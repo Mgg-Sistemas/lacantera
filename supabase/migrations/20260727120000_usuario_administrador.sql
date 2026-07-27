@@ -9,10 +9,21 @@
 --
 -- El mapeo vive en src/lib/auth.ts. Si cambia aquí, cambia allá.
 --
--- ADVERTENCIA: la clave 'CLAVE-RETIRADA-DEL-HISTORIAL' es provisional y débil para una cuenta con
--- acceso total a compras, inventario y nómina. Debe cambiarse en el primer
--- inicio de sesión. Cuando exista la tabla de perfiles se añadirá la marca
--- `debe_cambiar_clave` para forzarlo.
+-- ----------------------------------------------------------------------------
+-- LA CLAVE NO VA EN ESTE ARCHIVO.
+--
+-- Un repositorio se clona, se publica y se comparte; una clave escrita en una
+-- migración queda en el historial de git para siempre, y borrarla en un commit
+-- posterior no la saca del historial. Se pasa como parámetro de sesión y la
+-- migración falla si no está.
+--
+-- Para ejecutarla, en el SQL Editor:
+--
+--   set local app.clave_admin = 'LA-CLAVE-QUE-DECIDAS';
+--   -- y a continuación todo el bloque de abajo, en la MISMA ejecución
+--
+-- `set local` limita el valor a la transacción en curso: no queda residente en
+-- la conexión ni visible para la siguiente consulta.
 -- ============================================================================
 
 create extension if not exists pgcrypto with schema extensions;
@@ -21,14 +32,27 @@ do $$
 declare
   v_correo  text := 'admin_@lacantera.local';
   v_usuario text := 'admin_';
-  v_clave   text := 'CLAVE-RETIRADA-DEL-HISTORIAL';
+  v_clave   text := current_setting('app.clave_admin', true);
   v_id      uuid;
 begin
+  if v_clave is null or length(v_clave) < 8 then
+    raise exception
+      'Falta la clave o es demasiado corta. Ejecute antes: set local app.clave_admin = ''...'' (mínimo 8 caracteres).'
+      using errcode = '22023';
+  end if;
+
   -- Idempotente: la migración puede reaplicarse sin duplicar la cuenta.
   select id into v_id from auth.users where email = v_correo;
 
   if v_id is not null then
-    raise notice 'El usuario % ya existe (id %). No se modifica.', v_usuario, v_id;
+    -- La cuenta ya existe: se actualiza la clave. Esto es lo que permite usar
+    -- esta misma migración para reiniciar el acceso del administrador.
+    update auth.users
+       set encrypted_password = extensions.crypt(v_clave, extensions.gen_salt('bf')),
+           updated_at = now()
+     where id = v_id;
+
+    raise notice 'Clave del usuario % actualizada (id %).', v_usuario, v_id;
     return;
   end if;
 
