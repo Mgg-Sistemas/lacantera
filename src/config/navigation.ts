@@ -80,13 +80,15 @@ export const navigation: NavSection[] = [
       {
         label: 'Compras',
         icon: ShoppingCart,
-        badge: 7,
         children: [
-          { label: 'Requisiciones', to: '/app/compras/requisiciones' },
-          { label: 'Órdenes de compra', to: '/app/compras/ordenes' },
+          // El tablero es la pantalla del módulo: una tarjeta por compra,
+          // desde que alguien la pide hasta que llega el material. No hay
+          // "requisiciones" por un lado y "órdenes" por otro, porque quien
+          // compra no piensa en dos documentos sino en una sola compra.
+          { label: 'Tablero', to: '/app/compras' },
+          { label: 'Proveedores', to: '/app/compras/proveedores' },
           { label: 'Recepciones', to: '/app/compras/recepciones' },
           { label: 'Facturas de proveedor', to: '/app/compras/facturas' },
-          { label: 'Proveedores', to: '/app/compras/proveedores' },
         ],
       },
       {
