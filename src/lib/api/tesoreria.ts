@@ -17,6 +17,10 @@ export interface Cuenta {
   titular: string | null
   activa: boolean
   permite_sobregiro: boolean
+  documento: string | null
+  correo_binance: string | null
+  red_cripto: string | null
+  nota: string | null
   /** Suma del libro. No hay ninguna columna de saldo que pueda quedar vieja. */
   saldo: string
   saldo_bs: string
@@ -140,6 +144,46 @@ export function usePorPagar() {
     queryFn: async () =>
       desenvolver<PorPagar[]>(
         await supabase.from('v_cuentas_por_pagar').select('*').order('creada_en'),
+      ),
+    refetchInterval: 60_000,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Panel
+// ---------------------------------------------------------------------------
+
+export interface ResumenPanel {
+  compras_pedido: number
+  compras_cotizando: number
+  compras_por_aprobar: number
+  compras_aprobadas: number
+  compras_pagadas_sin_recibir: number
+  pagado_sin_recibir_usd: string
+  compras_atrasadas: number
+  por_pagar_n: number
+  por_pagar_usd: string
+  pago_mas_viejo_dias: number
+  disponible_usd: string
+  disponible_ves: string
+  cuentas_sin_abrir: number
+  inventario_usd: string
+  articulos_bajo_minimo: number
+  tasa_de_hoy: boolean
+}
+
+/**
+ * Los totales del panel, sumados en la base.
+ *
+ * Sumarlos en el navegador obligaría a bajarse cada movimiento y cada tarjeta
+ * para devolver un número, y con dos años de operación eso deja de abrir.
+ */
+export function useResumenPanel() {
+  return useQuery({
+    queryKey: ['tesoreria', 'panel'],
+    queryFn: async () =>
+      desenvolver<ResumenPanel>(
+        await supabase.from('v_panel_resumen').select('*').single(),
       ),
     refetchInterval: 60_000,
   })

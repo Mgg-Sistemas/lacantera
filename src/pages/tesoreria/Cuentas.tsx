@@ -121,6 +121,14 @@ function TarjetaCuenta({
           <Button size="sm" variant="outline" icon={<ArrowUpCircle />} onClick={() => onMover('egreso')}>
             Egreso
           </Button>
+          {/* El ajuste es el único remedio cuando el saldo de apertura quedó
+              mal: la apertura se registra una sola vez y la base rechaza la
+              segunda. Sin este botón, esa cuenta no se podría corregir. */}
+          {!sinAbrir ? (
+            <Button size="sm" variant="ghost" icon={<Scale />} onClick={() => onMover('ajuste')}>
+              Ajustar
+            </Button>
+          ) : null}
           <Button size="sm" variant="ghost" onClick={onEditar}>
             Editar
           </Button>
@@ -170,12 +178,15 @@ export function Cuentas() {
             banco: c.banco ?? '',
             numero_cuenta: c.numero_cuenta ?? '',
             titular: c.titular ?? '',
-            documento: '',
-            correo_binance: '',
-            red_cripto: '',
+            // Estos cuatro se cargan de la cuenta, no en blanco: el formulario
+            // guarda todo lo que tiene, así que abrirlos vacíos borraría el RIF
+            // del titular al corregir cualquier otra cosa.
+            documento: c.documento ?? '',
+            correo_binance: c.correo_binance ?? '',
+            red_cripto: c.red_cripto ?? '',
             permite_sobregiro: c.permite_sobregiro,
             activa: c.activa,
-            nota: '',
+            nota: c.nota ?? '',
           }
         : { ...vacia },
     )
@@ -185,13 +196,19 @@ export function Cuentas() {
   // El equivalente en dólares se calcula con la tasa de hoy, no con la de cada
   // día: es "cuánto vale ahora lo que hay", que es la pregunta que se hace
   // quien mira este número antes de comprometer un pago.
+  const hayBolivares = (data ?? []).some((c) => c.activa && c.moneda === 'VES')
+
   const enDolares = (data ?? []).reduce((suma, c) => {
     if (!c.activa) return suma
     const saldo = Number(c.saldo)
     if (c.moneda === 'USD') return suma + saldo
-    if (c.moneda === 'VES') return suma + (tasa ? saldo / Number(tasa.tasa) : 0)
+    if (c.moneda === 'VES' && tasa) return suma + saldo / Number(tasa.tasa)
     return suma
   }, 0)
+
+  // Sin tasa, los bolívares valdrían cero y el total saldría corto sin avisar.
+  // Es preferible no dar la cifra que darla mal.
+  const totalCompleto = !hayBolivares || Boolean(tasa)
 
   return (
     <>
@@ -222,13 +239,19 @@ export function Cuentas() {
               <div>
                 <p className="text-ink/45 text-xs">Disponible en cuentas activas</p>
                 <p className="text-safety tabular text-2xl font-semibold">
-                  {dolares(enDolares)}
+                  {totalCompleto ? dolares(enDolares) : '—'}
                 </p>
               </div>
               <p className="text-ink/45 max-w-md text-xs">
-                Convertido con la tasa de hoy
-                {tasa ? ` (Bs ${formatoTasa(tasa.tasa)})` : ''}, no con la del día en
-                que entró cada bolívar. Cada cuenta manda su propio saldo.
+                {totalCompleto ? (
+                  <>
+                    Convertido con la tasa de hoy
+                    {tasa ? ` (Bs ${formatoTasa(tasa.tasa)})` : ''}, no con la del día en
+                    que entró cada bolívar. Cada cuenta manda su propio saldo.
+                  </>
+                ) : (
+                  'Falta la tasa del día para convertir los bolívares. Regístrala en Sistema › Tasas de cambio; mientras tanto, el saldo de cada cuenta sí es exacto.'
+                )}
               </p>
             </div>
           </Card>
@@ -338,9 +361,17 @@ export function Cuentas() {
             {edicion.tipo === 'BILLETERA' ? (
               <>
                 <Input
-                  label="Correo de Binance"
+                  label="Correo de la plataforma"
+                  placeholder="pagos@lacantera.com"
                   value={edicion.correo_binance}
                   onChange={(e) => cambiar({ correo_binance: e.target.value })}
+                />
+                {/* Una billetera se identifica por el correo o por la dirección
+                    de la wallet: hay quien solo tiene la segunda. */}
+                <Input
+                  label="Dirección de la wallet"
+                  value={edicion.numero_cuenta}
+                  onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
                 />
                 <Input
                   label="Red"
@@ -361,6 +392,16 @@ export function Cuentas() {
               value={edicion.documento}
               onChange={(e) => cambiar({ documento: e.target.value })}
             />
+
+            <div className="sm:col-span-2">
+              <Textarea
+                label="Nota"
+                rows={2}
+                placeholder="Solo para pagos a proveedores del interior."
+                value={edicion.nota}
+                onChange={(e) => cambiar({ nota: e.target.value })}
+              />
+            </div>
           </div>
 
           <div className="mt-4 space-y-2">
@@ -483,8 +524,12 @@ function ModalMovimiento({
   const [dia, setDia] = useState('')
 
   const esAjuste = accion === 'ajuste'
+  // Solo el ajuste admite un monto negativo: es el único caso en que el signo
+  // significa algo — sobra o falta dinero. En el resto, el sentido lo pone la
+  // operación, y un negativo sería un ingreso que resta.
+  const montoValido = esAjuste ? Number(monto) !== 0 : Number(monto) > 0
   const listo =
-    Number(monto) !== 0 && (accion === 'apertura' || concepto.trim().length >= (esAjuste ? 10 : 4))
+    montoValido && (accion === 'apertura' || concepto.trim().length >= (esAjuste ? 10 : 4))
 
   return (
     <Modal

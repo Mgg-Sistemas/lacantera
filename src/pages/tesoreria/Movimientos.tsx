@@ -144,7 +144,14 @@ export function MovimientosTesoreria() {
                       </p>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      {puedeReversar && !m.movimiento_origen && !m.instruccion_id ? (
+                      {/* No se reversa: lo que ya es un reverso, el pago de una
+                          compra —se devuelve la instrucción desde la compra— ni
+                          una mitad de traslado, que devolvería el dinero al
+                          origen dejándolo también en el destino. */}
+                      {puedeReversar &&
+                      !m.movimiento_origen &&
+                      !m.instruccion_id &&
+                      !m.transferencia_par ? (
                         <Button
                           size="sm"
                           variant="ghost"

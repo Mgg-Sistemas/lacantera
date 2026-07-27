@@ -54,6 +54,12 @@ export function StatCard({
             </span>
             {deltaLabel ? <span className="text-ink/45">{deltaLabel}</span> : null}
           </p>
+        ) : deltaLabel ? (
+          // Sin comparación previa, la línea de abajo sigue haciendo falta: es
+          // donde va el dato que da sentido a la cifra —cuántas órdenes son,
+          // cuánto hay en la otra moneda—. Antes solo aparecía junto a un
+          // porcentaje, y los indicadores reales casi nunca tienen uno.
+          <p className="text-ink/45 mt-2 text-xs">{deltaLabel}</p>
         ) : null}
       </div>
 

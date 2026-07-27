@@ -1,305 +1,337 @@
+import { Link } from 'react-router'
 import {
   AlertTriangle,
   Banknote,
-  CheckCircle2,
+  Boxes,
+  ClipboardCheck,
+  Hammer,
+  HandCoins,
   Info,
-  Layers,
-  Pickaxe,
+  Landmark,
+  PackageSearch,
   Truck,
-  Users,
 } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { Button } from '@/components/ui/Button'
+import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
-import {
-  alertas,
-  despachosRecientes,
-  pendientesAprobacion,
-  produccionSemana,
-  productos,
-} from '@/data/demo'
-import { dolares, dolaresRedondos, enteros, toneladas } from '@/lib/formato'
+import { useResumenPanel } from '@/lib/api/tesoreria'
+import { useTablero } from '@/lib/api/compras'
+import { bolivares, dolares, dolaresRedondos, enteros, hace } from '@/lib/formato'
 
-const iconosAlerta = {
-  danger: AlertTriangle,
-  warning: AlertTriangle,
-  info: Info,
-} as const
+interface Aviso {
+  tono: 'danger' | 'warning' | 'info'
+  titulo: string
+  detalle: string
+  ruta: string
+}
+
+/**
+ * Lo que hay que atender hoy.
+ *
+ * No es una lista escrita a mano: cada aviso nace de una condición del sistema
+ * y desaparece cuando esa condición deja de cumplirse. Un tablero de avisos
+ * que hay que apagar a mano se llena de cosas resueltas y deja de leerse.
+ */
+function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
+  if (!r) return []
+  const avisos: Aviso[] = []
+
+  if (!r.tasa_de_hoy) {
+    avisos.push({
+      tono: 'danger',
+      titulo: 'No hay tasa del BCV de hoy',
+      detalle:
+        'Sin ella no se puede cotizar, aprobar ni pagar: todo documento valorado congela la tasa del día.',
+      ruta: '/app/tasas',
+    })
+  }
+
+  if (r.compras_atrasadas > 0) {
+    avisos.push({
+      tono: 'danger',
+      titulo: `${r.compras_atrasadas} compra${r.compras_atrasadas === 1 ? '' : 's'} pagada${r.compras_atrasadas === 1 ? '' : 's'} sin recibir`,
+      detalle: `Más de una semana esperando material. Son ${dolares(r.pagado_sin_recibir_usd)} que ya salieron de la empresa.`,
+      ruta: '/app/compras',
+    })
+  }
+
+  if (r.pago_mas_viejo_dias > 3) {
+    avisos.push({
+      tono: 'warning',
+      titulo: `Un pago lleva ${r.pago_mas_viejo_dias} días autorizado sin salir`,
+      detalle:
+        'El proveedor no reserva el material hasta ver el pago, y la cotización tiene fecha de vencimiento.',
+      ruta: '/app/tesoreria/pagos',
+    })
+  }
+
+  if (r.compras_por_aprobar > 0) {
+    avisos.push({
+      tono: 'warning',
+      titulo: `${r.compras_por_aprobar} compra${r.compras_por_aprobar === 1 ? '' : 's'} esperando al gerente`,
+      detalle: 'Hasta que se apruebe no hay orden, y sin orden el proveedor no despacha.',
+      ruta: '/app/compras',
+    })
+  }
+
+  if (r.articulos_bajo_minimo > 0) {
+    avisos.push({
+      tono: 'warning',
+      titulo: `${r.articulos_bajo_minimo} artículo${r.articulos_bajo_minimo === 1 ? '' : 's'} bajo el mínimo`,
+      detalle: 'Reponer antes de que pare una máquina cuesta menos que pararla.',
+      ruta: '/app/inventario/existencias',
+    })
+  }
+
+  if (r.cuentas_sin_abrir > 0) {
+    avisos.push({
+      tono: 'info',
+      titulo: `${r.cuentas_sin_abrir} cuenta${r.cuentas_sin_abrir === 1 ? '' : 's'} sin saldo de apertura`,
+      detalle:
+        'Mientras no se registre lo que había, esa cuenta figura en cero y no deja pagar desde ella.',
+      ruta: '/app/tesoreria/cuentas',
+    })
+  }
+
+  return avisos
+}
+
+const iconos = { danger: AlertTriangle, warning: AlertTriangle, info: Info } as const
 
 export function Dashboard() {
-  const maxProduccion = Math.max(...produccionSemana.map((d) => d.toneladas))
+  const { data: r, isPending, error } = useResumenPanel()
+  const { data: tarjetas } = useTablero()
+
   const hoy = new Date().toLocaleDateString('es-VE', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   })
 
+  const avisos = avisosDe(r)
+
+  // Lo que espera decisión del gerente, lo más viejo arriba: quien aprueba
+  // necesita saber qué lleva más tiempo detenido, no qué llegó de último.
+  const porAprobar = (tarjetas ?? [])
+    .filter((t) => t.columna === 'GERENTE')
+    .sort((a, b) => a.creada_en.localeCompare(b.creada_en))
+
   return (
     <>
       <PageHeader title="Panel" description={`Operación de ${hoy}`} />
 
-      {/* ---------- Indicadores ---------- */}
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Producción de hoy"
-          value={toneladas(1480)}
-          icon={<Pickaxe />}
-          tone="royal"
-          delta={-10.6}
-          deltaLabel="vs. viernes"
-        />
-        <StatCard
-          label="Despachado de hoy"
-          value={toneladas(1284)}
-          icon={<Truck />}
-          tone="success"
-          delta={12.4}
-          deltaLabel="vs. ayer"
-        />
-        <StatCard
-          label="Por cobrar vencido"
-          value={dolaresRedondos(48250)}
-          icon={<Banknote />}
-          tone="warning"
-          delta={8.2}
-          deltaLabel="vs. mes pasado"
-          invertDelta
-        />
-        <StatCard
-          label="Nómina de la semana"
-          value={dolaresRedondos(11840)}
-          icon={<Users />}
-          tone="info"
-          delta={2.1}
-          deltaLabel="38 obreros · 9 empleados"
-        />
-      </div>
+      {isPending ? <Cargando /> : null}
+      {error ? <ErrorDeCarga error={error} /> : null}
 
-      {/* ---------- Producción y existencias ---------- */}
-      <div className="mt-5 grid gap-5 lg:grid-cols-5">
-        <Card className="lg:col-span-2">
-          <CardHeader
-            title="Producción de la semana"
-            subtitle={`${enteros(10329)} t acumuladas`}
-          />
-
-          {/* La barra vive dentro de un contenedor `flex-1 min-h-0`: sin una
-              altura definida en el padre, un alto en porcentaje se resuelve
-              contra `auto` y la barra desaparece. */}
-          <div className="mt-6 flex h-52 gap-2.5">
-            {produccionSemana.map((dia) => {
-              const alto = (dia.toneladas / maxProduccion) * 100
-              const esHoy = dia.dia === 'Hoy'
-              return (
-                <div key={dia.dia} className="flex h-full flex-1 flex-col items-center gap-2">
-                  <span className="text-ink/50 tabular text-2xs">
-                    {enteros(dia.toneladas)}
-                  </span>
-                  <div className="flex min-h-0 w-full flex-1 items-end">
-                    {/* En oscuro se invierte la relación: un azul claro sobre
-                        fondo oscuro pesa más que uno saturado, así que el día
-                        de hoy tiene que ser el más claro, no el más intenso. */}
-                    <div
-                      className={`w-full rounded-t-[4px] ${
-                        esHoy
-                          ? 'bg-royal-600 dark:bg-royal-400'
-                          : 'bg-royal-200 dark:bg-royal-400/25'
-                      }`}
-                      style={{ height: `${alto}%` }}
-                    />
-                  </div>
-                  <span
-                    className={`text-2xs ${esHoy ? 'text-ink/90 font-semibold' : 'text-ink/45'}`}
-                  >
-                    {dia.dia}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </Card>
-
-        <Card className="lg:col-span-3">
-          <CardHeader
-            title="Existencia en patio"
-            subtitle="Toneladas sobre capacidad de acopio"
-            action={
-              <Chip tone="neutral">Último conteo: 24 jul · dron</Chip>
-            }
-          />
-
-          <ul className="mt-5 space-y-4">
-            {productos.map((producto) => {
-              const ocupacion = (producto.existenciaTon / producto.capacidadTon) * 100
-              const bajo = ocupacion < 35
-              return (
-                <li key={producto.codigo}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-ink/80 truncate text-sm font-medium">
-                      {producto.nombre}
-                    </span>
-                    <span className="text-ink/70 tabular shrink-0 text-sm">
-                      {toneladas(producto.existenciaTon)}
-                      <span className="text-ink/35"> / {enteros(producto.capacidadTon)}</span>
-                    </span>
-                  </div>
-                  <div className="bg-ink/8 mt-1.5 h-1.5 overflow-hidden rounded-full">
-                    <div
-                      className={`h-full rounded-full ${bajo ? 'bg-warning' : 'bg-royal-500'}`}
-                      style={{ width: `${ocupacion}%` }}
-                    />
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        </Card>
-      </div>
-
-      {/* ---------- Despachos ---------- */}
-      <div className="mt-5 grid gap-5 xl:grid-cols-3">
-        <Card flush className="xl:col-span-2">
-          <div className="p-5">
-            <CardHeader
-              title="Despachos recientes"
-              subtitle="Registrados en romana hoy"
-              action={
-                <Button variant="ghost" size="sm">
-                  Ver todos
-                </Button>
+      {r ? (
+        <>
+          {/* ---------- Indicadores ---------- */}
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label="En cuentas, en divisas"
+              value={dolaresRedondos(r.disponible_usd)}
+              icon={<Landmark />}
+              tone="royal"
+              deltaLabel={`${bolivares(r.disponible_ves)} en bolívares`}
+            />
+            <StatCard
+              label="Por pagar a proveedores"
+              value={dolaresRedondos(r.por_pagar_usd)}
+              icon={<HandCoins />}
+              tone={r.pago_mas_viejo_dias > 7 ? 'warning' : 'info'}
+              deltaLabel={
+                r.por_pagar_n === 0
+                  ? 'Nada pendiente'
+                  : `${r.por_pagar_n} pago${r.por_pagar_n === 1 ? '' : 's'} autorizado${r.por_pagar_n === 1 ? '' : 's'}`
+              }
+            />
+            <StatCard
+              label="Pagado sin recibir"
+              value={dolaresRedondos(r.pagado_sin_recibir_usd)}
+              icon={<Truck />}
+              tone={r.compras_atrasadas > 0 ? 'warning' : 'success'}
+              deltaLabel={
+                r.compras_pagadas_sin_recibir === 0
+                  ? 'Todo lo pagado llegó'
+                  : `${r.compras_pagadas_sin_recibir} orden${r.compras_pagadas_sin_recibir === 1 ? '' : 'es'} en camino`
+              }
+            />
+            <StatCard
+              label="Valor del inventario"
+              value={dolaresRedondos(r.inventario_usd)}
+              icon={<Boxes />}
+              tone="info"
+              deltaLabel={
+                r.articulos_bajo_minimo === 0
+                  ? 'Ningún artículo bajo mínimo'
+                  : `${r.articulos_bajo_minimo} bajo el mínimo`
               }
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[620px] text-left">
-              <thead>
-                <tr className="border-hairline border-y">
-                  <th className="text-ink/50 px-5 py-2.5 text-2xs font-semibold tracking-wider uppercase">
-                    Guía
-                  </th>
-                  <th className="text-ink/50 px-5 py-2.5 text-2xs font-semibold tracking-wider uppercase">
-                    Cliente
-                  </th>
-                  <th className="text-ink/50 px-5 py-2.5 text-2xs font-semibold tracking-wider uppercase">
-                    Producto
-                  </th>
-                  <th className="text-ink/50 px-5 py-2.5 text-right text-2xs font-semibold tracking-wider uppercase">
-                    Neto
-                  </th>
-                  <th className="text-ink/50 px-5 py-2.5 text-2xs font-semibold tracking-wider uppercase">
-                    Estado
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-hairline divide-y">
-                {despachosRecientes.map((despacho) => (
-                  <tr key={despacho.guia} className="hover:bg-ink/3 transition-colors">
-                    <td className="px-5 py-3">
-                      <span className="text-ink/85 tabular text-sm font-medium">
-                        {despacho.guia}
-                      </span>
-                      <span className="text-ink/45 block text-2xs">
-                        {despacho.hora} · {despacho.vehiculo}
-                      </span>
-                    </td>
-                    <td className="text-ink/75 px-5 py-3 text-sm">{despacho.cliente}</td>
-                    <td className="text-ink/60 px-5 py-3 text-sm">{despacho.producto}</td>
-                    <td className="text-ink/85 tabular px-5 py-3 text-right text-sm font-medium">
-                      {despacho.toneladas.toLocaleString('es-VE', {
-                        minimumFractionDigits: 1,
-                        maximumFractionDigits: 1,
-                      })}{' '}
-                      t
-                    </td>
-                    <td className="px-5 py-3">
-                      <Chip tone={despacho.estado === 'Entregado' ? 'success' : 'info'}>
-                        {despacho.estado}
-                      </Chip>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+          <div className="mt-5 grid gap-5 lg:grid-cols-3">
+            {/* ---------- Avisos ---------- */}
+            <Card className="lg:col-span-2">
+              <CardHeader
+                title="Requiere atención"
+                subtitle={
+                  avisos.length === 0
+                    ? 'Nada detenido ahora mismo'
+                    : `${avisos.length} asunto${avisos.length === 1 ? '' : 's'} abierto${avisos.length === 1 ? '' : 's'}`
+                }
+              />
 
-        {/* ---------- Alertas ---------- */}
-        <Card>
-          <CardHeader title="Requiere atención" subtitle="4 asuntos abiertos" />
+              {avisos.length === 0 ? (
+                <p className="text-ink/50 border-hairline mt-4 rounded-[6px] border border-dashed p-6 text-center text-sm">
+                  Ninguna compra atrasada, ningún pago esperando y ningún artículo bajo el
+                  mínimo.
+                </p>
+              ) : (
+                <ul className="mt-4 space-y-3">
+                  {avisos.map((a) => {
+                    const Icono = iconos[a.tono]
+                    return (
+                      <li key={a.titulo}>
+                        <Link
+                          to={a.ruta}
+                          className="border-hairline hover:border-royal-300 flex gap-3 rounded-[6px] border p-3 transition-colors"
+                        >
+                          <Icono
+                            className={`mt-0.5 size-[18px] shrink-0 ${
+                              a.tono === 'danger'
+                                ? 'text-danger'
+                                : a.tono === 'warning'
+                                  ? 'text-warning'
+                                  : 'text-info'
+                            }`}
+                          />
+                          <div className="min-w-0">
+                            <p className="text-ink/85 text-sm font-medium">{a.titulo}</p>
+                            <p className="text-ink/55 mt-0.5 text-xs leading-relaxed">
+                              {a.detalle}
+                            </p>
+                          </div>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </Card>
 
-          <ul className="mt-4 space-y-3">
-            {alertas.map((alerta) => {
-              const Icono = iconosAlerta[alerta.tono]
-              return (
-                <li
-                  key={alerta.titulo}
-                  className="border-hairline flex gap-3 rounded-[6px] border p-3"
-                >
-                  <Icono
-                    className={`mt-0.5 size-[18px] shrink-0 ${
-                      alerta.tono === 'danger'
-                        ? 'text-danger'
-                        : alerta.tono === 'warning'
-                          ? 'text-warning'
-                          : 'text-info'
-                    }`}
-                  />
-                  <div className="min-w-0">
-                    <p className="text-ink/85 text-sm font-medium">{alerta.titulo}</p>
-                    <p className="text-ink/55 mt-0.5 text-xs leading-relaxed">
-                      {alerta.detalle}
-                    </p>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        </Card>
-      </div>
+            {/* ---------- Compras, por etapa ---------- */}
+            <Card>
+              <CardHeader title="Compras en curso" subtitle="Dónde está detenida cada una" />
 
-      {/* ---------- Aprobaciones ---------- */}
-      <div className="mt-5">
-        <Card>
-          <CardHeader
-            title="Esperando tu aprobación"
-            subtitle="Ordenado por antigüedad de la solicitud"
-            action={
-              <Button variant="soft" size="sm" icon={<CheckCircle2 />}>
-                Revisar todo
-              </Button>
-            }
-          />
-
-          <ul className="mt-4 grid gap-3 md:grid-cols-2">
-            {pendientesAprobacion.map((pendiente) => (
-              <li
-                key={pendiente.documento}
-                className="border-hairline hover:border-royal-300 flex items-start gap-3 rounded-[6px] border p-4 transition-colors"
-              >
-                <Layers className="text-ink/35 mt-0.5 size-[18px] shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-ink/85 tabular text-sm font-semibold">
-                      {pendiente.documento}
+              <ul className="mt-4 space-y-2.5">
+                {[
+                  ['Pedidos por confirmar', r.compras_pedido],
+                  ['Buscando precios', r.compras_cotizando],
+                  ['Esperando al gerente', r.compras_por_aprobar],
+                  ['Por indicar el pago', r.compras_aprobadas],
+                  ['Pagadas, por recibir', r.compras_pagadas_sin_recibir],
+                ].map(([etiqueta, n]) => (
+                  <li key={etiqueta as string} className="flex items-baseline justify-between gap-3">
+                    <span className="text-ink/70 text-sm">{etiqueta}</span>
+                    <span
+                      className={`tabular text-sm font-semibold ${
+                        Number(n) > 0 ? 'text-ink/90' : 'text-ink/30'
+                      }`}
+                    >
+                      {enteros(Number(n))}
                     </span>
-                    {pendiente.urgente ? <Chip tone="danger">Urgente</Chip> : null}
-                  </div>
-                  <p className="text-ink/70 mt-1 text-sm">{pendiente.descripcion}</p>
-                  <p className="text-ink/45 mt-1 text-xs">
-                    {pendiente.solicitante} · {pendiente.nivel}
+                  </li>
+                ))}
+              </ul>
+
+              <Link to="/app/compras" className="mt-4 block">
+                <Button variant="soft" size="sm" block>
+                  Ver el tablero
+                </Button>
+              </Link>
+            </Card>
+          </div>
+
+          {/* ---------- Aprobaciones ---------- */}
+          {porAprobar.length > 0 ? (
+            <div className="mt-5">
+              <Card>
+                <CardHeader
+                  title="Esperando aprobación del gerente"
+                  subtitle="Lo que lleva más tiempo detenido, primero"
+                />
+
+                <ul className="mt-4 grid gap-3 md:grid-cols-2">
+                  {porAprobar.map((t) => (
+                    <li key={t.solicitud_id}>
+                      <Link
+                        to={`/app/compras/${t.solicitud_id}`}
+                        className="border-hairline hover:border-royal-300 flex items-start gap-3 rounded-[6px] border p-4 transition-colors"
+                      >
+                        <ClipboardCheck className="text-ink/35 mt-0.5 size-[18px] shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-ink/45 font-mono text-xs">{t.numero}</span>
+                            {t.prioridad === 'URGENTE' ? <Chip tone="danger">Urgente</Chip> : null}
+                          </div>
+                          <p className="text-ink/85 mt-1 text-sm font-medium">{t.titulo}</p>
+                          <p className="text-ink/45 mt-1 text-xs">
+                            {t.solicitante ?? 'Sin solicitante'} · {t.proveedor ?? 'sin proveedor'}{' '}
+                            · {hace(t.creada_en)}
+                          </p>
+                        </div>
+                        <span className="text-ink/90 tabular shrink-0 text-sm font-semibold">
+                          {t.total_usd ? dolares(t.total_usd) : '—'}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </div>
+          ) : null}
+
+          {/* ---------- Lo que todavía no existe ----------
+              Antes esta zona mostraba producción y despachos inventados. Un
+              número falso al lado de los verdaderos es peor que un hueco: nadie
+              sabe cuáles creer. */}
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            <Card>
+              <div className="flex items-start gap-3">
+                <Hammer className="text-ink/25 mt-0.5 size-5 shrink-0" />
+                <div>
+                  <h2 className="text-ink/70 text-base font-medium">Producción y explotación</h2>
+                  <p className="text-ink/45 mt-1 text-sm">
+                    Todavía no se registra. Cuando el módulo esté, aquí van las toneladas del
+                    día y de la semana.
                   </p>
                 </div>
-                <span className="text-ink/90 tabular shrink-0 text-sm font-semibold">
-                  {dolares(pendiente.montoUsd)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
+              </div>
+            </Card>
+            <Card>
+              <div className="flex items-start gap-3">
+                <PackageSearch className="text-ink/25 mt-0.5 size-5 shrink-0" />
+                <div>
+                  <h2 className="text-ink/70 text-base font-medium">Ventas y despachos</h2>
+                  <p className="text-ink/45 mt-1 text-sm">
+                    Todavía no se registran. Con ellos aparecerán aquí las guías de la romana y
+                    lo que está por cobrar.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <p className="text-ink/35 mt-5 flex items-center gap-1.5 text-xs">
+            <Banknote className="size-3.5" />
+            Todas las cifras salen de lo registrado en el sistema. No hay ningún número de
+            ejemplo en esta pantalla.
+          </p>
+        </>
+      ) : null}
     </>
   )
 }
