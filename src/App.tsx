@@ -4,15 +4,31 @@ import { AppLayout } from '@/layouts/AppLayout'
 import { Dashboard } from '@/pages/Dashboard'
 import { Login } from '@/pages/Login'
 import { ModuloPendiente } from '@/pages/ModuloPendiente'
+import { Tasas } from '@/pages/Tasas'
+import { Articulos } from '@/pages/config/Articulos'
+import { DetalleCompra } from '@/pages/compras/DetalleCompra'
+import { NuevoPedido } from '@/pages/compras/NuevoPedido'
+import { Proveedores } from '@/pages/compras/Proveedores'
+import { TableroCompras } from '@/pages/compras/Tablero'
 import { navigation } from '@/config/navigation'
 import { SesionProvider, useSesion } from '@/lib/sesion'
 import { Logo } from '@/components/Logo'
 
 /**
- * Las rutas de los módulos se derivan del mismo archivo que dibuja el menú.
- * Así es imposible que exista una entrada de menú sin ruta, o una ruta
- * huérfana que nadie puede alcanzar.
+ * Pantallas ya construidas, por ruta.
+ *
+ * Las rutas del menú siguen derivándose de `navigation` para que no exista una
+ * entrada sin destino; lo que hace este mapa es decidir cuál de ellas ya tiene
+ * pantalla real y cuál sigue mostrando el aviso de pendiente. Así el menú y las
+ * rutas no se pueden desincronizar.
  */
+const paginas: Record<string, ReactNode> = {
+  '/app/compras': <TableroCompras />,
+  '/app/compras/proveedores': <Proveedores />,
+  '/app/config/articulos': <Articulos />,
+  '/app/tasas': <Tasas />,
+}
+
 const rutasDeModulos = navigation.flatMap((seccion) =>
   seccion.items.flatMap((item) => {
     if (item.children) {
@@ -92,12 +108,22 @@ export default function App() {
             }
           >
             <Route index element={<Dashboard />} />
+
+            {/* Pantallas que no están en el menú porque se llega a ellas desde
+                el tablero, no desde la navegación. */}
+            <Route path="compras/nuevo" element={<NuevoPedido />} />
+            <Route path="compras/:id" element={<DetalleCompra />} />
+
             {rutasDeModulos.map((ruta) => (
               <Route
                 key={ruta.path}
                 // Las rutas del menú son absolutas; aquí se necesitan relativas al padre.
                 path={ruta.path.replace('/app/', '')}
-                element={<ModuloPendiente title={ruta.label} seccion={ruta.seccion} />}
+                element={
+                  paginas[ruta.path] ?? (
+                    <ModuloPendiente title={ruta.label} seccion={ruta.seccion} />
+                  )
+                }
               />
             ))}
           </Route>
