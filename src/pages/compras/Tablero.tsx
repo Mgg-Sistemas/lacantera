@@ -150,6 +150,26 @@ function TarjetaCompra({ tarjeta }: { tarjeta: Tarjeta }) {
   )
 }
 
+/**
+ * Columna vacía, reducida a una franja vertical.
+ *
+ * Siete columnas a ancho completo no caben en una pantalla de portátil, y la
+ * mitad del tablero suele estar vacía: nadie tiene compras en las siete etapas
+ * a la vez. Contraer lo vacío deja a la vista lo que sí tiene trabajo, sin
+ * esconder que la columna existe.
+ */
+function ColumnaVacia({ definicion }: { definicion: DefinicionColumna }) {
+  return (
+    <section className="bg-surface rounded-card shadow-card flex w-11 shrink-0 flex-col items-center overflow-hidden">
+      <div className={cn('h-1 w-full', franjas[definicion.tono])} />
+      <p className="text-ink/35 mt-3 [writing-mode:vertical-rl] text-xs font-medium whitespace-nowrap">
+        {definicion.titulo}
+      </p>
+      <span className="text-ink/25 mt-auto mb-3 text-xs">0</span>
+    </section>
+  )
+}
+
 function ColumnaTablero({
   definicion,
   tarjetas,
@@ -198,7 +218,9 @@ function ColumnaTablero({
 export function TableroCompras() {
   const { data, isPending, error } = useTablero()
   const esEscritorio = useMediaQuery('(min-width: 1024px)')
-  const [columnaMovil, setColumnaMovil] = useState<Columna>('PEDIDO')
+  // Nula hasta que se elige: así el teléfono abre en la primera columna que
+  // tiene trabajo en vez de en una vacía.
+  const [columnaElegida, setColumnaElegida] = useState<Columna | null>(null)
 
   const porColumna = useMemo(() => {
     const mapa = new Map<Columna, Tarjeta[]>(COLUMNAS.map((c) => [c.clave, []]))
@@ -210,6 +232,11 @@ export function TableroCompras() {
     }
     return mapa
   }, [data])
+
+  const columnaMovil =
+    columnaElegida ??
+    COLUMNAS.find((c) => (porColumna.get(c.clave)?.length ?? 0) > 0)?.clave ??
+    'PEDIDO'
 
   const enRiesgo = (data ?? []).filter(
     (t) => t.columna === 'PAGADA' && (t.dias_sin_recibir ?? 0) > 7,
@@ -260,18 +287,27 @@ export function TableroCompras() {
 
       {data && data.length > 0 ? (
         esEscritorio ? (
-          // Siete columnas no caben a lo ancho sin apretarlas hasta lo
-          // ilegible, así que el tablero desplaza en horizontal y cada columna
-          // conserva un ancho cómodo.
-          <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-4">
-            {COLUMNAS.map((c) => (
-              <ColumnaTablero
-                key={c.clave}
-                definicion={c}
-                tarjetas={porColumna.get(c.clave) ?? []}
-                className="max-h-[calc(100svh-15rem)] w-[268px] shrink-0"
-              />
-            ))}
+          // Las columnas con trabajo se reparten el ancho disponible; las
+          // vacías se quedan en una franja. Si aun así no cabe, el tablero
+          // desplaza en horizontal antes que estrechar una tarjeta hasta lo
+          // ilegible.
+          <div className="-mx-1 flex items-stretch gap-2.5 overflow-x-auto px-1 pb-4">
+            {COLUMNAS.map((c) => {
+              const tarjetas = porColumna.get(c.clave) ?? []
+              return tarjetas.length === 0 ? (
+                <ColumnaVacia key={c.clave} definicion={c} />
+              ) : (
+                <ColumnaTablero
+                  key={c.clave}
+                  definicion={c}
+                  tarjetas={tarjetas}
+                  // El máximo importa tanto como el mínimo: con una sola
+                  // columna con trabajo, sin tope la tarjeta se estiraría a
+                  // todo lo ancho de la pantalla.
+                  className="max-h-[calc(100svh-15rem)] min-w-[248px] max-w-[320px] flex-1"
+                />
+              )
+            })}
           </div>
         ) : (
           <div>
@@ -285,7 +321,12 @@ export function TableroCompras() {
                   <button
                     key={c.clave}
                     type="button"
-                    onClick={() => setColumnaMovil(c.clave)}
+                    // La barra de columnas no cabe entera: si la activa queda
+                    // fuera de vista, el tablero parece no responder al toque.
+                    ref={(nodo) => {
+                      if (activa) nodo?.scrollIntoView({ block: 'nearest', inline: 'center' })
+                    }}
+                    onClick={() => setColumnaElegida(c.clave)}
                     className={cn(
                       'rounded-control shrink-0 px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
                       activa
