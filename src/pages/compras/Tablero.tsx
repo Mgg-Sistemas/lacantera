@@ -1,15 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
-import {
-  AlertTriangle,
-  CalendarClock,
-  ChevronRight,
-  ClipboardList,
-  FileText,
-  Flame,
-  Plus,
-  Truck,
-} from 'lucide-react'
+import { AlertTriangle, ClipboardList, Plus, User } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -21,7 +12,7 @@ import { cn } from '@/lib/cn'
 
 type Tono = DefinicionColumna['tono']
 
-/** La franja de color es lo único que distingue una etapa de otra. */
+/** Franja superior del panel. Solo aparece cuando la etapa tiene trabajo. */
 const franjas: Record<Tono, string> = {
   neutral: 'bg-ink/25',
   info: 'bg-info',
@@ -31,166 +22,204 @@ const franjas: Record<Tono, string> = {
   danger: 'bg-danger',
 }
 
-function fechaCorta(iso: string | null): string {
-  if (!iso) return ''
-  return new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: 'short' }).format(
-    new Date(iso),
-  )
+const puntos: Record<Tono, string> = {
+  neutral: 'bg-ink/30',
+  info: 'bg-info',
+  royal: 'bg-royal-500',
+  warning: 'bg-warning',
+  success: 'bg-success',
+  danger: 'bg-danger',
+}
+
+function fechaLarga(iso: string): string {
+  return new Intl.DateTimeFormat('es-VE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso))
 }
 
 /**
- * La señal propia de la etapa. Una sola por tarjeta: si cada fila lleva cuatro
- * insignias, no se lee ninguna.
+ * Cuánto lleva la tarjeta sin moverse.
+ *
+ * Es el dato que convierte el tablero en una herramienta y no en una lista:
+ * un pedido de hace tres horas y uno de hace nueve días se ven igual hasta
+ * que alguien pone el tiempo al lado.
  */
-function SeñalDeEtapa({ tarjeta }: { tarjeta: Tarjeta }) {
-  if (tarjeta.columna === 'CONFIRMADA') {
-    return (
-      <Chip tone={tarjeta.cotizaciones > 0 ? 'info' : 'neutral'} icon={<FileText />}>
-        {tarjeta.cotizaciones === 0
-          ? 'Sin cotizaciones'
-          : `${tarjeta.cotizaciones} cotización${tarjeta.cotizaciones === 1 ? '' : 'es'}`}
-      </Chip>
-    )
+function hace(iso: string): string {
+  const minutos = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (minutos < 60) return `hace ${Math.max(minutos, 1)} min`
+
+  const horas = Math.floor(minutos / 60)
+  if (horas < 24) return `hace ${horas} h`
+
+  const dias = Math.floor(horas / 24)
+  if (dias < 30) return `hace ${dias} d`
+
+  const meses = Math.floor(dias / 30)
+  return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`
+}
+
+/** La señal propia de la etapa, cuando la etapa tiene algo que señalar. */
+function señal(t: Tarjeta): { texto: string; tono: Tono } | null {
+  if (t.columna === 'CONFIRMADA') {
+    return t.cotizaciones === 0
+      ? { texto: 'Sin cotizaciones', tono: 'neutral' }
+      : {
+          texto: `${t.cotizaciones} cotización${t.cotizaciones === 1 ? '' : 'es'}`,
+          tono: 'info',
+        }
   }
 
-  if (tarjeta.columna === 'APROBADA') {
-    return tarjeta.estado_orden === 'EN_TESORERIA' ? (
-      <Chip tone="info">En tesorería</Chip>
-    ) : (
-      <Chip tone="warning">Falta el método de pago</Chip>
-    )
+  if (t.columna === 'APROBADA') {
+    return t.estado_orden === 'EN_TESORERIA'
+      ? { texto: 'En tesorería', tono: 'info' }
+      : { texto: 'Falta el método de pago', tono: 'warning' }
   }
 
-  if (tarjeta.columna === 'PAGADA' && tarjeta.dias_sin_recibir !== null) {
-    const dias = tarjeta.dias_sin_recibir
-    return (
-      <Chip tone={dias > 15 ? 'danger' : dias > 7 ? 'warning' : 'success'} icon={<Truck />}>
-        {dias === 0 ? 'Pagada hoy' : `${dias} día${dias === 1 ? '' : 's'} sin recibir`}
-      </Chip>
-    )
+  if (t.columna === 'PAGADA' && t.dias_sin_recibir !== null) {
+    const d = t.dias_sin_recibir
+    return {
+      texto: d === 0 ? 'Pagada hoy' : `${d} día${d === 1 ? '' : 's'} sin recibir`,
+      tono: d > 15 ? 'danger' : d > 7 ? 'warning' : 'success',
+    }
   }
 
-  if (tarjeta.columna === 'DESISTIO') {
-    return (
-      <Chip
-        tone={tarjeta.desistio_resolucion === 'PENDIENTE' ? 'danger' : 'neutral'}
-        icon={<AlertTriangle />}
-      >
-        {tarjeta.desistio_resolucion === 'PENDIENTE'
-          ? 'Dinero sin resolver'
-          : tarjeta.desistio_resolucion === 'REEMBOLSADO'
-            ? 'Reembolsado'
-            : tarjeta.desistio_resolucion === 'SALDO_FAVOR'
-              ? 'Queda a favor'
-              : 'Dado por perdido'}
-      </Chip>
-    )
+  if (t.columna === 'DESISTIO') {
+    return t.desistio_resolucion === 'PENDIENTE'
+      ? { texto: 'Dinero sin resolver', tono: 'danger' }
+      : {
+          texto:
+            t.desistio_resolucion === 'REEMBOLSADO'
+              ? 'Reembolsado'
+              : t.desistio_resolucion === 'SALDO_FAVOR'
+                ? 'Queda a favor'
+                : 'Dado por perdido',
+          tono: 'neutral',
+        }
   }
 
-  if (tarjeta.estado_solicitud === 'BORRADOR') return <Chip tone="neutral">Borrador</Chip>
-
-  if (tarjeta.requerida_para) {
-    return (
-      <Chip tone="neutral" icon={<CalendarClock />}>
-        Para el {fechaCorta(tarjeta.requerida_para)}
-      </Chip>
-    )
-  }
-
+  if (t.estado_solicitud === 'BORRADOR') return { texto: 'Borrador', tono: 'neutral' }
   return null
 }
 
-/**
- * Tarjeta a lo ancho.
- *
- * La compra se lee de izquierda a derecha en una sola línea: qué es, en qué
- * anda y cuánto cuesta. En columnas estrechas el título se partía en dos y el
- * proveedor no cabía; aquí caben los tres datos que se miran de verdad.
- */
 function TarjetaCompra({ tarjeta }: { tarjeta: Tarjeta }) {
   const navigate = useNavigate()
+  const marca = señal(tarjeta)
 
   return (
     <article
       onClick={() => void navigate(`/app/compras/${tarjeta.solicitud_id}`)}
       className={cn(
-        'bg-surface rounded-card border-hairline group flex cursor-pointer flex-col gap-3 border p-3.5',
-        'hover:border-royal-600/40 hover:shadow-card transition-[border-color,box-shadow] duration-150',
-        'sm:flex-row sm:items-center sm:gap-4',
+        'bg-ink/4 border-hairline rounded-card group cursor-pointer border p-3',
+        'hover:border-royal-600/40 hover:bg-ink/6 transition-colors duration-150',
       )}
     >
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-ink/45 font-mono text-2xs tracking-tight">
-            {tarjeta.orden_numero ?? tarjeta.numero}
-          </span>
-          {tarjeta.prioridad === 'URGENTE' ? (
-            <Chip tone="danger" icon={<Flame />}>
-              Urgente
-            </Chip>
-          ) : tarjeta.prioridad === 'ALTA' ? (
-            <Chip tone="warning">Alta</Chip>
-          ) : null}
-        </div>
+      <p className="text-ink/45 font-mono text-2xs tracking-tight">
+        {tarjeta.orden_numero ?? tarjeta.numero}
+      </p>
 
-        <h3 className="text-ink/90 group-hover:text-royal-700 dark:group-hover:text-royal-300 mt-0.5 truncate text-base font-medium">
-          {tarjeta.titulo}
-        </h3>
-        <p className="text-ink/50 truncate text-xs">
+      <h3 className="text-ink/90 group-hover:text-royal-700 dark:group-hover:text-royal-300 mt-0.5 text-base leading-snug font-semibold">
+        {tarjeta.titulo}
+      </h3>
+
+      <p className="text-ink/50 text-xs">
+        {tarjeta.renglones} {tarjeta.renglones === 1 ? 'ítem' : 'ítems'}
+        {tarjeta.prioridad !== 'NORMAL'
+          ? ` · ${tarjeta.prioridad === 'URGENTE' ? 'Urgente' : 'Prioridad alta'}`
+          : ''}
+      </p>
+
+      <p className="text-ink/60 mt-2 flex items-center gap-1.5 text-xs">
+        <User className="text-royal-500 dark:text-royal-300 size-3.5 shrink-0" />
+        <span className="truncate">
           {tarjeta.solicitante ?? 'Sin solicitante'}
           {tarjeta.destino ? ` · ${tarjeta.destino}` : ''}
-        </p>
-      </div>
+        </span>
+      </p>
 
-      <div className="shrink-0 sm:w-52">
-        <SeñalDeEtapa tarjeta={tarjeta} />
-      </div>
+      <p className="text-ink/40 mt-0.5 text-xs">· {fechaLarga(tarjeta.creada_en)}</p>
 
-      {/* Hasta que hay cotización no existen ni proveedor ni monto. Un guion
-          en su sitio no informa de nada; mejor que la fila no lo ocupe. */}
-      {tarjeta.proveedor || tarjeta.total_usd ? (
-        <div className="border-hairline flex shrink-0 items-baseline justify-between gap-3 border-t pt-2.5 sm:w-56 sm:flex-col sm:items-end sm:justify-center sm:border-t-0 sm:pt-0">
-          {tarjeta.proveedor ? (
-            <span className="text-ink/55 truncate text-xs">{tarjeta.proveedor}</span>
-          ) : null}
-          {tarjeta.total_usd ? (
-            <span className="text-ink/90 tabular text-base font-semibold">
-              {dolares(tarjeta.total_usd)}
-            </span>
-          ) : null}
-        </div>
+      {tarjeta.proveedor ? (
+        <p className="text-ink/55 mt-1.5 truncate text-xs">{tarjeta.proveedor}</p>
       ) : null}
 
-      <ChevronRight className="text-ink/25 group-hover:text-royal-600 hidden size-4 shrink-0 sm:block" />
+      {marca ? (
+        <Chip tone={marca.tono} className="mt-2">
+          {marca.texto}
+        </Chip>
+      ) : null}
+
+      <div className="border-hairline mt-2.5 flex items-baseline justify-between gap-2 border-t pt-2">
+        {/* El ámbar es el único color cálido del sistema y aquí gana su sitio:
+            en un panel lleno de tarjetas iguales, el monto es lo que se busca
+            con la vista.
+
+            Sin cotización todavía no hay monto. Escribir "$ 0,00" sería
+            decir que la compra no cuesta nada. */}
+        {tarjeta.total_usd ? (
+          <span className="text-safety font-mono text-sm font-semibold">
+            {dolares(tarjeta.total_usd)}
+          </span>
+        ) : (
+          <span className="text-ink/30 text-xs">Sin cotizar</span>
+        )}
+        <span className="text-ink/40 text-xs whitespace-nowrap">
+          {hace(tarjeta.creada_en)}
+        </span>
+      </div>
     </article>
   )
 }
 
-function Etapa({
+function Panel({
   definicion,
   tarjetas,
 }: {
   definicion: DefinicionColumna
   tarjetas: Tarjeta[]
 }) {
-  const totalUsd = tarjetas.reduce((suma, t) => suma + Number(t.total_usd ?? 0), 0)
+  const hayTrabajo = tarjetas.length > 0
 
   return (
-    <section>
-      <header className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className={cn('h-4 w-1 rounded-full', franjas[definicion.tono])} />
-        <h2 className="text-ink/85 text-sm font-semibold">{definicion.titulo}</h2>
-        <span className="text-ink/45 text-sm">{tarjetas.length}</span>
-        {totalUsd > 0 ? (
-          <span className="text-ink/45 tabular text-xs">{dolares(totalUsd)}</span>
-        ) : null}
-        <span className="text-ink/35 ml-auto text-xs">{definicion.accion}</span>
+    // `self-start` evita que un panel vacío se estire hasta la altura del más
+    // lleno de su fila: media pantalla de vacío no dice nada que no diga ya
+    // el "Sin órdenes".
+    <section className="bg-surface rounded-card shadow-card flex max-h-[26rem] flex-col self-start overflow-hidden">
+      {/* La franja de color solo se enciende donde hay algo que hacer. Con las
+          siete encendidas a la vez, ninguna señala nada. */}
+      <div className={cn('h-[3px] shrink-0', hayTrabajo ? franjas[definicion.tono] : 'bg-transparent')} />
+
+      <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2.5">
+        <div className="flex min-w-0 items-start gap-2">
+          <span className={cn('mt-[5px] size-2 shrink-0 rounded-full', puntos[definicion.tono])} />
+          <h2 className="text-ink/80 text-xs leading-snug font-semibold tracking-wide uppercase">
+            {definicion.titulo}
+            <span className="text-ink/40 block text-2xs font-normal normal-case">
+              {definicion.accion}
+            </span>
+          </h2>
+        </div>
+        <span
+          className={cn(
+            'tabular shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
+            hayTrabajo ? 'bg-ink/10 text-ink/75' : 'bg-ink/6 text-ink/35',
+          )}
+        >
+          {tarjetas.length}
+        </span>
       </header>
 
-      <div className="space-y-2">
-        {tarjetas.map((t) => (
-          <TarjetaCompra key={t.solicitud_id} tarjeta={t} />
-        ))}
+      <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 pb-3">
+        {hayTrabajo ? (
+          tarjetas.map((t) => <TarjetaCompra key={t.solicitud_id} tarjeta={t} />)
+        ) : (
+          <p className="border-hairline text-ink/35 rounded-card border border-dashed py-8 text-center text-sm">
+            Sin órdenes
+          </p>
+        )}
       </div>
     </section>
   )
@@ -208,8 +237,6 @@ export function TableroCompras() {
     return mapa
   }, [data])
 
-  const conTrabajo = COLUMNAS.filter((c) => (porColumna.get(c.clave)?.length ?? 0) > 0)
-
   const enRiesgo = (data ?? []).filter(
     (t) => t.columna === 'PAGADA' && (t.dias_sin_recibir ?? 0) > 7,
   )
@@ -218,7 +245,7 @@ export function TableroCompras() {
     <>
       <PageHeader
         title="Compras"
-        description="Cada tarjeta es una compra. Avanza de arriba abajo y no se salta pasos."
+        description="Cada tarjeta es una compra. Avanza de un panel al siguiente y no se salta pasos."
         actions={
           <Link to="/app/compras/nuevo">
             <Button icon={<Plus />}>Nuevo pedido</Button>
@@ -244,60 +271,29 @@ export function TableroCompras() {
       {isPending ? <Cargando texto="Cargando el tablero…" /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
-      {data ? (
-        <>
-          {/* Resumen de las siete etapas. Está siempre completo, también con
-              las vacías: quien mira el tablero tiene que ver el recorrido
-              entero, no solo el trozo donde hoy hay trabajo. */}
-          <div className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-            {COLUMNAS.map((c) => {
-              const cantidad = porColumna.get(c.clave)?.length ?? 0
-              return (
-                <div
-                  key={c.clave}
-                  className={cn(
-                    'bg-surface rounded-card border-hairline flex shrink-0 items-center gap-2 border px-3 py-2',
-                    cantidad === 0 && 'opacity-55',
-                  )}
-                >
-                  <span className={cn('h-3.5 w-1 rounded-full', franjas[c.tono])} />
-                  <span className="text-ink/70 text-xs whitespace-nowrap">{c.titulo}</span>
-                  <span
-                    className={cn(
-                      'tabular text-sm font-semibold',
-                      cantidad === 0 ? 'text-ink/30' : 'text-ink/90',
-                    )}
-                  >
-                    {cantidad}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
+      {data && data.length === 0 ? (
+        <Vacio
+          icono={<ClipboardList />}
+          titulo="Todavía no hay compras"
+          descripcion="Un pedido arranca cuando alguien necesita algo: un repuesto, combustible, un servicio. Créalo y el tablero se llena solo."
+          accion={
+            <Link to="/app/compras/nuevo">
+              <Button icon={<Plus />}>Crear el primer pedido</Button>
+            </Link>
+          }
+        />
+      ) : null}
 
-          {conTrabajo.length === 0 ? (
-            <Vacio
-              icono={<ClipboardList />}
-              titulo="Todavía no hay compras"
-              descripcion="Un pedido arranca cuando alguien necesita algo: un repuesto, combustible, un servicio. Créalo y el tablero se llena solo."
-              accion={
-                <Link to="/app/compras/nuevo">
-                  <Button icon={<Plus />}>Crear el primer pedido</Button>
-                </Link>
-              }
-            />
-          ) : (
-            <div className="space-y-6">
-              {conTrabajo.map((c) => (
-                <Etapa
-                  key={c.clave}
-                  definicion={c}
-                  tarjetas={porColumna.get(c.clave) ?? []}
-                />
-              ))}
-            </div>
-          )}
-        </>
+      {data && data.length > 0 ? (
+        // Los paneles se reparten en rejilla en vez de en una fila que se
+        // desplaza: las siete etapas caben en dos filas y se ven todas a la
+        // vez, incluidas las vacías. Que una etapa esté vacía también es
+        // información.
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {COLUMNAS.map((c) => (
+            <Panel key={c.clave} definicion={c} tarjetas={porColumna.get(c.clave) ?? []} />
+          ))}
+        </div>
       ) : null}
     </>
   )
