@@ -1,0 +1,15 @@
+# Normaliza los finales de linea. El equipo trabaja en Windows, pero el
+# repositorio y el servidor de despliegue usan LF. Sin esto, cada commit
+# desde otra maquina aparece como "archivo entero modificado".
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+
+package-lock.json -diff linguist-generated=true

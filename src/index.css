@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+
+/* Tokens del sistema. La paleta definitiva entra cuando llegue el prompt de diseno. */
+@theme {
+  --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, Consolas, monospace;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  @apply bg-white text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200;
+}

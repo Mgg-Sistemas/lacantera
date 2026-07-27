@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // F5: levanta el servidor si no esta corriendo y abre Chrome con
+      // depuracion. Los breakpoints se ponen en el .tsx, no en el bundle.
+      "name": "Depurar en Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/src",
+      "sourceMapPathOverrides": {
+        "/src/*": "${workspaceFolder}/src/*"
+      },
+      "preLaunchTask": "dev: servidor local"
+    },
+    {
+      // Usa esta si prefieres arrancar el servidor a mano en el terminal.
+      "name": "Adjuntar a servidor ya corriendo",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/src"
+    }
+  ]
+}
