@@ -1,5 +1,8 @@
-import { Bell, ChevronDown, Menu, PanelLeft, Search } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Bell, ChevronDown, LogOut, Menu, PanelLeft, Search } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { useSesion } from '@/lib/sesion'
+import { cerrarSesion } from '@/lib/auth'
 
 interface TopbarProps {
   onToggleCollapsed: () => void
@@ -8,6 +11,30 @@ interface TopbarProps {
 }
 
 export function Topbar({ onToggleCollapsed, onOpenMobile, collapsed }: TopbarProps) {
+  const { nombre, usuario, iniciales } = useSesion()
+  const [menuAbierto, setMenuAbierto] = useState(false)
+  const contenedorMenu = useRef<HTMLDivElement>(null)
+
+  // Cierra al pulsar fuera o con Escape. Un menú que solo cierra pulsando de
+  // nuevo su botón se queda abierto tapando contenido.
+  useEffect(() => {
+    if (!menuAbierto) return
+
+    const alPulsarFuera = (evento: MouseEvent) => {
+      if (!contenedorMenu.current?.contains(evento.target as Node)) setMenuAbierto(false)
+    }
+    const alPulsarTecla = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') setMenuAbierto(false)
+    }
+
+    document.addEventListener('mousedown', alPulsarFuera)
+    document.addEventListener('keydown', alPulsarTecla)
+    return () => {
+      document.removeEventListener('mousedown', alPulsarFuera)
+      document.removeEventListener('keydown', alPulsarTecla)
+    }
+  }, [menuAbierto])
+
   return (
     <header className="bg-canvas/85 sticky top-0 z-30 backdrop-blur-md">
       <div className="flex h-16 items-center gap-2 px-4 sm:px-6">
@@ -55,9 +82,7 @@ export function Topbar({ onToggleCollapsed, onOpenMobile, collapsed }: TopbarPro
           <span className="bg-success size-1.5 shrink-0 rounded-full" />
           <div className="leading-tight">
             <span className="text-ink/45 text-2xs block">Tasa BCV · hoy</span>
-            <span className="text-ink/90 tabular block text-sm font-semibold">
-              Bs 235,4180
-            </span>
+            <span className="text-ink/90 tabular block text-sm font-semibold">Bs 235,4180</span>
           </div>
         </div>
 
@@ -72,16 +97,50 @@ export function Topbar({ onToggleCollapsed, onOpenMobile, collapsed }: TopbarPro
         </button>
 
         {/* Usuario */}
-        <button
-          type="button"
-          className="hover:bg-ink/6 ml-1 flex items-center gap-2 rounded-md py-1 pr-2 pl-1 transition-colors"
-        >
-          <span className="bg-royal-600 flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white">
-            AS
-          </span>
-          <span className="text-ink/80 hidden text-sm font-medium md:inline">Angélica</span>
-          <ChevronDown className="text-ink/45 hidden size-4 md:inline" />
-        </button>
+        <div className="relative ml-1" ref={contenedorMenu}>
+          <button
+            type="button"
+            onClick={() => setMenuAbierto((v) => !v)}
+            aria-expanded={menuAbierto}
+            aria-haspopup="menu"
+            className="hover:bg-ink/6 flex items-center gap-2 rounded-md py-1 pr-2 pl-1 transition-colors"
+          >
+            <span className="bg-royal-600 flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white">
+              {iniciales}
+            </span>
+            <span className="text-ink/80 hidden max-w-[140px] truncate text-sm font-medium md:inline">
+              {nombre}
+            </span>
+            <ChevronDown
+              className={cn(
+                'text-ink/45 hidden size-4 transition-transform md:inline',
+                menuAbierto && 'rotate-180',
+              )}
+            />
+          </button>
+
+          {menuAbierto ? (
+            <div
+              role="menu"
+              className="bg-surface shadow-popover rounded-card absolute right-0 mt-2 w-56 overflow-hidden py-1"
+            >
+              <div className="border-hairline border-b px-3 py-2.5">
+                <p className="text-ink/85 truncate text-sm font-medium">{nombre}</p>
+                <p className="text-ink/45 truncate text-xs">{usuario}</p>
+              </div>
+
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => void cerrarSesion()}
+                className="text-ink/75 hover:bg-ink/6 hover:text-ink/90 flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition-colors"
+              >
+                <LogOut className="size-[18px]" />
+                Cerrar sesión
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   )
