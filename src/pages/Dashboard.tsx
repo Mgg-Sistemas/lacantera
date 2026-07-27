@@ -38,11 +38,7 @@ export function Dashboard() {
 
   return (
     <>
-      <PageHeader
-        title="Panel"
-        description={`Operación de ${hoy}`}
-        actions={<Button variant="outline">Exportar cierre del día</Button>}
-      />
+      <PageHeader title="Panel" description={`Operación de ${hoy}`} />
 
       {/* ---------- Indicadores ---------- */}
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -102,8 +98,15 @@ export function Dashboard() {
                     {enteros(dia.toneladas)}
                   </span>
                   <div className="flex min-h-0 w-full flex-1 items-end">
+                    {/* En oscuro se invierte la relación: un azul claro sobre
+                        fondo oscuro pesa más que uno saturado, así que el día
+                        de hoy tiene que ser el más claro, no el más intenso. */}
                     <div
-                      className={`w-full rounded-t-[4px] ${esHoy ? 'bg-royal-600' : 'bg-royal-200'}`}
+                      className={`w-full rounded-t-[4px] ${
+                        esHoy
+                          ? 'bg-royal-600 dark:bg-royal-400'
+                          : 'bg-royal-200 dark:bg-royal-400/25'
+                      }`}
                       style={{ height: `${alto}%` }}
                     />
                   </div>

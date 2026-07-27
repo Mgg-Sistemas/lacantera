@@ -1,8 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell, ChevronDown, LogOut, Menu, PanelLeft, Search } from 'lucide-react'
+import {
+  Bell,
+  ChevronDown,
+  LogOut,
+  Menu,
+  Monitor,
+  Moon,
+  PanelLeft,
+  Search,
+  Sun,
+} from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useSesion } from '@/lib/sesion'
 import { cerrarSesion } from '@/lib/auth'
+import { useTema } from '@/lib/tema'
+import type { Tema } from '@/lib/tema'
+import { useTasaBcv } from '@/lib/tasaBcv'
+import { tasa as formatearTasa } from '@/lib/formato'
 
 interface TopbarProps {
   onToggleCollapsed: () => void
@@ -10,8 +24,82 @@ interface TopbarProps {
   collapsed: boolean
 }
 
+const opcionesTema: { valor: Tema; etiqueta: string; icono: typeof Sun }[] = [
+  { valor: 'claro', etiqueta: 'Claro', icono: Sun },
+  { valor: 'oscuro', etiqueta: 'Oscuro', icono: Moon },
+  { valor: 'sistema', etiqueta: 'Sistema', icono: Monitor },
+]
+
+/**
+ * Tasa del día.
+ *
+ * No es un adorno: cada documento que se emita hoy se congela a esta tasa. Por
+ * eso el estado importa tanto como el número — una tasa de ayer mostrada como
+ * si fuera de hoy hace que todo lo registrado quede mal valorado, y eso no se
+ * descubre hasta el cierre del mes.
+ */
+function IndicadorTasa() {
+  const { data, isPending, isError } = useTasaBcv()
+
+  if (isPending) {
+    return (
+      <div className="border-hairline bg-surface mr-1 hidden items-center gap-2.5 rounded-full border py-1.5 pr-3 pl-3 sm:flex">
+        <span className="bg-ink/20 size-1.5 shrink-0 animate-pulse rounded-full" />
+        <div className="leading-tight">
+          <span className="text-ink/45 text-2xs block">Tasa BCV</span>
+          <span className="bg-ink/10 mt-0.5 block h-3 w-20 animate-pulse rounded" />
+        </div>
+      </div>
+    )
+  }
+
+  if (isError || !data) {
+    return (
+      <div
+        title="No se pudo consultar la tasa. Verifica la conexión antes de emitir documentos."
+        className="border-danger/30 bg-danger-soft mr-1 hidden items-center gap-2.5 rounded-full border py-1.5 pr-3 pl-3 sm:flex"
+      >
+        <span className="bg-danger size-1.5 shrink-0 rounded-full" />
+        <div className="leading-tight">
+          <span className="text-ink/45 text-2xs block">Tasa BCV</span>
+          <span className="text-danger block text-sm font-semibold">No disponible</span>
+        </div>
+      </div>
+    )
+  }
+
+  const fechaCorta = data.fecha.toLocaleDateString('es-VE', { day: 'numeric', month: 'short' })
+
+  return (
+    <div
+      title={
+        data.vigente
+          ? 'Tasa publicada hoy'
+          : `La última tasa publicada es del ${fechaCorta}. Confirma antes de emitir documentos.`
+      }
+      className={cn(
+        'mr-1 hidden items-center gap-2.5 rounded-full border py-1.5 pr-3 pl-3 sm:flex',
+        data.vigente ? 'border-hairline bg-surface' : 'border-warning/40 bg-warning-soft',
+      )}
+    >
+      <span
+        className={cn('size-1.5 shrink-0 rounded-full', data.vigente ? 'bg-success' : 'bg-warning')}
+      />
+      <div className="leading-tight">
+        <span className="text-ink/45 text-2xs block">
+          Tasa BCV · {data.vigente ? 'hoy' : fechaCorta}
+        </span>
+        <span className="text-ink/90 tabular block text-sm font-semibold">
+          Bs {formatearTasa(data.valor)}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function Topbar({ onToggleCollapsed, onOpenMobile, collapsed }: TopbarProps) {
   const { nombre, usuario, iniciales } = useSesion()
+  const { tema, setTema } = useTema()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const contenedorMenu = useRef<HTMLDivElement>(null)
 
@@ -72,19 +160,7 @@ export function Topbar({ onToggleCollapsed, onOpenMobile, collapsed }: TopbarPro
 
         <div className="flex-1" />
 
-        {/*
-          Tasa del día, siempre visible.
-          En un sistema bimoneda no es un adorno: cada documento que alguien
-          emita hoy se congela a esta tasa. Si está desactualizada, todo lo
-          que se registre queda mal valorado.
-        */}
-        <div className="border-hairline bg-surface mr-1 hidden items-center gap-2.5 rounded-full border py-1.5 pr-3 pl-3 sm:flex">
-          <span className="bg-success size-1.5 shrink-0 rounded-full" />
-          <div className="leading-tight">
-            <span className="text-ink/45 text-2xs block">Tasa BCV · hoy</span>
-            <span className="text-ink/90 tabular block text-sm font-semibold">Bs 235,4180</span>
-          </div>
-        </div>
+        <IndicadorTasa />
 
         {/* Notificaciones */}
         <button
@@ -93,7 +169,7 @@ export function Topbar({ onToggleCollapsed, onOpenMobile, collapsed }: TopbarPro
           className="text-ink/60 hover:bg-ink/6 hover:text-ink/90 relative flex size-9 items-center justify-center rounded-md transition-colors"
         >
           <Bell className="size-5" />
-          <span className="bg-danger absolute top-1.5 right-1.5 size-2 rounded-full ring-2 ring-[#F3F5FB]" />
+          <span className="bg-danger ring-canvas absolute top-1.5 right-1.5 size-2 rounded-full ring-2" />
         </button>
 
         {/* Usuario */}
@@ -122,11 +198,38 @@ export function Topbar({ onToggleCollapsed, onOpenMobile, collapsed }: TopbarPro
           {menuAbierto ? (
             <div
               role="menu"
-              className="bg-surface shadow-popover rounded-card absolute right-0 mt-2 w-56 overflow-hidden py-1"
+              className="bg-surface shadow-popover rounded-card border-hairline absolute right-0 mt-2 w-60 overflow-hidden border py-1"
             >
               <div className="border-hairline border-b px-3 py-2.5">
                 <p className="text-ink/85 truncate text-sm font-medium">{nombre}</p>
                 <p className="text-ink/45 truncate text-xs">{usuario}</p>
+              </div>
+
+              {/* Tema: los tres estados a la vista. Un botón que rota entre
+                  modos obliga a pulsarlo para descubrir qué opciones hay. */}
+              <div className="border-hairline border-b px-3 py-2.5">
+                <p className="text-ink/45 mb-1.5 text-2xs font-semibold tracking-wider uppercase">
+                  Apariencia
+                </p>
+                <div className="bg-ink/6 flex gap-0.5 rounded-md p-0.5">
+                  {opcionesTema.map(({ valor, etiqueta, icono: Icono }) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => setTema(valor)}
+                      aria-pressed={tema === valor}
+                      className={cn(
+                        'flex flex-1 flex-col items-center gap-1 rounded px-1 py-1.5 text-2xs font-medium transition-colors',
+                        tema === valor
+                          ? 'bg-surface text-ink/90 shadow-control'
+                          : 'text-ink/55 hover:text-ink/80',
+                      )}
+                    >
+                      <Icono className="size-4" />
+                      {etiqueta}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <button

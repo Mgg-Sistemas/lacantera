@@ -1,6 +1,16 @@
 @import 'tailwindcss';
 
 /*
+  Tema oscuro por clase, no por preferencia del navegador.
+
+  El sistema tiene tres estados: claro, oscuro y "seguir al sistema". Con la
+  detección automática de Tailwind solo existiría el tercero, y quien trabaja
+  de noche en una oficina iluminada no podría forzar el claro. La clase la pone
+  src/lib/tema.ts sobre <html>.
+*/
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
   Sistema de diseño de La Cantera.
 
   La referencia visual es Materio (MUI). De ahí vienen la densidad, el radio de
@@ -89,6 +99,41 @@
   --shadow-control: 0 2px 4px 0 rgb(38 44 61 / 0.12);
   --shadow-primary: 0 2px 8px 0 rgb(43 79 217 / 0.32);
   --shadow-popover: 0 8px 28px 0 rgb(38 44 61 / 0.16);
+}
+
+/*
+  Tema oscuro.
+
+  Solo se redefinen los tokens neutros. Como cada componente pide `bg-surface`,
+  `text-ink/70` o `border-hairline` en vez de un color literal, redefinir cinco
+  variables voltea la interfaz entera sin tocar un solo componente.
+
+  En oscuro la superficie es MÁS CLARA que el lienzo, al revés que en claro. Es
+  cómo se lee la elevación cuando no hay sombra que valga: sobre fondo oscuro
+  una sombra no se ve, así que la jerarquía la da la luminosidad.
+*/
+.dark {
+  --color-ink: #e4e9f3;
+  --color-canvas: #11151e;
+  --color-surface: #1a202c;
+  --color-hairline: #2b3446;
+
+  /* Los tintes suaves se recalculan: un fondo claro con texto de color no
+     funciona sobre oscuro. Se invierte la relación. */
+  --color-success-soft: #10261a;
+  --color-warning-soft: #2a1e0d;
+  --color-danger-soft: #2b1416;
+  --color-info-soft: #0d2230;
+  --color-safety-soft: #2a1f0c;
+
+  /* Las sombras casi desaparecen en oscuro; se conservan solo para el
+     desplegable, donde sí hace falta despegar la capa del fondo. */
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-card-hover: 0 4px 12px 0 rgb(0 0 0 / 0.5);
+  --shadow-control: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-popover: 0 12px 32px 0 rgb(0 0 0 / 0.55);
+
+  color-scheme: dark;
 }
 
 @layer base {

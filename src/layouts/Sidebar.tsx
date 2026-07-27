@@ -121,7 +121,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
             className={cn('flex items-center gap-2.5', collapsed && 'justify-center')}
             title={collapsed ? nombre : undefined}
           >
-            <span className="bg-royal-600/12 text-royal-700 flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
+            <span className="bg-royal-600/12 text-royal-700 dark:text-royal-300 flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
               {iniciales}
             </span>
             {!collapsed && (
@@ -191,7 +191,7 @@ function SidebarItem({ item, collapsed, open, onToggle, onNavigate }: SidebarIte
         className={cn(
           baseRow,
           isGroupActive && !open
-            ? 'bg-royal-600/10 text-royal-700'
+            ? 'bg-royal-600/10 text-royal-700 dark:text-royal-300'
             : 'text-ink/70 hover:bg-ink/6 hover:text-ink/90',
         )}
       >
@@ -214,7 +214,7 @@ function SidebarItem({ item, collapsed, open, onToggle, onNavigate }: SidebarIte
         )}
         {/* Colapsado: el badge se reduce a un punto sobre el icono */}
         {collapsed && item.badge ? (
-          <span className="bg-danger absolute top-1.5 right-1.5 size-2 rounded-full ring-2 ring-white" />
+          <span className="bg-danger ring-surface absolute top-1.5 right-1.5 size-2 rounded-full ring-2" />
         ) : null}
       </button>
 
@@ -229,7 +229,7 @@ function SidebarItem({ item, collapsed, open, onToggle, onNavigate }: SidebarIte
                   cn(
                     'block truncate rounded-md px-3 py-2 text-sm transition-colors',
                     isActive
-                      ? 'bg-royal-600/12 text-royal-700 font-medium'
+                      ? 'bg-royal-600/12 text-royal-700 dark:text-royal-300 font-medium'
                       : 'text-ink/60 hover:bg-ink/5 hover:text-ink/90',
                   )
                 }
