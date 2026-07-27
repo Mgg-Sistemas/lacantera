@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
 import {
   AlertTriangle,
   CalendarClock,
+  ChevronRight,
   ClipboardList,
   FileText,
   Flame,
@@ -16,11 +17,12 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { COLUMNAS, useTablero } from '@/lib/api/compras'
 import type { Columna, DefinicionColumna, Tarjeta } from '@/lib/api/compras'
 import { dolares } from '@/lib/formato'
-import { useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/cn'
 
-/** La franja de color superior es lo único que distingue una columna de otra. */
-const franjas: Record<DefinicionColumna['tono'], string> = {
+type Tono = DefinicionColumna['tono']
+
+/** La franja de color es lo único que distingue una etapa de otra. */
+const franjas: Record<Tono, string> = {
   neutral: 'bg-ink/25',
   info: 'bg-info',
   royal: 'bg-royal-600',
@@ -29,16 +31,6 @@ const franjas: Record<DefinicionColumna['tono'], string> = {
   danger: 'bg-danger',
 }
 
-const tonoChip: Record<DefinicionColumna['tono'], 'neutral' | 'info' | 'royal' | 'warning' | 'success' | 'danger'> =
-  {
-    neutral: 'neutral',
-    info: 'info',
-    royal: 'royal',
-    warning: 'warning',
-    success: 'success',
-    danger: 'danger',
-  }
-
 function fechaCorta(iso: string | null): string {
   if (!iso) return ''
   return new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: 'short' }).format(
@@ -46,170 +38,159 @@ function fechaCorta(iso: string | null): string {
   )
 }
 
+/**
+ * La señal propia de la etapa. Una sola por tarjeta: si cada fila lleva cuatro
+ * insignias, no se lee ninguna.
+ */
+function SeñalDeEtapa({ tarjeta }: { tarjeta: Tarjeta }) {
+  if (tarjeta.columna === 'CONFIRMADA') {
+    return (
+      <Chip tone={tarjeta.cotizaciones > 0 ? 'info' : 'neutral'} icon={<FileText />}>
+        {tarjeta.cotizaciones === 0
+          ? 'Sin cotizaciones'
+          : `${tarjeta.cotizaciones} cotización${tarjeta.cotizaciones === 1 ? '' : 'es'}`}
+      </Chip>
+    )
+  }
+
+  if (tarjeta.columna === 'APROBADA') {
+    return tarjeta.estado_orden === 'EN_TESORERIA' ? (
+      <Chip tone="info">En tesorería</Chip>
+    ) : (
+      <Chip tone="warning">Falta el método de pago</Chip>
+    )
+  }
+
+  if (tarjeta.columna === 'PAGADA' && tarjeta.dias_sin_recibir !== null) {
+    const dias = tarjeta.dias_sin_recibir
+    return (
+      <Chip tone={dias > 15 ? 'danger' : dias > 7 ? 'warning' : 'success'} icon={<Truck />}>
+        {dias === 0 ? 'Pagada hoy' : `${dias} día${dias === 1 ? '' : 's'} sin recibir`}
+      </Chip>
+    )
+  }
+
+  if (tarjeta.columna === 'DESISTIO') {
+    return (
+      <Chip
+        tone={tarjeta.desistio_resolucion === 'PENDIENTE' ? 'danger' : 'neutral'}
+        icon={<AlertTriangle />}
+      >
+        {tarjeta.desistio_resolucion === 'PENDIENTE'
+          ? 'Dinero sin resolver'
+          : tarjeta.desistio_resolucion === 'REEMBOLSADO'
+            ? 'Reembolsado'
+            : tarjeta.desistio_resolucion === 'SALDO_FAVOR'
+              ? 'Queda a favor'
+              : 'Dado por perdido'}
+      </Chip>
+    )
+  }
+
+  if (tarjeta.estado_solicitud === 'BORRADOR') return <Chip tone="neutral">Borrador</Chip>
+
+  if (tarjeta.requerida_para) {
+    return (
+      <Chip tone="neutral" icon={<CalendarClock />}>
+        Para el {fechaCorta(tarjeta.requerida_para)}
+      </Chip>
+    )
+  }
+
+  return null
+}
+
+/**
+ * Tarjeta a lo ancho.
+ *
+ * La compra se lee de izquierda a derecha en una sola línea: qué es, en qué
+ * anda y cuánto cuesta. En columnas estrechas el título se partía en dos y el
+ * proveedor no cabía; aquí caben los tres datos que se miran de verdad.
+ */
 function TarjetaCompra({ tarjeta }: { tarjeta: Tarjeta }) {
   const navigate = useNavigate()
-  const urgente = tarjeta.prioridad === 'URGENTE'
 
   return (
     <article
       onClick={() => void navigate(`/app/compras/${tarjeta.solicitud_id}`)}
       className={cn(
-        'bg-surface rounded-card border-hairline group cursor-pointer border p-3.5',
+        'bg-surface rounded-card border-hairline group flex cursor-pointer flex-col gap-3 border p-3.5',
         'hover:border-royal-600/40 hover:shadow-card transition-[border-color,box-shadow] duration-150',
+        'sm:flex-row sm:items-center sm:gap-4',
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-ink/45 font-mono text-2xs tracking-tight">
-          {tarjeta.orden_numero ?? tarjeta.numero}
-        </span>
-        {urgente ? (
-          <Chip tone="danger" icon={<Flame />}>
-            Urgente
-          </Chip>
-        ) : tarjeta.prioridad === 'ALTA' ? (
-          <Chip tone="warning">Alta</Chip>
-        ) : null}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-ink/45 font-mono text-2xs tracking-tight">
+            {tarjeta.orden_numero ?? tarjeta.numero}
+          </span>
+          {tarjeta.prioridad === 'URGENTE' ? (
+            <Chip tone="danger" icon={<Flame />}>
+              Urgente
+            </Chip>
+          ) : tarjeta.prioridad === 'ALTA' ? (
+            <Chip tone="warning">Alta</Chip>
+          ) : null}
+        </div>
+
+        <h3 className="text-ink/90 group-hover:text-royal-700 dark:group-hover:text-royal-300 mt-0.5 truncate text-base font-medium">
+          {tarjeta.titulo}
+        </h3>
+        <p className="text-ink/50 truncate text-xs">
+          {tarjeta.solicitante ?? 'Sin solicitante'}
+          {tarjeta.destino ? ` · ${tarjeta.destino}` : ''}
+        </p>
       </div>
 
-      <h3 className="text-ink/90 group-hover:text-royal-700 dark:group-hover:text-royal-300 mt-1 line-clamp-2 text-base font-medium">
-        {tarjeta.titulo}
-      </h3>
-
-      <p className="text-ink/50 mt-1 truncate text-xs">
-        {tarjeta.solicitante ?? 'Sin solicitante'}
-        {tarjeta.destino ? ` · ${tarjeta.destino}` : ''}
-      </p>
-
-      {/* Señal propia de la columna. Solo una por tarjeta: si cada tarjeta
-          lleva cuatro insignias, ninguna se lee. */}
-      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        {tarjeta.columna === 'CONFIRMADA' ? (
-          <Chip tone={tarjeta.cotizaciones > 0 ? 'info' : 'neutral'} icon={<FileText />}>
-            {tarjeta.cotizaciones === 0
-              ? 'Sin cotizaciones'
-              : `${tarjeta.cotizaciones} cotización${tarjeta.cotizaciones === 1 ? '' : 'es'}`}
-          </Chip>
-        ) : null}
-
-        {tarjeta.columna === 'APROBADA' && tarjeta.estado_orden === 'EN_TESORERIA' ? (
-          <Chip tone="info">En tesorería</Chip>
-        ) : null}
-
-        {tarjeta.columna === 'APROBADA' && tarjeta.estado_orden === 'POR_INDICAR_PAGO' ? (
-          <Chip tone="warning">Falta el método de pago</Chip>
-        ) : null}
-
-        {tarjeta.columna === 'PAGADA' && tarjeta.dias_sin_recibir !== null ? (
-          <Chip
-            tone={tarjeta.dias_sin_recibir > 15 ? 'danger' : tarjeta.dias_sin_recibir > 7 ? 'warning' : 'success'}
-            icon={<Truck />}
-          >
-            {tarjeta.dias_sin_recibir === 0
-              ? 'Pagada hoy'
-              : `${tarjeta.dias_sin_recibir} día${tarjeta.dias_sin_recibir === 1 ? '' : 's'} sin recibir`}
-          </Chip>
-        ) : null}
-
-        {tarjeta.columna === 'DESISTIO' ? (
-          <Chip
-            tone={tarjeta.desistio_resolucion === 'PENDIENTE' ? 'danger' : 'neutral'}
-            icon={<AlertTriangle />}
-          >
-            {tarjeta.desistio_resolucion === 'PENDIENTE'
-              ? 'Dinero sin resolver'
-              : tarjeta.desistio_resolucion === 'REEMBOLSADO'
-                ? 'Reembolsado'
-                : tarjeta.desistio_resolucion === 'SALDO_FAVOR'
-                  ? 'Queda a favor'
-                  : 'Dado por perdido'}
-          </Chip>
-        ) : null}
-
-        {tarjeta.columna === 'PEDIDO' && tarjeta.estado_solicitud === 'BORRADOR' ? (
-          <Chip tone="neutral">Borrador</Chip>
-        ) : null}
-
-        {tarjeta.requerida_para && ['PEDIDO', 'CONFIRMADA', 'GERENTE'].includes(tarjeta.columna) ? (
-          <Chip tone="neutral" icon={<CalendarClock />}>
-            {fechaCorta(tarjeta.requerida_para)}
-          </Chip>
-        ) : null}
+      <div className="shrink-0 sm:w-52">
+        <SeñalDeEtapa tarjeta={tarjeta} />
       </div>
 
+      {/* Hasta que hay cotización no existen ni proveedor ni monto. Un guion
+          en su sitio no informa de nada; mejor que la fila no lo ocupe. */}
       {tarjeta.proveedor || tarjeta.total_usd ? (
-        <div className="border-hairline mt-3 flex items-baseline justify-between gap-2 border-t pt-2.5">
-          <span className="text-ink/60 truncate text-xs">{tarjeta.proveedor ?? '—'}</span>
+        <div className="border-hairline flex shrink-0 items-baseline justify-between gap-3 border-t pt-2.5 sm:w-56 sm:flex-col sm:items-end sm:justify-center sm:border-t-0 sm:pt-0">
+          {tarjeta.proveedor ? (
+            <span className="text-ink/55 truncate text-xs">{tarjeta.proveedor}</span>
+          ) : null}
           {tarjeta.total_usd ? (
-            <span className="text-ink/90 tabular shrink-0 text-sm font-semibold">
+            <span className="text-ink/90 tabular text-base font-semibold">
               {dolares(tarjeta.total_usd)}
             </span>
           ) : null}
         </div>
       ) : null}
+
+      <ChevronRight className="text-ink/25 group-hover:text-royal-600 hidden size-4 shrink-0 sm:block" />
     </article>
   )
 }
 
-/**
- * Columna vacía, reducida a una franja vertical.
- *
- * Siete columnas a ancho completo no caben en una pantalla de portátil, y la
- * mitad del tablero suele estar vacía: nadie tiene compras en las siete etapas
- * a la vez. Contraer lo vacío deja a la vista lo que sí tiene trabajo, sin
- * esconder que la columna existe.
- */
-function ColumnaVacia({ definicion }: { definicion: DefinicionColumna }) {
-  return (
-    <section className="bg-surface rounded-card shadow-card flex w-11 shrink-0 flex-col items-center overflow-hidden">
-      <div className={cn('h-1 w-full', franjas[definicion.tono])} />
-      <p className="text-ink/35 mt-3 [writing-mode:vertical-rl] text-xs font-medium whitespace-nowrap">
-        {definicion.titulo}
-      </p>
-      <span className="text-ink/25 mt-auto mb-3 text-xs">0</span>
-    </section>
-  )
-}
-
-function ColumnaTablero({
+function Etapa({
   definicion,
   tarjetas,
-  className,
 }: {
   definicion: DefinicionColumna
   tarjetas: Tarjeta[]
-  className?: string
 }) {
   const totalUsd = tarjetas.reduce((suma, t) => suma + Number(t.total_usd ?? 0), 0)
 
   return (
-    <section className={cn('flex min-h-0 flex-col', className)}>
-      <div className="bg-surface rounded-card shadow-card overflow-hidden">
-        <div className={cn('h-1', franjas[definicion.tono])} />
-        <div className="px-3.5 py-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-ink/85 text-sm leading-tight font-semibold">
-              {definicion.titulo}
-            </h2>
-            <Chip tone={tarjetas.length ? tonoChip[definicion.tono] : 'neutral'}>
-              {tarjetas.length}
-            </Chip>
-          </div>
-          <p className="text-ink/45 mt-0.5 truncate text-xs">
-            {totalUsd > 0 ? dolares(totalUsd) : definicion.accion}
-          </p>
-        </div>
-      </div>
+    <section>
+      <header className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className={cn('h-4 w-1 rounded-full', franjas[definicion.tono])} />
+        <h2 className="text-ink/85 text-sm font-semibold">{definicion.titulo}</h2>
+        <span className="text-ink/45 text-sm">{tarjetas.length}</span>
+        {totalUsd > 0 ? (
+          <span className="text-ink/45 tabular text-xs">{dolares(totalUsd)}</span>
+        ) : null}
+        <span className="text-ink/35 ml-auto text-xs">{definicion.accion}</span>
+      </header>
 
-      <div className="mt-2.5 flex flex-col gap-2.5 overflow-y-auto pb-2">
+      <div className="space-y-2">
         {tarjetas.map((t) => (
           <TarjetaCompra key={t.solicitud_id} tarjeta={t} />
         ))}
-
-        {tarjetas.length === 0 ? (
-          <p className="border-hairline text-ink/35 rounded-card border border-dashed px-3 py-6 text-center text-xs">
-            Nada aquí
-          </p>
-        ) : null}
       </div>
     </section>
   )
@@ -217,26 +198,17 @@ function ColumnaTablero({
 
 export function TableroCompras() {
   const { data, isPending, error } = useTablero()
-  const esEscritorio = useMediaQuery('(min-width: 1024px)')
-  // Nula hasta que se elige: así el teléfono abre en la primera columna que
-  // tiene trabajo en vez de en una vacía.
-  const [columnaElegida, setColumnaElegida] = useState<Columna | null>(null)
 
   const porColumna = useMemo(() => {
     const mapa = new Map<Columna, Tarjeta[]>(COLUMNAS.map((c) => [c.clave, []]))
     for (const t of data ?? []) {
-      // Las recibidas ya no están en el tablero: la compra terminó. Se
-      // consultan desde Recepciones cuando exista ese módulo.
-      const lista = mapa.get(t.columna)
-      if (lista) lista.push(t)
+      // Las recibidas salen del tablero: la compra terminó.
+      mapa.get(t.columna)?.push(t)
     }
     return mapa
   }, [data])
 
-  const columnaMovil =
-    columnaElegida ??
-    COLUMNAS.find((c) => (porColumna.get(c.clave)?.length ?? 0) > 0)?.clave ??
-    'PEDIDO'
+  const conTrabajo = COLUMNAS.filter((c) => (porColumna.get(c.clave)?.length ?? 0) > 0)
 
   const enRiesgo = (data ?? []).filter(
     (t) => t.columna === 'PAGADA' && (t.dias_sin_recibir ?? 0) > 7,
@@ -246,7 +218,7 @@ export function TableroCompras() {
     <>
       <PageHeader
         title="Compras"
-        description="Cada tarjeta es una compra. Avanza de izquierda a derecha y no se salta pasos."
+        description="Cada tarjeta es una compra. Avanza de arriba abajo y no se salta pasos."
         actions={
           <Link to="/app/compras/nuevo">
             <Button icon={<Plus />}>Nuevo pedido</Button>
@@ -272,83 +244,60 @@ export function TableroCompras() {
       {isPending ? <Cargando texto="Cargando el tablero…" /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
-      {data && data.length === 0 ? (
-        <Vacio
-          icono={<ClipboardList />}
-          titulo="Todavía no hay compras"
-          descripcion="Un pedido arranca cuando alguien necesita algo: un repuesto, combustible, un servicio. Créalo y el tablero se llena solo."
-          accion={
-            <Link to="/app/compras/nuevo">
-              <Button icon={<Plus />}>Crear el primer pedido</Button>
-            </Link>
-          }
-        />
-      ) : null}
-
-      {data && data.length > 0 ? (
-        esEscritorio ? (
-          // Las columnas con trabajo se reparten el ancho disponible; las
-          // vacías se quedan en una franja. Si aun así no cabe, el tablero
-          // desplaza en horizontal antes que estrechar una tarjeta hasta lo
-          // ilegible.
-          <div className="-mx-1 flex items-stretch gap-2.5 overflow-x-auto px-1 pb-4">
+      {data ? (
+        <>
+          {/* Resumen de las siete etapas. Está siempre completo, también con
+              las vacías: quien mira el tablero tiene que ver el recorrido
+              entero, no solo el trozo donde hoy hay trabajo. */}
+          <div className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
             {COLUMNAS.map((c) => {
-              const tarjetas = porColumna.get(c.clave) ?? []
-              return tarjetas.length === 0 ? (
-                <ColumnaVacia key={c.clave} definicion={c} />
-              ) : (
-                <ColumnaTablero
+              const cantidad = porColumna.get(c.clave)?.length ?? 0
+              return (
+                <div
                   key={c.clave}
-                  definicion={c}
-                  tarjetas={tarjetas}
-                  // El máximo importa tanto como el mínimo: con una sola
-                  // columna con trabajo, sin tope la tarjeta se estiraría a
-                  // todo lo ancho de la pantalla.
-                  className="max-h-[calc(100svh-15rem)] min-w-[248px] max-w-[320px] flex-1"
-                />
+                  className={cn(
+                    'bg-surface rounded-card border-hairline flex shrink-0 items-center gap-2 border px-3 py-2',
+                    cantidad === 0 && 'opacity-55',
+                  )}
+                >
+                  <span className={cn('h-3.5 w-1 rounded-full', franjas[c.tono])} />
+                  <span className="text-ink/70 text-xs whitespace-nowrap">{c.titulo}</span>
+                  <span
+                    className={cn(
+                      'tabular text-sm font-semibold',
+                      cantidad === 0 ? 'text-ink/30' : 'text-ink/90',
+                    )}
+                  >
+                    {cantidad}
+                  </span>
+                </div>
               )
             })}
           </div>
-        ) : (
-          <div>
-            {/* En el teléfono el tablero se recorre por pasos, no deslizando:
-                buscar la séptima columna a dedo es inservible en la obra. */}
-            <div className="-mx-4 mb-3 flex gap-1.5 overflow-x-auto px-4 pb-1">
-              {COLUMNAS.map((c) => {
-                const cantidad = porColumna.get(c.clave)?.length ?? 0
-                const activa = c.clave === columnaMovil
-                return (
-                  <button
-                    key={c.clave}
-                    type="button"
-                    // La barra de columnas no cabe entera: si la activa queda
-                    // fuera de vista, el tablero parece no responder al toque.
-                    ref={(nodo) => {
-                      if (activa) nodo?.scrollIntoView({ block: 'nearest', inline: 'center' })
-                    }}
-                    onClick={() => setColumnaElegida(c.clave)}
-                    className={cn(
-                      'rounded-control shrink-0 px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
-                      activa
-                        ? 'bg-royal-600 text-white'
-                        : 'bg-surface text-ink/65 border-hairline border',
-                    )}
-                  >
-                    {c.titulo}
-                    <span className={cn('ml-1.5', activa ? 'text-white/70' : 'text-ink/40')}>
-                      {cantidad}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
 
-            <ColumnaTablero
-              definicion={COLUMNAS.find((c) => c.clave === columnaMovil)!}
-              tarjetas={porColumna.get(columnaMovil) ?? []}
+          {conTrabajo.length === 0 ? (
+            <Vacio
+              icono={<ClipboardList />}
+              titulo="Todavía no hay compras"
+              descripcion="Un pedido arranca cuando alguien necesita algo: un repuesto, combustible, un servicio. Créalo y el tablero se llena solo."
+              accion={
+                <Link to="/app/compras/nuevo">
+                  <Button icon={<Plus />}>Crear el primer pedido</Button>
+                </Link>
+              }
             />
-          </div>
-        )
+          ) : (
+            <div className="space-y-6">
+              {conTrabajo.map((c) => (
+                <Etapa
+                  key={c.clave}
+                  definicion={c}
+                  tarjetas={porColumna.get(c.clave) ?? []}
+                />
+              ))}
+            </div>
+          )}
+        </>
       ) : null}
     </>
   )
