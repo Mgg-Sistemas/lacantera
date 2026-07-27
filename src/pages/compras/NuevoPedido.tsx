@@ -8,8 +8,19 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { useArticulos, useUnidades } from '@/lib/api/catalogo'
+import { useArticulos, usePerfiles, useUnidades } from '@/lib/api/catalogo'
 import { useCrearPedido } from '@/lib/api/compras'
+import { useSesion } from '@/lib/sesion'
+
+/**
+ * Valor del selector para quien pide y no tiene usuario.
+ *
+ * En la cantera la mayoría de quienes necesitan algo no tienen computadora ni
+ * cuenta: el mecánico pide por radio y alguien en la oficina carga el pedido.
+ * Sin esta opción, el sistema anotaría al de la oficina y perdería a la única
+ * persona a la que hay que preguntarle si llega otra cosa.
+ */
+const OTRA_PERSONA = 'OTRA'
 
 interface FilaRenglon {
   clave: number
@@ -34,7 +45,14 @@ export function NuevoPedido() {
   const navigate = useNavigate()
   const { data: articulos } = useArticulos()
   const { data: unidades } = useUnidades()
+  const { data: perfiles } = usePerfiles()
+  const { session } = useSesion()
   const crear = useCrearPedido()
+
+  const yo = session?.user.id ?? ''
+  const [quienPide, setQuienPide] = useState('')
+  const [otroNombre, setOtroNombre] = useState('')
+  const [otroCargo, setOtroCargo] = useState('')
 
   const [titulo, setTitulo] = useState('')
   const [justificacion, setJustificacion] = useState('')
@@ -42,6 +60,10 @@ export function NuevoPedido() {
   const [requeridaPara, setRequeridaPara] = useState('')
   const [destino, setDestino] = useState('')
   const [filas, setFilas] = useState<FilaRenglon[]>([filaVacia()])
+
+  // Mientras la lista de perfiles carga, el selector todavía no tiene opciones;
+  // el valor por defecto es uno mismo, que es el caso más común.
+  const seleccion = quienPide || yo
 
   const cambiar = (clave: number, cambios: Partial<FilaRenglon>) =>
     setFilas((f) => f.map((fila) => (fila.clave === clave ? { ...fila, ...cambios } : fila)))
@@ -68,6 +90,8 @@ export function NuevoPedido() {
         observacion: f.observacion.trim() || null,
       }))
 
+    const otra = seleccion === OTRA_PERSONA
+
     const id = await crear.mutateAsync({
       titulo,
       justificacion,
@@ -76,6 +100,9 @@ export function NuevoPedido() {
       requerida_para: requeridaPara || null,
       destino: destino || null,
       enviar: enviarAhora,
+      solicitante_id: otra ? null : seleccion,
+      solicitante_nombre: otra ? otroNombre : null,
+      solicitante_cargo: otra ? otroCargo : null,
     })
 
     void navigate(`/app/compras/${id}`)
@@ -219,6 +246,42 @@ export function NuevoPedido() {
                 onChange={(e) => setJustificacion(e.target.value)}
                 required
               />
+
+              <Select
+                label="Quién lo solicita"
+                hint="Si a quien lo necesita le falta algo, se le pregunta a esta persona."
+                value={seleccion}
+                onChange={(e) => setQuienPide(e.target.value)}
+                opciones={[
+                  ...(perfiles ?? [])
+                    .filter((p) => p.activo)
+                    .map((p) => ({
+                      valor: p.id,
+                      etiqueta:
+                        (p.id === yo ? `${p.nombre} (yo)` : p.nombre) +
+                        (p.cargo ? ` · ${p.cargo}` : ''),
+                    })),
+                  { valor: OTRA_PERSONA, etiqueta: 'Otra persona — no tiene usuario' },
+                ]}
+              />
+
+              {seleccion === OTRA_PERSONA ? (
+                <div className="border-hairline rounded-card space-y-4 border border-dashed p-3">
+                  <Input
+                    label="Nombre de quien solicita"
+                    placeholder="José Rondón"
+                    value={otroNombre}
+                    onChange={(e) => setOtroNombre(e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Cargo o frente"
+                    placeholder="Mecánico · frente 3"
+                    value={otroCargo}
+                    onChange={(e) => setOtroCargo(e.target.value)}
+                  />
+                </div>
+              ) : null}
 
               <Select
                 label="Prioridad"

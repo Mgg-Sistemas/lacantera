@@ -50,8 +50,14 @@ export interface Tarjeta {
   destino: string | null
   estado_solicitud: string
   creada_en: string
-  solicitante_id: string
+  /** Quién pidió, cuando tiene usuario en el sistema. */
+  solicitante_id: string | null
+  /** El nombre de quien pidió, venga del perfil o escrito a mano. */
   solicitante: string | null
+  solicitante_cargo: string | null
+  /** Quién lo cargó. No siempre es la misma persona que lo pidió. */
+  registrada_por: string
+  registrada_por_nombre: string | null
   orden_id: number | null
   orden_numero: string | null
   estado_orden: string | null
@@ -212,7 +218,12 @@ export interface Compra {
   estado: string
   creada_en: string
   enviada_en: string | null
-  solicitante_id: string
+  /** Quién pidió: o un usuario del sistema, o un nombre escrito a mano. */
+  solicitante_id: string | null
+  solicitante_nombre: string | null
+  solicitante_cargo: string | null
+  /** Quién lo cargó en el sistema. */
+  registrada_por: string
   confirmada_por: string | null
   confirmada_en: string | null
   cotizacion_elegida_id: number | null
@@ -342,6 +353,11 @@ export function useCrearPedido() {
       requerida_para?: string | null
       destino?: string | null
       enviar?: boolean
+      /** Usuario que pide. Sin ninguno de los dos, pide quien carga. */
+      solicitante_id?: string | null
+      /** Quien pide y no tiene usuario: el mecánico, el operador del frente. */
+      solicitante_nombre?: string | null
+      solicitante_cargo?: string | null
     }) =>
       rpc<number>('crear_pedido', {
         p_titulo: p.titulo,
@@ -351,6 +367,9 @@ export function useCrearPedido() {
         p_requerida_para: p.requerida_para || null,
         p_destino: p.destino || null,
         p_enviar: p.enviar ?? true,
+        p_solicitante_id: p.solicitante_id || null,
+        p_solicitante_nombre: p.solicitante_nombre || null,
+        p_solicitante_cargo: p.solicitante_cargo || null,
       }),
   )
 }

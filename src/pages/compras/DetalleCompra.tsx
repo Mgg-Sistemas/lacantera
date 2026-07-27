@@ -430,6 +430,17 @@ export function DetalleCompra() {
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
 
+  // Quien pide puede no tener usuario: entonces su nombre está escrito a mano.
+  const solicitante = compra.solicitante_id
+    ? nombreDe(compra.solicitante_id)
+    : (compra.solicitante_nombre ?? '—')
+
+  const solicitanteCargo =
+    compra.solicitante_cargo ??
+    (compra.solicitante_id
+      ? (perfiles?.find((p) => p.id === compra.solicitante_id)?.cargo ?? null)
+      : null)
+
   const cotizaciones = compra.cotizaciones ?? []
   const mejor = cotizaciones.reduce<Cotizacion | null>(
     (m, c) => (m === null || Number(c.total_usd) < Number(m.total_usd) ? c : m),
@@ -453,7 +464,7 @@ export function DetalleCompra() {
     <>
       <PageHeader
         title={compra.titulo}
-        description={`${compra.numero}${orden ? ` · Orden ${orden.numero}` : ''} · pedido por ${nombreDe(compra.solicitante_id)}`}
+        description={`${compra.numero}${orden ? ` · Orden ${orden.numero}` : ''} · pedido por ${solicitante}${solicitanteCargo ? ` (${solicitanteCargo})` : ''}`}
         actions={
           <Link to="/app/compras">
             <Button variant="outline" icon={<ArrowLeft />}>
@@ -959,7 +970,13 @@ export function DetalleCompra() {
             <dl className="mt-3 space-y-2 text-sm">
               {[
                 ['Pedido', compra.numero],
-                ['Solicitante', nombreDe(compra.solicitante_id)],
+                ['Solicita', solicitante + (solicitanteCargo ? ` · ${solicitanteCargo}` : '')],
+                // Quien carga el pedido responde por lo que escribió, aunque no
+                // sea quien lo necesita. Se muestra solo cuando son distintos:
+                // repetir el mismo nombre dos veces no informa de nada.
+                ...(compra.solicitante_id === compra.registrada_por
+                  ? []
+                  : [['Cargado por', nombreDe(compra.registrada_por)]]),
                 ['Creado', fechaHora(compra.creada_en)],
                 ['Prioridad', compra.prioridad === 'NORMAL' ? 'Normal' : compra.prioridad === 'ALTA' ? 'Alta' : 'Urgente'],
                 ['Se necesita', fecha(compra.requerida_para)],
