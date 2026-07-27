@@ -8,6 +8,7 @@ import {
   CircleDollarSign,
   FileText,
   History,
+  PackageCheck,
   Send,
   Undo2,
   UserX,
@@ -22,6 +23,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
+import { ModalRecepcion } from './ModalRecepcion'
 import { usePerfiles, useMisRoles } from '@/lib/api/catalogo'
 import {
   ordenVigente,
@@ -408,6 +410,7 @@ export function DetalleCompra() {
     | null
     | { tipo: 'cotizacion' }
     | { tipo: 'pago' }
+    | { tipo: 'recepcion' }
     | { tipo: 'cancelar-pedido' }
     | { tipo: 'devolver-gerencia' }
     | { tipo: 'cancelar-orden' }
@@ -435,6 +438,12 @@ export function DetalleCompra() {
 
   const estadoVisible = orden ? orden.estado : compra.estado
   const etiqueta = ETIQUETAS[estadoVisible] ?? { texto: estadoVisible, tono: 'neutral' as const }
+
+  // La columna de recibido solo aparece cuando ya hay algo que recibir: antes
+  // del pago sería una columna de ceros.
+  const muestraRecibido = ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'RECIBIDA'].includes(
+    orden?.estado ?? '',
+  )
 
   const puedeCompras = puede('COMPRAS')
   const puedeGerente = puede('GERENTE_GENERAL')
@@ -565,6 +574,9 @@ export function DetalleCompra() {
                     <tr className="text-ink/45 border-hairline border-y text-left text-xs">
                       <th className="py-2 pr-3 pl-5 font-medium">Descripción</th>
                       <th className="px-3 py-2 text-right font-medium">Cant.</th>
+                      {muestraRecibido ? (
+                        <th className="px-3 py-2 text-right font-medium">Recibido</th>
+                      ) : null}
                       <th className="px-3 py-2 text-right font-medium">Precio</th>
                       <th className="py-2 pr-5 pl-3 text-right font-medium">Subtotal</th>
                     </tr>
@@ -579,6 +591,20 @@ export function DetalleCompra() {
                           <td className="tabular text-ink/85 px-3 py-2.5 text-right">
                             {r.cantidad} {r.unidad}
                           </td>
+                          {muestraRecibido ? (
+                            <td
+                              className={cn(
+                                'tabular px-3 py-2.5 text-right',
+                                Number(r.cantidad_recibida) >= Number(r.cantidad)
+                                  ? 'text-success'
+                                  : Number(r.cantidad_recibida) > 0
+                                    ? 'text-warning'
+                                    : 'text-ink/40',
+                              )}
+                            >
+                              {r.cantidad_recibida}
+                            </td>
+                          ) : null}
                           <td className="tabular text-ink/70 px-3 py-2.5 text-right">
                             {dinero(orden.moneda, r.precio_unitario)}
                           </td>
@@ -843,9 +869,20 @@ export function DetalleCompra() {
                         : ''}
                     </p>
                   </div>
-                  <p className="text-ink/45 mt-2 text-xs">
-                    La recepción se registrará desde Inventario.
-                  </p>
+                  {puede('ALMACEN') ? (
+                    <Button
+                      block
+                      className="mt-2"
+                      icon={<PackageCheck />}
+                      onClick={() => setModal({ tipo: 'recepcion' })}
+                    >
+                      Recibir material
+                    </Button>
+                  ) : (
+                    <p className="text-ink/45 mt-2 text-xs">
+                      La recepción la registra almacén.
+                    </p>
+                  )}
                   {puedeCompras || puedeGerente ? (
                     <Button
                       block
@@ -947,6 +984,10 @@ export function DetalleCompra() {
 
       {modal?.tipo === 'pago' && orden ? (
         <ModalPago abierto onCerrar={() => setModal(null)} orden={orden} />
+      ) : null}
+
+      {modal?.tipo === 'recepcion' && orden ? (
+        <ModalRecepcion abierto onCerrar={() => setModal(null)} orden={orden} />
       ) : null}
 
       <ModalMotivo

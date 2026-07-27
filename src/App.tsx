@@ -5,7 +5,10 @@ import { Dashboard } from '@/pages/Dashboard'
 import { Login } from '@/pages/Login'
 import { ModuloPendiente } from '@/pages/ModuloPendiente'
 import { Tasas } from '@/pages/Tasas'
+import { Almacenes } from '@/pages/config/Almacenes'
 import { Articulos } from '@/pages/config/Articulos'
+import { Existencias } from '@/pages/inventario/Existencias'
+import { Movimientos } from '@/pages/inventario/Movimientos'
 import { DetalleCompra } from '@/pages/compras/DetalleCompra'
 import { NuevoPedido } from '@/pages/compras/NuevoPedido'
 import { Proveedores } from '@/pages/compras/Proveedores'
@@ -25,7 +28,10 @@ import { Logo } from '@/components/Logo'
 const paginas: Record<string, ReactNode> = {
   '/app/compras': <TableroCompras />,
   '/app/compras/proveedores': <Proveedores />,
+  '/app/inventario/existencias': <Existencias />,
+  '/app/inventario/movimientos': <Movimientos />,
   '/app/config/articulos': <Articulos />,
+  '/app/config/almacenes': <Almacenes />,
   '/app/tasas': <Tasas />,
 }
 

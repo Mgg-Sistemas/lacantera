@@ -210,7 +210,6 @@ export function TableroCompras() {
   const porColumna = useMemo(() => {
     const mapa = new Map<Columna, Tarjeta[]>(COLUMNAS.map((c) => [c.clave, []]))
     for (const t of data ?? []) {
-      // Las recibidas salen del tablero: la compra terminó.
       mapa.get(t.columna)?.push(t)
     }
     return mapa

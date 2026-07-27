@@ -34,6 +34,9 @@ export const COLUMNAS: DefinicionColumna[] = [
   { clave: 'GERENTE', titulo: 'Confirmar por el gerente', accion: 'Aprobar', tono: 'royal' },
   { clave: 'APROBADA', titulo: 'Aprobada', accion: 'Indicar método de pago', tono: 'warning' },
   { clave: 'PAGADA', titulo: 'Pagada', accion: 'Pendiente por recepcionar', tono: 'success' },
+  // La compra termina aquí, pero se queda a la vista: si desapareciera al
+  // recibirse, no habría dónde comprobar que llegó.
+  { clave: 'RECIBIDA', titulo: 'Recibida', accion: 'Cerrada', tono: 'info' },
   { clave: 'CANCELADA', titulo: 'Cancelada', accion: 'No sigue', tono: 'neutral' },
   { clave: 'DESISTIO', titulo: 'El proveedor desistió', accion: 'Resolver el dinero', tono: 'danger' },
 ]
