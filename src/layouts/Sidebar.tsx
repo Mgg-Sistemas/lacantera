@@ -5,6 +5,7 @@ import { navigation } from '@/config/navigation'
 import type { NavItem } from '@/config/navigation'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib/cn'
+import { useSesion } from '@/lib/sesion'
 
 interface SidebarProps {
   collapsed: boolean
@@ -15,6 +16,7 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
   const { pathname } = useLocation()
+  const { nombre, usuario, iniciales } = useSesion()
 
   // Un grupo abierto a la vez: con ocho módulos, permitir varios abiertos
   // convierte el riel en una lista de cuarenta líneas.
@@ -111,16 +113,21 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
         </nav>
 
         {/* Pie: quién está dentro. En un sistema con segregación de
-            funciones, el usuario activo debe estar siempre a la vista. */}
+            funciones, el usuario activo debe estar siempre a la vista — es lo
+            que evita que alguien registre algo sin darse cuenta de que dejó
+            abierta la sesión de otro. */}
         <div className={cn('border-hairline shrink-0 border-t p-3', collapsed && 'px-2')}>
-          <div className={cn('flex items-center gap-2.5', collapsed && 'justify-center')}>
+          <div
+            className={cn('flex items-center gap-2.5', collapsed && 'justify-center')}
+            title={collapsed ? nombre : undefined}
+          >
             <span className="bg-royal-600/12 text-royal-700 flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
-              AS
+              {iniciales}
             </span>
             {!collapsed && (
               <div className="min-w-0">
-                <p className="text-ink/85 truncate text-sm font-medium">Angélica Solís</p>
-                <p className="text-ink/45 truncate text-xs">Administración</p>
+                <p className="text-ink/85 truncate text-sm font-medium">{nombre}</p>
+                <p className="text-ink/45 truncate text-xs">{usuario}</p>
               </div>
             )}
           </div>
