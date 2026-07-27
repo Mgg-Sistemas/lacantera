@@ -36,3 +36,6 @@ dist-ssr
 # Supabase (local)
 supabase/.branches
 supabase/.temp
+
+# Claude Code: la configuracion personal no se comparte
+.claude/settings.local.json
