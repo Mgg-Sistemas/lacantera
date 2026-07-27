@@ -9,6 +9,10 @@ import { Almacenes } from '@/pages/config/Almacenes'
 import { Articulos } from '@/pages/config/Articulos'
 import { Existencias } from '@/pages/inventario/Existencias'
 import { Movimientos } from '@/pages/inventario/Movimientos'
+import { Cuentas } from '@/pages/tesoreria/Cuentas'
+import { MovimientosTesoreria } from '@/pages/tesoreria/Movimientos'
+import { Pagos } from '@/pages/tesoreria/Pagos'
+import { PorPagar } from '@/pages/tesoreria/PorPagar'
 import { DetalleCompra } from '@/pages/compras/DetalleCompra'
 import { NuevoPedido } from '@/pages/compras/NuevoPedido'
 import { Proveedores } from '@/pages/compras/Proveedores'
@@ -30,6 +34,10 @@ const paginas: Record<string, ReactNode> = {
   '/app/compras/proveedores': <Proveedores />,
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,
+  '/app/tesoreria/cuentas': <Cuentas />,
+  '/app/tesoreria/pagos': <Pagos />,
+  '/app/tesoreria/por-pagar': <PorPagar />,
+  '/app/tesoreria/movimientos': <MovimientosTesoreria />,
   '/app/config/articulos': <Articulos />,
   '/app/config/almacenes': <Almacenes />,
   '/app/tasas': <Tasas />,

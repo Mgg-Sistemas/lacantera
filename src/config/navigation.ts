@@ -116,9 +116,10 @@ export const navigation: NavSection[] = [
         icon: Landmark,
         children: [
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
+          { label: 'Pagos por hacer', to: '/app/tesoreria/pagos' },
           { label: 'Cuentas por pagar', to: '/app/tesoreria/por-pagar' },
+          { label: 'Libro de tesorería', to: '/app/tesoreria/movimientos' },
           { label: 'Cuentas por cobrar', to: '/app/tesoreria/por-cobrar' },
-          { label: 'Pagos', to: '/app/tesoreria/pagos' },
         ],
       },
     ],

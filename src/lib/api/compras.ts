@@ -465,6 +465,11 @@ export const METODOS_PAGO = [
   { valor: 'EFECTIVO', etiqueta: 'Efectivo' },
 ]
 
+/** El mismo listado, para mostrar un método ya elegido. */
+export const METODO_LEGIBLE: Record<string, string> = Object.fromEntries(
+  METODOS_PAGO.map((m) => [m.valor, m.etiqueta]),
+)
+
 export interface DatosPago {
   banco?: string
   numero_cuenta?: string
@@ -497,16 +502,8 @@ export function useIndicarPago() {
   )
 }
 
-export function useRegistrarPago() {
-  return useAccion((p: { instruccion_id: number; referencia?: string; fecha?: string; nota?: string }) =>
-    rpc('registrar_pago', {
-      p_instruccion_id: p.instruccion_id,
-      p_referencia: p.referencia || null,
-      p_fecha: p.fecha || null,
-      p_nota: p.nota ?? null,
-    }),
-  )
-}
+// Registrar el pago vive en tesorería (`useRegistrarPago`): quien lo hace es
+// tesorería, y el movimiento que escribe es de su libro, no del de compras.
 
 export function useDevolverInstruccion() {
   return useAccion((p: { instruccion_id: number; motivo: string }) =>

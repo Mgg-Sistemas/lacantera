@@ -24,6 +24,7 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
 import { ModalRecepcion } from './ModalRecepcion'
+import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
 import { usePerfiles, useMisRoles } from '@/lib/api/catalogo'
 import {
   ordenVigente,
@@ -39,11 +40,11 @@ import {
   useEnviarPedido,
   useMarcarDesistimiento,
   useProponerCotizacion,
-  useRegistrarPago,
   useResolverDesistimiento,
 } from '@/lib/api/compras'
+import { METODO_LEGIBLE } from '@/lib/api/compras'
 import type { Cotizacion, InstruccionPago } from '@/lib/api/compras'
-import { bolivares, dolares } from '@/lib/formato'
+import { bolivares, dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 // ---------------------------------------------------------------------------
@@ -62,36 +63,6 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   RECIBIDA: { texto: 'Recibida', tono: 'success' },
   PROVEEDOR_DESISTIO: { texto: 'El proveedor desistió', tono: 'danger' },
 }
-
-const METODO_LEGIBLE: Record<string, string> = {
-  TRANSFERENCIA: 'Transferencia',
-  PAGO_MOVIL: 'Pago móvil',
-  BINANCE: 'Binance',
-  EFECTIVO: 'Efectivo',
-}
-
-function fechaHora(iso: string | null): string {
-  if (!iso) return '—'
-  return new Intl.DateTimeFormat('es-VE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(iso))
-}
-
-function fecha(iso: string | null): string {
-  if (!iso) return '—'
-  return new Intl.DateTimeFormat('es-VE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(`${iso}T12:00:00`))
-}
-
-const dinero = (moneda: string | null | undefined, valor: string | number) =>
-  moneda === 'VES' ? bolivares(valor) : dolares(valor)
 
 // ---------------------------------------------------------------------------
 // Modal de un solo campo: el motivo.
@@ -400,7 +371,6 @@ export function DetalleCompra() {
   const eliminarCotizacion = useEliminarCotizacion()
   const aprobar = useAprobarCompra()
   const devolver = useDevolverACotizacion()
-  const pagar = useRegistrarPago()
   const devolverPago = useDevolverInstruccion()
   const cancelarOrden = useCancelarOrden()
   const desistir = useMarcarDesistimiento()
@@ -420,7 +390,6 @@ export function DetalleCompra() {
     | { tipo: 'devolver-instruccion'; instruccion: InstruccionPago }
   >(null)
 
-  const [referencia, setReferencia] = useState('')
   const [resolucion, setResolucion] = useState('REEMBOLSADO')
 
   if (isPending) return <Cargando texto="Cargando la compra…" />
@@ -699,10 +668,7 @@ export function DetalleCompra() {
                       key={i.id}
                       instruccion={i}
                       puedePagar={puedeTesoreria}
-                      onPagar={() => {
-                        setReferencia('')
-                        setModal({ tipo: 'registrar-pago', instruccion: i })
-                      }}
+                      onPagar={() => setModal({ tipo: 'registrar-pago', instruccion: i })}
                       onDevolver={() => setModal({ tipo: 'devolver-instruccion', instruccion: i })}
                     />
                   ))}
@@ -1076,64 +1042,10 @@ export function DetalleCompra() {
       />
 
       {modal?.tipo === 'registrar-pago' ? (
-        <Modal
-          abierto
+        <ModalRegistrarPago
+          instruccion={modal.instruccion}
           onCerrar={() => setModal(null)}
-          titulo="Registrar el pago"
-          descripcion={`${METODO_LEGIBLE[modal.instruccion.metodo]} por ${dinero(modal.instruccion.moneda, modal.instruccion.monto)}`}
-          ancho="sm"
-          acciones={
-            <>
-              <Button variant="ghost" onClick={() => setModal(null)}>
-                Cancelar
-              </Button>
-              <Button
-                disabled={pagar.isPending}
-                onClick={async () => {
-                  await pagar.mutateAsync({
-                    instruccion_id: modal.instruccion.id,
-                    referencia,
-                  })
-                  setModal(null)
-                }}
-              >
-                {pagar.isPending ? 'Guardando…' : 'Confirmar el pago'}
-              </Button>
-            </>
-          }
-        >
-          <div className="space-y-4">
-            <div className="border-hairline bg-canvas rounded-card border p-3 text-sm">
-              <p className="text-ink/70">
-                {modal.instruccion.banco ? `${modal.instruccion.banco} · ` : ''}
-                {modal.instruccion.numero_cuenta ??
-                  modal.instruccion.telefono ??
-                  modal.instruccion.correo_binance ??
-                  modal.instruccion.receptor}
-              </p>
-              {modal.instruccion.igtf_aplica ? (
-                <p className="text-warning mt-1 text-xs">
-                  Con IGTF sale {dinero(modal.instruccion.moneda, Number(modal.instruccion.monto) + Number(modal.instruccion.igtf_monto))}
-                </p>
-              ) : null}
-            </div>
-
-            <Textarea
-              label={
-                modal.instruccion.metodo === 'EFECTIVO'
-                  ? 'Referencia (opcional en efectivo)'
-                  : 'Número de referencia'
-              }
-              rows={2}
-              autoFocus
-              value={referencia}
-              onChange={(e) => setReferencia(e.target.value)}
-              hint="El número que devolvió el banco o la plataforma."
-            />
-
-            {pagar.error ? <ErrorDeCarga error={pagar.error} /> : null}
-          </div>
-        </Modal>
+        />
       ) : null}
 
       {modal?.tipo === 'resolver' && orden ? (
