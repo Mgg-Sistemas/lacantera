@@ -454,8 +454,14 @@ export function DetalleCompra() {
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* ---------------- Columna principal ---------------- */}
-        <div className="space-y-4 lg:col-span-2">
+        {/* ---------------- Columna principal ----------------
+
+            `min-w-0` no es cosmético: como elemento de cuadrícula, el mínimo
+            por defecto es el ancho mínimo del contenido, y las tablas de aquí
+            declaran 520px. Sin esto, la columna mide 520 en un teléfono de
+            375 y la página entera se desplaza a lo ancho, aunque cada tabla
+            tenga su propio contenedor con scroll. */}
+        <div className="min-w-0 space-y-4 lg:col-span-2">
           <Card>
             <CardHeader
               title="Qué se pidió"
@@ -694,9 +700,16 @@ export function DetalleCompra() {
           </Card>
         </div>
 
-        {/* ---------------- Panel de acciones ---------------- */}
-        <div className="space-y-4">
-          <Card>
+        {/* ---------------- Panel de acciones ----------------
+
+            `contents` en móvil disuelve esta columna para que sus dos tarjetas
+            sean elementos de la cuadrícula por separado. Así la acción que toca
+            ahora sube al principio —en el teléfono, tenerla al final obliga a
+            recorrer el documento entero para poder tocar el botón— y los datos
+            de cabecera bajan al final, que es donde se consultan. En escritorio
+            vuelven a ser una columna. */}
+        <div className="contents lg:flex lg:flex-col lg:gap-4">
+          <Card className="order-first lg:order-none">
             <CardHeader title="Qué sigue" />
 
             <div className="mt-4 space-y-2">
@@ -903,7 +916,7 @@ export function DetalleCompra() {
             {aprobar.error ? <ErrorDeCarga error={aprobar.error} className="mt-3" /> : null}
           </Card>
 
-          <Card>
+          <Card className="order-last lg:order-none">
             <CardHeader title="Datos" />
             <dl className="mt-3 space-y-2 text-sm">
               {[
