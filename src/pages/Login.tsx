@@ -1,23 +1,37 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router'
-import { ArrowUpRight, Mail, Truck } from 'lucide-react'
+import { AlertCircle, ArrowUpRight, Truck, User } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { IconTile } from '@/components/ui/IconTile'
 import { Logo } from '@/components/Logo'
 import { MinerIllustration } from '@/components/MinerIllustration'
+import { iniciarSesion } from '@/lib/auth'
 
 export function Login() {
   const navigate = useNavigate()
   const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // La autenticación real entra cuando esté definida la base de datos.
-  // Por ahora la pantalla solo prueba la navegación al shell.
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setError(null)
     setEnviando(true)
-    void navigate('/app')
+
+    const datos = new FormData(event.currentTarget)
+    const resultado = await iniciarSesion(
+      String(datos.get('usuario') ?? ''),
+      String(datos.get('clave') ?? ''),
+    )
+
+    if (resultado.ok) {
+      void navigate('/app')
+      return
+    }
+
+    setError(resultado.error ?? 'No se pudo entrar.')
+    setEnviando(false)
   }
 
   return (
@@ -101,20 +115,31 @@ export function Login() {
           </p>
 
           <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+            {error ? (
+              <div
+                role="alert"
+                className="border-danger/25 bg-danger-soft flex items-start gap-2.5 rounded-[6px] border p-3"
+              >
+                <AlertCircle className="text-danger mt-px size-[18px] shrink-0" />
+                <p className="text-danger text-sm">{error}</p>
+              </div>
+            ) : null}
+
             <Input
-              label="Correo"
-              type="email"
-              name="email"
+              label="Usuario"
+              name="usuario"
               autoComplete="username"
-              placeholder="tu.nombre@empresa.com"
-              icon={<Mail />}
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="tu.usuario"
+              icon={<User />}
               required
             />
 
             <div>
               <Input
-                label="Contraseña"
-                name="password"
+                label="Clave"
+                name="clave"
                 autoComplete="current-password"
                 placeholder="••••••••"
                 revealable
