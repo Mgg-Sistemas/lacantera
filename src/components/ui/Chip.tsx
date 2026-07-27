@@ -8,7 +8,7 @@ type Tone = 'royal' | 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 's
  * Es lo que permite meter seis estados en una tabla sin que grite ninguno.
  */
 const tones: Record<Tone, string> = {
-  royal: 'bg-royal-600/12 text-royal-700',
+  royal: 'bg-royal-600/12 text-royal-700 dark:text-royal-300',
   success: 'bg-success/14 text-success',
   warning: 'bg-warning/16 text-warning',
   danger: 'bg-danger/12 text-danger',

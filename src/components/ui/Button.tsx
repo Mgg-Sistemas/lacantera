@@ -9,7 +9,7 @@ const variants: Record<Variant, string> = {
   // levanta la acción principal sin subir su saturación.
   primary:
     'bg-royal-600 text-white shadow-primary hover:bg-royal-700 active:bg-royal-800 disabled:bg-royal-600/50 disabled:shadow-none',
-  soft: 'bg-royal-600/10 text-royal-700 hover:bg-royal-600/16 active:bg-royal-600/24',
+  soft: 'bg-royal-600/10 text-royal-700 dark:text-royal-300 hover:bg-royal-600/16 active:bg-royal-600/24',
   outline:
     'border border-ink/20 bg-transparent text-ink/80 hover:border-ink/32 hover:bg-ink/4 active:bg-ink/8',
   ghost: 'bg-transparent text-ink/70 hover:bg-ink/6 hover:text-ink/90 active:bg-ink/10',

@@ -50,7 +50,7 @@ export function Input({
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? describedById : undefined}
           className={cn(
-            'rounded-control h-10 w-full border bg-white text-base',
+            'rounded-control bg-surface h-10 w-full border text-base',
             'placeholder:text-ink/35 text-ink/90',
             'transition-[border-color,box-shadow] duration-150',
             'focus:outline-none',

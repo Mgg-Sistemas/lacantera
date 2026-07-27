@@ -46,7 +46,9 @@ export function Login() {
           preserveAspectRatio="none"
           aria-hidden="true"
         >
-          <path d="M0 300 L800 120 L800 300 Z" fill="#FFFFFF" opacity="0.75" />
+          {/* `fill-surface` en vez de blanco fijo: el talud debe seguir al
+              tema, no quedarse como una mancha clara sobre fondo oscuro. */}
+          <path d="M0 300 L800 120 L800 300 Z" className="fill-surface" opacity="0.75" />
         </svg>
 
         <div className="absolute top-8 left-8 z-20">
@@ -101,7 +103,7 @@ export function Login() {
       </div>
 
       {/* ---------- Columna del formulario ---------- */}
-      <div className="flex w-full flex-col justify-center bg-white px-6 py-12 sm:px-12 lg:w-[460px] lg:shrink-0 lg:px-14">
+      <div className="bg-surface flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-[460px] lg:shrink-0 lg:px-14">
         <div className="mx-auto w-full max-w-[360px]">
           <div className="mb-8 lg:hidden">
             <Logo />
@@ -156,7 +158,7 @@ export function Login() {
                 </label>
                 <a
                   href="#recuperar"
-                  className="text-royal-600 hover:text-royal-700 text-sm font-medium"
+                  className="text-royal-600 hover:text-royal-700 dark:text-royal-300 dark:hover:text-royal-200 text-sm font-medium"
                 >
                   Olvidé mi contraseña
                 </a>
