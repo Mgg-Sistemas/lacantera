@@ -53,3 +53,25 @@ export const porcentaje = (valor: string | number): string =>
   `${decimal2.format(aNumero(valor))}%`
 
 export const enteros = (valor: string | number): string => numero.format(aNumero(valor))
+
+/**
+ * Cuánto hace que ocurrió algo.
+ *
+ * Es lo que distingue una lista de una herramienta: un pedido de hace tres
+ * horas y uno de hace nueve días se ven igual hasta que alguien pone el tiempo
+ * al lado.
+ */
+export function hace(iso: string): string {
+  const minutos = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (minutos < 1) return 'ahora mismo'
+  if (minutos < 60) return `hace ${minutos} min`
+
+  const horas = Math.floor(minutos / 60)
+  if (horas < 24) return `hace ${horas} h`
+
+  const dias = Math.floor(horas / 24)
+  if (dias < 30) return `hace ${dias} d`
+
+  const meses = Math.floor(dias / 30)
+  return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`
+}

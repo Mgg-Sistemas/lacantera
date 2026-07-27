@@ -1,15 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  Bell,
-  ChevronDown,
-  LogOut,
-  Menu,
-  Monitor,
-  Moon,
-  PanelLeft,
-  Search,
-  Sun,
-} from 'lucide-react'
+import { ChevronDown, LogOut, Menu, Monitor, Moon, PanelLeft, Search, Sun } from 'lucide-react'
+import { Notificaciones } from '@/components/Notificaciones'
 import { cn } from '@/lib/cn'
 import { useSesion } from '@/lib/sesion'
 import { cerrarSesion } from '@/lib/auth'
@@ -162,15 +153,7 @@ export function Topbar({ onToggleCollapsed, onOpenMobile, collapsed }: TopbarPro
 
         <IndicadorTasa />
 
-        {/* Notificaciones */}
-        <button
-          type="button"
-          aria-label="Notificaciones"
-          className="text-ink/60 hover:bg-ink/6 hover:text-ink/90 relative flex size-9 items-center justify-center rounded-md transition-colors"
-        >
-          <Bell className="size-5" />
-          <span className="bg-danger ring-canvas absolute top-1.5 right-1.5 size-2 rounded-full ring-2" />
-        </button>
+        <Notificaciones />
 
         {/* Usuario */}
         <div className="relative ml-1" ref={contenedorMenu}>

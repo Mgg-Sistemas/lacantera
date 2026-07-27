@@ -190,8 +190,9 @@ function TarjetaCotizacion({
             {cotizacion.proveedor?.nombre ?? 'Proveedor'}
           </p>
           <p className="text-ink/50 text-xs">
+            <span className="text-ink/45 font-mono">{cotizacion.numero}</span> ·{' '}
             {cotizacion.proveedor?.rif} · {fecha(cotizacion.fecha)}
-            {cotizacion.numero_proveedor ? ` · N.º ${cotizacion.numero_proveedor}` : ''}
+            {cotizacion.numero_proveedor ? ` · s/n ${cotizacion.numero_proveedor}` : ''}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">

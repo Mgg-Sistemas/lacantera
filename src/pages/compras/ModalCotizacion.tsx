@@ -30,7 +30,6 @@ export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
   const registrar = useRegistrarCotizacion()
 
   const [proveedorId, setProveedorId] = useState('')
-  const [numeroProveedor, setNumeroProveedor] = useState('')
   const [fecha, setFecha] = useState(hoyEnCaracas())
   const [moneda, setMoneda] = useState('USD')
   const [condicionPago, setCondicionPago] = useState('CONTADO')
@@ -78,7 +77,6 @@ export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
       solicitud_id: compra.id,
       proveedor_id: Number(proveedorId),
       moneda,
-      numero_proveedor: numeroProveedor,
       fecha,
       validez_dias: Number(validez) || 15,
       dias_entrega: diasEntrega ? Number(diasEntrega) : null,
@@ -154,13 +152,6 @@ export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
             valor: String(p.id),
             etiqueta: `${p.nombre} · ${p.rif}`,
           }))}
-        />
-
-        <Input
-          label="N.º de cotización del proveedor"
-          placeholder="Opcional"
-          value={numeroProveedor}
-          onChange={(e) => setNumeroProveedor(e.target.value)}
         />
 
         <Input label="Fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />

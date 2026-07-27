@@ -7,7 +7,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { COLUMNAS, useTablero } from '@/lib/api/compras'
 import type { Columna, DefinicionColumna, Tarjeta } from '@/lib/api/compras'
-import { dolares } from '@/lib/formato'
+import { dolares, hace } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 type Tono = DefinicionColumna['tono']
@@ -39,27 +39,6 @@ function fechaLarga(iso: string): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(iso))
-}
-
-/**
- * Cuánto lleva la tarjeta sin moverse.
- *
- * Es el dato que convierte el tablero en una herramienta y no en una lista:
- * un pedido de hace tres horas y uno de hace nueve días se ven igual hasta
- * que alguien pone el tiempo al lado.
- */
-function hace(iso: string): string {
-  const minutos = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
-  if (minutos < 60) return `hace ${Math.max(minutos, 1)} min`
-
-  const horas = Math.floor(minutos / 60)
-  if (horas < 24) return `hace ${horas} h`
-
-  const dias = Math.floor(horas / 24)
-  if (dias < 30) return `hace ${dias} d`
-
-  const meses = Math.floor(dias / 30)
-  return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`
 }
 
 /** La señal propia de la etapa, cuando la etapa tiene algo que señalar. */

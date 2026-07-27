@@ -104,7 +104,10 @@ export interface RenglonCotizacion {
 
 export interface Cotizacion {
   id: number
+  /** Correlativo propio: COT-2026-0001. Lo asigna la base, no el navegador. */
+  numero: string
   proveedor_id: number
+  /** El número que el proveedor puso en su papel, cuando lo puso. */
   numero_proveedor: string | null
   fecha: string
   validez_dias: number
@@ -308,7 +311,13 @@ function useAccion<A>(fn: (args: A) => Promise<unknown>) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: fn,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['compras'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['compras'] })
+      // Cada cambio de estado emite un aviso. Sin esta invalidación, quien lo
+      // provoca no lo ve hasta la siguiente consulta periódica y parece que el
+      // sistema no se enteró.
+      void qc.invalidateQueries({ queryKey: ['notificaciones'] })
+    },
   })
 }
 
