@@ -1,50 +1,110 @@
-const stack = [
-  { nombre: 'React', version: '19' },
-  { nombre: 'Vite', version: '8' },
-  { nombre: 'TypeScript', version: '6' },
-  { nombre: 'Tailwind CSS', version: '4' },
-  { nombre: 'Supabase JS', version: '2' },
-]
+import type { ReactNode } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { AppLayout } from '@/layouts/AppLayout'
+import { Dashboard } from '@/pages/Dashboard'
+import { Login } from '@/pages/Login'
+import { ModuloPendiente } from '@/pages/ModuloPendiente'
+import { navigation } from '@/config/navigation'
+import { SesionProvider, useSesion } from '@/lib/sesion'
+import { Logo } from '@/components/Logo'
 
 /**
- * Pantalla de verificacion del entorno.
- * Se reemplaza por la landing page y el shell de la aplicacion una vez
- * aprobado el diseno.
+ * Las rutas de los módulos se derivan del mismo archivo que dibuja el menú.
+ * Así es imposible que exista una entrada de menú sin ruta, o una ruta
+ * huérfana que nadie puede alcanzar.
  */
-function App() {
-  return (
-    <main className="flex min-h-svh flex-col items-center justify-center gap-8 px-6 py-16">
-      <header className="text-center">
-        <p className="text-sm font-medium tracking-widest text-amber-600 uppercase">
-          Sistema de control interno
-        </p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
-          La Cantera
-        </h1>
-        <p className="mt-4 max-w-md text-balance text-slate-600 dark:text-slate-400">
-          Entorno de desarrollo funcionando. Edita{' '}
-          <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm dark:bg-slate-800">
-            src/App.tsx
-          </code>{' '}
-          y guarda para ver el refresco en caliente.
-        </p>
-      </header>
+const rutasDeModulos = navigation.flatMap((seccion) =>
+  seccion.items.flatMap((item) => {
+    if (item.children) {
+      return item.children.map((hijo) => ({
+        path: hijo.to,
+        label: hijo.label,
+        seccion: item.label,
+      }))
+    }
+    // El panel tiene página propia; el resto de enlaces directos, no todavía.
+    if (item.to && item.to !== '/app') {
+      return [{ path: item.to, label: item.label, seccion: seccion.label ?? 'Sistema' }]
+    }
+    return []
+  }),
+)
 
-      <ul className="grid w-full max-w-md grid-cols-2 gap-2 sm:grid-cols-3">
-        {stack.map((item) => (
-          <li
-            key={item.nombre}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center dark:border-slate-800 dark:bg-slate-900"
-          >
-            <span className="block text-sm font-medium text-slate-900 dark:text-slate-100">
-              {item.nombre}
-            </span>
-            <span className="block text-xs text-slate-500">v{item.version}</span>
-          </li>
-        ))}
-      </ul>
-    </main>
+/**
+ * Pantalla de espera mientras se resuelve la sesión guardada.
+ *
+ * Sin ella, quien ya tiene sesión ve el login parpadear antes de entrar: en el
+ * primer fotograma la sesión todavía no se ha leído del almacenamiento y el
+ * guardián la interpreta como ausente.
+ */
+function Cargando() {
+  return (
+    <div className="bg-canvas flex min-h-svh items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <Logo />
+        <span className="sr-only">Cargando…</span>
+        <div className="bg-ink/10 h-1 w-32 overflow-hidden rounded-full">
+          <div className="bg-royal-600 h-full w-1/3 animate-pulse rounded-full" />
+        </div>
+      </div>
+    </div>
   )
 }
 
-export default App
+/** Exige sesión. Sin ella, devuelve al login. */
+function RutaProtegida({ children }: { children: ReactNode }) {
+  const { session, cargando } = useSesion()
+
+  if (cargando) return <Cargando />
+  if (!session) return <Navigate to="/" replace />
+  return children
+}
+
+/** Evita que quien ya entró vuelva a ver el formulario de acceso. */
+function RutaPublica({ children }: { children: ReactNode }) {
+  const { session, cargando } = useSesion()
+
+  if (cargando) return <Cargando />
+  if (session) return <Navigate to="/app" replace />
+  return children
+}
+
+export default function App() {
+  return (
+    <SesionProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <RutaPublica>
+                <Login />
+              </RutaPublica>
+            }
+          />
+
+          <Route
+            path="/app"
+            element={
+              <RutaProtegida>
+                <AppLayout />
+              </RutaProtegida>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            {rutasDeModulos.map((ruta) => (
+              <Route
+                key={ruta.path}
+                // Las rutas del menú son absolutas; aquí se necesitan relativas al padre.
+                path={ruta.path.replace('/app/', '')}
+                element={<ModuloPendiente title={ruta.label} seccion={ruta.seccion} />}
+              />
+            ))}
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </SesionProvider>
+  )
+}
