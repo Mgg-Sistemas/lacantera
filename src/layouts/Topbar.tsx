@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router'
 import {
   ChevronDown,
   LogOut,
@@ -8,6 +9,7 @@ import {
   PanelLeft,
   Search,
   Sun,
+  UserRound,
   WifiOff,
 } from 'lucide-react'
 import { Notificaciones } from '@/components/Notificaciones'
@@ -263,6 +265,16 @@ export function Topbar({
                   ))}
                 </div>
               </div>
+
+              <Link
+                to="/app/cuenta"
+                role="menuitem"
+                onClick={() => setMenuAbierto(false)}
+                className="text-ink/75 hover:bg-ink/6 hover:text-ink/90 flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition-colors"
+              >
+                <UserRound className="size-[18px]" />
+                Mi cuenta
+              </Link>
 
               <button
                 type="button"

@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router'
 import { Lock } from 'lucide-react'
-import { moduloDeRuta } from '@/config/navigation'
+import { esRutaPropia, moduloDeRuta } from '@/config/navigation'
 import { Card } from '@/components/ui/Card'
 import { Cargando } from '@/components/ui/Estado'
 import { useMisPermisos, useModulos } from '@/lib/api/usuarios'
@@ -21,6 +21,8 @@ export function ExigePermiso() {
   const { pathname } = useLocation()
   const { puede, resuelto, isPending } = useMisPermisos()
   const { data: modulos } = useModulos()
+
+  if (esRutaPropia(pathname)) return <Outlet />
 
   const codigo = moduloDeRuta(pathname)
 

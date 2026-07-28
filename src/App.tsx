@@ -4,6 +4,7 @@ import { AppLayout } from '@/layouts/AppLayout'
 import { ExigePermiso } from '@/layouts/ExigePermiso'
 import { Dashboard } from '@/pages/Dashboard'
 import { Landing } from '@/pages/Landing'
+import { ExigeClaveNueva, MiCuenta } from '@/pages/MiCuenta'
 import { Login } from '@/pages/Login'
 import { ModuloPendiente } from '@/pages/ModuloPendiente'
 import { Tasas } from '@/pages/Tasas'
@@ -28,6 +29,7 @@ import { Proveedores } from '@/pages/compras/Proveedores'
 import { TableroCompras } from '@/pages/compras/Tablero'
 import { navigation } from '@/config/navigation'
 import { SesionProvider, useSesion } from '@/lib/sesion'
+import { useMiPerfil } from '@/lib/api/usuarios'
 import { Logo } from '@/components/Logo'
 
 /**
@@ -111,6 +113,21 @@ function RutaProtegida({ children }: { children: ReactNode }) {
   return children
 }
 
+/**
+ * La clave prestada no pasa de aquí.
+ *
+ * Mientras la clave sea la que asignó la administración, la sesión existe pero
+ * no identifica a nadie: la saben dos personas. Se deja entrar y se corta
+ * antes de cualquier pantalla, porque lo que hay del otro lado se firma.
+ */
+function ExigeClavePropia({ children }: { children: ReactNode }) {
+  const { data: yo, isPending } = useMiPerfil()
+
+  if (isPending) return <Cargando />
+  if (yo?.debe_cambiar_clave) return <ExigeClaveNueva nombre={yo.nombre} />
+  return children
+}
+
 /** Evita que quien ya entró vuelva a ver el formulario de acceso. */
 function RutaPublica({ children }: { children: ReactNode }) {
   const { session, cargando } = useSesion()
@@ -142,7 +159,9 @@ export default function App() {
             path="/app"
             element={
               <RutaProtegida>
-                <AppLayout />
+                <ExigeClavePropia>
+                  <AppLayout />
+                </ExigeClavePropia>
               </RutaProtegida>
             }
           >
@@ -151,6 +170,10 @@ export default function App() {
                 sitio y no una vez por pantalla. */}
             <Route element={<ExigePermiso />}>
               <Route index element={<Dashboard />} />
+
+              {/* La cuenta de cada quien no pertenece a ningún módulo: se
+                  alcanza siempre, aunque le hayan cerrado todo lo demás. */}
+              <Route path="cuenta" element={<MiCuenta />} />
 
               {/* Pantallas que no están en el menú porque se llega a ellas desde
                   el tablero, no desde la navegación. */}

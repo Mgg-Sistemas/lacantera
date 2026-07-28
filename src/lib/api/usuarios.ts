@@ -129,6 +129,40 @@ export interface UsuarioSistema {
   roles: string[]
 }
 
+export interface MiPerfil extends UsuarioSistema {
+  /** La clave vigente la puso el administrador: todavía no identifica a nadie. */
+  debe_cambiar_clave: boolean
+}
+
+/**
+ * Quién soy.
+ *
+ * Se pregunta a la base y no al token: los datos del token se congelaron al
+ * entrar, y quien acaba de cambiarse la clave o de recibir un rol seguiría
+ * viendo lo de antes hasta que la sesión caducara.
+ */
+export function useMiPerfil() {
+  return useQuery({
+    queryKey: ['mi-perfil'],
+    queryFn: async () => {
+      const filas = await rpc<MiPerfil[]>('mi_perfil')
+      return filas[0] ?? null
+    },
+  })
+}
+
+export function useCambiarMiClave() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { actual: string; nueva: string }) =>
+      rpc('cambiar_mi_clave', { p_actual: v.actual, p_nueva: v.nueva }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['mi-perfil'] })
+      void qc.invalidateQueries({ queryKey: ['usuarios'] })
+    },
+  })
+}
+
 export function useUsuarios() {
   return useQuery({
     queryKey: ['usuarios'],
@@ -161,6 +195,7 @@ function invalidar(qc: ReturnType<typeof useQueryClient>) {
   void qc.invalidateQueries({ queryKey: ['perfiles'] })
   void qc.invalidateQueries({ queryKey: ['mis-roles'] })
   void qc.invalidateQueries({ queryKey: ['mis-permisos'] })
+  void qc.invalidateQueries({ queryKey: ['mi-perfil'] })
 }
 
 export function useCrearUsuario() {

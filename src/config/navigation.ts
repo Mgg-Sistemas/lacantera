@@ -57,6 +57,19 @@ export function moduloDeRuta(ruta: string): string {
   return MODULO_POR_PREFIJO.find(([prefijo]) => ruta.startsWith(prefijo))?.[1] ?? 'PANEL'
 }
 
+/**
+ * Rutas que no son de ningún módulo porque son de la persona.
+ *
+ * Su cuenta y su clave las alcanza siempre, aunque le hayan cerrado todo lo
+ * demás: un usuario al que se le quitaron los permisos mientras se resuelve
+ * algo tiene que poder seguir cambiándose la clave.
+ */
+const RUTAS_PROPIAS = ['/app/cuenta']
+
+export function esRutaPropia(ruta: string): boolean {
+  return RUTAS_PROPIAS.some((prefijo) => ruta.startsWith(prefijo))
+}
+
 export interface NavSection {
   /** Ausente en el primer bloque: no se rotula lo que abre la lista. */
   label?: string
