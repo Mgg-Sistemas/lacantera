@@ -4,7 +4,9 @@ import {
   Plus,
   ShieldCheck,
   Trash2,
+  UserCheck,
   UserPlus,
+  UserX,
   Users as UsersIcon,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -376,6 +378,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
   const [clave, setClave] = useState<{ id: string; nombre: string; valor: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  const [cambiandoEstado, setCambiandoEstado] = useState<UsuarioSistema | null>(null)
 
   // Igual que en la pestaña de roles: se actualiza a partir del valor vigente,
   // no del que tenía este render. Al teclear rápido, o al rellenar el
@@ -533,9 +536,30 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                             size="sm"
                             icon={<KeyRound />}
                             aria-label={`Cambiar la clave de ${u.nombre}`}
+                            title="Cambiar la clave"
                             onClick={(ev) => {
                               ev.stopPropagation()
                               setClave({ id: u.id, nombre: u.nombre, valor: '' })
+                            }}
+                          />
+                        ) : null}
+
+                        {/* Un usuario no se borra: firmó cosas. Inactivar es
+                            el equivalente — deja de poder entrar y su nombre
+                            sigue estando en lo que hizo. El botón va aquí y no
+                            escondido dentro del formulario, que es donde nadie
+                            lo encuentra el día que hay que cortarle el acceso
+                            a alguien deprisa. */}
+                        {editable && u.usuario !== yo ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={u.activo ? <UserX /> : <UserCheck />}
+                            aria-label={`${u.activo ? 'Inactivar' : 'Reactivar'} a ${u.nombre}`}
+                            title={u.activo ? 'Inactivar' : 'Reactivar'}
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              setCambiandoEstado(u)
                             }}
                           />
                         ) : null}
@@ -741,6 +765,76 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
           </div>
         ) : null}
       </Modal>
+
+      {/* ---------- Inactivar y reactivar ---------- */}
+      {cambiandoEstado ? (
+        <Modal
+          abierto
+          onCerrar={() => setCambiandoEstado(null)}
+          titulo={`${cambiandoEstado.activo ? 'Inactivar' : 'Reactivar'} a ${cambiandoEstado.nombre}`}
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setCambiandoEstado(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant={cambiandoEstado.activo ? 'danger' : 'primary'}
+                disabled={activar.isPending}
+                onClick={() =>
+                  activar.mutate(
+                    { id: cambiandoEstado.id, activo: !cambiandoEstado.activo },
+                    {
+                      onSuccess: () => {
+                        setAviso(
+                          `${cambiandoEstado.nombre} ${cambiandoEstado.activo ? 'ya no puede entrar' : 'puede volver a entrar'}.`,
+                        )
+                        setCambiandoEstado(null)
+                      },
+                      onError: (e: Error) => setError(e.message),
+                    },
+                  )
+                }
+              >
+                {cambiandoEstado.activo ? 'Inactivar' : 'Reactivar'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            {error ? (
+              <div
+                role="alert"
+                className="border-danger/25 bg-danger-soft text-danger rounded-[6px] border p-3 text-sm"
+              >
+                {error}
+              </div>
+            ) : null}
+
+            {/* Un usuario nunca se borra. Su nombre está en las compras que
+                pidió y en los pagos que hizo, y borrarlo dejaría documentos
+                firmados por nadie. Inactivar le quita la entrada y conserva
+                todo lo demás. */}
+            <p className="text-ink/70 text-sm leading-relaxed">
+              {cambiandoEstado.activo ? (
+                <>
+                  Deja de poder entrar al sistema desde ya. Lo que hizo hasta hoy se conserva
+                  entero: su nombre sigue en lo que pidió, aprobó o pagó.
+                </>
+              ) : (
+                <>
+                  Vuelve a poder entrar con la misma clave que tenía. Si no la recuerda, cámbiasela
+                  desde la llave.
+                </>
+              )}
+            </p>
+            <p className="text-ink/50 text-xs leading-relaxed">
+              Los usuarios no se borran: un documento firmado por alguien que ya no existe no
+              serviría de nada.
+            </p>
+          </div>
+        </Modal>
+      ) : null}
     </>
   )
 }

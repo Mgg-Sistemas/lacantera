@@ -382,6 +382,24 @@ export function useEgresarEmpleado() {
   )
 }
 
+/**
+ * Borrar de verdad, para la ficha que nunca debió existir.
+ *
+ * No es lo mismo que egresar. La base solo lo deja pasar si esa persona no
+ * cobró ni tiene novedades: borrar a quien ya cobró descuadraría el libro de
+ * nómina contra lo que salió de tesorería, y eso no se ve hasta el cierre.
+ *
+ * Devuelve la ruta de su foto, si tenía, para poder sacarla del
+ * almacenamiento: la base no habla con el bucket, y si no se borra aquí queda
+ * ocupando espacio pagado para siempre.
+ */
+export function useEliminarEmpleado() {
+  return useAccionNomina(async (id: number) => {
+    const foto = await rpc<string | null>('eliminar_empleado', { p_id: id })
+    if (foto) await supabase.storage.from(BUCKET_FOTOS).remove([foto])
+  })
+}
+
 // ---------------------------------------------------------------------------
 // La foto de la ficha
 // ---------------------------------------------------------------------------
