@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { AppLayout } from '@/layouts/AppLayout'
 import { Dashboard } from '@/pages/Dashboard'
+import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
 import { ModuloPendiente } from '@/pages/ModuloPendiente'
 import { Tasas } from '@/pages/Tasas'
@@ -92,12 +93,18 @@ function Cargando() {
   )
 }
 
-/** Exige sesión. Sin ella, devuelve al login. */
+/**
+ * Exige sesión. Sin ella, devuelve al formulario de acceso.
+ *
+ * Va a `/entrar` y no a la portada a propósito: quien llega aquí es alguien a
+ * quien se le venció la sesión trabajando, y devolverlo a la portada le
+ * añadiría un clic para volver a donde estaba.
+ */
 function RutaProtegida({ children }: { children: ReactNode }) {
   const { session, cargando } = useSesion()
 
   if (cargando) return <Cargando />
-  if (!session) return <Navigate to="/" replace />
+  if (!session) return <Navigate to="/entrar" replace />
   return children
 }
 
@@ -115,8 +122,12 @@ export default function App() {
     <SesionProvider>
       <BrowserRouter>
         <Routes>
+          {/* La portada es la única pantalla sin guardián: se ve con sesión y
+              sin ella. Es la puerta de la calle, no una pantalla del sistema. */}
+          <Route path="/" element={<Landing />} />
+
           <Route
-            path="/"
+            path="/entrar"
             element={
               <RutaPublica>
                 <Login />

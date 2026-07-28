@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { AlertCircle, ArrowUpRight, Truck, User } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -51,9 +51,11 @@ export function Login() {
           <path d="M0 300 L800 120 L800 300 Z" className="fill-surface" opacity="0.75" />
         </svg>
 
-        <div className="absolute top-8 left-8 z-20">
+        {/* La marca vuelve a la portada. Es lo que la gente intenta pulsar
+            cuando llegó aquí sin querer. */}
+        <Link to="/" className="absolute top-8 left-8 z-20" aria-label="Volver a la portada">
           <Logo />
-        </div>
+        </Link>
 
         <div className="relative z-10 flex flex-1 items-center justify-center px-12">
           <div className="relative w-full max-w-[400px]">
@@ -105,9 +107,13 @@ export function Login() {
       {/* ---------- Columna del formulario ---------- */}
       <div className="bg-surface flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-[460px] lg:shrink-0 lg:px-14">
         <div className="mx-auto w-full max-w-[360px]">
-          <div className="mb-8 lg:hidden">
+          <Link
+            to="/"
+            className="mb-8 inline-flex lg:hidden"
+            aria-label="Volver a la portada"
+          >
             <Logo />
-          </div>
+          </Link>
 
           <h1 className="text-ink/90 text-2xl font-semibold tracking-tight">
             Bienvenido de vuelta
