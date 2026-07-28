@@ -3,18 +3,28 @@ import { createClient } from '@supabase/supabase-js'
 /*
   Las credenciales se limpian antes de usarlas.
 
-  Al cargarlas en un panel de despliegue se pegan desde el portapapeles, y lo
-  que se copia de la consola de Supabase arrastra a menudo un salto de línea o
-  un espacio al final. La clave viaja en una cabecera HTTP, y una cabecera con
-  un salto de línea dentro no es una cabecera válida: el navegador rechaza la
-  petición entera con "Failed to execute 'fetch' on 'Window': Invalid value".
+  Al cargarlas en un panel de despliegue se pegan desde el portapapeles, y la
+  clave publicable es una línea larguísima: al copiarla de una pantalla que la
+  parte en dos, o al pegarla en un campo que la envuelve, se cuela un salto de
+  línea EN MEDIO del valor.
 
-  Ese mensaje no dice nada de credenciales ni de despliegue, así que se pierde
-  media tarde buscándolo en el sitio equivocado. Un trim aquí lo evita, y lo
-  que el trim no pueda arreglar se explica abajo con nombre y apellido.
+  Eso rompe de una forma que no se parece a su causa. La clave viaja en una
+  cabecera HTTP, y una cabecera con un salto de línea dentro no es una
+  cabecera: el navegador rechaza la petición antes de enviarla con "Failed to
+  execute 'fetch' on 'Window': Invalid value". Ese mensaje no menciona
+  credenciales ni despliegue, así que se busca el fallo en el sitio
+  equivocado — y como la pantalla de acceso sí carga, parece un problema del
+  servidor.
+
+  Ni una URL ni una clave admiten espacios en ninguna posición, así que
+  quitarlos no puede estropear un valor bueno: si hay espacios, sobran. Se
+  reparan en vez de rechazarlos, porque un despliegue que funciona vale más
+  que uno que explica por qué no.
 */
-const url = import.meta.env.VITE_SUPABASE_URL?.trim()
-const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim()
+const sinEspacios = (valor: string | undefined) => valor?.replace(/\s+/g, '')
+
+const url = sinEspacios(import.meta.env.VITE_SUPABASE_URL)
+const publishableKey = sinEspacios(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY)
 
 const AYUDA =
   'En local van en .env.local (copia .env.example). En Vercel, en ' +
@@ -34,13 +44,12 @@ try {
   )
 }
 
-// Una cabecera HTTP no admite espacios, tabuladores ni saltos de línea dentro.
-// Si quedan después del trim, están en medio del valor: se pegó cortado o se
-// pegaron dos cosas juntas.
-if (/\s/.test(publishableKey)) {
+// Lo que queda tiene que parecer una clave. Un valor corto suele ser un pegado
+// a medias, y con él el sistema arrancaría para dar 401 en cada pantalla.
+if (publishableKey.length < 20) {
   throw new Error(
-    'VITE_SUPABASE_PUBLISHABLE_KEY tiene espacios o saltos de línea dentro. ' +
-      `Cópiala de una sola vez, sin cortar. ${AYUDA}`,
+    `VITE_SUPABASE_PUBLISHABLE_KEY parece incompleta (${publishableKey.length} caracteres). ` +
+      `Cópiala entera desde Supabase → Settings → API. ${AYUDA}`,
   )
 }
 
