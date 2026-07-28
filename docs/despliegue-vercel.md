@@ -14,10 +14,25 @@ Mientras el sistema corría en `localhost` solo entraba quien estuviera sentado
 en esa máquina. Con una dirección pública entra cualquiera que la encuentre, y
 hay tres cosas que dejan de ser teóricas:
 
-1. **El repositorio es público y la clave `la clave provisional` del usuario `admin_` está en
-   el historial de git.** Borrarla del código no la borra del historial: sigue
-   ahí para siempre en los commits viejos. Hay que cambiar la contraseña del
-   administrador antes de publicar, no después.
+1. **Hay que cambiar la clave del usuario `admin_`.** La provisional con la que
+   se creó la cuenta estuvo escrita en una migración y viajó al repositorio,
+   que es público. El historial se reescribió para sacarla (ver
+   `reescritura-del-historial.md`), pero una reescritura no deshace una
+   publicación: GitHub conserva los commits viejos accesibles por su código
+   durante un tiempo, y cualquier copia o bifurcación que se haya hecho antes
+   los conserva para siempre.
+
+   Por eso lo que cierra el agujero no es la reescritura, es cambiar la clave.
+   En el SQL Editor de Supabase, en una sola ejecución:
+
+   ```sql
+   set local app.clave_admin = 'LA-CLAVE-NUEVA';
+   -- y a continuación el bloque do $$ ... $$ de
+   -- supabase/migrations/20260727120000_usuario_administrador.sql
+   ```
+
+   La migración detecta que la cuenta ya existe y solo le cambia la clave.
+   `set local` hace que el valor no sobreviva a la transacción.
 
 2. **La contraseña de la base de datos pasó por conversaciones y por la línea de
    comandos.** Conviene rotarla en Supabase → Settings → Database. No afecta al
