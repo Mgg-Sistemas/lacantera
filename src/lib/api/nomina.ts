@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
@@ -8,6 +9,7 @@ import { desenvolver, rpc } from './rpc'
 
 export interface Empleado {
   id: number
+  /** Cuatro dígitos, correlativo de por vida. La asigna la base, no la pantalla. */
   ficha: string
   cedula: string
   nombres: string
@@ -17,6 +19,18 @@ export interface Empleado {
   fecha_ingreso: string
   fecha_egreso: string | null
   motivo_egreso: string | null
+  fecha_nacimiento: string | null
+  genero: 'MASCULINO' | 'FEMENINO' | null
+  nacionalidad: string | null
+  estado_civil: 'SOLTERO' | 'CASADO' | 'DIVORCIADO' | 'VIUDO' | 'CONCUBINATO' | null
+  grupo_sanguineo: string | null
+  direccion: string | null
+  contacto_emergencia: string | null
+  telefono_emergencia: string | null
+  foto_path: string | null
+  foto_zoom: string
+  foto_x: string
+  foto_y: string
   frecuencia: 'SEMANAL' | 'QUINCENAL' | 'MENSUAL'
   base_estipulacion: 'MENSUAL' | 'DIARIO' | 'HORA'
   salario_base: string
@@ -31,6 +45,21 @@ export interface Empleado {
   activo: boolean
   nota: string | null
 }
+
+export const GENEROS = [
+  { valor: 'MASCULINO', etiqueta: 'Masculino' },
+  { valor: 'FEMENINO', etiqueta: 'Femenino' },
+]
+
+export const ESTADOS_CIVILES = [
+  { valor: 'SOLTERO', etiqueta: 'Soltero/a' },
+  { valor: 'CASADO', etiqueta: 'Casado/a' },
+  { valor: 'CONCUBINATO', etiqueta: 'Concubinato' },
+  { valor: 'DIVORCIADO', etiqueta: 'Divorciado/a' },
+  { valor: 'VIUDO', etiqueta: 'Viudo/a' },
+]
+
+export const GRUPOS_SANGUINEOS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
 
 export const FRECUENCIAS = [
   { valor: 'SEMANAL', etiqueta: 'Semanal' },
@@ -65,6 +94,15 @@ export function useEmpleados(soloActivos = true) {
       if (soloActivos) q = q.eq('activo', true)
       return desenvolver<Empleado[]>(await q)
     },
+  })
+}
+
+export function useEmpleado(id: number | undefined) {
+  return useQuery({
+    queryKey: ['nomina', 'empleado', id],
+    enabled: id !== undefined && Number.isFinite(id),
+    queryFn: async () =>
+      desenvolver<Empleado>(await supabase.from('empleados').select('*').eq('id', id!).single()),
   })
 }
 
@@ -307,13 +345,20 @@ export function useGuardarEmpleado() {
   return useAccionNomina((e: Partial<Empleado> & { salario_base: number | string }) =>
     rpc<number>('guardar_empleado', {
       p_id: e.id ?? null,
-      p_ficha: e.ficha || null,
       p_cedula: e.cedula,
       p_nombres: e.nombres,
       p_apellidos: e.apellidos,
       p_cargo: e.cargo,
       p_departamento: e.departamento || null,
       p_fecha_ingreso: e.fecha_ingreso,
+      p_fecha_nacimiento: e.fecha_nacimiento || null,
+      p_genero: e.genero || null,
+      p_nacionalidad: e.nacionalidad || null,
+      p_estado_civil: e.estado_civil || null,
+      p_grupo_sanguineo: e.grupo_sanguineo || null,
+      p_direccion: e.direccion || null,
+      p_contacto_emergencia: e.contacto_emergencia || null,
+      p_telefono_emergencia: e.telefono_emergencia || null,
       p_frecuencia: e.frecuencia ?? 'QUINCENAL',
       p_base: e.base_estipulacion ?? 'MENSUAL',
       p_salario: Number(e.salario_base),
@@ -335,6 +380,105 @@ export function useEgresarEmpleado() {
   return useAccionNomina((e: { id: number; fecha: string; motivo: string }) =>
     rpc('egresar_empleado', { p_id: e.id, p_fecha: e.fecha, p_motivo: e.motivo }),
   )
+}
+
+// ---------------------------------------------------------------------------
+// La foto de la ficha
+// ---------------------------------------------------------------------------
+
+const BUCKET_FOTOS = 'personal'
+
+/**
+ * Sube la foto y anota dónde quedó.
+ *
+ * El archivo viaja directo del navegador al bucket; la base solo guarda la
+ * ruta. Si la subida falla, no queda una ficha apuntando a un archivo que no
+ * existe. Al reemplazar una foto, la anterior se borra: nadie va a volver a
+ * mirarla y ocupa espacio pagado.
+ */
+export function useSubirFoto() {
+  return useAccionNomina(async (f: { empleado_id: number; archivo: File }) => {
+    const extension = f.archivo.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const ruta = `${f.empleado_id}/${Date.now()}.${extension}`
+
+    const { error } = await supabase.storage
+      .from(BUCKET_FOTOS)
+      .upload(ruta, f.archivo, { contentType: f.archivo.type, upsert: false })
+
+    if (error) throw error
+
+    // Al cambiar de foto el encuadre anterior deja de tener sentido: apuntaba a
+    // una cara que estaba en otro sitio de otra imagen.
+    const anterior = await rpc<string | null>('guardar_foto_empleado', {
+      p_id: f.empleado_id,
+      p_path: ruta,
+      p_zoom: 1,
+      p_x: 0.5,
+      p_y: 0.5,
+    })
+
+    if (anterior) await supabase.storage.from(BUCKET_FOTOS).remove([anterior])
+
+    return ruta
+  })
+}
+
+export function useGuardarEncuadre() {
+  return useAccionNomina((e: { empleado_id: number; zoom: number; x: number; y: number }) =>
+    rpc<string | null>('guardar_foto_empleado', {
+      p_id: e.empleado_id,
+      p_path: null,
+      p_zoom: e.zoom,
+      p_x: e.x,
+      p_y: e.y,
+    }),
+  )
+}
+
+export function useQuitarFoto() {
+  return useAccionNomina(async (p: { empleado_id: number }) => {
+    const anterior = await rpc<string | null>('quitar_foto_empleado', { p_id: p.empleado_id })
+    if (anterior) await supabase.storage.from(BUCKET_FOTOS).remove([anterior])
+  })
+}
+
+/**
+ * La foto, lista para pintar.
+ *
+ * Se descarga como archivo y se envuelve en una URL de objeto en vez de pedir
+ * una URL firmada. Una URL firmada apunta a otro dominio y ensucia el lienzo:
+ * el navegador prohíbe exportar un canvas que tocó una imagen de otro origen,
+ * que es justo lo que hacen los dos botones de esta pantalla. Una URL de objeto
+ * es local y nunca lo ensucia.
+ */
+export function useFoto(path: string | null | undefined) {
+  const [url, setUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!path) {
+      setUrl(null)
+      return
+    }
+
+    let vigente = true
+    let objeto: string | null = null
+
+    void supabase.storage
+      .from(BUCKET_FOTOS)
+      .download(path)
+      .then(({ data }) => {
+        if (!vigente || !data) return
+        objeto = URL.createObjectURL(data)
+        setUrl(objeto)
+      })
+
+    return () => {
+      vigente = false
+      if (objeto) URL.revokeObjectURL(objeto)
+    }
+  }, [path])
+
+  return url
 }
 
 export function useAbrirPeriodo() {

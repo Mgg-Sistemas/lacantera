@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
-import { Plus, Search, UserMinus, Users } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router'
+import { Pencil, Plus, Search, UserMinus, Users } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -11,8 +12,11 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
   BASES_SALARIO,
+  ESTADOS_CIVILES,
   FORMAS_PAGO,
   FRECUENCIAS,
+  GENEROS,
+  GRUPOS_SANGUINEOS,
   JORNADAS,
   useEgresarEmpleado,
   useEmpleados,
@@ -24,13 +28,20 @@ import { BANCOS } from '@/lib/bancos'
 import { dinero, fecha } from '@/lib/formato'
 
 const vacio = {
-  ficha: '',
   cedula: 'V-',
   nombres: '',
   apellidos: '',
   cargo: '',
   departamento: '',
   fecha_ingreso: '',
+  fecha_nacimiento: '',
+  genero: '',
+  nacionalidad: 'VENEZOLANA',
+  estado_civil: '',
+  grupo_sanguineo: '',
+  direccion: '',
+  contacto_emergencia: '',
+  telefono_emergencia: '',
   frecuencia: 'QUINCENAL',
   base_estipulacion: 'MENSUAL',
   salario_base: '',
@@ -89,13 +100,20 @@ export function Personal() {
       e
         ? {
             id: e.id,
-            ficha: e.ficha,
             cedula: e.cedula,
             nombres: e.nombres,
             apellidos: e.apellidos,
             cargo: e.cargo,
             departamento: e.departamento ?? '',
             fecha_ingreso: e.fecha_ingreso,
+            fecha_nacimiento: e.fecha_nacimiento ?? '',
+            genero: e.genero ?? '',
+            nacionalidad: e.nacionalidad ?? '',
+            estado_civil: e.estado_civil ?? '',
+            grupo_sanguineo: e.grupo_sanguineo ?? '',
+            direccion: e.direccion ?? '',
+            contacto_emergencia: e.contacto_emergencia ?? '',
+            telefono_emergencia: e.telefono_emergencia ?? '',
             frecuencia: e.frecuencia,
             base_estipulacion: e.base_estipulacion,
             salario_base: e.salario_base,
@@ -114,6 +132,28 @@ export function Personal() {
     )
 
   const cambiar = (c: Partial<Edicion>) => setEdicion((e) => (e ? { ...e, ...c } : e))
+
+  // "Editar datos" desde la ficha del trabajador llega aquí con el id en la
+  // dirección. Se abre el formulario y se limpia el parámetro para que volver
+  // atrás no lo vuelva a abrir.
+  const [params, setParams] = useSearchParams()
+  const editarId = params.get('editar')
+
+  useEffect(() => {
+    if (!editarId || !data) return
+
+    const quien = data.find((e) => e.id === Number(editarId))
+
+    // Puede ser alguien que ya egresó, y la lista los oculta por defecto.
+    if (!quien) {
+      setVerInactivos(true)
+      return
+    }
+
+    abrir(quien)
+    setParams({}, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editarId, data])
 
   return (
     <>
@@ -189,14 +229,16 @@ export function Personal() {
                 {filtrados.map((e) => (
                   <tr key={e.id} className="border-hairline border-b last:border-0">
                     <td className="px-5 py-3">
-                      <button
-                        onClick={() => puedeRRHH && abrir(e)}
-                        className="text-ink/85 hover:text-royal-600 dark:hover:text-royal-300 text-left font-medium"
+                      {/* El nombre lleva a la ficha, no al formulario: mirar a
+                          alguien es mucho más frecuente que corregirle un dato. */}
+                      <Link
+                        to={`/app/nomina/personal/${e.id}`}
+                        className="text-ink/85 hover:text-royal-600 dark:hover:text-royal-300 font-medium"
                       >
                         {e.apellidos}, {e.nombres}
-                      </button>
+                      </Link>
                       <p className="text-ink/45 text-xs">
-                        {e.cedula} · ficha {e.ficha}
+                        <span className="tabular">{e.cedula} · ficha {e.ficha}</span>
                         {e.activo ? '' : ' · egresado'}
                       </p>
                     </td>
@@ -222,21 +264,34 @@ export function Personal() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      {puedeRRHH && e.activo ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          icon={<UserMinus />}
-                          onClick={() => {
-                            setSaliendo(e)
-                            setEgreso({ fecha: '', motivo: '' })
-                          }}
-                        >
-                          Egresar
-                        </Button>
-                      ) : (
-                        <Chip tone="neutral">{e.activo ? 'Activo' : 'Egresado'}</Chip>
-                      )}
+                      <div className="flex justify-end gap-1">
+                        {puedeRRHH ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={<Pencil />}
+                            aria-label={`Editar a ${e.nombres} ${e.apellidos}`}
+                            onClick={() => abrir(e)}
+                          />
+                        ) : null}
+                        {puedeRRHH && e.activo ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={<UserMinus />}
+                            onClick={() => {
+                              setSaliendo(e)
+                              setEgreso({ fecha: '', motivo: '' })
+                            }}
+                          >
+                            Egresar
+                          </Button>
+                        ) : (
+                          <Chip tone={e.activo ? 'success' : 'neutral'}>
+                            {e.activo ? 'Activo' : 'Egresado'}
+                          </Chip>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -251,7 +306,12 @@ export function Personal() {
         <Modal
           abierto
           onCerrar={() => setEdicion(null)}
-          titulo={edicion.id ? 'Ficha del trabajador' : 'Nuevo trabajador'}
+          titulo={edicion.id ? 'Editar los datos del trabajador' : 'Nuevo trabajador'}
+          descripcion={
+            edicion.id
+              ? undefined
+              : 'El número de ficha lo asigna el sistema al guardar: cuatro dígitos, correlativo.'
+          }
           ancho="lg"
           acciones={
             <>
@@ -284,12 +344,6 @@ export function Personal() {
               onChange={(e) => cambiar({ cedula: e.target.value.toUpperCase() })}
             />
             <Input
-              label="Ficha"
-              placeholder="Se genera sola si la dejas vacía"
-              value={edicion.ficha}
-              onChange={(e) => cambiar({ ficha: e.target.value.toUpperCase() })}
-            />
-            <Input
               label="Nombres"
               value={edicion.nombres}
               onChange={(e) => cambiar({ nombres: e.target.value })}
@@ -298,6 +352,40 @@ export function Personal() {
               label="Apellidos"
               value={edicion.apellidos}
               onChange={(e) => cambiar({ apellidos: e.target.value })}
+            />
+            <Input
+              label="Fecha de nacimiento"
+              type="date"
+              value={edicion.fecha_nacimiento}
+              onChange={(e) => cambiar({ fecha_nacimiento: e.target.value })}
+            />
+            <Select
+              label="Género"
+              vacio="Sin indicar"
+              value={edicion.genero}
+              onChange={(e) => cambiar({ genero: e.target.value })}
+              opciones={GENEROS}
+            />
+            <Select
+              label="Estado civil"
+              vacio="Sin indicar"
+              value={edicion.estado_civil}
+              onChange={(e) => cambiar({ estado_civil: e.target.value })}
+              opciones={ESTADOS_CIVILES}
+            />
+            <Input
+              label="Nacionalidad"
+              placeholder="Venezolana"
+              value={edicion.nacionalidad}
+              onChange={(e) => cambiar({ nacionalidad: e.target.value.toUpperCase() })}
+            />
+            <Select
+              label="Grupo sanguíneo"
+              vacio="Sin indicar"
+              hint="Va en el carnet. En una emergencia es lo primero que se busca."
+              value={edicion.grupo_sanguineo}
+              onChange={(e) => cambiar({ grupo_sanguineo: e.target.value })}
+              opciones={GRUPOS_SANGUINEOS.map((g) => ({ valor: g, etiqueta: g }))}
             />
             <Input
               label="Cargo"
@@ -322,6 +410,26 @@ export function Personal() {
               label="Teléfono"
               value={edicion.telefono}
               onChange={(e) => cambiar({ telefono: e.target.value })}
+            />
+            <Input
+              label="A quién llamar en una emergencia"
+              placeholder="Marta Arias, esposa"
+              value={edicion.contacto_emergencia}
+              onChange={(e) => cambiar({ contacto_emergencia: e.target.value })}
+            />
+            <Input
+              label="Teléfono de esa persona"
+              value={edicion.telefono_emergencia}
+              onChange={(e) => cambiar({ telefono_emergencia: e.target.value })}
+            />
+          </div>
+
+          <div className="mt-4">
+            <Textarea
+              label="Dirección"
+              rows={2}
+              value={edicion.direccion}
+              onChange={(e) => cambiar({ direccion: e.target.value })}
             />
           </div>
 

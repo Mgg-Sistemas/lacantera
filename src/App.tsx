@@ -10,6 +10,7 @@ import { Articulos } from '@/pages/config/Articulos'
 import { Existencias } from '@/pages/inventario/Existencias'
 import { Movimientos } from '@/pages/inventario/Movimientos'
 import { Asistencia } from '@/pages/nomina/Asistencia'
+import { FichaTrabajador } from '@/pages/nomina/FichaTrabajador'
 import { Parametros } from '@/pages/nomina/Parametros'
 import { Personal } from '@/pages/nomina/Personal'
 import { Procesos } from '@/pages/nomina/Procesos'
@@ -137,6 +138,7 @@ export default function App() {
                 el tablero, no desde la navegación. */}
             <Route path="compras/nuevo" element={<NuevoPedido />} />
             <Route path="compras/:id" element={<DetalleCompra />} />
+            <Route path="nomina/personal/:id" element={<FichaTrabajador />} />
 
             {rutasDeModulos.map((ruta) => (
               <Route
