@@ -82,8 +82,11 @@ export function useTablero() {
       desenvolver<Tarjeta[]>(
         await supabase.from('v_compras_tablero').select('*').order('creada_en', { ascending: false }),
       ),
-    // El tablero es lo que mira compras todo el día: se refresca solo.
-    refetchInterval: 60_000,
+    // Quien mantiene esto al día es el enlace en vivo (src/lib/tiempoReal.ts).
+    // Este intervalo es la red debajo: si el socket se cayó y nadie lo notó,
+    // el tablero se pone al día solo cada cinco minutos en vez de quedarse
+    // congelado hasta que alguien recargue.
+    refetchInterval: 5 * 60_000,
   })
 }
 

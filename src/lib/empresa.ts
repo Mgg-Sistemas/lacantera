@@ -17,6 +17,13 @@ export const EMPRESA = {
   /** Sin la forma societaria, para donde el espacio manda. */
   nombre: 'MINERIA INTERNACIONAL TS',
   forma: 'C.A.',
+  /**
+   * Como se escribe en pantalla.
+   *
+   * Aquí sí lleva tilde y caja mixta: no es una cita del registro sino un
+   * rótulo que alguien lee cincuenta veces al día, y en versalitas cansa.
+   */
+  marca: 'Minería Internacional',
   rif: 'J-50209170-0',
   actividad: 'Explotación de piedra',
   estado: 'Estado Bolívar',

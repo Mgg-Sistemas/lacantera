@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn'
+import { EMPRESA } from '@/lib/empresa'
 
 interface LogoProps {
   className?: string
@@ -45,11 +46,13 @@ export function Logo({ className, markOnly = false, inverted = false }: LogoProp
       {!markOnly && (
         <span
           className={cn(
-            'text-[17px] leading-none font-semibold tracking-tight',
+            // 15px y no 17: "Minería Internacional" es el doble de largo que
+            // el rótulo anterior y a 17 se sale del riel del menú contraíble.
+            'min-w-0 truncate text-[15px] leading-tight font-semibold tracking-tight',
             inverted ? 'text-white' : 'text-ink/90',
           )}
         >
-          La Cantera
+          {EMPRESA.marca}
         </span>
       )}
     </span>

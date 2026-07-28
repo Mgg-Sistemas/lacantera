@@ -40,7 +40,9 @@ export function useNotificaciones(limite = 40) {
           .order('creada_en', { ascending: false })
           .limit(limite),
       ),
-    refetchInterval: 30_000,
+    // La campana la enciende el enlace en vivo; esto es solo el respaldo por
+    // si el socket se cayó. Ver src/lib/tiempoReal.ts.
+    refetchInterval: 5 * 60_000,
     refetchOnWindowFocus: true,
   })
 }

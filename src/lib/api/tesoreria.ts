@@ -146,7 +146,9 @@ export function usePorPagar() {
       desenvolver<PorPagar[]>(
         await supabase.from('v_cuentas_por_pagar').select('*').order('creada_en'),
       ),
-    refetchInterval: 60_000,
+    // Respaldo del enlace en vivo, que es lo que de verdad mantiene esta cola
+    // al día. Ver src/lib/tiempoReal.ts.
+    refetchInterval: 5 * 60_000,
   })
 }
 
@@ -186,7 +188,8 @@ export function useResumenPanel() {
       desenvolver<ResumenPanel>(
         await supabase.from('v_panel_resumen').select('*').single(),
       ),
-    refetchInterval: 60_000,
+    // Respaldo del enlace en vivo. Ver src/lib/tiempoReal.ts.
+    refetchInterval: 5 * 60_000,
   })
 }
 

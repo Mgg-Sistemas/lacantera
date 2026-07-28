@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, LogOut, Menu, Monitor, Moon, PanelLeft, Search, Sun } from 'lucide-react'
+import {
+  ChevronDown,
+  LogOut,
+  Menu,
+  Monitor,
+  Moon,
+  PanelLeft,
+  Search,
+  Sun,
+  WifiOff,
+} from 'lucide-react'
 import { Notificaciones } from '@/components/Notificaciones'
 import { cn } from '@/lib/cn'
 import { useSesion } from '@/lib/sesion'
@@ -7,12 +17,44 @@ import { cerrarSesion } from '@/lib/auth'
 import { useTema } from '@/lib/tema'
 import type { Tema } from '@/lib/tema'
 import { useTasaBcv } from '@/lib/tasaBcv'
+import type { EstadoTiempoReal } from '@/lib/tiempoReal'
 import { tasa as formatearTasa } from '@/lib/formato'
 
 interface TopbarProps {
   onToggleCollapsed: () => void
   onOpenMobile: () => void
   collapsed: boolean
+  tiempoReal: EstadoTiempoReal
+}
+
+/**
+ * Aviso de que la pantalla dejó de actualizarse sola.
+ *
+ * Solo aparece cuando el enlace en vivo se cayó. Un distintivo permanente que
+ * dijera "en vivo" sería ruido: lo normal no hace falta anunciarlo. Lo que sí
+ * hay que decir es lo contrario, porque una pantalla quieta se ve exactamente
+ * igual que una pantalla al día, y sobre esos números se paga y se despacha.
+ */
+function IndicadorEnVivo({ estado }: { estado: EstadoTiempoReal }) {
+  if (estado !== 'sin-conexion') return null
+
+  const explicacion =
+    'Se perdió el enlace con el servidor. Lo que ves puede estar viejo; recarga la página para ponerlo al día.'
+
+  return (
+    <span
+      role="status"
+      title={explicacion}
+      aria-label={`Sin conexión en vivo. ${explicacion}`}
+      // Visible también en el teléfono, solo que reducido al icono. Esconderlo
+      // en pantallas chicas sería esconderlo justo donde la señal se cae: en el
+      // patio y en los frentes, no en la oficina.
+      className="border-warning/40 bg-warning-soft text-warning mr-1 flex shrink-0 items-center gap-1.5 rounded-full border py-1.5 pr-2.5 pl-2.5 text-xs font-medium sm:pr-3"
+    >
+      <WifiOff className="size-3.5 shrink-0" />
+      <span className="hidden sm:inline">Sin conexión en vivo</span>
+    </span>
+  )
 }
 
 const opcionesTema: { valor: Tema; etiqueta: string; icono: typeof Sun }[] = [
@@ -88,7 +130,12 @@ function IndicadorTasa() {
   )
 }
 
-export function Topbar({ onToggleCollapsed, onOpenMobile, collapsed }: TopbarProps) {
+export function Topbar({
+  onToggleCollapsed,
+  onOpenMobile,
+  collapsed,
+  tiempoReal,
+}: TopbarProps) {
   const { nombre, usuario, iniciales } = useSesion()
   const { tema, setTema } = useTema()
   const [menuAbierto, setMenuAbierto] = useState(false)
@@ -150,6 +197,8 @@ export function Topbar({ onToggleCollapsed, onOpenMobile, collapsed }: TopbarPro
         </button>
 
         <div className="flex-1" />
+
+        <IndicadorEnVivo estado={tiempoReal} />
 
         <IndicadorTasa />
 

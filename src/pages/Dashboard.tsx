@@ -39,10 +39,14 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
   if (!r) return []
   const avisos: Aviso[] = []
 
+  // Dice "sin cargar" y no "no hay": la barra de arriba consulta al BCV y el
+  // panel mira lo registrado aquí. Cuando el BCV ya publicó y nadie la cargó
+  // todavía, un aviso que dijera "no hay tasa" contradiría a la barra en la
+  // misma pantalla, y quien lo lea deja de creerle a las dos.
   if (!r.tasa_de_hoy) {
     avisos.push({
       tono: 'danger',
-      titulo: 'No hay tasa del BCV de hoy',
+      titulo: 'La tasa de hoy no está cargada',
       detalle:
         'Sin ella no se puede cotizar, aprobar ni pagar: todo documento valorado congela la tasa del día.',
       ruta: '/app/tasas',
