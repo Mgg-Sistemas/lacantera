@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { AppLayout } from '@/layouts/AppLayout'
+import { ExigePermiso } from '@/layouts/ExigePermiso'
 import { Dashboard } from '@/pages/Dashboard'
 import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
@@ -8,6 +9,7 @@ import { ModuloPendiente } from '@/pages/ModuloPendiente'
 import { Tasas } from '@/pages/Tasas'
 import { Almacenes } from '@/pages/config/Almacenes'
 import { Articulos } from '@/pages/config/Articulos'
+import { Usuarios } from '@/pages/config/Usuarios'
 import { Existencias } from '@/pages/inventario/Existencias'
 import { Movimientos } from '@/pages/inventario/Movimientos'
 import { Asistencia } from '@/pages/nomina/Asistencia'
@@ -50,6 +52,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/tesoreria/pagos': <Pagos />,
   '/app/tesoreria/por-pagar': <PorPagar />,
   '/app/tesoreria/movimientos': <MovimientosTesoreria />,
+  '/app/config/usuarios': <Usuarios />,
   '/app/config/articulos': <Articulos />,
   '/app/config/almacenes': <Almacenes />,
   '/app/tasas': <Tasas />,
@@ -143,26 +146,31 @@ export default function App() {
               </RutaProtegida>
             }
           >
-            <Route index element={<Dashboard />} />
+            {/* Capa sin ruta propia: cuelga de ella todo lo que hay dentro del
+                sistema, para que el permiso del módulo se compruebe en un solo
+                sitio y no una vez por pantalla. */}
+            <Route element={<ExigePermiso />}>
+              <Route index element={<Dashboard />} />
 
-            {/* Pantallas que no están en el menú porque se llega a ellas desde
-                el tablero, no desde la navegación. */}
-            <Route path="compras/nuevo" element={<NuevoPedido />} />
-            <Route path="compras/:id" element={<DetalleCompra />} />
-            <Route path="nomina/personal/:id" element={<FichaTrabajador />} />
+              {/* Pantallas que no están en el menú porque se llega a ellas desde
+                  el tablero, no desde la navegación. */}
+              <Route path="compras/nuevo" element={<NuevoPedido />} />
+              <Route path="compras/:id" element={<DetalleCompra />} />
+              <Route path="nomina/personal/:id" element={<FichaTrabajador />} />
 
-            {rutasDeModulos.map((ruta) => (
-              <Route
-                key={ruta.path}
-                // Las rutas del menú son absolutas; aquí se necesitan relativas al padre.
-                path={ruta.path.replace('/app/', '')}
-                element={
-                  paginas[ruta.path] ?? (
-                    <ModuloPendiente title={ruta.label} seccion={ruta.seccion} />
-                  )
-                }
-              />
-            ))}
+              {rutasDeModulos.map((ruta) => (
+                <Route
+                  key={ruta.path}
+                  // Las rutas del menú son absolutas; aquí se necesitan relativas al padre.
+                  path={ruta.path.replace('/app/', '')}
+                  element={
+                    paginas[ruta.path] ?? (
+                      <ModuloPendiente title={ruta.label} seccion={ruta.seccion} />
+                    )
+                  }
+                />
+              ))}
+            </Route>
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -27,6 +27,36 @@ export interface NavItem {
   badge?: number
 }
 
+/**
+ * Qué módulo gobierna cada rama del menú.
+ *
+ * Se resuelve por prefijo y de arriba abajo, así que lo más específico va
+ * primero: "Usuarios y roles" cuelga de Configuración en el menú, pero es su
+ * propio módulo — quien mantiene el catálogo de artículos no tiene por qué
+ * poder crear cuentas.
+ *
+ * Espeja el catálogo public.modulos. Si aquí aparece una rama nueva, allá hace
+ * falta la fila; si no, no habría forma de darle o quitarle permiso y quedaría
+ * abierta a todo el mundo.
+ */
+const MODULO_POR_PREFIJO: [string, string][] = [
+  ['/app/config/usuarios', 'USUARIOS'],
+  ['/app/explotacion', 'EXPLOTACION'],
+  ['/app/inventario', 'INVENTARIO'],
+  ['/app/despachos', 'DESPACHOS'],
+  ['/app/compras', 'COMPRAS'],
+  ['/app/ventas', 'VENTAS'],
+  ['/app/nomina', 'NOMINA'],
+  ['/app/tesoreria', 'TESORERIA'],
+  ['/app/tasas', 'TASAS'],
+  ['/app/config', 'CONFIGURACION'],
+]
+
+/** El módulo al que pertenece una ruta. El panel es la raíz. */
+export function moduloDeRuta(ruta: string): string {
+  return MODULO_POR_PREFIJO.find(([prefijo]) => ruta.startsWith(prefijo))?.[1] ?? 'PANEL'
+}
+
 export interface NavSection {
   /** Ausente en el primer bloque: no se rotula lo que abre la lista. */
   label?: string

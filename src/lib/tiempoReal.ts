@@ -50,10 +50,18 @@ const AFECTA: Record<string, string[][]> = {
   nomina_novedades_montos: [['nomina']],
   nomina_parametros: [['nomina']],
 
+  // Quitarle un rol a alguien tiene que llegarle a esa persona sin que
+  // recargue: hasta que no se refresque su menú, sigue viendo pantallas a las
+  // que ya no debería llegar. La base ya le dice que no, pero la pantalla
+  // todavía se las ofrece.
+  roles: [['roles'], ['mis-permisos']],
+  rol_permisos: [['rol-permisos'], ['mis-permisos']],
+  usuarios_roles: [['usuarios'], ['mis-roles'], ['mis-permisos']],
+
   notificaciones: [['notificaciones']],
   notificaciones_leidas: [['notificaciones']],
   tasas_cambio: [['tasas'], ['tasa-vigente']],
-  perfiles: [['perfiles']],
+  perfiles: [['perfiles'], ['usuarios']],
 }
 
 /**

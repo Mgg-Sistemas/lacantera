@@ -19,6 +19,8 @@ import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { useResumenPanel } from '@/lib/api/tesoreria'
 import { useTablero } from '@/lib/api/compras'
+import { useMisPermisos } from '@/lib/api/usuarios'
+import { moduloDeRuta } from '@/config/navigation'
 import { bolivares, dolares, dolaresRedondos, enteros, hace } from '@/lib/formato'
 
 interface Aviso {
@@ -108,6 +110,7 @@ const iconos = { danger: AlertTriangle, warning: AlertTriangle, info: Info } as 
 export function Dashboard() {
   const { data: r, isPending, error } = useResumenPanel()
   const { data: tarjetas } = useTablero()
+  const { puede } = useMisPermisos()
 
   const hoy = new Date().toLocaleDateString('es-VE', {
     weekday: 'long',
@@ -115,7 +118,22 @@ export function Dashboard() {
     month: 'long',
   })
 
-  const avisos = avisosDe(r)
+  /*
+    El panel solo enseña lo que quien mira puede ver.
+
+    No es pudor: la base ya no le devuelve esas filas, así que el indicador de
+    tesorería le saldría en cero. Y un cero se lee como "no hay plata en las
+    cuentas", que es una afirmación falsa, no un "esto no te toca". Vale más no
+    poner la tarjeta.
+
+    Los avisos se filtran por su propio enlace: si el aviso lleva a un módulo
+    que esta persona no puede abrir, avisarle de algo que no puede ir a
+    resolver solo sirve para inquietarla.
+  */
+  const avisos = avisosDe(r).filter((a) => puede(moduloDeRuta(a.ruta)))
+  const veTesoreria = puede('TESORERIA')
+  const veCompras = puede('COMPRAS')
+  const veInventario = puede('INVENTARIO')
 
   // Lo que espera decisión del gerente, lo más viejo arriba: quien aprueba
   // necesita saber qué lleva más tiempo detenido, no qué llegó de último.
@@ -134,51 +152,62 @@ export function Dashboard() {
         <>
           {/* ---------- Indicadores ---------- */}
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="En cuentas, en divisas"
-              value={dolaresRedondos(r.disponible_usd)}
-              icon={<Landmark />}
-              tone="royal"
-              deltaLabel={`${bolivares(r.disponible_ves)} en bolívares`}
-            />
-            <StatCard
-              label="Por pagar a proveedores"
-              value={dolaresRedondos(r.por_pagar_usd)}
-              icon={<HandCoins />}
-              tone={r.pago_mas_viejo_dias > 7 ? 'warning' : 'info'}
-              deltaLabel={
-                r.por_pagar_n === 0
-                  ? 'Nada pendiente'
-                  : `${r.por_pagar_n} pago${r.por_pagar_n === 1 ? '' : 's'} autorizado${r.por_pagar_n === 1 ? '' : 's'}`
-              }
-            />
-            <StatCard
-              label="Pagado sin recibir"
-              value={dolaresRedondos(r.pagado_sin_recibir_usd)}
-              icon={<Truck />}
-              tone={r.compras_atrasadas > 0 ? 'warning' : 'success'}
-              deltaLabel={
-                r.compras_pagadas_sin_recibir === 0
-                  ? 'Todo lo pagado llegó'
-                  : `${r.compras_pagadas_sin_recibir} orden${r.compras_pagadas_sin_recibir === 1 ? '' : 'es'} en camino`
-              }
-            />
-            <StatCard
-              label="Valor del inventario"
-              value={dolaresRedondos(r.inventario_usd)}
-              icon={<Boxes />}
-              tone="info"
-              deltaLabel={
-                r.articulos_bajo_minimo === 0
-                  ? 'Ningún artículo bajo mínimo'
-                  : `${r.articulos_bajo_minimo} bajo el mínimo`
-              }
-            />
+            {veTesoreria ? (
+              <StatCard
+                label="En cuentas, en divisas"
+                value={dolaresRedondos(r.disponible_usd)}
+                icon={<Landmark />}
+                tone="royal"
+                deltaLabel={`${bolivares(r.disponible_ves)} en bolívares`}
+              />
+            ) : null}
+            {veTesoreria || veCompras ? (
+              <StatCard
+                label="Por pagar a proveedores"
+                value={dolaresRedondos(r.por_pagar_usd)}
+                icon={<HandCoins />}
+                tone={r.pago_mas_viejo_dias > 7 ? 'warning' : 'info'}
+                deltaLabel={
+                  r.por_pagar_n === 0
+                    ? 'Nada pendiente'
+                    : `${r.por_pagar_n} pago${r.por_pagar_n === 1 ? '' : 's'} autorizado${r.por_pagar_n === 1 ? '' : 's'}`
+                }
+              />
+            ) : null}
+            {veCompras ? (
+              <StatCard
+                label="Pagado sin recibir"
+                value={dolaresRedondos(r.pagado_sin_recibir_usd)}
+                icon={<Truck />}
+                tone={r.compras_atrasadas > 0 ? 'warning' : 'success'}
+                deltaLabel={
+                  r.compras_pagadas_sin_recibir === 0
+                    ? 'Todo lo pagado llegó'
+                    : `${r.compras_pagadas_sin_recibir} orden${r.compras_pagadas_sin_recibir === 1 ? '' : 'es'} en camino`
+                }
+              />
+            ) : null}
+            {veInventario ? (
+              <StatCard
+                label="Valor del inventario"
+                value={dolaresRedondos(r.inventario_usd)}
+                icon={<Boxes />}
+                tone="info"
+                deltaLabel={
+                  r.articulos_bajo_minimo === 0
+                    ? 'Ningún artículo bajo mínimo'
+                    : `${r.articulos_bajo_minimo} bajo el mínimo`
+                }
+              />
+            ) : null}
           </div>
 
           <div className="mt-5 grid gap-5 lg:grid-cols-3">
             {/* ---------- Avisos ---------- */}
-            <Card className="lg:col-span-2">
+            {/* Sin la tarjeta de compras al lado, los avisos ocupan el ancho:
+                una columna de un tercio con dos tercios en blanco se lee como
+                que algo no cargó. */}
+            <Card className={veCompras ? 'lg:col-span-2' : 'lg:col-span-3'}>
               <CardHeader
                 title="Requiere atención"
                 subtitle={
@@ -227,6 +256,7 @@ export function Dashboard() {
             </Card>
 
             {/* ---------- Compras, por etapa ---------- */}
+            {veCompras ? (
             <Card>
               <CardHeader title="Compras en curso" subtitle="Dónde está detenida cada una" />
 
@@ -257,6 +287,7 @@ export function Dashboard() {
                 </Button>
               </Link>
             </Card>
+            ) : null}
           </div>
 
           {/* ---------- Aprobaciones ---------- */}

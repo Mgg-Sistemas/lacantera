@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { ChevronDown, X } from 'lucide-react'
-import { navigation } from '@/config/navigation'
-import type { NavItem } from '@/config/navigation'
+import { moduloDeRuta, navigation } from '@/config/navigation'
+import type { NavItem, NavSection } from '@/config/navigation'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib/cn'
 import { useSesion } from '@/lib/sesion'
+import { useMisPermisos } from '@/lib/api/usuarios'
 
 interface SidebarProps {
   collapsed: boolean
@@ -14,9 +15,37 @@ interface SidebarProps {
   onCloseMobile: () => void
 }
 
+/**
+ * El menú de quien está mirando.
+ *
+ * Un enlace a un módulo sin permiso no es un atajo prohibido: es una pantalla
+ * que se abre vacía, porque la base no devuelve las filas. Vale más no
+ * ofrecerla. Mientras los permisos no han llegado se muestra el menú entero —
+ * un riel vacío durante medio segundo se lee como que el sistema se rompió.
+ */
+function menuVisible(puede: (m: string) => boolean, resuelto: boolean): NavSection[] {
+  if (!resuelto) return navigation
+
+  return navigation
+    .map((seccion) => ({
+      ...seccion,
+      items: seccion.items
+        .map((item) => ({
+          ...item,
+          children: item.children?.filter((hijo) => puede(moduloDeRuta(hijo.to))),
+        }))
+        .filter((item) =>
+          item.children ? item.children.length > 0 : puede(moduloDeRuta(item.to ?? '/app')),
+        ),
+    }))
+    .filter((seccion) => seccion.items.length > 0)
+}
+
 export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
   const { pathname } = useLocation()
   const { nombre, usuario, iniciales } = useSesion()
+  const { puede, resuelto } = useMisPermisos()
+  const secciones = menuVisible(puede, resuelto)
 
   // Un grupo abierto a la vez: con ocho módulos, permitir varios abiertos
   // convierte el riel en una lista de cuarenta líneas.
@@ -82,7 +111,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
 
         {/* Navegación */}
         <nav className="scrollbar-none flex-1 overflow-y-auto px-3 pb-4">
-          {navigation.map((section, index) => (
+          {secciones.map((section, index) => (
             <div key={section.label ?? `seccion-${index}`} className={index > 0 ? 'mt-5' : ''}>
               {section.label ? (
                 collapsed ? (
