@@ -68,6 +68,7 @@ export interface MovimientoTesoreria {
   instruccion_id: number | null
   orden_id: number | null
   transferencia_par: number | null
+  nomina_periodo_id: number | null
   movimiento_origen: number | null
   nota: string | null
   registrado_por: string | null
