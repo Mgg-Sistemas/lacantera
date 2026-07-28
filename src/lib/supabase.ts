@@ -16,15 +16,27 @@ import { createClient } from '@supabase/supabase-js'
   equivocado — y como la pantalla de acceso sí carga, parece un problema del
   servidor.
 
-  Ni una URL ni una clave admiten espacios en ninguna posición, así que
-  quitarlos no puede estropear un valor bueno: si hay espacios, sobran. Se
-  reparan en vez de rechazarlos, porque un despliegue que funciona vale más
-  que uno que explica por qué no.
-*/
-const sinEspacios = (valor: string | undefined) => valor?.replace(/\s+/g, '')
+  Quitar los espacios no basta. Probado uno por uno en el navegador: el espacio
+  cero (U+200B) y el byte nulo NO son "espacio" para una expresión regular, y
+  rompen la cabecera igual. Y de ahí salen justo los dos mensajes que se ven en
+  la práctica: "Invalid value" y "String contains non ISO-8859-1 code point".
+  Se cuelan al copiar de un documento, de un correo o de un chat.
 
-const url = sinEspacios(import.meta.env.VITE_SUPABASE_URL)
-const publishableKey = sinEspacios(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+  Por eso no se listan los caracteres malos —siempre falta uno— sino los
+  buenos. Una URL de Supabase y una clave publicable usan alfabetos estrechos y
+  conocidos: letras, dígitos y un puñado de signos. Todo lo que no esté ahí
+  sobra, venga de donde venga. Reparar en vez de rechazar, porque un despliegue
+  que funciona vale más que uno que explica por qué no.
+*/
+const soloLoValido = (valor: string | undefined, permitidos: RegExp) =>
+  valor?.replace(permitidos, '')
+
+// La clave es base64url con puntos (un JWT) o `sb_publishable_…`.
+const url = soloLoValido(import.meta.env.VITE_SUPABASE_URL, /[^A-Za-z0-9:/._~%-]/g)
+const publishableKey = soloLoValido(
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  /[^A-Za-z0-9._~+/=-]/g,
+)
 
 const AYUDA =
   'En local van en .env.local (copia .env.example). En Vercel, en ' +

@@ -180,6 +180,12 @@ export function Login() {
             El acceso lo asigna la administración de la empresa. Si no tienes credenciales,
             escribe a sistemas.
           </p>
+
+          {/* Qué versión es la que está publicada. Diminuto y a propósito: no le
+              dice nada a quien entra a trabajar, y lo dice todo el día que hay
+              que averiguar si el arreglo llegó al servidor o se quedó por el
+              camino. */}
+          <p className="text-ink/25 mt-3 font-mono text-2xs">{__VERSION__}</p>
         </div>
       </div>
     </div>
