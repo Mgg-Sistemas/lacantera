@@ -1,17 +1,41 @@
 import { useId } from 'react'
-import type { TextareaHTMLAttributes } from 'react'
+import type { ChangeEvent, TextareaHTMLAttributes } from 'react'
 import { cn } from '@/lib/cn'
+import { enMayuscula } from '@/lib/texto'
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string
   hint?: string
   error?: string
+  /** Deja el texto tal como se escribe. Ver la nota en `Input`. */
+  sinNormalizar?: boolean
 }
 
-export function Textarea({ label, hint, error, className, id, rows = 3, ...rest }: TextareaProps) {
+export function Textarea({
+  label,
+  hint,
+  error,
+  sinNormalizar = false,
+  className,
+  id,
+  rows = 3,
+  onChange,
+  ...rest
+}: TextareaProps) {
   const generatedId = useId()
   const areaId = id ?? generatedId
   const describedById = `${areaId}-desc`
+
+  // Los motivos y las notas también son datos: se guardan en mayúscula, y aquí
+  // se ven así mientras se escriben en vez de al releerlos después.
+  const alEscribir = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    if (!sinNormalizar) {
+      const cursor = e.target.selectionStart
+      e.target.value = enMayuscula(e.target.value)
+      e.target.setSelectionRange(cursor, cursor)
+    }
+    onChange?.(e)
+  }
 
   return (
     <div className={cn('w-full', className)}>
@@ -22,6 +46,7 @@ export function Textarea({ label, hint, error, className, id, rows = 3, ...rest 
       <textarea
         id={areaId}
         rows={rows}
+        onChange={alEscribir}
         aria-invalid={error ? true : undefined}
         aria-describedby={error || hint ? describedById : undefined}
         className={cn(
