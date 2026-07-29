@@ -89,6 +89,10 @@ export function Landing() {
 
       <footer className="relative z-10 px-6 pb-7 text-center text-xs text-white/40 sm:px-10">
         {EMPRESA.actividad}
+        {/* La versión, también aquí. Es la primera pantalla que ve cualquiera,
+            y saber qué build está publicado no puede depender de haber llegado
+            hasta el formulario de acceso. */}
+        <span className="mt-1.5 block font-mono text-2xs text-white/25">{__VERSION__}</span>
       </footer>
     </div>
   )

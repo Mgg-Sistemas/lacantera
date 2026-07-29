@@ -31,6 +31,7 @@ import { navigation } from '@/config/navigation'
 import { SesionProvider, useSesion } from '@/lib/sesion'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { Logo } from '@/components/Logo'
+import { AvisoVersion } from '@/components/AvisoVersion'
 
 /**
  * Pantallas ya construidas, por ruta.
@@ -140,6 +141,9 @@ function RutaPublica({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <SesionProvider>
+      {/* Fuera del enrutador: da igual en qué pantalla esté quien lo lea. */}
+      <AvisoVersion />
+
       <BrowserRouter>
         <Routes>
           {/* La portada es la única pantalla sin guardián: se ve con sesión y
