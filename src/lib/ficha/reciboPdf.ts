@@ -361,7 +361,21 @@ function hoja(doc: Doc, d: DatosRecibo) {
   }
 }
 
-export async function descargarRecibo(d: DatosRecibo): Promise<void> {
+/**
+ * El PDF armado, sin guardarlo.
+ *
+ * Antes esto terminaba en `doc.save(...)` y el archivo caía en la carpeta de
+ * descargas sin que nadie lo hubiera visto. Para un recibo que hay que revisar
+ * antes de repartir, eso obliga a bajarlo, abrirlo y borrarlo si estaba mal.
+ * Devolver el blob deja que la pantalla lo enseñe primero y que la persona
+ * decida si se lo queda.
+ */
+export interface PdfArmado {
+  blob: Blob
+  nombre: string
+}
+
+export async function armarRecibo(d: DatosRecibo): Promise<PdfArmado> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
@@ -374,11 +388,17 @@ export async function descargarRecibo(d: DatosRecibo): Promise<void> {
   })
 
   const apellido = d.nombreCompleto.split(' ').pop()?.toLowerCase() ?? ''
-  doc.save(`recibo-${d.periodo}-${d.ficha}-${apellido}.pdf`)
+  return {
+    blob: doc.output('blob'),
+    nombre: `recibo-${d.periodo}-${d.ficha}-${apellido}.pdf`,
+  }
 }
 
 /** Todos los del período, uno por hoja, para repartir de una sentada. */
-export async function descargarRecibos(recibos: DatosRecibo[], periodo: string): Promise<void> {
+export async function armarRecibos(
+  recibos: DatosRecibo[],
+  periodo: string,
+): Promise<PdfArmado> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
@@ -393,5 +413,5 @@ export async function descargarRecibos(recibos: DatosRecibo[], periodo: string):
     author: EMPRESA.razonSocial,
   })
 
-  doc.save(`recibos-${periodo}.pdf`)
+  return { blob: doc.output('blob'), nombre: `recibos-${periodo}.pdf` }
 }

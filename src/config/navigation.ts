@@ -98,13 +98,18 @@ export const navigation: NavSection[] = [
         ],
       },
       {
+        // El catálogo y los almacenes vivían en Configuración, y ahí no los
+        // encontraba quien los usa: los mantiene el almacenista, no quien
+        // administra el sistema. Lo que se guarda y dónde se guarda es
+        // inventario, aunque no se mueva todos los días.
         label: 'Inventario',
         icon: Boxes,
         children: [
           { label: 'Existencias', to: '/app/inventario/existencias' },
           { label: 'Movimientos', to: '/app/inventario/movimientos' },
-          { label: 'Conteos físicos', to: '/app/inventario/conteos' },
           { label: 'Transferencias', to: '/app/inventario/transferencias' },
+          { label: 'Catálogo de artículos', to: '/app/inventario/articulos' },
+          { label: 'Almacenes y patios', to: '/app/inventario/almacenes' },
         ],
       },
       {
@@ -181,9 +186,8 @@ export const navigation: NavSection[] = [
         icon: Settings,
         children: [
           { label: 'Usuarios y roles', to: '/app/config/usuarios' },
-          { label: 'Catálogo de artículos', to: '/app/config/articulos' },
-          { label: 'Almacenes y patios', to: '/app/config/almacenes' },
-          { label: 'Parámetros fiscales', to: '/app/config/fiscal' },
+          { label: 'Datos de la empresa', to: '/app/config/empresa' },
+          { label: 'Documentos legales', to: '/app/config/documentos' },
         ],
       },
     ],

@@ -223,6 +223,33 @@ export function useRegistrarAjuste() {
   )
 }
 
+/**
+ * Traslado entre almacenes.
+ *
+ * Devuelve el id de la salida, que es la cabeza de la pareja: la entrada al
+ * destino cuelga de ella. Quien quiera deshacerlo reversa esa y caen las dos.
+ */
+export function useTransferir() {
+  return useAccionInventario(
+    (t: {
+      origen_id: number
+      destino_id: number
+      articulo_id: number
+      cantidad: number
+      motivo: string
+      fecha?: string
+    }) =>
+      rpc<number>('transferir_existencia', {
+        p_origen_id: t.origen_id,
+        p_destino_id: t.destino_id,
+        p_articulo_id: t.articulo_id,
+        p_cantidad: t.cantidad,
+        p_motivo: t.motivo,
+        p_fecha: t.fecha || null,
+      }),
+  )
+}
+
 export function useReversarMovimiento() {
   return useAccionInventario((r: { id: number; motivo: string }) =>
     rpc<number>('reversar_movimiento', { p_id: r.id, p_motivo: r.motivo }),
