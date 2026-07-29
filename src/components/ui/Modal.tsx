@@ -32,17 +32,32 @@ export function Modal({
 }: ModalProps) {
   const panel = useRef<HTMLDivElement>(null)
 
+  /*
+    `onCerrar` se lee de una referencia y no de las dependencias del efecto.
+
+    Cada pantalla lo escribe en el sitio —`onCerrar={() => setEdicion(null)}`—,
+    así que es una función distinta en cada render. Puesta como dependencia, el
+    efecto se rehacía con cada tecla y volvía a mover el foco al panel: se
+    escribía una letra y había que hacer clic otra vez para escribir la
+    siguiente. Cualquier modal con un campo de texto quedaba inservible.
+  */
+  const alCerrar = useRef(onCerrar)
+  useEffect(() => {
+    alCerrar.current = onCerrar
+  })
+
   useEffect(() => {
     if (!abierto) return
 
     const alPulsar = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCerrar()
+      if (e.key === 'Escape') alCerrar.current()
     }
     document.addEventListener('keydown', alPulsar)
 
     // El foco entra al panel: sin esto, tabular desde el modal recorre la
-    // página de detrás, que el usuario no puede ver.
-    panel.current?.focus()
+    // página de detrás, que el usuario no puede ver. Solo si no está ya
+    // dentro — si alguien está escribiendo, moverlo es quitarle el cursor.
+    if (!panel.current?.contains(document.activeElement)) panel.current?.focus()
 
     // Bloquear el desplazamiento de fondo. En móvil, sin esto, el dedo mueve
     // la página y el modal parece pegado a la nada.
@@ -53,7 +68,7 @@ export function Modal({
       document.removeEventListener('keydown', alPulsar)
       document.body.style.overflow = previo
     }
-  }, [abierto, onCerrar])
+  }, [abierto])
 
   if (!abierto) return null
 
