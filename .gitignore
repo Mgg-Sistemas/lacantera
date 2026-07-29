@@ -55,3 +55,24 @@ supabase/.temp
 # El historial de git es permanente: si uno de estos entra una vez, quitarlo
 # despues no lo saca. Por eso se corta aqui y no en la revision.
 public/*.pdf
+
+# Nominas y listados de personal en hoja de calculo.
+#
+# El libro de nomina lleva nombre, cedula, sueldo y numero de cuenta bancaria de
+# cada trabajador. Este repositorio es publico y su historial es permanente: un
+# archivo asi, commiteado una vez, queda expuesto para siempre aunque se borre
+# al minuto siguiente.
+#
+# Esos datos ya estan cargados en la base, detras del acceso y de las politicas
+# que solo dejan verlos a RRHH, gerencia y tesoreria. El archivo se queda en el
+# equipo de quien lo trabaja.
+*.xlsx
+*.xls
+*.csv
+
+# Cargas de datos reales de la empresa.
+#
+# En `supabase/migrations/` va como funciona el sistema y se versiona entero.
+# Aqui van los datos: el personal con su cedula y su cuenta, el tabulador con lo
+# que gana cada cargo. Ver supabase/CARGAS.md.
+supabase/cargas/

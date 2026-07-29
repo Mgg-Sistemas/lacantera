@@ -4,29 +4,36 @@
  * Es una lista cerrada a propósito: escrito a mano, el mismo banco aparece
  * como "Banesco", "banesco" y "BANESCO S.A.", y a la hora de conciliar tres
  * cuentas del mismo sitio parecen tres bancos distintos.
+ *
+ * En mayúscula y sin tildes porque así es como la base los guarda desde que
+ * todo el sistema se normaliza al escribir. Si esta lista los escribiera "en
+ * bonito", el desplegable de banco de una ficha ya guardada aparecería vacío:
+ * el valor almacenado —"0105 · MERCANTIL"— no coincidiría con ninguna de sus
+ * opciones, y quien la abriera para corregir un teléfono le borraría el banco
+ * sin enterarse.
  */
 export const BANCOS = [
-  '0102 · Banco de Venezuela',
-  '0104 · Venezolano de Crédito',
-  '0105 · Mercantil',
-  '0108 · Provincial',
-  '0114 · Bancaribe',
-  '0115 · Exterior',
-  '0128 · Banco Caroní',
-  '0134 · Banesco',
-  '0137 · Sofitasa',
-  '0138 · Banco Plaza',
-  '0151 · BFC Banco Fondo Común',
-  '0156 · 100% Banco',
-  '0157 · DelSur',
-  '0163 · Banco del Tesoro',
-  '0166 · Banco Agrícola de Venezuela',
-  '0168 · Bancrecer',
-  '0169 · Mi Banco',
-  '0171 · Banco Activo',
-  '0172 · Bancamiga',
-  '0174 · Banplus',
-  '0175 · Banco Bicentenario',
-  '0177 · Banfanb',
-  '0191 · BNC Banco Nacional de Crédito',
+  '0102 · BANCO DE VENEZUELA',
+  '0104 · VENEZOLANO DE CREDITO',
+  '0105 · MERCANTIL',
+  '0108 · PROVINCIAL',
+  '0114 · BANCARIBE',
+  '0115 · EXTERIOR',
+  '0128 · BANCO CARONI',
+  '0134 · BANESCO',
+  '0137 · SOFITASA',
+  '0138 · BANCO PLAZA',
+  '0151 · BFC BANCO FONDO COMUN',
+  '0156 · 100% BANCO',
+  '0157 · DELSUR',
+  '0163 · BANCO DEL TESORO',
+  '0166 · BANCO AGRICOLA DE VENEZUELA',
+  '0168 · BANCRECER',
+  '0169 · MI BANCO',
+  '0171 · BANCO ACTIVO',
+  '0172 · BANCAMIGA',
+  '0174 · BANPLUS',
+  '0175 · BANCO BICENTENARIO',
+  '0177 · BANFANB',
+  '0191 · BNC BANCO NACIONAL DE CREDITO',
 ]

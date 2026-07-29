@@ -42,7 +42,12 @@ const AFECTA: Record<string, string[][]> = {
   cuentas_tesoreria: [['tesoreria']],
   tesoreria_movimientos: [['tesoreria'], ['nomina']],
 
-  empleados: [['nomina']],
+  // El tabulador decide sueldos: al tocarlo cambia la lista de quién está
+  // desfasado, y con ella el botón de sincronizar. Va en las dos claves porque
+  // el personal también muestra el cargo que sale de aquí.
+  nomina_tabulador: [['tabulador'], ['nomina']],
+
+  empleados: [['nomina'], ['tabulador']],
   nomina_periodos: [['nomina']],
   nomina_recibos: [['nomina']],
   nomina_recibo_lineas: [['nomina']],

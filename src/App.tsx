@@ -71,6 +71,9 @@ const Parametros = lazy(() =>
 const Personal = lazy(() => import('@/pages/nomina/Personal').then((m) => ({ default: m.Personal })))
 const Procesos = lazy(() => import('@/pages/nomina/Procesos').then((m) => ({ default: m.Procesos })))
 const Recibos = lazy(() => import('@/pages/nomina/Recibos').then((m) => ({ default: m.Recibos })))
+const Tabulador = lazy(() =>
+  import('@/pages/nomina/Tabulador').then((m) => ({ default: m.Tabulador })),
+)
 const Cuentas = lazy(() =>
   import('@/pages/tesoreria/Cuentas').then((m) => ({ default: m.Cuentas })),
 )
@@ -108,6 +111,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,
   '/app/nomina/personal': <Personal />,
+  '/app/nomina/tabulador': <Tabulador />,
   '/app/nomina/asistencia': <Asistencia />,
   '/app/nomina/procesos': <Procesos />,
   '/app/nomina/recibos': <Recibos />,
