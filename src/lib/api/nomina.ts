@@ -298,7 +298,9 @@ export function useConceptos() {
 export interface Parametro {
   id: number
   clave: string
-  valor: string
+  /** Nulo cuando la unidad es TEXTO: entonces lo que vale está en valor_texto. */
+  valor: string | null
+  valor_texto: string | null
   unidad: string
   vigencia_desde: string
   vigencia_hasta: string | null
@@ -600,19 +602,60 @@ export function useGuardarParametro() {
   return useAccionNomina(
     (p: {
       clave: string
-      valor: number
       unidad: string
       desde: string
       descripcion: string
+      /** Para las unidades numéricas. */
+      valor?: number
+      /** Solo para la unidad TEXTO. */
+      texto?: string
       fuente?: string
     }) =>
       rpc<number>('guardar_parametro_nomina', {
         p_clave: p.clave,
-        p_valor: p.valor,
         p_unidad: p.unidad,
         p_desde: p.desde,
         p_descripcion: p.descripcion,
+        // La base rechaza la combinación que no toca; aquí no se manda de más.
+        p_valor: p.unidad === 'TEXTO' ? null : (p.valor ?? null),
+        p_texto: p.unidad === 'TEXTO' ? (p.texto ?? null) : null,
         p_fuente: p.fuente || null,
       }),
   )
+}
+
+/**
+ * Quién firma por la empresa, hoy.
+ *
+ * Los parámetros llevan vigencia, así que de cada clave puede haber varias
+ * filas; la buena es la que ya empezó y no se ha cerrado. Se lee de la misma
+ * consulta que ya trae los parámetros, sin pedir nada nuevo.
+ *
+ * Los campos sin llenar salen vacíos y el recibo los omite. Un papel con el
+ * renglón en blanco se corrige; uno firmado por alguien inventado, no.
+ */
+export function useFirmaRrhh() {
+  const { data, isPending } = useParametros()
+
+  const hoy = new Date().toISOString().slice(0, 10)
+  const vigente = (clave: string) => {
+    const p = (data ?? []).find(
+      (x) =>
+        x.clave === clave &&
+        x.vigencia_desde <= hoy &&
+        (x.vigencia_hasta === null || x.vigencia_hasta >= hoy),
+    )
+    const v = p?.valor_texto?.trim()
+    // "Por definir" es lo que siembra la migración: es un hueco, no un nombre.
+    return !v || v === 'Por definir' ? '' : v
+  }
+
+  return {
+    isPending,
+    firma: {
+      nombre: vigente('RRHH_FIRMA_NOMBRE'),
+      cargo: vigente('RRHH_FIRMA_CARGO'),
+      cedula: vigente('RRHH_FIRMA_CEDULA'),
+    },
+  }
 }

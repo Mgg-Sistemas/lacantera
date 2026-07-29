@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Outlet } from 'react-router'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
+import { Cargando } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useTiempoReal } from '@/lib/tiempoReal'
@@ -60,8 +61,14 @@ export function AppLayout() {
           onOpenMobile={() => setMobileOpen(true)}
         />
 
+        {/* Cada pantalla llega en su propio archivo y se pide al entrar en
+            ella. La espera va aquí dentro, no encima de todo: el menú y la
+            barra siguen puestos, así que se ve una pantalla cargando y no la
+            aplicación reiniciándose. */}
         <main className="px-4 pb-10 sm:px-6">
-          <Outlet />
+          <Suspense fallback={<Cargando />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

@@ -1,37 +1,91 @@
-import type { ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
-import { AppLayout } from '@/layouts/AppLayout'
-import { ExigePermiso } from '@/layouts/ExigePermiso'
-import { Dashboard } from '@/pages/Dashboard'
 import { Landing } from '@/pages/Landing'
-import { ExigeClaveNueva, MiCuenta } from '@/pages/MiCuenta'
 import { Login } from '@/pages/Login'
 import { ModuloPendiente } from '@/pages/ModuloPendiente'
-import { Tasas } from '@/pages/Tasas'
-import { Almacenes } from '@/pages/config/Almacenes'
-import { Articulos } from '@/pages/config/Articulos'
-import { Usuarios } from '@/pages/config/Usuarios'
-import { Existencias } from '@/pages/inventario/Existencias'
-import { Movimientos } from '@/pages/inventario/Movimientos'
-import { Asistencia } from '@/pages/nomina/Asistencia'
-import { FichaTrabajador } from '@/pages/nomina/FichaTrabajador'
-import { Parametros } from '@/pages/nomina/Parametros'
-import { Personal } from '@/pages/nomina/Personal'
-import { Procesos } from '@/pages/nomina/Procesos'
-import { Recibos } from '@/pages/nomina/Recibos'
-import { Cuentas } from '@/pages/tesoreria/Cuentas'
-import { MovimientosTesoreria } from '@/pages/tesoreria/Movimientos'
-import { Pagos } from '@/pages/tesoreria/Pagos'
-import { PorPagar } from '@/pages/tesoreria/PorPagar'
-import { DetalleCompra } from '@/pages/compras/DetalleCompra'
-import { NuevoPedido } from '@/pages/compras/NuevoPedido'
-import { Proveedores } from '@/pages/compras/Proveedores'
-import { TableroCompras } from '@/pages/compras/Tablero'
 import { navigation } from '@/config/navigation'
 import { SesionProvider, useSesion } from '@/lib/sesion'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { Logo } from '@/components/Logo'
 import { AvisoVersion } from '@/components/AvisoVersion'
+
+/*
+  Cada pantalla, en su propio archivo.
+
+  Con todo junto, entrar al sistema costaba descargar 154 kB comprimidos antes
+  de ver el formulario de acceso: la nómina entera, la tesorería, las compras y
+  el inventario viajaban aunque solo se fuera a mirar el panel. En la oficina no
+  se nota; en un teléfono en la cantera, con la señal que hay, sí.
+
+  Ahora cada módulo se pide al entrar en él. La portada y el acceso siguen
+  viniendo de entrada —son la primera pantalla y no pueden esperar a un segundo
+  viaje—, y `ModuloPendiente` también, porque es un aviso de cuatro líneas y
+  partirlo costaría más que traerlo.
+
+  Los `.then(...)` están porque estas pantallas se exportan por su nombre y no
+  por defecto: es el precio de no tener veinte archivos llamados `index`.
+*/
+// El armazón también. Quien está en la portada no ha entrado al sistema: no
+// necesita el menú lateral, ni la barra superior, ni los iconos de los once
+// módulos. Traérselos es cobrarle el sistema entero por mirar la puerta.
+const AppLayout = lazy(() => import('@/layouts/AppLayout').then((m) => ({ default: m.AppLayout })))
+const ExigePermiso = lazy(() =>
+  import('@/layouts/ExigePermiso').then((m) => ({ default: m.ExigePermiso })),
+)
+
+const Dashboard = lazy(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })))
+const MiCuenta = lazy(() => import('@/pages/MiCuenta').then((m) => ({ default: m.MiCuenta })))
+const ExigeClaveNueva = lazy(() =>
+  import('@/pages/MiCuenta').then((m) => ({ default: m.ExigeClaveNueva })),
+)
+const Tasas = lazy(() => import('@/pages/Tasas').then((m) => ({ default: m.Tasas })))
+const Almacenes = lazy(() =>
+  import('@/pages/config/Almacenes').then((m) => ({ default: m.Almacenes })),
+)
+const Articulos = lazy(() =>
+  import('@/pages/config/Articulos').then((m) => ({ default: m.Articulos })),
+)
+const Usuarios = lazy(() => import('@/pages/config/Usuarios').then((m) => ({ default: m.Usuarios })))
+const Existencias = lazy(() =>
+  import('@/pages/inventario/Existencias').then((m) => ({ default: m.Existencias })),
+)
+const Movimientos = lazy(() =>
+  import('@/pages/inventario/Movimientos').then((m) => ({ default: m.Movimientos })),
+)
+const Asistencia = lazy(() =>
+  import('@/pages/nomina/Asistencia').then((m) => ({ default: m.Asistencia })),
+)
+const FichaTrabajador = lazy(() =>
+  import('@/pages/nomina/FichaTrabajador').then((m) => ({ default: m.FichaTrabajador })),
+)
+const Parametros = lazy(() =>
+  import('@/pages/nomina/Parametros').then((m) => ({ default: m.Parametros })),
+)
+const Personal = lazy(() => import('@/pages/nomina/Personal').then((m) => ({ default: m.Personal })))
+const Procesos = lazy(() => import('@/pages/nomina/Procesos').then((m) => ({ default: m.Procesos })))
+const Recibos = lazy(() => import('@/pages/nomina/Recibos').then((m) => ({ default: m.Recibos })))
+const Cuentas = lazy(() =>
+  import('@/pages/tesoreria/Cuentas').then((m) => ({ default: m.Cuentas })),
+)
+const MovimientosTesoreria = lazy(() =>
+  import('@/pages/tesoreria/Movimientos').then((m) => ({ default: m.MovimientosTesoreria })),
+)
+const Pagos = lazy(() => import('@/pages/tesoreria/Pagos').then((m) => ({ default: m.Pagos })))
+const PorPagar = lazy(() =>
+  import('@/pages/tesoreria/PorPagar').then((m) => ({ default: m.PorPagar })),
+)
+const DetalleCompra = lazy(() =>
+  import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
+)
+const NuevoPedido = lazy(() =>
+  import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
+)
+const Proveedores = lazy(() =>
+  import('@/pages/compras/Proveedores').then((m) => ({ default: m.Proveedores })),
+)
+const TableroCompras = lazy(() =>
+  import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),
+)
 
 /**
  * Pantallas ya construidas, por ruta.
@@ -125,7 +179,15 @@ function ExigeClavePropia({ children }: { children: ReactNode }) {
   const { data: yo, isPending } = useMiPerfil()
 
   if (isPending) return <Cargando />
-  if (yo?.debe_cambiar_clave) return <ExigeClaveNueva nombre={yo.nombre} />
+  // Esta pantalla se muestra fuera del armazón, así que trae su propia espera:
+  // la de `AppLayout` cuelga del `Outlet`, y aquí todavía no hemos llegado.
+  if (yo?.debe_cambiar_clave) {
+    return (
+      <Suspense fallback={<Cargando />}>
+        <ExigeClaveNueva nombre={yo.nombre} />
+      </Suspense>
+    )
+  }
   return children
 }
 
@@ -164,7 +226,12 @@ export default function App() {
             element={
               <RutaProtegida>
                 <ExigeClavePropia>
-                  <AppLayout />
+                  {/* El armazón llega en su propio archivo. Esta espera es la
+                      de traerlo; la de cada pantalla vive dentro de él, para
+                      que el menú no parpadee al cambiar de módulo. */}
+                  <Suspense fallback={<Cargando />}>
+                    <AppLayout />
+                  </Suspense>
                 </ExigeClavePropia>
               </RutaProtegida>
             }
