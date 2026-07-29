@@ -11,8 +11,9 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ESTADOS_PERIODO, useFirmaRrhh, usePeriodos, useRecibos } from '@/lib/api/nomina'
 import type { Periodo, Recibo } from '@/lib/api/nomina'
 import { useSesion } from '@/lib/sesion'
-import { descargarRecibo, descargarRecibos } from '@/lib/ficha/reciboPdf'
-import type { DatosRecibo, FirmaEmpresa } from '@/lib/ficha/reciboPdf'
+import { armarRecibo, armarRecibos } from '@/lib/ficha/reciboPdf'
+import type { DatosRecibo, FirmaEmpresa, PdfArmado } from '@/lib/ficha/reciboPdf'
+import { VisorPdf } from '@/components/VisorPdf'
 import { bolivares, dolares, fecha } from '@/lib/formato'
 
 /**
@@ -76,6 +77,9 @@ export function Recibos() {
   const { data, isPending, error } = useRecibos(periodoId)
   const [abierto, setAbierto] = useState<Recibo | null>(null)
   const [imprimiendo, setImprimiendo] = useState(false)
+  // Se enseña antes de descargarlo: un recibo con la firma sin llenar o el
+  // periodo equivocado se ve en dos segundos y no llega al papel.
+  const [vista, setVista] = useState<(PdfArmado & { cuantos: number }) | null>(null)
 
   const ordenados = [...(data ?? [])].sort((a, b) =>
     `${a.empleado?.apellidos}`.localeCompare(`${b.empleado?.apellidos}`),
@@ -86,8 +90,9 @@ export function Recibos() {
     setImprimiendo(true)
     try {
       const hojas = recibos.map((r) => paraImprimir(r, periodo, firma, nombre))
-      if (hojas.length === 1) await descargarRecibo(hojas[0])
-      else await descargarRecibos(hojas, periodo.numero)
+      const pdf =
+        hojas.length === 1 ? await armarRecibo(hojas[0]) : await armarRecibos(hojas, periodo.numero)
+      setVista({ ...pdf, cuantos: hojas.length })
     } finally {
       setImprimiendo(false)
     }
@@ -346,6 +351,19 @@ export function Recibos() {
           </div>
         </Modal>
       ) : null}
+      <VisorPdf
+        abierto={vista !== null}
+        onCerrar={() => setVista(null)}
+        blob={vista?.blob ?? null}
+        nombreArchivo={vista?.nombre ?? 'recibo.pdf'}
+        titulo={vista && vista.cuantos > 1 ? `Recibos del periodo ${periodo?.numero ?? ''}` : 'Recibo de pago'}
+        descripcion={
+          vista
+            ? `${vista.cuantos} recibo${vista.cuantos === 1 ? '' : 's'} · original y copia, para firmar a mano`
+            : undefined
+        }
+      />
+
     </>
   )
 }

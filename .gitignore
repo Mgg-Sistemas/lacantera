@@ -44,3 +44,14 @@ supabase/.temp
 .playwright-mcp
 *.png
 !public/**/*.png
+
+# Documentos legales de la empresa.
+#
+# `public/` se sirve en internet SIN clave y ademas viaja al repositorio, que es
+# publico. El acta de alianza con la Gobernacion, el RIF y lo que venga detras
+# son papeles de la empresa: van al almacenamiento privado de Supabase, detras
+# del acceso, y se leen desde la pantalla de Documentos legales.
+#
+# El historial de git es permanente: si uno de estos entra una vez, quitarlo
+# despues no lo saca. Por eso se corta aqui y no en la revision.
+public/*.pdf

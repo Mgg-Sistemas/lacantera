@@ -40,10 +40,17 @@ const ExigeClaveNueva = lazy(() =>
 )
 const Tasas = lazy(() => import('@/pages/Tasas').then((m) => ({ default: m.Tasas })))
 const Almacenes = lazy(() =>
-  import('@/pages/config/Almacenes').then((m) => ({ default: m.Almacenes })),
+  import('@/pages/inventario/Almacenes').then((m) => ({ default: m.Almacenes })),
 )
 const Articulos = lazy(() =>
-  import('@/pages/config/Articulos').then((m) => ({ default: m.Articulos })),
+  import('@/pages/inventario/Articulos').then((m) => ({ default: m.Articulos })),
+)
+const Transferencias = lazy(() =>
+  import('@/pages/inventario/Transferencias').then((m) => ({ default: m.Transferencias })),
+)
+const Empresa = lazy(() => import('@/pages/config/Empresa').then((m) => ({ default: m.Empresa })))
+const Documentos = lazy(() =>
+  import('@/pages/config/Documentos').then((m) => ({ default: m.Documentos })),
 )
 const Usuarios = lazy(() => import('@/pages/config/Usuarios').then((m) => ({ default: m.Usuarios })))
 const Existencias = lazy(() =>
@@ -110,8 +117,11 @@ const paginas: Record<string, ReactNode> = {
   '/app/tesoreria/por-pagar': <PorPagar />,
   '/app/tesoreria/movimientos': <MovimientosTesoreria />,
   '/app/config/usuarios': <Usuarios />,
-  '/app/config/articulos': <Articulos />,
-  '/app/config/almacenes': <Almacenes />,
+  '/app/inventario/articulos': <Articulos />,
+  '/app/inventario/almacenes': <Almacenes />,
+  '/app/inventario/transferencias': <Transferencias />,
+  '/app/config/empresa': <Empresa />,
+  '/app/config/documentos': <Documentos />,
   '/app/tasas': <Tasas />,
 }
 
