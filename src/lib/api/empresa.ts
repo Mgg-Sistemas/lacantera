@@ -164,6 +164,66 @@ export function useSubirDocumento() {
   })
 }
 
+/**
+ * Corregir un documento ya cargado.
+ *
+ * El archivo es opcional: sin él solo se arreglan los datos y no viaja nada por
+ * la red, que con papeles de 17 MB es la diferencia entre corregir una fecha y
+ * no corregirla. Si viene uno nuevo, se sube primero y solo después se cambia
+ * el apunte — al revés, un fallo a mitad dejaría la fila señalando un archivo
+ * que no existe.
+ */
+export function useActualizarDocumento() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (d: {
+      id: number
+      tipo: string
+      nombre: string
+      emitido_el?: string
+      vence_el?: string
+      nota?: string
+      /** Solo cuando se reemplaza el papel. */
+      archivo?: File | null
+    }) => {
+      let ruta: string | null = null
+
+      if (d.archivo) {
+        const extension = d.archivo.name.split('.').pop()?.toLowerCase() ?? 'pdf'
+        ruta = `${d.tipo}/${crypto.randomUUID()}.${extension}`
+        const { error } = await supabase.storage.from(BUCKET).upload(ruta, d.archivo, {
+          contentType: d.archivo.type || 'application/pdf',
+          upsert: false,
+        })
+        if (error) throw new Error(`No se pudo subir el archivo: ${error.message}`)
+      }
+
+      try {
+        // Devuelve la ruta anterior solo si hubo reemplazo. Si no, null, y
+        // entonces no hay nada que llevarse del almacén.
+        const anterior = await rpc<string | null>('actualizar_documento_legal', {
+          p_id: d.id,
+          p_tipo: d.tipo,
+          p_nombre: d.nombre,
+          p_emitido_el: d.emitido_el || null,
+          p_vence_el: d.vence_el || null,
+          p_nota: d.nota || null,
+          p_archivo: ruta,
+          p_mime: d.archivo?.type || null,
+          p_bytes: d.archivo?.size ?? null,
+        })
+
+        if (anterior) await supabase.storage.from(BUCKET).remove([anterior])
+      } catch (e) {
+        if (ruta) await supabase.storage.from(BUCKET).remove([ruta])
+        throw e
+      }
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['documentos-legales'] }),
+  })
+}
+
 export function useEliminarDocumento() {
   const qc = useQueryClient()
   return useMutation({
@@ -176,11 +236,36 @@ export function useEliminarDocumento() {
   })
 }
 
-/** Baja el archivo para verlo en el visor. Nunca deja una dirección pública. */
-export async function descargarDocumento(ruta: string): Promise<Blob> {
-  const { data, error } = await supabase.storage.from(BUCKET).download(ruta)
-  if (error) throw new Error(`No se pudo abrir el documento: ${error.message}`)
-  return data
+/**
+ * Cuánto vale una dirección firmada. Diez minutos.
+ *
+ * Lo justo para abrir el papel, mirarlo y descargarlo si hace falta. Pasado
+ * ese rato deja de servir, así que aunque alguien copie la dirección de la
+ * barra y la reenvíe, al otro lado no habrá nada.
+ */
+const VIGENCIA_ENLACE = 600
+
+/**
+ * La dirección para verlo, no el archivo entero.
+ *
+ * Antes esto bajaba el documento completo a memoria y solo entonces lo
+ * enseñaba: con la alianza, 16,5 MB por la red de la cantera antes de ver la
+ * primera línea, y un botón diciendo "Abriendo…" sin señal de avance. Con una
+ * dirección firmada el visor del navegador pide el archivo por trozos y pinta
+ * la primera página en cuanto la tiene, que es lo que se siente como abrir.
+ *
+ * Sigue sin haber nada público: la dirección la firma el servidor contra la
+ * sesión de quien la pide y caduca en diez minutos.
+ */
+export async function urlDocumento(ruta: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(ruta, VIGENCIA_ENLACE)
+
+  if (error || !data) {
+    throw new Error(`No se pudo abrir el documento: ${error?.message ?? 'sin respuesta'}`)
+  }
+  return data.signedUrl
 }
 
 /** Días que faltan para que venza. Negativo si ya venció; null si no caduca. */

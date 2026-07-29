@@ -58,6 +58,13 @@ const AFECTA: Record<string, string[][]> = {
   rol_permisos: [['rol-permisos'], ['mis-permisos']],
   usuarios_roles: [['usuarios'], ['mis-roles'], ['mis-permisos']],
 
+  // El RIF y el domicilio salen impresos en lo que emite el sistema: quien
+  // tenga un recibo a medias en otra pestaña debe verlos corregidos sin
+  // recargar. Y un documento que alguien acaba de cargar tiene que aparecerle
+  // a quien lo está buscando en ese momento.
+  empresa: [['empresa']],
+  empresa_documentos: [['documentos-legales']],
+
   notificaciones: [['notificaciones']],
   notificaciones_leidas: [['notificaciones']],
   tasas_cambio: [['tasas'], ['tasa-vigente']],
