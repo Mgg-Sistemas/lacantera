@@ -90,6 +90,26 @@ pantalla.
 Estas variables **no se leen del archivo `.env.local`**: ese archivo está en
 `.gitignore` y no llega a Vercel. Se cargan a mano, una vez.
 
+#### Cada valor va una sola vez, en un solo renglón
+
+El campo de Vercel es un cuadro de texto de varias líneas y acepta sin quejarse
+lo que se le eche. Aquí ya pasó: `VITE_SUPABASE_PUBLISHABLE_KEY` acabó con la
+misma clave **pegada cuatro veces, una por renglón**. Cuesta días encontrarlo
+porque el mensaje no menciona ni credenciales ni despliegue —la clave viaja en
+una cabecera HTTP, y un salto de línea dentro de una cabecera hace que el
+navegador rechace la petición con `Failed to execute 'fetch' on 'Window':
+Invalid value`—, y porque **en local funciona**: el `.env.local` la tiene una
+sola vez.
+
+Al pegar, comprobar que el cuadro muestra **un solo renglón**. Si se ve más de
+uno, borrar el campo entero y volver a pegar.
+
+`src/lib/supabase.ts` repara los dos casos por su cuenta, y son opuestos: si
+todos los renglones dicen lo mismo se queda con uno (clave repetida), y si dicen
+cosas distintas los cose (una clave que se envolvió al pegarla). Aun así, el
+campo debe quedar limpio: la reparación es una red, no el sitio donde se
+arregla.
+
 ### 3. Elegir la rama
 
 Vercel publica `main` por defecto. Aquí la rama de trabajo es `develop`, así que
