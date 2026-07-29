@@ -25,6 +25,7 @@ import {
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
+import { useTabulador } from '@/lib/api/tabulador'
 import { BANCOS } from '@/lib/bancos'
 import { dinero, fecha } from '@/lib/formato'
 
@@ -32,6 +33,7 @@ const vacio = {
   cedula: 'V-',
   nombres: '',
   apellidos: '',
+  tabulador_id: '',
   cargo: '',
   departamento: '',
   fecha_ingreso: '',
@@ -77,6 +79,7 @@ function antiguedad(desde: string): string {
 export function Personal() {
   const [verInactivos, setVerInactivos] = useState(false)
   const { data, isPending, error } = useEmpleados(!verInactivos)
+  const niveles = useTabulador()
   const { puede } = useMisRoles()
   const guardar = useGuardarEmpleado()
   const egresar = useEgresarEmpleado()
@@ -106,6 +109,7 @@ export function Personal() {
             cedula: e.cedula,
             nombres: e.nombres,
             apellidos: e.apellidos,
+            tabulador_id: e.tabulador_id ? String(e.tabulador_id) : '',
             cargo: e.cargo,
             departamento: e.departamento ?? '',
             fecha_ingreso: e.fecha_ingreso,
@@ -253,9 +257,18 @@ export function Personal() {
                     </td>
                     <td className="text-ink/70 px-3 py-3 whitespace-nowrap">
                       {fecha(e.fecha_ingreso)}
-                      <span className="text-ink/45 block text-xs">
-                        {e.activo ? antiguedad(e.fecha_ingreso) : `hasta ${fecha(e.fecha_egreso)}`}
-                      </span>
+                      {/* De esta fecha salen la antigüedad, el bono vacacional
+                          y la liquidación. Mientras nadie la haya mirado, lo
+                          que se lee debajo no es un dato: es una suposición. */}
+                      {e.fecha_ingreso_confirmada ? (
+                        <span className="text-ink/45 block text-xs">
+                          {e.activo ? antiguedad(e.fecha_ingreso) : `hasta ${fecha(e.fecha_egreso)}`}
+                        </span>
+                      ) : (
+                        <Chip tone="warning" className="mt-1 flex w-fit">
+                          Por confirmar
+                        </Chip>
+                      )}
                     </td>
                     <td className="px-3 py-3 text-right">
                       <span className="text-ink/85 tabular font-medium whitespace-nowrap">
@@ -400,9 +413,46 @@ export function Personal() {
               onChange={(e) => cambiar({ grupo_sanguineo: e.target.value })}
               opciones={GRUPOS_SANGUINEOS.map((g) => ({ valor: g, etiqueta: g }))}
             />
+            {/* El cargo sale del tabulador y con él viene el sueldo. Se puede
+                dejar sin nivel —hay contratos especiales—, y entonces el cargo
+                se escribe a mano y el sueldo se pone abajo. Lo que no puede
+                pasar es tener nivel y un sueldo que no es el del nivel sin que
+                nadie se entere: de eso avisa la pantalla del tabulador. */}
+            <Select
+              label="Cargo del tabulador"
+              vacio="Fuera del tabulador"
+              hint={
+                edicion.tabulador_id
+                  ? 'Al guardar toma el sueldo de ese nivel.'
+                  : 'Sin nivel, el sueldo de esta ficha se escribe a mano y no sube cuando suba el tabulador.'
+              }
+              value={edicion.tabulador_id}
+              onChange={(e) => {
+                const nivel = (niveles.data ?? []).find((n) => String(n.id) === e.target.value)
+                cambiar(
+                  nivel
+                    ? {
+                        tabulador_id: e.target.value,
+                        cargo: nivel.cargo,
+                        salario_base: nivel.sueldo_mensual,
+                        moneda_salario: nivel.moneda,
+                        base_estipulacion: 'MENSUAL',
+                      }
+                    : { tabulador_id: '' },
+                )
+              }}
+              opciones={(niveles.data ?? [])
+                .filter((n) => n.activo || String(n.id) === edicion.tabulador_id)
+                .map((n) => ({
+                  valor: String(n.id),
+                  etiqueta: `${n.cargo} — ${dinero(n.moneda, n.sueldo_mensual)}`,
+                }))}
+            />
             <Input
               label="Cargo"
               placeholder="Operador de trituradora"
+              hint={edicion.tabulador_id ? 'Lo pone el tabulador.' : undefined}
+              disabled={Boolean(edicion.tabulador_id)}
               value={edicion.cargo}
               onChange={(e) => cambiar({ cargo: e.target.value })}
             />
@@ -415,7 +465,11 @@ export function Personal() {
             <Input
               label="Fecha de ingreso"
               type="date"
-              hint="De aquí salen la antigüedad y las prestaciones."
+              hint={
+                edicion.id && !data?.find((x) => x.id === edicion.id)?.fecha_ingreso_confirmada
+                  ? 'Esta fecha vino de la carga del libro de nómina y nadie la ha revisado. Corrígela: de aquí salen la antigüedad, el bono vacacional y la liquidación.'
+                  : 'De aquí salen la antigüedad y las prestaciones.'
+              }
               value={edicion.fecha_ingreso}
               onChange={(e) => cambiar({ fecha_ingreso: e.target.value })}
             />
@@ -460,6 +514,11 @@ export function Personal() {
                 type="number"
                 step="0.01"
                 inputMode="decimal"
+                hint={
+                  edicion.tabulador_id
+                    ? 'Sale del tabulador. Si lo cambias aquí, esta ficha aparecerá como desfasada hasta que alguien sincronice o corrija el nivel.'
+                    : undefined
+                }
                 value={edicion.salario_base}
                 onChange={(e) => cambiar({ salario_base: e.target.value })}
               />

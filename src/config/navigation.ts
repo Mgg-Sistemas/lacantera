@@ -153,6 +153,7 @@ export const navigation: NavSection[] = [
         icon: Users,
         children: [
           { label: 'Personal', to: '/app/nomina/personal' },
+          { label: 'Tabulador de cargos', to: '/app/nomina/tabulador' },
           { label: 'Novedades del período', to: '/app/nomina/asistencia' },
           { label: 'Procesar nómina', to: '/app/nomina/procesos' },
           { label: 'Recibos de pago', to: '/app/nomina/recibos' },

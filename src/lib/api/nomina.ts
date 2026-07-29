@@ -17,6 +17,18 @@ export interface Empleado {
   cargo: string
   departamento: string | null
   fecha_ingreso: string
+  /**
+   * `false` mientras nadie haya revisado la fecha de ingreso.
+   *
+   * Existe por la carga inicial desde el libro de nómina: ese archivo no traía
+   * fecha de ingreso y hubo que poner una para que la ficha entrara. De esa
+   * fecha salen la antigüedad, el bono vacacional y la liquidación, así que una
+   * inventada que no se distingue de una verdadera es dinero mal calculado sin
+   * que nadie lo note. Se pone en `true` sola al guardar la ficha.
+   */
+  fecha_ingreso_confirmada: boolean
+  /** Nivel del tabulador. Nulo si esta persona está fuera de la escala. */
+  tabulador_id: number | null
   fecha_egreso: string | null
   motivo_egreso: string | null
   fecha_nacimiento: string | null
@@ -339,6 +351,10 @@ function useAccionNomina<A>(fn: (args: A) => Promise<unknown>) {
       void qc.invalidateQueries({ queryKey: ['nomina'] })
       void qc.invalidateQueries({ queryKey: ['tesoreria'] })
       void qc.invalidateQueries({ queryKey: ['notificaciones'] })
+      // Tocar una ficha puede sacarla o meterla en el tabulador: quien tenga
+      // esa pantalla abierta vería un botón de sincronizar que ya no hace nada,
+      // o no lo vería habiendo alguien desfasado.
+      void qc.invalidateQueries({ queryKey: ['tabulador'] })
     },
   })
 }
@@ -374,6 +390,11 @@ export function useGuardarEmpleado() {
       p_telefono: e.telefono || null,
       p_activo: e.activo ?? true,
       p_nota: e.nota || null,
+      // El desplegable manda texto —'' cuando está fuera del tabulador— y la
+      // base espera un bigint. Sin esta conversión, "fuera del tabulador" viaja
+      // como cadena vacía y la función revienta con un error de tipo que no le
+      // dice nada a quien solo quería guardar una ficha.
+      p_tabulador_id: e.tabulador_id ? Number(e.tabulador_id) : null,
     }),
   )
 }
