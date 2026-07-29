@@ -21,9 +21,15 @@ const UNIDADES = [
   { valor: 'HORAS', etiqueta: 'Horas' },
   { valor: 'VECES_SM', etiqueta: 'Veces el salario mínimo' },
   { valor: 'FACTOR', etiqueta: 'Factor' },
+  // No todo parámetro es una cifra: quién firma los recibos por la empresa
+  // también cambia con el tiempo, y por las mismas razones se guarda con
+  // vigencia en vez de sustituirse.
+  { valor: 'TEXTO', etiqueta: 'Texto' },
 ]
 
 function valorLegible(p: Parametro): string {
+  if (p.unidad === 'TEXTO') return p.valor_texto ?? '—'
+
   const n = Number(p.valor)
   const f = n.toLocaleString('es-VE', { maximumFractionDigits: 4 })
   if (p.unidad === 'PORCENTAJE') return `${f} %`
@@ -164,10 +170,26 @@ export function Parametros() {
               </Button>
               <Button
                 disabled={
-                  guardar.isPending || !nuevo.clave || !nuevo.desde || !nuevo.descripcion
+                  guardar.isPending ||
+                  !nuevo.clave ||
+                  !nuevo.desde ||
+                  !nuevo.descripcion ||
+                  !nuevo.valor.trim()
                 }
                 onClick={async () => {
-                  await guardar.mutateAsync({ ...nuevo, valor: Number(nuevo.valor) })
+                  await guardar.mutateAsync({
+                    clave: nuevo.clave,
+                    unidad: nuevo.unidad,
+                    desde: nuevo.desde,
+                    descripcion: nuevo.descripcion,
+                    fuente: nuevo.fuente,
+                    // El mismo campo de la pantalla llega a la base por una
+                    // puerta o por la otra según la unidad. La base rechaza la
+                    // combinación que no toca, así que no se manda de más.
+                    ...(nuevo.unidad === 'TEXTO'
+                      ? { texto: nuevo.valor }
+                      : { valor: Number(nuevo.valor) }),
+                  })
                   setNuevo(null)
                 }}
               >
@@ -199,9 +221,9 @@ export function Parametros() {
             <div className="grid grid-cols-[1fr_auto] gap-2">
               <Input
                 label="Valor nuevo"
-                type="number"
-                step="0.0001"
-                inputMode="decimal"
+                {...(nuevo.unidad === 'TEXTO'
+                  ? { placeholder: 'Ana Rodríguez' }
+                  : { type: 'number', step: '0.0001', inputMode: 'decimal' as const })}
                 value={nuevo.valor}
                 onChange={(e) => setNuevo((n) => (n ? { ...n, valor: e.target.value } : n))}
               />

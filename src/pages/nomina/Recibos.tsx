@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { FileText, Printer } from 'lucide-react'
+import { AlertTriangle, FileText, Printer } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -8,23 +8,90 @@ import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { ESTADOS_PERIODO, usePeriodos, useRecibos } from '@/lib/api/nomina'
-import type { Recibo } from '@/lib/api/nomina'
+import { ESTADOS_PERIODO, useFirmaRrhh, usePeriodos, useRecibos } from '@/lib/api/nomina'
+import type { Periodo, Recibo } from '@/lib/api/nomina'
+import { useSesion } from '@/lib/sesion'
+import { descargarRecibo, descargarRecibos } from '@/lib/ficha/reciboPdf'
+import type { DatosRecibo, FirmaEmpresa } from '@/lib/ficha/reciboPdf'
 import { bolivares, dolares, fecha } from '@/lib/formato'
+
+/**
+ * De lo que hay en pantalla a lo que va al papel.
+ *
+ * El PDF no recibe el registro tal cual: recibe lo que se imprime. Así el
+ * documento no depende de cómo esté hecha la consulta hoy, y el día que cambie
+ * un nombre de columna se corrige aquí y no dentro del dibujo del recibo.
+ */
+function paraImprimir(
+  r: Recibo,
+  periodo: Periodo,
+  firma: FirmaEmpresa,
+  emitidoPor: string,
+): DatosRecibo {
+  return {
+    periodo: periodo.numero,
+    desde: periodo.desde,
+    hasta: periodo.hasta,
+    diasPagados: r.dias_pagados,
+
+    ficha: r.empleado?.ficha ?? '—',
+    cedula: r.empleado?.cedula ?? '—',
+    nombreCompleto: `${r.empleado?.nombres ?? ''} ${r.empleado?.apellidos ?? ''}`.trim(),
+    cargo: r.empleado?.cargo ?? '—',
+
+    salarioBasicoDiario: r.salario_basico_diario,
+    salarioNormalDiario: r.salario_normal_diario,
+    salarioIntegralDiario: r.salario_integral_diario,
+
+    lineas: r.lineas.map((l) => ({
+      descripcion: l.descripcion,
+      cantidad: l.cantidad,
+      monto: l.monto,
+      tipo: l.tipo,
+      orden: l.orden,
+    })),
+    totalAsignaciones: r.total_asignaciones,
+    totalDeducciones: r.total_deducciones,
+    neto: r.neto,
+    netoUsd: r.neto_usd,
+
+    formaPago: r.empleado?.forma_pago ?? 'EFECTIVO',
+    banco: r.empleado?.banco ?? null,
+    numeroCuenta: r.empleado?.numero_cuenta ?? null,
+
+    firma,
+    emitidoPor,
+  }
+}
 
 export function Recibos() {
   const [params, setParams] = useSearchParams()
   const { data: periodos } = usePeriodos()
+  const { firma } = useFirmaRrhh()
+  const { nombre } = useSesion()
 
   const periodoId = params.get('periodo') ? Number(params.get('periodo')) : undefined
   const periodo = (periodos ?? []).find((p) => p.id === periodoId)
 
   const { data, isPending, error } = useRecibos(periodoId)
   const [abierto, setAbierto] = useState<Recibo | null>(null)
+  const [imprimiendo, setImprimiendo] = useState(false)
 
   const ordenados = [...(data ?? [])].sort((a, b) =>
     `${a.empleado?.apellidos}`.localeCompare(`${b.empleado?.apellidos}`),
   )
+
+  const sacar = async (recibos: Recibo[]) => {
+    if (!periodo) return
+    setImprimiendo(true)
+    try {
+      const hojas = recibos.map((r) => paraImprimir(r, periodo, firma, nombre))
+      if (hojas.length === 1) await descargarRecibo(hojas[0])
+      else await descargarRecibos(hojas, periodo.numero)
+    } finally {
+      setImprimiendo(false)
+    }
+  }
 
   return (
     <>
@@ -70,17 +137,54 @@ export function Recibos() {
       {isPending && periodoId ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
+      {/* Se avisa antes de imprimir, no después. Un lote de cuarenta recibos
+          con el renglón de la firma vacío se reparte igual, y el error se
+          descubre cuando ya están repartidos. */}
+      {ordenados.length > 0 && !firma.nombre ? (
+        <Card className="border-warning/40 bg-warning-soft mb-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="text-warning mt-0.5 size-[18px] shrink-0" />
+            <p className="text-ink/75 text-sm">
+              Los recibos van a salir sin el nombre de quien firma por la empresa. Se pone una
+              sola vez en{' '}
+              <span className="font-medium">Nómina → Parámetros → RRHH_FIRMA_NOMBRE</span>.
+            </p>
+          </div>
+        </Card>
+      ) : null}
+
       {ordenados.length > 0 ? (
         <Card flush>
+          <div className="border-hairline flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3">
+            {/* Se dice qué sale, no cuántas hojas: si el recibo trae muchos
+                conceptos la copia se va a una hoja aparte, y prometer "dos por
+                hoja" sería mentira la mitad de las veces. */}
+            <p className="text-ink/55 text-sm">
+              {ordenados.length} {ordenados.length === 1 ? 'recibo' : 'recibos'} · cada uno con su
+              copia, para firmar a mano
+            </p>
+            <Button
+              variant="outline"
+              icon={<Printer />}
+              disabled={imprimiendo}
+              onClick={() => void sacar(ordenados)}
+            >
+              {imprimiendo ? 'Preparando…' : 'Imprimir todos'}
+            </Button>
+          </div>
+
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[780px] text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Trabajador</th>
                   <th className="px-3 py-3 text-right font-medium">Días</th>
                   <th className="px-3 py-3 text-right font-medium">Asignaciones</th>
                   <th className="px-3 py-3 text-right font-medium">Deducciones</th>
-                  <th className="px-5 py-3 text-right font-medium">Neto</th>
+                  <th className="px-3 py-3 text-right font-medium">Neto</th>
+                  <th className="px-5 py-3 font-medium">
+                    <span className="sr-only">Recibo</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -105,13 +209,30 @@ export function Recibos() {
                     <td className="text-ink/70 tabular px-3 py-3 text-right">
                       {bolivares(r.total_deducciones)}
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-3 py-3 text-right">
                       <span className="text-ink/90 tabular font-semibold whitespace-nowrap">
                         {bolivares(r.neto)}
                       </span>
                       <span className="text-ink/40 tabular block text-xs">
                         {dolares(r.neto_usd)}
                       </span>
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <button
+                        type="button"
+                        title={`Recibo de ${r.empleado?.nombres} ${r.empleado?.apellidos}`}
+                        aria-label={`Imprimir el recibo de ${r.empleado?.nombres} ${r.empleado?.apellidos}`}
+                        disabled={imprimiendo}
+                        // El clic de la fila abre el detalle; este saca el papel
+                        // directamente. Sin detenerlo aquí, haría las dos cosas.
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void sacar([r])
+                        }}
+                        className="text-ink/45 hover:bg-ink/8 hover:text-royal-600 rounded-[6px] p-1.5 transition-colors disabled:opacity-40"
+                      >
+                        <Printer className="size-[17px]" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -134,8 +255,12 @@ export function Recibos() {
               <Button variant="ghost" onClick={() => setAbierto(null)}>
                 Cerrar
               </Button>
-              <Button icon={<Printer />} onClick={() => window.print()}>
-                Imprimir
+              <Button
+                icon={<Printer />}
+                disabled={imprimiendo}
+                onClick={() => void sacar([abierto])}
+              >
+                {imprimiendo ? 'Preparando…' : 'Imprimir recibo'}
               </Button>
             </>
           }
