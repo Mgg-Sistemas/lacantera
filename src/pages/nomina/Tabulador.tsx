@@ -77,21 +77,13 @@ export function Tabulador() {
         description="Cuánto gana cada cargo al mes. El quincenal, el semanal y el diario salen de esa cifra: no se escriben aparte, para que no puedan desfasarse."
         actions={
           puedeRRHH ? (
-            <Button icon={<Plus />} onClick={() => abrir()}>
-              Nuevo cargo
-            </Button>
-          ) : null
-        }
-      />
-
-      {/* -------------------- Quién está fuera de la escala -------------------- */}
-      {puedeRRHH && fuera.length > 0 ? (
-        <Card className="border-warning/30 mb-4 border">
-          <CardHeader
-            title={`${fuera.length} ${fuera.length === 1 ? 'ficha no coincide' : 'fichas no coinciden'} con el tabulador`}
-            subtitle="Sincronizar les baja el sueldo y el nombre del cargo tal como están arriba. Los recibos ya emitidos no cambian; una nómina en borrador sí tomará el sueldo nuevo cuando se vuelva a calcular."
-            action={
+            <>
+              {/* Siempre visible, aunque no haya nada que sincronizar. Un botón
+                  que solo aparece cuando hace falta no se puede encontrar
+                  cuando hace falta: quien no lo ha visto nunca no sabe que
+                  existe. Si no hay desfase, pulsarlo lo dice y no toca nada. */}
               <Button
+                variant="outline"
                 icon={<RefreshCw />}
                 disabled={sincronizar.isPending}
                 onClick={async () => {
@@ -100,8 +92,25 @@ export function Tabulador() {
                 }}
               >
                 {sincronizar.isPending ? 'Sincronizando…' : 'Sincronizar'}
+                {/* Sin margen propio: el botón ya es un flex con `gap`. */}
+                {fuera.length > 0 ? <Chip tone="warning">{fuera.length}</Chip> : null}
               </Button>
-            }
+              <Button icon={<Plus />} onClick={() => abrir()}>
+                Nuevo cargo
+              </Button>
+            </>
+          ) : null
+        }
+      />
+
+      {sincronizar.error ? <ErrorDeCarga error={sincronizar.error} className="mb-4" /> : null}
+
+      {/* -------------------- Quién está fuera de la escala -------------------- */}
+      {puedeRRHH && fuera.length > 0 ? (
+        <Card className="border-warning/30 mb-4 border">
+          <CardHeader
+            title={`${fuera.length} ${fuera.length === 1 ? 'ficha no coincide' : 'fichas no coinciden'} con el tabulador`}
+            subtitle="Esto es lo que hará el botón Sincronizar de arriba: bajarles el sueldo y el nombre del cargo tal como están en la escala. Los recibos ya emitidos no cambian; una nómina en borrador sí tomará el sueldo nuevo cuando se vuelva a calcular."
           />
 
           <div className="mt-4 overflow-x-auto">
@@ -157,15 +166,15 @@ export function Tabulador() {
             </table>
           </div>
 
-          {sincronizar.error ? <ErrorDeCarga error={sincronizar.error} className="mt-4" /> : null}
         </Card>
       ) : null}
 
       {puedeRRHH && desfase.isFetched && fuera.length === 0 ? (
         <Card className="mb-4">
           <p className="text-ink/60 text-sm">
-            Todas las fichas coinciden con el tabulador. Cuando cambies un sueldo de aquí abajo, esta
-            franja te dirá a quién le toca y aparecerá el botón de sincronizar.
+            Todas las fichas coinciden con el tabulador, así que <strong>Sincronizar</strong> no
+            tiene nada que hacer ahora mismo. Cuando cambies un sueldo aquí abajo, esta franja te
+            dirá a quién le toca y de cuánto a cuánto, antes de que pulses nada.
           </p>
         </Card>
       ) : null}
