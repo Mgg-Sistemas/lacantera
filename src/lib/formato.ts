@@ -46,6 +46,15 @@ export const dolaresRedondos = (valor: string | number): string =>
 export const bolivares = (valor: string | number): string =>
   `Bs ${decimal2.format(aNumero(valor))}`
 
+/**
+ * Un monto en la moneda que le corresponde.
+ *
+ * El sistema maneja las dos a la vez y una cifra sin su símbolo es una trampa:
+ * 3.185.647 en bolívares y en dólares no son ni parecidos.
+ */
+export const dinero = (moneda: string | null | undefined, valor: string | number): string =>
+  moneda === 'VES' ? bolivares(valor) : dolares(valor)
+
 /** La tasa lleva cuatro decimales: a 235 Bs/USD, el cuarto decimal ya mueve céntimos. */
 export const tasa = (valor: string | number): string => decimal4.format(aNumero(valor))
 
@@ -53,3 +62,52 @@ export const porcentaje = (valor: string | number): string =>
   `${decimal2.format(aNumero(valor))}%`
 
 export const enteros = (valor: string | number): string => numero.format(aNumero(valor))
+
+export function fechaHora(iso: string | null): string {
+  if (!iso) return '—'
+  return new Intl.DateTimeFormat('es-VE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso))
+}
+
+/**
+ * Una fecha sin hora.
+ *
+ * Se le pega el mediodía a propósito: una fecha suelta la interpreta el
+ * navegador como medianoche UTC y en Venezuela —cuatro horas atrás— se muestra
+ * el día anterior. Al mediodía no hay huso que la mueva de día.
+ */
+export function fecha(iso: string | null): string {
+  if (!iso) return '—'
+  return new Intl.DateTimeFormat('es-VE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(`${iso}T12:00:00`))
+}
+
+/**
+ * Cuánto hace que ocurrió algo.
+ *
+ * Es lo que distingue una lista de una herramienta: un pedido de hace tres
+ * horas y uno de hace nueve días se ven igual hasta que alguien pone el tiempo
+ * al lado.
+ */
+export function hace(iso: string): string {
+  const minutos = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (minutos < 1) return 'ahora mismo'
+  if (minutos < 60) return `hace ${minutos} min`
+
+  const horas = Math.floor(minutos / 60)
+  if (horas < 24) return `hace ${horas} h`
+
+  const dias = Math.floor(horas / 24)
+  if (dias < 30) return `hace ${dias} d`
+
+  const meses = Math.floor(dias / 30)
+  return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`
+}

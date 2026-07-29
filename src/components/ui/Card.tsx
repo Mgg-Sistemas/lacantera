@@ -37,12 +37,21 @@ interface CardHeaderProps {
 
 export function CardHeader({ title, subtitle, action, className }: CardHeaderProps) {
   return (
-    <div className={cn('flex items-start justify-between gap-4', className)}>
+    // En pantalla estrecha, el título y su acción se apilan. Compartiendo
+    // línea, una etiqueta de estado larga —"Pagada · pendiente por
+    // recepcionar"— deja el título en "Qué …", que es justo lo que había que
+    // leer.
+    <div
+      className={cn(
+        'flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4',
+        className,
+      )}
+    >
       <div className="min-w-0">
         <h2 className="text-ink/90 truncate text-xl font-medium">{title}</h2>
         {subtitle ? <p className="text-ink/55 mt-0.5 text-sm">{subtitle}</p> : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="shrink-0 empty:hidden">{action}</div> : null}
     </div>
   )
 }

@@ -27,6 +27,49 @@ export interface NavItem {
   badge?: number
 }
 
+/**
+ * Qué módulo gobierna cada rama del menú.
+ *
+ * Se resuelve por prefijo y de arriba abajo, así que lo más específico va
+ * primero: "Usuarios y roles" cuelga de Configuración en el menú, pero es su
+ * propio módulo — quien mantiene el catálogo de artículos no tiene por qué
+ * poder crear cuentas.
+ *
+ * Espeja el catálogo public.modulos. Si aquí aparece una rama nueva, allá hace
+ * falta la fila; si no, no habría forma de darle o quitarle permiso y quedaría
+ * abierta a todo el mundo.
+ */
+const MODULO_POR_PREFIJO: [string, string][] = [
+  ['/app/config/usuarios', 'USUARIOS'],
+  ['/app/explotacion', 'EXPLOTACION'],
+  ['/app/inventario', 'INVENTARIO'],
+  ['/app/despachos', 'DESPACHOS'],
+  ['/app/compras', 'COMPRAS'],
+  ['/app/ventas', 'VENTAS'],
+  ['/app/nomina', 'NOMINA'],
+  ['/app/tesoreria', 'TESORERIA'],
+  ['/app/tasas', 'TASAS'],
+  ['/app/config', 'CONFIGURACION'],
+]
+
+/** El módulo al que pertenece una ruta. El panel es la raíz. */
+export function moduloDeRuta(ruta: string): string {
+  return MODULO_POR_PREFIJO.find(([prefijo]) => ruta.startsWith(prefijo))?.[1] ?? 'PANEL'
+}
+
+/**
+ * Rutas que no son de ningún módulo porque son de la persona.
+ *
+ * Su cuenta y su clave las alcanza siempre, aunque le hayan cerrado todo lo
+ * demás: un usuario al que se le quitaron los permisos mientras se resuelve
+ * algo tiene que poder seguir cambiándose la clave.
+ */
+const RUTAS_PROPIAS = ['/app/cuenta']
+
+export function esRutaPropia(ruta: string): boolean {
+  return RUTAS_PROPIAS.some((prefijo) => ruta.startsWith(prefijo))
+}
+
 export interface NavSection {
   /** Ausente en el primer bloque: no se rotula lo que abre la lista. */
   label?: string
@@ -80,13 +123,15 @@ export const navigation: NavSection[] = [
       {
         label: 'Compras',
         icon: ShoppingCart,
-        badge: 7,
         children: [
-          { label: 'Requisiciones', to: '/app/compras/requisiciones' },
-          { label: 'Órdenes de compra', to: '/app/compras/ordenes' },
+          // El tablero es la pantalla del módulo: una tarjeta por compra,
+          // desde que alguien la pide hasta que llega el material. No hay
+          // "requisiciones" por un lado y "órdenes" por otro, porque quien
+          // compra no piensa en dos documentos sino en una sola compra.
+          { label: 'Tablero', to: '/app/compras' },
+          { label: 'Proveedores', to: '/app/compras/proveedores' },
           { label: 'Recepciones', to: '/app/compras/recepciones' },
           { label: 'Facturas de proveedor', to: '/app/compras/facturas' },
-          { label: 'Proveedores', to: '/app/compras/proveedores' },
         ],
       },
       {
@@ -103,9 +148,10 @@ export const navigation: NavSection[] = [
         icon: Users,
         children: [
           { label: 'Personal', to: '/app/nomina/personal' },
-          { label: 'Asistencia', to: '/app/nomina/asistencia' },
+          { label: 'Novedades del período', to: '/app/nomina/asistencia' },
           { label: 'Procesar nómina', to: '/app/nomina/procesos' },
           { label: 'Recibos de pago', to: '/app/nomina/recibos' },
+          { label: 'Parámetros de nómina', to: '/app/nomina/parametros' },
           { label: 'Prestaciones sociales', to: '/app/nomina/prestaciones' },
         ],
       },
@@ -114,9 +160,10 @@ export const navigation: NavSection[] = [
         icon: Landmark,
         children: [
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
+          { label: 'Pagos por hacer', to: '/app/tesoreria/pagos' },
           { label: 'Cuentas por pagar', to: '/app/tesoreria/por-pagar' },
+          { label: 'Libro de tesorería', to: '/app/tesoreria/movimientos' },
           { label: 'Cuentas por cobrar', to: '/app/tesoreria/por-cobrar' },
-          { label: 'Pagos', to: '/app/tesoreria/pagos' },
         ],
       },
     ],

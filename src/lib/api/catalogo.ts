@@ -1,0 +1,204 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
+import { desenvolver, rpc } from './rpc'
+
+// ---------------------------------------------------------------------------
+// Roles
+// ---------------------------------------------------------------------------
+
+export type Rol =
+  | 'ADMIN'
+  | 'GERENTE_GENERAL'
+  | 'COMPRAS'
+  | 'TESORERIA'
+  | 'ALMACEN'
+  | 'OPERACIONES'
+  | 'RRHH'
+  | 'SOLICITANTE'
+  | 'CONSULTA'
+
+/**
+ * Los roles solo deciden qué botones se dibujan. Quien intente la acción sin
+ * el rol recibe el mismo "no" de la base, así que ocultar el botón es
+ * cortesía, no seguridad.
+ */
+export function useMisRoles() {
+  const consulta = useQuery({
+    queryKey: ['mis-roles'],
+    queryFn: () => rpc<Rol[]>('mis_roles'),
+    staleTime: 5 * 60_000,
+  })
+
+  const roles = consulta.data ?? []
+  const puede = (...requeridos: Rol[]) =>
+    roles.includes('ADMIN') || requeridos.some((r) => roles.includes(r))
+
+  return { ...consulta, roles, puede }
+}
+
+export function usePerfiles() {
+  return useQuery({
+    queryKey: ['perfiles'],
+    queryFn: async () =>
+      desenvolver(
+        await supabase
+          .from('perfiles')
+          .select('id, usuario, nombre, cargo, activo')
+          .order('nombre'),
+      ),
+    staleTime: 5 * 60_000,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Unidades y artículos
+// ---------------------------------------------------------------------------
+
+export interface Unidad {
+  codigo: string
+  nombre: string
+  tipo: string
+}
+
+export interface Articulo {
+  id: number
+  codigo: string
+  nombre: string
+  descripcion: string | null
+  categoria: string
+  unidad: string
+  inventariable: boolean
+  stock_minimo: string
+  activo: boolean
+}
+
+export const CATEGORIAS_ARTICULO = [
+  { valor: 'PRODUCTO', etiqueta: 'Producto de cantera' },
+  { valor: 'REPUESTO', etiqueta: 'Repuesto' },
+  { valor: 'INSUMO', etiqueta: 'Insumo' },
+  { valor: 'COMBUSTIBLE', etiqueta: 'Combustible' },
+  { valor: 'LUBRICANTE', etiqueta: 'Lubricante' },
+  { valor: 'EPP', etiqueta: 'Equipo de protección' },
+  { valor: 'HERRAMIENTA', etiqueta: 'Herramienta' },
+  { valor: 'EXPLOSIVO', etiqueta: 'Explosivo' },
+  { valor: 'SERVICIO', etiqueta: 'Servicio' },
+]
+
+export function useUnidades() {
+  return useQuery({
+    queryKey: ['unidades'],
+    queryFn: async () =>
+      desenvolver<Unidad[]>(
+        await supabase.from('unidades').select('codigo, nombre, tipo').order('orden'),
+      ),
+    staleTime: Infinity,
+  })
+}
+
+export function useArticulos(soloActivos = true) {
+  return useQuery({
+    queryKey: ['articulos', soloActivos],
+    queryFn: async () => {
+      let q = supabase.from('articulos').select('*').order('nombre')
+      if (soloActivos) q = q.eq('activo', true)
+      return desenvolver<Articulo[]>(await q)
+    },
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useCrearArticulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: {
+      codigo: string
+      nombre: string
+      categoria: string
+      unidad: string
+      descripcion?: string
+      inventariable?: boolean
+      stock_minimo?: number
+    }) =>
+      rpc<number>('crear_articulo', {
+        p_codigo: a.codigo,
+        p_nombre: a.nombre,
+        p_categoria: a.categoria,
+        p_unidad: a.unidad,
+        p_descripcion: a.descripcion ?? null,
+        p_inventariable: a.inventariable ?? true,
+        p_stock_minimo: a.stock_minimo ?? 0,
+      }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['articulos'] }),
+  })
+}
+
+export function useCambiarEstadoArticulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: { id: number; activo: boolean }) =>
+      rpc('cambiar_estado_articulo', { p_id: a.id, p_activo: a.activo }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['articulos'] }),
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Proveedores
+// ---------------------------------------------------------------------------
+
+export interface Proveedor {
+  id: number
+  rif: string
+  nombre: string
+  nombre_comercial: string | null
+  contacto: string | null
+  telefono: string | null
+  correo: string | null
+  direccion: string | null
+  condicion_pago: string
+  moneda_preferida: string
+  contribuyente_especial: boolean
+  activo: boolean
+  notas: string | null
+}
+
+export const CONDICIONES_PAGO = [
+  { valor: 'CONTADO', etiqueta: 'De contado' },
+  { valor: 'CREDITO_15', etiqueta: 'Crédito 15 días' },
+  { valor: 'CREDITO_30', etiqueta: 'Crédito 30 días' },
+  { valor: 'CREDITO_60', etiqueta: 'Crédito 60 días' },
+]
+
+export function useProveedores(soloActivos = true) {
+  return useQuery({
+    queryKey: ['proveedores', soloActivos],
+    queryFn: async () => {
+      let q = supabase.from('proveedores').select('*').order('nombre')
+      if (soloActivos) q = q.eq('activo', true)
+      return desenvolver<Proveedor[]>(await q)
+    },
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useGuardarProveedor() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (p: Partial<Proveedor> & { rif: string; nombre: string }) =>
+      rpc<number>('guardar_proveedor', {
+        p_id: p.id ?? null,
+        p_rif: p.rif,
+        p_nombre: p.nombre,
+        p_nombre_comercial: p.nombre_comercial ?? null,
+        p_contacto: p.contacto ?? null,
+        p_telefono: p.telefono ?? null,
+        p_correo: p.correo ?? null,
+        p_direccion: p.direccion ?? null,
+        p_condicion_pago: p.condicion_pago ?? 'CONTADO',
+        p_moneda_preferida: p.moneda_preferida ?? 'USD',
+        p_contribuyente_especial: p.contribuyente_especial ?? false,
+        p_notas: p.notas ?? null,
+        p_activo: p.activo ?? true,
+      }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['proveedores'] }),
+  })
+}

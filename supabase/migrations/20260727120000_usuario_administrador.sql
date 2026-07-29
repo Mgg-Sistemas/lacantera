@@ -35,14 +35,22 @@ declare
   v_clave   text := current_setting('app.clave_admin', true);
   v_id      uuid;
 begin
+  -- Idempotente: la migración puede reaplicarse sin duplicar la cuenta.
+  select id into v_id from auth.users where email = v_correo;
+
+  -- Sin clave y con la cuenta ya creada no hay nada que hacer. Es lo que
+  -- permite que esta migración forme parte del lote sin obligar a pasar la
+  -- clave cada vez que se aplica el resto.
+  if (v_clave is null or length(v_clave) = 0) and v_id is not null then
+    raise notice 'El usuario % ya existe y no se pasó clave nueva: no se toca.', v_usuario;
+    return;
+  end if;
+
   if v_clave is null or length(v_clave) < 8 then
     raise exception
       'Falta la clave o es demasiado corta. Ejecute antes: set local app.clave_admin = ''...'' (mínimo 8 caracteres).'
       using errcode = '22023';
   end if;
-
-  -- Idempotente: la migración puede reaplicarse sin duplicar la cuenta.
-  select id into v_id from auth.users where email = v_correo;
 
   if v_id is not null then
     -- La cuenta ya existe: se actualiza la clave. Esto es lo que permite usar

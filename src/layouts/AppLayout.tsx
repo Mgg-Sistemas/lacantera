@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { cn } from '@/lib/cn'
 import { useMediaQuery } from '@/lib/useMediaQuery'
+import { useTiempoReal } from '@/lib/tiempoReal'
 
 const CLAVE_COLAPSADO = 'lacantera:sidebar-colapsado'
 
@@ -20,6 +21,11 @@ export function AppLayout() {
   // qué significa cada símbolo, sin ganar nada de espacio a cambio.
   const esEscritorio = useMediaQuery('(min-width: 1024px)')
   const contraido = esEscritorio && collapsed
+
+  // El enlace en vivo se abre una sola vez para toda la aplicación. Uno por
+  // pantalla multiplicaría las conexiones sin ganar nada: lo que cambia no es
+  // lo que se está mirando, es la base.
+  const tiempoReal = useTiempoReal()
 
   useEffect(() => {
     localStorage.setItem(CLAVE_COLAPSADO, String(collapsed))
@@ -49,6 +55,7 @@ export function AppLayout() {
       >
         <Topbar
           collapsed={collapsed}
+          tiempoReal={tiempoReal}
           onToggleCollapsed={() => setCollapsed((v) => !v)}
           onOpenMobile={() => setMobileOpen(true)}
         />

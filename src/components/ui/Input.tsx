@@ -68,7 +68,12 @@ export function Input({
             type="button"
             onClick={() => setRevealed((v) => !v)}
             aria-label={revealed ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-            className="text-ink/40 hover:text-ink/70 focus-visible:outline-royal-600 absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-[6px] transition-colors"
+            title={revealed ? 'Ocultar la clave' : 'Ver la clave'}
+            // Al 40% no se veía: quien escribe mal la clave a ciegas no
+            // descubre que hay forma de mirarla, y vuelve a intentarlo a
+            // ciegas. Un control que existe pero no se distingue del fondo
+            // es un control que no existe.
+            className="text-ink/60 hover:bg-ink/8 hover:text-ink/90 focus-visible:outline-royal-600 absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-[6px] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2"
           >
             {revealed ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
           </button>
