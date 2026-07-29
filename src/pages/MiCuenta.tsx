@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
+import { TarjetaHuella } from '@/components/TarjetaHuella'
 import { FormularioClave } from '@/components/FormularioClave'
 import { useMiPerfil, useRoles } from '@/lib/api/usuarios'
 
@@ -95,6 +96,8 @@ export function MiCuenta() {
             <FormularioClave />
           </div>
         </Card>
+
+        <TarjetaHuella />
       </div>
     </>
   )

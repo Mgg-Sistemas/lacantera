@@ -1,18 +1,66 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { AlertCircle, ArrowUpRight, Truck, User } from 'lucide-react'
+import { AlertCircle, ArrowUpRight, Fingerprint, Truck, User } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { IconTile } from '@/components/ui/IconTile'
 import { Logo } from '@/components/Logo'
 import { MinerIllustration } from '@/components/MinerIllustration'
 import { iniciarSesion } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
+import { estadoGuardado, paseConHuella } from '@/lib/huella'
 
 export function Login() {
   const navigate = useNavigate()
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // La huella se activa por equipo, así que el botón solo sale donde la hay.
+  const [huella, setHuella] = useState<{ activa: boolean; usuario: string }>({
+    activa: false,
+    usuario: '',
+  })
+  const [conHuella, setConHuella] = useState(false)
+
+  useEffect(() => setHuella(estadoGuardado()), [])
+
+  /*
+    Entrar con el dedo.
+
+    Es un camino aparte y no un atajo del formulario: si algo falla aquí, el
+    acceso con clave sigue justo debajo, intacto. Una comodidad rota no puede
+    dejar a nadie fuera de su trabajo.
+  */
+  const entrarConHuella = async () => {
+    setError(null)
+    setConHuella(true)
+    try {
+      const pase = await paseConHuella()
+
+      // `refreshSession` es la puerta buena para cambiar un pase por una
+      // sesión. `setSession` pide además un token de acceso vigente, que aquí
+      // no tenemos: lo que se guardó fue el pase, precisamente porque es lo
+      // único que sobrevive a que el navegador se cierre.
+      const { data, error: fallo } = await supabase.auth.refreshSession({ refresh_token: pase })
+      if (fallo || !data.session) throw new Error(fallo?.message ?? 'No se pudo abrir la sesión.')
+
+      // El pase nuevo lo guarda el propio SesionProvider al ver SIGNED_IN.
+
+      void navigate('/app')
+    } catch (e) {
+      const mensaje = e instanceof Error ? e.message : String(e)
+      // Cancelar el diálogo del sistema no es un fallo que haya que gritar.
+      if (!/NotAllowed|abort/i.test(mensaje)) {
+        setError(
+          /refresh|token|JWT|expired/i.test(mensaje)
+            ? 'Tu sesión guardada caducó. Entra con tu clave y vuelve a activar la huella.'
+            : mensaje,
+        )
+      }
+      setConHuella(false)
+    }
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -178,6 +226,30 @@ export function Login() {
               {enviando ? 'Entrando…' : 'Entrar'}
             </Button>
           </form>
+
+          {huella.activa ? (
+            <>
+              <div className="my-5 flex items-center gap-3">
+                <span className="bg-ink/10 h-px flex-1" />
+                <span className="text-ink/40 text-xs">o</span>
+                <span className="bg-ink/10 h-px flex-1" />
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                block
+                onClick={() => void entrarConHuella()}
+                disabled={conHuella}
+                icon={<Fingerprint className="size-[18px]" />}
+              >
+                {conHuella
+                  ? 'Esperando el dedo…'
+                  : `Entrar con la huella${huella.usuario ? ` de ${huella.usuario}` : ''}`}
+              </Button>
+            </>
+          ) : null}
 
           <p className="text-ink/45 mt-8 text-xs leading-relaxed">
             El acceso lo asigna la administración de la empresa. Si no tienes credenciales,

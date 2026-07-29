@@ -2,6 +2,7 @@ import { createContext, use, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { renovarPaseGuardado } from './huella'
 
 interface EstadoSesion {
   session: Session | null
@@ -39,9 +40,27 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     })
 
     // Cubre inicio de sesión, cierre, refresco de token y expiración.
-    const { data: suscripcion } = supabase.auth.onAuthStateChange((_evento, nueva) => {
+    const { data: suscripcion } = supabase.auth.onAuthStateChange((evento, nueva) => {
       setSession(nueva)
       setCargando(false)
+
+      /*
+        El pase guardado para la huella sigue al de la sesión.
+
+        Supabase lo rota al refrescar y anula el anterior. Si el que quedó
+        cifrado en el equipo no se actualiza, se muere solo y a la mañana
+        siguiente el botón de la huella falla sin decir por qué. Se hace en
+        silencio y sin pedir el dedo: guardar no es entrar.
+
+        Va aquí y no en la pantalla de acceso porque el refresco ocurre mientras
+        alguien trabaja, con el acceso cerrado hace rato.
+      */
+      if (nueva?.refresh_token && (evento === 'TOKEN_REFRESHED' || evento === 'SIGNED_IN')) {
+        void renovarPaseGuardado(nueva.refresh_token).catch(() => {
+          // Que no se pueda renovar no debe tumbar la sesión: como mucho,
+          // la próxima vez habrá que entrar con la clave.
+        })
+      }
     })
 
     return () => {
