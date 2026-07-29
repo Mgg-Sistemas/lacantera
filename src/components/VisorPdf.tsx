@@ -19,8 +19,17 @@ import { Button } from '@/components/ui/Button'
 interface VisorPdfProps {
   abierto: boolean
   onCerrar: () => void
-  /** El PDF ya armado. Se libera solo al cerrar. */
-  blob: Blob | null
+  /**
+   * El PDF ya armado en memoria. Para lo que genera el propio sistema —un
+   * recibo de nómina— que nace aquí y no hay que ir a buscar.
+   */
+  blob?: Blob | null
+  /**
+   * Una dirección firmada. Para lo que está guardado: el navegador lo pide por
+   * trozos y pinta la primera página sin esperar al archivo entero, que con un
+   * acta escaneada de 17 MB es la diferencia entre abrir y esperar.
+   */
+  href?: string | null
   /** Con el que se guarda. Debe terminar en .pdf */
   nombreArchivo: string
   titulo: string
@@ -32,30 +41,33 @@ export function VisorPdf({
   abierto,
   onCerrar,
   blob,
+  href,
   nombreArchivo,
   titulo,
   descripcion,
 }: VisorPdfProps) {
-  const [url, setUrl] = useState<string | null>(null)
+  const [deMemoria, setDeMemoria] = useState<string | null>(null)
+  const [bajando, setBajando] = useState(false)
 
   /*
     La dirección temporal vive lo que vive el visor.
 
     `createObjectURL` reserva memoria hasta que se revoca a mano. Sin este
-    efecto, abrir diez recibos seguidos deja diez PDF cargados en el navegador
-    —y uno de ellos, el de la alianza, pesa 17 MB.
+    efecto, abrir diez recibos seguidos deja diez PDF cargados en el navegador.
   */
   useEffect(() => {
     if (!abierto || !blob) return
 
     const temporal = URL.createObjectURL(blob)
-    setUrl(temporal)
+    setDeMemoria(temporal)
 
     return () => {
       URL.revokeObjectURL(temporal)
-      setUrl(null)
+      setDeMemoria(null)
     }
   }, [abierto, blob])
+
+  const url = deMemoria ?? href ?? null
 
   useEffect(() => {
     if (!abierto) return
@@ -72,12 +84,39 @@ export function VisorPdf({
 
   if (!abierto) return null
 
-  const descargar = () => {
+  /*
+    Guardarlo con el nombre que le toca.
+
+    Con el PDF en memoria basta apuntar el enlace. Con una dirección firmada no:
+    `download` se ignora cuando el archivo viene de otro dominio, y el navegador
+    lo guardaría con el identificador aleatorio del almacén en vez de con el
+    nombre del documento. Por eso se trae primero. Cuesta una segunda petición,
+    pero solo la paga quien decide quedárselo, y el archivo suele venir ya de la
+    caché de haberlo mirado.
+  */
+  const descargar = async () => {
     if (!url) return
-    const enlace = document.createElement('a')
-    enlace.href = url
-    enlace.download = nombreArchivo
-    enlace.click()
+
+    if (deMemoria) {
+      const enlace = document.createElement('a')
+      enlace.href = deMemoria
+      enlace.download = nombreArchivo
+      enlace.click()
+      return
+    }
+
+    setBajando(true)
+    try {
+      const respuesta = await fetch(url)
+      const temporal = URL.createObjectURL(await respuesta.blob())
+      const enlace = document.createElement('a')
+      enlace.href = temporal
+      enlace.download = nombreArchivo
+      enlace.click()
+      URL.revokeObjectURL(temporal)
+    } finally {
+      setBajando(false)
+    }
   }
 
   return (
@@ -130,8 +169,12 @@ export function VisorPdf({
             <Button variant="ghost" onClick={onCerrar}>
               Cerrar
             </Button>
-            <Button onClick={descargar} disabled={!url} icon={<Download className="size-[18px]" />}>
-              Descargar
+            <Button
+              onClick={() => void descargar()}
+              disabled={!url || bajando}
+              icon={<Download className="size-[18px]" />}
+            >
+              {bajando ? 'Guardando…' : 'Descargar'}
             </Button>
           </div>
         </footer>
