@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import type { InputHTMLAttributes, ReactNode } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { enMayuscula } from '@/lib/texto'
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label: string
@@ -11,6 +12,17 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
   icon?: ReactNode
   /** Añade el botón de mostrar/ocultar y alterna el type. */
   revealable?: boolean
+  /**
+   * Deja el campo tal como se teclea.
+   *
+   * Los datos del sistema se guardan en mayúscula y sin tildes, así que el
+   * campo lo enseña así desde la primera letra: escribir "Minería" y que
+   * aparezca guardado "MINERIA" se lee como que el sistema cambió el dato por
+   * su cuenta. Se apaga donde el valor no es un dato sino una credencial o una
+   * dirección: el nombre de acceso se compara en minúscula y un correo puede
+   * distinguir mayúsculas antes de la arroba.
+   */
+  sinNormalizar?: boolean
 }
 
 export function Input({
@@ -19,9 +31,11 @@ export function Input({
   error,
   icon,
   revealable = false,
+  sinNormalizar = false,
   className,
   type = 'text',
   id,
+  onChange,
   ...rest
 }: InputProps) {
   const generatedId = useId()
@@ -30,6 +44,30 @@ export function Input({
   const [revealed, setRevealed] = useState(false)
 
   const resolvedType = revealable ? (revealed ? 'text' : 'password') : type
+
+  /*
+    Solo se normaliza lo que es texto escrito a mano.
+
+    Una clave, un correo, una fecha o un número no son datos del negocio: son
+    credenciales, direcciones o valores con formato propio, y subirlos a
+    mayúscula rompe desde el inicio de sesión hasta el selector de fecha del
+    navegador. La base aplica la misma regla; esto solo hace que se vea venir.
+  */
+  const normaliza =
+    !sinNormalizar &&
+    !revealable &&
+    (type === 'text' || type === 'search' || type === undefined)
+
+  const alEscribir = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (normaliza) {
+      const cursor = e.target.selectionStart
+      e.target.value = enMayuscula(e.target.value)
+      // Sin esto el cursor salta al final en cuanto se corrige una letra
+      // del medio, que es exactamente el fallo que ya costó una tarde.
+      e.target.setSelectionRange(cursor, cursor)
+    }
+    onChange?.(e)
+  }
 
   return (
     <div className={cn('w-full', className)}>
@@ -47,6 +85,7 @@ export function Input({
         <input
           id={inputId}
           type={resolvedType}
+          onChange={alEscribir}
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? describedById : undefined}
           className={cn(

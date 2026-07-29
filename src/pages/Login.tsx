@@ -135,6 +135,9 @@ export function Login() {
 
             <Input
               label="Usuario"
+              // El nombre de acceso se compara en minuscula contra el correo
+              // interno. Subirlo a mayuscula dejaria a todo el mundo fuera.
+              sinNormalizar
               name="usuario"
               autoComplete="username"
               autoCapitalize="none"

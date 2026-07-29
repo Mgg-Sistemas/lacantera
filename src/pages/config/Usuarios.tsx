@@ -636,6 +636,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
                 label="Nombre de usuario"
+                sinNormalizar
                 value={edicion.usuario}
                 disabled={!edicion.nuevo}
                 autoCapitalize="none"
