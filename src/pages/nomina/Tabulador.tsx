@@ -74,7 +74,7 @@ export function Tabulador() {
     <>
       <PageHeader
         title="Tabulador de cargos"
-        description="Cuánto gana cada cargo al mes. El quincenal, el semanal y el diario salen de esa cifra: no se escriben aparte, para que no puedan desfasarse."
+        description="Cuánto gana cada cargo al mes. El quincenal sale de esa cifra: no se escribe aparte, para que las dos no puedan desfasarse."
         actions={
           puedeRRHH ? (
             <>
@@ -203,14 +203,15 @@ export function Tabulador() {
       {data && data.length > 0 ? (
         <Card flush>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] text-sm">
+            {/* Menos ancho mínimo desde que se fueron el semanal y el diario:
+                con el de antes, en un teléfono la tabla arrastraba un scroll
+                horizontal que ya no hace falta. */}
+            <table className="w-full min-w-[620px] text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Cargo</th>
                   <th className="px-3 py-3 text-right font-medium">Mensual</th>
                   <th className="px-3 py-3 text-right font-medium">Quincenal</th>
-                  <th className="px-3 py-3 text-right font-medium">Semanal</th>
-                  <th className="px-3 py-3 text-right font-medium">Diario</th>
                   <th className="px-3 py-3 text-right font-medium">Alimentación</th>
                   <th className="px-3 py-3 text-right font-medium">Total mes</th>
                   <th className="px-5 py-3 text-right font-medium"></th>
@@ -235,12 +236,6 @@ export function Tabulador() {
                     </td>
                     <td className="text-ink/70 tabular px-3 py-3 text-right whitespace-nowrap">
                       {cifra(n.moneda, n.sueldo_quincenal)}
-                    </td>
-                    <td className="text-ink/55 tabular px-3 py-3 text-right whitespace-nowrap">
-                      {cifra(n.moneda, n.sueldo_semanal)}
-                    </td>
-                    <td className="text-ink/55 tabular px-3 py-3 text-right whitespace-nowrap">
-                      {cifra(n.moneda, n.sueldo_diario)}
                     </td>
                     <td className="text-ink/55 tabular px-3 py-3 text-right whitespace-nowrap">
                       {dinero(n.moneda, n.bono_mensual)}
@@ -274,22 +269,13 @@ export function Tabulador() {
             </table>
           </div>
 
-          {/* De dónde salen las divisiones. Va debajo de la tabla y en pequeño:
-              a quien consulta un sueldo no le hace falta, y a quien no entiende
-              por qué el diario da 11,07 le hace mucha. */}
-          {data[0]?.dias_mes ? (
-            <p className="text-ink/40 border-hairline border-t px-5 py-3 text-xs">
-              El quincenal es la mitad del mensual. El semanal y el diario salen de un mes de{' '}
-              {Number(data[0].dias_mes)} días —cuatro semanas—, que es como está hecho el tabulador
-              de la cantera. Se cambia en Parámetros de nómina, en{' '}
-              <span className="font-mono">tabulador_dias_mes</span>.
-            </p>
-          ) : (
-            <p className="text-warning border-hairline border-t px-5 py-3 text-xs">
-              Falta el parámetro <span className="font-mono">tabulador_dias_mes</span>: sin él no se
-              pueden sacar el semanal ni el diario. Cárgalo en Parámetros de nómina.
-            </p>
-          )}
+          {/* De dónde sale la única cifra que no se teclea. En pequeño y debajo:
+              a quien consulta un sueldo no le hace falta, y a quien se pregunta
+              por qué no puede editar el quincenal le hace mucha. */}
+          <p className="text-ink/40 border-hairline border-t px-5 py-3 text-xs">
+            Solo se guarda el mensual. El quincenal es su mitad y se calcula cada vez, así que las
+            dos cifras no pueden acabar diciendo cosas distintas.
+          </p>
         </Card>
       ) : null}
 
@@ -299,7 +285,7 @@ export function Tabulador() {
           abierto
           onCerrar={() => setEdicion(null)}
           titulo={edicion.id ? `Editar ${edicion.cargo}` : 'Nuevo cargo del tabulador'}
-          descripcion="Solo se guarda el sueldo mensual. Las demás cifras se calculan a partir de él."
+          descripcion="Solo se guarda el sueldo mensual. La quincena se calcula a partir de él."
           ancho="md"
           acciones={
             <>
@@ -349,6 +335,24 @@ export function Tabulador() {
               />
             </div>
 
+            {/* El quincenal sale solo mientras se teclea el mensual. Va
+                bloqueado a propósito: si se pudiera escribir, alguien pondría
+                una mitad que no es la mitad y el tabulador diría dos cosas
+                distintas del mismo sueldo — que es exactamente lo que pasó en
+                la hoja de cálculo con el supervisor y la analista. */}
+            <Input
+              label="Quincena"
+              disabled
+              hint="La mitad del mensual. Se calcula sola."
+              value={
+                edicion.sueldo_mensual && Number(edicion.sueldo_mensual) > 0
+                  ? dinero(edicion.moneda, Number(edicion.sueldo_mensual) / 2)
+                  : ''
+              }
+              placeholder="Escribe el mensual"
+              readOnly
+            />
+
             <Input
               label="Bono de alimentación"
               type="number"
@@ -380,15 +384,14 @@ export function Tabulador() {
 
           {edicion.sueldo_mensual && Number(edicion.sueldo_mensual) > 0 ? (
             <p className="text-ink/50 bg-ink/4 mt-4 rounded-[6px] px-3 py-2 text-xs">
-              Quedaría en{' '}
+              Quien esté en este cargo cobra{' '}
               <strong className="text-ink/75 font-medium">
-                {dinero(edicion.moneda, Number(edicion.sueldo_mensual) / 2)}
+                {dinero(
+                  edicion.moneda,
+                  Number(edicion.sueldo_mensual) + Number(edicion.bono_mensual || 0),
+                )}
               </strong>{' '}
-              la quincena, y{' '}
-              <strong className="text-ink/75 font-medium">
-                {dinero(edicion.moneda, Number(edicion.sueldo_mensual) + Number(edicion.bono_mensual || 0))}
-              </strong>{' '}
-              al mes con el bono de alimentación.
+              al mes contando el bono de alimentación.
             </p>
           ) : null}
 
