@@ -15,6 +15,23 @@ import type { LucideIcon } from 'lucide-react'
 export interface NavChild {
   label: string
   to: string
+  /**
+   * Solo para el rol ADMIN, por encima de los permisos por módulo.
+   *
+   * Los módulos se reparten: a alguien de tesorería se le puede dar Nómina en
+   * lectura. La auditoría no se reparte — es el registro de lo que ha hecho
+   * todo el mundo, incluida la propia administración, y quien lo lee ve de una
+   * sentada los sueldos, las cédulas y las cuentas bancarias que pasaron por el
+   * sistema. Eso no es un permiso más, es una llave aparte.
+   */
+  soloAdmin?: boolean
+}
+
+/** Rutas cerradas a quien no sea ADMIN, pase lo que pase con los módulos. */
+export const RUTAS_SOLO_ADMIN = ['/app/config/auditoria']
+
+export function esRutaSoloAdmin(ruta: string): boolean {
+  return RUTAS_SOLO_ADMIN.some((prefijo) => ruta.startsWith(prefijo))
 }
 
 export interface NavItem {
@@ -189,6 +206,7 @@ export const navigation: NavSection[] = [
           { label: 'Usuarios y roles', to: '/app/config/usuarios' },
           { label: 'Datos de la empresa', to: '/app/config/empresa' },
           { label: 'Documentos legales', to: '/app/config/documentos' },
+          { label: 'Auditoría', to: '/app/config/auditoria', soloAdmin: true },
         ],
       },
     ],
