@@ -1,9 +1,10 @@
 import { Link, Outlet, useLocation } from 'react-router'
 import { Lock } from 'lucide-react'
-import { esRutaPropia, moduloDeRuta } from '@/config/navigation'
+import { esRutaPropia, esRutaSoloAdmin, moduloDeRuta } from '@/config/navigation'
 import { Card } from '@/components/ui/Card'
 import { Cargando } from '@/components/ui/Estado'
 import { useMisPermisos, useModulos } from '@/lib/api/usuarios'
+import { useMisRoles } from '@/lib/api/catalogo'
 
 /**
  * La reja, en la pantalla.
@@ -20,6 +21,7 @@ import { useMisPermisos, useModulos } from '@/lib/api/usuarios'
 export function ExigePermiso() {
   const { pathname } = useLocation()
   const { puede, resuelto, isPending } = useMisPermisos()
+  const { puede: tieneRol, isPending: rolesPendientes } = useMisRoles()
   const { data: modulos } = useModulos()
 
   if (esRutaPropia(pathname)) return <Outlet />
@@ -27,6 +29,41 @@ export function ExigePermiso() {
   const codigo = moduloDeRuta(pathname)
 
   if (isPending) return <Cargando />
+
+  /*
+    Las rutas de solo administrador se comprueban antes que el módulo.
+
+    Auditoría cuelga de Configuración en el menú, así que por módulo la
+    alcanzaría cualquiera con permiso de Configuración. No es lo que se pidió:
+    ese registro lo lee la administración y nadie más. La base ya lo impide y
+    devolvería cero filas, pero una tabla vacía se lee como "no ha pasado nada",
+    que en un registro de auditoría es exactamente la mentira que no puede
+    contar.
+  */
+  if (esRutaSoloAdmin(pathname)) {
+    if (rolesPendientes) return <Cargando />
+    if (tieneRol('ADMIN')) return <Outlet />
+
+    return (
+      <Card className="mx-auto mt-10 max-w-lg text-center">
+        <div className="bg-ink/6 text-ink/45 mx-auto flex size-12 items-center justify-center rounded-full">
+          <Lock className="size-6" />
+        </div>
+        <h2 className="text-ink/90 mt-4 text-lg font-semibold">Esto lo ve la administración</h2>
+        <p className="text-ink/55 mt-2 text-sm">
+          El registro de auditoría guarda todo lo que ha hecho cada persona en el sistema. Solo lo
+          abre quien tiene el rol de administrador.
+        </p>
+        <Link
+          to="/app"
+          className="text-royal-600 hover:text-royal-700 dark:text-royal-300 mt-5 inline-block text-sm font-medium"
+        >
+          Volver al panel
+        </Link>
+      </Card>
+    )
+  }
+
   if (!resuelto || puede(codigo)) return <Outlet />
 
   const nombre = modulos?.find((m) => m.codigo === codigo)?.nombre ?? codigo

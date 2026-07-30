@@ -7,6 +7,7 @@ import { Logo } from '@/components/Logo'
 import { cn } from '@/lib/cn'
 import { useSesion } from '@/lib/sesion'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMisRoles } from '@/lib/api/catalogo'
 
 interface SidebarProps {
   collapsed: boolean
@@ -23,7 +24,11 @@ interface SidebarProps {
  * ofrecerla. Mientras los permisos no han llegado se muestra el menú entero —
  * un riel vacío durante medio segundo se lee como que el sistema se rompió.
  */
-function menuVisible(puede: (m: string) => boolean, resuelto: boolean): NavSection[] {
+function menuVisible(
+  puede: (m: string) => boolean,
+  resuelto: boolean,
+  esAdmin: boolean,
+): NavSection[] {
   if (!resuelto) return navigation
 
   return navigation
@@ -32,7 +37,11 @@ function menuVisible(puede: (m: string) => boolean, resuelto: boolean): NavSecti
       items: seccion.items
         .map((item) => ({
           ...item,
-          children: item.children?.filter((hijo) => puede(moduloDeRuta(hijo.to))),
+          children: item.children?.filter(
+            // `soloAdmin` va por encima del permiso de módulo: la auditoría no
+            // se reparte por módulos, se tiene o no se tiene.
+            (hijo) => (hijo.soloAdmin ? esAdmin : true) && puede(moduloDeRuta(hijo.to)),
+          ),
         }))
         .filter((item) =>
           item.children ? item.children.length > 0 : puede(moduloDeRuta(item.to ?? '/app')),
@@ -45,7 +54,8 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
   const { pathname } = useLocation()
   const { nombre, usuario, iniciales } = useSesion()
   const { puede, resuelto } = useMisPermisos()
-  const secciones = menuVisible(puede, resuelto)
+  const { puede: tieneRol } = useMisRoles()
+  const secciones = menuVisible(puede, resuelto, tieneRol('ADMIN'))
 
   // Un grupo abierto a la vez: con ocho módulos, permitir varios abiertos
   // convierte el riel en una lista de cuarenta líneas.

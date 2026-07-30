@@ -70,6 +70,12 @@ const AFECTA: Record<string, string[][]> = {
   empresa: [['empresa']],
   empresa_documentos: [['documentos-legales']],
 
+  // La auditoría se mira mientras algo está pasando: quien la tiene abierta
+  // investigando no debería tener que recargar para ver el movimiento que
+  // acaba de ocurrir. El reenvío respeta las políticas, así que solo le llega
+  // a la administración.
+  auditoria: [['auditoria']],
+
   notificaciones: [['notificaciones']],
   notificaciones_leidas: [['notificaciones']],
   tasas_cambio: [['tasas'], ['tasa-vigente']],
