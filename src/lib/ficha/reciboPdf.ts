@@ -23,6 +23,7 @@
  */
 
 import { marcaComoImagen, MARCA_SOBRE_OSCURO } from './marca'
+import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, DER, IZQ } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
 
 const AZUL = '#1D358F'
@@ -32,8 +33,8 @@ const GRIS = '#7B839A'
 const HAIRLINE = '#E6E9F2'
 const ROJO = '#C0392B'
 
-const IZQ = 14
-const DER = 196
+/** Donde arranca la columna de subtotales: el último tercio del ancho útil. */
+const COL_TOTAL = IZQ + ANCHO_UTIL * 0.62
 
 type Doc = import('jspdf').jsPDF
 
@@ -98,43 +99,44 @@ const dia = (iso: string) =>
     year: 'numeric',
   })
 
-/** Recorta con puntos suspensivos lo que no cabe, en vez de dejarlo salirse. */
-function ajustar(doc: Doc, texto: string, ancho: number): string {
-  if (doc.getTextWidth(texto) <= ancho) return texto
-  let corto = texto
-  while (corto.length > 1 && doc.getTextWidth(`${corto}…`) > ancho) corto = corto.slice(0, -1)
-  return `${corto.trimEnd()}…`
-}
-
 // --- Piezas ---------------------------------------------------------------
 
 function encabezado(doc: Doc, d: DatosRecibo, y0: number): number {
   doc.setFillColor(AZUL)
-  doc.rect(0, y0, 210, 26, 'F')
+  // Dentro del margen y no a sangre: una banda que llega al borde de la hoja
+  // convierte los tres centímetros en cero por tres de los cuatro lados.
+  doc.rect(IZQ, y0, ANCHO_UTIL, 26, 'F')
 
-  doc.addImage(marcaComoImagen(MARCA_SOBRE_OSCURO), 'PNG', IZQ, y0 + 6, 11, 11)
+  doc.addImage(marcaComoImagen(MARCA_SOBRE_OSCURO), 'PNG', IZQ + 4, y0 + 6, 11, 11)
 
-  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(11)
-  doc.text(EMPRESA.razonSocial, IZQ + 14, y0 + 11)
+  // Con 150 mm de ancho, la razón social entera y el rótulo del documento ya no
+  // caben en la misma línea sin tocarse. La marca baja de cuerpo lo justo y se
+  // recorta si hiciera falta: mejor eso que dos textos encabalgados.
+  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(9.5)
+  doc.text(ajustar(doc, EMPRESA.razonSocial, 78), IZQ + 18, y0 + 11)
 
-  doc.setTextColor(AZUL_CLARO).setFont('helvetica', 'normal').setFontSize(7)
-  doc.text(`RIF ${EMPRESA.rif} · ${EMPRESA.actividad.toUpperCase()}`, IZQ + 14, y0 + 16.5)
+  doc.setTextColor(AZUL_CLARO).setFont('helvetica', 'normal').setFontSize(6.5)
+  doc.text(`RIF ${EMPRESA.rif}`, IZQ + 18, y0 + 16.5)
 
-  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(10)
-  doc.text('RECIBO DE PAGO', DER, y0 + 11, { align: 'right' })
+  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(9)
+  doc.text('RECIBO DE PAGO', DER - 4, y0 + 11, { align: 'right' })
 
-  doc.setTextColor(AZUL_CLARO).setFont('helvetica', 'normal').setFontSize(7)
-  doc.text(`Período ${d.periodo}`, DER, y0 + 16.5, { align: 'right' })
+  doc.setTextColor(AZUL_CLARO).setFont('helvetica', 'normal').setFontSize(6.5)
+  doc.text(`Período ${d.periodo}`, DER - 4, y0 + 16.5, { align: 'right' })
 
   return y0 + 32
 }
 
 function trabajador(doc: Doc, d: DatosRecibo, y: number): number {
   doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(12)
-  doc.text(ajustar(doc, d.nombreCompleto, 120), IZQ, y)
+  doc.text(ajustar(doc, d.nombreCompleto, ANCHO_UTIL * 0.58), IZQ, y)
 
   doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7.5)
-  doc.text(`C.I. ${d.cedula} · Ficha ${d.ficha} · ${d.cargo}`, IZQ, y + 5)
+  doc.text(
+    ajustar(doc, `C.I. ${d.cedula} · Ficha ${d.ficha} · ${d.cargo}`, ANCHO_UTIL * 0.62),
+    IZQ,
+    y + 5,
+  )
 
   // El período y los días, a la derecha: es lo que se comprueba primero cuando
   // alguien reclama que le pagaron de menos.
@@ -187,7 +189,9 @@ function bloque(doc: Doc, d: DatosRecibo, tipo: LineaImpresa['tipo'], y: number)
   for (const l of lineas) {
     doc.setTextColor(TINTA).setFont('helvetica', 'normal').setFontSize(8)
     const etiqueta = l.cantidad ? `${l.descripcion}  (${Number(l.cantidad)})` : l.descripcion
-    doc.text(ajustar(doc, etiqueta, 140), IZQ + 2, fila)
+    // Hasta donde empieza la columna de cifras, menos un respiro. Antes era un
+    // 140 fijo que con el ancho nuevo dejaba la descripción encima del monto.
+    doc.text(ajustar(doc, etiqueta, COL_TOTAL - IZQ - 6), IZQ + 2, fila)
     doc.text(cifra(l.monto), DER, fila, { align: 'right' })
     fila += 4.4
   }
@@ -196,9 +200,13 @@ function bloque(doc: Doc, d: DatosRecibo, tipo: LineaImpresa['tipo'], y: number)
   // suman ni restan al neto: darles un total invita a restarlos.
   if (tipo === 'ASIGNACION' || tipo === 'DEDUCCION') {
     doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
-    doc.line(120, fila - 2.6, DER, fila - 2.6)
+    doc.line(COL_TOTAL, fila - 2.6, DER, fila - 2.6)
     doc.setTextColor(GRIS).setFont('helvetica', 'bold').setFontSize(7.5)
-    doc.text(tipo === 'ASIGNACION' ? 'Total asignaciones' : 'Total deducciones', 120, fila + 1)
+    doc.text(
+      tipo === 'ASIGNACION' ? 'Total asignaciones' : 'Total deducciones',
+      COL_TOTAL,
+      fila + 1,
+    )
     doc.setTextColor(TINTA).setFontSize(8.5)
     doc.text(
       cifra(tipo === 'ASIGNACION' ? d.totalAsignaciones : d.totalDeducciones),
@@ -240,13 +248,16 @@ function neto(doc: Doc, d: DatosRecibo, y: number): number {
       : `Forma de pago: ${d.formaPago.toLowerCase()}`
 
   doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7)
-  doc.text(forma, IZQ, y + 18)
+  doc.text(ajustar(doc, forma, ANCHO_UTIL), IZQ, y + 18)
 
   return y + 22
 }
 
 function firmas(doc: Doc, d: DatosRecibo, y: number) {
-  const ancho = (DER - IZQ - 24) / 2
+  // 16 mm de separación en vez de 24: con 150 mm de ancho, dos columnas de 63
+  // dejaban los nombres largos recortados en mitad del apellido.
+  const SEPARA = 16
+  const ancho = (DER - IZQ - SEPARA) / 2
 
   /*
     La declaración va encima de la firma del trabajador y no en el pie.
@@ -254,11 +265,8 @@ function firmas(doc: Doc, d: DatosRecibo, y: number) {
     convierte el papel en prueba; una nota al final se firma sin leerla.
   */
   doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
-  doc.text(
-    'Recibí conforme la cantidad indicada y estoy de acuerdo con los conceptos detallados.',
-    IZQ,
-    y - 4,
-  )
+  doc.text('Recibí conforme la cantidad indicada y estoy de acuerdo con', IZQ, y - 8)
+  doc.text('los conceptos detallados.', IZQ, y - 5)
 
   /*
     La fecha de recibido, en blanco y en el mismo renglón de la declaración.
@@ -270,12 +278,12 @@ function firmas(doc: Doc, d: DatosRecibo, y: number) {
     discute es cuándo lo recibió el trabajador.
   */
   doc.setDrawColor(GRIS).setLineWidth(0.3)
-  doc.line(DER - 34, y - 3.5, DER, y - 3.5)
-  doc.text('Fecha de recibido:', DER - 36, y - 4, { align: 'right' })
+  doc.line(DER - 26, y - 3.5, DER, y - 3.5)
+  doc.text('Fecha de recibido:', DER - 28, y - 4, { align: 'right' })
 
   doc.setDrawColor(TINTA).setLineWidth(0.4)
   doc.line(IZQ, y + 8, IZQ + ancho, y + 8)
-  doc.line(IZQ + ancho + 24, y + 8, DER, y + 8)
+  doc.line(IZQ + ancho + SEPARA, y + 8, DER, y + 8)
 
   const rotulo = (x: number, lineas: string[], negrita = 0) => {
     let fila = y + 12
@@ -296,7 +304,7 @@ function firmas(doc: Doc, d: DatosRecibo, y: number) {
         Boolean,
       )
     : [d.firma.cargo || 'Por la empresa']
-  rotulo(IZQ + ancho + 24, empresa, d.firma.nombre ? 1 : 0)
+  rotulo(IZQ + ancho + SEPARA, empresa, d.firma.nombre ? 1 : 0)
 }
 
 function pie(doc: Doc, d: DatosRecibo, y: number) {
@@ -307,8 +315,8 @@ function pie(doc: Doc, d: DatosRecibo, y: number) {
   })
 
   doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
-  doc.text(`Emitido el ${hoy} por ${d.emitidoPor}`, IZQ, y)
-  doc.text(`${EMPRESA.razonSocial} · RIF ${EMPRESA.rif}`, DER, y, { align: 'right' })
+  doc.text(ajustar(doc, `Emitido el ${hoy} por ${d.emitidoPor}`, ANCHO_UTIL * 0.45), IZQ, y)
+  doc.text(`RIF ${EMPRESA.rif}`, DER, y, { align: 'right' })
 }
 
 /** Una copia completa, empezando en `y0`. Devuelve dónde terminó. */
@@ -318,7 +326,7 @@ function copia(doc: Doc, d: DatosRecibo, y0: number, rotulo: string): number {
   // Dentro de la banda, bajo el período. Fuera de ella caía justo encima de
   // las fechas del período, que van pegadas al margen derecho.
   doc.setTextColor(AZUL_CLARO).setFont('helvetica', 'bold').setFontSize(6)
-  doc.text(rotulo.toUpperCase(), DER, y0 + 21.5, { align: 'right' })
+  doc.text(rotulo.toUpperCase(), DER - 4, y0 + 21.5, { align: 'right' })
 
   y = trabajador(doc, d, y)
   y = salarios(doc, d, y)
@@ -335,29 +343,37 @@ function copia(doc: Doc, d: DatosRecibo, y0: number, rotulo: string): number {
 /**
  * Siempre dos copias: una se la lleva el trabajador, la otra se archiva firmada.
  *
- * Van en la misma hoja cuando caben, con línea de corte. Cuando el recibo trae
- * muchos conceptos —horas extra, varias novedades, retenciones— no caben, y
- * entonces la segunda va en su propia hoja. Lo que no puede pasar es que
- * desaparezca: si el número de copias dependiera del largo del recibo, unos
- * trabajadores se quedarían sin su papel y nadie lo notaría hasta el reclamo.
+ * Van en la misma hoja cuando caben, con línea de corte; si no, la segunda va
+ * en su propia hoja. Lo que no puede pasar es que desaparezca: si el número de
+ * copias dependiera del largo del recibo, unos trabajadores se quedarían sin su
+ * papel y nadie lo notaría hasta el reclamo.
+ *
+ * Con el margen de 3 cm el reparto cambió de hecho. Antes cabían dos copias
+ * cuando el recibo era corto; ahora el alto útil son 237 mm y una copia ronda
+ * los 145, así que casi siempre son dos hojas. La regla no se toca —sigue
+ * midiendo y decidiendo— pero el resultado habitual es otro, y se imprime el
+ * doble de papel. Es el precio del margen, no un fallo.
  */
 function hoja(doc: Doc, d: DatosRecibo) {
-  const ALTO_A4 = 297
-  const fin = copia(doc, d, 0, 'Original — para la empresa')
+  const fin = copia(doc, d, ARRIBA, 'Original — para la empresa')
 
-  if (fin * 2 + 8 <= ALTO_A4) {
-    const corte = fin + 4
+  // Lo que ocupó la primera, más el corte, más otra igual: ¿cabe antes del
+  // margen de abajo?
+  const corte = fin + 4
+  const cabe = corte + 4 + (fin - ARRIBA) <= ABAJO
+
+  if (cabe) {
     doc.setDrawColor(ROJO).setLineWidth(0.2).setLineDashPattern([1.5, 1.5], 0)
-    doc.line(IZQ - 8, corte, DER + 8, corte)
+    doc.line(IZQ, corte, DER, corte)
     doc.setLineDashPattern([], 0)
 
     doc.setTextColor(ROJO).setFont('helvetica', 'normal').setFontSize(5.5)
-    doc.text('corte aquí', IZQ - 8, corte - 1.5)
+    doc.text('corte aquí', IZQ, corte - 1.5)
 
     copia(doc, d, corte + 4, 'Copia — para el trabajador')
   } else {
     doc.addPage()
-    copia(doc, d, 0, 'Copia — para el trabajador')
+    copia(doc, d, ARRIBA, 'Copia — para el trabajador')
   }
 }
 

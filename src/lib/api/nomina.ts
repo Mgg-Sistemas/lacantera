@@ -667,8 +667,18 @@ export function useFirmaRrhh() {
         (x.vigencia_hasta === null || x.vigencia_hasta >= hoy),
     )
     const v = p?.valor_texto?.trim()
-    // "Por definir" es lo que siembra la migración: es un hueco, no un nombre.
-    return !v || v === 'Por definir' ? '' : v
+
+    /*
+      "Por definir" es lo que siembra la migración: es un hueco, no un nombre.
+
+      La comparación va sin distinguir mayúsculas porque el sistema normaliza
+      todo lo que se guarda: el valor sembrado como "Por definir" hoy está en la
+      base como "POR DEFINIR", y con la comparación exacta dejó de reconocerse.
+      El resultado es que los recibos de pago llevaban semanas saliendo firmados
+      por una persona llamada POR DEFINIR — un hueco disfrazado de nombre, que es
+      justo lo que este filtro existía para evitar.
+    */
+    return !v || v.toLowerCase() === 'por definir' ? '' : v
   }
 
   return {

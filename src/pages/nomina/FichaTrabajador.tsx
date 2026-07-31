@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, FileText, IdCard, Pencil } from 'lucide-react'
+import { ArrowLeft, FileText, IdCard, Pencil, ScrollText, TriangleAlert } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
+import { Modal } from '@/components/ui/Modal'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
+import { VisorPdf } from '@/components/VisorPdf'
 import {
   BASES_SALARIO,
   ESTADOS_CIVILES,
@@ -14,6 +16,7 @@ import {
   GENEROS,
   JORNADAS,
   useEmpleado,
+  useFirmaRrhh,
   useFoto,
   useGuardarEncuadre,
   useQuitarFoto,
@@ -21,9 +24,12 @@ import {
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
+import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { descargarCarnet } from '@/lib/ficha/carnet'
 import { descargarFicha, type Seccion } from '@/lib/ficha/fichaPdf'
+import { armarConstancia } from '@/lib/ficha/constanciaPdf'
+import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { ENCUADRE_CENTRADO, type Encuadre } from '@/lib/ficha/encuadre'
 import { dinero, fecha } from '@/lib/formato'
 
@@ -152,6 +158,14 @@ export function FichaTrabajador() {
   const [exportando, setExportando] = useState<'pdf' | 'png' | null>(null)
   const [falloExportar, setFalloExportar] = useState<Error | null>(null)
 
+  // La constancia
+  const empresa = useEmpresa()
+  const { firma } = useFirmaRrhh()
+  const [pidiendo, setPidiendo] = useState(false)
+  const [conSueldo, setConSueldo] = useState(true)
+  const [armando, setArmando] = useState(false)
+  const [vista, setVista] = useState<PdfArmado | null>(null)
+
   /*
     El encuadre en pantalla arranca del guardado, pero solo se rehace cuando el
     guardado de verdad cambia.
@@ -226,6 +240,44 @@ export function FichaTrabajador() {
       setFalloExportar(err instanceof Error ? err : new Error(String(err)))
     } finally {
       setExportando(null)
+    }
+  }
+
+  async function emitirConstancia() {
+    if (!e) return
+    setArmando(true)
+    setFalloExportar(null)
+
+    try {
+      const pdf = await armarConstancia({
+        nombreCompleto: `${e.nombres} ${e.apellidos}`,
+        cedula: e.cedula,
+        ficha: e.ficha,
+        cargo: e.cargo,
+        departamento: e.departamento,
+        fechaIngreso: e.fecha_ingreso,
+        fechaEgreso: e.fecha_egreso,
+        activo: e.activo,
+        genero: e.genero,
+        // `base_estipulacion` y no `frecuencia`: aquí se estipula mensual y se
+        // paga quincenal. Poner la frecuencia diría «salario quincenal de 310»
+        // cuando la quincena son 155.
+        sueldo: conSueldo
+          ? { monto: e.salario_base, moneda: e.moneda_salario, base: e.base_estipulacion }
+          : null,
+        // Dónde se expide sale de los datos de la empresa, no de una constante
+        // escrita aquí: si la empresa se muda, la carta lo dice sola.
+        ciudad: empresa.data?.ciudad || empresa.data?.estado || 'Ciudad Bolívar',
+        domicilio: empresa.data?.domicilio_fiscal ?? null,
+        firma,
+        emitidaPor: nombre,
+      })
+      setVista(pdf)
+      setPidiendo(false)
+    } catch (err) {
+      setFalloExportar(err instanceof Error ? err : new Error(String(err)))
+    } finally {
+      setArmando(false)
     }
   }
 
@@ -355,17 +407,132 @@ export function FichaTrabajador() {
               >
                 {exportando === 'png' ? 'Armando la imagen…' : 'Carnet (imagen)'}
               </Button>
+              <div className="sm:col-span-2">
+                <Button
+                  block
+                  variant="outline"
+                  icon={<ScrollText />}
+                  disabled={armando}
+                  onClick={() => setPidiendo(true)}
+                >
+                  Constancia de trabajo
+                </Button>
+              </div>
             </div>
 
             <p className="text-ink/40 mt-3 text-center text-xs">
               El PDF trae todos los datos en A4. La imagen es el carnet de 54 × 86 mm a 300 dpi
-              —638 × 1016 píxeles—, que es lo que pide una imprenta para que no salga pixelado.
+              —638 × 1016 píxeles—, que es lo que pide una imprenta para que no salga pixelado. La
+              constancia es la carta que se entrega a un banco o a quien la pida.
             </p>
 
             {falloExportar ? <ErrorDeCarga error={falloExportar} className="mt-3" /> : null}
           </Card>
         </div>
       </div>
+
+      {/* --------------------- Constancia de trabajo --------------------- */}
+      {pidiendo ? (
+        <Modal
+          abierto
+          onCerrar={() => setPidiendo(false)}
+          titulo="Constancia de trabajo"
+          descripcion={`Para ${e.nombres} ${e.apellidos}`}
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setPidiendo(false)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={armando || !e.fecha_ingreso_confirmada}
+                onClick={() => void emitirConstancia()}
+              >
+                {armando ? 'Armando…' : 'Emitir'}
+              </Button>
+            </>
+          }
+        >
+          {/*
+            La fecha de ingreso sin confirmar detiene la emisión, no la avisa.
+
+            La constancia dice desde cuándo trabaja aquí esta persona, y sale
+            firmada por la empresa. Las fichas que se cargaron del libro de
+            nómina traen una fecha puesta por el sistema porque el archivo no la
+            tenía; firmar esa fecha es afirmar como cierto algo que nadie ha
+            comprobado. Un aviso que se puede saltar con un clic se salta.
+          */}
+          {!e.fecha_ingreso_confirmada ? (
+            <div className="border-warning/30 bg-warning/8 flex items-start gap-2.5 rounded-[6px] border p-3">
+              <TriangleAlert className="text-warning mt-0.5 size-4 shrink-0" />
+              <div className="text-sm">
+                <p className="text-ink/80 leading-relaxed">
+                  Falta confirmar la fecha de ingreso. La constancia declara desde cuándo trabaja
+                  aquí y sale firmada por la empresa: no se puede emitir con una fecha que nadie ha
+                  revisado.
+                </p>
+                <Link
+                  to={`/app/nomina/personal?editar=${e.id}`}
+                  className="text-royal-600 hover:text-royal-700 dark:text-royal-300 mt-2 inline-block font-medium"
+                >
+                  Corregir la fecha de ingreso
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-ink/70 text-sm leading-relaxed">
+                Va en papel de la empresa, con el logo, y declara que{' '}
+                <strong className="text-ink/90 font-medium">
+                  {e.activo ? 'presta sus servicios' : 'prestó sus servicios'}
+                </strong>{' '}
+                desde el {fecha(e.fecha_ingreso)}
+                {e.activo ? '' : ` hasta el ${fecha(e.fecha_egreso)}`} como {e.cargo}.
+              </p>
+
+              <label className="text-ink/75 flex cursor-pointer items-start gap-2.5 text-sm select-none">
+                <input
+                  type="checkbox"
+                  className="accent-royal-600 mt-0.5 size-4"
+                  checked={conSueldo}
+                  onChange={(ev) => setConSueldo(ev.target.checked)}
+                />
+                <span>
+                  Incluir el sueldo
+                  <span className="text-ink/45 block text-xs">
+                    {conSueldo
+                      ? `Dirá ${dinero(e.moneda_salario, e.salario_base)} ${
+                          BASES_SALARIO.find(
+                            (b) => b.valor === e.base_estipulacion,
+                          )?.etiqueta.toLowerCase() ?? 'mensual'
+                        }. El banco lo exige; un arrendador no tiene por qué verlo.`
+                      : 'La carta no dirá cuánto gana.'}
+                  </span>
+                </span>
+              </label>
+
+              {!firma.nombre ? (
+                <p className="text-ink/45 text-xs leading-relaxed">
+                  Nadie ha cargado quién firma por Recursos humanos, así que el renglón de la firma
+                  sale con el cargo y sin nombre, para llenarlo a mano. Se configura en Parámetros
+                  de nómina.
+                </p>
+              ) : null}
+            </div>
+          )}
+
+          {falloExportar ? <ErrorDeCarga error={falloExportar} className="mt-4" /> : null}
+        </Modal>
+      ) : null}
+
+      <VisorPdf
+        abierto={vista !== null}
+        onCerrar={() => setVista(null)}
+        blob={vista?.blob ?? null}
+        nombreArchivo={vista?.nombre ?? 'constancia.pdf'}
+        titulo="Constancia de trabajo"
+        descripcion="Revísala antes de entregarla. La firma va a mano."
+      />
     </>
   )
 }

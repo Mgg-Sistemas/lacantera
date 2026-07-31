@@ -34,8 +34,10 @@ export interface Empresa {
 export function useEmpresa() {
   return useQuery({
     queryKey: ['empresa'],
+    // Con el tipo puesto: sin él, `desenvolver` infería `never` y quien leyera
+    // `empresa.data.ciudad` recibía un error de compilación en vez del dato.
     queryFn: async () =>
-      desenvolver(await supabase.from('empresa').select('*').eq('id', 1).single()),
+      desenvolver<Empresa>(await supabase.from('empresa').select('*').eq('id', 1).single()),
   })
 }
 
