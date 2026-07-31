@@ -16,6 +16,7 @@
 
 import { marcaComoImagen, MARCA_SOBRE_OSCURO } from './marca'
 import { fotoRecortada, type Encuadre } from './encuadre'
+import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, DER, IZQ, PIE } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
 
 const AZUL = '#1D358F'
@@ -27,10 +28,12 @@ const HAIRLINE = '#EEF0F6'
 const VERDE = '#2EA05A'
 const VERDE_SUAVE = '#E6F4EC'
 
-const IZQ = 14
-const DER = 196
-const ANCHO_COL = (DER - IZQ - 18) / 2
-const COL2 = IZQ + ANCHO_COL + 18
+// La separación entre las dos columnas de datos baja de 18 a 10 mm: con 150 mm
+// de ancho útil, 18 dejaba cada columna en 66 y los valores largos —una
+// dirección, un contacto de emergencia— salían recortados a la mitad.
+const SEPARA_COL = 10
+const ANCHO_COL = (DER - IZQ - SEPARA_COL) / 2
+const COL2 = IZQ + ANCHO_COL + SEPARA_COL
 
 export interface Campo {
   clave: string
@@ -59,45 +62,32 @@ export interface DatosFicha {
 
 type Doc = import('jspdf').jsPDF
 
-/** Recorta con puntos suspensivos lo que no cabe, en vez de dejarlo salirse. */
-function ajustar(doc: Doc, texto: string, ancho: number): string {
-  if (doc.getTextWidth(texto) <= ancho) return texto
-
-  let corto = texto
-  while (corto.length > 1 && doc.getTextWidth(`${corto}…`) > ancho) {
-    corto = corto.slice(0, -1)
-  }
-  return `${corto.trimEnd()}…`
-}
-
-function encabezado(doc: Doc, d: DatosFicha) {
+function encabezado(doc: Doc, d: DatosFicha): number {
   doc.setFillColor(AZUL)
-  doc.rect(0, 0, 210, 38, 'F')
+  // Dentro del margen. Una banda a sangre anula tres de los cuatro lados.
+  doc.rect(IZQ, ARRIBA, ANCHO_UTIL, 34, 'F')
 
-  doc.addImage(marcaComoImagen(MARCA_SOBRE_OSCURO), 'PNG', IZQ, 9, 14, 14)
+  doc.addImage(marcaComoImagen(MARCA_SOBRE_OSCURO), 'PNG', IZQ + 5, ARRIBA + 7, 13, 13)
 
   doc.setTextColor('#FFFFFF')
-  doc.setFont('helvetica', 'bold').setFontSize(15)
-  doc.text(EMPRESA.razonSocial, IZQ + 17, 19)
+  doc.setFont('helvetica', 'bold').setFontSize(12)
+  doc.text(ajustar(doc, EMPRESA.razonSocial, 82), IZQ + 22, ARRIBA + 15)
 
   doc.setTextColor(AZUL_CLARO)
-  doc.setFont('helvetica', 'normal').setFontSize(8)
-  doc.text(
-    `RIF ${EMPRESA.rif} · ${EMPRESA.actividad.toUpperCase()} · ${EMPRESA.estado.toUpperCase()}`,
-    IZQ,
-    30,
-  )
+  doc.setFont('helvetica', 'normal').setFontSize(7)
+  doc.text(`RIF ${EMPRESA.rif} · ${EMPRESA.actividad.toUpperCase()}`, IZQ + 5, ARRIBA + 27)
 
-  doc.setFontSize(9)
-  doc.text('FICHA DEL TRABAJADOR', DER, 17, { align: 'right' })
+  doc.setFontSize(8)
+  doc.text('FICHA DEL TRABAJADOR', DER - 5, ARRIBA + 13, { align: 'right' })
 
   doc.setTextColor('#FFFFFF')
-  doc.setFont('helvetica', 'bold').setFontSize(20)
-  doc.text(`N° ${d.ficha}`, DER, 28, { align: 'right' })
+  doc.setFont('helvetica', 'bold').setFontSize(17)
+  doc.text(`N° ${d.ficha}`, DER - 5, ARRIBA + 25, { align: 'right' })
+
+  return ARRIBA + 44
 }
 
-function persona(doc: Doc, d: DatosFicha): number {
-  const y = 48
+function persona(doc: Doc, d: DatosFicha, y: number): number {
 
   if (d.foto) {
     doc.addImage(fotoRecortada(d.foto, 32, 40, d.encuadre), 'JPEG', IZQ, y, 32, 40)
@@ -111,13 +101,19 @@ function persona(doc: Doc, d: DatosFicha): number {
   doc.setDrawColor('#E6E9F2').setLineWidth(0.3)
   doc.rect(IZQ, y, 32, 40)
 
-  const x = IZQ + 40
+  const x = IZQ + 38
 
-  doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(19)
+  // 15 y no 19: con 112 mm de ancho, un nombre de cuatro palabras a cuerpo 19
+  // se recortaba en todas las fichas menos las más cortas.
+  doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(15)
   doc.text(ajustar(doc, d.nombreCompleto, DER - x), x, y + 11)
 
-  doc.setTextColor(AZUL_CARGO).setFont('helvetica', 'normal').setFontSize(10)
-  doc.text([d.cargo, d.departamento].filter(Boolean).join(' · '), x, y + 18)
+  doc.setTextColor(AZUL_CARGO).setFont('helvetica', 'normal').setFontSize(9)
+  doc.text(
+    ajustar(doc, [d.cargo, d.departamento].filter(Boolean).join(' · '), DER - x),
+    x,
+    y + 18,
+  )
 
   // La píldora de estado se dibuja a la medida del texto: una caja fija se ve
   // suelta con "Activo" y aprieta con "Egresado el 12/03/2027".
@@ -181,10 +177,11 @@ function seccion(doc: Doc, s: Seccion, y: number): number {
 }
 
 function firmas(doc: Doc, y: number) {
-  const ancho = (DER - IZQ - 20) / 2
+  const SEPARA = 14
+  const ancho = (DER - IZQ - SEPARA) / 2
 
   for (const [i, texto] of ['Firma del trabajador', 'Recursos humanos'].entries()) {
-    const x = IZQ + i * (ancho + 20)
+    const x = IZQ + i * (ancho + SEPARA)
     doc.setDrawColor(TINTA).setLineWidth(0.4)
     doc.line(x, y, x + ancho, y)
 
@@ -194,7 +191,9 @@ function firmas(doc: Doc, y: number) {
 }
 
 function pie(doc: Doc, d: DatosFicha) {
-  const y = 285
+  // Dentro de la caja de texto, no a 12 mm del borde de la hoja. `PIE` deja
+  // sitio para el rabo de las letras, que si no se comería el margen.
+  const y = PIE
 
   doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
   doc.line(IZQ, y - 5, DER, y - 5)
@@ -205,21 +204,24 @@ function pie(doc: Doc, d: DatosFicha) {
     year: 'numeric',
   })
 
-  doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7.5)
-  doc.text(`Emitida el ${hoy} por ${d.emitidaPor}`, IZQ, y)
-  doc.text(`Documento interno · ${EMPRESA.razonSocial}`, DER, y, { align: 'right' })
+  doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7)
+  doc.text(ajustar(doc, `Emitida el ${hoy} por ${d.emitidaPor}`, ANCHO_UTIL * 0.5), IZQ, y)
+  doc.text('Documento interno', DER, y, { align: 'right' })
 }
 
 export async function descargarFicha(d: DatosFicha): Promise<void> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  encabezado(doc, d)
+  let y = encabezado(doc, d)
 
-  let y = persona(doc, d)
+  y = persona(doc, d, y)
   for (const s of d.secciones) y = seccion(doc, s, y)
 
-  firmas(doc, Math.max(y + 8, 240))
+  // Las firmas bajan hasta donde llegue el contenido, pero nunca por debajo de
+  // donde empieza el pie: antes el tope era 240 contando desde el borde, y con
+  // el margen nuevo eso las metía dentro del pie.
+  firmas(doc, Math.min(Math.max(y + 8, ABAJO - 24), ABAJO - 16))
   pie(doc, d)
 
   doc.setProperties({
