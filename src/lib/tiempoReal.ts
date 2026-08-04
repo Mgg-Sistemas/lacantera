@@ -55,6 +55,9 @@ const AFECTA: Record<string, string[][]> = {
   facturas_venta: [['ventas'], ['cobranza'], ['clientes']],
   factura_venta_renglones: [['ventas']],
   cobros_venta: [['ventas'], ['cobranza'], ['clientes'], ['tesoreria']],
+  // Una nota de crédito baja lo que debe el cliente igual que un cobro, y si
+  // devolvió material también mueve el patio.
+  notas_credito: [['ventas'], ['cobranza'], ['clientes'], ['existencias'], ['movimientos']],
 
   // El parte de turno es la puerta por la que entra la piedra al patio: quien
   // esté mirando las existencias tiene que ver el material nuevo sin recargar,

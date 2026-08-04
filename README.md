@@ -47,6 +47,27 @@ Al abrir el proyecto, VS Code recomienda las extensiones necesarias
 | `npm run lint` | Analiza el código con Oxlint |
 | `npm run build` | Verifica tipos y compila a `dist/` |
 | `npm run preview` | Sirve el build de producción en local |
+| `npm run prueba` | Corre las pruebas contra la base |
+
+## Pruebas
+
+Hace falta la variable `DBURL`: la cadena de conexión de Postgres que da
+Supabase en Project Settings → Database → Connection string. No se versiona,
+se pone en el entorno antes de correr.
+
+```bash
+DBURL="postgresql://..." npm run prueba            # todas
+DBURL="postgresql://..." npm run prueba permisos   # solo esa suite
+```
+
+Se prueba contra la base de verdad —no hay otra—, así que cada archivo corre
+dentro de una transacción que se deshace al terminar, pase lo que pase. Nada
+de lo que crea la prueba sobrevive: ni usuarios, ni movimientos, ni asientos.
+
+Sin `DBURL` el comando corta con un mensaje explicativo y sale con código 2.
+Por eso en GitHub Actions estas pruebas van en un job aparte que se salta solo
+cuando el secreto no está: quien abre un pull request desde una bifurcación no
+tiene acceso a los secretos del repositorio.
 
 ## Ramas (gitflow-simple)
 
