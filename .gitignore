@@ -40,6 +40,15 @@ supabase/.temp
 # Claude Code: la configuracion personal no se comparte
 .claude/settings.local.json
 
+# El manual, convertido a HTML para la pantalla que lo muestra.
+#
+# El manual vive en docs/manual-de-usuario.md y esto es el mismo texto otra vez,
+# medio megabyte. Versionar las dos copias duplica el peso del repositorio y
+# abre la puerta a que alguien edite la equivocada. Lo genera
+# scripts/manual-a-html.mjs, y npm lo corre solo antes de dev, de build y del
+# chequeo de tipos.
+src/pages/manual.generado.html
+
 # Capturas y volcados de las pruebas en navegador
 .playwright-mcp
 *.png
