@@ -1,5 +1,6 @@
 import {
   Banknote,
+  BookOpen,
   Boxes,
   ClipboardList,
   Gauge,
@@ -42,6 +43,15 @@ export interface NavItem {
   children?: NavChild[]
   /** Contador de pendientes. Se resolverá contra datos reales. */
   badge?: number
+  /**
+   * Se ve siempre, sin comprobar permisos.
+   *
+   * Para lo que no es un módulo del negocio sino ayuda del propio sistema. El
+   * manual es el caso: quien más lo necesita es quien acaba de entrar y todavía
+   * no tiene ningún permiso asignado, y esconderle justo las instrucciones es
+   * dejarlo sin la única pantalla que le explica a quién pedírselos.
+   */
+  siempre?: boolean
 }
 
 /**
@@ -75,13 +85,17 @@ export function moduloDeRuta(ruta: string): string {
 }
 
 /**
- * Rutas que no son de ningún módulo porque son de la persona.
+ * Rutas que no pertenecen a ningún módulo y no se le cierran a nadie.
  *
  * Su cuenta y su clave las alcanza siempre, aunque le hayan cerrado todo lo
  * demás: un usuario al que se le quitaron los permisos mientras se resuelve
  * algo tiene que poder seguir cambiándose la clave.
+ *
+ * El manual va aquí por lo mismo visto al revés: no contiene ningún dato de la
+ * empresa, solo explica cómo se usa el sistema. Cerrarlo por permisos no
+ * protegería nada y dejaría sin instrucciones a quien acaba de llegar.
  */
-const RUTAS_PROPIAS = ['/app/cuenta']
+const RUTAS_PROPIAS = ['/app/cuenta', '/app/manual']
 
 export function esRutaPropia(ruta: string): boolean {
   return RUTAS_PROPIAS.some((prefijo) => ruta.startsWith(prefijo))
@@ -218,6 +232,15 @@ export const navigation: NavSection[] = [
           { label: 'Documentos legales', to: '/app/config/documentos' },
           { label: 'Auditoría', to: '/app/config/auditoria', soloAdmin: true },
         ],
+      },
+      {
+        // Al final de todo el menú, que es donde se busca la ayuda en cualquier
+        // programa. No se abre a diario, pero el día que hace falta se necesita
+        // encontrar sin preguntarle a nadie: para eso está.
+        label: 'Manual de usuario',
+        icon: BookOpen,
+        to: '/app/manual',
+        siempre: true,
       },
     ],
   },

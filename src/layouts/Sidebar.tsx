@@ -43,9 +43,11 @@ function menuVisible(
             (hijo) => (hijo.soloAdmin ? esAdmin : true) && puede(moduloDeRuta(hijo.to)),
           ),
         }))
-        .filter((item) =>
-          item.children ? item.children.length > 0 : puede(moduloDeRuta(item.to ?? '/app')),
-        ),
+        .filter((item) => {
+          // La ayuda del sistema no se reparte por permisos: ver `siempre`.
+          if (item.siempre) return true
+          return item.children ? item.children.length > 0 : puede(moduloDeRuta(item.to ?? '/app'))
+        }),
     }))
     .filter((seccion) => seccion.items.length > 0)
 }

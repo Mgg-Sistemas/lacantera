@@ -136,6 +136,8 @@ const FacturasProveedor = lazy(() =>
 const Prestaciones = lazy(() =>
   import('@/pages/nomina/Prestaciones').then((m) => ({ default: m.Prestaciones })),
 )
+// El manual pesa medio megabyte de texto. Partido, solo lo descarga quien lo abre.
+const Manual = lazy(() => import('@/pages/Manual').then((m) => ({ default: m.Manual })))
 
 /**
  * Pantallas ya construidas, por ruta.
@@ -181,6 +183,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/config/documentos': <Documentos />,
   '/app/config/auditoria': <Auditoria />,
   '/app/tasas': <Tasas />,
+  '/app/manual': <Manual />,
 }
 
 const rutasDeModulos = navigation.flatMap((seccion) =>
