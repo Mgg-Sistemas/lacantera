@@ -56,6 +56,28 @@ const AFECTA: Record<string, string[][]> = {
   factura_venta_renglones: [['ventas']],
   cobros_venta: [['ventas'], ['cobranza'], ['clientes'], ['tesoreria']],
 
+  // El parte de turno es la puerta por la que entra la piedra al patio: quien
+  // esté mirando las existencias tiene que ver el material nuevo sin recargar,
+  // porque de eso depende si puede despachar.
+  frentes_explotacion: [['explotacion']],
+  voladuras: [['explotacion']],
+  produccion_turnos: [['explotacion'], ['existencias'], ['movimientos']],
+  produccion_renglones: [['explotacion'], ['existencias']],
+
+  // El pesaje y la guía los produce la garita y los consume ventas. Sin esto,
+  // quien está armando la nota de entrega no ve el ticket que acaban de pesar.
+  romana_tickets: [['despachos'], ['ventas']],
+  guias_movilizacion: [['despachos'], ['ventas']],
+
+  facturas_compra: [['facturas-compra'], ['compras'], ['tesoreria']],
+  pagos_compra: [['facturas-compra'], ['tesoreria']],
+
+  prestaciones_corte: [['prestaciones']],
+  prestaciones_depositos: [['prestaciones']],
+  prestaciones_intereses: [['prestaciones']],
+  prestaciones_anticipos: [['prestaciones'], ['tesoreria']],
+  prestaciones_liquidaciones: [['prestaciones'], ['tesoreria'], ['nomina']],
+
   // El tabulador decide sueldos: al tocarlo cambia la lista de quién está
   // desfasado, y con ella el botón de sincronizar. Va en las dos claves porque
   // el personal también muestra el cargo que sale de aquí.

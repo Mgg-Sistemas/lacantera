@@ -14,6 +14,7 @@ import { dinero, enteros, fecha } from '@/lib/formato'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
+import { useGuias, useTickets } from '@/lib/api/despachos'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
@@ -65,11 +66,19 @@ export function Despachos() {
   const [chofer, setChofer] = useState('')
   const [cedula, setCedula] = useState('')
   const [ticket, setTicket] = useState('')
+  const [ticketId, setTicketId] = useState('')
+  const [guiaId, setGuiaId] = useState('')
   const [bruto, setBruto] = useState('')
   const [tara, setTara] = useState('')
   const [flete, setFlete] = useState('')
   const [observacion, setObservacion] = useState('')
   const [filas, setFilas] = useState<FilaRenglon[]>([filaVacia()])
+
+  const { data: tickets } = useTickets('LIBRE')
+  const { data: guias } = useGuias('VIGENTE')
+
+  const ticketsLibres = (tickets ?? []).filter((t) => t.tipo === 'SALIDA')
+  const guiasVigentes = (guias ?? []).filter((g) => !g.vencida)
 
   const { data: existencias } = useExistencias(almacenId ? Number(almacenId) : undefined)
   const renglonesDetalle = useRenglones('nota_entrega_renglones', 'nota_id', detalle?.id ?? null)
@@ -92,6 +101,8 @@ export function Despachos() {
     setChofer('')
     setCedula('')
     setTicket('')
+    setTicketId('')
+    setGuiaId('')
     setBruto('')
     setTara('')
     setFlete('')
@@ -268,6 +279,8 @@ export function Despachos() {
                     peso_tara: Number(tara) || null,
                     flete: Number(flete) || 0,
                     observacion: observacion || null,
+                    ticket_id: Number(ticketId) || null,
+                    guia_id: Number(guiaId) || null,
                   })
                   setNuevo(false)
                   limpiar()
@@ -332,6 +345,56 @@ export function Despachos() {
               Datos del camión y de la romana. El peso no cambia lo que se factura: es la prueba
               del día que alguien discuta la cantidad.
             </p>
+
+            {/* El pesaje y la guía se eligen de lo que la garita ya registró.
+                Elegir un ticket trae sus pesos y su placa: volver a teclearlos
+                es la forma de que el papel y la báscula digan cosas distintas.
+                Sin guía, la base rechaza el despacho de mineral. */}
+            <div className="mb-4 grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Ticket de romana"
+                vacio="Sin pesaje registrado"
+                value={ticketId}
+                onChange={(e) => {
+                  setTicketId(e.target.value)
+                  const t = ticketsLibres.find((x) => String(x.id) === e.target.value)
+                  if (t) {
+                    setVehiculo(t.vehiculo)
+                    setChofer(t.chofer ?? '')
+                    setCedula(t.cedula_chofer ?? '')
+                    setBruto(String(Number(t.peso_bruto)))
+                    setTara(String(Number(t.peso_tara)))
+                    setTicket(t.numero)
+                  }
+                }}
+                opciones={ticketsLibres.map((t) => ({
+                  valor: String(t.id),
+                  etiqueta: `${t.numero} · ${t.vehiculo} · ${enteros(t.peso_neto)} kg`,
+                }))}
+                hint={
+                  ticketsLibres.length === 0
+                    ? 'No hay pesajes sin usar. Se registran en Despachos › Tickets de romana.'
+                    : 'Al elegirlo, los pesos y la placa se traen de la báscula.'
+                }
+              />
+              <Select
+                label="Guía de movilización"
+                vacio="Sin guía"
+                value={guiaId}
+                onChange={(e) => setGuiaId(e.target.value)}
+                opciones={guiasVigentes.map((g) => ({
+                  valor: String(g.id),
+                  etiqueta: `${g.numero_guia} · ${g.articulo} · ${enteros(g.toneladas)} t`,
+                }))}
+                error={
+                  guiasVigentes.length === 0
+                    ? 'No hay guías vigentes: el despacho de mineral se rechazará'
+                    : undefined
+                }
+                hint="Ninguna salida de mineral viaja sin guía."
+              />
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-3">
               <Input
                 label="Placa del vehículo"
