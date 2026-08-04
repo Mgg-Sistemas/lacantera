@@ -40,7 +40,21 @@ const AFECTA: Record<string, string[][]> = {
   almacenes: [['almacenes'], ['existencias']],
 
   cuentas_tesoreria: [['tesoreria']],
-  tesoreria_movimientos: [['tesoreria'], ['nomina']],
+  tesoreria_movimientos: [['tesoreria'], ['nomina'], ['ventas']],
+
+  // Ventas cruza medio sistema: un despacho rebaja el patio, una factura entra
+  // en la cobranza y un cobro escribe en el libro de tesorería. Dos personas
+  // facturando a la vez tienen que ver la misma cola de notas por facturar, o
+  // la segunda emite un papel por material que ya se facturó.
+  clientes: [['clientes'], ['ventas']],
+  precios_venta: [['precios-venta']],
+  cotizaciones_venta: [['ventas']],
+  cotizacion_venta_renglones: [['ventas']],
+  notas_entrega: [['ventas'], ['existencias'], ['movimientos']],
+  nota_entrega_renglones: [['ventas']],
+  facturas_venta: [['ventas'], ['cobranza'], ['clientes']],
+  factura_venta_renglones: [['ventas']],
+  cobros_venta: [['ventas'], ['cobranza'], ['clientes'], ['tesoreria']],
 
   // El tabulador decide sueldos: al tocarlo cambia la lista de quién está
   // desfasado, y con ella el botón de sincronizar. Va en las dos claves porque

@@ -99,6 +99,24 @@ const Proveedores = lazy(() =>
 const TableroCompras = lazy(() =>
   import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),
 )
+const ClientesVenta = lazy(() =>
+  import('@/pages/ventas/Clientes').then((m) => ({ default: m.Clientes })),
+)
+const PreciosVenta = lazy(() =>
+  import('@/pages/ventas/Precios').then((m) => ({ default: m.Precios })),
+)
+const CotizacionesVenta = lazy(() =>
+  import('@/pages/ventas/Cotizaciones').then((m) => ({ default: m.Cotizaciones })),
+)
+const Despachos = lazy(() =>
+  import('@/pages/ventas/Despachos').then((m) => ({ default: m.Despachos })),
+)
+const Facturacion = lazy(() =>
+  import('@/pages/ventas/Facturacion').then((m) => ({ default: m.Facturacion })),
+)
+const PorCobrar = lazy(() =>
+  import('@/pages/tesoreria/PorCobrar').then((m) => ({ default: m.PorCobrar })),
+)
 
 /**
  * Pantallas ya construidas, por ruta.
@@ -123,6 +141,12 @@ const paginas: Record<string, ReactNode> = {
   '/app/tesoreria/pagos': <Pagos />,
   '/app/tesoreria/por-pagar': <PorPagar />,
   '/app/tesoreria/movimientos': <MovimientosTesoreria />,
+  '/app/tesoreria/por-cobrar': <PorCobrar />,
+  '/app/ventas/clientes': <ClientesVenta />,
+  '/app/ventas/precios': <PreciosVenta />,
+  '/app/ventas/cotizaciones': <CotizacionesVenta />,
+  '/app/ventas/despachos': <Despachos />,
+  '/app/ventas/facturacion': <Facturacion />,
   '/app/config/usuarios': <Usuarios />,
   '/app/inventario/articulos': <Articulos />,
   '/app/inventario/almacenes': <Almacenes />,

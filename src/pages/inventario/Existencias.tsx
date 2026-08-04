@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Boxes, PackageMinus, Scale, Search, TriangleAlert } from 'lucide-react'
+import { Boxes, PackagePlus, PackageMinus, Scale, Search, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -9,13 +9,14 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { useMisRoles } from '@/lib/api/catalogo'
+import { useArticulos, useMisRoles } from '@/lib/api/catalogo'
 import {
   useAlmacenes,
   useExistencias,
   useRegistrarAjuste,
   useRegistrarSalida,
 } from '@/lib/api/inventario'
+import { useRegistrarProduccion } from '@/lib/api/ventas'
 import type { Existencia } from '@/lib/api/inventario'
 import { dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -33,6 +34,20 @@ export function Existencias() {
 
   const salida = useRegistrarSalida()
   const ajuste = useRegistrarAjuste()
+  const produccion = useRegistrarProduccion()
+  const { data: articulos } = useArticulos()
+
+  // La producción es la puerta por la que entra lo que la cantera fabrica. Sin
+  // ella el patio dice cero de todo y no hay nada que despachar: es lo primero
+  // que falta el día que se abre Ventas.
+  const [cargando, setCargando] = useState(false)
+  const [prodAlmacen, setProdAlmacen] = useState('')
+  const [prodArticulo, setProdArticulo] = useState('')
+  const [prodCantidad, setProdCantidad] = useState('')
+  const [prodNota, setProdNota] = useState('')
+  const [prodFecha, setProdFecha] = useState('')
+
+  const productos = (articulos ?? []).filter((a) => a.categoria === 'PRODUCTO' && a.activo)
 
   const [busqueda, setBusqueda] = useState('')
   const [soloBajas, setSoloBajas] = useState(false)
@@ -93,6 +108,23 @@ export function Existencias() {
       <PageHeader
         title="Existencias"
         description="Lo que hay ahora mismo, calculado sumando el libro de movimientos. No es un número guardado que pueda desincronizarse."
+        actions={
+          puede('ALMACEN') ? (
+            <Button
+              icon={<PackagePlus />}
+              onClick={() => {
+                setProdAlmacen(almacenId)
+                setProdArticulo('')
+                setProdCantidad('')
+                setProdNota('')
+                setProdFecha('')
+                setCargando(true)
+              }}
+            >
+              Cargar producción
+            </Button>
+          ) : undefined
+        }
       />
 
       {bajas.length > 0 ? (
@@ -306,6 +338,101 @@ export function Existencias() {
 
           {salida.error ? <ErrorDeCarga error={salida.error} className="mt-3" /> : null}
           {ajuste.error ? <ErrorDeCarga error={ajuste.error} className="mt-3" /> : null}
+        </Modal>
+      ) : null}
+
+      {cargando ? (
+        <Modal
+          abierto
+          ancho="sm"
+          onCerrar={() => setCargando(false)}
+          titulo="Cargar producción"
+          descripcion="Lo que salió de la planta y entra al patio. Es de donde sale el material que después se despacha."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setCargando(false)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={
+                  produccion.isPending ||
+                  !prodAlmacen ||
+                  !prodArticulo ||
+                  !Number(prodCantidad) ||
+                  prodNota.trim().length < 4
+                }
+                onClick={async () => {
+                  await produccion.mutateAsync({
+                    almacen_id: Number(prodAlmacen),
+                    articulo_id: Number(prodArticulo),
+                    cantidad: Number(prodCantidad),
+                    nota: prodNota,
+                    fecha: prodFecha || undefined,
+                  })
+                  setCargando(false)
+                }}
+              >
+                {produccion.isPending ? 'Registrando…' : 'Registrar'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <Select
+              label="A qué patio entra"
+              vacio="Elige el patio"
+              value={prodAlmacen}
+              onChange={(e) => setProdAlmacen(e.target.value)}
+              opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
+              required
+            />
+            <Select
+              label="Qué se produjo"
+              vacio="Elige el producto"
+              value={prodArticulo}
+              onChange={(e) => setProdArticulo(e.target.value)}
+              opciones={productos.map((a) => ({
+                valor: String(a.id),
+                etiqueta: `${a.codigo} · ${a.nombre} (${a.unidad})`,
+              }))}
+              hint="Solo lo catalogado como producto de cantera."
+              required
+            />
+            <Input
+              label="Cantidad"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={prodCantidad}
+              onChange={(e) => setProdCantidad(e.target.value)}
+              required
+            />
+            <Input
+              label="Fecha"
+              type="date"
+              hint="En blanco, hoy."
+              value={prodFecha}
+              onChange={(e) => setProdFecha(e.target.value)}
+            />
+            <Textarea
+              label="De dónde sale"
+              placeholder="Turno de la mañana, frente 3, voladura del 28"
+              hint="Queda en el libro y no se puede editar. Sin esto, un mes después nadie puede cuadrar el patio."
+              rows={2}
+              value={prodNota}
+              onChange={(e) => setProdNota(e.target.value)}
+              required
+            />
+          </div>
+
+          <p className="text-ink/50 mt-4 text-xs leading-relaxed">
+            La producción entra valorada en cero. Lo que cuesta producir una tonelada sale de la
+            nómina, el gasoil y la voladura, y ese cálculo todavía no lo lleva el sistema: poner un
+            número inventado valoraría el patio con una cifra que nadie calculó.
+          </p>
+
+          {produccion.error ? <ErrorDeCarga error={produccion.error} className="mt-4" /> : null}
         </Modal>
       ) : null}
     </>
