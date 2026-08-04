@@ -568,6 +568,45 @@ where f.estado = 'EMITIDA'
 grant select on public.v_cuentas_por_cobrar to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- Lo que debe el cliente tampoco cuenta lo acreditado
+--
+-- Esta es la función que gobierna el techo de crédito: la consulta la pantalla
+-- de clientes para enseñar el disponible, y la consulta `facturar_notas` antes
+-- de dejar emitir. Sin tocarla, una nota de crédito bajaba el saldo de la
+-- factura pero NO lo que el cliente tiene consumido de su cupo.
+--
+-- El efecto era al revés de lo que se espera: se le devuelven $600 a un cliente
+-- con $1.000 de límite y su disponible se queda en cero. La próxima venta le
+-- rebota diciendo que se pasa del límite, por una deuda que ya no tiene, y no
+-- hay forma de arreglarlo desde la pantalla salvo subiéndole el límite a mano.
+-- ---------------------------------------------------------------------------
+create or replace function private.deuda_cliente(p_cliente bigint)
+returns numeric
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(sum(
+           greatest(f.total_usd - f.retencion_usd
+                    - coalesce(c.cobrado, 0) - coalesce(n.acreditado, 0), 0)
+         ), 0)
+  from public.facturas_venta f
+  left join lateral (
+    select sum(co.monto_usd) as cobrado
+    from public.cobros_venta co
+    where co.factura_id = f.id and co.estado = 'REGISTRADO'
+  ) c on true
+  left join lateral (
+    select sum(nc.total_usd) as acreditado
+    from public.notas_credito nc
+    where nc.factura_id = f.id and nc.estado = 'EMITIDA'
+  ) n on true
+  where f.cliente_id = p_cliente
+    and f.estado = 'EMITIDA';
+$$;
+
+-- ---------------------------------------------------------------------------
 -- La nota, para leerla
 -- ---------------------------------------------------------------------------
 create or replace view public.v_notas_credito

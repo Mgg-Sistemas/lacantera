@@ -11,6 +11,8 @@
 */
 import { grupo, comprobar, como, comoDueno, debeFallar } from './ayuda.mjs'
 
+const cerca = (a, b, holgura = 0.02) => Math.abs(Number(a) - Number(b)) < holgura
+
 export default async function pruebaVentas(tx) {
   grupo('Notas de crédito · preparación')
 
@@ -95,6 +97,16 @@ export default async function pruebaVentas(tx) {
   comprobar(
     Math.abs(Number(f2.saldo_usd) - (Number(f.saldo_usd) - 23.2)) < 0.01,
     'y el saldo baja en esa misma cifra',
+  )
+
+  // El techo de crédito del cliente es otra cuenta distinta del saldo de la
+  // factura, y vive en su propia función. Si no se entera de la nota, se le
+  // devuelve dinero al cliente y su cupo disponible no sube: la siguiente venta
+  // le rebota por una deuda que ya no tiene.
+  const [c1] = await tx`select deuda_usd from public.v_clientes where id = ${cli.id}`
+  comprobar(
+    cerca(c1.deuda_usd, Number(f.saldo_usd) - 23.2),
+    `el cupo del cliente también descuenta lo acreditado (${c1.deuda_usd})`,
   )
 
   const noSeAnula = await debeFallar(tx, (sp) =>

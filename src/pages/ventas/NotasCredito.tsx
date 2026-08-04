@@ -112,7 +112,20 @@ export function NotasCredito() {
   )
   const alicuota = Number(factura?.alicuota_iva ?? 16)
   const totalNota = Math.round((subtotal + (gravado * alicuota) / 100) * 100) / 100
-  const seExcede = factura ? totalNota > Number(factura.total) + 0.01 : false
+
+  /*
+    El techo no es el total de la factura, es lo que le queda por acreditar.
+    Una factura puede llevar varias notas —primero se corrige el precio, después
+    el cliente devuelve material— y entre todas no pueden pasarse. La base lo
+    rechaza igual, pero enterarse aquí evita llenar el formulario entero para
+    que rebote al final.
+  */
+  const yaAcreditado = (data ?? [])
+    .filter((n) => n.factura_id === factura?.id && n.estado === 'EMITIDA')
+    .reduce((t, n) => t + Number(n.total), 0)
+
+  const porAcreditar = factura ? Number(factura.total) - yaAcreditado : 0
+  const seExcede = factura ? totalNota > porAcreditar + 0.01 : false
 
   const cerrar = () => {
     setEmitiendo(false)
@@ -378,7 +391,10 @@ export function NotasCredito() {
                 <p className="text-ink/55 text-sm">
                   {elegidas.length === 0
                     ? 'Marca al menos un renglón.'
-                    : `${elegidas.length} renglón${elegidas.length === 1 ? '' : 'es'} · la factura es de ${dinero(factura.moneda, factura.total)}`}
+                    : `${elegidas.length} renglón${elegidas.length === 1 ? '' : 'es'} · ` +
+                      (yaAcreditado > 0
+                        ? `esta factura ya tiene ${dinero(factura.moneda, yaAcreditado)} acreditados y quedan ${dinero(factura.moneda, porAcreditar)}`
+                        : `la factura es de ${dinero(factura.moneda, factura.total)}`)}
                 </p>
                 <p
                   className={`tabular text-xl font-semibold ${seExcede ? 'text-danger' : 'text-ink/90'}`}
@@ -389,8 +405,9 @@ export function NotasCredito() {
 
               {seExcede ? (
                 <p className="text-danger mt-2 text-sm">
-                  La nota es mayor que la factura. Una nota de crédito no puede devolver más de lo
-                  que se cobró.
+                  {yaAcreditado > 0
+                    ? `Con lo que ya se acreditó, a esta factura solo le quedan ${dinero(factura.moneda, porAcreditar)} por devolver.`
+                    : 'La nota es mayor que la factura. Una nota de crédito no puede devolver más de lo que se cobró.'}
                 </p>
               ) : null}
             </>
