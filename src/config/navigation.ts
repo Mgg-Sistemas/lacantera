@@ -157,11 +157,18 @@ export const navigation: NavSection[] = [
         ],
       },
       {
+        // El orden es el del camino del material hacia afuera: se registra al
+        // cliente, se le pone precio a lo que se vende, se cotiza, sale el
+        // camión con su nota y al final se factura. Puesto al revés —empezando
+        // por facturación, que es lo que más se usa— la primera semana nadie
+        // encuentra dónde se carga un cliente.
         label: 'Ventas',
         icon: ClipboardList,
         children: [
           { label: 'Clientes', to: '/app/ventas/clientes' },
+          { label: 'Lista de precios', to: '/app/ventas/precios' },
           { label: 'Cotizaciones', to: '/app/ventas/cotizaciones' },
+          { label: 'Notas de entrega', to: '/app/ventas/despachos' },
           { label: 'Facturación', to: '/app/ventas/facturacion' },
         ],
       },

@@ -65,6 +65,7 @@ export const enteros = (valor: string | number): string => numero.format(aNumero
 
 export function fechaHora(iso: string | null): string {
   if (!iso) return '—'
+  if (Number.isNaN(new Date(iso).getTime())) return '—'
   return new Intl.DateTimeFormat('es-VE', {
     day: '2-digit',
     month: 'short',
@@ -77,17 +78,29 @@ export function fechaHora(iso: string | null): string {
 /**
  * Una fecha sin hora.
  *
- * Se le pega el mediodía a propósito: una fecha suelta la interpreta el
- * navegador como medianoche UTC y en Venezuela —cuatro horas atrás— se muestra
+ * A una fecha suelta se le pega el mediodía a propósito: el navegador la
+ * interpreta como medianoche UTC y en Venezuela —cuatro horas atrás— se muestra
  * el día anterior. Al mediodía no hay huso que la mueva de día.
+ *
+ * SI LO QUE LLEGA ES UN INSTANTE COMPLETO se usa tal cual, porque ya trae su
+ * hora y su huso. Antes se le pegaba el mediodía igual, y "2026-08-04T14:34:01
+ * +00:00T12:00:00" no es una fecha: `Intl` lanzaba y la pantalla entera se
+ * quedaba en blanco. Pasó al mostrar cuándo se actualizó un precio.
+ *
+ * Y si aun así no se entiende, se dibuja una raya. Un dato con mala forma puede
+ * estropear su celda; no puede tumbar la página que lo rodea.
  */
 export function fecha(iso: string | null): string {
   if (!iso) return '—'
+
+  const d = iso.length <= 10 ? new Date(`${iso}T12:00:00`) : new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+
   return new Intl.DateTimeFormat('es-VE', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(`${iso}T12:00:00`))
+  }).format(d)
 }
 
 /**
