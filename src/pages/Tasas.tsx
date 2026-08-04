@@ -13,6 +13,7 @@ import {
   useTasaVigente,
   useTasasRegistradas,
 } from '@/lib/api/tasas'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { tasa as fmtTasa } from '@/lib/formato'
 
 function fecha(iso: string): string {
@@ -30,6 +31,16 @@ export function Tasas() {
   const historial = useTasasRegistradas()
   const registrar = useRegistrarTasa()
 
+  /*
+    Cargar la tasa dejó de estar al alcance de cualquiera que entre. Es con lo
+    que se valora todo el sistema y, como las tasas no se corrigen, un valor
+    mal tecleado se queda. Quien solo la consulta ve la pantalla completa —el
+    historial, la del BCV— pero no el formulario: un botón que siempre rebota
+    enseña a ignorar los errores.
+  */
+  const { puede } = useMisPermisos()
+  const puedeRegistrar = puede('TASAS', 'ESCRITURA')
+
   const hoy = hoyEnCaracas()
   const [valor, setValor] = useState('')
   const [dia, setDia] = useState(hoy)
@@ -46,8 +57,12 @@ export function Tasas() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader
-            title="Registrar la tasa del día"
-            subtitle="Una vez registrada no se puede corregir. Si el BCV publica una corrección, se registra una fila nueva."
+            title={puedeRegistrar ? 'Registrar la tasa del día' : 'La tasa del día'}
+            subtitle={
+              puedeRegistrar
+                ? 'Una vez registrada no se puede corregir. Si el BCV publica una corrección, se registra una fila nueva.'
+                : 'La carga administración o tesorería. Aquí se consulta cuál está rigiendo.'
+            }
           />
 
           {yaRegistradaHoy ? (
@@ -71,6 +86,7 @@ export function Tasas() {
             </div>
           )}
 
+          {!puedeRegistrar ? null : (
           <div className="mt-4 grid gap-4 sm:grid-cols-[200px_1fr_auto] sm:items-end">
             <Input label="Fecha" type="date" max={hoy} value={dia} onChange={(e) => setDia(e.target.value)} />
 
@@ -107,6 +123,7 @@ export function Tasas() {
               </Button>
             </div>
           </div>
+          )}
 
           {registrar.error ? <ErrorDeCarga error={registrar.error} className="mt-2" /> : null}
         </Card>
