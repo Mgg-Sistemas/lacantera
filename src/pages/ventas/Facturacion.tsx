@@ -56,7 +56,7 @@ export function Facturacion() {
   const anularCobro = useAnularCobro()
 
   const [emitiendo, setEmitiendo] = useState(false)
-  const [detalle, setDetalle] = useState<FacturaVenta | null>(null)
+  const [detalleId, setDetalleId] = useState<number | null>(null)
   const [cobrando, setCobrando] = useState<FacturaVenta | null>(null)
   const [anulando, setAnulando] = useState<FacturaVenta | null>(null)
   const [motivo, setMotivo] = useState('')
@@ -72,10 +72,27 @@ export function Facturacion() {
   const [referencia, setReferencia] = useState('')
   const [igtf, setIgtf] = useState<boolean | null>(null)
 
-  const renglonesDetalle = useRenglones('factura_venta_renglones', 'factura_id', detalle?.id ?? null)
-  const cobros = useCobros(detalle?.id ?? null)
+  // La factura abierta se busca en la lista en cada pintada, no se copia al
+  // abrirla. Copiada, anular un cobro desde dentro del propio detalle dejaba a
+  // la vista los totales de antes y escondía los botones de cobrar y anular,
+  // porque el estado que los gobierna era el de la copia vieja: había que
+  // cerrar y volver a abrir para recuperarlos.
+  const detalle = detalleId !== null ? ((data ?? []).find((f) => f.id === detalleId) ?? null) : null
+
+  const renglonesDetalle = useRenglones('factura_venta_renglones', 'factura_id', detalleId)
+  const cobros = useCobros(detalleId)
 
   const notas = porFacturar.data ?? []
+
+  // Cerrar el checklist lo deja vacío, sin importar por cuál de los dos botones
+  // se abrió. Limpiar solo en el que abre deja la selección puesta cuando se
+  // vuelve a entrar por el otro.
+  const cerrarEmision = () => {
+    setEmitiendo(false)
+    setElegidas([])
+    setCondicion('')
+    setObservacion('')
+  }
 
   // Solo se pueden juntar notas del mismo cliente y la misma moneda: una
   // factura es de un cliente y tiene un total en una moneda. Elegida la
@@ -138,16 +155,7 @@ export function Facturacion() {
         title="Facturación"
         description="Se factura contra notas de entrega: una, o todas las de la semana de un cliente."
         actions={
-          <Button
-            icon={<Receipt />}
-            disabled={notas.length === 0}
-            onClick={() => {
-              setElegidas([])
-              setCondicion('')
-              setObservacion('')
-              setEmitiendo(true)
-            }}
-          >
+          <Button icon={<Receipt />} disabled={notas.length === 0} onClick={() => setEmitiendo(true)}>
             Facturar{notas.length > 0 ? ` (${notas.length} por facturar)` : ''}
           </Button>
         }
@@ -195,7 +203,7 @@ export function Facturacion() {
                 {data.map((f) => (
                   <tr
                     key={f.id}
-                    onClick={() => setDetalle(f)}
+                    onClick={() => setDetalleId(f.id)}
                     className="border-hairline hover:bg-ink/3 cursor-pointer border-b transition-colors last:border-0"
                   >
                     <td className="tabular px-5 py-3">
@@ -237,12 +245,12 @@ export function Facturacion() {
         <Modal
           abierto
           ancho="lg"
-          onCerrar={() => setEmitiendo(false)}
+          onCerrar={cerrarEmision}
           titulo="Emitir factura"
           descripcion="Marca las notas de entrega que van en esta factura. Tienen que ser del mismo cliente y la misma moneda."
           acciones={
             <>
-              <Button variant="ghost" onClick={() => setEmitiendo(false)}>
+              <Button variant="ghost" onClick={cerrarEmision}>
                 Cancelar
               </Button>
               <Button
@@ -253,8 +261,7 @@ export function Facturacion() {
                     condicion_pago: condicion || null,
                     observacion: observacion || null,
                   })
-                  setEmitiendo(false)
-                  setElegidas([])
+                  cerrarEmision()
                 }}
               >
                 {facturar.isPending ? 'Emitiendo…' : 'Emitir la factura'}
@@ -349,12 +356,12 @@ export function Facturacion() {
         <Modal
           abierto
           ancho="lg"
-          onCerrar={() => setDetalle(null)}
+          onCerrar={() => setDetalleId(null)}
           titulo={`${detalle.numero} · control ${detalle.numero_control}`}
           descripcion={`${detalle.cliente} · ${fecha(detalle.fecha)}`}
           acciones={
             <>
-              <Button variant="ghost" onClick={() => setDetalle(null)}>
+              <Button variant="ghost" onClick={() => setDetalleId(null)}>
                 Cerrar
               </Button>
               <Button
@@ -520,7 +527,7 @@ export function Facturacion() {
                     igtf,
                   })
                   setCobrando(null)
-                  setDetalle(null)
+                  setDetalleId(null)
                 }}
               >
                 {cobrar.isPending ? 'Registrando…' : 'Registrar el cobro'}
@@ -609,7 +616,7 @@ export function Facturacion() {
                 onClick={async () => {
                   await anular.mutateAsync({ id: anulando.id, motivo })
                   setAnulando(null)
-                  setDetalle(null)
+                  setDetalleId(null)
                 }}
               >
                 {anular.isPending ? 'Anulando…' : 'Anular la factura'}
