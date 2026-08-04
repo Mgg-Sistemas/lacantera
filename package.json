@@ -5,8 +5,12 @@
   "type": "module",
   "description": "Sistema de control interno para cantera: inventario, compras, ventas, nomina, tesoreria y explotacion",
   "scripts": {
+    "manual": "node scripts/manual-a-html.mjs",
+    "predev": "npm run manual",
     "dev": "vite",
+    "prebuild": "npm run manual",
     "build": "tsc -b && vite build",
+    "pretypecheck": "npm run manual",
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "preview": "vite preview --host",

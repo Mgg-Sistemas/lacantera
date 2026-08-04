@@ -241,10 +241,12 @@ function PestanaRoles({ editable }: { editable: boolean }) {
     <>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <p className="text-ink/55 max-w-2xl text-sm">
-          La matriz decide <strong className="text-ink/75 font-medium">a qué llega</strong> cada
-          rol. Solo puede cerrar puertas: darle control total en Tesorería a Almacén no lo convierte
-          en tesorero, porque quién aprueba y quién paga es una regla de la base de datos que esta
-          pantalla no toca.
+          La matriz decide <strong className="text-ink/75 font-medium">a qué llega</strong> cada rol
+          y también <strong className="text-ink/75 font-medium">qué puede hacer</strong> ahí: darle
+          escritura en Nómina a un rol lo habilita para escribir en Nómina. Lo que no reparte son las
+          firmas —aprobar una compra, aprobar una nómina— ni la administración del propio sistema:
+          eso sigue colgando de los roles de Gerente general y Administrador, para que quien arma un
+          documento no sea quien lo aprueba.
         </p>
         {editable ? (
           <Button icon={<Plus />} onClick={() => setEdicion({ ...rolVacio, nuevo: true })}>
