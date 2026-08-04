@@ -83,6 +83,8 @@ export interface LineaLibroCompras {
   base_imponible_bs: string
   credito_fiscal_bs: string
   total_compras_bs: string
+  tasa: string
+  iva_retenido_bs: string
 }
 
 export const CONDICIONES_COMPRA = [

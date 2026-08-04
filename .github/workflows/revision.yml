@@ -1,0 +1,98 @@
+# Revisión automática de cada cambio.
+#
+# Existe para que nadie tenga que acordarse de correr el lint y los tipos antes
+# de mezclar. Lo que aquí sale en rojo es lo que rompería el despliegue de
+# Vercel, así que se atiende antes de tocar `develop`.
+name: Revisión
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+# El repositorio es público: cualquiera puede abrir un pull request y disparar
+# esto. Se le da a la ejecución el permiso mínimo —leer el código— para que un
+# cambio malintencionado en el flujo no pueda escribir en el repositorio.
+permissions:
+  contents: read
+
+# Si alguien empuja tres veces seguidas a la misma rama, solo interesa el
+# resultado del último empujón. Los anteriores se cancelan para no hacer cola.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  revision:
+    name: Lint, tipos y compilación
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # La misma versión que se usa en las máquinas de aquí. Fijarla evita
+          # el clásico "en mi computadora sí compila".
+          node-version: '24'
+          # Guarda el caché de npm entre ejecuciones apoyándose en el
+          # package-lock.json; sin esto cada corrida vuelve a bajar todo.
+          cache: 'npm'
+
+      # `ci` y no `install`: instala exactamente lo que dice el lock y falla si
+      # el lock y el package.json no concuerdan. Eso es justo lo que se quiere
+      # detectar aquí.
+      - run: npm ci
+
+      # Primero lo barato. El lint tarda segundos y atrapa los descuidos, así
+      # que si algo va a fallar que falle rápido y con un mensaje claro.
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      # `build` vuelve a correr el `tsc -b`, sí. Se deja igual porque es el
+      # comando literal que ejecuta Vercel: si pasa aquí, despliega allá.
+      - run: npm run build
+
+  pruebas:
+    name: Pruebas de base
+    runs-on: ubuntu-latest
+    # A propósito NO depende del job anterior: son cosas distintas y saber que
+    # los permisos de la base siguen cerrados es útil aunque el lint se queje.
+    env:
+      # El secreto se lee aquí, a nivel de job, y no en un `if:` del job.
+      # GitHub no expone el contexto `secrets` en `jobs.<id>.if`, así que la
+      # única forma fiable de preguntar "¿está configurado?" es pasarlo a `env`
+      # y consultarlo desde los pasos.
+      DBURL: ${{ secrets.DBURL }}
+    steps:
+      # Cuando no hay secreto no se falla: se avisa y se sigue en verde.
+      # Quien abre un pull request desde una bifurcación no tiene acceso a los
+      # secretos del repositorio, y no tiene sentido ponerle en rojo algo que
+      # no está en su mano arreglar.
+      - name: Aviso cuando no hay conexión a la base
+        if: env.DBURL == ''
+        run: |
+          echo "Sin DBURL: las pruebas de base no corren en esta ejecución."
+          echo "Es lo esperado en un pull request desde una bifurcación, porque"
+          echo "los secretos del repositorio no se prestan a código de afuera."
+          echo "Para activarlas: Settings → Secrets and variables → Actions →"
+          echo "New repository secret, con el nombre DBURL."
+
+      - uses: actions/checkout@v4
+        if: env.DBURL != ''
+
+      - uses: actions/setup-node@v4
+        if: env.DBURL != ''
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm ci
+        if: env.DBURL != ''
+
+      # Todo el juego de pruebas corre dentro de una transacción que se deshace
+      # al terminar, por eso puede apuntar a la base de verdad sin dejar rastro.
+      - name: Correr las pruebas
+        if: env.DBURL != ''
+        run: npm run prueba

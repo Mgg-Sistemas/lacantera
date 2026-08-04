@@ -210,6 +210,38 @@ export interface Orden {
   instrucciones: InstruccionPago[]
 }
 
+/**
+ * Las órdenes que esperan material.
+ *
+ * Es la cola de almacén, no la de compras: aquí no importa quién aprobó ni cómo
+ * se pagó, importa qué camión falta por llegar. Trae los renglones completos
+ * porque la recepción se registra desde la misma fila, sin abrir la compra.
+ */
+const SELECT_ORDEN = `
+  *,
+  proveedor:proveedores(id, nombre, rif),
+  renglones:orden_renglones(*),
+  instrucciones:instrucciones_pago(*)
+`
+
+export function useOrdenesPorRecibir() {
+  return useQuery({
+    queryKey: ['compras', 'por-recibir'],
+    queryFn: async () =>
+      desenvolver<Orden[]>(
+        await supabase
+          .from('ordenes_compra')
+          .select(SELECT_ORDEN)
+          // Lo pagado y lo parcial es lo que de verdad está por llegar. Una
+          // orden que sigue en tesorería no salió del banco todavía, y el
+          // proveedor no despacha lo que no le han pagado.
+          .in('estado', ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL'])
+          .order('fecha_pago', { ascending: true, nullsFirst: false }),
+      ),
+    refetchInterval: 5 * 60_000,
+  })
+}
+
 export interface Compra {
   id: number
   numero: string

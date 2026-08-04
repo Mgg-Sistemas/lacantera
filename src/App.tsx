@@ -136,6 +136,18 @@ const FacturasProveedor = lazy(() =>
 const Prestaciones = lazy(() =>
   import('@/pages/nomina/Prestaciones').then((m) => ({ default: m.Prestaciones })),
 )
+const Recepciones = lazy(() =>
+  import('@/pages/compras/Recepciones').then((m) => ({ default: m.Recepciones })),
+)
+const LibroCompras = lazy(() =>
+  import('@/pages/compras/LibroCompras').then((m) => ({ default: m.LibroCompras })),
+)
+const LibroVentas = lazy(() =>
+  import('@/pages/ventas/LibroVentas').then((m) => ({ default: m.LibroVentas })),
+)
+const NotasCredito = lazy(() =>
+  import('@/pages/ventas/NotasCredito').then((m) => ({ default: m.NotasCredito })),
+)
 // El manual pesa medio megabyte de texto. Partido, solo lo descarga quien lo abre.
 const Manual = lazy(() => import('@/pages/Manual').then((m) => ({ default: m.Manual })))
 
@@ -155,7 +167,11 @@ const paginas: Record<string, ReactNode> = {
   '/app/despachos/guias': <Guias />,
   '/app/compras': <TableroCompras />,
   '/app/compras/proveedores': <Proveedores />,
+  '/app/compras/recepciones': <Recepciones />,
   '/app/compras/facturas': <FacturasProveedor />,
+  '/app/compras/libro': <LibroCompras />,
+  '/app/ventas/notas-credito': <NotasCredito />,
+  '/app/ventas/libro': <LibroVentas />,
   '/app/nomina/prestaciones': <Prestaciones />,
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,

@@ -282,8 +282,8 @@ Arriba del todo, sin rótulo de sección, está **Panel**, que lleva a la pantal
 
 | Grupo | Pantallas |
 | --- | --- |
-| **Compras** | **Tablero**, **Proveedores**, **Recepciones**, **Facturas de proveedor** |
-| **Ventas** | **Clientes**, **Lista de precios**, **Cotizaciones**, **Notas de entrega**, **Facturación** |
+| **Compras** | **Tablero**, **Proveedores**, **Recepciones**, **Facturas de proveedor**, **Libro de compras** |
+| **Ventas** | **Clientes**, **Lista de precios**, **Cotizaciones**, **Notas de entrega**, **Facturación**, **Notas de crédito**, **Libro de ventas** |
 | **Nómina** | **Personal**, **Tabulador de cargos**, **Novedades del período**, **Procesar nómina**, **Recibos de pago**, **Parámetros de nómina**, **Prestaciones sociales** |
 | **Tesorería** | **Bancos y cajas**, **Pagos por hacer**, **Cuentas por pagar**, **Libro de tesorería**, **Cuentas por cobrar** |
 
@@ -1911,6 +1911,16 @@ Al registrar, el material entra al inventario con su propio número de movimient
 
 El estado de la orden se recalcula solo: **Recibida** si no falta nada, **Recibida parcialmente** si falta algo.
 
+#### La pantalla de Recepciones
+
+El mismo diálogo se alcanza desde **Compras › Recepciones**, sin tener que abrir la compra. Es la lista de lo que está pagado y todavía no ha llegado, en orden de antigüedad del pago.
+
+La diferencia no es de comodidad, es de punto de vista: quien sigue una compra la busca por su número, pero quien está en el portón ve llegar un camión y sabe **de qué proveedor viene y qué trae**, no de qué orden salió. Cada tarjeta enseña el proveedor, cuándo se pagó, cuánto costó y qué falta renglón por renglón, con **Llegó una parte** marcado cuando ya entró algo.
+
+Debajo, **Lo último que entró**: las últimas treinta entradas al inventario por compra, con su número de movimiento, el material, el almacén y la cantidad. Sirve para comprobar de un vistazo que lo que se recibió hace un rato quedó registrado.
+
+El botón **Registrar recepción** solo lo ve quien tiene Inventario en escritura.
+
 ### 9.9 Indicar el método de pago
 
 Se llega desde la ficha de una compra en **Aprobada · indicar método de pago**, con el botón **Indicar método de pago**. Solo lo ve el rol Compras.
@@ -2112,7 +2122,21 @@ Escribe **Por qué se anula** —queda con tu nombre y la hora— y pulsa **Anul
 - **No se enlaza la factura con su orden de compra.** La pantalla no pregunta a qué orden corresponde, así que **no hay ningún cotejo entre lo que se pidió, lo que llegó y lo que facturaron**: si el proveedor factura más de lo que entregó, el sistema no lo nota. Esa comparación hoy la hace la persona, con los dos documentos delante.
 - **No hay nada que imprimir aquí.** Ni la factura ni un comprobante del pago. Lo que se archiva sigue siendo el papel del proveedor.
 
-### 9.11 Lo que conviene entender
+### 9.11 El libro de compras
+
+**Compras › Libro de compras.** Es la mitad de la declaración del IVA: el crédito fiscal, que es el impuesto que se pagó a los proveedores y que se descuenta del que se le cobró a los clientes. Sin este libro ese dinero se queda en el camino.
+
+Arriba se elige el **mes**. Empieza en el mes pasado, que es el que casi siempre se viene a ver: el IVA se declara dentro de los primeros quince días del mes siguiente.
+
+El **resumen** trae las cuatro cifras que van a la planilla —compras exentas, base imponible, crédito fiscal y total de compras— y debajo, la lista documento por documento. Si hubo retenciones, se dicen aparte.
+
+**Todo está en bolívares**, convertido con la tasa que congeló cada factura, no con la de hoy. Aquí se compra en las dos monedas y el libro se declara en una sola; sumar la columna en moneda original daría un número que no es ni dólares ni bolívares. En las facturas en divisas se enseña además, en pequeño, la cifra tal como está impresa en el papel, para poder cotejar.
+
+**Descargar** baja el libro en CSV para abrirlo en la hoja de cálculo desde la que se transcribe. Va separado por punto y coma, porque con coma se abriría partido por la mitad en una computadora configurada en Venezuela.
+
+**Las facturas anuladas no aparecen.** El número de control de una factura de compra es del proveedor, no nuestro, así que un salto en su serie no es algo que la empresa tenga que explicar; una factura anulada de este lado es una fila que se cargó mal y no se declara. En el libro de ventas es al revés, y allá se explica por qué.
+
+### 9.12 Lo que conviene entender
 
 #### Quién pide, quién aprueba, quién recibe
 
@@ -2185,14 +2209,12 @@ Además de su propio número, la cotización guarda **el número que el proveedo
 
 Conviene saberlo antes de buscarlo:
 
-- La entrada de menú **Recepciones** existe, pero al entrar muestra **Todavía no construido**. Las recepciones se registran desde la ficha de cada compra, como se explica arriba. La entrada **Facturas de proveedor**, en cambio, ya funciona y tiene su propia sección en este capítulo.
 - **No hay ningún documento imprimible en compras.** Ni la orden de compra, ni la cotización, ni el tablero, ni la factura del proveedor.
 - **No hay pantalla para editar un pedido en borrador.** Solo se puede enviar o cancelar.
-- **No hay pantalla del libro de compras.** Las facturas se registran con todo lo que ese libro necesita, pero hoy no hay dónde verlo ni de dónde sacarlo para la declaración: eso se transcribe a mano desde la lista de facturas.
 - **La factura del proveedor no se enlaza con su orden de compra**, así que el sistema no coteja lo pedido con lo recibido y lo facturado.
 - **Lo que se debe por facturas de proveedor no aparece en la cola de Tesorería › Por pagar**, que sigue mostrando solo las instrucciones de pago de las órdenes. Lo que falta por pagar de una factura solo se ve en la columna **Saldo** de su propia pantalla.
 
-### 9.12 Cuando el sistema no te deja
+### 9.13 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -2646,7 +2668,66 @@ Los totales son **Subtotal**, **Descuento**, **Flete**, **IVA 16%**, raya y **TO
 
 El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.**
 
-### 10.8 Lo que conviene entender
+### 10.8 Notas de crédito
+
+**Ventas › Notas de crédito.** Es el papel que corrige una factura que ya salió de la empresa. Solo lo emite quien tiene Ventas en control total.
+
+Sirve para cuatro cosas, y se elige cuál en **Por qué se corrige**:
+
+| Motivo | Cuándo |
+| --- | --- |
+| **Devolución de material** | El cliente devolvió lo despachado |
+| **Se facturó de más** | El precio o la cantidad quedaron por encima de lo acordado |
+| **Descuento posterior** | Una rebaja acordada después de emitir la factura |
+| **Dejar la factura sin efecto** | La venta no ocurrió, pero la factura ya estaba en manos del cliente |
+
+#### Cómo se emite
+
+Con **Emitir nota de crédito**. Primero se elige la factura; **las anuladas no aparecen**, porque a una factura sin efecto no hay nada que restarle.
+
+Al elegirla, **la nota se arma sobre los renglones de esa factura**, no en blanco. Corregir es decir «de esto que facturé, esto de aquí sobra», y para eso hay que tener delante lo que se facturó. Se marca el renglón que sobra y se ajusta la cantidad o el precio.
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Factura que se corrige** | Sí | Solo las que siguen en pie |
+| **Fecha de la nota** | Sí | Empieza en hoy. **No puede ser anterior a la factura** |
+| **Por qué se corrige** | Sí | Los cuatro motivos de arriba |
+| **Motivo** | Sí | Lo lee el cliente, lo lee el SENIAT y lo lee quien abra esto en un año |
+| **¿Vuelve al patio?** | No | Por renglón. El almacén al que entra el material devuelto |
+
+**El material puede volver o no volver.** Si se despachó piedra 2 cuando pidieron piedra 1 y el cliente la devuelve, ese renglón lleva almacén y el material entra al inventario con su propio movimiento. Si lo que se corrige es el precio, no se mueve ninguna piedra. Es el mismo papel para las dos cosas porque para el SENIAT lo es.
+
+#### Lo que la nota hace y lo que no hace
+
+- **Congela la tasa de la factura, no la de hoy.** Una nota que devuelve cien dólares de una factura de hace tres semanas tiene que restar los mismos bolívares que aquella sumó. Con la tasa de hoy restaría otra cosa y la factura no cerraría nunca en cero. La pantalla lo dice al elegir la factura.
+- **Gasta su propio número de control**, de la misma serie que las facturas: la numeración autorizada de la imprenta corre continua sobre todos los documentos fiscales, no una por cada tipo de papel.
+- **Baja lo que el cliente debe**, y también lo que tiene consumido de su cupo de crédito.
+- **No mueve dinero.** Si la factura ya estaba cobrada, eso es plata que hay que devolverle al cliente y sale de tesorería con su propio asiento. La nota baja lo que se debe; no firma cheques.
+- **No puede pasarse.** Entre todas las notas de una factura no se devuelve más de lo que la factura cobró. La pantalla descuenta lo que esa factura ya tiene acreditado y lo dice con números antes de dejar guardar.
+
+#### Anular una nota
+
+Desde su ficha, con **Anular**. El número de control se gastó y no vuelve: queda la nota anulada con su motivo, que es lo que el SENIAT espera encontrar. Si había entrado material, vuelve a salir.
+
+**No se puede anular si ese material ya se vendió otra vez**: deshacer la devolución dejaría el patio en negativo. El sistema lo dice con la cantidad exacta que falta.
+
+#### Corregir o anular, no las dos
+
+Una factura que ya tiene notas de crédito **no se puede anular**. O se corrige con notas o se deja sin efecto, porque si no quedarían notas colgando de una factura que ya no existe. Si de verdad hay que anularla, primero se anulan sus notas.
+
+### 10.9 El libro de ventas
+
+**Ventas › Libro de ventas.** La otra mitad de la declaración: el débito fiscal, que es el IVA que se le cobró a los clientes.
+
+Funciona igual que el libro de compras —se elige el mes, empieza en el pasado, se descarga en CSV, todo en bolívares a la tasa de cada documento—, con dos diferencias que conviene entender:
+
+**Las notas de crédito van en este mismo libro, en negativo.** No son un anexo ni un libro aparte: para el SENIAT son ventas del período con signo contrario. Cada una dice a qué número de control corrige.
+
+**Las facturas anuladas sí aparecen, en cero y marcadas.** Aquí el número de control es el nuestro y tiene que correr continua. Un salto sin explicación en la serie es lo primero que se busca en una fiscalización; una fila que dice «anulada» lo explica sola.
+
+Al pie, la suma del período con las notas ya restadas. Es lo que va a la planilla.
+
+### 10.10 Lo que conviene entender
 
 #### La nota de entrega y la factura no son el mismo papel
 
@@ -2666,7 +2747,7 @@ Es la confusión más común, y sale cara: quien la tiene, o le entrega al clien
 
 Una cosa más, que importa cuando algo se corrige: **al facturar, los renglones se copian a la factura, no se leen de la nota**. Por eso la factura sigue diciendo lo mismo aunque después alguien anule la nota de la que salió.
 
-**Lo que el sistema no trae: la nota de crédito.** No existe ese documento. Mientras la factura no haya salido de la empresa, la herramienta es anularla. Una factura que ya está en manos del cliente el sistema no la sabe corregir, y esa corrección hay que llevarla por fuera.
+**Anular no es lo mismo que corregir.** Anular sirve mientras la factura no ha salido de la empresa: se rompe el papel y se hace otro. En cuanto está en manos del cliente, él tiene un documento fiscal con un número de control que existe —y el SENIAT también—, y entonces lo que corresponde es la **nota de crédito**, que tiene su propia sección más adelante.
 
 #### Cómo se descuenta el inventario al despachar
 
@@ -2769,7 +2850,7 @@ Sobre la retención: cuando el cliente está marcado como contribuyente especial
 
 Sobre la moneda: cada documento **congela la tasa del día** al crearse, y esa es la que se imprime al pie. **Sin tasa del día registrada no se emite nada**, ni cotización, ni nota, ni factura. El cobro se registra **en la moneda de la cuenta donde cayó el dinero**, no en la de la factura, y el sistema lo pasa a dólares para descontarlo del saldo. Por eso el saldo, la deuda y el límite de crédito van siempre en dólares.
 
-### 10.9 Cuando el sistema no te deja
+### 10.11 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -4144,10 +4225,14 @@ Configuración es donde se decide quién entra al sistema, a qué llega cada qui
 
 La idea que conviene entender antes de tocar nada es que **aquí hay dos capas distintas de autorización**, y confundirlas es el error más caro del módulo:
 
-- **Los roles** son los que de verdad autorizan. Cada acción del sistema pregunta por un rol concreto: pagar pregunta por Tesorería, aprobar una compra pregunta por Gerente general, administrar usuarios pregunta por Administrador del sistema. Los roles se dan y se quitan en la ficha de cada persona.
-- **La matriz de permisos por módulo** solo cierra puertas. Decide a qué pantallas llega cada rol, y nada más. Está escrito en la propia pantalla: **La matriz decide a qué llega cada rol. Solo puede cerrar puertas: darle control total en Tesorería a Almacén no lo convierte en tesorero, porque quién aprueba y quién paga es una regla de la base de datos que esta pantalla no toca.**
+- **La matriz de permisos por módulo** decide a qué llega cada rol y qué puede hacer ahí. Los tres niveles son una escalera, no tres casillas sueltas: control total incluye escritura, y escritura incluye lectura. Darle **escritura en Nómina** a un rol lo habilita para escribir en Nómina de verdad, no solo para ver la pantalla.
+- **Los roles con nombre propio** guardan lo que no es acceso sino responsabilidad. **Gerente general** aprueba compras y nóminas; **Administrador del sistema** crea usuarios y reparte permisos. Eso no cuelga de ningún nivel de la escalera, y por eso no se puede repartir desde la matriz.
 
-Es una reja delante de la puerta, no una llave. Y está hecha así a propósito: si la matriz otorgara en vez de restringir, un descuido en esa pantalla abriría el sistema entero.
+La razón de la segunda capa es la separación de tareas: si «control total en Compras» bastara para aprobar, el mismo comprador que arma la orden la firmaría. Y si la administración de usuarios colgara de un nivel, quien administra un módulo podría darse a sí mismo todos los demás.
+
+**Esto cambió el 4 de agosto de 2026.** Antes la matriz solo cerraba puertas: se le daba Nómina en escritura a un rol propio, la pantalla se abría, la persona llenaba la ficha entera y al guardar le rebotaba «tu usuario no tiene ese rol». Ahora la matriz manda de verdad sobre los módulos de trabajo. **Nadie perdió nada**: los roles que ya existían siguen valiendo igual.
+
+Un efecto secundario que conviene saber: **cargar la tasa del BCV pasó a pedir escritura en Tasas de cambio.** Antes lo podía hacer cualquiera que entrara al sistema, y la tasa es con lo que se valora cada cotización, factura y recibo. Hoy la tienen administración y tesorería; quien solo la consulta ve la pantalla completa pero sin el formulario.
 
 ### 13.1 Usuarios y permisos
 
@@ -4620,11 +4705,11 @@ Estos cuatro no son cosas que falten, sino cosas que hoy pueden salir mal si nad
 
 **Costo por tonelada.** La producción entra al inventario valorada en cero, porque el costo real depende de la nómina, el gasoil y la voladura, y ese cálculo todavía no existe. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.** Las toneladas sí son confiables.
 
-**En Compras.** La pantalla de **Recepciones** del menú sigue sin construir. No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor se registra, pero **no se enlaza con su orden de compra**, así que no hay cotejo entre lo pedido, lo recibido y lo facturado. El sistema no calcula retenciones a proveedores. No hay libro de compras. Lo que se debe por facturas no llega a **Tesorería › Cuentas por pagar**, que sigue leyendo solo las instrucciones de pago de las órdenes. Ningún documento de compras se imprime.
+**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor se registra, pero **no se enlaza con su orden de compra**, así que no hay cotejo entre lo pedido, lo recibido y lo facturado. El sistema no calcula retenciones a proveedores. Lo que se debe por facturas no llega a **Tesorería › Cuentas por pagar**, que sigue leyendo solo las instrucciones de pago de las órdenes. Ningún documento de compras se imprime.
 
 **En Despachos.** El sistema comprueba el cliente, el tipo, el estado y la vigencia de los papeles, pero **no compara cifras**: ni el peso neto del ticket contra las cantidades de la nota, ni las toneladas de la guía contra los renglones. Cuadrar eso sigue siendo trabajo de la persona. Además, la nota despachada sin guía **no se marca en ninguna pantalla**: el único rastro está en la auditoría.
 
-**En Ventas.** No hay notas de crédito ni de débito. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. No hay libro de ventas ni exportación fiscal. Las facturas emitidas desde el sistema no admiten descuento.
+**En Ventas.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. Las facturas emitidas desde el sistema no admiten descuento. **La nota de crédito no se imprime**: se registra y se declara, pero el papel que se le entrega al cliente todavía se hace por fuera.
 
 **En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema.
 
@@ -4638,7 +4723,7 @@ Estos cuatro no son cosas que falten, sino cosas que hoy pueden salir mal si nad
 - **Mantener sesión abierta**, en la pantalla de entrar, no cambia nada: marcarla o no da el mismo resultado.
 - **Olvidé mi contraseña** no lleva a ninguna parte. La reposición de clave se pide a administración.
 - **Las listas largas se cortan** en los registros más recientes y no tienen paginación: 200 en los movimientos de inventario y en el libro de tesorería, 300 en voladuras y partes de turno, 400 en tickets, guías y facturas de proveedor. Un registro más antiguo sigue guardado, pero no se alcanza desde esa pantalla.
-- **Ninguna pantalla exporta a Excel.**
+- **Solo los dos libros de IVA se descargan.** El libro de compras y el de ventas bajan en CSV para abrirlos en la hoja de cálculo. Ninguna otra pantalla exporta.
 
 ---
 
