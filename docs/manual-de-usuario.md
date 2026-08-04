@@ -2,7 +2,7 @@
 
 **Sistema de control interno · Minería Internacional TS, C.A.**
 
-**Versión 1.0 · 4 de agosto de 2026**
+**Versión 1.1 · 4 de agosto de 2026**
 
 ---
 
@@ -18,7 +18,9 @@ Tres convenciones que se repiten en todo el documento:
 - Lo que aparece «entre comillas angulares» es un mensaje que muestra el sistema, copiado tal cual.
 - Las rutas se escriben como se recorre el menú: **Operación › Inventario › Existencias**.
 
-**Este manual describe el sistema que existe hoy, no el que se planeó.** Donde algo esté a medio construir, el manual lo dice. El capítulo 13 reúne todo lo que todavía no está disponible, para que nadie planifique su trabajo contando con algo que aún no puede hacer.
+**Este manual describe el sistema que existe hoy, no el que se planeó.** Donde algo esté a medio construir, el manual lo dice. El capítulo 15 reúne todo lo que todavía no está disponible y los puntos donde conviene tener cuidado, para que nadie planifique su trabajo contando con algo que aún no puede hacer.
+
+El orden de los capítulos es el del camino del material: primero se extrae, luego se almacena, después sale por el portón, y por último se administra lo que eso genera.
 
 ---
 
@@ -31,16 +33,18 @@ Tres convenciones que se repiten en todo el documento:
 | 3 | Cómo moverse por el sistema |
 | 4 | El panel |
 | 5 | Tasas de cambio |
-| 6 | Inventario |
-| 7 | Compras |
-| 8 | Ventas |
-| 9 | Nómina |
-| 10 | Tesorería |
-| 11 | Configuración |
-| 12 | Las reglas que el sistema impone |
-| 13 | Lo que todavía no está construido |
-| 14 | Preguntas frecuentes |
-| 15 | A quién acudir |
+| 6 | Explotación |
+| 7 | Inventario |
+| 8 | Despachos |
+| 9 | Compras |
+| 10 | Ventas |
+| 11 | Nómina |
+| 12 | Tesorería |
+| 13 | Configuración |
+| 14 | Las reglas que el sistema impone |
+| 15 | Lo que todavía no está construido |
+| 16 | Preguntas frecuentes |
+| 17 | A quién acudir |
 
 ---
 
@@ -48,9 +52,10 @@ Tres convenciones que se repiten en todo el documento:
 
 Es el sistema de **control interno** de la cantera. Sirve para saber, en cualquier momento y sin depender de la memoria de nadie:
 
+- Cuánta piedra se produjo, en qué turno y de qué frente salió.
 - Cuánto material hay en cada patio y en cada almacén.
+- Qué cruzó el portón, con qué peso y con qué papeles.
 - Qué se compró, quién lo pidió y quién lo aprobó.
-- Qué se vendió, qué salió por el portón y qué está facturado.
 - Cuánto se le debe a los proveedores y cuánto deben los clientes.
 - Qué se le paga a cada trabajador y por qué concepto.
 
@@ -60,11 +65,11 @@ Es el sistema de **control interno** de la cantera. Sirve para saber, en cualqui
 
 El sistema está hecho para que ciertas cosas **no** se puedan hacer.
 
-No se puede borrar un movimiento de inventario. No se puede editar una nómina ya pagada. No se puede sacar material que no está. No se puede cambiar el saldo de una cuenta a mano.
+No se puede borrar un movimiento de inventario. No se puede editar una nómina ya pagada. No se puede sacar material que no está. No se puede despachar mineral sin guía. No se puede cambiar el saldo de una cuenta a mano.
 
 Cuando el sistema te detiene, en la enorme mayoría de los casos es a propósito. La restricción no está para complicarte el trabajo: está para que dentro de seis meses, cuando alguien pregunte por qué faltaban cuarenta toneladas o por qué se le pagó de más a un trabajador, la respuesta esté escrita y no dependa de que alguien se acuerde.
 
-El capítulo 12 reúne esas reglas y explica el motivo de cada una. Vale la pena leerlo antes que los capítulos de los módulos.
+El capítulo 14 reúne esas reglas y explica el motivo de cada una. Vale la pena leerlo antes que los capítulos de los módulos.
 
 ### 1.2 Cómo se organiza el trabajo
 
@@ -72,17 +77,29 @@ El sistema no reparte el trabajo por persona sino por **módulo**, y a cada usua
 
 | Módulo | De qué se ocupa |
 | --- | --- |
+| **Explotación** | Frentes y bancos, voladuras, y el parte de producción de cada turno |
 | **Inventario** | Lo que hay en cada patio y almacén, y todo lo que entra y sale |
-| **Compras** | Pedir, cotizar, aprobar, recibir y pagar lo que la empresa compra |
+| **Despachos** | El pesaje en la romana y las guías de movilización |
+| **Compras** | Pedir, cotizar, aprobar, recibir, facturar y pagar lo que la empresa compra |
 | **Ventas** | Clientes, precios, cotizaciones, notas de entrega y facturas |
-| **Nómina** | Personal, novedades, cálculo de la nómina, recibos y pagos |
+| **Nómina** | Personal, novedades, cálculo, recibos, pagos y prestaciones sociales |
 | **Tesorería** | Bancos y cajas, lo que hay que pagar y lo que hay que cobrar |
 | **Tasas de cambio** | La tasa del día, que valoriza todo lo que se registre |
 | **Configuración** | Usuarios y permisos, datos de la empresa, documentos legales y auditoría |
 
-Dos módulos más aparecen en el menú pero todavía no están construidos: **Explotación** y **Despachos**. El capítulo 13 explica qué se hace mientras tanto.
+### 1.3 Por dónde entra y por dónde sale el material
 
-### 1.3 Bolívares y dólares
+Conviene tener este recorrido en la cabeza antes de leer los capítulos, porque explica por qué el sistema pide lo que pide en cada paso:
+
+1. Se registra el **frente** donde se trabaja.
+2. Se registra la **voladura**, contra ese frente.
+3. Al cierre del turno se carga el **parte de producción**, y ahí es donde la piedra entra al patio. Es la única puerta.
+4. El material se guarda, se traslada entre patios y se cuenta, en **Inventario**.
+5. Cuando se vende, el camión se pesa en la **romana** y se le emite la **guía**.
+6. Sale con su **nota de entrega**, que es el paso que descuenta el patio.
+7. Se **factura** y se **cobra**.
+
+### 1.4 Bolívares y dólares
 
 La empresa cobra y paga en las dos monedas, y el sistema está hecho para eso desde el principio.
 
@@ -678,7 +695,335 @@ De ahí salen dos consecuencias prácticas:
 
 ---
 
-## 6. Inventario
+## 6. Explotación
+
+Explotación es el principio de todo lo demás. Aquí se anota dónde se está arrancando el material, qué voladuras se hicieron y cuánto produjo cada turno. De esta última anotación sale la piedra que después se cuenta en el patio, se vende y se despacha.
+
+Hay una idea que conviene entender antes de tocar nada, porque explica casi todas las reglas del módulo:
+
+**El parte de turno es la única puerta por la que entra material al patio.** No es una forma más de cargar producción: es la única que queda. Mientras Explotación no existía había un atajo en Existencias, y ese atajo se cerró. Dos puertas al mismo patio es exactamente como se cuenta dos veces la misma piedra: una vez por el parte y otra por el atajo.
+
+De ahí se desprende la consecuencia práctica: **si el parte de turno no se carga, el inventario dice cero.** Y con el inventario en cero no se puede despachar ni facturar, porque el sistema no deja sacar material que según el libro no está.
+
+### 6.1 Quién entra y quién puede hacer qué
+
+Hay tres puertas distintas, y conviene no confundirlas.
+
+La primera es **ver el módulo**. Depende del permiso sobre Explotación que administración le haya dado a tu usuario. Si no lo tienes, el grupo Explotación no aparece en el menú, y si escribes la dirección a mano verás una tarjeta con un candado: **Explotación no está a tu alcance**.
+
+La segunda es **poder registrar**: crear frentes, registrar voladuras y cargar partes de turno.
+
+La tercera es **poder anular**. Anular una voladura o un parte no es una operación del día: un parte anulado le quita material al patio que quizá ya se despachó. Por eso pide el escalón más alto del módulo.
+
+| Rol | Ve el módulo | Registra frentes, voladuras y partes | Anula voladuras y partes |
+| --- | --- | --- | --- |
+| Administrador del sistema | Sí | Sí | Sí |
+| Operaciones | Sí | Sí | Sí |
+| Gerente general | Sí | No | No |
+| Almacén | No | No | No |
+| Compras | No | No | No |
+| Tesorería | No | No | No |
+| Recursos humanos | No | No | No |
+| Solicitante | No | No | No |
+| Consulta | No | No | No |
+
+Este es el reparto con el que arranca el sistema. Administración puede cambiarlo desde la matriz de permisos.
+
+Fíjate en la fila de Almacén: **quien lleva el patio no entra a Explotación.** Tiene consecuencias que hay que saber, y están explicadas en 6.6.
+
+Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu permiso es de consulta.
+
+**Lo que escribes se convierte solo a mayúsculas y se le quitan las tildes.** Ocurre mientras tecleas, en los nombres de los frentes, en el responsable de la voladura, en el operador y en las notas. La eñe se conserva. Unifica la forma de escribir para que buscar «CAMIÓN» y «camion» encuentre lo mismo.
+
+**Lo que registra otra persona aparece sin recargar la pantalla.** Si el operador carga el parte desde el patio mientras tú miras las existencias en la oficina, la piedra aparece sola.
+
+### 6.2 Cómo llega la piedra al patio
+
+Son cuatro pasos y siempre van en el mismo orden. Quien entienda esto entiende el módulo entero.
+
+1. **El frente.** Alguien anota en **Frentes y bancos** el sitio del cerro donde se está trabajando, y con qué se arranca: voladura, martillo, o los dos. Sin al menos un frente activo no se puede hacer nada más, porque tanto la voladura como el parte tienen que decir de dónde salió el material.
+2. **La voladura.** Cuando se dispara, se registra en **Voladuras** con su fecha, su explosivo, su responsable y su permiso. Aquí se anotan las **Toneladas estimadas**: lo que se calcula haber arrancado. Es una estimación, no una cuenta.
+3. **El parte de turno.** Al cerrar el turno, quien opera carga en **Producción por turno** lo que la trituradora produjo de verdad: un renglón por cada material, con sus toneladas. Puede enlazar el parte a la voladura que se estuvo trabajando.
+4. **La entrada al patio.** Al pulsar **Guardar el parte**, y en ese mismo momento, cada renglón escribe una entrada en el libro de inventario, en el patio que se eligió. A partir de ahí el material existe para el resto del sistema: se ve en Existencias y se puede despachar.
+
+Ese cuarto paso es el que hay que tener claro. **El parte de turno no es un reporte: es el asiento que mueve el inventario.** Guardarlo es meter la piedra al patio, y anularlo es sacarla.
+
+Y el paso 2 se cierra con el paso 3: cuando el parte se enlaza a la voladura, el sistema compara lo que se estimó con lo que se produjo y muestra el **Desvío**. Es el número que dice si quien calcula las voladuras está calibrado.
+
+### 6.3 Frentes y bancos
+
+**Operación › Explotación › Frentes y bancos**
+
+Dónde se está arrancando el material, y con qué. Es la primera pantalla del módulo porque todo lo demás cuelga de ella.
+
+#### Qué se ve
+
+Una tarjeta por frente. Cada una muestra el nombre, debajo el código, el banco y el material, y a la derecha una etiqueta con el estado: **activo**, **suspendido** o **agotado**.
+
+Debajo, cuatro cifras: **Producido** (las toneladas que han cargado los partes de ese frente), **Arranque**, **Voladuras** (cuántas se han registrado) y **Última** (la fecha de la más reciente). Si el frente tiene reserva anotada, aparece al pie: **Reserva estimada 40.000 t**.
+
+Si todavía no hay ninguno, la pantalla lo dice: **Todavía no hay frentes**.
+
+#### Crear o corregir un frente
+
+1. Pulsa **Nuevo frente**, arriba a la derecha. Para corregir uno que ya existe, **pulsa en cualquier parte de su tarjeta**: no hay botón de editar y nada en la pantalla lo indica.
+2. Llena la ficha.
+3. Pulsa **Guardar**.
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Código** | Sí | Corto, del estilo de **F-01**. No se puede repetir |
+| **Nombre** | Sí | Cómo lo llama la gente: **Frente norte** |
+| **Banco o cota** | No | En una cantera se avanza por bancos, y el mismo frente en dos bancos da material distinto |
+| **Material** | No | La roca: granito, caliza, arenisca |
+| **Cómo se arranca** | — | **Voladura**, **Martillo hidráulico** o **Los dos, según el material**. Empieza en **Voladura** |
+| **Estado** | — | **Activo**, **Suspendido** o **Agotado**. Empieza en **Activo** |
+| **Reserva estimada (t)** | No | Lo que estima geología. Es una cifra que se corrige, no una cuenta |
+| **Nota** | No | |
+
+#### Lo que no te deja el sistema
+
+**Sin código y sin nombre no se guarda.** El botón **Guardar** ni siquiera se enciende, y si llegara a intentarse, el sistema responde «El frente necesita un código con el que llamarlo.» o «El frente necesita un nombre.» Un frente sin nombre en la lista de un parte de turno no le dice nada a quien lo tiene que elegir a las seis de la mañana.
+
+**Dos frentes no pueden tener el mismo código.** El sistema no lo guarda, pero conviene saber que el aviso que aparece en ese caso no está escrito para quien lo lee: es el texto técnico que devuelve el sistema por su cuenta. Si al guardar un frente te sale un mensaje que no entiendes, revisa primero si ese código ya está en uso.
+
+**Un frente no se borra.** Se le pone **Suspendido** cuando se para, o **Agotado** cuando se acaba. La razón es que sus voladuras y sus partes siguen en el libro y tienen que poder seguir señalando de dónde salieron.
+
+**El estado manda sobre lo que se puede registrar después**, y la propia ficha lo advierte: *Un frente suspendido o agotado no admite partes de turno.*
+
+**El método de arranque también manda**, y el encabezado de la ficha lo dice: *El método de arranque manda: un frente de martillo no admite voladuras.* Está explicado en 6.4.
+
+### 6.4 Voladuras
+
+**Operación › Explotación › Voladuras**
+
+Lo que se arranca del cerro, con su permiso y su responsable. Cada voladura es un evento con explosivo de por medio, así que queda registrada con su número, no se edita y no se borra.
+
+#### Qué se ve
+
+Una lista, de la más reciente a la más antigua, con estas columnas:
+
+| Columna | Qué muestra |
+| --- | --- |
+| **Voladura** | El número — **VOL-2026-0001**, que se reinicia cada año — y debajo la fecha y la hora |
+| **Frente** | El nombre del frente y, debajo, el banco |
+| **Barrenos** | Cuántos se perforaron |
+| **Explosivo** | Los kilos que se cargaron |
+| **Estimado** | Las toneladas que se calculó arrancar |
+| **Producido** | Las toneladas que después cargaron los partes de turno enlazados a esta voladura |
+| **Desvío** | Cuánto se apartó lo producido de lo estimado |
+
+Las voladuras anuladas se quedan en la lista, atenuadas, con la etiqueta **Anulada** en lugar del desvío.
+
+**El desvío es la cifra que hay que mirar.** Sale en verde cuando la diferencia es del 15 % o menos, hacia arriba o hacia abajo, y en ámbar cuando se pasa de ahí. Solo aparece si se anotaron las **Toneladas estimadas**: sin estimación no hay con qué comparar, y la columna muestra una raya.
+
+Pulsando en una línea se abre el detalle, con todo lo que se cargó y la observación.
+
+#### Registrar una voladura
+
+1. Pulsa **Registrar voladura**, arriba a la derecha.
+2. Elige el **Frente**. Ojo con esta lista, porque no trae todos: está explicado abajo.
+3. Llena lo que sepas. La **Fecha** viene puesta en hoy.
+4. Pulsa **Registrar**.
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Frente** | Sí | Es lo único obligatorio |
+| **Fecha** | — | Viene puesta en hoy. Se puede poner una anterior, no una futura |
+| **Hora** | No | |
+| **Barrenos** | No | |
+| **Metros perforados** | No | |
+| **Diámetro (mm)** | No | |
+| **Tipo de explosivo** | No | **Emulsión**, por ejemplo |
+| **Explosivo (kg)** | No | |
+| **Detonadores** | No | |
+| **Cordón (m)** | No | |
+| **Toneladas estimadas** | No | Sin ella no se calcula el **Desvío** |
+| **Responsable** | No | Quién la dirigió |
+| **Permiso** | No | La autorización de explosivos |
+| **Observación** | No | |
+
+El encabezado del formulario recuerda de qué se trata: *Lo que se cargó y lo que se estima haber arrancado. El tonelaje real aparece después, en los partes de turno.*
+
+#### Lo que no te deja el sistema
+
+**En la lista de frentes no aparecen los de martillo.** Tampoco los suspendidos ni los agotados. Es la misma regla que aplica el sistema al guardar, dicha antes de que escribas nada.
+
+Si de todos modos se intenta registrar una voladura contra un frente de martillo, el sistema la rechaza en vez de guardarla: «El frente "FRENTE SUR" se trabaja con martillo, no con voladura. Si eso cambió, corrígelo primero en la ficha del frente.» **Se rechaza y no se guarda, y esa diferencia importa.** Guardarla dejaría un consumo de explosivo imputado a un sitio donde no se usó explosivo, y ese error no lo encuentra nadie hasta que aparece en un informe seis meses después. Si el frente de verdad cambió de método, se corrige primero en su ficha y después se registra la voladura.
+
+**No se registra una voladura con fecha futura**, porque una voladura que todavía no ocurrió no tiene consumo real que anotar. El sistema responde «No se registra una voladura con fecha futura.»
+
+**Si no hay ningún frente que se trabaje con voladura, el botón Registrar voladura está apagado.** La pantalla lo explica: *Primero hace falta un frente activo que se trabaje con voladura. Se crean en Frentes y bancos.*
+
+**Una voladura no se edita.** Si está mal, se anula con motivo y se registra la correcta.
+
+#### Anular una voladura
+
+1. Pulsa en la línea para abrir el detalle.
+2. Pulsa **Anular**.
+3. Escribe **Por qué se anula**. Son mínimo cuatro letras, y el sistema responde «Escribe por qué se anula la voladura.» si se deja corto.
+4. Pulsa **Anular**.
+
+La voladura **no se borra**: queda con su número, atenuada en la lista y con el motivo a la vista en el detalle. Es lo que se le puede enseñar a quien venga a preguntar.
+
+**No se puede anular una voladura que ya tiene partes de turno enlazados.** El sistema lo dice con la cuenta: «La voladura VOL-2026-0003 tiene 2 parte(s) de turno que trabajaron ese material. Anúlalos primero.» La razón es el orden: esos partes ya metieron piedra al patio, y borrar la voladura de la que dicen venir dejaría el tonelaje sin explicación.
+
+### 6.5 Producción por turno
+
+**Operación › Explotación › Producción por turno**
+
+Lo que produjo cada turno, y por dónde entra al patio. Es la pantalla que mueve el inventario.
+
+#### Qué se ve
+
+Una lista de partes, del más reciente al más antiguo:
+
+| Columna | Qué muestra |
+| --- | --- |
+| **Parte** | El número — **PRO-2026-0001**, que se reinicia cada año — y debajo la fecha y el turno |
+| **Frente** | De dónde salió el material |
+| **Patio** | A qué almacén entró |
+| **Producido** | La suma de todos los renglones del parte |
+| **Horas** | Las horas operativas y, en ámbar debajo, las horas de paro si las hubo |
+| **Rendimiento** | Toneladas por hora |
+
+Los partes anulados se quedan en la lista, atenuados, con la etiqueta **Anulado** en lugar del rendimiento.
+
+**El rendimiento solo aparece si se anotaron las horas operativas.** No es un capricho de la pantalla: 300 toneladas no significan nada sueltas — puede ser un turno excelente de cuatro horas o uno malo de ocho. Sin horas, ese parte no se puede comparar con ningún otro.
+
+Pulsando en una línea se abre el detalle: primero los renglones, uno por material con su cantidad, y debajo el patio, las horas, el paro, el rendimiento, la voladura y el operador.
+
+#### Cargar un parte
+
+1. Pulsa **Cargar parte**, arriba a la derecha.
+2. Revisa la **Fecha**, que viene puesta en hoy, y elige el **Turno**.
+3. Elige el **Frente** y el **Patio**.
+4. Enlaza la **Voladura**, si la hubo.
+5. Escribe las **Horas operativas** y, si hubo parada, las **Horas de paro** y el **Motivo del paro**.
+6. Llena el **Material producido**: en cada renglón elige el material y escribe las **Toneladas**. Con **Agregar material** se añade otro renglón, y con **Quitar** se elimina el que sobre. Abajo a la derecha se va sumando el **Total del turno**.
+7. Pulsa **Guardar el parte**.
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Fecha** | Sí | Viene puesta en hoy. Se puede poner una anterior, no una futura |
+| **Turno** | — | **Turno I**, **Turno II** o **Turno III**. Empieza en **Turno I** |
+| **Operador** | No | Quién reporta |
+| **Frente** | Sí | Solo salen los frentes activos |
+| **Patio** | Sí | Adónde entra el material. Si solo hay un almacén, viene elegido |
+| **Voladura** | No | Empieza en **Ninguna en particular**. Solo salen las voladuras vigentes de ese frente. *Enlazarla permite comparar lo estimado con lo producido* |
+| **Horas operativas** | No | *Sin ellas, el tonelaje no se puede comparar con otro turno* |
+| **Horas de paro** | No | |
+| **Motivo del paro** | Depende | Obligatorio en cuanto pongas horas de paro |
+| **Renglón** y **Toneladas** | Sí | Al menos uno, con cantidad mayor que cero |
+| **Nota** | No | |
+
+El encabezado del formulario dice lo importante en una línea: *Lo que se produjo entra al patio en el momento de guardar.*
+
+#### Lo que no te deja el sistema
+
+**Un parte sin material producido no se guarda.** El botón **Guardar el parte** está apagado mientras el total sea cero, y el sistema lo repite si llega a intentarse: «Un parte de turno sin material producido no dice nada.» Un parte que no mete piedra al patio no es un parte: es una nota.
+
+**Un renglón a medias no se guarda.** Si eliges el material y dejas las toneladas en blanco, o al revés, ese renglón se descarta en silencio y el resto del parte sí se guarda. Revisa el **Total del turno** antes de guardar: es la comprobación de que están todos.
+
+**Si pones horas de paro tienes que decir por qué.** El campo se pone en rojo con el aviso *Un paro sin motivo no se puede cuadrar después*, y el botón no se enciende. Un paro sin motivo es una hora perdida que nadie va a poder explicar cuando se revise el mes.
+
+**Solo entran materiales del catálogo marcados como producto de cantera.** Si se intenta otra cosa, el sistema responde «La cantera produce productos. "GASOIL" está catalogado como COMBUSTIBLE.» La cantera produce piedra; el gasoil entra por una compra, no por un turno.
+
+**No se registra producción con fecha futura**, porque un turno que todavía no ocurrió no produjo nada que meter al patio.
+
+**Solo hay un parte por turno y por frente.** Es la regla más importante de la pantalla y está explicada en 6.6.
+
+#### Anular un parte
+
+1. Pulsa en la línea para abrir el detalle.
+2. Pulsa **Anular**.
+3. Escribe **Por qué se anula**. Mínimo cuatro letras: «Escribe por qué se anula el parte.»
+4. Pulsa **Anular el parte**.
+
+La ventana avisa de lo que va a pasar antes de hacerlo: *El material que metió sale del patio con un asiento contrario. Si ya se despachó, no se puede: habrá que corregir con un ajuste.*
+
+El parte queda con su número, atenuado y con el motivo a la vista. En el libro de inventario aparecen las entradas contrarias con la nota **ANULACIÓN DEL PARTE PRO-2026-0012:** seguida de tu explicación.
+
+**No se puede anular un parte cuyo material ya se despachó.** El sistema lo comprueba material por material antes de escribir nada y lo dice con nombre y cantidad: «De "GRANZON" ya no quedan las 120 que metió este parte: se despacharon. Corrige con un ajuste de inventario, que deja constancia de la diferencia.» El motivo es que devolverlo dejaría el patio en negativo, y una existencia negativa no es un dato: es un error que alguien tendrá que deshacer más adelante, cuando ya nadie recuerde de dónde salió.
+
+### 6.6 Lo que conviene entender
+
+#### El parte de turno es la única puerta, y el botón de Existencias ya no la abre
+
+En **Operación › Inventario › Existencias** sigue habiendo un botón **Cargar producción**, arriba a la derecha. **Ya no abre ningún formulario.** Lo único que hace es llevarte a **Producción por turno**, que es donde se carga.
+
+Ese botón fue la puerta provisional mientras Explotación no existía. Ahora la piedra entra por el parte de turno, que además sabe de qué frente salió, con cuántas horas y contra qué voladura. Dos puertas al mismo patio es como se cuenta dos veces la misma piedra, así que se dejó una sola.
+
+Hay un detalle práctico que conviene decir claro: **ese botón se le dibuja al rol de Almacén, y Almacén no tiene permiso sobre Explotación.** Quien lo pulse sin ese permiso no llega al parte de turno, sino a la tarjeta con el candado, **Explotación no está a tu alcance**. Si el almacenista es quien tiene que cargar la producción, pídele a administración el permiso sobre Explotación; si no, la producción la carga Operaciones y el almacenista la ve aparecer sola en las existencias.
+
+#### Un parte lleva varios renglones porque un turno produce varios materiales
+
+Una trituradora no saca un solo material: del mismo turno salen piedra 1, piedra 2, granzón y polvillo a la vez. Por eso el parte tiene renglones y no una sola cantidad. Obligar a llenar cuatro partes del mismo turno sería llenar cuatro veces la misma cabecera y arriesgarse a que una se quede sin cargar.
+
+Lo que hay que saber es cómo se traduce eso al inventario: **cada renglón escribe su propia entrada en el libro**, con su número de movimiento, y el parte se queda apuntado con cuál escribió cada uno.
+
+Ahí está la razón de que anular funcione bien. **Al anular, el sistema reversa exactamente esas entradas y no otras parecidas.** Buscar «una entrada parecida» — mismo artículo, misma cantidad, mismo patio — devolvería la del turno de al lado el día que dos partes coincidan, y se estaría sacando del patio la piedra equivocada.
+
+Y como cada renglón es una entrada distinta, nada impide poner el mismo material en dos renglones del mismo parte. Si eso pasa, entran las dos cantidades por separado. Revisa el **Total del turno** antes de guardar.
+
+#### Un parte por turno y por frente
+
+**El mismo turno en el mismo frente no admite dos partes.** Si se intenta, el sistema no lo guarda.
+
+La razón se dice en una frase: **dos partes del mismo turno en el mismo frente son el mismo tonelaje contado dos veces.** El segundo se carga casi siempre sin mala intención — alguien no sabe que el otro ya lo cargó — y el resultado es un patio con material que no existe, que se descubre el día que se va a despachar y no aparece.
+
+Si un parte quedó mal cargado, el camino es anularlo y hacer otro. Sale más largo, y a cambio quedan los dos en el libro: el equivocado, el motivo por el que se anuló y el correcto.
+
+Una advertencia honesta sobre esta regla: **el aviso que sale al intentar guardar el segundo parte no está escrito para quien lo lee.** Es el texto técnico que devuelve el sistema por su cuenta. Si al guardar un parte te aparece un mensaje que no entiendes, lo primero que hay que mirar es si ese turno ya está cargado para ese frente.
+
+#### El frente dice con qué se trabaja, y por eso se rechaza la voladura
+
+El método de arranque es un dato del frente y no una casilla que se marca en cada voladura. Eso es deliberado: quien registra una voladura a las siete de la mañana no está en condiciones de decidir con qué se trabaja el frente; eso se decidió antes y se anotó una sola vez.
+
+De ahí sale el control. Registrar una voladura contra un frente de martillo es un error de captura, y **el sistema lo rechaza en lugar de guardarlo**. Guardarlo sería más cómodo en el momento y mucho peor después: quedaría un consumo de explosivo imputado a un sitio donde no se usó explosivo, y ese número aparecería seis meses más tarde en un informe de costos que ya nadie puede reconstruir. Un rechazo se resuelve en el instante; un dato falso, no.
+
+#### La producción entra valorada en cero
+
+Cada renglón del parte entra al patio **con costo cero**. No es un olvido.
+
+Lo que cuesta producir una tonelada de piedra sale de la nómina, el gasoil, el explosivo y el desgaste de la trituradora. Ese cálculo el sistema todavía no lo hace. Poner un número inventado valoraría el patio con una cifra que nadie calculó, y esa cifra acabaría en un balance. Cero es falso, pero se ve falso; un costo inventado es falso y parece cierto.
+
+Consecuencia práctica, y hay que tenerla presente al mirar Existencias: **la producción sube las toneladas del patio pero no sube el Valor del inventario**, y arrastra el **Costo prom.** hacia abajo. Mientras el costeo no esté construido, el valor en dólares del material producido no es una cifra en la que apoyarse. Las toneladas sí.
+
+#### Lo que muestran las listas
+
+**Las tres pantallas muestran lo más reciente y no tienen paginación.** Frentes y bancos los muestra todos. Voladuras y Producción por turno muestran los 300 registros más recientes, sin filtros ni botón de ver más. Es una limitación real: en una cantera con tres turnos diarios, un parte de hace unos meses deja de aparecer en la pantalla aunque siga en el libro y siga contando en las existencias.
+
+### 6.7 Cuando el sistema no te deja
+
+| Lo que ves | Qué significa | Qué hacer |
+| --- | --- | --- |
+| «Tu usuario no tiene permiso para esta acción.» | Te falta permiso sobre Explotación, y el mensaje no dice cuál | Si fue al anular una voladura o un parte, hace falta el control total sobre Explotación. Pídelo a administración, o que lo haga quien lo tenga |
+| **Explotación no está a tu alcance** | Llegaste a una pantalla del módulo sin permiso para verlo. Sale, por ejemplo, al pulsar **Cargar producción** en Existencias sin ese permiso | Pulsa **Volver al panel**. Si lo necesitas para tu trabajo, pide el permiso a administración |
+| «El frente necesita un código con el que llamarlo.» | El código quedó vacío | Escribe un código corto, del estilo de **F-01** |
+| «El frente necesita un nombre.» | El nombre quedó vacío | Escribe cómo llama la gente a ese frente |
+| «El frente "FRENTE SUR" se trabaja con martillo, no con voladura. Si eso cambió, corrígelo primero en la ficha del frente.» | Se intentó registrar una voladura contra un frente de martillo | Si el frente cambió de método, corrígelo en **Frentes y bancos** y vuelve a registrar la voladura |
+| «El frente "FRENTE SUR" está agotado.» | Contra un frente agotado no se registran voladuras | Elige otro frente, o reactívalo en su ficha si de verdad se sigue trabajando |
+| «No se registra una voladura con fecha futura.» | La fecha es de mañana o después | Corrige la fecha |
+| «Escribe por qué se anula la voladura.» | El motivo quedó vacío o con menos de cuatro letras | Escribe qué pasó con esa voladura |
+| «La voladura VOL-2026-0003 ya estaba anulada.» | Esa voladura ya se anuló | Recarga la pantalla: la anulación ya está hecha |
+| «La voladura VOL-2026-0003 tiene 2 parte(s) de turno que trabajaron ese material. Anúlalos primero.» | Hay partes de turno enlazados que ya metieron piedra al patio | Anula primero esos partes. Si no se pueden anular porque el material ya se despachó, la voladura se queda como está |
+| «Un parte de turno sin material producido no dice nada.» | No se cargó ningún renglón con cantidad | Añade al menos un material con sus toneladas |
+| «El frente "FRENTE NORTE" está suspendido.» | Un frente suspendido o agotado no admite partes de turno | Elige otro frente, o vuelve a ponerlo **Activo** en su ficha si se retomó el trabajo |
+| «El patio "PATIO VIEJO" está cerrado.» | El almacén elegido está desactivado | Elige otro patio, o pide que lo reactiven en **Almacenes y patios** |
+| «No se registra producción con fecha futura.» | La fecha del parte es de mañana o después | Corrige la fecha |
+| «La voladura indicada no existe o está anulada.» | La voladura que enlazaste se anuló mientras llenabas el parte | Recarga la pantalla y elige otra, o deja **Ninguna en particular** |
+| «La cantera produce productos. "GASOIL" está catalogado como COMBUSTIBLE.» | Ese material no es un producto de cantera | Elige un producto de cantera. Si falta en la lista, revísalo en el catálogo de artículos |
+| «La cantidad de "GRANZON" tiene que ser mayor que cero.» | Un renglón quedó en cero | Escribe las toneladas, o quita el renglón |
+| «Escribe por qué se anula el parte.» | El motivo quedó vacío o con menos de cuatro letras | Escribe qué pasó con ese parte |
+| «El parte PRO-2026-0012 ya estaba anulado.» | Ese parte ya se anuló | Recarga la pantalla: la anulación ya está hecha |
+| «De "GRANZON" ya no quedan las 120 que metió este parte: se despacharon. Corrige con un ajuste de inventario, que deja constancia de la diferencia.» | El material del parte ya salió del patio y no se puede devolver | Haz un conteo físico en Existencias y explica la diferencia |
+| Un mensaje en inglés al guardar un parte o un frente | Casi siempre es un dato repetido: ese turno ya está cargado para ese frente, o ese código de frente ya existe | Revisa la lista antes de volver a guardar |
+| «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
+
+---
+
+## 7. Inventario
 
 El inventario es el libro de lo que hay. Todo lo que entra y todo lo que sale del patio, del almacén, del taller y del surtidor queda escrito en una sola lista, en orden, con la fecha, la hora, la cantidad y el nombre de quien lo registró.
 
@@ -688,13 +1033,13 @@ Hay una idea que conviene entender antes de tocar nada, porque explica casi todo
 
 De ahí se desprende la consecuencia práctica: **para cambiar una existencia hay que escribir un movimiento**. No hay otra forma. No se puede corregir el número directamente, ni siquiera siendo administrador.
 
-### 6.1 Quién entra y quién puede registrar
+### 7.1 Quién entra y quién puede registrar
 
 Hay dos puertas distintas, y conviene no confundirlas.
 
 La primera es **ver el módulo**. Depende del permiso sobre Inventario que administración le haya dado a tu usuario. Si no lo tienes, el grupo Inventario no aparece en el menú, y si escribes la dirección a mano verás una tarjeta con un candado: **Inventario no está a tu alcance**.
 
-La segunda es **poder registrar**. Los botones que escriben algo — **Sacar**, **Contar**, **Cargar producción**, **Reversar**, **Nuevo traslado**, **Deshacer** — solo se dibujan para el rol de Almacén y para administración.
+La segunda es **poder registrar**. Los botones que escriben algo — **Sacar**, **Contar**, **Reversar**, **Nuevo traslado**, **Deshacer** — solo se dibujan para el rol de Almacén y para administración.
 
 | Rol | Ve el módulo | Ve los botones de registrar |
 | --- | --- | --- |
@@ -706,17 +1051,17 @@ La segunda es **poder registrar**. Los botones que escriben algo — **Sacar**, 
 
 Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu rol es de consulta.
 
-### 6.2 Dos cosas que pasan en todas las pantallas
+### 7.2 Dos cosas que pasan en todas las pantallas
 
 **Lo que escribes se convierte solo a mayúsculas y se le quitan las tildes.** Ocurre mientras tecleas, en los nombres y en las notas. La eñe se conserva. No es un capricho: unifica la forma de escribir para que buscar «CAMIÓN» y «camion» encuentre lo mismo.
 
-**Lo que registra otra persona aparece sin recargar la pantalla.** Si el almacenista carga la producción desde el patio mientras tú miras las existencias en la oficina, la verás aparecer sola.
+**Lo que registra otra persona aparece sin recargar la pantalla.** Si el operador carga el parte de turno desde el patio mientras tú miras las existencias en la oficina, la piedra aparece sola.
 
-### 6.3 Existencias
+### 7.3 Existencias
 
 **Operación › Inventario › Existencias**
 
-Es la pantalla de cabecera del módulo: cuánto hay ahora mismo de cada cosa, en qué almacén está y cuánto vale. Desde aquí se sacan materiales, se hacen los conteos y se carga la producción del día.
+Es la pantalla de cabecera del módulo: cuánto hay ahora mismo de cada cosa, en qué almacén está y cuánto vale. Desde aquí se sacan materiales y se hacen los conteos.
 
 #### Qué se ve
 
@@ -766,23 +1111,19 @@ La nota queda compuesta sola, con las tres cosas juntas: «Conteo físico: 110 c
 
 Se cuenta **un artículo y un almacén a la vez**. No hay una pantalla de toma de inventario general.
 
-#### Cargar producción
+#### El botón Cargar producción
 
-Es lo que sale de la planta y entra al patio. En una cantera esta es la entrada principal del inventario: la mayor parte del material no se compra, se produce.
+Arriba a la derecha hay un botón **Cargar producción**. **Ya no abre ningún formulario:** lleva a la pantalla **Producción por turno**, que es el único sitio desde el que entra material al patio. Está explicado en el capítulo de Explotación.
 
-1. Pulsa **Cargar producción**, arriba a la derecha.
-2. Elige **A qué patio entra**.
-3. Elige **Qué se produjo**. La lista solo trae los productos de cantera.
-4. Escribe la **Cantidad**.
-5. **Fecha**: si la dejas en blanco, queda hoy. Aquí sí se puede poner una fecha anterior, pero no una futura.
-6. Escribe **De dónde sale**: el turno, el frente, la fecha de la voladura.
-7. Pulsa **Registrar**.
+Aquí se cargaba la producción mientras Explotación no existía. Ahora la piedra entra por el parte de turno, que además sabe de qué frente salió y con cuántas horas. Dos puertas al mismo patio es como se cuenta dos veces la misma piedra, así que se dejó una sola.
 
-**La producción entra valorada en cero.** No es un olvido, y la propia pantalla lo advierte: lo que cuesta producir una tonelada sale de la nómina, el gasoil y la voladura, y ese cálculo todavía no lo hace el sistema. Poner un número inventado valoraría el patio con una cifra que nadie calculó.
+Conviene saber una cosa antes de pulsarlo: **el botón se dibuja para el rol de Almacén, pero Almacén no tiene permiso sobre Explotación.** Quien lo pulse sin ese permiso no llega al parte de turno sino a una tarjeta con un candado, **Explotación no está a tu alcance**. Si el almacenista es quien tiene que cargar la producción, hay que pedirle a administración el permiso sobre Explotación; si no, la carga Operaciones y el material aparece aquí solo.
 
-Consecuencia que hay que tener presente: la producción sube las toneladas del patio pero no sube el **Valor del inventario**, y arrastra el **Costo prom.** hacia abajo. Mientras el costeo no esté construido, el valor en dólares del material producido no es una cifra en la que apoyarse.
+**La producción entra valorada en cero.** No es un olvido: lo que cuesta producir una tonelada sale de la nómina, el gasoil y la voladura, y ese cálculo todavía no lo hace el sistema. Poner un número inventado valoraría el patio con una cifra que nadie calculó.
 
-### 6.4 Movimientos
+Consecuencia que hay que tener presente al mirar esta pantalla: la producción sube las toneladas del patio pero no sube el **Valor del inventario**, y arrastra el **Costo prom.** hacia abajo. Mientras el costeo no esté construido, el valor en dólares del material producido no es una cifra en la que apoyarse.
+
+### 7.4 Movimientos
 
 **Operación › Inventario › Movimientos**
 
@@ -809,7 +1150,7 @@ Tres reglas que conviene saber de antemano:
 - **Un movimiento solo se reversa una vez.**
 - **No se puede reversar si el material ya no está.** Si reversar una entrada obligaría a sacar material que ya se consumió, el sistema lo impide y lo dice con nombre y cantidad. En ese caso el camino es un conteo físico.
 
-### 6.5 Transferencias
+### 7.5 Transferencias
 
 **Operación › Inventario › Transferencias**
 
@@ -835,7 +1176,7 @@ Pulsa **Deshacer**, escribe **Por qué se deshace** y confirma. Se reversan las 
 
 El sistema comprueba las dos antes de escribir ninguna. **O se deshacen las dos, o no se deshace ninguna**, nunca se queda a medias. Si el material ya salió del destino, no deja deshacerlo y lo explica.
 
-### 6.6 Catálogo de artículos
+### 7.6 Catálogo de artículos
 
 **Operación › Inventario › Catálogo de artículos**
 
@@ -863,7 +1204,7 @@ Pulsa **Nuevo artículo** y llena la ficha:
 
 Esta es la limitación más incómoda del módulo y conviene decirla claro: **revisa el nombre y la unidad antes de guardar**. Si te equivocas, el camino es desactivar el artículo y crear otro. Un artículo desactivado deja de aparecer en las listas, pero sus movimientos anteriores siguen en el libro.
 
-### 6.7 Almacenes y patios
+### 7.7 Almacenes y patios
 
 **Operación › Inventario › Almacenes y patios**
 
@@ -884,7 +1225,7 @@ Un almacén **no se borra**: se desmarca **Activo** y deja de aparecer en las li
 
 Dos avisos sobre la casilla del almacén propuesto: el sistema **no impide marcarla en varios almacenes a la vez**, y si eso pasa, cuál se propone al recibir una compra deja de ser previsible. Márcala en uno solo.
 
-### 6.8 Lo que conviene entender
+### 7.8 Lo que conviene entender
 
 #### Por qué nada se borra
 
@@ -902,20 +1243,20 @@ Corregir tiene dos caminos, en este orden:
 | Entra por | Sale por |
 | --- | --- |
 | Recepción de una compra *(desde Compras)* | Salida a consumo |
-| Carga de producción | Despacho de una venta *(desde Ventas)* |
+| Parte de turno *(desde Explotación)* | Despacho de una venta *(desde Ventas)* |
 | Entrada de un traslado | Salida de un traslado |
 | Ajuste por conteo, cuando sobra | Ajuste por conteo, cuando falta |
-| Reverso de una salida | Reverso de una entrada |
+| Reverso de una salida | Reverso de una entrada, incluida la anulación de un parte de turno |
 
 Lo que nunca ocurre es que una cantidad cambie sin que quede una línea en el libro con su número, su fecha, su hora, su responsable y su motivo.
 
 #### Nunca se queda en negativo
 
-El sistema no permite que una existencia baje de cero, y lo comprueba en los cuatro sitios donde podría pasar: al sacar, al trasladar, al reversar y al despachar una venta.
+El sistema no permite que una existencia baje de cero, y lo comprueba en los cinco sitios donde podría pasar: al sacar, al trasladar, al reversar, al despachar una venta y al anular un parte de turno.
 
 El motivo es simple: una existencia negativa no es un dato, es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió.
 
-**Qué hacer cuando salta.** Si en el patio sí está el material pero el sistema dice que no, lo que falta es una entrada. Carga la producción o haz el conteo físico, y después repite la salida.
+**Qué hacer cuando salta.** Si en el patio sí está el material pero el sistema dice que no, lo que falta es una entrada. Carga el parte de turno que quedó pendiente, o haz el conteo físico, y después repite la salida.
 
 #### Toneladas y metros cúbicos
 
@@ -923,7 +1264,7 @@ Cada artículo tiene **una sola unidad**, la que se le puso al crearlo, y el mat
 
 **El sistema no convierte entre toneladas y metros cúbicos.** No guarda ningún factor de densidad. Si un cliente habla en metros cúbicos, la conversión la hace la persona antes de teclear, con el criterio que la empresa tenga establecido.
 
-### 6.9 Cuando el sistema no te deja
+### 7.9 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -937,14 +1278,294 @@ Cada artículo tiene **una sola unidad**, la que se le puso al crearlo, y el mat
 | «No se puede reversar MOV-2026-0007: … Ese material ya se usó.» | El material que habría que devolver ya no está | Corrige con un conteo físico |
 | «El origen y el destino son el mismo almacén.» | Elegiste dos veces el mismo sitio | Cambia el destino |
 | «Ya existe un artículo con el código REP-BOMBA.» | El código está ocupado | Busca el artículo. Si existe, úsalo; si está inactivo, actívalo |
-| «"GASOIL" no se inventaría: no hay dónde meterlo.» | El artículo no está marcado para entrar al inventario | Revisa el catálogo |
-| «La producción es de lo que la cantera fabrica. "GASOIL" está catalogado como COMBUSTIBLE.» | Solo entran por producción los productos de cantera | Elige un producto de cantera |
-| «No se registra producción con fecha futura.» | La fecha es de mañana o después | Corrige la fecha |
 | «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
 
 ---
 
-## 7. Compras
+## 8. Despachos
+
+Despachos guarda los dos papeles que acompañan al camión: el pesaje de la romana y la guía de movilización. Los dos se hacían a mano dentro de la nota de entrega, y los dos existen aunque no haya venta. Aquí se producen; Ventas los consume.
+
+Hay una idea que conviene entender antes de tocar nada:
+
+**La báscula pesa todo lo que cruza el portón, no solo lo que se vende.** Una gandola de gasoil que llega también se pesa, y ese pesaje no termina nunca en una nota de entrega. Por eso el ticket tiene tipo — **Salida** o **Entrada** — y por eso vive en su propio módulo. Si la romana solo registrara ventas, el resto del tránsito del portón habría que llevarlo en un cuaderno, que es justo de donde se viene.
+
+De ahí se desprende lo demás: un ticket es la prueba de un viaje, la guía es el permiso de ese viaje, y la nota de entrega es la que los gasta.
+
+### 8.1 Quién entra y quién puede hacer qué
+
+Para ver el módulo hace falta que administración le haya dado a tu usuario acceso a Despachos. Si no lo tiene, el grupo Despachos no aparece en el menú, y si escribes la dirección a mano verás una tarjeta con un candado: **Despachos no está a tu alcance**.
+
+Dentro hay dos alcances distintos. El primero es **el trabajo del día**: pesar camiones y cargar guías. El segundo es **el control total sobre Despachos**, y cubre lo que corrige o lo que exceptúa: anular un pesaje, anular una guía y — esto es lo que más importa — autorizar un despacho de mineral sin guía.
+
+| Rol | Ve el módulo | Pesa y carga guías | Anula pesajes y guías, y autoriza despachos sin guía |
+| --- | --- | --- | --- |
+| Almacén | Sí | Sí | No |
+| Ventas | Sí | Sí | No |
+| Administrador | Sí | Sí | Sí |
+| Gerencia general | Sí | No | No |
+| Consulta | Sí | No | No |
+
+Los demás roles no ven el módulo. Si ves las pantallas pero no ves los botones **Pesar** ni **Cargar guía**, no es una falla: tu rol es de consulta.
+
+Conviene fijarse en una cosa del reparto: **el control total sobre Despachos no lo tiene la gerencia, lo tiene la administración del sistema.** Quien autoriza una salida sin guía no es quien vende ni quien firma la venta, y ese reparto es deliberado: el permiso que se salta un requisito no debe estar en manos de quien tiene prisa por despachar.
+
+**Cuando te falta permiso, el sistema no te dice cuál.** Siempre ves el mismo texto: «Tu usuario no tiene permiso para esta acción.»
+
+Una cosa más, que vale para las dos pantallas: **lo que escribes se convierte solo a mayúsculas y se le quitan las tildes.** Ocurre en las placas, los nombres de chofer, el transportista, el destino y las notas. Así una placa buscada como «a12bc34» encuentra la misma que se tecleó como «A12BC34».
+
+Y las dos pantallas **se refrescan solas**. Si la garita registra un pesaje mientras tú miras la lista desde la oficina, lo verás aparecer sin recargar nada.
+
+### 8.2 Del pesaje a la salida del camión
+
+Esta es la sección que hay que leer aunque no se lea ninguna otra. El circuito son cinco pasos y va siempre en el mismo orden.
+
+1. **Se pesa el camión.** **Operación › Despachos › Tickets de romana › Pesar**. Se guarda el bruto, la tara y la placa. El ticket recibe su número — **TCK-2026-0001** — y nace **Sin usar**.
+2. **Se carga la guía de movilización.** **Operación › Despachos › Guías de movilización › Cargar guía**. El sistema no emite la guía: la emite el ministerio y aquí se copia el papel, con su número, su vigencia, su destino, el material y las toneladas que ampara. Nace **Vigente**.
+3. **Sale el camión con su nota de entrega.** **Ventas › Notas de entrega › Despachar**. Ahí se eligen los dos papeles: el **Ticket de romana** y la **Guía de movilización**. Al elegir el ticket, los pesos y la placa se traen solos de la báscula. **Si la nota lleva mineral y no lleva guía, el despacho se rechaza entero**, y con él la salida del inventario: el camión no sale.
+4. **Los dos papeles quedan gastados.** En cuanto la nota se guarda, el ticket pasa a **En una nota** y la guía a **Usada**, las dos con el número de la nota a la vista. Ninguno de los dos vuelve a aparecer para elegir.
+5. **Si la nota se anula, los dos vuelven a quedar libres.** El ticket regresa a **Sin usar** y la guía a **Vigente**, listos para la nota que corrige a la anterior.
+
+Dos avisos sobre este circuito, para que nadie los descubra a mitad de camino.
+
+**Un ticket de entrada nunca llega a una nota de entrega.** El pesaje de una gandola que llega se queda aquí, como registro del portón. Al despachar solo se ofrecen los tickets de salida.
+
+**Los dos papeles son opcionales para el sistema, salvo la guía cuando hay mineral.** Se puede despachar sin haber pesado el camión, y en ese caso los pesos se teclean a mano. Lo que no se puede es sacar mineral sin guía.
+
+### 8.3 Tickets de romana
+
+**Operación › Despachos › Tickets de romana**
+
+Cada pesada del portón, entre o salga. La pantalla lo resume así: **Cada pesada del portón, entre o salga.**
+
+#### Qué se ve
+
+Arriba, si hay pesajes disponibles, una etiqueta verde: **3 sin usar**. Al lado, el botón **Pesar**.
+
+Debajo, el filtro **Ver**, que empieza en **Todos** y admite **Sin usar**, **Ya en una nota** y **Anulados**. No hay buscador: el filtro por estado es lo único que hay para acotar la lista.
+
+Si todavía no hay ninguna pesada, aparece la tarjeta **No hay pesadas registradas**, que explica para qué sirve la pantalla: **Al despachar, la nota de entrega toma los pesos de aquí en vez de que alguien los teclee dos veces.**
+
+La lista tiene estas columnas:
+
+| Columna | Qué muestra |
+| --- | --- |
+| **Ticket** | **TCK-2026-0001** y, debajo, la fecha y la hora |
+| **Vehículo** | La placa y, debajo, el chofer |
+| **Material** | Lo que se pesó, o **—** si no se especificó |
+| **Para** | El cliente o el proveedor y, cuando ya se usó, el número de la nota de entrega |
+| **Bruto** | El peso del camión cargado, en kilos |
+| **Tara** | El peso del camión vacío, en kilos |
+| **Neto** | La resta de los dos |
+| **Estado** | **Sin usar** en verde, **En una nota** en azul, **Anulado** en gris |
+
+Los tickets anulados se ven más pálidos, pero siguen en la lista.
+
+**La pantalla muestra los 400 tickets más recientes.** No hay paginación ni botón de ver más. Es una limitación real: en un portón con mucho tránsito, un pesaje de hace unas semanas deja de aparecer aquí.
+
+#### Pesar un vehículo
+
+1. Pulsa **Pesar**. La ventana avisa: **El neto sale solo. Si el bruto no supera a la tara, algo se escribió al revés.**
+2. Elige el **Tipo**: **Salida — material que se va** o **Entrada — algo que llega**.
+3. Escribe la **Placa**. Es lo único que el sistema exige además de los pesos.
+4. Escribe el **Peso bruto (kg)** y la **Tara (kg)**. Debajo, el recuadro **Neto** hace la resta mientras tecleas.
+5. Completa lo que sepas: **Transportista**, **Chofer**, **Cédula del chofer**, **Material**, y el **Cliente** si es una salida o el **Proveedor** si es una entrada.
+6. Revisa la **Fecha**, que viene puesta en hoy, y escribe la **Hora** si la llevas.
+7. Pulsa **Guardar el pesaje**.
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Tipo** | Sí | Empieza en **Salida — material que se va** |
+| **Placa** | Sí | El botón queda apagado mientras esté vacía |
+| **Transportista** | No | |
+| **Chofer** | No | |
+| **Cédula del chofer** | No | Con la forma **V-12345678** |
+| **Material** | No | Empieza en **Sin especificar**. Trae todos los artículos activos |
+| **Cliente** | No | Solo en las salidas. Empieza en **Sin cliente todavía** |
+| **Proveedor** | No | Solo en las entradas. Empieza en **Sin proveedor** |
+| **Peso bruto (kg)** | Sí | Tiene que ser mayor que la tara |
+| **Tara (kg)** | Sí | Si iguala o supera al bruto, aparece en rojo **La tara no puede igualar al bruto** |
+| **Fecha** | Sí | Viene puesta en hoy. No admite una fecha futura |
+| **Hora** | No | |
+| **Romana** | No | Cuál báscula pesó, si hay más de una |
+| **Operador** | No | Quién pesó |
+| **Nota** | No | |
+
+**El cliente se puede dejar en blanco.** Se pesa cuando el camión llega al portón, y a esa hora a veces todavía no se sabe a nombre de quién sale la nota. Un ticket sin cliente se puede usar en el despacho de cualquiera; uno con cliente, solo en el de ese cliente.
+
+**Un pesaje no se puede modificar.** Ni los pesos, ni la placa, ni la fecha. Si está mal, se anula y se registra otro, porque un peso que se puede retocar después deja de ser una prueba de nada el día que alguien discuta la cantidad.
+
+#### Anular un pesaje
+
+El botón **Anular** aparece en la fila, en rojo, **solo mientras el ticket está Sin usar**, y solo para quien tenga el control total sobre Despachos.
+
+1. Pulsa **Anular**. Se abre **Anular el ticket TCK-2026-0004**, con el aviso **Se queda con su número, marcado como anulado. Un pesaje que desaparece deja un hueco en la numeración de la garita.**
+2. Escribe **Por qué se anula**.
+3. Pulsa **Anular**.
+
+El botón está apagado hasta que el motivo tenga al menos cuatro letras.
+
+**Un ticket que ya está en una nota de entrega no se anula desde aquí.** El sistema lo rechaza con «El ticket TCK-2026-0004 está en la nota de entrega. Anula primero la nota.» El orden es ese porque el ticket es lo que justifica el peso de esa nota: dejarlo anulado por debajo dejaría una nota de entrega con un peso que ningún pesaje respalda.
+
+### 8.4 Guías de movilización
+
+**Operación › Despachos › Guías de movilización**
+
+El permiso con el que el mineral puede circular. La pantalla lo dice así: **El permiso con el que el mineral puede circular.**
+
+**El sistema no emite la guía.** La emite el ministerio, y lo que se hace aquí es copiar el papel para saber cuáles hay, cuáles siguen vigentes y cuál amparó cada despacho. La ventana lo advierte: **Se copia del papel que emitió el ministerio. El número es el suyo, no uno nuestro.**
+
+#### Qué se ve
+
+Arriba, dos etiquetas cuando corresponde: **2 por vencer**, en ámbar, para las que vencen dentro de tres días o menos, y **5 vigentes**, en verde. Al lado, el botón **Cargar guía**.
+
+Debajo, el filtro **Ver**, que empieza en **Todas** y admite **Vigentes**, **Ya usadas** y **Anuladas**.
+
+Si no hay ninguna, aparece la tarjeta **No hay guías cargadas**, con el texto **Sin guía vigente, Ventas rechaza el despacho de mineral. Quien tenga control total sobre Despachos puede autorizar una salida sin ella, y esa nota queda marcada.**
+
+| Columna | Qué muestra |
+| --- | --- |
+| **Guía** | El número del ministerio y, debajo, el número nuestro — **GMV-2026-0001** — y la fecha de emisión |
+| **Destino** | A dónde va el viaje y, debajo, el cliente si se le puso uno |
+| **Material** | El producto amparado y, debajo, el frente del que sale |
+| **Ampara** | Las toneladas que cubre el papel |
+| **Vigencia** | Hasta cuándo vale y, cuando ya se usó, el número de la nota de entrega |
+| **Estado** | **Vigente**, **Vence en 2 d**, **Vencida**, **Usada** o **Anulada** |
+
+**Vencida no es un estado que alguien marque: se calcula cada vez que abres la pantalla**, comparando la vigencia con el día de hoy. Guardado, haría falta que algo lo cambiara todas las noches, y la noche que no corriera una guía vencida seguiría diciendo que está vigente.
+
+Igual que en la romana, **la pantalla muestra las 400 guías más recientes** y el único filtro es el de estado.
+
+#### Cargar una guía
+
+1. Pulsa **Cargar guía**.
+2. Escribe el **Número de guía**, que es el del papel del ministerio.
+3. Revisa **Emitida el**, que viene en hoy, y escribe **Vence el**.
+4. Escribe el **Destino**.
+5. Elige el **Material** y escribe las **Toneladas que ampara**.
+6. Completa lo que traiga el papel: **Cliente**, **Frente de origen** u **Origen**, **Transportista**, **Placa**, **Chofer**, **Cédula del chofer** y la **Observación**.
+7. Pulsa **Guardar la guía**.
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Número de guía** | Sí | El del ministerio. No se puede repetir |
+| **Emitida el** | Sí | Viene puesta en hoy |
+| **Vence el** | Sí | No puede ser anterior a la emisión |
+| **Destino** | Sí | La ciudad o el sitio al que va el viaje |
+| **Cliente** | No | Empieza en **Sin cliente concreto** |
+| **Material** | Sí | Empieza en **Elige el material**. Solo trae productos de cantera |
+| **Toneladas que ampara** | Sí | Mayor que cero |
+| **Frente de origen** | No | Empieza en **Sin frente concreto** |
+| **Origen** | No | Para cuando no sale de un frente del sistema |
+| **Transportista** | No | |
+| **Placa** | No | |
+| **Chofer** | No | |
+| **Cédula del chofer** | No | Con la forma **V-12345678** |
+| **Observación** | No | |
+
+**El cliente se puede dejar en blanco**, igual que en el ticket. Una guía sin cliente ampara el despacho de cualquiera; una guía con cliente, solo el de ese cliente.
+
+**Una guía cargada no se puede editar.** Si el número o la vigencia quedaron mal, se anula y se carga otra vez, porque lo que está guardado tiene que decir lo mismo que el papel que lleva el chofer.
+
+#### Anular una guía
+
+El botón **Anular** aparece en la fila **solo mientras la guía está Vigente**, y solo para quien tenga el control total sobre Despachos. Se abre **Anular la guía GM-2026-0099**, con el aviso **Deja de estar disponible para amparar despachos.** Escribe **Por qué se anula** — mínimo cuatro letras — y pulsa **Anular**.
+
+Una guía que ya amparó un despacho no se anula desde aquí: el sistema responde «La guía GM-2026-0099 amparó un despacho. Anula primero la nota de entrega.» El motivo es el mismo que en el ticket: la nota quedaría diciendo que viajó amparada por un papel que el sistema da por anulado.
+
+### 8.5 Lo que conviene entender
+
+#### La romana pesa todo, no solo lo que se vende
+
+Un ticket puede ser de salida o de entrada. La de salida es el material que se va; la de entrada, la gandola de gasoil que llega o la recepción de una compra.
+
+Solo los tickets de salida llegan a Ventas. Los de entrada se quedan aquí como registro del portón, y si intentas usar uno en un despacho el sistema lo rechaza con «El ticket TCK-2026-0004 es de una entrada a la cantera, no de una salida.»
+
+Esto tiene una consecuencia práctica que conviene tener presente: **un ticket de entrada no mete material en el inventario.** Pesar la gandola no es recibirla. La entrada al inventario se registra donde siempre, en Compras o en Inventario. La romana deja constancia de lo que cruzó el portón; el inventario, de lo que se guardó.
+
+#### Un ticket se usa una sola vez
+
+Un pesaje pertenece a un viaje. En cuanto una nota de entrega lo toma, el ticket pasa a **En una nota** y desaparece de la lista de los que se pueden elegir. Si intentas usarlo otra vez, el sistema responde «El ticket TCK-2026-0004 está usado.»
+
+La razón se entiende sola en el patio: **si el mismo ticket pudiera colgarse de dos notas de entrega, el mismo camión estaría justificando dos despachos.** Las dos notas dirían que salieron veintiocho toneladas y habría una sola pesada para respaldarlas.
+
+**Al anular la nota, el ticket vuelve a quedar Sin usar.** Esto no es una excepción a la regla anterior, es la misma regla: el camión se pesó igual. Ese pesaje ocurrió, es válido, y lo que se cayó fue la nota. Si tuvieras que volver a pesar un camión que ya se fue, la nota corregida saldría con un peso inventado. Lo mismo pasa con la guía, que vuelve a **Vigente**.
+
+#### Ninguna salida de mineral viaja sin guía
+
+Es la regla más dura del módulo y la que conviene explicar bien.
+
+**Cuando una nota de entrega lleva un producto de cantera y no se le eligió guía, el despacho se rechaza entero.** No se avisa y se sigue: no se guarda la nota y no sale nada del patio. El mensaje es: «Este despacho lleva mineral y no tiene guía de movilización. Cárgala en Despachos › Guías, o pídele a quien tenga control total sobre Despachos que lo autorice sin ella.»
+
+La razón es que la guía es lo que hace legal que el camión circule con la piedra. Un camión detenido en la vía sin guía es un problema de la empresa, no del sistema, y el sistema es el último sitio donde se puede impedir que salga.
+
+**La comprobación mira lo que va en los renglones, no lo que dice el papel.** Si la nota es solo un flete o un servicio, no hace falta guía. Basta con que haya un producto de cantera para que se exija.
+
+**Hay una excepción, y solo una: quien tenga el control total sobre Despachos puede despachar sin guía.** Existe porque hay días en que el papel llega tarde y el cliente está esperando, y una empresa que no puede despachar es una empresa parada. Ese permiso no lo da el control total sobre Ventas: es el de Despachos, y por defecto solo lo tiene la administración del sistema.
+
+**Y esa autorización queda marcada.** La nota queda guardada sin guía asociada, y el registro de auditoría guarda quién la despachó, cuándo y con qué datos. Eso importa por una razón concreta: una excepción que no deja rastro deja de ser una excepción y se convierte en la forma normal de trabajar, porque nadie puede contar cuántas veces se usó ni pedirle cuentas a nadie.
+
+Aquí hay que ser exacto sobre lo que el sistema hace hoy: **ninguna pantalla muestra una etiqueta que diga que una nota salió sin guía.** Ni la lista de notas de entrega, ni el detalle de la nota, ni el PDF. La única forma de revisarlo es el registro de auditoría, que solo abre quien tiene el rol de administrador. La pantalla de guías dice que la nota «queda marcada», y conviene leerlo por lo que es: queda guardada y auditada, no señalada a la vista de todo el mundo. Si la empresa quiere revisar esas salidas de forma habitual, hoy hay que pedirlo por fuera.
+
+#### Al elegir el ticket, los pesos y la placa se traen solos
+
+En la ventana de despachar hay dos listas, **Ticket de romana** y **Guía de movilización**, y debajo los campos del camión. La ayuda de la primera lo dice: **Al elegirlo, los pesos y la placa se traen de la báscula.**
+
+Al elegir un ticket se llenan solos el **Peso bruto (kg)**, la **Tara (kg)**, la **Placa del vehículo**, el **Chofer** y la **Cédula del chofer**.
+
+**Y lo que se guarda son los del ticket, no los que se vean en la pantalla.** Aunque después de elegir el ticket alguien escriba otro peso encima, el sistema guarda el de la báscula. Los pesos no se teclean a mano por lo mismo que no se copian dos veces a mano en ningún sitio: **teclear el peso otra vez es la forma de que el papel y la báscula terminen diciendo cosas distintas**, y el día que un cliente discuta la cantidad, la nota y el ticket tienen que decir lo mismo o ninguno de los dos sirve.
+
+La placa, el chofer y la cédula funcionan al revés: si los escribes tú, se respeta lo que escribiste; solo se traen del ticket cuando los dejas en blanco. Es a propósito, porque el chofer que se anotó en la garita a las seis de la mañana puede no ser el que se llevó el camión.
+
+#### Lo que el sistema no comprueba
+
+Conviene decirlo con claridad, porque es fácil suponer lo contrario:
+
+- **No compara el peso neto del ticket con las cantidades de la nota.** Puedes despachar cien toneladas con un ticket de veintiocho. El peso queda como prueba, no como control.
+- **No compara las toneladas de la guía con lo que se despacha**, ni el material de la guía con el de los renglones. Una guía que ampara treinta toneladas de granzón no impide despachar cincuenta.
+- **No comprueba que el material del ticket sea el de la nota.**
+
+Lo que sí comprueba es el cliente: **si el ticket o la guía se emitieron a nombre de un cliente, solo sirven para el despacho de ese cliente.** Si no coinciden, verás «El ticket TCK-2026-0004 se pesó para otro cliente.» o «La guía GM-2026-0099 se emitió para otro cliente.»
+
+Y comprueba la vigencia: una guía cuya vigencia terminó antes de la fecha del despacho se rechaza con «La guía GM-2026-0099 venció el 02/08/2026.»
+
+#### Los números de los documentos
+
+Cada pesaje lleva su correlativo, **TCK-2026-0001**, y cada guía lleva dos números: el del ministerio, que es el que se busca y el que va en el papel, y el nuestro, **GMV-2026-0001**, que sirve para nombrarla dentro del sistema. **Los dos correlativos se reinician cada enero.**
+
+**Nada se borra.** Un pesaje equivocado se anula y se queda con su número, y una guía anulada sigue en la lista. La razón es la misma que en el resto del sistema: un correlativo con huecos es lo primero que se pregunta en una revisión, y en la garita un número que falta es un camión del que nadie sabe dar cuenta.
+
+### 8.6 Cuando el sistema no te deja
+
+| Lo que ves | Qué significa | Qué hacer |
+| --- | --- | --- |
+| «Tu usuario no tiene permiso para esta acción.» | Te falta permiso, y el mensaje no dice cuál | Si fue al anular un pesaje o una guía, hace falta el control total sobre Despachos. Pídelo a administración, o que lo haga quien lo tenga |
+| «Un pesaje sin placa no se puede atribuir a nadie.» | La placa quedó vacía | Escribe la placa del camión |
+| «El peso bruto (12000) tiene que ser mayor que la tara (12000).» | El bruto no supera a la tara | Revisa los dos números: el bruto es el camión cargado |
+| «No se registra un pesaje con fecha futura.» | La fecha es de mañana o después | Corrige la fecha |
+| «Escribe por qué se anula el pesaje.» | El motivo quedó vacío o con menos de cuatro letras | Escribe qué pasó con ese pesaje |
+| «El ticket TCK-2026-0004 ya estaba anulado.» | Alguien se te adelantó | Recarga la lista: la anulación ya está hecha |
+| «El ticket TCK-2026-0004 está en la nota de entrega. Anula primero la nota.» | Ese pesaje ya se usó en un despacho | Anula la nota desde **Ventas › Notas de entrega**. El ticket vuelve solo a **Sin usar** |
+| «La guía necesita su número, que es el que lleva el papel del ministerio.» | El número quedó vacío | Cópialo del papel |
+| «La guía necesita el destino: una guía ampara un viaje a un sitio.» | El destino quedó vacío | Escribe a dónde va el camión |
+| «La guía no puede vencer antes de emitirse.» | **Vence el** quedó antes de **Emitida el** | Revisa las dos fechas del papel |
+| «La guía tiene que amparar un tonelaje mayor que cero.» | Las toneladas quedaron vacías o en cero | Escribe las toneladas que dice el papel |
+| Un mensaje largo en inglés al guardar la guía | Ese número de guía ya está cargado | Búscala en la lista con el filtro **Ver** en **Todas**. Si ya está, no hace falta cargarla otra vez |
+| «Escribe por qué se anula la guía.» | El motivo quedó vacío o muy corto | Escribe al menos cuatro letras que expliquen qué pasó |
+| «La guía GM-2026-0099 ya estaba anulada.» | Alguien se te adelantó | Recarga la lista |
+| «La guía GM-2026-0099 amparó un despacho. Anula primero la nota de entrega.» | Esa guía ya se usó | Anula la nota desde **Ventas › Notas de entrega**. La guía vuelve sola a **Vigente** |
+| «Este despacho lleva mineral y no tiene guía de movilización. Cárgala en Despachos › Guías, o pídele a quien tenga control total sobre Despachos que lo autorice sin ella.» | La nota lleva producto de cantera y no se eligió guía | Carga la guía y repite el despacho, o pide la autorización a quien tenga el control total sobre Despachos |
+| «El ticket TCK-2026-0004 es de una entrada a la cantera, no de una salida.» | Se eligió un pesaje de algo que llegó | Elige un ticket de salida, o registra el pesaje del camión que se va |
+| «El ticket TCK-2026-0004 está usado.» | Otra nota lo tomó primero | Cierra, vuelve a abrir **Despachar** y elige uno de los que sigan **Sin usar** |
+| «El ticket TCK-2026-0004 se pesó para otro cliente.» | El pesaje se registró a nombre de otro | Elige el ticket correcto, o pesa de nuevo el camión |
+| «La guía GM-2026-0099 está usada.» | Otra nota la tomó primero | Elige otra guía vigente |
+| «La guía GM-2026-0099 venció el 02/08/2026.» | La vigencia terminó antes de la fecha del despacho | Consigue una guía vigente. Una vencida no ampara el viaje |
+| «La guía GM-2026-0099 se emitió para otro cliente.» | La guía tiene otro cliente puesto | Elige la guía de ese cliente, o una que no tenga cliente |
+| «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
+
+---
+
+## 9. Compras
 
 Compras es el camino por el que la empresa consigue lo que no produce: un repuesto, combustible, un flete, un servicio. Todo ese camino cabe en una sola pantalla, y cada compra es una tarjeta que avanza de un panel al siguiente, desde que alguien la pide hasta que el material entra al almacén.
 
@@ -954,7 +1575,7 @@ Hay una idea que conviene entender antes de tocar nada:
 
 La segunda idea es la que explica la mitad de las alarmas del módulo: **aquí se paga antes de recibir**. Entre el momento en que tesorería transfiere y el momento en que llega el camión hay dinero de la empresa en manos de un tercero. Por eso el tablero cuenta los días y avisa.
 
-### 7.1 Quién entra y quién puede hacer qué
+### 9.1 Quién entra y quién puede hacer qué
 
 Hay dos puertas distintas, y conviene no confundirlas.
 
@@ -976,9 +1597,11 @@ La segunda es **poder hacer cada paso**. Cada acción exige un rol concreto, y s
 
 Si abres una compra y no ves ningún botón, no es una falla: el paso en el que está esa compra le toca a otro rol, y la pantalla te dice a quién estás esperando.
 
+**La pantalla de facturas de proveedor se guarda de otra manera**, y conviene saberlo antes de repartir nada. Ahí el sistema no pregunta por el rol sino por el nivel de permiso sobre Compras que administración le haya puesto a tu usuario. La repartición que resulta no coincide con la de esta tabla, y se detalla en la sección de esa pantalla.
+
 **Que un botón no se dibuje es solo cortesía.** El permiso se comprueba de verdad en el momento de ejecutar la acción, no al pintar la pantalla. Quien llegue por otro camino recibe el mismo «Esta acción la realiza: Compras. Tu usuario no tiene ese rol.» Se hace así porque una autorización que dependiera de lo que se ve en la pantalla se saltaría con solo escribir una dirección a mano.
 
-### 7.2 El circuito de una compra
+### 9.2 El circuito de una compra
 
 Esta es la sección que hay que leer si solo se va a leer una. Todo lo demás del capítulo son detalles de estas nueve casillas.
 
@@ -1010,13 +1633,21 @@ Además de los nueve pasos, una compra puede terminar de dos maneras que no son 
 - **Gerencia devuelve a compras.** La compra vuelve del paso 3 al paso 2, y **la cotización elegida se borra**. Es a propósito: si se devuelve, es porque esa opción no sirve.
 - **Tesorería devuelve una instrucción de pago.** Si no queda ninguna instrucción viva, la orden vuelve del paso 5 al paso 4 para que compras corrija el método de pago.
 
+#### La factura del proveedor va por fuera
+
+Al circuito le falta un papel que no aparece en la tabla de arriba: **la factura que emite el proveedor**. Se registra en su propia pantalla, **Facturas de proveedor**, que tiene su sección más adelante en este capítulo.
+
+**Registrar la factura no mueve la tarjeta.** No hay un panel de facturas ni un estado nuevo: una compra recibida se queda en **Recibida** con factura o sin ella, y ni el tablero ni la ficha avisan de las que faltan. Que la factura del proveedor esté cargada es hoy una disciplina de la oficina y no algo que el sistema exija ni compruebe.
+
+Y hay que decir dónde está el riesgo, porque cuesta dinero: **una misma compra se puede pagar por dos caminos distintos y el sistema no los cruza**. Uno es la instrucción de pago de la orden, que ejecuta tesorería en el paso 5. El otro es el pago que se registra sobre la factura, dentro de su propia pantalla. Los dos sacan dinero de una cuenta de verdad y ninguno de los dos sabe del otro, así que usar los dos para la misma compra saca el dinero dos veces sin que nada lo impida. La empresa tiene que decidir de antemano cuál de los dos caminos usa, y usar ese.
+
 #### Lo que ya no se deshace
 
 - **Un pedido enviado no se puede editar.** El sistema responde «El pedido ya fue enviado y no se puede editar. Cancélalo y crea otro.» La razón es que a partir del envío otras personas ya lo están mirando y decidiendo sobre él; cambiarle el contenido por debajo dejaría sin sentido lo que ya aprobaron.
 - **Una compra cancelada no se reabre.** Si vuelve a hacer falta, se crea un pedido nuevo.
 - **Una recepción no se corrige.** El libro de inventario no se modifica: una corrección se hace con un ajuste, y los dos apuntes quedan visibles.
 
-### 7.3 El tablero
+### 9.3 El tablero
 
 **Administración › Compras › Tablero**
 
@@ -1078,7 +1709,7 @@ El tablero se actualiza solo cuando otra persona mueve algo, y además se recarg
 
 **Nada de esto se imprime.** El módulo de compras no genera ningún documento en papel ni ningún archivo para enviar: ni la orden de compra, ni la cotización, ni el tablero. Si hoy hace falta mandarle la orden a un proveedor, se hace por fuera del sistema.
 
-### 7.4 Nuevo pedido
+### 9.4 Nuevo pedido
 
 Se llega desde el botón **Nuevo pedido** del tablero. **No está en el menú**, porque un pedido siempre nace mirando el tablero.
 
@@ -1129,7 +1760,7 @@ Dos avisos sobre el borrador. El primero: **Guardar como borrador no comprueba l
 
 Del pedido sale un número: **SOL-2026-0001**.
 
-### 7.5 El detalle de una compra
+### 9.5 El detalle de una compra
 
 Se llega pulsando una tarjeta del tablero. **No está en el menú.**
 
@@ -1188,7 +1819,7 @@ Cinco acciones piden explicación antes de ejecutarse. Todas tienen el mismo cam
 
 El diálogo **Resolver el dinero** es distinto: muestra cuánto se pagó y a quién, y tiene un solo campo, **Qué pasó con el dinero**, con tres opciones — **El proveedor lo devolvió**, **Queda como saldo a favor con el proveedor** y **Se dio por perdido** —. Empieza en la primera.
 
-### 7.6 Proveedores
+### 9.6 Proveedores
 
 **Administración › Compras › Proveedores**
 
@@ -1213,11 +1844,15 @@ Para **crear** uno, pulsa **Nuevo proveedor**. Para **editar** uno, pulsa **en c
 | **Contribuyente especial — se le retiene IVA al pagar** | No | Viene desmarcada. Marcarla muestra un distintivo **Especial** en la lista |
 | **Activo — aparece al cargar cotizaciones** | — | Viene marcada |
 
-Sobre la casilla de contribuyente especial conviene ser claro: **hoy es un dato de referencia**. El monto que se le instruye pagar a tesorería es el que se escribe a mano en el diálogo de pago; el sistema no calcula ninguna retención por su cuenta.
+Sobre la casilla de contribuyente especial conviene ser claro: **hoy es un dato de referencia**. El monto que se le instruye pagar a tesorería es el que se escribe a mano en el diálogo de pago, y la pantalla de facturas de proveedor tampoco tiene ningún campo de retención.
+
+**El sistema no calcula ni descuenta retenciones al proveedor**, ni en la orden ni en la factura. La razón es que la empresa no actúa como agente de retención frente a quien le vende, así que no hay nada que retenerle y nada que enterar por su cuenta. Si algún día hiciera falta retenerle a un proveedor, el cálculo y su comprobante se hacen hoy por fuera del sistema.
+
+No hay que confundir esto con el IVA que retiene un cliente cuando la empresa le vende: eso sí lo calcula el sistema, y es asunto del módulo de Ventas.
 
 **Un proveedor no se borra.** La única forma de retirarlo es desmarcar **Activo**, y entonces deja de aparecer al cargar cotizaciones. No se borra porque sus cotizaciones y sus órdenes anteriores tienen que seguir explicándose.
 
-### 7.7 Cargar una cotización
+### 9.7 Cargar una cotización
 
 Se llega desde la ficha de una compra confirmada, con el botón **Cargar cotización**. Solo lo ve el rol Compras.
 
@@ -1255,7 +1890,7 @@ La tasa del BCV del día **queda congelada** dentro de la cotización, como evid
 
 Una cotización se puede **Eliminar** mientras no esté propuesta al gerente y no haya generado una orden.
 
-### 7.8 Recibir material
+### 9.8 Recibir material
 
 Se llega desde la ficha de una compra en **Pagada · pendiente por recepcionar** o en **Recibida parcialmente**, con el botón **Recibir material**. Solo lo ve el rol Almacén; los demás leen **La recepción la registra almacén.**
 
@@ -1276,7 +1911,7 @@ Al registrar, el material entra al inventario con su propio número de movimient
 
 El estado de la orden se recalcula solo: **Recibida** si no falta nada, **Recibida parcialmente** si falta algo.
 
-### 7.9 Indicar el método de pago
+### 9.9 Indicar el método de pago
 
 Se llega desde la ficha de una compra en **Aprobada · indicar método de pago**, con el botón **Indicar método de pago**. Solo lo ve el rol Compras.
 
@@ -1326,7 +1961,158 @@ Si en la cuenta elegida no alcanza el saldo, el diálogo lo dice y explica el ca
 
 Si no hay ninguna cuenta en esa moneda, se lee **No hay cuentas en Bolívares** y hay que crearla en **Tesorería › Bancos y cajas**.
 
-### 7.10 Lo que conviene entender
+### 9.10 Facturas de proveedor
+
+**Administración › Compras › Facturas de proveedor**
+
+Es donde se copia el papel que emite el proveedor. La pantalla se presenta con una sola frase: **El papel que sustenta el crédito fiscal del IVA.**
+
+Se llega por el menú, como al tablero y a proveedores. No hace falta abrir ninguna compra para entrar.
+
+#### Para qué sirve registrar la factura
+
+Conviene decirlo en llano, porque es toda la razón de que esta pantalla exista.
+
+Cuando la empresa vende, le cobra IVA al cliente y ese dinero no se queda en casa: hay que entregarlo. Cuando la empresa compra, le paga IVA al proveedor. Lo que la ley permite es descontar el IVA que se pagó del IVA que se cobró y entregar solo la diferencia, y ese descuento solo se puede hacer con la factura del proveedor registrada.
+
+**Una compra sin su factura cargada termina pagando el IVA dos veces: una al proveedor y otra al fisco, porque no hubo con qué descontarlo.** No es papeleo: es dinero de la empresa que se queda en el camino. La propia pantalla lo dice mientras no haya ninguna factura, bajo el título **No hay facturas de proveedor**: **Sin la factura registrada, el IVA que se pagó no se puede descontar del que se cobró. Es dinero real que se queda en el camino.**
+
+De ahí sale la regla práctica: **la factura del proveedor se carga aunque la compra ya esté recibida y pagada**, y se carga aunque no haya pasado por el tablero. Lo que le importa a esta pantalla es el papel, no el camino que siguió la compra.
+
+#### Quién puede hacer qué
+
+Aquí no manda el rol sino el nivel de permiso sobre Compras. Esta es la repartición que trae el sistema:
+
+| Acción | Quién la tiene |
+| --- | --- |
+| Registrar una factura y registrar sus pagos | Compras, Operaciones, RRHH, Solicitante, Gerencia general y Administrador |
+| Anular una factura o anular un pago | Gerencia general y Administrador |
+| Solo mirar la lista | Almacén, Tesorería y Consulta |
+
+Dos cosas de esa repartición conviene mirarlas de frente: **Tesorería no puede registrar el pago de una factura de proveedor**, aunque sea quien paga todo lo demás en la empresa, y **el rol de Solicitante sí puede**. Es como está repartido hoy el permiso sobre Compras. Si a la empresa no le sirve, se corrige en los permisos, no en esta pantalla.
+
+Quien no llega al nivel que hace falta no ve el botón, y si llega por otro camino recibe «Tu usuario no tiene acceso a Compras.»
+
+#### Qué se ve
+
+Arriba, el título **Facturas de proveedor** y su frase. A la derecha, una etiqueta roja con las que ya se pasaron de fecha — **2 vencidas** — y el botón **Registrar factura**.
+
+Debajo, la lista, con estas columnas:
+
+| Columna | Qué muestra |
+| --- | --- |
+| **Factura** | El número que trae impreso y, debajo, **control** con el número de control cuando se cargó |
+| **Proveedor** | El nombre y, debajo, el RIF |
+| **Fecha** | La de emisión. Debajo, en rojo, **vencida hace 12 d**; o **vence 04/09/2026** si la factura es a crédito y todavía no se pasó |
+| **Total** | El total de la factura, en la moneda en que está |
+| **Saldo** | Lo que falta por pagar, **siempre en dólares**. En las que ya no están por pagar se ve un guion |
+| **Estado** | **Por pagar**, **Pagada** o **Anulada** |
+
+**El saldo se lleva en dólares aunque la factura esté en bolívares.** Se hace así porque a un mismo proveedor se le paga unas veces en una moneda y otras veces en la otra, y solo hay una forma de saber cuánto falta: llevar la cuenta en una sola.
+
+Pulsando en cualquier parte de una fila se abre la ficha de esa factura.
+
+**Sus dos limitaciones.** La lista **no tiene buscador ni filtros**, y muestra **las cuatrocientas facturas más recientes** por fecha de emisión. Es una limitación real: pasado ese número, una factura vieja deja de aparecer aquí aunque siga registrada.
+
+Lo que registre otra persona aparece sin recargar la pantalla.
+
+#### Registrar una factura
+
+El diálogo se llama **Registrar factura de proveedor** y avisa de la regla principal: **Se copian las cifras del papel. Si la suma no coincide con el total impreso, el sistema se para antes de guardar.**
+
+1. Pulsa **Registrar factura**.
+2. Elige el **Proveedor**. La lista trae el RIF delante del nombre, para distinguir dos razones sociales parecidas.
+3. Copia el **Número de factura** y, si lo trae, el **Número de control**.
+4. Revisa la **Fecha de emisión**, que empieza en hoy, y elige la **Moneda** y la **Condición de pago**.
+5. Escribe el **Exento** y la **Base imponible**. Al escribir la base, el sistema propone el **IVA**.
+6. Compara el **IVA** propuesto con el del papel y corrígelo si no coincide.
+7. Escribe el **Total impreso** y comprueba que el recuadro **Total** dé lo mismo.
+8. Pulsa **Registrar**. Mientras guarda dice **Registrando…**
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Proveedor** | Sí | Hasta elegirlo, el botón de guardar está apagado |
+| **Número de factura** | Sí | El que trae impreso el papel. Es del proveedor, no nuestro |
+| **Número de control** | No | El otro número impreso, con la forma 00-12345678 |
+| **Fecha de emisión** | Sí | Empieza en hoy. **No admite fechas futuras** |
+| **Moneda** | — | **Bolívares** o **Dólares**. Empieza en bolívares |
+| **Condición de pago** | — | **De contado**, **Crédito 15 días**, **Crédito 30 días** o **Crédito 60 días**. Empieza en **De contado**, y de aquí sale la fecha de vencimiento que después se ve en la lista |
+| **Exento** | No | **Lo que no lleva IVA** |
+| **Base imponible** | No | Lo que sí lleva IVA |
+| **Alícuota (%)** | — | Viene precargada con la alícuota general. Se cambia si el papel trae otra |
+| **IVA** | No | **Se propone solo; manda lo que diga el papel.** Si lo pisas y no cuadra con la alícuota, debajo se lee **Por la alícuota daría 160.00** |
+| **Total impreso** | No | **Opcional. Sirve para que el sistema compruebe la suma.** |
+| **Observación** | No | |
+
+El recuadro **Total** de la derecha se va sumando mientras escribes: es el exento, más la base imponible, más el IVA.
+
+**No se teclean los renglones de la factura.** Una factura de proveedor puede traer cuarenta líneas y nadie las copia: lo que hace falta para descontar el IVA son esas cuatro cifras, y el detalle de qué llegó ya está en la recepción de la compra.
+
+**Si escribes el total impreso y no cuadra con lo tecleado**, bajo ese campo aparece **Lo tecleado suma 1160.00** y el botón se apaga. Es a propósito: cuando la suma no da, o está mal el papel o está mal el tecleo, y las dos cosas hay que verlas ahora y no en la declaración.
+
+El número de la factura, el de control y la observación se guardan en mayúsculas y sin tildes, como en el resto del módulo.
+
+#### La ficha de una factura
+
+Se abre pulsando su fila. Arriba, el número de la factura y, debajo, el proveedor y la fecha.
+
+Luego una fila de etiquetas: el estado, la condición de pago, **Vencida hace 12 días** cuando aplica y **Orden OC-2026-0007** cuando la factura viene enlazada a una orden de compra. Si la factura está anulada, debajo se lee en rojo **Anulada:** con el motivo que se escribió.
+
+Después, el desglose: **Exento**, **Base imponible**, **IVA** con su alícuota y **Total**. Si la factura está por pagar, al pie se lee **Pagado** una cifra **· falta** la otra, las dos en dólares.
+
+Debajo, cuando ya hay alguno, la tarjeta **Pagos**. Cada pago muestra su número y cómo se pagó, y en letra pequeña la fecha y hora, la cuenta de donde salió, la referencia si la hay y el **IGTF** si lo causó. Los pagos anulados se quedan a la vista, más apagados y con la palabra **anulado** al lado.
+
+Al pie del diálogo: **Cerrar**, **Anular** y **Registrar pago**, según lo que tu permiso alcance.
+
+#### Registrar un pago
+
+Desde la ficha, con el botón **Registrar pago**. El diálogo dice de quién es la factura y cuánto falta.
+
+1. Elige **De qué cuenta sale**. Solo aparecen las cuentas abiertas.
+2. Escribe el **Monto**. La etiqueta cambia sola y te recuerda en qué moneda estás escribiendo.
+3. Elige **Cómo se pagó**: **Transferencia**, **Pago móvil**, **Efectivo**, **Binance** o **Cheque**.
+4. Escribe la **Referencia**, que es el **Número de la transferencia**.
+5. Revisa la casilla del IGTF.
+6. Pulsa **Registrar el pago**.
+
+**El pago se registra en la moneda de la cuenta.** Lo dice la propia ayuda del campo, y es la razón de que el saldo se lleve en dólares: se elige la cuenta y esa cuenta manda.
+
+Sobre el IGTF. La casilla dice **Pagar el IGTF del 3%** y explica debajo: **Grava los pagos en divisas. No abona la factura: va en su propio asiento porque no es del proveedor sino del fisco.** **Viene marcada sola cuando la cuenta no es en bolívares**, y se puede desmarcar. Que vaya en su propio asiento importa: si se sumara al pago, parecería que al proveedor se le dio de más.
+
+El dinero sale de la cuenta en el momento. Si en esa cuenta no alcanza el saldo, el sistema no deja registrar el pago y lo dice con el nombre de la cuenta y las dos cifras, porque una salida que deja la cuenta en negativo casi nunca es una salida real: falta cargar algo que sí entró.
+
+**Una factura admite varios pagos.** Cuando ya no queda saldo, pasa sola a **Pagada**.
+
+#### Anular un pago
+
+En la tarjeta **Pagos**, cada pago vivo lleva su propio botón **Anular**, y solo lo ven Gerencia general y Administrador.
+
+**Este botón no pide confirmación ni motivo: se ejecuta en cuanto se pulsa.** Conviene saberlo antes de acercarse al ratón.
+
+El pago no se borra: se queda en la lista, apagado y marcado como **anulado**, y el dinero vuelve a la cuenta con un movimiento contrario. Si el pago causó IGTF, ese también se devuelve, con su propio movimiento. Y si la factura ya estaba en **Pagada**, vuelve a **Por pagar**.
+
+#### Anular una factura
+
+Desde la ficha, con el botón **Anular**, que solo ven Gerencia general y Administrador. El diálogo se llama **Anular la factura** con su número y avisa de lo que se pierde: **Sale del libro de compras y su crédito fiscal deja de contar.**
+
+Escribe **Por qué se anula** —queda con tu nombre y la hora— y pulsa **Anular**. El botón está apagado hasta que escribas cuatro letras.
+
+**Una factura anulada no vuelve.** Si estaba mal, se anula y se registra otra.
+
+#### Lo que el sistema no deja hacer aquí
+
+- **No deja registrar dos veces la misma factura del mismo proveedor**, porque registrarla dos veces descuenta dos veces el mismo crédito fiscal, que es justo lo que busca un reparo. El sistema responde con el número, el nombre del proveedor y esa razón.
+- **No deja guardar si la suma no cuadra con el total impreso**, porque un descuadre que pasa aquí reaparece en la declaración, cuando ya no hay a quién preguntarle.
+- **No deja registrar una factura con fecha futura**, porque una factura que todavía no se emitió no sustenta nada.
+- **No deja registrar una factura que suma cero.** Si el exento, la base y el IVA quedan todos vacíos, no hay factura que registrar.
+- **No deja editar una factura registrada.** No hay pantalla para corregirla: el camino es anularla, con su motivo, y registrar la correcta. Es la misma razón de siempre: lo que ya se declaró tiene que poder explicarse, y una cifra corregida por debajo no deja rastro de qué se declaró antes.
+- **No deja anular una factura que tenga pagos vivos.** Primero se anulan los pagos, porque el dinero salió de una cuenta de verdad y tiene que volver con su propio movimiento antes de que la factura desaparezca del libro.
+- **No deja pagar más de lo que falta**, ni pagar una factura anulada o ya pagada, porque un pago de más no es un pago: es un error que alguien tendrá que perseguir con el proveedor.
+- **No deja registrar nada si no hay tasa del BCV** para la fecha de la factura. Sin ella no se puede valorar, y valorar con una tasa inventada es peor que no registrar. Se resuelve en **Sistema › Tasas de cambio**.
+- **No se enlaza la factura con su orden de compra.** La pantalla no pregunta a qué orden corresponde, así que **no hay ningún cotejo entre lo que se pidió, lo que llegó y lo que facturaron**: si el proveedor factura más de lo que entregó, el sistema no lo nota. Esa comparación hoy la hace la persona, con los dos documentos delante.
+- **No hay nada que imprimir aquí.** Ni la factura ni un comprobante del pago. Lo que se archiva sigue siendo el papel del proveedor.
+
+### 9.11 Lo que conviene entender
 
 #### Quién pide, quién aprueba, quién recibe
 
@@ -1346,6 +2132,8 @@ El circuito reparte cada paso en un rol distinto:
 | Resolver el dinero de un desistimiento | Gerencia general o Tesorería |
 
 Aprobar es la única acción del sistema reservada a un solo rol. Todo lo demás lo puede hacer más de uno.
+
+Fuera de esta tabla quedan **la factura del proveedor y sus pagos**, que no son un paso del circuito y no se reparten por rol sino por nivel de permiso sobre Compras. Están en su propia sección.
 
 **Y aquí hay que decir algo con honestidad, porque afecta a cualquiera que audite estas compras.**
 
@@ -1391,17 +2179,20 @@ Cuatro reglas que evitan discusiones:
 - **Cada número es único.** Puede haber huecos en la serie si una operación se cae después de tomar el número.
 - **La numeración del pedido y la de la orden son independientes.** El pedido **SOL-2026-0001** puede terminar en la orden **OC-2026-0007**. Y si una orden se cancela y se emite otra para el mismo pedido, la nueva lleva su propio número.
 
-Además de su propio número, la cotización guarda **el número que el proveedor puso en su papel**, cuando lo puso. Sirve para casar después su factura con lo que se cotizó.
+Además de su propio número, la cotización guarda **el número que el proveedor puso en su papel**, cuando lo puso. Sirve para casar después su factura con lo que se cotizó. Ese cotejo lo hace la persona, mirando los dos documentos: el sistema guarda los dos números pero no los compara.
 
 #### Lo que todavía no está construido
 
 Conviene saberlo antes de buscarlo:
 
-- Las entradas de menú **Recepciones** y **Facturas de proveedor** existen, pero al entrar muestran **Todavía no construido**. Las recepciones se registran desde la ficha de cada compra, como se explica arriba. Las facturas del proveedor no se cargan hoy en ninguna parte del sistema.
-- **No hay ningún documento imprimible en compras.** Ni la orden de compra, ni la cotización, ni el tablero.
+- La entrada de menú **Recepciones** existe, pero al entrar muestra **Todavía no construido**. Las recepciones se registran desde la ficha de cada compra, como se explica arriba. La entrada **Facturas de proveedor**, en cambio, ya funciona y tiene su propia sección en este capítulo.
+- **No hay ningún documento imprimible en compras.** Ni la orden de compra, ni la cotización, ni el tablero, ni la factura del proveedor.
 - **No hay pantalla para editar un pedido en borrador.** Solo se puede enviar o cancelar.
+- **No hay pantalla del libro de compras.** Las facturas se registran con todo lo que ese libro necesita, pero hoy no hay dónde verlo ni de dónde sacarlo para la declaración: eso se transcribe a mano desde la lista de facturas.
+- **La factura del proveedor no se enlaza con su orden de compra**, así que el sistema no coteja lo pedido con lo recibido y lo facturado.
+- **Lo que se debe por facturas de proveedor no aparece en la cola de Tesorería › Por pagar**, que sigue mostrando solo las instrucciones de pago de las órdenes. Lo que falta por pagar de una factura solo se ve en la columna **Saldo** de su propia pantalla.
 
-### 7.11 Cuando el sistema no te deja
+### 9.12 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -1448,10 +2239,24 @@ Conviene saberlo antes de buscarlo:
 | «Un pedido en "Aprobada" ya no se cancela desde aquí. Si ya hay orden de compra, cancélala en la orden.» | La compra pasó de la etapa de pedido | Cancela la orden desde su propia tarjeta |
 | «Una orden en "Pagada por recibir" ya no se cancela. Si ya se pagó y el proveedor no entregó, márcala como desistida.» | Ya se pagó: cancelar borraría del tablero dinero pendiente | Usa **El proveedor desistió** y después **Resolver el dinero** |
 | «Escribe por qué se cancela. Sin motivo, dentro de un mes nadie sabrá qué pasó.» | El motivo tiene menos de cinco letras | Escribe por qué se cancela |
+| «Tu usuario no tiene acceso a Compras.» | Tu permiso sobre Compras no llega al nivel que pide esa acción | Pide el permiso a administración, o que lo haga quien lo tenga |
+| «La factura necesita su número, que es el que trae impreso.» | El número de la factura quedó vacío | Copia el número que trae el papel |
+| «No se registra una factura con fecha futura.» | La fecha de emisión es de mañana o después | Corrige la fecha |
+| «La factura suma cero. Revisa el exento, la base imponible y el IVA.» | Las tres cifras quedaron vacías o en cero | Escribe las cifras del papel |
+| «El papel dice 1160.00 y lo tecleado suma 1150.00. Revisa el exento (0), la base (1000) y el IVA (150).» | El total impreso no coincide con lo tecleado | Repasa las tres cifras contra el papel. Si el papel es el que está mal, resuélvelo con el proveedor |
+| «La factura F-00123 de "FERRETERIA EL TORNILLO" ya está registrada. Registrarla dos veces descuenta dos veces el mismo crédito fiscal.» | Esa factura de ese proveedor ya se cargó | Búscala en la lista. Ya está |
+| «Escribe por qué se anula la factura.» | El motivo tiene menos de cuatro letras | Escribe qué pasó con esa factura |
+| «La factura F-00123 ya estaba anulada.» | Alguien la anuló antes | Revisa la lista: ya está fuera del libro |
+| «La factura F-00123 tiene 1 pago(s) registrados. Anúlalos primero: el dinero salió y tiene que volver al libro con su propio asiento.» | Se quiere anular una factura que ya se pagó | Anula los pagos desde la ficha y vuelve a intentarlo |
+| «La factura F-00123 está pagada y no admite pagos.» | Esa factura ya no debe nada | Revisa su ficha: el saldo está en cero |
+| «El monto del pago tiene que ser mayor que cero.» | El monto quedó vacío o en cero | Escribe cuánto se paga |
+| «A la factura F-00123 le faltan 500 $ y se están pagando 800 $.» | Se está pagando más de lo que se debe | Ajusta el monto a lo que falta |
+| «En "CAJA USD" hay 100 USD y se intentan sacar 500. Si el saldo no está al día, registra primero el saldo de apertura o el ingreso que falta.» | No alcanza el saldo de esa cuenta | Elige otra cuenta, o pide a tesorería que ponga esa al día |
+| «El pago PGC-2026-0001 ya estaba anulado.» | Otra persona lo anuló primero | Cierra y vuelve a abrir la ficha: ya está anulado |
 
 ---
 
-## 8. Ventas
+## 10. Ventas
 
 Ventas es el camino del material hacia afuera: a quién se le vende, a cuánto, qué se le entregó, qué se le facturó y qué ha pagado. Las cinco pantallas están en el menú en ese mismo orden, que es el orden en que ocurren las cosas.
 
@@ -1461,7 +2266,7 @@ Hay una idea que conviene entender antes de tocar nada, porque es la que ordena 
 
 De ahí se desprende lo demás: una nota de entrega mal hecha se corrige en el patio; una factura mal hecha se corrige con su número, que ya se consumió y no se recupera.
 
-### 8.1 Quién entra y quién puede hacer qué
+### 10.1 Quién entra y quién puede hacer qué
 
 Para ver el módulo hace falta que administración le haya dado a tu usuario acceso a Ventas. Si no lo tiene, el grupo Ventas no aparece en el menú.
 
@@ -1477,16 +2282,18 @@ El rol Ventas está descrito así: **Cotiza, despacha material, factura y regist
 
 **Cuando te falta permiso, el sistema no te dice cuál.** Siempre ves el mismo texto: «Tu usuario no tiene permiso para esta acción.» No es una falla ni un mensaje incompleto: es el único que llega hasta la pantalla. Si te sale al guardar un precio, al fijar un crédito o al anular, lo que falta es el control total sobre Ventas.
 
+**El control total sobre Ventas no alcanza para todo.** Despachar mineral sin guía de movilización depende de otro permiso, el control total sobre Despachos, y por defecto solo lo tiene quien administra el sistema. Se explica en el capítulo de Despachos.
+
 Una cosa más, que vale para todas las pantallas del módulo: **lo que escribes se convierte solo a mayúsculas y se le quitan las tildes** mientras tecleas. El **Correo** es la excepción y se guarda en minúscula.
 
-### 8.2 El circuito de una venta
+### 10.2 El circuito de una venta
 
 Esta es la sección que hay que leer aunque no se lea ninguna otra. Del cliente al cobro son seis pasos, y cada uno tiene un requisito para pasar al siguiente.
 
 1. **Se registra el cliente.** **Ventas › Clientes › Nuevo cliente**. Sin cliente no se cotiza, no se despacha y no se factura. Hace falta el **RIF** y la **Razón social**; el **Domicilio fiscal** se imprime en la factura.
 2. **Se le pone precio a lo que se vende.** **Ventas › Lista de precios**. Cada producto lleva un **Precio de lista**, que es el que se propone solo al cotizar y al despachar, y un **Precio mínimo**, que es el suelo. Un producto sin precio se puede elegir igual, pero hay que teclear el precio a mano.
 3. **Se cotiza, si hace falta.** **Ventas › Cotizaciones › Nueva cotización**. Nace en **Enviada**. Desde el detalle se cierra con **La aceptó**, y pasa a **Aceptada**, o con **La rechazó**, y pasa a **Rechazada**. Este paso es opcional: se puede despachar sin haber cotizado. Una cotización no compromete existencias, así que aceptarla no aparta material.
-4. **Sale el camión.** **Ventas › Notas de entrega › Despachar**. Hacen falta un cliente activo, el patio de donde sale, al menos un renglón con producto y cantidad, material suficiente en ese patio y la tasa del día registrada. La nota nace en **Por facturar**. **Este es el único paso que descuenta el patio.**
+4. **Sale el camión.** **Ventas › Notas de entrega › Despachar**. Hacen falta un cliente activo, el patio de donde sale, al menos un renglón con producto y cantidad, material suficiente en ese patio y la tasa del día registrada. **Y si en la nota va mineral, hace falta además una guía de movilización vigente**, que se carga antes en Despachos. La nota nace en **Por facturar**. **Este es el único paso que descuenta el patio.**
 5. **Se emite la factura.** **Ventas › Facturación › Facturar**. Se marcan una o varias notas que estén en **Por facturar**, del mismo cliente y de la misma moneda. Si la condición es a crédito, el cliente tiene que tener límite fijado y la factura tiene que caber dentro de él. Las notas pasan a **Facturada** y la factura nace en **Por cobrar**.
 6. **Se cobra.** Botón **Registrar cobro** dentro de la factura. Se pueden registrar varios abonos, en cualquiera de las dos monedas. **Cuando el saldo baja de un centavo de dólar, la factura pasa sola a Cobrada.** Nadie tiene que marcarla.
 
@@ -1496,13 +2303,17 @@ Esta es la sección que hay que leer aunque no se lea ninguna otra. Del cliente 
 - **Anular una factura que está en Por cobrar** deja la factura en **Anulada** con su número, y **sus notas de entrega vuelven a estar en Por facturar**, listas para facturarse otra vez. Pide motivo y exige que no haya cobros vivos.
 - **Anular un cobro** devuelve la factura de **Cobrada** a **Por cobrar**.
 
-**Dos avisos sobre este circuito, para que nadie los descubra a mitad de camino:**
+**Los dos papeles del camión ya no se escriben aquí.** El pesaje de la romana y la guía de movilización se registran antes, en su propio módulo, y al despachar se eligen de una lista. Al elegir el pesaje, los pesos y la placa se traen solos de la báscula; al guardar la nota, los dos papeles quedan gastados en ese viaje y no se pueden usar otra vez. Si la nota se anula, los dos vuelven a quedar libres. Todo eso está explicado en el capítulo de Despachos.
+
+**Tres avisos sobre este circuito, para que nadie los descubra a mitad de camino:**
+
+**Sin guía de movilización no sale mineral.** No es un aviso que se pueda pasar de largo: el despacho se rechaza entero y no se descuenta nada del patio. Solo quien tenga el control total sobre Despachos —que no es el control total sobre Ventas— puede autorizar una salida sin ella.
 
 **La cotización aceptada no se convierte en despacho.** No hay botón que la pase a nota de entrega. Aunque el cliente haya aceptado, al despachar hay que volver a elegir el cliente y volver a cargar los renglones. Por lo mismo, el detalle de una cotización nunca llega a mostrar despachos asociados.
 
 **Una cotización no se puede anular desde la pantalla.** Solo se puede cerrar como **Aceptada** o como **Rechazada**. Una oferta que se cayó se cierra con **La rechazó**.
 
-### 8.3 Clientes
+### 10.3 Clientes
 
 **Ventas › Clientes**
 
@@ -1563,7 +2374,7 @@ La del porcentaje que retiene: **Normalmente 75%. Se descuenta de lo que hay que
 
 Y un aviso práctico: **el botón Guardar no se apaga aunque falten el RIF o la razón social.** La pantalla no lo comprueba antes; el rechazo llega después de pulsar, en un recuadro rojo dentro de la misma ventana. Revísalos antes de guardar y te ahorras el viaje.
 
-### 8.4 Lista de precios
+### 10.4 Lista de precios
 
 **Ventas › Lista de precios**
 
@@ -1605,7 +2416,7 @@ Al pie de la ventana está la regla, escrita por la propia pantalla: **El mínim
 
 Solo se le pone precio a productos y servicios. A un insumo el sistema responde «Solo se le pone precio de venta a lo que se vende. "45" es INSUMO.»
 
-### 8.5 Cotizaciones
+### 10.5 Cotizaciones
 
 **Ventas › Cotizaciones**
 
@@ -1671,7 +2482,7 @@ Bajo los totales sale siempre el equivalente en la otra moneda —**Equivale a B
 
 El pie dice, literal: **Los precios están expresados con la tasa del día indicada arriba y se ajustan al momento de facturar. Esta cotización no compromete existencias.**
 
-### 8.6 Notas de entrega
+### 10.6 Notas de entrega
 
 **Ventas › Notas de entrega**
 
@@ -1698,27 +2509,44 @@ Las 200 más recientes, sin filtros.
 2. Elige el **Cliente**. La moneda se ajusta sola a la suya.
 3. Elige **De qué patio sale**.
 4. Carga los renglones. **Con el patio ya elegido, cada renglón dice cuánto hay**: **Hay 1.250 TON en el patio elegido.** Si pides más, la **Cantidad** se pone en rojo con **No hay tanto en el patio**.
-5. Llena el recuadro del camión y la romana. El recuadro lo explica: **Datos del camión y de la romana. El peso no cambia lo que se factura: es la prueba del día que alguien discuta la cantidad.**
-6. Escribe el **Flete** y la **Observación**, si los hay.
-7. Pulsa **Despachar**.
+5. Baja al recuadro del camión y la romana. El recuadro lo explica: **Datos del camión y de la romana. El peso no cambia lo que se factura: es la prueba del día que alguien discuta la cantidad.**
+6. Elige el **Ticket de romana** de la lista, que trae los pesajes de salida que todavía no se han usado. **Al elegirlo, los pesos y la placa se traen de la báscula**, y no hay que teclearlos.
+7. Elige la **Guía de movilización**. Si en la nota va mineral, este paso no es opcional.
+8. Completa a mano lo que falte del camión.
+9. Escribe el **Flete** y la **Observación**, si los hay.
+10. Pulsa **Despachar**.
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
 | **Cliente** | Sí | Solo los activos |
 | **Moneda** | Sí | Se sobrescribe con la del cliente |
 | **De qué patio sale** | Sí | Solo almacenes activos |
-| **Placa del vehículo** | No | Con la forma **A12BC3D** |
-| **Chofer** | No | |
-| **Cédula del chofer** | No | Con la forma **V-12345678** |
-| **Ticket de romana** | No | |
-| **Peso bruto (kg)** | No | Si se escribe, tiene que ser mayor que cero |
-| **Tara (kg)** | No | Con el bruto puesto, debajo aparece **Neto: 28.500 kg** |
+| **Ticket de romana** *(la lista)* | No | Empieza en **Sin pesaje registrado**. Trae los pesajes de salida sin usar, con su placa y su neto |
+| **Guía de movilización** | Sí, cuando hay mineral | Empieza en **Sin guía**. Trae las vigentes que no estén vencidas, con su material y sus toneladas |
+| **Placa del vehículo** | No | Con la forma **A12BC3D**. Se llena sola al elegir el ticket |
+| **Chofer** | No | Se llena solo al elegir el ticket |
+| **Cédula del chofer** | No | Con la forma **V-12345678**. Se llena solo al elegir el ticket |
+| **Ticket de romana** *(la casilla de texto)* | No | Se llena sola con el número del ticket elegido |
+| **Peso bruto (kg)** | No | Se llena solo al elegir el ticket. Si lo escribes a mano, tiene que ser mayor que la tara |
+| **Tara (kg)** | No | Se llena sola al elegir el ticket. Con el bruto puesto, debajo aparece **Neto: 28.500 kg** |
 | **Flete** | No | |
 | **Observación** | No | |
 
+**Hay dos campos con el mismo nombre y no es un error.** Arriba está la lista **Ticket de romana**, donde se elige el pesaje; abajo, la casilla de texto **Ticket de romana**, que se llena sola con el número al elegirlo. La casilla se puede escribir a mano cuando el pesaje no esté registrado en el sistema, pero si eliges un ticket de la lista, lo que se guarda es el número de ese ticket y no lo que hayas tecleado.
+
+**Con un ticket elegido, los pesos que se guardan son los de la báscula.** Aunque escribas otros encima, el sistema guarda los del pesaje. Los pesos no se teclean a mano porque teclearlos otra vez es la forma de que el papel y la báscula terminen diciendo cosas distintas, y ese día ninguno de los dos sirve para discutir la cantidad con el cliente.
+
+Con la placa, el chofer y la cédula ocurre lo contrario: si las escribes tú, se respeta lo que escribiste, y solo se toman del ticket cuando las dejas en blanco. Es a propósito, porque el chofer que se anotó en la garita puede no ser el que se llevó el camión.
+
+Debajo de las dos listas hay ayudas que conviene leer. Si no hay pesajes disponibles: **No hay pesajes sin usar. Se registran en Despachos › Tickets de romana.** Y bajo la guía, siempre: **Ninguna salida de mineral viaja sin guía.** Si no hay ninguna vigente, el aviso sale en rojo: **No hay guías vigentes: el despacho de mineral se rechazará**.
+
+**Ninguna salida de mineral viaja sin guía.** Cuando la nota lleva un producto de cantera y no se eligió guía, el despacho se rechaza entero: no queda nota y no sale nada del patio. El sistema lo dice así: «Este despacho lleva mineral y no tiene guía de movilización. Cárgala en Despachos › Guías, o pídele a quien tenga control total sobre Despachos que lo autorice sin ella.» La razón es que la guía es lo que hace legal que el camión circule con la piedra, y el sistema es el último sitio donde se puede impedir que salga sin ella. Si la nota es solo un flete, no hace falta guía.
+
+La excepción existe y conviene decir cómo funciona: **quien tenga el control total sobre Despachos puede despachar sin guía**, para los días en que el papel llega tarde y el cliente está esperando. **Esa nota queda guardada sin guía y quien la despachó queda en el registro de auditoría**, que solo abre la administración. Ninguna pantalla ni el PDF muestran una etiqueta que lo señale. El detalle está en el capítulo de Despachos.
+
 **En el despacho no hay campo de descuento.** Conviene saberlo antes de negociar: como la factura suma lo que traen sus notas, **ninguna factura emitida desde el sistema puede llevar descuento**. Si hay que rebajar, se rebaja en el precio del renglón.
 
-**Escribe la tara siempre menor que el peso bruto.** Si la pones mayor, el sistema rechaza el despacho, pero con un mensaje sin redactar que no se entiende. No es que hayas roto nada: es esa comprobación.
+**Escribe la tara siempre menor que el peso bruto.** Si la pones mayor, el sistema rechaza el despacho, pero con un mensaje sin redactar que no se entiende. No es que hayas roto nada: es esa comprobación. Con un ticket de romana elegido esto no llega a pasar, porque los dos pesos vienen de la báscula y allí ya se comprobaron.
 
 #### Ver una nota, imprimirla y anularla
 
@@ -1740,7 +2568,7 @@ El PDF lleva **banda naranja de seguridad**, porque es un papel de patio y se le
 
 El pie es lo más importante del papel: **ESTE DOCUMENTO NO ES UNA FACTURA. Ampara el traslado del material; la factura se emite aparte. Quien recibe firma conforme el material y el peso.**
 
-### 8.7 Facturación
+### 10.7 Facturación
 
 **Ventas › Facturación**
 
@@ -1818,7 +2646,7 @@ Los totales son **Subtotal**, **Descuento**, **Flete**, **IVA 16%**, raya y **TO
 
 El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.**
 
-### 8.8 Lo que conviene entender
+### 10.8 Lo que conviene entender
 
 #### La nota de entrega y la factura no son el mismo papel
 
@@ -1831,7 +2659,7 @@ Es la confusión más común, y sale cara: quien la tiene, o le entrega al clien
 | Numeración | **NE-2026-0001** | **FAC-2026-0012** más el número de control **00-00000034** |
 | ¿Mueve el patio? | Sí, en el acto | No. El material ya salió con la nota |
 | Cuántas | Una por camión | Una puede juntar varias notas del mismo cliente y misma moneda |
-| Datos propios | Vehículo, chofer, cédula, ticket de romana, peso | Número de control, condición de pago, vencimiento, retención |
+| Datos propios | Vehículo, chofer, cédula, ticket de romana, peso, guía de movilización | Número de control, condición de pago, vencimiento, retención |
 | Color de la banda | Naranja de seguridad | Azul de la casa |
 | Firmas | **Entregado por** / **Recibido conforme** | **Por la empresa** / **Aceptado por el cliente** |
 | Estado al nacer | **Por facturar** | **Por cobrar** |
@@ -1844,12 +2672,16 @@ Una cosa más, que importa cuando algo se corrige: **al facturar, los renglones 
 
 Cuando pulsas **Despachar**, el sistema hace todo esto de una vez:
 
-1. Crea la nota con su número y **congela la tasa del día** en el documento.
-2. Carga los renglones y comprueba que ningún precio quede por debajo del mínimo.
-3. Mira la existencia real del patio, renglón por renglón.
-4. **Los servicios se saltan.** Un flete se cobra, pero no sale de ningún almacén.
-5. Escribe la salida en el libro de inventario, valorada al costo promedio, con la nota **DESPACHO A ACME C.A.**
-6. **Guarda en cada renglón el número exacto de la salida que escribió.**
+1. Comprueba el pesaje, si elegiste uno: que sea de salida, que no esté usado ni anulado y que no se haya pesado para otro cliente. **De ahí toma el bruto, la tara y el número del ticket.**
+2. Comprueba la guía, si elegiste una: que esté vigente, que no haya vencido y que no se haya emitido para otro cliente.
+3. Crea la nota con su número y **congela la tasa del día** en el documento.
+4. Carga los renglones y comprueba que ningún precio quede por debajo del mínimo.
+5. **Comprueba que haya guía si en los renglones va mineral.** Lo mira aquí y no antes porque hasta este momento no sabía si la nota lleva producto o es solo un flete.
+6. Mira la existencia real del patio, renglón por renglón.
+7. **Los servicios se saltan.** Un flete se cobra, pero no sale de ningún almacén.
+8. Escribe la salida en el libro de inventario, valorada al costo promedio, con la nota **DESPACHO A ACME C.A.**
+9. **Guarda en cada renglón el número exacto de la salida que escribió.**
+10. Marca el ticket y la guía como gastados en este viaje: el ticket pasa a **En una nota** y la guía a **Usada**.
 
 Ese último paso es el que hace que anular funcione bien: al anular, el sistema devuelve exactamente lo que sacó ese camión, no una salida parecida. Buscar «una salida parecida» devolvería la del camión de al lado el día que dos despachos coincidan en artículo y cantidad.
 
@@ -1858,6 +2690,8 @@ Ese último paso es el que hace que anular funcione bien: al anular, el sistema 
 **Qué pasa si no hay material.** El despacho se rechaza entero y el sistema dice con nombre y cifras qué falta: «En "PATIO PRINCIPAL" hay 120.0000 de "GRANZÓN" y se están despachando 200.0000.» No deja el patio en negativo, porque una existencia negativa no es un dato: es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió. Si el material sí está en el patio pero el sistema dice que no, lo que falta es la entrada: se carga la producción o se hace el conteo desde **Inventario › Existencias**, y después se repite el despacho.
 
 **Al anular**, el sistema escribe en el libro el movimiento contrario, con la nota **ANULACIÓN DE LA NOTA NE-2026-0007** y tu motivo. El inventario nunca se edita: se le escribe el contrario, y los dos movimientos quedan visibles.
+
+**Y al anular, el pesaje y la guía vuelven a quedar libres**: el ticket regresa a **Sin usar** y la guía a **Vigente**, listos para la nota que corrija a la anterior. La razón es sencilla: el camión se pesó igual y la guía se emitió igual. Lo que se cayó fue la nota, no el pesaje. Si hubiera que volver a pesar un camión que ya se fue, la nota corregida saldría con un peso inventado.
 
 #### La lista de precios, y si se puede vender por debajo
 
@@ -1903,6 +2737,8 @@ Esta sección existe para que trabajes tranquilo cuando hay dos personas en el s
 | Otra persona abonó y ya no queda tanto saldo | «A la factura FAC-2026-0012 le faltan 100.00 $ y se están abonando 900.00 $. …» |
 | Alguien registró un cobro mientras tú anulabas la factura | «La factura FAC-2026-0012 tiene 1 cobro(s) registrados. Anúlalos primero: …» |
 | Otro camión se llevó ese material | «En "PATIO PRINCIPAL" hay 120.0000 de "GRANZÓN" y se están despachando 200.0000.» |
+| Otra nota tomó ese mismo pesaje | «El ticket TCK-2026-0004 está usado.» |
+| Otra nota tomó esa misma guía | «La guía GM-2026-0099 está usada.» |
 | Otra persona ya anuló esa nota | «La nota NE-2026-0007 ya estaba anulada.» |
 
 En todos los casos la regla es la misma: **lo que ves rechazado no se hizo a medias, no se hizo.** Vuelve a mirar la lista, que se actualiza sola, y decide con lo que hay.
@@ -1933,7 +2769,7 @@ Sobre la retención: cuando el cliente está marcado como contribuyente especial
 
 Sobre la moneda: cada documento **congela la tasa del día** al crearse, y esa es la que se imprime al pie. **Sin tasa del día registrada no se emite nada**, ni cotización, ni nota, ni factura. El cobro se registra **en la moneda de la cuenta donde cayó el dinero**, no en la de la factura, y el sistema lo pasa a dólares para descontarlo del saldo. Por eso el saldo, la deuda y el límite de crédito van siempre en dólares.
 
-### 8.9 Cuando el sistema no te deja
+### 10.9 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -1956,6 +2792,13 @@ Sobre la moneda: cada documento **congela la tasa del día** al crearse, y esa e
 | «El almacén "PATIO SUR" está cerrado.» | Ese patio no está activo | Elige otro patio, o pide que lo activen |
 | «En "PATIO PRINCIPAL" hay 120.0000 de "GRANZÓN" y se están despachando 200.0000.» | No hay tanto material | Si en el patio sí está, falta registrar su entrada: carga la producción o haz el conteo en **Inventario › Existencias** |
 | Un mensaje largo en inglés al pulsar **Despachar** | Escribiste la tara mayor que el peso bruto | Corrige la tara: siempre es menor que el bruto |
+| «Este despacho lleva mineral y no tiene guía de movilización. Cárgala en Despachos › Guías, o pídele a quien tenga control total sobre Despachos que lo autorice sin ella.» | La nota lleva producto de cantera y quedó sin guía | Carga la guía y repite el despacho, o pide la autorización a quien tenga el control total sobre Despachos |
+| «El ticket TCK-2026-0004 es de una entrada a la cantera, no de una salida.» | El pesaje elegido es de algo que llegó, no de algo que sale | Elige un pesaje de salida, o que la garita registre el del camión que se va |
+| «El ticket TCK-2026-0004 está usado.» / «está anulado.» | Ese pesaje ya no está disponible | Cierra, vuelve a abrir **Despachar** y elige uno de los que sigan sin usar |
+| «El ticket TCK-2026-0004 se pesó para otro cliente.» | El pesaje se registró a nombre de otro cliente | Elige el pesaje correcto, o pesa de nuevo el camión |
+| «La guía GM-2026-0099 está usada.» / «está anulada.» | Esa guía ya no ampara nada | Elige otra guía vigente |
+| «La guía GM-2026-0099 venció el 02/08/2026.» | La vigencia terminó antes de la fecha del despacho | Consigue una guía vigente: una vencida no ampara el viaje |
+| «La guía GM-2026-0099 se emitió para otro cliente.» | La guía tiene otro cliente puesto | Elige la guía de ese cliente, o una que no tenga cliente |
 | «Escribe por qué se anula. Un despacho anulado sin motivo no se puede auditar.» | El motivo quedó vacío o muy corto | Escribe al menos cuatro letras que expliquen qué pasó |
 | «La nota NE-2026-0007 ya estaba anulada.» | Alguien se te adelantó | Recarga la lista: la anulación ya está hecha |
 | «La nota NE-2026-0007 ya está en la factura. Anula primero la factura.» | Esa nota ya se facturó | Anula la factura. La nota vuelve sola a **Por facturar** |
@@ -1976,17 +2819,17 @@ Sobre la moneda: cada documento **congela la tasa del día** al crearse, y esa e
 
 ---
 
-## 9. Nómina
+## 11. Nómina
 
-La nómina es el registro de quién trabaja en la empresa, cuánto gana cada quien y cuánto se le pagó en cada período. De aquí salen los recibos de pago, la ficha del trabajador, su carnet y las constancias que pide un banco.
+La nómina es el registro de quién trabaja en la empresa, cuánto gana cada quien y cuánto se le pagó en cada período. De aquí salen los recibos de pago, la ficha del trabajador, su carnet y las constancias que pide un banco. Y de aquí sale también la cuenta de las prestaciones sociales de cada trabajador: cuánto lleva acumulado, cuánto se le ha adelantado y cuánto habría que pagarle si se fuera mañana.
 
 Hay una idea que conviene entender antes de tocar nada, porque explica casi todo lo demás:
 
 **Una nómina no se teclea: se arma sola con dos cosas.** La primera es la ficha del trabajador, que dice desde cuándo trabaja, cuánto gana y cómo se le paga. La segunda son las novedades del período: lo único que cambia de una quincena a otra —horas extra, faltas, un bono, la cuota de un préstamo—. El resto lo pone el sistema. La pantalla lo dice con estas palabras: *"Lo único que cambia de una quincena a otra: horas extra, faltas, bonos y descuentos. El resto lo saca el sistema del contrato."*
 
-La segunda idea es de la que depende que este módulo no te cueste dinero: **un período se abre, se calcula, se aprueba y se paga, en ese orden y en tres manos distintas.** Hasta el momento de pagar, todo se puede rehacer. Después de pagar, nada. Esa frontera está explicada con detalle en 9.2 y en 9.11, y es lo primero que hay que aprenderse de este capítulo.
+La segunda idea es de la que depende que este módulo no te cueste dinero: **un período se abre, se calcula, se aprueba y se paga, en ese orden y en tres manos distintas.** Hasta el momento de pagar, todo se puede rehacer. Después de pagar, nada. Esa frontera está explicada con detalle en 11.2 y en 11.11, y es lo primero que hay que aprenderse de este capítulo.
 
-### 9.1 Quién entra y quién puede hacer qué
+### 11.1 Quién entra y quién puede hacer qué
 
 Hay dos puertas distintas, y en este módulo conviene no confundirlas.
 
@@ -2005,6 +2848,8 @@ La segunda es **poder ejecutar cada paso**. Aquí no hay un solo rol que registr
 
 Tesorería no ve las novedades del período a propósito: paga el total aprobado, no revisa las horas extra de cada quien.
 
+**Prestaciones sociales la ven los cuatro**, porque para verla basta el mismo permiso sobre Nómina que para ver el resto del módulo. Otra cosa es poder registrar allí: eso está en 11.10 y no se reparte igual.
+
 #### Quién ejecuta cada acción
 
 | Acción | Quién la hace |
@@ -2018,6 +2863,8 @@ Tesorería no ve las novedades del período a propósito: paga el total aprobado
 | **Aprobar la nómina** | **Gerencia general, y nadie más** |
 | **Pagar** | **Tesorería, y nadie más** |
 | Ver e imprimir recibos | Cualquiera que vea el módulo |
+| **Cerrar trimestre** e **Intereses del mes**, en prestaciones sociales | Recursos humanos |
+| **Cargar el corte**, **Anticipo**, **Liquidar** y **Pagar y dar de baja** | Solo quien tenga el permiso más alto sobre Nómina. Recursos humanos no lo trae de fábrica |
 
 El rol de administrador pasa por encima de todo lo anterior.
 
@@ -2025,7 +2872,7 @@ Las dos filas en negrita son el corazón del módulo. **Quien calcula la nómina
 
 Si intentas un paso que no te toca, el sistema responde «Esta acción la realiza: Gerencia general. Tu usuario no tiene ese rol.», con el nombre del rol que sí puede hacerlo. No es una falla: es la respuesta correcta.
 
-### 9.2 El ciclo de una nómina
+### 11.2 El ciclo de una nómina
 
 Esta sección es el módulo entero. Si solo lees una parte del capítulo, que sea esta.
 
@@ -2050,7 +2897,7 @@ Los estados que verás en la etiqueta de cada período, y la frase que el sistem
 
 Una nómina **pagada** no se anula, no se recalcula y su salida de dinero no se reversa. La única corrección posible es la que el propio sistema indica: **cargar la diferencia en el período siguiente**, como bono o como descuento.
 
-### 9.3 Personal
+### 11.3 Personal
 
 **Nómina › Personal**
 
@@ -2134,15 +2981,19 @@ Cuando una ficha viene de la carga del libro de nómina y su fecha de ingreso na
 
 La ventana lo resume: *"Deja de entrar en las nóminas siguientes. Su historial se conserva entero."* Egresar **no borra nada**: guarda la fecha, el motivo, y la persona deja de aparecer en la lista salvo que marques **Incluir a quienes ya no trabajan aquí**.
 
+**Egresar aquí no le calcula la liquidación, y además cierra la puerta para calcularla.** La liquidación se hace en **Nómina › Prestaciones sociales** (ver 11.10), y esa pantalla solo deja liquidar a quien está activo. Si egresas primero, la persona queda con su saldo de prestaciones a la vista y sin forma de cerrarle la cuenta. El sistema no avisa de esto.
+
+Por eso, **cuando alguien se va, el orden es liquidarlo primero en Prestaciones sociales**: el botón que paga la liquidación egresa a la persona por su cuenta, con la fecha y el motivo, y no hay que volver a esta pantalla. **Egresar** aquí queda para cuando no hay nada que liquidar.
+
 #### Borrar la ficha
 
 Esto no es lo mismo que egresar, y la propia ventana empieza diciéndolo: *"Desaparece del sistema sin dejar rastro. No es lo mismo que egresar."*
 
 Borrar es **solo para una ficha cargada por error**: un nombre mal escrito, una cédula repetida, una ficha creada dos veces. La ventana lo dice con estas palabras: *"Esto es para una ficha cargada por error. Si trabajó aquí de verdad, ciérrale el ciclo con Egresar: su historia se conserva y sigue estando para una inspección o para él mismo."* Y avisa de lo que va a pasar si te equivocas: *"Si ya cobró alguna nómina, el sistema no va a dejar borrarlo."*
 
-En 9.11 está explicado qué comprueba el sistema antes de borrar y por qué.
+En 11.11 está explicado qué comprueba el sistema antes de borrar y por qué.
 
-### 9.4 La ficha del trabajador
+### 11.4 La ficha del trabajador
 
 **No está en el menú.** Se llega pinchando el nombre de la persona en la lista de **Personal**, o desde la tabla de fichas desfasadas del tabulador.
 
@@ -2195,9 +3046,9 @@ En la tarjeta de abajo hay tres botones: **Ficha completa (PDF)**, **Carnet (ima
 
 Junto al aviso está el enlace **Corregir la fecha de ingreso**, que te lleva directo a arreglarlo. La razón de que sea un bloqueo y no una advertencia está escrita en el propio sistema: un aviso que se puede saltar con un clic se salta, y una constancia con una fecha inventada la firma la empresa.
 
-Si nadie ha cargado quién firma por recursos humanos, la ventana también lo dice, y la carta sale con el cargo y el renglón en blanco para firmar a mano. Eso se arregla en **Parámetros de nómina** (ver 9.9).
+Si nadie ha cargado quién firma por recursos humanos, la ventana también lo dice, y la carta sale con el cargo y el renglón en blanco para firmar a mano. Eso se arregla en **Parámetros de nómina** (ver 11.9).
 
-### 9.5 Tabulador de cargos
+### 11.5 Tabulador de cargos
 
 **Nómina › Tabulador de cargos**
 
@@ -2261,7 +3112,7 @@ El nombre del cargo **se guarda en mayúsculas y sin tildes**, y no se puede rep
 
 Esa es la salida buena: **desmarcar Vigente**. El nivel deja de ofrecerse al crear fichas nuevas, pero quien está dentro sigue enganchado y sigue subiendo cuando suba el cargo.
 
-### 9.6 Novedades del período
+### 11.6 Novedades del período
 
 **Nómina › Novedades del período**
 
@@ -2311,11 +3162,13 @@ Cada casilla admite medios (0,5) y no admite números negativos.
 
 La ventana explica qué va aquí y qué no: *"Lo que no sale del contrato ni de las horas: una prima, un bono en divisas, la cuota de un préstamo."*
 
+**Cuidado con el concepto Anticipo de prestaciones de esta lista.** Desde que existe la pantalla de **Prestaciones sociales**, un anticipo de prestaciones se registra allí, y allí es donde baja el saldo de la persona y sale el dinero de la cuenta. Si además lo cargas aquí como descuento, se le descuenta dos veces: una del saldo de sus prestaciones y otra de su quincena. El sistema no avisa de esa duplicación, así que decidan en la casa por cuál de las dos vías se hace y no se mezclen.
+
 Para quitar uno, pulsa la papelera que tiene al lado. **Se borra al instante, sin pedir confirmación.**
 
 Si cargas un monto en dólares, el sistema lo pasa a bolívares con la tasa que quedó congelada al abrir el período, no con la del día en que lo tecleas.
 
-### 9.7 Procesar nómina
+### 11.7 Procesar nómina
 
 **Nómina › Procesar nómina**
 
@@ -2384,7 +3237,7 @@ La ayuda del primer campo explica qué pasa si pagas desde una cuenta en divisas
 
 Al confirmar, el saldo de esa cuenta baja, queda una línea de egreso en el libro de tesorería con el concepto **Nómina {número} — {n} trabajadores**, y les llega un aviso a gerencia general, a recursos humanos y a tesorería.
 
-**Antes de pulsar Confirmar el pago, lee 9.11.** Este botón es el punto de no retorno del módulo.
+**Antes de pulsar Confirmar el pago, lee 11.11.** Este botón es el punto de no retorno del módulo.
 
 #### Anular
 
@@ -2394,7 +3247,7 @@ Al confirmar, el saldo de esa cuenta baja, queda una línea de egreso en el libr
 
 La ventana lo resume: *"El período queda a la vista con su motivo. Una nómina pagada no se puede anular."*
 
-### 9.8 Recibos de pago
+### 11.8 Recibos de pago
 
 **Nómina › Recibos de pago**
 
@@ -2435,6 +3288,8 @@ Al final, el **Neto a cobrar**, con su equivalente en dólares, y cómo se le pa
 
 Los dos últimos bloques son los que más confusión generan cuando alguien lee su recibo por primera vez. **Ni los aportes del patrono ni lo que se aparta para prestaciones salen de su pago**, y por eso en el papel impreso van con el título completo: **APORTES DEL PATRONO — NO SE LE DESCUENTAN** y **SE APARTA A SU FAVOR — NO SALE DE SU PAGO**, y a propósito no llevan subtotal, para que nadie los sume al descuento.
 
+El bloque **Se aparta para prestaciones** dice lo que se apartó **en ese período**. Lo que la persona lleva acumulado en total, con sus intereses y sus adelantos, está en **Nómina › Prestaciones sociales**, explicado en 11.10. Son la misma cosa vista en dos sitios: el recibo enseña el aporte de esa quincena, la otra pantalla enseña la cuenta completa.
+
 #### Imprimir
 
 Pulsa **Imprimir recibo** en el detalle, el icono de impresora en la fila, o **Imprimir todos** para el período completo. El recibo se abre primero en el visor, y solo se descarga si pulsas **Descargar**.
@@ -2445,7 +3300,7 @@ Cada copia trae el nombre, la cédula, la ficha, el cargo, las fechas y los día
 
 Bajo el neto sale también el equivalente en dólares, con la palabra **referencia** delante. Es intencional: **no es lo que se paga, es lo que valía ese día**.
 
-### 9.9 Parámetros de nómina
+### 11.9 Parámetros de nómina
 
 **Nómina › Parámetros de nómina**
 
@@ -2455,7 +3310,7 @@ En la cabecera hay un aviso ámbar fijo:
 
 > *"El cestaticket y la base de la contribución de pensiones se anuncian sin publicarse en gaceta y cambian con frecuencia. Conviene revisarlos cada mes: una nómina calculada con el monto viejo se paga corta."*
 
-**Este manual no publica ningún valor.** Los que rigen hoy son los que estén cargados en esta pantalla, y quién los fija se explica más abajo, en 9.11.
+**Este manual no publica ningún valor.** Los que rigen hoy son los que estén cargados en esta pantalla, y quién los fija se explica más abajo, en 11.11.
 
 #### Qué se ve
 
@@ -2482,13 +3337,240 @@ El nombre, el cargo y la cédula de quien firma por recursos humanos también se
 
 Hay un detalle que conviene conocer: **el sistema trata el texto «Por definir» como si estuviera vacío**. Si el nombre del firmante dice eso, los recibos salen con el renglón de la firma en blanco, no firmados por alguien llamado «Por definir». Ese arreglo viene de un fallo real: durante semanas los recibos salieron firmados por un nombre que no era un nombre.
 
-### 9.10 Prestaciones sociales
+### 11.10 Prestaciones sociales
 
-**En el menú de Nómina aparece la entrada Prestaciones sociales, pero esa pantalla todavía no está construida.** Al entrar sale un aviso de pendiente, no una pantalla de trabajo.
+**Nómina › Prestaciones sociales**
 
-Se dice aquí para que nadie la busque, no la encuentre y crea que perdió un permiso o que algo se rompió. Lo que sí funciona hoy es el bloque **Se aparta para prestaciones** de cada recibo, que muestra cuánto se acumuló a favor de esa persona en ese período.
+Es la cuenta de lo que la empresa le debe a cada trabajador por el tiempo que lleva trabajando aquí. La pantalla lo dice en una línea: *"Lo que la empresa le debe a cada quien por el tiempo trabajado."*
 
-### 9.11 Lo que conviene entender
+Esta cuenta se lleva dentro del sistema, no en una hoja aparte, y se lleva separada de la nómina de la quincena. La razón es que no es dinero que se pague ahora: se acumula a favor del trabajador y solo sale de la empresa en dos momentos, cuando se le adelanta una parte y cuando se le liquida.
+
+#### Lo que conviene entender antes de abrirla
+
+Esta es la parte que hay que saber explicar cuando alguien se acerca a preguntar cuánto tiene acumulado.
+
+**Lo que se le va acumulando se llama garantía.** Cada trimestre —cada tres meses del calendario— la empresa le abona a cada trabajador una cantidad de días de su salario. No se los paga en la quincena: se los apunta a su favor. Ese apunte es el mismo que sale en el recibo bajo el título **Se aparta para prestaciones**, y por eso el recibo advierte que *"Se acumula a su favor. No sale de su pago."*
+
+**El día que cumple años de trabajo se le suman días adicionales.** Pasada la antigüedad que fija la ley, cada aniversario de ingreso trae unos días más, que se van acumulando año tras año hasta un tope. Se le abonan en el trimestre donde cae su aniversario, que es cuando se ganan.
+
+**Cuántos días son, en los dos casos, no lo dice este manual.** Los fija la ley, y este capítulo no publica ni uno solo: un número equivocado en materia de prestaciones cuesta dinero de verdad. Los días del trimestre están en **Parámetros de nómina**, en el renglón **Días de garantía de prestaciones por trimestre**, con su fecha de vigencia y su fuente; ahí se consultan y ahí se corrigen. Los días adicionales del aniversario y su tope, en cambio, **no están en esa pantalla**: van escritos por dentro del sistema, así que si la ley los cambia hay que pedir que los cambien. En los dos casos el valor bueno lo fija quien lleva la nómina junto con su asesor laboral o contable, con la gaceta delante.
+
+**Los intereses son lo que produce ese dinero mientras está apartado.** Mes a mes, lo acumulado gana intereses a favor del trabajador. La pantalla lo resume así: *"Corren sobre la garantía acumulada, a la tasa que publica el BCV."* Dos precisiones que ahorran discusiones: los intereses corren sobre la garantía, no sobre los intereses que ya se abonaron —eso sería interés sobre interés—, y la tasa hay que escribirla a mano cada mes, porque el sistema no la puede adivinar.
+
+**Un anticipo es un adelanto de lo que ya tiene acumulado.** Es dinero que se le entrega hoy a cuenta de lo que se le debe. No es un préstamo y no se descuenta de la quincena: baja directamente el saldo de su cuenta de prestaciones. No se le puede adelantar todo: la ley fija hasta qué parte de lo acumulado se puede adelantar, y de ahí se resta lo que ya se le adelantó antes. Tampoco se adelanta para cualquier cosa; la propia pantalla lo recuerda debajo del campo: *"La ley permite adelantar para vivienda, salud, educación y pensión alimentaria."*
+
+**La liquidación es la cuenta final**, la que se hace cuando la persona se va, y suma todo lo anterior más lo que le quede pendiente del último año trabajado.
+
+#### Quién puede hacer qué aquí
+
+Ver la pantalla es lo mismo que ver el resto del módulo: con el permiso sobre Nómina alcanza. Registrar es otra cosa, y aquí hay dos alturas distintas:
+
+| Acción | Qué permiso pide |
+| --- | --- |
+| Ver la lista y la cuenta de cada quien | El permiso sobre Nómina, el mismo del resto del módulo |
+| **Cerrar trimestre** e **Intereses del mes** | Permiso de carga sobre Nómina. Lo tiene recursos humanos |
+| **Cargar el corte**, **Anticipo**, **Liquidar** y **Pagar y dar de baja** | El permiso más alto sobre Nómina |
+
+Los cuatro botones de la última fila piden el permiso más alto porque los cuatro mueven dinero o mueven la base con la que se calcula: el corte decide cuánto traía acumulado alguien de antes, y los otros tres sacan plata de la cuenta de la empresa. **Recursos humanos, con el permiso que trae de fábrica, no los ve.** Si hacen falta, se piden a quien administra el sistema. Si no los tienes, los botones no se dibujan.
+
+#### Qué se ve
+
+Arriba a la derecha, dos botones: **Cerrar trimestre** e **Intereses del mes**.
+
+Debajo, tres cifras:
+
+| Tarjeta | Qué muestra |
+| --- | --- |
+| **Se les debe hoy** | La suma de lo que se le debe a todo el personal activo |
+| **Adelantado** | La suma de todo lo que se les ha adelantado y está restando de sus saldos |
+| **Sin corte cargado** | Cuántos trabajadores no tienen todavía su punto de partida. En rojo si hay alguno, en verde si no queda ninguno |
+
+**Las dos primeras cifras salen partidas por moneda** cuando en la empresa hay sueldos en bolívares y sueldos en dólares: se muestran una al lado de la otra, separadas por un punto, y no se suman. Sumarlas daría un número que no es ni bolívares ni dólares, y a qué tasa se convierten no lo puede decidir una pantalla.
+
+**Las tres cifras cuentan solo a quien está activo.** La lista de abajo, en cambio, trae también a quien ya egresó, en gris.
+
+Si falta algún punto de partida, aparece una franja de aviso: *"Hay {n} trabajador(es) sin corte cargado. Mientras no lo tengan, su cuenta arranca en cero y el sistema no sabe qué traían de antes. El corte se carga desde la ficha de cada uno, con lo que tenga acumulado a una fecha."* Una advertencia sobre esa última frase: **el corte no se carga en la ficha del trabajador, sino aquí mismo**, pinchando la fila de la persona. La ficha no muestra nada de prestaciones.
+
+Si no hay nadie cargado en Personal, la pantalla dice **No hay trabajadores** y *"Las prestaciones se calculan sobre el personal cargado en Nómina."*
+
+La lista tiene estas columnas:
+
+| Columna | Qué muestra |
+| --- | --- |
+| **Trabajador** | Apellidos y nombres y, debajo, el número de ficha y el cargo, más **liquidado** si ya se le liquidó |
+| **Desde** | Su fecha de ingreso |
+| **Garantía** | Lo acumulado: lo que traía del corte más lo abonado trimestre a trimestre |
+| **Intereses** | Los intereses abonados a su favor |
+| **Adelantado** | Lo que ya se le adelantó, en ámbar y con un menos delante. Un guion si nunca se le adelantó nada |
+| **Se le debe** | La garantía más los intereses, menos lo adelantado. Es la cifra que se responde cuando preguntan |
+| **Corte** | La fecha de su punto de partida, o la etiqueta **Sin corte** |
+
+**Pincha en cualquier parte de la fila** para abrir la cuenta de esa persona.
+
+#### Cargar el corte
+
+El corte es el punto de partida: lo que esa persona ya tenía acumulado el día en que el sistema empezó a llevarle la cuenta. Sin él, su cuenta arranca en cero y la lista lo dice.
+
+La propia ventana explica por qué se teclea a mano en vez de calcularlo el sistema: *"El sistema no tiene los salarios de los años anteriores, así que calcular hacia atrás daría un número con cara de exacto y falso. Esto se carga a mano, y se ve que es a mano."*
+
+1. Pincha la fila de la persona.
+2. Pulsa **Cargar el corte** —o **Corregir el corte**, si ya tiene uno—.
+3. Llena la ficha del corte.
+4. Pulsa **Guardar el corte**.
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Acumulado hasta** | Sí | La fecha del corte. Sin ella no se habilita **Guardar el corte** |
+| **Días acumulados** | No | Cuántos días llevaba acumulados a esa fecha |
+| **Garantía en {moneda}** | No | El monto acumulado, en la moneda de su sueldo |
+| **Intereses acumulados** | No | Los intereses que ya había ganado |
+| **Ya adelantado** | No | Lo que se le había adelantado antes de esa fecha |
+| **De dónde sale esta cifra** | No | *"Queda guardado con tu nombre y la hora."* |
+
+Ese último campo es el que hace defendible al corte: es lo único que explica, dentro de un año, de dónde salió el número que alguien tecleó.
+
+Tres cosas que el sistema no deja al cargar un corte, y por qué:
+
+- **No acepta una fecha futura**, porque nadie tiene acumulado todavía lo de un día que no ha llegado.
+- **No acepta una fecha anterior al ingreso** de esa persona, porque no se acumula nada antes de empezar a trabajar.
+- **No deja poner más adelantado que acumulado**, porque no se puede haber adelantado dinero que nunca se acumuló.
+
+Y una cuarta, que es la que más incomoda: **si ya hay trimestres cerrados anteriores a esa fecha, el corte no se guarda.** El sistema responde «Ya hay trimestres calculados antes de esa fecha de corte. Anúlalos primero: si no, ese tiempo quedaría contado dos veces.» La razón está en el propio mensaje: el corte ya incluye ese tiempo, y el trimestre lo volvería a contar. Ahora la parte incómoda: **esta pantalla no tiene ningún botón para anular un trimestre cerrado.** Si te topas con ese mensaje, no hay salida desde la pantalla; hay que pedírselo a quien administra el sistema.
+
+Por eso el orden importa: **primero se carga el corte de todo el mundo, y después se cierran trimestres.** Al revés se llega a un callejón.
+
+#### Cerrar el trimestre
+
+Es la operación que abona a cada quien lo que le tocó de ese trimestre. Se hace una vez, cuando el trimestre ya terminó.
+
+1. Pulsa **Cerrar trimestre**, arriba a la derecha.
+2. Escribe el **Año**.
+3. Elige el **Trimestre**: **1 — enero a marzo**, **2 — abril a junio**, **3 — julio a septiembre** o **4 — octubre a diciembre**. Viene propuesto el anterior al que corre.
+4. Pulsa **Cerrar el trimestre**.
+
+Al terminar sale un aviso con cuántos trabajadores se abonaron: «Trimestre cerrado para {n} trabajador(es).» Si no había nada que abonar —porque ese trimestre ya estaba cerrado, o porque nadie llevaba todavía el tiempo mínimo de servicio—, el aviso también lo dice. Se cierra con **Entendido**.
+
+Cuatro cosas que conviene saber antes de pulsar:
+
+**De dónde sale el salario con el que se calcula.** La ventana lo explica: *"El salario sale del último recibo del trimestre, con las horas extras y los recargos que de verdad se pagaron. Si no hay recibos, se calcula desde la ficha y el depósito queda marcado como estimado. Volver a correrlo no duplica nada."* Un abono marcado como **estimado** no está mal calculado: está calculado sobre el sueldo de la ficha y no sobre lo que de verdad se pagó, y se marca para que se sepa.
+
+**No se puede cerrar un trimestre que no ha terminado.** El sistema responde «El trimestre … de … todavía no ha terminado: cierra el ….», con la fecha en que se podrá. Cerrar un trimestre a mitad de camino abonaría menos de lo que corresponde y nadie se acordaría después de volver.
+
+**A quien no lleva todavía el tiempo mínimo de servicio no se le abona nada** ese trimestre. Empieza a acumular cuando la ley dice que empieza, y ese tiempo mínimo no lo decide el sistema.
+
+**Volver a cerrar el mismo trimestre no duplica nada.** A quien ya tiene su abono se le salta. Por eso se puede correr sin miedo después de cargar el corte de alguien que faltaba.
+
+#### Abonar los intereses del mes
+
+Se hace una vez al mes, cuando el mes ya cerró y el Banco Central publicó su tasa.
+
+1. Pulsa **Intereses del mes**, arriba a la derecha.
+2. Escribe el **Año** y el **Mes**. Viene propuesto el mes anterior.
+3. Escribe la **Tasa anual (%)** que publicó el Banco Central para ese mes.
+4. Pulsa **Abonar intereses**.
+
+Sale el aviso «Intereses abonados a {n} trabajador(es).»
+
+**Sin tasa no se abona nada, y es a propósito.** La ventana lo dice con todas sus letras: *"La tasa se guarda con el mes al que pertenece: sin ella no se calcula nada, porque unos intereses con una tasa inventada también son inventados."* Si intentas calcular un mes sin tasa cargada, el sistema responde «No está cargada la tasa de intereses de …. Cárgala antes de calcular: con una tasa inventada, los intereses también lo serían.»
+
+**La tasa queda guardada con el mes al que pertenece**, no con el día en que la tecleaste. Eso es lo que permite que abonar marzo en agosto dé el mismo resultado que habría dado en marzo.
+
+**Tampoco se puede abonar un mes que no ha terminado.**
+
+**Volver a correr un mes ya abonado no suma dos veces**: rehace el abono de ese mes con la tasa que esté cargada. Si te equivocaste al teclear la tasa, esa es la forma de corregirlo: vuelve a correr el mismo mes con la tasa buena.
+
+#### La cuenta de una persona
+
+Se abre pinchando su fila. Arriba, el nombre; debajo, la ficha, el cargo y desde cuándo trabaja.
+
+Lo primero es el resumen de su cuenta: **Garantía acumulada**, **Intereses**, **Adelantado** y, separada por una línea, la cifra que importa, **Se le debe**. Al pie, la pantalla dice hasta cuánto se le puede adelantar hoy.
+
+Más abajo, y solo si los tiene, aparecen dos listas:
+
+- **Depósitos trimestrales**, uno por trimestre cerrado, con el año, el trimestre, los días que se le abonaron —y los adicionales, si le tocaron—, el salario diario con el que se calculó y el monto. Los marcados **estimado** son los que se calcularon desde la ficha por no haber recibos.
+- **Anticipos**, cada uno con su número —**ANT-2026-0001**, que también se reinicia cada año—, para qué fue, la fecha, de qué cuenta salió y el monto.
+
+Los depósitos y los anticipos anulados siguen apareciendo, en gris. No desaparecen: una cuenta de la que se borran renglones deja de poder explicarse.
+
+#### Registrar un anticipo
+
+1. Abre la cuenta de la persona y pulsa **Anticipo**.
+2. Escribe el **Monto en {moneda}**. La ventana ya te dice arriba hasta cuánto se le puede adelantar; si escribes más, el campo se marca en rojo y avisa de que pasa del tope permitido.
+3. Elige **Para qué**: **Vivienda**, **Salud**, **Educación**, **Pensión alimentaria** u **Otro**.
+4. Elige **De qué cuenta sale**. Si lo dejas en **Sin mover tesorería**, el anticipo queda apuntado en su cuenta pero no sale dinero de ninguna cuenta de la empresa.
+5. Escribe la **Referencia**, si la tienes.
+6. Escribe el **Detalle**.
+7. Pulsa **Registrar el anticipo**.
+
+**Si eliges una cuenta, el dinero sale de verdad**: el saldo de esa cuenta baja y queda una línea de egreso en el libro de tesorería a nombre de esa persona. Si no la eliges, no baja ningún saldo. Conviene tenerlo claro antes de pulsar, porque son dos cosas distintas y el botón es el mismo.
+
+Lo que el sistema no deja, y por qué:
+
+- **No deja adelantar más de lo permitido.** Responde «A … se le pueden adelantar hasta … y se están pidiendo …» La razón es que un anticipo por encima del tope no es un anticipo: es dinero entregado contra algo que todavía no existe.
+- **No deja un monto de cero o negativo**, porque un anticipo que no entrega nada no es un anticipo.
+- **No deja fecharlo hacia adelante**, porque el dinero no puede salir mañana y estar apuntado hoy.
+- **No se puede anular un anticipo desde esta pantalla.** Si se registró mal, hay que pedírselo a quien administra el sistema.
+
+#### Liquidar a un trabajador
+
+Liquidar es la cuenta final de alguien que se va. Son dos pasos separados a propósito: primero se calcula y se revisa, y después se paga.
+
+**Paso uno: calcular.**
+
+1. Abre la cuenta de la persona y pulsa **Liquidar**.
+2. Escribe el **Último día trabajado**. Viene propuesto hoy.
+3. Elige **Por qué sale**: **Renuncia**, **Despido injustificado**, **Despido justificado**, **Contrato vencido**, **Jubilación** o **Fallecimiento**. La ayuda advierte de lo que cambia según elijas: *"El despido injustificado paga, además, otro tanto igual."*
+4. Escribe **Otras asignaciones** y **Otras deducciones**, si las hay.
+5. Escribe la **Observación**.
+6. Pulsa **Calcular la liquidación**.
+
+La ventana deja claro qué hace y qué no: *"Calcular no paga ni da de baja a nadie: deja el cálculo a la vista para revisarlo."* Ese es el punto: entre calcular y pagar hay una pausa, y esa pausa es la única oportunidad de revisar el cálculo mientras todavía se puede rehacer.
+
+El cálculo aparece dentro de la cuenta de esa persona, en una tarjeta con su número —**Liquidación LIQ-2026-0001**, que se reinicia cada año— y su etiqueta de estado, **calculada** o **pagada**, con estos renglones:
+
+| Renglón | Qué es |
+| --- | --- |
+| **Garantía acumulada** | Lo que se le fue abonando trimestre a trimestre, más lo que traía del corte |
+| La cuenta por años de servicio | La otra forma de calcular lo mismo: los días por año de servicio que manda la ley, al último salario integral. Su título en pantalla trae el número de días; este manual no lo reproduce |
+| **Base (la mayor)** | De las dos anteriores, la que dé más. Esa es la que se paga |
+| **Intereses** | Los intereses acumulados a su favor |
+| **Vacaciones fraccionadas** | La parte que le corresponde del último año trabajado |
+| **Bono vacacional** | Lo mismo, del bono |
+| **Utilidades fraccionadas** | Lo mismo, de las utilidades |
+| **Indemnización** | Solo trae cifra si sale por despido injustificado |
+| **Menos lo adelantado** | Todos sus anticipos, más lo que venía como adelantado en su corte |
+| **Total a pagar** | El resultado |
+
+La pantalla lo resume así: *"Se calculan las dos cuentas que manda comparar la ley y se paga la mayor."* Se enseñan las dos, y no solo el resultado, porque quien firma una liquidación tiene que poder explicar de dónde salió el número.
+
+**Paso dos: pagar.**
+
+1. En esa misma tarjeta, elige **Pagar desde** la cuenta de la que sale el dinero.
+2. Pulsa **Pagar y dar de baja**.
+
+El nombre del botón dice exactamente lo que hace: sale el dinero de la cuenta, queda la línea en el libro de tesorería y **la persona queda egresada en su ficha**, con la fecha y el motivo de la liquidación. No hay que ir a **Personal** a egresarla después: un trabajador liquidado que siguiera apareciendo como activo volvería a salir en la próxima nómina.
+
+Al revés hay una trampa, y es la más cara de este capítulo: **si primero lo egresas desde Personal, ya no lo puedes liquidar aquí.** Los botones **Anticipo** y **Liquidar** solo se dibujan para quien está activo, así que una persona egresada aparece en la lista, en gris, con su saldo a la vista y sin forma de cerrarle la cuenta desde la pantalla. El sistema no avisa de esto en ninguno de los dos sitios.
+
+De ahí sale la regla de la casa: **cuando alguien se va, primero se le liquida aquí y se le paga.** El egreso lo pone el propio botón **Pagar y dar de baja**. **Egresar** en Personal queda para el caso en que no haya nada que liquidar.
+
+Lo que el sistema no deja, y por qué:
+
+- **No deja liquidar dos veces.** Si ya hay un cálculo, responde «A … ya se le calculó la liquidación. Anúlala primero si hay que rehacerla.» Y aquí vale la misma advertencia de antes: **esta pantalla no tiene botón para anular una liquidación.** Antes de pulsar **Calcular la liquidación**, revisa la fecha y el motivo.
+- **No deja fechar el egreso antes del ingreso ni hacia adelante**, porque ninguna de las dos cosas puede haber pasado.
+- **No deja pagar una liquidación que no arroja monto**, ni pagar dos veces la misma.
+- **No deja adelantar ni liquidar a quien ya está egresado o ya se liquidó**: los botones **Anticipo** y **Liquidar** solo se dibujan para quien está activo y sin liquidar. Su cuenta se sigue viendo, pero de solo lectura.
+
+#### Lo que esta pantalla no hace
+
+Cuatro límites reales, dichos sin rodeos porque se descubren el primer día:
+
+- **No imprime nada.** No sale un comprobante de liquidación, ni un recibo de anticipo, ni un estado de cuenta para entregarle al trabajador. Lo que se le enseñe hay que copiarlo de la pantalla.
+- **No se anula nada desde aquí**: ni un trimestre cerrado, ni un anticipo, ni una liquidación. Los tres se pueden anular en el sistema, pero no hay botón que lo haga, así que hoy pasa por quien lo administra.
+- **No cierra el trimestre sola, ni abona los intereses sola.** Las dos cosas hay que acordarse de hacerlas: el trimestre cuando termina, los intereses cuando el Banco Central publica su tasa del mes. Nadie avisa.
+- **La ficha del trabajador no muestra nada de esto.** Para saber cuánto tiene acumulado alguien hay que venir a esta pantalla.
+
+### 11.11 Lo que conviene entender
 
 #### La nómina semanal y la quincenal
 
@@ -2557,9 +3639,11 @@ Que aprobar y pagar sean de dos personas distintas está pensado justo para esto
 
 #### Por qué los porcentajes y los topes se cargan en pantalla
 
-Ninguna cifra legal está escrita por dentro del sistema. Ni los porcentajes de las deducciones, ni los topes, ni los días de referencia. Todas viven en **Parámetros de nómina**, cada una con su fecha de vigencia y su fuente.
+Las cifras con las que se calcula la nómina de cada período —los porcentajes de las deducciones, los topes y los días de referencia— no están escritas por dentro del sistema. Viven en **Parámetros de nómina**, cada una con su fecha de vigencia y su fuente.
 
 La razón la explica el propio sistema: en Venezuela estas cifras cambian por decreto, y a veces con efecto hacia atrás. Un número escrito por dentro obligaría a que un técnico tocara el sistema cada vez que sale una gaceta. Cargado en pantalla, lo actualiza recursos humanos el mismo día, sin esperar a nadie.
+
+**Con las prestaciones sociales esto se cumple solo a medias, y conviene saberlo.** Los días de garantía de cada trimestre sí están en **Parámetros de nómina**, en el renglón **Días de garantía de prestaciones por trimestre**. Pero otras cifras que usa esa pantalla van escritas por dentro: los días adicionales del aniversario y su tope, el tiempo mínimo de servicio para empezar a acumular, hasta qué parte de lo acumulado se puede adelantar y los días por año con los que se compara la liquidación. Ninguna de esas se puede corregir desde ninguna pantalla. Si la ley cambia alguna, hay que pedir que la cambien, y mientras tanto lo que salga en pantalla hay que contrastarlo con el asesor antes de pagar nada.
 
 De ahí sale la segunda regla, que es la que hace que los recibos sean defendibles: **los valores se aplican por la fecha del período, no por la de hoy.** Recalcular en agosto una nómina de marzo tiene que dar lo mismo que dio en marzo. Por eso las vigencias anteriores no se borran nunca.
 
@@ -2581,6 +3665,8 @@ El sistema comprueba tres cosas antes de borrar, y si falla cualquiera, no borra
 3. **Que no tenga ninguna novedad cargada.** Si la tiene, responde «… tiene … novedad(es) registradas. Bórralas primero, o egrésalo si de verdad trabajó.»
 
 El motivo de esas dos puertas es el que hace útil al módulo: si borrar arrastrara recibos, el libro de nómina dejaría de cuadrar con lo que salió de tesorería, y eso no se descubre hasta el cierre.
+
+**Esas tres comprobaciones no miran las prestaciones**, y ahí hay dos sorpresas. Si a la persona se le cargó un corte, se le cerraron trimestres o se le abonaron intereses, borrar la ficha se lleva también todo eso, en silencio. Y si tiene algún anticipo o alguna liquidación, la ficha no se borra, pero el sistema no lo explica con un mensaje claro como los dos de arriba: sale un aviso confuso. En los dos casos la conclusión es la misma de siempre: si la persona trabajó aquí de verdad, no se borra, se egresa.
 
 Dos cosas más sobre borrar:
 
@@ -2605,7 +3691,7 @@ Son cuatro, y salen de dos sitios distintos:
 
 Los cuatro llevan al pie quién los emitió y cuándo. Y los tres que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano.
 
-### 9.12 Cuando el sistema no te deja
+### 11.12 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -2644,12 +3730,30 @@ Los cuatro llevan al pie quién los emitió y cuándo. Y los tres que llevan fir
 | «Solo se paga una nómina aprobada. Esta está en "…".» | Falta que gerencia general la apruebe | Pídele a gerencia general que la apruebe |
 | «Indica de qué cuenta sale el dinero.» | No elegiste la cuenta | Elige la cuenta en **De qué cuenta sale** |
 | «Este movimiento es el pago de una nómina. Reversarlo dejaría los recibos diciendo que se cobró y el banco que no salió nada.» | Intentas deshacer un pago de nómina desde el libro de tesorería | No hay forma de deshacerlo. La corrección va en el período siguiente |
+| «Tu usuario no tiene acceso a Nómina.» | O no tienes permiso sobre el módulo, o lo tienes pero no al nivel que pide esa acción | Pide el permiso a administración, o que lo haga quien lo tenga |
+| «El corte no puede ser de una fecha futura.» | La fecha del corte es de mañana o después | Corrige la fecha |
+| «El corte (…) es anterior al ingreso de … (…).» | El corte es de antes de que esa persona empezara a trabajar | Revisa las dos fechas: una de las dos está mal |
+| «Los anticipos (…) no pueden superar lo acumulado (…).» | En el corte pusiste más adelantado que acumulado | Revisa las cifras del corte contra el papel de donde salen |
+| «Ya hay trimestres calculados antes de esa fecha de corte. Anúlalos primero: si no, ese tiempo quedaría contado dos veces.» | Ese tiempo ya está abonado por trimestre y el corte lo contaría otra vez | La pantalla no anula trimestres. Pídeselo a quien administra el sistema |
+| «El trimestre … de … todavía no ha terminado: cierra el ….» | Estás cerrando un trimestre en curso | Espera a la fecha que dice el mensaje |
+| «El trimestre va del 1 al 4 (recibido: …).» | El trimestre está mal escrito | Elige uno de los cuatro de la lista |
+| «No está cargada la tasa de intereses de …. Cárgala antes de calcular: con una tasa inventada, los intereses también lo serían.» | Falta la tasa de ese mes | Escribe en **Tasa anual (%)** la que publicó el Banco Central para ese mes |
+| «El mes …/… todavía no ha terminado.» | Estás abonando intereses de un mes en curso | Espera a que el mes cierre |
+| «El anticipo tiene que ser mayor que cero.» | El monto quedó vacío o en cero | Escribe el monto |
+| «No se registra un anticipo con fecha futura.» | La fecha del anticipo es de mañana o después | Corrige la fecha |
+| «A … se le pueden adelantar hasta … y se están pidiendo …» | El anticipo pasa del tope de lo que se le puede adelantar | Baja el monto al que dice el mensaje |
+| «A … ya se le calculó la liquidación. Anúlala primero si hay que rehacerla.» | Esa persona ya tiene una liquidación calculada | Ábrela en su cuenta y revísala. Para rehacerla hay que anularla, y eso no se hace desde la pantalla |
+| «La fecha de egreso es anterior a la de ingreso.» | El último día trabajado es de antes del ingreso | Corrige la fecha |
+| «No se liquida con fecha futura.» | El último día trabajado todavía no ha llegado | Corrige la fecha |
+| «La liquidación … está ….» | Ya se pagó, o se anuló | Revisa su etiqueta de estado en la cuenta de esa persona |
+| «La liquidación … no arroja monto a pagar.» | La cuenta dio cero o menos, casi siempre por anticipos que se comieron lo acumulado | Revisa los renglones del cálculo antes de seguir |
+| «No existe la cuenta ….» | La cuenta de la que iba a salir el dinero ya no está | Recarga la pantalla y elige otra |
 | «Un parámetro de texto necesita un valor escrito.» | Ese parámetro lleva palabras, no un número | Escribe el texto |
 | «Un parámetro de unidad … necesita un número.» | Ese parámetro lleva una cifra, no palabras | Escribe el número |
 
 ---
 
-## 10. Tesorería
+## 12. Tesorería
 
 Tesorería es el libro del dinero. Cada banco, cada caja de efectivo y cada billetera digital de la empresa tiene aquí su cuenta, y todo lo que entra y sale de ellas queda escrito en una sola lista, en orden, con la fecha, el concepto, la referencia y el nombre de quien lo registró.
 
@@ -2659,9 +3763,9 @@ Hay una idea que conviene entender antes de tocar nada, y es la misma que ordena
 
 De ahí sale la consecuencia práctica: **para cambiar un saldo hay que escribir un movimiento**. No hay otra forma. No se corrige el número directamente, ni siquiera siendo administrador.
 
-Y hay una segunda regla que conviene tener presente desde la primera pantalla: **una cuenta, una moneda**. Una cuenta en bolívares no guarda dólares y una cuenta en dólares no guarda bolívares. La razón está en la sección 10.8.
+Y hay una segunda regla que conviene tener presente desde la primera pantalla: **una cuenta, una moneda**. Una cuenta en bolívares no guarda dólares y una cuenta en dólares no guarda bolívares. La razón está en la sección 12.8.
 
-### 10.1 Quién entra y quién puede hacer qué
+### 12.1 Quién entra y quién puede hacer qué
 
 Hay dos puertas distintas, y conviene no confundirlas.
 
@@ -2687,7 +3791,7 @@ El rol de Consulta queda fuera de Tesorería a propósito, igual que de Nómina.
 
 Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu rol es de consulta.
 
-### 10.2 El circuito del dinero
+### 12.2 El circuito del dinero
 
 Antes de entrar en las pantallas conviene saber por dónde nace y por dónde muere cada deuda. En este módulo casi nada se teclea desde cero: la mayor parte llega sola desde Compras y desde Ventas.
 
@@ -2715,7 +3819,7 @@ Dos cosas que conviene entender de aquí. La primera: **el cobro entra en la mon
 
 Registrar un cobro no exige el rol de Tesorería: exige permiso de escritura sobre el módulo Ventas. Quien factura es quien cobra.
 
-### 10.3 Bancos y cajas
+### 12.3 Bancos y cajas
 
 **Administración › Tesorería › Bancos y cajas**
 
@@ -2797,7 +3901,7 @@ Entre dos cuentas de la misma moneda **tiene que llegar exactamente lo que sale*
 
 De aquí no sale ningún papel imprimible. Lo que produce esta pantalla son líneas en el libro de tesorería.
 
-### 10.4 Pagos por hacer
+### 12.4 Pagos por hacer
 
 **Administración › Tesorería › Pagos por hacer**
 
@@ -2834,7 +3938,7 @@ Si no hay nada pendiente: **No hay nada por pagar**, con el texto **Cuando compr
 
 Si el saldo de la cuenta elegida no alcanza, aparece un aviso naranja que **no impide confirmar**: **En esa cuenta hay $ 200,00 y el pago es de $ 1.287,50. Si el dinero ya está, falta registrar el ingreso o el saldo de apertura.** Avisa porque lo más frecuente no es que falte el dinero, sino que falte registrarlo. Quien sí impide confirmar es el propio libro, más adelante, si al escribir la línea el saldo queda por debajo de cero y la cuenta no admite sobregiro.
 
-### 10.5 Cuentas por pagar
+### 12.5 Cuentas por pagar
 
 **Administración › Tesorería › Cuentas por pagar**
 
@@ -2857,7 +3961,7 @@ Si no se debe nada: **No se le debe nada a nadie**, con el texto **Toda compra a
 
 **Desde aquí no se paga.** Es una pantalla de solo consulta: no tiene filtros, ni acciones, ni botón de imprimir ni de exportar. Para pagar hay que ir a **Pagos por hacer** o al detalle de la compra, donde está el formulario que ata el dinero a la orden.
 
-### 10.6 Cuentas por cobrar
+### 12.6 Cuentas por cobrar
 
 **Administración › Tesorería › Cuentas por cobrar**
 
@@ -2886,7 +3990,7 @@ Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitida
 
 **Desde aquí no se cobra.** No hay filtros, ni acciones, ni exportación.
 
-### 10.7 Libro de tesorería
+### 12.7 Libro de tesorería
 
 **Administración › Tesorería › Libro de tesorería**
 
@@ -2933,7 +4037,7 @@ La línea original **se queda en el libro**. Lo que se escribe es una nueva, del
 
 Y a esos se suma el de siempre: sin el rol de Tesorería, el botón tampoco se dibuja.
 
-### 10.8 Lo que conviene entender
+### 12.8 Lo que conviene entender
 
 #### Las cuentas van separadas por moneda, y no se mezclan
 
@@ -2996,7 +4100,7 @@ Corregir tiene tres caminos, según qué se haya registrado mal:
 2. **Devolver la instrucción de pago desde la compra**, si lo que estuvo mal fue el pago de un proveedor.
 3. **Trasladar en sentido contrario**, si lo que estuvo mal fue un traslado.
 
-### 10.9 Cuando el sistema no te deja
+### 12.9 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -3034,7 +4138,7 @@ Corregir tiene tres caminos, según qué se haya registrado mal:
 
 ---
 
-## 11. Configuración
+## 13. Configuración
 
 Configuración es donde se decide quién entra al sistema, a qué llega cada quien, qué datos de la empresa salen impresos en los papeles que emite y dónde quedan guardados los documentos legales. Es también donde vive el registro de auditoría, que anota todo lo que se escribe en el sistema.
 
@@ -3045,7 +4149,7 @@ La idea que conviene entender antes de tocar nada es que **aquí hay dos capas d
 
 Es una reja delante de la puerta, no una llave. Y está hecha así a propósito: si la matriz otorgara en vez de restringir, un descuido en esa pantalla abriría el sistema entero.
 
-### 11.1 Usuarios y permisos
+### 13.1 Usuarios y permisos
 
 **Sistema › Configuración › Usuarios y roles**
 
@@ -3204,7 +4308,7 @@ Conviene saberlo antes de intentarlo, porque cada límite tiene su razón:
 - **Editar o borrar una línea del libro de tesorería o del registro de auditoría.**
 - **Ver la clave de alguien.** Ninguna clave se guarda en un sitio donde se pueda leer, ni la vieja ni la nueva.
 
-### 11.2 Datos de la empresa
+### 13.2 Datos de la empresa
 
 **Sistema › Configuración › Datos de la empresa**
 
@@ -3247,7 +4351,7 @@ Estos datos salen del comprobante del SENIAT, no de la memoria de nadie. Cópial
 
 **No se puede tener más de una empresa.** El sistema lleva los datos de una sola.
 
-### 11.3 Documentos legales
+### 13.3 Documentos legales
 
 **Sistema › Configuración › Documentos legales**
 
@@ -3315,7 +4419,7 @@ Al descargar, el archivo se guarda con el nombre del documento y no con el nombr
 
 **La dirección desde la que se abre deja de servir a los diez minutos.** No sirve para pasársela a nadie por mensaje: quien la reciba encontrará un enlace muerto. Si alguien necesita el papel, lo correcto es que lo abra desde el sistema con su propio usuario, y si no llega es porque su rol no debe verlo.
 
-### 11.4 Auditoría
+### 13.4 Auditoría
 
 **Sistema › Configuración › Auditoría**
 
@@ -3390,7 +4494,7 @@ Conviene decir también lo que no es. **La auditoría no está para vigilar a la
 
 De ahí sale otra decisión que a primera vista parece un descuido: **el registro no está atado a la ficha de los usuarios.** Es a propósito. Si lo estuviera, inactivar o modificar a una persona podría arrastrar su rastro, y el rastro de quien ya no está es justo el que hace falta el día que se investiga algo.
 
-### 11.5 Cuando el sistema no te deja
+### 13.5 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -3428,99 +4532,117 @@ De ahí sale otra decisión que a primera vista parece un descuido: **el registr
 
 ---
 
-## 12. Las reglas que el sistema impone
+## 14. Las reglas que el sistema impone
 
 Estas son las reglas que explican la mayoría de los casos en que el sistema no te deja avanzar. **No son fallas.** Cada una está puesta a propósito y aquí se explica por qué.
 
-### 12.1 Lo que se registra, se queda
+### 14.1 Lo que se registra, se queda
 
-Un movimiento de inventario no se modifica ni se elimina. Una nómina pagada no se revierte. Un cobro anulado no desaparece: queda anulado y a la vista.
+Un movimiento de inventario no se modifica ni se elimina. Una nómina pagada no se revierte. Un pesaje no se corrige. Un cobro anulado no desaparece: queda anulado y a la vista.
 
 La razón es la misma en todos los casos. Si un dato se puede borrar, ningún número del sistema significa nada, porque siempre cabe la sospecha de que alguien arregló lo que no cuadraba. Corregir consiste en **escribir un documento nuevo que explique la corrección**, de modo que el error y su arreglo queden los dos visibles.
 
 Es más incómodo. También es lo único que hace que las cifras se puedan defender frente a un auditor, un socio o el SENIAT.
 
-### 12.2 Cada documento guarda su tasa
+### 14.2 Una sola puerta para cada cosa
+
+La piedra entra al patio por el parte de turno, y por ningún otro sitio. Un pesaje de la romana se usa en un solo despacho. Una guía de movilización ampara un solo viaje.
+
+Todas estas reglas dicen lo mismo de formas distintas: **dos puertas al mismo sitio es como se cuenta dos veces lo mismo**. Un turno cargado dos veces son toneladas que no existen; un ticket usado dos veces es un camión que pesó una vez y salió dos.
+
+Cuando algo queda libre otra vez —al anular una nota, el ticket y la guía vuelven a quedar disponibles— es porque el hecho físico sigue siendo cierto: el camión se pesó igual.
+
+### 14.3 Cada documento guarda su tasa
 
 Un documento emitido hoy conserva para siempre la tasa de hoy. Si mañana el BCV publica otra, ese documento no cambia.
 
 Esto elimina de raíz un problema clásico: que el informe en bolívares y el informe en dólares dejen de cuadrar entre sí. No pueden desincronizarse, porque cada línea lleva su propia tasa congelada.
 
-### 12.3 No se saca lo que no hay
+### 14.4 No se saca lo que no hay
 
-Ninguna operación puede dejar una existencia por debajo de cero: ni una salida, ni un traslado, ni un despacho, ni deshacer una entrada.
+Ninguna operación puede dejar una existencia por debajo de cero: ni una salida, ni un traslado, ni un despacho, ni deshacer una entrada, ni anular un parte de turno.
 
 Una existencia negativa no es un dato, es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió. Es preferible detenerse en el momento y registrar la entrada que falta.
 
-### 12.4 Los documentos se numeran solos
+### 14.5 Los documentos se numeran solos
 
 Los números de los documentos los pone el sistema, en orden y sin repetir, y se reinician cada año. Nadie los escribe a mano.
 
 Dos personas registrando al mismo tiempo nunca obtienen el mismo número. Puede haber huecos en la serie si una operación se cae a mitad de camino; un hueco no es un documento perdido.
 
-### 12.5 Dos personas pueden trabajar a la vez
+### 14.6 Dos personas pueden trabajar a la vez
 
-Cuando dos personas intentan actuar sobre el mismo documento o el mismo material en el mismo instante, el sistema atiende a una y detiene a la otra con un aviso. Nunca deja que las dos avancen.
+Cuando dos personas intentan actuar sobre el mismo documento, el mismo material o el mismo pesaje en el mismo instante, el sistema atiende a una y detiene a la otra con un aviso. Nunca deja que las dos avancen.
 
-Es lo que impide que salgan dos notas de entrega por la misma cotización, o que dos despachos se lleven el mismo material del patio. Si te toca ser quien recibe el aviso, no perdiste nada: vuelve a abrir el documento, comprueba cómo quedó y sigue desde ahí.
+Es lo que impide que salgan dos notas de entrega por la misma cotización, que dos despachos se lleven el mismo material del patio, o que un ticket de romana se gaste dos veces. Si te toca ser quien recibe el aviso, no perdiste nada: vuelve a abrir el documento, comprueba cómo quedó y sigue desde ahí.
 
-### 12.6 Todo queda registrado
+### 14.7 Todo queda registrado
 
 Cada operación guarda quién la hizo y cuándo. La bitácora de auditoría no se puede modificar ni borrar, y solo la consulta administración.
 
-No es vigilancia sobre las personas. Es lo que permite responder una pregunta concreta —quién autorizó este pago, quién cambió este precio— sin que la respuesta dependa de la memoria o la buena voluntad de nadie. Un sistema donde no se puede responder eso no sirve para controlar nada.
+No es vigilancia sobre las personas. Es lo que permite responder una pregunta concreta —quién autorizó este pago, quién despachó sin guía, quién cambió este precio— sin que la respuesta dependa de la memoria o la buena voluntad de nadie. Un sistema donde no se puede responder eso no sirve para controlar nada.
 
-### 12.7 Sobre la separación de funciones
+### 14.8 Las excepciones se conceden, pero se anotan
+
+Algunas reglas admiten excepción para quien tenga el permiso más alto del módulo. Despachar mineral sin guía es la principal: hay días en que el papel llega tarde y el cliente está esperando.
+
+La excepción existe porque la operación real no siempre encaja en el procedimiento. Pero **queda registrada en la auditoría**, con el nombre de quien la autorizó. Nunca pasa en silencio.
+
+### 14.9 Sobre la separación de funciones
 
 El diseño del sistema establece que quien pide una compra no debe ser quien la aprueba, y quien la aprueba no debe ser quien recibe el material.
 
 **Hoy esa regla no la impone el sistema: la tiene que sostener la organización.** El sistema no compara identidades al aprobar, así que una persona con los dos permisos puede recorrer sola el circuito completo.
 
-Se dice aquí con claridad porque es la diferencia entre un control real y uno supuesto. Mientras esto no esté construido, la protección consiste en **no darle a la misma persona el permiso de pedir y el de aprobar**, y en revisar la auditoría con regularidad. El capítulo 11 explica cómo se reparten los permisos.
+Se dice aquí con claridad porque es la diferencia entre un control real y uno supuesto. Mientras esto no esté construido, la protección consiste en **no darle a la misma persona el permiso de pedir y el de aprobar**, y en revisar la auditoría con regularidad. El capítulo 13 explica cómo se reparten los permisos.
 
 ---
 
-## 13. Lo que todavía no está construido
+## 15. Lo que todavía no está construido
 
-El sistema se entrega por partes. Este capítulo reúne lo que aparece en el menú o se espera del diseño pero **todavía no funciona**, para que nadie organice su trabajo contando con ello.
+El sistema se entrega por partes. Este capítulo reúne lo que aparece en el menú o se espera del diseño pero **todavía no funciona**, y los puntos donde conviene tener cuidado.
 
-No es una lista de fallas. Es el estado real de la obra.
+No es una lista de fallas. Es el estado real de la obra, y está aquí para que nadie organice su trabajo contando con algo que aún no puede hacer.
 
-### 13.1 Módulos completos que faltan
+### 15.1 Puntos donde hay que tener cuidado
 
-| Módulo | Qué hará | Qué se hace mientras tanto |
-| --- | --- | --- |
-| **Explotación** (frentes y bancos, voladuras, producción por turno) | Registrar la producción con su frente, su turno y su voladura, y calcular el costo real por tonelada | La producción se carga desde **Inventario › Existencias › Cargar producción**, escribiendo el turno y el frente en el campo de texto |
-| **Despachos** (tickets de romana, guías) | Registrar el pesaje en la romana y emitir la guía | El despacho se registra desde **Ventas › Notas de entrega** |
-| **Prestaciones sociales** | Acumulación, intereses y anticipos de prestaciones | Fuera del sistema |
+Estos cuatro no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las sabe. Son las más importantes del capítulo.
 
-Al entrar a cualquiera de estas pantallas aparece el aviso de que todavía no está construida. No es un problema de permisos.
+**Una compra se puede pagar dos veces por caminos distintos.** El dinero puede salir por la instrucción de pago de la orden, en Tesorería, y también por el pago registrado sobre la factura del proveedor. Los dos descuentan de una cuenta real y **ninguno de los dos sabe del otro**. Hasta que eso se cruce, conviene acordar en la empresa un solo camino y usar siempre ese.
 
-### 13.2 Lo que falta dentro de módulos que sí funcionan
+**Hay que liquidar antes de egresar.** El botón de liquidar prestaciones solo aparece mientras la persona está activa. Si se egresa primero, la liquidación ya no se puede calcular desde el sistema. El orden correcto es: liquidar, y después registrar la salida.
 
-**Costo por tonelada.** La producción entra al inventario valorada en cero, porque el costo real depende de la nómina, el gasoil y la voladura, y ese cálculo todavía no existe. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.** Las cantidades sí son confiables.
+**El anticipo de prestaciones se puede descontar dos veces.** Existe como concepto en las novedades del período y también como operación propia en la pantalla de prestaciones. Si se carga por los dos lados, se descuenta dos veces. Elige uno.
 
-**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. No existe la pantalla de facturas de proveedor, y por lo tanto tampoco el cotejo entre la orden, la recepción y la factura. El sistema no calcula retenciones: la casilla de contribuyente especial es hoy un dato de referencia. Ningún documento de compras se imprime.
+**El botón Cargar producción de Existencias lleva a un candado.** Se dibuja para el rol de Almacén, pero Almacén no trae permiso sobre Explotación. Quien lo pulse sin ese permiso no llega al parte de turno. Se resuelve pidiéndole a administración el permiso, o dejando la carga a Operaciones.
+
+### 15.2 Lo que falta dentro de módulos que sí funcionan
+
+**Costo por tonelada.** La producción entra al inventario valorada en cero, porque el costo real depende de la nómina, el gasoil y la voladura, y ese cálculo todavía no existe. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.** Las toneladas sí son confiables.
+
+**En Compras.** La pantalla de **Recepciones** del menú sigue sin construir. No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor se registra, pero **no se enlaza con su orden de compra**, así que no hay cotejo entre lo pedido, lo recibido y lo facturado. El sistema no calcula retenciones a proveedores. No hay libro de compras. Lo que se debe por facturas no llega a **Tesorería › Cuentas por pagar**, que sigue leyendo solo las instrucciones de pago de las órdenes. Ningún documento de compras se imprime.
+
+**En Despachos.** El sistema comprueba el cliente, el tipo, el estado y la vigencia de los papeles, pero **no compara cifras**: ni el peso neto del ticket contra las cantidades de la nota, ni las toneladas de la guía contra los renglones. Cuadrar eso sigue siendo trabajo de la persona. Además, la nota despachada sin guía **no se marca en ninguna pantalla**: el único rastro está en la auditoría.
 
 **En Ventas.** No hay notas de crédito ni de débito. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. No hay libro de ventas ni exportación fiscal. Las facturas emitidas desde el sistema no admiten descuento.
 
-**En Tesorería.** No hay conciliación bancaria: no existe una pantalla que cruce el libro con el estado de cuenta del banco. Tampoco se calcula el diferencial cambiario; lo que sí existe es la tasa congelada en cada línea.
+**En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema.
 
-**En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal. Antes de montar el procedimiento de la casa, conviene confirmar este punto con quien administra el sistema.
+**En Tesorería.** No hay conciliación bancaria: no existe una pantalla que cruce el libro con el estado de cuenta del banco. Tampoco se calcula el diferencial cambiario; lo que sí existe es la tasa congelada en cada línea.
 
 **En el panel.** Las cifras que muestra son de demostración, no salen todavía de los datos reales. No las uses para decidir nada. Los números buenos están dentro de cada módulo.
 
-### 13.3 Detalles de la pantalla que conviene conocer
+### 15.3 Detalles de la pantalla que conviene conocer
 
 - **El buscador general** de la barra superior está dibujado pero no busca.
 - **Mantener sesión abierta**, en la pantalla de entrar, no cambia nada: marcarla o no da el mismo resultado.
 - **Olvidé mi contraseña** no lleva a ninguna parte. La reposición de clave se pide a administración.
-- **Las listas largas muestran las 200 líneas más recientes** y no tienen paginación. Afecta a los movimientos de inventario y al libro de tesorería, entre otras. Un registro más antiguo sigue guardado, pero no se alcanza desde esa pantalla.
+- **Las listas largas se cortan** en los registros más recientes y no tienen paginación: 200 en los movimientos de inventario y en el libro de tesorería, 300 en voladuras y partes de turno, 400 en tickets, guías y facturas de proveedor. Un registro más antiguo sigue guardado, pero no se alcanza desde esa pantalla.
 - **Ninguna pantalla exporta a Excel.**
 
 ---
 
-## 14. Preguntas frecuentes
+## 16. Preguntas frecuentes
 
 **¿Puedo usar el sistema desde mi teléfono?**
 Sí. Solo necesitas navegador e internet, con el mismo usuario y la misma clave. No hay aplicación que instalar. El teléfono está pensado para el trabajo de patio; las tareas de oficina, como procesar la nómina o aprobar compras, se hacen más cómodas en la computadora.
@@ -3537,6 +4659,9 @@ Tu usuario existe pero todavía no tiene permisos asignados. Pídeselos a admini
 **Veo la pantalla pero no me aparece ningún botón para registrar.**
 Tu permiso sobre ese módulo es de consulta. Ver y registrar son dos permisos distintos.
 
+**Quiero cargar la producción del turno y no encuentro dónde.**
+Está en **Operación › Explotación › Producción por turno**. Es la única puerta por la que entra material al patio.
+
 **Un dato está mal. ¿Lo corrijo?**
 Depende de qué sea. Los catálogos —clientes, proveedores, almacenes— se corrigen normalmente. Los movimientos y los documentos ya aprobados no se editan: se corrigen con un documento nuevo que explica la corrección. Si no tienes claro cuál es el caso, pregunta antes de tocar nada.
 
@@ -3544,7 +4669,10 @@ Depende de qué sea. Los catálogos —clientes, proveedores, almacenes— se co
 Un artículo creado no se edita ni se borra. Desactívalo y crea el correcto. Por eso conviene revisar el nombre y la unidad antes de guardar.
 
 **El sistema me dice que no hay material, pero yo lo estoy viendo en el patio.**
-Falta registrar su entrada. Carga la producción o haz un conteo físico, y después repite la salida.
+Falta registrar su entrada. Carga el parte de turno que quedó pendiente, o haz un conteo físico, y después repite la salida.
+
+**El camión está esperando y la guía no ha llegado.**
+Sin guía no sale mineral. Quien tenga el permiso más alto sobre Despachos puede autorizar la salida igual, y esa autorización queda registrada. No es una decisión que se tome sin avisar a quien corresponda.
 
 **¿Quién puede ver lo que yo hago?**
 Todo queda registrado: quién, cuándo y qué cambió. Esa bitácora la consulta administración. No es vigilancia sobre las personas: es el requisito que hace confiables las cifras de todos.
@@ -3557,7 +4685,7 @@ Ni administración, ni sistemas, ni la gerencia. Nadie necesita tu clave para ha
 
 ---
 
-## 15. A quién acudir
+## 17. A quién acudir
 
 | Situación | A quién |
 | --- | --- |
@@ -3565,6 +4693,7 @@ Ni administración, ni sistemas, ni la gerencia. Nadie necesita tu clave para ha
 | La tasa del día está mal o no se ha cargado | Administración |
 | Un dato de un documento está equivocado | A tu supervisor, antes de tocar nada |
 | Una cifra no cuadra y no sé por qué | A tu supervisor |
+| El camión espera y falta un papel | A tu supervisor |
 | El sistema muestra un error o se comporta raro | Sistemas |
 
 Cuando reportes un problema a sistemas, la información que sirve es siempre la misma:
