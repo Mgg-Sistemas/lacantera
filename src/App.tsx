@@ -117,6 +117,25 @@ const Facturacion = lazy(() =>
 const PorCobrar = lazy(() =>
   import('@/pages/tesoreria/PorCobrar').then((m) => ({ default: m.PorCobrar })),
 )
+const Frentes = lazy(() =>
+  import('@/pages/explotacion/Frentes').then((m) => ({ default: m.Frentes })),
+)
+const Voladuras = lazy(() =>
+  import('@/pages/explotacion/Voladuras').then((m) => ({ default: m.Voladuras })),
+)
+const ProduccionTurno = lazy(() =>
+  import('@/pages/explotacion/Produccion').then((m) => ({ default: m.Produccion })),
+)
+const Tickets = lazy(() =>
+  import('@/pages/despachos/Tickets').then((m) => ({ default: m.Tickets })),
+)
+const Guias = lazy(() => import('@/pages/despachos/Guias').then((m) => ({ default: m.Guias })))
+const FacturasProveedor = lazy(() =>
+  import('@/pages/compras/FacturasProveedor').then((m) => ({ default: m.FacturasProveedor })),
+)
+const Prestaciones = lazy(() =>
+  import('@/pages/nomina/Prestaciones').then((m) => ({ default: m.Prestaciones })),
+)
 
 /**
  * Pantallas ya construidas, por ruta.
@@ -127,8 +146,15 @@ const PorCobrar = lazy(() =>
  * rutas no se pueden desincronizar.
  */
 const paginas: Record<string, ReactNode> = {
+  '/app/explotacion/frentes': <Frentes />,
+  '/app/explotacion/voladuras': <Voladuras />,
+  '/app/explotacion/produccion': <ProduccionTurno />,
+  '/app/despachos/tickets': <Tickets />,
+  '/app/despachos/guias': <Guias />,
   '/app/compras': <TableroCompras />,
   '/app/compras/proveedores': <Proveedores />,
+  '/app/compras/facturas': <FacturasProveedor />,
+  '/app/nomina/prestaciones': <Prestaciones />,
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,
   '/app/nomina/personal': <Personal />,

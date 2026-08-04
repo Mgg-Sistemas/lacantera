@@ -134,7 +134,10 @@ export const navigation: NavSection[] = [
         icon: Truck,
         children: [
           { label: 'Tickets de romana', to: '/app/despachos/tickets' },
-          { label: 'Guías de despacho', to: '/app/despachos/guias' },
+          // "De movilización" y no "de despacho": es el permiso del ministerio
+          // para que el camión circule con el mineral, no el papel que se le
+          // entrega al cliente. Ese es la nota de entrega y vive en Ventas.
+          { label: 'Guías de movilización', to: '/app/despachos/guias' },
         ],
       },
     ],

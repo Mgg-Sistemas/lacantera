@@ -382,6 +382,8 @@ export interface Despacho {
   flete?: number
   fecha?: string
   observacion?: string | null
+  ticket_id?: number | null
+  guia_id?: number | null
 }
 
 export function useDespachar() {
@@ -403,6 +405,10 @@ export function useDespachar() {
       p_flete: d.flete ?? 0,
       p_fecha: d.fecha || null,
       p_observacion: d.observacion || null,
+      // Los dos papeles de la garita. Con ticket, los pesos y la placa salen
+      // de la báscula; sin guía, la base rechaza el despacho de mineral.
+      p_ticket_id: d.ticket_id ?? null,
+      p_guia_id: d.guia_id ?? null,
     }),
   )
 }
@@ -610,34 +616,3 @@ export function usePorCobrar() {
   })
 }
 
-// ---------------------------------------------------------------------------
-// Producción
-//
-// No es de ventas, pero es lo que llena el patio del que sale. Sin una entrada
-// de producción no hay nada que despachar, y la primera vez que alguien abre
-// Ventas es justo lo que le falta.
-// ---------------------------------------------------------------------------
-
-export function useRegistrarProduccion() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (p: {
-      almacen_id: number
-      articulo_id: number
-      cantidad: number
-      nota: string
-      fecha?: string
-    }) =>
-      rpc<number>('registrar_produccion', {
-        p_almacen_id: p.almacen_id,
-        p_articulo_id: p.articulo_id,
-        p_cantidad: p.cantidad,
-        p_nota: p.nota,
-        p_fecha: p.fecha || null,
-      }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['existencias'] })
-      void qc.invalidateQueries({ queryKey: ['movimientos'] })
-    },
-  })
-}
