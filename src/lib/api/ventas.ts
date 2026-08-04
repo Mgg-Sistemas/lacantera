@@ -454,6 +454,8 @@ export interface FacturaVenta {
   emitida_en: string
   motivo_anulacion: string | null
   cobrado_usd: string
+  /** Lo que le han restado las notas de crédito. Baja el saldo igual que un cobro. */
+  acreditado_usd: string
   saldo_usd: string
   dias_vencida: number
   renglones: number
@@ -492,6 +494,117 @@ export function useFacturarNotas() {
 export function useAnularFactura() {
   return useAccionVentas((f: { id: number; motivo: string }) =>
     rpc<void>('anular_factura', { p_id: f.id, p_motivo: f.motivo }),
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Notas de crédito
+//
+// Corrigen una factura que ya salió de la empresa. Anular sirve mientras el
+// papel no se entregó; después el cliente tiene un documento fiscal que existe
+// y lo que corresponde es restarle por diferencia.
+// ---------------------------------------------------------------------------
+
+export const TIPOS_NOTA_CREDITO = [
+  {
+    valor: 'DEVOLUCION',
+    etiqueta: 'Devolución de material',
+    ayuda: 'El cliente devolvió lo despachado. Elige el patio y el material vuelve a existencia.',
+  },
+  {
+    valor: 'CORRECCION',
+    etiqueta: 'Se facturó de más',
+    ayuda: 'El precio o la cantidad quedaron por encima de lo acordado.',
+  },
+  {
+    valor: 'DESCUENTO',
+    etiqueta: 'Descuento posterior',
+    ayuda: 'Una rebaja acordada después de emitir la factura.',
+  },
+  {
+    valor: 'ANULACION',
+    etiqueta: 'Dejar la factura sin efecto',
+    ayuda: 'La venta no ocurrió, pero la factura ya estaba en manos del cliente.',
+  },
+]
+
+export interface NotaCredito {
+  id: number
+  numero: string
+  numero_control: string
+  factura_id: number
+  factura_numero: string
+  factura_control: string
+  factura_fecha: string
+  factura_total: string
+  cliente_id: number
+  cliente: string
+  cliente_rif: string
+  fecha: string
+  tipo: string
+  motivo: string
+  moneda: string
+  tasa: string
+  tasa_usd: string
+  alicuota_iva: string
+  subtotal: string
+  base_imponible: string
+  iva: string
+  total: string
+  total_bs: string
+  total_usd: string
+  estado: string
+  motivo_anulacion: string | null
+  emitida_en: string
+  renglones: number
+  devolvio_material: boolean
+}
+
+export function useNotasCredito(facturaId?: number | null) {
+  return useQuery({
+    queryKey: ['ventas', 'notas-credito', facturaId ?? 'todas'],
+    queryFn: async () => {
+      let q = supabase
+        .from('v_notas_credito')
+        .select('*')
+        .order('fecha', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(200)
+      if (facturaId) q = q.eq('factura_id', facturaId)
+      return desenvolver<NotaCredito[]>(await q)
+    },
+  })
+}
+
+export interface RenglonNotaCredito {
+  articulo_id: number
+  descripcion?: string
+  cantidad: number
+  unidad?: string
+  precio_unitario: number
+  exento_iva?: boolean
+  /** Con almacén el material vuelve al patio. Sin almacén solo se corrige plata. */
+  almacen_id?: number | null
+}
+
+export function useEmitirNotaCredito() {
+  return useAccionVentas<
+    { factura_id: number; tipo: string; motivo: string; renglones: RenglonNotaCredito[]; fecha?: string },
+    number
+  >((n) =>
+    rpc<number>('emitir_nota_credito', {
+      p_factura_id: n.factura_id,
+      p_tipo: n.tipo,
+      p_motivo: n.motivo,
+      p_renglones: n.renglones,
+      p_fecha: n.fecha || null,
+    }),
+  )
+}
+
+export function useAnularNotaCredito() {
+  return useAccionVentas((n: { id: number; motivo: string }) =>
+    rpc<void>('anular_nota_credito', { p_id: n.id, p_motivo: n.motivo }),
   )
 }
 

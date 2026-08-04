@@ -157,6 +157,10 @@ export const navigation: NavSection[] = [
           { label: 'Proveedores', to: '/app/compras/proveedores' },
           { label: 'Recepciones', to: '/app/compras/recepciones' },
           { label: 'Facturas de proveedor', to: '/app/compras/facturas' },
+          // El libro cuelga de Compras y no de un módulo fiscal propio porque
+          // quien lo saca es quien cargó las facturas, y porque así el permiso
+          // que ya gobierna las facturas gobierna también su libro.
+          { label: 'Libro de compras', to: '/app/compras/libro' },
         ],
       },
       {
@@ -173,6 +177,8 @@ export const navigation: NavSection[] = [
           { label: 'Cotizaciones', to: '/app/ventas/cotizaciones' },
           { label: 'Notas de entrega', to: '/app/ventas/despachos' },
           { label: 'Facturación', to: '/app/ventas/facturacion' },
+          { label: 'Notas de crédito', to: '/app/ventas/notas-credito' },
+          { label: 'Libro de ventas', to: '/app/ventas/libro' },
         ],
       },
       {
