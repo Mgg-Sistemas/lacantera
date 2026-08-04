@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { dinero } from '@/lib/formato'
+import { useTasaVigente } from '@/lib/api/tasas'
 import type { PrecioVenta } from '@/lib/api/ventas'
 import { filaVacia, type FilaRenglon } from './filas'
 
@@ -31,6 +32,32 @@ interface Props {
 }
 
 export function Renglones({ filas, onCambiar, precios, moneda, existencias }: Props) {
+  const { data: tasaHoy } = useTasaVigente()
+  const tasa = Number(tasaHoy?.tasa ?? 0)
+
+  /**
+   * El mínimo del artículo, puesto en la moneda del documento.
+   *
+   * El precio de lista puede estar en dólares y el documento salir en
+   * bolívares, que es lo normal aquí: material en divisas, clientes que
+   * facturan en bolívares. Comparar los dos números crudos avisaba de un
+   * "precio por debajo del mínimo" cada vez que se tecleaba una cifra en
+   * bolívares —siempre más grande que el mínimo en dólares—, y callaba en el
+   * caso contrario. La base sí convierte antes de comparar; esto hace lo mismo.
+   *
+   * Devuelve null cuando no se puede saber: sin tasa del día registrada, un
+   * aviso inventado es peor que ninguno.
+   */
+  const minimoEnMoneda = (p: PrecioVenta | undefined): number | null => {
+    const minimo = Number(p?.precio_minimo ?? 0)
+    if (!p || minimo <= 0) return null
+    if (p.moneda === moneda) return minimo
+    if (!tasa) return null
+    if (p.moneda === 'USD' && moneda === 'VES') return minimo * tasa
+    if (p.moneda === 'VES' && moneda === 'USD') return minimo / tasa
+    return null
+  }
+
   const cambiar = (clave: number, cambios: Partial<FilaRenglon>) =>
     onCambiar(filas.map((f) => (f.clave === clave ? { ...f, ...cambios } : f)))
 
@@ -55,8 +82,12 @@ export function Renglones({ filas, onCambiar, precios, moneda, existencias }: Pr
     <div className="space-y-3">
       {filas.map((fila, indice) => {
         const precio = precios.find((p) => String(p.articulo_id) === fila.articulo_id)
-        const minimo = Number(precio?.precio_minimo ?? 0)
-        const bajoMinimo = minimo > 0 && Number(fila.precio) > 0 && Number(fila.precio) < minimo
+        const minimo = minimoEnMoneda(precio)
+        const bajoMinimo = minimo !== null && Number(fila.precio) > 0 && Number(fila.precio) < minimo
+        const avisoMinimo =
+          bajoMinimo && minimo !== null
+            ? `Por debajo del mínimo de ${dinero(moneda, minimo)}`
+            : undefined
 
         const disponible = fila.articulo_id ? existencias?.[Number(fila.articulo_id)] : undefined
         const sinMaterial =
@@ -106,11 +137,7 @@ export function Renglones({ filas, onCambiar, precios, moneda, existencias }: Pr
                 inputMode="decimal"
                 value={fila.precio}
                 onChange={(e) => cambiar(fila.clave, { precio: e.target.value })}
-                hint={
-                  bajoMinimo
-                    ? `Por debajo del mínimo de ${dinero(precio?.moneda ?? moneda, minimo)}`
-                    : undefined
-                }
+                hint={avisoMinimo}
               />
             </div>
 
