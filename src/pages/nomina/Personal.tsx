@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { Pencil, Plus, Search, Trash2, UserMinus, Users } from 'lucide-react'
+import { IdCard, Pencil, Plus, Search, Trash2, UserMinus, Users } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -166,7 +166,7 @@ export function Personal() {
     <>
       <PageHeader
         title="Personal"
-        description="Quién trabaja aquí, desde cuándo y cuánto gana. De la fecha de ingreso salen la antigüedad, el bono vacacional y las prestaciones."
+        description="Quién trabaja aquí, desde cuándo y cuánto gana. De la fecha de ingreso salen la antigüedad, el bono vacacional y las prestaciones. La ficha de cada quien lleva su foto, su carnet y su constancia de trabajo."
         actions={
           puedeRRHH ? (
             <Button icon={<Plus />} onClick={() => abrir()}>
@@ -237,10 +237,15 @@ export function Personal() {
                   <tr key={e.id} className="border-hairline border-b last:border-0">
                     <td className="px-5 py-3">
                       {/* El nombre lleva a la ficha, no al formulario: mirar a
-                          alguien es mucho más frecuente que corregirle un dato. */}
+                          alguien es mucho más frecuente que corregirle un dato.
+                          Va subrayado al pasar por encima porque un nombre en
+                          una tabla no se lee como algo que se pueda pulsar, y
+                          quien no lo descubra no encuentra el carnet ni el PDF
+                          —que están ahí dentro. Por lo mismo hay además un
+                          botón con nombre al final de la fila. */}
                       <Link
                         to={`/app/nomina/personal/${e.id}`}
-                        className="text-ink/85 hover:text-royal-600 dark:hover:text-royal-300 font-medium"
+                        className="text-ink/85 hover:text-royal-600 dark:hover:text-royal-300 font-medium hover:underline"
                       >
                         {e.apellidos}, {e.nombres}
                       </Link>
@@ -281,6 +286,16 @@ export function Personal() {
                     </td>
                     <td className="px-5 py-3 text-right">
                       <div className="flex justify-end gap-1">
+                        {/* Primero, y con su nombre escrito: es la puerta al
+                            carnet, al PDF con todos los datos y a la constancia
+                            de trabajo. No pide RRHH porque mirar no es escribir:
+                            quien tenga Nómina en lectura entra igual, y adentro
+                            los botones de escribir ya se esconden solos. */}
+                        <Link to={`/app/nomina/personal/${e.id}`}>
+                          <Button size="sm" variant="ghost" icon={<IdCard />}>
+                            Ficha
+                          </Button>
+                        </Link>
                         {puedeRRHH ? (
                           <Button
                             size="sm"
