@@ -55,12 +55,61 @@ function pantallaDeFallo(mensaje: string) {
   raiz.append(caja)
 }
 
+/**
+ * El archivo que ya no está.
+ *
+ * `src/lib/version.ts` vigila los despliegues y recarga sola cuando sale una
+ * versión nueva, pero eso vive DENTRO de la aplicación. Si lo que falla es
+ * traer la aplicación misma, esa vigilancia no ha llegado a arrancar y lo único
+ * que quedaba era una pantalla muerta con un mensaje en inglés.
+ *
+ * Y falla de verdad: los archivos llevan un hash en el nombre, así que al
+ * publicar una versión cambian de nombre todos. Un HTML de hace un rato —el que
+ * tenía abierta una pestaña, el que guardó un proxy— pide un archivo que ya no
+ * existe con ese nombre.
+ *
+ * La cura es recargar: el HTML nuevo trae los nombres nuevos. Una sola vez, y
+ * con la misma cautela que el vigilante de versión: si al recargar vuelve a
+ * fallar, el HTML no viene del navegador sino de más atrás, y recargar otra vez
+ * solo dejaría la pantalla parpadeando. Entonces se dice qué pasó, en español y
+ * con qué hacer.
+ */
+const CLAVE_REINTENTO = 'lacantera:recarga-al-arrancar'
+
+/** El almacén de sesión no existe en algunos modos privados. Sin él no se
+ *  puede recordar el intento, y sin memoria no se recarga: sería un bucle. */
+function recordarIntento(): boolean {
+  try {
+    if (sessionStorage.getItem(CLAVE_REINTENTO)) return false
+    sessionStorage.setItem(CLAVE_REINTENTO, '1')
+    return true
+  } catch {
+    return false
+  }
+}
+
+function olvidarIntento() {
+  try {
+    sessionStorage.removeItem(CLAVE_REINTENTO)
+  } catch {
+    // Da igual: si no se pudo guardar, tampoco hay nada que borrar.
+  }
+}
+
+const esArchivoQueNoLlego = (e: unknown) =>
+  e instanceof Error &&
+  /dynamically imported module|Importing a module script failed|error loading dynamically imported/i.test(
+    e.message,
+  )
+
 /*
   La importación es dinámica a propósito: una estática se evalúa antes que el
   cuerpo de este archivo, y el error se escaparía sin que nadie lo recogiera.
 */
 try {
   const { default: App } = await import('./App.tsx')
+
+  olvidarIntento()
 
   createRoot(raiz).render(
     <StrictMode>
@@ -70,6 +119,16 @@ try {
     </StrictMode>,
   )
 } catch (error) {
-  pantallaDeFallo(error instanceof Error ? error.message : String(error))
-  throw error
+  if (esArchivoQueNoLlego(error) && recordarIntento()) {
+    location.reload()
+  } else if (esArchivoQueNoLlego(error)) {
+    pantallaDeFallo(
+      'Se publicó una versión nueva del sistema y tu navegador sigue trayendo la anterior. ' +
+        'Recarga con Ctrl+Shift+R. Si sigue igual, ábrelo en una ventana de incógnito y avisa a quien administra el sistema.',
+    )
+    throw error
+  } else {
+    pantallaDeFallo(error instanceof Error ? error.message : String(error))
+    throw error
+  }
 }

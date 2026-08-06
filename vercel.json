@@ -3,7 +3,8 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "_comentario_rewrites": "Todo va al index porque el enrutador vive en el navegador, MENOS /assets. Un archivo con hash que no existe tiene que dar 404: con la regla abierta devolvía el index entero con código 200 y tipo text/html, así que el navegador intentaba ejecutar una página web como si fuera JavaScript y el error que llegaba no se parecia en nada a la causa.",
+  "rewrites": [{ "source": "/((?!assets/).*)", "destination": "/index.html" }],
   "headers": [
     {
       "source": "/(.*)",

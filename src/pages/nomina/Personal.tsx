@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { IdCard, Pencil, Plus, Search, Trash2, UserMinus, Users } from 'lucide-react'
+import { IdCard, Pencil, Plus, Search, UserMinus, Users } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -19,7 +19,6 @@ import {
   GRUPOS_SANGUINEOS,
   JORNADAS,
   useEgresarEmpleado,
-  useEliminarEmpleado,
   useEmpleados,
   useGuardarEmpleado,
 } from '@/lib/api/nomina'
@@ -83,13 +82,11 @@ export function Personal() {
   const { puede } = useMisRoles()
   const guardar = useGuardarEmpleado()
   const egresar = useEgresarEmpleado()
-  const eliminar = useEliminarEmpleado()
 
   const [busca, setBusca] = useState('')
   const [edicion, setEdicion] = useState<Edicion | null>(null)
   const [saliendo, setSaliendo] = useState<Empleado | null>(null)
   const [egreso, setEgreso] = useState({ fecha: '', motivo: '' })
-  const [borrando, setBorrando] = useState<Empleado | null>(null)
 
   const puedeRRHH = puede('RRHH')
 
@@ -322,16 +319,13 @@ export function Personal() {
                             {e.activo ? 'Activo' : 'Egresado'}
                           </Chip>
                         )}
-                        {puedeRRHH ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            icon={<Trash2 />}
-                            aria-label={`Borrar la ficha de ${e.nombres} ${e.apellidos}`}
-                            title="Borrar la ficha"
-                            onClick={() => setBorrando(e)}
-                          />
-                        ) : null}
+                        {/* Aquí había una papelera. Se quitó: una ficha de
+                            personal no se borra, se desincorpora con "Egresar"
+                            y su motivo escrito —"cargada por error" también es
+                            un motivo—. Deja de salir entre los activos, que es
+                            lo único que se quería, y se puede leer lo que pasó.
+                            El borrado era la única acción del sistema que no se
+                            podía deshacer desde la pantalla. */}
                       </div>
                     </td>
                   </tr>
@@ -659,8 +653,8 @@ export function Personal() {
             <Textarea
               label="Motivo"
               rows={3}
-              placeholder="Renuncia, despido justificado, fin de contrato…"
-              hint="De él dependen las prestaciones que le tocan."
+              placeholder="Renuncia, despido justificado, fin de contrato, cargada por error…"
+              hint="De él dependen las prestaciones que le tocan. Si la ficha se cargó por error o está duplicada, escríbelo tal cual: es la forma de sacarla de la lista sin borrar nada."
               value={egreso.motivo}
               onChange={(e) => setEgreso((g) => ({ ...g, motivo: e.target.value }))}
             />
@@ -669,54 +663,6 @@ export function Personal() {
         </Modal>
       ) : null}
 
-      {/* ---------------------------- Borrar ---------------------------- */}
-      {/* Borrar no es egresar. Esto es para la ficha cargada por error: un
-          nombre mal escrito, una cédula repetida, alguien metido dos veces.
-          Si esa persona cobró alguna vez, la base no deja — y hace bien: el
-          libro de nómina dejaría de cuadrar contra lo que salió de tesorería,
-          y eso no se descubre hasta el cierre del mes. */}
-      {borrando ? (
-        <Modal
-          abierto
-          onCerrar={() => setBorrando(null)}
-          titulo={`Borrar la ficha de ${borrando.nombres} ${borrando.apellidos}`}
-          descripcion="Desaparece del sistema sin dejar rastro. No es lo mismo que egresar."
-          ancho="sm"
-          acciones={
-            <>
-              <Button variant="ghost" onClick={() => setBorrando(null)}>
-                Cancelar
-              </Button>
-              <Button
-                variant="danger"
-                disabled={eliminar.isPending}
-                onClick={async () => {
-                  await eliminar.mutateAsync(borrando.id)
-                  setBorrando(null)
-                }}
-              >
-                {eliminar.isPending ? 'Borrando…' : 'Borrar la ficha'}
-              </Button>
-            </>
-          }
-        >
-          <div className="space-y-3">
-            <p className="text-ink/70 text-sm leading-relaxed">
-              Esto es para una ficha cargada por error. Si{' '}
-              <strong className="text-ink/90 font-medium">
-                {borrando.nombres} {borrando.apellidos}
-              </strong>{' '}
-              trabajó aquí de verdad, ciérrale el ciclo con{' '}
-              <strong className="text-ink/90 font-medium">Egresar</strong>: su historia se conserva
-              y sigue estando para una inspección o para él mismo.
-            </p>
-            <p className="text-ink/50 text-xs leading-relaxed">
-              Si ya cobró alguna nómina, el sistema no va a dejar borrarlo.
-            </p>
-            {eliminar.error ? <ErrorDeCarga error={eliminar.error} /> : null}
-          </div>
-        </Modal>
-      ) : null}
     </>
   )
 }
