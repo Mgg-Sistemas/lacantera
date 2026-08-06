@@ -13,7 +13,7 @@ import type { Periodo, Recibo } from '@/lib/api/nomina'
 import { useSesion } from '@/lib/sesion'
 import { armarRecibo, armarRecibos } from '@/lib/ficha/reciboPdf'
 import type { DatosRecibo, FirmaEmpresa, PdfArmado } from '@/lib/ficha/reciboPdf'
-import { VisorPdf } from '@/components/VisorPdf'
+import { Visor } from '@/components/Visor'
 import { bolivares, dolares, fecha } from '@/lib/formato'
 
 /**
@@ -351,7 +351,7 @@ export function Recibos() {
           </div>
         </Modal>
       ) : null}
-      <VisorPdf
+      <Visor
         abierto={vista !== null}
         onCerrar={() => setVista(null)}
         blob={vista?.blob ?? null}

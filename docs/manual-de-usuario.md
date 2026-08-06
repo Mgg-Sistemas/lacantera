@@ -3109,9 +3109,9 @@ Lo que no tiene dato sale con un guion. Para cambiar cualquiera de estos datos h
 
 En la tarjeta de abajo hay tres botones: **Ficha completa (PDF)**, **Carnet (imagen)** y **Constancia de trabajo**. El pie de esa tarjeta explica para qué es cada uno:
 
-> *"El PDF trae todos los datos en A4. La imagen es el carnet de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—, que es lo que pide una imprenta para que no salga pixelado. La constancia es la carta que se entrega a un banco o a quien la pida."*
+> *"Los tres se abren en pantalla antes de guardarse. El PDF trae todos los datos en A4. La imagen es el carnet de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—, que es lo que pide una imprenta para que no salga pixelado. La constancia es la carta que se entrega a un banco o a quien la pida."*
 
-**La ficha y el carnet se descargan directamente.** La constancia no: se abre antes en el visor, con **Cerrar** y **Descargar**, y con el aviso *"Revísala antes de entregarla. La firma va a mano."*
+**Los tres se abren primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que pulses **Descargar**. El carnet se ve entero, como saldrá impreso, para comprobar antes de mandarlo a la imprenta que la cara está centrada y que ningún dato salió en guion. La constancia además avisa: *"Revísala antes de entregarla. La firma va a mano."*
 
 #### Emitir una constancia de trabajo
 
@@ -3756,12 +3756,12 @@ Dos cosas más sobre borrar:
 
 #### Los documentos que salen del módulo
 
-Son cuatro, y salen de dos sitios distintos:
+Son cuatro, salen de dos sitios distintos y **los cuatro se abren en pantalla antes de guardarse**:
 
 | Documento | De dónde sale | Cómo sale |
 | --- | --- | --- |
-| **Ficha completa (PDF)** | La ficha del trabajador | Se descarga directamente |
-| **Carnet (imagen)** | La ficha del trabajador | Se descarga directamente |
+| **Ficha completa (PDF)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
+| **Carnet (imagen)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
 | **Constancia de trabajo** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
 | **Recibo de pago** | Recibos de pago | Se abre en el visor y se descarga desde ahí |
 
@@ -4498,9 +4498,11 @@ Pulsa la papelera. La ventana lo dice sin rodeos: **Se borra {nombre} y también
 
 #### Ver y descargar
 
-Pulsa **Ver** y el papel se abre a pantalla completa, en una ventana negra con el título arriba y el documento en el centro. Desde ahí se puede pasar página, acercar e imprimir con los controles del navegador. Abajo hay dos botones, **Cerrar** y **Descargar**; la tecla **Escape** también cierra la vista.
+Pulsa **Ver** y el papel se abre a pantalla completa, en una ventana negra con el título arriba y el documento en el centro. Si es un PDF, desde ahí se puede pasar página, acercar e imprimir con los controles del navegador; si es una imagen —un acta fotografiada, por ejemplo— se ve entera y encajada en la ventana. Abajo hay dos botones, **Cerrar** y **Descargar**; la tecla **Escape** también cierra la vista.
 
-Al descargar, el archivo se guarda con el nombre del documento y no con el nombre revuelto con el que estaba guardado, para que se pueda encontrar después en la carpeta de descargas.
+En la lista, el icono de cada renglón dice cuál de las dos cosas es antes de pulsar.
+
+Al descargar, el archivo se guarda con el nombre del documento y con la extensión que le corresponde —`.pdf` o la de la imagen—, y no con el nombre revuelto con el que estaba guardado, para que se pueda encontrar después en la carpeta de descargas.
 
 **La dirección desde la que se abre deja de servir a los diez minutos.** No sirve para pasársela a nadie por mensaje: quien la reciba encontrará un enlace muerto. Si alguien necesita el papel, lo correcto es que lo abra desde el sistema con su propio usuario, y si no llega es porque su rol no debe verlo.
 

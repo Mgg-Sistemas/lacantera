@@ -5,23 +5,26 @@ import { Button } from '@/components/ui/Button'
 /**
  * Ver el papel antes de quedárselo.
  *
- * Hasta ahora los PDF del sistema se descargaban de golpe: se pulsaba y
- * aparecía un archivo en la carpeta de descargas. Para un recibo que hay que
- * revisar antes de imprimir eso obliga a un rodeo —bajarlo, buscarlo, abrirlo,
- * y borrarlo si estaba mal—, y la carpeta se llena de intentos.
+ * Los documentos del sistema se descargaban de golpe: se pulsaba y aparecía un
+ * archivo en la carpeta de descargas. Para un recibo, una factura o un carnet
+ * que hay que revisar antes de imprimir eso obliga a un rodeo —bajarlo,
+ * buscarlo, abrirlo, y borrarlo si estaba mal—, y la carpeta se llena de
+ * intentos.
  *
- * Aquí se ve primero y se decide después. El visor es el del propio navegador:
- * ya sabe pasar páginas, acercar e imprimir, y trae su propio botón de
- * descarga. El de abajo se añade porque el del navegador no siempre está a la
- * vista —en un teléfono suele esconderse— y porque nombra el archivo como debe
- * llamarse, no con un identificador.
+ * Aquí se ve primero y se decide después, y da igual que sea un PDF o una
+ * imagen: la puerta es la misma y siempre tiene los dos botones, cerrar y
+ * descargar.
+ *
+ * El PDF lo pinta el visor del navegador, que ya sabe pasar páginas, acercar e
+ * imprimir. La imagen no necesita nada de eso: se enseña entera, encajada en el
+ * hueco, que es como se revisa un carnet antes de mandarlo a la imprenta.
  */
-interface VisorPdfProps {
+interface VisorProps {
   abierto: boolean
   onCerrar: () => void
   /**
-   * El PDF ya armado en memoria. Para lo que genera el propio sistema —un
-   * recibo de nómina— que nace aquí y no hay que ir a buscar.
+   * El archivo ya armado en memoria. Para lo que genera el propio sistema —un
+   * recibo, un carnet— que nace aquí y no hay que ir a buscar.
    */
   blob?: Blob | null
   /**
@@ -30,14 +33,34 @@ interface VisorPdfProps {
    * acta escaneada de 17 MB es la diferencia entre abrir y esperar.
    */
   href?: string | null
-  /** Con el que se guarda. Debe terminar en .pdf */
+  /** Con el que se guarda. Con su extensión, que es de donde se deduce el tipo. */
   nombreArchivo: string
   titulo: string
   /** Una línea sobre qué se está mirando. */
   descripcion?: string
+  /**
+   * El tipo declarado, cuando se sabe. Manda sobre la extensión del nombre
+   * porque un archivo puede haberse subido llamándose "acta" a secas.
+   */
+  mime?: string | null
 }
 
-export function VisorPdf({
+const EXTENSIONES_IMAGEN = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif', 'bmp']
+
+/**
+ * Si lo que viene es una imagen.
+ *
+ * Se mira primero el tipo real del blob, luego el declarado y por último la
+ * extensión del nombre. En ese orden porque el blob no miente: lo acaba de
+ * fabricar el sistema.
+ */
+function esImagen(blob: Blob | null | undefined, mime: string | null | undefined, nombre: string) {
+  const declarado = blob?.type || mime || ''
+  if (declarado) return declarado.startsWith('image/')
+  return EXTENSIONES_IMAGEN.includes(nombre.split('.').pop()?.toLowerCase() ?? '')
+}
+
+export function Visor({
   abierto,
   onCerrar,
   blob,
@@ -45,7 +68,8 @@ export function VisorPdf({
   nombreArchivo,
   titulo,
   descripcion,
-}: VisorPdfProps) {
+  mime,
+}: VisorProps) {
   const [deMemoria, setDeMemoria] = useState<string | null>(null)
   const [bajando, setBajando] = useState(false)
 
@@ -53,7 +77,8 @@ export function VisorPdf({
     La dirección temporal vive lo que vive el visor.
 
     `createObjectURL` reserva memoria hasta que se revoca a mano. Sin este
-    efecto, abrir diez recibos seguidos deja diez PDF cargados en el navegador.
+    efecto, abrir diez recibos seguidos deja diez archivos cargados en el
+    navegador.
   */
   useEffect(() => {
     if (!abierto || !blob) return
@@ -84,15 +109,17 @@ export function VisorPdf({
 
   if (!abierto) return null
 
+  const imagen = esImagen(blob, mime, nombreArchivo)
+
   /*
     Guardarlo con el nombre que le toca.
 
-    Con el PDF en memoria basta apuntar el enlace. Con una dirección firmada no:
-    `download` se ignora cuando el archivo viene de otro dominio, y el navegador
-    lo guardaría con el identificador aleatorio del almacén en vez de con el
-    nombre del documento. Por eso se trae primero. Cuesta una segunda petición,
-    pero solo la paga quien decide quedárselo, y el archivo suele venir ya de la
-    caché de haberlo mirado.
+    Con el archivo en memoria basta apuntar el enlace. Con una dirección firmada
+    no: `download` se ignora cuando el archivo viene de otro dominio, y el
+    navegador lo guardaría con el identificador aleatorio del almacén en vez de
+    con el nombre del documento. Por eso se trae primero. Cuesta una segunda
+    petición, pero solo la paga quien decide quedárselo, y el archivo suele venir
+    ya de la caché de haberlo mirado.
   */
   const descargar = async () => {
     if (!url) return
@@ -145,19 +172,38 @@ export function VisorPdf({
         </header>
 
         <div className="bg-ink/6 min-h-0 flex-1">
-          {url ? (
-            <iframe
-              src={`${url}#view=FitH`}
-              title={titulo}
-              className="size-full border-0"
-            />
-          ) : (
-            /* Sin blob no hay nada que enseñar. Pasa si la generación falló:
+          {!url ? (
+            /* Sin archivo no hay nada que enseñar. Pasa si la generación falló:
                mejor decirlo que dejar un rectángulo gris sin explicación. */
             <div className="text-ink/50 flex h-full flex-col items-center justify-center gap-3 p-8 text-center text-sm">
               <FileWarning className="size-8 opacity-60" />
               No se pudo preparar el documento.
             </div>
+          ) : imagen ? (
+            /*
+              La imagen encajada y sobre un fondo neutro.
+
+              `object-contain` y no `cover`: un carnet recortado por los bordes
+              en la vista previa es exactamente lo que esta pantalla existe para
+              evitar. El fondo a cuadros deja ver dónde acaba el papel cuando la
+              imagen tiene zonas blancas o transparentes.
+            */
+            <div className="flex h-full items-center justify-center p-4 sm:p-6">
+              <img
+                src={url}
+                alt={titulo}
+                className="max-h-full max-w-full object-contain shadow-lg"
+                style={{
+                  backgroundColor: '#fff',
+                  backgroundImage:
+                    'linear-gradient(45deg, rgba(0,0,0,.06) 25%, transparent 25%, transparent 75%, rgba(0,0,0,.06) 75%), linear-gradient(45deg, rgba(0,0,0,.06) 25%, transparent 25%, transparent 75%, rgba(0,0,0,.06) 75%)',
+                  backgroundSize: '16px 16px',
+                  backgroundPosition: '0 0, 8px 8px',
+                }}
+              />
+            </div>
+          ) : (
+            <iframe src={`${url}#view=FitH`} title={titulo} className="size-full border-0" />
           )}
         </div>
 

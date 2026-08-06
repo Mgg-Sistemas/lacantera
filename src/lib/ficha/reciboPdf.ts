@@ -24,6 +24,7 @@
 
 import { marcaComoImagen, MARCA_SOBRE_OSCURO } from './marca'
 import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, DER, IZQ } from './hoja'
+import type { ArchivoArmado } from './armado'
 import { EMPRESA } from '@/lib/empresa'
 
 const AZUL = '#1D358F'
@@ -380,16 +381,11 @@ function hoja(doc: Doc, d: DatosRecibo) {
 /**
  * El PDF armado, sin guardarlo.
  *
- * Antes esto terminaba en `doc.save(...)` y el archivo caía en la carpeta de
- * descargas sin que nadie lo hubiera visto. Para un recibo que hay que revisar
- * antes de repartir, eso obliga a bajarlo, abrirlo y borrarlo si estaba mal.
- * Devolver el blob deja que la pantalla lo enseñe primero y que la persona
- * decida si se lo queda.
+ * Es el mismo `ArchivoArmado` que devuelven el carnet y la ficha: un blob y el
+ * nombre con el que debe guardarse. Se conserva el nombre viejo porque media
+ * docena de pantallas lo llaman así y renombrarlo no arreglaría nada.
  */
-export interface PdfArmado {
-  blob: Blob
-  nombre: string
-}
+export type PdfArmado = ArchivoArmado
 
 export async function armarRecibo(d: DatosRecibo): Promise<PdfArmado> {
   const { jsPDF } = await import('jspdf')
