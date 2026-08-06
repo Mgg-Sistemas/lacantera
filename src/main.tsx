@@ -68,6 +68,13 @@ function pantallaDeFallo(mensaje: string) {
  * tenía abierta una pestaña, el que guardó un proxy— pide un archivo que ya no
  * existe con ese nombre.
  *
+ * Va junto con una regla de `vercel.json`, que no admite comentarios y por eso
+ * se explica aquí: la reescritura que manda todo al index deja fuera `/assets`.
+ * Con la regla abierta, un archivo con hash que ya no existe devolvía el index
+ * entero con código 200 y tipo `text/html`, así que el navegador intentaba
+ * ejecutar una página web como si fuera JavaScript y el error que llegaba no se
+ * parecía en nada a la causa. Ahora falta lo que falta, y se dice 404.
+ *
  * La cura es recargar: el HTML nuevo trae los nombres nuevos. Una sola vez, y
  * con la misma cautela que el vigilante de versión: si al recargar vuelve a
  * fallar, el HTML no viene del navegador sino de más atrás, y recargar otra vez
