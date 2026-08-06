@@ -3107,11 +3107,13 @@ Lo que no tiene dato sale con un guion. Para cambiar cualquiera de estos datos h
 
 #### Los documentos
 
-En la tarjeta de abajo hay tres botones: **Ficha completa (PDF)**, **Carnet (imagen)** y **Constancia de trabajo**. El pie de esa tarjeta explica para qué es cada uno:
+En la tarjeta de abajo hay cuatro botones: **Ficha completa (PDF)**, **Carnet · frente**, **Carnet · reverso** y **Constancia de trabajo**. El pie de esa tarjeta explica para qué es cada uno:
 
-> *"Los tres se abren en pantalla antes de guardarse. El PDF trae todos los datos en A4. La imagen es el carnet de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—, que es lo que pide una imprenta para que no salga pixelado. La constancia es la carta que se entrega a un banco o a quien la pida."*
+> *"Todo se abre en pantalla antes de guardarse. El PDF trae todos los datos en A4. El carnet sale en dos imágenes, cada una de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—, que es lo que pide una imprenta para que no salga pixelado: el frente es de esta persona, y el reverso lleva la marca y el RIF y es igual para todos. La constancia es la carta que se entrega a un banco o a quien la pida."*
 
-**Los tres se abren primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que pulses **Descargar**. El carnet se ve entero, como saldrá impreso, para comprobar antes de mandarlo a la imprenta que la cara está centrada y que ningún dato salió en guion. La constancia además avisa: *"Revísala antes de entregarla. La firma va a mano."*
+**Todo se abre primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que pulses **Descargar**. El carnet se ve entero, como saldrá impreso, para comprobar antes de mandarlo a la imprenta que la cara está centrada y que ningún dato salió en guion. La constancia además avisa: *"Revísala antes de entregarla. La firma va a mano."*
+
+**El reverso es el mismo para todos.** No lleva ningún dato del trabajador: solo la marca, la razón social y el RIF. Se baja una vez y se manda a la imprenta una vez; no hace falta repetirlo por cada persona. Sale igual aunque lo pidas desde la ficha de cualquiera.
 
 #### Emitir una constancia de trabajo
 
@@ -3756,21 +3758,23 @@ Dos cosas más sobre borrar:
 
 #### Los documentos que salen del módulo
 
-Son cuatro, salen de dos sitios distintos y **los cuatro se abren en pantalla antes de guardarse**:
+Son cinco, salen de dos sitios distintos y **todos se abren en pantalla antes de guardarse**:
 
 | Documento | De dónde sale | Cómo sale |
 | --- | --- | --- |
 | **Ficha completa (PDF)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
-| **Carnet (imagen)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
+| **Carnet · frente (imagen)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
+| **Carnet · reverso (imagen)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
 | **Constancia de trabajo** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
 | **Recibo de pago** | Recibos de pago | Se abre en el visor y se descarga desde ahí |
 
 - **La ficha** va en A4 con todos los datos de la pantalla, la foto, el estado de la persona y dos renglones de firma: **Firma del trabajador** y **Recursos humanos**. Al pie lleva quién la emitió y cuándo, y el rótulo **Documento interno**.
-- **El carnet** sale con la medida y la resolución que pide una imprenta para que no salga pixelado. Lleva la foto, el nombre, el cargo y cuatro datos: **Cédula**, **Departamento**, **Ingreso** y **Sangre**.
+- **El frente del carnet** sale con la medida y la resolución que pide una imprenta para que no salga pixelado. Lleva la foto, el nombre, el cargo y cuatro datos: **Cédula**, **Departamento**, **Ingreso** y **Sangre**.
+- **El reverso del carnet** lleva la marca, la razón social y el RIF, y nada más. Es el mismo para todo el personal: se baja una vez.
 - **La constancia** es la carta que se entrega a un banco o a quien la pida. Va en papel de la empresa, redactada en el tiempo verbal correcto según la persona siga trabajando o ya no, y con el sueldo dentro o fuera según dejes marcada la casilla **Incluir el sueldo**. Lleva un recuadro que repite el nombre, la cédula y la ficha para poder cotejarlos.
 - **El recibo** sale siempre por duplicado, original y copia, y esa es la mitad de su valor: la copia firmada por el trabajador es la constancia de que cobró.
 
-Los cuatro llevan al pie quién los emitió y cuándo. Y los tres que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano.
+La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo. Y los que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano. Las dos caras del carnet no llevan pie ni firma: en una tarjeta de 54 mm no cabe, y no hace falta.
 
 ### 11.12 Cuando el sistema no te deja
 
