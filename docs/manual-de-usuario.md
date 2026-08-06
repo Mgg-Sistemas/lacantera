@@ -3155,10 +3155,10 @@ La escala tiene estas columnas:
 | **Cargo** | El nombre y, debajo, cuánta gente está en ese nivel, y **inactivo** si no está vigente |
 | **Mensual** | Lo único que se guarda |
 | **Quincenal** | Su mitad, calculada cada vez |
-| **Alimentación** | El bono mensual |
-| **Total mes** | El mensual más el bono |
 
 El pie de la tabla vuelve a decirlo, porque es el punto de todo: *"Solo se guarda el mensual. El quincenal es su mitad y se calcula cada vez, así que las dos cifras no pueden acabar diciendo cosas distintas."*
+
+**El tabulador no lleva el bono de alimentación.** Lo llevó hasta el 6 de agosto de 2026, en una columna por cargo, y se quitó: el beneficio de alimentación es el mismo para toda la empresa, se carga una sola vez en **Parámetros de nómina** —con su fecha de vigencia y el decreto del que sale— y es de ahí de donde la nómina lo paga. Escrito también aquí, el día que cambiara el anuncio el tabulador seguiría enseñando el monto viejo, y el tabulador es justamente la pantalla que se consulta para saber cuánto gana un cargo.
 
 #### Crear o editar un cargo
 
@@ -3172,12 +3172,11 @@ El pie de la tabla vuelve a decirlo, porque es el punto de todo: *"Solo se guard
 | **Sueldo mensual** | Sí | |
 | **Moneda** | — | Empieza en **$** |
 | **Quincena** | — | **Está bloqueada.** Se calcula sola mientras escribes el mensual: *"La mitad del mensual. Se calcula sola."* |
-| **Bono de alimentación** | No | *"Al mes. No es salario, va aparte."* |
 | **Orden en la lista** | No | *"Menor sale primero. El tabulador se lee como una escala, no en alfabético."* |
 | **Vigente** | — | Viene marcada |
 | **Nota** | No | |
 
-Con un sueldo cargado, una banda gris te dice el total que cobrará quien esté en ese cargo contando el bono de alimentación.
+Debajo, una banda gris recuerda dónde está lo que no se escribe aquí: *"Aquí solo va el sueldo. El beneficio de alimentación es el mismo para todos y se carga una sola vez en Parámetros de nómina."* — con enlace directo a esa pantalla.
 
 El nombre del cargo **se guarda en mayúsculas y sin tildes**, y no se puede repetir. La razón es que «Vigilante» y «VIGILANTE» acabarían siendo dos niveles distintos y nadie sabría cuál es el bueno.
 

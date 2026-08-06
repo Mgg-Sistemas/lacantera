@@ -24,7 +24,6 @@ import { dinero } from '@/lib/formato'
 const vacio = {
   cargo: '',
   sueldo_mensual: '',
-  bono_mensual: '40',
   moneda: 'USD',
   orden: '100',
   activo: true,
@@ -59,7 +58,6 @@ export function Tabulador() {
             id: n.id,
             cargo: n.cargo,
             sueldo_mensual: n.sueldo_mensual,
-            bono_mensual: n.bono_mensual,
             moneda: n.moneda,
             orden: String(n.orden),
             activo: n.activo,
@@ -203,17 +201,16 @@ export function Tabulador() {
       {data && data.length > 0 ? (
         <Card flush>
           <div className="overflow-x-auto">
-            {/* Menos ancho mínimo desde que se fueron el semanal y el diario:
-                con el de antes, en un teléfono la tabla arrastraba un scroll
-                horizontal que ya no hace falta. */}
-            <table className="w-full min-w-[620px] text-sm">
+            {/* Menos ancho mínimo cada vez que se va una columna: primero el
+                semanal y el diario, ahora la alimentación y el total. Con el de
+                antes, en un teléfono la tabla arrastraba un scroll horizontal
+                que ya no hace falta. */}
+            <table className="w-full min-w-[440px] text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Cargo</th>
                   <th className="px-3 py-3 text-right font-medium">Mensual</th>
                   <th className="px-3 py-3 text-right font-medium">Quincenal</th>
-                  <th className="px-3 py-3 text-right font-medium">Alimentación</th>
-                  <th className="px-3 py-3 text-right font-medium">Total mes</th>
                   <th className="px-5 py-3 text-right font-medium"></th>
                 </tr>
               </thead>
@@ -236,12 +233,6 @@ export function Tabulador() {
                     </td>
                     <td className="text-ink/70 tabular px-3 py-3 text-right whitespace-nowrap">
                       {cifra(n.moneda, n.sueldo_quincenal)}
-                    </td>
-                    <td className="text-ink/55 tabular px-3 py-3 text-right whitespace-nowrap">
-                      {dinero(n.moneda, n.bono_mensual)}
-                    </td>
-                    <td className="text-ink/85 tabular px-3 py-3 text-right font-medium whitespace-nowrap">
-                      {dinero(n.moneda, n.total_mensual)}
                     </td>
                     <td className="px-5 py-3 text-right">
                       {puedeRRHH ? (
@@ -354,16 +345,6 @@ export function Tabulador() {
             />
 
             <Input
-              label="Bono de alimentación"
-              type="number"
-              step="0.01"
-              inputMode="decimal"
-              hint="Al mes. No es salario, va aparte."
-              value={edicion.bono_mensual}
-              onChange={(e) => cambiar({ bono_mensual: e.target.value })}
-            />
-
-            <Input
               label="Orden en la lista"
               type="number"
               hint="Menor sale primero. El tabulador se lee como una escala, no en alfabético."
@@ -382,18 +363,22 @@ export function Tabulador() {
             </label>
           </div>
 
-          {edicion.sueldo_mensual && Number(edicion.sueldo_mensual) > 0 ? (
-            <p className="text-ink/50 bg-ink/4 mt-4 rounded-[6px] px-3 py-2 text-xs">
-              Quien esté en este cargo cobra{' '}
-              <strong className="text-ink/75 font-medium">
-                {dinero(
-                  edicion.moneda,
-                  Number(edicion.sueldo_mensual) + Number(edicion.bono_mensual || 0),
-                )}
-              </strong>{' '}
-              al mes contando el bono de alimentación.
-            </p>
-          ) : null}
+          {/* El beneficio de alimentación no se escribe aquí a propósito: es un
+              solo número para toda la empresa, vive en Parámetros de nómina con
+              su vigencia y su origen legal, y es el que la nómina paga. Escrito
+              también por cargo, el día que cambie el anuncio el tabulador se
+              quedaría diciendo el monto viejo. */}
+          <p className="text-ink/45 bg-ink/4 mt-4 rounded-[6px] px-3 py-2 text-xs">
+            Aquí solo va el sueldo. El beneficio de alimentación es el mismo para todos y se carga
+            una sola vez en{' '}
+            <Link
+              to="/app/nomina/parametros"
+              className="text-royal-600 hover:text-royal-700 dark:text-royal-300 font-medium"
+            >
+              Parámetros de nómina
+            </Link>
+            .
+          </p>
 
           <div className="mt-4">
             <Textarea

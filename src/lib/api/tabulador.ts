@@ -15,13 +15,11 @@ export interface NivelTabulador {
   id: number
   cargo: string
   sueldo_mensual: string
-  bono_mensual: string
   moneda: string
   orden: number
   activo: boolean
   nota: string | null
   actualizado_en: string
-  total_mensual: string
   /** Nulos si falta el parámetro `tabulador_dias_mes`. La pantalla muestra un guion. */
   sueldo_quincenal: string | null
   sueldo_semanal: string | null
@@ -107,7 +105,6 @@ export function useGuardarNivel() {
       id?: number
       cargo: string
       sueldo_mensual: number | string
-      bono_mensual: number | string
       moneda: string
       orden: number | string
       activo: boolean
@@ -117,7 +114,6 @@ export function useGuardarNivel() {
         p_id: n.id ?? null,
         p_cargo: n.cargo,
         p_sueldo: Number(n.sueldo_mensual),
-        p_bono: Number(n.bono_mensual || 0),
         p_moneda: n.moneda,
         p_orden: Number(n.orden || 100),
         p_activo: n.activo,
