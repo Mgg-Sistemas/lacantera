@@ -2988,7 +2988,7 @@ El registro de quién trabaja en la empresa. La pantalla lo dice así: *"Quién 
 
 Arriba a la derecha, y solo con el rol de recursos humanos, el botón **Nuevo trabajador**.
 
-Debajo, dos filtros: **Buscar**, que acepta el nombre, la cédula o el cargo, y la casilla **Incluir a quienes ya no trabajan aquí**, que viene **desmarcada**: la lista trae solo a quien está activo.
+Debajo, dos filtros: **Buscar**, que acepta el nombre, la cédula o el cargo, y la casilla **Incluir a los desincorporados**, que viene **desmarcada**: la lista trae solo a quien está activo.
 
 Si todavía no hay nadie cargado, la pantalla muestra **Todavía no hay personal cargado**, el texto *"Sin trabajadores no se puede calcular una nómina."* y el botón **Cargar el primero**.
 
@@ -2996,12 +2996,12 @@ La lista tiene estas columnas:
 
 | Columna | Qué muestra |
 | --- | --- |
-| **Trabajador** | Apellidos y nombres, como enlace a su ficha; debajo, la cédula y el número de ficha, y **egresado** si ya no trabaja aquí |
+| **Trabajador** | Apellidos y nombres, como enlace a su ficha. Si la persona ya no está, al lado del nombre va una etiqueta roja **Desincorporado** y debajo, en pequeño, el motivo. Luego la cédula y el número de ficha |
 | **Cargo** | El cargo y, debajo, el departamento |
 | **Ingreso** | La fecha de ingreso y, debajo, la antigüedad, o **hasta** la fecha de egreso si egresó. Si la fecha de ingreso no está confirmada, en su lugar sale una etiqueta ámbar **Por confirmar** |
 | **Salario** | El monto con su símbolo y, debajo, la base y la frecuencia |
 
-En cada fila hay un botón **Ficha** para todos, y para recursos humanos además el lápiz para editar y **Egresar** (solo si la persona está activa). Quien no tenga ese rol ve en su lugar la etiqueta **Activo** o **Egresado**.
+En cada fila hay un botón **Ficha** para todos, y para recursos humanos además el lápiz para editar y **Desincorporar** (solo si la persona está activa). Quien no tenga ese rol ve en su lugar la etiqueta verde **Activo**. Al final de la fila de un desincorporado no va nada: su etiqueta ya está junto al nombre, y repetirla enseñaría lo mismo dos veces.
 
 **Ya no hay papelera.** Hasta el 6 de agosto de 2026 existía un botón para borrar una ficha; se quitó. Ver más abajo, en «Las fichas no se borran».
 
@@ -3062,7 +3062,7 @@ Cuando una ficha viene de la carga del libro de nómina y su fecha de ingreso na
 3. Escribe el **Motivo**. Son mínimo cuatro letras y el sistema no las deja en blanco, porque *"De él dependen las prestaciones que le tocan."*
 4. Pulsa **Egresar**.
 
-La ventana lo resume: *"Deja de entrar en las nóminas siguientes. Su historial se conserva entero."* Egresar **no borra nada**: guarda la fecha, el motivo, y la persona deja de aparecer en la lista salvo que marques **Incluir a quienes ya no trabajan aquí**.
+La ventana lo resume: *"Deja de entrar en las nóminas siguientes y queda marcado en la lista. Su historial se conserva entero: no se borra nada."* Desincorporar **no borra nada**: guarda la fecha y el motivo, y la persona deja de aparecer en la lista salvo que marques **Incluir a los desincorporados**.
 
 **Egresar aquí no le calcula la liquidación, y además cierra la puerta para calcularla.** La liquidación se hace en **Nómina › Prestaciones sociales** (ver 11.10), y esa pantalla solo deja liquidar a quien está activo. Si egresas primero, la persona queda con su saldo de prestaciones a la vista y sin forma de cerrarle la cuenta. El sistema no avisa de esto.
 
@@ -3084,7 +3084,7 @@ Es la pantalla donde se ve de un vistazo todo lo de una persona y **desde donde 
 
 #### Qué se ve
 
-Arriba, el nombre completo y, debajo, el número de ficha, el cargo y el departamento. A la derecha, la etiqueta **Activo** o **Egresado** y, solo para recursos humanos, el botón **Editar datos**, que abre el formulario de Personal ya cargado con esa persona.
+Arriba, el nombre completo y, debajo, el número de ficha, el cargo y el departamento. A la derecha, la etiqueta **Activo** en verde o **Desincorporado** en rojo —la misma que en la lista— y, solo para recursos humanos, el botón **Editar datos**, que abre el formulario de Personal ya cargado con esa persona.
 
 A la izquierda, **la foto**. El recuadro tiene la proporción del carnet y, si no hay foto, dice **Sin foto**.
 
@@ -3779,7 +3779,7 @@ La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo. 
 | «Faltan el nombre y el apellido del trabajador.» | La ficha quedó sin nombre o sin apellido | Complétalos |
 | «La fecha de ingreso decide la antigüedad, el bono vacacional y las prestaciones. No puede quedar vacía.» | Falta la fecha de ingreso | Escríbela. Si no la sabes con certeza, búscala antes de guardar |
 | «La fecha de nacimiento da menos de 14 años. Es la edad mínima para trabajar (LOPNNA art. 96); revísala.» | La fecha de nacimiento está mal tecleada | Corrígela |
-| «Ya hay un trabajador con esa cédula.» | Esa persona ya está cargada | Búscala en la lista. Si no aparece, marca **Incluir a quienes ya no trabajan aquí** |
+| «Ya hay un trabajador con esa cédula.» | Esa persona ya está cargada | Búscala en la lista. Si no aparece, marca **Incluir a los desincorporados** |
 | «Hay un dato con formato inválido: la cédula se escribe V-12345678, y el grupo sanguíneo es uno de A+, A-, B+, B-, AB+, AB-, O+ u O-.» | La cédula o el grupo sanguíneo no tienen la forma esperada | Corrige el que corresponda |
 | «Ese cargo del tabulador ya no existe.» | El nivel se quitó mientras tenías la ficha abierta | Cierra, vuelve a abrir y elige otro cargo |
 | «Escribe el motivo del egreso: de él dependen las prestaciones que le tocan.» | El motivo quedó vacío o muy corto | Escribe por qué se va |
