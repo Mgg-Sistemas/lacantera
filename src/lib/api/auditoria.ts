@@ -173,6 +173,10 @@ const CAMPOS: Record<string, string> = {
   precio: 'Precio',
   salario_base: 'Salario',
   sueldo_mensual: 'Sueldo mensual',
+  // El campo ya no existe: se quitó del tabulador el 06/08/2026 porque el
+  // beneficio de alimentación vive en Parámetros y allí es donde se paga. La
+  // traducción se queda para que los asientos viejos se sigan leyendo: la
+  // bitácora es historia, y una historia con nombres en clave no se lee.
   bono_mensual: 'Bono de alimentación',
   tabulador_id: 'Nivel del tabulador',
   tasa: 'Tasa',
