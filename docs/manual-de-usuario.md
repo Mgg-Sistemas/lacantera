@@ -4578,7 +4578,44 @@ Conviene decir también lo que no es. **La auditoría no está para vigilar a la
 
 De ahí sale otra decisión que a primera vista parece un descuido: **el registro no está atado a la ficha de los usuarios.** Es a propósito. Si lo estuviera, inactivar o modificar a una persona podría arrastrar su rastro, y el rastro de quien ya no está es justo el que hace falta el día que se investiga algo.
 
-### 13.5 Cuando el sistema no te deja
+### 13.5 Respaldo de la base
+
+**Configuración › Respaldo de la base**
+
+Una copia de todos los datos del sistema, para guardarla fuera de aquí.
+
+#### Quién puede
+
+**Solo quien tenga el rol Respaldo de la base**, que hoy tienen dos personas. No lo abre nadie más, y **tampoco lo abre quien administra el sistema por el hecho de administrarlo**: en todo lo demás el administrador pasa por encima de la matriz de permisos, y aquí a propósito no. «Puede administrar el sistema» y «puede llevarse todos los datos de la empresa en un archivo» no son la misma autorización.
+
+Un administrador sí puede otorgarse ese rol desde Usuarios y roles —esa llave no se le puede quitar sin dejar el sistema sin salida de emergencia—, pero tiene que hacerlo, y ese movimiento queda escrito en la auditoría con su nombre.
+
+Quien entre sin el rol ve la pantalla, no el botón, y una explicación de por qué.
+
+#### Qué lleva y qué no
+
+**Lleva todos los datos**: personal, inventario, compras, ventas, tesorería, nómina y la bitácora de auditoría completa.
+
+**No lleva las contraseñas.** Viven cifradas en otro sitio que el respaldo no toca. Al restaurar hay que volver a crear los usuarios.
+
+**No lleva la estructura de la base**, que vive en el repositorio del sistema. Para reconstruir la base hacen falta las dos cosas y en este orden: primero las migraciones sobre una base limpia, después este archivo.
+
+#### Cómo se descarga
+
+Pulsa **Descargar respaldo**. Una ventana repite qué es lo que va a bajar y hay que confirmarlo. El archivo se llama `respaldo-lacantera-AAAA-MM-DD-HHMM.sql`, con la fecha delante para que se ordenen solos en la carpeta cuando ya haya varios.
+
+La pantalla dice cuántas tablas tiene la base, cuántas filas tiene aproximadamente, y cuándo fue el último respaldo y quién lo bajó.
+
+#### Cuidado con este archivo
+
+**Es el archivo más delicado que produce el sistema.** Lleva juntas las cédulas, los sueldos y las cuentas bancarias de todo el personal, los precios, los clientes y la bitácora entera. Todo lo que aquí dentro está repartido por permisos, ahí queda junto y **sin ninguna protección**: quien lo abra lo ve todo.
+
+Guárdalo donde guardarías el libro de nómina en papel. No lo mandes por correo ni lo dejes en la carpeta de descargas de una computadora que usa más gente.
+
+**Cada descarga queda anotada en la auditoría**, con el nombre de quien la pidió, la fecha y la hora.
+
+
+### 13.6 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
