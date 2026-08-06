@@ -13,6 +13,7 @@
 
 import { dibujarMarca, MARCA_SOBRE_OSCURO } from './marca'
 import { recorte, type Encuadre } from './encuadre'
+import type { ArchivoArmado } from './armado'
 import { EMPRESA } from '@/lib/empresa'
 
 export const CARNET_ANCHO_MM = 54
@@ -46,11 +47,19 @@ export interface DatosCarnet {
   encuadre: Encuadre
 }
 
-/** Las cédulas se leen mucho mejor con los puntos de mil. */
+/**
+ * Las cédulas se leen mucho mejor con los puntos de mil.
+ *
+ * Se limpia el número antes de convertirlo. Una cédula guardada ya con puntos
+ * —"V-18.345.221", que es como la escribe quien la copia del documento— hacía
+ * `Number('18.345.221')`, que da NaN, y el carnet salía impreso con "V-NaN" en
+ * el renglón de la cédula sin que nada avisara.
+ */
 function cedulaLegible(cedula: string): string {
-  const [letra, numero] = cedula.split('-')
-  if (!numero) return cedula
-  return `${letra}-${Number(numero).toLocaleString('es-VE')}`
+  const [letra, ...resto] = cedula.split('-')
+  const digitos = resto.join('-').replace(/\D/g, '')
+  if (!digitos) return cedula
+  return `${letra}-${Number(digitos).toLocaleString('es-VE')}`
 }
 
 function fechaCorta(iso: string): string {
@@ -202,25 +211,19 @@ export async function dibujarCarnet(d: DatosCarnet): Promise<HTMLCanvasElement> 
   return lienzo
 }
 
-/** Descarga el carnet como PNG. */
-export async function descargarCarnet(d: DatosCarnet): Promise<void> {
+/**
+ * El carnet en PNG, armado y sin guardar.
+ *
+ * Antes esto terminaba en una descarga y la imagen caía en la carpeta sin que
+ * nadie la hubiera visto. Un carnet se revisa antes de mandarlo a imprimir
+ * —que la cara esté centrada, que el nombre quepa, que el grupo sanguíneo no
+ * salga en guion—, así que se devuelve para que la pantalla lo enseñe.
+ */
+export async function armarCarnet(d: DatosCarnet): Promise<ArchivoArmado> {
   const lienzo = await dibujarCarnet(d)
 
   const blob = await new Promise<Blob | null>((r) => lienzo.toBlob(r, 'image/png'))
   if (!blob) throw new Error('No se pudo generar la imagen del carnet.')
 
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `carnet-${d.ficha}-${d.apellidos.split(' ')[0].toLowerCase()}.png`
-
-  // El enlace tiene que estar en el documento para que el clic cuente como
-  // navegación, y la URL no se puede soltar en la misma vuelta del bucle: el
-  // navegador todavía no ha empezado a leer el archivo y la descarga se cae
-  // sin decir nada. Por eso se libera en el siguiente turno.
-  document.body.append(a)
-  a.click()
-  a.remove()
-
-  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  return { blob, nombre: `carnet-${d.ficha}-${d.apellidos.split(' ')[0].toLowerCase()}.png` }
 }
