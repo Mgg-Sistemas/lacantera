@@ -191,7 +191,7 @@ export function Personal() {
               checked={verInactivos}
               onChange={(e) => setVerInactivos(e.target.checked)}
             />
-            Incluir a quienes ya no trabajan aquí
+            Incluir a los desincorporados
           </label>
         </div>
       </Card>
@@ -240,16 +240,33 @@ export function Personal() {
                           quien no lo descubra no encuentra el carnet ni el PDF
                           —que están ahí dentro. Por lo mismo hay además un
                           botón con nombre al final de la fila. */}
-                      <Link
-                        to={`/app/nomina/personal/${e.id}`}
-                        className="text-ink/85 hover:text-royal-600 dark:hover:text-royal-300 font-medium hover:underline"
-                      >
-                        {e.apellidos}, {e.nombres}
-                      </Link>
+                      {/* La etiqueta va pegada al nombre y no en la columna de
+                          los botones. Ahí la ve todo el mundo —tenga el rol que
+                          tenga— y se lee en el mismo golpe de vista que la
+                          persona, que es lo que hace falta cuando la lista trae
+                          activos y desincorporados mezclados. Antes lo decía un
+                          " · egresado" en gris claro debajo de la cédula, del
+                          mismo tamaño y del mismo color que el resto: estaba
+                          escrito, pero no se veía. */}
+                      <span className="flex flex-wrap items-center gap-2">
+                        <Link
+                          to={`/app/nomina/personal/${e.id}`}
+                          className="text-ink/85 hover:text-royal-600 dark:hover:text-royal-300 font-medium hover:underline"
+                        >
+                          {e.apellidos}, {e.nombres}
+                        </Link>
+                        {e.activo ? null : <Chip tone="danger">Desincorporado</Chip>}
+                      </span>
                       <p className="text-ink/45 text-xs">
                         <span className="tabular">{e.cedula} · ficha {e.ficha}</span>
-                        {e.activo ? '' : ' · egresado'}
                       </p>
+                      {/* El motivo, en pequeño y solo cuando lo hay. Es la
+                          diferencia entre "esta persona ya no está" y saber si
+                          renunció, si la liquidaron o si la ficha se cargó por
+                          error. */}
+                      {!e.activo && e.motivo_egreso ? (
+                        <p className="text-ink/40 mt-0.5 text-xs italic">{e.motivo_egreso}</p>
+                      ) : null}
                     </td>
                     <td className="text-ink/70 px-3 py-3">
                       {e.cargo}
@@ -302,6 +319,9 @@ export function Personal() {
                             onClick={() => abrir(e)}
                           />
                         ) : null}
+                        {/* Para quien no está, aquí no va nada: la etiqueta ya
+                            está junto a su nombre, y repetirla al final de la
+                            fila solo enseñaría lo mismo dos veces. */}
                         {puedeRRHH && e.activo ? (
                           <Button
                             size="sm"
@@ -312,13 +332,11 @@ export function Personal() {
                               setEgreso({ fecha: '', motivo: '' })
                             }}
                           >
-                            Egresar
+                            Desincorporar
                           </Button>
-                        ) : (
-                          <Chip tone={e.activo ? 'success' : 'neutral'}>
-                            {e.activo ? 'Activo' : 'Egresado'}
-                          </Chip>
-                        )}
+                        ) : e.activo ? (
+                          <Chip tone="success">Activo</Chip>
+                        ) : null}
                         {/* Aquí había una papelera. Se quitó: una ficha de
                             personal no se borra, se desincorpora con "Egresar"
                             y su motivo escrito —"cargada por error" también es
@@ -622,8 +640,8 @@ export function Personal() {
         <Modal
           abierto
           onCerrar={() => setSaliendo(null)}
-          titulo={`Egresar a ${saliendo.nombres} ${saliendo.apellidos}`}
-          descripcion="Deja de entrar en las nóminas siguientes. Su historial se conserva entero."
+          titulo={`Desincorporar a ${saliendo.nombres} ${saliendo.apellidos}`}
+          descripcion="Deja de entrar en las nóminas siguientes y queda marcado en la lista. Su historial se conserva entero: no se borra nada."
           ancho="sm"
           acciones={
             <>
@@ -638,7 +656,7 @@ export function Personal() {
                   setSaliendo(null)
                 }}
               >
-                {egresar.isPending ? 'Guardando…' : 'Egresar'}
+                {egresar.isPending ? 'Guardando…' : 'Desincorporar'}
               </Button>
             </>
           }
