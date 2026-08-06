@@ -58,6 +58,9 @@ function edad(nacimiento: string | null): string {
   return `${a} años`
 }
 
+/** Lo que sabe sacar el botón de exportar. Cada uno acaba en el visor. */
+type Exportable = 'pdf' | 'frente' | 'reverso'
+
 const etiqueta = (lista: Array<{ valor: string; etiqueta: string }>, v: string | null) =>
   lista.find((o) => o.valor === v)?.etiqueta ?? '—'
 
@@ -155,7 +158,7 @@ export function FichaTrabajador() {
 
   const [encuadre, setEncuadre] = useState<Encuadre>(ENCUADRE_CENTRADO)
   const [encuadreGuardado, setEncuadreGuardado] = useState('')
-  const [exportando, setExportando] = useState<'pdf' | 'png' | null>(null)
+  const [exportando, setExportando] = useState<Exportable | null>(null)
   const [falloExportar, setFalloExportar] = useState<Error | null>(null)
 
   // La constancia
@@ -210,31 +213,40 @@ export function FichaTrabajador() {
     return img
   }
 
-  async function exportar(tipo: 'pdf' | 'png') {
+  async function exportar(tipo: Exportable) {
     if (!e) return
     setExportando(tipo)
     setFalloExportar(null)
 
     try {
-      const img = await imagenLista()
+      // El reverso es solo la marca: no lleva foto y no hace falta esperarla.
+      const img = tipo === 'reverso' ? null : await imagenLista()
 
-      if (tipo === 'png') {
+      if (tipo === 'frente' || tipo === 'reverso') {
         setVista({
-          archivo: await armarCarnet({
-            ficha: e.ficha,
-            nombres: e.nombres,
-            apellidos: e.apellidos,
-            cedula: e.cedula,
-            cargo: e.cargo,
-            departamento: e.departamento,
-            fecha_ingreso: e.fecha_ingreso,
-            grupo_sanguineo: e.grupo_sanguineo,
-            foto: img,
-            encuadre,
-          }),
-          titulo: `Carnet de ${e.nombres} ${e.apellidos}`,
+          archivo: await armarCarnet(
+            {
+              ficha: e.ficha,
+              nombres: e.nombres,
+              apellidos: e.apellidos,
+              cedula: e.cedula,
+              cargo: e.cargo,
+              departamento: e.departamento,
+              fecha_ingreso: e.fecha_ingreso,
+              grupo_sanguineo: e.grupo_sanguineo,
+              foto: img,
+              encuadre,
+            },
+            tipo,
+          ),
+          titulo:
+            tipo === 'frente'
+              ? `Carnet de ${e.nombres} ${e.apellidos} — frente`
+              : 'Carnet — reverso',
           descripcion:
-            'Tamaño real 54 × 86 mm a 300 dpi. Revisa que la cara esté centrada antes de mandarlo a imprimir.',
+            tipo === 'frente'
+              ? '54 × 86 mm a 300 dpi. Revisa que la cara esté centrada antes de mandarlo a imprimir.'
+              : 'La marca, la razón social y el RIF. Es igual para todos: se imprime una vez y sirve para todos los carnets.',
         })
       } else {
         setVista({
@@ -414,22 +426,33 @@ export function FichaTrabajador() {
 
           <Card>
             <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Button
+                  block
+                  icon={<FileText />}
+                  disabled={exportando !== null}
+                  onClick={() => void exportar('pdf')}
+                >
+                  {exportando === 'pdf' ? 'Armando el PDF…' : 'Ficha completa (PDF)'}
+                </Button>
+              </div>
               <Button
                 block
-                icon={<FileText />}
+                variant="soft"
+                icon={<IdCard />}
                 disabled={exportando !== null}
-                onClick={() => void exportar('pdf')}
+                onClick={() => void exportar('frente')}
               >
-                {exportando === 'pdf' ? 'Armando el PDF…' : 'Ficha completa (PDF)'}
+                {exportando === 'frente' ? 'Armando…' : 'Carnet · frente'}
               </Button>
               <Button
                 block
                 variant="soft"
                 icon={<IdCard />}
                 disabled={exportando !== null}
-                onClick={() => void exportar('png')}
+                onClick={() => void exportar('reverso')}
               >
-                {exportando === 'png' ? 'Armando la imagen…' : 'Carnet (imagen)'}
+                {exportando === 'reverso' ? 'Armando…' : 'Carnet · reverso'}
               </Button>
               <div className="sm:col-span-2">
                 <Button
@@ -445,10 +468,11 @@ export function FichaTrabajador() {
             </div>
 
             <p className="text-ink/40 mt-3 text-center text-xs">
-              Los tres se abren en pantalla antes de guardarse. El PDF trae todos los datos en A4.
-              La imagen es el carnet de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—, que es lo que
-              pide una imprenta para que no salga pixelado. La constancia es la carta que se
-              entrega a un banco o a quien la pida.
+              Todo se abre en pantalla antes de guardarse. El PDF trae todos los datos en A4. El
+              carnet sale en dos imágenes, cada una de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—,
+              que es lo que pide una imprenta para que no salga pixelado: el frente es de esta
+              persona, y el reverso lleva la marca y el RIF y es igual para todos. La constancia es
+              la carta que se entrega a un banco o a quien la pida.
             </p>
 
             {falloExportar ? <ErrorDeCarga error={falloExportar} className="mt-3" /> : null}
