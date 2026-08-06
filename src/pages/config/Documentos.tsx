@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, FileText, Pencil, ShieldCheck, Trash2, Upload } from 'lucide-react'
+import { Eye, FileText, Image as ImageIcon, Pencil, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { VisorPdf } from '@/components/VisorPdf'
+import { Visor } from '@/components/Visor'
 import { useMisRoles } from '@/lib/api/catalogo'
 import {
   diasParaVencer,
@@ -33,6 +33,17 @@ const peso = (bytes: number | null) =>
       : `${Math.round(bytes / 1024)} kB`
 
 const VACIO = { tipo: '', nombre: '', emitido_el: '', vence_el: '', nota: '' }
+
+/**
+ * Con qué nombre se guarda al descargarlo.
+ *
+ * El nombre visible —"Acta de alianza con la Gobernación"— es el que busca
+ * quien lo necesita, pero no lleva extensión. La extensión sale de la ruta del
+ * almacén, que sí la conserva: aquí se aceptan PDF e imágenes, y guardar un
+ * escaneado en JPG llamándolo `.pdf` deja un archivo que no abre en nada.
+ */
+const nombreParaGuardar = (d: DocumentoLegal) =>
+  `${d.nombre}.${d.archivo_path.split('.').pop()?.toLowerCase() ?? 'pdf'}`
 
 /**
  * Los papeles de la empresa, donde se consultan.
@@ -202,8 +213,15 @@ export function Documentos() {
             const dias = diasParaVencer(d.vence_el)
             return (
               <Card key={d.id} className="flex flex-wrap items-center gap-4">
+                {/* El icono dice qué se va a abrir. Un acta escaneada en JPG y
+                    un registro mercantil en PDF se manejan igual, pero saber
+                    cuál es cuál ahorra la sorpresa al pulsar. */}
                 <div className="bg-ink/6 text-ink/55 flex size-10 shrink-0 items-center justify-center rounded-[8px]">
-                  <FileText className="size-5" />
+                  {d.mime?.startsWith('image/') ? (
+                    <ImageIcon className="size-5" />
+                  ) : (
+                    <FileText className="size-5" />
+                  )}
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -371,11 +389,12 @@ export function Documentos() {
         </p>
       </Modal>
 
-      <VisorPdf
+      <Visor
         abierto={viendo !== null}
         onCerrar={() => setViendo(null)}
         href={viendo?.url ?? null}
-        nombreArchivo={`${viendo?.doc.nombre ?? 'documento'}.pdf`}
+        mime={viendo?.doc.mime}
+        nombreArchivo={viendo ? nombreParaGuardar(viendo.doc) : 'documento.pdf'}
         titulo={viendo?.doc.nombre ?? ''}
         descripcion={viendo ? nombreTipo(viendo.doc.tipo) : undefined}
       />

@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { VisorPdf } from '@/components/VisorPdf'
+import { Visor } from '@/components/Visor'
 import { dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
@@ -640,7 +640,7 @@ export function Facturacion() {
         </Modal>
       ) : null}
 
-      <VisorPdf
+      <Visor
         abierto={pdf !== null}
         onCerrar={() => setPdf(null)}
         blob={pdf?.blob ?? null}

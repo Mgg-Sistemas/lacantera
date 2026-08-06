@@ -16,6 +16,7 @@
 
 import { marcaComoImagen, MARCA_SOBRE_OSCURO } from './marca'
 import { fotoRecortada, type Encuadre } from './encuadre'
+import type { ArchivoArmado } from './armado'
 import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, DER, IZQ, PIE } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
 
@@ -209,7 +210,7 @@ function pie(doc: Doc, d: DatosFicha) {
   doc.text('Documento interno', DER, y, { align: 'right' })
 }
 
-export async function descargarFicha(d: DatosFicha): Promise<void> {
+export async function armarFicha(d: DatosFicha): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
@@ -230,5 +231,8 @@ export async function descargarFicha(d: DatosFicha): Promise<void> {
     author: EMPRESA.razonSocial,
   })
 
-  doc.save(`ficha-${d.ficha}-${d.nombreCompleto.split(' ').pop()?.toLowerCase() ?? ''}.pdf`)
+  return {
+    blob: doc.output('blob'),
+    nombre: `ficha-${d.ficha}-${d.nombreCompleto.split(' ').pop()?.toLowerCase() ?? ''}.pdf`,
+  }
 }

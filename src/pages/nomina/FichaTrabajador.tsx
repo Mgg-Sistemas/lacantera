@@ -7,7 +7,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
-import { VisorPdf } from '@/components/VisorPdf'
+import { Visor } from '@/components/Visor'
 import {
   BASES_SALARIO,
   ESTADOS_CIVILES,
@@ -26,10 +26,10 @@ import type { Empleado } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
-import { descargarCarnet } from '@/lib/ficha/carnet'
-import { descargarFicha, type Seccion } from '@/lib/ficha/fichaPdf'
+import { armarCarnet } from '@/lib/ficha/carnet'
+import { armarFicha, type Seccion } from '@/lib/ficha/fichaPdf'
 import { armarConstancia } from '@/lib/ficha/constanciaPdf'
-import type { PdfArmado } from '@/lib/ficha/reciboPdf'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { ENCUADRE_CENTRADO, type Encuadre } from '@/lib/ficha/encuadre'
 import { dinero, fecha } from '@/lib/formato'
 
@@ -164,7 +164,18 @@ export function FichaTrabajador() {
   const [pidiendo, setPidiendo] = useState(false)
   const [conSueldo, setConSueldo] = useState(true)
   const [armando, setArmando] = useState(false)
-  const [vista, setVista] = useState<PdfArmado | null>(null)
+
+  /*
+    Los tres papeles salen por la misma puerta.
+
+    La ficha, el carnet y la constancia se arman distinto y se guardan distinto
+    —dos PDF y una imagen—, pero lo que se hace con ellos es lo mismo: mirarlos
+    y decidir. Un solo estado con su título evita tres visores casi iguales que
+    con el tiempo dejarían de parecerse.
+  */
+  const [vista, setVista] = useState<
+    { archivo: ArchivoArmado; titulo: string; descripcion: string } | null
+  >(null)
 
   /*
     El encuadre en pantalla arranca del guardado, pero solo se rehace cuando el
@@ -208,32 +219,41 @@ export function FichaTrabajador() {
       const img = await imagenLista()
 
       if (tipo === 'png') {
-        await descargarCarnet({
-          ficha: e.ficha,
-          nombres: e.nombres,
-          apellidos: e.apellidos,
-          cedula: e.cedula,
-          cargo: e.cargo,
-          departamento: e.departamento,
-          fecha_ingreso: e.fecha_ingreso,
-          grupo_sanguineo: e.grupo_sanguineo,
-          foto: img,
-          encuadre,
+        setVista({
+          archivo: await armarCarnet({
+            ficha: e.ficha,
+            nombres: e.nombres,
+            apellidos: e.apellidos,
+            cedula: e.cedula,
+            cargo: e.cargo,
+            departamento: e.departamento,
+            fecha_ingreso: e.fecha_ingreso,
+            grupo_sanguineo: e.grupo_sanguineo,
+            foto: img,
+            encuadre,
+          }),
+          titulo: `Carnet de ${e.nombres} ${e.apellidos}`,
+          descripcion:
+            'Tamaño real 54 × 86 mm a 300 dpi. Revisa que la cara esté centrada antes de mandarlo a imprimir.',
         })
       } else {
-        await descargarFicha({
-          ficha: e.ficha,
-          nombreCompleto: `${e.nombres} ${e.apellidos}`,
-          cargo: e.cargo,
-          departamento: e.departamento,
-          estado: e.activo
-            ? `Activo desde el ${fecha(e.fecha_ingreso)}`
-            : `Egresado el ${fecha(e.fecha_egreso)}`,
-          activo: e.activo,
-          secciones,
-          foto: img,
-          encuadre,
-          emitidaPor: nombre,
+        setVista({
+          archivo: await armarFicha({
+            ficha: e.ficha,
+            nombreCompleto: `${e.nombres} ${e.apellidos}`,
+            cargo: e.cargo,
+            departamento: e.departamento,
+            estado: e.activo
+              ? `Activo desde el ${fecha(e.fecha_ingreso)}`
+              : `Egresado el ${fecha(e.fecha_egreso)}`,
+            activo: e.activo,
+            secciones,
+            foto: img,
+            encuadre,
+            emitidaPor: nombre,
+          }),
+          titulo: `Ficha ${e.ficha} — ${e.nombres} ${e.apellidos}`,
+          descripcion: 'Todos los datos del trabajador en una hoja A4.',
         })
       }
     } catch (err) {
@@ -272,7 +292,11 @@ export function FichaTrabajador() {
         firma,
         emitidaPor: nombre,
       })
-      setVista(pdf)
+      setVista({
+        archivo: pdf,
+        titulo: 'Constancia de trabajo',
+        descripcion: 'Revísala antes de entregarla. La firma va a mano.',
+      })
       setPidiendo(false)
     } catch (err) {
       setFalloExportar(err instanceof Error ? err : new Error(String(err)))
@@ -421,9 +445,10 @@ export function FichaTrabajador() {
             </div>
 
             <p className="text-ink/40 mt-3 text-center text-xs">
-              El PDF trae todos los datos en A4. La imagen es el carnet de 54 × 86 mm a 300 dpi
-              —638 × 1016 píxeles—, que es lo que pide una imprenta para que no salga pixelado. La
-              constancia es la carta que se entrega a un banco o a quien la pida.
+              Los tres se abren en pantalla antes de guardarse. El PDF trae todos los datos en A4.
+              La imagen es el carnet de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—, que es lo que
+              pide una imprenta para que no salga pixelado. La constancia es la carta que se
+              entrega a un banco o a quien la pida.
             </p>
 
             {falloExportar ? <ErrorDeCarga error={falloExportar} className="mt-3" /> : null}
@@ -525,13 +550,13 @@ export function FichaTrabajador() {
         </Modal>
       ) : null}
 
-      <VisorPdf
+      <Visor
         abierto={vista !== null}
         onCerrar={() => setVista(null)}
-        blob={vista?.blob ?? null}
-        nombreArchivo={vista?.nombre ?? 'constancia.pdf'}
-        titulo="Constancia de trabajo"
-        descripcion="Revísala antes de entregarla. La firma va a mano."
+        blob={vista?.archivo.blob ?? null}
+        nombreArchivo={vista?.archivo.nombre ?? 'documento.pdf'}
+        titulo={vista?.titulo ?? ''}
+        descripcion={vista?.descripcion}
       />
     </>
   )
