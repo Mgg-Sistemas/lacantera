@@ -416,12 +416,14 @@ export function useEgresarEmpleado() {
  * almacenamiento: la base no habla con el bucket, y si no se borra aquí queda
  * ocupando espacio pagado para siempre.
  */
-export function useEliminarEmpleado() {
-  return useAccionNomina(async (id: number) => {
-    const foto = await rpc<string | null>('eliminar_empleado', { p_id: id })
-    if (foto) await supabase.storage.from(BUCKET_FOTOS).remove([foto])
-  })
-}
+/*
+  Aquí vivía `useEliminarEmpleado`. Se quitó junto con el botón de la papelera:
+  una ficha de personal no se borra, se desincorpora con `useEgresarEmpleado`.
+
+  La función `eliminar_empleado` sigue existiendo en la base, pero solo para
+  negarse con una frase que se entienda. Quien tenga la pantalla vieja abierta
+  recibe esa frase en lugar de un "función no encontrada".
+*/
 
 // ---------------------------------------------------------------------------
 // La foto de la ficha

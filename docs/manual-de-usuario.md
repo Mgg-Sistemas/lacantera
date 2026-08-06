@@ -3001,7 +3001,9 @@ La lista tiene estas columnas:
 | **Ingreso** | La fecha de ingreso y, debajo, la antigüedad, o **hasta** la fecha de egreso si egresó. Si la fecha de ingreso no está confirmada, en su lugar sale una etiqueta ámbar **Por confirmar** |
 | **Salario** | El monto con su símbolo y, debajo, la base y la frecuencia |
 
-En cada fila, y solo para recursos humanos, hay tres botones: el lápiz para editar, **Egresar** (solo si la persona está activa) y la papelera, **Borrar la ficha**. Quien no tenga ese rol ve en su lugar la etiqueta **Activo** o **Egresado**.
+En cada fila hay un botón **Ficha** para todos, y para recursos humanos además el lápiz para editar y **Egresar** (solo si la persona está activa). Quien no tenga ese rol ve en su lugar la etiqueta **Activo** o **Egresado**.
+
+**Ya no hay papelera.** Hasta el 6 de agosto de 2026 existía un botón para borrar una ficha; se quitó. Ver más abajo, en «Las fichas no se borran».
 
 #### Cargar un trabajador
 
@@ -3066,13 +3068,13 @@ La ventana lo resume: *"Deja de entrar en las nóminas siguientes. Su historial 
 
 Por eso, **cuando alguien se va, el orden es liquidarlo primero en Prestaciones sociales**: el botón que paga la liquidación egresa a la persona por su cuenta, con la fecha y el motivo, y no hay que volver a esta pantalla. **Egresar** aquí queda para cuando no hay nada que liquidar.
 
-#### Borrar la ficha
+#### Las fichas no se borran
 
-Esto no es lo mismo que egresar, y la propia ventana empieza diciéndolo: *"Desaparece del sistema sin dejar rastro. No es lo mismo que egresar."*
+**No existe forma de borrar una ficha de personal.** Antes existía, con candados —solo dejaba borrar a quien no tuviera recibos ni novedades, es decir, a quien nunca había cobrado por el sistema— y aun así se quitó, porque esos candados no comprueban lo que hace falta comprobar. «Nunca cobró por el sistema» no significa «nunca trabajó aquí»: puede ser que su nómina no se haya procesado todavía, que se le pagara por fuera, o que la ficha se cargara ayer.
 
-Borrar es **solo para una ficha cargada por error**: un nombre mal escrito, una cédula repetida, una ficha creada dos veces. La ventana lo dice con estas palabras: *"Esto es para una ficha cargada por error. Si trabajó aquí de verdad, ciérrale el ciclo con Egresar: su historia se conserva y sigue estando para una inspección o para él mismo."* Y avisa de lo que va a pasar si te equivocas: *"Si ya cobró alguna nómina, el sistema no va a dejar borrarlo."*
+**Una ficha cargada por error también se egresa.** Escribe el motivo tal cual —«cargada por error», «duplicada de la ficha 0012»— y desaparece de la lista de activos, que es todo lo que se quería. La diferencia es que dentro de un año se puede leer qué pasó, y que una desincorporación se deshace volviendo a activar la ficha, mientras que un borrado no se deshacía desde ninguna pantalla.
 
-En 11.11 está explicado qué comprueba el sistema antes de borrar y por qué.
+Si alguien llama a la función vieja —una pestaña abierta desde antes del cambio, por ejemplo—, el sistema responde: *«Las fichas de personal ya no se borran: se desincorporan. Usa "Egresar" con la fecha y el motivo —"cargada por error" también es un motivo—, y esa persona deja de salir entre los activos sin que se pierda lo que decía su ficha.»*
 
 ### 11.4 La ficha del trabajador
 
@@ -3733,27 +3735,20 @@ De ahí sale la segunda regla, que es la que hace que los recibos sean defendibl
 
 Si al calcular falta alguno, el sistema no calcula a medias: se detiene y te dice cuál falta y dónde cargarlo.
 
-#### Borrar un empleado, y qué hacer en su lugar
+#### Las fichas de personal no se borran
 
-**Borrar no es egresar, y casi siempre lo que hace falta es egresar.**
+Hasta el 6 de agosto de 2026 se podía borrar una ficha, con candados: el sistema comprobaba que la persona existiera, que no tuviera ningún recibo de nómina y que no tuviera ninguna novedad cargada. La idea era dejar borrar solo una ficha cargada por error —un nombre mal escrito, una cédula repetida, alguien metido dos veces— y nunca a quien ya hubiera cobrado.
 
-- **Egresar** es para alguien que trabajó aquí y se fue. Cobró, firmó recibos, salió dinero a su nombre. Su historia se conserva entera, con su fecha y su motivo, y sigue estando para una inspección o para él mismo.
-- **Borrar** es solo para una ficha cargada por error: un nombre mal escrito, una cédula repetida, una ficha creada dos veces. Alguien que nunca cobró nada.
+**Se quitó.** Los candados comprobaban lo que la base sabe, no lo que hace falta saber. Que alguien no tenga recibos no significa que no haya trabajado aquí: puede que su nómina no se haya procesado todavía, que se le pagara por fuera, o que la ficha se cargara ayer. Y esos candados tampoco miraban las prestaciones: un corte cargado, unos trimestres cerrados o unos intereses abonados se iban con la ficha, en silencio.
 
-El sistema comprueba tres cosas antes de borrar, y si falla cualquiera, no borra:
+Encima, el borrado era la única acción de todo el sistema que no se podía deshacer desde ninguna pantalla.
 
-1. Que esa persona exista.
-2. **Que no tenga ningún recibo.** Si lo tiene, responde «… tiene … recibo(s) de nómina. No se puede borrar a quien ya cobró: egrésalo con su fecha y su motivo, y su historia se conserva.»
-3. **Que no tenga ninguna novedad cargada.** Si la tiene, responde «… tiene … novedad(es) registradas. Bórralas primero, o egrésalo si de verdad trabajó.»
+**Lo que se hace ahora, en todos los casos, es egresar.** Con la fecha y el motivo escrito, y «cargada por error» o «duplicada de la ficha 0012» son motivos perfectamente válidos. La persona deja de salir en la lista de activos —que es lo único que se quería— y lo que decía su ficha se conserva. Si mañana resulta que no había que sacarla, se vuelve a activar.
 
-El motivo de esas dos puertas es el que hace útil al módulo: si borrar arrastrara recibos, el libro de nómina dejaría de cuadrar con lo que salió de tesorería, y eso no se descubre hasta el cierre.
+**Lo que se borró antes del cambio se recuperó.** El registro de auditoría guarda la fila completa cuando algo se borra, así que las fichas volvieron con sus datos, desincorporadas y con el motivo apuntando a quién las borró y cuándo. Vuelven desincorporadas y no activas a propósito: nadie puede saber hoy cuál era una persona trabajando y cuál un duplicado, y devolverlas activas metería gente en la próxima nómina sin que nadie lo hubiera decidido. Quien sepa, las reactiva una por una.
 
-**Esas tres comprobaciones no miran las prestaciones**, y ahí hay dos sorpresas. Si a la persona se le cargó un corte, se le cerraron trimestres o se le abonaron intereses, borrar la ficha se lleva también todo eso, en silencio. Y si tiene algún anticipo o alguna liquidación, la ficha no se borra, pero el sistema no lo explica con un mensaje claro como los dos de arriba: sale un aviso confuso. En los dos casos la conclusión es la misma de siempre: si la persona trabajó aquí de verdad, no se borra, se egresa.
+**El número de ficha no se reutiliza.** El correlativo nunca se reinicia. Si faltan números en la serie, son fichas de la época en que se podía borrar.
 
-Dos cosas más sobre borrar:
-
-- **Se borra también su foto.** No queda nada suyo.
-- **El número de ficha no se reutiliza.** El correlativo nunca se reinicia, así que borrar la ficha 0013 no hace que el próximo trabajador sea el 0013. Si te faltan números en la serie, no es un error: es una ficha que se borró.
 
 #### Los documentos que salen del módulo
 
@@ -3789,8 +3784,7 @@ La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo. 
 | «Ese cargo del tabulador ya no existe.» | El nivel se quitó mientras tenías la ficha abierta | Cierra, vuelve a abrir y elige otro cargo |
 | «Escribe el motivo del egreso: de él dependen las prestaciones que le tocan.» | El motivo quedó vacío o muy corto | Escribe por qué se va |
 | «No existe ese trabajador.» | La ficha ya no está | Recarga la lista |
-| «… tiene … recibo(s) de nómina. No se puede borrar a quien ya cobró: egrésalo con su fecha y su motivo, y su historia se conserva.» | Esa persona sí trabajó aquí | Usa **Egresar**, no **Borrar la ficha** |
-| «… tiene … novedad(es) registradas. Bórralas primero, o egrésalo si de verdad trabajó.» | Tiene bonos, descuentos u horas cargadas | Quítalos desde **Novedades del período**, o egrésala |
+| «Las fichas de personal ya no se borran: se desincorporan…» | Alguien llamó al borrado viejo, casi siempre desde una pestaña abierta desde antes del cambio | Recarga la página y usa **Egresar** |
 | «La foto tiene que ser JPG, PNG o WEBP.» | El archivo no es una imagen de esas | Manda otra foto |
 | «La foto pesa … MB y el máximo son 5. Sácala con menos resolución o mándala por WhatsApp y guarda la que llega.» | La foto pesa demasiado | Haz lo que dice el mensaje |
 | «El encuadre quedó fuera de la foto. Vuelve a centrarla.» | El recuadro se salió de la imagen | Arrastra la foto hasta que la cara quede sobre la línea |
