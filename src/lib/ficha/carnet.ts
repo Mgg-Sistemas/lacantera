@@ -11,7 +11,7 @@
  * igual que la regla con la que se comprueba el resultado impreso.
  */
 
-import { dibujarMarca, MARCA_SOBRE_OSCURO } from './marca'
+import { dibujarMarca, MARCA_COLOR, MARCA_SOBRE_OSCURO } from './marca'
 import { recorte, type Encuadre } from './encuadre'
 import type { ArchivoArmado } from './armado'
 import { EMPRESA } from '@/lib/empresa'
@@ -93,32 +93,21 @@ function textoCentrado(ctx: CanvasRenderingContext2D, texto: string, y: number) 
   ctx.textAlign = 'left'
 }
 
+
 /**
- * Pinta el carnet completo y devuelve el lienzo.
+ * La cara de delante: quién es.
  *
- * Espera a que las fuentes estén cargadas: sin eso, el primer carnet del día
- * sale en la tipografía de reserva y nadie entiende por qué el segundo se ve
- * distinto.
+ * Dibuja desde el origen del lienzo, así que para ponerla en otro sitio basta
+ * trasladar el contexto antes de llamarla. Es lo que hace la hoja de imprenta.
  */
-export async function dibujarCarnet(d: DatosCarnet): Promise<HTMLCanvasElement> {
-  await document.fonts.ready
-
-  const lienzo = document.createElement('canvas')
-  lienzo.width = Math.round(mm(CARNET_ANCHO_MM))
-  lienzo.height = Math.round(mm(CARNET_ALTO_MM))
-
-  const ctx = lienzo.getContext('2d')
-  if (!ctx) throw new Error('El navegador no pudo preparar el lienzo del carnet.')
-
-  ctx.textBaseline = 'alphabetic'
-
+function frente(ctx: CanvasRenderingContext2D, d: DatosCarnet) {
   // Fondo
   ctx.fillStyle = '#FFFFFF'
-  ctx.fillRect(0, 0, lienzo.width, lienzo.height)
+  ctx.fillRect(0, 0, mm(CARNET_ANCHO_MM), mm(CARNET_ALTO_MM))
 
   // ---------------------------------------------------------------- Banda
   ctx.fillStyle = AZUL_BANDA
-  ctx.fillRect(0, 0, lienzo.width, mm(21))
+  ctx.fillRect(0, 0, mm(CARNET_ANCHO_MM), mm(21))
 
   dibujarMarca(ctx, mm(4), mm(3), mm(7), MARCA_SOBRE_OSCURO)
 
@@ -197,7 +186,7 @@ export async function dibujarCarnet(d: DatosCarnet): Promise<HTMLCanvasElement> 
 
   // ----------------------------------------------------------------- Pie
   ctx.fillStyle = AMARILLO
-  ctx.fillRect(0, mm(CARNET_ALTO_MM - 7.1), lienzo.width, mm(7.1))
+  ctx.fillRect(0, mm(CARNET_ALTO_MM - 7.1), mm(CARNET_ANCHO_MM), mm(7.1))
 
   ctx.fillStyle = TINTA
   ctx.font = `600 ${pt(5.2)}px ${FUENTE}`
@@ -207,23 +196,94 @@ export async function dibujarCarnet(d: DatosCarnet): Promise<HTMLCanvasElement> 
 
   ctx.font = `700 ${pt(11)}px ${FUENTE}`
   textoDerecha(ctx, d.ficha, mm(49.5), mm(CARNET_ALTO_MM - 2.3))
+}
+
+
+/**
+ * La cara de detrás: la marca y nada más.
+ *
+ * Un reverso no necesita repetir datos —todos están delante— y sí necesita
+ * decir de quién es la tarjeta a un metro de distancia, que es como se mira un
+ * carnet colgado del cuello cuando la persona está de espaldas. Por eso va la
+ * marca grande, centrada, sobre blanco, con la razón social tal como está en el
+ * registro y el RIF debajo.
+ *
+ * La barra amarilla del pie es la misma del frente. No dice nada: está para que
+ * las dos caras se reconozcan como del mismo carnet cuando se ven separadas.
+ */
+function reverso(ctx: CanvasRenderingContext2D) {
+  const ANCHO = mm(CARNET_ANCHO_MM)
+  const ALTO = mm(CARNET_ALTO_MM)
+
+  ctx.fillStyle = '#FFFFFF'
+  ctx.fillRect(0, 0, ANCHO, ALTO)
+
+  /*
+    El bloque —marca, nombre, RIF— se centra en el papel blanco, no en el
+    carnet entero: la barra amarilla del pie ya pesa abajo, y contarla dentro
+    del centro empujaba todo hacia el borde inferior. Queda un pelo más de aire
+    arriba que abajo, que es como se centra a ojo cualquier cosa enmarcada.
+  */
+  const lado = mm(28)
+  dibujarMarca(ctx, (ANCHO - lado) / 2, mm(19), lado, MARCA_COLOR)
+
+  ctx.fillStyle = TINTA
+  ctx.font = `700 ${pt(7.4)}px ${FUENTE}`
+  textoCentrado(ctx, EMPRESA.nombre, mm(57))
+
+  ctx.fillStyle = GRIS
+  ctx.font = `500 ${pt(6)}px ${FUENTE}`
+  textoCentrado(ctx, `${EMPRESA.forma} · RIF ${EMPRESA.rif}`, mm(62.5))
+
+  ctx.fillStyle = AMARILLO
+  ctx.fillRect(0, ALTO - mm(7.1), ANCHO, mm(7.1))
+}
+
+export type CaraCarnet = 'frente' | 'reverso'
+
+/**
+ * Pinta una cara del carnet y devuelve el lienzo.
+ *
+ * Espera a que las fuentes estén cargadas: sin eso, el primer carnet del día
+ * sale en la tipografía de reserva y nadie entiende por qué el segundo se ve
+ * distinto.
+ */
+export async function dibujarCarnet(
+  d: DatosCarnet,
+  cara: CaraCarnet = 'frente',
+): Promise<HTMLCanvasElement> {
+  await document.fonts.ready
+
+  const lienzo = document.createElement('canvas')
+  lienzo.width = Math.round(mm(CARNET_ANCHO_MM))
+  lienzo.height = Math.round(mm(CARNET_ALTO_MM))
+
+  const ctx = lienzo.getContext('2d')
+  if (!ctx) throw new Error('El navegador no pudo preparar el lienzo del carnet.')
+
+  ctx.textBaseline = 'alphabetic'
+  if (cara === 'reverso') reverso(ctx)
+  else frente(ctx, d)
 
   return lienzo
 }
 
 /**
- * El carnet en PNG, armado y sin guardar.
+ * Una cara del carnet en PNG, armada y sin guardar.
  *
- * Antes esto terminaba en una descarga y la imagen caía en la carpeta sin que
- * nadie la hubiera visto. Un carnet se revisa antes de mandarlo a imprimir
- * —que la cara esté centrada, que el nombre quepa, que el grupo sanguíneo no
- * salga en guion—, así que se devuelve para que la pantalla lo enseñe.
+ * Cada cara es un archivo suyo, de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—,
+ * y el nombre lo dice: quien las mande a imprimir no tiene que abrirlas para
+ * saber cuál es cuál.
  */
-export async function armarCarnet(d: DatosCarnet): Promise<ArchivoArmado> {
-  const lienzo = await dibujarCarnet(d)
+export async function armarCarnet(
+  d: DatosCarnet,
+  cara: CaraCarnet = 'frente',
+): Promise<ArchivoArmado> {
+  const lienzo = await dibujarCarnet(d, cara)
 
   const blob = await new Promise<Blob | null>((r) => lienzo.toBlob(r, 'image/png'))
   if (!blob) throw new Error('No se pudo generar la imagen del carnet.')
 
-  return { blob, nombre: `carnet-${d.ficha}-${d.apellidos.split(' ')[0].toLowerCase()}.png` }
+  const apellido = d.apellidos.split(' ')[0].toLowerCase()
+  return { blob, nombre: `carnet-${cara}-${d.ficha}-${apellido}.png` }
 }
