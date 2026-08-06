@@ -340,7 +340,12 @@ export function FichaTrabajador() {
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-2">
-          <Chip tone={e.activo ? 'success' : 'neutral'}>{e.activo ? 'Activo' : 'Egresado'}</Chip>
+          {/* La misma etiqueta y el mismo color que en la lista: si aquí
+              dijera "Egresado" en gris y allá "Desincorporado" en rojo,
+              parecerían dos estados distintos de la misma persona. */}
+          <Chip tone={e.activo ? 'success' : 'danger'}>
+            {e.activo ? 'Activo' : 'Desincorporado'}
+          </Chip>
           {puedeRRHH ? (
             <Link to={`/app/nomina/personal?editar=${e.id}`}>
               <Button size="sm" variant="outline" icon={<Pencil />}>
