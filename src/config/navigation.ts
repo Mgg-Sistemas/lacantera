@@ -67,6 +67,11 @@ export interface NavItem {
  * abierta a todo el mundo.
  */
 const MODULO_POR_PREFIJO: [string, string][] = [
+  // Antes que `/app/config`, que atraparía esta ruta: gana el primero que
+  // coincide. El respaldo cuelga de Configuración en el menú pero es su propio
+  // módulo, como Usuarios: quien mantiene el catálogo de artículos no tiene por
+  // qué poder llevarse la base entera.
+  ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
   ['/app/inventario', 'INVENTARIO'],
@@ -237,6 +242,7 @@ export const navigation: NavSection[] = [
           { label: 'Datos de la empresa', to: '/app/config/empresa' },
           { label: 'Documentos legales', to: '/app/config/documentos' },
           { label: 'Auditoría', to: '/app/config/auditoria', soloAdmin: true },
+          { label: 'Respaldo de la base', to: '/app/config/respaldo' },
         ],
       },
       {
