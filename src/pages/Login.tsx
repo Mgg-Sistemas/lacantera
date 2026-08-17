@@ -5,6 +5,7 @@ import { AlertCircle, Fingerprint, User } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Logo } from '@/components/Logo'
+import { FondoCantera } from '@/components/FondoCantera'
 import { EMPRESA } from '@/lib/empresa'
 import { iniciarSesion } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
@@ -113,24 +114,18 @@ export function Login() {
       ref={pantalla}
       className="bg-royal-950 relative flex min-h-svh flex-col overflow-hidden"
     >
-      {/* El envoltorio sobresale 16px por cada lado. El parallax desplaza hasta
-          10, así que sin ese margen se vería el borde del fondo asomar por el
-          lado contrario justo al mover el ratón. */}
+      {/* Tres capas, y cada una hace una cosa sola: el envoltorio se mueve con
+          el ratón, el de dentro se acerca despacio y la galería cruza las
+          fotografías. Juntas dan la sensación de cámara; separadas, cada una
+          se puede tocar sin romper las otras.
+
+          El envoltorio sobresale 16px por cada lado. El parallax desplaza
+          hasta 10, así que sin ese margen se vería el borde del fondo asomar
+          por el lado contrario justo al mover el ratón. */}
       <div className="sigue-al-puntero absolute -inset-4" aria-hidden="true">
-        <img
-          src="/cantera.jpg"
-          alt=""
-          // Las medidas reales, para que el navegador reserve el hueco antes de
-          // descargarla y la pantalla no dé un salto al aparecer.
-          //
-          // Y son 800x600 de verdad: en una pantalla de escritorio esta imagen
-          // se está estirando al doble. Se nota en los bordes de la roca. Hace
-          // falta el original a 2560px de ancho para que el frente se vea
-          // nítido, que es justo lo que esta pantalla tiene que transmitir.
-          width={800}
-          height={600}
-          className="anim-encuadre size-full object-cover"
-        />
+        <div className="anim-encuadre absolute inset-0">
+          <FondoCantera />
+        </div>
       </div>
 
       {/* Un velo mínimo, solo para amarrar la foto al azul de la casa. */}
