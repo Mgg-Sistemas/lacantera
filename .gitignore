@@ -85,3 +85,14 @@ public/*.pdf
 # Aqui van los datos: el personal con su cedula y su cuenta, el tabulador con lo
 # que gana cada cargo. Ver supabase/CARGAS.md.
 supabase/cargas/
+
+# Coordinacion interna del equipo.
+#
+# El traspaso entre las dos sesiones de trabajo —quien lleva la apariencia y
+# quien lleva la funcionalidad— nombra cuentas, acuerdos y el reparto de
+# archivos. Es andamiaje de como trabajamos, no documentacion del producto: no
+# le sirve a quien llegue al repositorio dentro de un ano, y este repositorio es
+# publico.
+#
+# El resto de `docs/` si se versiona: eso explica el sistema.
+docs/traspaso-funcional.md

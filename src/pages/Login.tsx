@@ -81,189 +81,181 @@ export function Login() {
     setEnviando(false)
   }
 
+  /*
+    LA CANTERA A SANGRE, Y EL ACCESO COMO UNA PLACA.
+
+    La versión anterior partía la pantalla en dos: dibujo a un lado,
+    formulario al otro. Cambiarle el dibujo por una foto fue maquillaje —el
+    esqueleto seguía siendo el de cualquier acceso de cualquier producto—, y
+    por eso se descartó.
+
+    Esto invierte el reparto. No hay dos columnas: hay una cantera que ocupa
+    la pantalla entera y una placa apoyada encima. La referencia es cómo se
+    presentan las areneras y canteras establecidas —Vulcan Materials abre con
+    el paisaje de su propia explotación—, donde la autoridad no la da un
+    adorno gráfico sino la escala de la operación fotografiada de verdad.
+
+    El velo es deliberadamente flojo. En la versión anterior tapaba la roca
+    al 72% y dejaba un azul turbio del que no se distinguía nada; aquí la
+    piedra se ve, que es justamente lo que hay que enseñar. La legibilidad
+    del texto blanco se resuelve con dos degradados en los bordes, no
+    apagando la foto entera.
+  */
   return (
-    <div className="flex min-h-svh">
-      {/* ---------- El frente de explotación ----------
+    <div className="bg-royal-950 relative flex min-h-svh flex-col overflow-hidden">
+      <img
+        src="/cantera.jpg"
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 size-full object-cover"
+      />
 
-          Aquí había un minero de caricatura y dos tarjetas flotantes con
-          cifras inventadas: 1.284 t despachadas hoy, 12,4% vs. ayer, tres
-          existencias en patio. El panel del sistema cierra prometiendo que
-          "no hay ningún número de ejemplo en esta pantalla", y esta —la
-          única que ve alguien sin credenciales— enseñaba seis. Ahora enseña
-          el frente de verdad y ninguna cifra. */}
-      <div className="bg-royal-950 relative hidden flex-1 overflow-hidden lg:flex">
-        <img
-          src="/cantera.jpg"
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 size-full object-cover"
-        />
+      {/* Un velo mínimo, solo para amarrar la foto al azul de la casa. */}
+      <div className="bg-royal-950/30 absolute inset-0" aria-hidden="true" />
 
-        {/* El velo azul. Debajo queda la roca; encima manda la casa. Sin él
-            la foto pelea con el formulario, y quien viene a entrar tiene que
-            buscar dónde escribir. */}
-        <div className="bg-royal-950/72 absolute inset-0" aria-hidden="true" />
-        <div
-          className="from-royal-950 via-royal-950/35 absolute inset-0 bg-gradient-to-t to-transparent"
-          aria-hidden="true"
-        />
+      {/* Los degradados van donde hay texto encima, y solo ahí: arriba para
+          la marca, abajo para la identidad. Oscurecer el centro no serviría
+          a nadie y se llevaría por delante el frente. */}
+      <div
+        className="from-royal-950/75 absolute inset-x-0 top-0 h-40 bg-gradient-to-b to-transparent"
+        aria-hidden="true"
+      />
+      {/* Abajo el degradado va más cargado que arriba, y no por simetría: el
+          suelo del frente es arena clara y el cielo es azul. Sobre la arena,
+          un blanco al 45% desaparece. */}
+      <div
+        className="from-royal-950/95 via-royal-950/45 absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t to-transparent"
+        aria-hidden="true"
+      />
 
-        {/* El banco.
-
-            Un frente no se corta a plomo: se baja en bancos, escalones de
-            altura fija que es donde se para la máquina. El menú los nombra
-            —"Frentes y bancos"—, así que la diagonal deja de ser un adorno
-            heredado y pasa a ser lo que ordena la pantalla, la misma que
-            cierra la portada. El filo naranja es la línea de cota que marca
-            el banco, y es el único acento de la página: se gasta aquí y no
-            se repite. */}
-        <svg
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[46%] w-full"
-          viewBox="0 0 800 300"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          {/* El banco baja hacia la derecha, al revés que el de la portada.
-              No es capricho: la identidad se apoya abajo a la izquierda y
-              necesita suelo sólido debajo, y la pendiente descendente lleva
-              la vista hacia el formulario en vez de sacarla de la pantalla. */}
-          <path d="M0 96 L800 300 L0 300 Z" className="fill-royal-950" opacity="0.94" />
-          <path
-            d="M0 96 L800 300"
-            className="stroke-safety"
-            strokeWidth="1.5"
-            fill="none"
-            opacity="0.5"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-
-        {/* La marca vuelve a la portada. Es lo que la gente intenta pulsar
-            cuando llegó aquí sin querer. */}
-        <Link to="/" className="absolute top-8 left-8 z-20" aria-label="Volver a la portada">
+      <header className="relative z-10 px-6 py-7 sm:px-10 lg:px-14">
+        <Link to="/" aria-label="Volver a la portada">
           <Logo inverted />
         </Link>
+      </header>
 
-        {/* La identidad, abajo y en mono. Mono porque todo lo que este sistema
-            cuenta —toneladas, horómetros, tickets de romana, el RIF— son
-            cifras que se alinean en columna, y el rótulo de la puerta debe
-            sonar a lo que hay dentro. */}
-        <div className="absolute right-10 bottom-10 left-10 z-20">
-          <p className="font-mono text-xs tracking-[0.14em] text-white/85 uppercase">
-            {EMPRESA.razonSocial}
-          </p>
-          <p className="text-2xs mt-1.5 font-mono tracking-[0.1em] text-white/45">
-            RIF {EMPRESA.rif} · {EMPRESA.estado}
-          </p>
-        </div>
-      </div>
+      <main className="relative z-10 flex flex-1 items-center px-6 sm:px-10 lg:px-14">
+        {/* La placa se apoya a la derecha y no en el centro: centrada parte la
+            fotografía por la mitad y no deja ver ni el frente ni la máquina.
+            Contra el margen, la explotación se lee entera. */}
+        <div className="mx-auto w-full max-w-6xl lg:flex lg:justify-end">
+          <div className="bg-surface rounded-card shadow-popover mx-auto w-full max-w-[400px] p-8 sm:p-9 lg:mx-0">
+            {/* Rótulo antes que titular: dice de qué sistema es esta puerta
+                antes de pedir nada. En versalitas espaciadas y en mono,
+                como los encabezados de los papeles que salen de aquí. */}
+            <p className="text-ink/40 text-2xs font-mono tracking-[0.2em] uppercase">
+              Sistema de control interno
+            </p>
 
-      {/* ---------- Columna del formulario ---------- */}
-      <div className="bg-surface flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-[460px] lg:shrink-0 lg:px-14">
-        <div className="mx-auto w-full max-w-[360px]">
-          <Link
-            to="/"
-            className="mb-8 inline-flex lg:hidden"
-            aria-label="Volver a la portada"
-          >
-            <Logo />
-          </Link>
+            {/* El título dice el mismo verbo que el botón. Un encabezado que
+                saluda y un botón que ordena obligan a leer dos veces para
+                entender que son la misma acción. */}
+            <h1 className="text-ink/90 mt-2 text-2xl font-semibold tracking-tight">
+              Entrar al sistema
+            </h1>
 
-          {/* El título dice el mismo verbo que el botón. Un encabezado que
-              saluda y un botón que ordena obligan a leer dos veces para
-              entender que son la misma acción. */}
-          <h1 className="text-ink/90 text-2xl font-semibold tracking-tight">Entrar al sistema</h1>
-          <p className="text-ink/55 mt-1.5 text-base">
-            Para registrar la operación del día.
-          </p>
+            <div className="bg-hairline mt-6 h-px" aria-hidden="true" />
 
-          <form onSubmit={handleSubmit} className="mt-7 space-y-5">
-            {error ? (
-              <div
-                role="alert"
-                className="border-danger/25 bg-danger-soft flex items-start gap-2.5 rounded-[6px] border p-3"
-              >
-                <AlertCircle className="text-danger mt-px size-[18px] shrink-0" />
-                <p className="text-danger text-sm">{error}</p>
-              </div>
-            ) : null}
+            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+              {error ? (
+                <div
+                  role="alert"
+                  className="border-danger/25 bg-danger-soft flex items-start gap-2.5 rounded-[6px] border p-3"
+                >
+                  <AlertCircle className="text-danger mt-px size-[18px] shrink-0" />
+                  <p className="text-danger text-sm">{error}</p>
+                </div>
+              ) : null}
 
-            <Input
-              label="Usuario"
-              // El nombre de acceso se compara en minuscula contra el correo
-              // interno. Subirlo a mayuscula dejaria a todo el mundo fuera.
-              sinNormalizar
-              name="usuario"
-              autoComplete="username"
-              autoCapitalize="none"
-              spellCheck={false}
-              placeholder="tu.usuario"
-              icon={<User />}
-              required
-            />
-
-            <div>
               <Input
-                label="Clave"
-                name="clave"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                revealable
+                label="Usuario"
+                // El nombre de acceso se compara en minuscula contra el correo
+                // interno. Subirlo a mayuscula dejaria a todo el mundo fuera.
+                sinNormalizar
+                name="usuario"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="tu.usuario"
+                icon={<User />}
                 required
               />
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <label className="text-ink/70 flex cursor-pointer items-center gap-2 text-sm select-none">
-                  <input
-                    type="checkbox"
-                    name="recordar"
-                    className="accent-royal-600 size-4 rounded"
-                  />
-                  Mantener sesión abierta
-                </label>
-                <a
-                  href="#recuperar"
-                  className="text-royal-600 hover:text-royal-700 dark:text-royal-300 dark:hover:text-royal-200 text-sm font-medium"
-                >
-                  Olvidé mi contraseña
-                </a>
-              </div>
-            </div>
 
-            <Button type="submit" size="lg" block disabled={enviando}>
-              {enviando ? 'Entrando…' : 'Entrar'}
-            </Button>
-          </form>
-
-          {huella.activa ? (
-            <>
-              <div className="my-5 flex items-center gap-3">
-                <span className="bg-ink/10 h-px flex-1" />
-                <span className="text-ink/40 text-xs">o</span>
-                <span className="bg-ink/10 h-px flex-1" />
+              <div>
+                <Input
+                  label="Clave"
+                  name="clave"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  revealable
+                  required
+                />
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <label className="text-ink/70 flex cursor-pointer items-center gap-2 text-sm select-none">
+                    <input
+                      type="checkbox"
+                      name="recordar"
+                      className="accent-royal-600 size-4 rounded"
+                    />
+                    Mantener sesión abierta
+                  </label>
+                  <a
+                    href="#recuperar"
+                    className="text-royal-600 hover:text-royal-700 dark:text-royal-300 dark:hover:text-royal-200 text-sm font-medium"
+                  >
+                    Olvidé mi contraseña
+                  </a>
+                </div>
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                block
-                onClick={() => void entrarConHuella()}
-                disabled={conHuella}
-                icon={<Fingerprint className="size-[18px]" />}
-              >
-                {conHuella
-                  ? 'Esperando el dedo…'
-                  : `Entrar con la huella${huella.usuario ? ` de ${huella.usuario}` : ''}`}
+              <Button type="submit" size="lg" block disabled={enviando}>
+                {enviando ? 'Entrando…' : 'Entrar'}
               </Button>
-            </>
-          ) : null}
+            </form>
 
-          <p className="text-ink/45 mt-8 text-xs leading-relaxed">
-            El acceso lo asigna la administración de la empresa. Si no tienes credenciales,
-            escribe a sistemas.
-          </p>
+            {huella.activa ? (
+              <>
+                <div className="my-5 flex items-center gap-3">
+                  <span className="bg-ink/10 h-px flex-1" />
+                  <span className="text-ink/40 text-xs">o</span>
+                  <span className="bg-ink/10 h-px flex-1" />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  block
+                  onClick={() => void entrarConHuella()}
+                  disabled={conHuella}
+                  icon={<Fingerprint className="size-[18px]" />}
+                >
+                  {conHuella
+                    ? 'Esperando el dedo…'
+                    : `Entrar con la huella${huella.usuario ? ` de ${huella.usuario}` : ''}`}
+                </Button>
+              </>
+            ) : null}
+
+            <p className="text-ink/45 mt-7 text-xs leading-relaxed">
+              El acceso lo asigna la administración de la empresa. Si no tienes credenciales,
+              escribe a sistemas.
+            </p>
+          </div>
         </div>
-      </div>
+      </main>
+
+      {/* La identidad cierra la pantalla, sobre la propia explotación. Es
+          como se firma un papel de la empresa: el nombre registrado y el RIF
+          al pie, no flotando en una tarjeta. */}
+      <footer className="relative z-10 px-6 pb-8 sm:px-10 lg:px-14">
+        <p className="text-2xs font-mono tracking-[0.2em] text-white/80 uppercase">
+          {EMPRESA.razonSocial}
+        </p>
+        <p className="text-2xs mt-1.5 font-mono tracking-[0.16em] text-white/60">
+          RIF {EMPRESA.rif} · {EMPRESA.estado}
+        </p>
+      </footer>
     </div>
   )
 }
