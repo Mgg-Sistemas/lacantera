@@ -287,24 +287,50 @@ export function Landing() {
       ))}
 
       {/* ================= Lo que sale del patio ================= */}
-      <section className="bg-royal-900 px-6 py-24 sm:px-10 lg:py-32">
-        <div className="mx-auto max-w-6xl">
-          <h2 className="text-2xs font-mono tracking-[0.28em] text-white/45 uppercase">
-            Lo que sale del patio
-          </h2>
+      {/*
+        El único momento con una persona.
 
-          {/* Los nombres solos y en grande. Sin descripciones inventadas de
-              para qué sirve cada calibre y sin toneladas. */}
-          <ul className="mt-10 grid gap-x-12 sm:grid-cols-2">
-            {MATERIALES.map((m) => (
-              <li
-                key={m}
-                className="border-t border-white/12 py-7 text-2xl font-light tracking-tight text-white/90 sm:text-4xl"
-              >
-                {m}
-              </li>
-            ))}
-          </ul>
+        Todo lo anterior son máquinas y paisaje, que es lo que hace grande a una
+        cantera y también lo que la vuelve abstracta. Una mano sosteniendo la
+        piedra devuelve la escala: esto es lo que se arranca, y cabe en un
+        puño. Va aquí y no antes porque es el punto donde se nombra el
+        material, y el material es justo lo que sujeta esa mano.
+
+        La foto va al lado y no detrás. Detrás obligaría a taparla con un velo
+        para que se leyeran los nombres, y lo que hay que ver de esta imagen
+        —el grano de la piedra, el polvo en los dedos— es lo primero que se
+        pierde bajo un velo.
+      */}
+      <section className="bg-royal-900 px-6 py-24 sm:px-10 lg:py-32">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[5fr_6fr] lg:gap-16">
+          <img
+            src="/tomandopiedra.jpeg"
+            alt="Un trabajador sostiene en la mano un fragmento de la piedra extraída."
+            width={1280}
+            height={840}
+            loading="lazy"
+            decoding="async"
+            className="rounded-card w-full object-cover"
+          />
+
+          <div>
+            <h2 className="text-2xs font-mono tracking-[0.28em] text-white/45 uppercase">
+              Lo que sale del patio
+            </h2>
+
+            {/* Los nombres solos y en grande. Sin descripciones inventadas de
+                para qué sirve cada calibre y sin toneladas. */}
+            <ul className="mt-8">
+              {MATERIALES.map((m) => (
+                <li
+                  key={m}
+                  className="border-t border-white/12 py-6 text-2xl font-light tracking-tight text-white/90 sm:text-3xl"
+                >
+                  {m}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
