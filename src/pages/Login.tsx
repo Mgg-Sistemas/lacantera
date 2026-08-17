@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { AlertCircle, ArrowUpRight, Fingerprint, Truck, User } from 'lucide-react'
+import { AlertCircle, Fingerprint, User } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { IconTile } from '@/components/ui/IconTile'
 import { Logo } from '@/components/Logo'
-import { MinerIllustration } from '@/components/MinerIllustration'
+import { EMPRESA } from '@/lib/empresa'
 import { iniciarSesion } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { estadoGuardado, paseConHuella } from '@/lib/huella'
@@ -84,71 +83,78 @@ export function Login() {
 
   return (
     <div className="flex min-h-svh">
-      {/* ---------- Columna de ilustración ---------- */}
-      <div className="bg-canvas relative hidden flex-1 overflow-hidden lg:flex">
-        {/* Plano del terreno: el mismo gesto diagonal de la referencia,
-            aquí leído como el talud de un banco de explotación. */}
+      {/* ---------- El frente de explotación ----------
+
+          Aquí había un minero de caricatura y dos tarjetas flotantes con
+          cifras inventadas: 1.284 t despachadas hoy, 12,4% vs. ayer, tres
+          existencias en patio. El panel del sistema cierra prometiendo que
+          "no hay ningún número de ejemplo en esta pantalla", y esta —la
+          única que ve alguien sin credenciales— enseñaba seis. Ahora enseña
+          el frente de verdad y ninguna cifra. */}
+      <div className="bg-royal-950 relative hidden flex-1 overflow-hidden lg:flex">
+        <img
+          src="/cantera.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 size-full object-cover"
+        />
+
+        {/* El velo azul. Debajo queda la roca; encima manda la casa. Sin él
+            la foto pelea con el formulario, y quien viene a entrar tiene que
+            buscar dónde escribir. */}
+        <div className="bg-royal-950/72 absolute inset-0" aria-hidden="true" />
+        <div
+          className="from-royal-950 via-royal-950/35 absolute inset-0 bg-gradient-to-t to-transparent"
+          aria-hidden="true"
+        />
+
+        {/* El banco.
+
+            Un frente no se corta a plomo: se baja en bancos, escalones de
+            altura fija que es donde se para la máquina. El menú los nombra
+            —"Frentes y bancos"—, así que la diagonal deja de ser un adorno
+            heredado y pasa a ser lo que ordena la pantalla, la misma que
+            cierra la portada. El filo naranja es la línea de cota que marca
+            el banco, y es el único acento de la página: se gasta aquí y no
+            se repite. */}
         <svg
-          className="absolute inset-x-0 bottom-0 h-1/2 w-full"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[46%] w-full"
           viewBox="0 0 800 300"
           preserveAspectRatio="none"
           aria-hidden="true"
         >
-          {/* `fill-surface` en vez de blanco fijo: el talud debe seguir al
-              tema, no quedarse como una mancha clara sobre fondo oscuro. */}
-          <path d="M0 300 L800 120 L800 300 Z" className="fill-surface" opacity="0.75" />
+          {/* El banco baja hacia la derecha, al revés que el de la portada.
+              No es capricho: la identidad se apoya abajo a la izquierda y
+              necesita suelo sólido debajo, y la pendiente descendente lleva
+              la vista hacia el formulario en vez de sacarla de la pantalla. */}
+          <path d="M0 96 L800 300 L0 300 Z" className="fill-royal-950" opacity="0.94" />
+          <path
+            d="M0 96 L800 300"
+            className="stroke-safety"
+            strokeWidth="1.5"
+            fill="none"
+            opacity="0.5"
+            vectorEffect="non-scaling-stroke"
+          />
         </svg>
 
         {/* La marca vuelve a la portada. Es lo que la gente intenta pulsar
             cuando llegó aquí sin querer. */}
         <Link to="/" className="absolute top-8 left-8 z-20" aria-label="Volver a la portada">
-          <Logo />
+          <Logo inverted />
         </Link>
 
-        <div className="relative z-10 flex flex-1 items-center justify-center px-12">
-          <div className="relative w-full max-w-[400px]">
-            <MinerIllustration className="w-full drop-shadow-[0_18px_28px_rgba(38,44,61,0.10)]" />
-
-            {/* Tarjetas flotantes: cifras reales de la operación, no adornos.
-                Van por fuera de la silueta — encima tapan la tableta, que es
-                justo lo que la ilustración tiene que contar. */}
-            <div className="bg-surface shadow-card rounded-card absolute top-[6%] -left-16 w-[176px] p-3.5">
-              <div className="flex items-start justify-between">
-                <IconTile tone="royal" size="sm">
-                  <Truck />
-                </IconTile>
-              </div>
-              <p className="text-ink/55 mt-2.5 text-xs">Despachado hoy</p>
-              <p className="text-ink/90 tabular mt-0.5 text-xl font-semibold">1.284 t</p>
-              <p className="text-success mt-1 flex items-center gap-0.5 text-xs font-medium">
-                <ArrowUpRight className="size-3.5" />
-                12,4% vs. ayer
-              </p>
-            </div>
-
-            <div className="bg-surface shadow-card rounded-card absolute -right-16 bottom-[8%] w-[180px] p-3.5">
-              <p className="text-ink/55 text-xs">Existencia en patio</p>
-              <ul className="mt-2 space-y-1.5">
-                {[
-                  { nombre: 'Piedra picada #1', valor: '3.410 t', ancho: 'w-full' },
-                  { nombre: 'Arena lavada', valor: '2.180 t', ancho: 'w-2/3' },
-                  { nombre: 'Granzón', valor: '940 t', ancho: 'w-1/4' },
-                ].map((fila) => (
-                  <li key={fila.nombre}>
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-ink/70 truncate text-2xs">{fila.nombre}</span>
-                      <span className="text-ink/90 tabular text-2xs font-semibold">
-                        {fila.valor}
-                      </span>
-                    </div>
-                    <div className="bg-ink/8 mt-1 h-1 rounded-full">
-                      <div className={`bg-royal-500 h-1 rounded-full ${fila.ancho}`} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+        {/* La identidad, abajo y en mono. Mono porque todo lo que este sistema
+            cuenta —toneladas, horómetros, tickets de romana, el RIF— son
+            cifras que se alinean en columna, y el rótulo de la puerta debe
+            sonar a lo que hay dentro. */}
+        <div className="absolute right-10 bottom-10 left-10 z-20">
+          <p className="font-mono text-xs tracking-[0.14em] text-white/85 uppercase">
+            {EMPRESA.razonSocial}
+          </p>
+          <p className="text-2xs mt-1.5 font-mono tracking-[0.1em] text-white/45">
+            RIF {EMPRESA.rif} · {EMPRESA.estado}
+          </p>
         </div>
       </div>
 
@@ -163,11 +169,12 @@ export function Login() {
             <Logo />
           </Link>
 
-          <h1 className="text-ink/90 text-2xl font-semibold tracking-tight">
-            Bienvenido de vuelta
-          </h1>
+          {/* El título dice el mismo verbo que el botón. Un encabezado que
+              saluda y un botón que ordena obligan a leer dos veces para
+              entender que son la misma acción. */}
+          <h1 className="text-ink/90 text-2xl font-semibold tracking-tight">Entrar al sistema</h1>
           <p className="text-ink/55 mt-1.5 text-base">
-            Entra para registrar la operación del día.
+            Para registrar la operación del día.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-7 space-y-5">
