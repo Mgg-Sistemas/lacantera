@@ -169,12 +169,99 @@
   }
 }
 
+/*
+  Movimiento de entrada.
+
+  Las pantallas de acceso aparecían de golpe, enteras y a la vez, como un
+  formulario que se enciende. Esto las pone en secuencia: primero el encuadre,
+  después la marca, después la placa y al final la firma al pie. No son cuatro
+  efectos sueltos —eso se nota y cansa— sino un solo gesto escalonado que dura
+  poco más de un segundo y no se vuelve a repetir.
+
+  `encuadre` es el único que no es una entrada: es la cámara asentándose sobre
+  el frente. Empieza un 6% dentro y se posa en dieciocho segundos, tan despacio
+  que no se ve moverse; lo que se percibe es que la fotografía está viva en vez
+  de congelada. No se repite en bucle a propósito: un vaivén infinito delata el
+  truco y termina distrayendo de lo único que hay que hacer aquí, que es entrar.
+
+  La curva es la misma en todas —una exponencial de salida—: arrancan rápido y
+  frenan largo, que es como se mueve algo con peso.
+
+  Todas llevan `both`: durante su retardo el elemento se queda en el fotograma
+  inicial, invisible. Eso importa para el bloque de abajo — con movimiento
+  reducido la duración pasa a ser casi cero y cada elemento salta directo a su
+  estado final, sin parpadeo y sin quedarse a medias.
+*/
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes encuadre {
+  from {
+    transform: scale(1.06);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/*
+  En propiedades largas y no con el atajo `animation:`.
+
+  El atajo reinicia a su valor inicial todo lo que no menciona, `animation-delay`
+  incluido. Con él, un `[animation-delay:440ms]` puesto al lado se anulaba y las
+  cuatro capas entraban a la vez: la secuencia existía en el código y no en la
+  pantalla. Cuesta verlo porque no falla nada — simplemente no escalona.
+*/
+@layer utilities {
+  .anim-surgir {
+    animation-name: surgir;
+    animation-duration: 0.8s;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }
+  .anim-aparecer {
+    animation-name: aparecer;
+    animation-duration: 1.2s;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+  }
+  .anim-encuadre {
+    animation-name: encuadre;
+    animation-duration: 18s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    animation-fill-mode: both;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    /* El retardo también, no solo la duración. Sin esta línea una entrada
+       escalonada sigue escalonando: la animación dura cero pero empieza tarde,
+       así que quien pidió no ver movimiento se queda mirando medio segundo de
+       pantalla incompleta. Anular la duración sin anular la espera arregla la
+       mitad del problema. */
+    animation-delay: 0.01ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }

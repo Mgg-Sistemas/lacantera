@@ -107,11 +107,11 @@ export function Login() {
         src="/cantera.jpg"
         alt=""
         aria-hidden="true"
-        className="absolute inset-0 size-full object-cover"
+        className="anim-encuadre absolute inset-0 size-full object-cover"
       />
 
       {/* Un velo mínimo, solo para amarrar la foto al azul de la casa. */}
-      <div className="bg-royal-950/30 absolute inset-0" aria-hidden="true" />
+      <div className="bg-royal-950/30 anim-aparecer absolute inset-0" aria-hidden="true" />
 
       {/* Los degradados van donde hay texto encima, y solo ahí: arriba para
           la marca, abajo para la identidad. Oscurecer el centro no serviría
@@ -128,7 +128,11 @@ export function Login() {
         aria-hidden="true"
       />
 
-      <header className="relative z-10 px-6 py-7 sm:px-10 lg:px-14">
+      {/* El orden de la secuencia es el de importancia, no el de la maqueta:
+          la marca dice dónde estás, la placa es a lo que vienes y la firma
+          cierra. Los retardos van de 180 en 180 ms, lo justo para que se lea
+          como un movimiento y no como tres cosas que llegan tarde. */}
+      <header className="anim-surgir relative z-10 px-6 py-7 [animation-delay:260ms] sm:px-10 lg:px-14">
         <Link to="/" aria-label="Volver a la portada">
           <Logo inverted />
         </Link>
@@ -139,7 +143,7 @@ export function Login() {
             fotografía por la mitad y no deja ver ni el frente ni la máquina.
             Contra el margen, la explotación se lee entera. */}
         <div className="mx-auto w-full max-w-6xl lg:flex lg:justify-end">
-          <div className="bg-surface rounded-card shadow-popover mx-auto w-full max-w-[400px] p-8 sm:p-9 lg:mx-0">
+          <div className="bg-surface rounded-card shadow-popover anim-surgir mx-auto w-full max-w-[400px] p-8 [animation-delay:440ms] sm:p-9 lg:mx-0">
             {/* Rótulo antes que titular: dice de qué sistema es esta puerta
                 antes de pedir nada. En versalitas espaciadas y en mono,
                 como los encabezados de los papeles que salen de aquí. */}
@@ -248,7 +252,7 @@ export function Login() {
       {/* La identidad cierra la pantalla, sobre la propia explotación. Es
           como se firma un papel de la empresa: el nombre registrado y el RIF
           al pie, no flotando en una tarjeta. */}
-      <footer className="relative z-10 px-6 pb-8 sm:px-10 lg:px-14">
+      <footer className="anim-surgir relative z-10 px-6 pb-8 [animation-delay:620ms] sm:px-10 lg:px-14">
         <p className="text-2xs font-mono tracking-[0.2em] text-white/80 uppercase">
           {EMPRESA.razonSocial}
         </p>
