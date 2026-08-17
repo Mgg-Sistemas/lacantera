@@ -1,5 +1,6 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from 'react'
 import { cn } from '@/lib/cn'
+import { sonarPulsar } from '@/lib/sonido'
 
 type Variant = 'primary' | 'soft' | 'outline' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
@@ -38,14 +39,42 @@ export function Button({
   className,
   children,
   type = 'button',
+  onClick,
   ...rest
 }: ButtonProps) {
+  /*
+    Acuse de recibo: se hunde y suena.
+
+    El hundido va en `transform` y no en tamaño ni en margen, que moverían lo
+    que hay alrededor; aquí solo se encoge el botón y nada más se entera. Y va
+    bajo `motion-safe`: con movimiento reducido la transición dura cero, así
+    que la escala daría un salto en vez de un gesto — peor que no tenerla.
+
+    El sonido va aquí y no en cada pantalla porque si no, en 53 archivos habría
+    53 criterios distintos sobre cuándo suena algo. Respeta el mismo silencio
+    que los avisos: un solo interruptor apaga el sistema entero.
+
+    Se llama antes de `onClick` a propósito. Si el manejador navega o lanza,
+    el sonido ya salió: el acuse de recibo no puede depender de que la acción
+    termine bien.
+  */
+  const alPulsar = (e: MouseEvent<HTMLButtonElement>) => {
+    sonarPulsar()
+    onClick?.(e)
+  }
+
   return (
     <button
       type={type}
+      onClick={alPulsar}
       className={cn(
         'rounded-control inline-flex items-center justify-center font-medium',
-        'transition-colors duration-150',
+        // `scale` y no `transform`: Tailwind 4 compila `scale-[0.97]` a la
+        // propiedad independiente `scale`, así que una transición sobre
+        // `transform` no la alcanza y el hundido daría un salto seco. Se ve
+        // igual en el navegador — solo que sin suavizar.
+        'transition-[color,background-color,border-color,scale,box-shadow] duration-150',
+        'motion-safe:active:scale-[0.97]',
         'disabled:cursor-not-allowed disabled:opacity-60',
         variants[variant],
         sizes[size],

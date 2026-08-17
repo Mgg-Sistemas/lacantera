@@ -10,6 +10,7 @@ import { iniciarSesion } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { estadoGuardado, paseConHuella } from '@/lib/huella'
 import { usePuntero } from '@/lib/puntero'
+import { sonarError } from '@/lib/sonido'
 
 export function Login() {
   const navigate = useNavigate()
@@ -53,6 +54,7 @@ export function Login() {
       const mensaje = e instanceof Error ? e.message : String(e)
       // Cancelar el diálogo del sistema no es un fallo que haya que gritar.
       if (!/NotAllowed|abort/i.test(mensaje)) {
+        sonarError()
         setError(
           /refresh|token|JWT|expired/i.test(mensaje)
             ? 'Tu sesión guardada caducó. Entra con tu clave y vuelve a activar la huella.'
@@ -79,6 +81,9 @@ export function Login() {
       return
     }
 
+    // La clave equivocada es el error más frecuente del sistema y el único que
+    // se comete a ciegas, mirando el teclado. Oírlo ahorra levantar la vista.
+    sonarError()
     setError(resultado.error ?? 'No se pudo entrar.')
     setEnviando(false)
   }
