@@ -39,6 +39,14 @@ export function Landing() {
         <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1fr_auto] lg:gap-16">
           {/* ---------- Lo que dice ---------- */}
           <div className="text-center lg:text-left">
+            {/* Lo primero que se lee, antes del titular: a qué se dedica la
+                casa. El nombre registrado ya está en el titular y el RIF
+                debajo; lo que ninguno de los dos dice es el oficio, y es lo
+                único que le interesa a quien llega sin conocer la empresa. */}
+            <p className="text-safety/90 mb-4 text-[11px] font-semibold tracking-[0.22em] uppercase sm:text-xs">
+              Explotación Internacional
+            </p>
+
             <h1 className="text-2xl font-bold tracking-tight text-balance text-white sm:text-3xl lg:text-4xl">
               BIENVENIDO AL SISTEMA DE CONTROL INTERNO DE{' '}
               <span className="text-safety">{EMPRESA.razonSocial}</span>
