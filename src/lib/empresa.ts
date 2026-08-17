@@ -26,5 +26,19 @@ export const EMPRESA = {
   marca: 'Minería Internacional',
   rif: 'J-50209170-0',
   actividad: 'Explotación de piedra',
-  estado: 'Estado Bolívar',
+  /*
+    Aquí había un campo `estado` con la ubicación. Se quitó por instrucción de
+    la dirección de Sistemas, por dos motivos a la vez: el dato no era correcto
+    y la ubicación de la explotación no es algo que deba publicarse. No se
+    repite aquí ni siquiera como comentario — este repositorio es público.
+
+    Se retira el campo entero y no solo sus usos. Mientras exista aquí, la
+    primera pantalla que necesite un pie de página vuelve a ponerlo sin que
+    nadie se pregunte si debe — y esta constante alimenta la portada, que es
+    pública, y los papeles que salen de la empresa.
+
+    Si algún día hace falta una dirección para un documento legal, va en los
+    datos de empresa de la base (Configuración → Datos de la empresa), que se
+    editan sin tocar código y no viajan al repositorio.
+  */
 } as const

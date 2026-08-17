@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { AlertCircle, ArrowUpRight, Fingerprint, Truck, User } from 'lucide-react'
+import { AlertCircle, Fingerprint, User } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { IconTile } from '@/components/ui/IconTile'
-import { Logo } from '@/components/Logo'
-import { MinerIllustration } from '@/components/MinerIllustration'
+import { FondoCantera } from '@/components/FondoCantera'
+import { EMPRESA } from '@/lib/empresa'
 import { iniciarSesion } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { estadoGuardado, paseConHuella } from '@/lib/huella'
+import { usePuntero } from '@/lib/puntero'
+import { sonarError } from '@/lib/sonido'
 
 export function Login() {
   const navigate = useNavigate()
+  const pantalla = usePuntero<HTMLDivElement>()
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -52,6 +54,7 @@ export function Login() {
       const mensaje = e instanceof Error ? e.message : String(e)
       // Cancelar el diálogo del sistema no es un fallo que haya que gritar.
       if (!/NotAllowed|abort/i.test(mensaje)) {
+        sonarError()
         setError(
           /refresh|token|JWT|expired/i.test(mensaje)
             ? 'Tu sesión guardada caducó. Entra con tu clave y vuelve a activar la huella.'
@@ -78,185 +81,213 @@ export function Login() {
       return
     }
 
+    // La clave equivocada es el error más frecuente del sistema y el único que
+    // se comete a ciegas, mirando el teclado. Oírlo ahorra levantar la vista.
+    sonarError()
     setError(resultado.error ?? 'No se pudo entrar.')
     setEnviando(false)
   }
 
+  /*
+    LA CANTERA A SANGRE, Y EL ACCESO COMO UNA PLACA.
+
+    La versión anterior partía la pantalla en dos: dibujo a un lado,
+    formulario al otro. Cambiarle el dibujo por una foto fue maquillaje —el
+    esqueleto seguía siendo el de cualquier acceso de cualquier producto—, y
+    por eso se descartó.
+
+    Esto invierte el reparto. No hay dos columnas: hay una cantera que ocupa
+    la pantalla entera y una placa apoyada encima. La referencia es cómo se
+    presentan las areneras y canteras establecidas —Vulcan Materials abre con
+    el paisaje de su propia explotación—, donde la autoridad no la da un
+    adorno gráfico sino la escala de la operación fotografiada de verdad.
+
+    El velo es deliberadamente flojo. En la versión anterior tapaba la roca
+    al 72% y dejaba un azul turbio del que no se distinguía nada; aquí la
+    piedra se ve, que es justamente lo que hay que enseñar. La legibilidad
+    del texto blanco se resuelve con dos degradados en los bordes, no
+    apagando la foto entera.
+  */
   return (
-    <div className="flex min-h-svh">
-      {/* ---------- Columna de ilustración ---------- */}
-      <div className="bg-canvas relative hidden flex-1 overflow-hidden lg:flex">
-        {/* Plano del terreno: el mismo gesto diagonal de la referencia,
-            aquí leído como el talud de un banco de explotación. */}
-        <svg
-          className="absolute inset-x-0 bottom-0 h-1/2 w-full"
-          viewBox="0 0 800 300"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          {/* `fill-surface` en vez de blanco fijo: el talud debe seguir al
-              tema, no quedarse como una mancha clara sobre fondo oscuro. */}
-          <path d="M0 300 L800 120 L800 300 Z" className="fill-surface" opacity="0.75" />
-        </svg>
+    <div
+      ref={pantalla}
+      className="bg-royal-950 relative flex min-h-svh flex-col overflow-hidden"
+    >
+      {/* Tres capas, y cada una hace una cosa sola: el envoltorio se mueve con
+          el ratón, el de dentro se acerca despacio y la galería cruza las
+          fotografías. Juntas dan la sensación de cámara; separadas, cada una
+          se puede tocar sin romper las otras.
 
-        {/* La marca vuelve a la portada. Es lo que la gente intenta pulsar
-            cuando llegó aquí sin querer. */}
-        <Link to="/" className="absolute top-8 left-8 z-20" aria-label="Volver a la portada">
-          <Logo />
-        </Link>
-
-        <div className="relative z-10 flex flex-1 items-center justify-center px-12">
-          <div className="relative w-full max-w-[400px]">
-            <MinerIllustration className="w-full drop-shadow-[0_18px_28px_rgba(38,44,61,0.10)]" />
-
-            {/* Tarjetas flotantes: cifras reales de la operación, no adornos.
-                Van por fuera de la silueta — encima tapan la tableta, que es
-                justo lo que la ilustración tiene que contar. */}
-            <div className="bg-surface shadow-card rounded-card absolute top-[6%] -left-16 w-[176px] p-3.5">
-              <div className="flex items-start justify-between">
-                <IconTile tone="royal" size="sm">
-                  <Truck />
-                </IconTile>
-              </div>
-              <p className="text-ink/55 mt-2.5 text-xs">Despachado hoy</p>
-              <p className="text-ink/90 tabular mt-0.5 text-xl font-semibold">1.284 t</p>
-              <p className="text-success mt-1 flex items-center gap-0.5 text-xs font-medium">
-                <ArrowUpRight className="size-3.5" />
-                12,4% vs. ayer
-              </p>
-            </div>
-
-            <div className="bg-surface shadow-card rounded-card absolute -right-16 bottom-[8%] w-[180px] p-3.5">
-              <p className="text-ink/55 text-xs">Existencia en patio</p>
-              <ul className="mt-2 space-y-1.5">
-                {[
-                  { nombre: 'Piedra picada #1', valor: '3.410 t', ancho: 'w-full' },
-                  { nombre: 'Arena lavada', valor: '2.180 t', ancho: 'w-2/3' },
-                  { nombre: 'Granzón', valor: '940 t', ancho: 'w-1/4' },
-                ].map((fila) => (
-                  <li key={fila.nombre}>
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-ink/70 truncate text-2xs">{fila.nombre}</span>
-                      <span className="text-ink/90 tabular text-2xs font-semibold">
-                        {fila.valor}
-                      </span>
-                    </div>
-                    <div className="bg-ink/8 mt-1 h-1 rounded-full">
-                      <div className={`bg-royal-500 h-1 rounded-full ${fila.ancho}`} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          El envoltorio sobresale 16px por cada lado. El parallax desplaza
+          hasta 10, así que sin ese margen se vería el borde del fondo asomar
+          por el lado contrario justo al mover el ratón. */}
+      <div className="sigue-al-puntero absolute -inset-4" aria-hidden="true">
+        <div className="anim-encuadre absolute inset-0">
+          <FondoCantera />
         </div>
       </div>
 
-      {/* ---------- Columna del formulario ---------- */}
-      <div className="bg-surface flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-[460px] lg:shrink-0 lg:px-14">
-        <div className="mx-auto w-full max-w-[360px]">
-          <Link
-            to="/"
-            className="mb-8 inline-flex lg:hidden"
-            aria-label="Volver a la portada"
-          >
-            <Logo />
-          </Link>
+      {/* Un velo mínimo, solo para amarrar la foto al azul de la casa. */}
+      <div className="bg-royal-950/30 anim-aparecer absolute inset-0" aria-hidden="true" />
 
-          <h1 className="text-ink/90 text-2xl font-semibold tracking-tight">
-            Bienvenido de vuelta
-          </h1>
-          <p className="text-ink/55 mt-1.5 text-base">
-            Entra para registrar la operación del día.
-          </p>
+      {/* Los degradados van donde hay texto encima, y solo ahí: arriba para
+          la marca, abajo para la identidad. Oscurecer el centro no serviría
+          a nadie y se llevaría por delante el frente. */}
+      <div
+        className="from-royal-950/75 absolute inset-x-0 top-0 h-40 bg-gradient-to-b to-transparent"
+        aria-hidden="true"
+      />
+      {/* Abajo el degradado va más cargado que arriba, y no por simetría: el
+          suelo del frente es arena clara y el cielo es azul. Sobre la arena,
+          un blanco al 45% desaparece. */}
+      <div
+        className="from-royal-950/95 via-royal-950/45 absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t to-transparent"
+        aria-hidden="true"
+      />
 
-          <form onSubmit={handleSubmit} className="mt-7 space-y-5">
-            {error ? (
-              <div
-                role="alert"
-                className="border-danger/25 bg-danger-soft flex items-start gap-2.5 rounded-[6px] border p-3"
-              >
-                <AlertCircle className="text-danger mt-px size-[18px] shrink-0" />
-                <p className="text-danger text-sm">{error}</p>
-              </div>
-            ) : null}
+      <main className="relative z-10 flex flex-1 items-center px-6 py-12 sm:px-10 lg:px-14">
+        {/* La placa se apoya a la derecha y no en el centro: centrada parte la
+            fotografía por la mitad y no deja ver ni el frente ni la máquina.
+            Contra el margen, la explotación se lee entera. */}
+        <div className="mx-auto w-full max-w-6xl lg:flex lg:justify-end">
+          <div className="bg-surface rounded-card shadow-popover anim-surgir mx-auto w-full max-w-[400px] p-8 [animation-delay:440ms] sm:p-9 lg:mx-0">
+            {/*
+              LA MARCA, Y EL PROVECHO DEL FONDO BLANCO
 
-            <Input
-              label="Usuario"
-              // El nombre de acceso se compara en minuscula contra el correo
-              // interno. Subirlo a mayuscula dejaria a todo el mundo fuera.
-              sinNormalizar
-              name="usuario"
-              autoComplete="username"
-              autoCapitalize="none"
-              spellCheck={false}
-              placeholder="tu.usuario"
-              icon={<User />}
-              required
-            />
+              El logo llega en JPEG, así que trae un rectángulo blanco pegado
+              que no se puede quitar: el formato no sabe de transparencia.
+              Sobre la fotografía sería un parche, y por eso no va ahí.
 
-            <div>
+              Aquí ese blanco no es un defecto sino la pieza que faltaba. La
+              placa del formulario ya era blanca, de modo que en tema claro el
+              rectángulo desaparece dentro de ella: no hay costura que
+              disimular porque no hay dos blancos, hay uno.
+
+              Y en tema oscuro, donde la placa se vuelve carbón, el rectángulo
+              reaparece — pero recortado y con aire alrededor se lee como un
+              cartel esmaltado atornillado a la pared, que es exactamente como
+              una cantera rotula su entrada. El punto flaco entra en el diseño
+              en vez de esconderse.
+
+              También se le quitó el margen sobrante del original: eran 162px
+              de blanco a la izquierda y 123 arriba, que empujaban la marca a
+              un tercio de su tamaño útil.
+
+              Va enlazado a la portada porque ya no hay otra marca en pantalla
+              que pulsar: era lo que había arriba a la izquierda, y dos logos
+              en una pantalla de acceso sobran.
+            */}
+            <Link to="/" aria-label="Volver a la portada" className="block">
+              <img
+                src="/marca.jpg"
+                alt={`${EMPRESA.razonSocial} — ${EMPRESA.actividad}`}
+                width={566}
+                height={525}
+                className="mx-auto block w-full max-w-[190px] rounded-[4px] bg-white p-2.5"
+              />
+            </Link>
+
+            <div className="bg-hairline mt-7 h-px" aria-hidden="true" />
+
+            {/* El título dice el mismo verbo que el botón. Un encabezado que
+                saluda y un botón que ordena obligan a leer dos veces para
+                entender que son la misma acción. */}
+            <h1 className="text-ink/90 mt-7 text-2xl font-semibold tracking-tight">
+              Entrar al sistema
+            </h1>
+
+            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+              {error ? (
+                <div
+                  role="alert"
+                  className="border-danger/25 bg-danger-soft flex items-start gap-2.5 rounded-[6px] border p-3"
+                >
+                  <AlertCircle className="text-danger mt-px size-[18px] shrink-0" />
+                  <p className="text-danger text-sm">{error}</p>
+                </div>
+              ) : null}
+
               <Input
-                label="Clave"
-                name="clave"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                revealable
+                label="Usuario"
+                // El nombre de acceso se compara en minuscula contra el correo
+                // interno. Subirlo a mayuscula dejaria a todo el mundo fuera.
+                sinNormalizar
+                name="usuario"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="tu.usuario"
+                icon={<User />}
                 required
               />
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <label className="text-ink/70 flex cursor-pointer items-center gap-2 text-sm select-none">
-                  <input
-                    type="checkbox"
-                    name="recordar"
-                    className="accent-royal-600 size-4 rounded"
-                  />
-                  Mantener sesión abierta
-                </label>
-                <a
-                  href="#recuperar"
-                  className="text-royal-600 hover:text-royal-700 dark:text-royal-300 dark:hover:text-royal-200 text-sm font-medium"
-                >
-                  Olvidé mi contraseña
-                </a>
-              </div>
-            </div>
 
-            <Button type="submit" size="lg" block disabled={enviando}>
-              {enviando ? 'Entrando…' : 'Entrar'}
-            </Button>
-          </form>
-
-          {huella.activa ? (
-            <>
-              <div className="my-5 flex items-center gap-3">
-                <span className="bg-ink/10 h-px flex-1" />
-                <span className="text-ink/40 text-xs">o</span>
-                <span className="bg-ink/10 h-px flex-1" />
+              <div>
+                <Input
+                  label="Clave"
+                  name="clave"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  revealable
+                  required
+                />
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <label className="text-ink/70 flex cursor-pointer items-center gap-2 text-sm select-none">
+                    <input
+                      type="checkbox"
+                      name="recordar"
+                      className="accent-royal-600 size-4 rounded"
+                    />
+                    Mantener sesión abierta
+                  </label>
+                  <a
+                    href="#recuperar"
+                    className="text-royal-600 hover:text-royal-700 dark:text-royal-300 dark:hover:text-royal-200 text-sm font-medium"
+                  >
+                    Olvidé mi contraseña
+                  </a>
+                </div>
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                block
-                onClick={() => void entrarConHuella()}
-                disabled={conHuella}
-                icon={<Fingerprint className="size-[18px]" />}
-              >
-                {conHuella
-                  ? 'Esperando el dedo…'
-                  : `Entrar con la huella${huella.usuario ? ` de ${huella.usuario}` : ''}`}
+              <Button type="submit" size="lg" block disabled={enviando}>
+                {enviando ? 'Entrando…' : 'Entrar'}
               </Button>
-            </>
-          ) : null}
+            </form>
 
-          <p className="text-ink/45 mt-8 text-xs leading-relaxed">
-            El acceso lo asigna la administración de la empresa. Si no tienes credenciales,
-            escribe a sistemas.
-          </p>
+            {huella.activa ? (
+              <>
+                <div className="my-5 flex items-center gap-3">
+                  <span className="bg-ink/10 h-px flex-1" />
+                  <span className="text-ink/40 text-xs">o</span>
+                  <span className="bg-ink/10 h-px flex-1" />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  block
+                  onClick={() => void entrarConHuella()}
+                  disabled={conHuella}
+                  icon={<Fingerprint className="size-[18px]" />}
+                >
+                  {conHuella
+                    ? 'Esperando el dedo…'
+                    : `Entrar con la huella${huella.usuario ? ` de ${huella.usuario}` : ''}`}
+                </Button>
+              </>
+            ) : null}
+
+            <p className="text-ink/45 mt-7 text-xs leading-relaxed">
+              El acceso lo asigna la administración de la empresa. Si no tienes credenciales,
+              escribe a sistemas.
+            </p>
+          </div>
         </div>
-      </div>
+      </main>
+
+      {/* Aquí iba la razón social y el RIF en versalitas. Se fueron con el
+          logo: la marca ya los trae impresos, y repetirlos treinta píxeles
+          más abajo era decir dos veces lo mismo en la misma pantalla. */}
     </div>
   )
 }
