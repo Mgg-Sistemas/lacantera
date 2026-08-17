@@ -1,106 +1,179 @@
 import { Link } from 'react-router'
-import { ArrowRight } from 'lucide-react'
-import { Logo } from '@/components/Logo'
+import { ArrowRight, ChevronDown } from 'lucide-react'
+import { FondoCantera } from '@/components/FondoCantera'
 import { EMPRESA } from '@/lib/empresa'
+import { usePuntero } from '@/lib/puntero'
 
 /**
  * La puerta de la calle.
  *
  * Es lo único del sistema que ve alguien sin credenciales, así que no lleva
  * datos: ni cifras de producción, ni nombres, ni el estado de la operación.
- * Dice de quién es la casa y dónde se toca; lo demás está del otro lado del
- * acceso.
  *
- * Va sobre fondo azul fijo y no sigue al tema claro/oscuro. El resto del
- * sistema sí lo hace porque se mira ocho horas seguidas; esto se mira cinco
- * segundos antes de entrar, y el azul de la casa es justamente lo que tiene
- * que quedar.
+ * DOS PANTALLAS Y NI UNA MÁS
+ *
+ * Arriba, la explotación a sangre y una sola cosa que hacer. Abajo, un único
+ * bloque con el recorrido de la piedra. Se descartó el "Quiénes somos", los
+ * "Servicios" y el "Contacto": una cantera no se elige por su página web, y
+ * quien llega aquí o viene a entrar al sistema o viene a saber a qué se dedica
+ * la casa. Las dos preguntas se responden sin bajar.
+ *
+ * POR QUÉ LOS CAPÍTULOS VAN NUMERADOS
+ *
+ * Numerar unas secciones cualesquiera es un adorno prestado. Aquí no lo es:
+ * la piedra tiene un recorrido y ocurre en ese orden y no en otro. Se vuela
+ * antes de extraer y se tritura antes de despachar. El número dice algo que el
+ * lector necesita —esto va después de aquello—, y por eso se queda.
+ *
+ * Es además lo contrario de una lista de servicios: no enumera lo que la
+ * empresa vende, enumera lo que le pasa a la roca.
  */
+
+/** El camino real del material, en el orden en que ocurre. */
+const CAPITULOS = [
+  {
+    romano: 'I',
+    titulo: 'Se vuela',
+    detalle: 'La barrenación y la carga explosiva abren el banco en el frente.',
+  },
+  {
+    romano: 'II',
+    titulo: 'Se extrae',
+    detalle: 'La excavadora carga la roca arrancada y el camión la baja al patio.',
+  },
+  {
+    romano: 'III',
+    titulo: 'Se tritura',
+    detalle: 'La planta la reduce y la clasifica por tamaño, de piedra picada a arena.',
+  },
+  {
+    romano: 'IV',
+    titulo: 'Se despacha',
+    detalle: 'La romana pesa el camión cargado y sale con su guía de movilización.',
+  },
+]
+
 export function Landing() {
+  const pantalla = usePuntero<HTMLDivElement>()
+
   return (
-    <div className="bg-royal-950 relative flex min-h-svh flex-col overflow-hidden">
-      {/* Talud: el mismo gesto diagonal del acceso, para que las dos pantallas
-          se lean como la misma casa. */}
-      <svg
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 w-full"
-        viewBox="0 0 800 300"
-        preserveAspectRatio="none"
-        aria-hidden="true"
+    <div className="bg-royal-950">
+      {/* ================= El frente ================= */}
+      <div
+        ref={pantalla}
+        className="bg-royal-950 relative flex min-h-svh flex-col overflow-hidden"
       >
-        <path d="M0 300 L800 90 L800 300 Z" fill="#1A2E73" opacity="0.55" />
-        <path d="M0 300 L800 190 L800 300 Z" fill="#1D358F" opacity="0.45" />
-      </svg>
-
-      <header className="relative z-10 px-6 py-6 sm:px-10">
-        <Logo inverted />
-      </header>
-
-      <main className="relative z-10 flex flex-1 items-center px-6 py-10 sm:px-10">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1fr_auto] lg:gap-16">
-          {/* ---------- Lo que dice ---------- */}
-          <div className="text-center lg:text-left">
-            {/* Lo primero que se lee, antes del titular: a qué se dedica la
-                casa. El nombre registrado ya está en el titular y el RIF
-                debajo; lo que ninguno de los dos dice es el oficio, y es lo
-                único que le interesa a quien llega sin conocer la empresa. */}
-            <p className="text-safety/90 mb-4 text-[11px] font-semibold tracking-[0.22em] uppercase sm:text-xs">
-              Explotación Internacional
-            </p>
-
-            <h1 className="text-2xl font-bold tracking-tight text-balance text-white sm:text-3xl lg:text-4xl">
-              BIENVENIDO AL SISTEMA DE CONTROL INTERNO DE{' '}
-              <span className="text-safety">{EMPRESA.razonSocial}</span>
-            </h1>
-
-            <div
-              className="bg-safety/70 mt-7 h-px w-12 mx-auto lg:mx-0"
-              aria-hidden="true"
-            />
-
-            {/* El RIF va debajo del nombre que ya trae el titular. Repetir la
-                razón social en dos renglones seguidos se lee como un descuido,
-                y así —nombre arriba, RIF debajo— identifican a la empresa
-                igual que en cualquier papel que salga de aquí. */}
-            <p className="tabular mt-7 text-sm text-white/65">RIF {EMPRESA.rif}</p>
-
-            <Link
-              to="/entrar"
-              className="rounded-control text-royal-800 hover:bg-royal-50 focus-visible:outline-safety mt-8 inline-flex h-12 items-center gap-2 bg-white px-7 text-base font-semibold shadow-[0_10px_28px_rgba(0,0,0,0.35)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-3"
-            >
-              Ingresar al Sistema
-              <ArrowRight className="size-[18px]" />
-            </Link>
-
-            <p className="mt-5 text-xs text-white/45">
-              El acceso lo asigna la administración de la empresa.
-            </p>
-          </div>
-
-          {/* ---------- La operación ---------- */}
-          {/* El halo detrás despega la foto del fondo sin un borde grueso, que
-              sobre azul se vería como un aro pegado encima. */}
-          <div className="relative mx-auto w-full max-w-[320px] sm:max-w-[400px] lg:mx-0 lg:w-[440px] lg:max-w-none xl:w-[500px]">
-            <div
-              aria-hidden="true"
-              className="bg-royal-500/25 absolute -inset-8 rounded-full blur-3xl"
-            />
-            <img
-              src="/cantera.jpg"
-              alt="Frente de explotación de la cantera, con la excavadora trabajando el talud."
-              width={800}
-              height={600}
-              className="ring-safety/35 relative aspect-square w-full rounded-full object-cover shadow-[0_24px_50px_rgba(0,0,0,0.5)] ring-2"
-            />
+        <div className="sigue-al-puntero absolute -inset-4" aria-hidden="true">
+          <div className="anim-encuadre absolute inset-0">
+            <FondoCantera />
           </div>
         </div>
-      </main>
 
-      {/* Sin el sello de versión: era una firma de obra en la fachada. Quien
-          necesite saber qué hay publicado lo pregunta en /version.json, que es
-          de donde salía y sigue ahí. */}
-      <footer className="relative z-10 px-6 pb-7 text-center text-xs text-white/40 sm:px-10">
-        {EMPRESA.actividad}
-      </footer>
+        {/* El velo va más cargado que en el acceso, y por una razón concreta:
+            allí el texto blanco vive dentro de una placa blanca y sólo la
+            firma queda al aire; aquí el titular, el rótulo y el botón están
+            todos sobre la fotografía. Sobre la arena clara del fondo aéreo, un
+            blanco al 55% se pierde. */}
+        <div className="bg-royal-950/50 anim-aparecer absolute inset-0" aria-hidden="true" />
+        <div
+          className="from-royal-950/90 via-royal-950/35 absolute inset-0 bg-gradient-to-t to-transparent"
+          aria-hidden="true"
+        />
+
+        <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+          {/*
+            La marca sobre un cartel blanco.
+
+            El logo trae su propio fondo blanco —llega en JPEG y el formato no
+            sabe de transparencia—, así que sobre la fotografía sería un parche
+            recortado a escuadra. Puesto deliberadamente sobre un cartel, con
+            aire alrededor, deja de ser un defecto: es como una cantera rotula
+            su entrada, una placa atornillada a la vista de quien llega.
+          */}
+          <div className="anim-surgir bg-white shadow-popover rounded-card p-4 [animation-delay:240ms] sm:p-5">
+            <img
+              src="/marca.jpg"
+              alt={EMPRESA.razonSocial}
+              width={566}
+              height={525}
+              className="block w-[160px] sm:w-[190px]"
+            />
+          </div>
+
+          {/* El encargo pedía resaltar esto y sólo esto. Va en versalitas y
+              partido en dos renglones: a este cuerpo, en uno solo, no cabe en
+              un teléfono sin encogerlo hasta volverlo un subtítulo. */}
+          <h1 className="anim-surgir mt-9 text-3xl leading-[1.05] font-bold tracking-[0.02em] text-balance text-white uppercase [animation-delay:420ms] sm:text-5xl lg:text-6xl">
+            Explotación
+            <br />
+            Internacional
+          </h1>
+
+          {/* Al 55% se perdía sobre la arena. Subido al 75%: sigue siendo un
+              rótulo por debajo del titular, pero se lee. */}
+          <p className="anim-surgir text-2xs mt-6 font-mono tracking-[0.22em] text-white/75 uppercase [animation-delay:560ms]">
+            {EMPRESA.actividad} · {EMPRESA.estado}
+          </p>
+
+          <Link
+            to="/entrar"
+            className="anim-surgir rounded-control text-royal-800 hover:bg-royal-50 focus-visible:outline-safety mt-10 inline-flex h-12 items-center gap-2 bg-white px-7 text-base font-semibold shadow-[0_10px_28px_rgba(0,0,0,0.35)] transition-[color,background-color,scale] duration-150 [animation-delay:700ms] motion-safe:active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-3"
+          >
+            Entrar al sistema
+            <ArrowRight className="size-[18px]" />
+          </Link>
+        </main>
+
+        {/* La única invitación a bajar. Sin ella el bloque de abajo no existe
+            para quien abre esto en un portátil, donde la pantalla se llena
+            justa y no hay nada que asome por el borde. */}
+        <div className="relative z-10 flex justify-center pb-8">
+          <ChevronDown
+            className="anim-aparecer size-5 text-white/40 [animation-delay:1100ms]"
+            aria-hidden="true"
+          />
+        </div>
+      </div>
+
+      {/* ================= El recorrido de la piedra ================= */}
+      <section className="bg-canvas px-6 py-20 sm:px-10 lg:py-28">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-ink/40 text-2xs font-mono tracking-[0.22em] uppercase">
+            De la roca al camión
+          </h2>
+
+          <ol className="mt-10 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+            {CAPITULOS.map((c) => (
+              <li key={c.romano}>
+                {/* El número y el filete: el filete es lo que hace que cuatro
+                    bloques se lean como una secuencia y no como cuatro
+                    tarjetas sueltas puestas en fila. */}
+                <p className="text-royal-600 dark:text-royal-300 font-mono text-sm tracking-[0.1em]">
+                  {c.romano}
+                </p>
+                <div className="bg-royal-600/25 mt-3 h-px w-full" aria-hidden="true" />
+
+                <h3 className="text-ink/90 mt-5 text-xl font-semibold tracking-tight">
+                  {c.titulo}
+                </h3>
+                <p className="text-ink/55 mt-2 text-sm leading-relaxed">{c.detalle}</p>
+              </li>
+            ))}
+          </ol>
+
+          {/* El pie identifica a la empresa donde toca identificarla: al final
+              y en letra pequeña, como en cualquier papel que salga de aquí. No
+              es una sección de "quiénes somos" — es la firma. */}
+          <div className="border-hairline mt-20 border-t pt-8">
+            <p className="text-ink/70 text-2xs font-mono tracking-[0.18em] uppercase">
+              {EMPRESA.razonSocial}
+            </p>
+            <p className="text-ink/40 text-2xs mt-1.5 font-mono tracking-[0.14em]">
+              RIF {EMPRESA.rif} · {EMPRESA.estado}
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
