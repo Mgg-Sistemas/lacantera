@@ -9,9 +9,11 @@ import { EMPRESA } from '@/lib/empresa'
 import { iniciarSesion } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { estadoGuardado, paseConHuella } from '@/lib/huella'
+import { usePuntero } from '@/lib/puntero'
 
 export function Login() {
   const navigate = useNavigate()
+  const pantalla = usePuntero<HTMLDivElement>()
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -102,13 +104,29 @@ export function Login() {
     apagando la foto entera.
   */
   return (
-    <div className="bg-royal-950 relative flex min-h-svh flex-col overflow-hidden">
-      <img
-        src="/cantera.jpg"
-        alt=""
-        aria-hidden="true"
-        className="anim-encuadre absolute inset-0 size-full object-cover"
-      />
+    <div
+      ref={pantalla}
+      className="bg-royal-950 relative flex min-h-svh flex-col overflow-hidden"
+    >
+      {/* El envoltorio sobresale 16px por cada lado. El parallax desplaza hasta
+          10, así que sin ese margen se vería el borde del fondo asomar por el
+          lado contrario justo al mover el ratón. */}
+      <div className="sigue-al-puntero absolute -inset-4" aria-hidden="true">
+        <img
+          src="/cantera.jpg"
+          alt=""
+          // Las medidas reales, para que el navegador reserve el hueco antes de
+          // descargarla y la pantalla no dé un salto al aparecer.
+          //
+          // Y son 800x600 de verdad: en una pantalla de escritorio esta imagen
+          // se está estirando al doble. Se nota en los bordes de la roca. Hace
+          // falta el original a 2560px de ancho para que el frente se vea
+          // nítido, que es justo lo que esta pantalla tiene que transmitir.
+          width={800}
+          height={600}
+          className="anim-encuadre size-full object-cover"
+        />
+      </div>
 
       {/* Un velo mínimo, solo para amarrar la foto al azul de la casa. */}
       <div className="bg-royal-950/30 anim-aparecer absolute inset-0" aria-hidden="true" />

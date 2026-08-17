@@ -248,6 +248,31 @@
     animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     animation-fill-mode: both;
   }
+
+  /*
+    La cámara sigue al puntero.
+
+    Lee `--px` y `--py` de src/lib/puntero.ts. Va sobre un envoltorio y nunca
+    sobre la propia imagen: la imagen ya tiene su animación de encuadre, que
+    también escribe `transform`, y una animación gana siempre a una declaración
+    normal. Puestos en el mismo elemento, el parallax no se vería nunca — y en
+    silencio, que es lo peor.
+
+    Diez píxeles de recorrido, no cuarenta. Aquí el efecto no es el espectáculo:
+    es que el frente respire cuando alguien mueve el ratón. Un desplazamiento
+    grande convertiría una pantalla de acceso en una atracción, y esto se abre
+    quince veces al día.
+
+    La suavidad la da esta transición y no un bucle en JavaScript: `transform`
+    se interpola en el compositor. Seiscientos milisegundos de salida
+    exponencial hacen que la imagen frene como frena algo que pesa, en vez de
+    pegarse al puntero como una calcomanía.
+  */
+  .sigue-al-puntero {
+    transform: translate3d(calc(var(--px, 0) * -10px), calc(var(--py, 0) * -8px), 0);
+    transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
