@@ -86,6 +86,18 @@ public/*.pdf
 # que gana cada cargo. Ver supabase/CARGAS.md.
 supabase/cargas/
 
+# Los originales pesados de las fotografias del frente.
+#
+# Llegaron en PNG y pesaban 7,5 MB entre las tres. PNG es formato de dibujo:
+# guarda cada pixel exacto, que en una fotografia no le sirve a nadie y
+# multiplica el peso por nueve. Las que se publican son los .jpg de al lado,
+# 830 KB entre las tres y sin diferencia visible.
+#
+# Los originales se quedan en el equipo por si hay que reencuadrar. Fuera del
+# repositorio a proposito: el historial de git es permanente, y 7,5 MB que
+# entran una vez ya no se sacan nunca.
+public/cantera/*.png
+
 # Coordinacion interna del equipo.
 #
 # El traspaso entre las dos sesiones de trabajo —quien lleva la apariencia y

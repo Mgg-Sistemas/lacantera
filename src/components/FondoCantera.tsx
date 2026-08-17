@@ -32,8 +32,16 @@ import { cn } from '@/lib/cn'
  * una pantalla de acceso.
  */
 
-/** El orden es el del recorrido: se arranca la roca, se ve el corte, se carga. */
-const FRENTES = ['/cantera/01.jpg', '/cantera/02.jpg', '/cantera/03.jpg', '/cantera.jpg']
+/**
+ * El orden es el del recorrido: se carga la roca arrancada, se ve el corte
+ * entero desde arriba, se vuelve al tajo.
+ *
+ * La antigua `/cantera.jpg` se quedó fuera de la rotación. Es de 800x600 y al
+ * lado de estas tres —1500 px— se ve blanda: al cruzar de una a otra la
+ * pantalla parecía desenfocarse. Sigue en su sitio porque la portada todavía
+ * la usa.
+ */
+const FRENTES = ['/cantera/01.jpg', '/cantera/02.jpg', '/cantera/03.jpg']
 
 const REPOSO_MS = 9000
 const CRUCE_MS = 1400

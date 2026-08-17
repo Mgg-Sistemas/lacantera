@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router'
 import { AlertCircle, Fingerprint, User } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Logo } from '@/components/Logo'
 import { FondoCantera } from '@/components/FondoCantera'
 import { EMPRESA } from '@/lib/empresa'
 import { iniciarSesion } from '@/lib/auth'
@@ -146,37 +145,56 @@ export function Login() {
         aria-hidden="true"
       />
 
-      {/* El orden de la secuencia es el de importancia, no el de la maqueta:
-          la marca dice dónde estás, la placa es a lo que vienes y la firma
-          cierra. Los retardos van de 180 en 180 ms, lo justo para que se lea
-          como un movimiento y no como tres cosas que llegan tarde. */}
-      <header className="anim-surgir relative z-10 px-6 py-7 [animation-delay:260ms] sm:px-10 lg:px-14">
-        <Link to="/" aria-label="Volver a la portada">
-          <Logo inverted />
-        </Link>
-      </header>
-
-      <main className="relative z-10 flex flex-1 items-center px-6 sm:px-10 lg:px-14">
+      <main className="relative z-10 flex flex-1 items-center px-6 py-12 sm:px-10 lg:px-14">
         {/* La placa se apoya a la derecha y no en el centro: centrada parte la
             fotografía por la mitad y no deja ver ni el frente ni la máquina.
             Contra el margen, la explotación se lee entera. */}
         <div className="mx-auto w-full max-w-6xl lg:flex lg:justify-end">
           <div className="bg-surface rounded-card shadow-popover anim-surgir mx-auto w-full max-w-[400px] p-8 [animation-delay:440ms] sm:p-9 lg:mx-0">
-            {/* Rótulo antes que titular: dice de qué sistema es esta puerta
-                antes de pedir nada. En versalitas espaciadas y en mono,
-                como los encabezados de los papeles que salen de aquí. */}
-            <p className="text-ink/40 text-2xs font-mono tracking-[0.2em] uppercase">
-              Sistema de control interno
-            </p>
+            {/*
+              LA MARCA, Y EL PROVECHO DEL FONDO BLANCO
+
+              El logo llega en JPEG, así que trae un rectángulo blanco pegado
+              que no se puede quitar: el formato no sabe de transparencia.
+              Sobre la fotografía sería un parche, y por eso no va ahí.
+
+              Aquí ese blanco no es un defecto sino la pieza que faltaba. La
+              placa del formulario ya era blanca, de modo que en tema claro el
+              rectángulo desaparece dentro de ella: no hay costura que
+              disimular porque no hay dos blancos, hay uno.
+
+              Y en tema oscuro, donde la placa se vuelve carbón, el rectángulo
+              reaparece — pero recortado y con aire alrededor se lee como un
+              cartel esmaltado atornillado a la pared, que es exactamente como
+              una cantera rotula su entrada. El punto flaco entra en el diseño
+              en vez de esconderse.
+
+              También se le quitó el margen sobrante del original: eran 162px
+              de blanco a la izquierda y 123 arriba, que empujaban la marca a
+              un tercio de su tamaño útil.
+
+              Va enlazado a la portada porque ya no hay otra marca en pantalla
+              que pulsar: era lo que había arriba a la izquierda, y dos logos
+              en una pantalla de acceso sobran.
+            */}
+            <Link to="/" aria-label="Volver a la portada" className="block">
+              <img
+                src="/marca.jpg"
+                alt={`${EMPRESA.razonSocial} — ${EMPRESA.actividad}`}
+                width={566}
+                height={525}
+                className="mx-auto block w-full max-w-[190px] rounded-[4px] bg-white p-2.5"
+              />
+            </Link>
+
+            <div className="bg-hairline mt-7 h-px" aria-hidden="true" />
 
             {/* El título dice el mismo verbo que el botón. Un encabezado que
                 saluda y un botón que ordena obligan a leer dos veces para
                 entender que son la misma acción. */}
-            <h1 className="text-ink/90 mt-2 text-2xl font-semibold tracking-tight">
+            <h1 className="text-ink/90 mt-7 text-2xl font-semibold tracking-tight">
               Entrar al sistema
             </h1>
-
-            <div className="bg-hairline mt-6 h-px" aria-hidden="true" />
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               {error ? (
@@ -267,17 +285,9 @@ export function Login() {
         </div>
       </main>
 
-      {/* La identidad cierra la pantalla, sobre la propia explotación. Es
-          como se firma un papel de la empresa: el nombre registrado y el RIF
-          al pie, no flotando en una tarjeta. */}
-      <footer className="anim-surgir relative z-10 px-6 pb-8 [animation-delay:620ms] sm:px-10 lg:px-14">
-        <p className="text-2xs font-mono tracking-[0.2em] text-white/80 uppercase">
-          {EMPRESA.razonSocial}
-        </p>
-        <p className="text-2xs mt-1.5 font-mono tracking-[0.16em] text-white/60">
-          RIF {EMPRESA.rif} · {EMPRESA.estado}
-        </p>
-      </footer>
+      {/* Aquí iba la razón social y el RIF en versalitas. Se fueron con el
+          logo: la marca ya los trae impresos, y repetirlos treinta píxeles
+          más abajo era decir dos veces lo mismo en la misma pantalla. */}
     </div>
   )
 }
