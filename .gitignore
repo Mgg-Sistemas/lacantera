@@ -121,3 +121,10 @@ docs/vistas-por-rol.md
 # Mismo motivo que los otros dos: andamiaje de como trabajamos, no
 # documentacion del producto. Este repositorio es publico.
 docs/traspaso-al-carril-unico.md
+
+# El andamio de la base local.
+#
+# Recrea el esquema para las pruebas, e incluye la clave provisional del
+# administrador. Es una base desechable que solo existe en el equipo de quien
+# la levanta, pero la clave no tiene por que viajar a un repositorio publico.
+supabase/local/andamio.sql
