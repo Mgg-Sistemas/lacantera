@@ -108,3 +108,10 @@ public/cantera/*.png
 #
 # El resto de `docs/` si se versiona: eso explica el sistema.
 docs/traspaso-funcional.md
+
+# Analisis interno de vistas por rol.
+#
+# Mismo motivo que el traspaso: es andamiaje de como decidimos, no
+# documentacion del producto. Nombra cargos, supuestos sobre personas concretas
+# y decisiones a medio tomar. Este repositorio es publico.
+docs/vistas-por-rol.md
