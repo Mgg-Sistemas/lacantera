@@ -29,6 +29,24 @@
   --font-sans: 'Inter Variable', 'Inter', system-ui, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
+  /* ---------- Titulares ----------
+
+     Inter se queda para la interfaz y para los datos: es de lo mejor que hay
+     para cifras tabulares, y este sistema es tablas. Pero como titular es
+     neutra —hace bien su trabajo y no dice nada—, y en la portada, sobre una
+     fotografía y en peso ligero, directamente se deshacía.
+
+     Archivo es una grotesca dibujada para titulares: ancha, firme y sin
+     redondeces. Viene del mismo mundo que la paleta nueva, el de los rótulos
+     de maquinaria y la señalética de seguridad.
+
+     Se descartó Helvetica porque el equipo trabaja en Windows, donde no está
+     instalada: el navegador la cambia por Arial y se diseñaría con una letra
+     que casi nadie vería. Y Montserrat porque es geométrica, redonda y de las
+     más usadas de la web — funciona, pero no distingue a esta empresa de
+     ninguna otra. */
+  --font-titular: 'Archivo Variable', 'Archivo', var(--font-sans);
+
   /* Escala compacta de panel administrativo. La base es 15px, no 16:
      en pantallas densas de tabla, 16px obliga a scrollear de más. */
   --text-2xs: 0.6875rem; /* 11px - etiquetas de eje, badges */
@@ -50,55 +68,126 @@
   --text-4xl: 2.25rem; /* 36px - titular de login */
   --text-4xl--line-height: 2.625rem;
 
-  /* ---------- Azul rey ---------- */
-  --color-royal-50: #edf2ff;
-  --color-royal-100: #dce4ff;
-  --color-royal-200: #bccbff;
-  --color-royal-300: #92a9fc;
-  --color-royal-400: #6484f7;
-  --color-royal-500: #3b62f0;
-  --color-royal-600: #2b4fd9; /* primario */
-  --color-royal-700: #2340b4;
-  --color-royal-800: #1d358f;
-  --color-royal-900: #1a2e73;
-  --color-royal-950: #131f4d;
+  /* ---------- Tierra ----------
+
+     LA PALETA DE LA CASA, agosto de 2026.
+
+     El sistema era azul rey. La dirección de Sistemas lo cambió a la paleta de
+     la propia cantera: la tierra removida, el óxido de la maquinaria y el
+     amarillo del casco. Los seis colores que llegaron son
+
+       #351E0E  marrón oscuro      #FF4F00  naranja vivo
+       #9E4C01  naranja quemado    #DEDEDE  gris claro
+       #FFC700  amarillo           #6D6D6D  gris medio
+
+     y esta escala los sostiene. Los tres tonos de tierra van en su sitio
+     exacto; los intermedios se interpolan para que existan los estados de
+     paso —hover, bordes, fondos suaves— que una paleta de seis no cubre.
+
+     DÓNDE VA CADA UNO, Y POR QUÉ NO DONDE PARECÍA
+
+     El 600 es el color de los botones, y NO es el naranja vivo. Se midió:
+     #FF4F00 con texto blanco da 3,30:1, por debajo del 4,5:1 que exige la
+     norma para texto normal. Un botón primario que aparece en cada pantalla
+     no puede fallar el contraste. El 600 es #CC3F00 —el mismo naranja,
+     bajado— que da 4,91:1, y el 700 de hover es el #9E4C01 de la paleta, con
+     6,02:1.
+
+     El naranja vivo tal cual vive en el 500 y en `--color-safety`, que es
+     donde tiene que estar: acento que se gasta una vez por pantalla, no
+     fondo de texto.
+
+     EL NOMBRE SIGUE SIENDO `royal`
+
+     Hay 192 referencias a `royal-*` repartidas en 51 archivos, y ahora mismo
+     otra sesión está editando buena parte de ellos. Un renombrado masivo
+     provocaría el conflicto justo cuando toque fusionar. Así que la escala
+     nueva se llama `tierra` y `royal` queda apuntando a ella: el código viejo
+     sigue funcionando, el nuevo se escribe con el nombre bueno, y el
+     renombrado se hace cuando los dos carriles estén quietos. */
+  --color-tierra-50: #fdf3ea;
+  --color-tierra-100: #fae2cc;
+  --color-tierra-200: #f3c39b;
+  --color-tierra-300: #e99c63; /* texto sobre fondo oscuro */
+  --color-tierra-400: #de7331;
+  --color-tierra-500: #ff4f00; /* paleta — naranja vivo, acento */
+  --color-tierra-600: #cc3f00; /* primario, 4,91:1 con texto blanco */
+  --color-tierra-700: #9e4c01; /* paleta — naranja quemado, hover */
+  --color-tierra-800: #7a3b06;
+  --color-tierra-900: #55290b;
+  --color-tierra-950: #351e0e; /* paleta — marrón oscuro, el suelo */
+
+  /* Alias de compatibilidad. Ver la nota de arriba: se retiran cuando se
+     renombren las 192 referencias, no antes. */
+  --color-royal-50: var(--color-tierra-50);
+  --color-royal-100: var(--color-tierra-100);
+  --color-royal-200: var(--color-tierra-200);
+  --color-royal-300: var(--color-tierra-300);
+  --color-royal-400: var(--color-tierra-400);
+  --color-royal-500: var(--color-tierra-500);
+  --color-royal-600: var(--color-tierra-600);
+  --color-royal-700: var(--color-tierra-700);
+  --color-royal-800: var(--color-tierra-800);
+  --color-royal-900: var(--color-tierra-900);
+  --color-royal-950: var(--color-tierra-950);
 
   /* ---------- Neutro ---------- */
-  /* Un solo tono. Las jerarquías salen por opacidad (ink/90, ink/70, ink/45),
-     igual que Materio. Así nunca hay dos grises que no combinan. */
-  --color-ink: #262c3d;
-  --color-canvas: #f3f5fb; /* fondo de página */
-  --color-surface: #ffffff; /* cards */
-  --color-hairline: #e6e9f2; /* separadores */
+  /* Un solo tono. Las jerarquías salen por opacidad (ink/90, ink/70, ink/45).
+     Así nunca hay dos grises que no combinan.
 
-  /* ---------- Semánticos ---------- */
-  --color-success: #2ea05a;
-  --color-success-soft: #e6f4ec;
-  --color-warning: #e8912a;
-  --color-warning-soft: #fdf1e2;
-  --color-danger: #de3b40;
-  --color-danger-soft: #fceaea;
-  --color-info: #1b9cd8;
-  --color-info-soft: #e4f3fb;
+     Los neutros dejan de ser azulados y pasan a ser cálidos: un gris frío
+     sobre una paleta de tierra se ve gris sucio, no gris neutro. El texto
+     toma el marrón de la paleta —es tan oscuro que se lee como negro— y el
+     filete es el #DEDEDE que vino en la paleta. */
+  --color-ink: #351e0e;
+  --color-canvas: #f5f2ef; /* fondo de página */
+  --color-surface: #ffffff; /* cards */
+  --color-hairline: #dedede; /* paleta — separadores */
+  --color-muted: #6d6d6d; /* paleta — gris medio */
+
+  /* ---------- Semánticos ----------
+
+     Con una marca naranja, el aviso ya no puede ser naranja: se confundiría
+     con el color de la casa y dejaría de avisar. Pasa al amarillo de la
+     paleta, y el peligro se va a un rojo claramente distinto del naranja —si
+     los dos tiran a lo mismo, la diferencia entre "atención" y "esto está mal"
+     se pierde justo cuando hace falta.
+
+     El amarillo de la paleta, #FFC700, da 1,56:1 sobre blanco: es un relleno
+     magnífico bajo texto oscuro y un texto ilegible. Como el sistema usa
+     `text-warning` en 132 sitios, el token de texto es el amarillo bajado a
+     #8C6D00 (4,88:1) y el vivo queda disponible aparte para rellenos y
+     filetes. */
+  --color-success: #2e7d4f;
+  --color-success-soft: #e6f2ea;
+  --color-warning: #8c6d00; /* amarillo de la paleta, legible como texto */
+  --color-warning-fuerte: #ffc700; /* paleta — solo relleno bajo texto oscuro */
+  --color-warning-soft: #fff6da;
+  --color-danger: #b3261e;
+  --color-danger-soft: #fbeae9;
+  --color-info: #5a6b72;
+  --color-info-soft: #eceff0;
 
   /* ---------- Acento de dominio ---------- */
-  /* El amarillo de seguridad del casco y los chalecos. Es el único color
-     cálido del sistema: se reserva para la ilustración y para señalar
-     material en patio. No es un color de interfaz general. */
-  --color-safety: #f0a128;
-  --color-safety-soft: #fdf2e0;
+  /* El naranja de seguridad: el de los conos, los chalecos y la maquinaria.
+     Es el color que más grita de la paleta y por eso se gasta una vez por
+     pantalla y nunca como fondo de texto —3,30:1 con blanco. */
+  --color-safety: #ff4f00;
+  --color-safety-soft: #ffe8dc;
 
   /* ---------- Forma ---------- */
   --radius-card: 6px;
   --radius-control: 6px;
 
   /* Sombras de bajo contraste teñidas con el neutro, no negro puro.
-     El negro puro sobre un fondo azulado se ve sucio. */
-  --shadow-card: 0 2px 8px 0 rgb(38 44 61 / 0.08);
-  --shadow-card-hover: 0 4px 16px 0 rgb(38 44 61 / 0.12);
-  --shadow-control: 0 2px 4px 0 rgb(38 44 61 / 0.12);
-  --shadow-primary: 0 2px 8px 0 rgb(43 79 217 / 0.32);
-  --shadow-popover: 0 8px 28px 0 rgb(38 44 61 / 0.16);
+     El negro puro sobre un fondo de color se ve sucio. Antes iban teñidas de
+     azul; ahora del marrón de la paleta, o se verían frías sobre un lienzo
+     cálido. */
+  --shadow-card: 0 2px 8px 0 rgb(53 30 14 / 0.08);
+  --shadow-card-hover: 0 4px 16px 0 rgb(53 30 14 / 0.12);
+  --shadow-control: 0 2px 4px 0 rgb(53 30 14 / 0.12);
+  --shadow-primary: 0 2px 8px 0 rgb(204 63 0 / 0.28);
+  --shadow-popover: 0 8px 28px 0 rgb(53 30 14 / 0.16);
 }
 
 /*
@@ -113,18 +202,25 @@
   una sombra no se ve, así que la jerarquía la da la luminosidad.
 */
 .dark {
-  --color-ink: #e4e9f3;
-  --color-canvas: #11151e;
-  --color-surface: #1a202c;
-  --color-hairline: #2b3446;
+  /* Oscuro cálido, no azulado: el mismo marrón de la paleta llevado al fondo.
+     Un gris frío debajo de acentos naranjas los vuelve chillones. */
+  --color-ink: #f0e8e2;
+  --color-canvas: #17110d;
+  --color-surface: #221a15;
+  --color-hairline: #3a2e26;
+  --color-muted: #9a9a9a;
+
+  /* En oscuro el amarillo bajado se vuelve ilegible: sobre un fondo casi negro
+     hace falta el tono claro, no el apagado. Aquí sí entra el de la paleta. */
+  --color-warning: #ffc700;
 
   /* Los tintes suaves se recalculan: un fondo claro con texto de color no
      funciona sobre oscuro. Se invierte la relación. */
   --color-success-soft: #10261a;
-  --color-warning-soft: #2a1e0d;
-  --color-danger-soft: #2b1416;
-  --color-info-soft: #0d2230;
-  --color-safety-soft: #2a1f0c;
+  --color-warning-soft: #2b2109;
+  --color-danger-soft: #2e1512;
+  --color-info-soft: #1b2124;
+  --color-safety-soft: #2e1508;
 
   /* Las sombras casi desaparecen en oscuro; se conservan solo para el
      desplegable, donde sí hace falta despegar la capa del fondo. */

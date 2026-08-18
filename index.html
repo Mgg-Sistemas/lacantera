@@ -2,7 +2,21 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--
+      El icono de la pestaña.
+
+      Era un cubo azul dibujado a mano, del tema anterior y sin parecido con el
+      logo de la empresa. Ahora es la insignia real, recortada y centrada en un
+      cuadrado: un favicon no es rectangular, y estirarla la deformaría.
+
+      Tres tamaños porque cada sitio pide el suyo: 32 para la pestaña, 180 para
+      cuando alguien la ancla en la pantalla de inicio de un iPhone, y 192 para
+      Android. Van cuantizados a 128 colores — a ese tamaño no se distingue el
+      degradado completo y pesan la mitad.
+    -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"

@@ -38,10 +38,10 @@ import { cn } from '@/lib/cn'
  * antes de despachar. El número dice algo que hace falta saber, y por eso el
  * raíl de abajo puede usarlo para situar a quien lee.
  *
- * El tercero va sin fotografía a propósito. Cuatro pantallas seguidas de roca
- * oscura se vuelven una sola; el corte en negro parte el ritmo y hace que la
- * cuarta vuelva a verse. Y encaja con el asunto: la trituración es la única
- * parte del recorrido que no ocurre en el frente sino dentro de una máquina.
+ * El tercero estuvo un tiempo sin fotografía, no por gusto sino porque no
+ * había ninguna de la planta. Ya la hay, y el capítulo cierra el recorrido: la
+ * trituración es la única parte que no ocurre en el frente sino dentro de una
+ * máquina, y la imagen de las cintas y el molino lo dice sin explicarlo.
  */
 const CAPITULOS: CapituloDatos[] = [
   {
@@ -63,6 +63,7 @@ const CAPITULOS: CapituloDatos[] = [
     titulo: 'Se reduce y se clasifica',
     detalle:
       'La planta parte la roca y la separa por tamaño. De un mismo turno salen cuatro materiales distintos, y cada uno entra al patio contado por separado.',
+    imagen: '/concrete-batching-plant-outdoor-gravel-conveyors.jpg',
   },
   {
     romano: 'IV',
@@ -149,11 +150,12 @@ export function Landing() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3 sm:px-10">
           <img
-            src="/marca.jpg"
+            src="/marca.webp"
             alt={EMPRESA.razonSocial}
-            width={566}
-            height={525}
-            className="h-9 w-auto rounded-[3px] bg-white p-1"
+            width={512}
+            height={521}
+            /* Sin plancha blanca detras: la insignia nueva es transparente. */
+            className="h-10 w-auto"
           />
           <Link
             to="/entrar"
@@ -222,33 +224,37 @@ export function Landing() {
           </div>
         </div>
 
-        <div className="bg-royal-950/50 anim-aparecer absolute inset-0" aria-hidden="true" />
+        <div className="anim-aparecer absolute inset-0 bg-black/45" aria-hidden="true" />
         <div
-          className="from-royal-950/90 via-royal-950/35 absolute inset-0 bg-gradient-to-t to-transparent"
+          className="from-tierra-950/80 via-tierra-950/20 absolute inset-0 bg-gradient-to-t to-transparent"
           aria-hidden="true"
         />
 
         <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
           {/*
-            La marca sobre un cartel blanco.
+            La marca, ya sin cartel.
 
-            El logo trae su propio fondo blanco —llega en JPEG y el formato no
-            sabe de transparencia—, así que sobre la fotografía sería un parche
-            recortado a escuadra. Puesto deliberadamente sobre un cartel, con
-            aire alrededor, deja de ser un defecto: es como una cantera rotula
-            su entrada, una placa atornillada a la vista de quien llega.
+            Aquí hubo un rectángulo blanco detrás del logo. No era un capricho:
+            el logo llegaba en JPEG, que no sabe de transparencia, y sobre la
+            fotografía habría sido un parche recortado a escuadra. El cartel
+            convertía ese defecto en algo deliberado.
+
+            La insignia nueva llega en PNG con transparencia, así que el
+            problema desaparece y con él el remedio: se apoya directamente
+            sobre la roca, que es como tiene que verse.
+
+            Se sirve en WebP y recortada del aire que la rodeaba: 585 KB de
+            origen a 79, sin pérdida visible. Esto se abre desde la cantera.
           */}
-          <div className="anim-surgir bg-white shadow-popover rounded-card p-4 [animation-delay:240ms] sm:p-5">
-            <img
-              src="/marca.jpg"
-              alt={EMPRESA.razonSocial}
-              width={566}
-              height={525}
-              className="block w-[160px] sm:w-[190px]"
-            />
-          </div>
+          <img
+            src="/marca.webp"
+            alt={EMPRESA.razonSocial}
+            width={512}
+            height={521}
+            className="anim-surgir block w-[150px] drop-shadow-[0_6px_20px_rgba(0,0,0,0.5)] [animation-delay:240ms] sm:w-[190px]"
+          />
 
-          <h1 className="anim-surgir mt-9 text-3xl leading-[1.05] font-bold tracking-[0.02em] text-balance text-white uppercase [animation-delay:420ms] sm:text-5xl lg:text-6xl">
+          <h1 className="anim-surgir font-titular mt-9 text-4xl leading-[0.95] font-extrabold tracking-[-0.01em] text-balance text-white uppercase [animation-delay:420ms] sm:text-6xl lg:text-7xl">
             Explotación
             <br />
             Internacional
@@ -348,13 +354,13 @@ export function Landing() {
             cierre.dentro ? 'scale-100 opacity-100' : 'scale-105 opacity-0',
           )}
         />
-        <div className="bg-royal-950/80 absolute inset-0" aria-hidden="true" />
+        <div className="absolute inset-0 bg-black/72" aria-hidden="true" />
 
         <div className="relative mx-auto max-w-6xl px-6 py-28 text-center sm:px-10 lg:py-36">
           <p className="text-2xs font-mono tracking-[0.28em] text-white/55 uppercase">
             Sistema de control interno
           </p>
-          <p className="mx-auto mt-6 max-w-2xl text-2xl leading-snug font-light text-balance text-white sm:text-4xl">
+          <p className="font-titular mx-auto mt-6 max-w-2xl text-3xl leading-[1.1] font-semibold text-balance text-white sm:text-5xl">
             Todo lo anterior, registrado en un solo sitio.
           </p>
 

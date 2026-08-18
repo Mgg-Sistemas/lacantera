@@ -18,13 +18,17 @@ export interface CapituloDatos {
  * paso obliga a detenerse el tiempo que dura leerlo, que es exactamente lo que
  * hace que se perciba como una secuencia y no como una lista.
  *
- * EL NÚMERO EN GRANDE Y EL TÍTULO EN FINO
+ * EL NÚMERO EN GRANDE Y EL TÍTULO EN ARCHIVO
  *
- * El contraste es deliberado y viene del asunto: la cantera es masa, peso y
- * ruido, y contarla con letra ligera sobre la propia roca dice algo que la
- * negrita no puede decir — que hay oficio detrás, no fuerza bruta. Es también
- * lo contrario de lo que hace cualquier web industrial, que grita en negrita
- * sobre una foto oscura.
+ * El título estuvo en Inter ligera. La idea era que letra fina sobre roca dijera
+ * que hay oficio detrás y no fuerza bruta, pero en pantalla no se sostenía: a
+ * ese tamaño y sobre una fotografía, Inter ligera se deshace y el titular pierde
+ * el peso que el asunto tiene.
+ *
+ * Archivo en peso medio resuelve las dos cosas. Es una grotesca de titular
+ * —ancha, firme, sin redondeces, del mundo de los rótulos de maquinaria— así
+ * que aguanta sobre la foto sin necesidad de negrita. Sigue sin gritar, que era
+ * lo que se buscaba, pero ahora se lee.
  *
  * El número es lo único pesado, y va enorme y translúcido detrás del texto:
  * marca el sitio dentro del relato sin competir por la lectura.
@@ -56,9 +60,15 @@ export function Capitulo({ datos, indice }: { datos: CapituloDatos; indice: numb
               dentro ? 'scale-100 opacity-100' : 'scale-105 opacity-0',
             )}
           />
-          {/* Muy cargado: aquí la fotografía es atmósfera, no el asunto. El
-              asunto es el texto, y sobre roca a plena luz no se lee. */}
-          <div className="bg-royal-950/78 absolute inset-0" aria-hidden="true" />
+          {/* Cargado, porque aquí la fotografía es atmósfera y el asunto es el
+              texto: sobre roca a plena luz no se lee.
+
+              Y casi neutro, no teñido con el marrón de la casa. Teñir una
+              fotografía de roca con el color de la marca la vuelve sepia y le
+              quita lo único que aporta, que es parecer real. El color de la
+              casa entra por la insignia y por los acentos, no por un filtro
+              encima de todo. */}
+          <div className="absolute inset-0 bg-black/70" aria-hidden="true" />
         </>
       ) : null}
 
@@ -91,7 +101,7 @@ export function Capitulo({ datos, indice }: { datos: CapituloDatos; indice: numb
 
           <h3
             className={cn(
-              'mt-5 text-4xl leading-[1.03] font-light tracking-tight text-balance text-white transition-all delay-150 duration-700 ease-out sm:text-6xl lg:text-7xl',
+              'font-titular mt-5 text-4xl leading-[1.02] font-medium tracking-[-0.01em] text-balance text-white transition-all delay-150 duration-700 ease-out sm:text-6xl lg:text-7xl',
               dentro ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0',
             )}
           >
