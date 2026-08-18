@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@fontsource-variable/inter'
+// Solo el eje de peso y en latino: 34 KB. El eje de anchura existe en el mismo
+// paquete y costaria 54 KB mas, que en un telefono en la cantera se notan.
+import '@fontsource-variable/archivo/wght.css'
 import './index.css'
 import { aplicarTemaInicial } from './lib/tema'
 
