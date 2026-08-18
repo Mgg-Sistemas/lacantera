@@ -128,6 +128,18 @@ export function Auditoria() {
           />
         </div>
 
+        {/* Va con los filtros y no en un menú aparte porque cambia lo que se
+            está contando justo debajo, y eso hay que verlo sin buscarlo. */}
+        <label className="text-ink/70 mt-4 flex w-fit cursor-pointer items-center gap-2 text-sm select-none">
+          <input
+            type="checkbox"
+            className="accent-royal-600 size-4 rounded"
+            checked={filtros.incluirSistema ?? false}
+            onChange={(e) => cambiar({ incluirSistema: e.target.checked || undefined })}
+          />
+          Mostrar también lo que hizo el sistema
+        </label>
+
         <div className="mt-4 flex items-center justify-between gap-4">
           <p className="text-ink/50 text-sm">
             {isPending
