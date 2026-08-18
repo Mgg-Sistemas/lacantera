@@ -152,38 +152,28 @@ export function Login() {
         <div className="mx-auto w-full max-w-6xl lg:flex lg:justify-end">
           <div className="bg-surface rounded-card shadow-popover anim-surgir mx-auto w-full max-w-[400px] p-8 [animation-delay:440ms] sm:p-9 lg:mx-0">
             {/*
-              LA MARCA, Y EL PROVECHO DEL FONDO BLANCO
+              LA MARCA
 
-              El logo llega en JPEG, así que trae un rectángulo blanco pegado
-              que no se puede quitar: el formato no sabe de transparencia.
-              Sobre la fotografía sería un parche, y por eso no va ahí.
+              Aquí hubo un rectángulo blanco. El logo anterior venía en JPEG,
+              que no sabe de transparencia, y traía su fondo pegado; el truco
+              era apoyarlo dentro de la placa —que ya era blanca— para que la
+              costura no se viera. Funcionaba en tema claro y en oscuro se
+              notaba, porque la placa se vuelve carbón y el rectángulo
+              reaparecía.
 
-              Aquí ese blanco no es un defecto sino la pieza que faltaba. La
-              placa del formulario ya era blanca, de modo que en tema claro el
-              rectángulo desaparece dentro de ella: no hay costura que
-              disimular porque no hay dos blancos, hay uno.
+              La insignia nueva tiene transparencia, así que el remiendo sobra:
+              se apoya sobre la placa en los dos temas sin nada detrás.
 
-              Y en tema oscuro, donde la placa se vuelve carbón, el rectángulo
-              reaparece — pero recortado y con aire alrededor se lee como un
-              cartel esmaltado atornillado a la pared, que es exactamente como
-              una cantera rotula su entrada. El punto flaco entra en el diseño
-              en vez de esconderse.
-
-              También se le quitó el margen sobrante del original: eran 162px
-              de blanco a la izquierda y 123 arriba, que empujaban la marca a
-              un tercio de su tamaño útil.
-
-              Va enlazado a la portada porque ya no hay otra marca en pantalla
-              que pulsar: era lo que había arriba a la izquierda, y dos logos
-              en una pantalla de acceso sobran.
+              Va enlazada a la portada porque no hay otra marca en pantalla que
+              pulsar: dos logos en un acceso sobran.
             */}
             <Link to="/" aria-label="Volver a la portada" className="block">
               <img
-                src="/marca.jpg"
+                src="/marca.webp"
                 alt={`${EMPRESA.razonSocial} — ${EMPRESA.actividad}`}
-                width={566}
-                height={525}
-                className="mx-auto block w-full max-w-[190px] rounded-[4px] bg-white p-2.5"
+                width={512}
+                height={521}
+                className="mx-auto block w-full max-w-[132px]"
               />
             </Link>
 
