@@ -127,4 +127,4 @@ docs/traspaso-al-carril-unico.md
 # Recrea el esquema para las pruebas, e incluye la clave provisional del
 # administrador. Es una base desechable que solo existe en el equipo de quien
 # la levanta, pero la clave no tiene por que viajar a un repositorio publico.
-supabase/local/andamio.sql
+supabase/local/
