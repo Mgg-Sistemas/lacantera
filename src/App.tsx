@@ -1,7 +1,6 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { Landing } from '@/pages/Landing'
-import { Laboratorio } from '@/pages/Laboratorio'
 import { Login } from '@/pages/Login'
 import { ModuloPendiente } from '@/pages/ModuloPendiente'
 import { navigation } from '@/config/navigation'
@@ -358,20 +357,6 @@ export default function App() {
               ))}
             </Route>
           </Route>
-
-          {/* Banco de pruebas del diseño, sólo en desarrollo.
-
-              El interior vive detrás del acceso, y rediseñar las piezas
-              compartidas sin poder verlas es como se rompen los diseños. Esta
-              ruta las monta con contenido fijo y sin sesión.
-
-              `import.meta.env.DEV` es una constante en tiempo de compilación:
-              en la versión publicada esta rama es literalmente `false` y tanto
-              la ruta como el archivo desaparecen del paquete. No es una puerta
-              escondida, es código que no llega. */}
-          {import.meta.env.DEV ? (
-            <Route path="/laboratorio" element={<Laboratorio />} />
-          ) : null}
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
