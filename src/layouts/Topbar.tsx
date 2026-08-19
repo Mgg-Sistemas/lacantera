@@ -7,12 +7,12 @@ import {
   Monitor,
   Moon,
   PanelLeft,
-  Search,
   Sun,
   UserRound,
   WifiOff,
 } from 'lucide-react'
 import { Notificaciones } from '@/components/Notificaciones'
+import { Buscador } from '@/components/Buscador'
 import { cn } from '@/lib/cn'
 import { useSesion } from '@/lib/sesion'
 import { cerrarSesion } from '@/lib/auth'
@@ -238,17 +238,9 @@ export function Topbar({
           <PanelLeft className={cn('size-5 transition-transform', collapsed && 'rotate-180')} />
         </button>
 
-        {/* Búsqueda */}
-        <button
-          type="button"
-          className="text-ink/45 hover:text-ink/70 ml-1 flex items-center gap-2 rounded-md text-base transition-colors"
-        >
-          <Search className="size-5" />
-          <span className="hidden sm:inline">Buscar</span>
-          <kbd className="text-ink/40 border-ink/15 hidden rounded border px-1.5 py-0.5 text-2xs font-medium md:inline">
-            Ctrl K
-          </kbd>
-        </button>
+        {/* Búsqueda. Llevaba puesta desde el principio sin `onClick`: un botón
+            con su atajo dibujado al lado que no hacía nada. */}
+        <Buscador />
 
         <div className="flex-1" />
 

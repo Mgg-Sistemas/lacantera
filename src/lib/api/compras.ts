@@ -213,6 +213,8 @@ export interface Orden {
     /** Cómo suele cobrar. Se propone al pagarle. */
     metodo_pago_preferido: string | null
   } | null
+  /** A dónde pidió el solicitante que fuera. Decide el almacén al recibir. */
+  solicitud: { destino: string | null; destino_almacen_id: number | null } | null
   renglones: RenglonOrden[]
   instrucciones: InstruccionPago[]
 }
@@ -227,6 +229,7 @@ export interface Orden {
 const SELECT_ORDEN = `
   *,
   proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
+  solicitud:solicitudes_pedido(destino, destino_almacen_id),
   renglones:orden_renglones(*),
   instrucciones:instrucciones_pago(*)
 `
@@ -288,6 +291,7 @@ const SELECT_DETALLE = `
   ordenes:ordenes_compra(
     *,
     proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
+  solicitud:solicitudes_pedido(destino, destino_almacen_id),
     renglones:orden_renglones(*),
     instrucciones:instrucciones_pago(*)
   )
@@ -524,6 +528,8 @@ export function useIndicarPago() {
       monto: number
       datos: DatosPago
       nota?: string
+      /** Si la operación causa IGTF. Sin valor, decide la moneda. */
+      igtf?: boolean | null
     }) =>
       rpc<number>('indicar_pago', {
         p_orden_id: p.orden_id,
@@ -532,6 +538,7 @@ export function useIndicarPago() {
         p_monto: p.monto,
         p_datos: p.datos,
         p_nota: p.nota ?? null,
+        p_igtf: p.igtf ?? null,
       }),
   )
 }

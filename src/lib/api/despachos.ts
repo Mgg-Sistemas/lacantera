@@ -56,8 +56,9 @@ export interface Guia {
   cliente: string | null
   articulo_id: number
   articulo: string
+  /** M3 o TON, lo que diga el papel del ministerio. */
   unidad: string
-  toneladas: string
+  cantidad: string
   transportista: string | null
   vehiculo: string | null
   chofer: string | null
@@ -174,7 +175,8 @@ export function useRegistrarGuia() {
       vigencia_hasta: string
       destino: string
       articulo_id: number
-      toneladas: number
+      cantidad: number
+      unidad?: string
       cliente_id?: number | null
       frente_id?: number | null
       origen?: string | null
@@ -190,7 +192,8 @@ export function useRegistrarGuia() {
         p_vigencia_hasta: g.vigencia_hasta,
         p_destino: g.destino,
         p_articulo_id: g.articulo_id,
-        p_toneladas: g.toneladas,
+        p_cantidad: g.cantidad,
+        p_unidad: g.unidad ?? 'M3',
         p_cliente_id: g.cliente_id ?? null,
         p_frente_id: g.frente_id ?? null,
         p_origen: g.origen ?? null,

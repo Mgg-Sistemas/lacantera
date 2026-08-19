@@ -452,7 +452,7 @@ export function Despachos() {
                 onChange={(e) => setGuiaId(e.target.value)}
                 opciones={guiasVigentes.map((g) => ({
                   valor: String(g.id),
-                  etiqueta: `${g.numero_guia} · ${g.articulo} · ${enteros(g.toneladas)} t`,
+                  etiqueta: `${g.numero_guia} · ${g.articulo} · ${enteros(g.cantidad)} ${g.unidad === 'TON' ? 't' : 'm³'}`,
                 }))}
                 error={
                   guiasVigentes.length === 0

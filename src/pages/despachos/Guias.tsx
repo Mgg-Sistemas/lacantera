@@ -16,6 +16,7 @@ import { useArticulos } from '@/lib/api/catalogo'
 import { useClientes } from '@/lib/api/ventas'
 import { useFrentes } from '@/lib/api/explotacion'
 import { useAnularGuia, useGuias, useRegistrarGuia, type Guia } from '@/lib/api/despachos'
+import { useVehiculos } from '@/lib/api/vehiculos'
 
 /**
  * Guías de movilización.
@@ -35,7 +36,9 @@ const vacio = {
   vigencia_hasta: '',
   destino: '',
   articulo_id: '',
-  toneladas: '',
+  cantidad: '',
+  unidad: 'M3',
+  vehiculo_id: '',
   cliente_id: '',
   frente_id: '',
   origen: '',
@@ -50,6 +53,7 @@ export function Guias() {
   const [filtro, setFiltro] = useState('')
   const { data, isPending, error } = useGuias(filtro || undefined)
   const { data: articulos } = useArticulos()
+  const { data: vehiculos } = useVehiculos()
   const { data: clientes } = useClientes(true)
   const { data: frentes } = useFrentes()
   const registrar = useRegistrarGuia()
@@ -163,7 +167,7 @@ export function Guias() {
                         ) : null}
                       </td>
                       <td className="tabular text-ink/85 px-3 py-3 text-right font-medium">
-                        {enteros(g.toneladas)} t
+                        {enteros(g.cantidad)} {g.unidad === 'TON' ? 't' : 'm³'}
                       </td>
                       <td className="text-ink/60 px-3 py-3 text-xs">
                         hasta {fecha(g.vigencia_hasta)}
@@ -218,7 +222,7 @@ export function Guias() {
                   !nueva.destino.trim() ||
                   !nueva.articulo_id ||
                   !nueva.vigencia_hasta ||
-                  Number(nueva.toneladas) <= 0
+                  Number(nueva.cantidad) <= 0
                 }
                 onClick={async () => {
                   await registrar.mutateAsync({
@@ -226,7 +230,8 @@ export function Guias() {
                     vigencia_hasta: nueva.vigencia_hasta,
                     destino: nueva.destino,
                     articulo_id: Number(nueva.articulo_id),
-                    toneladas: Number(nueva.toneladas),
+                    cantidad: Number(nueva.cantidad),
+                    unidad: nueva.unidad,
                     cliente_id: Number(nueva.cliente_id) || null,
                     frente_id: Number(nueva.frente_id) || null,
                     origen: nueva.origen || null,
@@ -292,15 +297,29 @@ export function Guias() {
               className="sm:col-span-2"
               required
             />
+            {/* La medida se elige. El campo decía «toneladas» y solo admitía
+                eso; la cantera opera en metros cúbicos mientras tramita la
+                licencia de toneladas, y el papel del ministerio dice una o la
+                otra. Un campo con nombre de unidad era una trampa. */}
             <Input
-              label="Toneladas que ampara"
+              label="Cantidad que ampara"
               type="number"
               min="0"
               step="0.01"
               inputMode="decimal"
-              value={nueva.toneladas}
-              onChange={(e) => setNueva({ ...nueva, toneladas: e.target.value })}
+              value={nueva.cantidad}
+              onChange={(e) => setNueva({ ...nueva, cantidad: e.target.value })}
               required
+            />
+            <Select
+              label="Medida"
+              value={nueva.unidad}
+              onChange={(e) => setNueva({ ...nueva, unidad: e.target.value })}
+              opciones={[
+                { valor: 'M3', etiqueta: 'Metros cúbicos' },
+                { valor: 'TON', etiqueta: 'Toneladas' },
+              ]}
+              hint="La que diga el papel."
             />
             <Select
               label="Frente de origen"
@@ -324,11 +343,43 @@ export function Guias() {
               value={nueva.transportista}
               onChange={(e) => setNueva({ ...nueva, transportista: e.target.value })}
             />
-            <Input
-              label="Placa"
-              value={nueva.vehiculo}
-              onChange={(e) => setNueva({ ...nueva, vehiculo: e.target.value })}
+            {/* La placa sale del catálogo. Escribirla a mano es como el
+                mismo camión termina existiendo tres veces: «A12BC3D»,
+                «a12bc3d» y «A12 BC3D». Queda «Otra» para el que no esté
+                cargado, que sigue siendo texto. */}
+            <Select
+              label="Vehículo"
+              vacio="Otro — escribo la placa"
+              value={nueva.vehiculo_id}
+              onChange={(e) => {
+                const v = (vehiculos ?? []).find((x) => String(x.id) === e.target.value)
+                setNueva({
+                  ...nueva,
+                  vehiculo_id: e.target.value,
+                  vehiculo: v ? v.placa : '',
+                })
+              }}
+              opciones={(vehiculos ?? []).map((v) => ({
+                valor: String(v.id),
+                etiqueta: `${v.placa} · ${Number(v.capacidad_m3)} m³${
+                  v.transportista ? ` · ${v.transportista}` : ''
+                }`,
+              }))}
+              hint={
+                (vehiculos ?? []).length === 0
+                  ? 'No hay vehículos cargados. Se dan de alta en Despachos › Vehículos.'
+                  : undefined
+              }
             />
+
+            {nueva.vehiculo_id === '' ? (
+              <Input
+                label="Placa"
+                placeholder="A12BC3D"
+                value={nueva.vehiculo}
+                onChange={(e) => setNueva({ ...nueva, vehiculo: e.target.value })}
+              />
+            ) : null}
             <Input
               label="Chofer"
               value={nueva.chofer}
