@@ -213,6 +213,8 @@ export interface Orden {
     /** Cómo suele cobrar. Se propone al pagarle. */
     metodo_pago_preferido: string | null
   } | null
+  /** A dónde pidió el solicitante que fuera. Decide el almacén al recibir. */
+  solicitud: { destino: string | null; destino_almacen_id: number | null } | null
   renglones: RenglonOrden[]
   instrucciones: InstruccionPago[]
 }
@@ -227,6 +229,7 @@ export interface Orden {
 const SELECT_ORDEN = `
   *,
   proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
+  solicitud:solicitudes_pedido(destino, destino_almacen_id),
   renglones:orden_renglones(*),
   instrucciones:instrucciones_pago(*)
 `
@@ -288,6 +291,7 @@ const SELECT_DETALLE = `
   ordenes:ordenes_compra(
     *,
     proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
+  solicitud:solicitudes_pedido(destino, destino_almacen_id),
     renglones:orden_renglones(*),
     instrucciones:instrucciones_pago(*)
   )

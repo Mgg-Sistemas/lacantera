@@ -33,15 +33,42 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
   const [cantidades, setCantidades] = useState<Record<number, string>>(() =>
     Object.fromEntries(pendientes.map((r) => [r.id, String(r.pendiente)])),
   )
-  const [almacenId, setAlmacenId] = useState(
-    () => String(almacenes?.find((a) => a.recibe_compras)?.id ?? ''),
+  /*
+    EL ALMACÉN LO PROPONE EL PEDIDO, NO LA CONFIGURACIÓN
+
+    Antes venía siempre el almacén marcado como «recibe compras», el mismo para
+    todo. Un filtro de aire terminó en ALIMENTACIÓN, y no fue un descuido de
+    quien recibió: la pantalla se lo puso y él no tenía por qué saber que estaba
+    mal.
+
+    Ahora manda lo que dijo quien pidió. Si el pedido decía «Taller de
+    Reparación Primaria», ahí va; si el destino no era un almacén —un frente, la
+    planta— se cae al de por defecto, que es lo único que queda.
+  */
+  const destinoDelPedido = orden.solicitud?.destino_almacen_id
+
+  /*
+    Y si el pedido no dijo destino, no se adivina.
+
+    `recibe_compras` está marcado en seis almacenes: quien cargó los datos lo
+    leyó como «puede recibir compras», que es una lectura razonable. El código
+    lo leía como «el almacén por defecto» y tomaba el primero de la lista, que
+    por orden alfabético es ALIMENTACIÓN. De ahí el filtro de aire.
+
+    Con un solo candidato se propone; con seis no se propone ninguno, porque
+    elegir por orden alfabético es elegir al azar con cara de decisión.
+  */
+  const candidatos = (almacenes ?? []).filter((a) => a.recibe_compras)
+  const porDefecto = candidatos.length === 1 ? candidatos[0].id : null
+
+  const [almacenId, setAlmacenId] = useState(() =>
+    String(destinoDelPedido ?? porDefecto ?? ''),
   )
   const [fecha, setFecha] = useState(hoyEnCaracas())
   const [nota, setNota] = useState('')
 
   // El almacén por defecto llega con la consulta, después del primer render.
-  const almacenElegido =
-    almacenId || String(almacenes?.find((a) => a.recibe_compras)?.id ?? almacenes?.[0]?.id ?? '')
+  const almacenElegido = almacenId || String(destinoDelPedido ?? porDefecto ?? '')
 
   const guardar = async () => {
     await recibir.mutateAsync({
@@ -73,7 +100,7 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
           <Button variant="ghost" onClick={onCerrar}>
             Cancelar
           </Button>
-          <Button onClick={() => void guardar()} disabled={!algo || recibir.isPending}>
+          <Button onClick={() => void guardar()} disabled={!algo || !almacenElegido || recibir.isPending}>
             {recibir.isPending ? 'Registrando…' : 'Registrar la recepción'}
           </Button>
         </>
@@ -82,12 +109,22 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
       <div className="grid gap-4 sm:grid-cols-2">
         <Select
           label="Almacén que recibe"
+          vacio="Elige el almacén"
           value={almacenElegido}
           onChange={(e) => setAlmacenId(e.target.value)}
           opciones={(almacenes ?? []).map((a) => ({
             valor: String(a.id),
             etiqueta: `${a.codigo} · ${a.nombre}`,
           }))}
+          hint={
+            destinoDelPedido
+              ? String(destinoDelPedido) === almacenElegido
+                ? 'Es el destino que pidió quien lo solicitó.'
+                : 'Ojo: el pedido era para otro sitio.'
+              : orden.solicitud?.destino
+                ? `El pedido decía «${orden.solicitud.destino}», que no es un almacén. Elige dónde entra.`
+                : 'El pedido no dijo a dónde iba. Elige dónde entra.'
+          }
         />
         <Input
           label="Fecha de recepción"
