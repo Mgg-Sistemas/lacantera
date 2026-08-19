@@ -62,6 +62,12 @@ const Respaldo = lazy(() =>
 const TableroInventario = lazy(() =>
   import('@/pages/inventario/Tablero').then((m) => ({ default: m.TableroInventario })),
 )
+const Talleres = lazy(() =>
+  import('@/pages/inventario/Talleres').then((m) => ({ default: m.Talleres })),
+)
+const Vehiculos = lazy(() =>
+  import('@/pages/despachos/Vehiculos').then((m) => ({ default: m.Vehiculos })),
+)
 const Maquinaria = lazy(() =>
   import('@/pages/maquinaria/Maquinaria').then((m) => ({ default: m.Maquinaria })),
 )
@@ -203,6 +209,8 @@ const paginas: Record<string, ReactNode> = {
   '/app/inventario': <TableroInventario />,
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,
+  '/app/inventario/talleres': <Talleres />,
+  '/app/despachos/vehiculos': <Vehiculos />,
   '/app/nomina': <TableroNomina />,
   '/app/nomina/personal': <Personal />,
   '/app/nomina/tabulador': <Tabulador />,

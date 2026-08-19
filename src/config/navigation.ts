@@ -156,6 +156,9 @@ export const navigation: NavSection[] = [
           // Igual que en compras y ventas: la primera entrada es el tablero.
           { label: 'Tablero', to: '/app/inventario' },
           { label: 'Existencias', to: '/app/inventario/existencias' },
+          // Va pegada a Existencias porque responde la pregunta de después:
+          // se ve el total, se ve dónde está, y aquí qué pasa en cada taller.
+          { label: 'Talleres', to: '/app/inventario/talleres' },
           { label: 'Movimientos', to: '/app/inventario/movimientos' },
           { label: 'Transferencias', to: '/app/inventario/transferencias' },
           { label: 'Catálogo de artículos', to: '/app/inventario/articulos' },
@@ -172,6 +175,10 @@ export const navigation: NavSection[] = [
           // para que el camión circule con el mineral, no el papel que se le
           // entrega al cliente. Ese es la nota de entrega y vive en Ventas.
           { label: 'Guías de movilización', to: '/app/despachos/guias' },
+          // Los da de alta quien ve llegar el camión, no quien administra el
+          // sistema; en Configuración nadie los cargaría y la placa seguiría
+          // escribiéndose a mano.
+          { label: 'Vehículos', to: '/app/despachos/vehiculos' },
         ],
       },
     ],

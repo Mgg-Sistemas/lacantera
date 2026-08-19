@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import {
   Boxes,
   MapPin,
@@ -59,7 +59,13 @@ function cantidad(valor: string | number): string {
  */
 export function Existencias() {
   const { data: almacenes } = useAlmacenes()
-  const [almacenId, setAlmacenId] = useState('')
+
+  // El sitio puede venir en la URL: desde Talleres se llega aquí con el taller
+  // ya elegido. Sin esto el enlace prometía un filtro que no aplicaba.
+  const [params, setParams] = useSearchParams()
+  const almacenId = params.get('almacen') ?? ''
+  const setAlmacenId = (v: string) =>
+    setParams(v ? { almacen: v } : {}, { replace: true })
   const enTotal = almacenId === ''
 
   const totales = useExistenciasTotales(enTotal)

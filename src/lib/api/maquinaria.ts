@@ -113,6 +113,28 @@ export function useLecturas(maquinaId: number | null) {
   })
 }
 
+/**
+ * Lo reparado en un taller, sea de la máquina que sea.
+ *
+ * Es la otra mitad de lo que hace un taller: la primera es lo que tiene
+ * asignado en inventario, y esta es en qué lo gastó.
+ */
+export function useMantenimientosDeTaller(tallerId: number | null) {
+  return useQuery({
+    queryKey: ['maquinaria', 'mantenimientos-taller', tallerId],
+    enabled: tallerId !== null,
+    queryFn: async () =>
+      desenvolver<Mantenimiento[]>(
+        await supabase
+          .from('mantenimientos')
+          .select('*')
+          .eq('taller_id', tallerId!)
+          .order('fecha', { ascending: false })
+          .limit(40),
+      ),
+  })
+}
+
 export function useMantenimientos(maquinaId: number | null) {
   return useQuery({
     queryKey: ['maquinaria', 'mantenimientos', maquinaId],
