@@ -142,3 +142,12 @@ supabase/local/
 #
 # Para versionar uno nuevo a proposito: git add -f, o una excepcion aqui.
 *.md
+
+# Originales de marca y paleta.
+#
+# Son material de origen, no piezas que sirva la web: de logoNuevo2.png salen
+# media/marca.webp y los tres favicones, y paleta_colores.jpeg es la referencia
+# de color que ya vive en index.css. Dentro de public/ los dos se publican y se
+# descargan con la pagina —253 KB que nadie pide— asi que se quedan en el equipo.
+public/logoNuevo*.png
+public/paleta_colores.jpeg

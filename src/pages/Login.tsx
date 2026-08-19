@@ -169,7 +169,7 @@ export function Login() {
             */}
             <Link to="/" aria-label="Volver a la portada" className="block">
               <img
-                src="/marca.webp"
+                src="/media/marca.webp"
                 alt={`${EMPRESA.razonSocial} — ${EMPRESA.actividad}`}
                 width={512}
                 height={521}

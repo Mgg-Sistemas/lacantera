@@ -63,7 +63,7 @@ const CAPITULOS: CapituloDatos[] = [
     titulo: 'Se reduce y se clasifica',
     detalle:
       'La planta parte la roca y la separa por tamaño. De un mismo turno salen cuatro materiales distintos, y cada uno entra al patio contado por separado.',
-    imagen: '/concrete-batching-plant-outdoor-gravel-conveyors.jpg',
+    imagen: '/media/concrete-batching-plant-outdoor-gravel-conveyors.jpg',
   },
   {
     romano: 'IV',
@@ -150,7 +150,7 @@ export function Landing() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3 sm:px-10">
           <img
-            src="/marca.webp"
+            src="/media/marca.webp"
             alt={EMPRESA.razonSocial}
             width={512}
             height={521}
@@ -247,7 +247,7 @@ export function Landing() {
             origen a 79, sin pérdida visible. Esto se abre desde la cantera.
           */}
           <img
-            src="/marca.webp"
+            src="/media/marca.webp"
             alt={EMPRESA.razonSocial}
             width={512}
             height={521}
@@ -310,7 +310,7 @@ export function Landing() {
       <section className="bg-royal-900 px-6 py-24 sm:px-10 lg:py-32">
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[5fr_6fr] lg:gap-16">
           <img
-            src="/tomandopiedra.jpeg"
+            src="/media/tomandopiedra.jpeg"
             alt="Un trabajador sostiene en la mano un fragmento de la piedra extraída."
             width={1280}
             height={840}
