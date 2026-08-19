@@ -524,6 +524,8 @@ export function useIndicarPago() {
       monto: number
       datos: DatosPago
       nota?: string
+      /** Si la operación causa IGTF. Sin valor, decide la moneda. */
+      igtf?: boolean | null
     }) =>
       rpc<number>('indicar_pago', {
         p_orden_id: p.orden_id,
@@ -532,6 +534,7 @@ export function useIndicarPago() {
         p_monto: p.monto,
         p_datos: p.datos,
         p_nota: p.nota ?? null,
+        p_igtf: p.igtf ?? null,
       }),
   )
 }

@@ -140,7 +140,11 @@ export function ModalRegistrarPago({
           autoFocus
           value={referencia}
           onChange={(e) => setReferencia(e.target.value)}
-          hint="El número que devolvió el banco o la plataforma."
+          hint={
+            instruccion.metodo === 'EFECTIVO'
+              ? 'En efectivo no hay número que copiar: si lo dejas vacío, el sistema le pone uno (EFEUSD-2026-0001).'
+              : 'El número que devolvió el banco o la plataforma.'
+          }
         />
 
         <Input

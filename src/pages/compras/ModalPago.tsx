@@ -12,6 +12,7 @@ import { MONEDAS } from '@/lib/api/ventas'
 import { CamposDePago } from '@/components/CamposDePago'
 import type { DatosPago, Orden } from '@/lib/api/compras'
 import { bolivares, dolares } from '@/lib/formato'
+import { cn } from '@/lib/cn'
 
 interface Props {
   abierto: boolean
@@ -44,6 +45,17 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
   const [datos, setDatos] = useState<DatosPago>({})
   const [nota, setNota] = useState('')
 
+  /*
+    EL IGTF SE PROPONE, NO SE IMPONE
+
+    El 3% grava los pagos en divisa, así que se marca solo cuando la moneda no
+    es el bolívar. Pero la empresa pidió que fuera opcional en cada operación
+    —igual que el IVA—, y hay casos donde no aplica. Antes salía como un aviso
+    y no había forma de quitarlo: la pantalla informaba de un cobro que el
+    usuario no podía discutir.
+  */
+  const [conIgtf, setConIgtf] = useState(moneda !== 'VES')
+
   const elegido = (metodos ?? []).find((m) => m.codigo === metodo)
 
   const cambiar = (cambios: DatosPago) => setDatos((d) => ({ ...d, ...cambios }))
@@ -67,13 +79,14 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
     const m = (metodos ?? []).find((x) => x.codigo === nuevo)
     const admitidas = monedasDe(m, MONEDAS)
     if (!admitidas.some((x) => x.valor === moneda) && admitidas[0]) {
+      setConIgtf(admitidas[0].valor !== 'VES')
       setMoneda(admitidas[0].valor)
     }
 
     setDatos({})
   }
 
-  const igtf = moneda !== 'VES' ? Number(monto || 0) * 0.03 : 0
+  const igtf = conIgtf ? Number(monto || 0) * 0.03 : 0
   const formato = moneda === 'VES' ? bolivares : dolares
 
   const guardar = async () => {
@@ -137,14 +150,29 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
           hint={`Falta por pagar: ${formato(pendiente)}`}
         />
 
-        {moneda !== 'VES' ? (
-          <div className="border-warning/30 bg-warning-soft rounded-[6px] border p-3 text-sm sm:mt-6">
-            <p className="text-ink/80">
-              Pago en divisa: causa <strong>IGTF del 3%</strong> ={' '}
-              <span className="tabular">{dolares(igtf)}</span>. Sale además del monto.
-            </p>
-          </div>
-        ) : null}
+        <label
+          className={cn(
+            'flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm sm:mt-6',
+            conIgtf ? 'border-warning/30 bg-warning-soft' : 'border-hairline',
+          )}
+        >
+          <input
+            type="checkbox"
+            checked={conIgtf}
+            onChange={(e) => setConIgtf(e.target.checked)}
+            className="accent-royal-600 mt-0.5 size-4 shrink-0"
+          />
+          <span className="text-ink/80">
+            Causa <strong>IGTF del 3%</strong>
+            {conIgtf ? (
+              <>
+                {' '}= <span className="tabular">{dolares(igtf)}</span>. Sale además del monto.
+              </>
+            ) : (
+              <span className="text-ink/50"> — esta operación no lo causa.</span>
+            )}
+          </span>
+        </label>
       </div>
 
       <h3 className="text-ink/85 mt-6 mb-2 text-sm font-semibold">Datos de la transacción</h3>
