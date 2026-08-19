@@ -14,15 +14,16 @@
  * pesada del proyecto y no tiene por qué estar en la primera pantalla.
  */
 
-import { marcaComoImagen, MARCA_SOBRE_OSCURO } from './marca'
+import { logoComoImagen } from './logo'
 import { fotoRecortada, type Encuadre } from './encuadre'
 import type { ArchivoArmado } from './armado'
 import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, DER, IZQ, PIE } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
 
-const AZUL = '#1D358F'
+// El primario de la marca. Antes era el azul de «La Cantera».
+const MARCA = '#cc3f00'
 const AZUL_CLARO = '#B9C6F5'
-const AZUL_CARGO = '#2B4FD9'
+const MARCA_SUAVE = '#9e4c01'
 const TINTA = '#262C3D'
 const GRIS = '#7B839A'
 const HAIRLINE = '#EEF0F6'
@@ -63,12 +64,12 @@ export interface DatosFicha {
 
 type Doc = import('jspdf').jsPDF
 
-function encabezado(doc: Doc, d: DatosFicha): number {
-  doc.setFillColor(AZUL)
+function encabezado(doc: Doc, d: DatosFicha, logo: string): number {
+  doc.setFillColor(MARCA)
   // Dentro del margen. Una banda a sangre anula tres de los cuatro lados.
   doc.rect(IZQ, ARRIBA, ANCHO_UTIL, 34, 'F')
 
-  doc.addImage(marcaComoImagen(MARCA_SOBRE_OSCURO), 'PNG', IZQ + 5, ARRIBA + 7, 13, 13)
+  doc.addImage(logo, 'PNG', IZQ + 5, ARRIBA + 7, 13, 13)
 
   doc.setTextColor('#FFFFFF')
   doc.setFont('helvetica', 'bold').setFontSize(12)
@@ -109,7 +110,7 @@ function persona(doc: Doc, d: DatosFicha, y: number): number {
   doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(15)
   doc.text(ajustar(doc, d.nombreCompleto, DER - x), x, y + 11)
 
-  doc.setTextColor(AZUL_CARGO).setFont('helvetica', 'normal').setFontSize(9)
+  doc.setTextColor(MARCA_SUAVE).setFont('helvetica', 'normal').setFontSize(9)
   doc.text(
     ajustar(doc, [d.cargo, d.departamento].filter(Boolean).join(' · '), DER - x),
     x,
@@ -130,10 +131,10 @@ function persona(doc: Doc, d: DatosFicha, y: number): number {
 }
 
 function seccion(doc: Doc, s: Seccion, y: number): number {
-  doc.setTextColor(AZUL_CARGO).setFont('helvetica', 'bold').setFontSize(8)
+  doc.setTextColor(MARCA_SUAVE).setFont('helvetica', 'bold').setFontSize(8)
   doc.text(s.titulo.toUpperCase(), IZQ, y)
 
-  doc.setDrawColor(AZUL_CARGO).setLineWidth(0.4)
+  doc.setDrawColor(MARCA_SUAVE).setLineWidth(0.4)
   doc.line(IZQ, y + 1.8, DER, y + 1.8)
 
   let fila = y + 7.5
@@ -212,9 +213,10 @@ function pie(doc: Doc, d: DatosFicha) {
 
 export async function armarFicha(d: DatosFicha): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
+  const logo = await logoComoImagen(400, true)
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  let y = encabezado(doc, d)
+  let y = encabezado(doc, d, logo)
 
   y = persona(doc, d, y)
   for (const s of d.secciones) y = seccion(doc, s, y)
