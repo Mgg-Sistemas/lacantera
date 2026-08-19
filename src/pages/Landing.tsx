@@ -205,8 +205,18 @@ export function Landing() {
         */}
         <div
           className={cn(
-            'from-royal-950/85 via-royal-950/45 bg-gradient-to-t to-transparent px-6 pt-10 pb-5 sm:px-10',
-            activo !== null && 'backdrop-blur-[3px]',
+            /*
+              La banda se ciñe al texto.
+
+              La primera versión abría 40px por arriba y encima llevaba un
+              degradado largo: el desenfoque se comía media fotografía y se
+              notaba más el velo que el raíl. Ahora es una franja de la altura
+              del filete más su rótulo, con un tinte plano en vez de degradado
+              —un degradado alto vuelve a extender el borrón hacia arriba, que
+              es justo lo que sobraba.
+            */
+            'bg-royal-950/55 px-6 pt-2 pb-2.5 sm:px-10',
+            activo !== null && 'backdrop-blur-[2px]',
           )}
         >
           <ol className="mx-auto flex max-w-6xl gap-3 sm:gap-6">
