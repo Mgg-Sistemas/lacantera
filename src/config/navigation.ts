@@ -164,6 +164,10 @@ export const navigation: NavSection[] = [
           // Va pegada a Existencias porque responde la pregunta de después:
           // se ve el total, se ve dónde está, y aquí qué pasa en cada taller.
           { label: 'Talleres', to: '/app/inventario/talleres' },
+          // Va en Inventario y no en Nómina porque la entrega la hace quien
+          // está en el mostrador del taller. Lo que queda pendiente de
+          // cobrar sí vive en Nómina, que es quien lo decide.
+          { label: 'Herramientas', to: '/app/inventario/herramientas' },
           { label: 'Movimientos', to: '/app/inventario/movimientos' },
           { label: 'Transferencias', to: '/app/inventario/transferencias' },
           { label: 'Catálogo de artículos', to: '/app/inventario/articulos' },
@@ -242,6 +246,10 @@ export const navigation: NavSection[] = [
           { label: 'Personal', to: '/app/nomina/personal' },
           { label: 'Tabulador de cargos', to: '/app/nomina/tabulador' },
           { label: 'Novedades del período', to: '/app/nomina/asistencia' },
+          // Pegada a las novedades porque se mira en el mismo momento: al
+          // preparar el período es cuando se decide si a alguien se le
+          // descuenta la herramienta que no devolvió.
+          { label: 'Herramientas sin devolver', to: '/app/nomina/herramientas' },
           { label: 'Procesar nómina', to: '/app/nomina/procesos' },
           { label: 'Recibos de pago', to: '/app/nomina/recibos' },
           { label: 'Parámetros de nómina', to: '/app/nomina/parametros' },
