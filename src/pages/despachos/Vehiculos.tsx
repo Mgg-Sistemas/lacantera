@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { Plus, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -162,16 +163,26 @@ function Grupo({
                 Ficha: {v.maquina_codigo} · {v.maquina}
               </p>
             ) : null}
+            {v.chofer_actual ? (
+              <p className="text-ink/55 mt-1 text-xs">Lo maneja {v.chofer_actual}</p>
+            ) : null}
 
             <div className="grow" />
 
             <div className="mt-3 flex items-center justify-between gap-2">
               {!v.activo ? <Chip tone="neutral">Fuera de servicio</Chip> : <span />}
-              {puedeEscribir ? (
-                <Button size="sm" variant="ghost" onClick={() => onEditar(v)}>
-                  Editar
-                </Button>
-              ) : null}
+              <div className="flex gap-1">
+                <Link to={`/app/despachos/vehiculos/${v.id}`}>
+                  <Button size="sm" variant="soft">
+                    Ver ficha
+                  </Button>
+                </Link>
+                {puedeEscribir ? (
+                  <Button size="sm" variant="ghost" onClick={() => onEditar(v)}>
+                    Editar
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </Card>
         ))}
