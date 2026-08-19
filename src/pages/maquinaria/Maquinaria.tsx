@@ -215,6 +215,18 @@ export function Maquinaria() {
                           ? ` · Mantenimiento: ${fecha(m.ultimo_mantenimiento)}`
                           : ' · Sin mantenimientos'}
                       </p>
+
+                      {/* La reparación va aparte del mantenimiento porque
+                          responde otra pregunta: no si va al día, sino cada
+                          cuánto se está rompiendo. */}
+                      {m.reparaciones > 0 ? (
+                        <p className="text-ink/45 mt-1 text-xs">
+                          {m.reparaciones} reparación{m.reparaciones === 1 ? '' : 'es'}
+                          {m.ultima_reparacion
+                            ? ` · la última el ${fecha(m.ultima_reparacion)}`
+                            : ''}
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="grow" />

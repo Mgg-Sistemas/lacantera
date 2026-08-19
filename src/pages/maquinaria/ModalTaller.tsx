@@ -12,6 +12,7 @@ import {
   useAnularMantenimiento,
   useCerrarMantenimiento,
   type Maquina,
+  type TipoOrden,
 } from '@/lib/api/maquinaria'
 import { enteros, fecha as formatearFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -53,13 +54,19 @@ export function ModalTaller({
  *
  * LA ELECCIÓN DE ARRIBA NO ES UNA ETIQUETA: DECIDE SI EL CONTADOR VUELVE A CERO
  *
- * Quien marque «servicio» habiendo hecho un mantenimiento profundo dejará la
- * máquina contando horas que ya no debía, y el aviso saltará tarde. Al revés es
- * peor: marcar «mantenimiento» por engrasar pone el contador a cero y la
- * máquina se pasa su intervalo real sin que nadie se entere.
+ * Quien marque «servicio» o «reparación» habiendo hecho un mantenimiento
+ * profundo dejará la máquina contando horas que ya no debía, y el aviso
+ * saltará tarde. Al revés es peor: marcar «mantenimiento» por arreglar una
+ * correa pone el contador a cero y la máquina se pasa su intervalo real sin
+ * que nadie se entere.
  *
- * Por eso no es un desplegable con dos opciones parecidas, sino dos botones
- * grandes que dicen su consecuencia en la propia tarjeta.
+ * Y la reparación se separa del servicio porque responde otra pregunta. El
+ * servicio es rutina; la reparación es algo que se rompió, y cada cuánto se
+ * rompe una máquina es lo que termina decidiendo si conviene seguir
+ * arreglándola.
+ *
+ * Por eso no es un desplegable con tres opciones parecidas, sino tres botones
+ * que dicen su consecuencia en la propia tarjeta.
  */
 function Entrada({
   abierto,
@@ -74,7 +81,7 @@ function Entrada({
   const { data: almacenes } = useAlmacenes()
 
   const hoy = new Date().toLocaleDateString('en-CA')
-  const [tipo, setTipo] = useState<'MANTENIMIENTO' | 'SERVICIO'>('MANTENIMIENTO')
+  const [tipo, setTipo] = useState<TipoOrden>('MANTENIMIENTO')
   const [dia, setDia] = useState(hoy)
   const [motivo, setMotivo] = useState('')
   const [taller, setTaller] = useState('')
@@ -99,8 +106,14 @@ function Entrada({
     {
       valor: 'MANTENIMIENTO' as const,
       titulo: 'Mantenimiento',
-      ejemplo: 'Motor, correas, filtros, cambio de aceite',
+      ejemplo: 'Le tocaba: motor, correas, filtros, cambio de aceite',
       consecuencia: 'Al salir, el contador de horas vuelve a cero',
+    },
+    {
+      valor: 'REPARACION' as const,
+      titulo: 'Reparación',
+      ejemplo: 'Se dañó algo y hay que arreglarlo',
+      consecuencia: 'No toca el contador: sigue debiendo su mantenimiento',
     },
     {
       valor: 'SERVICIO' as const,
@@ -139,7 +152,7 @@ function Entrada({
         </>
       }
     >
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         {opciones.map((o) => {
           const elegida = tipo === o.valor
           return (
@@ -154,7 +167,7 @@ function Entrada({
                   : 'border-hairline hover:border-royal-300',
               )}
             >
-              <p className="text-ink/90 text-base font-medium">{o.titulo}</p>
+              <p className="text-ink/90 text-sm font-medium">{o.titulo}</p>
               <p className="text-ink/55 mt-1 text-xs leading-relaxed">{o.ejemplo}</p>
               <p
                 className={cn(

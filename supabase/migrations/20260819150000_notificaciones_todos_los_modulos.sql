@@ -15,10 +15,10 @@
 --
 -- La casa usa CHECK sobre `text` para los vocabularios cerrados, y está bien
 -- para los que no viven en una tabla. Este sí vive en una: `modulos` es un
--- catálogo real, con nombre y orden, y hay una función —`crear_modulo`— que le
--- añade filas en caliente. Un CHECK aquí obliga a escribir una migración cada
--- vez que nace un módulo, que es exactamente lo que nadie hizo tres veces
--- seguidas. La clave foránea no se puede olvidar.
+-- catálogo real, con su nombre, su descripción y su orden. Un CHECK aquí
+-- obliga a acordarse de dos sitios cada vez que nace un módulo, que es
+-- exactamente lo que no pasó las últimas tres veces. La clave foránea no se
+-- puede olvidar.
 -- ---------------------------------------------------------------------------
 alter table public.notificaciones drop constraint if exists notificaciones_modulo_check;
 

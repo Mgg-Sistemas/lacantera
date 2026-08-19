@@ -50,7 +50,8 @@ export interface Maquina {
   /** Cuánto suele tardar su mantenimiento. Nulo si nadie lo ha estimado. */
   dias_mantenimiento: number | null
   nota: string | null
-  activa: boolean
+  /** Sale del estado: es «su estado no es DESINCORPORADA». */
+  en_la_flota: boolean
   /** Lo que lleva trabajado desde el último mantenimiento cerrado. */
   horas_desde_mant: string
   horas_totales: string
@@ -58,10 +59,14 @@ export interface Maquina {
   ultima_lectura: string | null
   horometro_actual: string | null
   ultimo_mantenimiento: string | null
+  /** Cuándo se le arregló algo por última vez. Distinto del mantenimiento. */
+  ultima_reparacion: string | null
+  reparaciones: number
   semaforo: Semaforo
 
   /** La orden de taller abierta, si la tiene. */
   mantenimiento_abierto_id: number | null
+  mantenimiento_abierto_tipo: TipoOrden | null
   mantenimiento_desde: string | null
   mantenimiento_taller_id: number | null
   dias_en_taller: number | null
@@ -82,6 +87,16 @@ export interface Lectura {
 
 export type EstadoOrden = 'ABIERTO' | 'CERRADO' | 'ANULADO'
 
+/**
+ * Por qué está el equipo en el taller.
+ *
+ * Los tres pasan por el mismo sitio y descuentan repuestos igual. Lo que los
+ * separa es lo que arrastran al cerrar: solo MANTENIMIENTO reinicia el
+ * contador de horas. Una reparación arregla algo que se dañó, y arreglar una
+ * correa rota no adelanta el cambio de aceite.
+ */
+export type TipoOrden = 'MANTENIMIENTO' | 'SERVICIO' | 'REPARACION'
+
 export interface Mantenimiento {
   id: number
   numero: string | null
@@ -89,7 +104,7 @@ export interface Mantenimiento {
   maquina_codigo: string
   maquina: string
   maquina_tipo: string
-  tipo: 'MANTENIMIENTO' | 'SERVICIO'
+  tipo: TipoOrden
   estado: EstadoOrden
   /** Por qué entró. Se pide al abrir. */
   motivo: string | null
@@ -163,12 +178,20 @@ export const ETIQUETA_ESTADO: Record<EstadoMaquina, string> = {
 // Leer
 // ---------------------------------------------------------------------------
 
-export function useMaquinaria(soloActivas = true) {
+/**
+ * Las máquinas.
+ *
+ * `enLaFlota` filtra las desincorporadas. Antes esto miraba una columna
+ * `activa` que ninguna función escribía, así que desincorporar una máquina la
+ * dejaba en la lista para siempre. Ahora se deriva del estado y no puede
+ * volver a contradecirlo.
+ */
+export function useMaquinaria(enLaFlota = true) {
   return useQuery({
-    queryKey: ['maquinaria', soloActivas],
+    queryKey: ['maquinaria', enLaFlota],
     queryFn: async () => {
       let q = supabase.from('v_maquinaria').select('*').order('codigo')
-      if (soloActivas) q = q.eq('activa', true)
+      if (enLaFlota) q = q.eq('en_la_flota', true)
       return desenvolver<Maquina[]>(await q)
     },
   })
@@ -363,7 +386,7 @@ export function useAbrirMantenimiento() {
   return useAccion(
     async (m: {
       maquina_id: number
-      tipo: 'MANTENIMIENTO' | 'SERVICIO'
+      tipo: TipoOrden
       motivo: string
       taller_id?: number | null
       fecha?: string | null

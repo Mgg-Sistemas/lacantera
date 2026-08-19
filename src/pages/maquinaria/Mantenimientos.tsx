@@ -162,8 +162,20 @@ export function Mantenimientos() {
                           ? 'Anulada'
                           : 'Terminada'}
                     </Chip>
-                    <Chip tone={m.tipo === 'MANTENIMIENTO' ? 'warning' : 'neutral'}>
-                      {m.tipo === 'MANTENIMIENTO' ? 'Mantenimiento' : 'Servicio'}
+                    <Chip
+                      tone={
+                        m.tipo === 'MANTENIMIENTO'
+                          ? 'warning'
+                          : m.tipo === 'REPARACION'
+                            ? 'danger'
+                            : 'neutral'
+                      }
+                    >
+                      {m.tipo === 'MANTENIMIENTO'
+                        ? 'Mantenimiento'
+                        : m.tipo === 'REPARACION'
+                          ? 'Reparación'
+                          : 'Servicio'}
                     </Chip>
 
                     {m.numero ? (

@@ -249,8 +249,20 @@ function ModalReparaciones({
               <li key={m.id} className="py-3">
                 <div className="flex flex-wrap items-baseline gap-2">
                   <span className="text-ink/85 font-mono text-sm">{nombreDe(m.maquina_id)}</span>
-                  <Chip tone={m.tipo === 'MANTENIMIENTO' ? 'warning' : 'neutral'}>
-                    {m.tipo === 'MANTENIMIENTO' ? 'Mantenimiento' : 'Servicio'}
+                  <Chip
+                    tone={
+                      m.tipo === 'MANTENIMIENTO'
+                        ? 'warning'
+                        : m.tipo === 'REPARACION'
+                          ? 'danger'
+                          : 'neutral'
+                    }
+                  >
+                    {m.tipo === 'MANTENIMIENTO'
+                      ? 'Mantenimiento'
+                      : m.tipo === 'REPARACION'
+                        ? 'Reparación'
+                        : 'Servicio'}
                   </Chip>
                   <span className="text-ink/45 text-xs">{fecha(m.fecha)}</span>
                   {m.horometro ? (
