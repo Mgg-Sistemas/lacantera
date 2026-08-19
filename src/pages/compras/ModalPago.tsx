@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { ChipTasa } from '@/components/ChipTasa'
@@ -12,6 +12,7 @@ import { MONEDAS } from '@/lib/api/ventas'
 import { CamposDePago } from '@/components/CamposDePago'
 import type { DatosPago, Orden } from '@/lib/api/compras'
 import { bolivares, dolares } from '@/lib/formato'
+import { cn } from '@/lib/cn'
 
 interface Props {
   abierto: boolean
@@ -30,13 +31,52 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
     .reduce((s, i) => s + Number(i.monto), 0)
   const pendiente = Math.max(Number(orden.total) - comprometido, 0)
 
-  const [metodo, setMetodo] = useState('TRANSFERENCIA')
+  /*
+    Se propone cómo cobra el proveedor, no un método fijo.
+
+    Estaba en «Transferencia» para todos, y el dato ya existía en su ficha sin
+    que nadie lo mirara. Quien paga tenía que acordarse de que a este se le
+    paga por Zelle y a aquel por pago móvil. Se propone; se puede cambiar,
+    porque el que siempre cobra por transferencia un día pide efectivo.
+  */
+  const [metodo, setMetodo] = useState(orden.proveedor?.metodo_pago_preferido ?? 'TRANSFERENCIA')
   const [moneda, setMoneda] = useState(orden.moneda)
   const [monto, setMonto] = useState(String(pendiente.toFixed(2)))
   const [datos, setDatos] = useState<DatosPago>({})
   const [nota, setNota] = useState('')
 
+  /*
+    EL IGTF SE PROPONE, NO SE IMPONE
+
+    El 3% grava los pagos en divisa, así que se marca solo cuando la moneda no
+    es el bolívar. Pero la empresa pidió que fuera opcional en cada operación
+    —igual que el IVA—, y hay casos donde no aplica. Antes salía como un aviso
+    y no había forma de quitarlo: la pantalla informaba de un cobro que el
+    usuario no podía discutir.
+  */
+  const [conIgtf, setConIgtf] = useState(moneda !== 'VES')
+
   const elegido = (metodos ?? []).find((m) => m.codigo === metodo)
+
+  /*
+    El método que propone el proveedor puede no servir para esta orden.
+
+    Un proveedor que cobra por Zelle solo admite dólares; si la orden va en
+    bolívares, el modal abría con una pareja imposible y la base lo rechazaba
+    al guardar. Se cuadra en cuanto llega el catálogo: si el método no admite
+    la moneda, se pasa a la primera que sí, igual que al cambiarlo a mano.
+  */
+  useEffect(() => {
+    if (!metodos || !elegido) return
+    const admitidas = monedasDe(elegido, MONEDAS)
+    if (admitidas.length > 0 && !admitidas.some((m) => m.valor === moneda)) {
+      setMoneda(admitidas[0].valor)
+      setConIgtf(admitidas[0].valor !== 'VES')
+    }
+    // Solo cuando llega el catálogo o cambia el método: si `moneda` entrara
+    // como dependencia, elegir bolívares a mano se desharía solo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metodos, metodo])
 
   const cambiar = (cambios: DatosPago) => setDatos((d) => ({ ...d, ...cambios }))
 
@@ -59,13 +99,14 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
     const m = (metodos ?? []).find((x) => x.codigo === nuevo)
     const admitidas = monedasDe(m, MONEDAS)
     if (!admitidas.some((x) => x.valor === moneda) && admitidas[0]) {
+      setConIgtf(admitidas[0].valor !== 'VES')
       setMoneda(admitidas[0].valor)
     }
 
     setDatos({})
   }
 
-  const igtf = moneda !== 'VES' ? Number(monto || 0) * 0.03 : 0
+  const igtf = conIgtf ? Number(monto || 0) * 0.03 : 0
   const formato = moneda === 'VES' ? bolivares : dolares
 
   const guardar = async () => {
@@ -76,6 +117,7 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
       monto: Number(monto),
       datos,
       nota,
+      igtf: conIgtf,
     })
     onCerrar()
   }
@@ -129,14 +171,29 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
           hint={`Falta por pagar: ${formato(pendiente)}`}
         />
 
-        {moneda !== 'VES' ? (
-          <div className="border-warning/30 bg-warning-soft rounded-[6px] border p-3 text-sm sm:mt-6">
-            <p className="text-ink/80">
-              Pago en divisa: causa <strong>IGTF del 3%</strong> ={' '}
-              <span className="tabular">{dolares(igtf)}</span>. Sale además del monto.
-            </p>
-          </div>
-        ) : null}
+        <label
+          className={cn(
+            'flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm sm:mt-6',
+            conIgtf ? 'border-warning/30 bg-warning-soft' : 'border-hairline',
+          )}
+        >
+          <input
+            type="checkbox"
+            checked={conIgtf}
+            onChange={(e) => setConIgtf(e.target.checked)}
+            className="accent-royal-600 mt-0.5 size-4 shrink-0"
+          />
+          <span className="text-ink/80">
+            Causa <strong>IGTF del 3%</strong>
+            {conIgtf ? (
+              <>
+                {' '}= <span className="tabular">{dolares(igtf)}</span>. Sale además del monto.
+              </>
+            ) : (
+              <span className="text-ink/50"> — esta operación no lo causa.</span>
+            )}
+          </span>
+        </label>
       </div>
 
       <h3 className="text-ink/85 mt-6 mb-2 text-sm font-semibold">Datos de la transacción</h3>

@@ -9,7 +9,7 @@ import { ErrorDeCarga } from '@/components/ui/Estado'
 import { CONDICIONES_PAGO, useProveedores } from '@/lib/api/catalogo'
 import { useRegistrarCotizacion } from '@/lib/api/compras'
 import type { Compra } from '@/lib/api/compras'
-import { useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
+import { useMonedasUsables, useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
 import { bolivares, dolares, tasa as fmtTasa } from '@/lib/formato'
 
 interface Props {
@@ -27,6 +27,7 @@ interface Precio {
 export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
   const { data: proveedores } = useProveedores()
   const { data: tasaVigente } = useTasaVigente()
+  const { data: monedas } = useMonedasUsables()
   const registrar = useRegistrarCotizacion()
 
   const [proveedorId, setProveedorId] = useState('')
@@ -160,11 +161,8 @@ export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
           label="Moneda"
           value={moneda}
           onChange={(e) => setMoneda(e.target.value)}
-          opciones={[
-            { valor: 'USD', etiqueta: 'Dólares' },
-            { valor: 'VES', etiqueta: 'Bolívares' },
-            { valor: 'EUR', etiqueta: 'Euros' },
-          ]}
+          opciones={monedas ?? []}
+          hint="Solo las que tienen tasa registrada: sin tasa no hay con qué convertir."
         />
       </div>
 

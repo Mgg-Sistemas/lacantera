@@ -2,14 +2,21 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
-import { Card, CardHeader } from '@/components/ui/Card'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ChipTasa } from '@/components/ChipTasa'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { useArticulos, usePerfiles, useUnidades } from '@/lib/api/catalogo'
+import {
+  CATEGORIAS_ARTICULO,
+  useArticulos,
+  useCrearArticulo,
+  usePerfiles,
+  useUnidades,
+} from '@/lib/api/catalogo'
+import { useAlmacenes } from '@/lib/api/inventario'
 import { useCrearPedido } from '@/lib/api/compras'
 import { useSesion } from '@/lib/sesion'
 
@@ -30,6 +37,9 @@ interface FilaRenglon {
   cantidad: string
   unidad: string
   observacion: string
+  /* Solo mientras se crea el artículo desde aquí; no viajan al pedido. */
+  nuevo_codigo: string
+  nueva_categoria: string
 }
 
 let contador = 0
@@ -40,11 +50,17 @@ const filaVacia = (): FilaRenglon => ({
   cantidad: '',
   unidad: 'UND',
   observacion: '',
+  nuevo_codigo: '',
+  nueva_categoria: '',
 })
+
+const OTRO_SITIO = 'OTRO'
 
 export function NuevoPedido() {
   const navigate = useNavigate()
   const { data: articulos } = useArticulos()
+  const { data: almacenes } = useAlmacenes()
+  const crearArticulo = useCrearArticulo()
   const { data: unidades } = useUnidades()
   const { data: perfiles } = usePerfiles()
   const { session } = useSesion()
@@ -59,6 +75,10 @@ export function NuevoPedido() {
   const [justificacion, setJustificacion] = useState('')
   const [prioridad, setPrioridad] = useState('NORMAL')
   const [requeridaPara, setRequeridaPara] = useState('')
+  // OTRO_SITIO es la única opción del desplegable que no es un almacén: es la
+  // puerta para lo que el inventario no conoce —un frente, la planta, una
+  // máquina— sin volver al texto libre para todo lo demás.
+  const [sitio, setSitio] = useState('')
   const [destino, setDestino] = useState('')
   const [filas, setFilas] = useState<FilaRenglon[]>([filaVacia()])
 
@@ -99,7 +119,8 @@ export function NuevoPedido() {
       renglones,
       prioridad,
       requerida_para: requeridaPara || null,
-      destino: destino || null,
+      destino: sitio === OTRO_SITIO ? destino || null : null,
+      destino_almacen_id: sitio && sitio !== OTRO_SITIO ? Number(sitio) : null,
       enviar: enviarAhora,
       solicitante_id: otra ? null : seleccion,
       solicitante_nombre: otra ? otroNombre : null,
@@ -116,10 +137,9 @@ export function NuevoPedido() {
         description="Lo que pidas aquí entra al tablero en la columna Pedido."
         actions={
           <>
-            {/* Con qué se va a valorar lo que se pida aquí. Va en la cabecera y
-                no junto al total porque a un pedido todavía no se le ponen
-                precios: lo que hay que saber antes de empezar es si la tasa del
-                día está cargada, no cuánto suma. */}
+            {/* Con qué se va a valorar lo que se pida. A un pedido todavía no
+                se le ponen precios, así que lo que hay que saber antes de
+                empezar es si la tasa del día está cargada, no cuánto suma. */}
             <ChipTasa className="self-center" />
             <Link to="/app/compras">
               <Button variant="outline" icon={<ArrowLeft />}>
@@ -130,18 +150,139 @@ export function NuevoPedido() {
         }
       />
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          void enviar(true)
-        }}
-        className="grid gap-4 lg:grid-cols-3"
-      >
-        <div className="min-w-0 space-y-4 lg:col-span-2">
-          <Card>
-            <CardHeader title="Qué se necesita" subtitle="Un renglón por cosa distinta." />
+      {/*
+        UNA SOLA COLUMNA, Y NO DOS
 
-            <div className="mt-4 space-y-3">
+        Estaba en rejilla de tres: los renglones a la izquierda ocupando dos
+        tercios y los datos del pedido a la derecha. Con un solo renglón la
+        columna izquierda medía un tercio de lo que medía la derecha, y quedaba
+        un vacío alto y sin sentido en medio de la pantalla.
+
+        Dos columnas solo funcionan cuando los dos lados crecen parecido. Aquí
+        uno crece con cada renglón que se agrega y el otro es fijo, así que no
+        pueden emparejarse nunca. En columna, y con un ancho de lectura, el
+        formulario se recorre de arriba abajo sin huecos.
+      */}
+      <div className="max-w-3xl">
+        <Card className="space-y-5">
+        <div>
+          <h3 className="text-ink/85 text-sm font-semibold">Datos del pedido</h3>
+
+
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Título"
+              placeholder="Repuestos para la trituradora primaria"
+              hint="Es lo que se lee en la tarjeta del tablero."
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              required
+            />
+
+            <div className="sm:col-span-2">
+            <Textarea
+              label="Para qué es"
+              placeholder="La muela está gastada y el material sale fuera de medida."
+              hint="Quien aprueba no está en el frente."
+              rows={4}
+              value={justificacion}
+              onChange={(e) => setJustificacion(e.target.value)}
+              required
+            />
+            </div>
+
+            <Select
+              label="Quién lo solicita"
+              hint="Si a quien lo necesita le falta algo, se le pregunta a esta persona."
+              value={seleccion}
+              onChange={(e) => setQuienPide(e.target.value)}
+              opciones={[
+                ...(perfiles ?? [])
+                  .filter((p) => p.activo)
+                  .map((p) => ({
+                    valor: p.id,
+                    etiqueta:
+                      (p.id === yo ? `${p.nombre} (yo)` : p.nombre) +
+                      (p.cargo ? ` · ${p.cargo}` : ''),
+                  })),
+                { valor: OTRA_PERSONA, etiqueta: 'Otra persona — no tiene usuario' },
+              ]}
+            />
+
+            {seleccion === OTRA_PERSONA ? (
+              <div className="border-hairline rounded-card space-y-4 border border-dashed p-3">
+                <Input
+                  label="Nombre de quien solicita"
+                  placeholder="José Rondón"
+                  value={otroNombre}
+                  onChange={(e) => setOtroNombre(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Cargo o frente"
+                  placeholder="Mecánico · frente 3"
+                  value={otroCargo}
+                  onChange={(e) => setOtroCargo(e.target.value)}
+                />
+              </div>
+            ) : null}
+
+            <Select
+              label="Prioridad"
+              value={prioridad}
+              onChange={(e) => setPrioridad(e.target.value)}
+              opciones={[
+                { valor: 'NORMAL', etiqueta: 'Normal' },
+                { valor: 'ALTA', etiqueta: 'Alta' },
+                { valor: 'URGENTE', etiqueta: 'Urgente — para la planta' },
+              ]}
+            />
+
+            <Input
+              label="Se necesita para"
+              type="date"
+              value={requeridaPara}
+              onChange={(e) => setRequeridaPara(e.target.value)}
+            />
+
+            <Select
+              label="Destino"
+              vacio="Sin definir"
+              value={sitio}
+              onChange={(e) => {
+                setSitio(e.target.value)
+                if (e.target.value !== OTRO_SITIO) setDestino('')
+              }}
+              opciones={[
+                ...(almacenes ?? [])
+                  // Los que están marcados como «recibe compras». No es un
+                  // almacén por defecto —no hay— sino la lista de sitios a los
+                  // que se puede pedir que llegue algo.
+                  .filter((a) => a.recibe_compras)
+                  .map((a) => ({ valor: String(a.id), etiqueta: a.nombre })),
+                { valor: OTRO_SITIO, etiqueta: 'Otro — no es un almacén' },
+              ]}
+              hint="A dónde va lo que se pide. Al recibirlo, entra aquí."
+            />
+
+            {sitio === OTRO_SITIO ? (
+              <div className="sm:col-span-2">
+                <Input
+                  label="Cuál es el destino"
+                  placeholder="Frente 3, planta de lavado, la 966"
+                  value={destino}
+                  onChange={(e) => setDestino(e.target.value)}
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-ink/85 text-sm font-semibold">Qué se necesita</h3>
+          <p className="text-ink/50 mt-0.5 mb-3 text-xs">Un renglón por cosa distinta.</p>
+
+          <div className="space-y-3">
               {filas.map((fila, indice) => (
                 <div
                   key={fila.clave}
@@ -195,6 +336,75 @@ export function NuevoPedido() {
                     />
                   </div>
 
+                  {/* CREAR EN EL CATÁLOGO SIN SALIR DE AQUÍ
+
+                      «No está en el catálogo» deja la descripción como texto
+                      libre, y a los seis meses conviven «Hoja CARTA A4», «hoja
+                      carta a4» y «oja carta A-4»: tres artículos que son el
+                      mismo y ninguna forma de sumar lo que se gastó en papel.
+
+                      Se podría exigir que estuviera en el catálogo antes de
+                      pedir, pero eso frena la compra por un trámite y la gente
+                      acabaría escribiendo cualquier cosa en la descripción para
+                      salir del paso. Así que se ofrece crearlo aquí, con lo que
+                      ya escribió, sin abandonar el pedido. */}
+                  {!fila.articulo_id && fila.descripcion.trim().length >= 3 ? (
+                    <div className="border-hairline rounded-card bg-canvas grid gap-3 border border-dashed p-3 sm:col-span-12 sm:grid-cols-12">
+                      <p className="text-ink/60 text-xs sm:col-span-12">
+                        No está en el catálogo. Si es algo que se va a volver a pedir, créalo
+                        ahora y queda con un solo nombre para siempre.
+                      </p>
+
+                      <div className="sm:col-span-4">
+                        <Input
+                          label="Código"
+                          placeholder="INS-HOJA-A4"
+                          value={fila.nuevo_codigo}
+                          onChange={(e) => cambiar(fila.clave, { nuevo_codigo: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="sm:col-span-5">
+                        <Select
+                          label="Categoría"
+                          vacio="Elige"
+                          value={fila.nueva_categoria}
+                          onChange={(e) =>
+                            cambiar(fila.clave, { nueva_categoria: e.target.value })
+                          }
+                          opciones={CATEGORIAS_ARTICULO}
+                        />
+                      </div>
+
+                      <div className="flex items-end sm:col-span-3">
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          disabled={
+                            !fila.nuevo_codigo.trim() ||
+                            !fila.nueva_categoria ||
+                            crearArticulo.isPending
+                          }
+                          onClick={async () => {
+                            const id = await crearArticulo.mutateAsync({
+                              codigo: fila.nuevo_codigo.trim(),
+                              nombre: fila.descripcion.trim(),
+                              categoria: fila.nueva_categoria,
+                              unidad: fila.unidad,
+                            })
+                            cambiar(fila.clave, {
+                              articulo_id: String(id),
+                              nuevo_codigo: '',
+                              nueva_categoria: '',
+                            })
+                          }}
+                        >
+                          {crearArticulo.isPending ? 'Creando…' : 'Crear y usar'}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+
                   <div className="sm:col-span-10">
                     <Input
                       label="Observación"
@@ -227,114 +437,23 @@ export function NuevoPedido() {
               >
                 Agregar renglón
               </Button>
-            </div>
-          </Card>
-        </div>
-
-        <div className="space-y-4">
-          <Card>
-            <CardHeader title="Datos del pedido" />
-
-            <div className="mt-4 space-y-4">
-              <Input
-                label="Título"
-                placeholder="Repuestos para la trituradora primaria"
-                hint="Es lo que se lee en la tarjeta del tablero."
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
-                required
-              />
-
-              <Textarea
-                label="Para qué es"
-                placeholder="La muela está gastada y el material sale fuera de medida."
-                hint="Quien aprueba no está en el frente."
-                rows={4}
-                value={justificacion}
-                onChange={(e) => setJustificacion(e.target.value)}
-                required
-              />
-
-              <Select
-                label="Quién lo solicita"
-                hint="Si a quien lo necesita le falta algo, se le pregunta a esta persona."
-                value={seleccion}
-                onChange={(e) => setQuienPide(e.target.value)}
-                opciones={[
-                  ...(perfiles ?? [])
-                    .filter((p) => p.activo)
-                    .map((p) => ({
-                      valor: p.id,
-                      etiqueta:
-                        (p.id === yo ? `${p.nombre} (yo)` : p.nombre) +
-                        (p.cargo ? ` · ${p.cargo}` : ''),
-                    })),
-                  { valor: OTRA_PERSONA, etiqueta: 'Otra persona — no tiene usuario' },
-                ]}
-              />
-
-              {seleccion === OTRA_PERSONA ? (
-                <div className="border-hairline rounded-card space-y-4 border border-dashed p-3">
-                  <Input
-                    label="Nombre de quien solicita"
-                    placeholder="José Rondón"
-                    value={otroNombre}
-                    onChange={(e) => setOtroNombre(e.target.value)}
-                    required
-                  />
-                  <Input
-                    label="Cargo o frente"
-                    placeholder="Mecánico · frente 3"
-                    value={otroCargo}
-                    onChange={(e) => setOtroCargo(e.target.value)}
-                  />
-                </div>
-              ) : null}
-
-              <Select
-                label="Prioridad"
-                value={prioridad}
-                onChange={(e) => setPrioridad(e.target.value)}
-                opciones={[
-                  { valor: 'NORMAL', etiqueta: 'Normal' },
-                  { valor: 'ALTA', etiqueta: 'Alta' },
-                  { valor: 'URGENTE', etiqueta: 'Urgente — para la planta' },
-                ]}
-              />
-
-              <Input
-                label="Se necesita para"
-                type="date"
-                value={requeridaPara}
-                onChange={(e) => setRequeridaPara(e.target.value)}
-              />
-
-              <Input
-                label="Destino"
-                placeholder="Taller, planta, frente 3"
-                value={destino}
-                onChange={(e) => setDestino(e.target.value)}
-              />
-            </div>
-          </Card>
-
-          {crear.error ? <ErrorDeCarga error={crear.error} /> : null}
-
-          <div className="flex flex-col gap-2">
-            <Button type="submit" size="lg" block disabled={crear.isPending}>
-              {crear.isPending ? 'Enviando…' : 'Enviar el pedido'}
-            </Button>
-            <Button
-              variant="outline"
-              block
-              disabled={crear.isPending}
-              onClick={() => void enviar(false)}
-            >
-              Guardar como borrador
-            </Button>
           </div>
         </div>
-      </form>
+
+          {crear.error ? <ErrorDeCarga error={crear.error} /> : null}
+        </Card>
+
+        {/* Los botones fuera de la tarjeta: cierran la pantalla, no la
+            sección. */}
+        <div className="mt-4 flex flex-wrap justify-end gap-2">
+          <Button variant="outline" disabled={crear.isPending} onClick={() => void enviar(false)}>
+            Guardar borrador
+          </Button>
+          <Button size="lg" disabled={crear.isPending} onClick={() => void enviar(true)}>
+            {crear.isPending ? 'Enviando…' : 'Enviar el pedido'}
+          </Button>
+        </div>
+      </div>
     </>
   )
 }

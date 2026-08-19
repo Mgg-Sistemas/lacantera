@@ -87,8 +87,23 @@ export function Tasas() {
           )}
 
           {!puedeRegistrar ? null : (
-          <div className="mt-4 grid gap-4 sm:grid-cols-[200px_1fr_auto] sm:items-end">
-            <Input label="Fecha" type="date" max={hoy} value={dia} onChange={(e) => setDia(e.target.value)} />
+          <>
+          {/* Los dos campos arriba y los botones en su propia fila.
+
+              Estaban los tres en la misma línea con la columna del medio en
+              `1fr`, y con la tarjeta a dos tercios del ancho los dos botones se
+              comían el espacio: el campo del valor quedaba en noventa píxeles y
+              su pista se partía en cuatro renglones verticales, que además
+              empujaban la fecha hacia abajo por el `items-end`. Un botón no
+              debe decidir el ancho del campo que lo acompaña. */}
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Fecha"
+              type="date"
+              max={hoy}
+              value={dia}
+              onChange={(e) => setDia(e.target.value)}
+            />
 
             <Input
               label="Bolívares por dólar"
@@ -105,24 +120,25 @@ export function Tasas() {
                   : 'No se pudo consultar la fuente pública; escribe el valor a mano.'
               }
             />
-
-            <div className="flex gap-2 pb-6">
-              {enVivo.data ? (
-                <Button variant="outline" onClick={() => setValor(String(enVivo.data.valor))}>
-                  Usar la del BCV
-                </Button>
-              ) : null}
-              <Button
-                disabled={!valor || registrar.isPending}
-                onClick={async () => {
-                  await registrar.mutateAsync({ fecha: dia, tasa: Number(valor) })
-                  setValor('')
-                }}
-              >
-                {registrar.isPending ? 'Guardando…' : 'Registrar'}
-              </Button>
-            </div>
           </div>
+
+          <div className="mt-4 flex flex-wrap justify-end gap-2">
+            {enVivo.data ? (
+              <Button variant="outline" onClick={() => setValor(String(enVivo.data.valor))}>
+                Usar la del BCV
+              </Button>
+            ) : null}
+            <Button
+              disabled={!valor || registrar.isPending}
+              onClick={async () => {
+                await registrar.mutateAsync({ fecha: dia, tasa: Number(valor) })
+                setValor('')
+              }}
+            >
+              {registrar.isPending ? 'Guardando…' : 'Registrar'}
+            </Button>
+          </div>
+          </>
           )}
 
           {registrar.error ? <ErrorDeCarga error={registrar.error} className="mt-2" /> : null}

@@ -14,6 +14,7 @@ import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useArticulos, useProveedores } from '@/lib/api/catalogo'
 import { useClientes } from '@/lib/api/ventas'
+import { useVehiculos } from '@/lib/api/vehiculos'
 import {
   TIPOS_TICKET,
   useAnularTicket,
@@ -45,6 +46,7 @@ const ETIQUETA: Record<string, string> = {
 const vacio = {
   tipo: 'SALIDA',
   vehiculo: '',
+  vehiculo_id: '',
   chofer: '',
   cedula: '',
   transportista: '',
@@ -64,6 +66,7 @@ export function Tickets() {
   const [filtro, setFiltro] = useState('')
   const { data, isPending, error } = useTickets(filtro || undefined)
   const { data: articulos } = useArticulos()
+  const { data: vehiculos } = useVehiculos()
   const { data: clientes } = useClientes(true)
   const { data: proveedores } = useProveedores()
   const registrar = useRegistrarTicket()
@@ -252,13 +255,40 @@ export function Tickets() {
               }
               opciones={TIPOS_TICKET}
             />
-            <Input
-              label="Placa"
-              placeholder="A12BC34"
-              value={nuevo.vehiculo}
-              onChange={(e) => setNuevo({ ...nuevo, vehiculo: e.target.value })}
-              required
+            {/* La placa sale del catálogo. Escribirla a mano es como el mismo
+                camión termina existiendo tres veces: «A12BC3D», «a12bc3d» y
+                «A12 BC3D». Queda «Otro» para el que no esté cargado, que sigue
+                siendo texto — a la romana entra quien entra. */}
+            <Select
+              label="Vehículo"
+              vacio="Otro — escribo la placa"
+              value={nuevo.vehiculo_id}
+              onChange={(e) => {
+                const v = (vehiculos ?? []).find((x) => String(x.id) === e.target.value)
+                setNuevo({
+                  ...nuevo,
+                  vehiculo_id: e.target.value,
+                  vehiculo: v ? v.placa : '',
+                  transportista: v?.transportista ?? nuevo.transportista,
+                })
+              }}
+              opciones={(vehiculos ?? []).map((v) => ({
+                valor: String(v.id),
+                etiqueta: `${v.placa} · ${Number(v.capacidad_m3)} m³${
+                  v.transportista ? ` · ${v.transportista}` : ''
+                }`,
+              }))}
             />
+
+            {nuevo.vehiculo_id === '' ? (
+              <Input
+                label="Placa"
+                placeholder="A12BC34"
+                value={nuevo.vehiculo}
+                onChange={(e) => setNuevo({ ...nuevo, vehiculo: e.target.value })}
+                required
+              />
+            ) : null}
             <Input
               label="Transportista"
               value={nuevo.transportista}

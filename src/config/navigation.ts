@@ -1,5 +1,7 @@
 import {
   Banknote,
+  Fuel,
+  HandHelping,
   Wrench,
   BookOpen,
   Boxes,
@@ -76,6 +78,8 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
   ['/app/maquinaria', 'MAQUINARIA'],
+  ['/app/combustible', 'COMBUSTIBLE'],
+  ['/app/asignaciones', 'ASIGNACIONES'],
   ['/app/inventario', 'INVENTARIO'],
   ['/app/despachos', 'DESPACHOS'],
   ['/app/compras', 'COMPRAS'],
@@ -168,6 +172,37 @@ export const navigation: NavSection[] = [
           { label: 'Transferencias', to: '/app/inventario/transferencias' },
           { label: 'Catálogo de artículos', to: '/app/inventario/articulos' },
           { label: 'Almacenes y patios', to: '/app/inventario/almacenes' },
+        ],
+      },
+      {
+        /*
+          Módulo propio por lo mismo que Asignaciones: quien está en la bomba
+          no tiene por qué poder tocar el almacén general, y quien lleva el
+          almacén no necesariamente despacha combustible.
+
+          Va pegado a Maquinaria porque el número que justifica el módulo —los
+          litros por hora— sale de cruzar lo despachado con el horómetro.
+        */
+        label: 'Combustible',
+        icon: Fuel,
+        to: '/app/combustible',
+      },
+      {
+        /*
+          Módulo propio y no una pantalla de inventario.
+
+          Lo asignado sale de un almacén, sí, pero la otra mitad del asunto es
+          una persona: quién lo tiene y de quién es la responsabilidad si no
+          vuelve. Colgado de Inventario el permiso quedaba mal en las dos
+          puntas — quien lleva personal necesitaba acceso al almacén, y
+          cualquiera con acceso al almacén podía entregar cosas a nombre de un
+          trabajador.
+        */
+        label: 'Asignaciones',
+        icon: HandHelping,
+        children: [
+          { label: 'Quién tiene qué', to: '/app/asignaciones' },
+          { label: 'Incidencias', to: '/app/asignaciones/incidencias' },
         ],
       },
       {

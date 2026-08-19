@@ -62,8 +62,20 @@ const Respaldo = lazy(() =>
 const TableroInventario = lazy(() =>
   import('@/pages/inventario/Tablero').then((m) => ({ default: m.TableroInventario })),
 )
+const Combustible = lazy(() =>
+  import('@/pages/combustible/Combustible').then((m) => ({ default: m.Combustible })),
+)
+const Asignaciones = lazy(() =>
+  import('@/pages/asignaciones/Asignaciones').then((m) => ({ default: m.Asignaciones })),
+)
+const Incidencias = lazy(() =>
+  import('@/pages/asignaciones/Incidencias').then((m) => ({ default: m.Incidencias })),
+)
 const Talleres = lazy(() =>
   import('@/pages/inventario/Talleres').then((m) => ({ default: m.Talleres })),
+)
+const FichaVehiculo = lazy(() =>
+  import('@/pages/despachos/FichaVehiculo').then((m) => ({ default: m.FichaVehiculo })),
 )
 const Vehiculos = lazy(() =>
   import('@/pages/despachos/Vehiculos').then((m) => ({ default: m.Vehiculos })),
@@ -114,11 +126,11 @@ const PorPagar = lazy(() =>
 const DetalleCompra = lazy(() =>
   import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
 )
-const NuevoPedido = lazy(() =>
-  import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
-)
 const Proveedores = lazy(() =>
   import('@/pages/compras/Proveedores').then((m) => ({ default: m.Proveedores })),
+)
+const NuevoPedido = lazy(() =>
+  import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
 )
 const TableroCompras = lazy(() =>
   import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),
@@ -214,6 +226,9 @@ const paginas: Record<string, ReactNode> = {
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,
   '/app/inventario/talleres': <Talleres />,
+  '/app/combustible': <Combustible />,
+  '/app/asignaciones': <Asignaciones />,
+  '/app/asignaciones/incidencias': <Incidencias />,
   '/app/despachos/vehiculos': <Vehiculos />,
   '/app/nomina': <TableroNomina />,
   '/app/nomina/personal': <Personal />,
@@ -379,6 +394,7 @@ export default function App() {
 
               {/* Pantallas que no están en el menú porque se llega a ellas desde
                   el tablero, no desde la navegación. */}
+              <Route path="despachos/vehiculos/:id" element={<FichaVehiculo />} />
               <Route path="compras/nuevo" element={<NuevoPedido />} />
               <Route path="compras/:id" element={<DetalleCompra />} />
               <Route path="nomina/personal/:id" element={<FichaTrabajador />} />
