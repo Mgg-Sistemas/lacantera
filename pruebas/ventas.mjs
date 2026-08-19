@@ -9,7 +9,7 @@
   en el patio, despacho, factura. Es larga porque una nota de crédito no existe
   sin una factura, y una factura no existe sin algo que se haya despachado.
 */
-import { grupo, comprobar, como, comoDueno, debeFallar } from './ayuda.mjs'
+import { grupo, comprobar, como, comoDueno, debeFallar, asegurarTasaBcv } from './ayuda.mjs'
 
 const cerca = (a, b, holgura = 0.02) => Math.abs(Number(a) - Number(b)) < holgura
 
@@ -30,6 +30,7 @@ export default async function pruebaVentas(tx) {
   if (!admin || !patio || !piedra) return
 
   await como(tx, admin.id)
+  await asegurarTasaBcv(tx)
 
   const renglones = (items) => tx.json(items)
 

@@ -692,3 +692,86 @@ export function useFirmaRrhh() {
     },
   }
 }
+
+// ---------------------------------------------------------------------------
+// Dotación
+//
+// Lo que se le ha entregado a cada trabajador: uniformes, botas, casco. No es
+// una tabla aparte sino el propio libro de inventario mirado por trabajador —
+// una entrega es una salida de almacén a nombre de alguien—, así que descuenta
+// existencias y arrastra su costo como cualquier otra salida.
+// ---------------------------------------------------------------------------
+
+export interface Dotacion {
+  id: number
+  numero: string
+  fecha: string
+  empleado_id: number
+  ficha: string
+  nombres: string
+  apellidos: string
+  cargo: string | null
+  articulo_id: number
+  articulo_codigo: string
+  articulo: string
+  categoria: string
+  cantidad: string
+  unidad: string
+  costo_usd: string
+  valor_usd: string
+  almacen_id: number
+  almacen: string
+  nota: string | null
+  registrado_por: string | null
+  registrado_en: string
+}
+
+export function useDotaciones(empleadoId?: number) {
+  return useQuery({
+    queryKey: ['nomina', 'dotaciones', empleadoId ?? 'todos'],
+    queryFn: async () => {
+      let q = supabase.from('v_dotaciones').select('*').order('fecha', { ascending: false })
+      if (empleadoId) q = q.eq('empleado_id', empleadoId)
+      return desenvolver<Dotacion[]>(await q)
+    },
+    enabled: empleadoId === undefined || Number.isFinite(empleadoId),
+  })
+}
+
+export interface PrendaEntregada {
+  articulo_id: number
+  cantidad: number
+}
+
+/**
+ * Entregar varias prendas de una vez, que es como se entregan: el casco, las
+ * botas y los guantes salen juntos y se firman en el mismo papel.
+ *
+ * Invalida también el inventario: la entrega descuenta del almacén, y quien
+ * tenga las existencias abiertas en otra pestaña estaría viendo un par de botas
+ * que ya no están.
+ */
+export function useEntregarDotacion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: {
+      empleado_id: number
+      almacen_id: number
+      renglones: PrendaEntregada[]
+      fecha?: string
+      nota?: string
+    }) =>
+      rpc<number>('entregar_dotacion', {
+        p_empleado_id: d.empleado_id,
+        p_almacen_id: d.almacen_id,
+        p_renglones: d.renglones,
+        p_fecha: d.fecha || null,
+        p_nota: d.nota || null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['nomina', 'dotaciones'] })
+      void qc.invalidateQueries({ queryKey: ['existencias'] })
+      void qc.invalidateQueries({ queryKey: ['movimientos'] })
+    },
+  })
+}

@@ -25,7 +25,19 @@ if (!URL_BASE) {
   process.exit(2)
 }
 
-export const conectar = () => pg(URL_BASE, { ssl: 'require', prepare: false })
+/**
+ * El certificado se exige fuera de casa, no dentro.
+ *
+ * Supabase solo acepta conexiones cifradas y por eso el valor por defecto es
+ * exigirlo. Una base local levantada para correr estas pruebas no tiene SSL, y
+ * exigírselo la deja incomunicada con un error que no dice lo que pasa. Se
+ * mira la cadena: `sslmode=disable`, o un servidor que es esta misma máquina.
+ */
+const enCasa = /sslmode=disable/i.test(URL_BASE) || /@(localhost|127\.0\.0\.1)[:/]/.test(URL_BASE)
+
+const opciones = { ssl: enCasa ? false : 'require', prepare: false }
+
+export const conectar = () => pg(URL_BASE, opciones)
 
 /**
  * Una conexión propia, sin reutilizar el pool.
@@ -35,7 +47,7 @@ export const conectar = () => pg(URL_BASE, { ssl: 'require', prepare: false })
  * las dos consultas podrían salir por el mismo socket y no habría carrera que
  * observar.
  */
-export const conexionAparte = () => pg(URL_BASE, { ssl: 'require', prepare: false, max: 1 })
+export const conexionAparte = () => pg(URL_BASE, { ...opciones, max: 1 })
 
 // ---------------------------------------------------------------------------
 // Marcador
@@ -99,6 +111,31 @@ export const debeFallar = async (tx, fn) => {
   } catch (e) {
     return e.message
   }
+}
+
+/**
+ * Asegura que haya tasa BCV del día.
+ *
+ * En la base de producción siempre la hay, porque se registra a diario. En una
+ * base local recién levantada no hay ninguna, y sin ella no se abre ni una
+ * compra ni un período de nómina: los dos congelan la tasa al nacer y se
+ * niegan a inventarla.
+ *
+ * Solo se registra si falta, así que contra producción esta función no escribe
+ * nada y las pruebas usan la tasa de verdad. Se llama ya identificado: la tasa
+ * lleva la firma de quien la carga.
+ */
+export const asegurarTasaBcv = async (tx, valor = 36.5) => {
+  // Se mira un mes atrás, no hoy: la tasa se arrastra hacia adelante pero no
+  // hacia atrás, y un período de nómina se abre sobre la semana que pasó. Una
+  // tasa cargada hoy dejaría sin cubrir el lunes pasado.
+  const [hay] = await tx`
+    select tasa from public.obtener_tasa('USD', 'VES', current_date - 30, 'BCV')`
+
+  if (hay?.tasa) return Number(hay.tasa)
+
+  await tx`select public.registrar_tasa('USD', 'VES', current_date - 30, ${valor}, 'BCV')`
+  return valor
 }
 
 // ---------------------------------------------------------------------------

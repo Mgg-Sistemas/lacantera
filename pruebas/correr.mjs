@@ -13,6 +13,10 @@ const SUITES = {
   permisos: () => import('./permisos.mjs'),
   ventas: () => import('./ventas.mjs'),
   libros: () => import('./libros.mjs'),
+  inventario: () => import('./inventario.mjs'),
+  compras: () => import('./compras.mjs'),
+  nomina: () => import('./nomina.mjs'),
+  tesoreria: () => import('./tesoreria.mjs'),
 }
 
 const pedidas = process.argv.slice(2)

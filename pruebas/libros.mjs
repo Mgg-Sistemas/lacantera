@@ -6,7 +6,7 @@
   reste, que una factura anulada aparezca en cero sin dejar hueco en la serie de
   control, y que la conversión a bolívares use la tasa del documento.
 */
-import { grupo, comprobar, como, comoDueno } from './ayuda.mjs'
+import { grupo, comprobar, como, comoDueno, asegurarTasaBcv } from './ayuda.mjs'
 
 const cerca = (a, b, holgura = 0.02) => Math.abs(Number(a) - Number(b)) < holgura
 
@@ -20,12 +20,23 @@ export default async function pruebaLibros(tx) {
   const [patio] = await tx`select id from public.almacenes where tipo = 'PATIO' order by id limit 1`
   const [piedra] = await tx`
     select id from public.articulos where categoria = 'PRODUCTO' and activo order by id limit 1`
-  const [prov] = await tx`select id from public.proveedores order by id limit 1`
+  let [prov] = await tx`select id from public.proveedores order by id limit 1`
 
   comprobar(!!admin && !!patio && !!piedra, 'hay con qué armar la cadena')
   if (!admin || !patio || !piedra) return
 
   await como(tx, admin.id)
+  await asegurarTasaBcv(tx)
+
+  // En producción siempre hay proveedores cargados. En una base recién
+  // levantada no hay ninguno, y sin uno no hay factura de compra que el libro
+  // pueda recoger. Se crea aquí y muere con la transacción, como todo.
+  if (!prov) {
+    const creado = await tx`
+      select public.guardar_proveedor(null, 'J-30999888-7', 'PROVEEDOR DE PRUEBA LIBROS') as id`
+    prov = creado[0]
+  }
+
   const renglones = (items) => tx.json(items)
 
   await tx`select public.registrar_ajuste(${patio.id}, ${piedra.id}, 500, 'PRUEBA: libros')`
