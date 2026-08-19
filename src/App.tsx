@@ -123,11 +123,11 @@ const PorPagar = lazy(() =>
 const DetalleCompra = lazy(() =>
   import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
 )
-const NuevoPedido = lazy(() =>
-  import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
-)
 const Proveedores = lazy(() =>
   import('@/pages/compras/Proveedores').then((m) => ({ default: m.Proveedores })),
+)
+const NuevoPedido = lazy(() =>
+  import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
 )
 const TableroCompras = lazy(() =>
   import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),

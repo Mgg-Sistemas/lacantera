@@ -48,6 +48,7 @@ export interface Tarjeta {
   prioridad: 'NORMAL' | 'ALTA' | 'URGENTE'
   requerida_para: string | null
   destino: string | null
+  destino_almacen_id: number | null
   estado_solicitud: string
   creada_en: string
   /** Quién pidió, cuando tiene usuario en el sistema. */
@@ -387,6 +388,8 @@ export function useCrearPedido() {
       prioridad?: string
       requerida_para?: string | null
       destino?: string | null
+      /** El sitio del inventario al que va. Nulo si el destino no es uno. */
+      destino_almacen_id?: number | null
       enviar?: boolean
       /** Usuario que pide. Sin ninguno de los dos, pide quien carga. */
       solicitante_id?: string | null
@@ -401,6 +404,7 @@ export function useCrearPedido() {
         p_prioridad: p.prioridad ?? 'NORMAL',
         p_requerida_para: p.requerida_para || null,
         p_destino: p.destino || null,
+        p_destino_almacen_id: p.destino_almacen_id ?? null,
         p_enviar: p.enviar ?? true,
         p_solicitante_id: p.solicitante_id || null,
         p_solicitante_nombre: p.solicitante_nombre || null,
