@@ -11,7 +11,7 @@
  * igual que la regla con la que se comprueba el resultado impreso.
  */
 
-import { dibujarMarca, MARCA_COLOR, MARCA_SOBRE_OSCURO } from './marca'
+import { cargarLogo, dibujarLogo } from './logo'
 import { recorte, type Encuadre } from './encuadre'
 import type { ArchivoArmado } from './armado'
 import { EMPRESA } from '@/lib/empresa'
@@ -25,8 +25,9 @@ const mm = (v: number) => (v / 25.4) * DPI
 /** Puntos tipográficos a píxeles del lienzo. */
 const pt = (v: number) => (v / 72) * DPI
 
-const AZUL_BANDA = '#1D358F'
-const AZUL_CARGO = '#2B4FD9'
+// El primario de la marca. Antes era el azul de «La Cantera».
+const MARCA_BANDA = '#cc3f00'
+const MARCA_CARGO = '#9e4c01'
 const AMARILLO = '#F0A128'
 const TINTA = '#262C3D'
 const GRIS = '#7B839A'
@@ -100,16 +101,16 @@ function textoCentrado(ctx: CanvasRenderingContext2D, texto: string, y: number) 
  * Dibuja desde el origen del lienzo, así que para ponerla en otro sitio basta
  * trasladar el contexto antes de llamarla. Es lo que hace la hoja de imprenta.
  */
-function frente(ctx: CanvasRenderingContext2D, d: DatosCarnet) {
+function frente(ctx: CanvasRenderingContext2D, d: DatosCarnet, logo: HTMLImageElement) {
   // Fondo
   ctx.fillStyle = '#FFFFFF'
   ctx.fillRect(0, 0, mm(CARNET_ANCHO_MM), mm(CARNET_ALTO_MM))
 
   // ---------------------------------------------------------------- Banda
-  ctx.fillStyle = AZUL_BANDA
+  ctx.fillStyle = MARCA_BANDA
   ctx.fillRect(0, 0, mm(CARNET_ANCHO_MM), mm(21))
 
-  dibujarMarca(ctx, mm(4), mm(3), mm(7), MARCA_SOBRE_OSCURO)
+  dibujarLogo(ctx, logo, mm(4), mm(3), mm(7))
 
   // La razón social se parte en dos líneas: entera en una sola caben 30
   // caracteres en 37 mm y habría que bajarla a un cuerpo que en la mano no se
@@ -155,7 +156,7 @@ function frente(ctx: CanvasRenderingContext2D, d: DatosCarnet) {
   ctx.font = `700 ${pt(9.5)}px ${FUENTE}`
   textoCentrado(ctx, nombreDeCarnet(ctx, d, mm(45)), mm(50))
 
-  ctx.fillStyle = AZUL_CARGO
+  ctx.fillStyle = MARCA_CARGO
   ctx.font = `600 ${pt(6)}px ${FUENTE}`
   ctx.letterSpacing = `${mm(0.1)}px`
   textoCentrado(ctx, d.cargo.toUpperCase(), mm(54))
@@ -211,7 +212,7 @@ function frente(ctx: CanvasRenderingContext2D, d: DatosCarnet) {
  * La barra amarilla del pie es la misma del frente. No dice nada: está para que
  * las dos caras se reconozcan como del mismo carnet cuando se ven separadas.
  */
-function reverso(ctx: CanvasRenderingContext2D) {
+function reverso(ctx: CanvasRenderingContext2D, logo: HTMLImageElement) {
   const ANCHO = mm(CARNET_ANCHO_MM)
   const ALTO = mm(CARNET_ALTO_MM)
 
@@ -225,7 +226,8 @@ function reverso(ctx: CanvasRenderingContext2D) {
     arriba que abajo, que es como se centra a ojo cualquier cosa enmarcada.
   */
   const lado = mm(28)
-  dibujarMarca(ctx, (ANCHO - lado) / 2, mm(19), lado, MARCA_COLOR)
+  // Sobre papel blanco el disco sobra: se vería su borde.
+  dibujarLogo(ctx, logo, (ANCHO - lado) / 2, mm(19), lado, false)
 
   ctx.fillStyle = TINTA
   ctx.font = `700 ${pt(7.4)}px ${FUENTE}`
@@ -253,6 +255,7 @@ export async function dibujarCarnet(
   cara: CaraCarnet = 'frente',
 ): Promise<HTMLCanvasElement> {
   await document.fonts.ready
+  const logo = await cargarLogo()
 
   const lienzo = document.createElement('canvas')
   lienzo.width = Math.round(mm(CARNET_ANCHO_MM))
@@ -262,8 +265,8 @@ export async function dibujarCarnet(
   if (!ctx) throw new Error('El navegador no pudo preparar el lienzo del carnet.')
 
   ctx.textBaseline = 'alphabetic'
-  if (cara === 'reverso') reverso(ctx)
-  else frente(ctx, d)
+  if (cara === 'reverso') reverso(ctx, logo)
+  else frente(ctx, d, logo)
 
   return lienzo
 }

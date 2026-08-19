@@ -30,12 +30,13 @@
  * cierta la fecha que recibe.
  */
 
-import { marcaComoImagen, MARCA_COLOR } from './marca'
+import { logoComoImagen } from './logo'
 import { ajustar, ANCHO_UTIL, ARRIBA, CENTRO, DER, IZQ, PIE } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
 import type { PdfArmado } from './reciboPdf'
 
-const AZUL = '#1D358F'
+// El primario de la marca. Antes era el azul de «La Cantera».
+const MARCA = '#cc3f00'
 const TINTA = '#262C3D'
 const GRIS = '#7B839A'
 const HAIRLINE = '#E6E9F2'
@@ -185,10 +186,10 @@ function parrafo(d: DatosConstancia): string {
   )
 }
 
-function membrete(doc: Doc, d: DatosConstancia): number {
-  doc.addImage(marcaComoImagen(MARCA_COLOR), 'PNG', IZQ, ARRIBA, 16, 16)
+function membrete(doc: Doc, d: DatosConstancia, logo: string): number {
+  doc.addImage(logo, 'PNG', IZQ, ARRIBA, 16, 16)
 
-  doc.setTextColor(AZUL).setFont('helvetica', 'bold').setFontSize(11)
+  doc.setTextColor(MARCA).setFont('helvetica', 'bold').setFontSize(11)
   doc.text(ajustar(doc, EMPRESA.razonSocial, ANCHO_UTIL - 22), IZQ + 21, ARRIBA + 6.5)
 
   doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7.5)
@@ -208,7 +209,7 @@ function membrete(doc: Doc, d: DatosConstancia): number {
   }
 
   const raya = Math.max(y + 2, ARRIBA + 21)
-  doc.setDrawColor(AZUL).setLineWidth(0.6)
+  doc.setDrawColor(MARCA).setLineWidth(0.6)
   doc.line(IZQ, raya, DER, raya)
 
   return raya + 17
@@ -216,9 +217,10 @@ function membrete(doc: Doc, d: DatosConstancia): number {
 
 export async function armarConstancia(d: DatosConstancia): Promise<PdfArmado> {
   const { jsPDF } = await import('jspdf')
+  const logo = await logoComoImagen(400, false)
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  let y = membrete(doc, d)
+  let y = membrete(doc, d, logo)
 
   // --- Título ---
   doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(14)
