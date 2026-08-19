@@ -128,6 +128,7 @@ export const navigation: NavSection[] = [
         label: 'Explotación',
         icon: Pickaxe,
         children: [
+          { label: 'Tablero', to: '/app/explotacion' },
           { label: 'Frentes y bancos', to: '/app/explotacion/frentes' },
           { label: 'Voladuras', to: '/app/explotacion/voladuras' },
           { label: 'Producción por turno', to: '/app/explotacion/produccion' },
@@ -154,6 +155,7 @@ export const navigation: NavSection[] = [
         label: 'Despachos',
         icon: Truck,
         children: [
+          { label: 'Tablero', to: '/app/despachos' },
           { label: 'Tickets de romana', to: '/app/despachos/tickets' },
           // "De movilización" y no "de despacho": es el permiso del ministerio
           // para que el camión circule con el mineral, no el papel que se le
@@ -213,6 +215,7 @@ export const navigation: NavSection[] = [
         label: 'Nómina',
         icon: Users,
         children: [
+          { label: 'Tablero', to: '/app/nomina' },
           { label: 'Personal', to: '/app/nomina/personal' },
           { label: 'Tabulador de cargos', to: '/app/nomina/tabulador' },
           { label: 'Novedades del período', to: '/app/nomina/asistencia' },
@@ -226,6 +229,7 @@ export const navigation: NavSection[] = [
         label: 'Tesorería',
         icon: Landmark,
         children: [
+          { label: 'Tablero', to: '/app/tesoreria' },
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
           { label: 'Pagos por hacer', to: '/app/tesoreria/pagos' },
           { label: 'Cuentas por pagar', to: '/app/tesoreria/por-pagar' },
