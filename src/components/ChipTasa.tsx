@@ -19,33 +19,31 @@ import { cn } from '@/lib/cn'
  * documento se valora con la de ayer. Quien mira arriba cree que está bien.
  * Este chip se pone donde se emite, no donde se navega, y dice la que manda.
  *
- * TRES ESTADOS, PORQUE HAY TRES SITUACIONES DISTINTAS
+ * SOLO APARECE CUANDO HACE FALTA
  *
- * Al día: se enseña y punto, sin adornos. Es lo normal y no debe llamar la
- * atención.
+ * La primera versión se dibujaba siempre, y estaba mal: la barra ya enseña la
+ * tasa en todas las pantallas, así que en el caso normal quedaban dos etiquetas
+ * con el mismo número a diez píxeles de distancia. Eso no informa — enseña a no
+ * mirar ninguna de las dos.
  *
- * Arrastrada: hay tasa, pero es de un día anterior. Se puede seguir —el
- * sistema no bloquea— pero avisa, porque lo que se emita queda valorado con
- * una tasa vieja y eso no se descubre hasta el cierre del mes.
+ * Ahora solo se dibuja en los dos casos en que dice algo que la barra no puede
+ * decir:
  *
- * Sin ninguna: no se puede emitir nada valorado. Ahí el chip deja de informar y
- * se vuelve un enlace a la pantalla donde se arregla, porque avisar de un
- * problema sin decir dónde se resuelve solo sirve para molestar.
+ * Arrastrada: hay tasa, pero es de un día anterior porque nadie cargó la de
+ * hoy. La barra enseña la que el BCV publicó y parece que todo está bien; el
+ * documento, en cambio, se va a valorar con la vieja. Eso no se descubre hasta
+ * el cierre del mes.
+ *
+ * Sin ninguna: no se puede emitir nada valorado. Ahí deja de informar y se
+ * vuelve un enlace a la pantalla donde se arregla, porque avisar de un problema
+ * sin decir dónde se resuelve solo sirve para molestar.
  */
 export function ChipTasa({ className }: { className?: string }) {
   const { data, isPending } = useTasaVigente()
 
-  if (isPending) {
-    return (
-      <span
-        className={cn(
-          'border-hairline bg-ink/5 inline-block h-6 w-40 animate-pulse rounded-full border',
-          className,
-        )}
-        aria-hidden="true"
-      />
-    )
-  }
+  // Mientras carga no se dibuja nada. Un esqueleto que casi siempre termina en
+  // nada es un parpadeo en la cabecera cada vez que se entra a la pantalla.
+  if (isPending) return null
 
   // Sin tasa registrada no se puede valorar nada, así que el chip lleva a
   // resolverlo en vez de limitarse a dar la mala noticia.
@@ -64,7 +62,21 @@ export function ChipTasa({ className }: { className?: string }) {
     )
   }
 
-  const arrastrada = data.arrastrada
+  /*
+    Si la tasa está al día, el chip no se dibuja.
+
+    La barra de arriba ya enseña la tasa en todas las pantallas. Cuando las dos
+    coinciden —que es casi siempre— poner otra debajo son dos etiquetas con el
+    mismo número a diez píxeles de distancia, y eso no informa: enseña a no
+    mirar ninguna de las dos.
+
+    Este chip existe para el caso en que NO coinciden: el BCV publicó, la barra
+    enseña la nueva, y en el sistema sigue la de ayer porque nadie la cargó. Ahí
+    aparece, y aparece solo. Un aviso que está siempre puesto deja de ser un
+    aviso al tercer día.
+  */
+  if (!data.arrastrada) return null
+
   const fechaCorta = new Date(`${data.fecha}T12:00:00`).toLocaleDateString('es-VE', {
     day: 'numeric',
     month: 'short',
@@ -72,25 +84,15 @@ export function ChipTasa({ className }: { className?: string }) {
 
   return (
     <span
-      title={
-        arrastrada
-          ? `No hay tasa de hoy. Lo que se emita ahora se valora con la del ${fechaCorta}.`
-          : 'Con esta tasa se valora lo que se emita hoy.'
-      }
+      title={`No hay tasa de hoy registrada. Lo que se emita ahora se valora con la del ${fechaCorta}.`}
       className={cn(
-        'text-2xs inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1',
-        arrastrada
-          ? 'border-warning/40 bg-warning-soft text-warning font-medium'
-          : 'border-hairline bg-surface text-ink/60',
+        'border-warning/40 bg-warning-soft text-warning text-2xs inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium',
         className,
       )}
     >
-      {arrastrada ? <AlertTriangle className="size-3.5 shrink-0" /> : null}
-      <span className="text-ink/40">Se valora a</span>
-      <span className={cn('tabular font-semibold', arrastrada ? 'text-warning' : 'text-ink/80')}>
-        Bs {formatearTasa(Number(data.tasa))}
-      </span>
-      {arrastrada ? <span>· del {fechaCorta}</span> : null}
+      <AlertTriangle className="size-3.5 shrink-0" />
+      <span>Se valora con la tasa del {fechaCorta}</span>
+      <span className="tabular font-semibold">Bs {formatearTasa(Number(data.tasa))}</span>
     </span>
   )
 }
