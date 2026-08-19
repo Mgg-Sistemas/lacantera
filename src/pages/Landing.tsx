@@ -216,6 +216,18 @@ export function Landing() {
               es justo lo que sobraba.
             */
             'bg-royal-950/55 px-6 pt-2 pb-2.5 sm:px-10',
+            /*
+              El borde de arriba se desvanece con una mascara.
+
+              Con el tinte a secas se dibujaba una linea horizontal donde
+              empezaba la banda, y esa linea se veia mas que el rail. La
+              mascara apaga el borde superior de forma progresiva y —esto es lo
+              que la hace la herramienta correcta— apaga con el la capa
+              entera: el tinte y el desenfoque a la vez. Un degradado encima
+              solo habria disimulado el color, dejando el corte del blur.
+            */
+            '[mask-image:linear-gradient(to_top,#000_58%,transparent)]',
+            '[-webkit-mask-image:linear-gradient(to_top,#000_58%,transparent)]',
             activo !== null && 'backdrop-blur-[2px]',
           )}
         >
