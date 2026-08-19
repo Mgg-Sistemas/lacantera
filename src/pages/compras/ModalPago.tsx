@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { ChipTasa } from '@/components/ChipTasa'
@@ -58,6 +58,26 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
 
   const elegido = (metodos ?? []).find((m) => m.codigo === metodo)
 
+  /*
+    El método que propone el proveedor puede no servir para esta orden.
+
+    Un proveedor que cobra por Zelle solo admite dólares; si la orden va en
+    bolívares, el modal abría con una pareja imposible y la base lo rechazaba
+    al guardar. Se cuadra en cuanto llega el catálogo: si el método no admite
+    la moneda, se pasa a la primera que sí, igual que al cambiarlo a mano.
+  */
+  useEffect(() => {
+    if (!metodos || !elegido) return
+    const admitidas = monedasDe(elegido, MONEDAS)
+    if (admitidas.length > 0 && !admitidas.some((m) => m.valor === moneda)) {
+      setMoneda(admitidas[0].valor)
+      setConIgtf(admitidas[0].valor !== 'VES')
+    }
+    // Solo cuando llega el catálogo o cambia el método: si `moneda` entrara
+    // como dependencia, elegir bolívares a mano se desharía solo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metodos, metodo])
+
   const cambiar = (cambios: DatosPago) => setDatos((d) => ({ ...d, ...cambios }))
 
   /*
@@ -97,6 +117,7 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
       monto: Number(monto),
       datos,
       nota,
+      igtf: conIgtf,
     })
     onCerrar()
   }
