@@ -16,6 +16,7 @@ import {
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { ChipTasa } from '@/components/ChipTasa'
 import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
@@ -435,11 +436,17 @@ export function DetalleCompra() {
         title={compra.titulo}
         description={`${compra.numero}${orden ? ` · Orden ${orden.numero}` : ''} · pedido por ${solicitante}${solicitanteCargo ? ` (${solicitanteCargo})` : ''}`}
         actions={
-          <Link to="/app/compras">
-            <Button variant="outline" icon={<ArrowLeft />}>
-              Tablero
-            </Button>
-          </Link>
+          <>
+            {/* Aquí se cotiza, se aprueba y se paga, y las tres cosas congelan
+                la tasa en la fila. Verla sin salir de la pantalla evita el
+                error caro: emitir un lunes con la tasa del viernes. */}
+            <ChipTasa className="self-center" />
+            <Link to="/app/compras">
+              <Button variant="outline" icon={<ArrowLeft />}>
+                Tablero
+              </Button>
+            </Link>
+          </>
         }
       />
 

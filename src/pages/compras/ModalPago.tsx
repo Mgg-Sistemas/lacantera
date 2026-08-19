@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { ChipTasa } from '@/components/ChipTasa'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
@@ -84,6 +85,12 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
         </>
       }
     >
+      {/* De las tres pantallas donde va el chip, esta es la que más lo
+          necesita: aquí se elige moneda y monto, y si el pago va en bolívares
+          la tasa decide cuánto sale de la cuenta. Puesto arriba del formulario
+          se lee antes de escribir la cifra, no después. */}
+      <ChipTasa className="mb-4" />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Select
           label="Cómo se paga"
