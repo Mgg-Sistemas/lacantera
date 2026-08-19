@@ -77,12 +77,44 @@ const CAPITULOS: CapituloDatos[] = [
 /**
  * Lo que sale del patio.
  *
- * Los nombres son los de la casa, no los de un folleto: salen del parte de
- * turno, que es donde se cuenta lo que produce cada jornada. Van sin cifras a
- * propósito — la producción no es asunto de la calle, y este sistema tiene por
- * norma que ningún número en pantalla sea de ejemplo.
+ * Los nombres son los de la casa, no los de un folleto: salen del catálogo del
+ * sistema, que es el mismo con el que se cuenta cada turno.
+ *
+ * POR QUÉ NO VAN SOLOS
+ *
+ * Puestos a secas —cuatro nombres uno debajo de otro— se leen como títulos
+ * puestos porque sí. A quien conoce el oficio no le dicen nada nuevo, y a quien
+ * no, no le dicen nada.
+ *
+ * Lo que los vuelve una serie y no una lista es el hecho que los une: los
+ * cuatro salen de la MISMA trituración y se separan por tamaño, del más grueso
+ * al más fino. Eso no es adorno, es cómo funciona una planta, y explica por qué
+ * son cuatro y no uno.
+ *
+ * QUÉ NO SE INVENTA AQUÍ
+ *
+ * Ni calibres en pulgadas ni usos recomendados. La granulometría exacta de esta
+ * cantera la está averiguando la dirección de Sistemas; hasta que llegue, poner
+ * un 3/4" copiado de la costumbre del gremio sería exactamente el número de
+ * ejemplo que este sistema promete no tener. Cuando llegue el dato, entra en
+ * `calibre` y la pantalla no cambia.
+ *
+ * La tonelada sí es real: los cinco productos del catálogo se llevan en TON.
  */
-const MATERIALES = ['Piedra picada #1', 'Piedra picada #2', 'Granzón', 'Polvillo']
+interface Material {
+  nombre: string
+  /** Dónde cae en el cribado. Es lo único que se afirma, y es verdad por el proceso. */
+  grano: string
+  /** Reservado para la granulometría cuando la dirección la confirme. */
+  calibre?: string
+}
+
+const MATERIALES: Material[] = [
+  { nombre: 'Piedra picada #1', grano: 'Grueso' },
+  { nombre: 'Piedra picada #2', grano: 'Medio' },
+  { nombre: 'Granzón', grano: 'Fino' },
+  { nombre: 'Polvillo', grano: 'Lo más fino del cribado' },
+]
 
 export function Landing() {
   const pantalla = usePuntero<HTMLDivElement>()
@@ -367,15 +399,30 @@ export function Landing() {
               Lo que sale del patio
             </h2>
 
+            {/* La frase que convierte la lista en una serie. Sin ella, cuatro
+                nombres sueltos; con ella, cuatro salidas de un mismo proceso. */}
+            <p className="mt-4 max-w-md text-base leading-relaxed text-white/60">
+              Los cuatro salen de la misma trituración y se separan por tamaño. Se despachan por
+              tonelada, pesados en romana.
+            </p>
+
             {/* Los nombres solos y en grande. Sin descripciones inventadas de
                 para qué sirve cada calibre y sin toneladas. */}
             <ul className="mt-8">
               {MATERIALES.map((m) => (
                 <li
-                  key={m}
-                  className="border-t border-white/12 py-6 text-2xl font-light tracking-tight text-white/90 sm:text-3xl"
+                  key={m.nombre}
+                  className="flex items-baseline justify-between gap-6 border-t border-white/12 py-5"
                 >
-                  {m}
+                  <span className="text-2xl font-light tracking-tight text-white/90 sm:text-3xl">
+                    {m.nombre}
+                  </span>
+                  {/* El grano a la derecha y en mono: es un dato de ficha, no
+                      un subtítulo. Alineado en columna, los cuatro se leen de
+                      un vistazo como lo que son — una gradación. */}
+                  <span className="text-2xs shrink-0 text-right font-mono tracking-[0.14em] text-white/40 uppercase">
+                    {m.calibre ?? m.grano}
+                  </span>
                 </li>
               ))}
             </ul>
