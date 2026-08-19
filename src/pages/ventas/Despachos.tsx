@@ -31,6 +31,8 @@ import {
 import { Renglones } from './Renglones'
 import { aRenglones, filaVacia, gravadoDe, subtotalDe, type FilaRenglon } from './filas'
 import { TablaRenglones, Totales } from './Cotizaciones'
+import { CasillaIva } from './CasillaIva'
+import { useIvaPorDefecto } from './ivaPorDefecto'
 
 const TONO: Record<string, 'safety' | 'success' | 'neutral'> = {
   DESPACHADA: 'safety',
@@ -65,6 +67,8 @@ export function Despachos() {
   const [moneda, setMoneda] = useState('USD')
   const [vehiculo, setVehiculo] = useState('')
   const [vehiculoId, setVehiculoId] = useState('')
+  const ivaPorDefecto = useIvaPorDefecto()
+  const [conIva, setConIva] = useState(ivaPorDefecto)
   const [chofer, setChofer] = useState('')
   const [cedula, setCedula] = useState('')
   const [ticket, setTicket] = useState('')
@@ -118,7 +122,10 @@ export function Despachos() {
   for (const e of existencias ?? []) porArticulo[e.articulo_id] = Number(e.existencia)
 
   const cliente = clientes?.find((c) => String(c.id) === clienteId)
-  const alicuota = cliente?.exento_iva ? 0 : 16
+  // La alícuota que se pinta es la que viaja a la base. Antes se calculaba solo
+  // para el total de la pantalla y el documento salía con el 16 por defecto: la
+  // nota de entrega de un cliente exento decía 0 en pantalla y 16 en el libro.
+  const alicuota = cliente?.exento_iva || !conIva ? 0 : 16
   const subtotal = subtotalDe(filas)
   const gravado = gravadoDe(filas)
   const base = gravado + (Number(flete) || 0)
@@ -130,6 +137,7 @@ export function Despachos() {
     setMoneda('USD')
     setVehiculo('')
     setVehiculoId('')
+    setConIva(ivaPorDefecto)
     setChofer('')
     setCedula('')
     setTicket('')
@@ -326,6 +334,7 @@ export function Despachos() {
                     almacen_id: Number(almacenId),
                     renglones: aRenglones(filas),
                     moneda,
+                    alicuota_iva: alicuota,
                     vehiculo: vehiculo || null,
                     chofer: chofer || null,
                     cedula_chofer: cedula || null,
@@ -541,6 +550,10 @@ export function Despachos() {
               onChange={(e) => setObservacion(e.target.value)}
             />
           </div>
+
+          {!cliente?.exento_iva ? (
+            <CasillaIva aplica={conIva} onCambiar={setConIva} className="mt-4" />
+          ) : null}
 
           <div className="bg-ink/4 rounded-card mt-4 p-4">
             <Totales

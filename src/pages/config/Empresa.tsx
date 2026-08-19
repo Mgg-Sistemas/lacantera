@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { useMisRoles } from '@/lib/api/catalogo'
-import { diasParaVencer, useEmpresa, useGuardarEmpresa, type Empresa as Datos } from '@/lib/api/empresa'
+import {
+  diasParaVencer,
+  useEmpresa,
+  useFijarTributos,
+  useGuardarEmpresa,
+  type Empresa as Datos,
+} from '@/lib/api/empresa'
 import { fecha } from '@/lib/formato'
 
 /**
@@ -23,8 +29,14 @@ import { fecha } from '@/lib/formato'
 export function Empresa() {
   const { data, isPending, error } = useEmpresa()
   const guardar = useGuardarEmpresa()
+  const fijar = useFijarTributos()
   const { puede } = useMisRoles()
   const editable = puede('ADMIN') || puede('GERENTE_GENERAL')
+
+  const tributos = {
+    aplica_iva: data?.aplica_iva ?? true,
+    aplica_igtf: data?.aplica_igtf ?? true,
+  }
 
   const [form, setForm] = useState<Partial<Datos>>({})
   const [fallo, setFallo] = useState('')
@@ -172,6 +184,35 @@ export function Empresa() {
         </div>
       </Card>
 
+      <Card className="mt-4">
+        <h2 className="text-ink/90 mb-1 text-base font-semibold">Impuestos</h2>
+        <p className="text-ink/50 mb-5 text-xs leading-relaxed">
+          Cómo llegan marcadas las casillas al emitir. Cada operación puede decir otra cosa: esto
+          solo decide lo habitual, para que nadie tenga que acordarse en cada venta.
+        </p>
+
+        <div className="grid gap-3">
+          <Interruptor
+            titulo="Cobra IVA"
+            detalle="Se aplica el 16 % a las cotizaciones, notas de entrega y facturas nuevas."
+            marcado={tributos.aplica_iva}
+            editable={editable}
+            onCambiar={(v) => void fijar.mutateAsync({ ...tributos, aplica_iva: v })}
+          />
+          <Interruptor
+            titulo="Cobra IGTF"
+            detalle="El 3 % sobre los cobros en divisas. Sin esto la casilla no se marca ni cobrando en dólares."
+            marcado={tributos.aplica_igtf}
+            editable={editable}
+            onCambiar={(v) => void fijar.mutateAsync({ ...tributos, aplica_igtf: v })}
+          />
+        </div>
+
+        {fijar.error ? (
+          <p className="text-danger mt-3 text-sm">{(fijar.error as Error).message}</p>
+        ) : null}
+      </Card>
+
       {editable ? (
         <div className="mt-4 flex items-center justify-end gap-3">
           {guardado ? <span className="text-success text-sm">Guardado.</span> : null}
@@ -190,5 +231,47 @@ export function Empresa() {
         </p>
       )}
     </>
+  )
+}
+
+/**
+ * Una casilla que se guarda al momento.
+ *
+ * No espera al botón de «guardar cambios» como el resto de la ficha: son dos
+ * valores sueltos con su propia función, y hacer que dependan del formulario
+ * grande obligaría a mandar los quince campos para cambiar uno.
+ */
+function Interruptor({
+  titulo,
+  detalle,
+  marcado,
+  editable,
+  onCambiar,
+}: {
+  titulo: string
+  detalle: string
+  marcado: boolean
+  editable: boolean
+  onCambiar: (valor: boolean) => void
+}) {
+  return (
+    <label
+      className={
+        'border-hairline flex items-start gap-2.5 rounded-[6px] border p-3 ' +
+        (editable ? 'cursor-pointer' : 'opacity-60')
+      }
+    >
+      <input
+        type="checkbox"
+        checked={marcado}
+        disabled={!editable}
+        onChange={(e) => onCambiar(e.target.checked)}
+        className="accent-royal-600 mt-0.5 size-4 shrink-0"
+      />
+      <span>
+        <span className="text-ink/85 text-sm font-medium">{titulo}</span>
+        <span className="text-ink/50 mt-0.5 block text-xs leading-relaxed">{detalle}</span>
+      </span>
+    </label>
   )
 }

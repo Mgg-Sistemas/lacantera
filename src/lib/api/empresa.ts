@@ -26,6 +26,9 @@ export interface Empresa {
   comprobante_rif: string | null
   condicion_iva: string | null
   retencion_iva_pct: number | null
+  /** Si la empresa cobra IVA por defecto. Cada operación puede decir otra cosa. */
+  aplica_iva: boolean
+  aplica_igtf: boolean
   telefono: string | null
   correo: string | null
   actualizado_en: string
@@ -71,6 +74,28 @@ export interface TipoDocumento {
   nombre: string
   caduca: boolean
   orden: number
+}
+
+/**
+ * Si la empresa cobra IVA e IGTF por defecto.
+ *
+ * Va en su propia función y no dentro de `guardar_empresa`, que lleva quince
+ * campos: son dos casillas que no tienen que ver con el RIF ni con el
+ * domicilio fiscal, y obligar a mandar los quince para cambiarlas invita a
+ * pisar sin querer lo que no se estaba tocando.
+ */
+export function useFijarTributos() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (t: { aplica_iva: boolean; aplica_igtf: boolean }) =>
+      rpc('fijar_tributos', {
+        p_aplica_iva: t.aplica_iva,
+        p_aplica_igtf: t.aplica_igtf,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['empresa'] })
+    },
+  })
 }
 
 export function useTiposDocumento() {

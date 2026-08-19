@@ -71,6 +71,15 @@ export function Facturacion() {
   const [monto, setMonto] = useState('')
   const [metodo, setMetodo] = useState('TRANSFERENCIA')
   const [referencia, setReferencia] = useState('')
+  /*
+    `null` significa «no lo he tocado»: la base lo deduce de la moneda.
+
+    Lo que decide cómo llega marcada la casilla es la ficha de la empresa. Si
+    la empresa no aplica IGTF, no se marca ni siquiera cobrando en divisas — y
+    entonces se manda `false` explícito en vez de `null`, porque si no la base
+    volvería a deducirlo de la moneda y lo aplicaría igual.
+  */
+  const aplicaIgtf = empresa?.aplica_igtf ?? true
   const [igtf, setIgtf] = useState<boolean | null>(null)
 
   // La factura abierta se busca en la lista en cada pintada, no se copia al
@@ -525,7 +534,7 @@ export function Facturacion() {
                     monto: Number(monto),
                     metodo,
                     referencia: referencia || null,
-                    igtf,
+                    igtf: igtf ?? (aplicaIgtf ? null : false),
                   })
                   setCobrando(null)
                   setDetalleId(null)
@@ -583,7 +592,7 @@ export function Facturacion() {
               <input
                 type="checkbox"
                 className="accent-royal-600 mt-0.5 size-4"
-                checked={igtf ?? cuenta.moneda !== 'VES'}
+                checked={igtf ?? (aplicaIgtf && cuenta.moneda !== 'VES')}
                 onChange={(e) => setIgtf(e.target.checked)}
               />
               <span>

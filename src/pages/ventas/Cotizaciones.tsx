@@ -27,6 +27,8 @@ import {
 } from '@/lib/api/ventas'
 import { Renglones } from './Renglones'
 import { aRenglones, filaVacia, gravadoDe, subtotalDe, type FilaRenglon } from './filas'
+import { CasillaIva } from './CasillaIva'
+import { useIvaPorDefecto } from './ivaPorDefecto'
 
 const TONO: Record<string, 'royal' | 'success' | 'danger' | 'neutral'> = {
   ENVIADA: 'royal',
@@ -62,6 +64,8 @@ export function Cotizaciones() {
   const [flete, setFlete] = useState('')
   const [observacion, setObservacion] = useState('')
   const [filas, setFilas] = useState<FilaRenglon[]>([filaVacia()])
+  const ivaPorDefecto = useIvaPorDefecto()
+  const [conIva, setConIva] = useState(ivaPorDefecto)
 
   const renglonesDetalle = useRenglones(
     'cotizacion_venta_renglones',
@@ -70,7 +74,18 @@ export function Cotizaciones() {
   )
 
   const cliente = clientes?.find((c) => String(c.id) === clienteId)
-  const alicuota = cliente?.exento_iva ? 0 : 16
+  /*
+    LA ALÍCUOTA QUE SE VE ES LA QUE SE GUARDA
+
+    Antes esto se calculaba para pintar el total y no se enviaba a la base, que
+    aplicaba su 16 por defecto. Con un cliente exento la pantalla decía IVA 0 y
+    el documento salía con 16: dos totales distintos para la misma venta, y el
+    de la base era el bueno.
+
+    Dos motivos la ponen en cero, y son distintos: el cliente está exento —lo
+    dice su ficha— o esta operación en concreto no lleva IVA.
+  */
+  const alicuota = cliente?.exento_iva || !conIva ? 0 : 16
   const subtotal = subtotalDe(filas)
   const gravado = gravadoDe(filas)
   const baseDescuento = subtotal > 0 ? (Number(descuento) || 0) * (gravado / subtotal) : 0
@@ -79,6 +94,7 @@ export function Cotizaciones() {
   const total = subtotal - (Number(descuento) || 0) + (Number(flete) || 0) + iva
 
   const limpiar = () => {
+    setConIva(ivaPorDefecto)
     setClienteId('')
     setMoneda('USD')
     setValidez('15')
@@ -236,6 +252,7 @@ export function Cotizaciones() {
                     cliente_id: Number(clienteId),
                     renglones: aRenglones(filas),
                     moneda,
+                    alicuota_iva: alicuota,
                     validez_dias: Number(validez) || 15,
                     descuento: Number(descuento) || 0,
                     flete: Number(flete) || 0,
@@ -321,6 +338,11 @@ export function Cotizaciones() {
             value={observacion}
             onChange={(e) => setObservacion(e.target.value)}
           />
+
+          {/* La decisión va pegada al total: es lo que la cambia. */}
+          {!cliente?.exento_iva ? (
+            <CasillaIva aplica={conIva} onCambiar={setConIva} className="mt-4" />
+          ) : null}
 
           <div className="bg-ink/4 rounded-card mt-4 p-4">
             <Totales
