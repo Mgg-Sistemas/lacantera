@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Download, FileWarning, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
@@ -146,7 +147,10 @@ export function Visor({
     }
   }
 
-  return (
+  // Al `body`, por lo mismo que el modal: un ancestro con `transform` —y lo
+  // hay, la animación de entrada de cada pantalla— convierte a `fixed` en
+  // relativo a él y el visor deja de cubrir la ventana.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -225,6 +229,7 @@ export function Visor({
           </div>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -72,7 +73,25 @@ export function Modal({
 
   if (!abierto) return null
 
-  return (
+  /*
+    EL MODAL SE CUELGA DEL `body`, NO DE DONDE SE ESCRIBIÓ
+
+    `position: fixed` no siempre se mide contra la ventana: basta que un
+    ancestro tenga `transform`, `filter` o `backdrop-filter` para que ese
+    ancestro pase a ser el marco de referencia. Y uno lo tiene — cada pantalla
+    entra envuelta en `anim-surgir` (AppLayout), que anima `transform` con
+    `animation-fill-mode: both`.
+
+    El resultado se veía así: el velo oscurecía solo la zona de contenido, el
+    menú y la barra superior quedaban por encima, y el panel se recortaba por
+    arriba porque se centraba contra el alto de la lista de detrás y no contra
+    la pantalla. En una lista larga el título quedaba fuera de la vista.
+
+    Sacarlo al `body` con un portal lo deja inmune a eso, y también a cualquier
+    animación o efecto que se añada mañana en medio del árbol. Es la única
+    forma de que un modal no dependa de dónde lo montó la pantalla que lo usa.
+  */
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div
         className="bg-ink/40 absolute inset-0 backdrop-blur-[1px]"
@@ -115,6 +134,7 @@ export function Modal({
           </div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
