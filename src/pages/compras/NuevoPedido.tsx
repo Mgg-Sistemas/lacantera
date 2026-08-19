@@ -9,7 +9,13 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { useArticulos, usePerfiles, useUnidades } from '@/lib/api/catalogo'
+import {
+  CATEGORIAS_ARTICULO,
+  useArticulos,
+  useCrearArticulo,
+  usePerfiles,
+  useUnidades,
+} from '@/lib/api/catalogo'
 import { useAlmacenes } from '@/lib/api/inventario'
 import { useCrearPedido } from '@/lib/api/compras'
 import { useSesion } from '@/lib/sesion'
@@ -31,6 +37,9 @@ interface FilaRenglon {
   cantidad: string
   unidad: string
   observacion: string
+  /* Solo mientras se crea el artículo desde aquí; no viajan al pedido. */
+  nuevo_codigo: string
+  nueva_categoria: string
 }
 
 let contador = 0
@@ -41,6 +50,8 @@ const filaVacia = (): FilaRenglon => ({
   cantidad: '',
   unidad: 'UND',
   observacion: '',
+  nuevo_codigo: '',
+  nueva_categoria: '',
 })
 
 const OTRO_SITIO = 'OTRO'
@@ -49,6 +60,7 @@ export function NuevoPedido() {
   const navigate = useNavigate()
   const { data: articulos } = useArticulos()
   const { data: almacenes } = useAlmacenes()
+  const crearArticulo = useCrearArticulo()
   const { data: unidades } = useUnidades()
   const { data: perfiles } = usePerfiles()
   const { session } = useSesion()
@@ -323,6 +335,75 @@ export function NuevoPedido() {
                       }))}
                     />
                   </div>
+
+                  {/* CREAR EN EL CATÁLOGO SIN SALIR DE AQUÍ
+
+                      «No está en el catálogo» deja la descripción como texto
+                      libre, y a los seis meses conviven «Hoja CARTA A4», «hoja
+                      carta a4» y «oja carta A-4»: tres artículos que son el
+                      mismo y ninguna forma de sumar lo que se gastó en papel.
+
+                      Se podría exigir que estuviera en el catálogo antes de
+                      pedir, pero eso frena la compra por un trámite y la gente
+                      acabaría escribiendo cualquier cosa en la descripción para
+                      salir del paso. Así que se ofrece crearlo aquí, con lo que
+                      ya escribió, sin abandonar el pedido. */}
+                  {!fila.articulo_id && fila.descripcion.trim().length >= 3 ? (
+                    <div className="border-hairline rounded-card bg-canvas grid gap-3 border border-dashed p-3 sm:col-span-12 sm:grid-cols-12">
+                      <p className="text-ink/60 text-xs sm:col-span-12">
+                        No está en el catálogo. Si es algo que se va a volver a pedir, créalo
+                        ahora y queda con un solo nombre para siempre.
+                      </p>
+
+                      <div className="sm:col-span-4">
+                        <Input
+                          label="Código"
+                          placeholder="INS-HOJA-A4"
+                          value={fila.nuevo_codigo}
+                          onChange={(e) => cambiar(fila.clave, { nuevo_codigo: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="sm:col-span-5">
+                        <Select
+                          label="Categoría"
+                          vacio="Elige"
+                          value={fila.nueva_categoria}
+                          onChange={(e) =>
+                            cambiar(fila.clave, { nueva_categoria: e.target.value })
+                          }
+                          opciones={CATEGORIAS_ARTICULO}
+                        />
+                      </div>
+
+                      <div className="flex items-end sm:col-span-3">
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          disabled={
+                            !fila.nuevo_codigo.trim() ||
+                            !fila.nueva_categoria ||
+                            crearArticulo.isPending
+                          }
+                          onClick={async () => {
+                            const id = await crearArticulo.mutateAsync({
+                              codigo: fila.nuevo_codigo.trim(),
+                              nombre: fila.descripcion.trim(),
+                              categoria: fila.nueva_categoria,
+                              unidad: fila.unidad,
+                            })
+                            cambiar(fila.clave, {
+                              articulo_id: String(id),
+                              nuevo_codigo: '',
+                              nueva_categoria: '',
+                            })
+                          }}
+                        >
+                          {crearArticulo.isPending ? 'Creando…' : 'Crear y usar'}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="sm:col-span-10">
                     <Input
