@@ -19,6 +19,7 @@ import { cerrarSesion } from '@/lib/auth'
 import { useTema } from '@/lib/tema'
 import type { Tema } from '@/lib/tema'
 import { useTasaBcv } from '@/lib/tasaBcv'
+import { useTasaVigente } from '@/lib/api/tasas'
 import type { EstadoTiempoReal } from '@/lib/tiempoReal'
 import { tasa as formatearTasa } from '@/lib/formato'
 
@@ -72,9 +73,25 @@ const opcionesTema: { valor: Tema; etiqueta: string; icono: typeof Sun }[] = [
  * eso el estado importa tanto como el número — una tasa de ayer mostrada como
  * si fuera de hoy hace que todo lo registrado quede mal valorado, y eso no se
  * descubre hasta el cierre del mes.
+ *
+ * ENSEÑA DOS COSAS PORQUE SON DOS COSAS
+ *
+ * Lo que el BCV publica y lo que el sistema tiene registrado no son lo mismo.
+ * Las tasas no se registran solas a propósito: una vez guardadas no se
+ * corrigen, así que alguien tiene que confirmarlas.
+ *
+ * Este indicador enseñaba solo la publicada, con su punto verde y su «hoy», y
+ * eso era un problema: el día que el BCV publica y nadie la carga, arriba se
+ * lee la nueva mientras los documentos salen con la de ayer. Quien mira la
+ * barra cree que está todo bien. Christopher lo vio de frente —dos números
+ * distintos en la misma pantalla— y tenía razón en preguntar.
+ *
+ * Ahora el punto verde significa una sola cosa: lo que ves es lo que se va a
+ * usar. Si no coinciden, el indicador se pone ámbar y lleva a arreglarlo.
  */
 function IndicadorTasa() {
   const { data, isPending, isError } = useTasaBcv()
+  const registrada = useTasaVigente()
 
   if (isPending) {
     return (
@@ -105,29 +122,64 @@ function IndicadorTasa() {
 
   const fechaCorta = data.fecha.toLocaleDateString('es-VE', { day: 'numeric', month: 'short' })
 
-  return (
-    <div
-      title={
-        data.vigente
-          ? 'Tasa publicada hoy'
-          : `La última tasa publicada es del ${fechaCorta}. Confirma antes de emitir documentos.`
-      }
-      className={cn(
-        'mr-1 hidden items-center gap-2.5 rounded-full border py-1.5 pr-3 pl-3 sm:flex',
-        data.vigente ? 'border-hairline bg-surface' : 'border-warning/40 bg-warning-soft',
-      )}
-    >
+  // La publicada de hoy está, pero el sistema todavía valora con una anterior
+  // —o con ninguna—. Es el caso que hacía que la barra dijera una cosa y los
+  // documentos otra.
+  const sinRegistrar =
+    data.vigente && !registrada.isPending && (!registrada.data || registrada.data.arrastrada)
+
+  const enCalma = data.vigente && !sinRegistrar
+
+  const contenido = (
+    <>
       <span
-        className={cn('size-1.5 shrink-0 rounded-full', data.vigente ? 'bg-success' : 'bg-warning')}
+        className={cn('size-1.5 shrink-0 rounded-full', enCalma ? 'bg-success' : 'bg-warning')}
       />
       <div className="leading-tight">
         <span className="text-ink/45 text-2xs block">
           Tasa BCV · {data.vigente ? 'hoy' : fechaCorta}
+          {sinRegistrar ? ' · sin registrar' : ''}
         </span>
         <span className="text-ink/90 tabular block text-sm font-semibold">
           Bs {formatearTasa(data.valor)}
         </span>
       </div>
+    </>
+  )
+
+  const clases = cn(
+    'mr-1 hidden items-center gap-2.5 rounded-full border py-1.5 pr-3 pl-3 sm:flex',
+    enCalma ? 'border-hairline bg-surface' : 'border-warning/40 bg-warning-soft',
+  )
+
+  // Cuando hay algo que arreglar, el indicador lleva a donde se arregla.
+  // Avisar de un problema sin decir dónde se resuelve solo sirve para molestar.
+  if (sinRegistrar) {
+    return (
+      <Link
+        to="/app/tasas"
+        title={
+          registrada.data
+            ? `El BCV publicó Bs ${formatearTasa(data.valor)} hoy, pero el sistema todavía valora con la del ${new Date(`${registrada.data.fecha}T12:00:00`).toLocaleDateString('es-VE', { day: 'numeric', month: 'short' })}. Regístrala antes de emitir documentos.`
+            : 'No hay ninguna tasa registrada: no se puede valorar ningún documento.'
+        }
+        className={cn(clases, 'hover:border-warning/60 transition-colors')}
+      >
+        {contenido}
+      </Link>
+    )
+  }
+
+  return (
+    <div
+      title={
+        data.vigente
+          ? 'Tasa publicada hoy y registrada en el sistema: es la que valora lo que se emita ahora.'
+          : `La última tasa publicada es del ${fechaCorta}. Confirma antes de emitir documentos.`
+      }
+      className={clases}
+    >
+      {contenido}
     </div>
   )
 }

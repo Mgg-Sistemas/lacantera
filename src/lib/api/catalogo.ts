@@ -156,6 +156,8 @@ export interface Proveedor {
   direccion: string | null
   condicion_pago: string
   moneda_preferida: string
+  /** Cómo suele cobrar. Se propone al pagarle; no obliga. */
+  metodo_pago_preferido: string | null
   contribuyente_especial: boolean
   activo: boolean
   notas: string | null
@@ -211,6 +213,7 @@ export function useGuardarProveedor() {
         p_contribuyente_especial: p.contribuyente_especial ?? false,
         p_notas: p.notas ?? null,
         p_activo: p.activo ?? true,
+        p_metodo_pago_preferido: p.metodo_pago_preferido ?? null,
       }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['proveedores'] }),
   })

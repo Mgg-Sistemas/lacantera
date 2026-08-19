@@ -22,11 +22,14 @@ interface ChipProps {
   children: ReactNode
   icon?: ReactNode
   className?: string
+  /** Lo que la etiqueta no alcanza a decir. Un chip cabe en dos palabras. */
+  title?: string
 }
 
-export function Chip({ tone = 'neutral', children, icon, className }: ChipProps) {
+export function Chip({ tone = 'neutral', children, icon, className, title }: ChipProps) {
   return (
     <span
+      title={title}
       className={cn(
         'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap',
         tones[tone],

@@ -80,3 +80,42 @@ export function useRegistrarTasa() {
     },
   })
 }
+
+/**
+ * Las monedas con las que de verdad se puede operar.
+ *
+ * POR QUÉ NO ES UNA LISTA FIJA
+ *
+ * Dos pantallas ofrecían euros en un desplegable escrito a mano. Elegirlo no
+ * hacía nada malo —la base rechaza el documento con «No hay tasa BCV de EUR a
+ * bolívares»— pero ofrecer algo que siempre falla es peor que no ofrecerlo:
+ * quien lo elige descubre el problema después de llenar el formulario entero.
+ *
+ * Una moneda se puede usar cuando hay con qué convertirla. El bolívar y el
+ * dólar siempre están —el sistema se mide en dólares y la tasa BCV es la del
+ * par USD/VES—; cualquier otra aparece el día que se le registre una tasa, y
+ * desaparece sola si nunca se le registra.
+ */
+export function useMonedasUsables() {
+  return useQuery({
+    queryKey: ['monedas-usables'],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const filas = desenvolver<Array<{ moneda_origen: string }>>(
+        await supabase.from('tasas_cambio').select('moneda_origen'),
+      )
+
+      const nombres: Record<string, string> = {
+        USD: 'Dólares',
+        VES: 'Bolívares',
+        EUR: 'Euros',
+      }
+
+      const codigos = ['USD', 'VES', ...filas.map((f) => f.moneda_origen)]
+      return [...new Set(codigos)].map((c) => ({
+        valor: c,
+        etiqueta: nombres[c] ?? c,
+      }))
+    },
+  })
+}

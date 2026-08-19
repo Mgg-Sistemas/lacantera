@@ -94,7 +94,7 @@ export function Modal({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div
-        className="bg-ink/40 absolute inset-0 backdrop-blur-[1px]"
+        className="bg-ink/40 absolute inset-0 hidden backdrop-blur-[1px] sm:block"
         onClick={onCerrar}
         aria-hidden="true"
       />
@@ -106,8 +106,21 @@ export function Modal({
         aria-label={titulo}
         tabIndex={-1}
         className={cn(
-          'bg-surface shadow-popover relative flex max-h-[92svh] w-full flex-col outline-none',
-          'rounded-t-[10px] sm:rounded-card',
+          'bg-surface shadow-popover relative flex w-full flex-col outline-none',
+          /*
+            EN EL TELÉFONO OCUPA LA PANTALLA ENTERA, NO UNA HOJA
+
+            Antes era una hoja pegada abajo con tope de 92svh. En un escritorio
+            eso está bien —el formulario cabe y el fondo da contexto—, pero en
+            un teléfono la cabecera y el pie se comen el alto y un formulario de
+            ocho campos se asoma por una rendija que hay que arrastrar.
+
+            Desde `sm` sigue siendo el panel centrado de siempre. Se resuelve
+            aquí y no pantalla por pantalla porque hay cuarenta y seis modales:
+            arreglarlo en cada una sería arreglarlo mal cuarenta y seis veces.
+          */
+          'h-full rounded-none',
+          'sm:h-auto sm:max-h-[92svh] sm:rounded-card',
           anchos[ancho],
         )}
       >

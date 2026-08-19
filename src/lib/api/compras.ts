@@ -48,6 +48,7 @@ export interface Tarjeta {
   prioridad: 'NORMAL' | 'ALTA' | 'URGENTE'
   requerida_para: string | null
   destino: string | null
+  destino_almacen_id: number | null
   estado_solicitud: string
   creada_en: string
   /** Quién pidió, cuando tiene usuario en el sistema. */
@@ -205,7 +206,13 @@ export interface Orden {
   desistio_nota: string | null
   motivo_cancelacion: string | null
   creada_en: string
-  proveedor: { id: number; nombre: string; rif: string } | null
+  proveedor: {
+    id: number
+    nombre: string
+    rif: string
+    /** Cómo suele cobrar. Se propone al pagarle. */
+    metodo_pago_preferido: string | null
+  } | null
   renglones: RenglonOrden[]
   instrucciones: InstruccionPago[]
 }
@@ -219,7 +226,7 @@ export interface Orden {
  */
 const SELECT_ORDEN = `
   *,
-  proveedor:proveedores(id, nombre, rif),
+  proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
   renglones:orden_renglones(*),
   instrucciones:instrucciones_pago(*)
 `
@@ -280,7 +287,7 @@ const SELECT_DETALLE = `
   ),
   ordenes:ordenes_compra(
     *,
-    proveedor:proveedores(id, nombre, rif),
+    proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
     renglones:orden_renglones(*),
     instrucciones:instrucciones_pago(*)
   )
@@ -387,6 +394,8 @@ export function useCrearPedido() {
       prioridad?: string
       requerida_para?: string | null
       destino?: string | null
+      /** El sitio del inventario al que va. Nulo si el destino no es uno. */
+      destino_almacen_id?: number | null
       enviar?: boolean
       /** Usuario que pide. Sin ninguno de los dos, pide quien carga. */
       solicitante_id?: string | null
@@ -401,6 +410,7 @@ export function useCrearPedido() {
         p_prioridad: p.prioridad ?? 'NORMAL',
         p_requerida_para: p.requerida_para || null,
         p_destino: p.destino || null,
+        p_destino_almacen_id: p.destino_almacen_id ?? null,
         p_enviar: p.enviar ?? true,
         p_solicitante_id: p.solicitante_id || null,
         p_solicitante_nombre: p.solicitante_nombre || null,

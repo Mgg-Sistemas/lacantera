@@ -62,6 +62,9 @@ const Respaldo = lazy(() =>
 const TableroInventario = lazy(() =>
   import('@/pages/inventario/Tablero').then((m) => ({ default: m.TableroInventario })),
 )
+const Combustible = lazy(() =>
+  import('@/pages/combustible/Combustible').then((m) => ({ default: m.Combustible })),
+)
 const Asignaciones = lazy(() =>
   import('@/pages/asignaciones/Asignaciones').then((m) => ({ default: m.Asignaciones })),
 )
@@ -120,11 +123,11 @@ const PorPagar = lazy(() =>
 const DetalleCompra = lazy(() =>
   import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
 )
-const NuevoPedido = lazy(() =>
-  import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
-)
 const Proveedores = lazy(() =>
   import('@/pages/compras/Proveedores').then((m) => ({ default: m.Proveedores })),
+)
+const NuevoPedido = lazy(() =>
+  import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
 )
 const TableroCompras = lazy(() =>
   import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),
@@ -220,6 +223,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,
   '/app/inventario/talleres': <Talleres />,
+  '/app/combustible': <Combustible />,
   '/app/asignaciones': <Asignaciones />,
   '/app/asignaciones/incidencias': <Incidencias />,
   '/app/despachos/vehiculos': <Vehiculos />,
