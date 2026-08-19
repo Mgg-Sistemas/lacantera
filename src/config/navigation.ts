@@ -191,11 +191,13 @@ export const navigation: NavSection[] = [
         label: 'Ventas',
         icon: ClipboardList,
         children: [
-          // El tablero va primero por el mismo motivo que en compras: quien
+          // El tablero va primero y se llama igual que el de compras: los dos
+          // modulos son hermanos y quien aprende uno no deberia reaprender el
+          // otro. Antes la primera entrada era Clientes, y quien
           // entra a Ventas quiere vender, no abrir una lista de clientes. El
           // menu nombraba siete documentos y ninguno decia por donde se
           // empieza.
-          { label: 'Cómo va cada venta', to: '/app/ventas' },
+          { label: 'Tablero', to: '/app/ventas' },
           { label: 'Clientes', to: '/app/ventas/clientes' },
           { label: 'Lista de precios', to: '/app/ventas/precios' },
           { label: 'Cotizaciones', to: '/app/ventas/cotizaciones' },

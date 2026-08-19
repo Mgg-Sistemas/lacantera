@@ -122,9 +122,8 @@ export function TableroVentas() {
   return (
     <>
       <PageHeader
-        eyebrow="Ventas"
-        title="Cómo va cada venta"
-        description="Del pedido del cliente hasta el cobro. Cada paso enseña qué está esperando ahí."
+        title="Ventas"
+        description="Del pedido del cliente hasta el cobro. Cada paso muestra qué está esperando ahí."
         actions={
           <Link to="/app/ventas/despachos">
             <Button icon={<Truck />}>Despachar material</Button>
