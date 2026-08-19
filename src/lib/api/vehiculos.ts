@@ -34,6 +34,40 @@ export interface Vehiculo {
   semaforo_mantenimiento: Semaforo | null
   horas_desde_mant: string | null
   tope_horas: string | null
+  /** Quién lo maneja hoy. Nulo si nadie lo tiene asignado. */
+  chofer_actual: string | null
+  cedula_chofer_actual: string | null
+  chofer_desde: string | null
+  asignacion_chofer_id: number | null
+}
+
+export interface ChoferDeVehiculo {
+  id: number
+  vehiculo_id: number
+  placa: string
+  empleado_id: number | null
+  chofer: string
+  cedula: string | null
+  cargo: string | null
+  /** Si está en nómina. Los de un transportista no lo están. */
+  es_de_la_casa: boolean
+  desde: string
+  hasta: string | null
+  vigente: boolean
+  dias: number
+  motivo: string | null
+  nota: string | null
+}
+
+export interface ActividadDeVehiculo {
+  vehiculo_id: number
+  tipo: 'PESAJE' | 'DESPACHO' | 'GUIA' | 'TALLER'
+  fecha: string
+  numero: string
+  detalle: string | null
+  cantidad: string | null
+  unidad: string
+  estado: string
 }
 
 export const TIPOS_VEHICULO = [
@@ -98,4 +132,86 @@ export function useGuardarVehiculo() {
       void qc.invalidateQueries({ queryKey: ['vehiculos'] })
     },
   })
+}
+
+/**
+ * Quién ha manejado un vehículo, del más reciente al más antiguo.
+ *
+ * EL TRASPASO NO SE ANOTA: SE DEDUCE
+ *
+ * Asignar un chofer nuevo cierra el período del anterior el día antes. No hay
+ * que acordarse de cerrar nada, y por eso el historial no tiene huecos ni
+ * solapes: un índice único impide que dos figuren manejando a la vez.
+ */
+export function useChoferesDeVehiculo(vehiculoId: number | null) {
+  return useQuery({
+    queryKey: ['vehiculos', 'choferes', vehiculoId],
+    enabled: vehiculoId !== null,
+    queryFn: async () =>
+      desenvolver<ChoferDeVehiculo[]>(
+        await supabase
+          .from('v_vehiculo_choferes')
+          .select('*')
+          .eq('vehiculo_id', vehiculoId!)
+          .order('desde', { ascending: false }),
+      ),
+  })
+}
+
+/** Pesajes, despachos, guías y pasos por el taller, en una sola línea de tiempo. */
+export function useActividadDeVehiculo(vehiculoId: number | null) {
+  return useQuery({
+    queryKey: ['vehiculos', 'actividad', vehiculoId],
+    enabled: vehiculoId !== null,
+    queryFn: async () =>
+      desenvolver<ActividadDeVehiculo[]>(
+        await supabase
+          .from('v_vehiculo_actividad')
+          .select('*')
+          .eq('vehiculo_id', vehiculoId!)
+          .order('fecha', { ascending: false })
+          .limit(100),
+      ),
+  })
+}
+
+function useAccionDeVehiculo<A>(fn: (a: A) => Promise<unknown>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['vehiculos'] }),
+  })
+}
+
+export function useAsignarChofer() {
+  return useAccionDeVehiculo(
+    (a: {
+      vehiculo_id: number
+      empleado_id?: number | null
+      nombre?: string | null
+      cedula?: string | null
+      desde?: string | null
+      motivo?: string | null
+      nota?: string | null
+    }) =>
+      rpc<number>('asignar_chofer', {
+        p_vehiculo_id: a.vehiculo_id,
+        p_empleado_id: a.empleado_id ?? null,
+        p_nombre: a.nombre ?? null,
+        p_cedula: a.cedula ?? null,
+        p_desde: a.desde ?? null,
+        p_motivo: a.motivo ?? null,
+        p_nota: a.nota ?? null,
+      }),
+  )
+}
+
+export function useTerminarChofer() {
+  return useAccionDeVehiculo((a: { id: number; hasta?: string | null; motivo?: string | null }) =>
+    rpc<number>('terminar_chofer', {
+      p_id: a.id,
+      p_hasta: a.hasta ?? null,
+      p_motivo: a.motivo ?? null,
+    }),
+  )
 }

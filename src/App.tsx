@@ -74,6 +74,9 @@ const Incidencias = lazy(() =>
 const Talleres = lazy(() =>
   import('@/pages/inventario/Talleres').then((m) => ({ default: m.Talleres })),
 )
+const FichaVehiculo = lazy(() =>
+  import('@/pages/despachos/FichaVehiculo').then((m) => ({ default: m.FichaVehiculo })),
+)
 const Vehiculos = lazy(() =>
   import('@/pages/despachos/Vehiculos').then((m) => ({ default: m.Vehiculos })),
 )
@@ -391,6 +394,7 @@ export default function App() {
 
               {/* Pantallas que no están en el menú porque se llega a ellas desde
                   el tablero, no desde la navegación. */}
+              <Route path="despachos/vehiculos/:id" element={<FichaVehiculo />} />
               <Route path="compras/nuevo" element={<NuevoPedido />} />
               <Route path="compras/:id" element={<DetalleCompra />} />
               <Route path="nomina/personal/:id" element={<FichaTrabajador />} />
