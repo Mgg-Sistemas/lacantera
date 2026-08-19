@@ -187,7 +187,28 @@ export function Landing() {
         )}
         aria-hidden="true"
       >
-        <div className="from-royal-950/80 bg-gradient-to-t to-transparent px-6 pt-10 pb-5 sm:px-10">
+        {/*
+          El velo desenfocado va aquí y solo mientras hay raíl.
+
+          Sobre la arena clara del capítulo I, las versalitas blancas del raíl
+          se perdían: el degradado solo no basta porque la fotografía tiene
+          detalle fino justo a esa altura, y el texto competía con la roca.
+
+          El desenfoque se aplica de forma condicionada y no siempre. Puesto
+          fijo seguiría emborronando la franja de abajo en la portada —donde
+          está el botón de entrar— y en el cierre, que tiene otro. Son las dos
+          pantallas donde no hay raíl y donde el fondo tiene que verse limpio.
+
+          No basta con que el contenedor esté en `opacity-0`: un
+          `backdrop-filter` sigue trabajando en varios navegadores aunque su
+          elemento sea invisible, así que la clase entra y sale con el raíl.
+        */}
+        <div
+          className={cn(
+            'from-royal-950/85 via-royal-950/45 bg-gradient-to-t to-transparent px-6 pt-10 pb-5 sm:px-10',
+            activo !== null && 'backdrop-blur-[3px]',
+          )}
+        >
           <ol className="mx-auto flex max-w-6xl gap-3 sm:gap-6">
             {CAPITULOS.map((c, i) => (
               <li key={c.romano} className="min-w-0 flex-1">
