@@ -242,10 +242,12 @@ export function NuevoPedido() {
                 if (e.target.value !== OTRO_SITIO) setDestino('')
               }}
               opciones={[
-                ...(almacenes ?? []).map((a) => ({
-                  valor: String(a.id),
-                  etiqueta: a.nombre,
-                })),
+                ...(almacenes ?? [])
+                  // Los que están marcados como «recibe compras». No es un
+                  // almacén por defecto —no hay— sino la lista de sitios a los
+                  // que se puede pedir que llegue algo.
+                  .filter((a) => a.recibe_compras)
+                  .map((a) => ({ valor: String(a.id), etiqueta: a.nombre })),
                 { valor: OTRO_SITIO, etiqueta: 'Otro — no es un almacén' },
               ]}
               hint="A dónde va lo que se pide. Al recibirlo, entra aquí."

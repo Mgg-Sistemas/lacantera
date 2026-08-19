@@ -50,25 +50,20 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
   /*
     Y si el pedido no dijo destino, no se adivina.
 
-    `recibe_compras` está marcado en seis almacenes: quien cargó los datos lo
-    leyó como «puede recibir compras», que es una lectura razonable. El código
-    lo leía como «el almacén por defecto» y tomaba el primero de la lista, que
+    No hay almacén predeterminado, y esa es la decisión: `recibe_compras` marca
+    los sitios a los que se puede pedir que llegue algo, no uno que gane por
+    defecto. El código lo leía al revés y tomaba el primero de esa lista, que
     por orden alfabético es ALIMENTACIÓN. De ahí el filtro de aire.
 
-    Con un solo candidato se propone; con seis no se propone ninguno, porque
-    elegir por orden alfabético es elegir al azar con cara de decisión.
+    Por eso el almacén se enlaza desde la solicitud: quien pide sabe a dónde
+    va, y quien recibe no tiene por qué adivinarlo.
   */
-  const candidatos = (almacenes ?? []).filter((a) => a.recibe_compras)
-  const porDefecto = candidatos.length === 1 ? candidatos[0].id : null
-
-  const [almacenId, setAlmacenId] = useState(() =>
-    String(destinoDelPedido ?? porDefecto ?? ''),
-  )
+  const [almacenId, setAlmacenId] = useState(() => String(destinoDelPedido ?? ''))
   const [fecha, setFecha] = useState(hoyEnCaracas())
   const [nota, setNota] = useState('')
 
   // El almacén por defecto llega con la consulta, después del primer render.
-  const almacenElegido = almacenId || String(destinoDelPedido ?? porDefecto ?? '')
+  const almacenElegido = almacenId || String(destinoDelPedido ?? '')
 
   const guardar = async () => {
     await recibir.mutateAsync({
