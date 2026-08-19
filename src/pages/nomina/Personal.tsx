@@ -13,7 +13,6 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
   BASES_SALARIO,
   ESTADOS_CIVILES,
-  FORMAS_PAGO,
   FRECUENCIAS,
   GENEROS,
   GRUPOS_SANGUINEOS,
@@ -27,6 +26,7 @@ import { useMisRoles } from '@/lib/api/catalogo'
 import { useTabulador } from '@/lib/api/tabulador'
 import { BANCOS } from '@/lib/bancos'
 import { dinero, fecha } from '@/lib/formato'
+import { useMetodosPago, opcionesDe } from '@/lib/api/metodosPago'
 
 const vacio = {
   cedula: 'V-',
@@ -76,6 +76,7 @@ function antiguedad(desde: string): string {
 }
 
 export function Personal() {
+  const { data: metodos } = useMetodosPago()
   const [verInactivos, setVerInactivos] = useState(false)
   const { data, isPending, error } = useEmpleados(!verInactivos)
   const niveles = useTabulador()
@@ -584,7 +585,7 @@ export function Personal() {
               label="Forma de pago"
               value={edicion.forma_pago}
               onChange={(e) => cambiar({ forma_pago: e.target.value })}
-              opciones={FORMAS_PAGO}
+              opciones={opcionesDe(metodos)}
             />
 
             {edicion.forma_pago === 'TRANSFERENCIA' ? (

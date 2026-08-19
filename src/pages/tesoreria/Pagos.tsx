@@ -8,7 +8,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useCuentas, usePorPagar } from '@/lib/api/tesoreria'
 import type { PorPagar } from '@/lib/api/tesoreria'
-import { METODO_LEGIBLE } from '@/lib/api/compras'
+import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { dinero, dolares, hace } from '@/lib/formato'
 import { ModalRegistrarPago } from './ModalRegistrarPago'
@@ -30,6 +30,7 @@ function Fila({
   puedePagar: boolean
   onPagar: () => void
 }) {
+  const { data: metodos } = useMetodosPago()
   const total = Number(pago.monto) + Number(pago.igtf_monto)
 
   return (
@@ -42,7 +43,7 @@ function Fila({
           >
             {pago.orden_numero} <ExternalLink className="inline size-3" />
           </Link>
-          <Chip tone="info">{METODO_LEGIBLE[pago.metodo]}</Chip>
+          <Chip tone="info">{nombreDe(metodos, pago.metodo)}</Chip>
           {pago.dias_esperando > 3 ? (
             <Chip tone={pago.dias_esperando > 7 ? 'danger' : 'warning'}>
               {pago.dias_esperando} días esperando

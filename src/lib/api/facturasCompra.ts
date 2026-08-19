@@ -94,13 +94,6 @@ export const CONDICIONES_COMPRA = [
   { valor: 'CREDITO_60', etiqueta: 'Crédito 60 días' },
 ]
 
-export const METODOS_PAGO_COMPRA = [
-  { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia' },
-  { valor: 'PAGO_MOVIL', etiqueta: 'Pago móvil' },
-  { valor: 'EFECTIVO', etiqueta: 'Efectivo' },
-  { valor: 'BINANCE', etiqueta: 'Binance' },
-  { valor: 'CHEQUE', etiqueta: 'Cheque' },
-]
 
 function useAccion<A, R = unknown>(fn: (args: A) => Promise<R>) {
   const qc = useQueryClient()

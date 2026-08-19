@@ -15,9 +15,9 @@ import { useMisPermisos } from '@/lib/api/usuarios'
 import { useProveedores } from '@/lib/api/catalogo'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useCuentas } from '@/lib/api/tesoreria'
+import { useMetodosPago, nombreDe, opcionesDe } from '@/lib/api/metodosPago'
 import {
   CONDICIONES_COMPRA,
-  METODOS_PAGO_COMPRA,
   useAnularFacturaCompra,
   useAnularPagoCompra,
   useFacturasCompra,
@@ -79,6 +79,7 @@ function retencionQueTocaria(iva: number, especial: boolean, pct: number | null)
 }
 
 export function FacturasProveedor() {
+  const { data: metodos } = useMetodosPago()
   const { data, isPending, error } = useFacturasCompra()
   const { data: proveedores } = useProveedores()
   const { data: empresa } = useEmpresa()
@@ -614,7 +615,7 @@ export function FacturasProveedor() {
                     <div className="min-w-0">
                       <p className="text-ink/80">
                         {p.numero} ·{' '}
-                        {METODOS_PAGO_COMPRA.find((m) => m.valor === p.metodo)?.etiqueta ?? p.metodo}
+                        {nombreDe(metodos, p.metodo)}
                         {p.estado === 'ANULADO' ? ' · anulado' : ''}
                       </p>
                       <p className="text-ink/45 text-xs">
@@ -717,7 +718,7 @@ export function FacturasProveedor() {
               label="Cómo se pagó"
               value={metodo}
               onChange={(e) => setMetodo(e.target.value)}
-              opciones={METODOS_PAGO_COMPRA}
+              opciones={opcionesDe(metodos)}
             />
             <Input
               label="Referencia"

@@ -91,12 +91,6 @@ export const JORNADAS = [
   { valor: 'MIXTA', etiqueta: 'Mixta — 7,5 h' },
 ]
 
-export const FORMAS_PAGO = [
-  { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia' },
-  { valor: 'PAGO_MOVIL', etiqueta: 'Pago móvil' },
-  { valor: 'EFECTIVO', etiqueta: 'Efectivo' },
-  { valor: 'BINANCE', etiqueta: 'Binance' },
-]
 
 export function useEmpleados(soloActivos = true) {
   return useQuery({

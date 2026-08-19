@@ -14,7 +14,6 @@ import { Visor } from '@/components/Visor'
 import {
   BASES_SALARIO,
   ESTADOS_CIVILES,
-  FORMAS_PAGO,
   FRECUENCIAS,
   GENEROS,
   JORNADAS,
@@ -38,6 +37,8 @@ import { armarConstancia } from '@/lib/ficha/constanciaPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { ENCUADRE_CENTRADO, type Encuadre } from '@/lib/ficha/encuadre'
 import { dinero, fecha } from '@/lib/formato'
+import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
+import type { MetodoPago } from '@/lib/api/metodosPago'
 
 /** Años y meses de servicio: es lo que decide bono vacacional y prestaciones. */
 function antiguedad(desde: string, hasta: string | null): string {
@@ -72,7 +73,14 @@ const etiqueta = (lista: Array<{ valor: string; etiqueta: string }>, v: string |
 
 /** Las secciones de la ficha. Las mismas en pantalla y en el PDF: si se
  *  escribieran dos veces, tarde o temprano dirían cosas distintas. */
-function seccionesDe(e: Empleado): Seccion[] {
+/*
+  Recibe el catalogo en vez de pedirlo.
+
+  No es un componente: es una funcion que arma la ficha, y las funciones
+  normales no pueden usar hooks. Pasarlo por parametro tambien la deja
+  probable sin montar nada.
+*/
+function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] {
   const secciones: Seccion[] = [
     {
       titulo: 'Identificación',
@@ -123,7 +131,7 @@ function seccionesDe(e: Empleado): Seccion[] {
           valor: `${dinero(e.moneda_salario, e.salario_base)} ${etiqueta(BASES_SALARIO, e.base_estipulacion).toLowerCase()}`,
         },
         { clave: 'Frecuencia', valor: etiqueta(FRECUENCIAS, e.frecuencia) },
-        { clave: 'Forma de pago', valor: etiqueta(FORMAS_PAGO, e.forma_pago) },
+        { clave: 'Forma de pago', valor: nombreDe(metodos, e.forma_pago) },
         {
           clave: 'Cuenta',
           valor:
@@ -152,6 +160,7 @@ function seccionesDe(e: Empleado): Seccion[] {
 }
 
 export function FichaTrabajador() {
+  const { data: metodos } = useMetodosPago()
   const { id } = useParams()
   const { data: e, isPending, error } = useEmpleado(id ? Number(id) : undefined)
   const { puede } = useMisRoles()
@@ -228,7 +237,7 @@ export function FichaTrabajador() {
   if (error) return <ErrorDeCarga error={error} />
   if (!e) return null
 
-  const secciones = seccionesDe(e)
+  const secciones = seccionesDe(e, metodos)
 
   /** La foto ya cargada como elemento, que es lo que saben pintar el lienzo y el PDF. */
   async function imagenLista(): Promise<HTMLImageElement | null> {

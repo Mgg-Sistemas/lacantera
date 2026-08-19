@@ -493,17 +493,6 @@ export function useDevolverACotizacion() {
   )
 }
 
-export const METODOS_PAGO = [
-  { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia bancaria' },
-  { valor: 'PAGO_MOVIL', etiqueta: 'Pago móvil' },
-  { valor: 'BINANCE', etiqueta: 'Binance' },
-  { valor: 'EFECTIVO', etiqueta: 'Efectivo' },
-]
-
-/** El mismo listado, para mostrar un método ya elegido. */
-export const METODO_LEGIBLE: Record<string, string> = Object.fromEntries(
-  METODOS_PAGO.map((m) => [m.valor, m.etiqueta]),
-)
 
 export interface DatosPago {
   banco?: string

@@ -43,7 +43,7 @@ import {
   useProponerCotizacion,
   useResolverDesistimiento,
 } from '@/lib/api/compras'
-import { METODO_LEGIBLE } from '@/lib/api/compras'
+import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import type { Cotizacion, InstruccionPago } from '@/lib/api/compras'
 import { bolivares, dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -235,13 +235,14 @@ function TarjetaInstruccion({
   onPagar: () => void
   onDevolver: () => void
 }) {
+  const { data: metodos } = useMetodosPago()
   const i = instruccion
 
   return (
     <div className="border-hairline rounded-card border p-3.5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-ink/90 text-base font-medium">{METODO_LEGIBLE[i.metodo]}</p>
+          <p className="text-ink/90 text-base font-medium">{nombreDe(metodos, i.metodo)}</p>
           <p className="text-ink/50 text-xs">Cargada el {fechaHora(i.creada_en)}</p>
         </div>
         <Chip
