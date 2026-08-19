@@ -31,12 +31,13 @@
  * factura suelta sin ese rótulo no se sabe si está completa.
  */
 
-import { marcaComoImagen, MARCA_SOBRE_OSCURO } from './marca'
+import { logoComoImagen } from './logo'
 import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, CENTRO, DER, IZQ, PIE } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
 import type { PdfArmado } from './reciboPdf'
 
-const AZUL = '#1D358F'
+// El primario de la marca. Antes era el azul de «La Cantera».
+const MARCA = '#cc3f00'
 const NARANJA = '#C2500A'
 const GRIS_BANDA = '#4A5163'
 const TINTA = '#262C3D'
@@ -115,7 +116,7 @@ export interface DatosDocumento {
 const ROTULOS: Record<TipoDocumento, { titulo: string; color: string; archivo: string }> = {
   COTIZACION: { titulo: 'COTIZACIÓN', color: GRIS_BANDA, archivo: 'cotizacion' },
   NOTA: { titulo: 'NOTA DE ENTREGA', color: NARANJA, archivo: 'nota-entrega' },
-  FACTURA: { titulo: 'FACTURA', color: AZUL, archivo: 'factura' },
+  FACTURA: { titulo: 'FACTURA', color: MARCA, archivo: 'factura' },
 }
 
 const PIES: Record<TipoDocumento, string> = {
@@ -165,13 +166,13 @@ const ANCHO_DESCRIPCION = 68
 /** Alto de la banda del membrete. Da para tres renglones de domicilio. */
 const ALTO_MEMBRETE = 34
 
-function membrete(doc: Doc, d: DatosDocumento): number {
+function membrete(doc: Doc, d: DatosDocumento, logo: string): number {
   const rotulo = ROTULOS[d.tipo]
 
   doc.setFillColor(rotulo.color)
   doc.rect(IZQ, ARRIBA, ANCHO_UTIL, ALTO_MEMBRETE, 'F')
 
-  doc.addImage(marcaComoImagen(MARCA_SOBRE_OSCURO), 'PNG', IZQ + 5, ARRIBA + 6, 14, 14)
+  doc.addImage(logo, 'PNG', IZQ + 5, ARRIBA + 6, 14, 14)
 
   doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(11)
   doc.text(ajustar(doc, d.empresa.razonSocial, 76), IZQ + 23, ARRIBA + 10)
@@ -436,6 +437,9 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
+  // El logo de la empresa. Se carga una vez y se reutiliza en cada hoja.
+  const logo = await logoComoImagen()
+
   // Cuánto ocupa el cierre —totales, firmas y observación— para saber si cabe
   // detrás del último renglón o necesita hoja propia.
   const cierre = altoTotales(d) + 22 + (d.observacion ? 10 : 0)
@@ -446,7 +450,7 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
   // o dos renglones y de si el documento lleva los datos del camión. Calcularlo
   // con números escritos a mano aquí funcionaba hasta el primer cliente con
   // dirección larga, y entonces la tabla se salía por abajo sin avisar.
-  const yPrimera = encabezadoCliente(doc, d, membrete(doc, d))
+  const yPrimera = encabezadoCliente(doc, d, membrete(doc, d, logo))
 
   // Ahora sí se reparten las hojas, sin pintar: hace falta saber cuántas son
   // para poder escribir "página 1 de 3" ya en la primera.
@@ -482,7 +486,7 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
       // mano tiene que saber de qué documento es sin buscar la primera.
       doc.setFillColor(ROTULOS[d.tipo].color)
       doc.rect(IZQ, ARRIBA, ANCHO_UTIL, 9, 'F')
-      doc.addImage(marcaComoImagen(MARCA_SOBRE_OSCURO), 'PNG', IZQ + 3, ARRIBA + 1.5, 6, 6)
+      doc.addImage(logo, 'PNG', IZQ + 3, ARRIBA + 1.5, 6, 6)
       doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(8)
       doc.text(`${ROTULOS[d.tipo].titulo} ${d.numero}`, IZQ + 12, ARRIBA + 6)
       doc.setFont('helvetica', 'normal').setFontSize(7)

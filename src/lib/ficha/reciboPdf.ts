@@ -22,12 +22,13 @@
  * lector de PDF y no engorda el archivo.
  */
 
-import { marcaComoImagen, MARCA_SOBRE_OSCURO } from './marca'
+import { logoComoImagen } from './logo'
 import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, DER, IZQ } from './hoja'
 import type { ArchivoArmado } from './armado'
 import { EMPRESA } from '@/lib/empresa'
 
-const AZUL = '#1D358F'
+// El primario de la marca. Antes era el azul de «La Cantera».
+const MARCA = '#cc3f00'
 const AZUL_CLARO = '#B9C6F5'
 const TINTA = '#262C3D'
 const GRIS = '#7B839A'
@@ -102,13 +103,13 @@ const dia = (iso: string) =>
 
 // --- Piezas ---------------------------------------------------------------
 
-function encabezado(doc: Doc, d: DatosRecibo, y0: number): number {
-  doc.setFillColor(AZUL)
+function encabezado(doc: Doc, d: DatosRecibo, y0: number, logo: string): number {
+  doc.setFillColor(MARCA)
   // Dentro del margen y no a sangre: una banda que llega al borde de la hoja
   // convierte los tres centímetros en cero por tres de los cuatro lados.
   doc.rect(IZQ, y0, ANCHO_UTIL, 26, 'F')
 
-  doc.addImage(marcaComoImagen(MARCA_SOBRE_OSCURO), 'PNG', IZQ + 4, y0 + 6, 11, 11)
+  doc.addImage(logo, 'PNG', IZQ + 4, y0 + 6, 11, 11)
 
   // Con 150 mm de ancho, la razón social entera y el rótulo del documento ya no
   // caben en la misma línea sin tocarse. La marca baja de cuerpo lo justo y se
@@ -183,7 +184,7 @@ function bloque(doc: Doc, d: DatosRecibo, tipo: LineaImpresa['tipo'], y: number)
   const lineas = d.lineas.filter((l) => l.tipo === tipo).sort((a, b) => a.orden - b.orden)
   if (lineas.length === 0) return y
 
-  doc.setTextColor(AZUL).setFont('helvetica', 'bold').setFontSize(6.5)
+  doc.setTextColor(MARCA).setFont('helvetica', 'bold').setFontSize(6.5)
   doc.text(TITULOS[tipo], IZQ, y)
 
   let fila = y + 4
@@ -228,7 +229,7 @@ function neto(doc: Doc, d: DatosRecibo, y: number): number {
   doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(9)
   doc.text('NETO A COBRAR', IZQ + 4, y + 8)
 
-  doc.setTextColor(AZUL).setFontSize(13)
+  doc.setTextColor(MARCA).setFontSize(13)
   doc.text(`Bs ${cifra(d.neto)}`, DER - 4, y + 8.5, { align: 'right' })
 
   // La referencia en dólares no es lo que se paga: es lo que valía ese día.
@@ -321,8 +322,8 @@ function pie(doc: Doc, d: DatosRecibo, y: number) {
 }
 
 /** Una copia completa, empezando en `y0`. Devuelve dónde terminó. */
-function copia(doc: Doc, d: DatosRecibo, y0: number, rotulo: string): number {
-  let y = encabezado(doc, d, y0)
+function copia(doc: Doc, d: DatosRecibo, y0: number, rotulo: string, logo: string): number {
+  let y = encabezado(doc, d, y0, logo)
 
   // Dentro de la banda, bajo el período. Fuera de ella caía justo encima de
   // las fechas del período, que van pegadas al margen derecho.
@@ -355,8 +356,8 @@ function copia(doc: Doc, d: DatosRecibo, y0: number, rotulo: string): number {
  * midiendo y decidiendo— pero el resultado habitual es otro, y se imprime el
  * doble de papel. Es el precio del margen, no un fallo.
  */
-function hoja(doc: Doc, d: DatosRecibo) {
-  const fin = copia(doc, d, ARRIBA, 'Original — para la empresa')
+function hoja(doc: Doc, d: DatosRecibo, logo: string) {
+  const fin = copia(doc, d, ARRIBA, 'Original — para la empresa', logo)
 
   // Lo que ocupó la primera, más el corte, más otra igual: ¿cabe antes del
   // margen de abajo?
@@ -371,10 +372,10 @@ function hoja(doc: Doc, d: DatosRecibo) {
     doc.setTextColor(ROJO).setFont('helvetica', 'normal').setFontSize(5.5)
     doc.text('corte aquí', IZQ, corte - 1.5)
 
-    copia(doc, d, corte + 4, 'Copia — para el trabajador')
+    copia(doc, d, corte + 4, 'Copia — para el trabajador', logo)
   } else {
     doc.addPage()
-    copia(doc, d, ARRIBA, 'Copia — para el trabajador')
+    copia(doc, d, ARRIBA, 'Copia — para el trabajador', logo)
   }
 }
 
@@ -391,7 +392,8 @@ export async function armarRecibo(d: DatosRecibo): Promise<PdfArmado> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  hoja(doc, d)
+  const logo = await logoComoImagen()
+  hoja(doc, d, logo)
 
   doc.setProperties({
     title: `Recibo ${d.periodo} — ${d.nombreCompleto}`,
@@ -414,9 +416,13 @@ export async function armarRecibos(
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
+  // Una sola carga para todo el lote: cincuenta recibos seguidos no pueden
+  // convertir el PNG cincuenta veces.
+  const logo = await logoComoImagen()
+
   for (const [i, d] of recibos.entries()) {
     if (i > 0) doc.addPage()
-    hoja(doc, d)
+    hoja(doc, d, logo)
   }
 
   doc.setProperties({
