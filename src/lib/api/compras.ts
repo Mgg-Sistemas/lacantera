@@ -235,7 +235,7 @@ export function useOrdenesPorRecibir() {
           // Lo pagado y lo parcial es lo que de verdad está por llegar. Una
           // orden que sigue en tesorería no salió del banco todavía, y el
           // proveedor no despacha lo que no le han pagado.
-          .in('estado', ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL'])
+          .in('estado', ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'POR_RECIBIR'])
           .order('fecha_pago', { ascending: true, nullsFirst: false }),
       ),
     refetchInterval: 5 * 60_000,

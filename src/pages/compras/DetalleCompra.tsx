@@ -59,6 +59,8 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   CANCELADA: { texto: 'Cancelada', tono: 'neutral' },
   POR_INDICAR_PAGO: { texto: 'Aprobada · indicar método de pago', tono: 'warning' },
   EN_TESORERIA: { texto: 'En tesorería', tono: 'info' },
+  // Contra entrega: aprobada y esperando el material, sin un bolivar fuera.
+  POR_RECIBIR: { texto: 'Contra entrega · esperando el material', tono: 'info' },
   PAGADA_POR_RECIBIR: { texto: 'Pagada · pendiente por recepcionar', tono: 'success' },
   RECIBIDA_PARCIAL: { texto: 'Recibida parcialmente', tono: 'success' },
   RECIBIDA: { texto: 'Recibida', tono: 'success' },
@@ -423,7 +425,12 @@ export function DetalleCompra() {
 
   // La columna de recibido solo aparece cuando ya hay algo que recibir: antes
   // del pago sería una columna de ceros.
-  const muestraRecibido = ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'RECIBIDA'].includes(
+  const muestraRecibido = [
+    'PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'RECIBIDA',
+    // Contra entrega recibe antes de pagar, asi que lo recibido importa
+    // desde que la orden existe y no solo despues del pago.
+    'POR_RECIBIR', 'POR_INDICAR_PAGO', 'EN_TESORERIA',
+  ].includes(
     orden?.estado ?? '',
   )
 
@@ -844,7 +851,7 @@ export function DetalleCompra() {
                 )
               ) : null}
 
-              {orden && ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL'].includes(orden.estado) ? (
+              {orden && ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'POR_RECIBIR'].includes(orden.estado) ? (
                 <>
                   <div className="border-success/25 bg-success-soft rounded-[6px] border p-3">
                     <p className="text-ink/80 text-sm">

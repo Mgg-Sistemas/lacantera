@@ -161,8 +161,21 @@ export interface Proveedor {
   notas: string | null
 }
 
+/**
+ * Cómo se paga una compra.
+ *
+ * `CONTRA_ENTREGA` no es una etiqueta más: cambia el orden del recorrido. Las
+ * otras tres dicen CUÁNDO se paga —ahora, o a tantos días— pero todas pagan
+ * antes de recibir. Contra entrega recibe primero y paga solo lo que llegó, así
+ * que la orden nace en `POR_RECIBIR` en vez de esperando instrucción de pago.
+ *
+ * Esta lista es la de compras. Ventas tiene la suya en `ventas.ts` y de momento
+ * no ofrece contra entrega: nadie lo ha pedido de ese lado, y un valor que
+ * ninguna pantalla ofrece es una puerta sin puerta detrás.
+ */
 export const CONDICIONES_PAGO = [
   { valor: 'CONTADO', etiqueta: 'De contado' },
+  { valor: 'CONTRA_ENTREGA', etiqueta: 'Contra entrega' },
   { valor: 'CREDITO_15', etiqueta: 'Crédito 15 días' },
   { valor: 'CREDITO_30', etiqueta: 'Crédito 30 días' },
   { valor: 'CREDITO_60', etiqueta: 'Crédito 60 días' },

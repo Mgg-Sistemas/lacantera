@@ -89,6 +89,7 @@ export interface LineaLibroCompras {
 
 export const CONDICIONES_COMPRA = [
   { valor: 'CONTADO', etiqueta: 'De contado' },
+  { valor: 'CONTRA_ENTREGA', etiqueta: 'Contra entrega' },
   { valor: 'CREDITO_15', etiqueta: 'Crédito 15 días' },
   { valor: 'CREDITO_30', etiqueta: 'Crédito 30 días' },
   { valor: 'CREDITO_60', etiqueta: 'Crédito 60 días' },
