@@ -68,6 +68,9 @@ const Talleres = lazy(() =>
 const Vehiculos = lazy(() =>
   import('@/pages/despachos/Vehiculos').then((m) => ({ default: m.Vehiculos })),
 )
+const Mantenimientos = lazy(() =>
+  import('@/pages/maquinaria/Mantenimientos').then((m) => ({ default: m.Mantenimientos })),
+)
 const Maquinaria = lazy(() =>
   import('@/pages/maquinaria/Maquinaria').then((m) => ({ default: m.Maquinaria })),
 )
@@ -206,6 +209,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/ventas/libro': <LibroVentas />,
   '/app/nomina/prestaciones': <Prestaciones />,
   '/app/maquinaria': <Maquinaria />,
+  '/app/maquinaria/mantenimientos': <Mantenimientos />,
   '/app/inventario': <TableroInventario />,
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,

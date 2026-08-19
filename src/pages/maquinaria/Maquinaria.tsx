@@ -1,15 +1,18 @@
 import { useState } from 'react'
-import { Gauge, Plus, Wrench } from 'lucide-react'
+import { ClipboardList, Gauge, Plus, ToggleLeft, Wrench } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { AvisoBloqueantes, SemaforoMantenimiento } from '@/components/SemaforoMantenimiento'
 import { ModalHorometro } from './ModalHorometro'
-import { ModalMantenimiento } from './ModalMantenimiento'
+import { ModalTaller } from './ModalTaller'
+import { ModalEstado } from './ModalEstado'
 import { ModalMaquina } from './ModalMaquina'
-import { useMaquinaria, type Maquina } from '@/lib/api/maquinaria'
+import { ETIQUETA_ESTADO, useMaquinaria, type Maquina } from '@/lib/api/maquinaria'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useNavigate } from 'react-router'
+import { Chip } from '@/components/ui/Chip'
 import { enteros, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -23,6 +26,14 @@ import { cn } from '@/lib/cn'
  * pregunta que se hace todo el mundo al entrar: cuál toca atender. Partirlo en
  * dos obligaría a un clic para llegar a lo único que hay.
  *
+ * EL TALLER ES UN SITIO, NO UNA ANOTACIÓN
+ *
+ * El botón dice «meter al taller» o «sacar del taller» según dónde esté la
+ * máquina, porque eso es lo que ocurre de verdad: entra, está dentro unos días
+ * sin trabajar, y sale. Antes se anotaba el mantenimiento de un golpe cuando
+ * ya estaba hecho, y en el medio no había forma de saber qué máquinas estaban
+ * paradas.
+ *
  * LO QUE ESTÁ PEOR VA PRIMERO
  *
  * No se ordena por código ni por nombre: por gravedad. Con veinte máquinas en
@@ -35,7 +46,9 @@ export function Maquinaria() {
 
   const [editando, setEditando] = useState<Maquina | null | undefined>(undefined)
   const [horometro, setHorometro] = useState<Maquina | null>(null)
-  const [mantenimiento, setMantenimiento] = useState<Maquina | null>(null)
+  const [taller, setTaller] = useState<Maquina | null>(null)
+  const [estado, setEstado] = useState<Maquina | null>(null)
+  const navegar = useNavigate()
 
   const puedeEscribir = puede('MAQUINARIA', 'ESCRITURA')
 
@@ -54,11 +67,20 @@ export function Maquinaria() {
         title="Maquinaria"
         description="Cada equipo, lo que lleva trabajado y cuánto le falta para su mantenimiento."
         actions={
-          puedeEscribir ? (
-            <Button icon={<Plus />} onClick={() => setEditando(null)}>
-              Nueva máquina
+          <>
+            <Button
+              variant="outline"
+              icon={<ClipboardList />}
+              onClick={() => navegar('/app/maquinaria/mantenimientos')}
+            >
+              Historial de taller
             </Button>
-          ) : undefined
+            {puedeEscribir ? (
+              <Button icon={<Plus />} onClick={() => setEditando(null)}>
+                Nueva máquina
+              </Button>
+            ) : null}
+          </>
         }
       />
 
@@ -92,6 +114,7 @@ export function Maquinaria() {
                 const horas = Number(m.horas_desde_mant)
                 const tope = Number(m.tope_horas)
                 const bloquea = m.semaforo === 'BLOQUEANTE'
+                const enTaller = m.mantenimiento_abierto_id !== null
 
                 // Cuánto del intervalo lleva consumido. Se corta en 100 para
                 // que la barra no se salga cuando ya se pasó del tope.
@@ -117,6 +140,40 @@ export function Maquinaria() {
                           {[m.marca, m.modelo].filter(Boolean).join(' ') || 'Sin marca ni modelo'}
                           {m.almacen ? ` · ${m.almacen}` : ''}
                         </p>
+
+                        {/* Dónde está la máquina ahora. Va debajo del nombre y
+                            no junto al semáforo porque son dos cosas
+                            distintas: una dice si le toca mantenimiento y la
+                            otra si está trabajando. */}
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <Chip
+                            tone={
+                              m.estado === 'ACTIVA'
+                                ? 'success'
+                                : m.estado === 'EN_MANTENIMIENTO'
+                                  ? 'warning'
+                                  : m.estado === 'FUERA_DE_SERVICIO' ||
+                                      m.estado === 'DESINCORPORADA'
+                                    ? 'danger'
+                                    : 'neutral'
+                            }
+                          >
+                            {ETIQUETA_ESTADO[m.estado]}
+                          </Chip>
+                          {m.dias_en_taller !== null ? (
+                            <span
+                              className={cn(
+                                'text-2xs',
+                                m.se_paso_en_el_taller ? 'text-warning font-medium' : 'text-ink/45',
+                              )}
+                            >
+                              {m.dias_en_taller === 0
+                                ? 'entró hoy'
+                                : `${m.dias_en_taller} día${m.dias_en_taller === 1 ? '' : 's'} dentro`}
+                              {m.se_paso_en_el_taller ? ' · más de lo previsto' : ''}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                       <SemaforoMantenimiento estado={m.semaforo} />
                     </div>
@@ -168,17 +225,26 @@ export function Maquinaria() {
                           size="sm"
                           variant="soft"
                           icon={<Gauge />}
+                          disabled={enTaller}
                           onClick={() => setHorometro(m)}
                         >
                           Horómetro
                         </Button>
                         <Button
                           size="sm"
-                          variant={bloquea ? 'primary' : 'outline'}
+                          variant={bloquea || enTaller ? 'primary' : 'outline'}
                           icon={<Wrench />}
-                          onClick={() => setMantenimiento(m)}
+                          onClick={() => setTaller(m)}
                         >
-                          Mantenimiento
+                          {enTaller ? 'Sacar del taller' : 'Meter al taller'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          icon={<ToggleLeft />}
+                          onClick={() => setEstado(m)}
+                        >
+                          Estado
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setEditando(m)}>
                           Editar
@@ -203,10 +269,15 @@ export function Maquinaria() {
         maquina={horometro}
         onCerrar={() => setHorometro(null)}
       />
-      <ModalMantenimiento
-        abierto={mantenimiento !== null}
-        maquina={mantenimiento}
-        onCerrar={() => setMantenimiento(null)}
+      <ModalTaller
+        abierto={taller !== null}
+        maquina={taller}
+        onCerrar={() => setTaller(null)}
+      />
+      <ModalEstado
+        abierto={estado !== null}
+        maquina={estado}
+        onCerrar={() => setEstado(null)}
       />
     </>
   )

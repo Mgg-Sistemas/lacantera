@@ -6,12 +6,7 @@ import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useAlmacenes } from '@/lib/api/inventario'
-import {
-  ESTADOS_MAQUINA,
-  TIPOS_MAQUINA,
-  useGuardarMaquina,
-  type Maquina,
-} from '@/lib/api/maquinaria'
+import { TIPOS_MAQUINA, useGuardarMaquina, type Maquina } from '@/lib/api/maquinaria'
 
 /**
  * Dar de alta o corregir una máquina.
@@ -26,6 +21,12 @@ import {
  * aviso antes que la alarma y la alarma antes que el tope— y la base lo exige.
  * Verlos juntos hace evidente esa relación antes de guardar, en vez de después
  * con un error que habla de una restricción.
+ *
+ * EL ESTADO NO SE EDITA AQUÍ
+ *
+ * Estaba, y era un error: cambiar la marca de una máquina no puede ser también
+ * la vía para sacarla del taller. El estado se mueve en su propio sitio, donde
+ * cada paso dice lo que arrastra consigo.
  */
 export function ModalMaquina({
   abierto,
@@ -49,10 +50,10 @@ export function ModalMaquina({
     serial: '',
     anio: '',
     almacen_id: '',
-    estado: 'ACTIVA',
     tope_horas: '250',
     aviso_horas: '200',
     alarma_horas: '220',
+    dias_mantenimiento: '',
     nota: '',
   })
 
@@ -70,10 +71,12 @@ export function ModalMaquina({
       serial: maquina?.serial ?? '',
       anio: maquina?.anio ? String(maquina.anio) : '',
       almacen_id: maquina?.almacen_id ? String(maquina.almacen_id) : '',
-      estado: maquina?.estado ?? 'ACTIVA',
       tope_horas: maquina?.tope_horas ?? '250',
       aviso_horas: maquina?.aviso_horas ?? '200',
       alarma_horas: maquina?.alarma_horas ?? '220',
+      dias_mantenimiento: maquina?.dias_mantenimiento
+        ? String(maquina.dias_mantenimiento)
+        : '',
       nota: maquina?.nota ?? '',
     })
   }, [abierto, maquina])
@@ -88,21 +91,21 @@ export function ModalMaquina({
 
   const enviar = async () => {
     await guardar.mutateAsync({
-      ...(maquina ? { id: maquina.id } : {}),
+      id: maquina?.id ?? null,
       codigo: f.codigo.trim(),
       nombre: f.nombre.trim(),
       tipo: f.tipo,
-      marca: f.marca,
-      modelo: f.modelo,
-      serial: f.serial,
+      marca: f.marca.trim() || null,
+      modelo: f.modelo.trim() || null,
+      serial: f.serial.trim() || null,
       anio: f.anio ? Number(f.anio) : null,
       almacen_id: f.almacen_id ? Number(f.almacen_id) : null,
-      estado: f.estado,
-      tope_horas: f.tope_horas,
-      aviso_horas: f.aviso_horas,
-      alarma_horas: f.alarma_horas,
-      nota: f.nota,
-    } as never)
+      tope_horas: Number(f.tope_horas),
+      aviso_horas: Number(f.aviso_horas),
+      alarma_horas: Number(f.alarma_horas),
+      dias_mantenimiento: f.dias_mantenimiento ? Number(f.dias_mantenimiento) : null,
+      nota: f.nota.trim() || null,
+    })
     onCerrar()
   }
 
@@ -141,12 +144,6 @@ export function ModalMaquina({
           value={f.tipo}
           onChange={(e) => cambiar('tipo', e.target.value)}
           opciones={TIPOS_MAQUINA}
-        />
-        <Select
-          label="Estado"
-          value={f.estado}
-          onChange={(e) => cambiar('estado', e.target.value)}
-          opciones={ESTADOS_MAQUINA}
         />
         <Input
           label="Marca"
@@ -215,6 +212,19 @@ export function ModalMaquina({
           step="1"
           value={f.tope_horas}
           onChange={(e) => cambiar('tope_horas', e.target.value)}
+        />
+      </div>
+
+      <div className="mt-4 max-w-xs">
+        <Input
+          label="Días que suele tardar su mantenimiento"
+          type="number"
+          min="1"
+          step="1"
+          placeholder="Si se sabe"
+          value={f.dias_mantenimiento}
+          onChange={(e) => cambiar('dias_mantenimiento', e.target.value)}
+          hint="Sirve para avisar cuando lleva más de lo previsto en el taller. Vacío no compara contra nada."
         />
       </div>
 

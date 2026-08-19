@@ -143,7 +143,12 @@ export const navigation: NavSection[] = [
         // trae a la gente es siempre la misma: cuál toca atender.
         label: 'Maquinaria',
         icon: Wrench,
-        to: '/app/maquinaria',
+        children: [
+          { label: 'Equipos', to: '/app/maquinaria' },
+          // El historial es la vista al revés: no cada máquina y su última
+          // reparación, sino qué ha pasado por el taller y qué costó.
+          { label: 'Historial de taller', to: '/app/maquinaria/mantenimientos' },
+        ],
       },
       {
         // El catálogo y los almacenes vivían en Configuración, y ahí no los
