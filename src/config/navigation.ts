@@ -1,5 +1,6 @@
 import {
   Banknote,
+  Wrench,
   BookOpen,
   Boxes,
   ClipboardList,
@@ -74,6 +75,7 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
+  ['/app/maquinaria', 'MAQUINARIA'],
   ['/app/inventario', 'INVENTARIO'],
   ['/app/despachos', 'DESPACHOS'],
   ['/app/compras', 'COMPRAS'],
@@ -135,6 +137,20 @@ export const navigation: NavSection[] = [
         ],
       },
       {
+        // Va entre Explotación e Inventario porque ese es su sitio en la
+        // jornada: la máquina trabaja en el frente y lo que consume sale del
+        // patio. No tiene submenú — hay una sola pantalla y la pregunta que
+        // trae a la gente es siempre la misma: cuál toca atender.
+        label: 'Maquinaria',
+        icon: Wrench,
+        children: [
+          { label: 'Equipos', to: '/app/maquinaria' },
+          // El historial es la vista al revés: no cada máquina y su última
+          // reparación, sino qué ha pasado por el taller y qué costó.
+          { label: 'Historial de taller', to: '/app/maquinaria/mantenimientos' },
+        ],
+      },
+      {
         // El catálogo y los almacenes vivían en Configuración, y ahí no los
         // encontraba quien los usa: los mantiene el almacenista, no quien
         // administra el sistema. Lo que se guarda y dónde se guarda es
@@ -145,6 +161,9 @@ export const navigation: NavSection[] = [
           // Igual que en compras y ventas: la primera entrada es el tablero.
           { label: 'Tablero', to: '/app/inventario' },
           { label: 'Existencias', to: '/app/inventario/existencias' },
+          // Va pegada a Existencias porque responde la pregunta de después:
+          // se ve el total, se ve dónde está, y aquí qué pasa en cada taller.
+          { label: 'Talleres', to: '/app/inventario/talleres' },
           { label: 'Movimientos', to: '/app/inventario/movimientos' },
           { label: 'Transferencias', to: '/app/inventario/transferencias' },
           { label: 'Catálogo de artículos', to: '/app/inventario/articulos' },
@@ -161,6 +180,10 @@ export const navigation: NavSection[] = [
           // para que el camión circule con el mineral, no el papel que se le
           // entrega al cliente. Ese es la nota de entrega y vive en Ventas.
           { label: 'Guías de movilización', to: '/app/despachos/guias' },
+          // Los da de alta quien ve llegar el camión, no quien administra el
+          // sistema; en Configuración nadie los cargaría y la placa seguiría
+          // escribiéndose a mano.
+          { label: 'Vehículos', to: '/app/despachos/vehiculos' },
         ],
       },
     ],

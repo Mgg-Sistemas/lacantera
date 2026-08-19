@@ -15,6 +15,7 @@ import { useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useGuias, useTickets } from '@/lib/api/despachos'
+import { useVehiculos } from '@/lib/api/vehiculos'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
@@ -63,6 +64,7 @@ export function Despachos() {
   const [almacenId, setAlmacenId] = useState('')
   const [moneda, setMoneda] = useState('USD')
   const [vehiculo, setVehiculo] = useState('')
+  const [vehiculoId, setVehiculoId] = useState('')
   const [chofer, setChofer] = useState('')
   const [cedula, setCedula] = useState('')
   const [ticket, setTicket] = useState('')
@@ -74,10 +76,39 @@ export function Despachos() {
   const [observacion, setObservacion] = useState('')
   const [filas, setFilas] = useState<FilaRenglon[]>([filaVacia()])
 
+  const { data: vehiculos } = useVehiculos()
   const { data: tickets } = useTickets('LIBRE')
   const { data: guias } = useGuias('VIGENTE')
 
   const ticketsLibres = (tickets ?? []).filter((t) => t.tipo === 'SALIDA')
+
+  /*
+    LA CAPACIDAD DEL CAMIÓN, CONTRASTADA CON LO QUE SE VA A CARGAR
+
+    Es la razón de que exista el catálogo de vehículos. La cantera despacha en
+    metros cúbicos y sus camiones tienen medida conocida —el volteo lleva unos
+    18 m³, el chuto unos 25—, así que despachar 30 en uno de 18 es un error que
+    se puede ver antes de que el camión salga.
+
+    Avisa, no impide. Puede ser deliberado: dos viajes con la misma nota, o una
+    carga que se completa después. Bloquearlo obligaría a inventar una excusa
+    para algo legítimo; callarlo dejaría pasar el error de tecleo. El aviso es
+    la única de las tres opciones que respeta las dos situaciones.
+
+    Solo cuenta los renglones en M³. Un renglón en sacos o en unidades no ocupa
+    la volqueta del mismo modo y sumarlo daría un número sin sentido.
+  */
+  const porPlaca = (placa: string) =>
+    (vehiculos ?? []).find((v) => v.placa === placa.trim().toUpperCase().replace(/\s+/g, ''))
+
+  const vehiculoElegido = (vehiculos ?? []).find((v) => String(v.id) === vehiculoId) ?? null
+
+  const m3EnLaCarga = filas
+    .filter((f) => f.unidad === 'M3')
+    .reduce((suma, f) => suma + Number(f.cantidad || 0), 0)
+
+  const excedeCapacidad =
+    vehiculoElegido !== null && m3EnLaCarga > Number(vehiculoElegido.capacidad_m3)
   const guiasVigentes = (guias ?? []).filter((g) => !g.vencida)
 
   const { data: existencias } = useExistencias(almacenId ? Number(almacenId) : undefined)
@@ -98,6 +129,7 @@ export function Despachos() {
     setClienteId('')
     setMoneda('USD')
     setVehiculo('')
+    setVehiculoId('')
     setChofer('')
     setCedula('')
     setTicket('')
@@ -249,6 +281,29 @@ export function Despachos() {
           descripcion="Esto rebaja el patio en el acto. Si el camión no sale, hay que anular la nota."
           acciones={
             <>
+              {/* Ocupa toda la fila para que no compita con los botones: es
+                  una advertencia, no un control. */}
+              {excedeCapacidad ? (
+                <p className="border-warning/40 bg-warning-soft text-ink/80 mb-1 w-full rounded-[6px] border px-3 py-2 text-sm">
+                  Se están cargando{' '}
+                  <strong className="font-semibold">
+                    {m3EnLaCarga.toLocaleString('es-VE', { maximumFractionDigits: 2 })} m³
+                  </strong>{' '}
+                  en un vehículo de {Number(vehiculoElegido!.capacidad_m3)} m³. Si es a propósito
+                  —dos viajes, carga parcial— sigue adelante.
+                </p>
+              ) : null}
+
+              {vehiculoElegido?.semaforo_mantenimiento === 'BLOQUEANTE' ? (
+                <p
+                  role="alert"
+                  className="border-danger bg-danger-soft text-danger mb-1 w-full rounded-[6px] border px-3 py-2 text-sm font-medium"
+                >
+                  {vehiculoElegido.placa} pasó su tope de mantenimiento. No debería estar
+                  trabajando.
+                </p>
+              ) : null}
+
               <Button
                 variant="ghost"
                 onClick={() => {
@@ -360,6 +415,10 @@ export function Despachos() {
                   const t = ticketsLibres.find((x) => String(x.id) === e.target.value)
                   if (t) {
                     setVehiculo(t.vehiculo)
+                    // La báscula guarda la placa como texto. Si ese
+                    // camión está en el catálogo, se engancha para
+                    // que su capacidad entre en juego sin pedirla.
+                    setVehiculoId(String(porPlaca(t.vehiculo)?.id ?? ''))
                     setChofer(t.chofer ?? '')
                     setCedula(t.cedula_chofer ?? '')
                     setBruto(String(Number(t.peso_bruto)))
@@ -396,12 +455,39 @@ export function Despachos() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <Input
-                label="Placa del vehículo"
-                placeholder="A12BC3D"
-                value={vehiculo}
-                onChange={(e) => setVehiculo(e.target.value)}
+              <Select
+                label="Vehículo"
+                vacio="Otro (escribir la placa)"
+                value={vehiculoId}
+                onChange={(e) => {
+                  setVehiculoId(e.target.value)
+                  const v = (vehiculos ?? []).find((x) => String(x.id) === e.target.value)
+                  // La placa sigue viajando como texto: es lo que se imprime
+                  // en la nota, y un documento emitido no puede cambiar
+                  // porque después se corrija el catálogo.
+                  setVehiculo(v ? v.placa : '')
+                }}
+                opciones={(vehiculos ?? []).map((v) => ({
+                  valor: String(v.id),
+                  etiqueta: `${v.placa} · ${Number(v.capacidad_m3)} m³${
+                    v.transportista ? ` · ${v.transportista}` : ''
+                  }`,
+                }))}
+                hint={
+                  (vehiculos ?? []).length === 0
+                    ? 'No hay vehículos cargados. Se dan de alta en Despachos › Vehículos.'
+                    : undefined
+                }
               />
+              {vehiculoId === '' ? (
+                <Input
+                  label="Placa del vehículo"
+                  placeholder="A12BC3D"
+                  value={vehiculo}
+                  onChange={(e) => setVehiculo(e.target.value)}
+                  hint="No está en el catálogo: no se podrá contrastar con su capacidad."
+                />
+              ) : null}
               <Input label="Chofer" value={chofer} onChange={(e) => setChofer(e.target.value)} />
               <Input
                 label="Cédula del chofer"

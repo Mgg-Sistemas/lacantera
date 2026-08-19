@@ -73,7 +73,7 @@ export interface Existencia {
   ultimo_movimiento: string | null
 }
 
-export function useExistencias(almacenId?: number) {
+export function useExistencias(almacenId?: number, activa = true) {
   return useQuery({
     queryKey: ['existencias', almacenId ?? 'todos'],
     queryFn: async () => {
@@ -81,6 +81,68 @@ export function useExistencias(almacenId?: number) {
       if (almacenId) q = q.eq('almacen_id', almacenId)
       return desenvolver<Existencia[]>(await q)
     },
+    enabled: activa,
+  })
+}
+
+/**
+ * El inventario de la empresa entero, sin partir por almacén.
+ *
+ * POR QUÉ NO SE SUMA EN LA PANTALLA
+ *
+ * La existencia sí se podría sumar aquí. El costo promedio no: promediar los
+ * promedios de cada almacén da un número que no es el costo de nada. La vista
+ * lo recalcula sobre el libro completo, que es la única forma de que cuadre.
+ */
+export interface ExistenciaTotal {
+  articulo_id: number
+  articulo_codigo: string
+  articulo: string
+  categoria: string
+  unidad: string
+  stock_minimo: string
+  densidad_ton_m3: string | null
+  existencia: string
+  /** La misma existencia en la otra medida. Nula si nadie midió la densidad. */
+  existencia_equivalente: string | null
+  unidad_equivalente: string | null
+  valor_usd: string
+  costo_promedio_usd: string | null
+  /** En cuántos almacenes o talleres ha pasado por el libro. */
+  almacenes: number
+  ultimo_movimiento: string | null
+}
+
+export function useExistenciasTotales(activa = true) {
+  return useQuery({
+    queryKey: ['existencias-totales'],
+    queryFn: async () =>
+      desenvolver<ExistenciaTotal[]>(
+        await supabase.from('v_existencias_totales').select('*').order('articulo'),
+      ),
+    enabled: activa,
+  })
+}
+
+/**
+ * Dónde está repartido un artículo.
+ *
+ * Es el escalón que faltaba entre el total de la empresa y un almacén
+ * concreto: ver que hay 400 sacos no dice en cuál de los cuatro sitios
+ * buscarlos.
+ */
+export function useExistenciasDeArticulo(articuloId: number | null) {
+  return useQuery({
+    queryKey: ['existencias-articulo', articuloId],
+    queryFn: async () =>
+      desenvolver<Existencia[]>(
+        await supabase
+          .from('v_existencias')
+          .select('*')
+          .eq('articulo_id', articuloId!)
+          .order('almacen'),
+      ),
+    enabled: articuloId !== null,
   })
 }
 
