@@ -18,7 +18,6 @@ import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
   CONDICIONES_PAGO,
-  METODOS_COBRO,
   useAnularCobro,
   useAnularFactura,
   useCobros,
@@ -30,6 +29,7 @@ import {
   type FacturaVenta,
 } from '@/lib/api/ventas'
 import { TablaRenglones, Totales } from './Cotizaciones'
+import { useMetodosPago, nombreDe, opcionesDe } from '@/lib/api/metodosPago'
 
 const TONO: Record<string, 'royal' | 'success' | 'neutral'> = {
   EMITIDA: 'royal',
@@ -44,6 +44,7 @@ const ETIQUETA: Record<string, string> = {
 }
 
 export function Facturacion() {
+  const { data: metodos } = useMetodosPago()
   const { data, isPending, error } = useFacturas()
   const porFacturar = useNotasEntrega('DESPACHADA')
   const { data: empresa } = useEmpresa()
@@ -460,7 +461,7 @@ export function Facturacion() {
                     <div className="min-w-0">
                       <p className="text-ink/80">
                         {c.numero} ·{' '}
-                        {METODOS_COBRO.find((m) => m.valor === c.metodo)?.etiqueta ?? c.metodo}
+                        {nombreDe(metodos, c.metodo)}
                         {c.estado === 'ANULADO' ? ' · anulado' : ''}
                       </p>
                       <p className="text-ink/45 text-xs">
@@ -567,7 +568,7 @@ export function Facturacion() {
               label="Cómo pagó"
               value={metodo}
               onChange={(e) => setMetodo(e.target.value)}
-              opciones={METODOS_COBRO}
+              opciones={opcionesDe(metodos)}
             />
             <Input
               label="Referencia"

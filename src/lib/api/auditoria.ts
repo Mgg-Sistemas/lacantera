@@ -36,6 +36,14 @@ export interface FiltrosAuditoria {
   tabla?: string
   operacion?: string
   texto?: string
+  /**
+   * Traer también lo que hizo el sistema por su cuenta. Apagado por defecto.
+   *
+   * Ver la nota en la consulta: una limpieza de mantenimiento escribe cientos
+   * de renglones de golpe y tapa lo que hicieron las personas, que es a lo que
+   * se entra a esta pantalla.
+   */
+  incluirSistema?: boolean
 }
 
 /** Cuántos renglones se traen de una vez. */
@@ -51,6 +59,23 @@ export function useAuditoria(filtros: FiltrosAuditoria, pagina: number) {
         .order('ocurrido_en', { ascending: false })
         .order('id', { ascending: false })
         .range(pagina * POR_PAGINA, pagina * POR_PAGINA + POR_PAGINA - 1)
+
+      /*
+        Por defecto, solo lo que hizo alguien.
+
+        Un mantenimiento —una limpieza de datos, una migración que reordena
+        filas— escribe cientos de renglones en el mismo segundo, todos con la
+        misma pinta que si una persona hubiera borrado una factura a mano. El
+        18 de agosto una limpieza de datos de prueba dejó 95 renglones rojos
+        seguidos y hubo que borrarlos para que la pantalla volviera a ser
+        legible. Esto evita tener que volver a tocar la bitácora: los registros
+        se quedan, simplemente no tapan.
+
+        La marca no es el nombre `SISTEMA` sino `usuario_id` nulo, que es la
+        diferencia de verdad: lo que corre sin sesión no tiene quién. Filtrar
+        por el texto fallaría el día que alguien llame a un usuario así.
+      */
+      if (!filtros.incluirSistema) q = q.not('usuario_id', 'is', null)
 
       if (filtros.desde) q = q.gte('ocurrido_en', `${filtros.desde}T00:00:00`)
       // Hasta el final del día elegido: quien escribe "hasta el 30" espera que

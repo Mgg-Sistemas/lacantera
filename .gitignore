@@ -121,3 +121,33 @@ docs/vistas-por-rol.md
 # Mismo motivo que los otros dos: andamiaje de como trabajamos, no
 # documentacion del producto. Este repositorio es publico.
 docs/traspaso-al-carril-unico.md
+
+# El andamio de la base local.
+#
+# Recrea el esquema para las pruebas, e incluye la clave provisional del
+# administrador. Es una base desechable que solo existe en el equipo de quien
+# la levanta, pero la clave no tiene por que viajar a un repositorio publico.
+supabase/local/
+
+# Documentos de trabajo en Markdown.
+#
+# Instruccion del 2026-08-19: todo .md nuevo queda fuera salvo que se diga lo
+# contrario. Lo que se escribe entre carriles —investigaciones, traspasos,
+# analisis a medio cocer— es andamiaje de como trabajamos, no documentacion del
+# producto, y este repositorio es publico.
+#
+# Los .md que YA estaban rastreados siguen estandolo: .gitignore no destrackea.
+# Eso salva a docs/manual-de-usuario.md, que la compilacion convierte a HTML en
+# cada build; si saliera del repo, un clon limpio no compilaria.
+#
+# Para versionar uno nuevo a proposito: git add -f, o una excepcion aqui.
+*.md
+
+# Originales de marca y paleta.
+#
+# Son material de origen, no piezas que sirva la web: de logoNuevo2.png salen
+# media/marca.webp y los tres favicones, y paleta_colores.jpeg es la referencia
+# de color que ya vive en index.css. Dentro de public/ los dos se publican y se
+# descargan con la pagina —253 KB que nadie pide— asi que se quedan en el equipo.
+public/logoNuevo*.png
+public/paleta_colores.jpeg

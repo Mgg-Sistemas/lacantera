@@ -13,10 +13,11 @@ import { dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useProveedores } from '@/lib/api/catalogo'
+import { useEmpresa } from '@/lib/api/empresa'
 import { useCuentas } from '@/lib/api/tesoreria'
+import { useMetodosPago, nombreDe, opcionesDe } from '@/lib/api/metodosPago'
 import {
   CONDICIONES_COMPRA,
-  METODOS_PAGO_COMPRA,
   useAnularFacturaCompra,
   useAnularPagoCompra,
   useFacturasCompra,
@@ -57,13 +58,31 @@ const vacio = {
   base: '',
   alicuota: '16',
   iva: '',
+  retencion_iva: '',
+  retencion_islr: '',
   total_papel: '',
   observacion: '',
 }
 
+/**
+ * Lo que se le retiene de IVA a un proveedor.
+ *
+ * Solo a quien está marcado como contribuyente especial en su ficha, y por el
+ * porcentaje que la empresa tenga configurado en sus datos fiscales. Se propone
+ * y se deja tocar: el porcentaje sube al 100% cuando la factura no cumple los
+ * requisitos del reglamento, y eso lo ve quien tiene el papel delante, no el
+ * sistema.
+ */
+function retencionQueTocaria(iva: number, especial: boolean, pct: number | null): number {
+  if (!especial || iva <= 0) return 0
+  return Math.round(iva * (pct ?? 75)) / 100
+}
+
 export function FacturasProveedor() {
+  const { data: metodos } = useMetodosPago()
   const { data, isPending, error } = useFacturasCompra()
   const { data: proveedores } = useProveedores()
+  const { data: empresa } = useEmpresa()
   const { data: cuentas } = useCuentas()
   const registrar = useRegistrarFacturaCompra()
   const anular = useAnularFacturaCompra()
@@ -100,6 +119,40 @@ export function FacturasProveedor() {
     nueva && Number(nueva.total_papel) > 0
       ? Math.abs(Number(nueva.total_papel) - totalCalculado) > 0.01
       : false
+
+  const proveedorElegido = nueva
+    ? (proveedores ?? []).find((p) => String(p.id) === nueva.proveedor_id)
+    : undefined
+
+  const retencionPropuesta = nueva
+    ? retencionQueTocaria(
+        Number(nueva.iva) || 0,
+        proveedorElegido?.contribuyente_especial ?? false,
+        empresa?.retencion_iva_pct ?? null,
+      )
+    : 0
+
+  // Lo que de verdad sale de tesorería: el total del papel menos lo que se le
+  // retiene y se entera al SENIAT en su lugar. Es la cifra que se transfiere,
+  // y verla aquí evita el error de pagarle el IVA completo al proveedor.
+  const netoAPagar =
+    totalCalculado - (Number(nueva?.retencion_iva) || 0) - (Number(nueva?.retencion_islr) || 0)
+
+  // La retención se vuelve a proponer cada vez que cambia algo de lo que
+  // depende: el proveedor decide si se retiene y el IVA decide cuánto. Pisa lo
+  // tecleado a propósito, igual que la base pisa el IVA — quien quiera otra
+  // cifra la escribe después, que es el orden en que se rellena el papel.
+  const conRetencionPropuesta = (estado: typeof vacio) => ({
+    ...estado,
+    retencion_iva: String(
+      retencionQueTocaria(
+        Number(estado.iva) || 0,
+        (proveedores ?? []).find((p) => String(p.id) === estado.proveedor_id)
+          ?.contribuyente_especial ?? false,
+        empresa?.retencion_iva_pct ?? null,
+      ) || '',
+    ),
+  })
 
   const porPagar = (data ?? []).filter((f) => f.estado === 'REGISTRADA')
   const vencidas = porPagar.filter((f) => f.dias_vencida > 0).length
@@ -217,7 +270,9 @@ export function FacturasProveedor() {
                   !nueva.numero_factura.trim() ||
                   !nueva.fecha_emision ||
                   totalCalculado <= 0 ||
-                  descuadre
+                  descuadre ||
+                  // La base lo rechaza igual, pero enterarse aquí ahorra el viaje.
+                  Number(nueva.retencion_iva) > (Number(nueva.iva) || 0) + 0.01
                 }
                 onClick={async () => {
                   await registrar.mutateAsync({
@@ -231,6 +286,8 @@ export function FacturasProveedor() {
                     numero_control: nueva.numero_control || null,
                     condicion_pago: nueva.condicion_pago,
                     alicuota_iva: Number(nueva.alicuota) || 16,
+                    retencion_iva: Number(nueva.retencion_iva) || 0,
+                    retencion_islr: Number(nueva.retencion_islr) || 0,
                     total_del_papel: Number(nueva.total_papel) || null,
                     observacion: nueva.observacion || null,
                   })
@@ -247,7 +304,9 @@ export function FacturasProveedor() {
               label="Proveedor"
               vacio="Elige el proveedor"
               value={nueva.proveedor_id}
-              onChange={(e) => setNueva({ ...nueva, proveedor_id: e.target.value })}
+              onChange={(e) =>
+                setNueva(conRetencionPropuesta({ ...nueva, proveedor_id: e.target.value }))
+              }
               opciones={(proveedores ?? []).map((p) => ({
                 valor: String(p.id),
                 etiqueta: `${p.rif} · ${p.nombre}`,
@@ -308,15 +367,17 @@ export function FacturasProveedor() {
               inputMode="decimal"
               value={nueva.base}
               onChange={(e) =>
-                setNueva({
-                  ...nueva,
-                  base: e.target.value,
-                  iva: String(
-                    Math.round(
-                      ((Number(e.target.value) || 0) * (Number(nueva.alicuota) || 0)) / 100 * 100,
-                    ) / 100,
-                  ),
-                })
+                setNueva(
+                  conRetencionPropuesta({
+                    ...nueva,
+                    base: e.target.value,
+                    iva: String(
+                      Math.round(
+                        ((Number(e.target.value) || 0) * (Number(nueva.alicuota) || 0)) / 100 * 100,
+                      ) / 100,
+                    ),
+                  }),
+                )
               }
             />
             <Input
@@ -335,7 +396,7 @@ export function FacturasProveedor() {
               step="0.01"
               inputMode="decimal"
               value={nueva.iva}
-              onChange={(e) => setNueva({ ...nueva, iva: e.target.value })}
+              onChange={(e) => setNueva(conRetencionPropuesta({ ...nueva, iva: e.target.value }))}
               hint={
                 Number(nueva.iva) > 0 && Math.abs(Number(nueva.iva) - ivaPropuesto) > 0.01
                   ? `Por la alícuota daría ${ivaPropuesto.toFixed(2)}`
@@ -353,6 +414,39 @@ export function FacturasProveedor() {
               error={descuadre ? `Lo tecleado suma ${totalCalculado.toFixed(2)}` : undefined}
               hint="Opcional. Sirve para que el sistema compruebe la suma."
             />
+            <Input
+              label="Retención de IVA"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={nueva.retencion_iva}
+              onChange={(e) => setNueva({ ...nueva, retencion_iva: e.target.value })}
+              error={
+                Number(nueva.retencion_iva) > (Number(nueva.iva) || 0) + 0.01
+                  ? 'No se retiene más IVA del que trae la factura'
+                  : undefined
+              }
+              hint={
+                !nueva.proveedor_id
+                  ? 'Se propone al elegir el proveedor'
+                  : !proveedorElegido?.contribuyente_especial
+                    ? 'A este proveedor no se le retiene: no está marcado como contribuyente especial'
+                    : Math.abs(Number(nueva.retencion_iva) - retencionPropuesta) > 0.01
+                      ? `Por los datos de la empresa tocarían ${retencionPropuesta.toFixed(2)}`
+                      : `${empresa?.retencion_iva_pct ?? 75}% del IVA, según los datos fiscales de la empresa`
+              }
+            />
+            <Input
+              label="Retención de ISLR"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={nueva.retencion_islr}
+              onChange={(e) => setNueva({ ...nueva, retencion_islr: e.target.value })}
+              hint="Solo si al proveedor le aplica por su actividad"
+            />
             <div className="flex items-end">
               <div className="bg-ink/4 rounded-card w-full p-3">
                 <p className="text-ink/45 text-xs">Total</p>
@@ -361,6 +455,21 @@ export function FacturasProveedor() {
                 </p>
               </div>
             </div>
+            {/* Lo que se transfiere. Solo aparece cuando hay algo retenido:
+                sin retenciones sería el total otra vez y solo haría ruido. */}
+            {netoAPagar < totalCalculado - 0.01 ? (
+              <div className="flex items-end sm:col-span-2">
+                <div className="bg-royal-600/8 rounded-card w-full p-3">
+                  <p className="text-ink/45 text-xs">Neto a pagar al proveedor</p>
+                  <p className="tabular text-royal-700 dark:text-royal-300 text-lg font-semibold">
+                    {dinero(nueva.moneda, netoAPagar)}
+                  </p>
+                  <p className="text-ink/45 mt-0.5 text-xs">
+                    El resto se retiene y se entera al SENIAT
+                  </p>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <Textarea
@@ -449,6 +558,41 @@ export function FacturasProveedor() {
                 {dinero(detalle.moneda, detalle.total)}
               </span>
             </div>
+
+            {/* Lo retenido no se le paga al proveedor: se entera al SENIAT. Sin
+                verlo aquí, el total de arriba parece lo que hay que transferir. */}
+            {Number(detalle.retencion_iva) > 0 || Number(detalle.retencion_islr) > 0 ? (
+              <>
+                {Number(detalle.retencion_iva) > 0 ? (
+                  <div className="flex justify-between">
+                    <span className="text-ink/55">IVA retenido</span>
+                    <span className="tabular text-ink/80">
+                      −{dinero(detalle.moneda, detalle.retencion_iva)}
+                    </span>
+                  </div>
+                ) : null}
+                {Number(detalle.retencion_islr) > 0 ? (
+                  <div className="flex justify-between">
+                    <span className="text-ink/55">ISLR retenido</span>
+                    <span className="tabular text-ink/80">
+                      −{dinero(detalle.moneda, detalle.retencion_islr)}
+                    </span>
+                  </div>
+                ) : null}
+                <div className="border-hairline flex justify-between border-t pt-1.5">
+                  <span className="text-ink/75 font-medium">Neto al proveedor</span>
+                  <span className="tabular text-ink/90 font-semibold">
+                    {dinero(
+                      detalle.moneda,
+                      Number(detalle.total) -
+                        Number(detalle.retencion_iva) -
+                        Number(detalle.retencion_islr),
+                    )}
+                  </span>
+                </div>
+              </>
+            ) : null}
+
             {detalle.estado === 'REGISTRADA' ? (
               <p className="text-ink/55 border-hairline mt-2 border-t pt-2">
                 Pagado {dolares(detalle.pagado_usd)} · falta{' '}
@@ -471,7 +615,7 @@ export function FacturasProveedor() {
                     <div className="min-w-0">
                       <p className="text-ink/80">
                         {p.numero} ·{' '}
-                        {METODOS_PAGO_COMPRA.find((m) => m.valor === p.metodo)?.etiqueta ?? p.metodo}
+                        {nombreDe(metodos, p.metodo)}
                         {p.estado === 'ANULADO' ? ' · anulado' : ''}
                       </p>
                       <p className="text-ink/45 text-xs">
@@ -574,7 +718,7 @@ export function FacturasProveedor() {
               label="Cómo se pagó"
               value={metodo}
               onChange={(e) => setMetodo(e.target.value)}
-              opciones={METODOS_PAGO_COMPRA}
+              opciones={opcionesDe(metodos)}
             />
             <Input
               label="Referencia"

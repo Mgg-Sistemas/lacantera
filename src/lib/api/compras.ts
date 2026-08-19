@@ -235,7 +235,7 @@ export function useOrdenesPorRecibir() {
           // Lo pagado y lo parcial es lo que de verdad está por llegar. Una
           // orden que sigue en tesorería no salió del banco todavía, y el
           // proveedor no despacha lo que no le han pagado.
-          .in('estado', ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL'])
+          .in('estado', ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'POR_RECIBIR'])
           .order('fecha_pago', { ascending: true, nullsFirst: false }),
       ),
     refetchInterval: 5 * 60_000,
@@ -493,17 +493,6 @@ export function useDevolverACotizacion() {
   )
 }
 
-export const METODOS_PAGO = [
-  { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia bancaria' },
-  { valor: 'PAGO_MOVIL', etiqueta: 'Pago móvil' },
-  { valor: 'BINANCE', etiqueta: 'Binance' },
-  { valor: 'EFECTIVO', etiqueta: 'Efectivo' },
-]
-
-/** El mismo listado, para mostrar un método ya elegido. */
-export const METODO_LEGIBLE: Record<string, string> = Object.fromEntries(
-  METODOS_PAGO.map((m) => [m.valor, m.etiqueta]),
-)
 
 export interface DatosPago {
   banco?: string

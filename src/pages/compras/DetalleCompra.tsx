@@ -16,6 +16,7 @@ import {
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { ChipTasa } from '@/components/ChipTasa'
 import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
@@ -42,7 +43,7 @@ import {
   useProponerCotizacion,
   useResolverDesistimiento,
 } from '@/lib/api/compras'
-import { METODO_LEGIBLE } from '@/lib/api/compras'
+import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import type { Cotizacion, InstruccionPago } from '@/lib/api/compras'
 import { bolivares, dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -58,6 +59,8 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   CANCELADA: { texto: 'Cancelada', tono: 'neutral' },
   POR_INDICAR_PAGO: { texto: 'Aprobada · indicar método de pago', tono: 'warning' },
   EN_TESORERIA: { texto: 'En tesorería', tono: 'info' },
+  // Contra entrega: aprobada y esperando el material, sin un bolivar fuera.
+  POR_RECIBIR: { texto: 'Contra entrega · esperando el material', tono: 'info' },
   PAGADA_POR_RECIBIR: { texto: 'Pagada · pendiente por recepcionar', tono: 'success' },
   RECIBIDA_PARCIAL: { texto: 'Recibida parcialmente', tono: 'success' },
   RECIBIDA: { texto: 'Recibida', tono: 'success' },
@@ -234,13 +237,14 @@ function TarjetaInstruccion({
   onPagar: () => void
   onDevolver: () => void
 }) {
+  const { data: metodos } = useMetodosPago()
   const i = instruccion
 
   return (
     <div className="border-hairline rounded-card border p-3.5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-ink/90 text-base font-medium">{METODO_LEGIBLE[i.metodo]}</p>
+          <p className="text-ink/90 text-base font-medium">{nombreDe(metodos, i.metodo)}</p>
           <p className="text-ink/50 text-xs">Cargada el {fechaHora(i.creada_en)}</p>
         </div>
         <Chip
@@ -421,7 +425,12 @@ export function DetalleCompra() {
 
   // La columna de recibido solo aparece cuando ya hay algo que recibir: antes
   // del pago sería una columna de ceros.
-  const muestraRecibido = ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'RECIBIDA'].includes(
+  const muestraRecibido = [
+    'PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'RECIBIDA',
+    // Contra entrega recibe antes de pagar, asi que lo recibido importa
+    // desde que la orden existe y no solo despues del pago.
+    'POR_RECIBIR', 'POR_INDICAR_PAGO', 'EN_TESORERIA',
+  ].includes(
     orden?.estado ?? '',
   )
 
@@ -435,11 +444,17 @@ export function DetalleCompra() {
         title={compra.titulo}
         description={`${compra.numero}${orden ? ` · Orden ${orden.numero}` : ''} · pedido por ${solicitante}${solicitanteCargo ? ` (${solicitanteCargo})` : ''}`}
         actions={
-          <Link to="/app/compras">
-            <Button variant="outline" icon={<ArrowLeft />}>
-              Tablero
-            </Button>
-          </Link>
+          <>
+            {/* Aquí se cotiza, se aprueba y se paga, y las tres cosas congelan
+                la tasa en la fila. Verla sin salir de la pantalla evita el
+                error caro: emitir un lunes con la tasa del viernes. */}
+            <ChipTasa className="self-center" />
+            <Link to="/app/compras">
+              <Button variant="outline" icon={<ArrowLeft />}>
+                Tablero
+              </Button>
+            </Link>
+          </>
         }
       />
 
@@ -836,7 +851,7 @@ export function DetalleCompra() {
                 )
               ) : null}
 
-              {orden && ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL'].includes(orden.estado) ? (
+              {orden && ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'POR_RECIBIR'].includes(orden.estado) ? (
                 <>
                   <div className="border-success/25 bg-success-soft rounded-[6px] border p-3">
                     <p className="text-ink/80 text-sm">

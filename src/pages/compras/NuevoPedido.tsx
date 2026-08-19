@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { ChipTasa } from '@/components/ChipTasa'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
@@ -114,11 +115,18 @@ export function NuevoPedido() {
         title="Nuevo pedido"
         description="Lo que pidas aquí entra al tablero en la columna Pedido."
         actions={
-          <Link to="/app/compras">
-            <Button variant="outline" icon={<ArrowLeft />}>
-              Volver al tablero
-            </Button>
-          </Link>
+          <>
+            {/* Con qué se va a valorar lo que se pida aquí. Va en la cabecera y
+                no junto al total porque a un pedido todavía no se le ponen
+                precios: lo que hay que saber antes de empezar es si la tasa del
+                día está cargada, no cuánto suma. */}
+            <ChipTasa className="self-center" />
+            <Link to="/app/compras">
+              <Button variant="outline" icon={<ArrowLeft />}>
+                Volver al tablero
+              </Button>
+            </Link>
+          </>
         }
       />
 

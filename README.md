@@ -69,6 +69,27 @@ Por eso en GitHub Actions estas pruebas van en un job aparte que se salta solo
 cuando el secreto no está: quien abre un pull request desde una bifurcación no
 tiene acceso a los secretos del repositorio.
 
+### Sin la contraseña de producción
+
+No siempre se tiene la cadena de conexión a mano, y repartirla tampoco es
+gratis: da acceso total de escritura a la base de la empresa. Para eso está la
+base local, que solo necesita Docker.
+
+```bash
+node supabase/local/preparar.mjs
+```
+
+Levanta un PostgreSQL en el 55432, le aplica el andamio y todas las
+migraciones, e imprime la línea de `DBURL` a usar. El andamio
+(`supabase/local/andamio.sql`) fabrica lo que las migraciones dan por hecho y
+un Postgres desnudo no tiene: el esquema `auth`, `storage`, la publicación de
+tiempo real y los roles `anon` y `authenticated`.
+
+Sirve para comprobar que las funciones calculan bien. **No sirve** para
+comprobar que lo cargado en producción está bien: ahí no hay ni un dato real, y
+esa es otra pregunta. Tampoco pasa por GoTrue — las pruebas se identifican
+poniendo el `sub` en `request.jwt.claims`, no iniciando sesión.
+
 ## Ramas (gitflow-simple)
 
 | Rama | Propósito |

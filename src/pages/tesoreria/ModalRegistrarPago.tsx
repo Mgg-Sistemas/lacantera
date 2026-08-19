@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useCuentas, useRegistrarPago } from '@/lib/api/tesoreria'
-import { METODO_LEGIBLE } from '@/lib/api/compras'
+import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import { dinero } from '@/lib/formato'
 
 /**
@@ -35,6 +35,7 @@ export function ModalRegistrarPago({
   instruccion: InstruccionPagable
   onCerrar: () => void
 }) {
+  const { data: metodos } = useMetodosPago()
   const { data: cuentas } = useCuentas(true)
   const pagar = useRegistrarPago()
 
@@ -65,7 +66,7 @@ export function ModalRegistrarPago({
       abierto
       onCerrar={onCerrar}
       titulo="Registrar el pago"
-      descripcion={`${METODO_LEGIBLE[instruccion.metodo]} por ${dinero(instruccion.moneda, instruccion.monto)}`}
+      descripcion={`${nombreDe(metodos, instruccion.metodo)} por ${dinero(instruccion.moneda, instruccion.monto)}`}
       ancho="sm"
       acciones={
         <>

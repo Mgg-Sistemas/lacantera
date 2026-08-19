@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { ChipTasa } from '@/components/ChipTasa'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { METODOS_PAGO, useIndicarPago } from '@/lib/api/compras'
+import { useIndicarPago } from '@/lib/api/compras'
+import { useMetodosPago, opcionesDe, monedasDe } from '@/lib/api/metodosPago'
+import { MONEDAS } from '@/lib/api/ventas'
+import { CamposDePago } from '@/components/CamposDePago'
 import type { DatosPago, Orden } from '@/lib/api/compras'
 import { bolivares, dolares } from '@/lib/formato'
-import { BANCOS } from '@/lib/bancos'
 
 interface Props {
   abierto: boolean
@@ -18,6 +21,7 @@ interface Props {
 
 export function ModalPago({ abierto, onCerrar, orden }: Props) {
   const indicar = useIndicarPago()
+  const { data: metodos } = useMetodosPago()
 
   // Lo instruido y lo pagado ya reservan parte de la orden; lo que se ofrece
   // por defecto es lo que falta, no el total.
@@ -32,23 +36,32 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
   const [datos, setDatos] = useState<DatosPago>({})
   const [nota, setNota] = useState('')
 
+  const elegido = (metodos ?? []).find((m) => m.codigo === metodo)
+
   const cambiar = (cambios: DatosPago) => setDatos((d) => ({ ...d, ...cambios }))
 
-  // El pago móvil solo existe en bolívares y Binance no liquida en bolívares.
-  const monedasPosibles =
-    metodo === 'PAGO_MOVIL'
-      ? [{ valor: 'VES', etiqueta: 'Bolívares' }]
-      : metodo === 'BINANCE'
-        ? [{ valor: 'USD', etiqueta: 'Dólares (USDT)' }]
-        : [
-            { valor: 'USD', etiqueta: 'Dólares' },
-            { valor: 'VES', etiqueta: 'Bolívares' },
-          ]
+  /*
+    Las monedas que admite el método las dice el catálogo, no un `if`.
+
+    Antes esto era una escalera: si es pago móvil, bolívares; si es Binance,
+    dólares; si no, las dos. Cada método nuevo obligaba a añadir un peldaño, y
+    la misma regla estaba además escrita en la base. Ahora hay una sola:
+    `moneda_regla`.
+  */
+  const monedasPosibles = monedasDe(elegido, MONEDAS)
 
   const cambiarMetodo = (nuevo: string) => {
     setMetodo(nuevo)
-    if (nuevo === 'PAGO_MOVIL') setMoneda('VES')
-    if (nuevo === 'BINANCE') setMoneda('USD')
+
+    // Si la moneda puesta no le sirve al método nuevo, se pasa a la primera que
+    // sí. Dejarla inválida haría que el guardado fallara al llegar a la base
+    // con un mensaje que no señala el selector que hay que corregir.
+    const m = (metodos ?? []).find((x) => x.codigo === nuevo)
+    const admitidas = monedasDe(m, MONEDAS)
+    if (!admitidas.some((x) => x.valor === moneda) && admitidas[0]) {
+      setMoneda(admitidas[0].valor)
+    }
+
     setDatos({})
   }
 
@@ -84,12 +97,18 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
         </>
       }
     >
+      {/* De las tres pantallas donde va el chip, esta es la que más lo
+          necesita: aquí se elige moneda y monto, y si el pago va en bolívares
+          la tasa decide cuánto sale de la cuenta. Puesto arriba del formulario
+          se lee antes de escribir la cifra, no después. */}
+      <ChipTasa className="mb-4" />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Select
           label="Cómo se paga"
           value={metodo}
           onChange={(e) => cambiarMetodo(e.target.value)}
-          opciones={METODOS_PAGO}
+          opciones={opcionesDe(metodos)}
         />
 
         <Select
@@ -122,114 +141,7 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
 
       <h3 className="text-ink/85 mt-6 mb-2 text-sm font-semibold">Datos de la transacción</h3>
 
-      {metodo === 'TRANSFERENCIA' ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Select
-            label="Banco"
-            vacio="Elige el banco"
-            value={datos.banco ?? ''}
-            onChange={(e) => cambiar({ banco: e.target.value })}
-            opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}
-          />
-          <Input
-            label="Número de cuenta"
-            inputMode="numeric"
-            placeholder="0102 0000 00 0000000000"
-            value={datos.numero_cuenta ?? ''}
-            onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
-          />
-          <Input
-            label="Titular de la cuenta"
-            value={datos.titular ?? ''}
-            onChange={(e) => cambiar({ titular: e.target.value })}
-          />
-          <Input
-            label="Cédula o RIF del titular"
-            placeholder="J-12345678-9"
-            value={datos.documento ?? ''}
-            onChange={(e) => cambiar({ documento: e.target.value })}
-          />
-        </div>
-      ) : null}
-
-      {metodo === 'PAGO_MOVIL' ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Select
-            label="Banco"
-            vacio="Elige el banco"
-            value={datos.banco ?? ''}
-            onChange={(e) => cambiar({ banco: e.target.value })}
-            opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}
-          />
-          <Input
-            label="Teléfono"
-            inputMode="tel"
-            placeholder="0414 1234567"
-            value={datos.telefono ?? ''}
-            onChange={(e) => cambiar({ telefono: e.target.value })}
-          />
-          <Input
-            label="Cédula o RIF"
-            placeholder="V-12345678"
-            value={datos.documento ?? ''}
-            onChange={(e) => cambiar({ documento: e.target.value })}
-          />
-          <Input
-            label="A nombre de"
-            value={datos.titular ?? ''}
-            onChange={(e) => cambiar({ titular: e.target.value })}
-          />
-        </div>
-      ) : null}
-
-      {metodo === 'BINANCE' ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input
-            label="Correo o Pay ID de Binance"
-            value={datos.correo_binance ?? ''}
-            onChange={(e) => cambiar({ correo_binance: e.target.value })}
-          />
-          <Input
-            label="Dirección de la billetera"
-            hint="Si se paga por red en vez de Pay ID"
-            value={datos.numero_cuenta ?? ''}
-            onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
-          />
-          <Select
-            label="Red"
-            vacio="Sin especificar"
-            value={datos.red_cripto ?? ''}
-            onChange={(e) => cambiar({ red_cripto: e.target.value })}
-            opciones={[
-              { valor: 'TRC20', etiqueta: 'TRC20 (Tron)' },
-              { valor: 'BEP20', etiqueta: 'BEP20 (BNB Chain)' },
-              { valor: 'ERC20', etiqueta: 'ERC20 (Ethereum)' },
-              { valor: 'PAY', etiqueta: 'Binance Pay (interno)' },
-            ]}
-          />
-          <Input
-            label="Titular de la cuenta"
-            value={datos.titular ?? ''}
-            onChange={(e) => cambiar({ titular: e.target.value })}
-          />
-        </div>
-      ) : null}
-
-      {metodo === 'EFECTIVO' ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input
-            label="Quién recibe"
-            value={datos.receptor ?? ''}
-            onChange={(e) => cambiar({ receptor: e.target.value })}
-          />
-          <Input
-            label="Cédula de quien recibe"
-            placeholder="V-12345678"
-            value={datos.documento ?? ''}
-            onChange={(e) => cambiar({ documento: e.target.value })}
-          />
-        </div>
-      ) : null}
+      <CamposDePago metodo={elegido} datos={datos} onCambiar={cambiar} />
 
       <Textarea
         label="Nota para tesorería"

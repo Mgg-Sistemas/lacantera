@@ -29,6 +29,18 @@ const AFECTA: Record<string, string[][]> = {
   compras_bitacora: [['compras']],
   proveedores: [['proveedores']],
 
+  // Maquinaria y taller. La orden de mantenimiento toca tres pantallas: la
+  // ficha de la máquina, el historial de taller y —si el camión es propio— la
+  // flota, donde se ve su semáforo antes de cargarlo. Y al cerrarla con
+  // repuestos se descuenta del almacén, así que el inventario también queda
+  // viejo.
+  maquinaria: [['maquinaria'], ['vehiculos']],
+  horometro_lecturas: [['maquinaria']],
+  mantenimientos: [['maquinaria'], ['vehiculos']],
+  mantenimiento_repuestos: [['maquinaria'], ['existencias'], ['existencias-totales']],
+  vehiculos: [['vehiculos']],
+  metodos_pago: [['metodos-pago']],
+
   // Una instrucción de pago vive entre los dos módulos: nace en la compra y se
   // salda en tesorería. Cualquiera de las dos pantallas queda vieja.
   instrucciones_pago: [['compras'], ['tesoreria']],

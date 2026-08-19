@@ -1,5 +1,6 @@
 import {
   Banknote,
+  Wrench,
   BookOpen,
   Boxes,
   ClipboardList,
@@ -74,6 +75,7 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
+  ['/app/maquinaria', 'MAQUINARIA'],
   ['/app/inventario', 'INVENTARIO'],
   ['/app/despachos', 'DESPACHOS'],
   ['/app/compras', 'COMPRAS'],
@@ -128,9 +130,24 @@ export const navigation: NavSection[] = [
         label: 'Explotación',
         icon: Pickaxe,
         children: [
+          { label: 'Tablero', to: '/app/explotacion' },
           { label: 'Frentes y bancos', to: '/app/explotacion/frentes' },
           { label: 'Voladuras', to: '/app/explotacion/voladuras' },
           { label: 'Producción por turno', to: '/app/explotacion/produccion' },
+        ],
+      },
+      {
+        // Va entre Explotación e Inventario porque ese es su sitio en la
+        // jornada: la máquina trabaja en el frente y lo que consume sale del
+        // patio. No tiene submenú — hay una sola pantalla y la pregunta que
+        // trae a la gente es siempre la misma: cuál toca atender.
+        label: 'Maquinaria',
+        icon: Wrench,
+        children: [
+          { label: 'Equipos', to: '/app/maquinaria' },
+          // El historial es la vista al revés: no cada máquina y su última
+          // reparación, sino qué ha pasado por el taller y qué costó.
+          { label: 'Historial de taller', to: '/app/maquinaria/mantenimientos' },
         ],
       },
       {
@@ -141,7 +158,12 @@ export const navigation: NavSection[] = [
         label: 'Inventario',
         icon: Boxes,
         children: [
+          // Igual que en compras y ventas: la primera entrada es el tablero.
+          { label: 'Tablero', to: '/app/inventario' },
           { label: 'Existencias', to: '/app/inventario/existencias' },
+          // Va pegada a Existencias porque responde la pregunta de después:
+          // se ve el total, se ve dónde está, y aquí qué pasa en cada taller.
+          { label: 'Talleres', to: '/app/inventario/talleres' },
           { label: 'Movimientos', to: '/app/inventario/movimientos' },
           { label: 'Transferencias', to: '/app/inventario/transferencias' },
           { label: 'Catálogo de artículos', to: '/app/inventario/articulos' },
@@ -152,11 +174,16 @@ export const navigation: NavSection[] = [
         label: 'Despachos',
         icon: Truck,
         children: [
+          { label: 'Tablero', to: '/app/despachos' },
           { label: 'Tickets de romana', to: '/app/despachos/tickets' },
           // "De movilización" y no "de despacho": es el permiso del ministerio
           // para que el camión circule con el mineral, no el papel que se le
           // entrega al cliente. Ese es la nota de entrega y vive en Ventas.
           { label: 'Guías de movilización', to: '/app/despachos/guias' },
+          // Los da de alta quien ve llegar el camión, no quien administra el
+          // sistema; en Configuración nadie los cargaría y la placa seguiría
+          // escribiéndose a mano.
+          { label: 'Vehículos', to: '/app/despachos/vehiculos' },
         ],
       },
     ],
@@ -191,6 +218,13 @@ export const navigation: NavSection[] = [
         label: 'Ventas',
         icon: ClipboardList,
         children: [
+          // El tablero va primero y se llama igual que el de compras: los dos
+          // modulos son hermanos y quien aprende uno no deberia reaprender el
+          // otro. Antes la primera entrada era Clientes, y quien
+          // entra a Ventas quiere vender, no abrir una lista de clientes. El
+          // menu nombraba siete documentos y ninguno decia por donde se
+          // empieza.
+          { label: 'Tablero', to: '/app/ventas' },
           { label: 'Clientes', to: '/app/ventas/clientes' },
           { label: 'Lista de precios', to: '/app/ventas/precios' },
           { label: 'Cotizaciones', to: '/app/ventas/cotizaciones' },
@@ -204,6 +238,7 @@ export const navigation: NavSection[] = [
         label: 'Nómina',
         icon: Users,
         children: [
+          { label: 'Tablero', to: '/app/nomina' },
           { label: 'Personal', to: '/app/nomina/personal' },
           { label: 'Tabulador de cargos', to: '/app/nomina/tabulador' },
           { label: 'Novedades del período', to: '/app/nomina/asistencia' },
@@ -217,6 +252,7 @@ export const navigation: NavSection[] = [
         label: 'Tesorería',
         icon: Landmark,
         children: [
+          { label: 'Tablero', to: '/app/tesoreria' },
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
           { label: 'Pagos por hacer', to: '/app/tesoreria/pagos' },
           { label: 'Cuentas por pagar', to: '/app/tesoreria/por-pagar' },

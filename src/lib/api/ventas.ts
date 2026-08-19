@@ -633,15 +633,6 @@ export interface Cobro {
   cuenta: { nombre: string; moneda: string } | null
 }
 
-export const METODOS_COBRO = [
-  { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia' },
-  { valor: 'PAGO_MOVIL', etiqueta: 'Pago móvil' },
-  { valor: 'EFECTIVO', etiqueta: 'Efectivo' },
-  { valor: 'ZELLE', etiqueta: 'Zelle' },
-  { valor: 'BINANCE', etiqueta: 'Binance' },
-  { valor: 'CHEQUE', etiqueta: 'Cheque' },
-  { valor: 'OTRO', etiqueta: 'Otro' },
-]
 
 export function useCobros(facturaId: number | null) {
   return useQuery({

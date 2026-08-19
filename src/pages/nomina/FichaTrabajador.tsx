@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, FileText, IdCard, Pencil, ScrollText, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, FileText, IdCard, Pencil, ScrollText, Shirt, TriangleAlert } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
+import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
 import { Visor } from '@/components/Visor'
 import {
   BASES_SALARIO,
   ESTADOS_CIVILES,
-  FORMAS_PAGO,
   FRECUENCIAS,
   GENEROS,
   JORNADAS,
@@ -19,11 +21,14 @@ import {
   useFirmaRrhh,
   useFoto,
   useGuardarEncuadre,
+  useDotaciones,
+  useEntregarDotacion,
   useQuitarFoto,
   useSubirFoto,
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
-import { useMisRoles } from '@/lib/api/catalogo'
+import { useArticulos, useMisRoles } from '@/lib/api/catalogo'
+import { useAlmacenes } from '@/lib/api/inventario'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarCarnet } from '@/lib/ficha/carnet'
@@ -32,6 +37,8 @@ import { armarConstancia } from '@/lib/ficha/constanciaPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { ENCUADRE_CENTRADO, type Encuadre } from '@/lib/ficha/encuadre'
 import { dinero, fecha } from '@/lib/formato'
+import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
+import type { MetodoPago } from '@/lib/api/metodosPago'
 
 /** Años y meses de servicio: es lo que decide bono vacacional y prestaciones. */
 function antiguedad(desde: string, hasta: string | null): string {
@@ -66,7 +73,14 @@ const etiqueta = (lista: Array<{ valor: string; etiqueta: string }>, v: string |
 
 /** Las secciones de la ficha. Las mismas en pantalla y en el PDF: si se
  *  escribieran dos veces, tarde o temprano dirían cosas distintas. */
-function seccionesDe(e: Empleado): Seccion[] {
+/*
+  Recibe el catalogo en vez de pedirlo.
+
+  No es un componente: es una funcion que arma la ficha, y las funciones
+  normales no pueden usar hooks. Pasarlo por parametro tambien la deja
+  probable sin montar nada.
+*/
+function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] {
   const secciones: Seccion[] = [
     {
       titulo: 'Identificación',
@@ -117,7 +131,7 @@ function seccionesDe(e: Empleado): Seccion[] {
           valor: `${dinero(e.moneda_salario, e.salario_base)} ${etiqueta(BASES_SALARIO, e.base_estipulacion).toLowerCase()}`,
         },
         { clave: 'Frecuencia', valor: etiqueta(FRECUENCIAS, e.frecuencia) },
-        { clave: 'Forma de pago', valor: etiqueta(FORMAS_PAGO, e.forma_pago) },
+        { clave: 'Forma de pago', valor: nombreDe(metodos, e.forma_pago) },
         {
           clave: 'Cuenta',
           valor:
@@ -146,6 +160,7 @@ function seccionesDe(e: Empleado): Seccion[] {
 }
 
 export function FichaTrabajador() {
+  const { data: metodos } = useMetodosPago()
   const { id } = useParams()
   const { data: e, isPending, error } = useEmpleado(id ? Number(id) : undefined)
   const { puede } = useMisRoles()
@@ -167,6 +182,26 @@ export function FichaTrabajador() {
   const [pidiendo, setPidiendo] = useState(false)
   const [conSueldo, setConSueldo] = useState(true)
   const [armando, setArmando] = useState(false)
+
+  // La dotación
+  const dotaciones = useDotaciones(e?.id)
+  const entregar = useEntregarDotacion()
+  const { data: almacenes } = useAlmacenes()
+  const { data: articulos } = useArticulos()
+  const [entregando, setEntregando] = useState(false)
+  const [almacenDotacion, setAlmacenDotacion] = useState('')
+  const [notaDotacion, setNotaDotacion] = useState('')
+  const [prendas, setPrendas] = useState<Record<number, string>>({})
+
+  // Lo que se entrega a una persona: protección, herramienta y ropa. No el
+  // catálogo entero — nadie le entrega media tonelada de granzón a nadie.
+  const entregables = (articulos ?? []).filter(
+    (a) => a.inventariable && ['EPP', 'HERRAMIENTA', 'INSUMO'].includes(a.categoria),
+  )
+
+  const aEntregar = Object.entries(prendas)
+    .map(([articulo_id, cantidad]) => ({ articulo_id: Number(articulo_id), cantidad: Number(cantidad) }))
+    .filter((p) => p.cantidad > 0)
 
   /*
     Los tres papeles salen por la misma puerta.
@@ -202,7 +237,7 @@ export function FichaTrabajador() {
   if (error) return <ErrorDeCarga error={error} />
   if (!e) return null
 
-  const secciones = seccionesDe(e)
+  const secciones = seccionesDe(e, metodos)
 
   /** La foto ya cargada como elemento, que es lo que saben pintar el lienzo y el PDF. */
   async function imagenLista(): Promise<HTMLImageElement | null> {
@@ -482,8 +517,145 @@ export function FichaTrabajador() {
 
             {falloExportar ? <ErrorDeCarga error={falloExportar} className="mt-3" /> : null}
           </Card>
+
+          {/* ------------------------ Dotación ------------------------ */}
+          <Card>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-ink/85 font-semibold">Dotación</h2>
+                <p className="text-ink/45 text-xs">Lo que se le ha entregado</p>
+              </div>
+              {puede('ALMACEN') || puede('RRHH') ? (
+                <Button
+                  size="sm"
+                  variant="soft"
+                  icon={<Shirt />}
+                  disabled={!e.activo}
+                  onClick={() => {
+                    setAlmacenDotacion('')
+                    setNotaDotacion('')
+                    setPrendas({})
+                    setEntregando(true)
+                  }}
+                >
+                  Entregar
+                </Button>
+              ) : null}
+            </div>
+
+            {dotaciones.isPending ? <Cargando /> : null}
+
+            {dotaciones.data && dotaciones.data.length === 0 ? (
+              <p className="text-ink/45 py-2 text-sm">
+                Todavía no se le ha entregado nada.
+                {e.activo ? '' : ' Su ficha queda como historia: ya egresó.'}
+              </p>
+            ) : null}
+
+            {dotaciones.data && dotaciones.data.length > 0 ? (
+              <ul className="space-y-2">
+                {dotaciones.data.map((d) => (
+                  <li
+                    key={d.id}
+                    className="border-hairline flex items-baseline justify-between gap-3 border-b pb-2 text-sm last:border-0 last:pb-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-ink/85">{d.articulo}</p>
+                      <p className="text-ink/45 text-xs">{fecha(d.fecha)}</p>
+                    </div>
+                    <span className="tabular text-ink/70 shrink-0">
+                      {Number(d.cantidad)} {d.unidad.toLowerCase()}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            <p className="text-ink/40 mt-3 text-xs">
+              Una entrega sale del almacén y descuenta existencias, como cualquier otra salida. Si
+              se cargó mal, se reversa desde Inventario › Movimientos y deja de figurar aquí.
+            </p>
+          </Card>
         </div>
       </div>
+
+      {/* ---------------------- Entregar dotación ---------------------- */}
+      {entregando ? (
+        <Modal
+          abierto
+          ancho="lg"
+          onCerrar={() => setEntregando(false)}
+          titulo="Entregar dotación"
+          descripcion={`Para ${e.nombres} ${e.apellidos}. Sale del almacén que se indique y descuenta existencias.`}
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setEntregando(false)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={!almacenDotacion || aEntregar.length === 0 || entregar.isPending}
+                onClick={async () => {
+                  await entregar.mutateAsync({
+                    empleado_id: e.id,
+                    almacen_id: Number(almacenDotacion),
+                    renglones: aEntregar,
+                    nota: notaDotacion || undefined,
+                  })
+                  setEntregando(false)
+                }}
+              >
+                {entregar.isPending
+                  ? 'Entregando…'
+                  : `Entregar ${aEntregar.length || ''}`.trim()}
+              </Button>
+            </>
+          }
+        >
+          <Select
+            label="De qué almacén sale"
+            vacio="Elige el almacén"
+            value={almacenDotacion}
+            onChange={(ev) => setAlmacenDotacion(ev.target.value)}
+            opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
+            required
+          />
+
+          {entregables.length === 0 ? (
+            <p className="text-ink/45 mt-4 text-sm">
+              No hay artículos de protección, herramienta ni insumo en el catálogo. Se cargan en
+              Inventario › Catálogo de artículos.
+            </p>
+          ) : (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {entregables.map((a) => (
+                <Input
+                  key={a.id}
+                  label={a.nombre}
+                  hint={a.unidad.toLowerCase()}
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={prendas[a.id] ?? ''}
+                  onChange={(ev) => setPrendas({ ...prendas, [a.id]: ev.target.value })}
+                />
+              ))}
+            </div>
+          )}
+
+          <Textarea
+            label="Nota"
+            rows={2}
+            className="mt-4"
+            placeholder="Dotación de ingreso, reposición por desgaste…"
+            value={notaDotacion}
+            onChange={(ev) => setNotaDotacion(ev.target.value)}
+          />
+
+          {entregar.error ? <ErrorDeCarga error={entregar.error} className="mt-3" /> : null}
+        </Modal>
+      ) : null}
 
       {/* --------------------- Constancia de trabajo --------------------- */}
       {pidiendo ? (

@@ -46,7 +46,7 @@ export function Logo({ className, markOnly = false, inverted = false }: LogoProp
   return (
     <span className={cn('inline-flex items-center gap-2.5', className)}>
       <img
-        src="/marca.webp"
+        src="/media/marca.webp"
         alt=""
         aria-hidden="true"
         width={512}

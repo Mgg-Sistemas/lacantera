@@ -59,11 +59,29 @@ const Auditoria = lazy(() =>
 const Respaldo = lazy(() =>
   import('@/pages/config/Respaldo').then((m) => ({ default: m.Respaldo })),
 )
+const TableroInventario = lazy(() =>
+  import('@/pages/inventario/Tablero').then((m) => ({ default: m.TableroInventario })),
+)
+const Talleres = lazy(() =>
+  import('@/pages/inventario/Talleres').then((m) => ({ default: m.Talleres })),
+)
+const Vehiculos = lazy(() =>
+  import('@/pages/despachos/Vehiculos').then((m) => ({ default: m.Vehiculos })),
+)
+const Mantenimientos = lazy(() =>
+  import('@/pages/maquinaria/Mantenimientos').then((m) => ({ default: m.Mantenimientos })),
+)
+const Maquinaria = lazy(() =>
+  import('@/pages/maquinaria/Maquinaria').then((m) => ({ default: m.Maquinaria })),
+)
 const Existencias = lazy(() =>
   import('@/pages/inventario/Existencias').then((m) => ({ default: m.Existencias })),
 )
 const Movimientos = lazy(() =>
   import('@/pages/inventario/Movimientos').then((m) => ({ default: m.Movimientos })),
+)
+const TableroNomina = lazy(() =>
+  import('@/pages/nomina/Tablero').then((m) => ({ default: m.TableroNomina })),
 )
 const Asistencia = lazy(() =>
   import('@/pages/nomina/Asistencia').then((m) => ({ default: m.Asistencia })),
@@ -79,6 +97,9 @@ const Procesos = lazy(() => import('@/pages/nomina/Procesos').then((m) => ({ def
 const Recibos = lazy(() => import('@/pages/nomina/Recibos').then((m) => ({ default: m.Recibos })))
 const Tabulador = lazy(() =>
   import('@/pages/nomina/Tabulador').then((m) => ({ default: m.Tabulador })),
+)
+const TableroTesoreria = lazy(() =>
+  import('@/pages/tesoreria/Tablero').then((m) => ({ default: m.TableroTesoreria })),
 )
 const Cuentas = lazy(() =>
   import('@/pages/tesoreria/Cuentas').then((m) => ({ default: m.Cuentas })),
@@ -102,6 +123,9 @@ const Proveedores = lazy(() =>
 const TableroCompras = lazy(() =>
   import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),
 )
+const TableroVentas = lazy(() =>
+  import('@/pages/ventas/Tablero').then((m) => ({ default: m.TableroVentas })),
+)
 const ClientesVenta = lazy(() =>
   import('@/pages/ventas/Clientes').then((m) => ({ default: m.Clientes })),
 )
@@ -120,6 +144,9 @@ const Facturacion = lazy(() =>
 const PorCobrar = lazy(() =>
   import('@/pages/tesoreria/PorCobrar').then((m) => ({ default: m.PorCobrar })),
 )
+const TableroExplotacion = lazy(() =>
+  import('@/pages/explotacion/Tablero').then((m) => ({ default: m.TableroExplotacion })),
+)
 const Frentes = lazy(() =>
   import('@/pages/explotacion/Frentes').then((m) => ({ default: m.Frentes })),
 )
@@ -128,6 +155,9 @@ const Voladuras = lazy(() =>
 )
 const ProduccionTurno = lazy(() =>
   import('@/pages/explotacion/Produccion').then((m) => ({ default: m.Produccion })),
+)
+const TableroDespachos = lazy(() =>
+  import('@/pages/despachos/Tablero').then((m) => ({ default: m.TableroDespachos })),
 )
 const Tickets = lazy(() =>
   import('@/pages/despachos/Tickets').then((m) => ({ default: m.Tickets })),
@@ -163,9 +193,11 @@ const Manual = lazy(() => import('@/pages/Manual').then((m) => ({ default: m.Man
  * rutas no se pueden desincronizar.
  */
 const paginas: Record<string, ReactNode> = {
+  '/app/explotacion': <TableroExplotacion />,
   '/app/explotacion/frentes': <Frentes />,
   '/app/explotacion/voladuras': <Voladuras />,
   '/app/explotacion/produccion': <ProduccionTurno />,
+  '/app/despachos': <TableroDespachos />,
   '/app/despachos/tickets': <Tickets />,
   '/app/despachos/guias': <Guias />,
   '/app/compras': <TableroCompras />,
@@ -176,19 +208,27 @@ const paginas: Record<string, ReactNode> = {
   '/app/ventas/notas-credito': <NotasCredito />,
   '/app/ventas/libro': <LibroVentas />,
   '/app/nomina/prestaciones': <Prestaciones />,
+  '/app/maquinaria': <Maquinaria />,
+  '/app/maquinaria/mantenimientos': <Mantenimientos />,
+  '/app/inventario': <TableroInventario />,
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,
+  '/app/inventario/talleres': <Talleres />,
+  '/app/despachos/vehiculos': <Vehiculos />,
+  '/app/nomina': <TableroNomina />,
   '/app/nomina/personal': <Personal />,
   '/app/nomina/tabulador': <Tabulador />,
   '/app/nomina/asistencia': <Asistencia />,
   '/app/nomina/procesos': <Procesos />,
   '/app/nomina/recibos': <Recibos />,
   '/app/nomina/parametros': <Parametros />,
+  '/app/tesoreria': <TableroTesoreria />,
   '/app/tesoreria/cuentas': <Cuentas />,
   '/app/tesoreria/pagos': <Pagos />,
   '/app/tesoreria/por-pagar': <PorPagar />,
   '/app/tesoreria/movimientos': <MovimientosTesoreria />,
   '/app/tesoreria/por-cobrar': <PorCobrar />,
+  '/app/ventas': <TableroVentas />,
   '/app/ventas/clientes': <ClientesVenta />,
   '/app/ventas/precios': <PreciosVenta />,
   '/app/ventas/cotizaciones': <CotizacionesVenta />,
