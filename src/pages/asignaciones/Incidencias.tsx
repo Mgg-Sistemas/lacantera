@@ -9,41 +9,48 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
   MOTIVOS_SALDO,
   useAsignaciones,
-  useHerramientasPorCobrar,
-  useSaldarPerdida,
+  useIncidenciasAbiertas,
+  useResolverIncidencia,
   type Asignacion,
-} from '@/lib/api/herramientas'
+} from '@/lib/api/asignaciones'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { dolares, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 /**
- * Las herramientas que alguien no devolvió, para quien procesa la nómina.
+ * Lo que se perdió o se dañó y sigue sin resolverse.
  *
- * POR QUÉ ESTÁ EN NÓMINA Y NO EN INVENTARIO
+ * POR QUÉ NO VIVE EN NÓMINA
  *
- * La pérdida se registra en el taller —lo hace quien está en el mostrador— y
- * ahí se acaba su parte: el inventario ya bajó. Lo que queda abierto es de
- * otro: si a esa persona se le descuenta, si la repone, o si no se le cobra.
- * Esa decisión la toma quien paga, y tiene que encontrarla sin ir a buscarla.
+ * Estuvo ahí un rato y era un error de encuadre. Se puso pensando en el caso
+ * de la herramienta que se le descuenta a alguien, y con ese caso en la cabeza
+ * parecía un asunto de quien paga. Pero si lo roto es una silla de oficina, la
+ * decisión no es de nómina — y el módulo tampoco puede depender de que a
+ * alguien se le vaya a descontar algo.
  *
- * Mientras no se salde, aparece. Al saldarse, desaparece sola. Nadie tiene que
- * acordarse de tacharla de una lista.
+ * Descontar es una de las tres salidas, no la naturaleza del asunto. Por eso
+ * vive con las asignaciones, que es de donde viene.
+ *
+ * Mientras no se resuelva, aparece. Al resolverse, desaparece sola. Nadie
+ * tiene que acordarse de tacharla de una lista.
  */
-export function HerramientasPorCobrar() {
-  const { data, isPending, error } = useHerramientasPorCobrar()
+export function Incidencias() {
+  const { data, isPending, error } = useIncidenciasAbiertas()
   const perdidas = useAsignaciones({ estado: 'PERDIDA' })
   const { puede } = useMisRoles()
   const [saldando, setSaldando] = useState<Asignacion | null>(null)
 
-  const puedeSaldar = puede('ADMIN') || puede('RRHH')
+  // Lo resuelve quien administra o quien lleva personal: una silla rota por
+  // accidente no la decide nómina, y con el permiso de nómina puesto el
+  // almacenista no podía cerrar ni los casos que le tocan.
+  const puedeSaldar = puede('ADMIN') || puede('RRHH') || puede('ALMACEN')
   const total = (data ?? []).reduce((s, p) => s + Number(p.costo_usd), 0)
 
   return (
     <>
       <PageHeader
-        title="Herramientas sin devolver"
-        description="Lo que se perdió y todavía no se ha resuelto. El inventario ya se descontó; lo que falta es decidir qué pasa con quien la tenía."
+        title="Incidencias"
+        description="Bienes perdidos o dañados que siguen sin resolverse. Falta decidir qué pasa con quien los tenía."
       />
 
       {isPending ? <Cargando /> : null}
@@ -64,7 +71,7 @@ export function HerramientasPorCobrar() {
           <Card className="mb-4">
             <p className="text-ink/70 text-sm">
               <strong className="text-ink/90 font-semibold">{(data ?? []).length}</strong>{' '}
-              trabajador{(data ?? []).length === 1 ? '' : 'es'} con herramientas sin devolver, por{' '}
+              trabajador{(data ?? []).length === 1 ? '' : 'es'} con bienes sin resolver, por{' '}
               <span className="tabular text-ink/90 font-semibold">{dolares(total)}</span> en total.
             </p>
           </Card>
@@ -153,7 +160,7 @@ function ModalSaldar({
   asignacion: Asignacion | null
   onCerrar: () => void
 }) {
-  const saldar = useSaldarPerdida()
+  const saldar = useResolverIncidencia()
   const [como, setComo] = useState<'DESCUENTO' | 'REPOSICION' | 'EXONERADO'>('DESCUENTO')
   const [nota, setNota] = useState('')
 
