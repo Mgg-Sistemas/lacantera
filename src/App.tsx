@@ -102,6 +102,9 @@ const Proveedores = lazy(() =>
 const TableroCompras = lazy(() =>
   import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),
 )
+const TableroVentas = lazy(() =>
+  import('@/pages/ventas/Tablero').then((m) => ({ default: m.TableroVentas })),
+)
 const ClientesVenta = lazy(() =>
   import('@/pages/ventas/Clientes').then((m) => ({ default: m.Clientes })),
 )
@@ -189,6 +192,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/tesoreria/por-pagar': <PorPagar />,
   '/app/tesoreria/movimientos': <MovimientosTesoreria />,
   '/app/tesoreria/por-cobrar': <PorCobrar />,
+  '/app/ventas': <TableroVentas />,
   '/app/ventas/clientes': <ClientesVenta />,
   '/app/ventas/precios': <PreciosVenta />,
   '/app/ventas/cotizaciones': <CotizacionesVenta />,
