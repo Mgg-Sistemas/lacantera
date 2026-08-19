@@ -128,3 +128,17 @@ docs/traspaso-al-carril-unico.md
 # administrador. Es una base desechable que solo existe en el equipo de quien
 # la levanta, pero la clave no tiene por que viajar a un repositorio publico.
 supabase/local/
+
+# Documentos de trabajo en Markdown.
+#
+# Instruccion del 2026-08-19: todo .md nuevo queda fuera salvo que se diga lo
+# contrario. Lo que se escribe entre carriles —investigaciones, traspasos,
+# analisis a medio cocer— es andamiaje de como trabajamos, no documentacion del
+# producto, y este repositorio es publico.
+#
+# Los .md que YA estaban rastreados siguen estandolo: .gitignore no destrackea.
+# Eso salva a docs/manual-de-usuario.md, que la compilacion convierte a HTML en
+# cada build; si saliera del repo, un clon limpio no compilaria.
+#
+# Para versionar uno nuevo a proposito: git add -f, o una excepcion aqui.
+*.md
