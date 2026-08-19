@@ -141,6 +141,8 @@ export const navigation: NavSection[] = [
         label: 'Inventario',
         icon: Boxes,
         children: [
+          // Igual que en compras y ventas: la primera entrada es el tablero.
+          { label: 'Tablero', to: '/app/inventario' },
           { label: 'Existencias', to: '/app/inventario/existencias' },
           { label: 'Movimientos', to: '/app/inventario/movimientos' },
           { label: 'Transferencias', to: '/app/inventario/transferencias' },
