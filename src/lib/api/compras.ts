@@ -206,7 +206,13 @@ export interface Orden {
   desistio_nota: string | null
   motivo_cancelacion: string | null
   creada_en: string
-  proveedor: { id: number; nombre: string; rif: string } | null
+  proveedor: {
+    id: number
+    nombre: string
+    rif: string
+    /** Cómo suele cobrar. Se propone al pagarle. */
+    metodo_pago_preferido: string | null
+  } | null
   renglones: RenglonOrden[]
   instrucciones: InstruccionPago[]
 }
@@ -220,7 +226,7 @@ export interface Orden {
  */
 const SELECT_ORDEN = `
   *,
-  proveedor:proveedores(id, nombre, rif),
+  proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
   renglones:orden_renglones(*),
   instrucciones:instrucciones_pago(*)
 `
@@ -281,7 +287,7 @@ const SELECT_DETALLE = `
   ),
   ordenes:ordenes_compra(
     *,
-    proveedor:proveedores(id, nombre, rif),
+    proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
     renglones:orden_renglones(*),
     instrucciones:instrucciones_pago(*)
   )

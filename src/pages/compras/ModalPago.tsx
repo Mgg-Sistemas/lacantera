@@ -30,7 +30,15 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
     .reduce((s, i) => s + Number(i.monto), 0)
   const pendiente = Math.max(Number(orden.total) - comprometido, 0)
 
-  const [metodo, setMetodo] = useState('TRANSFERENCIA')
+  /*
+    Se propone cómo cobra el proveedor, no un método fijo.
+
+    Estaba en «Transferencia» para todos, y el dato ya existía en su ficha sin
+    que nadie lo mirara. Quien paga tenía que acordarse de que a este se le
+    paga por Zelle y a aquel por pago móvil. Se propone; se puede cambiar,
+    porque el que siempre cobra por transferencia un día pide efectivo.
+  */
+  const [metodo, setMetodo] = useState(orden.proveedor?.metodo_pago_preferido ?? 'TRANSFERENCIA')
   const [moneda, setMoneda] = useState(orden.moneda)
   const [monto, setMonto] = useState(String(pendiente.toFixed(2)))
   const [datos, setDatos] = useState<DatosPago>({})

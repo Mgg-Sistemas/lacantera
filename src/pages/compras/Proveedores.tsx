@@ -11,6 +11,8 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { CONDICIONES_PAGO, useGuardarProveedor, useProveedores } from '@/lib/api/catalogo'
 import type { Proveedor } from '@/lib/api/catalogo'
+import { useMonedasUsables } from '@/lib/api/tasas'
+import { useMetodosPago } from '@/lib/api/metodosPago'
 
 const vacio = {
   rif: '',
@@ -22,6 +24,7 @@ const vacio = {
   direccion: '',
   condicion_pago: 'CONTADO',
   moneda_preferida: 'USD',
+  metodo_pago_preferido: null as string | null,
   contribuyente_especial: false,
   notas: '',
   activo: true,
@@ -29,6 +32,8 @@ const vacio = {
 
 export function Proveedores() {
   const { data, isPending, error } = useProveedores(false)
+  const { data: monedas } = useMonedasUsables()
+  const { data: metodos } = useMetodosPago()
   const guardar = useGuardarProveedor()
   const [edicion, setEdicion] = useState<(typeof vacio & { id?: number }) | null>(null)
 
@@ -45,6 +50,7 @@ export function Proveedores() {
             correo: p.correo ?? '',
             direccion: p.direccion ?? '',
             condicion_pago: p.condicion_pago,
+            metodo_pago_preferido: p.metodo_pago_preferido,
             moneda_preferida: p.moneda_preferida,
             contribuyente_especial: p.contribuyente_especial,
             notas: p.notas ?? '',
@@ -206,11 +212,21 @@ export function Proveedores() {
               label="Moneda con la que cotiza"
               value={edicion.moneda_preferida}
               onChange={(e) => cambiar({ moneda_preferida: e.target.value })}
-              opciones={[
-                { valor: 'USD', etiqueta: 'Dólares' },
-                { valor: 'VES', etiqueta: 'Bolívares' },
-                { valor: 'EUR', etiqueta: 'Euros' },
-              ]}
+              opciones={monedas ?? []}
+            />
+
+            {/* Cómo cobra. Vivía en la cabeza de quien paga; ahora se propone
+                solo al momento de pagarle, y se puede cambiar: el que siempre
+                cobra por transferencia un día pide efectivo. */}
+            <Select
+              label="Cómo suele cobrar"
+              vacio="Sin definir"
+              value={edicion.metodo_pago_preferido ?? ''}
+              onChange={(e) => cambiar({ metodo_pago_preferido: e.target.value || null })}
+              opciones={(metodos ?? [])
+                .filter((m) => m.activo)
+                .map((m) => ({ valor: m.codigo, etiqueta: m.nombre }))}
+              hint="Se propone al pagarle. No obliga."
             />
           </div>
 

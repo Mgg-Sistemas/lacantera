@@ -138,16 +138,120 @@ function ModalMotivo({
 
 // ---------------------------------------------------------------------------
 
+/**
+ * En qué gana cada cotización frente a las demás.
+ *
+ * POR QUÉ NO HAY UNA «MEJOR» A SECAS
+ *
+ * Antes se marcaba una sola: la más barata. Y la más barata no siempre es la
+ * que conviene — una que cuesta veinte dólares más pero se paga a treinta días
+ * puede ser mejor para una empresa que anda ajustada de caja, y una que llega
+ * en dos días puede serlo cuando la planta está parada esperando la pieza.
+ *
+ * Poner un ganador único obligaría a inventar una fórmula que pondere precio,
+ * plazo y entrega. Cualquier peso que eligiéramos sería nuestro, no de quien
+ * compra, y quedaría escondido detrás de una etiqueta que parece objetiva.
+ *
+ * Así que cada cotización lleva las etiquetas de aquello en lo que gana, y
+ * decide la persona. Si una gana en todo, se le ven las tres juntas y la
+ * decisión se toma sola.
+ *
+ * SOLO SE COMPARA LO QUE SE PUEDE COMPARAR
+ *
+ * Con una sola cotización no hay nada que decir: llamarla «la más económica»
+ * sería cierto y vacío. Y una etiqueta solo aparece si de verdad hay
+ * diferencia: si las tres cuestan lo mismo, ninguna es la más barata.
+ */
+export interface Ventaja {
+  clave: string
+  etiqueta: string
+  detalle: string
+  tono: 'success' | 'royal' | 'neutral'
+}
+
+/** Cuánto se tarda en pagar cada condición. Más días, más aire de caja. */
+const DIAS_DE_PAGO: Record<string, number> = {
+  CONTADO: 0,
+  CONTRA_ENTREGA: 1,
+  CREDITO_15: 15,
+  CREDITO_30: 30,
+  CREDITO_60: 60,
+}
+
+function compararCotizaciones(cotizaciones: Cotizacion[]): Map<number, Ventaja[]> {
+  const mapa = new Map<number, Ventaja[]>()
+  if (cotizaciones.length < 2) return mapa
+
+  const anotar = (id: number, v: Ventaja) => mapa.set(id, [...(mapa.get(id) ?? []), v])
+
+  // Precio: en dólares, que es lo único comparable entre monedas distintas.
+  const precios = cotizaciones.map((c) => Number(c.total_usd))
+  const menor = Math.min(...precios)
+  if (Math.max(...precios) > menor) {
+    for (const c of cotizaciones) {
+      if (Number(c.total_usd) === menor) {
+        anotar(c.id, {
+          clave: 'precio',
+          etiqueta: 'Más económica',
+          detalle: 'Es la de menor total en dólares.',
+          tono: 'success',
+        })
+      }
+    }
+  }
+
+  // Pago: gana la que da más días para pagar.
+  const plazos = cotizaciones.map((c) => DIAS_DE_PAGO[c.condicion_pago] ?? 0)
+  const mayorPlazo = Math.max(...plazos)
+  if (mayorPlazo > Math.min(...plazos)) {
+    for (const c of cotizaciones) {
+      if ((DIAS_DE_PAGO[c.condicion_pago] ?? 0) === mayorPlazo) {
+        anotar(c.id, {
+          clave: 'pago',
+          etiqueta: c.condicion_pago === 'CONTRA_ENTREGA' ? 'Se paga al recibir' : 'Más plazo',
+          detalle:
+            c.condicion_pago === 'CONTRA_ENTREGA'
+              ? 'Solo se paga lo que llegue.'
+              : `Es la que da más días para pagar (${mayorPlazo}).`,
+          tono: 'royal',
+        })
+      }
+    }
+  }
+
+  // Entrega: solo entre las que dijeron en cuántos días.
+  const conEntrega = cotizaciones.filter((c) => c.dias_entrega !== null)
+  if (conEntrega.length > 1) {
+    const dias = conEntrega.map((c) => Number(c.dias_entrega))
+    const masRapida = Math.min(...dias)
+    if (Math.max(...dias) > masRapida) {
+      for (const c of conEntrega) {
+        if (Number(c.dias_entrega) === masRapida) {
+          anotar(c.id, {
+            clave: 'entrega',
+            etiqueta: 'Llega antes',
+            detalle: `Entrega en ${masRapida} día${masRapida === 1 ? '' : 's'}.`,
+            tono: 'neutral',
+          })
+        }
+      }
+    }
+  }
+
+  return mapa
+}
+
 function TarjetaCotizacion({
   cotizacion,
-  esMejor,
+  ventajas,
   elegida,
   puedeOperar,
   onProponer,
   onEliminar,
 }: {
   cotizacion: Cotizacion
-  esMejor: boolean
+  /** En qué gana esta cotización frente a las demás. Vacío si no gana en nada. */
+  ventajas: Ventaja[]
   elegida: boolean
   puedeOperar: boolean
   onProponer: () => void
@@ -173,7 +277,11 @@ function TarjetaCotizacion({
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {elegida ? <Chip tone="royal">Propuesta al gerente</Chip> : null}
-          {esMejor && !elegida ? <Chip tone="success">Más económica</Chip> : null}
+          {ventajas.map((v) => (
+            <Chip key={v.clave} tone={v.tono} title={v.detalle}>
+              {v.etiqueta}
+            </Chip>
+          ))}
         </div>
       </div>
 
@@ -415,10 +523,7 @@ export function DetalleCompra() {
       : null)
 
   const cotizaciones = compra.cotizaciones ?? []
-  const mejor = cotizaciones.reduce<Cotizacion | null>(
-    (m, c) => (m === null || Number(c.total_usd) < Number(m.total_usd) ? c : m),
-    null,
-  )
+  const comparacion = compararCotizaciones(cotizaciones)
 
   const estadoVisible = orden ? orden.estado : compra.estado
   const etiqueta = ETIQUETAS[estadoVisible] ?? { texto: estadoVisible, tono: 'neutral' as const }
@@ -537,7 +642,7 @@ export function DetalleCompra() {
                   <TarjetaCotizacion
                     key={c.id}
                     cotizacion={c}
-                    esMejor={mejor?.id === c.id && cotizaciones.length > 1}
+                    ventajas={comparacion.get(c.id) ?? []}
                     elegida={compra.cotizacion_elegida_id === c.id}
                     puedeOperar={puedeCompras && compra.estado !== 'APROBADA'}
                     onProponer={() =>
