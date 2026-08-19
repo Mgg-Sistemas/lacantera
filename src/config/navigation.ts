@@ -1,5 +1,6 @@
 import {
   Banknote,
+  Wrench,
   BookOpen,
   Boxes,
   ClipboardList,
@@ -74,6 +75,7 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
+  ['/app/maquinaria', 'MAQUINARIA'],
   ['/app/inventario', 'INVENTARIO'],
   ['/app/despachos', 'DESPACHOS'],
   ['/app/compras', 'COMPRAS'],
@@ -133,6 +135,15 @@ export const navigation: NavSection[] = [
           { label: 'Voladuras', to: '/app/explotacion/voladuras' },
           { label: 'Producción por turno', to: '/app/explotacion/produccion' },
         ],
+      },
+      {
+        // Va entre Explotación e Inventario porque ese es su sitio en la
+        // jornada: la máquina trabaja en el frente y lo que consume sale del
+        // patio. No tiene submenú — hay una sola pantalla y la pregunta que
+        // trae a la gente es siempre la misma: cuál toca atender.
+        label: 'Maquinaria',
+        icon: Wrench,
+        to: '/app/maquinaria',
       },
       {
         // El catálogo y los almacenes vivían en Configuración, y ahí no los

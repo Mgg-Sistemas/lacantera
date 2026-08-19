@@ -62,6 +62,9 @@ const Respaldo = lazy(() =>
 const TableroInventario = lazy(() =>
   import('@/pages/inventario/Tablero').then((m) => ({ default: m.TableroInventario })),
 )
+const Maquinaria = lazy(() =>
+  import('@/pages/maquinaria/Maquinaria').then((m) => ({ default: m.Maquinaria })),
+)
 const Existencias = lazy(() =>
   import('@/pages/inventario/Existencias').then((m) => ({ default: m.Existencias })),
 )
@@ -196,6 +199,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/ventas/notas-credito': <NotasCredito />,
   '/app/ventas/libro': <LibroVentas />,
   '/app/nomina/prestaciones': <Prestaciones />,
+  '/app/maquinaria': <Maquinaria />,
   '/app/inventario': <TableroInventario />,
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,
