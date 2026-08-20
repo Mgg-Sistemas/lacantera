@@ -32,7 +32,7 @@ export function Select({
   const describedById = `${selectId}-desc`
 
   return (
-    <div className={cn('w-full', className)}>
+    <div className={cn('w-full min-w-0', className)}>
       <label htmlFor={selectId} className="text-ink/75 mb-1.5 block text-sm font-medium">
         {label}
       </label>
