@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
-import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useAlmacenes } from '@/lib/api/inventario'
@@ -123,11 +123,11 @@ export function Asignaciones() {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
-          <Select
+          <SelectBuscable
             label="Sitio"
             vacio="Todos"
-            value={almacenId}
-            onChange={(e) => setAlmacenId(e.target.value)}
+            valor={almacenId}
+            onCambio={(v) => setAlmacenId(v)}
             opciones={(almacenes ?? []).map((a) => ({
               valor: String(a.id),
               etiqueta: `${a.nombre}${a.tipo === 'TALLER' ? ' · taller' : ''}`,
@@ -378,11 +378,11 @@ function ModalEntrega({
         </>
       }
     >
-      <Select
+      <SelectBuscable
         label="A quién"
         vacio="Elegir trabajador"
-        value={empleado}
-        onChange={(e) => setEmpleado(e.target.value)}
+        valor={empleado}
+        onCambio={(v) => setEmpleado(v)}
         opciones={(empleados ?? []).map((e) => ({
           valor: String(e.id),
           etiqueta: `${e.nombres} ${e.apellidos} · ficha ${e.ficha}`,

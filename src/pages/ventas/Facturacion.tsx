@@ -7,6 +7,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
@@ -546,12 +547,12 @@ export function Facturacion() {
           }
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Select
+            <SelectBuscable
               label="A qué cuenta entró"
               vacio="Elige la cuenta"
-              value={cuentaId}
-              onChange={(e) => {
-                setCuentaId(e.target.value)
+              valor={cuentaId}
+              onCambio={(v) => {
+                setCuentaId(v)
                 setIgtf(null)
               }}
               opciones={(cuentas ?? [])
@@ -561,7 +562,6 @@ export function Facturacion() {
                   etiqueta: `${c.nombre} · ${c.moneda}`,
                 }))}
               hint="El cobro se registra en la moneda de la cuenta."
-              required
             />
             <Input
               label={`Monto${cuenta ? ` en ${cuenta.moneda}` : ''}`}

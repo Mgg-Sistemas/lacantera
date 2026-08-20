@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
-import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMisRoles, usePerfiles } from '@/lib/api/catalogo'
@@ -53,11 +53,11 @@ export function Movimientos() {
       />
 
       <Card className="mb-4 sm:max-w-xs">
-        <Select
+        <SelectBuscable
           label="Almacén"
           vacio="Todos"
-          value={almacenId}
-          onChange={(e) => setAlmacenId(e.target.value)}
+          valor={almacenId}
+          onCambio={(v) => setAlmacenId(v)}
           opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
         />
       </Card>

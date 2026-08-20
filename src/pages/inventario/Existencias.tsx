@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
-import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMisRoles } from '@/lib/api/catalogo'
@@ -189,11 +189,11 @@ export function Existencias() {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
-          <Select
+          <SelectBuscable
             label="Dónde"
             vacio="Todo el inventario"
-            value={almacenId}
-            onChange={(e) => setAlmacenId(e.target.value)}
+            valor={almacenId}
+            onCambio={(v) => setAlmacenId(v)}
             opciones={(almacenes ?? []).map((a) => ({
               valor: String(a.id),
               etiqueta: `${a.nombre}${a.tipo === 'TALLER' ? ' · taller' : ''}`,

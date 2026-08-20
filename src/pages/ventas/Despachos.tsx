@@ -8,6 +8,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
@@ -358,20 +359,19 @@ export function Despachos() {
         >
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="sm:col-span-2">
-              <Select
+              <SelectBuscable
                 label="Cliente"
                 vacio="Elige el cliente"
-                value={clienteId}
-                onChange={(e) => {
-                  setClienteId(e.target.value)
-                  const c = clientes?.find((x) => String(x.id) === e.target.value)
+                valor={clienteId}
+                onCambio={(v) => {
+                  setClienteId(v)
+                  const c = clientes?.find((x) => String(x.id) === v)
                   if (c) setMoneda(c.moneda_preferida)
                 }}
                 opciones={(clientes ?? []).map((c) => ({
                   valor: String(c.id),
                   etiqueta: `${c.nombre} · ${c.rif}`,
                 }))}
-                required
               />
             </div>
             <Select
@@ -381,16 +381,15 @@ export function Despachos() {
               opciones={monedas.data ?? []}
             />
             <div className="sm:col-span-3">
-              <Select
+              <SelectBuscable
                 label="De qué patio sale"
                 vacio="Elige el patio o almacén"
-                value={almacenId}
-                onChange={(e) => setAlmacenId(e.target.value)}
+                valor={almacenId}
+                onCambio={(v) => setAlmacenId(v)}
                 opciones={(almacenes ?? []).map((a) => ({
                   valor: String(a.id),
                   etiqueta: a.nombre,
                 }))}
-                required
               />
             </div>
           </div>
@@ -465,17 +464,17 @@ export function Despachos() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <Select
+              <SelectBuscable
                 label="Vehículo"
                 vacio="Otro (escribir la placa)"
-                value={vehiculoId}
-                onChange={(e) => {
-                  setVehiculoId(e.target.value)
-                  const v = (vehiculos ?? []).find((x) => String(x.id) === e.target.value)
+                valor={vehiculoId}
+                onCambio={(elegido) => {
+                  setVehiculoId(elegido)
+                  const veh = (vehiculos ?? []).find((x) => String(x.id) === elegido)
                   // La placa sigue viajando como texto: es lo que se imprime
                   // en la nota, y un documento emitido no puede cambiar
                   // porque después se corrija el catálogo.
-                  setVehiculo(v ? v.placa : '')
+                  setVehiculo(veh ? veh.placa : '')
                 }}
                 opciones={(vehiculos ?? []).map((v) => ({
                   valor: String(v.id),

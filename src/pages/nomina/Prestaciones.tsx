@@ -8,6 +8,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dinero, fecha } from '@/lib/formato'
@@ -362,11 +363,11 @@ export function Prestaciones() {
 
               {liquidacion.estado === 'CALCULADA' && puede('NOMINA', 'TOTAL') ? (
                 <div className="mt-4 flex flex-wrap items-end gap-3">
-                  <Select
+                  <SelectBuscable
                     label="Pagar desde"
                     vacio="Elige la cuenta"
-                    value={fAnt.cuenta_id}
-                    onChange={(e) => setFAnt({ ...fAnt, cuenta_id: e.target.value })}
+                    valor={fAnt.cuenta_id}
+                    onCambio={(v) => setFAnt({ ...fAnt, cuenta_id: v })}
                     opciones={(cuentas ?? [])
                       .filter((c) => c.activa)
                       .map((c) => ({ valor: String(c.id), etiqueta: `${c.nombre} · ${c.moneda}` }))}
@@ -753,11 +754,11 @@ export function Prestaciones() {
               opciones={MOTIVOS_ANTICIPO}
               hint="La ley permite adelantar para vivienda, salud, educación y pensión alimentaria."
             />
-            <Select
+            <SelectBuscable
               label="De qué cuenta sale"
               vacio="Sin mover tesorería"
-              value={fAnt.cuenta_id}
-              onChange={(e) => setFAnt({ ...fAnt, cuenta_id: e.target.value })}
+              valor={fAnt.cuenta_id}
+              onCambio={(v) => setFAnt({ ...fAnt, cuenta_id: v })}
               opciones={(cuentas ?? [])
                 .filter((c) => c.activa)
                 .map((c) => ({ valor: String(c.id), etiqueta: `${c.nombre} · ${c.moneda}` }))}
