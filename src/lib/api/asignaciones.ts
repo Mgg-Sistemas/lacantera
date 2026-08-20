@@ -138,6 +138,70 @@ export function useAsignables(filtros: { almacenId?: number; categoria?: string 
   })
 }
 
+/*
+  ENTREGARLE VARIAS COSAS A UNA PERSONA DE UNA VEZ
+
+  Antes esto solo existía dentro de la ficha del trabajador, y ahí consumía
+  todo lo que se le pusiera delante: entregar un torquímetro desde la ficha lo
+  hacía desaparecer del almacén en vez de dejarlo prestado.
+
+  Ahora la base decide por cada renglón según `articulos.modo_entrega`, y esta
+  pantalla vive donde tiene que vivir: en el módulo de asignaciones, que es
+  donde alguien va cuando quiere darle cosas a alguien.
+*/
+export interface Entregable {
+  almacen_id: number
+  almacen: string
+  articulo_id: number
+  articulo_codigo: string
+  articulo: string
+  categoria: string
+  unidad: string
+  modo_entrega: string
+  existencia: string
+  prestadas: string
+  disponibles: string
+}
+
+export function useEntregables(almacenId?: number) {
+  return useQuery({
+    queryKey: ['entregables', almacenId ?? 'todos'],
+    queryFn: async () => {
+      let q = supabase.from('v_entregables').select('*').order('articulo')
+      if (almacenId) q = q.eq('almacen_id', almacenId)
+      return desenvolver<Entregable[]>(await q)
+    },
+  })
+}
+
+export function useEntregarATrabajador() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (e: {
+      empleado_id: number
+      almacen_id: number
+      renglones: { articulo_id: number; cantidad: number }[]
+      fecha?: string | null
+      nota?: string | null
+    }) =>
+      rpc<{ prestados: number; consumidos: number }>('entregar_a_trabajador', {
+        p_empleado_id: e.empleado_id,
+        p_almacen_id: e.almacen_id,
+        p_renglones: e.renglones,
+        p_fecha: e.fecha ?? null,
+        p_nota: e.nota ?? null,
+      }),
+    onSuccess: () => {
+      // Toca las tres cosas a la vez: lo prestado, lo que queda y el libro.
+      void qc.invalidateQueries({ queryKey: ['asignaciones'] })
+      void qc.invalidateQueries({ queryKey: ['asignables'] })
+      void qc.invalidateQueries({ queryKey: ['entregables'] })
+      void qc.invalidateQueries({ queryKey: ['existencias'] })
+      void qc.invalidateQueries({ queryKey: ['movimientos'] })
+    },
+  })
+}
+
 export function useAsignaciones(filtros: { estado?: EstadoAsignacion; empleadoId?: number } = {}) {
   return useQuery({
     queryKey: ['asignaciones', filtros.estado ?? 'todas', filtros.empleadoId ?? 'todos'],

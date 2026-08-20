@@ -69,6 +69,9 @@ const Combustible = lazy(() =>
 const Asignaciones = lazy(() =>
   import('@/pages/asignaciones/Asignaciones').then((m) => ({ default: m.Asignaciones })),
 )
+const EntregarATrabajador = lazy(() =>
+  import('@/pages/asignaciones/Entregar').then((m) => ({ default: m.Entregar })),
+)
 const Incidencias = lazy(() =>
   import('@/pages/asignaciones/Incidencias').then((m) => ({ default: m.Incidencias })),
 )
@@ -442,6 +445,10 @@ export default function App() {
               <Route path="nomina/personal/nuevo" element={<FormularioTrabajador />} />
               <Route path="nomina/personal/:id/editar" element={<FormularioTrabajador />} />
               <Route path="nomina/personal/:id" element={<FichaTrabajador />} />
+
+              {/* Es una acción, no una entrada del menú, así que no sale de
+                  `navigation` y se declara aquí como las de personal. */}
+              <Route path="asignaciones/entregar" element={<EntregarATrabajador />} />
 
               {rutasDeModulos.map((ruta) => (
                 <Route
