@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router'
 import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
 import { ModuloPendiente } from '@/pages/ModuloPendiente'
@@ -308,9 +308,34 @@ function Cargando() {
  */
 function RutaProtegida({ children }: { children: ReactNode }) {
   const { session, cargando } = useSesion()
+  const lugar = useLocation()
 
   if (cargando) return <Cargando />
-  if (!session) return <Navigate to="/entrar" replace />
+
+  /*
+    SE VA AL ACCESO DICIENDO POR QUE, Y GUARDANDO DONDE ESTABA
+
+    Antes se saltaba a `/entrar` sin mas. Quien estaba trabajando veia
+    aparecer el formulario de acceso de la nada, sin una linea que explicara
+    que habia pasado, y al volver a entrar aterrizaba en el panel en vez de en
+    la pantalla que tenia abierta. Lo reporto un usuario tal cual: «me cerro la
+    sesion porque si», y la captura que mando era el login en blanco.
+
+    La sesion se pierde por cosas que no son culpa de nadie —el token se
+    refresca cada hora y un corte de red en ese momento basta, o se entro con
+    la huella desde otro equipo y la cadena de tokens se rompio—. Que ocurra es
+    inevitable; que ocurra en silencio, no.
+  */
+  if (!session) {
+    return (
+      <Navigate
+        to="/entrar"
+        replace
+        state={{ expiro: true, volverA: lugar.pathname + lugar.search }}
+      />
+    )
+  }
+
   return children
 }
 
@@ -340,9 +365,16 @@ function ExigeClavePropia({ children }: { children: ReactNode }) {
 /** Evita que quien ya entró vuelva a ver el formulario de acceso. */
 function RutaPublica({ children }: { children: ReactNode }) {
   const { session, cargando } = useSesion()
+  const lugar = useLocation()
 
   if (cargando) return <Cargando />
-  if (session) return <Navigate to="/app" replace />
+
+  // Al volver a entrar se vuelve a donde estaba, no al panel.
+  if (session) {
+    const volverA = (lugar.state as { volverA?: string } | null)?.volverA
+    return <Navigate to={volverA && volverA.startsWith('/app') ? volverA : '/app'} replace />
+  }
+
   return children
 }
 

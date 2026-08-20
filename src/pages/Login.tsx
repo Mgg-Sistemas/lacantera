@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { AlertCircle, Fingerprint, User } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -14,6 +14,20 @@ import { sonarError } from '@/lib/sonido'
 
 export function Login() {
   const navigate = useNavigate()
+  const lugar = useLocation()
+
+  /*
+    Si llegó aquí porque se le cayó la sesión, se le dice.
+
+    `RutaProtegida` manda `expiro` cuando expulsa a alguien que estaba dentro.
+    Sin esto, el formulario de acceso aparece de la nada en mitad del trabajo y
+    la única lectura posible es que el sistema falló porque sí — que fue,
+    literalmente, lo que reportó el primer usuario al que le pasó.
+
+    Se distingue de un error de clave: aquello es un aviso rojo, esto es
+    información, y además no es culpa de quien lo lee.
+  */
+  const expiro = Boolean((lugar.state as { expiro?: boolean } | null)?.expiro)
   const pantalla = usePuntero<HTMLDivElement>()
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -185,6 +199,20 @@ export function Login() {
             <h1 className="text-ink/90 mt-7 text-2xl font-semibold tracking-tight">
               Entrar al sistema
             </h1>
+
+            {expiro && !error ? (
+              <div className="border-warning/30 bg-warning-soft mt-5 flex items-start gap-2.5 rounded-[6px] border p-3">
+                <AlertCircle className="text-warning mt-px size-[18px] shrink-0" />
+                <div>
+                  <p className="text-ink/85 text-sm font-medium">Se cerró la sesión</p>
+                  <p className="text-ink/60 mt-0.5 text-xs leading-relaxed">
+                    Pasa cuando se pierde la conexión al renovarse el acceso, o si entraste
+                    con la huella desde otro equipo. Vuelve a entrar y te dejamos donde
+                    estabas.
+                  </p>
+                </div>
+              </div>
+            ) : null}
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               {error ? (

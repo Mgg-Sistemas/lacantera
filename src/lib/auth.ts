@@ -60,5 +60,24 @@ export async function iniciarSesion(
 }
 
 export async function cerrarSesion(): Promise<void> {
-  await supabase.auth.signOut()
+  /*
+    `scope: 'local'` CIERRA ESTE EQUIPO, NO LA CUENTA ENTERA
+
+    Sin el argumento, Supabase usa `scope: 'global'` y **borra todas las
+    sesiones del usuario en todos los aparatos**. Como aquí varias personas
+    comparten un mismo acceso —`admin_`, `administradora_`, `sistemas2`—, el
+    que se iba a su casa y pulsaba «Salir» expulsaba a los demás en mitad del
+    trabajo.
+
+    Se veía en los registros del 19 de agosto: cierre de sesión de `admin_`
+    desde una IP a las 20:43, y a partir de las 21:18 tres
+    `refresh_token_not_found` seguidos desde otra IP de la misma cuenta —otra
+    persona, otro equipo—, que después tecleó mal la clave tres veces antes de
+    poder volver a entrar. Eso es lo que se reportó como «el sistema me cerró
+    la sesión porque sí».
+
+    Lo correcto sería una cuenta por persona; mientras se comparten, al menos
+    salir no arrastra a nadie.
+  */
+  await supabase.auth.signOut({ scope: 'local' })
 }
