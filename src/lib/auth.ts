@@ -59,7 +59,31 @@ export async function iniciarSesion(
   return { ok: true }
 }
 
+/*
+  QUIEN SE VA POR SU PIE NO NECESITA QUE LE EXPLIQUEN NADA
+
+  La pantalla de acceso avisa cuando la sesión se cayó sola, porque aparecer
+  ante un formulario en blanco a media tarea no se entiende. Pero ese mismo
+  aviso, después de pulsar «Salir», dice que algo falló cuando no falló nada.
+
+  Esta marca distingue las dos salidas. No se consume al leerla —hacerlo
+  durante el renderizado la vaciaría en el primer pase y React renderiza dos
+  veces en desarrollo—: se apaga sola cuando vuelve a haber sesión, en
+  `sesion.tsx`.
+*/
+let salidaDeliberada = false
+
+/** Si el último cierre de sesión lo pidió una persona, no un fallo. */
+export const salioAProposito = () => salidaDeliberada
+
+/** La llama `sesion.tsx` cuando entra una sesión nueva. */
+export const olvidarSalida = () => {
+  salidaDeliberada = false
+}
+
 export async function cerrarSesion(): Promise<void> {
+  salidaDeliberada = true
+
   /*
     `scope: 'local'` CIERRA ESTE EQUIPO, NO LA CUENTA ENTERA
 

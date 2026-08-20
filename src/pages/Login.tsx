@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
-import { AlertCircle, Fingerprint, User } from 'lucide-react'
+import { AlertCircle, Fingerprint, LogOut, User } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { FondoCantera } from '@/components/FondoCantera'
@@ -27,7 +27,11 @@ export function Login() {
     Se distingue de un error de clave: aquello es un aviso rojo, esto es
     información, y además no es culpa de quien lo lee.
   */
-  const expiro = Boolean((lugar.state as { expiro?: boolean } | null)?.expiro)
+  const estado = lugar.state as { expiro?: boolean; salio?: boolean } | null
+  const expiro = Boolean(estado?.expiro)
+
+  // Salir es una acción, no un incidente: se confirma en voz baja y se acabó.
+  const salio = Boolean(estado?.salio)
   const pantalla = usePuntero<HTMLDivElement>()
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -199,6 +203,13 @@ export function Login() {
             <h1 className="text-ink/90 mt-7 text-2xl font-semibold tracking-tight">
               Entrar al sistema
             </h1>
+
+            {salio && !error ? (
+              <div className="border-ink/12 bg-ink/4 mt-5 flex items-center gap-2.5 rounded-[6px] border p-3">
+                <LogOut className="text-ink/45 size-[18px] shrink-0" />
+                <p className="text-ink/70 text-sm">Cerraste la sesión en este equipo.</p>
+              </div>
+            ) : null}
 
             {expiro && !error ? (
               <div className="border-warning/30 bg-warning-soft mt-5 flex items-start gap-2.5 rounded-[6px] border p-3">

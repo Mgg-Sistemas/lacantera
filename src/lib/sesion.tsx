@@ -2,6 +2,7 @@ import { createContext, use, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { olvidarSalida } from './auth'
 import { renovarPaseGuardado } from './huella'
 
 interface EstadoSesion {
@@ -43,6 +44,10 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     const { data: suscripcion } = supabase.auth.onAuthStateChange((evento, nueva) => {
       setSession(nueva)
       setCargando(false)
+
+      // Entrar borra el recuerdo de la salida anterior: a partir de aquí, si la
+      // sesión se pierde, se perdió sola y el acceso debe decirlo.
+      if (nueva) olvidarSalida()
 
       /*
         El pase guardado para la huella sigue al de la sesión.

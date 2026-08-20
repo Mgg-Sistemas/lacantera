@@ -1,4 +1,5 @@
 import { lazy, Suspense, type ReactNode } from 'react'
+import { salioAProposito } from '@/lib/auth'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router'
 import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
@@ -327,6 +328,10 @@ function RutaProtegida({ children }: { children: ReactNode }) {
     inevitable; que ocurra en silencio, no.
   */
   if (!session) {
+    // Quien pulsó «Salir» no recibe explicación ni vuelve a donde estaba: se
+    // fue porque quiso. Sin esto, salir se contestaba con una alarma.
+    if (salioAProposito()) return <Navigate to="/entrar" replace state={{ salio: true }} />
+
     return (
       <Navigate
         to="/entrar"
