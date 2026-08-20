@@ -247,6 +247,7 @@ function TarjetaCotizacion({
   ventajas,
   elegida,
   puedeOperar,
+  ocupado,
   onProponer,
   onEliminar,
 }: {
@@ -255,6 +256,8 @@ function TarjetaCotizacion({
   ventajas: Ventaja[]
   elegida: boolean
   puedeOperar: boolean
+  /** Hay una petición en vuelo. El resto de la pantalla ya lo mira; esto faltaba. */
+  ocupado: boolean
   onProponer: () => void
   onEliminar: () => void
 }) {
@@ -319,11 +322,27 @@ function TarjetaCotizacion({
 
       {puedeOperar ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button size="sm" variant={elegida ? 'outline' : 'soft'} onClick={onProponer}>
+          {/* «Ya propuesta» es una frase, no una acción: dice cómo está la
+              cotización. Se dejaba pulsar y cada pulsación volvía a proponer
+              lo mismo, que llenaba el historial de líneas iguales y le mandaba
+              otro aviso al gerente. Para cambiar de cotización se pulsa la
+              otra, que sí está viva. */}
+          <Button
+            size="sm"
+            variant={elegida ? 'outline' : 'soft'}
+            disabled={elegida || ocupado}
+            onClick={onProponer}
+          >
             {elegida ? 'Ya propuesta' : 'Proponer al gerente'}
           </Button>
           {!elegida ? (
-            <Button size="sm" variant="ghost" className="text-danger" onClick={onEliminar}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-danger"
+              disabled={ocupado}
+              onClick={onEliminar}
+            >
               Eliminar
             </Button>
           ) : null}
@@ -647,6 +666,7 @@ export function DetalleCompra() {
                     ventajas={comparacion.get(c.id) ?? []}
                     elegida={compra.cotizacion_elegida_id === c.id}
                     puedeOperar={puedeCompras && compra.estado !== 'APROBADA'}
+                    ocupado={proponer.isPending || eliminarCotizacion.isPending}
                     onProponer={() =>
                       void proponer.mutate({ solicitud_id: compra.id, cotizacion_id: c.id })
                     }
