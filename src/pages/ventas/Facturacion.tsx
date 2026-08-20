@@ -581,9 +581,16 @@ export function Facturacion() {
             />
             <Input
               label="Referencia"
-              placeholder="Número de la transferencia"
+              placeholder={
+                metodo === 'EFECTIVO' ? 'Se genera sola' : 'Número de la transferencia'
+              }
               value={referencia}
               onChange={(e) => setReferencia(e.target.value)}
+              hint={
+                metodo === 'EFECTIVO'
+                  ? 'En efectivo no hay número que copiar: si lo dejas vacío, el sistema le pone uno (EFEUSD-2026-0001).'
+                  : 'El número que devolvió el banco o la plataforma.'
+              }
             />
           </div>
 
