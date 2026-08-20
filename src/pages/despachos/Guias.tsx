@@ -7,6 +7,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { enteros, fecha } from '@/lib/formato'
@@ -286,16 +287,20 @@ export function Guias() {
               onChange={(e) => setNueva({ ...nueva, cliente_id: e.target.value })}
               opciones={(clientes ?? []).map((c) => ({ valor: String(c.id), etiqueta: c.nombre }))}
             />
-            <Select
+            <SelectBuscable
               label="Material"
               vacio="Elige el material"
-              value={nueva.articulo_id}
-              onChange={(e) => setNueva({ ...nueva, articulo_id: e.target.value })}
+              valor={nueva.articulo_id}
+              onCambio={(v) => setNueva({ ...nueva, articulo_id: v })}
               opciones={(articulos ?? [])
                 .filter((a) => a.activo && a.categoria === 'PRODUCTO')
-                .map((a) => ({ valor: String(a.id), etiqueta: `${a.codigo} · ${a.nombre}` }))}
+                .map((a) => ({
+                  valor: String(a.id),
+                  codigo: a.codigo,
+                  nombre: a.nombre,
+                  detalle: a.unidad,
+                }))}
               className="sm:col-span-2"
-              required
             />
             {/* La medida se elige. El campo decía «toneladas» y solo admitía
                 eso; la cantera opera en metros cúbicos mientras tramita la

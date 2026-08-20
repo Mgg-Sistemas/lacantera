@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { ChipTasa } from '@/components/ChipTasa'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import {
@@ -289,14 +290,16 @@ export function NuevoPedido() {
                   className="border-hairline rounded-card grid gap-3 border p-3 sm:grid-cols-12"
                 >
                   <div className="sm:col-span-12">
-                    <Select
+                    <SelectBuscable
                       label={`Renglón ${indice + 1} · artículo del catálogo`}
                       vacio="No está en el catálogo — lo describo abajo"
-                      value={fila.articulo_id}
-                      onChange={(e) => elegirArticulo(fila.clave, e.target.value)}
+                      valor={fila.articulo_id}
+                      onCambio={(v) => elegirArticulo(fila.clave, v)}
                       opciones={(articulos ?? []).map((a) => ({
                         valor: String(a.id),
-                        etiqueta: `${a.codigo} · ${a.nombre}`,
+                        codigo: a.codigo,
+                        nombre: a.nombre,
+                        detalle: `${a.categoria} · ${a.unidad}`,
                       }))}
                     />
                   </div>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useArticulos, useMisRoles } from '@/lib/api/catalogo'
@@ -219,14 +220,19 @@ export function Transferencias() {
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Select
+          <SelectBuscable
             label="Artículo"
             vacio="Elige el artículo"
-            value={form.articulo}
-            onChange={(e) => cambiar({ articulo: e.target.value })}
+            valor={form.articulo}
+            onCambio={(v) => cambiar({ articulo: v })}
             opciones={(articulos ?? [])
               .filter((a) => a.inventariable && a.activo)
-              .map((a) => ({ valor: String(a.id), etiqueta: `${a.codigo} · ${a.nombre}` }))}
+              .map((a) => ({
+                valor: String(a.id),
+                codigo: a.codigo,
+                nombre: a.nombre,
+                detalle: `${a.categoria} · ${a.unidad}`,
+              }))}
           />
           <Input
             label="Cantidad"

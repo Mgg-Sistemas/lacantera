@@ -7,6 +7,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { enteros, fecha } from '@/lib/formato'
@@ -305,14 +306,19 @@ export function Tickets() {
               value={nuevo.cedula}
               onChange={(e) => setNuevo({ ...nuevo, cedula: e.target.value })}
             />
-            <Select
+            <SelectBuscable
               label="Material"
               vacio="Sin especificar"
-              value={nuevo.articulo_id}
-              onChange={(e) => setNuevo({ ...nuevo, articulo_id: e.target.value })}
+              valor={nuevo.articulo_id}
+              onCambio={(v) => setNuevo({ ...nuevo, articulo_id: v })}
               opciones={(articulos ?? [])
                 .filter((a) => a.activo)
-                .map((a) => ({ valor: String(a.id), etiqueta: `${a.codigo} · ${a.nombre}` }))}
+                .map((a) => ({
+                  valor: String(a.id),
+                  codigo: a.codigo,
+                  nombre: a.nombre,
+                  detalle: `${a.categoria} · ${a.unidad}`,
+                }))}
             />
             {nuevo.tipo === 'SALIDA' ? (
               <Select
