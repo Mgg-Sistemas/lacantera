@@ -41,7 +41,20 @@ export function PageHeader({ title, description, eyebrow, actions }: PageHeaderP
         <h1 className="text-ink/90 text-2xl font-semibold tracking-tight">{title}</h1>
         {description ? <p className="text-ink/55 mt-1 text-base">{description}</p> : null}
       </div>
-      {actions ? <div className="flex shrink-0 gap-2">{actions}</div> : null}
+      {/*
+        Los botones se parten de línea antes que empujar la página.
+
+        Llevaban `shrink-0` a secas: nunca se encogían y nunca se partían, así
+        que dos botones con nombre largo —«Historial de taller» y «Nueva
+        máquina», o «Cerrar trimestre» e «Intereses del trimestre»— medían 366
+        y 375 píxeles en una pantalla de 345 y sacaban la página entera de
+        cuadro. Se veía el título cortado por la izquierda, que es lo que menos
+        hace pensar en un botón.
+
+        De `sm` para arriba se comportan como antes: no se encogen, y el título
+        cede si hace falta. Debajo, mandan las líneas.
+      */}
+      {actions ? <div className="flex flex-wrap gap-2 sm:shrink-0">{actions}</div> : null}
     </div>
   )
 }
