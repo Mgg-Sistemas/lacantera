@@ -42,6 +42,7 @@ import {
   useMarcarDesistimiento,
   useProponerCotizacion,
   useResolverDesistimiento,
+  useDeclararComprobante,
 } from '@/lib/api/compras'
 import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import type { Cotizacion, InstruccionPago } from '@/lib/api/compras'
@@ -480,6 +481,7 @@ export function DetalleCompra() {
   const confirmar = useConfirmarPedido()
   const cancelarPedido = useCancelarPedido()
   const proponer = useProponerCotizacion()
+  const declarar = useDeclararComprobante()
   const eliminarCotizacion = useEliminarCotizacion()
   const aprobar = useAprobarCompra()
   const devolver = useDevolverACotizacion()
@@ -931,10 +933,66 @@ export function DetalleCompra() {
               {orden?.estado === 'POR_INDICAR_PAGO' ? (
                 puedeCompras ? (
                   <>
+                    {/*
+                      Se pregunta aquí y no dentro del formulario de pago.
+
+                      La base se niega a instruir un pago sin esto, y descubrirlo
+                      después de llenar banco, cuenta y titular sería enseñar la
+                      puerta cerrada al final del pasillo. Además es un dato que
+                      se sabe antes: se pacta al comprar o se ve al recibir.
+                    */}
+                    {!orden.comprobante_tipo ? (
+                      <div className="border-warning/30 bg-warning-soft mb-3 rounded-[6px] border p-3">
+                        <p className="text-ink/85 text-sm font-medium">
+                          ¿Con qué entrega el proveedor?
+                        </p>
+                        <p className="text-ink/60 mt-1 text-xs leading-relaxed">
+                          Solo la factura da derecho al crédito fiscal y entra en el libro de
+                          compras. Sin decirlo no se puede pagar.
+                        </p>
+
+                        <div className="mt-3 flex gap-2">
+                          {(['NOTA_ENTREGA', 'FACTURA'] as const).map((t) => (
+                            <Button
+                              key={t}
+                              size="sm"
+                              variant="outline"
+                              disabled={declarar.isPending}
+                              onClick={() =>
+                                declarar.mutate({ orden_id: orden.id, tipo: t })
+                              }
+                            >
+                              {t === 'FACTURA' ? 'Factura' : 'Nota de entrega'}
+                            </Button>
+                          ))}
+                        </div>
+
+                        {declarar.error ? (
+                          <ErrorDeCarga error={declarar.error} className="mt-2" />
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="text-ink/50 mb-3 text-xs">
+                        El proveedor entrega con{' '}
+                        <span className="text-ink/75 font-medium">
+                          {orden.comprobante_tipo === 'FACTURA' ? 'factura' : 'nota de entrega'}
+                        </span>
+                        .
+                        {orden.comprobante_tipo === 'FACTURA'
+                          ? ' Recuerda registrarla para poder descontar el IVA.'
+                          : ''}
+                      </p>
+                    )}
+
                     <p className="text-ink/60 mb-3 text-sm">
                       Indica cómo se le paga al proveedor. Con eso la orden entra a tesorería.
                     </p>
-                    <Button block icon={<CircleDollarSign />} onClick={() => setModal({ tipo: 'pago' })}>
+                    <Button
+                      block
+                      icon={<CircleDollarSign />}
+                      disabled={!orden.comprobante_tipo}
+                      onClick={() => setModal({ tipo: 'pago' })}
+                    >
                       Indicar método de pago
                     </Button>
                   </>

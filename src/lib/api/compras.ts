@@ -186,6 +186,14 @@ export interface Orden {
   id: number
   numero: string
   estado: string
+  /**
+   * Con qué respalda el proveedor esta compra: NOTA_ENTREGA o FACTURA.
+   *
+   * Nulo mientras nadie lo diga, y sin decirlo la base no deja instruir el
+   * pago. Solo la factura da derecho al crédito fiscal y entra al libro de
+   * compras.
+   */
+  comprobante_tipo: string | null
   moneda: string
   tasa: string
   tasa_usd: string
@@ -517,6 +525,21 @@ export interface DatosPago {
   correo_binance?: string
   red_cripto?: string
   receptor?: string
+}
+
+/*
+  DECLARAR CON QUÉ ENTREGA EL PROVEEDOR
+
+  Va aparte de `indicar_pago` a propósito. Se sabe al pactar la compra o al
+  recibir el material, casi siempre antes de que nadie piense en pagar, y
+  obligar a decirlo dentro del formulario de pago sería preguntarlo tarde.
+
+  Lo que sí hace el pago es negarse si esto falta.
+*/
+export function useDeclararComprobante() {
+  return useAccion((p: { orden_id: number; tipo: 'NOTA_ENTREGA' | 'FACTURA' }) =>
+    rpc('declarar_comprobante', { p_orden_id: p.orden_id, p_tipo: p.tipo }),
+  )
 }
 
 export function useIndicarPago() {
