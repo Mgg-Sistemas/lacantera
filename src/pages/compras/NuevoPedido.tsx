@@ -192,21 +192,23 @@ export function NuevoPedido() {
             />
             </div>
 
-            <Select
+            {/* El cargo va en la tercera línea y no pegado al nombre: así se
+                busca por «tesoreria» y sale quien la lleva, sin que el
+                renglón se parta en dos cuando el cargo es largo. */}
+            <SelectBuscable
               label="Quién lo solicita"
               hint="Si a quien lo necesita le falta algo, se le pregunta a esta persona."
-              value={seleccion}
-              onChange={(e) => setQuienPide(e.target.value)}
+              valor={seleccion}
+              onCambio={setQuienPide}
               opciones={[
                 ...(perfiles ?? [])
                   .filter((p) => p.activo)
                   .map((p) => ({
                     valor: p.id,
-                    etiqueta:
-                      (p.id === yo ? `${p.nombre} (yo)` : p.nombre) +
-                      (p.cargo ? ` · ${p.cargo}` : ''),
+                    nombre: p.id === yo ? `${p.nombre} (yo)` : p.nombre,
+                    detalle: p.cargo ?? undefined,
                   })),
-                { valor: OTRA_PERSONA, etiqueta: 'Otra persona — no tiene usuario' },
+                { valor: OTRA_PERSONA, nombre: 'Otra persona — no tiene usuario' },
               ]}
             />
 

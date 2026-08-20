@@ -189,6 +189,20 @@ export function useRegistrarTasa() {
  * par USD/VES—; cualquier otra aparece el día que se le registre una tasa, y
  * desaparece sola si nunca se le registra.
  */
+export type MonedaUsable = { valor: string; etiqueta: string; simbolo: string }
+
+/**
+ * La misma lista, dicha en símbolos.
+ *
+ * Para los sitios donde la moneda comparte fila con un monto y no hay ancho
+ * para «Dólar estadounidense»: el sueldo del tabulador, el salario de una
+ * ficha, el monto de una novedad. Es una función y no otro gancho a propósito
+ * — la consulta ya está hecha, esto solo elige qué columna se pinta.
+ */
+export function enSimbolos(lista: MonedaUsable[] | undefined) {
+  return (lista ?? []).map((m) => ({ valor: m.valor, etiqueta: m.simbolo }))
+}
+
 export function useMonedasUsables() {
   return useQuery({
     queryKey: ['monedas-usables'],
@@ -196,20 +210,31 @@ export function useMonedasUsables() {
     queryFn: async () => {
       const [conTasa, catalogo] = await Promise.all([
         supabase.from('tasas_cambio').select('moneda_origen'),
-        supabase.from('monedas').select('codigo, nombre').eq('activa', true),
+        supabase.from('monedas').select('codigo, nombre, simbolo').eq('activa', true),
       ])
 
       const filas = desenvolver<Array<{ moneda_origen: string }>>(conTasa)
-      const monedas = desenvolver<Array<{ codigo: string; nombre: string }>>(catalogo)
+      const monedas = desenvolver<Array<{ codigo: string; nombre: string; simbolo: string }>>(
+        catalogo,
+      )
 
       // El nombre sale del catálogo y no de un mapa aquí dentro: cuando el
       // USDT deje de llamarse `UST`, esta lista no hay que tocarla.
-      const nombres = new Map(monedas.map((m) => [m.codigo, m.nombre]))
+      const porCodigo = new Map(monedas.map((m) => [m.codigo, m]))
       const codigos = ['USD', 'VES', ...filas.map((f) => f.moneda_origen)]
 
-      return [...new Set(codigos)].map((c) => ({
+      /*
+        Viaja el nombre y el símbolo, y elige quien pinta.
+
+        En un desplegable ancho cabe «Dólar estadounidense» y se lee mejor. En
+        una columna estrecha —el sueldo del tabulador, el monto de una novedad—
+        ese nombre parte la etiqueta de al lado en dos líneas y descuadra la
+        fila entera. Ahí manda el símbolo.
+      */
+      return [...new Set(codigos)].map((c): MonedaUsable => ({
         valor: c,
-        etiqueta: nombres.get(c) ?? c,
+        etiqueta: porCodigo.get(c)?.nombre ?? c,
+        simbolo: porCodigo.get(c)?.simbolo ?? c,
       }))
     },
   })

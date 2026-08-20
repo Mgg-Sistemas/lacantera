@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useMonedasUsables } from '@/lib/api/tasas'
+import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -388,7 +388,7 @@ export function FormularioTrabajador() {
                 label="Moneda"
                 value={f.moneda_salario}
                 onChange={(e) => cambiar({ moneda_salario: e.target.value })}
-                opciones={monedas.data ?? []}
+                opciones={enSimbolos(monedas.data)}
               />
             </div>
             <Select
