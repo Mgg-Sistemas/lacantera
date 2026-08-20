@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { cn } from '@/lib/cn'
 import { Link, useNavigate } from 'react-router'
 import { ArrowLeft, PackageCheck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -55,6 +56,17 @@ export function Entregar() {
   const [empleado, setEmpleado] = useState('')
   const [almacen, setAlmacen] = useState('')
   const [fecha, setFecha] = useState(hoyEnCaracas())
+  /*
+    PARA QUÉ SE LE DA, QUE NO ES LO MISMO QUE QUÉ SE LE DA
+
+    Dotación es lo que necesita por su rol, mientras trabaje: casco, botas,
+    uniforme, la laptop. Asignación es lo que se le da para una faena concreta y
+    por un tiempo: el kit de llaves, el taladro, la motosierra.
+
+    No se puede deducir del artículo. El mismo taladro es dotación del mecánico
+    y asignación del ayudante que lo pidió para el martes. Por eso se pregunta.
+  */
+  const [clase, setClase] = useState<'DOTACION' | 'ASIGNACION'>('ASIGNACION')
   const [nota, setNota] = useState('')
   const [cuantas, setCuantas] = useState<Record<number, string>>({})
 
@@ -105,6 +117,7 @@ export function Entregar() {
       empleado_id: Number(empleado),
       almacen_id: Number(almacen),
       renglones,
+      clase,
       fecha,
       nota: nota || null,
     })
@@ -164,6 +177,62 @@ export function Entregar() {
               value={fecha}
               onChange={(e) => setFecha(e.target.value)}
             />
+          </div>
+
+          {/*
+            Dos botones y no un desplegable: son dos opciones, se leen de una
+            vez, y con la explicación debajo nadie tiene que adivinar cuál es
+            cuál. Un desplegable escondería la mitad de la pregunta.
+          */}
+          <div className="border-hairline mt-5 border-t pt-5">
+            <p className="text-ink/75 mb-2 text-sm font-medium">¿Para qué se le da?</p>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  {
+                    valor: 'DOTACION' as const,
+                    titulo: 'Dotación',
+                    detalle: 'Por su rol, mientras trabaje. Casco, botas, uniforme, la laptop.',
+                  },
+                  {
+                    valor: 'ASIGNACION' as const,
+                    titulo: 'Asignación',
+                    detalle: 'Para una actividad concreta y por un tiempo. Kit de llaves, taladro.',
+                  },
+                ]
+              ).map((o) => (
+                <button
+                  key={o.valor}
+                  type="button"
+                  onClick={() => setClase(o.valor)}
+                  className={cn(
+                    'rounded-[8px] border p-3 text-left transition-colors',
+                    clase === o.valor
+                      ? 'border-royal-600 bg-royal-600/8'
+                      : 'border-ink/15 hover:border-ink/30',
+                  )}
+                >
+                  <p
+                    className={cn(
+                      'text-sm font-medium',
+                      clase === o.valor ? 'text-ink/90' : 'text-ink/70',
+                    )}
+                  >
+                    {o.titulo}
+                  </p>
+                  <p className="text-ink/50 mt-0.5 text-xs leading-relaxed">{o.detalle}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Lo que vuelve y lo que se gasta lo decide el catálogo, no esta
+                pregunta. Decirlo aquí evita que alguien crea que eligiendo
+                «dotación» las botas dejan de descontarse. */}
+            <p className="text-ink/40 text-2xs mt-2 leading-relaxed">
+              Esto no decide si el bien vuelve: eso lo dice cada artículo en el catálogo. Una
+              laptop es dotación y vuelve; unas mascarillas son dotación y se gastan.
+            </p>
           </div>
         </Card>
 
