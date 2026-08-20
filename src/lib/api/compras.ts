@@ -559,8 +559,24 @@ export function useCancelarOrden() {
 }
 
 export function useMarcarDesistimiento() {
-  return useAccion((p: { orden_id: number; motivo: string }) =>
-    rpc('marcar_desistimiento', { p_orden_id: p.orden_id, p_motivo: p.motivo }),
+  return useAccion(
+    (p: {
+      orden_id: number
+      motivo: string
+      /**
+       * Si el proveedor se llevó de vuelta lo que ya había entregado.
+       *
+       * Por defecto no: lo recibido llegó de verdad y es de la empresa —contra
+       * entrega paga lo que llegue—. Marcarlo saca ese material del inventario
+       * con un reverso, no borrando nada.
+       */
+      material_devuelto?: boolean
+    }) =>
+      rpc('marcar_desistimiento', {
+        p_orden_id: p.orden_id,
+        p_motivo: p.motivo,
+        p_material_devuelto: p.material_devuelto ?? false,
+      }),
   )
 }
 
