@@ -74,7 +74,58 @@ function aNumero(crudo: string): number {
   return Number(crudo.slice(0, corte).replace(/[.,]/g, '') + '.' + crudo.slice(corte + 1))
 }
 
-function trocear(texto: string, alias: Map<string, string>): Ficha[] {
+/**
+ * Cuántas letras hay que cambiar para pasar de una palabra a la otra.
+ *
+ * Se corta en cuanto pasa de dos: no hace falta el número exacto, solo saber
+ * si están cerca. `bsb` y `bs` distan una.
+ */
+function distancia(a: string, b: string): number {
+  if (Math.abs(a.length - b.length) > 2) return 9
+  let fila = Array.from({ length: b.length + 1 }, (_, i) => i)
+
+  for (let i = 1; i <= a.length; i++) {
+    const nueva = [i]
+    for (let j = 1; j <= b.length; j++) {
+      nueva[j] = Math.min(
+        fila[j] + 1,
+        nueva[j - 1] + 1,
+        fila[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      )
+    }
+    fila = nueva
+  }
+
+  return fila[b.length]
+}
+
+/**
+ * Qué moneda quiso escribir quien tecleó otra cosa.
+ *
+ * Un aviso que solo dice que algo está mal deja a quien lo lee igual de
+ * atascado. `bsb` es `bs` con un dedo de más, y eso se puede decir.
+ */
+function parecida(palabra: string, alias: Map<string, string>): string | null {
+  const busca = palabra.toUpperCase()
+  let mejor: { codigo: string; d: number } | null = null
+
+  for (const [clave, codigo] of alias) {
+    // Los nombres largos del catálogo no sirven de sugerencia para un teclazo
+    // corto: nadie escribe «Dólar estadounidense» y le sobra una letra.
+    if (clave.length > 6) continue
+
+    const d = busca.startsWith(clave) || clave.startsWith(busca) ? 1 : distancia(busca, clave)
+    if (d <= 1 && (!mejor || d < mejor.d)) mejor = { codigo, d }
+  }
+
+  return mejor?.codigo ?? null
+}
+
+function trocear(
+  texto: string,
+  alias: Map<string, string>,
+  simbolo: (c: string) => string,
+): Ficha[] {
   const fichas: Ficha[] = []
   let i = 0
 
@@ -95,7 +146,7 @@ function trocear(texto: string, alias: Map<string, string>): Ficha[] {
     // El símbolo del euro y el del dólar no son letras.
     if (c === '$' || c === '€') {
       const codigo = alias.get(c)
-      if (!codigo) throw new ErrorDeCuenta(`No conozco la moneda «${c}».`)
+      if (!codigo) throw new ErrorDeCuenta(`«${c}» no es una moneda del sistema.`)
       fichas.push({ t: 'moneda', codigo })
       i++
       continue
@@ -106,7 +157,7 @@ function trocear(texto: string, alias: Map<string, string>): Ficha[] {
       while (j < texto.length && /[\d.,]/.test(texto[j])) j++
       const crudo = texto.slice(i, j)
       const valor = aNumero(crudo)
-      if (!Number.isFinite(valor)) throw new ErrorDeCuenta(`No entiendo el número «${crudo}».`)
+      if (!Number.isFinite(valor)) throw new ErrorDeCuenta(`«${crudo}» no es un número.`)
       fichas.push({ t: 'num', valor })
       i = j
       continue
@@ -117,13 +168,21 @@ function trocear(texto: string, alias: Map<string, string>): Ficha[] {
       while (j < texto.length && /\p{L}/u.test(texto[j])) j++
       const palabra = texto.slice(i, j)
       const codigo = alias.get(palabra.toUpperCase())
-      if (!codigo) throw new ErrorDeCuenta(`No conozco la moneda «${palabra}».`)
+
+      if (!codigo) {
+        const cerca = parecida(palabra, alias)
+        throw new ErrorDeCuenta(
+          cerca
+            ? `«${palabra}» no es una moneda. ¿Querías escribir ${simbolo(cerca)}?`
+            : `«${palabra}» no es una moneda del sistema.`,
+        )
+      }
       fichas.push({ t: 'moneda', codigo })
       i = j
       continue
     }
 
-    throw new ErrorDeCuenta(`Sobra un «${c}».`)
+    throw new ErrorDeCuenta(`Sobra un «${c}» en la cuenta.`)
   }
 
   return fichas
@@ -203,7 +262,7 @@ function analizar(fichas: Ficha[]): Nodo {
     throw new ErrorDeCuenta(
       sobra.t === 'sig' && sobra.s === ')'
         ? 'Sobra un paréntesis cerrado.'
-        : 'No entiendo el final de la cuenta.',
+        : 'Sobra algo al final de la cuenta.',
     )
   }
 
@@ -318,7 +377,7 @@ export function calcular(
 ): Resultado | null {
   if (!texto.trim()) return null
 
-  const fichas = trocear(texto, alias)
+  const fichas = trocear(texto, alias, simbolo)
   if (fichas.length === 0) return null
 
   const arbol = analizar(fichas)
