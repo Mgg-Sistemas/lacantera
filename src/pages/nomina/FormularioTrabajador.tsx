@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useMonedasUsables } from '@/lib/api/tasas'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -77,6 +78,7 @@ const vacio = {
 type Edicion = typeof vacio & { id?: number }
 
 export function FormularioTrabajador() {
+  const monedas = useMonedasUsables()
   const { id } = useParams()
   const navegar = useNavigate()
   const esNuevo = !id
@@ -386,10 +388,7 @@ export function FormularioTrabajador() {
                 label="Moneda"
                 value={f.moneda_salario}
                 onChange={(e) => cambiar({ moneda_salario: e.target.value })}
-                opciones={[
-                  { valor: 'VES', etiqueta: 'Bs' },
-                  { valor: 'USD', etiqueta: '$' },
-                ]}
+                opciones={monedas.data ?? []}
               />
             </div>
             <Select

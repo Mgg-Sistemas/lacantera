@@ -202,8 +202,18 @@ export function Prestaciones() {
                   >
                     <td className="px-5 py-3">
                       <p className="text-ink/85 font-medium">{p.nombre}</p>
+                      {/*
+                        La fila atenuada tenía que explicarse sola.
+
+                        Un renglón más pálido que el de al lado no dice nada: se
+                        lee como un fallo de pintado, no como «esta persona ya
+                        no trabaja aquí». Lo señaló Christopher mirando la
+                        lista, y tenía razón — el color era la única pista y el
+                        color no habla.
+                      */}
                       <p className="text-ink/45 text-xs">
                         {p.ficha} · {p.cargo}
+                        {!p.activo ? ' · egresado' : ''}
                         {p.liquidado ? ' · liquidado' : ''}
                       </p>
                     </td>
@@ -409,6 +419,7 @@ export function Prestaciones() {
                       <p className="text-ink/80">
                         {d.anio} · trimestre {d.trimestre}
                         {d.estimado ? ' · estimado' : ''}
+                        {d.estado === 'ANULADO' ? ' · anulado' : ''}
                       </p>
                       <p className="text-ink/45 text-xs">
                         {Number(d.dias)} días
@@ -442,6 +453,7 @@ export function Prestaciones() {
                       <p className="text-ink/80">
                         {a.numero} ·{' '}
                         {MOTIVOS_ANTICIPO.find((m) => m.valor === a.motivo)?.etiqueta ?? a.motivo}
+                        {a.estado === 'ANULADO' ? ' · anulado' : ''}
                       </p>
                       <p className="text-ink/45 text-xs">
                         {fecha(a.fecha)}

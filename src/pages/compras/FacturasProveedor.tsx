@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMonedasUsables } from '@/lib/api/tasas'
 import { Banknote, FileText, Paperclip, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Visor } from '@/components/Visor'
@@ -84,6 +85,7 @@ function retencionQueTocaria(iva: number, especial: boolean, pct: number | null)
 }
 
 export function FacturasProveedor() {
+  const monedas = useMonedasUsables()
   const { data: metodos } = useMetodosPago()
   const { data, isPending, error } = useFacturasCompra()
   const { data: proveedores } = useProveedores()
@@ -348,10 +350,7 @@ export function FacturasProveedor() {
               label="Moneda"
               value={nueva.moneda}
               onChange={(e) => setNueva({ ...nueva, moneda: e.target.value })}
-              opciones={[
-                { valor: 'VES', etiqueta: 'Bolívares' },
-                { valor: 'USD', etiqueta: 'Dólares' },
-              ]}
+              opciones={monedas.data ?? []}
             />
             <Select
               label="Condición de pago"
