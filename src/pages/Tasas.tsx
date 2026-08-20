@@ -8,7 +8,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
-import { useTasaBcv } from '@/lib/tasaBcv'
+import { useTasaEnVivo } from '@/lib/tasaBcv'
 import {
   hoyEnCaracas,
   useMonedasConTasa,
@@ -46,7 +46,7 @@ export function Tasas() {
   const [codigo, setCodigo] = useState('USD')
   const elegida = monedas.data?.find((m) => m.codigo === codigo)
 
-  const enVivo = useTasaBcv()
+  const enVivo = useTasaEnVivo(elegida)
   const vigente = useTasaVigente(codigo, elegida?.fuente_tasa ?? 'BCV')
   const historial = useTasasRegistradas(60, codigo)
   const registrar = useRegistrarTasa()
@@ -71,10 +71,21 @@ export function Tasas() {
 
   const yaRegistradaHoy = vigente.data?.fecha === hoy
 
-  // El BCV publica el dólar. Del euro publica otra cosa que aquí no se
-  // consulta, y del Tether no publica nada: para esas dos no hay valor
-  // sugerido y el número lo escribe quien lo sabe.
-  const conFuentePublica = codigo === 'USD'
+  /*
+    Las tres tienen fuente, pero no la misma.
+
+    El BCV publica el dólar y el euro —dos endpoints hermanos del mismo
+    agregador— y el USDT no lo publica ningún organismo: sale de la mediana del
+    libro P2P de Binance, por la función `tasa-usdt`, porque esa consulta el
+    navegador no la puede hacer.
+
+    Se mira el símbolo y no el código: el Tether entró como `UST` mientras
+    `monedas.codigo` medía tres, y pasó a `USDT` al ensancharse. El símbolo dice
+    lo mismo en los dos casos.
+  */
+  const porBinance = elegida?.simbolo === 'USDT'
+  const conFuentePublica = codigo === 'USD' || codigo === 'EUR' || porBinance
+  const quienPublica = porBinance ? 'la mediana del P2P de Binance' : 'el BCV'
   const unidad = elegida?.simbolo ?? codigo
 
   return (
@@ -169,8 +180,8 @@ export function Tasas() {
                     !conFuentePublica
                       ? `Se registra como ${elegida?.fuente_tasa ?? 'PARALELO'}: no hay fuente pública que consultar.`
                       : enVivo.data
-                        ? `Publicada por el BCV: Bs ${fmtTasa(enVivo.data.valor)}${enVivo.data.vigente ? '' : ' (no es de hoy)'}`
-                        : 'No se pudo consultar la fuente pública; escribe el valor a mano.'
+                        ? `Según ${quienPublica}: Bs ${fmtTasa(enVivo.data.valor)}${enVivo.data.vigente ? '' : ' (no es de hoy)'}`
+                        : `No se pudo consultar ${quienPublica}; escribe el valor a mano.`
                   }
                 />
               </div>
@@ -178,7 +189,7 @@ export function Tasas() {
               <div className="mt-4 flex flex-wrap justify-end gap-2">
                 {conFuentePublica && enVivo.data ? (
                   <Button variant="outline" onClick={() => setValor(String(enVivo.data.valor))}>
-                    Usar la del BCV
+                    {porBinance ? 'Usar la de Binance' : 'Usar la del BCV'}
                   </Button>
                 ) : null}
                 <Button
@@ -207,13 +218,19 @@ export function Tasas() {
           <div className="mt-4 space-y-4">
             {conFuentePublica ? (
               <div>
-                <p className="text-ink/50 text-xs">Publicada por el BCV</p>
+                <p className="text-ink/50 text-xs">
+                  {porBinance ? 'Mediana del P2P de Binance' : 'Publicada por el BCV'}
+                </p>
                 <p className="text-ink/90 tabular text-3xl font-semibold">
                   {enVivo.data ? fmtTasa(enVivo.data.valor) : '—'}
                 </p>
                 {enVivo.data ? (
                   <Chip tone={enVivo.data.vigente ? 'success' : 'warning'} className="mt-1.5">
-                    {enVivo.data.vigente ? 'De hoy' : 'De un día anterior'}
+                    {porBinance
+                      ? 'De ahora mismo'
+                      : enVivo.data.vigente
+                        ? 'De hoy'
+                        : 'De un día anterior'}
                   </Chip>
                 ) : null}
               </div>
