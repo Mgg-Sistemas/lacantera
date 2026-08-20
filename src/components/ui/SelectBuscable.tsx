@@ -58,6 +58,20 @@ interface Props {
   desplazamiento, una lista absoluta se recorta contra el borde; es el mismo
   motivo por el que `Modal` ya se dibuja allí.
 */
+/*
+  `min-w-0` NO ES DECORACIÓN
+
+  Un elemento dentro de un grid o un flex trae `min-width: auto`, que significa
+  «no me encojas por debajo de lo que mide mi contenido». Un campo con un
+  texto largo dentro —un marcador de posición, o el nombre de lo elegido—
+  ensancha su columna y desborda la tarjeta que lo contiene, con el borde
+  cortado a la derecha. Pasó en `/compras/nuevo`, donde el desplegable del
+  artículo dice «No está en el catálogo — lo describo abajo».
+
+  Con `min-w-0` el campo puede encogerse y el texto de dentro se recorta, que es
+  lo que se espera. Va aquí y no en cada pantalla porque el problema es del
+  campo, no de quien lo coloca.
+*/
 export function SelectBuscable({
   label,
   opciones,
@@ -184,7 +198,7 @@ export function SelectBuscable({
   const describedById = `${id}-desc`
 
   return (
-    <div className={cn('w-full', className)}>
+    <div className={cn('w-full min-w-0', className)}>
       <label htmlFor={id} className="text-ink/75 mb-1.5 block text-sm font-medium">
         {label}
       </label>

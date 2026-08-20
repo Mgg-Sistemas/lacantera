@@ -108,6 +108,25 @@ export function Modal({
         className={cn(
           'bg-surface shadow-popover relative flex w-full flex-col outline-none',
           /*
+            `min-w-0` ES LO QUE HACE QUE `w-full` SE CUMPLA
+
+            El contenedor de fuera es un flex, y este panel es uno de sus
+            elementos. Un elemento flex trae `min-width: auto`, que significa
+            «no me encojas por debajo de lo que mide mi contenido» — y eso gana
+            sobre `w-full`. Basta con un campo que lleve dentro un texto largo
+            para que el panel entero crezca más que la pantalla y se salga por
+            la derecha.
+
+            Se ve raro porque no se rompe el campo: se rompe todo. Hasta un
+            párrafo que debería partirse en líneas aparece cortado, porque el
+            que se salió de la pantalla fue el panel.
+
+            Lo destapó la cotización del proveedor en un teléfono, después de
+            que el desplegable del proveedor pasara a ser un botón con el
+            nombre y el RIF dentro.
+          */
+          'min-w-0 overflow-hidden',
+          /*
             EN EL TELÉFONO OCUPA LA PANTALLA ENTERA, NO UNA HOJA
 
             Antes era una hoja pegada abajo con tope de 92svh. En un escritorio
