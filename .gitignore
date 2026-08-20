@@ -36,6 +36,7 @@ dist-ssr
 # Supabase (local)
 supabase/.branches
 supabase/.temp
+supabase/local/
 
 # Claude Code: la configuracion personal no se comparte
 .claude/settings.local.json
@@ -54,87 +55,39 @@ src/pages/manual.generado.html
 *.png
 !public/**/*.png
 
-# Documentos legales de la empresa.
+# ---------------------------------------------------------------------------
+# Lo que no entra nunca
 #
-# `public/` se sirve en internet SIN clave y ademas viaja al repositorio, que es
-# publico. El acta de alianza con la Gobernacion, el RIF y lo que venga detras
-# son papeles de la empresa: van al almacenamiento privado de Supabase, detras
-# del acceso, y se leen desde la pantalla de Documentos legales.
+# Este repositorio es publico y el historial de git es permanente: un archivo
+# que entra una vez queda expuesto para siempre aunque se borre al minuto
+# siguiente. Por eso se corta aqui y no en la revision.
 #
-# El historial de git es permanente: si uno de estos entra una vez, quitarlo
-# despues no lo saca. Por eso se corta aqui y no en la revision.
+# Nada de lo de abajo hace falta en el repositorio. Los datos de la empresa ya
+# viven en la base, detras del acceso y de las politicas que deciden quien los
+# ve; los archivos se quedan en el equipo de quien los trabaja. Lo que si se
+# versiona es como funciona el sistema: eso esta en supabase/migrations/ y en
+# src/.
+#
+# El porque de cada linea, con el detalle que aqui no cabe, esta fuera del
+# repositorio. Preguntar antes de quitar ninguna.
+# ---------------------------------------------------------------------------
+
+# Documentos de la empresa. `public/` ademas se sirve en internet sin clave.
 public/*.pdf
 
-# Nominas y listados de personal en hoja de calculo.
-#
-# El libro de nomina lleva nombre, cedula, sueldo y numero de cuenta bancaria de
-# cada trabajador. Este repositorio es publico y su historial es permanente: un
-# archivo asi, commiteado una vez, queda expuesto para siempre aunque se borre
-# al minuto siguiente.
-#
-# Esos datos ya estan cargados en la base, detras del acceso y de las politicas
-# que solo dejan verlos a RRHH, gerencia y tesoreria. El archivo se queda en el
-# equipo de quien lo trabaja.
+# Hojas de calculo con datos de personal.
 *.xlsx
 *.xls
 *.csv
 
-# Cargas de datos reales de la empresa.
-#
-# En `supabase/migrations/` va como funciona el sistema y se versiona entero.
-# Aqui van los datos: el personal con su cedula y su cuenta, el tabulador con lo
-# que gana cada cargo. Ver supabase/CARGAS.md.
+# Cargas de datos reales.
 supabase/cargas/
-
-# Los originales pesados de las fotografias del frente.
-#
-# Llegaron en PNG y pesaban 7,5 MB entre las tres. PNG es formato de dibujo:
-# guarda cada pixel exacto, que en una fotografia no le sirve a nadie y
-# multiplica el peso por nueve. Las que se publican son los .jpg de al lado,
-# 830 KB entre las tres y sin diferencia visible.
-#
-# Los originales se quedan en el equipo por si hay que reencuadrar. Fuera del
-# repositorio a proposito: el historial de git es permanente, y 7,5 MB que
-# entran una vez ya no se sacan nunca.
-public/cantera/*.png
-
-# Coordinacion interna del equipo.
-#
-# El traspaso entre las dos sesiones de trabajo —quien lleva la apariencia y
-# quien lleva la funcionalidad— nombra cuentas, acuerdos y el reparto de
-# archivos. Es andamiaje de como trabajamos, no documentacion del producto: no
-# le sirve a quien llegue al repositorio dentro de un ano, y este repositorio es
-# publico.
-#
-# El resto de `docs/` si se versiona: eso explica el sistema.
-docs/traspaso-funcional.md
-
-# Analisis interno de vistas por rol.
-#
-# Mismo motivo que el traspaso: es andamiaje de como decidimos, no
-# documentacion del producto. Nombra cargos, supuestos sobre personas concretas
-# y decisiones a medio tomar. Este repositorio es publico.
-docs/vistas-por-rol.md
-
-# Traspaso del carril funcional al unico.
-#
-# Mismo motivo que los otros dos: andamiaje de como trabajamos, no
-# documentacion del producto. Este repositorio es publico.
-docs/traspaso-al-carril-unico.md
-
-# El andamio de la base local.
-#
-# Recrea el esquema para las pruebas, e incluye la clave provisional del
-# administrador. Es una base desechable que solo existe en el equipo de quien
-# la levanta, pero la clave no tiene por que viajar a un repositorio publico.
-supabase/local/
 
 # Documentos de trabajo en Markdown.
 #
 # Instruccion del 2026-08-19: todo .md nuevo queda fuera salvo que se diga lo
-# contrario. Lo que se escribe entre carriles —investigaciones, traspasos,
-# analisis a medio cocer— es andamiaje de como trabajamos, no documentacion del
-# producto, y este repositorio es publico.
+# contrario. Lo que se escribe mientras se trabaja es andamiaje, no
+# documentacion del producto.
 #
 # Los .md que YA estaban rastreados siguen estandolo: .gitignore no destrackea.
 # Eso salva a docs/manual-de-usuario.md, que la compilacion convierte a HTML en
@@ -143,11 +96,13 @@ supabase/local/
 # Para versionar uno nuevo a proposito: git add -f, o una excepcion aqui.
 *.md
 
-# Originales de marca y paleta.
+# ---------------------------------------------------------------------------
+# Peso
 #
-# Son material de origen, no piezas que sirva la web: de logoNuevo2.png salen
-# media/marca.webp y los tres favicones, y paleta_colores.jpeg es la referencia
-# de color que ya vive en index.css. Dentro de public/ los dos se publican y se
-# descargan con la pagina —253 KB que nadie pide— asi que se quedan en el equipo.
+# Originales pesados de los que salen las piezas que si se publican. Se quedan
+# en el equipo por si hay que rehacerlas: el historial es permanente y los
+# megabytes que entran una vez ya no se sacan.
+# ---------------------------------------------------------------------------
+public/cantera/*.png
 public/logoNuevo*.png
 public/paleta_colores.jpeg
