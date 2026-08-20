@@ -324,3 +324,52 @@ export function useReversarMovimiento() {
     rpc<number>('reversar_movimiento', { p_id: r.id, p_motivo: r.motivo }),
   )
 }
+
+// ---------------------------------------------------------------------------
+// La historia de un artículo
+// ---------------------------------------------------------------------------
+
+/*
+  TODO LO QUE LE HA PASADO, SEGUIDO
+
+  Estaba todo escrito y repartido en tres sitios que nadie cruza a mano: el
+  libro, las asignaciones y la propia fila del catálogo. Christopher lo pidió
+  con la comparación exacta —«tal como ya lo hacen las solicitudes de compras»—
+  y tenía razón: una compra sí cuenta su historia seguida y un artículo no.
+
+  Sale de `v_historial_articulo`, que une los hechos donde ya viven en vez de
+  copiarlos a una tabla nueva. Copiarlos sería asegurar que un día las dos
+  versiones no coincidan.
+*/
+export interface HechoDelArticulo {
+  articulo_id: number
+  ocurrido_en: string
+  fecha: string
+  tipo: string
+  titulo: string
+  detalle: string | null
+  cantidad: string | null
+  /** +1 sumó, -1 restó, 0 no movió existencia. */
+  signo: number
+  almacen: string | null
+  documento: string | null
+  /** Quién lo registró en el sistema. */
+  quien: string | null
+  /** A quién se le entregó, cuando el hecho es una entrega. */
+  persona: string | null
+}
+
+export function useHistorialArticulo(articuloId: number | null) {
+  return useQuery({
+    queryKey: ['historial-articulo', articuloId],
+    enabled: articuloId != null,
+    queryFn: async () =>
+      desenvolver<HechoDelArticulo[]>(
+        await supabase
+          .from('v_historial_articulo')
+          .select('*')
+          .eq('articulo_id', articuloId)
+          .order('ocurrido_en', { ascending: false }),
+      ),
+  })
+}

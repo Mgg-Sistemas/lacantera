@@ -102,6 +102,9 @@ const TableroNomina = lazy(() =>
 const Asistencia = lazy(() =>
   import('@/pages/nomina/Asistencia').then((m) => ({ default: m.Asistencia })),
 )
+const FichaArticulo = lazy(() =>
+  import('@/pages/inventario/FichaArticulo').then((m) => ({ default: m.FichaArticulo })),
+)
 const FichaTrabajador = lazy(() =>
   import('@/pages/nomina/FichaTrabajador').then((m) => ({ default: m.FichaTrabajador })),
 )
@@ -442,6 +445,7 @@ export default function App() {
               <Route path="compras/:id" element={<DetalleCompra />} />
               {/* `nuevo` antes que `:id` para leerlo de un vistazo, aunque el
                   enrutador ya prefiere lo estático sobre lo dinámico. */}
+              <Route path="inventario/articulos/:id" element={<FichaArticulo />} />
               <Route path="nomina/personal/nuevo" element={<FormularioTrabajador />} />
               <Route path="nomina/personal/:id/editar" element={<FormularioTrabajador />} />
               <Route path="nomina/personal/:id" element={<FichaTrabajador />} />

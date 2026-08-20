@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { Boxes, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -47,6 +48,7 @@ const modoDe = (categoria: string) =>
       : 'CONSUMIBLE'
 
 export function Articulos() {
+  const navegar = useNavigate()
   const { data, isPending, error } = useArticulos(false)
   const { data: unidades } = useUnidades()
   const crear = useCrearArticulo()
@@ -134,8 +136,15 @@ export function Articulos() {
                 </tr>
               </thead>
               <tbody>
+                {/* La fila entera lleva a la ficha del artículo. Es donde está su
+                    historia, y llegar ahí no debería costar buscar un enlace
+                    pequeño al final del renglón. */}
                 {filtrados.map((a) => (
-                  <tr key={a.id} className="border-hairline border-b last:border-0">
+                  <tr
+                    key={a.id}
+                    onClick={() => void navegar(`/app/inventario/articulos/${a.id}`)}
+                    className="border-hairline hover:bg-ink/3 cursor-pointer border-b transition-colors last:border-0"
+                  >
                     <td className="tabular text-ink/60 px-5 py-3 font-mono text-xs">{a.codigo}</td>
                     <td className="px-3 py-3">
                       <p className="text-ink/85 font-medium">{a.nombre}</p>
@@ -169,7 +178,7 @@ export function Articulos() {
                         </Chip>
                       </button>
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-5 py-3 text-right" onClick={(ev) => ev.stopPropagation()}>
                       <div className="flex justify-end gap-1">
                         <Button
                           size="sm"
