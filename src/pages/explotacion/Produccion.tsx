@@ -7,6 +7,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { enteros, fecha } from '@/lib/formato'
@@ -257,16 +258,15 @@ export function Produccion() {
               opciones={frentesActivos}
               required
             />
-            <Select
+            <SelectBuscable
               label="Patio"
               vacio="Adónde entra"
-              value={nuevo.almacen_id}
-              onChange={(e) => setNuevo({ ...nuevo, almacen_id: e.target.value })}
+              valor={nuevo.almacen_id}
+              onCambio={(v) => setNuevo({ ...nuevo, almacen_id: v })}
               opciones={(almacenes ?? []).map((a) => ({
                 valor: String(a.id),
                 etiqueta: a.nombre,
               }))}
-              required
             />
             <Select
               label="Voladura"

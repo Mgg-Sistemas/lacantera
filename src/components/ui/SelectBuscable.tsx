@@ -5,12 +5,28 @@ import { cn } from '@/lib/cn'
 
 export interface OpcionBuscable {
   valor: string
-  /** Lo que va en la columna angosta: el código con el que la gente lo pide. */
-  codigo: string
-  nombre: string
+  /**
+   * Lo que va en la columna angosta: el código con el que la gente lo pide.
+   *
+   * Opcional porque no todo tiene código. Un artículo sí —REP-NEU— y entonces
+   * la lista va a dos columnas; un cliente no, y va a una sola.
+   */
+  codigo?: string
+  nombre?: string
+  /**
+   * Una sola línea, cuando no hay código y nombre por separado.
+   *
+   * Existe para poder convertir de golpe los desplegables que ya venían
+   * armando su etiqueta a mano —«JESMARY BARCO · ficha 0018»— sin tener que
+   * partir treinta plantillas a mano y equivocarse en alguna.
+   */
+  etiqueta?: string
   /** Tercera línea opcional: unidad, categoría, existencia. */
   detalle?: string
 }
+
+/** Lo que se enseña cuando solo hay una línea. */
+const textoDe = (o: OpcionBuscable) => o.etiqueta ?? o.nombre ?? o.valor
 
 interface Props {
   label: string
@@ -82,7 +98,9 @@ export function SelectBuscable({
     // Cada palabra por separado, en cualquier orden: «neu 29» encuentra
     // «NEUMATICO 29.5R25» sin obligar a escribirlo seguido.
     return opciones.filter((o) => {
-      const heno = normalizar(`${o.codigo} ${o.nombre} ${o.detalle ?? ''}`)
+      const heno = normalizar(
+        `${o.codigo ?? ''} ${o.nombre ?? ''} ${o.etiqueta ?? ''} ${o.detalle ?? ''}`,
+      )
       return trozos.every((t) => heno.includes(t))
     })
   }, [opciones, texto])
@@ -214,8 +232,12 @@ export function SelectBuscable({
             <span className="flex items-center gap-2 truncate">
               {elegida ? (
                 <>
-                  <span className="text-ink/45 shrink-0 font-mono text-xs">{elegida.codigo}</span>
-                  <span className="truncate">{elegida.nombre}</span>
+                  {elegida.codigo ? (
+                    <span className="text-ink/45 shrink-0 font-mono text-xs">
+                      {elegida.codigo}
+                    </span>
+                  ) : null}
+                  <span className="truncate">{textoDe(elegida)}</span>
                 </>
               ) : (
                 (vacio ?? 'Selecciona…')
@@ -282,13 +304,17 @@ export function SelectBuscable({
                       )}
                     >
                       {/* El código en columna propia y a ancho fijo: así la
-                          vista baja en línea recta en vez de ir a saltos. */}
-                      <span className="text-ink/45 w-24 shrink-0 truncate font-mono text-xs">
-                        {o.codigo}
-                      </span>
+                          vista baja en línea recta en vez de ir a saltos. Sin
+                          código no se reserva la columna: dejaría a todas las
+                          filas con un hueco delante. */}
+                      {o.codigo ? (
+                        <span className="text-ink/45 w-24 shrink-0 truncate font-mono text-xs">
+                          {o.codigo}
+                        </span>
+                      ) : null}
 
                       <span className="min-w-0 flex-1">
-                        <span className="text-ink/90 block truncate text-sm">{o.nombre}</span>
+                        <span className="text-ink/90 block truncate text-sm">{textoDe(o)}</span>
                         {o.detalle ? (
                           <span className="text-ink/45 block truncate text-xs">{o.detalle}</span>
                         ) : null}

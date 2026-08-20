@@ -7,6 +7,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMaquinaria } from '@/lib/api/maquinaria'
@@ -370,11 +371,11 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
       />
 
       <div className="mt-4">
-        <Select
+        <SelectBuscable
           label="A qué máquina"
           vacio="No está en la ficha"
-          value={maquina}
-          onChange={(e) => setMaquina(e.target.value)}
+          valor={maquina}
+          onCambio={(v) => setMaquina(v)}
           opciones={(maquinas ?? []).map((m) => ({
             valor: String(m.id),
             etiqueta: `${m.codigo} · ${m.nombre}`,
@@ -427,11 +428,11 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
       </div>
 
       <div className="mt-4">
-        <Select
+        <SelectBuscable
           label="Quién lo recibió"
           vacio="Sin indicar"
-          value={empleado}
-          onChange={(e) => setEmpleado(e.target.value)}
+          valor={empleado}
+          onCambio={(v) => setEmpleado(v)}
           opciones={(empleados ?? []).map((e) => ({
             valor: String(e.id),
             etiqueta: `${e.nombres} ${e.apellidos} · ficha ${e.ficha}`,

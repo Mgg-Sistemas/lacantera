@@ -260,17 +260,17 @@ export function Tickets() {
                 camión termina existiendo tres veces: «A12BC3D», «a12bc3d» y
                 «A12 BC3D». Queda «Otro» para el que no esté cargado, que sigue
                 siendo texto — a la romana entra quien entra. */}
-            <Select
+            <SelectBuscable
               label="Vehículo"
               vacio="Otro — escribo la placa"
-              value={nuevo.vehiculo_id}
-              onChange={(e) => {
-                const v = (vehiculos ?? []).find((x) => String(x.id) === e.target.value)
+              valor={nuevo.vehiculo_id}
+              onCambio={(elegido) => {
+                const veh = (vehiculos ?? []).find((x) => String(x.id) === elegido)
                 setNuevo({
                   ...nuevo,
-                  vehiculo_id: e.target.value,
-                  vehiculo: v ? v.placa : '',
-                  transportista: v?.transportista ?? nuevo.transportista,
+                  vehiculo_id: elegido,
+                  vehiculo: veh ? veh.placa : '',
+                  transportista: veh?.transportista ?? nuevo.transportista,
                 })
               }}
               opciones={(vehiculos ?? []).map((v) => ({
@@ -321,11 +321,11 @@ export function Tickets() {
                 }))}
             />
             {nuevo.tipo === 'SALIDA' ? (
-              <Select
+              <SelectBuscable
                 label="Cliente"
                 vacio="Sin cliente todavía"
-                value={nuevo.cliente_id}
-                onChange={(e) => setNuevo({ ...nuevo, cliente_id: e.target.value })}
+                valor={nuevo.cliente_id}
+                onCambio={(v) => setNuevo({ ...nuevo, cliente_id: v })}
                 opciones={(clientes ?? []).map((c) => ({
                   valor: String(c.id),
                   etiqueta: c.nombre,
@@ -333,11 +333,11 @@ export function Tickets() {
                 className="sm:col-span-3"
               />
             ) : (
-              <Select
+              <SelectBuscable
                 label="Proveedor"
                 vacio="Sin proveedor"
-                value={nuevo.proveedor_id}
-                onChange={(e) => setNuevo({ ...nuevo, proveedor_id: e.target.value })}
+                valor={nuevo.proveedor_id}
+                onCambio={(v) => setNuevo({ ...nuevo, proveedor_id: v })}
                 opciones={(proveedores ?? []).map((p) => ({
                   valor: String(p.id),
                   etiqueta: p.nombre,

@@ -8,6 +8,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dinero, dolares, fecha, fechaHora } from '@/lib/formato'
@@ -311,19 +312,18 @@ export function FacturasProveedor() {
           }
         >
           <div className="grid gap-4 sm:grid-cols-3">
-            <Select
+            <SelectBuscable
               label="Proveedor"
               vacio="Elige el proveedor"
-              value={nueva.proveedor_id}
-              onChange={(e) =>
-                setNueva(conRetencionPropuesta({ ...nueva, proveedor_id: e.target.value }))
+              valor={nueva.proveedor_id}
+              onCambio={(v) =>
+                setNueva(conRetencionPropuesta({ ...nueva, proveedor_id: v }))
               }
               opciones={(proveedores ?? []).map((p) => ({
                 valor: String(p.id),
                 etiqueta: `${p.rif} · ${p.nombre}`,
               }))}
               className="sm:col-span-3"
-              required
             />
             <Input
               label="Número de factura"
@@ -782,19 +782,18 @@ export function FacturasProveedor() {
           }
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Select
+            <SelectBuscable
               label="De qué cuenta sale"
               vacio="Elige la cuenta"
-              value={cuentaId}
-              onChange={(e) => {
-                setCuentaId(e.target.value)
+              valor={cuentaId}
+              onCambio={(v) => {
+                setCuentaId(v)
                 setIgtf(null)
               }}
               opciones={(cuentas ?? [])
                 .filter((c) => c.activa)
                 .map((c) => ({ valor: String(c.id), etiqueta: `${c.nombre} · ${c.moneda}` }))}
               hint="El pago se registra en la moneda de la cuenta."
-              required
             />
             <Input
               label={`Monto${cuenta ? ` en ${cuenta.moneda}` : ''}`}

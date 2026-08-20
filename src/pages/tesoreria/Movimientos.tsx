@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
-import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
@@ -46,11 +46,11 @@ export function MovimientosTesoreria() {
 
       <Card className="mb-4">
         <div className="sm:max-w-xs">
-          <Select
+          <SelectBuscable
             label="Cuenta"
             vacio="Todas las cuentas"
-            value={cuentaId}
-            onChange={(e) => setCuentaId(e.target.value)}
+            valor={cuentaId}
+            onCambio={(v) => setCuentaId(v)}
             opciones={(cuentas ?? []).map((c) => ({
               valor: String(c.id),
               etiqueta: `${c.nombre} — ${dinero(c.moneda, c.saldo)}`,
