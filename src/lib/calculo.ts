@@ -1,0 +1,337 @@
+/*
+  UNA CALCULADORA QUE SABE DE MONEDAS
+
+  La primera versión solo entendía sumas y restas, y con lo demás hizo algo
+  peor que fallar: `(1+98.09usdt*2eur)/2usd` lo leyó como si todo fueran sumas
+  y devolvió un número con total confianza. Una calculadora que se inventa la
+  cuenta es más peligrosa que una que no calcula.
+
+  Ahora lee la cuenta entera —paréntesis, `*`, `/`, signos— y cuando no puede
+  con algo lo dice en vez de aproximarlo.
+
+  LAS MONEDAS TIENEN DIMENSIÓN, Y ESO NO ES PEDANTERÍA
+
+  Cada valor lleva su exponente de dinero: `300 $` es dinero (1), `1,16` es un
+  número suelto (0). Las operaciones lo arrastran:
+
+    dinero + dinero → dinero          300 $ + 50 €
+    dinero × número → dinero          300 $ × 1,16      (el IVA)
+    dinero ÷ número → dinero          (300 $ + 200 $) ÷ 2   (repartir)
+    dinero ÷ dinero → número          1.000 $ ÷ 800 $ = 1,25   (una proporción)
+    dinero × dinero → NO EXISTE
+
+  Esa última es la de tu cuenta: multiplicar 98,09 USDT por 2 € daría
+  «USDT·euros», que no es nada. Antes salía un número; ahora sale el motivo.
+
+  UN NÚMERO SIN MONEDA
+
+  Sumando o restando, toma la moneda del otro lado: `300 $ + 50` son 350
+  dólares, que es lo que quiere decir cualquiera. Multiplicando o dividiendo se
+  queda como número suelto, que es lo que hace falta para el IVA o para
+  repartir. La regla cabe en una línea y no depende de dónde esté escrito.
+
+  TODO PASA POR BOLÍVARES
+
+  Es la única moneda contra la que hay tasas registradas; no existe una tabla
+  de pares. Euros → bolívares → USDT, con una conversión intermedia y sin
+  inventar cruces que nadie anotó.
+*/
+
+export interface Valor {
+  /** El monto llevado a bolívares. Para un número suelto, el número tal cual. */
+  bs: number
+  /** 0 = número suelto, 1 = dinero. Cualquier otra cosa es un error. */
+  dim: number
+  /** Con qué moneda se escribió, para poder ascender un número suelto. */
+  moneda?: string
+}
+
+type Nodo =
+  | { t: 'num'; valor: number; moneda?: string }
+  | { t: 'op'; op: '+' | '-' | '*' | '/'; a: Nodo; b: Nodo }
+  | { t: 'neg'; a: Nodo }
+
+export class ErrorDeCuenta extends Error {}
+
+// ---------------------------------------------------------------------------
+// Trocear
+// ---------------------------------------------------------------------------
+type Ficha =
+  | { t: 'num'; valor: number }
+  | { t: 'moneda'; codigo: string }
+  | { t: 'sig'; s: string }
+
+/**
+ * Coma o punto como decimal.
+ *
+ * En Venezuela se escribe `15,50` y el teclado numérico pone `15.50`. Cuando
+ * aparecen los dos manda el último, que es el decimal en las dos convenciones:
+ * `1.234,56` y `1,234.56` son el mismo número escrito por dos personas.
+ */
+function aNumero(crudo: string): number {
+  const corte = Math.max(crudo.lastIndexOf(','), crudo.lastIndexOf('.'))
+  if (corte === -1) return Number(crudo)
+  return Number(crudo.slice(0, corte).replace(/[.,]/g, '') + '.' + crudo.slice(corte + 1))
+}
+
+function trocear(texto: string, alias: Map<string, string>): Ficha[] {
+  const fichas: Ficha[] = []
+  let i = 0
+
+  while (i < texto.length) {
+    const c = texto[i]
+
+    if (/\s/.test(c)) {
+      i++
+      continue
+    }
+
+    if ('+-*/()'.includes(c)) {
+      fichas.push({ t: 'sig', s: c })
+      i++
+      continue
+    }
+
+    // El símbolo del euro y el del dólar no son letras.
+    if (c === '$' || c === '€') {
+      const codigo = alias.get(c)
+      if (!codigo) throw new ErrorDeCuenta(`No conozco la moneda «${c}».`)
+      fichas.push({ t: 'moneda', codigo })
+      i++
+      continue
+    }
+
+    if (/[\d.,]/.test(c)) {
+      let j = i
+      while (j < texto.length && /[\d.,]/.test(texto[j])) j++
+      const crudo = texto.slice(i, j)
+      const valor = aNumero(crudo)
+      if (!Number.isFinite(valor)) throw new ErrorDeCuenta(`No entiendo el número «${crudo}».`)
+      fichas.push({ t: 'num', valor })
+      i = j
+      continue
+    }
+
+    if (/\p{L}/u.test(c)) {
+      let j = i
+      while (j < texto.length && /\p{L}/u.test(texto[j])) j++
+      const palabra = texto.slice(i, j)
+      const codigo = alias.get(palabra.toUpperCase())
+      if (!codigo) throw new ErrorDeCuenta(`No conozco la moneda «${palabra}».`)
+      fichas.push({ t: 'moneda', codigo })
+      i = j
+      continue
+    }
+
+    throw new ErrorDeCuenta(`Sobra un «${c}».`)
+  }
+
+  return fichas
+}
+
+// ---------------------------------------------------------------------------
+// Leer la cuenta
+// ---------------------------------------------------------------------------
+function analizar(fichas: Ficha[]): Nodo {
+  let i = 0
+
+  const mirar = () => fichas[i]
+  const esSigno = (s: string) => {
+    const f = mirar()
+    return f?.t === 'sig' && f.s === s
+  }
+
+  function expresion(): Nodo {
+    let izq = termino()
+    while (esSigno('+') || esSigno('-')) {
+      const op = (fichas[i] as { s: string }).s as '+' | '-'
+      i++
+      izq = { t: 'op', op, a: izq, b: termino() }
+    }
+    return izq
+  }
+
+  function termino(): Nodo {
+    let izq = unario()
+    while (esSigno('*') || esSigno('/')) {
+      const op = (fichas[i] as { s: string }).s as '*' | '/'
+      i++
+      izq = { t: 'op', op, a: izq, b: unario() }
+    }
+    return izq
+  }
+
+  function unario(): Nodo {
+    if (esSigno('-')) {
+      i++
+      return { t: 'neg', a: unario() }
+    }
+    if (esSigno('+')) {
+      i++
+      return unario()
+    }
+    return primario()
+  }
+
+  function primario(): Nodo {
+    if (esSigno('(')) {
+      i++
+      const dentro = expresion()
+      if (!esSigno(')')) throw new ErrorDeCuenta('Falta cerrar un paréntesis.')
+      i++
+      return dentro
+    }
+
+    const f = mirar()
+    if (f?.t !== 'num') throw new ErrorDeCuenta('Falta un número en la cuenta.')
+    i++
+
+    // La moneda va pegada detrás del número: `98,09 usdt`.
+    const siguiente = mirar()
+    if (siguiente?.t === 'moneda') {
+      i++
+      return { t: 'num', valor: f.valor, moneda: siguiente.codigo }
+    }
+
+    return { t: 'num', valor: f.valor }
+  }
+
+  const arbol = expresion()
+
+  if (i < fichas.length) {
+    const sobra = fichas[i]
+    throw new ErrorDeCuenta(
+      sobra.t === 'sig' && sobra.s === ')'
+        ? 'Sobra un paréntesis cerrado.'
+        : 'No entiendo el final de la cuenta.',
+    )
+  }
+
+  return arbol
+}
+
+// ---------------------------------------------------------------------------
+// Calcular
+// ---------------------------------------------------------------------------
+function evaluar(n: Nodo, enBolivares: Map<string, number>, nombre: (c: string) => string): Valor {
+  if (n.t === 'num') {
+    if (!n.moneda) return { bs: n.valor, dim: 0 }
+
+    const tasa = enBolivares.get(n.moneda)
+    if (tasa === undefined) {
+      throw new ErrorDeCuenta(`Falta registrar la tasa de ${nombre(n.moneda)}.`)
+    }
+    return { bs: n.valor * tasa, dim: 1, moneda: n.moneda }
+  }
+
+  if (n.t === 'neg') {
+    const a = evaluar(n.a, enBolivares, nombre)
+    return { ...a, bs: -a.bs }
+  }
+
+  const a = evaluar(n.a, enBolivares, nombre)
+  const b = evaluar(n.b, enBolivares, nombre)
+
+  if (n.op === '+' || n.op === '-') {
+    const signo = n.op === '+' ? 1 : -1
+
+    if (a.dim === b.dim) {
+      return { bs: a.bs + signo * b.bs, dim: a.dim, moneda: a.moneda ?? b.moneda }
+    }
+
+    // Un número suelto sumado a dinero toma la moneda del otro lado.
+    const ascender = (suelto: Valor, dinero: Valor): Valor => {
+      const tasa = enBolivares.get(dinero.moneda ?? '')
+      if (tasa === undefined) throw new ErrorDeCuenta('Falta la tasa para esa suma.')
+      return { bs: suelto.bs * tasa, dim: 1, moneda: dinero.moneda }
+    }
+
+    if (a.dim === 0 && b.dim === 1) {
+      const sube = ascender(a, b)
+      return { bs: sube.bs + signo * b.bs, dim: 1, moneda: b.moneda }
+    }
+    if (b.dim === 0 && a.dim === 1) {
+      const sube = ascender(b, a)
+      return { bs: a.bs + signo * sube.bs, dim: 1, moneda: a.moneda }
+    }
+
+    throw new ErrorDeCuenta('No se pueden sumar esas dos cosas.')
+  }
+
+  if (n.op === '*') {
+    const dim = a.dim + b.dim
+    if (dim > 1) {
+      throw new ErrorDeCuenta(
+        'No se puede multiplicar dinero por dinero: el resultado no sería una cantidad. Para un porcentaje usa un número suelto, como «× 1,16».',
+      )
+    }
+    return { bs: a.bs * b.bs, dim, moneda: a.moneda ?? b.moneda }
+  }
+
+  if (b.bs === 0) throw new ErrorDeCuenta('No se puede dividir entre cero.')
+
+  const dim = a.dim - b.dim
+  if (dim < 0) {
+    throw new ErrorDeCuenta('No se puede dividir un número entre dinero.')
+  }
+  return { bs: a.bs / b.bs, dim, moneda: dim === 1 ? (a.moneda ?? b.moneda) : undefined }
+}
+
+// ---------------------------------------------------------------------------
+// Devolver la cuenta escrita como se entendió
+// ---------------------------------------------------------------------------
+function escribir(n: Nodo, simbolo: (c: string) => string): string {
+  const numero = (v: number) =>
+    new Intl.NumberFormat('es-VE', { maximumFractionDigits: 4 }).format(v)
+
+  if (n.t === 'num') {
+    return n.moneda ? `${numero(n.valor)} ${simbolo(n.moneda)}` : numero(n.valor)
+  }
+  if (n.t === 'neg') return `−${escribir(n.a, simbolo)}`
+
+  const signos = { '+': '+', '-': '−', '*': '×', '/': '÷' } as const
+  const dentro = `${escribir(n.a, simbolo)} ${signos[n.op]} ${escribir(n.b, simbolo)}`
+
+  // Solo lleva paréntesis lo que los necesita para leerse igual que se calcula.
+  return n.op === '+' || n.op === '-' ? `(${dentro})` : dentro
+}
+
+export interface Resultado {
+  valor: Valor
+  /** La cuenta tal como se entendió, para poder comprobarla de un vistazo. */
+  comoSeLeyo: string
+}
+
+/**
+ * Resuelve una cuenta con monedas.
+ *
+ * `enBolivares` lleva cuántos bolívares vale una unidad de cada moneda; el
+ * bolívar contra sí mismo es 1. `alias` traduce lo que escribe la gente —`$`,
+ * `bs`, `euros`— al código del catálogo.
+ */
+export function calcular(
+  texto: string,
+  alias: Map<string, string>,
+  enBolivares: Map<string, number>,
+  nombre: (c: string) => string,
+  simbolo: (c: string) => string,
+): Resultado | null {
+  if (!texto.trim()) return null
+
+  const fichas = trocear(texto, alias)
+  if (fichas.length === 0) return null
+
+  const arbol = analizar(fichas)
+  const valor = evaluar(arbol, enBolivares, nombre)
+
+  if (!Number.isFinite(valor.bs)) throw new ErrorDeCuenta('La cuenta no da un número.')
+
+  // Los paréntesis de fuera sobran: envuelven la cuenta entera y no aclaran
+  // nada. Los de dentro se quedan, que son los que dicen el orden.
+  let leida = escribir(arbol, simbolo)
+  if (arbol.t === 'op' && (arbol.op === '+' || arbol.op === '-')) {
+    leida = leida.slice(1, -1)
+  }
+
+  return { valor, comoSeLeyo: leida }
+}
