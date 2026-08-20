@@ -382,7 +382,7 @@ export function FichaTrabajador() {
             {e.activo ? 'Activo' : 'Desincorporado'}
           </Chip>
           {puedeRRHH ? (
-            <Link to={`/app/nomina/personal?editar=${e.id}`}>
+            <Link to={`/app/nomina/personal/${e.id}/editar`}>
               <Button size="sm" variant="outline" icon={<Pencil />}>
                 Editar datos
               </Button>

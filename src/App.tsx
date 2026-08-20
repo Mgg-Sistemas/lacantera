@@ -102,6 +102,9 @@ const Asistencia = lazy(() =>
 const FichaTrabajador = lazy(() =>
   import('@/pages/nomina/FichaTrabajador').then((m) => ({ default: m.FichaTrabajador })),
 )
+const FormularioTrabajador = lazy(() =>
+  import('@/pages/nomina/FormularioTrabajador').then((m) => ({ default: m.FormularioTrabajador })),
+)
 const Parametros = lazy(() =>
   import('@/pages/nomina/Parametros').then((m) => ({ default: m.Parametros })),
 )
@@ -434,6 +437,10 @@ export default function App() {
               <Route path="despachos/vehiculos/:id" element={<FichaVehiculo />} />
               <Route path="compras/nuevo" element={<NuevoPedido />} />
               <Route path="compras/:id" element={<DetalleCompra />} />
+              {/* `nuevo` antes que `:id` para leerlo de un vistazo, aunque el
+                  enrutador ya prefiere lo estático sobre lo dinámico. */}
+              <Route path="nomina/personal/nuevo" element={<FormularioTrabajador />} />
+              <Route path="nomina/personal/:id/editar" element={<FormularioTrabajador />} />
               <Route path="nomina/personal/:id" element={<FichaTrabajador />} />
 
               {rutasDeModulos.map((ruta) => (
