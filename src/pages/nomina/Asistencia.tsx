@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useMonedasUsables } from '@/lib/api/tasas'
+import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import { useSearchParams } from 'react-router'
 import { CalendarClock, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -330,7 +330,7 @@ export function Asistencia() {
                 label="Moneda"
                 value={nuevoMonto.moneda}
                 onChange={(e) => setNuevoMonto((n) => ({ ...n, moneda: e.target.value }))}
-                opciones={monedas.data ?? []}
+                opciones={enSimbolos(monedas.data)}
               />
             </div>
             <Input

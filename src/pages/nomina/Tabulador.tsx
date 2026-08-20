@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMonedasUsables } from '@/lib/api/tasas'
+import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import { Link } from 'react-router'
 import { ArrowRight, Pencil, Plus, RefreshCw, Scale, Trash2, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -321,7 +321,7 @@ export function Tabulador() {
                 label="Moneda"
                 value={edicion.moneda}
                 onChange={(e) => cambiar({ moneda: e.target.value })}
-                opciones={monedas.data ?? []}
+                opciones={enSimbolos(monedas.data)}
               />
             </div>
 
