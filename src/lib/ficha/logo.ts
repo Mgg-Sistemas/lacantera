@@ -26,7 +26,20 @@
  * pantalla dicen lo mismo.
  */
 
-const RUTA = '/logoNuevo2.png'
+/*
+  Se lee de `/media/marca.webp` y no de `/logoNuevo2.png`.
+
+  El PNG existe en el equipo pero esta en el `.gitignore` —el repositorio es
+  publico y las imagenes de marca no viajan— asi que nunca llego al servidor.
+  En produccion daba 404, la promesa se rompia, y como `armarDocumento` la
+  espera antes de dibujar nada, el PDF no se generaba: el boton de Imprimir no
+  hacia absolutamente nada, sin error visible.
+
+  `media/marca.webp` es el mismo logo, si esta versionado, y es el que la
+  interfaz ya pinta en la barra lateral. Una sola fuente para la pantalla y el
+  papel, que ademas es la unica que se despliega.
+*/
+const RUTA = '/media/marca.webp'
 
 let cargando: Promise<HTMLImageElement> | null = null
 const cacheDataUrl = new Map<number, string>()
@@ -39,6 +52,14 @@ function cargar(): Promise<HTMLImageElement> {
     img.onload = () => resolver(img)
     img.onerror = () => rechazar(new Error(`No se pudo cargar ${RUTA}`))
     img.src = RUTA
+  })
+
+  // Un logo que no carga no puede impedir que salga el documento. Se pierde el
+  // sello, que es feo; perder la nota de entrega con el camion esperando es
+  // otra cosa.
+  cargando = cargando.catch(() => {
+    cargando = null
+    throw new Error('sin-logo')
   })
 
   return cargando
@@ -55,7 +76,12 @@ export async function logoComoImagen(lado = 400, conCirculo = true): Promise<str
   const guardado = cacheDataUrl.get(clave)
   if (guardado) return guardado
 
-  const img = await cargar()
+  let img: HTMLImageElement
+  try {
+    img = await cargar()
+  } catch {
+    return ''
+  }
 
   const lienzo = document.createElement('canvas')
   lienzo.width = lado
