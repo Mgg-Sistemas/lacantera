@@ -781,3 +781,149 @@ export function useEntregarDotacion() {
     },
   })
 }
+
+// ---------------------------------------------------------------------------
+// Lo que le pasa a una persona
+// ---------------------------------------------------------------------------
+
+/*
+  «Incidencia» significaba dos cosas y ninguna era esta.
+
+  En asignaciones es lo que le pasa a una herramienta —perdida, dañada—. En
+  nómina, `faltas_injustificadas` es un número dentro de un período, hecho para
+  restar de un pago: no dice cuándo fue, ni por qué, ni si estaba enfermo.
+
+  Esto es el hecho: qué pasó, cuándo, dónde, cuánto duró, con quién y por qué.
+*/
+export const TIPOS_INCIDENCIA = [
+  { valor: 'CONFLICTO', etiqueta: 'Conflicto', reposo: false },
+  { valor: 'ENFERMEDAD', etiqueta: 'Enfermedad', reposo: true },
+  { valor: 'LESION_LABORAL', etiqueta: 'Lesión en labores', reposo: true },
+  { valor: 'ACCIDENTE_COMUN', etiqueta: 'Accidente común', reposo: true },
+  { valor: 'AUSENCIA_JUSTIFICADA', etiqueta: 'Ausencia justificada', reposo: true },
+  { valor: 'AUSENCIA_INJUSTIFICADA', etiqueta: 'Ausencia injustificada', reposo: true },
+  { valor: 'LLEGADA_TARDE', etiqueta: 'Llegada tarde', reposo: false },
+  { valor: 'OTRA', etiqueta: 'Otra', reposo: false },
+]
+
+export const MOMENTOS_INCIDENCIA = [
+  { valor: 'MANANA', etiqueta: 'En la mañana' },
+  { valor: 'TARDE', etiqueta: 'En la tarde' },
+  { valor: 'NOCHE', etiqueta: 'En la noche' },
+  { valor: 'TODO_EL_DIA', etiqueta: 'Todo el día' },
+  { valor: 'VARIOS_DIAS', etiqueta: 'Varios días' },
+]
+
+export interface Incidencia {
+  id: number
+  numero: string
+  empleado_id: number
+  empleado: string
+  ficha: string
+  fecha: string
+  tipo: string
+  lugar: string | null
+  momento: string
+  dias_reposo: string | null
+  motivo: string
+  nota: string | null
+  registrado_en: string
+  /** Los demás implicados, con nombre. Vacío es individual. */
+  participantes: string[]
+  participantes_id: number[]
+}
+
+/**
+ * Las incidencias de una persona, las suyas y aquellas en las que estuvo.
+ *
+ * Un conflicto tiene dos lados: sale en la ficha de quien lo protagoniza y en
+ * la de quien participó. Verlo solo en una de las dos contaría media historia.
+ */
+export function useIncidencias(empleadoId?: number) {
+  return useQuery({
+    queryKey: ['incidencias', empleadoId ?? 'todas'],
+    enabled: empleadoId != null,
+    queryFn: async () => {
+      const propias = desenvolver<Incidencia[]>(
+        await supabase
+          .from('v_incidencias_personal')
+          .select('*')
+          .eq('empleado_id', empleadoId!)
+          .order('fecha', { ascending: false }),
+      )
+
+      const ajenas = desenvolver<Incidencia[]>(
+        await supabase
+          .from('v_incidencias_personal')
+          .select('*')
+          .contains('participantes_id', [empleadoId!])
+          .order('fecha', { ascending: false }),
+      )
+
+      const vistas = new Set(propias.map((i) => i.id))
+      return [...propias, ...ajenas.filter((i) => !vistas.has(i.id))].sort((a, b) =>
+        a.fecha < b.fecha ? 1 : -1,
+      )
+    },
+  })
+}
+
+export interface DotacionEntregada {
+  id: number
+  numero: string
+  empleado_id: number
+  fecha: string
+  articulo_id: number
+  articulo_codigo: string
+  articulo: string
+  unidad: string
+  categoria: string
+  cantidad: string
+  almacen: string
+  nota: string | null
+}
+
+/** Lo consumible que se llevó: casco, guantes, botas. No vuelve. */
+export function useDotacionEntregada(empleadoId?: number) {
+  return useQuery({
+    queryKey: ['dotacion-entregada', empleadoId ?? 'todos'],
+    enabled: empleadoId != null,
+    queryFn: async () =>
+      desenvolver<DotacionEntregada[]>(
+        await supabase
+          .from('v_dotacion_entregada')
+          .select('*')
+          .eq('empleado_id', empleadoId!)
+          .order('fecha', { ascending: false }),
+      ),
+  })
+}
+
+export function useRegistrarIncidencia() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (i: {
+      empleado_id: number
+      fecha: string
+      tipo: string
+      motivo: string
+      lugar?: string | null
+      momento?: string
+      dias_reposo?: number | null
+      participantes?: number[]
+      nota?: string | null
+    }) =>
+      rpc<number>('registrar_incidencia', {
+        p_empleado_id: i.empleado_id,
+        p_fecha: i.fecha,
+        p_tipo: i.tipo,
+        p_motivo: i.motivo,
+        p_lugar: i.lugar ?? null,
+        p_momento: i.momento ?? 'TODO_EL_DIA',
+        p_dias_reposo: i.dias_reposo ?? null,
+        p_participantes: i.participantes?.length ? i.participantes : null,
+        p_nota: i.nota ?? null,
+      }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['incidencias'] }),
+  })
+}
