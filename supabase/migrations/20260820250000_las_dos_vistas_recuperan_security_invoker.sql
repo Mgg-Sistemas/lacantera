@@ -1,0 +1,38 @@
+-- ---------------------------------------------------------------------------
+-- Dos vistas se quedaron sin `security_invoker`, y la RLS dejó de aplicarse
+--
+-- LO QUE PASÓ
+--
+-- `create or replace view` **descarta las opciones de la vista si no se vuelven
+-- a declarar**. No avisa, no falla, y la vista sigue devolviendo las mismas
+-- filas — a quien las pida.
+--
+-- `20260820230000` rehizo `v_facturas_compra` para añadirle dos columnas, y
+-- `20260820240000` rehizo `v_compras_sin_respaldo` para cambiarle el `where`.
+-- Las dos con `create or replace` y sin repetir la opción. Las dos la
+-- perdieron.
+--
+-- LO QUE QUEDÓ ABIERTO MIENTRAS TANTO
+--
+-- Sin `security_invoker` la vista corre como su dueño, `postgres`, y la RLS de
+-- las tablas de debajo no se aplica. Los roles sin permiso de COMPRAS —VENTAS y
+-- RESPALDO— podían leer por ahí las órdenes de compra, los proveedores y las
+-- facturas del proveedor con sus montos. Que la pantalla no ofrezca la ruta no
+-- importa: PostgREST expone la vista a cualquier sesión autenticada.
+--
+-- No se podía escribir nada, pero era una fuga de lectura y estaba abierta.
+--
+-- LO ENCONTRÓ EL CARRIL DE BASE DE DATOS
+--
+-- Con la misma consulta que este carril les había dado tres horas antes como
+-- «el fallo más caro posible y no avisa», al revisarles a ellos el ensanchado
+-- de `monedas.codigo`. Avisar de una trampa y caer en ella dos veces el mismo
+-- día es exactamente por qué esa comprobación tiene que correrse **siempre que
+-- una migración toque una vista**, la tenga por título o no:
+--
+--   select relname from pg_class
+--    where relkind='v' and relnamespace='public'::regnamespace
+--      and not ('security_invoker=on' = any(coalesce(reloptions, '{}')));
+-- ---------------------------------------------------------------------------
+alter view public.v_compras_sin_respaldo set (security_invoker = on);
+alter view public.v_facturas_compra     set (security_invoker = on);
