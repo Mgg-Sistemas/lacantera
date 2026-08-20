@@ -181,6 +181,8 @@ export function useEntregarATrabajador() {
       empleado_id: number
       almacen_id: number
       renglones: { articulo_id: number; cantidad: number }[]
+      /** Para qué se le da: por su rol o para una actividad concreta. */
+      clase: 'DOTACION' | 'ASIGNACION'
       fecha?: string | null
       nota?: string | null
     }) =>
@@ -188,6 +190,7 @@ export function useEntregarATrabajador() {
         p_empleado_id: e.empleado_id,
         p_almacen_id: e.almacen_id,
         p_renglones: e.renglones,
+        p_clase: e.clase,
         p_fecha: e.fecha ?? null,
         p_nota: e.nota ?? null,
       }),
@@ -318,4 +321,49 @@ export function useResolverIncidencia() {
         p_nota: s.nota ?? null,
       }),
   )
+}
+
+
+/*
+  TODO LO QUE SE LE HA DADO A UNA PERSONA
+
+  Une los dos rastros —lo prestado y lo consumido— porque para quien mira una
+  ficha son lo mismo: cosas que se le dieron. Lo que las separa no es de dónde
+  salió el registro sino `clase`, que es la pregunta que de verdad se hace: ¿es
+  de su puesto, o se lo llevó para una faena?
+*/
+export interface EntregadoATrabajador {
+  origen: 'PRESTAMO' | 'CONSUMO'
+  id: number
+  numero: string
+  empleado_id: number
+  fecha: string
+  articulo_id: number
+  articulo_codigo: string
+  articulo: string
+  unidad: string
+  categoria: string
+  cantidad: string
+  almacen: string
+  clase: 'DOTACION' | 'ASIGNACION'
+  /** Solo lo prestado tiene estado; lo consumido ya salió del libro. */
+  estado: string | null
+  vuelve: boolean
+  motivo: string | null
+  nota: string | null
+}
+
+export function useEntregadoATrabajador(empleadoId?: number) {
+  return useQuery({
+    queryKey: ['entregado', empleadoId ?? 'todos'],
+    enabled: empleadoId != null,
+    queryFn: async () =>
+      desenvolver<EntregadoATrabajador[]>(
+        await supabase
+          .from('v_entregado_a_trabajador')
+          .select('*')
+          .eq('empleado_id', empleadoId)
+          .order('fecha', { ascending: false }),
+      ),
+  })
 }

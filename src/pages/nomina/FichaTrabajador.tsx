@@ -1,17 +1,17 @@
 import { useState } from 'react'
+import { hoyEnCaracas } from '@/lib/api/tasas'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, FileText, IdCard, Pencil, ScrollText, Shirt, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, FileText, IdCard, Pencil, ScrollText, TriangleAlert } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
-import { SelectBuscable } from '@/components/ui/SelectBuscable'
+import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
-import { useAsignaciones } from '@/lib/api/asignaciones'
-import type { Asignacion } from '@/lib/api/asignaciones'
+import { useEntregadoATrabajador } from '@/lib/api/asignaciones'
 import { Visor } from '@/components/Visor'
 import {
   BASES_SALARIO,
@@ -23,14 +23,16 @@ import {
   useFirmaRrhh,
   useFoto,
   useGuardarEncuadre,
-  useDotaciones,
-  useEntregarDotacion,
+  useEmpleados,
+  useIncidencias,
+  useRegistrarIncidencia,
+  TIPOS_INCIDENCIA,
+  MOMENTOS_INCIDENCIA,
   useQuitarFoto,
   useSubirFoto,
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
-import { useArticulos, useMisRoles } from '@/lib/api/catalogo'
-import { useAlmacenes } from '@/lib/api/inventario'
+import { useMisRoles } from '@/lib/api/catalogo'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarCarnet } from '@/lib/ficha/carnet'
@@ -186,19 +188,26 @@ export function FichaTrabajador() {
   const [armando, setArmando] = useState(false)
 
   // La dotación
-  const dotaciones = useDotaciones(e?.id)
-  const entregar = useEntregarDotacion()
 
   // Lo suyo: lo que tiene prestado y lo que se dio por perdido o dañado. Sin
   // filtrar por estado, porque una incidencia importa tanto como un préstamo
   // abierto — sobre todo al liquidar.
-  const suyas = useAsignaciones({ empleadoId: e?.id })
-  const { data: almacenes } = useAlmacenes()
-  const { data: articulos } = useArticulos()
-  const [entregando, setEntregando] = useState(false)
-  const [almacenDotacion, setAlmacenDotacion] = useState('')
-  const [notaDotacion, setNotaDotacion] = useState('')
-  const [prendas, setPrendas] = useState<Record<number, string>>({})
+  const entregado = useEntregadoATrabajador(e?.id)
+  const incidencias = useIncidencias(e?.id)
+  const [anotando, setAnotando] = useState(false)
+  const registrarIncidencia = useRegistrarIncidencia()
+  const { data: companeros } = useEmpleados(true)
+
+  const incidenciaVacia = {
+    fecha: hoyEnCaracas(),
+    tipo: 'AUSENCIA_JUSTIFICADA',
+    lugar: '',
+    momento: 'TODO_EL_DIA',
+    dias_reposo: '',
+    motivo: '',
+    participantes: [] as number[],
+  }
+  const [inc, setInc] = useState(incidenciaVacia)
 
   /*
     Lo que se le entrega a una persona lo dice el catálogo, no la categoría.
@@ -209,13 +218,7 @@ export function FichaTrabajador() {
     tonelada de granzón sigue sin aparecer, pero porque el catálogo lo dice, no
     porque alguien acertara la lista.
   */
-  const entregables = (articulos ?? []).filter(
-    (a) => a.inventariable && a.modo_entrega !== 'NO',
-  )
 
-  const aEntregar = Object.entries(prendas)
-    .map(([articulo_id, cantidad]) => ({ articulo_id: Number(articulo_id), cantidad: Number(cantidad) }))
-    .filter((p) => p.cantidad > 0)
 
   /*
     Los tres papeles salen por la misma puerta.
@@ -532,64 +535,6 @@ export function FichaTrabajador() {
             {falloExportar ? <ErrorDeCarga error={falloExportar} className="mt-3" /> : null}
           </Card>
 
-          {/* ------------------------ Dotación ------------------------ */}
-          <Card>
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-ink/85 font-semibold">Dotación</h2>
-                <p className="text-ink/45 text-xs">Lo que se le ha entregado</p>
-              </div>
-              {puede('ALMACEN') || puede('RRHH') ? (
-                <Button
-                  size="sm"
-                  variant="soft"
-                  icon={<Shirt />}
-                  disabled={!e.activo}
-                  onClick={() => {
-                    setAlmacenDotacion('')
-                    setNotaDotacion('')
-                    setPrendas({})
-                    setEntregando(true)
-                  }}
-                >
-                  Entregar
-                </Button>
-              ) : null}
-            </div>
-
-            {dotaciones.isPending ? <Cargando /> : null}
-
-            {dotaciones.data && dotaciones.data.length === 0 ? (
-              <p className="text-ink/45 py-2 text-sm">
-                Todavía no se le ha entregado nada.
-                {e.activo ? '' : ' Su ficha queda como historia: ya egresó.'}
-              </p>
-            ) : null}
-
-            {dotaciones.data && dotaciones.data.length > 0 ? (
-              <ul className="space-y-2">
-                {dotaciones.data.map((d) => (
-                  <li
-                    key={d.id}
-                    className="border-hairline flex items-baseline justify-between gap-3 border-b pb-2 text-sm last:border-0 last:pb-0"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-ink/85">{d.articulo}</p>
-                      <p className="text-ink/45 text-xs">{fecha(d.fecha)}</p>
-                    </div>
-                    <span className="tabular text-ink/70 shrink-0">
-                      {Number(d.cantidad)} {d.unidad.toLowerCase()}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-
-            <p className="text-ink/40 mt-3 text-xs">
-              Lo que se gasta sale del almacén y descuenta existencias. Lo que vuelve queda a su
-              nombre, abajo, y sigue contando como de la empresa.
-            </p>
-          </Card>
         </div>
       </div>
 
@@ -601,147 +546,175 @@ export function FichaTrabajador() {
         cierra un egreso necesita saber en la misma pantalla qué queda pendiente
         de devolver y qué se dio por perdido.
       */}
+      {/*
+        TRES COSAS DISTINTAS, TRES SECCIONES
+
+        Se parecen en que se le dieron a la misma persona, y en nada más.
+
+        DOTACIÓN es lo que necesita por su rol, mientras trabaje. ASIGNACIÓN es
+        lo que se le dio para una faena concreta y hay que recuperar cuando
+        acabe. La diferencia no es si vuelve —una laptop es dotación y vuelve—
+        sino para qué se le dio.
+
+        INCIDENCIA no es una cosa, es un hecho: se enfermó, se lesionó, faltó,
+        tuvo un altercado. Antes no tenía dónde vivir.
+      */}
+
+      {[
+        {
+          clase: 'DOTACION' as const,
+          titulo: 'Dotación',
+          subtitulo: 'Lo que necesita por su rol: casco, botas, uniforme, equipo.',
+          vacio: 'Todavía no se le ha dado dotación.',
+        },
+        {
+          clase: 'ASIGNACION' as const,
+          titulo: 'Asignado para una actividad',
+          subtitulo: 'Lo que se le dio para una faena concreta y hay que recuperar.',
+          vacio: 'No tiene nada asignado.',
+        },
+      ].map((seccion) => {
+        const filas = (entregado.data ?? []).filter((x) => x.clase === seccion.clase)
+
+        return (
+          <Card flush key={seccion.clase} className="mt-4">
+            <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5">
+              <CardHeader title={seccion.titulo} subtitle={seccion.subtitulo} />
+              {puede('ALMACEN') || puede('RRHH') ? (
+                <Link to={`/app/asignaciones/entregar?empleado=${e.id}`}>
+                  <Button size="sm" variant="outline">
+                    Entregar
+                  </Button>
+                </Link>
+              ) : null}
+            </div>
+
+            {entregado.isPending ? <Cargando /> : null}
+
+            {!entregado.isPending && filas.length === 0 ? (
+              <p className="text-ink/45 px-5 pt-3 pb-5 text-sm">{seccion.vacio}</p>
+            ) : null}
+
+            {filas.length > 0 ? (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[480px] text-sm">
+                  <thead>
+                    <tr className="text-ink/45 border-hairline border-y text-left text-xs">
+                      <th className="px-5 py-3 font-medium">Qué</th>
+                      <th className="px-3 py-3 text-right font-medium">Cuánto</th>
+                      <th className="px-3 py-3 font-medium">Desde</th>
+                      <th className="px-5 py-3 text-right font-medium">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filas.map((x) => (
+                      <tr key={`${x.origen}-${x.id}`} className="border-hairline border-b last:border-0">
+                        <td className="px-5 py-2.5">
+                          <p className="text-ink/85 font-medium">{x.articulo}</p>
+                          <p className="text-ink/40 text-2xs font-mono">
+                            {x.articulo_codigo} · {x.numero}
+                          </p>
+                        </td>
+                        <td className="tabular text-ink/70 px-3 py-2.5 text-right">
+                          {x.cantidad} {x.unidad}
+                        </td>
+                        <td className="text-ink/60 px-3 py-2.5 text-xs">{fecha(x.fecha)}</td>
+                        <td className="px-5 py-2.5 text-right">
+                          {/* Lo que se gasta no tiene estado que seguir: salió
+                              del almacén y se acabó. Decir «entregado» es más
+                              honesto que dejar la celda vacía. */}
+                          {!x.vuelve ? (
+                            <Chip tone="neutral">Entregado</Chip>
+                          ) : (
+                            <Chip
+                              tone={
+                                x.estado === 'ASIGNADA'
+                                  ? 'royal'
+                                  : x.estado === 'PERDIDA'
+                                    ? 'danger'
+                                    : x.estado === 'DANADA'
+                                      ? 'warning'
+                                      : 'neutral'
+                              }
+                            >
+                              {x.estado === 'ASIGNADA'
+                                ? 'En su poder'
+                                : x.estado === 'DEVUELTA'
+                                  ? 'Devuelta'
+                                  : x.estado === 'PERDIDA'
+                                    ? 'Perdida'
+                                    : x.estado === 'DANADA'
+                                      ? 'Dañada'
+                                      : x.estado === 'REPUESTA'
+                                        ? 'Repuesta'
+                                        : (x.estado ?? '—')}
+                            </Chip>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </Card>
+        )
+      })}
+
+      {/* ---------------------------- Incidencias ---------------------------- */}
       <Card flush className="mt-4">
-        <div className="px-5 pt-5">
+        <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5">
           <CardHeader
-            title="Lo que tiene a su nombre"
-            subtitle={
-              (suyas.data ?? []).length === 0
-                ? 'Nada pendiente de devolver.'
-                : 'Sigue siendo de la empresa hasta que lo devuelva.'
-            }
+            title="Incidencias"
+            subtitle="Lo que le pasó: enfermedad, lesión en labores, ausencia, conflicto."
           />
+          {puede('RRHH') ? (
+            <Button size="sm" variant="outline" onClick={() => setAnotando(true)}>
+              Anotar una
+            </Button>
+          ) : null}
         </div>
 
-        {suyas.isPending ? <Cargando /> : null}
+        {incidencias.isPending ? <Cargando /> : null}
 
-        {suyas.data && suyas.data.length === 0 ? (
-          <p className="text-ink/45 px-5 pt-3 pb-5 text-sm">
-            No tiene herramienta ni equipo prestado.
-          </p>
+        {!incidencias.isPending && (incidencias.data ?? []).length === 0 ? (
+          <p className="text-ink/45 px-5 pt-3 pb-5 text-sm">Ninguna anotada.</p>
         ) : null}
 
-        {suyas.data && suyas.data.length > 0 ? (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[460px] text-sm">
-              <thead>
-                <tr className="text-ink/45 border-hairline border-y text-left text-xs">
-                  <th className="px-5 py-3 font-medium">Qué</th>
-                  <th className="px-3 py-3 text-right font-medium">Cuánto</th>
-                  <th className="px-3 py-3 font-medium">Desde</th>
-                  <th className="px-5 py-3 text-right font-medium">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {suyas.data.map((a: Asignacion) => (
-                  <tr key={a.id} className="border-hairline border-b last:border-0">
-                    <td className="px-5 py-2.5">
-                      <p className="text-ink/85 font-medium">{a.articulo}</p>
-                      <p className="text-ink/40 text-2xs font-mono">{a.numero}</p>
-                    </td>
-                    <td className="tabular text-ink/70 px-3 py-2.5 text-right">{a.cantidad}</td>
-                    <td className="text-ink/60 px-3 py-2.5 text-xs">{fecha(a.fecha_entrega)}</td>
-                    <td className="px-5 py-2.5 text-right">
-                      <Chip
-                        tone={
-                          a.estado === 'ASIGNADA'
-                            ? 'royal'
-                            : a.estado === 'PERDIDA'
-                              ? 'danger'
-                              : a.estado === 'DANADA'
-                                ? 'warning'
-                                : 'neutral'
-                        }
-                      >
-                        {a.estado === 'ASIGNADA'
-                          ? 'En su poder'
-                          : a.estado.charAt(0) + a.estado.slice(1).toLowerCase()}
-                      </Chip>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {(incidencias.data ?? []).length > 0 ? (
+          <ul className="mt-4">
+            {(incidencias.data ?? []).map((i) => (
+              <li key={i.id} className="border-hairline border-t px-5 py-3">
+                {/* La línea sigue el orden en que se cuenta en voz alta: cuándo,
+                    qué, dónde, cuánto duró, con quién. */}
+                <p className="text-ink/85 text-sm">
+                  <span className="tabular">{fecha(i.fecha)}</span>
+                  {' · '}
+                  <span className="font-medium">
+                    {TIPOS_INCIDENCIA.find((t) => t.valor === i.tipo)?.etiqueta ?? i.tipo}
+                  </span>
+                  {i.lugar ? ` · ${i.lugar}` : ''}
+                  {' · '}
+                  {MOMENTOS_INCIDENCIA.find((m) => m.valor === i.momento)?.etiqueta ?? i.momento}
+                  {i.dias_reposo ? ` (${i.dias_reposo} d de reposo)` : ''}
+                  {' · '}
+                  {i.participantes.length > 0 ? i.participantes.join(', ') : 'Individual'}
+                </p>
+
+                <p className="text-ink/55 mt-0.5 text-xs">Motivo: {i.motivo}</p>
+
+                {/* En la ficha de quien solo participó, «se enfermó» sería
+                    falso: se dice de quién es. */}
+                {i.empleado_id !== e.id ? (
+                  <p className="text-ink/40 text-2xs mt-0.5">
+                    Anotada en la ficha de {i.empleado}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         ) : null}
       </Card>
-
-      {/* ---------------------- Entregar dotación ---------------------- */}
-      {entregando ? (
-        <Modal
-          abierto
-          ancho="lg"
-          onCerrar={() => setEntregando(false)}
-          titulo="Entregar dotación"
-          descripcion={`Para ${e.nombres} ${e.apellidos}. Sale del almacén que se indique y descuenta existencias.`}
-          acciones={
-            <>
-              <Button variant="ghost" onClick={() => setEntregando(false)}>
-                Cancelar
-              </Button>
-              <Button
-                disabled={!almacenDotacion || aEntregar.length === 0 || entregar.isPending}
-                onClick={async () => {
-                  await entregar.mutateAsync({
-                    empleado_id: e.id,
-                    almacen_id: Number(almacenDotacion),
-                    renglones: aEntregar,
-                    nota: notaDotacion || undefined,
-                  })
-                  setEntregando(false)
-                }}
-              >
-                {entregar.isPending
-                  ? 'Entregando…'
-                  : `Entregar ${aEntregar.length || ''}`.trim()}
-              </Button>
-            </>
-          }
-        >
-          <SelectBuscable
-            label="De qué almacén sale"
-            vacio="Elige el almacén"
-            valor={almacenDotacion}
-            onCambio={(elegido) => setAlmacenDotacion(elegido)}
-            opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
-          />
-
-          {entregables.length === 0 ? (
-            <p className="text-ink/45 mt-4 text-sm">
-              No hay artículos de protección, herramienta ni insumo en el catálogo. Se cargan en
-              Inventario › Catálogo de artículos.
-            </p>
-          ) : (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {entregables.map((a) => (
-                <Input
-                  key={a.id}
-                  label={a.nombre}
-                  hint={a.unidad.toLowerCase()}
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={prendas[a.id] ?? ''}
-                  onChange={(ev) => setPrendas({ ...prendas, [a.id]: ev.target.value })}
-                />
-              ))}
-            </div>
-          )}
-
-          <Textarea
-            label="Nota"
-            rows={2}
-            className="mt-4"
-            placeholder="Dotación de ingreso, reposición por desgaste…"
-            value={notaDotacion}
-            onChange={(ev) => setNotaDotacion(ev.target.value)}
-          />
-
-          {entregar.error ? <ErrorDeCarga error={entregar.error} className="mt-3" /> : null}
-        </Modal>
-      ) : null}
 
       {/* --------------------- Constancia de trabajo --------------------- */}
       {pidiendo ? (
@@ -845,6 +818,150 @@ export function FichaTrabajador() {
         titulo={vista?.titulo ?? ''}
         descripcion={vista?.descripcion}
       />
+
+      {/* ------------------------ Anotar una incidencia ----------------------- */}
+      {anotando ? (
+        <Modal
+          abierto
+          ancho="lg"
+          onCerrar={() => setAnotando(false)}
+          titulo={`Anotar una incidencia de ${e.nombres}`}
+          descripcion="Lo que pasó, cuándo y por qué. Queda en su ficha y en la de quien haya participado."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setAnotando(false)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={inc.motivo.trim().length < 5 || registrarIncidencia.isPending}
+                onClick={async () => {
+                  await registrarIncidencia.mutateAsync({
+                    empleado_id: e.id,
+                    fecha: inc.fecha,
+                    tipo: inc.tipo,
+                    motivo: inc.motivo,
+                    lugar: inc.lugar || null,
+                    momento: inc.momento,
+                    dias_reposo: inc.dias_reposo ? Number(inc.dias_reposo) : null,
+                    participantes: inc.participantes,
+                  })
+                  setInc(incidenciaVacia)
+                  setAnotando(false)
+                }}
+              >
+                {registrarIncidencia.isPending ? 'Guardando…' : 'Anotar'}
+              </Button>
+            </>
+          }
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Cuándo"
+              type="date"
+              max={hoyEnCaracas()}
+              value={inc.fecha}
+              onChange={(ev) => setInc({ ...inc, fecha: ev.target.value })}
+            />
+
+            <Select
+              label="Qué pasó"
+              value={inc.tipo}
+              onChange={(ev) => setInc({ ...inc, tipo: ev.target.value })}
+              opciones={TIPOS_INCIDENCIA.map((t) => ({ valor: t.valor, etiqueta: t.etiqueta }))}
+            />
+
+            <Input
+              label="Dónde"
+              placeholder="Planta 01"
+              value={inc.lugar}
+              onChange={(ev) => setInc({ ...inc, lugar: ev.target.value.toUpperCase() })}
+            />
+
+            <Select
+              label="Cuánto duró"
+              value={inc.momento}
+              onChange={(ev) => setInc({ ...inc, momento: ev.target.value })}
+              opciones={MOMENTOS_INCIDENCIA}
+            />
+
+            {/* El reposo solo aparece donde tiene sentido: nadie reposa de una
+                discusión, y un campo vacío que no aplica se llena por inercia. */}
+            {TIPOS_INCIDENCIA.find((t) => t.valor === inc.tipo)?.reposo ? (
+              <Input
+                label="Días de reposo"
+                type="number"
+                min="0"
+                step="0.5"
+                hint={
+                  inc.momento === 'VARIOS_DIAS'
+                    ? 'Obligatorio si duró varios días.'
+                    : 'Vacío si no hubo reposo.'
+                }
+                value={inc.dias_reposo}
+                onChange={(ev) => setInc({ ...inc, dias_reposo: ev.target.value })}
+              />
+            ) : null}
+          </div>
+
+          {/* Quién más estuvo. Sin nadie, la incidencia es individual — que es
+              exactamente lo que quiere decir esa palabra en el papel. */}
+          <div className="mt-4">
+            <p className="text-ink/75 mb-1.5 text-sm font-medium">Quién más estuvo</p>
+
+            <div className="border-hairline max-h-40 overflow-y-auto rounded-[8px] border p-2">
+              {(companeros ?? [])
+                .filter((c) => c.id !== e.id)
+                .map((c) => {
+                  const puesto = inc.participantes.includes(c.id)
+                  return (
+                    <label
+                      key={c.id}
+                      className="hover:bg-ink/4 flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={puesto}
+                        onChange={() =>
+                          setInc({
+                            ...inc,
+                            participantes: puesto
+                              ? inc.participantes.filter((x) => x !== c.id)
+                              : [...inc.participantes, c.id],
+                          })
+                        }
+                      />
+                      <span className="text-ink/80">
+                        {c.nombres} {c.apellidos}
+                      </span>
+                      <span className="text-ink/40 text-xs">ficha {c.ficha}</span>
+                    </label>
+                  )
+                })}
+            </div>
+
+            <p className="text-ink/45 mt-1.5 text-xs">
+              {inc.participantes.length === 0
+                ? 'Sin nadie marcado queda como individual.'
+                : `Saldrá también en la ficha de ${inc.participantes.length} persona${inc.participantes.length === 1 ? '' : 's'}.`}
+            </p>
+          </div>
+
+          <div className="mt-4">
+            <Textarea
+              label="Motivo"
+              rows={3}
+              placeholder="Desacuerdo por uso de maquinaria"
+              hint="Lo que se escriba aquí es lo que se va a leer dentro de un año."
+              value={inc.motivo}
+              onChange={(ev) => setInc({ ...inc, motivo: ev.target.value })}
+            />
+          </div>
+
+          {registrarIncidencia.error ? (
+            <ErrorDeCarga error={registrarIncidencia.error} className="mt-4" />
+          ) : null}
+        </Modal>
+      ) : null}
     </>
   )
 }

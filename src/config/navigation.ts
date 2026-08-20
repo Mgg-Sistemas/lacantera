@@ -122,7 +122,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/despachos/vehiculos': 'camion volteo chuto gandola placa chofer',
   '/app/maquinaria': 'excavadora cargador equipo horometro',
   '/app/maquinaria/mantenimientos': 'reparacion taller averia servicio',
-  '/app/nomina/personal': 'trabajador empleado ficha cedula contratar',
+  '/app/nomina/personal': 'trabajador empleado ficha cedula contratar incidencia enfermedad lesion ausencia accidente reposo conflicto dotacion asignacion',
   '/app/nomina/procesos': 'pagar quincena periodo calcular sueldo',
   '/app/nomina/recibos': 'recibo pago sueldo',
   '/app/nomina/prestaciones': 'antiguedad liquidacion intereses garantia',
