@@ -745,6 +745,18 @@ export interface PrendaEntregada {
  * tenga las existencias abiertas en otra pestaña estaría viendo un par de botas
  * que ya no están.
  */
+/*
+  LA FICHA SIGUE ENTREGANDO, PERO YA NO LO CONSUME TODO
+
+  Llamaba a `entregar_dotacion`, que registra una salida de consumo para cada
+  renglón. Con botas y guantes está bien; con un torquímetro no, y la ficha
+  ofrecía la categoría HERRAMIENTA entera. Entregar una herramienta desde aquí
+  la hacía desaparecer del almacén en vez de dejarla prestada a nombre de nadie.
+
+  Ahora va por `entregar_a_trabajador`, que mira `articulos.modo_entrega` y
+  decide por cada renglón: lo retornable queda prestado, lo consumible sale. La
+  pantalla no cambia; lo que cambia es que hace lo que dice.
+*/
 export function useEntregarDotacion() {
   const qc = useQueryClient()
   return useMutation({
@@ -755,7 +767,7 @@ export function useEntregarDotacion() {
       fecha?: string
       nota?: string
     }) =>
-      rpc<number>('entregar_dotacion', {
+      rpc<{ prestados: number; consumidos: number }>('entregar_a_trabajador', {
         p_empleado_id: d.empleado_id,
         p_almacen_id: d.almacen_id,
         p_renglones: d.renglones,

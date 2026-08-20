@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { HandHelping, Search, TriangleAlert, Wrench } from 'lucide-react'
+import { Link } from 'react-router'
+import { HandHelping, PackagePlus, Search, TriangleAlert, Wrench } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -99,7 +100,14 @@ export function Asignaciones() {
     <>
       <PageHeader
         title="Asignaciones"
-        description="Quién tiene qué, desde cuándo, y qué queda por entregar. Entregar no descuenta del almacén: el bien sigue siendo de la empresa."
+        description="Quién tiene qué, desde cuándo, y qué queda por entregar. Lo que vuelve no descuenta del almacén: el bien sigue siendo de la empresa."
+        actions={
+          puede('ALMACEN', 'RRHH', 'ADMIN') ? (
+            <Link to="/app/asignaciones/entregar">
+              <Button icon={<PackagePlus />}>Entregar a un trabajador</Button>
+            </Link>
+          ) : null
+        }
       />
 
       {sinSaldar.length > 0 ? (

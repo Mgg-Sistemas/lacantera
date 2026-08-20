@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ArrowLeft, FileText, IdCard, Pencil, ScrollText, Shirt, TriangleAlert } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
+import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
@@ -10,6 +10,8 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
+import { useAsignaciones } from '@/lib/api/asignaciones'
+import type { Asignacion } from '@/lib/api/asignaciones'
 import { Visor } from '@/components/Visor'
 import {
   BASES_SALARIO,
@@ -186,6 +188,11 @@ export function FichaTrabajador() {
   // La dotación
   const dotaciones = useDotaciones(e?.id)
   const entregar = useEntregarDotacion()
+
+  // Lo suyo: lo que tiene prestado y lo que se dio por perdido o dañado. Sin
+  // filtrar por estado, porque una incidencia importa tanto como un préstamo
+  // abierto — sobre todo al liquidar.
+  const suyas = useAsignaciones({ empleadoId: e?.id })
   const { data: almacenes } = useAlmacenes()
   const { data: articulos } = useArticulos()
   const [entregando, setEntregando] = useState(false)
@@ -193,10 +200,17 @@ export function FichaTrabajador() {
   const [notaDotacion, setNotaDotacion] = useState('')
   const [prendas, setPrendas] = useState<Record<number, string>>({})
 
-  // Lo que se entrega a una persona: protección, herramienta y ropa. No el
-  // catálogo entero — nadie le entrega media tonelada de granzón a nadie.
+  /*
+    Lo que se le entrega a una persona lo dice el catálogo, no la categoría.
+
+    Antes era una lista de tres categorías —EPP, HERRAMIENTA, INSUMO— y eso
+    dejaba fuera cosas que sí se entregan y metía cosas que no. Ahora entra lo
+    que tenga un modo de entrega: `modo_entrega` distinto de `NO`. Media
+    tonelada de granzón sigue sin aparecer, pero porque el catálogo lo dice, no
+    porque alguien acertara la lista.
+  */
   const entregables = (articulos ?? []).filter(
-    (a) => a.inventariable && ['EPP', 'HERRAMIENTA', 'INSUMO'].includes(a.categoria),
+    (a) => a.inventariable && a.modo_entrega !== 'NO',
   )
 
   const aEntregar = Object.entries(prendas)
@@ -572,12 +586,85 @@ export function FichaTrabajador() {
             ) : null}
 
             <p className="text-ink/40 mt-3 text-xs">
-              Una entrega sale del almacén y descuenta existencias, como cualquier otra salida. Si
-              se cargó mal, se reversa desde Inventario › Movimientos y deja de figurar aquí.
+              Lo que se gasta sale del almacén y descuenta existencias. Lo que vuelve queda a su
+              nombre, abajo, y sigue contando como de la empresa.
             </p>
           </Card>
         </div>
       </div>
+
+      {/*
+        QUÉ TIENE EN LA MANO, EN SU PROPIA FICHA
+
+        La entrega se hacía desde aquí y lo entregado no se veía desde aquí: había
+        que ir a Asignaciones y buscar por persona. Quien firma una entrega o
+        cierra un egreso necesita saber en la misma pantalla qué queda pendiente
+        de devolver y qué se dio por perdido.
+      */}
+      <Card flush className="mt-4">
+        <div className="px-5 pt-5">
+          <CardHeader
+            title="Lo que tiene a su nombre"
+            subtitle={
+              (suyas.data ?? []).length === 0
+                ? 'Nada pendiente de devolver.'
+                : 'Sigue siendo de la empresa hasta que lo devuelva.'
+            }
+          />
+        </div>
+
+        {suyas.isPending ? <Cargando /> : null}
+
+        {suyas.data && suyas.data.length === 0 ? (
+          <p className="text-ink/45 px-5 pt-3 pb-5 text-sm">
+            No tiene herramienta ni equipo prestado.
+          </p>
+        ) : null}
+
+        {suyas.data && suyas.data.length > 0 ? (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[460px] text-sm">
+              <thead>
+                <tr className="text-ink/45 border-hairline border-y text-left text-xs">
+                  <th className="px-5 py-3 font-medium">Qué</th>
+                  <th className="px-3 py-3 text-right font-medium">Cuánto</th>
+                  <th className="px-3 py-3 font-medium">Desde</th>
+                  <th className="px-5 py-3 text-right font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {suyas.data.map((a: Asignacion) => (
+                  <tr key={a.id} className="border-hairline border-b last:border-0">
+                    <td className="px-5 py-2.5">
+                      <p className="text-ink/85 font-medium">{a.articulo}</p>
+                      <p className="text-ink/40 text-2xs font-mono">{a.numero}</p>
+                    </td>
+                    <td className="tabular text-ink/70 px-3 py-2.5 text-right">{a.cantidad}</td>
+                    <td className="text-ink/60 px-3 py-2.5 text-xs">{fecha(a.fecha_entrega)}</td>
+                    <td className="px-5 py-2.5 text-right">
+                      <Chip
+                        tone={
+                          a.estado === 'ASIGNADA'
+                            ? 'royal'
+                            : a.estado === 'PERDIDA'
+                              ? 'danger'
+                              : a.estado === 'DANADA'
+                                ? 'warning'
+                                : 'neutral'
+                        }
+                      >
+                        {a.estado === 'ASIGNADA'
+                          ? 'En su poder'
+                          : a.estado.charAt(0) + a.estado.slice(1).toLowerCase()}
+                      </Chip>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </Card>
 
       {/* ---------------------- Entregar dotación ---------------------- */}
       {entregando ? (
