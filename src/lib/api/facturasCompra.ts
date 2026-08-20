@@ -44,6 +44,10 @@ export interface FacturaCompra {
   estado: string
   motivo_anulacion: string | null
   registrada_en: string
+  /** Ruta del papel dentro del bucket privado. Nulo si no se ha cargado. */
+  archivo_path: string | null
+  /** Cómo se llamaba el archivo al subirlo. La ruta lleva un sello de tiempo. */
+  archivo_nombre: string | null
 }
 
 export interface PagoCompra {
@@ -192,6 +196,66 @@ export function useRegistrarFacturaCompra() {
         p_observacion: f.observacion ?? null,
       }),
   )
+}
+
+const BUCKET_FACTURAS = 'facturas-proveedor'
+
+/*
+  EL PAPEL DE LA FACTURA, NO SOLO SUS DATOS
+
+  La fila tiene el número de control y los montos; ante una fiscalización el
+  soporte es el documento. Y para conciliar un número mal tecleado hay que poder
+  mirar el original.
+
+  El archivo va directo del navegador al bucket y la ruta entra por una función,
+  igual que la foto del personal. Si la subida falla no queda una factura
+  apuntando a un archivo que no existe.
+*/
+export function useSubirArchivoFactura() {
+  return useAccion(async (a: { factura_id: number; archivo: File }) => {
+    const extension = a.archivo.name.split('.').pop()?.toLowerCase() ?? 'pdf'
+    const ruta = `${a.factura_id}/${Date.now()}.${extension}`
+
+    const { error } = await supabase.storage
+      .from(BUCKET_FACTURAS)
+      .upload(ruta, a.archivo, { contentType: a.archivo.type, upsert: false })
+
+    if (error) throw error
+
+    const anterior = await rpc<string | null>('guardar_archivo_factura', {
+      p_id: a.factura_id,
+      p_path: ruta,
+      p_nombre: a.archivo.name,
+    })
+
+    // Nadie va a mirar la versión vieja de un papel y ocupa espacio pagado.
+    if (anterior) await supabase.storage.from(BUCKET_FACTURAS).remove([anterior])
+
+    return ruta
+  })
+}
+
+export function useQuitarArchivoFactura() {
+  return useAccion(async (a: { factura_id: number }) => {
+    const anterior = await rpc<string | null>('quitar_archivo_factura', { p_id: a.factura_id })
+    if (anterior) await supabase.storage.from(BUCKET_FACTURAS).remove([anterior])
+  })
+}
+
+/**
+ * Una dirección temporal para mirar el papel.
+ *
+ * El bucket es privado, así que no hay URL pública que valga. Se firma por
+ * cinco minutos: lo que dura mirar un documento, no lo que dura un enlace
+ * reenviado por correo.
+ */
+export async function enlaceDelArchivo(path: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(BUCKET_FACTURAS)
+    .createSignedUrl(path, 300)
+
+  if (error) throw error
+  return data.signedUrl
 }
 
 export function useAnularFacturaCompra() {

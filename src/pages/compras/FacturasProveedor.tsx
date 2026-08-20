@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Banknote, FileText, Plus } from 'lucide-react'
+import { Banknote, FileText, Paperclip, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Visor } from '@/components/Visor'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -25,6 +26,9 @@ import {
   useRegistrarFacturaCompra,
   useRegistrarPagoCompra,
   type FacturaCompra,
+  enlaceDelArchivo,
+  useSubirArchivoFactura,
+  useQuitarArchivoFactura,
 } from '@/lib/api/facturasCompra'
 
 /**
@@ -88,11 +92,18 @@ export function FacturasProveedor() {
   const anular = useAnularFacturaCompra()
   const pagar = useRegistrarPagoCompra()
   const anularPago = useAnularPagoCompra()
+  const subir = useSubirArchivoFactura()
+  const quitar = useQuitarArchivoFactura()
   const { puede } = useMisPermisos()
 
   const [nueva, setNueva] = useState<typeof vacio | null>(null)
   const [detalleId, setDetalleId] = useState<number | null>(null)
   const [pagando, setPagando] = useState<FacturaCompra | null>(null)
+
+  // El bucket es privado: no hay dirección fija que guardar. Se firma una al
+  // abrir y vive lo que dura el visor.
+  const [viendo, setViendo] = useState<{ href: string; nombre: string } | null>(null)
+  const [abriendo, setAbriendo] = useState(false)
   const [anulando, setAnulando] = useState<FacturaCompra | null>(null)
   const [motivo, setMotivo] = useState('')
 
@@ -601,6 +612,87 @@ export function FacturasProveedor() {
             ) : null}
           </div>
 
+          {/*
+            EL PAPEL
+
+            Los datos de arriba salen de lo que alguien tecleó del papel. Ante
+            una fiscalización lo que vale es el papel, y para conciliar un
+            número de control mal tecleado hay que poder mirar el original.
+          */}
+          <Card className="mt-4">
+            <CardHeader
+              title="El documento del proveedor"
+              subtitle={
+                detalle.archivo_path
+                  ? 'Guardado. Solo lo ven compras, tesorería y gerencia.'
+                  : 'PDF o foto del papel, hasta 10 MB.'
+              }
+            />
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {detalle.archivo_path ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    icon={<Paperclip />}
+                    disabled={abriendo}
+                    onClick={async () => {
+                      setAbriendo(true)
+                      try {
+                        const href = await enlaceDelArchivo(detalle.archivo_path!)
+                        setViendo({ href, nombre: detalle.archivo_nombre ?? 'factura' })
+                      } finally {
+                        setAbriendo(false)
+                      }
+                    }}
+                  >
+                    {abriendo ? 'Abriendo…' : 'Ver el documento'}
+                  </Button>
+
+                  <span className="text-ink/45 min-w-0 truncate text-xs">
+                    {detalle.archivo_nombre}
+                  </span>
+
+                  {puede('COMPRAS', 'TOTAL') ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-danger ml-auto"
+                      disabled={quitar.isPending}
+                      onClick={() => void quitar.mutateAsync({ factura_id: detalle.id })}
+                    >
+                      Quitar
+                    </Button>
+                  ) : null}
+                </>
+              ) : puede('COMPRAS', 'ESCRITURA') ? (
+                <label className="border-ink/20 hover:border-ink/32 text-ink/75 flex cursor-pointer items-center gap-2 rounded-[6px] border px-3 py-2 text-sm transition-colors">
+                  <Paperclip className="size-4" />
+                  {subir.isPending ? 'Subiendo…' : 'Cargar el documento'}
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="application/pdf,image/*"
+                    disabled={subir.isPending}
+                    onChange={(e) => {
+                      const archivo = e.target.files?.[0]
+                      // El campo se limpia para que volver a elegir el mismo
+                      // archivo tras un fallo dispare el `change` otra vez.
+                      e.target.value = ''
+                      if (archivo) void subir.mutateAsync({ factura_id: detalle.id, archivo })
+                    }}
+                  />
+                </label>
+              ) : (
+                <p className="text-ink/50 text-sm">Todavía no se ha cargado.</p>
+              )}
+            </div>
+
+            {subir.error ? <ErrorDeCarga error={subir.error} className="mt-3" /> : null}
+            {quitar.error ? <ErrorDeCarga error={quitar.error} className="mt-3" /> : null}
+          </Card>
+
           {(pagos.data ?? []).length > 0 ? (
             <Card flush className="mt-4">
               <CardHeader title="Pagos" className="p-4 pb-0" />
@@ -785,6 +877,17 @@ export function FacturasProveedor() {
           />
           {anular.error ? <ErrorDeCarga error={anular.error} className="mt-4" /> : null}
         </Modal>
+      ) : null}
+
+      {viendo ? (
+        <Visor
+          abierto
+          onCerrar={() => setViendo(null)}
+          href={viendo.href}
+          nombreArchivo={viendo.nombre}
+          titulo="Documento del proveedor"
+          descripcion="Tal como lo entregó. La dirección caduca en cinco minutos."
+        />
       ) : null}
     </>
   )
