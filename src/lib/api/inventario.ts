@@ -68,6 +68,10 @@ export interface Existencia {
   unidad: string
   stock_minimo: string
   existencia: string
+  /** De la existencia, cuánto está en manos de alguien y no se puede entregar. */
+  prestadas: string
+  /** Lo que se puede entregar hoy: existencia menos lo prestado. */
+  disponibles: string
   valor_usd: string
   costo_promedio_usd: string | null
   ultimo_movimiento: string | null
@@ -103,6 +107,9 @@ export interface ExistenciaTotal {
   stock_minimo: string
   densidad_ton_m3: string | null
   existencia: string
+  prestadas: string
+  disponibles: string
+  modo_entrega: string
   /** La misma existencia en la otra medida. Nula si nadie midió la densidad. */
   existencia_equivalente: string | null
   unidad_equivalente: string | null

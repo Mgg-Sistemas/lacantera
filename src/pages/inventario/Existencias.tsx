@@ -277,6 +277,30 @@ export function Existencias() {
                           </Chip>
                         ) : null}
 
+                        {/*
+                          EXISTIR NO ES ESTAR DISPONIBLE
+
+                          Diez cascos en el libro pueden ser diez cascos en diez
+                          cabezas. Lo prestado sigue contando como existencia
+                          —es de la empresa y vale— pero no se puede entregar.
+
+                          Solo se dice cuando difieren: repetir «10 · 10
+                          disponibles» en cada renglón enseñaría a no leerlo, y
+                          entonces no se leería el día que dice cero.
+                        */}
+                        {Number(e.prestadas) > 0 ? (
+                          <p
+                            className={cn(
+                              'text-2xs mt-0.5',
+                              Number(e.disponibles) <= 0 ? 'text-warning' : 'text-ink/50',
+                            )}
+                          >
+                            {cantidad(e.disponibles)} disponible
+                            {Number(e.disponibles) === 1 ? '' : 's'} ·{' '}
+                            {cantidad(e.prestadas)} en manos de alguien
+                          </p>
+                        ) : null}
+
                         {/* La otra medida, solo en los materiales cuya densidad
                             se midió. Sin ese dato no se supone: se calla. */}
                         {total?.existencia_equivalente ? (
