@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Boxes, Plus, Search } from 'lucide-react'
+import { Boxes, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -11,13 +11,17 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
   CATEGORIAS_ARTICULO,
+  MODOS_ENTREGA,
   useArticulos,
   useCambiarEstadoArticulo,
   useCrearArticulo,
+  useEditarArticulo,
+  useEliminarArticulo,
   useUnidades,
 } from '@/lib/api/catalogo'
 
 const nuevo = {
+  id: 0,
   codigo: '',
   nombre: '',
   categoria: 'REPUESTO',
@@ -25,12 +29,29 @@ const nuevo = {
   descripcion: '',
   inventariable: true,
   stock_minimo: '0',
+  modo_entrega: 'CONSUMIBLE',
 }
+
+/*
+  El modo por defecto lo propone la categoría.
+
+  Es lo que acierta más veces —una herramienta vuelve, un repuesto se instala,
+  un producto se vende— y se puede cambiar en el mismo formulario. Poner uno
+  fijo obligaría a corregirlo casi siempre, que es como se acaba dejando mal.
+*/
+const modoDe = (categoria: string) =>
+  categoria === 'HERRAMIENTA' || categoria === 'EPP'
+    ? 'RETORNABLE'
+    : categoria === 'PRODUCTO' || categoria === 'SERVICIO'
+      ? 'NO'
+      : 'CONSUMIBLE'
 
 export function Articulos() {
   const { data, isPending, error } = useArticulos(false)
   const { data: unidades } = useUnidades()
   const crear = useCrearArticulo()
+  const editar = useEditarArticulo()
+  const eliminar = useEliminarArticulo()
   const cambiarEstado = useCambiarEstadoArticulo()
 
   const [busqueda, setBusqueda] = useState('')
@@ -106,8 +127,10 @@ export function Articulos() {
                   <th className="px-3 py-3 font-medium">Artículo</th>
                   <th className="px-3 py-3 font-medium">Categoría</th>
                   <th className="px-3 py-3 font-medium">Unidad</th>
+                  <th className="px-3 py-3 font-medium">Al entregarlo</th>
                   <th className="px-3 py-3 text-right font-medium">Mínimo</th>
-                  <th className="px-5 py-3 text-right font-medium">Estado</th>
+                  <th className="px-3 py-3 text-right font-medium">Estado</th>
+                  <th className="px-5 py-3 text-right font-medium" />
                 </tr>
               </thead>
               <tbody>
@@ -125,10 +148,16 @@ export function Articulos() {
                         a.categoria}
                     </td>
                     <td className="text-ink/70 px-3 py-3">{a.unidad}</td>
+                    <td className="px-3 py-3">
+                      <Chip tone={a.modo_entrega === 'RETORNABLE' ? 'royal' : 'neutral'}>
+                        {MODOS_ENTREGA.find((m) => m.valor === a.modo_entrega)?.etiqueta ??
+                          a.modo_entrega}
+                      </Chip>
+                    </td>
                     <td className="tabular text-ink/70 px-3 py-3 text-right">
                       {Number(a.stock_minimo) > 0 ? a.stock_minimo : '—'}
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-3 py-3 text-right">
                       <button
                         type="button"
                         onClick={() =>
@@ -140,6 +169,41 @@ export function Articulos() {
                         </Chip>
                       </button>
                     </td>
+                    <td className="px-5 py-3 text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          icon={<Pencil />}
+                          aria-label={`Editar ${a.nombre}`}
+                          onClick={() =>
+                            setForm({
+                              id: a.id,
+                              codigo: a.codigo,
+                              nombre: a.nombre,
+                              categoria: a.categoria,
+                              unidad: a.unidad,
+                              descripcion: a.descripcion ?? '',
+                              inventariable: a.inventariable,
+                              stock_minimo: String(a.stock_minimo),
+                              modo_entrega: a.modo_entrega,
+                            })
+                          }
+                        />
+                        {/* Borrar solo sale si nada lo ha tocado todavía. En
+                            cuanto aparece en una orden o un movimiento, la base
+                            lo impide y el mensaje dice que se desactive. */}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-danger"
+                          icon={<Trash2 />}
+                          aria-label={`Borrar ${a.nombre}`}
+                          disabled={eliminar.isPending}
+                          onClick={() => void eliminar.mutateAsync({ id: a.id }).catch(() => {})}
+                        />
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -148,28 +212,33 @@ export function Articulos() {
         </Card>
       ) : null}
 
+      {eliminar.error ? <ErrorDeCarga error={eliminar.error} className="mt-3" /> : null}
+
       {form ? (
         <Modal
           abierto
           onCerrar={() => setForm(null)}
-          titulo="Nuevo artículo"
-          descripcion="El código no se puede repetir y no se cambia después."
+          titulo={form.id ? `Corregir ${form.codigo}` : 'Nuevo artículo'}
+          descripcion={
+            form.id
+              ? 'El código no se cambia: es con lo que se pide en el almacén y ya está impreso en lo emitido.'
+              : 'El código no se puede repetir y no se cambia después.'
+          }
           acciones={
             <>
               <Button variant="ghost" onClick={() => setForm(null)}>
                 Cancelar
               </Button>
               <Button
-                disabled={crear.isPending}
+                disabled={crear.isPending || editar.isPending || !form.nombre}
                 onClick={async () => {
-                  await crear.mutateAsync({
-                    ...form,
-                    stock_minimo: Number(form.stock_minimo) || 0,
-                  })
+                  const datos = { ...form, stock_minimo: Number(form.stock_minimo) || 0 }
+                  if (form.id) await editar.mutateAsync(datos)
+                  else await crear.mutateAsync(datos)
                   setForm(null)
                 }}
               >
-                {crear.isPending ? 'Guardando…' : 'Guardar'}
+                {crear.isPending || editar.isPending ? 'Guardando…' : 'Guardar'}
               </Button>
             </>
           }
@@ -178,6 +247,8 @@ export function Articulos() {
             <Input
               label="Código"
               placeholder="REP-BOMBA"
+              disabled={Boolean(form.id)}
+              hint={form.id ? 'No se cambia.' : undefined}
               value={form.codigo}
               onChange={(e) => setForm({ ...form, codigo: e.target.value.toUpperCase() })}
             />
@@ -194,6 +265,10 @@ export function Articulos() {
                   ...form,
                   categoria: e.target.value,
                   inventariable: e.target.value !== 'SERVICIO',
+                  // Al cambiar de categoría se propone el modo que le toca. Si
+                  // ya se había elegido a mano se respeta: cambiarlo por debajo
+                  // sería deshacer una decisión de quien está mirando.
+                  modo_entrega: form.id ? form.modo_entrega : modoDe(e.target.value),
                 })
               }
               opciones={CATEGORIAS_ARTICULO}
@@ -212,6 +287,18 @@ export function Articulos() {
               hint="Cero significa que no se controla."
               value={form.stock_minimo}
               onChange={(e) => setForm({ ...form, stock_minimo: e.target.value })}
+            />
+
+            {/* Lo que faltaba: el formulario no decía si esto se le puede
+                entregar a alguien, y por eso Asignaciones ofrecía gasolina
+                «hasta que la devuelva». */}
+            <Select
+              label="Al entregarlo a una persona"
+              className="sm:col-span-2"
+              hint={MODOS_ENTREGA.find((m) => m.valor === form.modo_entrega)?.ayuda}
+              value={form.modo_entrega}
+              onChange={(e) => setForm({ ...form, modo_entrega: e.target.value })}
+              opciones={MODOS_ENTREGA.map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
             />
           </div>
 
