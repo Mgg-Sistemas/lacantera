@@ -46,10 +46,21 @@ export const CONDICIONES_PAGO = [
   { valor: 'CREDITO_60', etiqueta: 'Crédito a 60 días' },
 ]
 
-export const MONEDAS = [
-  { valor: 'USD', etiqueta: 'Dólares' },
-  { valor: 'VES', etiqueta: 'Bolívares' },
-]
+/*
+  AQUÍ HABÍA UNA LISTA DE MONEDAS ESCRITA A MANO
+
+  Tenía dos elementos, dólar y bolívar, y la usaban cinco pantallas. Cuando
+  entraron el euro y el USDT con tasa vigente, esas cinco siguieron ofreciendo
+  dos: ventas no podía cotizar, despachar, poner precio ni asignarle moneda a un
+  cliente en euros, teniendo la base las cuatro.
+
+  Se quitó en vez de ampliarla. `useMonedasUsables()` de `lib/api/tasas` ya hacía
+  el trabajo bien —y mejor: solo ofrece las que tienen tasa registrada, porque
+  ofrecer una moneda que va a fallar al guardar es peor que no ofrecerla—.
+
+  Lo encontró el carril de base de datos comparando lo que sabe la base con lo
+  que enseñan las pantallas.
+*/
 
 export function useClientes(soloActivos = false) {
   return useQuery({

@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useIndicarPago } from '@/lib/api/compras'
 import { useMetodosPago, opcionesDe, monedasDe } from '@/lib/api/metodosPago'
-import { MONEDAS } from '@/lib/api/ventas'
+import { useMonedasUsables } from '@/lib/api/tasas'
 import { CamposDePago } from '@/components/CamposDePago'
 import type { DatosPago, Orden } from '@/lib/api/compras'
 import { bolivares, dolares } from '@/lib/formato'
@@ -22,6 +22,21 @@ interface Props {
 
 export function ModalPago({ abierto, onCerrar, orden }: Props) {
   const indicar = useIndicarPago()
+
+  /*
+    Las monedas salen del catálogo, no de una lista de dos escrita a mano.
+
+    Estaba cruzando la regla del método contra `MONEDAS`, que solo tenía dólar
+    y bolívar. Con la cuenta de Binance ya en USDT, a un método `NUNCA_VES` le
+    quedaba únicamente el dólar: la pantalla ofrecía indicar un pago en dólares
+    sobre una cuenta en Tether. No llegó a corromper nada porque
+    `registrar_pago_compra` toma la moneda de la cuenta y no de la instrucción,
+    pero la instrucción habría quedado diciendo una moneda que no era.
+
+    Lo encontró el carril de base de datos revisando el contrato.
+  */
+  const catalogo = useMonedasUsables()
+  const todas = catalogo.data ?? []
   const { data: metodos } = useMetodosPago()
 
   // Lo instruido y lo pagado ya reservan parte de la orden; lo que se ofrece
@@ -68,7 +83,7 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
   */
   useEffect(() => {
     if (!metodos || !elegido) return
-    const admitidas = monedasDe(elegido, MONEDAS)
+    const admitidas = monedasDe(elegido, todas)
     if (admitidas.length > 0 && !admitidas.some((m) => m.valor === moneda)) {
       setMoneda(admitidas[0].valor)
       setConIgtf(admitidas[0].valor !== 'VES')
@@ -76,7 +91,7 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
     // Solo cuando llega el catálogo o cambia el método: si `moneda` entrara
     // como dependencia, elegir bolívares a mano se desharía solo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [metodos, metodo])
+  }, [metodos, metodo, todas])
 
   const cambiar = (cambios: DatosPago) => setDatos((d) => ({ ...d, ...cambios }))
 
@@ -88,7 +103,7 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
     la misma regla estaba además escrita en la base. Ahora hay una sola:
     `moneda_regla`.
   */
-  const monedasPosibles = monedasDe(elegido, MONEDAS)
+  const monedasPosibles = monedasDe(elegido, todas)
 
   const cambiarMetodo = (nuevo: string) => {
     setMetodo(nuevo)
@@ -97,7 +112,7 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
     // sí. Dejarla inválida haría que el guardado fallara al llegar a la base
     // con un mensaje que no señala el selector que hay que corregir.
     const m = (metodos ?? []).find((x) => x.codigo === nuevo)
-    const admitidas = monedasDe(m, MONEDAS)
+    const admitidas = monedasDe(m, todas)
     if (!admitidas.some((x) => x.valor === moneda) && admitidas[0]) {
       setConIgtf(admitidas[0].valor !== 'VES')
       setMoneda(admitidas[0].valor)

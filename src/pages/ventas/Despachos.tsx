@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMonedasUsables } from '@/lib/api/tasas'
 import { Printer, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -19,7 +20,6 @@ import { useVehiculos } from '@/lib/api/vehiculos'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
-  MONEDAS,
   useAnularNota,
   useClientes,
   useDespachar,
@@ -47,6 +47,7 @@ const ETIQUETA: Record<string, string> = {
 }
 
 export function Despachos() {
+  const monedas = useMonedasUsables()
   const { data, isPending, error } = useNotasEntrega()
   const { data: clientes } = useClientes(true)
   const { data: precios } = usePrecios()
@@ -377,7 +378,7 @@ export function Despachos() {
               label="Moneda"
               value={moneda}
               onChange={(e) => setMoneda(e.target.value)}
-              opciones={MONEDAS}
+              opciones={monedas.data ?? []}
             />
             <div className="sm:col-span-3">
               <Select

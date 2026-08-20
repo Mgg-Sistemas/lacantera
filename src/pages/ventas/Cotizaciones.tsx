@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMonedasUsables } from '@/lib/api/tasas'
 import { FileText, Plus, Printer } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -16,7 +17,6 @@ import { useMiPerfil } from '@/lib/api/usuarios'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
-  MONEDAS,
   useCerrarCotizacion,
   useClientes,
   useCotizacionesVenta,
@@ -45,6 +45,7 @@ const ETIQUETA: Record<string, string> = {
 }
 
 export function Cotizaciones() {
+  const monedas = useMonedasUsables()
   const { data, isPending, error } = useCotizacionesVenta()
   const { data: clientes } = useClientes(true)
   const { data: precios } = usePrecios()
@@ -289,7 +290,7 @@ export function Cotizaciones() {
               label="Moneda"
               value={moneda}
               onChange={(e) => setMoneda(e.target.value)}
-              opciones={MONEDAS}
+              opciones={monedas.data ?? []}
             />
           </div>
 

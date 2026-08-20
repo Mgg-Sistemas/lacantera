@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMonedasUsables } from '@/lib/api/tasas'
 import { Tag } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -9,7 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dinero, fecha } from '@/lib/formato'
-import { MONEDAS, usePrecios, useGuardarPrecio, type PrecioVenta } from '@/lib/api/ventas'
+import { usePrecios, useGuardarPrecio, type PrecioVenta } from '@/lib/api/ventas'
 
 /**
  * La lista de precios.
@@ -20,6 +21,7 @@ import { MONEDAS, usePrecios, useGuardarPrecio, type PrecioVenta } from '@/lib/a
  * el granzón se puede despachar y todavía nadie dijo a cuánto.
  */
 export function Precios() {
+  const monedas = useMonedasUsables()
   const { data, isPending, error } = usePrecios()
   const guardar = useGuardarPrecio()
   const [edicion, setEdicion] = useState<{
@@ -157,7 +159,7 @@ export function Precios() {
               label="Moneda"
               value={edicion.moneda}
               onChange={(e) => setEdicion({ ...edicion, moneda: e.target.value })}
-              opciones={MONEDAS}
+              opciones={monedas.data ?? []}
             />
             <Input
               label="Precio de lista"

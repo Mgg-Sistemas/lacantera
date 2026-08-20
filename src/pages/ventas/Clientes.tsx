@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMonedasUsables } from '@/lib/api/tasas'
 import { Building2, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -12,7 +13,6 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dolares, fecha } from '@/lib/formato'
 import {
   CONDICIONES_PAGO,
-  MONEDAS,
   useClientes,
   useGuardarCliente,
   type Cliente,
@@ -37,6 +37,7 @@ const vacio = {
 }
 
 export function Clientes() {
+  const monedas = useMonedasUsables()
   const { data, isPending, error } = useClientes()
   const guardar = useGuardarCliente()
   const [edicion, setEdicion] = useState<(typeof vacio & { id?: number }) | null>(null)
@@ -253,7 +254,7 @@ export function Clientes() {
               label="Moneda con la que se le factura"
               value={edicion.moneda_preferida}
               onChange={(e) => cambiar({ moneda_preferida: e.target.value })}
-              opciones={MONEDAS}
+              opciones={monedas.data ?? []}
             />
           </div>
 
