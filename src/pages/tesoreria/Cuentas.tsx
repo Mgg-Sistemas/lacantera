@@ -29,7 +29,7 @@ import {
 } from '@/lib/api/tesoreria'
 import type { Cuenta } from '@/lib/api/tesoreria'
 import { useMisRoles } from '@/lib/api/catalogo'
-import { useMonedas, useTasaVigente, useTasasVigentes } from '@/lib/api/tasas'
+import { useMonedas, useTasasVigentes } from '@/lib/api/tasas'
 import { dinero, fecha, tasa as formatoTasa } from '@/lib/formato'
 import { BANCOS } from '@/lib/bancos'
 
@@ -148,7 +148,6 @@ function TarjetaCuenta({
 
 export function Cuentas() {
   const { data, isPending, error } = useCuentas(false)
-  const { data: tasa } = useTasaVigente()
   const { puede } = useMisRoles()
   const guardar = useGuardarCuenta()
   const apertura = useRegistrarApertura()
@@ -219,9 +218,19 @@ export function Cuentas() {
     if (t) bsPorUnidad.set(moneda.codigo, Number(t.tasa))
   }
 
-  // El total se puede leer en las dos que interesan: quien va a pagarle a un
-  // proveedor en bolívares no quiere hacer la cuenta de cabeza.
-  const [expresarEn, setExpresarEn] = useState<'USD' | 'VES'>('USD')
+  /*
+    El total se lee en cualquier moneda que tenga tasa, no en dos escritas a
+    mano.
+
+    Empezó con `['USD', 'VES']` fijo, y eso era el mismo vicio que este cambio
+    venía a quitar de otros sitios: quien va a pagar en euros o a pasar un saldo
+    a Binance tiene la misma pregunta que quien paga en bolívares. Salen del
+    catálogo, así que la lista es la misma que ofrece la calculadora y el día que
+    entre otra moneda aparece sola.
+
+    El dólar abre porque es con lo que se mide el sistema.
+  */
+  const [expresarEn, setExpresarEn] = useState('USD')
 
   const presentes = [...new Set((data ?? []).filter((c) => c.activa).map((c) => c.moneda))]
   const sinTasa = presentes.filter((m) => !bsPorUnidad.has(m))
@@ -231,12 +240,16 @@ export function Cuentas() {
     0,
   )
 
-  const tasaDolar = bsPorUnidad.get('USD')
-  const total = expresarEn === 'VES' ? totalBs : totalBs / (tasaDolar ?? 1)
+  const tasaDestino = bsPorUnidad.get(expresarEn)
+  const total = totalBs / (tasaDestino ?? 1)
 
   // Faltando una tasa el total saldría corto sin avisar. Es preferible no dar
   // la cifra que darla mal.
-  const totalCompleto = sinTasa.length === 0 && (expresarEn === 'VES' || Boolean(tasaDolar))
+  const totalCompleto = sinTasa.length === 0 && Boolean(tasaDestino)
+
+  // Solo se ofrecen las que tienen tasa: expresar un total en una moneda sin
+  // tasa no da un número, y ofrecerlo enseña a chocarse.
+  const expresables = (monedas.data ?? []).filter((m) => bsPorUnidad.has(m.codigo))
 
   return (
     <>
@@ -268,18 +281,19 @@ export function Cuentas() {
                 <div className="flex items-center gap-2">
                   <p className="text-ink/45 text-xs">Disponible en cuentas activas</p>
                   <div className="border-hairline flex overflow-hidden rounded-full border">
-                    {(['USD', 'VES'] as const).map((m) => (
+                    {expresables.map((m) => (
                       <button
-                        key={m}
+                        key={m.codigo}
                         type="button"
-                        onClick={() => setExpresarEn(m)}
+                        onClick={() => setExpresarEn(m.codigo)}
+                        title={`Expresar el total en ${m.nombre.toLowerCase()}`}
                         className={
-                          m === expresarEn
+                          m.codigo === expresarEn
                             ? 'bg-royal-600/12 text-ink/85 px-2 py-0.5 text-2xs font-medium'
                             : 'text-ink/45 hover:text-ink/75 px-2 py-0.5 text-2xs'
                         }
                       >
-                        {m === 'USD' ? '$' : 'Bs'}
+                        {m.codigo === 'VES' ? 'Bs' : m.simbolo}
                       </button>
                     ))}
                   </div>
@@ -291,9 +305,13 @@ export function Cuentas() {
               <p className="text-ink/45 max-w-md text-xs">
                 {totalCompleto ? (
                   <>
-                    Convertido con la tasa de hoy
-                    {tasa ? ` (Bs ${formatoTasa(tasa.tasa)} por dólar)` : ''}, no con la del día
-                    en que entró cada bolívar. Cada cuenta manda su propio saldo.
+                    Convertido con las tasas de hoy
+                    {expresarEn !== 'VES' && tasaDestino
+                      ? ` (Bs ${formatoTasa(tasaDestino)} por ${
+                          expresables.find((m) => m.codigo === expresarEn)?.simbolo ?? expresarEn
+                        })`
+                      : ''}
+                    , no con la del día en que entró cada saldo. Cada cuenta manda el suyo.
                   </>
                 ) : sinTasa.length > 0 ? (
                   `Hay cuentas en ${sinTasa.join(', ')} y falta registrar su tasa del día. Sin ella el total saldría corto: regístrala en Sistema › Tasas de cambio. El saldo de cada cuenta sí es exacto.`

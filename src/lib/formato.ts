@@ -47,13 +47,36 @@ export const bolivares = (valor: string | number): string =>
   `Bs ${decimal2.format(aNumero(valor))}`
 
 /**
+ * El símbolo con el que se escribe cada moneda.
+ *
+ * Son hechos, no configuración: el euro se escribe € en todas partes. Lo que sí
+ * es configuración —qué monedas existen y de dónde sale su tasa— vive en la
+ * tabla `monedas`. Una moneda que no esté aquí se rotula con su propio código,
+ * que es feo pero no miente.
+ */
+const SIMBOLOS: Record<string, string> = {
+  VES: 'Bs',
+  USD: '$',
+  EUR: '€',
+  USDT: 'USDT',
+}
+
+/**
  * Un monto en la moneda que le corresponde.
  *
- * El sistema maneja las dos a la vez y una cifra sin su símbolo es una trampa:
+ * El sistema maneja varias a la vez y una cifra sin su símbolo es una trampa:
  * 3.185.647 en bolívares y en dólares no son ni parecidos.
+ *
+ * Antes esto decía «bolívares si es VES, dólares en cualquier otro caso», y
+ * mientras solo hubo dos monedas coló. Al entrar el USDT dejó de colar: el
+ * saldo de la cuenta de Binance salía rotulado con un `$` que no le
+ * correspondía, en la tarjeta de la cuenta y en los desplegables de traslado.
  */
-export const dinero = (moneda: string | null | undefined, valor: string | number): string =>
-  moneda === 'VES' ? bolivares(valor) : dolares(valor)
+export const dinero = (moneda: string | null | undefined, valor: string | number): string => {
+  const codigo = moneda ?? 'USD'
+  const simbolo = SIMBOLOS[codigo] ?? codigo
+  return `${simbolo} ${decimal2.format(aNumero(valor))}`
+}
 
 /** La tasa lleva cuatro decimales: a 235 Bs/USD, el cuarto decimal ya mueve céntimos. */
 export const tasa = (valor: string | number): string => decimal4.format(aNumero(valor))
