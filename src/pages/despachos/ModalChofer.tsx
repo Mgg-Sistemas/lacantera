@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useEmpleados } from '@/lib/api/nomina'
 import { useAsignarChofer, type Vehiculo } from '@/lib/api/vehiculos'
@@ -116,11 +116,11 @@ export function ModalChofer({
 
       {deLaCasa ? (
         <div className="mt-4">
-          <Select
+          <SelectBuscable
             label="Quién"
             vacio="Elige a la persona"
-            value={empleadoId}
-            onChange={(e) => setEmpleadoId(e.target.value)}
+            valor={empleadoId}
+            onCambio={(v) => setEmpleadoId(v)}
             opciones={(empleados ?? [])
               .filter((e) => e.activo)
               .map((e) => ({

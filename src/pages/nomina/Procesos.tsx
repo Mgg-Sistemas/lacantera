@@ -8,6 +8,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
@@ -312,11 +313,11 @@ export function Procesos() {
           }
         >
           <div className="space-y-4">
-            <Select
+            <SelectBuscable
               label="De qué cuenta sale"
               vacio="Elige la cuenta"
-              value={pago.cuenta}
-              onChange={(e) => setPago((p) => ({ ...p, cuenta: e.target.value }))}
+              valor={pago.cuenta}
+              onCambio={(v) => setPago((p) => ({ ...p, cuenta: v }))}
               opciones={(cuentas ?? []).map((c) => ({
                 valor: String(c.id),
                 etiqueta: `${c.nombre} — ${dinero(c.moneda, c.saldo)}`,

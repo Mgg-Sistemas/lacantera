@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useAlmacenes, useRegistrarRecepcion } from '@/lib/api/inventario'
@@ -102,11 +102,11 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
       }
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select
+        <SelectBuscable
           label="Almacén que recibe"
           vacio="Elige el almacén"
-          value={almacenElegido}
-          onChange={(e) => setAlmacenId(e.target.value)}
+          valor={almacenElegido}
+          onCambio={(v) => setAlmacenId(v)}
           opciones={(almacenes ?? []).map((a) => ({
             valor: String(a.id),
             etiqueta: `${a.codigo} · ${a.nombre}`,

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
-import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
@@ -611,13 +611,12 @@ export function FichaTrabajador() {
             </>
           }
         >
-          <Select
+          <SelectBuscable
             label="De qué almacén sale"
             vacio="Elige el almacén"
-            value={almacenDotacion}
-            onChange={(ev) => setAlmacenDotacion(ev.target.value)}
+            valor={almacenDotacion}
+            onCambio={(elegido) => setAlmacenDotacion(elegido)}
             opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
-            required
           />
 
           {entregables.length === 0 ? (

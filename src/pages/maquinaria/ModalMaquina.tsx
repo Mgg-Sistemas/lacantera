@@ -3,6 +3,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useAlmacenes } from '@/lib/api/inventario'
@@ -169,11 +170,11 @@ export function ModalMaquina({
           onChange={(e) => cambiar('anio', e.target.value)}
         />
         <div className="sm:col-span-2">
-          <Select
+          <SelectBuscable
             label="Dónde vive"
             vacio="Sin asignar"
-            value={f.almacen_id}
-            onChange={(e) => cambiar('almacen_id', e.target.value)}
+            valor={f.almacen_id}
+            onCambio={(v) => cambiar('almacen_id', v)}
             opciones={(almacenes ?? []).map((a) => ({
               valor: String(a.id),
               etiqueta: `${a.nombre}${a.tipo === 'TALLER' ? ' (taller)' : ''}`,

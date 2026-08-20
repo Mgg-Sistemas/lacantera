@@ -8,6 +8,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
@@ -270,20 +271,19 @@ export function Cotizaciones() {
         >
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="sm:col-span-2">
-              <Select
+              <SelectBuscable
                 label="Cliente"
                 vacio="Elige el cliente"
-                value={clienteId}
-                onChange={(e) => {
-                  setClienteId(e.target.value)
-                  const c = clientes?.find((x) => String(x.id) === e.target.value)
+                valor={clienteId}
+                onCambio={(v) => {
+                  setClienteId(v)
+                  const c = clientes?.find((x) => String(x.id) === v)
                   if (c) setMoneda(c.moneda_preferida)
                 }}
                 opciones={(clientes ?? []).map((c) => ({
                   valor: String(c.id),
                   etiqueta: `${c.nombre} · ${c.rif}`,
                 }))}
-                required
               />
             </div>
             <Select

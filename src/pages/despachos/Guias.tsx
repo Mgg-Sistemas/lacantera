@@ -280,11 +280,11 @@ export function Guias() {
               className="sm:col-span-2"
               required
             />
-            <Select
+            <SelectBuscable
               label="Cliente"
               vacio="Sin cliente concreto"
-              value={nueva.cliente_id}
-              onChange={(e) => setNueva({ ...nueva, cliente_id: e.target.value })}
+              valor={nueva.cliente_id}
+              onCambio={(v) => setNueva({ ...nueva, cliente_id: v })}
               opciones={(clientes ?? []).map((c) => ({ valor: String(c.id), etiqueta: c.nombre }))}
             />
             <SelectBuscable
@@ -352,16 +352,16 @@ export function Guias() {
                 mismo camión termina existiendo tres veces: «A12BC3D»,
                 «a12bc3d» y «A12 BC3D». Queda «Otra» para el que no esté
                 cargado, que sigue siendo texto. */}
-            <Select
+            <SelectBuscable
               label="Vehículo"
               vacio="Otro — escribo la placa"
-              value={nueva.vehiculo_id}
-              onChange={(e) => {
-                const v = (vehiculos ?? []).find((x) => String(x.id) === e.target.value)
+              valor={nueva.vehiculo_id}
+              onCambio={(elegido) => {
+                const veh = (vehiculos ?? []).find((x) => String(x.id) === elegido)
                 setNueva({
                   ...nueva,
-                  vehiculo_id: e.target.value,
-                  vehiculo: v ? v.placa : '',
+                  vehiculo_id: elegido,
+                  vehiculo: veh ? veh.placa : '',
                 })
               }}
               opciones={(vehiculos ?? []).map((v) => ({

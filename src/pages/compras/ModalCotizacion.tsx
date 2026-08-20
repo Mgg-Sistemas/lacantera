@@ -4,6 +4,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { CONDICIONES_PAGO, useProveedores } from '@/lib/api/catalogo'
@@ -137,13 +138,13 @@ export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select
+        <SelectBuscable
           label="Proveedor"
           vacio="Elige el proveedor"
-          value={proveedorId}
-          onChange={(e) => {
-            setProveedorId(e.target.value)
-            const p = proveedores?.find((x) => String(x.id) === e.target.value)
+          valor={proveedorId}
+          onCambio={(v) => {
+            setProveedorId(v)
+            const p = proveedores?.find((x) => String(x.id) === v)
             if (p) {
               setMoneda(p.moneda_preferida)
               setCondicionPago(p.condicion_pago)
