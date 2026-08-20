@@ -7,6 +7,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { useGuardarParametro, useParametros } from '@/lib/api/nomina'
 import type { Parametro } from '@/lib/api/nomina'
@@ -199,24 +200,34 @@ export function Parametros() {
           }
         >
           <div className="space-y-4">
-            <Select
+            {/*
+              Treinta y tantos parámetros con nombres largos —«APORTE PATRONAL
+              IVSS — RIESGO MAXIMO: CANTERAS Y TRITURACION DE PIEDRA»— en un
+              desplegable del navegador: la lista se salía de la caja y tapaba
+              media pantalla. Escribiendo «ivss» se llega en dos teclas.
+            */}
+            <SelectBuscable
               label="Parámetro"
               vacio="Elige cuál cambia"
-              value={nuevo.clave}
-              onChange={(e) => {
-                const previo = (data ?? []).find((p) => p.clave === e.target.value)
+              valor={nuevo.clave}
+              onCambio={(v) => {
+                const previo = (data ?? []).find((p) => p.clave === v)
                 setNuevo((n) =>
                   n
                     ? {
                         ...n,
-                        clave: e.target.value,
+                        clave: v,
                         unidad: previo?.unidad ?? n.unidad,
                         descripcion: previo?.descripcion ?? '',
                       }
                     : n,
                 )
               }}
-              opciones={vigentes.map((p) => ({ valor: p.clave, etiqueta: p.descripcion }))}
+              opciones={vigentes.map((p) => ({
+                valor: p.clave,
+                codigo: p.clave,
+                nombre: p.descripcion,
+              }))}
             />
             <div className="grid grid-cols-[1fr_auto] gap-2">
               <Input

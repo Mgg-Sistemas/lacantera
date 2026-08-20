@@ -390,10 +390,7 @@ export function Cuentas() {
               label="Moneda"
               value={edicion.moneda}
               onChange={(e) => cambiar({ moneda: e.target.value })}
-              opciones={[
-                { valor: 'VES', etiqueta: 'Bolívares' },
-                { valor: 'USD', etiqueta: 'Dólares' },
-              ]}
+              opciones={(monedas.data ?? []).map((m) => ({ valor: m.codigo, etiqueta: m.nombre }))}
               hint={edicion.id ? 'No cambia si ya tiene movimientos.' : undefined}
             />
 

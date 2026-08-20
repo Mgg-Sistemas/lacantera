@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMonedasUsables } from '@/lib/api/tasas'
 import { Link } from 'react-router'
 import { ArrowRight, Pencil, Plus, RefreshCw, Scale, Trash2, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -37,6 +38,7 @@ const cifra = (moneda: string, valor: string | null) =>
   valor === null ? '—' : dinero(moneda, valor)
 
 export function Tabulador() {
+  const monedas = useMonedasUsables()
   const { data, isPending, error } = useTabulador()
   const desfase = useDesfase()
   const { puede } = useMisRoles()
@@ -319,10 +321,7 @@ export function Tabulador() {
                 label="Moneda"
                 value={edicion.moneda}
                 onChange={(e) => cambiar({ moneda: e.target.value })}
-                opciones={[
-                  { valor: 'USD', etiqueta: '$' },
-                  { valor: 'VES', etiqueta: 'Bs' },
-                ]}
+                opciones={monedas.data ?? []}
               />
             </div>
 

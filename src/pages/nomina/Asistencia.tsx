@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useMonedasUsables } from '@/lib/api/tasas'
 import { useSearchParams } from 'react-router'
 import { CalendarClock, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -37,6 +38,7 @@ const CAMPOS = [
 type Fila = Record<string, string>
 
 export function Asistencia() {
+  const monedas = useMonedasUsables()
   const [params, setParams] = useSearchParams()
   const { data: periodos } = usePeriodos()
   const { data: empleados, isPending, error } = useEmpleados(true)
@@ -328,10 +330,7 @@ export function Asistencia() {
                 label="Moneda"
                 value={nuevoMonto.moneda}
                 onChange={(e) => setNuevoMonto((n) => ({ ...n, moneda: e.target.value }))}
-                opciones={[
-                  { valor: 'VES', etiqueta: 'Bs' },
-                  { valor: 'USD', etiqueta: '$' },
-                ]}
+                opciones={monedas.data ?? []}
               />
             </div>
             <Input
