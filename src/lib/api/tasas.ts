@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
 
@@ -12,6 +12,16 @@ export interface TasaRegistrada {
   registrado_en: string
 }
 
+export interface Moneda {
+  codigo: string
+  nombre: string
+  simbolo: string
+  decimales: number
+  es_curso_legal: boolean
+  /** De dónde sale su tasa: BCV, PARALELO, INTERNA o CONTRACTUAL. */
+  fuente_tasa: string
+}
+
 /** Fecha de hoy en Venezuela, en formato AAAA-MM-DD. */
 export function hoyEnCaracas(): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -22,19 +32,71 @@ export function hoyEnCaracas(): string {
   }).format(new Date())
 }
 
-export function useTasasRegistradas(limite = 60) {
+/*
+  EL CATÁLOGO MANDA, Y NO UNA LISTA ESCRITA A MANO
+
+  La pantalla de tasas solo dejaba registrar el dólar porque el front mandaba
+  `p_origen: 'USD'` fijo, no porque la base lo impidiera. Y las monedas estaban
+  escritas a mano en siete sitios distintos, así que añadir una obligaba a
+  acordarse de los siete.
+
+  Ahora sale de `monedas`. El día que entre otra —o que el USDT deje de llamarse
+  `UST` cuando se ensanche el código—, la pantalla se entera sola.
+*/
+export function useMonedas() {
   return useQuery({
-    queryKey: ['tasas', limite],
+    queryKey: ['monedas'],
+    staleTime: 10 * 60_000,
     queryFn: async () =>
-      desenvolver<TasaRegistrada[]>(
+      desenvolver<Moneda[]>(
         await supabase
-          .from('tasas_cambio')
-          .select('*')
-          .order('fecha', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(limite),
+          .from('monedas')
+          .select('codigo, nombre, simbolo, decimales, es_curso_legal, fuente_tasa')
+          .eq('activa', true)
+          .order('es_curso_legal', { ascending: false })
+          .order('codigo'),
       ),
   })
+}
+
+/**
+ * Las monedas a las que se les puede registrar una tasa.
+ *
+ * El bolívar queda fuera: es la moneda contra la que se mide todo lo demás, y
+ * su tasa contra sí mismo es 1 por definición. Registrarla no significaría
+ * nada.
+ */
+export function useMonedasConTasa() {
+  const monedas = useMonedas()
+  return {
+    ...monedas,
+    data: monedas.data?.filter((m) => m.codigo !== 'VES'),
+  }
+}
+
+export function useTasasRegistradas(limite = 60, origen?: string) {
+  return useQuery({
+    queryKey: ['tasas', limite, origen ?? 'todas'],
+    queryFn: async () => {
+      let consulta = supabase
+        .from('tasas_cambio')
+        .select('*')
+        .order('fecha', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(limite)
+
+      if (origen) consulta = consulta.eq('moneda_origen', origen)
+
+      return desenvolver<TasaRegistrada[]>(await consulta)
+    },
+  })
+}
+
+export interface TasaVigente {
+  tasa: string
+  fecha: string
+  fuente: string
+  arrastrada: boolean
 }
 
 /**
@@ -44,17 +106,15 @@ export function useTasasRegistradas(limite = 60) {
  * de arriba informa, esta compromete. Si no coinciden, alguien tiene que
  * registrar la del día antes de emitir.
  */
-export function useTasaVigente() {
+export function useTasaVigente(origen = 'USD', fuente = 'BCV') {
   return useQuery({
-    queryKey: ['tasa-vigente'],
+    queryKey: ['tasa-vigente', origen, fuente],
     queryFn: async () => {
-      const filas = await rpc<
-        { tasa: string; fecha: string; fuente: string; arrastrada: boolean }[]
-      >('obtener_tasa', {
-        p_origen: 'USD',
+      const filas = await rpc<TasaVigente[]>('obtener_tasa', {
+        p_origen: origen,
         p_destino: 'VES',
         p_fecha: hoyEnCaracas(),
-        p_fuente: 'BCV',
+        p_fuente: fuente,
       })
 
       return filas?.[0] ?? null
@@ -63,20 +123,53 @@ export function useTasaVigente() {
   })
 }
 
+/**
+ * La tasa vigente de varias monedas a la vez.
+ *
+ * Va con `enabled` porque el indicador de la barra solo necesita las demás
+ * cuando alguien lo despliega. Pedirlas en cada carga de página sería una
+ * consulta por moneda para un dato que casi nadie mira.
+ */
+export function useTasasVigentes(monedas: Moneda[] | undefined, activo: boolean) {
+  return useQueries({
+    queries: (monedas ?? []).map((m) => ({
+      queryKey: ['tasa-vigente', m.codigo, m.fuente_tasa],
+      queryFn: async () => {
+        const filas = await rpc<TasaVigente[]>('obtener_tasa', {
+          p_origen: m.codigo,
+          p_destino: 'VES',
+          p_fecha: hoyEnCaracas(),
+          p_fuente: m.fuente_tasa,
+        })
+
+        return filas?.[0] ?? null
+      },
+      staleTime: 5 * 60_000,
+      enabled: activo,
+    })),
+    combine: (resultados) => ({
+      // Cada moneda con su tasa, o con null si nadie se la ha registrado.
+      datos: (monedas ?? []).map((m, i) => ({ moneda: m, tasa: resultados[i]?.data ?? null })),
+      cargando: resultados.some((r) => r.isPending && r.fetchStatus !== 'idle'),
+    }),
+  })
+}
+
 export function useRegistrarTasa() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (t: { fecha: string; tasa: number; fuente?: string }) =>
+    mutationFn: (t: { origen: string; fecha: string; tasa: number; fuente: string }) =>
       rpc<number>('registrar_tasa', {
-        p_origen: 'USD',
+        p_origen: t.origen,
         p_destino: 'VES',
         p_fecha: t.fecha,
         p_tasa: t.tasa,
-        p_fuente: t.fuente ?? 'BCV',
+        p_fuente: t.fuente,
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['tasas'] })
       void qc.invalidateQueries({ queryKey: ['tasa-vigente'] })
+      void qc.invalidateQueries({ queryKey: ['monedas-usables'] })
     },
   })
 }
@@ -101,20 +194,22 @@ export function useMonedasUsables() {
     queryKey: ['monedas-usables'],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const filas = desenvolver<Array<{ moneda_origen: string }>>(
-        await supabase.from('tasas_cambio').select('moneda_origen'),
-      )
+      const [conTasa, catalogo] = await Promise.all([
+        supabase.from('tasas_cambio').select('moneda_origen'),
+        supabase.from('monedas').select('codigo, nombre').eq('activa', true),
+      ])
 
-      const nombres: Record<string, string> = {
-        USD: 'Dólares',
-        VES: 'Bolívares',
-        EUR: 'Euros',
-      }
+      const filas = desenvolver<Array<{ moneda_origen: string }>>(conTasa)
+      const monedas = desenvolver<Array<{ codigo: string; nombre: string }>>(catalogo)
 
+      // El nombre sale del catálogo y no de un mapa aquí dentro: cuando el
+      // USDT deje de llamarse `UST`, esta lista no hay que tocarla.
+      const nombres = new Map(monedas.map((m) => [m.codigo, m.nombre]))
       const codigos = ['USD', 'VES', ...filas.map((f) => f.moneda_origen)]
+
       return [...new Set(codigos)].map((c) => ({
         valor: c,
-        etiqueta: nombres[c] ?? c,
+        etiqueta: nombres.get(c) ?? c,
       }))
     },
   })

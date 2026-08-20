@@ -11,6 +11,7 @@ import {
   UserRound,
   WifiOff,
 } from 'lucide-react'
+import { Conversor } from '@/components/Conversor'
 import { Notificaciones } from '@/components/Notificaciones'
 import { Buscador } from '@/components/Buscador'
 import { cn } from '@/lib/cn'
@@ -19,7 +20,7 @@ import { cerrarSesion } from '@/lib/auth'
 import { useTema } from '@/lib/tema'
 import type { Tema } from '@/lib/tema'
 import { useTasaBcv } from '@/lib/tasaBcv'
-import { useTasaVigente } from '@/lib/api/tasas'
+import { useMonedasConTasa, useTasaVigente, useTasasVigentes } from '@/lib/api/tasas'
 import type { EstadoTiempoReal } from '@/lib/tiempoReal'
 import { tasa as formatearTasa } from '@/lib/formato'
 
@@ -93,6 +94,40 @@ function IndicadorTasa() {
   const { data, isPending, isError } = useTasaBcv()
   const registrada = useTasaVigente()
 
+  /*
+    LA PRINCIPAL SE VE; LAS DEMÁS SE DESPLIEGAN
+
+    La barra enseña el dólar porque es con lo que se mide el sistema, pero la
+    cantera también cobra en euros y en USDT. Ponerlas las tres una al lado de
+    otra llenaría la barra y no escalaría a la cuarta.
+
+    Las demás se piden solo al abrir. Consultarlas en cada carga de página sería
+    una llamada por moneda para un dato que casi nadie mira.
+  */
+  const [abierto, setAbierto] = useState(false)
+  const caja = useRef<HTMLDivElement>(null)
+  const monedas = useMonedasConTasa()
+  const otras = useTasasVigentes(
+    monedas.data?.filter((m) => m.codigo !== 'USD'),
+    abierto,
+  )
+
+  useEffect(() => {
+    if (!abierto) return
+
+    const fuera = (e: MouseEvent) => {
+      if (!caja.current?.contains(e.target as Node)) setAbierto(false)
+    }
+    const escape = (e: KeyboardEvent) => e.key === 'Escape' && setAbierto(false)
+
+    document.addEventListener('mousedown', fuera)
+    document.addEventListener('keydown', escape)
+    return () => {
+      document.removeEventListener('mousedown', fuera)
+      document.removeEventListener('keydown', escape)
+    }
+  }, [abierto])
+
   if (isPending) {
     return (
       <div className="border-hairline bg-surface mr-1 hidden items-center gap-2.5 rounded-full border py-1.5 pr-3 pl-3 sm:flex">
@@ -152,34 +187,86 @@ function IndicadorTasa() {
     enCalma ? 'border-hairline bg-surface' : 'border-warning/40 bg-warning-soft',
   )
 
-  // Cuando hay algo que arreglar, el indicador lleva a donde se arregla.
-  // Avisar de un problema sin decir dónde se resuelve solo sirve para molestar.
-  if (sinRegistrar) {
-    return (
-      <Link
-        to="/app/tasas"
+  return (
+    <div ref={caja} className="relative mr-1 hidden sm:block">
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        aria-expanded={abierto}
         title={
-          registrada.data
-            ? `El BCV publicó Bs ${formatearTasa(data.valor)} hoy, pero el sistema todavía valora con la del ${new Date(`${registrada.data.fecha}T12:00:00`).toLocaleDateString('es-VE', { day: 'numeric', month: 'short' })}. Regístrala antes de emitir documentos.`
-            : 'No hay ninguna tasa registrada: no se puede valorar ningún documento.'
+          sinRegistrar
+            ? 'El BCV ya publicó la tasa de hoy y el sistema todavía valora con otra. Abre para arreglarlo.'
+            : data.vigente
+              ? 'Tasa publicada hoy y registrada en el sistema. Abre para ver las demás monedas y convertir.'
+              : `La última tasa publicada es del ${fechaCorta}. Confirma antes de emitir documentos.`
         }
-        className={cn(clases, 'hover:border-warning/60 transition-colors')}
+        className={cn(clases, 'flex transition-colors', sinRegistrar && 'hover:border-warning/60')}
       >
         {contenido}
-      </Link>
-    )
-  }
+        <ChevronDown
+          className={cn('text-ink/35 ml-0.5 size-3.5 transition-transform', abierto && 'rotate-180')}
+        />
+      </button>
 
-  return (
-    <div
-      title={
-        data.vigente
-          ? 'Tasa publicada hoy y registrada en el sistema: es la que valora lo que se emita ahora.'
-          : `La última tasa publicada es del ${fechaCorta}. Confirma antes de emitir documentos.`
-      }
-      className={clases}
-    >
-      {contenido}
+      {abierto ? (
+        <div className="border-ink/15 bg-surface absolute top-full right-0 z-50 mt-2 w-80 rounded-[10px] border p-4 shadow-xl">
+          {/* Lo que hay que arreglar va primero: si el sistema valora con una
+              tasa vieja, eso importa más que cualquier conversión. */}
+          {sinRegistrar ? (
+            <Link
+              to="/app/tasas"
+              onClick={() => setAbierto(false)}
+              className="border-warning/30 bg-warning-soft mb-3 block rounded-[6px] border p-2.5"
+            >
+              <p className="text-ink/85 text-xs font-medium">La tasa de hoy no está registrada</p>
+              <p className="text-ink/60 mt-0.5 text-2xs leading-relaxed">
+                {registrada.data
+                  ? `El sistema valora con la del ${new Date(`${registrada.data.fecha}T12:00:00`).toLocaleDateString('es-VE', { day: 'numeric', month: 'short' })}. Regístrala antes de emitir.`
+                  : 'Sin ninguna tasa registrada no se puede emitir nada.'}
+              </p>
+            </Link>
+          ) : null}
+
+          <p className="text-ink/45 text-2xs mb-2 font-medium tracking-wide uppercase">
+            Con lo que valora el sistema
+          </p>
+
+          <ul className="space-y-1.5">
+            <li className="flex items-baseline justify-between gap-3">
+              <span className="text-ink/70 text-sm">Dólar</span>
+              <span className="tabular text-ink/90 text-sm font-semibold">
+                {registrada.data ? `Bs ${formatearTasa(registrada.data.tasa)}` : 'sin registrar'}
+              </span>
+            </li>
+
+            {otras.datos.map(({ moneda, tasa }) => (
+              <li key={moneda.codigo} className="flex items-baseline justify-between gap-3">
+                <span className="text-ink/70 text-sm">{moneda.nombre}</span>
+                <span
+                  className={cn(
+                    'tabular text-sm',
+                    tasa ? 'text-ink/90 font-semibold' : 'text-ink/35',
+                  )}
+                >
+                  {tasa ? `Bs ${formatearTasa(tasa.tasa)}` : 'sin registrar'}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="border-hairline mt-3 border-t pt-3">
+            <Conversor compacto />
+          </div>
+
+          <Link
+            to="/app/tasas"
+            onClick={() => setAbierto(false)}
+            className="text-royal-600 mt-3 block text-xs hover:underline"
+          >
+            Ver y registrar tasas →
+          </Link>
+        </div>
+      ) : null}
     </div>
   )
 }

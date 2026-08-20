@@ -29,8 +29,8 @@ import {
 } from '@/lib/api/tesoreria'
 import type { Cuenta } from '@/lib/api/tesoreria'
 import { useMisRoles } from '@/lib/api/catalogo'
-import { useTasaVigente } from '@/lib/api/tasas'
-import { dinero, dolares, fecha, tasa as formatoTasa } from '@/lib/formato'
+import { useMonedas, useTasaVigente, useTasasVigentes } from '@/lib/api/tasas'
+import { dinero, fecha, tasa as formatoTasa } from '@/lib/formato'
 import { BANCOS } from '@/lib/bancos'
 
 const vacia = {
@@ -193,22 +193,50 @@ export function Cuentas() {
 
   const cambiar = (c: Partial<Edicion>) => setEdicion((e) => (e ? { ...e, ...c } : e))
 
-  // El equivalente en dólares se calcula con la tasa de hoy, no con la de cada
-  // día: es "cuánto vale ahora lo que hay", que es la pregunta que se hace
-  // quien mira este número antes de comprometer un pago.
-  const hayBolivares = (data ?? []).some((c) => c.activa && c.moneda === 'VES')
+  /*
+    EL TOTAL SUMA TODAS LAS MONEDAS, NO SOLO DOS
 
-  const enDolares = (data ?? []).reduce((suma, c) => {
-    if (!c.activa) return suma
-    const saldo = Number(c.saldo)
-    if (c.moneda === 'USD') return suma + saldo
-    if (c.moneda === 'VES' && tasa) return suma + saldo / Number(tasa.tasa)
-    return suma
-  }, 0)
+    Antes recorría las cuentas y devolvía `suma` sin tocarla para cualquier
+    moneda que no fuera dólar o bolívar. Con una sola cuenta en euros o en USDT
+    —y hay una, la de Binance— ese saldo desaparecía del total **sin avisar**:
+    el número salía corto y parecía correcto, que es la peor forma de estar mal.
 
-  // Sin tasa, los bolívares valdrían cero y el total saldría corto sin avisar.
-  // Es preferible no dar la cifra que darla mal.
-  const totalCompleto = !hayBolivares || Boolean(tasa)
+    Ahora cada moneda se convierte con su propia tasa y se dice cuál falta si
+    alguna no la tiene.
+
+    Se convierte con la tasa de hoy, no con la del día en que entró cada
+    bolívar: la pregunta que se hace quien mira este número es «cuánto vale
+    ahora lo que hay» antes de comprometer un pago.
+  */
+  const monedas = useMonedas()
+  const tasas = useTasasVigentes(
+    monedas.data?.filter((m) => m.codigo !== 'VES'),
+    true,
+  )
+
+  const bsPorUnidad = new Map<string, number>([['VES', 1]])
+  for (const { moneda, tasa: t } of tasas.datos) {
+    if (t) bsPorUnidad.set(moneda.codigo, Number(t.tasa))
+  }
+
+  // El total se puede leer en las dos que interesan: quien va a pagarle a un
+  // proveedor en bolívares no quiere hacer la cuenta de cabeza.
+  const [expresarEn, setExpresarEn] = useState<'USD' | 'VES'>('USD')
+
+  const presentes = [...new Set((data ?? []).filter((c) => c.activa).map((c) => c.moneda))]
+  const sinTasa = presentes.filter((m) => !bsPorUnidad.has(m))
+
+  const totalBs = (data ?? []).reduce(
+    (suma, c) => (c.activa ? suma + Number(c.saldo) * (bsPorUnidad.get(c.moneda) ?? 0) : suma),
+    0,
+  )
+
+  const tasaDolar = bsPorUnidad.get('USD')
+  const total = expresarEn === 'VES' ? totalBs : totalBs / (tasaDolar ?? 1)
+
+  // Faltando una tasa el total saldría corto sin avisar. Es preferible no dar
+  // la cifra que darla mal.
+  const totalCompleto = sinTasa.length === 0 && (expresarEn === 'VES' || Boolean(tasaDolar))
 
   return (
     <>
@@ -237,20 +265,40 @@ export function Cuentas() {
           <Card className="mb-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
               <div>
-                <p className="text-ink/45 text-xs">Disponible en cuentas activas</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-ink/45 text-xs">Disponible en cuentas activas</p>
+                  <div className="border-hairline flex overflow-hidden rounded-full border">
+                    {(['USD', 'VES'] as const).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setExpresarEn(m)}
+                        className={
+                          m === expresarEn
+                            ? 'bg-royal-600/12 text-ink/85 px-2 py-0.5 text-2xs font-medium'
+                            : 'text-ink/45 hover:text-ink/75 px-2 py-0.5 text-2xs'
+                        }
+                      >
+                        {m === 'USD' ? '$' : 'Bs'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <p className="text-safety tabular text-2xl font-semibold">
-                  {totalCompleto ? dolares(enDolares) : '—'}
+                  {totalCompleto ? dinero(expresarEn, total) : '—'}
                 </p>
               </div>
               <p className="text-ink/45 max-w-md text-xs">
                 {totalCompleto ? (
                   <>
                     Convertido con la tasa de hoy
-                    {tasa ? ` (Bs ${formatoTasa(tasa.tasa)})` : ''}, no con la del día en
-                    que entró cada bolívar. Cada cuenta manda su propio saldo.
+                    {tasa ? ` (Bs ${formatoTasa(tasa.tasa)} por dólar)` : ''}, no con la del día
+                    en que entró cada bolívar. Cada cuenta manda su propio saldo.
                   </>
+                ) : sinTasa.length > 0 ? (
+                  `Hay cuentas en ${sinTasa.join(', ')} y falta registrar su tasa del día. Sin ella el total saldría corto: regístrala en Sistema › Tasas de cambio. El saldo de cada cuenta sí es exacto.`
                 ) : (
-                  'Falta la tasa del día para convertir los bolívares. Regístrala en Sistema › Tasas de cambio; mientras tanto, el saldo de cada cuenta sí es exacto.'
+                  'Falta la tasa del día para convertir. Regístrala en Sistema › Tasas de cambio; mientras tanto, el saldo de cada cuenta sí es exacto.'
                 )}
               </p>
             </div>
