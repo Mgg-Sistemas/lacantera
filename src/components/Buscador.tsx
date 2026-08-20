@@ -2,7 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router'
 import { Search } from 'lucide-react'
-import { navigation, moduloDeRuta, esRutaSoloAdmin } from '@/config/navigation'
+import {
+  navigation,
+  moduloDeRuta,
+  esRutaSoloAdmin,
+  CLAVES_DE_BUSQUEDA,
+} from '@/config/navigation'
+import { useBusquedaDocumentos } from '@/lib/api/busqueda'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { cn } from '@/lib/cn'
@@ -20,12 +26,18 @@ import { cn } from '@/lib/cn'
  * preguntarse dónde se hace algo, y con veinte pantallas repartidas en cinco
  * módulos, escribir «horómetro» y llegar es exactamente eso.
  *
- * NO ES UNA BÚSQUEDA DE DATOS
+ * TAMBIÉN BUSCA DENTRO DE LOS DATOS
  *
- * Busca pantallas, no documentos. Escribir el número de una factura no la va a
- * encontrar, y el texto de ayuda lo dice para que nadie lo intente dos veces.
- * Buscar dentro de los datos es otra cosa —y más cara— que se hará cuando haya
- * datos que buscar.
+ * Al principio solo encontraba pantallas y el mensaje vacío lo confesaba: «el
+ * número de una factura no se encuentra aquí». Tenía sentido cuando no había
+ * datos; con ciento setenta artículos y las órdenes andando, quien tiene un
+ * número en la mano no debería adivinar en qué pantalla vive. Lo de dentro sale
+ * de `lib/api/busqueda.ts`, que solo consulta los módulos que este usuario
+ * puede leer.
+ *
+ * Y las pantallas se encuentran por cómo se las nombra, no solo por su título:
+ * «convertir» lleva a Tasas de cambio aunque ahí no diga esa palabra. Los
+ * sinónimos están en `CLAVES_DE_BUSQUEDA`.
  *
  * SOLO LO QUE ESTE USUARIO PUEDE ABRIR
  *
@@ -72,6 +84,23 @@ export function Buscador() {
     return () => clearTimeout(t)
   }, [abierto])
 
+  /*
+    El texto llega a la base con un cuarto de segundo de retraso.
+
+    Las pantallas se filtran en memoria y pueden seguir cada tecla. Los
+    documentos son nueve consultas, y dispararlas letra a letra sería castigar
+    a la base por escribir deprisa.
+  */
+  const [textoTardio, setTextoTardio] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => setTextoTardio(texto), 250)
+    return () => clearTimeout(t)
+  }, [texto])
+
+  const documentos = useBusquedaDocumentos(abierto ? textoTardio : '', (modulo) =>
+    puede(modulo, 'LECTURA'),
+  )
+
   const destinos = useMemo<Destino[]>(() => {
     const salida: Destino[] = []
 
@@ -108,17 +137,47 @@ export function Buscador() {
 
     return destinos
       .filter((d) => {
-        const heno = normalizar(`${d.label} ${d.grupo ?? ''} ${d.seccion}`)
+        const heno = normalizar(
+          `${d.label} ${d.grupo ?? ''} ${d.seccion} ${CLAVES_DE_BUSQUEDA[d.to] ?? ''}`,
+        )
         return trozos.every((t) => heno.includes(t))
       })
-      .slice(0, 10)
+      .slice(0, 6)
   }, [texto, destinos])
+
+  /*
+    Pantallas y documentos en una sola lista.
+
+    Van juntos porque las flechas y el Enter tienen que recorrerlos igual: dos
+    listas con dos cursores obligarían a saber en cuál está el foco, y eso no se
+    ve. Las pantallas van primero —son la respuesta más frecuente y las únicas
+    que salen con el campo vacío— y los documentos debajo, con su encabezado.
+  */
+  const filas = useMemo(
+    () => [
+      ...resultados.map((d) => ({
+        clase: 'pantalla' as const,
+        titulo: d.label,
+        sub: `${d.grupo ? `${d.grupo} · ` : ''}${d.seccion}`,
+        to: d.to,
+        tipo: '',
+      })),
+      ...(documentos.data ?? []).map((h) => ({
+        clase: 'documento' as const,
+        titulo: h.titulo,
+        sub: h.detalle ?? '',
+        to: h.to,
+        tipo: h.tipo,
+      })),
+    ],
+    [resultados, documentos.data],
+  )
 
   useEffect(() => setCursor(0), [texto])
 
-  const ir = (d: Destino) => {
+  const ir = (destino: string) => {
     setAbierto(false)
-    void navegar(d.to)
+    void navegar(destino)
   }
 
   return (
@@ -161,45 +220,60 @@ export function Buscador() {
                     onKeyDown={(e) => {
                       if (e.key === 'ArrowDown') {
                         e.preventDefault()
-                        setCursor((c) => Math.min(c + 1, resultados.length - 1))
+                        setCursor((c) => Math.min(c + 1, filas.length - 1))
                       }
                       if (e.key === 'ArrowUp') {
                         e.preventDefault()
                         setCursor((c) => Math.max(c - 1, 0))
                       }
-                      if (e.key === 'Enter' && resultados[cursor]) {
+                      if (e.key === 'Enter' && filas[cursor]) {
                         e.preventDefault()
-                        ir(resultados[cursor])
+                        ir(filas[cursor].to)
                       }
                     }}
-                    placeholder="Escribe el nombre de una pantalla"
+                    placeholder="Una pantalla, un número de documento, un nombre…"
                     className="text-ink/90 placeholder:text-ink/35 h-14 w-full bg-transparent text-base outline-none"
                   />
                 </div>
 
-                {resultados.length === 0 ? (
+                {filas.length === 0 ? (
                   <p className="text-ink/50 px-4 py-6 text-sm">
-                    Nada con ese nombre. Esto busca pantallas, no documentos: el número de una
-                    factura no se encuentra aquí.
+                    {documentos.isFetching
+                      ? 'Buscando…'
+                      : texto.trim().length < 2
+                        ? 'Escribe al menos dos letras.'
+                        : 'Nada con ese nombre, ni en las pantallas ni en los documentos que puedes ver.'}
                   </p>
                 ) : (
                   <ul className="max-h-[50vh] overflow-y-auto py-1.5">
-                    {resultados.map((d, i) => (
-                      <li key={d.to}>
+                    {filas.map((f, i) => (
+                      <li key={`${f.clase}-${f.to}-${f.titulo}`}>
+                        {/* El encabezado va pegado a la primera fila de su
+                            grupo en vez de en su propio renglón: así el índice
+                            del cursor sigue siendo el de la lista y no hay que
+                            descontar los títulos al moverse con las flechas. */}
+                        {f.clase === 'documento' && filas[i - 1]?.clase !== 'documento' ? (
+                          <p className="text-ink/35 text-2xs border-hairline mt-1.5 border-t px-4 pt-2.5 pb-1 font-medium tracking-wide uppercase">
+                            Documentos y fichas
+                          </p>
+                        ) : null}
+
                         <button
                           type="button"
                           onMouseEnter={() => setCursor(i)}
-                          onClick={() => ir(d)}
+                          onClick={() => ir(f.to)}
                           className={cn(
                             'flex w-full items-baseline gap-2 px-4 py-2.5 text-left transition-colors',
                             i === cursor ? 'bg-royal-600/8' : 'hover:bg-ink/4',
                           )}
                         >
-                          <span className="text-ink/90 text-sm">{d.label}</span>
-                          <span className="text-ink/40 text-xs">
-                            {d.grupo ? `${d.grupo} · ` : ''}
-                            {d.seccion}
-                          </span>
+                          {f.tipo ? (
+                            <span className="text-ink/35 w-28 shrink-0 truncate text-xs">
+                              {f.tipo}
+                            </span>
+                          ) : null}
+                          <span className="text-ink/90 truncate text-sm">{f.titulo}</span>
+                          <span className="text-ink/40 truncate text-xs">{f.sub}</span>
                         </button>
                       </li>
                     ))}

@@ -90,6 +90,51 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/config', 'CONFIGURACION'],
 ]
 
+/*
+  PALABRAS CON LAS QUE LA GENTE BUSCA, QUE NO SON LAS DEL MENÚ
+
+  El menú dice «Tasas de cambio» y quien necesita la calculadora escribe
+  «convertir». Christopher lo hizo y no encontró nada, habiendo una calculadora
+  en esa misma pantalla y en el panel de la barra.
+
+  Aquí van los sinónimos, el trabajo que se hace en cada sitio y el nombre del
+  documento que sale de ella. No hace falta repetir el título: la lupa ya
+  compara contra él, contra su grupo y contra su sección.
+*/
+export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
+  '/app/tasas': 'convertir calculadora conversor cambio divisa dolar euro usdt bcv paralelo binance',
+  '/app/tesoreria/cuentas': 'banco caja billetera saldo dinero efectivo zelle binance traslado',
+  '/app/tesoreria': 'movimientos ingresos egresos flujo',
+  '/app/compras': 'orden pedido oc requisicion comprar',
+  '/app/compras/proveedores': 'rif suplidor',
+  '/app/compras/recepciones': 'recibir entrada mercancia llegada',
+  '/app/compras/libro': 'iva impuesto seniat fiscal credito',
+  '/app/ventas/facturacion': 'factura fac cobrar emitir',
+  '/app/ventas/despachos': 'nota de entrega ne remision',
+  '/app/ventas/clientes': 'rif comprador',
+  '/app/ventas/libro': 'iva impuesto seniat fiscal debito',
+  '/app/ventas/precios': 'tarifa lista precio',
+  '/app/inventario/existencias': 'stock cuanto hay disponible',
+  '/app/inventario/articulos': 'catalogo repuesto insumo herramienta epp material',
+  '/app/inventario/transferencias': 'mover traspaso entre almacenes',
+  '/app/despachos/guias': 'permiso movilizacion ministerio guia',
+  '/app/despachos/tickets': 'romana pesaje peso bruto tara',
+  '/app/despachos/vehiculos': 'camion volteo chuto gandola placa chofer',
+  '/app/maquinaria': 'excavadora cargador equipo horometro',
+  '/app/maquinaria/mantenimientos': 'reparacion taller averia servicio',
+  '/app/nomina/personal': 'trabajador empleado ficha cedula contratar',
+  '/app/nomina/procesos': 'pagar quincena periodo calcular sueldo',
+  '/app/nomina/recibos': 'recibo pago sueldo',
+  '/app/nomina/prestaciones': 'antiguedad liquidacion intereses garantia',
+  '/app/nomina/tabulador': 'cargo sueldo escala aumento',
+  '/app/combustible': 'gasoil gasolina diesel surtir tanque',
+  '/app/asignaciones': 'herramienta prestada quien tiene responsable',
+  '/app/config/usuarios': 'permiso acceso clave rol alta',
+  '/app/config/auditoria': 'quien hizo rastro historial cambios',
+  '/app/explotacion/voladuras': 'explosivo barreno detonante',
+  '/app/explotacion/produccion': 'turno tonelada extraccion',
+}
+
 /** El módulo al que pertenece una ruta. El panel es la raíz. */
 export function moduloDeRuta(ruta: string): string {
   return MODULO_POR_PREFIJO.find(([prefijo]) => ruta.startsWith(prefijo))?.[1] ?? 'PANEL'
