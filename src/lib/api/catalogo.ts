@@ -70,6 +70,14 @@ export interface Articulo {
   inventariable: boolean
   stock_minimo: string
   activo: boolean
+  /**
+   * Qué pasa cuando se le entrega a una persona.
+   *
+   * `NO` no se entrega a nadie, `RETORNABLE` se presta y vuelve, `CONSUMIBLE`
+   * se lo lleva y no vuelve. Solo lo retornable aparece en asignaciones:
+   * prestar algo que se consume abre una deuda que no puede cerrarse.
+   */
+  modo_entrega: string
 }
 
 export const CATEGORIAS_ARTICULO = [
@@ -82,6 +90,31 @@ export const CATEGORIAS_ARTICULO = [
   { valor: 'HERRAMIENTA', etiqueta: 'Herramienta' },
   { valor: 'EXPLOSIVO', etiqueta: 'Explosivo' },
   { valor: 'SERVICIO', etiqueta: 'Servicio' },
+]
+
+/*
+  CÓMO SE COMPORTA UN ARTÍCULO AL ENTREGARLO
+
+  Christopher lo vio con la gasolina: el sistema ofrecía entregarla a un
+  trabajador diciendo «queda a su nombre hasta que la devuelva». Entregar un
+  destornillador y entregar gasolina no son la misma operación.
+*/
+export const MODOS_ENTREGA = [
+  {
+    valor: 'RETORNABLE',
+    etiqueta: 'Se presta y vuelve',
+    ayuda: 'Queda a nombre de quien lo recibe y se le pide de vuelta. Aparece en Asignaciones.',
+  },
+  {
+    valor: 'CONSUMIBLE',
+    etiqueta: 'Se entrega y no vuelve',
+    ayuda: 'Se gasta al usarlo. Sale por su propio camino —combustible, dotación, movimiento de almacén— y no como préstamo.',
+  },
+  {
+    valor: 'NO',
+    etiqueta: 'No se le entrega a una persona',
+    ayuda: 'Lo que se vende o se contrata. Nadie se lo lleva.',
+  },
 ]
 
 export function useUnidades() {
@@ -118,6 +151,7 @@ export function useCrearArticulo() {
       descripcion?: string
       inventariable?: boolean
       stock_minimo?: number
+      modo_entrega?: string
     }) =>
       rpc<number>('crear_articulo', {
         p_codigo: a.codigo,
@@ -127,7 +161,60 @@ export function useCrearArticulo() {
         p_descripcion: a.descripcion ?? null,
         p_inventariable: a.inventariable ?? true,
         p_stock_minimo: a.stock_minimo ?? 0,
+        p_modo_entrega: a.modo_entrega ?? null,
       }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['articulos'] }),
+  })
+}
+
+/**
+ * Corregir un artículo ya creado.
+ *
+ * El código no viaja: es con lo que se pide en el almacén y ya está impreso en
+ * órdenes y guías emitidas. Todo lo demás sí, porque un nombre mal tecleado se
+ * quedaba mal para siempre.
+ */
+export function useEditarArticulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: {
+      id: number
+      nombre: string
+      categoria: string
+      unidad: string
+      descripcion?: string
+      inventariable?: boolean
+      stock_minimo?: number
+      modo_entrega?: string
+    }) =>
+      rpc('editar_articulo', {
+        p_id: a.id,
+        p_nombre: a.nombre,
+        p_categoria: a.categoria,
+        p_unidad: a.unidad,
+        p_descripcion: a.descripcion ?? null,
+        p_inventariable: a.inventariable ?? true,
+        p_stock_minimo: a.stock_minimo ?? 0,
+        p_modo_entrega: a.modo_entrega ?? null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['articulos'] })
+      void qc.invalidateQueries({ queryKey: ['asignables'] })
+    },
+  })
+}
+
+/**
+ * Borrar uno creado por error.
+ *
+ * Solo sale si no lo ha tocado nada. En cuanto aparece en una orden, un
+ * movimiento o una guía, la base lo impide y el mensaje dice qué hacer en su
+ * lugar: desactivarlo.
+ */
+export function useEliminarArticulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: { id: number }) => rpc('eliminar_articulo', { p_id: a.id }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['articulos'] }),
   })
 }

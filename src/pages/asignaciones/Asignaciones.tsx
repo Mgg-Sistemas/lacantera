@@ -315,6 +315,32 @@ export function Asignaciones() {
 }
 
 /**
+ * La unidad como se dice al contar.
+ *
+ * El catálogo guarda el código —UND, L, PAR— porque es lo que viaja en los
+ * documentos. Preguntar «cuántas UND» es hablarle a alguien en el idioma de la
+ * base de datos.
+ */
+function unidadEnPlural(codigo: string): string {
+  const dicho: Record<string, string> = {
+    UND: 'unidades',
+    PAR: 'pares',
+    JGO: 'juegos',
+    L: 'litros',
+    GAL: 'galones',
+    KG: 'kilos',
+    M: 'metros',
+    M3: 'metros cúbicos',
+    TON: 'toneladas',
+    SACO: 'sacos',
+    CAJA: 'cajas',
+    ROLLO: 'rollos',
+    HORA: 'horas',
+  }
+  return dicho[codigo] ?? codigo.toLowerCase()
+}
+
+/**
  * Entregar un bien.
  *
  * El trabajador es obligatorio y no hay opción de «sin asignar»: el módulo
@@ -391,8 +417,14 @@ function ModalEntrega({
       />
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {/*
+          «Cuántas» a secas dejaba la pregunta a medias: ¿cuántas qué? El
+          artículo ya trae su unidad, así que la etiqueta la dice —«Cuántas
+          unidades», «Cuántos litros»— y de paso recuerda en qué se mide lo que
+          se está entregando.
+        */}
         <Input
-          label="Cuántas"
+          label={`Cuántas ${unidadEnPlural(bien.unidad)}`}
           type="number"
           min="1"
           step="1"
