@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Gauge,
   Landmark,
+  Network,
   Pickaxe,
   Settings,
   ShoppingCart,
@@ -93,6 +94,7 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/despachos', 'DESPACHOS'],
   ['/app/compras', 'COMPRAS'],
   ['/app/ventas', 'VENTAS'],
+  ['/app/organigrama', 'NOMINA'],
   ['/app/nomina', 'NOMINA'],
   ['/app/tesoreria', 'TESORERIA'],
   ['/app/tasas', 'TASAS'],
@@ -125,6 +127,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/ventas/precios': 'tarifa lista precio',
   '/app/inventario/existencias': 'stock cuanto hay disponible',
   '/app/inventario/articulos': 'catalogo repuesto insumo herramienta epp material',
+  '/app/organigrama': 'organizacion estructura jerarquia cargos quien depende de quien departamentos arbol',
   '/app/inventario/articulos/carga': 'excel csv planilla plantilla lote masivo importar cargar productos precios',
   '/app/inventario/transferencias': 'mover traspaso entre almacenes',
   '/app/despachos/guias': 'permiso movilizacion ministerio guia',
@@ -341,6 +344,16 @@ export const navigation: NavSection[] = [
           { label: 'Parámetros de nómina', to: '/app/nomina/parametros' },
           { label: 'Prestaciones sociales', to: '/app/nomina/prestaciones' },
         ],
+      },
+      {
+        /*
+          Sección propia y no una pantalla dentro de Nómina, que es como lo
+          pidió la líder de sistemas. El permiso sí es el de Nómina: quien
+          lleva el personal es quien sabe de quién depende quién.
+        */
+        label: 'Organigrama',
+        icon: Network,
+        to: '/app/organigrama',
       },
       {
         label: 'Tesorería',

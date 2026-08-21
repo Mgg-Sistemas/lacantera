@@ -108,6 +108,9 @@ const FichaArticulo = lazy(() =>
 const CargaPorLote = lazy(() =>
   import('@/pages/inventario/CargaPorLote').then((m) => ({ default: m.CargaPorLote })),
 )
+const Organigrama = lazy(() =>
+  import('@/pages/organigrama/Organigrama').then((m) => ({ default: m.Organigrama })),
+)
 const FichaTrabajador = lazy(() =>
   import('@/pages/nomina/FichaTrabajador').then((m) => ({ default: m.FichaTrabajador })),
 )
@@ -451,6 +454,7 @@ export default function App() {
               {/* Antes que `:id`, que si no atraparia «carga» como si fuera
                   el numero de un articulo. */}
               <Route path="inventario/articulos/carga" element={<CargaPorLote />} />
+              <Route path="organigrama" element={<Organigrama />} />
               <Route path="inventario/articulos/:id" element={<FichaArticulo />} />
               <Route path="nomina/personal/nuevo" element={<FormularioTrabajador />} />
               <Route path="nomina/personal/:id/editar" element={<FormularioTrabajador />} />
