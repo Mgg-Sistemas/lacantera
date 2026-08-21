@@ -181,6 +181,7 @@ export const TIPOS_MOVIMIENTO: Record<string, string> = {
   ENTRADA_COMPRA: 'Entrada por compra',
   ENTRADA_PRODUCCION: 'Entrada de producción',
   ENTRADA_DEVOLUCION: 'Devolución',
+  ENTRADA_DIRECTA: 'Entrada directa',
   SALIDA_CONSUMO: 'Salida a consumo',
   SALIDA_DESPACHO: 'Salida por despacho',
   SALIDA_MERMA: 'Merma',

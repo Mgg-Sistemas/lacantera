@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { useExistencias, useMovimientos } from '@/lib/api/inventario'
+import { esRutaFueraDelMvp } from '@/config/navigation'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -64,6 +65,14 @@ const ENTRA: Accion[] = [
     exigeEscritura: true,
   },
   {
+    titulo: 'Entró sin compra de por medio',
+    detalle:
+      'El saldo con el que arranca el almacén, algo comprado por fuera, material que trae alguien. Lleva su costo.',
+    icono: PackagePlus,
+    ruta: '/app/inventario/existencias',
+    exigeEscritura: true,
+  },
+  {
     titulo: 'Salió producción del turno',
     detalle: 'El parte de turno es la única puerta por la que entra material de la planta.',
     icono: PackagePlus,
@@ -99,6 +108,18 @@ const MUEVE: Accion[] = [
   },
 ]
 
+/*
+  LOS ATAJOS A LO QUE HOY NO SE OFRECE NO SE PINTAN
+
+  Este tablero es un mapa de por dónde entra y por dónde sale el material, y
+  dos de sus caminos —el parte de turno de Explotación y la nota de entrega de
+  Ventas— llevan hoy al cartel de obra. Un mapa que enseña calles cortadas se
+  deja de leer.
+
+  Se filtra con la misma función que usan el riel y la lupa, y no con una lista
+  aparte: cuando un módulo vuelva al menú, su atajo reaparece aquí solo. Una
+  lista propia sería la que nadie se acuerda de tocar ese día.
+*/
 function Grupo({
   titulo,
   acciones,
@@ -108,7 +129,9 @@ function Grupo({
   acciones: Accion[]
   puedeEscribir: boolean
 }) {
-  const visibles = acciones.filter((a) => !a.exigeEscritura || puedeEscribir)
+  const visibles = acciones.filter(
+    (a) => (!a.exigeEscritura || puedeEscribir) && !esRutaFueraDelMvp(a.ruta),
+  )
   if (visibles.length === 0) return null
 
   return (
