@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { IdCard, Pencil, Plus, Search, UserMinus, Users } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_PERSONAL } from '@/components/Pestanas'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -66,6 +67,8 @@ export function Personal() {
           ) : null
         }
       />
+
+      <Pestanas pestanas={PESTANAS_PERSONAL} />
 
       <Card className="mb-4">
         <div className="flex flex-wrap items-end gap-4">

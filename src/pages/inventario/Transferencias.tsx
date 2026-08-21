@@ -5,7 +5,6 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
-import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
@@ -195,19 +194,29 @@ export function Transferencias() {
           </>
         }
       >
+        {/* Once almacenes con nombres largos —«TALLER DE REPARACION DE PLANTA
+            FIJA»— no se eligen en un desplegable: hay que abrirlo, recorrerlo
+            con la vista y acertar. Escribiendo «planta» sale solo, y de paso
+            se ve el código y el tipo de sitio, que es lo que distingue un
+            taller de un patio cuando los dos empiezan igual. */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <Select
+          <SelectBuscable
             label="Sale de"
             vacio="Elige el almacén"
-            value={form.origen}
-            onChange={(e) => cambiar({ origen: e.target.value })}
-            opciones={activos.map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
+            valor={form.origen}
+            onCambio={(v) => cambiar({ origen: v })}
+            opciones={activos.map((a) => ({
+              valor: String(a.id),
+              codigo: a.codigo,
+              nombre: a.nombre,
+              detalle: a.tipo,
+            }))}
           />
-          <Select
+          <SelectBuscable
             label="Entra en"
             vacio="Elige el almacén"
-            value={form.destino}
-            onChange={(e) => cambiar({ destino: e.target.value })}
+            valor={form.destino}
+            onCambio={(v) => cambiar({ destino: v })}
             error={
               form.destino && form.destino === form.origen
                 ? 'No puede ser el mismo de donde sale.'
@@ -215,7 +224,12 @@ export function Transferencias() {
             }
             opciones={activos
               .filter((a) => String(a.id) !== form.origen)
-              .map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
+              .map((a) => ({
+                valor: String(a.id),
+                codigo: a.codigo,
+                nombre: a.nombre,
+                detalle: a.tipo,
+              }))}
           />
         </div>
 

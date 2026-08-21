@@ -3,6 +3,7 @@ import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import { Link } from 'react-router'
 import { ArrowRight, Pencil, Plus, RefreshCw, Scale, Trash2, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_PERSONAL } from '@/components/Pestanas'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -102,6 +103,8 @@ export function Tabulador() {
           ) : null
         }
       />
+
+      <Pestanas pestanas={PESTANAS_PERSONAL} />
 
       {sincronizar.error ? <ErrorDeCarga error={sincronizar.error} className="mb-4" /> : null}
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AlertTriangle, Plus, Scale } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_REGLAS } from '@/components/Pestanas'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -97,6 +98,8 @@ export function Parametros() {
           ) : null
         }
       />
+
+      <Pestanas pestanas={PESTANAS_REGLAS} />
 
       <div className="border-warning/30 bg-warning-soft mb-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
         <AlertTriangle className="text-warning mt-px size-[18px] shrink-0" />

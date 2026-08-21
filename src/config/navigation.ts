@@ -357,13 +357,17 @@ export const navigation: NavSection[] = [
         icon: Users,
         children: [
           { label: 'Tablero', to: '/app/nomina' },
+          // La gente y lo que cobra su cargo: quién trabaja aquí y cuánto le
+          // toca por serlo. Se consultan juntas porque la respuesta de una es
+          // la pregunta de la otra.
           { label: 'Personal', to: '/app/nomina/personal' },
-          { label: 'Tabulador de cargos', to: '/app/nomina/tabulador' },
-          { label: 'Novedades del período', to: '/app/nomina/asistencia' },
-          { label: 'Procesar nómina', to: '/app/nomina/procesos' },
-          { label: 'Recibos de pago', to: '/app/nomina/recibos' },
-          { label: 'Parámetros de nómina', to: '/app/nomina/parametros' },
-          { label: 'Prestaciones sociales', to: '/app/nomina/prestaciones' },
+          // El período, en el orden en que se hace: se anotan las novedades,
+          // se calcula, y salen los recibos. Tres pasos de una misma tarea,
+          // que como entradas sueltas obligaban a recordar cuál iba primero.
+          { label: 'Nómina del período', to: '/app/nomina/asistencia' },
+          // Lo que no cambia cada quincena: las reglas del cálculo y la deuda
+          // de prestaciones, que se tocan de mes en mes.
+          { label: 'Prestaciones y parámetros', to: '/app/nomina/prestaciones' },
         ],
       },
       {

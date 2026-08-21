@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { BadgeCheck, Ban, Calculator, CalendarPlus, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_PERIODO } from '@/components/Pestanas'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -80,6 +81,8 @@ export function Procesos() {
           ) : null
         }
       />
+
+      <Pestanas pestanas={PESTANAS_PERIODO} />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}

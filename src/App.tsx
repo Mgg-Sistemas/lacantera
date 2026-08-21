@@ -277,7 +277,27 @@ const paginas: Record<string, ReactNode> = {
   '/app/manual': <Manual />,
 }
 
-const rutasDeModulos = navigation.flatMap((seccion) =>
+/*
+  LAS RUTAS SALEN DE LAS PANTALLAS QUE EXISTEN, NO DEL MENÚ
+
+  Antes se generaban recorriendo `navigation`. Parecía elegante —una sola
+  lista— y era una trampa: el menú dice qué se OFRECE y el mapa de páginas dice
+  qué EXISTE, y son dos cosas distintas.
+
+  Se cobró la pieza el 21/08/2026. Al reducir Inventario de ocho entradas a
+  cuatro, Catálogo, Movimientos y Talleres dejaron de estar en el menú y con
+  ello dejaron de tener ruta: React Router caía en el comodín y mandaba a la
+  portada. Desde la pantalla se leía como que el sistema te expulsaba, que es
+  justo lo que Christopher reportó.
+
+  Ahora manda `paginas`. Una pantalla existe si está ahí, la ofrezca el menú o
+  no — que es la misma regla que ya rige para los módulos escondidos, cuyas
+  direcciones siguen abiertas a propósito.
+
+  `ModuloPendiente` se queda para las entradas de menú que todavía no tienen
+  pantalla: son las que aparecen en `navigation` y no en `paginas`.
+*/
+const rutasDelMenu = navigation.flatMap((seccion) =>
   seccion.items.flatMap((item) => {
     if (item.children) {
       return item.children.map((hijo) => ({
@@ -286,13 +306,21 @@ const rutasDeModulos = navigation.flatMap((seccion) =>
         seccion: item.label,
       }))
     }
-    // El panel tiene página propia; el resto de enlaces directos, no todavía.
     if (item.to && item.to !== '/app') {
-      return [{ path: item.to, label: item.label, seccion: seccion.label ?? 'Sistema' }]
+      return [{ path: item.to, label: item.label, seccion: seccion.label ?? '' }]
     }
     return []
   }),
 )
+
+const rutasDeModulos = [
+  ...rutasDelMenu,
+  // Las que existen sin figurar en el menú: se llega a ellas por un botón,
+  // por una pestaña, o escribiendo la dirección.
+  ...Object.keys(paginas)
+    .filter((ruta) => ruta !== '/app' && !rutasDelMenu.some((r) => r.path === ruta))
+    .map((ruta) => ({ path: ruta, label: ruta, seccion: '' })),
+]
 
 /**
  * Pantalla de espera mientras se resuelve la sesión guardada.

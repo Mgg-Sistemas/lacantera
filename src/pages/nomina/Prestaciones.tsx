@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CalendarClock, HandCoins, Percent, PiggyBank, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_REGLAS } from '@/components/Pestanas'
 import { StatCard } from '@/components/StatCard'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -128,6 +129,8 @@ export function Prestaciones() {
           ) : undefined
         }
       />
+
+      <Pestanas pestanas={PESTANAS_REGLAS} />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}

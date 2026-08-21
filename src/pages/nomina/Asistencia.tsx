@@ -3,6 +3,7 @@ import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import { useSearchParams } from 'react-router'
 import { CalendarClock, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_PERIODO } from '@/components/Pestanas'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -112,6 +113,8 @@ export function Asistencia() {
         title="Novedades del período"
         description="Lo único que cambia de una quincena a otra: horas extra, faltas, bonos y descuentos. El resto lo saca el sistema del contrato."
       />
+
+      <Pestanas pestanas={PESTANAS_PERIODO} />
 
       <Card className="mb-4">
         <div className="flex flex-wrap items-end gap-4">

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { AlertTriangle, FileText, Printer } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_PERIODO } from '@/components/Pestanas'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -104,6 +105,8 @@ export function Recibos() {
         title="Recibos de pago"
         description="El recibo es un documento con consecuencias legales: sin él, en un juicio se presume cierto lo que alegue el trabajador."
       />
+
+      <Pestanas pestanas={PESTANAS_PERIODO} />
 
       <Card className="mb-4">
         <div className="flex flex-wrap items-end gap-4">

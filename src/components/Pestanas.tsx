@@ -37,10 +37,17 @@ export function Pestanas({ pestanas }: { pestanas: Pestana[] }) {
   }, null)
 
   return (
-    // Se desplaza en horizontal en vez de partirse: cinco pestañas en un
-    // teléfono no caben, y partidas en dos filas dejan de leerse como una
-    // barra y pasan a leerse como dos grupos distintos.
-    <div className="border-hairline -mx-1 mb-5 overflow-x-auto border-b">
+    /*
+      Se desplaza en horizontal en vez de partirse: cinco pestañas en un
+      teléfono no caben, y partidas en dos filas dejan de leerse como una barra
+      y pasan a leerse como dos grupos distintos.
+
+      La barra de desplazamiento se esconde. Windows la pinta siempre, ocupe
+      falta o no, y con tres pestañas que caben de sobra aparecía una barra
+      gris a la derecha que no desplazaba nada. El desplazamiento sigue
+      funcionando con el dedo y con la rueda; lo que se quita es el adorno.
+    */
+    <div className="border-hairline -mx-1 mb-5 overflow-x-auto border-b [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <nav className="flex min-w-max gap-1 px-1">
         {pestanas.map((p) => (
           <NavLink
@@ -75,4 +82,23 @@ export const PESTANAS_MATERIAL: Pestana[] = [
 export const PESTANAS_SITIOS: Pestana[] = [
   { etiqueta: 'Almacenes y patios', a: '/app/inventario/almacenes' },
   { etiqueta: 'Talleres', a: '/app/inventario/talleres' },
+]
+
+/** Quién trabaja aquí, y cuánto cobra su cargo. */
+export const PESTANAS_PERSONAL: Pestana[] = [
+  { etiqueta: 'Personal', a: '/app/nomina/personal' },
+  { etiqueta: 'Tabulador de cargos', a: '/app/nomina/tabulador' },
+]
+
+/** El período, en el orden en que se hace. */
+export const PESTANAS_PERIODO: Pestana[] = [
+  { etiqueta: '1 · Novedades', a: '/app/nomina/asistencia' },
+  { etiqueta: '2 · Procesar', a: '/app/nomina/procesos' },
+  { etiqueta: '3 · Recibos', a: '/app/nomina/recibos' },
+]
+
+/** Lo que no cambia cada quincena. */
+export const PESTANAS_REGLAS: Pestana[] = [
+  { etiqueta: 'Prestaciones sociales', a: '/app/nomina/prestaciones' },
+  { etiqueta: 'Parámetros de nómina', a: '/app/nomina/parametros' },
 ]
