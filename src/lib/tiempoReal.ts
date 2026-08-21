@@ -87,6 +87,27 @@ const AFECTA: Record<string, string[][]> = {
   facturas_compra: [['facturas-compra'], ['compras'], ['tesoreria']],
   pagos_compra: [['facturas-compra'], ['tesoreria']],
 
+  /*
+    Los papeles de una compra los suben tres áreas distintas.
+
+    Tesorería el comprobante del pago, almacén la nota de entrega, compras la
+    factura. Los tres miran la misma compra a la vez —es cuando se está
+    cerrando— y sin esto cada uno sube el suyo creyendo que los otros dos
+    faltan.
+  */
+  compras_papeles: [['compras']],
+
+  // El organigrama lo edita una persona y lo mira toda la empresa. Un cambio
+  // de estructura que no llega deja a media plantilla viendo un jefe que ya no
+  // lo es.
+  organigrama_nodos: [['organigrama']],
+
+  // Una incidencia de personal —un conflicto, una lesión— la abre quien la
+  // presencia y la consulta RRHH. Aparece en la ficha del trabajador y en el
+  // tablero de nómina.
+  incidencias_personal: [['nomina'], ['incidencias']],
+  incidencia_participantes: [['nomina'], ['incidencias']],
+
   prestaciones_corte: [['prestaciones']],
   prestaciones_depositos: [['prestaciones']],
   prestaciones_intereses: [['prestaciones']],
