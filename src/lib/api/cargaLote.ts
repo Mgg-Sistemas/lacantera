@@ -10,12 +10,16 @@ import type { FilaDeHoja } from '@/lib/hojas/leerHoja'
   dos —una que valida y otra que carga— acabarían divergiendo el día que se
   añada una regla a una sola, y quien sube el archivo vería «todo correcto» y
   después un error.
+
+  Artículos, personal y proveedores comparten esta forma. Lo único que cambia
+  es qué función de la base atiende y qué se invalida después.
 */
 
 export type EstadoDeFila = 'NUEVO' | 'ACTUALIZA' | 'ERROR'
 
 export interface FilaRevisada {
   fila: number
+  /** Lo que identifica la fila: el código, la cédula, el RIF. */
   codigo: string
   nombre: string
   estado: EstadoDeFila
@@ -32,65 +36,56 @@ export interface InformeDeCarga {
 }
 
 /**
- * Solo viajan las columnas que la función conoce.
+ * El par de ganchos de una carga.
  *
- * Una planilla puede traer columnas de más —notas del almacenista, un total
- * calculado— y mandarlas no aportaría nada. Se recortan aquí para que lo que
- * sube sea exactamente lo que se va a interpretar.
+ * Se fabrican juntos porque van juntos siempre: revisar sin poder cargar no
+ * sirve, y cargar sin haber revisado es lo que esta pantalla existe para
+ * evitar.
  */
-const CAMPOS = [
-  'codigo',
-  'nombre',
-  'descripcion',
-  'categoria',
-  'unidad',
-  'inventariable',
-  'modo_entrega',
-  'stock_minimo',
-  'densidad_ton_m3',
-  'precio',
-  'precio_minimo',
-  'moneda',
-] as const
-
-export function prepararFilas(filas: FilaDeHoja[]): FilaDeHoja[] {
-  return filas
-    .map((f) => {
-      const limpia: FilaDeHoja = {}
-      for (const campo of CAMPOS) limpia[campo] = (f[campo] ?? '').trim()
-      return limpia
+function cargaPorLote(funcion: string, invalidar: string[]) {
+  const usarRevisar = () =>
+    useMutation({
+      mutationFn: (filas: FilaDeHoja[]) =>
+        rpc<InformeDeCarga>(funcion, { p_filas: filas, p_confirmar: false }),
     })
-    // Una planilla de Excel casi siempre arrastra filas en blanco al final.
-    // Contarlas como error haría que un archivo correcto pareciera roto.
-    .filter((f) => Object.values(f).some((v) => v !== ''))
+
+  const usarCargar = () => {
+    const qc = useQueryClient()
+    return useMutation({
+      mutationFn: (filas: FilaDeHoja[]) =>
+        rpc<InformeDeCarga>(funcion, { p_filas: filas, p_confirmar: true }),
+      onSuccess: () => {
+        for (const clave of invalidar) void qc.invalidateQueries({ queryKey: [clave] })
+      },
+    })
+  }
+
+  return { usarRevisar, usarCargar }
 }
 
-export function useRevisarArticulos() {
-  return useMutation({
-    mutationFn: (filas: FilaDeHoja[]) =>
-      rpc<InformeDeCarga>('cargar_articulos_por_lote', {
-        p_filas: filas,
-        p_confirmar: false,
-      }),
-  })
-}
+// La planilla de artículos también pone precios: la lista de ventas que alguien
+// tenga abierta en otra pestaña ya no es la que hay.
+const articulos = cargaPorLote('cargar_articulos_por_lote', [
+  'articulos',
+  'asignables',
+  'ventas',
+  'existencias',
+  'existencias-totales',
+])
+export const useRevisarArticulos = articulos.usarRevisar
+export const useCargarArticulos = articulos.usarCargar
 
-export function useCargarArticulos() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (filas: FilaDeHoja[]) =>
-      rpc<InformeDeCarga>('cargar_articulos_por_lote', {
-        p_filas: filas,
-        p_confirmar: true,
-      }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['articulos'] })
-      void qc.invalidateQueries({ queryKey: ['asignables'] })
-      // La planilla también pone precios: la lista de ventas que alguien tenga
-      // abierta en otra pestaña ya no es la que hay.
-      void qc.invalidateQueries({ queryKey: ['ventas'] })
-      void qc.invalidateQueries({ queryKey: ['existencias'] })
-      void qc.invalidateQueries({ queryKey: ['existencias-totales'] })
-    },
-  })
-}
+// Cargar gente mueve el organigrama: cada ficha lleva su departamento, y el
+// organigrama cuenta cuánta gente hay registrada en cada uno.
+const personal = cargaPorLote('cargar_personal_por_lote', [
+  'empleados',
+  'nomina',
+  'tabulador',
+  'organigrama',
+])
+export const useRevisarPersonal = personal.usarRevisar
+export const useCargarPersonal = personal.usarCargar
+
+const proveedores = cargaPorLote('cargar_proveedores_por_lote', ['proveedores', 'compras'])
+export const useRevisarProveedores = proveedores.usarRevisar
+export const useCargarProveedores = proveedores.usarCargar

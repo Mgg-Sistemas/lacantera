@@ -9,6 +9,7 @@ import {
   HandCoins,
   PackageCheck,
   Plus,
+  Upload,
   User,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -274,6 +275,14 @@ const QUE_HACER: GrupoDeAcciones[] = [
   {
     titulo: 'Alrededor de la compra',
     acciones: [
+      {
+        titulo: 'Cargar proveedores por planilla',
+        detalle:
+          'Para dar de alta a todos de una vez. Manda el RIF: el mismo proveedor con dos RIF distintos es como se paga dos veces la misma factura.',
+        icono: Upload,
+        a: '/app/compras/proveedores/carga',
+        exige: 'ESCRITURA',
+      },
       {
         titulo: 'Proveedores',
         detalle: 'A quién se le compra: su RIF, cómo cobra y cómo se le paga.',

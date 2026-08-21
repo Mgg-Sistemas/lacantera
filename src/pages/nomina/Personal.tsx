@@ -1,6 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { IdCard, Pencil, Plus, Search, UserMinus, Users } from 'lucide-react'
+import {
+  IdCard,
+  Pencil,
+  Plus,
+  Search,
+  Upload,
+  UserMinus,
+  Users,
+} from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas, PESTANAS_PERSONAL } from '@/components/Pestanas'
 import { Card } from '@/components/ui/Card'
@@ -61,9 +69,19 @@ export function Personal() {
         description="Quién trabaja aquí, desde cuándo y cuánto gana. De la fecha de ingreso salen la antigüedad, el bono vacacional y las prestaciones. La ficha de cada quien lleva su foto, su carnet y su constancia de trabajo."
         actions={
           puedeRRHH ? (
-            <Link to="/app/nomina/personal/nuevo">
-              <Button icon={<Plus />}>Nuevo trabajador</Button>
-            </Link>
+            <>
+            {/* La carga por planilla vive donde se necesita, no en el menú:
+                quien va a dar de alta a treinta personas está mirando esta
+                lista, no buscándola en el riel. */}
+              <Link to="/app/nomina/personal/carga">
+                <Button variant="outline" icon={<Upload />}>
+                  Cargar por planilla
+                </Button>
+              </Link>
+              <Link to="/app/nomina/personal/nuevo">
+                <Button icon={<Plus />}>Nuevo trabajador</Button>
+              </Link>
+            </>
           ) : null
         }
       />

@@ -5,6 +5,7 @@ import {
   FileText,
   Landmark,
   Settings,
+  Upload,
   Users,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -94,6 +95,14 @@ const QUE_HACER: GrupoDeAcciones[] = [
   {
     titulo: 'La gente',
     acciones: [
+      {
+        titulo: 'Cargar personal por planilla',
+        detalle:
+          'Para dar de alta a toda la gente de una vez. Se baja la plantilla, se llena y el sistema comprueba fila por fila antes de escribir nada.',
+        icono: Upload,
+        a: '/app/nomina/personal/carga',
+        exige: 'ESCRITURA',
+      },
       {
         titulo: 'Contratar o corregir una ficha',
         detalle: 'Datos, cargo, cuenta donde cobra, y lo que se le ha entregado.',

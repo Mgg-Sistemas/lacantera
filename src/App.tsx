@@ -108,6 +108,12 @@ const FichaArticulo = lazy(() =>
 const CargaPorLote = lazy(() =>
   import('@/pages/inventario/CargaPorLote').then((m) => ({ default: m.CargaPorLote })),
 )
+const CargarPersonal = lazy(() =>
+  import('@/pages/nomina/CargarPersonal').then((m) => ({ default: m.CargarPersonal })),
+)
+const CargarProveedores = lazy(() =>
+  import('@/pages/compras/CargarProveedores').then((m) => ({ default: m.CargarProveedores })),
+)
 const Organigrama = lazy(() =>
   import('@/pages/organigrama/Organigrama').then((m) => ({ default: m.Organigrama })),
 )
@@ -267,6 +273,9 @@ const paginas: Record<string, ReactNode> = {
   '/app/ventas/facturacion': <Facturacion />,
   '/app/config/usuarios': <Usuarios />,
   '/app/inventario/articulos': <Articulos />,
+  '/app/inventario/articulos/carga': <CargaPorLote />,
+  '/app/nomina/personal/carga': <CargarPersonal />,
+  '/app/compras/proveedores/carga': <CargarProveedores />,
   '/app/inventario/almacenes': <Almacenes />,
   '/app/inventario/transferencias': <Transferencias />,
   '/app/config/empresa': <Empresa />,
@@ -479,9 +488,6 @@ export default function App() {
               <Route path="compras/:id" element={<DetalleCompra />} />
               {/* `nuevo` antes que `:id` para leerlo de un vistazo, aunque el
                   enrutador ya prefiere lo estático sobre lo dinámico. */}
-              {/* Antes que `:id`, que si no atraparia «carga» como si fuera
-                  el numero de un articulo. */}
-              <Route path="inventario/articulos/carga" element={<CargaPorLote />} />
               <Route path="organigrama" element={<Organigrama />} />
               <Route path="inventario/articulos/:id" element={<FichaArticulo />} />
               <Route path="nomina/personal/nuevo" element={<FormularioTrabajador />} />

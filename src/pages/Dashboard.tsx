@@ -140,9 +140,10 @@ const QUE_HACER: GrupoDeAcciones[] = [
       {
         paso: 2,
         titulo: 'Cargar el personal',
-        detalle: 'Las fichas de quienes trabajan aquí, con su cargo y su sueldo.',
+        detalle:
+          'Desde una planilla, igual que el catálogo. Las fichas de quienes trabajan aquí, con su cargo y su sueldo.',
         icono: Users,
-        a: '/app/nomina/personal',
+        a: '/app/nomina/personal/carga',
         exige: 'ESCRITURA',
       },
       {

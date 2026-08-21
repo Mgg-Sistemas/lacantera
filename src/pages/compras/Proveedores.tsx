@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { Plus, Truck } from 'lucide-react'
+import { Link } from 'react-router'
+import {
+  Plus,
+  Truck,
+  Upload,
+} from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -67,9 +72,19 @@ export function Proveedores() {
         title="Proveedores"
         description="A quién se le compra. El RIF y la condición de pago se usan al emitir la orden."
         actions={
-          <Button icon={<Plus />} onClick={() => abrir()}>
-            Nuevo proveedor
-          </Button>
+          <>
+            {/* La carga por planilla vive donde se necesita, no en el menú:
+                quien va a dar de alta a treinta personas está mirando esta
+                lista, no buscándola en el riel. */}
+            <Link to="/app/compras/proveedores/carga">
+              <Button variant="outline" icon={<Upload />}>
+                Cargar por planilla
+              </Button>
+            </Link>
+            <Button icon={<Plus />} onClick={() => abrir()}>
+              Nuevo proveedor
+            </Button>
+          </>
         }
       />
 
