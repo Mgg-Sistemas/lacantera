@@ -48,14 +48,19 @@ export interface NavItem {
   /** Contador de pendientes. Se resolverá contra datos reales. */
   badge?: number
   /**
-   * La rama entera se esconde a quien no sea ADMIN.
+   * Fuera del MVP: la rama entera no sale en el menú, ni en la lupa.
    *
    * Esconder, no cerrar: la ruta sigue abierta y quien escriba la dirección
-   * entra. Es deliberado — estos tres módulos se siguen desarrollando, y
-   * cerrarlos dejaría al equipo sin poder verlos mientras se trabajan. La
+   * entra. Es deliberado y lo pidió Christopher así — el equipo sigue
+   * desarrollando estos módulos y cerrarlos lo dejaría sin poder verlos. La
    * diferencia con `RUTAS_SOLO_ADMIN`, que sí cierra, es justo esa.
+   *
+   * Y se esconde para todo el mundo, ADMIN incluido: el MVP se enseña desde
+   * una cuenta con todos los permisos, y si al administrador le siguiera
+   * saliendo el menú entero, esconderlo no habría servido de nada. La
+   * dirección escrita a mano es la puerta de servicio del equipo.
    */
-  soloAdmin?: boolean
+  fueraDelMvp?: boolean
   /**
    * Se ve siempre, sin comprobar permisos.
    *
@@ -191,6 +196,7 @@ export const navigation: NavSection[] = [
       {
         label: 'Explotación',
         icon: Pickaxe,
+        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/explotacion' },
           { label: 'Frentes y bancos', to: '/app/explotacion/frentes' },
@@ -205,7 +211,7 @@ export const navigation: NavSection[] = [
         // trae a la gente es siempre la misma: cuál toca atender.
         label: 'Maquinaria',
         icon: Wrench,
-        soloAdmin: true,
+        fueraDelMvp: true,
         children: [
           { label: 'Equipos', to: '/app/maquinaria' },
           // El historial es la vista al revés: no cada máquina y su última
@@ -245,7 +251,7 @@ export const navigation: NavSection[] = [
         */
         label: 'Combustible',
         icon: Fuel,
-        soloAdmin: true,
+        fueraDelMvp: true,
         to: '/app/combustible',
       },
       {
@@ -261,7 +267,7 @@ export const navigation: NavSection[] = [
         */
         label: 'Asignaciones',
         icon: HandHelping,
-        soloAdmin: true,
+        fueraDelMvp: true,
         children: [
           { label: 'Quién tiene qué', to: '/app/asignaciones' },
           { label: 'Incidencias', to: '/app/asignaciones/incidencias' },
@@ -270,6 +276,7 @@ export const navigation: NavSection[] = [
       {
         label: 'Despachos',
         icon: Truck,
+        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/despachos' },
           { label: 'Tickets de romana', to: '/app/despachos/tickets' },
@@ -314,6 +321,7 @@ export const navigation: NavSection[] = [
         // encuentra dónde se carga un cliente.
         label: 'Ventas',
         icon: ClipboardList,
+        fueraDelMvp: true,
         children: [
           // El tablero va primero y se llama igual que el de compras: los dos
           // modulos son hermanos y quien aprende uno no deberia reaprender el
@@ -353,11 +361,13 @@ export const navigation: NavSection[] = [
         */
         label: 'Organigrama',
         icon: Network,
+        fueraDelMvp: true,
         to: '/app/organigrama',
       },
       {
         label: 'Tesorería',
         icon: Landmark,
+        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/tesoreria' },
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },

@@ -108,7 +108,7 @@ export function Buscador() {
       for (const item of seccion.items) {
         // La lupa es otra puerta al mismo menú. Un módulo escondido del riel
         // que saliera aquí escribiendo su nombre no estaría escondido.
-        if (item.soloAdmin && !tieneRol('ADMIN')) continue
+        if (item.fueraDelMvp) continue
 
         const agregar = (label: string, to: string, grupo: string | null) => {
           if (esRutaSoloAdmin(to) && !tieneRol('ADMIN')) return

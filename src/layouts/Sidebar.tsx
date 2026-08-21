@@ -44,9 +44,9 @@ function menuVisible(
           ),
         }))
         .filter((item) => {
-          // La rama entera escondida pesa más que cualquier permiso que se
-          // le haya dado a alguien sobre ese módulo.
-          if (item.soloAdmin && !esAdmin) return false
+          // Fuera del MVP pesa más que cualquier permiso, y más que ser
+          // ADMIN: el MVP se enseña desde una cuenta que puede todo.
+          if (item.fueraDelMvp) return false
           // La ayuda del sistema no se reparte por permisos: ver `siempre`.
           if (item.siempre) return true
           return item.children ? item.children.length > 0 : puede(moduloDeRuta(item.to ?? '/app'))
