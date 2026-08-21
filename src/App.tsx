@@ -1,4 +1,19 @@
-import { lazy, Suspense, type ReactNode } from 'react'
+import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
+import { conReintento } from '@/lib/cargarPagina'
+
+/*
+  Cada pantalla se carga aparte, y con red de seguridad.
+
+  `conReintento` cubre el caso de desplegar con la pestaña abierta: los trozos
+  viejos ya no existen y `lazy` se queda en blanco sin decir nada.
+*/
+// `any` es el mismo que usa el tipo de `lazy` en React: la firma tiene que
+// admitir componentes con props distintas, y estrecharlo rompe los que las
+// llevan.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function pagina<T extends ComponentType<any>>(importar: () => Promise<{ default: T }>) {
+  return lazy(conReintento(importar))
+}
 import { salioAProposito } from '@/lib/auth'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router'
 import { Landing } from '@/pages/Landing'
@@ -29,197 +44,197 @@ import { AvisoVersion } from '@/components/AvisoVersion'
 // El armazón también. Quien está en la portada no ha entrado al sistema: no
 // necesita el menú lateral, ni la barra superior, ni los iconos de los once
 // módulos. Traérselos es cobrarle el sistema entero por mirar la puerta.
-const AppLayout = lazy(() => import('@/layouts/AppLayout').then((m) => ({ default: m.AppLayout })))
-const ExigePermiso = lazy(() =>
+const AppLayout = pagina(() => import('@/layouts/AppLayout').then((m) => ({ default: m.AppLayout })))
+const ExigePermiso = pagina(() =>
   import('@/layouts/ExigePermiso').then((m) => ({ default: m.ExigePermiso })),
 )
 
-const Dashboard = lazy(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })))
-const MiCuenta = lazy(() => import('@/pages/MiCuenta').then((m) => ({ default: m.MiCuenta })))
-const ExigeClaveNueva = lazy(() =>
+const Dashboard = pagina(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })))
+const MiCuenta = pagina(() => import('@/pages/MiCuenta').then((m) => ({ default: m.MiCuenta })))
+const ExigeClaveNueva = pagina(() =>
   import('@/pages/MiCuenta').then((m) => ({ default: m.ExigeClaveNueva })),
 )
-const Tasas = lazy(() => import('@/pages/Tasas').then((m) => ({ default: m.Tasas })))
-const Almacenes = lazy(() =>
+const Tasas = pagina(() => import('@/pages/Tasas').then((m) => ({ default: m.Tasas })))
+const Almacenes = pagina(() =>
   import('@/pages/inventario/Almacenes').then((m) => ({ default: m.Almacenes })),
 )
-const Articulos = lazy(() =>
+const Articulos = pagina(() =>
   import('@/pages/inventario/Articulos').then((m) => ({ default: m.Articulos })),
 )
-const Transferencias = lazy(() =>
+const Transferencias = pagina(() =>
   import('@/pages/inventario/Transferencias').then((m) => ({ default: m.Transferencias })),
 )
-const Empresa = lazy(() => import('@/pages/config/Empresa').then((m) => ({ default: m.Empresa })))
-const Documentos = lazy(() =>
+const Empresa = pagina(() => import('@/pages/config/Empresa').then((m) => ({ default: m.Empresa })))
+const Documentos = pagina(() =>
   import('@/pages/config/Documentos').then((m) => ({ default: m.Documentos })),
 )
-const Usuarios = lazy(() => import('@/pages/config/Usuarios').then((m) => ({ default: m.Usuarios })))
-const Auditoria = lazy(() =>
+const Usuarios = pagina(() => import('@/pages/config/Usuarios').then((m) => ({ default: m.Usuarios })))
+const Auditoria = pagina(() =>
   import('@/pages/config/Auditoria').then((m) => ({ default: m.Auditoria })),
 )
-const Respaldo = lazy(() =>
+const Respaldo = pagina(() =>
   import('@/pages/config/Respaldo').then((m) => ({ default: m.Respaldo })),
 )
-const TableroInventario = lazy(() =>
+const TableroInventario = pagina(() =>
   import('@/pages/inventario/Tablero').then((m) => ({ default: m.TableroInventario })),
 )
-const Combustible = lazy(() =>
+const Combustible = pagina(() =>
   import('@/pages/combustible/Combustible').then((m) => ({ default: m.Combustible })),
 )
-const Asignaciones = lazy(() =>
+const Asignaciones = pagina(() =>
   import('@/pages/asignaciones/Asignaciones').then((m) => ({ default: m.Asignaciones })),
 )
-const EntregarATrabajador = lazy(() =>
+const EntregarATrabajador = pagina(() =>
   import('@/pages/asignaciones/Entregar').then((m) => ({ default: m.Entregar })),
 )
-const Incidencias = lazy(() =>
+const Incidencias = pagina(() =>
   import('@/pages/asignaciones/Incidencias').then((m) => ({ default: m.Incidencias })),
 )
-const Talleres = lazy(() =>
+const Talleres = pagina(() =>
   import('@/pages/inventario/Talleres').then((m) => ({ default: m.Talleres })),
 )
-const FichaVehiculo = lazy(() =>
+const FichaVehiculo = pagina(() =>
   import('@/pages/despachos/FichaVehiculo').then((m) => ({ default: m.FichaVehiculo })),
 )
-const Vehiculos = lazy(() =>
+const Vehiculos = pagina(() =>
   import('@/pages/despachos/Vehiculos').then((m) => ({ default: m.Vehiculos })),
 )
-const Mantenimientos = lazy(() =>
+const Mantenimientos = pagina(() =>
   import('@/pages/maquinaria/Mantenimientos').then((m) => ({ default: m.Mantenimientos })),
 )
-const Maquinaria = lazy(() =>
+const Maquinaria = pagina(() =>
   import('@/pages/maquinaria/Maquinaria').then((m) => ({ default: m.Maquinaria })),
 )
-const Existencias = lazy(() =>
+const Existencias = pagina(() =>
   import('@/pages/inventario/Existencias').then((m) => ({ default: m.Existencias })),
 )
-const Movimientos = lazy(() =>
+const Movimientos = pagina(() =>
   import('@/pages/inventario/Movimientos').then((m) => ({ default: m.Movimientos })),
 )
-const TableroNomina = lazy(() =>
+const TableroNomina = pagina(() =>
   import('@/pages/nomina/Tablero').then((m) => ({ default: m.TableroNomina })),
 )
-const Asistencia = lazy(() =>
+const Asistencia = pagina(() =>
   import('@/pages/nomina/Asistencia').then((m) => ({ default: m.Asistencia })),
 )
-const FichaArticulo = lazy(() =>
+const FichaArticulo = pagina(() =>
   import('@/pages/inventario/FichaArticulo').then((m) => ({ default: m.FichaArticulo })),
 )
-const CargaPorLote = lazy(() =>
+const CargaPorLote = pagina(() =>
   import('@/pages/inventario/CargaPorLote').then((m) => ({ default: m.CargaPorLote })),
 )
-const CargarPersonal = lazy(() =>
+const CargarPersonal = pagina(() =>
   import('@/pages/nomina/CargarPersonal').then((m) => ({ default: m.CargarPersonal })),
 )
-const CargarProveedores = lazy(() =>
+const CargarProveedores = pagina(() =>
   import('@/pages/compras/CargarProveedores').then((m) => ({ default: m.CargarProveedores })),
 )
-const TableroConfiguracion = lazy(() =>
+const TableroConfiguracion = pagina(() =>
   import('@/pages/config/Tablero').then((m) => ({ default: m.TableroConfiguracion })),
 )
-const Organigrama = lazy(() =>
+const Organigrama = pagina(() =>
   import('@/pages/organigrama/Organigrama').then((m) => ({ default: m.Organigrama })),
 )
-const FichaTrabajador = lazy(() =>
+const FichaTrabajador = pagina(() =>
   import('@/pages/nomina/FichaTrabajador').then((m) => ({ default: m.FichaTrabajador })),
 )
-const FormularioTrabajador = lazy(() =>
+const FormularioTrabajador = pagina(() =>
   import('@/pages/nomina/FormularioTrabajador').then((m) => ({ default: m.FormularioTrabajador })),
 )
-const Parametros = lazy(() =>
+const Parametros = pagina(() =>
   import('@/pages/nomina/Parametros').then((m) => ({ default: m.Parametros })),
 )
-const Personal = lazy(() => import('@/pages/nomina/Personal').then((m) => ({ default: m.Personal })))
-const Procesos = lazy(() => import('@/pages/nomina/Procesos').then((m) => ({ default: m.Procesos })))
-const Recibos = lazy(() => import('@/pages/nomina/Recibos').then((m) => ({ default: m.Recibos })))
-const Tabulador = lazy(() =>
+const Personal = pagina(() => import('@/pages/nomina/Personal').then((m) => ({ default: m.Personal })))
+const Procesos = pagina(() => import('@/pages/nomina/Procesos').then((m) => ({ default: m.Procesos })))
+const Recibos = pagina(() => import('@/pages/nomina/Recibos').then((m) => ({ default: m.Recibos })))
+const Tabulador = pagina(() =>
   import('@/pages/nomina/Tabulador').then((m) => ({ default: m.Tabulador })),
 )
-const TableroTesoreria = lazy(() =>
+const TableroTesoreria = pagina(() =>
   import('@/pages/tesoreria/Tablero').then((m) => ({ default: m.TableroTesoreria })),
 )
-const Cuentas = lazy(() =>
+const Cuentas = pagina(() =>
   import('@/pages/tesoreria/Cuentas').then((m) => ({ default: m.Cuentas })),
 )
-const MovimientosTesoreria = lazy(() =>
+const MovimientosTesoreria = pagina(() =>
   import('@/pages/tesoreria/Movimientos').then((m) => ({ default: m.MovimientosTesoreria })),
 )
-const Pagos = lazy(() => import('@/pages/tesoreria/Pagos').then((m) => ({ default: m.Pagos })))
-const PorPagar = lazy(() =>
+const Pagos = pagina(() => import('@/pages/tesoreria/Pagos').then((m) => ({ default: m.Pagos })))
+const PorPagar = pagina(() =>
   import('@/pages/tesoreria/PorPagar').then((m) => ({ default: m.PorPagar })),
 )
-const DetalleCompra = lazy(() =>
+const DetalleCompra = pagina(() =>
   import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
 )
-const Proveedores = lazy(() =>
+const Proveedores = pagina(() =>
   import('@/pages/compras/Proveedores').then((m) => ({ default: m.Proveedores })),
 )
-const NuevoPedido = lazy(() =>
+const NuevoPedido = pagina(() =>
   import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
 )
-const TableroCompras = lazy(() =>
+const TableroCompras = pagina(() =>
   import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),
 )
-const TableroVentas = lazy(() =>
+const TableroVentas = pagina(() =>
   import('@/pages/ventas/Tablero').then((m) => ({ default: m.TableroVentas })),
 )
-const ClientesVenta = lazy(() =>
+const ClientesVenta = pagina(() =>
   import('@/pages/ventas/Clientes').then((m) => ({ default: m.Clientes })),
 )
-const PreciosVenta = lazy(() =>
+const PreciosVenta = pagina(() =>
   import('@/pages/ventas/Precios').then((m) => ({ default: m.Precios })),
 )
-const CotizacionesVenta = lazy(() =>
+const CotizacionesVenta = pagina(() =>
   import('@/pages/ventas/Cotizaciones').then((m) => ({ default: m.Cotizaciones })),
 )
-const Despachos = lazy(() =>
+const Despachos = pagina(() =>
   import('@/pages/ventas/Despachos').then((m) => ({ default: m.Despachos })),
 )
-const Facturacion = lazy(() =>
+const Facturacion = pagina(() =>
   import('@/pages/ventas/Facturacion').then((m) => ({ default: m.Facturacion })),
 )
-const PorCobrar = lazy(() =>
+const PorCobrar = pagina(() =>
   import('@/pages/tesoreria/PorCobrar').then((m) => ({ default: m.PorCobrar })),
 )
-const TableroExplotacion = lazy(() =>
+const TableroExplotacion = pagina(() =>
   import('@/pages/explotacion/Tablero').then((m) => ({ default: m.TableroExplotacion })),
 )
-const Frentes = lazy(() =>
+const Frentes = pagina(() =>
   import('@/pages/explotacion/Frentes').then((m) => ({ default: m.Frentes })),
 )
-const Voladuras = lazy(() =>
+const Voladuras = pagina(() =>
   import('@/pages/explotacion/Voladuras').then((m) => ({ default: m.Voladuras })),
 )
-const ProduccionTurno = lazy(() =>
+const ProduccionTurno = pagina(() =>
   import('@/pages/explotacion/Produccion').then((m) => ({ default: m.Produccion })),
 )
-const TableroDespachos = lazy(() =>
+const TableroDespachos = pagina(() =>
   import('@/pages/despachos/Tablero').then((m) => ({ default: m.TableroDespachos })),
 )
-const Tickets = lazy(() =>
+const Tickets = pagina(() =>
   import('@/pages/despachos/Tickets').then((m) => ({ default: m.Tickets })),
 )
-const Guias = lazy(() => import('@/pages/despachos/Guias').then((m) => ({ default: m.Guias })))
-const FacturasProveedor = lazy(() =>
+const Guias = pagina(() => import('@/pages/despachos/Guias').then((m) => ({ default: m.Guias })))
+const FacturasProveedor = pagina(() =>
   import('@/pages/compras/FacturasProveedor').then((m) => ({ default: m.FacturasProveedor })),
 )
-const Prestaciones = lazy(() =>
+const Prestaciones = pagina(() =>
   import('@/pages/nomina/Prestaciones').then((m) => ({ default: m.Prestaciones })),
 )
-const Recepciones = lazy(() =>
+const Recepciones = pagina(() =>
   import('@/pages/compras/Recepciones').then((m) => ({ default: m.Recepciones })),
 )
-const LibroCompras = lazy(() =>
+const LibroCompras = pagina(() =>
   import('@/pages/compras/LibroCompras').then((m) => ({ default: m.LibroCompras })),
 )
-const LibroVentas = lazy(() =>
+const LibroVentas = pagina(() =>
   import('@/pages/ventas/LibroVentas').then((m) => ({ default: m.LibroVentas })),
 )
-const NotasCredito = lazy(() =>
+const NotasCredito = pagina(() =>
   import('@/pages/ventas/NotasCredito').then((m) => ({ default: m.NotasCredito })),
 )
 // El manual pesa medio megabyte de texto. Partido, solo lo descarga quien lo abre.
-const Manual = lazy(() => import('@/pages/Manual').then((m) => ({ default: m.Manual })))
+const Manual = pagina(() => import('@/pages/Manual').then((m) => ({ default: m.Manual })))
 
 /**
  * Pantallas ya construidas, por ruta.

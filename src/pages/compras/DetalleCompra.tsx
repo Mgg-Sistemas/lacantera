@@ -526,6 +526,18 @@ const NOMBRE_DEL_ESTADO: Record<string, Record<string, string>> = {
     REGISTRADA: 'Se cargó una cotización',
     ANULADA: 'Se quitó una cotización',
   },
+  /*
+    En una orden, dos de estas entradas no son estados: son el comprobante.
+
+    Al declarar con qué respalda el proveedor, la base anota FACTURA o
+    NOTA_ENTREGA en la misma columna donde anota los estados. En el historial
+    salía una línea que decía «factura» a secas, que no cuenta nada de lo que
+    pasó. Se nombra el acto, no el valor.
+  */
+  ORDEN: {
+    FACTURA: 'El proveedor respalda con factura',
+    NOTA_ENTREGA: 'El proveedor respalda con nota de entrega',
+  },
   PAGO: {
     POR_PAGAR: 'Pago instruido a tesorería',
     PAGADA: 'Tesorería ejecutó el pago',
