@@ -28,7 +28,7 @@ import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
 import { ModalRecepcion } from './ModalRecepcion'
 import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
-import { usePerfiles, useMisRoles, CONDICIONES_PAGO } from '@/lib/api/catalogo'
+import { usePerfiles, useMisRoles, useArticulos, CONDICIONES_PAGO } from '@/lib/api/catalogo'
 import {
   ordenVigente,
   useAprobarCompra,
@@ -46,11 +46,13 @@ import {
   useResolverDesistimiento,
   useDeclararComprobante,
 } from '@/lib/api/compras'
-import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
+// Con alias: la pantalla ya tiene su propio `nombreDe`, que traduce un
+// identificador de usuario. Dos cosas distintas no pueden llamarse igual en el
+// mismo archivo sin que una tape a la otra — y taparla es un error silencioso.
+import { useMetodosPago, nombreDe as nombreDelMetodo } from '@/lib/api/metodosPago' 
 import type { Cotizacion, InstruccionPago } from '@/lib/api/compras'
 import { useEmpresa } from '@/lib/api/empresa'
-import { useSesion } from '@/lib/sesion'
-import { armarDocumento } from '@/lib/ficha/ventaPdf'
+import { armarOrdenDeCompra, armarComprobanteDePago } from '@/lib/ficha/comprasPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { bolivares, dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -365,11 +367,14 @@ function TarjetaInstruccion({
   puedePagar,
   onPagar,
   onDevolver,
+  onComprobante,
 }: {
   instruccion: InstruccionPago
   puedePagar: boolean
   onPagar: () => void
   onDevolver: () => void
+  /** Solo cuando ya está pagada: antes no hay nada que comprobar. */
+  onComprobante: () => void
 }) {
   const { data: metodos } = useMetodosPago()
   const i = instruccion
@@ -378,7 +383,7 @@ function TarjetaInstruccion({
     <div className="border-hairline rounded-card border p-3.5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-ink/90 text-base font-medium">{nombreDe(metodos, i.metodo)}</p>
+          <p className="text-ink/90 text-base font-medium">{nombreDelMetodo(metodos, i.metodo)}</p>
           <p className="text-ink/50 text-xs">Cargada el {fechaHora(i.creada_en)}</p>
         </div>
         <Chip
@@ -477,6 +482,16 @@ function TarjetaInstruccion({
         <p className="text-danger mt-2 text-sm">Devuelta: {i.motivo_devolucion}</p>
       ) : null}
 
+      {/* El comprobante solo existe cuando ya se pagó. Ofrecerlo antes
+          sería ofrecer papel de algo que todavía no pasó. */}
+      {i.estado === 'PAGADA' ? (
+        <div className="mt-3">
+          <Button size="sm" variant="outline" icon={<Printer />} onClick={onComprobante}>
+            Comprobante de pago
+          </Button>
+        </div>
+      ) : null}
+
       {puedePagar && i.estado === 'POR_PAGAR' ? (
         <div className="mt-3 flex flex-wrap gap-2">
           <Button size="sm" icon={<Check />} onClick={onPagar}>
@@ -501,7 +516,8 @@ export function DetalleCompra() {
   const { data: bitacora } = useBitacora(compraId, orden?.id)
   const { data: perfiles } = usePerfiles()
   const { data: empresa } = useEmpresa()
-  const { nombre: yo } = useSesion()
+  const { data: articulos } = useArticulos()
+  const { data: metodosDePago } = useMetodosPago()
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
   const { puede } = useMisRoles()
 
@@ -545,67 +561,130 @@ export function DetalleCompra() {
     uno propio. Si se maquetara aparte, en seis meses la orden y la factura de
     la misma empresa se verían como de dos empresas distintas.
   */
+  /*
+    LA ORDEN, EN PAPEL
+
+    Es el documento que de verdad hace falta fuera del sistema: sin él, al
+    proveedor se le pide por teléfono y no queda constancia de a qué precio ni
+    en cuánto tiempo se acordó.
+
+    Desde hoy sale con la forma que mandó la líder de sistemas —título negro
+    sobre blanco, bloque de condiciones, tabla con cabecera teñida— y no con la
+    del generador de ventas. Son papeles distintos y van a manos distintas: uno
+    lo firma un cliente, el otro un proveedor.
+  */
+  /** El nombre detrás de un identificador de usuario, para el papel. */
+  const quienEs = (id: string | null | undefined) =>
+    id ? ((perfiles ?? []).find((x) => x.id === id)?.nombre ?? null) : null
+
   const imprimirOrden = async () => {
     if (!compra || !orden) return
 
-    // La alícuota vive en la cotización, no en la orden: la orden guarda el
-    // monto de IVA ya calculado. Sin el porcentaje, el papel diría «IVA» a
-    // secas y quien lo revise no sabría contra qué cuadrarlo.
-    const deLaCotizacion = (compra.cotizaciones ?? []).find((c) => c.id === orden.cotizacion_id)
-
     setPdf(
-      await armarDocumento({
-        tipo: 'ORDEN',
+      await armarOrdenDeCompra({
         numero: orden.numero,
-        fecha: orden.creada_en.slice(0, 10),
-        vigencia: orden.entrega_estimada
-          ? { rotulo: 'Entrega estimada', fecha: orden.entrega_estimada }
-          : null,
-        // El valor crudo de la base —«CONTRA_ENTREGA»— no es para leerlo un
-        // proveedor. Se traduce con el mismo catálogo que usa la pantalla.
-        condicionPago:
-          CONDICIONES_PAGO.find((c) => c.valor === orden.condicion_pago)?.etiqueta ??
-          orden.condicion_pago,
-        contraparte: {
+        refPedido: compra.numero,
+        emitida: fechaHora(orden.creada_en),
+        proveedor: {
           nombre: orden.proveedor?.nombre ?? '',
           rif: orden.proveedor?.rif ?? '',
-          direccion: orden.proveedor?.direccion ?? null,
           telefono: orden.proveedor?.telefono ?? null,
+          direccion: orden.proveedor?.direccion ?? null,
+        },
+        condiciones: {
+          unidadSolicitante: compra.destino,
+          // Cuando quien pide tiene usuario, su nombre no se copia en la
+          // solicitud: vive en su perfil. Se busca antes de rendirse a «—».
+          solicitante: compra.solicitante_nombre ?? quienEs(compra.solicitante_id),
+          fechaSolicitud: fechaHora(compra.creada_en),
+          finalidad: compra.justificacion,
+          notas: compra.titulo,
+          clasificacion: compra.prioridad,
+          entregaPrometida: orden.entrega_estimada ? fecha(orden.entrega_estimada) : null,
+          condicionPago:
+            CONDICIONES_PAGO.find((c) => c.valor === orden.condicion_pago)?.etiqueta ??
+            orden.condicion_pago,
+          documentos:
+            orden.comprobante_tipo === 'FACTURA'
+              ? 'Factura'
+              : orden.comprobante_tipo === 'NOTA_ENTREGA'
+                ? 'Nota de entrega'
+                : null,
+          aprobadaPor: quienEs(compra.confirmada_por),
+          aprobadaEl: compra.confirmada_en ? fechaHora(compra.confirmada_en) : null,
+          confirmadaPor: quienEs(compra.aprobada_gg_por),
+          confirmadaEl: compra.aprobada_gg_en ? fechaHora(compra.aprobada_gg_en) : null,
         },
         moneda: orden.moneda,
-        tasa: orden.tasa_usd,
         renglones: (orden.renglones ?? [])
           .slice()
           .sort((a, b) => a.linea - b.linea)
-          .map((r) => ({
-            descripcion: r.descripcion,
-            cantidad: r.cantidad,
-            unidad: r.unidad,
-            precio_unitario: r.precio_unitario,
-            subtotal: r.subtotal,
-            exento_iva: r.exento_iva,
-          })),
+          .map((r) => {
+            const art = (articulos ?? []).find((a) => a.id === r.articulo_id)
+            return {
+              // Sin artículo del catálogo no hay SKU: el renglón se describió
+              // a mano porque lo que se pide no está dado de alta todavía.
+              sku: art?.codigo ?? '—',
+              descripcion: r.descripcion,
+              categoria: art?.categoria ?? '—',
+              cantidad: r.cantidad,
+              unidad: r.unidad,
+              precioUnitario: r.precio_unitario,
+              subtotal: r.subtotal,
+            }
+          }),
         subtotal: orden.subtotal,
         descuento: orden.descuento,
         flete: orden.flete,
         iva: orden.iva,
-        alicuotaIva: deLaCotizacion?.alicuota_iva ?? 0,
         total: orden.total,
-        // Referencia al pedido que la originó: al proveedor le dice de qué
-        // va, y a nosotros nos deja atar el papel con lo que se pidió cuando
-        // llegue el material meses después.
-        observacion: `Según pedido ${compra.numero} · ${compra.titulo}`,
-        // Una orden cancelada que se imprime sin decirlo es una orden que
-        // alguien puede despachar por error.
-        sello: orden.estado === 'ANULADA' || orden.estado === 'CANCELADA' ? 'ANULADA' : null,
+        observaciones: compra.justificacion,
+        sello:
+          orden.estado === 'ANULADA' || orden.estado === 'CANCELADA' ? 'ANULADA' : null,
         empresa: {
           razonSocial: empresa?.razon_social ?? '',
           rif: empresa?.rif ?? '',
-          domicilio: empresa?.domicilio_fiscal ?? null,
-          telefono: empresa?.telefono ?? null,
-          correo: empresa?.correo ?? null,
         },
-        emitidoPor: yo ?? '',
+        momento: new Date(),
+      }),
+    )
+  }
+
+  /*
+    EL COMPROBANTE DE PAGO
+
+    Lo pide quien tiene que demostrar que se pagó: al proveedor que reclama, o
+    a quien revisa las cuentas meses después. Sale de la instrucción, no de la
+    orden, porque una orden se puede pagar en varias veces y cada pago tiene su
+    propio comprobante.
+  */
+  const imprimirComprobante = async (i: InstruccionPago) => {
+    if (!compra || !orden) return
+
+    setPdf(
+      await armarComprobanteDePago({
+        ordenNumero: orden.numero,
+        pedidoNumero: compra.numero,
+        proveedor: orden.proveedor?.nombre ?? '',
+        solicitante: compra.solicitante_nombre ?? quienEs(compra.solicitante_id),
+        condicionPago:
+          CONDICIONES_PAGO.find((c) => c.valor === orden.condicion_pago)?.etiqueta ??
+          orden.condicion_pago,
+        totalOrden: orden.total,
+        monedaOrden: orden.moneda,
+        metodo: nombreDelMetodo(metodosDePago, i.metodo),
+        montoPagado: i.monto,
+        monedaPago: i.moneda,
+        // La instrucción guarda la fecha del pago, no la hora ni quién lo
+        // ejecutó: eso vive en la bitácora. Se imprime lo que sabe.
+        fechaPago: fecha(i.fecha_pago ?? orden.fecha_pago ?? ''),
+        pagadoPor: null,
+        comprobanteAdjunto: i.referencia ?? null,
+        empresa: {
+          razonSocial: empresa?.razon_social ?? '',
+          rif: empresa?.rif ?? '',
+        },
+        momento: new Date(),
       }),
     )
   }
@@ -911,6 +990,7 @@ export function DetalleCompra() {
                       puedePagar={puedeTesoreria}
                       onPagar={() => setModal({ tipo: 'registrar-pago', instruccion: i })}
                       onDevolver={() => setModal({ tipo: 'devolver-instruccion', instruccion: i })}
+                      onComprobante={() => void imprimirComprobante(i)}
                     />
                   ))}
               </div>

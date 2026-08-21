@@ -238,7 +238,7 @@ export function Existencias() {
                 disabled={filtradas.length === 0}
                 onClick={() => void imprimirActa()}
               >
-                Acta para contar
+                Acta de conteo físico
               </Button>
               <Button
                 variant="outline"

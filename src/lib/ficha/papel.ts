@@ -144,7 +144,7 @@ export function etiquetaValor(
     doc.setFont('helvetica', 'normal').setTextColor(GRIS)
     doc.text(lineas, IZQ + ANCHO_ETIQUETA, fila, { lineHeightFactor: 1.4 })
 
-    fila += Math.max(lineas.length, 1) * 4.6 + 1.6
+    fila += Math.max(lineas.length, 1) * 4.3 + 0.6
   }
 
   return fila + 3
@@ -215,6 +215,51 @@ export function tabla(
     doc.text(pie, DER - 4, fila + 5, { align: 'right' })
     fila += ALTO_FILA + 1
   }
+
+  return fila + 8
+}
+
+/**
+ * Un bloque con cabecera teñida y filas alternas de etiqueta y valor.
+ *
+ * Es la forma del comprobante de pago del modelo: en vez de una tabla de
+ * renglones, dos bloques —la orden y el pago— con sus datos en columna. Se
+ * lee buscando un dato, no recorriendo filas, y para eso la banda de color
+ * separa mejor que un título suelto.
+ */
+export function bloqueEtiquetado(
+  doc: Doc,
+  y: number,
+  titulo: string,
+  filas: Array<[string, string | null | undefined]>,
+): number {
+  const ALTO = 7
+  const ANCHO_ETIQUETA = 55
+  let fila = y
+
+  doc.setFillColor(MARCA)
+  doc.rect(IZQ, fila, ANCHO_UTIL, ALTO, 'F')
+  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor('#FFFFFF')
+  doc.text(titulo, IZQ + 3, fila + 4.8)
+  fila += ALTO
+
+  filas.forEach(([etiqueta, valor], i) => {
+    if (i % 2 === 0) {
+      doc.setFillColor(FILA_ALTERNA)
+      doc.rect(IZQ, fila, ANCHO_UTIL, ALTO, 'F')
+    }
+
+    doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(TINTA)
+    doc.text(etiqueta, IZQ + 3, fila + 4.8)
+
+    doc.setFont('helvetica', 'normal').setTextColor(GRIS)
+    doc.text(
+      ajustar(doc, valor || '—', ANCHO_UTIL - ANCHO_ETIQUETA - 6),
+      IZQ + ANCHO_ETIQUETA,
+      fila + 4.8,
+    )
+    fila += ALTO
+  })
 
   return fila + 8
 }

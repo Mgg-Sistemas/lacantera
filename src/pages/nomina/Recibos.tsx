@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { AlertTriangle, FileText, Printer } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas, PESTANAS_PERIODO } from '@/components/Pestanas'
@@ -145,18 +145,34 @@ export function Recibos() {
       {isPending && periodoId ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
-      {/* Se avisa antes de imprimir, no después. Un lote de cuarenta recibos
-          con el renglón de la firma vacío se reparte igual, y el error se
-          descubre cuando ya están repartidos. */}
+      {/*
+        Se avisa antes de imprimir, no después: un lote de cuarenta recibos con
+        el renglón de la firma vacío se reparte igual, y el error se descubre
+        cuando ya están repartidos.
+
+        Antes este aviso decía «Nómina → Parámetros → RRHH_FIRMA_NOMBRE». Dos
+        cosas iban mal. La ruta ya no existe —Parámetros es hoy una pestaña
+        dentro de Prestaciones—, así que mandaba a un sitio que no está; y
+        `RRHH_FIRMA_NOMBRE` es el nombre que el dato tiene por dentro, no algo
+        que nadie vaya a buscar. Enseñar la llave interna a quien solo quiere
+        arreglarlo es pedirle que traduzca.
+
+        Ahora lleva. Un aviso que dice qué hacer y no cómo llegar es medio
+        aviso.
+      */}
       {ordenados.length > 0 && !firma.nombre ? (
         <Card className="border-warning/40 bg-warning-soft mb-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="text-warning mt-0.5 size-[18px] shrink-0" />
-            <p className="text-ink/75 text-sm">
-              Los recibos van a salir sin el nombre de quien firma por la empresa. Se pone una
-              sola vez en{' '}
-              <span className="font-medium">Nómina → Parámetros → RRHH_FIRMA_NOMBRE</span>.
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <AlertTriangle className="text-warning size-[18px] shrink-0" />
+            <p className="text-ink/75 min-w-0 flex-1 text-sm">
+              Falta decir <strong className="font-medium">quién firma por la empresa</strong>.
+              Los recibos saldrían con ese renglón en blanco.
             </p>
+            <Link to="/app/nomina/parametros">
+              <Button size="sm" variant="outline">
+                Ponerlo ahora
+              </Button>
+            </Link>
           </div>
         </Card>
       ) : null}
