@@ -44,6 +44,9 @@ function menuVisible(
           ),
         }))
         .filter((item) => {
+          // La rama entera escondida pesa más que cualquier permiso que se
+          // le haya dado a alguien sobre ese módulo.
+          if (item.soloAdmin && !esAdmin) return false
           // La ayuda del sistema no se reparte por permisos: ver `siempre`.
           if (item.siempre) return true
           return item.children ? item.children.length > 0 : puede(moduloDeRuta(item.to ?? '/app'))

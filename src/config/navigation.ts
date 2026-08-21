@@ -47,6 +47,15 @@ export interface NavItem {
   /** Contador de pendientes. Se resolverá contra datos reales. */
   badge?: number
   /**
+   * La rama entera se esconde a quien no sea ADMIN.
+   *
+   * Esconder, no cerrar: la ruta sigue abierta y quien escriba la dirección
+   * entra. Es deliberado — estos tres módulos se siguen desarrollando, y
+   * cerrarlos dejaría al equipo sin poder verlos mientras se trabajan. La
+   * diferencia con `RUTAS_SOLO_ADMIN`, que sí cierra, es justo esa.
+   */
+  soloAdmin?: boolean
+  /**
    * Se ve siempre, sin comprobar permisos.
    *
    * Para lo que no es un módulo del negocio sino ayuda del propio sistema. El
@@ -192,6 +201,7 @@ export const navigation: NavSection[] = [
         // trae a la gente es siempre la misma: cuál toca atender.
         label: 'Maquinaria',
         icon: Wrench,
+        soloAdmin: true,
         children: [
           { label: 'Equipos', to: '/app/maquinaria' },
           // El historial es la vista al revés: no cada máquina y su última
@@ -230,6 +240,7 @@ export const navigation: NavSection[] = [
         */
         label: 'Combustible',
         icon: Fuel,
+        soloAdmin: true,
         to: '/app/combustible',
       },
       {
@@ -245,6 +256,7 @@ export const navigation: NavSection[] = [
         */
         label: 'Asignaciones',
         icon: HandHelping,
+        soloAdmin: true,
         children: [
           { label: 'Quién tiene qué', to: '/app/asignaciones' },
           { label: 'Incidencias', to: '/app/asignaciones/incidencias' },
