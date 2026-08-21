@@ -317,9 +317,11 @@ export const navigation: NavSection[] = [
           // "requisiciones" por un lado y "órdenes" por otro, porque quien
           // compra no piensa en dos documentos sino en una sola compra.
           { label: 'Tablero', to: '/app/compras' },
+          // Las facturas del proveedor pasan a ser pestaña de Proveedores: una
+          // factura pertenece a alguien, y es ahí donde se busca. Como entrada
+          // suelta invitaba a registrarla sin decir contra qué orden.
           { label: 'Proveedores', to: '/app/compras/proveedores' },
           { label: 'Recepciones', to: '/app/compras/recepciones' },
-          { label: 'Facturas de proveedor', to: '/app/compras/facturas' },
           // El libro cuelga de Compras y no de un módulo fiscal propio porque
           // quien lo saca es quien cargó las facturas, y porque así el permiso
           // que ya gobierna las facturas gobierna también su libro.

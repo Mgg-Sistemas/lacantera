@@ -43,3 +43,9 @@ export const PESTANAS_REGLAS: Pestana[] = [
   { etiqueta: 'Prestaciones sociales', a: '/app/nomina/prestaciones' },
   { etiqueta: 'Parámetros de nómina', a: '/app/nomina/parametros' },
 ]
+
+/** A quién se le compra, y qué papeles nos ha pasado. */
+export const PESTANAS_PROVEEDORES: Pestana[] = [
+  { etiqueta: 'Proveedores', a: '/app/compras/proveedores' },
+  { etiqueta: 'Facturas recibidas', a: '/app/compras/facturas' },
+]

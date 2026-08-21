@@ -508,6 +508,41 @@ function TarjetaInstruccion({
 
 // ---------------------------------------------------------------------------
 
+/*
+  LA BITÁCORA NO PUEDE HABLAR EN MAYÚSCULAS
+
+  `ETIQUETAS` solo nombra los estados de la solicitud y la orden. La bitácora
+  registra además los de la cotización y los de cada instrucción de pago, y
+  esos salían tal cual: «POR_PAGAR», «PAGADA», «REGISTRADA». Un historial que
+  se lee «PAGO · POR_PAGAR · ADMINISTRADOR» no es un historial, es un volcado.
+
+  Va por tipo de documento y no por estado a secas porque la misma palabra
+  significa cosas distintas: una orden ANULADA se canceló antes de recibirse;
+  un pago ANULADO no llegó a salir del banco.
+*/
+const NOMBRE_DEL_ESTADO: Record<string, Record<string, string>> = {
+  COTIZACION: {
+    REGISTRADA: 'Se cargó una cotización',
+    ANULADA: 'Se quitó una cotización',
+  },
+  PAGO: {
+    POR_PAGAR: 'Pago instruido a tesorería',
+    PAGADA: 'Tesorería ejecutó el pago',
+    DEVUELTA: 'Tesorería devolvió el pago a compras',
+    ANULADA: 'Se anuló la instrucción de pago',
+  },
+}
+
+function comoSeLlama(documento: string, estado: string): string {
+  return (
+    NOMBRE_DEL_ESTADO[documento]?.[estado] ??
+    ETIQUETAS[estado]?.texto ??
+    // Si aparece uno nuevo, al menos que no grite: sin guiones bajos y en
+    // minúscula, que se lee como una frase a medias y no como un código.
+    estado.replace(/_/g, ' ').toLowerCase()
+  )
+}
+
 export function DetalleCompra() {
   const { id } = useParams()
   const compraId = Number(id)
@@ -1008,7 +1043,7 @@ export function DetalleCompra() {
                   </div>
                   <div className="min-w-0 pb-1">
                     <p className="text-ink/85 text-sm">
-                      {ETIQUETAS[e.estado_nuevo]?.texto ?? e.estado_nuevo}
+                      {comoSeLlama(e.documento_tipo, e.estado_nuevo)}
                       <span className="text-ink/45"> · {nombreDe(e.actor_id)}</span>
                     </p>
                     <p className="text-ink/45 text-xs">{fechaHora(e.ocurrido_en)}</p>

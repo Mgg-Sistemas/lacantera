@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useMonedasUsables } from '@/lib/api/tasas'
 import { Banknote, FileText, Paperclip, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas } from '@/components/Pestanas'
+import { PESTANAS_PROVEEDORES } from '@/components/pestanasDeModulos'
 import { Visor } from '@/components/Visor'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -15,6 +17,7 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useTablero } from '@/lib/api/compras'
 import { useProveedores } from '@/lib/api/catalogo'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useCuentas } from '@/lib/api/tesoreria'
@@ -55,6 +58,7 @@ const ETIQUETA: Record<string, string> = {
 
 const vacio = {
   proveedor_id: '',
+  orden_id: '',
   numero_factura: '',
   numero_control: '',
   fecha_emision: '',
@@ -89,6 +93,30 @@ export function FacturasProveedor() {
   const { data: metodos } = useMetodosPago()
   const { data, isPending, error } = useFacturasCompra()
   const { data: proveedores } = useProveedores()
+  const { data: tarjetas } = useTablero()
+
+  /*
+    Las órdenes del proveedor elegido, para poder atar la factura.
+
+    Salen del tablero de compras, que ya trae número, título y proveedor de
+    cada una y se consulta igualmente. Pedir una consulta aparte para esto
+    sería traer dos veces lo mismo.
+  */
+  const ordenesDelProveedor = (tarjetas ?? [])
+    .filter(
+      (t) =>
+        t.orden_id !== null &&
+        t.proveedor ===
+          (proveedores ?? []).find((p) => String(p.id) === nueva?.proveedor_id)?.nombre,
+    )
+    .map((t) => ({
+      id: t.orden_id as number,
+      numero: t.orden_numero ?? '',
+      titulo: t.titulo,
+      detalle: [t.numero, t.total ? `${t.moneda} ${t.total}` : null]
+        .filter(Boolean)
+        .join(' · '),
+    }))
   const { data: empresa } = useEmpresa()
   const { data: cuentas } = useCuentas()
   const registrar = useRegistrarFacturaCompra()
@@ -191,6 +219,8 @@ export function FacturasProveedor() {
         }
       />
 
+      <Pestanas pestanas={PESTANAS_PROVEEDORES} />
+
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
@@ -284,6 +314,7 @@ export function FacturasProveedor() {
                   !nueva.numero_factura.trim() ||
                   !nueva.fecha_emision ||
                   totalCalculado <= 0 ||
+                  !nueva.orden_id ||
                   descuadre ||
                   // La base lo rechaza igual, pero enterarse aquí ahorra el viaje.
                   Number(nueva.retencion_iva) > (Number(nueva.iva) || 0) + 0.01
@@ -291,6 +322,7 @@ export function FacturasProveedor() {
                 onClick={async () => {
                   await registrar.mutateAsync({
                     proveedor_id: Number(nueva.proveedor_id),
+                    orden_id: Number(nueva.orden_id),
                     numero_factura: nueva.numero_factura,
                     fecha_emision: nueva.fecha_emision,
                     exento: Number(nueva.exento) || 0,
@@ -327,6 +359,38 @@ export function FacturasProveedor() {
               }))}
               className="sm:col-span-3"
             />
+
+            {/*
+              UNA FACTURA VA CASADA CON SU ORDEN
+
+              Christopher: «una factura no se puede registrar individual, si no
+              ¿que estamos facturando? ¿de donde salio esa factura?». Tenía
+              razón: sin orden no se puede cuadrar contra lo pedido, lo
+              recibido ni lo pagado, y en el libro de compras aparece un
+              crédito fiscal que no se sabe de qué operación salió.
+
+              La lista se acota al proveedor elegido. Ofrecer las órdenes de
+              todos invita a atar la factura a la orden de otro, que es peor
+              que no atarla.
+            */}
+            <SelectBuscable
+              label="¿Contra qué orden?"
+              vacio={
+                nueva.proveedor_id ? 'Elige la orden' : 'Elige antes el proveedor'
+              }
+              valor={nueva.orden_id}
+              onCambio={(v) => setNueva({ ...nueva, orden_id: v })}
+              disabled={!nueva.proveedor_id}
+              hint="Es la que dice qué se compró y a qué precio."
+              opciones={ordenesDelProveedor.map((o) => ({
+                valor: String(o.id),
+                codigo: o.numero,
+                nombre: o.titulo,
+                detalle: o.detalle,
+              }))}
+              className="sm:col-span-3"
+            />
+
             <Input
               label="Número de factura"
               value={nueva.numero_factura}

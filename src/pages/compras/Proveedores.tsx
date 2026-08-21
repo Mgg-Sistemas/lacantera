@@ -6,6 +6,8 @@ import {
   Upload,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas } from '@/components/Pestanas'
+import { PESTANAS_PROVEEDORES } from '@/components/pestanasDeModulos'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -87,6 +89,8 @@ export function Proveedores() {
           </>
         }
       />
+
+      <Pestanas pestanas={PESTANAS_PROVEEDORES} />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
