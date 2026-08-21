@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import {
   ArrowLeftRight,
-  ArrowRight,
+  Upload,
   Boxes,
   ClipboardList,
   PackageMinus,
@@ -9,14 +9,13 @@ import {
   TriangleAlert,
   Warehouse,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { QueHacer } from '@/components/QueHacer'
+import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { useExistencias, useMovimientos } from '@/lib/api/inventario'
-import { esRutaFueraDelMvp } from '@/config/navigation'
-import { useMisPermisos } from '@/lib/api/usuarios'
 import { dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -47,66 +46,113 @@ import { cn } from '@/lib/cn'
  * no.
  */
 
-interface Accion {
-  titulo: string
-  detalle: string
-  icono: LucideIcon
-  ruta: string
-  /** Sin esto, se ve siempre. Con esto, solo con permiso de escritura. */
-  exigeEscritura?: boolean
+
+/*
+  DE UN ALMACÉN VACÍO A UN ALMACÉN QUE SE MUEVE
+
+  Los grupos van en el orden en que hacen falta, no por naturaleza. Antes se
+  repartían en «entra / sale / se mueve», que es como lo ve quien construyó el
+  sistema; quien abre el tablero viene con una tarea, y la primera de todas
+  —cuando el almacén arranca— es que exista el catálogo.
+
+  Los tres primeros van numerados porque hay un orden real: sin artículos no
+  hay qué recibir, y sin existencia no hay qué mover. Los del día a día no se
+  numeran: se hacen cuando toca y en cualquier orden.
+*/
+function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
+  return [
+    {
+      titulo: 'Poner el almacén en marcha',
+      detalle: 'Los tres pasos para que el inventario empiece a decir la verdad.',
+      acciones: [
+        {
+          paso: 1,
+          titulo: 'Cargar el catálogo',
+          detalle:
+            'Los artículos que la empresa maneja. Se sube una planilla de Excel y el sistema comprueba fila por fila antes de escribir nada.',
+          icono: Upload,
+          a: '/app/inventario/articulos/carga',
+          exige: 'ESCRITURA',
+        },
+        {
+          paso: 2,
+          titulo: 'Abrir los almacenes',
+          detalle: 'Dónde se guarda cada cosa: patios, depósitos y talleres.',
+          icono: Warehouse,
+          a: '/app/inventario/almacenes',
+          exige: 'ESCRITURA',
+        },
+        {
+          paso: 3,
+          titulo: 'Cargar el saldo inicial',
+          detalle:
+            'Lo que hay hoy en cada sitio, con su costo. Es la única entrada que no necesita una compra detrás.',
+          icono: PackagePlus,
+          a: '/app/inventario/existencias',
+          exige: 'ESCRITURA',
+        },
+      ],
+    },
+    {
+      titulo: 'El día a día',
+      acciones: [
+        {
+          titulo: 'Llegó una compra',
+          detalle: 'Recibir contra la orden. El material entra al almacén y la compra se cierra.',
+          icono: PackagePlus,
+          a: '/app/compras/recepciones',
+          exige: 'ESCRITURA',
+        },
+        {
+          titulo: 'Sacar o dar de baja material',
+          detalle: 'Consumo, merma, o lo que se perdió. Sale al costo promedio que tiene.',
+          icono: PackageMinus,
+          a: '/app/inventario/existencias',
+          exige: 'ESCRITURA',
+        },
+        {
+          titulo: 'Trasladar a otro almacén',
+          detalle: 'No cambia cuánto hay, cambia dónde está.',
+          icono: ArrowLeftRight,
+          a: '/app/inventario/transferencias',
+          exige: 'ESCRITURA',
+        },
+      ],
+    },
+    {
+      titulo: 'Revisar y cuadrar',
+      acciones: [
+        {
+          titulo: 'Contar el almacén',
+          detalle:
+            'Se imprime el acta con lo que el sistema cree que hay, se cuenta a mano, y la diferencia se anota como ajuste.',
+          icono: ClipboardList,
+          a: '/app/inventario/existencias',
+        },
+        {
+          titulo:
+            faltantes > 0
+              ? `Reponer lo que falta (${faltantes})`
+              : 'Ver lo que está por debajo del mínimo',
+          detalle:
+            faltantes > 0
+              ? 'Hay artículos en el mínimo o por debajo. Conviene pedirlos antes de que hagan falta.'
+              : 'Ahora mismo no hay nada por reponer.',
+          icono: TriangleAlert,
+          a: '/app/inventario/existencias',
+        },
+        {
+          titulo: 'Ver qué le pasó a un artículo',
+          detalle:
+            'Su historia entera desde que se creó: entradas, salidas, traslados y a quién se le entregó.',
+          icono: Boxes,
+          a: '/app/inventario/articulos',
+        },
+      ],
+    },
+  ]
 }
 
-const ENTRA: Accion[] = [
-  {
-    titulo: 'Llegó una compra',
-    detalle: 'Recibir contra la orden. El material entra al almacén y la compra se cierra.',
-    icono: PackagePlus,
-    ruta: '/app/compras/recepciones',
-    exigeEscritura: true,
-  },
-  {
-    titulo: 'Entró sin compra de por medio',
-    detalle:
-      'El saldo con el que arranca el almacén, algo comprado por fuera, material que trae alguien. Lleva su costo.',
-    icono: PackagePlus,
-    ruta: '/app/inventario/existencias',
-    exigeEscritura: true,
-  },
-  {
-    titulo: 'Salió producción del turno',
-    detalle: 'El parte de turno es la única puerta por la que entra material de la planta.',
-    icono: PackagePlus,
-    ruta: '/app/explotacion/produccion',
-    exigeEscritura: true,
-  },
-]
-
-const SALE: Accion[] = [
-  {
-    titulo: 'Se despachó a un cliente',
-    detalle: 'La nota de entrega descuenta el patio al salir el camión.',
-    icono: PackageMinus,
-    ruta: '/app/ventas/despachos',
-    exigeEscritura: true,
-  },
-  {
-    titulo: 'Se consumió o se perdió',
-    detalle: 'Consumo en el frente, merma y ajustes de conteo.',
-    icono: PackageMinus,
-    ruta: '/app/inventario/movimientos',
-    exigeEscritura: true,
-  },
-]
-
-const MUEVE: Accion[] = [
-  {
-    titulo: 'Cambió de almacén',
-    detalle: 'Traslado entre almacenes o patios. No cambia el total, cambia dónde está.',
-    icono: ArrowLeftRight,
-    ruta: '/app/inventario/transferencias',
-    exigeEscritura: true,
-  },
-]
 
 /*
   LOS ATAJOS A LO QUE HOY NO SE OFRECE NO SE PINTAN
@@ -120,51 +166,11 @@ const MUEVE: Accion[] = [
   aparte: cuando un módulo vuelva al menú, su atajo reaparece aquí solo. Una
   lista propia sería la que nadie se acuerda de tocar ese día.
 */
-function Grupo({
-  titulo,
-  acciones,
-  puedeEscribir,
-}: {
-  titulo: string
-  acciones: Accion[]
-  puedeEscribir: boolean
-}) {
-  const visibles = acciones.filter(
-    (a) => (!a.exigeEscritura || puedeEscribir) && !esRutaFueraDelMvp(a.ruta),
-  )
-  if (visibles.length === 0) return null
-
-  return (
-    <div>
-      <h2 className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">{titulo}</h2>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        {visibles.map((a) => {
-          const Icono = a.icono
-          return (
-            <Link key={a.titulo} to={a.ruta} className="block">
-              <Card className="hover:border-royal-300 border-hairline h-full border transition-colors">
-                <div className="flex items-start gap-3">
-                  <Icono className="text-ink/30 mt-0.5 size-[18px] shrink-0" aria-hidden="true" />
-                  <div className="min-w-0">
-                    <p className="text-ink/90 text-base font-medium">{a.titulo}</p>
-                    <p className="text-ink/55 mt-1 text-sm leading-relaxed">{a.detalle}</p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
 
 export function TableroInventario() {
   const { data: existencias, isPending, error } = useExistencias()
   const { data: movimientos } = useMovimientos()
-  const { puede } = useMisPermisos()
 
-  const puedeEscribir = puede('INVENTARIO', 'ESCRITURA')
 
   const filas = existencias ?? []
 
@@ -270,58 +276,26 @@ export function TableroInventario() {
             </Card>
           </div>
 
-          {/* ---------- Por dónde se mueve el material ---------- */}
-          <div className="mt-8 space-y-8">
-            <Grupo titulo="Entra material" acciones={ENTRA} puedeEscribir={puedeEscribir} />
-            <Grupo titulo="Sale material" acciones={SALE} puedeEscribir={puedeEscribir} />
-            <Grupo titulo="Cambia de sitio" acciones={MUEVE} puedeEscribir={puedeEscribir} />
+          <QueHacer grupos={QUE_HACER(bajoMinimo.length)} />
 
-            {/* ---------- Lo que define el inventario ---------- */}
-            <div>
-              <h2 className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">
-                Consultar y configurar
-              </h2>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Link to="/app/inventario/existencias">
-                  <Button variant="outline" size="sm" icon={<Boxes />}>
-                    Existencias
-                  </Button>
-                </Link>
-                <Link to="/app/inventario/movimientos">
-                  <Button variant="outline" size="sm" icon={<ClipboardList />}>
-                    Movimientos
-                  </Button>
-                </Link>
-                <Link to="/app/inventario/articulos">
-                  <Button variant="outline" size="sm" icon={<ArrowRight />}>
-                    Catálogo de artículos
-                  </Button>
-                </Link>
-                <Link to="/app/inventario/almacenes">
-                  <Button variant="outline" size="sm" icon={<Warehouse />}>
-                    Almacenes y patios
-                  </Button>
-                </Link>
-              </div>
-            </div>
+          {/* Para quien entra por primera vez. Va al final y no arriba: quien
+              ya sabe no tiene que saltárselo cada mañana. */}
+          <Card className="mt-8">
+            <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">
+              Si es la primera vez
+            </p>
+            <p className="text-ink/75 mt-3 text-sm leading-relaxed">
+              El inventario <strong>no se escribe a mano</strong>: es la suma del libro de
+              movimientos. Cada cosa que entra, sale o se traslada deja su renglón, y las
+              existencias salen de ahí.
+            </p>
+            <p className="text-ink/50 mt-2 text-sm leading-relaxed">
+              Por eso no hay un botón de «poner existencia en 40». Si un número no cuadra se
+              corrige con un ajuste de conteo, que queda anotado con su motivo y con quién lo
+              hizo.
+            </p>
+          </Card>
 
-            {/* Para quien entra por primera vez. Va al final y no arriba: quien
-                ya sabe no tiene que saltárselo cada mañana. */}
-            <Card>
-              <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">
-                Si es la primera vez
-              </p>
-              <p className="text-ink/75 mt-3 text-sm leading-relaxed">
-                El inventario no se escribe a mano: <strong>se mueve solo</strong> cuando pasa algo.
-                Entra al recibir una compra o al cargar el parte de turno; sale al despachar a un
-                cliente o al consumir en el frente. Las existencias son la suma de todo eso.
-              </p>
-              <p className="text-ink/50 mt-2 text-sm leading-relaxed">
-                Por eso no hay un botón de «cargar existencias»: si un número no cuadra, se corrige
-                con un ajuste, que queda anotado con su motivo.
-              </p>
-            </Card>
-          </div>
         </>
       ) : null}
     </>

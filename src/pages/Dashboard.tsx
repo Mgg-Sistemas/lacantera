@@ -4,11 +4,12 @@ import {
   Banknote,
   Boxes,
   ClipboardCheck,
-  Hammer,
+  Users,
   HandCoins,
   Info,
   Landmark,
-  PackageSearch,
+  ShoppingCart,
+  Calculator,
   Truck,
 } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -16,6 +17,8 @@ import { Chip } from '@/components/ui/Chip'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { PageHeader } from '@/components/PageHeader'
+import { QueHacer } from '@/components/QueHacer'
+import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { StatCard } from '@/components/StatCard'
 import { useResumenPanel } from '@/lib/api/tesoreria'
 import { useTablero } from '@/lib/api/compras'
@@ -106,6 +109,79 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
 }
 
 const iconos = { danger: AlertTriangle, warning: AlertTriangle, info: Info } as const
+
+/*
+  EL PANEL TAMBIÉN GUÍA, NO SOLO INFORMA
+
+  Arriba dice cómo va la operación. Esto de abajo dice por dónde se empieza.
+
+  No repite los tableros de cada módulo: recoge las tres o cuatro cosas que de
+  verdad se hacen desde aquí, y las ordena por lo que suele venir antes. Quien
+  abre el sistema por primera vez necesita cargar el catálogo y la gente antes
+  de poder comprar o pagar nada; quien ya lo tiene montado entra a lo del día.
+
+  `QueHacer` esconde solo lo que quien mira no puede abrir, así que a cada
+  quien le queda su lista.
+*/
+const QUE_HACER: GrupoDeAcciones[] = [
+  {
+    titulo: 'Poner el sistema en marcha',
+    detalle: 'Lo que hay que cargar una vez para que lo demás funcione.',
+    acciones: [
+      {
+        paso: 1,
+        titulo: 'Cargar el catálogo de artículos',
+        detalle:
+          'Desde una planilla de Excel. El sistema comprueba fila por fila y enseña qué va a pasar antes de escribir nada.',
+        icono: Boxes,
+        a: '/app/inventario/articulos/carga',
+        exige: 'ESCRITURA',
+      },
+      {
+        paso: 2,
+        titulo: 'Cargar el personal',
+        detalle: 'Las fichas de quienes trabajan aquí, con su cargo y su sueldo.',
+        icono: Users,
+        a: '/app/nomina/personal',
+        exige: 'ESCRITURA',
+      },
+      {
+        paso: 3,
+        titulo: 'Poner la tasa del día',
+        detalle:
+          'Sin tasa no se puede cotizar, aprobar ni pagar: todo documento valorado congela la del día.',
+        icono: Banknote,
+        a: '/app/tasas',
+        exige: 'ESCRITURA',
+      },
+    ],
+  },
+  {
+    titulo: 'Lo del día',
+    acciones: [
+      {
+        titulo: 'Pedir algo que hace falta',
+        detalle: 'Un repuesto, combustible, un servicio. Basta con decir qué y para qué.',
+        icono: ShoppingCart,
+        a: '/app/compras/nuevo',
+        exige: 'ESCRITURA',
+      },
+      {
+        titulo: 'Ver cómo está el almacén',
+        detalle: 'Cuánto hay de cada cosa, dónde está, y qué se está acabando.',
+        icono: Boxes,
+        a: '/app/inventario/existencias',
+      },
+      {
+        titulo: 'Procesar la quincena',
+        detalle: 'Novedades, cálculo y recibos, en ese orden.',
+        icono: Calculator,
+        a: '/app/nomina/asistencia',
+        exige: 'ESCRITURA',
+      },
+    ],
+  },
+]
 
 export function Dashboard() {
   const { data: r, isPending, error } = useResumenPanel()
@@ -329,42 +405,12 @@ export function Dashboard() {
             </div>
           ) : null}
 
-          {/* ---------- Lo que todavía no existe ----------
-              Antes esta zona mostraba producción y despachos inventados. Un
-              número falso al lado de los verdaderos es peor que un hueco: nadie
-              sabe cuáles creer. */}
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <Card>
-              <div className="flex items-start gap-3">
-                <Hammer className="text-ink/25 mt-0.5 size-5 shrink-0" />
-                <div>
-                  <h2 className="text-ink/70 text-base font-medium">Producción y explotación</h2>
-                  <p className="text-ink/45 mt-1 text-sm">
-                    Todavía no se registra. Cuando el módulo esté, aquí van las toneladas del
-                    día y de la semana.
-                  </p>
-                </div>
-              </div>
-            </Card>
-            <Card>
-              <div className="flex items-start gap-3">
-                <PackageSearch className="text-ink/25 mt-0.5 size-5 shrink-0" />
-                <div>
-                  <h2 className="text-ink/70 text-base font-medium">Ventas y despachos</h2>
-                  <p className="text-ink/45 mt-1 text-sm">
-                    Todavía no se registran. Con ellos aparecerán aquí las guías de la romana y
-                    lo que está por cobrar.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-
           <p className="text-ink/35 mt-5 flex items-center gap-1.5 text-xs">
             <Banknote className="size-3.5" />
             Todas las cifras salen de lo registrado en el sistema. No hay ningún número de
             ejemplo en esta pantalla.
           </p>
+          <QueHacer grupos={QUE_HACER} />
         </>
       ) : null}
     </>

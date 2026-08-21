@@ -1,7 +1,19 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { AlertTriangle, ClipboardList, Plus, User } from 'lucide-react'
+import {
+  AlertTriangle,
+  BookOpen,
+  Building2,
+  ClipboardList,
+  FileText,
+  HandCoins,
+  PackageCheck,
+  Plus,
+  User,
+} from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { QueHacer } from '@/components/QueHacer'
+import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
@@ -204,6 +216,86 @@ function Panel({
   )
 }
 
+/*
+  UNA COMPRA ES UNA CADENA DE MANOS
+
+  El tablero de arriba enseña dónde está parada cada una. Esto de abajo dice
+  qué le toca hacer a quien mira, y en qué orden: el pedido lo levanta quien
+  necesita algo, compras lo cotiza, gerencia lo aprueba, tesorería lo paga y
+  almacén lo recibe.
+
+  Van numerados porque el orden no se puede saltar —no se paga lo que el
+  gerente no aprobó— y porque cada paso lo hace un rol distinto: ver la cadena
+  entera es lo que permite saber a quién reclamarle.
+*/
+const QUE_HACER: GrupoDeAcciones[] = [
+  {
+    titulo: 'La cadena de una compra',
+    detalle: 'De la necesidad al material en el patio. Cada paso lo hace alguien distinto.',
+    acciones: [
+      {
+        paso: 1,
+        titulo: 'Pedir algo',
+        detalle:
+          'Lo levanta quien lo necesita: un repuesto, combustible, un servicio. Con decir qué hace falta y para qué, basta.',
+        icono: Plus,
+        a: '/app/compras/nuevo',
+        exige: 'ESCRITURA',
+      },
+      {
+        paso: 2,
+        titulo: 'Cotizar y proponer',
+        detalle:
+          'Compras carga las cotizaciones que consiguió y propone una al gerente. Se comparan lado a lado.',
+        icono: ClipboardList,
+        a: '/app/compras',
+        exige: 'ESCRITURA',
+      },
+      {
+        paso: 3,
+        titulo: 'Pagar lo aprobado',
+        detalle:
+          'Tesorería ejecuta el pago de lo que gerencia autorizó, y deja el comprobante.',
+        icono: HandCoins,
+        a: '/app/tesoreria/pagos',
+        exige: 'ESCRITURA',
+      },
+      {
+        paso: 4,
+        titulo: 'Recibir el material',
+        detalle:
+          'Almacén cuenta lo que llegó contra la orden. Puede llegar en partes; el sistema lleva la cuenta.',
+        icono: PackageCheck,
+        a: '/app/compras/recepciones',
+        exige: 'ESCRITURA',
+      },
+    ],
+  },
+  {
+    titulo: 'Alrededor de la compra',
+    acciones: [
+      {
+        titulo: 'Proveedores',
+        detalle: 'A quién se le compra: su RIF, cómo cobra y cómo se le paga.',
+        icono: Building2,
+        a: '/app/compras/proveedores',
+      },
+      {
+        titulo: 'Facturas del proveedor',
+        detalle: 'El papel que respalda cada compra, guardado donde se pueda encontrar.',
+        icono: FileText,
+        a: '/app/compras/facturas',
+      },
+      {
+        titulo: 'Libro de compras',
+        detalle: 'Lo que va al SENIAT: base imponible, IVA y crédito fiscal del período.',
+        icono: BookOpen,
+        a: '/app/compras/libro',
+      },
+    ],
+  },
+]
+
 export function TableroCompras() {
   const { data, isPending, error } = useTablero()
 
@@ -273,6 +365,8 @@ export function TableroCompras() {
           ))}
         </div>
       ) : null}
+
+      <QueHacer grupos={QUE_HACER} />
     </>
   )
 }
