@@ -408,6 +408,10 @@ export const navigation: NavSection[] = [
         label: 'Configuración',
         icon: Settings,
         children: [
+          // Igual que en los demás módulos: la primera entrada es el tablero.
+          // Configuración era el único que abría directamente en una lista, y
+          // una lista no dice si lo que hay debajo está bien puesto.
+          { label: 'Tablero', to: '/app/config' },
           { label: 'Usuarios y roles', to: '/app/config/usuarios' },
           { label: 'Datos de la empresa', to: '/app/config/empresa' },
           { label: 'Documentos legales', to: '/app/config/documentos' },

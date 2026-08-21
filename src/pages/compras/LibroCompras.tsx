@@ -82,6 +82,9 @@ export function LibroCompras() {
         title="Libro de compras"
         description="El IVA que se pagó a los proveedores y que se descuenta del que se cobró."
         actions={
+          /* `items-end` alinea el botón con la caja del mes, no con su
+             etiqueta. Antes llevaba un `mb-6` a mano que lo levantaba 24 px de
+             más y lo dejaba flotando por encima. */
           <div className="flex items-end gap-3">
             <Input
               label="Mes"
@@ -95,7 +98,6 @@ export function LibroCompras() {
               icon={<Download />}
               disabled={filas.length === 0}
               onClick={exportar}
-              className="mb-6"
             >
               Descargar
             </Button>

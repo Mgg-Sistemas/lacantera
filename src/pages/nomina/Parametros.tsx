@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { cn } from '@/lib/cn'
 import { AlertTriangle, Plus, Scale } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
@@ -74,6 +75,26 @@ export function Parametros() {
 
   const historicos = (data ?? []).length - vigentes.length
 
+  /*
+    CORREGIR UNA EQUIVOCACIÓN NO ES ABRIR UNA VIGENCIA
+
+    Christopher preguntó qué pasa si alguien se equivoca al registrar un
+    parámetro. La base ya lo permitía —guardar la misma clave con la misma
+    fecha sobrescribe— pero la pantalla no lo ofrecía: las filas eran de solo
+    lectura y el formulario abría en blanco, así que corregir un cero de más
+    obligaba a recordar la clave exacta y teclearla otra vez.
+
+    Ahora la fila se pulsa y se abre con lo que tiene. Si se deja la misma
+    fecha, corrige; si se pone una posterior, cierra la anterior y abre una
+    nueva. Las dos cosas son legítimas y son distintas, así que el modal dice
+    cuál está pasando.
+  */
+  const esCorreccion =
+    nuevo !== null &&
+    (data ?? []).some(
+      (p) => p.clave === nuevo.clave && p.vigencia_desde.slice(0, 10) === nuevo.desde,
+    )
+
   return (
     <>
       <PageHeader
@@ -128,7 +149,26 @@ export function Parametros() {
               </thead>
               <tbody>
                 {vigentes.map((p) => (
-                  <tr key={p.id} className="border-hairline border-b align-top last:border-0">
+                  <tr
+                    key={p.id}
+                    onClick={
+                      puedeRRHH
+                        ? () =>
+                            setNuevo({
+                              clave: p.clave,
+                              valor: p.unidad === 'TEXTO' ? (p.valor_texto ?? '') : String(p.valor ?? ''),
+                              unidad: p.unidad,
+                              desde: p.vigencia_desde.slice(0, 10),
+                              descripcion: p.descripcion ?? '',
+                              fuente: p.fuente ?? '',
+                            })
+                        : undefined
+                    }
+                    className={cn(
+                      'border-hairline border-b align-top last:border-0',
+                      puedeRRHH && 'hover:bg-ink/3 cursor-pointer transition-colors',
+                    )}
+                  >
                     <td className="px-5 py-3">
                       <p className="text-ink/85 font-medium">{p.descripcion}</p>
                       <p className="text-ink/40 font-mono text-xs">{p.clave}</p>
@@ -165,8 +205,12 @@ export function Parametros() {
         <Modal
           abierto
           onCerrar={() => setNuevo(null)}
-          titulo="Nueva vigencia"
-          descripcion="No sustituye el valor anterior: lo cierra el día antes y empieza uno nuevo."
+          titulo={esCorreccion ? `Corregir ${nuevo.clave}` : 'Nueva vigencia'}
+          descripcion={
+            esCorreccion
+              ? 'Misma fecha de vigencia: se corrige lo que hay, no se abre una vigencia nueva. Cambia la fecha si lo que quieres es que rija desde otro día.'
+              : 'No sustituye el valor anterior: lo cierra el día antes y empieza uno nuevo.'
+          }
           ancho="sm"
           acciones={
             <>

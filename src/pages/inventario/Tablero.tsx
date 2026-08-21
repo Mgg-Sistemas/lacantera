@@ -285,13 +285,17 @@ export function TableroInventario() {
               Si es la primera vez
             </p>
             <p className="text-ink/75 mt-3 text-sm leading-relaxed">
-              El inventario <strong>no se escribe a mano</strong>: es la suma del libro de
-              movimientos. Cada cosa que entra, sale o se traslada deja su renglón, y las
-              existencias salen de ahí.
+              La existencia <strong>no se escribe: se deduce</strong>. Es la suma del libro de
+              movimientos, y cada cosa que entra, sale o se traslada deja su renglón.
             </p>
             <p className="text-ink/50 mt-2 text-sm leading-relaxed">
-              Por eso no hay un botón de «poner existencia en 40». Si un número no cuadra se
-              corrige con un ajuste de conteo, que queda anotado con su motivo y con quién lo
+              Registrar una entrada tampoco es escribirla a mano: es anotar que entraron
+              cuarenta y cuánto costaron, y la existencia sube como consecuencia. La diferencia
+              importa el día que alguien pregunte de dónde salieron.
+            </p>
+            <p className="text-ink/50 mt-2 text-sm leading-relaxed">
+              Por eso no hay un botón de «poner existencia en 40». Si el conteo no cuadra con el
+              sistema, se corrige con un ajuste, que queda anotado con su motivo y con quién lo
               hizo.
             </p>
           </Card>

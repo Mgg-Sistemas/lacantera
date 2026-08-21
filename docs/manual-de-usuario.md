@@ -2,7 +2,7 @@
 
 **Sistema de control interno · Minería Internacional TS, C.A.**
 
-**Versión 1.1 · 4 de agosto de 2026**
+**Versión 1.2 · 21 de agosto de 2026**
 
 ---
 
@@ -22,29 +22,44 @@ Tres convenciones que se repiten en todo el documento:
 
 El orden de los capítulos es el del camino del material: primero se extrae, luego se almacena, después sale por el portón, y por último se administra lo que eso genera.
 
+### Por qué hay capítulos que hoy no se alcanzan
+
+El sistema se entrega por partes, y desde el 21 de agosto de 2026 el menú lateral ofrece seis cosas y nada más: **Panel**, **Inventario**, **Compras**, **Nómina**, **Tasas de cambio** y **Configuración**. Lo demás —Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar.
+
+De los dos caminos posibles, este manual eligió el segundo:
+
+- Reordenar los capítulos para poner delante lo que hoy se alcanza y mandar el resto al final.
+- **Dejar cada capítulo en su sitio y avisar al principio de los que hoy no se alcanzan.**
+
+El motivo es que las dos cosas se mueven a velocidades distintas. **El orden de los capítulos describe cómo funciona la cantera**, que es el mismo de hace veinte años: se extrae, se almacena, sale por el portón y se administra lo que eso genera. **El menú describe qué está entregado**, y eso cambia cada pocas semanas. Reordenar el manual con cada entrega lo dejaría sin ninguna estructura estable, cambiaría los números de capítulo debajo de los pies de quien lo tiene impreso, y dentro de dos meses habría que volver a moverlo todo.
+
+Así que los capítulos de los módulos escondidos **no se borraron ni se movieron**: siguen siendo verdad y hacen falta. Lo único que cambió es que cada uno abre con un recuadro que lo dice, y que el índice lleva una columna que se lee de un vistazo.
+
 ---
 
 ## Índice
 
-| | Capítulo |
-| --- | --- |
-| 1 | Qué es este sistema y qué no es |
-| 2 | Cómo entrar |
-| 3 | Cómo moverse por el sistema |
-| 4 | El panel |
-| 5 | Tasas de cambio |
-| 6 | Explotación |
-| 7 | Inventario |
-| 8 | Despachos |
-| 9 | Compras |
-| 10 | Ventas |
-| 11 | Nómina |
-| 12 | Tesorería |
-| 13 | Configuración |
-| 14 | Las reglas que el sistema impone |
-| 15 | Lo que todavía no está construido |
-| 16 | Preguntas frecuentes |
-| 17 | A quién acudir |
+| | Capítulo | ¿Se alcanza hoy desde el menú? |
+| --- | --- | --- |
+| 1 | Qué es este sistema y qué no es | — |
+| 2 | Cómo entrar | Sí |
+| 3 | Cómo moverse por el sistema | Sí |
+| 4 | El panel | Sí |
+| 5 | Tasas de cambio | Sí |
+| 6 | Explotación | **No, está en obra** |
+| 7 | Inventario | Sí |
+| 8 | Despachos | **No, está en obra** |
+| 9 | Compras | Sí |
+| 10 | Ventas | **No, está en obra** |
+| 11 | Nómina | Sí |
+| 12 | Tesorería | **No, está en obra** |
+| 13 | Configuración | Sí |
+| 14 | Las reglas que el sistema impone | — |
+| 15 | Lo que todavía no está construido | — |
+| 16 | Preguntas frecuentes | — |
+| 17 | A quién acudir | — |
+
+Maquinaria, Combustible, Asignaciones y Organigrama tampoco se alcanzan hoy desde el menú. No tienen capítulo propio todavía: lo poco que hay escrito de ellos está repartido entre el capítulo 7 y el 11.
 
 ---
 
@@ -75,17 +90,29 @@ El capítulo 14 reúne esas reglas y explica el motivo de cada una. Vale la pena
 
 El sistema no reparte el trabajo por persona sino por **módulo**, y a cada usuario se le habilitan los módulos que necesita.
 
-| Módulo | De qué se ocupa |
-| --- | --- |
-| **Explotación** | Frentes y bancos, voladuras, y el parte de producción de cada turno |
-| **Inventario** | Lo que hay en cada patio y almacén, y todo lo que entra y sale |
-| **Despachos** | El pesaje en la romana y las guías de movilización |
-| **Compras** | Pedir, cotizar, aprobar, recibir, facturar y pagar lo que la empresa compra |
-| **Ventas** | Clientes, precios, cotizaciones, notas de entrega y facturas |
-| **Nómina** | Personal, novedades, cálculo, recibos, pagos y prestaciones sociales |
-| **Tesorería** | Bancos y cajas, lo que hay que pagar y lo que hay que cobrar |
-| **Tasas de cambio** | La tasa del día, que valoriza todo lo que se registre |
-| **Configuración** | Usuarios y permisos, datos de la empresa, documentos legales y auditoría |
+Los módulos son quince. La última columna dice cuáles se ofrecen hoy en el menú lateral y cuáles están en obra; el apartado 1.5 explica qué significa eso exactamente.
+
+| Módulo | De qué se ocupa | Hoy |
+| --- | --- | --- |
+| **Panel** | La pantalla de inicio: qué hay que atender hoy | En el menú |
+| **Explotación** | Frentes y bancos, voladuras, y el parte de producción de cada turno | En obra |
+| **Maquinaria** | Los equipos de la cantera, su horómetro y lo que ha pasado por el taller | En obra |
+| **Combustible** | El gasoil y la gasolina que se despachan a cada máquina | En obra |
+| **Inventario** | Lo que hay en cada patio y almacén, y todo lo que entra y sale | En el menú |
+| **Asignaciones** | Lo que se le entrega a una persona y hay que recuperar, y lo que se pierde o se daña | En obra |
+| **Despachos** | El pesaje en la romana y las guías de movilización | En obra |
+| **Compras** | Pedir, cotizar, aprobar, recibir, facturar y pagar lo que la empresa compra | En el menú |
+| **Ventas** | Clientes, precios, cotizaciones, notas de entrega y facturas | En obra |
+| **Nómina** | Personal, novedades, cálculo, recibos, pagos, prestaciones sociales y el organigrama | En el menú |
+| **Tesorería** | Bancos y cajas, lo que hay que pagar y lo que hay que cobrar | En obra |
+| **Tasas de cambio** | Las tasas del día, que valorizan todo lo que se registre | En el menú |
+| **Configuración** | Datos de la empresa, documentos legales y auditoría | En el menú |
+| **Usuarios y roles** | Quién entra al sistema y a qué llega cada quien | En el menú |
+| **Respaldo de la base** | La copia completa de los datos, para guardarla fuera | En el menú |
+
+**Usuarios y roles** y **Respaldo de la base** cuelgan de Configuración en el menú, pero son módulos aparte a la hora de repartir permisos: quien mantiene el catálogo de artículos no tiene por qué poder crear cuentas ni llevarse la base entera en un archivo. El capítulo 13 lo explica.
+
+El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina, porque quien lleva el personal es quien sabe de quién depende quién.
 
 ### 1.3 Por dónde entra y por dónde sale el material
 
@@ -106,6 +133,35 @@ La empresa cobra y paga en las dos monedas, y el sistema está hecho para eso de
 Cada documento se emite en la moneda en que se pactó la operación, y **guarda para siempre la tasa de cambio del día en que se emitió**. Si mañana la tasa cambia, ese documento no cambia. La tasa usada forma parte del hecho, igual que la fecha o el monto: no es un dato que se actualice.
 
 Por eso la tasa del día está siempre visible en la parte de arriba de la pantalla, y por eso importa que esté correcta antes de empezar a registrar. El capítulo 5 lo explica.
+
+### 1.5 Lo que hoy se ofrece, y lo que está en obra
+
+Esto es lo primero que hay que saber antes de buscar una pantalla, porque explica por qué el menú tiene seis entradas y este manual diecisiete capítulos.
+
+**Hoy el menú lateral ofrece esto, y nada más:**
+
+**Panel · Inventario · Compras · Nómina · Tasas de cambio · Configuración**
+
+Lo decidió así la líder de sistemas, para entregar primero lo que ya se puede usar todos los días sin sobresaltos. **Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería** no salen en el menú, y tampoco los encuentra la barra buscadora.
+
+Ahora la parte que hay que entender bien, porque no es lo que parece:
+
+**Esos módulos no se borraron, ni se cerraron, ni se le quitaron a nadie.** Sus pantallas siguen existiendo y sus direcciones siguen respondiendo. Es deliberado: el equipo los sigue desarrollando y cerrarlos lo dejaría sin poder verlos. Lo único que se hizo fue dejar de ofrecerlos desde el menú.
+
+Y para que nadie tropiece con una pantalla a medio afinar sin saberlo, **quien llegue a una de esas direcciones —escribiéndola a mano, por un enlace que le pasaron o porque quedó en el historial del navegador— se encuentra primero un cartel de obra**:
+
+> **En construcción.** *Esta parte del sistema todavía se está trabajando y no forma parte de lo que hoy está en uso. Lo que se haga aquí puede perderse o no cuadrar con el resto.* Y debajo, en letra más pequeña: *Si llegaste por un enlace o escribiendo la dirección, no te equivocaste: la pantalla existe, pero aún no está lista.* El único botón es **Volver al panel**.
+
+**El cartel se le pone a todo el mundo, incluida la administración.** Quien tiene el rol de administrador ve además, en letra pequeña y en tono menor, un enlace **Entrar de todos modos**: es la puerta de servicio del equipo que está construyendo, no una invitación. Se recuerda mientras la pestaña esté abierta y se olvida al cerrarla, para que nadie se deje la puerta abierta sin darse cuenta en el equipo con el que se enseña el sistema.
+
+Dos consecuencias prácticas que conviene tener presentes:
+
+- **No es un problema de permisos.** Un candado —**Ventas no está a tu alcance**— significa que a tu rol no le abrieron ese módulo, y se resuelve pidiéndoselo a administración. El cartel de obra significa otra cosa: que esa parte todavía no está entregada, y pedir el permiso no lo cambia.
+- **El panel puede mandarte a una obra.** Algunos avisos del panel llevan a **Cuentas** de tesorería, y el tablero de inventario ofrece atajos a Ventas y a Explotación. Los enlaces siguen ahí; lo que hay al otro lado, hoy, es el cartel.
+
+**Este manual sigue contando esos módulos entero**, capítulo por capítulo, porque lo que dicen es cierto y porque el día que vuelvan al menú va a hacer falta. Cada uno abre con un recuadro que recuerda que hoy no se alcanza.
+
+Una última cosa, que despista si nadie la dice: **el propio manual tampoco está en el menú.** Se llega escribiendo `/app/manual` en la barra del navegador, y esa dirección **no** muestra el cartel de obra: se abre normal, porque el manual no contiene ningún dato de la empresa y quien más lo necesita es quien acaba de llegar.
 
 ---
 
@@ -270,35 +326,53 @@ Está organizado en tres secciones, y dentro de ellas en grupos que se despliega
 
 Arriba del todo, sin rótulo de sección, está **Panel**, que lleva a la pantalla de inicio.
 
+Esto es todo lo que ofrece el menú hoy:
+
 **Operación**
 
 | Grupo | Pantallas |
 | --- | --- |
-| **Explotación** | **Frentes y bancos**, **Voladuras**, **Producción por turno** |
-| **Inventario** | **Existencias**, **Movimientos**, **Transferencias**, **Catálogo de artículos**, **Almacenes y patios** |
-| **Despachos** | **Tickets de romana**, **Guías de despacho** |
+| **Inventario** | **Tablero**, **Existencias**, **Talleres**, **Movimientos**, **Transferencias**, **Catálogo de artículos**, **Cargar por planilla**, **Almacenes y patios** |
 
 **Administración**
 
 | Grupo | Pantallas |
 | --- | --- |
 | **Compras** | **Tablero**, **Proveedores**, **Recepciones**, **Facturas de proveedor**, **Libro de compras** |
-| **Ventas** | **Clientes**, **Lista de precios**, **Cotizaciones**, **Notas de entrega**, **Facturación**, **Notas de crédito**, **Libro de ventas** |
-| **Nómina** | **Personal**, **Tabulador de cargos**, **Novedades del período**, **Procesar nómina**, **Recibos de pago**, **Parámetros de nómina**, **Prestaciones sociales** |
-| **Tesorería** | **Bancos y cajas**, **Pagos por hacer**, **Cuentas por pagar**, **Libro de tesorería**, **Cuentas por cobrar** |
+| **Nómina** | **Tablero**, **Personal**, **Tabulador de cargos**, **Novedades del período**, **Procesar nómina**, **Recibos de pago**, **Parámetros de nómina**, **Prestaciones sociales** |
 
 **Sistema**
 
 | Grupo | Pantallas |
 | --- | --- |
 | **Tasas de cambio** | Enlace directo, sin submenú |
-| **Configuración** | **Usuarios y roles**, **Datos de la empresa**, **Documentos legales**, **Auditoría** |
+| **Configuración** | **Usuarios y roles**, **Datos de la empresa**, **Documentos legales**, **Auditoría**, **Respaldo de la base** |
 
-**Muchas de estas entradas todavía no están construidas.** Al abrirlas se ve el nombre de la pantalla y debajo **Todavía no construido**, con la explicación **Esta pantalla entra cuando se defina la base de datos. La navegación y el diseño ya están en su sitio.** No es una falla ni un permiso que falte: esa parte del sistema aún no existe.
+**Todas las entradas de este menú están construidas.** Ninguna abre ya el aviso de «todavía no construido» que se veía en las versiones anteriores. Si una pantalla no se abre, es por permisos o por conexión, no porque falte.
+
+#### Lo que no sale en el menú, y sigue existiendo
+
+Estas ramas están construidas y funcionando, pero hoy no se ofrecen desde el menú lateral ni las encuentra la barra buscadora. El apartado 1.5 explica el porqué y qué se ve al entrar en ellas.
+
+| Grupo | Pantallas | Capítulo |
+| --- | --- | --- |
+| **Explotación** | **Tablero**, **Frentes y bancos**, **Voladuras**, **Producción por turno** | 6 |
+| **Maquinaria** | **Equipos**, **Historial de taller** | — |
+| **Combustible** | Enlace directo, sin submenú | — |
+| **Asignaciones** | **Quién tiene qué**, **Incidencias** | 11.4 |
+| **Despachos** | **Tablero**, **Tickets de romana**, **Guías de movilización**, **Vehículos** | 8 |
+| **Ventas** | **Tablero**, **Clientes**, **Lista de precios**, **Cotizaciones**, **Notas de entrega**, **Facturación**, **Notas de crédito**, **Libro de ventas** | 10 |
+| **Organigrama** | Enlace directo, sin submenú | 11.12 |
+| **Tesorería** | **Tablero**, **Bancos y cajas**, **Pagos por hacer**, **Cuentas por pagar**, **Libro de tesorería**, **Cuentas por cobrar** | 12 |
+| **Manual de usuario** | Este documento, dentro del sistema | — |
+
+**Se esconden para todo el mundo, incluido el administrador.** No es un permiso: es que el MVP se enseña desde una cuenta con todos los permisos, y si al administrador le siguiera saliendo el menú entero, esconderlo no habría servido de nada.
+
+Dos nombres que cambiaron y conviene no buscar por el viejo: lo que antes era **Guías de despacho** hoy es **Guías de movilización** —es el permiso del ministerio para que el camión circule, no el papel que se le entrega al cliente—, y la primera entrada de casi todos los grupos pasó a llamarse **Tablero**.
 
 Cómo se comporta el menú:
 
-- **Solo hay un grupo abierto a la vez.** Abrir uno cierra el anterior. Con ocho módulos, varios abiertos convertirían el menú en una lista de cuarenta líneas.
+- **Solo hay un grupo abierto a la vez.** Abrir uno cierra el anterior. Con quince módulos, varios abiertos convertirían el menú en una lista de cuarenta líneas.
 - Al entrar en una pantalla, **se abre solo el grupo al que pertenece**.
 - La pantalla en la que estás se ve en azul relleno con letra blanca.
 - Al pie, siempre a la vista, está **quién está dentro**: el círculo con tus iniciales, tu nombre completo y tu usuario debajo. Está ahí a propósito: es lo que evita que alguien registre algo sin darse cuenta de que quedó abierta la sesión de otra persona.
@@ -335,20 +409,45 @@ De izquierda a derecha:
 6. La campana de notificaciones.
 7. Tu círculo con las iniciales, que abre el menú del usuario.
 
-**La búsqueda todavía no funciona.** El botón **Buscar** está dibujado y la tecla **Ctrl K** aparece sugerida, pero ninguno de los dos hace nada por ahora. Para llegar a una pantalla, usa el menú.
-
 **Sin conexión en vivo** aparece únicamente si se pierde el enlace con el sistema, y explica qué implica: **Se perdió el enlace con el servidor. Lo que ves puede estar viejo; recarga la página para ponerlo al día.** En pantallas chicas se reduce al icono de la señal tachada, pero no desaparece: se esconde justo donde la señal se cae, que es el patio.
 
-El indicador **Tasa BCV** tiene tres estados:
+El indicador **Tasa BCV** tiene estos estados:
 
 | Lo que ves | Qué significa |
 | --- | --- |
 | Punto gris parpadeando | Todavía está consultando |
 | Punto rojo y **No disponible** | No se pudo consultar. El globo lo dice: **No se pudo consultar la tasa. Verifica la conexión antes de emitir documentos.** |
-| Punto verde, **Tasa BCV · hoy** y la cifra en bolívares | La tasa publicada es de hoy |
-| Punto naranja, fondo naranja y **Tasa BCV** seguido de una fecha anterior | La última publicada es de otro día. El globo avisa: **Confirma antes de emitir documentos.** |
+| Punto verde, **Tasa BCV · hoy** y la cifra en bolívares | La tasa publicada es de hoy y además está registrada |
+| Punto naranja y **Tasa BCV** seguido de una fecha anterior | La última publicada es de otro día |
+| Punto naranja y **Tasa BCV · hoy · sin registrar** | El BCV ya publicó la de hoy, pero nadie la ha registrado en el sistema |
 
-Este indicador **solo informa**. No es la tasa con la que el sistema valora los documentos; esa se registra en **Tasas de cambio** y se explica en el apartado 5.
+**El indicador solo enseña el dólar, pero se despliega.** Al pulsarlo se abre un panel con tres cosas: el aviso **La tasa de hoy no está registrada** cuando toca —*El sistema valora con la del 15 ago. Regístrala antes de emitir.*—, la lista **Con lo que valora el sistema** con las tres monedas (**Dólar**, **Euro** y **Tether (USDT)**, cada una con su cifra en bolívares o la palabra **sin registrar**), la calculadora, y al pie el enlace **Ver y registrar tasas →**.
+
+Este indicador **solo informa**. No es la tasa con la que el sistema valora los documentos; esa se registra en **Tasas de cambio** y se explica en el capítulo 5.
+
+#### La barra buscadora
+
+**El buscador ya funciona**, y es la forma más rápida de llegar a cualquier sitio sin recorrer el menú. Hasta la versión anterior de este manual estaba dibujado y no hacía nada; ahora encuentra dos cosas distintas: **pantallas** y **documentos**.
+
+Se abre de dos formas: pulsando **Buscar** en la barra, o con **Ctrl+K** desde cualquier pantalla —en un Mac, **Cmd+K**—. El mismo atajo la cierra, y también la cierran la tecla Escape y pulsar fuera de la caja. Al abrirse, el campo aparece vacío y con el cursor puesto.
+
+El campo dice **Una pantalla, un número de documento, un nombre…** Se escribe, se sube y se baja con las flechas **↑** y **↓**, y se abre lo resaltado con **Enter**.
+
+**Qué encuentra:**
+
+- **Pantallas.** Con el campo vacío ofrece las primeras ocho; al escribir, hasta seis. Cada una lleva debajo, en gris, **su grupo y su sección**, para distinguir dos pantallas con nombre parecido.
+- **Documentos y fichas**, bajo ese mismo encabezado. Nueve clases: **Orden de compra** por su número, **Proveedor** y **Cliente** por nombre o RIF, **Factura** y **Nota de entrega** por su número, **Artículo** por código o nombre, **Trabajador** por nombres, apellidos, cédula o número de ficha, **Máquina** por código o nombre, y **Vehículo** por su placa.
+
+**Entiende cómo habla la gente, no cómo se rotula el menú.** El menú dice «Tasas de cambio» y quien necesita la calculadora escribe «convertir»; el menú dice «Tickets de romana» y quien la usa escribe «pesaje» o «peso bruto». Cada pantalla tiene detrás una lista de palabras equivalentes: «stock» lleva a Existencias, «gasoil» a Combustible, «excel» o «planilla» a la carga por planilla, «liquidación» a Prestaciones sociales. Y las palabras se pueden escribir en cualquier orden y a medias: **mant taller** encuentra el historial de taller.
+
+Cuatro cosas de su funcionamiento que evitan malentendidos:
+
+- Hay que escribir **al menos dos letras**. Con menos dice **Escribe al menos dos letras.**
+- Los documentos se buscan en la base, así que espera un instante después de que dejes de teclear. Mientras tanto dice **Buscando…**
+- **Solo encuentra lo que tu permiso alcanza.** Ofrecer un atajo a una pantalla que va a rebotar por falta de permiso es enseñar una puerta cerrada. Si no hay nada, dice **Nada con ese nombre, ni en las pantallas ni en los documentos que puedes ver.**
+- **Las pantallas escondidas del menú tampoco salen aquí.** La lupa es otra puerta al mismo menú, y un módulo escondido que se encontrara escribiendo su nombre no estaría escondido. Con una salvedad que conviene conocer: **los documentos sí salen**. Una factura o una placa de vehículo pueden aparecer en la lista, y al pulsarlas se llega al cartel de obra.
+
+Solo tres resultados llevan al registro concreto —la orden de compra, el trabajador y el vehículo—; los demás dejan en la lista donde ese registro vive.
 
 #### El menú del usuario
 
@@ -561,6 +660,8 @@ Si hay algo, aparece una lista de recuadros, y cada uno lleva a la pantalla dond
 
 **Los avisos también se filtran por tu permiso.** Si el aviso lleva a un módulo que no puedes abrir, no se te muestra: avisarte de algo que no puedes ir a resolver solo sirve para inquietarte. Consecuencia práctica: **el panel de cada persona es distinto**, y que tú no veas un asunto no significa que no exista.
 
+**Un aviso puede llevar a una obra.** El último de la tabla, el de las cuentas sin saldo de apertura, lleva a **Bancos y cajas**, que es de Tesorería y hoy no está entregada: al pulsarlo aparece el cartel de **En construcción** en vez de la pantalla. El aviso no está equivocado —esas cuentas siguen sin saldo—, es que lo que las arregla todavía no se ofrece. Está explicado en 1.5.
+
 ### 4.4 Compras en curso
 
 Esta tarjeta solo se ve con permiso de Compras. Su subtítulo es **Dónde está detenida cada una**, y muestra cinco filas con su número al lado, en este orden:
@@ -606,69 +707,90 @@ El panel se refresca solo cada cinco minutos, además del enlace en vivo. No se 
 
 **Sistema › Tasas de cambio**
 
-Esta pantalla registra la tasa oficial del día, que es con la que el sistema valora todos los documentos que se emiten. La propia pantalla marca la diferencia con el indicador de la barra superior en una frase que conviene aprenderse: **La tasa que valora los documentos. No es la del indicador de arriba: esa informa, esta compromete.**
+Esta pantalla registra las tasas del día, que son con las que el sistema valora todos los documentos que se emiten. La propia pantalla marca la diferencia con el indicador de la barra superior en una frase que conviene aprenderse: **La tasa que valora los documentos. No es la del indicador de arriba: esa informa, esta compromete.**
 
-Antes de tocar nada hay que entender esto: **una tasa registrada no se puede corregir ni borrar. Nunca, para nadie.** No hay botón de editar ni de eliminar en toda la pantalla. La razón es que la tasa es evidencia: con ella se valoró lo que se cotizó, se aprobó y se pagó ese día, y cambiarla después alteraría de golpe documentos ya emitidos. Si el BCV publica una corrección, se registra una fila nueva y los documentos afectados se reprocesan aparte, con administración.
+**Ya no es solo el dólar.** El sistema lleva tres monedas contra el bolívar, cada una con su tasa y su propia fuente:
+
+| Moneda | Cómo se rotula | Símbolo | De dónde sale la referencia |
+| --- | --- | --- | --- |
+| Dólar | **Dólar estadounidense** | **$** | Lo publicado por el **BCV** |
+| Euro | **Euro** | **€** | Lo publicado por el **BCV** |
+| Tether | **Tether (USDT)** | **USDT** | La **mediana del P2P de Binance**. Se registra con fuente **PARALELO**: no hay fuente oficial que consultar |
+
+El bolívar no aparece en la lista porque su tasa contra sí mismo es uno por definición.
+
+Antes de tocar nada hay que entender esto: **una tasa registrada no se puede corregir ni borrar. Nunca, para nadie.** No hay botón de editar ni de eliminar en toda la pantalla. La razón es que la tasa es evidencia: con ella se valoró lo que se cotizó, se aprobó y se pagó ese día, y cambiarla después alteraría de golpe documentos ya emitidos. Si se publica una corrección, se registra una fila nueva y los documentos afectados se reprocesan aparte, con administración.
 
 ### 5.1 Qué se ve
 
-**Registrar la tasa del día** es la tarjeta ancha de arriba. Su subtítulo repite la regla: **Una vez registrada no se puede corregir. Si el BCV publica una corrección, se registra una fila nueva.**
+Lo primero de la pantalla es **la fila de monedas**: una píldora por cada una, con su nombre y su símbolo al lado en gris. **Todo lo que hay debajo —el formulario, los avisos y el historial— es de la moneda que esté elegida.**
+
+**Abre siempre en el dólar**, porque es con lo que se mide todo el sistema; las otras dos están a un clic. Cambiar de moneda **vacía el campo del valor** a propósito: la cifra que ibas a escribir para el dólar no vale para el euro.
+
+**Registrar la tasa del día · $** es la tarjeta ancha de arriba, y el símbolo del final cambia con la moneda elegida. Si tu permiso sobre Tasas de cambio es de consulta, el título dice solo **La tasa del día · $** y el subtítulo explica quién la carga: **La carga administración o tesorería. Aquí se consulta cuál está rigiendo.** Con permiso de escritura, el subtítulo repite la regla: **Una vez registrada no se puede corregir. Si se publica una corrección, se registra una fila nueva.**
 
 Debajo hay un aviso de estado, siempre uno de los dos:
 
-- En verde, si ya se registró: **La tasa de hoy ya está registrada: Bs** seguido de la cifra **por dólar. Las compras que se emitan hoy se valoran con esta.**
-- En naranja, si no: **Todavía no se ha registrado la tasa de hoy.**, seguido de **Los documentos se están valorando con la del** y la fecha de la última. Si no hay ninguna tasa registrada en absoluto, dice **Sin ninguna tasa registrada no se puede cargar ninguna cotización.**
+- En verde, si ya se registró: **La tasa de hoy ya está registrada: Bs** seguido de la cifra **por $. Los documentos que se emitan hoy en $ se valoran con esta.**
+- En naranja, si no: **Todavía no se ha registrado la tasa de hoy en $.**, seguido de **Los documentos se están valorando con la del** y la fecha de la última. Si no hay ninguna tasa registrada de esa moneda, dice **Sin ninguna tasa registrada no se puede emitir nada en $.**
 
-**Ahora mismo** es la tarjeta estrecha, y muestra las dos tasas una al lado de la otra para que no se confundan:
+**Ahora mismo** es la tarjeta estrecha, y muestra las dos tasas una encima de la otra para que no se confundan:
 
-- **Publicada por el BCV**: la cifra que se pudo consultar, o un guion si no se pudo. Debajo, la etiqueta **De hoy** en verde o **De un día anterior** en naranja.
-- **Con la que valora el sistema**: la cifra registrada, o un guion. Debajo, en letra pequeña, **Registrada el** y la fecha, con la palabra **arrastrada** si viene de un día anterior.
+- Arriba, la de la calle: **Publicada por el BCV** para el dólar y el euro, **Mediana del P2P de Binance** para el USDT. Debajo, la etiqueta **De hoy** o **De un día anterior** en el caso del BCV, y **De ahora mismo** en el de Binance.
+- Abajo, **Con la que valora el sistema**: la cifra registrada, o **Ninguna todavía.** Al lado, en letra pequeña, **Registrada el** y la fecha, con la palabra **arrastrada** si viene de un día anterior.
 
-**Historial** es la tercera tarjeta, con el subtítulo **Últimas tasas registradas.** Tiene tres columnas:
+Y debajo de esa tarjeta está la calculadora, que tiene su propio apartado (5.5).
+
+**Historial** es la tercera tarjeta, con el subtítulo **Últimas tasas registradas en $.** Tiene tres columnas:
 
 | Columna | Qué muestra |
 | --- | --- |
 | **Fecha** | El día de la semana abreviado, el día, el mes y el año |
-| **Bs por dólar** | El valor, con cuatro decimales |
-| **Fuente** | De dónde salió. **BCV** se pinta en azul; cualquier otra, en gris |
+| **Bs por $** | El valor, con cuatro decimales |
+| **Fuente** | De dónde salió. **BCV** se pinta en azul; **PARALELO** y las demás, en gris |
 
 Los cuatro decimales no son un capricho: a más de doscientos bolívares por dólar, el cuarto decimal ya mueve céntimos en una factura.
 
-La tabla va de la más reciente a la más antigua y **muestra hasta sesenta filas. No tiene buscador, ni filtros, ni paginación**, así que una tasa muy antigua deja de aparecer aquí. Si no hay ninguna registrada, se ve **Sin tasas registradas todavía**.
+La tabla va de la más reciente a la más antigua, **es solo de la moneda elegida** y **muestra hasta sesenta filas. No tiene buscador, ni filtros, ni paginación**, así que una tasa muy antigua deja de aparecer aquí. Si no hay ninguna, se ve **Sin tasas registradas en $**.
 
 ### 5.2 Cómo se carga una tasa
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
 | **Fecha** | Sí | Viene puesta la de hoy en Venezuela. **No admite días futuros** |
-| **Bolívares por dólar** | Sí | Numérico, admite decimales. Empieza vacío; como ejemplo muestra la tasa consultada al BCV, o **0,0000** si no se pudo consultar |
+| **Bolívares por $** | Sí | Numérico, admite decimales. El rótulo cambia con la moneda: **Bolívares por €**, **Bolívares por USDT**. Empieza vacío, con **0,0000** de ejemplo |
 
-1. Revisa la **Fecha**. Normalmente es la de hoy y no hay que tocarla.
-2. Escribe el valor en **Bolívares por dólar**. Si el sistema pudo consultar la tasa pública, tienes el botón **Usar la del BCV**, que la copia al campo de un golpe; ese botón no aparece si no se pudo consultar.
-3. Pulsa **Registrar**. Mientras guarda dice **Guardando…** y no se puede volver a pulsar.
-4. Al guardar, el campo del valor se vacía solo y las tres tarjetas se ponen al día.
+1. Elige la **moneda** en la fila de píldoras. Si es el dólar, ya está elegida.
+2. Revisa la **Fecha**. Normalmente es la de hoy y no hay que tocarla.
+3. Escribe el valor. Si el sistema pudo consultar la fuente pública, tienes un botón que la copia de un golpe: **Usar la del BCV** para el dólar y el euro, **Usar la de Binance** para el USDT. Ese botón no aparece si la consulta falló.
+4. Pulsa **Registrar**. Mientras guarda dice **Guardando…** y no se puede volver a pulsar.
+5. Al guardar, el campo del valor se vacía solo y las tres tarjetas se ponen al día.
 
-Debajo del campo del valor hay una línea de ayuda: **Publicada por el BCV: Bs** con la cifra, a la que se añade **(no es de hoy)** cuando la publicada corresponde a otro día. Si no se pudo consultar, dice **No se pudo consultar la fuente pública; escribe el valor a mano.**
+Debajo del campo del valor hay una línea de ayuda que dice qué se pudo consultar: **Según el BCV: Bs** con la cifra, o **Según la mediana del P2P de Binance: Bs** con la cifra, a la que se añade **(no es de hoy)** cuando la publicada corresponde a otro día. Si no se pudo consultar, dice **No se pudo consultar el BCV; escribe el valor a mano.**
 
 **El botón Registrar está apagado mientras el campo del valor esté vacío**, y el selector de fecha no deja elegir mañana ni después, porque una tasa futura valoraría documentos con un número que todavía no se ha publicado.
 
-Registrar la tasa apaga el aviso rojo **La tasa de hoy no está cargada** del panel.
+Registrar la tasa del dólar apaga el aviso rojo **La tasa de hoy no está cargada** del panel.
 
-Un aviso sobre quién puede hacerlo: **esta pantalla no oculta ni apaga el botón Registrar según el rol**, así que quien puede abrirla puede registrar la tasa. El control por rol para esta pantalla todavía no está construido. Antes de dar por sentado que solo unos pocos pueden cargarla, confírmalo con quien administra el sistema.
+**Cargar una tasa exige permiso de escritura sobre Tasas de cambio**, que hoy tienen administración y tesorería. Quien solo la consulta ve la pantalla completa —las monedas, el historial y la calculadora— pero sin el formulario. Esto cambió el 4 de agosto de 2026: antes lo podía hacer cualquiera que entrara al sistema.
 
 ### 5.3 De dónde salen las tasas
 
 Hay dos tasas distintas en el sistema y no hay que confundirlas.
 
-**La del indicador de la barra superior** se consulta a una fuente pública en internet. Es solo para mirar: te dice qué publicó el BCV. No valora nada.
+**La de la calle** se consulta a una fuente pública en internet y se refresca cada media hora. Es solo para mirar. Para el dólar y el euro es lo que publica el BCV; para el USDT es la mediana de las diez primeras ofertas del mercado entre particulares de Binance, consultada desde el servidor porque el navegador no puede pedirla directamente. **Ninguna de las tres valora nada.**
 
-**La registrada en esta pantalla** es la que el sistema usa para valorar los documentos. Puede escribirse a mano o copiarse de la pública con **Usar la del BCV**, pero mientras no se registre aquí, para el sistema no existe.
+**La registrada en esta pantalla** es la que el sistema usa para valorar los documentos. Puede escribirse a mano o copiarse de la pública con el botón, pero mientras no se registre aquí, para el sistema no existe.
 
-Si las dos no coinciden —el indicador dice una cosa y **Con la que valora el sistema** dice otra—, significa que la tasa del día todavía no se ha cargado. Alguien tiene que registrarla antes de emitir nada.
+Si las dos no coinciden —arriba dice una cosa y **Con la que valora el sistema** dice otra—, significa que la tasa del día todavía no se ha cargado. Alguien tiene que registrarla antes de emitir nada.
+
+**El USDT no tiene tasa oficial, y eso hay que saberlo.** El dólar y el euro los publica el BCV y se registran con fuente **BCV**; el USDT se registra con fuente **PARALELO**, porque nadie lo publica oficialmente: lo pone quien lo negocia. La cifra de Binance es una referencia de mercado, no una publicación con respaldo. Antes de registrarla, confírmala con quien cierra las operaciones.
 
 #### La tasa que se arrastra
 
 El BCV no publica los fines de semana ni los feriados. Un documento emitido en sábado tiene que valorarse con algo, y ese algo es la última tasa registrada. Por eso la tarjeta **Ahora mismo** dice **arrastrada** cuando la que está valorando es de un día anterior: no es un error ni un descuido, es el sistema trabajando con lo último publicado.
+
+**Cada moneda se arrastra por su cuenta.** Registrar la del dólar no registra la del euro. Si mañana hay que emitir algo en euros y nadie ha cargado el euro esta semana, se valorará con el euro de la semana pasada.
 
 ### 5.4 Por qué cada documento congela la tasa del día
 
@@ -681,21 +803,52 @@ De ahí salen dos consecuencias prácticas:
 - **Cargar la tasa es lo primero de la mañana.** Mientras no esté, el sistema avisa en rojo en el panel, porque todo lo que se emita antes de cargarla se valorará con la del día anterior.
 - **Corregir una tasa mal cargada no se hace en esta pantalla.** Se registra una fila nueva y los documentos ya emitidos con la equivocada se revisan con administración. Por eso vale la pena mirar dos veces la cifra antes de pulsar **Registrar**.
 
-### 5.5 Cuando el sistema no te deja
+### 5.5 La calculadora
+
+Está en dos sitios: en la tarjeta **Ahora mismo** de esta pantalla, y dentro del panel que se despliega al pulsar el indicador de tasa de la barra superior. Sirve para hacer una cuenta con monedas mezcladas sin sacar la calculadora del teléfono ni buscar la tasa a mano.
+
+Su rótulo es **Calcular** y el campo trae de ejemplo **(300 $ + 120 €) / 3**. Se escribe la cuenta como se diría en voz alta y el resultado sale debajo, en grande, mientras se teclea. Con el campo vacío ofrece tres ejemplos pulsables: **(300 $ + 120 €) / 3**, **850 usdt \* 1,16** y **1200 $ - 340,50 €**.
+
+Cuando el resultado es dinero aparece una fila **en** con una píldora por cada moneda —**Bs**, **$**, **€**, **USDT**—, y pulsando una se convierte el resultado a esa moneda. Solo salen las monedas que tengan tasa registrada. Empieza en bolívares.
+
+Debajo del resultado, la calculadora **repite cómo leyó la cuenta**, con los signos escritos como se escriben a mano: `300,00 $ + 120,00 € ÷ 3`. Es para que se vea si entendió lo que quisiste decir antes de apuntar el número.
+
+**Cómo hay que escribirle:**
+
+- La moneda se nombra por su símbolo, su código o su nombre: **$**, **USD**, **dólar**, **dólares**, **€**, **euro**, **Bs**, **USDT**. Da igual mayúscula o minúscula.
+- El decimal puede ir con coma o con punto: **15,50** y **15.50** valen lo mismo.
+- Se puede sumar, restar, multiplicar, dividir y agrupar con paréntesis.
+
+**Cuatro reglas que explican casi todos sus avisos:**
+
+- **Dinero más dinero da dinero**, aunque sean monedas distintas: todo pasa por bolívares, que es la única moneda contra la que hay tasas.
+- **Dinero por un número da dinero.** Es lo que se usa para el IVA: **× 1,16**.
+- **Dinero entre un número da dinero.** Es repartir.
+- **Dinero entre dinero da un número**, que es una proporción. Y **dinero por dinero no existe**: el resultado no sería una cantidad de nada. Si lo intentas, responde: «No se puede multiplicar dinero por dinero: el resultado no sería una cantidad. Para un porcentaje usa un número suelto, como «× 1,16».»
+
+Si escribes una moneda que no existe, te lo dice y, cuando se parece a una que sí, la propone: ««bsb» no es una moneda. ¿Querías escribir Bs?» Y si la moneda existe pero nadie ha cargado su tasa, avisa de lo que falta: «Falta registrar la tasa de Euro.»
+
+**La calculadora no registra nada.** Es una cuenta a mano hecha en pantalla: no queda guardada, no aparece en ningún documento y no valora nada. Lo que valora es lo registrado en esta pantalla.
+
+### 5.6 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Ya existe una tasa BCV para USD/VES del … Las tasas no se corrigen: si el valor cambió, consulte con administración.» | Ya se cargó la tasa de ese día. Es el caso más frecuente | Revisa el historial: la de hoy ya está. Si el valor cargado está mal, habla con administración |
-| «La tasa debe ser mayor que cero» | Escribiste cero o un valor negativo | Escribe la tasa publicada |
+| «Ya existe una tasa BCV para USD/VES del … Las tasas no se corrigen: si el valor cambió, consulte con administración.» | Ya se cargó la tasa de ese día y esa moneda. Es el caso más frecuente | Revisa el historial: la de hoy ya está. Si el valor cargado está mal, habla con administración |
+| «La tasa debe ser mayor que cero (recibido: …)» | Escribiste cero o un valor negativo | Escribe la tasa publicada |
 | «No se puede registrar una tasa con fecha futura» | La fecha es de mañana o después | Corrige la fecha |
+| «Tu usuario no tiene acceso a Tasas de cambio.» | Tu permiso sobre este módulo es de consulta | Que la cargue administración o tesorería |
 | «No autenticado» | Tu sesión ya no vale | Vuelve a entrar y repite el registro |
 | «Las tasas de cambio no se modifican ni se borran (operación: …). Inserte una tasa nueva.» | Se intentó cambiar o eliminar una tasa ya registrada | Registra una fila nueva. Las tasas anteriores se quedan |
 | **No disponible** en el indicador de la barra superior | No se pudo consultar la tasa pública | Escribe el valor a mano. La consulta pública no hace falta para registrar |
+| «Falta registrar la tasa de Euro.» en la calculadora | Metiste esa moneda en la cuenta y nadie ha cargado su tasa | Regístrala arriba, eligiendo esa moneda |
 | «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
 
 ---
 
 ## 6. Explotación
+
+> **Hoy este módulo no se ofrece en el menú.** Está construido y sus pantallas funcionan —todo lo que cuenta este capítulo es cierto—, pero se dejó fuera del menú lateral mientras se termina de afinar, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Lo que eso significa exactamente está en 1.5. Consecuencia inmediata: **mientras Explotación no vuelva al menú, no entra piedra al patio por ninguna vía**, porque el parte de turno es la única puerta y vive aquí.
 
 Explotación es el principio de todo lo demás. Aquí se anota dónde se está arrancando el material, qué voladuras se hicieron y cuánto produjo cada turno. De esta última anotación sale la piedra que después se cuenta en el patio, se vende y se despacha.
 
@@ -948,13 +1101,13 @@ El parte queda con su número, atenuado y con el motivo a la vista. En el libro 
 
 ### 6.6 Lo que conviene entender
 
-#### El parte de turno es la única puerta, y el botón de Existencias ya no la abre
+#### El parte de turno es la única puerta, y el atajo de Existencias ya no existe
 
-En **Operación › Inventario › Existencias** sigue habiendo un botón **Cargar producción**, arriba a la derecha. **Ya no abre ningún formulario.** Lo único que hace es llevarte a **Producción por turno**, que es donde se carga.
+Hubo un botón **Cargar producción** en **Existencias**, que fue la puerta provisional mientras Explotación no existía. **Ya no está.** Hoy en su lugar hay un botón **Registrar entrada**, que es otra cosa: sirve para lo que entra sin una compra de por medio —el saldo inicial de un almacén, algo comprado por fuera— y **no carga producción de cantera**. Está explicado en 7.4.
 
-Ese botón fue la puerta provisional mientras Explotación no existía. Ahora la piedra entra por el parte de turno, que además sabe de qué frente salió, con cuántas horas y contra qué voladura. Dos puertas al mismo patio es como se cuenta dos veces la misma piedra, así que se dejó una sola.
+La piedra entra por el parte de turno y por ningún otro sitio. El parte, además, sabe de qué frente salió, con cuántas horas y contra qué voladura. Dos puertas al mismo patio es como se cuenta dos veces la misma piedra, así que se dejó una sola.
 
-Hay un detalle práctico que conviene decir claro: **ese botón se le dibuja al rol de Almacén, y Almacén no tiene permiso sobre Explotación.** Quien lo pulse sin ese permiso no llega al parte de turno, sino a la tarjeta con el candado, **Explotación no está a tu alcance**. Si el almacenista es quien tiene que cargar la producción, pídele a administración el permiso sobre Explotación; si no, la producción la carga Operaciones y el almacenista la ve aparecer sola en las existencias.
+Con Explotación fuera del menú, la consecuencia es la que dice el aviso del principio de este capítulo: **hoy no entra piedra al patio por ninguna vía.**
 
 #### Un parte lleva varios renglones porque un turno produce varios materiales
 
@@ -999,7 +1152,7 @@ Consecuencia práctica, y hay que tenerla presente al mirar Existencias: **la pr
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
 | «Tu usuario no tiene permiso para esta acción.» | Te falta permiso sobre Explotación, y el mensaje no dice cuál | Si fue al anular una voladura o un parte, hace falta el control total sobre Explotación. Pídelo a administración, o que lo haga quien lo tenga |
-| **Explotación no está a tu alcance** | Llegaste a una pantalla del módulo sin permiso para verlo. Sale, por ejemplo, al pulsar **Cargar producción** en Existencias sin ese permiso | Pulsa **Volver al panel**. Si lo necesitas para tu trabajo, pide el permiso a administración |
+| **Explotación no está a tu alcance** | Llegaste a una pantalla del módulo sin permiso para verlo | Pulsa **Volver al panel**. Si lo necesitas para tu trabajo, pide el permiso a administración |
 | «El frente necesita un código con el que llamarlo.» | El código quedó vacío | Escribe un código corto, del estilo de **F-01** |
 | «El frente necesita un nombre.» | El nombre quedó vacío | Escribe cómo llama la gente a ese frente |
 | «El frente "FRENTE SUR" se trabaja con martillo, no con voladura. Si eso cambió, corrígelo primero en la ficha del frente.» | Se intentó registrar una voladura contra un frente de martillo | Si el frente cambió de método, corrígelo en **Frentes y bancos** y vuelve a registrar la voladura |
@@ -1039,7 +1192,7 @@ Hay dos puertas distintas, y conviene no confundirlas.
 
 La primera es **ver el módulo**. Depende del permiso sobre Inventario que administración le haya dado a tu usuario. Si no lo tienes, el grupo Inventario no aparece en el menú, y si escribes la dirección a mano verás una tarjeta con un candado: **Inventario no está a tu alcance**.
 
-La segunda es **poder registrar**. Los botones que escriben algo — **Sacar**, **Contar**, **Reversar**, **Nuevo traslado**, **Deshacer** — solo se dibujan para el rol de Almacén y para administración.
+La segunda es **poder registrar**. Los botones que escriben algo — **Registrar entrada**, **Sacar**, **Contar**, **Reversar**, **Nuevo traslado**, **Deshacer** — solo se dibujan para el rol de Almacén y para administración.
 
 | Rol | Ve el módulo | Ve los botones de registrar |
 | --- | --- | --- |
@@ -1057,29 +1210,82 @@ Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu 
 
 **Lo que registra otra persona aparece sin recargar la pantalla.** Si el operador carga el parte de turno desde el patio mientras tú miras las existencias en la oficina, la piedra aparece sola.
 
-### 7.3 Existencias
+### 7.3 El tablero
+
+**Operación › Inventario › Tablero**
+
+Es la primera entrada del grupo y la pantalla por la que se empieza. No se registra nada aquí: se lee cómo está el patio y se sale hacia donde toca. Su descripción lo resume: **Cómo está el patio ahora mismo, y por dónde entra y sale el material.**
+
+Arriba hay cuatro tarjetas:
+
+| Rótulo | Qué mide | La línea de abajo |
+| --- | --- | --- |
+| **Artículos con existencia** | Cuántos artículos tienen algo, no cuántos hay en el catálogo | **de 28 en el catálogo** |
+| **Valor del inventario** | Lo que vale todo lo que hay | **A costo promedio, no a precio de venta** |
+| **Bajo el mínimo** | Cuántos artículos están por debajo de su mínimo | **Nada por reponer**, o **Conviene pedirlos antes de que falten** |
+| **Movimientos de hoy** | Cuántas líneas se escribieron hoy en el libro | **Entradas, salidas y traslados** |
+
+**Bajo el mínimo es la única tarjeta que se enciende**, con un filo ámbar arriba y el triángulo de aviso, y solo cuando hay algo que atender. Lo demás informa; esta reclama. Un artículo sin mínimo puesto no cuenta: no está bajo mínimo, está sin configurar.
+
+Debajo, el material se organiza por lo que le pasa, en tres bloques con sus atajos: **Entra material** —*Llegó una compra* y *Salió producción del turno*—, **Sale material** —*Se despachó a un cliente* y *Se consumió o se perdió*— y **Cambia de sitio** —*Cambió de almacén*—. Al final, **Consultar y configurar**, con los botones de **Existencias**, **Movimientos**, **Catálogo de artículos** y **Almacenes y patios**.
+
+**Los atajos que escriben solo se dibujan con permiso de escritura.** Enseñar una acción que va a rebotar contra un permiso es peor que no enseñarla: manda a alguien a intentarlo para que el sistema le diga que no.
+
+Y hay que avisar de una cosa, porque de otro modo desconcierta: **tres de esos cinco atajos llevan a módulos que hoy no están en el menú.** *Llegó una compra* va a Recepciones, que sí está; pero *Salió producción del turno* lleva a Explotación y *Se despachó a un cliente* lleva a Ventas, y en los dos casos lo que aparece es el cartel de **En construcción**. El atajo no está roto: es que la pantalla del otro lado todavía no se ofrece.
+
+Al pie, para quien entra por primera vez, queda esta explicación: *"El inventario no se escribe a mano: se mueve solo cuando pasa algo. Entra al recibir una compra o al cargar el parte de turno; sale al despachar a un cliente o al consumir en el frente. Las existencias son la suma de todo eso. Por eso no hay un botón de «cargar existencias»: si un número no cuadra, se corrige con un ajuste, que queda anotado con su motivo."*
+
+### 7.4 Existencias
 
 **Operación › Inventario › Existencias**
 
-Es la pantalla de cabecera del módulo: cuánto hay ahora mismo de cada cosa, en qué almacén está y cuánto vale. Desde aquí se sacan materiales y se hacen los conteos.
+Cuánto hay ahora mismo de cada cosa, dónde está y cuánto vale. Desde aquí se saca material, se cuenta y se carga lo que entra sin una compra de por medio.
+
+**Primero todo, después dónde.** Esta pantalla abre con **el total de la empresa**: una fila por artículo, con lo que hay sumando todos los sitios. Antes abría con una fila por almacén y artículo, y el mismo saco de cemento aparecía cuatro veces sin que en ninguna dijera cuántos hay en total. Con un solo almacén no se notaba; con patio, almacenes y varios talleres, la primera pregunta —cuánto tiene la empresa— se quedaba sin respuesta.
+
+De ahí se baja: se abre el desglose de un artículo, se ve en qué sitios está, y en cada uno se saca o se cuenta.
 
 #### Qué se ve
 
-Arriba, si hay artículos en el mínimo o por debajo, aparece una franja ámbar: **3 artículos en el mínimo o por debajo**, con el enlace **Ver solo esos** para filtrar la lista. Solo se controlan los artículos que tengan una existencia mínima distinta de cero.
+Arriba, si hay artículos en el mínimo o por debajo, aparece una franja ámbar: **3 artículos en el mínimo o por debajo**, seguida de **Conviene pedirlos antes de que hagan falta.** y el enlace **Ver solo esos**, que se convierte en **Ver todo** al pulsarlo. Solo se controlan los artículos que tengan una existencia mínima distinta de cero.
 
-Debajo hay dos filtros: **Buscar**, que acepta el nombre o el código del artículo, y **Almacén**, que empieza en **Todos**.
+Debajo hay dos filtros: **Buscar**, que acepta el nombre o el código del artículo, y **Dónde**, que empieza en **Todo el inventario**. Los talleres se distinguen en la lista con un **· taller** detrás del nombre.
 
-Sobre la lista, a la derecha, está el **Valor del inventario**. Cuidado con este número: **suma solo las filas que se están viendo**. Si filtraste por un almacén, es el valor de ese almacén, no el de la cantera.
+Sobre la lista, a la izquierda va cuántos artículos se están viendo y a la derecha el **Valor del inventario**. Cuidado con este número: **suma solo las filas que se están viendo**. Si filtraste por un sitio, es el valor de ese sitio, no el de la cantera.
 
 La lista tiene estas columnas:
 
 | Columna | Qué muestra |
 | --- | --- |
 | **Artículo** | Nombre y, debajo, el código |
-| **Almacén** | Solo aparece cuando el filtro está en **Todos** |
 | **Existencia** | Cantidad y unidad. En ámbar, con la etiqueta **Mínimo**, si está bajo |
+| **Almacén** | El sitio. Viendo el total se llama **Repartido en** y dice **3 sitios** |
 | **Costo prom.** | Lo que cuesta en promedio cada unidad, en dólares |
 | **Valor** | Existencia por costo promedio |
+
+Debajo de la cantidad pueden salir dos líneas más, y solo cuando hace falta:
+
+- **10 disponibles · 4 en manos de alguien**, si hay unidades entregadas a alguna persona. Es la distinción del apartado 7.12: existir no es estar disponible.
+- **≈ 45 M3**, la otra medida, en los materiales a los que se les cargó la densidad. Sin ese dato no se supone nada: se calla.
+
+**Las acciones cuelgan de un sitio, no del total.** Viendo el total, el único botón de la fila es **Ver dónde está**, que abre el desglose: cada sitio con su cantidad y su costo por unidad, y ahí sí los botones de **Sacar** y **Contar**. Sacar material del «inventario general» no significa nada: el material sale de un sitio concreto y de ahí se descuenta.
+
+En el desglose, **los sitios con existencia cero se muestran igual, apagados**. Saber que un taller tuvo el repuesto y se le acabó es distinto de no verlo listado, que se lee como que nunca lo manejó.
+
+#### Registrar entrada
+
+Arriba a la derecha, para el rol de Almacén, está el botón **Registrar entrada**. Es para **lo que entra sin una compra de por medio**: el saldo con el que arranca un almacén, algo comprado por fuera, material que trae alguien.
+
+**Este botón sustituyó al de Cargar producción**, que llevaba a Explotación. Se cambió por dos razones: la primera, que Explotación hoy está detrás del cartel de obra y el botón principal de la pantalla mandaba a una puerta cerrada; la segunda, y más de fondo, que **Inventario tiene que valerse solo**. Sin esta entrada, la única forma de meter mercancía con su costo era una orden de compra, y un almacén que arranca no tiene ninguna todavía.
+
+1. Pulsa **Registrar entrada**.
+2. Elige **A qué almacén entra** y **Qué entra**. El artículo sale del catálogo entero, no de lo que ya tiene existencia: justamente lo que se está cargando todavía no la tiene.
+3. Escribe la **Cantidad que entra** y el **Costo por unidad ($)**. Debajo aparece la cuenta hecha: **Entra por $ 1.240,00**.
+4. Si viene al caso, llena la **Referencia**: *quién lo trajo, o el número de una factura de fuera*.
+5. Escribe **De dónde vino**, que son mínimo cuatro letras.
+6. Pulsa **Registrar**.
+
+**El costo es obligatorio y es lo que distingue una entrada de un ajuste.** Sin él el almacén quedaría lleno y valorado en nada, que es exactamente el problema que arrastra la producción de cantera. Si el campo está vacío, la ayuda lo dice: **Sin costo no se puede valorar lo que hay.**
 
 #### Sacar material
 
@@ -1111,19 +1317,28 @@ La nota queda compuesta sola, con las tres cosas juntas: «Conteo físico: 110 c
 
 Se cuenta **un artículo y un almacén a la vez**. No hay una pantalla de toma de inventario general.
 
-#### El botón Cargar producción
+#### La producción entra valorada en cero
 
-Arriba a la derecha hay un botón **Cargar producción**. **Ya no abre ningún formulario:** lleva a la pantalla **Producción por turno**, que es el único sitio desde el que entra material al patio. Está explicado en el capítulo de Explotación.
+Esto no es de esta pantalla, pero se ve aquí y desconcierta: **el material que produce la cantera entra al inventario sin valor.** No es un olvido. Lo que cuesta producir una tonelada sale de la nómina, el gasoil y la voladura, y ese cálculo todavía no lo hace el sistema. Poner un número inventado valoraría el patio con una cifra que nadie calculó.
 
-Aquí se cargaba la producción mientras Explotación no existía. Ahora la piedra entra por el parte de turno, que además sabe de qué frente salió y con cuántas horas. Dos puertas al mismo patio es como se cuenta dos veces la misma piedra, así que se dejó una sola.
+Consecuencia que hay que tener presente al mirar esta pantalla: la producción sube las toneladas del patio pero no sube el **Valor del inventario**, y arrastra el **Costo prom.** hacia abajo. Mientras el costeo no esté construido, el valor en dólares del material producido no es una cifra en la que apoyarse; las toneladas sí.
 
-Conviene saber una cosa antes de pulsarlo: **el botón se dibuja para el rol de Almacén, pero Almacén no tiene permiso sobre Explotación.** Quien lo pulse sin ese permiso no llega al parte de turno sino a una tarjeta con un candado, **Explotación no está a tu alcance**. Si el almacenista es quien tiene que cargar la producción, hay que pedirle a administración el permiso sobre Explotación; si no, la carga Operaciones y el material aparece aquí solo.
+### 7.5 Talleres
 
-**La producción entra valorada en cero.** No es un olvido: lo que cuesta producir una tonelada sale de la nómina, el gasoil y la voladura, y ese cálculo todavía no lo hace el sistema. Poner un número inventado valoraría el patio con una cifra que nadie calculó.
+**Operación › Inventario › Talleres**
 
-Consecuencia que hay que tener presente al mirar esta pantalla: la producción sube las toneladas del patio pero no sube el **Valor del inventario**, y arrastra el **Costo prom.** hacia abajo. Mientras el costeo no esté construido, el valor en dólares del material producido no es una cifra en la que apoyarse.
+Un taller es un almacén más —los de tipo **Taller**—, pero se mira con otra pregunta. Las existencias responden *cuánto hay*; esta pantalla responde *qué tiene asignado cada taller y en qué lo está gastando*. Su descripción lo dice: **Qué tiene asignado cada taller y en qué lo está gastando. El detalle artículo por artículo vive en Existencias.**
 
-### 7.4 Movimientos
+Hay una tarjeta por taller, con su nombre, su código y la etiqueta **Cerrado** si está inactivo. Dentro, dos bloques:
+
+- **Material asignado**: cuántos artículos tiene y cuánto valen, con la etiqueta ámbar **2 bajo mínimo** si la hay. Si el taller no ha recibido nada, no se inventa un cero con aire de dato: dice **Todavía no ha recibido material. Llega por transferencia desde otro almacén o por una compra recibida aquí.**
+- **Máquinas asignadas**: las que tienen ese taller como sede, cada una con su código y su semáforo de mantenimiento. Si alguna está en alarma, el rótulo añade en rojo **· 2 necesitan atención**. Si no hay ninguna, **Ninguna máquina tiene este taller como sede.** Es lo que convierte a un taller en algo distinto de un depósito.
+
+Al pie, dos botones: **Ver su inventario**, que lleva a **Existencias** con ese taller ya elegido en el filtro **Dónde**, y el de las reparaciones que ha atendido. Por eso Talleres está pegada a Existencias en el menú: se ve el total, se ve dónde está, y aquí qué pasa en cada taller.
+
+Si no hay ninguno, la pantalla lo explica: **Un taller se crea como almacén, eligiendo el tipo Taller. A partir de ahí recibe material, guarda lo suyo y las reparaciones se le pueden atribuir.**, con el botón **Ir a almacenes**.
+
+### 7.6 Movimientos
 
 **Operación › Inventario › Movimientos**
 
@@ -1150,7 +1365,7 @@ Tres reglas que conviene saber de antemano:
 - **Un movimiento solo se reversa una vez.**
 - **No se puede reversar si el material ya no está.** Si reversar una entrada obligaría a sacar material que ya se consumió, el sistema lo impide y lo dice con nombre y cantidad. En ese caso el camino es un conteo físico.
 
-### 7.5 Transferencias
+### 7.7 Transferencias
 
 **Operación › Inventario › Transferencias**
 
@@ -1172,17 +1387,19 @@ El traslado queda con la fecha de hoy. No se puede fechar hacia atrás.
 
 #### Deshacer un traslado
 
-Pulsa **Deshacer**, escribe **Por qué se deshace** y confirma. Se reversan las dos patas a la vez: el material vuelve a donde estaba.
+Pulsa **Deshacer**, escribe **Por qué se deshace** y confirma. Un traslado son dos movimientos —la salida de un almacén y la entrada en el otro— y se deshacen los dos a la vez. El material vuelve donde estaba.
 
 El sistema comprueba las dos antes de escribir ninguna. **O se deshacen las dos, o no se deshace ninguna**, nunca se queda a medias. Si el material ya salió del destino, no deja deshacerlo y lo explica.
 
-### 7.6 Catálogo de artículos
+### 7.8 Catálogo de artículos
 
 **Operación › Inventario › Catálogo de artículos**
 
-La lista de todo lo que la empresa pide, compra y cuenta. Un artículo mal definido se convierte más adelante en existencias que no cuadran, así que vale la pena crearlo con calma.
+La lista de todo lo que la empresa pide, compra y cuenta. Un artículo mal definido se convierte más adelante en existencias que no cuadran, así que vale la pena crearlo con calma. La propia pantalla lo dice: **Lo que se pide, se compra y se cuenta. Un artículo mal definido se convierte en existencias que no cuadran.**
 
-Se filtra por **Buscar** y por **Categoría**. La lista muestra activos e inactivos.
+Se filtra por **Buscar** y por **Categoría**, que empieza en **Todas**. La lista muestra activos e inactivos, con estas columnas: **Código**, **Artículo**, **Categoría**, **Unidad**, **Al entregarlo**, **Mínimo** y **Estado**.
+
+**Pulsar la fila abre la ficha del artículo**, que es donde está su historia. Está en 7.9. Los dos botones del final del renglón —el lápiz y la papelera— no abren la ficha; la etiqueta de **Estado**, en cambio, sí abre la ficha además de cambiar el estado.
 
 #### Crear un artículo
 
@@ -1191,20 +1408,182 @@ Pulsa **Nuevo artículo** y llena la ficha:
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
 | **Código** | Sí | No se puede repetir y **no se cambia después** |
-| **Nombre** | Sí | Mínimo tres letras |
-| **Categoría** | Sí | Empieza en **Repuesto** |
+| **Nombre** | Sí | Sin él no se habilita **Guardar** |
+| **Categoría** | Sí | Empieza en **Repuesto**. Las nueve son: **Producto de cantera**, **Repuesto**, **Insumo**, **Combustible**, **Lubricante**, **Equipo de protección**, **Herramienta**, **Explosivo** y **Servicio** |
 | **Unidad** | Sí | Empieza en **Unidad**. Los productos de cantera van en tonelada |
-| **Existencia mínima** | No | Cero significa que no se controla |
+| **Existencia mínima** | No | **Cero significa que no se controla.** |
+| **Al entregarlo a una persona** | — | Las tres opciones están abajo. La categoría propone una y se puede cambiar |
 | **Descripción** | No | |
-| **Entra al inventario** | — | Viene marcada. Se apaga sola si la categoría es **Servicio**, porque un servicio no se almacena |
+| **Entra al inventario** | — | Viene marcada. Se apaga sola si la categoría es **Servicio**, y al lado aparece **(un servicio no se almacena)** |
 
-#### Lo que no se puede hacer aquí
+#### Qué pasa al entregarlo
 
-**Un artículo creado no se puede editar ni borrar.** Ni el código, ni el nombre, ni la unidad, ni el mínimo. Lo único que se puede es **activarlo o desactivarlo**, pulsando directamente la etiqueta de la columna **Estado**, que cambia al instante y sin pedir confirmación.
+Es el campo que se añadió después y el que evita un error caro. Lo que faltaba era que el formulario no decía si un artículo se le puede entregar a alguien, y por eso Asignaciones ofrecía gasolina «hasta que la devuelva». Entregar un destornillador y entregar gasolina no son la misma operación.
 
-Esta es la limitación más incómoda del módulo y conviene decirla claro: **revisa el nombre y la unidad antes de guardar**. Si te equivocas, el camino es desactivar el artículo y crear otro. Un artículo desactivado deja de aparecer en las listas, pero sus movimientos anteriores siguen en el libro.
+| Opción | Qué significa |
+| --- | --- |
+| **Se presta y vuelve** | **Queda a nombre de quien lo recibe y se le pide de vuelta. Aparece en Asignaciones.** |
+| **Se entrega y no vuelve** | **Se gasta al usarlo. Sale por su propio camino —combustible, dotación, movimiento de almacén— y no como préstamo.** |
+| **No se le entrega a una persona** | **Lo que se vende o se contrata. Nadie se lo lleva.** |
 
-### 7.7 Almacenes y patios
+**La categoría propone el modo que acierta más veces** —una herramienta o un equipo de protección vuelven, un repuesto se instala, un producto o un servicio no se le entregan a nadie— y se puede cambiar en el mismo formulario. Si ya se eligió a mano, cambiar la categoría **no** lo pisa: sería deshacer una decisión de quien está mirando.
+
+En la lista, esta columna se llama **Al entregarlo** y muestra la etiqueta correspondiente.
+
+#### Corregir y borrar un artículo
+
+**Esto cambió, y para bien.** Hasta la versión anterior de este manual un artículo creado no se podía editar ni borrar, y el único camino era desactivarlo y crear otro. Hoy:
+
+- **Se corrige** con el botón del lápiz. Se abre **Corregir REP-BOMBA** y se puede cambiar todo menos el código, que sale bloqueado con la ayuda **No se cambia.** El motivo está escrito en la ventana: **El código no se cambia: es con lo que se pide en el almacén y ya está impreso en lo emitido.**
+- **Se borra** con la papelera, y **solo mientras nada lo haya tocado todavía**. En cuanto el artículo aparece en una orden de compra o en un movimiento de inventario, la base lo impide y el mensaje dice que se desactive. No es una traba: borrar un artículo que ya se movió dejaría el libro señalando a algo que no existe.
+- **Se activa y se desactiva** pulsando la etiqueta de la columna **Estado**, que cambia al instante y sin pedir confirmación.
+
+Sigue valiendo el consejo, aunque ya no sea irreversible: **revisa el nombre y la unidad antes de guardar.** Un artículo desactivado deja de aparecer en las listas, pero sus movimientos anteriores siguen en el libro.
+
+### 7.9 La ficha de un artículo
+
+**No está en el menú.** Se llega pulsando la fila del artículo en el **Catálogo de artículos**.
+
+Es donde un artículo cuenta su historia: qué es, cuánto hay y **todo lo que le ha pasado desde que se creó**. Hasta ahora esa historia había que reconstruirla mirando el libro de movimientos y filtrando a ojo; aquí sale sola y en orden.
+
+Arriba van el **código**, el **nombre** y la **descripción**, y a la derecha el botón **Al catálogo** para volver.
+
+#### De un vistazo
+
+Cuatro tarjetas:
+
+| Rótulo | Qué muestra |
+| --- | --- |
+| **Existencia** | Cuánto hay en total, con su unidad |
+| **Categoría** | La categoría, y debajo **Se lleva en el libro** o **No entra al inventario** |
+| **Al entregarlo** | **Vuelve** / **Se gasta** / **No se entrega**, y debajo la explicación: **Queda a nombre de quien lo tiene**, **Sale del almacén y no vuelve** o **No es algo que se le dé a una persona** |
+| **Mínimo** | El número, o un guion. Debajo, **Avisa al bajar de aquí** o **No se controla** |
+
+Dentro de **Existencia**, y **solo cuando hay unidades en manos de alguien**, aparece una segunda línea: **6 disponible · 4 en manos de alguien**. Si el disponible llega a cero o menos, se pinta en ámbar. Cuando nadie tiene nada prestado esa línea no se dibuja: repetirla siempre enseñaría a no leerla, y entonces no se leería el día que dice cero.
+
+Esta ficha **no muestra precios de venta**. Los precios viven en la lista de precios de Ventas.
+
+#### Su historia
+
+Es la tarjeta grande de abajo, y su subtítulo lo resume: **Todo lo que le ha pasado desde que se creó, de lo más reciente a lo más viejo.**
+
+No es una tabla, es una lista: un renglón por hecho. Cada uno lleva un icono a la izquierda —**flecha verde hacia abajo** si sumó existencia, **flecha roja hacia arriba** si la restó, **círculo** si no la movió—, el nombre de lo que pasó, la cantidad con su unidad, el almacén, y al pie la fecha y la hora, el documento y **lo registró** seguido del nombre de la persona. Cuando el hecho tiene que ver con alguien —una entrega, una devolución, una pérdida— aparece además el nombre de esa persona en una etiqueta gris.
+
+Los hechos que puede contar son estos:
+
+| Lo que se lee | Qué fue |
+| --- | --- |
+| **Se creó en el catálogo** | El primer renglón de todos. Al lado, su categoría y su unidad |
+| **Entró por una compra** | Una recepción de compras |
+| **Entró por producción** | Un parte de turno de Explotación |
+| **Volvió al almacén** | Material devuelto |
+| **Salió para consumo** | Una salida de las de todos los días |
+| **Salió en un despacho** | Una nota de entrega de Ventas |
+| **Se dio de baja por merma** | Material perdido o inservible |
+| **Ajuste: sobraba** / **Ajuste: faltaba** | Un conteo físico, en cada sentido |
+| **Se transfirió a otro almacén** / **Llegó de otro almacén** | Los dos movimientos de un traslado |
+| **Se reversó un movimiento** | Una corrección |
+| **Se entregó como dotación** | Se le dio a alguien por su rol |
+| **Se asignó para una actividad** | Se le dio a alguien para una faena concreta |
+| **La devolvió** | Volvió a manos de la empresa |
+| **Se dio por perdida** / **Se reportó dañada** | En ámbar: no mueven existencia, pero cambian quién responde |
+| **Se saldó con descuento de nómina** / **La repuso** / **Se le exoneró** | Cómo se cerró una pérdida |
+
+Si el artículo todavía no ha tenido movimiento, se ve **Sin movimientos todavía**. Si el identificador de la dirección no corresponde a ninguno, **No existe ese artículo.** con el enlace **Volver al catálogo**.
+
+**La ficha de un artículo desactivado se sigue abriendo.** Su historia no desaparece porque se le apague la etiqueta.
+
+### 7.10 Cargar artículos por planilla
+
+**Operación › Inventario › Cargar por planilla**
+
+Para dar de alta muchos artículos de una vez, o corregir los que ya están, sin teclear la ficha uno por uno. Es la pantalla que hace falta el día que se monta el catálogo, y la que sirve después para cambiarle el mínimo o el precio a cincuenta artículos de un golpe.
+
+La idea que ordena toda la pantalla es esta: **primero se ve lo que va a pasar, y solo después se escribe.** Y es todo o nada: **con una sola fila mal, no entra ninguna.**
+
+Son tres pasos, los tres a la vista en la misma página. A la derecha hay un panel de ayuda, **Qué va en cada columna**, con el detalle de cada una y un aviso ámbar **Obligatoria** en las que lo son.
+
+#### 1 · Baja la plantilla
+
+**Trae las columnas en el orden que el sistema espera y dos filas de ejemplo para que se vea cómo se llena.**
+
+Pulsa **Descargar plantilla**. Baja un archivo llamado `plantilla-articulos.csv`, y debajo del botón queda la nota que evita la pregunta de siempre: **Se abre en Excel de un doble clic. Al terminar puedes guardarla como CSV o como Excel: el sistema lee las dos.**
+
+Trae doce columnas, en este orden:
+
+| Columna | ¿Hace falta? | Qué va |
+| --- | --- | --- |
+| `codigo` | **Sí** | **El código con el que se pide. Si ya existe, la fila lo actualiza en vez de crearlo.** |
+| `nombre` | **Sí** | **Cómo se llama.** |
+| `descripcion` | No | **Detalle. Si se deja vacía en un artículo que ya existe, se respeta la que tenía.** |
+| `categoria` | **Sí** | **PRODUCTO, REPUESTO, INSUMO, COMBUSTIBLE, LUBRICANTE, EPP, HERRAMIENTA, EXPLOSIVO o SERVICIO.** |
+| `unidad` | **Sí** | **UND, M3, TON, KG, L, GAL, M, PAR, JGO, CAJA, SACO, ROLLO, HORA o SERV.** |
+| `inventariable` | No | **SI o NO. Vacío es SI. Un SERVICIO tiene que ser NO.** |
+| `modo_entrega` | No | **Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. Vacío es CONSUMIBLE.** |
+| `stock_minimo` | No | **A partir de cuánto avisa. Vacío es cero, que es no avisar.** |
+| `densidad_ton_m3` | No | **Toneladas por metro cúbico. Solo para lo que se pesa y se mide de las dos formas.** |
+| `precio` | No | **Precio de venta. Poner precio exige permiso de escritura en Ventas.** |
+| `precio_minimo` | No | **Lo más bajo que se puede vender. Vacío es cero: sin suelo.** |
+| `moneda` | No | **La moneda del precio. Vacío es USD.** |
+
+Las dos filas de ejemplo se borran y se escribe encima. **Los títulos de las columnas se pueden escribir como se quiera**: «Stock mínimo», «stock_minimo» y «STOCK MINIMO» valen lo mismo. Y las columnas de más que traiga la planilla se ignoran.
+
+#### 2 · Súbela llena
+
+**Se revisa al instante y se te dice qué va a pasar con cada fila, antes de tocar nada.**
+
+Pulsa **Elegir archivo**. Acepta **CSV** y **Excel (.xlsx)**; del Excel lee **solo la primera hoja**. **No hay botón de revisar**: en cuanto se elige el archivo la revisión arranca sola y aparece el paso 3.
+
+Si el archivo no se puede leer, el aviso sale en rojo debajo del botón. Los más frecuentes:
+
+| Lo que ves | Qué hacer |
+| --- | --- |
+| «La planilla no trae ninguna fila con datos.» | Llénala antes de subirla |
+| «La planilla no tiene una columna «codigo». ¿Seguro que es la plantilla del sistema?» | Estás subiendo otro archivo. Baja la plantilla y trabaja sobre ella |
+| «El formato .xls es de Excel 97 y no se puede leer. Ábrelo y guárdalo como .xlsx o como CSV.» | Guárdalo otra vez con **Guardar como** |
+| «Este navegador no sabe abrir archivos .xlsx. Guarda la planilla como CSV y vuelve a subirla.» | Guárdala como CSV |
+| «No se pudo leer el archivo. Comprueba que sea la plantilla en CSV o en Excel.» | Cualquier otro problema del archivo |
+
+#### 3 · Esto es lo que va a pasar
+
+Aquí está lo importante de la pantalla. **Nada se ha escrito todavía**, y eso es lo que dice el subtítulo mientras no haya errores.
+
+Arriba, cuatro etiquetas de resumen: **12 se crean** en verde, **3 se actualizan** en azul, **2 con problemas** en rojo —solo si las hay— y **17 filas en total** en gris.
+
+Debajo, la lista fila por fila. **Las filas con problema se ponen arriba del todo** y con el fondo teñido de rojo. Cada renglón lleva **Fila 7**, una etiqueta de estado, el código, el nombre y, si algo va mal, el motivo en rojo al final.
+
+| Etiqueta | Qué significa |
+| --- | --- |
+| **Se crea** *(verde)* | Ese código no existe todavía en el catálogo |
+| **Se actualiza** *(azul)* | Ese código ya está, y la fila lo corrige |
+| **No entra** *(rojo)* | Esa fila tiene un problema |
+
+Al pie, el botón. Si todo está bien dice **Cargar 15 artículos** y escribe. **Si hay una sola fila mal, el botón se apaga y dice No se puede cargar todavía**, y el subtítulo lo explica: **Con una sola fila mal no entra ninguna. Corrige la planilla y vuelve a subirla.**
+
+Los motivos de rechazo son estos, y se leen tal cual:
+
+- **Falta el código.** · **Falta el nombre.** · **Falta la categoría.** · **Falta la unidad.**
+- **El código REP-BOMBA se repite en la planilla.**
+- **«REPUEST» no es una categoría del sistema.**
+- **«X» no dice qué pasa al entregarlo: NO, RETORNABLE o CONSUMIBLE.**
+- **La unidad «UNI» no existe.**, seguido de la lista completa de las que hay.
+- **Hay un número que no se entiende. Se escriben sin separador de miles y con punto decimal.**
+- **La columna «inventariable» se responde SI o NO.**
+- **El mínimo no puede ser negativo.** · **La densidad, si se pone, es mayor que cero.**
+- **Un servicio no se guarda en el almacén: «inventariable» tiene que ser NO.**
+- **El precio tiene que ser mayor que cero.** · **Hay precio mínimo sin precio.** · **El precio mínimo no puede pasar del precio.**
+- **La moneda «GBP» no está activa en el sistema.**
+
+Cuando la carga entra, la pantalla se limpia sola y aparece **Cargado.** con el detalle —**12 artículos nuevos y 3 actualizados.**— y el enlace **Ver el catálogo**.
+
+#### Cuatro cosas que conviene saber de antemano
+
+- **Lo que ves en la previsualización es exactamente lo que va a pasar.** No lo calcula el navegador por su cuenta: es la misma comprobación que hará la base, hecha en modo mirar. Si dice «se actualiza», se actualiza.
+- **El código manda, y subir dos veces no duplica.** Si el código ya existe, la fila lo corrige; si no, lo crea. La misma planilla sirve para dar de alta y para corregir.
+- **Lo que se deja en blanco sobre un artículo que ya existe se respeta.** Una descripción vacía no borra la que tenía. No hace falta volver a escribirlo todo para cambiar un mínimo.
+- **Si alguna fila trae precio, hace falta además permiso de escritura sobre Ventas.** Cargar el catálogo es cosa de inventario; ponerle precio a lo que se vende, no. Sin ese permiso la respuesta es «Tu usuario no tiene permiso para esta acción.»
+
+### 7.11 Almacenes y patios
 
 **Operación › Inventario › Almacenes y patios**
 
@@ -1225,7 +1604,7 @@ Un almacén **no se borra**: se desmarca **Activo** y deja de aparecer en las li
 
 Dos avisos sobre la casilla del almacén propuesto: el sistema **no impide marcarla en varios almacenes a la vez**, y si eso pasa, cuál se propone al recibir una compra deja de ser previsible. Márcala en uno solo.
 
-### 7.8 Lo que conviene entender
+### 7.12 Lo que conviene entender
 
 #### Por qué nada se borra
 
@@ -1258,13 +1637,27 @@ El motivo es simple: una existencia negativa no es un dato, es un error que algu
 
 **Qué hacer cuando salta.** Si en el patio sí está el material pero el sistema dice que no, lo que falta es una entrada. Carga el parte de turno que quedó pendiente, o haz el conteo físico, y después repite la salida.
 
+#### Existir no es estar disponible
+
+Diez cascos en el libro pueden ser diez cascos en diez cabezas.
+
+**Lo que está en manos de una persona sigue contando como existencia** —es de la empresa y vale— **pero no se puede volver a entregar.** Por eso el sistema lleva dos números y los distingue: la **existencia**, que es lo que hay, y lo **disponible**, que es lo que queda sin entregar.
+
+Se ve en tres sitios: en **Existencias**, en la **ficha del artículo** y en la pantalla de Asignaciones. Y **solo cuando difieren**: si nadie tiene nada prestado, la línea no se dibuja. Repetir «10 · 10 disponibles» en cada renglón enseñaría a no leerlo, y entonces no se leería el día que dice cero.
+
+**El sistema no deja entregar más de lo disponible**, y lo dice con nombre y cantidad: «Solo quedan 2 de "LLAVE STILSON" sin asignar.» Con lo que se gasta —guantes, mascarillas— el aviso es el de siempre, el de la existencia: «De "GUANTES DE CUERO" solo hay 4 en existencia y se intentan entregar 6.»
+
+**Entregar no descuenta del almacén** cuando el artículo es de los que vuelven: el bien sigue siendo de la empresa y sigue valorado en el inventario. Lo que baja es cuántos quedan por entregar. Cuando la persona lo devuelve, o se da por perdido, el disponible vuelve a subir solo.
+
+Cuál de los dos comportamientos tiene cada artículo lo dice su campo **Al entregarlo a una persona**, en el catálogo (7.8).
+
 #### Toneladas y metros cúbicos
 
 Cada artículo tiene **una sola unidad**, la que se le puso al crearlo, y el material de cantera va en toneladas. La razón es que la tonelada es lo único que mide un instrumento auditable: la romana. El volumen de una pila siempre es una estimación.
 
 **El sistema no convierte entre toneladas y metros cúbicos.** No guarda ningún factor de densidad. Si un cliente habla en metros cúbicos, la conversión la hace la persona antes de teclear, con el criterio que la empresa tenga establecido.
 
-### 7.9 Cuando el sistema no te deja
+### 7.13 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -1283,6 +1676,8 @@ Cada artículo tiene **una sola unidad**, la que se le puso al crearlo, y el mat
 ---
 
 ## 8. Despachos
+
+> **Hoy este módulo no se ofrece en el menú.** Está construido y sus pantallas funcionan —todo lo que cuenta este capítulo es cierto—, pero se dejó fuera del menú lateral mientras se termina de afinar, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Lo que eso significa exactamente está en 1.5. La pantalla **Vehículos**, que no existía cuando se escribió este capítulo, cuelga también de aquí.
 
 Despachos guarda los dos papeles que acompañan al camión: el pesaje de la romana y la guía de movilización. Los dos se hacían a mano dentro de la nota de entrega, y los dos existen aunque no haya venta. Aquí se producen; Ventas los consume.
 
@@ -1611,7 +2006,7 @@ Esta es la sección que hay que leer si solo se va a leer una. Todo lo demás de
 | 1 | **Pedido** | Compras | Pulsar **Confirmar el pedido** |
 | 2 | **Confirmada** *(en la ficha: **Confirmada · indicar proveedores**)* | Compras | Cargar al menos una cotización y pulsar **Proponer al gerente** |
 | 3 | **Confirmar por el gerente** *(en la ficha: **Por confirmar el gerente**)* | Gerencia general | Pulsar **Aprobar la compra**. Ahí nace la orden de compra y el precio queda fijo |
-| 4 | **Aprobada** *(en la ficha: **Aprobada · indicar método de pago**)* | Compras | Pulsar **Indicar método de pago** y **Enviar a tesorería** |
+| 4 | **Aprobada** *(en la ficha: **Aprobada · indicar método de pago**)* | Compras | Decir **con qué entrega el proveedor**, y después **Indicar método de pago** y **Enviar a tesorería** |
 | 5 | **En tesorería** | Tesorería | **Registrar el pago** de cada instrucción, hasta cubrir el total |
 | 6 | **Pagada** *(en la ficha: **Pagada · pendiente por recepcionar**)* | Almacén | **Recibir material** |
 | 7 | **Recibida parcialmente** | Almacén | Volver a **Recibir material** hasta completar |
@@ -1633,11 +2028,15 @@ Además de los nueve pasos, una compra puede terminar de dos maneras que no son 
 - **Gerencia devuelve a compras.** La compra vuelve del paso 3 al paso 2, y **la cotización elegida se borra**. Es a propósito: si se devuelve, es porque esa opción no sirve.
 - **Tesorería devuelve una instrucción de pago.** Si no queda ninguna instrucción viva, la orden vuelve del paso 5 al paso 4 para que compras corrija el método de pago.
 
-#### La factura del proveedor va por fuera
+Hay un estado más que no sale en la tabla porque no es un paso, sino un desvío: **Contra entrega · esperando el material**. Es donde queda una orden que se pactó para pagar al recibir, y por eso no pasa por tesorería antes que por el almacén.
+
+#### La factura del proveedor: lo que sí exige el sistema y lo que no
 
 Al circuito le falta un papel que no aparece en la tabla de arriba: **la factura que emite el proveedor**. Se registra en su propia pantalla, **Facturas de proveedor**, que tiene su sección más adelante en este capítulo.
 
-**Registrar la factura no mueve la tarjeta.** No hay un panel de facturas ni un estado nuevo: una compra recibida se queda en **Recibida** con factura o sin ella, y ni el tablero ni la ficha avisan de las que faltan. Que la factura del proveedor esté cargada es hoy una disciplina de la oficina y no algo que el sistema exija ni compruebe.
+**Lo que cambió, y es lo más importante del capítulo: ninguna orden se paga sin decir con qué entrega el proveedor.** En el paso 4, antes de poder indicar el método de pago, hay que declarar si el proveedor entrega con **nota de entrega** o con **factura**. No es opcional y no se puede saltar: el botón **Indicar método de pago** está apagado hasta que se responda. Está en 9.9.
+
+**Registrar la factura, en cambio, sigue sin mover la tarjeta.** No hay un panel de facturas ni un estado nuevo: una compra recibida se queda en **Recibida** con factura o sin ella, y ni el tablero ni la ficha avisan de las que faltan. **Y la factura sigue sin poder atarse a su orden desde la pantalla**: el formulario de alta no tiene campo para elegirla. Así que el sistema ya sabe qué compras prometieron factura, pero **no puede comprobar cuáles la cumplieron**. Ese cotejo sigue siendo trabajo de la oficina.
 
 Y hay que decir dónde está el riesgo, porque cuesta dinero: **una misma compra se puede pagar por dos caminos distintos y el sistema no los cruza**. Uno es la instrucción de pago de la orden, que ejecuta tesorería en el paso 5. El otro es el pago que se registra sobre la factura, dentro de su propia pantalla. Los dos sacan dinero de una cuenta de verdad y ninguno de los dos sabe del otro, así que usar los dos para la misma compra saca el dinero dos veces sin que nada lo impida. La empresa tiene que decidir de antemano cuál de los dos caminos usa, y usar ese.
 
@@ -1776,6 +2175,8 @@ En la cabecera está el título de la compra y, debajo, la línea que la identif
 
 **Orden OC-…** La orden emitida, con el proveedor y la fecha de aprobación. Sus columnas son **Descripción**, **Cant.**, **Precio** y **Subtotal**, y se le añade **Recibido** en cuanto la orden está pagada: en verde si llegó todo, en naranja si llegó parte y en gris si no ha llegado nada. Al pie, **Subtotal**, **Descuento** y **Flete** cuando los hay, **IVA**, **Total** y el **Equivalente** en la otra moneda.
 
+En la cabecera de esa misma tarjeta está el botón **Imprimir**, que saca **la orden de compra en papel**. Tiene su apartado enseguida.
+
 **Pagos.** Aparece en cuanto hay instrucciones de pago: **Lo que se instruyó pagar y lo que tesorería ya ejecutó.** Cada instrucción muestra el método, cuándo se cargó, su estado — **Por pagar**, **Pagada**, **Devuelta a compras** o **Anulada** —, el monto, el impuesto cuando corresponde, los datos de la transacción y la nota entre comillas angulares.
 
 **Historial.** **Quién movió esta compra y cuándo.** Cada línea trae el paso, el nombre de quien lo hizo, la fecha y hora y la nota que escribió. Si no hay nada todavía: **Sin movimientos todavía.**
@@ -1783,6 +2184,30 @@ En la cabecera está el título de la compra y, debajo, la línea que la identif
 **Qué sigue.** Es el panel lateral, y es el que hay que mirar primero: **muestra solo la acción que toca ahora**. En el teléfono sube al principio de la pantalla.
 
 **Datos.** El resto de la ficha: **Pedido**, **Solicita**, **Cargado por** cuando quien teclea no es quien pide, **Creado**, **Prioridad**, **Se necesita**, **Destino**, **Confirmado por** y **Aprobado por**. Lo que falta se muestra como **—**.
+
+#### Imprimir la orden de compra
+
+**Esto es nuevo, y deshace la que era la peor limitación del módulo:** hasta ahora de compras no salía ningún papel, y la orden que se le mandaba al proveedor se hacía por fuera.
+
+1. Abre la ficha de la compra. El botón **Imprimir** está en la cabecera de la tarjeta **Orden OC-…**, a la izquierda de la etiqueta de estado. Solo aparece cuando la compra ya tiene orden.
+2. Se abre el visor con el título **Orden de compra** y el documento entero a la vista.
+3. Revísalo y pulsa **Descargar**, o **Cerrar** si no hace falta. **Nada se guarda hasta que pulses Descargar.**
+
+El archivo se llama `orden-compra-oc-2026-0007.pdf`.
+
+**Sale con el mismo membrete que la factura y la nota de entrega**, porque los cuatro documentos del sistema se maquetan en un solo sitio: si se hicieran por separado acabarían diciéndolo distinto. Lleva el logo, la razón social, el RIF, el domicilio fiscal y el contacto de la empresa, y a la derecha el rótulo **ORDEN DE COMPRA** con su número, la fecha y, si la orden la tiene, la **entrega estimada**.
+
+Tres diferencias con una factura, y las tres a propósito:
+
+- **La banda del membrete va en gris**, como la de la cotización, y no en el naranja de la marca. Los dos son papeles que piden algo, no que cobran. Así el proveedor no confunde una orden con una factura.
+- **La contraparte se rotula PROVEEDOR**, no «cliente», y lleva su RIF, su dirección y la **condición** de pago escrita en palabras, nunca en el código interno.
+- **Las firmas están al revés que en una venta**: a la izquierda **Autorizado por** y a la derecha **Recibido por el proveedor**.
+
+Al pie de la tabla queda anotado de qué pedido salió —**Según pedido SOL-2026-0001**— y, en cada página, el texto legal: *"Esta orden autoriza la compra en los términos y precios indicados. Cualquier variación en cantidad, precio o plazo debe acordarse por escrito antes de despachar. Facture a nombre de la razón social y el RIF del membrete."* Debajo, el número de página, quién lo emitió y la tasa del día con la que se valoró.
+
+**Una orden cancelada o anulada sale con el sello ANULADA cruzado en rojo.** Una orden cancelada que se imprimiera sin decirlo es una orden que alguien puede despachar por error.
+
+**Lo demás de compras sigue sin imprimirse**: ni la cotización, ni el tablero, ni la factura del proveedor.
 
 #### Qué muestra Qué sigue en cada paso
 
@@ -1926,6 +2351,22 @@ El botón **Registrar recepción** solo lo ve quien tiene Inventario en escritur
 Se llega desde la ficha de una compra en **Aprobada · indicar método de pago**, con el botón **Indicar método de pago**. Solo lo ve el rol Compras.
 
 Sirve para decirle a tesorería **cómo y a quién** se le paga al proveedor: **Con esto la orden pasa a tesorería para que ejecute el pago.**
+
+#### Antes de nada: con qué entrega el proveedor
+
+Encima del botón, mientras no se responda, hay un recuadro naranja con esta pregunta:
+
+> **¿Con qué entrega el proveedor?** *Solo la factura da derecho al crédito fiscal y entra en el libro de compras. Sin decirlo no se puede pagar.*
+
+Se responde con uno de dos botones: **Nota de entrega** o **Factura**. **No hay tercera opción y no se puede posponer**: hasta que se pulse uno, el botón **Indicar método de pago** está apagado.
+
+Se pregunta aquí y no dentro del formulario de pago a propósito. La base se niega a instruir un pago sin este dato, y descubrirlo después de llenar banco, cuenta, titular y cédula sería enseñar la puerta cerrada al final del pasillo.
+
+Una vez respondido, el recuadro desaparece y queda una línea en gris: **El proveedor entrega con factura.** o **El proveedor entrega con nota de entrega.** Si fue factura, se añade el recordatorio: **Recuerda registrarla para poder descontar el IVA.**
+
+**La respuesta no se puede cambiar desde la pantalla.** Hoy el recuadro solo se dibuja mientras la orden está en ese paso y todavía no se ha respondido; una vez respondida, o si la orden ya avanzó, no hay dónde corregirla. Si te equivocaste, avisa a quien administra el sistema. Lo único que sí impide el sistema es retroceder de factura a nota de entrega cuando la factura ya está registrada: «Esta orden ya tiene una factura registrada. Anúlala antes de decir que se entregó con nota de entrega.»
+
+**Las órdenes que ya habían pasado de ese punto cuando esto se implantó se quedaron sin declarar**, y no hay pantalla para ponerlas al día. No es un error tuyo si te encuentras alguna.
 
 | Campo | Detalle |
 | --- | --- |
@@ -2072,7 +2513,32 @@ Después, el desglose: **Exento**, **Base imponible**, **IVA** con su alícuota 
 
 Debajo, cuando ya hay alguno, la tarjeta **Pagos**. Cada pago muestra su número y cómo se pagó, y en letra pequeña la fecha y hora, la cuenta de donde salió, la referencia si la hay y el **IGTF** si lo causó. Los pagos anulados se quedan a la vista, más apagados y con la palabra **anulado** al lado.
 
+Al final de la ficha está la tarjeta **El documento del proveedor**, que es donde se guarda el papel. Tiene su apartado enseguida.
+
 Al pie del diálogo: **Cerrar**, **Anular** y **Registrar pago**, según lo que tu permiso alcance.
+
+#### Guardar el papel de la factura
+
+**Esto también es nuevo.** Hasta ahora la factura del proveedor se registraba como cifras y el papel se quedaba en una carpeta de la oficina. Ahora el archivo se guarda con la factura.
+
+La tarjeta se llama **El documento del proveedor** y su subtítulo dice lo que admite: **PDF o foto del papel, hasta 10 MB.** Una vez cargado, cambia a **Guardado. Solo lo ven compras, tesorería y gerencia.**
+
+1. Abre la factura pulsando su fila.
+2. Baja a **El documento del proveedor** y pulsa **Cargar el documento**. Mientras sube dice **Subiendo…**
+3. Al terminar, el nombre del archivo queda escrito al lado.
+
+Para verlo, **Ver el documento** —mientras abre, **Abriendo…**—. Se muestra en el visor, con el título **Documento del proveedor** y el aviso **Tal como lo entregó. La dirección caduca en cinco minutos.** Abajo, **Cerrar** y **Descargar**. Se baja con el mismo nombre que tenía al subirlo.
+
+Para quitarlo, el botón rojo **Quitar**, que solo tiene quien administra el sistema o tiene control total sobre Compras.
+
+Cuatro cosas que conviene saber:
+
+- **Quién lo ve y quién lo toca no es lo mismo.** Lo abren administración, gerencia, compras y tesorería; **lo suben y lo quitan solo administración y compras**. Tesorería paga contra el documento pero no lo produce.
+- **Reemplazar borra el anterior.** No hay historial de versiones: el archivo que estaba se pierde.
+- **Una factura anulada conserva su archivo**, a propósito. Anular es decir que ese documento no cuenta, no que no existió.
+- **Si al cargar sale un mensaje en inglés**, es que el archivo pesa más de 10 MB o no es de los que se admiten: PDF, JPG, PNG, WEBP o HEIC. El selector de archivos deja elegir más cosas de las que el sistema acepta, así que el rechazo llega al final. Ese aviso viene sin traducir.
+
+Si tu permiso es de consulta y todavía no hay archivo, la tarjeta dice solo **Todavía no se ha cargado.**
 
 #### Registrar un pago
 
@@ -2209,9 +2675,11 @@ Además de su propio número, la cotización guarda **el número que el proveedo
 
 Conviene saberlo antes de buscarlo:
 
-- **No hay ningún documento imprimible en compras.** Ni la orden de compra, ni la cotización, ni el tablero, ni la factura del proveedor.
+- **La orden de compra ya se imprime**, y su papel se guarda con el mismo membrete que la factura. **La cotización y el tablero siguen sin imprimirse.**
 - **No hay pantalla para editar un pedido en borrador.** Solo se puede enviar o cancelar.
-- **La factura del proveedor no se enlaza con su orden de compra**, así que el sistema no coteja lo pedido con lo recibido y lo facturado.
+- **La factura del proveedor sigue sin enlazarse con su orden de compra.** El formulario de alta no tiene campo para elegir la orden, así que el sistema no coteja lo pedido con lo recibido y lo facturado, y la etiqueta **Orden OC-…** de la ficha no llega a encenderse.
+- **Con qué entrega el proveedor no se puede corregir después.** Se declara una sola vez, en el paso 4, y no hay pantalla para cambiarlo ni para ponerse al día con las órdenes anteriores a que esto existiera.
+- **El sistema sabe qué compras prometieron factura, pero no avisa de las que no la cumplieron.** Ese pendiente existe por dentro y todavía no sale en ninguna pantalla.
 - **Lo que se debe por facturas de proveedor no aparece en la cola de Tesorería › Por pagar**, que sigue mostrando solo las instrucciones de pago de las órdenes. Lo que falta por pagar de una factura solo se ve en la columna **Saldo** de su propia pantalla.
 
 ### 9.13 Cuando el sistema no te deja
@@ -2279,6 +2747,8 @@ Conviene saberlo antes de buscarlo:
 ---
 
 ## 10. Ventas
+
+> **Hoy este módulo no se ofrece en el menú.** Está construido y sus pantallas funcionan —todo lo que cuenta este capítulo es cierto—, pero se dejó fuera del menú lateral mientras se termina de afinar, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Lo que eso significa exactamente está en 1.5. El módulo ganó además una primera entrada, **Tablero**, que no existía cuando se escribió este capítulo.
 
 Ventas es el camino del material hacia afuera: a quién se le vende, a cuánto, qué se le entregó, qué se le facturó y qué ha pagado. Las cinco pantallas están en el menú en ese mismo orden, que es el orden en que ocurren las cosas.
 
@@ -3117,6 +3587,59 @@ En la tarjeta de abajo hay cuatro botones: **Ficha completa (PDF)**, **Carnet ·
 
 **El reverso es el mismo para todos.** No lleva ningún dato del trabajador: solo la marca, la razón social y el RIF. Se baja una vez y se manda a la imprenta una vez; no hace falta repetirlo por cada persona. Sale igual aunque lo pidas desde la ficha de cualquiera.
 
+#### Dotación, asignación e incidencias
+
+Debajo de los documentos hay tres tarjetas más, y **son tres cosas distintas** que conviene no mezclar:
+
+| Tarjeta | Qué guarda |
+| --- | --- |
+| **Dotación** | **Lo que necesita por su rol: casco, botas, uniforme, equipo.** |
+| **Asignado para una actividad** | **Lo que se le dio para una faena concreta y hay que recuperar.** |
+| **Incidencias** | **Lo que le pasó: enfermedad, lesión en labores, ausencia, conflicto.** |
+
+**La diferencia entre dotación y asignación no es si vuelve, es para qué se le dio.** Una laptop es dotación y vuelve; unas mascarillas son dotación y se gastan; un kit de llaves para montar una banda es asignación. Si el bien vuelve o no lo dice cada artículo en el catálogo, en su campo **Al entregarlo a una persona** (7.8), y eso es un eje aparte.
+
+Las dos primeras tarjetas tienen las mismas cuatro columnas —**Qué**, **Cuánto**, **Desde** y **Estado**— y el mismo botón **Entregar** arriba a la derecha, que ven almacén y recursos humanos. En **Qué** va el nombre del artículo y debajo su código y el número de la entrega.
+
+La columna **Estado** dice en qué quedó cada cosa:
+
+| Etiqueta | Qué significa |
+| --- | --- |
+| **Entregado** | Se gastó al usarlo. No hay nada que devolver |
+| **En su poder** | Lo tiene, y se le va a pedir de vuelta |
+| **Devuelta** | Ya volvió |
+| **Perdida** | No apareció |
+| **Dañada** | Volvió rota o dejó de servir |
+| **Repuesta** | Trajo otra en su lugar |
+
+Cuando no hay nada, cada tarjeta lo dice a su manera: **Todavía no se le ha dado dotación.** y **No tiene nada asignado.**
+
+**Desde aquí no se entrega nada.** Las dos tarjetas son de solo lectura: el botón **Entregar** lleva a la pantalla de entrega de Asignaciones, que hoy está detrás del cartel de obra. Y hay un detalle que hace perder tiempo: **al llegar allí la persona no viene puesta**, hay que volver a elegirla en el desplegable.
+
+#### Anotar una incidencia
+
+Esta sí se registra desde la ficha, con el botón **Anotar una**, que ve recursos humanos. La ventana se llama **Anotar una incidencia de** seguido del nombre, y explica para qué es: **Lo que pasó, cuándo y por qué. Queda en su ficha y en la de quien haya participado.**
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Cuándo** | Sí | Viene la fecha de hoy. No admite días futuros ni fechas anteriores al ingreso |
+| **Qué pasó** | Sí | Empieza en **Ausencia justificada** |
+| **Dónde** | No | El sitio. Se pasa solo a mayúsculas |
+| **Cuánto duró** | Sí | Empieza en **Todo el día** |
+| **Días de reposo** | Según el caso | Solo aparece en los tipos que pueden llevar reposo. **Obligatorio si duró varios días.** |
+| **Quién más estuvo** | No | Casillas con el resto del personal activo. **Sin nadie marcado queda como individual.** |
+| **Motivo** | Sí | **Mínimo cinco caracteres.** La ayuda lo dice todo: *"Lo que se escriba aquí es lo que se va a leer dentro de un año."* |
+
+Los ocho tipos de **Qué pasó** son: **Conflicto**, **Enfermedad**, **Lesión en labores**, **Accidente común**, **Ausencia justificada**, **Ausencia injustificada**, **Llegada tarde** y **Otra**. Y los cinco de **Cuánto duró**: **En la mañana**, **En la tarde**, **En la noche**, **Todo el día** y **Varios días**.
+
+**El botón Anotar está apagado hasta que el motivo llegue a cinco caracteres.** No sale ningún aviso en rojo: simplemente no se puede pulsar.
+
+**Una incidencia con más de un implicado se anota una sola vez y sale en todas las fichas.** Al marcar a alguien en **Quién más estuvo**, la incidencia aparece también en su ficha, con la línea **Anotada en la ficha de** seguida del nombre de la persona sobre la que se registró. Es lo que evita que un altercado entre dos se cuente como dos hechos distintos.
+
+En la lista, cada incidencia se lee en una línea: la fecha, el tipo, el lugar, cuánto duró, los días de reposo entre paréntesis si los hay, y quiénes estuvieron o la palabra **Individual**. Debajo, **Motivo:** con lo que se escribió. Si no hay ninguna, **Ninguna anotada.**
+
+**Ojo con la palabra «incidencia», que el sistema usa para dos cosas.** Aquí es *algo que le pasó a una persona*. En la pantalla **Asignaciones › Incidencias** significa otra: *un bien perdido o dañado que sigue sin resolverse*. No se mezclan.
+
 #### Emitir una constancia de trabajo
 
 1. Pulsa **Constancia de trabajo**.
@@ -3770,7 +4293,60 @@ Son cinco, salen de dos sitios distintos y **todos se abren en pantalla antes de
 
 La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo. Y los que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano. Las dos caras del carnet no llevan pie ni firma: en una tarjeta de 54 mm no cabe, y no hace falta.
 
-### 11.12 Cuando el sistema no te deja
+### 11.12 Organigrama
+
+> **Hoy esta pantalla no se ofrece en el menú.** Está construida y funciona, pero se dejó fuera mientras se afina, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Está explicado en 1.5.
+
+Es una sección propia y no una pantalla dentro de Nómina, que es como lo pidió la líder de sistemas. **El permiso sí es el de Nómina**: quien lleva el personal es quien sabe de quién depende quién. Con Nómina en lectura se ve el árbol; para cambiarlo hace falta escritura, y sin ella no aparece ningún botón.
+
+Responde una pregunta que ninguna otra pantalla contesta: **Quién depende de quién, y cuánta gente hay prevista en cada puesto.**
+
+#### Qué se ve
+
+Tres tarjetas arriba:
+
+| Rótulo | Qué mide |
+| --- | --- |
+| **Prevista en el organigrama** | Cuántas personas suman todos los puestos dibujados |
+| **Registrada en nómina** | Cuántas hay activas de verdad. Debajo, **cuadra** o **3 de diferencia**, y **· 2 sin departamento escrito** si las hay |
+| **Departamentos sin sitio** | Departamentos que existen en nómina y a los que nadie colgó de la estructura |
+
+Debajo, la tarjeta **La estructura**, con el subtítulo **Cada sangría es un escalón de dependencia.** El árbol se dibuja anidado, con un riel a la izquierda en vez de cajas y líneas, porque así se lee también en el teléfono.
+
+Cada renglón lleva, en este orden: el **nombre** —en negrita si es una unidad—, **quién lo ocupa** en azul si tiene titular, **el número de personas previstas entre paréntesis**, y una etiqueta de nómina.
+
+Esa etiqueta es lo que hay que aprender a leer, y hay una tarjeta al lado que lo explica:
+
+- Verde, **4 en nómina**: la nómina tiene esa gente registrada en el departamento enlazado.
+- Ámbar, **3 ≠ 5**: la nómina no coincide con lo previsto. **No es un error del sistema: es lo que hay que cuadrar.**
+- **Sin etiqueta**: ese puesto no está enlazado a ningún departamento de nómina. Sin enlace no es cero: es que no se sabe, y pintar un cero sería mentir.
+
+Y sobre las dos cifras, la propia pantalla avisa: **Son dos, y no tienen por qué coincidir todavía.** El número entre paréntesis es la gente **prevista**, que sale del organigrama; la etiqueta de color es la **registrada** en nómina. Mientras la nómina se termina de cargar, mandan las cifras del organigrama.
+
+#### Cómo se cambia
+
+Los botones son iconos, y su nombre sale al pasar el ratón por encima:
+
+1. **+**, **Colgar un puesto de aquí**. Abre el formulario debajo del renglón, sin ventana emergente.
+2. El **lápiz**, **Editar**.
+3. Las **flechas**, **Moverlo a otra dependencia**. No se arrastra: se abre un buscador —**Mover «Mantenimiento» a**— donde se escribe el código o el nombre del sitio nuevo. Cada opción muestra debajo de quién cuelga hoy, para distinguir dos «Mantenimiento» distintos. Para dejarlo como estaba, **Dejarlo donde está**.
+4. La **papelera**, **Quitarlo**, que solo aparece si de ese puesto no cuelga nada.
+
+El formulario pide: **Cómo se llama**, **Quién lo ocupa** —*se deja vacío si el puesto no tiene nombre y apellido*—, **Qué es** (**Unidad** o **Cargo**), **Cuántos**, **Departamento de nómina** —*para saber cuánta gente hay de verdad aquí*, y se puede dejar **Sin enlazar**— y una **Nota** para *lo que el nombre no alcanza a decir*. Se cierra con **Añadir** o **Guardar**, y con **Cancelar**.
+
+Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un **Cargo** es un puesto con su gente, como «Cocineros (2)».
+
+#### Cuando no te deja
+
+| Lo que ves | Qué significa |
+| --- | --- |
+| «Ya hay una cabeza en el organigrama. Cuelga este nodo de alguna.» | Solo puede haber una raíz |
+| «De ahí cuelgan 3 puesto(s). Muévelos o quítalos primero.» | No se quita un puesto con gente colgando |
+| «No se puede mover ahí: ese puesto ya depende de este.» | Estabas creando un círculo |
+| «Un cargo no puede depender de sí mismo.» | Elegiste como destino el mismo puesto |
+| «El nombre del cargo o la unidad no puede quedar vacío.» | Falta el nombre |
+
+### 11.13 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -3832,6 +4408,8 @@ La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo. 
 ---
 
 ## 12. Tesorería
+
+> **Hoy este módulo no se ofrece en el menú.** Está construido y sus pantallas funcionan —todo lo que cuenta este capítulo es cierto—, pero se dejó fuera del menú lateral mientras se termina de afinar, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Lo que eso significa exactamente está en 1.5. Tiene una consecuencia que hay que prever: **una compra puede llegar hasta tesorería y quedarse ahí**, porque el paso 5 del circuito de Compras —registrar el pago— se ejecuta en este módulo. Mientras Tesorería no vuelva al menú, ese paso lo hace quien tenga el rol y sepa escribir la dirección. El módulo ganó además una primera entrada, **Tablero**, que no existía cuando se escribió este capítulo.
 
 Tesorería es el libro del dinero. Cada banco, cada caja de efectivo y cada billetera digital de la empresa tiene aquí su cuenta, y todo lo que entra y sale de ellas queda escrito en una sola lista, en orden, con la fecha, el concepto, la referencia y el nombre de quien lo registró.
 
@@ -4279,10 +4857,12 @@ Los roles que trae el sistema son estos, con la descripción que se lee al lado 
 | **Compras** | **Aprueba requisiciones, carga cotizaciones y prepara la orden.** |
 | **Tesorería** | **Ejecuta los pagos autorizados y los concilia.** |
 | **Almacén** | **Recibe material, cuenta existencias y despacha.** |
+| **Ventas** | **Cotiza, despacha material, factura y registra cobros.** |
 | **Operaciones** | **Registra producción, voladuras y consumo en el frente.** |
 | **Recursos humanos** | **Personal, asistencia y nómina.** |
 | **Solicitante** | **Puede pedir material. Es el rol mínimo de cualquier supervisor.** |
 | **Consulta** | **Solo lectura.** |
+| **Respaldo de la base** | **Puede descargar la copia completa de los datos. Es el archivo más sensible del sistema: no se reparte.** |
 
 Una advertencia sobre el reparto de roles, y no es menor: el sistema se instala con el administrador teniendo todos los roles a la vez, para poder probar el circuito completo. **En operación real, el rol de Gerente general debe estar en manos de la gerencia y no del administrador del sistema.** Si quien carga la cotización es el mismo que la aprueba, el control no existe.
 
@@ -4311,21 +4891,29 @@ Dentro de cada tarjeta está la matriz, con estas columnas:
 | **Escritura** | Casilla |
 | **Control total** | Casilla |
 
-**Los módulos que aparecen, en este orden, son once:**
+**Los módulos que aparecen, en este orden, son quince:**
 
 | # | Módulo |
 | --- | --- |
 | 1 | **Panel** |
 | 2 | **Explotación** |
-| 3 | **Inventario** |
-| 4 | **Despachos** |
-| 5 | **Compras** |
-| 6 | **Ventas** |
-| 7 | **Nómina** |
-| 8 | **Tesorería** |
-| 9 | **Tasas de cambio** |
-| 10 | **Configuración** |
-| 11 | **Usuarios y roles** |
+| 3 | **Maquinaria** |
+| 4 | **Combustible** |
+| 5 | **Inventario** |
+| 6 | **Asignaciones** |
+| 7 | **Despachos** |
+| 8 | **Compras** |
+| 9 | **Ventas** |
+| 10 | **Nómina** |
+| 11 | **Tesorería** |
+| 12 | **Tasas de cambio** |
+| 13 | **Configuración** |
+| 14 | **Usuarios y roles** |
+| 15 | **Respaldo de la base** |
+
+**Que un módulo no salga hoy en el menú no lo saca de esta matriz.** Maquinaria, Combustible, Asignaciones y los demás siguen aquí, y su permiso se reparte igual: el día que vuelvan al menú, quien lo tenga entrará sin que haya que tocar nada.
+
+**El Organigrama no tiene fila propia**: se gobierna con el permiso de Nómina.
 
 **Qué significa cada nivel en la práctica:**
 
@@ -4348,21 +4936,25 @@ Y la advertencia que conviene repetir: **ningún nivel de esta matriz convierte 
 
 **Se guarda al instante.** No hay botón de guardar y no se pide confirmación. Y recuerda lo principal: **no le estás dando permiso a una persona, se lo estás dando a un rol.** Todos los que tengan ese rol quedan afectados por el mismo clic.
 
-Este es el reparto con el que arranca el sistema, útil como referencia:
+**El reparto se ajusta desde esta misma pantalla, así que la referencia buena es la matriz que tengas delante**, no una tabla impresa. Esta de aquí es orientativa y sirve para ver la forma que tiene el reparto:
 
-| Rol | Lectura | Escritura | Control total |
-| --- | --- | --- | --- |
-| **Administrador del sistema** | — | — | Los once módulos |
-| **Gerente general** | Panel, Explotación, Inventario, Despachos, Ventas, Nómina, Tesorería, Tasas de cambio | — | Compras |
-| **Compras** | Panel, Inventario, Tesorería, Tasas de cambio | Compras, Configuración | — |
-| **Tesorería** | Panel, Compras, Nómina | Tesorería, Tasas de cambio | — |
-| **Almacén** | Panel, Compras | Inventario, Despachos, Configuración | — |
-| **Operaciones** | Panel, Inventario | Explotación, Compras | — |
-| **Recursos humanos** | Panel | Nómina, Compras | — |
-| **Solicitante** | Panel, Inventario | Compras | — |
-| **Consulta** | Panel, Inventario, Compras, Despachos, Tasas de cambio | — | — |
+| Rol | Hasta dónde llega |
+| --- | --- |
+| **Administrador del sistema** | Control total en los catorce módulos de trabajo. **Respaldo de la base no**: ver más abajo |
+| **Gerente general** | Control total en casi todo. Lectura en Maquinaria, Combustible y Asignaciones |
+| **Compras** | Control total en Compras e Inventario; escritura en Configuración; lectura en Panel, Maquinaria, Combustible, Tesorería y Tasas |
+| **Tesorería** | Control total en el circuito del dinero y en lo que lo alimenta; nada en Maquinaria, Combustible ni Asignaciones |
+| **Almacén** | Escritura en Inventario, Asignaciones, Maquinaria, Combustible, Despachos y Configuración; lectura en Panel y Compras |
+| **Ventas** | Escritura en Ventas y Despachos; lectura en Panel, Inventario, Tesorería y Tasas |
+| **Operaciones** | Control total en Explotación; escritura en Maquinaria, Combustible y Compras; lectura en Panel, Inventario y Asignaciones |
+| **Recursos humanos** | Escritura en Nómina, Asignaciones, Inventario, Compras y Ventas; control total en Tasas de cambio |
+| **Solicitante** | Escritura en Compras; lectura en Panel e Inventario. Nada más |
+| **Consulta** | Lectura en Panel, Maquinaria, Combustible, Inventario, Asignaciones, Despachos, Compras y Tasas |
+| **Respaldo de la base** | Solo eso, y nada más |
 
-Nómina y Tesorería quedan fuera del rol de Consulta a propósito: «solo lectura» de lo que gana cada quien sigue siendo ver el sueldo de todo el mundo.
+Nómina, Tesorería y Ventas quedan fuera del rol de Consulta a propósito: «solo lectura» de lo que gana cada quien sigue siendo ver el sueldo de todo el mundo.
+
+**El Respaldo de la base es la única excepción a que el administrador llegue a todo.** Ese módulo no se le da a nadie por el hecho de administrar el sistema: hace falta el rol **Respaldo de la base**. «Puede administrar el sistema» y «puede llevarse todos los datos de la empresa en un archivo» no son la misma autorización. Está explicado en 13.5.
 
 #### Crear y editar roles
 
@@ -4721,45 +5313,62 @@ Se dice aquí con claridad porque es la diferencia entre un control real y uno s
 
 ## 15. Lo que todavía no está construido
 
-El sistema se entrega por partes. Este capítulo reúne lo que aparece en el menú o se espera del diseño pero **todavía no funciona**, y los puntos donde conviene tener cuidado.
+El sistema se entrega por partes. Este capítulo reúne lo que se espera del diseño pero **todavía no funciona**, y los puntos donde conviene tener cuidado.
 
 No es una lista de fallas. Es el estado real de la obra, y está aquí para que nadie organice su trabajo contando con algo que aún no puede hacer.
 
+Antes de nada, lo primero que hay que saber: **ocho módulos construidos no se ofrecen hoy en el menú.** Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería existen y funcionan, pero se dejaron fuera del menú mientras se afinan, y sus direcciones responden con un cartel de obra. Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
+
 ### 15.1 Puntos donde hay que tener cuidado
 
-Estos cuatro no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las sabe. Son las más importantes del capítulo.
+Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las sabe. Son las más importantes del capítulo.
 
 **Una compra se puede pagar dos veces por caminos distintos.** El dinero puede salir por la instrucción de pago de la orden, en Tesorería, y también por el pago registrado sobre la factura del proveedor. Los dos descuentan de una cuenta real y **ninguno de los dos sabe del otro**. Hasta que eso se cruce, conviene acordar en la empresa un solo camino y usar siempre ese.
+
+**El sistema pregunta con qué entrega el proveedor, pero no comprueba que se cumpla.** Declarar «factura» es obligatorio antes de pagar, y eso sí lo exige. Lo que no hay todavía es una pantalla que enseñe cuáles prometieron factura y no la registraron, ni forma de atar una factura a su orden. El cotejo sigue siendo trabajo de la oficina.
+
+**Con qué entrega el proveedor no se corrige.** Se declara una vez y no hay dónde cambiarlo. Las órdenes que ya habían pasado de ese paso cuando la regla se implantó se quedaron sin declarar y así siguen.
 
 **Hay que liquidar antes de egresar.** El botón de liquidar prestaciones solo aparece mientras la persona está activa. Si se egresa primero, la liquidación ya no se puede calcular desde el sistema. El orden correcto es: liquidar, y después registrar la salida.
 
 **El anticipo de prestaciones se puede descontar dos veces.** Existe como concepto en las novedades del período y también como operación propia en la pantalla de prestaciones. Si se carga por los dos lados, se descuenta dos veces. Elige uno.
 
-**El botón Cargar producción de Existencias lleva a un candado.** Se dibuja para el rol de Almacén, pero Almacén no trae permiso sobre Explotación. Quien lo pulse sin ese permiso no llega al parte de turno. Se resuelve pidiéndole a administración el permiso, o dejando la carga a Operaciones.
+**El USDT no tiene tasa oficial.** El dólar y el euro salen de lo que publica el BCV; el USDT sale de la mediana del mercado entre particulares de Binance y se registra como **PARALELO**. Es una referencia de mercado, no una publicación con respaldo. Confírmala con quien cierra las operaciones antes de registrarla.
+
+**La barra buscadora encuentra documentos de módulos escondidos.** Las pantallas escondidas no salen, pero una factura, una nota de entrega o una placa de vehículo sí pueden aparecer en la lista, y al pulsarlas se llega al cartel de obra. No es un fallo del buscador: es que el documento existe y su pantalla todavía no se ofrece.
 
 ### 15.2 Lo que falta dentro de módulos que sí funcionan
 
 **Costo por tonelada.** La producción entra al inventario valorada en cero, porque el costo real depende de la nómina, el gasoil y la voladura, y ese cálculo todavía no existe. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.** Las toneladas sí son confiables.
 
-**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor se registra, pero **no se enlaza con su orden de compra**, así que no hay cotejo entre lo pedido, lo recibido y lo facturado. El sistema no calcula retenciones a proveedores. Lo que se debe por facturas no llega a **Tesorería › Cuentas por pagar**, que sigue leyendo solo las instrucciones de pago de las órdenes. Ningún documento de compras se imprime.
+**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor se registra y su papel se guarda, pero **no se enlaza con su orden de compra**, así que no hay cotejo entre lo pedido, lo recibido y lo facturado. El sistema no calcula retenciones a proveedores. Lo que se debe por facturas no llega a **Tesorería › Cuentas por pagar**, que sigue leyendo solo las instrucciones de pago de las órdenes. **La orden de compra sí se imprime**; la cotización y el tablero, no.
+
+**En Inventario.** Un artículo ya se puede corregir y borrar, pero **el código sigue sin poder cambiarse**: es con lo que se pide en el almacén y ya está impreso en lo emitido. Y **borrar solo funciona mientras nada lo haya tocado**; en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo.
 
 **En Despachos.** El sistema comprueba el cliente, el tipo, el estado y la vigencia de los papeles, pero **no compara cifras**: ni el peso neto del ticket contra las cantidades de la nota, ni las toneladas de la guía contra los renglones. Cuadrar eso sigue siendo trabajo de la persona. Además, la nota despachada sin guía **no se marca en ninguna pantalla**: el único rastro está en la auditoría.
 
 **En Ventas.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. Las facturas emitidas desde el sistema no admiten descuento. **La nota de crédito no se imprime**: se registra y se declara, pero el papel que se le entrega al cliente todavía se hace por fuera.
 
-**En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema.
+**En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla, donde además **hay que volver a elegir a la persona** porque no llega puesta.
+
+**En las incidencias del personal.** Si se elige un tipo que no pide reposo —**Conflicto**, **Llegada tarde** u **Otra**— y a la vez se marca **Varios días**, el campo de los días de reposo no se dibuja y el guardado falla con un mensaje sin traducir. Mientras eso se arregla, **para varios días usa un tipo que pida reposo**, o anota la duración en el motivo.
 
 **En Tesorería.** No hay conciliación bancaria: no existe una pantalla que cruce el libro con el estado de cuenta del banco. Tampoco se calcula el diferencial cambiario; lo que sí existe es la tasa congelada en cada línea.
 
-**En el panel.** Las cifras que muestra son de demostración, no salen todavía de los datos reales. No las uses para decidir nada. Los números buenos están dentro de cada módulo.
-
 ### 15.3 Detalles de la pantalla que conviene conocer
 
-- **El buscador general** de la barra superior está dibujado pero no busca.
 - **Mantener sesión abierta**, en la pantalla de entrar, no cambia nada: marcarla o no da el mismo resultado.
 - **Olvidé mi contraseña** no lleva a ninguna parte. La reposición de clave se pide a administración.
-- **Las listas largas se cortan** en los registros más recientes y no tienen paginación: 200 en los movimientos de inventario y en el libro de tesorería, 300 en voladuras y partes de turno, 400 en tickets, guías y facturas de proveedor. Un registro más antiguo sigue guardado, pero no se alcanza desde esa pantalla.
-- **Solo los dos libros de IVA se descargan.** El libro de compras y el de ventas bajan en CSV para abrirlos en la hoja de cálculo. Ninguna otra pantalla exporta.
+- **Las cifras de la pantalla de entrar son un adorno.** Las tarjetas de toneladas de la ilustración están escritas fijas y no salen de nada registrado. **Las del panel, en cambio, son reales**: salen de lo registrado en el sistema, y el propio panel lo dice al pie.
+- **Las listas largas se cortan** en los registros más recientes y no tienen paginación: 200 en los movimientos de inventario y en el libro de tesorería, 300 en voladuras y partes de turno, 400 en tickets, guías y facturas de proveedor, 60 en el historial de tasas. Un registro más antiguo sigue guardado, pero no se alcanza desde esa pantalla.
+- **Qué se descarga hoy.** El libro de compras y el de ventas bajan en CSV; la plantilla de carga de artículos baja en CSV; la orden de compra, la factura, la nota de entrega, la cotización, la ficha del trabajador, su carnet y su constancia bajan en PDF o en imagen; el respaldo de la base baja en SQL. Ninguna otra pantalla exporta.
+
+### 15.4 Lo que quedó sin comprobar en esta revisión
+
+Se dice para que nadie lo lea como verificado:
+
+- **El reparto de permisos que trae el sistema de fábrica.** La tabla de 13.1 se levantó de la base tal como está hoy, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla.
+- **Los capítulos de los módulos escondidos** —Explotación, Despachos, Ventas y Tesorería— no se revisaron pantalla por pantalla en esta versión. Lo que dicen era cierto en la versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte. **Maquinaria y Combustible todavía no tienen capítulo.**
 
 ---
 
@@ -4771,8 +5380,17 @@ Sí. Solo necesitas navegador e internet, con el mismo usuario y la misma clave.
 **Se me fue el internet mientras registraba algo. ¿Se perdió?**
 Si no llegaste a guardar, sí. El sistema necesita conexión para guardar y no trabaja sin señal. Vuelve a registrarlo cuando vuelva el internet.
 
+**Ayer estaba Ventas en el menú y hoy no. ¿Se borró?**
+No. Desde el 21 de agosto de 2026 el menú solo ofrece **Panel, Inventario, Compras, Nómina, Tasas de cambio y Configuración**. Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería siguen construidos y funcionando, pero no se ofrecen mientras se afinan. El apartado 1.5 lo explica entero.
+
+**Escribí la dirección de Ventas y me salió «En construcción».**
+Es lo previsto. Esa pantalla existe, pero todavía no está entregada, y lo que se haga ahí puede perderse o no cuadrar con el resto. No es un problema de permisos: pedir el permiso no lo cambia.
+
 **¿Por qué no veo el mismo menú que mi compañero?**
 Porque tienen permisos distintos. Cada quien ve solo los módulos que necesita para su trabajo. No es una falla.
+
+**¿Cómo llego rápido a una pantalla sin recorrer el menú?**
+Con **Ctrl+K**, en cualquier momento. Encuentra pantallas y también documentos: el número de una orden de compra, el RIF de un proveedor, la cédula de un trabajador, la placa de un camión. Y entiende cómo habla la gente: «convertir» lleva a la calculadora de tasas, «stock» a Existencias, «gasoil» a Combustible.
 
 **Entré y no veo ningún módulo.**
 Tu usuario existe pero todavía no tiene permisos asignados. Pídeselos a administración.
@@ -4787,7 +5405,16 @@ Está en **Operación › Explotación › Producción por turno**. Es la única
 Depende de qué sea. Los catálogos —clientes, proveedores, almacenes— se corrigen normalmente. Los movimientos y los documentos ya aprobados no se editan: se corrigen con un documento nuevo que explica la corrección. Si no tienes claro cuál es el caso, pregunta antes de tocar nada.
 
 **Me equivoqué al crear un artículo. ¿Lo borro?**
-Un artículo creado no se edita ni se borra. Desactívalo y crea el correcto. Por eso conviene revisar el nombre y la unidad antes de guardar.
+Ahora sí se puede corregir, con el lápiz del catálogo, y todo menos el código. Y se puede borrar **solo mientras nada lo haya tocado**: en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo. Aun así, conviene revisar el nombre y la unidad antes de guardar.
+
+**Tengo que cargar cien artículos. ¿Uno por uno?**
+No. **Operación › Inventario › Cargar por planilla**: se baja la plantilla, se llena en Excel, se sube y el sistema enseña qué va a pasar con cada fila antes de escribir nada. Sirve también para corregir los que ya están. Está en 7.10.
+
+**Tengo diez cascos pero no me deja entregar ninguno.**
+Porque están todos en manos de alguien. Existir y estar disponible no es lo mismo: lo prestado sigue contando como existencia —es de la empresa— pero no se puede volver a entregar. En la ficha del artículo se lee **0 disponible · 10 en manos de alguien**.
+
+**¿Dónde veo todo lo que le ha pasado a un artículo?**
+En su ficha. Se llega pulsando su fila en el **Catálogo de artículos**, y la tarjeta **Su historia** lista todo desde que se creó: entradas, salidas, ajustes, traslados, entregas, devoluciones y pérdidas, con la fecha y el nombre de quien lo registró.
 
 **El sistema me dice que no hay material, pero yo lo estoy viendo en el patio.**
 Falta registrar su entrada. Carga el parte de turno que quedó pendiente, o haz un conteo físico, y después repite la salida.

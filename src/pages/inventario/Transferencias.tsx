@@ -123,7 +123,7 @@ export function Transferencias() {
         <Vacio
           icono={<MoveRight className="size-6" />}
           titulo="Todavía no se ha movido nada de sitio"
-          descripcion="Cuando el material pase de un almacén a otro, el traslado queda aquí con las dos patas."
+          descripcion="Cuando el material pase de un almacén a otro, el traslado queda aquí: la salida de un sitio y la entrada en el otro."
         />
       ) : (
         <Card className="overflow-x-auto p-0">
@@ -282,7 +282,7 @@ export function Transferencias() {
         abierto={deshaciendo !== null}
         onCerrar={() => setDeshaciendo(null)}
         titulo={`Deshacer ${deshaciendo?.numero ?? ''}`}
-        descripcion="Se reversan las dos patas: el material vuelve a donde estaba."
+        descripcion="Un traslado son dos movimientos —la salida de un almacén y la entrada en el otro— y se deshacen los dos. El material vuelve donde estaba."
         ancho="sm"
         acciones={
           <>

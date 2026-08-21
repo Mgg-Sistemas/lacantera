@@ -114,6 +114,9 @@ const CargarPersonal = lazy(() =>
 const CargarProveedores = lazy(() =>
   import('@/pages/compras/CargarProveedores').then((m) => ({ default: m.CargarProveedores })),
 )
+const TableroConfiguracion = lazy(() =>
+  import('@/pages/config/Tablero').then((m) => ({ default: m.TableroConfiguracion })),
+)
 const Organigrama = lazy(() =>
   import('@/pages/organigrama/Organigrama').then((m) => ({ default: m.Organigrama })),
 )
@@ -271,6 +274,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/ventas/cotizaciones': <CotizacionesVenta />,
   '/app/ventas/despachos': <Despachos />,
   '/app/ventas/facturacion': <Facturacion />,
+  '/app/config': <TableroConfiguracion />,
   '/app/config/usuarios': <Usuarios />,
   '/app/inventario/articulos': <Articulos />,
   '/app/inventario/articulos/carga': <CargaPorLote />,
