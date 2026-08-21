@@ -226,18 +226,31 @@ export const navigation: NavSection[] = [
         // inventario, aunque no se mueva todos los días.
         label: 'Inventario',
         icon: Boxes,
+        /*
+          CUATRO ENTRADAS DONDE HABÍA OCHO
+
+          Christopher lo pidió así: «simplificar, disminuir, unificar la
+          cantidad de elementos o pasos para una acción». Ocho entradas para un
+          módulo obligan a decidir ocho veces antes de hacer una sola cosa.
+
+          Lo que se fue no desapareció: se agrupó donde se usa.
+
+            Existencias  ← existencias, catálogo y movimientos, en pestañas.
+                           Son tres miradas al mismo material: cuánto hay, qué
+                           puede haber, y qué le pasó.
+            Almacenes    ← almacenes y talleres. Un taller es un almacén con
+                           máquinas dentro; separarlos obligaba a saber de
+                           antemano en cuál de los dos estaba lo que se busca.
+
+          «Cargar por planilla» deja de ser pestaña y pasa a ser un botón
+          dentro del catálogo, que es donde se está cuando hace falta. Su
+          dirección sigue viva.
+        */
         children: [
-          // Igual que en compras y ventas: la primera entrada es el tablero.
           { label: 'Tablero', to: '/app/inventario' },
           { label: 'Existencias', to: '/app/inventario/existencias' },
-          // Va pegada a Existencias porque responde la pregunta de después:
-          // se ve el total, se ve dónde está, y aquí qué pasa en cada taller.
-          { label: 'Talleres', to: '/app/inventario/talleres' },
-          { label: 'Movimientos', to: '/app/inventario/movimientos' },
           { label: 'Transferencias', to: '/app/inventario/transferencias' },
-          { label: 'Catálogo de artículos', to: '/app/inventario/articulos' },
-          { label: 'Cargar por planilla', to: '/app/inventario/articulos/carga' },
-          { label: 'Almacenes y patios', to: '/app/inventario/almacenes' },
+          { label: 'Almacenes y talleres', to: '/app/inventario/almacenes' },
         ],
       },
       {

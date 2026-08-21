@@ -4,18 +4,25 @@ import {
   Boxes,
   MapPin,
   PackagePlus,
+  Printer,
   PackageMinus,
   Scale,
   Search,
   TriangleAlert,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_MATERIAL } from '@/components/Pestanas'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
+import { Visor } from '@/components/Visor'
+import { useEmpresa } from '@/lib/api/empresa'
+import { useSesion } from '@/lib/sesion'
+import { armarActaExistencias } from '@/lib/ficha/actaExistencias'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
@@ -78,6 +85,9 @@ export function Existencias() {
   const ajuste = useRegistrarAjuste()
   const entrada = useRegistrarEntrada()
   const { data: articulos } = useArticulos()
+  const { data: empresa } = useEmpresa()
+  const { nombre: yo } = useSesion()
+  const [acta, setActa] = useState<ArchivoArmado | null>(null)
 
   const [busqueda, setBusqueda] = useState('')
   const [soloBajas, setSoloBajas] = useState(false)
@@ -115,6 +125,46 @@ export function Existencias() {
   const bajas = datos.filter(
     (e) => Number(e.stock_minimo) > 0 && Number(e.existencia) <= Number(e.stock_minimo),
   )
+
+  /*
+    EL ACTA SE ARMA CON LO QUE SE ESTÁ VIENDO
+
+    Y no con todo el almacén: si alguien filtró por «solo bajo mínimo» y pide
+    el papel, lo que quiere en la mano es esa lista. Por eso el filtro aplicado
+    va impreso en el acta — un papel con quince renglones que no dice que son
+    quince de doscientos se lee como si fueran todos.
+  */
+  const imprimirActa = async () => {
+    const sitio = almacenes?.find((a) => String(a.id) === almacenId)
+    const filtros = [
+      busqueda.trim() ? `Búsqueda: «${busqueda.trim()}»` : null,
+      soloBajas ? 'Solo lo que está en el mínimo o por debajo' : null,
+    ].filter(Boolean)
+
+    setActa(
+      await armarActaExistencias({
+        almacen: sitio?.nombre ?? null,
+        filtro: filtros.length > 0 ? filtros.join(' · ') : null,
+        renglones: filtradas.map((e) => ({
+          codigo: e.articulo_codigo,
+          articulo: e.articulo,
+          unidad: e.unidad,
+          existencia: e.existencia,
+          // Nulo cuando el articulo nunca entro con un costo. Se imprime
+          // cero, que es lo que vale en libros: la alternativa es un hueco,
+          // y un hueco en una columna de dinero se lee como un error.
+          costoUsd: e.costo_promedio_usd ?? 0,
+          valorUsd: e.valor_usd,
+        })),
+        empresa: {
+          razonSocial: empresa?.razon_social ?? '',
+          rif: empresa?.rif ?? '',
+        },
+        emitidoPor: yo ?? '',
+        momento: new Date(),
+      }),
+    )
+  }
 
   const abrir = (tipo: 'salida' | 'ajuste' | 'entrada', fila: Existencia | null) => {
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
@@ -181,16 +231,28 @@ export function Existencias() {
               orden de compra, y un almacén que arranca no tiene ninguna
               todavía.
             */
-            <Button
-              variant="outline"
-              icon={<PackagePlus />}
-              onClick={() => abrir('entrada', null)}
-            >
-              Registrar entrada
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                icon={<Printer />}
+                disabled={filtradas.length === 0}
+                onClick={() => void imprimirActa()}
+              >
+                Acta para contar
+              </Button>
+              <Button
+                variant="outline"
+                icon={<PackagePlus />}
+                onClick={() => abrir('entrada', null)}
+              >
+                Registrar entrada
+              </Button>
+            </>
           ) : undefined
         }
       />
+
+      <Pestanas pestanas={PESTANAS_MATERIAL} />
 
       {bajas.length > 0 ? (
         <div className="border-warning/30 bg-warning-soft mb-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
@@ -566,6 +628,14 @@ export function Existencias() {
           {entrada.error ? <ErrorDeCarga error={entrada.error} className="mt-3" /> : null}
         </Modal>
       ) : null}
+
+      <Visor
+        abierto={acta !== null}
+        onCerrar={() => setActa(null)}
+        blob={acta?.blob ?? null}
+        nombreArchivo={acta?.nombre ?? ''}
+        titulo="Acta de existencias"
+      />
     </>
   )
 }

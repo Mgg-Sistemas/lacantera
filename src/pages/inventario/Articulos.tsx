@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
-import { Boxes, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Link, useNavigate } from 'react-router'
+import { Boxes, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_MATERIAL } from '@/components/Pestanas'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -77,11 +78,23 @@ export function Articulos() {
         title="Catálogo de artículos"
         description="Lo que se pide, se compra y se cuenta. Un artículo mal definido se convierte en existencias que no cuadran."
         actions={
-          <Button icon={<Plus />} onClick={() => setForm({ ...nuevo })}>
-            Nuevo artículo
-          </Button>
+          <>
+            {/* Dejo de ser entrada del menú y paso a estar donde hago falta:
+                quien va a cargar cien artículos de golpe está mirando el
+                catálogo, no buscándome en el riel. */}
+            <Link to="/app/inventario/articulos/carga">
+              <Button variant="outline" icon={<Upload />}>
+                Cargar por planilla
+              </Button>
+            </Link>
+            <Button icon={<Plus />} onClick={() => setForm({ ...nuevo })}>
+              Nuevo artículo
+            </Button>
+          </>
         }
       />
+
+      <Pestanas pestanas={PESTANAS_MATERIAL} />
 
       <Card className="mb-4">
         <div className="grid gap-3 sm:grid-cols-[1fr_220px]">

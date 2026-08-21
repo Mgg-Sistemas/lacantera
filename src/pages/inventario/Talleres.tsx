@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Boxes, Wrench } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_SITIOS } from '@/components/Pestanas'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -72,6 +73,8 @@ export function Talleres() {
         title="Talleres"
         description="Qué tiene asignado cada taller y en qué lo está gastando. El detalle artículo por artículo vive en Existencias."
       />
+
+      <Pestanas pestanas={PESTANAS_SITIOS} />
 
       {cargando ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}

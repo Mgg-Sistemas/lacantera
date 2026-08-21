@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { ChevronDown, X } from 'lucide-react'
 import { moduloDeRuta, navigation } from '@/config/navigation'
-import type { NavItem, NavSection } from '@/config/navigation'
+import type { NavItem, NavSection, NavChild } from '@/config/navigation'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib/cn'
 import { useSesion } from '@/lib/sesion'
@@ -189,6 +189,36 @@ interface SidebarItemProps {
   onNavigate: () => void
 }
 
+/*
+  UN SOLO HERMANO ENCENDIDO
+
+  `NavLink` marca por prefijo, y en un menú donde las direcciones se anidan
+  —`/app/inventario`, `/app/inventario/articulos`,
+  `/app/inventario/articulos/carga`— eso enciende tres entradas a la vez.
+  Christopher lo vio en una captura: Tablero, Catálogo y Cargar por planilla,
+  las tres sombreadas, estando en una sola pantalla.
+
+  Gana la más larga de las que casan, que es la más específica. Así la ficha de
+  un artículo sigue encendiendo «Catálogo» —es donde se estaba— y la pantalla
+  de carga enciende solo la suya.
+*/
+function ramaActiva(hijos: NavChild[], pathname: string): string | null {
+  let mejor: string | null = null
+
+  for (const h of hijos) {
+    // El tablero cuelga de la misma dirección que el módulo entero
+    // —«/app/inventario»—, así que por prefijo casaría con todas las pantallas
+    // del módulo y quedaría encendido siempre. Quien es prefijo de un hermano
+    // solo se enciende exacto.
+    const esRaizDeOtro = hijos.some((otro) => otro !== h && otro.to.startsWith(h.to + '/'))
+    const casa = esRaizDeOtro ? pathname === h.to : pathname === h.to || pathname.startsWith(h.to + '/')
+
+    if (casa && (mejor === null || h.to.length > mejor.length)) mejor = h.to
+  }
+
+  return mejor
+}
+
 function SidebarItem({ item, collapsed, open, onToggle, onNavigate }: SidebarItemProps) {
   const { pathname } = useLocation()
   const Icon = item.icon
@@ -269,14 +299,12 @@ function SidebarItem({ item, collapsed, open, onToggle, onNavigate }: SidebarIte
               <NavLink
                 to={child.to}
                 onClick={onNavigate}
-                className={({ isActive }) =>
-                  cn(
-                    'block truncate rounded-md px-3 py-2 text-sm transition-colors',
-                    isActive
-                      ? 'bg-royal-600/12 text-royal-700 dark:text-royal-300 font-medium'
-                      : 'text-ink/60 hover:bg-ink/5 hover:text-ink/90',
-                  )
-                }
+                className={cn(
+                  'block truncate rounded-md px-3 py-2 text-sm transition-colors',
+                  ramaActiva(item.children ?? [], pathname) === child.to
+                    ? 'bg-royal-600/12 text-royal-700 dark:text-royal-300 font-medium'
+                    : 'text-ink/60 hover:bg-ink/5 hover:text-ink/90',
+                )}
               >
                 {child.label}
               </NavLink>

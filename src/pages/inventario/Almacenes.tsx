@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, Warehouse } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_SITIOS } from '@/components/Pestanas'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -53,6 +54,8 @@ export function Almacenes() {
           </Button>
         }
       />
+
+      <Pestanas pestanas={PESTANAS_SITIOS} />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}

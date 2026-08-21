@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { ArrowDownLeft, ArrowUpRight, ScrollText, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas, PESTANAS_MATERIAL } from '@/components/Pestanas'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -51,6 +52,8 @@ export function Movimientos() {
         title="Movimientos"
         description="El libro del inventario. Nada se edita y nada se borra: una corrección se escribe como un movimiento nuevo."
       />
+
+      <Pestanas pestanas={PESTANAS_MATERIAL} />
 
       <Card className="mb-4 sm:max-w-xs">
         <SelectBuscable
