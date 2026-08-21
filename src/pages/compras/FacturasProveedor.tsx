@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useMonedasUsables } from '@/lib/api/tasas'
-import { Banknote, FileText, Paperclip, Plus } from 'lucide-react'
+import { Banknote, FileText, Paperclip } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_PROVEEDORES } from '@/components/pestanasDeModulos'
@@ -95,6 +96,61 @@ export function FacturasProveedor() {
   const { data: proveedores } = useProveedores()
   const { data: tarjetas } = useTablero()
 
+  const { data: empresa } = useEmpresa()
+  const { data: cuentas } = useCuentas()
+  const registrar = useRegistrarFacturaCompra()
+  const anular = useAnularFacturaCompra()
+  const pagar = useRegistrarPagoCompra()
+  const anularPago = useAnularPagoCompra()
+  const subir = useSubirArchivoFactura()
+  const quitar = useQuitarArchivoFactura()
+  const { puede } = useMisPermisos()
+
+  const [nueva, setNueva] = useState<typeof vacio | null>(null)
+
+  /*
+    Se llega aquí con la orden decidida.
+
+    El detalle de la compra manda `?orden=` y `?proveedor=`, y el formulario
+    abre con las dos casillas puestas y bloqueadas. Reusar esta pantalla en vez
+    de maquetar el formulario allá evita tener dos sitios que sepan calcular
+    retenciones y descuadres, que es como acaban dando cifras distintas.
+  */
+  const navegar = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const ordenPedida = params.get('orden')
+  useEffect(() => {
+    if (!ordenPedida) return
+    setNueva({
+      ...vacio,
+      fecha_emision: hoyEnCaracas(),
+      proveedor_id: params.get('proveedor') ?? '',
+      orden_id: ordenPedida,
+      // La moneda viaja también. Sin ella el formulario proponía bolívares
+      // sobre una orden en dólares, y quien teclea las cifras del papel no
+      // suele mirar dos veces una casilla que ya venía llena.
+      moneda: params.get('moneda') || vacio.moneda,
+    })
+    // La dirección se limpia: si no, volver atrás en el navegador reabre el
+    // formulario de una factura que quizá ya se registró.
+    setParams({}, { replace: true })
+  }, [ordenPedida, params, setParams])
+  const [detalleId, setDetalleId] = useState<number | null>(null)
+  const [pagando, setPagando] = useState<FacturaCompra | null>(null)
+
+  // El bucket es privado: no hay dirección fija que guardar. Se firma una al
+  // abrir y vive lo que dura el visor.
+  const [viendo, setViendo] = useState<{ href: string; nombre: string } | null>(null)
+  const [abriendo, setAbriendo] = useState(false)
+  const [anulando, setAnulando] = useState<FacturaCompra | null>(null)
+  const [motivo, setMotivo] = useState('')
+
+  const [cuentaId, setCuentaId] = useState('')
+  const [monto, setMonto] = useState('')
+  const [metodo, setMetodo] = useState('TRANSFERENCIA')
+  const [referencia, setReferencia] = useState('')
+  const [igtf, setIgtf] = useState<boolean | null>(null)
+
   /*
     Las órdenes del proveedor elegido, para poder atar la factura.
 
@@ -117,32 +173,6 @@ export function FacturasProveedor() {
         .filter(Boolean)
         .join(' · '),
     }))
-  const { data: empresa } = useEmpresa()
-  const { data: cuentas } = useCuentas()
-  const registrar = useRegistrarFacturaCompra()
-  const anular = useAnularFacturaCompra()
-  const pagar = useRegistrarPagoCompra()
-  const anularPago = useAnularPagoCompra()
-  const subir = useSubirArchivoFactura()
-  const quitar = useQuitarArchivoFactura()
-  const { puede } = useMisPermisos()
-
-  const [nueva, setNueva] = useState<typeof vacio | null>(null)
-  const [detalleId, setDetalleId] = useState<number | null>(null)
-  const [pagando, setPagando] = useState<FacturaCompra | null>(null)
-
-  // El bucket es privado: no hay dirección fija que guardar. Se firma una al
-  // abrir y vive lo que dura el visor.
-  const [viendo, setViendo] = useState<{ href: string; nombre: string } | null>(null)
-  const [abriendo, setAbriendo] = useState(false)
-  const [anulando, setAnulando] = useState<FacturaCompra | null>(null)
-  const [motivo, setMotivo] = useState('')
-
-  const [cuentaId, setCuentaId] = useState('')
-  const [monto, setMonto] = useState('')
-  const [metodo, setMetodo] = useState('TRANSFERENCIA')
-  const [referencia, setReferencia] = useState('')
-  const [igtf, setIgtf] = useState<boolean | null>(null)
 
   const detalle = detalleId !== null ? ((data ?? []).find((f) => f.id === detalleId) ?? null) : null
   const pagos = usePagosCompra(detalleId)
@@ -202,21 +232,22 @@ export function FacturasProveedor() {
   return (
     <>
       <PageHeader
-        title="Facturas de proveedor"
-        description="El papel que sustenta el crédito fiscal del IVA."
-        actions={
-          <div className="flex items-center gap-3">
-            {vencidas > 0 ? <Chip tone="danger">{vencidas} vencidas</Chip> : null}
-            {puede('COMPRAS', 'ESCRITURA') ? (
-              <Button
-                icon={<Plus />}
-                onClick={() => setNueva({ ...vacio, fecha_emision: hoyEnCaracas() })}
-              >
-                Registrar factura
-              </Button>
-            ) : null}
-          </div>
-        }
+        title="Facturas recibidas de proveedores"
+        description="El papel que manda el proveedor por una orden ya aprobada. Es lo que sustenta el crédito fiscal del IVA."
+        /*
+          AQUÍ NO SE CREA UNA FACTURA
+
+          Christopher: «si creas nada más la factura sin lo que la motiva y los
+          pasos previos, ¿qué significa?». Nada — y el botón invitaba a
+          intentarlo. Una factura llega POR una orden: se registra desde ella,
+          que es donde consta qué se pidió, a quién y por cuánto, y aparece
+          aquí ya atada.
+
+          Lo que queda es la lista: todas las facturas recibidas, cuáles están
+          vencidas, cuáles alimentan el libro de compras. Eso sí se mira aquí y
+          no desde una compra concreta.
+        */
+        actions={vencidas > 0 ? <Chip tone="danger">{vencidas} vencidas</Chip> : null}
       />
 
       <Pestanas pestanas={PESTANAS_PROVEEDORES} />
@@ -228,8 +259,13 @@ export function FacturasProveedor() {
         <Card>
           <Vacio
             icono={<FileText />}
-            titulo="No hay facturas de proveedor"
-            descripcion="Sin la factura registrada, el IVA que se pagó no se puede descontar del que se cobró. Es dinero real que se queda en el camino."
+            titulo="Todavía no se ha recibido ninguna factura"
+            descripcion="Una factura se registra desde la orden de compra que la motivó: se abre la compra y ahí está el botón. Sin registrarla, el IVA que se pagó no se puede descontar del que se cobró — es dinero real que se queda en el camino."
+            accion={
+              <Button variant="outline" onClick={() => navegar('/app/compras')}>
+                Ir a las compras
+              </Button>
+            }
           />
         </Card>
       ) : null}
@@ -380,7 +416,7 @@ export function FacturasProveedor() {
               }
               valor={nueva.orden_id}
               onCambio={(v) => setNueva({ ...nueva, orden_id: v })}
-              disabled={!nueva.proveedor_id}
+              disabled={!nueva.proveedor_id || Boolean(ordenPedida)}
               hint="Es la que dice qué se compró y a qué precio."
               opciones={ordenesDelProveedor.map((o) => ({
                 valor: String(o.id),

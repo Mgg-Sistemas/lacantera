@@ -6,6 +6,8 @@ import {
   navigation,
   moduloDeRuta,
   esRutaSoloAdmin,
+  esRutaFueraDelMvp,
+  PANTALLAS_SIN_ENTRADA,
   CLAVES_DE_BUSQUEDA,
 } from '@/config/navigation'
 import { useBusquedaDocumentos } from '@/lib/api/busqueda'
@@ -119,6 +121,21 @@ export function Buscador() {
         if (item.to) agregar(item.label, item.to, null)
         for (const hijo of item.children ?? []) agregar(hijo.label, hijo.to, item.label)
       }
+    }
+
+    /*
+      Y las que existen sin estar en el menú.
+
+      Al agrupar los módulos, varias pantallas dejaron de tener entrada propia.
+      La lupa recorría solo `navigation`, así que buscar «cargar articulo» no
+      encontraba nada — el mismo error que se cobró las rutas: confundir lo que
+      el menú ofrece con lo que existe.
+    */
+    for (const p of PANTALLAS_SIN_ENTRADA) {
+      if (esRutaFueraDelMvp(p.to)) continue
+      if (!puede(moduloDeRuta(p.to), 'LECTURA')) continue
+      if (salida.some((d) => d.to === p.to)) continue
+      salida.push({ label: p.label, to: p.to, seccion: p.seccion, grupo: p.grupo })
     }
 
     return salida

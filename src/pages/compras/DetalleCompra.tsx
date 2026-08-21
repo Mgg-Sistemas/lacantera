@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import {
   ArrowLeft,
   Ban,
@@ -10,6 +10,7 @@ import {
   History,
   PackageCheck,
   Printer,
+  Receipt,
   Send,
   Undo2,
   UserX,
@@ -545,6 +546,7 @@ function comoSeLlama(documento: string, estado: string): string {
 
 export function DetalleCompra() {
   const { id } = useParams()
+  const navegar = useNavigate()
   const compraId = Number(id)
   const { data: compra, isPending, error } = useCompra(compraId)
   const orden = ordenVigente(compra)
@@ -887,7 +889,35 @@ export function DetalleCompra() {
                 title={`Orden ${orden.numero}`}
                 subtitle={`${orden.proveedor?.nombre ?? ''} · aprobada el ${fecha(orden.creada_en.slice(0, 10))}`}
                 action={
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center justify-end gap-2">
+                    {/*
+                      LA FACTURA NACE AQUÍ
+
+                      Christopher: «si creas nada más la factura sin lo que la
+                      motiva y los pasos previos, ¿qué significa?». Por eso la
+                      lista de facturas ya no deja crear ninguna: se registra
+                      desde la orden, que es la que dice qué se pidió, a quién
+                      y por cuánto, y de ahí sale ya atada.
+
+                      Solo cuando el proveedor dijo que respalda con factura.
+                      Si respalda con nota de entrega no hay factura que
+                      registrar, y ofrecerlo sería invitar a inventarla.
+                    */}
+                    {orden.comprobante_tipo === 'FACTURA' &&
+                    puedeCompras ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        icon={<Receipt />}
+                        onClick={() =>
+                          navegar(
+                            `/app/compras/facturas?orden=${orden.id}&proveedor=${orden.proveedor?.id ?? ''}&moneda=${orden.moneda}`,
+                          )
+                        }
+                      >
+                        Registrar factura
+                      </Button>
+                    ) : null}
                     <Button
                       size="sm"
                       variant="outline"

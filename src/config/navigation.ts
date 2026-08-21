@@ -117,7 +117,99 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   documento que sale de ella. No hace falta repetir el título: la lupa ya
   compara contra él, contra su grupo y contra su sección.
 */
+/*
+  LAS PANTALLAS QUE NO ESTÁN EN EL MENÚ
+
+  Al agrupar los módulos, varias pantallas dejaron de tener entrada propia: se
+  llega a ellas por un botón o por una pestaña. Christopher buscó «cargar
+  articulo» y «cargar proveedor» en la lupa y no salió nada, con razón — la
+  lupa recorría `navigation` y ahí ya no estaban.
+
+  Es el mismo error que se cobró las rutas hace unas horas: confundir lo que el
+  menú OFRECE con lo que EXISTE. Aquí van las que existen sin figurar, con la
+  sección a la que pertenecen para que la lupa las sepa colocar.
+*/
+export const PANTALLAS_SIN_ENTRADA: Array<{
+  label: string
+  to: string
+  grupo: string
+  seccion: string
+}> = [
+  {
+    label: 'Cargar artículos por planilla',
+    to: '/app/inventario/articulos/carga',
+    grupo: 'Inventario',
+    seccion: 'Operación',
+  },
+  {
+    label: 'Cargar personal por planilla',
+    to: '/app/nomina/personal/carga',
+    grupo: 'Nómina',
+    seccion: 'Administración',
+  },
+  {
+    label: 'Cargar proveedores por planilla',
+    to: '/app/compras/proveedores/carga',
+    grupo: 'Compras',
+    seccion: 'Administración',
+  },
+  {
+    label: 'Catálogo de artículos',
+    to: '/app/inventario/articulos',
+    grupo: 'Inventario',
+    seccion: 'Operación',
+  },
+  {
+    label: 'Movimientos de inventario',
+    to: '/app/inventario/movimientos',
+    grupo: 'Inventario',
+    seccion: 'Operación',
+  },
+  {
+    label: 'Talleres',
+    to: '/app/inventario/talleres',
+    grupo: 'Inventario',
+    seccion: 'Operación',
+  },
+  {
+    label: 'Facturas de proveedor',
+    to: '/app/compras/facturas',
+    grupo: 'Compras',
+    seccion: 'Administración',
+  },
+  {
+    label: 'Tabulador de cargos',
+    to: '/app/nomina/tabulador',
+    grupo: 'Nómina',
+    seccion: 'Administración',
+  },
+  {
+    label: 'Procesar nómina',
+    to: '/app/nomina/procesos',
+    grupo: 'Nómina',
+    seccion: 'Administración',
+  },
+  {
+    label: 'Recibos de pago',
+    to: '/app/nomina/recibos',
+    grupo: 'Nómina',
+    seccion: 'Administración',
+  },
+  {
+    label: 'Parámetros de nómina',
+    to: '/app/nomina/parametros',
+    grupo: 'Nómina',
+    seccion: 'Administración',
+  },
+]
+
 export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
+  '/app/inventario/articulos/carga':
+    'cargar articulo articulos producto productos catalogo excel csv planilla plantilla lote masivo importar subir',
+  '/app/nomina/personal/carga':
+    'cargar personal trabajador trabajadores empleado empleados gente nomina excel csv planilla plantilla lote masivo importar subir',
+  '/app/compras/proveedores/carga':
+    'cargar proveedor proveedores suplidor excel csv planilla plantilla lote masivo importar subir',
   '/app/tasas': 'convertir calculadora conversor cambio divisa dolar euro usdt bcv paralelo binance',
   '/app/tesoreria/cuentas': 'banco caja billetera saldo dinero efectivo zelle binance traslado',
   '/app/tesoreria': 'movimientos ingresos egresos flujo',
@@ -133,7 +225,6 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/inventario/existencias': 'stock cuanto hay disponible',
   '/app/inventario/articulos': 'catalogo repuesto insumo herramienta epp material',
   '/app/organigrama': 'organizacion estructura jerarquia cargos quien depende de quien departamentos arbol',
-  '/app/inventario/articulos/carga': 'excel csv planilla plantilla lote masivo importar cargar productos precios',
   '/app/inventario/transferencias': 'mover traspaso entre almacenes',
   '/app/despachos/guias': 'permiso movilizacion ministerio guia',
   '/app/despachos/tickets': 'romana pesaje peso bruto tara',

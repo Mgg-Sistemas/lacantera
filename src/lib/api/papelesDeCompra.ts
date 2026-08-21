@@ -88,7 +88,7 @@ export function useAdjuntarPapel() {
     async (a: { orden_id: number; tipo: TipoDePapel; archivo: File; nota?: string | null }) => {
       // El nombre viaja aparte: en la ruta se limpia para que no rompa, y el
       // original se guarda para poder devolvérselo tal cual al descargarlo.
-      const limpio = a.archivo.name.replace(/[^\w.\-]+/g, '_').slice(-80)
+      const limpio = a.archivo.name.replace(/[^\w.-]+/g, '_').slice(-80)
       const ruta = `orden-${a.orden_id}/${Date.now()}-${limpio}`
 
       const { error } = await supabase.storage
