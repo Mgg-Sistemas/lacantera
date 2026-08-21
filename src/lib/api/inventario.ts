@@ -252,6 +252,37 @@ export function useRegistrarRecepcion() {
   )
 }
 
+/**
+ * Meter mercancía sin una compra detrás.
+ *
+ * El saldo con el que arranca un almacén, algo comprado por fuera, material
+ * que trae alguien. Lleva costo propio — al revés que el ajuste de conteo, que
+ * hereda el promedio— porque aquí el costo es un dato que se conoce, y sin él
+ * el almacén quedaría lleno y valorado en nada.
+ */
+export function useRegistrarEntrada() {
+  return useAccionInventario(
+    (e: {
+      almacen_id: number
+      articulo_id: number
+      cantidad: number
+      costo_usd: number
+      motivo: string
+      referencia?: string | null
+      fecha?: string
+    }) =>
+      rpc<number>('registrar_entrada', {
+        p_almacen_id: e.almacen_id,
+        p_articulo_id: e.articulo_id,
+        p_cantidad: e.cantidad,
+        p_costo_usd: e.costo_usd,
+        p_motivo: e.motivo,
+        p_referencia: e.referencia ?? null,
+        p_fecha: e.fecha ?? null,
+      }),
+  )
+}
+
 export function useRegistrarSalida() {
   return useAccionInventario(
     (s: {

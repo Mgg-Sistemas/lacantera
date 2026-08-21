@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import {
   Boxes,
   MapPin,
@@ -18,13 +18,14 @@ import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { useMisRoles } from '@/lib/api/catalogo'
+import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
 import {
   useAlmacenes,
   useExistencias,
   useExistenciasDeArticulo,
   useExistenciasTotales,
   useRegistrarAjuste,
+  useRegistrarEntrada,
   useRegistrarSalida,
 } from '@/lib/api/inventario'
 import type { Existencia, ExistenciaTotal } from '@/lib/api/inventario'
@@ -75,14 +76,23 @@ export function Existencias() {
   const { puede } = useMisRoles()
   const salida = useRegistrarSalida()
   const ajuste = useRegistrarAjuste()
-  const navegar = useNavigate()
+  const entrada = useRegistrarEntrada()
+  const { data: articulos } = useArticulos()
 
   const [busqueda, setBusqueda] = useState('')
   const [soloBajas, setSoloBajas] = useState(false)
   const [desglose, setDesglose] = useState<ExistenciaTotal | null>(null)
-  const [modal, setModal] = useState<null | { tipo: 'salida' | 'ajuste'; fila: Existencia }>(null)
+  const [modal, setModal] = useState<
+    null | { tipo: 'salida' | 'ajuste' | 'entrada'; fila: Existencia | null }
+  >(null)
   const [valor, setValor] = useState('')
   const [motivo, setMotivo] = useState('')
+  // Solo para la entrada: el costo es lo que la distingue de un ajuste, y el
+  // almacén y el artículo hacen falta cuando se abre sin fila debajo.
+  const [costo, setCosto] = useState('')
+  const [referencia, setReferencia] = useState('')
+  const [aDonde, setADonde] = useState('')
+  const [queCosa, setQueCosa] = useState('')
 
   // La referencia tiene que ser estable o el filtrado se recalcula en cada
   // pintado: `?? []` crea un arreglo nuevo cada vez.
@@ -106,26 +116,42 @@ export function Existencias() {
     (e) => Number(e.stock_minimo) > 0 && Number(e.existencia) <= Number(e.stock_minimo),
   )
 
-  const abrir = (tipo: 'salida' | 'ajuste', fila: Existencia) => {
-    setValor(tipo === 'ajuste' ? fila.existencia : '')
+  const abrir = (tipo: 'salida' | 'ajuste' | 'entrada', fila: Existencia | null) => {
+    setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setMotivo('')
+    setCosto('')
+    setReferencia('')
+    // Abierta desde una fila, ya se sabe dónde y qué. Abierta desde la
+    // cabecera —el caso del saldo inicial— no hay fila que preguntar, porque
+    // justamente todavía no existe.
+    setADonde(fila ? String(fila.almacen_id) : almacenId)
+    setQueCosa(fila ? String(fila.articulo_id) : '')
     setModal({ tipo, fila })
   }
 
   const guardar = async () => {
     if (!modal) return
 
-    if (modal.tipo === 'salida') {
+    if (modal.tipo === 'entrada') {
+      await entrada.mutateAsync({
+        almacen_id: Number(aDonde),
+        articulo_id: Number(queCosa),
+        cantidad: Number(valor),
+        costo_usd: Number(costo),
+        motivo,
+        referencia: referencia || null,
+      })
+    } else if (modal.tipo === 'salida') {
       await salida.mutateAsync({
-        almacen_id: modal.fila.almacen_id,
-        articulo_id: modal.fila.articulo_id,
+        almacen_id: modal.fila!.almacen_id,
+        articulo_id: modal.fila!.articulo_id,
         cantidad: Number(valor),
         motivo,
       })
     } else {
       await ajuste.mutateAsync({
-        almacen_id: modal.fila.almacen_id,
-        articulo_id: modal.fila.articulo_id,
+        almacen_id: modal.fila!.almacen_id,
+        articulo_id: modal.fila!.articulo_id,
         contado: Number(valor),
         motivo,
       })
@@ -145,17 +171,22 @@ export function Existencias() {
         }
         actions={
           puede('ALMACEN') ? (
-            /* El botón de cargar producción vivía aquí mientras Explotación no
-               existía. Ahora existe, y la piedra entra por el parte de turno,
-               que además sabe de qué frente salió y con cuántas horas. Dos
-               puertas al mismo patio es como se cuenta dos veces la misma
-               piedra, así que esta se queda como lo que es: un atajo. */
+            /*
+              Antes esto era un atajo a Explotación, que hoy está fuera del
+              MVP y detrás del cartel de obra: el botón principal de esta
+              pantalla mandaba a una puerta cerrada.
+
+              Y sobre todo, Inventario tiene que valerse solo. Sin esta
+              entrada, la única forma de meter mercancía con su costo era una
+              orden de compra, y un almacén que arranca no tiene ninguna
+              todavía.
+            */
             <Button
               variant="outline"
               icon={<PackagePlus />}
-              onClick={() => navegar('/app/explotacion/produccion')}
+              onClick={() => abrir('entrada', null)}
             >
-              Cargar producción
+              Registrar entrada
             </Button>
           ) : undefined
         }
@@ -212,7 +243,7 @@ export function Existencias() {
             titulo={datos.length === 0 ? 'El inventario está vacío' : 'Nada coincide'}
             descripcion={
               datos.length === 0
-                ? 'Las existencias aparecen cuando entra material: al recibir una compra, al registrar producción o con un ajuste por conteo.'
+                ? 'Las existencias aparecen cuando entra material. Si el almacén arranca ahora, usa «Registrar entrada» para cargar el saldo inicial con su costo.'
                 : undefined
             }
           />
@@ -381,11 +412,19 @@ export function Existencias() {
         <Modal
           abierto
           onCerrar={() => setModal(null)}
-          titulo={modal.tipo === 'salida' ? 'Sacar material' : 'Conteo físico'}
+          titulo={
+            modal.tipo === 'entrada'
+              ? 'Entrada de material'
+              : modal.tipo === 'salida'
+                ? 'Sacar material'
+                : 'Conteo físico'
+          }
           descripcion={
-            modal.tipo === 'salida'
-              ? 'Sale del almacén al costo promedio que tiene ahora.'
-              : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
+            modal.tipo === 'entrada'
+              ? 'Para lo que entra sin una compra de por medio: el saldo con el que arranca el almacén, algo comprado por fuera, material que trae alguien.'
+              : modal.tipo === 'salida'
+                ? 'Sale del almacén al costo promedio que tiene ahora.'
+                : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
           }
           ancho="sm"
           acciones={
@@ -395,38 +434,126 @@ export function Existencias() {
               </Button>
               <Button
                 onClick={() => void guardar()}
-                disabled={!valor || motivo.trim().length < 4 || salida.isPending || ajuste.isPending}
+                disabled={
+                  !valor ||
+                  motivo.trim().length < 4 ||
+                  (modal.tipo === 'entrada' && (!aDonde || !queCosa || !costo)) ||
+                  salida.isPending ||
+                  ajuste.isPending ||
+                  entrada.isPending
+                }
               >
-                {salida.isPending || ajuste.isPending ? 'Guardando…' : 'Registrar'}
+                {salida.isPending || ajuste.isPending || entrada.isPending
+                  ? 'Guardando…'
+                  : 'Registrar'}
               </Button>
             </>
           }
         >
-          <div className="border-hairline bg-canvas rounded-card mb-4 border p-3">
-            <p className="text-ink/85 text-sm font-medium">{modal.fila.articulo}</p>
-            <p className="text-ink/55 text-xs">
-              {modal.fila.almacen} · hay {cantidad(modal.fila.existencia)} {modal.fila.unidad}
-            </p>
+          {/* Con fila debajo ya se sabe dónde y qué, y repetirlo como campos
+              sería preguntar lo que se acaba de pulsar. Sin ella —el caso del
+              saldo inicial— hay que elegirlo, y por eso el artículo sale del
+              catálogo entero y no de lo que ya tiene existencia: justamente lo
+              que se está cargando todavía no la tiene. */}
+          {modal.fila ? (
+            <div className="border-hairline bg-canvas rounded-card mb-4 border p-3">
+              <p className="text-ink/85 text-sm font-medium">{modal.fila.articulo}</p>
+              <p className="text-ink/55 text-xs">
+                {modal.fila.almacen} · hay {cantidad(modal.fila.existencia)} {modal.fila.unidad}
+              </p>
+            </div>
+          ) : (
+            <div className="mb-4 space-y-4">
+              <SelectBuscable
+                label="A qué almacén entra"
+                vacio="Elige el sitio"
+                valor={aDonde}
+                onCambio={setADonde}
+                opciones={(almacenes ?? []).map((a) => ({
+                  valor: String(a.id),
+                  codigo: a.codigo,
+                  nombre: a.nombre,
+                  detalle: a.tipo,
+                }))}
+              />
+              <SelectBuscable
+                label="Qué entra"
+                vacio="Elige el artículo"
+                valor={queCosa}
+                onCambio={setQueCosa}
+                opciones={(articulos ?? [])
+                  .filter((a) => a.inventariable)
+                  .map((a) => ({
+                    valor: String(a.id),
+                    codigo: a.codigo,
+                    nombre: a.nombre,
+                    detalle: `${a.categoria} · ${a.unidad}`,
+                  }))}
+              />
+            </div>
+          )}
+
+          <div className={modal.tipo === 'entrada' ? 'grid gap-4 sm:grid-cols-2' : undefined}>
+            <Input
+              label={
+                modal.tipo === 'entrada'
+                  ? 'Cantidad que entra'
+                  : modal.tipo === 'salida'
+                    ? 'Cantidad que sale'
+                    : 'Cantidad contada'
+              }
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              autoFocus
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              hint={
+                modal.tipo === 'ajuste' && modal.fila && valor !== ''
+                  ? `Diferencia: ${(Number(valor) - Number(modal.fila.existencia)).toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${modal.fila.unidad}`
+                  : undefined
+              }
+            />
+
+            {/* El costo es lo que distingue una entrada de un ajuste, y lo que
+                evita que el almacén quede lleno y valorado en nada. */}
+            {modal.tipo === 'entrada' ? (
+              <Input
+                label="Costo por unidad ($)"
+                type="number"
+                min="0"
+                step="0.0001"
+                inputMode="decimal"
+                value={costo}
+                onChange={(e) => setCosto(e.target.value)}
+                hint={
+                  valor && costo
+                    ? `Entra por $ ${(Number(valor) * Number(costo)).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : 'Sin costo no se puede valorar lo que hay.'
+                }
+              />
+            ) : null}
           </div>
 
-          <Input
-            label={modal.tipo === 'salida' ? 'Cantidad que sale' : 'Cantidad contada'}
-            type="number"
-            min="0"
-            step="0.01"
-            inputMode="decimal"
-            autoFocus
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
-            hint={
-              modal.tipo === 'ajuste' && valor !== ''
-                ? `Diferencia: ${(Number(valor) - Number(modal.fila.existencia)).toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${modal.fila.unidad}`
-                : undefined
-            }
-          />
+          {modal.tipo === 'entrada' ? (
+            <Input
+              className="mt-4"
+              label="Referencia"
+              hint="Opcional: quién lo trajo, o el número de una factura de fuera."
+              value={referencia}
+              onChange={(e) => setReferencia(e.target.value)}
+            />
+          ) : null}
 
           <Textarea
-            label={modal.tipo === 'salida' ? 'Para qué sale' : 'Qué explica la diferencia'}
+            label={
+              modal.tipo === 'entrada'
+                ? 'De dónde vino'
+                : modal.tipo === 'salida'
+                  ? 'Para qué sale'
+                  : 'Qué explica la diferencia'
+            }
             className="mt-4"
             rows={3}
             value={motivo}
@@ -436,6 +563,7 @@ export function Existencias() {
 
           {salida.error ? <ErrorDeCarga error={salida.error} className="mt-3" /> : null}
           {ajuste.error ? <ErrorDeCarga error={ajuste.error} className="mt-3" /> : null}
+          {entrada.error ? <ErrorDeCarga error={entrada.error} className="mt-3" /> : null}
         </Modal>
       ) : null}
     </>
