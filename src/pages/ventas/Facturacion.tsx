@@ -128,7 +128,7 @@ export function Facturacion() {
         numeroControl: f.numero_control,
         vigencia: { rotulo: 'Vence el', fecha: f.vence_el },
         condicionPago: CONDICIONES_PAGO.find((c) => c.valor === f.condicion_pago)?.etiqueta ?? null,
-        cliente: { nombre: f.cliente, rif: f.cliente_rif, direccion: f.cliente_direccion },
+        contraparte: { nombre: f.cliente, rif: f.cliente_rif, direccion: f.cliente_direccion },
         moneda: f.moneda,
         tasa: f.tasa_usd,
         renglones: renglones.map((r) => ({

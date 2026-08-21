@@ -9,6 +9,7 @@ import {
   FileText,
   History,
   PackageCheck,
+  Printer,
   Send,
   Undo2,
   UserX,
@@ -17,6 +18,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ChipTasa } from '@/components/ChipTasa'
+import { Visor } from '@/components/Visor'
 import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
@@ -26,7 +28,7 @@ import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
 import { ModalRecepcion } from './ModalRecepcion'
 import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
-import { usePerfiles, useMisRoles } from '@/lib/api/catalogo'
+import { usePerfiles, useMisRoles, CONDICIONES_PAGO } from '@/lib/api/catalogo'
 import {
   ordenVigente,
   useAprobarCompra,
@@ -46,6 +48,10 @@ import {
 } from '@/lib/api/compras'
 import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import type { Cotizacion, InstruccionPago } from '@/lib/api/compras'
+import { useEmpresa } from '@/lib/api/empresa'
+import { useSesion } from '@/lib/sesion'
+import { armarDocumento } from '@/lib/ficha/ventaPdf'
+import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { bolivares, dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -494,6 +500,9 @@ export function DetalleCompra() {
   const orden = ordenVigente(compra)
   const { data: bitacora } = useBitacora(compraId, orden?.id)
   const { data: perfiles } = usePerfiles()
+  const { data: empresa } = useEmpresa()
+  const { nombre: yo } = useSesion()
+  const [pdf, setPdf] = useState<PdfArmado | null>(null)
   const { puede } = useMisRoles()
 
   const enviar = useEnviarPedido()
@@ -524,6 +533,82 @@ export function DetalleCompra() {
   >(null)
 
   const [resolucion, setResolucion] = useState('REEMBOLSADO')
+
+  /*
+    LA ORDEN, EN PAPEL
+
+    Es el único documento que sale de Compras y el que de verdad hace falta
+    fuera del sistema: sin él, al proveedor se le pide por teléfono y no queda
+    constancia de a qué precio ni en cuánto tiempo se acordó.
+
+    Se arma con el mismo generador que la factura y la nota de entrega, no con
+    uno propio. Si se maquetara aparte, en seis meses la orden y la factura de
+    la misma empresa se verían como de dos empresas distintas.
+  */
+  const imprimirOrden = async () => {
+    if (!compra || !orden) return
+
+    // La alícuota vive en la cotización, no en la orden: la orden guarda el
+    // monto de IVA ya calculado. Sin el porcentaje, el papel diría «IVA» a
+    // secas y quien lo revise no sabría contra qué cuadrarlo.
+    const deLaCotizacion = (compra.cotizaciones ?? []).find((c) => c.id === orden.cotizacion_id)
+
+    setPdf(
+      await armarDocumento({
+        tipo: 'ORDEN',
+        numero: orden.numero,
+        fecha: orden.creada_en.slice(0, 10),
+        vigencia: orden.entrega_estimada
+          ? { rotulo: 'Entrega estimada', fecha: orden.entrega_estimada }
+          : null,
+        // El valor crudo de la base —«CONTRA_ENTREGA»— no es para leerlo un
+        // proveedor. Se traduce con el mismo catálogo que usa la pantalla.
+        condicionPago:
+          CONDICIONES_PAGO.find((c) => c.valor === orden.condicion_pago)?.etiqueta ??
+          orden.condicion_pago,
+        contraparte: {
+          nombre: orden.proveedor?.nombre ?? '',
+          rif: orden.proveedor?.rif ?? '',
+          direccion: orden.proveedor?.direccion ?? null,
+          telefono: orden.proveedor?.telefono ?? null,
+        },
+        moneda: orden.moneda,
+        tasa: orden.tasa_usd,
+        renglones: (orden.renglones ?? [])
+          .slice()
+          .sort((a, b) => a.linea - b.linea)
+          .map((r) => ({
+            descripcion: r.descripcion,
+            cantidad: r.cantidad,
+            unidad: r.unidad,
+            precio_unitario: r.precio_unitario,
+            subtotal: r.subtotal,
+            exento_iva: r.exento_iva,
+          })),
+        subtotal: orden.subtotal,
+        descuento: orden.descuento,
+        flete: orden.flete,
+        iva: orden.iva,
+        alicuotaIva: deLaCotizacion?.alicuota_iva ?? 0,
+        total: orden.total,
+        // Referencia al pedido que la originó: al proveedor le dice de qué
+        // va, y a nosotros nos deja atar el papel con lo que se pidió cuando
+        // llegue el material meses después.
+        observacion: `Según pedido ${compra.numero} · ${compra.titulo}`,
+        // Una orden cancelada que se imprime sin decirlo es una orden que
+        // alguien puede despachar por error.
+        sello: orden.estado === 'ANULADA' || orden.estado === 'CANCELADA' ? 'ANULADA' : null,
+        empresa: {
+          razonSocial: empresa?.razon_social ?? '',
+          rif: empresa?.rif ?? '',
+          domicilio: empresa?.domicilio_fiscal ?? null,
+          telefono: empresa?.telefono ?? null,
+          correo: empresa?.correo ?? null,
+        },
+        emitidoPor: yo ?? '',
+      }),
+    )
+  }
 
   if (isPending) return <Cargando texto="Cargando la compra…" />
   if (error) return <ErrorDeCarga error={error} />
@@ -687,7 +772,21 @@ export function DetalleCompra() {
               <CardHeader
                 title={`Orden ${orden.numero}`}
                 subtitle={`${orden.proveedor?.nombre ?? ''} · aprobada el ${fecha(orden.creada_en.slice(0, 10))}`}
-                action={<Chip tone={ETIQUETAS[orden.estado]?.tono ?? 'neutral'}>{ETIQUETAS[orden.estado]?.texto ?? orden.estado}</Chip>}
+                action={
+                  <span className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      icon={<Printer />}
+                      onClick={() => void imprimirOrden()}
+                    >
+                      Imprimir
+                    </Button>
+                    <Chip tone={ETIQUETAS[orden.estado]?.tono ?? 'neutral'}>
+                      {ETIQUETAS[orden.estado]?.texto ?? orden.estado}
+                    </Chip>
+                  </span>
+                }
               />
 
               <div className="-mx-5 mt-4 overflow-x-auto">
@@ -1283,6 +1382,14 @@ export function DetalleCompra() {
           {resolver.error ? <ErrorDeCarga error={resolver.error} className="mt-3" /> : null}
         </Modal>
       ) : null}
+
+      <Visor
+        abierto={pdf !== null}
+        onCerrar={() => setPdf(null)}
+        blob={pdf?.blob ?? null}
+        nombreArchivo={pdf?.nombre ?? ''}
+        titulo="Orden de compra"
+      />
     </>
   )
 }

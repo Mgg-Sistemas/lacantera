@@ -1,12 +1,13 @@
 /**
- * Los papeles que se le entregan al cliente.
+ * Los papeles con los que la empresa trata con alguien de fuera.
  *
- * Son tres —cotización, nota de entrega y factura— y se arman con el mismo
- * archivo a propósito. No es ahorro de código: es que los tres dicen lo mismo
+ * Son cuatro —cotización, nota de entrega, factura y orden de compra— y se
+ * arman con el mismo archivo a propósito. No es ahorro de código: es que los tres dicen lo mismo
  * en distinto momento, y si se maquetaran por separado acabarían diciéndolo
- * distinto. El cliente que recibe una cotización, después una nota y al final
- * una factura tiene que poder poner los tres papeles uno al lado del otro y
- * reconocer que son de la misma empresa y del mismo negocio.
+ * distinto. Quien recibe una cotización, después una nota y al final una
+ * factura tiene que poder poner los papeles uno al lado del otro y reconocer
+ * que son de la misma empresa y del mismo negocio. Y el proveedor que recibe
+ * una orden de compra, lo mismo.
  *
  * Lo que cambia entre ellos:
  *
@@ -47,7 +48,7 @@ const FONDO = '#F4F6FB'
 
 type Doc = import('jspdf').jsPDF
 
-export type TipoDocumento = 'COTIZACION' | 'NOTA' | 'FACTURA'
+export type TipoDocumento = 'COTIZACION' | 'NOTA' | 'FACTURA' | 'ORDEN'
 
 export interface RenglonImpreso {
   descripcion: string
@@ -69,7 +70,14 @@ export interface DatosDocumento {
   vigencia?: { rotulo: string; fecha: string } | null
   condicionPago?: string | null
 
-  cliente: {
+  /**
+   * El de enfrente: el cliente en una venta, el proveedor en una orden.
+   *
+   * Se llama así y no `cliente` porque una orden de compra con el proveedor
+   * metido en un campo llamado «cliente» es de las cosas que confunden a quien
+   * lea esto dentro de un año.
+   */
+  contraparte: {
     nombre: string
     rif: string
     direccion?: string | null
@@ -117,6 +125,9 @@ const ROTULOS: Record<TipoDocumento, { titulo: string; color: string; archivo: s
   COTIZACION: { titulo: 'COTIZACIÓN', color: GRIS_BANDA, archivo: 'cotizacion' },
   NOTA: { titulo: 'NOTA DE ENTREGA', color: NARANJA, archivo: 'nota-entrega' },
   FACTURA: { titulo: 'FACTURA', color: MARCA, archivo: 'factura' },
+  // Gris de banda, como la cotización: los dos son papeles que piden algo, no
+  // que cobran. Y así el proveedor no confunde una orden con una factura.
+  ORDEN: { titulo: 'ORDEN DE COMPRA', color: GRIS_BANDA, archivo: 'orden-compra' },
 }
 
 const PIES: Record<TipoDocumento, string> = {
@@ -125,6 +136,8 @@ const PIES: Record<TipoDocumento, string> = {
   NOTA: 'ESTE DOCUMENTO NO ES UNA FACTURA. Ampara el traslado del material; la factura se emite aparte. Quien recibe firma conforme el material y el peso.',
   FACTURA:
     'La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.',
+  ORDEN:
+    'Esta orden autoriza la compra en los términos y precios indicados. Cualquier variación en cantidad, precio o plazo debe acordarse por escrito antes de despachar. Facture a nombre de la razón social y el RIF del membrete.',
 }
 
 const decimal2 = new Intl.NumberFormat('es-VE', {
@@ -250,9 +263,9 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
   // CARONI, C.A.»— no cabe en un renglón de 88 mm, y recortarla con puntos
   // suspensivos en una factura es escribir mal el nombre del comprador.
   doc.setFont('helvetica', 'bold').setFontSize(8)
-  const nombre = (doc.splitTextToSize(d.cliente.nombre, ANCHO_1) as string[]).slice(0, 2)
+  const nombre = (doc.splitTextToSize(d.contraparte.nombre, ANCHO_1) as string[]).slice(0, 2)
   const direccion = (
-    doc.splitTextToSize(d.cliente.direccion ?? '—', ANCHO_1) as string[]
+    doc.splitTextToSize(d.contraparte.direccion ?? '—', ANCHO_1) as string[]
   ).slice(0, 3)
 
   const yDireccion = 14.5 + (nombre.length - 1) * RENGLON
@@ -267,17 +280,17 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
     doc.text(lineas, x, fila, { lineHeightFactor: 1.45 })
   }
 
-  etiqueta('Cliente', x1, y + 5)
+  etiqueta(d.tipo === 'ORDEN' ? 'Proveedor' : 'Cliente', x1, y + 5)
   parrafo(nombre, x1, y + 9.5)
 
   etiqueta('RIF', x2, y + 5)
-  valor(d.cliente.rif, x2, y + 9.5, 50)
+  valor(d.contraparte.rif, x2, y + 9.5, 50)
 
   etiqueta('Dirección', x1, y + yDireccion)
   parrafo(direccion, x1, y + yDireccion + 4.5)
 
   etiqueta(d.condicionPago ? 'Condición' : 'Teléfono', x2, y + 14.5)
-  valor(d.condicionPago ?? d.cliente.telefono ?? '', x2, y + 19, 50)
+  valor(d.condicionPago ?? d.contraparte.telefono ?? '', x2, y + 19, 50)
 
   if (d.despacho) {
     doc.setDrawColor(HAIRLINE).setLineWidth(0.3)
@@ -416,8 +429,16 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
 }
 
 function firmas(doc: Doc, d: DatosDocumento, y: number) {
-  const izquierda = d.tipo === 'NOTA' ? 'Entregado por' : 'Por la empresa'
-  const derecha = d.tipo === 'NOTA' ? 'Recibido conforme' : 'Aceptado por el cliente'
+  // En una orden de compra las firmas van al revés que en una venta: la
+  // empresa autoriza y el proveedor acepta el encargo.
+  const izquierda =
+    d.tipo === 'NOTA' ? 'Entregado por' : d.tipo === 'ORDEN' ? 'Autorizado por' : 'Por la empresa'
+  const derecha =
+    d.tipo === 'NOTA'
+      ? 'Recibido conforme'
+      : d.tipo === 'ORDEN'
+        ? 'Recibido por el proveedor'
+        : 'Aceptado por el cliente'
 
   const SEPARA = 20
   const ancho = (ANCHO_UTIL - SEPARA) / 2
@@ -490,7 +511,7 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
       doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(8)
       doc.text(`${ROTULOS[d.tipo].titulo} ${d.numero}`, IZQ + 12, ARRIBA + 6)
       doc.setFont('helvetica', 'normal').setFontSize(7)
-      doc.text(ajustar(doc, d.cliente.nombre, 60), DER - 3, ARRIBA + 6, { align: 'right' })
+      doc.text(ajustar(doc, d.contraparte.nombre, 60), DER - 3, ARRIBA + 6, { align: 'right' })
       y = ARRIBA + 12
     }
 
@@ -536,7 +557,7 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
   }
 
   doc.setProperties({
-    title: `${ROTULOS[d.tipo].titulo} ${d.numero} — ${d.cliente.nombre}`,
+    title: `${ROTULOS[d.tipo].titulo} ${d.numero} — ${d.contraparte.nombre}`,
     subject: ROTULOS[d.tipo].titulo,
     author: d.empresa.razonSocial,
   })

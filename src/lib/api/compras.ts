@@ -206,6 +206,10 @@ export interface Orden {
   total_usd: string
   dias_entrega: number | null
   entrega_estimada: string | null
+  /** Cómo se le paga. Va impreso en la orden que se le manda al proveedor. */
+  condicion_pago: string | null
+  /** De qué cotización salió. De ahí sale la alícuota que imprime la orden. */
+  cotizacion_id: number | null
   fecha_pago: string | null
   recibida_en: string | null
   desistio_motivo: string | null
@@ -220,6 +224,9 @@ export interface Orden {
     rif: string
     /** Cómo suele cobrar. Se propone al pagarle. */
     metodo_pago_preferido: string | null
+    /** Para el papel: una orden de compra lleva a dónde se le manda. */
+    direccion: string | null
+    telefono: string | null
   } | null
   /** A dónde pidió el solicitante que fuera. Decide el almacén al recibir. */
   solicitud: { destino: string | null; destino_almacen_id: number | null } | null
@@ -298,7 +305,7 @@ const SELECT_DETALLE = `
   ),
   ordenes:ordenes_compra(
     *,
-    proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
+    proveedor:proveedores(id, nombre, rif, metodo_pago_preferido, direccion, telefono),
   solicitud:solicitudes_pedido(destino, destino_almacen_id),
     renglones:orden_renglones(*),
     instrucciones:instrucciones_pago(*)

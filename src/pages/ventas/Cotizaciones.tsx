@@ -114,7 +114,7 @@ export function Cotizaciones() {
         numero: q.numero,
         fecha: q.fecha,
         vigencia: { rotulo: 'Válida hasta', fecha: q.vence_el },
-        cliente: {
+        contraparte: {
           nombre: q.cliente,
           rif: q.cliente_rif,
           direccion: clientes?.find((c) => c.id === q.cliente_id)?.direccion ?? null,

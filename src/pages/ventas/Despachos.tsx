@@ -159,7 +159,7 @@ export function Despachos() {
         tipo: 'NOTA',
         numero: n.numero,
         fecha: n.fecha,
-        cliente: {
+        contraparte: {
           nombre: n.cliente,
           rif: n.cliente_rif,
           direccion: clientes?.find((c) => c.id === n.cliente_id)?.direccion ?? null,
