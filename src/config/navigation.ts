@@ -403,6 +403,7 @@ export const navigation: NavSection[] = [
         // programa. No se abre a diario, pero el día que hace falta se necesita
         // encontrar sin preguntarle a nadie: para eso está.
         label: 'Manual de usuario',
+        fueraDelMvp: true,
         icon: BookOpen,
         to: '/app/manual',
         siempre: true,
@@ -410,3 +411,28 @@ export const navigation: NavSection[] = [
     ],
   },
 ]
+
+/*
+  LAS DIRECCIONES DE LO QUE QUEDÓ FUERA DEL MVP
+
+  Se calculan del propio menú y no se escriben a mano: si mañana un módulo
+  vuelve al riel, basta con quitarle el marbete y esta lista se entera sola.
+  Una lista paralela sería justo la que alguien olvida actualizar, y entonces
+  un módulo volvería al menú pero seguiría dando la pantalla de obra.
+*/
+const FUERA_DEL_MVP: string[] = navigation
+  .flatMap((seccion) => seccion.items)
+  .filter((item) => item.fueraDelMvp)
+  .flatMap((item) => [item.to, ...(item.children ?? []).map((hijo) => hijo.to)])
+  .filter((ruta): ruta is string => Boolean(ruta))
+
+/**
+ * ¿Esta dirección es de algo que hoy no se ofrece?
+ *
+ * Se compara por prefijo con la barra detrás, no con `startsWith` a secas:
+ * `/app/ventas` no debe atrapar una hipotética `/app/ventasexpress`, y sí
+ * tiene que atrapar `/app/ventas/clientes`.
+ */
+export function esRutaFueraDelMvp(ruta: string): boolean {
+  return FUERA_DEL_MVP.some((base) => ruta === base || ruta.startsWith(base + '/'))
+}

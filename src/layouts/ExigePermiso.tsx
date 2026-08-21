@@ -1,8 +1,9 @@
 import { Link, Outlet, useLocation } from 'react-router'
 import { Lock } from 'lucide-react'
-import { esRutaPropia, esRutaSoloAdmin, moduloDeRuta } from '@/config/navigation'
+import { esRutaPropia, esRutaSoloAdmin, esRutaFueraDelMvp, moduloDeRuta } from '@/config/navigation'
 import { Card } from '@/components/ui/Card'
 import { Cargando } from '@/components/ui/Estado'
+import { EnConstruccion } from '@/components/EnConstruccion'
 import { useMisPermisos, useModulos } from '@/lib/api/usuarios'
 import { useMisRoles } from '@/lib/api/catalogo'
 
@@ -25,6 +26,22 @@ export function ExigePermiso() {
   const { data: modulos } = useModulos()
 
   if (esRutaPropia(pathname)) return <Outlet />
+
+  /*
+    El cartel de obra va antes que el permiso, y a propósito.
+
+    Un módulo fuera del MVP no está fuera del alcance de nadie: está sin
+    terminar. Decirle a quien entra «tu rol no llega aquí» sería mandarle a
+    pedir un permiso que no le va a servir de nada, y de paso hacerle pensar
+    que la culpa es suya.
+  */
+  if (esRutaFueraDelMvp(pathname)) {
+    return (
+      <EnConstruccion>
+        <Outlet />
+      </EnConstruccion>
+    )
+  }
 
   const codigo = moduloDeRuta(pathname)
 
