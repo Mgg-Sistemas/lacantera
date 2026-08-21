@@ -54,6 +54,7 @@ import {
 import { useMetodosPago, nombreDe as nombreDelMetodo } from '@/lib/api/metodosPago' 
 import type { Cotizacion, InstruccionPago } from '@/lib/api/compras'
 import { useEmpresa } from '@/lib/api/empresa'
+import { useFirmas } from '@/lib/api/firmas'
 import { armarOrdenDeCompra, armarComprobanteDePago } from '@/lib/ficha/comprasPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { bolivares, dinero, dolares, fecha, fechaHora } from '@/lib/formato'
@@ -565,6 +566,7 @@ export function DetalleCompra() {
   const orden = ordenVigente(compra)
   const { data: bitacora } = useBitacora(compraId, orden?.id)
   const { data: perfiles } = usePerfiles()
+  const { data: firmas } = useFirmas()
   const { data: empresa } = useEmpresa()
   const { data: articulos } = useArticulos()
   const { data: metodosDePago } = useMetodosPago()
@@ -632,6 +634,10 @@ export function DetalleCompra() {
 
     setPdf(
       await armarOrdenDeCompra({
+        autoriza: {
+          nombre: quienEs(compra.aprobada_gg_por),
+          imagen: compra.aprobada_gg_por ? (firmas?.[compra.aprobada_gg_por] ?? null) : null,
+        },
         numero: orden.numero,
         refPedido: compra.numero,
         emitida: fechaHora(orden.creada_en),

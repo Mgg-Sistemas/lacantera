@@ -70,6 +70,15 @@ export interface RenglonDeOrden {
 }
 
 export interface DatosOrdenCompra {
+  /*
+    Quién autoriza, con su firma si la tiene guardada.
+
+    Es el gerente que aprobó, no quien imprime: el papel dice quién autorizó la
+    compra, y eso no cambia porque lo imprima otro después. Sin firma guardada
+    la raya sale en blanco, que es como salía antes y se firma a mano.
+  */
+  autoriza?: { nombre?: string | null; imagen?: string | null }
+
   numero: string
   /** El pedido del que salió. Va en la cabecera y en el pie. */
   refPedido: string
@@ -216,11 +225,22 @@ export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoAr
 
   // Las firmas van enteras o en su propia hoja: una raya partida entre dos
   // páginas no la firma nadie.
-  if (y > ABAJO - 30) {
+  if (y > ABAJO - 34) {
     doc.addPage()
     y = ARRIBA
   }
-  firmas(doc, Math.max(y + 16, ABAJO - 22), 'Firma autorizada', 'Recibido por el proveedor')
+  firmas(
+    doc,
+    // Se reserva más alto que antes: debajo de la raya van ahora dos renglones
+    // —el rol y el nombre— y con el hueco viejo el nombre chocaba con el pie.
+    Math.max(y + 16, ABAJO - 26),
+    {
+      texto: 'Firma autorizada',
+      nombre: d.autoriza?.nombre ?? null,
+      imagen: d.autoriza?.imagen ?? null,
+    },
+    'Recibido por el proveedor',
+  )
 
   pieDePagina(doc, `Documento generado por el sistema · ${d.refPedido} · ${fechaLarga(d.momento)}`)
   doc.setProperties({ title: `Orden de compra ${d.numero} — ${d.proveedor.nombre}` })

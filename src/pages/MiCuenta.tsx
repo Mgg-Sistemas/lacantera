@@ -5,6 +5,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { TarjetaHuella } from '@/components/TarjetaHuella'
 import { FormularioClave } from '@/components/FormularioClave'
+import { TarjetaFirma } from '@/components/TarjetaFirma'
 import { useMiPerfil, useRoles } from '@/lib/api/usuarios'
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
@@ -98,6 +99,8 @@ export function MiCuenta() {
         </Card>
 
         <TarjetaHuella />
+
+        <TarjetaFirma nombre={yo.nombre} />
       </div>
     </>
   )

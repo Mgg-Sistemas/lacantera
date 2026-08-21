@@ -64,7 +64,7 @@ revoke insert, update, delete on public.compras_papeles from authenticated;
 drop trigger if exists trg_auditar on public.compras_papeles;
 create trigger trg_auditar
   after insert or update or delete on public.compras_papeles
-  for each row execute function private.auditar();
+  for each row execute function private.auditar('id');
 
 -- ---------------------------------------------------------------------------
 -- Adjuntar

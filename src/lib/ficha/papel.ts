@@ -264,18 +264,77 @@ export function bloqueEtiquetado(
   return fila + 8
 }
 
-/** Las dos rayas de firma, con lo que se espera debajo de cada una. */
-export function firmas(doc: Doc, y: number, izquierda: string, derecha: string): void {
+/** Un lado de la firma: qué se espera ahí y, si la hay, la firma de quien va. */
+export interface LadoFirmado {
+  /** Lo que va debajo de la raya: «Firma autorizada», «Recibido por…». */
+  texto: string
+  /** El PNG guardado de esa persona. Sin él la raya se queda en blanco. */
+  imagen?: string | null
+  /** Quién es. Va debajo del rol, en pequeño, para que el papel diga el nombre. */
+  nombre?: string | null
+}
+
+/**
+ * Las dos rayas de firma, con lo que se espera debajo de cada una.
+ *
+ * Si quien firma tiene firma guardada, se estampa SOBRE la raya y no encima
+ * del hueco: una firma que flota separada de la línea se lee como pegada
+ * después. Y va con fondo transparente, por eso no tapa la raya.
+ *
+ * Sin firma guardada, el papel sale como salía: con la raya en blanco para
+ * firmarlo a mano. Es el caso normal el primer mes y no puede verse como que
+ * algo falló.
+ */
+export function firmas(
+  doc: Doc,
+  y: number,
+  izquierda: string | LadoFirmado,
+  derecha: string | LadoFirmado,
+): void {
   const SEPARA = 20
   const ancho = (ANCHO_UTIL - SEPARA) / 2
 
-  for (const [i, texto] of [izquierda, derecha].entries()) {
+  const lados: LadoFirmado[] = [izquierda, derecha].map((l) =>
+    typeof l === 'string' ? { texto: l } : l,
+  )
+
+  for (const [i, lado] of lados.entries()) {
     const x = IZQ + i * (ancho + SEPARA)
+
+    if (lado.imagen) {
+      /*
+        La firma se mete en un alto fijo y se centra sobre la raya. El ancho
+        sale de la proporción de la imagen —ya viene recortada al trazo— y se
+        limita al del hueco: una rúbrica muy alargada invadiría la de al lado.
+      */
+      const ALTO = 13
+      try {
+        const props = doc.getImageProperties(lado.imagen)
+        const anchoFirma = Math.min(ancho - 4, (props.width / props.height) * ALTO)
+        doc.addImage(
+          lado.imagen,
+          'PNG',
+          x + (ancho - anchoFirma) / 2,
+          y - ALTO - 0.5,
+          anchoFirma,
+          ALTO,
+        )
+      } catch {
+        // Una imagen que jsPDF no sabe leer no puede tumbar el documento
+        // entero: el papel sale con la raya en blanco, que es firmable.
+      }
+    }
+
     doc.setDrawColor(TINTA).setLineWidth(0.4)
     doc.line(x, y, x + ancho, y)
 
     doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(GRIS)
-    doc.text(texto, x, y + 4.5)
+    doc.text(lado.texto, x, y + 4.5)
+
+    if (lado.nombre) {
+      doc.setFontSize(7.5).setTextColor(GRIS_SUAVE)
+      doc.text(ajustar(doc, lado.nombre, ancho), x, y + 8.6)
+    }
   }
 }
 
