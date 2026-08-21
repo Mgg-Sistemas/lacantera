@@ -11,7 +11,8 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
-import { Pestanas, PESTANAS_MATERIAL } from '@/components/Pestanas'
+import { Pestanas } from '@/components/Pestanas'
+import { PESTANAS_MATERIAL } from '@/components/pestanasDeModulos'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'

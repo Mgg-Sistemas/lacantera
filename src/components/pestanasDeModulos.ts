@@ -1,0 +1,45 @@
+import type { Pestana } from '@/components/Pestanas'
+
+/*
+  LAS BARRAS DE PESTAÑAS DEL SISTEMA
+
+  Viven aparte del componente y no junto a él por un motivo mecánico: un
+  archivo que exporta un componente y además constantes rompe el refresco en
+  caliente de Vite, que solo sabe reemplazar un módulo cuando todo lo que
+  exporta son componentes. El lint lo avisa, y tiene razón.
+
+  Que estén juntas tiene además una ventaja: se ve de un vistazo en qué se
+  agrupó cada módulo, que es la decisión que de verdad importa aquí.
+*/
+
+/** Las tres miradas al mismo material. */
+export const PESTANAS_MATERIAL: Pestana[] = [
+  { etiqueta: 'Existencias', a: '/app/inventario/existencias' },
+  { etiqueta: 'Catálogo', a: '/app/inventario/articulos' },
+  { etiqueta: 'Movimientos', a: '/app/inventario/movimientos' },
+]
+
+/** Dónde se guarda: un taller es un almacén con máquinas dentro. */
+export const PESTANAS_SITIOS: Pestana[] = [
+  { etiqueta: 'Almacenes y patios', a: '/app/inventario/almacenes' },
+  { etiqueta: 'Talleres', a: '/app/inventario/talleres' },
+]
+
+/** Quién trabaja aquí, y cuánto cobra su cargo. */
+export const PESTANAS_PERSONAL: Pestana[] = [
+  { etiqueta: 'Personal', a: '/app/nomina/personal' },
+  { etiqueta: 'Tabulador de cargos', a: '/app/nomina/tabulador' },
+]
+
+/** El período, en el orden en que se hace. */
+export const PESTANAS_PERIODO: Pestana[] = [
+  { etiqueta: '1 · Novedades', a: '/app/nomina/asistencia' },
+  { etiqueta: '2 · Procesar', a: '/app/nomina/procesos' },
+  { etiqueta: '3 · Recibos', a: '/app/nomina/recibos' },
+]
+
+/** Lo que no cambia cada quincena. */
+export const PESTANAS_REGLAS: Pestana[] = [
+  { etiqueta: 'Prestaciones sociales', a: '/app/nomina/prestaciones' },
+  { etiqueta: 'Parámetros de nómina', a: '/app/nomina/parametros' },
+]

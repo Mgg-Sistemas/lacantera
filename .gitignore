@@ -106,3 +106,8 @@ supabase/cargas/
 public/cantera/*.png
 public/logoNuevo*.png
 public/paleta_colores.jpeg
+
+# Material de referencia que nos pasa el cliente —papeles de otros sistemas,
+# capturas, modelos a imitar—. Sirve para construir y no para publicar: el
+# repositorio es publico y esos papeles llevan RIF, nombres y montos reales.
+docs/pdfs/

@@ -35,57 +35,81 @@ export interface InformeDeCarga {
   filas: FilaRevisada[]
 }
 
-/**
- * El par de ganchos de una carga.
- *
- * Se fabrican juntos porque van juntos siempre: revisar sin poder cargar no
- * sirve, y cargar sin haber revisado es lo que esta pantalla existe para
- * evitar.
- */
-function cargaPorLote(funcion: string, invalidar: string[]) {
-  const usarRevisar = () =>
-    useMutation({
-      mutationFn: (filas: FilaDeHoja[]) =>
-        rpc<InformeDeCarga>(funcion, { p_filas: filas, p_confirmar: false }),
-    })
+/*
+  LOS DOS GANCHOS DE FONDO, Y POR QUÉ NO SON UNA FÁBRICA
 
-  const usarCargar = () => {
-    const qc = useQueryClient()
-    return useMutation({
-      mutationFn: (filas: FilaDeHoja[]) =>
-        rpc<InformeDeCarga>(funcion, { p_filas: filas, p_confirmar: true }),
-      onSuccess: () => {
-        for (const clave of invalidar) void qc.invalidateQueries({ queryKey: [clave] })
-      },
-    })
-  }
+  El primer intento fue una función `cargaPorLote(funcion, invalidar)` que
+  devolvía el par de ganchos ya hechos. Se veía más corto y estaba mal: los
+  ganchos que devolvía eran funciones anónimas, y una función anónima que llama
+  a `useMutation` rompe la regla de los ganchos de React — no hay forma de que
+  el compilador ni el linter comprueben que se llama siempre en el mismo orden.
 
-  return { usarRevisar, usarCargar }
+  Lo atrapó el lint del repositorio, no yo: en local venía filtrando su salida
+  con `grep` y me estaba comiendo justo estas líneas.
+
+  Estos dos sí empiezan por `use`, así que son ganchos de verdad y quien los
+  envuelve también lo es.
+*/
+
+function useRevisarPlanilla(funcion: string) {
+  return useMutation({
+    mutationFn: (filas: FilaDeHoja[]) =>
+      rpc<InformeDeCarga>(funcion, { p_filas: filas, p_confirmar: false }),
+  })
 }
 
-// La planilla de artículos también pone precios: la lista de ventas que alguien
-// tenga abierta en otra pestaña ya no es la que hay.
-const articulos = cargaPorLote('cargar_articulos_por_lote', [
-  'articulos',
-  'asignables',
-  'ventas',
-  'existencias',
-  'existencias-totales',
-])
-export const useRevisarArticulos = articulos.usarRevisar
-export const useCargarArticulos = articulos.usarCargar
+function useCargarPlanilla(funcion: string, invalidar: string[]) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (filas: FilaDeHoja[]) =>
+      rpc<InformeDeCarga>(funcion, { p_filas: filas, p_confirmar: true }),
+    onSuccess: () => {
+      for (const clave of invalidar) void qc.invalidateQueries({ queryKey: [clave] })
+    },
+  })
+}
 
-// Cargar gente mueve el organigrama: cada ficha lleva su departamento, y el
-// organigrama cuenta cuánta gente hay registrada en cada uno.
-const personal = cargaPorLote('cargar_personal_por_lote', [
-  'empleados',
-  'nomina',
-  'tabulador',
-  'organigrama',
-])
-export const useRevisarPersonal = personal.usarRevisar
-export const useCargarPersonal = personal.usarCargar
+// ---------------------------------------------------------------------------
 
-const proveedores = cargaPorLote('cargar_proveedores_por_lote', ['proveedores', 'compras'])
-export const useRevisarProveedores = proveedores.usarRevisar
-export const useCargarProveedores = proveedores.usarCargar
+export function useRevisarArticulos() {
+  return useRevisarPlanilla('cargar_articulos_por_lote')
+}
+
+/**
+ * La planilla de artículos también pone precios: la lista de ventas que alguien
+ * tenga abierta en otra pestaña ya no es la que hay.
+ */
+export function useCargarArticulos() {
+  return useCargarPlanilla('cargar_articulos_por_lote', [
+    'articulos',
+    'asignables',
+    'ventas',
+    'existencias',
+    'existencias-totales',
+  ])
+}
+
+export function useRevisarPersonal() {
+  return useRevisarPlanilla('cargar_personal_por_lote')
+}
+
+/**
+ * Cargar gente mueve el organigrama: cada ficha lleva su departamento, y el
+ * organigrama cuenta cuánta gente hay registrada en cada uno.
+ */
+export function useCargarPersonal() {
+  return useCargarPlanilla('cargar_personal_por_lote', [
+    'empleados',
+    'nomina',
+    'tabulador',
+    'organigrama',
+  ])
+}
+
+export function useRevisarProveedores() {
+  return useRevisarPlanilla('cargar_proveedores_por_lote')
+}
+
+export function useCargarProveedores() {
+  return useCargarPlanilla('cargar_proveedores_por_lote', ['proveedores', 'compras'])
+}

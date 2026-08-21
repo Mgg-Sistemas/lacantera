@@ -70,35 +70,3 @@ export function Pestanas({ pestanas }: { pestanas: Pestana[] }) {
     </div>
   )
 }
-
-/** Las tres miradas al mismo material. */
-export const PESTANAS_MATERIAL: Pestana[] = [
-  { etiqueta: 'Existencias', a: '/app/inventario/existencias' },
-  { etiqueta: 'Catálogo', a: '/app/inventario/articulos' },
-  { etiqueta: 'Movimientos', a: '/app/inventario/movimientos' },
-]
-
-/** Dónde se guarda: un taller es un almacén con máquinas dentro. */
-export const PESTANAS_SITIOS: Pestana[] = [
-  { etiqueta: 'Almacenes y patios', a: '/app/inventario/almacenes' },
-  { etiqueta: 'Talleres', a: '/app/inventario/talleres' },
-]
-
-/** Quién trabaja aquí, y cuánto cobra su cargo. */
-export const PESTANAS_PERSONAL: Pestana[] = [
-  { etiqueta: 'Personal', a: '/app/nomina/personal' },
-  { etiqueta: 'Tabulador de cargos', a: '/app/nomina/tabulador' },
-]
-
-/** El período, en el orden en que se hace. */
-export const PESTANAS_PERIODO: Pestana[] = [
-  { etiqueta: '1 · Novedades', a: '/app/nomina/asistencia' },
-  { etiqueta: '2 · Procesar', a: '/app/nomina/procesos' },
-  { etiqueta: '3 · Recibos', a: '/app/nomina/recibos' },
-]
-
-/** Lo que no cambia cada quincena. */
-export const PESTANAS_REGLAS: Pestana[] = [
-  { etiqueta: 'Prestaciones sociales', a: '/app/nomina/prestaciones' },
-  { etiqueta: 'Parámetros de nómina', a: '/app/nomina/parametros' },
-]
