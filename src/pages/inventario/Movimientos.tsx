@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowDownLeft, ArrowUpRight, ScrollText, Undo2 } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Printer, ScrollText, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_MATERIAL } from '@/components/pestanasDeModulos'
@@ -18,6 +18,11 @@ import {
   useMovimientos,
   useReversarMovimiento,
 } from '@/lib/api/inventario'
+import { Visor } from '@/components/Visor'
+import { useEmpresa } from '@/lib/api/empresa'
+import { useSesion } from '@/lib/sesion'
+import { armarLibroDeMovimientos } from '@/lib/ficha/libroMovimientos'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { dolares } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -43,15 +48,65 @@ export function Movimientos() {
 
   const [reversando, setReversando] = useState<{ id: number; numero: string } | null>(null)
   const [motivo, setMotivo] = useState('')
+  const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
+  const { data: empresa } = useEmpresa()
+  const { nombre: yo } = useSesion()
 
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
+
+  /*
+    EL LIBRO EN PAPEL
+
+    Lo pidió Christopher: poder enterar los movimientos de todo el inventario o
+    de un almacén concreto. Sale con lo que se está viendo —si hay un sitio
+    elegido, ese— y el filtro va impreso: una lista de treinta renglones que no
+    dice que son los de un solo taller se lee como si fueran todos.
+  */
+  const sitio = (almacenes ?? []).find((a) => String(a.id) === almacenId)
+
+  const imprimirLibro = async () => {
+    setPdf(
+      await armarLibroDeMovimientos({
+        almacen: sitio?.nombre ?? null,
+        filtro: null,
+        renglones: (data ?? []).map((m) => ({
+          numero: m.numero,
+          fecha: fechaHora(m.registrado_en),
+          tipo: TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo,
+          articulo: m.articulo?.nombre ?? '—',
+          almacen: m.almacen?.nombre ?? '—',
+          cantidad: m.cantidad,
+          unidad: '',
+          signo: m.signo,
+          valorUsd: Number(m.cantidad) * Number(m.costo_usd ?? 0),
+          quien: nombreDe(m.registrado_por),
+        })),
+        empresa: {
+          razonSocial: empresa?.razon_social ?? '',
+          rif: empresa?.rif ?? '',
+        },
+        emitidoPor: yo ?? '',
+        momento: new Date(),
+      }),
+    )
+  }
 
   return (
     <>
       <PageHeader
         title="Movimientos"
         description="El libro del inventario. Nada se edita y nada se borra: una corrección se escribe como un movimiento nuevo."
+        actions={
+          <Button
+            variant="outline"
+            icon={<Printer />}
+            disabled={(data ?? []).length === 0}
+            onClick={() => void imprimirLibro()}
+          >
+            Imprimir el libro
+          </Button>
+        }
       />
 
       <Pestanas pestanas={PESTANAS_MATERIAL} />
@@ -203,6 +258,14 @@ export function Movimientos() {
           {reversar.error ? <ErrorDeCarga error={reversar.error} className="mt-3" /> : null}
         </Modal>
       ) : null}
+
+      <Visor
+        abierto={pdf !== null}
+        onCerrar={() => setPdf(null)}
+        blob={pdf?.blob ?? null}
+        nombreArchivo={pdf?.nombre ?? ''}
+        titulo="Libro de movimientos"
+      />
     </>
   )
 }

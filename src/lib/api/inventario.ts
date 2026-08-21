@@ -284,6 +284,43 @@ export function useRegistrarEntrada() {
   )
 }
 
+/** Un renglón de una entrada: qué, cuánto, y cuánto costó en qué moneda. */
+export interface RenglonDeEntrada {
+  articulo_id: number
+  cantidad: number
+  costo: number
+  moneda: string
+}
+
+/**
+ * Meter varias cosas al almacén de una vez, sin compra detrás.
+ *
+ * Antes era de una en una: cargar el saldo inicial de un almacén con veinte
+ * artículos eran veinte formularios, veinte veces eligiendo el mismo sitio.
+ *
+ * Cada renglón dice en qué moneda costó y la conversión a dólares la hace la
+ * base con la tasa del día — aquí no se calcula ninguna tasa, que es la regla
+ * de la casa. La unidad tampoco viaja: sale del artículo.
+ */
+export function useRegistrarEntradas() {
+  return useAccionInventario(
+    (e: {
+      almacen_id: number
+      renglones: RenglonDeEntrada[]
+      motivo: string
+      referencia?: string | null
+      fecha?: string
+    }) =>
+      rpc<number>('registrar_entradas', {
+        p_almacen_id: e.almacen_id,
+        p_renglones: e.renglones,
+        p_motivo: e.motivo,
+        p_referencia: e.referencia ?? null,
+        p_fecha: e.fecha ?? null,
+      }),
+  )
+}
+
 export function useRegistrarSalida() {
   return useAccionInventario(
     (s: {

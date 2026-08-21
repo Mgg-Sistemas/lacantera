@@ -3,9 +3,10 @@ import { useSearchParams } from 'react-router'
 import {
   Boxes,
   MapPin,
-  PackagePlus,
-  Printer,
   PackageMinus,
+  PackagePlus,
+  Plus,
+  Printer,
   Scale,
   Search,
   TriangleAlert,
@@ -18,6 +19,7 @@ import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
@@ -27,6 +29,7 @@ import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
+import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
   useAlmacenes,
   useExistencias,
@@ -34,7 +37,7 @@ import {
   useExistenciasTotales,
   useMovimientos,
   useRegistrarAjuste,
-  useRegistrarEntrada,
+  useRegistrarEntradas,
   useRegistrarSalida,
 } from '@/lib/api/inventario'
 import type { Existencia, ExistenciaTotal } from '@/lib/api/inventario'
@@ -67,6 +70,24 @@ function cantidad(valor: string | number): string {
  * nada; se abre el desglose, se elige el almacén, y ahí sí. La pantalla no
  * ofrece lo que no se puede hacer.
  */
+/** Un renglón mientras se escribe: todo texto, que es lo que da un input. */
+interface RenglonEnCurso {
+  clave: string
+  articulo: string
+  cantidad: string
+  costo: string
+  moneda: string
+}
+
+let siguienteClave = 0
+const renglonVacio = (articulo: string): RenglonEnCurso => ({
+  clave: String(++siguienteClave),
+  articulo,
+  cantidad: '',
+  costo: '',
+  moneda: 'USD',
+})
+
 export function Existencias() {
   const { data: almacenes } = useAlmacenes()
 
@@ -95,8 +116,9 @@ export function Existencias() {
   const { puede } = useMisRoles()
   const salida = useRegistrarSalida()
   const ajuste = useRegistrarAjuste()
-  const entrada = useRegistrarEntrada()
+  const entrada = useRegistrarEntradas()
   const { data: articulos } = useArticulos()
+  const monedas = useMonedasUsables()
   const { data: empresa } = useEmpresa()
   const { nombre: yo } = useSesion()
   const [acta, setActa] = useState<ArchivoArmado | null>(null)
@@ -111,10 +133,20 @@ export function Existencias() {
   const [motivo, setMotivo] = useState('')
   // Solo para la entrada: el costo es lo que la distingue de un ajuste, y el
   // almacén y el artículo hacen falta cuando se abre sin fila debajo.
-  const [costo, setCosto] = useState('')
   const [referencia, setReferencia] = useState('')
   const [aDonde, setADonde] = useState('')
-  const [queCosa, setQueCosa] = useState('')
+  /*
+    LA ENTRADA ES DE VARIOS RENGLONES
+
+    Christopher: «¿tengo que repetir ese formulario N veces?». Cargar el saldo
+    inicial de un almacén con veinte artículos eran veinte formularios, veinte
+    veces eligiendo el mismo sitio. Ahora el sitio se elige una vez y debajo se
+    van añadiendo renglones.
+
+    La clave es para React: sin una estable, borrar un renglón del medio
+    reordena los de abajo y el foco salta al campo equivocado.
+  */
+  const [renglones, setRenglones] = useState<RenglonEnCurso[]>([])
 
   // La referencia tiene que ser estable o el filtrado se recalcula en cada
   // pintado: `?? []` crea un arreglo nuevo cada vez.
@@ -205,13 +237,17 @@ export function Existencias() {
   const abrir = (tipo: 'salida' | 'ajuste' | 'entrada', fila: Existencia | null) => {
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setMotivo('')
-    setCosto('')
     setReferencia('')
+    // Abierta desde una fila, el primer renglón viene con ese artículo puesto.
+    setRenglones(
+      tipo === 'entrada'
+        ? [renglonVacio(fila ? String(fila.articulo_id) : '')]
+        : [],
+    )
     // Abierta desde una fila, ya se sabe dónde y qué. Abierta desde la
     // cabecera —el caso del saldo inicial— no hay fila que preguntar, porque
     // justamente todavía no existe.
     setADonde(fila ? String(fila.almacen_id) : almacenId)
-    setQueCosa(fila ? String(fila.articulo_id) : '')
     setModal({ tipo, fila })
   }
 
@@ -221,9 +257,14 @@ export function Existencias() {
     if (modal.tipo === 'entrada') {
       await entrada.mutateAsync({
         almacen_id: Number(aDonde),
-        articulo_id: Number(queCosa),
-        cantidad: Number(valor),
-        costo_usd: Number(costo),
+        renglones: renglones
+          .filter((r) => r.articulo && r.cantidad && r.costo)
+          .map((r) => ({
+            articulo_id: Number(r.articulo),
+            cantidad: Number(r.cantidad),
+            costo: Number(r.costo),
+            moneda: r.moneda,
+          })),
         motivo,
         referencia: referencia || null,
       })
@@ -545,9 +586,11 @@ export function Existencias() {
               <Button
                 onClick={() => void guardar()}
                 disabled={
-                  !valor ||
+                  (modal.tipo !== 'entrada' && !valor) ||
                   motivo.trim().length < 4 ||
-                  (modal.tipo === 'entrada' && (!aDonde || !queCosa || !costo)) ||
+                  (modal.tipo === 'entrada' &&
+                    (!aDonde ||
+                      renglones.filter((r) => r.articulo && r.cantidad && r.costo).length === 0)) ||
                   salida.isPending ||
                   ajuste.isPending ||
                   entrada.isPending
@@ -565,15 +608,11 @@ export function Existencias() {
               saldo inicial— hay que elegirlo, y por eso el artículo sale del
               catálogo entero y no de lo que ya tiene existencia: justamente lo
               que se está cargando todavía no la tiene. */}
-          {modal.fila ? (
-            <div className="border-hairline bg-canvas rounded-card mb-4 border p-3">
-              <p className="text-ink/85 text-sm font-medium">{modal.fila.articulo}</p>
-              <p className="text-ink/55 text-xs">
-                {modal.fila.almacen} · hay {cantidad(modal.fila.existencia)} {modal.fila.unidad}
-              </p>
-            </div>
-          ) : (
-            <div className="mb-4 space-y-4">
+          {/* La entrada tiene su propio cuerpo: se elige el sitio una vez y
+              debajo van los renglones. Salida y ajuste siguen siendo de una
+              fila, que es como se hacen. */}
+          {modal.tipo === 'entrada' ? (
+            <>
               <SelectBuscable
                 label="A qué almacén entra"
                 vacio="Elige el sitio"
@@ -586,65 +625,150 @@ export function Existencias() {
                   detalle: a.tipo,
                 }))}
               />
-              <SelectBuscable
-                label="Qué entra"
-                vacio="Elige el artículo"
-                valor={queCosa}
-                onCambio={setQueCosa}
-                opciones={(articulos ?? [])
-                  .filter((a) => a.inventariable)
-                  .map((a) => ({
-                    valor: String(a.id),
-                    codigo: a.codigo,
-                    nombre: a.nombre,
-                    detalle: `${a.categoria} · ${a.unidad}`,
-                  }))}
-              />
-            </div>
-          )}
 
-          <div className={modal.tipo === 'entrada' ? 'grid gap-4 sm:grid-cols-2' : undefined}>
-            <Input
-              label={
-                modal.tipo === 'entrada'
-                  ? 'Cantidad que entra'
-                  : modal.tipo === 'salida'
-                    ? 'Cantidad que sale'
-                    : 'Cantidad contada'
-              }
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              autoFocus
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              hint={
-                modal.tipo === 'ajuste' && modal.fila && valor !== ''
-                  ? `Diferencia: ${(Number(valor) - Number(modal.fila.existencia)).toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${modal.fila.unidad}`
-                  : undefined
-              }
-            />
+              <div className="mt-4 space-y-3">
+                {renglones.map((r, i) => {
+                  const art = (articulos ?? []).find((a) => String(a.id) === r.articulo)
+                  return (
+                    <div
+                      key={r.clave}
+                      className="border-hairline rounded-card border border-dashed p-3"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-ink/40 text-2xs font-mono tracking-[0.16em] uppercase">
+                          Renglón {i + 1}
+                        </span>
+                        {renglones.length > 1 ? (
+                          <button
+                            type="button"
+                            className="text-ink/40 hover:text-danger text-xs underline underline-offset-2"
+                            onClick={() =>
+                              setRenglones((v) => v.filter((x) => x.clave !== r.clave))
+                            }
+                          >
+                            Quitar
+                          </button>
+                        ) : null}
+                      </div>
 
-            {/* El costo es lo que distingue una entrada de un ajuste, y lo que
-                evita que el almacén quede lleno y valorado en nada. */}
-            {modal.tipo === 'entrada' ? (
+                      <SelectBuscable
+                        label="Qué entra"
+                        vacio="Elige el artículo"
+                        valor={r.articulo}
+                        onCambio={(v) =>
+                          setRenglones((lista) =>
+                            lista.map((x) => (x.clave === r.clave ? { ...x, articulo: v } : x)),
+                          )
+                        }
+                        opciones={(articulos ?? [])
+                          .filter((a) => a.inventariable)
+                          .map((a) => ({
+                            valor: String(a.id),
+                            codigo: a.codigo,
+                            nombre: a.nombre,
+                            detalle: `${a.categoria} · ${a.unidad}`,
+                          }))}
+                      />
+
+                      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                        <Input
+                          label="Cantidad"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          inputMode="decimal"
+                          value={r.cantidad}
+                          onChange={(e) =>
+                            setRenglones((lista) =>
+                              lista.map((x) =>
+                                x.clave === r.clave ? { ...x, cantidad: e.target.value } : x,
+                              ),
+                            )
+                          }
+                          // La unidad la trae el artículo. Veinte de algo que
+                          // se mide en pares no es veinte de algo que se mide
+                          // en metros cúbicos.
+                          hint={art ? `En ${art.unidad}` : 'Elige antes el artículo'}
+                        />
+
+                        <Input
+                          label="Costo por unidad"
+                          type="number"
+                          min="0"
+                          step="0.0001"
+                          inputMode="decimal"
+                          value={r.costo}
+                          onChange={(e) =>
+                            setRenglones((lista) =>
+                              lista.map((x) =>
+                                x.clave === r.clave ? { ...x, costo: e.target.value } : x,
+                              ),
+                            )
+                          }
+                          hint="Lo que costó, en la moneda en que se pagó."
+                        />
+
+                        {/* La moneda no se asume. El sistema maneja cuatro, y
+                            convertir de cabeza es como se cargan los costos
+                            equivocados. La conversión a dólares la hace la
+                            base con la tasa del día. */}
+                        <Select
+                          label="Moneda"
+                          value={r.moneda}
+                          onChange={(e) =>
+                            setRenglones((lista) =>
+                              lista.map((x) =>
+                                x.clave === r.clave ? { ...x, moneda: e.target.value } : x,
+                              ),
+                            )
+                          }
+                          opciones={enSimbolos(monedas.data)}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <Button
+                className="mt-3"
+                size="sm"
+                variant="outline"
+                icon={<Plus />}
+                onClick={() => setRenglones((v) => [...v, renglonVacio('')])}
+              >
+                Añadir otro artículo
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="border-hairline bg-canvas rounded-card mb-4 border p-3">
+                <p className="text-ink/85 text-sm font-medium">{modal.fila?.articulo}</p>
+                <p className="text-ink/55 text-xs">
+                  {modal.fila?.almacen} · hay {cantidad(modal.fila?.existencia ?? 0)}{' '}
+                  {modal.fila?.unidad}
+                </p>
+              </div>
+
               <Input
-                label="Costo por unidad ($)"
+                label={modal.tipo === 'salida' ? 'Cantidad que sale' : 'Cantidad contada'}
                 type="number"
                 min="0"
-                step="0.0001"
+                step="0.01"
                 inputMode="decimal"
-                value={costo}
-                onChange={(e) => setCosto(e.target.value)}
+                autoFocus
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
                 hint={
-                  valor && costo
-                    ? `Entra por $ ${(Number(valor) * Number(costo)).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    : 'Sin costo no se puede valorar lo que hay.'
+                  modal.tipo === 'ajuste' && modal.fila && valor !== ''
+                    ? `Diferencia: ${(Number(valor) - Number(modal.fila.existencia)).toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${modal.fila.unidad}`
+                    : modal.fila
+                      ? `En ${modal.fila.unidad}`
+                      : undefined
                 }
               />
-            ) : null}
-          </div>
+            </>
+          )}
 
           {modal.tipo === 'entrada' ? (
             <Input
