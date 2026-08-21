@@ -28,6 +28,7 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
 import { ModalRecepcion } from './ModalRecepcion'
+import { PapelesDeCompra } from './PapelesDeCompra'
 import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
 import { usePerfiles, useMisRoles, useArticulos, CONDICIONES_PAGO } from '@/lib/api/catalogo'
 import {
@@ -1072,6 +1073,20 @@ export function DetalleCompra() {
                   ))}
               </div>
             </Card>
+          ) : null}
+
+          {/*
+            Los papeles cuelgan de la orden, así que hasta que no hay orden no
+            hay dónde colgarlos. Antes de aprobar no ha llegado ninguno: no hay
+            comprobante de un pago que no se hizo ni nota de entrega de un
+            camión que no salió.
+          */}
+          {orden ? (
+            <PapelesDeCompra
+              ordenId={orden.id}
+              puedeCargar={puedeCompras || puedeTesoreria || puede('ALMACEN')}
+              puedeQuitar={puedeCompras}
+            />
           ) : null}
 
           <Card>

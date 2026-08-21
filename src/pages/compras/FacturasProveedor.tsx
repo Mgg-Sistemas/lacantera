@@ -109,6 +109,22 @@ export function FacturasProveedor() {
   const [nueva, setNueva] = useState<typeof vacio | null>(null)
 
   /*
+    EL PAPEL SE ELIGE ANTES DE QUE LA FACTURA EXISTA
+
+    Christopher: «es el que recibe, que con el tiempo se daña, por eso una
+    imagen en la base tiene importancia». Exacto: el papel del proveedor se
+    despinta, se moja o se traspapela, y lo que queda es lo que se guardó.
+
+    Se puede cargar después desde la ficha, pero pedirlo aquí es lo que hace
+    que se cargue: quien tiene el papel en la mano es quien está tecleando sus
+    cifras, y no va a volver mañana a buscarlo.
+
+    Queda en memoria hasta que la base devuelve el número de la factura, que es
+    la carpeta donde se guarda. Por eso son dos pasos y no uno.
+  */
+  const [papel, setPapel] = useState<File | null>(null)
+
+  /*
     Se llega aquí con la orden decidida.
 
     El detalle de la compra manda `?orden=` y `?proveedor=`, y el formulario
@@ -335,12 +351,21 @@ export function FacturasProveedor() {
         <Modal
           abierto
           ancho="lg"
-          onCerrar={() => setNueva(null)}
+          onCerrar={() => {
+            setNueva(null)
+            setPapel(null)
+          }}
           titulo="Registrar factura de proveedor"
           descripcion="Se copian las cifras del papel. Si la suma no coincide con el total impreso, el sistema se para antes de guardar."
           acciones={
             <>
-              <Button variant="ghost" onClick={() => setNueva(null)}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setNueva(null)
+                  setPapel(null)
+                }}
+              >
                 Cancelar
               </Button>
               <Button
@@ -356,7 +381,7 @@ export function FacturasProveedor() {
                   Number(nueva.retencion_iva) > (Number(nueva.iva) || 0) + 0.01
                 }
                 onClick={async () => {
-                  await registrar.mutateAsync({
+                  const facturaId = await registrar.mutateAsync({
                     proveedor_id: Number(nueva.proveedor_id),
                     orden_id: Number(nueva.orden_id),
                     numero_factura: nueva.numero_factura,
@@ -373,10 +398,29 @@ export function FacturasProveedor() {
                     total_del_papel: Number(nueva.total_papel) || null,
                     observacion: nueva.observacion || null,
                   })
+
+                  // Si la subida falla, la factura queda registrada igual y el
+                  // papel se puede cargar después desde su ficha. Deshacer el
+                  // registro por un archivo sería perder las cifras ya
+                  // tecleadas, que es lo caro de rehacer.
+                  if (papel && facturaId) {
+                    try {
+                      await subir.mutateAsync({ factura_id: facturaId, archivo: papel })
+                    } catch {
+                      // El error ya se ve debajo del botón: `subir.error`.
+                      return
+                    }
+                  }
+
+                  setPapel(null)
                   setNueva(null)
                 }}
               >
-                {registrar.isPending ? 'Registrando…' : 'Registrar'}
+                {registrar.isPending
+                  ? 'Registrando…'
+                  : subir.isPending
+                    ? 'Guardando el papel…'
+                    : 'Registrar'}
               </Button>
             </>
           }
@@ -590,7 +634,67 @@ export function FacturasProveedor() {
             onChange={(e) => setNueva({ ...nueva, observacion: e.target.value })}
           />
 
+          {/*
+            EL PAPEL RECIBIDO
+
+            Va al final, después de las cifras: primero se teclea lo que dice
+            el papel y luego se guarda el papel que lo dice. Al revés invita a
+            adjuntar y dar por hecho que el sistema leerá las cifras solo.
+          */}
+          <div className="border-hairline mt-4 border-t pt-4">
+            <p className="text-ink/75 text-sm font-medium">
+              Imagen o PDF de la factura recibida
+            </p>
+            <p className="text-ink/50 mt-0.5 text-xs">
+              El papel del proveedor se despinta y se traspapela. Lo que quede aquí es lo que
+              habrá dentro de un año para demostrar que estas cifras son las que llegaron.
+            </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <label className="border-ink/20 hover:border-ink/32 text-ink/75 flex cursor-pointer items-center gap-2 rounded-[6px] border px-3 py-2 text-sm transition-colors">
+                <Paperclip className="size-4" />
+                {papel ? 'Cambiar el papel' : 'Elegir el papel'}
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="application/pdf,image/*"
+                  onChange={(e) => {
+                    const elegido = e.target.files?.[0] ?? null
+                    // El campo se limpia para que volver a elegir el mismo
+                    // archivo dispare el `change` otra vez.
+                    e.target.value = ''
+                    if (elegido) setPapel(elegido)
+                  }}
+                />
+              </label>
+
+              {papel ? (
+                <>
+                  <span className="text-ink/60 min-w-0 flex-1 truncate text-xs">
+                    {papel.name} · {Math.max(1, Math.round(papel.size / 1024))} KB
+                  </span>
+                  <Button size="sm" variant="ghost" onClick={() => setPapel(null)}>
+                    Quitar
+                  </Button>
+                </>
+              ) : (
+                <span className="text-ink/45 text-xs">
+                  Se puede cargar después desde la ficha de la factura.
+                </span>
+              )}
+            </div>
+          </div>
+
           {registrar.error ? <ErrorDeCarga error={registrar.error} className="mt-4" /> : null}
+          {subir.error ? (
+            <>
+              <ErrorDeCarga error={subir.error} className="mt-4" />
+              <p className="text-ink/55 mt-2 text-xs">
+                La factura sí quedó registrada. Solo falló el papel: se puede cargar desde su
+                ficha.
+              </p>
+            </>
+          ) : null}
         </Modal>
       ) : null}
 
