@@ -32,6 +32,7 @@ import {
   useExistencias,
   useExistenciasDeArticulo,
   useExistenciasTotales,
+  useMovimientos,
   useRegistrarAjuste,
   useRegistrarEntrada,
   useRegistrarSalida,
@@ -81,6 +82,16 @@ export function Existencias() {
   const porAlmacen = useExistencias(almacenId ? Number(almacenId) : undefined, !enTotal)
   const { isPending, error } = enTotal ? totales : porAlmacen
 
+  /*
+    Los movimientos del sitio, para poder decir qué se movió aquí.
+
+    Se piden acotados al almacén: en el total de la empresa la cifra sería la
+    suma de todo el libro, que no informa de nada — siempre es «muchos».
+  */
+  const movimientos = useMovimientos(
+    almacenId ? { almacenId: Number(almacenId) } : {},
+  )
+
   const { puede } = useMisRoles()
   const salida = useRegistrarSalida()
   const ajuste = useRegistrarAjuste()
@@ -123,6 +134,30 @@ export function Existencias() {
   }, [datos, busqueda, soloBajas])
 
   const valorTotal = filtradas.reduce((s, e) => s + Number(e.valor_usd), 0)
+
+  /*
+    LO QUE ESTE SITIO TIENE, VALE, NECESITA Y MUEVE
+
+    Christopher: «cada almacén o taller debe informar cuánto tiene, cuánto
+    vale, cuánto necesita reponer y cuánto transfiere». El tablero del módulo
+    ya lo dice de la empresa entera; aquí hace falta del sitio que se está
+    mirando, que es la pregunta que se hace estando en esta pantalla.
+
+    Van en una franja y no en tarjetas grandes, a propósito: el protagonista
+    de esta pantalla es la lista, no el resumen. Las cifras acompañan.
+
+    Se calculan sobre `filtradas` y no sobre todo, porque si alguien filtró por
+    «solo bajo mínimo» o buscó una palabra, el resumen tiene que hablar de lo
+    que está viendo. Un total que no cuadra con la lista de debajo se lee como
+    un error del sistema.
+  */
+  const conExistencia = filtradas.filter((e) => Number(e.existencia) > 0).length
+  const porReponer = filtradas.filter(
+    (e) => Number(e.stock_minimo) > 0 && Number(e.existencia) <= Number(e.stock_minimo),
+  ).length
+  const traslados = (movimientos.data ?? []).filter((m) =>
+    m.tipo.startsWith('TRANSFERENCIA'),
+  ).length
   const bajas = datos.filter(
     (e) => Number(e.stock_minimo) > 0 && Number(e.existencia) <= Number(e.stock_minimo),
   )
@@ -298,6 +333,18 @@ export function Existencias() {
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
+
+      {!isPending && !error && datos.length > 0 ? (
+        <Franja
+          sitio={enTotal ? null : (almacenes ?? []).find((a) => String(a.id) === almacenId)?.nombre ?? null}
+          conExistencia={conExistencia}
+          listados={filtradas.length}
+          valor={valorTotal}
+          porReponer={porReponer}
+          traslados={traslados}
+          onVerBajos={() => setSoloBajas(true)}
+        />
+      ) : null}
 
       {!isPending && !error && filtradas.length === 0 ? (
         <Card>
@@ -638,6 +685,87 @@ export function Existencias() {
         titulo="Acta de existencias"
       />
     </>
+  )
+}
+
+/*
+  LA FRANJA DE CIFRAS DEL SITIO
+
+  Cuatro datos en una línea, con un separador entre ellos. No son tarjetas: una
+  tarjeta pide atención y aquí la atención es de la lista.
+
+  El de reponer es el único que se enciende, y solo cuando hay algo que
+  atender. Los demás informan; ese reclama, y además lleva — pulsarlo filtra la
+  lista a lo que está bajo mínimo, que es lo que se quiere ver justo después de
+  leer que hay siete.
+*/
+function Franja({
+  sitio,
+  conExistencia,
+  listados,
+  valor,
+  porReponer,
+  traslados,
+  onVerBajos,
+}: {
+  sitio: string | null
+  conExistencia: number
+  listados: number
+  valor: number
+  porReponer: number
+  traslados: number
+  onVerBajos: () => void
+}) {
+  return (
+    <div className="border-hairline mb-4 rounded-[6px] border px-4 py-3">
+      <p className="text-ink/40 text-2xs font-mono tracking-[0.16em] uppercase">
+        {sitio ?? 'Toda la empresa'}
+      </p>
+
+      <dl className="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-2">
+        <div className="flex items-baseline gap-1.5">
+          <dt className="text-ink/45 text-xs">Tiene</dt>
+          <dd className="text-ink/85 tabular text-sm font-semibold">
+            {enteros(conExistencia)}
+          </dd>
+          <span className="text-ink/40 text-xs">
+            de {enteros(listados)} artículo{listados === 1 ? '' : 's'}
+          </span>
+        </div>
+
+        <div className="flex items-baseline gap-1.5">
+          <dt className="text-ink/45 text-xs">Vale</dt>
+          <dd className="text-ink/85 tabular text-sm font-semibold">{dolares(valor)}</dd>
+          <span className="text-ink/40 text-xs">a costo promedio</span>
+        </div>
+
+        <div className="flex items-baseline gap-1.5">
+          <dt className="text-ink/45 text-xs">Por reponer</dt>
+          {porReponer > 0 ? (
+            <button
+              type="button"
+              onClick={onVerBajos}
+              className="text-warning tabular text-sm font-semibold underline underline-offset-2"
+            >
+              {enteros(porReponer)}
+            </button>
+          ) : (
+            <dd className="text-ink/30 tabular text-sm font-semibold">0</dd>
+          )}
+          <span className="text-ink/40 text-xs">
+            {porReponer > 0 ? 'en el mínimo o por debajo' : 'nada pendiente'}
+          </span>
+        </div>
+
+        <div className="flex items-baseline gap-1.5">
+          <dt className="text-ink/45 text-xs">Traslados</dt>
+          <dd className="text-ink/85 tabular text-sm font-semibold">{enteros(traslados)}</dd>
+          <span className="text-ink/40 text-xs">
+            {sitio ? 'entrados y salidos de aquí' : 'en el libro'}
+          </span>
+        </div>
+      </dl>
+    </div>
   )
 }
 
