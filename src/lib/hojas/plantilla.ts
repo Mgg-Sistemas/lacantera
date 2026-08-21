@@ -1,23 +1,38 @@
+import { armarLibro, ESTILO } from '@/lib/hojas/escribirLibro'
+import type { CeldaDeLibro } from '@/lib/hojas/escribirLibro'
+
 /*
   LA PLANTILLA QUE SE REPARTE, PARA CUALQUIER CARGA
 
   Empezó siendo solo la de artículos. Cuando hicieron falta la de personal y la
   de proveedores, la elección era copiarla dos veces o describirla como datos.
-  Copiarla es como acaban divergiendo: alguien arregla el separador en una y no
-  en las otras dos, y la que se quedó atrás rompe en el Excel de la persona que
-  menos sabe qué hacer con eso.
+  Copiar es como acaban divergiendo: alguien arregla algo en una y no en las
+  otras dos, y la que se quedó atrás rompe en el Excel de la persona que menos
+  sabe qué hacer con eso.
 
-  Se entrega en CSV y no en `.xlsx` a propósito: Excel lo abre de un doble clic
-  y escribirlo no obliga a arrastrar media librería al paquete. Quien luego lo
-  guarde como `.xlsx` tampoco tiene problema — `leerHoja` sabe leer los dos.
+  POR QUÉ DEJÓ DE SER UN CSV
 
-  Va con punto y coma y con BOM. Sin el BOM, Excel en Windows abre el archivo
-  en la codificación del sistema y las tildes salen rotas; con punto y coma,
-  Excel en español reparte las columnas solo en vez de meterlo todo en la A.
+  Se repartía en CSV con punto y coma, dando por hecho que Excel en español lo
+  entiende. El Excel de Christopher usa coma como separador de lista, así que
+  le metió las doce columnas dentro de la celda A1. Una plantilla que hay que
+  repartir a mano en columnas no es una plantilla.
 
-  Las dos filas de ejemplo no son adorno: enseñan de un vistazo cómo se escribe
-  un número, qué se pone en una columna que se deja vacía, y qué palabras
-  admite cada catálogo. Se borran y se escriben los propios encima.
+  Y hacía falta una segunda hoja con las instrucciones —la leyenda vive en la
+  pantalla, y quien llena el archivo lo hace con la pantalla cerrada—, y un CSV
+  no tiene hojas.
+
+  Ahora es un `.xlsx` de verdad, escrito sin librería: ver `escribirLibro.ts`.
+
+  QUÉ LLEVA CADA HOJA
+
+    Plantilla      El título de qué se está cargando, una línea que dice qué
+                   hacer, la cabecera de columnas en el naranja de la casa, y
+                   dos filas de ejemplo. Las columnas van anchas: una columna
+                   de 8 caracteres con «CONSUMIBLE» dentro se lee «####».
+
+    Instrucciones  Una fila por columna, con si es obligatoria, qué va ahí y
+                   qué se admite. Es la misma leyenda de la pantalla, para
+                   quien ya la cerró.
 */
 
 export interface ColumnaPlantilla {
@@ -31,24 +46,89 @@ export interface ColumnaPlantilla {
   otro?: string
 }
 
-/** Un campo con separador, comillas o salto dentro va entrecomillado. */
-function escapar(valor: string): string {
-  return /[;"\n\r]/.test(valor) ? `"${valor.replace(/"/g, '""')}"` : valor
+const celda = (texto: string, estilo?: number): CeldaDeLibro => ({ texto, estilo })
+
+/**
+ * El ancho de cada columna, en caracteres.
+ *
+ * Se calcula de lo que va a llevar —su nombre, su ejemplo— y no se deja fijo:
+ * `codigo` necesita doce y `descripcion` treinta, y darles lo mismo a las dos
+ * deja una a medias y la otra vacía.
+ */
+function anchoDe(c: ColumnaPlantilla): number {
+  const largos = [c.columna.length, (c.ejemplo ?? '').length, (c.otro ?? '').length]
+  return Math.min(38, Math.max(12, ...largos) + 3)
 }
 
-export function plantillaCsv(columnas: ColumnaPlantilla[]): string {
-  const lineas = [
-    columnas.map((c) => c.columna).join(';'),
-    columnas.map((c) => escapar(c.ejemplo ?? '')).join(';'),
-    columnas.map((c) => escapar(c.otro ?? '')).join(';'),
-  ]
-  // El BOM va delante, o Excel en Windows rompe las tildes.
-  return '﻿' + lineas.join('\r\n') + '\r\n'
+export function libroDePlantilla(
+  queSeCarga: string,
+  columnas: ColumnaPlantilla[],
+): Blob {
+  const obligatorias = columnas.filter((c) => c.obligatoria).map((c) => c.columna)
+
+  return armarLibro([
+    {
+      nombre: 'Plantilla',
+      anchos: columnas.map(anchoDe),
+      filas: [
+        [celda(`Carga de ${queSeCarga} — Minería Internacional TS`, ESTILO.titulo)],
+        [
+          celda(
+            `Borra las dos filas de ejemplo y escribe las tuyas debajo de la cabecera. ` +
+              `No cambies los nombres de las columnas. Obligatorias: ${obligatorias.join(', ')}.`,
+            ESTILO.subtitulo,
+          ),
+        ],
+        [],
+        columnas.map((c) => celda(c.columna, ESTILO.cabecera)),
+        columnas.map((c) => celda(c.ejemplo ?? '')),
+        columnas.map((c) => celda(c.otro ?? '')),
+      ],
+    },
+    {
+      nombre: 'Instrucciones',
+      anchos: [26, 14, 78],
+      filas: [
+        [celda(`Cómo se llena la plantilla de ${queSeCarga}`, ESTILO.titulo)],
+        [
+          celda(
+            'Las columnas que no son obligatorias se pueden dejar vacías. Al subir el archivo, ' +
+              'el sistema revisa fila por fila y dice qué va a pasar con cada una antes de escribir nada.',
+            ESTILO.subtitulo,
+          ),
+        ],
+        [],
+        [
+          celda('Columna', ESTILO.cabecera),
+          celda('¿Obligatoria?', ESTILO.cabecera),
+          celda('Qué va ahí', ESTILO.cabecera),
+        ],
+        ...columnas.map((c) => [
+          celda(c.columna, ESTILO.etiqueta),
+          celda(c.obligatoria ? 'Sí' : 'No', c.obligatoria ? ESTILO.obligatoria : undefined),
+          celda(c.dice, ESTILO.parrafo),
+        ]),
+        [],
+        [celda('Si una fila queda mal', ESTILO.etiqueta)],
+        [
+          celda(
+            'No entra ninguna. Es a propósito: una carga a medias deja a nadie sabiendo qué quedó dentro, ' +
+              'y el archivo ya no sirve para volver a intentarlo. El sistema dice el número de fila y el motivo, ' +
+              'se corrige aquí y se sube otra vez.',
+            ESTILO.parrafo,
+          ),
+        ],
+      ],
+    },
+  ])
 }
 
-export function descargarPlantilla(nombreArchivo: string, columnas: ColumnaPlantilla[]): void {
-  const blob = new Blob([plantillaCsv(columnas)], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
+export function descargarPlantilla(
+  nombreArchivo: string,
+  queSeCarga: string,
+  columnas: ColumnaPlantilla[],
+): void {
+  const url = URL.createObjectURL(libroDePlantilla(queSeCarga, columnas))
   const a = document.createElement('a')
   a.href = url
   a.download = nombreArchivo

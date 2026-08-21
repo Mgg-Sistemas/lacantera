@@ -17,7 +17,7 @@ export function CargarProveedores() {
       descripcion="Para dar de alta a todos los proveedores de una vez, o corregir los que ya están."
       loQueSeCarga="proveedores"
       columnas={COLUMNAS_PROVEEDORES}
-      nombrePlantilla="plantilla-proveedores.csv"
+      nombrePlantilla="plantilla-proveedores.xlsx"
       columnaClave="rif"
       volverA={{ a: '/app/compras/proveedores', etiqueta: 'A proveedores' }}
       revisar={useRevisarProveedores()}

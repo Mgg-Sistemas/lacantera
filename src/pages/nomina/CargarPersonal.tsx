@@ -19,7 +19,7 @@ export function CargarPersonal() {
       descripcion="Para dar de alta a toda la gente de una vez, o corregir las fichas que ya están."
       loQueSeCarga="trabajadores"
       columnas={COLUMNAS_PERSONAL}
-      nombrePlantilla="plantilla-personal.csv"
+      nombrePlantilla="plantilla-personal.xlsx"
       columnaClave="cedula"
       volverA={{ a: '/app/nomina/personal', etiqueta: 'Al personal' }}
       revisar={useRevisarPersonal()}

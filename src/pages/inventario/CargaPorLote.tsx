@@ -19,7 +19,7 @@ export function CargaPorLote() {
       descripcion="Para dar de alta muchos artículos de una vez, o corregir los que ya están."
       loQueSeCarga="artículos"
       columnas={COLUMNAS_ARTICULOS}
-      nombrePlantilla="plantilla-articulos.csv"
+      nombrePlantilla="plantilla-articulos.xlsx"
       columnaClave="codigo"
       volverA={{ a: '/app/inventario/articulos', etiqueta: 'Al catálogo' }}
       revisar={useRevisarArticulos()}

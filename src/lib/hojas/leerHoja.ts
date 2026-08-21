@@ -262,7 +262,44 @@ async function leerXlsx(archivo: File): Promise<string[][]> {
  * para que «Stock mínimo», «stock_minimo» y «STOCK MINIMO» sean la misma
  * columna. Quien llena una planilla no tiene por qué respetar mayúsculas.
  */
-export async function leerHoja(archivo: File): Promise<HojaLeida> {
+export interface OpcionesDeLectura {
+  /**
+   * La columna que identifica cada fila: `codigo`, `cedula`, `rif`.
+   *
+   * Sirve para encontrar la cabecera. Desde que la plantilla lleva título y
+   * subtítulo, la cabecera ya no está en la fila 1, y tomar la primera fila
+   * con contenido daría «carga de artículos — minería internacional ts» como
+   * nombre de la primera columna y ninguna otra. Todas las filas saldrían
+   * vacías y el informe diría «falta el código» en todas — un error cierto
+   * que no explica nada.
+   */
+  claveEsperada?: string
+  /** Las columnas que la plantilla debería traer, para avisar de las que no. */
+  columnasEsperadas?: string[]
+}
+
+export interface HojaLeidaConAvisos extends HojaLeida {
+  /** Columnas de la plantilla que el archivo no trae. */
+  faltan: string[]
+  /** En qué fila del archivo estaba la cabecera. Para poder decirlo. */
+  filaDeCabecera: number
+}
+
+/**
+ * Cuántas filas se admiten de una vez.
+ *
+ * No es capricho: todo el lote viaja como un solo `jsonb` y se valida y se
+ * escribe en una transacción. Un archivo de diez mil filas no falla con un
+ * mensaje: se queda pensando hasta que el navegador o la base cortan, y quien
+ * lo subió no sabe si cargó, si va a cargar, o si tiene que volver a
+ * intentarlo. Mejor decirlo antes de empezar.
+ */
+const TOPE_DE_FILAS = 2000
+
+export async function leerHoja(
+  archivo: File,
+  opciones: OpcionesDeLectura = {},
+): Promise<HojaLeidaConAvisos> {
   const nombre = archivo.name.toLowerCase()
   let celdas: string[][]
 
@@ -270,14 +307,18 @@ export async function leerHoja(archivo: File): Promise<HojaLeida> {
     celdas = await leerXlsx(archivo)
   } else if (nombre.endsWith('.xls')) {
     throw new ErrorDePlanilla(
-      'El formato .xls es de Excel 97 y no se puede leer. Ábrelo y guárdalo como .xlsx o como CSV.',
+      'El formato .xls es de Excel 97 y no se puede leer. Ábrelo y guárdalo como .xlsx.',
     )
-  } else {
+  } else if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) {
     // El BOM que Excel escribe delante se colaría dentro del primer nombre de
     // columna y esa columna no coincidiría con ninguna.
     const texto = (await archivo.text()).replace(/^﻿/, '')
     const primera = texto.split('\n')[0] ?? ''
     celdas = partirCsv(texto, separadorDe(primera))
+  } else {
+    throw new ErrorDePlanilla(
+      'Ese archivo no es una planilla. Se admiten .xlsx y .csv, que es lo que descarga el botón de la plantilla.',
+    )
   }
 
   const conContenido = celdas.filter((f) => f.some((c) => c.trim() !== ''))
@@ -292,9 +333,32 @@ export async function leerHoja(archivo: File): Promise<HojaLeida> {
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/^_|_$/g, '')
 
-  const cabecera = conContenido[0].map(normalizar)
+  /*
+    LA CABECERA SE BUSCA, NO SE SUPONE
 
-  const filas = conContenido.slice(1).map((celda) => {
+    Se toma la primera fila que contenga la columna clave. Así da igual cuántas
+    líneas de título lleve la plantilla por encima, y da igual que alguien
+    añada una nota suya arriba —que lo hará—.
+
+    Sin clave que buscar, se cae a la vieja regla: la primera fila con algo.
+  */
+  const clave = opciones.claveEsperada ? normalizar(opciones.claveEsperada) : null
+  let indiceCabecera = 0
+
+  if (clave) {
+    const encontrada = conContenido.findIndex((f) => f.some((c) => normalizar(c) === clave))
+    if (encontrada < 0) {
+      throw new ErrorDePlanilla(
+        `No encuentro la fila de columnas: en ninguna parte del archivo aparece «${opciones.claveEsperada}». ` +
+          'Vuelve a bajar la plantilla y llena esa, sin cambiarle los nombres a las columnas.',
+      )
+    }
+    indiceCabecera = encontrada
+  }
+
+  const cabecera = conContenido[indiceCabecera].map(normalizar)
+
+  const filas = conContenido.slice(indiceCabecera + 1).map((celda) => {
     const fila: FilaDeHoja = {}
     cabecera.forEach((nombreColumna, i) => {
       if (nombreColumna) fila[nombreColumna] = (celda[i] ?? '').trim()
@@ -302,5 +366,14 @@ export async function leerHoja(archivo: File): Promise<HojaLeida> {
     return fila
   })
 
-  return { cabecera, filas }
+  if (filas.length > TOPE_DE_FILAS) {
+    throw new ErrorDePlanilla(
+      `La planilla trae ${filas.length} filas y el máximo por archivo es ${TOPE_DE_FILAS}. ` +
+        'Pártela en varias y súbelas una detrás de otra: cada una se comprueba y se carga por su cuenta.',
+    )
+  }
+
+  const faltan = (opciones.columnasEsperadas ?? []).filter((c) => !cabecera.includes(normalizar(c)))
+
+  return { cabecera, filas, faltan, filaDeCabecera: indiceCabecera + 1 }
 }

@@ -63,6 +63,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
   const [filas, setFilas] = useState<FilaDeHoja[] | null>(null)
   const [informe, setInforme] = useState<InformeDeCarga | null>(null)
   const [errorLectura, setErrorLectura] = useState<string | null>(null)
+  const [avisos, setAvisos] = useState<string | null>(null)
   const [cargado, setCargado] = useState<InformeDeCarga | null>(null)
 
   const entrada = useRef<HTMLInputElement>(null)
@@ -90,27 +91,54 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
 
   async function alElegirArchivo(archivo: File) {
     setErrorLectura(null)
+    setAvisos(null)
     setInforme(null)
     setCargado(null)
     setNombreArchivo(archivo.name)
 
     try {
-      const hoja = await leerHoja(archivo)
+      /*
+        Se le dice al lector qué busca.
+
+        Con la clave encuentra la fila de columnas por su cuenta, así que da
+        igual cuántas líneas de título lleve la plantilla encima —o cuántas
+        añada quien la llena, que las añadirá—. Y con la lista completa avisa
+        de las que faltan antes de mandar nada.
+      */
+      const hoja = await leerHoja(archivo, {
+        claveEsperada: p.columnaClave,
+        columnasEsperadas: campos,
+      })
       const limpias = preparar(hoja.filas)
 
       if (limpias.length === 0) {
-        setErrorLectura('La planilla no trae ninguna fila con datos.')
-        setFilas(null)
-        return
-      }
-
-      if (!hoja.cabecera.includes(p.columnaClave)) {
         setErrorLectura(
-          `La planilla no tiene una columna «${p.columnaClave}». ¿Seguro que es la plantilla de ${p.loQueSeCarga}?`,
+          'La planilla trae la fila de columnas pero ninguna fila con datos debajo.',
         )
         setFilas(null)
         return
       }
+
+      // Faltar una obligatoria es no poder seguir. Faltar una opcional es que
+      // esas filas se van a cargar sin ese dato, y eso hay que decirlo antes,
+      // no descubrirlo cuando ya está dentro.
+      const obligatoriasQueFaltan = hoja.faltan.filter(
+        (c) => p.columnas.find((x) => x.columna === c)?.obligatoria,
+      )
+      if (obligatoriasQueFaltan.length > 0) {
+        setErrorLectura(
+          `A la planilla le faltan columnas que hacen falta: ${obligatoriasQueFaltan.join(', ')}. ` +
+            'Vuelve a bajar la plantilla y llena esa, sin cambiarle los nombres a las columnas.',
+        )
+        setFilas(null)
+        return
+      }
+
+      setAvisos(
+        hoja.faltan.length > 0
+          ? `El archivo no trae ${hoja.faltan.join(', ')}. Esas filas se cargarán sin ese dato.`
+          : null,
+      )
 
       setFilas(limpias)
       // Se revisa sola al soltar el archivo. Obligar a pulsar «Revisar» sería
@@ -156,19 +184,19 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
           <Card>
             <CardHeader
               title="1 · Baja la plantilla"
-              subtitle="Trae las columnas en el orden que el sistema espera y dos filas de ejemplo para que se vea cómo se llena."
+              subtitle="Trae las columnas en el orden que el sistema espera, dos filas de ejemplo, y una segunda hoja que explica qué va en cada una."
             />
             <Button
               className="mt-3"
               variant="outline"
               icon={<Download />}
-              onClick={() => descargarPlantilla(p.nombrePlantilla, p.columnas)}
+              onClick={() => descargarPlantilla(p.nombrePlantilla, p.loQueSeCarga, p.columnas)}
             >
               Descargar plantilla
             </Button>
             <p className="text-ink/45 mt-2 text-xs">
-              Se abre en Excel de un doble clic. Al terminar puedes guardarla como CSV o como
-              Excel: el sistema lee las dos.
+              Es un archivo de Excel con dos hojas: la que se llena y otra con las
+              instrucciones. Al terminar, guárdala como está.
             </p>
           </Card>
 
@@ -203,6 +231,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
             </div>
 
             {errorLectura ? <p className="text-danger mt-3 text-sm">{errorLectura}</p> : null}
+            {avisos ? <p className="text-warning mt-3 text-sm">{avisos}</p> : null}
             {p.revisar.error ? <ErrorDeCarga error={p.revisar.error} className="mt-3" /> : null}
           </Card>
 
