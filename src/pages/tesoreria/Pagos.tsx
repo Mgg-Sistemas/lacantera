@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { AlertTriangle, CheckCircle2, ExternalLink, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas } from '@/components/Pestanas'
+import { PESTANAS_DEUDAS } from '@/components/pestanasDeModulos'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -115,6 +117,8 @@ export function Pagos() {
         title="Pagos por hacer"
         description="Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda pendiente por recepcionar."
       />
+
+      <Pestanas pestanas={PESTANAS_DEUDAS} />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}

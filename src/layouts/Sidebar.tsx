@@ -38,9 +38,14 @@ function menuVisible(
         .map((item) => ({
           ...item,
           children: item.children?.filter(
-            // `soloAdmin` va por encima del permiso de módulo: la auditoría no
-            // se reparte por módulos, se tiene o no se tiene.
-            (hijo) => (hijo.soloAdmin ? esAdmin : true) && puede(moduloDeRuta(hijo.to)),
+            (hijo) =>
+              // Una pantalla puede quedar fuera del MVP aunque su módulo entre.
+              // Pesa más que cualquier permiso, igual que a nivel de módulo.
+              !hijo.fueraDelMvp &&
+              // `soloAdmin` va por encima del permiso de módulo: la auditoría no
+              // se reparte por módulos, se tiene o no se tiene.
+              (hijo.soloAdmin ? esAdmin : true) &&
+              puede(moduloDeRuta(hijo.to)),
           ),
         }))
         .filter((item) => {

@@ -21,6 +21,16 @@ export interface NavChild {
   label: string
   to: string
   /**
+   * Esta pantalla concreta no se ofrece todavía, aunque su módulo sí.
+   *
+   * Hizo falta al entrar Tesorería: el módulo va al riel entero menos «Cuentas
+   * por cobrar», que es de ventas y ventas no está en el MVP. Antes el marbete
+   * era del módulo completo, y ocultar una sola pantalla obligaba a sacarla del
+   * menú a mano — que es como se pierde la cuenta de lo que está oculto y por
+   * qué.
+   */
+  fueraDelMvp?: boolean
+  /**
    * Solo para el rol ADMIN, por encima de los permisos por módulo.
    *
    * Los módulos se reparten: a alguien de tesorería se le puede dar Nómina en
@@ -474,17 +484,30 @@ export const navigation: NavSection[] = [
         fueraDelMvp: true,
         to: '/app/organigrama',
       },
+      /*
+        TESORERÍA ENTRA AL MVP
+
+        Por orden de la líder, «para lograr completar el ciclo de compras». Y es
+        exacto: sin tesorería una compra aprobada se queda esperando un pago que
+        nadie puede registrar, y la orden no llega nunca a «pagada».
+
+        De seis entradas a cuatro, con el mismo criterio que Inventario y
+        Nómina. «Cuentas por pagar» era la misma deuda que «Pagos por hacer»
+        agrupada por proveedor, así que pasa a ser su pestaña.
+
+        «Cuentas por cobrar» se queda fuera: es de ventas, y ventas no está en
+        el MVP. Una pantalla que solo puede estar vacía enseña a desconfiar de
+        las que sí tienen datos.
+      */
       {
         label: 'Tesorería',
         icon: Landmark,
-        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/tesoreria' },
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
           { label: 'Pagos por hacer', to: '/app/tesoreria/pagos' },
-          { label: 'Cuentas por pagar', to: '/app/tesoreria/por-pagar' },
           { label: 'Libro de tesorería', to: '/app/tesoreria/movimientos' },
-          { label: 'Cuentas por cobrar', to: '/app/tesoreria/por-cobrar' },
+          { label: 'Cuentas por cobrar', to: '/app/tesoreria/por-cobrar', fueraDelMvp: true },
         ],
       },
     ],
@@ -536,8 +559,13 @@ export const navigation: NavSection[] = [
 */
 const FUERA_DEL_MVP: string[] = navigation
   .flatMap((seccion) => seccion.items)
-  .filter((item) => item.fueraDelMvp)
-  .flatMap((item) => [item.to, ...(item.children ?? []).map((hijo) => hijo.to)])
+  .flatMap((item) =>
+    item.fueraDelMvp
+      ? // El módulo entero: él y todo lo que cuelga de él.
+        [item.to, ...(item.children ?? []).map((hijo) => hijo.to)]
+      : // El módulo se ofrece, pero puede tener pantallas que no.
+        (item.children ?? []).filter((hijo) => hijo.fueraDelMvp).map((hijo) => hijo.to),
+  )
   .filter((ruta): ruta is string => Boolean(ruta))
 
 /**

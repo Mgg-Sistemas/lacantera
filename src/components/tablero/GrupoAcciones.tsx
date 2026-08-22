@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import type { LucideIcon } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { esRutaFueraDelMvp } from '@/config/navigation'
 import { cn } from '@/lib/cn'
 
 /**
@@ -50,7 +51,19 @@ export function GrupoAcciones({
   columnas?: 2 | 3
   className?: string
 }) {
-  const visibles = acciones.filter((a) => !a.exigeEscritura || puedeEscribir)
+  /*
+    Lo que hoy no se ofrece no se ofrece tampoco desde un tablero.
+
+    Un tablero es la otra puerta al menú: una tarjeta que lleva a una pantalla
+    escondida del riel no está escondida, solo cuesta más de encontrar — y quien
+    la pulsa se topa con el cartel de obra sin entender por qué se lo ofrecían.
+
+    Hizo falta al entrar Tesorería, que ofrece «cuentas por cobrar» y ventas
+    sigue fuera del MVP.
+  */
+  const visibles = acciones.filter(
+    (a) => (!a.exigeEscritura || puedeEscribir) && !esRutaFueraDelMvp(a.ruta),
+  )
   if (visibles.length === 0) return null
 
   return (

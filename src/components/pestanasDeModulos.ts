@@ -49,3 +49,9 @@ export const PESTANAS_PROVEEDORES: Pestana[] = [
   { etiqueta: 'Proveedores', a: '/app/compras/proveedores' },
   { etiqueta: 'Facturas recibidas', a: '/app/compras/facturas' },
 ]
+
+/** Lo que se debe, por documento y agrupado por a quién. */
+export const PESTANAS_DEUDAS: Pestana[] = [
+  { etiqueta: 'Pagos por hacer', a: '/app/tesoreria/pagos' },
+  { etiqueta: 'Por proveedor', a: '/app/tesoreria/por-pagar' },
+]

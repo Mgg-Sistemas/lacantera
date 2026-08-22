@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { HandCoins } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas } from '@/components/Pestanas'
+import { PESTANAS_DEUDAS } from '@/components/pestanasDeModulos'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
@@ -58,6 +60,8 @@ export function PorPagar() {
         title="Cuentas por pagar"
         description="Lo que se le debe a cada proveedor, por autorizaciones de compra que todavía no han salido del banco."
       />
+
+      <Pestanas pestanas={PESTANAS_DEUDAS} />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}

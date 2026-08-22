@@ -119,7 +119,12 @@ export function Buscador() {
         }
 
         if (item.to) agregar(item.label, item.to, null)
-        for (const hijo of item.children ?? []) agregar(hijo.label, hijo.to, item.label)
+        for (const hijo of item.children ?? []) {
+          // Una pantalla escondida del riel que saliera aquí escribiendo su
+          // nombre no estaría escondida.
+          if (hijo.fueraDelMvp) continue
+          agregar(hijo.label, hijo.to, item.label)
+        }
       }
     }
 

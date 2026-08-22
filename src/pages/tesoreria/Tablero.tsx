@@ -87,7 +87,7 @@ export function TableroTesoreria() {
     <>
       <PageHeader
         title="Tesorería"
-        description="Cuánto hay y dónde, qué hay que pagar y qué está por cobrar."
+        description="Cuánto hay, dónde está, y qué hay que pagar."
         actions={
           <Link to="/app/tesoreria/cuentas">
             <Button icon={<Landmark />}>Bancos y cajas</Button>
