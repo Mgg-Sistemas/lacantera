@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import {
   Plus,
   Truck,
@@ -20,6 +20,9 @@ import { CONDICIONES_PAGO, useGuardarProveedor, useProveedores } from '@/lib/api
 import type { Proveedor } from '@/lib/api/catalogo'
 import { useMonedasUsables } from '@/lib/api/tasas'
 import { useMetodosPago } from '@/lib/api/metodosPago'
+import { useResumenProveedores } from '@/lib/api/proveedorFicha'
+import { useMisPermisos } from '@/lib/api/usuarios'
+import { dolares } from '@/lib/formato'
 
 const vacio = {
   rif: '',
@@ -38,7 +41,11 @@ const vacio = {
 }
 
 export function Proveedores() {
+  const navegar = useNavigate()
   const { data, isPending, error } = useProveedores(false)
+  const { data: resumen } = useResumenProveedores()
+  const { puede } = useMisPermisos()
+  const puedeEscribir = puede('COMPRAS', 'ESCRITURA')
   const { data: monedas } = useMonedasUsables()
   const { data: metodos } = useMetodosPago()
   const guardar = useGuardarProveedor()
@@ -120,14 +127,29 @@ export function Proveedores() {
                   <th className="px-3 py-3 font-medium">RIF</th>
                   <th className="px-3 py-3 font-medium">Contacto</th>
                   <th className="px-3 py-3 font-medium">Condición</th>
+                  {/*
+                    LAS CIFRAS, EN LA LISTA
+
+                    La líder pregunta «cuánto se le ha comprado a cada uno».
+                    Ponerlo solo en la ficha obligaría a entrar en los quince
+                    proveedores para comparar dos. Aquí se ve de un vistazo, y
+                    la ficha es para el detalle.
+                  */}
+                  <th className="px-3 py-3 text-right font-medium">Invertido</th>
+                  <th className="px-3 py-3 text-right font-medium">Este mes</th>
                   <th className="px-5 py-3 text-right font-medium">Estado</th>
                 </tr>
               </thead>
               <tbody>
-                {data.map((p) => (
+                {data.map((p) => {
+                  const r = resumen?.find((x) => x.proveedor_id === p.id)
+                  return (
                   <tr
                     key={p.id}
-                    onClick={() => abrir(p)}
+                    // La fila lleva a la ficha, como en Inventario y en Nómina:
+                    // lo que se hace más veces con un proveedor es consultarlo,
+                    // no corregir su RIF. Editar tiene su botón.
+                    onClick={() => navegar(`/app/compras/proveedores/${p.id}`)}
                     className="border-hairline hover:bg-ink/3 cursor-pointer border-b transition-colors last:border-0"
                   >
                     <td className="px-5 py-3">
@@ -149,13 +171,33 @@ export function Proveedores() {
                         </Chip>
                       ) : null}
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="text-ink/85 tabular px-3 py-3 text-right font-medium">
+                      {r && Number(r.invertido_usd) > 0 ? dolares(r.invertido_usd) : '—'}
+                    </td>
+                    <td className="text-ink/70 tabular px-3 py-3 text-right">
+                      {r && Number(r.invertido_mes_usd) > 0 ? dolares(r.invertido_mes_usd) : '—'}
+                    </td>
+                    <td className="px-5 py-3 text-right whitespace-nowrap">
                       <Chip tone={p.activo ? 'success' : 'neutral'}>
                         {p.activo ? 'Activo' : 'Inactivo'}
                       </Chip>
+                      {puedeEscribir ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="ml-2"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            abrir(p)
+                          }}
+                        >
+                          Editar
+                        </Button>
+                      ) : null}
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
