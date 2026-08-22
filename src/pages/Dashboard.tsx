@@ -212,6 +212,26 @@ export function Dashboard() {
   const veCompras = puede('COMPRAS')
   const veInventario = puede('INVENTARIO')
 
+  /*
+    PODER PEDIR ALGO NO ES LLEVAR LAS COMPRAS
+
+    Entrando como un jefe electricista —rol SOLICITANTE, que solo puede pedir
+    material— el panel le enseñaba «Por pagar a proveedores: $11.600» y
+    «Pagado sin recibir». Cuánto le debe la empresa a sus proveedores no es
+    asunto suyo, y sin embargo lo tenía en la primera pantalla.
+
+    La causa: SOLICITANTE usa el módulo COMPRAS con nivel ESCRITURA, igual que
+    el rol COMPRAS, porque crear un pedido es escribir en compras. El permiso
+    de módulo no distingue «pedir» de «gestionar», así que `veCompras` era
+    cierto para los dos.
+
+    La cifra de lo que se debe se ata a TESORERIA, no a COMPRAS: quien lleva
+    compras tiene tesorería en lectura y la sigue viendo; quien solo pide, no.
+    Es la separación que ya estaba pensada en la matriz de permisos, solo que
+    el panel no la usaba.
+  */
+  const veDinero = veTesoreria
+
   // Lo que espera decisión del gerente, lo más viejo arriba: quien aprueba
   // necesita saber qué lleva más tiempo detenido, no qué llegó de último.
   const porAprobar = (tarjetas ?? [])
@@ -238,7 +258,7 @@ export function Dashboard() {
                 deltaLabel={`${bolivares(r.disponible_ves)} en bolívares`}
               />
             ) : null}
-            {veTesoreria || veCompras ? (
+            {veDinero ? (
               <StatCard
                 label="Por pagar a proveedores"
                 value={dolaresRedondos(r.por_pagar_usd)}
@@ -251,7 +271,7 @@ export function Dashboard() {
                 }
               />
             ) : null}
-            {veCompras ? (
+            {veDinero ? (
               <StatCard
                 label="Pagado sin recibir"
                 value={dolaresRedondos(r.pagado_sin_recibir_usd)}
