@@ -176,8 +176,24 @@ const COL_PREC = IZQ + 124
 const COL_TOTAL = DER
 const ANCHO_DESCRIPCION = 68
 
-/** Alto de la banda del membrete. Da para tres renglones de domicilio. */
-const ALTO_MEMBRETE = 34
+/*
+  Alto de la banda del membrete.
+
+  La líder pidió reducirlo «al menos un 20%»: de 34 mm a 27, que es un 20,6%.
+  Siete milímetros de papel que pasan a la mercancía — en una factura de
+  veinte renglones eso es un renglón y medio más por hoja.
+
+  El recorte no sale del domicilio. Sigue teniendo sus tres renglones, que es
+  lo que pide una dirección venezolana completa: se probó dejarlo en dos y la
+  dirección terminaba en «MUNICIPIO CARONI, ESTADO», perdiendo el estado y la
+  zona postal, que son obligatorios.
+
+  Sale del aire: había seis milímetros muertos entre el domicilio y la línea de
+  contacto, y el logo era más grande de lo que hacía falta para reconocerse.
+  Los cuerpos de letra bajan un punto cada uno, no más: por debajo de 6 el RIF
+  deja de leerse en una fotocopia, y una factura se fotocopia mucho.
+*/
+const ALTO_MEMBRETE = 27
 
 function membrete(doc: Doc, d: DatosDocumento, logo: string): number {
   const rotulo = ROTULOS[d.tipo]
@@ -185,14 +201,14 @@ function membrete(doc: Doc, d: DatosDocumento, logo: string): number {
   doc.setFillColor(rotulo.color)
   doc.rect(IZQ, ARRIBA, ANCHO_UTIL, ALTO_MEMBRETE, 'F')
 
-  doc.addImage(logo, 'PNG', IZQ + 5, ARRIBA + 6, 14, 14)
+  doc.addImage(logo, 'PNG', IZQ + 5, ARRIBA + 4.5, 11, 11)
 
-  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(11)
-  doc.text(ajustar(doc, d.empresa.razonSocial, 76), IZQ + 23, ARRIBA + 10)
+  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(10)
+  doc.text(ajustar(doc, d.empresa.razonSocial, 74), IZQ + 20, ARRIBA + 8)
 
-  doc.setFont('helvetica', 'normal').setFontSize(6.5)
+  doc.setFont('helvetica', 'normal').setFontSize(6)
   doc.setTextColor('#FFFFFFCC')
-  doc.text(`RIF ${d.empresa.rif}`, IZQ + 23, ARRIBA + 14.5)
+  doc.text(`RIF ${d.empresa.rif}`, IZQ + 20, ARRIBA + 12)
 
   // EL DOMICILIO FISCAL VA ENTERO. Es obligatorio en una factura y antes se
   // cortaba a dos líneas: la dirección salía terminando en «MUNICIPIO CARONI,
@@ -201,34 +217,41 @@ function membrete(doc: Doc, d: DatosDocumento, logo: string): number {
   // partir de ahí el problema es que la dirección registrada es un párrafo.
   const domicilio = d.empresa.domicilio ?? ''
   if (domicilio) {
-    const lineas = (doc.splitTextToSize(domicilio, 76) as string[]).slice(0, 3)
-    doc.text(lineas, IZQ + 23, ARRIBA + 18.5, { lineHeightFactor: 1.35 })
+    const lineas = (doc.splitTextToSize(domicilio, 74) as string[]).slice(0, 3)
+    doc.text(lineas, IZQ + 20, ARRIBA + 15.5, { lineHeightFactor: 1.3 })
   }
 
   const contacto = [d.empresa.telefono, d.empresa.correo].filter(Boolean).join(' · ')
-  if (contacto) doc.text(ajustar(doc, contacto, 76), IZQ + 23, ARRIBA + 31)
+  if (contacto) doc.text(ajustar(doc, contacto, 74), IZQ + 20, ARRIBA + 24.5)
 
   // El rótulo y el número, a la derecha.
-  doc.setFont('helvetica', 'bold').setFontSize(12).setTextColor('#FFFFFF')
-  doc.text(rotulo.titulo, DER - 5, ARRIBA + 10, { align: 'right' })
+  doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor('#FFFFFF')
+  doc.text(rotulo.titulo, DER - 5, ARRIBA + 7, { align: 'right' })
 
-  doc.setFontSize(15)
-  doc.text(d.numero, DER - 5, ARRIBA + 19, { align: 'right' })
+  doc.setFontSize(12)
+  doc.text(d.numero, DER - 5, ARRIBA + 14, { align: 'right' })
 
-  doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor('#FFFFFFCC')
+  doc.setFont('helvetica', 'normal').setFontSize(6.5).setTextColor('#FFFFFFCC')
 
-  // De abajo hacia arriba, para que el número de control —que solo lleva la
-  // factura— no deje un hueco en los otros dos documentos.
-  let fila = ARRIBA + 31
+  /*
+    De abajo hacia arriba, para que el número de control —que solo lleva la
+    factura— no deje un hueco en los otros dos documentos.
+
+    Empieza en 25 y no en 24,5: con las tres líneas puestas —vence, fecha y
+    número de control, que es el caso de una factura a crédito— la de arriba
+    subía hasta rozar el número del documento y los dos textos se cruzaban.
+    Se vio al probar el peor caso; con dos líneas no pasaba.
+  */
+  let fila = ARRIBA + 25
   if (d.vigencia) {
     doc.text(`${d.vigencia.rotulo} ${fechaCorta(d.vigencia.fecha)}`, DER - 5, fila, {
       align: 'right',
     })
-    fila -= 4.5
+    fila -= 3.8
   }
   doc.text(`Fecha: ${fechaCorta(d.fecha)}`, DER - 5, fila, { align: 'right' })
   if (d.numeroControl) {
-    doc.text(`N.º de control ${d.numeroControl}`, DER - 5, fila - 4.5, { align: 'right' })
+    doc.text(`N.º de control ${d.numeroControl}`, DER - 5, fila - 3.8, { align: 'right' })
   }
 
   return ARRIBA + ALTO_MEMBRETE + 6

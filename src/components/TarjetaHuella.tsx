@@ -5,7 +5,13 @@ import { CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
 import { useSesion } from '@/lib/sesion'
-import { activarHuella, desactivarHuella, estadoGuardado, hayHuella } from '@/lib/huella'
+import {
+  activarHuella,
+  desactivarHuella,
+  enCastellano,
+  estadoGuardado,
+  hayHuella,
+} from '@/lib/huella'
 
 /**
  * Activar la huella en este equipo.
@@ -53,10 +59,20 @@ export function TarjetaHuella() {
       setDuena(usuario)
       setAviso('Listo. En este equipo ya puedes entrar con la huella.')
     } catch (e) {
-      // Cancelar el diálogo del sistema entra por aquí, y no es un error que
-      // haya que enseñar como si algo se hubiera roto.
-      const mensaje = e instanceof Error ? e.message : String(e)
-      setFallo(/NotAllowed|abort/i.test(mensaje) ? '' : mensaje)
+      /*
+        El mensaje ya viene en castellano desde `huella.ts`.
+
+        Aquí se intentaba silenciar la cancelación buscando «NotAllowed» dentro
+        del texto del error, pero Chrome lo escribe «not allowed» —con espacio y
+        en minúscula— así que la comprobación nunca acertaba y pasaba entero a
+        la pantalla, enlace a la especificación incluido.
+
+        Y silenciarlo del todo tampoco servía: WebAuthn devuelve el mismo error
+        cuando alguien cancela, cuando se agota el minuto y cuando el aparato ni
+        llega a preguntar. Callar los tres deja al que no pudo activarla mirando
+        un botón que no hace nada.
+      */
+      setFallo(e instanceof Error ? e.message : enCastellano(e))
     } finally {
       setTrabajando(false)
     }

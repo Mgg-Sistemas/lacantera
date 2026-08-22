@@ -124,6 +124,64 @@ async function cifrarPase(pase: string, llave: CryptoKey): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Lo que el navegador dice, en castellano
+// ---------------------------------------------------------------------------
+/**
+ * Traduce el fallo de WebAuthn a algo que se pueda leer.
+ *
+ * A Christopher le salió esto tal cual en pantalla:
+ *
+ *   «The operation either timed out or was not allowed. See:
+ *    https://www.w3.org/TR/webauthn-2/#sctn-privacy-considerations-client»
+ *
+ * Un enlace a una especificación técnica en inglés, dentro de una tarjeta que
+ * hasta esa línea estaba escrita para cualquiera.
+ *
+ * SE TRADUCE POR `name`, NO POR EL TEXTO
+ *
+ * El texto lo escribe cada navegador y cambia entre versiones; `name` es lo que
+ * manda la norma y no se mueve. La tarjeta intentaba filtrar buscando
+ * «NotAllowed» dentro del mensaje, pero Chrome escribe «not allowed» con
+ * espacio y en minúscula — así que la comprobación nunca acertaba y el texto
+ * crudo pasaba entero a la pantalla. De ahí la captura.
+ *
+ * `NotAllowedError` es el cajón de sastre de la norma a propósito: no distingue
+ * entre «lo cancelé», «se acabó el minuto» y «el navegador ni lo pidió», para
+ * no filtrar si el aparato tiene o no huella registrada. Como no se puede
+ * saber cuál fue, el mensaje nombra las tres sin acusar de ninguna.
+ */
+export function enCastellano(fallo: unknown): string {
+  const nombre = fallo instanceof DOMException ? fallo.name : ''
+
+  switch (nombre) {
+    case 'NotAllowedError':
+    case 'AbortError':
+      return 'No se completó. Puede que lo hayas cancelado, que pasara el minuto de espera, o que el aparato no llegara a pedírtelo. Vuelve a intentarlo y responde cuando salga el aviso del sistema.'
+
+    case 'InvalidStateError':
+      return 'Este equipo ya tiene tu huella registrada para el sistema. Si no te deja entrar con ella, quítala y vuelve a activarla.'
+
+    case 'NotSupportedError':
+      return 'Este equipo no tiene un lector que el sistema pueda usar. En Windows hace falta tener configurado Windows Hello; en el teléfono, la huella o la cara del propio aparato.'
+
+    case 'SecurityError':
+      return 'La huella solo funciona sobre una conexión segura. Entra por la dirección con https y vuelve a intentarlo.'
+
+    case 'ConstraintError':
+      return 'El aparato no puede cumplir lo que el sistema le pide: hace falta que verifique quién eres, y aquí no hay huella, cara ni PIN configurados.'
+
+    case 'UnknownError':
+      return 'El lector falló sin decir por qué. Suele arreglarse cerrando el navegador y volviendo a entrar.'
+
+    default:
+      // Un error nuestro ya viene escrito para leerse; uno del navegador que no
+      // esté en la lista, al menos sin el enlace a la especificación.
+      if (fallo instanceof Error && !(fallo instanceof DOMException)) return fallo.message
+      return 'No se pudo usar la huella en este equipo. Entra con tu clave y vuelve a intentarlo más tarde.'
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Activar
 // ---------------------------------------------------------------------------
 export async function activarHuella(datos: {
@@ -135,7 +193,9 @@ export async function activarHuella(datos: {
     throw new Error('Este equipo no tiene lector de huella, o el navegador no sabe usarlo.')
   }
 
-  const credencial = (await navigator.credentials.create({
+  let credencial: PublicKeyCredential | null
+  try {
+    credencial = (await navigator.credentials.create({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
       rp: { name: 'Minería Internacional TS', id: location.hostname },
@@ -157,8 +217,11 @@ export async function activarHuella(datos: {
         userVerification: 'required',
       },
       timeout: 60_000,
-    },
-  })) as PublicKeyCredential | null
+      },
+    })) as PublicKeyCredential | null
+  } catch (fallo) {
+    throw new Error(enCastellano(fallo))
+  }
 
   if (!credencial) throw new Error('No se registró la huella.')
 
@@ -197,14 +260,19 @@ export async function paseConHuella(): Promise<string> {
   const guardado = localStorage.getItem(CLAVE_PASE)
   if (!idCredencial || !guardado) throw new Error('La huella no está activada en este equipo.')
 
-  const afirmacion = (await navigator.credentials.get({
-    publicKey: {
-      challenge: crypto.getRandomValues(new Uint8Array(32)),
-      allowCredentials: [{ type: 'public-key', id: deBase64(idCredencial) }],
-      userVerification: 'required',
-      timeout: 60_000,
-    },
-  })) as PublicKeyCredential | null
+  let afirmacion: PublicKeyCredential | null
+  try {
+    afirmacion = (await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ type: 'public-key', id: deBase64(idCredencial) }],
+        userVerification: 'required',
+        timeout: 60_000,
+      },
+    })) as PublicKeyCredential | null
+  } catch (fallo) {
+    throw new Error(enCastellano(fallo))
+  }
 
   if (!afirmacion) throw new Error('No se reconoció la huella.')
 
