@@ -40,6 +40,7 @@ import {
   useRegistrarAjuste,
   useRegistrarBaja,
   CAUSAS_DE_BAJA,
+  CLASES_DE_SALIDA,
   useRegistrarEntradas,
   useRegistrarSalida,
 } from '@/lib/api/inventario'
@@ -248,10 +249,12 @@ export function Existencias() {
   */
   const [causa, setCausa] = useState(CAUSAS_DE_BAJA[0].valor)
   const [destino, setDestino] = useState('')
+  const [clase, setClase] = useState(CLASES_DE_SALIDA[0].valor)
 
   const abrir = (tipo: 'salida' | 'ajuste' | 'entrada' | 'baja', fila: Existencia | null) => {
     setCausa(CAUSAS_DE_BAJA[0].valor)
     setDestino('')
+    setClase(CLASES_DE_SALIDA[0].valor)
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setMotivo('')
     setReferencia('')
@@ -300,6 +303,7 @@ export function Existencias() {
         articulo_id: modal.fila!.articulo_id,
         cantidad: Number(valor),
         motivo,
+        tipo: clase,
       })
     } else {
       await ajuste.mutateAsync({
@@ -610,7 +614,7 @@ export function Existencias() {
             modal.tipo === 'entrada'
               ? 'Para lo que entra sin una compra de por medio: el saldo con el que arranca el almacén, algo comprado por fuera, material que trae alguien.'
               : modal.tipo === 'salida'
-                ? 'Sale del almacén al costo promedio que tiene ahora.'
+                ? 'Sale del almacén al costo promedio que tiene ahora. Di de qué clase es: lo que se usa trabajando y lo que se pierde en el manejo se miran por separado.'
                 : modal.tipo === 'baja'
                   ? 'Para lo que dejó de servir: se dañó, quedó obsoleto, venció, no aparece. Sale del inventario y su valor se da por perdido.'
                   : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
@@ -824,6 +828,19 @@ export function Existencias() {
                 es lo que después deja responder «cuánto se perdió por
                 obsolescencia» sin leer doscientas notas a mano.
               */}
+              {modal.tipo === 'salida' ? (
+                <Select
+                  label="¿De qué clase?"
+                  value={clase}
+                  onChange={(e) => setClase(e.target.value)}
+                  hint={CLASES_DE_SALIDA.find((c) => c.valor === clase)?.dice}
+                  opciones={CLASES_DE_SALIDA.map((c) => ({
+                    valor: c.valor,
+                    etiqueta: c.etiqueta,
+                  }))}
+                />
+              ) : null}
+
               {modal.tipo === 'baja' ? (
                 <>
                   <Select
@@ -863,7 +880,12 @@ export function Existencias() {
               modal.tipo === 'entrada'
                 ? 'De dónde vino'
                 : modal.tipo === 'salida'
-                  ? 'Para qué sale'
+                  // «Para qué sale» no encaja con una merma: nada se derrama
+                  // para algo. Cada clase pregunta lo que de verdad se
+                  // responde.
+                  ? clase === 'SALIDA_MERMA'
+                    ? 'Qué pasó'
+                    : 'Para qué sale'
                   : modal.tipo === 'baja'
                     ? 'Qué pasó'
                     : 'Qué explica la diferencia'

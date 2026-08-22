@@ -344,6 +344,38 @@ export function useRegistrarSalida() {
 }
 
 /*
+  DE QUÉ CLASE ES UNA SALIDA
+
+  Christopher: «validar si se pueden registrar salidas del inventario, así como
+  ya se tienen entradas con o sin compras».
+
+  Se podían, pero de una sola clase. La base admite tres —consumo, merma y
+  despacho— y la pantalla mandaba siempre `SALIDA_CONSUMO` sin preguntar, así
+  que la merma existía en el catálogo y no había forma de registrarla.
+
+  Y eso importa más de lo que parece: el porcentaje de merma es lo que se
+  vigila para detectar robo. Si todo lo que se pierde se anota como consumo, la
+  merma da siempre cero y el indicador que debería avisar no avisa nunca.
+
+  El despacho NO se ofrece aquí a propósito. Lo escribe una venta cuando sale
+  el camión, con su nota de entrega detrás. Dejarlo a mano permitiría restar
+  material «por despacho» sin documento que lo respalde, y al facturar la venta
+  el patio quedaría descontado dos veces.
+*/
+export const CLASES_DE_SALIDA: Array<{ valor: string; etiqueta: string; dice: string }> = [
+  {
+    valor: 'SALIDA_CONSUMO',
+    etiqueta: 'Se usó trabajando',
+    dice: 'El repuesto que se montó, el aceite del cambio, el combustible que se quemó.',
+  },
+  {
+    valor: 'SALIDA_MERMA',
+    etiqueta: 'Se perdió en el manejo',
+    dice: 'Lo que se derrama, se evapora o se rompe moviéndolo. Se vigila: una merma que sube sin explicación es la primera señal de un faltante.',
+  },
+]
+
+/*
   LAS CAUSAS POR LAS QUE UN BIEN DEJA DE SERVIR
 
   La líder: «el inventario registra entradas, pero no registra salidas que no
