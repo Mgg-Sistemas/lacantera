@@ -39,9 +39,8 @@ export function CardHeader({ title, subtitle, action, className }: CardHeaderPro
   return (
     /*
       En pantalla estrecha, el título y su acción se apilan. Compartiendo
-      línea, una etiqueta de estado larga —"Pagada · pendiente por
-      recepcionar"— deja el título en "Qué …", que es justo lo que había que
-      leer.
+      línea, una etiqueta de estado larga —"Pagada · falta que llegue"— deja el
+      título en "Qué …", que es justo lo que había que leer.
 
       Y se apilan también cuando la acción crece: la acción no encoge, así que
       sin envolver le come el ancho al título hasta partirle el subtítulo

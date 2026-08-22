@@ -115,7 +115,7 @@ export function Pagos() {
     <>
       <PageHeader
         title="Pagos por hacer"
-        description="Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda pendiente por recepcionar."
+        description="Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda esperando que llegue el material."
       />
 
       <Pestanas pestanas={PESTANAS_DEUDAS} />
@@ -138,7 +138,7 @@ export function Pagos() {
             <Card>
               <p className="text-ink/45 text-xs">Suma, con IGTF</p>
               <p className="text-safety tabular text-2xl font-semibold">{dolares(totalUsd)}</p>
-              <p className="text-ink/40 text-xs">Al cambio de cada instrucción</p>
+              <p className="text-ink/40 text-xs">Al cambio de cada pago</p>
             </Card>
             <Card>
               <p className="text-ink/45 text-xs">En cuentas en dólares</p>

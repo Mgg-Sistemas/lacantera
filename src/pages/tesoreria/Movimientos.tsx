@@ -60,7 +60,7 @@ export function MovimientosTesoreria() {
     <>
       <PageHeader
         title={cuentaElegida ? `Movimientos de ${cuentaElegida.nombre}` : 'Libro de tesorería'}
-        description="Todo el dinero que entró y salió. No se edita ni se borra: lo que estuvo mal se reversa y las dos líneas quedan."
+        description="Todo el dinero que entró y salió. No se edita ni se borra: para deshacer algo se escribe el movimiento contrario, y quedan los dos a la vista — el equivocado y el que lo corrige."
       />
 
       <Card className="mb-4">
@@ -191,7 +191,7 @@ export function MovimientosTesoreria() {
                             setMotivo('')
                           }}
                         >
-                          Reversar
+                          Deshacer
                         </Button>
                       ) : null}
                     </td>
@@ -207,7 +207,7 @@ export function MovimientosTesoreria() {
         <Modal
           abierto
           onCerrar={() => setReverso(null)}
-          titulo={`Reversar ${reverso.numero}`}
+          titulo={`Deshacer ${reverso.numero}`}
           descripcion="Se escribe el movimiento contrario. El equivocado se queda a la vista: así se entiende qué pasó."
           ancho="sm"
           acciones={
@@ -223,7 +223,7 @@ export function MovimientosTesoreria() {
                   setReverso(null)
                 }}
               >
-                {reversar.isPending ? 'Guardando…' : 'Reversar'}
+                {reversar.isPending ? 'Guardando…' : 'Deshacer'}
               </Button>
             </>
           }
@@ -237,7 +237,7 @@ export function MovimientosTesoreria() {
           </div>
 
           <Textarea
-            label="Por qué se reversa"
+            label="Por qué se deshace"
             rows={3}
             autoFocus
             value={motivo}

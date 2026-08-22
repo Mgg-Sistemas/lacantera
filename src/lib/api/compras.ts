@@ -33,7 +33,7 @@ export const COLUMNAS: DefinicionColumna[] = [
   { clave: 'CONFIRMADA', titulo: 'Confirmada', accion: 'Indicar proveedores', tono: 'info' },
   { clave: 'GERENTE', titulo: 'Confirmar por el gerente', accion: 'Aprobar', tono: 'royal' },
   { clave: 'APROBADA', titulo: 'Aprobada', accion: 'Indicar método de pago', tono: 'warning' },
-  { clave: 'PAGADA', titulo: 'Pagada', accion: 'Pendiente por recepcionar', tono: 'success' },
+  { clave: 'PAGADA', titulo: 'Pagada', accion: 'Falta que llegue el material', tono: 'success' },
   // La compra termina aquí, pero se queda a la vista: si desapareciera al
   // recibirse, no habría dónde comprobar que llegó.
   { clave: 'RECIBIDA', titulo: 'Recibida', accion: 'Cerrada', tono: 'info' },

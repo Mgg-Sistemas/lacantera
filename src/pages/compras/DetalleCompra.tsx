@@ -73,7 +73,7 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   EN_TESORERIA: { texto: 'En tesorería', tono: 'info' },
   // Contra entrega: aprobada y esperando el material, sin un bolivar fuera.
   POR_RECIBIR: { texto: 'Contra entrega · esperando el material', tono: 'info' },
-  PAGADA_POR_RECIBIR: { texto: 'Pagada · pendiente por recepcionar', tono: 'success' },
+  PAGADA_POR_RECIBIR: { texto: 'Pagada · falta que llegue', tono: 'success' },
   RECIBIDA_PARCIAL: { texto: 'Recibida parcialmente', tono: 'success' },
   RECIBIDA: { texto: 'Recibida', tono: 'success' },
   PROVEEDOR_DESISTIO: { texto: 'El proveedor desistió', tono: 'danger' },
@@ -544,7 +544,7 @@ const NOMBRE_DEL_ESTADO: Record<string, Record<string, string>> = {
     POR_PAGAR: 'Pago instruido a tesorería',
     PAGADA: 'Tesorería ejecutó el pago',
     DEVUELTA: 'Tesorería devolvió el pago a compras',
-    ANULADA: 'Se anuló la instrucción de pago',
+    ANULADA: 'Se anuló el pago autorizado',
   },
 }
 
@@ -1061,7 +1061,7 @@ export function DetalleCompra() {
             <Card>
               <CardHeader
                 title="Pagos"
-                subtitle="Lo que se instruyó pagar y lo que tesorería ya ejecutó."
+                subtitle="Lo que compras autorizó pagar y lo que tesorería ya pagó."
               />
               <div className="mt-4 space-y-3">
                 {orden.instrucciones
@@ -1301,8 +1301,8 @@ export function DetalleCompra() {
               {orden?.estado === 'EN_TESORERIA' ? (
                 puedeTesoreria ? (
                   <p className="text-ink/60 text-sm">
-                    Registra el pago desde la instrucción, abajo. Al hacerlo, la compra queda
-                    pendiente por recepcionar.
+                    Registra el pago abajo, en el pago autorizado. Al hacerlo, la compra queda
+                    esperando que llegue el material.
                   </p>
                 ) : (
                   <p className="text-ink/60 text-sm">
@@ -1493,7 +1493,7 @@ export function DetalleCompra() {
         onCerrar={() => setModal(null)}
         titulo="El proveedor desistió"
         descripcion="La compra ya está pagada. La tarjeta se queda a la vista hasta que se resuelva el dinero."
-        etiqueta="Marcar desistimiento"
+        etiqueta="Registrar que desistió"
         pendiente={desistir.isPending}
         error={desistir.error}
         onConfirmar={async (motivo) => {
@@ -1505,7 +1505,7 @@ export function DetalleCompra() {
         abierto={modal?.tipo === 'devolver-instruccion'}
         onCerrar={() => setModal(null)}
         titulo="Devolver a compras"
-        descripcion="La instrucción no se paga y compras tendrá que corregirla."
+        descripcion="El pago no se ejecuta y compras tendrá que autorizarlo de nuevo."
         etiqueta="Devolver"
         pendiente={devolverPago.isPending}
         error={devolverPago.error}

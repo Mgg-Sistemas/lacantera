@@ -460,7 +460,7 @@ export function Cuentas() {
                 {/* Una billetera se identifica por el correo o por la dirección
                     de la wallet: hay quien solo tiene la segunda. */}
                 <Input
-                  label="Dirección de la wallet"
+                  label="Dirección de la billetera"
                   value={edicion.numero_cuenta}
                   onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
                 />

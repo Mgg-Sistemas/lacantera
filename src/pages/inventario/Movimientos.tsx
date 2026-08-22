@@ -211,7 +211,7 @@ export function Movimientos() {
                             setReversando({ id: m.id, numero: m.numero })
                           }}
                         >
-                          Reversar
+                          Deshacer
                         </Button>
                       ) : null}
                     </td>
@@ -227,7 +227,7 @@ export function Movimientos() {
         <Modal
           abierto
           onCerrar={() => setReversando(null)}
-          titulo="Reversar el movimiento"
+          titulo="Deshacer el movimiento"
           descripcion={`Se escribe el movimiento contrario a ${reversando.numero}. El original se queda en el libro.`}
           ancho="sm"
           acciones={
@@ -243,13 +243,13 @@ export function Movimientos() {
                   setReversando(null)
                 }}
               >
-                {reversar.isPending ? 'Guardando…' : 'Reversar'}
+                {reversar.isPending ? 'Guardando…' : 'Deshacer'}
               </Button>
             </>
           }
         >
           <Textarea
-            label="Por qué se reversa"
+            label="Por qué se deshace"
             rows={3}
             autoFocus
             value={motivo}
