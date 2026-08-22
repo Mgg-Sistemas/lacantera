@@ -99,6 +99,19 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   // coincide. El respaldo cuelga de Configuración en el menú pero es su propio
   // módulo, como Usuarios: quien mantiene el catálogo de artículos no tiene por
   // qué poder llevarse la base entera.
+  /*
+    Los pagos de una compra son de COMPRAS, no de TESORERIA.
+
+    Van antes que `/app/tesoreria`, que si no las atraparía. Al pasar la cola
+    de pagos a Compras había que mover también su permiso: si no, quien lleva
+    compras vería la entrada en su menú y se toparía con «Tesorería no está a
+    tu alcance».
+
+    Y coincide con lo que ya pedía la base: `registrar_pago_compra` exige
+    COMPRAS en escritura, no tesorería. El mapa iba por detrás de la función.
+  */
+  ['/app/tesoreria/pagos', 'COMPRAS'],
+  ['/app/tesoreria/por-pagar', 'COMPRAS'],
   ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
@@ -423,6 +436,23 @@ export const navigation: NavSection[] = [
           // suelta invitaba a registrarla sin decir contra qué orden.
           { label: 'Proveedores', to: '/app/compras/proveedores' },
           { label: 'Recepciones', to: '/app/compras/recepciones' },
+          /*
+            LOS PAGOS ENTRAN EN COMPRAS
+
+            Por instrucción de la líder: tesorería se combina con compras, y la
+            empresa deja de llevar bancos y cajas. El sistema ya no lleva saldo
+            disponible de nadie — refleja los movimientos, no los controla.
+
+            De tesorería sobrevive lo que es parte del camino de una compra: la
+            cola de lo que hay que pagar, y el historial de lo que se pagó.
+            Bancos, cajas, traslados entre cuentas y cobranza se quedan fuera:
+            eran la gestión de un saldo que ya no se gestiona.
+
+            La cola va de entrada y no de pestaña del tablero porque es trabajo
+            de otra persona: quien paga entra a hacer eso, no a mirar en qué
+            punto va cada compra.
+          */
+          { label: 'Pagos por hacer', to: '/app/tesoreria/pagos' },
           // El libro cuelga de Compras y no de un módulo fiscal propio porque
           // quien lo saca es quien cargó las facturas, y porque así el permiso
           // que ya gobierna las facturas gobierna también su libro.
@@ -499,15 +529,32 @@ export const navigation: NavSection[] = [
         el MVP. Una pantalla que solo puede estar vacía enseña a desconfiar de
         las que sí tienen datos.
       */
+      /*
+        TESORERÍA DEJA DE SER UN MÓDULO
+
+        Duró una mañana. La líder la mandó activar «para completar el ciclo de
+        compras» y horas después llegó el cambio: la empresa no va a llevar
+        bancos ni cajas, y el sistema no manejará saldo disponible — solo
+        refleja los movimientos.
+
+        Sin saldos, un módulo de tesorería es una carpeta con dos pantallas que
+        pertenecen a otro sitio. Sus dos piezas útiles se van a Compras, que es
+        donde nace el pago: la cola de pagos por hacer y el historial de lo
+        pagado.
+
+        Las rutas siguen abiertas —`/app/tesoreria/cuentas` y las demás— y
+        quedan fuera del MVP: el día que la empresa quiera llevar sus cuentas,
+        el módulo está entero y basta con devolverlo al riel.
+      */
       {
         label: 'Tesorería',
         icon: Landmark,
+        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/tesoreria' },
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
-          { label: 'Pagos por hacer', to: '/app/tesoreria/pagos' },
           { label: 'Libro de tesorería', to: '/app/tesoreria/movimientos' },
-          { label: 'Cuentas por cobrar', to: '/app/tesoreria/por-cobrar', fueraDelMvp: true },
+          { label: 'Cuentas por cobrar', to: '/app/tesoreria/por-cobrar' },
         ],
       },
     ],
@@ -568,13 +615,39 @@ const FUERA_DEL_MVP: string[] = navigation
   )
   .filter((ruta): ruta is string => Boolean(ruta))
 
+/*
+  LO QUE EL MENÚ SÍ OFRECE HOY, DIRECCIÓN POR DIRECCIÓN
+
+  Manda sobre la regla del prefijo. Hizo falta al llevar la cola de pagos de
+  Tesorería a Compras: el tablero de Tesorería vive en `/app/tesoreria`, y por
+  prefijo se tragaba a `/app/tesoreria/pagos` — que ahora se ofrece desde
+  Compras y por tanto no está fuera de nada.
+
+  Sin esto, una pantalla podía estar en el menú y dar el cartel de obra al
+  pulsarla, que es la contradicción más difícil de explicar de todas.
+*/
+const OFRECIDAS: Set<string> = new Set(
+  navigation
+    .flatMap((seccion) => seccion.items)
+    .filter((item) => !item.fueraDelMvp)
+    .flatMap((item) => [
+      item.to,
+      ...(item.children ?? []).filter((hijo) => !hijo.fueraDelMvp).map((hijo) => hijo.to),
+    ])
+    .filter((ruta): ruta is string => Boolean(ruta)),
+)
+
 /**
  * ¿Esta dirección es de algo que hoy no se ofrece?
  *
  * Se compara por prefijo con la barra detrás, no con `startsWith` a secas:
  * `/app/ventas` no debe atrapar una hipotética `/app/ventasexpress`, y sí
  * tiene que atrapar `/app/ventas/clientes`.
+ *
+ * Salvo que el menú la ofrezca por su nombre, que gana siempre: una pantalla
+ * puede haberse mudado de módulo sin cambiar de dirección.
  */
 export function esRutaFueraDelMvp(ruta: string): boolean {
+  if (OFRECIDAS.has(ruta)) return false
   return FUERA_DEL_MVP.some((base) => ruta === base || ruta.startsWith(base + '/'))
 }

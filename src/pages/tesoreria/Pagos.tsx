@@ -8,7 +8,7 @@ import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { useCuentas, usePorPagar } from '@/lib/api/tesoreria'
+import { usePorPagar } from '@/lib/api/tesoreria'
 import type { PorPagar } from '@/lib/api/tesoreria'
 import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import { useMisRoles } from '@/lib/api/catalogo'
@@ -89,11 +89,21 @@ function Fila({
 
 export function Pagos() {
   const { data, isPending, error } = usePorPagar()
-  const { data: cuentas } = useCuentas(true)
   const { puede } = useMisRoles()
   const [pagando, setPagando] = useState<PorPagar | null>(null)
 
-  const puedePagar = puede('TESORERIA')
+  /*
+    QUIÉN PUEDE REGISTRAR EL PAGO
+
+    Era solo el rol TESORERIA. Al combinarse las dos áreas por decisión de la
+    empresa, quien lleva compras se quedaba mirando la cola sin poder cerrarla.
+
+    Van los dos, y no es una apertura: `registrar_pago_compra` siempre exigió
+    COMPRAS en escritura, nunca el rol de tesorería. El front pedía una llave
+    distinta de la que pide la puerta, y quien tuviera compras y no tesorería
+    veía el botón ausente sin saber por qué.
+  */
+  const puedePagar = puede('TESORERIA', 'COMPRAS')
   const pendientes = data ?? []
 
   // Lo que hay que pagar, en dólares, para compararlo con lo que hay. Es la
@@ -106,10 +116,6 @@ export function Pagos() {
     const igtf = p.igtf_aplica ? (Number(p.igtf_monto) * monto) / Number(p.monto) : 0
     return s + monto + igtf
   }, 0)
-
-  const disponibleUsd = (cuentas ?? [])
-    .filter((c) => c.moneda === 'USD')
-    .reduce((s, c) => s + Number(c.saldo), 0)
 
   return (
     <>
@@ -140,13 +146,15 @@ export function Pagos() {
               <p className="text-safety tabular text-2xl font-semibold">{dolares(totalUsd)}</p>
               <p className="text-ink/40 text-xs">Al cambio de cada pago</p>
             </Card>
-            <Card>
-              <p className="text-ink/45 text-xs">En cuentas en dólares</p>
-              <p className="text-ink/90 tabular text-2xl font-semibold">
-                {dolares(disponibleUsd)}
-              </p>
-              <p className="text-ink/40 text-xs">Los bolívares se ven en Bancos y cajas</p>
-            </Card>
+            {/*
+              Aquí había un tercer indicador: cuánto había en las cuentas en
+              dólares. Se va con los bancos.
+
+              La empresa dejó de llevar saldos, así que ese número no lo
+              actualiza nadie — y un disponible desactualizado al lado de lo que
+              hay que pagar es peor que no tenerlo: invita a decidir sobre él.
+              Además remitía a «Bancos y cajas», que ya no está en el menú.
+            */}
           </div>
 
           {pendientes.some((p) => p.dias_esperando > 7) ? (

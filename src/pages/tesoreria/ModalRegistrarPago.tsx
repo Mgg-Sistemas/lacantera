@@ -51,9 +51,7 @@ export function ModalRegistrarPago({
     [cuentas, instruccion.moneda],
   )
 
-  const cuenta = compatibles.find((c) => String(c.id) === cuentaId)
   const total = Number(instruccion.monto) + Number(instruccion.igtf_monto)
-  const alcanza = !cuenta || cuenta.permite_sobregiro || Number(cuenta.saldo) >= total
 
   const destino =
     instruccion.numero_cuenta ??
@@ -107,29 +105,35 @@ export function ModalRegistrarPago({
           ) : null}
         </div>
 
+        {/*
+          DE DÓNDE SALIÓ, NO DE DÓNDE SALE
+
+          La empresa dejó de llevar bancos y cajas: el sistema ya no controla
+          un saldo disponible, solo refleja lo que se movió. Así que esto dejó
+          de ser «elige de qué cuenta va a salir» —una decisión que el sistema
+          vigilaba— y pasó a ser «di por dónde salió», que es un dato del
+          hecho, igual que la fecha o la referencia.
+
+          Por eso desaparecen el saldo al lado de cada opción y el aviso de que
+          no alcanza: eran la vigilancia de un número que ya nadie mantiene, y
+          un saldo desactualizado enseña a desconfiar de todas las cifras.
+
+          La cuenta sigue haciendo falta para una cosa que no es contable: de
+          ella sale la moneda con la que se convierte el pago y se decide el
+          IGTF. Sin ella la base no sabría a qué tasa registrarlo.
+        */}
         <Select
-          label="De qué cuenta sale"
-          vacio={compatibles.length ? 'Elige la cuenta' : `No hay cuentas en ${instruccion.moneda}`}
+          label="Por dónde salió el dinero"
+          vacio={compatibles.length ? 'Elige' : `No hay ninguna registrada en ${instruccion.moneda}`}
           value={cuentaId}
           onChange={(e) => setCuentaId(e.target.value)}
-          opciones={compatibles.map((c) => ({
-            valor: String(c.id),
-            etiqueta: `${c.nombre} — ${dinero(c.moneda, c.saldo)}`,
-          }))}
+          opciones={compatibles.map((c) => ({ valor: String(c.id), etiqueta: c.nombre }))}
           hint={
             compatibles.length
-              ? 'El saldo baja al confirmar.'
-              : `Crea una cuenta en ${instruccion.moneda} en Tesorería › Bancos y cajas.`
+              ? 'Queda anotado en el pago. El sistema no lleva el saldo de las cuentas.'
+              : `Hace falta una registrada en ${instruccion.moneda} para saber a qué tasa convertir el pago.`
           }
         />
-
-        {cuenta && !alcanza ? (
-          <p className="border-warning/30 bg-warning-soft text-ink/80 rounded-[6px] border p-2.5 text-xs">
-            En esa cuenta hay {dinero(cuenta.moneda, cuenta.saldo)} y el pago es de{' '}
-            {dinero(instruccion.moneda, total)}. Si el dinero ya está, falta registrar el
-            ingreso o el saldo de apertura.
-          </p>
-        ) : null}
 
         <Input
           label={
