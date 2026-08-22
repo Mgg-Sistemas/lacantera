@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { BookOpen, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -20,7 +21,24 @@ import { bolivares, dinero, dolares, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 export function MovimientosTesoreria() {
-  const [cuentaId, setCuentaId] = useState('')
+  /*
+    LA CUENTA VIENE EN LA DIRECCIÓN
+
+    Christopher: «las cuentas y bancos de la tesorería no tienen un historial de
+    movimientos, pensé que lo tenían». Lo tenían —este libro filtra por cuenta—
+    pero no había cómo llegar: la tarjeta de la cuenta decía «14 movimientos» y
+    no llevaba a ninguna parte, así que había que venir aquí y volver a buscar
+    la cuenta en un selector.
+
+    Al vivir el filtro en la dirección, además, el enlace se puede guardar y
+    volver atrás en el navegador deshace el filtro en vez de salir del libro.
+  */
+  const [params, setParams] = useSearchParams()
+  const cuentaId = params.get('cuenta') ?? ''
+  const setCuentaId = (v: string) => {
+    if (v) setParams({ cuenta: v }, { replace: true })
+    else setParams({}, { replace: true })
+  }
   const { data: cuentas } = useCuentas(false)
   const { data, isPending, error } = useMovimientosTesoreria({
     cuentaId: cuentaId ? Number(cuentaId) : undefined,
@@ -36,11 +54,12 @@ export function MovimientosTesoreria() {
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
 
   const puedeReversar = puede('TESORERIA')
+  const cuentaElegida = cuentaId ? cuentas?.find((c) => String(c.id) === cuentaId) : undefined
 
   return (
     <>
       <PageHeader
-        title="Libro de tesorería"
+        title={cuentaElegida ? `Movimientos de ${cuentaElegida.nombre}` : 'Libro de tesorería'}
         description="Todo el dinero que entró y salió. No se edita ni se borra: lo que estuvo mal se reversa y las dos líneas quedan."
       />
 
@@ -48,6 +67,14 @@ export function MovimientosTesoreria() {
         <div className="sm:max-w-xs">
           <SelectBuscable
             label="Cuenta"
+            hint={
+              // Con una cuenta elegida, el saldo de esa cuenta es la cifra
+              // contra la que se leen sus movimientos. Sin él hay que salir a
+              // buscarlo a otra pantalla y volver.
+              cuentaElegida
+                ? `Saldo hoy: ${dinero(cuentaElegida.moneda, cuentaElegida.saldo)}`
+                : undefined
+            }
             vacio="Todas las cuentas"
             valor={cuentaId}
             onCambio={(v) => setCuentaId(v)}

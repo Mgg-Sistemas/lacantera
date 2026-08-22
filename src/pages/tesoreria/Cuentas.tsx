@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import {
   ArrowLeftRight,
   ArrowDownCircle,
@@ -7,6 +8,8 @@ import {
   Plus,
   Scale,
   Wallet,
+  ArrowRight,
+  BookOpen,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -101,11 +104,26 @@ function TarjetaCuenta({
         >
           {dinero(cuenta.moneda, cuenta.saldo)}
         </p>
-        <p className="text-ink/40 mt-0.5 text-xs">
-          {sinAbrir
-            ? 'Sin movimientos todavía'
-            : `${cuenta.movimientos} movimiento${cuenta.movimientos === 1 ? '' : 's'} · último ${fecha(cuenta.ultimo_movimiento)}`}
-        </p>
+        {/*
+          El recuento de movimientos era un dato muerto.
+
+          Christopher: «las cuentas y bancos de la tesorería no tienen un
+          historial de movimientos, pensé que lo tenían». Lo tenían, pero decía
+          «14 movimientos» sin llevar a ninguna parte, y había que ir al libro y
+          buscar la cuenta otra vez en un selector. Ahora es el enlace.
+        */}
+        {sinAbrir ? (
+          <p className="text-ink/40 mt-0.5 text-xs">Sin movimientos todavía</p>
+        ) : (
+          <Link
+            to={`/app/tesoreria/movimientos?cuenta=${cuenta.id}`}
+            className="text-ink/40 hover:text-marca mt-0.5 inline-flex items-center gap-1 text-xs transition-colors"
+          >
+            {cuenta.movimientos} movimiento{cuenta.movimientos === 1 ? '' : 's'} · último{' '}
+            {fecha(cuenta.ultimo_movimiento)}
+            <ArrowRight className="size-3" />
+          </Link>
+        )}
       </div>
 
       {puedeMover ? (
@@ -129,12 +147,22 @@ function TarjetaCuenta({
               Ajustar
             </Button>
           ) : null}
+          <Link to={`/app/tesoreria/movimientos?cuenta=${cuenta.id}`}>
+            <Button size="sm" variant="ghost" icon={<BookOpen />}>
+              Ver movimientos
+            </Button>
+          </Link>
           <Button size="sm" variant="ghost" onClick={onEditar}>
             Editar
           </Button>
         </div>
       ) : (
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link to={`/app/tesoreria/movimientos?cuenta=${cuenta.id}`}>
+            <Button size="sm" variant="ghost" icon={<BookOpen />}>
+              Ver movimientos
+            </Button>
+          </Link>
           <Button size="sm" variant="ghost" onClick={onEditar}>
             Ver datos
           </Button>
