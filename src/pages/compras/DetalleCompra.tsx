@@ -636,7 +636,7 @@ export function DetalleCompra() {
       await armarOrdenDeCompra({
         autoriza: {
           nombre: quienEs(compra.aprobada_gg_por),
-          imagen: compra.aprobada_gg_por ? (firmas?.[compra.aprobada_gg_por] ?? null) : null,
+          imagen: compra.aprobada_gg_por ? (firmas?.porPerfil[compra.aprobada_gg_por] ?? null) : null,
         },
         numero: orden.numero,
         refPedido: compra.numero,

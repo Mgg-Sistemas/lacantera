@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, FileText, IdCard, Pencil, ScrollText, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, FileText, IdCard, Pencil, ScrollText, TriangleAlert, UserX } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
-import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
+import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
 import { useEntregadoATrabajador } from '@/lib/api/asignaciones'
 import { Visor } from '@/components/Visor'
@@ -32,6 +32,7 @@ import {
   useSubirFoto,
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
+import { TarjetaFirma } from '@/components/TarjetaFirma'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
@@ -252,7 +253,23 @@ export function FichaTrabajador() {
 
   if (isPending) return <Cargando />
   if (error) return <ErrorDeCarga error={error} />
-  if (!e) return null
+  // Una ficha que no existe se dice, no se deja en blanco: quien llega por un
+  // enlace viejo tiene que saber si se equivocó de número o si el sistema falló.
+  if (!e)
+    return (
+      <Card>
+        <Vacio
+          icono={<UserX />}
+          titulo="No hay ninguna ficha con ese número"
+          descripcion="Puede que el trabajador se haya dado de baja o que el enlace venga con un número que ya no existe."
+          accion={
+            <Link to="/app/nomina/personal">
+              <Button variant="outline">Ver el personal</Button>
+            </Link>
+          }
+        />
+      </Card>
+    )
 
   const secciones = seccionesDe(e, metodos)
 
@@ -480,6 +497,22 @@ export function FichaTrabajador() {
               </dl>
             </Card>
           ))}
+
+          {/*
+            LA FIRMA DEL TRABAJADOR
+
+            Christopher: «tanto usuarios como empleados deben tener la
+            posibilidad de registrar su firma digital». Un obrero de la cantera
+            no entra al sistema —no tiene usuario ni clave— así que la carga
+            quien lleva el personal, con él delante o con el papel que firmó.
+
+            Va aquí, entre sus datos y sus descargas, porque es un dato suyo
+            más: sale impresa en el recibo de pago que se le entrega.
+          */}
+          <TarjetaFirma
+            nombre={`${e.nombres} ${e.apellidos}`}
+            de={{ tipo: 'empleado', id: e.id, puedeEditar: puedeRRHH }}
+          />
 
           <Card>
             <div className="grid gap-3 sm:grid-cols-2">

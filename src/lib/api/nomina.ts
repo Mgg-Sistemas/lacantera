@@ -103,12 +103,25 @@ export function useEmpleados(soloActivos = true) {
   })
 }
 
+/**
+ * Un trabajador, o nada si esa ficha no existe.
+ *
+ * Con `single()` una ficha inexistente devolvía error, y react-query lo
+ * reintentaba tres veces con espera creciente: siete segundos de «Cargando…»
+ * para acabar en un error técnico. Un enlace viejo o un número tecleado a mano
+ * son motivos de sobra para llegar aquí, y ninguno merece eso.
+ *
+ * Con `maybeSingle()` no hay error que reintentar: no está, y la pantalla lo
+ * dice de una vez.
+ */
 export function useEmpleado(id: number | undefined) {
   return useQuery({
     queryKey: ['nomina', 'empleado', id],
     enabled: id !== undefined && Number.isFinite(id),
     queryFn: async () =>
-      desenvolver<Empleado>(await supabase.from('empleados').select('*').eq('id', id!).single()),
+      desenvolver<Empleado | null>(
+        await supabase.from('empleados').select('*').eq('id', id!).maybeSingle(),
+      ),
   })
 }
 

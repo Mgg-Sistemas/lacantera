@@ -100,7 +100,7 @@ export function MiCuenta() {
 
         <TarjetaHuella />
 
-        <TarjetaFirma nombre={yo.nombre} />
+        <TarjetaFirma nombre={yo.nombre} de={{ tipo: 'usuario' }} />
       </div>
     </>
   )
