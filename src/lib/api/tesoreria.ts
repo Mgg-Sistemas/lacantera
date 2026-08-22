@@ -88,7 +88,9 @@ export const TIPOS_TESORERIA: Record<string, string> = {
   REVERSO: 'Reverso',
 }
 
-export function useMovimientosTesoreria(filtros: { cuentaId?: number } = {}) {
+export function useMovimientosTesoreria(
+  filtros: { cuentaId?: number; desde?: string; hasta?: string } = {},
+) {
   return useQuery({
     queryKey: ['tesoreria', 'movimientos', filtros],
     queryFn: async () => {
@@ -100,6 +102,10 @@ export function useMovimientosTesoreria(filtros: { cuentaId?: number } = {}) {
         .limit(200)
 
       if (filtros.cuentaId) q = q.eq('cuenta_id', filtros.cuentaId)
+      // Por la fecha del movimiento —el día que salió el dinero del banco— y no
+      // por la de registro: es la que cuadra con el estado de cuenta.
+      if (filtros.desde) q = q.gte('fecha', filtros.desde)
+      if (filtros.hasta) q = q.lte('fecha', filtros.hasta)
 
       return desenvolver<MovimientoTesoreria[]>(await q)
     },

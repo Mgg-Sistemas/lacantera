@@ -7,10 +7,10 @@ import {
   Users,
   HandCoins,
   Info,
-  Landmark,
   ShoppingCart,
   Calculator,
   Truck,
+  Stamp,
 } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
@@ -24,7 +24,7 @@ import { useResumenPanel } from '@/lib/api/tesoreria'
 import { useTablero } from '@/lib/api/compras'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { moduloDeRuta } from '@/config/navigation'
-import { bolivares, dolares, dolaresRedondos, enteros, hace } from '@/lib/formato'
+import { dolares, dolaresRedondos, enteros, hace } from '@/lib/formato'
 
 interface Aviso {
   tono: 'danger' | 'warning' | 'info'
@@ -234,6 +234,21 @@ export function Dashboard() {
 
   // Lo que espera decisión del gerente, lo más viejo arriba: quien aprueba
   // necesita saber qué lleva más tiempo detenido, no qué llegó de último.
+  /*
+    Cuánto lleva esperando la más vieja.
+
+    Es lo que convierte un número en una urgencia: «3 esperando» no dice si es
+    de esta mañana o de hace dos semanas, y son dos situaciones distintas.
+  */
+  const masVieja = (() => {
+    const primera = (tarjetas ?? [])
+      .filter((t) => t.columna === 'GERENTE')
+      .map((t) => t.creada_en)
+      .sort()[0]
+    if (!primera) return null
+    return Math.floor((Date.now() - new Date(primera).getTime()) / 86_400_000)
+  })()
+
   const porAprobar = (tarjetas ?? [])
     .filter((t) => t.columna === 'GERENTE')
     .sort((a, b) => a.creada_en.localeCompare(b.creada_en))
@@ -249,16 +264,41 @@ export function Dashboard() {
         <>
           {/* ---------- Indicadores ---------- */}
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {veTesoreria ? (
+            {/*
+              Aquí estaba «En cuentas, en divisas». Se va con los bancos.
+
+              La empresa dejó de llevar saldos, así que ese número no lo
+              actualiza nadie, y abrir el panel con un disponible desactualizado
+              es peor que no tenerlo: es la primera cifra que se ve al entrar y
+              la que se usa para decidir si se puede pagar algo.
+
+              Es el mismo motivo por el que se quitó de la cola de pagos. Se
+              quedó aquí por descuido y se vio al enlazar las tarjetas: llevaba
+              a una pantalla que ni siquiera estaba en el menú.
+
+              En su sitio va lo que pidió la líder: cuántas compras esperan la
+              firma del gerente. Es la cifra que de verdad detiene el trabajo
+              —mientras nadie apruebe, no hay orden, no hay pago y no llega el
+              material— y estaba solo como un renglón dentro de «compras en
+              curso», donde no la ve quien tiene que resolverla.
+            */}
+            {veCompras ? (
               <StatCard
-                a="/app/tesoreria/movimientos"
-                label="En cuentas, en divisas"
-                value={dolaresRedondos(r.disponible_usd)}
-                icon={<Landmark />}
-                tone="royal"
-                deltaLabel={`${bolivares(r.disponible_ves)} en bolívares`}
+                a="/app/compras"
+                label="Esperan aprobación"
+                value={enteros(porAprobar.length)}
+                icon={<Stamp />}
+                tone={porAprobar.length > 0 ? 'warning' : 'success'}
+                deltaLabel={
+                  porAprobar.length === 0
+                    ? 'Ninguna compra detenida'
+                    : masVieja === null || masVieja === 0
+                      ? 'Pendientes de la gerencia'
+                      : `La más vieja lleva ${masVieja} día${masVieja === 1 ? '' : 's'}`
+                }
               />
             ) : null}
+
             {veDinero ? (
               <StatCard
                 a="/app/tesoreria/pagos"

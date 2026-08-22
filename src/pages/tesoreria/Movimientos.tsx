@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
+import { RangoDeFechas } from '@/components/RangoDeFechas'
+import { SIN_RANGO } from '@/components/rango'
+import type { Rango } from '@/components/rango'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
@@ -40,8 +43,11 @@ export function MovimientosTesoreria() {
     else setParams({}, { replace: true })
   }
   const { data: cuentas } = useCuentas(false)
+  const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const { data, isPending, error } = useMovimientosTesoreria({
     cuentaId: cuentaId ? Number(cuentaId) : undefined,
+    desde: rango.desde || undefined,
+    hasta: rango.hasta || undefined,
   })
   const { data: perfiles } = usePerfiles()
   const { puede } = useMisRoles()
@@ -64,7 +70,7 @@ export function MovimientosTesoreria() {
       />
 
       <Card className="mb-4">
-        <div className="sm:max-w-xs">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,20rem)_1fr]">
           <SelectBuscable
             label="Cuenta"
             hint={
@@ -80,9 +86,10 @@ export function MovimientosTesoreria() {
             onCambio={(v) => setCuentaId(v)}
             opciones={(cuentas ?? []).map((c) => ({
               valor: String(c.id),
-              etiqueta: `${c.nombre} — ${dinero(c.moneda, c.saldo)}`,
+              etiqueta: c.nombre,
             }))}
           />
+          <RangoDeFechas valor={rango} onCambio={setRango} />
         </div>
       </Card>
 
@@ -93,8 +100,16 @@ export function MovimientosTesoreria() {
         <Card>
           <Vacio
             icono={<BookOpen />}
-            titulo="Todavía no hay movimientos"
-            descripcion="El libro se llena solo: cada pago, ingreso o traslado escribe su línea."
+            titulo={
+              rango.desde || rango.hasta || cuentaId
+                ? 'Nada con esos filtros'
+                : 'Todavía no hay movimientos'
+            }
+            descripcion={
+              rango.desde || rango.hasta || cuentaId
+                ? 'No se movió dinero en lo que estás mirando. Prueba a ampliar las fechas o a quitar la cuenta.'
+                : 'El libro se llena solo: cada pago, ingreso o traslado escribe su línea.'
+            }
           />
         </Card>
       ) : null}

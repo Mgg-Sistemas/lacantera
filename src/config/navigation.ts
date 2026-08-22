@@ -453,6 +453,10 @@ export const navigation: NavSection[] = [
             punto va cada compra.
           */
           { label: 'Pagos por hacer', to: '/app/tesoreria/pagos' },
+          // Y lo que ya se pagó. Sin esta entrada, el libro quedaba fuera del
+          // menú y la pantalla daba el cartel de obra: se dijo al mover los
+          // pagos que el historial venía con ellos, y no vino.
+          { label: 'Movimientos de dinero', to: '/app/tesoreria/movimientos' },
           // El libro cuelga de Compras y no de un módulo fiscal propio porque
           // quien lo saca es quien cargó las facturas, y porque así el permiso
           // que ya gobierna las facturas gobierna también su libro.
@@ -557,7 +561,6 @@ export const navigation: NavSection[] = [
         children: [
           { label: 'Tablero', to: '/app/tesoreria' },
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
-          { label: 'Libro de tesorería', to: '/app/tesoreria/movimientos' },
           { label: 'Cuentas por cobrar', to: '/app/tesoreria/por-cobrar' },
         ],
       },

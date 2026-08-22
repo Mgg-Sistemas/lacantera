@@ -193,7 +193,9 @@ export const TIPOS_MOVIMIENTO: Record<string, string> = {
   REVERSO: 'Reverso',
 }
 
-export function useMovimientos(filtros: { almacenId?: number; articuloId?: number } = {}) {
+export function useMovimientos(
+  filtros: { almacenId?: number; articuloId?: number; desde?: string; hasta?: string } = {},
+) {
   return useQuery({
     queryKey: ['movimientos', filtros],
     queryFn: async () => {
@@ -205,6 +207,18 @@ export function useMovimientos(filtros: { almacenId?: number; articuloId?: numbe
 
       if (filtros.almacenId) q = q.eq('almacen_id', filtros.almacenId)
       if (filtros.articuloId) q = q.eq('articulo_id', filtros.articuloId)
+
+      /*
+        Se filtra por `fecha`, no por `registrado_en`.
+
+        Son distintas a propósito: una entrada del sábado se puede registrar el
+        lunes, y quien pregunta «qué se movió el sábado» pregunta por el día en
+        que pasó, no por el día en que alguien lo escribió. `registrado_en`
+        sigue mandando en el orden de la lista, que ahí sí importa el momento
+        exacto para desempatar dos movimientos del mismo día.
+      */
+      if (filtros.desde) q = q.gte('fecha', filtros.desde)
+      if (filtros.hasta) q = q.lte('fecha', filtros.hasta)
 
       return desenvolver<Movimiento[]>(await q)
     },

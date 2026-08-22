@@ -3,6 +3,9 @@ import { Link } from 'react-router'
 import { ArrowDownLeft, ArrowUpRight, Printer, ScrollText, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
+import { RangoDeFechas } from '@/components/RangoDeFechas'
+import { SIN_RANGO } from '@/components/rango'
+import type { Rango } from '@/components/rango'
 import { PESTANAS_MATERIAL } from '@/components/pestanasDeModulos'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -42,9 +45,12 @@ export function Movimientos() {
   const reversar = useReversarMovimiento()
 
   const [almacenId, setAlmacenId] = useState('')
-  const { data, isPending, error } = useMovimientos(
-    almacenId ? { almacenId: Number(almacenId) } : {},
-  )
+  const [rango, setRango] = useState<Rango>(SIN_RANGO)
+  const { data, isPending, error } = useMovimientos({
+    ...(almacenId ? { almacenId: Number(almacenId) } : {}),
+    ...(rango.desde ? { desde: rango.desde } : {}),
+    ...(rango.hasta ? { hasta: rango.hasta } : {}),
+  })
 
   const [reversando, setReversando] = useState<{ id: number; numero: string } | null>(null)
   const [motivo, setMotivo] = useState('')
@@ -111,14 +117,17 @@ export function Movimientos() {
 
       <Pestanas pestanas={PESTANAS_MATERIAL} />
 
-      <Card className="mb-4 sm:max-w-xs">
-        <SelectBuscable
-          label="Almacén"
-          vacio="Todos"
-          valor={almacenId}
-          onCambio={(v) => setAlmacenId(v)}
-          opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
-        />
+      <Card className="mb-4">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,16rem)_1fr]">
+          <SelectBuscable
+            label="Almacén"
+            vacio="Todos"
+            valor={almacenId}
+            onCambio={(v) => setAlmacenId(v)}
+            opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
+          />
+          <RangoDeFechas valor={rango} onCambio={setRango} />
+        </div>
       </Card>
 
       {isPending ? <Cargando /> : null}
@@ -128,8 +137,16 @@ export function Movimientos() {
         <Card>
           <Vacio
             icono={<ScrollText />}
-            titulo="El libro está en blanco"
-            descripcion="La primera línea la escribe la primera recepción de una compra."
+            titulo={
+              rango.desde || rango.hasta || almacenId
+                ? 'Nada con esos filtros'
+                : 'El libro está en blanco'
+            }
+            descripcion={
+              rango.desde || rango.hasta || almacenId
+                ? 'No hubo movimientos en lo que estás mirando. Prueba a ampliar las fechas o a quitar el almacén.'
+                : 'La primera línea la escribe la primera recepción de una compra.'
+            }
           />
         </Card>
       ) : null}
