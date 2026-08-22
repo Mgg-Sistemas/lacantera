@@ -166,6 +166,9 @@ const PorPagar = pagina(() =>
 const DetalleCompra = pagina(() =>
   import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
 )
+const GastoPorUnidad = pagina(() =>
+  import('@/pages/compras/GastoPorUnidad').then((m) => ({ default: m.GastoPorUnidad })),
+)
 const FichaProveedor = pagina(() =>
   import('@/pages/compras/FichaProveedor').then((m) => ({ default: m.FichaProveedor })),
 )
@@ -258,6 +261,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/compras': <TableroCompras />,
   '/app/compras/proveedores': <Proveedores />,
   '/app/compras/proveedores/:id': <FichaProveedor />,
+  '/app/compras/gasto': <GastoPorUnidad />,
   '/app/compras/recepciones': <Recepciones />,
   '/app/compras/facturas': <FacturasProveedor />,
   '/app/compras/libro': <LibroCompras />,

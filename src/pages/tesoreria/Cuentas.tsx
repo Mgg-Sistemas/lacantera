@@ -117,7 +117,7 @@ function TarjetaCuenta({
         ) : (
           <Link
             to={`/app/tesoreria/movimientos?cuenta=${cuenta.id}`}
-            className="text-ink/40 hover:text-marca mt-0.5 inline-flex items-center gap-1 text-xs transition-colors"
+            className="text-ink/40 hover:text-royal-700 dark:hover:text-royal-300 mt-0.5 inline-flex items-center gap-1 text-xs transition-colors"
           >
             {cuenta.movimientos} movimiento{cuenta.movimientos === 1 ? '' : 's'} · último{' '}
             {fecha(cuenta.ultimo_movimiento)}

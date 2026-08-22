@@ -37,8 +37,8 @@ export function Interruptor({
         onClick={() => onCambio(!encendido)}
         className={cn(
           'relative mt-0.5 h-[22px] w-[38px] shrink-0 rounded-full transition-colors',
-          'focus-visible:ring-marca/40 focus-visible:ring-2 focus-visible:outline-none',
-          encendido ? 'bg-marca' : 'bg-ink/20',
+          'focus-visible:ring-royal-600/40 focus-visible:ring-2 focus-visible:outline-none',
+          encendido ? 'bg-royal-600' : 'bg-ink/20',
           deshabilitado && 'cursor-not-allowed opacity-50',
         )}
       >

@@ -221,7 +221,7 @@ export function FichaProveedor() {
                       <span className="min-w-0 flex-1">
                         <Link
                           to={`/app/compras/${papel.orden_id}`}
-                          className="text-ink/75 hover:text-marca block truncate text-sm transition-colors"
+                          className="text-ink/75 hover:text-royal-700 dark:hover:text-royal-300 block truncate text-sm transition-colors"
                         >
                           {papel.orden?.numero ?? `Orden ${papel.orden_id}`}
                         </Link>

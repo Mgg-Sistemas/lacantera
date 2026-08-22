@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { BookOpen, Download } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas } from '@/components/Pestanas'
+import { PESTANAS_ANALISIS } from '@/components/pestanasDeModulos'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -93,6 +95,8 @@ export function LibroCompras() {
               onChange={(e) => setMes(e.target.value)}
               className="w-[170px]"
             />
+
+      <Pestanas pestanas={PESTANAS_ANALISIS} />
             <Button
               variant="outline"
               icon={<Download />}

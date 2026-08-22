@@ -55,3 +55,16 @@ export const PESTANAS_DEUDAS: Pestana[] = [
   { etiqueta: 'Pagos por hacer', a: '/app/tesoreria/pagos' },
   { etiqueta: 'Por proveedor', a: '/app/tesoreria/por-pagar' },
 ]
+
+/*
+  Lo que dicen las compras cuando se miran juntas.
+
+  El libro es una obligación fiscal —lo pide el SENIAT con ese formato— y el
+  gasto por unidad es una pregunta de gerencia. Comparten pestaña porque las
+  dos se responden con lo mismo: las compras del período, sumadas de otra
+  manera.
+*/
+export const PESTANAS_ANALISIS: Pestana[] = [
+  { etiqueta: 'Libro de compras', a: '/app/compras/libro' },
+  { etiqueta: 'Gasto por unidad', a: '/app/compras/gasto' },
+]

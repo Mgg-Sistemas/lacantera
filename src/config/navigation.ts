@@ -457,6 +457,10 @@ export const navigation: NavSection[] = [
           // quien lo saca es quien cargó las facturas, y porque así el permiso
           // que ya gobierna las facturas gobierna también su libro.
           { label: 'Libro de compras', to: '/app/compras/libro' },
+          // A dónde va el dinero. La líder preguntó qué unidad genera más
+          // gasto, y la respuesta sale de las mismas compras que alimentan el
+          // libro: por eso son pestañas la una de la otra.
+          { label: 'Gasto por unidad', to: '/app/compras/gasto' },
         ],
       },
       {

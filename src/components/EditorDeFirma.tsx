@@ -200,7 +200,7 @@ export function EditorDeFirma({
             className={cn(
               'flex items-center gap-2 rounded-[6px] border px-3 py-1.5 text-sm transition-colors',
               modo === m.valor
-                ? 'border-marca/40 bg-marca/8 text-marca'
+                ? 'border-royal-600/40 bg-royal-600/10 text-royal-700 dark:text-royal-300'
                 : 'border-ink/15 text-ink/65 hover:border-ink/30',
             )}
           >
