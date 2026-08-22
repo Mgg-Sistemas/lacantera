@@ -111,3 +111,21 @@ public/paleta_colores.jpeg
 # capturas, modelos a imitar—. Sirve para construir y no para publicar: el
 # repositorio es publico y esos papeles llevan RIF, nombres y montos reales.
 docs/pdfs/
+
+# ---------------------------------------------------------------------------
+# Firmas de personas reales
+#
+# La firma de alguien es suya, no del proyecto. Va a la base de datos —donde
+# solo la ve quien entra al sistema— y el archivo original se queda en el
+# equipo de quien la carga.
+#
+# Este repositorio es publico. Una firma escaneada en el historial de git es
+# copiable por cualquiera y no se puede retirar despues: el historial es
+# permanente.
+#
+# Y el nombre va con comodin a proposito. La primera llego como
+# «firma gerente general.jpeg» y la siguiente llegara llamandose de otra manera.
+# ---------------------------------------------------------------------------
+public/firma*
+public/*firma*
+firmas/

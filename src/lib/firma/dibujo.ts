@@ -102,6 +102,20 @@ export function papelATransparencia(ctx: CanvasRenderingContext2D, w: number, h:
   const d = imagen.data
 
   for (let i = 0; i < d.length; i += 4) {
+    /*
+      Lo que ya era transparente se queda transparente.
+
+      Sin esto, los márgenes del lienzo salían NEGROS. Un píxel que nunca se
+      pintó es (0, 0, 0) con alfa 0: por color es negro puro, así que el filtro
+      lo tomaba por trazo y lo devolvía opaco. Una firma que no llena el lienzo
+      —todas, porque casi ninguna foto tiene la proporción exacta— salía con
+      dos bandas negras a los lados.
+
+      Solo se ve cargando una foto de verdad. Con un trazo hecho aquí el lienzo
+      entero está pintado y el fallo no aparece.
+    */
+    if (d[i + 3] === 0) continue
+
     // Luminancia aproximada. Los coeficientes son los de siempre para el ojo
     // humano: el verde pesa más que el rojo y mucho más que el azul.
     const luz = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255
@@ -116,7 +130,7 @@ export function papelATransparencia(ctx: CanvasRenderingContext2D, w: number, h:
     d[i] = 22
     d[i + 1] = 22
     d[i + 2] = 22
-    d[i + 3] = Math.round(alfa * 255)
+    d[i + 3] = Math.round(alfa * (d[i + 3] / 255) * 255)
   }
 
   ctx.putImageData(imagen, 0, 0)

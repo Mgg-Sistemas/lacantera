@@ -52,6 +52,8 @@ export interface FirmaEmpresa {
   nombre: string
   cargo: string
   cedula: string
+  /** Su firma guardada, si la tiene y la tiene encendida. */
+  imagen?: string | null
 }
 
 export interface DatosRecibo {
@@ -82,6 +84,14 @@ export interface DatosRecibo {
 
   firma: FirmaEmpresa
   emitidoPor: string
+
+  /*
+    La firma del trabajador, si la guardó.
+
+    Sin ella el recibo sale como siempre, con la raya en blanco para firmar a
+    mano — que sigue siendo el caso de casi todos y no puede parecer un fallo.
+  */
+  firmaTrabajador?: string | null
 }
 
 // --- Formato --------------------------------------------------------------
@@ -282,6 +292,30 @@ function firmas(doc: Doc, d: DatosRecibo, y: number) {
   doc.setDrawColor(GRIS).setLineWidth(0.3)
   doc.line(DER - 26, y - 3.5, DER, y - 3.5)
   doc.text('Fecha de recibido:', DER - 28, y - 4, { align: 'right' })
+
+  /*
+    Las firmas guardadas van SOBRE la raya, no encima del hueco.
+
+    Alto fijo y ancho por proporción, con tope al de la columna: la imagen ya
+    viene recortada al trazo, y una rúbrica alargada invadiría la de al lado.
+    El recibo lleva dos copias por hoja, así que 10 mm es lo que cabe sin
+    empujar la segunda fuera de la página.
+  */
+  const estampar = (imagen: string | null | undefined, x: number) => {
+    if (!imagen) return
+    const ALTO = 10
+    try {
+      const props = doc.getImageProperties(imagen)
+      const anchoFirma = Math.min(ancho - 4, (props.width / props.height) * ALTO)
+      doc.addImage(imagen, 'PNG', x + (ancho - anchoFirma) / 2, y + 8 - ALTO - 0.5, anchoFirma, ALTO)
+    } catch {
+      // Una imagen que jsPDF no sabe leer no puede tumbar la nómina entera: el
+      // recibo sale con la raya en blanco, que es firmable.
+    }
+  }
+
+  estampar(d.firmaTrabajador, IZQ)
+  estampar(d.firma.imagen, IZQ + ancho + SEPARA)
 
   doc.setDrawColor(TINTA).setLineWidth(0.4)
   doc.line(IZQ, y + 8, IZQ + ancho, y + 8)

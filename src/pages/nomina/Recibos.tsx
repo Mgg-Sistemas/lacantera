@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ESTADOS_PERIODO, useFirmaRrhh, usePeriodos, useRecibos } from '@/lib/api/nomina'
 import type { Periodo, Recibo } from '@/lib/api/nomina'
+import { useFirmas } from '@/lib/api/firmas'
 import { useSesion } from '@/lib/sesion'
 import { armarRecibo, armarRecibos } from '@/lib/ficha/reciboPdf'
 import type { DatosRecibo, FirmaEmpresa, PdfArmado } from '@/lib/ficha/reciboPdf'
@@ -30,6 +31,9 @@ function paraImprimir(
   periodo: Periodo,
   firma: FirmaEmpresa,
   emitidoPor: string,
+  // Las firmas guardadas, por empleado. Las apagadas no llegan hasta aquí: se
+  // filtran al leerlas, para que ningún papel tenga que acordarse de mirarlo.
+  firmasGuardadas: Record<number, string> = {},
 ): DatosRecibo {
   return {
     periodo: periodo.numero,
@@ -64,6 +68,7 @@ function paraImprimir(
 
     firma,
     emitidoPor,
+    firmaTrabajador: firmasGuardadas[r.empleado_id] ?? null,
   }
 }
 
@@ -71,6 +76,7 @@ export function Recibos() {
   const [params, setParams] = useSearchParams()
   const { data: periodos } = usePeriodos()
   const { firma } = useFirmaRrhh()
+  const { data: firmas } = useFirmas()
   const { nombre } = useSesion()
 
   const periodoId = params.get('periodo') ? Number(params.get('periodo')) : undefined
@@ -91,7 +97,9 @@ export function Recibos() {
     if (!periodo) return
     setImprimiendo(true)
     try {
-      const hojas = recibos.map((r) => paraImprimir(r, periodo, firma, nombre))
+      const hojas = recibos.map((r) =>
+        paraImprimir(r, periodo, firma, nombre, firmas?.porEmpleado ?? {}),
+      )
       const pdf =
         hojas.length === 1 ? await armarRecibo(hojas[0]) : await armarRecibos(hojas, periodo.numero)
       setVista({ ...pdf, cuantos: hojas.length })
