@@ -111,6 +111,19 @@ export function useMovimientosTesoreria(filtros: { cuentaId?: number } = {}) {
 // ---------------------------------------------------------------------------
 
 export interface PorPagar {
+  /*
+    Lo que urge y para quién es.
+
+    Sale de la solicitud, donde siempre estuvo, y llega hasta aquí porque quien
+    paga necesita saber qué apura y de qué unidad viene antes de decidir por
+    dónde empieza. Antes tenía que abrir cada compra para averiguarlo.
+  */
+  prioridad: 'NORMAL' | 'ALTA' | 'URGENTE'
+  prioridad_orden: number
+  unidad: string
+  destino_almacen_id: number | null
+  requerida_para: string | null
+
   instruccion_id: number
   orden_id: number
   orden_numero: string
@@ -346,6 +359,36 @@ export function useAjustarCuenta() {
  * una cuenta concreta. Si el pago causa IGTF, el impuesto se escribe como una
  * línea aparte para poder sumarlo por sí solo a fin de mes.
  */
+/**
+ * Registra varios pagos de una tanda.
+ *
+ * La líder pidió poder marcarlos con casillas y pagarlos por lote. La base
+ * recorre y llama a la misma función que paga uno solo, así que hereda todas
+ * sus comprobaciones; y como una función es una transacción, o pasan todos o
+ * no pasa ninguno. Quien marca doce casillas no puede quedarse sin saber
+ * cuáles pasaron.
+ *
+ * Devuelve cuántos se registraron.
+ */
+export function useRegistrarPagosEnLote() {
+  return useAccionTesoreria(
+    (p: {
+      ids: number[]
+      cuenta_id: number
+      referencia?: string
+      fecha?: string
+      nota?: string
+    }) =>
+      rpc<number>('registrar_pagos_en_lote', {
+        p_ids: p.ids,
+        p_cuenta_id: p.cuenta_id,
+        p_referencia: p.referencia || null,
+        p_fecha: p.fecha || null,
+        p_nota: p.nota ?? null,
+      }),
+  )
+}
+
 export function useRegistrarPago() {
   return useAccionTesoreria(
     (p: {

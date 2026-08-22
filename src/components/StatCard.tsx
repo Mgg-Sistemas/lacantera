@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
+import { Link } from 'react-router'
+import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { cn } from '@/lib/cn'
 
@@ -54,6 +55,18 @@ interface StatCardProps {
   deltaLabel?: string
   /** Cuando subir es malo — mermas, cuentas por pagar — invierte el color. */
   invertDelta?: boolean
+  /**
+   * A dónde lleva la cifra.
+   *
+   * La líder pidió que las tarjetas se puedan pulsar. Tiene razón: quien lee
+   * «5 bajo el mínimo» quiere ver cuáles, y hasta ahora tenía que buscar la
+   * pantalla en el menú y volver a filtrar. Una cifra que se mira siempre es
+   * la puerta de algo.
+   *
+   * Sin `a`, la tarjeta sigue siendo un rectángulo que informa y no invita a
+   * pulsar: no todas llevan a alguna parte.
+   */
+  a?: string
 }
 
 /**
@@ -85,12 +98,20 @@ export function StatCard({
   delta,
   deltaLabel,
   invertDelta = false,
+  a,
 }: StatCardProps) {
   const subio = (delta ?? 0) >= 0
   const esBueno = invertDelta ? !subio : subio
 
-  return (
-    <Card className="relative overflow-hidden">
+  const cuerpo = (
+    <Card
+      className={cn(
+        'relative h-full overflow-hidden',
+        // Solo la que lleva a algún sitio se comporta como pulsable. Dar el
+        // cursor de mano a todas enseñaría que pulsar no hace nada.
+        a && 'hover:border-royal-300 cursor-pointer border border-transparent transition-colors',
+      )}
+    >
       {/* El filete de cota. `absolute` para que no empuje el contenido y la
           tarjeta conserve su altura junto a las demás de la fila. */}
       <span
@@ -133,6 +154,22 @@ export function StatCard({
         // porcentaje, y los indicadores reales casi nunca tienen uno.
         <p className="text-ink/45 mt-2.5 text-xs">{deltaLabel}</p>
       ) : null}
+
+      {/* La flecha aparece al pasar por encima: mientras no se pulsa, la
+          tarjeta tiene que seguir leyéndose como una cifra y no como un botón. */}
+      {a ? (
+        <ArrowRight
+          className="text-ink/30 absolute right-4 bottom-4 size-4 opacity-0 transition-opacity group-hover:opacity-100"
+          aria-hidden="true"
+        />
+      ) : null}
     </Card>
+  )
+
+  if (!a) return cuerpo
+  return (
+    <Link to={a} className="group block h-full">
+      {cuerpo}
+    </Link>
   )
 }

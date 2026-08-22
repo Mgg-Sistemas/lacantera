@@ -251,6 +251,7 @@ export function Dashboard() {
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {veTesoreria ? (
               <StatCard
+                a="/app/tesoreria/movimientos"
                 label="En cuentas, en divisas"
                 value={dolaresRedondos(r.disponible_usd)}
                 icon={<Landmark />}
@@ -260,6 +261,7 @@ export function Dashboard() {
             ) : null}
             {veDinero ? (
               <StatCard
+                a="/app/tesoreria/pagos"
                 label="Por pagar a proveedores"
                 value={dolaresRedondos(r.por_pagar_usd)}
                 icon={<HandCoins />}
@@ -273,6 +275,7 @@ export function Dashboard() {
             ) : null}
             {veDinero ? (
               <StatCard
+                a="/app/compras/recepciones"
                 label="Pagado sin recibir"
                 value={dolaresRedondos(r.pagado_sin_recibir_usd)}
                 icon={<Truck />}
@@ -286,6 +289,7 @@ export function Dashboard() {
             ) : null}
             {veInventario ? (
               <StatCard
+                a="/app/inventario/existencias"
                 label="Valor del inventario"
                 value={dolaresRedondos(r.inventario_usd)}
                 icon={<Boxes />}
