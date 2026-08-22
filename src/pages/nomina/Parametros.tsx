@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { cn } from '@/lib/cn'
-import { AlertTriangle, Plus, Scale } from 'lucide-react'
+import { AlertTriangle, Pencil, Plus, Scale } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_REGLAS } from '@/components/pestanasDeModulos'
@@ -12,10 +12,16 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
-import { useGuardarParametro, useParametros } from '@/lib/api/nomina'
+import {
+  useCerrarParametro,
+  useEliminarParametro,
+  useGuardarParametro,
+  useParametros,
+} from '@/lib/api/nomina'
 import type { Parametro } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { fecha } from '@/lib/formato'
+import { hoyEnCaracas } from '@/lib/api/tasas'
 
 const UNIDADES = [
   { valor: 'BS', etiqueta: 'Bolívares' },
@@ -49,8 +55,18 @@ export function Parametros() {
   const { data, isPending, error } = useParametros()
   const { puede } = useMisRoles()
   const guardar = useGuardarParametro()
+  const cerrar = useCerrarParametro()
+  const eliminar = useEliminarParametro()
 
   const [nuevo, setNuevo] = useState<null | {
+    /*
+      Solo cuando se abrió desde una fila.
+
+      Es lo que distingue «estoy corrigiendo esta vigencia» de «estoy creando
+      una». Sin él no se puede ofrecer quitarla: hay que decirle a la base
+      exactamente cuál.
+    */
+    id?: number
     clave: string
     valor: string
     unidad: string
@@ -123,6 +139,12 @@ export function Parametros() {
 
       <Pestanas pestanas={PESTANAS_REGLAS} />
 
+      {puedeRRHH ? (
+        <p className="text-ink/50 mb-4 text-sm">
+          Toca cualquier parámetro para corregir su valor o abrirle una vigencia nueva.
+        </p>
+      ) : null}
+
       <div className="border-warning/30 bg-warning-soft mb-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
         <AlertTriangle className="text-warning mt-px size-[18px] shrink-0" />
         <p className="text-ink/80 text-sm">
@@ -145,6 +167,19 @@ export function Parametros() {
                   <th className="px-3 py-3 text-right font-medium">Valor</th>
                   <th className="px-3 py-3 font-medium">Rige desde</th>
                   <th className="px-5 py-3 font-medium">Fuente</th>
+                  {/*
+                    LO QUE SE PUEDE CORREGIR TIENE QUE NOTARSE
+
+                    Christopher: «¿no habíamos hecho editable los parámetros de
+                    nómina?». Sí — la fila entera abría el formulario desde
+                    hace semanas. Pero no había un icono, ni un botón, ni una
+                    palabra que lo dijera: solo el cursor cambiaba al pasar por
+                    encima, y en una tableta ni eso.
+
+                    Una función que existe y no se ve no existe para quien la
+                    necesita. La columna vale más que el pixel que ocupa.
+                  */}
+                  {puedeRRHH ? <th className="px-5 py-3 font-medium"></th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -155,6 +190,7 @@ export function Parametros() {
                       puedeRRHH
                         ? () =>
                             setNuevo({
+                              id: p.id,
                               clave: p.clave,
                               valor: p.unidad === 'TEXTO' ? (p.valor_texto ?? '') : String(p.valor ?? ''),
                               unidad: p.unidad,
@@ -185,6 +221,14 @@ export function Parametros() {
                       ) : null}
                     </td>
                     <td className="text-ink/50 px-5 py-3 text-xs">{p.fuente ?? '—'}</td>
+                    {puedeRRHH ? (
+                      <td className="px-5 py-3 text-right whitespace-nowrap">
+                        <span className="text-ink/45 inline-flex items-center gap-1.5 text-xs">
+                          <Pencil className="size-3.5" />
+                          Corregir
+                        </span>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
@@ -214,6 +258,47 @@ export function Parametros() {
           ancho="sm"
           acciones={
             <>
+              {/*
+                QUITAR UNA CIFRA LEGAL SON DOS COSAS DISTINTAS
+
+                Christopher: «¿qué pasa si deseara eliminar algún parámetro?».
+                Hasta hoy, nada — y faltaba, pero no como un borrado a secas.
+
+                Dejó de regir  → se le pone fecha de fin. El cestaticket de
+                                 enero no se borra cuando sube en marzo: una
+                                 nómina vieja tiene que poder recalcularse con
+                                 la cifra que regía entonces.
+
+                Nunca debió existir → se borra. Una clave mal escrita, un valor
+                                 con un cero de más. La base solo lo permite si
+                                 no hubo ninguna nómina en esas fechas, y si la
+                                 hubo lo dice nombrándola.
+              */}
+              {esCorreccion && nuevo.id ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    className="text-danger mr-auto"
+                    disabled={eliminar.isPending}
+                    onClick={async () => {
+                      await eliminar.mutateAsync({ id: nuevo.id! })
+                      setNuevo(null)
+                    }}
+                  >
+                    {eliminar.isPending ? 'Quitando…' : 'Eliminar'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={cerrar.isPending || !nuevo.desde}
+                    onClick={async () => {
+                      await cerrar.mutateAsync({ id: nuevo.id!, hasta: hoyEnCaracas() })
+                      setNuevo(null)
+                    }}
+                  >
+                    {cerrar.isPending ? 'Cerrando…' : 'Dejó de regir hoy'}
+                  </Button>
+                </>
+              ) : null}
               <Button variant="ghost" onClick={() => setNuevo(null)}>
                 Cancelar
               </Button>
@@ -313,6 +398,8 @@ export function Parametros() {
               onChange={(e) => setNuevo((n) => (n ? { ...n, fuente: e.target.value } : n))}
             />
             {guardar.error ? <ErrorDeCarga error={guardar.error} /> : null}
+            {cerrar.error ? <ErrorDeCarga error={cerrar.error} /> : null}
+            {eliminar.error ? <ErrorDeCarga error={eliminar.error} /> : null}
           </div>
         </Modal>
       ) : null}

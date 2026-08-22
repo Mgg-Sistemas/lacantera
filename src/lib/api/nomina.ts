@@ -655,6 +655,31 @@ export function useGuardarParametro() {
 }
 
 /**
+ * Le pone fecha de fin a una cifra legal.
+ *
+ * No la borra: las nóminas de ese tiempo tienen que poder recalcularse con la
+ * cifra que regía entonces, que es lo primero que pide una inspección.
+ */
+export function useCerrarParametro() {
+  return useAccionNomina((p: { id: number; hasta: string }) =>
+    rpc('cerrar_parametro_nomina', { p_id: p.id, p_hasta: p.hasta }),
+  )
+}
+
+/**
+ * Borra una vigencia que nunca calculó nada.
+ *
+ * La base se niega en cuanto hubo una nómina en esas fechas, y lo dice
+ * nombrando cuál. Es más estricta de lo necesario a propósito: antes negar un
+ * borrado legítimo que permitir uno que descuadre una nómina ya pagada.
+ */
+export function useEliminarParametro() {
+  return useAccionNomina((p: { id: number }) =>
+    rpc('eliminar_parametro_nomina', { p_id: p.id }),
+  )
+}
+
+/**
  * Quién firma por la empresa, hoy.
  *
  * Los parámetros llevan vigencia, así que de cada clave puede haber varias
