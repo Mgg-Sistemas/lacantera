@@ -185,6 +185,7 @@ export const TIPOS_MOVIMIENTO: Record<string, string> = {
   SALIDA_CONSUMO: 'Salida a consumo',
   SALIDA_DESPACHO: 'Salida por despacho',
   SALIDA_MERMA: 'Merma',
+  SALIDA_BAJA: 'Baja',
   AJUSTE_POSITIVO: 'Ajuste por conteo (sobrante)',
   AJUSTE_NEGATIVO: 'Ajuste por conteo (faltante)',
   TRANSFERENCIA_SALIDA: 'Traslado, salida',
@@ -338,6 +339,79 @@ export function useRegistrarSalida() {
         p_motivo: s.motivo,
         p_tipo: s.tipo ?? 'SALIDA_CONSUMO',
         p_fecha: s.fecha || null,
+      }),
+  )
+}
+
+/*
+  LAS CAUSAS POR LAS QUE UN BIEN DEJA DE SERVIR
+
+  La líder: «el inventario registra entradas, pero no registra salidas que no
+  necesariamente son ventas (ej. equipo dañado e irreparable, desechado,
+  obsoleto, etc.)».
+
+  Ninguna de las tres salidas que había servía. Consumo es haberlo gastado
+  trabajando; merma es lo que se pierde en el manejo —y su porcentaje se vigila
+  para detectar robo, así que meter ahí un taladro quemado lo dispararía por
+  una razón que no tiene nada que ver—; despacho es haberlo vendido.
+
+  No hay «otro» a propósito: con esa opción acaba todo ahí, y en un año nadie
+  puede responder cuánto se perdió por obsolescencia.
+*/
+export const CAUSAS_DE_BAJA: Array<{ valor: string; etiqueta: string; dice: string }> = [
+  {
+    valor: 'DANADO',
+    etiqueta: 'Dañado sin reparación',
+    dice: 'Se rompió y no compensa arreglarlo.',
+  },
+  {
+    valor: 'OBSOLETO',
+    etiqueta: 'Obsoleto',
+    dice: 'Funciona, pero ya no sirve para lo que se hace hoy.',
+  },
+  {
+    valor: 'VENCIDO',
+    etiqueta: 'Vencido',
+    dice: 'Caducó: químicos, filtros con vida útil, consumibles.',
+  },
+  {
+    valor: 'EXTRAVIADO',
+    etiqueta: 'Extraviado',
+    dice: 'No aparece y nadie sabe dónde está.',
+  },
+  {
+    valor: 'ROBADO',
+    etiqueta: 'Robado',
+    dice: 'Falta, y hay motivos para creer que se lo llevaron.',
+  },
+]
+
+/**
+ * Saca del inventario lo que dejó de servir.
+ *
+ * Pide más explicación que una salida normal —diez caracteres frente a
+ * cuatro— porque una baja destruye valor en libros y lo único que quedará para
+ * justificarla dentro de un año es esa frase.
+ */
+export function useRegistrarBaja() {
+  return useAccionInventario(
+    (b: {
+      almacen_id: number
+      articulo_id: number
+      cantidad: number
+      causa: string
+      motivo: string
+      destino?: string | null
+      fecha?: string
+    }) =>
+      rpc<number>('registrar_baja', {
+        p_almacen_id: b.almacen_id,
+        p_articulo_id: b.articulo_id,
+        p_cantidad: b.cantidad,
+        p_causa: b.causa,
+        p_motivo: b.motivo,
+        p_destino: b.destino || null,
+        p_fecha: b.fecha || null,
       }),
   )
 }

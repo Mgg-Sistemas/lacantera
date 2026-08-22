@@ -10,6 +10,7 @@ import {
   Scale,
   Search,
   TriangleAlert,
+  Trash2,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
@@ -37,6 +38,8 @@ import {
   useExistenciasTotales,
   useMovimientos,
   useRegistrarAjuste,
+  useRegistrarBaja,
+  CAUSAS_DE_BAJA,
   useRegistrarEntradas,
   useRegistrarSalida,
 } from '@/lib/api/inventario'
@@ -116,6 +119,7 @@ export function Existencias() {
   const { puede } = useMisRoles()
   const salida = useRegistrarSalida()
   const ajuste = useRegistrarAjuste()
+  const baja = useRegistrarBaja()
   const entrada = useRegistrarEntradas()
   const { data: articulos } = useArticulos()
   const monedas = useMonedasUsables()
@@ -127,7 +131,7 @@ export function Existencias() {
   const [soloBajas, setSoloBajas] = useState(false)
   const [desglose, setDesglose] = useState<ExistenciaTotal | null>(null)
   const [modal, setModal] = useState<
-    null | { tipo: 'salida' | 'ajuste' | 'entrada'; fila: Existencia | null }
+    null | { tipo: 'salida' | 'ajuste' | 'entrada' | 'baja'; fila: Existencia | null }
   >(null)
   const [valor, setValor] = useState('')
   const [motivo, setMotivo] = useState('')
@@ -234,7 +238,20 @@ export function Existencias() {
     )
   }
 
-  const abrir = (tipo: 'salida' | 'ajuste' | 'entrada', fila: Existencia | null) => {
+  /*
+    LA BAJA NO ES UNA SALIDA MÁS
+
+    Sacar material es darlo a quien lo va a usar; darlo de baja es decir que
+    dejó de existir para la empresa. Comparten el formulario porque preguntan
+    casi lo mismo, pero la causa solo aparece en la baja: es lo que después
+    permite responder cuánto se perdió por obsolescencia y cuánto por robo.
+  */
+  const [causa, setCausa] = useState(CAUSAS_DE_BAJA[0].valor)
+  const [destino, setDestino] = useState('')
+
+  const abrir = (tipo: 'salida' | 'ajuste' | 'entrada' | 'baja', fila: Existencia | null) => {
+    setCausa(CAUSAS_DE_BAJA[0].valor)
+    setDestino('')
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setMotivo('')
     setReferencia('')
@@ -267,6 +284,15 @@ export function Existencias() {
           })),
         motivo,
         referencia: referencia || null,
+      })
+    } else if (modal.tipo === 'baja') {
+      await baja.mutateAsync({
+        almacen_id: modal.fila!.almacen_id,
+        articulo_id: modal.fila!.articulo_id,
+        cantidad: Number(valor),
+        causa,
+        motivo,
+        destino: destino || null,
       })
     } else if (modal.tipo === 'salida') {
       await salida.mutateAsync({
@@ -533,6 +559,14 @@ export function Existencias() {
                             >
                               Contar
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              icon={<Trash2 />}
+                              onClick={() => abrir('baja', fila!)}
+                            >
+                              Dar de baja
+                            </Button>
                           </>
                         ) : null}
                       </td>
@@ -568,14 +602,18 @@ export function Existencias() {
               ? 'Entrada de material'
               : modal.tipo === 'salida'
                 ? 'Sacar material'
-                : 'Conteo físico'
+                : modal.tipo === 'baja'
+                  ? 'Dar de baja'
+                  : 'Conteo físico'
           }
           descripcion={
             modal.tipo === 'entrada'
               ? 'Para lo que entra sin una compra de por medio: el saldo con el que arranca el almacén, algo comprado por fuera, material que trae alguien.'
               : modal.tipo === 'salida'
                 ? 'Sale del almacén al costo promedio que tiene ahora.'
-                : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
+                : modal.tipo === 'baja'
+                  ? 'Para lo que dejó de servir: se dañó, quedó obsoleto, venció, no aparece. Sale del inventario y su valor se da por perdido.'
+                  : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
           }
           ancho="sm"
           acciones={
@@ -591,12 +629,16 @@ export function Existencias() {
                   (modal.tipo === 'entrada' &&
                     (!aDonde ||
                       renglones.filter((r) => r.articulo && r.cantidad && r.costo).length === 0)) ||
+                  // Una baja pide más explicación: es lo único que quedará
+                  // dentro de un año para justificar la pérdida.
+                  (modal.tipo === 'baja' && motivo.trim().length < 10) ||
                   salida.isPending ||
                   ajuste.isPending ||
-                  entrada.isPending
+                  entrada.isPending ||
+                  baja.isPending
                 }
               >
-                {salida.isPending || ajuste.isPending || entrada.isPending
+                {salida.isPending || ajuste.isPending || entrada.isPending || baja.isPending
                   ? 'Guardando…'
                   : 'Registrar'}
               </Button>
@@ -751,7 +793,13 @@ export function Existencias() {
               </div>
 
               <Input
-                label={modal.tipo === 'salida' ? 'Cantidad que sale' : 'Cantidad contada'}
+                label={
+                  modal.tipo === 'salida'
+                    ? 'Cantidad que sale'
+                    : modal.tipo === 'baja'
+                      ? 'Cantidad que se da de baja'
+                      : 'Cantidad contada'
+                }
                 type="number"
                 min="0"
                 step="0.01"
@@ -767,6 +815,36 @@ export function Existencias() {
                       : undefined
                 }
               />
+
+              {/*
+                POR QUÉ DEJÓ DE SERVIR
+
+                Debajo de la cantidad y antes del motivo: primero cuánto, luego
+                de qué clase de pérdida se trata, y al final el relato. La causa
+                es lo que después deja responder «cuánto se perdió por
+                obsolescencia» sin leer doscientas notas a mano.
+              */}
+              {modal.tipo === 'baja' ? (
+                <>
+                  <Select
+                    label="¿Por qué?"
+                    value={causa}
+                    onChange={(e) => setCausa(e.target.value)}
+                    hint={CAUSAS_DE_BAJA.find((c) => c.valor === causa)?.dice}
+                    opciones={CAUSAS_DE_BAJA.map((c) => ({
+                      valor: c.valor,
+                      etiqueta: c.etiqueta,
+                    }))}
+                  />
+
+                  <Input
+                    label="¿Y qué se hizo con eso?"
+                    value={destino}
+                    onChange={(e) => setDestino(e.target.value)}
+                    hint="Opcional. Se desechó, se vendió como chatarra, se guardó para repuestos — para que nadie lo salga a buscar después."
+                  />
+                </>
+              ) : null}
             </>
           )}
 
@@ -786,18 +864,25 @@ export function Existencias() {
                 ? 'De dónde vino'
                 : modal.tipo === 'salida'
                   ? 'Para qué sale'
-                  : 'Qué explica la diferencia'
+                  : modal.tipo === 'baja'
+                    ? 'Qué pasó'
+                    : 'Qué explica la diferencia'
             }
             className="mt-4"
             rows={3}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            hint="Queda en el libro y no se puede editar después."
+            hint={
+              modal.tipo === 'baja'
+                ? 'Con detalle: dentro de un año esta frase será lo único que quede para justificar la pérdida. Queda en el libro y no se puede editar.'
+                : 'Queda en el libro y no se puede editar después.'
+            }
           />
 
           {salida.error ? <ErrorDeCarga error={salida.error} className="mt-3" /> : null}
           {ajuste.error ? <ErrorDeCarga error={ajuste.error} className="mt-3" /> : null}
           {entrada.error ? <ErrorDeCarga error={entrada.error} className="mt-3" /> : null}
+          {baja.error ? <ErrorDeCarga error={baja.error} className="mt-3" /> : null}
         </Modal>
       ) : null}
 
