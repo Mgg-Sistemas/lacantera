@@ -605,6 +605,10 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                 variant={
                   usuarios.data?.find((u) => u.id === edicion.id)?.activo ? 'danger' : 'outline'
                 }
+                // Sin esto, el segundo clic manda la orden contraria: desactiva
+                // y vuelve a activar, o al revés. Es el único botón del sistema
+                // que hacía una escritura sin apagarse mientras corría.
+                disabled={activar.isPending}
                 onClick={() => {
                   const actual = usuarios.data?.find((u) => u.id === edicion.id)
                   activar.mutate(
@@ -613,9 +617,11 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                   )
                 }}
               >
-                {usuarios.data?.find((u) => u.id === edicion.id)?.activo
-                  ? 'Desactivar'
-                  : 'Reactivar'}
+                {activar.isPending
+                  ? 'Guardando…'
+                  : usuarios.data?.find((u) => u.id === edicion.id)?.activo
+                    ? 'Desactivar'
+                    : 'Reactivar'}
               </Button>
             ) : null}
             <Button onClick={guardar} disabled={crear.isPending || guardarPerfil.isPending}>
