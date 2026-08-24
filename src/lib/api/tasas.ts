@@ -10,6 +10,8 @@ export interface TasaRegistrada {
   tasa: string
   fuente: string
   registrado_en: string
+  /** Cierto si la tomo sola la tarea diaria en vez de teclearla una persona. */
+  automatica: boolean
 }
 
 export interface Moneda {
@@ -238,4 +240,76 @@ export function useMonedasUsables() {
       }))
     },
   })
+}
+
+/*
+  LA TASA SE TOMA SOLA, Y AQUÍ SE VE QUIÉN LA PUSO
+
+  La líder pidió que el sistema tomara la tasa del BCV en vez de esperar a que
+  alguien la registrara. Lo hace una tarea de la base cuatro veces al día.
+
+  Estos tres hooks son lo que la pantalla necesita para acompañar eso: saber si
+  la de hoy la puso una persona o la máquina, pedirla en el momento sin esperar
+  al reloj, y enmendarla si la máquina leyó mal.
+*/
+
+/**
+ * La fila de hoy tal cual está guardada.
+ *
+ * Se consulta aparte de `useTasaVigente` porque esa arrastra la del último día
+ * que haya y no dice de dónde salió. Para saber si la tasa de hoy es de hoy
+ * —y quién la puso— hace falta mirar la fila.
+ */
+export function useTasaDeHoy(origen: string, fuente = 'BCV') {
+  return useQuery({
+    queryKey: ['tasa-de-hoy', origen, fuente],
+    queryFn: async () =>
+      desenvolver<TasaRegistrada | null>(
+        await supabase
+          .from('tasas_cambio')
+          .select('*')
+          .eq('moneda_origen', origen)
+          .eq('moneda_destino', 'VES')
+          .eq('fecha', hoyEnCaracas())
+          .eq('fuente', fuente)
+          .maybeSingle(),
+      ),
+  })
+}
+
+function useAccionTasa<A>(fn: (a: A) => Promise<unknown>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tasas'] })
+      void qc.invalidateQueries({ queryKey: ['tasa-vigente'] })
+      void qc.invalidateQueries({ queryKey: ['tasa-de-hoy'] })
+      void qc.invalidateQueries({ queryKey: ['monedas-usables'] })
+    },
+  })
+}
+
+/**
+ * Pedir la tasa del día ahora mismo.
+ *
+ * La lee el servidor de la fuente oficial: el navegador no manda el número, solo
+ * pide que se tome. Es la diferencia entre registrar una tasa y elegirla.
+ */
+export function useTomarTasaAhora() {
+  return useAccionTasa((origen: string) =>
+    rpc<number | null>('tomar_tasa_ahora', { p_origen: origen }),
+  )
+}
+
+/**
+ * Enmendar la que tomó el sistema hoy.
+ *
+ * Solo funciona sobre una fila automática y del día. Las que registró una
+ * persona siguen siendo inmutables, como han sido siempre.
+ */
+export function useCorregirTasaAutomatica() {
+  return useAccionTasa((t: { origen: string; tasa: number }) =>
+    rpc<number>('corregir_tasa_automatica', { p_origen: t.origen, p_tasa: t.tasa }),
+  )
 }

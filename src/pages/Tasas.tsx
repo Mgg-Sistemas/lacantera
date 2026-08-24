@@ -12,12 +12,24 @@ import { useTasaEnVivo } from '@/lib/tasaBcv'
 import {
   hoyEnCaracas,
   useMonedasConTasa,
+  useCorregirTasaAutomatica,
   useRegistrarTasa,
+  useTasaDeHoy,
   useTasaVigente,
   useTasasRegistradas,
+  useTomarTasaAhora,
 } from '@/lib/api/tasas'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { tasa as fmtTasa } from '@/lib/formato'
+
+/** La hora de la cantera, para decir cuándo la tomó el sistema. */
+function hora(iso: string): string {
+  return new Intl.DateTimeFormat('es-VE', {
+    timeZone: 'America/Caracas',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso))
+}
 
 function fecha(iso: string): string {
   return new Intl.DateTimeFormat('es-VE', {
@@ -50,6 +62,22 @@ export function Tasas() {
   const vigente = useTasaVigente(codigo, elegida?.fuente_tasa ?? 'BCV')
   const historial = useTasasRegistradas(60, codigo)
   const registrar = useRegistrarTasa()
+
+  /*
+    LA TASA YA NO ESPERA A NADIE
+
+    Una tarea de la base la toma cuatro veces al día de la fuente oficial. Esto
+    es lo que hace falta para acompañarla en pantalla: la fila de hoy tal cual
+    está guardada —para saber si la puso una persona o la máquina—, el botón de
+    pedirla en el momento, y el de enmendarla si la máquina leyó mal.
+
+    `vigente` no sirve para esto: arrastra la del último día que haya, así que
+    no distingue «la de hoy» de «la del viernes que sigue rigiendo».
+  */
+  const deHoy = useTasaDeHoy(codigo, elegida?.fuente_tasa ?? 'BCV')
+  const tomarAhora = useTomarTasaAhora()
+  const corregir = useCorregirTasaAutomatica()
+  const laTomoElSistema = deHoy.data?.automatica === true
 
   /*
     Cargar la tasa dejó de estar al alcance de cualquiera que entre. Es con lo
@@ -122,8 +150,8 @@ export function Tasas() {
             title={puedeRegistrar ? `Registrar la tasa del día · ${unidad}` : `La tasa del día · ${unidad}`}
             subtitle={
               puedeRegistrar
-                ? 'Una vez registrada no se puede corregir. Si se publica una corrección, se registra una fila nueva.'
-                : 'La carga administración o tesorería. Aquí se consulta cuál está rigiendo.'
+                ? 'El sistema la toma solo del BCV varias veces al día. Aquí se comprueba, se enmienda la de hoy si leyó mal, y se cargan las monedas sin fuente pública.'
+                : 'La toma el sistema del BCV. Aquí se consulta cuál está rigiendo.'
             }
           />
 
@@ -134,19 +162,44 @@ export function Tasas() {
                 La tasa de hoy ya está registrada:{' '}
                 <span className="tabular font-semibold">Bs {fmtTasa(vigente.data!.tasa)}</span> por{' '}
                 {unidad}. Los documentos que se emitan hoy en {unidad} se valoran con esta.
+                {laTomoElSistema && deHoy.data ? (
+                  <>
+                    {' '}
+                    La tomó el sistema a las {hora(deHoy.data.registrado_en)}, del BCV. Si el
+                    número no cuadra, hoy todavía se puede enmendar.
+                  </>
+                ) : null}
               </p>
             </div>
           ) : (
             <div className="border-warning/30 bg-warning-soft mt-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
               <TriangleAlert className="text-warning mt-px size-[18px] shrink-0" />
-              <p className="text-ink/80 text-sm">
-                Todavía no se ha registrado la tasa de hoy en {unidad}.{' '}
-                {vigente.data
-                  ? `Los documentos se están valorando con la del ${fecha(vigente.data.fecha)}.`
-                  : `Sin ninguna tasa registrada no se puede emitir nada en ${unidad}.`}
-              </p>
+              <div className="min-w-0">
+                <p className="text-ink/80 text-sm">
+                  Todavía no se ha registrado la tasa de hoy en {unidad}.{' '}
+                  {vigente.data
+                    ? `Los documentos se están valorando con la del ${fecha(vigente.data.fecha)}.`
+                    : `Sin ninguna tasa registrada no se puede emitir nada en ${unidad}.`}
+                </p>
+
+                {/* El sistema la toma a las 08:15, 11:15, 14:15 y 17:15. Quien
+                    llega antes y necesita emitir no tiene por qué esperar a la
+                    próxima pasada ni teclear el número a mano. */}
+                {puedeRegistrar && conFuentePublica && !porBinance ? (
+                  <Button
+                    variant="outline"
+                    className="mt-3"
+                    disabled={tomarAhora.isPending}
+                    onClick={() => tomarAhora.mutate(codigo)}
+                  >
+                    {tomarAhora.isPending ? 'Consultando al BCV…' : 'Tomarla del BCV ahora'}
+                  </Button>
+                ) : null}
+              </div>
             </div>
           )}
+
+          {tomarAhora.error ? <ErrorDeCarga error={tomarAhora.error} className="mt-2" /> : null}
 
           {!puedeRegistrar ? null : (
             <>
@@ -192,25 +245,40 @@ export function Tasas() {
                     {porBinance ? 'Usar la de Binance' : 'Usar la del BCV'}
                   </Button>
                 ) : null}
+                {/* Enmendar y registrar no son lo mismo, y el botón lo dice.
+
+                    Si la de hoy la tomó la máquina, «Registrar» rebotaría: la
+                    fila ya existe y las tasas no se duplican. Lo que toca es
+                    corregir esa lectura — y solo se puede hoy, porque mañana esa
+                    fila ya valoró documentos. */}
                 <Button
-                  disabled={!valor || registrar.isPending}
+                  disabled={!valor || registrar.isPending || corregir.isPending}
                   onClick={async () => {
-                    await registrar.mutateAsync({
-                      origen: codigo,
-                      fecha: dia,
-                      tasa: Number(valor),
-                      fuente: elegida?.fuente_tasa ?? 'BCV',
-                    })
+                    if (laTomoElSistema && dia === hoy) {
+                      await corregir.mutateAsync({ origen: codigo, tasa: Number(valor) })
+                    } else {
+                      await registrar.mutateAsync({
+                        origen: codigo,
+                        fecha: dia,
+                        tasa: Number(valor),
+                        fuente: elegida?.fuente_tasa ?? 'BCV',
+                      })
+                    }
                     setValor('')
                   }}
                 >
-                  {registrar.isPending ? 'Guardando…' : 'Registrar'}
+                  {registrar.isPending || corregir.isPending
+                    ? 'Guardando…'
+                    : laTomoElSistema && dia === hoy
+                      ? 'Corregir la de hoy'
+                      : 'Registrar'}
                 </Button>
               </div>
             </>
           )}
 
           {registrar.error ? <ErrorDeCarga error={registrar.error} className="mt-2" /> : null}
+          {corregir.error ? <ErrorDeCarga error={corregir.error} className="mt-2" /> : null}
         </Card>
 
         <Card>
