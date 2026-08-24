@@ -6,6 +6,11 @@ import { enMayuscula } from '@/lib/texto'
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label: string
+  /**
+   * Esconde la etiqueta a la vista pero la deja para el lector de pantalla.
+   * Para editar en linea, donde el rotulo lo da la fila y repetirlo es ruido.
+   */
+  ocultarEtiqueta?: boolean
   /** Texto de ayuda. Si hay error, el error lo sustituye. */
   hint?: string
   error?: string
@@ -27,6 +32,7 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
 
 export function Input({
   label,
+  ocultarEtiqueta,
   hint,
   error,
   icon,
@@ -71,7 +77,12 @@ export function Input({
 
   return (
     <div className={cn('w-full min-w-0', className)}>
-      <label htmlFor={inputId} className="text-ink/75 mb-1.5 block text-sm font-medium">
+      <label
+        htmlFor={inputId}
+        className={cn(
+          ocultarEtiqueta ? 'sr-only' : 'text-ink/75 mb-1.5 block text-sm font-medium',
+        )}
+      >
         {label}
       </label>
 

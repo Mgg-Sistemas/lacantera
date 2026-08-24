@@ -185,6 +185,7 @@ export interface CategoriaGasto {
   nombre: string
   padre: string | null
   orden: number
+  activa?: boolean
 }
 
 /**
@@ -194,19 +195,63 @@ export interface CategoriaGasto {
  * mover: una subcategoría puede cambiar de padre según cómo la empresa mire su
  * propio gasto, y eso no debería costar un despliegue.
  */
-export function useCategoriasGasto() {
+export function useCategoriasGasto(incluirApagadas = false) {
   return useQuery({
-    queryKey: ['categorias-gasto'],
+    queryKey: ['categorias-gasto', incluirApagadas],
     staleTime: 30 * 60_000,
-    queryFn: async () =>
-      desenvolver<CategoriaGasto[]>(
-        await supabase
-          .from('categorias_gasto')
-          .select('codigo, nombre, padre, orden')
-          .eq('activa', true)
-          .order('orden'),
-      ),
+    queryFn: async () => {
+      let consulta = supabase
+        .from('categorias_gasto')
+        .select('codigo, nombre, padre, orden, activa')
+        .order('orden')
+      if (!incluirApagadas) consulta = consulta.eq('activa', true)
+      return desenvolver<CategoriaGasto[]>(await consulta)
+    },
   })
+}
+
+function useAccionCatalogo<A>(fn: (a: A) => Promise<unknown>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['categorias-gasto'] })
+      void qc.invalidateQueries({ queryKey: ['centro-costos'] })
+    },
+  })
+}
+
+/**
+ * Crear o cambiar una categoria.
+ *
+ * Sin codigo, crea; con codigo, cambia. El codigo no se toca al renombrar: es lo
+ * que guardan los gastos ya registrados, y cambiar «Viaticos» por «Viaticos y
+ * peajes» no puede reescribir el pasado.
+ */
+export function useGuardarCategoriaGasto() {
+  return useAccionCatalogo(
+    (c: {
+      codigo?: string | null
+      nombre: string
+      padre?: string | null
+      orden?: number | null
+      activa?: boolean
+    }) =>
+      rpc<string>('guardar_categoria_gasto', {
+        p_codigo: c.codigo ?? null,
+        p_nombre: c.nombre,
+        p_padre: c.padre ?? null,
+        p_orden: c.orden ?? null,
+        p_activa: c.activa ?? true,
+      }),
+  )
+}
+
+/** Solo se puede con las que nunca se usaron. El resto se apaga. */
+export function useBorrarCategoriaGasto() {
+  return useAccionCatalogo((codigo: string) =>
+    rpc<void>('borrar_categoria_gasto', { p_codigo: codigo }),
+  )
 }
 
 /** Le pone la clase a un gasto que nació sin ella. Solo de nula a valor. */

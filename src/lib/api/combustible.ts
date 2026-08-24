@@ -41,21 +41,60 @@ export interface MotivoDelVale {
   pista: string | null
   orden: number
   exige_detalle: boolean
+  activo?: boolean
 }
 
-export function useMotivosDespacho() {
+export function useMotivosDespacho(incluirApagados = false) {
   return useQuery({
-    queryKey: ['combustible', 'motivos'],
+    queryKey: ['combustible', 'motivos', incluirApagados],
     staleTime: 10 * 60_000,
-    queryFn: async () =>
-      desenvolver<MotivoDelVale[]>(
-        await supabase
-          .from('motivos_despacho')
-          .select('codigo, nombre, pista, orden, exige_detalle')
-          .eq('activo', true)
-          .order('orden'),
-      ),
+    queryFn: async () => {
+      let consulta = supabase
+        .from('motivos_despacho')
+        .select('codigo, nombre, pista, orden, exige_detalle, activo')
+        .order('orden')
+      if (!incluirApagados) consulta = consulta.eq('activo', true)
+      return desenvolver<MotivoDelVale[]>(await consulta)
+    },
   })
+}
+
+function useAccionMotivo<A>(fn: (a: A) => Promise<unknown>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['combustible'] })
+    },
+  })
+}
+
+export function useGuardarMotivoDespacho() {
+  return useAccionMotivo(
+    (m: {
+      codigo?: string | null
+      nombre: string
+      pista?: string | null
+      orden?: number | null
+      exige_detalle?: boolean
+      activo?: boolean
+    }) =>
+      rpc<string>('guardar_motivo_despacho', {
+        p_codigo: m.codigo ?? null,
+        p_nombre: m.nombre,
+        p_pista: m.pista ?? null,
+        p_orden: m.orden ?? null,
+        p_exige_detalle: m.exige_detalle ?? false,
+        p_activo: m.activo ?? true,
+      }),
+  )
+}
+
+/** Solo con los que nunca se usaron en un vale. El resto se apaga. */
+export function useBorrarMotivoDespacho() {
+  return useAccionMotivo((codigo: string) =>
+    rpc<void>('borrar_motivo_despacho', { p_codigo: codigo }),
+  )
 }
 
 export interface DespachoCombustible {

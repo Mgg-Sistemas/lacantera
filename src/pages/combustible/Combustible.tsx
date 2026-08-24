@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FileText, Fuel, Plus, TriangleAlert } from 'lucide-react'
+import { FileText, Fuel, Plus, Tags, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -11,10 +11,13 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMaquinaria } from '@/lib/api/maquinaria'
+import { ListaEditable } from '@/components/ListaEditable'
 import {
+  useBorrarMotivoDespacho,
   useConsumoCombustible,
   useDespachosCombustible,
   useDespacharCombustible,
+  useGuardarMotivoDespacho,
   useMotivosDespacho,
   usePersonasParaVale,
   useTanques,
@@ -60,6 +63,7 @@ export function Combustible() {
   const firmas = useFirmas()
   const [despachando, setDespachando] = useState(false)
   const [vale, setVale] = useState<{ blob: Blob; nombre: string } | null>(null)
+  const [ordenando, setOrdenando] = useState(false)
 
   /*
     EL VALE EN PAPEL
@@ -109,6 +113,7 @@ export function Combustible() {
   }
 
   const puedeDespachar = puede('COMBUSTIBLE', 'ESCRITURA')
+  const puedeMandar = puede('COMBUSTIBLE', 'TOTAL')
   const bajos = (tanques.data ?? []).filter(
     (t) => Number(t.stock_minimo) > 0 && Number(t.existencia) <= Number(t.stock_minimo),
   )
@@ -120,9 +125,19 @@ export function Combustible() {
         description="Cuánto queda, cuánto consume cada máquina y a qué se le echó. Las entradas llegan por las compras recibidas."
         actions={
           puedeDespachar ? (
-            <Button icon={<Plus />} onClick={() => setDespachando(true)}>
-              Despachar
-            </Button>
+            <>
+              {/* La lista de motivos se toca desde aquí: quien despacha es quien
+                  descubre que falta uno, y no debería tener que pedirlo. */}
+              {puedeMandar ? (
+                <Button variant="ghost" onClick={() => setOrdenando(true)}>
+                  <Tags className="size-4" />
+                  Motivos
+                </Button>
+              ) : null}
+              <Button icon={<Plus />} onClick={() => setDespachando(true)}>
+                Despachar
+              </Button>
+            </>
           ) : undefined
         }
       />
@@ -343,6 +358,8 @@ export function Combustible() {
       ) : null}
 
       <ModalDespacho abierto={despachando} onCerrar={() => setDespachando(false)} />
+
+      <ModalMotivos abierto={ordenando} onCerrar={() => setOrdenando(false)} />
 
       <Visor
         abierto={vale !== null}
@@ -622,6 +639,63 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
       </div>
 
       {despachar.error ? <ErrorDeCarga error={despachar.error} className="mt-3" /> : null}
+    </Modal>
+  )
+}
+
+/*
+  LOS MOTIVOS DEL VALE, EN MANOS DE LA EMPRESA
+
+  La lider pidio anadir «Produccion» y costo un despliegue. Esto es para que la
+  proxima no cueste nada.
+
+  Va aqui, en la pantalla de combustible, y no en Configuracion: quien descubre
+  que falta un motivo es quien esta despachando y no encuentra donde poner lo que
+  tiene delante. Mandarlo a otro menu es garantizar que en vez de arreglarlo elija
+  «Otro» y siga.
+*/
+function ModalMotivos({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {
+  const motivos = useMotivosDespacho(true)
+  const guardar = useGuardarMotivoDespacho()
+  const borrar = useBorrarMotivoDespacho()
+
+  return (
+    <Modal
+      abierto={abierto}
+      onCerrar={onCerrar}
+      titulo="Para qué se surte"
+      descripcion="La lista que sale al despachar. Cámbiala cuando haga falta; los vales viejos siguen diciendo lo que decían."
+      acciones={
+        <Button variant="ghost" onClick={onCerrar}>
+          Listo
+        </Button>
+      }
+    >
+      <ListaEditable
+        elementos={(motivos.data ?? []).map((m) => ({
+          codigo: m.codigo,
+          nombre: m.nombre,
+          pista: m.exige_detalle ? `${m.pista ?? ''} · pide explicación` : m.pista,
+          activo: m.activo !== false,
+        }))}
+        error={guardar.error ?? borrar.error}
+        guardando={guardar.isPending || borrar.isPending}
+        etiquetaAnadir="Añadir motivo"
+        placeholderNuevo="Traslado a otro frente"
+        nota="Apagar un motivo lo quita del formulario sin tocar los vales ya emitidos. Borrar solo funciona con los que nunca se usaron."
+        onGuardar={(e) => {
+          const actual = (motivos.data ?? []).find((m) => m.codigo === e.codigo)
+          return guardar.mutateAsync({
+            codigo: e.codigo,
+            nombre: e.nombre,
+            pista: actual?.pista ?? null,
+            exige_detalle: actual?.exige_detalle ?? false,
+            activo: e.activo,
+          })
+        }}
+        onBorrar={(codigo) => borrar.mutateAsync(codigo)}
+        onAnadir={(nombre) => guardar.mutateAsync({ nombre })}
+      />
     </Modal>
   )
 }

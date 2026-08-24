@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, PieChart, Plus, Wallet } from 'lucide-react'
+import { ArrowLeft, PieChart, Plus, Tags, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_ANALISIS } from '@/components/pestanasDeModulos'
@@ -15,9 +15,12 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
+import { ListaEditable } from '@/components/ListaEditable'
 import {
+  useBorrarCategoriaGasto,
   useCategoriasGasto,
   useClasificarGasto,
+  useGuardarCategoriaGasto,
   useGastoPorCategoria,
   useGastosDelPeriodo,
   useGuardarPresupuesto,
@@ -55,6 +58,7 @@ export function CentroDeCostos() {
   const [dentroDe, setDentroDe] = useState<string | null>(null)
   const [editando, setEditando] = useState(false)
   const [clasificando, setClasificando] = useState<number | null>(null)
+  const [ordenando, setOrdenando] = useState(false)
 
   const resumen = useResumenCentroCostos(rango)
   const trozos = useGastoPorCategoria(rango, dentroDe)
@@ -83,10 +87,18 @@ export function CentroDeCostos() {
         description="Lo que se entregó para operar, lo que se ha gastado y lo que cuesta sacar el material. No es una caja: el fondo no se mueve."
         actions={
           puedeAsignar ? (
-            <Button variant="outline" onClick={() => setEditando(true)}>
-              <Plus className="size-4" />
-              Asignar fondo
-            </Button>
+            <>
+              {/* Las categorías se tocan desde donde se ven: quien mira la torta
+                  y piensa «esto debería estar separado» lo arregla ahí mismo. */}
+              <Button variant="ghost" onClick={() => setOrdenando(true)}>
+                <Tags className="size-4" />
+                Categorías
+              </Button>
+              <Button variant="outline" onClick={() => setEditando(true)}>
+                <Plus className="size-4" />
+                Asignar fondo
+              </Button>
+            </>
           ) : undefined
         }
       />
@@ -296,6 +308,7 @@ export function CentroDeCostos() {
 
       <ModalFondo abierto={editando} onCerrar={() => setEditando(false)} />
       <ModalClase gastoId={clasificando} onCerrar={() => setClasificando(null)} />
+      <ModalCategorias abierto={ordenando} onCerrar={() => setOrdenando(false)} />
     </>
   )
 }
@@ -482,6 +495,86 @@ function ModalClase({
       />
 
       {clasificar.error ? <ErrorDeCarga error={clasificar.error} className="mt-3" /> : null}
+    </Modal>
+  )
+}
+
+/*
+  LAS CATEGORIAS, EN MANOS DE LA EMPRESA
+
+  La lider: «igual debe ser editable, no quiero nos llamen a cada rato por cosas
+  asi». Esto es lo que hace verdad esa frase.
+
+  Los grupos y su detalle se pintan en la misma lista, sangrados, porque asi es
+  como se piensan: «dentro de Administrativos falta Seguros». Dos listas
+  separadas obligarian a elegir primero el grupo, que es un paso mas para la
+  operacion mas comun.
+
+  Anadir crea siempre DENTRO del ultimo grupo elegido, no un grupo nuevo. Crear
+  grupos de primer nivel es raro —son los seis que ella misma dio— y ofrecerlo
+  con la misma prominencia invita a inventar un septimo que descuadra los
+  informes.
+*/
+function ModalCategorias({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {
+  const categorias = useCategoriasGasto(true)
+  const guardar = useGuardarCategoriaGasto()
+  const borrar = useBorrarCategoriaGasto()
+  const [dentroDe, setDentroDe] = useState<string>('')
+
+  const raices = (categorias.data ?? []).filter((c) => c.padre === null)
+
+  // Grupo, y debajo lo suyo. El orden de la lista es el orden en que se leen.
+  const enOrden = raices.flatMap((r) => [
+    { codigo: r.codigo, nombre: r.nombre, activo: r.activa !== false, esGrupo: true },
+    ...(categorias.data ?? [])
+      .filter((h) => h.padre === r.codigo)
+      .map((h) => ({ codigo: h.codigo, nombre: h.nombre, activo: h.activa !== false })),
+  ])
+
+  return (
+    <Modal
+      abierto={abierto}
+      onCerrar={onCerrar}
+      titulo="Categorías de gasto"
+      descripcion="Cámbialas cuando quieras. Lo que ya está registrado sigue contando igual."
+      acciones={
+        <Button variant="ghost" onClick={onCerrar}>
+          Listo
+        </Button>
+      }
+    >
+      <div className="mb-4">
+        <Select
+          label="Añadir dentro de"
+          vacio="Elegir grupo"
+          value={dentroDe}
+          onChange={(e) => setDentroDe(e.target.value)}
+          opciones={raices.map((r) => ({ valor: r.codigo, etiqueta: r.nombre }))}
+          hint="Lo nuevo entra dentro de uno de los seis grupos, que es donde hace falta detalle."
+        />
+      </div>
+
+      <ListaEditable
+        elementos={enOrden}
+        error={guardar.error ?? borrar.error}
+        guardando={guardar.isPending || borrar.isPending}
+        etiquetaAnadir="Añadir categoría"
+        placeholderNuevo="Seguros"
+        nota="Apagar una categoría la quita del formulario pero deja los gastos viejos donde estaban. Borrar solo funciona con las que nunca se usaron."
+        onGuardar={(e) => {
+          const actual = (categorias.data ?? []).find((c) => c.codigo === e.codigo)
+          return guardar.mutateAsync({
+            codigo: e.codigo,
+            nombre: e.nombre,
+            padre: actual?.padre ?? null,
+            activa: e.activo,
+          })
+        }}
+        onBorrar={(codigo) => borrar.mutateAsync(codigo)}
+        onAnadir={(nombre) =>
+          guardar.mutateAsync({ nombre, padre: dentroDe || null })
+        }
+      />
     </Modal>
   )
 }
