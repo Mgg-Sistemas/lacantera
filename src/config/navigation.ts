@@ -246,7 +246,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/ventas/clientes': 'rif comprador',
   '/app/ventas/libro': 'iva impuesto seniat fiscal debito',
   '/app/ventas/precios': 'tarifa lista precio',
-  '/app/inventario/existencias': 'stock cuanto hay disponible',
+  '/app/inventario/existencias': 'stock cuanto hay disponible sacar salida dar de baja merma consumo desechar danado obsoleto contar conteo ajuste',
   '/app/inventario/articulos': 'catalogo repuesto insumo herramienta epp material',
   '/app/organigrama': 'organizacion estructura jerarquia cargos quien depende de quien departamentos arbol',
   '/app/inventario/transferencias': 'mover traspaso entre almacenes',
