@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, ToggleLeft } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
 import { Card, CardHeader } from '@/components/ui/Card'
+import { Chip } from '@/components/ui/Chip'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -13,6 +14,7 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useAlmacenes } from '@/lib/api/inventario'
 import { useCombustibles } from '@/lib/api/combustible'
 import {
+  ETIQUETA_ESTADO,
   TIPOS_MAQUINA,
   useFotoMaquina,
   useGuardarEncuadreMaquina,
@@ -22,6 +24,7 @@ import {
   useSubirFotoMaquina,
 } from '@/lib/api/maquinaria'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { ModalEstado } from './ModalEstado'
 
 /*
   LA FICHA DE UNA MÁQUINA
@@ -93,6 +96,7 @@ export function FichaMaquina() {
   const [f, setF] = useState(vacio)
   const [cargado, setCargado] = useState(false)
   const [encuadre, setEncuadre] = useState({ zoom: 1, x: 0.5, y: 0.5 })
+  const [cambiandoEstado, setCambiandoEstado] = useState(false)
 
   const foto = useFotoMaquina(maquina?.foto_path)
 
@@ -193,12 +197,60 @@ export function FichaMaquina() {
             : 'Los cambios se ven en la lista de equipos en cuanto se guardan.'
         }
         actions={
-          <Link to={esNueva ? '/app/maquinaria' : '/app/maquinaria'}>
-            <Button variant="outline" size="sm" icon={<ArrowLeft />}>
-              A los equipos
-            </Button>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {/*
+              EL ESTADO SE VE AQUÍ PERO NO SE EDITA CON LOS DEMÁS CAMPOS
+
+              Cambiar la marca de una máquina no puede ser también la vía para
+              sacarla de servicio: son decisiones de peso muy distinto y una se
+              guarda sin mirar. El estado va por su propia puerta, que avisa de
+              lo que arrastra cada paso.
+
+              Pero tiene que VERSE: una ficha que no dice si la máquina está
+              trabajando o averiada obliga a volver a la lista para saberlo.
+            */}
+            {!esNueva && maquina ? (
+              <>
+                <Chip
+                  tone={
+                    maquina.estado === 'ACTIVA'
+                      ? 'success'
+                      : maquina.estado === 'FUERA_DE_SERVICIO'
+                        ? 'danger'
+                        : maquina.estado === 'EN_MANTENIMIENTO'
+                          ? 'warning'
+                          : 'neutral'
+                  }
+                >
+                  {ETIQUETA_ESTADO[maquina.estado]}
+                </Chip>
+
+                {editable ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<ToggleLeft />}
+                    onClick={() => setCambiandoEstado(true)}
+                  >
+                    Cambiar estado
+                  </Button>
+                ) : null}
+              </>
+            ) : null}
+
+            <Link to="/app/maquinaria">
+              <Button variant="outline" size="sm" icon={<ArrowLeft />}>
+                A los equipos
+              </Button>
+            </Link>
+          </div>
         }
+      />
+
+      <ModalEstado
+        abierto={cambiandoEstado}
+        maquina={maquina ?? null}
+        onCerrar={() => setCambiandoEstado(false)}
       />
 
       <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
