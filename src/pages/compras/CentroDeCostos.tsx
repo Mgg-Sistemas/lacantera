@@ -12,9 +12,12 @@ import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
+  useCategoriasGasto,
+  useClasificarGasto,
   useGastoPorCategoria,
   useGastosDelPeriodo,
   useGuardarPresupuesto,
@@ -51,6 +54,7 @@ export function CentroDeCostos() {
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const [dentroDe, setDentroDe] = useState<string | null>(null)
   const [editando, setEditando] = useState(false)
+  const [clasificando, setClasificando] = useState<number | null>(null)
 
   const resumen = useResumenCentroCostos(rango)
   const trozos = useGastoPorCategoria(rango, dentroDe)
@@ -58,6 +62,7 @@ export function CentroDeCostos() {
 
   const { puede } = useMisPermisos()
   const puedeAsignar = puede('COMPRAS', 'TOTAL')
+  const puedeClasificar = puede('COMPRAS', 'ESCRITURA')
 
   const r = resumen.data
   const hayFondo = r ? Number(r.asignado_usd) > 0 : false
@@ -260,6 +265,18 @@ export function CentroDeCostos() {
                         <td className="px-5 py-2.5">
                           {g.categoria_nombre ? (
                             <Chip tone="neutral">{g.categoria_nombre}</Chip>
+                          ) : puedeClasificar ? (
+                            /* El aviso ES el botón. Un «sin clasificar» que no
+                               se puede tocar obliga a buscar dónde se arregla, y
+                               el sitio donde se ve el problema es el sitio donde
+                               hay que poder resolverlo. */
+                            <button
+                              type="button"
+                              onClick={() => setClasificando(g.id)}
+                              className="text-warning hover:bg-warning-soft rounded-full px-2.5 py-1 text-xs transition-colors"
+                            >
+                              Sin clasificar · decir de qué clase es
+                            </button>
                           ) : (
                             <Chip tone="warning">Sin clasificar</Chip>
                           )}
@@ -278,6 +295,7 @@ export function CentroDeCostos() {
       ) : null}
 
       <ModalFondo abierto={editando} onCerrar={() => setEditando(false)} />
+      <ModalClase gastoId={clasificando} onCerrar={() => setClasificando(null)} />
     </>
   )
 }
@@ -394,6 +412,76 @@ function ModalFondo({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => v
       </div>
 
       {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-3" /> : null}
+    </Modal>
+  )
+}
+
+/*
+  DECIR DE QUE CLASE ES UN GASTO YA REGISTRADO
+
+  Solo se puede una vez y solo si nacio sin clase. El libro de tesoreria es
+  inmutable —esa es su razon de ser— y esta es una de las tres transiciones que
+  el disparador deja pasar: de nula a valor, sin tocar el monto ni la fecha ni
+  la cuenta.
+
+  Si la clase estuviera mal puesta, el camino es el de siempre en este libro:
+  reversar el movimiento. No se corrige encima.
+*/
+function ModalClase({
+  gastoId,
+  onCerrar,
+}: {
+  gastoId: number | null
+  onCerrar: () => void
+}) {
+  const categorias = useCategoriasGasto()
+  const clasificar = useClasificarGasto()
+  const [elegida, setElegida] = useState('')
+
+  const hojas = (categorias.data ?? []).filter((c) => c.padre !== null)
+
+  return (
+    <Modal
+      abierto={gastoId !== null}
+      onCerrar={onCerrar}
+      titulo="De qué clase es este gasto"
+      descripcion="Se dice una vez. Después no se cambia, como todo en el libro de tesorería."
+      ancho="sm"
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={!elegida || clasificar.isPending || gastoId === null}
+            onClick={async () => {
+              if (gastoId === null) return
+              await clasificar.mutateAsync({ id: gastoId, categoria: elegida })
+              setElegida('')
+              onCerrar()
+            }}
+          >
+            {clasificar.isPending ? 'Guardando…' : 'Clasificar'}
+          </Button>
+        </>
+      }
+    >
+      <Select
+        label="Clase"
+        vacio="Elegir"
+        value={elegida}
+        onChange={(e) => setElegida(e.target.value)}
+        opciones={hojas.map((c) => {
+          const padre = (categorias.data ?? []).find((p) => p.codigo === c.padre)
+          return {
+            valor: c.codigo,
+            etiqueta: padre ? `${padre.nombre} · ${c.nombre}` : c.nombre,
+          }
+        })}
+        hint="Se ofrece el detalle y no los seis grandes: la torta suma hacia arriba sola."
+      />
+
+      {clasificar.error ? <ErrorDeCarga error={clasificar.error} className="mt-3" /> : null}
     </Modal>
   )
 }

@@ -11,6 +11,7 @@ import {
   ArrowRight,
   BookOpen,
 } from 'lucide-react'
+import { useCategoriasGasto } from '@/lib/api/centroDeCostos'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -546,7 +547,11 @@ export function Cuentas() {
             } else if (movimiento.accion === 'ingreso') {
               await ingreso.mutateAsync({ ...base, concepto: datos.concepto })
             } else if (movimiento.accion === 'egreso') {
-              await egreso.mutateAsync({ ...base, concepto: datos.concepto })
+              await egreso.mutateAsync({
+                ...base,
+                concepto: datos.concepto,
+                categoria: datos.categoria,
+              })
             } else {
               await ajuste.mutateAsync({ ...base, motivo: datos.concepto })
             }
@@ -608,6 +613,7 @@ function ModalMovimiento({
   onGuardar: (d: {
     monto: number
     concepto: string
+    categoria?: string
     fecha?: string
     referencia?: string
     contraparte?: string
@@ -620,7 +626,9 @@ function ModalMovimiento({
   const [contraparte, setContraparte] = useState('')
   const [referencia, setReferencia] = useState('')
   const [dia, setDia] = useState('')
+  const [categoria, setCategoria] = useState('')
 
+  const categorias = useCategoriasGasto()
   const esAjuste = accion === 'ajuste'
   // Solo el ajuste admite un monto negativo: es el único caso en que el signo
   // significa algo — sobra o falta dinero. En el resto, el sentido lo pone la
@@ -647,6 +655,7 @@ function ModalMovimiento({
               void onGuardar({
                 monto: Number(monto),
                 concepto,
+                categoria: categoria || undefined,
                 fecha: dia || undefined,
                 referencia: referencia || undefined,
                 contraparte: contraparte || undefined,
@@ -687,6 +696,36 @@ function ModalMovimiento({
             }
             value={concepto}
             onChange={(e) => setConcepto(e.target.value)}
+          />
+        ) : null}
+
+        {/*
+          La clase, solo en el egreso.
+
+          Es el unico gasto que hay que clasificar a mano: los que nacen de una
+          orden o de una nomina el sistema los deduce solos. Va aqui y no en el
+          centro de costos porque el momento de saber en que se gasto es cuando
+          se registra, no un mes despues mirando una lista.
+
+          Se ofrecen las hojas y no los seis grandes: elegir «Administrativos» a
+          secas deja el informe sin el detalle que la lider pidio ver.
+        */}
+        {accion === 'egreso' ? (
+          <Select
+            label="De qué clase es"
+            vacio="Sin clasificar"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            opciones={(categorias.data ?? [])
+              .filter((c) => c.padre !== null)
+              .map((c) => {
+                const padre = (categorias.data ?? []).find((p) => p.codigo === c.padre)
+                return {
+                  valor: c.codigo,
+                  etiqueta: padre ? `${padre.nombre} · ${c.nombre}` : c.nombre,
+                }
+              })}
+            hint="Sin clase, el gasto sale como «sin clasificar» en el centro de costos y hay que volver a por él."
           />
         ) : null}
 

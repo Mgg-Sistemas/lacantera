@@ -309,6 +309,9 @@ export function useRegistrarEgreso() {
       cuenta_id: number
       monto: number
       concepto: string
+      /** De que clase es. Es el unico gasto que hay que clasificar a mano:
+          los que nacen de una orden o de una nomina se deducen solos. */
+      categoria?: string | null
       fecha?: string
       referencia?: string
       contraparte?: string
@@ -318,6 +321,7 @@ export function useRegistrarEgreso() {
         p_cuenta: m.cuenta_id,
         p_monto: m.monto,
         p_concepto: m.concepto,
+        p_categoria: m.categoria || null,
         p_fecha: m.fecha || null,
         p_referencia: m.referencia || null,
         p_contraparte: m.contraparte || null,

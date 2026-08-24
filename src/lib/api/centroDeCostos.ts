@@ -175,3 +175,45 @@ export function useGuardarPresupuesto() {
     },
   })
 }
+
+export interface CategoriaGasto {
+  codigo: string
+  nombre: string
+  padre: string | null
+  orden: number
+}
+
+/**
+ * El catálogo de clases de gasto, en sus dos niveles.
+ *
+ * Sale de la base y no de una lista escrita en el front porque la líder la va a
+ * mover: una subcategoría puede cambiar de padre según cómo la empresa mire su
+ * propio gasto, y eso no debería costar un despliegue.
+ */
+export function useCategoriasGasto() {
+  return useQuery({
+    queryKey: ['categorias-gasto'],
+    staleTime: 30 * 60_000,
+    queryFn: async () =>
+      desenvolver<CategoriaGasto[]>(
+        await supabase
+          .from('categorias_gasto')
+          .select('codigo, nombre, padre, orden')
+          .eq('activa', true)
+          .order('orden'),
+      ),
+  })
+}
+
+/** Le pone la clase a un gasto que nació sin ella. Solo de nula a valor. */
+export function useClasificarGasto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (g: { id: number; categoria: string }) =>
+      rpc<number>('clasificar_gasto', { p_id: g.id, p_categoria: g.categoria }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['centro-costos'] })
+      void qc.invalidateQueries({ queryKey: ['movimientos-tesoreria'] })
+    },
+  })
+}
