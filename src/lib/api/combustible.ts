@@ -176,26 +176,70 @@ export function useConsumoCombustible() {
 }
 
 /** El saldo de cada combustible en cada tanque. */
+/** Combustible en un sitio, sea tanque o no. */
+export interface CombustibleEnSitio {
+  almacen_id: number
+  almacen: string
+  almacen_tipo: string
+  articulo_id: number
+  articulo: string
+  unidad: string
+  existencia: string
+  stock_minimo: string
+  costo_promedio_usd: string | null
+}
+
+const COLUMNAS_DE_SITIO =
+  'almacen_id, almacen, almacen_tipo, articulo_id, articulo, unidad, existencia, stock_minimo, costo_promedio_usd'
+
+/**
+ * Lo que hay EN LOS TANQUES.
+ *
+ * Filtra por el tipo del almacén, no por la categoría del artículo. Filtraba por
+ * la categoría, y entonces cualquier sitio con gasoil —un patio, un taller— se
+ * enseñaba bajo el título «En el tanque» y se ofrecía para despachar. La base lo
+ * paraba al guardar, con razón, y el mensaje parecía un error del sistema
+ * cuando el error estaba aquí: «hay combustible aquí» y «esto es un tanque» son
+ * dos cosas distintas.
+ *
+ * El filtro va en la consulta y no en la pantalla a propósito: dos pantallas
+ * usan este hook, y una de ellas es la que despacha.
+ */
 export function useTanques() {
   return useQuery({
     queryKey: ['combustible', 'tanques'],
     queryFn: async () =>
-      desenvolver<
-        Array<{
-          almacen_id: number
-          almacen: string
-          articulo_id: number
-          articulo: string
-          unidad: string
-          existencia: string
-          stock_minimo: string
-          costo_promedio_usd: string | null
-        }>
-      >(
+      desenvolver<CombustibleEnSitio[]>(
         await supabase
           .from('v_existencias')
-          .select('almacen_id, almacen, articulo_id, articulo, unidad, existencia, stock_minimo, costo_promedio_usd')
+          .select(COLUMNAS_DE_SITIO)
           .eq('categoria', 'COMBUSTIBLE')
+          .eq('almacen_tipo', 'COMBUSTIBLE')
+          .order('almacen'),
+      ),
+  })
+}
+
+/**
+ * Combustible que está fuera de un tanque.
+ *
+ * Pasa de verdad y no es un error de nadie: una compra se recibe en el patio o
+ * en el almacén general, y el gasoil se queda ahí hasta que alguien lo pasa al
+ * tanque. Esconderlo sería peor —son litros que la empresa tiene y que no
+ * aparecerían por ninguna parte—, así que se enseña aparte, dicho como lo que
+ * es, y con la manera de moverlo al lado.
+ */
+export function useCombustibleFueraDeTanque() {
+  return useQuery({
+    queryKey: ['combustible', 'fuera-de-tanque'],
+    queryFn: async () =>
+      desenvolver<CombustibleEnSitio[]>(
+        await supabase
+          .from('v_existencias')
+          .select(COLUMNAS_DE_SITIO)
+          .eq('categoria', 'COMBUSTIBLE')
+          .neq('almacen_tipo', 'COMBUSTIBLE')
+          .gt('existencia', 0)
           .order('almacen'),
       ),
   })

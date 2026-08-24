@@ -178,6 +178,8 @@ export interface Movimiento {
   valor_usd: string
   orden_id: number | null
   nota: string | null
+  /** El papel que respalda esta salida. Varios renglones de la misma nota lo comparten. */
+  nota_salida: string | null
   registrado_por: string | null
   registrado_en: string
   almacen: { nombre: string } | null
@@ -362,6 +364,67 @@ export function useRegistrarSalida() {
         p_fecha: s.fecha || null,
       }),
   )
+}
+
+/**
+ * Sacar varios materiales de una vez, bajo un solo número de nota.
+ *
+ * Cada renglón puede decir de qué almacén sale. El de arriba es solo el valor
+ * por defecto: el aceite está en el almacén general y las varillas en el patio,
+ * y obligar a hacer dos salidas para un mismo trabajo parte en dos un papel que
+ * es uno solo.
+ *
+ * Devuelve el número de nota —NS-2026-0001—, que es lo que después permite
+ * volver a leerla entera con `leerNotaDeSalida`.
+ */
+export function useRegistrarSalidas() {
+  return useAccionInventario(
+    (s: {
+      almacen_id: number | null
+      renglones: Array<{ almacen_id: number; articulo_id: number; cantidad: number }>
+      motivo: string
+      tipo?: string
+      fecha?: string
+    }) =>
+      rpc<string>('registrar_salidas', {
+        p_almacen_id: s.almacen_id,
+        p_renglones: s.renglones.map((r) => ({
+          almacen_id: String(r.almacen_id),
+          articulo_id: String(r.articulo_id),
+          cantidad: String(r.cantidad),
+        })),
+        p_motivo: s.motivo,
+        p_tipo: s.tipo ?? 'SALIDA_CONSUMO',
+        p_fecha: s.fecha || null,
+      }),
+  )
+}
+
+/** Un renglón de una nota de salida, tal como se emitió. */
+export interface RenglonDeNota {
+  nota: string
+  fecha: string
+  almacen: string
+  tipo: string
+  motivo: string | null
+  articulo_codigo: string
+  articulo: string
+  cantidad: string
+  unidad: string
+  costo_usd: string
+  valor_usd: string
+  registrado_en: string
+}
+
+/**
+ * Los renglones de una nota, para volver a imprimirla.
+ *
+ * No es un hook: se llama en el momento en que alguien pide el papel, no al
+ * pintar la lista. Doscientos movimientos en pantalla no son doscientas notas
+ * que traer por si acaso.
+ */
+export function leerNotaDeSalida(numero: string) {
+  return rpc<RenglonDeNota[]>('nota_de_salida', { p_numero: numero })
 }
 
 /*

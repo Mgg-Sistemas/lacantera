@@ -1,6 +1,7 @@
 import { logoComoImagen } from '@/lib/ficha/logo'
 import {
   GRIS,
+  MARCA,
   TINTA,
   bloqueEtiquetado,
   fechaLarga,
@@ -12,7 +13,10 @@ import {
   tabla,
   type Columna,
 } from '@/lib/ficha/papel'
-import { ABAJO, ANCHO_UTIL, IZQ } from '@/lib/ficha/hoja'
+import { ABAJO, ANCHO_UTIL, ARRIBA, DER, IZQ } from '@/lib/ficha/hoja'
+
+/** Lo que mide una fila en `tabla`. Si cambia alli, cambia aqui. */
+const ALTO_FILA = 6.5
 
 /*
   LA NOTA DE SALIDA
@@ -60,6 +64,15 @@ export interface RenglonDeSalida {
   unidad: string
   costoUnitarioUsd?: string | number | null
   valorUsd?: string | number | null
+  /**
+   * De qué almacén sale este renglón.
+   *
+   * Solo importa cuando la nota mezcla varios sitios, y entonces NO se imprime
+   * como una columna más: la tabla se parte en un bloque por almacén, con el
+   * nombre entero encima. Probamos la columna y hubo que meterla a la fuerza —
+   * primero cortaba los nombres, y con códigos dejaba de entenderse.
+   */
+  almacen?: string | null
 }
 
 export interface DatosNotaDeSalida {
@@ -118,6 +131,16 @@ function numero(valor: string | number, decimales = 2): string {
   })
 }
 
+/** Un renglón, en las seis celdas de la tabla. Es el mismo dibujo con sitio o sin él. */
+const celdas = (r: RenglonDeSalida): string[] => [
+  r.articuloCodigo,
+  r.articulo,
+  numero(r.cantidad),
+  r.unidad,
+  r.costoUnitarioUsd != null ? numero(r.costoUnitarioUsd) : '—',
+  r.valorUsd != null ? numero(r.valorUsd) : '—',
+]
+
 export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmada> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
@@ -131,12 +154,31 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
 
   y = lineaEmpresa(doc, y, `${d.empresa.razonSocial} · RIF ${d.empresa.rif}`)
 
-  y = bloqueEtiquetado(doc, y, 'La salida', [
-    ['De qué almacén', d.almacen],
-    ['Clase', d.clase],
-    ['A dónde va', d.destino],
-    ['Fecha', d.fecha],
-  ])
+  // Si los renglones vienen de sitios distintos, ninguno de ellos es «el»
+  // almacén de la nota: decir uno solo arriba sería falso.
+  const sitios = new Set(d.renglones.map((r) => (r.almacen ?? '').trim()).filter(Boolean))
+  const mezclada = sitios.size > 1
+
+  /*
+    Las filas vacias no se pintan.
+
+    «A dónde va — » no dice nada y ocupa lo mismo que una fila con contenido: en
+    una nota con material de tres sitios, esos milimetros eran justo los que
+    empujaban las firmas a una segunda hoja. Un dato que no se tiene se calla.
+  */
+  y = bloqueEtiquetado(
+    doc,
+    y,
+    'La salida',
+    (
+      [
+        ['De qué almacén', mezclada ? 'Varios · se indica en cada renglón' : d.almacen],
+        ['Clase', d.clase],
+        ['A dónde va', d.destino],
+        ['Fecha', d.fecha],
+      ] as Array<[string, string | null | undefined]>
+    ).filter(([, valor]) => Boolean(valor && String(valor).trim())),
+  )
 
   // El motivo va antes de la tabla y no al final: es lo que explica todos los
   // renglones, y leerlo después de la lista obliga a volver a subir.
@@ -150,20 +192,84 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
 
   const total = d.renglones.reduce((s, r) => s + Number(r.valorUsd ?? 0), 0)
 
-  y = tabla(
-    doc,
-    y,
-    COLUMNAS,
-    d.renglones.map((r) => [
-      r.articuloCodigo,
-      r.articulo,
-      numero(r.cantidad),
-      r.unidad,
-      r.costoUnitarioUsd != null ? numero(r.costoUnitarioUsd) : '—',
-      r.valorUsd != null ? numero(r.valorUsd) : '—',
-    ]),
-    total > 0 ? `TOTAL   $ ${numero(total)}` : undefined,
-  )
+  /*
+    UN BLOQUE POR SITIO
+
+    Con renglones de dos almacenes hicieron falta dos intentos antes de dar con
+    esto. Una columna «De dónde» cortaba los nombres —«ALMACEN GENE…»—, y
+    poniendo el código en su lugar dejaba de entenderse: quien firma el papel no
+    tiene por qué saberse las siglas.
+
+    Lo que funciona es no meter el sitio en la fila. La tabla se parte en un
+    bloque por almacén, con el nombre entero como título, y cada bloque lleva su
+    subtotal. Los renglones conservan todo el ancho, y de paso el papel dice algo
+    que la columna no decía: cuánto salió de cada sitio.
+  */
+  if (mezclada) {
+    // Se agrupa conservando el orden en que llegaron: el papel sigue el orden
+    // del libro, y reordenar por nombre haría que no coincidieran.
+    const porSitio = new Map<string, RenglonDeSalida[]>()
+    for (const r of d.renglones) {
+      const sitio = (r.almacen ?? '').trim() || 'Sin indicar'
+      const ya = porSitio.get(sitio)
+      if (ya) ya.push(r)
+      else porSitio.set(sitio, [r])
+    }
+
+    for (const [sitio, suyos] of porSitio) {
+      /*
+        El titulo del bloque no usa `seccion`: a once puntos y con seis
+        milimetros debajo, tres bloques empujaban las firmas a una segunda hoja
+        con cuatro renglones. Aqui el titulo es parte de la tabla, no una
+        seccion del documento, y se dibuja como tal.
+      */
+      /*
+        Un titulo de bloque no se pinta si no cabe debajo, por lo menos, la
+        cabecera de su tabla y una fila.
+
+        `tabla` comprueba el hueco antes de cada FILA, pero no antes de su
+        cabecera: con el bloque anterior acabando bajo, la hoja se quedaba con
+        el nombre del almacen y la banda naranja de titulos, y nada debajo. La
+        tabla de verdad empezaba en la hoja siguiente. No se pierde ningun dato
+        —es cosmetico— pero un papel que se firma no puede tener eso.
+
+        Se piden dos alturas de fila: la cabecera y el primer renglon. Con una
+        sola, la cabecera cabria y la fila saltaria igual.
+      */
+      if (y + 4.5 + ALTO_FILA * 2 > ABAJO - 30) {
+        doc.addPage()
+        y = ARRIBA
+      }
+
+      doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(TINTA)
+      doc.text(`DE ${sitio.toUpperCase()}`, IZQ, y)
+      y += 4.5
+
+      const suma = suyos.reduce((t, r) => t + Number(r.valorUsd ?? 0), 0)
+      // `tabla` deja ocho milimetros detras, que separan de lo que venga
+      // despues. Entre bloques del mismo cuadro sobran cuatro.
+      y = tabla(doc, y, COLUMNAS, suyos.map(celdas), `Subtotal   $ ${numero(suma)}`) - 4
+    }
+
+    // El total de la nota, con el mismo peso que en una nota de un solo sitio:
+    // es la cifra por la que se firma, y quedarse en los subtotales obligaría a
+    // sumarlos de cabeza.
+    doc.setFillColor(MARCA)
+    doc.rect(IZQ, y - 4, ANCHO_UTIL, 8, 'F')
+    doc.setFont('helvetica', 'bold').setFontSize(9.5).setTextColor('#FFFFFF')
+    doc.text(`TOTAL DE LA NOTA   $ ${numero(total)}`, DER - 4, y + 1.4, {
+      align: 'right',
+    })
+    y += 10
+  } else {
+    y = tabla(
+      doc,
+      y,
+      COLUMNAS,
+      d.renglones.map(celdas),
+      total > 0 ? `TOTAL   $ ${numero(total)}` : undefined,
+    )
+  }
 
   /*
     Las firmas van a altura fija —abajo del todo— porque una nota se firma
@@ -171,7 +277,31 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
     Eso obliga a comprobar que la tabla no llegue hasta ahí: con quince
     renglones se pisarían.
   */
-  if (y > ABAJO - 46) {
+  /*
+    DÓNDE EMPIEZA LA ZONA DE FIRMAS
+
+    Las firmas van a altura fija —abajo del todo— porque una nota se firma
+    siempre en el mismo sitio y quien maneja veinte al día no debe buscarlas. Eso
+    obliga a comprobar que la tabla no llegue hasta ahí.
+
+    Antes la comprobación era un número redondo, «cuarenta y seis milímetros», y
+    con material de tres almacenes se pasaba por 1,7 mm: la nota se iba a dos
+    hojas con cuatro renglones y la segunda llevaba solo las firmas. Medido, no
+    supuesto: el aviso ocupa lo que ocupa según en cuántas líneas parta, y de ahí
+    hacia arriba es donde puede acabar la tabla.
+  */
+  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
+  const aviso = doc.splitTextToSize(
+    'Al firmar, quien recibe declara que se le entregó el material relacionado arriba en las cantidades indicadas. Esta nota respalda una salida de inventario y queda registrada en el libro de movimientos.',
+    ANCHO_UTIL,
+  ) as string[]
+
+  const LINEA_DE_FIRMAS = ABAJO - 24
+  // Cuatro milímetros de aire entre la última línea del aviso y la raya donde
+  // se firma: pegados se leen como una sola cosa.
+  const ARRANQUE_DEL_AVISO = LINEA_DE_FIRMAS - 4 - aviso.length * 3.8
+
+  if (y > ARRANQUE_DEL_AVISO) {
     doc.addPage()
     y = membrete(doc, logo, {
       titulo: 'NOTA DE SALIDA',
@@ -181,16 +311,18 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
   }
 
   doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-  const aviso = doc.splitTextToSize(
-    'Al firmar, quien recibe declara que se le entregó el material relacionado arriba en las cantidades indicadas. Esta nota respalda una salida de inventario y queda registrada en el libro de movimientos.',
-    ANCHO_UTIL,
-  ) as string[]
-  doc.text(aviso, IZQ, Math.max(y + 6, ABAJO - 40), { lineHeightFactor: 1.4 })
+  doc.text(aviso, IZQ, Math.max(y + 6, ARRANQUE_DEL_AVISO), {
+    lineHeightFactor: 1.4,
+  })
 
   firmas(
     doc,
-    ABAJO - 24,
-    { texto: 'Entregó', nombre: d.entrego ?? null, imagen: d.entregoFirma ?? null },
+    LINEA_DE_FIRMAS,
+    {
+      texto: 'Entregó',
+      nombre: d.entrego ?? null,
+      imagen: d.entregoFirma ?? null,
+    },
     // Sin nombre: el sistema todavía no captura quién retira. Se firma a mano.
     { texto: 'Recibió conforme', nombre: null },
   )

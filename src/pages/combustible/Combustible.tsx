@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Droplets, FileText, Fuel, Plus, Settings2, Tags, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -21,7 +22,10 @@ import {
   useMotivosDespacho,
   usePersonasParaVale,
   useTanques,
+  useCombustibleFueraDeTanque,
 } from '@/lib/api/combustible'
+import type { CombustibleEnSitio } from '@/lib/api/combustible'
+import { useAlmacenes, useTransferir } from '@/lib/api/inventario'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useFirmas } from '@/lib/api/firmas'
@@ -115,6 +119,19 @@ export function Combustible() {
     )
   }
 
+  /*
+    EL COMBUSTIBLE QUE NO ESTA EN UN TANQUE
+
+    Una compra se recibe en el patio o en el almacen general, y el gasoil se
+    queda ahi hasta que alguien lo pasa al tanque. Antes esos litros aparecian
+    bajo el titulo «En el tanque» y se ofrecian para despachar; la base lo
+    paraba al guardar —«ese almacen es de tipo PATIO»— y el aviso parecia un
+    fallo del sistema. Ahora se dicen aparte, por su nombre, con la puerta al
+    lado.
+  */
+  const fuera = useCombustibleFueraDeTanque()
+  const [pasarAlTanque, setPasarAlTanque] = useState<CombustibleEnSitio | null>(null)
+
   const puedeDespachar = puede('COMBUSTIBLE', 'ESCRITURA')
   const puedeMandar = puede('COMBUSTIBLE', 'TOTAL')
   const bajos = (tanques.data ?? []).filter(
@@ -174,7 +191,12 @@ export function Combustible() {
       {tanques.isPending ? <Cargando /> : null}
       {tanques.error ? <ErrorDeCarga error={tanques.error} /> : null}
 
-      {!tanques.isPending && (tanques.data ?? []).length === 0 ? (
+      {/* Con litros esperando fuera, «el tanque está vacío» es verdad y
+          engaña: suena a que no hay combustible, y hay 5.400 litros a cien
+          metros. El bloque de abajo lo cuenta, y este se calla. */}
+      {!tanques.isPending &&
+      (tanques.data ?? []).length === 0 &&
+      (fuera.data ?? []).length === 0 ? (
         <Card className="mb-6">
           <Vacio
             icono={<Fuel />}
@@ -212,6 +234,46 @@ export function Combustible() {
           )
         })}
       </div>
+
+      {(fuera.data ?? []).length > 0 ? (
+        <div className="mb-6">
+          <h2 className="text-ink/80 mb-1 text-sm font-semibold">Fuera de tanque</h2>
+          <p className="text-ink/50 mb-3 text-xs">
+            Combustible que la empresa tiene, pero en un sitio que no es un tanque —normalmente
+            porque la compra se recibió ahí—. No se puede despachar desde ahí: pásalo primero.
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {(fuera.data ?? []).map((c) => (
+              <Card key={`fuera-${c.almacen_id}-${c.articulo_id}`}>
+                <div className="flex items-start gap-2">
+                  <TriangleAlert className="text-warning mt-0.5 size-4 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-ink/55 text-xs">
+                      {c.almacen} · {c.almacen_tipo}
+                    </p>
+                    <p className="text-ink/90 mt-0.5 text-base font-medium">{c.articulo}</p>
+                  </div>
+                </div>
+                <p className="tabular text-ink/90 mt-2 text-2xl font-semibold">
+                  {litros(c.existencia, c.unidad)}
+                </p>
+                {puedeMandar ? (
+                  <Button
+                    className="mt-3"
+                    size="sm"
+                    variant="outline"
+                    icon={<Droplets />}
+                    onClick={() => setPasarAlTanque(c)}
+                  >
+                    Pasarlo a un tanque
+                  </Button>
+                ) : null}
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {/* ------------------------------------------------ cuánto consume */}
       <h2 className="text-ink/80 mb-1 text-sm font-semibold">Consumo por máquina</h2>
@@ -385,6 +447,7 @@ export function Combustible() {
         titulo="Vale de combustible"
         descripcion="Compruébalo antes de imprimirlo: lo que diga este papel es lo que se va a firmar."
       />
+      <ModalPasarAlTanque origen={pasarAlTanque} onCerrar={() => setPasarAlTanque(null)} />
     </>
   )
 }
@@ -712,6 +775,157 @@ function ModalMotivos({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =>
         onBorrar={(codigo) => borrar.mutateAsync(codigo)}
         onAnadir={(nombre) => guardar.mutateAsync({ nombre })}
       />
+    </Modal>
+  )
+}
+
+/**
+ * Pasar al tanque el combustible que está en otro sitio.
+ *
+ * No es una carga: es un TRASLADO. La diferencia importa. Cargar añadiría
+ * litros que ya están contados en el patio, y la empresa acabaría teniendo el
+ * doble de gasoil en el sistema que en el suelo. Trasladar los mueve: salen de
+ * un sitio y entran en el otro, con su costo, y el total no cambia.
+ */
+function ModalPasarAlTanque({
+  origen,
+  onCerrar,
+}: {
+  origen: CombustibleEnSitio | null
+  onCerrar: () => void
+}) {
+  const qc = useQueryClient()
+  const transferir = useTransferir()
+  const { data: almacenes } = useAlmacenes()
+  const [tanque, setTanque] = useState('')
+  const [cuanto, setCuanto] = useState('')
+  const [motivo, setMotivo] = useState('')
+
+  const tanques = (almacenes ?? []).filter((a) => a.tipo === 'COMBUSTIBLE')
+
+  useEffect(() => {
+    if (!origen) return
+    // Con un solo tanque no hay nada que preguntar. Y por defecto se pasa todo:
+    // el combustible en el patio está de paso, no repartido a propósito.
+    setTanque(tanques.length === 1 ? String(tanques[0].id) : '')
+    setCuanto(String(Number(origen.existencia)))
+    setMotivo('')
+    // Los tanques cambian de identidad en cada pintado; lo que decide es el
+    // origen, que es lo que abre este formulario.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origen])
+
+  if (!origen) return null
+
+  const hay = Number(origen.existencia)
+  const pedido = Number(cuanto || 0)
+  const pasado = pedido > hay
+  const capacidad = tanques.find((t) => String(t.id) === tanque)?.capacidad
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Pasar al tanque"
+      descripcion="Se mueve de un sitio al otro con su costo. No se crea combustible: el total de la empresa no cambia."
+      ancho="sm"
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() =>
+              void (async () => {
+                await transferir.mutateAsync({
+                  origen_id: origen.almacen_id,
+                  destino_id: Number(tanque),
+                  articulo_id: origen.articulo_id,
+                  cantidad: pedido,
+                  motivo,
+                })
+
+                /*
+                  `useTransferir` invalida existencias, movimientos, compras y
+                  avisos — no combustible, porque un traslado no escribe en
+                  `despachos_combustible`. Sin esto, las dos tarjetas de arriba
+                  siguen diciendo lo de antes: «Fuera de tanque» con los mismos
+                  litros y el tanque vacio. El operador concluye que no paso
+                  nada y lo pasa otra vez.
+                */
+                await qc.invalidateQueries({ queryKey: ['combustible'] })
+                onCerrar()
+              })()
+            }
+            disabled={
+              !tanque || pedido <= 0 || pasado || motivo.trim().length < 4 || transferir.isPending
+            }
+          >
+            {transferir.isPending ? 'Pasando…' : 'Pasar'}
+          </Button>
+        </>
+      }
+    >
+      <div className="border-hairline bg-canvas rounded-card mb-4 border p-3">
+        <p className="text-ink/85 text-sm font-medium">{origen.articulo}</p>
+        <p className="text-ink/55 text-xs">
+          {origen.almacen} · hay {litros(origen.existencia, origen.unidad)}
+        </p>
+      </div>
+
+      {tanques.length === 0 ? (
+        <p className="text-danger text-sm">
+          No hay ningún tanque creado. Créalo primero en Tanques, arriba, y vuelve aquí.
+        </p>
+      ) : (
+        <>
+          <SelectBuscable
+            label="A qué tanque"
+            vacio="Elige el tanque"
+            valor={tanque}
+            onCambio={setTanque}
+            opciones={tanques.map((t) => ({
+              valor: String(t.id),
+              codigo: t.codigo,
+              nombre: t.nombre,
+              detalle: t.capacidad ? `le caben ${Number(t.capacidad)}` : 'sin tope declarado',
+            }))}
+          />
+
+          <Input
+            className="mt-3"
+            label="Cuánto se pasa"
+            type="number"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={cuanto}
+            onChange={(e) => setCuanto(e.target.value)}
+            hint={
+              pasado
+                ? `Ahí solo hay ${litros(origen.existencia, origen.unidad)}`
+                : capacidad
+                  ? `Al tanque le caben ${Number(capacidad)} ${origen.unidad}`
+                  : `En ${origen.unidad}`
+            }
+          />
+
+          <Textarea
+            className="mt-3"
+            label="Por qué se mueve"
+            rows={2}
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            hint="Basta con «la compra se recibió en el patio y va al tanque»."
+          />
+
+          {/* La base puede negarse por varias razones —el tanque no tiene sitio,
+              falta el rol ALMACEN— y sin esto el boton se quedaria mudo. */}
+          {transferir.error ? (
+            <ErrorDeCarga error={transferir.error} className="mt-3" />
+          ) : null}
+        </>
+      )}
     </Modal>
   )
 }
