@@ -60,6 +60,7 @@ export function Incidencias() {
         <Card>
           <Vacio
             icono={<Wrench />}
+            resuelto
             titulo="No hay nada pendiente"
             descripcion="Cuando una herramienta se reporte como perdida, aparecerá aquí a nombre de quien la tenía."
           />

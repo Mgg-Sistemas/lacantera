@@ -40,13 +40,39 @@ interface VacioProps {
   /** Qué hacer para que deje de estar vacío. Una pantalla vacía es una invitación. */
   descripcion?: string
   accion?: ReactNode
+  /**
+   * Cierto cuando el cero es la respuesta y no un hueco: no se debe nada, no
+   * hay nada vencido, no falta ningún papel. Pinta el icono en verde.
+   */
+  resuelto?: boolean
   className?: string
 }
 
-export function Vacio({ icono, titulo, descripcion, accion, className }: VacioProps) {
+/*
+  CERO NO SIEMPRE ES UN HUECO
+
+  «Esta pantalla me informa de que no esta terminada», dijo Christopher mirando
+  Cuentas por pagar. Y la pantalla estaba bien: no se le debe nada a nadie, que
+  es la verdad y ademas es la buena noticia.
+
+  El problema era que se usaba el mismo cartel gris para dos cosas distintas:
+
+    «todavia no has hecho esto»  — un hueco, y hay algo que ir a hacer
+    «la respuesta es que no hay» — un resultado, y esta bien asi
+
+  Con , el icono se pinta en verde en vez de gris. Es el unico cambio,
+  y basta: el gris apagado es el idioma de lo que falta, y en cuanto el icono
+  tiene color el mismo texto se lee como una conclusion y no como una obra a
+  medias.
+*/
+export function Vacio({ icono, titulo, descripcion, accion, resuelto, className }: VacioProps) {
   return (
     <div className={cn('flex flex-col items-center px-6 py-12 text-center', className)}>
-      {icono ? <div className="text-ink/25 [&>svg]:size-8">{icono}</div> : null}
+      {icono ? (
+        <div className={cn(resuelto ? 'text-success' : 'text-ink/25', '[&>svg]:size-8')}>
+          {icono}
+        </div>
+      ) : null}
       <p className="text-ink/75 mt-3 text-base font-medium">{titulo}</p>
       {descripcion ? (
         <p className="text-ink/50 mt-1 max-w-sm text-sm leading-relaxed">{descripcion}</p>
