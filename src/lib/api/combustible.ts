@@ -22,21 +22,41 @@ import { desenvolver, rpc } from './rpc'
   La misma excavadora se surte para producir o para una prueba despues de
   reparar, y esa diferencia es la que separa consumo de desperdicio.
 
-  Cuatro y no siete: quien llena el vale son las cinco de la manana, con guantes
-  mojados y una maquina esperando. Una lista larga se contesta siempre con la
-  primera opcion, y entonces el dato existe pero no informa.
+  LA LISTA VIVE EN LA BASE, NO AQUI
 
-  La lista vive tambien en un CHECK de la base. Aqui esta para pintar el
-  desplegable y traducir el codigo a algo legible; la que manda es la de alla.
+  Estaba escrita en este archivo. La lider pidio anadir «Produccion» —una
+  palabra— y hizo falta un desarrollador y un despliegue. Eso es justo lo que
+  dijo que no queria: «debe ser editable, no quiero nos llamen a cada rato por
+  cosas asi».
+
+  Ahora sale de `motivos_despacho`, que ella misma puede tocar. Y cada motivo
+  dice si obliga a explicarse en pocas palabras — que es lo que pidio para
+  «Otro», generalizado.
 */
-export type MotivoDespacho = 'OPERACION' | 'TALLER' | 'PLANTA' | 'TERCERO'
+export type MotivoDespacho = string
 
-export const MOTIVOS: Array<{ valor: MotivoDespacho; etiqueta: string; pista: string }> = [
-  { valor: 'OPERACION', etiqueta: 'Operacion', pista: 'Arrancar y trabajar: producir o acarrear' },
-  { valor: 'TALLER', etiqueta: 'Taller', pista: 'Mantenimiento, y la prueba de despues' },
-  { valor: 'PLANTA', etiqueta: 'Planta', pista: 'La planta fija y los generadores' },
-  { valor: 'TERCERO', etiqueta: 'Tercero', pista: 'Equipo que no es de la casa' },
-]
+export interface MotivoDelVale {
+  codigo: string
+  nombre: string
+  pista: string | null
+  orden: number
+  exige_detalle: boolean
+}
+
+export function useMotivosDespacho() {
+  return useQuery({
+    queryKey: ['combustible', 'motivos'],
+    staleTime: 10 * 60_000,
+    queryFn: async () =>
+      desenvolver<MotivoDelVale[]>(
+        await supabase
+          .from('motivos_despacho')
+          .select('codigo, nombre, pista, orden, exige_detalle')
+          .eq('activo', true)
+          .order('orden'),
+      ),
+  })
+}
 
 export interface DespachoCombustible {
   id: number
@@ -45,6 +65,10 @@ export interface DespachoCombustible {
   /** Nula cuando el vale se transcribio otro dia: no la sabemos. */
   hora: string | null
   motivo: MotivoDespacho
+  /** En pocas palabras, cuando el motivo obliga a explicarse. */
+  motivo_detalle: string | null
+  /** El rotulo legible del motivo, resuelto contra el catalogo. */
+  motivo_nombre?: string | null
   articulo_id: number
   articulo_codigo: string
   combustible: string
@@ -146,6 +170,7 @@ export function useDespacharCombustible() {
       almacen_id: number
       cantidad: number
       motivo: MotivoDespacho
+      motivo_detalle?: string | null
       maquina_id?: number | null
       destino?: string | null
       horometro?: number | null
@@ -160,6 +185,7 @@ export function useDespacharCombustible() {
         p_almacen_id: d.almacen_id,
         p_cantidad: d.cantidad,
         p_motivo: d.motivo,
+        p_motivo_detalle: d.motivo_detalle ?? null,
         p_maquina_id: d.maquina_id ?? null,
         p_destino: d.destino ?? null,
         p_horometro: d.horometro ?? null,

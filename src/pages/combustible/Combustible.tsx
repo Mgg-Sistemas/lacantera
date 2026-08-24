@@ -12,13 +12,12 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMaquinaria } from '@/lib/api/maquinaria'
 import {
-  MOTIVOS,
   useConsumoCombustible,
   useDespachosCombustible,
   useDespacharCombustible,
+  useMotivosDespacho,
   usePersonasParaVale,
   useTanques,
-  type MotivoDespacho,
 } from '@/lib/api/combustible'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useEmpresa } from '@/lib/api/empresa'
@@ -55,6 +54,7 @@ export function Combustible() {
   const tanques = useTanques()
   const consumo = useConsumoCombustible()
   const despachos = useDespachosCombustible()
+  const motivos = useMotivosDespacho()
   const { puede } = useMisPermisos()
   const empresa = useEmpresa()
   const firmas = useFirmas()
@@ -83,7 +83,9 @@ export function Combustible() {
         unidad: d.unidad,
         cantidad: d.cantidad,
         tanque: d.tanque,
-        motivo: MOTIVOS.find((m) => m.valor === d.motivo)?.etiqueta ?? d.motivo,
+        motivo:
+          (motivos.data?.find((m) => m.codigo === d.motivo)?.nombre ?? d.motivo) +
+          (d.motivo_detalle ? ` · ${d.motivo_detalle.toLowerCase()}` : ''),
         destino: d.destino,
         maquinaCodigo: d.maquina_codigo,
         sinFicha: d.maquina_id === null,
@@ -297,11 +299,12 @@ export function Combustible() {
                         Sin ficha
                       </Chip>
                     )}
-                    <Chip
-                      tone={d.motivo === 'OPERACION' ? 'info' : 'neutral'}
-                      className="ml-2"
-                    >
-                      {MOTIVOS.find((m) => m.valor === d.motivo)?.etiqueta ?? d.motivo}
+                    {/* El detalle va pegado al motivo y no escondido en la nota:
+                        un «Otro» sin decir cual es lo que vacia un catalogo, y
+                        verlo repetido es lo que avisa de que falta una opcion. */}
+                    <Chip tone={d.motivo === 'OTRO' ? 'warning' : 'neutral'} className="ml-2">
+                      {motivos.data?.find((m) => m.codigo === d.motivo)?.nombre ?? d.motivo}
+                      {d.motivo_detalle ? `: ${d.motivo_detalle.toLowerCase()}` : ''}
                     </Chip>
                   </p>
                   {/* La segunda línea responde las cinco preguntas del vale:
@@ -372,6 +375,7 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   const tanques = useTanques()
   const { data: maquinas } = useMaquinaria(true)
   const { data: personas } = usePersonasParaVale()
+  const motivos = useMotivosDespacho()
 
   const hoy = new Date().toLocaleDateString('en-CA')
   const [tanque, setTanque] = useState('')
@@ -384,7 +388,8 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   // gasoil no tiene ficha, y sin esto el vale se quedaria sin nombre.
   const [otroNombre, setOtroNombre] = useState('')
   const [otraCedula, setOtraCedula] = useState('')
-  const [motivo, setMotivo] = useState<MotivoDespacho | ''>('')
+  const [motivo, setMotivo] = useState('')
+  const [detalle, setDetalle] = useState('')
   const [dia, setDia] = useState(hoy)
   const [nota, setNota] = useState('')
 
@@ -401,6 +406,7 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
     setOtroNombre('')
     setOtraCedula('')
     setMotivo('')
+    setDetalle('')
     setDia(hoy)
     setNota('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -416,11 +422,18 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   // a nadie.
   const hayQuienRecibe = empleado !== '' || otroNombre.trim().length >= 3
 
+  // Si el motivo elegido obliga a explicarse, el boton no se enciende sin la
+  // explicacion. Lo pidio la lider: «que el usuario especifique en pocas
+  // palabras».
+  const elMotivo = motivos.data?.find((m) => m.codigo === motivo)
+  const faltaDetalle = elMotivo?.exige_detalle === true && detalle.trim().length < 3
+
   const valido =
     elegido !== undefined &&
     pedidos > 0 &&
     !excede &&
     motivo !== '' &&
+    !faltaDetalle &&
     hayQuienRecibe &&
     (!sinFicha || destino.trim().length >= 3)
 
@@ -430,7 +443,8 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
       articulo_id: elegido.articulo_id,
       almacen_id: elegido.almacen_id,
       cantidad: pedidos,
-      motivo: motivo as MotivoDespacho,
+      motivo,
+      motivo_detalle: elMotivo?.exige_detalle ? detalle.trim() : null,
       maquina_id: maquina ? Number(maquina) : null,
       destino: sinFicha ? destino.trim() : null,
       horometro: horometro ? Number(horometro) : null,
@@ -483,13 +497,28 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
           label="Para qué"
           vacio="Elegir"
           value={motivo}
-          onChange={(e) => setMotivo(e.target.value as MotivoDespacho)}
-          opciones={MOTIVOS.map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
+          onChange={(e) => setMotivo(e.target.value)}
+          opciones={(motivos.data ?? []).map((m) => ({ valor: m.codigo, etiqueta: m.nombre }))}
           hint={
-            MOTIVOS.find((m) => m.valor === motivo)?.pista ??
+            elMotivo?.pista ??
             'No es lo mismo que a qué máquina: la misma excavadora se surte para producir o para probarla tras repararla.'
           }
         />
+
+        {/* Solo aparece cuando el motivo lo pide. Un campo de texto siempre a la
+            vista se rellena con cualquier cosa; uno que sale porque hiciste una
+            elección concreta, se contesta. */}
+        {elMotivo?.exige_detalle ? (
+          <div className="mt-4">
+            <Input
+              label="¿Para qué exactamente?"
+              placeholder="Prueba de la bomba nueva"
+              value={detalle}
+              onChange={(e) => setDetalle(e.target.value)}
+              hint="En pocas palabras. Si esto se repite mucho, conviene que sea una opción propia."
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4">
