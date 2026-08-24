@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
+import type { HechoDeFicha } from '@/components/Historial'
 
 // ---------------------------------------------------------------------------
 // Almacenes
@@ -596,39 +597,29 @@ export function useReversarMovimiento() {
   con la comparación exacta —«tal como ya lo hacen las solicitudes de compras»—
   y tenía razón: una compra sí cuenta su historia seguida y un artículo no.
 
-  Sale de `v_historial_articulo`, que une los hechos donde ya viven en vez de
-  copiarlos a una tabla nueva. Copiarlos sería asegurar que un día las dos
-  versiones no coincidan.
-*/
-export interface HechoDelArticulo {
-  articulo_id: number
-  ocurrido_en: string
-  fecha: string
-  tipo: string
-  titulo: string
-  detalle: string | null
-  cantidad: string | null
-  /** +1 sumó, -1 restó, 0 no movió existencia. */
-  signo: number
-  almacen: string | null
-  documento: string | null
-  /** Quién lo registró en el sistema. */
-  quien: string | null
-  /** A quién se le entregó, cuando el hecho es una entrega. */
-  persona: string | null
-}
+  SALÍA DE UNA VISTA, Y AHORA DE UNA FUNCIÓN
 
+  `v_historial_articulo` es `security_invoker` y se apoya en RLS. Suena bien y
+  miente: `empleados` exige NOMINA:LECTURA y ALMACEN la tiene en NINGUNO, así que
+  un almacenista miraba la ficha de un casco y veía «se entregó» sin A QUIÉN. La
+  columna salía nula y nada avisaba. Es el mismo fallo que ya costó el nombre de
+  quien recibe en el vale de combustible.
+
+  Y una vista sin permiso devuelve CERO FILAS, que la pantalla pinta como «no ha
+  pasado nada» — una mentira peor que un error.
+
+  `historial_articulo()` es SECURITY DEFINER, hace su propia comprobación y
+  lanza si falta. Además añade lo que la vista no tenía: los viajes al taller y
+  el número de la nota de salida en papel.
+*/
 export function useHistorialArticulo(articuloId: number | null) {
   return useQuery({
     queryKey: ['historial-articulo', articuloId],
     enabled: articuloId != null,
-    queryFn: async () =>
-      desenvolver<HechoDelArticulo[]>(
-        await supabase
-          .from('v_historial_articulo')
-          .select('*')
-          .eq('articulo_id', articuloId)
-          .order('ocurrido_en', { ascending: false }),
-      ),
+    queryFn: () =>
+      rpc<HechoDeFicha[]>('historial_articulo', {
+        p_articulo_id: articuloId,
+        p_limite: 200,
+      }),
   })
 }

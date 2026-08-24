@@ -1,15 +1,14 @@
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, ArrowDownRight, ArrowUpRight, Circle } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
-import { Card, CardHeader } from '@/components/ui/Card'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Chip } from '@/components/ui/Chip'
-import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
+import { Cargando } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
+import { Historial } from '@/components/Historial'
 import { useArticulos } from '@/lib/api/catalogo'
 import { useHistorialArticulo, useExistenciasTotales } from '@/lib/api/inventario'
-import type { HechoDelArticulo } from '@/lib/api/inventario'
-import { enteros, fechaHora } from '@/lib/formato'
+import { enteros } from '@/lib/formato'
 
 /**
  * La misma forma de escribir cantidades que Existencias.
@@ -33,14 +32,6 @@ function fmtCantidad(valor: string | number): string {
   casi siempre es «¿qué pasó con esto?», no «¿cómo empezó?». El nacimiento
   queda al fondo, que es donde corresponde a algo que se mira una vez.
 */
-
-/** Cada tipo de hecho tiene su color, y el color significa una sola cosa. */
-function tono(h: HechoDelArticulo): 'entrada' | 'salida' | 'aviso' | 'quieto' {
-  if (h.tipo === 'PERDIDA' || h.tipo === 'DANADA') return 'aviso'
-  if (h.signo > 0) return 'entrada'
-  if (h.signo < 0) return 'salida'
-  return 'quieto'
-}
 
 export function FichaArticulo() {
   const { id } = useParams()
@@ -141,93 +132,20 @@ export function FichaArticulo() {
         </Card>
       </div>
 
-      {/* -------------------------------- La historia ------------------------------- */}
-      <Card flush className="mt-4">
-        <div className="px-5 pt-5">
-          <CardHeader
-            title="Su historia"
-            subtitle="Todo lo que le ha pasado desde que se creó, de lo más reciente a lo más viejo."
-          />
-        </div>
-
-        {historial.isPending ? <Cargando /> : null}
-        {historial.error ? (
-          <div className="p-5">
-            <ErrorDeCarga error={historial.error} />
-          </div>
-        ) : null}
-
-        {historial.data && historial.data.length === 0 ? (
-          <Vacio icono={<Circle />} titulo="Sin movimientos todavía" />
-        ) : null}
-
-        {historial.data && historial.data.length > 0 ? (
-          <ul className="mt-2">
-            {historial.data.map((h, i) => {
-              const t = tono(h)
-
-              return (
-                <li
-                  key={`${h.tipo}-${h.documento ?? 'x'}-${h.ocurrido_en}-${i}`}
-                  className="border-hairline flex gap-3 border-t px-5 py-3"
-                >
-                  {/* La flecha dice en un golpe de vista si sumó o restó. Lo que
-                      no mueve existencia —una entrega que vuelve— lleva punto,
-                      no flecha: no es ni entrada ni salida. */}
-                  <span
-                    className={cn(
-                      'mt-0.5 shrink-0',
-                      t === 'entrada'
-                        ? 'text-success'
-                        : t === 'salida'
-                          ? 'text-danger'
-                          : t === 'aviso'
-                            ? 'text-warning'
-                            : 'text-ink/30',
-                    )}
-                  >
-                    {t === 'entrada' ? (
-                      <ArrowDownRight className="size-4" />
-                    ) : t === 'salida' ? (
-                      <ArrowUpRight className="size-4" />
-                    ) : (
-                      <Circle className="size-3" />
-                    )}
-                  </span>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-x-2">
-                      <span className="text-ink/85 text-sm font-medium">{h.titulo}</span>
-
-                      {h.cantidad ? (
-                        <span className="tabular text-ink/70 text-sm">
-                          {fmtCantidad(h.cantidad)} {a.unidad}
-                        </span>
-                      ) : null}
-
-                      {h.almacen ? (
-                        <span className="text-ink/45 text-xs">· {h.almacen}</span>
-                      ) : null}
-
-                      {h.persona ? <Chip tone="neutral">{h.persona}</Chip> : null}
-                    </div>
-
-                    {h.detalle ? (
-                      <p className="text-ink/55 mt-0.5 text-xs">{h.detalle}</p>
-                    ) : null}
-
-                    <p className="text-ink/40 text-2xs mt-0.5">
-                      {fechaHora(h.ocurrido_en)}
-                      {h.documento ? ` · ${h.documento}` : ''}
-                      {h.quien ? ` · lo registró ${h.quien}` : ''}
-                    </p>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        ) : null}
-      </Card>
+      {/* -------------------------------- La historia -------------------------------
+          Antes esto eran noventa líneas aquí mismo. Se mudó a <Historial>, que
+          es el mismo dibujo: se copió DE aquí, porque de los siete dialectos que
+          había este era el único que decía a la vez el signo, el detalle y quién
+          lo registró. Lo que cambia es que ahora lo comparten las tres fichas. */}
+      <Historial
+        className="mt-4"
+        titulo="Su historia"
+        subtitulo="Todo lo que le ha pasado desde que se creó, de lo más reciente a lo más viejo."
+        hechos={historial.data}
+        cargando={historial.isPending}
+        error={historial.error}
+        vacio="Sin movimientos todavía"
+      />
     </>
   )
 }

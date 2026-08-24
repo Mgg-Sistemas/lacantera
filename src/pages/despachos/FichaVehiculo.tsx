@@ -4,18 +4,18 @@ import { ArrowLeft, UserRound } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Chip } from '@/components/ui/Chip'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { SemaforoMantenimiento } from '@/components/SemaforoMantenimiento'
+import { Historial } from '@/components/Historial'
 import { ModalChofer } from './ModalChofer'
 import {
   TIPOS_VEHICULO,
-  useActividadDeVehiculo,
+  useHistorialVehiculo,
   useChoferesDeVehiculo,
   useVehiculos,
 } from '@/lib/api/vehiculos'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { dolares, enteros, fecha } from '@/lib/formato'
+import { enteros, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 /**
@@ -42,7 +42,9 @@ export function FichaVehiculo() {
 
   const { data: vehiculos, isPending, error } = useVehiculos(false)
   const choferes = useChoferesDeVehiculo(vehiculoId || null)
-  const actividad = useActividadDeVehiculo(vehiculoId || null)
+  // `historial` ya esta cogido mas abajo por la lista de choferes, que es
+  // otra cosa: periodos de quien lo manejo, no hechos con fecha.
+  const hilo = useHistorialVehiculo(vehiculoId || null)
   const { puede } = useMisPermisos()
   const [asignando, setAsignando] = useState(false)
 
@@ -138,61 +140,24 @@ export function FichaVehiculo() {
             ) : null}
           </Card>
 
-          <Card flush>
-            <div className="px-5 pt-5">
-              <CardHeader
-                title="Qué ha hecho"
-                subtitle="Pesajes, despachos, guías y pasos por el taller, de lo más reciente a lo más antiguo."
-              />
-            </div>
+          {/* «Qué ha hecho» eran cincuenta líneas de un dialecto propio, y
+              solo contaba la mitad: un camión propio es DOS cosas a la vez —un
+              vehículo que hace viajes y una máquina que se mantiene— y para la
+              otra mitad la ficha ponía un enlace «Ver en Maquinaria». Quien
+              abría la ficha de su camión no veía cuándo se le echó gasoil.
 
-            {actividad.isPending ? <Cargando /> : null}
-
-            {actividad.data && actividad.data.length === 0 ? (
-              <div className="px-5 pb-5">
-                <Vacio
-                  titulo="Todavía no ha hecho nada"
-                  descripcion="Cuando pase por la romana, salga con un despacho o entre al taller, aparecerá aquí."
-                />
-              </div>
-            ) : null}
-
-            {actividad.data && actividad.data.length > 0 ? (
-              <ul className="divide-hairline mt-4 divide-y">
-                {actividad.data.map((a) => (
-                  <li key={`${a.tipo}-${a.numero}`} className="flex flex-wrap items-baseline gap-2 px-5 py-3">
-                    <Chip
-                      tone={
-                        a.tipo === 'TALLER'
-                          ? 'warning'
-                          : a.tipo === 'DESPACHO'
-                            ? 'success'
-                            : 'neutral'
-                      }
-                    >
-                      {a.tipo === 'PESAJE'
-                        ? 'Pesaje'
-                        : a.tipo === 'DESPACHO'
-                          ? 'Despacho'
-                          : a.tipo === 'GUIA'
-                            ? 'Guía'
-                            : 'Taller'}
-                    </Chip>
-                    <span className="text-ink/45 text-2xs font-mono">{a.numero}</span>
-                    <span className="text-ink/75 text-sm">{a.detalle}</span>
-                    {a.cantidad ? (
-                      <span className="tabular text-ink/70 ml-auto text-sm">
-                        {a.unidad === 'USD'
-                          ? dolares(a.cantidad)
-                          : `${enteros(Number(a.cantidad))} ${a.unidad === 'KG' ? 'kg' : a.unidad === 'M3' ? 'm³' : a.unidad}`}
-                      </span>
-                    ) : null}
-                    <span className="text-ink/45 w-full text-xs">{fecha(a.fecha)}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </Card>
+              Ahora las dos mitades van en el mismo hilo, y lo que viene del lado
+              de maquinaria lleva etiqueta: sin decirlo, parecería que el camión
+              tiene combustible propio. */}
+          <Historial
+            titulo="Qué ha hecho"
+            subtitulo="Pesajes, despachos, guías, choferes y —si es propio— también su combustible, sus horas y sus pasos por el taller."
+            hechos={hilo.data}
+            cargando={hilo.isPending}
+            error={hilo.error}
+            vacio="Todavía no ha hecho nada"
+            prestadoDe={{ prefijo: '/app/maquinaria', etiqueta: 'de maquinaria' }}
+          />
         </div>
 
         <div className="space-y-4">

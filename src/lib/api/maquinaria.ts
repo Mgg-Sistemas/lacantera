@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
+import type { HechoDeFicha } from '@/components/Historial'
 
 /**
  * Las máquinas, su horómetro y su paso por el taller.
@@ -392,6 +393,31 @@ export function useGuardarMaquina() {
  * arrancar y completarla al terminar el turno es lo normal, y sin eso el
  * segundo intento chocaría contra la restricción de una lectura por día.
  */
+/**
+ * Todo lo que le ha pasado a una máquina, en un solo hilo.
+ *
+ * La ficha era hasta hoy un formulario puro: decía qué ES la máquina y nada de
+ * lo que le había pasado. El combustible vivía en Combustible, las horas en un
+ * modal de la lista, y los pasos por el taller en Mantenimientos — para saber
+ * qué le habían hecho a la excavadora había que abrir tres pantallas y juntarlo
+ * de cabeza.
+ *
+ * `historial_maquina` estaba escrita desde ayer y no la llamaba nadie. Y no
+ * corría: al ejecutarla daba «column h.cuando does not exist». Aplicada y nunca
+ * probada, que es la forma más cara de dar algo por hecho.
+ */
+export function useHistorialMaquina(maquinaId: number | null) {
+  return useQuery({
+    queryKey: ['historial-maquina', maquinaId],
+    enabled: maquinaId != null,
+    queryFn: () =>
+      rpc<HechoDeFicha[]>('historial_maquina', {
+        p_maquina_id: maquinaId,
+        p_limite: 200,
+      }),
+  })
+}
+
 export function useGuardarLectura() {
   return useAccion(
     async (l: { maquina_id: number; fecha: string; inicial: number; final: number }) =>
