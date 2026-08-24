@@ -11,6 +11,7 @@ import {
   Search,
   TriangleAlert,
   Trash2,
+  Wrench,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
@@ -29,6 +30,7 @@ import { armarActaExistencias } from '@/lib/ficha/actaExistencias'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
+import { ModalAlTaller } from './ModalAlTaller'
 import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
@@ -119,6 +121,9 @@ export function Existencias() {
 
   const { puede } = useMisRoles()
   const salida = useRegistrarSalida()
+  // Mandar algo al taller no es sacarlo: vuelve. Por eso va en su propio modal
+  // y no como un quinto caso del de salidas.
+  const [alTaller, setAlTaller] = useState<Existencia | null>(null)
   const ajuste = useRegistrarAjuste()
   const baja = useRegistrarBaja()
   const entrada = useRegistrarEntradas()
@@ -566,6 +571,14 @@ export function Existencias() {
                             <Button
                               size="sm"
                               variant="ghost"
+                              icon={<Wrench />}
+                              onClick={() => setAlTaller(fila!)}
+                            >
+                              Al taller
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               icon={<Trash2 />}
                               onClick={() => abrir('baja', fila!)}
                             >
@@ -596,6 +609,8 @@ export function Existencias() {
           abrir('ajuste', f)
         }}
       />
+
+      <ModalAlTaller fila={alTaller} onCerrar={() => setAlTaller(null)} />
 
       {modal ? (
         <Modal

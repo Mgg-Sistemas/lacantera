@@ -104,7 +104,17 @@ export type EstadoOrden = 'ABIERTO' | 'CERRADO' | 'ANULADO'
  * contador de horas. Una reparación arregla algo que se dañó, y arreglar una
  * correa rota no adelanta el cambio de aceite.
  */
-export type TipoOrden = 'MANTENIMIENTO' | 'SERVICIO' | 'REPARACION'
+/*
+  Los dos ultimos solo tienen sentido sobre MATERIAL: una varilla se rectifica y
+  una pieza se fabrica, pero a una excavadora no se le hace ninguna de las dos.
+  Van en la misma lista porque son la misma tabla y el mismo taller.
+*/
+export type TipoOrden =
+  | 'MANTENIMIENTO'
+  | 'SERVICIO'
+  | 'REPARACION'
+  | 'RECTIFICACION'
+  | 'FABRICACION'
 
 export interface Mantenimiento {
   id: number

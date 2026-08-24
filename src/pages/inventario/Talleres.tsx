@@ -18,8 +18,10 @@ import {
   useMaquinaria,
   useOrdenesTaller,
   useTalleres,
+  type OrdenDeTaller,
 } from '@/lib/api/maquinaria'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { ModalVuelveDelTaller } from './ModalVuelveDelTaller'
 import { Interruptor } from '@/components/ui/Interruptor'
 import { cn } from '@/lib/cn'
 import { dolares, enteros, fecha } from '@/lib/formato'
@@ -55,6 +57,9 @@ export function Talleres() {
     null,
   )
   const [editandoOficios, setEditandoOficios] = useState<number | null>(null)
+  // Solo las de material: las de maquina se cierran desde la ficha del equipo,
+  // donde ademas se decide con que estado sale.
+  const [cerrando, setCerrando] = useState<OrdenDeTaller | null>(null)
 
   /*
     LO QUE CADA TALLER SABE HACER Y TIENE ENCIMA
@@ -195,7 +200,25 @@ export function Talleres() {
                       ) : (
                         <ul className="mt-2 space-y-1.5">
                           {suyas.slice(0, 5).map((o) => (
-                            <li key={o.id} className="flex items-center gap-2 text-sm">
+                            <li
+                              key={o.id}
+                              className={cn(
+                                'flex items-center gap-2 rounded-[4px] px-1 py-0.5 text-sm',
+                                o.sobre_que === 'MATERIAL' && puedeMandar
+                                  ? 'hover:bg-ink/[0.04] cursor-pointer'
+                                  : undefined,
+                              )}
+                              onClick={
+                                o.sobre_que === 'MATERIAL' && puedeMandar
+                                  ? () => setCerrando(o)
+                                  : undefined
+                              }
+                              title={
+                                o.sobre_que === 'MATERIAL'
+                                  ? 'Cerrar: el material vuelve'
+                                  : 'Se cierra desde la ficha de la maquina'
+                              }
+                            >
                               <Chip
                                 tone={
                                   o.urgencia === 'URGENTE'
@@ -311,6 +334,8 @@ export function Talleres() {
           )
         })}
       </div>
+
+      <ModalVuelveDelTaller orden={cerrando} onCerrar={() => setCerrando(null)} />
 
       <ModalOficios
         tallerId={editandoOficios}
