@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Boxes, Wrench } from 'lucide-react'
+import { Boxes, Tags, Wrench } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_SITIOS } from '@/components/pestanasDeModulos'
@@ -11,7 +11,17 @@ import { Modal } from '@/components/ui/Modal'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { SemaforoMantenimiento } from '@/components/SemaforoMantenimiento'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
-import { useMantenimientosDeTaller, useMaquinaria } from '@/lib/api/maquinaria'
+import {
+  useEspecialidades,
+  useGuardarEspecialidadesTaller,
+  useMantenimientosDeTaller,
+  useMaquinaria,
+  useOrdenesTaller,
+  useTalleres,
+} from '@/lib/api/maquinaria'
+import { useMisPermisos } from '@/lib/api/usuarios'
+import { Interruptor } from '@/components/ui/Interruptor'
+import { cn } from '@/lib/cn'
 import { dolares, enteros, fecha } from '@/lib/formato'
 
 /**
@@ -44,6 +54,24 @@ export function Talleres() {
   const [verReparaciones, setVerReparaciones] = useState<{ id: number; nombre: string } | null>(
     null,
   )
+  const [editandoOficios, setEditandoOficios] = useState<number | null>(null)
+
+  /*
+    LO QUE CADA TALLER SABE HACER Y TIENE ENCIMA
+
+    Christopher pregunto a que taller mandar, si esta libre y que tiene en cola.
+    Las tres salen de aqui: `v_talleres` trae los oficios declarados y el conteo
+    de lo abierto, y la cola son las ordenes abiertas ordenadas por urgencia.
+
+    Se piden aparte de los almacenes porque son preguntas distintas —una es
+    «que guarda», la otra «que esta haciendo»— y mezclarlas obligaria a la vista
+    de almacenes a saber de ordenes de taller.
+  */
+  const detalle = useTalleres()
+  const especialidades = useEspecialidades()
+  const cola = useOrdenesTaller('ABIERTO')
+  const { puede } = useMisPermisos()
+  const puedeMandar = puede('MAQUINARIA', 'ESCRITURA')
 
   const talleres = useMemo(
     () => (almacenes ?? []).filter((a) => a.tipo === 'TALLER'),
@@ -112,6 +140,100 @@ export function Talleres() {
                 </div>
                 {!t.activo ? <Chip tone="neutral">Cerrado</Chip> : null}
               </div>
+
+              {/* ------------------------- Qué sabe hacer ------------------------- */}
+              {(() => {
+                const d = (detalle.data ?? []).find((x) => x.id === t.id)
+                const suyas = (cola.data ?? []).filter((o) => o.taller_id === t.id)
+
+                return (
+                  <>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {d?.sabe_hacer ? (
+                        d.especialidades.map((codigo) => {
+                          const nombre =
+                            (especialidades.data ?? []).find((x) => x.codigo === codigo)?.nombre ??
+                            codigo
+                          return (
+                            <Chip key={codigo} tone="info">
+                              {nombre}
+                            </Chip>
+                          )
+                        })
+                      ) : (
+                        /* Sin oficios declarados el taller acepta cualquier
+                           trabajo. Se dice, porque un hueco aquí se lee como
+                           «no sabe hacer nada». */
+                        <span className="text-ink/45 text-xs">Acepta cualquier trabajo</span>
+                      )}
+
+                      {puedeMandar ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Tags />}
+                          onClick={() => setEditandoOficios(t.id)}
+                        >
+                          Oficios
+                        </Button>
+                      ) : null}
+                    </div>
+
+                    {/* ---------------------- Qué tiene encima ---------------------- */}
+                    <div className="border-hairline mt-3 rounded-[6px] border p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-ink/55 text-xs">En el taller ahora</p>
+                        {d?.tiene_sitio === false ? (
+                          <Chip tone="warning">Sin sitio</Chip>
+                        ) : d?.tiene_sitio === true ? (
+                          <Chip tone="success">Le queda sitio</Chip>
+                        ) : null}
+                      </div>
+
+                      {suyas.length === 0 ? (
+                        <p className="text-ink/45 mt-1 text-sm">Nada abierto.</p>
+                      ) : (
+                        <ul className="mt-2 space-y-1.5">
+                          {suyas.slice(0, 5).map((o) => (
+                            <li key={o.id} className="flex items-center gap-2 text-sm">
+                              <Chip
+                                tone={
+                                  o.urgencia === 'URGENTE'
+                                    ? 'danger'
+                                    : o.urgencia === 'ALTA'
+                                      ? 'warning'
+                                      : 'neutral'
+                                }
+                              >
+                                {o.urgencia === 'URGENTE'
+                                  ? 'Urgente'
+                                  : o.urgencia === 'ALTA'
+                                    ? 'Alta'
+                                    : 'Normal'}
+                              </Chip>
+                              <span className="text-ink/75 min-w-0 grow truncate">{o.sobre}</span>
+                              <span
+                                className={cn(
+                                  'shrink-0 text-xs',
+                                  o.se_paso ? 'text-danger' : 'text-ink/45',
+                                )}
+                              >
+                                {o.dias_dentro ?? 0} d
+                                {o.dias_estimados ? ` / ${o.dias_estimados}` : ''}
+                              </span>
+                            </li>
+                          ))}
+                          {suyas.length > 5 ? (
+                            <li className="text-ink/45 text-xs">
+                              y {suyas.length - 5} más
+                            </li>
+                          ) : null}
+                        </ul>
+                      )}
+                    </div>
+                  </>
+                )
+              })()}
 
               {/* Lo que tiene. Sin existencias todavía no se inventa un cero
                   con aire de dato: se dice que no ha recibido nada. */}
@@ -189,6 +311,11 @@ export function Talleres() {
           )
         })}
       </div>
+
+      <ModalOficios
+        tallerId={editandoOficios}
+        onCerrar={() => setEditandoOficios(null)}
+      />
 
       <ModalReparaciones taller={verReparaciones} onCerrar={() => setVerReparaciones(null)} />
     </>
@@ -286,6 +413,86 @@ function ModalReparaciones({
           </ul>
         </>
       ) : null}
+    </Modal>
+  )
+}
+
+/*
+  QUE SABE HACER ESTE TALLER
+
+  Se marca lo que hace y se guarda la lista entera, no los cambios uno a uno:
+  la pantalla manda lo que quedo marcado y asi no hay forma de que las dos se
+  descuadren.
+
+  Sin nada marcado, el taller acepta cualquier trabajo. Es lo razonable en una
+  cantera con un solo taller — y se dice en el pie, porque dejarlo vacio sin
+  explicar se lee como que no sabe hacer nada.
+*/
+function ModalOficios({
+  tallerId,
+  onCerrar,
+}: {
+  tallerId: number | null
+  onCerrar: () => void
+}) {
+  const especialidades = useEspecialidades()
+  const talleres = useTalleres()
+  const guardar = useGuardarEspecialidadesTaller()
+  const [marcadas, setMarcadas] = useState<string[] | null>(null)
+
+  const taller = (talleres.data ?? []).find((t) => t.id === tallerId)
+  const actuales = marcadas ?? taller?.especialidades ?? []
+
+  return (
+    <Modal
+      abierto={tallerId !== null}
+      onCerrar={() => {
+        setMarcadas(null)
+        onCerrar()
+      }}
+      titulo={taller ? `Qué se hace en ${taller.nombre}` : 'Oficios del taller'}
+      descripcion="Al abrir una orden se comprueba contra esta lista. Sin nada marcado, el taller acepta cualquier trabajo."
+      acciones={
+        <>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setMarcadas(null)
+              onCerrar()
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            disabled={guardar.isPending || tallerId === null}
+            onClick={async () => {
+              if (tallerId === null) return
+              await guardar.mutateAsync({ taller_id: tallerId, especialidades: actuales })
+              setMarcadas(null)
+              onCerrar()
+            }}
+          >
+            {guardar.isPending ? 'Guardando…' : 'Guardar'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-1">
+        {(especialidades.data ?? []).map((e) => (
+          <Interruptor
+            key={e.codigo}
+            encendido={actuales.includes(e.codigo)}
+            etiqueta={e.nombre}
+            onCambio={(v) =>
+              setMarcadas(
+                v ? [...actuales, e.codigo] : actuales.filter((c) => c !== e.codigo),
+              )
+            }
+          />
+        ))}
+      </div>
+
+      {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-3" /> : null}
     </Modal>
   )
 }

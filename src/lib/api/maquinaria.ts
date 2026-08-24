@@ -398,20 +398,35 @@ export function useGuardarLectura() {
 export function useAbrirMantenimiento() {
   return useAccion(
     async (m: {
-      maquina_id: number
+      maquina_id?: number | null
       tipo: TipoOrden
       motivo: string
       taller_id?: number | null
       fecha?: string | null
       dias_estimados?: number | null
+      /** Sobre material en vez de sobre una maquina. */
+      articulo_id?: number | null
+      cantidad?: number | null
+      /** De que almacen sale el material. Obligatorio si es material. */
+      origen_id?: number | null
+      urgencia?: Urgencia
+      especialidad?: string | null
+      /** Lo que se preve usar. No descuenta nada hasta cerrar. */
+      repuestos?: Array<{ articulo_id: number; cantidad: number }>
     }) =>
       rpc<number>('abrir_mantenimiento', {
-        p_maquina_id: m.maquina_id,
+        p_maquina_id: m.maquina_id ?? null,
         p_tipo: m.tipo,
         p_motivo: m.motivo,
         p_taller_id: m.taller_id ?? null,
         p_fecha: m.fecha ?? null,
         p_dias_estimados: m.dias_estimados ?? null,
+        p_articulo_id: m.articulo_id ?? null,
+        p_cantidad: m.cantidad ?? null,
+        p_origen_id: m.origen_id ?? null,
+        p_urgencia: m.urgencia ?? 'NORMAL',
+        p_especialidad: m.especialidad ?? null,
+        p_repuestos: m.repuestos ?? [],
       }),
   )
 }
@@ -426,6 +441,10 @@ export function useCerrarMantenimiento() {
       repuestos?: RepuestoUsado[]
       estado_salida?: 'EN_ESPERA' | 'ACTIVA' | 'FUERA_DE_SERVICIO'
       fecha_salida?: string | null
+      /** Cuanto material volvio. Lo que falte se registra como merma. */
+      devuelto?: number | null
+      /** A que almacen vuelve. Obligatorio si la orden era sobre material. */
+      destino_id?: number | null
     }) =>
       rpc<number>('cerrar_mantenimiento', {
         p_id: m.id,
@@ -433,6 +452,8 @@ export function useCerrarMantenimiento() {
         p_costo_usd: m.costo_usd ?? null,
         p_repuestos: m.repuestos ?? [],
         p_estado_salida: m.estado_salida ?? 'EN_ESPERA',
+        p_devuelto: m.devuelto ?? null,
+        p_destino_id: m.destino_id ?? null,
         p_fecha_salida: m.fecha_salida ?? null,
       }),
   )
@@ -552,4 +573,140 @@ export function useFotoMaquina(path: string | null | undefined) {
   }, [path])
 
   return url
+}
+
+/*
+  EL TALLER, COMO SITIO Y NO SOLO COMO CAMPO
+
+  Christopher pregunto seis cosas seguidas: a que taller mandar, si esta libre,
+  que tiene en cola, que ha hecho, cuanto tardara y que se usara. Ninguna se
+  podia contestar porque un taller era solo un almacen con nombre.
+
+  Lo que sigue es lo que hace falta para contestarlas todas desde la pantalla.
+*/
+export type Urgencia = 'NORMAL' | 'ALTA' | 'URGENTE'
+
+export const URGENCIAS: Array<{ valor: Urgencia; etiqueta: string; detalle: string }> = [
+  { valor: 'NORMAL', etiqueta: 'Normal', detalle: 'Entra en la cola cuando toque.' },
+  { valor: 'ALTA', etiqueta: 'Alta', detalle: 'Antes que lo normal, sin parar lo demas.' },
+  { valor: 'URGENTE', etiqueta: 'Urgente', detalle: 'La maquina no trabaja hasta que salga.' },
+]
+
+export interface OrdenDeTaller {
+  id: number
+  numero: string | null
+  estado: EstadoOrden
+  tipo: TipoOrden
+  urgencia: Urgencia
+  peso_urgencia: number
+  especialidad: string | null
+  especialidad_nombre: string | null
+  motivo: string
+  detalle: string | null
+  fecha: string
+  fecha_salida: string | null
+  dias_estimados: number | null
+  taller_id: number | null
+  taller: string | null
+  maquina_id: number | null
+  maquina_codigo: string | null
+  articulo_id: number | null
+  articulo: string | null
+  unidad: string | null
+  cantidad: string | null
+  cantidad_devuelta: string | null
+  /** Sobre que recae, ya en palabras. */
+  sobre: string
+  sobre_que: 'MAQUINA' | 'MATERIAL'
+  costo_usd: string | null
+  costo_repuestos_usd: string | null
+  /** Nulo si ya esta cerrada. */
+  dias_dentro: number | null
+  /** Cierto si lleva mas de lo estimado. Nulo si nadie estimo nada. */
+  se_paso: boolean | null
+  repuestos_previstos: string
+  repuestos_usados: string
+}
+
+export interface Taller {
+  id: number
+  codigo: string
+  nombre: string
+  ubicacion: string | null
+  activo: boolean
+  trabajos_a_la_vez: number | null
+  abiertas: number
+  urgentes: number
+  pasadas_de_plazo: number
+  cerradas: number
+  ultimo_trabajo: string | null
+  /** Nulo cuando nadie declaro cuantos trabajos aguanta. */
+  tiene_sitio: boolean | null
+  especialidades: string[]
+  sabe_hacer: string
+}
+
+export interface Especialidad {
+  codigo: string
+  nombre: string
+  orden: number
+}
+
+/** La cola y el historial salen de la misma vista: cambia el filtro. */
+export function useOrdenesTaller(estado?: EstadoOrden, tallerId?: number | null) {
+  return useQuery({
+    queryKey: ['maquinaria', 'ordenes-taller', estado ?? 'todo', tallerId ?? 'todos'],
+    queryFn: async () => {
+      let consulta = supabase.from('v_ordenes_taller').select('*')
+      if (estado) consulta = consulta.eq('estado', estado)
+      if (tallerId) consulta = consulta.eq('taller_id', tallerId)
+      return desenvolver<OrdenDeTaller[]>(
+        await consulta
+          .order('peso_urgencia')
+          .order('fecha', { ascending: false })
+          .limit(200),
+      )
+    },
+  })
+}
+
+export function useTalleres() {
+  return useQuery({
+    queryKey: ['maquinaria', 'talleres'],
+    queryFn: async () =>
+      desenvolver<Taller[]>(await supabase.from('v_talleres').select('*').order('nombre')),
+  })
+}
+
+export function useEspecialidades() {
+  return useQuery({
+    queryKey: ['especialidades-taller'],
+    staleTime: 30 * 60_000,
+    queryFn: async () =>
+      desenvolver<Especialidad[]>(
+        await supabase
+          .from('especialidades_taller')
+          .select('codigo, nombre, orden')
+          .eq('activa', true)
+          .order('orden'),
+      ),
+  })
+}
+
+export function useGuardarEspecialidadesTaller() {
+  return useAccion((t: { taller_id: number; especialidades: string[] }) =>
+    rpc<number>('guardar_especialidades_taller', {
+      p_taller_id: t.taller_id,
+      p_especialidades: t.especialidades,
+    }),
+  )
+}
+
+export function useGuardarCapacidadTaller() {
+  return useAccion((t: { taller_id: number; trabajos: number | null }) =>
+    rpc<number>('guardar_capacidad_taller', {
+      p_taller_id: t.taller_id,
+      p_trabajos: t.trabajos,
+    }),
+  )
 }

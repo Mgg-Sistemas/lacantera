@@ -8,11 +8,14 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import {
+  URGENCIAS,
   useAbrirMantenimiento,
   useAnularMantenimiento,
   useCerrarMantenimiento,
+  useEspecialidades,
   type Maquina,
   type TipoOrden,
+  type Urgencia,
 } from '@/lib/api/maquinaria'
 import { enteros, fecha as formatearFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -86,6 +89,9 @@ function Entrada({
   const [motivo, setMotivo] = useState('')
   const [taller, setTaller] = useState('')
   const [dias, setDias] = useState('')
+  const especialidades = useEspecialidades()
+  const [urgencia, setUrgencia] = useState<Urgencia>('NORMAL')
+  const [especialidad, setEspecialidad] = useState('')
 
   useEffect(() => {
     if (!abierto) return
@@ -94,6 +100,8 @@ function Entrada({
     setMotivo('')
     setTaller(maquina.mantenimiento_taller_id ? String(maquina.mantenimiento_taller_id) : '')
     setDias(maquina.dias_mantenimiento ? String(maquina.dias_mantenimiento) : '')
+    setUrgencia('NORMAL')
+    setEspecialidad('')
     // `hoy` se recalcula en cada render pero es el mismo texto; no entra como
     // dependencia para no reabrir el formulario a medianoche mientras se llena.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,6 +135,8 @@ function Entrada({
     await entrar.mutateAsync({
       maquina_id: maquina.id,
       tipo,
+      urgencia,
+      especialidad: especialidad || null,
       motivo: motivo.trim(),
       taller_id: taller ? Number(taller) : null,
       fecha: dia,
@@ -210,6 +220,35 @@ function Entrada({
           placeholder="Opcional"
           value={dias}
           onChange={(e) => setDias(e.target.value)}
+        />
+      </div>
+
+      {/*
+        LA URGENCIA Y EL OFICIO, DEBAJO DEL TALLER
+
+        La urgencia ordena la cola de ese taller. El oficio dice qué clase de
+        trabajo hace falta, y si el taller elegido declaró los suyos y no está
+        ese, la base se niega con el nombre del taller en el mensaje — antes de
+        que la máquina salga de sitio.
+      */}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <Select
+          label="Urgencia"
+          value={urgencia}
+          onChange={(e) => setUrgencia(e.target.value as Urgencia)}
+          opciones={URGENCIAS.map((u) => ({ valor: u.valor, etiqueta: u.etiqueta }))}
+          hint={URGENCIAS.find((u) => u.valor === urgencia)?.detalle}
+        />
+        <Select
+          label="Qué hace falta"
+          vacio="Sin especificar"
+          value={especialidad}
+          onChange={(e) => setEspecialidad(e.target.value)}
+          opciones={(especialidades.data ?? []).map((x) => ({
+            valor: x.codigo,
+            etiqueta: x.nombre,
+          }))}
+          hint="Si el taller declaró sus oficios y este no está, no lo acepta."
         />
       </div>
 
