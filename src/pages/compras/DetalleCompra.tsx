@@ -29,6 +29,7 @@ import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
 import { ModalRecepcion } from './ModalRecepcion'
 import { PapelesDeCompra } from './PapelesDeCompra'
+import { usePapelesDeCompra } from '@/lib/api/papelesDeCompra'
 import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
 import { usePerfiles, useMisRoles, useArticulos, CONDICIONES_PAGO } from '@/lib/api/catalogo'
 import {
@@ -70,7 +71,18 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   APROBADA: { texto: 'Aprobada', tono: 'warning' },
   CANCELADA: { texto: 'Cancelada', tono: 'neutral' },
   POR_INDICAR_PAGO: { texto: 'Aprobada · indicar método de pago', tono: 'warning' },
-  EN_TESORERIA: { texto: 'En tesorería', tono: 'info' },
+  /*
+    El estado se sigue llamando EN_TESORERIA en la base y el rotulo ya no lo
+    dice. Christopher: «hay un momento en que el estatus es "En tesoreria" y eso
+    ya no debe ser, pues "Tesoreria" como la habiamos conocido ya no existe».
+
+    No se le cambia el nombre al estado: es un CHECK sobre texto que nombran
+    varias funciones y ocho ordenes ya escritas, y renombrarlo por un rotulo
+    seria mover la base para arreglar una palabra. Lo que se cambia es lo que
+    lee la gente, que es lo unico que estaba mal: el estado nunca dijo «esta en
+    un departamento», dijo «el pago esta indicado y falta que salga el dinero».
+  */
+  EN_TESORERIA: { texto: 'Por pagar', tono: 'info' },
   // Contra entrega: aprobada y esperando el material, sin un bolivar fuera.
   POR_RECIBIR: { texto: 'Contra entrega · esperando el material', tono: 'info' },
   PAGADA_POR_RECIBIR: { texto: 'Pagada · falta que llegue', tono: 'success' },
@@ -564,6 +576,19 @@ export function DetalleCompra() {
   const compraId = Number(id)
   const { data: compra, isPending, error } = useCompra(compraId)
   const orden = ordenVigente(compra)
+
+  /*
+    Sin factura ni nota de entrega el material no entra.
+
+    Lo pidio la lider: «intentan guardar sin subir nada -> el sistema muestra
+    error (porque falta la factura o nota de entrega)». La reja de verdad esta en
+    `registrar_recepcion`, que es la unica puerta; esto es para decirlo antes de
+    que alguien llene el formulario con el camion esperando.
+  */
+  const papeles = usePapelesDeCompra(orden?.id)
+  const hayPapelDelProveedor = (papeles.data ?? []).some(
+    (x) => x.tipo === 'FACTURA' || x.tipo === 'NOTA_ENTREGA',
+  )
   const { data: bitacora } = useBitacora(compraId, orden?.id)
   const { data: perfiles } = usePerfiles()
   const { data: firmas } = useFirmas()
@@ -1322,14 +1347,41 @@ export function DetalleCompra() {
                     </p>
                   </div>
                   {puede('ALMACEN') ? (
-                    <Button
-                      block
-                      className="mt-2"
-                      icon={<PackageCheck />}
-                      onClick={() => setModal({ tipo: 'recepcion' })}
-                    >
-                      Recibir material
-                    </Button>
+                    <>
+                      {/*
+                        Sin factura ni nota de entrega el material no entra, y se
+                        dice AQUI en vez de al pulsar Guardar. La base tambien lo
+                        para —es la unica puerta por la que entra material de una
+                        compra— pero enterarse con el formulario ya lleno y el
+                        camion en el porton es tarde.
+
+                        El comprobante de pago no cuenta: dice que se pago, no
+                        que llego ni que llego. Por eso sigue siendo opcional.
+                      */}
+                      {!hayPapelDelProveedor ? (
+                        <div className="border-warning/30 bg-warning-soft mt-2 rounded-[6px] border p-3">
+                          <p className="text-ink/80 text-sm leading-relaxed">
+                            Falta el papel del proveedor. Sube la{' '}
+                            <strong className="font-semibold">factura</strong> o la{' '}
+                            <strong className="font-semibold">nota de entrega</strong> en «Papeles
+                            de la compra», aquí abajo, y se podrá recibir.
+                          </p>
+                          <p className="text-ink/55 mt-1 text-xs">
+                            El comprobante de pago puede llegar después.
+                          </p>
+                        </div>
+                      ) : null}
+
+                      <Button
+                        block
+                        className="mt-2"
+                        icon={<PackageCheck />}
+                        disabled={!hayPapelDelProveedor}
+                        onClick={() => setModal({ tipo: 'recepcion' })}
+                      >
+                        Recibir material
+                      </Button>
+                    </>
                   ) : (
                     <p className="text-ink/45 mt-2 text-xs">
                       La recepción la registra almacén.
