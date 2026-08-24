@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FileText, Fuel, Plus, Tags, TriangleAlert } from 'lucide-react'
+import { Droplets, FileText, Fuel, Plus, Settings2, Tags, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -26,6 +26,8 @@ import { useMisPermisos } from '@/lib/api/usuarios'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useFirmas } from '@/lib/api/firmas'
 import { Visor } from '@/components/Visor'
+import { Link } from 'react-router'
+import { ModalCargarCombustible } from './ModalCargarCombustible'
 import { armarValeDeCombustible } from '@/lib/ficha/valeCombustiblePdf'
 import type { DespachoCombustible } from '@/lib/api/combustible'
 import { dolares, fecha } from '@/lib/formato'
@@ -64,6 +66,7 @@ export function Combustible() {
   const [despachando, setDespachando] = useState(false)
   const [vale, setVale] = useState<{ blob: Blob; nombre: string } | null>(null)
   const [ordenando, setOrdenando] = useState(false)
+  const [cargando, setCargando] = useState(false)
 
   /*
     EL VALE EN PAPEL
@@ -122,7 +125,7 @@ export function Combustible() {
     <>
       <PageHeader
         title="Combustible"
-        description="Cuánto queda, cuánto consume cada máquina y a qué se le echó. Las entradas llegan por las compras recibidas."
+        description="Cuánto queda, cuánto consume cada máquina y a qué se le echó. Entra por una compra recibida, o a mano desde Cargar."
         actions={
           puedeDespachar ? (
             <>
@@ -134,6 +137,17 @@ export function Combustible() {
                   Motivos
                 </Button>
               ) : null}
+              {/* El modulo sabia sacar y no sabia meter, y quien preguntaba
+                  como cargar el tanque estaba parado justo aqui. Las tres
+                  puertas del combustible viven ahora en su pantalla. */}
+              <Link to="/app/inventario/almacenes">
+                <Button variant="ghost" icon={<Settings2 />}>
+                  Tanques
+                </Button>
+              </Link>
+              <Button variant="outline" icon={<Droplets />} onClick={() => setCargando(true)}>
+                Cargar
+              </Button>
               <Button icon={<Plus />} onClick={() => setDespachando(true)}>
                 Despachar
               </Button>
@@ -165,7 +179,7 @@ export function Combustible() {
           <Vacio
             icono={<Fuel />}
             titulo="El tanque está vacío"
-            descripcion="El combustible entra por una compra recibida en el tanque. Desde ahí se despacha a las máquinas."
+            descripcion="El combustible entra por una compra recibida, o a mano con el botón Cargar de arriba. Desde el tanque se despacha a las máquinas."
           />
         </Card>
       ) : null}
@@ -358,6 +372,8 @@ export function Combustible() {
       ) : null}
 
       <ModalDespacho abierto={despachando} onCerrar={() => setDespachando(false)} />
+
+      <ModalCargarCombustible abierto={cargando} onCerrar={() => setCargando(false)} />
 
       <ModalMotivos abierto={ordenando} onCerrar={() => setOrdenando(false)} />
 

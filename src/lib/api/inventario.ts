@@ -13,7 +13,10 @@ export interface Almacen {
   tipo: string
   ubicacion: string | null
   recibe_compras: boolean
-  activo: boolean
+  activo: boolean  /** Cuanto le cabe. Solo en un tanque de combustible. */
+  capacidad?: string | null
+  /** Cuantas ordenes aguanta a la vez. Solo en un taller. */
+  trabajos_a_la_vez?: number | null
 }
 
 export const TIPOS_ALMACEN = [
@@ -48,6 +51,10 @@ export function useGuardarAlmacen() {
         p_ubicacion: a.ubicacion ?? null,
         p_recibe_compras: a.recibe_compras ?? false,
         p_activo: a.activo ?? true,
+        // Solo significan algo en su tipo: la capacidad en un tanque y los
+        // trabajos a la vez en un taller. La base rechaza lo demas.
+        p_capacidad: a.capacidad ?? null,
+        p_trabajos_a_la_vez: a.trabajos_a_la_vez ?? null,
       }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['almacenes'] }),
   })

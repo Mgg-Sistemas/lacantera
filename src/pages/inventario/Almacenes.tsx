@@ -20,6 +20,8 @@ const vacio = {
   ubicacion: '',
   recibe_compras: false,
   activo: true,
+  capacidad: '',
+  trabajos_a_la_vez: '',
 }
 
 export function Almacenes() {
@@ -38,6 +40,8 @@ export function Almacenes() {
             ubicacion: a.ubicacion ?? '',
             recibe_compras: a.recibe_compras,
             activo: a.activo,
+            capacidad: a.capacidad ?? '',
+            trabajos_a_la_vez: a.trabajos_a_la_vez ? String(a.trabajos_a_la_vez) : '',
           }
         : { ...vacio },
     )
@@ -135,7 +139,16 @@ export function Almacenes() {
               <Button
                 disabled={guardar.isPending || !edicion.codigo || !edicion.nombre}
                 onClick={async () => {
-                  await guardar.mutateAsync(edicion)
+                  // Los dos campos de tipo viajan como numero o como nada: la
+                  // base rechaza una capacidad en un patio, y una cadena vacia
+                  // no es cero.
+                  await guardar.mutateAsync({
+                    ...edicion,
+                    capacidad: edicion.capacidad || null,
+                    trabajos_a_la_vez: edicion.trabajos_a_la_vez
+                      ? Number(edicion.trabajos_a_la_vez)
+                      : null,
+                  })
                   setEdicion(null)
                 }}
               >
@@ -168,6 +181,42 @@ export function Almacenes() {
               value={edicion.ubicacion}
               onChange={(e) => cambiar({ ubicacion: e.target.value })}
             />
+
+            {/*
+              LO QUE SOLO TIENE SENTIDO EN SU TIPO
+
+              Un patio no tiene tope y un almacen tampoco: la capacidad solo
+              significa algo en un tanque, y los trabajos a la vez solo en un
+              taller. Se ensena el campo cuando toca en vez de dejarlo siempre a
+              la vista pidiendo un dato que en la mayoria de los casos no existe
+              — y la base rechaza lo demas, asi que las dos rejas dicen lo mismo.
+            */}
+            {edicion.tipo === 'COMBUSTIBLE' ? (
+              <Input
+                label="Capacidad del tanque"
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                placeholder="Litros"
+                value={edicion.capacidad}
+                onChange={(e) => cambiar({ capacidad: e.target.value })}
+                hint="Con esto, el saldo deja de ser «720 L» y pasa a leerse «720 de 5.000»."
+              />
+            ) : null}
+
+            {edicion.tipo === 'TALLER' ? (
+              <Input
+                label="Trabajos a la vez"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Opcional"
+                value={edicion.trabajos_a_la_vez}
+                onChange={(e) => cambiar({ trabajos_a_la_vez: e.target.value })}
+                hint="Sin esto, el taller no dice si le queda sitio: no opinar es mejor que inventar."
+              />
+            ) : null}
           </div>
 
           <div className="mt-4 space-y-2">
