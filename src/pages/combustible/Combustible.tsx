@@ -11,12 +11,14 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMaquinaria } from '@/lib/api/maquinaria'
-import { useEmpleados } from '@/lib/api/nomina'
 import {
+  MOTIVOS,
   useConsumoCombustible,
   useDespachosCombustible,
   useDespacharCombustible,
+  usePersonasParaVale,
   useTanques,
+  type MotivoDespacho,
 } from '@/lib/api/combustible'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { dolares, fecha } from '@/lib/formato'
@@ -219,7 +221,7 @@ export function Combustible() {
           <Vacio
             icono={<Fuel />}
             titulo="Sin despachos todavía"
-            descripcion="Cada vez que se le eche combustible a algo, quedará anotado aquí con su destino y quién lo recibió."
+            descripcion="Cada vez que se le eche combustible a algo quedará anotado aquí: a qué, para qué, cuánto y quién lo recibió."
           />
         </Card>
       ) : null}
@@ -242,12 +244,24 @@ export function Combustible() {
                         Sin ficha
                       </Chip>
                     )}
+                    <Chip
+                      tone={d.motivo === 'OPERACION' ? 'info' : 'neutral'}
+                      className="ml-2"
+                    >
+                      {MOTIVOS.find((m) => m.valor === d.motivo)?.etiqueta ?? d.motivo}
+                    </Chip>
                   </p>
+                  {/* La segunda línea responde las cinco preguntas del vale:
+                      cuándo, para qué, quién lo recibió y quién lo surtió. La
+                      hora solo sale cuando se sabe — un vale transcrito al día
+                      siguiente no la tiene, y nula es más honesto que inventada. */}
                   <p className="text-ink/45 text-xs">
                     {fecha(d.fecha)}
+                    {d.hora ? ` a las ${d.hora.slice(0, 5)}` : ''}
                     {d.numero ? ` · ${d.numero}` : ''}
                     {d.horometro ? ` · horómetro ${Number(d.horometro)}` : ' · sin horómetro'}
-                    {d.recibio ? ` · recibió ${d.recibio}` : ''}
+                    {` · recibió ${d.recibio}`}
+                    {d.surtio ? ` · surtió ${d.surtio}` : ''}
                   </p>
                   {d.nota ? <p className="text-ink/60 mt-1 text-sm">{d.nota}</p> : null}
                 </div>
@@ -283,7 +297,7 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   const despachar = useDespacharCombustible()
   const tanques = useTanques()
   const { data: maquinas } = useMaquinaria(true)
-  const { data: empleados } = useEmpleados()
+  const { data: personas } = usePersonasParaVale()
 
   const hoy = new Date().toLocaleDateString('en-CA')
   const [tanque, setTanque] = useState('')
@@ -292,6 +306,11 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   const [cantidad, setCantidad] = useState('')
   const [horometro, setHorometro] = useState('')
   const [empleado, setEmpleado] = useState('')
+  // Para quien no esta en la nomina: el chofer de un fletero al que se le echa
+  // gasoil no tiene ficha, y sin esto el vale se quedaria sin nombre.
+  const [otroNombre, setOtroNombre] = useState('')
+  const [otraCedula, setOtraCedula] = useState('')
+  const [motivo, setMotivo] = useState<MotivoDespacho | ''>('')
   const [dia, setDia] = useState(hoy)
   const [nota, setNota] = useState('')
 
@@ -305,6 +324,9 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
     setCantidad('')
     setHorometro('')
     setEmpleado('')
+    setOtroNombre('')
+    setOtraCedula('')
+    setMotivo('')
     setDia(hoy)
     setNota('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -315,10 +337,17 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   const excede = elegido ? pedidos > Number(elegido.existencia) : false
   const sinFicha = maquina === ''
 
+  // Quien recibe es obligatorio, de la nomina o escrito a mano. El combustible
+  // es de lo que mas se pierde, y un vale sin nombre no se le puede preguntar
+  // a nadie.
+  const hayQuienRecibe = empleado !== '' || otroNombre.trim().length >= 3
+
   const valido =
     elegido !== undefined &&
     pedidos > 0 &&
     !excede &&
+    motivo !== '' &&
+    hayQuienRecibe &&
     (!sinFicha || destino.trim().length >= 3)
 
   const enviar = async () => {
@@ -327,10 +356,13 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
       articulo_id: elegido.articulo_id,
       almacen_id: elegido.almacen_id,
       cantidad: pedidos,
+      motivo: motivo as MotivoDespacho,
       maquina_id: maquina ? Number(maquina) : null,
       destino: sinFicha ? destino.trim() : null,
       horometro: horometro ? Number(horometro) : null,
       empleado_id: empleado ? Number(empleado) : null,
+      recibio_nombre: empleado ? null : otroNombre.trim(),
+      recibio_cedula: empleado ? null : otraCedula.trim() || null,
       fecha: dia,
       nota: nota.trim() || null,
     })
@@ -369,6 +401,22 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
             : undefined
         }
       />
+
+      {/* El «para qué» va antes que el «a qué»: son preguntas distintas, y si
+          van juntas la gente contesta la máquina y da el motivo por sabido. */}
+      <div className="mt-4">
+        <Select
+          label="Para qué"
+          vacio="Elegir"
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value as MotivoDespacho)}
+          opciones={MOTIVOS.map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
+          hint={
+            MOTIVOS.find((m) => m.valor === motivo)?.pista ??
+            'No es lo mismo que a qué máquina: la misma excavadora se surte para producir o para probarla tras repararla.'
+          }
+        />
+      </div>
 
       <div className="mt-4">
         <SelectBuscable
@@ -430,16 +478,37 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
       <div className="mt-4">
         <SelectBuscable
           label="Quién lo recibió"
-          vacio="Sin indicar"
+          vacio="No está en la nómina"
           valor={empleado}
           onCambio={(v) => setEmpleado(v)}
-          opciones={(empleados ?? []).map((e) => ({
+          opciones={(personas ?? []).map((e) => ({
             valor: String(e.id),
-            etiqueta: `${e.nombres} ${e.apellidos} · ficha ${e.ficha}`,
+            etiqueta: e.cargo ? `${e.nombre} · ${e.cargo}` : e.nombre,
           }))}
-          hint="El combustible es de lo que más se pierde: un despacho sin nombre no se le puede preguntar a nadie."
+          hint="El combustible es de lo que más se pierde: un vale sin nombre no se le puede preguntar a nadie."
         />
       </div>
+
+      {/* A la cantera entran gandolas de fleteros a las que se les echa gasoil,
+          y su chófer no está en la nómina. Sin esta salida, o el vale se queda
+          sin nombre o alguien acaba poniendo el suyo. */}
+      {empleado === '' ? (
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Input
+            label="Nombre de quien recibió"
+            placeholder="José Ramírez"
+            value={otroNombre}
+            onChange={(e) => setOtroNombre(e.target.value)}
+          />
+          <Input
+            label="Cédula"
+            placeholder="V-12345678"
+            value={otraCedula}
+            onChange={(e) => setOtraCedula(e.target.value)}
+            hint="Opcional, pero es lo que permite dar con la persona después."
+          />
+        </div>
+      ) : null}
 
       <div className="mt-4">
         <Textarea label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />

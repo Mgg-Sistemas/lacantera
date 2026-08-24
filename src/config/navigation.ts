@@ -325,7 +325,6 @@ export const navigation: NavSection[] = [
         // trae a la gente es siempre la misma: cuál toca atender.
         label: 'Maquinaria',
         icon: Wrench,
-        fueraDelMvp: true,
         children: [
           { label: 'Equipos', to: '/app/maquinaria' },
           // El historial es la vista al revés: no cada máquina y su última
@@ -378,7 +377,6 @@ export const navigation: NavSection[] = [
         */
         label: 'Combustible',
         icon: Fuel,
-        fueraDelMvp: true,
         to: '/app/combustible',
       },
       {
