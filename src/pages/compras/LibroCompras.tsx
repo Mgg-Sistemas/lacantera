@@ -96,7 +96,6 @@ export function LibroCompras() {
               className="w-[170px]"
             />
 
-      <Pestanas pestanas={PESTANAS_ANALISIS} />
             <Button
               variant="outline"
               icon={<Download />}
@@ -108,6 +107,13 @@ export function LibroCompras() {
           </div>
         }
       />
+
+      {/* La barra de pestañas va debajo de la cabecera y en su propia línea,
+          como en las otras dos pantallas del grupo. Estaba metida DENTRO de las
+          acciones, entre el mes y el botón de descargar: con dos pestañas
+          cortas cabía y no se veía, y al entrar la tercera se juntó todo en un
+          renglón. */}
+      <Pestanas pestanas={PESTANAS_ANALISIS} />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
