@@ -914,16 +914,50 @@ export function Existencias() {
                 obsolescencia» sin leer doscientas notas a mano.
               */}
               {modal.tipo === 'salida' ? (
-                <Select
-                  label="¿De qué clase?"
-                  value={clase}
-                  onChange={(e) => setClase(e.target.value)}
-                  hint={CLASES_DE_SALIDA.find((c) => c.valor === clase)?.dice}
-                  opciones={CLASES_DE_SALIDA.map((c) => ({
-                    valor: c.valor,
-                    etiqueta: c.etiqueta,
-                  }))}
-                />
+                <>
+                  <Select
+                    label="¿De qué clase?"
+                    value={clase}
+                    onChange={(e) => setClase(e.target.value)}
+                    hint={CLASES_DE_SALIDA.find((c) => c.valor === clase)?.dice}
+                    opciones={CLASES_DE_SALIDA.map((c) => ({
+                      valor: c.valor,
+                      etiqueta: c.etiqueta,
+                    }))}
+                  />
+
+                  {/*
+                    EL PUENTE A LA OTRA PUERTA
+
+                    Christopher: «esta lista no da las opciones necesarias... esta
+                    el caso en que no se dano, no se perdio, pero es obsoleto».
+
+                    Y obsoleto SI existe — con danado, vencido, extraviado y
+                    robado— pero vive en Dar de baja. El reparto es correcto:
+                    sacar es haberlo gastado o perdido moviendolo; dar de baja es
+                    que dejo de servir. Meter «obsoleto» aqui partiria la misma
+                    pregunta en dos sitios y ninguno respondería entero.
+
+                    Lo que faltaba era decirlo desde aqui. Quien abrio esta
+                    puerta no tiene por que saber que hay otra al lado, y menos
+                    con la lista delante pareciendo incompleta.
+                  */}
+                  <div className="border-hairline rounded-[6px] border p-3">
+                    <p className="text-ink/60 text-xs leading-relaxed">
+                      ¿Se dañó, venció, quedó obsoleto, se extravió o se lo llevaron? Eso no es
+                      sacarlo: es <strong className="text-ink/80">darlo de baja</strong>, y ahí
+                      sí está cada una de esas causas.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => abrir('baja', modal.fila)}
+                    >
+                      Darlo de baja
+                    </Button>
+                  </div>
+                </>
               ) : null}
 
               {modal.tipo === 'baja' ? (
