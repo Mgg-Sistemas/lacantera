@@ -9,60 +9,71 @@ import {
   membrete,
   pieDePagina,
   seccion,
+  tabla,
+  type Columna,
 } from '@/lib/ficha/papel'
-import { ABAJO, ANCHO_UTIL, CENTRO, IZQ } from '@/lib/ficha/hoja'
+import { ABAJO, ANCHO_UTIL, IZQ } from '@/lib/ficha/hoja'
 
 /*
   LA NOTA DE SALIDA
 
-  «Cada salida de material que se haga, hacer una nota de salida (PDF)».
+  «Cada salida de material que se haga, hacer una nota de salida (PDF)». Y
+  después, viendo la primera versión: «necesitamos que este documento aparente
+  mayor seriedad o profesionalismo».
 
-  QUÉ PRUEBA ESTE PAPEL
+  QUÉ ESTABA MAL, MIRANDO LAS CAPTURAS
 
-  Que esa cantidad de ese material salió de ese almacén, ese día, por ese motivo
-  — y que alguien lo recibió. El almacén es lo segundo que más se pierde en una
-  cantera después del combustible, y por el mismo camino: no desaparece un
-  tambor entero, se van cinco de cada veinte sin que nadie firme nada.
+  El recuadro gigante con «1 GAL» en cuerpo 22. Funciona en el vale de
+  combustible, donde la cifra ES el documento —doscientos litros de gasoil—,
+  pero un galón de aceite en letras de dos centímetros parece un cartel de feria,
+  no un papel de almacén. Un documento serio no grita: ordena.
 
-  ES EL HERMANO DEL VALE DE COMBUSTIBLE
+  Y «POR QUÉ SALE / SE HIZO MERMA» en mayúsculas sobre media página en blanco.
+  Dos palabras solas ocupando un bloque entero es lo que hace que un papel
+  parezca sin terminar.
 
-  Y se parece a propósito: el mismo membrete, el mismo recuadro con la cifra en
-  grande, las mismas dos firmas. Quien maneja los dos papeles no debería tener
-  que aprender dos formas de leer lo mismo.
+  QUÉ LO ARREGLA: UNA TABLA
 
-  SIRVE PARA LAS TRES SALIDAS
+  Un documento de almacén se lee como se leen todos: encabezado con los datos,
+  renglones con lo que salió, total abajo, firmas al pie. Es la misma forma que
+  ya tienen la orden de compra y la factura de esta casa, y por eso se usa el
+  mismo armador de tablas — no uno propio.
 
-  Sacar material, darlo de baja y mandarlo al taller son tres cosas distintas
-  para el sistema, pero el papel que las respalda es el mismo: algo salió y
-  alguien lo recibió. Lo que cambia es el rótulo del motivo, que se pasa hecho.
+  Y LA TABLA RESUELVE LA OTRA PETICIÓN
 
-  LA RAYA DE QUIEN RECIBE VA EN BLANCO
+  «¿Es posible gestionar la salida de más de un material a la vez?». Sí, y era
+  la misma pregunta: un papel con una tabla de renglones es exactamente un papel
+  que puede llevar varios materiales. Una salida de cinco cosas para el mismo
+  trabajo es UN documento con cinco líneas, no cinco documentos.
 
-  Porque hoy el sistema no captura quién retira el material — al revés que el
-  vale de combustible, que sí lo exige. Se firma a mano, que es como funcionaba
-  antes de que existiera el sistema, y el día que se capture el nombre se
-  estampará aquí sin tocar nada más.
+  EL VALOR VA EN EL PAPEL
+
+  Una salida de almacén es un costo, y quien firma tiene derecho a saber por
+  cuánto está firmando. El total va destacado abajo de la tabla, como en
+  cualquier documento que mueva dinero.
 */
+
+export interface RenglonDeSalida {
+  articuloCodigo: string
+  articulo: string
+  cantidad: string | number
+  unidad: string
+  costoUnitarioUsd?: string | number | null
+  valorUsd?: string | number | null
+}
 
 export interface DatosNotaDeSalida {
   numero: string
   fecha: string
 
   almacen: string
-  articuloCodigo: string
-  articulo: string
-  cantidad: string | number
-  unidad: string
-
-  /** «Salida a consumo», «Baja por daño», «Al taller»… ya en palabras. */
+  /** «Salida a consumo», «Baja por daño»… ya en palabras. */
   clase: string
   motivo?: string | null
-
-  costoUnitarioUsd?: string | number | null
-  valorUsd?: string | number | null
-
-  /** A dónde va, cuando se sabe: un taller, una unidad, un destino escrito. */
+  /** A dónde va, cuando se sabe. */
   destino?: string | null
+
+  renglones: RenglonDeSalida[]
 
   entrego?: string | null
   entregoFirma?: string | null
@@ -76,8 +87,35 @@ export interface NotaArmada {
   nombre: string
 }
 
-function conUnidad(valor: string | number, unidad: string): string {
-  return `${Number(valor).toLocaleString('es-VE', { maximumFractionDigits: 4 })} ${unidad}`
+/*
+  Los anchos suman los 150 mm útiles.
+
+  Las cifras van alineadas a la derecha, así que cada una necesita por delante el
+  hueco de su número más largo. Repartir mirando los rótulos de la cabecera deja
+  la primera nota con cifras grandes escribiendo una columna encima de otra.
+*/
+const COLUMNAS: Columna[] = [
+  { titulo: 'Código', ancho: 26 },
+  { titulo: 'Material', ancho: 58 },
+  { titulo: 'Cantidad', ancho: 17, alDerecha: true },
+  { titulo: 'Unidad', ancho: 13 },
+  // «Costo unit.» a ocho puntos no cabe en quince milimetros: la cabecera se
+  // montaba encima de la de al lado. Se ensancha la columna y se acorta el
+  // rotulo — en un papel de almacen, «Costo» no se confunde con nada.
+  { titulo: 'Costo', ancho: 18, alDerecha: true },
+  { titulo: 'Total', ancho: 18, alDerecha: true },
+]
+
+/*
+  Dos decimales, siempre. Es lo predeterminado de la casa, y en un papel que se
+  firma importa mas que en una pantalla: tres cifras con distinta cantidad de
+  decimales en la misma columna no se pueden comparar de un vistazo.
+*/
+function numero(valor: string | number, decimales = 2): string {
+  return Number(valor).toLocaleString('es-VE', {
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: decimales,
+  })
 }
 
 export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmada> {
@@ -93,50 +131,15 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
 
   y = lineaEmpresa(doc, y, `${d.empresa.razonSocial} · RIF ${d.empresa.rif}`)
 
-  /*
-    LO QUE SE COMPRUEBA ANTES DE FIRMAR
-
-    La cantidad y qué es, en grande y centrado. Es lo único que mira quien está
-    recibiendo, y si tiene que buscarlo entre ocho renglones iguales deja de
-    mirarlo a la tercera vez.
-  */
-  const ALTO_CAJA = 30
-  doc.setDrawColor(TINTA).setLineWidth(0.4)
-  doc.rect(IZQ, y, ANCHO_UTIL, ALTO_CAJA)
-
-  doc.setFont('helvetica', 'bold').setFontSize(22).setTextColor(TINTA)
-  doc.text(conUnidad(d.cantidad, d.unidad), CENTRO, y + 12, { align: 'center' })
-
-  doc.setFont('helvetica', 'bold').setFontSize(12).setTextColor(TINTA)
-  doc.text(d.articulo.toUpperCase(), CENTRO, y + 20, {
-    align: 'center',
-    maxWidth: ANCHO_UTIL - 8,
-  })
-
-  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(GRIS)
-  doc.text(d.articuloCodigo, CENTRO, y + 25.5, { align: 'center' })
-
-  y += ALTO_CAJA + 10
-
   y = bloqueEtiquetado(doc, y, 'La salida', [
     ['De qué almacén', d.almacen],
     ['Clase', d.clase],
     ['A dónde va', d.destino],
     ['Fecha', d.fecha],
-    // El valor va en el papel porque una salida de almacén es un costo, y quien
-    // firma tiene derecho a saber por cuánto está firmando.
-    [
-      'Valor',
-      d.valorUsd != null
-        ? `$ ${Number(d.valorUsd).toFixed(2)}${
-            d.costoUnitarioUsd != null
-              ? ` · $ ${Number(d.costoUnitarioUsd).toFixed(4)} por ${d.unidad.toLowerCase()}`
-              : ''
-          }`
-        : null,
-    ],
   ])
 
+  // El motivo va antes de la tabla y no al final: es lo que explica todos los
+  // renglones, y leerlo después de la lista obliga a volver a subir.
   if (d.motivo) {
     y = seccion(doc, y, 'Por qué sale')
     doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(TINTA)
@@ -145,8 +148,29 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
     y += lineas.length * 4.6 + 6
   }
 
-  // Las firmas van a altura fija —abajo del todo— y por eso hay que comprobar
-  // que lo de arriba no llegue hasta ahí. Un motivo largo se les echaría encima.
+  const total = d.renglones.reduce((s, r) => s + Number(r.valorUsd ?? 0), 0)
+
+  y = tabla(
+    doc,
+    y,
+    COLUMNAS,
+    d.renglones.map((r) => [
+      r.articuloCodigo,
+      r.articulo,
+      numero(r.cantidad),
+      r.unidad,
+      r.costoUnitarioUsd != null ? numero(r.costoUnitarioUsd) : '—',
+      r.valorUsd != null ? numero(r.valorUsd) : '—',
+    ]),
+    total > 0 ? `TOTAL   $ ${numero(total)}` : undefined,
+  )
+
+  /*
+    Las firmas van a altura fija —abajo del todo— porque una nota se firma
+    siempre en el mismo sitio y quien maneja veinte al día no debe buscarlas.
+    Eso obliga a comprobar que la tabla no llegue hasta ahí: con quince
+    renglones se pisarían.
+  */
   if (y > ABAJO - 46) {
     doc.addPage()
     y = membrete(doc, logo, {
@@ -158,10 +182,10 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
 
   doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
   const aviso = doc.splitTextToSize(
-    'Al firmar, quien recibe declara que se le entregó la cantidad indicada arriba. Esta nota respalda una salida de inventario y queda registrada en el libro de movimientos.',
+    'Al firmar, quien recibe declara que se le entregó el material relacionado arriba en las cantidades indicadas. Esta nota respalda una salida de inventario y queda registrada en el libro de movimientos.',
     ANCHO_UTIL,
   ) as string[]
-  doc.text(aviso, IZQ, Math.max(y + 4, ABAJO - 40), { lineHeightFactor: 1.4 })
+  doc.text(aviso, IZQ, Math.max(y + 6, ABAJO - 40), { lineHeightFactor: 1.4 })
 
   firmas(
     doc,
@@ -173,7 +197,7 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
 
   pieDePagina(doc, `Documento generado por el sistema · ${d.numero} · ${fechaLarga(d.momento)}`)
 
-  doc.setProperties({ title: `Nota de salida ${d.numero} — ${d.articulo}` })
+  doc.setProperties({ title: `Nota de salida ${d.numero}` })
 
   return {
     blob: doc.output('blob'),

@@ -159,14 +159,20 @@ export function Existencias() {
         numero: data.numero,
         fecha: fecha(data.fecha),
         almacen: alm?.nombre ?? '',
-        articuloCodigo: art?.codigo ?? '',
-        articulo: art?.nombre ?? '',
-        cantidad: data.cantidad,
-        unidad: data.unidad,
         clase,
         motivo,
-        costoUnitarioUsd: data.costo_usd,
-        valorUsd: data.valor_usd,
+        // Un renglon hoy. El papel ya sabe llevar varios, y la base tambien:
+        // falta el formulario, que es lo unico que sigue siendo de una fila.
+        renglones: [
+          {
+            articuloCodigo: art?.codigo ?? '',
+            articulo: art?.nombre ?? '',
+            cantidad: data.cantidad,
+            unidad: data.unidad,
+            costoUnitarioUsd: data.costo_usd,
+            valorUsd: data.valor_usd,
+          },
+        ],
         empresa: {
           razonSocial: empresa?.razon_social ?? '',
           rif: empresa?.rif ?? '',
