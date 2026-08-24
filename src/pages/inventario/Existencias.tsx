@@ -31,6 +31,8 @@ import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalAlTaller } from './ModalAlTaller'
+import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
+import { supabase } from '@/lib/supabase'
 import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
@@ -47,7 +49,7 @@ import {
   useRegistrarSalida,
 } from '@/lib/api/inventario'
 import type { Existencia, ExistenciaTotal } from '@/lib/api/inventario'
-import { dolares, enteros } from '@/lib/formato'
+import { dolares, enteros, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 function cantidad(valor: string | number): string {
@@ -124,6 +126,55 @@ export function Existencias() {
   // Mandar algo al taller no es sacarlo: vuelve. Por eso va en su propio modal
   // y no como un quinto caso del de salidas.
   const [alTaller, setAlTaller] = useState<Existencia | null>(null)
+
+  /*
+    LA NOTA DE SALIDA
+
+    «Cada salida de material que se haga, hacer una nota de salida (PDF)».
+
+    Se arma DESPUES de guardar y con el numero que devuelve la base, no con lo
+    que hay en el formulario: el numero de movimiento lo pone la base y es lo
+    unico que ata el papel al libro. Un papel con un numero inventado no
+    respalda nada.
+
+    Y se ensena en el visor en vez de descargarse de golpe: quien acaba de sacar
+    material lo comprueba antes de imprimirlo y de que alguien lo firme.
+  */
+  const [nota, setNota] = useState<{ blob: Blob; nombre: string } | null>(null)
+
+  const notaDelMovimiento = async (movimientoId: number, clase: string, motivo: string) => {
+    const { data } = await supabase
+      .from('inventario_movimientos')
+      .select('numero, fecha, cantidad, unidad, costo_usd, valor_usd, almacen_id, articulo_id')
+      .eq('id', movimientoId)
+      .maybeSingle()
+
+    if (!data) return
+
+    const alm = (almacenes ?? []).find((a) => a.id === data.almacen_id)
+    const art = (articulos ?? []).find((a) => a.id === data.articulo_id)
+
+    setNota(
+      await armarNotaDeSalida({
+        numero: data.numero,
+        fecha: fecha(data.fecha),
+        almacen: alm?.nombre ?? '',
+        articuloCodigo: art?.codigo ?? '',
+        articulo: art?.nombre ?? '',
+        cantidad: data.cantidad,
+        unidad: data.unidad,
+        clase,
+        motivo,
+        costoUnitarioUsd: data.costo_usd,
+        valorUsd: data.valor_usd,
+        empresa: {
+          razonSocial: empresa?.razon_social ?? '',
+          rif: empresa?.rif ?? '',
+        },
+        momento: new Date(),
+      }),
+    )
+  }
   const ajuste = useRegistrarAjuste()
   const baja = useRegistrarBaja()
   const entrada = useRegistrarEntradas()
@@ -294,22 +345,32 @@ export function Existencias() {
         referencia: referencia || null,
       })
     } else if (modal.tipo === 'baja') {
-      await baja.mutateAsync({
+      const id = (await baja.mutateAsync({
         almacen_id: modal.fila!.almacen_id,
         articulo_id: modal.fila!.articulo_id,
         cantidad: Number(valor),
         causa,
         motivo,
         destino: destino || null,
-      })
+      })) as number
+      await notaDelMovimiento(
+        id,
+        `Baja · ${CAUSAS_DE_BAJA.find((c) => c.valor === causa)?.etiqueta ?? causa}`,
+        motivo,
+      )
     } else if (modal.tipo === 'salida') {
-      await salida.mutateAsync({
+      const id = (await salida.mutateAsync({
         almacen_id: modal.fila!.almacen_id,
         articulo_id: modal.fila!.articulo_id,
         cantidad: Number(valor),
         motivo,
         tipo: clase,
-      })
+      })) as number
+      await notaDelMovimiento(
+        id,
+        CLASES_DE_SALIDA.find((c) => c.valor === clase)?.etiqueta ?? clase,
+        motivo,
+      )
     } else {
       await ajuste.mutateAsync({
         almacen_id: modal.fila!.almacen_id,
@@ -611,6 +672,15 @@ export function Existencias() {
       />
 
       <ModalAlTaller fila={alTaller} onCerrar={() => setAlTaller(null)} />
+
+      <Visor
+        abierto={nota !== null}
+        onCerrar={() => setNota(null)}
+        blob={nota?.blob ?? null}
+        nombreArchivo={nota?.nombre ?? 'nota-salida.pdf'}
+        titulo="Nota de salida"
+        descripcion="Compruébala antes de imprimirla: es lo que va a firmar quien recibe el material."
+      />
 
       {modal ? (
         <Modal
