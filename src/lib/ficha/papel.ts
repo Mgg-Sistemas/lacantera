@@ -381,3 +381,49 @@ export function fechaCorta(iso: string): string {
     year: 'numeric',
   }).format(new Date(`${iso.slice(0, 10)}T12:00:00`))
 }
+
+/**
+ * Una sola firma, centrada.
+ *
+ * La líder lo pidió así para la orden de compra: «quita la firma del proveedor,
+ * solo coloca en el medio la del sr Jesús Lozada».
+ *
+ * Y tiene razón de fondo, no solo de gusto. La raya de «recibido por el
+ * proveedor» nunca se llenaba: la orden se manda por correo o por WhatsApp, no
+ * se le pone delante a nadie para que la firme. Una raya que sale en blanco en
+ * todos los papeles enseña que las rayas de este documento no se firman —y la
+ * que sí importa se lee como decorado.
+ *
+ * Queda una, la de quien autoriza, y en el medio porque a la izquierda con la
+ * derecha vacía el papel se ve descuadrado.
+ */
+export function firmaCentrada(doc: Doc, y: number, lado: string | LadoFirmado): void {
+  const l: LadoFirmado = typeof lado === 'string' ? { texto: lado } : lado
+
+  // Poco más de la mitad del ancho útil. A todo lo ancho, la raya parece un
+  // subrayado del párrafo de arriba en vez de un sitio donde firmar.
+  const ancho = 80
+  const x = IZQ + (ANCHO_UTIL - ancho) / 2
+
+  if (l.imagen) {
+    const ALTO = 15
+    try {
+      const props = doc.getImageProperties(l.imagen)
+      const anchoFirma = Math.min(ancho - 4, (props.width / props.height) * ALTO)
+      doc.addImage(l.imagen, 'PNG', x + (ancho - anchoFirma) / 2, y - ALTO - 0.5, anchoFirma, ALTO)
+    } catch {
+      // Una imagen que jsPDF no sabe leer no puede tumbar el documento entero.
+    }
+  }
+
+  doc.setDrawColor(TINTA).setLineWidth(0.4)
+  doc.line(x, y, x + ancho, y)
+
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(GRIS)
+  doc.text(l.texto, x + ancho / 2, y + 4.5, { align: 'center' })
+
+  if (l.nombre) {
+    doc.setFontSize(7.5).setTextColor(GRIS_SUAVE)
+    doc.text(ajustar(doc, l.nombre, ancho), x + ancho / 2, y + 8.6, { align: 'center' })
+  }
+}

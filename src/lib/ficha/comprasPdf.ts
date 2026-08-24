@@ -9,7 +9,7 @@ import {
   etiquetaValor,
   bloqueEtiquetado,
   tabla,
-  firmas,
+  firmaCentrada,
   pieDePagina,
   fechaLarga,
   fechaCorta,
@@ -229,18 +229,14 @@ export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoAr
     doc.addPage()
     y = ARRIBA
   }
-  firmas(
-    doc,
-    // Se reserva más alto que antes: debajo de la raya van ahora dos renglones
-    // —el rol y el nombre— y con el hueco viejo el nombre chocaba con el pie.
-    Math.max(y + 16, ABAJO - 26),
-    {
-      texto: 'Firma autorizada',
-      nombre: d.autoriza?.nombre ?? null,
-      imagen: d.autoriza?.imagen ?? null,
-    },
-    'Recibido por el proveedor',
-  )
+  // Una sola firma, la de quien autoriza. La raya de «recibido por el
+  // proveedor» salió en blanco en todas las órdenes emitidas: la orden se manda
+  // por correo, no se le pone delante al proveedor para que la firme.
+  firmaCentrada(doc, Math.max(y + 18, ABAJO - 26), {
+    texto: 'Firma autorizada',
+    nombre: d.autoriza?.nombre ?? null,
+    imagen: d.autoriza?.imagen ?? null,
+  })
 
   pieDePagina(doc, `Documento generado por el sistema · ${d.refPedido} · ${fechaLarga(d.momento)}`)
   doc.setProperties({ title: `Orden de compra ${d.numero} — ${d.proveedor.nombre}` })
