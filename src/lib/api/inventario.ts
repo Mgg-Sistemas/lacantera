@@ -429,36 +429,85 @@ export function leerNotaDeSalida(numero: string) {
 }
 
 /*
-  DE QUÉ CLASE ES UNA SALIDA
+  DE QUÉ CLASE ES UNA SALIDA, Y ESA LISTA LA LLEVA LA EMPRESA
 
-  Christopher: «validar si se pueden registrar salidas del inventario, así como
-  ya se tienen entradas con o sin compras».
+  Empezó siendo dos opciones escritas aquí —consumo y merma—, y la misma queja
+  llegó DOS VECES:
 
-  Se podían, pero de una sola clase. La base admite tres —consumo, merma y
-  despacho— y la pantalla mandaba siempre `SALIDA_CONSUMO` sin preguntar, así
-  que la merma existía en el catálogo y no había forma de registrarla.
+    «Esta lista no da las opciones necesarias o al menos otorga la opción "Otro"
+     para especificar por qué sale, es que está el caso en que no se dañó, no se
+     perdió, pero es obsoleto por ejemplo»
 
-  Y eso importa más de lo que parece: el porcentaje de merma es lo que se
-  vigila para detectar robo. Si todo lo que se pierde se anota como consumo, la
-  merma da siempre cero y el indicador que debería avisar no avisa nunca.
+    «Solo 2 opciones no da apertura necesaria, ¿y si solo lo sacan porque está
+     obsoleto? Y si mejor se le añade la opción "Otro" y que especifique»
 
-  El despacho NO se ofrece aquí a propósito. Lo escribe una venta cuando sale
-  el camión, con su nota de entrega detrás. Dejarlo a mano permitiría restar
-  material «por despacho» sin documento que lo respalde, y al facturar la venta
-  el patio quedaría descontado dos veces.
+  La primera vez se contestó con un puente a «Dar de baja», que contablemente es
+  correcto y como respuesta es mala: cuando alguien pregunta dos veces lo mismo,
+  el problema no es que no se lo hayan explicado.
+
+  Desde el patio, «sacar material» es UNA acción. Que el sistema la parta en dos
+  funciones es asunto nuestro. Así que la lista es una y cada opción sabe si va a
+  consumo, a merma o a baja —y con qué causa—; la base encamina.
+
+  Y es editable, como pidió la líder para los motivos del vale: «igual debe ser
+  editable, no quiero nos llamen a cada rato por cosas así». Es la tercera lista
+  que se pasa de CHECK a tabla por el mismo motivo.
+
+  El porcentaje de merma sigue separado del consumo, que era para lo que servía
+  distinguir clases: es lo que se vigila para detectar un faltante, y si todo lo
+  que se pierde se anota como consumo, la merma da cero para siempre.
+
+  EL DESPACHO NO SE OFRECE, y eso no cambia. Lo escribe una venta cuando sale el
+  camión, con su nota de entrega detrás. A mano permitiría restar material «por
+  despacho» sin documento, y al facturar la venta el patio quedaría descontado
+  dos veces.
 */
-export const CLASES_DE_SALIDA: Array<{ valor: string; etiqueta: string; dice: string }> = [
-  {
-    valor: 'SALIDA_CONSUMO',
-    etiqueta: 'Se usó trabajando',
-    dice: 'El repuesto que se montó, el aceite del cambio, el combustible que se quemó.',
-  },
-  {
-    valor: 'SALIDA_MERMA',
-    etiqueta: 'Se perdió en el manejo',
-    dice: 'Lo que se derrama, se evapora o se rompe moviéndolo. Se vigila: una merma que sube sin explicación es la primera señal de un faltante.',
-  },
-]
+export interface ClaseDeSalida {
+  codigo: string
+  nombre: string
+  pista: string | null
+  /** A dónde va en el libro. No lo elige quien saca el material. */
+  tipo: 'SALIDA_CONSUMO' | 'SALIDA_MERMA' | 'SALIDA_BAJA'
+  causa_baja: string | null
+  orden: number
+  /** Cierto si obliga a explicarse en más de cuatro palabras. */
+  exige_detalle: boolean
+  activa: boolean
+}
+
+export function useClasesDeSalida(incluirApagadas = false) {
+  return useQuery({
+    queryKey: ['clases-de-salida', incluirApagadas],
+    queryFn: () =>
+      rpc<ClaseDeSalida[]>('clases_de_salida', { p_incluir_apagadas: incluirApagadas }),
+  })
+}
+
+function useAccionDeClase<A>(fn: (a: A) => Promise<unknown>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['clases-de-salida'] }),
+  })
+}
+
+export function useGuardarClaseDeSalida() {
+  return useAccionDeClase(
+    (c: { codigo?: string | null; nombre: string; pista?: string | null; activa?: boolean }) =>
+      rpc<string>('guardar_clase_de_salida', {
+        p_codigo: c.codigo ?? null,
+        p_nombre: c.nombre,
+        p_pista: c.pista ?? null,
+        p_activa: c.activa ?? true,
+      }),
+  )
+}
+
+export function useBorrarClaseDeSalida() {
+  return useAccionDeClase((codigo: string) =>
+    rpc<void>('borrar_clase_de_salida', { p_codigo: codigo }),
+  )
+}
 
 /*
   LAS CAUSAS POR LAS QUE UN BIEN DEJA DE SERVIR
