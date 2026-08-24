@@ -66,8 +66,10 @@ function señal(t: Tarjeta): { texto: string; tono: Tono } | null {
   }
 
   if (t.columna === 'APROBADA') {
+    // El estado sigue llamandose EN_TESORERIA en la base; lo que se lee, no.
+    // Vease el comentario de ESTADOS en DetalleCompra.tsx.
     return t.estado_orden === 'EN_TESORERIA'
-      ? { texto: 'En tesorería', tono: 'info' }
+      ? { texto: 'Por pagar', tono: 'info' }
       : { texto: 'Falta el método de pago', tono: 'warning' }
   }
 

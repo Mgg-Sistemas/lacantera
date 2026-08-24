@@ -62,7 +62,11 @@ export function ModalEstado({
       abierto={abierto}
       onCerrar={onCerrar}
       titulo={`Estado de ${maquina.nombre}`}
-      descripcion={`Ahora mismo está ${ETIQUETA_ESTADO[maquina.estado].toLowerCase()}.`}
+      /* La segunda frase contesta la pregunta que se hizo en voz alta: «¿como se
+         saca de circulacion una maquina que ya no funciona o que ya no es de la
+         empresa?». La respuesta estaba aqui dentro y la pantalla no la decia en
+         ningun sitio. */
+      descripcion={`Ahora mismo está ${ETIQUETA_ESTADO[maquina.estado].toLowerCase()}. Aquí también se saca de circulación: «fuera de servicio» si se dañó, «desincorporada» si ya no es de la empresa.`}
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>

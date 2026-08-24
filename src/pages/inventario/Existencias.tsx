@@ -31,9 +31,11 @@ import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalAlTaller } from './ModalAlTaller'
+import { ListaEditable } from '@/components/ListaEditable'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { supabase } from '@/lib/supabase'
 import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
   useAlmacenes,
@@ -44,9 +46,10 @@ import {
   useRegistrarAjuste,
   useRegistrarBaja,
   CAUSAS_DE_BAJA,
-  CLASES_DE_SALIDA,
+  useClasesDeSalida,
+  useGuardarClaseDeSalida,
+  useBorrarClaseDeSalida,
   useRegistrarEntradas,
-  useRegistrarSalida,
   useRegistrarSalidas,
   leerNotaDeSalida,
 } from '@/lib/api/inventario'
@@ -133,7 +136,10 @@ export function Existencias() {
   )
 
   const { puede } = useMisRoles()
-  const salida = useRegistrarSalida()
+  // El de arriba comprueba ROL literal; este comprueba NIVEL por modulo, que es
+  // lo que exige `guardar_clase_de_salida` (INVENTARIO en TOTAL). Ofrecer el
+  // boton a quien la RPC va a rechazar es enseñar una puerta cerrada.
+  const { puede: alcanza } = useMisPermisos()
   const salidas = useRegistrarSalidas()
   // Mandar algo al taller no es sacarlo: vuelve. Por eso va en su propio modal
   // y no como un quinto caso del de salidas.
@@ -164,6 +170,18 @@ export function Existencias() {
     sacar el material.
   */
   const [falloElPapel, setFalloElPapel] = useState<string | null>(null)
+
+  /*
+    La lista de razones, editable desde donde se usa.
+
+    Es la tercera del sistema que se abre así —motivos del vale, categorías de
+    gasto y ahora esta—, y por la misma frase de la líder: «igual debe ser
+    editable, no quiero nos llamen a cada rato por cosas así».
+  */
+  const [ordenandoClases, setOrdenandoClases] = useState(false)
+  const guardarClase = useGuardarClaseDeSalida()
+  const borrarClase = useBorrarClaseDeSalida()
+  const todasLasClases = useClasesDeSalida(true)
 
   /*
     La nota entera, releída de la base por su número.
@@ -463,7 +481,14 @@ export function Existencias() {
   */
   const [causa, setCausa] = useState(CAUSAS_DE_BAJA[0].valor)
   const [destino, setDestino] = useState('')
-  const [clase, setClase] = useState(CLASES_DE_SALIDA[0].valor)
+  /*
+    La lista ya no está escrita aquí: la lleva la empresa y llega por la red, así
+    que al montar todavía no hay ninguna. Arranca vacía y se pone la primera en
+    cuanto llegan.
+  */
+  const clases = useClasesDeSalida()
+  const [clase, setClase] = useState('')
+  const claseElegida = (clases.data ?? []).find((c) => c.codigo === clase)
 
   const abrir = (
     tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada' | 'baja',
@@ -471,7 +496,7 @@ export function Existencias() {
   ) => {
     setCausa(CAUSAS_DE_BAJA[0].valor)
     setDestino('')
-    setClase(CLASES_DE_SALIDA[0].valor)
+    setClase((clases.data ?? [])[0]?.codigo ?? '')
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setMotivo('')
     setReferencia('')
@@ -549,7 +574,7 @@ export function Existencias() {
       try {
         await notaCompleta(
           numero,
-          CLASES_DE_SALIDA.find((c) => c.valor === clase)?.etiqueta ?? clase,
+          (clases.data ?? []).find((c) => c.codigo === clase)?.nombre ?? clase,
           motivo,
         )
       } catch (e) {
@@ -574,18 +599,48 @@ export function Existencias() {
         motivo,
       )
     } else if (modal.tipo === 'salida') {
-      const id = (await salida.mutateAsync({
+      /*
+        Sacar una sola fila va por la MISMA puerta que sacar varias.
+
+        Antes llamaba a `registrar_salida` en singular, que solo entiende los
+        tipos de movimiento crudos. Al pasar las clases a una lista editable,
+        `clase` dejo de ser 'SALIDA_CONSUMO' y paso a ser el codigo de una razon
+        —'QUEDO_OBSOLETO'—, y esa funcion no sabe encaminarla. Habria reventado.
+
+        Se podia traducir el codigo aqui antes de enviarlo. No se hace: seria un
+        segundo sitio donde vive la regla de que «obsoleto» es una baja, y el dia
+        que alguien añada una razon nueva por la pantalla, este camino no se
+        enteraria. Un renglon es una lista de uno.
+      */
+      const numero = (await salidas.mutateAsync({
         almacen_id: modal.fila!.almacen_id,
-        articulo_id: modal.fila!.articulo_id,
-        cantidad: Number(valor),
+        renglones: [
+          {
+            almacen_id: modal.fila!.almacen_id,
+            articulo_id: modal.fila!.articulo_id,
+            cantidad: Number(valor),
+          },
+        ],
         motivo,
         tipo: clase,
-      })) as number
-      await notaDelMovimiento(
-        id,
-        CLASES_DE_SALIDA.find((c) => c.valor === clase)?.etiqueta ?? clase,
-        motivo,
-      )
+      })) as string
+
+      // Igual que en la de varios renglones: el modal se cierra antes de armar
+      // el papel, o el segundo toque registra una salida entera de mas.
+      setModal(null)
+      try {
+        await notaCompleta(
+          numero,
+          (clases.data ?? []).find((c) => c.codigo === clase)?.nombre ?? clase,
+          motivo,
+        )
+      } catch (e) {
+        setFalloElPapel(
+          `La salida ${numero} quedo registrada, pero no se pudo armar el papel. Buscala en Movimientos y pulsa «Nota».`,
+        )
+        console.error(e)
+      }
+      return
     } else {
       await ajuste.mutateAsync({
         almacen_id: modal.fila!.almacen_id,
@@ -916,6 +971,36 @@ export function Existencias() {
         </Modal>
       ) : null}
 
+      {ordenandoClases ? (
+        <Modal
+          abierto
+          onCerrar={() => setOrdenandoClases(false)}
+          titulo="Por qué puede salir un material"
+          descripcion="La lista que aparece al sacar material. Cada razón ya sabe si es consumo, merma o baja: eso no se cambia desde aquí, porque movería de sitio salidas ya registradas."
+          ancho="sm"
+          acciones={<Button onClick={() => setOrdenandoClases(false)}>Listo</Button>}
+        >
+          <ListaEditable
+            elementos={(todasLasClases.data ?? []).map((c) => ({
+              codigo: c.codigo,
+              nombre: c.nombre,
+              pista: c.pista,
+              activo: c.activa,
+            }))}
+            onGuardar={(e) =>
+              guardarClase.mutateAsync({ codigo: e.codigo, nombre: e.nombre, activa: e.activo })
+            }
+            onBorrar={(codigo) => borrarClase.mutateAsync(codigo)}
+            onAnadir={(nombre) => guardarClase.mutateAsync({ nombre })}
+            error={guardarClase.error ?? borrarClase.error}
+            guardando={guardarClase.isPending || borrarClase.isPending}
+            etiquetaAnadir="Añadir una razón"
+            placeholderNuevo="Se prestó a otra obra"
+            nota="Una razón que ya se usó no se borra: se apaga. Si se borrara, las salidas de hace tres meses se quedarían sin poder decir por qué se hicieron."
+          />
+        </Modal>
+      ) : null}
+
       <Visor
         abierto={nota !== null}
         onCerrar={() => setNota(null)}
@@ -946,7 +1031,7 @@ export function Existencias() {
               : modal.tipo === 'salidas'
                 ? 'Todo lo que sale para un mismo trabajo, en un solo papel. Cada renglón dice qué se lleva y de qué sitio: el aceite puede estar en el almacén y las varillas en el patio.'
                 : modal.tipo === 'salida'
-                  ? 'Sale del almacén al costo promedio que tiene ahora. Di de qué clase es: lo que se usa trabajando y lo que se pierde en el manejo se miran por separado.'
+                  ? 'Sale del almacén al costo promedio que tiene ahora. Di por qué sale: lo que se usa trabajando, lo que se pierde en el manejo y lo que se da de baja se miran por separado.'
                   : modal.tipo === 'baja'
                     ? 'Para lo que dejó de servir: se dañó, quedó obsoleto, venció, no aparece. Sale del inventario y su valor se da por perdido.'
                     : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
@@ -973,18 +1058,21 @@ export function Existencias() {
                     escribe la cantidad.
                   */
                   (modal.tipo === 'salidas' && !salidaEnPie) ||
+                  // Lo mismo que exige la base, dicho antes de pulsar. Una baja
+                  // y un «Otro» piden diez caracteres, no cuatro.
+                  ((modal.tipo === 'salidas' || modal.tipo === 'salida') &&
+                    (claseElegida?.tipo === 'SALIDA_BAJA' || claseElegida?.exige_detalle) &&
+                    motivo.trim().length < 10) ||
                   // Una baja pide más explicación: es lo único que quedará
                   // dentro de un año para justificar la pérdida.
                   (modal.tipo === 'baja' && motivo.trim().length < 10) ||
-                  salida.isPending ||
                   salidas.isPending ||
                   ajuste.isPending ||
                   entrada.isPending ||
                   baja.isPending
                 }
               >
-                {salida.isPending ||
-                salidas.isPending ||
+                {                salidas.isPending ||
                 ajuste.isPending ||
                 entrada.isPending ||
                 baja.isPending
@@ -1284,15 +1372,38 @@ export function Existencias() {
 
               <div className="mt-4">
                 <Select
-                  label="¿De qué clase?"
+                  /* Decía «¿De qué clase?». Christopher: «falta aclarar un poco,
+                     ¿clase de salida? ¿de qué clase... salida?». Era un rótulo
+                     escrito por quien ya sabía la respuesta. */
+                  label="¿Por qué sale?"
                   value={clase}
                   onChange={(e) => setClase(e.target.value)}
-                  hint={CLASES_DE_SALIDA.find((c) => c.valor === clase)?.dice}
-                  opciones={CLASES_DE_SALIDA.map((c) => ({
-                    valor: c.valor,
-                    etiqueta: c.etiqueta,
+                  hint={claseElegida?.pista ?? undefined}
+                  opciones={(clases.data ?? []).map((c) => ({
+                    valor: c.codigo,
+                    etiqueta: c.nombre,
                   }))}
                 />
+
+                {/* Cuando la clase es una baja, el papel deja de ser una salida
+                    corriente: destruye valor en libros. Decirlo aquí, y no al
+                    guardar, es lo que evita darse cuenta después. */}
+                {claseElegida?.tipo === 'SALIDA_BAJA' ? (
+                  <p className="text-ink/55 mt-2 text-xs leading-relaxed">
+                    Esto es una <strong className="text-ink/75">baja</strong>: el material sale del
+                    inventario y su valor se da por perdido. Hay que explicar qué pasó.
+                  </p>
+                ) : null}
+
+                {alcanza('INVENTARIO', 'TOTAL') ? (
+                  <button
+                    type="button"
+                    className="text-ink/45 hover:text-ink/75 mt-2 text-xs underline underline-offset-2"
+                    onClick={() => setOrdenandoClases(true)}
+                  >
+                    ¿Falta una razón? Editar la lista
+                  </button>
+                ) : null}
               </div>
             </>
           ) : (
@@ -1340,13 +1451,16 @@ export function Existencias() {
               {modal.tipo === 'salida' ? (
                 <>
                   <Select
-                    label="¿De qué clase?"
+                    /* Decía «¿De qué clase?» y Christopher preguntó «¿clase de
+                       salida? ¿de qué clase... salida?». Era un rótulo escrito
+                       por quien ya sabía la respuesta. */
+                    label="¿Por qué sale?"
                     value={clase}
                     onChange={(e) => setClase(e.target.value)}
-                    hint={CLASES_DE_SALIDA.find((c) => c.valor === clase)?.dice}
-                    opciones={CLASES_DE_SALIDA.map((c) => ({
-                      valor: c.valor,
-                      etiqueta: c.etiqueta,
+                    hint={claseElegida?.pista ?? undefined}
+                    opciones={(clases.data ?? []).map((c) => ({
+                      valor: c.codigo,
+                      etiqueta: c.nombre,
                     }))}
                   />
 
@@ -1423,9 +1537,12 @@ export function Existencias() {
               modal.tipo === 'entrada'
                 ? 'De dónde vino'
                 : modal.tipo === 'salidas'
-                  ? clase === 'SALIDA_MERMA'
-                    ? 'Qué pasó'
-                    : 'Para qué sale'
+                  ? // «Para qué sale» no encaja con una merma ni con una baja:
+                    // nada se derrama para algo. Cada clase pregunta lo que de
+                    // verdad se responde.
+                    claseElegida?.tipo === 'SALIDA_CONSUMO' && !claseElegida?.exige_detalle
+                    ? 'Para qué sale'
+                    : 'Qué pasó'
                   : modal.tipo === 'salida'
                   // «Para qué sale» no encaja con una merma: nada se derrama
                   // para algo. Cada clase pregunta lo que de verdad se
@@ -1448,7 +1565,6 @@ export function Existencias() {
             }
           />
 
-          {salida.error ? <ErrorDeCarga error={salida.error} className="mt-3" /> : null}
           {/* El de `salidas` faltaba, y era el unico de los cinco. La base para
               la salida y nombra el renglon; sin esta linea el boton se quedaba
               mudo y el operador no sabia por que no pasaba nada. */}

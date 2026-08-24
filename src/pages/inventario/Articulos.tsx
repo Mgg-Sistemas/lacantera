@@ -245,7 +245,7 @@ export function Articulos() {
           descripcion={
             form.id
               ? 'El código no se cambia: es con lo que se pide en el almacén y ya está impreso en lo emitido.'
-              : 'El código no se puede repetir y no se cambia después.'
+              : 'Solo hacen falta el nombre, la categoría y la unidad. El código se pone solo si lo dejas vacío.'
           }
           acciones={
             <>
@@ -267,11 +267,25 @@ export function Articulos() {
           }
         >
           <div className="grid gap-4 sm:grid-cols-2">
+            {/* El codigo dejo de ser obligatorio.
+                Lo pidio la lider: quien va a cargar cuarenta repuestos de una
+                caja tenia que inventarse cuarenta codigos antes de escribir el
+                primer nombre, y lo que sale de ahi son codigos inventados a las
+                prisas. Ya se nota en los que hay: junto a REP-FILTRO-A conviven
+                TAN-250-HQ, sin el prefijo de su categoria, e INS_HOJA_01 con
+                guion bajo.
+
+                Sigue pudiendose escribir: quien tiene una nomenclatura la usa.
+                Lo que cambia es que dejarlo vacio ya no es un error. */}
             <Input
               label="Código"
-              placeholder="REP-BOMBA"
+              placeholder="Se pone solo"
               disabled={Boolean(form.id)}
-              hint={form.id ? 'No se cambia.' : undefined}
+              hint={
+                form.id
+                  ? 'No se cambia.'
+                  : 'Opcional. Vacío, se pone solo con el prefijo de su categoría.'
+              }
               value={form.codigo}
               onChange={(e) => setForm({ ...form, codigo: e.target.value.toUpperCase() })}
             />
