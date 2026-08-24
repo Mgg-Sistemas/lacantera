@@ -102,6 +102,9 @@ const Vehiculos = pagina(() =>
 const Mantenimientos = pagina(() =>
   import('@/pages/maquinaria/Mantenimientos').then((m) => ({ default: m.Mantenimientos })),
 )
+const FichaMaquina = pagina(() =>
+  import('@/pages/maquinaria/FichaMaquina').then((m) => ({ default: m.FichaMaquina })),
+)
 const Maquinaria = pagina(() =>
   import('@/pages/maquinaria/Maquinaria').then((m) => ({ default: m.Maquinaria })),
 )
@@ -273,6 +276,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/ventas/libro': <LibroVentas />,
   '/app/nomina/prestaciones': <Prestaciones />,
   '/app/maquinaria': <Maquinaria />,
+  '/app/maquinaria/nueva': <FichaMaquina />,
   '/app/maquinaria/mantenimientos': <Mantenimientos />,
   '/app/inventario': <TableroInventario />,
   '/app/inventario/existencias': <Existencias />,
@@ -520,6 +524,9 @@ export default function App() {
               {/* `nuevo` antes que `:id` para leerlo de un vistazo, aunque el
                   enrutador ya prefiere lo estático sobre lo dinámico. */}
               <Route path="organigrama" element={<Organigrama />} />
+              {/* La ficha de una maquina. `nueva` no esta aqui sino en el mapa
+                  de pantallas de arriba, que es donde viven las rutas fijas. */}
+              <Route path="maquinaria/:id" element={<FichaMaquina />} />
               <Route path="inventario/articulos/:id" element={<FichaArticulo />} />
               <Route path="nomina/personal/nuevo" element={<FormularioTrabajador />} />
               <Route path="nomina/personal/:id/editar" element={<FormularioTrabajador />} />

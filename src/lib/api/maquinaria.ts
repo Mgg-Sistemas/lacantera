@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
@@ -49,6 +50,14 @@ export interface Maquina {
   alarma_horas: string
   /** Cuánto suele tardar su mantenimiento. Nulo si nadie lo ha estimado. */
   dias_mantenimiento: number | null
+  /** Qué combustible quema. Nulo mientras no se sepa. */
+  combustible_id: number | null
+  /** Cuántos litros le caben. Nulo mientras no se sepa. */
+  capacidad_combustible: string | null
+  foto_path: string | null
+  foto_zoom: string
+  foto_x: string
+  foto_y: string
   nota: string | null
   /** Sale del estado: es «su estado no es DESINCORPORADA». */
   en_la_flota: boolean
@@ -341,6 +350,8 @@ export function useGuardarMaquina() {
       aviso_horas: number
       alarma_horas: number
       dias_mantenimiento?: number | null
+      combustible_id?: number | null
+      capacidad_combustible?: number | null
       nota?: string | null
     }) =>
       rpc<number>('guardar_maquina', {
@@ -358,6 +369,8 @@ export function useGuardarMaquina() {
         p_alarma_horas: m.alarma_horas,
         p_dias_mantenimiento: m.dias_mantenimiento ?? null,
         p_nota: m.nota ?? null,
+        p_combustible_id: m.combustible_id ?? null,
+        p_capacidad_combustible: m.capacidad_combustible ?? null,
       }),
   )
 }
@@ -440,4 +453,103 @@ export function useCambiarEstadoMaquina() {
         p_motivo: m.motivo ?? null,
       }),
   )
+}
+
+/*
+  LA FOTO DE LA MAQUINA
+
+  La lider la pidio: «una imagen referencial de la maquina». Sirve para que quien
+  va a surtir combustible o a mandar algo al taller reconozca cual es — en una
+  cantera hay tres excavadoras y el codigo pintado se borra.
+
+  Es la misma tuberia que la foto del personal, copiada sin cambiarla: el archivo
+  viaja del navegador al bucket y la base solo guarda la ruta. Es la excepcion
+  conocida a la regla 1 — el navegador no escribe en las TABLAS, pero si sube
+  ficheros, porque pasar megabytes por una funcion es usar una tuberia pensada
+  para filas.
+*/
+const BUCKET_MAQUINAS = 'maquinaria'
+
+export function useSubirFotoMaquina() {
+  return useAccion(async (f: { maquina_id: number; archivo: File }) => {
+    const extension = f.archivo.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const ruta = `${f.maquina_id}/${Date.now()}.${extension}`
+
+    const { error } = await supabase.storage
+      .from(BUCKET_MAQUINAS)
+      .upload(ruta, f.archivo, { contentType: f.archivo.type, upsert: false })
+
+    if (error) throw error
+
+    // Al cambiar de foto el encuadre anterior deja de tener sentido: apuntaba a
+    // un sitio de otra imagen.
+    const anterior = await rpc<string | null>('guardar_foto_maquina', {
+      p_id: f.maquina_id,
+      p_path: ruta,
+      p_zoom: 1,
+      p_x: 0.5,
+      p_y: 0.5,
+    })
+
+    if (anterior) await supabase.storage.from(BUCKET_MAQUINAS).remove([anterior])
+
+    return ruta
+  })
+}
+
+export function useGuardarEncuadreMaquina() {
+  return useAccion((e: { maquina_id: number; zoom: number; x: number; y: number }) =>
+    rpc<string | null>('guardar_foto_maquina', {
+      p_id: e.maquina_id,
+      p_path: null,
+      p_zoom: e.zoom,
+      p_x: e.x,
+      p_y: e.y,
+    }),
+  )
+}
+
+export function useQuitarFotoMaquina() {
+  return useAccion(async (m: { maquina_id: number }) => {
+    const anterior = await rpc<string | null>('quitar_foto_maquina', { p_id: m.maquina_id })
+    if (anterior) await supabase.storage.from(BUCKET_MAQUINAS).remove([anterior])
+  })
+}
+
+/**
+ * La foto, lista para pintar.
+ *
+ * Se descarga y se envuelve en una URL de objeto en vez de pedir una firmada,
+ * por lo mismo que en el personal: una URL firmada apunta a otro dominio y el
+ * navegador prohibe exportar un lienzo que toco una imagen de otro origen — que
+ * es justo lo que hace el recortador.
+ */
+export function useFotoMaquina(path: string | null | undefined) {
+  const [url, setUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!path) {
+      setUrl(null)
+      return
+    }
+
+    let vigente = true
+    let objeto: string | null = null
+
+    void supabase.storage
+      .from(BUCKET_MAQUINAS)
+      .download(path)
+      .then(({ data }) => {
+        if (!vigente || !data) return
+        objeto = URL.createObjectURL(data)
+        setUrl(objeto)
+      })
+
+    return () => {
+      vigente = false
+      if (objeto) URL.revokeObjectURL(objeto)
+    }
+  }, [path])
+
+  return url
 }

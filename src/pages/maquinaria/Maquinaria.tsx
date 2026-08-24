@@ -8,7 +8,6 @@ import { AvisoBloqueantes, SemaforoMantenimiento } from '@/components/SemaforoMa
 import { ModalHorometro } from './ModalHorometro'
 import { ModalTaller } from './ModalTaller'
 import { ModalEstado } from './ModalEstado'
-import { ModalMaquina } from './ModalMaquina'
 import { ETIQUETA_ESTADO, useMaquinaria, type Maquina } from '@/lib/api/maquinaria'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useNavigate } from 'react-router'
@@ -44,7 +43,6 @@ export function Maquinaria() {
   const { data, isPending, error } = useMaquinaria(true)
   const { puede } = useMisPermisos()
 
-  const [editando, setEditando] = useState<Maquina | null | undefined>(undefined)
   const [horometro, setHorometro] = useState<Maquina | null>(null)
   const [taller, setTaller] = useState<Maquina | null>(null)
   const [estado, setEstado] = useState<Maquina | null>(null)
@@ -76,7 +74,7 @@ export function Maquinaria() {
               Historial de taller
             </Button>
             {puedeEscribir ? (
-              <Button icon={<Plus />} onClick={() => setEditando(null)}>
+              <Button icon={<Plus />} onClick={() => void navegar('/app/maquinaria/nueva')}>
                 Nueva máquina
               </Button>
             ) : null}
@@ -101,7 +99,7 @@ export function Maquinaria() {
                 descripcion="Sin ellas no se puede llevar el horómetro ni programar mantenimientos. Se cargan una vez, con su código y su tope de horas."
                 accion={
                   puedeEscribir ? (
-                    <Button icon={<Plus />} onClick={() => setEditando(null)}>
+                    <Button icon={<Plus />} onClick={() => void navegar('/app/maquinaria/nueva')}>
                       Cargar la primera
                     </Button>
                   ) : undefined
@@ -258,7 +256,11 @@ export function Maquinaria() {
                         >
                           Estado
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditando(m)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => void navegar(`/app/maquinaria/${m.id}`)}
+                        >
                           Editar
                         </Button>
                       </div>
@@ -271,11 +273,6 @@ export function Maquinaria() {
         </>
       ) : null}
 
-      <ModalMaquina
-        abierto={editando !== undefined}
-        maquina={editando ?? null}
-        onCerrar={() => setEditando(undefined)}
-      />
       <ModalHorometro
         abierto={horometro !== null}
         maquina={horometro}
