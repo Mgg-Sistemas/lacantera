@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowDownLeft, ArrowUpRight, Printer, ScrollText, Undo2 } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, FileText, Printer, ScrollText, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
@@ -21,12 +21,15 @@ import {
   useMovimientos,
   useReversarMovimiento,
 } from '@/lib/api/inventario'
+import type { Movimiento } from '@/lib/api/inventario'
+import { leerNotaDeSalida } from '@/lib/api/inventario'
+import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarLibroDeMovimientos } from '@/lib/ficha/libroMovimientos'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
-import { dolares } from '@/lib/formato'
+import { dolares, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 function fechaHora(iso: string): string {
@@ -44,6 +47,74 @@ export function Movimientos() {
   const { puede } = useMisRoles()
   const reversar = useReversarMovimiento()
 
+  /*
+    LA NOTA, DESDE EL MOVIMIENTO
+
+    Christopher: «esto aquí es una salida, que ciertamente pertenece a los
+    movimientos, pero ¿por qué no puedo ver u obtener el PDF desde acá también?».
+
+    Tenía razón y era un descuido de sitio: la nota se armaba solo en el momento
+    de registrar la salida. Quien la necesita otra vez —porque se perdió el
+    papel, o porque quien lo firmó lo pidió— llega por el libro.
+
+    LOS MOVIMIENTOS VIEJOS NO TIENEN NÚMERO DE NOTA
+
+    El número se inventó hoy, así que los de antes no lo llevan. En vez de
+    negarles el papel, se les arma una nota de un renglón con el número del
+    propio movimiento. La forma del documento es la misma; lo único que cambia
+    es que no agrupa.
+  */
+  const [armando, setArmando] = useState<number | null>(null)
+
+  const verLaNota = async (m: Movimiento) => {
+    setArmando(m.id)
+    try {
+      // Con número de nota se trae la nota entera; sin él, este renglón solo.
+      const lineas = m.nota_salida ? await leerNotaDeSalida(m.nota_salida) : null
+
+      setTituloDoc(`Nota de salida ${m.nota_salida ?? m.numero}`)
+      setPdf(
+        await armarNotaDeSalida({
+          numero: m.nota_salida ?? m.numero,
+          fecha: fecha(m.fecha),
+          almacen: m.almacen?.nombre ?? '',
+          clase: TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo,
+          motivo: m.nota,
+          renglones:
+            lineas && lineas.length > 0
+              ? lineas.map((l) => ({
+                  articuloCodigo: l.articulo_codigo,
+                  articulo: l.articulo,
+                  cantidad: l.cantidad,
+                  unidad: l.unidad,
+                  costoUnitarioUsd: l.costo_usd,
+                  valorUsd: l.valor_usd,
+                  // Una nota puede llevar material de varios sitios: el papel
+                  // se parte en un bloque por almacén y necesita saberlo.
+                  almacen: l.almacen,
+                }))
+              : [
+                  {
+                    articuloCodigo: m.articulo?.codigo ?? '',
+                    articulo: m.articulo?.nombre ?? '',
+                    cantidad: m.cantidad,
+                    unidad: m.unidad,
+                    costoUnitarioUsd: m.costo_usd,
+                    valorUsd: m.valor_usd,
+                  },
+                ],
+          empresa: {
+            razonSocial: empresa?.razon_social ?? '',
+            rif: empresa?.rif ?? '',
+          },
+          momento: new Date(),
+        }),
+      )
+    } finally {
+      setArmando(null)
+    }
+  }
+
   const [almacenId, setAlmacenId] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const { data, isPending, error } = useMovimientos({
@@ -55,6 +126,7 @@ export function Movimientos() {
   const [reversando, setReversando] = useState<{ id: number; numero: string } | null>(null)
   const [motivo, setMotivo] = useState('')
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
+  const [tituloDoc, setTituloDoc] = useState('Libro de movimientos')
   const { data: empresa } = useEmpresa()
   const { nombre: yo } = useSesion()
 
@@ -72,6 +144,7 @@ export function Movimientos() {
   const sitio = (almacenes ?? []).find((a) => String(a.id) === almacenId)
 
   const imprimirLibro = async () => {
+    setTituloDoc('Libro de movimientos')
     setPdf(
       await armarLibroDeMovimientos({
         almacen: sitio?.nombre ?? null,
@@ -218,6 +291,20 @@ export function Movimientos() {
                           <Link to={`/app/compras`}>Compra</Link>
                         </Chip>
                       ) : null}
+                      {/* Solo en las salidas: una entrada no tiene nota de
+                          salida, y ofrecerla ahí sería un botón que miente. */}
+                      {m.signo < 0 && m.tipo !== 'REVERSO' ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          icon={<FileText />}
+                          disabled={armando === m.id}
+                          onClick={() => void verLaNota(m)}
+                        >
+                          {armando === m.id ? 'Armando…' : 'Nota'}
+                        </Button>
+                      ) : null}
+
                       {puede('ALMACEN') && m.tipo !== 'REVERSO' ? (
                         <Button
                           size="sm"
@@ -281,7 +368,7 @@ export function Movimientos() {
         onCerrar={() => setPdf(null)}
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ''}
-        titulo="Libro de movimientos"
+        titulo={tituloDoc}
       />
     </>
   )

@@ -47,6 +47,8 @@ import {
   CLASES_DE_SALIDA,
   useRegistrarEntradas,
   useRegistrarSalida,
+  useRegistrarSalidas,
+  leerNotaDeSalida,
 } from '@/lib/api/inventario'
 import type { Existencia, ExistenciaTotal } from '@/lib/api/inventario'
 import { dolares, enteros, fecha } from '@/lib/formato'
@@ -85,15 +87,24 @@ interface RenglonEnCurso {
   cantidad: string
   costo: string
   moneda: string
+  /**
+   * Solo en la salida: de qué almacén sale ESTE renglón.
+   *
+   * En la entrada el sitio se elige una vez arriba, porque lo que entra entra
+   * a un sitio. En la salida no es igual: «necesito estas cinco cosas» suele
+   * significar el aceite del almacén y las varillas del patio.
+   */
+  almacen: string
 }
 
 let siguienteClave = 0
-const renglonVacio = (articulo: string): RenglonEnCurso => ({
+const renglonVacio = (articulo: string, almacen = ''): RenglonEnCurso => ({
   clave: String(++siguienteClave),
   articulo,
   cantidad: '',
   costo: '',
   moneda: 'USD',
+  almacen,
 })
 
 export function Existencias() {
@@ -123,6 +134,7 @@ export function Existencias() {
 
   const { puede } = useMisRoles()
   const salida = useRegistrarSalida()
+  const salidas = useRegistrarSalidas()
   // Mandar algo al taller no es sacarlo: vuelve. Por eso va en su propio modal
   // y no como un quinto caso del de salidas.
   const [alTaller, setAlTaller] = useState<Existencia | null>(null)
@@ -141,6 +153,40 @@ export function Existencias() {
     material lo comprueba antes de imprimirlo y de que alguien lo firme.
   */
   const [nota, setNota] = useState<{ blob: Blob; nombre: string } | null>(null)
+
+  /*
+    La nota entera, releída de la base por su número.
+
+    No se arma con lo que hay en el formulario: el costo promedio y el valor de
+    cada renglón los calcula la base al mover, y son justo las cifras que
+    quedan en el papel que alguien firma. Un papel con cifras del navegador y un
+    libro con otras es exactamente el problema que la nota venía a resolver.
+  */
+  const notaCompleta = async (numero: string, clase: string, motivo: string) => {
+    const lineas = await leerNotaDeSalida(numero)
+    if (lineas.length === 0) return
+
+    setNota(
+      await armarNotaDeSalida({
+        numero,
+        fecha: fecha(lineas[0].fecha),
+        almacen: lineas[0].almacen,
+        clase,
+        motivo,
+        renglones: lineas.map((l) => ({
+          articuloCodigo: l.articulo_codigo,
+          articulo: l.articulo,
+          cantidad: l.cantidad,
+          unidad: l.unidad,
+          costoUnitarioUsd: l.costo_usd,
+          valorUsd: l.valor_usd,
+          almacen: l.almacen,
+        })),
+        empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+        momento: new Date(),
+      }),
+    )
+  }
 
   const notaDelMovimiento = async (movimientoId: number, clase: string, motivo: string) => {
     const { data } = await supabase
@@ -194,7 +240,7 @@ export function Existencias() {
   const [soloBajas, setSoloBajas] = useState(false)
   const [desglose, setDesglose] = useState<ExistenciaTotal | null>(null)
   const [modal, setModal] = useState<
-    null | { tipo: 'salida' | 'ajuste' | 'entrada' | 'baja'; fila: Existencia | null }
+    null | { tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada' | 'baja'; fila: Existencia | null }
   >(null)
   const [valor, setValor] = useState('')
   const [motivo, setMotivo] = useState('')
@@ -214,6 +260,77 @@ export function Existencias() {
     reordena los de abajo y el foco salta al campo equivocado.
   */
   const [renglones, setRenglones] = useState<RenglonEnCurso[]>([])
+
+  /*
+    DE DÓNDE SE PUEDE SACAR CADA COSA
+
+    La salida de varios renglones necesita ver el inventario entero, no el del
+    almacén elegido arriba: quien empieza por «necesito estas cinco cosas»
+    todavía no sabe en cuál de los cuatro sitios están.
+
+    Se pide solo con el formulario abierto: doscientas filas de existencias no
+    hacen falta para pintar la pantalla, que ya tiene las suyas.
+  */
+  const todas = useExistencias(undefined, modal?.tipo === 'salidas')
+
+  /** Lo que hay de un artículo en un sitio concreto, para avisar antes y no después. */
+  const hayEn = (almacen: string, articulo: string) =>
+    Number(
+      (todas.data ?? []).find(
+        (e) => String(e.almacen_id) === almacen && String(e.articulo_id) === articulo,
+      )?.disponibles ?? 0,
+    )
+
+  /*
+    El artículo se elige de lo que EXISTE, no del catálogo entero.
+
+    Es la diferencia con la entrada: allí el artículo puede no tener existencia
+    todavía —justamente se está cargando—, aquí no se puede sacar lo que no hay,
+    y ofrecerlo sería dejar que el error salga al guardar en vez de al elegir.
+  */
+  const articulosConExistencia = useMemo(() => {
+    const porArticulo = new Map<
+      string,
+      { codigo: string; nombre: string; unidad: string; total: number; sitios: number }
+    >()
+    for (const e of todas.data ?? []) {
+      if (Number(e.disponibles) <= 0) continue
+      const clave = String(e.articulo_id)
+      const ya = porArticulo.get(clave)
+      if (ya) {
+        ya.total += Number(e.disponibles)
+        ya.sitios += 1
+      } else {
+        porArticulo.set(clave, {
+          codigo: e.articulo_codigo,
+          nombre: e.articulo,
+          unidad: e.unidad,
+          total: Number(e.disponibles),
+          sitios: 1,
+        })
+      }
+    }
+    return [...porArticulo.entries()].map(([valor, v]) => ({
+      valor,
+      codigo: v.codigo,
+      nombre: v.nombre,
+      detalle: `${cantidad(v.total)} ${v.unidad} · ${v.sitios === 1 ? 'un sitio' : `${v.sitios} sitios`}`,
+    }))
+  }, [todas.data])
+
+  /** Los renglones que cuentan: uno a medio escribir no invalida los demás. */
+  const renglonesDeSalida = renglones.filter(
+    (r) => r.articulo && r.almacen && Number(r.cantidad) > 0,
+  )
+
+  /*
+    La salida está en pie si hay al menos un renglón bueno y ninguno pide más de
+    lo que hay. Se comprueba aquí y no solo en la base porque enterarse al
+    pulsar Registrar, con el formulario ya lleno, llega tarde.
+  */
+  const salidaEnPie =
+    renglonesDeSalida.length > 0 &&
+    renglonesDeSalida.every((r) => Number(r.cantidad) <= hayEn(r.almacen, r.articulo))
 
   // La referencia tiene que ser estable o el filtrado se recalcula en cada
   // pintado: `?? []` crea un arreglo nuevo cada vez.
@@ -313,7 +430,10 @@ export function Existencias() {
   const [destino, setDestino] = useState('')
   const [clase, setClase] = useState(CLASES_DE_SALIDA[0].valor)
 
-  const abrir = (tipo: 'salida' | 'ajuste' | 'entrada' | 'baja', fila: Existencia | null) => {
+  const abrir = (
+    tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada' | 'baja',
+    fila: Existencia | null,
+  ) => {
     setCausa(CAUSAS_DE_BAJA[0].valor)
     setDestino('')
     setClase(CLASES_DE_SALIDA[0].valor)
@@ -324,7 +444,16 @@ export function Existencias() {
     setRenglones(
       tipo === 'entrada'
         ? [renglonVacio(fila ? String(fila.articulo_id) : '')]
-        : [],
+        : tipo === 'salidas'
+          ? [
+              renglonVacio(
+                fila ? String(fila.articulo_id) : '',
+                // El sitio del renglón arranca en el que se esté mirando. Es
+                // el caso corriente, y así el primer renglón queda hecho.
+                fila ? String(fila.almacen_id) : almacenId,
+              ),
+            ]
+          : [],
     )
     // Abierta desde una fila, ya se sabe dónde y qué. Abierta desde la
     // cabecera —el caso del saldo inicial— no hay fila que preguntar, porque
@@ -350,6 +479,30 @@ export function Existencias() {
         motivo,
         referencia: referencia || null,
       })
+    } else if (modal.tipo === 'salidas') {
+      /*
+        Los renglones a medio escribir se descartan aquí y no se avisan: añadir
+        uno y no llenarlo es lo que hace cualquiera antes de decidir que con
+        cuatro basta, y pararle el guardado por eso sería castigar la duda.
+      */
+      const buenos = renglones.filter((r) => r.articulo && r.almacen && Number(r.cantidad) > 0)
+
+      const numero = (await salidas.mutateAsync({
+        almacen_id: aDonde ? Number(aDonde) : null,
+        renglones: buenos.map((r) => ({
+          almacen_id: Number(r.almacen),
+          articulo_id: Number(r.articulo),
+          cantidad: Number(r.cantidad),
+        })),
+        motivo,
+        tipo: clase,
+      })) as string
+
+      await notaCompleta(
+        numero,
+        CLASES_DE_SALIDA.find((c) => c.valor === clase)?.etiqueta ?? clase,
+        motivo,
+      )
     } else if (modal.tipo === 'baja') {
       const id = (await baja.mutateAsync({
         almacen_id: modal.fila!.almacen_id,
@@ -425,6 +578,20 @@ export function Existencias() {
                 onClick={() => abrir('entrada', null)}
               >
                 Registrar entrada
+              </Button>
+              {/*
+                La salida estaba, pero solo dentro de cada fila. Quien empieza
+                por «necesito estas cinco cosas» no tenía puerta: tenía que
+                buscar cinco filas y sacar cinco veces, y le salían cinco notas
+                para un solo trabajo. Aquí el orden es el suyo — primero qué,
+                después de dónde.
+              */}
+              <Button
+                variant="outline"
+                icon={<PackageMinus />}
+                onClick={() => abrir('salidas', null)}
+              >
+                Registrar salida
               </Button>
             </>
           ) : undefined
@@ -695,22 +862,26 @@ export function Existencias() {
           titulo={
             modal.tipo === 'entrada'
               ? 'Entrada de material'
-              : modal.tipo === 'salida'
-                ? 'Sacar material'
-                : modal.tipo === 'baja'
-                  ? 'Dar de baja'
-                  : 'Conteo físico'
+              : modal.tipo === 'salidas'
+                ? 'Salida de material'
+                : modal.tipo === 'salida'
+                  ? 'Sacar material'
+                  : modal.tipo === 'baja'
+                    ? 'Dar de baja'
+                    : 'Conteo físico'
           }
           descripcion={
             modal.tipo === 'entrada'
               ? 'Para lo que entra sin una compra de por medio: el saldo con el que arranca el almacén, algo comprado por fuera, material que trae alguien.'
-              : modal.tipo === 'salida'
-                ? 'Sale del almacén al costo promedio que tiene ahora. Di de qué clase es: lo que se usa trabajando y lo que se pierde en el manejo se miran por separado.'
-                : modal.tipo === 'baja'
-                  ? 'Para lo que dejó de servir: se dañó, quedó obsoleto, venció, no aparece. Sale del inventario y su valor se da por perdido.'
-                  : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
+              : modal.tipo === 'salidas'
+                ? 'Todo lo que sale para un mismo trabajo, en un solo papel. Cada renglón dice qué se lleva y de qué sitio: el aceite puede estar en el almacén y las varillas en el patio.'
+                : modal.tipo === 'salida'
+                  ? 'Sale del almacén al costo promedio que tiene ahora. Di de qué clase es: lo que se usa trabajando y lo que se pierde en el manejo se miran por separado.'
+                  : modal.tipo === 'baja'
+                    ? 'Para lo que dejó de servir: se dañó, quedó obsoleto, venció, no aparece. Sale del inventario y su valor se da por perdido.'
+                    : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
           }
-          ancho="sm"
+          ancho={modal.tipo === 'salidas' ? 'md' : 'sm'}
           acciones={
             <>
               <Button variant="ghost" onClick={() => setModal(null)}>
@@ -719,21 +890,34 @@ export function Existencias() {
               <Button
                 onClick={() => void guardar()}
                 disabled={
-                  (modal.tipo !== 'entrada' && !valor) ||
+                  (modal.tipo !== 'entrada' && modal.tipo !== 'salidas' && !valor) ||
                   motivo.trim().length < 4 ||
                   (modal.tipo === 'entrada' &&
                     (!aDonde ||
                       renglones.filter((r) => r.articulo && r.cantidad && r.costo).length === 0)) ||
+                  /*
+                    La salida se para si algún renglón pide más de lo que hay.
+                    La base también lo para —y nombra el renglón—, pero
+                    enterarse al pulsar Registrar, con el formulario ya lleno,
+                    llega tarde: el aviso está debajo del renglón desde que se
+                    escribe la cantidad.
+                  */
+                  (modal.tipo === 'salidas' && !salidaEnPie) ||
                   // Una baja pide más explicación: es lo único que quedará
                   // dentro de un año para justificar la pérdida.
                   (modal.tipo === 'baja' && motivo.trim().length < 10) ||
                   salida.isPending ||
+                  salidas.isPending ||
                   ajuste.isPending ||
                   entrada.isPending ||
                   baja.isPending
                 }
               >
-                {salida.isPending || ajuste.isPending || entrada.isPending || baja.isPending
+                {salida.isPending ||
+                salidas.isPending ||
+                ajuste.isPending ||
+                entrada.isPending ||
+                baja.isPending
                   ? 'Guardando…'
                   : 'Registrar'}
               </Button>
@@ -877,6 +1061,163 @@ export function Existencias() {
                 Añadir otro artículo
               </Button>
             </>
+          ) : modal.tipo === 'salidas' ? (
+            /*
+              EL ORDEN ES QUÉ, LUEGO DE DÓNDE
+
+              Quien saca material piensa en lo que necesita, no en el almacén.
+              Por eso el artículo va primero y el sitio después, filtrado a los
+              que de verdad lo tienen: elegir un sitio y descubrir allí que no
+              está es hacer el camino dos veces.
+
+              Y no hay un «de dónde» arriba: con el sitio en cada renglón, uno
+              general solo serviría para contradecirlo.
+            */
+            <>
+              <div className="space-y-3">
+                {renglones.map((r, i) => {
+                  const sitios = (todas.data ?? []).filter(
+                    (e) => String(e.articulo_id) === r.articulo && Number(e.disponibles) > 0,
+                  )
+                  const unidad = sitios[0]?.unidad ?? ''
+                  const disponible = hayEn(r.almacen, r.articulo)
+                  const pasado = Boolean(r.articulo && r.almacen && Number(r.cantidad) > disponible)
+
+                  return (
+                    <div
+                      key={r.clave}
+                      className="border-hairline rounded-card border border-dashed p-3"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-ink/40 text-2xs font-mono tracking-[0.16em] uppercase">
+                          Renglón {i + 1}
+                        </span>
+                        {renglones.length > 1 ? (
+                          <button
+                            type="button"
+                            className="text-ink/40 hover:text-danger text-xs underline underline-offset-2"
+                            onClick={() =>
+                              setRenglones((v) => v.filter((x) => x.clave !== r.clave))
+                            }
+                          >
+                            Quitar
+                          </button>
+                        ) : null}
+                      </div>
+
+                      <SelectBuscable
+                        label="Qué sale"
+                        vacio="Busca el material"
+                        valor={r.articulo}
+                        onCambio={(v) => {
+                          /*
+                            Al cambiar de artículo, el sitio elegido puede dejar
+                            de tenerlo. Se conserva si lo tiene, y si solo hay
+                            un sitio con existencia se pone solo — es la única
+                            respuesta posible y preguntarla sobra. Con varios se
+                            limpia: elegir por él uno de tres sería decidir de
+                            qué almacén sale el costo, que no es cosa nuestra.
+                          */
+                          const conEse = (todas.data ?? []).filter(
+                            (e) => String(e.articulo_id) === v && Number(e.disponibles) > 0,
+                          )
+                          const sigueValiendo = conEse.some(
+                            (e) => String(e.almacen_id) === r.almacen,
+                          )
+                          setRenglones((lista) =>
+                            lista.map((x) =>
+                              x.clave === r.clave
+                                ? {
+                                    ...x,
+                                    articulo: v,
+                                    almacen: sigueValiendo
+                                      ? x.almacen
+                                      : conEse.length === 1
+                                        ? String(conEse[0].almacen_id)
+                                        : '',
+                                  }
+                                : x,
+                            ),
+                          )
+                        }}
+                        opciones={articulosConExistencia}
+                      />
+
+                      <div className="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr]">
+                        <SelectBuscable
+                          label="De dónde sale"
+                          vacio={r.articulo ? 'Elige el sitio' : 'Elige antes el material'}
+                          valor={r.almacen}
+                          onCambio={(v) =>
+                            setRenglones((lista) =>
+                              lista.map((x) => (x.clave === r.clave ? { ...x, almacen: v } : x)),
+                            )
+                          }
+                          // Solo los sitios que tienen ese material, con lo que
+                          // hay en cada uno: es la información que decide.
+                          opciones={sitios.map((e) => ({
+                            valor: String(e.almacen_id),
+                            codigo: e.almacen_codigo,
+                            nombre: e.almacen,
+                            detalle: `hay ${cantidad(e.disponibles)} ${e.unidad}`,
+                          }))}
+                        />
+
+                        <Input
+                          label="Cantidad"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          inputMode="decimal"
+                          value={r.cantidad}
+                          onChange={(e) =>
+                            setRenglones((lista) =>
+                              lista.map((x) =>
+                                x.clave === r.clave ? { ...x, cantidad: e.target.value } : x,
+                              ),
+                            )
+                          }
+                          hint={
+                            r.almacen
+                              ? `Hay ${cantidad(disponible)} ${unidad}`
+                              : 'Elige antes de dónde sale'
+                          }
+                        />
+                      </div>
+
+                      {pasado ? (
+                        <p className="text-danger mt-2 text-xs">
+                          Ahí solo quedan {cantidad(disponible)} {unidad}.
+                        </p>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+
+              <Button
+                className="mt-3"
+                size="sm"
+                variant="outline"
+                icon={<Plus />}
+                onClick={() => setRenglones((v) => [...v, renglonVacio('', almacenId)])}
+              >
+                Añadir otro material
+              </Button>
+
+              <div className="mt-4">
+                <Select
+                  label="¿De qué clase?"
+                  value={clase}
+                  onChange={(e) => setClase(e.target.value)}
+                  hint={CLASES_DE_SALIDA.find((c) => c.valor === clase)?.dice}
+                  opciones={CLASES_DE_SALIDA.map((c) => ({
+                    valor: c.valor,
+                    etiqueta: c.etiqueta,
+                  }))}
+                />
+              </div>
+            </>
           ) : (
             <>
               <div className="border-hairline bg-canvas rounded-card mb-4 border p-3">
@@ -1004,7 +1345,11 @@ export function Existencias() {
             label={
               modal.tipo === 'entrada'
                 ? 'De dónde vino'
-                : modal.tipo === 'salida'
+                : modal.tipo === 'salidas'
+                  ? clase === 'SALIDA_MERMA'
+                    ? 'Qué pasó'
+                    : 'Para qué sale'
+                  : modal.tipo === 'salida'
                   // «Para qué sale» no encaja con una merma: nada se derrama
                   // para algo. Cada clase pregunta lo que de verdad se
                   // responde.
