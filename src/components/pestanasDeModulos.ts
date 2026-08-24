@@ -65,6 +65,7 @@ export const PESTANAS_DEUDAS: Pestana[] = [
   manera.
 */
 export const PESTANAS_ANALISIS: Pestana[] = [
+  { etiqueta: 'Centro de costos', a: '/app/compras/centro-de-costos' },
   { etiqueta: 'Libro de compras', a: '/app/compras/libro' },
   { etiqueta: 'Gasto por unidad', a: '/app/compras/gasto' },
 ]
