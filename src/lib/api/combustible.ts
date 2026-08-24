@@ -267,3 +267,32 @@ export function usePersonasParaVale() {
       ),
   })
 }
+
+/**
+ * Los combustibles del catálogo.
+ *
+ * NO SALE DE LOS TANQUES, Y ESA ES LA CORRECCIÓN
+ *
+ * La ficha de la máquina construía esta lista a partir de las existencias, así
+ * que solo ofrecía lo que hubiera comprado. Una camioneta no podía declarar que
+ * quema gasolina hasta que alguien comprara gasolina — y declarar qué quema una
+ * máquina es justo lo que hay que hacer ANTES de comprarle nada.
+ *
+ * Son dos preguntas distintas: qué combustibles existen, y cuáles hay en el
+ * tanque. Para el despacho manda la segunda; para la ficha, esta.
+ */
+export function useCombustibles() {
+  return useQuery({
+    queryKey: ['combustibles'],
+    staleTime: 10 * 60_000,
+    queryFn: async () =>
+      desenvolver<Array<{ id: number; codigo: string; nombre: string; unidad: string }>>(
+        await supabase
+          .from('articulos')
+          .select('id, codigo, nombre, unidad')
+          .eq('categoria', 'COMBUSTIBLE')
+          .eq('activo', true)
+          .order('nombre'),
+      ),
+  })
+}

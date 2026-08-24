@@ -11,7 +11,7 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useAlmacenes } from '@/lib/api/inventario'
-import { useTanques } from '@/lib/api/combustible'
+import { useCombustibles } from '@/lib/api/combustible'
 import {
   TIPOS_MAQUINA,
   useFotoMaquina,
@@ -79,7 +79,7 @@ export function FichaMaquina() {
 
   const { data, isPending } = useMaquinaria(false)
   const { data: almacenes } = useAlmacenes()
-  const tanques = useTanques()
+  const combustibles = useCombustibles()
   const guardar = useGuardarMaquina()
   const subir = useSubirFotoMaquina()
   const quitar = useQuitarFotoMaquina()
@@ -182,12 +182,6 @@ export function FichaMaquina() {
 
     void navegar(`/app/maquinaria/${esNueva ? guardado : id}`)
   }
-
-  // Los combustibles que existen, para decir cuál quema. Salen de los tanques
-  // porque son los que de verdad se pueden despachar.
-  const combustibles = Array.from(
-    new Map((tanques.data ?? []).map((t) => [t.articulo_id, t.articulo])).entries(),
-  ).map(([valor, etiqueta]) => ({ valor: String(valor), etiqueta }))
 
   return (
     <>
@@ -334,7 +328,10 @@ export function FichaMaquina() {
                 vacio="No se sabe todavía"
                 value={f.combustible_id}
                 onChange={(e) => cambiar('combustible_id', e.target.value)}
-                opciones={combustibles}
+                opciones={(combustibles.data ?? []).map((c) => ({
+                  valor: String(c.id),
+                  etiqueta: c.nombre,
+                }))}
                 hint="Vacío no estorba: se puede surtir igual, solo que sin esta comprobación."
               />
               <Input
