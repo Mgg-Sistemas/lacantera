@@ -47,7 +47,14 @@ const vacia = {
   documento: '',
   correo_binance: '',
   red_cripto: '',
-  permite_sobregiro: false,
+  // Nace PERMITIENDO sobregiro, al reves que antes.
+  //
+  // La lider mando que el sistema no llevara saldo habil real: «solo gestionara
+  // y reflejara los movimientos». Con el valor viejo, la cuenta de hoy no
+  // bloquea pero la proxima que alguien cree desde esta pantalla si — y vuelve
+  // el rebote de «hay 257,56 y se intentan sacar 556,80» que ya paro una tanda
+  // de pagos.
+  permite_sobregiro: true,
   activa: true,
   nota: '',
 }

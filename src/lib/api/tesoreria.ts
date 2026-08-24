@@ -264,7 +264,7 @@ export function useGuardarCuenta() {
         p_documento: c.documento || null,
         p_correo_binance: c.correo_binance || null,
         p_red_cripto: c.red_cripto || null,
-        p_sobregiro: c.permite_sobregiro ?? false,
+        p_sobregiro: c.permite_sobregiro ?? true,
         p_activa: c.activa ?? true,
         p_nota: c.nota || null,
       }),
