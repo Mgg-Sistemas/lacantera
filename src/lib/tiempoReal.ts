@@ -52,7 +52,12 @@ const AFECTA: Record<string, string[][]> = {
   almacenes: [['almacenes'], ['existencias']],
 
   cuentas_tesoreria: [['tesoreria']],
-  tesoreria_movimientos: [['tesoreria'], ['nomina'], ['ventas']],
+  // El libro alimenta también el centro de costos: cada egreso cambia el
+  // gastado, el balance y el reparto de la torta. Sin esto, quien tenga la
+  // pantalla abierta la sigue viendo con las cifras de antes del último pago.
+  tesoreria_movimientos: [['tesoreria'], ['nomina'], ['ventas'], ['centro-costos']],
+  presupuestos: [['centro-costos']],
+  despachos_combustible: [['combustible'], ['existencias']],
 
   // Ventas cruza medio sistema: un despacho rebaja el patio, una factura entra
   // en la cobranza y un cobro escribe en el libro de tesorería. Dos personas

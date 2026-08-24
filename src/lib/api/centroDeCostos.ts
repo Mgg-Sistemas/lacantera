@@ -112,26 +112,30 @@ export function useGastoPorCategoria(rango: Rango, padre?: string | null) {
   })
 }
 
-/** El detalle: cada egreso del período, con su clase. */
+/**
+ * El detalle: cada egreso del período, con su clase.
+ *
+ * VA POR RPC, Y ESO NO ES CAPRICHO — ES UN FALLO QUE YA ESTUVO PUESTO
+ *
+ * Esto leía `v_gastos` directamente, seis líneas después de que el encabezado de
+ * este archivo explicara por qué no se puede: la vista es `security_invoker`
+ * sobre `tesoreria_movimientos`, que solo lee quien tenga TESORERIA:LECTURA, y
+ * esta pantalla vive en Compras.
+ *
+ * El resultado era el peor posible: las tarjetas de arriba salían bien —llegan
+ * por funciones `security definer`— y la tabla de abajo salía VACÍA, sin ningún
+ * error. Una pantalla que miente sin avisar.
+ */
 export function useGastosDelPeriodo(rango: Rango, categoria?: string | null, limite = 300) {
   return useQuery({
     queryKey: ['centro-costos', 'detalle', rango.desde, rango.hasta, categoria ?? 'todas', limite],
-    queryFn: async () => {
-      let consulta = supabase
-        .from('v_gastos')
-        .select(
-          'id, numero, fecha, concepto, contraparte, tipo, monto_usd, categoria, categoria_nombre, categoria_raiz, categoria_raiz_nombre',
-        )
-        .order('fecha', { ascending: false })
-        .order('id', { ascending: false })
-        .limit(limite)
-
-      if (rango.desde) consulta = consulta.gte('fecha', rango.desde)
-      if (rango.hasta) consulta = consulta.lte('fecha', rango.hasta)
-      if (categoria) consulta = consulta.eq('categoria_raiz', categoria)
-
-      return desenvolver<GastoDelLibro[]>(await consulta)
-    },
+    queryFn: () =>
+      rpc<GastoDelLibro[]>('gastos_del_periodo', {
+        p_desde: rango.desde ?? null,
+        p_hasta: rango.hasta ?? null,
+        p_categoria: categoria ?? null,
+        p_limite: limite,
+      }),
   })
 }
 

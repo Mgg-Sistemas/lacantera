@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Fuel, Plus, TriangleAlert } from 'lucide-react'
+import { FileText, Fuel, Plus, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -21,6 +21,11 @@ import {
   type MotivoDespacho,
 } from '@/lib/api/combustible'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useEmpresa } from '@/lib/api/empresa'
+import { useFirmas } from '@/lib/api/firmas'
+import { Visor } from '@/components/Visor'
+import { armarValeDeCombustible } from '@/lib/ficha/valeCombustiblePdf'
+import type { DespachoCombustible } from '@/lib/api/combustible'
 import { dolares, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -51,7 +56,55 @@ export function Combustible() {
   const consumo = useConsumoCombustible()
   const despachos = useDespachosCombustible()
   const { puede } = useMisPermisos()
+  const empresa = useEmpresa()
+  const firmas = useFirmas()
   const [despachando, setDespachando] = useState(false)
+  const [vale, setVale] = useState<{ blob: Blob; nombre: string } | null>(null)
+
+  /*
+    EL VALE EN PAPEL
+
+    Es el unico documento de este modulo que sale de la mano de quien despacha y
+    va a la mano de quien recibe, en el patio y sin pantalla de por medio. Por
+    eso se arma aqui y no se descarga de golpe: se ve primero, se comprueba que
+    los litros y la maquina son los que se acordaron, y despues se imprime.
+
+    La firma guardada de quien recibe se estampa si la tiene. Si no, la raya
+    sale en blanco para firmarla a mano — que es el caso normal en el patio y no
+    puede parecer que algo fallo.
+  */
+  const imprimirVale = async (d: DespachoCombustible) => {
+    setVale(
+      await armarValeDeCombustible({
+        numero: d.numero,
+        fecha: fecha(d.fecha),
+        hora: d.hora,
+        combustible: d.combustible,
+        unidad: d.unidad,
+        cantidad: d.cantidad,
+        tanque: d.tanque,
+        motivo: MOTIVOS.find((m) => m.valor === d.motivo)?.etiqueta ?? d.motivo,
+        destino: d.destino,
+        maquinaCodigo: d.maquina_codigo,
+        sinFicha: d.maquina_id === null,
+        horometro: d.horometro,
+        recibio: d.recibio,
+        recibioCedula: d.recibio_cedula,
+        recibioFirma: d.empleado_id ? (firmas.data?.porEmpleado[d.empleado_id] ?? null) : null,
+        surtio: d.surtio,
+        surtioFirma: d.registrado_por
+          ? (firmas.data?.porPerfil[d.registrado_por] ?? null)
+          : null,
+        costoUsd: d.costo_usd,
+        nota: d.nota,
+        empresa: {
+          razonSocial: empresa.data?.razon_social ?? '',
+          rif: empresa.data?.rif ?? '',
+        },
+        momento: new Date(),
+      }),
+    )
+  }
 
   const puedeDespachar = puede('COMBUSTIBLE', 'ESCRITURA')
   const bajos = (tanques.data ?? []).filter(
@@ -268,6 +321,18 @@ export function Combustible() {
                 {d.costo_usd ? (
                   <span className="tabular text-ink/70 text-sm">{dolares(d.costo_usd)}</span>
                 ) : null}
+
+                {/* El vale se imprime desde su propia linea y no desde una
+                    pantalla de detalle: quien lo necesita lo pide justo despues
+                    de despachar, con la maquina esperando fuera. */}
+                <Button
+                  variant="ghost"
+                  className="shrink-0"
+                  onClick={() => void imprimirVale(d)}
+                  title="Imprimir el vale"
+                >
+                  <FileText className="size-4" />
+                </Button>
               </li>
             ))}
           </ul>
@@ -275,6 +340,15 @@ export function Combustible() {
       ) : null}
 
       <ModalDespacho abierto={despachando} onCerrar={() => setDespachando(false)} />
+
+      <Visor
+        abierto={vale !== null}
+        onCerrar={() => setVale(null)}
+        blob={vale?.blob ?? null}
+        nombreArchivo={vale?.nombre ?? 'vale-combustible.pdf'}
+        titulo="Vale de combustible"
+        descripcion="Compruébalo antes de imprimirlo: lo que diga este papel es lo que se va a firmar."
+      />
     </>
   )
 }
@@ -428,7 +502,11 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
             valor: String(m.id),
             etiqueta: `${m.codigo} · ${m.nombre}`,
           }))}
-          hint="Sin máquina no hay consumo por hora: solo cuenta para el gasto."
+          hint={
+            (maquinas ?? []).length === 0
+              ? 'Todavía no hay máquinas cargadas en la ficha. El vale se puede emitir igual: escribe abajo a qué se le echó. Cuando se carguen en Maquinaria aparecerán aquí y se podrá llevar el consumo por hora.'
+              : 'Sin máquina no hay consumo por hora: solo cuenta para el gasto.'
+          }
         />
       </div>
 
