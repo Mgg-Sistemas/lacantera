@@ -155,6 +155,17 @@ export function Existencias() {
   const [nota, setNota] = useState<{ blob: Blob; nombre: string } | null>(null)
 
   /*
+    Cuando la salida se registro pero el papel no salio.
+
+    Pasa de verdad: `armarNotaDeSalida` carga jsPDF como trozo aparte, y el
+    propio arranque de la aplicacion documenta que tras publicar una version los
+    trozos cambian de nombre y una pestana vieja recibe 404 al pedirlos. Sin
+    esto, el operador ve que no sale papel, cree que no se guardo, y vuelve a
+    sacar el material.
+  */
+  const [falloElPapel, setFalloElPapel] = useState<string | null>(null)
+
+  /*
     La nota entera, releída de la base por su número.
 
     No se arma con lo que hay en el formulario: el costo promedio y el valor de
@@ -282,6 +293,23 @@ export function Existencias() {
     )
 
   /*
+    EL MISMO MATERIAL DOS VECES SE SUMA
+
+    Con renglones libres aparece un caso que con una sola fila no existía: pedir
+    el mismo artículo del mismo sitio en dos renglones. Mirando cada renglón por
+    separado, dos de dos galones pasan aunque solo haya tres — cada uno ve el
+    saldo entero.
+
+    La base ya lo para y nombra el renglón, pero enterarse al pulsar Registrar
+    es tarde. Se cuenta aquí lo mismo que cuenta ella.
+  */
+  const pedidoHasta = (indice: number, almacen: string, articulo: string) =>
+    renglones
+      .slice(0, indice)
+      .filter((x) => x.almacen === almacen && x.articulo === articulo)
+      .reduce((t, x) => t + Number(x.cantidad || 0), 0)
+
+  /*
     El artículo se elige de lo que EXISTE, no del catálogo entero.
 
     Es la diferencia con la entrada: allí el artículo puede no tener existencia
@@ -330,7 +358,14 @@ export function Existencias() {
   */
   const salidaEnPie =
     renglonesDeSalida.length > 0 &&
-    renglonesDeSalida.every((r) => Number(r.cantidad) <= hayEn(r.almacen, r.articulo))
+    renglones.every(
+      (r, i) =>
+        !r.articulo ||
+        !r.almacen ||
+        Number(r.cantidad || 0) <= 0 ||
+        Number(r.cantidad) + pedidoHasta(i, r.almacen, r.articulo) <=
+          hayEn(r.almacen, r.articulo),
+    )
 
   // La referencia tiene que ser estable o el filtrado se recalcula en cada
   // pintado: `?? []` crea un arreglo nuevo cada vez.
@@ -498,11 +533,32 @@ export function Existencias() {
         tipo: clase,
       })) as string
 
-      await notaCompleta(
-        numero,
-        CLASES_DE_SALIDA.find((c) => c.valor === clase)?.etiqueta ?? clase,
-        motivo,
-      )
+      /*
+        El modal se cierra AQUÍ, antes de armar el papel.
+
+        Armarlo tarda: dos viajes de red y la descarga del trozo de jsPDF la
+        primera vez. Durante esa espera la mutación ya resolvió, así que el botón
+        vuelve a decir «Registrar» y se deja pulsar — y el segundo toque registra
+        una SEGUNDA salida completa, con su propio número de nota, sin que nadie
+        se entere. La salida ya está hecha y el visor no depende del modal.
+      */
+      setModal(null)
+
+      // Y si el papel no se puede armar, la salida sigue estando bien hecha: se
+      // reimprime desde Movimientos. Tragarse el error aquí es peor que decirlo.
+      try {
+        await notaCompleta(
+          numero,
+          CLASES_DE_SALIDA.find((c) => c.valor === clase)?.etiqueta ?? clase,
+          motivo,
+        )
+      } catch (e) {
+        setFalloElPapel(
+          `La salida ${numero} quedó registrada, pero no se pudo armar el papel. Búscala en Movimientos y pulsa «Nota».`,
+        )
+        console.error(e)
+      }
+      return
     } else if (modal.tipo === 'baja') {
       const id = (await baja.mutateAsync({
         almacen_id: modal.fila!.almacen_id,
@@ -846,6 +902,20 @@ export function Existencias() {
 
       <ModalAlTaller fila={alTaller} onCerrar={() => setAlTaller(null)} />
 
+      {falloElPapel ? (
+        <Modal
+          abierto
+          onCerrar={() => setFalloElPapel(null)}
+          titulo="La salida quedo hecha, el papel no"
+          ancho="sm"
+          acciones={
+            <Button onClick={() => setFalloElPapel(null)}>Entendido</Button>
+          }
+        >
+          <p className="text-ink/70 text-sm leading-relaxed">{falloElPapel}</p>
+        </Modal>
+      ) : null}
+
       <Visor
         abierto={nota !== null}
         onCerrar={() => setNota(null)}
@@ -1080,7 +1150,10 @@ export function Existencias() {
                     (e) => String(e.articulo_id) === r.articulo && Number(e.disponibles) > 0,
                   )
                   const unidad = sitios[0]?.unidad ?? ''
-                  const disponible = hayEn(r.almacen, r.articulo)
+                  // Lo que queda para ESTE renglón: lo que hay menos lo que ya
+                  // se llevaron los renglones de arriba del mismo par.
+                  const disponible =
+                    hayEn(r.almacen, r.articulo) - pedidoHasta(i, r.almacen, r.articulo)
                   const pasado = Boolean(r.articulo && r.almacen && Number(r.cantidad) > disponible)
 
                   return (
@@ -1179,7 +1252,9 @@ export function Existencias() {
                           }
                           hint={
                             r.almacen
-                              ? `Hay ${cantidad(disponible)} ${unidad}`
+                              ? pedidoHasta(i, r.almacen, r.articulo) > 0
+                                ? `Quedan ${cantidad(disponible)} ${unidad} tras los renglones de arriba`
+                                : `Hay ${cantidad(disponible)} ${unidad}`
                               : 'Elige antes de dónde sale'
                           }
                         />
@@ -1187,7 +1262,9 @@ export function Existencias() {
 
                       {pasado ? (
                         <p className="text-danger mt-2 text-xs">
-                          Ahí solo quedan {cantidad(disponible)} {unidad}.
+                          {pedidoHasta(i, r.almacen, r.articulo) > 0
+                            ? `Ya lo pediste más arriba: ahí solo quedan ${cantidad(disponible)} ${unidad}.`
+                            : `Ahí solo quedan ${cantidad(disponible)} ${unidad}.`}
                         </p>
                       ) : null}
                     </div>
@@ -1372,6 +1449,10 @@ export function Existencias() {
           />
 
           {salida.error ? <ErrorDeCarga error={salida.error} className="mt-3" /> : null}
+          {/* El de `salidas` faltaba, y era el unico de los cinco. La base para
+              la salida y nombra el renglon; sin esta linea el boton se quedaba
+              mudo y el operador no sabia por que no pasaba nada. */}
+          {salidas.error ? <ErrorDeCarga error={salidas.error} className="mt-3" /> : null}
           {ajuste.error ? <ErrorDeCarga error={ajuste.error} className="mt-3" /> : null}
           {entrada.error ? <ErrorDeCarga error={entrada.error} className="mt-3" /> : null}
           {baja.error ? <ErrorDeCarga error={baja.error} className="mt-3" /> : null}

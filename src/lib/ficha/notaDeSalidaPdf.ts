@@ -13,7 +13,10 @@ import {
   tabla,
   type Columna,
 } from '@/lib/ficha/papel'
-import { ABAJO, ANCHO_UTIL, DER, IZQ } from '@/lib/ficha/hoja'
+import { ABAJO, ANCHO_UTIL, ARRIBA, DER, IZQ } from '@/lib/ficha/hoja'
+
+/** Lo que mide una fila en `tabla`. Si cambia alli, cambia aqui. */
+const ALTO_FILA = 6.5
 
 /*
   LA NOTA DE SALIDA
@@ -220,6 +223,24 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
         con cuatro renglones. Aqui el titulo es parte de la tabla, no una
         seccion del documento, y se dibuja como tal.
       */
+      /*
+        Un titulo de bloque no se pinta si no cabe debajo, por lo menos, la
+        cabecera de su tabla y una fila.
+
+        `tabla` comprueba el hueco antes de cada FILA, pero no antes de su
+        cabecera: con el bloque anterior acabando bajo, la hoja se quedaba con
+        el nombre del almacen y la banda naranja de titulos, y nada debajo. La
+        tabla de verdad empezaba en la hoja siguiente. No se pierde ningun dato
+        —es cosmetico— pero un papel que se firma no puede tener eso.
+
+        Se piden dos alturas de fila: la cabecera y el primer renglon. Con una
+        sola, la cabecera cabria y la fila saltaria igual.
+      */
+      if (y + 4.5 + ALTO_FILA * 2 > ABAJO - 30) {
+        doc.addPage()
+        y = ARRIBA
+      }
+
       doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(TINTA)
       doc.text(`DE ${sitio.toUpperCase()}`, IZQ, y)
       y += 4.5

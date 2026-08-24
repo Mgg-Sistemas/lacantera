@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Droplets, FileText, Fuel, Plus, Settings2, Tags, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -793,6 +794,7 @@ function ModalPasarAlTanque({
   origen: CombustibleEnSitio | null
   onCerrar: () => void
 }) {
+  const qc = useQueryClient()
   const transferir = useTransferir()
   const { data: almacenes } = useAlmacenes()
   const [tanque, setTanque] = useState('')
@@ -842,6 +844,16 @@ function ModalPasarAlTanque({
                   cantidad: pedido,
                   motivo,
                 })
+
+                /*
+                  `useTransferir` invalida existencias, movimientos, compras y
+                  avisos — no combustible, porque un traslado no escribe en
+                  `despachos_combustible`. Sin esto, las dos tarjetas de arriba
+                  siguen diciendo lo de antes: «Fuera de tanque» con los mismos
+                  litros y el tanque vacio. El operador concluye que no paso
+                  nada y lo pasa otra vez.
+                */
+                await qc.invalidateQueries({ queryKey: ['combustible'] })
                 onCerrar()
               })()
             }
@@ -906,6 +918,12 @@ function ModalPasarAlTanque({
             onChange={(e) => setMotivo(e.target.value)}
             hint="Basta con «la compra se recibió en el patio y va al tanque»."
           />
+
+          {/* La base puede negarse por varias razones —el tanque no tiene sitio,
+              falta el rol ALMACEN— y sin esto el boton se quedaria mudo. */}
+          {transferir.error ? (
+            <ErrorDeCarga error={transferir.error} className="mt-3" />
+          ) : null}
         </>
       )}
     </Modal>
