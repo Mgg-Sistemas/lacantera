@@ -21,9 +21,11 @@ import {
   useGuardarMaquina,
   useMaquinaria,
   useQuitarFotoMaquina,
+  useHistorialMaquina,
   useSubirFotoMaquina,
 } from '@/lib/api/maquinaria'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { Historial } from '@/components/Historial'
 import { ModalEstado } from './ModalEstado'
 
 /*
@@ -99,6 +101,17 @@ export function FichaMaquina() {
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
 
   const foto = useFotoMaquina(maquina?.foto_path)
+
+  /*
+    La ficha era hasta hoy un formulario y nada más: decía qué ES la máquina y
+    ni una palabra de lo que le había pasado. El combustible vivía en
+    Combustible, las horas en un modal de la lista y el taller en Mantenimientos.
+
+    Va con el id de la URL y no con `maquina.id`, que llega un pintado más tarde;
+    y solo cuando la máquina existe, porque en «Nueva máquina» no hay id que
+    preguntar y pediría el historial de NaN.
+  */
+  const historial = useHistorialMaquina(esNueva ? null : Number(id))
 
   // Se rellena una sola vez, cuando llega la máquina. Sin el pestillo, cada
   // refresco de la lista pisaría lo que se está escribiendo.
@@ -465,6 +478,20 @@ export function FichaMaquina() {
           </Card>
 
           {guardar.error ? <ErrorDeCarga error={guardar.error} /> : null}
+
+          {/* Debajo del formulario y no encima: quien entra a corregir un campo
+              lo tiene a la vista, y quien entra a mirar qué le pasó baja una
+              vez. En una máquina nueva no hay historia que contar todavía. */}
+          {!esNueva ? (
+            <Historial
+              titulo="Su historia"
+              subtitulo="Combustible, horas trabajadas, pasos por el taller, repuestos y cambios de estado, de lo más reciente a lo más viejo."
+              hechos={historial.data}
+              cargando={historial.isPending}
+              error={historial.error}
+              vacio="Todavía no se le ha hecho nada"
+            />
+          ) : null}
 
           {/* Los botones abajo, no arriba: después de llenar catorce campos, subir
               a buscar el de guardar es el único paso del formulario que no

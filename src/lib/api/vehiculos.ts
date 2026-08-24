@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
 import type { Semaforo } from './maquinaria'
+import type { HechoDeFicha } from '@/components/Historial'
 
 /**
  * La flota que mueve el material.
@@ -158,20 +159,38 @@ export function useChoferesDeVehiculo(vehiculoId: number | null) {
   })
 }
 
-/** Pesajes, despachos, guías y pasos por el taller, en una sola línea de tiempo. */
-export function useActividadDeVehiculo(vehiculoId: number | null) {
+/*
+  `useActividadDeVehiculo` se fue de aqui.
+
+  Leia `v_vehiculo_actividad` para pintar «Que ha hecho» en la ficha, y contaba
+  solo la mitad: un camion propio es tambien una maquina, y su combustible y su
+  taller vivian del otro lado. Ahora esa vista la une `historial_vehiculo` con
+  el resto, y la ficha usa `useHistorialVehiculo`. La vista sigue viva y en uso
+  —dentro de la funcion—, lo que sobraba era el hook.
+*/
+
+
+/**
+ * Todo lo que le ha pasado a un vehículo, incluida su otra mitad.
+ *
+ * Un camión propio es DOS cosas: un vehículo que hace viajes y una máquina que
+ * se mantiene. La ficha enseñaba la primera mitad y para la otra ponía un enlace
+ * «Ver en Maquinaria» — así que quien abría la ficha de su camión no veía cuándo
+ * se le había echado gasoil.
+ *
+ * Lo de la máquina llega solo si quien mira TIENE maquinaria: la función usa
+ * `tiene_permiso` y no `exigir_permiso`, para que a un usuario de despachos la
+ * ficha le enseñe su parte en vez de reventar.
+ */
+export function useHistorialVehiculo(vehiculoId: number | null) {
   return useQuery({
-    queryKey: ['vehiculos', 'actividad', vehiculoId],
-    enabled: vehiculoId !== null,
-    queryFn: async () =>
-      desenvolver<ActividadDeVehiculo[]>(
-        await supabase
-          .from('v_vehiculo_actividad')
-          .select('*')
-          .eq('vehiculo_id', vehiculoId!)
-          .order('fecha', { ascending: false })
-          .limit(100),
-      ),
+    queryKey: ['historial-vehiculo', vehiculoId],
+    enabled: vehiculoId != null,
+    queryFn: () =>
+      rpc<HechoDeFicha[]>('historial_vehiculo', {
+        p_vehiculo_id: vehiculoId,
+        p_limite: 200,
+      }),
   })
 }
 
