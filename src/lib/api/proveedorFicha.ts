@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { desenvolver } from '@/lib/api/rpc'
+import { desenvolver, rpc } from '@/lib/api/rpc'
 
 /*
   LO QUE SE LE HA COMPRADO A UN PROVEEDOR
@@ -103,15 +103,27 @@ export interface GastoDeUnidad {
   ultima_compra: string | null
 }
 
-export function useGastoPorUnidad() {
+/**
+ * El gasto por unidad, en el período que se pida.
+ *
+ * Pasó de vista a función porque una vista no recibe parámetros y esta ya viene
+ * agregada: no quedan filas que filtrar desde fuera, solo totales ya sumados.
+ *
+ * Sin fechas devuelve todo, que es lo que devolvía la vista.
+ */
+export function useGastoPorUnidad(rango: { desde?: string; hasta?: string } = {}) {
   return useQuery({
-    queryKey: ['compras', 'gasto-por-unidad'],
-    queryFn: async () =>
-      desenvolver<GastoDeUnidad[]>(
-        await supabase.from('v_gasto_por_unidad').select('*').order('gastado_usd', {
-          ascending: false,
-        }),
-      ),
+    queryKey: ['compras', 'gasto-por-unidad', rango.desde ?? '', rango.hasta ?? ''],
+    queryFn: async () => {
+      const filas = await rpc<GastoDeUnidad[]>('gasto_por_unidad', {
+        p_desde: rango.desde || null,
+        p_hasta: rango.hasta || null,
+      })
+      // El orden se pone aquí y no en la función: una función que devuelve
+      // filas no garantiza el orden salvo que lo diga, y decirlo dentro obliga
+      // a tocar la base el día que se quiera ordenar por otra columna.
+      return [...filas].sort((a, b) => Number(b.gastado_usd) - Number(a.gastado_usd))
+    },
     staleTime: 60_000,
   })
 }
