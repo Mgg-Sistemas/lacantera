@@ -85,8 +85,8 @@ export function useResumenCentroCostos(rango: Rango) {
     queryKey: ['centro-costos', 'resumen', rango.desde, rango.hasta],
     queryFn: async () => {
       const filas = await rpc<ResumenCentroCostos[]>('resumen_centro_costos', {
-        p_desde: rango.desde ?? null,
-        p_hasta: rango.hasta ?? null,
+        p_desde: rango.desde || null,
+        p_hasta: rango.hasta || null,
       })
       return filas?.[0] ?? null
     },
@@ -105,9 +105,9 @@ export function useGastoPorCategoria(rango: Rango, padre?: string | null) {
     queryKey: ['centro-costos', 'categorias', rango.desde, rango.hasta, padre ?? 'raiz'],
     queryFn: () =>
       rpc<TrozoDeGasto[]>('gasto_por_categoria', {
-        p_desde: rango.desde ?? null,
-        p_hasta: rango.hasta ?? null,
-        p_padre: padre ?? null,
+        p_desde: rango.desde || null,
+        p_hasta: rango.hasta || null,
+        p_padre: padre || null,
       }),
   })
 }
@@ -131,9 +131,9 @@ export function useGastosDelPeriodo(rango: Rango, categoria?: string | null, lim
     queryKey: ['centro-costos', 'detalle', rango.desde, rango.hasta, categoria ?? 'todas', limite],
     queryFn: () =>
       rpc<GastoDelLibro[]>('gastos_del_periodo', {
-        p_desde: rango.desde ?? null,
-        p_hasta: rango.hasta ?? null,
-        p_categoria: categoria ?? null,
+        p_desde: rango.desde || null,
+        p_hasta: rango.hasta || null,
+        p_categoria: categoria || null,
         p_limite: limite,
       }),
   })
