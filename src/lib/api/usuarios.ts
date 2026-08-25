@@ -414,6 +414,119 @@ export function useMisAcciones() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Autorizaciones: lo que se le extiende a UNA PERSONA por encima de su rol
+//
+// La lider: «Coloca que Jesmary pueda aprobar las ordenes marcando un check que
+// diga: Autorizada bajo autorizacion del gerente general».
+//
+// Y Christopher lo que hay detras: «en usuarios, se pueda extender permisos que
+// no competen a un rol, bajo una justificacion». Por persona, no por rol — el
+// rol dice lo que compete al puesto, y esto es lo que se le presta a alguien
+// concreto por encima de su puesto, con fecha de fin o sin ella.
+//
+// El check solo es verdad porque hay un registro detras. Sin el, seria una
+// frase que teclea sobre si mismo quien aprueba, en un papel que compromete
+// dinero.
+// ---------------------------------------------------------------------------
+
+export interface AutorizacionDelSistema {
+  id: number
+  accion: string
+  accion_nombre: string
+  modulo: string
+  modulo_nombre: string
+  a_usuario: string
+  a_nombre: string
+  por_usuario: string
+  por_nombre: string
+  desde: string
+  /** Nulo es indefinida, que es la mitad de lo que se pidio. */
+  hasta: string | null
+  motivo: string
+  /** Ya calculado por la base: ni retirada, ni por empezar, ni caducada. */
+  vigente: boolean
+  revocada_en: string | null
+  revocada_por: string | null
+  revocada_nombre: string | null
+  revocada_motivo: string | null
+  creada_en: string
+}
+
+export function useAutorizaciones() {
+  return useQuery({
+    queryKey: ['autorizaciones'],
+    queryFn: () => rpc<AutorizacionDelSistema[]>('autorizaciones_del_sistema'),
+  })
+}
+
+export function useAutorizar() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: {
+      usuario_id: string
+      accion: string
+      motivo: string
+      desde?: string | null
+      hasta?: string | null
+    }) =>
+      rpc<number>('autorizar_accion', {
+        p_usuario_id: v.usuario_id,
+        p_accion: v.accion,
+        p_motivo: v.motivo,
+        p_desde: v.desde || null,
+        p_hasta: v.hasta || null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['autorizaciones'] })
+      // Lo que YO puedo cambia si me acabo de autorizar algo a otro y luego
+      // miro su ficha; y sobre todo cambia para quien la recibe al recargar.
+      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
+      void qc.invalidateQueries({ queryKey: ['mis-autorizaciones'] })
+    },
+  })
+}
+
+export function useRetirarAutorizacion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { id: number; motivo?: string }) =>
+      rpc('retirar_autorizacion', { p_id: v.id, p_motivo: v.motivo || null }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['autorizaciones'] })
+      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
+      void qc.invalidateQueries({ queryKey: ['mis-autorizaciones'] })
+    },
+  })
+}
+
+/**
+ * Lo que tiene prestado quien esta mirando, y de quien.
+ *
+ * Distinto de `useMisAcciones`, que dice lo que puede sin distinguir de donde
+ * le viene. Aqui hace falta la distincion: el check de «bajo autorizacion de»
+ * solo debe salir cuando de verdad esta actuando con permiso de otro. A quien
+ * le compete por su rol no se le pide que declare nada.
+ */
+export function useMisAutorizaciones() {
+  const consulta = useQuery({
+    queryKey: ['mis-autorizaciones'],
+    queryFn: () =>
+      rpc<{ accion: string; por_nombre: string; hasta: string | null; motivo: string }[]>(
+        'mis_autorizaciones',
+      ),
+    staleTime: 5 * 60_000,
+  })
+
+  const mapa = new Map((consulta.data ?? []).map((a) => [a.accion, a]))
+
+  return {
+    ...consulta,
+    /** La autorizacion viva para esa casilla, o `undefined` si va por lo suyo. */
+    de: (accion: string) => mapa.get(accion),
+  }
+}
+
 export function useEliminarRol() {
   const qc = useQueryClient()
   return useMutation({

@@ -13,11 +13,13 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
+import { fecha } from '@/lib/formato'
 import { useSesion } from '@/lib/sesion'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { esModuloEnObra } from '@/config/navigation'
@@ -37,11 +39,20 @@ import {
   usePermisos,
   useRoles,
   useAcciones,
+  useAutorizaciones,
+  useAutorizar,
+  useRetirarAutorizacion,
   useAccionesDeLosRoles,
   useMarcarAccion,
   useUsuarios,
 } from '@/lib/api/usuarios'
-import type { AccionDelSistema, Nivel, RolSistema, UsuarioSistema } from '@/lib/api/usuarios'
+import type {
+  AccionDelSistema,
+  AutorizacionDelSistema,
+  Nivel,
+  RolSistema,
+  UsuarioSistema,
+} from '@/lib/api/usuarios'
 
 // ---------------------------------------------------------------------------
 // Matriz de un rol
@@ -1055,17 +1066,319 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
+// Autorizaciones: lo que se le extiende a una persona por encima de su rol
+//
+// La líder: «Coloca que Jesmary pueda aprobar las órdenes marcando un check que
+// diga: Autorizada bajo autorización del gerente general».
+//
+// Christopher lo que hay detrás: «en usuarios, se pueda extender permisos que
+// no competen a un rol, bajo una justificación». Por PERSONA y no por rol — el
+// rol dice lo que compete al puesto; esto es lo que se le presta a alguien
+// concreto mientras el gerente está de viaje, o para siempre si así se decide.
+//
+// La pestaña la manejan administración y la gerencia. Es la única de esta
+// pantalla que el gerente general puede usar de verdad: las otras dos exigen el
+// rol de administrador en la base, y a él le contestan que no.
+// ---------------------------------------------------------------------------
+
+function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
+  const autorizaciones = useAutorizaciones()
+  const usuarios = useUsuarios()
+  const acciones = useAcciones()
+  const conceder = useAutorizar()
+  const retirar = useRetirarAutorizacion()
+
+  const [abierto, setAbierto] = useState(false)
+  const [retirando, setRetirando] = useState<AutorizacionDelSistema | null>(null)
+  const [motivoRetiro, setMotivoRetiro] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [forma, setForma] = useState({
+    usuario_id: '',
+    accion: '',
+    motivo: '',
+    desde: '',
+    hasta: '',
+  })
+
+  const limpiar = () => {
+    setForma({ usuario_id: '', accion: '', motivo: '', desde: '', hasta: '' })
+    setError(null)
+  }
+
+  /*
+    Solo las casillas que se pueden prestar.
+
+    Las dos de repartir permisos las rechaza la base, así que ofrecerlas sería
+    enseñar una puerta para que reviente al pulsarla. Y el respaldo tampoco
+    entra: su casilla está apagada.
+  */
+  const NO_SE_PRESTAN = ['USUARIOS.DAR_PERMISOS', 'USUARIOS.ASIGNAR_ROLES']
+  const opcionesAccion = (acciones.data ?? [])
+    .filter((a) => !NO_SE_PRESTAN.includes(a.codigo))
+    .map((a) => ({
+      valor: a.codigo,
+      nombre: a.nombre,
+      codigo: a.modulo_nombre,
+      detalle: a.dice ?? undefined,
+    }))
+
+  const opcionesPersona = (usuarios.data ?? [])
+    .filter((u) => u.activo)
+    .map((u) => ({
+      valor: u.id,
+      etiqueta: u.nombre,
+      detalle: u.cargo ?? u.usuario,
+    }))
+
+  const guardar = () => {
+    setError(null)
+    conceder.mutate(
+      {
+        usuario_id: forma.usuario_id,
+        accion: forma.accion,
+        motivo: forma.motivo,
+        desde: forma.desde || null,
+        hasta: forma.hasta || null,
+      },
+      {
+        onSuccess: () => {
+          setAbierto(false)
+          limpiar()
+        },
+        onError: (e: Error) => setError(e.message),
+      },
+    )
+  }
+
+  if (autorizaciones.isPending) return <Cargando />
+  if (autorizaciones.error) return <ErrorDeCarga error={autorizaciones.error} />
+
+  const filas = autorizaciones.data ?? []
+  const vivas = filas.filter((a) => a.vigente)
+  const pasadas = filas.filter((a) => !a.vigente)
+
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <p className="text-ink/60 max-w-[62ch] text-sm">
+          Un permiso que no le compete a alguien por su puesto, prestado por un tiempo o de forma
+          indefinida. Lo que se firme usándolo queda diciendo de quién era la autoridad.
+        </p>
+        {gestionable ? (
+          <Button icon={<Plus />} onClick={() => setAbierto(true)}>
+            Extender un permiso
+          </Button>
+        ) : null}
+      </div>
+
+      {filas.length === 0 ? (
+        <Vacio
+          titulo="No hay permisos extendidos"
+          descripcion="Cuando alguien tenga que hacer algo que no le compete —el gerente de viaje y una orden que no puede esperar— se le extiende desde aquí, con la razón escrita."
+        />
+      ) : (
+        <div className="space-y-2.5">
+          {[...vivas, ...pasadas].map((a) => (
+            <Card key={a.id} flush className={cn('overflow-hidden', !a.vigente && 'opacity-60')}>
+              <div className="flex flex-wrap items-start justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-ink/85 font-medium">{a.a_nombre}</span>
+                    <Chip tone={a.vigente ? 'success' : 'neutral'}>
+                      {a.vigente ? 'Vigente' : a.revocada_en ? 'Retirada' : 'Fuera de fecha'}
+                    </Chip>
+                  </div>
+
+                  <p className="text-ink/70 mt-1 text-sm">
+                    {a.accion_nombre}
+                    <span className="text-ink/40"> · {a.modulo_nombre}</span>
+                  </p>
+
+                  <p className="text-ink/50 mt-1.5 text-xs">
+                    Bajo autorización de <span className="text-ink/70">{a.por_nombre}</span>
+                    {' · desde '}
+                    {fecha(a.desde)}
+                    {a.hasta ? ` hasta ${fecha(a.hasta)}` : ' · sin fecha de fin'}
+                  </p>
+
+                  <p className="text-ink/60 mt-1.5 text-sm italic">«{a.motivo}»</p>
+
+                  {a.revocada_en ? (
+                    <p className="text-ink/45 mt-1.5 text-xs">
+                      Retirada por {a.revocada_nombre ?? '—'} el {fecha(a.revocada_en)}
+                      {a.revocada_motivo ? ` · ${a.revocada_motivo}` : ''}
+                    </p>
+                  ) : null}
+                </div>
+
+                {gestionable && a.vigente ? (
+                  <Button
+                    variant="outline"
+                    className="text-danger border-danger/30"
+                    onClick={() => {
+                      setRetirando(a)
+                      setMotivoRetiro('')
+                    }}
+                  >
+                    Retirar
+                  </Button>
+                ) : null}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* ---------------- Extender ---------------- */}
+      <Modal
+        abierto={abierto}
+        onCerrar={() => {
+          setAbierto(false)
+          limpiar()
+        }}
+        titulo="Extender un permiso"
+        descripcion="Se le presta a una persona concreta una cosa concreta. Todo lo que firme con ella va a decir que fue bajo tu autorización."
+        acciones={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setAbierto(false)
+                limpiar()
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              disabled={
+                conceder.isPending ||
+                !forma.usuario_id ||
+                !forma.accion ||
+                forma.motivo.trim().length < 5
+              }
+              onClick={guardar}
+            >
+              Extender
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <SelectBuscable
+            label="A quién"
+            opciones={opcionesPersona}
+            valor={forma.usuario_id}
+            onCambio={(v: string) => setForma((f) => ({ ...f, usuario_id: v }))}
+            vacio="Elige a la persona"
+          />
+
+          <SelectBuscable
+            label="Qué se le extiende"
+            opciones={opcionesAccion}
+            valor={forma.accion}
+            onCambio={(v: string) => setForma((f) => ({ ...f, accion: v }))}
+            vacio="Busca la cosa concreta"
+            hint="Solo puedes extender lo que tú mismo puedes hacer."
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Desde"
+              type="date"
+              value={forma.desde}
+              onChange={(e) => setForma((f) => ({ ...f, desde: e.target.value }))}
+              hint="Vacío, desde hoy."
+            />
+            <Input
+              label="Hasta"
+              type="date"
+              value={forma.hasta}
+              onChange={(e) => setForma((f) => ({ ...f, hasta: e.target.value }))}
+              hint="Vacío, indefinida."
+            />
+          </div>
+
+          <Textarea
+            label="Justificación"
+            value={forma.motivo}
+            onChange={(e) => setForma((f) => ({ ...f, motivo: e.target.value }))}
+            rows={3}
+            hint="Por qué hace falta. Dentro de un mes es lo único que va a explicar por qué esta persona pudo hacer esto."
+          />
+
+          {error ? <ErrorDeCarga error={new Error(error)} /> : null}
+        </div>
+      </Modal>
+
+      {/* ---------------- Retirar ---------------- */}
+      <Modal
+        abierto={!!retirando}
+        onCerrar={() => setRetirando(null)}
+        titulo="Retirar el permiso"
+        descripcion={
+          retirando
+            ? `${retirando.a_nombre} deja de poder «${retirando.accion_nombre}» en el acto. Lo que ya firmó con este permiso no se toca: sigue diciendo que fue bajo tu autorización.`
+            : ''
+        }
+        acciones={
+          <>
+            <Button variant="ghost" onClick={() => setRetirando(null)}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-danger hover:bg-danger/90"
+              disabled={retirar.isPending}
+              onClick={() =>
+                retirando &&
+                retirar.mutate(
+                  { id: retirando.id, motivo: motivoRetiro },
+                  {
+                    onSuccess: () => setRetirando(null),
+                    onError: (e: Error) => setError(e.message),
+                  },
+                )
+              }
+            >
+              Retirar
+            </Button>
+          </>
+        }
+      >
+        <Textarea
+          label="Por qué se retira"
+          value={motivoRetiro}
+          onChange={(e) => setMotivoRetiro(e.target.value)}
+          rows={2}
+          hint="Opcional, pero ayuda a quien lea esto después."
+        />
+      </Modal>
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Pantalla
 // ---------------------------------------------------------------------------
 
 export function Usuarios() {
-  const [pestana, setPestana] = useState<'usuarios' | 'roles'>('usuarios')
+  const [pestana, setPestana] = useState<'usuarios' | 'roles' | 'autorizaciones'>('usuarios')
   const { puede, isPending } = useMisRoles()
 
   // Administrar usuarios exige ADMIN en la base. Sin él la pantalla se lee,
   // porque saber quién puede qué no es secreto entre quienes ya entraron, pero
   // no se toca nada.
   const editable = puede('ADMIN')
+
+  /*
+    Las autorizaciones las manejan administración Y la gerencia.
+
+    Es lo único de esta pantalla que el gerente general puede usar de verdad: la
+    matriz le da el módulo entero, pero las funciones de las otras dos pestañas
+    exigen el rol de administrador y le contestan que no. Aquí no, porque
+    `autorizar_accion` admite a los dos — y tiene sentido, ya que la autoridad
+    que se invoca en el papel es suya.
+  */
+  const gestionaAutorizaciones = puede('ADMIN', 'GERENTE_GENERAL')
 
   return (
     <>
@@ -1089,6 +1402,7 @@ export function Usuarios() {
           [
             { id: 'usuarios', etiqueta: 'Usuarios' },
             { id: 'roles', etiqueta: 'Roles y permisos' },
+            { id: 'autorizaciones', etiqueta: 'Permisos extendidos' },
           ] as const
         ).map((p) => (
           <button
@@ -1110,8 +1424,10 @@ export function Usuarios() {
 
       {pestana === 'usuarios' ? (
         <PestanaUsuarios editable={editable} />
-      ) : (
+      ) : pestana === 'roles' ? (
         <PestanaRoles editable={editable} />
+      ) : (
+        <PestanaAutorizaciones gestionable={gestionaAutorizaciones} />
       )}
     </>
   )

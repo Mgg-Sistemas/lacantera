@@ -77,7 +77,20 @@ export interface DatosOrdenCompra {
     compra, y eso no cambia porque lo imprima otro después. Sin firma guardada
     la raya sale en blanco, que es como salía antes y se firma a mano.
   */
-  autoriza?: { nombre?: string | null; imagen?: string | null }
+  autoriza?: {
+    nombre?: string | null
+    imagen?: string | null
+    /*
+      De quién era la autoridad, cuando quien firma no podía por su puesto.
+
+      Es lo que pidió la líder: que la orden diga «bajo autorización del gerente
+      general». Va debajo de la raya y no en lugar del nombre a propósito —
+      quien firma es quien firma, y la autoridad prestada es un dato aparte. Las
+      dos cosas juntas es lo único que deja reconstruir quién respondía por esto
+      dentro de un año.
+    */
+    porAutorizacionDe?: string | null
+  }
 
   numero: string
   /** El pedido del que salió. Va en la cabecera y en el pie. */
@@ -233,7 +246,9 @@ export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoAr
   // proveedor» salió en blanco en todas las órdenes emitidas: la orden se manda
   // por correo, no se le pone delante al proveedor para que la firme.
   firmaCentrada(doc, Math.max(y + 18, ABAJO - 26), {
-    texto: 'Firma autorizada',
+    texto: d.autoriza?.porAutorizacionDe
+      ? `Firma autorizada · bajo autorización de ${d.autoriza.porAutorizacionDe}`
+      : 'Firma autorizada',
     nombre: d.autoriza?.nombre ?? null,
     imagen: d.autoriza?.imagen ?? null,
   })
