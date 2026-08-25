@@ -112,6 +112,19 @@ public/paleta_colores.jpeg
 # repositorio es publico y esos papeles llevan RIF, nombres y montos reales.
 docs/pdfs/
 
+# Papeles de la empresa, en su version vigente.
+#
+# Aqui llegan las actualizaciones: el RIF renovado, la cedula del representante.
+# Los archivos SE QUEDAN en el equipo —hacen falta para trabajar y para cargarlos
+# al sistema, que es donde deben vivir, detras del acceso— pero no entran al
+# repositorio. Una cedula escaneada en un historial publico es copiable por
+# cualquiera y no se puede retirar despues.
+#
+# Es la misma razon de docs/pdfs/, con la diferencia de que estos no son
+# referencia ajena sino documentos vigentes de la empresa: los que hay que tener
+# a mano, y por eso mismo los que mas cuesta que se cuelen.
+docs/renovado/
+
 # ---------------------------------------------------------------------------
 # Firmas de personas reales
 #
