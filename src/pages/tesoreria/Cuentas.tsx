@@ -32,7 +32,7 @@ import {
   useTransferir,
 } from '@/lib/api/tesoreria'
 import type { Cuenta } from '@/lib/api/tesoreria'
-import { useMisRoles } from '@/lib/api/catalogo'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedas, useTasasVigentes } from '@/lib/api/tasas'
 import { dinero, fecha, tasa as formatoTasa } from '@/lib/formato'
 import { BANCOS } from '@/lib/bancos'
@@ -184,7 +184,7 @@ function TarjetaCuenta({
 
 export function Cuentas() {
   const { data, isPending, error } = useCuentas(false)
-  const { puede } = useMisRoles()
+  const { puede } = useMisPermisos()
   const guardar = useGuardarCuenta()
   const apertura = useRegistrarApertura()
   const ingreso = useRegistrarIngreso()
@@ -199,7 +199,8 @@ export function Cuentas() {
   } | null>(null)
   const [traslado, setTraslado] = useState(false)
 
-  const puedeMover = puede('TESORERIA')
+  // El módulo está en obra: hasta que vuelva al riel solo lo abre administración.
+  const puedeMover = puede('TESORERIA', 'ESCRITURA')
 
   const abrir = (c?: Cuenta) =>
     setEdicion(

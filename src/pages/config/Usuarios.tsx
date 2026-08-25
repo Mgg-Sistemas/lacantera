@@ -20,6 +20,7 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
 import { useSesion } from '@/lib/sesion'
 import { useMisRoles } from '@/lib/api/catalogo'
+import { esModuloEnObra } from '@/config/navigation'
 import {
   alcanza,
   nivelAlMarcar,
@@ -103,7 +104,22 @@ function TarjetaRol({
   onEditar: () => void
   onBorrar: () => void
 }) {
-  const { data: modulos } = useModulos()
+  const { data: todosLosModulos } = useModulos()
+
+  /*
+    Los módulos en obra no salen en la matriz.
+
+    Enseñar el nivel de un módulo que el menú esconde es prometer un reparto
+    que nadie va a poder usar, y peor: se enseñaba repartido, así que la
+    pantalla decía que Almacén trabaja en Despachos mientras el menú no le
+    ofrecía Despachos a nadie. Mientras un módulo esté en obra lo abre solo
+    administración, y eso no se reparte.
+
+    La lista sale de `navigation.ts`, del mismo sitio del que sale que el menú
+    los esconda. Una lista aparte aquí sería la que nadie actualiza el día que
+    un módulo vuelva al riel.
+  */
+  const modulos = (todosLosModulos ?? []).filter((m) => !esModuloEnObra(m.codigo))
 
   // ADMIN no se recorta: es la salida de emergencia. Si se le pudiera cerrar
   // esta misma pantalla, no habría desde dónde volver a abrirla.
@@ -174,7 +190,7 @@ function TarjetaRol({
             </tr>
           </thead>
           <tbody>
-            {(modulos ?? []).map((m) => {
+            {modulos.map((m) => {
               const nivel = niveles.get(m.codigo) ?? 'NINGUNO'
               const suyas = accionesPorModulo.get(m.codigo) ?? []
 
@@ -325,8 +341,10 @@ function PestanaRoles({ editable }: { editable: boolean }) {
     marcadasPorRol.set(ra.rol, set)
   }
 
+  // De los que se ofrecen: los de obra no salen en la matriz, así que contarlos
+  // aquí haría que la pista prometiera un resto que nadie ve.
   const sinCatalogo = (modulosTodos ?? []).filter(
-    (m) => (accionesPorModulo.get(m.codigo) ?? []).length === 0,
+    (m) => !esModuloEnObra(m.codigo) && (accionesPorModulo.get(m.codigo) ?? []).length === 0,
   ).length
 
   const cuentaPorRol = new Map<string, number>()

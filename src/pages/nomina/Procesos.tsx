@@ -62,7 +62,16 @@ export function Procesos() {
 
   const puedeRRHH = puede('RRHH')
   const puedeGerente = puede('GERENTE_GENERAL')
-  const puedeTesoreria = puede('TESORERIA')
+  /*
+    La nómina la paga Recursos Humanos.
+
+    Tesorería no existe en La Cantera —la absorbió Compras— y el rol se retiró
+    el 25/08/2026. `pagar_nomina` pasó a pedir RRHH o el gerente general, que es
+    lo que decidió Christopher: quien arma la nómina la paga. Este botón pedía
+    el rol viejo, así que sin esto se habría quedado escondido para todo el
+    mundo menos administración.
+  */
+  const puedePagar = puede('RRHH', 'GERENTE_GENERAL')
 
   return (
     <>
@@ -186,7 +195,7 @@ export function Procesos() {
                     </Button>
                   ) : null}
 
-                  {puedeTesoreria && p.estado === 'APROBADA' ? (
+                  {puedePagar && p.estado === 'APROBADA' ? (
                     <Button
                       size="sm"
                       icon={<Wallet />}

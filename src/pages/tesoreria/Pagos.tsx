@@ -286,7 +286,7 @@ export function Pagos() {
     distinta de la que pide la puerta, y quien tuviera compras y no tesorería
     veía el botón ausente sin saber por qué.
   */
-  const puedePagar = puede('TESORERIA', 'COMPRAS')
+  const puedePagar = puede('COMPRAS')
   const pendientes = data ?? []
 
   // Lo que hay que pagar, en dólares, para compararlo con lo que hay. Es la

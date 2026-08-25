@@ -19,7 +19,8 @@ import {
   useReversarTesoreria,
 } from '@/lib/api/tesoreria'
 import type { MovimientoTesoreria } from '@/lib/api/tesoreria'
-import { usePerfiles, useMisRoles } from '@/lib/api/catalogo'
+import { usePerfiles } from '@/lib/api/catalogo'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { bolivares, dinero, dolares, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -66,7 +67,7 @@ export function MovimientosTesoreria() {
     hasta: rango.hasta || undefined,
   })
   const { data: perfiles } = usePerfiles()
-  const { puede } = useMisRoles()
+  const { puede } = useMisPermisos()
   const reversar = useReversarTesoreria()
 
   const [reverso, setReverso] = useState<MovimientoTesoreria | null>(null)
@@ -75,7 +76,8 @@ export function MovimientosTesoreria() {
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
 
-  const puedeReversar = puede('TESORERIA')
+  // El módulo está en obra: hasta que vuelva al riel solo lo abre administración.
+  const puedeReversar = puede('TESORERIA', 'ESCRITURA')
 
   return (
     <>
