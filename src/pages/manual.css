@@ -96,6 +96,26 @@
   margin-top: 1rem;
 }
 
+/*
+  El aviso de un capitulo que ya no se corresponde con el sistema.
+
+  Va pegado bajo el titulo, en ambar y con la raya a la izquierda: se tiene que
+  leer antes que la primera linea del capitulo, porque de eso depende que lo que
+  viene despues sea cierto o no. Lo pone la pantalla al montar el documento, no
+  el generador: la condicion sale del propio menu y cambia sola el dia que un
+  modulo vuelve al riel.
+*/
+.manual .cap-aviso {
+  margin: -0.5rem 0 1.5rem;
+  padding: 0.7rem 0.9rem;
+  border-left: 3px solid var(--ambar);
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+  background: color-mix(in oklab, var(--ambar) 10%, transparent);
+  color: var(--tinta);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 /* ---------- Texto ---------- */
 
 .manual p {
@@ -407,5 +427,18 @@
   .manual a {
     color: #000;
     text-decoration: none;
+  }
+  /*
+    El aviso tiene que viajar al PDF, y en blanco y negro el ambar no se ve. Se
+    queda la raya, mas gruesa, y el texto en cursiva: quien reparta el capitulo
+    de Ventas impreso tiene que llevarselo con la advertencia puesta.
+  */
+  .manual .cap-aviso {
+    border-left-width: 4px;
+    border-left-color: #000;
+    background: none;
+    color: #000;
+    font-style: italic;
+    break-inside: avoid;
   }
 }
