@@ -56,7 +56,37 @@ export interface Empleado {
   telefono: string | null
   activo: boolean
   nota: string | null
+
+  /**
+   * La cuenta del sistema de esta persona, si tiene.
+   *
+   * Nulo es lo normal y no significa nada malo: de los 22 trabajadores solo
+   * unos pocos entran al sistema. Por eso la pantalla calla cuando esta vacio
+   * —lo pidio la lider con esas palabras: «el sistema debe actuar de manera
+   * silenciosa, sin mostrar ningun indicador ni mencion al respecto»—.
+   */
+  perfil_id: string | null
+  /** Lo que se lee de esa cuenta cuando la hay. Viene por el enlace de arriba. */
+  cuenta: {
+    id: string
+    usuario: string
+    nombre: string
+    creado_en: string
+    activo: boolean
+    roles: { rol: string }[]
+  } | null
 }
+
+/*
+  El empleado y su cuenta, en la misma consulta.
+
+  Se trae por el enlace y no con una segunda consulta porque la lista de
+  personal la pinta una sola tabla: dos consultas dejarian las filas apareciendo
+  primero sin indicador y con el un instante despues, que es justo el parpadeo
+  que hace dudar de si esa persona tiene cuenta o no.
+*/
+const SELECT_EMPLEADO =
+  '*, cuenta:perfiles(id, usuario, nombre, creado_en, activo, roles:usuarios_roles(rol))'
 
 export const GENEROS = [
   { valor: 'MASCULINO', etiqueta: 'Masculino' },
@@ -96,7 +126,11 @@ export function useEmpleados(soloActivos = true) {
   return useQuery({
     queryKey: ['nomina', 'empleados', soloActivos],
     queryFn: async () => {
-      let q = supabase.from('empleados').select('*').order('apellidos').order('nombres')
+      let q = supabase
+        .from('empleados')
+        .select(SELECT_EMPLEADO)
+        .order('apellidos')
+        .order('nombres')
       if (soloActivos) q = q.eq('activo', true)
       return desenvolver<Empleado[]>(await q)
     },
@@ -120,7 +154,7 @@ export function useEmpleado(id: number | undefined) {
     enabled: id !== undefined && Number.isFinite(id),
     queryFn: async () =>
       desenvolver<Empleado | null>(
-        await supabase.from('empleados').select('*').eq('id', id!).maybeSingle(),
+        await supabase.from('empleados').select(SELECT_EMPLEADO).eq('id', id!).maybeSingle(),
       ),
   })
 }
@@ -363,6 +397,41 @@ function useAccionNomina<A>(fn: (args: A) => Promise<unknown>) {
       // o no lo vería habiendo alguien desfasado.
       void qc.invalidateQueries({ queryKey: ['tabulador'] })
     },
+  })
+}
+
+/*
+  Atar una ficha con su cuenta del sistema.
+
+  No reparte ningun permiso: solo deja dicho que el trabajador de la ficha y el
+  usuario que entra al sistema son la misma persona. Hace falta desde que un
+  permiso se le puede extender a alguien concreto — una autorizacion se le da a
+  una PERSONA, y hasta ahora el sistema no sabia que la ficha y la cuenta eran
+  la misma.
+
+  Se ata a mano y no por cedula: de los 12 perfiles solo 4 la tienen, y cruzarla
+  con los 22 empleados daba CERO coincidencias. Adivinarlo habria colgado
+  cuentas de quien no es.
+*/
+export function useVincularCuenta() {
+  return useAccionNomina((v: { empleado_id: number; perfil_id: string | null }) =>
+    rpc('vincular_cuenta_a_empleado', {
+      p_empleado_id: v.empleado_id,
+      p_perfil_id: v.perfil_id,
+    }),
+  )
+}
+
+/** Las cuentas que no son de nadie todavia, mas la que ya tenga esta ficha. */
+export function useCuentasSinFicha(empleadoId: number | undefined) {
+  return useQuery({
+    queryKey: ['nomina', 'cuentas-sin-ficha', empleadoId],
+    enabled: empleadoId !== undefined,
+    queryFn: () =>
+      rpc<{ id: string; usuario: string; nombre: string; cargo: string | null; creado_en: string }[]>(
+        'cuentas_sin_ficha',
+        { p_empleado_id: empleadoId ?? null },
+      ),
   })
 }
 
