@@ -70,7 +70,19 @@ export function RangoDeFechas({
   const puesto = Boolean(valor.desde || valor.hasta)
 
   return (
-    <div className={cn('grid gap-3 sm:grid-cols-[auto_auto_1fr]', className)}>
+    /*
+      LOS ATAJOS SE BAJAN SOLOS CUANDO NO CABEN
+
+      Estaban en la tercera columna de la misma fila que las dos casillas, y con
+      poco sitio se partian: cuatro pastillas de dos renglones cada una —«Esta /
+      semana»— debajo de dos fechas. Se vio en el libro de tesoreria, que ahora
+      lleva dos desplegables delante, pero pasaba en cualquier pantalla estrecha.
+
+      Hasta `xl` ocupan una linea entera para ellos, que es lo que miden: cuatro
+      atajos mas «quitar fechas» piden unos 380 px y dos casillas de fecha se
+      llevan otros 380. En `xl` si hay sitio para las tres cosas seguidas.
+    */
+    <div className={cn('grid gap-3 sm:grid-cols-[auto_auto] xl:grid-cols-[auto_auto_1fr]', className)}>
       <Input
         label="Desde"
         type="date"
@@ -86,7 +98,7 @@ export function RangoDeFechas({
         onChange={(e) => onCambio({ ...valor, hasta: e.target.value })}
       />
 
-      <div className="flex flex-wrap items-end gap-2 pb-1">
+      <div className="flex flex-wrap items-end gap-2 pb-1 sm:col-span-2 xl:col-span-1">
         {atajos().map((a) => {
           const activo = valor.desde === a.rango.desde && valor.hasta === a.rango.hasta
           return (

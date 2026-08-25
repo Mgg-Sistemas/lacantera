@@ -929,14 +929,20 @@ export function Existencias() {
                             >
                               Contar
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              icon={<Wrench />}
-                              onClick={() => setAlTaller(fila!)}
-                            >
-                              Al taller
-                            </Button>
+                            {/* El boton de la fila tambien: un pote de aceite
+                                no se manda a reparar, y ofrecerlo es hacer que
+                                alguien llene la orden para que se la tumben. */}
+                            {(articulos ?? []).find((a) => a.id === fila!.articulo_id)
+                              ?.reparable ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                icon={<Wrench />}
+                                onClick={() => setAlTaller(fila!)}
+                              >
+                                Al taller
+                              </Button>
+                            ) : null}
                             <Button
                               size="sm"
                               variant="ghost"
