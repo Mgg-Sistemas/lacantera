@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
-import { useMisRoles } from '@/lib/api/catalogo'
+import { useMisAcciones } from '@/lib/api/usuarios'
 import {
   diasParaVencer,
   useEmpresa,
@@ -30,8 +30,18 @@ export function Empresa() {
   const { data, isPending, error } = useEmpresa()
   const guardar = useGuardarEmpresa()
   const fijar = useFijarTributos()
-  const { puede } = useMisRoles()
-  const editable = puede('ADMIN') || puede('GERENTE_GENERAL')
+  const { puede: alcanza } = useMisAcciones()
+
+  /*
+    Dos permisos distintos que estaban gobernados por la misma reja.
+
+    Corregir el RIF de la empresa y decidir si se cobra IVA son decisiones que no
+    tienen por que ir juntas — es justo el «gestionar de forma limitada» que se
+    pidio. Ahora cada boton pregunta por lo suyo, y quien tenga uno y no el otro
+    ve exactamente lo que puede tocar.
+  */
+  const puedeEditarFicha = alcanza('CONFIGURACION.EDITAR_EMPRESA')
+  const puedeFijarTributos = alcanza('CONFIGURACION.FIJAR_TRIBUTOS')
 
   const tributos = {
     aplica_iva: data?.aplica_iva ?? true,
@@ -81,7 +91,7 @@ export function Empresa() {
       type={extra.tipo}
       value={(form[clave] as string | null) ?? ''}
       onChange={(e) => cambiar({ [clave]: e.target.value } as Partial<Datos>)}
-      disabled={!editable}
+      disabled={!puedeEditarFicha}
       hint={extra.hint}
       error={extra.error}
     />
@@ -178,7 +188,7 @@ export function Empresa() {
                 retencion_iva_pct: e.target.value === '' ? null : Number(e.target.value),
               })
             }
-            disabled={!editable}
+            disabled={!puedeEditarFicha}
             hint="Porcentaje del impuesto causado que retienen los agentes de retención."
           />
         </div>
@@ -196,14 +206,14 @@ export function Empresa() {
             titulo="Cobra IVA"
             detalle="Se aplica el 16 % a las cotizaciones, notas de entrega y facturas nuevas."
             marcado={tributos.aplica_iva}
-            editable={editable}
+            editable={puedeFijarTributos}
             onCambiar={(v) => void fijar.mutateAsync({ ...tributos, aplica_iva: v })}
           />
           <Interruptor
             titulo="Cobra IGTF"
             detalle="El 3 % sobre los cobros en divisas. Sin esto la casilla no se marca ni cobrando en dólares."
             marcado={tributos.aplica_igtf}
-            editable={editable}
+            editable={puedeFijarTributos}
             onCambiar={(v) => void fijar.mutateAsync({ ...tributos, aplica_igtf: v })}
           />
         </div>
@@ -213,7 +223,7 @@ export function Empresa() {
         ) : null}
       </Card>
 
-      {editable ? (
+      {puedeEditarFicha ? (
         <div className="mt-4 flex items-center justify-end gap-3">
           {guardado ? <span className="text-success text-sm">Guardado.</span> : null}
           {fallo ? <span className="text-danger text-sm">{fallo}</span> : null}
