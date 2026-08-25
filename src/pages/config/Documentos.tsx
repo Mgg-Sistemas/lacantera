@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { SoltarArchivo } from '@/components/SoltarArchivo'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
@@ -314,30 +315,23 @@ export function Documentos() {
           hint="Como lo buscará quien lo necesite dentro de un año."
         />
 
-        <div className="mt-4">
-          <span className="text-ink/70 mb-1.5 block text-sm font-medium">
-            {corrigiendo ? 'Reemplazar el archivo' : 'Archivo'}
-          </span>
-          <input
-            type="file"
-            accept="application/pdf,image/jpeg,image/png,image/webp"
-            onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
-            className="text-ink/70 file:bg-royal-600/10 file:text-royal-700 dark:file:text-royal-300 hover:file:bg-royal-600/16 block w-full text-sm file:mr-3 file:cursor-pointer file:rounded-[6px] file:border-0 file:px-3 file:py-2 file:text-sm file:font-medium"
-          />
-          {archivo ? (
-            <p
-              className={`mt-1.5 text-xs ${archivo.size > TOPE_BYTES ? 'text-danger' : 'text-ink/50'}`}
-            >
-              {archivo.name} · {peso(archivo.size)}
-              {archivo.size > TOPE_BYTES ? ' — pasa del tope de 50 MB.' : ''}
-            </p>
-          ) : corrigiendo ? (
-            <p className="text-ink/50 mt-1.5 text-xs">
-              Déjalo vacío y se queda el que ya está. Solo elige uno si llegó una versión nueva del
-              papel.
-            </p>
-          ) : null}
-        </div>
+        {/* Se arrastra o se pulsa, las dos cosas. Lo pidio Christopher: estos
+            papeles llegan por correo y el camino natural es soltarlos, no
+            abrir un dialogo y volver a buscar la carpeta de la que acabas de
+            sacarlos. El peso y el tipo los avisa el propio recuadro. */}
+        <SoltarArchivo
+          className="mt-4"
+          etiqueta={corrigiendo ? 'Reemplazar el archivo' : 'Archivo'}
+          valor={archivo}
+          onCambio={setArchivo}
+          acepta="application/pdf,image/jpeg,image/png,image/webp"
+          tope={TOPE_BYTES}
+          pista={
+            corrigiendo
+              ? 'Vacio se queda el que ya esta. Solo pon uno si llego una version nueva del papel.'
+              : 'PDF o imagen, hasta 50 MB.'
+          }
+        />
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Input
