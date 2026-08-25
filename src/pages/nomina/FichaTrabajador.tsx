@@ -30,10 +30,14 @@ import {
   MOMENTOS_INCIDENCIA,
   useQuitarFoto,
   useSubirFoto,
+  useVincularCuenta,
+  useCuentasSinFicha,
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
 import { TarjetaFirma } from '@/components/TarjetaFirma'
 import { useMisRoles } from '@/lib/api/catalogo'
+import { useMisAcciones, useRoles } from '@/lib/api/usuarios'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarCarnet } from '@/lib/ficha/carnet'
@@ -169,6 +173,16 @@ export function FichaTrabajador() {
   const { id } = useParams()
   const { data: e, isPending, error } = useEmpleado(id ? Number(id) : undefined)
   const { puede } = useMisRoles()
+  const { puede: alcanza } = useMisAcciones()
+  const puedeVincular = alcanza('NOMINA.VINCULAR_CUENTA')
+
+  const [atandoCuenta, setAtandoCuenta] = useState(false)
+  const [cuentaElegida, setCuentaElegida] = useState('')
+  const vincular = useVincularCuenta()
+  const cuentasLibres = useCuentasSinFicha(atandoCuenta ? e?.id : undefined)
+  const rolesDelSistema = useRoles()
+  const etiquetaDeRol = (codigo: string) =>
+    rolesDelSistema.data?.find((r) => r.codigo === codigo)?.nombre ?? codigo
   const { nombre } = useSesion()
 
   const foto = useFoto(e?.foto_path)
@@ -570,6 +584,146 @@ export function FichaTrabajador() {
 
         </div>
       </div>
+
+      {/*
+        LA CUENTA DEL SISTEMA, Y EL SILENCIO CUANDO NO LA HAY
+
+        La líder lo pidió con estas palabras: «Si tiene usuario asignado: mostrar
+        de forma explícita la fecha de creación, el nombre de usuario y el rol
+        asignado. Si NO tiene usuario asignado: el sistema debe actuar de manera
+        silenciosa, sin mostrar ningún indicador o mención al respecto».
+
+        El silencio importa y no es un capricho de diseño: de veintidós
+        trabajadores solo unos pocos entran al sistema. Un «sin cuenta» en las
+        otras dieciocho fichas se leería como una carencia, como algo que falta
+        por hacer, y no lo es — la mayoría de la gente de una cantera no necesita
+        entrar a un sistema.
+
+        La única grieta al silencio es para quien puede atarla: sin un sitio
+        desde donde hacerlo, la función no existiría. Es un botón discreto y solo
+        lo ve quien tiene la casilla, no todo el que abra la ficha.
+      */}
+      {e.cuenta || puedeVincular ? (
+        <Card className="mt-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <CardHeader
+              title="Cuenta del sistema"
+              subtitle={
+                e.cuenta
+                  ? 'Con qué usuario entra esta persona y qué puede hacer dentro.'
+                  : 'Esta persona todavía no tiene cuenta atada a su ficha.'
+              }
+            />
+            {puedeVincular ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setCuentaElegida(e.perfil_id ?? '')
+                  setAtandoCuenta(true)
+                }}
+              >
+                {e.cuenta ? 'Cambiar' : 'Atar una cuenta'}
+              </Button>
+            ) : null}
+          </div>
+
+          {e.cuenta ? (
+            <dl className="mt-4 space-y-2.5 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="text-ink/50 shrink-0">Usuario</dt>
+                <dd className="text-ink/85 tabular truncate text-right font-medium">
+                  {e.cuenta.usuario}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-ink/50 shrink-0">Cuenta creada</dt>
+                <dd className="text-ink/80 truncate text-right">{fecha(e.cuenta.creado_en)}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-ink/50 shrink-0">Rol</dt>
+                <dd className="flex flex-wrap justify-end gap-1.5 text-right">
+                  {e.cuenta.roles.length === 0 ? (
+                    <span className="text-ink/45">Sin roles: entra pero no alcanza nada</span>
+                  ) : (
+                    e.cuenta.roles.map((r) => (
+                      <Chip key={r.rol} tone="royal">
+                        {etiquetaDeRol(r.rol)}
+                      </Chip>
+                    ))
+                  )}
+                </dd>
+              </div>
+
+              {/* Una cuenta desactivada sigue atada, y hay que decirlo: si no,
+                  la ficha promete un acceso que ya no existe. */}
+              {!e.cuenta.activo ? (
+                <p className="text-warning border-warning/30 bg-warning-soft mt-3 rounded-[6px] border p-2.5 text-xs">
+                  Esta cuenta está desactivada. La persona no alcanza nada del sistema, aunque la
+                  ficha siga atada a ella.
+                </p>
+              ) : null}
+            </dl>
+          ) : null}
+        </Card>
+      ) : null}
+
+      {/* ---------------- Atar la cuenta ---------------- */}
+      <Modal
+        abierto={atandoCuenta}
+        onCerrar={() => setAtandoCuenta(false)}
+        titulo="Atar una cuenta a esta ficha"
+        descripcion="Dejas dicho que el trabajador de esta ficha y ese usuario del sistema son la misma persona. No le da ni le quita ningún permiso."
+        acciones={
+          <>
+            <Button variant="ghost" onClick={() => setAtandoCuenta(false)}>
+              Cancelar
+            </Button>
+            {e.perfil_id ? (
+              <Button
+                variant="outline"
+                className="text-danger border-danger/30"
+                disabled={vincular.isPending}
+                onClick={() =>
+                  vincular.mutate(
+                    { empleado_id: e.id, perfil_id: null },
+                    { onSuccess: () => setAtandoCuenta(false) },
+                  )
+                }
+              >
+                Desatar
+              </Button>
+            ) : null}
+            <Button
+              disabled={vincular.isPending || !cuentaElegida || cuentaElegida === e.perfil_id}
+              onClick={() =>
+                vincular.mutate(
+                  { empleado_id: e.id, perfil_id: cuentaElegida },
+                  { onSuccess: () => setAtandoCuenta(false) },
+                )
+              }
+            >
+              Atar
+            </Button>
+          </>
+        }
+      >
+        <SelectBuscable
+          label="Qué cuenta es suya"
+          opciones={(cuentasLibres.data ?? []).map((c: { id: string; usuario: string; nombre: string; cargo: string | null }) => ({
+            valor: c.id,
+            nombre: c.nombre,
+            codigo: c.usuario,
+            detalle: c.cargo ?? undefined,
+          }))}
+          valor={cuentaElegida}
+          onCambio={(v: string) => setCuentaElegida(v)}
+          vacio="Busca por nombre o por usuario"
+          hint="Solo salen las cuentas que no son de nadie todavía. Una cuenta es de una sola persona."
+        />
+
+        {vincular.error ? <ErrorDeCarga error={vincular.error} className="mt-3" /> : null}
+      </Modal>
 
       {/*
         QUÉ TIENE EN LA MANO, EN SU PROPIA FICHA

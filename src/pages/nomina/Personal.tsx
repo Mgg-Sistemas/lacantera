@@ -7,6 +7,7 @@ import {
   Search,
   Upload,
   UserMinus,
+  UserRound,
   Users,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -172,6 +173,27 @@ export function Personal() {
                           {e.apellidos}, {e.nombres}
                         </Link>
                         {e.activo ? null : <Chip tone="danger">Desincorporado</Chip>}
+                        {/* El indicador de que esta persona entra al sistema.
+                            Sutil a propósito, y sobre todo SILENCIOSO cuando no
+                            la hay: lo pidió así la líder —«sin mostrar ningún
+                            indicador ni mención al respecto»— y tiene razón, que
+                            de veintidós trabajadores solo unos pocos tienen
+                            cuenta. Un «sin usuario» en las otras veinte filas
+                            leería como una carencia, y no lo es.
+
+                            Va aquí y no en la columna de botones por lo mismo
+                            que la etiqueta de desincorporado: se lee en el mismo
+                            golpe de vista que la persona. El nombre de usuario
+                            entero está en la ficha; aquí solo la marca. */}
+                        {e.cuenta ? (
+                          <span
+                            title={`Entra al sistema como ${e.cuenta.usuario}`}
+                            aria-label={`Entra al sistema como ${e.cuenta.usuario}`}
+                            className="inline-flex"
+                          >
+                            <UserRound className="text-ink/30 size-3.5 shrink-0" aria-hidden />
+                          </span>
+                        ) : null}
                       </span>
                       <p className="text-ink/45 text-xs">
                         <span className="tabular">{e.cedula} · ficha {e.ficha}</span>
