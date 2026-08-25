@@ -40,6 +40,8 @@ function paraImprimir(
     desde: periodo.desde,
     hasta: periodo.hasta,
     diasPagados: r.dias_pagados,
+    diasFacturados: r.dias_facturados,
+    diasLaborados: r.dias_laborados,
 
     ficha: r.empleado?.ficha ?? '—',
     cedula: r.empleado?.cedula ?? '—',
