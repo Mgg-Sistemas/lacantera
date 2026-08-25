@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import {
   KeyRound,
   Plus,
@@ -35,9 +35,12 @@ import {
   useModulos,
   usePermisos,
   useRoles,
+  useAcciones,
+  useAccionesDeLosRoles,
+  useMarcarAccion,
   useUsuarios,
 } from '@/lib/api/usuarios'
-import type { Nivel, RolSistema, UsuarioSistema } from '@/lib/api/usuarios'
+import type { AccionDelSistema, Nivel, RolSistema, UsuarioSistema } from '@/lib/api/usuarios'
 
 // ---------------------------------------------------------------------------
 // Matriz de un rol
@@ -76,16 +79,27 @@ function TarjetaRol({
   rol,
   usuarios,
   niveles,
+  marcadas,
+  accionesPorModulo,
+  sinCatalogo,
   editable,
   onNivel,
+  onAccion,
   onEditar,
   onBorrar,
 }: {
   rol: RolSistema
   usuarios: number
   niveles: Map<string, Nivel>
+  /** Las acciones que este rol tiene marcadas. */
+  marcadas: Set<string>
+  /** El catálogo, agrupado por módulo. Vacío en los que aún no se han desglosado. */
+  accionesPorModulo: Map<string, AccionDelSistema[]>
+  /** Cuántos módulos siguen sin catálogo, para decirlo abajo. */
+  sinCatalogo: number
   editable: boolean
   onNivel: (modulo: string, nivel: Nivel) => void
+  onAccion: (accion: string, marcada: boolean) => void
   onEditar: () => void
   onBorrar: () => void
 }) {
@@ -109,6 +123,7 @@ function TarjetaRol({
                 {rol.nombre}
               </h3>
               {rol.sistema ? <Chip tone="neutral">Sistema</Chip> : <Chip tone="success">Propio</Chip>}
+              {rol.a_la_medida ? <Chip tone="royal">Detallado</Chip> : null}
             </div>
             <p className="text-ink/55 mt-1.5 text-xs">{rol.descripcion}</p>
             <p className="text-ink/45 mt-1 text-xs">
@@ -161,27 +176,86 @@ function TarjetaRol({
           <tbody>
             {(modulos ?? []).map((m) => {
               const nivel = niveles.get(m.codigo) ?? 'NINGUNO'
+              const suyas = accionesPorModulo.get(m.codigo) ?? []
+
+              /*
+                Detallado y con catálogo: mandan las casillas, y la escalera
+                de ese módulo se apaga. Enseñarla encendida sería mentir — la
+                base la ignora para estos roles, y alguien la marcaría creyendo
+                que hace algo.
+              */
+              const porCasillas = rol.a_la_medida && suyas.length > 0
+
               return (
-                <tr key={m.codigo} className="border-hairline border-b last:border-0">
-                  <td className="px-5 py-2.5">
-                    <span className="text-ink/85 font-medium">{m.nombre}</span>
-                  </td>
-                  {COLUMNAS.map((c) => (
-                    <td key={c.nivel} className="px-2 py-2.5 text-center">
-                      <Casilla
-                        marcada={alcanza(nivel, c.nivel)}
-                        bloqueada={!editable || intocable}
-                        etiqueta={`${c.etiqueta} en ${m.nombre} para ${rol.nombre}`}
-                        onPulsar={() => onNivel(m.codigo, nivelAlMarcar(nivel, c.nivel))}
-                      />
+                <Fragment key={m.codigo}>
+                  <tr className="border-hairline border-b last:border-0">
+                    <td className="px-5 py-2.5">
+                      <span className="text-ink/85 font-medium">{m.nombre}</span>
+                      {porCasillas ? (
+                        <span className="text-ink/40 ml-2 text-2xs">detallado</span>
+                      ) : null}
                     </td>
-                  ))}
-                </tr>
+                    {COLUMNAS.map((c) => (
+                      <td key={c.nivel} className="px-2 py-2.5 text-center">
+                        {porCasillas ? (
+                          <span className="text-ink/20 text-xs">·</span>
+                        ) : (
+                          <Casilla
+                            marcada={alcanza(nivel, c.nivel)}
+                            bloqueada={!editable || intocable}
+                            etiqueta={`${c.etiqueta} en ${m.nombre} para ${rol.nombre}`}
+                            onPulsar={() => onNivel(m.codigo, nivelAlMarcar(nivel, c.nivel))}
+                          />
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+
+                  {porCasillas
+                    ? suyas.map((a) => (
+                        <tr key={a.codigo} className="border-hairline border-b last:border-0">
+                          <td colSpan={1 + COLUMNAS.length} className="py-2 pr-5 pl-10">
+                            <label className="flex cursor-pointer items-start gap-2.5">
+                              <input
+                                type="checkbox"
+                                checked={marcadas.has(a.codigo)}
+                                disabled={!editable || intocable}
+                                onChange={(e) => onAccion(a.codigo, e.target.checked)}
+                                className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                              />
+                              <span className="min-w-0">
+                                <span className="text-ink/85 block text-sm">{a.nombre}</span>
+                                {/* La explicación no es adorno: quien arma un rol
+                                    no conoce el sistema por dentro, y «fijar
+                                    tributos» no le dice que eso enciende el IVA
+                                    de todas las facturas. */}
+                                {a.dice ? (
+                                  <span className="text-ink/50 block text-xs">{a.dice}</span>
+                                ) : null}
+                              </span>
+                            </label>
+                          </td>
+                        </tr>
+                      ))
+                    : null}
+                </Fragment>
               )
             })}
           </tbody>
         </table>
       </div>
+
+      {/* Los módulos que todavía no tienen catálogo se rigen por su escalón
+          aunque el rol esté detallado. Hay que decirlo o el rol parece roto:
+          alguien buscaría las casillas de Compras y no las encontraría. */}
+      {rol.a_la_medida && sinCatalogo > 0 ? (
+        <p className="text-ink/45 border-hairline border-t px-5 py-3 text-xs leading-relaxed">
+          {sinCatalogo === 1
+            ? 'Queda un módulo sin desglosar en acciones: ese sigue rigiéndose por su escalón.'
+            : `Quedan ${sinCatalogo} módulos sin desglosar en acciones: esos siguen rigiéndose por su escalón.`}{' '}
+          Se van afinando de uno en uno, y mientras tanto el rol funciona.
+        </p>
+      ) : null}
     </Card>
   )
 }
@@ -190,25 +264,35 @@ function TarjetaRol({
 // Pestaña de roles
 // ---------------------------------------------------------------------------
 
-const rolVacio = { codigo: '', nombre: '', descripcion: '' }
+const rolVacio = { codigo: '', nombre: '', descripcion: '', a_la_medida: false }
 
 function PestanaRoles({ editable }: { editable: boolean }) {
   const roles = useRoles()
   const permisos = usePermisos()
   const usuarios = useUsuarios()
   const guardarPermiso = useGuardarPermiso()
+  const { data: modulosTodos } = useModulos()
+  const acciones = useAcciones()
+  const accionesDeRoles = useAccionesDeLosRoles()
+  const marcarAccion = useMarcarAccion()
   const crearRol = useCrearRol()
   const guardarRol = useGuardarRol()
   const eliminarRol = useEliminarRol()
 
   const [edicion, setEdicion] = useState<(typeof rolVacio & { nuevo: boolean }) | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [verMatices, setVerMatices] = useState(false)
 
   // Con la forma de actualización, no con el objeto de este render: dos
   // pulsaciones seguidas antes de repintar leerían las dos el mismo valor
   // viejo y la segunda borraría a la primera.
   const cambiarRol = (c: Partial<typeof rolVacio>) =>
     setEdicion((v) => (v ? { ...v, ...c } : v))
+
+  // Con qué clase se abrió el formulario, para avisar solo si de verdad cambia.
+  const yaEra = edicion
+    ? ((roles.data ?? []).find((r) => r.codigo === edicion.codigo)?.a_la_medida ?? false)
+    : false
 
   if (roles.isPending || permisos.isPending) return <Cargando />
   if (roles.error) return <ErrorDeCarga error={roles.error} />
@@ -220,6 +304,30 @@ function PestanaRoles({ editable }: { editable: boolean }) {
     mapa.set(p.modulo, p.nivel)
     nivelesPorRol.set(p.rol, mapa)
   }
+
+  /*
+    El catálogo, agrupado por módulo, y las casillas de cada rol.
+
+    Se arma una vez aquí y no dentro de cada tarjeta: con quince roles serían
+    quince recorridos del mismo catálogo en cada pintado.
+  */
+  const accionesPorModulo = new Map<string, AccionDelSistema[]>()
+  for (const a of acciones.data ?? []) {
+    const lista = accionesPorModulo.get(a.modulo) ?? []
+    lista.push(a)
+    accionesPorModulo.set(a.modulo, lista)
+  }
+
+  const marcadasPorRol = new Map<string, Set<string>>()
+  for (const ra of accionesDeRoles.data ?? []) {
+    const set = marcadasPorRol.get(ra.rol) ?? new Set<string>()
+    set.add(ra.accion)
+    marcadasPorRol.set(ra.rol, set)
+  }
+
+  const sinCatalogo = (modulosTodos ?? []).filter(
+    (m) => (accionesPorModulo.get(m.codigo) ?? []).length === 0,
+  ).length
 
   const cuentaPorRol = new Map<string, number>()
   for (const u of usuarios.data ?? []) {
@@ -240,14 +348,31 @@ function PestanaRoles({ editable }: { editable: boolean }) {
   return (
     <>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <p className="text-ink/55 max-w-2xl text-sm">
-          La matriz decide <strong className="text-ink/75 font-medium">a qué llega</strong> cada rol
-          y también <strong className="text-ink/75 font-medium">qué puede hacer</strong> ahí: darle
-          escritura en Nómina a un rol lo habilita para escribir en Nómina. Lo que no reparte son las
-          firmas —aprobar una compra, aprobar una nómina— ni la administración del propio sistema:
-          eso sigue colgando de los roles de Gerente general y Administrador, para que quien arma un
-          documento no sea quien lo aprueba.
-        </p>
+        {/* Era un parrafo de seis lineas y Christopher lo señalo: «esto puede
+            ser un hint, no es necesario expandir toda la informacion». Lo que
+            hace falta saber de un vistazo cabe en una linea; el matiz de las
+            firmas solo importa a quien se pregunta por que no las ve, y ese lo
+            abre. */}
+        <div className="max-w-2xl">
+          <p className="text-ink/55 text-sm">
+            Cada rol decide <strong className="text-ink/75 font-medium">a qué llega</strong> y{' '}
+            <strong className="text-ink/75 font-medium">qué puede hacer</strong> ahí.
+          </p>
+          <button
+            type="button"
+            onClick={() => setVerMatices((v) => !v)}
+            className="text-ink/45 hover:text-ink/75 mt-1 text-xs underline underline-offset-2"
+          >
+            {verMatices ? 'Vale' : '¿Qué no reparte?'}
+          </button>
+          {verMatices ? (
+            <p className="text-ink/55 mt-2 text-xs leading-relaxed">
+              Las firmas —aprobar una compra, aprobar una nomina— y la administracion del propio
+              sistema. Eso cuelga de Gerente general y Administrador, para que quien arma un
+              documento no sea quien lo aprueba.
+            </p>
+          ) : null}
+        </div>
         {editable ? (
           <Button icon={<Plus />} onClick={() => setEdicion({ ...rolVacio, nuevo: true })}>
             Nuevo rol
@@ -262,10 +387,19 @@ function PestanaRoles({ editable }: { editable: boolean }) {
             rol={r}
             usuarios={cuentaPorRol.get(r.codigo) ?? 0}
             niveles={nivelesPorRol.get(r.codigo) ?? new Map()}
+            marcadas={marcadasPorRol.get(r.codigo) ?? new Set()}
+            accionesPorModulo={accionesPorModulo}
+            sinCatalogo={sinCatalogo}
             editable={editable}
             onNivel={(modulo, nivel) =>
               guardarPermiso.mutate(
                 { rol: r.codigo, modulo, nivel },
+                { onError: (e: Error) => setError(e.message) },
+              )
+            }
+            onAccion={(accion, marcada) =>
+              marcarAccion.mutate(
+                { rol: r.codigo, accion, marcada },
                 { onError: (e: Error) => setError(e.message) },
               )
             }
@@ -274,6 +408,7 @@ function PestanaRoles({ editable }: { editable: boolean }) {
                 codigo: r.codigo,
                 nombre: r.nombre,
                 descripcion: r.descripcion,
+                a_la_medida: r.a_la_medida,
                 nuevo: false,
               })
             }
@@ -343,6 +478,59 @@ function PestanaRoles({ editable }: { editable: boolean }) {
               hint="Qué hace quien tiene este rol. Se lee en la tarjeta."
               rows={2}
             />
+
+            {/* La decisión que de verdad importa, y por eso va con su
+                explicación entera y no como un interruptor suelto. */}
+            <div className="border-hairline rounded-card border p-3.5">
+              <span className="text-ink/70 mb-2 block text-sm font-medium">
+                Cómo se le dan los permisos
+              </span>
+
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="radio"
+                  name="clase-de-rol"
+                  checked={!edicion.a_la_medida}
+                  onChange={() => cambiarRol({ a_la_medida: false })}
+                  className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
+                />
+                <span className="min-w-0">
+                  <span className="text-ink/85 block text-sm">Por módulo entero</span>
+                  <span className="text-ink/50 block text-xs leading-relaxed">
+                    Se le da un nivel en cada módulo: ninguno, lectura, escritura o total. Es
+                    como funcionan los roles de siempre.
+                  </span>
+                </span>
+              </label>
+
+              <label className="mt-3 flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="radio"
+                  name="clase-de-rol"
+                  checked={edicion.a_la_medida}
+                  onChange={() => cambiarRol({ a_la_medida: true })}
+                  className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
+                />
+                <span className="min-w-0">
+                  <span className="text-ink/85 block text-sm">Permiso por permiso</span>
+                  <span className="text-ink/50 block text-xs leading-relaxed">
+                    Se marca una por una cada cosa que puede hacer. Es lo que permite dejarle
+                    ver un módulo sin poder modificarlo, o darle los papeles de la empresa sin
+                    darle el respaldo de la base.
+                  </span>
+                </span>
+              </label>
+
+              {/* Cambiar de clase a un rol que ya lleva gente es lo que puede
+                  dejar a alguien sin su pantalla el lunes por la mañana. */}
+              {!edicion.nuevo && edicion.a_la_medida !== yaEra ? (
+                <p className="text-warning mt-3 text-xs leading-relaxed">
+                  {edicion.a_la_medida
+                    ? 'Al detallarlo, en los módulos ya desglosados dejará de valer su nivel y solo valdrán las casillas que le marques. Empieza sin ninguna.'
+                    : 'Al devolverlo a módulo entero, sus casillas dejan de decidir y vuelve a mandar el nivel de cada módulo.'}
+                </p>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </Modal>

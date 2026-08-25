@@ -48,6 +48,14 @@ export interface RolSistema {
   descripcion: string
   orden: number
   sistema: boolean
+  /**
+   * Cierto si el rol se rige por CASILLAS y no por la escalera.
+   *
+   * Solo en los módulos que ya tienen catálogo de acciones: en los demás sigue
+   * mandando su escalón, para que un rol nuevo no se quede sin poder tocar nada
+   * hasta que estén catalogados los quince.
+   */
+  a_la_medida: boolean
 }
 
 export interface PermisoRol {
@@ -74,7 +82,7 @@ export function useRoles() {
       desenvolver<RolSistema[]>(
         await supabase
           .from('roles')
-          .select('codigo, nombre, descripcion, orden, sistema')
+          .select('codigo, nombre, descripcion, orden, sistema, a_la_medida')
           .order('orden'),
       ),
   })
@@ -289,11 +297,17 @@ export function useGuardarPermiso() {
 export function useCrearRol() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (v: { codigo: string; nombre: string; descripcion: string }) =>
+    mutationFn: (v: {
+      codigo: string
+      nombre: string
+      descripcion: string
+      a_la_medida?: boolean
+    }) =>
       rpc<string>('crear_rol', {
         p_codigo: v.codigo,
         p_nombre: v.nombre,
         p_descripcion: v.descripcion,
+        p_a_la_medida: v.a_la_medida ?? false,
       }),
     onSuccess: () => invalidarRoles(qc),
   })
@@ -302,14 +316,102 @@ export function useCrearRol() {
 export function useGuardarRol() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (v: { codigo: string; nombre: string; descripcion: string }) =>
+    mutationFn: (v: {
+      codigo: string
+      nombre: string
+      descripcion: string
+      a_la_medida?: boolean
+    }) =>
       rpc('guardar_rol', {
         p_codigo: v.codigo,
         p_nombre: v.nombre,
         p_descripcion: v.descripcion,
+        // Nulo deja la clase como estaba: quien solo viene a corregir el nombre
+        // no cambia de qué se rige el rol sin querer.
+        p_a_la_medida: v.a_la_medida ?? null,
       }),
     onSuccess: () => invalidarRoles(qc),
   })
+}
+
+// ---------------------------------------------------------------------------
+// Acciones: lo que un rol puede hacer, casilla por casilla
+//
+// Es lo que pidió la líder: «al crear un rol estamos creando un título o caja
+// que se llenará de permisos». La escalera decía a qué módulo llegas y con qué
+// fuerza; esto dice QUÉ COSAS puedes hacer ahí dentro, una por una.
+// ---------------------------------------------------------------------------
+
+export interface AccionDelSistema {
+  codigo: string
+  modulo: string
+  modulo_nombre: string
+  nombre: string
+  dice: string | null
+  orden: number
+  /**
+   * El escalón que la cubría antes, para que los roles de siempre no pierdan
+   * nada. Nulo cuando ningún nivel la abre: esas solo se tienen marcándolas.
+   */
+  nivel_equivalente: Nivel | null
+}
+
+export function useAcciones() {
+  return useQuery({
+    queryKey: ['acciones'],
+    queryFn: () => rpc<AccionDelSistema[]>('acciones_del_sistema'),
+    staleTime: 10 * 60_000,
+  })
+}
+
+export function useAccionesDeLosRoles() {
+  return useQuery({
+    queryKey: ['acciones-de-roles'],
+    queryFn: () => rpc<{ rol: string; accion: string }[]>('acciones_de_los_roles'),
+  })
+}
+
+export function useMarcarAccion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { rol: string; accion: string; marcada: boolean }) =>
+      rpc('marcar_accion_de_rol', {
+        p_rol: v.rol,
+        p_accion: v.accion,
+        p_marcada: v.marcada,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['acciones-de-roles'] })
+      // Y lo que YO puedo: si me acabo de recortar a mí mismo, la pantalla
+      // tiene que enterarse sin recargar.
+      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
+    },
+  })
+}
+
+/**
+ * Lo que puede hacer quien está mirando.
+ *
+ * Es el gemelo de `useMisPermisos`, y hace falta para lo otro que se pidió:
+ * «que un módulo se pueda visualizar, pero no modificar (sin botones)». Con
+ * solo el escalón no se puede pintar eso — los botones se quedarían ahí para
+ * fallar al pulsarlos.
+ */
+export function useMisAcciones() {
+  const consulta = useQuery({
+    queryKey: ['mis-acciones'],
+    queryFn: () => rpc<string[]>('mis_acciones'),
+    staleTime: 5 * 60_000,
+  })
+
+  const suyas = new Set(consulta.data ?? [])
+
+  return {
+    ...consulta,
+    /** Falso mientras carga: se abre al confirmar, no antes. */
+    puede: (accion: string) => suyas.has(accion),
+    resuelto: consulta.isSuccess,
+  }
 }
 
 export function useEliminarRol() {
