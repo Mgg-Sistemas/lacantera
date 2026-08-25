@@ -62,6 +62,10 @@ export interface DatosRecibo {
   desde: string
   hasta: string
   diasPagados: string
+  /** Lo que paga el periodo. Nulo en los recibos anteriores a que se guardara. */
+  diasFacturados?: string | null
+  /** Facturados menos TODAS las faltas: lo que de verdad estuvo. */
+  diasLaborados?: string | null
 
   ficha: string
   cedula: string
@@ -154,8 +158,33 @@ function trabajador(doc: Doc, d: DatosRecibo, y: number): number {
   // alguien reclama que le pagaron de menos.
   doc.setTextColor(GRIS).setFontSize(7.5)
   doc.text(`Del ${dia(d.desde)} al ${dia(d.hasta)}`, DER, y - 1, { align: 'right' })
+  /*
+    LOS TRES NUMEROS, QUE ES LO QUE PIDIO LA LIDER
+
+    «QUE SE REFLEJE EN EL RECIBO DE PAGO DIAS FACTURADOS, DIAS LABORADOS, DIAS A
+    PAGAR». Van los tres juntos y en ese orden porque asi se lee la resta: de
+    quince que paga la quincena, trabajo trece, y se le pagan catorce porque una
+    de las dos faltas estaba justificada.
+
+    Con un solo numero —«14 dias pagados»— quien lo recibia no podia saber si le
+    habian descontado, ni cuanto, ni por que. Que es exactamente lo que se
+    discute cuando se discute un recibo.
+
+    Los recibos calculados antes de esto no traen los otros dos: entonces sale
+    la linea de siempre, que no es un fallo sino un recibo mas viejo.
+  */
   doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(9)
-  doc.text(`${Number(d.diasPagados)} días pagados`, DER, y + 5, { align: 'right' })
+
+  if (d.diasFacturados != null && d.diasLaborados != null) {
+    doc.text(
+      `${Number(d.diasFacturados)} facturados · ${Number(d.diasLaborados)} laborados · ${Number(d.diasPagados)} a pagar`,
+      DER,
+      y + 5,
+      { align: 'right' },
+    )
+  } else {
+    doc.text(`${Number(d.diasPagados)} días pagados`, DER, y + 5, { align: 'right' })
+  }
 
   return y + 11
 }

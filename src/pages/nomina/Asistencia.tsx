@@ -18,13 +18,17 @@ import {
   useEliminarNovedadMonto,
   useEmpleados,
   useGuardarNovedad,
+  useFaltas,
+  useMarcarFalta,
   useGuardarNovedadMonto,
   useNovedades,
   useNovedadesMontos,
   usePeriodos,
 } from '@/lib/api/nomina'
+import type { Empleado, FaltaDelPeriodo, Periodo } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { dinero, fecha } from '@/lib/formato'
+import { cn } from '@/lib/cn'
 
 /** Los campos que se teclean por trabajador y período. */
 const CAMPOS = [
@@ -33,11 +37,303 @@ const CAMPOS = [
   { clave: 'horas_nocturnas', columna: 'horas_nocturnas', etiqueta: 'H. nocturnas' },
   { clave: 'feriados', columna: 'dias_feriados_trabajados', etiqueta: 'Feriados trab.' },
   { clave: 'descansos', columna: 'dias_descanso_trabajados', etiqueta: 'Descansos trab.' },
-  { clave: 'faltas_inj', columna: 'faltas_injustificadas', etiqueta: 'Faltas s/j' },
-  { clave: 'faltas_just', columna: 'faltas_justificadas', etiqueta: 'Faltas just.' },
 ] as const
 
+/*
+  Las dos casillas de faltas salieron de esta rejilla.
+
+  Ahora los dias se señalan en el calendario de arriba y la base recuenta sola
+  las columnas de nomina_novedades. Dejarlas aqui serian dos sitios diciendo lo
+  mismo, y el que se toque de ultimo gana — que es como se pierde una falta.
+
+  `guardar_novedad` ademas las ignora, asi que ni una pestaña abierta desde
+  antes del cambio puede borrarlas.
+*/
+
 type Fila = Record<string, string>
+
+/*
+  LOS DÍAS DE LA QUINCENA, UNO A UNO
+
+  La líder: «QUE DEL PAGO QUINCENAL SE VEA DIARIO, Y QUE PERMITA INDICAR SI NO
+  TRABAJÓ ALGÚN DÍA PARA DESCONTARLO. QUE PUEDA ESCOGER LOS DÍAS QUE FALTÓ Y SE
+  LE DESCUENTE». Y de la pantalla anterior dijo que no era intuitiva: eran siete
+  casillas numéricas por persona, y en dos de ellas se tecleaba un número de
+  faltas que no decía qué días.
+
+  Un «2» no se puede discutir el día del reclamo. Dos fechas señaladas sí.
+
+  SE ELIGE A LA PERSONA Y SE VE SU QUINCENA. Lo decidió Christopher entre las dos
+  formas posibles. La otra —todo el mundo en filas y los días en columnas— era
+  más rápida para cerrar la quincena de veinte personas, pero se lee peor cuando
+  hay que explicarle a alguien por qué le descontaron.
+
+  Para que elegir uno a uno no signifique entrar y salir diecinueve veces, la
+  lista de la izquierda se queda a la vista con lo que lleva marcado cada quien.
+*/
+
+const DIAS_SEMANA = ['do', 'lu', 'ma', 'mi', 'ju', 'vi', 'sá']
+
+/** Las fechas del período, de la primera a la última, sin saltarse ninguna. */
+function diasDelPeriodo(desde: string, hasta: string): string[] {
+  const dias: string[] = []
+  // Se recorre en UTC a propósito: las fechas de la base son `date` sin hora, y
+  // construirlas en la zona local haría que en Caracas —UTC-4— el día 16 se
+  // leyera como el 15 a las ocho de la noche.
+  const d = new Date(desde + 'T00:00:00Z')
+  const fin = new Date(hasta + 'T00:00:00Z')
+  while (d <= fin) {
+    dias.push(d.toISOString().slice(0, 10))
+    d.setUTCDate(d.getUTCDate() + 1)
+  }
+  return dias
+}
+
+function DiasDelPeriodo({
+  periodo,
+  empleados,
+  editable,
+}: {
+  periodo: Periodo
+  empleados: Empleado[]
+  editable: boolean
+}) {
+  const faltas = useFaltas(periodo.id)
+  const marcar = useMarcarFalta()
+  const [elegido, setElegido] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const quien = elegido ?? empleados[0]?.id ?? null
+  const trabajador = empleados.find((e) => e.id === quien)
+
+  const dias = useMemo(() => diasDelPeriodo(periodo.desde, periodo.hasta), [periodo.desde, periodo.hasta])
+
+  /** Lo marcado, por trabajador y por fecha. */
+  const porTrabajador = useMemo(() => {
+    const mapa = new Map<number, Map<string, FaltaDelPeriodo>>()
+    for (const f of faltas.data ?? []) {
+      const suyas = mapa.get(f.empleado_id) ?? new Map()
+      suyas.set(f.fecha, f)
+      mapa.set(f.empleado_id, suyas)
+    }
+    return mapa
+  }, [faltas.data])
+
+  const suyas = quien ? (porTrabajador.get(quien) ?? new Map<string, FaltaDelPeriodo>()) : new Map()
+
+  const cuenta = (id: number, tipo: 'INJUSTIFICADA' | 'JUSTIFICADA') =>
+    [...(porTrabajador.get(id)?.values() ?? [])].filter((f) => f.tipo === tipo).length
+
+  /*
+    LOS TRES NÚMEROS, EN VIVO
+
+    Facturados es lo que paga el período —quince en una quincena, aunque el
+    rango tenga dieciséis fechas—. Se leen aquí mismo mientras se marca, porque
+    el número que importa es el de a pagar y verlo cambiar es lo que confirma
+    que el clic hizo lo que se creía.
+  */
+  const inj = quien ? cuenta(quien, 'INJUSTIFICADA') : 0
+  const jus = quien ? cuenta(quien, 'JUSTIFICADA') : 0
+  const facturados = Number(periodo.dias)
+  const laborados = Math.max(facturados - inj - jus, 0)
+  const aPagar = Math.max(facturados - inj, 0)
+
+  /** Un clic rota: limpio → no vino y descuenta → justificada → limpio. */
+  const siguiente = (actual?: FaltaDelPeriodo): 'INJUSTIFICADA' | 'JUSTIFICADA' | null =>
+    !actual ? 'INJUSTIFICADA' : actual.tipo === 'INJUSTIFICADA' ? 'JUSTIFICADA' : null
+
+  const pulsar = (fecha: string) => {
+    if (!editable || !quien) return
+    setError(null)
+    marcar.mutate(
+      { periodo_id: periodo.id, empleado_id: quien, fecha, tipo: siguiente(suyas.get(fecha)) },
+      { onError: (e: Error) => setError(e.message) },
+    )
+  }
+
+  if (faltas.isPending) return <Cargando />
+  if (faltas.error) return <ErrorDeCarga error={faltas.error} />
+
+  return (
+    <Card flush className="mb-4">
+      <div className="p-5 pb-3">
+        <CardHeader
+          title="Días de la quincena"
+          subtitle="Señala los días que no trabajó. Un clic: no vino y se le descuenta. Dos: justificada, no descuenta. Tres: se limpia."
+        />
+      </div>
+
+      <div className="border-hairline flex flex-col border-t lg:flex-row">
+        {/* La gente, siempre a la vista */}
+        <div className="border-hairline shrink-0 border-b lg:w-64 lg:border-r lg:border-b-0">
+          <ul className="max-h-[26rem] overflow-y-auto">
+            {empleados.map((e) => {
+              const i = cuenta(e.id, 'INJUSTIFICADA')
+              const j = cuenta(e.id, 'JUSTIFICADA')
+              return (
+                <li key={e.id}>
+                  <button
+                    type="button"
+                    onClick={() => setElegido(e.id)}
+                    aria-current={quien === e.id}
+                    className={cn(
+                      'flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-sm',
+                      quien === e.id
+                        ? 'bg-royal-600/10 text-royal-700 dark:text-royal-300 font-medium'
+                        : 'text-ink/70 hover:bg-ink/5',
+                    )}
+                  >
+                    <span className="min-w-0 truncate">
+                      {e.apellidos}, {e.nombres}
+                    </span>
+                    {/* Solo cuando hay algo que decir: una columna de ceros en
+                        diecinueve filas es ruido que esconde las tres que sí
+                        tienen faltas. */}
+                    {i + j > 0 ? (
+                      <span className="shrink-0 text-xs tabular">
+                        {i > 0 ? <span className="text-danger">{i}</span> : null}
+                        {i > 0 && j > 0 ? <span className="text-ink/30"> · </span> : null}
+                        {j > 0 ? <span className="text-warning">{j}</span> : null}
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+
+        {/* Su quincena */}
+        <div className="min-w-0 flex-1 p-5">
+          {!trabajador ? (
+            <p className="text-ink/50 text-sm">Elige a alguien de la lista.</p>
+          ) : (
+            <>
+              <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+                <p className="text-ink/85 font-medium">
+                  {trabajador.apellidos}, {trabajador.nombres}
+                  <span className="text-ink/45 ml-2 text-sm font-normal">{trabajador.cargo}</span>
+                </p>
+                <dl className="text-ink/70 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+                  <div className="flex gap-1.5">
+                    <dt className="text-ink/45">Facturados</dt>
+                    <dd className="tabular font-medium">{facturados}</dd>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <dt className="text-ink/45">Laborados</dt>
+                    <dd className="tabular font-medium">{laborados}</dd>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <dt className="text-ink/45">A pagar</dt>
+                    <dd
+                      className={cn(
+                        'tabular font-semibold',
+                        aPagar < facturados ? 'text-danger' : 'text-ink/85',
+                      )}
+                    >
+                      {aPagar}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="grid grid-cols-5 gap-2 sm:grid-cols-8">
+                {dias.map((d) => {
+                  const marca = suyas.get(d)
+                  const dia = new Date(d + 'T00:00:00Z')
+                  const fuera =
+                    d < trabajador.fecha_ingreso ||
+                    (trabajador.fecha_egreso !== null && d > trabajador.fecha_egreso)
+
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      disabled={!editable || fuera || marcar.isPending}
+                      onClick={() => pulsar(d)}
+                      title={
+                        fuera
+                          ? 'Esta persona no trabajaba aquí ese día'
+                          : marca?.tipo === 'INJUSTIFICADA'
+                            ? 'No vino · se le descuenta'
+                            : marca?.tipo === 'JUSTIFICADA'
+                              ? `Justificada · no se descuenta${marca.motivo ? ` · ${marca.motivo}` : ''}`
+                              : 'Trabajó'
+                      }
+                      className={cn(
+                        'flex flex-col items-center gap-0.5 rounded-[6px] border py-2 text-sm transition-colors',
+                        fuera && 'border-hairline text-ink/20 cursor-not-allowed',
+                        !fuera && !marca && 'border-hairline text-ink/70 hover:bg-ink/5',
+                        marca?.tipo === 'INJUSTIFICADA' &&
+                          'border-danger/40 bg-danger/12 text-danger font-semibold',
+                        marca?.tipo === 'JUSTIFICADA' &&
+                          'border-warning/40 bg-warning-soft text-warning font-semibold',
+                      )}
+                    >
+                      <span className="text-2xs opacity-70">{DIAS_SEMANA[dia.getUTCDay()]}</span>
+                      <span className="tabular">{dia.getUTCDate()}</span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/*
+                Lo marcado, con su motivo escribible.
+
+                La justificada es la que hay que poder defender: una falta que no
+                descuenta y no dice por qué es la que nadie puede explicar seis
+                meses después. Se escribe aquí y no en un diálogo por clic, que
+                convertiría marcar cuatro días en cuatro ventanas.
+              */}
+              {suyas.size > 0 ? (
+                <ul className="border-hairline mt-5 space-y-2 border-t pt-4">
+                  {[...suyas.values()]
+                    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+                    .map((f) => (
+                      <li key={f.fecha} className="flex flex-wrap items-center gap-2 text-sm">
+                        <Chip tone={f.tipo === 'INJUSTIFICADA' ? 'danger' : 'warning'}>
+                          {fecha(f.fecha)}
+                        </Chip>
+                        <span className="text-ink/50 text-xs">
+                          {f.tipo === 'INJUSTIFICADA' ? 'se le descuenta' : 'no descuenta'}
+                        </span>
+                        <input
+                          className="border-hairline text-ink/80 placeholder:text-ink/30 min-w-0 flex-1 rounded-[6px] border bg-transparent px-2.5 py-1 text-sm"
+                          placeholder="Por qué faltó"
+                          defaultValue={f.motivo ?? ''}
+                          disabled={!editable}
+                          onBlur={(ev) => {
+                            const v = ev.target.value.trim()
+                            if (v === (f.motivo ?? '')) return
+                            marcar.mutate(
+                              {
+                                periodo_id: periodo.id,
+                                empleado_id: quien!,
+                                fecha: f.fecha,
+                                tipo: f.tipo,
+                                motivo: v || null,
+                              },
+                              { onError: (e: Error) => setError(e.message) },
+                            )
+                          }}
+                        />
+                        {f.quien ? (
+                          <span className="text-ink/35 shrink-0 text-2xs">lo marcó {f.quien}</span>
+                        ) : null}
+                      </li>
+                    ))}
+                </ul>
+              ) : null}
+
+              {error ? <ErrorDeCarga error={new Error(error)} className="mt-4" /> : null}
+            </>
+          )}
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 
 export function Asistencia() {
   const monedas = useMonedasUsables()
@@ -93,8 +389,6 @@ export function Asistencia() {
       horas_nocturnas: Number(f.horas_nocturnas || 0),
       feriados: Number(f.feriados || 0),
       descansos: Number(f.descansos || 0),
-      faltas_inj: Number(f.faltas_inj || 0),
-      faltas_just: Number(f.faltas_just || 0),
     })
   }
 
@@ -164,11 +458,15 @@ export function Asistencia() {
       {error ? <ErrorDeCarga error={error} /> : null}
 
       {periodo && empleados && empleados.length > 0 ? (
+        <DiasDelPeriodo periodo={periodo} empleados={empleados} editable={puedeRRHH && abierto} />
+      ) : null}
+
+      {periodo && empleados && empleados.length > 0 ? (
         <Card flush>
           <div className="p-5 pb-2">
             <CardHeader
-              title="Personal activo"
-              subtitle="Se guarda por trabajador. Lo que no se toca queda en cero."
+              title="Horas y recargos"
+              subtitle="Horas extra, nocturnas y días trabajados de descanso o feriado. Se guarda por trabajador; lo que no se toca queda en cero."
             />
           </div>
 

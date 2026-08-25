@@ -283,6 +283,17 @@ export interface Recibo {
   id: number
   periodo_id: number
   empleado_id: number
+  /*
+    LOS TRES NUMEROS DE DIAS
+
+    Los pidio la lider para el recibo. Facturados es lo que paga el periodo —15
+    en una quincena, aunque su rango tenga 16 fechas—. Laborados es eso menos
+    TODAS las faltas: lo que de verdad estuvo. A pagar es eso menos solo las
+    INJUSTIFICADAS, porque la justificada se paga, y es el unico de los tres que
+    entra en el calculo.
+  */
+  dias_facturados: string | null
+  dias_laborados: string | null
   dias_pagados: string
   salario_basico_diario: string
   salario_normal_diario: string
@@ -639,6 +650,62 @@ export function usePagarNomina() {
         p_fecha: p.fecha || null,
       }),
   )
+}
+
+/*
+  LAS FALTAS SE SEÑALAN POR DIA
+
+  La lider: «que permita indicar si no trabajo algun dia para descontarlo, que
+  pueda escoger los dias que falto y se le descuente».
+
+  Antes se tecleaba un numero —«2»— en una casilla. Un 2 no se puede discutir el
+  dia del reclamo: no dice que dias, ni quien lo escribio, ni cuando. Dos fechas
+  señaladas si, y quedan en la auditoria con su autor.
+
+  El numero sigue existiendo en nomina_novedades porque es de donde lee
+  calcular_nomina, pero lo mantiene la base sola al marcar y desmarcar. Aqui no
+  se toca nunca.
+*/
+export interface FaltaDelPeriodo {
+  empleado_id: number
+  fecha: string
+  tipo: 'INJUSTIFICADA' | 'JUSTIFICADA'
+  motivo: string | null
+  quien: string | null
+}
+
+export function useFaltas(periodoId: number | undefined) {
+  return useQuery({
+    queryKey: ['nomina', 'faltas', periodoId],
+    enabled: periodoId !== undefined,
+    queryFn: () => rpc<FaltaDelPeriodo[]>('faltas_del_periodo', { p_periodo_id: periodoId }),
+  })
+}
+
+export function useMarcarFalta() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: {
+      periodo_id: number
+      empleado_id: number
+      fecha: string
+      /** Nulo limpia el dia. */
+      tipo: 'INJUSTIFICADA' | 'JUSTIFICADA' | null
+      motivo?: string | null
+    }) =>
+      rpc('marcar_falta', {
+        p_periodo_id: v.periodo_id,
+        p_empleado_id: v.empleado_id,
+        p_fecha: v.fecha,
+        p_tipo: v.tipo,
+        p_motivo: v.motivo ?? null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['nomina', 'faltas'] })
+      // Las novedades tambien: la base acaba de rehacerles el contador.
+      void qc.invalidateQueries({ queryKey: ['nomina', 'novedades'] })
+    },
+  })
 }
 
 export function useGuardarNovedad() {
