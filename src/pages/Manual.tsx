@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Printer, Search } from 'lucide-react'
+import { Download, Search } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { enMayuscula } from '@/lib/texto'
+import { esModuloEnObra } from '@/config/navigation'
 import './manual.css'
 /*
   El manual entra como texto, no como componentes.
@@ -23,6 +24,50 @@ interface Capitulo {
   id: string
   numero: string
   nombre: string
+  /** Este capitulo habla de algo que hoy no se corresponde con el sistema. */
+  aviso?: string
+}
+
+/*
+  LOS CAPITULOS QUE HOY NO SE CORRESPONDEN CON EL SISTEMA
+
+  El manual describe el sistema entero, y hay modulos que todavia no se ofrecen
+  —el menu los esconde— y uno, Tesoreria, que directamente dejo de existir: la
+  absorbio Compras.
+
+  Publicar el manual sin decirlo seria darle a quien empieza cuatrocientas
+  paginas donde cinco capitulos hablan de pantallas que no puede abrir, y una de
+  un departamento que no existe. La primera vez que alguien busque «cuentas por
+  cobrar» y no encuentre el menu, va a dejar de creerle al manual entero — y el
+  manual es lo unico que tiene quien acaba de entrar.
+
+  No se borran los capitulos: el trabajo esta hecho y vale para el dia que el
+  modulo salga. Se marcan.
+
+  Se ata por NOMBRE de capitulo y no por numero para que renumerar el manual no
+  lo rompa en silencio; y la condicion se pregunta a `esModuloEnObra`, que sale
+  del propio menu, para que el aviso se caiga solo el dia que el modulo vuelva
+  al riel.
+*/
+const MODULO_DEL_CAPITULO: Record<string, string> = {
+  Explotación: 'EXPLOTACION',
+  Despachos: 'DESPACHOS',
+  Ventas: 'VENTAS',
+  Tesorería: 'TESORERIA',
+  Asignaciones: 'ASIGNACIONES',
+}
+
+/** Tesoreria no es «todavia no»: es «ya no». Merece su propia frase. */
+const AVISO_TESORERIA =
+  'Tesorería ya no existe en La Cantera: Compras absorbió su función. Este capítulo está pendiente de reescribir. Los pagos de una compra se hacen hoy desde Compras › Pagos por hacer, y el libro del dinero desde Compras › Movimientos de dinero.'
+
+const AVISO_EN_OBRA =
+  'Este módulo todavía no está en el sistema: el menú no lo ofrece. El capítulo se queda como referencia de cómo va a funcionar cuando entre.'
+
+function avisoDelCapitulo(nombre: string): string | undefined {
+  const modulo = MODULO_DEL_CAPITULO[nombre.trim()]
+  if (!modulo || !esModuloEnObra(modulo)) return undefined
+  return modulo === 'TESORERIA' ? AVISO_TESORERIA : AVISO_EN_OBRA
 }
 
 interface Hallazgo {
@@ -56,15 +101,31 @@ export function Manual() {
 
     const secciones = Array.from(raiz.querySelectorAll<HTMLElement>('section.cap'))
 
-    setCapitulos(
-      secciones
-        .filter((s) => s.dataset.cap)
-        .map((s) => ({
-          id: s.id,
-          numero: s.dataset.cap ?? '',
-          nombre: s.querySelector('.cap-tit span:last-child')?.textContent?.trim() ?? '',
-        })),
-    )
+    const leidos = secciones
+      .filter((s) => s.dataset.cap)
+      .map((s) => {
+        const nombre = s.querySelector('.cap-tit span:last-child')?.textContent?.trim() ?? ''
+        return { seccion: s, id: s.id, numero: s.dataset.cap ?? '', nombre, aviso: avisoDelCapitulo(nombre) }
+      })
+
+    /*
+      El aviso se mete en el documento, no encima de él: así viaja también al
+      PDF. Quien imprima el capítulo de Ventas para repartirlo tiene que
+      llevárselo con la advertencia puesta, o el papel dirá que existe algo que
+      no existe.
+
+      Con guarda de idempotencia porque en desarrollo el efecto corre dos veces
+      y si no saldría el aviso duplicado.
+    */
+    for (const c of leidos) {
+      if (!c.aviso || c.seccion.querySelector('.cap-aviso')) continue
+      const banda = document.createElement('p')
+      banda.className = 'cap-aviso'
+      banda.textContent = c.aviso
+      c.seccion.querySelector('.cap-tit')?.after(banda)
+    }
+
+    setCapitulos(leidos.map(({ id, numero, nombre, aviso }) => ({ id, numero, nombre, aviso })))
 
     const encontrables: Hallazgo[] = []
 
@@ -136,10 +197,26 @@ export function Manual() {
     <>
       <PageHeader
         title="Manual de usuario"
-        description="Cómo se usa el sistema, explicado para quien trabaja con él todos los días."
+        description="Cómo se usa el sistema, explicado para quien trabaja con él todos los días. Se puede leer aquí, buscar por un mensaje de error, o descargarlo en PDF para repartirlo en el patio."
         actions={
-          <Button variant="outline" icon={<Printer />} onClick={() => window.print()}>
-            Imprimir
+          /*
+            Dice PDF y no «Imprimir» porque es lo que la gente viene a buscar, y
+            porque con «Imprimir» nadie adivinaba que de ahí salía el archivo.
+
+            Por dentro sigue siendo el diálogo del navegador, y es a propósito:
+            el manual son cuatrocientas páginas con tablas y diagramas, y
+            armarlas con jsPDF daría un resultado peor que el que ya da el
+            navegador con la hoja de estilos de impresión —que además parte cada
+            capítulo en su hoja, para poder repartir solo el que le toca a cada
+            quien—. El `title` dice qué hacer por si el destino no viene puesto.
+          */
+          <Button
+            variant="outline"
+            icon={<Download />}
+            title="Abre el diálogo de impresión. Elige «Guardar como PDF» como destino."
+            onClick={() => window.print()}
+          >
+            Descargar en PDF
           </Button>
         }
       />
@@ -221,7 +298,16 @@ export function Manual() {
                   <span className="tabular text-ink/40 w-4 shrink-0 text-xs leading-5">
                     {c.numero}
                   </span>
-                  <span className="min-w-0">{c.nombre}</span>
+                  <span className="min-w-0">
+                    {c.nombre}
+                    {/* En el riel basta un punto: el porqué está arriba del
+                        capítulo, que es donde se va a leer. */}
+                    {c.aviso ? (
+                      <span className="text-warning ml-1.5" title={c.aviso} aria-label={c.aviso}>
+                        ·
+                      </span>
+                    ) : null}
+                  </span>
                 </button>
               </li>
             ))}

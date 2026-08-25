@@ -603,7 +603,6 @@ export const navigation: NavSection[] = [
         // programa. No se abre a diario, pero el día que hace falta se necesita
         // encontrar sin preguntarle a nadie: para eso está.
         label: 'Manual de usuario',
-        fueraDelMvp: true,
         icon: BookOpen,
         to: '/app/manual',
         siempre: true,
