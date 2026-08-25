@@ -68,6 +68,14 @@ export interface Articulo {
   categoria: string
   unidad: string
   inventariable: boolean
+  /**
+   * Si esto se puede mandar al taller y volver arreglado.
+   *
+   * Lo pidió Christopher viendo el selector del taller lleno de aceite de motor
+   * y arena lavada: «no podemos mandar al taller a reparar un pote de aceite».
+   * Un repuesto vuelve arreglado; un litro de aceite no se rectifica, se gasta.
+   */
+  reparable: boolean
   stock_minimo: string
   activo: boolean
   /**
@@ -150,10 +158,12 @@ export function useCrearArticulo() {
       unidad: string
       descripcion?: string
       inventariable?: boolean
+      reparable?: boolean
       stock_minimo?: number
       modo_entrega?: string
     }) =>
       rpc<number>('crear_articulo', {
+        p_reparable: a.reparable ?? null,
         p_codigo: a.codigo,
         p_nombre: a.nombre,
         p_categoria: a.categoria,
@@ -184,10 +194,12 @@ export function useEditarArticulo() {
       unidad: string
       descripcion?: string
       inventariable?: boolean
+      reparable?: boolean
       stock_minimo?: number
       modo_entrega?: string
     }) =>
       rpc('editar_articulo', {
+        p_reparable: a.reparable ?? null,
         p_id: a.id,
         p_nombre: a.nombre,
         p_categoria: a.categoria,

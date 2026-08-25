@@ -85,27 +85,44 @@ export function MovimientosTesoreria() {
       />
 
       <Card className="mb-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,12rem)_minmax(0,10rem)_1fr]">
-          <Select
-            label="Cómo se pagó"
-            vacio="De cualquier forma"
-            value={metodo}
-            onChange={(e) => filtrar('metodo', e.target.value)}
-            opciones={METODOS_DE_PAGO.map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
-          />
-          <Select
-            label="Moneda"
-            vacio="Todas"
-            value={moneda}
-            onChange={(e) => filtrar('moneda', e.target.value)}
-            opciones={[
-              { valor: 'USD', etiqueta: 'Dólares' },
-              { valor: 'VES', etiqueta: 'Bolívares' },
-              { valor: 'USDT', etiqueta: 'USDT' },
-              { valor: 'EUR', etiqueta: 'Euros' },
-            ]}
-          />
-          <RangoDeFechas valor={rango} onCambio={setRango} />
+        {/*
+          Los atajos de fecha piden una linea entera, y con dos desplegables
+          delante no la tienen: «Esta semana» se partia en dos renglones y la
+          fila quedaba con cuatro pastillas de dos pisos.
+
+          Con `flex-wrap` y un ancho minimo de verdad, el rango se baja solo a su
+          propia linea cuando no cabe al lado. Es lo contrario de apretarlo:
+          se le pide el sitio que necesita y el navegador decide donde ponerlo.
+        */}
+        <div className="flex flex-wrap items-start gap-3">
+          <div className="w-full sm:w-48">
+            <Select
+              label="Cómo se pagó"
+              vacio="De cualquier forma"
+              value={metodo}
+              onChange={(e) => filtrar('metodo', e.target.value)}
+              opciones={METODOS_DE_PAGO.map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
+            />
+          </div>
+
+          <div className="w-full sm:w-36">
+            <Select
+              label="Moneda"
+              vacio="Todas"
+              value={moneda}
+              onChange={(e) => filtrar('moneda', e.target.value)}
+              opciones={[
+                { valor: 'USD', etiqueta: 'Dólares' },
+                { valor: 'VES', etiqueta: 'Bolívares' },
+                { valor: 'USDT', etiqueta: 'USDT' },
+                { valor: 'EUR', etiqueta: 'Euros' },
+              ]}
+            />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <RangoDeFechas valor={rango} onCambio={setRango} />
+          </div>
         </div>
       </Card>
 

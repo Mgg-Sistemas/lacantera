@@ -31,6 +31,7 @@ const nuevo = {
   unidad: 'UND',
   descripcion: '',
   inventariable: true,
+  reparable: false,
   stock_minimo: '0',
   modo_entrega: 'CONSUMIBLE',
 }
@@ -208,6 +209,7 @@ export function Articulos() {
                               unidad: a.unidad,
                               descripcion: a.descripcion ?? '',
                               inventariable: a.inventariable,
+                              reparable: a.reparable,
                               stock_minimo: String(a.stock_minimo),
                               modo_entrega: a.modo_entrega,
                             })
@@ -302,6 +304,10 @@ export function Articulos() {
                   ...form,
                   categoria: e.target.value,
                   inventariable: e.target.value !== 'SERVICIO',
+                  // La categoria decide por defecto, y se puede desmarcar. Un
+                  // repuesto y una herramienta vuelven arreglados del taller; un
+                  // lubricante o un producto se gastan.
+                  reparable: ['HERRAMIENTA', 'REPUESTO'].includes(e.target.value),
                   // Al cambiar de categoría se propone el modo que le toca. Si
                   // ya se había elegido a mano se respeta: cambiarlo por debajo
                   // sería deshacer una decisión de quien está mirando.
@@ -359,6 +365,30 @@ export function Articulos() {
             {form.categoria === 'SERVICIO' ? (
               <span className="text-ink/45 text-xs">(un servicio no se almacena)</span>
             ) : null}
+          </label>
+
+          {/*
+            Lo pidio Christopher viendo el selector del taller lleno de aceite de
+            motor y arena lavada: «no podemos mandar al taller a reparar un pote
+            de aceite, por lo tanto al crear un articulo se debe especificar si
+            es o no apto para enviar al taller».
+
+            Viene marcada sola segun la categoria porque para la mayoria la
+            respuesta es evidente, y se puede corregir: la casilla esta para el
+            caso raro, no para hacer pensar en cada alta.
+          */}
+          <label className="text-ink/75 mt-3 flex cursor-pointer items-center gap-2 text-sm select-none">
+            <input
+              type="checkbox"
+              className="accent-royal-600 size-4"
+              disabled={!form.inventariable}
+              checked={form.reparable}
+              onChange={(e) => setForm({ ...form, reparable: e.target.checked })}
+            />
+            Se puede mandar al taller
+            <span className="text-ink/45 text-xs">
+              {form.reparable ? '(vuelve arreglado)' : '(se gasta, no se repara)'}
+            </span>
           </label>
 
           {crear.error ? <ErrorDeCarga error={crear.error} className="mt-4" /> : null}

@@ -7,6 +7,7 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
+import { useArticulos } from '@/lib/api/catalogo'
 import { enPlural } from '@/lib/formato'
 import type { Existencia } from '@/lib/api/inventario'
 import {
@@ -76,6 +77,7 @@ export function ModalAlTaller({
     no hacen falta para pintar la pantalla de detrás.
   */
   const todas = useExistencias(undefined, seVe && fila === null)
+  const { data: articulos } = useArticulos()
   const [elegidoArticulo, setElegidoArticulo] = useState('')
   const [elegidoAlmacen, setElegidoAlmacen] = useState('')
 
@@ -89,10 +91,25 @@ export function ModalAlTaller({
     (e) => String(e.articulo_id) === elegidoArticulo && Number(e.disponibles) > 0,
   )
 
+  /*
+    Solo lo que se puede reparar.
+
+    El selector se llenaba con todo lo que tuviera existencia —aceite de motor,
+    arena lavada, botas, cascos— y nada de eso vuelve del taller arreglado. La
+    base ya lo rechaza; ofrecerlo era hacer que alguien llenara la orden entera
+    para que se la tumbaran al final.
+
+    El dato vive en el articulo y no en la existencia, asi que se cruza con el
+    catalogo que la aplicacion ya tiene cargado.
+  */
+  const reparables = new Set(
+    (articulos ?? []).filter((a) => a.reparable).map((a) => a.id),
+  )
+
   const articulosConExistencia = [
     ...new Map(
       (todas.data ?? [])
-        .filter((e) => Number(e.disponibles) > 0)
+        .filter((e) => Number(e.disponibles) > 0 && reparables.has(e.articulo_id))
         .map((e) => [String(e.articulo_id), e]),
     ).entries(),
   ].map(([valor, e]) => ({
@@ -193,7 +210,11 @@ export function ModalAlTaller({
         <div className="mb-4 grid gap-4 sm:grid-cols-2">
           <SelectBuscable
             label="Qué se manda"
-            vacio="Busca el material"
+            vacio={
+              articulosConExistencia.length === 0
+                ? 'Nada reparable con existencia'
+                : 'Busca el material'
+            }
             valor={elegidoArticulo}
             onCambio={(v) => {
               // Al cambiar de artículo, el sitio elegido puede dejar de tenerlo.
