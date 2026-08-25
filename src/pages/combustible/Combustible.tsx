@@ -34,7 +34,7 @@ import { Link } from 'react-router'
 import { ModalCargarCombustible } from './ModalCargarCombustible'
 import { armarValeDeCombustible } from '@/lib/ficha/valeCombustiblePdf'
 import type { DespachoCombustible } from '@/lib/api/combustible'
-import { dolares, fecha } from '@/lib/formato'
+import { dolares, enPlural, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 function litros(valor: string | number, unidad = 'L'): string {
@@ -509,6 +509,19 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   }, [abierto])
 
   const elegido = conSaldo.find((t) => `${t.almacen_id}|${t.articulo_id}` === tanque)
+
+  /*
+    Las maquinas que pueden recibir ESTE combustible.
+
+    Una que no declara cual quema entra igual: no esta mal, esta sin declarar, y
+    esconderla obligaria a abrir Maquinaria antes de poder surtir. Una que
+    declara OTRO no entra: la base la rechaza al guardar, y ofrecerla es hacer
+    que alguien llene el vale entero para que se lo tumben al final.
+  */
+  const maquinasQuePueden = (maquinas ?? []).filter(
+    (m) => !elegido || !m.combustible_id || m.combustible_id === elegido.articulo_id,
+  )
+  const ocultasPorCombustible = (maquinas ?? []).length - maquinasQuePueden.length
   const pedidos = Number(cantidad)
   const excede = elegido ? pedidos > Number(elegido.existencia) : false
   const sinFicha = maquina === ''
@@ -618,19 +631,39 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
       </div>
 
       <div className="mt-4">
+        {/*
+          Solo las maquinas que queman ESTE combustible.
+
+          Christopher: «¿una maquina de gasolina es seleccionable para
+          despacharle gasoil? ¿validaste eso?». No lo estaba: la base lo paraba
+          al guardar —«"X" usa gasolina y se le esta echando gasoil»— y el
+          desplegable las ofrecia todas. Es el mismo fallo que ya salio hoy tres
+          veces: la pantalla ofrece lo que la base va a rechazar.
+
+          Las que no dicen que queman SI salen. No estan mal: estan sin declarar,
+          y esconderlas obligaria a abrir Maquinaria antes de poder surtir.
+        */}
         <SelectBuscable
           label="A qué máquina"
           vacio="No está en la ficha"
           valor={maquina}
           onCambio={(v) => setMaquina(v)}
-          opciones={(maquinas ?? []).map((m) => ({
+          opciones={maquinasQuePueden.map((m) => ({
             valor: String(m.id),
-            etiqueta: `${m.codigo} · ${m.nombre}`,
+            codigo: m.codigo,
+            nombre: m.nombre,
+            detalle: m.combustible_id
+              ? m.capacidad_combustible
+                ? `le caben ${Number(m.capacidad_combustible)} ${elegido?.unidad ?? ''}`
+                : 'quema este combustible'
+              : 'no dice qué quema',
           }))}
           hint={
             (maquinas ?? []).length === 0
               ? 'Todavía no hay máquinas cargadas en la ficha. El vale se puede emitir igual: escribe abajo a qué se le echó. Cuando se carguen en Maquinaria aparecerán aquí y se podrá llevar el consumo por hora.'
-              : 'Sin máquina no hay consumo por hora: solo cuenta para el gasto.'
+              : ocultasPorCombustible > 0
+                ? `No salen ${ocultasPorCombustible} que queman otro combustible. Si la ficha de alguna está equivocada, corrígela en Maquinaria.`
+                : 'Sin máquina no hay consumo por hora: solo cuenta para el gasto.'
           }
         />
       </div>
@@ -662,7 +695,7 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input
-          label={`Cuántos ${elegido?.unidad?.toLowerCase() ?? 'litros'}`}
+          label={`Cuántos ${enPlural(elegido?.unidad) || 'litros'}`}
           type="number"
           min="0.01"
           step="0.01"
