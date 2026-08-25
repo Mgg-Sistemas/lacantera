@@ -32,6 +32,7 @@ import { PapelesDeCompra } from './PapelesDeCompra'
 import { usePapelesDeCompra } from '@/lib/api/papelesDeCompra'
 import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
 import { usePerfiles, useMisRoles, useArticulos, CONDICIONES_PAGO } from '@/lib/api/catalogo'
+import { useMisAcciones, useMisAutorizaciones } from '@/lib/api/usuarios'
 import {
   ordenVigente,
   useAprobarCompra,
@@ -596,7 +597,11 @@ export function DetalleCompra() {
   const { data: articulos } = useArticulos()
   const { data: metodosDePago } = useMetodosPago()
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
+  // Se marca a mano cada vez: no se recuerda de una aprobacion a la siguiente.
+  const [bajoAutorizacion, setBajoAutorizacion] = useState(false)
   const { puede } = useMisRoles()
+  const { puede: alcanza } = useMisAcciones()
+  const misAutorizaciones = useMisAutorizaciones()
 
   const enviar = useEnviarPedido()
   const confirmar = useConfirmarPedido()
@@ -662,6 +667,7 @@ export function DetalleCompra() {
         autoriza: {
           nombre: quienEs(compra.aprobada_gg_por),
           imagen: compra.aprobada_gg_por ? (firmas?.porPerfil[compra.aprobada_gg_por] ?? null) : null,
+          porAutorizacionDe: quienEs(compra.aprobada_por_autorizacion_de),
         },
         numero: orden.numero,
         refPedido: compra.numero,
@@ -807,7 +813,16 @@ export function DetalleCompra() {
 
   const puedeCompras = puede('COMPRAS')
   const puedeGerente = puede('GERENTE_GENERAL')
-  const puedeTesoreria = puede('TESORERIA')
+
+  /*
+    Aprobar ya no se pregunta por el rol, sino por la casilla.
+
+    Es lo que deja entrar a quien tenga la autorizacion extendida — el caso que
+    pidio la lider con Jesmary—. Para quien le compete por su puesto no cambia
+    nada: la casilla va sembrada en el gerente general.
+  */
+  const puedeAprobar = alcanza('COMPRAS.APROBAR_COMPRA')
+  const autorizaAprobar = misAutorizaciones.de('COMPRAS.APROBAR_COMPRA')
 
   return (
     <>
@@ -1096,7 +1111,7 @@ export function DetalleCompra() {
                     <TarjetaInstruccion
                       key={i.id}
                       instruccion={i}
-                      puedePagar={puedeTesoreria}
+                      puedePagar={puedeCompras}
                       onPagar={() => setModal({ tipo: 'registrar-pago', instruccion: i })}
                       onDevolver={() => setModal({ tipo: 'devolver-instruccion', instruccion: i })}
                       onComprobante={() => void imprimirComprobante(i)}
@@ -1115,7 +1130,7 @@ export function DetalleCompra() {
           {orden ? (
             <PapelesDeCompra
               ordenId={orden.id}
-              puedeCargar={puedeCompras || puedeTesoreria || puede('ALMACEN')}
+              puedeCargar={puedeCompras || puede('ALMACEN')}
               puedeQuitar={puedeCompras}
             />
           ) : null}
@@ -1216,7 +1231,7 @@ export function DetalleCompra() {
               ) : null}
 
               {compra.estado === 'POR_CONFIRMAR_GERENTE' ? (
-                puedeGerente ? (
+                puedeAprobar ? (
                   <>
                     <p className="text-ink/60 mb-3 text-sm">
                       Al aprobar se emite la orden de compra por{' '}
@@ -1228,10 +1243,42 @@ export function DetalleCompra() {
                       </strong>
                       . A partir de ahí, el precio queda fijo.
                     </p>
+                    {/*
+                      El check que pidio la lider, y solo cuando es verdad.
+
+                      A quien le compete aprobar no se le pide que declare nada.
+                      A quien lo hace con un permiso extendido si, y con el
+                      nombre de quien se lo extendio delante: es lo que va a
+                      quedar impreso en la orden, y quien lo firma tiene que
+                      haberlo leido antes de pulsar.
+                    */}
+                    {autorizaAprobar ? (
+                      <label
+                        className={cn(
+                          'mb-3 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm',
+                          bajoAutorizacion ? 'border-warning/30 bg-warning-soft' : 'border-hairline',
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={bajoAutorizacion}
+                          onChange={(e) => setBajoAutorizacion(e.target.checked)}
+                          className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                        />
+                        <span className="text-ink/80">
+                          Autorizada bajo autorización del gerente general
+                          <span className="text-ink/50 mt-0.5 block text-xs">
+                            {autorizaAprobar.por_nombre} te lo autorizó
+                            {autorizaAprobar.hasta ? ` hasta el ${fecha(autorizaAprobar.hasta)}` : ''}
+                            . Va a quedar escrito en la orden.
+                          </span>
+                        </span>
+                      </label>
+                    ) : null}
                     <Button
                       block
                       icon={<BadgeCheck />}
-                      disabled={aprobar.isPending}
+                      disabled={aprobar.isPending || (!!autorizaAprobar && !bajoAutorizacion)}
                       onClick={() => void aprobar.mutate({ solicitud_id: compra.id })}
                     >
                       Aprobar la compra
@@ -1324,7 +1371,7 @@ export function DetalleCompra() {
               ) : null}
 
               {orden?.estado === 'EN_TESORERIA' ? (
-                puedeTesoreria ? (
+                puedeCompras ? (
                   <p className="text-ink/60 text-sm">
                     Registra el pago abajo, en el pago autorizado. Al hacerlo, la compra queda
                     esperando que llegue el material.
@@ -1403,7 +1450,7 @@ export function DetalleCompra() {
 
               {orden?.estado === 'PROVEEDOR_DESISTIO' &&
               orden.desistio_resolucion === 'PENDIENTE' &&
-              (puedeGerente || puedeTesoreria) ? (
+              (puedeGerente || puedeCompras) ? (
                 <>
                   <p className="text-ink/60 mb-3 text-sm">
                     Hay {dinero(orden.moneda, orden.total)} pagados sin material. Decide qué pasó
@@ -1476,6 +1523,9 @@ export function DetalleCompra() {
                 ['Destino', compra.destino ?? '—'],
                 ['Confirmado por', nombreDe(compra.confirmada_por)],
                 ['Aprobado por', nombreDe(compra.aprobada_gg_por)],
+                ...(compra.aprobada_por_autorizacion_de
+                  ? [['Bajo autorización de', nombreDe(compra.aprobada_por_autorizacion_de)]]
+                  : []),
               ].map(([clave, valor]) => (
                 <div key={clave} className="flex justify-between gap-3">
                   <dt className="text-ink/50 shrink-0">{clave}</dt>

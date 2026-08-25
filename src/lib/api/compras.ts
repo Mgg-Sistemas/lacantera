@@ -289,6 +289,13 @@ export interface Compra {
   cotizacion_elegida_id: number | null
   aprobada_gg_por: string | null
   aprobada_gg_en: string | null
+  /**
+   * De quien era la autoridad, si quien aprobo no podia por derecho propio.
+   *
+   * Nulo cuando aprueba quien le compete. Es lo que sale como «bajo
+   * autorizacion de» en el papel y en el resumen del pedido.
+   */
+  aprobada_por_autorizacion_de: string | null
   motivo_cancelacion: string | null
   renglones: RenglonPedido[]
   cotizaciones: Cotizacion[]
