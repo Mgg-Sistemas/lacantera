@@ -27,6 +27,7 @@ import {
 import type { CombustibleEnSitio } from '@/lib/api/combustible'
 import { useAlmacenes, useTransferir } from '@/lib/api/inventario'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMisRoles } from '@/lib/api/catalogo'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useFirmas } from '@/lib/api/firmas'
 import { Visor } from '@/components/Visor'
@@ -65,6 +66,7 @@ export function Combustible() {
   const despachos = useDespachosCombustible()
   const motivos = useMotivosDespacho()
   const { puede } = useMisPermisos()
+  const { puede: tieneRol } = useMisRoles()
   const empresa = useEmpresa()
   const firmas = useFirmas()
   const [despachando, setDespachando] = useState(false)
@@ -133,7 +135,21 @@ export function Combustible() {
   const [pasarAlTanque, setPasarAlTanque] = useState<CombustibleEnSitio | null>(null)
 
   const puedeDespachar = puede('COMBUSTIBLE', 'ESCRITURA')
-  const puedeMandar = puede('COMBUSTIBLE', 'TOTAL')
+  /*
+    Dos cosas distintas que estaban gobernadas por la misma reja.
+
+    EDITAR LA LISTA de motivos pedia COMBUSTIBLE:TOTAL, y ese nivel solo lo
+    tienen las cuatro cuentas de administrador. La lista se hizo editable
+    justamente para que quien despacha no tuviera que pedirlo, asi que la reja
+    la dejaba inservible. Ahora ESCRITURA, igual que la funcion de la base.
+
+    PASAR EL COMBUSTIBLE AL TANQUE es un traslado, y `transferir_existencia`
+    pide el ROL ALMACEN, no un nivel de combustible. Se comprueba lo que de
+    verdad se va a exigir: ofrecer un boton que la base va a rechazar es
+    ensenar una puerta cerrada, y esconderlo a quien si puede es peor.
+  */
+  const puedeOrdenar = puede('COMBUSTIBLE', 'ESCRITURA')
+  const puedeTrasladar = tieneRol('ALMACEN')
   const bajos = (tanques.data ?? []).filter(
     (t) => Number(t.stock_minimo) > 0 && Number(t.existencia) <= Number(t.stock_minimo),
   )
@@ -148,7 +164,7 @@ export function Combustible() {
             <>
               {/* La lista de motivos se toca desde aquí: quien despacha es quien
                   descubre que falta uno, y no debería tener que pedirlo. */}
-              {puedeMandar ? (
+              {puedeOrdenar ? (
                 <Button variant="ghost" onClick={() => setOrdenando(true)}>
                   <Tags className="size-4" />
                   Motivos
@@ -258,7 +274,7 @@ export function Combustible() {
                 <p className="tabular text-ink/90 mt-2 text-2xl font-semibold">
                   {litros(c.existencia, c.unidad)}
                 </p>
-                {puedeMandar ? (
+                {puedeTrasladar ? (
                   <Button
                     className="mt-3"
                     size="sm"

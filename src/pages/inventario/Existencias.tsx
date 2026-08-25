@@ -1424,7 +1424,10 @@ export function Existencias() {
                   </p>
                 ) : null}
 
-                {alcanza('INVENTARIO', 'TOTAL') ? (
+                {/* ESCRITURA y no TOTAL: con TOTAL el boton solo lo veian las
+                    cuatro cuentas de administrador, y la lista se hizo editable
+                    justamente para que no nos llamaran por ella. */}
+                {alcanza('INVENTARIO', 'ESCRITURA') ? (
                   <button
                     type="button"
                     className="text-ink/45 hover:text-ink/75 mt-2 text-xs underline underline-offset-2"
