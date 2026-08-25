@@ -1,0 +1,62 @@
+-- Fuera las dos quincenas de prueba.
+--
+-- Christopher: «Elimina los periodos que estan guardados, fueron de prueba, no
+-- reales» — NOM-2026-0001 y NOM-2026-0002.
+--
+-- Conviene decir por qué se habían quedado: la limpieza del 25 vació compras,
+-- inventario y tesorería para el uso real, pero dejó la nómina intacta a
+-- propósito porque son los datos de verdad de veintidós trabajadores. Y lo son:
+-- las FICHAS, el organigrama y el tabulador. Los dos períodos calculados encima
+-- no, y eso no se distinguía desde fuera.
+--
+-- =========================================================================
+-- LO QUE SE MIDIÓ ANTES DE BORRAR
+-- =========================================================================
+--
+-- Un borrado en nómina no se hace a ojo. Se recorrió el grafo de claves foráneas
+-- del catálogo, no de memoria:
+--
+--   nomina_novedades.periodo_id ......... cascade
+--   nomina_novedades_montos.periodo_id .. cascade
+--   nomina_recibos.periodo_id ........... cascade
+--   nomina_faltas.periodo_id ............ cascade
+--   nomina_recibo_lineas.recibo_id ...... cascade (cuelga del recibo)
+--   tesoreria_movimientos.nomina_periodo_id .. NO ACTION  <- el único que podía
+--                                                            frenar el borrado
+--
+-- Ese último es el que importaba: los dos períodos están PAGADOS, así que
+-- `pagar_nomina` les creó su egreso. Pero la limpieza del 25 ya vació
+-- `tesoreria_movimientos`, así que hoy hay CERO filas apuntando aquí y no hay
+-- nada que frenar ni ningún rastro de dinero que quede huérfano.
+--
+-- Tampoco hay disparadores de inmutabilidad en las tablas de nómina —los que sí
+-- existen son de tesorería, movimientos de inventario y auditoría—, así que no
+-- hace falta apagar y volver a encender nada.
+--
+-- COMPROBADO en transacción revertida antes de aplicarlo:
+--
+--   antes            2 periodos · 20 recibos · 180 lineas
+--   despues          0          · 0          · 0
+--   sin tocar        empleados=22  organigrama=21  tabulador=12
+--   prestaciones     0 en las seis tablas, antes y despues
+--
+-- El borrado va directo y no por `anular_periodo_nomina` porque esa función se
+-- niega con un período pagado, y con razón: anular es para lo que salió mal, no
+-- para lo que nunca debió existir.
+
+delete from public.nomina_periodos
+ where numero in ('NOM-2026-0001', 'NOM-2026-0002');
+
+-- ---------------------------------------------------------------------------
+-- Y el contador vuelve a cero
+--
+-- Esta tarde lo puse en 2 porque los dos períodos existían y el próximo iba a
+-- chocar (migración 20260825300000). Si los períodos se van, el 2 deja de tener
+-- sentido: la primera nómina de verdad tiene que ser la NOM-2026-0001, igual que
+-- la primera compra real es la OC-0001.
+--
+-- Se borra la fila en vez de ponerla en cero: `siguiente_numero` inserta con 1
+-- cuando no la encuentra, así que no hay diferencia salvo que una fila en cero
+-- es una fila que alguien tiene que interpretar.
+-- ---------------------------------------------------------------------------
+delete from public.correlativos where prefijo = 'NOM';
