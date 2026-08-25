@@ -54,7 +54,12 @@ export interface MovimientoTesoreria {
   id: number
   numero: string
   fecha: string
-  cuenta_id: number
+  /** EN RETIRADA: la empresa ya no lleva cajas ni bancos. Nulo en lo nuevo. */
+  cuenta_id: number | null
+  /** Cómo se pagó. Ocupa el sitio que tenía la cuenta. */
+  metodo: string | null
+  /** En qué moneda se movió. Antes vivía dentro de la cuenta. */
+  moneda: string | null
   tipo: string
   signo: number
   monto: string
@@ -88,8 +93,34 @@ export const TIPOS_TESORERIA: Record<string, string> = {
   REVERSO: 'Reverso',
 }
 
+/*
+  CÓMO SE PAGÓ Y EN QUÉ MONEDA, NO DE QUÉ CUENTA
+
+  Christopher: «ya no se manejan cajas ni bancos, esto dará error tarde o
+  temprano». La empresa dejó de llevar el dinero por cuenta, y el libro seguía
+  preguntando por una — con siete cargadas que eran de prueba, empezando por
+  «CAJA CHICA PRUEBA».
+
+  Lo que sí se lleva, y ya se registraba, son dos cosas: el MÉTODO —efectivo,
+  transferencia, pago móvil, que estaba en la instrucción de pago y el libro no
+  miraba— y la MONEDA, que estaba escondida dentro de la cuenta. Al quitar la
+  cuenta la moneda se habría perdido: `monto_bs` y `monto_usd` salen de las
+  tasas y ninguno de los dos dice cuál era la original.
+
+  `cuenta` se sigue leyendo mientras haya movimientos viejos que la nombren. Es
+  lo único que queda de ella.
+*/
+export const METODOS_DE_PAGO: Array<{ valor: string; etiqueta: string }> = [
+  { valor: 'EFECTIVO', etiqueta: 'Efectivo' },
+  { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia' },
+  { valor: 'PAGO_MOVIL', etiqueta: 'Pago móvil' },
+  { valor: 'ZELLE', etiqueta: 'Zelle' },
+  { valor: 'BINANCE', etiqueta: 'Binance' },
+  { valor: 'OTRO', etiqueta: 'Otro' },
+]
+
 export function useMovimientosTesoreria(
-  filtros: { cuentaId?: number; desde?: string; hasta?: string } = {},
+  filtros: { metodo?: string; moneda?: string; desde?: string; hasta?: string } = {},
 ) {
   return useQuery({
     queryKey: ['tesoreria', 'movimientos', filtros],
@@ -101,7 +132,8 @@ export function useMovimientosTesoreria(
         .order('id', { ascending: false })
         .limit(200)
 
-      if (filtros.cuentaId) q = q.eq('cuenta_id', filtros.cuentaId)
+      if (filtros.metodo) q = q.eq('metodo', filtros.metodo)
+      if (filtros.moneda) q = q.eq('moneda', filtros.moneda)
       // Por la fecha del movimiento —el día que salió el dinero del banco— y no
       // por la de registro: es la que cuadra con el estado de cuenta.
       if (filtros.desde) q = q.gte('fecha', filtros.desde)

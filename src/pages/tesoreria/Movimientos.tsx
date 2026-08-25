@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
-import { SelectBuscable } from '@/components/ui/SelectBuscable'
+import { Select } from '@/components/ui/Select'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
   TIPOS_TESORERIA,
-  useCuentas,
+  METODOS_DE_PAGO,
   useMovimientosTesoreria,
   useReversarTesoreria,
 } from '@/lib/api/tesoreria'
@@ -37,15 +37,31 @@ export function MovimientosTesoreria() {
     volver atrás en el navegador deshace el filtro en vez de salir del libro.
   */
   const [params, setParams] = useSearchParams()
-  const cuentaId = params.get('cuenta') ?? ''
-  const setCuentaId = (v: string) => {
-    if (v) setParams({ cuenta: v }, { replace: true })
-    else setParams({}, { replace: true })
+
+  /*
+    El filtro era «de qué cuenta salió» y ya no hay cuentas.
+
+    Christopher: «ya no se manejan cajas ni bancos, esto dará error tarde o
+    temprano». Lo que la empresa sí lleva —y ya se registraba sin que este libro
+    lo mirase— es cómo se pagó y en qué moneda.
+
+    Los dos siguen viviendo en la dirección, por lo mismo que vivía la cuenta:
+    el enlace se puede guardar y volver atrás deshace el filtro en vez de salir
+    del libro.
+  */
+  const metodo = params.get('metodo') ?? ''
+  const moneda = params.get('moneda') ?? ''
+  const filtrar = (clave: string, v: string) => {
+    const siguiente = new URLSearchParams(params)
+    if (v) siguiente.set(clave, v)
+    else siguiente.delete(clave)
+    setParams(siguiente, { replace: true })
   }
-  const { data: cuentas } = useCuentas(false)
+
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const { data, isPending, error } = useMovimientosTesoreria({
-    cuentaId: cuentaId ? Number(cuentaId) : undefined,
+    metodo: metodo || undefined,
+    moneda: moneda || undefined,
     desde: rango.desde || undefined,
     hasta: rango.hasta || undefined,
   })
@@ -60,34 +76,34 @@ export function MovimientosTesoreria() {
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
 
   const puedeReversar = puede('TESORERIA')
-  const cuentaElegida = cuentaId ? cuentas?.find((c) => String(c.id) === cuentaId) : undefined
 
   return (
     <>
       <PageHeader
-        title={cuentaElegida ? `Movimientos de ${cuentaElegida.nombre}` : 'Libro de tesorería'}
+        title="Libro de tesorería"
         description="Todo el dinero que entró y salió. No se edita ni se borra: para deshacer algo se escribe el movimiento contrario, y quedan los dos a la vista — el equivocado y el que lo corrige."
       />
 
       <Card className="mb-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,20rem)_1fr]">
-          <SelectBuscable
-            label="Cuenta"
-            hint={
-              // Con una cuenta elegida, el saldo de esa cuenta es la cifra
-              // contra la que se leen sus movimientos. Sin él hay que salir a
-              // buscarlo a otra pantalla y volver.
-              cuentaElegida
-                ? `Saldo hoy: ${dinero(cuentaElegida.moneda, cuentaElegida.saldo)}`
-                : undefined
-            }
-            vacio="Todas las cuentas"
-            valor={cuentaId}
-            onCambio={(v) => setCuentaId(v)}
-            opciones={(cuentas ?? []).map((c) => ({
-              valor: String(c.id),
-              etiqueta: c.nombre,
-            }))}
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,12rem)_minmax(0,10rem)_1fr]">
+          <Select
+            label="Cómo se pagó"
+            vacio="De cualquier forma"
+            value={metodo}
+            onChange={(e) => filtrar('metodo', e.target.value)}
+            opciones={METODOS_DE_PAGO.map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
+          />
+          <Select
+            label="Moneda"
+            vacio="Todas"
+            value={moneda}
+            onChange={(e) => filtrar('moneda', e.target.value)}
+            opciones={[
+              { valor: 'USD', etiqueta: 'Dólares' },
+              { valor: 'VES', etiqueta: 'Bolívares' },
+              { valor: 'USDT', etiqueta: 'USDT' },
+              { valor: 'EUR', etiqueta: 'Euros' },
+            ]}
           />
           <RangoDeFechas valor={rango} onCambio={setRango} />
         </div>
@@ -101,13 +117,13 @@ export function MovimientosTesoreria() {
           <Vacio
             icono={<BookOpen />}
             titulo={
-              rango.desde || rango.hasta || cuentaId
+              rango.desde || rango.hasta || metodo || moneda
                 ? 'Nada con esos filtros'
                 : 'Todavía no hay movimientos'
             }
             descripcion={
-              rango.desde || rango.hasta || cuentaId
-                ? 'No se movió dinero en lo que estás mirando. Prueba a ampliar las fechas o a quitar la cuenta.'
+              rango.desde || rango.hasta || metodo || moneda
+                ? 'No se movió dinero en lo que estás mirando. Prueba a ampliar las fechas o a quitar los filtros.'
                 : 'El libro se llena solo: cada pago, ingreso o traslado escribe su línea.'
             }
           />
@@ -122,7 +138,7 @@ export function MovimientosTesoreria() {
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Movimiento</th>
                   <th className="px-3 py-3 font-medium">Fecha</th>
-                  <th className="px-3 py-3 font-medium">Cuenta</th>
+                  <th className="px-3 py-3 font-medium">Cómo se pagó</th>
                   <th className="px-3 py-3 font-medium">Concepto</th>
                   <th className="px-3 py-3 text-right font-medium">Monto</th>
                   <th className="px-5 py-3 text-right font-medium"></th>
@@ -151,7 +167,19 @@ export function MovimientosTesoreria() {
                     <td className="text-ink/70 px-3 py-3 whitespace-nowrap">
                       {fecha(m.fecha)}
                     </td>
-                    <td className="text-ink/70 px-3 py-3">{m.cuenta?.nombre ?? '—'}</td>
+                    <td className="text-ink/70 px-3 py-3">
+                      {/* Lo viejo nombra una cuenta y lo nuevo un método. Se
+                          enseña lo que haya: esconder los quince movimientos
+                          anteriores para que la columna quede limpia sería
+                          borrar historia por estética. */}
+                      {METODOS_DE_PAGO.find((x) => x.valor === m.metodo)?.etiqueta ??
+                        m.metodo ??
+                        m.cuenta?.nombre ??
+                        '—'}
+                      {m.moneda ? (
+                        <span className="text-ink/40 ml-1.5 text-xs">{m.moneda}</span>
+                      ) : null}
+                    </td>
                     <td className="text-ink/75 px-3 py-3">
                       {m.concepto}
                       {m.contraparte ? (
@@ -174,13 +202,13 @@ export function MovimientosTesoreria() {
                         )}
                       >
                         {m.signo > 0 ? '+' : '−'}{' '}
-                        {dinero(m.cuenta?.moneda ?? 'USD', m.monto)}
+                        {dinero(m.moneda ?? m.cuenta?.moneda ?? 'USD', m.monto)}
                       </p>
                       {/* La otra moneda, con la tasa congelada del día del
                           movimiento: es lo que permite comparar un pago de
                           enero con uno de julio. */}
                       <p className="text-ink/35 tabular text-xs">
-                        {m.cuenta?.moneda === 'VES'
+                        {(m.moneda ?? m.cuenta?.moneda) === 'VES'
                           ? dolares(m.monto_usd)
                           : bolivares(m.monto_bs)}
                       </p>
