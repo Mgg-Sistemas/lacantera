@@ -165,7 +165,24 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
   { columna: 'densidad_ton_m3', obligatoria: false, dice: 'Toneladas por metro cúbico. Solo para lo que se pesa y se mide de las dos formas.', ejemplo: '1.6' },
   { columna: 'precio', obligatoria: false, dice: 'Precio de venta. Poner precio exige permiso de escritura en Ventas.', ejemplo: '18.50', otro: '40' },
   { columna: 'precio_minimo', obligatoria: false, dice: 'Lo más bajo que se puede vender. Vacío es cero: sin suelo.', ejemplo: '16' },
-  { columna: 'moneda', obligatoria: false, dice: 'La moneda del precio. Vacío es USD.', ejemplo: 'USD', otro: 'USD' },
+  { columna: 'moneda', obligatoria: false, dice: 'La moneda del precio y del costo. Vacío es USD.', ejemplo: 'USD', otro: 'USD' },
+
+  /*
+    LAS TRES DE LA EXISTENCIA
+
+    Van juntas o no va ninguna: media fila —un almacén sin cantidad, una
+    cantidad sin costo— casi siempre es una celda que se quedó sin llenar, y
+    adivinar el resto sería meter existencia que nadie pidió.
+
+    Y `costo` no es `precio`. El precio es a cuánto se le vende al cliente; el
+    costo es cuánto vale lo que está en el almacén, y de ahí sale el costo
+    promedio y lo que se va a cargar en cada salida futura. Confundirlos infla
+    el inventario y encarece cada consumo, en silencio y para siempre. Por eso
+    son dos columnas y el texto lo dice en las dos.
+  */
+  { columna: 'almacen', obligatoria: false, dice: 'Dónde está lo que hay. Se escribe el código o el nombre, como se lee en la pantalla de almacenes. Va con cantidad y costo: las tres o ninguna.', ejemplo: 'ALM-GEN', otro: '' },
+  { columna: 'cantidad', obligatoria: false, dice: 'Cuánto hay de esto en ese almacén. Entra como carga inicial, con su movimiento y su fecha.', ejemplo: '120', otro: '' },
+  { columna: 'costo', obligatoria: false, dice: 'Cuánto vale la unidad de lo que entra. NO es el precio de venta: de este número salen el valor del inventario y lo que costará cada salida futura.', ejemplo: '0.75', otro: '' },
 ]
 
 // ---------------------------------------------------------------------------
