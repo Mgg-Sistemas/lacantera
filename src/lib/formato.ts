@@ -147,3 +147,35 @@ export function hace(iso: string): string {
   const meses = Math.floor(dias / 30)
   return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`
 }
+
+/*
+  LA UNIDAD, DICHA EN PALABRAS
+
+  «Cuántos l» no se entiende, y era lo que salía de bajar la unidad a minúscula:
+  el catálogo guarda siglas —L, GAL, UND— porque en una tabla de veinte filas es
+  lo único que cabe, y en el rótulo de un campo hay sitio para la palabra.
+
+  Lo que no esté en la lista sale tal cual, en minúscula. Es una lista de
+  cortesía, no un catálogo: un rótulo un poco seco es mejor que un campo que no
+  se deja escribir porque alguien añadió una unidad nueva.
+*/
+const EN_PALABRAS: Record<string, string> = {
+  L: 'litros',
+  GAL: 'galones',
+  UND: 'unidades',
+  KG: 'kilos',
+  TON: 'toneladas',
+  M3: 'metros cúbicos',
+  M: 'metros',
+  PAR: 'pares',
+  CAJA: 'cajas',
+  SACO: 'sacos',
+  ROLLO: 'rollos',
+  JGO: 'juegos',
+  H: 'horas',
+}
+
+export function enPlural(unidad: string | null | undefined): string {
+  const u = (unidad ?? '').trim().toUpperCase()
+  return EN_PALABRAS[u] ?? u.toLowerCase()
+}

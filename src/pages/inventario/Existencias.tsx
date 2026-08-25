@@ -144,6 +144,8 @@ export function Existencias() {
   // Mandar algo al taller no es sacarlo: vuelve. Por eso va en su propio modal
   // y no como un quinto caso del de salidas.
   const [alTaller, setAlTaller] = useState<Existencia | null>(null)
+  // Abierto desde la cabecera, sin fila: el modal pregunta que y de donde.
+  const [alTallerSuelto, setAlTallerSuelto] = useState(false)
 
   /*
     LA NOTA DE SALIDA
@@ -704,6 +706,20 @@ export function Existencias() {
               >
                 Registrar salida
               </Button>
+              {/*
+                El «Al taller» existia desde ayer, pero solo dentro de una fila —y
+                las filas solo salen cuando se elige un almacen, asi que desde
+                «Todo el inventario», que es como se entra, no habia ninguno.
+                Christopher pregunto «¿donde puedo enviar un item al taller?» y la
+                respuesta era «primero elige un almacen», que no es una respuesta.
+              */}
+              <Button
+                variant="outline"
+                icon={<Wrench />}
+                onClick={() => setAlTallerSuelto(true)}
+              >
+                Mandar al taller
+              </Button>
             </>
           ) : undefined
         }
@@ -955,7 +971,14 @@ export function Existencias() {
         }}
       />
 
-      <ModalAlTaller fila={alTaller} onCerrar={() => setAlTaller(null)} />
+      <ModalAlTaller
+        fila={alTaller}
+        abierto={alTallerSuelto}
+        onCerrar={() => {
+          setAlTaller(null)
+          setAlTallerSuelto(false)
+        }}
+      />
 
       {falloElPapel ? (
         <Modal
