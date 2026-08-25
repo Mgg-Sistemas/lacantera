@@ -112,6 +112,11 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   */
   ['/app/tesoreria/pagos', 'COMPRAS'],
   ['/app/tesoreria/por-pagar', 'COMPRAS'],
+  // «Movimientos de dinero» cuelga de Compras en el menú, al lado de «Pagos
+  // por hacer», pero se había quedado sin su línea aquí y por prefijo caía en
+  // Tesorería. Se notó al vaciar Tesorería por estar en obra: la entrada seguía
+  // en el menú de Compras y daba el candado.
+  ['/app/tesoreria/movimientos', 'COMPRAS'],
   ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
@@ -661,4 +666,31 @@ const OFRECIDAS: Set<string> = new Set(
 export function esRutaFueraDelMvp(ruta: string): boolean {
   if (OFRECIDAS.has(ruta)) return false
   return FUERA_DEL_MVP.some((base) => ruta === base || ruta.startsWith(base + '/'))
+}
+
+/**
+ * Los módulos que hoy no se ofrecen por ninguna de sus pantallas.
+ *
+ * No es lo mismo que «tiene alguna pantalla escondida»: Nómina esconde el
+ * organigrama y sigue estando en el riel, así que Nómina no está aquí. Un
+ * módulo entra en esta lista solo cuando NINGUNA de sus rutas se ofrece.
+ *
+ * Se calcula del menú, como el resto: una lista escrita a mano es la que
+ * alguien olvida el día que un módulo vuelve, y entonces el módulo estaría en
+ * el riel y seguiría sin poder repartirse.
+ *
+ * Christopher lo pidió al ver la matriz de permisos: enseñaba los niveles de
+ * cinco módulos que nadie puede abrir, y los enseñaba repartidos, así que quien
+ * la leyera creería que Almacén trabaja en Despachos y que Ventas factura. La
+ * pantalla decía una cosa y el menú otra. Mientras un módulo esté en obra, lo
+ * abre solo administración y no sale en la matriz.
+ */
+export const MODULOS_EN_OBRA: ReadonlySet<string> = (() => {
+  const conPantallaViva = new Set<string>()
+  for (const ruta of OFRECIDAS) conPantallaViva.add(moduloDeRuta(ruta))
+  return new Set(MODULO_POR_PREFIJO.map(([, modulo]) => modulo).filter((m) => !conPantallaViva.has(m)))
+})()
+
+export function esModuloEnObra(modulo: string): boolean {
+  return MODULOS_EN_OBRA.has(modulo)
 }

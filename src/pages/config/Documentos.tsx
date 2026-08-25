@@ -11,7 +11,7 @@ import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
-import { useMisRoles } from '@/lib/api/catalogo'
+import { useMisAcciones } from '@/lib/api/usuarios'
 import {
   diasParaVencer,
   urlDocumento,
@@ -64,8 +64,15 @@ export function Documentos() {
   const subir = useSubirDocumento()
   const actualizar = useActualizarDocumento()
   const eliminar = useEliminarDocumento()
-  const { puede } = useMisRoles()
-  const gestiona = puede('ADMIN') || puede('GERENTE_GENERAL')
+  const { puede: alcanza } = useMisAcciones()
+
+  /*
+    Cargar, corregir y quitar eran la misma reja y son tres decisiones. Dejar que
+    alguien suba el RIF renovado no es dejarle borrar el acta constitutiva.
+  */
+  const puedeCargar = alcanza('CONFIGURACION.CARGAR_DOCUMENTO')
+  const puedeCorregir = alcanza('CONFIGURACION.EDITAR_DOCUMENTO')
+  const puedeQuitar = alcanza('CONFIGURACION.QUITAR_DOCUMENTO')
 
   // `null` cerrado, `0` cargando uno nuevo, `id` corrigiendo el que sea.
   const [editando, setEditando] = useState<number | null>(null)
@@ -173,7 +180,7 @@ export function Documentos() {
         title="Documentos legales"
         description="Los papeles de la empresa, guardados dentro del sistema y no en una carpeta pública."
         actions={
-          gestiona ? (
+          puedeCargar ? (
             <Button icon={<Upload className="size-[18px]" />} onClick={abrirNuevo}>
               Cargar documento
             </Button>
@@ -201,7 +208,7 @@ export function Documentos() {
           titulo="Todavía no hay documentos cargados"
           descripcion="El acta de alianza con la Gobernación, el comprobante del RIF, el registro mercantil y lo que haga falta van aquí."
           accion={
-            gestiona ? (
+            puedeCorregir ? (
               <Button icon={<Upload className="size-[18px]" />} onClick={abrirNuevo}>
                 Cargar el primero
               </Button>
@@ -254,7 +261,7 @@ export function Documentos() {
                   >
                     {abriendo === d.id ? 'Abriendo…' : 'Ver'}
                   </Button>
-                  {gestiona ? (
+                  {puedeQuitar ? (
                     <>
                       <Button
                         variant="ghost"
