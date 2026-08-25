@@ -44,6 +44,18 @@ export interface ColumnaPlantilla {
   ejemplo?: string
   /** La segunda fila. Sirve para enseñar el caso distinto: lo que va vacío. */
   otro?: string
+  /**
+   * Que esta columna lleva una fecha.
+   *
+   * NO es decoracion. Una fecha escrita en Excel NO se guarda como texto: se
+   * guarda como el numero de dias desde 1900, y la hoja solo la enseña bonita.
+   * Quien escribe 15/01/2026 en la casilla de `fecha_ingreso` manda «46037».
+   *
+   * Con esta marca, el lector la traduce antes de mandarla. Sin ella, la
+   * planilla de personal —donde la fecha de ingreso es obligatoria— la rechaza
+   * entera y quien la llena no entiende por que.
+   */
+  fecha?: boolean
 }
 
 const celda = (texto: string, estilo?: number): CeldaDeLibro => ({ texto, estilo })
@@ -148,6 +160,7 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
   { columna: 'unidad', obligatoria: true, dice: 'UND, M3, TON, KG, L, GAL, M, PAR, JGO, CAJA, SACO, ROLLO, HORA o SERV.', ejemplo: 'M3', otro: 'SERV' },
   { columna: 'inventariable', obligatoria: false, dice: 'SI o NO. Vacío es SI. Un SERVICIO tiene que ser NO.', ejemplo: 'SI', otro: 'NO' },
   { columna: 'modo_entrega', obligatoria: false, dice: 'Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. Vacío es CONSUMIBLE.', ejemplo: 'CONSUMIBLE', otro: 'NO' },
+  { columna: 'reparable', obligatoria: false, dice: 'SI o NO: si esto se puede mandar al taller y vuelve arreglado. Vacío se deduce de la categoría — un repuesto o una herramienta sí, lo demás no. En un artículo que ya existe, vacío respeta lo que tenía.', ejemplo: 'NO', otro: 'SI' },
   { columna: 'stock_minimo', obligatoria: false, dice: 'A partir de cuánto avisa. Vacío es cero, que es no avisar.', ejemplo: '50' },
   { columna: 'densidad_ton_m3', obligatoria: false, dice: 'Toneladas por metro cúbico. Solo para lo que se pesa y se mide de las dos formas.', ejemplo: '1.6' },
   { columna: 'precio', obligatoria: false, dice: 'Precio de venta. Poner precio exige permiso de escritura en Ventas.', ejemplo: '18.50', otro: '40' },
@@ -164,7 +177,7 @@ export const COLUMNAS_PERSONAL: ColumnaPlantilla[] = [
   { columna: 'nombres', obligatoria: true, dice: 'Como aparece en la cédula.', ejemplo: 'Juan Carlos', otro: 'Maria' },
   { columna: 'apellidos', obligatoria: true, dice: 'Como aparece en la cédula.', ejemplo: 'Perez Blanco', otro: 'Rojas' },
   { columna: 'cargo', obligatoria: true, dice: 'El cargo que ocupa. Si coincide con uno del tabulador, de ahí sale el sueldo.', ejemplo: 'OPERADOR EQUIPO PESADO', otro: 'ANALISTA ADMINISTRATIVO' },
-  { columna: 'fecha_ingreso', obligatoria: true, dice: 'Cuándo entró, como 2026-01-15. De aquí salen la antigüedad y las prestaciones.', ejemplo: '2026-01-15', otro: '2025-06-01' },
+  { columna: 'fecha_ingreso', obligatoria: true, fecha: true, dice: 'Cuándo entró, como 2026-01-15. De aquí salen la antigüedad y las prestaciones.', ejemplo: '2026-01-15', otro: '2025-06-01' },
   { columna: 'salario_base', obligatoria: false, dice: 'Lo que gana según su estipulación. Vacío es cero: se le pondrá desde el tabulador.', ejemplo: '350', otro: '500' },
   { columna: 'moneda_salario', obligatoria: false, dice: 'La moneda del sueldo. Vacío es VES.', ejemplo: 'USD', otro: 'USD' },
   { columna: 'base_estipulacion', obligatoria: false, dice: 'Si ese sueldo es MENSUAL, DIARIO o por HORA. Vacío es MENSUAL.', ejemplo: 'MENSUAL', otro: 'MENSUAL' },
@@ -174,7 +187,7 @@ export const COLUMNAS_PERSONAL: ColumnaPlantilla[] = [
   { columna: 'ficha', obligatoria: false, dice: 'El número de ficha. Si se deja vacío, el sistema pone el siguiente.', ejemplo: '' },
   { columna: 'telefono', obligatoria: false, dice: 'Para localizarlo.', ejemplo: '0414-1234567' },
   { columna: 'direccion', obligatoria: false, dice: 'Dónde vive.', ejemplo: 'Puerto Ordaz' },
-  { columna: 'fecha_nacimiento', obligatoria: false, dice: 'Como 1990-03-22.', ejemplo: '1990-03-22' },
+  { columna: 'fecha_nacimiento', obligatoria: false, fecha: true, dice: 'Como 1990-03-22.', ejemplo: '1990-03-22' },
   { columna: 'genero', obligatoria: false, dice: 'MASCULINO o FEMENINO, o vacío.', ejemplo: 'MASCULINO', otro: 'FEMENINO' },
   { columna: 'estado_civil', obligatoria: false, dice: 'SOLTERO, CASADO, DIVORCIADO, VIUDO o CONCUBINATO.', ejemplo: 'SOLTERO' },
   { columna: 'nacionalidad', obligatoria: false, dice: 'Vacío se entiende venezolana.', ejemplo: '' },

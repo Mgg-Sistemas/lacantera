@@ -78,11 +78,56 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
    * calculado— y mandarlas no aportaría nada. Se recortan aquí para que lo que
    * sube sea exactamente lo que se va a interpretar.
    */
+  /*
+    LAS FECHAS DE EXCEL NO SON FECHAS
+
+    Excel no guarda «2026-01-15»: guarda 46037, el numero de dias desde el 30 de
+    diciembre de 1899, y la hoja solo lo ENSEÑA como fecha. Al leer el .xlsx
+    llega el numero, no el texto, asi que la planilla de personal —donde la fecha
+    de ingreso es obligatoria— se rechazaba entera y quien la llenaba no podia
+    saber por que: en su pantalla ponia 15/01/2026.
+
+    Se traduce aqui, y solo en las columnas marcadas como fecha, porque un
+    numero suelto en una columna de texto es un numero y no hay que tocarlo.
+
+    Se admite tambien el formato de toda la vida —15/03/2024— porque es lo que
+    escribe la gente cuando la celda esta como texto.
+  */
+  const enFecha = (v: string): string => {
+    const t = v.trim()
+    if (!t) return ''
+
+    // El numero de serie de Excel. El origen es el 30/12/1899 y no el 1/1/1900:
+    // Excel arrastra desde Lotus 1-2-3 el error de creer que 1900 fue bisiesto,
+    // y esa fecha de origen es la que lo compensa.
+    if (/^\d{1,6}(\.\d+)?$/.test(t)) {
+      const serie = Number(t)
+      // Menos de 367 es mas probable que sea un numero de verdad que una fecha
+      // de 1900, y mas de 60000 se sale de cualquier fecha razonable.
+      if (serie > 367 && serie < 60000) {
+        const d = new Date(Date.UTC(1899, 11, 30) + serie * 86400000)
+        return d.toISOString().slice(0, 10)
+      }
+      return t
+    }
+
+    // 15/03/2024 o 15-03-2024. El dia va primero, que es como se escribe aqui.
+    const m = /^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/.exec(t)
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+
+    return t
+  }
+
+  const esFecha = new Set(p.columnas.filter((c) => c.fecha).map((c) => c.columna))
+
   const preparar = (crudas: FilaDeHoja[]): FilaDeHoja[] =>
     crudas
       .map((f) => {
         const limpia: FilaDeHoja = {}
-        for (const campo of campos) limpia[campo] = (f[campo] ?? '').trim()
+        for (const campo of campos) {
+          const bruto = (f[campo] ?? '').trim()
+          limpia[campo] = esFecha.has(campo) ? enFecha(bruto) : bruto
+        }
         return limpia
       })
       // Excel casi siempre arrastra filas en blanco al final. Contarlas como
@@ -134,9 +179,18 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
         return
       }
 
+      /*
+        El aviso decia «esas filas se cargaran sin ese dato», y eso solo es
+        cierto en un alta. En una correccion —y la planilla existe para
+        corregir: «el RIF es lo que decide si la fila crea al proveedor o lo
+        corrige»— una columna ausente significa que se deja lo que habia.
+
+        Decirlo mal costo caro: las tres columnas de proveedores se pisaban con
+        el valor por defecto y el aviso prometia lo contrario.
+      */
       setAvisos(
         hoja.faltan.length > 0
-          ? `El archivo no trae ${hoja.faltan.join(', ')}. Esas filas se cargarán sin ese dato.`
+          ? `El archivo no trae ${hoja.faltan.join(', ')}. En las filas nuevas quedarán con su valor por defecto; en las que ya existen, se respeta lo que tengan.`
           : null,
       )
 
