@@ -16,16 +16,24 @@
 -- =========================================================================
 --
 -- Era la tentación evidente: las dos tablas tienen cédula, se cruzan y listo.
--- Medido antes de escribir nada:
 --
---   perfiles con cédula ............ 4 de 12
---   empleados ...................... 22
---   casan por cédula ............... 0
+-- AVISO: la primera versión de este comentario decía «casan por cédula: CERO»,
+-- y era falso. El fallo era de mi comparación: `perfiles.cedula` guarda
+-- `20301176` y `empleados.cedula` guarda `V-20301176`, y crucé las columnas tal
+-- cual. La corrección está en la migración 20260825260000. Lo medido de verdad:
 --
--- CERO. Atar identidades por un campo que ocho de doce cuentas tienen vacío es
--- fabricar vínculos falsos en silencio, y un vínculo falso aquí le cuelga a un
--- trabajador la cuenta de otro — y con ella, en su expediente, lo que hizo otro.
--- Lo ata una persona, a mano, y queda en la auditoría.
+--   administradora_  ->  ficha 0018, BARCO PACHECO JESMARY GABIELA
+--   leni12, sistemas2, susi ....... con cédula, sin ficha que les corresponda
+--   admin_, jlozada, prueba.admin,
+--   revision.diseno ............... sin cédula: no hay con qué cruzarlas
+--
+-- Una de doce no es una regla, es una casualidad afortunada. Ocho cuentas no
+-- tienen cédula con la que cruzarse y tres la tienen sin ficha detrás. Un cruce
+-- automático ataría una y dejaría once a mano, con la diferencia de que nadie
+-- sabría cuáles fueron adivinadas.
+--
+-- Y un vínculo falso aquí le cuelga a un trabajador, en su expediente, lo que
+-- hizo otro. Lo ata una persona, a mano, y queda en la auditoría.
 --
 -- =========================================================================
 -- UNA CUENTA, UNA FICHA
@@ -48,7 +56,7 @@ alter table public.empleados
   add column if not exists perfil_id uuid unique references public.perfiles(id) on delete set null;
 
 comment on column public.empleados.perfil_id is
-  'La cuenta del sistema de esta persona, si tiene. Nulo es lo normal: de 22 trabajadores solo unos pocos entran al sistema. Se ata a mano —por cedula daban CERO coincidencias— y unico, para que una cuenta no cuelgue de dos fichas.';
+  'La cuenta del sistema de esta persona, si tiene. Nulo es lo normal: de 22 trabajadores solo unos pocos entran al sistema. Se ata a mano y es unico, para que una cuenta no cuelgue de dos fichas. Ojo con cruzar por cedula: perfiles la guarda sin prefijo (20301176) y empleados con el (V-20301176), y ademas 8 de 12 cuentas no la tienen.';
 
 -- ---------------------------------------------------------------------------
 -- La casilla
