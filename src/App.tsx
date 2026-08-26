@@ -90,6 +90,9 @@ const EntregarATrabajador = pagina(() =>
 const Incidencias = pagina(() =>
   import('@/pages/asignaciones/Incidencias').then((m) => ({ default: m.Incidencias })),
 )
+const Dotacion = pagina(() =>
+  import('@/pages/asignaciones/Dotacion').then((m) => ({ default: m.Dotacion })),
+)
 const Talleres = pagina(() =>
   import('@/pages/inventario/Talleres').then((m) => ({ default: m.Talleres })),
 )
@@ -285,6 +288,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/combustible': <Combustible />,
   '/app/asignaciones': <Asignaciones />,
   '/app/asignaciones/incidencias': <Incidencias />,
+  '/app/asignaciones/dotacion': <Dotacion />,
   '/app/despachos/vehiculos': <Vehiculos />,
   '/app/nomina': <TableroNomina />,
   '/app/nomina/personal': <Personal />,

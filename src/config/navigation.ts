@@ -268,6 +268,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/nomina/tabulador': 'cargo sueldo escala aumento',
   '/app/combustible': 'gasoil gasolina diesel surtir tanque',
   '/app/asignaciones': 'herramienta prestada quien tiene responsable',
+  '/app/asignaciones/dotacion': 'dotacion cargo botas guantes casco epp reponer cada cuanto le toca',
   '/app/config/usuarios': 'permiso acceso clave rol alta',
   '/app/config/auditoria': 'quien hizo rastro historial cambios',
   '/app/explotacion/voladuras': 'explosivo barreno detonante',
@@ -402,6 +403,7 @@ export const navigation: NavSection[] = [
         fueraDelMvp: true,
         children: [
           { label: 'Quién tiene qué', to: '/app/asignaciones' },
+          { label: 'Dotación por cargo', to: '/app/asignaciones/dotacion' },
           { label: 'Incidencias', to: '/app/asignaciones/incidencias' },
         ],
       },
