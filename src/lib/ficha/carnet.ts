@@ -290,3 +290,56 @@ export async function armarCarnet(
   const apellido = d.apellidos.split(' ')[0].toLowerCase()
   return { blob, nombre: `carnet-${cara}-${d.ficha}-${apellido}.png` }
 }
+
+/**
+ * Las dos caras en un PDF a tamaño real, que es lo que se lleva a la imprenta.
+ *
+ * UNA IMAGEN NO TIENE TAMAÑO
+ *
+ * El PNG mide 638 × 1016 píxeles y nada más: cuánto es eso en centímetros
+ * depende de a qué resolución decida imprimirlo quien lo reciba. Hay que
+ * decírselo aparte, por mensaje, y confiar en que no se pierda por el camino.
+ * Un carnet impreso un 4% más grande no entra en la funda de plastificar.
+ *
+ * El PDF lleva la medida dentro. La página ES de 54 × 86 mm, así que la
+ * imprenta abre el archivo y ya está: no hay nada que ajustar ni nada que
+ * preguntar. Es lo único que cambia respecto a las imágenes, y es justo lo que
+ * pedía la líder al decir «optimizado para su posterior impresión».
+ *
+ * DOS PÁGINAS, NO DOS ARCHIVOS
+ *
+ * Frente y reverso van en el mismo documento y en ese orden. Mandarlos por
+ * separado es cómo se acaba imprimiendo el frente de uno con el reverso de
+ * otro, o el reverso al revés.
+ */
+export async function armarCarnetPdf(d: DatosCarnet): Promise<ArchivoArmado> {
+  const { jsPDF } = await import('jspdf')
+
+  const [frenteLienzo, reversoLienzo] = await Promise.all([
+    dibujarCarnet(d, 'frente'),
+    dibujarCarnet(d, 'reverso'),
+  ])
+
+  const doc = new jsPDF({
+    unit: 'mm',
+    format: [CARNET_ANCHO_MM, CARNET_ALTO_MM],
+    orientation: 'portrait',
+    compress: true,
+  })
+
+  // Sin márgenes: el dibujo ya trae los suyos y la sangre la pone la imprenta.
+  doc.addImage(
+    frenteLienzo.toDataURL('image/png'),
+    'PNG', 0, 0, CARNET_ANCHO_MM, CARNET_ALTO_MM,
+  )
+  doc.addPage([CARNET_ANCHO_MM, CARNET_ALTO_MM], 'portrait')
+  doc.addImage(
+    reversoLienzo.toDataURL('image/png'),
+    'PNG', 0, 0, CARNET_ANCHO_MM, CARNET_ALTO_MM,
+  )
+
+  doc.setProperties({ title: `Carnet ${d.ficha} — ${d.nombres} ${d.apellidos}` })
+
+  const apellido = d.apellidos.split(' ')[0].toLowerCase()
+  return { blob: doc.output('blob'), nombre: `carnet-${d.ficha}-${apellido}.pdf` }
+}
