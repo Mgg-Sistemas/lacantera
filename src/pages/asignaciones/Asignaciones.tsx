@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { HandHelping, PackagePlus, Search, TriangleAlert, Wrench } from 'lucide-react'
+import { HandHelping, PackagePlus, Search, TriangleAlert, Wrench , Printer } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -24,6 +24,10 @@ import {
 } from '@/lib/api/asignaciones'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { dolares, fecha } from '@/lib/formato'
+import { Visor } from '@/components/Visor'
+import { armarConstanciaDeEntrega } from '@/lib/ficha/entregaPdf'
+import { EMPRESA } from '@/lib/empresa'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { cn } from '@/lib/cn'
 
 function cantidad(valor: string | number): string {
@@ -95,6 +99,59 @@ export function Asignaciones() {
   }, [asignadas])
 
   const sinSaldar = perdidas.data ?? []
+
+  /*
+    LA CONSTANCIA SE ARMA POR PERSONA, NO POR HERRAMIENTA
+
+    Lo pidió la líder: que la entrega salga en papel y la firme el trabajador,
+    como el recibo de nómina. Se firma lo que alguien tiene en la mano, y quien
+    recibe cuatro cosas firma una vez: cuatro papeles con una línea cada uno son
+    cuatro que archivar y tres que perder.
+  */
+  const [papel, setPapel] = useState<ArchivoArmado | null>(null)
+  const [armando, setArmando] = useState<string | null>(null)
+  const [falloPapel, setFalloPapel] = useState<unknown>(null)
+
+  const imprimirConstancia = async (filas: Asignacion[]) => {
+    const primera = filas[0]
+    if (!primera) return
+
+    setArmando(primera.ficha)
+    setFalloPapel(null)
+    try {
+      setPapel(
+        await armarConstanciaDeEntrega({
+          trabajador: {
+            nombre: primera.empleado,
+            ficha: primera.ficha,
+            cedula: primera.cedula,
+            cargo: primera.cargo,
+            departamento: primera.departamento,
+          },
+          renglones: filas.map((a) => ({
+            codigo: a.articulo_codigo,
+            articulo: a.articulo,
+            cantidad: a.cantidad,
+            unidad: a.unidad,
+            fechaLimite: a.fecha_limite ? fecha(a.fecha_limite) : null,
+          })),
+          almacen: primera.almacen,
+          fecha: fecha(primera.fecha_entrega),
+          entregadoPor: null,
+          empresa: {
+            razonSocial: EMPRESA.razonSocial,
+            rif: EMPRESA.rif,
+            actividad: EMPRESA.actividad,
+          },
+          momento: new Date(),
+        }),
+      )
+    } catch (e) {
+      setFalloPapel(e)
+    } finally {
+      setArmando(null)
+    }
+  }
 
   return (
     <>
@@ -174,12 +231,29 @@ export function Asignaciones() {
       <div className="mb-6 grid gap-3 lg:grid-cols-2">
         {porPersona.map((p) => (
           <Card key={p.ficha} className="flex h-full flex-col">
-            <div>
-              <p className="text-ink/90 text-sm font-semibold">{p.nombre}</p>
-              <p className="text-ink/45 text-xs">
-                Ficha {p.ficha}
-                {p.cargo ? ` · ${p.cargo}` : ''}
-              </p>
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 grow">
+                <p className="text-ink/90 text-sm font-semibold">{p.nombre}</p>
+                <p className="text-ink/45 text-xs">
+                  Ficha {p.ficha}
+                  {p.cargo ? ` · ${p.cargo}` : ''}
+                </p>
+              </div>
+
+              {/*
+                El papel se imprime y se firma a mano. Es la misma instrucción
+                que se dio para el recibo de nómina: no se usa la firma digital
+                salvo que se indique lo contrario.
+              */}
+              <Button
+                size="sm"
+                variant="outline"
+                icon={<Printer />}
+                disabled={armando !== null}
+                onClick={() => void imprimirConstancia(p.filas)}
+              >
+                {armando === p.ficha ? 'Armando…' : 'Constancia'}
+              </Button>
             </div>
 
             <ul className="divide-hairline mt-3 divide-y">
@@ -326,6 +400,17 @@ export function Asignaciones() {
           </div>
         </Card>
       ) : null}
+
+      {falloPapel ? <ErrorDeCarga error={falloPapel} className="mt-3" /> : null}
+
+      <Visor
+        abierto={papel !== null}
+        onCerrar={() => setPapel(null)}
+        blob={papel?.blob ?? null}
+        nombreArchivo={papel?.nombre ?? 'constancia.pdf'}
+        titulo="Constancia de entrega"
+        descripcion="Se imprime y la firma el trabajador. La raya sale en blanco a propósito: no se usa la firma digital."
+      />
 
       <ModalEntrega
         bien={entregando ?? null}
