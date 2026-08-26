@@ -11,6 +11,7 @@
  * igual que la regla con la que se comprueba el resultado impreso.
  */
 
+import qrcode from 'qrcode-generator'
 import { cargarLogo, dibujarLogo } from './logo'
 import { recorte, type Encuadre } from './encuadre'
 import type { ArchivoArmado } from './armado'
@@ -46,6 +47,14 @@ export interface DatosCarnet {
   grupo_sanguineo: string | null
   foto: HTMLImageElement | null
   encuadre: Encuadre
+  /**
+   * El carnet emitido: su código y la dirección que lleva el QR.
+   *
+   * Sin esto el reverso sale como salía, sin QR. No es un caso raro ni un
+   * error: un trabajador al que todavía no se le ha emitido carnet no tiene
+   * código, y un QR que lleva a «este carnet no existe» es peor que no tenerlo.
+   */
+  verificacion?: { codigo: string; url: string } | null
 }
 
 /**
@@ -94,6 +103,73 @@ function textoCentrado(ctx: CanvasRenderingContext2D, texto: string, y: number) 
   ctx.textAlign = 'left'
 }
 
+
+/**
+ * El QR, dibujado módulo a módulo sobre el lienzo.
+ *
+ * NO SE PINTA UNA IMAGEN Y SE ESCALA
+ *
+ * La librería sabe devolver una etiqueta `<img>` con el QR dentro, y usarla
+ * sería una línea. Pero esa imagen nace del tamaño que ella decide y aquí habría
+ * que estirarla hasta los milímetros que toquen: al estirar, los bordes de cada
+ * módulo quedan a medio píxel y el lector duda. Dibujando los módulos a mano,
+ * cada uno mide un número ENTERO de píxeles del lienzo y el borde cae siempre
+ * donde tiene que caer.
+ *
+ * Por eso el lado real se redondea hacia abajo: treinta y dos milímetros a 300
+ * dpi son 378 píxeles, y entre 33 módulos tocan a 11,45. Se usan 11 y el QR
+ * acaba midiendo 363 píxeles —30,7 mm— en vez de los 32 pedidos. Perder un
+ * milímetro y pico a cambio de que no haya un solo borde borroso es el cambio
+ * que hay que hacer.
+ *
+ * CORRECCIÓN DE ERRORES ALTA, Y NO ES POR CAPRICHO
+ *
+ * Esto va plastificado en el bolsillo de alguien que trabaja en una cantera.
+ * Con el nivel «Q» el código se sigue leyendo con la cuarta parte de su
+ * superficie rayada o con polvo encima. Cuesta unos módulos más de tamaño; a
+ * cambio, el carnet sigue sirviendo después del primer mes de uso.
+ */
+function dibujarQr(
+  ctx: CanvasRenderingContext2D,
+  texto: string,
+  centroXmm: number,
+  arribaMm: number,
+  ladoMm: number,
+): number {
+  const qr = qrcode(0, 'Q')
+  qr.addData(texto)
+  qr.make()
+
+  const modulos = qr.getModuleCount()
+  const paso = Math.floor(mm(ladoMm) / modulos)
+  const lado = paso * modulos
+
+  const x = mm(centroXmm) - lado / 2
+  const y = mm(arribaMm)
+
+  /*
+    El fondo blanco se pinta aunque el papel ya sea blanco.
+
+    Es la zona de silencio: el QR necesita cuatro módulos de margen limpio a su
+    alrededor o el lector no encuentra dónde empieza. Pintarla aquí garantiza el
+    margen aunque un día alguien ponga una marca de agua detrás.
+  */
+  const silencio = paso * 4
+  ctx.fillStyle = '#FFFFFF'
+  ctx.fillRect(x - silencio, y - silencio, lado + silencio * 2, lado + silencio * 2)
+
+  ctx.fillStyle = TINTA
+  for (let fila = 0; fila < modulos; fila++) {
+    for (let col = 0; col < modulos; col++) {
+      if (qr.isDark(fila, col)) {
+        ctx.fillRect(x + col * paso, y + fila * paso, paso, paso)
+      }
+    }
+  }
+
+  // Devuelve dónde termina, en milímetros, para que el reverso siga debajo.
+  return arribaMm + lado / mm(1)
+}
 
 /**
  * La cara de delante: quién es.
@@ -212,7 +288,11 @@ function frente(ctx: CanvasRenderingContext2D, d: DatosCarnet, logo: HTMLImageEl
  * La barra amarilla del pie es la misma del frente. No dice nada: está para que
  * las dos caras se reconozcan como del mismo carnet cuando se ven separadas.
  */
-function reverso(ctx: CanvasRenderingContext2D, logo: HTMLImageElement) {
+function reverso(
+  ctx: CanvasRenderingContext2D,
+  logo: HTMLImageElement,
+  verificacion?: { codigo: string; url: string } | null,
+) {
   const ANCHO = mm(CARNET_ANCHO_MM)
   const ALTO = mm(CARNET_ALTO_MM)
 
@@ -220,22 +300,97 @@ function reverso(ctx: CanvasRenderingContext2D, logo: HTMLImageElement) {
   ctx.fillRect(0, 0, ANCHO, ALTO)
 
   /*
-    El bloque —marca, nombre, RIF— se centra en el papel blanco, no en el
-    carnet entero: la barra amarilla del pie ya pesa abajo, y contarla dentro
-    del centro empujaba todo hacia el borde inferior. Queda un pelo más de aire
-    arriba que abajo, que es como se centra a ojo cualquier cosa enmarcada.
+    SIN CÓDIGO, EL REVERSO ES EL DE SIEMPRE
+
+    A un trabajador al que todavía no se le emitió carnet no se le puede
+    imprimir un QR: llevaría a «este carnet no existe». Así que este reverso
+    tiene dos maquetas y no una, y la de arriba es la que había.
   */
-  const lado = mm(28)
-  // Sobre papel blanco el disco sobra: se vería su borde.
-  dibujarLogo(ctx, logo, (ANCHO - lado) / 2, mm(19), lado, false)
+  if (!verificacion) {
+    const lado = mm(28)
+    // Sobre papel blanco el disco sobra: se vería su borde.
+    dibujarLogo(ctx, logo, (ANCHO - lado) / 2, mm(19), lado, false)
+
+    ctx.fillStyle = TINTA
+    ctx.font = `700 ${pt(7.4)}px ${FUENTE}`
+    textoCentrado(ctx, EMPRESA.nombre, mm(57))
+
+    ctx.fillStyle = GRIS
+    ctx.font = `500 ${pt(6)}px ${FUENTE}`
+    textoCentrado(ctx, `${EMPRESA.forma} · RIF ${EMPRESA.rif}`, mm(62.5))
+
+    ctx.fillStyle = AMARILLO
+    ctx.fillRect(0, ALTO - mm(7.1), ANCHO, mm(7.1))
+    return
+  }
+
+  /*
+    CON CÓDIGO: LA MARCA SE ENCOGE Y EL QR MANDA
+
+    El QR va aquí y no en el frente, que es donde lo puso el modelo que mandaron.
+    En el frente no cabe —entre la foto y la barra amarilla quedan cuatro
+    milímetros— y meterlo obligaría a robarle sitio a la foto, que es lo único
+    que identifica a alguien de un vistazo en un portón.
+
+    Aquí cabe a treinta milímetros. Un QR de treinta se lee de medio metro y
+    aguanta el plástico rayado; uno de veinte, apretado en una esquina del
+    frente, hay que acercárselo a la cara. Que se lea es lo único que le pedimos.
+
+    Lo que se pierde: el reverso deja de ser igual para todos. Antes se imprimía
+    uno y servía para toda la plantilla. Ahora cada persona tiene el suyo, que es
+    lo mismo que ya pasa con el frente.
+  */
+  const ladoLogo = mm(13)
+  dibujarLogo(ctx, logo, (ANCHO - ladoLogo) / 2, mm(5), ladoLogo, false)
 
   ctx.fillStyle = TINTA
-  ctx.font = `700 ${pt(7.4)}px ${FUENTE}`
-  textoCentrado(ctx, EMPRESA.nombre, mm(57))
+  ctx.font = `700 ${pt(6.6)}px ${FUENTE}`
+  textoCentrado(ctx, EMPRESA.nombre, mm(23))
 
   ctx.fillStyle = GRIS
-  ctx.font = `500 ${pt(6)}px ${FUENTE}`
-  textoCentrado(ctx, `${EMPRESA.forma} · RIF ${EMPRESA.rif}`, mm(62.5))
+  ctx.font = `500 ${pt(5.4)}px ${FUENTE}`
+  textoCentrado(ctx, `${EMPRESA.forma} · RIF ${EMPRESA.rif}`, mm(27))
+
+  ctx.fillStyle = HAIRLINE
+  ctx.fillRect(mm(10), mm(30.5), mm(CARNET_ANCHO_MM - 20), Math.max(1, mm(0.25)))
+
+  ctx.fillStyle = MARCA_CARGO
+  ctx.font = `600 ${pt(5.2)}px ${FUENTE}`
+  ctx.letterSpacing = `${mm(0.15)}px`
+  textoCentrado(ctx, 'ESCANEE PARA VERIFICAR', mm(34))
+  ctx.letterSpacing = '0px'
+
+  /*
+    El QR arranca en 39,5 y no en 38, y pide 32 mm y no 30.
+
+    Las dos cifras salieron de medir el dibujo, no de elegirlas. Con 30 mm los
+    módulos quedaban en 0,76 mm y para un plástico que va a acabar rayado eso es
+    justo; con 32 salen a 0,85. Y con el QR arrancando en 38 su zona de silencio
+    —el blanco obligatorio de cuatro módulos alrededor— empezaba en 34,95 y le
+    comía el pie a las letras de «ESCANEE PARA VERIFICAR», que se dibuja antes.
+    Metro y medio de aire más abajo y el problema desaparece.
+  */
+  const finQr = dibujarQr(ctx, verificacion.url, CARNET_ANCHO_MM / 2, 39.5, 32)
+
+  /*
+    EL CÓDIGO TAMBIÉN VA ESCRITO, DEBAJO
+
+    Es lo que salva el carnet cuando el QR ya no se lee: rayado, mojado, o
+    escaneado por un teléfono viejo. Con el código a la vista, quien verifica lo
+    teclea en la misma pantalla y llega igual.
+
+    Va partido en grupos de seis. Dieciocho caracteres seguidos se copian mal
+    —se salta uno y se repite otro— y agrupados se leen de tres golpes.
+  */
+  ctx.fillStyle = TINTA
+  ctx.font = `600 ${pt(6.4)}px ${FUENTE}`
+  ctx.letterSpacing = `${mm(0.25)}px`
+  textoCentrado(
+    ctx,
+    (verificacion.codigo.match(/.{1,6}/g) ?? [verificacion.codigo]).join(' '),
+    mm(finQr + 4.2),
+  )
+  ctx.letterSpacing = '0px'
 
   ctx.fillStyle = AMARILLO
   ctx.fillRect(0, ALTO - mm(7.1), ANCHO, mm(7.1))
@@ -265,7 +420,7 @@ export async function dibujarCarnet(
   if (!ctx) throw new Error('El navegador no pudo preparar el lienzo del carnet.')
 
   ctx.textBaseline = 'alphabetic'
-  if (cara === 'reverso') reverso(ctx, logo)
+  if (cara === 'reverso') reverso(ctx, logo, d.verificacion)
   else frente(ctx, d, logo)
 
   return lienzo
