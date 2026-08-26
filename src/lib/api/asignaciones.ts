@@ -82,6 +82,17 @@ export interface Asignacion {
   saldado_como: 'DESCUENTO' | 'REPOSICION' | 'EXONERADO' | null
   saldado_el: string | null
   dias_fuera: number
+  /** `DOTACION` no vuelve; `ASIGNACION` es un prestamo. */
+  clase: 'DOTACION' | 'ASIGNACION'
+  /** Cuando tiene que estar de vuelta. Nulo si no se le puso fecha. */
+  fecha_limite: string | null
+  /**
+   * Dias de retraso, o nulo si no hay retraso.
+   *
+   * No es `dias_fuera`: una herramienta puede llevar tres meses fuera y estar
+   * en su sitio. Esto solo tiene valor cuando se paso de la fecha.
+   */
+  dias_vencida: number | null
 }
 
 /** Lo pendiente de resolver, agrupado por trabajador. */
@@ -257,6 +268,13 @@ export function useAsignar() {
       cantidad: number
       fecha?: string | null
       nota?: string | null
+      /**
+       * Cuando tiene que estar de vuelta. Opcional a proposito: hay prestamos
+       * de una manana y hay dotacion que no vuelve nunca, y obligar a poner
+       * fecha en todos convierte el campo en un tramite que se rellena con
+       * cualquier cosa.
+       */
+      fecha_limite?: string | null
     }) =>
       rpc<number>('asignar_herramienta', {
         p_articulo_id: a.articulo_id,
@@ -265,6 +283,7 @@ export function useAsignar() {
         p_cantidad: a.cantidad,
         p_fecha: a.fecha ?? null,
         p_nota: a.nota ?? null,
+        p_fecha_limite: a.fecha_limite || null,
       }),
   )
 }
@@ -313,12 +332,21 @@ export function useResolverIncidencia() {
       como: 'DESCUENTO' | 'REPOSICION' | 'EXONERADO'
       fecha?: string | null
       nota?: string | null
+      /**
+       * En qué período de nómina se carga el descuento.
+       *
+       * Solo cuenta con `DESCUENTO`. Sin valor, la base toma el último período
+       * que siga admitiendo cambios; si no hay ninguno, se niega y lo dice en
+       * vez de dejar el caso cerrado sin descontar nada.
+       */
+      periodo_id?: number | null
     }) =>
       rpc<number>('saldar_herramienta_perdida', {
         p_id: s.id,
         p_como: s.como,
         p_fecha: s.fecha ?? null,
         p_nota: s.nota ?? null,
+        p_periodo_id: s.periodo_id ?? null,
       }),
   )
 }
@@ -366,4 +394,111 @@ export function useEntregadoATrabajador(empleadoId?: number) {
           .order('fecha', { ascending: false }),
       ),
   })
+}
+
+// ---------------------------------------------------------------------------
+// La dotación que le toca a cada cargo
+// ---------------------------------------------------------------------------
+
+/*
+  QUÉ LE CORRESPONDE A CADA PUESTO, Y CADA CUÁNTO
+
+  Lo pidió la líder. Hasta ahora la entrega era a pulso: alguien se acordaba, o
+  alguien reclamaba. Aquí se declara una vez por cargo —dos pares de botas cada
+  seis meses al de patio— y el sistema cruza eso con lo que ya se entregó.
+
+  CUELGA DEL TABULADOR Y NO DEL TEXTO DEL CARGO
+
+  `empleados.cargo` es texto libre y hay trece variantes escritas a mano; el
+  tabulador es el catálogo de verdad y los diecinueve activos ya apuntan a él.
+*/
+
+export interface DotacionDeCargo {
+  id: number
+  tabulador_id: number
+  articulo_id: number
+  cantidad: string
+  /** Cada cuántos meses se repone. Nulo: se entrega una vez y no se repone. */
+  cada_meses: number | null
+  nota: string | null
+  activo: boolean
+}
+
+/** Lo que le toca a una persona, con lo que ya se le dio. */
+export interface DotacionPendiente {
+  empleado_id: number
+  ficha: string
+  empleado: string
+  cargo: string | null
+  departamento: string | null
+  tabulador_id: number
+  cargo_tabulador: string
+  dotacion_id: number
+  articulo_id: number
+  articulo_codigo: string
+  articulo: string
+  unidad: string
+  cantidad: string
+  cada_meses: number | null
+  nota: string | null
+  ultima_entrega: string | null
+  /** Cuándo vuelve a tocarle. Nulo si nunca se le dio o si no se repone. */
+  toca_el: string | null
+  /**
+   * `NUNCA` no es lo mismo que `VENCIDA` aunque las dos pidan entregar: a quien
+   * nunca recibió las botas hay que dárselas por primera vez, y eso suele
+   * querer decir que entró hace poco.
+   */
+  situacion: 'NUNCA' | 'VENCIDA' | 'AL_DIA' | 'ENTREGADA'
+}
+
+export function useDotacionDeCargos() {
+  return useQuery({
+    queryKey: ['asignaciones', 'dotacion-cargos'],
+    queryFn: async () =>
+      desenvolver<DotacionDeCargo[]>(
+        await supabase
+          .from('dotacion_por_cargo')
+          .select('*')
+          .eq('activo', true)
+          .order('tabulador_id'),
+      ),
+  })
+}
+
+export function useDotacionPendiente() {
+  return useQuery({
+    queryKey: ['asignaciones', 'dotacion-pendiente'],
+    queryFn: async () =>
+      desenvolver<DotacionPendiente[]>(
+        await supabase.from('v_dotacion_pendiente').select('*').order('empleado'),
+      ),
+  })
+}
+
+export function useGuardarDotacionDeCargo() {
+  return useAccion(
+    async (d: {
+      tabulador_id: number
+      articulo_id: number
+      cantidad: number
+      cada_meses?: number | null
+      nota?: string | null
+      id?: number | null
+    }) =>
+      rpc<number>('guardar_dotacion_de_cargo', {
+        p_tabulador_id: d.tabulador_id,
+        p_articulo_id: d.articulo_id,
+        p_cantidad: d.cantidad,
+        p_cada_meses: d.cada_meses ?? null,
+        p_nota: d.nota ?? null,
+        p_id: d.id ?? null,
+      }),
+  )
+}
+
+export function useQuitarDotacionDeCargo() {
+  return useAccion(async (d: { id: number }) =>
+    rpc<number>('quitar_dotacion_de_cargo', { p_id: d.id }),
+  )
 }
