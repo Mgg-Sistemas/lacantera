@@ -12,6 +12,7 @@ import {
   Printer,
   Receipt,
   Send,
+  ShoppingCart,
   Undo2,
   UserX,
 } from 'lucide-react'
@@ -576,7 +577,7 @@ export function DetalleCompra() {
   const navegar = useNavigate()
   const compraId = Number(id)
   const { data: compra, isPending, error } = useCompra(compraId)
-  const orden = ordenVigente(compra)
+  const orden = ordenVigente(compra ?? undefined)
 
   /*
     Sin factura ni nota de entrega el material no entra.
@@ -778,7 +779,27 @@ export function DetalleCompra() {
 
   if (isPending) return <Cargando texto="Cargando la compra…" />
   if (error) return <ErrorDeCarga error={error} />
-  if (!compra) return <Vacio titulo="No se encontró esa compra" />
+  /*
+    El pedido no está. Es un final normal, no un fallo: se llega aquí desde una
+    notificación vieja, un enlace guardado o un número tecleado a mano — y ahora
+    también desde un aviso de algo que se borró.
+
+    Se dice qué pasó y se ofrece la salida, en vez de dejar a alguien mirando un
+    cartel sin nada que pulsar.
+  */
+  if (!compra)
+    return (
+      <Vacio
+        icono={<ShoppingCart />}
+        titulo="Ese pedido ya no está"
+        descripcion="Puede que lo hayan cancelado o borrado. Si llegaste desde un aviso, ese aviso quedó viejo."
+        accion={
+          <Link to="/app/compras">
+            <Button variant="outline">Ver los pedidos</Button>
+          </Link>
+        }
+      />
+    )
 
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'

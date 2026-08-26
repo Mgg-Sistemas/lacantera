@@ -319,13 +319,32 @@ const SELECT_DETALLE = `
   )
 `
 
+/**
+ * Una compra, o nada si ese pedido no existe.
+ *
+ * Con `single()` un pedido inexistente devolvia error, y react-query lo
+ * reintentaba tres veces con espera creciente: varios segundos de «Cargando…»
+ * para acabar en «Cannot coerce the result to a single JSON object», que no le
+ * dice nada a nadie.
+ *
+ * Y llegar aqui es facil: basta una notificacion vieja, un enlace guardado o un
+ * numero tecleado a mano. Paso de verdad al borrar los datos de prueba — diez
+ * avisos seguian apuntando a un pedido que ya no estaba, y pulsarlos daba ese
+ * error tecnico en rojo.
+ *
+ * Con `maybeSingle()` no hay error que reintentar: no esta, y la pantalla lo
+ * dice de una vez con el vacio que ya tenia escrito y no llegaba a usar nunca.
+ *
+ * Es el mismo arreglo que ya llevaba `useEmpleado` en nomina.ts, por la misma
+ * razon. Aqui no se habia hecho.
+ */
 export function useCompra(id: number | undefined) {
   return useQuery({
     enabled: id !== undefined && Number.isFinite(id),
     queryKey: ['compras', 'detalle', id],
     queryFn: async () =>
-      desenvolver<Compra>(
-        await supabase.from('solicitudes_pedido').select(SELECT_DETALLE).eq('id', id!).single(),
+      desenvolver<Compra | null>(
+        await supabase.from('solicitudes_pedido').select(SELECT_DETALLE).eq('id', id!).maybeSingle(),
       ),
   })
 }
