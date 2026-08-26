@@ -34,11 +34,32 @@ import { IZQ, DER, ARRIBA, ABAJO, ANCHO_UTIL, PIE, ajustar } from '@/lib/ficha/h
 
 type Doc = import('jspdf').jsPDF
 
-export const MARCA = '#cc3f00'
-export const TINTA = '#1c1917'
-export const GRIS = '#78716c'
+/*
+  LA PALETA DEL PAPEL, MEDIDA DEL MODELO QUE MANDÓ LA LÍDER
+
+  Es la del membrete de Minería Internacional TS, y por eso se copia entera —a
+  diferencia de la vez anterior, cuando el modelo era de MGG y copiar el color
+  habría hecho que los papeles de dos empresas se confundieran sobre una mesa.
+  Este es el papel de la casa: el color también.
+
+  Son dos colores y no uno, y esa es la parte que no se ve hasta tenerlo
+  delante: el ROJO identifica a la empresa —el nombre arriba, la cabecera de la
+  tabla— y el AZUL PIZARRA ordena el documento —el título, las etiquetas—. Con
+  un solo color todo compite por la misma atención; con dos, el ojo separa
+  «quién emite esto» de «qué dice».
+*/
+
+/** El rojo ladrillo del membrete y de las cabeceras de tabla. */
+export const MARCA = '#8c2f1f'
+/** El azul pizarra del título del documento y de las etiquetas. */
+export const ROTULO = '#2f5063'
+/** La etiqueta teñida —la prioridad—, más viva que el membrete a propósito. */
+export const REALCE = '#e1503c'
+
+export const TINTA = '#333333'
+export const GRIS = '#6b6b6b'
 export const GRIS_SUAVE = '#a8a29e'
-export const FILA_ALTERNA = '#f5f5f4'
+export const FILA_ALTERNA = '#f7f4f1'
 export const HAIRLINE = '#e7e5e4'
 
 /** Lo que un renglón de tabla necesita saber de su columna. */
@@ -51,31 +72,173 @@ export interface Columna {
 
 // ---------------------------------------------------------------------------
 
+/** Lo que la cabecera necesita saber de quien emite el papel. */
+export interface EmpresaPapel {
+  razonSocial: string
+  rif: string
+  /** «OPERACIONES Y LOGÍSTICA MINERA». La segunda línea del membrete. */
+  actividad?: string | null
+  /** «ESTADO LA GUAIRA, VENEZUELA». Va junto al RIF en la tercera. */
+  domicilio?: string | null
+}
+
 /**
- * El membrete: logo, título, y la línea de identificación debajo.
+ * El membrete: quién emite arriba, y el documento debajo.
+ *
+ * MANDA LA EMPRESA, NO EL TIPO DE PAPEL. Es el cambio grande respecto a lo que
+ * había: antes el renglón grande decía «ORDEN DE COMPRA» y la empresa quedaba
+ * en una línea de pie. Ahora es al revés, que es como está el modelo que mandó
+ * la líder y como funciona un membrete de verdad — quien recibe el papel
+ * necesita saber de quién le llega antes que qué es, y el tipo de documento ya
+ * va centrado justo debajo.
+ *
+ * CON LOGO, que es el unico cambio que pidio la lider sobre el modelo. El
+ * modelo no lo lleva -el nombre en color le hace de identidad- pero la empresa
+ * si quiere el suyo. Va pequeno y a la izquierda del nombre, no encima: con
+ * catorce milimetros la marca se reconoce y el nombre sigue siendo lo mas
+ * grande de la hoja, que es lo que hace que un membrete se lea de un vistazo.
+ *
+ * Y si el logo no carga -da 404, o esto corre fuera del navegador- el ayudante
+ * devuelve cadena vacia y aqui el texto se corre a la izquierda como si nunca
+ * hubiera habido logo. Un hueco de catorce milimetros en la esquina se lee como
+ * un papel roto; sin hueco no se nota que falta nada.
  *
  * Devuelve la altura a la que sigue el documento, para que quien lo llama no
  * tenga que saber cuánto mide esto.
  */
 export function membrete(
   doc: Doc,
+  /** El logo ya convertido a data URL. Cadena vacia si no se pudo cargar. */
   logo: string,
-  d: { titulo: string; subtitulo?: string | null; derecha?: string | null },
+  d: {
+    empresa: EmpresaPapel
+    /** Lo de la derecha: [«N° SOLICITUD», «S-C 2026-0826»], [«FECHA», …]. */
+    datos?: Array<[string, string]>
+  },
 ): number {
-  doc.addImage(logo, 'PNG', IZQ, ARRIBA - 6, 20, 20)
+  const y = ARRIBA
 
-  doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(20)
-  doc.text(d.titulo, IZQ + 25, ARRIBA + 3)
+  // El logo, centrado con los tres renglones de texto que tiene al lado.
+  if (logo) doc.addImage(logo, 'PNG', IZQ, y - 2.5, 14, 14)
 
-  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(GRIS)
-  if (d.subtitulo) doc.text(ajustar(doc, d.subtitulo, 95), IZQ + 25, ARRIBA + 9.5)
-  if (d.derecha) doc.text(d.derecha, DER, ARRIBA + 9.5, { align: 'right' })
+  const TEXTO = logo ? IZQ + 17 : IZQ
+  const ANCHO_NOMBRE = logo ? 88 : 105
+
+  doc.setTextColor(MARCA).setFont('helvetica', 'bold').setFontSize(15)
+  doc.text(ajustar(doc, d.empresa.razonSocial.toUpperCase(), ANCHO_NOMBRE), TEXTO, y + 2)
+
+  doc.setFont('helvetica', 'normal').setFontSize(6.8).setTextColor(GRIS)
+  if (d.empresa.actividad) {
+    doc.text(ajustar(doc, d.empresa.actividad.toUpperCase(), ANCHO_NOMBRE), TEXTO, y + 6.5)
+  }
+
+  /*
+    El domicilio y el RIF, en la misma línea y separados por una barra.
+
+    Van juntos porque son lo mismo para quien lee: de dónde sale este papel y
+    con qué identificación fiscal. Y el RIF va siempre aunque no haya domicilio
+    —es obligatorio en cualquier papel que salga de aquí—, así que la línea se
+    arma con lo que haya en vez de dar por hecho que están los dos.
+  */
+  const identidad = [d.empresa.domicilio?.toUpperCase(), 'J-RIF: ' + d.empresa.rif]
+    .filter(Boolean)
+    .join('  |  ')
+  doc.text(ajustar(doc, identidad, ANCHO_NOMBRE), TEXTO, y + 10)
+
+  /*
+    A la derecha, el número del documento y su fecha.
+
+    El primer par va en negro y algo mayor: es el número, y es lo que alguien
+    busca cuando tiene el papel en la mano y le preguntan por él. Los demás en
+    gris pequeño.
+  */
+  const datos = d.datos ?? []
+  datos.forEach(([etiqueta, valor], i) => {
+    const alto = y + 2 + i * 4.6
+    if (i === 0) {
+      // Del rojo de la empresa, como en el modelo: el número del papel es lo
+      // que se busca cuando alguien lo tiene en la mano y le preguntan por él.
+      doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(MARCA)
+    } else {
+      doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(GRIS)
+    }
+    doc.text(etiqueta.toUpperCase() + ': ' + valor, DER, alto, { align: 'right' })
+  })
 
   // La regla de color, que es lo único teñido de la cabecera.
   doc.setDrawColor(MARCA).setLineWidth(0.8)
-  doc.line(IZQ, ARRIBA + 16, DER, ARRIBA + 16)
+  doc.line(IZQ, y + 14, DER, y + 14)
 
-  return ARRIBA + 24
+  return y + 14
+}
+
+/**
+ * El tipo de documento, centrado bajo la regla.
+ *
+ * Centrado y no a la izquierda: es lo que pide el modelo, y en un papel que se
+ * archiva de canto es lo que se lee al abrirlo. A la izquierda competía con el
+ * nombre de la empresa, que está justo encima y es más grande.
+ */
+export function tituloDocumento(doc: Doc, y: number, texto: string): number {
+  /*
+    El título vive en su propia banda, entre dos rayas finas.
+
+    En el modelo no es un renglón suelto: las dos rayas lo separan del membrete
+    de arriba y de los datos de abajo, y eso es lo que deja leer la hoja en tres
+    golpes —quién la emite, qué es, qué dice— en vez de como un bloque continuo.
+  */
+  doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
+  doc.line(IZQ, y + 3, DER, y + 3)
+
+  doc.setFont('helvetica', 'bold').setFontSize(13).setTextColor(ROTULO)
+  doc.text(texto.toUpperCase(), IZQ + ANCHO_UTIL / 2, y + 10.5, { align: 'center' })
+
+  doc.line(IZQ, y + 14, DER, y + 14)
+
+  return y + 21
+}
+
+/**
+ * Una etiqueta teñida: la prioridad, el estado que urge.
+ *
+ * Se dibuja midiendo el texto en vez de con un ancho fijo, porque «ALTA
+ * OPERATIVA» y «NORMAL» no miden lo mismo y una caja fija deja a una nadando y
+ * a la otra apretada.
+ *
+ * Devuelve dónde termina, por si detrás va algo más.
+ */
+export function chip(doc: Doc, x: number, y: number, texto: string, color = REALCE): number {
+  doc.setFont('helvetica', 'bold').setFontSize(7)
+  const ancho = doc.getTextWidth(texto.toUpperCase()) + 5
+
+  doc.setFillColor(color)
+  doc.roundedRect(x, y - 3.2, ancho, 4.8, 0.8, 0.8, 'F')
+
+  doc.setTextColor('#FFFFFF')
+  doc.text(texto.toUpperCase(), x + 2.5, y)
+
+  return x + ancho
+}
+
+/**
+ * La nota al pie del documento, con su raya punteada encima.
+ *
+ * Existe porque el modelo la trae y porque hacía falta: es donde se explica lo
+ * que el papel NO dice —«los renglones 1 al 5 se excluyeron según indicación»—.
+ * Sin ese renglón, un papel al que le faltan cinco líneas parece incompleto en
+ * vez de filtrado a propósito.
+ */
+export function notaAlPie(doc: Doc, y: number, texto: string): number {
+  doc.setDrawColor(GRIS_SUAVE).setLineWidth(0.2)
+  doc.setLineDashPattern([0.8, 0.8], 0)
+  doc.line(IZQ, y, DER, y)
+  doc.setLineDashPattern([], 0)
+
+  doc.setFont('helvetica', 'italic').setFontSize(7).setTextColor(GRIS)
+  const lineas = doc.splitTextToSize(texto, ANCHO_UTIL) as string[]
+  doc.text(lineas, IZQ, y + 4, { lineHeightFactor: 1.35 })
+
+  return y + 4 + lineas.length * 3 + 3
 }
 
 /** Una línea con quién emite el papel. Para los documentos cortos. */
@@ -114,7 +277,7 @@ export function dosPartes(
 
 /** El rótulo de una sección: ÍTEMS, CONDICIONES. */
 export function seccion(doc: Doc, y: number, titulo: string): number {
-  doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor(TINTA)
+  doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor(ROTULO)
   doc.text(titulo.toUpperCase(), IZQ, y)
   return y + 6
 }
@@ -130,21 +293,53 @@ export function etiquetaValor(
   doc: Doc,
   y: number,
   filas: Array<[string, string | null | undefined]>,
+  opciones: { columnas?: 1 | 2 } = {},
 ): number {
-  const ANCHO_ETIQUETA = 55
-  const ANCHO_VALOR = ANCHO_UTIL - ANCHO_ETIQUETA
+  /*
+    DOS COLUMNAS, COMO EL MODELO.
+
+    Las trece condiciones de una orden de compra, una debajo de otra, se comían
+    media hoja y empujaban la firma a una segunda página donde no había nada
+    más: una orden de compra firmada en una hoja en blanco. El modelo que mandó
+    la líder los pone de dos en dos —«SOLICITANTE» y «ESTATUS» en el mismo
+    renglón— y con eso el papel entero cabe donde tiene que caber.
+
+    Queda la salida a una sola columna para el desglose del dinero: subtotal,
+    descuento, flete e IVA se leen en pila, uno debajo de otro, porque se suman.
+    Enfrentados de dos en dos parecerían cuatro datos sueltos.
+  */
+  const columnas = opciones.columnas ?? 2
+  const MITAD = columnas === 2 ? ANCHO_UTIL / 2 : ANCHO_UTIL
+  const ANCHO_ETIQUETA = columnas === 2 ? 34 : 55
+  const ANCHO_VALOR = MITAD - ANCHO_ETIQUETA - 3
+
   let fila = y
 
-  for (const [etiqueta, valor] of filas) {
-    const lineas = doc.splitTextToSize(valor || '—', ANCHO_VALOR) as string[]
+  for (let i = 0; i < filas.length; i += columnas) {
+    let renglones = 1
 
-    doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(TINTA)
-    doc.text(etiqueta, IZQ, fila)
+    filas.slice(i, i + columnas).forEach(([etiqueta, valor], j) => {
+      const x = IZQ + j * MITAD
 
-    doc.setFont('helvetica', 'normal').setTextColor(GRIS)
-    doc.text(lineas, IZQ + ANCHO_ETIQUETA, fila, { lineHeightFactor: 1.4 })
+      /*
+        La etiqueta en azul pizarra y con dos puntos; el valor en tinta.
 
-    fila += Math.max(lineas.length, 1) * 4.3 + 0.6
+        Antes era al revés de lo que pide el modelo: etiqueta negra y valor
+        gris, o sea el dato más apagado que su rótulo. Se lee buscando el VALOR,
+        así que es el valor el que tiene que resaltar.
+      */
+      const rotulo = encajar(doc, etiqueta.toUpperCase() + ':', ANCHO_ETIQUETA - 2, 8.5, 'bold', true)
+      doc.setTextColor(ROTULO)
+      doc.text(rotulo.lineas, x, fila, { lineHeightFactor: 1.4 })
+
+      const dato = encajar(doc, valor || '—', ANCHO_VALOR, 8.5)
+      doc.setTextColor(TINTA)
+      doc.text(dato.lineas, x + ANCHO_ETIQUETA, fila, { lineHeightFactor: 1.4 })
+
+      renglones = Math.max(renglones, rotulo.lineas.length, dato.lineas.length)
+    })
+
+    fila += renglones * 4.3 + 0.6
   }
 
   return fila + 3
@@ -157,6 +352,55 @@ export function etiquetaValor(
  * una segunda hoja de cifras sin rótulos no se puede leer, y con veinte
  * artículos en un almacén eso pasa siempre.
  */
+/** Un texto ya medido: a qué tamaño se dibuja y en qué renglones se reparte. */
+export type Celda = { talla: number; lineas: string[] }
+
+/**
+ * Encaja un texto en un ancho: ANTES DE PARTIR UNA PALABRA, ENCOGE LA LETRA.
+ *
+ * `splitTextToSize` reparte por espacios, pero cuando una sola palabra no cabe
+ * la corta por donde sea: «HERRAMIEN / TA», «PARE / S», «CANTI / DAD». Eso no es
+ * un renglón partido, es una palabra rota, y en un papel impreso se lee como un
+ * error de imprenta.
+ *
+ * Así que primero se busca el tamaño —de ocho a seis puntos— al que la palabra
+ * más larga cabe entera, y solo entonces se reparte. Un rótulo dos puntos más
+ * pequeño no se nota; una palabra rota sí.
+ *
+ * Es además la red que faltaba: los anchos se han repartido a mano en cinco
+ * documentos, y ya hubo un papel con la cabecera de «Costo unit.» montada
+ * encima de la de al lado. Con esto, equivocarse en el reparto cuesta medio
+ * punto de letra en vez de un documento ilegible.
+ */
+export function encajar(
+  doc: Doc,
+  texto: string,
+  util: number,
+  base: number,
+  estilo: 'bold' | 'normal' = 'normal',
+  /*
+    Para los rótulos: no basta con no romper palabras, tienen que caber ENTEROS
+    en un renglón. «FECHA DE / ENTREGA / PROMETIDA:» está bien partido y aun así
+    es un rótulo de tres pisos que hace la fila tres veces más alta que el dato
+    que rotula. Con esto se encoge hasta que entra de una vez.
+  */
+  unaLinea = false,
+): Celda {
+  const TALLAS = [8.5, 8, 7.5, 7, 6.5, 6]
+  const trozos = unaLinea ? [texto || ''] : (texto || '').split(/\s+/).filter(Boolean)
+
+  let talla = base
+  for (const t of TALLAS) {
+    if (t > base) continue
+    talla = t
+    doc.setFont('helvetica', estilo).setFontSize(t)
+    if (trozos.every((p) => doc.getTextWidth(p) <= util)) break
+  }
+
+  doc.setFont('helvetica', estilo).setFontSize(talla)
+  return { talla, lineas: doc.splitTextToSize(texto || '', util) as string[] }
+}
+
 export function tabla(
   doc: Doc,
   y: number,
@@ -164,28 +408,66 @@ export function tabla(
   filas: string[][],
   pie?: string,
 ): number {
+  /*
+    LAS CELDAS SE PARTEN EN VARIOS RENGLONES; NO SE RECORTAN.
+
+    Antes cada celda pasaba por `ajustar`, que corta y pone puntos suspensivos.
+    En pantalla eso se tolera —se pasa el ratón por encima y se ve el resto—,
+    pero esto es papel: una categoría que dice «SEGURID...» y una unidad que
+    dice «P...» quedan así para siempre en el archivador. El modelo que mandó la
+    líder parte en dos renglones («SERVICIOS / GENERALES») y hace la fila más
+    alta, que es lo único que conserva el dato.
+
+    La consecuencia es que la fila ya no mide siempre lo mismo, y por eso el
+    corte de página se calcula contra el alto de ESTA fila y no contra una
+    constante. Con la constante, una fila de tres renglones cerca del pie se
+    salía de la hoja.
+  */
   const ALTO_FILA = 6.5
+  const ALTO_RENGLON = 3.4
   let fila = y
 
-  const cabecera = () => {
-    doc.setFillColor(MARCA)
-    doc.rect(IZQ, fila, ANCHO_UTIL, ALTO_FILA, 'F')
-    doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor('#FFFFFF')
+  const medir = (textos: string[], base: number, estilo: 'bold' | 'normal'): Celda[] =>
+    columnas.map((c, j) => encajar(doc, textos[j] ?? '', c.ancho - 4, base, estilo))
 
+  const altoDe = (celdas: Celda[]) =>
+    ALTO_FILA + (Math.max(1, ...celdas.map((c) => c.lineas.length)) - 1) * ALTO_RENGLON
+
+  const pintar = (celdas: Celda[], alto: number, estilo: 'bold' | 'normal') => {
     let x = IZQ + 2
-    for (const c of columnas) {
-      doc.text(c.titulo, c.alDerecha ? x + c.ancho - 4 : x, fila + 4.4, {
+    columnas.forEach((c, j) => {
+      doc.setFont('helvetica', estilo).setFontSize(celdas[j].talla)
+      doc.text(celdas[j].lineas, c.alDerecha ? x + c.ancho - 4 : x, fila + 4.4, {
         align: c.alDerecha ? 'right' : 'left',
+        lineHeightFactor: 1.35,
       })
       x += c.ancho
-    }
-    fila += ALTO_FILA
+    })
+    fila += alto
+  }
+
+  const cabecera = () => {
+    // En mayúscula, como el modelo. Una cabecera en minúscula se confunde con
+    // la primera fila cuando la tabla es larga y se mira por encima.
+    const celdas = medir(columnas.map((c) => c.titulo.toUpperCase()), 7.5, 'bold')
+    const alto = altoDe(celdas)
+
+    doc.setFillColor(MARCA)
+    doc.rect(IZQ, fila, ANCHO_UTIL, alto, 'F')
+    doc.setTextColor('#FFFFFF')
+    pintar(celdas, alto, 'bold')
   }
 
   cabecera()
 
   filas.forEach((celdas, i) => {
-    if (fila + ALTO_FILA > ABAJO - 30) {
+    const medidas = medir(celdas, 8, 'normal')
+    const alto = altoDe(medidas)
+
+    // Contra el alto de ESTA fila, no contra una constante: desde que las
+    // celdas se reparten en varios renglones, una fila de tres cerca del pie se
+    // salía de la hoja.
+    if (fila + alto > ABAJO - 30) {
       doc.addPage()
       fila = ARRIBA
       cabecera()
@@ -193,19 +475,11 @@ export function tabla(
 
     if (i % 2 === 1) {
       doc.setFillColor(FILA_ALTERNA)
-      doc.rect(IZQ, fila, ANCHO_UTIL, ALTO_FILA, 'F')
+      doc.rect(IZQ, fila, ANCHO_UTIL, alto, 'F')
     }
 
-    doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(TINTA)
-    let x = IZQ + 2
-    columnas.forEach((c, j) => {
-      const texto = ajustar(doc, celdas[j] ?? '', c.ancho - 4)
-      doc.text(texto, c.alDerecha ? x + c.ancho - 4 : x, fila + 4.4, {
-        align: c.alDerecha ? 'right' : 'left',
-      })
-      x += c.ancho
-    })
-    fila += ALTO_FILA
+    doc.setTextColor(TINTA)
+    pintar(medidas, alto, 'normal')
   })
 
   if (pie) {
