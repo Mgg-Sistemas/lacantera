@@ -2,6 +2,7 @@ import { logoComoImagen } from '@/lib/ficha/logo'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import {
   membrete,
+  tituloDocumento,
   lineaEmpresa,
   seccion,
   etiquetaValor,
@@ -81,16 +82,20 @@ const COLUMNAS: Columna[] = [
 
 export async function armarLibroDeMovimientos(d: DatosLibro): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
   const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
   const donde = d.almacen ?? 'Todos los almacenes'
 
   let y = membrete(doc, logo, {
-    titulo: 'LIBRO DE MOVIMIENTOS',
-    subtitulo: donde,
-    derecha: `Emitido: ${fechaLarga(d.momento)}`,
+    empresa: d.empresa,
+    datos: [
+      ['Alcance', donde],
+      ['Emitido', fechaLarga(d.momento)],
+    ],
   })
+
+  y = tituloDocumento(doc, y, 'Libro de movimientos')
 
   y = lineaEmpresa(
     doc,

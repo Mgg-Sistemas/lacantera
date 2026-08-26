@@ -3,6 +3,7 @@ import { ARRIBA, ABAJO } from '@/lib/ficha/hoja'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import {
   membrete,
+  tituloDocumento,
   lineaEmpresa,
   seccion,
   etiquetaValor,
@@ -64,27 +65,31 @@ const cantidad = (v: string | number): string => {
    porque es lo único que no se puede abreviar sin dejar de reconocerlo. */
 const COLUMNAS: Columna[] = [
   { titulo: 'Código', ancho: 22 },
-  { titulo: 'Artículo', ancho: 48 },
-  { titulo: 'Unidad', ancho: 14 },
-  { titulo: 'Existencia', ancho: 18, alDerecha: true },
+  { titulo: 'Artículo', ancho: 44 },
+  { titulo: 'Unidad', ancho: 15 },
+  { titulo: 'Existencia', ancho: 20, alDerecha: true },
   { titulo: 'Costo unit.', ancho: 16, alDerecha: true },
   { titulo: 'Valor', ancho: 16, alDerecha: true },
   // Se imprime vacía a propósito: es donde se escribe a mano lo que se contó.
-  { titulo: 'Contado', ancho: 16, alDerecha: true },
+  { titulo: 'Contado', ancho: 17, alDerecha: true },
 ]
 
 export async function armarActaExistencias(d: DatosActa): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
   const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
   const donde = d.almacen ?? 'Todos los almacenes'
 
   let y = membrete(doc, logo, {
-    titulo: 'ACTA DE EXISTENCIAS',
-    subtitulo: donde,
-    derecha: `Generada: ${fechaLarga(d.momento)}`,
+    empresa: d.empresa,
+    datos: [
+      ['Almacén', donde],
+      ['Generada', fechaLarga(d.momento)],
+    ],
   })
+
+  y = tituloDocumento(doc, y, 'Acta de existencias')
 
   y = lineaEmpresa(
     doc,

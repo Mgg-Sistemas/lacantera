@@ -8,6 +8,7 @@ import {
   firmas,
   lineaEmpresa,
   membrete,
+  tituloDocumento,
   pieDePagina,
   seccion,
   tabla,
@@ -109,9 +110,9 @@ export interface NotaArmada {
 */
 const COLUMNAS: Columna[] = [
   { titulo: 'Código', ancho: 26 },
-  { titulo: 'Material', ancho: 58 },
-  { titulo: 'Cantidad', ancho: 17, alDerecha: true },
-  { titulo: 'Unidad', ancho: 13 },
+  { titulo: 'Material', ancho: 55 },
+  { titulo: 'Cantidad', ancho: 18, alDerecha: true },
+  { titulo: 'Unidad', ancho: 15 },
   // «Costo unit.» a ocho puntos no cabe en quince milimetros: la cabecera se
   // montaba encima de la de al lado. Se ensancha la columna y se acorta el
   // rotulo — en un papel de almacen, «Costo» no se confunde con nada.
@@ -143,14 +144,19 @@ const celdas = (r: RenglonDeSalida): string[] => [
 
 export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmada> {
   const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
   const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
   let y = membrete(doc, logo, {
-    titulo: 'NOTA DE SALIDA',
-    subtitulo: `${d.numero}  ·  ${d.fecha}`,
-    derecha: `Generado: ${fechaLarga(d.momento)}`,
+    empresa: d.empresa,
+    datos: [
+      ['N° nota', d.numero],
+      ['Fecha', d.fecha],
+      ['Generado', fechaLarga(d.momento)],
+    ],
   })
+
+  y = tituloDocumento(doc, y, 'Nota de salida')
 
   y = lineaEmpresa(doc, y, `${d.empresa.razonSocial} · RIF ${d.empresa.rif}`)
 
@@ -304,9 +310,11 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
   if (y > ARRANQUE_DEL_AVISO) {
     doc.addPage()
     y = membrete(doc, logo, {
-      titulo: 'NOTA DE SALIDA',
-      subtitulo: `${d.numero}  ·  (continuación)`,
-      derecha: null,
+      empresa: d.empresa,
+      datos: [
+        ['N° nota', d.numero],
+        ['', '(continuación)'],
+      ],
     })
   }
 
