@@ -30,7 +30,8 @@ import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
 import { ModalRecepcion } from './ModalRecepcion'
 import { PapelesDeCompra } from './PapelesDeCompra'
-import { usePapelesDeCompra } from '@/lib/api/papelesDeCompra'
+import { usePapelesDeCompra, useRespaldarAutorizacion } from '@/lib/api/papelesDeCompra'
+import { SoltarArchivo } from '@/components/SoltarArchivo'
 import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
 import { usePerfiles, useMisRoles, useArticulos, CONDICIONES_PAGO } from '@/lib/api/catalogo'
 import { useMisAcciones, useMisAutorizaciones } from '@/lib/api/usuarios'
@@ -600,6 +601,7 @@ export function DetalleCompra() {
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
   // Se marca a mano cada vez: no se recuerda de una aprobacion a la siguiente.
   const [bajoAutorizacion, setBajoAutorizacion] = useState(false)
+  const [respaldo, setRespaldo] = useState<File | null>(null)
   const { puede } = useMisRoles()
   const { puede: alcanza } = useMisAcciones()
   const misAutorizaciones = useMisAutorizaciones()
@@ -611,6 +613,7 @@ export function DetalleCompra() {
   const declarar = useDeclararComprobante()
   const eliminarCotizacion = useEliminarCotizacion()
   const aprobar = useAprobarCompra()
+  const respaldar = useRespaldarAutorizacion()
   const devolver = useDevolverACotizacion()
   const devolverPago = useDevolverInstruccion()
   const cancelarOrden = useCancelarOrden()
@@ -1153,6 +1156,7 @@ export function DetalleCompra() {
               ordenId={orden.id}
               puedeCargar={puedeCompras || puede('ALMACEN')}
               puedeQuitar={puedeCompras}
+              puedeRespaldar={puedeAprobar && !!compra.aprobada_por_autorizacion_de}
             />
           ) : null}
 
@@ -1296,11 +1300,55 @@ export function DetalleCompra() {
                         </span>
                       </label>
                     ) : null}
+                    {/*
+                      El respaldo, y SOLO para quien aprueba con permiso
+                      extendido.
+
+                      Lo acotó Christopher: a quien le compete aprobar por su
+                      puesto no se le pide que certifique nada, así que el campo
+                      no existe para él. Aparece donde la acción la toma alguien
+                      con un permiso especial, que es de quien puede hacer falta
+                      saber en qué se apoyó.
+
+                      Es opcional y por eso no bloquea el botón. Se sube DESPUÉS
+                      de aprobar porque los papeles cuelgan de la orden y la
+                      orden nace al aprobar: antes no hay dónde colgarlo.
+                    */}
+                    {autorizaAprobar ? (
+                      <SoltarArchivo
+                        valor={respaldo}
+                        onCambio={setRespaldo}
+                        acepta="application/pdf,image/*"
+                        tope={10 * 1024 * 1024}
+                        etiqueta="Respaldo de la autorización (opcional)"
+                        pista="La captura de WhatsApp, el correo o el PDF donde el gerente autorizó esta compra. PDF o foto, hasta 10 MB."
+                        deshabilitado={aprobar.isPending || respaldar.isPending}
+                        className="mb-3"
+                      />
+                    ) : null}
                     <Button
                       block
                       icon={<BadgeCheck />}
-                      disabled={aprobar.isPending || (!!autorizaAprobar && !bajoAutorizacion)}
-                      onClick={() => void aprobar.mutate({ solicitud_id: compra.id })}
+                      disabled={
+                        aprobar.isPending ||
+                        respaldar.isPending ||
+                        (!!autorizaAprobar && !bajoAutorizacion)
+                      }
+                      onClick={() => {
+                        void (async () => {
+                          const ordenId = await aprobar.mutateAsync({ solicitud_id: compra.id })
+                          /*
+                            Si el archivo falla, la compra YA está aprobada: eso
+                            no se deshace y no se disimula. Se dice, y el papel
+                            se sube desde la tarjeta de papeles de la orden, que
+                            ya se lo ofrece a quien aprobó con permiso especial.
+                          */
+                          if (respaldo && ordenId) {
+                            await respaldar.mutateAsync({ orden_id: ordenId, archivo: respaldo })
+                            setRespaldo(null)
+                          }
+                        })()
+                      }}
                     >
                       Aprobar la compra
                     </Button>
@@ -1524,6 +1572,24 @@ export function DetalleCompra() {
             {enviar.error ? <ErrorDeCarga error={enviar.error} className="mt-3" /> : null}
             {confirmar.error ? <ErrorDeCarga error={confirmar.error} className="mt-3" /> : null}
             {aprobar.error ? <ErrorDeCarga error={aprobar.error} className="mt-3" /> : null}
+            {/*
+              El respaldo falla APARTE de la aprobación, y se dice aparte.
+
+              Ver solo el error del archivo, con el botón de aprobar ya
+              desaparecido, deja a quien lo lee sin saber si la compra se aprobó
+              o no. Se aprobó: eso va primero, y el fallo del papel después, con
+              dónde volver a intentarlo.
+            */}
+            {respaldar.error ? (
+              <div className="mt-3">
+                <p className="text-ink/70 mb-2 text-sm">
+                  La compra <strong className="text-ink/85">quedó aprobada</strong>, pero el
+                  respaldo no llegó a subir. Vuelve a subirlo en «Papeles recibidos», dentro de la
+                  orden.
+                </p>
+                <ErrorDeCarga error={respaldar.error} />
+              </div>
+            ) : null}
           </Card>
 
           <Card className="order-last lg:order-none">

@@ -408,7 +408,15 @@ export function ordenVigente(compra: Compra | undefined): Orden | undefined {
  * haber hecho más cosas de las que la pantalla sabe — aprobar una compra, por
  * ejemplo, crea una orden con sus renglones.
  */
-function useAccion<A>(fn: (args: A) => Promise<unknown>) {
+/*
+  El tipo del resultado se conserva.
+
+  Antes se borraba a `unknown`, y por eso el id de orden que devuelve
+  `aprobar_compra` llegaba al que llamaba como `{}`: la base lo prometia y
+  TypeScript lo negaba. Quien queria encadenar algo con ese id —adjuntarle un
+  papel, por ejemplo— tenia que aseverar el tipo a mano.
+*/
+function useAccion<A, R>(fn: (args: A) => Promise<R>) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: fn,
