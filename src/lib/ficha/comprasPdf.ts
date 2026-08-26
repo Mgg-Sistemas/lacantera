@@ -1,10 +1,10 @@
 import { logoComoImagen } from '@/lib/ficha/logo'
-import { ABAJO, ARRIBA } from '@/lib/ficha/hoja'
+import { ABAJO, ARRIBA, PIE } from '@/lib/ficha/hoja'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import {
   membrete,
+  tituloDocumento,
   lineaEmpresa,
-  dosPartes,
   seccion,
   etiquetaValor,
   bloqueEtiquetado,
@@ -146,55 +146,73 @@ export interface DatosOrdenCompra {
 */
 const COLUMNAS_ORDEN: Columna[] = [
   { titulo: 'SKU', ancho: 20 },
-  { titulo: 'Descripción', ancho: 48 },
-  { titulo: 'Categoría', ancho: 20 },
-  { titulo: 'Cantidad', ancho: 14, alDerecha: true },
-  { titulo: 'Unidad', ancho: 10 },
+  { titulo: 'Descripción', ancho: 45 },
+  { titulo: 'Categoría', ancho: 25 },
+  // La unidad va dentro de la cantidad —«80 PARES»—, como en el modelo que
+  // mandó la líder. De columna aparte se llevaba doce milímetros para escribir
+  // «UND», y se los quitaba a la descripción, que es lo que de verdad se lee.
+  { titulo: 'Cantidad', ancho: 22, alDerecha: true },
   { titulo: 'Precio unit.', ancho: 19, alDerecha: true },
   { titulo: 'Subtotal', ancho: 19, alDerecha: true },
 ]
 
 export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
   const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
   let y = membrete(doc, logo, {
-    titulo: 'ORDEN DE COMPRA',
-    subtitulo: `N° ${d.numero}  ·  Ref. pedido: ${d.refPedido}`,
-    derecha: `Emitida: ${d.emitida}`,
+    empresa: d.empresa,
+    datos: [
+      ['N° orden', d.numero],
+      ['Ref. pedido', d.refPedido],
+      ['Emitida', d.emitida],
+    ],
   })
 
-  y = dosPartes(
-    doc,
-    y,
-    [d.empresa.razonSocial, `RIF ${d.empresa.rif}`, d.empresa.actividad ?? 'Sistema administrativo'],
-    {
-      rotulo: 'PROVEEDOR',
-      lineas: [
-        d.proveedor.nombre,
-        `RIF: ${d.proveedor.rif}`,
-        d.proveedor.telefono ?? '',
-        d.proveedor.direccion ?? '',
-      ].filter(Boolean),
-    },
-  )
+  y = tituloDocumento(doc, y, 'Orden de compra')
 
+  /*
+    Solo el proveedor, y a la izquierda.
+
+    Antes esto eran dos partes enfrentadas: la empresa a la izquierda y el
+    proveedor a la derecha. La empresa ya está arriba en el membrete, con su RIF
+    y su domicilio, así que repetirla aquí era decir dos veces lo mismo y dejar
+    al proveedor —que es el dato que se busca— arrinconado en media hoja.
+  */
+  y = etiquetaValor(doc, y, [
+    ['Proveedor', d.proveedor.nombre],
+    ['RIF', d.proveedor.rif],
+    ['Teléfono', d.proveedor.telefono],
+    ['Dirección', d.proveedor.direccion],
+  ])
+
+  /*
+    Los rótulos, cortos.
+
+    Venían de cuando el bloque ocupaba los 150 mm de ancho y cabía cualquier
+    cosa: «Fecha de entrega prometida», «OC confirmada por (gerente)». Puestos
+    en dos columnas se partían en tres pisos y hacían la fila más alta que el
+    dato que rotulan —y con eso la firma se iba a una segunda hoja vacía—.
+
+    Lo que se quita no se pierde: «aprobada» y «confirmada» ya distinguen el
+    paso del analista del paso del gerente, que es lo que decían los paréntesis.
+  */
   y = seccion(doc, y, 'Condiciones')
   y = etiquetaValor(doc, y, [
-    ['Unidad solicitante', d.condiciones.unidadSolicitante],
+    ['Departamento', d.condiciones.unidadSolicitante],
     ['Solicitante', d.condiciones.solicitante],
-    ['Fecha de solicitud', d.condiciones.fechaSolicitud],
+    ['Solicitada el', d.condiciones.fechaSolicitud],
     ['Finalidad', d.condiciones.finalidad],
     ['Notas', d.condiciones.notas],
     ['Clasificación', d.condiciones.clasificacion],
-    ['Fecha de entrega prometida', d.condiciones.entregaPrometida],
-    ['Condiciones de pago', d.condiciones.condicionPago],
+    ['Entrega prometida', d.condiciones.entregaPrometida],
+    ['Forma de pago', d.condiciones.condicionPago],
     ['Documentos', d.condiciones.documentos],
-    ['Aprobada por (analista)', d.condiciones.aprobadaPor],
+    ['Aprobada por', d.condiciones.aprobadaPor],
     ['Aprobada el', d.condiciones.aprobadaEl],
-    ['OC confirmada por (gerente)', d.condiciones.confirmadaPor],
-    ['OC confirmada el', d.condiciones.confirmadaEl],
+    ['Confirmada por', d.condiciones.confirmadaPor],
+    ['Confirmada el', d.condiciones.confirmadaEl],
   ])
 
   y = seccion(doc, y, 'Ítems')
@@ -206,8 +224,7 @@ export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoAr
       r.sku,
       r.descripcion,
       r.categoria,
-      cantidad(r.cantidad),
-      r.unidad,
+      [cantidad(r.cantidad), r.unidad].filter(Boolean).join(' '),
       numero(r.precioUnitario),
       numero(r.subtotal),
     ]),
@@ -223,7 +240,7 @@ export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoAr
   if (Number(d.iva) > 0) desglose.push(['IVA', conMoneda(d.moneda, d.iva)])
   if (desglose.length > 0) {
     desglose.unshift(['Subtotal', conMoneda(d.moneda, d.subtotal)])
-    y = etiquetaValor(doc, y, desglose)
+    y = etiquetaValor(doc, y, desglose, { columnas: 1 })
   }
 
   if (d.observaciones) {
@@ -236,16 +253,26 @@ export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoAr
 
   if (d.sello) marcaDeAgua(doc, d.sello)
 
-  // Las firmas van enteras o en su propia hoja: una raya partida entre dos
-  // páginas no la firma nadie.
-  if (y > ABAJO - 34) {
+  /*
+    La firma va entera o en su propia hoja: una raya partida entre dos páginas
+    no la firma nadie. Pero cuánto sitio necesita depende de si hay firma
+    escaneada —quince milímetros de imagen POR ENCIMA de la raya— o solo la raya
+    con el cargo y el nombre debajo.
+
+    Antes se reservaban treinta y cuatro milímetros en todos los casos, y una
+    orden de siete renglones acababa a veinticuatro del pie: la firma se iba a
+    una segunda hoja donde no había nada más. Una orden de compra firmada en una
+    hoja en blanco es exactamente lo que no se quiere entregar a un proveedor.
+  */
+  const hueco = d.autoriza?.imagen ? 18 : 8
+  if (y + hueco + 10 > PIE - 3) {
     doc.addPage()
     y = ARRIBA
   }
   // Una sola firma, la de quien autoriza. La raya de «recibido por el
   // proveedor» salió en blanco en todas las órdenes emitidas: la orden se manda
   // por correo, no se le pone delante al proveedor para que la firme.
-  firmaCentrada(doc, Math.max(y + 18, ABAJO - 26), {
+  firmaCentrada(doc, Math.max(y + hueco, ABAJO - 26), {
     texto: d.autoriza?.porAutorizacionDe
       ? `Firma autorizada · bajo autorización de ${d.autoriza.porAutorizacionDe}`
       : 'Firma autorizada',
@@ -292,14 +319,19 @@ export async function armarComprobanteDePago(
   d: DatosComprobantePago,
 ): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
   const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
   let y = membrete(doc, logo, {
-    titulo: 'COMPROBANTE DE PAGO',
-    subtitulo: `${d.ordenNumero}  ·  ${d.fechaPago}`,
-    derecha: `Generado: ${fechaLarga(d.momento)}`,
+    empresa: d.empresa,
+    datos: [
+      ['Orden', d.ordenNumero],
+      ['Fecha de pago', d.fechaPago],
+      ['Generado', fechaLarga(d.momento)],
+    ],
   })
+
+  y = tituloDocumento(doc, y, 'Comprobante de pago')
 
   y = lineaEmpresa(
     doc,

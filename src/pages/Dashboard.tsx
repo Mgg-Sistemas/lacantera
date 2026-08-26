@@ -95,15 +95,23 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
     })
   }
 
-  if (r.cuentas_sin_abrir > 0) {
-    avisos.push({
-      tono: 'info',
-      titulo: `${r.cuentas_sin_abrir} cuenta${r.cuentas_sin_abrir === 1 ? '' : 's'} sin saldo de apertura`,
-      detalle:
-        'Mientras no se registre lo que había, esa cuenta figura en cero y no deja pagar desde ella.',
-      ruta: '/app/tesoreria/cuentas',
-    })
-  }
+  /*
+    EL AVISO DE LAS CUENTAS SIN SALDO DE APERTURA SE QUITA
+
+    Pedía abrir un saldo que la empresa decidió no llevar. Tesorería dejó de ser
+    un módulo justamente porque «no va a llevar bancos ni cajas, y el sistema no
+    manejará saldo disponible — solo refleja los movimientos»; con esa decisión
+    tomada, un saldo de apertura no le falta a nadie.
+
+    Y además llevaba a `/app/tesoreria/cuentas`, que está fuera del menú por lo
+    mismo: al administrador le abría la pantalla y a todos los demás les daba el
+    candado. Un aviso que pide arreglar algo por una puerta cerrada no es un
+    aviso, es un recordatorio de que algo no se puede hacer.
+
+    El número se sigue calculando en la base y lo sigue usando el tablero de
+    Tesorería, que está entero esperando: el día que la empresa quiera llevar
+    sus cuentas, esto vuelve tal cual.
+  */
 
   return avisos
 }

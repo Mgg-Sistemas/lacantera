@@ -7,6 +7,7 @@ import {
   firmas,
   lineaEmpresa,
   membrete,
+  tituloDocumento,
   pieDePagina,
   seccion,
 } from '@/lib/ficha/papel'
@@ -93,16 +94,21 @@ function cantidadLegible(valor: string | number, unidad: string): string {
 
 export async function armarValeDeCombustible(d: DatosValeCombustible): Promise<ValeArmado> {
   const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
   const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
   const cuando = d.hora ? `${d.fecha} · ${d.hora.slice(0, 5)}` : d.fecha
 
   let y = membrete(doc, logo, {
-    titulo: 'VALE DE COMBUSTIBLE',
-    subtitulo: d.numero ? `${d.numero}  ·  ${cuando}` : cuando,
-    derecha: `Generado: ${fechaLarga(d.momento)}`,
+    empresa: d.empresa,
+    datos: [
+      ...(d.numero ? ([['N° vale', d.numero]] as Array<[string, string]>) : []),
+      ['Fecha', cuando],
+      ['Generado', fechaLarga(d.momento)],
+    ],
   })
+
+  y = tituloDocumento(doc, y, 'Vale de combustible')
 
   y = lineaEmpresa(doc, y, `${d.empresa.razonSocial} · RIF ${d.empresa.rif}`)
 
@@ -171,9 +177,11 @@ export async function armarValeDeCombustible(d: DatosValeCombustible): Promise<V
   if (y > ABAJO - 46) {
     doc.addPage()
     y = membrete(doc, logo, {
-      titulo: 'VALE DE COMBUSTIBLE',
-      subtitulo: d.numero ? `${d.numero}  ·  (continuación)` : '(continuación)',
-      derecha: null,
+      empresa: d.empresa,
+      datos: [
+        ...(d.numero ? ([['N° vale', d.numero]] as Array<[string, string]>) : []),
+        ['', '(continuación)'],
+      ],
     })
   }
 

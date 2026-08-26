@@ -30,6 +30,58 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
   sinNormalizar?: boolean
 }
 
+/**
+ * Un número tal como lo escribe la gente aquí, pasado a lo que entiende el código.
+ *
+ * LA COMA Y EL PUNTO SON LO MISMO
+ *
+ * En Venezuela el separador decimal es la coma —«3,20»— y el teclado numérico
+ * del teléfono ofrece coma, no punto. Con `type="number"` el navegador
+ * sencillamente no la admite: se pulsa y no aparece nada, o peor, aparece y el
+ * campo se queda en blanco al leerlo. La gente escribía «320» sin decimales sin
+ * saber por qué, y eso en un precio unitario no se nota hasta el total.
+ *
+ * Se traduce a punto, que es lo único que entiende `Number()`, así que todo lo
+ * que ya lee `e.target.value` sigue leyendo lo mismo de siempre.
+ *
+ * Y SE SIGUE SIN PODER ESCRIBIR LETRAS
+ *
+ * Es lo que se pierde al dejar `type="number"`, que no admitía nada que no
+ * fuera un número. Se repone aquí a mano: fuera todo lo que no sea cifra, punto
+ * o el signo, un solo punto, y el signo solo delante. Sin esto, cambiar la coma
+ * habría abierto la puerta a que en «cantidad» acabara escrito «doce».
+ */
+function comoNumero(bruto: string): string {
+  let s = bruto.replace(/[^0-9.,-]/g, '')
+
+  const negativo = s.startsWith('-')
+  s = s.replace(/-/g, '')
+
+  /*
+    Cuando hay varios separadores, el decimal es el ÚLTIMO.
+
+    Los de antes son de millar. Es lo que hace falta para que pegar «1.500,25»
+    —copiado de una factura o de una hoja de cálculo— dé mil quinientos con
+    veinticinco y no uno coma cincuenta mil. Quedarse con el PRIMERO, que es lo
+    primero que se escribe, daba justo eso.
+
+    Con un solo separador no hay nada que decidir y es siempre el decimal, así
+    que escribir «1,5» sigue funcionando tecla a tecla: «1», «1,», «1,5».
+
+    «1.500» a secas es ambiguo —mil quinientos o uno y medio— y aquí se toma
+    como uno y medio, que es lo que se lee tal cual. No hay forma de acertar
+    siempre: quien quiera mil quinientos lo escribe sin punto, como se escribe
+    en un campo.
+  */
+  const ultimo = Math.max(s.lastIndexOf('.'), s.lastIndexOf(','))
+  if (ultimo !== -1) {
+    s =
+      s.slice(0, ultimo).replace(/[.,]/g, '') + '.' + s.slice(ultimo + 1).replace(/[.,]/g, '')
+  }
+
+  return (negativo ? '-' : '') + s
+}
+
 export function Input({
   label,
   ocultarEtiqueta,
@@ -49,7 +101,22 @@ export function Input({
   const describedById = `${inputId}-desc`
   const [revealed, setRevealed] = useState(false)
 
-  const resolvedType = revealable ? (revealed ? 'text' : 'password') : type
+  /*
+    Los campos de número se dibujan como texto.
+
+    No es un capricho: `type="number"` no deja escribir la coma, y no hay forma
+    de metérsela desde fuera porque el navegador tampoco expone dónde está el
+    cursor en ese tipo de campo. Como texto sí se puede traducir la coma a punto
+    sin que se mueva nada de sitio.
+
+    A cambio se pierden las flechitas de subir y bajar —que en un precio nadie
+    usa— y `min`, `max` y `step` dejan de restringir. No sostenían nada: no hay
+    un solo sitio en el sistema que pregunte al navegador si el formulario es
+    válido, la comprobación se hace siempre en el código.
+  */
+  const esNumero = type === 'number' && !revealable
+
+  const resolvedType = revealable ? (revealed ? 'text' : 'password') : esNumero ? 'text' : type
 
   /*
     Solo se normaliza lo que es texto escrito a mano.
@@ -65,6 +132,29 @@ export function Input({
     (type === 'text' || type === 'search' || type === undefined)
 
   const alEscribir = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (esNumero) {
+      const bruto = e.target.value
+      const limpio = comoNumero(bruto)
+
+      if (limpio !== bruto) {
+        /*
+          El cursor se recoloca por lo que se haya caído.
+
+          Cambiar la coma por el punto no mueve nada —una letra por otra—, así
+          que en el caso corriente el cursor se queda donde estaba. Solo se
+          desplaza cuando de verdad se quitó algo, que es cuando alguien pegó
+          texto o tecleó una letra: se retrocede tanto como se acortó.
+        */
+        const cursor = e.target.selectionStart ?? bruto.length
+        e.target.value = limpio
+        const sitio = Math.max(0, cursor - (bruto.length - limpio.length))
+        e.target.setSelectionRange(sitio, sitio)
+      }
+
+      onChange?.(e)
+      return
+    }
+
     if (normaliza) {
       const cursor = e.target.selectionStart
       e.target.value = enMayuscula(e.target.value)
@@ -96,6 +186,10 @@ export function Input({
         <input
           id={inputId}
           type={resolvedType}
+          // El teclado del teléfono sigue abriéndose en cifras aunque el campo
+          // ya sea de texto. Va antes de `...rest` para que quien lo declare a
+          // mano —la mayoría lo hace— siga mandando.
+          inputMode={esNumero ? 'decimal' : undefined}
           onChange={alEscribir}
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? describedById : undefined}
