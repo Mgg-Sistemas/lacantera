@@ -7,11 +7,13 @@ import { Modal } from '@/components/ui/Modal'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import {
+  emitiendoDesdeOtroSitio,
   useAnularCarnet,
   useCarnetVigente,
   useEmitirCarnet,
   useHistorialDeCarnets,
   urlDeVerificacion,
+  URL_PUBLICA,
 } from '@/lib/api/carnets'
 import { fechaHora } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -260,6 +262,22 @@ export function TarjetaCarnet({
               : 'Queda escrito en el carnet que se anula. Sin motivo se guarda «Se emitió un carnet nuevo».'
           }
         />
+
+        {/*
+          Si se está emitiendo desde otro sitio, se dice.
+
+          El QR va a apuntar bien igual —la dirección sale de una constante, no
+          de la barra del navegador— pero quien emite tiene que enterarse de que
+          lo que va impreso no es donde él está. Es media línea y evita una
+          reimpresión de toda la plantilla.
+        */}
+        {pidiendo === 'emitir' && emitiendoDesdeOtroSitio() ? (
+          <p className="border-warning/30 bg-warning-soft text-ink/75 mt-4 rounded-[6px] border p-3 text-sm leading-relaxed">
+            Estás emitiendo desde <strong>{window.location.host}</strong>, pero el QR va a apuntar a{' '}
+            <strong>{URL_PUBLICA.replace(/^https?:\/\//, '')}</strong>, que es la dirección de
+            producción. Es lo correcto; se avisa para que no sorprenda.
+          </p>
+        ) : null}
 
         {pidiendo === 'emitir' ? (
           <p

@@ -143,22 +143,42 @@ export async function verificarCarnet(codigo: string): Promise<CarnetVerificado>
 }
 
 /**
- * La dirección que se imprime dentro del QR.
+ * Dónde vive la página que verifica. NO se adivina.
  *
- * Sale de dónde esté servida la aplicación, no de una constante: así el carnet
- * que se imprime desde producción apunta a producción sin que nadie tenga que
- * acordarse de nada. `VITE_URL_PUBLICA` existe para el día que el sistema viva
- * en un dominio y los carnets deban apuntar a otro.
+ * ESTO YA SALIÓ MAL UNA VEZ Y POR ESO ESTÁ ESCRITO ASÍ.
  *
- * OJO CON DÓNDE SE IMPRIME. Un carnet impreso desde un despliegue de prueba
- * lleva la dirección de ese despliegue grabada en el plástico para siempre. Por
- * eso la pantalla que emite enseña la dirección completa antes de emitir, en vez
- * de esconderla: es lo único que evita ese error, y no se puede arreglar
- * después.
+ * Escribí una muestra del QR poniendo `lacantera.vercel.app` de ejemplo, dando
+ * por hecho que sería el dominio. Existe, y es de otra empresa: al escanearla
+ * se llegaba a la aplicación de un desconocido. El dominio de verdad es
+ * `lacantera-omega.vercel.app` —comprobado pidiéndole `/version.json`, que
+ * devuelve el commit que se publicó hoy—.
+ *
+ * Un QR impreso no se corrige: lo que se grabó en el plástico apunta ahí para
+ * siempre. Así que la dirección sale de una constante y no de dónde esté abierta
+ * la aplicación: un carnet emitido por descuido desde un despliegue de prueba
+ * habría quedado apuntando a una dirección temporal que un día deja de existir.
+ *
+ * `VITE_URL_PUBLICA` la sobreescribe, para el día que la empresa ponga su
+ * dominio propio. Se cambia AHÍ y no aquí.
  */
+export const URL_PUBLICA = (
+  (import.meta.env.VITE_URL_PUBLICA as string | undefined) ?? 'https://lacantera-omega.vercel.app'
+).replace(/\/+$/, '')
+
 export function urlDeVerificacion(codigo: string): string {
-  const base = (import.meta.env.VITE_URL_PUBLICA as string | undefined) ?? window.location.origin
-  return `${base.replace(/\/+$/, '')}/v/${codigo}`
+  return `${URL_PUBLICA}/v/${codigo}`
+}
+
+/**
+ * ¿Se está emitiendo desde otro sitio del que va a decir el QR?
+ *
+ * Pasa al abrir la aplicación en un despliegue de prueba o en el ordenador de
+ * alguien. No impide emitir —el QR va a apuntar bien igual, porque sale de la
+ * constante— pero quien emite tiene que saber que la dirección impresa no es la
+ * que tiene en la barra del navegador.
+ */
+export function emitiendoDesdeOtroSitio(): boolean {
+  return typeof window !== 'undefined' && window.location.origin !== URL_PUBLICA
 }
 
 /**

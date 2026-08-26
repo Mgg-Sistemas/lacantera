@@ -357,8 +357,27 @@ function reverso(
   ctx.fillStyle = MARCA_CARGO
   ctx.font = `600 ${pt(5.2)}px ${FUENTE}`
   ctx.letterSpacing = `${mm(0.15)}px`
-  textoCentrado(ctx, 'ESCANEE PARA VERIFICAR', mm(34))
+  textoCentrado(ctx, 'ESCANEE PARA VERIFICAR', mm(32.8))
   ctx.letterSpacing = '0px'
+
+  /*
+    Y LA DIRECCIÓN, IMPRESA DEBAJO.
+
+    Nadie puede impedir que un carnet falsificado lleve un QR que apunte a una
+    copia de esta página diciendo VIGENTE siempre. Lo único que se puede hacer es
+    que la dirección buena esté escrita al lado, para que quien escanea pueda
+    comparar lo que le abrió el teléfono con lo que dice el plástico.
+
+    No es una hipótesis: preparando esto se imprimió una muestra con un dominio
+    inventado que resultó ser de otra empresa, y al escanearla se llegaba a su
+    aplicación. Con la dirección impresa, eso se ve.
+
+    Sale de la propia URL del QR, no de una constante aparte: si las dos se
+    escribieran por separado, un día dirían cosas distintas.
+  */
+  ctx.fillStyle = GRIS
+  ctx.font = `500 ${pt(4.4)}px ${FUENTE}`
+  textoCentrado(ctx, verificacion.url.replace(/^https?:\/\//, '').split('/')[0], mm(35.2))
 
   /*
     El QR arranca en 39,5 y no en 38, y pide 32 mm y no 30.
