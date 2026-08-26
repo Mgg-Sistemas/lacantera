@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   Undo2,
   UserX,
+  Repeat,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -28,9 +29,11 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
+import { ModalCambiarMetodo } from './ModalCambiarMetodo'
 import { ModalRecepcion } from './ModalRecepcion'
 import { PapelesDeCompra } from './PapelesDeCompra'
-import { usePapelesDeCompra } from '@/lib/api/papelesDeCompra'
+import { usePapelesDeCompra, useRespaldarAutorizacion } from '@/lib/api/papelesDeCompra'
+import { SoltarArchivo } from '@/components/SoltarArchivo'
 import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
 import { usePerfiles, useMisRoles, useArticulos, CONDICIONES_PAGO } from '@/lib/api/catalogo'
 import { useMisAcciones, useMisAutorizaciones } from '@/lib/api/usuarios'
@@ -382,14 +385,19 @@ function TarjetaCotizacion({
 function TarjetaInstruccion({
   instruccion,
   puedePagar,
+  puedeCambiarMetodo,
   onPagar,
   onDevolver,
+  onCambiarMetodo,
   onComprobante,
 }: {
   instruccion: InstruccionPago
   puedePagar: boolean
+  /** Corregir por dónde se paga sin retroceder la orden. */
+  puedeCambiarMetodo: boolean
   onPagar: () => void
   onDevolver: () => void
+  onCambiarMetodo: () => void
   /** Solo cuando ya está pagada: antes no hay nada que comprobar. */
   onComprobante: () => void
 }) {
@@ -509,14 +517,31 @@ function TarjetaInstruccion({
         </div>
       ) : null}
 
-      {puedePagar && i.estado === 'POR_PAGAR' ? (
+      {i.estado === 'POR_PAGAR' && (puedePagar || puedeCambiarMetodo) ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button size="sm" icon={<Check />} onClick={onPagar}>
-            Registrar el pago
-          </Button>
-          <Button size="sm" variant="ghost" className="text-danger" onClick={onDevolver}>
-            Devolver a compras
-          </Button>
+          {puedePagar ? (
+            <Button size="sm" icon={<Check />} onClick={onPagar}>
+              Registrar el pago
+            </Button>
+          ) : null}
+          {/*
+            Cambiar el método va ANTES de devolver a compras.
+
+            Son las dos salidas cuando el pago no se puede hacer como está, y la
+            de aquí es la barata: la orden no retrocede, sigue aprobada y sigue
+            en la cola. Devolverla rehace un paso que estaba bien, así que se
+            deja de última y sin destacar.
+          */}
+          {puedeCambiarMetodo ? (
+            <Button size="sm" variant="outline" icon={<Repeat />} onClick={onCambiarMetodo}>
+              Cambiar el método
+            </Button>
+          ) : null}
+          {puedePagar ? (
+            <Button size="sm" variant="ghost" className="text-danger" onClick={onDevolver}>
+              Devolver a compras
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -600,6 +625,7 @@ export function DetalleCompra() {
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
   // Se marca a mano cada vez: no se recuerda de una aprobacion a la siguiente.
   const [bajoAutorizacion, setBajoAutorizacion] = useState(false)
+  const [respaldo, setRespaldo] = useState<File | null>(null)
   const { puede } = useMisRoles()
   const { puede: alcanza } = useMisAcciones()
   const misAutorizaciones = useMisAutorizaciones()
@@ -611,6 +637,7 @@ export function DetalleCompra() {
   const declarar = useDeclararComprobante()
   const eliminarCotizacion = useEliminarCotizacion()
   const aprobar = useAprobarCompra()
+  const respaldar = useRespaldarAutorizacion()
   const devolver = useDevolverACotizacion()
   const devolverPago = useDevolverInstruccion()
   const cancelarOrden = useCancelarOrden()
@@ -629,6 +656,7 @@ export function DetalleCompra() {
     | { tipo: 'resolver' }
     | { tipo: 'registrar-pago'; instruccion: InstruccionPago }
     | { tipo: 'devolver-instruccion'; instruccion: InstruccionPago }
+    | { tipo: 'cambiar-metodo'; instruccion: InstruccionPago }
   >(null)
 
   const [resolucion, setResolucion] = useState('REEMBOLSADO')
@@ -844,6 +872,7 @@ export function DetalleCompra() {
   */
   const puedeAprobar = alcanza('COMPRAS.APROBAR_COMPRA')
   const autorizaAprobar = misAutorizaciones.de('COMPRAS.APROBAR_COMPRA')
+  const puedeCambiarMetodo = alcanza('COMPRAS.CAMBIAR_METODO_PAGO')
 
   return (
     <>
@@ -1133,8 +1162,10 @@ export function DetalleCompra() {
                       key={i.id}
                       instruccion={i}
                       puedePagar={puedeCompras}
+                      puedeCambiarMetodo={puedeCambiarMetodo}
                       onPagar={() => setModal({ tipo: 'registrar-pago', instruccion: i })}
                       onDevolver={() => setModal({ tipo: 'devolver-instruccion', instruccion: i })}
+                      onCambiarMetodo={() => setModal({ tipo: 'cambiar-metodo', instruccion: i })}
                       onComprobante={() => void imprimirComprobante(i)}
                     />
                   ))}
@@ -1153,6 +1184,7 @@ export function DetalleCompra() {
               ordenId={orden.id}
               puedeCargar={puedeCompras || puede('ALMACEN')}
               puedeQuitar={puedeCompras}
+              puedeRespaldar={puedeAprobar && !!compra.aprobada_por_autorizacion_de}
             />
           ) : null}
 
@@ -1296,11 +1328,55 @@ export function DetalleCompra() {
                         </span>
                       </label>
                     ) : null}
+                    {/*
+                      El respaldo, y SOLO para quien aprueba con permiso
+                      extendido.
+
+                      Lo acotó Christopher: a quien le compete aprobar por su
+                      puesto no se le pide que certifique nada, así que el campo
+                      no existe para él. Aparece donde la acción la toma alguien
+                      con un permiso especial, que es de quien puede hacer falta
+                      saber en qué se apoyó.
+
+                      Es opcional y por eso no bloquea el botón. Se sube DESPUÉS
+                      de aprobar porque los papeles cuelgan de la orden y la
+                      orden nace al aprobar: antes no hay dónde colgarlo.
+                    */}
+                    {autorizaAprobar ? (
+                      <SoltarArchivo
+                        valor={respaldo}
+                        onCambio={setRespaldo}
+                        acepta="application/pdf,image/*"
+                        tope={10 * 1024 * 1024}
+                        etiqueta="Respaldo de la autorización (opcional)"
+                        pista="La captura de WhatsApp, el correo o el PDF donde el gerente autorizó esta compra. PDF o foto, hasta 10 MB."
+                        deshabilitado={aprobar.isPending || respaldar.isPending}
+                        className="mb-3"
+                      />
+                    ) : null}
                     <Button
                       block
                       icon={<BadgeCheck />}
-                      disabled={aprobar.isPending || (!!autorizaAprobar && !bajoAutorizacion)}
-                      onClick={() => void aprobar.mutate({ solicitud_id: compra.id })}
+                      disabled={
+                        aprobar.isPending ||
+                        respaldar.isPending ||
+                        (!!autorizaAprobar && !bajoAutorizacion)
+                      }
+                      onClick={() => {
+                        void (async () => {
+                          const ordenId = await aprobar.mutateAsync({ solicitud_id: compra.id })
+                          /*
+                            Si el archivo falla, la compra YA está aprobada: eso
+                            no se deshace y no se disimula. Se dice, y el papel
+                            se sube desde la tarjeta de papeles de la orden, que
+                            ya se lo ofrece a quien aprobó con permiso especial.
+                          */
+                          if (respaldo && ordenId) {
+                            await respaldar.mutateAsync({ orden_id: ordenId, archivo: respaldo })
+                            setRespaldo(null)
+                          }
+                        })()
+                      }}
                     >
                       Aprobar la compra
                     </Button>
@@ -1524,6 +1600,24 @@ export function DetalleCompra() {
             {enviar.error ? <ErrorDeCarga error={enviar.error} className="mt-3" /> : null}
             {confirmar.error ? <ErrorDeCarga error={confirmar.error} className="mt-3" /> : null}
             {aprobar.error ? <ErrorDeCarga error={aprobar.error} className="mt-3" /> : null}
+            {/*
+              El respaldo falla APARTE de la aprobación, y se dice aparte.
+
+              Ver solo el error del archivo, con el botón de aprobar ya
+              desaparecido, deja a quien lo lee sin saber si la compra se aprobó
+              o no. Se aprobó: eso va primero, y el fallo del papel después, con
+              dónde volver a intentarlo.
+            */}
+            {respaldar.error ? (
+              <div className="mt-3">
+                <p className="text-ink/70 mb-2 text-sm">
+                  La compra <strong className="text-ink/85">quedó aprobada</strong>, pero el
+                  respaldo no llegó a subir. Vuelve a subirlo en «Papeles recibidos», dentro de la
+                  orden.
+                </p>
+                <ErrorDeCarga error={respaldar.error} />
+              </div>
+            ) : null}
           </Card>
 
           <Card className="order-last lg:order-none">
@@ -1638,6 +1732,16 @@ export function DetalleCompra() {
           }
         }}
       />
+
+      {/* Se monta solo cuando hay una instruccion elegida: el modal arranca sus
+          campos con los datos de esa, y sin ella no tendria de que partir. */}
+      {modal?.tipo === 'cambiar-metodo' ? (
+        <ModalCambiarMetodo
+          abierto
+          onCerrar={() => setModal(null)}
+          instruccion={modal.instruccion}
+        />
+      ) : null}
 
       {modal?.tipo === 'registrar-pago' ? (
         <ModalRegistrarPago
