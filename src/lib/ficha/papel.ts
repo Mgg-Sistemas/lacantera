@@ -124,8 +124,31 @@ export function membrete(
   const TEXTO = logo ? IZQ + 17 : IZQ
   const ANCHO_NOMBRE = logo ? 88 : 105
 
-  doc.setTextColor(MARCA).setFont('helvetica', 'bold').setFontSize(15)
-  doc.text(ajustar(doc, d.empresa.razonSocial.toUpperCase(), ANCHO_NOMBRE), TEXTO, y + 2)
+  /*
+    LA RAZÓN SOCIAL SE ENCOGE, NO SE CORTA.
+
+    «MINERIA INTERNACIONAL TS, C.A.» mide 88,7 mm a quince puntos y el hueco es
+    de 88: fallaba por siete décimas de milímetro y `ajustar` la dejaba en
+    «MINERIA INTERNACIONAL TS, C...» en TODOS los papeles del sistema.
+
+    No es un detalle de maquetación. `empresa.ts` ya lo dice: la razón social va
+    tal como está en el registro, «y un documento laboral que escribe el nombre
+    distinto al del registro se discute». Un nombre con puntos suspensivos no es
+    el nombre. Un punto tipográfico menos no lo nota nadie.
+
+    Es la misma regla que las tablas: antes de romper el texto, encoger la letra.
+  */
+  let talla = 15
+  doc.setFont('helvetica', 'bold')
+  const nombre = d.empresa.razonSocial.toUpperCase()
+  while (talla > 9) {
+    doc.setFontSize(talla)
+    if (doc.getTextWidth(nombre) <= ANCHO_NOMBRE) break
+    talla -= 0.5
+  }
+
+  doc.setTextColor(MARCA).setFontSize(talla)
+  doc.text(ajustar(doc, nombre, ANCHO_NOMBRE), TEXTO, y + 2)
 
   doc.setFont('helvetica', 'normal').setFontSize(6.8).setTextColor(GRIS)
   if (d.empresa.actividad) {
