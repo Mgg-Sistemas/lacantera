@@ -82,6 +82,17 @@ export interface Asignacion {
   saldado_como: 'DESCUENTO' | 'REPOSICION' | 'EXONERADO' | null
   saldado_el: string | null
   dias_fuera: number
+  /** `DOTACION` no vuelve; `ASIGNACION` es un prestamo. */
+  clase: 'DOTACION' | 'ASIGNACION'
+  /** Cuando tiene que estar de vuelta. Nulo si no se le puso fecha. */
+  fecha_limite: string | null
+  /**
+   * Dias de retraso, o nulo si no hay retraso.
+   *
+   * No es `dias_fuera`: una herramienta puede llevar tres meses fuera y estar
+   * en su sitio. Esto solo tiene valor cuando se paso de la fecha.
+   */
+  dias_vencida: number | null
 }
 
 /** Lo pendiente de resolver, agrupado por trabajador. */
@@ -257,6 +268,13 @@ export function useAsignar() {
       cantidad: number
       fecha?: string | null
       nota?: string | null
+      /**
+       * Cuando tiene que estar de vuelta. Opcional a proposito: hay prestamos
+       * de una manana y hay dotacion que no vuelve nunca, y obligar a poner
+       * fecha en todos convierte el campo en un tramite que se rellena con
+       * cualquier cosa.
+       */
+      fecha_limite?: string | null
     }) =>
       rpc<number>('asignar_herramienta', {
         p_articulo_id: a.articulo_id,
@@ -265,6 +283,7 @@ export function useAsignar() {
         p_cantidad: a.cantidad,
         p_fecha: a.fecha ?? null,
         p_nota: a.nota ?? null,
+        p_fecha_limite: a.fecha_limite || null,
       }),
   )
 }

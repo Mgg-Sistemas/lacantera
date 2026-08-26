@@ -195,6 +195,21 @@ export function Asignaciones() {
                       {a.dias_fuera > 0 ? ` · ${a.dias_fuera} día${a.dias_fuera === 1 ? '' : 's'}` : ''}
                       {a.almacen ? ` · ${a.almacen}` : ''}
                     </p>
+                    {/*
+                      El retraso va en su propio renglón y teñido.
+
+                      Metido entre los días fuera y el almacén se perdía: son
+                      dos números de días seguidos y el que importa es el de
+                      atrás. Aquí es lo único rojo de la fila.
+                    */}
+                    {a.dias_vencida !== null && a.dias_vencida > 0 ? (
+                      <p className="text-danger mt-0.5 text-xs font-medium">
+                        Debió volver el {fecha(a.fecha_limite!)} ·{' '}
+                        {a.dias_vencida} día{a.dias_vencida === 1 ? '' : 's'} de retraso
+                      </p>
+                    ) : a.fecha_limite ? (
+                      <p className="text-ink/45 text-xs">Vuelve el {fecha(a.fecha_limite)}</p>
+                    ) : null}
                   </div>
 
                   {puedeMover ? (
@@ -371,6 +386,7 @@ function ModalEntrega({
   const [empleado, setEmpleado] = useState('')
   const [cuantas, setCuantas] = useState('1')
   const [dia, setDia] = useState(hoy)
+  const [limite, setLimite] = useState('')
   const [nota, setNota] = useState('')
 
   if (!bien) return null
@@ -388,9 +404,11 @@ function ModalEntrega({
       cantidad: pedidas,
       fecha: dia,
       nota: nota.trim() || null,
+      fecha_limite: limite || null,
     })
     setEmpleado('')
     setCuantas('1')
+    setLimite('')
     setNota('')
     onCerrar()
   }
@@ -441,6 +459,24 @@ function ModalEntrega({
           error={excede ? `Solo quedan ${cantidad(bien.disponibles)}` : undefined}
         />
         <Input label="Fecha" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
+      </div>
+
+      {/*
+        La fecha de vuelta es opcional, y el rótulo lo dice.
+
+        Hay préstamos de una mañana y hay dotación que no vuelve nunca. Si el
+        campo se pidiera siempre, se rellenaría con cualquier cosa y el aviso de
+        vencidas acabaría siendo ruido — que es como muere un aviso.
+      */}
+      <div className="mt-4">
+        <Input
+          label="Cuándo tiene que estar de vuelta (opcional)"
+          type="date"
+          min={dia}
+          value={limite}
+          onChange={(e) => setLimite(e.target.value)}
+          hint="Si se pone, el sistema avisa al día siguiente de pasarse. Si se deja vacío, no reclama nada."
+        />
       </div>
 
       <div className="mt-4">
