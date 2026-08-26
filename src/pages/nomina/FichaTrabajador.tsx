@@ -40,7 +40,7 @@ import { useMisAcciones, useRoles } from '@/lib/api/usuarios'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
-import { armarCarnet } from '@/lib/ficha/carnet'
+import { armarCarnet, armarCarnetPdf } from '@/lib/ficha/carnet'
 import { armarFicha, type Seccion } from '@/lib/ficha/fichaPdf'
 import { armarConstancia } from '@/lib/ficha/constanciaPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
@@ -75,7 +75,7 @@ function edad(nacimiento: string | null): string {
 }
 
 /** Lo que sabe sacar el botón de exportar. Cada uno acaba en el visor. */
-type Exportable = 'pdf' | 'frente' | 'reverso'
+type Exportable = 'pdf' | 'frente' | 'reverso' | 'carnet-pdf'
 
 const etiqueta = (lista: Array<{ valor: string; etiqueta: string }>, v: string | null) =>
   lista.find((o) => o.valor === v)?.etiqueta ?? '—'
@@ -305,23 +305,29 @@ export function FichaTrabajador() {
       // El reverso es solo la marca: no lleva foto y no hace falta esperarla.
       const img = tipo === 'reverso' ? null : await imagenLista()
 
-      if (tipo === 'frente' || tipo === 'reverso') {
+      const datosCarnet = {
+        ficha: e.ficha,
+        nombres: e.nombres,
+        apellidos: e.apellidos,
+        cedula: e.cedula,
+        cargo: e.cargo,
+        departamento: e.departamento,
+        fecha_ingreso: e.fecha_ingreso,
+        grupo_sanguineo: e.grupo_sanguineo,
+        foto: img,
+        encuadre,
+      }
+
+      if (tipo === 'carnet-pdf') {
         setVista({
-          archivo: await armarCarnet(
-            {
-              ficha: e.ficha,
-              nombres: e.nombres,
-              apellidos: e.apellidos,
-              cedula: e.cedula,
-              cargo: e.cargo,
-              departamento: e.departamento,
-              fecha_ingreso: e.fecha_ingreso,
-              grupo_sanguineo: e.grupo_sanguineo,
-              foto: img,
-              encuadre,
-            },
-            tipo,
-          ),
+          archivo: await armarCarnetPdf(datosCarnet),
+          titulo: `Carnet de ${e.nombres} ${e.apellidos} — para la imprenta`,
+          descripcion:
+            'Dos páginas de 54 × 86 mm: el frente y el reverso. La medida va dentro del archivo, así que la imprenta no tiene que ajustar nada.',
+        })
+      } else if (tipo === 'frente' || tipo === 'reverso') {
+        setVista({
+          archivo: await armarCarnet(datosCarnet, tipo),
           titulo:
             tipo === 'frente'
               ? `Carnet de ${e.nombres} ${e.apellidos} — frente`
@@ -540,6 +546,24 @@ export function FichaTrabajador() {
                   {exportando === 'pdf' ? 'Armando el PDF…' : 'Ficha completa (PDF)'}
                 </Button>
               </div>
+              {/*
+                El PDF va primero y a lo ancho, porque es el que se manda.
+
+                Las dos imágenes sueltas siguen ahí para quien quiera mirar una
+                cara suelta o retocarla, pero lo que se le entrega a la imprenta
+                es este: una imagen no lleva su tamaño dentro y un carnet
+                impreso un 4% más grande no entra en la funda de plastificar.
+              */}
+              <div className="sm:col-span-2">
+                <Button
+                  block
+                  icon={<IdCard />}
+                  disabled={exportando !== null}
+                  onClick={() => void exportar('carnet-pdf')}
+                >
+                  {exportando === 'carnet-pdf' ? 'Armando el carnet…' : 'Carnet para imprenta (PDF)'}
+                </Button>
+              </div>
               <Button
                 block
                 variant="soft"
@@ -572,11 +596,12 @@ export function FichaTrabajador() {
             </div>
 
             <p className="text-ink/40 mt-3 text-center text-xs">
-              Todo se abre en pantalla antes de guardarse. El PDF trae todos los datos en A4. El
-              carnet sale en dos imágenes, cada una de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—,
-              que es lo que pide una imprenta para que no salga pixelado: el frente es de esta
-              persona, y el reverso lleva la marca y el RIF y es igual para todos. La constancia es
-              la carta que se entrega a un banco o a quien la pida.
+              Todo se abre en pantalla antes de guardarse. La ficha trae todos los datos en A4.
+              El carnet para imprenta es un PDF de dos páginas —frente y reverso— de 54 × 86 mm a
+              300 dpi, con la medida dentro del archivo: es el que se manda. Las dos imágenes
+              sueltas son las mismas caras en PNG, por si hace falta mirar o retocar una: el frente
+              es de esta persona y el reverso lleva la marca y el RIF, igual para todos. La
+              constancia es la carta que se entrega a un banco o a quien la pida.
             </p>
 
             {falloExportar ? <ErrorDeCarga error={falloExportar} className="mt-3" /> : null}
