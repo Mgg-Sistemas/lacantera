@@ -3,7 +3,7 @@ import { logoComoImagen } from '@/lib/ficha/logo'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import {
   membrete,
-  lineaEmpresa,
+  tituloDocumento,
   seccion,
   etiquetaValor,
   tabla,
@@ -80,27 +80,34 @@ export async function armarConstanciaDeEntrega(d: DatosEntrega): Promise<Archivo
   const logo = await logoComoImagen()
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
+  /*
+    Manda la empresa arriba y el tipo de papel debajo, como el resto.
+
+    Esto se escribió cuando `membrete` todavía llevaba el título del documento
+    dentro y la empresa en una línea de pie. Al fusionarse el rediseño de los
+    PDF la firma cambió, y esta constancia se quedó llamando a la de antes: el
+    build lo dijo en cuanto las dos ramas estuvieron juntas.
+  */
   let y = membrete(doc, logo, {
-    titulo: 'CONSTANCIA DE ENTREGA',
-    subtitulo: `${d.trabajador.nombre} · ficha ${d.trabajador.ficha}`,
-    derecha: `Emitida: ${fechaLarga(d.momento)}`,
+    empresa: d.empresa,
+    datos: [
+      ['Ficha', d.trabajador.ficha],
+      ['Entregado el', d.fecha],
+      ['Emitida', fechaLarga(d.momento)],
+    ],
   })
 
-  y = lineaEmpresa(
-    doc,
-    y,
-    `${d.empresa.razonSocial} · RIF ${d.empresa.rif}${d.empresa.actividad ? ` · ${d.empresa.actividad}` : ''}`,
-  )
+  y = tituloDocumento(doc, y, 'Constancia de entrega')
 
+  // La ficha y la fecha ya están arriba, en el membrete: repetirlas aquí sería
+  // decir dos veces lo mismo en media hoja.
   y = seccion(doc, y, 'Quién recibe')
   y = etiquetaValor(doc, y, [
     ['Trabajador', d.trabajador.nombre],
     ['Cédula', d.trabajador.cedula],
-    ['Ficha', d.trabajador.ficha],
     ['Cargo', d.trabajador.cargo],
     ['Departamento', d.trabajador.departamento],
     ['Sale de', d.almacen],
-    ['Fecha de entrega', d.fecha],
   ])
 
   y = seccion(doc, y, 'Qué se le entrega')
