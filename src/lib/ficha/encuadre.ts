@@ -72,6 +72,13 @@ export function fotoRecortada(
   altoMm: number,
   e: Encuadre,
   dpi = 300,
+  /*
+    La calidad del JPEG. Alta para imprimir, más baja para la copia que se
+    guarda con la emisión del carnet: esa viaja dentro de una fila que lee una
+    página pública, y a 240 píxeles de ancho la diferencia entre 0,92 y 0,72 no
+    se ve en una cara pero sí en el peso.
+  */
+  calidad = 0.92,
 ): string {
   const ancho = Math.round((anchoMm / 25.4) * dpi)
   const alto = Math.round((altoMm / 25.4) * dpi)
@@ -86,7 +93,7 @@ export function fotoRecortada(
   const r = recorte(foto.naturalWidth, foto.naturalHeight, ancho, alto, e)
   ctx.drawImage(foto, r.dx, r.dy, r.ancho, r.alto)
 
-  return lienzo.toDataURL('image/jpeg', 0.92)
+  return lienzo.toDataURL('image/jpeg', calidad)
 }
 
 /** El mismo recorte, en propiedades de CSS. Es lo que usa el previo. */
