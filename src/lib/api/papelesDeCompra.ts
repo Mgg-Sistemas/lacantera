@@ -18,8 +18,21 @@ import { rpc, desenvolver } from '@/lib/api/rpc'
 
 const BUCKET = 'facturas-proveedor'
 
-export type TipoDePapel = 'COMPROBANTE_PAGO' | 'NOTA_ENTREGA' | 'FACTURA' | 'OTRO'
+export type TipoDePapel =
+  | 'COMPROBANTE_PAGO'
+  | 'NOTA_ENTREGA'
+  | 'FACTURA'
+  | 'AUTORIZACION'
+  | 'OTRO'
 
+/**
+ * Los que se pueden elegir al subir un papel a mano.
+ *
+ * NO ESTÁ `AUTORIZACION`, Y NO ES UN OLVIDO. Ese papel no se sube desde aquí:
+ * se adjunta en el momento de aprobar la compra, por una puerta propia
+ * (`respaldar_autorizacion`) que pide poder aprobar en vez del rol de compras.
+ * Ofrecerlo en esta lista sería ofrecer algo que la base va a rechazar.
+ */
 export const TIPOS_DE_PAPEL: Array<{ valor: TipoDePapel; etiqueta: string; dice: string }> = [
   {
     valor: 'COMPROBANTE_PAGO',
@@ -38,6 +51,21 @@ export const TIPOS_DE_PAPEL: Array<{ valor: TipoDePapel; etiqueta: string; dice:
   },
   { valor: 'OTRO', etiqueta: 'Otro papel', dice: 'Cualquier otra cosa que convenga guardar.' },
 ]
+
+/**
+ * Cómo se llama cada tipo, incluidos los que no se eligen a mano.
+ *
+ * La lista de arriba dice qué se PUEDE subir; esta dice cómo se LLAMA lo que ya
+ * está subido. Sin separarlas, un respaldo de autorización aparecía en la
+ * tarjeta con su código en mayúsculas, «AUTORIZACION», como si fuera un error.
+ */
+export const NOMBRE_DE_PAPEL: Record<TipoDePapel, string> = {
+  COMPROBANTE_PAGO: 'Comprobante de pago',
+  NOTA_ENTREGA: 'Nota de entrega',
+  FACTURA: 'Factura del proveedor',
+  AUTORIZACION: 'Respaldo de la autorización',
+  OTRO: 'Otro papel',
+}
 
 export interface PapelDeCompra {
   id: number
@@ -65,7 +93,7 @@ export function usePapelesDeCompra(ordenId: number | null | undefined) {
   })
 }
 
-function useAccionPapeles<A>(fn: (a: A) => Promise<unknown>) {
+function useAccionPapeles<A, R>(fn: (a: A) => Promise<R>) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: fn,
@@ -107,6 +135,44 @@ export function useAdjuntarPapel() {
       } catch (e) {
         // Si la base lo rechaza, el archivo se va con él. Un bucket que
         // acumula lo que nadie registró acaba costando dinero por basura.
+        await supabase.storage.from(BUCKET).remove([ruta])
+        throw e
+      }
+    },
+  )
+}
+
+/**
+ * El papel que certifica que el gerente dijo que sí.
+ *
+ * Lo pidió la líder: aprobar una orden no debería apoyarse solo en el rol o en
+ * el permiso extendido, y quien aprueba tiene que poder acompañarlo —si quiere—
+ * de la captura de WhatsApp o el PDF donde consta la autorización.
+ *
+ * Va por `respaldar_autorizacion` y no por `adjuntar_papel_de_compra` porque
+ * aquella exige el rol de compras o almacén, y quien aprueba no lo tiene: el
+ * gerente general no está en esa lista, ni quien aprueba con un permiso
+ * extendido, que es justo el caso que este papel documenta.
+ */
+export function useRespaldarAutorizacion() {
+  return useAccionPapeles(
+    async (a: { orden_id: number; archivo: File; nota?: string | null }) => {
+      const limpio = a.archivo.name.replace(/[^\w.-]+/g, '_').slice(-80)
+      const ruta = `orden-${a.orden_id}/${Date.now()}-${limpio}`
+
+      const { error } = await supabase.storage
+        .from(BUCKET)
+        .upload(ruta, a.archivo, { contentType: a.archivo.type, upsert: false })
+      if (error) throw error
+
+      try {
+        return await rpc<number>('respaldar_autorizacion', {
+          p_orden_id: a.orden_id,
+          p_archivo_path: ruta,
+          p_archivo_nombre: a.archivo.name,
+          p_nota: a.nota ?? null,
+        })
+      } catch (e) {
         await supabase.storage.from(BUCKET).remove([ruta])
         throw e
       }
