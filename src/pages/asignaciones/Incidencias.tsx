@@ -16,6 +16,7 @@ import {
 import { useMisRoles } from '@/lib/api/catalogo'
 import { dolares, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
+import { usePeriodos } from '@/lib/api/nomina'
 
 /**
  * Lo que se perdió o se dañó y sigue sin resolverse.
@@ -162,6 +163,19 @@ function ModalSaldar({
   onCerrar: () => void
 }) {
   const saldar = useResolverIncidencia()
+
+  /*
+    Los períodos, solo para poder DECIR dónde va a caer el descuento.
+
+    La base lo elige sola —el último que admita cambios— y aquí no se elige
+    nada: se enseña. Un descuento que aparece en una quincena que nadie esperaba
+    es la forma más rápida de que un trabajador reclame, y quien cierra el caso
+    tiene que poder verlo antes de pulsar.
+  */
+  const { data: periodos } = usePeriodos()
+  const periodoDestino = (periodos ?? [])
+    .filter((p) => p.estado === 'BORRADOR' || p.estado === 'CALCULADA')
+    .sort((a, b) => b.hasta.localeCompare(a.hasta))[0]
   const [como, setComo] = useState<'DESCUENTO' | 'REPOSICION' | 'EXONERADO'>('DESCUENTO')
   const [nota, setNota] = useState('')
 
@@ -223,11 +237,27 @@ function ModalSaldar({
         />
       </div>
 
+      {/*
+        El texto de antes decía que esto NO aplicaba la deducción. Ya la aplica,
+        así que decirlo seguiría siendo una pantalla prometiendo lo contrario de
+        lo que hace la base — al revés que de costumbre, pero igual de falso.
+      */}
       {como === 'DESCUENTO' ? (
-        <p className="border-hairline text-ink/60 mt-4 rounded-[6px] border border-dashed p-3 text-sm leading-relaxed">
-          Esto marca el caso como resuelto, no aplica la deducción: el descuento se carga en las
-          novedades del período, que es donde la nómina lo calcula.
-        </p>
+        periodoDestino ? (
+          <p className="border-hairline text-ink/60 mt-4 rounded-[6px] border border-dashed p-3 text-sm leading-relaxed">
+            Al cerrar, el costo se carga como deducción en{' '}
+            <strong className="text-ink/85">{periodoDestino.numero}</strong> y se le descuenta al
+            trabajador en ese pago.
+            {periodoDestino.estado === 'CALCULADA'
+              ? ' Ese período ya está calculado: hay que volver a calcularlo para que el recibo lo recoja.'
+              : ''}
+          </p>
+        ) : (
+          <p className="border-warning/30 bg-warning-soft text-ink/75 mt-4 rounded-[6px] border p-3 text-sm leading-relaxed">
+            No hay ningún período de nómina abierto donde cargar el descuento, así que esto va a
+            fallar. Abre el período primero, o cierra el caso con reposición o exoneración.
+          </p>
+        )
       ) : null}
 
       {saldar.error ? <ErrorDeCarga error={saldar.error} className="mt-3" /> : null}

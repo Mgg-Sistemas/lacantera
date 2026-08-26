@@ -332,12 +332,21 @@ export function useResolverIncidencia() {
       como: 'DESCUENTO' | 'REPOSICION' | 'EXONERADO'
       fecha?: string | null
       nota?: string | null
+      /**
+       * En qué período de nómina se carga el descuento.
+       *
+       * Solo cuenta con `DESCUENTO`. Sin valor, la base toma el último período
+       * que siga admitiendo cambios; si no hay ninguno, se niega y lo dice en
+       * vez de dejar el caso cerrado sin descontar nada.
+       */
+      periodo_id?: number | null
     }) =>
       rpc<number>('saldar_herramienta_perdida', {
         p_id: s.id,
         p_como: s.como,
         p_fecha: s.fecha ?? null,
         p_nota: s.nota ?? null,
+        p_periodo_id: s.periodo_id ?? null,
       }),
   )
 }
