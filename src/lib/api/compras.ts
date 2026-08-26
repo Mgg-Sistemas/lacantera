@@ -602,6 +602,29 @@ export function useIndicarPago() {
 // Registrar el pago vive en tesorería (`useRegistrarPago`): quien lo hace es
 // tesorería, y el movimiento que escribe es de su libro, no del de compras.
 
+/**
+ * Cambia por dónde se paga una orden que ya está aprobada.
+ *
+ * Lo pidió la líder: se equivocaron al armar la instrucción, la cuenta no tiene
+ * fondos, el proveedor cambió la seña. Hasta ahora la única salida era devolver
+ * la instrucción a compras, que retrocede la orden entera y obliga a rehacer un
+ * paso que estaba bien.
+ *
+ * Cambia el método y los datos que lo acompañan; no el monto, no la moneda, no
+ * el estado. Y exige el motivo, que es lo único que va a leer quien pague.
+ */
+export function useCambiarMetodoDePago() {
+  return useAccion(
+    (p: { instruccion_id: number; metodo: string; datos: DatosPago; motivo: string }) =>
+      rpc('cambiar_metodo_de_pago', {
+        p_instruccion_id: p.instruccion_id,
+        p_metodo: p.metodo,
+        p_datos: p.datos,
+        p_motivo: p.motivo,
+      }),
+  )
+}
+
 export function useDevolverInstruccion() {
   return useAccion((p: { instruccion_id: number; motivo: string }) =>
     rpc('devolver_instruccion', { p_instruccion_id: p.instruccion_id, p_motivo: p.motivo }),

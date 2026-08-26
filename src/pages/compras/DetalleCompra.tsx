@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   Undo2,
   UserX,
+  Repeat,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -28,6 +29,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
+import { ModalCambiarMetodo } from './ModalCambiarMetodo'
 import { ModalRecepcion } from './ModalRecepcion'
 import { PapelesDeCompra } from './PapelesDeCompra'
 import { usePapelesDeCompra } from '@/lib/api/papelesDeCompra'
@@ -382,14 +384,19 @@ function TarjetaCotizacion({
 function TarjetaInstruccion({
   instruccion,
   puedePagar,
+  puedeCambiarMetodo,
   onPagar,
   onDevolver,
+  onCambiarMetodo,
   onComprobante,
 }: {
   instruccion: InstruccionPago
   puedePagar: boolean
+  /** Corregir por dónde se paga sin retroceder la orden. */
+  puedeCambiarMetodo: boolean
   onPagar: () => void
   onDevolver: () => void
+  onCambiarMetodo: () => void
   /** Solo cuando ya está pagada: antes no hay nada que comprobar. */
   onComprobante: () => void
 }) {
@@ -509,14 +516,31 @@ function TarjetaInstruccion({
         </div>
       ) : null}
 
-      {puedePagar && i.estado === 'POR_PAGAR' ? (
+      {i.estado === 'POR_PAGAR' && (puedePagar || puedeCambiarMetodo) ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button size="sm" icon={<Check />} onClick={onPagar}>
-            Registrar el pago
-          </Button>
-          <Button size="sm" variant="ghost" className="text-danger" onClick={onDevolver}>
-            Devolver a compras
-          </Button>
+          {puedePagar ? (
+            <Button size="sm" icon={<Check />} onClick={onPagar}>
+              Registrar el pago
+            </Button>
+          ) : null}
+          {/*
+            Cambiar el método va ANTES de devolver a compras.
+
+            Son las dos salidas cuando el pago no se puede hacer como está, y la
+            de aquí es la barata: la orden no retrocede, sigue aprobada y sigue
+            en la cola. Devolverla rehace un paso que estaba bien, así que se
+            deja de última y sin destacar.
+          */}
+          {puedeCambiarMetodo ? (
+            <Button size="sm" variant="outline" icon={<Repeat />} onClick={onCambiarMetodo}>
+              Cambiar el método
+            </Button>
+          ) : null}
+          {puedePagar ? (
+            <Button size="sm" variant="ghost" className="text-danger" onClick={onDevolver}>
+              Devolver a compras
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -629,6 +653,7 @@ export function DetalleCompra() {
     | { tipo: 'resolver' }
     | { tipo: 'registrar-pago'; instruccion: InstruccionPago }
     | { tipo: 'devolver-instruccion'; instruccion: InstruccionPago }
+    | { tipo: 'cambiar-metodo'; instruccion: InstruccionPago }
   >(null)
 
   const [resolucion, setResolucion] = useState('REEMBOLSADO')
@@ -844,6 +869,7 @@ export function DetalleCompra() {
   */
   const puedeAprobar = alcanza('COMPRAS.APROBAR_COMPRA')
   const autorizaAprobar = misAutorizaciones.de('COMPRAS.APROBAR_COMPRA')
+  const puedeCambiarMetodo = alcanza('COMPRAS.CAMBIAR_METODO_PAGO')
 
   return (
     <>
@@ -1133,8 +1159,10 @@ export function DetalleCompra() {
                       key={i.id}
                       instruccion={i}
                       puedePagar={puedeCompras}
+                      puedeCambiarMetodo={puedeCambiarMetodo}
                       onPagar={() => setModal({ tipo: 'registrar-pago', instruccion: i })}
                       onDevolver={() => setModal({ tipo: 'devolver-instruccion', instruccion: i })}
+                      onCambiarMetodo={() => setModal({ tipo: 'cambiar-metodo', instruccion: i })}
                       onComprobante={() => void imprimirComprobante(i)}
                     />
                   ))}
@@ -1638,6 +1666,16 @@ export function DetalleCompra() {
           }
         }}
       />
+
+      {/* Se monta solo cuando hay una instruccion elegida: el modal arranca sus
+          campos con los datos de esa, y sin ella no tendria de que partir. */}
+      {modal?.tipo === 'cambiar-metodo' ? (
+        <ModalCambiarMetodo
+          abierto
+          onCerrar={() => setModal(null)}
+          instruccion={modal.instruccion}
+        />
+      ) : null}
 
       {modal?.tipo === 'registrar-pago' ? (
         <ModalRegistrarPago
