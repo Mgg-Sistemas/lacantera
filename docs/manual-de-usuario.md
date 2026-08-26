@@ -647,7 +647,7 @@ Es la tarjeta que dice qué está detenido. Su subtítulo es **Nada detenido aho
 
 Si no hay nada, se ve un recuadro punteado con el texto **Ninguna compra atrasada, ningún pago esperando y ningún artículo bajo el mínimo.**
 
-Si hay algo, aparece una lista de recuadros, y cada uno lleva a la pantalla donde se resuelve. Estos son los seis avisos que pueden salir:
+Si hay algo, aparece una lista de recuadros, y cada uno lleva a la pantalla donde se resuelve. Estos son los cinco avisos que pueden salir:
 
 | Color | Lo que ves | Por qué importa | Adónde lleva |
 | --- | --- | --- | --- |
@@ -656,11 +656,10 @@ Si hay algo, aparece una lista de recuadros, y cada uno lleva a la pantalla dond
 | Naranja | Cuántos días lleva **un pago autorizado sin salir** | **El proveedor no reserva el material hasta ver el pago, y la cotización tiene fecha de vencimiento.** Aparece a partir de los tres días | **Pagos por hacer** |
 | Naranja | Cuántas **compras esperan al gerente** | **Hasta que se apruebe no hay orden, y sin orden el proveedor no despacha.** | **Compras** |
 | Naranja | Cuántos **artículos están bajo el mínimo** | **Reponer antes de que pare una máquina cuesta menos que pararla.** | **Existencias** |
-| Azul | Cuántas **cuentas están sin saldo de apertura** | **Mientras no se registre lo que había, esa cuenta figura en cero y no deja pagar desde ella.** | **Cuentas** de tesorería |
 
 **Los avisos también se filtran por tu permiso.** Si el aviso lleva a un módulo que no puedes abrir, no se te muestra: avisarte de algo que no puedes ir a resolver solo sirve para inquietarte. Consecuencia práctica: **el panel de cada persona es distinto**, y que tú no veas un asunto no significa que no exista.
 
-**Un aviso puede llevar a una obra.** El último de la tabla, el de las cuentas sin saldo de apertura, lleva a **Bancos y cajas**, que es de Tesorería y hoy no está entregada: al pulsarlo aparece el cartel de **En construcción** en vez de la pantalla. El aviso no está equivocado —esas cuentas siguen sin saldo—, es que lo que las arregla todavía no se ofrece. Está explicado en 1.5.
+**Hubo un sexto aviso y se retiró.** Contaba cuántas cuentas estaban sin saldo de apertura y llevaba a **Bancos y cajas**. Pedía abrir un saldo que la empresa decidió no llevar —Tesorería dejó de ser un módulo justamente porque no se van a llevar bancos ni cajas, y el sistema solo refleja los movimientos—, y encima llevaba a una pantalla que está fuera del menú por lo mismo: al administrador le abría, y a todos los demás les daba el candado. Un aviso que pide arreglar algo por una puerta cerrada no es un aviso.
 
 ### 4.4 Compras en curso
 
