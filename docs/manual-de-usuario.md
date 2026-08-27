@@ -1228,21 +1228,32 @@ Hay dos puertas distintas, y conviene no confundirlas.
 
 La primera es **ver el módulo**. Depende del permiso sobre Inventario que administración le haya dado a tu usuario. Si no lo tienes, el grupo Inventario no aparece en el menú, y si escribes la dirección a mano verás una tarjeta con un candado: **Inventario no está a tu alcance**.
 
-La segunda es **poder registrar**. Los botones que escriben algo — **Registrar entrada**, **Sacar**, **Contar**, **Reversar**, **Nuevo traslado**, **Deshacer** — solo se dibujan para el rol de Almacén y para administración.
+La segunda es **poder registrar**. Los botones que escriben algo solo se dibujan para el rol de **Almacén** y para administración. Son estos:
 
-| Rol | Ve el módulo | Registra |
+| Dónde | Botones |
+| --- | --- |
+| Cabecera de **Existencias** | **Acta de conteo físico**, **Registrar entrada**, **Registrar salida**, **Mandar al taller** |
+| En cada fila | **Contar**, **Sacar**, **Al taller**, **Dar de baja** |
+| **Transferencias** | **Nuevo traslado** |
+| **Movimientos** | **Deshacer** |
+
+**El botón «Al taller» de la fila no siempre está.** Solo aparece en los artículos marcados como reparables en su ficha: un pote de aceite no se manda a arreglar. Está en 7.8.
+
+**Aquí hay un desajuste que confunde, y conviene saberlo.** Compras y la gerencia general tienen sobre Inventario el permiso más alto —**Control total**— y aun así **no ven ninguno de estos botones**, porque los botones cuelgan del **rol Almacén** y no del nivel de permiso. Si alguien con control total sobre Inventario te dice que no puede registrar, no es un error: es esto.
+
+**Las dos columnas no dicen lo mismo, y ahí está la trampa.** La primera sale de la matriz de permisos; la segunda, del rol.
+
+| Rol | Permiso sobre Inventario | ¿Ve los botones? |
 | --- | --- | --- |
-| Administrador | Sí | Sí |
-| Compras | Sí | Sí |
-| Gerencia general | Sí | Sí |
-| Almacén | Sí | Sí |
-| Recursos humanos | Sí | Sí |
-| Operaciones | Sí | No |
-| Ventas | Sí | No |
-| Solicitante | Sí | No |
-| Consulta | Sí | No |
+| Administrador | Control total | **Sí** |
+| Almacén | Escritura | **Sí** |
+| Compras | Control total | **No** |
+| Gerencia general | Control total | **No** |
+| Recursos humanos | Escritura | **No** |
+| Operaciones, Ventas, Solicitante, Consulta | Lectura | No |
+| Respaldo | Ninguno | — |
 
-**Inventario es el módulo más repartido del sistema**, y tiene sentido: casi todo el mundo necesita saber qué hay en el patio aunque no toque nada. Nueve de los diez roles lo ven.
+**Inventario es el módulo más repartido del sistema**: nueve de los diez roles lo ven. Tiene sentido — casi todo el mundo necesita saber qué hay en el patio aunque no toque nada.
 
 Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu rol es de consulta.
 
@@ -1256,7 +1267,7 @@ Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu 
 
 **Operación › Inventario › Tablero**
 
-Es la primera entrada del grupo y la pantalla por la que se empieza. No se registra nada aquí: se lee cómo está el patio y se sale hacia donde toca. Su descripción lo resume: **Cómo está el patio ahora mismo, y por dónde entra y sale el material.**
+Es la primera de las **cuatro** entradas del grupo —**Tablero**, **Existencias**, **Transferencias** y **Almacenes y talleres**— y la pantalla por la que se empieza. Las demás pantallas del módulo se reparten en pestañas dentro de esas cuatro; está en 3.1. No se registra nada aquí: se lee cómo está el patio y se sale hacia donde toca. Su descripción lo resume: **Cómo está el patio ahora mismo, y por dónde entra y sale el material.**
 
 Arriba hay cuatro tarjetas:
 
@@ -1269,11 +1280,17 @@ Arriba hay cuatro tarjetas:
 
 **Bajo el mínimo es la única tarjeta que se enciende**, con un filo ámbar arriba y el triángulo de aviso, y solo cuando hay algo que atender. Lo demás informa; esta reclama. Un artículo sin mínimo puesto no cuenta: no está bajo mínimo, está sin configurar.
 
-Debajo, el material se organiza por lo que le pasa, en tres bloques con sus atajos: **Entra material** —*Llegó una compra* y *Salió producción del turno*—, **Sale material** —*Se despachó a un cliente* y *Se consumió o se perdió*— y **Cambia de sitio** —*Cambió de almacén*—. Al final, **Consultar y configurar**, con los botones de **Existencias**, **Movimientos**, **Catálogo de artículos** y **Almacenes y patios**.
+Debajo, los atajos. **Ya no se agrupan por lo que le pasa al material sino por el orden en que hacen falta**, que es lo que sirve a quien está montando el almacén y a quien ya lo tiene andando:
+
+| Bloque | Atajos |
+| --- | --- |
+| **Poner el almacén en marcha** | Va numerado, 1 a 3: **Cargar el catálogo**, **Abrir los almacenes**, **Cargar el saldo inicial** |
+| **El día a día** | **Llegó una compra**, **Sacar o dar de baja material**, **Trasladar a otro almacén** |
+| **Revisar y cuadrar** | **Contar el almacén**; **Reponer lo que falta (3)** cuando hay artículos en el mínimo, o **Ver lo que está por debajo del mínimo** cuando no; y **Ver qué le pasó a un artículo** |
 
 **Los atajos que escriben solo se dibujan con permiso de escritura.** Enseñar una acción que va a rebotar contra un permiso es peor que no enseñarla: manda a alguien a intentarlo para que el sistema le diga que no.
 
-Y hay que avisar de una cosa, porque de otro modo desconcierta: **tres de esos cinco atajos llevan a módulos que hoy no están en el menú.** *Llegó una compra* va a Recepciones, que sí está; pero *Salió producción del turno* lleva a Explotación y *Se despachó a un cliente* lleva a Ventas, y en los dos casos lo que aparece es el cartel de **En construcción**. El atajo no está roto: es que la pantalla del otro lado todavía no se ofrece.
+**Y ya no hay ningún atajo que lleve al cartel de obra.** Los había —*Salió producción del turno* iba a Explotación y *Se despachó a un cliente* a Ventas— y se quitaron a propósito: un mapa que enseña calles cortadas hace perder el viaje. El día que esos módulos vuelvan al menú, los atajos vuelven con ellos.
 
 Al pie, para quien entra por primera vez, queda esta explicación: *"El inventario no se escribe a mano: se mueve solo cuando pasa algo. Entra al recibir una compra o al cargar el parte de turno; sale al despachar a un cliente o al consumir en el frente. Las existencias son la suma de todo eso. Por eso no hay un botón de «cargar existencias»: si un número no cuadra, se corrige con un ajuste, que queda anotado con su motivo."*
 
@@ -1320,12 +1337,16 @@ Arriba a la derecha, para el rol de Almacén, está el botón **Registrar entrad
 
 **Este botón sustituyó al de Cargar producción**, que llevaba a Explotación. Se cambió por dos razones: la primera, que Explotación hoy está detrás del cartel de obra y el botón principal de la pantalla mandaba a una puerta cerrada; la segunda, y más de fondo, que **Inventario tiene que valerse solo**. Sin esta entrada, la única forma de meter mercancía con su costo era una orden de compra, y un almacén que arranca no tiene ninguna todavía.
 
+**Entran varios artículos de una vez.** El almacén se elige una sola vez y debajo van **Renglón 1**, **Renglón 2**… con el botón **Añadir otro artículo** y un enlace **Quitar** en cada uno. Cargar el saldo inicial de un almacén con veinte artículos es una ventana, no veinte.
+
 1. Pulsa **Registrar entrada**.
-2. Elige **A qué almacén entra** y **Qué entra**. El artículo sale del catálogo entero, no de lo que ya tiene existencia: justamente lo que se está cargando todavía no la tiene.
-3. Escribe la **Cantidad que entra** y el **Costo por unidad ($)**. Debajo aparece la cuenta hecha: **Entra por $ 1.240,00**.
+2. Elige **A qué almacén entra**.
+3. En cada renglón: **Qué entra** —del catálogo entero, no de lo que ya tiene existencia—, **Cantidad**, **Costo por unidad** y **Moneda**.
 4. Si viene al caso, llena la **Referencia**: *quién lo trajo, o el número de una factura de fuera*.
 5. Escribe **De dónde vino**, que son mínimo cuatro letras.
 6. Pulsa **Registrar**.
+
+**El costo se escribe en la moneda en que se pagó, y el sistema convierte.** Si el material se pagó en bolívares, se pone en bolívares: la conversión a dólares la hace el sistema con la tasa del día, y no hay que echar la cuenta a mano. Es lo que evita el error de escribir un precio en bolívares en un campo que decía dólares.
 
 **El costo es obligatorio y es lo que distingue una entrada de un ajuste.** Sin él el almacén quedaría lleno y valorado en nada, que es exactamente el problema que arrastra la producción de cantera. Si el campo está vacío, la ayuda lo dice: **Sin costo no se puede valorar lo que hay.**
 
@@ -1333,15 +1354,44 @@ Arriba a la derecha, para el rol de Almacén, está el botón **Registrar entrad
 
 Es la salida de siempre: material que se entrega a un mecánico, gasoil que se carga a una máquina, un repuesto que se instala.
 
+**Hay dos puertas, y sirven para dos maneras de pensar.** La de la fila es para cuando sabes qué artículo vas a sacar; la de la cabecera, **Registrar salida**, es para cuando lo que tienes es una lista —«necesito estas cinco cosas»— y no quieres buscar cinco filas y sacar cinco veces.
+
 1. Busca la fila del artículo y del almacén correcto.
 2. Pulsa **Sacar**.
 3. Escribe la **Cantidad que sale**.
-4. Escribe **Para qué sale**. Son mínimo cuatro letras y el sistema no las deja en blanco.
-5. Pulsa **Registrar**.
+4. Elige **¿Por qué sale?** Son ocho motivos y salen de un catálogo, no de una lista escrita en la pantalla: **Se usó trabajando**, **Se perdió en el manejo**, **Quedó obsoleto**, **Se dañó**, **Se venció**, **No aparece**, **Se lo llevaron** y **Otro**. Cada uno trae su pista debajo.
+5. Escribe **Para qué sale**. Son mínimo cuatro letras y el sistema no las deja en blanco.
+6. Pulsa **Registrar**.
+
+**El motivo se elige además de escribirlo, y no en vez de.** El desplegable es para poder contar después —cuánto se perdió en el manejo este trimestre— y el texto es para saber qué pasó en ese caso concreto. Uno sin el otro no sirve.
 
 La salida queda **con la fecha de hoy**. Esta pantalla no permite elegir otra fecha, así que si el material salió el sábado y lo tecleas el lunes, el libro dirá lunes. Cuando eso pase, escríbelo en el motivo.
 
 El material sale valorado **al costo promedio que tenga el almacén en ese momento**, no al precio al que se compró aquel lote en particular.
+
+#### Dar de baja
+
+**No es lo mismo que sacar.** Sacar es material que se usó; dar de baja es material que **dejó de servir**. La diferencia importa porque una baja destruye valor en libros y hay que poder justificarla.
+
+Tiene su propio botón en cada fila. Pregunta tres cosas:
+
+1. La **Cantidad** que se da de baja.
+2. **¿Por qué?**, entre cinco causas: **Dañado sin reparación** *(se rompió y no compensa arreglarlo)*, **Obsoleto** *(funciona, pero ya no sirve para lo que se hace hoy)*, **Vencido** *(caducó: químicos, filtros con vida útil, consumibles)*, **Extraviado** *(no aparece y nadie sabe dónde está)* y **Robado** *(falta, y hay motivos para creer que se lo llevaron)*.
+3. **¿Y qué se hizo con eso?**, que es opcional: *"Se desechó, se vendió como chatarra, se guardó para repuestos — para que nadie lo salga a buscar después."*
+
+**Pide más explicación que una salida normal: diez caracteres frente a cuatro.** Es deliberado. Dentro de un año, esa frase es lo único que va a justificar por qué el almacén vale menos.
+
+#### Mandar al taller
+
+**Mandar algo al taller no es sacarlo, porque vuelve.** Por eso tiene su propia operación y no se registra como una salida.
+
+Hay dos puertas: **Mandar al taller** en la cabecera, y **Al taller** en la fila. **El de la fila solo aparece en los artículos marcados como reparables** en su ficha; un pote de aceite no se manda a arreglar. Ese marbete está en 7.8.
+
+La ventana **Mandar material al taller** pide: **Qué se manda**, **De dónde sale**, **A qué taller**, **Cuánto mandas**, **Qué le pasa** —*"Lo que se sabe ahora. Qué se le hizo se anota al cerrarla."*—, la **Urgencia**, **Qué hace falta**, **Sale el** y los **Días estimados**.
+
+**El taller puede rechazar el trabajo por su oficio.** La ayuda lo advierte: *"Si el taller declaró sus oficios y este no está, no lo acepta."* Los oficios de cada taller se editan en 7.5.
+
+**La vuelta se registra desde Talleres**, no desde aquí: es allí donde se ve lo que está dentro.
 
 #### Contar (conteo físico)
 
@@ -1367,13 +1417,20 @@ Consecuencia que hay que tener presente al mirar esta pantalla: la producción s
 
 ### 7.5 Talleres
 
-**Operación › Inventario › Talleres**
+**Operación › Inventario › Almacenes y talleres › Talleres**
+
+**No es una entrada del menú**: es la segunda pestaña de **Almacenes y talleres**, junto a **Almacenes y patios**.
 
 Un taller es un almacén más —los de tipo **Taller**—, pero se mira con otra pregunta. Las existencias responden *cuánto hay*; esta pantalla responde *qué tiene asignado cada taller y en qué lo está gastando*. Su descripción lo dice: **Qué tiene asignado cada taller y en qué lo está gastando. El detalle artículo por artículo vive en Existencias.**
 
-Hay una tarjeta por taller, con su nombre, su código y la etiqueta **Cerrado** si está inactivo. Dentro, dos bloques:
+Hay una tarjeta por taller, con su nombre, su código y la etiqueta **Cerrado** si está inactivo.
+
+**Arriba van los oficios**: unas etiquetas con lo que ahí se hace —soldadura, hidráulica, motores— o, si no se declaró ninguno, **Acepta cualquier trabajo**. El botón **Oficios** los edita. **No es decoración: al mandar algo al taller el sistema comprueba contra esa lista**, y si el trabajo no está entre sus oficios no lo acepta. Un taller sin oficios declarados acepta todo, que es lo razonable mientras nadie los haya escrito.
+
+Dentro, tres bloques:
 
 - **Material asignado**: cuántos artículos tiene y cuánto valen, con la etiqueta ámbar **2 bajo mínimo** si la hay. Si el taller no ha recibido nada, no se inventa un cero con aire de dato: dice **Todavía no ha recibido material. Llega por transferencia desde otro almacén o por una compra recibida aquí.**
+- **En el taller ahora**: las órdenes abiertas, con su urgencia, de dónde salió el material y cuántos días lleva dentro contra los que se estimaron. Es el bloque que se mira todos los días: lo que lleva más días de los previstos es lo que hay que ir a preguntar.
 - **Máquinas asignadas**: las que tienen ese taller como sede, cada una con su código y su semáforo de mantenimiento. Si alguna está en alarma, el rótulo añade en rojo **· 2 necesitan atención**. Si no hay ninguna, **Ninguna máquina tiene este taller como sede.** Es lo que convierte a un taller en algo distinto de un depósito.
 
 Al pie, dos botones: **Ver su inventario**, que lleva a **Existencias** con ese taller ya elegido en el filtro **Dónde**, y el de las reparaciones que ha atendido. Por eso Talleres está pegada a Existencias en el menú: se ve el total, se ve dónde está, y aquí qué pasa en cada taller.
@@ -1382,7 +1439,9 @@ Si no hay ninguno, la pantalla lo explica: **Un taller se crea como almacén, el
 
 ### 7.6 Movimientos
 
-**Operación › Inventario › Movimientos**
+**Operación › Inventario › Existencias › Movimientos**
+
+**No es una entrada del menú**: es la tercera pestaña de la cabecera de **Existencias** —**Existencias · Catálogo · Movimientos**—.
 
 Es el libro. Aquí no se registra nada nuevo: se consulta lo que pasó y, si algo se registró mal, se corrige escribiendo el movimiento contrario.
 
@@ -1390,22 +1449,30 @@ Cada línea muestra el número del movimiento — **MOV-2026-0001**, que se rein
 
 La cantidad va **en verde con un más** si entró material y **en rojo con un menos** si salió.
 
-**La pantalla muestra los 200 movimientos más recientes.** No hay paginación ni botón de ver más, y el único filtro es por almacén. Es una limitación real: en un patio con mucho tránsito, un movimiento de hace unas semanas deja de aparecer aquí aunque siga en el libro.
+**La pantalla muestra los 200 movimientos más recientes.** No hay paginación ni botón de ver más. Es una limitación real: en un patio con mucho tránsito, un movimiento de hace unas semanas deja de aparecer aquí aunque siga en el libro — y para eso están los filtros.
 
-#### Reversar un movimiento
+**Hay dos filtros: el almacén y un rango de fechas.** Conviene saber cómo filtra el segundo, porque no es obvio: **el rango se aplica sobre la fecha del movimiento** —el día en que pasó— **y no sobre el momento en que alguien lo escribió**, que es lo que sigue mandando en el orden de la lista. Si el material salió el sábado y se tecleó el lunes, el filtro lo encuentra en el sábado y la lista lo enseña en el sitio del lunes.
+
+En la cabecera hay además **Imprimir el libro**, que saca en PDF exactamente lo que se está viendo, con los filtros puestos.
+
+En las salidas, cada línea lleva un botón **Nota**, que saca la nota de salida en papel. Solo en las salidas: de una entrada no hay nada que entregarle a nadie.
+
+#### Deshacer un movimiento
+
+**El botón se llama Deshacer**, no «Reversar». Por dentro la operación sigue llamándose reverso —es lo que se lee en la nota que deja—, pero en la pantalla no aparece esa palabra.
 
 1. Busca la línea equivocada.
-2. Pulsa **Reversar**.
-3. Escribe **Por qué se reversa**.
-4. Pulsa **Reversar** en el botón rojo.
+2. Pulsa **Deshacer**.
+3. Escribe por qué.
+4. Confirma con **Deshacer** en el botón rojo.
 
 El movimiento original **se queda en el libro**. Lo que se escribe es uno nuevo, del mismo tamaño y en sentido contrario, con la nota «Reverso de MOV-2026-0007» seguida de tu explicación. Después se registra el movimiento correcto.
 
 Tres reglas que conviene saber de antemano:
 
-- **Un reverso no se reversa.** Si te equivocaste al reversar, registra el movimiento que corresponda.
-- **Un movimiento solo se reversa una vez.**
-- **No se puede reversar si el material ya no está.** Si reversar una entrada obligaría a sacar material que ya se consumió, el sistema lo impide y lo dice con nombre y cantidad. En ese caso el camino es un conteo físico.
+- **Un movimiento deshecho no se vuelve a deshacer.** Si te equivocaste al deshacer, registra el movimiento que corresponda.
+- **Un movimiento solo se deshace una vez.**
+- **No se puede deshacer si el material ya no está.** Si deshacer una entrada obligaría a sacar material que ya se consumió, el sistema lo impide y lo dice con nombre y cantidad. En ese caso el camino es un conteo físico.
 
 ### 7.7 Transferencias
 
@@ -1435,7 +1502,9 @@ El sistema comprueba las dos antes de escribir ninguna. **O se deshacen las dos,
 
 ### 7.8 Catálogo de artículos
 
-**Operación › Inventario › Catálogo de artículos**
+**Operación › Inventario › Existencias › Catálogo**
+
+**No es una entrada del menú**: es la segunda pestaña de la cabecera de **Existencias**.
 
 La lista de todo lo que la empresa pide, compra y cuenta. Un artículo mal definido se convierte más adelante en existencias que no cuadran, así que vale la pena crearlo con calma. La propia pantalla lo dice: **Lo que se pide, se compra y se cuenta. Un artículo mal definido se convierte en existencias que no cuadran.**
 
@@ -1457,6 +1526,9 @@ Pulsa **Nuevo artículo** y llena la ficha:
 | **Al entregarlo a una persona** | — | Las tres opciones están abajo. La categoría propone una y se puede cambiar |
 | **Descripción** | No | |
 | **Entra al inventario** | — | Viene marcada. Se apaga sola si la categoría es **Servicio**, y al lado aparece **(un servicio no se almacena)** |
+| **Se puede mandar al taller** | — | **(vuelve arreglado)** o **(se gasta, no se repara)**. Viene marcada sola en las herramientas y los repuestos, y se puede corregir. Se apaga si el artículo no entra al inventario |
+
+**La casilla de taller decide si el artículo ofrece el botón «Al taller» en Existencias** (7.4). Marcarla en un pote de aceite llenaría de ruido el desplegable de lo que se manda a reparar; no marcarla en una herramienta la deja sin poder mandarse.
 
 #### Qué pasa al entregarlo
 
@@ -1519,17 +1591,21 @@ Los hechos que puede contar son estos:
 | **Entró por una compra** | Una recepción de compras |
 | **Entró por producción** | Un parte de turno de Explotación |
 | **Volvió al almacén** | Material devuelto |
+| **Entró sin compra de por medio** | La entrada directa de 7.4: el saldo inicial, algo comprado por fuera |
 | **Salió para consumo** | Una salida de las de todos los días |
 | **Salió en un despacho** | Una nota de entrega de Ventas |
-| **Se dio de baja por merma** | Material perdido o inservible |
+| **Se perdió en el manejo** | Merma: se rompió, se derramó, se echó a perder moviéndolo |
+| **Se dio de baja** | Dejó de servir. La operación de 7.4, con su causa |
 | **Ajuste: sobraba** / **Ajuste: faltaba** | Un conteo físico, en cada sentido |
-| **Se transfirió a otro almacén** / **Llegó de otro almacén** | Los dos movimientos de un traslado |
-| **Se reversó un movimiento** | Una corrección |
+| **Se trasladó a otro almacén** / **Llegó de otro almacén** | Los dos movimientos de un traslado |
+| **Se deshizo un movimiento** | Una corrección |
 | **Se entregó como dotación** | Se le dio a alguien por su rol |
 | **Se asignó para una actividad** | Se le dio a alguien para una faena concreta |
 | **La devolvió** | Volvió a manos de la empresa |
 | **Se dio por perdida** / **Se reportó dañada** | En ámbar: no mueven existencia, pero cambian quién responde |
-| **Se saldó con descuento de nómina** / **La repuso** / **Se le exoneró** | Cómo se cerró una pérdida |
+| **Se saldó con descuento de nómina** / **La repuso** / **Se le exoneró** | Cómo se cerró una pérdida (18.5) |
+| **Se mandó al taller · reparación** | Con el motivo, el oficio y la urgencia detrás |
+| **Volvió del taller** | Con lo que se le hizo y, si volvió menos de lo que se mandó, **faltaron 2** |
 
 Si el artículo todavía no ha tenido movimiento, se ve **Sin movimientos todavía**. Si el identificador de la dirección no corresponde a ninguno, **No existe ese artículo.** con el enlace **Volver al catálogo**.
 
@@ -1537,7 +1613,7 @@ Si el artículo todavía no ha tenido movimiento, se ve **Sin movimientos todav�
 
 ### 7.10 Cargar artículos por planilla
 
-**Operación › Inventario › Cargar por planilla**
+**No está en el menú ni en ninguna pestaña.** Se llega por el botón **Cargar por planilla** de la cabecera del **Catálogo de artículos**, y también desde un atajo del Panel.
 
 Para dar de alta muchos artículos de una vez, o corregir los que ya están, sin teclear la ficha uno por uno. Es la pantalla que hace falta el día que se monta el catálogo, y la que sirve después para cambiarle el mínimo o el precio a cincuenta artículos de un golpe.
 
@@ -1547,11 +1623,11 @@ Son tres pasos, los tres a la vista en la misma página. A la derecha hay un pan
 
 #### 1 · Baja la plantilla
 
-**Trae las columnas en el orden que el sistema espera y dos filas de ejemplo para que se vea cómo se llena.**
+**Trae las columnas en el orden que el sistema espera, dos filas de ejemplo, y una segunda hoja que explica qué va en cada una.**
 
-Pulsa **Descargar plantilla**. Baja un archivo llamado `plantilla-articulos.csv`, y debajo del botón queda la nota que evita la pregunta de siempre: **Se abre en Excel de un doble clic. Al terminar puedes guardarla como CSV o como Excel: el sistema lee las dos.**
+Pulsa **Descargar plantilla**. Baja un archivo llamado `plantilla-articulos.xlsx`. **Es un Excel de dos hojas**: la que se llena y otra con las instrucciones de cada columna, para no tener que volver al manual mientras se rellena.
 
-Trae doce columnas, en este orden:
+Trae dieciséis columnas, en este orden:
 
 | Columna | ¿Hace falta? | Qué va |
 | --- | --- | --- |
@@ -1560,13 +1636,21 @@ Trae doce columnas, en este orden:
 | `descripcion` | No | **Detalle. Si se deja vacía en un artículo que ya existe, se respeta la que tenía.** |
 | `categoria` | **Sí** | **PRODUCTO, REPUESTO, INSUMO, COMBUSTIBLE, LUBRICANTE, EPP, HERRAMIENTA, EXPLOSIVO o SERVICIO.** |
 | `unidad` | **Sí** | **UND, M3, TON, KG, L, GAL, M, PAR, JGO, CAJA, SACO, ROLLO, HORA o SERV.** |
-| `inventariable` | No | **SI o NO. Vacío es SI. Un SERVICIO tiene que ser NO.** |
-| `modo_entrega` | No | **Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. Vacío es CONSUMIBLE.** |
-| `stock_minimo` | No | **A partir de cuánto avisa. Vacío es cero, que es no avisar.** |
+| `inventariable` | No | **SI o NO. En uno nuevo, vacío es SI; en uno que ya existe, vacío respeta lo que tenía. Un SERVICIO tiene que ser NO.** |
+| `modo_entrega` | No | **Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. En uno nuevo, vacío es CONSUMIBLE; en uno que ya existe, vacío respeta lo que tenía.** |
+| `reparable` | No | **SI o NO: si esto se puede mandar al taller y vuelve arreglado. Vacío se deduce de la categoría — un repuesto o una herramienta sí, lo demás no.** |
+| `stock_minimo` | No | **A partir de cuánto avisa. En uno nuevo, vacío es cero —que es no avisar—; en uno que ya existe, vacío respeta lo que tenía.** |
 | `densidad_ton_m3` | No | **Toneladas por metro cúbico. Solo para lo que se pesa y se mide de las dos formas.** |
 | `precio` | No | **Precio de venta. Poner precio exige permiso de escritura en Ventas.** |
 | `precio_minimo` | No | **Lo más bajo que se puede vender. Vacío es cero: sin suelo.** |
-| `moneda` | No | **La moneda del precio. Vacío es USD.** |
+| `moneda` | No | **La moneda del precio y del costo. Vacío es USD.** |
+| `almacen` | No | **Dónde está lo que hay. Se escribe el código o el nombre, como se lee en la pantalla de almacenes. Va con cantidad y costo: las tres o ninguna.** |
+| `cantidad` | No | **Cuánto hay de esto en ese almacén. Entra como carga inicial, con su movimiento y su fecha.** |
+| `costo` | No | **Cuánto vale la unidad de lo que entra. NO es el precio de venta: de este número salen el valor del inventario y lo que costará cada salida futura.** |
+
+**Las tres últimas van juntas o no va ninguna**, y son las que convierten la planilla en una forma de arrancar un almacén entero: cargan el catálogo y su existencia inicial de una vez, cada una con su movimiento y su fecha.
+
+**No confundas `costo` con `precio`.** El precio es a cuánto se vende; el costo es cuánto vale lo que entra. De este último salen el valor del inventario y lo que costará cada salida futura.
 
 Las dos filas de ejemplo se borran y se escribe encima. **Los títulos de las columnas se pueden escribir como se quiera**: «Stock mínimo», «stock_minimo» y «STOCK MINIMO» valen lo mismo. Y las columnas de más que traiga la planilla se ignoran.
 
@@ -1639,6 +1723,8 @@ Para **editar** un almacén se pulsa **en cualquier parte de su fila**. No hay b
 | **Nombre** | Sí | |
 | **Tipo** | Sí | Almacén, Patio de material, Taller, Combustible o En tránsito |
 | **Ubicación** | No | |
+| **Capacidad del tanque** | Según el tipo | Solo si el tipo es **Combustible**. En litros. Con ella el saldo deja de leerse «720 L» y pasa a **720 de 5.000** |
+| **Trabajos a la vez** | Según el tipo | Solo si el tipo es **Taller**. Sin él, el taller no sabe decir si le queda sitio |
 | **Es el almacén propuesto al recibir una compra** | — | |
 | **Activo** | — | Viene marcada |
 
@@ -1656,8 +1742,8 @@ La razón es la que hace útil al inventario: una existencia que no cuadra se co
 
 Corregir tiene dos caminos, en este orden:
 
-1. **Reversar** el movimiento equivocado y registrar el correcto. Sirve mientras el material siga estando.
-2. **Contar** y explicar la diferencia, cuando el material ya se consumió y reversar ya no es posible.
+1. **Deshacer** el movimiento equivocado y registrar el correcto. Sirve mientras el material siga estando.
+2. **Contar** y explicar la diferencia, cuando el material ya se consumió y deshacerlo ya no es posible.
 
 #### De dónde entra y por dónde sale el material
 
@@ -1673,7 +1759,7 @@ Lo que nunca ocurre es que una cantidad cambie sin que quede una línea en el li
 
 #### Nunca se queda en negativo
 
-El sistema no permite que una existencia baje de cero, y lo comprueba en los cinco sitios donde podría pasar: al sacar, al trasladar, al reversar, al despachar una venta y al anular un parte de turno.
+El sistema no permite que una existencia baje de cero, y lo comprueba en los cinco sitios donde podría pasar: al sacar, al trasladar, al deshacer un movimiento, al despachar una venta y al anular un parte de turno.
 
 El motivo es simple: una existencia negativa no es un dato, es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió.
 
@@ -1693,13 +1779,43 @@ Se ve en tres sitios: en **Existencias**, en la **ficha del artículo** y en la 
 
 Cuál de los dos comportamientos tiene cada artículo lo dice su campo **Al entregarlo a una persona**, en el catálogo (7.8).
 
+#### Los caminos que el libro conoce
+
+Además de los que van en la tabla de arriba, el libro registra cuatro movimientos más que conviene reconocer al leerlo:
+
+| Camino | Cuándo |
+| --- | --- |
+| **Entrada directa** | El botón **Registrar entrada** de 7.4: el saldo inicial, algo comprado por fuera |
+| **Devolución** | Material que vuelve al almacén |
+| **Merma** | Se perdió en el manejo: se rompió, se derramó, se echó a perder moviéndolo |
+| **Baja** | Dejó de servir, con su causa (7.4). **No es lo mismo que la merma** y por eso son dos tipos distintos |
+
+A eso se suma la salida que escribe **Asignaciones** cuando se reporta perdido o dañado un bien que estaba en manos de alguien (18.5).
+
 #### Toneladas y metros cúbicos
 
-Cada artículo tiene **una sola unidad**, la que se le puso al crearlo, y el material de cantera va en toneladas. La razón es que la tonelada es lo único que mide un instrumento auditable: la romana. El volumen de una pila siempre es una estimación.
+Cada artículo tiene **una sola unidad**, la que se le puso al crearlo. La razón de fondo no ha cambiado: la tonelada es lo único que mide un instrumento auditable, la romana, y el volumen de una pila siempre es una estimación.
 
-**El sistema no convierte entre toneladas y metros cúbicos.** No guarda ningún factor de densidad. Si un cliente habla en metros cúbicos, la conversión la hace la persona antes de teclear, con el criterio que la empresa tenga establecido.
+**Pero el sistema sí sabe convertir, si se le dice cómo.** Cada artículo tiene un campo de **densidad** —cuántas toneladas pesa un metro cúbico de ese material—, y la planilla de carga trae esa columna. Cuando está lleno, Existencias y la ficha del artículo enseñan la misma cantidad en la otra medida, en gris y precedida de **≈**, para que se lea como lo que es: una equivalencia, no una medición.
 
-### 7.13 Cuando el sistema no te deja
+**Hoy no hay ningún artículo con densidad cargada**, así que en la práctica no se ve ninguna equivalencia. Si a la empresa le sirve, es cuestión de llenar ese campo; mientras no se llene, la conversión la sigue haciendo la persona antes de teclear.
+
+**Y ojo con lo que se decide al crear el artículo**, porque la unidad no se cambia después: un material dado de alta en metros cúbicos se mueve en metros cúbicos, y la densidad solo añade la lectura equivalente. **Hoy la cantera opera en metros cúbicos** mientras tramita la licencia para vender por tonelada.
+
+### 7.13 Los papeles del inventario
+
+Del módulo salen cuatro documentos, y **los cuatro llevan la misma cabecera que el resto de los papeles del sistema** (13.2):
+
+| Papel | De dónde sale |
+| --- | --- |
+| **Nota de salida** | Se arma sola al registrar una salida y se ve en el visor antes de imprimirla. Se vuelve a sacar desde **Movimientos**, con el botón **Nota** de esa línea |
+| **Acta de conteo físico** | Desde la cabecera de **Existencias**. Trae lo que el sistema dice que hay, para salir a contar contra el papel |
+| **Libro de movimientos** | Desde la cabecera de **Movimientos**, con el botón **Imprimir el libro**: saca en PDF lo que se está viendo, con los filtros puestos |
+| **Constancia de entrega** | Desde **Asignaciones**. Es el papel que firma quien recibe (18.2) |
+
+**El acta se imprime antes de contar, no después.** Es su razón de ser: se sale al patio con lo que el sistema cree que hay y se anota al lado lo que se cuenta. Un acta impresa después del conteo no sirve para cuadrar nada.
+
+### 7.14 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -1757,7 +1873,18 @@ Una cosa más, que vale para las dos pantallas: **lo que escribes se convierte s
 
 Y las dos pantallas **se refrescan solas**. Si la garita registra un pesaje mientras tú miras la lista desde la oficina, lo verás aparecer sin recargar nada.
 
-### 8.2 Del pesaje a la salida del camión
+### 8.2 El tablero
+
+**Operación › Despachos › Tablero**
+
+Es la primera entrada del grupo y por donde se aterriza al abrir Despachos. No se registra nada aquí. Describe el módulo en una línea —*"El papeleo de la romana: se pesa el camión y se emite la guía con la que sale."*— y ofrece los dos pasos, numerados:
+
+| Paso | A dónde lleva |
+| --- | --- |
+| **I · Se pesa en la romana** | Tickets de romana |
+| **II · Se emite la guía** | Guías de movilización. *"La guía de movilización, que es con lo que el camión puede circular."* |
+
+### 8.3 Del pesaje a la salida del camión
 
 Esta es la sección que hay que leer aunque no se lea ninguna otra. El circuito son cinco pasos y va siempre en el mismo orden.
 
@@ -1773,7 +1900,7 @@ Dos avisos sobre este circuito, para que nadie los descubra a mitad de camino.
 
 **Los dos papeles son opcionales para el sistema, salvo la guía cuando hay mineral.** Se puede despachar sin haber pesado el camión, y en ese caso los pesos se teclean a mano. Lo que no se puede es sacar mineral sin guía.
 
-### 8.3 Tickets de romana
+### 8.4 Tickets de romana
 
 **Operación › Despachos › Tickets de romana**
 
@@ -1808,7 +1935,7 @@ Los tickets anulados se ven más pálidos, pero siguen en la lista.
 
 1. Pulsa **Pesar**. La ventana avisa: **El neto sale solo. Si el bruto no supera a la tara, algo se escribió al revés.**
 2. Elige el **Tipo**: **Salida — material que se va** o **Entrada — algo que llega**.
-3. Escribe la **Placa**. Es lo único que el sistema exige además de los pesos.
+3. Elige el **Vehículo**. Sale del catálogo de **Despachos › Vehículos** y trae la placa, lo que carga y el transportista; **al elegirlo, el transportista se rellena solo**. Si el camión no está en el catálogo —el que viene una vez y no vuelve— se elige **Otro — escribo la placa** y aparece el campo **Placa** para teclearla.
 4. Escribe el **Peso bruto (kg)** y la **Tara (kg)**. Debajo, el recuadro **Neto** hace la resta mientras tecleas.
 5. Completa lo que sepas: **Transportista**, **Chofer**, **Cédula del chofer**, **Material**, y el **Cliente** si es una salida o el **Proveedor** si es una entrada.
 6. Revisa la **Fecha**, que viene puesta en hoy, y escribe la **Hora** si la llevas.
@@ -1848,7 +1975,7 @@ El botón está apagado hasta que el motivo tenga al menos cuatro letras.
 
 **Un ticket que ya está en una nota de entrega no se anula desde aquí.** El sistema lo rechaza con «El ticket TCK-2026-0004 está en la nota de entrega. Anula primero la nota.» El orden es ese porque el ticket es lo que justifica el peso de esa nota: dejarlo anulado por debajo dejaría una nota de entrega con un peso que ningún pesaje respalda.
 
-### 8.4 Guías de movilización
+### 8.5 Guías de movilización
 
 **Operación › Despachos › Guías de movilización**
 
@@ -1869,7 +1996,7 @@ Si no hay ninguna, aparece la tarjeta **No hay guías cargadas**, con el texto *
 | **Guía** | El número del ministerio y, debajo, el número nuestro — **GMV-2026-0001** — y la fecha de emisión |
 | **Destino** | A dónde va el viaje y, debajo, el cliente si se le puso uno |
 | **Material** | El producto amparado y, debajo, el frente del que sale |
-| **Ampara** | Las toneladas que cubre el papel |
+| **Ampara** | La cantidad que cubre el papel, con su medida: **m³** o **t** |
 | **Vigencia** | Hasta cuándo vale y, cuando ya se usó, el número de la nota de entrega |
 | **Estado** | **Vigente**, **Vence en 2 d**, **Vencida**, **Usada** o **Anulada** |
 
@@ -1883,7 +2010,7 @@ Igual que en la romana, **la pantalla muestra las 400 guías más recientes** y 
 2. Escribe el **Número de guía**, que es el del papel del ministerio.
 3. Revisa **Emitida el**, que viene en hoy, y escribe **Vence el**.
 4. Escribe el **Destino**.
-5. Elige el **Material** y escribe las **Toneladas que ampara**.
+5. Elige el **Material**, escribe la **Cantidad que ampara** y elige la **Medida**: **Metros cúbicos** o **Toneladas**. La ayuda dice el criterio: *"La que diga el papel."* **Viene puesto en metros cúbicos**, porque es en lo que opera hoy la cantera mientras tramita la licencia para vender por tonelada.
 6. Completa lo que traiga el papel: **Cliente**, **Frente de origen** u **Origen**, **Transportista**, **Placa**, **Chofer**, **Cédula del chofer** y la **Observación**.
 7. Pulsa **Guardar la guía**.
 
@@ -1895,7 +2022,8 @@ Igual que en la romana, **la pantalla muestra las 400 guías más recientes** y 
 | **Destino** | Sí | La ciudad o el sitio al que va el viaje |
 | **Cliente** | No | Empieza en **Sin cliente concreto** |
 | **Material** | Sí | Empieza en **Elige el material**. Solo trae productos de cantera |
-| **Toneladas que ampara** | Sí | Mayor que cero |
+| **Cantidad que ampara** | Sí | Mayor que cero |
+| **Medida** | Sí | **Metros cúbicos** o **Toneladas**. Empieza en metros cúbicos |
 | **Frente de origen** | No | Empieza en **Sin frente concreto** |
 | **Origen** | No | Para cuando no sale de un frente del sistema |
 | **Transportista** | No | |
@@ -1914,7 +2042,27 @@ El botón **Anular** aparece en la fila **solo mientras la guía está Vigente**
 
 Una guía que ya amparó un despacho no se anula desde aquí: el sistema responde «La guía GM-2026-0099 amparó un despacho. Anula primero la nota de entrega.» El motivo es el mismo que en el ticket: la nota quedaría diciendo que viajó amparada por un papel que el sistema da por anulado.
 
-### 8.5 Lo que conviene entender
+### 8.6 Vehículos
+
+**Operación › Despachos › Vehículos**
+
+*"La flota propia y la de los transportistas, con lo que carga cada uno. Es lo que permite saber si un despacho cabe en el camión."*
+
+Es el catálogo del que salen los desplegables **Vehículo** del ticket y de la guía. Cada ficha lleva:
+
+| Campo | Detalle |
+| --- | --- |
+| **Placa** | Con la que se le identifica en todo el sistema |
+| **Tipo** | Volteo, chuto, gandola… |
+| **Descripción** | Lo que ayude a reconocerlo |
+| **Metros cúbicos** y **Toneladas** | Lo que carga. Es el dato que responde si un despacho cabe |
+| **Ficha en Maquinaria** | Si el camión es de la empresa, se ata a su ficha de Maquinaria |
+| **Transportista** | Si es de un tercero. Es lo que se rellena solo en el ticket al elegir el vehículo |
+| **Nota** | |
+
+**Un camión es propio o es de un transportista, no las dos cosas.** Los de la empresa se atan a Maquinaria para que su mantenimiento y su horómetro vivan en un solo sitio; los de fuera llevan el nombre de quien los pone.
+
+### 8.7 Lo que conviene entender
 
 #### La romana pesa todo, no solo lo que se vende
 
@@ -1976,7 +2124,7 @@ Cada pesaje lleva su correlativo, **TCK-2026-0001**, y cada guía lleva dos núm
 
 **Nada se borra.** Un pesaje equivocado se anula y se queda con su número, y una guía anulada sigue en la lista. La razón es la misma que en el resto del sistema: un correlativo con huecos es lo primero que se pregunta en una revisión, y en la garita un número que falta es un camión del que nadie sabe dar cuenta.
 
-### 8.6 Cuando el sistema no te deja
+### 8.8 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -1990,7 +2138,7 @@ Cada pesaje lleva su correlativo, **TCK-2026-0001**, y cada guía lleva dos núm
 | «La guía necesita su número, que es el que lleva el papel del ministerio.» | El número quedó vacío | Cópialo del papel |
 | «La guía necesita el destino: una guía ampara un viaje a un sitio.» | El destino quedó vacío | Escribe a dónde va el camión |
 | «La guía no puede vencer antes de emitirse.» | **Vence el** quedó antes de **Emitida el** | Revisa las dos fechas del papel |
-| «La guía tiene que amparar un tonelaje mayor que cero.» | Las toneladas quedaron vacías o en cero | Escribe las toneladas que dice el papel |
+| «La guía tiene que amparar un tonelaje mayor que cero.» | La cantidad quedó vacía o en cero | Escribe la cantidad que dice el papel. **El mensaje habla de tonelaje aunque la guía se emita en metros cúbicos**: es un texto que quedó de antes |
 | Un mensaje largo en inglés al guardar la guía | Ese número de guía ya está cargado | Búscala en la lista con el filtro **Ver** en **Todas**. Si ya está, no hace falta cargarla otra vez |
 | «Escribe por qué se anula la guía.» | El motivo quedó vacío o muy corto | Escribe al menos cuatro letras que expliquen qué pasó |
 | «La guía GM-2026-0099 ya estaba anulada.» | Alguien se te adelantó | Recarga la lista |
@@ -4444,7 +4592,7 @@ Después de **Confirmar el pago**, no hay ninguna de las tres:
 
 - **La nómina no se anula.** El sistema responde «Esta nómina ya se pagó y no se puede anular. Corrige la diferencia en el período siguiente.»
 - **La nómina no se recalcula.** El sistema responde «El período está en "PAGADA" y ya no se recalcula. Anúlalo si hay que rehacerlo.» — y anularla tampoco deja.
-- **La salida de dinero no se reversa.** En el libro de tesorería, un movimiento equivocado normalmente se corrige con un reverso, que es otra línea en sentido contrario. El pago de una nómina no admite ni siquiera eso: el botón de reversar no se ofrece para esas líneas, y si se intenta, el sistema responde «Este movimiento es el pago de una nómina. Reversarlo dejaría los recibos diciendo que se cobró y el banco que no salió nada.»
+- **La salida de dinero no se reversa.** En el libro de tesorería, un movimiento equivocado normalmente se corrige con un reverso, que es otra línea en sentido contrario. El pago de una nómina no admite ni siquiera eso: el botón de deshacer no se ofrece para esas líneas, y si se intenta, el sistema responde «Este movimiento es el pago de una nómina. Reversarlo dejaría los recibos diciendo que se cobró y el banco que no salió nada.»
 
 La razón es esa misma frase. Si se devolviera el dinero a la cuenta, el período seguiría diciendo «pagada» y los recibos seguirían diciendo que la gente cobró. El sistema quedaría contando dos historias distintas, y esa contradicción no se descubre hasta el cierre, cuando ya nadie recuerda qué pasó.
 
@@ -4898,21 +5046,23 @@ El equivalente en gris se calcula **con la tasa congelada del día del movimient
 
 Si todavía no hay nada: **Todavía no hay movimientos**, con el texto **El libro se llena solo: cada pago, ingreso o traslado escribe su línea.**
 
-#### Reversar una línea
+#### Deshacer una línea
+
+**El botón se llama Deshacer**, igual que en el libro de inventario. Por dentro la operación sigue siendo un reverso —es lo que dice la nota que deja— pero esa palabra no aparece en la pantalla.
 
 1. Busca la línea equivocada.
-2. Pulsa **Reversar**. Se abre la ventana con el número del movimiento en el título y el texto **Se escribe el movimiento contrario. El equivocado se queda a la vista: así se entiende qué pasó.**
+2. Pulsa **Deshacer**. Se abre la ventana **Deshacer TES-000123** y el texto **Se escribe el movimiento contrario. El equivocado se queda a la vista: así se entiende qué pasó.**
 3. Arriba verás un recuadro fijo, que no se puede tocar, con el concepto y el importe de lo que vas a anular.
 4. Escribe **Por qué se reversa**. Mínimo diez letras. Ayuda: **Queda escrito en el movimiento nuevo.**
-5. Pulsa **Reversar** en el botón rojo.
+5. Confirma con **Deshacer** en el botón rojo.
 
 La línea original **se queda en el libro**. Lo que se escribe es una nueva, del mismo tamaño y en sentido contrario. Después, si hace falta, se registra la correcta.
 
-**El botón Reversar no aparece en cuatro casos**, y cada uno tiene su motivo:
+**El botón Deshacer no aparece en cuatro casos**, y cada uno tiene su motivo:
 
-- **La línea ya es un reverso de otra.** Un reverso no se reversa: si la corrección estuvo mal, se registra el movimiento que corresponda.
-- **La línea es el pago de una compra.** Reversarla a solas dejaría la compra marcada como pagada y el dinero de vuelta en la cuenta. Se devuelve la instrucción de pago desde la compra.
-- **La línea es una de las dos mitades de un traslado.** Reversar solo esa devolvería el dinero al origen dejándolo también en el destino. Se deshace con un traslado en sentido contrario.
+- **La línea ya deshace otra.** Lo que ya se deshizo no se vuelve a deshacer: si la corrección estuvo mal, se registra el movimiento que corresponda.
+- **La línea es el pago de una compra.** Deshacerla a solas dejaría la compra marcada como pagada y el dinero de vuelta en la cuenta. Se devuelve la instrucción de pago desde la compra.
+- **La línea es una de las dos mitades de un traslado.** Deshacer solo esa devolvería el dinero al origen dejándolo también en el destino. Se deshace con un traslado en sentido contrario.
 - **La línea es el pago de una nómina.**
 
 Y a esos se suma el de siempre: sin el rol **Compras**, el botón tampoco se dibuja. No es el rol de Tesorería, que ya no existe.
