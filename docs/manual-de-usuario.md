@@ -1627,7 +1627,7 @@ Son tres pasos, los tres a la vista en la misma página. A la derecha hay un pan
 
 Pulsa **Descargar plantilla**. Baja un archivo llamado `plantilla-articulos.xlsx`. **Es un Excel de dos hojas**: la que se llena y otra con las instrucciones de cada columna, para no tener que volver al manual mientras se rellena.
 
-Trae doce columnas, en este orden:
+Trae dieciséis columnas, en este orden:
 
 | Columna | ¿Hace falta? | Qué va |
 | --- | --- | --- |
@@ -1636,13 +1636,21 @@ Trae doce columnas, en este orden:
 | `descripcion` | No | **Detalle. Si se deja vacía en un artículo que ya existe, se respeta la que tenía.** |
 | `categoria` | **Sí** | **PRODUCTO, REPUESTO, INSUMO, COMBUSTIBLE, LUBRICANTE, EPP, HERRAMIENTA, EXPLOSIVO o SERVICIO.** |
 | `unidad` | **Sí** | **UND, M3, TON, KG, L, GAL, M, PAR, JGO, CAJA, SACO, ROLLO, HORA o SERV.** |
-| `inventariable` | No | **SI o NO. Vacío es SI. Un SERVICIO tiene que ser NO.** |
-| `modo_entrega` | No | **Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. Vacío es CONSUMIBLE.** |
-| `stock_minimo` | No | **A partir de cuánto avisa. Vacío es cero, que es no avisar.** |
+| `inventariable` | No | **SI o NO. En uno nuevo, vacío es SI; en uno que ya existe, vacío respeta lo que tenía. Un SERVICIO tiene que ser NO.** |
+| `modo_entrega` | No | **Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. En uno nuevo, vacío es CONSUMIBLE; en uno que ya existe, vacío respeta lo que tenía.** |
+| `reparable` | No | **SI o NO: si esto se puede mandar al taller y vuelve arreglado. Vacío se deduce de la categoría — un repuesto o una herramienta sí, lo demás no.** |
+| `stock_minimo` | No | **A partir de cuánto avisa. En uno nuevo, vacío es cero —que es no avisar—; en uno que ya existe, vacío respeta lo que tenía.** |
 | `densidad_ton_m3` | No | **Toneladas por metro cúbico. Solo para lo que se pesa y se mide de las dos formas.** |
 | `precio` | No | **Precio de venta. Poner precio exige permiso de escritura en Ventas.** |
 | `precio_minimo` | No | **Lo más bajo que se puede vender. Vacío es cero: sin suelo.** |
-| `moneda` | No | **La moneda del precio. Vacío es USD.** |
+| `moneda` | No | **La moneda del precio y del costo. Vacío es USD.** |
+| `almacen` | No | **Dónde está lo que hay. Se escribe el código o el nombre, como se lee en la pantalla de almacenes. Va con cantidad y costo: las tres o ninguna.** |
+| `cantidad` | No | **Cuánto hay de esto en ese almacén. Entra como carga inicial, con su movimiento y su fecha.** |
+| `costo` | No | **Cuánto vale la unidad de lo que entra. NO es el precio de venta: de este número salen el valor del inventario y lo que costará cada salida futura.** |
+
+**Las tres últimas van juntas o no va ninguna**, y son las que convierten la planilla en una forma de arrancar un almacén entero: cargan el catálogo y su existencia inicial de una vez, cada una con su movimiento y su fecha.
+
+**No confundas `costo` con `precio`.** El precio es a cuánto se vende; el costo es cuánto vale lo que entra. De este último salen el valor del inventario y lo que costará cada salida futura.
 
 Las dos filas de ejemplo se borran y se escribe encima. **Los títulos de las columnas se pueden escribir como se quiera**: «Stock mínimo», «stock_minimo» y «STOCK MINIMO» valen lo mismo. Y las columnas de más que traiga la planilla se ignoran.
 
@@ -1794,7 +1802,20 @@ Cada artículo tiene **una sola unidad**, la que se le puso al crearlo. La razó
 
 **Y ojo con lo que se decide al crear el artículo**, porque la unidad no se cambia después: un material dado de alta en metros cúbicos se mueve en metros cúbicos, y la densidad solo añade la lectura equivalente. **Hoy la cantera opera en metros cúbicos** mientras tramita la licencia para vender por tonelada.
 
-### 7.13 Cuando el sistema no te deja
+### 7.13 Los papeles del inventario
+
+Del módulo salen cuatro documentos, y **los cuatro llevan la misma cabecera que el resto de los papeles del sistema** (13.2):
+
+| Papel | De dónde sale |
+| --- | --- |
+| **Nota de salida** | Se arma sola al registrar una salida y se ve en el visor antes de imprimirla. Se vuelve a sacar desde **Movimientos**, con el botón **Nota** de esa línea |
+| **Acta de conteo físico** | Desde la cabecera de **Existencias**. Trae lo que el sistema dice que hay, para salir a contar contra el papel |
+| **Libro de movimientos** | Desde la cabecera de **Movimientos**, con el botón **Imprimir el libro**: saca en PDF lo que se está viendo, con los filtros puestos |
+| **Constancia de entrega** | Desde **Asignaciones**. Es el papel que firma quien recibe (18.2) |
+
+**El acta se imprime antes de contar, no después.** Es su razón de ser: se sale al patio con lo que el sistema cree que hay y se anota al lado lo que se cuenta. Un acta impresa después del conteo no sirve para cuadrar nada.
+
+### 7.14 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
