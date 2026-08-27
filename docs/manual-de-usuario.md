@@ -2532,7 +2532,7 @@ No hay que confundir esto con el IVA que retiene un cliente cuando la empresa le
 
 Se llega desde la ficha de una compra confirmada, con el botón **Cargar cotización**. Solo lo ve el rol Compras.
 
-Es donde se carga el precio que mandó cada proveedor, **tal como lo mandó**, para poder compararlos. La descripción del diálogo avisa de la regla principal: **Se carga tal como la mandó el proveedor. Cargar otra del mismo proveedor sustituye a esta.**
+Es donde se carga el precio que mandó cada proveedor, **tal como lo mandó**, para poder compararlos. La descripción del diálogo avisa de la regla principal: **Se carga tal como la mandó el proveedor. Cargar otra del mismo proveedor sustituye a esta.** Si lo que hace falta es cambiarle algo a una que ya está cargada, **no se vuelve a cargar: se corrige** — ver más abajo.
 
 Antes de nada, el diálogo mira la tasa del BCV. Si la hay, avisa con qué tasa y de qué fecha se va a congelar la cotización, y dice si viene arrastrada de un día anterior. Si no la hay, aparece **No hay tasa del BCV registrada. Sin ella no se puede valorar la cotización.** con el enlace **Registrar la tasa de hoy**. Este es el bloqueo más frecuente al empezar el día, y se resuelve en **Sistema › Tasas de cambio**.
 
@@ -2549,6 +2549,22 @@ Debajo, en **Precios por renglón**, por cada renglón del pedido: **Cantidad**,
 Al pie: **Descuento** y **Flete**, que empiezan en cero; **IVA %**, que empieza en 16; **Entrega en (días)**; **Condición de pago**; **Validez (días)**, que empieza en 15; y **Observación**. Después, **Guardar cotización**.
 
 El recuadro de totales que se ve mientras escribes — **Subtotal**, **Base imponible**, **IVA**, **Total** — es un adelanto. El total que queda guardado lo calcula el sistema al guardar.
+
+#### Corregir una cotización ya cargada
+
+Pasa todo el rato: la cotización está cargada y hay que ajustarle las condiciones de pago antes de proponerla —*la base se cancela en USDT y el IVA a la tasa oficial del BCV*—, o el proveedor corrige un precio.
+
+**En la tarjeta de cada cotización hay un botón Editar**, junto a **Proponer al gerente** y **Eliminar**. Abre el mismo formulario del alta, **ya lleno con lo que la cotización dice hoy**, y se cambia lo que haga falta: la observación, las condiciones, los precios, el descuento, el flete, la fecha.
+
+**Se corrige sobre la misma cotización.** Conserva su número —sigue siendo la COT-2026-0001— y su sitio en el historial del pedido, donde queda anotado que se corrigió y quién lo hizo.
+
+**El proveedor no se puede cambiar.** Sale fijo, porque cambiarlo no sería corregir esta cotización sino cargar la de otro, y para eso está **Cargar cotización**.
+
+**Si cambias la fecha, cambia la tasa.** La cotización guarda congelada la del día que lleva escrito, así que mover la fecha vuelve a pedir la tasa del BCV de ese día.
+
+> **Una cotización propuesta al gerente no se corrige.** Los botones **Editar** y **Eliminar** desaparecen mientras lo esté, y si se intenta por otro camino el sistema se niega: *«Esta cotización está propuesta al gerente. Retira la propuesta antes de corregirla, o él aprobaría unas condiciones distintas de las que se le enseñaron.»* Se retira la propuesta, se corrige y se vuelve a proponer — y las tres cosas quedan anotadas.
+
+**Tampoco se corrige una que ya generó su orden de compra**: a esas alturas sus precios están impresos en un papel que salió de la empresa.
 
 #### Cómo se calcula el total
 

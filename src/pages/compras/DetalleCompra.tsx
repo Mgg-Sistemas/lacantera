@@ -277,6 +277,7 @@ function TarjetaCotizacion({
   puedeOperar,
   ocupado,
   onProponer,
+  onEditar,
   onEliminar,
 }: {
   cotizacion: Cotizacion
@@ -287,6 +288,7 @@ function TarjetaCotizacion({
   /** Hay una petición en vuelo. El resto de la pantalla ya lo mira; esto faltaba. */
   ocupado: boolean
   onProponer: () => void
+  onEditar: () => void
   onEliminar: () => void
 }) {
   return (
@@ -363,16 +365,31 @@ function TarjetaCotizacion({
           >
             {elegida ? 'Ya propuesta' : 'Proponer al gerente'}
           </Button>
+          {/*
+            EDITAR Y ELIMINAR SE APAGAN CUANDO LA COTIZACIÓN ESTÁ PROPUESTA, y
+            es la misma razón para los dos: el gerente aprobaría unas
+            condiciones distintas de las que se le enseñaron. La base se niega
+            igual —no hace falta que la pantalla acierte para que el control
+            exista— pero enseñar un botón que va a rebotar manda a alguien a
+            intentarlo para que le digan que no.
+
+            Para corregir una propuesta se retira la propuesta primero.
+          */}
           {!elegida ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-danger"
-              disabled={ocupado}
-              onClick={onEliminar}
-            >
-              Eliminar
-            </Button>
+            <>
+              <Button size="sm" variant="ghost" disabled={ocupado} onClick={onEditar}>
+                Editar
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-danger"
+                disabled={ocupado}
+                onClick={onEliminar}
+              >
+                Eliminar
+              </Button>
+            </>
           ) : null}
         </div>
       ) : null}
@@ -646,7 +663,7 @@ export function DetalleCompra() {
 
   const [modal, setModal] = useState<
     | null
-    | { tipo: 'cotizacion' }
+    | { tipo: 'cotizacion'; corregir?: Cotizacion }
     | { tipo: 'pago' }
     | { tipo: 'recepcion' }
     | { tipo: 'cancelar-pedido' }
@@ -980,6 +997,7 @@ export function DetalleCompra() {
                     onProponer={() =>
                       void proponer.mutate({ solicitud_id: compra.id, cotizacion_id: c.id })
                     }
+                    onEditar={() => setModal({ tipo: 'cotizacion', corregir: c })}
                     onEliminar={() => void eliminarCotizacion.mutate({ id: c.id })}
                   />
                 ))}
@@ -1654,7 +1672,21 @@ export function DetalleCompra() {
 
       {/* ---------------- Modales ---------------- */}
       {modal?.tipo === 'cotizacion' ? (
-        <ModalCotizacion abierto onCerrar={() => setModal(null)} compra={compra} />
+        /*
+          La `key` obliga a rehacer el formulario al cambiar de cotización.
+
+          Sus campos se inicializan una sola vez, al montarlo, que es lo
+          correcto: si se recalcularan en cada pintado, lo que estás
+          escribiendo se borraría solo. El precio es que reutilizar la misma
+          instancia para otra cotización enseñaría los datos de la anterior.
+        */
+        <ModalCotizacion
+          key={modal.corregir?.id ?? 'nueva'}
+          abierto
+          onCerrar={() => setModal(null)}
+          compra={compra}
+          cotizacion={modal.corregir}
+        />
       ) : null}
 
       {modal?.tipo === 'pago' && orden ? (

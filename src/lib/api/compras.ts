@@ -530,6 +530,56 @@ export function useRegistrarCotizacion() {
   )
 }
 
+/**
+ * Corregir una cotización ya cargada, sobre la misma fila.
+ *
+ * No es lo mismo que volver a cargarla. `registrar_cotizacion` sustituye la del
+ * mismo proveedor borrando la fila e insertando otra, así que la nueva tiene
+ * otro `id` — y el pedido apunta a la cotización elegida por su `id`, con una
+ * clave que la vacía al borrarla. Recargar una cotización ya propuesta dejaba
+ * al gerente sin nada que aprobar, en silencio.
+ *
+ * Esto actualiza en su sitio: mismo `id`, mismo número, misma trazabilidad.
+ */
+export function useActualizarCotizacion() {
+  return useAccion(
+    (c: {
+      id: number
+      moneda: string
+      renglones: Array<{
+        solicitud_renglon_id: number
+        cantidad: number
+        precio_unitario: number
+        exento_iva?: boolean
+        observacion?: string | null
+      }>
+      numero_proveedor?: string | null
+      fecha?: string | null
+      validez_dias?: number
+      dias_entrega?: number | null
+      condicion_pago?: string
+      alicuota_iva?: number
+      descuento?: number
+      flete?: number
+      observacion?: string | null
+    }) =>
+      rpc<number>('actualizar_cotizacion', {
+        p_id: c.id,
+        p_moneda: c.moneda,
+        p_renglones: c.renglones,
+        p_numero_proveedor: c.numero_proveedor || null,
+        p_fecha: c.fecha || null,
+        p_validez_dias: c.validez_dias ?? 15,
+        p_dias_entrega: c.dias_entrega ?? null,
+        p_condicion_pago: c.condicion_pago ?? 'CONTADO',
+        p_alicuota_iva: c.alicuota_iva ?? 16,
+        p_descuento: c.descuento ?? 0,
+        p_flete: c.flete ?? 0,
+        p_observacion: c.observacion || null,
+      }),
+  )
+}
+
 export function useEliminarCotizacion() {
   return useAccion((p: { id: number }) => rpc('eliminar_cotizacion', { p_id: p.id }))
 }
