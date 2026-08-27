@@ -5955,18 +5955,16 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **En Ventas.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. Las facturas emitidas desde el sistema no admiten descuento. **La nota de crédito no se imprime**: se registra y se declara, pero el papel que se le entrega al cliente todavía se hace por fuera, y fiscalmente es un documento con número de control propio.
 
-**La factura impresa todavía no está completa ante el SENIAT.** Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención y la tasa del día. **Le faltan cuatro cosas:**
+**La factura impresa todavía no está completa ante el SENIAT**, aunque ya le falta menos. Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención, la tasa del día y —desde el 27 de agosto— la **base imponible** y el **total exento** (10.7). **Le faltan dos cosas:**
 
 | Falta | Por qué importa |
 | --- | --- |
-| **Base imponible** | El dato existe en el sistema y no llega al papel |
-| **Total exento** | Los renglones exentos ya se marcan con **(E)**, pero no se suman aparte |
 | **Desglose por alícuota** | Hoy la factura admite una sola alícuota. Una factura mixta no se puede expresar |
 | **Datos de la imprenta autorizada** | Con su número de autorización. **No existen en ninguna pantalla del sistema**: hay que crearlos primero en Datos de la empresa |
 
-Las tres primeras cambian el cálculo —hay que acordar, por ejemplo, si el flete entra en la base o no—, así que no se tocan sin decidirlo con quien lleva la contabilidad.
+Las dos se deciden con quien lleva la contabilidad: la primera cambia el cálculo y la segunda no existe todavía como dato.
 
-**En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla, donde además **hay que volver a elegir a la persona** porque no llega puesta.
+**En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla. Lo que sí se arregló es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4).
 
 **En las incidencias del personal.** Si se elige un tipo que no pide reposo —**Conflicto**, **Llegada tarde** u **Otra**— y a la vez se marca **Varios días**, el campo de los días de reposo no se dibuja y el guardado falla con un mensaje sin traducir. Mientras eso se arregla, **para varios días usa un tipo que pida reposo**, o anota la duración en el motivo.
 

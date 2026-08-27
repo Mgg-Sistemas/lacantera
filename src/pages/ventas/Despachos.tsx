@@ -188,6 +188,7 @@ export function Despachos() {
         subtotal: n.subtotal,
         descuento: n.descuento,
         flete: n.flete,
+        baseImponible: n.base_imponible,
         iva: n.iva,
         alicuotaIva: n.alicuota_iva,
         total: n.total,
