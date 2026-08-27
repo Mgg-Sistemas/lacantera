@@ -4780,26 +4780,32 @@ Tres tarjetas arriba:
 | **Registrada en nómina** | Cuántas hay activas de verdad. Debajo, **cuadra** o **3 de diferencia**, y **· 2 sin departamento escrito** si las hay |
 | **Departamentos sin sitio** | Departamentos que existen en nómina y a los que nadie colgó de la estructura |
 
-Debajo, la tarjeta **La estructura**, con el subtítulo **Cada sangría es un escalón de dependencia.** El árbol se dibuja anidado, con un riel a la izquierda en vez de cajas y líneas, porque así se lee también en el teléfono.
+Debajo va la estructura, **dibujada por bancos**: una banda horizontal por cada escalón de dependencia, como se corta un frente de cantera. Arriba el banco 1 —la gerencia—, y debajo cada nivel que cuelga.
 
-Cada renglón lleva, en este orden: el **nombre** —en negrita si es una unidad—, **quién lo ocupa** en azul si tiene titular, **el número de personas previstas entre paréntesis**, y una etiqueta de nómina.
+En el canto izquierdo de cada banda va **el número del escalón** en grande y, debajo, **cuántos puestos y cuánta gente** hay en él. Es la lectura que la lista con sangría no dejaba hacer: de un vistazo se ve cuántos escalones tiene la empresa y dónde está el grueso del personal.
 
-Esa etiqueta es lo que hay que aprender a leer, y hay una tarjeta al lado que lo explica:
+**No hay ni una línea dibujada.** Dentro de cada banda las fichas van reunidas bajo un rótulo pequeño —**de Administración**— que dice de quién cuelgan. Se lee igual que con líneas, y así la hoja crece hacia abajo y nunca hacia los lados: es lo que hace que el mismo dibujo sirva en un proyector y en un teléfono.
 
-- Verde, **4 en nómina**: la nómina tiene esa gente registrada en el departamento enlazado.
-- Ámbar, **3 ≠ 5**: la nómina no coincide con lo previsto. **No es un error del sistema: es lo que hay que cuadrar.**
-- **Sin etiqueta**: ese puesto no está enlazado a ningún departamento de nómina. Sin enlace no es cero: es que no se sabe, y pintar un cero sería mentir.
+Cada ficha lleva el **nombre** —más marcado si es una unidad, más suave si es un cargo—, **quién lo ocupa** en naranja si tiene titular, y **cuántas plazas** hay previstas.
 
-Y sobre las dos cifras, la propia pantalla avisa: **Son dos, y no tienen por qué coincidir todavía.** El número entre paréntesis es la gente **prevista**, que sale del organigrama; la etiqueta de color es la **registrada** en nómina. Mientras la nómina se termina de cargar, mandan las cifras del organigrama.
+Y solo cuando hay desajuste, en ámbar, **cuántos hay en nómina de verdad**. **El acuerdo se calla y el desajuste se dice**: marcar también los que cuadran llena la pantalla de etiquetas y esconde justo lo que hay que mirar. Una ficha sin esa marca es una ficha que cuadra —o un puesto que no está enlazado a ningún departamento, y entonces no se sabe: pintar un cero sería mentir.
+
+#### Seguir una línea de mando
+
+**Al pulsar una ficha se enciende su línea de mando entera** —lo que tiene encima hasta la gerencia y todo lo que le cuelga— y el resto del organigrama se apaga. Es señalar con el dedo en una reunión, y de paso es cómo uno se sitúa antes de tocar nada.
+
+Pulsando la misma ficha otra vez se suelta y vuelve a verse todo. Lo apagado no está escondido: sigue pulsándose, y con el tabulador se recorre igual.
 
 #### Cómo se cambia
 
-Los botones son iconos, y su nombre sale al pasar el ratón por encima:
+Al pulsar una ficha aparece debajo una barra con su nombre y lo que se puede hacer con ella:
 
-1. **+**, **Colgar un puesto de aquí**. Abre el formulario debajo del renglón, sin ventana emergente.
-2. El **lápiz**, **Editar**.
-3. Las **flechas**, **Moverlo a otra dependencia**. No se arrastra: se abre un buscador —**Mover «Mantenimiento» a**— donde se escribe el código o el nombre del sitio nuevo. Cada opción muestra debajo de quién cuelga hoy, para distinguir dos «Mantenimiento» distintos. Para dejarlo como estaba, **Dejarlo donde está**.
-4. La **papelera**, **Quitarlo**, que solo aparece si de ese puesto no cuelga nada.
+1. **Colgar un puesto**. Abre el formulario debajo, sin ventana emergente.
+2. **Editar**.
+3. **Mover**. No se arrastra —en un teléfono arrastrar es un ejercicio de puntería—: al pulsar **Mover**, **los destinos válidos se encienden con el borde punteado** y se elige uno pulsándolo. Lo que cuelga del puesto que se mueve no se ofrece, porque sería colgarlo de sí mismo. Para dejarlo como estaba, **Dejarlo donde está**.
+4. **Quitar**, que solo aparece si de ese puesto no cuelga nada. Si cuelga algo, en su sitio se lee **No se quita: tiene 3 puestos colgando**, para que se sepa por qué no está el botón.
+
+De la cabeza del organigrama no se ofrece ni **Mover** ni **Quitar**: un organigrama sin cabeza no es un organigrama.
 
 El formulario pide: **Cómo se llama**, **Quién lo ocupa** —*se deja vacío si el puesto no tiene nombre y apellido*—, **Qué es** (**Unidad** o **Cargo**), **Cuántos**, **Departamento de nómina** —*para saber cuánta gente hay de verdad aquí*, y se puede dejar **Sin enlazar**— y una **Nota** para *lo que el nombre no alcanza a decir*. Se cierra con **Añadir** o **Guardar**, y con **Cancelar**.
 
