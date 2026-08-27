@@ -60,6 +60,7 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 15 | Lo que todavía no está construido | — |
 | 16 | Preguntas frecuentes | — |
 | 17 | A quién acudir | — |
+| 18 | Asignaciones | Sí |
 
 **Maquinaria**, **Combustible** y **Asignaciones** sí se alcanzan hoy desde el menú, pero **no tienen capítulo propio todavía**: lo poco que hay escrito de ellos está repartido entre el capítulo 7 y el 11. Es el hueco más grande que tiene este manual y está anotado en 15.4. El **Organigrama** tiene apartado propio, el 11.12, y su pantalla sigue en obra.
 
@@ -5646,3 +5647,140 @@ Cuando reportes un problema a sistemas, la información que sirve es siempre la 
 3. **Qué decía exactamente el mensaje.**
 
 Una fotografía de la pantalla ahorra media hora de ida y vuelta. Si el mensaje trae un número de documento, cópialo tal cual.
+
+---
+
+## 18. Asignaciones
+
+**Va al final del documento y no entre el 7 y el 8, que es donde le tocaría por el menú.** El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlo en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones —«ver 11.9», «está en 13.2»— que hay repartidas por todo el documento.
+
+Es lo que se le entrega a una persona: el casco, las botas, el uniforme, el juego de llaves para montar una banda. Y lo que pasa después: que vuelva, que se pierda, que se rompa, o que haya que descontarlo.
+
+**Existir no es estar disponible.** Un casco prestado sigue contando como existencia —es de la empresa, nadie lo compró de nuevo— pero no se puede volver a entregar. Es la misma idea de 7.12 y aquí es donde se ve: la ficha de un artículo dice **0 disponible · 10 en manos de alguien**.
+
+**Dotación y asignación no se distinguen por si vuelve, sino por para qué se dio.**
+
+| | Qué es |
+| --- | --- |
+| **Dotación** | Lo que le toca por su cargo: casco, botas, uniforme, equipo |
+| **Asignación** | Lo que se le dio para una faena concreta y hay que recuperar |
+
+Una laptop es dotación y vuelve; unas mascarillas son dotación y se gastan; un kit de llaves para montar una banda es asignación. **Si un bien vuelve o no lo dice cada artículo en el catálogo**, en su campo **Al entregarlo a una persona** (7.8), y eso es un eje aparte.
+
+### 18.1 Quién entra y quién puede entregar
+
+Hay dos puertas y hoy dan el mismo resultado, pero salen de sitios distintos y conviene saberlo porque el día que alguien toque los permisos dejarán de coincidir.
+
+**La primera es el permiso sobre Asignaciones**, el de la matriz de 13.1:
+
+| Rol | Sobre Asignaciones |
+| --- | --- |
+| Administrador del sistema | **Total** |
+| Almacén | **Escritura** |
+| Recursos humanos | **Escritura** |
+| Gerente general, Operaciones, Consulta | **Lectura** |
+| Ventas, Solicitante, Respaldo | Ninguno |
+
+**La segunda es el rol.** Los botones que entregan y que cierran casos solo se dibujan para **Almacén**, **Recursos humanos** y **Administrador**. No sale de la matriz: está escrito en la pantalla.
+
+Hoy los dos conjuntos son el mismo, así que nadie ve un botón que luego le falle. **Si algún día administración le da escritura a otro rol y ese rol no ve los botones, no es una falla del permiso: es que la pantalla mira el rol.**
+
+### 18.2 Quién tiene qué
+
+**Operación › Asignaciones › Quién tiene qué**
+
+La pantalla lo dice: *"Quién tiene qué, desde cuándo, y qué queda por entregar. Lo que vuelve no descuenta del almacén: el bien sigue siendo de la empresa."*
+
+Dos filtros: **Buscar** —acepta el trabajador, la ficha, la cédula o el artículo— y **Sitio**.
+
+La columna del estado dice en qué quedó cada cosa:
+
+| Etiqueta | Qué significa |
+| --- | --- |
+| **Entregado** | Se gastó al usarlo. No hay nada que devolver |
+| **En su poder** | Lo tiene, y se le va a pedir de vuelta |
+| **Devuelta** | Ya volvió |
+| **Perdida** | No apareció |
+| **Dañada** | Volvió rota o dejó de servir |
+| **Repuesta** | El caso se cerró: se le descontó, la repuso o se le exoneró |
+
+Desde aquí se saca la **Constancia de entrega**, que es el papel que firma quien recibe.
+
+### 18.3 Entregar a un trabajador
+
+**No está en el menú.** Se llega por el botón de la cabecera de **Quién tiene qué**.
+
+La pantalla lo resume: *"Varias cosas de una vez. Lo que vuelve queda a su nombre; lo que se gasta sale del almacén."*
+
+1. En **A quién y de dónde**: el **Trabajador**, **De qué almacén sale** y la **Fecha**.
+2. En **Qué se lleva**, se escriben las cantidades. La ayuda lo dice: *"Deja en blanco lo que no se entrega."*
+3. La **Nota** es opcional, y su ejemplo dice para qué sirve: *"Opcional: para qué frente, quién autorizó."*
+
+Si el almacén elegido no tiene nada entregable, la pantalla lo dice en vez de enseñar una lista vacía: **En ese almacén no hay nada que entregar**.
+
+**Se entrega de varias cosas a la vez a propósito.** Un trabajador que empieza se lleva casco, botas y uniforme en el mismo acto, y hacerlo en tres pantallas es tres veces la misma ficha.
+
+### 18.4 Dotación por cargo
+
+**Operación › Asignaciones › Dotación por cargo**
+
+*"Qué le corresponde a cada puesto y cada cuánto se repone. De aquí sale la lista de a quién le toca hoy."*
+
+Se define una vez por cargo y sirve para todos los que lo tengan. La ventana **Qué le toca a este cargo** pide: **Cargo**, **Qué se le entrega**, **Cuántas**, **Se repone cada (meses)** y una **Nota**.
+
+Arriba está la tarjeta **A quién le toca ahora**, que es lo que se mira todos los días: quién debería tener algo y no lo tiene, o lo tiene vencido.
+
+**Ojo con esta trampa, que hace perder tiempo:** esa lista **solo ve a quien tenga un cargo del tabulador en su ficha**. Un trabajador con el cargo escrito a mano, sin cargo del tabulador asignado, **no aparece nunca**, por mucha dotación que le corresponda. Si echas de menos a alguien en esa lista, revisa primero su ficha en **Nómina › Personal**, no la dotación.
+
+### 18.5 Incidencias
+
+**Operación › Asignaciones › Incidencias**
+
+*"Bienes perdidos o dañados que siguen sin resolverse. Falta decidir qué pasa con quien los tenía."*
+
+**No es lo mismo que las incidencias de la ficha del trabajador.** Aquí una incidencia es *un bien perdido o dañado*; allí (11.4) es *algo que le pasó a una persona* —una enfermedad, una ausencia, un conflicto—. Comparten palabra y nada más.
+
+Al abrir un caso, la ventana lleva el artículo y el nombre, y arriba dice lo que costaba: **Costaba $ 45,50 el día que se perdió.** Hay que elegir una de tres:
+
+| Opción | Qué hace |
+| --- | --- |
+| **Se le descuenta** | *"Va como deducción en la nómina del período."* |
+| **La repuso** | *"Trajo otra. Entra al almacén por su recepción, no desde aquí."* |
+| **No se le cobra** | *"Se rompió trabajando o se decidió no cobrársela."* |
+
+La **Nota** *"queda en el registro de la asignación"*. Se cierra con **Cerrar el caso**.
+
+#### Qué pasa de verdad al elegir «Se le descuenta»
+
+Esto conviene entenderlo antes de pulsarlo, porque **sale del sueldo de una persona**.
+
+El sistema **mete una deducción de verdad en la nómina**: por el costo del bien **en dólares**, en el último período que todavía admita cambios, y con una nota que deja rastro —el número de la asignación, el artículo, la cantidad y el motivo—, que es lo que se lee en el recibo.
+
+Tres cosas que hay que saber:
+
+**No se puede descontar lo que no tiene costo.** Si la herramienta no tiene costo calculado, el sistema no deja y lo dice: *«Esa herramienta no tiene costo calculado, así que no hay cuánto descontar. Sáldala con reposición o exoneración.»*
+
+**Si no hay ningún período abierto, tampoco.** El mensaje es: *«No hay ningún período de nómina que admita cambios donde cargar el descuento. Abre el período, o sáldala con reposición o exoneración.»*
+
+**Si el período ya está calculado, hay que volver a calcularlo.** La deducción entra igual, pero el recibo no la recoge hasta que se recalcule. El sistema no lo avisa: es cosa de quien lleva la nómina acordarse.
+
+### 18.6 El módulo avisa solo
+
+Asignaciones es de los pocos sitios del sistema que trabajan sin que nadie abra la pantalla. Hay dos avisos automáticos:
+
+| Cuándo | Qué avisa | A quién |
+| --- | --- | --- |
+| **Todos los días** | Cada asignación cuya fecha de vuelta ya pasó y sigue sin devolver, con el número, la persona y los días de retraso | Almacén y administración |
+| **Los lunes** | A quién le toca dotación y no la tiene | Almacén y administración |
+
+**El aviso de retraso sale una sola vez por asignación**, no todos los días hasta que vuelva. Es deliberado: un aviso que se repite se deja de leer.
+
+### 18.7 Cuando el sistema no te deja
+
+| Lo que ves | Qué significa | Qué hacer |
+| --- | --- | --- |
+| «Esa herramienta no tiene costo calculado, así que no hay cuánto descontar. Sáldala con reposición o exoneración.» | El artículo no tiene costo | Ciérralo como reposición o exoneración |
+| «No hay ningún período de nómina que admita cambios donde cargar el descuento. Abre el período, o sáldala con reposición o exoneración.» | Ningún período en borrador ni calculado | Abre el período en Nómina, o cierra el caso de otra forma |
+| «Esa asignación está devuelta: solo se cierra lo que tuvo una incidencia.» | El bien ya volvió | No hay nada que cerrar |
+| **En ese almacén no hay nada que entregar** | El almacén elegido está sin existencias entregables | Elige otro almacén, o carga la entrada primero |
+| No ves el botón de entregar | Tu rol no es Almacén, Recursos humanos ni Administrador | Pídeselo a administración |
