@@ -1228,7 +1228,18 @@ Hay dos puertas distintas, y conviene no confundirlas.
 
 La primera es **ver el módulo**. Depende del permiso sobre Inventario que administración le haya dado a tu usuario. Si no lo tienes, el grupo Inventario no aparece en el menú, y si escribes la dirección a mano verás una tarjeta con un candado: **Inventario no está a tu alcance**.
 
-La segunda es **poder registrar**. Los botones que escriben algo — **Registrar entrada**, **Sacar**, **Contar**, **Reversar**, **Nuevo traslado**, **Deshacer** — solo se dibujan para el rol de Almacén y para administración.
+La segunda es **poder registrar**. Los botones que escriben algo solo se dibujan para el rol de **Almacén** y para administración. Son estos:
+
+| Dónde | Botones |
+| --- | --- |
+| Cabecera de **Existencias** | **Acta de conteo físico**, **Registrar entrada**, **Registrar salida**, **Mandar al taller** |
+| En cada fila | **Contar**, **Sacar**, **Al taller**, **Dar de baja** |
+| **Transferencias** | **Nuevo traslado** |
+| **Movimientos** | **Deshacer** |
+
+**El botón «Al taller» de la fila no siempre está.** Solo aparece en los artículos marcados como reparables en su ficha: un pote de aceite no se manda a arreglar. Está en 7.8.
+
+**Aquí hay un desajuste que confunde, y conviene saberlo.** Compras y la gerencia general tienen sobre Inventario el permiso más alto —**Control total**— y aun así **no ven ninguno de estos botones**, porque los botones cuelgan del **rol Almacén** y no del nivel de permiso. Si alguien con control total sobre Inventario te dice que no puede registrar, no es un error: es esto.
 
 | Rol | Ve el módulo | Registra |
 | --- | --- | --- |
@@ -1256,7 +1267,7 @@ Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu 
 
 **Operación › Inventario › Tablero**
 
-Es la primera entrada del grupo y la pantalla por la que se empieza. No se registra nada aquí: se lee cómo está el patio y se sale hacia donde toca. Su descripción lo resume: **Cómo está el patio ahora mismo, y por dónde entra y sale el material.**
+Es la primera de las **cuatro** entradas del grupo —**Tablero**, **Existencias**, **Transferencias** y **Almacenes y talleres**— y la pantalla por la que se empieza. Las demás pantallas del módulo se reparten en pestañas dentro de esas cuatro; está en 3.1. No se registra nada aquí: se lee cómo está el patio y se sale hacia donde toca. Su descripción lo resume: **Cómo está el patio ahora mismo, y por dónde entra y sale el material.**
 
 Arriba hay cuatro tarjetas:
 
@@ -1269,11 +1280,17 @@ Arriba hay cuatro tarjetas:
 
 **Bajo el mínimo es la única tarjeta que se enciende**, con un filo ámbar arriba y el triángulo de aviso, y solo cuando hay algo que atender. Lo demás informa; esta reclama. Un artículo sin mínimo puesto no cuenta: no está bajo mínimo, está sin configurar.
 
-Debajo, el material se organiza por lo que le pasa, en tres bloques con sus atajos: **Entra material** —*Llegó una compra* y *Salió producción del turno*—, **Sale material** —*Se despachó a un cliente* y *Se consumió o se perdió*— y **Cambia de sitio** —*Cambió de almacén*—. Al final, **Consultar y configurar**, con los botones de **Existencias**, **Movimientos**, **Catálogo de artículos** y **Almacenes y patios**.
+Debajo, los atajos. **Ya no se agrupan por lo que le pasa al material sino por el orden en que hacen falta**, que es lo que sirve a quien está montando el almacén y a quien ya lo tiene andando:
+
+| Bloque | Atajos |
+| --- | --- |
+| **Poner el almacén en marcha** | Va numerado, 1 a 3: **Cargar el catálogo**, **Abrir los almacenes**, **Cargar el saldo inicial** |
+| **El día a día** | **Llegó una compra**, **Sacar o dar de baja material**, **Trasladar a otro almacén** |
+| **Revisar y cuadrar** | **Contar el almacén**; **Reponer lo que falta (3)** cuando hay artículos en el mínimo, o **Ver lo que está por debajo del mínimo** cuando no; y **Ver qué le pasó a un artículo** |
 
 **Los atajos que escriben solo se dibujan con permiso de escritura.** Enseñar una acción que va a rebotar contra un permiso es peor que no enseñarla: manda a alguien a intentarlo para que el sistema le diga que no.
 
-Y hay que avisar de una cosa, porque de otro modo desconcierta: **tres de esos cinco atajos llevan a módulos que hoy no están en el menú.** *Llegó una compra* va a Recepciones, que sí está; pero *Salió producción del turno* lleva a Explotación y *Se despachó a un cliente* lleva a Ventas, y en los dos casos lo que aparece es el cartel de **En construcción**. El atajo no está roto: es que la pantalla del otro lado todavía no se ofrece.
+**Y ya no hay ningún atajo que lleve al cartel de obra.** Los había —*Salió producción del turno* iba a Explotación y *Se despachó a un cliente* a Ventas— y se quitaron a propósito: un mapa que enseña calles cortadas hace perder el viaje. El día que esos módulos vuelvan al menú, los atajos vuelven con ellos.
 
 Al pie, para quien entra por primera vez, queda esta explicación: *"El inventario no se escribe a mano: se mueve solo cuando pasa algo. Entra al recibir una compra o al cargar el parte de turno; sale al despachar a un cliente o al consumir en el frente. Las existencias son la suma de todo eso. Por eso no hay un botón de «cargar existencias»: si un número no cuadra, se corrige con un ajuste, que queda anotado con su motivo."*
 
@@ -1320,12 +1337,16 @@ Arriba a la derecha, para el rol de Almacén, está el botón **Registrar entrad
 
 **Este botón sustituyó al de Cargar producción**, que llevaba a Explotación. Se cambió por dos razones: la primera, que Explotación hoy está detrás del cartel de obra y el botón principal de la pantalla mandaba a una puerta cerrada; la segunda, y más de fondo, que **Inventario tiene que valerse solo**. Sin esta entrada, la única forma de meter mercancía con su costo era una orden de compra, y un almacén que arranca no tiene ninguna todavía.
 
+**Entran varios artículos de una vez.** El almacén se elige una sola vez y debajo van **Renglón 1**, **Renglón 2**… con el botón **Añadir otro artículo** y un enlace **Quitar** en cada uno. Cargar el saldo inicial de un almacén con veinte artículos es una ventana, no veinte.
+
 1. Pulsa **Registrar entrada**.
-2. Elige **A qué almacén entra** y **Qué entra**. El artículo sale del catálogo entero, no de lo que ya tiene existencia: justamente lo que se está cargando todavía no la tiene.
-3. Escribe la **Cantidad que entra** y el **Costo por unidad ($)**. Debajo aparece la cuenta hecha: **Entra por $ 1.240,00**.
+2. Elige **A qué almacén entra**.
+3. En cada renglón: **Qué entra** —del catálogo entero, no de lo que ya tiene existencia—, **Cantidad**, **Costo por unidad** y **Moneda**.
 4. Si viene al caso, llena la **Referencia**: *quién lo trajo, o el número de una factura de fuera*.
 5. Escribe **De dónde vino**, que son mínimo cuatro letras.
 6. Pulsa **Registrar**.
+
+**El costo se escribe en la moneda en que se pagó, y el sistema convierte.** Si el material se pagó en bolívares, se pone en bolívares: la conversión a dólares la hace el sistema con la tasa del día, y no hay que echar la cuenta a mano. Es lo que evita el error de escribir un precio en bolívares en un campo que decía dólares.
 
 **El costo es obligatorio y es lo que distingue una entrada de un ajuste.** Sin él el almacén quedaría lleno y valorado en nada, que es exactamente el problema que arrastra la producción de cantera. Si el campo está vacío, la ayuda lo dice: **Sin costo no se puede valorar lo que hay.**
 
@@ -1333,15 +1354,44 @@ Arriba a la derecha, para el rol de Almacén, está el botón **Registrar entrad
 
 Es la salida de siempre: material que se entrega a un mecánico, gasoil que se carga a una máquina, un repuesto que se instala.
 
+**Hay dos puertas, y sirven para dos maneras de pensar.** La de la fila es para cuando sabes qué artículo vas a sacar; la de la cabecera, **Registrar salida**, es para cuando lo que tienes es una lista —«necesito estas cinco cosas»— y no quieres buscar cinco filas y sacar cinco veces.
+
 1. Busca la fila del artículo y del almacén correcto.
 2. Pulsa **Sacar**.
 3. Escribe la **Cantidad que sale**.
-4. Escribe **Para qué sale**. Son mínimo cuatro letras y el sistema no las deja en blanco.
-5. Pulsa **Registrar**.
+4. Elige **¿Por qué sale?** Son ocho motivos y salen de un catálogo, no de una lista escrita en la pantalla: **Se usó trabajando**, **Se perdió en el manejo**, **Quedó obsoleto**, **Se dañó**, **Se venció**, **No aparece**, **Se lo llevaron** y **Otro**. Cada uno trae su pista debajo.
+5. Escribe **Para qué sale**. Son mínimo cuatro letras y el sistema no las deja en blanco.
+6. Pulsa **Registrar**.
+
+**El motivo se elige además de escribirlo, y no en vez de.** El desplegable es para poder contar después —cuánto se perdió en el manejo este trimestre— y el texto es para saber qué pasó en ese caso concreto. Uno sin el otro no sirve.
 
 La salida queda **con la fecha de hoy**. Esta pantalla no permite elegir otra fecha, así que si el material salió el sábado y lo tecleas el lunes, el libro dirá lunes. Cuando eso pase, escríbelo en el motivo.
 
 El material sale valorado **al costo promedio que tenga el almacén en ese momento**, no al precio al que se compró aquel lote en particular.
+
+#### Dar de baja
+
+**No es lo mismo que sacar.** Sacar es material que se usó; dar de baja es material que **dejó de servir**. La diferencia importa porque una baja destruye valor en libros y hay que poder justificarla.
+
+Tiene su propio botón en cada fila. Pregunta tres cosas:
+
+1. La **Cantidad** que se da de baja.
+2. **¿Por qué?**, entre cinco causas: **Dañado sin reparación** *(se rompió y no compensa arreglarlo)*, **Obsoleto** *(funciona, pero ya no sirve para lo que se hace hoy)*, **Vencido** *(caducó: químicos, filtros con vida útil, consumibles)*, **Extraviado** *(no aparece y nadie sabe dónde está)* y **Robado** *(falta, y hay motivos para creer que se lo llevaron)*.
+3. **¿Y qué se hizo con eso?**, que es opcional: *"Se desechó, se vendió como chatarra, se guardó para repuestos — para que nadie lo salga a buscar después."*
+
+**Pide más explicación que una salida normal: diez caracteres frente a cuatro.** Es deliberado. Dentro de un año, esa frase es lo único que va a justificar por qué el almacén vale menos.
+
+#### Mandar al taller
+
+**Mandar algo al taller no es sacarlo, porque vuelve.** Por eso tiene su propia operación y no se registra como una salida.
+
+Hay dos puertas: **Mandar al taller** en la cabecera, y **Al taller** en la fila. **El de la fila solo aparece en los artículos marcados como reparables** en su ficha; un pote de aceite no se manda a arreglar. Ese marbete está en 7.8.
+
+La ventana **Mandar material al taller** pide: **Qué se manda**, **De dónde sale**, **A qué taller**, **Cuánto mandas**, **Qué le pasa** —*"Lo que se sabe ahora. Qué se le hizo se anota al cerrarla."*—, la **Urgencia**, **Qué hace falta**, **Sale el** y los **Días estimados**.
+
+**El taller puede rechazar el trabajo por su oficio.** La ayuda lo advierte: *"Si el taller declaró sus oficios y este no está, no lo acepta."* Los oficios de cada taller se editan en 7.5.
+
+**La vuelta se registra desde Talleres**, no desde aquí: es allí donde se ve lo que está dentro.
 
 #### Contar (conteo físico)
 
@@ -1367,7 +1417,9 @@ Consecuencia que hay que tener presente al mirar esta pantalla: la producción s
 
 ### 7.5 Talleres
 
-**Operación › Inventario › Talleres**
+**Operación › Inventario › Almacenes y talleres › Talleres**
+
+**No es una entrada del menú**: es la segunda pestaña de **Almacenes y talleres**, junto a **Almacenes y patios**.
 
 Un taller es un almacén más —los de tipo **Taller**—, pero se mira con otra pregunta. Las existencias responden *cuánto hay*; esta pantalla responde *qué tiene asignado cada taller y en qué lo está gastando*. Su descripción lo dice: **Qué tiene asignado cada taller y en qué lo está gastando. El detalle artículo por artículo vive en Existencias.**
 
@@ -1382,7 +1434,9 @@ Si no hay ninguno, la pantalla lo explica: **Un taller se crea como almacén, el
 
 ### 7.6 Movimientos
 
-**Operación › Inventario › Movimientos**
+**Operación › Inventario › Existencias › Movimientos**
+
+**No es una entrada del menú**: es la tercera pestaña de la cabecera de **Existencias** —**Existencias · Catálogo · Movimientos**—.
 
 Es el libro. Aquí no se registra nada nuevo: se consulta lo que pasó y, si algo se registró mal, se corrige escribiendo el movimiento contrario.
 
@@ -1435,7 +1489,9 @@ El sistema comprueba las dos antes de escribir ninguna. **O se deshacen las dos,
 
 ### 7.8 Catálogo de artículos
 
-**Operación › Inventario › Catálogo de artículos**
+**Operación › Inventario › Existencias › Catálogo**
+
+**No es una entrada del menú**: es la segunda pestaña de la cabecera de **Existencias**.
 
 La lista de todo lo que la empresa pide, compra y cuenta. Un artículo mal definido se convierte más adelante en existencias que no cuadran, así que vale la pena crearlo con calma. La propia pantalla lo dice: **Lo que se pide, se compra y se cuenta. Un artículo mal definido se convierte en existencias que no cuadran.**
 
@@ -1537,7 +1593,7 @@ Si el artículo todavía no ha tenido movimiento, se ve **Sin movimientos todav�
 
 ### 7.10 Cargar artículos por planilla
 
-**Operación › Inventario › Cargar por planilla**
+**No está en el menú ni en ninguna pestaña.** Se llega por el botón **Cargar por planilla** de la cabecera del **Catálogo de artículos**, y también desde un atajo del Panel.
 
 Para dar de alta muchos artículos de una vez, o corregir los que ya están, sin teclear la ficha uno por uno. Es la pantalla que hace falta el día que se monta el catálogo, y la que sirve después para cambiarle el mínimo o el precio a cincuenta artículos de un golpe.
 
