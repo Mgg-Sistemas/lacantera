@@ -25,14 +25,17 @@
 import { logoComoImagen } from './logo'
 import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, DER, IZQ } from './hoja'
 import type { ArchivoArmado } from './armado'
-import { EMPRESA } from '@/lib/empresa'
+import {
+  type EmpresaPapel,
+  GRIS,
+  MARCA,
+  GRIS_SUAVE,
+  HAIRLINE,
+  membrete,
+  TINTA,
+  tituloDocumento,
+} from './papel'
 
-// El primario de la marca. Antes era el azul de «La Cantera».
-const MARCA = '#cc3f00'
-const AZUL_CLARO = '#B9C6F5'
-const TINTA = '#262C3D'
-const GRIS = '#7B839A'
-const HAIRLINE = '#E6E9F2'
 const ROJO = '#C0392B'
 
 /** Donde arranca la columna de subtotales: el último tercio del ancho útil. */
@@ -96,6 +99,8 @@ export interface DatosRecibo {
     mano — que sigue siendo el caso de casi todos y no puede parecer un fallo.
   */
   firmaTrabajador?: string | null
+
+  empresa: EmpresaPapel
 }
 
 // --- Formato --------------------------------------------------------------
@@ -116,32 +121,6 @@ const dia = (iso: string) =>
   })
 
 // --- Piezas ---------------------------------------------------------------
-
-function encabezado(doc: Doc, d: DatosRecibo, y0: number, logo: string): number {
-  doc.setFillColor(MARCA)
-  // Dentro del margen y no a sangre: una banda que llega al borde de la hoja
-  // convierte los tres centímetros en cero por tres de los cuatro lados.
-  doc.rect(IZQ, y0, ANCHO_UTIL, 26, 'F')
-
-  doc.addImage(logo, 'PNG', IZQ + 4, y0 + 6, 11, 11)
-
-  // Con 150 mm de ancho, la razón social entera y el rótulo del documento ya no
-  // caben en la misma línea sin tocarse. La marca baja de cuerpo lo justo y se
-  // recorta si hiciera falta: mejor eso que dos textos encabalgados.
-  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(9.5)
-  doc.text(ajustar(doc, EMPRESA.razonSocial, 78), IZQ + 18, y0 + 11)
-
-  doc.setTextColor(AZUL_CLARO).setFont('helvetica', 'normal').setFontSize(6.5)
-  doc.text(`RIF ${EMPRESA.rif}`, IZQ + 18, y0 + 16.5)
-
-  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(9)
-  doc.text('RECIBO DE PAGO', DER - 4, y0 + 11, { align: 'right' })
-
-  doc.setTextColor(AZUL_CLARO).setFont('helvetica', 'normal').setFontSize(6.5)
-  doc.text(`Período ${d.periodo}`, DER - 4, y0 + 16.5, { align: 'right' })
-
-  return y0 + 32
-}
 
 function trabajador(doc: Doc, d: DatosRecibo, y: number): number {
   doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(12)
@@ -379,19 +358,33 @@ function pie(doc: Doc, d: DatosRecibo, y: number) {
     year: 'numeric',
   })
 
-  doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
+  doc.setTextColor(GRIS_SUAVE).setFont('helvetica', 'normal').setFontSize(6.5)
   doc.text(ajustar(doc, `Emitido el ${hoy} por ${d.emitidoPor}`, ANCHO_UTIL * 0.45), IZQ, y)
-  doc.text(`RIF ${EMPRESA.rif}`, DER, y, { align: 'right' })
+  doc.text(`RIF ${d.empresa.rif}`, DER, y, { align: 'right' })
 }
 
 /** Una copia completa, empezando en `y0`. Devuelve dónde terminó. */
 function copia(doc: Doc, d: DatosRecibo, y0: number, rotulo: string, logo: string): number {
-  let y = encabezado(doc, d, y0, logo)
+  /*
+    EL EJEMPLAR VA EN LA CABECERA, no suelto debajo de ella.
 
-  // Dentro de la banda, bajo el período. Fuera de ella caía justo encima de
-  // las fechas del período, que van pegadas al margen derecho.
-  doc.setTextColor(AZUL_CLARO).setFont('helvetica', 'bold').setFontSize(6)
-  doc.text(rotulo.toUpperCase(), DER - 4, y0 + 21.5, { align: 'right' })
+    Antes era un renglón pequeño metido dentro de la banda de color. Ahora es un
+    dato más de los de la derecha, junto al período, y por eso se lee: quien
+    archiva una carpeta de recibos necesita distinguir el ejemplar de la empresa
+    del del trabajador sin leer el papel entero.
+  */
+  let y = tituloDocumento(
+    doc,
+    membrete(doc, logo, {
+      empresa: d.empresa,
+      datos: [
+        ['PERÍODO', d.periodo],
+        ['EJEMPLAR', rotulo],
+      ],
+      desde: y0,
+    }),
+    'Recibo de pago',
+  )
 
   y = trabajador(doc, d, y)
   y = salarios(doc, d, y)
@@ -461,7 +454,7 @@ export async function armarRecibo(d: DatosRecibo): Promise<PdfArmado> {
   doc.setProperties({
     title: `Recibo ${d.periodo} — ${d.nombreCompleto}`,
     subject: 'Recibo de pago',
-    author: EMPRESA.razonSocial,
+    author: d.empresa.razonSocial,
   })
 
   const apellido = d.nombreCompleto.split(' ').pop()?.toLowerCase() ?? ''
@@ -491,7 +484,7 @@ export async function armarRecibos(
   doc.setProperties({
     title: `Recibos de pago — período ${periodo}`,
     subject: 'Recibos de pago',
-    author: EMPRESA.razonSocial,
+    author: recibos[0]?.empresa.razonSocial ?? '',
   })
 
   return { blob: doc.output('blob'), nombre: `recibos-${periodo}.pdf` }

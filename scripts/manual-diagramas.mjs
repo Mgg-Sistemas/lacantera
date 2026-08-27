@@ -353,7 +353,7 @@ const despachos = `
 
 export default {
   '6.2 Cómo llega la piedra al patio': explotacion,
-  '8.2 Del pesaje a la salida del camión': despachos,
+  '8.3 Del pesaje a la salida del camión': despachos,
   '9.2 El circuito de una compra': compras,
   '10.2 El circuito de una venta': ventas,
   '11.2 El ciclo de una nómina': nomina,

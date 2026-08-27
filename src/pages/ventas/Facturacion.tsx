@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import { dinero, dolares, fecha, fechaHora } from '@/lib/formato'
-import { useEmpresa } from '@/lib/api/empresa'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useCuentas } from '@/lib/api/tesoreria'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
@@ -148,13 +148,7 @@ export function Facturacion() {
         retencionIva: f.retencion_iva,
         observacion: f.observacion,
         sello: f.estado === 'ANULADA' ? 'ANULADA' : null,
-        empresa: {
-          razonSocial: empresa?.razon_social ?? '',
-          rif: empresa?.rif ?? '',
-          domicilio: empresa?.domicilio_fiscal ?? null,
-          telefono: empresa?.telefono ?? null,
-          correo: empresa?.correo ?? null,
-        },
+        empresa: empresaDelPapel(empresa),
         emitidoPor: yo?.nombre ?? '',
       }),
     )

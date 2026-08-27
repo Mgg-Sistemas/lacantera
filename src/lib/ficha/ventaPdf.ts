@@ -35,20 +35,44 @@
 import { logoComoImagen } from './logo'
 import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, CENTRO, DER, IZQ, PIE } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
+import {
+  type EmpresaPapel,
+  FILA_ALTERNA,
+  GRIS,
+  GRIS_SUAVE,
+  HAIRLINE,
+  membrete,
+  ROTULO,
+  TINTA,
+  tituloDocumento,
+} from './papel'
 import type { PdfArmado } from './reciboPdf'
 
 // El primario de la marca. Antes era el azul de «La Cantera».
-const MARCA = '#cc3f00'
+/*
+  El naranja de la nota de entrega es el único color propio que queda.
+
+  Los demás documentos toman el azul pizarra de la casa. La nota no: es el papel
+  que el chofer lleva encima por el patio, y en un fajo mezclado el color es lo
+  que la separa de una factura sin leer ninguna. Antes eso era una banda llena
+  de arriba abajo; ahora tiñe el rótulo del documento y la banda de las hojas
+  siguientes, que es donde hace falta.
+*/
 const NARANJA = '#C2500A'
-const GRIS_BANDA = '#4A5163'
-const TINTA = '#262C3D'
-const GRIS = '#7B839A'
-const HAIRLINE = '#E6E9F2'
-const FONDO = '#F4F6FB'
 
 type Doc = import('jspdf').jsPDF
 
-export type TipoDocumento = 'COTIZACION' | 'NOTA' | 'FACTURA' | 'ORDEN'
+/*
+  Ya no hay 'ORDEN'.
+
+  Este archivo sabía armar una orden de compra desde antes de que compras
+  tuviera la suya. Hoy la arma `comprasPdf.ts`, que además ya usa el membrete
+  compartido, y ninguna pantalla pedía 'ORDEN' aquí —se comprobó buscándolo en
+  todo el front—. Lo que quedaba era un rótulo, un pie, dos rótulos de firma y
+  una etiqueta «Proveedor» que nadie iba a ver nunca, y que al leer el archivo
+  hacían pensar que ventas y compras comparten papel. No lo comparten.
+*/
+export type TipoDocumento = 'COTIZACION' | 'NOTA' | 'FACTURA'
 
 export interface RenglonImpreso {
   descripcion: string
@@ -110,24 +134,23 @@ export interface DatosDocumento {
   /** Marca de agua: ANULADA, o nada. */
   sello?: string | null
 
-  empresa: {
-    razonSocial: string
-    rif: string
-    domicilio?: string | null
-    telefono?: string | null
-    correo?: string | null
-  }
+  empresa: EmpresaPapel
 
   emitidoPor: string
 }
 
-const ROTULOS: Record<TipoDocumento, { titulo: string; color: string; archivo: string }> = {
-  COTIZACION: { titulo: 'COTIZACIÓN', color: GRIS_BANDA, archivo: 'cotizacion' },
-  NOTA: { titulo: 'NOTA DE ENTREGA', color: NARANJA, archivo: 'nota-entrega' },
-  FACTURA: { titulo: 'FACTURA', color: MARCA, archivo: 'factura' },
-  // Gris de banda, como la cotización: los dos son papeles que piden algo, no
-  // que cobran. Y así el proveedor no confunde una orden con una factura.
-  ORDEN: { titulo: 'ORDEN DE COMPRA', color: GRIS_BANDA, archivo: 'orden-compra' },
+const ROTULOS: Record<
+  TipoDocumento,
+  { titulo: string; color: string; archivo: string; numero: string }
+> = {
+  COTIZACION: {
+    titulo: 'COTIZACIÓN',
+    color: ROTULO,
+    archivo: 'cotizacion',
+    numero: 'N° COTIZACIÓN',
+  },
+  NOTA: { titulo: 'NOTA DE ENTREGA', color: NARANJA, archivo: 'nota-entrega', numero: 'N° NOTA' },
+  FACTURA: { titulo: 'FACTURA', color: ROTULO, archivo: 'factura', numero: 'N° FACTURA' },
 }
 
 const PIES: Record<TipoDocumento, string> = {
@@ -136,8 +159,6 @@ const PIES: Record<TipoDocumento, string> = {
   NOTA: 'ESTE DOCUMENTO NO ES UNA FACTURA. Ampara el traslado del material; la factura se emite aparte. Quien recibe firma conforme el material y el peso.',
   FACTURA:
     'La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.',
-  ORDEN:
-    'Esta orden autoriza la compra en los términos y precios indicados. Cualquier variación en cantidad, precio o plazo debe acordarse por escrito antes de despachar. Facture a nombre de la razón social y el RIF del membrete.',
 }
 
 const decimal2 = new Intl.NumberFormat('es-VE', {
@@ -175,87 +196,6 @@ const COL_UNID = IZQ + 100
 const COL_PREC = IZQ + 124
 const COL_TOTAL = DER
 const ANCHO_DESCRIPCION = 68
-
-/*
-  Alto de la banda del membrete.
-
-  La líder pidió reducirlo «al menos un 20%»: de 34 mm a 27, que es un 20,6%.
-  Siete milímetros de papel que pasan a la mercancía — en una factura de
-  veinte renglones eso es un renglón y medio más por hoja.
-
-  El recorte no sale del domicilio. Sigue teniendo sus tres renglones, que es
-  lo que pide una dirección venezolana completa: se probó dejarlo en dos y la
-  dirección terminaba en «MUNICIPIO CARONI, ESTADO», perdiendo el estado y la
-  zona postal, que son obligatorios.
-
-  Sale del aire: había seis milímetros muertos entre el domicilio y la línea de
-  contacto, y el logo era más grande de lo que hacía falta para reconocerse.
-  Los cuerpos de letra bajan un punto cada uno, no más: por debajo de 6 el RIF
-  deja de leerse en una fotocopia, y una factura se fotocopia mucho.
-*/
-const ALTO_MEMBRETE = 27
-
-function membrete(doc: Doc, d: DatosDocumento, logo: string): number {
-  const rotulo = ROTULOS[d.tipo]
-
-  doc.setFillColor(rotulo.color)
-  doc.rect(IZQ, ARRIBA, ANCHO_UTIL, ALTO_MEMBRETE, 'F')
-
-  doc.addImage(logo, 'PNG', IZQ + 5, ARRIBA + 4.5, 11, 11)
-
-  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(10)
-  doc.text(ajustar(doc, d.empresa.razonSocial, 74), IZQ + 20, ARRIBA + 8)
-
-  doc.setFont('helvetica', 'normal').setFontSize(6)
-  doc.setTextColor('#FFFFFFCC')
-  doc.text(`RIF ${d.empresa.rif}`, IZQ + 20, ARRIBA + 12)
-
-  // EL DOMICILIO FISCAL VA ENTERO. Es obligatorio en una factura y antes se
-  // cortaba a dos líneas: la dirección salía terminando en «MUNICIPIO CARONI,
-  // ESTADO» y se perdía el estado y la zona postal. Tres renglones dan para
-  // una dirección venezolana completa; si aun así sobrara, se recorta, pero a
-  // partir de ahí el problema es que la dirección registrada es un párrafo.
-  const domicilio = d.empresa.domicilio ?? ''
-  if (domicilio) {
-    const lineas = (doc.splitTextToSize(domicilio, 74) as string[]).slice(0, 3)
-    doc.text(lineas, IZQ + 20, ARRIBA + 15.5, { lineHeightFactor: 1.3 })
-  }
-
-  const contacto = [d.empresa.telefono, d.empresa.correo].filter(Boolean).join(' · ')
-  if (contacto) doc.text(ajustar(doc, contacto, 74), IZQ + 20, ARRIBA + 24.5)
-
-  // El rótulo y el número, a la derecha.
-  doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor('#FFFFFF')
-  doc.text(rotulo.titulo, DER - 5, ARRIBA + 7, { align: 'right' })
-
-  doc.setFontSize(12)
-  doc.text(d.numero, DER - 5, ARRIBA + 14, { align: 'right' })
-
-  doc.setFont('helvetica', 'normal').setFontSize(6.5).setTextColor('#FFFFFFCC')
-
-  /*
-    De abajo hacia arriba, para que el número de control —que solo lleva la
-    factura— no deje un hueco en los otros dos documentos.
-
-    Empieza en 25 y no en 24,5: con las tres líneas puestas —vence, fecha y
-    número de control, que es el caso de una factura a crédito— la de arriba
-    subía hasta rozar el número del documento y los dos textos se cruzaban.
-    Se vio al probar el peor caso; con dos líneas no pasaba.
-  */
-  let fila = ARRIBA + 25
-  if (d.vigencia) {
-    doc.text(`${d.vigencia.rotulo} ${fechaCorta(d.vigencia.fecha)}`, DER - 5, fila, {
-      align: 'right',
-    })
-    fila -= 3.8
-  }
-  doc.text(`Fecha: ${fechaCorta(d.fecha)}`, DER - 5, fila, { align: 'right' })
-  if (d.numeroControl) {
-    doc.text(`N.º de control ${d.numeroControl}`, DER - 5, fila - 3.8, { align: 'right' })
-  }
-
-  return ARRIBA + ALTO_MEMBRETE + 6
-}
 
 /**
  * El recuadro del cliente y, en la nota, el del camión.
@@ -295,7 +235,7 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
   const altoDatos = yDireccion + 4.5 + (direccion.length - 1) * RENGLON + 3
   const alto = altoDatos + (d.despacho ? 14 : 0)
 
-  doc.setFillColor(FONDO)
+  doc.setFillColor(FILA_ALTERNA)
   doc.rect(IZQ, y, ANCHO_UTIL, alto, 'F')
 
   const parrafo = (lineas: string[], x: number, fila: number) => {
@@ -303,7 +243,7 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
     doc.text(lineas, x, fila, { lineHeightFactor: 1.45 })
   }
 
-  etiqueta(d.tipo === 'ORDEN' ? 'Proveedor' : 'Cliente', x1, y + 5)
+  etiqueta('Cliente', x1, y + 5)
   parrafo(nombre, x1, y + 9.5)
 
   etiqueta('RIF', x2, y + 5)
@@ -365,6 +305,7 @@ function pie(doc: Doc, d: DatosDocumento, pagina: number, de: number) {
 
   doc.text(`Página ${pagina} de ${de}`, DER, PIE - 4.5, { align: 'right' })
   doc.text(`Emitido por ${d.emitidoPor} · ${EMPRESA.marca}`, IZQ, PIE)
+  doc.setTextColor(GRIS_SUAVE)
   doc.text(`Tasa del día: ${numero(d.tasa)} Bs/$`, DER, PIE, { align: 'right' })
 }
 
@@ -452,16 +393,8 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
 }
 
 function firmas(doc: Doc, d: DatosDocumento, y: number) {
-  // En una orden de compra las firmas van al revés que en una venta: la
-  // empresa autoriza y el proveedor acepta el encargo.
-  const izquierda =
-    d.tipo === 'NOTA' ? 'Entregado por' : d.tipo === 'ORDEN' ? 'Autorizado por' : 'Por la empresa'
-  const derecha =
-    d.tipo === 'NOTA'
-      ? 'Recibido conforme'
-      : d.tipo === 'ORDEN'
-        ? 'Recibido por el proveedor'
-        : 'Aceptado por el cliente'
+  const izquierda = d.tipo === 'NOTA' ? 'Entregado por' : 'Por la empresa'
+  const derecha = d.tipo === 'NOTA' ? 'Recibido conforme' : 'Aceptado por el cliente'
 
   const SEPARA = 20
   const ancho = (ANCHO_UTIL - SEPARA) / 2
@@ -494,7 +427,43 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
   // o dos renglones y de si el documento lleva los datos del camión. Calcularlo
   // con números escritos a mano aquí funcionaba hasta el primer cliente con
   // dirección larga, y entonces la tabla se salía por abajo sin avisar.
-  const yPrimera = encabezadoCliente(doc, d, membrete(doc, d, logo))
+  /*
+    LA CABECERA ES LA DE LA CASA, la misma que la orden de compra y el recibo.
+
+    Antes era una banda de color llena de 27 mm con todo el texto en blanco
+    encima. Se cambió por el membrete compartido: la razón social en rojo
+    ladrillo sobre papel, el RIF, el domicilio fiscal entero y una regla. Del
+    color se queda lo que decía algo —el rótulo del documento y la banda de las
+    hojas siguientes—, y se va lo que solo era fondo.
+
+    El alto ya no es fijo, y no puede serlo: crece con el domicilio de la
+    empresa y con la dirección del cliente. Por eso el reparto de renglones
+    arranca de lo que devuelven las dos funciones y no de un número escrito
+    aquí, que es lo que hacía que la tabla se saliera por abajo sin avisar en
+    cuanto llegaba un cliente con dirección larga.
+  */
+  const rotulo = ROTULOS[d.tipo]
+  const cabecera = membrete(doc, logo, {
+    empresa: d.empresa,
+    datos: [
+      [rotulo.numero, d.numero],
+      ['FECHA', fechaCorta(d.fecha)],
+      ...(d.vigencia
+        ? ([[d.vigencia.rotulo.toUpperCase(), fechaCorta(d.vigencia.fecha)]] as Array<
+            [string, string]
+          >)
+        : []),
+      ...(d.numeroControl
+        ? ([['N° DE CONTROL', d.numeroControl]] as Array<[string, string]>)
+        : []),
+    ],
+  })
+
+  const yPrimera = encabezadoCliente(
+    doc,
+    d,
+    tituloDocumento(doc, cabecera, rotulo.titulo, rotulo.color),
+  )
 
   // Ahora sí se reparten las hojas, sin pintar: hace falta saber cuántas son
   // para poder escribir "página 1 de 3" ya en la primera.
@@ -528,11 +497,15 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
     } else {
       // Las hojas siguientes llevan una banda fina: quien tiene la hoja 3 en la
       // mano tiene que saber de qué documento es sin buscar la primera.
-      doc.setFillColor(ROTULOS[d.tipo].color)
+      doc.setFillColor(rotulo.color)
       doc.rect(IZQ, ARRIBA, ANCHO_UTIL, 9, 'F')
-      doc.addImage(logo, 'PNG', IZQ + 3, ARRIBA + 1.5, 6, 6)
+      // Mirando si hay logo, como hace el membrete. `logoComoImagen` devuelve
+      // cadena vacía cuando no puede cargar la imagen, y `addImage('')` no
+      // dibuja nada: se lanza. Una factura de tres hojas se quedaba sin
+      // generar entera —ni PDF, ni aviso— porque no cargó un logo de 6 mm.
+      if (logo) doc.addImage(logo, 'PNG', IZQ + 3, ARRIBA + 1.5, 6, 6)
       doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(8)
-      doc.text(`${ROTULOS[d.tipo].titulo} ${d.numero}`, IZQ + 12, ARRIBA + 6)
+      doc.text(`${rotulo.titulo} ${d.numero}`, IZQ + 12, ARRIBA + 6)
       doc.setFont('helvetica', 'normal').setFontSize(7)
       doc.text(ajustar(doc, d.contraparte.nombre, 60), DER - 3, ARRIBA + 6, { align: 'right' })
       y = ARRIBA + 12
@@ -542,12 +515,37 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
 
     for (const [i, r] of renglones.entries()) {
       if (i % 2 === 1) {
-        doc.setFillColor(FONDO)
+        doc.setFillColor(FILA_ALTERNA)
         doc.rect(IZQ, y, ANCHO_UTIL, 6, 'F')
       }
 
       doc.setTextColor(TINTA).setFont('helvetica', 'normal').setFontSize(8)
-      doc.text(ajustar(doc, r.descripcion, ANCHO_DESCRIPCION), IZQ + 3, y + 4.2)
+      const descripcion = ajustar(doc, r.descripcion, ANCHO_DESCRIPCION)
+      doc.text(descripcion, IZQ + 3, y + 4.2)
+      // Se mide a los ocho puntos con los que se pintó, no a los seis y medio
+      // de la marca: midiéndolo después de bajar el cuerpo, el «(E)» caía
+      // encima de la última letra —«FLETE HASTA OBR(E)»—.
+      const finDescripcion = IZQ + 3 + doc.getTextWidth(descripcion)
+
+      /*
+        UN RENGLÓN EXENTO TIENE QUE VERSE EXENTO.
+
+        `exento_iva` llegaba hasta aquí desde las tres pantallas y no se leía en
+        ninguna parte: quien marcaba un renglón como exento veía salir un papel
+        idéntico al de un renglón gravado. La marca es de una letra, pegada a la
+        descripción, y abajo se explica.
+
+        Falta lo otro: los totales siguen sin decir la base imponible ni el
+        total exento, y con una sola alícuota no se puede expresar una factura
+        mixta. Eso ya no es maquetación —cambia el cálculo y hay que acordar con
+        la líder cómo entra el flete— y va aparte.
+      */
+      if (r.exento_iva) {
+        doc.setTextColor(GRIS).setFontSize(6.5)
+        doc.text('(E)', finDescripcion + 1.2, y + 4.2)
+        doc.setTextColor(TINTA).setFontSize(8)
+      }
+
       doc.text(numero(r.cantidad), COL_CANT, y + 4.2, { align: 'right' })
 
       doc.setTextColor(GRIS).setFontSize(7)
@@ -565,9 +563,20 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
     doc.line(IZQ, y, DER, y)
 
     if (indice === hojas.length - 1) {
+      // La marca (E) no se explica sola, y una letra suelta en un papel fiscal
+      // que nadie sabe leer es peor que no ponerla.
+      if (d.renglones.some((r) => r.exento_iva)) {
+        doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
+        doc.text('(E) Renglón exento de IVA.', IZQ, y + 3.5)
+      }
+
       if (d.observacion) {
         doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7)
-        doc.text(ajustar(doc, `Observación: ${d.observacion}`, ANCHO_UTIL * 0.5), IZQ, y + 6)
+        doc.text(
+          ajustar(doc, `Observación: ${d.observacion}`, ANCHO_UTIL * 0.5),
+          IZQ,
+          d.renglones.some((r) => r.exento_iva) ? y + 8 : y + 6,
+        )
       }
 
       const finTotales = totales(doc, d, y)

@@ -16,8 +16,10 @@ import { useFirmas } from '@/lib/api/firmas'
 import { useSesion } from '@/lib/sesion'
 import { armarRecibo, armarRecibos } from '@/lib/ficha/reciboPdf'
 import type { DatosRecibo, FirmaEmpresa, PdfArmado } from '@/lib/ficha/reciboPdf'
+import type { EmpresaPapel } from '@/lib/ficha/papel'
 import { Visor } from '@/components/Visor'
 import { bolivares, dolares, fecha } from '@/lib/formato'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 
 /**
  * De lo que hay en pantalla a lo que va al papel.
@@ -34,8 +36,10 @@ function paraImprimir(
   // Las firmas guardadas, por empleado. Las apagadas no llegan hasta aquí: se
   // filtran al leerlas, para que ningún papel tenga que acordarse de mirarlo.
   firmasGuardadas: Record<number, string> = {},
+  empresa: EmpresaPapel,
 ): DatosRecibo {
   return {
+    empresa,
     periodo: periodo.numero,
     desde: periodo.desde,
     hasta: periodo.hasta,
@@ -80,6 +84,7 @@ export function Recibos() {
   const { firma } = useFirmaRrhh()
   const { data: firmas } = useFirmas()
   const { nombre } = useSesion()
+  const { data: empresa } = useEmpresa()
 
   const periodoId = params.get('periodo') ? Number(params.get('periodo')) : undefined
   const periodo = (periodos ?? []).find((p) => p.id === periodoId)
@@ -95,12 +100,14 @@ export function Recibos() {
     `${a.empleado?.apellidos}`.localeCompare(`${b.empleado?.apellidos}`),
   )
 
+  const papelDeEmpresa = empresaDelPapel(empresa)
+
   const sacar = async (recibos: Recibo[]) => {
     if (!periodo) return
     setImprimiendo(true)
     try {
       const hojas = recibos.map((r) =>
-        paraImprimir(r, periodo, firma, nombre, firmas?.porEmpleado ?? {}),
+        paraImprimir(r, periodo, firma, nombre, firmas?.porEmpleado ?? {}, papelDeEmpresa),
       )
       const pdf =
         hojas.length === 1 ? await armarRecibo(hojas[0]) : await armarRecibos(hojas, periodo.numero)

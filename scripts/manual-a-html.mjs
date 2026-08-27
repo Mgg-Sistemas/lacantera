@@ -35,13 +35,34 @@ function enLinea(s) {
   return t
 }
 
-const ancla = (s) =>
+const limpiar = (s) =>
   s
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
+
+/*
+  NINGUN ANCLA SE REPITE.
+
+  Los apartados del manual se llaman igual en muchos capitulos --«Que se ve»,
+  «Que sale de aqui», «Lo que no te deja el sistema»-- y siete anclas estaban
+  duplicadas. No es cosmetico: el buscador de la pantalla del manual indexa por
+  el `id` del encabezado, asi que buscar «Que sale de aqui» estando en
+  Facturacion llevaba al de Cotizaciones, que es el primero del documento.
+
+  Al segundo y siguientes se les pone un sufijo. Se prefiere eso a prefijarlos
+  todos con el numero de capitulo, que arreglaria lo mismo pero cambiaria las
+  trescientas setenta anclas de golpe.
+*/
+const usadas = new Map()
+const ancla = (s) => {
+  const base = limpiar(s)
+  const vistas = usadas.get(base) ?? 0
+  usadas.set(base, vistas + 1)
+  return vistas === 0 ? base : `${base}-${vistas + 1}`
+}
 
 const lineas = fs.readFileSync(ORIGEN, 'utf8').replace(/\r\n/g, '\n').split('\n')
 const partes = []
@@ -67,7 +88,12 @@ while (i < lineas.length) {
     continue
   }
 
-  const h = l.match(/^(#{1,4})\s+(.*)$/)
+  // Hasta cinco. El quinto nivel entro con el carnet: la ficha del trabajador
+  // ya tenia cuatro --capitulo, seccion, apartado-- y el carnet pide un escalon
+  // mas para separar «cuando todavia no lo tiene» de «cuando ya lo tiene». Con
+  // cuatro, los cinco encabezados salian impresos tal cual: «##### La pagina
+  // que abre el QR» en medio de la pantalla.
+  const h = l.match(/^(#{1,5})\s+(.*)$/)
   if (h) {
     const nivel = h[1].length
     const texto = h[2].trim()
@@ -199,7 +225,7 @@ while (i < lineas.length) {
   while (
     i < lineas.length &&
     lineas[i].trim() !== '' &&
-    !/^(#{1,4}\s|\s*\||[-*]\s|\d+\.\s|>|---\s*$)/.test(lineas[i])
+    !/^(#{1,5}\s|\s*\||[-*]\s|\d+\.\s|>|---\s*$)/.test(lineas[i])
   ) {
     buf.push(lineas[i])
     i++
