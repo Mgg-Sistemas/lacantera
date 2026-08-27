@@ -1712,7 +1712,9 @@ Cuando la carga entra, la pantalla se limpia sola y aparece **Cargado.** con el 
 
 ### 7.11 Almacenes y patios
 
-**Operación › Inventario › Almacenes y patios**
+**Operación › Inventario › Almacenes y talleres**
+
+En el menú se llama **Almacenes y talleres**; dentro, la primera pestaña se llama **Almacenes y patios** y la segunda **Talleres** (7.5).
 
 Dónde se guarda cada cosa. Las existencias se llevan por almacén, no en un montón único, y por eso hace falta al menos uno para poder recibir material.
 
@@ -4029,7 +4031,7 @@ La columna **Estado** dice en qué quedó cada cosa:
 
 Cuando no hay nada, cada tarjeta lo dice a su manera: **Todavía no se le ha dado dotación.** y **No tiene nada asignado.**
 
-**Desde aquí no se entrega nada.** Las dos tarjetas son de solo lectura: el botón **Entregar** lleva a la pantalla de entrega de Asignaciones, que hoy está detrás del cartel de obra. Y hay un detalle que hace perder tiempo: **al llegar allí la persona no viene puesta**, hay que volver a elegirla en el desplegable.
+**Desde aquí no se entrega nada.** Las dos tarjetas son de solo lectura: el botón **Entregar** lleva a la pantalla de entrega de Asignaciones, **que hoy sí se alcanza** —el módulo entró al menú— y está contada en 18.3. Y hay un detalle que hace perder tiempo: **al llegar allí la persona no viene puesta**, hay que volver a elegirla en el desplegable.
 
 #### Anotar una incidencia
 
@@ -4138,7 +4140,9 @@ Esa es la salida buena: **desmarcar Vigente**. El nivel deja de ofrecerse al cre
 
 ### 11.6 Novedades del período
 
-**Nómina › Novedades del período**
+**Nómina › Nómina del período › 1 · Novedades**
+
+**No es una entrada del menú**: es la primera de las tres pestañas de **Nómina del período**.
 
 Es la única pantalla donde se teclea algo cada quincena: *"Lo único que cambia de una quincena a otra: horas extra, faltas, bonos y descuentos. El resto lo saca el sistema del contrato."*
 
@@ -4194,7 +4198,9 @@ Si cargas un monto en dólares, el sistema lo pasa a bolívares con la tasa que 
 
 ### 11.7 Procesar nómina
 
-**Nómina › Procesar nómina**
+**Nómina › Nómina del período › 2 · Procesar**
+
+**No es una entrada del menú**: es la segunda pestaña de **Nómina del período**.
 
 Es la pantalla donde vive el ciclo completo: *"Un período se abre, se calcula, se aprueba y se paga. No se salta pasos: cada uno deja constancia de quién lo hizo."*
 
@@ -4273,7 +4279,9 @@ La ventana lo resume: *"El período queda a la vista con su motivo. Una nómina 
 
 ### 11.8 Recibos de pago
 
-**Nómina › Recibos de pago**
+**Nómina › Nómina del período › 3 · Recibos**
+
+**No es una entrada del menú**: es la tercera pestaña de **Nómina del período**.
 
 Aquí no se registra nada: **esta pantalla solo se lee y se imprime.** No tiene botones de editar ni de borrar.
 
@@ -4312,7 +4320,7 @@ Al final, el **Neto a cobrar**, con su equivalente en dólares, y cómo se le pa
 
 Los dos últimos bloques son los que más confusión generan cuando alguien lee su recibo por primera vez. **Ni los aportes del patrono ni lo que se aparta para prestaciones salen de su pago**, y por eso en el papel impreso van con el título completo: **APORTES DEL PATRONO — NO SE LE DESCUENTAN** y **SE APARTA A SU FAVOR — NO SALE DE SU PAGO**, y a propósito no llevan subtotal, para que nadie los sume al descuento.
 
-El bloque **Se aparta para prestaciones** dice lo que se apartó **en ese período**. Lo que la persona lleva acumulado en total, con sus intereses y sus adelantos, está en **Nómina › Prestaciones sociales**, explicado en 11.10. Son la misma cosa vista en dos sitios: el recibo enseña el aporte de esa quincena, la otra pantalla enseña la cuenta completa.
+El bloque **Se aparta para prestaciones** dice lo que se apartó **en ese período**. Lo que la persona lleva acumulado en total, con sus intereses y sus adelantos, está en **Nómina › Prestaciones y parámetros › Prestaciones sociales**, explicado en 11.10. Son la misma cosa vista en dos sitios: el recibo enseña el aporte de esa quincena, la otra pantalla enseña la cuenta completa.
 
 #### Imprimir
 
@@ -4365,7 +4373,9 @@ Hay un detalle que conviene conocer: **el sistema trata el texto «Por definir»
 
 ### 11.10 Prestaciones sociales
 
-**Nómina › Prestaciones sociales**
+**Nómina › Prestaciones y parámetros › Prestaciones sociales**
+
+**No es una entrada del menú**: es la primera pestaña de **Prestaciones y parámetros**.
 
 Es la cuenta de lo que la empresa le debe a cada trabajador por el tiempo que lleva trabajando aquí. La pantalla lo dice en una línea: *"Lo que la empresa le debe a cada quien por el tiempo trabajado."*
 
@@ -5872,7 +5882,7 @@ El sistema se entrega por partes. Este capítulo reúne lo que se espera del dis
 
 No es una lista de fallas. Es el estado real de la obra, y está aquí para que nadie organice su trabajo contando con algo que aún no puede hacer.
 
-Antes de nada, lo primero que hay que saber: **ocho módulos construidos no se ofrecen hoy en el menú.** Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería existen y funcionan, pero se dejaron fuera del menú mientras se afinan, y sus direcciones responden con un cartel de obra. Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
+Antes de nada, lo primero que hay que saber: **tres módulos construidos no se ofrecen hoy en el menú, más dos pantallas sueltas.** Explotación, Despachos y Ventas existen y funcionan, pero se dejaron fuera mientras se afinan, y sus direcciones responden con un cartel de obra; lo mismo el **Organigrama** y **Cuentas por cobrar**. **Tesorería es aparte: no está escondida, se retiró** (12.1). Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
 
 ### 15.1 Puntos donde hay que tener cuidado
 
@@ -5995,7 +6005,7 @@ Depende de qué sea. Los catálogos —clientes, proveedores, almacenes— se co
 Ahora sí se puede corregir, con el lápiz del catálogo, y todo menos el código. Y se puede borrar **solo mientras nada lo haya tocado**: en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo. Aun así, conviene revisar el nombre y la unidad antes de guardar.
 
 **Tengo que cargar cien artículos. ¿Uno por uno?**
-No. **Operación › Inventario › Cargar por planilla**: se baja la plantilla, se llena en Excel, se sube y el sistema enseña qué va a pasar con cada fila antes de escribir nada. Sirve también para corregir los que ya están. Está en 7.10.
+No. Con el botón **Cargar por planilla** del **Catálogo de artículos**: se baja la plantilla, se llena en Excel, se sube y el sistema enseña qué va a pasar con cada fila antes de escribir nada. Sirve también para corregir los que ya están. Está en 7.10.
 
 **Tengo diez cascos pero no me deja entregar ninguno.**
 Porque están todos en manos de alguien. Existir y estar disponible no es lo mismo: lo prestado sigue contando como existencia —es de la empresa— pero no se puede volver a entregar. En la ficha del artículo se lee **0 disponible · 10 en manos de alguien**.
