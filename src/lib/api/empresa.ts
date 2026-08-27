@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
+import { EMPRESA } from '@/lib/empresa'
+import type { EmpresaPapel } from '@/lib/ficha/papel'
 
 /**
  * La empresa y sus papeles.
@@ -302,4 +304,34 @@ export function diasParaVencer(vence: string | null): number | null {
   hoy.setHours(0, 0, 0, 0)
   const fin = new Date(`${vence}T00:00:00`)
   return Math.round((fin.getTime() - hoy.getTime()) / 86_400_000)
+}
+
+/**
+ * La empresa tal como va en la cabecera de un papel.
+ *
+ * Antes cada pantalla la armaba a mano —once sitios— y ninguno salía igual:
+ * unos ponían la actividad, otros no; unos el domicilio, otros no; y ninguno
+ * componía el domicilio entero. La ficha de la base guarda la calle en un
+ * campo y la ciudad, el estado y la zona postal en otros tres, y todos los
+ * llamadores pasaban solo la calle. En una factura eso es un domicilio fiscal
+ * incompleto, que es de las cosas que un fiscal del SENIAT mira.
+ *
+ * Va aquí, junto al tipo `Empresa`, y no en `ficha/`: quien lo necesita ya
+ * tiene esta fila en la mano.
+ *
+ * SI LA FILA NO HA CARGADO TODAVÍA, se cae a la constante de `empresa.ts` en
+ * vez de a cadena vacía, que es lo que se hacía. Un papel con el nombre vacío
+ * es peor que uno con el nombre del registro: es la misma empresa, y el dato
+ * de la base solo puede diferir si alguien lo editó en Configuración.
+ */
+export function empresaDelPapel(e: Empresa | null | undefined): EmpresaPapel {
+  const region = [e?.estado, e?.zona_postal].filter(Boolean).join(' ')
+  const domicilio = [e?.domicilio_fiscal, e?.ciudad, region].filter(Boolean).join(', ')
+
+  return {
+    razonSocial: e?.razon_social || EMPRESA.razonSocial,
+    rif: e?.rif || EMPRESA.rif,
+    actividad: EMPRESA.actividad,
+    domicilio: domicilio || null,
+  }
 }

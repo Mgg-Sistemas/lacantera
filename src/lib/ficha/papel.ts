@@ -114,9 +114,18 @@ export function membrete(
     empresa: EmpresaPapel
     /** Lo de la derecha: [«N° SOLICITUD», «S-C 2026-0826»], [«FECHA», …]. */
     datos?: Array<[string, string]>
+    /**
+     * Dónde empieza, si no es arriba del todo.
+     *
+     * Lo pide el recibo de nómina, que imprime dos ejemplares en la misma hoja
+     * cuando caben —el del trabajador y el que se archiva firmado— y el segundo
+     * arranca a media página. Los demás papeles no lo pasan y empiezan en el
+     * margen, como siempre.
+     */
+    desde?: number
   },
 ): number {
-  const y = ARRIBA
+  const y = d.desde ?? ARRIBA
 
   // El logo, centrado con los tres renglones de texto que tiene al lado.
   if (logo) doc.addImage(logo, 'PNG', IZQ, y - 2.5, 14, 14)
@@ -155,14 +164,6 @@ export function membrete(
     doc.text(ajustar(doc, d.empresa.actividad.toUpperCase(), ANCHO_NOMBRE), TEXTO, y + 6.5)
   }
 
-  /*
-    El domicilio y el RIF, en la misma línea y separados por una barra.
-
-    Van juntos porque son lo mismo para quien lee: de dónde sale este papel y
-    con qué identificación fiscal. Y el RIF va siempre aunque no haya domicilio
-    —es obligatorio en cualquier papel que salga de aquí—, así que la línea se
-    arma con lo que haya en vez de dar por hecho que están los dos.
-  */
   /*
     EL RIF VA SOLO EN SU RENGLÓN, Y EL DOMICILIO DEBAJO, PARTIDO.
 

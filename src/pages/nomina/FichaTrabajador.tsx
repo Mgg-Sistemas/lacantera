@@ -38,7 +38,7 @@ import { TarjetaFirma } from '@/components/TarjetaFirma'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { useMisAcciones, useRoles } from '@/lib/api/usuarios'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
-import { useEmpresa } from '@/lib/api/empresa'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarCarnet, armarCarnetPdf } from '@/lib/ficha/carnet'
 import { TarjetaCarnet } from './TarjetaCarnet'
@@ -390,6 +390,7 @@ export function FichaTrabajador() {
             foto: img,
             encuadre,
             emitidaPor: nombre,
+            empresa: empresaDelPapel(empresa.data),
           }),
           titulo: `Ficha ${e.ficha} — ${e.nombres} ${e.apellidos}`,
           descripcion: 'Todos los datos del trabajador en una hoja A4.',
@@ -427,7 +428,7 @@ export function FichaTrabajador() {
         // Dónde se expide sale de los datos de la empresa, no de una constante
         // escrita aquí: si la empresa se muda, la carta lo dice sola.
         ciudad: empresa.data?.ciudad || empresa.data?.estado || 'Ciudad Bolívar',
-        domicilio: empresa.data?.domicilio_fiscal ?? null,
+        empresa: empresaDelPapel(empresa.data),
         firma,
         emitidaPor: nombre,
       })
