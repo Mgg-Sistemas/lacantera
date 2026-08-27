@@ -1712,7 +1712,9 @@ Cuando la carga entra, la pantalla se limpia sola y aparece **Cargado.** con el 
 
 ### 7.11 Almacenes y patios
 
-**Operación › Inventario › Almacenes y patios**
+**Operación › Inventario › Almacenes y talleres**
+
+En el menú se llama **Almacenes y talleres**; dentro, la primera pestaña se llama **Almacenes y patios** y la segunda **Talleres** (7.5).
 
 Dónde se guarda cada cosa. Las existencias se llevan por almacén, no en un montón único, y por eso hace falta al menos uno para poder recibir material.
 
@@ -4029,7 +4031,7 @@ La columna **Estado** dice en qué quedó cada cosa:
 
 Cuando no hay nada, cada tarjeta lo dice a su manera: **Todavía no se le ha dado dotación.** y **No tiene nada asignado.**
 
-**Desde aquí no se entrega nada.** Las dos tarjetas son de solo lectura: el botón **Entregar** lleva a la pantalla de entrega de Asignaciones, que hoy está detrás del cartel de obra. Y hay un detalle que hace perder tiempo: **al llegar allí la persona no viene puesta**, hay que volver a elegirla en el desplegable.
+**Desde aquí no se entrega nada.** Las dos tarjetas son de solo lectura: el botón **Entregar** lleva a la pantalla de entrega de Asignaciones, **que hoy sí se alcanza** —el módulo entró al menú— y está contada en 18.3. Y hay un detalle que hace perder tiempo: **al llegar allí la persona no viene puesta**, hay que volver a elegirla en el desplegable.
 
 #### Anotar una incidencia
 
@@ -4138,7 +4140,9 @@ Esa es la salida buena: **desmarcar Vigente**. El nivel deja de ofrecerse al cre
 
 ### 11.6 Novedades del período
 
-**Nómina › Novedades del período**
+**Nómina › Nómina del período › 1 · Novedades**
+
+**No es una entrada del menú**: es la primera de las tres pestañas de **Nómina del período**.
 
 Es la única pantalla donde se teclea algo cada quincena: *"Lo único que cambia de una quincena a otra: horas extra, faltas, bonos y descuentos. El resto lo saca el sistema del contrato."*
 
@@ -4194,7 +4198,9 @@ Si cargas un monto en dólares, el sistema lo pasa a bolívares con la tasa que 
 
 ### 11.7 Procesar nómina
 
-**Nómina › Procesar nómina**
+**Nómina › Nómina del período › 2 · Procesar**
+
+**No es una entrada del menú**: es la segunda pestaña de **Nómina del período**.
 
 Es la pantalla donde vive el ciclo completo: *"Un período se abre, se calcula, se aprueba y se paga. No se salta pasos: cada uno deja constancia de quién lo hizo."*
 
@@ -4273,7 +4279,9 @@ La ventana lo resume: *"El período queda a la vista con su motivo. Una nómina 
 
 ### 11.8 Recibos de pago
 
-**Nómina › Recibos de pago**
+**Nómina › Nómina del período › 3 · Recibos**
+
+**No es una entrada del menú**: es la tercera pestaña de **Nómina del período**.
 
 Aquí no se registra nada: **esta pantalla solo se lee y se imprime.** No tiene botones de editar ni de borrar.
 
@@ -4312,7 +4320,7 @@ Al final, el **Neto a cobrar**, con su equivalente en dólares, y cómo se le pa
 
 Los dos últimos bloques son los que más confusión generan cuando alguien lee su recibo por primera vez. **Ni los aportes del patrono ni lo que se aparta para prestaciones salen de su pago**, y por eso en el papel impreso van con el título completo: **APORTES DEL PATRONO — NO SE LE DESCUENTAN** y **SE APARTA A SU FAVOR — NO SALE DE SU PAGO**, y a propósito no llevan subtotal, para que nadie los sume al descuento.
 
-El bloque **Se aparta para prestaciones** dice lo que se apartó **en ese período**. Lo que la persona lleva acumulado en total, con sus intereses y sus adelantos, está en **Nómina › Prestaciones sociales**, explicado en 11.10. Son la misma cosa vista en dos sitios: el recibo enseña el aporte de esa quincena, la otra pantalla enseña la cuenta completa.
+El bloque **Se aparta para prestaciones** dice lo que se apartó **en ese período**. Lo que la persona lleva acumulado en total, con sus intereses y sus adelantos, está en **Nómina › Prestaciones y parámetros › Prestaciones sociales**, explicado en 11.10. Son la misma cosa vista en dos sitios: el recibo enseña el aporte de esa quincena, la otra pantalla enseña la cuenta completa.
 
 #### Imprimir
 
@@ -4365,7 +4373,9 @@ Hay un detalle que conviene conocer: **el sistema trata el texto «Por definir»
 
 ### 11.10 Prestaciones sociales
 
-**Nómina › Prestaciones sociales**
+**Nómina › Prestaciones y parámetros › Prestaciones sociales**
+
+**No es una entrada del menú**: es la primera pestaña de **Prestaciones y parámetros**.
 
 Es la cuenta de lo que la empresa le debe a cada trabajador por el tiempo que lleva trabajando aquí. La pantalla lo dice en una línea: *"Lo que la empresa le debe a cada quien por el tiempo trabajado."*
 
@@ -4987,19 +4997,28 @@ Es la cola de trabajo de quien paga: **Lo que compras ya autorizó y todavía no
 
 #### Qué se ve
 
-Arriba, tres tarjetas de resumen:
+Arriba, dos tarjetas de resumen:
 
 | Tarjeta | Qué muestra |
 | --- | --- |
 | **Por pagar** | Cuántas instrucciones esperan, y debajo cuántas llevan más de tres días |
-| **Suma, con IGTF** | El total en dólares, **Al cambio de cada instrucción** |
-| **En cuentas en dólares** | Lo disponible en dólares. **Los bolívares se ven en Bancos y cajas** |
+| **Suma, con IGTF** | El total, **Al cambio de cada pago** |
+
+**Había una tercera, «En cuentas en dólares», y se retiró.** Enseñaba un disponible que ya no actualiza nadie: la empresa dejó de llevar saldos, así que ese número habría envejecido en pantalla dando la impresión contraria.
 
 Si alguna instrucción lleva más de una semana esperando, aparece un aviso naranja: **Hay instrucciones esperando más de una semana. El proveedor no reserva el material hasta que ve el pago, y la cotización tiene fecha de vencimiento.**
 
 Debajo está la **Cola de pagos**, con el subtítulo **En orden de llegada. La más vieja primero.** No es una tabla: es una lista de filas. Cada fila muestra el número de la orden, que es un enlace a la compra; la etiqueta del método; los días que lleva esperando, en naranja pasados tres días y en rojo pasados siete; el proveedor y el título de la compra; a dónde va el dinero, escrito según el método — banco y número de cuenta en una transferencia, banco y teléfono en un pago móvil, correo o cuenta en Binance, y **Entregar a {nombre}** en efectivo —; el titular y su documento; y a la derecha el importe en su moneda, con el IGTF sumado en naranja cuando aplica.
 
-**No hay filtros.** La lista se refresca sola: lo que instruya Compras aparece aquí sin que tengas que recargar la pantalla.
+**Sí hay filtros, y están para armar las tandas.** Sobre la cola hay tres controles:
+
+| Control | Qué hace |
+| --- | --- |
+| **Qué urge** | Vacío es **Todas las prioridades**. Filtra por Urgente, Alta o Normal |
+| **Para qué unidad** | Vacío es **Todas las unidades**. Solo salen las que hoy tienen pagos pendientes |
+| **Por dónde empezar** | El orden de la lista: por antigüedad —el de partida—, por monto o por prioridad |
+
+**La lista se refresca sola**: lo que instruya Compras aparece aquí sin que tengas que recargar la pantalla.
 
 Si no hay nada pendiente: **No hay nada por pagar**, con el texto **Cuando compras autorice una orden e indique cómo se paga, aparece aquí.**
 
@@ -5007,7 +5026,7 @@ Si no hay nada pendiente: **No hay nada por pagar**, con el texto **Cuando compr
 
 1. Busca la fila y pulsa **Pagar**.
 2. Se abre **Registrar el pago**. Arriba, el método y el importe, y un recuadro con el destino del dinero y el titular. Si hay IGTF, en naranja: **Con IGTF salen $ 1.287,50 — $ 37,50 de impuesto.**
-3. Elige **De qué cuenta sale**. Ayuda: **El saldo baja al confirmar.**
+3. Elige **Por dónde salió el dinero**. Ayuda: **Queda anotado en el pago. El sistema no lleva el saldo de las cuentas.** Las opciones se leen solo con el nombre de la cuenta: ya no llevan el saldo al lado, y **ya no hay aviso de saldo insuficiente**. Los dos eran la vigilancia de un número que la empresa dejó de llevar.
 4. Escribe el **Número de referencia**: **El número que devolvió el banco o la plataforma.** Si el método es efectivo, la etiqueta cambia a **Referencia (opcional en efectivo)**.
 5. Rellena la **Fecha del pago** si no es hoy: **Vacío es hoy. Es la fecha que aparece en el estado de cuenta.**
 6. Pulsa **Confirmar el pago**.
@@ -5015,6 +5034,18 @@ Si no hay nada pendiente: **No hay nada por pagar**, con el texto **Cuando compr
 **En la lista de cuentas solo salen las que están en la misma moneda de la instrucción.** Si no hay ninguna, la lista lo dice. **Bancos y cajas ya no está en el menú** —es una de las pantallas que quedaron fuera cuando Tesorería dejó de ser un módulo—, así que crear una cuenta hoy lo hace el administrador. No es un olvido: pagar una instrucción en dólares desde una cuenta en bolívares obligaría al sistema a inventar la tasa a la que se hizo el cambio, y esa cifra la pone el banco, no el sistema.
 
 Si el saldo de la cuenta elegida no alcanza, aparece un aviso naranja que **no impide confirmar**: **En esa cuenta hay $ 200,00 y el pago es de $ 1.287,50. Si el dinero ya está, falta registrar el ingreso o el saldo de apertura.** Avisa porque lo más frecuente no es que falte el dinero, sino que falte registrarlo. Quien sí impide confirmar es el propio libro, más adelante, si al escribir la línea el saldo queda por debajo de cero y la cuenta no admite sobregiro.
+
+#### Pagar varias de una vez
+
+Es lo que se usa cuando se va al banco a hacer la tanda del día.
+
+Cada fila lleva **una casilla** a la izquierda, y solo la ve quien puede pagar.
+
+**Al marcar la primera, la moneda del lote queda fijada.** Las filas de otra moneda pierden su casilla, y con ella la posibilidad de entrar en ese lote. No es un capricho: **el lote entero sale de una sola cuenta y con una sola referencia**, y una cuenta tiene una sola moneda.
+
+Al pie, pegada abajo mientras se recorre la lista, aparece una barra con **N pagos marcados** y, debajo, la suma: *"Suman $ 1.287,50, con IGTF. Salen todos de la misma cuenta y con la misma referencia."* A la derecha, **Desmarcar** y **Registrar los N**.
+
+**Si el banco te devolvió una referencia por cada pago, no uses el lote.** El lote escribe la misma en todos, y entonces el número del estado de cuenta deja de casar con el del sistema — que es justo lo que se mira cuando algo no cuadra.
 
 ### 12.5 Cuentas por pagar
 
@@ -5076,11 +5107,19 @@ Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitida
 
 En el menú se llama así. El título de la pantalla sigue diciendo **Libro de tesorería**.
 
-Es el libro contable del dinero: **Todo el dinero que entró y salió. No se edita ni se borra: lo que estuvo mal se reversa y las dos líneas quedan.** Aquí no se registra nada nuevo: se consulta, y si algo se registró mal, se escribe la línea contraria.
+Es el libro contable del dinero: **Todo el dinero que entró y salió. No se edita ni se borra: lo que estuvo mal se deshace y las dos líneas quedan.** Aquí no se registra nada nuevo: se consulta, y si algo se registró mal, se escribe la línea contraria.
 
 #### Qué se ve
 
-Arriba hay **un solo filtro**: el desplegable **Cuenta**, que empieza en **Todas las cuentas** y muestra cada cuenta con su saldo. **No hay filtro de fechas ni de tipo de movimiento.**
+Arriba hay **tres filtros**:
+
+| Filtro | Qué hace |
+| --- | --- |
+| **Cómo se pagó** | Empieza en **De cualquier forma**. Efectivo, transferencia, pago móvil, Zelle, Binance u otro |
+| **Moneda** | Empieza en **Todas** |
+| **Rango de fechas** | Con atajos para los períodos de siempre |
+
+**Había un cuarto, el de Cuenta, y se retiró**: ya no se manejan cajas ni bancos, así que filtrar por cuenta dejó de decir nada.
 
 La tabla tiene estas columnas:
 
@@ -5088,11 +5127,10 @@ La tabla tiene estas columnas:
 | --- | --- |
 | **Movimiento** | El número del asiento y, debajo, una etiqueta con el tipo |
 | **Fecha** | La fecha del movimiento |
-| **Cuenta** | La cuenta a la que pertenece |
 | **Concepto** | El texto y, debajo, la contraparte, la referencia y quién lo registró |
 | **Monto** | Con signo más o menos, en la moneda de la cuenta, y debajo en gris el equivalente en la otra moneda |
 
-Los tipos que puede llevar la etiqueta son: **Saldo de apertura**, **Ingreso**, **Egreso**, **Pago a proveedor**, **IGTF**, **Comisión bancaria**, **Traslado entre cuentas**, **Ajuste** y **Reverso**. Los reversos y los ajustes salen en naranja; las entradas, en verde.
+Los tipos que puede llevar la etiqueta son: **Saldo de apertura**, **Ingreso**, **Egreso**, **Pago a proveedor**, **IGTF**, **Comisión bancaria**, **Traslado entre cuentas**, **Ajuste** y **Reverso**. Los reversos y los ajustes salen en naranja; las entradas, en verde. **El tipo se sigue llamando «Reverso» aunque el botón diga «Deshacer»**: es el nombre del asiento, no el del botón.
 
 El equivalente en gris se calcula **con la tasa congelada del día del movimiento**, no con la de hoy. Es una diferencia con el total de la pantalla de cuentas, y es deliberada: así un pago de enero se puede comparar con uno de julio.
 
@@ -5119,7 +5157,16 @@ La línea original **se queda en el libro**. Lo que se escribe es una nueva, del
 - **La línea es una de las dos mitades de un traslado.** Deshacer solo esa devolvería el dinero al origen dejándolo también en el destino. Se deshace con un traslado en sentido contrario.
 - **La línea es el pago de una nómina.**
 
-Y a esos se suma el de siempre: sin el rol **Compras**, el botón tampoco se dibuja. No es el rol de Tesorería, que ya no existe.
+Y a esos se suma el de siempre: **sin permiso de escritura sobre Tesorería, el botón tampoco se dibuja.**
+
+**Aquí hay una asimetría que conviene entender**, porque es lo que hace que alguien de compras vea el libro y no pueda tocarlo:
+
+| Para… | Hace falta |
+| --- | --- |
+| **Entrar al libro** | El permiso de **Compras**, que es de donde cuelga en el menú |
+| **Deshacer una línea** | El permiso de **escritura sobre Tesorería**, que hoy solo tiene la administración |
+
+No es un rol —el de Tesorería se retiró y ya no existe— sino un nivel de la matriz. Y como sobre Tesorería todos los demás roles están en **Ninguno** (12.1), en la práctica **solo el administrador deshace una línea del libro**.
 
 ### 12.8 Lo que conviene entender
 
@@ -5835,7 +5882,7 @@ El sistema se entrega por partes. Este capítulo reúne lo que se espera del dis
 
 No es una lista de fallas. Es el estado real de la obra, y está aquí para que nadie organice su trabajo contando con algo que aún no puede hacer.
 
-Antes de nada, lo primero que hay que saber: **ocho módulos construidos no se ofrecen hoy en el menú.** Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería existen y funcionan, pero se dejaron fuera del menú mientras se afinan, y sus direcciones responden con un cartel de obra. Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
+Antes de nada, lo primero que hay que saber: **tres módulos construidos no se ofrecen hoy en el menú, más dos pantallas sueltas.** Explotación, Despachos y Ventas existen y funcionan, pero se dejaron fuera mientras se afinan, y sus direcciones responden con un cartel de obra; lo mismo el **Organigrama** y **Cuentas por cobrar**. **Tesorería es aparte: no está escondida, se retiró** (12.1). Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
 
 ### 15.1 Puntos donde hay que tener cuidado
 
@@ -5958,7 +6005,7 @@ Depende de qué sea. Los catálogos —clientes, proveedores, almacenes— se co
 Ahora sí se puede corregir, con el lápiz del catálogo, y todo menos el código. Y se puede borrar **solo mientras nada lo haya tocado**: en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo. Aun así, conviene revisar el nombre y la unidad antes de guardar.
 
 **Tengo que cargar cien artículos. ¿Uno por uno?**
-No. **Operación › Inventario › Cargar por planilla**: se baja la plantilla, se llena en Excel, se sube y el sistema enseña qué va a pasar con cada fila antes de escribir nada. Sirve también para corregir los que ya están. Está en 7.10.
+No. Con el botón **Cargar por planilla** del **Catálogo de artículos**: se baja la plantilla, se llena en Excel, se sube y el sistema enseña qué va a pasar con cada fila antes de escribir nada. Sirve también para corregir los que ya están. Está en 7.10.
 
 **Tengo diez cascos pero no me deja entregar ninguno.**
 Porque están todos en manos de alguien. Existir y estar disponible no es lo mismo: lo prestado sigue contando como existencia —es de la empresa— pero no se puede volver a entregar. En la ficha del artículo se lee **0 disponible · 10 en manos de alguien**.
