@@ -4987,19 +4987,28 @@ Es la cola de trabajo de quien paga: **Lo que compras ya autorizó y todavía no
 
 #### Qué se ve
 
-Arriba, tres tarjetas de resumen:
+Arriba, dos tarjetas de resumen:
 
 | Tarjeta | Qué muestra |
 | --- | --- |
 | **Por pagar** | Cuántas instrucciones esperan, y debajo cuántas llevan más de tres días |
-| **Suma, con IGTF** | El total en dólares, **Al cambio de cada instrucción** |
-| **En cuentas en dólares** | Lo disponible en dólares. **Los bolívares se ven en Bancos y cajas** |
+| **Suma, con IGTF** | El total, **Al cambio de cada pago** |
+
+**Había una tercera, «En cuentas en dólares», y se retiró.** Enseñaba un disponible que ya no actualiza nadie: la empresa dejó de llevar saldos, así que ese número habría envejecido en pantalla dando la impresión contraria.
 
 Si alguna instrucción lleva más de una semana esperando, aparece un aviso naranja: **Hay instrucciones esperando más de una semana. El proveedor no reserva el material hasta que ve el pago, y la cotización tiene fecha de vencimiento.**
 
 Debajo está la **Cola de pagos**, con el subtítulo **En orden de llegada. La más vieja primero.** No es una tabla: es una lista de filas. Cada fila muestra el número de la orden, que es un enlace a la compra; la etiqueta del método; los días que lleva esperando, en naranja pasados tres días y en rojo pasados siete; el proveedor y el título de la compra; a dónde va el dinero, escrito según el método — banco y número de cuenta en una transferencia, banco y teléfono en un pago móvil, correo o cuenta en Binance, y **Entregar a {nombre}** en efectivo —; el titular y su documento; y a la derecha el importe en su moneda, con el IGTF sumado en naranja cuando aplica.
 
-**No hay filtros.** La lista se refresca sola: lo que instruya Compras aparece aquí sin que tengas que recargar la pantalla.
+**Sí hay filtros, y están para armar las tandas.** Sobre la cola hay tres controles:
+
+| Control | Qué hace |
+| --- | --- |
+| **Qué urge** | Vacío es **Todas las prioridades**. Filtra por Urgente, Alta o Normal |
+| **Para qué unidad** | Vacío es **Todas las unidades**. Solo salen las que hoy tienen pagos pendientes |
+| **Por dónde empezar** | El orden de la lista: por antigüedad —el de partida—, por monto o por prioridad |
+
+**La lista se refresca sola**: lo que instruya Compras aparece aquí sin que tengas que recargar la pantalla.
 
 Si no hay nada pendiente: **No hay nada por pagar**, con el texto **Cuando compras autorice una orden e indique cómo se paga, aparece aquí.**
 
@@ -5007,7 +5016,7 @@ Si no hay nada pendiente: **No hay nada por pagar**, con el texto **Cuando compr
 
 1. Busca la fila y pulsa **Pagar**.
 2. Se abre **Registrar el pago**. Arriba, el método y el importe, y un recuadro con el destino del dinero y el titular. Si hay IGTF, en naranja: **Con IGTF salen $ 1.287,50 — $ 37,50 de impuesto.**
-3. Elige **De qué cuenta sale**. Ayuda: **El saldo baja al confirmar.**
+3. Elige **Por dónde salió el dinero**. Ayuda: **Queda anotado en el pago. El sistema no lleva el saldo de las cuentas.** Las opciones se leen solo con el nombre de la cuenta: ya no llevan el saldo al lado, y **ya no hay aviso de saldo insuficiente**. Los dos eran la vigilancia de un número que la empresa dejó de llevar.
 4. Escribe el **Número de referencia**: **El número que devolvió el banco o la plataforma.** Si el método es efectivo, la etiqueta cambia a **Referencia (opcional en efectivo)**.
 5. Rellena la **Fecha del pago** si no es hoy: **Vacío es hoy. Es la fecha que aparece en el estado de cuenta.**
 6. Pulsa **Confirmar el pago**.
@@ -5015,6 +5024,18 @@ Si no hay nada pendiente: **No hay nada por pagar**, con el texto **Cuando compr
 **En la lista de cuentas solo salen las que están en la misma moneda de la instrucción.** Si no hay ninguna, la lista lo dice. **Bancos y cajas ya no está en el menú** —es una de las pantallas que quedaron fuera cuando Tesorería dejó de ser un módulo—, así que crear una cuenta hoy lo hace el administrador. No es un olvido: pagar una instrucción en dólares desde una cuenta en bolívares obligaría al sistema a inventar la tasa a la que se hizo el cambio, y esa cifra la pone el banco, no el sistema.
 
 Si el saldo de la cuenta elegida no alcanza, aparece un aviso naranja que **no impide confirmar**: **En esa cuenta hay $ 200,00 y el pago es de $ 1.287,50. Si el dinero ya está, falta registrar el ingreso o el saldo de apertura.** Avisa porque lo más frecuente no es que falte el dinero, sino que falte registrarlo. Quien sí impide confirmar es el propio libro, más adelante, si al escribir la línea el saldo queda por debajo de cero y la cuenta no admite sobregiro.
+
+#### Pagar varias de una vez
+
+Es lo que se usa cuando se va al banco a hacer la tanda del día.
+
+Cada fila lleva **una casilla** a la izquierda, y solo la ve quien puede pagar.
+
+**Al marcar la primera, la moneda del lote queda fijada.** Las filas de otra moneda pierden su casilla, y con ella la posibilidad de entrar en ese lote. No es un capricho: **el lote entero sale de una sola cuenta y con una sola referencia**, y una cuenta tiene una sola moneda.
+
+Al pie, pegada abajo mientras se recorre la lista, aparece una barra con **N pagos marcados** y, debajo, la suma: *"Suman $ 1.287,50, con IGTF. Salen todos de la misma cuenta y con la misma referencia."* A la derecha, **Desmarcar** y **Registrar los N**.
+
+**Si el banco te devolvió una referencia por cada pago, no uses el lote.** El lote escribe la misma en todos, y entonces el número del estado de cuenta deja de casar con el del sistema — que es justo lo que se mira cuando algo no cuadra.
 
 ### 12.5 Cuentas por pagar
 
@@ -5076,11 +5097,19 @@ Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitida
 
 En el menú se llama así. El título de la pantalla sigue diciendo **Libro de tesorería**.
 
-Es el libro contable del dinero: **Todo el dinero que entró y salió. No se edita ni se borra: lo que estuvo mal se reversa y las dos líneas quedan.** Aquí no se registra nada nuevo: se consulta, y si algo se registró mal, se escribe la línea contraria.
+Es el libro contable del dinero: **Todo el dinero que entró y salió. No se edita ni se borra: lo que estuvo mal se deshace y las dos líneas quedan.** Aquí no se registra nada nuevo: se consulta, y si algo se registró mal, se escribe la línea contraria.
 
 #### Qué se ve
 
-Arriba hay **un solo filtro**: el desplegable **Cuenta**, que empieza en **Todas las cuentas** y muestra cada cuenta con su saldo. **No hay filtro de fechas ni de tipo de movimiento.**
+Arriba hay **tres filtros**:
+
+| Filtro | Qué hace |
+| --- | --- |
+| **Cómo se pagó** | Empieza en **De cualquier forma**. Efectivo, transferencia, pago móvil, Zelle, Binance u otro |
+| **Moneda** | Empieza en **Todas** |
+| **Rango de fechas** | Con atajos para los períodos de siempre |
+
+**Había un cuarto, el de Cuenta, y se retiró**: ya no se manejan cajas ni bancos, así que filtrar por cuenta dejó de decir nada.
 
 La tabla tiene estas columnas:
 
@@ -5088,11 +5117,10 @@ La tabla tiene estas columnas:
 | --- | --- |
 | **Movimiento** | El número del asiento y, debajo, una etiqueta con el tipo |
 | **Fecha** | La fecha del movimiento |
-| **Cuenta** | La cuenta a la que pertenece |
 | **Concepto** | El texto y, debajo, la contraparte, la referencia y quién lo registró |
 | **Monto** | Con signo más o menos, en la moneda de la cuenta, y debajo en gris el equivalente en la otra moneda |
 
-Los tipos que puede llevar la etiqueta son: **Saldo de apertura**, **Ingreso**, **Egreso**, **Pago a proveedor**, **IGTF**, **Comisión bancaria**, **Traslado entre cuentas**, **Ajuste** y **Reverso**. Los reversos y los ajustes salen en naranja; las entradas, en verde.
+Los tipos que puede llevar la etiqueta son: **Saldo de apertura**, **Ingreso**, **Egreso**, **Pago a proveedor**, **IGTF**, **Comisión bancaria**, **Traslado entre cuentas**, **Ajuste** y **Reverso**. Los reversos y los ajustes salen en naranja; las entradas, en verde. **El tipo se sigue llamando «Reverso» aunque el botón diga «Deshacer»**: es el nombre del asiento, no el del botón.
 
 El equivalente en gris se calcula **con la tasa congelada del día del movimiento**, no con la de hoy. Es una diferencia con el total de la pantalla de cuentas, y es deliberada: así un pago de enero se puede comparar con uno de julio.
 
@@ -5119,7 +5147,16 @@ La línea original **se queda en el libro**. Lo que se escribe es una nueva, del
 - **La línea es una de las dos mitades de un traslado.** Deshacer solo esa devolvería el dinero al origen dejándolo también en el destino. Se deshace con un traslado en sentido contrario.
 - **La línea es el pago de una nómina.**
 
-Y a esos se suma el de siempre: sin el rol **Compras**, el botón tampoco se dibuja. No es el rol de Tesorería, que ya no existe.
+Y a esos se suma el de siempre: **sin permiso de escritura sobre Tesorería, el botón tampoco se dibuja.**
+
+**Aquí hay una asimetría que conviene entender**, porque es lo que hace que alguien de compras vea el libro y no pueda tocarlo:
+
+| Para… | Hace falta |
+| --- | --- |
+| **Entrar al libro** | El permiso de **Compras**, que es de donde cuelga en el menú |
+| **Deshacer una línea** | El permiso de **escritura sobre Tesorería**, que hoy solo tiene la administración |
+
+No es un rol —el de Tesorería se retiró y ya no existe— sino un nivel de la matriz. Y como sobre Tesorería todos los demás roles están en **Ninguno** (12.1), en la práctica **solo el administrador deshace una línea del libro**.
 
 ### 12.8 Lo que conviene entender
 
