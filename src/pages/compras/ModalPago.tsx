@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useIndicarPago } from '@/lib/api/compras'
 import { useMetodosPago, opcionesDe, monedasDe } from '@/lib/api/metodosPago'
-import { useMonedasUsables } from '@/lib/api/tasas'
+import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
 import { CamposDePago } from '@/components/CamposDePago'
 import type { DatosPago, Orden } from '@/lib/api/compras'
 import { bolivares, dolares } from '@/lib/formato'
@@ -35,16 +35,48 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
 
     Lo encontró el carril de base de datos revisando el contrato.
   */
+  const { data: tasaVigente } = useTasaVigente()
   const catalogo = useMonedasUsables()
   const todas = catalogo.data ?? []
   const { data: metodos } = useMetodosPago()
 
-  // Lo instruido y lo pagado ya reservan parte de la orden; lo que se ofrece
-  // por defecto es lo que falta, no el total.
-  const comprometido = orden.instrucciones
+  /*
+    LO QUE FALTA SE SUMA EN DÓLARES, NO EN MONTOS CRUDOS.
+
+    Antes esto sumaba `i.monto` de cada instrucción sin mirar en qué moneda
+    estaba. Con todas en la misma moneda salía bien; en cuanto una orden en
+    dólares recibía un pago en bolívares, sumaba mil dólares con ciento
+    veintiséis mil bolívares y decía que no quedaba nada por pagar.
+
+    No es un caso raro: es exactamente lo que hace falta para pagar la base en
+    divisa y el IVA en bolívares a la tasa del BCV, que es como se compra aquí.
+
+    `monto_usd` y `total_usd` los calcula la base con la tasa congelada de cada
+    documento, así que la resta se hace ahí y se devuelve a la moneda de la
+    orden con su propio factor. Es la misma cuenta que hace `indicar_pago` para
+    comprobar el tope.
+  */
+  const comprometidoUsd = orden.instrucciones
     .filter((i) => i.estado === 'POR_PAGAR' || i.estado === 'PAGADA')
-    .reduce((s, i) => s + Number(i.monto), 0)
-  const pendiente = Math.max(Number(orden.total) - comprometido, 0)
+    .reduce((s, i) => s + Number(i.monto_usd), 0)
+
+  const totalUsd = Number(orden.total_usd) || 0
+  const factor = totalUsd > 0 ? Number(orden.total) / totalUsd : 1
+  const pendiente = Math.max((totalUsd - comprometidoUsd) * factor, 0)
+
+  /*
+    Lo que falta, partido en sus dos mitades.
+
+    Sirve para el reparto que pidió la líder: la base se cancela en divisa y el
+    IVA en bolívares a la tasa oficial. Se calculan sobre lo que FALTA y no
+    sobre el total de la orden, para que en un segundo pago no vuelvan a
+    ofrecer lo que ya se instruyó.
+  */
+  const ivaOrden = Number(orden.iva) || 0
+  const totalOrden = Number(orden.total) || 0
+  const proporcion = totalOrden > 0 ? pendiente / totalOrden : 0
+  const ivaPendiente = ivaOrden * proporcion
+  const basePendiente = Math.max(pendiente - ivaPendiente, 0)
 
   /*
     Se propone cómo cobra el proveedor, no un método fijo.
@@ -123,6 +155,29 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
 
   const igtf = conIgtf ? Number(monto || 0) * 0.03 : 0
   const formato = moneda === 'VES' ? bolivares : dolares
+  const formatoOrden = orden.moneda === 'VES' ? bolivares : dolares
+
+  /*
+    Rellenar el monto en la moneda que esté elegida.
+
+    Si la orden va en dólares y se está pagando en bolívares —el caso del IVA—,
+    la cifra se pasa a bolívares con la tasa del BCV del día, que es la que la
+    base va a congelar en la instrucción. Se propone: quien paga puede
+    corregirla, y el monto que vale es el que quede escrito.
+  */
+  const tasaBcv = Number(tasaVigente?.tasa) || 0
+  const enLaMonedaElegida = (importeEnLaOrden: number) => {
+    if (moneda === orden.moneda) return importeEnLaOrden
+    const enUsd = factor > 0 ? importeEnLaOrden / factor : importeEnLaOrden
+    if (moneda === 'VES') return tasaBcv > 0 ? enUsd * tasaBcv : 0
+    return enUsd
+  }
+
+  const proponer = (importeEnLaOrden: number) =>
+    setMonto(enLaMonedaElegida(importeEnLaOrden).toFixed(2))
+
+  const puedeRepartir = ivaPendiente > 0.01 && basePendiente > 0.01
+  const faltaLaTasa = moneda !== orden.moneda && moneda === 'VES' && tasaBcv <= 0
 
   const guardar = async () => {
     await indicar.mutateAsync({
@@ -183,8 +238,54 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
           inputMode="decimal"
           value={monto}
           onChange={(e) => setMonto(e.target.value)}
-          hint={`Falta por pagar: ${formato(pendiente)}`}
+          hint={
+            moneda === orden.moneda
+              ? `Falta por pagar: ${formatoOrden(pendiente)}`
+              : `Falta por pagar: ${formatoOrden(pendiente)} · en ${moneda}, ${formato(enLaMonedaElegida(pendiente))}`
+          }
         />
+
+        {/*
+          PARTIR EL PAGO EN BASE E IVA.
+
+          Es como se compra aquí: la base se cancela en divisa y el IVA en
+          bolívares a la tasa oficial. Se hacía ya --dos instrucciones sobre la
+          misma orden, cada una en su moneda-- pero echando las dos cuentas a
+          mano, y una de ellas es una conversión con la tasa del día.
+
+          Los tres botones solo escriben en el campo de arriba. No deciden
+          nada: el monto que vale es el que quede escrito, y se puede corregir.
+        */}
+        {puedeRepartir ? (
+          <div className="sm:col-span-2">
+            <p className="text-ink/45 mb-1.5 text-xs">Repartir lo que falta</p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => proponer(pendiente)}>
+                Todo · {formato(enLaMonedaElegida(pendiente))}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => proponer(basePendiente)}>
+                Solo la base · {formato(enLaMonedaElegida(basePendiente))}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => proponer(ivaPendiente)}>
+                Solo el IVA · {formato(enLaMonedaElegida(ivaPendiente))}
+              </Button>
+            </div>
+
+            {moneda !== orden.moneda && moneda === 'VES' && tasaBcv > 0 ? (
+              <p className="text-ink/45 mt-1.5 text-xs">
+                Convertido con la tasa del BCV del{' '}
+                {new Date(`${tasaVigente?.fecha}T12:00`).toLocaleDateString('es-VE')}.
+              </p>
+            ) : null}
+
+            {faltaLaTasa ? (
+              <p className="text-warning mt-1.5 text-xs">
+                No hay tasa del BCV registrada, así que no se puede convertir a bolívares. Escribe
+                el monto a mano o carga la tasa del día.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <label
           className={cn(

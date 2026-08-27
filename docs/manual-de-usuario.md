@@ -2688,6 +2688,21 @@ Sobre una instrucción que siga **Por pagar** hay un tercer botón, **Cambiar el
 
 Una orden admite **varias instrucciones de pago**: mitad ahora y mitad al entregar. Por eso el **Monto** viene con lo que falta y no con el total.
 
+**Y cada instrucción puede ir en una moneda distinta.** Es lo que permite la forma de comprar de la casa: **la base se cancela en divisa y el IVA en bolívares a la tasa oficial del BCV**.
+
+Se hace en dos pasos, sobre la misma orden:
+
+1. **Indicar método de pago** con la moneda de la divisa —USDT, dólares— y el monto de la base.
+2. Otra vez **Indicar método de pago**, esta vez en **bolívares**, por el IVA.
+
+**Debajo del monto hay tres botones que hacen la cuenta**: **Todo**, **Solo la base** y **Solo el IVA**, cada uno con su cifra ya calculada. Se calculan sobre **lo que falta**, no sobre el total, así que en el segundo pago no vuelven a ofrecer lo que ya se instruyó.
+
+**Si la moneda elegida no es la de la orden, la cifra se convierte con la tasa del BCV del día** y la pantalla dice de qué fecha es esa tasa. Es una propuesta: el monto que vale es el que quede escrito, y se puede corregir.
+
+> **Cuidado con el IGTF, que es la mitad del motivo de repartir así.** Un pago en divisa causa el **3 %** y uno en bolívares no. Pagar el IVA en bolívares se ahorra ese 3 % sobre esa parte. La casilla del IGTF se propone según la moneda y se puede cambiar.
+
+**Lo que falta por pagar se calcula en dólares y se vuelve a expresar en la moneda de la orden.** Es lo que permite mezclar monedas sin que la cuenta se descuadre: dos instrucciones, una de $9.140,66 y otra de Bs 1.151.755,29, cubren exactamente una orden de $10.603,17.
+
 **La orden solo pasa a Pagada · falta que llegue cuando ya no queda nada por pagar.** Con un abono parcial se queda esperando el resto, porque mientras se le deba al proveedor la compra no está pagada.
 
 #### Registrar el pago (tesorería)
