@@ -2,7 +2,7 @@
 
 **Sistema de control interno · Minería Internacional TS, C.A.**
 
-**Versión 1.2 · 21 de agosto de 2026**
+**Versión 1.3 · 26 de agosto de 2026**
 
 ---
 
@@ -2526,11 +2526,13 @@ Si no hay ninguna cuenta en esa moneda, se lee **No hay cuentas en Bolívares** 
 
 ### 9.10 Facturas de proveedor
 
-**Administración › Compras › Facturas de proveedor**
+**Administración › Compras › Proveedores › Facturas recibidas**
 
-Es donde se copia el papel que emite el proveedor. La pantalla se presenta con una sola frase: **El papel que sustenta el crédito fiscal del IVA.**
+**Ya no es una entrada del menú: es la segunda pestaña de Proveedores**, y allí se llama **Facturas recibidas**. El título de la pantalla es **Facturas recibidas de proveedores**, y se presenta así: *"El papel que manda el proveedor por una orden ya aprobada. Es lo que sustenta el crédito fiscal del IVA."*
 
-Se llega por el menú, como al tablero y a proveedores. No hace falta abrir ninguna compra para entrar.
+**Aquí no se registra ninguna factura**, aunque el manual anterior dijera que sí. Esta pantalla es la lista de lo que ya se recibió. **La factura nace en la ficha de la compra**, con el botón **Registrar factura** de la tarjeta de la orden, y solo cuando el proveedor declaró que entrega con factura. Es lo que impide que se cargue una factura suelta que no case con ninguna orden.
+
+Cuando no hay ninguna, la pantalla lo dice: **Todavía no se ha recibido ninguna factura**.
 
 #### Para qué sirve registrar la factura
 
@@ -5574,9 +5576,15 @@ No es vigilancia sobre las personas. Es lo que permite responder una pregunta co
 
 ### 14.8 Las excepciones se conceden, pero se anotan
 
-Algunas reglas admiten excepción para quien tenga el permiso más alto del módulo. Despachar mineral sin guía es la principal: hay días en que el papel llega tarde y el cliente está esperando.
+Hay **dos maneras** de salirse de una regla, y conviene no confundirlas.
 
-La excepción existe porque la operación real no siempre encaja en el procedimiento. Pero **queda registrada en la auditoría**, con el nombre de quien la autorizó. Nunca pasa en silencio.
+**La primera es por control total sobre el módulo.** Algunas reglas admiten excepción para quien tenga el escalón más alto: despachar mineral sin guía —hay días en que el papel llega tarde y el cliente está esperando—, vender por debajo del precio mínimo del artículo, o facturar a crédito por encima del límite del cliente. La facultad viene del nivel de permiso, no de un permiso aparte.
+
+**La segunda es por un permiso extendido**, que es lo contrario: no viene del nivel sino de que alguien te prestó una facultad concreta, a ti y por un plazo. Aprobar una compra sin ser el gerente general es el caso vivo. Está contado en 13.1.
+
+**Las dos quedan registradas en la auditoría**, con el nombre de quien las autorizó. Nunca pasan en silencio.
+
+**Y la segunda deja además rastro en el papel.** Quien aprueba una compra con un permiso extendido no firma como si fuera suyo: la orden impresa dice **bajo autorización de** seguido del nombre de quien se lo extendió, y el sistema le exige subir el papel que lo respalda. **El respaldo se pide solo ahí**: a quien actúa por su puesto no se le pide nada, porque no hay nada que justificar.
 
 ### 14.9 Sobre la separación de funciones
 
@@ -5655,8 +5663,11 @@ Las tres primeras cambian el cálculo —hay que acordar, por ejemplo, si el fle
 
 Se dice para que nadie lo lea como verificado:
 
-- **El reparto de permisos que trae el sistema de fábrica.** La tabla de 13.1 se levantó de la base tal como está hoy, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla.
-- **Los capítulos de los módulos escondidos** —Explotación, Despachos, Ventas y Tesorería— no se revisaron pantalla por pantalla en esta versión. Lo que dicen era cierto en la versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte. **Maquinaria y Combustible todavía no tienen capítulo.**
+- **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles de esta versión se levantaron de la base tal como está hoy, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla.
+- **Maquinaria y Combustible están en el menú y no tienen capítulo.** Es el hueco más grande que queda. Son dos módulos que se usan todos los días y de los que este manual no cuenta nada; lo poco que hay está repartido en el capítulo 7.
+- **Los capítulos de los módulos escondidos** —Explotación, Despachos y Ventas— no se revisaron pantalla por pantalla en esta versión. Lo que dicen era cierto en la versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte.
+- **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla, quién puede pagar, que el rol de Tesorería ya no existe— pero las pantallas que quedaron escondidas no se recorrieron una por una.
+- **La factura de venta no está completa ante el SENIAT.** Lo que le falta está en 15.2, y no es un olvido de este manual sino del sistema.
 
 ---
 
