@@ -1715,6 +1715,8 @@ Para **editar** un almacén se pulsa **en cualquier parte de su fila**. No hay b
 | **Nombre** | Sí | |
 | **Tipo** | Sí | Almacén, Patio de material, Taller, Combustible o En tránsito |
 | **Ubicación** | No | |
+| **Capacidad del tanque** | Según el tipo | Solo si el tipo es **Combustible**. En litros. Con ella el saldo deja de leerse «720 L» y pasa a **720 de 5.000** |
+| **Trabajos a la vez** | Según el tipo | Solo si el tipo es **Taller**. Sin él, el taller no sabe decir si le queda sitio |
 | **Es el almacén propuesto al recibir una compra** | — | |
 | **Activo** | — | Viene marcada |
 
@@ -1769,11 +1771,28 @@ Se ve en tres sitios: en **Existencias**, en la **ficha del artículo** y en la 
 
 Cuál de los dos comportamientos tiene cada artículo lo dice su campo **Al entregarlo a una persona**, en el catálogo (7.8).
 
+#### Los caminos que el libro conoce
+
+Además de los que van en la tabla de arriba, el libro registra cuatro movimientos más que conviene reconocer al leerlo:
+
+| Camino | Cuándo |
+| --- | --- |
+| **Entrada directa** | El botón **Registrar entrada** de 7.4: el saldo inicial, algo comprado por fuera |
+| **Devolución** | Material que vuelve al almacén |
+| **Merma** | Se perdió en el manejo: se rompió, se derramó, se echó a perder moviéndolo |
+| **Baja** | Dejó de servir, con su causa (7.4). **No es lo mismo que la merma** y por eso son dos tipos distintos |
+
+A eso se suma la salida que escribe **Asignaciones** cuando se reporta perdido o dañado un bien que estaba en manos de alguien (18.5).
+
 #### Toneladas y metros cúbicos
 
-Cada artículo tiene **una sola unidad**, la que se le puso al crearlo, y el material de cantera va en toneladas. La razón es que la tonelada es lo único que mide un instrumento auditable: la romana. El volumen de una pila siempre es una estimación.
+Cada artículo tiene **una sola unidad**, la que se le puso al crearlo. La razón de fondo no ha cambiado: la tonelada es lo único que mide un instrumento auditable, la romana, y el volumen de una pila siempre es una estimación.
 
-**El sistema no convierte entre toneladas y metros cúbicos.** No guarda ningún factor de densidad. Si un cliente habla en metros cúbicos, la conversión la hace la persona antes de teclear, con el criterio que la empresa tenga establecido.
+**Pero el sistema sí sabe convertir, si se le dice cómo.** Cada artículo tiene un campo de **densidad** —cuántas toneladas pesa un metro cúbico de ese material—, y la planilla de carga trae esa columna. Cuando está lleno, Existencias y la ficha del artículo enseñan la misma cantidad en la otra medida, en gris y precedida de **≈**, para que se lea como lo que es: una equivalencia, no una medición.
+
+**Hoy no hay ningún artículo con densidad cargada**, así que en la práctica no se ve ninguna equivalencia. Si a la empresa le sirve, es cuestión de llenar ese campo; mientras no se llene, la conversión la sigue haciendo la persona antes de teclear.
+
+**Y ojo con lo que se decide al crear el artículo**, porque la unidad no se cambia después: un material dado de alta en metros cúbicos se mueve en metros cúbicos, y la densidad solo añade la lectura equivalente. **Hoy la cantera opera en metros cúbicos** mientras tramita la licencia para vender por tonelada.
 
 ### 7.13 Cuando el sistema no te deja
 
