@@ -22,7 +22,8 @@ import {
 } from '@/lib/api/auditoria'
 import type { FiltrosAuditoria, Movimiento, Operacion } from '@/lib/api/auditoria'
 import { usePerfiles } from '@/lib/api/catalogo'
-import { fechaHora } from '@/lib/formato'
+import { usePresencia } from '@/lib/api/usuarios'
+import { fechaHora, hace } from '@/lib/formato'
 
 const OPERACIONES: { valor: Operacion; etiqueta: string }[] = [
   { valor: 'INSERT', etiqueta: 'Creaciones' },
@@ -46,6 +47,96 @@ function frase(m: Movimiento): string {
   if (m.operacion === 'ACCESO') return 'Entró al sistema'
   if (m.operacion === 'CLAVE') return 'Cambió una clave'
   return `${VERBOS[m.operacion]} ${nombreDeTabla(m.tabla).toLowerCase()}`
+}
+
+/**
+ * Quien esta en el sistema ahora mismo.
+ *
+ * Va en Auditoria y no en Usuarios a proposito: esta lista no sirve para
+ * administrar a nadie, sirve para saber quien esta trabajando —a quien se le
+ * puede preguntar algo, y quien pudo hacer lo que se acaba de ver en el
+ * registro de abajo—. Es la misma pregunta que responde el resto de esta
+ * pantalla, pero en presente.
+ *
+ * EN LINEA ES UNA VENTANA DE CINCO MINUTOS, y conviene saberlo al leerla. El
+ * navegador manda una señal cada dos, asi que se puede perder una sin que la
+ * persona desaparezca; pero nadie se apaga en el momento exacto en que cierra.
+ */
+function QuienEstaConectado() {
+  const { data, isPending } = usePresencia()
+
+  const gente = data ?? []
+  const dentro = gente.filter((p) => p.en_linea)
+  const fuera = gente.filter((p) => !p.en_linea)
+
+  return (
+    <Card className="mb-4">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-ink/90 text-base font-semibold">Quién está en el sistema</h2>
+        <span className="text-ink/45 text-xs">
+          {isPending
+            ? 'Cargando…'
+            : dentro.length === 0
+              ? 'Nadie conectado ahora'
+              : `${dentro.length} de ${gente.length} conectad${dentro.length === 1 ? 'o' : 'os'}`}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {dentro.map((p) => (
+          <span
+            key={p.id}
+            className="border-success/30 bg-success/10 rounded-card flex items-center gap-2 border px-2.5 py-1.5"
+          >
+            {/*
+              El punto es el dato, no el adorno: es lo que se busca al abrir
+              esta tarjeta. Con `animate-pulse` diria «en vivo», que seria
+              prometer mas de lo que hay — la ventana es de cinco minutos.
+            */}
+            <span className="bg-success size-2 shrink-0 rounded-full" />
+            <span className="min-w-0">
+              <span className="text-ink/85 block text-sm">{p.nombre}</span>
+              {p.cargo ? <span className="text-ink/45 block text-2xs">{p.cargo}</span> : null}
+            </span>
+          </span>
+        ))}
+
+        {dentro.length === 0 && !isPending ? (
+          <p className="text-ink/50 text-sm">
+            Nadie tiene el sistema abierto en este momento.
+          </p>
+        ) : null}
+      </div>
+
+      {fuera.length > 0 ? (
+        <div className="border-hairline mt-3 border-t pt-3">
+          <p className="text-ink/45 text-2xs mb-2 tracking-wide uppercase">
+            Los demás, y cuándo se les vio
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+            {fuera.map((p) => (
+              <span key={p.id} className="text-ink/60 text-xs">
+                {p.nombre}{' '}
+                <span className="text-ink/40">
+                  {/*
+                    `visto_en` es cuando se le vio; `ultimo_acceso` es cuando
+                    entro. Se prefiere el primero y se cae al segundo, que es lo
+                    unico que hay de quien no ha vuelto a entrar desde que
+                    existe la señal. Sin ninguno de los dos, no se inventa nada.
+                  */}
+                  {p.visto_en
+                    ? hace(p.visto_en)
+                    : p.ultimo_acceso
+                      ? `entró ${hace(p.ultimo_acceso)}`
+                      : 'sin registro'}
+                </span>
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </Card>
+  )
 }
 
 export function Auditoria() {
@@ -78,6 +169,8 @@ export function Auditoria() {
         title="Auditoría"
         description="Todo lo que se escribe en el sistema queda aquí, con la fecha, la hora y quién lo hizo. Esta pantalla la abre solo la administración."
       />
+
+      <QuienEstaConectado />
 
       {/* ------------------------------ Filtros ------------------------------ */}
       <Card className="mb-4">

@@ -1,6 +1,7 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import {
   KeyRound,
+  Search,
   Plus,
   ShieldCheck,
   Trash2,
@@ -40,7 +41,7 @@ import {
   useRoles,
   useAcciones,
   useAutorizaciones,
-  useAutorizar,
+  useAutorizarVarias,
   useRetirarAutorizacion,
   useAccionesDeLosRoles,
   useMarcarAccion,
@@ -1102,7 +1103,7 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
   const autorizaciones = useAutorizaciones()
   const usuarios = useUsuarios()
   const acciones = useAcciones()
-  const conceder = useAutorizar()
+  const conceder = useAutorizarVarias()
   const retirar = useRetirarAutorizacion()
 
   const [abierto, setAbierto] = useState(false)
@@ -1111,16 +1112,30 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
   const [error, setError] = useState<string | null>(null)
   const [forma, setForma] = useState({
     usuario_id: '',
-    accion: '',
+    // Varias, y no una. Lo pidió Christopher: «en vez de agregar uno por uno,
+    // la opción de marcar varios».
+    acciones: [] as string[],
     motivo: '',
     desde: '',
     hasta: '',
   })
+  const [busca, setBusca] = useState('')
+  /** Lo que la base dejó fuera y por qué, para decirlo al cerrar. */
+  const [omitidas, setOmitidas] = useState<{ accion: string; motivo: string }[]>([])
 
   const limpiar = () => {
-    setForma({ usuario_id: '', accion: '', motivo: '', desde: '', hasta: '' })
+    setForma({ usuario_id: '', acciones: [], motivo: '', desde: '', hasta: '' })
+    setBusca('')
     setError(null)
   }
+
+  const marcar = (codigo: string) =>
+    setForma((f) => ({
+      ...f,
+      acciones: f.acciones.includes(codigo)
+        ? f.acciones.filter((x) => x !== codigo)
+        : [...f.acciones, codigo],
+    }))
 
   /*
     Solo las casillas que se pueden prestar.
@@ -1130,14 +1145,32 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
     entra: su casilla está apagada.
   */
   const NO_SE_PRESTAN = ['USUARIOS.DAR_PERMISOS', 'USUARIOS.ASIGNAR_ROLES']
-  const opcionesAccion = (acciones.data ?? [])
-    .filter((a) => !NO_SE_PRESTAN.includes(a.codigo))
-    .map((a) => ({
-      valor: a.codigo,
-      nombre: a.nombre,
-      codigo: a.modulo_nombre,
-      detalle: a.dice ?? undefined,
-    }))
+  const prestables = (acciones.data ?? []).filter((a) => !NO_SE_PRESTAN.includes(a.codigo))
+
+  /*
+    Ciento cincuenta casillas en catorce módulos no caben en una lista pelada.
+
+    Se filtran por lo que se escriba —nombre, módulo o lo que la casilla dice—
+    y se agrupan por módulo, que es como la gente las busca: «lo de compras».
+    El orden de los módulos es el que traiga el catálogo; reordenarlo aquí haría
+    que esta pantalla y la matriz de permisos no se parecieran.
+  */
+  const porModulo = useMemo(() => {
+    const q = busca.trim().toLowerCase()
+    const cabe = (a: (typeof prestables)[number]) =>
+      !q ||
+      a.nombre.toLowerCase().includes(q) ||
+      (a.modulo_nombre ?? '').toLowerCase().includes(q) ||
+      (a.dice ?? '').toLowerCase().includes(q)
+
+    const mapa = new Map<string, typeof prestables>()
+    for (const a of prestables) {
+      if (!cabe(a)) continue
+      const clave = a.modulo_nombre ?? a.modulo
+      mapa.set(clave, [...(mapa.get(clave) ?? []), a])
+    }
+    return [...mapa.entries()]
+  }, [prestables, busca])
 
   const opcionesPersona = (usuarios.data ?? [])
     .filter((u) => u.activo)
@@ -1149,17 +1182,30 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
 
   const guardar = () => {
     setError(null)
+    setOmitidas([])
     conceder.mutate(
       {
         usuario_id: forma.usuario_id,
-        accion: forma.accion,
+        acciones: forma.acciones,
         motivo: forma.motivo,
         desde: forma.desde || null,
         hasta: forma.hasta || null,
       },
       {
-        onSuccess: () => {
+        onSuccess: (r) => {
+          /*
+            Si alguna se quedo fuera, el modal NO se cierra: se enseña cuales y
+            por que. Cerrar diciendo «listo» habiendo extendido tres de cinco es
+            como no decirlo — y las dos que faltan se descubren el dia que
+            alguien no puede hacer lo que creia que podia.
+          */
+          if (r?.omitidas?.length) {
+            setOmitidas(r.omitidas)
+            setForma((f) => ({ ...f, acciones: [] }))
+            return
+          }
           setAbierto(false)
+          setOmitidas([])
           limpiar()
         },
         onError: (e: Error) => setError(e.message),
@@ -1270,12 +1316,14 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
               disabled={
                 conceder.isPending ||
                 !forma.usuario_id ||
-                !forma.accion ||
+                forma.acciones.length === 0 ||
                 forma.motivo.trim().length < 5
               }
               onClick={guardar}
             >
-              Extender
+              {forma.acciones.length > 1
+                ? `Extender las ${forma.acciones.length}`
+                : 'Extender'}
             </Button>
           </>
         }
@@ -1289,14 +1337,99 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
             vacio="Elige a la persona"
           />
 
-          <SelectBuscable
-            label="Qué se le extiende"
-            opciones={opcionesAccion}
-            valor={forma.accion}
-            onCambio={(v: string) => setForma((f) => ({ ...f, accion: v }))}
-            vacio="Busca la cosa concreta"
-            hint="Solo puedes extender lo que tú mismo puedes hacer."
-          />
+          {/*
+            DE UNA EN UNA A MARCAR VARIAS.
+
+            Antes era un buscador de una sola casilla, y prestarle cuatro cosas
+            a la misma persona eran cuatro pasadas por el mismo formulario,
+            escribiendo la misma justificación cada vez.
+
+            Se conserva el buscador —con ciento cincuenta casillas hace falta—
+            pero ahora filtra una lista de marcar, agrupada por módulo.
+          */}
+          <div>
+            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+              <span className="text-ink/80 text-sm font-medium">Qué se le extiende</span>
+              {forma.acciones.length > 0 ? (
+                <button
+                  type="button"
+                  className="text-royal-600 dark:text-royal-300 text-xs underline"
+                  onClick={() => setForma((f) => ({ ...f, acciones: [] }))}
+                >
+                  {forma.acciones.length} marcada{forma.acciones.length === 1 ? '' : 's'} · quitar
+                  todas
+                </button>
+              ) : null}
+            </div>
+
+            <Input
+              label="Buscar"
+              ocultarEtiqueta
+              icon={<Search />}
+              placeholder="Filtra por casilla o por módulo"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+
+            <div className="border-hairline rounded-card mt-2 max-h-64 overflow-y-auto border">
+              {porModulo.length === 0 ? (
+                <p className="text-ink/45 p-3 text-sm">Ninguna casilla coincide.</p>
+              ) : (
+                porModulo.map(([modulo, lista]) => (
+                  <div key={modulo}>
+                    <p className="bg-canvas text-ink/50 text-2xs sticky top-0 px-3 py-1.5 tracking-wide uppercase">
+                      {modulo}
+                    </p>
+                    {lista.map((a) => (
+                      <label
+                        key={a.codigo}
+                        className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 px-3 py-2"
+                      >
+                        <input
+                          type="checkbox"
+                          className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                          checked={forma.acciones.includes(a.codigo)}
+                          onChange={() => marcar(a.codigo)}
+                        />
+                        <span className="min-w-0">
+                          <span className="text-ink/85 block text-sm">{a.nombre}</span>
+                          {a.dice ? (
+                            <span className="text-ink/45 block text-xs">{a.dice}</span>
+                          ) : null}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+            <p className="text-ink/45 mt-1.5 text-xs">
+              Solo puedes extender lo que tú mismo puedes hacer. La misma justificación vale para
+              todas las que marques.
+            </p>
+          </div>
+
+          {/*
+            Lo que la base dejó fuera. No es un error —las demás sí entraron—
+            pero tampoco se puede callar: son casillas que alguien creyó haber
+            extendido.
+          */}
+          {omitidas.length > 0 ? (
+            <div className="border-warning/30 bg-warning-soft rounded-card border p-3">
+              <p className="text-ink/80 text-sm font-medium">
+                {omitidas.length === 1
+                  ? 'Una no entró:'
+                  : `${omitidas.length} no entraron:`}
+              </p>
+              <ul className="text-ink/70 mt-1.5 space-y-1 text-xs">
+                {omitidas.map((o) => (
+                  <li key={o.accion}>
+                    <strong>{o.accion}</strong> — {o.motivo}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
