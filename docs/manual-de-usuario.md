@@ -5271,19 +5271,20 @@ Es el espejo de lo que ya hace la ficha del trabajador, que dice si esa persona 
 4. Escribe el **Nombre y apellido**. Se escribe solo en mayúsculas y sin tildes.
 5. Escribe la **Clave inicial**. **Mínimo 8 caracteres. Dásela en persona y que la cambie.**
 6. Rellena el **Cargo**, la **Cédula** y el **Teléfono** si los tienes. Los tres son opcionales.
+
+**Cuidado con el Teléfono: lo que escribas aquí no se guarda.** El campo está en la ventana pero el alta no lo lleva a la base, así que el usuario se crea sin dar error y el número se pierde. Para que quede, abre después la ficha de ese usuario y **vuelve a escribirlo**: desde la edición sí se guarda. Está avisado a sistemas.
 7. Marca al menos un rol en el bloque **Roles**. Viene marcado **Solicitante**.
 8. Pulsa **Guardar**. Aparece el aviso **Usuario p.ramirez creado. Dile la clave en persona, no por escrito.**
 
 La primera vez que esa persona entre, el sistema le obliga a ponerse una clave propia antes de dejarle ver nada. El motivo es que la clave que pone administración la saben dos personas, y mientras eso sea así la sesión existe pero no identifica a nadie.
 
-Los roles que trae el sistema son estos, con la descripción que se lee al lado de cada casilla:
+Los roles que trae el sistema son **diez**, con la descripción que se lee al lado de cada casilla. **Hubo un undécimo, Tesorería, y se retiró el 25 de agosto de 2026** junto con el módulo: sus permisos, sus acciones y las cuentas que lo tenían se borraron el mismo día. Si tienes un manual impreso donde aparece, esta lista es la que manda.
 
 | Rol | Qué dice el sistema de él |
 | --- | --- |
 | **Administrador del sistema** | **Puede todo. Se reserva a quien administra el sistema, no a la gerencia.** |
 | **Gerente general** | **Única figura que aprueba una compra antes de que se pague.** |
 | **Compras** | **Aprueba requisiciones, carga cotizaciones y prepara la orden.** |
-| **Tesorería** | **Ejecuta los pagos autorizados y los concilia.** |
 | **Almacén** | **Recibe material, cuenta existencias y despacha.** |
 | **Ventas** | **Cotiza, despacha material, factura y registra cobros.** |
 | **Operaciones** | **Registra producción, voladuras y consumo en el frente.** |
@@ -5319,27 +5320,33 @@ Dentro de cada tarjeta está la matriz, con estas columnas:
 | **Escritura** | Casilla |
 | **Control total** | Casilla |
 
-**Los módulos que aparecen, en este orden, son quince:**
+**Los módulos que aparecen en la matriz son once, en este orden:**
 
-| # | Módulo |
-| --- | --- |
-| 1 | **Panel** |
-| 2 | **Explotación** |
-| 3 | **Maquinaria** |
-| 4 | **Combustible** |
-| 5 | **Inventario** |
-| 6 | **Asignaciones** |
-| 7 | **Despachos** |
-| 8 | **Compras** |
-| 9 | **Ventas** |
-| 10 | **Nómina** |
-| 11 | **Tesorería** |
-| 12 | **Tasas de cambio** |
-| 13 | **Configuración** |
-| 14 | **Usuarios y roles** |
-| 15 | **Respaldo de la base** |
+**Panel · Maquinaria · Combustible · Inventario · Asignaciones · Compras · Nómina · Tasas de cambio · Configuración · Usuarios y roles · Respaldo de la base**
 
-**Que un módulo no salga hoy en el menú no lo saca de esta matriz.** Maquinaria, Combustible, Asignaciones y los demás siguen aquí, y su permiso se reparte igual: el día que vuelvan al menú, quien lo tenga entrará sin que haya que tocar nada.
+Faltan cuatro de los quince, y no es un olvido: **la matriz esconde los módulos que están en obra** —Explotación, Despachos, Ventas y Tesorería—. Repartir permisos sobre lo que nadie puede abrir solo sirve para que alguien crea que tiene acceso a algo. El día que uno vuelva al menú, vuelve también a la matriz con lo que tuviera repartido.
+
+Los quince del sistema, para referencia, son:
+
+| # | Módulo | |
+| --- | --- | --- |
+| 1 | **Panel** | |
+| 2 | **Explotación** | *(en obra: no sale en la matriz)* |
+| 3 | **Maquinaria** | |
+| 4 | **Combustible** | |
+| 5 | **Inventario** | |
+| 6 | **Asignaciones** | |
+| 7 | **Despachos** | *(en obra: no sale en la matriz)* |
+| 8 | **Compras** | |
+| 9 | **Ventas** | *(en obra: no sale en la matriz)* |
+| 10 | **Nómina** | |
+| 11 | **Tesorería** | *(en obra: no sale en la matriz)* |
+| 12 | **Tasas de cambio** | |
+| 13 | **Configuración** | |
+| 14 | **Usuarios y roles** | |
+| 15 | **Respaldo de la base** | |
+
+**Lo que un módulo en obra tuviera repartido no se pierde**: sigue guardado aunque su columna no se vea, y vuelve a la matriz el día que el módulo vuelva al menú. Lo que no se puede es repartirlo mientras tanto.
 
 **El Organigrama no tiene fila propia**: se gobierna con el permiso de Nómina.
 
