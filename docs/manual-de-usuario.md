@@ -5270,9 +5270,9 @@ Es el espejo de lo que ya hace la ficha del trabajador, que dice si esa persona 
 3. Escribe el **Nombre de usuario**. **De 3 a 32 caracteres: letras, números, punto y guion.** Se pasa solo a minúsculas y se le quitan los espacios.
 4. Escribe el **Nombre y apellido**. Se escribe solo en mayúsculas y sin tildes.
 5. Escribe la **Clave inicial**. **Mínimo 8 caracteres. Dásela en persona y que la cambie.**
-6. Rellena el **Cargo**, la **Cédula** y el **Teléfono** si los tienes. Los tres son opcionales.
+6. Rellena el **Cargo**, la **Cédula** y el **Teléfono** si los tienes. Los tres son opcionales, y los tres se guardan.
 
-**Cuidado con el Teléfono: lo que escribas aquí no se guarda.** El campo está en la ventana pero el alta no lo lleva a la base, así que el usuario se crea sin dar error y el número se pierde. Para que quede, abre después la ficha de ese usuario y **vuelve a escribirlo**: desde la edición sí se guarda. Está avisado a sistemas.
+**El Teléfono no se guardaba hasta el 27 de agosto de 2026.** El campo estaba en la ventana y el alta no lo llevaba a la base: el usuario se creaba sin dar error y el número se perdía. Si tienes usuarios creados antes de esa fecha a los que les falta el teléfono, es esto — se arregla abriendo su ficha y escribiéndolo.
 7. Marca al menos un rol en el bloque **Roles**. Viene marcado **Solicitante**.
 8. Pulsa **Guardar**. Aparece el aviso **Usuario p.ramirez creado. Dile la clave en persona, no por escrito.**
 

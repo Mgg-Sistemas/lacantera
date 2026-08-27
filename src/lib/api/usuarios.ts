@@ -215,14 +215,24 @@ export function useCrearUsuario() {
       nombre: string
       cargo?: string
       cedula?: string
+      telefono?: string
       roles: string[]
     }) =>
+      /*
+        El teléfono va, y antes no iba.
+
+        La ventana de alta lo pedía y este hook no lo mandaba: la función de la
+        base ni siquiera tenía el parámetro. El usuario se creaba sin dar error
+        y el número se perdía en silencio, que es la peor forma de perder un
+        dato — nadie lo nota hasta que hace falta llamar a esa persona.
+      */
       rpc<string>('crear_usuario_sistema', {
         p_usuario: v.usuario,
         p_clave: v.clave,
         p_nombre: v.nombre,
         p_cargo: v.cargo || null,
         p_cedula: v.cedula || null,
+        p_telefono: v.telefono || null,
         p_roles: v.roles,
       }),
     onSuccess: () => invalidar(qc),
