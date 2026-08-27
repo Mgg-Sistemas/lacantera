@@ -20,6 +20,7 @@ import {
   useCrearArticulo,
   useEditarArticulo,
   useEliminarArticulo,
+  usePresentaciones,
   useUnidades,
 } from '@/lib/api/catalogo'
 
@@ -36,6 +37,8 @@ const nuevo = {
   modo_entrega: 'CONSUMIBLE',
   presentacion: '',
   unidades_por_presentacion: '',
+  marca: '',
+  numero_parte: '',
 }
 
 /*
@@ -52,10 +55,40 @@ const modoDe = (categoria: string) =>
       ? 'NO'
       : 'CONSUMIBLE'
 
+/**
+ * «un bulto», «una paleta» — con su artículo, para que la ayuda se lea.
+ *
+ * El código no sirve para esto: «Lo que trae BULTO» está escrito para una
+ * máquina. Se busca el nombre del catálogo, que ya viene en castellano y con
+ * su tilde, y se le pone el artículo mirando la última letra. No es gramática
+ * perfecta —«un paleta» no pasaría— pero acierta con todos los de la lista, y
+ * la lista es cerrada.
+ */
+function unNombre(
+  lista: { codigo: string; nombre: string }[] | undefined,
+  codigo: string,
+): string {
+  const nombre = lista?.find((p) => p.codigo === codigo)?.nombre ?? codigo
+  return `${nombre.trim().toLowerCase().endsWith('a') ? 'una' : 'un'} ${nombre.toLowerCase()}`
+}
+
 export function Articulos() {
   const navegar = useNavigate()
   const { data, isPending, error } = useArticulos(false)
   const { data: unidades } = useUnidades()
+  const { data: presentaciones } = usePresentaciones()
+  /*
+    Las marcas que ya se han usado, para ofrecerlas en vez de que cada quien
+    teclee la suya. Salen de los articulos que ya estan cargados —no hace falta
+    otra consulta— y se ordenan para que la lista no baile entre aperturas.
+  */
+  const marcasUsadas = useMemo(
+    () =>
+      [...new Set((data ?? []).map((a) => a.marca).filter((m): m is string => !!m))].sort((x, y) =>
+        x.localeCompare(y, 'es'),
+      ),
+    [data],
+  )
   const crear = useCrearArticulo()
   const editar = useEditarArticulo()
   const eliminar = useEliminarArticulo()
@@ -215,6 +248,8 @@ export function Articulos() {
                               stock_minimo: String(a.stock_minimo),
                               modo_entrega: a.modo_entrega,
                               presentacion: a.presentacion ?? '',
+                              marca: a.marca ?? '',
+                              numero_parte: a.numero_parte ?? '',
                               unidades_por_presentacion:
                                 a.unidades_por_presentacion == null
                                   ? ''
@@ -267,11 +302,13 @@ export function Articulos() {
                   const datos = {
                     ...form,
                     stock_minimo: Number(form.stock_minimo) || 0,
-                    presentacion: form.presentacion.trim() || null,
+                    presentacion: form.presentacion || null,
+                    marca: form.marca.trim() || null,
+                    numero_parte: form.numero_parte.trim() || null,
                     // Sin presentación no viaja el número: la base rechaza
                     // decir cuántas trae algo que no dice en qué viene.
                     unidades_por_presentacion:
-                      form.presentacion.trim() && Number(form.unidades_por_presentacion) > 0
+                      form.presentacion && Number(form.unidades_por_presentacion) > 0
                         ? Number(form.unidades_por_presentacion)
                         : null,
                   }
@@ -366,12 +403,36 @@ export function Articulos() {
               cabeza y se piden seis veces de más.
             */}
             <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
-              <Input
+              {/*
+                De lista y no escrito a mano. Con el campo libre el mismo envase
+                acababa como BIDON, BIDOM y BIDON DE 20, y entonces ninguna
+                consulta los junta: ni la que dice cuánto se compró en bidones,
+                ni la que busca lo que llega en paletas.
+
+                Y la medida no va aquí. «BIDON DE 20 L» sería texto libre otra
+                vez, con un desplegable delante: esto dice BIDON y cuántos
+                litros trae lo dice el campo de al lado, que es donde se puede
+                contar.
+              */}
+              <Select
                 label="Cómo llega"
-                placeholder="Bulto, bidón, paleta…"
-                hint="En blanco si llega suelto."
+                vacio="Suelto, sin empaque"
                 value={form.presentacion}
-                onChange={(e) => setForm({ ...form, presentacion: e.target.value })}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    presentacion: e.target.value,
+                    // Al quitar la presentación se va con ella lo que traía:
+                    // «6 por nada» no significa nada, y la base lo rechaza.
+                    unidades_por_presentacion: e.target.value
+                      ? form.unidades_por_presentacion
+                      : '',
+                  })
+                }
+                opciones={(presentaciones ?? []).map((p) => ({
+                  valor: p.codigo,
+                  etiqueta: p.nombre,
+                }))}
               />
               <Input
                 label={`Cuántas ${form.unidad} trae`}
@@ -379,16 +440,55 @@ export function Articulos() {
                 min="0"
                 step="0.0001"
                 inputMode="decimal"
-                disabled={!form.presentacion.trim()}
+                disabled={!form.presentacion}
                 hint={
-                  form.presentacion.trim()
-                    ? `Un ${form.presentacion.trim().toLowerCase()} trae esta cantidad.`
+                  form.presentacion
+                    ? `Lo que trae ${unNombre(presentaciones, form.presentacion)}.`
                     : 'Primero di cómo llega.'
                 }
                 value={form.unidades_por_presentacion}
                 onChange={(e) =>
                   setForm({ ...form, unidades_por_presentacion: e.target.value })
                 }
+              />
+            </div>
+
+            {/*
+              LO QUE IDENTIFICA AL PRODUCTO, Y NO ESTABA EN NINGUNA PARTE.
+
+              Lo pidió Christopher: «no se está apreciando dónde ingresar la
+              marca, serial, etc.». Estaba yendo a parar a la descripción, que
+              es el cajón de lo que no tiene campo — y de ahí no se puede
+              buscar ni comparar.
+
+              La marca es libre pero ofrece las ya usadas: una lista cerrada de
+              marcas envejece mal, cada compra puede traer una nueva, pero
+              dejarla a pelo produce MOTUL, Motul y Motul S.A.
+
+              El número de parte no tiene lista posible: es distinto en cada
+              producto. Es lo que se le dice al proveedor cuando el nombre no
+              basta para que mande la pieza correcta.
+            */}
+            <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+              <Input
+                label="Marca"
+                list="marcas-usadas"
+                placeholder="Motul, Komatsu…"
+                hint="Se ofrecen las que ya se han usado."
+                value={form.marca}
+                onChange={(e) => setForm({ ...form, marca: e.target.value })}
+              />
+              <datalist id="marcas-usadas">
+                {marcasUsadas.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
+              <Input
+                label="N° de parte o serial"
+                placeholder="La referencia del fabricante"
+                hint="Lo que se le dice al proveedor para que mande la pieza correcta."
+                value={form.numero_parte}
+                onChange={(e) => setForm({ ...form, numero_parte: e.target.value })}
               />
             </div>
 

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
@@ -467,6 +468,109 @@ export function useAutorizaciones() {
   return useQuery({
     queryKey: ['autorizaciones'],
     queryFn: () => rpc<AutorizacionDelSistema[]>('autorizaciones_del_sistema'),
+  })
+}
+
+/** Lo que devuelve extender varias: cuantas entraron y cuales no, con su motivo. */
+export interface ResumenDeExtension {
+  extendidas: number
+  omitidas: { accion: string; motivo: string }[]
+}
+
+/**
+ * Extender varias casillas de una vez, a la misma persona y con el mismo motivo.
+ *
+ * La base las mete una a una en su propia subtransaccion, asi que la que no
+ * entra no tumba a las demas: marcar cinco y que una ya la tuviera por su rol
+ * no puede dejar las otras cuatro sin extender. Devuelve cuantas entraron y
+ * cuales se quedaron fuera, que es lo que hay que enseñar despues.
+ */
+export interface Presencia {
+  id: string
+  nombre: string
+  usuario: string
+  cargo: string | null
+  visto_en: string | null
+  en_linea: boolean
+  /** Cuando entro por ultima vez, de la auditoria. Distinto de `visto_en`. */
+  ultimo_acceso: string | null
+}
+
+/**
+ * Quien esta en el sistema ahora, y cuando se le vio por ultima vez si no.
+ *
+ * Se refresca sola cada medio minuto. Una lista de conectados que hay que
+ * recargar a mano no dice quien esta: dice quien estaba cuando se abrio.
+ */
+export function usePresencia() {
+  return useQuery({
+    queryKey: ['presencia'],
+    queryFn: async () =>
+      desenvolver<Presencia[]>(
+        await supabase.from('v_presencia').select('*').order('nombre'),
+      ),
+    refetchInterval: 30_000,
+  })
+}
+
+/**
+ * El latido: le dice a la base que esta persona sigue delante de la pantalla.
+ *
+ * Cada dos minutos y al entrar. Es lo unico que distingue «esta trabajando» de
+ * «entro esta mañana y se fue»: la auditoria solo apunta entradas y
+ * escrituras, asi que quien se pasa el dia leyendo pantallas no dejaria rastro
+ * y figuraria desconectado.
+ *
+ * Se para cuando la pestaña se esconde. Un portatil cerrado con veinte
+ * pestañas abiertas no es alguien a quien se le pueda preguntar algo, que es
+ * para lo que se mira esta lista.
+ */
+export function useLatido() {
+  useEffect(() => {
+    let vivo = true
+
+    const latir = () => {
+      if (!vivo || document.visibilityState !== 'visible') return
+      void rpc('sigo_aqui', {}).catch(() => {
+        // Un latido perdido no es nada: al siguiente se vuelve a intentar, y
+        // molestar con un error por esto seria peor que el propio silencio.
+      })
+    }
+
+    latir()
+    const cada = setInterval(latir, 120_000)
+    document.addEventListener('visibilitychange', latir)
+
+    return () => {
+      vivo = false
+      clearInterval(cada)
+      document.removeEventListener('visibilitychange', latir)
+    }
+  }, [])
+}
+
+export function useAutorizarVarias() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: {
+      usuario_id: string
+      acciones: string[]
+      motivo: string
+      desde?: string | null
+      hasta?: string | null
+    }) =>
+      rpc<ResumenDeExtension>('autorizar_varias', {
+        p_usuario_id: v.usuario_id,
+        p_acciones: v.acciones,
+        p_motivo: v.motivo,
+        p_desde: v.desde || null,
+        p_hasta: v.hasta || null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['autorizaciones'] })
+      void qc.invalidateQueries({ queryKey: ['mis-autorizaciones'] })
+      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
+    },
   })
 }
 

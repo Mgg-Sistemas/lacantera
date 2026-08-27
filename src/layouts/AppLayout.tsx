@@ -6,10 +6,19 @@ import { Cargando } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useTiempoReal } from '@/lib/tiempoReal'
+import { useLatido } from '@/lib/api/usuarios'
 
 const CLAVE_COLAPSADO = 'lacantera:sidebar-colapsado'
 
 export function AppLayout() {
+  /*
+    La señal de vida, una sola para toda la aplicacion.
+
+    Va aqui y no en la pantalla que enseña los conectados, porque lo que hay
+    que saber es quien esta usando el sistema, no quien esta mirando la lista.
+  */
+  useLatido()
+
   // Se recuerda entre sesiones: quien trabaja todo el día en tablas anchas
   // deja el menú contraído y no quiere volver a hacerlo cada mañana.
   const [collapsed, setCollapsed] = useState(

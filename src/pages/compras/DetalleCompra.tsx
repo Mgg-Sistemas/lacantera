@@ -342,9 +342,27 @@ function TarjetaCotizacion({
             {cotizacion.numero_proveedor ? ` · s/n ${cotizacion.numero_proveedor}` : ''}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {aprobada ? <Chip tone="success">Aprobada</Chip> : null}
+        {/*
+          `flex-wrap` y sin `shrink-0`: con cinco chips —aprobada, propuesta y
+          las tres ventajas— la fila medía más que la tarjeta, y como no podía
+          encogerse ni partirse se salía por encima del borde. Ahora envuelve
+          dentro de su bloque, y si aun así no cabe, el bloque entero baja
+          debajo del nombre del proveedor.
+        */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {/*
+            «Aprobada» a secas se leia como que la orden ya estaba dada. Dice
+            quien aprobo y que: es la que el gerente escogio de entre las
+            propuestas, y solo aparece cuando el pedido esta aprobado de verdad.
+          */}
+          {aprobada ? <Chip tone="success">La que aprobó el gerente</Chip> : null}
           {cotizacion.propuesta ? <Chip tone="royal">Propuesta al gerente</Chip> : null}
+          {/*
+            El detalle iba solo en `title`, que en un telefono no existe: no hay
+            raton con el que pasar por encima. Se enseña al lado de la etiqueta,
+            que ademas es lo que la vuelve util —«Mas economica» no dice cuanto,
+            y con dos cotizaciones lo que se compara es cuanto—.
+          */}
           {ventajas.map((v) => (
             <Chip key={v.clave} tone={v.tono} title={v.detalle}>
               {v.etiqueta}
@@ -1123,12 +1141,23 @@ export function DetalleCompra() {
                   puede mandar dos ofertas, «3 proveedores» sobre dos empresas
                   distintas era sencillamente falso.
                 */
+                /*
+                  Con dos o mas se dice que las etiquetas comparan.
+
+                  Sin eso, la tarjeta que gana en todo sale con tres etiquetas y
+                  la otra con ninguna, y quien lo lee no sabe si a la segunda le
+                  falta algo. Comparan; la que no las lleva no gana en nada, que
+                  no es lo mismo que estar incompleta.
+                */
                 subtitle={
                   cotizaciones.length === 0
                     ? 'Ninguna todavía'
                     : [
                         `${cotizaciones.length} cotización${cotizaciones.length === 1 ? '' : 'es'}`,
                         propuestas.length > 0 ? `${propuestas.length} con el gerente` : null,
+                        cotizaciones.length > 1
+                          ? 'las etiquetas dicen en qué gana cada una'
+                          : null,
                       ]
                         .filter(Boolean)
                         .join(' · ')
@@ -1156,7 +1185,20 @@ export function DetalleCompra() {
                     key={c.id}
                     cotizacion={c}
                     ventajas={comparacion.get(c.id) ?? []}
-                    aprobada={compra.cotizacion_elegida_id === c.id}
+                    /*
+                      Se pregunta tambien por el estado del pedido.
+
+                      `cotizacion_elegida_id` cambio de significado al permitir
+                      varias propuestas —antes decia «la que compras propone» y
+                      ahora «la que el gerente aprobo»— y un pedido esperando en
+                      la gerencia aparecio con una cotizacion marcada
+                      «Aprobada». No lo estaba. Con el estado delante, la
+                      etiqueta no puede volver a adelantarse a la decision
+                      aunque la columna traiga algo viejo.
+                    */
+                    aprobada={
+                      compra.estado === 'APROBADA' && compra.cotizacion_elegida_id === c.id
+                    }
                     puedeOperar={puedeCompras && compra.estado !== 'APROBADA'}
                     ocupado={
                       proponer.isPending || retirar.isPending || eliminarCotizacion.isPending
