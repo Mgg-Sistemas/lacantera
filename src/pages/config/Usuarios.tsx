@@ -45,6 +45,8 @@ import {
   useAccionesDeLosRoles,
   useMarcarAccion,
   useUsuarios,
+  useFichasDeLasCuentas,
+  type FichaDeCuenta,
 } from '@/lib/api/usuarios'
 import type {
   AccionDelSistema,
@@ -583,6 +585,17 @@ const usuarioVacio = {
 
 function PestanaUsuarios({ editable }: { editable: boolean }) {
   const usuarios = useUsuarios()
+
+  /*
+    De qué trabajador es cada cuenta.
+
+    Va por su propia función de la base y no cruzando `empleados` desde aquí:
+    esa tabla exige NOMINA:LECTURA y esta pantalla la ve quien tiene USUARIOS.
+    Hoy coinciden; el día que no, el cruce se apagaría en silencio y la columna
+    entera diría que ninguna cuenta tiene ficha.
+  */
+  const fichas = useFichasDeLasCuentas()
+  const fichaPorPerfil = new Map((fichas.data ?? []).map((f) => [f.perfil_id, f]))
   const roles = useRoles()
   const crear = useCrearUsuario()
   const guardarPerfil = useGuardarPerfil()
@@ -700,12 +713,13 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
       ) : (
         <Card flush>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full min-w-[880px] text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Usuario</th>
                   <th className="px-3 py-3 font-medium">Nombre</th>
                   <th className="px-3 py-3 font-medium">Cargo</th>
+                  <th className="px-3 py-3 font-medium">Ficha de personal</th>
                   <th className="px-3 py-3 font-medium">Roles</th>
                   <th className="px-5 py-3 text-right font-medium">Estado</th>
                 </tr>
@@ -731,6 +745,9 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                     </td>
                     <td className="text-ink/85 px-3 py-3 font-medium">{u.nombre}</td>
                     <td className="text-ink/60 px-3 py-3">{u.cargo ?? '—'}</td>
+                    <td className="px-3 py-3">
+                      <FichaDeLaCuenta ficha={fichaPorPerfil.get(u.id)} />
+                    </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap gap-1">
                         {u.roles.length === 0 ? (
@@ -1430,5 +1447,44 @@ export function Usuarios() {
         <PestanaAutorizaciones gestionable={gestionaAutorizaciones} />
       )}
     </>
+  )
+}
+
+/*
+  DE QUIÉN ES ESTA CUENTA.
+
+  Tres estados y no dos, porque el tercero es el que sirve para algo:
+
+  ATADA — la cuenta ya está unida a una ficha. Se dice y ya.
+
+  SUGERIDA — no está atada, pero hay una ficha con SU MISMA CÉDULA. Es un
+  vínculo pendiente que el sistema puede señalar, y por eso va teñido: es lo
+  único de esta columna sobre lo que hay algo que hacer. Se ata desde la ficha
+  del trabajador, que es donde vive el botón.
+
+  NINGUNA — ni atada ni parecida. No se tiñe ni se marca: hay cuentas que no son
+  de nadie del personal —administración, sistemas, un externo— y pintarlas como
+  una carencia sería inventar trabajo que no existe. Es la misma razón por la
+  que la ficha del trabajador calla cuando no tiene cuenta.
+*/
+function FichaDeLaCuenta({ ficha }: { ficha: FichaDeCuenta | undefined }) {
+  if (!ficha) return <span className="text-ink/30">—</span>
+
+  if (ficha.sugerida) {
+    return (
+      <span className="inline-flex flex-col">
+        <span className="text-warning text-xs font-medium">Hay una ficha con su cédula</span>
+        <span className="text-ink/60 tabular text-xs">
+          {ficha.ficha} · {ficha.nombre}
+        </span>
+      </span>
+    )
+  }
+
+  return (
+    <span className="inline-flex flex-col">
+      <span className="text-ink/85 tabular text-xs font-medium">Ficha {ficha.ficha}</span>
+      <span className="text-ink/50 text-xs">{ficha.nombre}</span>
+    </span>
   )
 }
