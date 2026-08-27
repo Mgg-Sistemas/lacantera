@@ -534,3 +534,40 @@ export function useEliminarRol() {
     onSuccess: () => invalidarRoles(qc),
   })
 }
+
+/*
+  DE QUÉ TRABAJADOR ES CADA CUENTA
+
+  La ficha ya decía con qué usuario entra una persona; esto es el camino de
+  vuelta, que pidió Christopher.
+
+  Sale de una función de la base y no de un cruce aquí. Los nombres y las fichas
+  están en `empleados`, cuya política exige NOMINA:LECTURA, y esta pantalla la ve
+  quien tiene USUARIOS. Hoy los dos únicos roles con USUARIOS tienen también
+  NOMINA, así que cruzarlo aquí funcionaría — y dejaría de funcionar EN SILENCIO
+  el día que alguien reciba USUARIOS sin NOMINA. La columna se quedaría vacía sin
+  un solo error y quien la mirara concluiría que ninguna cuenta tiene ficha.
+*/
+
+export interface FichaDeCuenta {
+  perfil_id: string
+  empleado_id: number
+  ficha: string
+  nombre: string
+  /**
+   * `true` cuando la cuenta NO está atada y solo se parece por la cédula.
+   *
+   * Se sugiere únicamente por cédula. Cruzar por nombre daba basura: la cuenta
+   * «admin_», cuyo titular se llama ADMINISTRADOR, casaba con diecinueve
+   * trabajadores. En un sistema que paga nóminas, sugerir mal es peor que no
+   * sugerir.
+   */
+  sugerida: boolean
+}
+
+export function useFichasDeLasCuentas() {
+  return useQuery({
+    queryKey: ['usuarios', 'fichas'],
+    queryFn: () => rpc<FichaDeCuenta[]>('fichas_de_las_cuentas'),
+  })
+}
