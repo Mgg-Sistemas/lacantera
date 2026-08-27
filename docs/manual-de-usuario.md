@@ -2,7 +2,7 @@
 
 **Sistema de control interno · Minería Internacional TS, C.A.**
 
-**Versión 1.3 · 26 de agosto de 2026**
+**Versión 1.4 · 27 de agosto de 2026**
 
 ---
 
@@ -5897,7 +5897,8 @@ Las tres primeras cambian el cálculo —hay que acordar, por ejemplo, si el fle
 Se dice para que nadie lo lea como verificado:
 
 - **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles de esta versión se levantaron de la base tal como está hoy, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla.
-- **Los capítulos de los módulos escondidos** —Explotación, Despachos y Ventas— no se revisaron pantalla por pantalla en esta versión. Lo que dicen era cierto en la versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte.
+- **Los capítulos de los módulos escondidos** —Explotación y Ventas— no se revisaron pantalla por pantalla. Lo que dicen era cierto en una versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte. **Despachos sí se revisó** en esta versión, aunque siga en obra.
+- **Los capítulos 19 y 20, Maquinaria y Combustible, son nuevos.** Se escribieron leyendo las pantallas y la base, no usándolas. Si algo no coincide con lo que hace el módulo en el patio, es de esperar en una primera versión: dilo y se corrige.
 - **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla, quién puede pagar, que el rol de Tesorería ya no existe— pero las pantallas que quedaron escondidas no se recorrieron una por una.
 - **La factura de venta no está completa ante el SENIAT.** Lo que le falta está en 15.2, y no es un olvido de este manual sino del sistema.
 
