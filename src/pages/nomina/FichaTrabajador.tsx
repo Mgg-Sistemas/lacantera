@@ -41,6 +41,8 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarCarnet, armarCarnetPdf } from '@/lib/ficha/carnet'
+import { TarjetaCarnet } from './TarjetaCarnet'
+import { fotoParaVerificar, urlDeVerificacion, useCarnetVigente } from '@/lib/api/carnets'
 import { armarFicha, type Seccion } from '@/lib/ficha/fichaPdf'
 import { armarConstancia } from '@/lib/ficha/constanciaPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
@@ -207,6 +209,20 @@ export function FichaTrabajador() {
   // Lo suyo: lo que tiene prestado y lo que se dio por perdido o dañado. Sin
   // filtrar por estado, porque una incidencia importa tanto como un préstamo
   // abierto — sobre todo al liquidar.
+  /*
+    EL CARNET EMITIDO, PARA QUE EL DIBUJO SEPA QUÉ QR PONER.
+
+    Si no hay ninguno, el reverso sale como salía antes: sin QR. A quien no se
+    le ha emitido carnet no se le puede imprimir un código que no existe, y un
+    QR que lleva a «este carnet no existe» es peor que no tener QR.
+
+    VA AQUÍ ARRIBA Y NO JUNTO A `exportar`, que es donde se usa. Lo puse ahí
+    primero y era un hook DESPUÉS de los `return` tempranos de más abajo: en
+    cuanto la ficha termina de cargar cambia el número de hooks entre un render
+    y el siguiente, y React tumba la pantalla entera. No lo ve el compilador.
+  */
+  const { data: carnetVigente } = useCarnetVigente(e?.id)
+
   const entregado = useEntregadoATrabajador(e?.id)
   const incidencias = useIncidencias(e?.id)
   const [anotando, setAnotando] = useState(false)
@@ -296,6 +312,17 @@ export function FichaTrabajador() {
     return img
   }
 
+  /*
+    La foto que se guarda con la emisión.
+
+    Se saca en el momento de emitir y no antes: cargarla cuesta, y la mayoría de
+    las veces que se abre una ficha no se emite ningún carnet.
+  */
+  const fotoParaEmitir = async (): Promise<string | null> => {
+    const img = await imagenLista()
+    return img ? fotoParaVerificar(img, encuadre) : null
+  }
+
   async function exportar(tipo: Exportable) {
     if (!e) return
     setExportando(tipo)
@@ -316,6 +343,9 @@ export function FichaTrabajador() {
         grupo_sanguineo: e.grupo_sanguineo,
         foto: img,
         encuadre,
+        verificacion: carnetVigente
+          ? { codigo: carnetVigente.codigo, url: urlDeVerificacion(carnetVigente.codigo) }
+          : null,
       }
 
       if (tipo === 'carnet-pdf') {
@@ -534,6 +564,14 @@ export function FichaTrabajador() {
             de={{ tipo: 'empleado', id: e.id, puedeEditar: puedeRRHH }}
           />
 
+          <TarjetaCarnet
+            empleadoId={e.id}
+            nombre={`${e.nombres} ${e.apellidos}`}
+            puedeEmitir={puedeRRHH}
+            trabajaAqui={e.fecha_egreso === null}
+            fotoParaEmitir={fotoParaEmitir}
+          />
+
           <Card>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -598,7 +636,8 @@ export function FichaTrabajador() {
             <p className="text-ink/40 mt-3 text-center text-xs">
               Todo se abre en pantalla antes de guardarse. La ficha trae todos los datos en A4.
               El carnet para imprenta es un PDF de dos páginas —frente y reverso— de 54 × 86 mm a
-              300 dpi, con la medida dentro del archivo: es el que se manda. Las dos imágenes
+              300 dpi, con la medida dentro del archivo: es el que se manda. El QR de verificación
+              va en el reverso y solo aparece si el carnet está emitido. Las dos imágenes
               sueltas son las mismas caras en PNG, por si hace falta mirar o retocar una: el frente
               es de esta persona y el reverso lleva la marca y el RIF, igual para todos. La
               constancia es la carta que se entrega a un banco o a quien la pida.
