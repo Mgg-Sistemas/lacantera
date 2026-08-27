@@ -78,8 +78,16 @@ export interface EmpresaPapel {
   rif: string
   /** «OPERACIONES Y LOGÍSTICA MINERA». La segunda línea del membrete. */
   actividad?: string | null
-  /** «ESTADO LA GUAIRA, VENEZUELA». Va junto al RIF en la tercera. */
+  /** «ESTADO LA GUAIRA, VENEZUELA». Va debajo del RIF, partido si hace falta. */
   domicilio?: string | null
+  /**
+   * Teléfono y correo, ya juntos: «0286-9515000 · ventas@…».
+   *
+   * Hoy los dos están vacíos en Configuración, así que ningún papel lo enseña.
+   * Está aquí porque la factura vieja sí lo imprimía y al unificar la cabecera
+   * se habría perdido: el día que alguien los llene, salen solos.
+   */
+  contacto?: string | null
 }
 
 /**
@@ -114,9 +122,18 @@ export function membrete(
     empresa: EmpresaPapel
     /** Lo de la derecha: [«N° SOLICITUD», «S-C 2026-0826»], [«FECHA», …]. */
     datos?: Array<[string, string]>
+    /**
+     * Dónde empieza, si no es arriba del todo.
+     *
+     * Lo pide el recibo de nómina, que imprime dos ejemplares en la misma hoja
+     * cuando caben —el del trabajador y el que se archiva firmado— y el segundo
+     * arranca a media página. Los demás papeles no lo pasan y empiezan en el
+     * margen, como siempre.
+     */
+    desde?: number
   },
 ): number {
-  const y = ARRIBA
+  const y = d.desde ?? ARRIBA
 
   // El logo, centrado con los tres renglones de texto que tiene al lado.
   if (logo) doc.addImage(logo, 'PNG', IZQ, y - 2.5, 14, 14)
@@ -156,17 +173,41 @@ export function membrete(
   }
 
   /*
-    El domicilio y el RIF, en la misma línea y separados por una barra.
+    EL RIF VA SOLO EN SU RENGLÓN, Y EL DOMICILIO DEBAJO, PARTIDO.
 
-    Van juntos porque son lo mismo para quien lee: de dónde sale este papel y
-    con qué identificación fiscal. Y el RIF va siempre aunque no haya domicilio
-    —es obligatorio en cualquier papel que salga de aquí—, así que la línea se
-    arma con lo que haya en vez de dar por hecho que están los dos.
+    Antes los dos compartían línea —«DOMICILIO  |  J-RIF: …»— y esa línea pasaba
+    por `ajustar`, que corta y pone puntos suspensivos. Con el domicilio fiscal
+    de verdad de esta empresa, que son noventa y cinco caracteres, la línea mide
+    152 mm en un hueco de 88: se cortaba en «…MUNICIPIO ANGOSTURA DEL ORI...» y
+    EL RIF NO LLEGABA A IMPRIMIRSE.
+
+    El RIF es obligatorio en todo papel que emite una empresa venezolana. Un
+    documento sin él no es un descuido de maquetación.
+
+    No estaba explotando todavía: los seis papeles ya migrados no le pasan
+    domicilio a esta función, así que la línea era solo el RIF y cabía. Se
+    descubrió al ir a migrar la factura y la constancia, que sí lo pasan — y que
+    hoy, cada una por su cuenta, ya lo parten en dos y tres renglones en vez de
+    cortarlo. Migrarlas sin esto habría sido cambiar algo que funciona por algo
+    que pierde el RIF.
+
+    Así que el orden se invierte: primero el RIF, que es corto y obligatorio, y
+    debajo el domicilio, partido y como mucho en dos renglones. Y la cabecera
+    crece solo cuando hay domicilio que enseñar, así que a los seis de antes no
+    les cambia ni un milímetro.
   */
-  const identidad = [d.empresa.domicilio?.toUpperCase(), 'J-RIF: ' + d.empresa.rif]
-    .filter(Boolean)
-    .join('  |  ')
+  const identidad = ['J-RIF: ' + d.empresa.rif, d.empresa.contacto].filter(Boolean).join('  ·  ')
   doc.text(ajustar(doc, identidad, ANCHO_NOMBRE), TEXTO, y + 10)
+
+  let bajo = y + 10
+  if (d.empresa.domicilio) {
+    doc.setFontSize(6.2)
+    const lineas = (
+      doc.splitTextToSize(d.empresa.domicilio.toUpperCase(), ANCHO_NOMBRE) as string[]
+    ).slice(0, 2)
+    doc.text(lineas, TEXTO, y + 13.4, { lineHeightFactor: 1.3 })
+    bajo = y + 13.4 + (lineas.length - 1) * 2.4
+  }
 
   /*
     A la derecha, el número del documento y su fecha.
@@ -188,11 +229,19 @@ export function membrete(
     doc.text(etiqueta.toUpperCase() + ': ' + valor, DER, alto, { align: 'right' })
   })
 
+  /*
+    La regla se apoya en lo más bajo que haya: el bloque de la izquierda o los
+    datos de la derecha. Con `y + 14` fijo, un domicilio de dos renglones se
+    salía por debajo de la raya.
+  */
+  const finDatos = y + 2 + Math.max(0, (d.datos?.length ?? 1) - 1) * 4.6
+  const regla = Math.max(y + 14, bajo + 3.2, finDatos + 3.2)
+
   // La regla de color, que es lo único teñido de la cabecera.
   doc.setDrawColor(MARCA).setLineWidth(0.8)
-  doc.line(IZQ, y + 14, DER, y + 14)
+  doc.line(IZQ, regla, DER, regla)
 
-  return y + 14
+  return regla
 }
 
 /**
@@ -202,7 +251,7 @@ export function membrete(
  * archiva de canto es lo que se lee al abrirlo. A la izquierda competía con el
  * nombre de la empresa, que está justo encima y es más grande.
  */
-export function tituloDocumento(doc: Doc, y: number, texto: string): number {
+export function tituloDocumento(doc: Doc, y: number, texto: string, color = ROTULO): number {
   /*
     El título vive en su propia banda, entre dos rayas finas.
 
@@ -213,7 +262,17 @@ export function tituloDocumento(doc: Doc, y: number, texto: string): number {
   doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
   doc.line(IZQ, y + 3, DER, y + 3)
 
-  doc.setFont('helvetica', 'bold').setFontSize(13).setTextColor(ROTULO)
+  /*
+    EL COLOR ES OPCIONAL Y CASI NUNCA SE USA.
+
+    Todos los papeles lo dejan en el azul pizarra de la casa. La excepción es la
+    nota de entrega, que va naranja: es el papel que el chofer lleva en la mano
+    por el patio, y en un fajo de hojas mezcladas el color es lo que deja
+    separarla de una factura sin leer ninguna. Ese naranja estaba antes en una
+    banda llena de arriba abajo, y al pasar al membrete de la casa se habría
+    perdido sin que nadie lo pidiera.
+  */
+  doc.setFont('helvetica', 'bold').setFontSize(13).setTextColor(color)
   doc.text(texto.toUpperCase(), IZQ + ANCHO_UTIL / 2, y + 10.5, { align: 'center' })
 
   doc.line(IZQ, y + 14, DER, y + 14)

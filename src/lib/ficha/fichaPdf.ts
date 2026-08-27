@@ -17,16 +17,24 @@
 import { logoComoImagen } from './logo'
 import { fotoRecortada, type Encuadre } from './encuadre'
 import type { ArchivoArmado } from './armado'
-import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, DER, IZQ, PIE } from './hoja'
-import { EMPRESA } from '@/lib/empresa'
+import { ABAJO, ajustar, DER, IZQ } from './hoja'
+import {
+  type EmpresaPapel,
+  firmas as firmasCompartidas,
+  GRIS,
+  HAIRLINE,
+  membrete,
+  pieDePagina,
+  ROTULO,
+  TINTA,
+  tituloDocumento,
+} from './papel'
 
-// El primario de la marca. Antes era el azul de «La Cantera».
-const MARCA = '#cc3f00'
-const AZUL_CLARO = '#B9C6F5'
-const MARCA_SUAVE = '#9e4c01'
-const TINTA = '#262C3D'
-const GRIS = '#7B839A'
-const HAIRLINE = '#EEF0F6'
+// La ficha se tiñe con la paleta compartida: los rótulos de sección en azul
+// pizarra, como en todos los demás papeles. El verde se queda —es el único
+// sitio donde el color dice un dato, activo o egresado— y ya no hay dos tintas
+// distintas rondando el mismo documento.
+const MARCA_SUAVE = ROTULO
 const VERDE = '#2EA05A'
 const VERDE_SUAVE = '#E6F4EC'
 
@@ -60,34 +68,10 @@ export interface DatosFicha {
   foto: HTMLImageElement | null
   encuadre: Encuadre
   emitidaPor: string
+  empresa: EmpresaPapel
 }
 
 type Doc = import('jspdf').jsPDF
-
-function encabezado(doc: Doc, d: DatosFicha, logo: string): number {
-  doc.setFillColor(MARCA)
-  // Dentro del margen. Una banda a sangre anula tres de los cuatro lados.
-  doc.rect(IZQ, ARRIBA, ANCHO_UTIL, 34, 'F')
-
-  doc.addImage(logo, 'PNG', IZQ + 5, ARRIBA + 7, 13, 13)
-
-  doc.setTextColor('#FFFFFF')
-  doc.setFont('helvetica', 'bold').setFontSize(12)
-  doc.text(ajustar(doc, EMPRESA.razonSocial, 82), IZQ + 22, ARRIBA + 15)
-
-  doc.setTextColor(AZUL_CLARO)
-  doc.setFont('helvetica', 'normal').setFontSize(7)
-  doc.text(`RIF ${EMPRESA.rif} · ${EMPRESA.actividad.toUpperCase()}`, IZQ + 5, ARRIBA + 27)
-
-  doc.setFontSize(8)
-  doc.text('FICHA DEL TRABAJADOR', DER - 5, ARRIBA + 13, { align: 'right' })
-
-  doc.setTextColor('#FFFFFF')
-  doc.setFont('helvetica', 'bold').setFontSize(17)
-  doc.text(`N° ${d.ficha}`, DER - 5, ARRIBA + 25, { align: 'right' })
-
-  return ARRIBA + 44
-}
 
 function persona(doc: Doc, d: DatosFicha, y: number): number {
 
@@ -178,45 +162,16 @@ function seccion(doc: Doc, s: Seccion, y: number): number {
   return (columna === 1 ? fila + 5.5 : fila) + 4
 }
 
-function firmas(doc: Doc, y: number) {
-  const SEPARA = 14
-  const ancho = (DER - IZQ - SEPARA) / 2
-
-  for (const [i, texto] of ['Firma del trabajador', 'Recursos humanos'].entries()) {
-    const x = IZQ + i * (ancho + SEPARA)
-    doc.setDrawColor(TINTA).setLineWidth(0.4)
-    doc.line(x, y, x + ancho, y)
-
-    doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(8)
-    doc.text(texto, x + ancho / 2, y + 4.5, { align: 'center' })
-  }
-}
-
-function pie(doc: Doc, d: DatosFicha) {
-  // Dentro de la caja de texto, no a 12 mm del borde de la hoja. `PIE` deja
-  // sitio para el rabo de las letras, que si no se comería el margen.
-  const y = PIE
-
-  doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
-  doc.line(IZQ, y - 5, DER, y - 5)
-
-  const hoy = new Date().toLocaleDateString('es-VE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
-
-  doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7)
-  doc.text(ajustar(doc, `Emitida el ${hoy} por ${d.emitidaPor}`, ANCHO_UTIL * 0.5), IZQ, y)
-  doc.text('Documento interno', DER, y, { align: 'right' })
-}
-
 export async function armarFicha(d: DatosFicha): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
   const logo = await logoComoImagen(400, true)
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  let y = encabezado(doc, d, logo)
+  let y = tituloDocumento(
+    doc,
+    membrete(doc, logo, { empresa: d.empresa, datos: [['FICHA N°', d.ficha]] }),
+    'Ficha del trabajador',
+  )
 
   y = persona(doc, d, y)
   for (const s of d.secciones) y = seccion(doc, s, y)
@@ -224,13 +179,27 @@ export async function armarFicha(d: DatosFicha): Promise<ArchivoArmado> {
   // Las firmas bajan hasta donde llegue el contenido, pero nunca por debajo de
   // donde empieza el pie: antes el tope era 240 contando desde el borde, y con
   // el margen nuevo eso las metía dentro del pie.
-  firmas(doc, Math.min(Math.max(y + 8, ABAJO - 24), ABAJO - 16))
-  pie(doc, d)
+  firmasCompartidas(
+    doc,
+    Math.min(Math.max(y + 8, ABAJO - 24), ABAJO - 16),
+    'Firma del trabajador',
+    'Recursos humanos',
+  )
+
+  const hoy = new Date().toLocaleDateString('es-VE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+  // «Documento interno» sigue en el pie: la ficha lleva el salario y la
+  // dirección de casa del trabajador, y quien la imprime tiene que ver de un
+  // vistazo que ese papel no se le entrega a un tercero.
+  pieDePagina(doc, `Emitida el ${hoy} por ${d.emitidaPor} · Documento interno`)
 
   doc.setProperties({
     title: `Ficha ${d.ficha} — ${d.nombreCompleto}`,
     subject: 'Ficha del trabajador',
-    author: EMPRESA.razonSocial,
+    author: d.empresa.razonSocial,
   })
 
   return {

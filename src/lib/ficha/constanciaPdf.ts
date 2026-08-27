@@ -31,17 +31,17 @@
  */
 
 import { logoComoImagen } from './logo'
-import { ajustar, ANCHO_UTIL, ARRIBA, CENTRO, DER, IZQ, PIE } from './hoja'
-import { EMPRESA } from '@/lib/empresa'
+import { ajustar, ANCHO_UTIL, CENTRO, IZQ } from './hoja'
+import {
+  type EmpresaPapel,
+  GRIS,
+  GRIS_SUAVE,
+  membrete,
+  pieDePagina,
+  TINTA,
+  tituloDocumento,
+} from './papel'
 import type { PdfArmado } from './reciboPdf'
-
-// El primario de la marca. Antes era el azul de «La Cantera».
-const MARCA = '#cc3f00'
-const TINTA = '#262C3D'
-const GRIS = '#7B839A'
-const HAIRLINE = '#E6E9F2'
-
-type Doc = import('jspdf').jsPDF
 
 export interface DatosConstancia {
   nombreCompleto: string
@@ -67,9 +67,16 @@ export interface DatosConstancia {
    */
   sueldo: { monto: string; moneda: string; base: string } | null
 
-  /** Dónde se expide. Sale de los datos de la empresa. */
+  /**
+   * Dónde se expide. Sale de los datos de la empresa.
+   *
+   * Es aparte del domicilio del membrete a propósito: el membrete dice dónde
+   * está inscrita la empresa y este renglón dónde se firmó el papel, que en
+   * una constancia es una fórmula de la redacción, no un dato fiscal.
+   */
   ciudad: string
-  domicilio: string | null
+
+  empresa: EmpresaPapel
 
   firma: { nombre: string; cargo: string; cedula: string }
   emitidaPor: string
@@ -186,46 +193,13 @@ function parrafo(d: DatosConstancia): string {
   )
 }
 
-function membrete(doc: Doc, d: DatosConstancia, logo: string): number {
-  doc.addImage(logo, 'PNG', IZQ, ARRIBA, 16, 16)
-
-  doc.setTextColor(MARCA).setFont('helvetica', 'bold').setFontSize(11)
-  doc.text(ajustar(doc, EMPRESA.razonSocial, ANCHO_UTIL - 22), IZQ + 21, ARRIBA + 6.5)
-
-  doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7.5)
-  doc.text(`RIF ${EMPRESA.rif} · ${EMPRESA.actividad}`, IZQ + 21, ARRIBA + 11.5)
-
-  // El domicilio fiscal se parte en dos líneas en vez de recortarse. En una
-  // carta que la empresa firma, la dirección incompleta terminada en puntos
-  // suspensivos se lee como un documento mal hecho.
-  let y = ARRIBA + 15.5
-  if (d.domicilio) {
-    doc.setFontSize(6.5)
-    const lineas = (doc.splitTextToSize(d.domicilio, ANCHO_UTIL - 22) as string[]).slice(0, 2)
-    for (const linea of lineas) {
-      doc.text(linea, IZQ + 21, y)
-      y += 3.4
-    }
-  }
-
-  const raya = Math.max(y + 2, ARRIBA + 21)
-  doc.setDrawColor(MARCA).setLineWidth(0.6)
-  doc.line(IZQ, raya, DER, raya)
-
-  return raya + 17
-}
-
 export async function armarConstancia(d: DatosConstancia): Promise<PdfArmado> {
   const { jsPDF } = await import('jspdf')
   const logo = await logoComoImagen(400, false)
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  let y = membrete(doc, d, logo)
-
-  // --- Título ---
-  doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(14)
-  doc.text('CONSTANCIA DE TRABAJO', CENTRO, y, { align: 'center' })
-  y += 16
+  let y = tituloDocumento(doc, membrete(doc, logo, { empresa: d.empresa }), 'Constancia de trabajo')
+  y += 6
 
   doc.setFont('helvetica', 'bold').setFontSize(10)
   doc.text('A QUIEN PUEDA INTERESAR', IZQ, y)
@@ -283,34 +257,31 @@ export async function armarConstancia(d: DatosConstancia): Promise<PdfArmado> {
         d.firma.cargo || 'Recursos humanos',
         d.firma.cedula ? `C.I. ${cedulaLegible(d.firma.cedula)}` : '',
       ]
-    : [d.firma.cargo || 'Recursos humanos', EMPRESA.razonSocial, '']
+    : [d.firma.cargo || 'Recursos humanos', d.empresa.razonSocial, '']
 
   let fila = y + 5
   for (const [i, texto] of rotulos.filter(Boolean).entries()) {
     doc.setFont('helvetica', i === 0 ? 'bold' : 'normal').setFontSize(i === 0 ? 9.5 : 8)
-    doc.setTextColor(i === 0 ? TINTA : GRIS)
+    doc.setTextColor(i === 0 ? TINTA : i === 1 ? GRIS : GRIS_SUAVE)
     doc.text(ajustar(doc, texto, anchoFirma + 20), CENTRO, fila, { align: 'center' })
     fila += i === 0 ? 5 : 4
   }
 
   // --- El pie ---
-  doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
-  doc.line(IZQ, PIE - 5, DER, PIE - 5)
-
+  // Fecha corta, no la de la formula. `fechaExpedicion` devuelve «a los
+  // veintiseis (26) dias del mes de agosto», que en el cuerpo es la redaccion
+  // que toca y en el pie daba «Emitida el a los veintiseis (26) dias...».
   const hoy = new Date().toLocaleDateString('es-VE', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   })
-
-  doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7)
-  doc.text(ajustar(doc, `Emitida el ${hoy} por ${d.emitidaPor}`, ANCHO_UTIL * 0.55), IZQ, PIE)
-  doc.text(`RIF ${EMPRESA.rif}`, DER, PIE, { align: 'right' })
+  pieDePagina(doc, `Emitida el ${hoy} por ${d.emitidaPor}`)
 
   doc.setProperties({
     title: `Constancia de trabajo — ${d.nombreCompleto}`,
     subject: 'Constancia de trabajo',
-    author: EMPRESA.razonSocial,
+    author: d.empresa.razonSocial,
   })
 
   const apellido = d.nombreCompleto.split(' ').pop()?.toLowerCase() ?? ''
