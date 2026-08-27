@@ -2194,15 +2194,23 @@ En la cabecera de esa misma tarjeta está el botón **Imprimir**, que saca **la 
 
 El archivo se llama `orden-compra-oc-2026-0007.pdf`.
 
-**Sale con el mismo membrete que la factura y la nota de entrega**, porque los cuatro documentos del sistema se maquetan en un solo sitio: si se hicieran por separado acabarían diciéndolo distinto. Lleva el logo, la razón social, el RIF, el domicilio fiscal y el contacto de la empresa, y a la derecha el rótulo **ORDEN DE COMPRA** con su número, la fecha y, si la orden la tiene, la **entrega estimada**.
+**Sale con la misma cabecera que los demás papeles del sistema** (13.2): el logo, la razón social, la actividad, el RIF y el domicilio fiscal de la empresa, y a la derecha tres datos —**N° orden**, **Ref. pedido** y **Emitida**—. Debajo, entre dos rayas finas y centrado, el rótulo **ORDEN DE COMPRA**.
 
-Tres diferencias con una factura, y las tres a propósito:
+Lo que viene después, en este orden:
 
-- **La banda del membrete va en gris**, como la de la cotización, y no en el naranja de la marca. Los dos son papeles que piden algo, no que cobran. Así el proveedor no confunde una orden con una factura.
-- **La contraparte se rotula PROVEEDOR**, no «cliente», y lleva su RIF, su dirección y la **condición** de pago escrita en palabras, nunca en el código interno.
-- **Las firmas están al revés que en una venta**: a la izquierda **Autorizado por** y a la derecha **Recibido por el proveedor**.
+| Bloque | Qué trae |
+| --- | --- |
+| **Proveedor** | Nombre, **RIF**, **Teléfono** y **Dirección**. La empresa no se repite aquí: ya está arriba |
+| **CONDICIONES** | **Departamento**, **Solicitante**, **Solicitada el**, **Finalidad**, **Notas**, **Clasificación**, **Entrega prometida**, **Forma de pago**, **Documentos**, **Aprobada por** y **Aprobada el**, **Confirmada por** y **Confirmada el** |
+| **ÍTEMS** | La tabla: **SKU · Descripción · Categoría · Cantidad · Precio unit. · Subtotal**, y el **TOTAL** con su moneda |
+| Desglose | **Subtotal**, **Descuento**, **Flete** e **IVA**, y **solo si hay algo que desglosar**. Una orden sin descuento, sin flete y exenta no los enseña en cero |
+| **NOTAS / OBSERVACIONES** | Solo si la orden las lleva |
 
-Al pie de la tabla queda anotado de qué pedido salió —**Según pedido SOL-2026-0001**— y, en cada página, el texto legal: *"Esta orden autoriza la compra en los términos y precios indicados. Cualquier variación en cantidad, precio o plazo debe acordarse por escrito antes de despachar. Facture a nombre de la razón social y el RIF del membrete."* Debajo, el número de página, quién lo emitió y la tasa del día con la que se valoró.
+**La forma de pago va escrita en palabras** —«Crédito 30 días»—, nunca en el código interno.
+
+**Una sola firma, centrada: Firma autorizada**, con el nombre debajo. La raya de «recibido por el proveedor» se quitó porque salía en blanco en todas las órdenes: la orden se manda por correo o por WhatsApp, no se le pone delante a nadie para que la firme, y una raya que nunca se llena enseña que las rayas de este papel no se firman. **Si quien autorizó lo hizo con un permiso concedido por otra persona, la firma lo dice**: *Firma autorizada · bajo autorización de* seguido del nombre.
+
+Al pie de cada página: **Documento generado por el sistema**, el número del pedido del que salió y la fecha y hora, y a la derecha **Página 1 de 2** cuando pasa de una hoja.
 
 **Una orden cancelada o anulada sale con el sello ANULADA cruzado en rojo.** Una orden cancelada que se imprimiera sin decirlo es una orden que alguien puede despachar por error.
 
@@ -2967,7 +2975,7 @@ Pulsa en la fila. Se abre el detalle con el número por título, los chips del e
 
 #### Qué sale de aquí
 
-El PDF lleva **banda gris**, porque la cotización todavía no compromete a nadie. En el membrete van la razón social de la empresa, su RIF, su domicilio y sus contactos; a la derecha, el rótulo **COTIZACIÓN**, el número, la **Fecha** y **Válida hasta**. Después, el recuadro del cliente con **CLIENTE**, **RIF**, **DIRECCIÓN** y **TELÉFONO**, y la tabla **DESCRIPCIÓN · CANTIDAD · UNIDAD · PRECIO · TOTAL**, que se parte en hojas numeradas **Página 2 de 3**.
+El PDF sale con la misma cabecera que los demás papeles del sistema (13.2): la razón social, la actividad, el RIF, el domicilio fiscal y, si están cargados, el teléfono y el correo; a la derecha, **N° COTIZACIÓN**, **FECHA** y **VÁLIDA HASTA**. Debajo, centrado entre dos rayas, el rótulo **COTIZACIÓN**. Después, el recuadro del cliente con **CLIENTE**, **RIF**, **DIRECCIÓN** y **TELÉFONO**, y la tabla **DESCRIPCIÓN · CANTIDAD · UNIDAD · PRECIO · TOTAL**, que se parte en hojas numeradas **Página 2 de 3**.
 
 Bajo los totales sale siempre el equivalente en la otra moneda —**Equivale a Bs 45.320,00**— y, en el pie, la tasa usada: **Tasa del día: 235,4500 Bs/$**. Firman **Por la empresa** y **Aceptado por el cliente**, ambas con **Nombre, cédula y fecha**.
 
@@ -3055,7 +3063,7 @@ Para anular:
 
 #### Qué sale de aquí
 
-El PDF lleva **banda naranja de seguridad**, porque es un papel de patio y se lee con guantes. Trae el rótulo **NOTA DE ENTREGA**, el número y la **Fecha**, y bajo el recuadro del cliente una segunda fila con **VEHÍCULO**, **CHOFER**, **CÉDULA** y **TICKET · PESO NETO**. Firman **Entregado por** y **Recibido conforme**, distintas a propósito de las de la cotización y la factura.
+El PDF sale con la cabecera de la casa, como los demás, **pero el rótulo NOTA DE ENTREGA va en naranja** y no en el azul del resto. Es lo único que cambia de color en todo el sistema, y es a propósito: la nota es un papel de patio, se lee con guantes, y en un fajo de hojas mezcladas el color es lo que la separa de una factura sin tener que leer ninguna. A la derecha van **N° NOTA** y **FECHA**; bajo el recuadro del cliente, una segunda fila con **VEHÍCULO**, **CHOFER**, **CÉDULA** y **TICKET · PESO NETO**. Firman **Entregado por** y **Recibido conforme**, distintas a propósito de las de la cotización y la factura.
 
 El pie es lo más importante del papel: **ESTE DOCUMENTO NO ES UNA FACTURA. Ampara el traslado del material; la factura se emite aparte. Quien recibe firma conforme el material y el peso.**
 
@@ -3131,11 +3139,15 @@ Anular un cobro devuelve la factura de **Cobrada** a **Por cobrar** y, si hubo I
 
 #### Qué sale de aquí
 
-El PDF lleva **banda azul**, el rótulo **FACTURA**, el número, la **Fecha**, el **N.º de control** y el **Vence el**. En el recuadro del cliente van **CLIENTE**, **RIF**, **DIRECCIÓN** y **CONDICIÓN**; cuando hay condición de pago, esa casilla ocupa el sitio del teléfono.
+El PDF sale con la cabecera de la casa (13.2) y, a la derecha, cuatro datos: **N° FACTURA**, **FECHA**, **VENCE EL** y **N° DE CONTROL**. Debajo, centrado, el rótulo **FACTURA**. En el recuadro del cliente van **CLIENTE**, **RIF**, **DIRECCIÓN** y **CONDICIÓN**; cuando hay condición de pago, esa casilla ocupa el sitio del teléfono.
+
+**Un renglón exento de IVA lleva la marca (E)** pegada a su descripción, y al pie de la tabla sale la línea que la explica: **(E) Renglón exento de IVA.** Si ningún renglón es exento, no aparece nada.
 
 Los totales son **Subtotal**, **Descuento**, **Flete**, **IVA 16%**, raya y **TOTAL**, más **IVA retenido por el cliente** y **A pagar** cuando hay retención, y debajo el equivalente en la otra moneda. Firman **Por la empresa** y **Aceptado por el cliente**.
 
 El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.**
+
+> **Lo que esta factura todavía no imprime, y hace falta para que sea completa ante el SENIAT:** la **base imponible**, el **total exento** en los totales, el **desglose por alícuota** —hoy solo admite una, así que una factura mixta no se puede expresar— y los **datos de la imprenta autorizada** con su número de autorización, que no existen en ninguna pantalla del sistema. Está anotado en el capítulo 15.
 
 ### 10.8 Notas de crédito
 
@@ -4374,18 +4386,17 @@ Son cinco, salen de dos sitios distintos y **todos se abren en pantalla antes de
 | Documento | De dónde sale | Cómo sale |
 | --- | --- | --- |
 | **Ficha completa (PDF)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
-| **Carnet · frente (imagen)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
-| **Carnet · reverso (imagen)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
+| **Carnet (PDF)** | La tarjeta del carnet, en la ficha | Se emite y se abre solo. Después, **Imprimir el carnet** |
 | **Constancia de trabajo** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
 | **Recibo de pago** | Recibos de pago | Se abre en el visor y se descarga desde ahí |
 
 - **La ficha** va en A4 con todos los datos de la pantalla, la foto, el estado de la persona y dos renglones de firma: **Firma del trabajador** y **Recursos humanos**. Al pie lleva quién la emitió y cuándo, y el rótulo **Documento interno**.
-- **El frente del carnet** sale con la medida y la resolución que pide una imprenta para que no salga pixelado. Lleva la foto, el nombre, el cargo y cuatro datos: **Cédula**, **Departamento**, **Ingreso** y **Sangre**.
-- **El reverso del carnet** lleva la marca, la razón social y el RIF, y nada más. Es el mismo para todo el personal: se baja una vez.
+- **El carnet** es un PDF de dos páginas, cada una de 54 × 86 mm a 300 dpi, que es lo que pide una imprenta para que no salga pixelado. En el frente van la foto, el nombre, el cargo y cuatro datos: **Cédula**, **Departamento**, **Ingreso** y **Sangre**. En el reverso, la marca, la razón social, el RIF y **el QR de verificación con el código de esa persona**.
+- **El reverso NO es igual para todos.** El código del QR es distinto en cada carnet: es lo que identifica a esa persona cuando alguien escanea. Está explicado entero en 11.4.
 - **La constancia** es la carta que se entrega a un banco o a quien la pida. Va en papel de la empresa, redactada en el tiempo verbal correcto según la persona siga trabajando o ya no, y con el sueldo dentro o fuera según dejes marcada la casilla **Incluir el sueldo**. Lleva un recuadro que repite el nombre, la cédula y la ficha para poder cotejarlos.
 - **El recibo** sale siempre por duplicado, original y copia, y esa es la mitad de su valor: la copia firmada por el trabajador es la constancia de que cobró.
 
-La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo. Y los que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano. Las dos caras del carnet no llevan pie ni firma: en una tarjeta de 54 mm no cabe, y no hace falta.
+La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo, y **abren con la misma cabecera que el resto de los papeles del sistema** (13.2). Los que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano. El carnet no lleva pie ni firma: en una tarjeta de 54 mm no cabe, y no hace falta.
 
 ### 11.12 Organigrama
 
