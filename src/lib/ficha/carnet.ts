@@ -361,23 +361,17 @@ function reverso(
   ctx.letterSpacing = '0px'
 
   /*
-    Y LA DIRECCIÓN, IMPRESA DEBAJO.
+    AQUÍ IBA LA DIRECCIÓN IMPRESA, Y SE QUITÓ POR PETICIÓN.
 
-    Nadie puede impedir que un carnet falsificado lleve un QR que apunte a una
-    copia de esta página diciendo VIGENTE siempre. Lo único que se puede hacer es
-    que la dirección buena esté escrita al lado, para que quien escanea pueda
-    comparar lo que le abrió el teléfono con lo que dice el plástico.
+    La puse para que quien escanea pudiera comparar lo que le abrió el teléfono
+    con lo que dice el plástico: es la única defensa contra un carnet falso cuyo
+    QR lleve a una copia de la página que diga VIGENTE siempre. Christopher pidió
+    quitarla del carnet, y es su decisión.
 
-    No es una hipótesis: preparando esto se imprimió una muestra con un dominio
-    inventado que resultó ser de otra empresa, y al escanearla se llegaba a su
-    aplicación. Con la dirección impresa, eso se ve.
-
-    Sale de la propia URL del QR, no de una constante aparte: si las dos se
-    escribieran por separado, un día dirían cosas distintas.
+    Queda dicho lo que se pierde, para que no haya que redescubrirlo: sin la
+    dirección impresa, «mira a dónde te llevó» deja de ser comprobable a simple
+    vista. La dirección sigue estando en el pie de la propia página.
   */
-  ctx.fillStyle = GRIS
-  ctx.font = `500 ${pt(4.4)}px ${FUENTE}`
-  textoCentrado(ctx, verificacion.url.replace(/^https?:\/\//, '').split('/')[0], mm(35.2))
 
   /*
     El QR arranca en 39,5 y no en 38, y pide 32 mm y no 30.
