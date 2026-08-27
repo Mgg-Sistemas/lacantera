@@ -24,7 +24,9 @@ El orden de los capítulos es el del camino del material: primero se extrae, lue
 
 ### Por qué hay capítulos que hoy no se alcanzan
 
-El sistema se entrega por partes, y desde el 21 de agosto de 2026 el menú lateral ofrece seis cosas y nada más: **Panel**, **Inventario**, **Compras**, **Nómina**, **Tasas de cambio** y **Configuración**. Lo demás —Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar.
+El sistema se entrega por partes, y el menú va creciendo. Hoy ofrece diez entradas: **Panel**, **Maquinaria**, **Inventario**, **Combustible**, **Asignaciones**, **Compras**, **Nómina**, **Tasas de cambio**, **Configuración** y **Manual de usuario**.
+
+Lo que todavía no sale —**Explotación**, **Despachos**, **Ventas**, el **Organigrama** y **Cuentas por cobrar**— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar. **Tesorería es distinto: dejó de ser un módulo**, y lo que quedaba vivo se lo llevó Compras.
 
 De los dos caminos posibles, este manual eligió el segundo:
 
@@ -52,14 +54,14 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 9 | Compras | Sí |
 | 10 | Ventas | **No, está en obra** |
 | 11 | Nómina | Sí |
-| 12 | Tesorería | **No, está en obra** |
+| 12 | Tesorería | **Retirado: se lo llevó Compras** |
 | 13 | Configuración | Sí |
 | 14 | Las reglas que el sistema impone | — |
 | 15 | Lo que todavía no está construido | — |
 | 16 | Preguntas frecuentes | — |
 | 17 | A quién acudir | — |
 
-Maquinaria, Combustible, Asignaciones y Organigrama tampoco se alcanzan hoy desde el menú. No tienen capítulo propio todavía: lo poco que hay escrito de ellos está repartido entre el capítulo 7 y el 11.
+**Maquinaria**, **Combustible** y **Asignaciones** sí se alcanzan hoy desde el menú, pero **no tienen capítulo propio todavía**: lo poco que hay escrito de ellos está repartido entre el capítulo 7 y el 11. Es el hueco más grande que tiene este manual y está anotado en 15.4. El **Organigrama** tiene apartado propio, el 11.12, y su pantalla sigue en obra.
 
 ---
 
@@ -90,29 +92,34 @@ El capítulo 14 reúne esas reglas y explica el motivo de cada una. Vale la pena
 
 El sistema no reparte el trabajo por persona sino por **módulo**, y a cada usuario se le habilitan los módulos que necesita.
 
-Los módulos son quince. La última columna dice cuáles se ofrecen hoy en el menú lateral y cuáles están en obra; el apartado 1.5 explica qué significa eso exactamente.
+La última columna dice cuáles se ofrecen hoy en el menú lateral y cuáles están en obra; el apartado 1.5 explica qué significa eso exactamente.
 
 | Módulo | De qué se ocupa | Hoy |
 | --- | --- | --- |
 | **Panel** | La pantalla de inicio: qué hay que atender hoy | En el menú |
 | **Explotación** | Frentes y bancos, voladuras, y el parte de producción de cada turno | En obra |
-| **Maquinaria** | Los equipos de la cantera, su horómetro y lo que ha pasado por el taller | En obra |
-| **Combustible** | El gasoil y la gasolina que se despachan a cada máquina | En obra |
+| **Maquinaria** | Los equipos de la cantera, su horómetro y lo que ha pasado por el taller | En el menú |
+| **Combustible** | El gasoil y la gasolina que se despachan a cada máquina | En el menú |
 | **Inventario** | Lo que hay en cada patio y almacén, y todo lo que entra y sale | En el menú |
-| **Asignaciones** | Lo que se le entrega a una persona y hay que recuperar, y lo que se pierde o se daña | En obra |
+| **Asignaciones** | Lo que se le entrega a una persona y hay que recuperar, y lo que se pierde o se daña | En el menú |
 | **Despachos** | El pesaje en la romana y las guías de movilización | En obra |
-| **Compras** | Pedir, cotizar, aprobar, recibir, facturar y pagar lo que la empresa compra | En el menú |
+| **Compras** | Pedir, cotizar, aprobar, recibir, facturar y **pagar** lo que la empresa compra | En el menú |
 | **Ventas** | Clientes, precios, cotizaciones, notas de entrega y facturas | En obra |
 | **Nómina** | Personal, novedades, cálculo, recibos, pagos, prestaciones sociales y el organigrama | En el menú |
-| **Tesorería** | Bancos y cajas, lo que hay que pagar y lo que hay que cobrar | En obra |
+| **Tesorería** | **Ya no es un módulo.** Lo que quedaba vivo se lo llevó Compras | Retirado |
 | **Tasas de cambio** | Las tasas del día, que valorizan todo lo que se registre | En el menú |
 | **Configuración** | Datos de la empresa, documentos legales y auditoría | En el menú |
 | **Usuarios y roles** | Quién entra al sistema y a qué llega cada quien | En el menú |
 | **Respaldo de la base** | La copia completa de los datos, para guardarla fuera | En el menú |
+| **Manual de usuario** | Este documento, dentro del sistema | En el menú |
 
 **Usuarios y roles** y **Respaldo de la base** cuelgan de Configuración en el menú, pero son módulos aparte a la hora de repartir permisos: quien mantiene el catálogo de artículos no tiene por qué poder crear cuentas ni llevarse la base entera en un archivo. El capítulo 13 lo explica.
 
-El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina, porque quien lleva el personal es quien sabe de quién depende quién.
+El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina, porque quien lleva el personal es quien sabe de quién depende quién. Hoy su pantalla está en obra.
+
+**El manual es la única entrada del menú que no comprueba permisos.** Quien acaba de entrar y todavía no tiene ningún módulo asignado la ve igual, y es a propósito: es lo único que tiene mientras espera que administración le reparta lo demás.
+
+**Tesorería dejó de existir como módulo, y conviene entender por qué.** No se escondió mientras se afina: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos. Sus dos piezas vivas —**Pagos por hacer** y **Movimientos de dinero**— cuelgan hoy de **Compras**, que es donde se usan. El capítulo 12 sigue en el manual porque lo que cuenta esas dos pantallas vale, pero su primera línea avisa de dónde están ahora.
 
 ### 1.3 Por dónde entra y por dónde sale el material
 
@@ -136,13 +143,15 @@ Por eso la tasa del día está siempre visible en la parte de arriba de la panta
 
 ### 1.5 Lo que hoy se ofrece, y lo que está en obra
 
-Esto es lo primero que hay que saber antes de buscar una pantalla, porque explica por qué el menú tiene seis entradas y este manual diecisiete capítulos.
+Esto es lo primero que hay que saber antes de buscar una pantalla, porque explica por qué el menú no trae todo lo que este manual cuenta.
 
-**Hoy el menú lateral ofrece esto, y nada más:**
+**Hoy el menú lateral ofrece esto:**
 
-**Panel · Inventario · Compras · Nómina · Tasas de cambio · Configuración**
+**Panel · Maquinaria · Inventario · Combustible · Asignaciones · Compras · Nómina · Tasas de cambio · Configuración · Manual de usuario**
 
-Lo decidió así la líder de sistemas, para entregar primero lo que ya se puede usar todos los días sin sobresaltos. **Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería** no salen en el menú, y tampoco los encuentra la barra buscadora.
+Lo decidió así la líder de sistemas, para entregar primero lo que ya se puede usar todos los días sin sobresaltos, e ir soltando el resto conforme se afina. **El menú ha ido creciendo**: en agosto ofrecía seis entradas y hoy son diez —entraron Maquinaria, Combustible, Asignaciones y el propio manual—, así que si tienes un manual impreso de hace unas semanas, esta lista es la que manda.
+
+**Lo que hoy no sale en el menú son cuatro módulos completos** —**Explotación**, **Despachos**, **Ventas** y **Tesorería**— **y dos pantallas sueltas**: el **Organigrama**, cuyo módulo (Nómina) sí está, y **Cuentas por cobrar**. Tampoco los encuentra la barra buscadora.
 
 Ahora la parte que hay que entender bien, porque no es lo que parece:
 
@@ -157,11 +166,21 @@ Y para que nadie tropiece con una pantalla a medio afinar sin saberlo, **quien l
 Dos consecuencias prácticas que conviene tener presentes:
 
 - **No es un problema de permisos.** Un candado —**Ventas no está a tu alcance**— significa que a tu rol no le abrieron ese módulo, y se resuelve pidiéndoselo a administración. El cartel de obra significa otra cosa: que esa parte todavía no está entregada, y pedir el permiso no lo cambia.
-- **El panel puede mandarte a una obra.** Algunos avisos del panel llevan a **Cuentas** de tesorería, y el tablero de inventario ofrece atajos a Ventas y a Explotación. Los enlaces siguen ahí; lo que hay al otro lado, hoy, es el cartel.
+- **Tesorería es un caso aparte, y no es «todavía no».** Los otros tres módulos escondidos están construidos y esperando. Tesorería **dejó de ser un módulo**: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos, y sus dos pantallas vivas se mudaron a **Compras**. Su capítulo sigue en el manual, con el aviso puesto.
 
 **Este manual sigue contando esos módulos entero**, capítulo por capítulo, porque lo que dicen es cierto y porque el día que vuelvan al menú va a hacer falta. Cada uno abre con un recuadro que recuerda que hoy no se alcanza.
 
-Una última cosa, que despista si nadie la dice: **el propio manual tampoco está en el menú.** Se llega escribiendo `/app/manual` en la barra del navegador, y esa dirección **no** muestra el cartel de obra: se abre normal, porque el manual no contiene ningún dato de la empresa y quien más lo necesita es quien acaba de llegar.
+**El manual sí está en el menú**, al final, en **Sistema**, con un icono de libro. Y es la única entrada que no comprueba permisos: quien acaba de entrar y todavía no tiene ningún módulo asignado la ve igual. Es lo único que tiene mientras espera que administración le reparta lo demás.
+
+#### La pantalla que se abre sin entrar
+
+Hay una sola, y conviene conocerla porque no se parece a nada más del sistema: **la página que abre el QR del carnet**.
+
+Su dirección es **/v** seguida del código del carnet, y **no pide usuario ni clave**. Es deliberado: quien la abre es un vigilante en un portón o un fiscal en la carretera, con el plástico en una mano y el teléfono en la otra, y no tiene cuenta en el sistema ni la va a tener. Tampoco da el cartel de obra, y se ve igual con sesión abierta y sin ella.
+
+Enseña si el carnet vale, la foto y los datos de la persona que hacen falta en un portón o en un accidente. **No enseña el sueldo, ni la cuenta bancaria, ni las incidencias.** Está contada entera en 11.4.
+
+Escribiendo **/v** a secas, sin código, se abre la misma página con un campo para teclearlo a mano: es lo que se usa cuando el plástico está rayado y el QR no lee.
 
 ---
 
@@ -332,23 +351,43 @@ Esto es todo lo que ofrece el menú hoy:
 
 | Grupo | Pantallas |
 | --- | --- |
-| **Inventario** | **Tablero**, **Existencias**, **Talleres**, **Movimientos**, **Transferencias**, **Catálogo de artículos**, **Cargar por planilla**, **Almacenes y patios** |
+| **Maquinaria** | **Equipos**, **Historial de taller** |
+| **Inventario** | **Tablero**, **Existencias**, **Transferencias**, **Almacenes y talleres** |
+| **Combustible** | Enlace directo, sin submenú |
+| **Asignaciones** | **Quién tiene qué**, **Dotación por cargo**, **Incidencias** |
 
 **Administración**
 
 | Grupo | Pantallas |
 | --- | --- |
-| **Compras** | **Tablero**, **Proveedores**, **Recepciones**, **Facturas de proveedor**, **Libro de compras** |
-| **Nómina** | **Tablero**, **Personal**, **Tabulador de cargos**, **Novedades del período**, **Procesar nómina**, **Recibos de pago**, **Parámetros de nómina**, **Prestaciones sociales** |
+| **Compras** | **Tablero**, **Proveedores**, **Recepciones**, **Pagos por hacer**, **Movimientos de dinero**, **Centro de costos**, **Libro de compras**, **Gasto por unidad** |
+| **Nómina** | **Tablero**, **Personal**, **Nómina del período**, **Prestaciones y parámetros** |
 
 **Sistema**
 
 | Grupo | Pantallas |
 | --- | --- |
 | **Tasas de cambio** | Enlace directo, sin submenú |
-| **Configuración** | **Usuarios y roles**, **Datos de la empresa**, **Documentos legales**, **Auditoría**, **Respaldo de la base** |
+| **Configuración** | **Tablero**, **Usuarios y roles**, **Datos de la empresa**, **Documentos legales**, **Auditoría**, **Respaldo de la base** |
+| **Manual de usuario** | Enlace directo. **Es la única entrada que se ve sin tener ningún permiso** |
 
-**Todas las entradas de este menú están construidas.** Ninguna abre ya el aviso de «todavía no construido» que se veía en las versiones anteriores. Si una pantalla no se abre, es por permisos o por conexión, no porque falte.
+**Muchas pantallas ya no están en el menú: están en pestañas.** El menú se quedó con la puerta de cada cosa y el resto se agrupó por dentro, arriba de la pantalla. Es lo que hay que saber para no darlas por perdidas:
+
+| Si buscas | Está en |
+| --- | --- |
+| **Catálogo de artículos**, **Movimientos** | Pestañas de **Inventario › Existencias** |
+| **Talleres** | **Inventario › Almacenes y talleres**, segunda pestaña |
+| **Facturas de proveedor** | **Compras › Proveedores**, segunda pestaña. **Ahí se llama Facturas recibidas** |
+| **Cuentas por pagar** | **Compras › Pagos por hacer**, segunda pestaña. **Ahí se llama Por proveedor** |
+| **Centro de costos**, **Libro de compras**, **Gasto por unidad** | Están en el menú, y además son pestañas entre sí |
+| **Tabulador de cargos**, **Carnets** | Pestañas de **Nómina › Personal** |
+| **Novedades del período**, **Procesar nómina**, **Recibos de pago** | Las tres pestañas de **Nómina › Nómina del período**, numeradas **1 · Novedades**, **2 · Procesar** y **3 · Recibos**, en el orden en que se hacen |
+| **Prestaciones sociales**, **Parámetros de nómina** | Pestañas de **Nómina › Prestaciones y parámetros** |
+| **Cargar por planilla** —artículos, personal o proveedores— | No es pestaña: es un **botón** dentro del Catálogo de artículos, de Personal y de Proveedores. También hay atajos en el Panel |
+
+**La lupa (Ctrl+K) sí las encuentra todas**, aunque no estén en el menú, y por su nombre corriente: buscar «cargar artículo» o «cuentas por pagar» lleva a donde toca.
+
+**Todas las entradas de este menú están construidas.** Ninguna abre el cartel de obra. Si una pantalla no se abre, es por permisos o por conexión, no porque falte.
 
 #### Lo que no sale en el menú, y sigue existiendo
 
@@ -357,14 +396,12 @@ Estas ramas están construidas y funcionando, pero hoy no se ofrecen desde el me
 | Grupo | Pantallas | Capítulo |
 | --- | --- | --- |
 | **Explotación** | **Tablero**, **Frentes y bancos**, **Voladuras**, **Producción por turno** | 6 |
-| **Maquinaria** | **Equipos**, **Historial de taller** | — |
-| **Combustible** | Enlace directo, sin submenú | — |
-| **Asignaciones** | **Quién tiene qué**, **Incidencias** | 11.4 |
 | **Despachos** | **Tablero**, **Tickets de romana**, **Guías de movilización**, **Vehículos** | 8 |
 | **Ventas** | **Tablero**, **Clientes**, **Lista de precios**, **Cotizaciones**, **Notas de entrega**, **Facturación**, **Notas de crédito**, **Libro de ventas** | 10 |
 | **Organigrama** | Enlace directo, sin submenú | 11.12 |
-| **Tesorería** | **Tablero**, **Bancos y cajas**, **Pagos por hacer**, **Cuentas por pagar**, **Libro de tesorería**, **Cuentas por cobrar** | 12 |
-| **Manual de usuario** | Este documento, dentro del sistema | — |
+| **Tesorería** | **Tablero**, **Bancos y cajas**, **Cuentas por cobrar** | 12 |
+
+**Tesorería está en esta lista por otro motivo que los demás.** Los otros cuatro están construidos y esperando. Tesorería **dejó de ser un módulo**: de sus seis pantallas, **Pagos por hacer** y **Movimientos de dinero** —que era el libro de tesorería— se mudaron a **Compras** y sí están en el menú; **Cuentas por pagar** desapareció como pantalla propia. Lo que queda escondido es lo que la empresa decidió no llevar: bancos y cajas.
 
 **Se esconden para todo el mundo, incluido el administrador.** No es un permiso: es que el MVP se enseña desde una cuenta con todos los permisos, y si al administrador le siguiera saliendo el menú entero, esconderlo no habría servido de nada.
 
@@ -5513,7 +5550,10 @@ Sí. Solo necesitas navegador e internet, con el mismo usuario y la misma clave.
 Si no llegaste a guardar, sí. El sistema necesita conexión para guardar y no trabaja sin señal. Vuelve a registrarlo cuando vuelva el internet.
 
 **Ayer estaba Ventas en el menú y hoy no. ¿Se borró?**
-No. Desde el 21 de agosto de 2026 el menú solo ofrece **Panel, Inventario, Compras, Nómina, Tasas de cambio y Configuración**. Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería siguen construidos y funcionando, pero no se ofrecen mientras se afinan. El apartado 1.5 lo explica entero.
+No. El menú va creciendo por partes y hoy ofrece **Panel, Maquinaria, Inventario, Combustible, Asignaciones, Compras, Nómina, Tasas de cambio, Configuración y Manual de usuario**. Explotación, Despachos, Ventas y el Organigrama siguen construidos y funcionando, pero no se ofrecen mientras se afinan. El apartado 1.5 lo explica entero.
+
+**Antes había Tesorería y ahora no la encuentro.**
+Tesorería **dejó de ser un módulo**. No está escondida: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos. Lo que se usaba todos los días se mudó a **Compras**: **Pagos por hacer** y **Movimientos de dinero** están ahí, en el mismo menú, y funcionan igual. El capítulo 12 las sigue contando.
 
 **Escribí la dirección de Ventas y me salió «En construcción».**
 Es lo previsto. Esa pantalla existe, pero todavía no está entregada, y lo que se haga ahí puede perderse o no cuadrar con el resto. No es un problema de permisos: pedir el permiso no lo cambia.
