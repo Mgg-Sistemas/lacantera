@@ -35,13 +35,34 @@ function enLinea(s) {
   return t
 }
 
-const ancla = (s) =>
+const limpiar = (s) =>
   s
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
+
+/*
+  NINGUN ANCLA SE REPITE.
+
+  Los apartados del manual se llaman igual en muchos capitulos --«Que se ve»,
+  «Que sale de aqui», «Lo que no te deja el sistema»-- y siete anclas estaban
+  duplicadas. No es cosmetico: el buscador de la pantalla del manual indexa por
+  el `id` del encabezado, asi que buscar «Que sale de aqui» estando en
+  Facturacion llevaba al de Cotizaciones, que es el primero del documento.
+
+  Al segundo y siguientes se les pone un sufijo. Se prefiere eso a prefijarlos
+  todos con el numero de capitulo, que arreglaria lo mismo pero cambiaria las
+  trescientas setenta anclas de golpe.
+*/
+const usadas = new Map()
+const ancla = (s) => {
+  const base = limpiar(s)
+  const vistas = usadas.get(base) ?? 0
+  usadas.set(base, vistas + 1)
+  return vistas === 0 ? base : `${base}-${vistas + 1}`
+}
 
 const lineas = fs.readFileSync(ORIGEN, 'utf8').replace(/\r\n/g, '\n').split('\n')
 const partes = []
