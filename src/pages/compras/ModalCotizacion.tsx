@@ -11,6 +11,7 @@ import { CONDICIONES_PAGO, useProveedores } from '@/lib/api/catalogo'
 import { useActualizarCotizacion, useRegistrarCotizacion } from '@/lib/api/compras'
 import type { Compra, Cotizacion } from '@/lib/api/compras'
 import { useMonedasUsables, useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
+import { useAlicuotaIva } from '@/lib/api/empresa'
 import { bolivares, dolares, tasa as fmtTasa } from '@/lib/formato'
 
 interface Props {
@@ -41,6 +42,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
   const { data: tasaVigente } = useTasaVigente()
   const { data: monedas } = useMonedasUsables()
   const registrar = useRegistrarCotizacion()
+  const alicuotaVigente = useAlicuotaIva()
   const actualizar = useActualizarCotizacion()
 
   const corrigiendo = !!cotizacion
@@ -56,7 +58,9 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
     cotizacion?.dias_entrega != null ? String(cotizacion.dias_entrega) : '',
   )
   const [validez, setValidez] = useState(String(cotizacion?.validez_dias ?? 15))
-  const [alicuota, setAlicuota] = useState(cotizacion?.alicuota_iva ?? '16')
+  const [alicuota, setAlicuota] = useState(
+    cotizacion?.alicuota_iva ?? String(alicuotaVigente),
+  )
   const [descuento, setDescuento] = useState(cotizacion?.descuento ?? '0')
   const [flete, setFlete] = useState(cotizacion?.flete ?? '0')
   const [observacion, setObservacion] = useState(cotizacion?.observacion ?? '')

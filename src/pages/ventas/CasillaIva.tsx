@@ -1,4 +1,4 @@
-import { useEmpresa } from '@/lib/api/empresa'
+import { useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { cn } from '@/lib/cn'
 
 /**
@@ -22,16 +22,19 @@ import { cn } from '@/lib/cn'
 export function CasillaIva({
   aplica,
   onCambiar,
-  alicuota = 16,
+  alicuota,
   className,
 }: {
   aplica: boolean
   onCambiar: (aplica: boolean) => void
+  /** Si no se pasa, la que diga la ficha de la empresa. */
   alicuota?: number
   className?: string
 }) {
   const { data: empresa } = useEmpresa()
+  const vigente = useAlicuotaIva()
   const porDefecto = empresa?.aplica_iva ?? true
+  const cuanto = alicuota ?? vigente
 
   return (
     <div className={cn('border-hairline rounded-[6px] border p-3', className)}>
@@ -44,7 +47,7 @@ export function CasillaIva({
         />
         <span>
           <span className="text-ink/85 text-sm font-medium">
-            Esta operación lleva IVA ({alicuota}%)
+            Esta operación lleva IVA ({cuanto}%)
           </span>
           <span className="text-ink/50 mt-0.5 block text-xs leading-relaxed">
             {aplica === porDefecto
