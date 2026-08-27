@@ -88,6 +88,17 @@ export interface EmpresaPapel {
    * se habría perdido: el día que alguien los llene, salen solos.
    */
   contacto?: string | null
+  /**
+   * La imprenta autorizada, ya compuesta: «IMPRESOS DEL SUR, C.A. · J-… · Aut. …».
+   *
+   * Una factura venezolana la lleva impresa: quién la imprimió y con qué
+   * autorización del SENIAT. Solo la factura — una cotización o una nota de
+   * entrega no la necesitan, y ponerla ahí sería decir que son fiscales.
+   *
+   * Vacía mientras nadie haya cargado esos datos en Configuración, y entonces
+   * no se imprime nada: un renglón que dice «Imprenta: —» es peor que ninguno.
+   */
+  imprenta?: string | null
 }
 
 /**

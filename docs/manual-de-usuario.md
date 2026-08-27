@@ -3455,7 +3455,9 @@ El PDF sale con la cabecera de la casa (13.2) y, a la derecha, cuatro datos: **N
 
 Los totales son **Subtotal**, **Descuento**, **Flete**, **IVA 16%**, raya y **TOTAL**, más **IVA retenido por el cliente** y **A pagar** cuando hay retención, y debajo el equivalente en la otra moneda. Firman **Por la empresa** y **Aceptado por el cliente**.
 
-El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.**
+El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.** Y detrás, **cuando la empresa tenga cargados los datos de su imprenta autorizada**, el renglón que exige el SENIAT: **Imprenta:** el nombre, su RIF y el número de autorización. **Solo en la factura** — una cotización o una nota de entrega no lo llevan, y ponérselo les daría un aire fiscal que no tienen.
+
+**Si esos datos no están cargados, el renglón no sale.** Un pie que dijera «Imprenta: —» no cumpliría el requisito y encima parecería que el sistema se dejó algo.
 
 > **Lo que esta factura todavía no imprime, y hace falta para que sea completa ante el SENIAT:** la **base imponible**, el **total exento** en los totales, el **desglose por alícuota** —hoy solo admite una, así que una factura mixta no se puede expresar— y los **datos de la imprenta autorizada** con su número de autorización, que no existen en ninguna pantalla del sistema. Está anotado en el capítulo 15.
 
@@ -5960,9 +5962,9 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 | Falta | Por qué importa |
 | --- | --- |
 | **Desglose por alícuota** | Hoy la factura admite una sola alícuota. Una factura mixta no se puede expresar |
-| **Datos de la imprenta autorizada** | Con su número de autorización. **No existen en ninguna pantalla del sistema**: hay que crearlos primero en Datos de la empresa |
+| **Dónde escribir los datos de la imprenta** | **La factura ya sabe imprimirlos** (10.7), pero todavía no hay casilla en Configuración para escribirlos, así que el renglón no sale |
 
-Las dos se deciden con quien lleva la contabilidad: la primera cambia el cálculo y la segunda no existe todavía como dato.
+**Y la alícuota ya no está escrita en el código.** Sale de la ficha de la empresa; mientras esa casilla no exista, el sistema usa el 16 de respaldo. Las dos cosas —la casilla de la alícuota y las de la imprenta— entran juntas cuando se aplique su migración.
 
 **En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla. Lo que sí se arregló es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4).
 

@@ -308,14 +308,44 @@ function pie(doc: Doc, d: DatosDocumento, pagina: number, de: number) {
   doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
   doc.line(IZQ, PIE - 8, DER, PIE - 8)
 
+  /*
+    LA IMPRENTA AUTORIZADA, Y SOLO EN LA FACTURA.
+
+    Una factura venezolana lleva impreso quién la imprimió y con qué número la
+    autorizó el SENIAT. Una cotización y una nota de entrega no: ponérselo sería
+    darles un aire fiscal que no tienen.
+
+    Va pegada al texto legal y no en un renglón propio debajo. Se probó ahí y
+    caía 1,4 mm dentro del margen inferior, que la hoja reserva a propósito
+    —`PIE` ya deja dos milímetros para el rabo de las letras—. Aquí el pie pasa
+    de uno a dos renglones, que es justo lo que ya admitía.
+
+    Si nadie ha cargado esos datos en Configuración no se imprime nada. Un
+    renglón que dice «Imprenta: —» no cumple el requisito y encima parece que
+    el sistema se dejó algo.
+  */
+  const legal =
+    d.tipo === 'FACTURA' && d.empresa.imprenta
+      ? `${PIES[d.tipo]} Imprenta: ${d.empresa.imprenta}.`
+      : PIES[d.tipo]
+
   doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
-  const lineas = doc.splitTextToSize(PIES[d.tipo], ANCHO_UTIL - 30) as string[]
-  doc.text(lineas.slice(0, 2), IZQ, PIE - 4.5)
+  const lineas = (doc.splitTextToSize(legal, ANCHO_UTIL - 30) as string[]).slice(0, 2)
+
+  /*
+    Con dos renglones, el bloque arranca más arriba.
+
+    Medido: a 6,5 puntos el segundo renglón caía a 1,86 mm del de «Emitido
+    por», y ahí los rabos de una «p» ya tocan las mayúsculas de abajo. Subiendo
+    el arranque quedan 3,5 mm, y con un solo renglón nada cambia.
+  */
+  doc.text(lineas, IZQ, lineas.length > 1 ? PIE - 6.2 : PIE - 4.5)
 
   doc.text(`Página ${pagina} de ${de}`, DER, PIE - 4.5, { align: 'right' })
   doc.text(`Emitido por ${d.emitidoPor} · ${EMPRESA.marca}`, IZQ, PIE)
   doc.setTextColor(GRIS_SUAVE)
   doc.text(`Tasa del día: ${numero(d.tasa)} Bs/$`, DER, PIE, { align: 'right' })
+
 }
 
 /** ANULADA, cruzada sobre la hoja. Un papel anulado tiene que verse anulado. */
