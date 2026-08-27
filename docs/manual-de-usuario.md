@@ -1423,9 +1423,14 @@ Consecuencia que hay que tener presente al mirar esta pantalla: la producción s
 
 Un taller es un almacén más —los de tipo **Taller**—, pero se mira con otra pregunta. Las existencias responden *cuánto hay*; esta pantalla responde *qué tiene asignado cada taller y en qué lo está gastando*. Su descripción lo dice: **Qué tiene asignado cada taller y en qué lo está gastando. El detalle artículo por artículo vive en Existencias.**
 
-Hay una tarjeta por taller, con su nombre, su código y la etiqueta **Cerrado** si está inactivo. Dentro, dos bloques:
+Hay una tarjeta por taller, con su nombre, su código y la etiqueta **Cerrado** si está inactivo.
+
+**Arriba van los oficios**: unas etiquetas con lo que ahí se hace —soldadura, hidráulica, motores— o, si no se declaró ninguno, **Acepta cualquier trabajo**. El botón **Oficios** los edita. **No es decoración: al mandar algo al taller el sistema comprueba contra esa lista**, y si el trabajo no está entre sus oficios no lo acepta. Un taller sin oficios declarados acepta todo, que es lo razonable mientras nadie los haya escrito.
+
+Dentro, tres bloques:
 
 - **Material asignado**: cuántos artículos tiene y cuánto valen, con la etiqueta ámbar **2 bajo mínimo** si la hay. Si el taller no ha recibido nada, no se inventa un cero con aire de dato: dice **Todavía no ha recibido material. Llega por transferencia desde otro almacén o por una compra recibida aquí.**
+- **En el taller ahora**: las órdenes abiertas, con su urgencia, de dónde salió el material y cuántos días lleva dentro contra los que se estimaron. Es el bloque que se mira todos los días: lo que lleva más días de los previstos es lo que hay que ir a preguntar.
 - **Máquinas asignadas**: las que tienen ese taller como sede, cada una con su código y su semáforo de mantenimiento. Si alguna está en alarma, el rótulo añade en rojo **· 2 necesitan atención**. Si no hay ninguna, **Ninguna máquina tiene este taller como sede.** Es lo que convierte a un taller en algo distinto de un depósito.
 
 Al pie, dos botones: **Ver su inventario**, que lleva a **Existencias** con ese taller ya elegido en el filtro **Dónde**, y el de las reparaciones que ha atendido. Por eso Talleres está pegada a Existencias en el menú: se ve el total, se ve dónde está, y aquí qué pasa en cada taller.
@@ -1444,22 +1449,30 @@ Cada línea muestra el número del movimiento — **MOV-2026-0001**, que se rein
 
 La cantidad va **en verde con un más** si entró material y **en rojo con un menos** si salió.
 
-**La pantalla muestra los 200 movimientos más recientes.** No hay paginación ni botón de ver más, y el único filtro es por almacén. Es una limitación real: en un patio con mucho tránsito, un movimiento de hace unas semanas deja de aparecer aquí aunque siga en el libro.
+**La pantalla muestra los 200 movimientos más recientes.** No hay paginación ni botón de ver más. Es una limitación real: en un patio con mucho tránsito, un movimiento de hace unas semanas deja de aparecer aquí aunque siga en el libro — y para eso están los filtros.
 
-#### Reversar un movimiento
+**Hay dos filtros: el almacén y un rango de fechas.** Conviene saber cómo filtra el segundo, porque no es obvio: **el rango se aplica sobre la fecha del movimiento** —el día en que pasó— **y no sobre el momento en que alguien lo escribió**, que es lo que sigue mandando en el orden de la lista. Si el material salió el sábado y se tecleó el lunes, el filtro lo encuentra en el sábado y la lista lo enseña en el sitio del lunes.
+
+En la cabecera hay además **Imprimir el libro**, que saca en PDF exactamente lo que se está viendo, con los filtros puestos.
+
+En las salidas, cada línea lleva un botón **Nota**, que saca la nota de salida en papel. Solo en las salidas: de una entrada no hay nada que entregarle a nadie.
+
+#### Deshacer un movimiento
+
+**El botón se llama Deshacer**, no «Reversar». Por dentro la operación sigue llamándose reverso —es lo que se lee en la nota que deja—, pero en la pantalla no aparece esa palabra.
 
 1. Busca la línea equivocada.
-2. Pulsa **Reversar**.
-3. Escribe **Por qué se reversa**.
-4. Pulsa **Reversar** en el botón rojo.
+2. Pulsa **Deshacer**.
+3. Escribe por qué.
+4. Confirma con **Deshacer** en el botón rojo.
 
 El movimiento original **se queda en el libro**. Lo que se escribe es uno nuevo, del mismo tamaño y en sentido contrario, con la nota «Reverso de MOV-2026-0007» seguida de tu explicación. Después se registra el movimiento correcto.
 
 Tres reglas que conviene saber de antemano:
 
-- **Un reverso no se reversa.** Si te equivocaste al reversar, registra el movimiento que corresponda.
-- **Un movimiento solo se reversa una vez.**
-- **No se puede reversar si el material ya no está.** Si reversar una entrada obligaría a sacar material que ya se consumió, el sistema lo impide y lo dice con nombre y cantidad. En ese caso el camino es un conteo físico.
+- **Un movimiento deshecho no se vuelve a deshacer.** Si te equivocaste al deshacer, registra el movimiento que corresponda.
+- **Un movimiento solo se deshace una vez.**
+- **No se puede deshacer si el material ya no está.** Si deshacer una entrada obligaría a sacar material que ya se consumió, el sistema lo impide y lo dice con nombre y cantidad. En ese caso el camino es un conteo físico.
 
 ### 7.7 Transferencias
 
@@ -1513,6 +1526,9 @@ Pulsa **Nuevo artículo** y llena la ficha:
 | **Al entregarlo a una persona** | — | Las tres opciones están abajo. La categoría propone una y se puede cambiar |
 | **Descripción** | No | |
 | **Entra al inventario** | — | Viene marcada. Se apaga sola si la categoría es **Servicio**, y al lado aparece **(un servicio no se almacena)** |
+| **Se puede mandar al taller** | — | **(vuelve arreglado)** o **(se gasta, no se repara)**. Viene marcada sola en las herramientas y los repuestos, y se puede corregir. Se apaga si el artículo no entra al inventario |
+
+**La casilla de taller decide si el artículo ofrece el botón «Al taller» en Existencias** (7.4). Marcarla en un pote de aceite llenaría de ruido el desplegable de lo que se manda a reparar; no marcarla en una herramienta la deja sin poder mandarse.
 
 #### Qué pasa al entregarlo
 
@@ -1603,9 +1619,9 @@ Son tres pasos, los tres a la vista en la misma página. A la derecha hay un pan
 
 #### 1 · Baja la plantilla
 
-**Trae las columnas en el orden que el sistema espera y dos filas de ejemplo para que se vea cómo se llena.**
+**Trae las columnas en el orden que el sistema espera, dos filas de ejemplo, y una segunda hoja que explica qué va en cada una.**
 
-Pulsa **Descargar plantilla**. Baja un archivo llamado `plantilla-articulos.csv`, y debajo del botón queda la nota que evita la pregunta de siempre: **Se abre en Excel de un doble clic. Al terminar puedes guardarla como CSV o como Excel: el sistema lee las dos.**
+Pulsa **Descargar plantilla**. Baja un archivo llamado `plantilla-articulos.xlsx`. **Es un Excel de dos hojas**: la que se llena y otra con las instrucciones de cada columna, para no tener que volver al manual mientras se rellena.
 
 Trae doce columnas, en este orden:
 
@@ -1712,8 +1728,8 @@ La razón es la que hace útil al inventario: una existencia que no cuadra se co
 
 Corregir tiene dos caminos, en este orden:
 
-1. **Reversar** el movimiento equivocado y registrar el correcto. Sirve mientras el material siga estando.
-2. **Contar** y explicar la diferencia, cuando el material ya se consumió y reversar ya no es posible.
+1. **Deshacer** el movimiento equivocado y registrar el correcto. Sirve mientras el material siga estando.
+2. **Contar** y explicar la diferencia, cuando el material ya se consumió y deshacerlo ya no es posible.
 
 #### De dónde entra y por dónde sale el material
 
@@ -1729,7 +1745,7 @@ Lo que nunca ocurre es que una cantidad cambie sin que quede una línea en el li
 
 #### Nunca se queda en negativo
 
-El sistema no permite que una existencia baje de cero, y lo comprueba en los cinco sitios donde podría pasar: al sacar, al trasladar, al reversar, al despachar una venta y al anular un parte de turno.
+El sistema no permite que una existencia baje de cero, y lo comprueba en los cinco sitios donde podría pasar: al sacar, al trasladar, al deshacer un movimiento, al despachar una venta y al anular un parte de turno.
 
 El motivo es simple: una existencia negativa no es un dato, es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió.
 
@@ -4500,7 +4516,7 @@ Después de **Confirmar el pago**, no hay ninguna de las tres:
 
 - **La nómina no se anula.** El sistema responde «Esta nómina ya se pagó y no se puede anular. Corrige la diferencia en el período siguiente.»
 - **La nómina no se recalcula.** El sistema responde «El período está en "PAGADA" y ya no se recalcula. Anúlalo si hay que rehacerlo.» — y anularla tampoco deja.
-- **La salida de dinero no se reversa.** En el libro de tesorería, un movimiento equivocado normalmente se corrige con un reverso, que es otra línea en sentido contrario. El pago de una nómina no admite ni siquiera eso: el botón de reversar no se ofrece para esas líneas, y si se intenta, el sistema responde «Este movimiento es el pago de una nómina. Reversarlo dejaría los recibos diciendo que se cobró y el banco que no salió nada.»
+- **La salida de dinero no se reversa.** En el libro de tesorería, un movimiento equivocado normalmente se corrige con un reverso, que es otra línea en sentido contrario. El pago de una nómina no admite ni siquiera eso: el botón de deshacer no se ofrece para esas líneas, y si se intenta, el sistema responde «Este movimiento es el pago de una nómina. Reversarlo dejaría los recibos diciendo que se cobró y el banco que no salió nada.»
 
 La razón es esa misma frase. Si se devolviera el dinero a la cuenta, el período seguiría diciendo «pagada» y los recibos seguirían diciendo que la gente cobró. El sistema quedaría contando dos historias distintas, y esa contradicción no se descubre hasta el cierre, cuando ya nadie recuerda qué pasó.
 
@@ -4954,21 +4970,23 @@ El equivalente en gris se calcula **con la tasa congelada del día del movimient
 
 Si todavía no hay nada: **Todavía no hay movimientos**, con el texto **El libro se llena solo: cada pago, ingreso o traslado escribe su línea.**
 
-#### Reversar una línea
+#### Deshacer una línea
+
+**El botón se llama Deshacer**, igual que en el libro de inventario. Por dentro la operación sigue siendo un reverso —es lo que dice la nota que deja— pero esa palabra no aparece en la pantalla.
 
 1. Busca la línea equivocada.
-2. Pulsa **Reversar**. Se abre la ventana con el número del movimiento en el título y el texto **Se escribe el movimiento contrario. El equivocado se queda a la vista: así se entiende qué pasó.**
+2. Pulsa **Deshacer**. Se abre la ventana **Deshacer TES-000123** y el texto **Se escribe el movimiento contrario. El equivocado se queda a la vista: así se entiende qué pasó.**
 3. Arriba verás un recuadro fijo, que no se puede tocar, con el concepto y el importe de lo que vas a anular.
 4. Escribe **Por qué se reversa**. Mínimo diez letras. Ayuda: **Queda escrito en el movimiento nuevo.**
-5. Pulsa **Reversar** en el botón rojo.
+5. Confirma con **Deshacer** en el botón rojo.
 
 La línea original **se queda en el libro**. Lo que se escribe es una nueva, del mismo tamaño y en sentido contrario. Después, si hace falta, se registra la correcta.
 
-**El botón Reversar no aparece en cuatro casos**, y cada uno tiene su motivo:
+**El botón Deshacer no aparece en cuatro casos**, y cada uno tiene su motivo:
 
-- **La línea ya es un reverso de otra.** Un reverso no se reversa: si la corrección estuvo mal, se registra el movimiento que corresponda.
-- **La línea es el pago de una compra.** Reversarla a solas dejaría la compra marcada como pagada y el dinero de vuelta en la cuenta. Se devuelve la instrucción de pago desde la compra.
-- **La línea es una de las dos mitades de un traslado.** Reversar solo esa devolvería el dinero al origen dejándolo también en el destino. Se deshace con un traslado en sentido contrario.
+- **La línea ya deshace otra.** Lo que ya se deshizo no se vuelve a deshacer: si la corrección estuvo mal, se registra el movimiento que corresponda.
+- **La línea es el pago de una compra.** Deshacerla a solas dejaría la compra marcada como pagada y el dinero de vuelta en la cuenta. Se devuelve la instrucción de pago desde la compra.
+- **La línea es una de las dos mitades de un traslado.** Deshacer solo esa devolvería el dinero al origen dejándolo también en el destino. Se deshace con un traslado en sentido contrario.
 - **La línea es el pago de una nómina.**
 
 Y a esos se suma el de siempre: sin el rol **Compras**, el botón tampoco se dibuja. No es el rol de Tesorería, que ya no existe.
