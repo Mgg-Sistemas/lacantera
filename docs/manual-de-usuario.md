@@ -2243,7 +2243,13 @@ Y hay que decir dónde está el riesgo, porque cuesta dinero: **una misma compra
 
 #### Lo que ya no se deshace
 
-- **Un pedido enviado no se puede editar.** El sistema responde «El pedido ya fue enviado y no se puede editar. Cancélalo y crea otro.» La razón es que a partir del envío otras personas ya lo están mirando y decidiendo sobre él; cambiarle el contenido por debajo dejaría sin sentido lo que ya aprobaron.
+- **Un pedido enviado sí se puede corregir, y esto cambió el 27 de agosto de 2026.** Lo pidió Jesmary: antes, una unidad mal puesta obligaba a cancelar el pedido entero y volver a teclear los siete renglones, y el pedido perdía su número.
+
+  En la ficha del pedido hay un botón **Corregir**, que abre el mismo formulario del alta ya lleno. Se ofrece mientras el pedido esté en **Borrador**, **Pedido** o **Confirmada**, y queda anotado en el historial.
+
+  **De ahí en adelante no.** Con el pedido en la gerencia o ya aprobado, el sistema se niega: cambiarle el contenido por debajo dejaría sin sentido lo que otros ya están mirando o aprobaron.
+
+  **Y tampoco si ya hay cotizaciones cargadas.** Esto no es prudencia: los renglones de una cotización cuelgan de los del pedido, y corregir el pedido los rehace — se llevaría por delante los renglones de todas sus cotizaciones, dejándolas vivas y en cero sin dar un solo error. El botón no aparece en ese caso, y si se llega por otro camino el sistema lo dice: *«Este pedido ya tiene 2 cotización(es) cargada(s)… Elimina las cotizaciones y vuelve a cargarlas después.»*
 - **Una compra cancelada no se reabre.** Si vuelve a hacer falta, se crea un pedido nuevo.
 - **Una recepción no se corrige.** El libro de inventario no se modifica: una corrección se hace con un ajuste, y los dos apuntes quedan visibles.
 
@@ -2534,7 +2540,23 @@ No hay que confundir esto con el IVA que retiene un cliente cuando la empresa le
 
 Se llega desde la ficha de una compra confirmada, con el botón **Cargar cotización**. Solo lo ve el rol Compras.
 
-Es donde se carga el precio que mandó cada proveedor, **tal como lo mandó**, para poder compararlos. La descripción del diálogo avisa de la regla principal: **Se carga tal como la mandó el proveedor. Cargar otra del mismo proveedor sustituye a esta.** Si lo que hace falta es cambiarle algo a una que ya está cargada, **no se vuelve a cargar: se corrige** — ver más abajo.
+Es donde se carga el precio que mandó cada proveedor, **tal como lo mandó**, para poder compararlos. La descripción del diálogo lo dice: **Se carga tal como la mandó el proveedor. Del mismo proveedor caben varias: una por cada oferta que mande.**
+
+**Del mismo proveedor caben varias, y esto cambió el 27 de agosto de 2026.** Antes cargar la segunda del mismo proveedor borraba la primera sin avisar. Estaba hecho así a propósito —un proveedor, un precio— y resultó no ser cierto: el mismo proveedor manda dos ofertas del mismo aceite en marcas distintas, y las dos hay que poder enseñarlas juntas. Ahora cada carga es una cotización nueva, con su propio número.
+
+Aun así, **si lo que hace falta es cambiarle algo a una que ya está cargada, no se vuelve a cargar: se corrige** — ver más abajo. Cargar añade otra oferta a la mesa; corregir arregla la que ya estaba.
+
+##### La marca y la presentación
+
+En cada renglón, debajo de la cantidad y el precio, hay dos campos más: **Marca** y **Presentación**.
+
+Lo pidió Diana, y el motivo es el reparto del trabajo: **quien hace el pedido lo pide en litros**, que es como se consume, y **quien compra recibe del proveedor otra cosa** — una marca (Motul, Chronus) y una presentación (bidón, barril, paleta, saco). Son dos personas y dos momentos, y por eso el dato no está en el pedido: nace después. Antes se escribía en la observación, que es donde va a parar todo lo que no tiene campo.
+
+Se escriben **tal como los mandó el proveedor**, sin lista de la que escoger: lo que se guarda es lo que él puso en su papel.
+
+Son además **lo que distingue dos cotizaciones del mismo proveedor**: en la tarjeta salen resumidos en una línea que empieza por **Ofrece**, y sin ella las dos tarjetas se leerían iguales.
+
+**La marca llega hasta la orden de compra.** Al aprobar se copia, y va impresa: la orden es el papel contra el que se recibe en el almacén, y sin la marca quien recibe no tiene con qué comprobar que llegó lo que se compró.
 
 Antes de nada, el diálogo mira la tasa del BCV. Si la hay, avisa con qué tasa y de qué fecha se va a congelar la cotización, y dice si viene arrastrada de un día anterior. Si no la hay, aparece **No hay tasa del BCV registrada. Sin ella no se puede valorar la cotización.** con el enlace **Registrar la tasa de hoy**. Este es el bloqueo más frecuente al empezar el día, y se resuelve en **Sistema › Tasas de cambio**.
 
@@ -2564,9 +2586,29 @@ Pasa todo el rato: la cotización está cargada y hay que ajustarle las condicio
 
 **Si cambias la fecha, cambia la tasa.** La cotización guarda congelada la del día que lleva escrito, así que mover la fecha vuelve a pedir la tasa del BCV de ese día.
 
-> **Una cotización propuesta al gerente no se corrige.** Los botones **Editar** y **Eliminar** desaparecen mientras lo esté, y si se intenta por otro camino el sistema se niega: *«Esta cotización está propuesta al gerente. Retira la propuesta antes de corregirla, o él aprobaría unas condiciones distintas de las que se le enseñaron.»* Se retira la propuesta, se corrige y se vuelve a proponer — y las tres cosas quedan anotadas.
+> **Una cotización propuesta al gerente no se corrige.** Los botones **Editar** y **Eliminar** desaparecen mientras lo esté, y si se intenta por otro camino el sistema se niega: *«Esta cotización está propuesta al gerente. Retira la propuesta antes de corregirla, o él aprobaría unas condiciones distintas de las que se le enseñaron.»* Se retira con el botón **Retirar la propuesta**, que está en la misma tarjeta; luego se corrige y se vuelve a proponer — y las tres cosas quedan anotadas.
+
+#### Proponer más de una al gerente
+
+**Se pueden subir varias a la vez, y esto también cambió el 27 de agosto de 2026.** Antes proponer una segunda desproponía la primera sin decirlo: la propuesta se guardaba en el pedido, y en el pedido solo cabía una.
+
+Ahora **la propuesta es una marca de cada cotización**, así que **Proponer al gerente** suma en vez de sustituir. En cada tarjeta propuesta aparece el chip **Propuesta al gerente** y el botón cambia a **Retirar la propuesta**.
+
+El encabezado de la tarjeta lo resume: **3 cotizaciones · 2 con el gerente**.
+
+**Retirar la última devuelve el pedido a compras.** Vuelve a **Confirmada** y queda anotado, porque un pedido esperando en la gerencia sin nada que aprobar es una bandeja con un papel en blanco.
+
+**Al gerente le toca escoger.** Con una sola propuesta el panel de aprobación es el de siempre y dice por cuánto se emite la orden. **Con dos o más aparece una lista para marcar cuál se aprueba** —proveedor, total, días de entrega y número— y el botón no se deja pulsar hasta que se marque una. El sistema no escoge por su cuenta: hacerlo sería firmarle al gerente una compra que no decidió. En el historial del pedido queda escrito **«Escogió COT-2026-0002 entre 3 propuestas»**.
 
 **Tampoco se corrige una que ya generó su orden de compra**: a esas alturas sus precios están impresos en un papel que salió de la empresa.
+
+#### Bajarla en PDF
+
+**En cada tarjeta hay un botón PDF**, el primero de la fila. Saca la cotización en papel para mandarla por correo o llevarla a una reunión sin tener que entrar al sistema.
+
+Sale con **el mismo membrete que la orden de compra** —son papeles de la misma casa— y con la marca y la presentación de cada renglón. Si está propuesta o aprobada, lleva el sello cruzado que lo dice.
+
+**No lleva firma, y el pie avisa de por qué:** *«Transcripción de la oferta recibida · el papel del proveedor es el que vale»*. No es el documento del proveedor sino lo que el sistema anotó de él, y quien lo reciba tiene que poder distinguirlo — si algún día las cifras no coinciden, manda el original.
 
 #### Cómo se calcula el total
 
@@ -3014,7 +3056,9 @@ Conviene saberlo antes de buscarlo:
 | «El pedido necesita al menos un renglón.» | Ningún renglón tenía descripción y cantidad | Llena al menos un renglón completo |
 | «El renglón 2 no tiene descripción.» | Ese renglón quedó sin describir | Escribe qué es, o quita el renglón |
 | «La cantidad del renglón 2 debe ser mayor que cero.» | Falta la cantidad | Escribe cuánto se necesita |
-| «El pedido ya fue enviado y no se puede editar. Cancélalo y crea otro.» | Un pedido enviado no se toca | Cancélalo y crea uno nuevo |
+| «Este pedido está en "…" y ya no se corrige aquí.» | El pedido pasó de Confirmada: está con el gerente o ya se aprobó | Si está con el gerente, retira lo propuesto; si ya se aprobó, manda la orden |
+| «Este pedido ya tiene 2 cotización(es) cargada(s)…» | Corregirlo dejaría esas cotizaciones vacías | Elimina las cotizaciones, corrige y vuelve a cargarlas |
+| «Hay 3 cotizaciones propuestas: hay que decir cuál se aprueba.» | El gerente no marcó ninguna | Marca cuál se aprueba en la lista del panel |
 | «Solo quien creó el borrador puede editarlo.» | El borrador es de otra persona | Pídele a esa persona que lo envíe o lo corrija |
 | «Solo se envía un borrador. Este pedido está en "Pedido".» | Ese pedido ya se envió | Revisa el tablero: ya está en circulación |
 | «Solo se confirma un pedido recién enviado. Este está en "Confirmada".» | Ya alguien lo confirmó | Sigue por el paso siguiente |

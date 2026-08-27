@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -18,7 +18,9 @@ import {
   useUnidades,
 } from '@/lib/api/catalogo'
 import { useAlmacenes } from '@/lib/api/inventario'
-import { useCrearPedido } from '@/lib/api/compras'
+import { useActualizarPedido, useCompra, useCrearPedido } from '@/lib/api/compras'
+import type { Compra } from '@/lib/api/compras'
+import { Cargando, ErrorDeCarga as ErrorDeCargaPagina } from '@/components/ui/Estado'
 import { useSesion } from '@/lib/sesion'
 
 /**
@@ -57,7 +59,46 @@ const filaVacia = (): FilaRenglon => ({
 
 const OTRO_SITIO = 'OTRO'
 
+/*
+  EL MISMO FORMULARIO CREA Y CORRIGE.
+
+  Lo pidió Jesmary: equivocarse en un pedido ya enviado obligaba a cancelarlo
+  entero y volver a teclear los siete renglones, y el pedido perdía su número.
+
+  No se hace una pantalla gemela porque piden exactamente los mismos datos, y
+  dos pantallas iguales se separan a la primera semana — una gana un campo y la
+  otra no. Lo único que cambia es de dónde salen los valores iniciales y a qué
+  función se llama al guardar.
+
+  La base permite corregir hasta CONFIRMADA y se niega en seco si ya hay
+  cotizaciones cargadas: los renglones de una cotización cuelgan de los del
+  pedido con borrado en cascada, y guardar aquí los rehace. Esta pantalla ni
+  siquiera se ofrece en ese caso, pero el control que vale es el de allá.
+*/
+export function CorregirPedido() {
+  const { id } = useParams()
+  const { data: compra, isPending, error } = useCompra(Number(id))
+
+  if (isPending) return <Cargando texto="Cargando el pedido…" />
+  if (error) return <ErrorDeCargaPagina error={error} />
+  if (!compra) return <ErrorDeCargaPagina error={new Error('Ese pedido no existe.')} />
+
+  /*
+    `key` para que el formulario se rearme al cambiar de pedido.
+
+    Sin ella, los `useState` de dentro conservarían los valores del pedido
+    anterior al navegar de uno a otro: se editaría el pedido nuevo con los
+    renglones del viejo delante.
+  */
+  return <Formulario key={compra.id} pedido={compra} />
+}
+
 export function NuevoPedido() {
+  return <Formulario pedido={null} />
+}
+
+function Formulario({ pedido }: { pedido: Compra | null }) {
+  const corrigiendo = !!pedido
   const navigate = useNavigate()
   const { data: articulos } = useArticulos()
   const { data: almacenes } = useAlmacenes()
@@ -66,22 +107,44 @@ export function NuevoPedido() {
   const { data: perfiles } = usePerfiles()
   const { session } = useSesion()
   const crear = useCrearPedido()
+  const actualizar = useActualizarPedido()
 
   const yo = session?.user.id ?? ''
-  const [quienPide, setQuienPide] = useState('')
-  const [otroNombre, setOtroNombre] = useState('')
-  const [otroCargo, setOtroCargo] = useState('')
+  const [quienPide, setQuienPide] = useState(
+    pedido?.solicitante_id ?? (pedido?.solicitante_nombre ? OTRA_PERSONA : ''),
+  )
+  const [otroNombre, setOtroNombre] = useState(pedido?.solicitante_nombre ?? '')
+  const [otroCargo, setOtroCargo] = useState(pedido?.solicitante_cargo ?? '')
 
-  const [titulo, setTitulo] = useState('')
-  const [justificacion, setJustificacion] = useState('')
-  const [prioridad, setPrioridad] = useState('NORMAL')
-  const [requeridaPara, setRequeridaPara] = useState('')
+  const [titulo, setTitulo] = useState(pedido?.titulo ?? '')
+  const [justificacion, setJustificacion] = useState(pedido?.justificacion ?? '')
+  const [prioridad, setPrioridad] = useState<string>(pedido?.prioridad ?? 'NORMAL')
+  const [requeridaPara, setRequeridaPara] = useState(pedido?.requerida_para ?? '')
   // OTRO_SITIO es la única opción del desplegable que no es un almacén: es la
   // puerta para lo que el inventario no conoce —un frente, la planta, una
   // máquina— sin volver al texto libre para todo lo demás.
-  const [sitio, setSitio] = useState('')
-  const [destino, setDestino] = useState('')
-  const [filas, setFilas] = useState<FilaRenglon[]>([filaVacia()])
+  const [sitio, setSitio] = useState(
+    pedido?.destino_almacen_id != null
+      ? String(pedido.destino_almacen_id)
+      : pedido?.destino
+        ? OTRO_SITIO
+        : '',
+  )
+  const [destino, setDestino] = useState(
+    pedido && pedido.destino_almacen_id == null ? (pedido.destino ?? '') : '',
+  )
+  const [filas, setFilas] = useState<FilaRenglon[]>(() =>
+    pedido && pedido.renglones.length > 0
+      ? pedido.renglones.map((r) => ({
+          ...filaVacia(),
+          articulo_id: r.articulo_id != null ? String(r.articulo_id) : '',
+          descripcion: r.descripcion,
+          cantidad: String(r.cantidad),
+          unidad: r.unidad,
+          observacion: r.observacion ?? '',
+        }))
+      : [filaVacia()],
+  )
 
   // Mientras la lista de perfiles carga, el selector todavía no tiene opciones;
   // el valor por defecto es uno mismo, que es el caso más común.
@@ -114,7 +177,7 @@ export function NuevoPedido() {
 
     const otra = seleccion === OTRA_PERSONA
 
-    const id = await crear.mutateAsync({
+    const comun = {
       titulo,
       justificacion,
       renglones,
@@ -122,29 +185,39 @@ export function NuevoPedido() {
       requerida_para: requeridaPara || null,
       destino: sitio === OTRO_SITIO ? destino || null : null,
       destino_almacen_id: sitio && sitio !== OTRO_SITIO ? Number(sitio) : null,
-      enviar: enviarAhora,
       solicitante_id: otra ? null : seleccion,
       solicitante_nombre: otra ? otroNombre : null,
       solicitante_cargo: otra ? otroCargo : null,
-    })
+    }
 
+    if (pedido) {
+      await actualizar.mutateAsync({ id: pedido.id, ...comun })
+      void navigate(`/app/compras/${pedido.id}`)
+      return
+    }
+
+    const id = await crear.mutateAsync({ ...comun, enviar: enviarAhora })
     void navigate(`/app/compras/${id}`)
   }
 
   return (
     <>
       <PageHeader
-        title="Nuevo pedido"
-        description="Lo que pidas aquí entra al tablero en la columna Pedido."
+        title={corrigiendo ? `Corregir ${pedido.numero}` : 'Nuevo pedido'}
+        description={
+          corrigiendo
+            ? 'Se corrige sobre el mismo pedido: conserva su número y su sitio en el historial.'
+            : 'Lo que pidas aquí entra al tablero en la columna Pedido.'
+        }
         actions={
           <>
             {/* Con qué se va a valorar lo que se pida. A un pedido todavía no
                 se le ponen precios, así que lo que hay que saber antes de
                 empezar es si la tasa del día está cargada, no cuánto suma. */}
             <ChipTasa className="self-center" />
-            <Link to="/app/compras">
+            <Link to={corrigiendo ? `/app/compras/${pedido.id}` : '/app/compras'}>
               <Button variant="outline" icon={<ArrowLeft />}>
-                Volver al tablero
+                {corrigiendo ? 'Volver al pedido' : 'Volver al tablero'}
               </Button>
             </Link>
           </>

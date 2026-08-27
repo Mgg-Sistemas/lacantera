@@ -30,12 +30,16 @@ import {
       haría que los papeles de dos empresas se confundan sobre una mesa, que
       es justo lo que un membrete existe para evitar.
 
-    - LAS COLUMNAS «MARCA / MODELO» Y «SUBCATEGORÍA» no van. El modelo las
-      lleva y las imprime vacías —«—» en las dos— porque tampoco las tiene.
-      Nosotros no guardamos esos datos, así que serían dos columnas siempre en
-      blanco quitándole ancho a la descripción, que es lo único que no se
-      puede abreviar sin dejar de reconocer lo que se pidió. Si hacen falta de
-      verdad, primero hay que poder guardarlas.
+    - LA COLUMNA «SUBCATEGORÍA» no va. El modelo la lleva y la imprime vacía
+      —«—»— porque tampoco la tiene. Sería una columna siempre en blanco
+      quitándole ancho a la descripción, que es lo único que no se puede
+      abreviar sin dejar de reconocer lo que se pidió.
+
+  Y una que dejó de ser cierta: aquí decía que la marca tampoco se imprimía
+  «porque no guardamos ese dato, y si hace falta de verdad, primero hay que
+  poder guardarlo». Se guarda desde el 27 de agosto —lo pidió Diana, que recibe
+  del proveedor la marca y la presentación que el pedido no trae— así que la
+  orden ya la lleva, y la cotización también.
 */
 
 const decimal2 = new Intl.NumberFormat('es-VE', {
@@ -381,3 +385,199 @@ function marcaDeAgua(doc: import('jspdf').jsPDF, texto: string): void {
 }
 
 export { fechaCorta }
+
+// ---------------------------------------------------------------------------
+// Cotización recibida
+// ---------------------------------------------------------------------------
+
+/*
+  EL PAPEL DE UNA COTIZACIÓN CARGADA.
+
+  Lo pidieron para poder mandarla por correo o llevarla a una reunión sin tener
+  que abrir el sistema, que es cuando de verdad se comparan precios.
+
+  NO ES EL PAPEL DEL PROVEEDOR, Y EL PIE LO DICE. Es lo que el sistema anotó de
+  lo que el proveedor mandó, con nuestro membrete: quien lo reciba tiene que
+  poder distinguirlo del original, porque las cifras son transcritas y el
+  original es el que vale si algún día no coinciden. Por eso tampoco lleva
+  firma — no hay nada que autorizar en un documento que solo recoge una oferta.
+
+  Y por eso lleva el número del proveedor cuando lo puso: es lo único que ata
+  esta hoja con el papel que llegó.
+*/
+
+export interface RenglonDeCotizacion {
+  descripcion: string
+  marca?: string | null
+  presentacion?: string | null
+  cantidad: string | number
+  unidad: string
+  precioUnitario: string | number
+  subtotal: string | number
+  exento?: boolean
+}
+
+export interface DatosCotizacionCompra {
+  numero: string
+  /** El pedido del que salió. */
+  refPedido: string
+  /** El número que el proveedor puso en su papel, si lo puso. */
+  numeroProveedor?: string | null
+  fecha: string
+
+  proveedor: {
+    nombre: string
+    rif: string
+    telefono?: string | null
+    direccion?: string | null
+  }
+
+  condiciones: {
+    validezDias?: number | null
+    diasEntrega?: number | null
+    condicionPago?: string | null
+    cargadaPor?: string | null
+    tituloPedido?: string | null
+  }
+
+  moneda: string
+  /** La tasa con la que se congeló. Va al pie: sin ella el total en Bs no se puede rehacer. */
+  tasa?: string | number | null
+  renglones: RenglonDeCotizacion[]
+  subtotal: string | number
+  descuento: string | number
+  flete: string | number
+  iva: string | number
+  alicuota: string | number
+  total: string | number
+
+  observaciones?: string | null
+  /** «PROPUESTA AL GERENTE», «APROBADA», o nada. */
+  sello?: string | null
+
+  empresa: { razonSocial: string; rif: string; actividad?: string | null }
+  momento: Date
+}
+
+/*
+  Los anchos suman los 150 mm útiles, como en la orden.
+
+  Aquí no va el SKU y sí van marca y presentación: una cotización no se lee para
+  saber qué código de almacén es, se lee para saber qué ofrecen y a cómo. El
+  código ya está en el pedido, que es de donde salen estos renglones.
+*/
+const COLUMNAS_COTIZACION: Columna[] = [
+  { titulo: 'Descripción', ancho: 40 },
+  { titulo: 'Marca', ancho: 21 },
+  // 26 y no 20: con 20 el propio rótulo se partía en «PRESENTACI / ÓN», que es
+  // lo primero que se ve de la tabla. Se midió en el PDF, no se calculó.
+  { titulo: 'Presentación', ancho: 26 },
+  { titulo: 'Cantidad', ancho: 21, alDerecha: true },
+  { titulo: 'Precio unit.', ancho: 21, alDerecha: true },
+  { titulo: 'Subtotal', ancho: 21, alDerecha: true },
+]
+
+export async function armarCotizacionDeCompra(
+  d: DatosCotizacionCompra,
+): Promise<ArchivoArmado> {
+  const { jsPDF } = await import('jspdf')
+  const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
+
+  let y = membrete(doc, logo, {
+    empresa: d.empresa,
+    datos: [
+      ['N° cotización', d.numero],
+      ['Ref. pedido', d.refPedido],
+      ['Fecha', d.fecha],
+    ],
+  })
+
+  y = tituloDocumento(doc, y, 'Cotización recibida')
+
+  y = etiquetaValor(doc, y, [
+    ['Proveedor', d.proveedor.nombre],
+    ['RIF', d.proveedor.rif],
+    ['Teléfono', d.proveedor.telefono],
+    ['Dirección', d.proveedor.direccion],
+  ])
+
+  y = seccion(doc, y, 'Condiciones ofrecidas')
+  y = etiquetaValor(doc, y, [
+    ['Pedido', d.condiciones.tituloPedido],
+    ['N° del proveedor', d.numeroProveedor],
+    ['Forma de pago', d.condiciones.condicionPago],
+    ['Entrega', d.condiciones.diasEntrega != null ? `${d.condiciones.diasEntrega} días` : null],
+    ['Validez', d.condiciones.validezDias != null ? `${d.condiciones.validezDias} días` : null],
+    ['Cargada por', d.condiciones.cargadaPor],
+  ])
+
+  y = seccion(doc, y, 'Ítems cotizados')
+  y = tabla(
+    doc,
+    y,
+    COLUMNAS_COTIZACION,
+    d.renglones.map((r) => [
+      r.descripcion,
+      r.marca ?? '—',
+      r.presentacion ?? '—',
+      [cantidad(r.cantidad), r.unidad].filter(Boolean).join(' '),
+      numero(r.precioUnitario),
+      // La marca de exento va pegada al subtotal y no en columna propia: es una
+      // nota de dos renglones de cada diez, y una columna para eso se lleva
+      // ancho de la descripción todas las veces.
+      `${numero(r.subtotal)}${r.exento ? ' (E)' : ''}`,
+    ]),
+    `TOTAL   ${conMoneda(d.moneda, d.total)}`,
+  )
+
+  const desglose: Array<[string, string | null]> = [
+    ['Subtotal', conMoneda(d.moneda, d.subtotal)],
+  ]
+  if (Number(d.descuento) > 0) desglose.push(['Descuento', conMoneda(d.moneda, d.descuento)])
+  if (Number(d.flete) > 0) desglose.push(['Flete', conMoneda(d.moneda, d.flete)])
+  desglose.push([`IVA ${numero(d.alicuota)}%`, conMoneda(d.moneda, d.iva)])
+  y = etiquetaValor(doc, y, desglose, { columnas: 1 })
+
+  if (d.renglones.some((r) => r.exento)) {
+    doc.setFont('helvetica', 'normal').setFontSize(7.5)
+    doc.text('(E) Renglón exento de IVA.', 30, y)
+    y += 5
+  }
+
+  if (d.observaciones) {
+    y = seccion(doc, y, 'Notas / observaciones')
+    doc.setFont('helvetica', 'normal').setFontSize(9)
+    const lineas = doc.splitTextToSize(d.observaciones, 150) as string[]
+    doc.text(lineas, 30, y, { lineHeightFactor: 1.45 })
+    y += lineas.length * 4.6 + 6
+  }
+
+  if (d.sello) marcaDeAgua(doc, d.sello)
+
+  /*
+    El pie dice de dónde salen las cifras.
+
+    Sin esto, una hoja con nuestro membrete y el nombre del proveedor arriba se
+    lee como si el proveedor la hubiera emitido. Lo que se está entregando es
+    nuestra transcripción, y quien la reciba tiene que saberlo antes de usarla
+    para decidir.
+  */
+  pieDePagina(
+    doc,
+    [
+      'Transcripción de la oferta recibida · el papel del proveedor es el que vale',
+      d.refPedido,
+      d.tasa ? `Tasa BCV ${numero(d.tasa)} Bs/$` : null,
+      fechaLarga(d.momento),
+    ]
+      .filter(Boolean)
+      .join(' · '),
+  )
+  doc.setProperties({ title: `Cotización ${d.numero} — ${d.proveedor.nombre}` })
+
+  return {
+    blob: doc.output('blob'),
+    nombre: `cotizacion-${d.numero.toLowerCase()}.pdf`,
+  }
+}
