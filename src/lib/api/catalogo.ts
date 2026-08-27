@@ -86,6 +86,46 @@ export interface Articulo {
    * prestar algo que se consume abre una deuda que no puede cerrarse.
    */
   modo_entrega: string
+  /**
+   * Como llega el articulo, y cuantas unidades trae.
+   *
+   * SON DOS COSAS DISTINTAS Y POR ESO SON DOS CAMPOS. `unidad` es lo que la
+   * empresa **usa** —litros, kilos, metros cubicos, unidades— y es en lo que
+   * se lleva la existencia y se descuenta el consumo. `presentacion` es como
+   * la empresa lo **recibe**: un bulto, un bidon de 20 L, una paleta.
+   *
+   * Una barra de acero llega suelta y no tiene presentacion: aqui va nulo, y
+   * no es un dato que falte. El agua Minalba llega en bultos de seis, y
+   * entonces `presentacion` dice BULTO y `unidades_por_presentacion` dice 6.
+   *
+   * Lo pidio Christopher al ver que la presentacion que se anota en una
+   * cotizacion no tenia donde vivir en el catalogo: el proveedor la manda una
+   * vez, pero el articulo llega asi siempre.
+   */
+  presentacion: string | null
+  unidades_por_presentacion: string | null
+}
+
+/**
+ * «6 UND por BULTO», o nada si el articulo llega suelto.
+ *
+ * Se arma en un solo sitio porque lo enseñan varias pantallas y una frase
+ * escrita dos veces acaba diciendo dos cosas distintas.
+ */
+export function comoLlega(
+  a:
+    | {
+        presentacion?: string | null
+        unidades_por_presentacion?: string | null
+        unidad?: string
+      }
+    | undefined
+    | null,
+): string | null {
+  if (!a?.presentacion) return null
+  const cuantas = Number(a.unidades_por_presentacion)
+  if (!Number.isFinite(cuantas) || cuantas <= 0) return a.presentacion
+  return `${cuantas} ${a.unidad ?? ''} por ${a.presentacion}`.replace(/\s+/g, ' ').trim()
 }
 
 export const CATEGORIAS_ARTICULO = [
@@ -161,9 +201,13 @@ export function useCrearArticulo() {
       reparable?: boolean
       stock_minimo?: number
       modo_entrega?: string
+      presentacion?: string | null
+      unidades_por_presentacion?: number | null
     }) =>
       rpc<number>('crear_articulo', {
         p_reparable: a.reparable ?? null,
+        p_presentacion: a.presentacion || null,
+        p_unidades_por_presentacion: a.unidades_por_presentacion ?? null,
         p_codigo: a.codigo,
         p_nombre: a.nombre,
         p_categoria: a.categoria,
@@ -197,9 +241,13 @@ export function useEditarArticulo() {
       reparable?: boolean
       stock_minimo?: number
       modo_entrega?: string
+      presentacion?: string | null
+      unidades_por_presentacion?: number | null
     }) =>
       rpc('editar_articulo', {
         p_reparable: a.reparable ?? null,
+        p_presentacion: a.presentacion || null,
+        p_unidades_por_presentacion: a.unidades_por_presentacion ?? null,
         p_id: a.id,
         p_nombre: a.nombre,
         p_categoria: a.categoria,
