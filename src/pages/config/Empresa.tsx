@@ -192,6 +192,63 @@ export function Empresa() {
             hint="Porcentaje del impuesto causado que retienen los agentes de retención."
           />
         </div>
+
+        {/*
+          LA ALÍCUOTA, AQUÍ Y EN NINGÚN OTRO SITIO.
+
+          Estaba escrita como un 16 en cinco puntos del código. Es una cifra
+          legal: cambia por decreto, y el día que cambie no puede hacer falta
+          una versión del sistema para seguirla — se cambia aquí y los
+          documentos nuevos salen con la nueva.
+
+          Los ya emitidos no se tocan: cada cotización, nota y factura guarda la
+          suya, que es lo que hace que una factura de marzo siga diciendo lo que
+          decía en marzo.
+
+          En blanco, el sistema usa el 16 de respaldo.
+        */}
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Input
+            label="Alícuota general del IVA"
+            inputMode="decimal"
+            value={form.alicuota_iva_pct == null ? '' : String(form.alicuota_iva_pct)}
+            onChange={(e) =>
+              cambiar({
+                alicuota_iva_pct: e.target.value === '' ? null : Number(e.target.value),
+              })
+            }
+            disabled={!puedeEditarFicha}
+            hint="La que se propone en los documentos nuevos. Los ya emitidos conservan la suya."
+          />
+        </div>
+      </Card>
+
+      {/*
+        LA IMPRENTA AUTORIZADA.
+
+        Una factura venezolana lleva impreso quién la imprimió y con qué número
+        la autorizó el SENIAT. Es lo único que faltaba para que la factura
+        cumpla, y hasta hoy no existía como dato en ninguna parte.
+
+        Solo va en la factura: una cotización o una nota de entrega no la
+        necesitan, y ponérsela sería darles un aire fiscal que no tienen.
+
+        Mientras esto esté vacío no se imprime nada. Un renglón que dice
+        «Imprenta: —» no cumple el requisito y encima parece que el sistema se
+        dejó algo.
+      */}
+      <Card className="mt-4">
+        <h2 className="text-ink/90 mb-1 text-base font-semibold">Imprenta autorizada</h2>
+        <p className="text-ink/50 mb-5 text-xs leading-relaxed">
+          Va impresa al pie de la factura, y solo de la factura. Es lo que el SENIAT exige que diga
+          quién imprimió el formato. Vacío, no se imprime nada.
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {campo('Nombre de la imprenta', 'imprenta_nombre')}
+          {campo('RIF de la imprenta', 'imprenta_rif')}
+          {campo('N° de autorización', 'imprenta_autorizacion')}
+        </div>
       </Card>
 
       <Card className="mt-4">
