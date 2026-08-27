@@ -26,7 +26,7 @@ El orden de los capítulos es el del camino del material: primero se extrae, lue
 
 El sistema se entrega por partes, y el menú va creciendo. Hoy ofrece diez entradas: **Panel**, **Maquinaria**, **Inventario**, **Combustible**, **Asignaciones**, **Compras**, **Nómina**, **Tasas de cambio**, **Configuración** y **Manual de usuario**.
 
-Lo que todavía no sale —**Explotación**, **Despachos**, **Ventas**, el **Organigrama** y **Cuentas por cobrar**— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar. **Tesorería es distinto: dejó de ser un módulo**, y lo que quedaba vivo se lo llevó Compras.
+Lo que todavía no sale —**Explotación**, **Despachos**, **Ventas** y el **Organigrama**— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar. **Tesorería es distinto: dejó de ser un módulo**, y lo que quedaba vivo se lo llevó Compras.
 
 De los dos caminos posibles, este manual eligió el segundo:
 
@@ -54,7 +54,7 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 9 | Compras | Sí |
 | 10 | Ventas | **No, está en obra** |
 | 11 | Nómina | Sí |
-| 12 | Tesorería | **Retirado: se lo llevó Compras** |
+| 12 | Tesorería | **No: se retiró, lo absorbió Compras** |
 | 13 | Configuración | Sí |
 | 14 | Las reglas que el sistema impone | — |
 | 15 | Lo que todavía no está construido | — |
@@ -93,7 +93,7 @@ El capítulo 14 reúne esas reglas y explica el motivo de cada una. Vale la pena
 
 El sistema no reparte el trabajo por persona sino por **módulo**, y a cada usuario se le habilitan los módulos que necesita.
 
-La última columna dice cuáles se ofrecen hoy en el menú lateral y cuáles están en obra; el apartado 1.5 explica qué significa eso exactamente.
+Los módulos son quince. La última columna dice cuáles se ofrecen hoy en el menú lateral y cuáles están en obra; el apartado 1.5 explica qué significa eso exactamente.
 
 | Módulo | De qué se ocupa | Hoy |
 | --- | --- | --- |
@@ -107,18 +107,17 @@ La última columna dice cuáles se ofrecen hoy en el menú lateral y cuáles est
 | **Compras** | Pedir, cotizar, aprobar, recibir, facturar y **pagar** lo que la empresa compra | En el menú |
 | **Ventas** | Clientes, precios, cotizaciones, notas de entrega y facturas | En obra |
 | **Nómina** | Personal, novedades, cálculo, recibos, pagos, prestaciones sociales y el organigrama | En el menú |
-| **Tesorería** | **Ya no es un módulo.** Lo que quedaba vivo se lo llevó Compras | Retirado |
+| **Tesorería** | Bancos y cajas, y cuentas por cobrar. **La empresa dejó de llevar saldos**: los pagos por hacer y los movimientos de dinero se mudaron a Compras | **No: se retiró** |
 | **Tasas de cambio** | Las tasas del día, que valorizan todo lo que se registre | En el menú |
 | **Configuración** | Datos de la empresa, documentos legales y auditoría | En el menú |
 | **Usuarios y roles** | Quién entra al sistema y a qué llega cada quien | En el menú |
 | **Respaldo de la base** | La copia completa de los datos, para guardarla fuera | En el menú |
-| **Manual de usuario** | Este documento, dentro del sistema | En el menú |
 
 **Usuarios y roles** y **Respaldo de la base** cuelgan de Configuración en el menú, pero son módulos aparte a la hora de repartir permisos: quien mantiene el catálogo de artículos no tiene por qué poder crear cuentas ni llevarse la base entera en un archivo. El capítulo 13 lo explica.
 
 El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina, porque quien lleva el personal es quien sabe de quién depende quién. Hoy su pantalla está en obra.
 
-**El manual es la única entrada del menú que no comprueba permisos.** Quien acaba de entrar y todavía no tiene ningún módulo asignado la ve igual, y es a propósito: es lo único que tiene mientras espera que administración le reparta lo demás.
+El **Manual de usuario** aparece siempre al final del menú y **no es un módulo**: no se reparte por permisos y no figura en la tabla. Quien acaba de entrar y todavía no tiene nada asignado lo ve igual, y es a propósito — es lo único que tiene mientras espera que administración le reparta lo demás. No contiene ningún dato de la empresa: solo explica cómo se usa el sistema.
 
 **Tesorería dejó de existir como módulo, y conviene entender por qué.** No se escondió mientras se afina: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos. Sus dos piezas vivas —**Pagos por hacer** y **Movimientos de dinero**— cuelgan hoy de **Compras**, que es donde se usan. El capítulo 12 sigue en el manual porque lo que cuenta esas dos pantallas vale, pero su primera línea avisa de dónde están ahora.
 
@@ -152,7 +151,7 @@ Esto es lo primero que hay que saber antes de buscar una pantalla, porque explic
 
 Lo decidió así la líder de sistemas, para entregar primero lo que ya se puede usar todos los días sin sobresaltos, e ir soltando el resto conforme se afina. **El menú ha ido creciendo**: en agosto ofrecía seis entradas y hoy son diez —entraron Maquinaria, Combustible, Asignaciones y el propio manual—, así que si tienes un manual impreso de hace unas semanas, esta lista es la que manda.
 
-**Lo que hoy no sale en el menú son cuatro módulos completos** —**Explotación**, **Despachos**, **Ventas** y **Tesorería**— **y dos pantallas sueltas**: el **Organigrama**, cuyo módulo (Nómina) sí está, y **Cuentas por cobrar**. Tampoco los encuentra la barra buscadora.
+**Lo que hoy no sale en el menú son cuatro módulos completos** —**Explotación**, **Despachos**, **Ventas** y **Tesorería**— **y una pantalla suelta**: el **Organigrama**, cuyo módulo, Nómina, sí está. Tampoco los encuentra la barra buscadora. Las pantallas que cuelgan de un módulo escondido —**Cuentas por cobrar**, por ejemplo— no están escondidas por su cuenta: lo está el grupo entero.
 
 Ahora la parte que hay que entender bien, porque no es lo que parece:
 
