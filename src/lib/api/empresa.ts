@@ -42,6 +42,10 @@ export interface Empresa {
    * alguien cuadra el libro.
    */
   alicuota_iva_pct: number | null
+  /** De la imprenta autorizada. Van impresos al pie de la factura. */
+  imprenta_nombre: string | null
+  imprenta_rif: string | null
+  imprenta_autorizacion: string | null
   /** Si la empresa cobra IVA por defecto. Cada operación puede decir otra cosa. */
   aplica_iva: boolean
   aplica_igtf: boolean
@@ -362,5 +366,13 @@ export function empresaDelPapel(e: Empresa | null | undefined): EmpresaPapel {
     actividad: EMPRESA.actividad,
     domicilio: domicilio || null,
     contacto: [e?.telefono, e?.correo].filter(Boolean).join(' · ') || null,
+    imprenta:
+      [
+        e?.imprenta_nombre,
+        e?.imprenta_rif ? `RIF ${e.imprenta_rif}` : null,
+        e?.imprenta_autorizacion ? `Aut. ${e.imprenta_autorizacion}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ') || null,
   }
 }
