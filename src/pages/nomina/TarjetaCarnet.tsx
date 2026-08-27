@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BadgeCheck, Copy, IdCard, ShieldAlert } from 'lucide-react'
+import { BadgeCheck, Copy, IdCard, Printer, ShieldAlert } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -44,12 +44,29 @@ export function TarjetaCarnet({
   trabajaAqui,
   /** Emite y, si hay foto cargada, la guarda con la emisión. */
   fotoParaEmitir,
+  /*
+    Las descargas del carnet viven AQUÍ y no en la tarjeta de documentos.
+
+    Estaban allí, y al añadir esta tarjeta el carnet acabó apareciendo en dos
+    sitios de la misma pantalla: uno para emitirlo y otro para bajarlo.
+    Christopher lo dijo con estas palabras — «hay 2 carnets, el sistema debe
+    tener solo 1» — y no pudo terminar de comprobar el QR porque no sabía cuál
+    de los dos era el bueno.
+
+    Son un solo objeto y ahora están en un solo sitio, y encima en el orden en
+    que se usan: primero se emite, después se imprime. La tarjeta de documentos
+    se queda con lo que no es carnet.
+  */
+  descargar,
+  descargando,
 }: {
   empleadoId: number
   nombre: string
   puedeEmitir: boolean
   trabajaAqui: boolean
   fotoParaEmitir: () => Promise<string | null>
+  descargar: (cara: 'carnet-pdf' | 'frente' | 'reverso') => void
+  descargando: string | null
 }) {
   const { data: carnet, isPending } = useCarnetVigente(empleadoId)
   const { data: historial } = useHistorialDeCarnets(empleadoId)
@@ -209,6 +226,51 @@ export function TarjetaCarnet({
           </ul>
         </div>
       ) : null}
+
+      {/* ----------------------------------------------- imprimirlo */}
+      <div className="border-hairline mt-5 border-t pt-4">
+        {/*
+          El PDF va primero y a lo ancho, porque es el que se manda a la
+          imprenta: una imagen no lleva su tamaño dentro y un carnet impreso un
+          4% más grande no entra en la funda de plastificar.
+        */}
+        <Button
+          block
+          icon={<Printer />}
+          disabled={descargando !== null}
+          onClick={() => descargar('carnet-pdf')}
+        >
+          {descargando === 'carnet-pdf' ? 'Armando el carnet…' : 'Carnet para imprenta (PDF)'}
+        </Button>
+
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <Button
+            block
+            variant="soft"
+            size="sm"
+            disabled={descargando !== null}
+            onClick={() => descargar('frente')}
+          >
+            {descargando === 'frente' ? 'Armando…' : 'Solo el frente (PNG)'}
+          </Button>
+          <Button
+            block
+            variant="soft"
+            size="sm"
+            disabled={descargando !== null}
+            onClick={() => descargar('reverso')}
+          >
+            {descargando === 'reverso' ? 'Armando…' : 'Solo el reverso (PNG)'}
+          </Button>
+        </div>
+
+        <p className="text-ink/40 mt-3 text-xs leading-relaxed">
+          El PDF trae las dos caras, de 54 × 86 mm a 300 dpi y con la medida dentro del archivo:
+          es el que se manda. Las dos imágenes sueltas son las mismas caras en PNG, por si hace
+          falta mirar o retocar una.
+          {carnet ? '' : ' Sin emitir, el reverso sale sin QR.'}
+        </p>
+      </div>
 
       {emitir.error ? <ErrorDeCarga error={emitir.error} className="mt-3" /> : null}
       {anular.error ? <ErrorDeCarga error={anular.error} className="mt-3" /> : null}

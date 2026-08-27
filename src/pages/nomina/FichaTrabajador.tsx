@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, FileText, IdCard, Pencil, ScrollText, TriangleAlert, UserX } from 'lucide-react'
+import { ArrowLeft, FileText, Pencil, ScrollText, TriangleAlert, UserX } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -570,6 +570,8 @@ export function FichaTrabajador() {
             puedeEmitir={puedeRRHH}
             trabajaAqui={e.fecha_egreso === null}
             fotoParaEmitir={fotoParaEmitir}
+            descargar={(cara) => void exportar(cara)}
+            descargando={exportando}
           />
 
           <Card>
@@ -585,41 +587,13 @@ export function FichaTrabajador() {
                 </Button>
               </div>
               {/*
-                El PDF va primero y a lo ancho, porque es el que se manda.
+                Los tres botones del carnet se fueron a la tarjeta del carnet.
 
-                Las dos imágenes sueltas siguen ahí para quien quiera mirar una
-                cara suelta o retocarla, pero lo que se le entrega a la imprenta
-                es este: una imagen no lleva su tamaño dentro y un carnet
-                impreso un 4% más grande no entra en la funda de plastificar.
+                Estaban aquí, y al añadir aquella el carnet aparecía en dos
+                sitios de la misma pantalla: uno para emitirlo y otro para
+                bajarlo. Es un solo objeto y va en un solo sitio. Aquí se queda
+                lo que no es carnet.
               */}
-              <div className="sm:col-span-2">
-                <Button
-                  block
-                  icon={<IdCard />}
-                  disabled={exportando !== null}
-                  onClick={() => void exportar('carnet-pdf')}
-                >
-                  {exportando === 'carnet-pdf' ? 'Armando el carnet…' : 'Carnet para imprenta (PDF)'}
-                </Button>
-              </div>
-              <Button
-                block
-                variant="soft"
-                icon={<IdCard />}
-                disabled={exportando !== null}
-                onClick={() => void exportar('frente')}
-              >
-                {exportando === 'frente' ? 'Armando…' : 'Carnet · frente'}
-              </Button>
-              <Button
-                block
-                variant="soft"
-                icon={<IdCard />}
-                disabled={exportando !== null}
-                onClick={() => void exportar('reverso')}
-              >
-                {exportando === 'reverso' ? 'Armando…' : 'Carnet · reverso'}
-              </Button>
               <div className="sm:col-span-2">
                 <Button
                   block
@@ -634,13 +608,9 @@ export function FichaTrabajador() {
             </div>
 
             <p className="text-ink/40 mt-3 text-center text-xs">
-              Todo se abre en pantalla antes de guardarse. La ficha trae todos los datos en A4.
-              El carnet para imprenta es un PDF de dos páginas —frente y reverso— de 54 × 86 mm a
-              300 dpi, con la medida dentro del archivo: es el que se manda. El QR de verificación
-              va en el reverso y solo aparece si el carnet está emitido. Las dos imágenes
-              sueltas son las mismas caras en PNG, por si hace falta mirar o retocar una: el frente
-              es de esta persona y el reverso lleva la marca y el RIF, igual para todos. La
-              constancia es la carta que se entrega a un banco o a quien la pida.
+              Los dos se abren en pantalla antes de guardarse. La ficha trae todos los datos en
+              A4; la constancia es la carta que se entrega a un banco o a quien la pida. El
+              carnet se emite y se imprime más arriba.
             </p>
 
             {falloExportar ? <ErrorDeCarga error={falloExportar} className="mt-3" /> : null}
