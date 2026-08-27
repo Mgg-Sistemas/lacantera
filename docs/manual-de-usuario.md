@@ -1852,7 +1852,18 @@ Una cosa más, que vale para las dos pantallas: **lo que escribes se convierte s
 
 Y las dos pantallas **se refrescan solas**. Si la garita registra un pesaje mientras tú miras la lista desde la oficina, lo verás aparecer sin recargar nada.
 
-### 8.2 Del pesaje a la salida del camión
+### 8.2 El tablero
+
+**Operación › Despachos › Tablero**
+
+Es la primera entrada del grupo y por donde se aterriza al abrir Despachos. No se registra nada aquí. Describe el módulo en una línea —*"El papeleo de la romana: se pesa el camión y se emite la guía con la que sale."*— y ofrece los dos pasos, numerados:
+
+| Paso | A dónde lleva |
+| --- | --- |
+| **I · Se pesa en la romana** | Tickets de romana |
+| **II · Se emite la guía** | Guías de movilización. *"La guía de movilización, que es con lo que el camión puede circular."* |
+
+### 8.3 Del pesaje a la salida del camión
 
 Esta es la sección que hay que leer aunque no se lea ninguna otra. El circuito son cinco pasos y va siempre en el mismo orden.
 
@@ -1868,7 +1879,7 @@ Dos avisos sobre este circuito, para que nadie los descubra a mitad de camino.
 
 **Los dos papeles son opcionales para el sistema, salvo la guía cuando hay mineral.** Se puede despachar sin haber pesado el camión, y en ese caso los pesos se teclean a mano. Lo que no se puede es sacar mineral sin guía.
 
-### 8.3 Tickets de romana
+### 8.4 Tickets de romana
 
 **Operación › Despachos › Tickets de romana**
 
@@ -1903,7 +1914,7 @@ Los tickets anulados se ven más pálidos, pero siguen en la lista.
 
 1. Pulsa **Pesar**. La ventana avisa: **El neto sale solo. Si el bruto no supera a la tara, algo se escribió al revés.**
 2. Elige el **Tipo**: **Salida — material que se va** o **Entrada — algo que llega**.
-3. Escribe la **Placa**. Es lo único que el sistema exige además de los pesos.
+3. Elige el **Vehículo**. Sale del catálogo de **Despachos › Vehículos** y trae la placa, lo que carga y el transportista; **al elegirlo, el transportista se rellena solo**. Si el camión no está en el catálogo —el que viene una vez y no vuelve— se elige **Otro — escribo la placa** y aparece el campo **Placa** para teclearla.
 4. Escribe el **Peso bruto (kg)** y la **Tara (kg)**. Debajo, el recuadro **Neto** hace la resta mientras tecleas.
 5. Completa lo que sepas: **Transportista**, **Chofer**, **Cédula del chofer**, **Material**, y el **Cliente** si es una salida o el **Proveedor** si es una entrada.
 6. Revisa la **Fecha**, que viene puesta en hoy, y escribe la **Hora** si la llevas.
@@ -1943,7 +1954,7 @@ El botón está apagado hasta que el motivo tenga al menos cuatro letras.
 
 **Un ticket que ya está en una nota de entrega no se anula desde aquí.** El sistema lo rechaza con «El ticket TCK-2026-0004 está en la nota de entrega. Anula primero la nota.» El orden es ese porque el ticket es lo que justifica el peso de esa nota: dejarlo anulado por debajo dejaría una nota de entrega con un peso que ningún pesaje respalda.
 
-### 8.4 Guías de movilización
+### 8.5 Guías de movilización
 
 **Operación › Despachos › Guías de movilización**
 
@@ -1964,7 +1975,7 @@ Si no hay ninguna, aparece la tarjeta **No hay guías cargadas**, con el texto *
 | **Guía** | El número del ministerio y, debajo, el número nuestro — **GMV-2026-0001** — y la fecha de emisión |
 | **Destino** | A dónde va el viaje y, debajo, el cliente si se le puso uno |
 | **Material** | El producto amparado y, debajo, el frente del que sale |
-| **Ampara** | Las toneladas que cubre el papel |
+| **Ampara** | La cantidad que cubre el papel, con su medida: **m³** o **t** |
 | **Vigencia** | Hasta cuándo vale y, cuando ya se usó, el número de la nota de entrega |
 | **Estado** | **Vigente**, **Vence en 2 d**, **Vencida**, **Usada** o **Anulada** |
 
@@ -1978,7 +1989,7 @@ Igual que en la romana, **la pantalla muestra las 400 guías más recientes** y 
 2. Escribe el **Número de guía**, que es el del papel del ministerio.
 3. Revisa **Emitida el**, que viene en hoy, y escribe **Vence el**.
 4. Escribe el **Destino**.
-5. Elige el **Material** y escribe las **Toneladas que ampara**.
+5. Elige el **Material**, escribe la **Cantidad que ampara** y elige la **Medida**: **Metros cúbicos** o **Toneladas**. La ayuda dice el criterio: *"La que diga el papel."* **Viene puesto en metros cúbicos**, porque es en lo que opera hoy la cantera mientras tramita la licencia para vender por tonelada.
 6. Completa lo que traiga el papel: **Cliente**, **Frente de origen** u **Origen**, **Transportista**, **Placa**, **Chofer**, **Cédula del chofer** y la **Observación**.
 7. Pulsa **Guardar la guía**.
 
@@ -1990,7 +2001,8 @@ Igual que en la romana, **la pantalla muestra las 400 guías más recientes** y 
 | **Destino** | Sí | La ciudad o el sitio al que va el viaje |
 | **Cliente** | No | Empieza en **Sin cliente concreto** |
 | **Material** | Sí | Empieza en **Elige el material**. Solo trae productos de cantera |
-| **Toneladas que ampara** | Sí | Mayor que cero |
+| **Cantidad que ampara** | Sí | Mayor que cero |
+| **Medida** | Sí | **Metros cúbicos** o **Toneladas**. Empieza en metros cúbicos |
 | **Frente de origen** | No | Empieza en **Sin frente concreto** |
 | **Origen** | No | Para cuando no sale de un frente del sistema |
 | **Transportista** | No | |
@@ -2009,7 +2021,27 @@ El botón **Anular** aparece en la fila **solo mientras la guía está Vigente**
 
 Una guía que ya amparó un despacho no se anula desde aquí: el sistema responde «La guía GM-2026-0099 amparó un despacho. Anula primero la nota de entrega.» El motivo es el mismo que en el ticket: la nota quedaría diciendo que viajó amparada por un papel que el sistema da por anulado.
 
-### 8.5 Lo que conviene entender
+### 8.6 Vehículos
+
+**Operación › Despachos › Vehículos**
+
+*"La flota propia y la de los transportistas, con lo que carga cada uno. Es lo que permite saber si un despacho cabe en el camión."*
+
+Es el catálogo del que salen los desplegables **Vehículo** del ticket y de la guía. Cada ficha lleva:
+
+| Campo | Detalle |
+| --- | --- |
+| **Placa** | Con la que se le identifica en todo el sistema |
+| **Tipo** | Volteo, chuto, gandola… |
+| **Descripción** | Lo que ayude a reconocerlo |
+| **Metros cúbicos** y **Toneladas** | Lo que carga. Es el dato que responde si un despacho cabe |
+| **Ficha en Maquinaria** | Si el camión es de la empresa, se ata a su ficha de Maquinaria |
+| **Transportista** | Si es de un tercero. Es lo que se rellena solo en el ticket al elegir el vehículo |
+| **Nota** | |
+
+**Un camión es propio o es de un transportista, no las dos cosas.** Los de la empresa se atan a Maquinaria para que su mantenimiento y su horómetro vivan en un solo sitio; los de fuera llevan el nombre de quien los pone.
+
+### 8.7 Lo que conviene entender
 
 #### La romana pesa todo, no solo lo que se vende
 
@@ -2071,7 +2103,7 @@ Cada pesaje lleva su correlativo, **TCK-2026-0001**, y cada guía lleva dos núm
 
 **Nada se borra.** Un pesaje equivocado se anula y se queda con su número, y una guía anulada sigue en la lista. La razón es la misma que en el resto del sistema: un correlativo con huecos es lo primero que se pregunta en una revisión, y en la garita un número que falta es un camión del que nadie sabe dar cuenta.
 
-### 8.6 Cuando el sistema no te deja
+### 8.8 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -2085,7 +2117,7 @@ Cada pesaje lleva su correlativo, **TCK-2026-0001**, y cada guía lleva dos núm
 | «La guía necesita su número, que es el que lleva el papel del ministerio.» | El número quedó vacío | Cópialo del papel |
 | «La guía necesita el destino: una guía ampara un viaje a un sitio.» | El destino quedó vacío | Escribe a dónde va el camión |
 | «La guía no puede vencer antes de emitirse.» | **Vence el** quedó antes de **Emitida el** | Revisa las dos fechas del papel |
-| «La guía tiene que amparar un tonelaje mayor que cero.» | Las toneladas quedaron vacías o en cero | Escribe las toneladas que dice el papel |
+| «La guía tiene que amparar un tonelaje mayor que cero.» | La cantidad quedó vacía o en cero | Escribe la cantidad que dice el papel. **El mensaje habla de tonelaje aunque la guía se emita en metros cúbicos**: es un texto que quedó de antes |
 | Un mensaje largo en inglés al guardar la guía | Ese número de guía ya está cargado | Búscala en la lista con el filtro **Ver** en **Todas**. Si ya está, no hace falta cargarla otra vez |
 | «Escribe por qué se anula la guía.» | El motivo quedó vacío o muy corto | Escribe al menos cuatro letras que expliquen qué pasó |
 | «La guía GM-2026-0099 ya estaba anulada.» | Alguien se te adelantó | Recarga la lista |
