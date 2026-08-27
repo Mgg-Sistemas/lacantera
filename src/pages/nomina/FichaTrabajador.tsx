@@ -323,7 +323,14 @@ export function FichaTrabajador() {
     return img ? fotoParaVerificar(img, encuadre) : null
   }
 
-  async function exportar(tipo: Exportable) {
+  /*
+    `codigoRecien` llega solo justo despues de emitir.
+
+    Sin el, emitir y pedir el PDF seguido daria un carnet SIN QR: la consulta
+    del carnet vigente se invalida al emitir, pero refrescar es asincrono y esta
+    funcion ya corrio con el valor viejo.
+  */
+  async function exportar(tipo: Exportable, codigoRecien?: string) {
     if (!e) return
     setExportando(tipo)
     setFalloExportar(null)
@@ -343,9 +350,10 @@ export function FichaTrabajador() {
         grupo_sanguineo: e.grupo_sanguineo,
         foto: img,
         encuadre,
-        verificacion: carnetVigente
-          ? { codigo: carnetVigente.codigo, url: urlDeVerificacion(carnetVigente.codigo) }
-          : null,
+        verificacion: (() => {
+          const codigo = codigoRecien ?? carnetVigente?.codigo
+          return codigo ? { codigo, url: urlDeVerificacion(codigo) } : null
+        })(),
       }
 
       if (tipo === 'carnet-pdf') {
@@ -570,7 +578,7 @@ export function FichaTrabajador() {
             puedeEmitir={puedeRRHH}
             trabajaAqui={e.fecha_egreso === null}
             fotoParaEmitir={fotoParaEmitir}
-            descargar={(cara) => void exportar(cara)}
+            descargar={(cara, codigo) => void exportar(cara, codigo)}
             descargando={exportando}
           />
 
