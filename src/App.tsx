@@ -87,6 +87,9 @@ const Asignaciones = pagina(() =>
 const EntregarATrabajador = pagina(() =>
   import('@/pages/asignaciones/Entregar').then((m) => ({ default: m.Entregar })),
 )
+const VerificarCarnet = pagina(() =>
+  import('@/pages/VerificarCarnet').then((m) => ({ default: m.VerificarCarnet })),
+)
 const Incidencias = pagina(() =>
   import('@/pages/asignaciones/Incidencias').then((m) => ({ default: m.Incidencias })),
 )
@@ -485,6 +488,24 @@ export default function App() {
           {/* La portada es la única pantalla sin guardián: se ve con sesión y
               sin ella. Es la puerta de la calle, no una pantalla del sistema. */}
           <Route path="/" element={<Landing />} />
+
+          {/*
+            VERIFICAR UN CARNET. LA SEGUNDA PANTALLA SIN GUARDIÁN.
+
+            La abre el QR impreso en el reverso de un carnet, y quien la abre es
+            un vigilante en un portón o un fiscal en la carretera: nadie con
+            cuenta en el sistema.
+
+            No lleva `RutaPublica`, y eso NO es un olvido. `RutaPublica` echa a
+            quien SÍ tiene sesión —está para que el login no se le aparezca a
+            alguien que ya entró— y aquí dejaría a un supervisor de la empresa
+            sin poder escanear un carnet: le rebotaría a `/app` al instante.
+
+            Van dos rutas: con código, que es la que trae el QR, y sin él, para
+            teclearlo a mano cuando el plástico está rayado y no lee.
+          */}
+          <Route path="/v" element={<VerificarCarnet />} />
+          <Route path="/v/:codigo" element={<VerificarCarnet />} />
 
           <Route
             path="/entrar"
