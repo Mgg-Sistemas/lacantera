@@ -5039,7 +5039,9 @@ Un efecto secundario que conviene saber: **cargar la tasa del BCV pasó a pedir 
 
 Esta pantalla la maneja el rol de Administrador del sistema. Quien tenga permiso para verla pero no ese rol lee arriba un aviso naranja: **Estás viendo esta pantalla en solo lectura. Crear usuarios y cambiar permisos lo hace quien tiene el rol de administrador del sistema.** No aparecen **Nuevo usuario** ni **Nuevo rol**, no hay botones en las filas y las casillas de la matriz salen apagadas.
 
-La pantalla tiene dos pestañas: **Usuarios** y **Roles y permisos**.
+La pantalla tiene tres pestañas: **Usuarios**, **Roles y permisos** y **Permisos extendidos**.
+
+**El aviso de solo lectura vale para las dos primeras, no para la tercera.** El gerente general lo lee arriba y, sin embargo, **sí puede extender y retirar permisos**: esa pestaña la manejan el administrador del sistema y la gerencia general. Es lo único de esta pantalla que la gerencia puede usar de verdad.
 
 #### La pestaña Usuarios
 
@@ -5052,10 +5054,23 @@ La tabla tiene estas columnas:
 | **Usuario** | El nombre de usuario. En tu propia fila lleva la etiqueta **Tú** |
 | **Nombre** | Nombre y apellido |
 | **Cargo** | El cargo, si se llenó |
+| **Ficha de personal** | Si la cuenta está relacionada con un trabajador. Ver abajo |
 | **Roles** | Una etiqueta por rol. Si no tiene ninguno: **Sin roles** |
 | **Estado** | **Activo** o **Inactivo**, más el botón de la llave para cambiar la clave y el del muñeco para inactivar o reactivar |
 
 Pulsar cualquier parte de la fila abre la ficha del usuario. **No hay buscador ni filtros** en esta pestaña.
+
+#### La columna «Ficha de personal»
+
+Es el espejo de lo que ya hace la ficha del trabajador, que dice si esa persona tiene cuenta. Aquí se lee al revés: si esa cuenta es de alguien de la plantilla.
+
+| Lo que dice | Qué significa |
+| --- | --- |
+| **Ficha 0018 · Jesmary Barco** | La cuenta está atada a ese trabajador |
+| En naranja: **Hay una ficha con su cédula** | No está atada, pero existe un trabajador con la misma cédula. **Es lo único de esta columna sobre lo que hay que hacer algo** |
+| En gris | Ni atada ni hay ficha con esa cédula. Es lo normal en una cuenta de sistemas o de un tercero |
+
+**Sirve para dos cosas distintas.** La primera es no darle dos identidades a la misma persona. La segunda es más útil de lo que parece: cuando alguien egresa, saber qué cuenta era suya es lo que evita que se quede abierta.
 
 #### Crear un usuario
 
@@ -5191,6 +5206,30 @@ Nómina, Tesorería y Ventas quedan fuera del rol de Consulta a propósito: «so
 Al editar, el **Código** queda bloqueado y la ventana lo explica: **El código no cambia: hay funciones de la base que lo nombran.**
 
 **Los roles que trae el sistema no se pueden borrar.** Solo se borran los que creó la empresa, y solo si no los tiene nadie. Si un rol del sistema sobra en alguien, el camino no es borrarlo sino quitárselo a quien no deba tenerlo: borrarlo dejaría sin dueño todas las reglas que lo nombran.
+
+#### La pestaña «Permisos extendidos»
+
+Es la tercera capa de autorización del sistema, y la más reciente. Las otras dos reparten por **rol**; esta presta una facultad **a una persona concreta y por un plazo**.
+
+Nació de un caso real: el gerente general es el único que aprueba compras, y cuando no está, la empresa deja de comprar. Extenderle esa facultad a alguien de confianza por dos semanas resuelve el viaje sin repartirle el rol de gerente a nadie.
+
+**Lo que se presta es una acción, no un módulo.** El sistema tiene un catálogo de **153 acciones** repartidas en quince módulos —aprobar una compra, anular un carnet, autorizar un despacho sin guía—, y se extiende una, no el módulo entero.
+
+Con el botón **Extender un permiso** se pide:
+
+| Campo | Detalle |
+| --- | --- |
+| **A quién** | Una persona activa del sistema |
+| **Qué se le extiende** | Una acción del catálogo. La ayuda dice el límite: *"Solo puedes extender lo que tú mismo puedes hacer."* |
+| **Desde** | En blanco, desde hoy |
+| **Hasta** | En blanco, **indefinida**. Conviene poner fecha |
+| **Justificación** | Obligatoria, y la ayuda dice por qué: *"Por qué hace falta. Dentro de un mes es lo único que va a explicar por qué esta persona pudo hacer esto."* |
+
+**Nadie puede extender lo que él mismo no puede hacer.** Es lo que impide que esta pantalla se use para escalar permisos: el administrador puede prestar cualquier cosa porque lo puede todo, pero el gerente general solo presta lo suyo.
+
+**Lo que se hace con un permiso extendido queda marcado como tal.** No es lo mismo aprobar una compra porque es tu puesto que aprobarla porque alguien te prestó la facultad: la orden impresa dice *bajo autorización de* seguido del nombre, y a quien la usa se le exige subir el papel que la respalda. Está contado en 9.5.
+
+**Un permiso extendido se retira**, no se borra, y al retirarlo se pide **Por qué se retira**: queda el rastro de que existió, de quién lo dio, por qué y hasta cuándo.
 
 #### Lo que ni siquiera el administrador puede hacer
 
