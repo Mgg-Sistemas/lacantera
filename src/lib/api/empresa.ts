@@ -98,6 +98,10 @@ export function useGuardarEmpresa() {
         p_retencion_iva_pct: e.retencion_iva_pct ?? null,
         p_telefono: e.telefono || null,
         p_correo: e.correo || null,
+        p_alicuota_iva_pct: e.alicuota_iva_pct ?? null,
+        p_imprenta_nombre: e.imprenta_nombre || null,
+        p_imprenta_rif: e.imprenta_rif || null,
+        p_imprenta_autorizacion: e.imprenta_autorizacion || null,
       }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['empresa'] }),
   })

@@ -74,9 +74,83 @@ alter table public.empresa
   campos nuevos al `update`.
 */
 
--- PENDIENTE: pegar aquí el cuerpo vivo de guardar_empresa con los cuatro
--- campos añadidos. No se escribe a ciegas: sin el MCP no hay forma de saber
--- qué hace hoy, y esta función escribe la identidad fiscal de la empresa.
+drop function if exists public.guardar_empresa(text, text, text, text, text, text, date, date, date, text, text, text, numeric, text, text);
+
+create function public.guardar_empresa(
+  p_rif text,
+  p_razon_social text,
+  p_domicilio_fiscal text default null,
+  p_ciudad text default null,
+  p_estado text default null,
+  p_zona_postal text default null,
+  p_inscrito_el date default null,
+  p_rif_actualizado_el date default null,
+  p_rif_vence_el date default null,
+  p_gerencia_seniat text default null,
+  p_comprobante_rif text default null,
+  p_condicion_iva text default null,
+  p_retencion_iva_pct numeric default null,
+  p_telefono text default null,
+  p_correo text default null,
+  p_alicuota_iva_pct numeric default null,
+  p_imprenta_nombre text default null,
+  p_imprenta_rif text default null,
+  p_imprenta_autorizacion text default null
+) returns void
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  perform private.exigir_rol('ADMIN', 'GERENTE_GENERAL');
+
+  if length(trim(coalesce(p_razon_social, ''))) < 3 then
+    raise exception 'La razon social no puede quedar vacia.' using errcode = '22023';
+  end if;
+
+  -- El RIF venezolano: una letra de tipo, ocho digitos y el verificador.
+  if trim(coalesce(p_rif, '')) !~ '^[JGVEP]-?[0-9]{8}-?[0-9]$' then
+    raise exception 'El RIF "%" no tiene forma de RIF. Debe ser como J-50209170-0.', p_rif
+      using errcode = '22023';
+  end if;
+
+  -- El de la imprenta es un RIF igual que el nuestro, y se comprueba igual:
+  -- va impreso en la factura y el SENIAT lo mira.
+  if nullif(trim(coalesce(p_imprenta_rif, '')), '') is not null
+     and trim(p_imprenta_rif) !~ '^[JGVEP]-?[0-9]{8}-?[0-9]$' then
+    raise exception 'El RIF de la imprenta "%" no tiene forma de RIF.', p_imprenta_rif
+      using errcode = '22023';
+  end if;
+
+  update public.empresa set
+    rif                = upper(trim(p_rif)),
+    razon_social       = trim(p_razon_social),
+    domicilio_fiscal   = nullif(trim(coalesce(p_domicilio_fiscal, '')), ''),
+    ciudad             = nullif(trim(coalesce(p_ciudad, '')), ''),
+    estado             = nullif(trim(coalesce(p_estado, '')), ''),
+    zona_postal        = nullif(trim(coalesce(p_zona_postal, '')), ''),
+    inscrito_el        = p_inscrito_el,
+    rif_actualizado_el = p_rif_actualizado_el,
+    rif_vence_el       = p_rif_vence_el,
+    gerencia_seniat    = nullif(trim(coalesce(p_gerencia_seniat, '')), ''),
+    comprobante_rif    = nullif(trim(coalesce(p_comprobante_rif, '')), ''),
+    condicion_iva      = nullif(trim(coalesce(p_condicion_iva, '')), ''),
+    retencion_iva_pct  = p_retencion_iva_pct,
+    telefono           = nullif(trim(coalesce(p_telefono, '')), ''),
+    correo             = nullif(trim(coalesce(p_correo, '')), ''),
+    alicuota_iva_pct   = p_alicuota_iva_pct,
+    imprenta_nombre    = nullif(trim(coalesce(p_imprenta_nombre, '')), ''),
+    imprenta_rif       = upper(nullif(trim(coalesce(p_imprenta_rif, '')), '')),
+    imprenta_autorizacion = nullif(trim(coalesce(p_imprenta_autorizacion, '')), ''),
+    actualizado_por    = (select auth.uid()),
+    actualizado_en     = now()
+  where id = 1;
+end;
+$function$;
+
+revoke all on function public.guardar_empresa(text, text, text, text, text, text, date, date, date, text, text, text, numeric, text, text, numeric, text, text, text) from public, anon;
+grant execute on function public.guardar_empresa(text, text, text, text, text, text, date, date, date, text, text, text, numeric, text, text, numeric, text, text, text)
+  to authenticated, service_role;
 
 /*
   COMPROBAR DESPUÉS DE APLICARLA
