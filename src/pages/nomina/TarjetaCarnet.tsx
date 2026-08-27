@@ -65,7 +65,18 @@ export function TarjetaCarnet({
   puedeEmitir: boolean
   trabajaAqui: boolean
   fotoParaEmitir: () => Promise<string | null>
-  descargar: (cara: 'carnet-pdf' | 'frente' | 'reverso') => void
+  /*
+    `codigo` es el recien emitido, y NO sobra.
+
+    Al emitir y pedir el PDF en el mismo instante, el dibujo leeria el carnet
+    que habia ANTES —ninguno— y el reverso saldria sin QR. La consulta se
+    invalida al emitir, pero refrescar es asincrono y esta funcion ya se
+    ejecuto: se lleva el codigo en la mano en vez de confiar en que llegue.
+
+    Es el peor momento posible para ese fallo: acabas de emitir, se abre el
+    carnet, y es justo el que no sirve.
+  */
+  descargar: (cara: 'carnet-pdf' | 'frente' | 'reverso', codigo?: string) => void
   descargando: string | null
 }) {
   const { data: carnet, isPending } = useCarnetVigente(empleadoId)
@@ -90,13 +101,28 @@ export function TarjetaCarnet({
     }
   }
 
+  /*
+    EMITIR NO TERMINA EN «EMITIDO». TERMINA CON EL CARNET EN PANTALLA.
+
+    Estaban separados —un botón para emitir y otro para bajar el PDF— y
+    Christopher lo dijo dos veces: «el carnet para imprenta y el carnet que se ha
+    construido debería ser 1 solo». Tiene razón, y el error era mío: por dentro
+    son dos cosas —una fila en la base y un dibujo— pero para quien lo usa el
+    carnet es UNA, y pedirle dos pasos es contarle cómo está hecho por dentro.
+
+    Ahora se pulsa una vez y sale el carnet listo para imprimir.
+  */
   const confirmar = async () => {
     if (pidiendo === 'emitir') {
-      await emitir.mutateAsync({
+      const nuevo = await emitir.mutateAsync({
         empleado_id: empleadoId,
         motivo: motivo.trim() || null,
         foto: await fotoParaEmitir(),
       })
+      setMotivo('')
+      setPidiendo(null)
+      descargar('carnet-pdf', nuevo)
+      return
     } else if (pidiendo === 'anular') {
       await anular.mutateAsync({ empleado_id: empleadoId, motivo: motivo.trim() })
     }
@@ -144,6 +170,20 @@ export function TarjetaCarnet({
 
           <p className="text-ink/50 text-xs">Emitido el {fechaHora(carnet.emitido_en)}</p>
 
+          {/*
+            Ya emitido, el botón grande es imprimirlo: es lo que se viene a
+            hacer aquí el 95% de las veces —el carnet se perdió, se rompió, hace
+            falta otra copia— y lo demás son excepciones.
+          */}
+          <Button
+            block
+            icon={<Printer />}
+            disabled={descargando !== null}
+            onClick={() => descargar('carnet-pdf')}
+          >
+            {descargando === 'carnet-pdf' ? 'Armando el carnet…' : 'Imprimir el carnet'}
+          </Button>
+
           {puedeEmitir ? (
             <div className="flex flex-wrap gap-2">
               {/*
@@ -182,7 +222,7 @@ export function TarjetaCarnet({
         <div className="mt-4">
           <p className="text-ink/60 text-sm leading-relaxed">
             {trabajaAqui
-              ? 'Todavía no se le ha emitido carnet. Sin emitirlo, el que se imprima sale sin QR: se puede usar, pero nadie podrá comprobarlo escaneándolo.'
+              ? 'Todavía no tiene carnet. Al emitirlo sale su PDF listo para la imprenta: dos páginas de 54 × 86 mm a 300 dpi, con el QR de verificación en el reverso.'
               : 'Esta persona ya no trabaja en la empresa, así que no se le emite carnet. Si tenía uno, escanea como no válido.'}
           </p>
 
@@ -196,7 +236,9 @@ export function TarjetaCarnet({
                 setPidiendo('emitir')
               }}
             >
-              {emitir.isPending ? 'Emitiendo…' : 'Emitir el carnet'}
+              {emitir.isPending || descargando === 'carnet-pdf'
+                ? 'Armando el carnet…'
+                : 'Emitir el carnet'}
             </Button>
           ) : null}
         </div>
@@ -227,50 +269,36 @@ export function TarjetaCarnet({
         </div>
       ) : null}
 
-      {/* ----------------------------------------------- imprimirlo */}
-      <div className="border-hairline mt-5 border-t pt-4">
-        {/*
-          El PDF va primero y a lo ancho, porque es el que se manda a la
-          imprenta: una imagen no lleva su tamaño dentro y un carnet impreso un
-          4% más grande no entra en la funda de plastificar.
-        */}
-        <Button
-          block
-          icon={<Printer />}
-          disabled={descargando !== null}
-          onClick={() => descargar('carnet-pdf')}
-        >
-          {descargando === 'carnet-pdf' ? 'Armando el carnet…' : 'Carnet para imprenta (PDF)'}
-        </Button>
+      {/*
+        LAS DOS CARAS SUELTAS, EN LETRA PEQUEÑA Y COMO ENLACES.
 
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          <Button
-            block
-            variant="soft"
-            size="sm"
+        Sirven para mirar o retocar una cara, y nada más. Como botones parecían
+        dos carnets más, que es justo lo que se estaba corrigiendo. Son un
+        apaño de taller, no una forma de sacar el carnet.
+      */}
+      {carnet ? (
+        <p className="text-ink/40 mt-3 text-xs leading-relaxed">
+          ¿Hace falta una cara suelta para retocarla?{' '}
+          <button
+            type="button"
+            className="hover:text-ink/70 underline underline-offset-2"
             disabled={descargando !== null}
             onClick={() => descargar('frente')}
           >
-            {descargando === 'frente' ? 'Armando…' : 'Solo el frente (PNG)'}
-          </Button>
-          <Button
-            block
-            variant="soft"
-            size="sm"
+            el frente
+          </button>{' '}
+          ·{' '}
+          <button
+            type="button"
+            className="hover:text-ink/70 underline underline-offset-2"
             disabled={descargando !== null}
             onClick={() => descargar('reverso')}
           >
-            {descargando === 'reverso' ? 'Armando…' : 'Solo el reverso (PNG)'}
-          </Button>
-        </div>
-
-        <p className="text-ink/40 mt-3 text-xs leading-relaxed">
-          El PDF trae las dos caras, de 54 × 86 mm a 300 dpi y con la medida dentro del archivo:
-          es el que se manda. Las dos imágenes sueltas son las mismas caras en PNG, por si hace
-          falta mirar o retocar una.
-          {carnet ? '' : ' Sin emitir, el reverso sale sin QR.'}
+            el reverso
+          </button>
+          , en PNG.
         </p>
-      </div>
+      ) : null}
 
       {emitir.error ? <ErrorDeCarga error={emitir.error} className="mt-3" /> : null}
       {anular.error ? <ErrorDeCarga error={anular.error} className="mt-3" /> : null}
@@ -349,8 +377,13 @@ export function TarjetaCarnet({
             )}
           >
             <IdCard className="mr-1.5 -mt-0.5 inline size-4" />
-            Después de emitir hay que <strong className="text-ink/85">imprimir el carnet
-            otra vez</strong>: el código nuevo va dentro del QR, y el plástico viejo no lo tiene.
+            Al emitir se abre el carnet listo para imprimir.{' '}
+            {carnet ? (
+              <>
+                <strong className="text-ink/85">Hay que imprimirlo otra vez</strong>: el código
+                nuevo va dentro del QR y el plástico viejo no lo tiene.
+              </>
+            ) : null}
           </p>
         ) : null}
       </Modal>
