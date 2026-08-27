@@ -2205,7 +2205,7 @@ Esta es la sección que hay que leer si solo se va a leer una. Todo lo demás de
 | 3 | **Confirmar por el gerente** *(en la ficha: **Por confirmar el gerente**)* | Gerencia general | Pulsar **Aprobar la compra**. Ahí nace la orden de compra y el precio queda fijo |
 | 4 | **Aprobada** *(en la ficha: **Aprobada · indicar método de pago**)* | Compras | Decir **con qué entrega el proveedor**, y después **Indicar método de pago** y **Enviar a tesorería** |
 | 5 | **En tesorería** | Compras | **Registrar el pago** de cada instrucción, hasta cubrir el total |
-| 6 | **Pagada** *(en la ficha: **Pagada · pendiente por recepcionar**)* | Almacén | **Recibir material** |
+| 6 | **Pagada** *(en la ficha: **Pagada · falta que llegue**)* | Almacén | **Recibir material** |
 | 7 | **Recibida parcialmente** | Almacén | Volver a **Recibir material** hasta completar |
 | 8 | **Recibida** | — | Cerrada |
 
@@ -2295,7 +2295,16 @@ Mientras carga se lee **Cargando el tablero…** Si no hay ninguna compra todav�
 1. Pulsa en cualquier parte de una tarjeta para abrir la ficha de esa compra.
 2. Pulsa **Nuevo pedido** para crear uno.
 
-Eso es todo lo que se hace desde aquí. **Ninguna acción cambia el estado de una compra desde el tablero**: todo ocurre dentro de la ficha, donde está el contexto completo de lo que se va a decidir.
+Debajo de los paneles hay además un bloque, **¿Qué quieres hacer?**, con dos grupos de atajos:
+
+| Grupo | Atajos |
+| --- | --- |
+| **La cadena de una compra** | Numerados, en el orden en que ocurren: **Pedir algo**, **Cotizar y proponer**, **Pagar lo aprobado**, **Recibir el material** |
+| **Alrededor de la compra** | **Cargar proveedores por planilla**, **Proveedores**, **Facturas del proveedor**, **Libro de compras** |
+
+Los del segundo grupo son la puerta a pantallas que ya no están en el menú (3.1), así que este bloque es la forma corta de llegar a ellas.
+
+**Ninguna acción cambia el estado de una compra desde el tablero**: todo ocurre dentro de la ficha, donde está el contexto completo de lo que se va a decidir.
 
 El tablero se actualiza solo cuando otra persona mueve algo, y además se recarga cada cinco minutos por si acaso.
 
@@ -2457,7 +2466,7 @@ Cuelga de la orden, así que **no aparece hasta que la compra tiene orden**. Pri
 | **Por confirmar el gerente** | Botones **Aprobar la compra** y **Devolver a compras** (Gerencia general) | **Esperando la confirmación del gerente general.** |
 | **Aprobada · indicar método de pago** | Botón **Indicar método de pago** (Compras) | **Compras está cargando el método de pago.** |
 | **En tesorería** | Botones **Registrar el pago** y **Devolver a compras** en cada instrucción (Tesorería) | **Tesorería tiene la orden para pagar.** |
-| **Pagada · pendiente por recepcionar** y **Recibida parcialmente** | Botón **Recibir material** (Almacén) | **La recepción la registra almacén.** |
+| **Pagada · falta que llegue** y **Recibida parcialmente** | Botón **Recibir material** (Almacén) | **La recepción la registra almacén.** |
 | **El proveedor desistió**, con dinero pendiente | Botón **Resolver el dinero** (Gerencia general o Tesorería) | La tarjeta se queda a la vista hasta que se resuelva |
 
 Antes de aprobar, el panel dice el monto exacto por el que se emitirá la orden y advierte que **a partir de ahí, el precio queda fijo**. Léelo: es la última pantalla en la que el precio todavía se puede discutir.
@@ -2555,7 +2564,11 @@ Una cotización se puede **Eliminar** mientras no esté propuesta al gerente y n
 
 ### 9.8 Recibir material
 
-Se llega desde la ficha de una compra en **Pagada · pendiente por recepcionar** o en **Recibida parcialmente**, con el botón **Recibir material**. Solo lo ve el rol Almacén; los demás leen **La recepción la registra almacén.**
+Se llega desde la ficha de una compra en **Pagada · falta que llegue** o en **Recibida parcialmente**, con el botón **Recibir material**. Solo lo ve el rol Almacén; los demás leen **La recepción la registra almacén.**
+
+**Sin el papel del proveedor no se puede recibir.** Si en la tarjeta **Papeles recibidos** no hay ni factura ni nota de entrega, la ficha lo dice en ámbar: *"Falta el papel del proveedor. Sube la **factura** o la **nota de entrega** en «Papeles de la compra», aquí abajo, y se podrá recibir."*
+
+**El comprobante de pago no sirve para esto**, y la propia pantalla lo aclara: *"El comprobante de pago puede llegar después."* Dice que se pagó, no que llegó — y lo que hay que respaldar al recibir es que el material entró.
 
 Es lo que cierra el círculo: hasta aquí hay dinero pagado y nada en el almacén. La descripción del diálogo avisa de lo que más importa: **Lo que se registre aquí entra al inventario y no se puede editar después: una corrección se hace con un ajuste.**
 
@@ -2655,7 +2668,7 @@ Sobre una instrucción que siga **Por pagar** hay un tercer botón, **Cambiar el
 
 Una orden admite **varias instrucciones de pago**: mitad ahora y mitad al entregar. Por eso el **Monto** viene con lo que falta y no con el total.
 
-**La orden solo pasa a Pagada · pendiente por recepcionar cuando ya no queda nada por pagar.** Con un abono parcial se queda esperando el resto, porque mientras se le deba al proveedor la compra no está pagada.
+**La orden solo pasa a Pagada · falta que llegue cuando ya no queda nada por pagar.** Con un abono parcial se queda esperando el resto, porque mientras se le deba al proveedor la compra no está pagada.
 
 #### Registrar el pago (tesorería)
 
@@ -4867,7 +4880,7 @@ Antes de entrar en las pantallas conviene saber por dónde nace y por dónde mue
 3. **Compras indica cómo se paga**: el método — **Transferencia bancaria**, **Pago móvil**, **Binance** o **Efectivo** —, la moneda, el monto y los datos de a dónde va el dinero. En ese momento nace la instrucción de pago, y con ella el IGTF ya calculado si la moneda no es el bolívar.
 4. **La instrucción aparece sola en Compras**, en dos vistas de la misma pantalla: **Pagos por hacer**, en orden de llegada, y su pestaña **Por proveedor**, agrupada. Nadie la carga a mano.
 5. **Quien tenga el rol Compras pulsa Pagar** y dice **por dónde salió** el dinero, con qué referencia y en qué fecha. No hay «tesorero»: ese rol no existe.
-6. **Al pulsar Confirmar el pago**, el sistema hace todo de una vez: escribe la línea **Pago a proveedor** en el libro y baja el saldo de la cuenta; si hay IGTF, escribe una segunda línea **IGTF** aparte; marca la instrucción como pagada; lo anota en la bitácora de la compra; y si con eso la orden queda saldada, la compra pasa a estar pendiente por recepcionar.
+6. **Al pulsar Confirmar el pago**, el sistema hace todo de una vez: escribe la línea **Pago a proveedor** en el libro y baja el saldo de la cuenta; si hay IGTF, escribe una segunda línea **IGTF** aparte; marca la instrucción como pagada; lo anota en la bitácora de la compra; y si con eso la orden queda saldada, la compra pasa a esperar que llegue el material.
 7. **La instrucción desaparece de la cola** y la línea se queda para siempre en el libro.
 
 Una deuda con un proveedor, por lo tanto, **se cierra pagándola desde tesorería, no borrándola**. Y si el pago estuvo mal, no se arregla reversando la línea del libro: hay que ir a la compra y devolver la instrucción de pago, porque reversar solo el dinero dejaría la compra marcada como pagada y el dinero de vuelta en la cuenta.
@@ -4970,7 +4983,7 @@ De aquí no sale ningún papel imprimible. Lo que produce esta pantalla son lín
 
 **Administración › Compras › Pagos por hacer**
 
-Es la cola de trabajo del tesorero: **Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda pendiente por recepcionar.**
+Es la cola de trabajo de quien paga: **Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda esperando que llegue el material.**
 
 #### Qué se ve
 
