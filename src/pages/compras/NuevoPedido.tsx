@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import {
   CATEGORIAS_ARTICULO,
+  comoLlega,
   useArticulos,
   useCrearArticulo,
   usePerfiles,
@@ -390,12 +391,29 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                   </div>
 
                   <div className="sm:col-span-3">
+                    {/*
+                      LA EQUIVALENCIA SE ENSENA, NO SE APLICA.
+
+                      El pedido se hace en la unidad que la empresa usa —litros,
+                      kilos— y ahi se queda: la existencia se lleva en eso. Pero
+                      el articulo llega empacado, y quien pide necesita saber
+                      cuanto es eso en bultos antes de teclear el numero.
+
+                      Se dice debajo del campo y no se convierte solo. Convertir
+                      por detras cambiaria lo que se guarda sin que nadie lo
+                      vea, y una cifra de inventario que no es la que se tecleo
+                      es de las cosas que no se descubren hasta contar.
+                    */}
                     <Input
                       label="Cantidad"
                       type="number"
                       min="0"
                       step="0.01"
                       inputMode="decimal"
+                      hint={
+                        comoLlega(articulos?.find((a) => String(a.id) === fila.articulo_id)) ??
+                        undefined
+                      }
                       value={fila.cantidad}
                       onChange={(e) => cambiar(fila.clave, { cantidad: e.target.value })}
                       required

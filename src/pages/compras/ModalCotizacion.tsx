@@ -7,7 +7,7 @@ import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { CONDICIONES_PAGO, useProveedores } from '@/lib/api/catalogo'
+import { CONDICIONES_PAGO, useArticulos, useProveedores } from '@/lib/api/catalogo'
 import { useActualizarCotizacion, useRegistrarCotizacion } from '@/lib/api/compras'
 import type { Compra, Cotizacion } from '@/lib/api/compras'
 import { useMonedasUsables, useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
@@ -48,6 +48,7 @@ interface Precio {
 
 export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props) {
   const { data: proveedores } = useProveedores()
+  const { data: articulos } = useArticulos()
   const { data: tasaVigente } = useTasaVigente()
   const { data: monedas } = useMonedasUsables()
   const registrar = useRegistrarCotizacion()
@@ -85,6 +86,16 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
     Object.fromEntries(
       compra.renglones.map((r) => {
         const previo = cotizacion?.renglones.find((x) => x.solicitud_renglon_id === r.id)
+        /*
+          La presentación arranca con la que el catálogo ya sabe.
+
+          El artículo llega siempre igual —el agua en bultos, el aceite en
+          bidones—, así que teclearla en cada cotización era copiar un dato que
+          el sistema ya tiene. Sigue siendo editable: este proveedor puede
+          mandarlo en barril aunque el otro lo mande en bidón, y entonces se
+          corrige aquí sin tocar el catálogo.
+        */
+        const delCatalogo = articulos?.find((a) => a.id === r.articulo_id)?.presentacion ?? ''
         return [
           r.id,
           {
@@ -92,7 +103,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
             precio: previo ? String(previo.precio_unitario) : '',
             exento: previo?.exento_iva ?? false,
             marca: previo?.marca ?? '',
-            presentacion: previo?.presentacion ?? '',
+            presentacion: previo ? (previo.presentacion ?? '') : delCatalogo,
           },
         ]
       }),

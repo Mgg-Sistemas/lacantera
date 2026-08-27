@@ -34,6 +34,8 @@ const nuevo = {
   reparable: false,
   stock_minimo: '0',
   modo_entrega: 'CONSUMIBLE',
+  presentacion: '',
+  unidades_por_presentacion: '',
 }
 
 /*
@@ -212,6 +214,11 @@ export function Articulos() {
                               reparable: a.reparable,
                               stock_minimo: String(a.stock_minimo),
                               modo_entrega: a.modo_entrega,
+                              presentacion: a.presentacion ?? '',
+                              unidades_por_presentacion:
+                                a.unidades_por_presentacion == null
+                                  ? ''
+                                  : String(Number(a.unidades_por_presentacion)),
                             })
                           }
                         />
@@ -257,7 +264,17 @@ export function Articulos() {
               <Button
                 disabled={crear.isPending || editar.isPending || !form.nombre}
                 onClick={async () => {
-                  const datos = { ...form, stock_minimo: Number(form.stock_minimo) || 0 }
+                  const datos = {
+                    ...form,
+                    stock_minimo: Number(form.stock_minimo) || 0,
+                    presentacion: form.presentacion.trim() || null,
+                    // Sin presentación no viaja el número: la base rechaza
+                    // decir cuántas trae algo que no dice en qué viene.
+                    unidades_por_presentacion:
+                      form.presentacion.trim() && Number(form.unidades_por_presentacion) > 0
+                        ? Number(form.unidades_por_presentacion)
+                        : null,
+                  }
                   if (form.id) await editar.mutateAsync(datos)
                   else await crear.mutateAsync(datos)
                   setForm(null)
@@ -331,6 +348,49 @@ export function Articulos() {
               value={form.stock_minimo}
               onChange={(e) => setForm({ ...form, stock_minimo: e.target.value })}
             />
+
+            {/*
+              CÓMO LLEGA, QUE NO ES CÓMO SE USA.
+
+              La unidad de arriba es lo que la empresa **usa**: litros, kilos,
+              metros cúbicos. En eso se lleva la existencia y en eso se
+              descuenta el consumo, y eso no cambia.
+
+              Esto de aquí es cómo **llega**: un bulto, un bidón de 20 L, una
+              paleta. Una barra de acero llega suelta y se queda en blanco —no
+              es un dato que falte, es que no lo tiene—.
+
+              Sirve para pedir y para recibir. El almacén cuenta bultos al
+              descargar el camión, y el pedido se hace en litros; sin esta
+              equivalencia escrita en algún sitio, cada quien la calcula de
+              cabeza y se piden seis veces de más.
+            */}
+            <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+              <Input
+                label="Cómo llega"
+                placeholder="Bulto, bidón, paleta…"
+                hint="En blanco si llega suelto."
+                value={form.presentacion}
+                onChange={(e) => setForm({ ...form, presentacion: e.target.value })}
+              />
+              <Input
+                label={`Cuántas ${form.unidad} trae`}
+                type="number"
+                min="0"
+                step="0.0001"
+                inputMode="decimal"
+                disabled={!form.presentacion.trim()}
+                hint={
+                  form.presentacion.trim()
+                    ? `Un ${form.presentacion.trim().toLowerCase()} trae esta cantidad.`
+                    : 'Primero di cómo llega.'
+                }
+                value={form.unidades_por_presentacion}
+                onChange={(e) =>
+                  setForm({ ...form, unidades_por_presentacion: e.target.value })
+                }
+              />
+            </div>
 
             {/* Lo que faltaba: el formulario no decía si esto se le puede
                 entregar a alguien, y por eso Asignaciones ofrecía gasolina

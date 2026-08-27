@@ -34,7 +34,7 @@ import { ModalAlTaller } from './ModalAlTaller'
 import { ListaEditable } from '@/components/ListaEditable'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { supabase } from '@/lib/supabase'
-import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
+import { comoLlega, useMisRoles, useArticulos } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
@@ -1193,10 +1193,22 @@ export function Existencias() {
                               ),
                             )
                           }
-                          // La unidad la trae el artículo. Veinte de algo que
-                          // se mide en pares no es veinte de algo que se mide
-                          // en metros cúbicos.
-                          hint={art ? `En ${art.unidad}` : 'Elige antes el artículo'}
+                          /*
+                            La unidad la trae el artículo. Veinte de algo que
+                            se mide en pares no es veinte de algo que se mide
+                            en metros cúbicos.
+
+                            Y si el artículo llega empacado, se dice cuánto trae
+                            cada bulto: aquí es donde alguien está contando
+                            bultos descargados de un camión y tiene que teclear
+                            litros. La cuenta se enseña; no se hace sola, porque
+                            lo que se guarde es lo que quede en la existencia.
+                          */
+                          hint={
+                            art
+                              ? [`En ${art.unidad}`, comoLlega(art)].filter(Boolean).join(' · ')
+                              : 'Elige antes el artículo'
+                          }
                         />
 
                         <Input
