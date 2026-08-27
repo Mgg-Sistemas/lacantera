@@ -1701,7 +1701,7 @@ Los motivos de rechazo son estos, y se leen tal cual:
 - **El precio tiene que ser mayor que cero.** · **Hay precio mínimo sin precio.** · **El precio mínimo no puede pasar del precio.**
 - **La moneda «GBP» no está activa en el sistema.**
 
-Cuando la carga entra, la pantalla se limpia sola y aparece **Cargado.** con el detalle —**12 artículos nuevos y 3 actualizados.**— y el enlace **Ver el catálogo**.
+Cuando la carga entra, la pantalla se limpia sola y aparece **Cargado.** con el detalle —**12 nuevos y 3 actualizados.**— y el enlace **Al catálogo**. **El detalle ya no nombra qué se cargó**: el formulario es el mismo para artículos, personal y proveedores, así que dice cuántos y no de qué.
 
 #### Cuatro cosas que conviene saber de antemano
 
@@ -2518,9 +2518,11 @@ Para **crear** uno, pulsa **Nuevo proveedor**. Para **editar** uno, pulsa **en c
 | **Contribuyente especial — se le retiene IVA al pagar** | No | Viene desmarcada. Marcarla muestra un distintivo **Especial** en la lista |
 | **Activo — aparece al cargar cotizaciones** | — | Viene marcada |
 
-Sobre la casilla de contribuyente especial conviene ser claro: **hoy es un dato de referencia**. El monto que se le instruye pagar a tesorería es el que se escribe a mano en el diálogo de pago, y la pantalla de facturas de proveedor tampoco tiene ningún campo de retención.
+**La casilla de contribuyente especial ya no es un dato de referencia: manda.** Al registrar la factura de un proveedor marcado así, **el formulario propone la retención de IVA** con el porcentaje que la empresa tenga configurado en sus datos fiscales (13.2), y descuenta lo retenido del total a pagar.
 
-**El sistema no calcula ni descuenta retenciones al proveedor**, ni en la orden ni en la factura. La razón es que la empresa no actúa como agente de retención frente a quien le vende, así que no hay nada que retenerle y nada que enterar por su cuenta. Si algún día hiciera falta retenerle a un proveedor, el cálculo y su comprobante se hacen hoy por fuera del sistema.
+**Se propone y se deja tocar, a propósito.** El porcentaje sube al 100 % cuando la factura no cumple los requisitos del reglamento, y eso lo ve quien tiene el papel delante, no el sistema. Si el proveedor no está marcado como contribuyente especial, o la factura no lleva IVA, no se propone nada.
+
+**Lo que sigue sin calcularse es la retención de ISLR**: el campo está y admite el monto, pero hay que echar la cuenta aparte.
 
 No hay que confundir esto con el IVA que retiene un cliente cuando la empresa le vende: eso sí lo calcula el sistema, y es asunto del módulo de Ventas.
 
@@ -2955,7 +2957,7 @@ Conviene saberlo antes de buscarlo:
 
 - **La orden de compra ya se imprime**, y su papel se guarda con el mismo membrete que la factura. **La cotización y el tablero siguen sin imprimirse.**
 - **No hay pantalla para editar un pedido en borrador.** Solo se puede enviar o cancelar.
-- **La factura del proveedor sigue sin enlazarse con su orden de compra.** El formulario de alta no tiene campo para elegir la orden, así que el sistema no coteja lo pedido con lo recibido y lo facturado, y la etiqueta **Orden OC-…** de la ficha no llega a encenderse.
+- **El sistema no coteja lo pedido con lo recibido y lo facturado.** La factura ya nace atada a su orden, pero nadie compara las cifras: si el proveedor factura más de lo que se pidió, o menos de lo que llegó, el sistema no lo dice. Ese cuadre lo sigue haciendo la persona.
 - **Con qué entrega el proveedor no se puede corregir después.** Se declara una sola vez, en el paso 4, y no hay pantalla para cambiarlo ni para ponerse al día con las órdenes anteriores a que esto existiera.
 - **El sistema sabe qué compras prometieron factura, pero no avisa de las que no la cumplieron.** Ese pendiente existe por dentro y todavía no sale en ninguna pantalla.
 - **Lo que se debe por facturas de proveedor no aparece en la cola de Compras › Pagos por hacer › Por proveedor**, que sigue mostrando solo las instrucciones de pago de las órdenes. Lo que falta por pagar de una factura solo se ve en la columna **Saldo** de su propia pantalla.
@@ -5227,7 +5229,7 @@ La razón es la que hace útil al libro: un saldo que no cuadra se corrige con u
 
 Corregir tiene tres caminos, según qué se haya registrado mal:
 
-1. **Reversar** la línea, si es un ingreso, un egreso, un ajuste o un saldo de apertura.
+1. **Deshacer** la línea, si es un ingreso, un egreso, un ajuste o un saldo de apertura.
 2. **Devolver la instrucción de pago desde la compra**, si lo que estuvo mal fue el pago de un proveedor.
 3. **Trasladar en sentido contrario**, si lo que estuvo mal fue un traslado.
 
@@ -5906,7 +5908,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **Costo por tonelada.** La producción entra al inventario valorada en cero, porque el costo real depende de la nómina, el gasoil y la voladura, y ese cálculo todavía no existe. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.** Las toneladas sí son confiables.
 
-**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor se registra y su papel se guarda, pero **no se enlaza con su orden de compra**, así que no hay cotejo entre lo pedido, lo recibido y lo facturado. El sistema no calcula retenciones a proveedores. Lo que se debe por facturas no llega a **Compras › Pagos por hacer › Por proveedor**, que sigue leyendo solo las instrucciones de pago de las órdenes. **La orden de compra sí se imprime**; la cotización y el tablero, no.
+**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor **ya se enlaza con su orden de compra** —nace desde la ficha de la compra y lleva su orden dentro—, pero el sistema todavía no cruza las cifras: no compara lo pedido con lo recibido y lo facturado. Ese cotejo lo sigue haciendo la persona. El sistema no calcula retenciones a proveedores. Lo que se debe por facturas no llega a **Compras › Pagos por hacer › Por proveedor**, que sigue leyendo solo las instrucciones de pago de las órdenes. **La orden de compra sí se imprime**; la cotización y el tablero, no.
 
 **En Inventario.** Un artículo ya se puede corregir y borrar, pero **el código sigue sin poder cambiarse**: es con lo que se pide en el almacén y ya está impreso en lo emitido. Y **borrar solo funciona mientras nada lo haya tocado**; en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo.
 
