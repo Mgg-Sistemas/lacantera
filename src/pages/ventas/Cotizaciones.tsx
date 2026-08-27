@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import { dinero, fecha } from '@/lib/formato'
-import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
@@ -87,7 +87,8 @@ export function Cotizaciones() {
     Dos motivos la ponen en cero, y son distintos: el cliente está exento —lo
     dice su ficha— o esta operación en concreto no lleva IVA.
   */
-  const alicuota = cliente?.exento_iva || !conIva ? 0 : 16
+  const alicuotaVigente = useAlicuotaIva()
+  const alicuota = cliente?.exento_iva || !conIva ? 0 : alicuotaVigente
   const subtotal = subtotalDe(filas)
   const gravado = gravadoDe(filas)
   const baseDescuento = subtotal > 0 ? (Number(descuento) || 0) * (gravado / subtotal) : 0

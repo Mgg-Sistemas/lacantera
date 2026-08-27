@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import { dinero, enteros, fecha } from '@/lib/formato'
-import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useGuias, useTickets } from '@/lib/api/despachos'
@@ -127,7 +127,8 @@ export function Despachos() {
   // La alícuota que se pinta es la que viaja a la base. Antes se calculaba solo
   // para el total de la pantalla y el documento salía con el 16 por defecto: la
   // nota de entrega de un cliente exento decía 0 en pantalla y 16 en el libro.
-  const alicuota = cliente?.exento_iva || !conIva ? 0 : 16
+  const alicuotaVigente = useAlicuotaIva()
+  const alicuota = cliente?.exento_iva || !conIva ? 0 : alicuotaVigente
   const subtotal = subtotalDe(filas)
   const gravado = gravadoDe(filas)
   const base = gravado + (Number(flete) || 0)
