@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { HardHat, Plus, Trash2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
+import { HardHat, PackageCheck, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -18,6 +19,7 @@ import {
   type DotacionPendiente,
 } from '@/lib/api/asignaciones'
 import { useTabulador } from '@/lib/api/tabulador'
+import { useEmpleados } from '@/lib/api/nomina'
 import { useArticulos, useMisRoles } from '@/lib/api/catalogo'
 import { fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -50,6 +52,7 @@ export function Dotacion() {
   const puedeMover = (roles ?? []).some((r) => r === 'ADMIN' || r === 'ALMACEN')
 
   const [nueva, setNueva] = useState(false)
+  const [entregando, setEntregando] = useState(false)
 
   const articuloDe = (id: number) => (articulos ?? []).find((a) => a.id === id)
 
@@ -62,6 +65,15 @@ export function Dotacion() {
     (d) => d.situacion === 'NUNCA' || d.situacion === 'VENCIDA',
   )
 
+  /*
+    LO QUE LE FALTA A UNA PERSONA, NO LO QUE LE FALTA EN ESE RENGLÓN.
+
+    Quien viene al almacén se lleva de una vez todo lo que se le debe. Entregar
+    renglón a renglón serían tres viajes y tres firmas para lo mismo.
+  */
+  const pendienteDe = (empleadoId: number) =>
+    porEntregar.filter((d) => d.empleado_id === empleadoId)
+
   return (
     <>
       <PageHeader
@@ -69,9 +81,14 @@ export function Dotacion() {
         description="Qué le corresponde a cada puesto y cada cuánto se repone. De aquí sale la lista de a quién le toca hoy."
         actions={
           puedeMover ? (
-            <Button icon={<Plus />} onClick={() => setNueva(true)}>
-              Añadir
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" icon={<PackageCheck />} onClick={() => setEntregando(true)}>
+                Entregar a alguien
+              </Button>
+              <Button icon={<Plus />} onClick={() => setNueva(true)}>
+                Añadir
+              </Button>
+            </div>
           ) : undefined
         }
       />
@@ -101,7 +118,12 @@ export function Dotacion() {
         {porEntregar.length > 0 ? (
           <ul className="divide-hairline mt-3 divide-y">
             {porEntregar.map((d) => (
-              <FilaPendiente key={`${d.empleado_id}-${d.dotacion_id}`} d={d} />
+              <FilaPendiente
+                key={`${d.empleado_id}-${d.dotacion_id}`}
+                d={d}
+                puedeMover={puedeMover}
+                pendienteSuyo={pendienteDe(d.empleado_id)}
+              />
             ))}
           </ul>
         ) : null}
@@ -169,12 +191,28 @@ export function Dotacion() {
       {quitar.error ? <ErrorDeCarga error={quitar.error} className="mt-3" /> : null}
 
       <ModalDotacion abierto={nueva} onCerrar={() => setNueva(false)} />
+
+      <ModalEntregarA
+        abierto={entregando}
+        onCerrar={() => setEntregando(false)}
+        pendientes={porEntregar}
+      />
     </>
   )
 }
 
 /** Una persona a la que le toca algo, con por qué le toca. */
-function FilaPendiente({ d }: { d: DotacionPendiente }) {
+function FilaPendiente({
+  d,
+  puedeMover,
+  pendienteSuyo,
+}: {
+  d: DotacionPendiente
+  puedeMover: boolean
+  /** Todo lo que se le debe a esta persona, no solo lo de este renglón. */
+  pendienteSuyo: DotacionPendiente[]
+}) {
+  const navegar = useNavigate()
   const nunca = d.situacion === 'NUNCA'
 
   return (
@@ -199,7 +237,189 @@ function FilaPendiente({ d }: { d: DotacionPendiente }) {
       <Chip tone={nunca ? 'neutral' : 'warning'}>
         {nunca ? 'Nunca se le dio' : `Venció el ${fecha(d.toca_el!)}`}
       </Chip>
+
+      {/*
+        El botón se lleva a la persona y TODO lo que se le debe, no solo el
+        renglón que se pulsó. Y solo aparece una vez por persona —en su primer
+        renglón—, porque tres botones iguales en tres renglones seguidos hacen
+        pensar que entregan cosas distintas.
+      */}
+      {puedeMover && pendienteSuyo[0]?.dotacion_id === d.dotacion_id ? (
+        <Button
+          size="sm"
+          variant="soft"
+          onClick={() => navegar(direccionDeEntrega(d.empleado_id, pendienteSuyo))}
+        >
+          Entregar{pendienteSuyo.length > 1 ? ` las ${pendienteSuyo.length}` : ''}
+        </Button>
+      ) : null}
     </li>
+  )
+}
+
+/**
+ * La dirección de la pantalla de entrega, con la persona y lo suyo ya puestos.
+ *
+ * `pide` es artículo y cantidad. La pantalla de entrega lo aplica cuando se
+ * elige el almacén, y avisa de lo que no haya allí.
+ */
+function direccionDeEntrega(
+  empleadoId: number,
+  lineas: Array<{ articulo_id: number; cantidad: string | number }>,
+): string {
+  const pide = lineas.map((l) => `${l.articulo_id}:${Number(l.cantidad)}`).join(',')
+  return `/app/asignaciones/entregar?empleado=${empleadoId}&clase=DOTACION&pide=${pide}`
+}
+
+/**
+ * Elegir a quién dotar, con el cargo de filtro.
+ *
+ * POR QUÉ AQUÍ Y NO SOLO EN LA FICHA DEL TRABAJADOR
+ *
+ * La entrega por lista —«a estos nueve les toca hoy»— sirve cuando se va por
+ * la lista. Pero quien llega al almacén es una persona: se le rompieron las
+ * botas, entró ayer, viene por lo suyo. Buscarla pasando por Nómina para
+ * volver a Asignaciones es dar la vuelta a la manzana.
+ *
+ * EL CARGO ES UN FILTRO, NO UN DATO QUE SE GUARDE
+ *
+ * Está para acortar la lista —«los de patio»— cuando se sabe el puesto y no el
+ * nombre. Se puede dejar en blanco y buscar por nombre directamente; lo que se
+ * entrega sale de la persona, no del filtro.
+ */
+function ModalEntregarA({
+  abierto,
+  onCerrar,
+  pendientes,
+}: {
+  abierto: boolean
+  onCerrar: () => void
+  pendientes: DotacionPendiente[]
+}) {
+  const navegar = useNavigate()
+  const { data: tabulador } = useTabulador()
+  const { data: empleados } = useEmpleados(true)
+  const { data: reglas } = useDotacionDeCargos()
+  const { data: articulos } = useArticulos()
+
+  const [cargo, setCargo] = useState('')
+  const [empleado, setEmpleado] = useState('')
+
+  const gente = useMemo(() => {
+    const lista = empleados ?? []
+    return cargo ? lista.filter((e) => String(e.tabulador_id) === cargo) : lista
+  }, [empleados, cargo])
+
+  const elegido = (empleados ?? []).find((e) => String(e.id) === empleado)
+
+  /*
+    Lo que se le va a entregar: lo que se le DEBE, si se le debe algo.
+
+    Si está al día, se ofrece lo que su cargo dice entero — que es el caso de
+    unas botas rotas antes de tiempo. Lo uno y lo otro se dicen, para que nadie
+    entregue de más creyendo que iba tocando.
+  */
+  const suyoPendiente = pendientes.filter((p) => String(p.empleado_id) === empleado)
+  const suCargo = (reglas ?? []).filter(
+    (r) => elegido?.tabulador_id != null && r.tabulador_id === elegido.tabulador_id,
+  )
+  const aEntregar = suyoPendiente.length > 0 ? suyoPendiente : suCargo
+
+  const nombreDe = (id: number) => (articulos ?? []).find((a) => a.id === id)?.nombre ?? '—'
+
+  const cerrar = () => {
+    setCargo('')
+    setEmpleado('')
+    onCerrar()
+  }
+
+  return (
+    <Modal
+      abierto={abierto}
+      onCerrar={cerrar}
+      titulo="Entregarle la dotación a alguien"
+      descripcion="El cargo es solo para encontrarlo más rápido. Lo que se entrega sale de la persona."
+      acciones={
+        <>
+          <Button variant="ghost" onClick={cerrar}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={!empleado || aEntregar.length === 0}
+            onClick={() => {
+              navegar(direccionDeEntrega(Number(empleado), aEntregar))
+              cerrar()
+            }}
+          >
+            Continuar
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-4">
+        <Select
+          label="Cargo"
+          hint="Para acortar la lista. Se puede dejar en blanco."
+          value={cargo}
+          onChange={(e) => {
+            setCargo(e.target.value)
+            setEmpleado('')
+          }}
+          opciones={[
+            { valor: '', etiqueta: 'Todos los cargos' },
+            ...(tabulador ?? []).map((t) => ({
+              valor: String(t.id),
+              etiqueta: `${t.cargo} · ${t.personas} persona${t.personas === 1 ? '' : 's'}`,
+            })),
+          ]}
+        />
+
+        <SelectBuscable
+          label="A quién"
+          vacio={gente.length === 0 ? 'Nadie con ese cargo' : 'Elige el trabajador'}
+          valor={empleado}
+          onCambio={setEmpleado}
+          opciones={gente.map((e) => ({
+            valor: String(e.id),
+            etiqueta: `${e.nombres} ${e.apellidos} · ficha ${e.ficha}`,
+          }))}
+        />
+
+        {elegido && elegido.tabulador_id == null ? (
+          <p className="border-warning/30 bg-warning-soft text-ink/75 rounded-[6px] border p-3 text-sm leading-relaxed">
+            Esta persona no tiene un cargo del tabulador en su ficha, así que el sistema no sabe qué
+            le toca. Se le puede entregar igual desde <strong>Quién tiene qué</strong>, eligiendo a
+            mano lo que se lleva.
+          </p>
+        ) : null}
+
+        {empleado && aEntregar.length > 0 ? (
+          <div className="border-hairline rounded-card border p-3">
+            <p className="text-ink/45 text-xs">
+              {suyoPendiente.length > 0
+                ? 'Lo que se le debe ahora mismo'
+                : 'Está al día. Esto es lo que su cargo dice, por si hay que reponerle algo'}
+            </p>
+            <ul className="mt-1.5 space-y-1">
+              {aEntregar.map((l) => (
+                <li key={l.articulo_id} className="text-ink/80 text-sm">
+                  <span className="tabular">{Number(l.cantidad)}</span> ·{' '}
+                  {nombreDe(l.articulo_id)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {empleado && aEntregar.length === 0 && elegido?.tabulador_id != null ? (
+          <p className="text-ink/55 text-sm leading-relaxed">
+            A su cargo no se le ha definido ninguna dotación, así que no hay nada que proponer.
+            Defínela arriba con <strong>Añadir</strong>, o entrégale a mano desde{' '}
+            <strong>Quién tiene qué</strong>.
+          </p>
+        ) : null}
+      </div>
+    </Modal>
   )
 }
 

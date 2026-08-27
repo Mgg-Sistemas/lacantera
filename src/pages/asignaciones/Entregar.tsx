@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft, PackageCheck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -14,7 +14,7 @@ import { useEmpleados } from '@/lib/api/nomina'
 import { useEntregables, useEntregarATrabajador } from '@/lib/api/asignaciones'
 import type { Entregable } from '@/lib/api/asignaciones'
 import { useAlmacenes } from '@/lib/api/inventario'
-import { useMisRoles } from '@/lib/api/catalogo'
+import { useArticulos, useMisRoles } from '@/lib/api/catalogo'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 
 /**
@@ -45,15 +45,44 @@ function fmtCantidad(valor: string | number): string {
   y porque tiene dirección propia: alguien puede dejarla a medias, mirar una
   existencia en otra pestaña y volver.
 */
+/*
+  SE PUEDE LLEGAR AQUÍ CON LA PERSONA YA PUESTA.
+
+  Antes esta pantalla siempre empezaba en blanco, y desde la ficha del
+  trabajador o desde la dotación había que volver a buscar en el desplegable a
+  la persona que se acababa de pulsar. Es de las cosas que hacen perder el rato
+  y equivocarse de nombre.
+
+  Se lee de la dirección:
+
+    ?empleado=18&clase=DOTACION&pide=4:2,9:1
+
+  `pide` es lo que le toca —artículo y cantidad—, y no se aplica hasta que hay
+  almacén elegido: lo que le corresponde por su cargo no tiene por qué estar en
+  el almacén desde el que se entrega hoy. Lo que no esté se dice, no se calla.
+*/
+function leerPide(crudo: string | null): Array<{ articulo_id: number; cantidad: number }> {
+  if (!crudo) return []
+  return crudo
+    .split(',')
+    .map((par) => {
+      const [a, c] = par.split(':')
+      return { articulo_id: Number(a), cantidad: Number(c) }
+    })
+    .filter((r) => Number.isFinite(r.articulo_id) && r.articulo_id > 0 && r.cantidad > 0)
+}
+
 export function Entregar() {
   const navegar = useNavigate()
   const { puede } = useMisRoles()
+  const [params] = useSearchParams()
 
   const { data: empleados } = useEmpleados(true)
   const { data: almacenes } = useAlmacenes()
+  const { data: catalogo } = useArticulos()
   const entregar = useEntregarATrabajador()
 
-  const [empleado, setEmpleado] = useState('')
+  const [empleado, setEmpleado] = useState(params.get('empleado') ?? '')
   const [almacen, setAlmacen] = useState('')
   const [fecha, setFecha] = useState(hoyEnCaracas())
   /*
@@ -66,11 +95,41 @@ export function Entregar() {
     No se puede deducir del artículo. El mismo taladro es dotación del mecánico
     y asignación del ayudante que lo pidió para el martes. Por eso se pregunta.
   */
-  const [clase, setClase] = useState<'DOTACION' | 'ASIGNACION'>('ASIGNACION')
+  const [clase, setClase] = useState<'DOTACION' | 'ASIGNACION'>(
+    params.get('clase') === 'DOTACION' ? 'DOTACION' : 'ASIGNACION',
+  )
   const [nota, setNota] = useState('')
   const [cuantas, setCuantas] = useState<Record<number, string>>({})
 
   const disponibles = useEntregables(almacen ? Number(almacen) : undefined)
+
+  /*
+    Lo que le toca se rellena solo, una vez, cuando llega la lista del almacén.
+
+    Una sola vez y no en cada pintado: la consulta se refresca sola, y volver a
+    escribir las cantidades borraría lo que quien entrega acabara de corregir.
+    Cambiar de almacén sí lo vuelve a intentar, porque las existencias son otras.
+  */
+  const pide = useMemo(() => leerPide(params.get('pide')), [params])
+  const yaSePuso = useRef('')
+  const [sinExistencia, setSinExistencia] = useState<number[]>([])
+
+  useEffect(() => {
+    const lista = disponibles.data
+    if (!almacen || !lista || pide.length === 0) return
+    if (yaSePuso.current === almacen) return
+    yaSePuso.current = almacen
+
+    const puestas: Record<number, string> = {}
+    const faltan: number[] = []
+    for (const r of pide) {
+      const hay = lista.find((x) => x.articulo_id === r.articulo_id)
+      if (hay) puestas[r.articulo_id] = String(r.cantidad)
+      else faltan.push(r.articulo_id)
+    }
+    setCuantas(puestas)
+    setSinExistencia(faltan)
+  }, [almacen, disponibles.data, pide])
 
   const renglones = useMemo(
     () =>
@@ -163,6 +222,7 @@ export function Entregar() {
                 // Las cantidades eran de otro almacén: lo que había allí no
                 // tiene por qué estar aquí.
                 setCuantas({})
+                setSinExistencia([])
               }}
               opciones={(almacenes ?? []).map((a) => ({
                 valor: String(a.id),
@@ -253,8 +313,30 @@ export function Entregar() {
             <div className="px-5 pt-5">
               <CardHeader
                 title="Qué se lleva"
-                subtitle="Deja en blanco lo que no se entrega."
+                subtitle={
+                  pide.length > 0
+                    ? 'Viene puesto lo que le toca por su cargo. Corrige lo que haga falta.'
+                    : 'Deja en blanco lo que no se entrega.'
+                }
               />
+
+              {/*
+                Lo que le toca y este almacén no tiene se dice, no se calla. Si
+                no, quien entrega cree que ya le dio todo y la persona se va sin
+                las botas.
+              */}
+              {sinExistencia.length > 0 ? (
+                <p className="border-warning/30 bg-warning-soft text-ink/75 mt-3 rounded-[6px] border p-3 text-sm leading-relaxed">
+                  {sinExistencia.length === 1
+                    ? 'Una de las cosas que le tocan no está en este almacén'
+                    : `${sinExistencia.length} de las cosas que le tocan no están en este almacén`}
+                  : {sinExistencia
+                    .map((id) => (catalogo ?? []).find((a) => a.id === id)?.nombre)
+                    .filter(Boolean)
+                    .join(', ')}
+                  . Prueba con otro almacén, o entrégale lo que sí hay y lo demás después.
+                </p>
+              ) : null}
             </div>
 
             <div className="mt-4 overflow-x-auto">

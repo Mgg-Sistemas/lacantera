@@ -11,6 +11,7 @@ import { CONDICIONES_PAGO, useProveedores } from '@/lib/api/catalogo'
 import { useActualizarCotizacion, useRegistrarCotizacion } from '@/lib/api/compras'
 import type { Compra, Cotizacion } from '@/lib/api/compras'
 import { useMonedasUsables, useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
+import { useAlicuotaIva } from '@/lib/api/empresa'
 import { bolivares, dolares, tasa as fmtTasa } from '@/lib/formato'
 
 interface Props {
@@ -34,6 +35,15 @@ interface Precio {
   cantidad: string
   precio: string
   exento: boolean
+  /*
+    Lo que el proveedor ofrece de verdad. El pedido pide «100 litros de aceite
+    hidráulico»; el proveedor contesta «Motul, en bidón de 20». Son dos
+    personas y dos momentos, y hasta ahora el segundo no tenía dónde
+    escribirse: acababa en la observación de la cotización entera, aunque sea
+    un dato de un renglón.
+  */
+  marca: string
+  presentacion: string
 }
 
 export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props) {
@@ -41,6 +51,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
   const { data: tasaVigente } = useTasaVigente()
   const { data: monedas } = useMonedasUsables()
   const registrar = useRegistrarCotizacion()
+  const alicuotaVigente = useAlicuotaIva()
   const actualizar = useActualizarCotizacion()
 
   const corrigiendo = !!cotizacion
@@ -56,7 +67,9 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
     cotizacion?.dias_entrega != null ? String(cotizacion.dias_entrega) : '',
   )
   const [validez, setValidez] = useState(String(cotizacion?.validez_dias ?? 15))
-  const [alicuota, setAlicuota] = useState(cotizacion?.alicuota_iva ?? '16')
+  const [alicuota, setAlicuota] = useState(
+    cotizacion?.alicuota_iva ?? String(alicuotaVigente),
+  )
   const [descuento, setDescuento] = useState(cotizacion?.descuento ?? '0')
   const [flete, setFlete] = useState(cotizacion?.flete ?? '0')
   const [observacion, setObservacion] = useState(cotizacion?.observacion ?? '')
@@ -78,6 +91,8 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
             cantidad: previo ? String(previo.cantidad) : r.cantidad,
             precio: previo ? String(previo.precio_unitario) : '',
             exento: previo?.exento_iva ?? false,
+            marca: previo?.marca ?? '',
+            presentacion: previo?.presentacion ?? '',
           },
         ]
       }),
@@ -128,6 +143,10 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
           cantidad: Number(precios[r.id].cantidad),
           precio_unitario: Number(precios[r.id].precio),
           exento_iva: precios[r.id].exento,
+          // Se mandan en crudo: la mayúscula la pone el disparador de la base,
+          // no el navegador.
+          marca: precios[r.id].marca || null,
+          presentacion: precios[r.id].presentacion || null,
         })),
     }
 
@@ -154,7 +173,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
       descripcion={
         corrigiendo
           ? 'Se corrige sobre la misma cotización: conserva su número y su sitio en el historial.'
-          : 'Se carga tal como la mandó el proveedor. Cargar otra del mismo proveedor sustituye a esta.'
+          : 'Se carga tal como la mandó el proveedor. Del mismo proveedor caben varias: una por cada oferta que mande.'
       }
       ancho="lg"
       acciones={
@@ -261,6 +280,33 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
                 />
                 Exento de IVA
               </label>
+            </div>
+
+            {/*
+              MARCA Y PRESENTACIÓN, DEBAJO Y NO AL LADO.
+
+              Van en su propia fila porque no son del pedido sino de la
+              respuesta: el renglón de arriba dice qué se pidió y con qué
+              precio, y esta fila dice qué es lo que en realidad ofrecen. Se
+              distinguen por eso, no por un rótulo que lo explique.
+
+              Texto libre y sin lista: se guarda lo que el proveedor escribió
+              en su papel, y una lista cerrada obligaría a traducirlo — con lo
+              que ya no sería lo que mandó.
+            */}
+            <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
+              <Input
+                label="Marca"
+                placeholder="La que ofrece el proveedor"
+                value={precios[r.id]?.marca ?? ''}
+                onChange={(e) => cambiar(r.id, { marca: e.target.value })}
+              />
+              <Input
+                label="Presentación"
+                placeholder="Bidón, barril, paleta, saco…"
+                value={precios[r.id]?.presentacion ?? ''}
+                onChange={(e) => cambiar(r.id, { presentacion: e.target.value })}
+              />
             </div>
           </div>
         ))}

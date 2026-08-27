@@ -193,6 +193,11 @@ const Proveedores = pagina(() =>
 const NuevoPedido = pagina(() =>
   import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
 )
+// Comparte modulo con «Nuevo pedido» y por tanto trozo: es el mismo formulario,
+// y separarlo obligaria a cargar dos veces lo mismo para hacer lo mismo.
+const CorregirPedido = pagina(() =>
+  import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.CorregirPedido })),
+)
 const TableroCompras = pagina(() =>
   import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),
 )
@@ -549,6 +554,7 @@ export default function App() {
                   el tablero, no desde la navegación. */}
               <Route path="despachos/vehiculos/:id" element={<FichaVehiculo />} />
               <Route path="compras/nuevo" element={<NuevoPedido />} />
+              <Route path="compras/:id/editar" element={<CorregirPedido />} />
               <Route path="compras/:id" element={<DetalleCompra />} />
               {/* `nuevo` antes que `:id` para leerlo de un vistazo, aunque el
                   enrutador ya prefiere lo estático sobre lo dinámico. */}

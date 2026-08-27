@@ -124,6 +124,15 @@ export interface DatosDocumento {
   subtotal: string | number
   descuento: string | number
   flete: string | number
+  /**
+   * La que calculó la base, no una que se eche aquí.
+   *
+   * `private.recalcular_venta` la reparte: al gravado le quita el descuento en
+   * la proporción que le toca y le suma el flete en esa misma proporción. Echar
+   * esa cuenta otra vez en el navegador sería tener dos versiones de la misma
+   * verdad, y la que vale es la de Postgres.
+   */
+  baseImponible?: string | number | null
   iva: string | number
   alicuotaIva: string | number
   total: string | number
@@ -299,14 +308,44 @@ function pie(doc: Doc, d: DatosDocumento, pagina: number, de: number) {
   doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
   doc.line(IZQ, PIE - 8, DER, PIE - 8)
 
+  /*
+    LA IMPRENTA AUTORIZADA, Y SOLO EN LA FACTURA.
+
+    Una factura venezolana lleva impreso quién la imprimió y con qué número la
+    autorizó el SENIAT. Una cotización y una nota de entrega no: ponérselo sería
+    darles un aire fiscal que no tienen.
+
+    Va pegada al texto legal y no en un renglón propio debajo. Se probó ahí y
+    caía 1,4 mm dentro del margen inferior, que la hoja reserva a propósito
+    —`PIE` ya deja dos milímetros para el rabo de las letras—. Aquí el pie pasa
+    de uno a dos renglones, que es justo lo que ya admitía.
+
+    Si nadie ha cargado esos datos en Configuración no se imprime nada. Un
+    renglón que dice «Imprenta: —» no cumple el requisito y encima parece que
+    el sistema se dejó algo.
+  */
+  const legal =
+    d.tipo === 'FACTURA' && d.empresa.imprenta
+      ? `${PIES[d.tipo]} Imprenta: ${d.empresa.imprenta}.`
+      : PIES[d.tipo]
+
   doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
-  const lineas = doc.splitTextToSize(PIES[d.tipo], ANCHO_UTIL - 30) as string[]
-  doc.text(lineas.slice(0, 2), IZQ, PIE - 4.5)
+  const lineas = (doc.splitTextToSize(legal, ANCHO_UTIL - 30) as string[]).slice(0, 2)
+
+  /*
+    Con dos renglones, el bloque arranca más arriba.
+
+    Medido: a 6,5 puntos el segundo renglón caía a 1,86 mm del de «Emitido
+    por», y ahí los rabos de una «p» ya tocan las mayúsculas de abajo. Subiendo
+    el arranque quedan 3,5 mm, y con un solo renglón nada cambia.
+  */
+  doc.text(lineas, IZQ, lineas.length > 1 ? PIE - 6.2 : PIE - 4.5)
 
   doc.text(`Página ${pagina} de ${de}`, DER, PIE - 4.5, { align: 'right' })
   doc.text(`Emitido por ${d.emitidoPor} · ${EMPRESA.marca}`, IZQ, PIE)
   doc.setTextColor(GRIS_SUAVE)
   doc.text(`Tasa del día: ${numero(d.tasa)} Bs/$`, DER, PIE, { align: 'right' })
+
 }
 
 /** ANULADA, cruzada sobre la hoja. Un papel anulado tiene que verse anulado. */
@@ -325,11 +364,42 @@ function sello(doc: Doc, texto: string) {
  * Devuelve el alto que ocupa para poder decidir, antes de empezar a pintar
  * renglones en una hoja, si el bloque cabe debajo o hay que abrir otra.
  */
+/*
+  LO QUE QUEDÓ FUERA DEL IMPUESTO, QUE NO ES LO MISMO QUE LOS RENGLONES EXENTOS.
+
+  Lo primero que se probó fue sumar los renglones que llevan su (E). Es lo que
+  se espera, y está mal en cuanto hay flete o descuento: la base los reparte
+  entre lo gravado y lo exento en la proporción que les toca, así que una parte
+  del flete tampoco pagó impuesto. Con un flete de 120 sobre esta factura, esa
+  parte son 13,89, y la columna no cuadraba por ahí.
+
+  Una factura tiene que poder sumarse con el dedo. Así que lo exento se saca
+  como lo que es: lo que queda del total una vez fuera el impuesto y la base
+  sobre la que se calculó.
+
+      exento = total - IVA - base imponible
+
+  Cuando no llega base imponible no hay nada que reconciliar y se cae a la suma
+  de los renglones, que es lo único que se puede decir con lo que hay.
+*/
+function totalExento(d: DatosDocumento): number {
+  if (d.baseImponible != null) {
+    const resto = Number(d.total) - Number(d.iva) - Number(d.baseImponible)
+    // Las milésimas de redondeo no son un exento: por debajo de un céntimo, cero.
+    return resto > 0.005 ? resto : 0
+  }
+  return d.renglones
+    .filter((r) => r.exento_iva)
+    .reduce((s, r) => s + Number(r.subtotal ?? 0), 0)
+}
+
 function altoTotales(d: DatosDocumento): number {
   const filas =
     3 + // subtotal, IVA, total
     (Number(d.descuento) > 0 ? 1 : 0) +
     (Number(d.flete) > 0 ? 1 : 0) +
+    (totalExento(d) > 0 ? 1 : 0) +
+    (d.baseImponible != null ? 1 : 0) +
     (Number(d.retencionIva ?? 0) > 0 ? 2 : 0)
   return filas * 5 + 10
 }
@@ -354,6 +424,25 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
   // la derecha se iba 4 mm fuera del margen. Medido, no supuesto.
   if (Number(d.descuento) > 0) linea('Descuento', `- ${conSimbolo(d.moneda, d.descuento)}`)
   if (Number(d.flete) > 0) linea('Flete', conSimbolo(d.moneda, d.flete))
+
+  /*
+    LO EXENTO Y LA BASE, QUE ES LO QUE MIRA UN FISCAL.
+
+    Una factura venezolana tiene que decir sobre qué se calculó el impuesto, y
+    hasta ahora este papel enseñaba el IVA sin enseñar de dónde salía: quien lo
+    recibía no podía comprobar la cuenta.
+
+    El exento se suma de los renglones que llevan su (E). La base viene
+    calculada de la base de datos, que es donde se decide cómo entra el flete y
+    cómo se reparte el descuento — aquí no se calcula ninguna de las dos.
+
+    Cada una sale solo si tiene sentido: sin renglones exentos no se enseña un
+    cero, que en una factura se lee como una afirmación.
+  */
+  const exento = totalExento(d)
+  if (exento > 0) linea('Total exento', conSimbolo(d.moneda, exento))
+  if (d.baseImponible != null) linea('Base imponible', conSimbolo(d.moneda, d.baseImponible))
+
   // «IVA 16%», no «IVA 16,00%»: dos decimales en una alícuota entera solo
   // ocupan sitio. Los lleva cuando de verdad los tiene.
   const alicuota = Number(d.alicuotaIva)

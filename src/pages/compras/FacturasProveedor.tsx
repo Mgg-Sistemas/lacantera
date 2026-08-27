@@ -20,7 +20,7 @@ import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useTablero } from '@/lib/api/compras'
 import { useProveedores } from '@/lib/api/catalogo'
-import { useEmpresa } from '@/lib/api/empresa'
+import { useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useCuentas } from '@/lib/api/tesoreria'
 import { useMetodosPago, nombreDe, opcionesDe } from '@/lib/api/metodosPago'
 import {
@@ -67,7 +67,7 @@ const vacio = {
   condicion_pago: 'CONTADO',
   exento: '',
   base: '',
-  alicuota: '16',
+  alicuota: '',
   iva: '',
   retencion_iva: '',
   retencion_islr: '',
@@ -90,6 +90,7 @@ function retencionQueTocaria(iva: number, especial: boolean, pct: number | null)
 }
 
 export function FacturasProveedor() {
+  const alicuotaVigente = useAlicuotaIva()
   const monedas = useMonedasUsables()
   const { data: metodos } = useMetodosPago()
   const { data, isPending, error } = useFacturasCompra()
@@ -140,6 +141,10 @@ export function FacturasProveedor() {
     setNueva({
       ...vacio,
       fecha_emision: hoyEnCaracas(),
+      // La alícuota que rige, de la ficha de la empresa. Estaba escrita aquí
+      // como un 16 y `vacio` es una constante del módulo: no puede leer un
+      // hook, así que se pone al abrir el formulario.
+      alicuota: String(alicuotaVigente),
       proveedor_id: params.get('proveedor') ?? '',
       orden_id: ordenPedida,
       // La moneda viaja también. Sin ella el formulario proponía bolívares
@@ -150,7 +155,7 @@ export function FacturasProveedor() {
     // La dirección se limpia: si no, volver atrás en el navegador reabre el
     // formulario de una factura que quizá ya se registró.
     setParams({}, { replace: true })
-  }, [ordenPedida, params, setParams])
+  }, [ordenPedida, params, setParams, alicuotaVigente])
   const [detalleId, setDetalleId] = useState<number | null>(null)
   const [pagando, setPagando] = useState<FacturaCompra | null>(null)
 
@@ -392,7 +397,7 @@ export function FacturasProveedor() {
                     moneda: nueva.moneda,
                     numero_control: nueva.numero_control || null,
                     condicion_pago: nueva.condicion_pago,
-                    alicuota_iva: Number(nueva.alicuota) || 16,
+                    alicuota_iva: Number(nueva.alicuota) || alicuotaVigente,
                     retencion_iva: Number(nueva.retencion_iva) || 0,
                     retencion_islr: Number(nueva.retencion_islr) || 0,
                     total_del_papel: Number(nueva.total_papel) || null,

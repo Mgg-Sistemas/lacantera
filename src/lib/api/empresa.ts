@@ -28,6 +28,24 @@ export interface Empresa {
   comprobante_rif: string | null
   condicion_iva: string | null
   retencion_iva_pct: number | null
+  /**
+   * La alícuota general del IVA, en porcentaje.
+   *
+   * Estaba escrita en cinco sitios del código como un 16. Es una cifra legal:
+   * cambia por decreto, y el día que cambie no puede hacer falta una versión
+   * del sistema para seguirla.
+   *
+   * Vive en la ficha de la empresa y no en cada documento a propósito. La
+   * pregunta que se hace quien factura no es «cuánto» sino «sí o no» —eso lo
+   * decide la casilla de cada operación—; un campo numérico abierto en cada
+   * venta invita a escribir un 16 mal tecleado, y ese error no se ve hasta que
+   * alguien cuadra el libro.
+   */
+  alicuota_iva_pct: number | null
+  /** De la imprenta autorizada. Van impresos al pie de la factura. */
+  imprenta_nombre: string | null
+  imprenta_rif: string | null
+  imprenta_autorizacion: string | null
   /** Si la empresa cobra IVA por defecto. Cada operación puede decir otra cosa. */
   aplica_iva: boolean
   aplica_igtf: boolean
@@ -44,6 +62,20 @@ export function useEmpresa() {
     queryFn: async () =>
       desenvolver<Empresa>(await supabase.from('empresa').select('*').eq('id', 1).single()),
   })
+}
+
+/**
+ * La alícuota que rige, con su respaldo si la ficha todavía no la dice.
+ *
+ * El 16 de reserva no es un valor por omisión cualquiera: es la alícuota
+ * general vigente en Venezuela cuando se escribió esto. Está aquí y en ningún
+ * otro sitio, para que quede un solo número que cambiar el día que cambie la
+ * ley — y para que ese día se cambie en la pantalla, no en el código.
+ */
+export function useAlicuotaIva(): number {
+  const { data } = useEmpresa()
+  const v = Number(data?.alicuota_iva_pct)
+  return Number.isFinite(v) && v >= 0 ? v : 16
 }
 
 export function useGuardarEmpresa() {
@@ -66,6 +98,10 @@ export function useGuardarEmpresa() {
         p_retencion_iva_pct: e.retencion_iva_pct ?? null,
         p_telefono: e.telefono || null,
         p_correo: e.correo || null,
+        p_alicuota_iva_pct: e.alicuota_iva_pct ?? null,
+        p_imprenta_nombre: e.imprenta_nombre || null,
+        p_imprenta_rif: e.imprenta_rif || null,
+        p_imprenta_autorizacion: e.imprenta_autorizacion || null,
       }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['empresa'] }),
   })
@@ -334,5 +370,13 @@ export function empresaDelPapel(e: Empresa | null | undefined): EmpresaPapel {
     actividad: EMPRESA.actividad,
     domicilio: domicilio || null,
     contacto: [e?.telefono, e?.correo].filter(Boolean).join(' · ') || null,
+    imprenta:
+      [
+        e?.imprenta_nombre,
+        e?.imprenta_rif ? `RIF ${e.imprenta_rif}` : null,
+        e?.imprenta_autorizacion ? `Aut. ${e.imprenta_autorizacion}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ') || null,
   }
 }

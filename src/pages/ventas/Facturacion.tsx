@@ -142,6 +142,7 @@ export function Facturacion() {
         subtotal: f.subtotal,
         descuento: f.descuento,
         flete: f.flete,
+        baseImponible: f.base_imponible,
         iva: f.iva,
         alicuotaIva: f.alicuota_iva,
         total: f.total,

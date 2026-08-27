@@ -26,7 +26,7 @@ El orden de los capítulos es el del camino del material: primero se extrae, lue
 
 El sistema se entrega por partes, y el menú va creciendo. Hoy ofrece diez entradas: **Panel**, **Maquinaria**, **Inventario**, **Combustible**, **Asignaciones**, **Compras**, **Nómina**, **Tasas de cambio**, **Configuración** y **Manual de usuario**.
 
-Lo que todavía no sale —**Explotación**, **Despachos**, **Ventas** y el **Organigrama**— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar. **Tesorería es distinto: dejó de ser un módulo**, y lo que quedaba vivo se lo llevó Compras.
+Lo que todavía no sale —**Explotación**, **Despachos** y **Ventas**— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar. El **Organigrama** era de esos y ya no: desde el 27 de agosto de 2026 está en el menú, dentro de Nómina. **Tesorería es distinto: dejó de ser un módulo**, y lo que quedaba vivo se lo llevó Compras.
 
 De los dos caminos posibles, este manual eligió el segundo:
 
@@ -64,7 +64,7 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 19 | Maquinaria | Sí |
 | 20 | Combustible | Sí |
 
-**Asignaciones, Maquinaria y Combustible tienen sus capítulos al final** —el 18, el 19 y el 20— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.12, y su pantalla sigue en obra.
+**Asignaciones, Maquinaria y Combustible tienen sus capítulos al final** —el 18, el 19 y el 20— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.12.
 
 ---
 
@@ -117,7 +117,7 @@ Los módulos son quince. La última columna dice cuáles se ofrecen hoy en el me
 
 **Usuarios y roles** y **Respaldo de la base** cuelgan de Configuración en el menú, pero son módulos aparte a la hora de repartir permisos: quien mantiene el catálogo de artículos no tiene por qué poder crear cuentas ni llevarse la base entera en un archivo. El capítulo 13 lo explica.
 
-El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina, porque quien lleva el personal es quien sabe de quién depende quién. Hoy su pantalla está en obra.
+El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina, porque quien lleva el personal es quien sabe de quién depende quién.
 
 El **Manual de usuario** aparece siempre al final del menú y **no es un módulo**: no se reparte por permisos y no figura en la tabla. Quien acaba de entrar y todavía no tiene nada asignado lo ve igual, y es a propósito — es lo único que tiene mientras espera que administración le reparta lo demás. No contiene ningún dato de la empresa: solo explica cómo se usa el sistema.
 
@@ -153,7 +153,9 @@ Esto es lo primero que hay que saber antes de buscar una pantalla, porque explic
 
 Lo decidió así la líder de sistemas, para entregar primero lo que ya se puede usar todos los días sin sobresaltos, e ir soltando el resto conforme se afina. **El menú ha ido creciendo**: en agosto ofrecía seis entradas y hoy son diez —entraron Maquinaria, Combustible, Asignaciones y el propio manual—, así que si tienes un manual impreso de hace unas semanas, esta lista es la que manda.
 
-**Lo que hoy no sale en el menú son cuatro módulos completos** —**Explotación**, **Despachos**, **Ventas** y **Tesorería**— **y una pantalla suelta**: el **Organigrama**, cuyo módulo, Nómina, sí está. Tampoco los encuentra la barra buscadora. Las pantallas que cuelgan de un módulo escondido —**Cuentas por cobrar**, por ejemplo— no están escondidas por su cuenta: lo está el grupo entero.
+**Lo que hoy no sale en el menú son cuatro módulos completos**: **Explotación**, **Despachos**, **Ventas** y **Tesorería**. Tampoco los encuentra la barra buscadora. Las pantallas que cuelgan de un módulo escondido —**Cuentas por cobrar**, por ejemplo— no están escondidas por su cuenta: lo está el grupo entero.
+
+El **Organigrama** estuvo en esta lista y salió de ella el 27 de agosto de 2026: se rehizo la pantalla —antes era una lista con sangría que no se podía enseñar a nadie— y en cuanto se pudo presentar dejó de tener sentido tenerla detrás de un cartel de obra.
 
 Ahora la parte que hay que entender bien, porque no es lo que parece:
 
@@ -2241,7 +2243,13 @@ Y hay que decir dónde está el riesgo, porque cuesta dinero: **una misma compra
 
 #### Lo que ya no se deshace
 
-- **Un pedido enviado no se puede editar.** El sistema responde «El pedido ya fue enviado y no se puede editar. Cancélalo y crea otro.» La razón es que a partir del envío otras personas ya lo están mirando y decidiendo sobre él; cambiarle el contenido por debajo dejaría sin sentido lo que ya aprobaron.
+- **Un pedido enviado sí se puede corregir, y esto cambió el 27 de agosto de 2026.** Lo pidió Jesmary: antes, una unidad mal puesta obligaba a cancelar el pedido entero y volver a teclear los siete renglones, y el pedido perdía su número.
+
+  En la ficha del pedido hay un botón **Corregir**, que abre el mismo formulario del alta ya lleno. Se ofrece mientras el pedido esté en **Borrador**, **Pedido** o **Confirmada**, y queda anotado en el historial.
+
+  **De ahí en adelante no.** Con el pedido en la gerencia o ya aprobado, el sistema se niega: cambiarle el contenido por debajo dejaría sin sentido lo que otros ya están mirando o aprobaron.
+
+  **Y tampoco si ya hay cotizaciones cargadas.** Esto no es prudencia: los renglones de una cotización cuelgan de los del pedido, y corregir el pedido los rehace — se llevaría por delante los renglones de todas sus cotizaciones, dejándolas vivas y en cero sin dar un solo error. El botón no aparece en ese caso, y si se llega por otro camino el sistema lo dice: *«Este pedido ya tiene 2 cotización(es) cargada(s)… Elimina las cotizaciones y vuelve a cargarlas después.»*
 - **Una compra cancelada no se reabre.** Si vuelve a hacer falta, se crea un pedido nuevo.
 - **Una recepción no se corrige.** El libro de inventario no se modifica: una corrección se hace con un ajuste, y los dos apuntes quedan visibles.
 
@@ -2532,7 +2540,23 @@ No hay que confundir esto con el IVA que retiene un cliente cuando la empresa le
 
 Se llega desde la ficha de una compra confirmada, con el botón **Cargar cotización**. Solo lo ve el rol Compras.
 
-Es donde se carga el precio que mandó cada proveedor, **tal como lo mandó**, para poder compararlos. La descripción del diálogo avisa de la regla principal: **Se carga tal como la mandó el proveedor. Cargar otra del mismo proveedor sustituye a esta.** Si lo que hace falta es cambiarle algo a una que ya está cargada, **no se vuelve a cargar: se corrige** — ver más abajo.
+Es donde se carga el precio que mandó cada proveedor, **tal como lo mandó**, para poder compararlos. La descripción del diálogo lo dice: **Se carga tal como la mandó el proveedor. Del mismo proveedor caben varias: una por cada oferta que mande.**
+
+**Del mismo proveedor caben varias, y esto cambió el 27 de agosto de 2026.** Antes cargar la segunda del mismo proveedor borraba la primera sin avisar. Estaba hecho así a propósito —un proveedor, un precio— y resultó no ser cierto: el mismo proveedor manda dos ofertas del mismo aceite en marcas distintas, y las dos hay que poder enseñarlas juntas. Ahora cada carga es una cotización nueva, con su propio número.
+
+Aun así, **si lo que hace falta es cambiarle algo a una que ya está cargada, no se vuelve a cargar: se corrige** — ver más abajo. Cargar añade otra oferta a la mesa; corregir arregla la que ya estaba.
+
+##### La marca y la presentación
+
+En cada renglón, debajo de la cantidad y el precio, hay dos campos más: **Marca** y **Presentación**.
+
+Lo pidió Diana, y el motivo es el reparto del trabajo: **quien hace el pedido lo pide en litros**, que es como se consume, y **quien compra recibe del proveedor otra cosa** — una marca (Motul, Chronus) y una presentación (bidón, barril, paleta, saco). Son dos personas y dos momentos, y por eso el dato no está en el pedido: nace después. Antes se escribía en la observación, que es donde va a parar todo lo que no tiene campo.
+
+Se escriben **tal como los mandó el proveedor**, sin lista de la que escoger: lo que se guarda es lo que él puso en su papel.
+
+Son además **lo que distingue dos cotizaciones del mismo proveedor**: en la tarjeta salen resumidos en una línea que empieza por **Ofrece**, y sin ella las dos tarjetas se leerían iguales.
+
+**La marca llega hasta la orden de compra.** Al aprobar se copia, y va impresa: la orden es el papel contra el que se recibe en el almacén, y sin la marca quien recibe no tiene con qué comprobar que llegó lo que se compró.
 
 Antes de nada, el diálogo mira la tasa del BCV. Si la hay, avisa con qué tasa y de qué fecha se va a congelar la cotización, y dice si viene arrastrada de un día anterior. Si no la hay, aparece **No hay tasa del BCV registrada. Sin ella no se puede valorar la cotización.** con el enlace **Registrar la tasa de hoy**. Este es el bloqueo más frecuente al empezar el día, y se resuelve en **Sistema › Tasas de cambio**.
 
@@ -2562,9 +2586,29 @@ Pasa todo el rato: la cotización está cargada y hay que ajustarle las condicio
 
 **Si cambias la fecha, cambia la tasa.** La cotización guarda congelada la del día que lleva escrito, así que mover la fecha vuelve a pedir la tasa del BCV de ese día.
 
-> **Una cotización propuesta al gerente no se corrige.** Los botones **Editar** y **Eliminar** desaparecen mientras lo esté, y si se intenta por otro camino el sistema se niega: *«Esta cotización está propuesta al gerente. Retira la propuesta antes de corregirla, o él aprobaría unas condiciones distintas de las que se le enseñaron.»* Se retira la propuesta, se corrige y se vuelve a proponer — y las tres cosas quedan anotadas.
+> **Una cotización propuesta al gerente no se corrige.** Los botones **Editar** y **Eliminar** desaparecen mientras lo esté, y si se intenta por otro camino el sistema se niega: *«Esta cotización está propuesta al gerente. Retira la propuesta antes de corregirla, o él aprobaría unas condiciones distintas de las que se le enseñaron.»* Se retira con el botón **Retirar la propuesta**, que está en la misma tarjeta; luego se corrige y se vuelve a proponer — y las tres cosas quedan anotadas.
+
+#### Proponer más de una al gerente
+
+**Se pueden subir varias a la vez, y esto también cambió el 27 de agosto de 2026.** Antes proponer una segunda desproponía la primera sin decirlo: la propuesta se guardaba en el pedido, y en el pedido solo cabía una.
+
+Ahora **la propuesta es una marca de cada cotización**, así que **Proponer al gerente** suma en vez de sustituir. En cada tarjeta propuesta aparece el chip **Propuesta al gerente** y el botón cambia a **Retirar la propuesta**.
+
+El encabezado de la tarjeta lo resume: **3 cotizaciones · 2 con el gerente**.
+
+**Retirar la última devuelve el pedido a compras.** Vuelve a **Confirmada** y queda anotado, porque un pedido esperando en la gerencia sin nada que aprobar es una bandeja con un papel en blanco.
+
+**Al gerente le toca escoger.** Con una sola propuesta el panel de aprobación es el de siempre y dice por cuánto se emite la orden. **Con dos o más aparece una lista para marcar cuál se aprueba** —proveedor, total, días de entrega y número— y el botón no se deja pulsar hasta que se marque una. El sistema no escoge por su cuenta: hacerlo sería firmarle al gerente una compra que no decidió. En el historial del pedido queda escrito **«Escogió COT-2026-0002 entre 3 propuestas»**.
 
 **Tampoco se corrige una que ya generó su orden de compra**: a esas alturas sus precios están impresos en un papel que salió de la empresa.
+
+#### Bajarla en PDF
+
+**En cada tarjeta hay un botón PDF**, el primero de la fila. Saca la cotización en papel para mandarla por correo o llevarla a una reunión sin tener que entrar al sistema.
+
+Sale con **el mismo membrete que la orden de compra** —son papeles de la misma casa— y con la marca y la presentación de cada renglón. Si está propuesta o aprobada, lleva el sello cruzado que lo dice.
+
+**No lleva firma, y el pie avisa de por qué:** *«Transcripción de la oferta recibida · el papel del proveedor es el que vale»*. No es el documento del proveedor sino lo que el sistema anotó de él, y quien lo reciba tiene que poder distinguirlo — si algún día las cifras no coinciden, manda el original.
 
 #### Cómo se calcula el total
 
@@ -3012,7 +3056,9 @@ Conviene saberlo antes de buscarlo:
 | «El pedido necesita al menos un renglón.» | Ningún renglón tenía descripción y cantidad | Llena al menos un renglón completo |
 | «El renglón 2 no tiene descripción.» | Ese renglón quedó sin describir | Escribe qué es, o quita el renglón |
 | «La cantidad del renglón 2 debe ser mayor que cero.» | Falta la cantidad | Escribe cuánto se necesita |
-| «El pedido ya fue enviado y no se puede editar. Cancélalo y crea otro.» | Un pedido enviado no se toca | Cancélalo y crea uno nuevo |
+| «Este pedido está en "…" y ya no se corrige aquí.» | El pedido pasó de Confirmada: está con el gerente o ya se aprobó | Si está con el gerente, retira lo propuesto; si ya se aprobó, manda la orden |
+| «Este pedido ya tiene 2 cotización(es) cargada(s)…» | Corregirlo dejaría esas cotizaciones vacías | Elimina las cotizaciones, corrige y vuelve a cargarlas |
+| «Hay 3 cotizaciones propuestas: hay que decir cuál se aprueba.» | El gerente no marcó ninguna | Marca cuál se aprueba en la lista del panel |
 | «Solo quien creó el borrador puede editarlo.» | El borrador es de otra persona | Pídele a esa persona que lo envíe o lo corrija |
 | «Solo se envía un borrador. Este pedido está en "Pedido".» | Ese pedido ya se envió | Revisa el tablero: ya está en circulación |
 | «Solo se confirma un pedido recién enviado. Este está en "Confirmada".» | Ya alguien lo confirmó | Sigue por el paso siguiente |
@@ -3455,7 +3501,9 @@ El PDF sale con la cabecera de la casa (13.2) y, a la derecha, cuatro datos: **N
 
 Los totales son **Subtotal**, **Descuento**, **Flete**, **IVA 16%**, raya y **TOTAL**, más **IVA retenido por el cliente** y **A pagar** cuando hay retención, y debajo el equivalente en la otra moneda. Firman **Por la empresa** y **Aceptado por el cliente**.
 
-El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.**
+El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.** Y detrás, **cuando la empresa tenga cargados los datos de su imprenta autorizada**, el renglón que exige el SENIAT: **Imprenta:** el nombre, su RIF y el número de autorización. **Solo en la factura** — una cotización o una nota de entrega no lo llevan, y ponérselo les daría un aire fiscal que no tienen.
+
+**Si esos datos no están cargados, el renglón no sale.** Un pie que dijera «Imprenta: —» no cumpliría el requisito y encima parecería que el sistema se dejó algo.
 
 > **Lo que esta factura todavía no imprime, y hace falta para que sea completa ante el SENIAT:** la **base imponible**, el **total exento** en los totales, el **desglose por alícuota** —hoy solo admite una, así que una factura mixta no se puede expresar— y los **datos de la imprenta autorizada** con su número de autorización, que no existen en ninguna pantalla del sistema. Está anotado en el capítulo 15.
 
@@ -4762,8 +4810,6 @@ La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo, 
 
 ### 11.12 Organigrama
 
-> **Hoy esta pantalla no se ofrece en el menú.** Está construida y funciona, pero se dejó fuera mientras se afina, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Está explicado en 1.5.
-
 Es una sección propia y no una pantalla dentro de Nómina, que es como lo pidió la líder de sistemas. **El permiso sí es el de Nómina**: quien lleva el personal es quien sabe de quién depende quién. Con Nómina en lectura se ve el árbol; para cambiarlo hace falta escritura, y sin ella no aparece ningún botón.
 
 Responde una pregunta que ninguna otra pantalla contesta: **Quién depende de quién, y cuánta gente hay prevista en cada puesto.**
@@ -4778,26 +4824,32 @@ Tres tarjetas arriba:
 | **Registrada en nómina** | Cuántas hay activas de verdad. Debajo, **cuadra** o **3 de diferencia**, y **· 2 sin departamento escrito** si las hay |
 | **Departamentos sin sitio** | Departamentos que existen en nómina y a los que nadie colgó de la estructura |
 
-Debajo, la tarjeta **La estructura**, con el subtítulo **Cada sangría es un escalón de dependencia.** El árbol se dibuja anidado, con un riel a la izquierda en vez de cajas y líneas, porque así se lee también en el teléfono.
+Debajo va la estructura, **dibujada por bancos**: una banda horizontal por cada escalón de dependencia, como se corta un frente de cantera. Arriba el banco 1 —la gerencia—, y debajo cada nivel que cuelga.
 
-Cada renglón lleva, en este orden: el **nombre** —en negrita si es una unidad—, **quién lo ocupa** en azul si tiene titular, **el número de personas previstas entre paréntesis**, y una etiqueta de nómina.
+En el canto izquierdo de cada banda va **el número del escalón** en grande y, debajo, **cuántos puestos y cuánta gente** hay en él. Es la lectura que la lista con sangría no dejaba hacer: de un vistazo se ve cuántos escalones tiene la empresa y dónde está el grueso del personal.
 
-Esa etiqueta es lo que hay que aprender a leer, y hay una tarjeta al lado que lo explica:
+**No hay ni una línea dibujada.** Dentro de cada banda las fichas van reunidas bajo un rótulo pequeño —**de Administración**— que dice de quién cuelgan. Se lee igual que con líneas, y así la hoja crece hacia abajo y nunca hacia los lados: es lo que hace que el mismo dibujo sirva en un proyector y en un teléfono.
 
-- Verde, **4 en nómina**: la nómina tiene esa gente registrada en el departamento enlazado.
-- Ámbar, **3 ≠ 5**: la nómina no coincide con lo previsto. **No es un error del sistema: es lo que hay que cuadrar.**
-- **Sin etiqueta**: ese puesto no está enlazado a ningún departamento de nómina. Sin enlace no es cero: es que no se sabe, y pintar un cero sería mentir.
+Cada ficha lleva el **nombre** —más marcado si es una unidad, más suave si es un cargo—, **quién lo ocupa** en naranja si tiene titular, y **cuántas plazas** hay previstas.
 
-Y sobre las dos cifras, la propia pantalla avisa: **Son dos, y no tienen por qué coincidir todavía.** El número entre paréntesis es la gente **prevista**, que sale del organigrama; la etiqueta de color es la **registrada** en nómina. Mientras la nómina se termina de cargar, mandan las cifras del organigrama.
+Y solo cuando hay desajuste, en ámbar, **cuántos hay en nómina de verdad**. **El acuerdo se calla y el desajuste se dice**: marcar también los que cuadran llena la pantalla de etiquetas y esconde justo lo que hay que mirar. Una ficha sin esa marca es una ficha que cuadra —o un puesto que no está enlazado a ningún departamento, y entonces no se sabe: pintar un cero sería mentir.
+
+#### Seguir una línea de mando
+
+**Al pulsar una ficha se enciende su línea de mando entera** —lo que tiene encima hasta la gerencia y todo lo que le cuelga— y el resto del organigrama se apaga. Es señalar con el dedo en una reunión, y de paso es cómo uno se sitúa antes de tocar nada.
+
+Pulsando la misma ficha otra vez se suelta y vuelve a verse todo. Lo apagado no está escondido: sigue pulsándose, y con el tabulador se recorre igual.
 
 #### Cómo se cambia
 
-Los botones son iconos, y su nombre sale al pasar el ratón por encima:
+Al pulsar una ficha aparece debajo una barra con su nombre y lo que se puede hacer con ella:
 
-1. **+**, **Colgar un puesto de aquí**. Abre el formulario debajo del renglón, sin ventana emergente.
-2. El **lápiz**, **Editar**.
-3. Las **flechas**, **Moverlo a otra dependencia**. No se arrastra: se abre un buscador —**Mover «Mantenimiento» a**— donde se escribe el código o el nombre del sitio nuevo. Cada opción muestra debajo de quién cuelga hoy, para distinguir dos «Mantenimiento» distintos. Para dejarlo como estaba, **Dejarlo donde está**.
-4. La **papelera**, **Quitarlo**, que solo aparece si de ese puesto no cuelga nada.
+1. **Colgar un puesto**. Abre el formulario debajo, sin ventana emergente.
+2. **Editar**.
+3. **Mover**. No se arrastra —en un teléfono arrastrar es un ejercicio de puntería—: al pulsar **Mover**, **los destinos válidos se encienden con el borde punteado** y se elige uno pulsándolo. Lo que cuelga del puesto que se mueve no se ofrece, porque sería colgarlo de sí mismo. Para dejarlo como estaba, **Dejarlo donde está**.
+4. **Quitar**, que solo aparece si de ese puesto no cuelga nada. Si cuelga algo, en su sitio se lee **No se quita: tiene 3 puestos colgando**, para que se sepa por qué no está el botón.
+
+De la cabeza del organigrama no se ofrece ni **Mover** ni **Quitar**: un organigrama sin cabeza no es un organigrama.
 
 El formulario pide: **Cómo se llama**, **Quién lo ocupa** —*se deja vacío si el puesto no tiene nombre y apellido*—, **Qué es** (**Unidad** o **Cargo**), **Cuántos**, **Departamento de nómina** —*para saber cuánta gente hay de verdad aquí*, y se puede dejar **Sin enlazar**— y una **Nota** para *lo que el nombre no alcanza a decir*. Se cierra con **Añadir** o **Guardar**, y con **Cancelar**.
 
@@ -5923,7 +5975,7 @@ El sistema se entrega por partes. Este capítulo reúne lo que se espera del dis
 
 No es una lista de fallas. Es el estado real de la obra, y está aquí para que nadie organice su trabajo contando con algo que aún no puede hacer.
 
-Antes de nada, lo primero que hay que saber: **tres módulos construidos no se ofrecen hoy en el menú, más dos pantallas sueltas.** Explotación, Despachos y Ventas existen y funcionan, pero se dejaron fuera mientras se afinan, y sus direcciones responden con un cartel de obra; lo mismo el **Organigrama** y **Cuentas por cobrar**. **Tesorería es aparte: no está escondida, se retiró** (12.1). Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
+Antes de nada, lo primero que hay que saber: **tres módulos construidos no se ofrecen hoy en el menú, más una pantalla suelta.** Explotación, Despachos y Ventas existen y funcionan, pero se dejaron fuera mientras se afinan, y sus direcciones responden con un cartel de obra; lo mismo **Cuentas por cobrar**. **Tesorería es aparte: no está escondida, se retiró** (12.1). Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
 
 ### 15.1 Puntos donde hay que tener cuidado
 
@@ -5955,18 +6007,16 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **En Ventas.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. Las facturas emitidas desde el sistema no admiten descuento. **La nota de crédito no se imprime**: se registra y se declara, pero el papel que se le entrega al cliente todavía se hace por fuera, y fiscalmente es un documento con número de control propio.
 
-**La factura impresa todavía no está completa ante el SENIAT.** Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención y la tasa del día. **Le faltan cuatro cosas:**
+**La factura impresa todavía no está completa ante el SENIAT**, aunque ya le falta menos. Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención, la tasa del día y —desde el 27 de agosto— la **base imponible** y el **total exento** (10.7). **Le faltan dos cosas:**
 
 | Falta | Por qué importa |
 | --- | --- |
-| **Base imponible** | El dato existe en el sistema y no llega al papel |
-| **Total exento** | Los renglones exentos ya se marcan con **(E)**, pero no se suman aparte |
 | **Desglose por alícuota** | Hoy la factura admite una sola alícuota. Una factura mixta no se puede expresar |
-| **Datos de la imprenta autorizada** | Con su número de autorización. **No existen en ninguna pantalla del sistema**: hay que crearlos primero en Datos de la empresa |
+| **Dónde escribir los datos de la imprenta** | **La factura ya sabe imprimirlos** (10.7), pero todavía no hay casilla en Configuración para escribirlos, así que el renglón no sale |
 
-Las tres primeras cambian el cálculo —hay que acordar, por ejemplo, si el flete entra en la base o no—, así que no se tocan sin decidirlo con quien lleva la contabilidad.
+**Y la alícuota ya no está escrita en el código.** Sale de la ficha de la empresa; mientras esa casilla no exista, el sistema usa el 16 de respaldo. Las dos cosas —la casilla de la alícuota y las de la imprenta— entran juntas cuando se aplique su migración.
 
-**En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla, donde además **hay que volver a elegir a la persona** porque no llega puesta.
+**En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla. Lo que sí se arregló es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4).
 
 **En las incidencias del personal.** Si se elige un tipo que no pide reposo —**Conflicto**, **Llegada tarde** u **Otra**— y a la vez se marca **Varios días**, el campo de los días de reposo no se dibuja y el guardado falla con un mensaje sin traducir. Mientras eso se arregla, **para varios días usa un tipo que pida reposo**, o anota la duración en el motivo.
 
@@ -6001,7 +6051,7 @@ Sí. Solo necesitas navegador e internet, con el mismo usuario y la misma clave.
 Si no llegaste a guardar, sí. El sistema necesita conexión para guardar y no trabaja sin señal. Vuelve a registrarlo cuando vuelva el internet.
 
 **Ayer estaba Ventas en el menú y hoy no. ¿Se borró?**
-No. El menú va creciendo por partes y hoy ofrece **Panel, Maquinaria, Inventario, Combustible, Asignaciones, Compras, Nómina, Tasas de cambio, Configuración y Manual de usuario**. Explotación, Despachos, Ventas y el Organigrama siguen construidos y funcionando, pero no se ofrecen mientras se afinan. El apartado 1.5 lo explica entero.
+No. El menú va creciendo por partes y hoy ofrece **Panel, Maquinaria, Inventario, Combustible, Asignaciones, Compras, Nómina —con el Organigrama dentro—, Tasas de cambio, Configuración y Manual de usuario**. Explotación, Despachos y Ventas siguen construidos y funcionando, pero no se ofrecen mientras se afinan. El apartado 1.5 lo explica entero.
 
 **Antes había Tesorería y ahora no la encuentro.**
 Tesorería **dejó de ser un módulo**. No está escondida: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos. Lo que se usaba todos los días se mudó a **Compras**: **Pagos por hacer** y **Movimientos de dinero** están ahí, en el mismo menú, y funcionan igual. El capítulo 12 las sigue contando.
@@ -6173,6 +6223,24 @@ Se define una vez por cargo y sirve para todos los que lo tengan. La ventana **Q
 Arriba está la tarjeta **A quién le toca ahora**, que es lo que se mira todos los días: quién debería tener algo y no lo tiene, o lo tiene vencido.
 
 **Ojo con esta trampa, que hace perder tiempo:** esa lista **solo ve a quien tenga un cargo del tabulador en su ficha**. Un trabajador con el cargo escrito a mano, sin cargo del tabulador asignado, **no aparece nunca**, por mucha dotación que le corresponda. Si echas de menos a alguien en esa lista, revisa primero su ficha en **Nómina › Personal**, no la dotación.
+
+#### Entregar desde aquí
+
+Hay dos caminos, y responden a dos formas de trabajar.
+
+**Por la lista**, cuando se va bajando por los pendientes: cada persona lleva un botón **Entregar** en su primer renglón. Se lleva a la pantalla de entrega **con ella puesta y con todo lo que se le debe**, no solo el renglón que se pulsó — quien llega al almacén se lleva de una vez lo suyo, y tres botones iguales en tres renglones seguidos harían pensar que entregan cosas distintas.
+
+**Por la persona**, cuando llega alguien concreto: el botón **Entregar a alguien**, arriba. Se elige el **Cargo** —que es solo un filtro para acortar la lista, y se puede dejar en blanco— y después **A quién**. La ventana enseña lo que se le va a entregar antes de continuar.
+
+| Si la persona… | Se propone |
+| --- | --- |
+| Debe algo | **Lo que se le debe ahora mismo** |
+| Está al día | **Lo que su cargo dice**, por si hay que reponerle unas botas rotas antes de tiempo. La ventana lo advierte |
+| No tiene cargo del tabulador | Nada: el sistema no sabe qué le toca. Se entrega a mano desde **Quién tiene qué** |
+
+**Lo que le toca se rellena al elegir el almacén, no antes.** Lo que le corresponde por su cargo no tiene por qué estar en el almacén desde el que se entrega hoy, y **lo que no esté se dice**: sale un aviso con el nombre de lo que falta. Se le entrega lo que sí hay y el resto después.
+
+**Las cantidades se pueden corregir.** Vienen propuestas, no impuestas: el sistema sabe qué le toca, no cuántas botas quedan en la caja.
 
 ### 18.5 Incidencias
 
