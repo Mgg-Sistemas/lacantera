@@ -92,6 +92,42 @@ const deNodo = (n: NodoOrganigrama): Edicion => ({
 })
 
 /**
+ * El puesto y todo lo que le cuelga. Sin lo que tiene encima.
+ *
+ * Es lo que un movimiento no puede tener como destino: colgar un puesto de sí
+ * mismo o de uno de sus hijos es hacer un círculo, y la base lo rechaza.
+ *
+ * Va aparte de `lineaDeMando` porque encender y mover necesitan conjuntos
+ * distintos, y usar el mismo salía mal en una dirección que no se ve hasta que
+ * se prueba: `lineaDeMando` trae también los ancestros, así que daba por
+ * inválido subir un puesto a la gerencia, que es de los movimientos más
+ * normales que hay.
+ */
+function laRamaDe(id: number | null, arbol: RamaOrganigrama[]): Set<number> {
+  const dentro = new Set<number>()
+  if (id === null) return dentro
+
+  const bajar = (rama: RamaOrganigrama) => {
+    dentro.add(rama.id)
+    for (const h of rama.ramas) bajar(h)
+  }
+
+  const buscar = (ramas: RamaOrganigrama[]): boolean => {
+    for (const r of ramas) {
+      if (r.id === id) {
+        bajar(r)
+        return true
+      }
+      if (buscar(r.ramas)) return true
+    }
+    return false
+  }
+
+  buscar(arbol)
+  return dentro
+}
+
+/**
  * Toda la línea de mando de un puesto: lo que tiene encima y lo que le cuelga.
  *
  * Se recorre el árbol y no el campo `camino`, que sería más corto. `camino` es
@@ -203,7 +239,7 @@ export function Organigrama() {
 
   const puesto = enfocado !== null ? (nodos ?? []).find((n) => n.id === enfocado) : undefined
   const quienMueve = moviendo !== null ? (nodos ?? []).find((n) => n.id === moviendo) : undefined
-  const bajoElQueMueve = lineaDeMando(moviendo, arbol)
+  const bajoElQueMueve = laRamaDe(moviendo, arbol)
 
   return (
     <>
@@ -258,8 +294,13 @@ export function Organigrama() {
         </div>
       ) : null}
 
-      {/* --------------------------------- Los bancos ----------------------------- */}
-      <Card flush className="mt-4 overflow-hidden">
+      {/*
+        --------------------------------- Los bancos -----------------------------
+        Con un puesto pulsado se reserva sitio abajo: la barra de acciones va
+        pegada al canto de la pantalla, y sin ese hueco las últimas fichas se
+        quedaban debajo de ella sin manera de apartarlas.
+      */}
+      <Card flush className={cn('mt-4 overflow-hidden', enfocado !== null && 'pb-24 sm:pb-20')}>
         {bancos.map(({ nivel, grupos }, iBanco) => {
           const enEsteBanco = grupos.flatMap(([, hermanos]) => hermanos)
           const personas = enEsteBanco.reduce((t, n) => t + n.cuantos, 0)
@@ -270,11 +311,30 @@ export function Organigrama() {
               className={cn(
                 'border-hairline flex flex-col gap-3 border-t px-4 py-4 sm:flex-row sm:gap-5 sm:px-5',
                 iBanco === 0 && 'border-t-0',
-                // Los bancos alternan como alterna la piedra cortada: el par
-                // hundido, el impar a la vista. Es lo único que los separa
-                // cuando la pantalla es estrecha y el rótulo se va arriba.
-                iBanco % 2 === 1 && 'bg-canvas/60',
               )}
+              /*
+                CADA BANCO, UN POCO MÁS HONDO QUE EL DE ENCIMA.
+
+                Se probó alternando claro y oscuro y en pantalla no se veía: la
+                diferencia era tan corta que la página quedaba plana y el dibujo
+                por bancos no se leía por ninguna parte. Escalonado sí, y además
+                el tinte dice lo que importa —cuánto se ha bajado desde la
+                gerencia— en vez de solo separar filas.
+
+                Se mezcla contra `ink` y no contra un marrón fijo para que sirva
+                en los dos temas: en claro `ink` es oscuro y hunde, en oscuro es
+                crema y aclara. En los dos, más hondo es más marcado.
+
+                Va en `style` y no en una clase porque el paso se calcula, y se
+                frena al 10 %: más abajo el texto empezaría a pelear con el
+                fondo, y hay organigramas de seis escalones.
+              */
+              style={{
+                backgroundColor:
+                  'color-mix(in oklab, var(--color-ink) ' +
+                  String(Math.min(iBanco * 2.5, 10)) +
+                  '%, transparent)',
+              }}
             >
               {/*
                 El canto del banco. Lleva el número de escalón grande y, debajo,
@@ -282,27 +342,71 @@ export function Organigrama() {
                 dejaba hacer —cuántos escalones tiene la empresa y cuánta gente
                 vive en cada uno—.
               */}
-              <div className="flex shrink-0 items-baseline gap-2 sm:w-24 sm:flex-col sm:items-end sm:gap-0.5">
-                <span className="font-titular text-ink/25 text-3xl leading-none font-semibold tabular">
+              <div className="flex shrink-0 items-baseline gap-2 sm:w-24 sm:flex-col sm:items-end sm:gap-0">
+                {/*
+                  «Nivel» y no «banco», aunque el dibujo sea de bancos: el
+                  sistema ya tiene una pantalla de «Bancos y cajas», y dos
+                  palabras iguales para dos cosas distintas se pagan caras. La
+                  metáfora se queda donde sirve, que es en la forma.
+                */}
+                <span className="text-ink/35 text-2xs hidden tracking-widest uppercase sm:block">
+                  Nivel
+                </span>
+                <span className="font-titular text-ink/55 text-3xl leading-none font-semibold tabular">
                   {nivel + 1}
                 </span>
-                <span className="text-ink/45 text-2xs sm:text-right">
+                <span className="text-ink/45 text-2xs mt-1 sm:text-right">
                   {enEsteBanco.length} puesto{enEsteBanco.length === 1 ? '' : 's'}
                   {personas > 0 ? ` · ${personas} persona${personas === 1 ? '' : 's'}` : ''}
                 </span>
               </div>
 
               <div className="grid min-w-0 grow gap-3">
-                {grupos.map(([padre, hermanos]) => (
-                  <div key={String(padre)}>
+                {grupos.map(([padre, hermanos]) => {
+                  /*
+                    El rótulo se apaga con los suyos.
+
+                    Al encender una línea de mando, las fichas se apagaban pero
+                    el «de MANTENIMIENTO» de encima seguía a plena luz, así que
+                    un grupo entero apagado seguía anunciándose igual de fuerte
+                    que el encendido. Se vio en pantalla.
+                  */
+                  const grupoApagado =
+                    enfocado !== null && !hermanos.some((h) => enLinea.has(h.id))
+
+                  return (
+                  <div
+                    key={String(padre)}
+                    /*
+                      LA BARRA DE LA IZQUIERDA ES LO ÚNICO QUE SE DIBUJA.
+
+                      Sustituye a las líneas de padre a hijo, y a propósito no
+                      va de un sitio a otro: no apunta, no cruza y no se
+                      desborda. Solo encierra a los hermanos, que es toda la
+                      información que daban las líneas.
+
+                      Sin ella, con el rótulo gris a secas, un banco con tres
+                      grupos se leía como una sola fila de fichas sueltas. Se
+                      vio en pantalla, y por eso está.
+                    */
+                    className={cn(
+                      'transition-opacity duration-200 motion-reduce:transition-none',
+                      padre !== null && 'border-tierra-600/25 border-l-2 pl-3',
+                      grupoApagado && 'opacity-40',
+                    )}
+                  >
                     {/*
-                      De quién cuelgan. Esto es lo que sustituye a las líneas:
-                      en el primer banco sobra —no cuelgan de nadie— y en los
-                      demás es la única forma de saberlo sin trazar nada.
+                      El nombre del padre lleva la misma letra que el título de
+                      una ficha. Es lo que ata el grupo a la ficha del banco de
+                      arriba: se reconoce por la forma, sin trazar nada entre
+                      las dos.
                     */}
                     {padre !== null ? (
-                      <p className="text-ink/40 text-2xs mb-1.5 tracking-wide uppercase">
-                        de {nombreDe.get(padre) ?? '—'}
+                      <p className="text-2xs mb-1.5">
+                        <span className="text-ink/35">de </span>
+                        <span className="font-titular text-ink/60 font-semibold">
+                          {nombreDe.get(padre) ?? '—'}
+                        </span>
                       </p>
                     ) : null}
 
@@ -311,7 +415,22 @@ export function Organigrama() {
                         <Ficha
                           key={n.id}
                           nodo={n}
-                          apagada={enfocado !== null && !enLinea.has(n.id)}
+                          /*
+                            Moviendo, se apaga lo que no vale como destino.
+
+                            Sin esto quedaba al revés de como debe leerse: los
+                            destinos válidos se tiñen y el que se mueve y su
+                            padre de hoy se quedaban en blanco, así que lo único
+                            que NO se puede pulsar era lo que más resaltaba de
+                            la pantalla. Se vio moviendo «Soldadura».
+                          */
+                          apagada={
+                            moviendo !== null
+                              ? !(
+                                  !bajoElQueMueve.has(n.id) && n.id !== quienMueve?.padre_id
+                                )
+                              : enfocado !== null && !grupoApagado && !enLinea.has(n.id)
+                          }
                           enfocada={enfocado === n.id}
                           // El destino de un movimiento no puede ser el que se
                           // mueve ni nada que cuelgue de él: sería colgarlo de
@@ -337,7 +456,8 @@ export function Organigrama() {
                       ))}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
           )
@@ -483,8 +603,15 @@ function Ficha({
             {nodo.cuantos} {nodo.cuantos === 1 ? 'plaza' : 'plazas'}
           </span>
         ) : null}
+        {/*
+          Con el ámbar a secas se confundía con el texto de al lado y el aviso
+          pasaba desapercibido, que es justo lo contrario de lo que hace falta.
+          Con fondo se lee como lo que es: una marca, no un dato más.
+        */}
         {descuadra ? (
-          <span className="text-warning tabular">{nodo.registrados} en nómina</span>
+          <span className="bg-warning-soft text-warning tabular rounded px-1.5 py-0.5 font-medium">
+            {nodo.registrados} en nómina
+          </span>
         ) : null}
       </span>
     </button>
@@ -508,7 +635,15 @@ function AccionesDe({
   onEliminar: () => void
 }) {
   return (
-    <div className="border-hairline rounded-card mt-4 flex flex-wrap items-center gap-2 border p-3">
+    /*
+      PEGADA ABAJO MIENTRAS HAYA UN PUESTO PULSADO.
+
+      Va debajo del dibujo, y con dieciséis puestos ya quedaba a setecientos
+      píxeles del que se acababa de pulsar: en uno de cuarenta, pulsar la
+      gerencia dejaba los botones fuera de la pantalla y parecía que no había
+      pasado nada. Pegada, la respuesta a pulsar una ficha se ve siempre.
+    */
+    <div className="border-hairline rounded-card bg-surface sticky bottom-3 z-10 mt-4 flex flex-wrap items-center gap-2 border p-3 shadow-[var(--shadow-card)]">
       <span className="text-ink/70 font-titular mr-1 text-sm">{nodo.nombre}</span>
 
       <Button size="sm" variant="soft" icon={<Plus />} disabled={ocupado} onClick={onAnadir}>
@@ -540,7 +675,7 @@ function AccionesDe({
           Quitar
         </Button>
       ) : nodo.hijos > 0 ? (
-        <span className="text-ink/40 text-2xs ml-auto">
+        <span className="text-ink/40 text-2xs sm:ml-auto">
           No se quita: tiene {nodo.hijos} puesto{nodo.hijos === 1 ? '' : 's'} colgando
         </span>
       ) : null}

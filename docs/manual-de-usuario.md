@@ -26,7 +26,7 @@ El orden de los capítulos es el del camino del material: primero se extrae, lue
 
 El sistema se entrega por partes, y el menú va creciendo. Hoy ofrece diez entradas: **Panel**, **Maquinaria**, **Inventario**, **Combustible**, **Asignaciones**, **Compras**, **Nómina**, **Tasas de cambio**, **Configuración** y **Manual de usuario**.
 
-Lo que todavía no sale —**Explotación**, **Despachos**, **Ventas** y el **Organigrama**— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar. **Tesorería es distinto: dejó de ser un módulo**, y lo que quedaba vivo se lo llevó Compras.
+Lo que todavía no sale —**Explotación**, **Despachos** y **Ventas**— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar. El **Organigrama** era de esos y ya no: desde el 27 de agosto de 2026 está en el menú, dentro de Nómina. **Tesorería es distinto: dejó de ser un módulo**, y lo que quedaba vivo se lo llevó Compras.
 
 De los dos caminos posibles, este manual eligió el segundo:
 
@@ -64,7 +64,7 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 19 | Maquinaria | Sí |
 | 20 | Combustible | Sí |
 
-**Asignaciones, Maquinaria y Combustible tienen sus capítulos al final** —el 18, el 19 y el 20— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.12, y su pantalla sigue en obra.
+**Asignaciones, Maquinaria y Combustible tienen sus capítulos al final** —el 18, el 19 y el 20— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.12.
 
 ---
 
@@ -117,7 +117,7 @@ Los módulos son quince. La última columna dice cuáles se ofrecen hoy en el me
 
 **Usuarios y roles** y **Respaldo de la base** cuelgan de Configuración en el menú, pero son módulos aparte a la hora de repartir permisos: quien mantiene el catálogo de artículos no tiene por qué poder crear cuentas ni llevarse la base entera en un archivo. El capítulo 13 lo explica.
 
-El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina, porque quien lleva el personal es quien sabe de quién depende quién. Hoy su pantalla está en obra.
+El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina, porque quien lleva el personal es quien sabe de quién depende quién.
 
 El **Manual de usuario** aparece siempre al final del menú y **no es un módulo**: no se reparte por permisos y no figura en la tabla. Quien acaba de entrar y todavía no tiene nada asignado lo ve igual, y es a propósito — es lo único que tiene mientras espera que administración le reparta lo demás. No contiene ningún dato de la empresa: solo explica cómo se usa el sistema.
 
@@ -153,7 +153,9 @@ Esto es lo primero que hay que saber antes de buscar una pantalla, porque explic
 
 Lo decidió así la líder de sistemas, para entregar primero lo que ya se puede usar todos los días sin sobresaltos, e ir soltando el resto conforme se afina. **El menú ha ido creciendo**: en agosto ofrecía seis entradas y hoy son diez —entraron Maquinaria, Combustible, Asignaciones y el propio manual—, así que si tienes un manual impreso de hace unas semanas, esta lista es la que manda.
 
-**Lo que hoy no sale en el menú son cuatro módulos completos** —**Explotación**, **Despachos**, **Ventas** y **Tesorería**— **y una pantalla suelta**: el **Organigrama**, cuyo módulo, Nómina, sí está. Tampoco los encuentra la barra buscadora. Las pantallas que cuelgan de un módulo escondido —**Cuentas por cobrar**, por ejemplo— no están escondidas por su cuenta: lo está el grupo entero.
+**Lo que hoy no sale en el menú son cuatro módulos completos**: **Explotación**, **Despachos**, **Ventas** y **Tesorería**. Tampoco los encuentra la barra buscadora. Las pantallas que cuelgan de un módulo escondido —**Cuentas por cobrar**, por ejemplo— no están escondidas por su cuenta: lo está el grupo entero.
+
+El **Organigrama** estuvo en esta lista y salió de ella el 27 de agosto de 2026: se rehizo la pantalla —antes era una lista con sangría que no se podía enseñar a nadie— y en cuanto se pudo presentar dejó de tener sentido tenerla detrás de un cartel de obra.
 
 Ahora la parte que hay que entender bien, porque no es lo que parece:
 
@@ -4764,8 +4766,6 @@ La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo, 
 
 ### 11.12 Organigrama
 
-> **Hoy esta pantalla no se ofrece en el menú.** Está construida y funciona, pero se dejó fuera mientras se afina, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Está explicado en 1.5.
-
 Es una sección propia y no una pantalla dentro de Nómina, que es como lo pidió la líder de sistemas. **El permiso sí es el de Nómina**: quien lleva el personal es quien sabe de quién depende quién. Con Nómina en lectura se ve el árbol; para cambiarlo hace falta escritura, y sin ella no aparece ningún botón.
 
 Responde una pregunta que ninguna otra pantalla contesta: **Quién depende de quién, y cuánta gente hay prevista en cada puesto.**
@@ -5931,7 +5931,7 @@ El sistema se entrega por partes. Este capítulo reúne lo que se espera del dis
 
 No es una lista de fallas. Es el estado real de la obra, y está aquí para que nadie organice su trabajo contando con algo que aún no puede hacer.
 
-Antes de nada, lo primero que hay que saber: **tres módulos construidos no se ofrecen hoy en el menú, más dos pantallas sueltas.** Explotación, Despachos y Ventas existen y funcionan, pero se dejaron fuera mientras se afinan, y sus direcciones responden con un cartel de obra; lo mismo el **Organigrama** y **Cuentas por cobrar**. **Tesorería es aparte: no está escondida, se retiró** (12.1). Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
+Antes de nada, lo primero que hay que saber: **tres módulos construidos no se ofrecen hoy en el menú, más una pantalla suelta.** Explotación, Despachos y Ventas existen y funcionan, pero se dejaron fuera mientras se afinan, y sus direcciones responden con un cartel de obra; lo mismo **Cuentas por cobrar**. **Tesorería es aparte: no está escondida, se retiró** (12.1). Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
 
 ### 15.1 Puntos donde hay que tener cuidado
 
@@ -6007,7 +6007,7 @@ Sí. Solo necesitas navegador e internet, con el mismo usuario y la misma clave.
 Si no llegaste a guardar, sí. El sistema necesita conexión para guardar y no trabaja sin señal. Vuelve a registrarlo cuando vuelva el internet.
 
 **Ayer estaba Ventas en el menú y hoy no. ¿Se borró?**
-No. El menú va creciendo por partes y hoy ofrece **Panel, Maquinaria, Inventario, Combustible, Asignaciones, Compras, Nómina, Tasas de cambio, Configuración y Manual de usuario**. Explotación, Despachos, Ventas y el Organigrama siguen construidos y funcionando, pero no se ofrecen mientras se afinan. El apartado 1.5 lo explica entero.
+No. El menú va creciendo por partes y hoy ofrece **Panel, Maquinaria, Inventario, Combustible, Asignaciones, Compras, Nómina —con el Organigrama dentro—, Tasas de cambio, Configuración y Manual de usuario**. Explotación, Despachos y Ventas siguen construidos y funcionando, pero no se ofrecen mientras se afinan. El apartado 1.5 lo explica entero.
 
 **Antes había Tesorería y ahora no la encuentro.**
 Tesorería **dejó de ser un módulo**. No está escondida: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos. Lo que se usaba todos los días se mudó a **Compras**: **Pagos por hacer** y **Movimientos de dinero** están ahí, en el mismo menú, y funcionan igual. El capítulo 12 las sigue contando.

@@ -540,10 +540,17 @@ export const navigation: NavSection[] = [
           Sección propia y no una pantalla dentro de Nómina, que es como lo
           pidió la líder de sistemas. El permiso sí es el de Nómina: quien
           lleva el personal es quien sabe de quién depende quién.
+
+          VUELVE AL RIEL
+
+          Estuvo fuera mientras su pantalla no se podía enseñar: era una lista
+          con sangría, que decía quién depende de quién pero no servía para
+          poner delante de nadie. Rehecha por bancos, ya se presenta, y una
+          pantalla que se presenta no tiene sentido detrás de un cartel de
+          obra — que además obligaba a escribir la dirección a mano.
         */
         label: 'Organigrama',
         icon: Network,
-        fueraDelMvp: true,
         to: '/app/organigrama',
       },
       /*
