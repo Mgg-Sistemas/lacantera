@@ -2695,9 +2695,15 @@ Se hace en dos pasos, sobre la misma orden:
 1. **Indicar método de pago** con la moneda de la divisa —USDT, dólares— y el monto de la base.
 2. Otra vez **Indicar método de pago**, esta vez en **bolívares**, por el IVA.
 
-**Debajo del monto hay tres botones que hacen la cuenta**: **Todo**, **Solo la base** y **Solo el IVA**, cada uno con su cifra ya calculada. Se calculan sobre **lo que falta**, no sobre el total, así que en el segundo pago no vuelven a ofrecer lo que ya se instruyó.
+**Debajo del monto hay tres botones que hacen la cuenta**: **Todo**, **Solo la base** y **Solo el IVA**, cada uno con su cifra ya calculada.
 
-**Si la moneda elegida no es la de la orden, la cifra se convierte con la tasa del BCV del día** y la pantalla dice de qué fecha es esa tasa. Es una propuesta: el monto que vale es el que quede escrito, y se puede corregir.
+**La base se cubre primero**, que es el orden en que se paga aquí. Así que después de instruir la base entera, **Solo el IVA** ofrece el IVA completo y **Solo la base** desaparece: ya no queda base que pagar. Las dos cifras siempre suman lo que falta.
+
+**Si la moneda elegida no es la de la orden, la cifra se convierte con la tasa que la orden lleva congelada**, no con la de hoy. Es la que el sistema usa para comprobar cuánto falta, así que es la única con la que la cuenta cuadra: convertir con la del día haría que el sistema rechazara el pago por unos céntimos en cuanto la tasa se moviera. La pantalla dice qué tasa está usando.
+
+**El reparto solo se calcula pagando en la moneda de la orden o en bolívares.** Para otra divisa hace falta su tasa de hoy, que esta pantalla no tiene, y proponer un número aproximado sería ofrecer un pago que el sistema va a rechazar. En ese caso se escribe el monto a mano.
+
+Es una propuesta: el monto que vale es el que quede escrito, y se puede corregir.
 
 > **Cuidado con el IGTF, que es la mitad del motivo de repartir así.** Un pago en divisa causa el **3 %** y uno en bolívares no. Pagar el IVA en bolívares se ahorra ese 3 % sobre esa parte. La casilla del IGTF se propone según la moneda y se puede cambiar.
 
