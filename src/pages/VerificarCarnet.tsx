@@ -75,6 +75,37 @@ const limpio = (texto: string) =>
 /** Se lee de tres golpes en grupos de seis, como va impreso. */
 const enGrupos = (codigo: string) => (codigo.match(/.{1,6}/g) ?? [codigo]).join(' ')
 
+/**
+ * Cuánto lleva aquí, dicho como lo dice la gente.
+ *
+ * «Desde el 20/07/2026» obliga a quien lo lee a restar de cabeza, y en un
+ * portón nadie resta. Lo pidió Christopher: que se vea también el tiempo.
+ *
+ * En años y meses, y omitiendo lo que sea cero: «3 años», «7 meses», «2 años y
+ * 4 meses». Decir «0 años y 7 meses» es hablar como una máquina.
+ */
+function antiguedad(iso: string | null | undefined): string | null {
+  if (!iso) return null
+
+  const desde = new Date(`${iso}T12:00:00`)
+  const hoy = new Date()
+
+  let meses = (hoy.getFullYear() - desde.getFullYear()) * 12 + (hoy.getMonth() - desde.getMonth())
+  if (hoy.getDate() < desde.getDate()) meses -= 1
+  if (meses < 0) return null
+
+  const anios = Math.floor(meses / 12)
+  const resto = meses % 12
+
+  const enAnios = `${anios} ${anios === 1 ? 'año' : 'años'}`
+  const enMeses = `${resto} ${resto === 1 ? 'mes' : 'meses'}`
+
+  if (anios === 0 && resto === 0) return 'menos de un mes'
+  if (anios === 0) return enMeses
+  if (resto === 0) return enAnios
+  return `${enAnios} y ${enMeses}`
+}
+
 function fechaCorta(iso: string | null | undefined): string {
   if (!iso) return '—'
   const d = new Date(`${iso}T12:00:00`)
@@ -190,8 +221,31 @@ function Marco({
         className="flex flex-col items-center justify-center px-5 py-9 text-center"
         style={{ backgroundColor: c.fondo, color: c.texto }}
       >
-        <div className="flex w-full max-w-[30rem] items-start">
-          <img src="/media/marca.webp" alt="" className="size-6 rounded-full bg-white/90 p-px" />
+        {/*
+          LA MARCA, CENTRADA Y SOBRE UN DISCO BLANCO.
+
+          Estaba a 24 píxeles y alineada a la izquierda dentro de un contenedor
+          de 30rem que va centrado: en una pantalla ancha eso la dejaba flotando
+          en mitad de la nada, y sobre el verde apenas se distinguía. Christopher
+          lo dijo: «el logo casi no se aprecia».
+
+          Va sobre disco blanco porque el logo tiene trazos oscuros y encima de
+          un fondo de color se pierde — es lo mismo que ya hace en el carnet
+          impreso y en la barra lateral.
+
+          Y con el nombre al lado: es lo que convierte una insignia en un
+          membrete. Sigue siendo pequeño a propósito, porque nada de este bloque
+          puede competir con la palabra del veredicto.
+        */}
+        <div className="mb-4 flex items-center gap-2">
+          <img
+            src="/media/marca.webp"
+            alt=""
+            className="size-10 shrink-0 rounded-full bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,.2)]"
+          />
+          <span className="text-[13px] leading-tight font-bold tracking-wide opacity-90">
+            {EMPRESA.nombre}
+          </span>
         </div>
 
         <div className="[&>svg]:size-16 [&>svg]:stroke-[2.5]">{icono}</div>
@@ -366,7 +420,10 @@ function Veredicto({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
           ...(!egresado
             ? ([
                 ['Departamento', d.departamento ?? '—'],
-                ['Trabaja aquí desde', fechaCorta(d.desde)],
+                [
+                  'Trabaja aquí desde',
+                  `${fechaCorta(d.desde)}${antiguedad(d.desde) ? ` · ${antiguedad(d.desde)}` : ''}`,
+                ],
                 ...(d.edad ? ([['Edad', `${d.edad} años`]] as Array<[string, string]>) : []),
               ] as Array<[string, string]>)
             : []),
