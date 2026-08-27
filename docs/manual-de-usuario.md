@@ -2,7 +2,7 @@
 
 **Sistema de control interno · Minería Internacional TS, C.A.**
 
-**Versión 1.3 · 26 de agosto de 2026**
+**Versión 1.4 · 27 de agosto de 2026**
 
 ---
 
@@ -61,8 +61,10 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 16 | Preguntas frecuentes | — |
 | 17 | A quién acudir | — |
 | 18 | Asignaciones | Sí |
+| 19 | Maquinaria | Sí |
+| 20 | Combustible | Sí |
 
-**Maquinaria**, **Combustible** y **Asignaciones** sí se alcanzan hoy desde el menú, pero **no tienen capítulo propio todavía**: lo poco que hay escrito de ellos está repartido entre el capítulo 7 y el 11. Es el hueco más grande que tiene este manual y está anotado en 15.4. El **Organigrama** tiene apartado propio, el 11.12, y su pantalla sigue en obra.
+**Asignaciones, Maquinaria y Combustible tienen sus capítulos al final** —el 18, el 19 y el 20— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.12, y su pantalla sigue en obra.
 
 ---
 
@@ -2203,7 +2205,7 @@ Esta es la sección que hay que leer si solo se va a leer una. Todo lo demás de
 | 3 | **Confirmar por el gerente** *(en la ficha: **Por confirmar el gerente**)* | Gerencia general | Pulsar **Aprobar la compra**. Ahí nace la orden de compra y el precio queda fijo |
 | 4 | **Aprobada** *(en la ficha: **Aprobada · indicar método de pago**)* | Compras | Decir **con qué entrega el proveedor**, y después **Indicar método de pago** y **Enviar a tesorería** |
 | 5 | **En tesorería** | Compras | **Registrar el pago** de cada instrucción, hasta cubrir el total |
-| 6 | **Pagada** *(en la ficha: **Pagada · pendiente por recepcionar**)* | Almacén | **Recibir material** |
+| 6 | **Pagada** *(en la ficha: **Pagada · falta que llegue**)* | Almacén | **Recibir material** |
 | 7 | **Recibida parcialmente** | Almacén | Volver a **Recibir material** hasta completar |
 | 8 | **Recibida** | — | Cerrada |
 
@@ -2293,7 +2295,16 @@ Mientras carga se lee **Cargando el tablero…** Si no hay ninguna compra todav�
 1. Pulsa en cualquier parte de una tarjeta para abrir la ficha de esa compra.
 2. Pulsa **Nuevo pedido** para crear uno.
 
-Eso es todo lo que se hace desde aquí. **Ninguna acción cambia el estado de una compra desde el tablero**: todo ocurre dentro de la ficha, donde está el contexto completo de lo que se va a decidir.
+Debajo de los paneles hay además un bloque, **¿Qué quieres hacer?**, con dos grupos de atajos:
+
+| Grupo | Atajos |
+| --- | --- |
+| **La cadena de una compra** | Numerados, en el orden en que ocurren: **Pedir algo**, **Cotizar y proponer**, **Pagar lo aprobado**, **Recibir el material** |
+| **Alrededor de la compra** | **Cargar proveedores por planilla**, **Proveedores**, **Facturas del proveedor**, **Libro de compras** |
+
+Los del segundo grupo son la puerta a pantallas que ya no están en el menú (3.1), así que este bloque es la forma corta de llegar a ellas.
+
+**Ninguna acción cambia el estado de una compra desde el tablero**: todo ocurre dentro de la ficha, donde está el contexto completo de lo que se va a decidir.
 
 El tablero se actualiza solo cuando otra persona mueve algo, y además se recarga cada cinco minutos por si acaso.
 
@@ -2455,7 +2466,7 @@ Cuelga de la orden, así que **no aparece hasta que la compra tiene orden**. Pri
 | **Por confirmar el gerente** | Botones **Aprobar la compra** y **Devolver a compras** (Gerencia general) | **Esperando la confirmación del gerente general.** |
 | **Aprobada · indicar método de pago** | Botón **Indicar método de pago** (Compras) | **Compras está cargando el método de pago.** |
 | **En tesorería** | Botones **Registrar el pago** y **Devolver a compras** en cada instrucción (Tesorería) | **Tesorería tiene la orden para pagar.** |
-| **Pagada · pendiente por recepcionar** y **Recibida parcialmente** | Botón **Recibir material** (Almacén) | **La recepción la registra almacén.** |
+| **Pagada · falta que llegue** y **Recibida parcialmente** | Botón **Recibir material** (Almacén) | **La recepción la registra almacén.** |
 | **El proveedor desistió**, con dinero pendiente | Botón **Resolver el dinero** (Gerencia general o Tesorería) | La tarjeta se queda a la vista hasta que se resuelva |
 
 Antes de aprobar, el panel dice el monto exacto por el que se emitirá la orden y advierte que **a partir de ahí, el precio queda fijo**. Léelo: es la última pantalla en la que el precio todavía se puede discutir.
@@ -2553,7 +2564,11 @@ Una cotización se puede **Eliminar** mientras no esté propuesta al gerente y n
 
 ### 9.8 Recibir material
 
-Se llega desde la ficha de una compra en **Pagada · pendiente por recepcionar** o en **Recibida parcialmente**, con el botón **Recibir material**. Solo lo ve el rol Almacén; los demás leen **La recepción la registra almacén.**
+Se llega desde la ficha de una compra en **Pagada · falta que llegue** o en **Recibida parcialmente**, con el botón **Recibir material**. Solo lo ve el rol Almacén; los demás leen **La recepción la registra almacén.**
+
+**Sin el papel del proveedor no se puede recibir.** Si en la tarjeta **Papeles recibidos** no hay ni factura ni nota de entrega, la ficha lo dice en ámbar: *"Falta el papel del proveedor. Sube la **factura** o la **nota de entrega** en «Papeles de la compra», aquí abajo, y se podrá recibir."*
+
+**El comprobante de pago no sirve para esto**, y la propia pantalla lo aclara: *"El comprobante de pago puede llegar después."* Dice que se pagó, no que llegó — y lo que hay que respaldar al recibir es que el material entró.
 
 Es lo que cierra el círculo: hasta aquí hay dinero pagado y nada en el almacén. La descripción del diálogo avisa de lo que más importa: **Lo que se registre aquí entra al inventario y no se puede editar después: una corrección se hace con un ajuste.**
 
@@ -2653,7 +2668,7 @@ Sobre una instrucción que siga **Por pagar** hay un tercer botón, **Cambiar el
 
 Una orden admite **varias instrucciones de pago**: mitad ahora y mitad al entregar. Por eso el **Monto** viene con lo que falta y no con el total.
 
-**La orden solo pasa a Pagada · pendiente por recepcionar cuando ya no queda nada por pagar.** Con un abono parcial se queda esperando el resto, porque mientras se le deba al proveedor la compra no está pagada.
+**La orden solo pasa a Pagada · falta que llegue cuando ya no queda nada por pagar.** Con un abono parcial se queda esperando el resto, porque mientras se le deba al proveedor la compra no está pagada.
 
 #### Registrar el pago (tesorería)
 
@@ -2874,7 +2889,7 @@ El circuito reparte cada paso en un rol distinto:
 | Pedir | Solicitante, Compras, Operaciones, Almacén o RRHH |
 | Confirmar el pedido | Compras |
 | Cargar, eliminar y proponer cotizaciones | Compras |
-| Aprobar la compra | Gerencia general, y nadie más |
+| Aprobar la compra | Gerencia general por su puesto, **y quien tenga ese permiso extendido** (13.1) |
 | Devolver a compras | Gerencia general |
 | Indicar el método de pago | Compras |
 | Registrar el pago o devolver la instrucción | Tesorería |
@@ -4228,7 +4243,7 @@ Si falta algún parámetro, el sistema no calcula a medias: se detiene y te dice
 
 #### Aprobar la nómina
 
-Lo hace **gerencia general**, y nadie más. Solo se aprueba una nómina calculada, y solo si tiene recibos: aprobar un período vacío sería aprobar nada.
+Lo hace **gerencia general** —y la administración del sistema, que pasa por encima de todo—. **Esta sí es de las pocas que no tienen segunda puerta**: aprobar una nómina no se delega por nivel de permiso ni se extiende a nadie. Solo se aprueba una nómina calculada, y solo si tiene recibos: aprobar un período vacío sería aprobar nada.
 
 Al aprobar, le llega un aviso a tesorería y a recursos humanos: **Nómina {número} aprobada**, con cuántos recibos son, por cuánto, y que está lista para pagar.
 
@@ -4861,11 +4876,11 @@ Antes de entrar en las pantallas conviene saber por dónde nace y por dónde mue
 #### Lo que se debe a un proveedor
 
 1. **Alguien pide material.** Nace un pedido en Compras.
-2. **Compras cotiza y prepara la orden**, y la aprueba el **Gerente general**. Es el único rol que aprueba una compra.
+2. **Compras cotiza y prepara la orden**, y la aprueba el **Gerente general**. Es quien la aprueba por su puesto — y, desde que existen los permisos extendidos, también quien tenga esa facultad prestada por un plazo (13.1). Lo aprobado de esa manera queda marcado como tal en la orden impresa.
 3. **Compras indica cómo se paga**: el método — **Transferencia bancaria**, **Pago móvil**, **Binance** o **Efectivo** —, la moneda, el monto y los datos de a dónde va el dinero. En ese momento nace la instrucción de pago, y con ella el IGTF ya calculado si la moneda no es el bolívar.
 4. **La instrucción aparece sola en Compras**, en dos vistas de la misma pantalla: **Pagos por hacer**, en orden de llegada, y su pestaña **Por proveedor**, agrupada. Nadie la carga a mano.
 5. **Quien tenga el rol Compras pulsa Pagar** y dice **por dónde salió** el dinero, con qué referencia y en qué fecha. No hay «tesorero»: ese rol no existe.
-6. **Al pulsar Confirmar el pago**, el sistema hace todo de una vez: escribe la línea **Pago a proveedor** en el libro y baja el saldo de la cuenta; si hay IGTF, escribe una segunda línea **IGTF** aparte; marca la instrucción como pagada; lo anota en la bitácora de la compra; y si con eso la orden queda saldada, la compra pasa a estar pendiente por recepcionar.
+6. **Al pulsar Confirmar el pago**, el sistema hace todo de una vez: escribe la línea **Pago a proveedor** en el libro y baja el saldo de la cuenta; si hay IGTF, escribe una segunda línea **IGTF** aparte; marca la instrucción como pagada; lo anota en la bitácora de la compra; y si con eso la orden queda saldada, la compra pasa a esperar que llegue el material.
 7. **La instrucción desaparece de la cola** y la línea se queda para siempre en el libro.
 
 Una deuda con un proveedor, por lo tanto, **se cierra pagándola desde tesorería, no borrándola**. Y si el pago estuvo mal, no se arregla reversando la línea del libro: hay que ir a la compra y devolver la instrucción de pago, porque reversar solo el dinero dejaría la compra marcada como pagada y el dinero de vuelta en la cuenta.
@@ -4968,7 +4983,7 @@ De aquí no sale ningún papel imprimible. Lo que produce esta pantalla son lín
 
 **Administración › Compras › Pagos por hacer**
 
-Es la cola de trabajo del tesorero: **Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda pendiente por recepcionar.**
+Es la cola de trabajo de quien paga: **Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda esperando que llegue el material.**
 
 #### Qué se ve
 
@@ -5404,6 +5419,28 @@ Nómina, Tesorería y Ventas quedan fuera del rol de Consulta a propósito: «so
 Al editar, el **Código** queda bloqueado y la ventana lo explica: **El código no cambia: hay funciones de la base que lo nombran.**
 
 **Los roles que trae el sistema no se pueden borrar.** Solo se borran los que creó la empresa, y solo si no los tiene nadie. Si un rol del sistema sobra en alguien, el camino no es borrarlo sino quitárselo a quien no deba tenerlo: borrarlo dejaría sin dueño todas las reglas que lo nombran.
+
+#### Cinco atajos entre el nivel y el rol
+
+Hay una regla del sistema que no se ve en ninguna pantalla y explica muchas sorpresas: **para cinco casos, tener el nivel equivale a tener el rol.**
+
+Cuando una acción pide un rol y no lo tienes, el sistema mira además si tienes el nivel equivalente. Si lo tienes, pasas.
+
+| Tener este rol… | …es lo mismo que tener |
+| --- | --- |
+| **Recursos humanos** | Nómina en **escritura** |
+| **Almacén** | Inventario en **escritura** |
+| **Compras** | Compras en **control total** |
+| **Solicitante** | Compras en **escritura** |
+| **Operaciones** | Explotación en **escritura** |
+
+**Compras va a control total y no a escritura, y no es un descuido.** «Compras en escritura» lo tienen también Solicitante, Operaciones y Recursos humanos, que son quienes **piden** material. Si el comprador y el que pide compartieran nivel, cualquiera podría confirmar un pedido o dar de alta un proveedor. **Pedir es escritura; comprar es total.**
+
+**Esto solo vale para las acciones que piden un rol.** Las que piden un permiso de módulo no tienen atajo: ahí el nivel es el nivel y nada más.
+
+**Y el administrador del sistema pasa siempre**, tenga o no el rol y tenga o no el nivel.
+
+Es la razón por la que en este manual casi nunca se dice «este rol, y nadie más»: casi siempre hay una segunda puerta.
 
 #### La pestaña «Permisos extendidos»
 
@@ -5860,8 +5897,8 @@ Las tres primeras cambian el cálculo —hay que acordar, por ejemplo, si el fle
 Se dice para que nadie lo lea como verificado:
 
 - **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles de esta versión se levantaron de la base tal como está hoy, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla.
-- **Maquinaria y Combustible están en el menú y no tienen capítulo.** Es el hueco más grande que queda. Son dos módulos que se usan todos los días y de los que este manual no cuenta nada; lo poco que hay está repartido en el capítulo 7.
-- **Los capítulos de los módulos escondidos** —Explotación, Despachos y Ventas— no se revisaron pantalla por pantalla en esta versión. Lo que dicen era cierto en la versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte.
+- **Los capítulos de los módulos escondidos** —Explotación y Ventas— no se revisaron pantalla por pantalla. Lo que dicen era cierto en una versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte. **Despachos sí se revisó** en esta versión, aunque siga en obra.
+- **Los capítulos 19 y 20, Maquinaria y Combustible, son nuevos.** Se escribieron leyendo las pantallas y la base, no usándolas. Si algo no coincide con lo que hace el módulo en el patio, es de esperar en una primera versión: dilo y se corrige.
 - **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla, quién puede pagar, que el rol de Tesorería ya no existe— pero las pantallas que quedaron escondidas no se recorrieron una por una.
 - **La factura de venta no está completa ante el SENIAT.** Lo que le falta está en 15.2, y no es un olvido de este manual sino del sistema.
 
@@ -6101,3 +6138,174 @@ Asignaciones es de los pocos sitios del sistema que trabajan sin que nadie abra 
 | «Esa asignación está devuelta: solo se cierra lo que tuvo una incidencia.» | El bien ya volvió | No hay nada que cerrar |
 | **En ese almacén no hay nada que entregar** | El almacén elegido está sin existencias entregables | Elige otro almacén, o carga la entrada primero |
 | No ves el botón de entregar | Tu rol no es Almacén, Recursos humanos ni Administrador | Pídeselo a administración |
+
+---
+
+## 19. Maquinaria
+
+**Va al final por el mismo motivo que el 18**: meterlo en su sitio del menú correría diez números debajo de quien tiene el manual impreso.
+
+Es la flota: cada excavadora, cada cargador, cada camión y cada planta, con lo que lleva trabajado y **cuánto le falta para su próximo mantenimiento**. La pantalla lo resume así: *"Cada equipo, lo que lleva trabajado y cuánto le falta para su mantenimiento."*
+
+**La idea que hay que entender antes de nada es el horómetro.** Una máquina no se mantiene por calendario sino por horas de trabajo, y el sistema no las adivina: **alguien las anota**. De ahí sale todo lo demás — cuándo toca el taller, cuántos litros por hora consume, si vale lo que cuesta.
+
+### 19.1 Quién entra y quién puede registrar
+
+Aquí **no hay dos puertas: hay una sola**, y es el permiso sobre Maquinaria. A diferencia de Inventario, los botones no cuelgan de ningún rol: si tienes escritura, escribes.
+
+| Rol | Sobre Maquinaria |
+| --- | --- |
+| Administrador del sistema | **Control total** |
+| Almacén | **Escritura** |
+| Operaciones | **Escritura** |
+| Compras, Gerencia general, Consulta | Lectura |
+| Ventas, Recursos humanos, Solicitante, Respaldo | Ninguno |
+
+### 19.2 Equipos
+
+**Operación › Maquinaria › Equipos**
+
+Tres filtros: **Buscar**, **Estado** y **Tipo**. Arriba, dos cuentas que son las que importan: cuántas máquinas **bloquean** y cuántas tienen algo **pendiente**.
+
+#### El semáforo de mantenimiento
+
+Es lo primero que se mira, y ordena la lista: lo peor arriba.
+
+| Semáforo | Qué significa |
+| --- | --- |
+| **(sin marca)** | Dentro de su intervalo de mantenimiento |
+| **Programar**, en ámbar | Pasó el primer umbral. Conviene programarlo |
+| **Alarma**, en naranja | Quedan pocas horas para el tope |
+| **Pasó el tope**, en rojo y titilando | **No debería estar trabajando** |
+
+**El rojo titila a propósito.** Una máquina que se pasó del tope sigue arrancando —el sistema no apaga motores— pero cada hora que trabaja así se paga después, y más cara.
+
+#### El estado
+
+Es otra cosa distinta del semáforo: el semáforo dice **si le toca taller**, el estado dice **dónde está**.
+
+| Estado | Qué significa |
+| --- | --- |
+| **Activa** | Trabajando o asignada a un frente |
+| **En espera** | Sana y disponible, sin asignar |
+| **En el taller** | Dentro, con una orden abierta |
+| **Fuera de servicio** | Averiada o parada sin fecha. **No se puede mandar a trabajar** |
+| **Desincorporada** | Ya no es de la flota. Se conserva por su historial |
+
+**Una máquina no se borra: se desincorpora.** Su historial —lo que consumió, lo que costó tenerla— es justamente lo que sirve para decidir sobre la siguiente.
+
+Al cambiar el estado hay que decir **Por qué**, y esa razón *"queda en la ficha de la máquina y se avisa a operaciones"*.
+
+Los tipos son ocho: **Excavadora**, **Cargador**, **Camión**, **Planta**, **Perforadora**, **Vehículo**, **Generador** y **Otro**.
+
+> **Ojo con esta confusión, que ya ha costado tiempo.** El tipo de una **máquina** —excavadora, cargador, planta— **no es** el tipo de un **vehículo** de Despachos —volteo, chuto, gandola—. Son dos catálogos distintos para dos cosas distintas: uno describe qué hace el equipo, el otro qué carga el camión. Un camión de la flota puede estar en los dos, atado por su ficha (8.6).
+
+### 19.3 Anotar el horómetro
+
+**Es la tarea diaria del módulo, y de ella depende todo lo demás.**
+
+La ventana lo dice sin rodeos: *"Copia los dos números que marca el reloj. La resta la hace el sistema."* Se pide la **Fecha**, **Al arrancar** y **Al terminar**.
+
+**No se anota la diferencia, se anotan las dos lecturas.** Es deliberado: quien copia dos números del tablero se equivoca menos que quien hace una resta de cabeza en el patio, y si algo no cuadra, las dos lecturas dejan ver dónde.
+
+### 19.4 La ficha de una máquina
+
+Se llega pulsando su fila. Tiene cinco bloques:
+
+| Bloque | Qué guarda |
+| --- | --- |
+| **Foto** | *"Para reconocerla de un vistazo."* |
+| **Cuál es** | *"El código es con el que se la nombra en el patio y en todos los papeles."* |
+| **Qué combustible quema** | *"Con esto, el vale se niega a echarle lo que no es y a pasarse de lo que le cabe."* |
+| **Cuándo avisar** | Los tres umbrales, en horas desde el último mantenimiento |
+| **Su historia** | Combustible, horas trabajadas, pasos por el taller, repuestos y cambios de estado |
+
+**Los tres umbrales van en orden: primero el aviso, después la alarma, y el tope al final.** Son los que encienden el semáforo de 19.2, y **si no se llenan, la máquina nunca avisa de nada**: se queda en blanco para siempre, que parece estar bien y no lo está.
+
+**El bloque del combustible no es informativo, es un candado.** Con él puesto, el vale de combustible (20.3) se niega a echarle gasoil a una máquina de gasolina y a pasarse de lo que le cabe el tanque. Sin él, acepta cualquier cosa.
+
+### 19.5 Mandarla al taller
+
+Desde su ficha. La ventana abre recordando en qué situación está: *"Lleva 412 horas desde el último mantenimiento, sobre un tope de 500."*
+
+| Campo | Detalle |
+| --- | --- |
+| **Por qué entra** | *"Lo que se sabe ahora. Qué se le hizo se anota al sacarla."* |
+| **Entra el** | La fecha |
+| **Taller** | *"Los repuestos salen de aquí."* Es un almacén de tipo Taller (7.11) |
+| **Días estimados** | Contra los que se mide el retraso |
+| **Urgencia** | **Normal** *(entra en la cola cuando toque)*, **Alta** *(antes que lo normal, sin parar lo demás)* o **Urgente** *(la máquina no trabaja hasta que salga)* |
+| **Qué hace falta** | El oficio. Si el taller declaró los suyos y este no está, no lo acepta (7.5) |
+
+**El taller que se elige es de dónde salen los repuestos**, así que la orden descuenta del inventario de ese taller y no de otro. Elegir el taller equivocado no rompe nada, pero deja el repuesto descontado del almacén que no era.
+
+### 19.6 Historial de taller
+
+**Operación › Maquinaria › Historial de taller**
+
+*"Qué ha entrado, cuánto tardó, qué se le hizo y qué costó. Las órdenes abiertas son máquinas paradas ahora mismo."*
+
+Esa última frase es la razón de que esta pantalla exista aparte: **una orden abierta no es un registro, es una máquina que no está trabajando.** Filtra por **Buscar** y por **Estado**.
+
+---
+
+## 20. Combustible
+
+Es el gasoil y la gasolina: **cuánto queda, cuánto consume cada máquina y a qué se le echó**. La pantalla lo dice entero: *"Cuánto queda, cuánto consume cada máquina y a qué se le echó. Entra por una compra recibida, o a mano desde Cargar."*
+
+**El combustible es un artículo del inventario como cualquier otro**, guardado en un almacén de tipo Combustible (7.11). Lo que este módulo añade es lo que el inventario no sabe: a qué máquina se le echó y con qué horómetro, que es lo que convierte litros en **litros por hora**.
+
+### 20.1 Quién entra y quién puede despachar
+
+El reparto es el mismo que el de Maquinaria, y por el mismo motivo: quien opera las máquinas es quien les echa combustible.
+
+| Rol | Sobre Combustible |
+| --- | --- |
+| Administrador del sistema | **Control total** |
+| Almacén | **Escritura** |
+| Operaciones | **Escritura** |
+| Compras, Gerencia general, Consulta | Lectura |
+| Los demás | Ninguno |
+
+**Editar la lista de motivos pide control total**, que solo tiene administración. Despachar, no.
+
+### 20.2 Qué se ve
+
+Arriba, **los tanques con su saldo**. Si no hay ninguno con existencia, la pantalla lo dice: **El tanque está vacío**.
+
+Debajo, **el consumo por máquina** —litros por hora— y la lista de despachos. Cuando una máquina tiene despachos pero le falta el horómetro, sale marcada: **Falta anotar el horómetro en el parte diario**. Sin ese dato los litros no se pueden convertir en litros por hora, así que esa máquina no entra en la comparación.
+
+Si todavía no se ha despachado nada, cada bloque lo dice a su manera: **Todavía no se ha despachado a ninguna máquina** y **Sin despachos todavía**.
+
+### 20.3 Despachar combustible
+
+| Campo | Detalle |
+| --- | --- |
+| **De qué tanque** | Solo salen los que tienen saldo |
+| **Para qué** | Del catálogo de motivos. Ver abajo |
+| **¿Para qué exactamente?** | Solo en los motivos que lo exigen. *"En pocas palabras. Si esto se repite mucho, conviene que sea una opción propia."* |
+| **A qué máquina** | De la flota. Si no está, **No está en la ficha** |
+| **A qué se le echó** | Cuando no es una máquina de la flota |
+| **Horómetro al echarle** | *"Es lo que convierte los litros en litros por hora."* |
+| **Fecha** | |
+
+Los motivos son seis y salen de un catálogo, no de una lista escrita en la pantalla:
+
+| Motivo | Cuándo |
+| --- | --- |
+| **Producción** | Sacar material: excavación, trituración, planta |
+| **Operación** | Acarreo y movimiento dentro de la cantera |
+| **Taller** | Mantenimiento, y la prueba de después |
+| **Planta** | Planta fija y generadores |
+| **Tercero** | Equipo que no es de la empresa |
+| **Otro** | Cualquier otro caso: **hay que decir cuál** |
+
+**El horómetro es el campo que más se salta y el que más falta hace.** Sin él el despacho se registra igual —los litros salen del tanque— pero esa máquina deja de tener consumo por hora, que es lo único que permite comparar dos equipos o notar que uno empezó a beber más de la cuenta.
+
+**La lista de motivos la toca quien despacha**, no sistemas: es quien sabe para qué se echa combustible en esta cantera. Pero cambiarla pide control total.
+
+### 20.4 El vale
+
+Cada despacho saca su **Vale de combustible** en papel, con el botón **Imprimir el vale**. Lleva la misma cabecera que el resto de los papeles del sistema (13.2).
+
+**Es el papel que firma quien recibe el combustible**, y por eso se imprime al despachar y no después.
