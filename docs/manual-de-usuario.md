@@ -61,8 +61,10 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 16 | Preguntas frecuentes | — |
 | 17 | A quién acudir | — |
 | 18 | Asignaciones | Sí |
+| 19 | Maquinaria | Sí |
+| 20 | Combustible | Sí |
 
-**Maquinaria**, **Combustible** y **Asignaciones** sí se alcanzan hoy desde el menú, pero **no tienen capítulo propio todavía**: lo poco que hay escrito de ellos está repartido entre el capítulo 7 y el 11. Es el hueco más grande que tiene este manual y está anotado en 15.4. El **Organigrama** tiene apartado propio, el 11.12, y su pantalla sigue en obra.
+**Asignaciones, Maquinaria y Combustible tienen sus capítulos al final** —el 18, el 19 y el 20— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.12, y su pantalla sigue en obra.
 
 ---
 
@@ -5860,7 +5862,6 @@ Las tres primeras cambian el cálculo —hay que acordar, por ejemplo, si el fle
 Se dice para que nadie lo lea como verificado:
 
 - **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles de esta versión se levantaron de la base tal como está hoy, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla.
-- **Maquinaria y Combustible están en el menú y no tienen capítulo.** Es el hueco más grande que queda. Son dos módulos que se usan todos los días y de los que este manual no cuenta nada; lo poco que hay está repartido en el capítulo 7.
 - **Los capítulos de los módulos escondidos** —Explotación, Despachos y Ventas— no se revisaron pantalla por pantalla en esta versión. Lo que dicen era cierto en la versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte.
 - **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla, quién puede pagar, que el rol de Tesorería ya no existe— pero las pantallas que quedaron escondidas no se recorrieron una por una.
 - **La factura de venta no está completa ante el SENIAT.** Lo que le falta está en 15.2, y no es un olvido de este manual sino del sistema.
@@ -6101,3 +6102,174 @@ Asignaciones es de los pocos sitios del sistema que trabajan sin que nadie abra 
 | «Esa asignación está devuelta: solo se cierra lo que tuvo una incidencia.» | El bien ya volvió | No hay nada que cerrar |
 | **En ese almacén no hay nada que entregar** | El almacén elegido está sin existencias entregables | Elige otro almacén, o carga la entrada primero |
 | No ves el botón de entregar | Tu rol no es Almacén, Recursos humanos ni Administrador | Pídeselo a administración |
+
+---
+
+## 19. Maquinaria
+
+**Va al final por el mismo motivo que el 18**: meterlo en su sitio del menú correría diez números debajo de quien tiene el manual impreso.
+
+Es la flota: cada excavadora, cada cargador, cada camión y cada planta, con lo que lleva trabajado y **cuánto le falta para su próximo mantenimiento**. La pantalla lo resume así: *"Cada equipo, lo que lleva trabajado y cuánto le falta para su mantenimiento."*
+
+**La idea que hay que entender antes de nada es el horómetro.** Una máquina no se mantiene por calendario sino por horas de trabajo, y el sistema no las adivina: **alguien las anota**. De ahí sale todo lo demás — cuándo toca el taller, cuántos litros por hora consume, si vale lo que cuesta.
+
+### 19.1 Quién entra y quién puede registrar
+
+Aquí **no hay dos puertas: hay una sola**, y es el permiso sobre Maquinaria. A diferencia de Inventario, los botones no cuelgan de ningún rol: si tienes escritura, escribes.
+
+| Rol | Sobre Maquinaria |
+| --- | --- |
+| Administrador del sistema | **Control total** |
+| Almacén | **Escritura** |
+| Operaciones | **Escritura** |
+| Compras, Gerencia general, Consulta | Lectura |
+| Ventas, Recursos humanos, Solicitante, Respaldo | Ninguno |
+
+### 19.2 Equipos
+
+**Operación › Maquinaria › Equipos**
+
+Tres filtros: **Buscar**, **Estado** y **Tipo**. Arriba, dos cuentas que son las que importan: cuántas máquinas **bloquean** y cuántas tienen algo **pendiente**.
+
+#### El semáforo de mantenimiento
+
+Es lo primero que se mira, y ordena la lista: lo peor arriba.
+
+| Semáforo | Qué significa |
+| --- | --- |
+| **(sin marca)** | Dentro de su intervalo de mantenimiento |
+| **Programar**, en ámbar | Pasó el primer umbral. Conviene programarlo |
+| **Alarma**, en naranja | Quedan pocas horas para el tope |
+| **Pasó el tope**, en rojo y titilando | **No debería estar trabajando** |
+
+**El rojo titila a propósito.** Una máquina que se pasó del tope sigue arrancando —el sistema no apaga motores— pero cada hora que trabaja así se paga después, y más cara.
+
+#### El estado
+
+Es otra cosa distinta del semáforo: el semáforo dice **si le toca taller**, el estado dice **dónde está**.
+
+| Estado | Qué significa |
+| --- | --- |
+| **Activa** | Trabajando o asignada a un frente |
+| **En espera** | Sana y disponible, sin asignar |
+| **En el taller** | Dentro, con una orden abierta |
+| **Fuera de servicio** | Averiada o parada sin fecha. **No se puede mandar a trabajar** |
+| **Desincorporada** | Ya no es de la flota. Se conserva por su historial |
+
+**Una máquina no se borra: se desincorpora.** Su historial —lo que consumió, lo que costó tenerla— es justamente lo que sirve para decidir sobre la siguiente.
+
+Al cambiar el estado hay que decir **Por qué**, y esa razón *"queda en la ficha de la máquina y se avisa a operaciones"*.
+
+Los tipos son ocho: **Excavadora**, **Cargador**, **Camión**, **Planta**, **Perforadora**, **Vehículo**, **Generador** y **Otro**.
+
+> **Ojo con esta confusión, que ya ha costado tiempo.** El tipo de una **máquina** —excavadora, cargador, planta— **no es** el tipo de un **vehículo** de Despachos —volteo, chuto, gandola—. Son dos catálogos distintos para dos cosas distintas: uno describe qué hace el equipo, el otro qué carga el camión. Un camión de la flota puede estar en los dos, atado por su ficha (8.6).
+
+### 19.3 Anotar el horómetro
+
+**Es la tarea diaria del módulo, y de ella depende todo lo demás.**
+
+La ventana lo dice sin rodeos: *"Copia los dos números que marca el reloj. La resta la hace el sistema."* Se pide la **Fecha**, **Al arrancar** y **Al terminar**.
+
+**No se anota la diferencia, se anotan las dos lecturas.** Es deliberado: quien copia dos números del tablero se equivoca menos que quien hace una resta de cabeza en el patio, y si algo no cuadra, las dos lecturas dejan ver dónde.
+
+### 19.4 La ficha de una máquina
+
+Se llega pulsando su fila. Tiene cinco bloques:
+
+| Bloque | Qué guarda |
+| --- | --- |
+| **Foto** | *"Para reconocerla de un vistazo."* |
+| **Cuál es** | *"El código es con el que se la nombra en el patio y en todos los papeles."* |
+| **Qué combustible quema** | *"Con esto, el vale se niega a echarle lo que no es y a pasarse de lo que le cabe."* |
+| **Cuándo avisar** | Los tres umbrales, en horas desde el último mantenimiento |
+| **Su historia** | Combustible, horas trabajadas, pasos por el taller, repuestos y cambios de estado |
+
+**Los tres umbrales van en orden: primero el aviso, después la alarma, y el tope al final.** Son los que encienden el semáforo de 19.2, y **si no se llenan, la máquina nunca avisa de nada**: se queda en blanco para siempre, que parece estar bien y no lo está.
+
+**El bloque del combustible no es informativo, es un candado.** Con él puesto, el vale de combustible (20.3) se niega a echarle gasoil a una máquina de gasolina y a pasarse de lo que le cabe el tanque. Sin él, acepta cualquier cosa.
+
+### 19.5 Mandarla al taller
+
+Desde su ficha. La ventana abre recordando en qué situación está: *"Lleva 412 horas desde el último mantenimiento, sobre un tope de 500."*
+
+| Campo | Detalle |
+| --- | --- |
+| **Por qué entra** | *"Lo que se sabe ahora. Qué se le hizo se anota al sacarla."* |
+| **Entra el** | La fecha |
+| **Taller** | *"Los repuestos salen de aquí."* Es un almacén de tipo Taller (7.11) |
+| **Días estimados** | Contra los que se mide el retraso |
+| **Urgencia** | **Normal** *(entra en la cola cuando toque)*, **Alta** *(antes que lo normal, sin parar lo demás)* o **Urgente** *(la máquina no trabaja hasta que salga)* |
+| **Qué hace falta** | El oficio. Si el taller declaró los suyos y este no está, no lo acepta (7.5) |
+
+**El taller que se elige es de dónde salen los repuestos**, así que la orden descuenta del inventario de ese taller y no de otro. Elegir el taller equivocado no rompe nada, pero deja el repuesto descontado del almacén que no era.
+
+### 19.6 Historial de taller
+
+**Operación › Maquinaria › Historial de taller**
+
+*"Qué ha entrado, cuánto tardó, qué se le hizo y qué costó. Las órdenes abiertas son máquinas paradas ahora mismo."*
+
+Esa última frase es la razón de que esta pantalla exista aparte: **una orden abierta no es un registro, es una máquina que no está trabajando.** Filtra por **Buscar** y por **Estado**.
+
+---
+
+## 20. Combustible
+
+Es el gasoil y la gasolina: **cuánto queda, cuánto consume cada máquina y a qué se le echó**. La pantalla lo dice entero: *"Cuánto queda, cuánto consume cada máquina y a qué se le echó. Entra por una compra recibida, o a mano desde Cargar."*
+
+**El combustible es un artículo del inventario como cualquier otro**, guardado en un almacén de tipo Combustible (7.11). Lo que este módulo añade es lo que el inventario no sabe: a qué máquina se le echó y con qué horómetro, que es lo que convierte litros en **litros por hora**.
+
+### 20.1 Quién entra y quién puede despachar
+
+El reparto es el mismo que el de Maquinaria, y por el mismo motivo: quien opera las máquinas es quien les echa combustible.
+
+| Rol | Sobre Combustible |
+| --- | --- |
+| Administrador del sistema | **Control total** |
+| Almacén | **Escritura** |
+| Operaciones | **Escritura** |
+| Compras, Gerencia general, Consulta | Lectura |
+| Los demás | Ninguno |
+
+**Editar la lista de motivos pide control total**, que solo tiene administración. Despachar, no.
+
+### 20.2 Qué se ve
+
+Arriba, **los tanques con su saldo**. Si no hay ninguno con existencia, la pantalla lo dice: **El tanque está vacío**.
+
+Debajo, **el consumo por máquina** —litros por hora— y la lista de despachos. Cuando una máquina tiene despachos pero le falta el horómetro, sale marcada: **Falta anotar el horómetro en el parte diario**. Sin ese dato los litros no se pueden convertir en litros por hora, así que esa máquina no entra en la comparación.
+
+Si todavía no se ha despachado nada, cada bloque lo dice a su manera: **Todavía no se ha despachado a ninguna máquina** y **Sin despachos todavía**.
+
+### 20.3 Despachar combustible
+
+| Campo | Detalle |
+| --- | --- |
+| **De qué tanque** | Solo salen los que tienen saldo |
+| **Para qué** | Del catálogo de motivos. Ver abajo |
+| **¿Para qué exactamente?** | Solo en los motivos que lo exigen. *"En pocas palabras. Si esto se repite mucho, conviene que sea una opción propia."* |
+| **A qué máquina** | De la flota. Si no está, **No está en la ficha** |
+| **A qué se le echó** | Cuando no es una máquina de la flota |
+| **Horómetro al echarle** | *"Es lo que convierte los litros en litros por hora."* |
+| **Fecha** | |
+
+Los motivos son seis y salen de un catálogo, no de una lista escrita en la pantalla:
+
+| Motivo | Cuándo |
+| --- | --- |
+| **Producción** | Sacar material: excavación, trituración, planta |
+| **Operación** | Acarreo y movimiento dentro de la cantera |
+| **Taller** | Mantenimiento, y la prueba de después |
+| **Planta** | Planta fija y generadores |
+| **Tercero** | Equipo que no es de la empresa |
+| **Otro** | Cualquier otro caso: **hay que decir cuál** |
+
+**El horómetro es el campo que más se salta y el que más falta hace.** Sin él el despacho se registra igual —los litros salen del tanque— pero esa máquina deja de tener consumo por hora, que es lo único que permite comparar dos equipos o notar que uno empezó a beber más de la cuenta.
+
+**La lista de motivos la toca quien despacha**, no sistemas: es quien sabe para qué se echa combustible en esta cantera. Pero cambiarla pide control total.
+
+### 20.4 El vale
+
+Cada despacho saca su **Vale de combustible** en papel, con el botón **Imprimir el vale**. Lleva la misma cabecera que el resto de los papeles del sistema (13.2).
+
+**Es el papel que firma quien recibe el combustible**, y por eso se imprime al despachar y no después.
