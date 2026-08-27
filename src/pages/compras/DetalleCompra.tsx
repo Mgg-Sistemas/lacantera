@@ -6,9 +6,11 @@ import {
   BadgeCheck,
   Check,
   CircleDollarSign,
+  Download,
   FileText,
   History,
   PackageCheck,
+  Pencil,
   Printer,
   Receipt,
   Send,
@@ -51,6 +53,7 @@ import {
   useEnviarPedido,
   useMarcarDesistimiento,
   useProponerCotizacion,
+  useRetirarCotizacion,
   useResolverDesistimiento,
   useDeclararComprobante,
 } from '@/lib/api/compras'
@@ -59,9 +62,13 @@ import {
 // mismo archivo sin que una tape a la otra — y taparla es un error silencioso.
 import { useMetodosPago, nombreDe as nombreDelMetodo } from '@/lib/api/metodosPago' 
 import type { Cotizacion, InstruccionPago } from '@/lib/api/compras'
-import { useEmpresa } from '@/lib/api/empresa'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useFirmas } from '@/lib/api/firmas'
-import { armarOrdenDeCompra, armarComprobanteDePago } from '@/lib/ficha/comprasPdf'
+import {
+  armarOrdenDeCompra,
+  armarComprobanteDePago,
+  armarCotizacionDeCompra,
+} from '@/lib/ficha/comprasPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { bolivares, dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -273,29 +280,55 @@ function compararCotizaciones(cotizaciones: Cotizacion[]): Map<number, Ventaja[]
 function TarjetaCotizacion({
   cotizacion,
   ventajas,
-  elegida,
+  aprobada,
   puedeOperar,
   ocupado,
   onProponer,
+  onRetirar,
   onEditar,
   onEliminar,
+  onPdf,
 }: {
   cotizacion: Cotizacion
   /** En qué gana esta cotización frente a las demás. Vacío si no gana en nada. */
   ventajas: Ventaja[]
-  elegida: boolean
+  /** El gerente ya escogió esta. Distinto de propuesta: propuesta es antes. */
+  aprobada: boolean
   puedeOperar: boolean
   /** Hay una petición en vuelo. El resto de la pantalla ya lo mira; esto faltaba. */
   ocupado: boolean
   onProponer: () => void
+  onRetirar: () => void
   onEditar: () => void
   onEliminar: () => void
+  onPdf: () => void
 }) {
+  /*
+    Lo que el proveedor ofrece de verdad, resumido en una línea.
+
+    Con dos cotizaciones del mismo proveedor —que desde el 27 de agosto
+    conviven— el nombre de arriba ya no las distingue: lo que las distingue es
+    justo esto, que uno ofrece Motul en bidón y el otro Chronus en barril. Sin
+    esta línea las dos tarjetas se leen iguales.
+
+    Se juntan las distintas y no se repite por renglón: la tarjeta compara
+    ofertas, no las detalla. El detalle está en «Editar» y en el PDF.
+  */
+  const ofrece = [
+    ...new Set(
+      cotizacion.renglones
+        .map((r) => [r.marca, r.presentacion].filter(Boolean).join(' · '))
+        .filter(Boolean),
+    ),
+  ]
+
   return (
     <div
       className={cn(
         'rounded-card border p-3.5',
-        elegida ? 'border-royal-600 bg-royal-600/5' : 'border-hairline',
+        cotizacion.propuesta || aprobada
+          ? 'border-royal-600 bg-royal-600/5'
+          : 'border-hairline',
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -310,7 +343,8 @@ function TarjetaCotizacion({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {elegida ? <Chip tone="royal">Propuesta al gerente</Chip> : null}
+          {aprobada ? <Chip tone="success">Aprobada</Chip> : null}
+          {cotizacion.propuesta ? <Chip tone="royal">Propuesta al gerente</Chip> : null}
           {ventajas.map((v) => (
             <Chip key={v.clave} tone={v.tono} title={v.detalle}>
               {v.etiqueta}
@@ -346,53 +380,73 @@ function TarjetaCotizacion({
         </dl>
       </div>
 
+      {ofrece.length > 0 ? (
+        <p className="text-ink/60 mt-2 text-sm">
+          <span className="text-ink/40">Ofrece</span> {ofrece.join(' — ')}
+        </p>
+      ) : null}
+
       {cotizacion.observacion ? (
         <p className="text-ink/55 mt-2 text-sm">{cotizacion.observacion}</p>
       ) : null}
 
-      {puedeOperar ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {/* «Ya propuesta» es una frase, no una acción: dice cómo está la
-              cotización. Se dejaba pulsar y cada pulsación volvía a proponer
-              lo mismo, que llenaba el historial de líneas iguales y le mandaba
-              otro aviso al gerente. Para cambiar de cotización se pulsa la
-              otra, que sí está viva. */}
-          <Button
-            size="sm"
-            variant={elegida ? 'outline' : 'soft'}
-            disabled={elegida || ocupado}
-            onClick={onProponer}
-          >
-            {elegida ? 'Ya propuesta' : 'Proponer al gerente'}
-          </Button>
-          {/*
-            EDITAR Y ELIMINAR SE APAGAN CUANDO LA COTIZACIÓN ESTÁ PROPUESTA, y
-            es la misma razón para los dos: el gerente aprobaría unas
-            condiciones distintas de las que se le enseñaron. La base se niega
-            igual —no hace falta que la pantalla acierte para que el control
-            exista— pero enseñar un botón que va a rebotar manda a alguien a
-            intentarlo para que le digan que no.
+      <div className="mt-3 flex flex-wrap gap-2">
+        {/*
+          El PDF no depende del permiso de compras y va el primero: es la
+          cotización tal como se cargó, y sirve para mandarla por correo o
+          enseñarla en una reunión sin tener que entrar al sistema.
+        */}
+        <Button size="sm" variant="ghost" icon={<Download />} onClick={onPdf}>
+          PDF
+        </Button>
 
-            Para corregir una propuesta se retira la propuesta primero.
-          */}
-          {!elegida ? (
-            <>
-              <Button size="sm" variant="ghost" disabled={ocupado} onClick={onEditar}>
-                Editar
+        {puedeOperar ? (
+          <>
+            {/*
+              PROPONER SUMA, NO SUSTITUYE. Antes esto era un botón que se
+              apagaba —«Ya propuesta»— porque proponer otra desproponía esta.
+              Ahora caben varias en la mesa del gerente, así que la pareja es
+              proponer y retirar.
+            */}
+            {cotizacion.propuesta ? (
+              <Button size="sm" variant="outline" disabled={ocupado} onClick={onRetirar}>
+                Retirar la propuesta
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-danger"
-                disabled={ocupado}
-                onClick={onEliminar}
-              >
-                Eliminar
+            ) : (
+              <Button size="sm" variant="soft" disabled={ocupado} onClick={onProponer}>
+                Proponer al gerente
               </Button>
-            </>
-          ) : null}
-        </div>
-      ) : null}
+            )}
+            {/*
+              EDITAR Y ELIMINAR SE APAGAN CUANDO LA COTIZACIÓN ESTÁ PROPUESTA, y
+              es la misma razón para los dos: el gerente aprobaría unas
+              condiciones distintas de las que se le enseñaron. La base se niega
+              igual —no hace falta que la pantalla acierte para que el control
+              exista— pero enseñar un botón que va a rebotar manda a alguien a
+              intentarlo para que le digan que no.
+
+              Para corregir una propuesta se retira la propuesta primero, que
+              ahora es un botón de al lado y no una explicación.
+            */}
+            {!cotizacion.propuesta ? (
+              <>
+                <Button size="sm" variant="ghost" disabled={ocupado} onClick={onEditar}>
+                  Editar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-danger"
+                  disabled={ocupado}
+                  onClick={onEliminar}
+                >
+                  Eliminar
+                </Button>
+              </>
+            ) : null}
+          </>
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -642,6 +696,15 @@ export function DetalleCompra() {
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
   // Se marca a mano cada vez: no se recuerda de una aprobacion a la siguiente.
   const [bajoAutorizacion, setBajoAutorizacion] = useState(false)
+  /*
+    Cuál de las propuestas aprueba el gerente.
+
+    Nulo mientras no escoja, y con una sola propuesta se queda nulo para
+    siempre: la base la toma sola y no hay nada que preguntar. Preguntar
+    igualmente sería pedirle que confirme que el único camino es el único
+    camino.
+  */
+  const [cualAprobar, setCualAprobar] = useState<number | null>(null)
   const [respaldo, setRespaldo] = useState<File | null>(null)
   const { puede } = useMisRoles()
   const { puede: alcanza } = useMisAcciones()
@@ -651,6 +714,7 @@ export function DetalleCompra() {
   const confirmar = useConfirmarPedido()
   const cancelarPedido = useCancelarPedido()
   const proponer = useProponerCotizacion()
+  const retirar = useRetirarCotizacion()
   const declarar = useDeclararComprobante()
   const eliminarCotizacion = useEliminarCotizacion()
   const aprobar = useAprobarCompra()
@@ -704,6 +768,75 @@ export function DetalleCompra() {
   /** El nombre detrás de un identificador de usuario, para el papel. */
   const quienEs = (id: string | null | undefined) =>
     id ? ((perfiles ?? []).find((x) => x.id === id)?.nombre ?? null) : null
+
+  /*
+    LA COTIZACIÓN, EN PAPEL
+
+    Se pidió para poder mandarla por correo o llevarla a una reunión sin entrar
+    al sistema. Sale con el mismo membrete que la orden —son papeles de la
+    misma casa— pero sin firma y con un pie que dice que es nuestra
+    transcripción: el que vale sigue siendo el papel del proveedor.
+
+    El sello dice en qué punto está, que es lo primero que se pregunta quien la
+    recibe en una reunión.
+  */
+  const imprimirCotizacion = async (c: Cotizacion) => {
+    if (!compra) return
+
+    setPdf(
+      await armarCotizacionDeCompra({
+        numero: c.numero,
+        refPedido: compra.numero,
+        numeroProveedor: c.numero_proveedor,
+        fecha: fecha(c.fecha),
+        proveedor: {
+          nombre: c.proveedor?.nombre ?? '',
+          rif: c.proveedor?.rif ?? '',
+        },
+        condiciones: {
+          tituloPedido: compra.titulo,
+          validezDias: c.validez_dias,
+          diasEntrega: c.dias_entrega,
+          condicionPago:
+            CONDICIONES_PAGO.find((x) => x.valor === c.condicion_pago)?.etiqueta ??
+            c.condicion_pago,
+          cargadaPor: quienEs(c.registrada_por),
+        },
+        moneda: c.moneda,
+        tasa: c.tasa,
+        // Los renglones de la cotización no traen la descripción: la tienen los
+        // del pedido, que es de donde salen. Se cruzan por
+        // `solicitud_renglon_id`, que es lo que los une.
+        renglones: c.renglones.map((r) => {
+          const pedido = compra.renglones.find((x) => x.id === r.solicitud_renglon_id)
+          return {
+            descripcion: pedido?.descripcion ?? '—',
+            marca: r.marca,
+            presentacion: r.presentacion,
+            cantidad: r.cantidad,
+            unidad: pedido?.unidad ?? '',
+            precioUnitario: r.precio_unitario,
+            subtotal: r.subtotal,
+            exento: r.exento_iva,
+          }
+        }),
+        subtotal: c.subtotal,
+        descuento: c.descuento,
+        flete: c.flete,
+        iva: c.iva,
+        alicuota: c.alicuota_iva,
+        total: c.total,
+        observaciones: c.observacion,
+        sello: c.propuesta
+          ? 'PROPUESTA AL GERENTE'
+          : compra.cotizacion_elegida_id === c.id
+            ? 'APROBADA'
+            : null,
+        empresa: empresaDelPapel(empresa),
+        momento: new Date(),
+      }),
+    )
+  }
 
   const imprimirOrden = async () => {
     if (!compra || !orden) return
@@ -774,10 +907,7 @@ export function DetalleCompra() {
         observaciones: compra.justificacion,
         sello:
           orden.estado === 'ANULADA' || orden.estado === 'CANCELADA' ? 'ANULADA' : null,
-        empresa: {
-          razonSocial: empresa?.razon_social ?? '',
-          rif: empresa?.rif ?? '',
-        },
+        empresa: empresaDelPapel(empresa),
         momento: new Date(),
       }),
     )
@@ -862,6 +992,9 @@ export function DetalleCompra() {
 
   const cotizaciones = compra.cotizaciones ?? []
   const comparacion = compararCotizaciones(cotizaciones)
+  // Las que estan en la mesa del gerente. Antes era una y vivia en el pedido;
+  // ahora son las que lleven el marbete, y pueden ser varias.
+  const propuestas = cotizaciones.filter((c) => c.propuesta)
 
   const estadoVisible = orden ? orden.estado : compra.estado
   const etiqueta = ETIQUETAS[estadoVisible] ?? { texto: estadoVisible, tono: 'neutral' as const }
@@ -902,6 +1035,28 @@ export function DetalleCompra() {
                 la tasa en la fila. Verla sin salir de la pantalla evita el
                 error caro: emitir un lunes con la tasa del viernes. */}
             <ChipTasa className="self-center" />
+            {/*
+              CORREGIR EL PEDIDO, TAMBIÉN DESPUÉS DE ENVIARLO.
+
+              Lo pidió Jesmary: una unidad mal puesta obligaba a cancelar el
+              pedido entero y volver a teclear los siete renglones.
+
+              Se ofrece hasta CONFIRMADA y solo mientras no haya cotizaciones.
+              Lo segundo no es prudencia: los renglones de una cotización
+              cuelgan de los del pedido con borrado en cascada, y corregir aquí
+              los rehace — se llevaría las cotizaciones por delante sin dar un
+              solo error. La base se niega igual; aquí no se ofrece el botón
+              para no mandar a nadie a que le digan que no.
+            */}
+            {puedeCompras &&
+            ['BORRADOR', 'PEDIDO', 'CONFIRMADA'].includes(compra.estado) &&
+            cotizaciones.length === 0 ? (
+              <Link to={`/app/compras/${compra.id}/editar`}>
+                <Button variant="outline" icon={<Pencil />}>
+                  Corregir
+                </Button>
+              </Link>
+            ) : null}
             <Link to="/app/compras">
               <Button variant="outline" icon={<ArrowLeft />}>
                 Tablero
@@ -963,10 +1118,20 @@ export function DetalleCompra() {
             <Card>
               <CardHeader
                 title="Cotizaciones"
+                /*
+                  Cuenta cotizaciones y no proveedores: desde que un proveedor
+                  puede mandar dos ofertas, «3 proveedores» sobre dos empresas
+                  distintas era sencillamente falso.
+                */
                 subtitle={
                   cotizaciones.length === 0
                     ? 'Ninguna todavía'
-                    : `${cotizaciones.length} proveedor${cotizaciones.length === 1 ? '' : 'es'}`
+                    : [
+                        `${cotizaciones.length} cotización${cotizaciones.length === 1 ? '' : 'es'}`,
+                        propuestas.length > 0 ? `${propuestas.length} con el gerente` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')
                 }
                 action={
                   puedeCompras && compra.estado !== 'APROBADA' ? (
@@ -991,19 +1156,24 @@ export function DetalleCompra() {
                     key={c.id}
                     cotizacion={c}
                     ventajas={comparacion.get(c.id) ?? []}
-                    elegida={compra.cotizacion_elegida_id === c.id}
+                    aprobada={compra.cotizacion_elegida_id === c.id}
                     puedeOperar={puedeCompras && compra.estado !== 'APROBADA'}
-                    ocupado={proponer.isPending || eliminarCotizacion.isPending}
+                    ocupado={
+                      proponer.isPending || retirar.isPending || eliminarCotizacion.isPending
+                    }
                     onProponer={() =>
                       void proponer.mutate({ solicitud_id: compra.id, cotizacion_id: c.id })
                     }
+                    onRetirar={() => void retirar.mutate({ id: c.id })}
                     onEditar={() => setModal({ tipo: 'cotizacion', corregir: c })}
                     onEliminar={() => void eliminarCotizacion.mutate({ id: c.id })}
+                    onPdf={() => void imprimirCotizacion(c)}
                   />
                 ))}
               </div>
 
               {proponer.error ? <ErrorDeCarga error={proponer.error} className="mt-3" /> : null}
+              {retirar.error ? <ErrorDeCarga error={retirar.error} className="mt-3" /> : null}
               {eliminarCotizacion.error ? (
                 <ErrorDeCarga error={eliminarCotizacion.error} className="mt-3" />
               ) : null}
@@ -1304,16 +1474,67 @@ export function DetalleCompra() {
               {compra.estado === 'POR_CONFIRMAR_GERENTE' ? (
                 puedeAprobar ? (
                   <>
-                    <p className="text-ink/60 mb-3 text-sm">
-                      Al aprobar se emite la orden de compra por{' '}
-                      <strong className="text-ink/85">
-                        {dinero(
-                          cotizaciones.find((c) => c.id === compra.cotizacion_elegida_id)?.moneda,
-                          cotizaciones.find((c) => c.id === compra.cotizacion_elegida_id)?.total ?? 0,
-                        )}
-                      </strong>
-                      . A partir de ahí, el precio queda fijo.
-                    </p>
+                    {/*
+                      CON VARIAS PROPUESTAS, EL GERENTE ESCOGE AQUÍ.
+
+                      Compras puede subir dos o tres ofertas, que es de lo que
+                      trata comparar. La base se niega a elegir por su cuenta
+                      cuando hay más de una —escoger por el gerente sería
+                      firmarle una compra que no decidió— así que la pantalla
+                      tiene que preguntarlo antes de dejar pulsar.
+
+                      Con una sola no se pregunta nada y el texto es el de
+                      siempre: no hay elección que hacer.
+                    */}
+                    {propuestas.length > 1 ? (
+                      <div className="mb-3">
+                        <p className="text-ink/60 mb-2 text-sm">
+                          Compras subió {propuestas.length} cotizaciones. Escoge cuál se aprueba:
+                        </p>
+                        <div className="space-y-1.5">
+                          {propuestas.map((c) => (
+                            <label
+                              key={c.id}
+                              className={cn(
+                                'flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-2.5 text-sm',
+                                cualAprobar === c.id
+                                  ? 'border-royal-600 bg-royal-600/5'
+                                  : 'border-hairline',
+                              )}
+                            >
+                              <input
+                                type="radio"
+                                name="cual-aprobar"
+                                className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                                checked={cualAprobar === c.id}
+                                onChange={() => setCualAprobar(c.id)}
+                              />
+                              <span className="min-w-0">
+                                <span className="text-ink/85 block truncate font-medium">
+                                  {c.proveedor?.nombre ?? 'Proveedor'}
+                                </span>
+                                <span className="text-ink/55 block text-xs">
+                                  <span className="tabular">
+                                    {dinero(c.moneda, c.total)}
+                                  </span>
+                                  {c.dias_entrega !== null ? ` · ${c.dias_entrega} días` : ''}
+                                  {' · '}
+                                  <span className="font-mono">{c.numero}</span>
+                                </span>
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-ink/60 mb-3 text-sm">
+                        Al aprobar se emite la orden de compra por{' '}
+                        <strong className="text-ink/85">
+                          {dinero(propuestas[0]?.moneda, propuestas[0]?.total ?? 0)}
+                        </strong>
+                        . A partir de ahí, el precio queda fijo.
+                      </p>
+                    )}
                     {/*
                       El check que pidio la lider, y solo cuando es verdad.
 
@@ -1378,11 +1599,17 @@ export function DetalleCompra() {
                       disabled={
                         aprobar.isPending ||
                         respaldar.isPending ||
-                        (!!autorizaAprobar && !bajoAutorizacion)
+                        (!!autorizaAprobar && !bajoAutorizacion) ||
+                        // Con varias propuestas no se aprueba a ciegas. La base
+                        // lo rechaza igual; esto evita el viaje.
+                        (propuestas.length > 1 && cualAprobar === null)
                       }
                       onClick={() => {
                         void (async () => {
-                          const ordenId = await aprobar.mutateAsync({ solicitud_id: compra.id })
+                          const ordenId = await aprobar.mutateAsync({
+                            solicitud_id: compra.id,
+                            cotizacion_id: cualAprobar,
+                          })
                           /*
                             Si el archivo falla, la compra YA está aprobada: eso
                             no se deshace y no se disimula. Se dice, y el papel

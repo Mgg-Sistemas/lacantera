@@ -112,6 +112,19 @@ export interface RenglonCotizacion {
   precio_unitario: string
   exento_iva: boolean
   subtotal: string
+  /**
+   * Qué marca ofrece el proveedor para este renglón, y cómo viene.
+   *
+   * No están en el pedido y no es un olvido: quien pide lo pide en litros,
+   * que es como se consume, y la marca y el bidón llegan después, con el
+   * papel del proveedor y a otra persona. Por eso se escriben al cargar o al
+   * corregir la cotización, y no antes.
+   *
+   * Es lo que distingue dos cotizaciones del mismo proveedor por el mismo
+   * artículo, que desde el 27 de agosto pueden convivir.
+   */
+  marca: string | null
+  presentacion: string | null
   observacion: string | null
 }
 
@@ -139,7 +152,18 @@ export interface Cotizacion {
   total_bs: string
   total_usd: string
   observacion: string | null
+  /** Quien la cargo. Va en el papel: «Cargada por». */
+  registrada_por: string | null
   registrada_en: string
+  /**
+   * Compras la subió a la gerencia.
+   *
+   * Pueden estar marcadas varias del mismo pedido: el gerente compara y escoge
+   * una al aprobar. Antes esto vivía en `solicitudes_pedido.cotizacion_elegida_id`,
+   * que al ser una sola columna hacía que proponer la segunda desproponiera la
+   * primera sin decir nada.
+   */
+  propuesta: boolean
   proveedor: { id: number; nombre: string; rif: string; condicion_pago: string } | null
   renglones: RenglonCotizacion[]
 }
@@ -275,6 +299,8 @@ export interface Compra {
   prioridad: 'NORMAL' | 'ALTA' | 'URGENTE'
   requerida_para: string | null
   destino: string | null
+  /** El almacen al que va, cuando el destino es uno del inventario. */
+  destino_almacen_id: number | null
   estado: string
   creada_en: string
   enviada_en: string | null
@@ -472,6 +498,49 @@ export function useCrearPedido() {
   )
 }
 
+/**
+ * Corregir un pedido, incluso después de enviado.
+ *
+ * Lo pidió Jesmary: equivocarse en un pedido ya enviado obligaba a cancelarlo
+ * entero y volver a teclearlo, y el pedido perdía su número.
+ *
+ * La base lo permite hasta CONFIRMADA y **se niega en seco si ya hay
+ * cotizaciones cargadas**. No es prudencia: los renglones de una cotización
+ * cuelgan de los del pedido con borrado en cascada, y guardar aquí los borra y
+ * los vuelve a crear con otros identificadores — se llevaría por delante las
+ * cotizaciones sin dar un solo error.
+ */
+export function useActualizarPedido() {
+  return useAccion(
+    (p: {
+      id: number
+      titulo: string
+      justificacion: string
+      renglones: RenglonNuevo[]
+      prioridad?: string
+      requerida_para?: string | null
+      destino?: string | null
+      destino_almacen_id?: number | null
+      solicitante_id?: string | null
+      solicitante_nombre?: string | null
+      solicitante_cargo?: string | null
+    }) =>
+      rpc('actualizar_pedido', {
+        p_id: p.id,
+        p_titulo: p.titulo,
+        p_justificacion: p.justificacion,
+        p_renglones: p.renglones,
+        p_prioridad: p.prioridad ?? 'NORMAL',
+        p_requerida_para: p.requerida_para || null,
+        p_destino: p.destino || null,
+        p_destino_almacen_id: p.destino_almacen_id ?? null,
+        p_solicitante_id: p.solicitante_id || null,
+        p_solicitante_nombre: p.solicitante_nombre || null,
+        p_solicitante_cargo: p.solicitante_cargo || null,
+      }),
+  )
+}
+
 export function useEnviarPedido() {
   return useAccion((p: { id: number }) => rpc('enviar_pedido', { p_id: p.id }))
 }
@@ -493,6 +562,8 @@ export interface RenglonCotizado {
   cantidad: number
   precio_unitario: number
   exento_iva: boolean
+  marca?: string | null
+  presentacion?: string | null
 }
 
 export function useRegistrarCotizacion() {
@@ -533,13 +604,17 @@ export function useRegistrarCotizacion() {
 /**
  * Corregir una cotización ya cargada, sobre la misma fila.
  *
- * No es lo mismo que volver a cargarla. `registrar_cotizacion` sustituye la del
- * mismo proveedor borrando la fila e insertando otra, así que la nueva tiene
- * otro `id` — y el pedido apunta a la cotización elegida por su `id`, con una
- * clave que la vacía al borrarla. Recargar una cotización ya propuesta dejaba
- * al gerente sin nada que aprobar, en silencio.
+ * No es lo mismo que volver a cargarla. Desde el 27 de agosto
+ * `registrar_cotizacion` no sustituye a nadie: cada carga es una cotización
+ * nueva, con su número, y dos del mismo proveedor conviven — que es lo que
+ * pidió compras, porque un proveedor manda dos ofertas del mismo artículo en
+ * marcas distintas.
  *
- * Esto actualiza en su sitio: mismo `id`, mismo número, misma trazabilidad.
+ * Así que las dos cosas hacen falta y no son la misma: cargar añade una oferta
+ * más a la mesa; corregir arregla la que ya estaba. Esto último actualiza en
+ * su sitio — mismo `id`, mismo número, misma trazabilidad—, que es lo que
+ * pidió el reporte: «guardar los cambios sobre el mismo registro sin alterar
+ * la trazabilidad del historial».
  */
 export function useActualizarCotizacion() {
   return useAccion(
@@ -551,6 +626,8 @@ export function useActualizarCotizacion() {
         cantidad: number
         precio_unitario: number
         exento_iva?: boolean
+        marca?: string | null
+        presentacion?: string | null
         observacion?: string | null
       }>
       numero_proveedor?: string | null
@@ -580,6 +657,24 @@ export function useActualizarCotizacion() {
   )
 }
 
+/**
+ * Bajar una cotización de la mesa del gerente.
+ *
+ * Antes no hacía falta: como solo podía haber una propuesta, proponer otra
+ * desproponía la anterior sola. Ahora que se suman, retirar es una acción
+ * propia — y retirar la última devuelve el pedido a compras, porque un pedido
+ * esperando en la gerencia sin nada que aprobar es una bandeja con un papel
+ * en blanco.
+ *
+ * Es además el camino para corregir o eliminar una cotización propuesta, que
+ * la base sigue sin permitir: primero se baja, luego se toca.
+ */
+export function useRetirarCotizacion() {
+  return useAccion((p: { id: number; nota?: string }) =>
+    rpc('retirar_cotizacion', { p_cotizacion_id: p.id, p_nota: p.nota ?? null }),
+  )
+}
+
 export function useEliminarCotizacion() {
   return useAccion((p: { id: number }) => rpc('eliminar_cotizacion', { p_id: p.id }))
 }
@@ -594,9 +689,21 @@ export function useProponerCotizacion() {
   )
 }
 
+/**
+ * El gerente aprueba, y ahora dice cuál.
+ *
+ * `cotizacion_id` se puede omitir cuando solo hay una propuesta —que es el
+ * caso de siempre— y la base la toma sola. Con dos o más se niega a elegir por
+ * su cuenta, y hace bien: escoger por el gerente sería firmarle una compra que
+ * no decidió.
+ */
 export function useAprobarCompra() {
-  return useAccion((p: { solicitud_id: number; nota?: string }) =>
-    rpc<number>('aprobar_compra', { p_solicitud_id: p.solicitud_id, p_nota: p.nota ?? null }),
+  return useAccion((p: { solicitud_id: number; cotizacion_id?: number | null; nota?: string }) =>
+    rpc<number>('aprobar_compra', {
+      p_solicitud_id: p.solicitud_id,
+      p_cotizacion_id: p.cotizacion_id ?? null,
+      p_nota: p.nota ?? null,
+    }),
   )
 }
 
