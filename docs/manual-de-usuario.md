@@ -1241,19 +1241,19 @@ La segunda es **poder registrar**. Los botones que escriben algo solo se dibujan
 
 **Aquí hay un desajuste que confunde, y conviene saberlo.** Compras y la gerencia general tienen sobre Inventario el permiso más alto —**Control total**— y aun así **no ven ninguno de estos botones**, porque los botones cuelgan del **rol Almacén** y no del nivel de permiso. Si alguien con control total sobre Inventario te dice que no puede registrar, no es un error: es esto.
 
-| Rol | Ve el módulo | Registra |
-| --- | --- | --- |
-| Administrador | Sí | Sí |
-| Compras | Sí | Sí |
-| Gerencia general | Sí | Sí |
-| Almacén | Sí | Sí |
-| Recursos humanos | Sí | Sí |
-| Operaciones | Sí | No |
-| Ventas | Sí | No |
-| Solicitante | Sí | No |
-| Consulta | Sí | No |
+**Las dos columnas no dicen lo mismo, y ahí está la trampa.** La primera sale de la matriz de permisos; la segunda, del rol.
 
-**Inventario es el módulo más repartido del sistema**, y tiene sentido: casi todo el mundo necesita saber qué hay en el patio aunque no toque nada. Nueve de los diez roles lo ven.
+| Rol | Permiso sobre Inventario | ¿Ve los botones? |
+| --- | --- | --- |
+| Administrador | Control total | **Sí** |
+| Almacén | Escritura | **Sí** |
+| Compras | Control total | **No** |
+| Gerencia general | Control total | **No** |
+| Recursos humanos | Escritura | **No** |
+| Operaciones, Ventas, Solicitante, Consulta | Lectura | No |
+| Respaldo | Ninguno | — |
+
+**Inventario es el módulo más repartido del sistema**: nueve de los diez roles lo ven. Tiene sentido — casi todo el mundo necesita saber qué hay en el patio aunque no toque nada.
 
 Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu rol es de consulta.
 
@@ -1591,17 +1591,21 @@ Los hechos que puede contar son estos:
 | **Entró por una compra** | Una recepción de compras |
 | **Entró por producción** | Un parte de turno de Explotación |
 | **Volvió al almacén** | Material devuelto |
+| **Entró sin compra de por medio** | La entrada directa de 7.4: el saldo inicial, algo comprado por fuera |
 | **Salió para consumo** | Una salida de las de todos los días |
 | **Salió en un despacho** | Una nota de entrega de Ventas |
-| **Se dio de baja por merma** | Material perdido o inservible |
+| **Se perdió en el manejo** | Merma: se rompió, se derramó, se echó a perder moviéndolo |
+| **Se dio de baja** | Dejó de servir. La operación de 7.4, con su causa |
 | **Ajuste: sobraba** / **Ajuste: faltaba** | Un conteo físico, en cada sentido |
-| **Se transfirió a otro almacén** / **Llegó de otro almacén** | Los dos movimientos de un traslado |
-| **Se reversó un movimiento** | Una corrección |
+| **Se trasladó a otro almacén** / **Llegó de otro almacén** | Los dos movimientos de un traslado |
+| **Se deshizo un movimiento** | Una corrección |
 | **Se entregó como dotación** | Se le dio a alguien por su rol |
 | **Se asignó para una actividad** | Se le dio a alguien para una faena concreta |
 | **La devolvió** | Volvió a manos de la empresa |
 | **Se dio por perdida** / **Se reportó dañada** | En ámbar: no mueven existencia, pero cambian quién responde |
-| **Se saldó con descuento de nómina** / **La repuso** / **Se le exoneró** | Cómo se cerró una pérdida |
+| **Se saldó con descuento de nómina** / **La repuso** / **Se le exoneró** | Cómo se cerró una pérdida (18.5) |
+| **Se mandó al taller · reparación** | Con el motivo, el oficio y la urgencia detrás |
+| **Volvió del taller** | Con lo que se le hizo y, si volvió menos de lo que se mandó, **faltaron 2** |
 
 Si el artículo todavía no ha tenido movimiento, se ve **Sin movimientos todavía**. Si el identificador de la dirección no corresponde a ninguno, **No existe ese artículo.** con el enlace **Volver al catálogo**.
 
