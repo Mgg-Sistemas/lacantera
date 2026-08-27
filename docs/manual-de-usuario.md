@@ -4917,7 +4917,9 @@ Es la pantalla de cabecera del módulo: dónde está el dinero de la empresa y c
 
 #### Qué se ve
 
-Arriba, una tarjeta con el rótulo **Disponible en cuentas activas** y la cifra en dólares. Al lado, la advertencia de cómo está hecha esa suma: **Convertido con la tasa de hoy (Bs X), no con la del día en que entró cada bolívar. Cada cuenta manda su propio saldo.**
+Arriba, una tarjeta con el rótulo **Disponible en cuentas activas**. **La cifra ya no es fija en dólares**: junto al rótulo hay una fila de píldoras, una por cada moneda con tasa registrada —**Bs**, **$**, y las demás con su símbolo—, y el total se expresa en la que se elija.
+
+Al lado, la advertencia de cómo está hecha esa suma: **Convertido con las tasas de hoy (Bs X por $), no con la del día en que entró cada saldo. Cada cuenta manda el suyo.**
 
 Si falta la tasa del día y hay cuentas en bolívares, la cifra se sustituye por **—** y el texto pasa a ser **Falta la tasa del día para convertir los bolívares. Regístrala en Sistema › Tasas de cambio; mientras tanto, el saldo de cada cuenta sí es exacto.** El sistema prefiere no dar el total antes que darlo mal.
 
