@@ -49,6 +49,24 @@ export interface CarnetVerificado {
   foto?: string | null
   emitido_en?: string
   empresa?: { razonSocial: string; rif: string }
+
+  /*
+    LO QUE PIDIO LA LIDER: contacto de emergencia, edad, direccion.
+
+    Van EN VIVO y no congelados al emitir, al reves que el nombre y el cargo. El
+    telefono al que hay que llamar si alguien se cae en la planta tiene que ser
+    el de HOY, no el que estaba en la ficha el dia que se plastifico el carnet:
+    un telefono viejo en una emergencia es peor que ninguno, porque se marca y
+    se pierde el tiempo.
+
+    Del que ya no trabaja aqui no sale ninguno.
+  */
+  edad?: number | null
+  direccion?: string | null
+  telefono?: string | null
+  sangre?: string | null
+  contacto_emergencia?: string | null
+  telefono_emergencia?: string | null
 }
 
 /** El carnet vigente de una persona, si tiene alguno. */

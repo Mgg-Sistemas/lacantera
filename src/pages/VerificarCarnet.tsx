@@ -367,6 +367,7 @@ function Veredicto({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
             ? ([
                 ['Departamento', d.departamento ?? '—'],
                 ['Trabaja aquí desde', fechaCorta(d.desde)],
+                ...(d.edad ? ([['Edad', `${d.edad} años`]] as Array<[string, string]>) : []),
               ] as Array<[string, string]>)
             : []),
         ].map(([k, v]) => (
@@ -381,6 +382,76 @@ function Veredicto({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
         <p className="mt-3 text-[13px] leading-relaxed text-[#6b5b4e]">
           No se publican más datos de quien ya no trabaja aquí.
         </p>
+      ) : null}
+
+      {/*
+        EN CASO DE EMERGENCIA.
+
+        Lo pidió la líder y Christopher lo confirmó sabiendo que sale a internet
+        sin sesión. Va en bloque aparte, teñido y debajo del veredicto, porque
+        no se lee en el mismo momento: el portón se resuelve arriba; esto se
+        busca cuando alguien está en el suelo.
+
+        Los teléfonos son enlaces `tel:`. Quien está atendiendo a un herido no
+        va a copiar once dígitos a mano en la aplicación del teléfono.
+      */}
+      {!egresado && (d.sangre || d.contacto_emergencia || d.telefono_emergencia || d.telefono) ? (
+        <div className="mt-5 rounded-[6px] border-2 border-[#8c6d00]/30 bg-[#fff6da] px-4 py-3">
+          <p className="text-[11px] font-bold tracking-wider text-[#6b4e00]">
+            EN CASO DE EMERGENCIA
+          </p>
+
+          <dl className="mt-2 text-[14px]">
+            {d.sangre ? (
+              <div className="flex justify-between gap-4 py-1">
+                <dt className="text-[#6b5b4e]">Grupo sanguíneo</dt>
+                <dd className="text-[17px] font-bold">{d.sangre}</dd>
+              </div>
+            ) : null}
+
+            {d.contacto_emergencia ? (
+              <div className="flex justify-between gap-4 py-1">
+                <dt className="text-[#6b5b4e]">Llamar a</dt>
+                <dd className="text-right font-semibold">{d.contacto_emergencia}</dd>
+              </div>
+            ) : null}
+
+            {d.telefono_emergencia ? (
+              <div className="flex justify-between gap-4 py-1">
+                <dt className="text-[#6b5b4e]">Su teléfono</dt>
+                <dd>
+                  <a
+                    href={`tel:${d.telefono_emergencia.replace(/[^\d+]/g, '')}`}
+                    className="tabular text-[17px] font-bold underline underline-offset-2"
+                  >
+                    {d.telefono_emergencia}
+                  </a>
+                </dd>
+              </div>
+            ) : null}
+
+            {d.telefono ? (
+              <div className="flex justify-between gap-4 py-1">
+                <dt className="text-[#6b5b4e]">Teléfono del trabajador</dt>
+                <dd>
+                  <a
+                    href={`tel:${d.telefono.replace(/[^\d+]/g, '')}`}
+                    className="tabular font-semibold underline underline-offset-2"
+                  >
+                    {d.telefono}
+                  </a>
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+
+          {d.direccion ? (
+            <div className="mt-2 border-t border-[#8c6d00]/20 pt-2">
+              <p className="text-[12px] text-[#6b5b4e]">Dirección</p>
+              <p className="text-[14px] leading-snug">{d.direccion}</p>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="mt-5 rounded-[6px] bg-white px-4 py-3">
