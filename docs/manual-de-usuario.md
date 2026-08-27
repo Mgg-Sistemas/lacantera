@@ -2150,11 +2150,11 @@ Eso es todo lo que se hace desde aquí. **Ninguna acción cambia el estado de un
 
 El tablero se actualiza solo cuando otra persona mueve algo, y además se recarga cada cinco minutos por si acaso.
 
-#### Sus dos limitaciones
+#### Su limitación
 
 **No hay buscador, ni filtros, ni forma de cambiar el orden.** Las tarjetas vienen siempre de la más reciente a la más antigua.
 
-**Nada de esto se imprime.** El módulo de compras no genera ningún documento en papel ni ningún archivo para enviar: ni la orden de compra, ni la cotización, ni el tablero. Si hoy hace falta mandarle la orden a un proveedor, se hace por fuera del sistema.
+**El tablero no se imprime**, y no hace falta: los dos papeles del módulo —la **orden de compra** y el **comprobante de pago**— salen de la ficha de cada compra, no de aquí. Está en 9.5. Lo que sigue sin imprimirse es la cotización y la factura del proveedor.
 
 ### 9.4 Nuevo pedido
 
@@ -2262,6 +2262,39 @@ Lo que viene después, en este orden:
 Al pie de cada página: **Documento generado por el sistema**, el número del pedido del que salió y la fecha y hora, y a la derecha **Página 1 de 2** cuando pasa de una hoja.
 
 **Una orden cancelada o anulada sale con el sello ANULADA cruzado en rojo.** Una orden cancelada que se imprimiera sin decirlo es una orden que alguien puede despachar por error.
+
+#### Cuando alguien aprueba con un permiso que no es suyo por el puesto
+
+Aprobar una compra es del gerente general por su puesto. Pero el sistema permite **extenderle esa facultad a una persona concreta y por un plazo** —el gerente se va de viaje, hay que seguir comprando—, y eso cambia dos cosas.
+
+**La orden dice quién autorizó.** El papel impreso no firma solo con el nombre de quien aprobó: dice *Firma autorizada · bajo autorización de* seguido del nombre de quien le extendió el permiso. Quien recibe la orden ve de dónde viene la facultad.
+
+**Y hay que dejar el respaldo.** A quien aprueba por su puesto no se le pide nada más. A quien aprueba con un permiso extendido se le exige subir el papel —el correo, el mensaje, la nota— que lo autorizaba. En la tarjeta **Papeles recibidos** aparece para eso un tipo más: **Respaldo de la autorización**.
+
+**Ese tipo no se le ofrece a todo el mundo.** Solo lo ve quien puede aprobar, y solo sobre una orden que se aprobó de esa manera. A los demás ni siquiera aparece en la lista, porque el sistema se lo rechazaría: va por otra puerta, que pregunta si puedes aprobar en vez de si eres de compras.
+
+#### El comprobante de pago
+
+Cada instrucción **ya pagada** lleva su propio botón, **Comprobante de pago**, que saca un PDF con la misma cabecera que la orden. Es lo que se le manda al proveedor cuando pregunta si ya le pagaron.
+
+Trae la orden y el pedido de los que sale, el proveedor, quién lo solicitó, la condición de pago, el total de la orden, el método con el que se pagó, el monto, la fecha y la referencia.
+
+**Solo aparece cuando la instrucción está pagada.** Antes no hay nada que comprobar.
+
+#### Los papeles que manda el proveedor
+
+Debajo de la orden hay una tarjeta, **Papeles recibidos**: *"Lo que entregó el proveedor: el comprobante del pago, la nota de entrega, la factura. Con los años el papel se pierde; esta copia no."*
+
+Cuelga de la orden, así que **no aparece hasta que la compra tiene orden**. Primero se elige **¿Qué papel es?** y después el archivo — en ese orden, para que nadie suba una factura rotulada como nota de entrega por ir rápido.
+
+| Tipo | Cuándo |
+| --- | --- |
+| **Comprobante de pago** | El que manda el banco o el proveedor |
+| **Nota de entrega** | El papel con el que llegó el material |
+| **Factura del proveedor** | La que da derecho al crédito fiscal |
+| **Otro papel** | Cualquier otra cosa que convenga guardar |
+
+**Los archivos van a un sitio privado**, no a una dirección pública: se abren con un enlace que se firma en el momento y caduca a los cinco minutos. Un enlace público sería eterno y reenviable.
 
 **Lo demás de compras sigue sin imprimirse**: ni la cotización, ni el tablero, ni la factura del proveedor.
 
@@ -2426,17 +2459,24 @@ Una vez respondido, el recuadro desaparece y queda una línea en gris: **El prov
 
 | Campo | Detalle |
 | --- | --- |
-| **Cómo se paga** | **Transferencia bancaria**, **Pago móvil**, **Binance** o **Efectivo**. Empieza en la transferencia |
-| **Moneda** | Empieza en la de la orden. El pago móvil solo existe en bolívares y Binance solo liquida en dólares, así que en esos dos casos no hay nada que elegir |
+| **Cómo se paga** | Sale del catálogo de métodos, no de una lista escrita en la pantalla. Hoy son siete |
+| **Moneda** | Empieza en la de la orden. Cada método decide qué monedas admite, así que a veces no hay nada que elegir |
 | **Monto** | **Falta por pagar:** y la cifra. Empieza en lo que falta, no en el total |
 | **Nota para tesorería** | Llamar antes de transferir, pagar solo en horario de oficina |
 
-Después, en **Datos de la transacción**, cambian los campos según el método:
+**Los métodos de pago son un catálogo, no una lista fija.** Cada uno trae escrito en qué moneda se puede usar y qué datos exige. Estos son los siete activos hoy:
 
-- **Transferencia bancaria**: **Banco**, **Número de cuenta**, **Titular de la cuenta** y **Cédula o RIF del titular**.
-- **Pago móvil**: **Banco**, **Teléfono**, **Cédula o RIF** y **A nombre de**.
-- **Binance**: **Correo o Pay ID de Binance**, **Dirección de la billetera**, **Red** y **Titular de la cuenta**.
-- **Efectivo**: **Quién recibe** y **Cédula de quien recibe**.
+| Método | Moneda | Qué datos pide |
+| --- | --- | --- |
+| **Transferencia bancaria** | Cualquiera | Banco, número de cuenta, titular y su documento |
+| **Pago móvil** | **Solo bolívares** | Banco, teléfono y documento |
+| **Efectivo** | Cualquiera | Quién recibe y su documento |
+| **Zelle** | **Nunca bolívares** | Correo y titular |
+| **Binance / USDT** | **Nunca bolívares** | Titular |
+| **Cheque** | Cualquiera | Banco, número de cuenta y titular |
+| **Otro** | Cualquiera | Ninguno |
+
+**Todos menos el efectivo exigen la referencia al darse por pagados.** Es el número de la transferencia, del cheque o de la operación; en efectivo no hay ninguno que apuntar.
 
 Para terminar, **Enviar a tesorería**.
 
@@ -2446,6 +2486,22 @@ Si la moneda no es el bolívar, el diálogo avisa en naranja: el pago **causa IG
 
 **Cuidado con los datos de la transacción: la pantalla no los marca como obligatorios, pero el sistema los exige al enviar.** Si falta alguno, la respuesta llega al pulsar **Enviar a tesorería**, con la lista completa de lo que hace falta según el método. Conviene rellenarlos todos antes.
 
+#### Cambiar el método en una orden ya aprobada
+
+Pasa a menudo: la orden se aprobó para pagarla por transferencia y el proveedor pide pago móvil, o al revés. **Antes había que devolver la orden a compras y volver a aprobarla.** Ya no.
+
+Sobre una instrucción que siga **Por pagar** hay un tercer botón, **Cambiar el método**, entre **Registrar el pago** y **Devolver a compras**.
+
+> **Cambiar el método de pago.** *La orden sigue aprobada y en la cola. Solo cambia por dónde sale el dinero.*
+
+**Lo que no toca:** ni el monto, ni la moneda, ni el estado de la orden. La aprobación del gerente sigue valiendo, porque lo que él aprobó —qué se compra, a quién y por cuánto— no ha cambiado.
+
+**Solo se ofrecen los métodos que sirven para la moneda que la instrucción ya tiene.** Si está en bolívares no aparecerán Zelle ni Binance, y si está en dólares no aparecerá el pago móvil.
+
+**Hay que decir por qué, y es obligatorio.** El motivo pide un mínimo de cinco caracteres y **queda anotado**: quién lo cambió, cuándo, de qué método a cuál y con qué razón. No es burocracia — es la diferencia entre un cambio de método y un pago desviado a otra cuenta.
+
+**Los datos de la transacción se piden de nuevo**, los que exija el método nuevo. Los del anterior no se conservan: los de una transferencia no sirven para un pago móvil, y dejarlos ahí solo produciría pagos a cuentas equivocadas.
+
 #### Se puede pagar en partes
 
 Una orden admite **varias instrucciones de pago**: mitad ahora y mitad al entregar. Por eso el **Monto** viene con lo que falta y no con el total.
@@ -2454,7 +2510,7 @@ Una orden admite **varias instrucciones de pago**: mitad ahora y mitad al entreg
 
 #### Registrar el pago (tesorería)
 
-Cuando la instrucción está **Por pagar**, el rol Tesorería ve dos botones en ella: **Registrar el pago** y **Devolver a compras**.
+Cuando la instrucción está **Por pagar**, quien tenga el rol **Compras** ve tres botones en ella: **Registrar el pago**, **Cambiar el método** y **Devolver a compras**. **No es tesorería quien paga**: ese rol se retiró con el módulo, y la propia función de la base exige el rol Compras. La cola de pagos vive hoy en **Administración › Compras › Pagos por hacer**.
 
 **Registrar el pago** abre un diálogo con los datos del destino a la vista y tres campos:
 
@@ -4752,7 +4808,7 @@ Si no hay nada pendiente: **No hay nada por pagar**, con el texto **Cuando compr
 5. Rellena la **Fecha del pago** si no es hoy: **Vacío es hoy. Es la fecha que aparece en el estado de cuenta.**
 6. Pulsa **Confirmar el pago**.
 
-**En la lista de cuentas solo salen las que están en la misma moneda de la instrucción.** Si no hay ninguna, la lista dice **No hay cuentas en USD** y debajo **Crea una cuenta en USD en Tesorería › Bancos y cajas.** No es un olvido: pagar una instrucción en dólares desde una cuenta en bolívares obligaría al sistema a inventar la tasa a la que se hizo el cambio, y esa cifra la pone el banco, no el sistema.
+**En la lista de cuentas solo salen las que están en la misma moneda de la instrucción.** Si no hay ninguna, la lista lo dice. **Bancos y cajas ya no está en el menú** —es una de las pantallas que quedaron fuera cuando Tesorería dejó de ser un módulo—, así que crear una cuenta hoy lo hace el administrador. No es un olvido: pagar una instrucción en dólares desde una cuenta en bolívares obligaría al sistema a inventar la tasa a la que se hizo el cambio, y esa cifra la pone el banco, no el sistema.
 
 Si el saldo de la cuenta elegida no alcanza, aparece un aviso naranja que **no impide confirmar**: **En esa cuenta hay $ 200,00 y el pago es de $ 1.287,50. Si el dinero ya está, falta registrar el ingreso o el saldo de apertura.** Avisa porque lo más frecuente no es que falte el dinero, sino que falte registrarlo. Quien sí impide confirmar es el propio libro, más adelante, si al escribir la línea el saldo queda por debajo de cero y la cuenta no admite sobregiro.
 
