@@ -905,19 +905,18 @@ La segunda es **poder registrar**: crear frentes, registrar voladuras y cargar p
 
 La tercera es **poder anular**. Anular una voladura o un parte no es una operación del día: un parte anulado le quita material al patio que quizá ya se despachó. Por eso pide el escalón más alto del módulo.
 
+**Hoy no lo alcanza nadie salvo el administrador del sistema.** Sobre Explotación, los otros nueve roles están en **Ninguno**, igual que en Despachos y en Ventas: mientras un módulo esté en obra, tampoco se reparte.
+
+La tabla que sigue es **cómo está previsto repartirlo el día que se ofrezca**, y así es como se comportan las pantallas:
+
 | Rol | Ve el módulo | Registra frentes, voladuras y partes | Anula voladuras y partes |
 | --- | --- | --- | --- |
 | Administrador del sistema | Sí | Sí | Sí |
 | Operaciones | Sí | Sí | Sí |
 | Gerente general | Sí | No | No |
-| Almacén | No | No | No |
-| Compras | No | No | No |
-| Tesorería | No | No | No |
-| Recursos humanos | No | No | No |
-| Solicitante | No | No | No |
-| Consulta | No | No | No |
+| Los otros siete roles | No | No | No |
 
-Este es el reparto con el que arranca el sistema. Administración puede cambiarlo desde la matriz de permisos.
+Administración lo abre desde la matriz de permisos cuando toque.
 
 Fíjate en la fila de Almacén: **quien lleva el patio no entra a Explotación.** Tiene consecuencias que hay que saber, y están explicadas en 6.6.
 
@@ -1231,13 +1230,19 @@ La primera es **ver el módulo**. Depende del permiso sobre Inventario que admin
 
 La segunda es **poder registrar**. Los botones que escriben algo — **Registrar entrada**, **Sacar**, **Contar**, **Reversar**, **Nuevo traslado**, **Deshacer** — solo se dibujan para el rol de Almacén y para administración.
 
-| Rol | Ve el módulo | Ve los botones de registrar |
+| Rol | Ve el módulo | Registra |
 | --- | --- | --- |
-| Almacén | Sí | Sí |
 | Administrador | Sí | Sí |
-| Gerencia general | Sí | No |
-| Compras | Sí | No |
+| Compras | Sí | Sí |
+| Gerencia general | Sí | Sí |
+| Almacén | Sí | Sí |
+| Recursos humanos | Sí | Sí |
 | Operaciones | Sí | No |
+| Ventas | Sí | No |
+| Solicitante | Sí | No |
+| Consulta | Sí | No |
+
+**Inventario es el módulo más repartido del sistema**, y tiene sentido: casi todo el mundo necesita saber qué hay en el patio aunque no toque nada. Nueve de los diez roles lo ven.
 
 Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu rol es de consulta.
 
@@ -1730,6 +1735,10 @@ Para ver el módulo hace falta que administración le haya dado a tu usuario acc
 
 Dentro hay dos alcances distintos. El primero es **el trabajo del día**: pesar camiones y cargar guías. El segundo es **el control total sobre Despachos**, y cubre lo que corrige o lo que exceptúa: anular un pesaje, anular una guía y — esto es lo que más importa — autorizar un despacho de mineral sin guía.
 
+**Hoy no lo alcanza nadie salvo el administrador del sistema.** Sobre Despachos, los otros nueve roles están en **Ninguno**. Es coherente con que el módulo esté en obra: mientras no se ofrezca, tampoco se reparte.
+
+La tabla que sigue es **cómo está previsto repartirlo el día que se ofrezca**, y así es como se comportan las pantallas. Se deja escrita porque el reparto ya está decidido y porque las pantallas ya lo respetan; lo que falta es abrir el permiso.
+
 | Rol | Ve el módulo | Pesa y carga guías | Anula pesajes y guías, y autoriza despachos sin guía |
 | --- | --- | --- | --- |
 | Almacén | Sí | Sí | No |
@@ -2024,8 +2033,10 @@ La segunda es **poder hacer cada paso**. Cada acción exige un rol concreto, y s
 | Operaciones | Sí | Crea pedidos |
 | RRHH | Sí | Crea pedidos |
 | Almacén | Sí, de consulta | Crea pedidos y registra la recepción del material |
-| Tesorería | Sí, de consulta | Registra los pagos y devuelve instrucciones a compras |
 | Consulta | Sí, de consulta | Nada: solo mirar |
+| Ventas, Respaldo | No | — |
+
+**Ya no hay rol de Tesorería.** Lo hubo, y en esta tabla tenía su fila: registraba los pagos. Se retiró junto con el módulo, y **quien paga hoy es el rol Compras** —lo exige la propia función de la base, no la matriz de permisos—. Por eso **Pagos por hacer** cuelga del menú de Compras. Está contado en 12.1.
 
 Si abres una compra y no ves ningún botón, no es una falla: el paso en el que está esa compra le toca a otro rol, y la pantalla te dice a quién estás esperando.
 
@@ -2044,7 +2055,7 @@ Esta es la sección que hay que leer si solo se va a leer una. Todo lo demás de
 | 2 | **Confirmada** *(en la ficha: **Confirmada · indicar proveedores**)* | Compras | Cargar al menos una cotización y pulsar **Proponer al gerente** |
 | 3 | **Confirmar por el gerente** *(en la ficha: **Por confirmar el gerente**)* | Gerencia general | Pulsar **Aprobar la compra**. Ahí nace la orden de compra y el precio queda fijo |
 | 4 | **Aprobada** *(en la ficha: **Aprobada · indicar método de pago**)* | Compras | Decir **con qué entrega el proveedor**, y después **Indicar método de pago** y **Enviar a tesorería** |
-| 5 | **En tesorería** | Tesorería | **Registrar el pago** de cada instrucción, hasta cubrir el total |
+| 5 | **En tesorería** | Compras | **Registrar el pago** de cada instrucción, hasta cubrir el total |
 | 6 | **Pagada** *(en la ficha: **Pagada · pendiente por recepcionar**)* | Almacén | **Recibir material** |
 | 7 | **Recibida parcialmente** | Almacén | Volver a **Recibir material** hasta completar |
 | 8 | **Recibida** | — | Cerrada |
@@ -3441,10 +3452,14 @@ La segunda es **poder ejecutar cada paso**. Aquí no hay un solo rol que registr
 
 | Rol | Personal, fichas, tabulador y recibos | Novedades del período | Períodos y parámetros |
 | --- | --- | --- | --- |
-| Recursos humanos | Sí | Sí | Sí |
-| Gerencia general | Sí | Sí | Sí |
-| Tesorería | Sí | **No** | Sí |
 | Administrador | Sí | Sí | Sí |
+| Gerencia general | Sí | Sí | Sí |
+| Recursos humanos | Sí | Sí | Sí |
+| Los otros siete roles | No | No | No |
+
+**Nómina es el módulo menos repartido del sistema, y es a propósito.** Solo tres roles lo alcanzan. **Consulta queda fuera**, a diferencia de casi todos los demás módulos: «solo lectura» sobre Nómina sigue siendo ver el sueldo de todo el mundo.
+
+**Aquí había una cuarta fila, la de Tesorería.** Ese rol ya no existe: se retiró junto con el módulo. Ver 12.1.
 
 Tesorería no ve las novedades del período a propósito: paga el total aprobado, no revisa las horas extra de cada quien.
 
@@ -5216,11 +5231,11 @@ Son dos grupos distintos:
 | --- | --- | --- |
 | Administrador del sistema | Sí | Sí |
 | Gerente general | Sí | Sí |
-| Tesorería | Sí | No |
-| Recursos humanos | Sí | No |
+| Almacén | Sí | Sí |
+| Compras | Sí | Sí |
 | El resto de los roles | No | No |
 
-Está repartido así a propósito: cargar y quitar papeles de la empresa es de la gerencia. Tesorería y recursos humanos los consultan para hacer su trabajo, pero no deciden cuáles valen.
+Está repartido así a propósito: cargar y quitar papeles de la empresa es de la gerencia. **Aquí había una fila de Tesorería y ese rol ya no existe** (12.1). Quien consulta estos papeles para hacer su trabajo hoy es compras, que paga contra ellos.
 
 #### Cargar un documento
 
