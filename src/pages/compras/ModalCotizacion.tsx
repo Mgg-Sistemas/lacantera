@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
@@ -264,14 +265,16 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
             </p>
 
             <div className="mt-2.5 grid gap-2.5 sm:grid-cols-3">
-              <Input
-                label="Cantidad"
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                value={precios[r.id]?.cantidad ?? ''}
-                onChange={(e) => cambiar(r.id, { cantidad: e.target.value })}
+              {/*
+                El proveedor cotiza por bulto y el pedido va en litros. Aqui
+                tambien se elige en cual se teclea; lo que se guarda es lo que
+                lleva la cotizacion, en la unidad del articulo.
+              */}
+              <CantidadDeArticulo
+                valor={precios[r.id]?.cantidad ?? ''}
+                onCambiar={(v) => cambiar(r.id, { cantidad: v })}
+                articulo={articulos?.find((a) => a.id === r.articulo_id)}
+                hintSinArticulo=""
               />
               <Input
                 label="Precio unitario"
