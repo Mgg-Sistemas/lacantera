@@ -4551,7 +4551,18 @@ Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un
 
 ## 12. Tesorería
 
-> **Hoy este módulo no se ofrece en el menú.** Está construido y sus pantallas funcionan —todo lo que cuenta este capítulo es cierto—, pero se dejó fuera del menú lateral mientras se termina de afinar, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Lo que eso significa exactamente está en 1.5. Tiene una consecuencia que hay que prever: **una compra puede llegar hasta tesorería y quedarse ahí**, porque el paso 5 del circuito de Compras —registrar el pago— se ejecuta en este módulo. Mientras Tesorería no vuelva al menú, ese paso lo hace quien tenga el rol y sepa escribir la dirección. El módulo ganó además una primera entrada, **Tablero**, que no existía cuando se escribió este capítulo.
+**Tesorería dejó de ser un módulo, y no es que esté escondida mientras se afina.** La empresa decidió que el sistema **no lleva bancos ni cajas**: anota de dónde salió cada pago, pero no controla ningún saldo. Con esa decisión, la mitad del módulo dejó de tener sentido.
+
+Lo que se usa todos los días **se mudó a Compras y sí está en el menú**. Este capítulo se conserva porque lo que cuenta de esas pantallas sigue valiendo; lo que cambió es dónde se entra:
+
+| Pantalla | Dónde está hoy |
+| --- | --- |
+| **Pagos por hacer** | **Administración › Compras › Pagos por hacer** |
+| **Cuentas por pagar** | La misma pantalla, pestaña **Por proveedor** |
+| **Libro de tesorería** | **Administración › Compras › Movimientos de dinero** |
+| **Tablero**, **Bancos y cajas**, **Cuentas por cobrar** | Siguen fuera del menú. Son lo que la empresa decidió no llevar |
+
+**Ninguna de las seis da el cartel de obra**: las direcciones responden y las pantallas se abren. Lo que las cierra hoy es el permiso, no el cartel — y sobre este módulo **solo el administrador tiene permiso**.
 
 Tesorería es el libro del dinero. Cada banco, cada caja de efectivo y cada billetera digital de la empresa tiene aquí su cuenta, y todo lo que entra y sale de ellas queda escrito en una sola lista, en orden, con la fecha, el concepto, la referencia y el nombre de quien lo registró.
 
@@ -4565,29 +4576,22 @@ Y hay una segunda regla que conviene tener presente desde la primera pantalla: *
 
 ### 12.1 Quién entra y quién puede hacer qué
 
-Hay dos puertas distintas, y conviene no confundirlas.
+**No existe el rol de Tesorería.** Lo hubo y se retiró junto con el módulo. Los roles del sistema son diez y ninguno se llama así; están todos en 13.1.
 
-La primera es **ver el módulo**. Depende del permiso sobre Tesorería que administración le haya dado a tu rol. Si no lo tienes, el grupo Tesorería no aparece en el menú, y si escribes la dirección a mano verás una tarjeta: **Tesorería no está a tu alcance**, con el texto **Tu rol no tiene acceso a este módulo. Si lo necesitas para tu trabajo, pídeselo a quien administra el sistema.** y el enlace **Volver al panel**.
+Hay **tres** puertas distintas, y conviene no confundirlas.
 
-La segunda es **poder mover dinero**. Los botones que escriben algo — **Nueva cuenta**, **Trasladar**, **Saldo de apertura**, **Ingreso**, **Egreso**, **Ajustar**, **Pagar**, **Reversar** — solo se dibujan para el rol de Tesorería y para administración. Quien no lo tenga ve, en lugar de esos botones, uno solo: **Ver datos**.
+**La primera es ver las pantallas del módulo** —Tablero, Bancos y cajas, Cuentas por cobrar—. Depende del permiso sobre Tesorería, y hoy **solo lo tiene el administrador del sistema**. Todos los demás roles están en **Ninguno**, el gerente general y compras incluidos. Quien escriba la dirección ve la tarjeta **Tesorería no está a tu alcance**, con el texto **Tu rol no tiene acceso a este módulo. Si lo necesitas para tu trabajo, pídeselo a quien administra el sistema.** y el enlace **Volver al panel**.
 
-Esta es la situación con la que arranca el sistema. Administración puede cambiar la primera columna desde la matriz de permisos, pero no la segunda: quién paga es una regla que esa pantalla no toca.
+| Rol | Sobre Tesorería |
+| --- | --- |
+| Administrador del sistema | **Total** |
+| Los otros nueve roles | **Ninguno** |
 
-| Rol | Ve las pantallas | Registra movimientos y paga |
-| --- | --- | --- |
-| Administrador del sistema | Sí | Sí |
-| Tesorería | Sí | Sí |
-| Gerente general | Sí | No |
-| Compras | Sí | No |
-| Almacén | No | No |
-| Operaciones | No | No |
-| Recursos humanos | No | No |
-| Solicitante | No | No |
-| Consulta | No | No |
+**La segunda es mover dinero en esas pantallas** —**Nueva cuenta**, **Trasladar**, **Saldo de apertura**, **Ingreso**, **Egreso**, **Ajustar**, **Deshacer una línea**—. Pide permiso de **escritura** sobre Tesorería, que sale de la matriz de permisos como cualquier otro. Hoy, por lo anterior, solo el administrador.
 
-El rol de Consulta queda fuera de Tesorería a propósito, igual que de Nómina. «Solo lectura» de las cuentas de la empresa sigue siendo ver por dónde entra y sale todo el dinero.
+**La tercera es registrar un pago de la cola**, y esta no sale de la matriz: **la exige la propia función de la base y pide el rol Compras**, o ser administrador. Por eso quien paga las órdenes es compras, y por eso «Pagos por hacer» vive en el menú de Compras y no aquí.
 
-Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu rol es de consulta.
+**Esa tercera puerta no se puede abrir desde la matriz de permisos.** Dar permiso sobre Tesorería a alguien no le deja pagar; lo que hace falta es el rol Compras.
 
 ### 12.2 El circuito del dinero
 
@@ -4598,8 +4602,8 @@ Antes de entrar en las pantallas conviene saber por dónde nace y por dónde mue
 1. **Alguien pide material.** Nace un pedido en Compras.
 2. **Compras cotiza y prepara la orden**, y la aprueba el **Gerente general**. Es el único rol que aprueba una compra.
 3. **Compras indica cómo se paga**: el método — **Transferencia bancaria**, **Pago móvil**, **Binance** o **Efectivo** —, la moneda, el monto y los datos de a dónde va el dinero. En ese momento nace la instrucción de pago, y con ella el IGTF ya calculado si la moneda no es el bolívar.
-4. **La instrucción aparece sola en tesorería**, en dos pantallas a la vez: en **Pagos por hacer**, en orden de llegada, y en **Cuentas por pagar**, agrupada por proveedor. Nadie la carga a mano.
-5. **El tesorero pulsa Pagar** y dice de qué cuenta sale el dinero, con qué referencia y en qué fecha.
+4. **La instrucción aparece sola en Compras**, en dos vistas de la misma pantalla: **Pagos por hacer**, en orden de llegada, y su pestaña **Por proveedor**, agrupada. Nadie la carga a mano.
+5. **Quien tenga el rol Compras pulsa Pagar** y dice **por dónde salió** el dinero, con qué referencia y en qué fecha. No hay «tesorero»: ese rol no existe.
 6. **Al pulsar Confirmar el pago**, el sistema hace todo de una vez: escribe la línea **Pago a proveedor** en el libro y baja el saldo de la cuenta; si hay IGTF, escribe una segunda línea **IGTF** aparte; marca la instrucción como pagada; lo anota en la bitácora de la compra; y si con eso la orden queda saldada, la compra pasa a estar pendiente por recepcionar.
 7. **La instrucción desaparece de la cola** y la línea se queda para siempre en el libro.
 
@@ -4619,7 +4623,7 @@ Registrar un cobro no exige el rol de Tesorería: exige permiso de escritura sob
 
 ### 12.3 Bancos y cajas
 
-**Administración › Tesorería › Bancos y cajas**
+**Fuera del menú.** Es lo que la empresa decidió no llevar: hoy solo la abre el administrador.
 
 Es la pantalla de cabecera del módulo: dónde está el dinero de la empresa y cuánto hay en cada sitio. Desde aquí se crean las cuentas, se registran los ingresos y egresos que no vienen de una compra ni de una venta, y se traslada dinero de un sitio a otro.
 
@@ -4701,7 +4705,7 @@ De aquí no sale ningún papel imprimible. Lo que produce esta pantalla son lín
 
 ### 12.4 Pagos por hacer
 
-**Administración › Tesorería › Pagos por hacer**
+**Administración › Compras › Pagos por hacer**
 
 Es la cola de trabajo del tesorero: **Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda pendiente por recepcionar.**
 
@@ -4738,7 +4742,9 @@ Si el saldo de la cuenta elegida no alcanza, aparece un aviso naranja que **no i
 
 ### 12.5 Cuentas por pagar
 
-**Administración › Tesorería › Cuentas por pagar**
+**Administración › Compras › Pagos por hacer › Por proveedor**
+
+Ya no tiene entrada propia en el menú: es la segunda pestaña de **Pagos por hacer**. El título de la pantalla sigue diciendo **Cuentas por pagar**.
 
 Es la misma deuda de la pantalla anterior, pero vista al revés: **Lo que se le debe a cada proveedor, por autorizaciones de compra que todavía no han salido del banco.** La cola sirve para pagar en orden; esta pantalla sirve para decidir a quién se le paga.
 
@@ -4761,7 +4767,7 @@ Si no se debe nada: **No se le debe nada a nadie**, con el texto **Toda compra a
 
 ### 12.6 Cuentas por cobrar
 
-**Administración › Tesorería › Cuentas por cobrar**
+**Fuera del menú.** Es una de las tres pantallas que quedaron escondidas, y hoy solo la abre el administrador.
 
 Lo que deben los clientes: **Facturas emitidas y todavía sin cobrar del todo. El saldo va en dólares porque se cobra en las dos monedas.**
 
@@ -4790,7 +4796,9 @@ Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitida
 
 ### 12.7 Libro de tesorería
 
-**Administración › Tesorería › Libro de tesorería**
+**Administración › Compras › Movimientos de dinero**
+
+En el menú se llama así. El título de la pantalla sigue diciendo **Libro de tesorería**.
 
 Es el libro contable del dinero: **Todo el dinero que entró y salió. No se edita ni se borra: lo que estuvo mal se reversa y las dos líneas quedan.** Aquí no se registra nada nuevo: se consulta, y si algo se registró mal, se escribe la línea contraria.
 
