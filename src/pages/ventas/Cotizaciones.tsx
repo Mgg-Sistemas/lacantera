@@ -136,6 +136,7 @@ export function Cotizaciones() {
         subtotal: q.subtotal,
         descuento: q.descuento,
         flete: q.flete,
+        baseImponible: q.base_imponible,
         iva: q.iva,
         alicuotaIva: q.alicuota_iva,
         total: q.total,
