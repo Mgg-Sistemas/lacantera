@@ -8,8 +8,8 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { CONDICIONES_PAGO, useProveedores } from '@/lib/api/catalogo'
-import { useRegistrarCotizacion } from '@/lib/api/compras'
-import type { Compra } from '@/lib/api/compras'
+import { useActualizarCotizacion, useRegistrarCotizacion } from '@/lib/api/compras'
+import type { Compra, Cotizacion } from '@/lib/api/compras'
 import { useMonedasUsables, useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
 import { bolivares, dolares, tasa as fmtTasa } from '@/lib/formato'
 
@@ -17,6 +17,17 @@ interface Props {
   abierto: boolean
   onCerrar: () => void
   compra: Compra
+  /**
+   * La cotización que se está corrigiendo, si se está corrigiendo alguna.
+   *
+   * EL MISMO FORMULARIO SIRVE PARA LAS DOS COSAS, y es a propósito: cargar y
+   * corregir piden exactamente los mismos datos. Dos pantallas gemelas se
+   * separan a la primera semana — una gana un campo y la otra no.
+   *
+   * Lo único que cambia es el proveedor, que al corregir queda fijo: cambiarlo
+   * no sería corregir esta cotización sino cargar la de otro.
+   */
+  cotizacion?: Cotizacion | null
 }
 
 interface Precio {
@@ -25,26 +36,51 @@ interface Precio {
   exento: boolean
 }
 
-export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
+export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props) {
   const { data: proveedores } = useProveedores()
   const { data: tasaVigente } = useTasaVigente()
   const { data: monedas } = useMonedasUsables()
   const registrar = useRegistrarCotizacion()
+  const actualizar = useActualizarCotizacion()
 
-  const [proveedorId, setProveedorId] = useState('')
-  const [fecha, setFecha] = useState(hoyEnCaracas())
-  const [moneda, setMoneda] = useState('USD')
-  const [condicionPago, setCondicionPago] = useState('CONTADO')
-  const [diasEntrega, setDiasEntrega] = useState('')
-  const [validez, setValidez] = useState('15')
-  const [alicuota, setAlicuota] = useState('16')
-  const [descuento, setDescuento] = useState('0')
-  const [flete, setFlete] = useState('0')
-  const [observacion, setObservacion] = useState('')
+  const corrigiendo = !!cotizacion
+  const enVuelo = registrar.isPending || actualizar.isPending
 
+  const [proveedorId, setProveedorId] = useState(
+    cotizacion ? String(cotizacion.proveedor_id) : '',
+  )
+  const [fecha, setFecha] = useState(cotizacion?.fecha ?? hoyEnCaracas())
+  const [moneda, setMoneda] = useState(cotizacion?.moneda ?? 'USD')
+  const [condicionPago, setCondicionPago] = useState(cotizacion?.condicion_pago ?? 'CONTADO')
+  const [diasEntrega, setDiasEntrega] = useState(
+    cotizacion?.dias_entrega != null ? String(cotizacion.dias_entrega) : '',
+  )
+  const [validez, setValidez] = useState(String(cotizacion?.validez_dias ?? 15))
+  const [alicuota, setAlicuota] = useState(cotizacion?.alicuota_iva ?? '16')
+  const [descuento, setDescuento] = useState(cotizacion?.descuento ?? '0')
+  const [flete, setFlete] = useState(cotizacion?.flete ?? '0')
+  const [observacion, setObservacion] = useState(cotizacion?.observacion ?? '')
+
+  /*
+    Al corregir, cada renglón arranca con lo que la cotización ya decía.
+
+    Los renglones de la cotización se buscan por `solicitud_renglon_id`, que es
+    lo que las une al pedido. Un renglón del pedido que la cotización no cotizó
+    se queda en blanco, igual que en un alta: se puede cotizar ahora.
+  */
   const [precios, setPrecios] = useState<Record<number, Precio>>(() =>
     Object.fromEntries(
-      compra.renglones.map((r) => [r.id, { cantidad: r.cantidad, precio: '', exento: false }]),
+      compra.renglones.map((r) => {
+        const previo = cotizacion?.renglones.find((x) => x.solicitud_renglon_id === r.id)
+        return [
+          r.id,
+          {
+            cantidad: previo ? String(previo.cantidad) : r.cantidad,
+            precio: previo ? String(previo.precio_unitario) : '',
+            exento: previo?.exento_iva ?? false,
+          },
+        ]
+      }),
     ),
   )
 
@@ -75,9 +111,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
   }, [compra.renglones, precios, descuento, flete, alicuota])
 
   const guardar = async () => {
-    await registrar.mutateAsync({
-      solicitud_id: compra.id,
-      proveedor_id: Number(proveedorId),
+    const comun = {
       moneda,
       fecha,
       validez_dias: Number(validez) || 15,
@@ -95,7 +129,17 @@ export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
           precio_unitario: Number(precios[r.id].precio),
           exento_iva: precios[r.id].exento,
         })),
-    })
+    }
+
+    if (cotizacion) {
+      await actualizar.mutateAsync({ id: cotizacion.id, ...comun })
+    } else {
+      await registrar.mutateAsync({
+        solicitud_id: compra.id,
+        proveedor_id: Number(proveedorId),
+        ...comun,
+      })
+    }
     onCerrar()
   }
 
@@ -106,16 +150,24 @@ export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
     <Modal
       abierto={abierto}
       onCerrar={onCerrar}
-      titulo="Cotización del proveedor"
-      descripcion="Se carga tal como la mandó el proveedor. Cargar otra del mismo proveedor sustituye a esta."
+      titulo={corrigiendo ? `Corregir la ${cotizacion.numero}` : 'Cotización del proveedor'}
+      descripcion={
+        corrigiendo
+          ? 'Se corrige sobre la misma cotización: conserva su número y su sitio en el historial.'
+          : 'Se carga tal como la mandó el proveedor. Cargar otra del mismo proveedor sustituye a esta.'
+      }
       ancho="lg"
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
             Cancelar
           </Button>
-          <Button onClick={() => void guardar()} disabled={!proveedorId || registrar.isPending}>
-            {registrar.isPending ? 'Guardando…' : 'Guardar cotización'}
+          <Button onClick={() => void guardar()} disabled={!proveedorId || enVuelo}>
+            {enVuelo
+              ? 'Guardando…'
+              : corrigiendo
+                ? 'Guardar los cambios'
+                : 'Guardar cotización'}
           </Button>
         </>
       }
@@ -138,9 +190,12 @@ export function ModalCotizacion({ abierto, onCerrar, compra }: Props) {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
+        {/* Al corregir, el proveedor queda fijo: cambiarlo no seria corregir
+            esta cotizacion sino cargar la de otro, y eso ya tiene su boton. */}
         <SelectBuscable
           label="Proveedor"
           vacio="Elige el proveedor"
+          disabled={corrigiendo}
           valor={proveedorId}
           onCambio={(v) => {
             setProveedorId(v)
