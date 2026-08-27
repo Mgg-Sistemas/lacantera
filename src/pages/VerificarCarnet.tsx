@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { BadgeCheck, ShieldX, Search, TriangleAlert } from 'lucide-react'
 import { verificarCarnet, type CarnetVerificado } from '@/lib/api/carnets'
 import { EMPRESA } from '@/lib/empresa'
 
@@ -10,53 +9,54 @@ import { EMPRESA } from '@/lib/empresa'
 
   La abre un vigilante en un portón, a pleno sol, con un teléfono barato y con el
   trabajador delante esperando. No tiene cuenta, nunca ha visto el sistema y no
-  va a leer un párrafo. Tiene UNA pregunta: ¿este carnet vale?
+  va a leer un párrafo. Tres preguntas, en este orden: ¿el carnet vale?, ¿es la
+  misma cara?, y —si alguien está en el suelo— ¿a quién llamo?
 
-  Se diseñó con tres propuestas independientes y nueve jueces —velocidad,
-  resistencia al engaño e identidad—. Lo que sigue son las decisiones que salieron
-  de ahí, y están escritas porque cada una se va a leer como un capricho si no
-  queda dicha la razón.
+  ────────────────────────────────────────────────────────────────────────────
+  DE DÓNDE SALE EL DISEÑO
 
-  1. «VIGENTE» Y «RECHAZADO», NUNCA «VÁLIDO» Y «NO VÁLIDO»
+  De la tarjeta de plástico, que es el objeto contra el que se compara. La
+  pantalla no la copia —copiarla la haría lenta, y eso ya se descartó midiéndolo
+  con tres propuestas y nueve jueces— pero habla su idioma: la banda naranja
+  arriba, la placa ámbar de la ficha abajo, y la misma tipografía de rótulo.
 
-  Es el hallazgo más barato y el más importante: «NO VÁLIDO» contiene «VÁLIDO».
-  A dos metros, con reflejo y prisa, el error cae siempre del mismo lado — el de
-  dejar pasar. Dos palabras con distinta inicial, distinta longitud y distinta
-  silueta no se confunden ni de refilón.
+  Archivo para el veredicto y los rótulos: es la grotesca que la casa eligió
+  «del mundo de los rótulos de maquinaria y la señalética de seguridad». Inter
+  para los datos, que es donde importan las cifras tabulares. Las dos ya vienen
+  servidas con la aplicación, así que no hay una sola petición de red por la
+  tipografía — en un portón con mala señal eso se nota.
 
-  2. EL COLOR NO PUEDE SER EL ÚNICO PORTADOR DEL VEREDICTO
+  LA FOTO VIVE DENTRO DEL CAMPO DE COLOR
 
-  Verde #1FA24E y rojo #A31207 están a 24 puntos de L*, comprobado: en escala de
-  grises siguen siendo dos manchas distintas, así que el veredicto sobrevive al
-  sol, a una pantalla mala y al daltonismo. Y encima cambia la polaridad del
-  texto —tinta sobre el claro, blanco sobre el oscuro—, que es un tercer canal.
+  Es la decisión que más cambia la pantalla y viene de la última advertencia del
+  panel: el riesgo que queda vivo es que el verde enseñe a no mirar la cara. Con
+  la foto fuera, el color se lee y se pasa de largo. Con la foto DENTRO, el
+  verde no existe sin cara: no se puede leer el veredicto sin tener el retrato
+  en el mismo golpe de vista.
 
-  3. EL GRIS DE «BUSCANDO» ES ACROMÁTICO A PROPÓSITO
+  EL SELLO SE ESTAMPA
 
-  Es la única superficie sin color de toda la pantalla, y por eso no puede
-  leerse como un veredicto. Se le da al estado que sale en el cien por cien de
-  los escaneos, y JAMÁS al fallo de red: el fallo de red pide una acción y el
-  gris no la pide.
+  Al llegar la respuesta el cuño cae como sobre un papel. Es lo que la página es
+  —un acto de certificación— y es un solo momento, no efectos sueltos. De paso
+  resuelve algo que ninguna palabra resuelve: una captura de pantalla nunca se
+  estampa.
 
-  4. LA FOTO MANDA, PORQUE ES EL ANTIFRAUDE
+  PRIMERO EL TELÉFONO
 
-  Toda esta función existe para eso: la base guarda la foto QUE SE IMPRIMIÓ EN
-  ESE CARNET, así que si alguien despegó el plástico y cambió el retrato,
-  comparar lo delata.
+  Todo está medido para un teléfono: el veredicto y la cara caben juntos en la
+  primera pantalla. En un escritorio no hay «versión de escritorio» — la misma
+  columna, centrada, como un recibo largo. Un vigilante y una recepcionista
+  tienen que ver exactamente lo mismo, porque una foto de una de las dos
+  pantallas tiene que poder compararse con la otra.
 
-  5. ALGO QUE UNA CAPTURA DE PANTALLA NO PUEDA FALSIFICAR
+  LO QUE NO SE TOCA, Y POR QUÉ
 
-  Un bloque de color liso con un gancho se copia en diez líneas de HTML, y una
-  captura de ayer se ve igual que una comprobación de ahora. Por eso los
-  segundos corren, y por eso el código se enseña con la instrucción de cotejarlo
-  contra el que está impreso bajo el QR: una captura del carnet de otro se cae
-  ahí.
-
-  6. NO SE RESPETA EL TEMA DEL SISTEMA, Y ES A PROPÓSITO
-
-  En el resto de la aplicación respetar el modo oscuro es cortesía. Aquí el
-  color ES el veredicto, y que el teléfono decida invertirlo es exactamente lo
-  que no puede pasar. Los colores van escritos, no en tokens.
+  El par de colores del veredicto está medido: verde #1FA24E en L* 59 y rojo
+  #A31207 en L* 34, veinticinco puntos de separación, o sea que en blanco y
+  negro siguen siendo dos manchas distintas. Las palabras son VIGENTE y
+  RECHAZADO y no «válido / no válido», porque «NO VÁLIDO» contiene «VÁLIDO» y a
+  dos metros el error caería siempre del lado de dejar pasar. Y el gris de
+  «buscando» es acromático para que nunca pueda leerse como un veredicto.
 */
 
 const HEX = /[^0-9A-F]/g
@@ -78,11 +78,10 @@ const enGrupos = (codigo: string) => (codigo.match(/.{1,6}/g) ?? [codigo]).join(
 /**
  * Cuánto lleva aquí, dicho como lo dice la gente.
  *
- * «Desde el 20/07/2026» obliga a quien lo lee a restar de cabeza, y en un
- * portón nadie resta. Lo pidió Christopher: que se vea también el tiempo.
- *
- * En años y meses, y omitiendo lo que sea cero: «3 años», «7 meses», «2 años y
- * 4 meses». Decir «0 años y 7 meses» es hablar como una máquina.
+ * «Desde el 20/07/2026» obliga a restar de cabeza, y en un portón nadie resta.
+ * En años y meses, omitiendo lo que sea cero: decir «0 años y 7 meses» es
+ * hablar como una máquina. Y de quien empieza mañana no se dice nada, porque
+ * «menos de un mes» sería falso.
  */
 function antiguedad(iso: string | null | undefined): string | null {
   if (!iso) return null
@@ -112,20 +111,61 @@ function fechaCorta(iso: string | null | undefined): string {
   return d.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-/** El dominio donde vive esta página. Se enseña para poder desconfiar de otro. */
-const dominio = () => window.location.host
+const soloDigitos = (t: string) => t.replace(/[^\d+]/g, '')
+
+const TITULAR = { fontFamily: 'var(--font-titular)' } as const
 
 // ---------------------------------------------------------------------------
 
 type Cara = 'buscando' | 'vigente' | 'rechazado' | 'sin-senal'
 
-const PALETA: Record<Cara, { fondo: string; texto: string; pie: string }> = {
+const CAMPO: Record<Cara, { fondo: string; tinta: string; sello: string }> = {
   // Acromático: la única superficie sin color, y por eso nunca un veredicto.
-  buscando: { fondo: '#6D6D6D', texto: '#FFFFFF', pie: '#cc3f00' },
-  vigente: { fondo: '#1FA24E', texto: '#351e0e', pie: '#cc3f00' },
-  rechazado: { fondo: '#A31207', texto: '#FFFFFF', pie: '#351e0e' },
-  'sin-senal': { fondo: '#F0A128', texto: '#351e0e', pie: '#351e0e' },
+  buscando: { fondo: '#6D6D6D', tinta: '#FFFFFF', sello: '#5A5A5A' },
+  vigente: { fondo: '#1FA24E', tinta: '#0B2E18', sello: '#188A41' },
+  rechazado: { fondo: '#A31207', tinta: '#FFFFFF', sello: '#7E0D05' },
+  'sin-senal': { fondo: '#F0A128', tinta: '#3D2F00', sello: '#D18A1E' },
 }
+
+/*
+  EL CUÑO, DIBUJADO Y NO UN ICONO DE LIBRERÍA.
+
+  Una orla dentada de doce puntas: es la silueta de un sello de caucho y se
+  reconoce como tal antes de leer nada. Cambia solo lo de dentro —el gancho, el
+  aspa, la raya— porque esas tres siluetas no se parecen a ninguna distancia, y
+  esa es la tercera vía por la que se distingue el veredicto, además del color y
+  de la palabra.
+*/
+function Cuno({ vale }: { vale: boolean | null }) {
+  /*
+    El borde alterna dos radios, y ahí está la diferencia.
+
+    A radio constante salen doce lados iguales, o sea un dodecágono: de lejos se
+    lee como un círculo y no dice nada. Alternando 47 y 39 salen las muescas, y
+    esa silueta dentada es lo que se reconoce como sello antes de leer nada.
+  */
+  const puntas = Array.from({ length: 24 }, (_, i) => {
+    const a = (i / 24) * Math.PI * 2 - Math.PI / 2
+    const r = i % 2 === 0 ? 47 : 39
+    return `${(50 + Math.cos(a) * r).toFixed(2)},${(50 + Math.sin(a) * r).toFixed(2)}`
+  }).join(' ')
+
+  return (
+    <svg viewBox="0 0 100 100" aria-hidden className="size-full">
+      <polygon points={puntas} fill="none" stroke="currentColor" strokeWidth="5" />
+      <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" strokeWidth="3.5" />
+      {vale === true ? (
+        <path d="M33 51 L45 63 L68 39" fill="none" stroke="currentColor" strokeWidth="9" />
+      ) : vale === false ? (
+        <path d="M36 36 L64 64 M64 36 L36 64" fill="none" stroke="currentColor" strokeWidth="9" />
+      ) : (
+        <path d="M33 50 H67" fill="none" stroke="currentColor" strokeWidth="9" />
+      )}
+    </svg>
+  )
+}
+
+// ---------------------------------------------------------------------------
 
 export function VerificarCarnet() {
   const { codigo } = useParams()
@@ -134,9 +174,9 @@ export function VerificarCarnet() {
   /*
     Fuera de los buscadores.
 
-    Es una página abierta con nombres y cédulas de gente que no eligió estar en
-    internet. Que exista para quien escanea no quiere decir que tenga que salir
-    en una búsqueda.
+    Es una página abierta con nombres, cédulas y —por decisión de la empresa—
+    direcciones y teléfonos de familiares. Que exista para quien escanea no
+    quiere decir que tenga que salir en una búsqueda.
   */
   useEffect(() => {
     const m = document.createElement('meta')
@@ -161,120 +201,205 @@ export function VerificarCarnet() {
   })
 
   if (!buscado) return <PedirCodigo />
-
-  if (consulta.isPending) return <Marco cara="buscando" palabra="BUSCANDO" icono={<Search />} />
-
-  if (consulta.error) return <SinSenal codigo={buscado} onReintentar={() => void consulta.refetch()} />
+  if (consulta.isPending) return <Hoja cara="buscando" palabra="Buscando" vale={null} />
+  if (consulta.error)
+    return <SinSenal codigo={buscado} onReintentar={() => void consulta.refetch()} />
 
   const d = consulta.data
+  if (!d || !d.existe) return <NoExiste codigo={buscado} />
 
-  if (!d || !d.existe) {
-    return (
-      <Marco cara="rechazado" palabra="RECHAZADO" rotulo="CÓDIGO DESCONOCIDO" icono={<ShieldX />}>
-        <p className="text-[17px] leading-snug font-bold">
-          Ningún carnet de esta empresa tiene ese código.
-        </p>
-        <p className="tabular mt-4 text-[15px] tracking-wider">{enGrupos(buscado)}</p>
-        <p className="mt-2 text-[13px] leading-relaxed text-[#6b5b4e]">
-          Revise los 18 caracteres impresos debajo del QR.
-        </p>
-        <a
-          href="/v"
-          className="mt-4 inline-flex h-11 items-center justify-center rounded-[6px] border-2 border-[#351e0e]/25 px-4 text-[15px] font-semibold"
-        >
-          Escribirlo a mano
-        </a>
-      </Marco>
-    )
-  }
-
-  return <Veredicto d={d} codigo={buscado} />
+  return <Resultado d={d} codigo={buscado} />
 }
 
 // ---------------------------------------------------------------------------
 
-/*
-  EL MARCO ES EL MISMO EN TODAS.
-
-  Mismo alto de bloque, mismo sitio del glifo, misma línea de sello. A partir
-  del segundo carnet el ojo deja de buscar y va directo. Si el bloque creciera
-  cuando hay algo que explicar, cada consulta empezaría de cero.
-*/
-function Marco({
-  cara,
-  palabra,
-  rotulo,
-  icono,
-  children,
-}: {
-  cara: Cara
-  palabra: string
-  rotulo?: string
-  icono: React.ReactNode
-  children?: React.ReactNode
-}) {
-  const c = PALETA[cara]
-
+/** La banda de la casa. Igual en todas las pantallas, y la primera que carga. */
+function Banda() {
   return (
-    <div className="flex min-h-dvh flex-col bg-[#f5f2ef] text-[#351e0e]">
-      <div
-        className="flex flex-col items-center justify-center px-5 py-9 text-center"
-        style={{ backgroundColor: c.fondo, color: c.texto }}
-      >
-        {/*
-          LA MARCA, CENTRADA Y SOBRE UN DISCO BLANCO.
-
-          Estaba a 24 píxeles y alineada a la izquierda dentro de un contenedor
-          de 30rem que va centrado: en una pantalla ancha eso la dejaba flotando
-          en mitad de la nada, y sobre el verde apenas se distinguía. Christopher
-          lo dijo: «el logo casi no se aprecia».
-
-          Va sobre disco blanco porque el logo tiene trazos oscuros y encima de
-          un fondo de color se pierde — es lo mismo que ya hace en el carnet
-          impreso y en la barra lateral.
-
-          Y con el nombre al lado: es lo que convierte una insignia en un
-          membrete. Sigue siendo pequeño a propósito, porque nada de este bloque
-          puede competir con la palabra del veredicto.
-        */}
-        <div className="mb-4 flex items-center gap-2">
-          <img
-            src="/media/marca.webp"
-            alt=""
-            className="size-10 shrink-0 rounded-full bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,.2)]"
-          />
-          <span className="text-[13px] leading-tight font-bold tracking-wide opacity-90">
-            {EMPRESA.nombre}
-          </span>
-        </div>
-
-        <div className="[&>svg]:size-16 [&>svg]:stroke-[2.5]">{icono}</div>
-
-        <p className="mt-2 text-[clamp(2rem,12vw,3.25rem)] leading-none font-extrabold tracking-tight">
-          {palabra}
+    <header
+      className="flex items-center gap-2.5 bg-[#cc3f00] px-4 pb-2.5"
+      style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
+    >
+      <img src="/media/marca.webp" alt="" className="size-9 shrink-0 rounded-full bg-white p-1" />
+      <div className="min-w-0 leading-tight">
+        <p className="truncate text-[13px] font-bold tracking-wide text-white" style={TITULAR}>
+          {EMPRESA.nombre}
         </p>
-
-        {/* Hueco reservado: el bloque mide igual haya o no haya causa. */}
-        <p className="mt-2 h-6 text-[15px] leading-6 font-bold tracking-wide">{rotulo ?? ''}</p>
+        <p className="truncate text-[10px] text-white/70">
+          {EMPRESA.forma} · RIF {EMPRESA.rif}
+        </p>
       </div>
+    </header>
+  )
+}
 
-      <Sello cara={cara} />
-
-      <main className="mx-auto w-full max-w-[30rem] grow px-5 py-6">{children}</main>
-
-      <Pie color={c.pie} />
-    </div>
+function Pie() {
+  return (
+    <footer className="bg-[#351e0e] px-5 py-4 text-center">
+      <p className="text-[10px] leading-relaxed text-white/55">
+        Esta página dice si un carnet es auténtico y si sigue vigente.
+      </p>
+      <p className="mt-1 text-[10px] text-white/40">{window.location.host}</p>
+    </footer>
   )
 }
 
 /*
-  LA HORA, CON LOS SEGUNDOS CORRIENDO.
+  LA HOJA.
 
-  Es lo único de esta pantalla que una captura no puede imitar: quien enseñe la
-  foto de una comprobación de ayer la tiene congelada, y ahí se ve. Va fuera del
-  bloque para no robarle la primera mirada, y pegada a él para que se vea.
+  Una sola columna, siempre igual de ancha, con la banda de la empresa arriba y
+  la placa de la ficha abajo. En un teléfono ocupa la pantalla; en un escritorio
+  se centra sobre el fondo de piedra y se lee como un recibo largo. No hay
+  «versión de escritorio»: un vigilante y una recepcionista tienen que ver
+  exactamente lo mismo, porque una foto de una de las dos pantallas tiene que
+  poder compararse con la otra.
 */
-function Sello({ cara }: { cara: Cara }) {
+function Hoja({
+  cara,
+  palabra,
+  causa,
+  vale,
+  foto,
+  nombre,
+  ficha,
+  children,
+}: {
+  cara: Cara
+  palabra: string
+  causa?: string
+  vale: boolean | null
+  foto?: string | null
+  nombre?: string
+  ficha?: string
+  children?: React.ReactNode
+}) {
+  const c = CAMPO[cara]
+
+  return (
+    <div
+      className="flex min-h-dvh justify-center bg-[#e9e4de]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      {/*
+        Las claves de la animación viven aquí y no en la hoja de estilos global:
+        esta pantalla es la única de todo el sistema que las usa, y meterlas en
+        el CSS de la aplicación las cargaría en las otras cincuenta.
+      */}
+      <style>{`
+        @keyframes cuno {
+          0%   { transform: scale(2.6) rotate(-16deg); opacity: 0 }
+          55%  { transform: scale(.92) rotate(-7deg);  opacity: 1 }
+          100% { transform: scale(1)   rotate(-5deg);  opacity: 1 }
+        }
+        @keyframes surge {
+          from { opacity: 0; transform: translateY(6px) }
+          to   { opacity: 1; transform: none }
+        }
+        .cuno  { animation: cuno .42s cubic-bezier(.2,1.4,.4,1) both }
+        .surge { animation: surge .3s ease-out both; animation-delay: .2s }
+        @media (prefers-reduced-motion: reduce) {
+          .cuno  { animation: none; transform: rotate(-5deg) }
+          .surge { animation: none }
+        }
+      `}</style>
+
+      <main className="flex w-full max-w-[26rem] flex-col bg-[#f5f2ef] shadow-[0_0_40px_rgba(53,30,14,.12)]">
+        <Banda />
+
+        {/* ------------------------------------------------- el veredicto */}
+        <section
+          className="px-5 pt-7 pb-6 text-center"
+          style={{ backgroundColor: c.fondo, color: c.tinta }}
+          aria-live="polite"
+        >
+          <div className="cuno mx-auto size-[4.5rem]">
+            <Cuno vale={vale} />
+          </div>
+
+          <p
+            className="surge mt-3 text-[clamp(2.25rem,13vw,3rem)] leading-[.95] font-extrabold uppercase"
+            style={{ ...TITULAR, letterSpacing: '-.01em' }}
+          >
+            {palabra}
+          </p>
+
+          {/* Hueco reservado: el campo mide igual haya causa o no la haya. */}
+          <p
+            className="surge mt-2 h-5 text-[13px] leading-5 font-bold tracking-[.08em] uppercase opacity-90"
+            style={TITULAR}
+          >
+            {causa ?? ''}
+          </p>
+
+          {/*
+            LA CARA, DENTRO DEL COLOR.
+
+            Es lo que impide que el verde enseñe a no mirar. Con la foto abajo,
+            el color se lee y se pasa de largo; aquí no se puede leer el
+            veredicto sin tener el retrato en el mismo golpe de vista.
+
+            El marco blanco y la sombra dura no son adorno: separan el retrato
+            del campo de color, que si no se lo traga.
+          */}
+          {foto ? (
+            <div className="surge mt-5">
+              <img
+                src={foto}
+                alt={`Foto impresa en el carnet de ${nombre ?? 'el trabajador'}`}
+                className="mx-auto block w-[40vw] max-w-[9.5rem] rounded-[3px] border-[5px] border-white object-cover shadow-[3px_3px_0_rgba(0,0,0,.22)]"
+                style={{ aspectRatio: '24 / 27' }}
+              />
+              <p className="mt-3 text-[12px] font-bold tracking-[.1em] uppercase" style={TITULAR}>
+                Compare la cara con la persona
+              </p>
+            </div>
+          ) : null}
+        </section>
+
+        {/*
+          EL SELLO DEL MOMENTO.
+
+          Con los segundos corriendo. Es lo único de esta pantalla que una
+          captura no puede imitar: quien enseñe la foto de una comprobación de
+          ayer la tiene congelada, y ahí se ve. Va pegado al campo y fuera de él,
+          para no robarle la primera mirada.
+        */}
+        <Momento cara={cara} color={c.sello} tinta={c.tinta} />
+
+        <div className="grow px-5 py-5">{children}</div>
+
+        {/*
+          LA PLACA DE LA FICHA.
+
+          Es la barra amarilla del carnet, continuada en la pantalla. Va abajo,
+          como en el plástico, y con el número grande: puestos uno al lado del
+          otro, es lo que hace que las dos cosas se lean como el mismo
+          documento.
+        */}
+        {ficha ? (
+          <div className="flex items-center justify-between bg-[#F0A128] px-5 py-3.5">
+            <span
+              className="text-[11px] font-bold tracking-[.18em] text-[#3D2F00] uppercase"
+              style={TITULAR}
+            >
+              Ficha
+            </span>
+            <span
+              className="text-[26px] leading-none font-extrabold text-[#3D2F00] tabular-nums"
+              style={TITULAR}
+            >
+              {ficha}
+            </span>
+          </div>
+        ) : null}
+
+        <Pie />
+      </main>
+    </div>
+  )
+}
+
+function Momento({ cara, color, tinta }: { cara: Cara; color: string; tinta: string }) {
   const [ahora, setAhora] = useState(() => new Date())
 
   useEffect(() => {
@@ -282,121 +407,88 @@ function Sello({ cara }: { cara: Cara }) {
     return () => window.clearInterval(t)
   }, [])
 
-  if (cara === 'buscando') {
-    return (
-      <div className="bg-[#5a5a5a] py-2 text-center text-[12px] font-semibold tracking-wider text-white/90">
-        COMPROBANDO EL CÓDIGO
-      </div>
-    )
-  }
-
   return (
     <div
-      className="tabular py-2 text-center text-[12px] font-semibold tracking-wider"
-      style={{
-        backgroundColor: cara === 'vigente' ? '#188A41' : cara === 'rechazado' ? '#7E0D05' : '#D18A1E',
-        color: cara === 'rechazado' ? '#FFFFFF' : '#2a1608',
-      }}
+      className="py-2 text-center text-[11px] font-bold tracking-[.12em] uppercase tabular-nums"
+      style={{ backgroundColor: color, color: tinta, ...TITULAR }}
     >
-      COMPROBADO{' '}
-      {ahora.toLocaleString('es-VE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      })}
+      {cara === 'buscando'
+        ? 'Comprobando el código'
+        : `Comprobado ${ahora.toLocaleString('es-VE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          })}`}
     </div>
-  )
-}
-
-function Pie({ color }: { color: string }) {
-  return (
-    <footer style={{ backgroundColor: color }}>
-      <div className="mx-auto flex w-full max-w-[30rem] items-center gap-2.5 px-5 py-3">
-        <img src="/media/marca.webp" alt="" className="size-9 shrink-0 rounded-full bg-white/95 p-0.5" />
-        <div className="min-w-0">
-          <p className="truncate text-[12px] leading-tight font-bold text-white">{EMPRESA.nombre}</p>
-          <p className="truncate text-[10px] leading-tight text-white/75">
-            {EMPRESA.forma} · RIF {EMPRESA.rif}
-          </p>
-          {/*
-            El dominio, a la vista. Nadie puede impedir que un carnet falso
-            apunte a una copia de esta página que diga VIGENTE siempre; lo único
-            que se puede hacer es que la dirección buena esté escrita donde se
-            pueda comparar.
-          */}
-          <p className="truncate text-[10px] leading-tight text-white/60">{dominio()}</p>
-        </div>
-      </div>
-      <p className="pb-3 text-center text-[10px] text-white/60">
-        Si los segundos no corren, es una foto de pantalla.
-      </p>
-    </footer>
   )
 }
 
 // ---------------------------------------------------------------------------
 
-function Veredicto({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
+/** Una etiqueta y su valor, con la raya gruesa que el sol no borra. */
+function Fila({ k, v }: { k: string; v: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 border-b-2 border-[#e0d9d1] py-2.5">
+      <dt className="text-[13px] text-[#7a6a5c]">{k}</dt>
+      <dd className="text-right text-[15px] font-semibold text-[#351e0e]">{v}</dd>
+    </div>
+  )
+}
+
+/** Un rótulo de sección: Archivo, versalitas, y muy espaciado. */
+function Rotulo({ children, color = '#9e4c01' }: { children: React.ReactNode; color?: string }) {
+  return (
+    <p
+      className="mb-2 text-[11px] font-bold tracking-[.16em] uppercase"
+      style={{ ...TITULAR, color }}
+    >
+      {children}
+    </p>
+  )
+}
+
+function Resultado({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
   const vale = d.vigente === true
   const egresado = d.causa === 'EGRESADO'
 
-  const rotulo = vale ? undefined : egresado ? 'YA NO TRABAJA AQUÍ' : 'CARNET ANULADO'
-
   return (
-    <Marco
+    <Hoja
       cara={vale ? 'vigente' : 'rechazado'}
-      palabra={vale ? 'VIGENTE' : 'RECHAZADO'}
-      rotulo={rotulo}
-      icono={vale ? <BadgeCheck /> : <ShieldX />}
+      palabra={vale ? 'Vigente' : 'Rechazado'}
+      causa={vale ? undefined : egresado ? 'Ya no trabaja aquí' : 'Carnet anulado'}
+      vale={vale}
+      foto={egresado ? null : d.foto}
+      nombre={d.nombre}
+      ficha={d.ficha}
     >
       {/*
-        La consecuencia, dicha en una frase, y distinta en los dos rechazos.
+        La consecuencia, en una frase, y distinta en los dos rechazos.
 
         Actuar es lo mismo —no pasa— pero lo que sigue no: con el carnet anulado
         el trabajador es de la casa y hay que pedirle el nuevo; con el egreso, no
-        representa a la empresa. Quien está en el portón necesita saber cuál es.
+        representa a la empresa.
       */}
       {!vale ? (
-        <p className="mb-5 text-[17px] leading-snug font-bold">
+        <p className="mb-5 text-[17px] leading-snug font-bold text-[#351e0e]">
           {egresado
             ? 'Esta persona no representa a la empresa.'
             : 'Este carnet no sirve. La persona sí trabaja aquí: pídale el carnet nuevo.'}
         </p>
       ) : null}
 
-      {/*
-        Del que ya no trabaja aquí no se enseña foto ni cargo, y la base tampoco
-        los manda. La decisión ya está tomada y comparar la cara no la cambia:
-        publicar el retrato y el puesto de un ex trabajador en una página abierta
-        no compra seguridad, la regala.
-      */}
-      {!egresado ? (
-        <div className="flex gap-4">
-          {d.foto ? (
-            <img
-              src={d.foto}
-              alt={`Foto impresa en el carnet de ${d.nombre ?? 'el trabajador'}`}
-              className="h-[132px] w-[117px] shrink-0 rounded-[4px] border-4 border-white object-cover shadow-[2px_2px_0_rgba(53,30,14,.25)]"
-            />
-          ) : (
-            <div className="flex h-[132px] w-[117px] shrink-0 items-center justify-center rounded-[4px] border-2 border-dashed border-[#351e0e]/30 px-2 text-center text-[11px] leading-tight font-semibold">
-              ESTE CARNET SE EMITIÓ SIN FOTO
-            </div>
-          )}
-
-          <div className="min-w-0 self-center">
-            <p className="text-[11px] font-semibold tracking-wider text-[#6b5b4e]">NOMBRE COMPLETO</p>
-            <p className="text-[21px] leading-tight font-bold break-words">{d.nombre}</p>
-            {d.cargo ? (
-              <p className="mt-1 text-[13px] leading-snug font-semibold tracking-wide text-[#9e4c01]">
-                {d.cargo.toUpperCase()}
-              </p>
-            ) : null}
-          </div>
-        </div>
+      <p className="text-[11px] font-semibold tracking-[.14em] text-[#7a6a5c] uppercase">
+        Nombre completo
+      </p>
+      <p className="mt-0.5 text-[22px] leading-tight font-bold text-[#351e0e]" style={TITULAR}>
+        {d.nombre}
+      </p>
+      {d.cargo ? (
+        <p className="mt-1 text-[13px] font-semibold tracking-[.06em] text-[#9e4c01] uppercase">
+          {d.cargo}
+        </p>
       ) : null}
 
       {/*
@@ -404,39 +496,36 @@ function Veredicto({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
         contra suplantación se cayó, y quien verifica tiene que enterarse.
       */}
       {vale && !d.foto ? (
-        <p className="mt-3 rounded-[6px] bg-[#fff6da] px-3 py-2 text-[13px] font-semibold">
-          Este carnet no lleva foto guardada. Pida la cédula.
+        <p className="mt-4 border-l-4 border-[#F0A128] bg-[#fff6da] px-3 py-2 text-[14px] font-semibold text-[#3D2F00]">
+          Este carnet se emitió sin foto. Pida la cédula.
         </p>
       ) : null}
 
-      {!egresado && d.foto ? (
-        <p className="mt-3 text-[14px] font-bold tracking-wide">COMPARE LA CARA CON LA PERSONA</p>
-      ) : null}
-
-      <dl className="mt-5 text-[14px]">
-        {[
-          ['Cédula', d.cedula],
-          ['Ficha', d.ficha],
-          ...(!egresado
-            ? ([
-                ['Departamento', d.departamento ?? '—'],
-                [
-                  'Trabaja aquí desde',
-                  `${fechaCorta(d.desde)}${antiguedad(d.desde) ? ` · ${antiguedad(d.desde)}` : ''}`,
-                ],
-                ...(d.edad ? ([['Edad', `${d.edad} años`]] as Array<[string, string]>) : []),
-              ] as Array<[string, string]>)
-            : []),
-        ].map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-4 border-b-2 border-[#dedede] py-2">
-            <dt className="text-[#6b5b4e]">{k}</dt>
-            <dd className="tabular text-right font-semibold">{v}</dd>
-          </div>
-        ))}
+      <dl className="mt-5">
+        <Fila k="Cédula" v={<span className="tabular-nums">{d.cedula}</span>} />
+        {!egresado ? (
+          <>
+            <Fila k="Departamento" v={d.departamento ?? '—'} />
+            <Fila
+              k="Trabaja aquí desde"
+              v={
+                <>
+                  <span className="tabular-nums">{fechaCorta(d.desde)}</span>
+                  {antiguedad(d.desde) ? (
+                    <span className="block text-[12px] font-normal text-[#7a6a5c]">
+                      {antiguedad(d.desde)}
+                    </span>
+                  ) : null}
+                </>
+              }
+            />
+            {d.edad ? <Fila k="Edad" v={`${d.edad} años`} /> : null}
+          </>
+        ) : null}
       </dl>
 
       {egresado ? (
-        <p className="mt-3 text-[13px] leading-relaxed text-[#6b5b4e]">
+        <p className="mt-3 text-[13px] leading-relaxed text-[#7a6a5c]">
           No se publican más datos de quien ya no trabaja aquí.
         </p>
       ) : null}
@@ -444,87 +533,119 @@ function Veredicto({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
       {/*
         EN CASO DE EMERGENCIA.
 
-        Lo pidió la líder y Christopher lo confirmó sabiendo que sale a internet
-        sin sesión. Va en bloque aparte, teñido y debajo del veredicto, porque
-        no se lee en el mismo momento: el portón se resuelve arriba; esto se
-        busca cuando alguien está en el suelo.
-
-        Los teléfonos son enlaces `tel:`. Quien está atendiendo a un herido no
-        va a copiar once dígitos a mano en la aplicación del teléfono.
+        No se lee en el mismo momento que el veredicto: el portón se resuelve
+        arriba; esto se busca cuando alguien está en el suelo. Por eso va abajo,
+        con su propio color, y con los teléfonos como botones de llamada — quien
+        atiende a un herido no va a copiar once dígitos a mano.
       */}
-      {!egresado && (d.sangre || d.contacto_emergencia || d.telefono_emergencia || d.telefono) ? (
-        <div className="mt-5 rounded-[6px] border-2 border-[#8c6d00]/30 bg-[#fff6da] px-4 py-3">
-          <p className="text-[11px] font-bold tracking-wider text-[#6b4e00]">
-            EN CASO DE EMERGENCIA
-          </p>
+      {!egresado &&
+      (d.sangre || d.contacto_emergencia || d.telefono_emergencia || d.telefono || d.direccion) ? (
+        <section className="mt-6 border-l-4 border-[#A31207] bg-white px-4 py-3.5">
+          <Rotulo color="#A31207">En caso de emergencia</Rotulo>
 
-          <dl className="mt-2 text-[14px]">
-            {d.sangre ? (
-              <div className="flex justify-between gap-4 py-1">
-                <dt className="text-[#6b5b4e]">Grupo sanguíneo</dt>
-                <dd className="text-[17px] font-bold">{d.sangre}</dd>
-              </div>
-            ) : null}
-
-            {d.contacto_emergencia ? (
-              <div className="flex justify-between gap-4 py-1">
-                <dt className="text-[#6b5b4e]">Llamar a</dt>
-                <dd className="text-right font-semibold">{d.contacto_emergencia}</dd>
-              </div>
-            ) : null}
-
-            {d.telefono_emergencia ? (
-              <div className="flex justify-between gap-4 py-1">
-                <dt className="text-[#6b5b4e]">Su teléfono</dt>
-                <dd>
-                  <a
-                    href={`tel:${d.telefono_emergencia.replace(/[^\d+]/g, '')}`}
-                    className="tabular text-[17px] font-bold underline underline-offset-2"
-                  >
-                    {d.telefono_emergencia}
-                  </a>
-                </dd>
-              </div>
-            ) : null}
-
-            {d.telefono ? (
-              <div className="flex justify-between gap-4 py-1">
-                <dt className="text-[#6b5b4e]">Teléfono del trabajador</dt>
-                <dd>
-                  <a
-                    href={`tel:${d.telefono.replace(/[^\d+]/g, '')}`}
-                    className="tabular font-semibold underline underline-offset-2"
-                  >
-                    {d.telefono}
-                  </a>
-                </dd>
-              </div>
-            ) : null}
-          </dl>
-
-          {d.direccion ? (
-            <div className="mt-2 border-t border-[#8c6d00]/20 pt-2">
-              <p className="text-[12px] text-[#6b5b4e]">Dirección</p>
-              <p className="text-[14px] leading-snug">{d.direccion}</p>
+          {d.sangre ? (
+            <div className="mb-3 flex items-baseline gap-2">
+              <span className="text-[13px] text-[#7a6a5c]">Grupo sanguíneo</span>
+              <span
+                className="text-[24px] leading-none font-extrabold text-[#A31207]"
+                style={TITULAR}
+              >
+                {d.sangre}
+              </span>
             </div>
           ) : null}
-        </div>
+
+          {d.telefono_emergencia ? (
+            <a
+              href={`tel:${soloDigitos(d.telefono_emergencia)}`}
+              className="mb-2 flex min-h-14 items-center justify-between gap-3 rounded-[4px] bg-[#A31207] px-3.5 text-white"
+            >
+              <span className="min-w-0">
+                <span className="block text-[10px] tracking-[.14em] uppercase opacity-80">
+                  Llamar a
+                </span>
+                <span className="block truncate text-[15px] font-semibold">
+                  {d.contacto_emergencia ?? 'el contacto de emergencia'}
+                </span>
+              </span>
+              <span className="shrink-0 text-[16px] font-bold tabular-nums">
+                {d.telefono_emergencia}
+              </span>
+            </a>
+          ) : d.contacto_emergencia ? (
+            <Fila k="Llamar a" v={d.contacto_emergencia} />
+          ) : null}
+
+          {d.telefono ? (
+            <a
+              href={`tel:${soloDigitos(d.telefono)}`}
+              className="flex min-h-14 items-center justify-between gap-3 rounded-[4px] border-2 border-[#A31207]/25 px-3.5 text-[#351e0e]"
+            >
+              <span className="text-[10px] tracking-[.14em] text-[#7a6a5c] uppercase">
+                Su propio teléfono
+              </span>
+              <span className="text-[15px] font-semibold tabular-nums">{d.telefono}</span>
+            </a>
+          ) : null}
+
+          {d.direccion ? (
+            <div className="mt-3 border-t-2 border-[#e0d9d1] pt-2.5">
+              <p className="text-[10px] tracking-[.14em] text-[#7a6a5c] uppercase">Dirección</p>
+              <p className="mt-0.5 text-[14px] leading-snug text-[#351e0e]">{d.direccion}</p>
+            </div>
+          ) : null}
+        </section>
       ) : null}
 
-      <div className="mt-5 rounded-[6px] bg-white px-4 py-3">
-        <p className="text-[11px] font-semibold tracking-wider text-[#6b5b4e]">CÓDIGO DEL CARNET</p>
-        <p className="tabular mt-0.5 text-[17px] font-semibold tracking-widest">
+      {/*
+        El código, y la instrucción de cotejarlo.
+
+        Es lo que convierte a quien verifica en parte de la comprobación: una
+        captura de pantalla del carnet de otro se cae justo aquí.
+      */}
+      <section className="mt-6">
+        <Rotulo>Código del carnet</Rotulo>
+        <p className="text-[19px] leading-none font-semibold tracking-[.12em] text-[#351e0e] tabular-nums">
           {enGrupos(codigo)}
         </p>
-        <p className="mt-1.5 text-[12px] leading-relaxed text-[#6b5b4e]">
+        <p className="mt-1.5 text-[12px] leading-relaxed text-[#7a6a5c]">
           Debe coincidir con el impreso debajo del QR.
         </p>
-      </div>
-    </Marco>
+      </section>
+    </Hoja>
   )
 }
 
 // ---------------------------------------------------------------------------
+
+function NoExiste({ codigo }: { codigo: string }) {
+  return (
+    <Hoja cara="rechazado" palabra="Rechazado" causa="Código desconocido" vale={false}>
+      <p className="text-[17px] leading-snug font-bold text-[#351e0e]">
+        Ningún carnet de esta empresa tiene ese código.
+      </p>
+
+      <p className="mt-5 text-[19px] leading-none font-semibold tracking-[.12em] text-[#351e0e] tabular-nums">
+        {enGrupos(codigo)}
+      </p>
+      <p className="mt-1.5 text-[12px] leading-relaxed text-[#7a6a5c]">
+        Revise los 18 caracteres impresos debajo del QR.
+      </p>
+
+      {/*
+        Escribirlo a mano va en segundo plano y no como botón grande: la
+        reparación no puede pesar más que el rechazo, con el trabajador delante
+        y la cola detrás.
+      */}
+      <a
+        href="/v"
+        className="mt-4 inline-flex min-h-12 items-center rounded-[4px] border-2 border-[#351e0e]/20 px-4 text-[15px] font-semibold text-[#351e0e]"
+      >
+        Escribirlo a mano
+      </a>
+    </Hoja>
+  )
+}
 
 /*
   SIN SEÑAL NO ES «NO VALE», Y TAMPOCO ES «PASA».
@@ -535,30 +656,30 @@ function Veredicto({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
 */
 function SinSenal({ codigo, onReintentar }: { codigo: string; onReintentar: () => void }) {
   return (
-    <Marco
-      cara="sin-senal"
-      palabra="SIN SEÑAL"
-      rotulo="NO SE PUDO COMPROBAR"
-      icono={<TriangleAlert />}
-    >
-      <p className="text-[17px] leading-snug font-bold">Esto no dice que el carnet sea falso.</p>
-      <p className="mt-2 text-[17px] leading-snug font-bold">
+    <Hoja cara="sin-senal" palabra="Sin señal" causa="No se pudo comprobar" vale={null}>
+      <p className="text-[17px] leading-snug font-bold text-[#351e0e]">
+        Esto no dice que el carnet sea falso.
+      </p>
+      <p className="mt-2 text-[17px] leading-snug font-bold text-[#351e0e]">
         Tampoco autoriza el paso. Consulte con el supervisor.
       </p>
 
-      <p className="tabular mt-5 text-[19px] font-semibold tracking-widest">{enGrupos(codigo)}</p>
-      <p className="mt-1 text-[12px] text-[#6b5b4e]">
+      <p className="mt-5 text-[22px] leading-none font-semibold tracking-[.12em] text-[#351e0e] tabular-nums">
+        {enGrupos(codigo)}
+      </p>
+      <p className="mt-1.5 text-[12px] text-[#7a6a5c]">
         Puede dictar este código por radio para que lo comprueben.
       </p>
 
       <button
         type="button"
         onClick={onReintentar}
-        className="mt-5 h-14 w-full rounded-[6px] bg-[#cc3f00] text-[17px] font-bold text-white"
+        className="mt-5 min-h-14 w-full rounded-[4px] bg-[#cc3f00] text-[17px] font-bold tracking-wide text-white uppercase"
+        style={TITULAR}
       >
-        REINTENTAR
+        Reintentar
       </button>
-    </Marco>
+    </Hoja>
   )
 }
 
@@ -584,79 +705,72 @@ function PedirCodigo() {
   const faltan = 18 - codigo.length
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#f5f2ef] text-[#351e0e]">
-      <header className="bg-[#cc3f00]">
-        <div className="mx-auto flex w-full max-w-[30rem] items-center gap-2.5 px-5 py-3">
-          <img src="/media/marca.webp" alt="" className="size-9 shrink-0 rounded-full bg-white/95 p-0.5" />
-          <div className="min-w-0">
-            <p className="truncate text-[13px] leading-tight font-bold text-white">{EMPRESA.nombre}</p>
-            <p className="truncate text-[10px] leading-tight text-white/75">
-              {EMPRESA.forma} · RIF {EMPRESA.rif}
-            </p>
-          </div>
-        </div>
-        <div className="h-1 bg-[#F0A128]" />
-      </header>
+    <div
+      className="flex min-h-dvh justify-center bg-[#e9e4de]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      <main className="flex w-full max-w-[26rem] flex-col bg-[#f5f2ef] shadow-[0_0_40px_rgba(53,30,14,.12)]">
+        <Banda />
 
-      <main className="mx-auto w-full max-w-[30rem] grow px-5 py-8">
-        <h1 className="text-[24px] leading-tight font-extrabold">Escriba el código del carnet</h1>
-        <p className="mt-2 text-[15px] leading-relaxed text-[#6b5b4e]">
-          Está impreso al reverso, debajo del QR, en tres grupos de seis.
-        </p>
-
-        <form
-          className="mt-6"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (codigo.length === 18) {
-              window.location.assign(`/v/${codigo}`)
-            } else if (faltan > 0) {
-              setAviso(`Faltan ${faltan} ${faltan === 1 ? 'carácter' : 'caracteres'}.`)
-            } else {
-              setAviso('Sobran caracteres: el código tiene 18.')
-            }
-          }}
-        >
-          <input
-            aria-label="Código del carnet"
-            value={enGrupos(codigo)}
-            onChange={(e) => {
-              setTexto(e.target.value)
-              setAviso('')
-            }}
-            placeholder="1A2B3C 4D5E6F 708192"
-            autoCapitalize="characters"
-            autoCorrect="off"
-            autoComplete="off"
-            spellCheck={false}
-            className="tabular h-16 w-full rounded-[6px] border-2 border-[#351e0e]/25 px-4 text-center text-[22px] tracking-widest uppercase outline-none focus:border-[#cc3f00]"
-          />
-
-          <p className="tabular mt-1.5 text-right text-[12px] text-[#6b5b4e]">
-            {codigo.length}/18
+        <div className="grow px-5 py-8">
+          <h1
+            className="text-[26px] leading-tight font-extrabold text-[#351e0e] uppercase"
+            style={{ ...TITULAR, letterSpacing: '-.01em' }}
+          >
+            Verificar un carnet
+          </h1>
+          <p className="mt-2 text-[15px] leading-relaxed text-[#7a6a5c]">
+            Escanee el QR del reverso. Si no se deja leer, escriba aquí el código impreso debajo,
+            en tres grupos de seis.
           </p>
 
-          {aviso ? (
-            <p className="mt-2 rounded-[6px] bg-[#fff6da] px-3 py-2 text-[14px] font-semibold">
-              {aviso}
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
-            className="mt-4 h-16 w-full rounded-[6px] bg-[#cc3f00] text-[18px] font-bold text-white"
+          <form
+            className="mt-6"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (codigo.length === 18) window.location.assign(`/v/${codigo}`)
+              else if (faltan > 0)
+                setAviso(`Faltan ${faltan} ${faltan === 1 ? 'carácter' : 'caracteres'}.`)
+              else setAviso('Sobran caracteres: el código tiene 18.')
+            }}
           >
-            COMPROBAR
-          </button>
-        </form>
+            <input
+              aria-label="Código del carnet"
+              value={enGrupos(codigo)}
+              onChange={(e) => {
+                setTexto(e.target.value)
+                setAviso('')
+              }}
+              placeholder="1A2B3C 4D5E6F 708192"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck={false}
+              className="h-16 w-full rounded-[4px] border-2 border-[#351e0e]/25 bg-white px-4 text-center text-[22px] tracking-[.1em] text-[#351e0e] uppercase tabular-nums outline-none focus:border-[#cc3f00]"
+            />
 
-        <p className="mt-6 text-[13px] leading-relaxed text-[#6b5b4e]">
-          Escanear el QR es más rápido y no se equivoca. Esto es para cuando el código no se deja
-          leer.
-        </p>
+            <p className="mt-1.5 text-right text-[12px] text-[#7a6a5c] tabular-nums">
+              {codigo.length}/18
+            </p>
+
+            {aviso ? (
+              <p className="mt-2 border-l-4 border-[#F0A128] bg-[#fff6da] px-3 py-2 text-[14px] font-semibold text-[#3D2F00]">
+                {aviso}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              className="mt-4 min-h-16 w-full rounded-[4px] bg-[#cc3f00] text-[18px] font-bold tracking-wide text-white uppercase"
+              style={TITULAR}
+            >
+              Comprobar
+            </button>
+          </form>
+        </div>
+
+        <Pie />
       </main>
-
-      <Pie color="#351e0e" />
     </div>
   )
 }
