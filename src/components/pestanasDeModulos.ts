@@ -29,6 +29,7 @@ export const PESTANAS_SITIOS: Pestana[] = [
 export const PESTANAS_PERSONAL: Pestana[] = [
   { etiqueta: 'Personal', a: '/app/nomina/personal' },
   { etiqueta: 'Tabulador de cargos', a: '/app/nomina/tabulador' },
+  { etiqueta: 'Carnets', a: '/app/nomina/carnets' },
 ]
 
 /** El período, en el orden en que se hace. */

@@ -1101,3 +1101,36 @@ export function useRegistrarIncidencia() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['incidencias'] }),
   })
 }
+
+/**
+ * La foto de alguien, cargada de una vez y sin hook.
+ *
+ * `useFoto` sirve para pintar la de UNA ficha abierta. Emitir carnets en tanda
+ * necesita cargar veinte, una detrás de otra, dentro de un bucle: para eso un
+ * hook no vale — no se pueden llamar en un bucle ni esperar a que resuelvan.
+ *
+ * Se descarga y se envuelve en una URL de objeto por la misma razón que allí:
+ * una URL firmada apunta a otro dominio y ensucia el lienzo, y un lienzo sucio
+ * no se puede exportar, que es justo lo que hay que hacer con él.
+ */
+export async function cargarFoto(path: string | null | undefined): Promise<HTMLImageElement | null> {
+  if (!path) return null
+
+  const { data } = await supabase.storage.from(BUCKET_FOTOS).download(path)
+  if (!data) return null
+
+  const objeto = URL.createObjectURL(data)
+  try {
+    const img = new Image()
+    img.src = objeto
+    await img.decode()
+    return img
+  } catch {
+    // Una foto que el navegador no sabe leer no puede impedir que salga el
+    // carnet: sale sin ella, y la página de verificación lo dice.
+    return null
+  } finally {
+    // La imagen ya está decodificada en memoria; la URL puede irse.
+    URL.revokeObjectURL(objeto)
+  }
+}
