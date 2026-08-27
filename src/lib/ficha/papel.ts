@@ -163,10 +163,41 @@ export function membrete(
     —es obligatorio en cualquier papel que salga de aquí—, así que la línea se
     arma con lo que haya en vez de dar por hecho que están los dos.
   */
-  const identidad = [d.empresa.domicilio?.toUpperCase(), 'J-RIF: ' + d.empresa.rif]
-    .filter(Boolean)
-    .join('  |  ')
-  doc.text(ajustar(doc, identidad, ANCHO_NOMBRE), TEXTO, y + 10)
+  /*
+    EL RIF VA SOLO EN SU RENGLÓN, Y EL DOMICILIO DEBAJO, PARTIDO.
+
+    Antes los dos compartían línea —«DOMICILIO  |  J-RIF: …»— y esa línea pasaba
+    por `ajustar`, que corta y pone puntos suspensivos. Con el domicilio fiscal
+    de verdad de esta empresa, que son noventa y cinco caracteres, la línea mide
+    152 mm en un hueco de 88: se cortaba en «…MUNICIPIO ANGOSTURA DEL ORI...» y
+    EL RIF NO LLEGABA A IMPRIMIRSE.
+
+    El RIF es obligatorio en todo papel que emite una empresa venezolana. Un
+    documento sin él no es un descuido de maquetación.
+
+    No estaba explotando todavía: los seis papeles ya migrados no le pasan
+    domicilio a esta función, así que la línea era solo el RIF y cabía. Se
+    descubrió al ir a migrar la factura y la constancia, que sí lo pasan — y que
+    hoy, cada una por su cuenta, ya lo parten en dos y tres renglones en vez de
+    cortarlo. Migrarlas sin esto habría sido cambiar algo que funciona por algo
+    que pierde el RIF.
+
+    Así que el orden se invierte: primero el RIF, que es corto y obligatorio, y
+    debajo el domicilio, partido y como mucho en dos renglones. Y la cabecera
+    crece solo cuando hay domicilio que enseñar, así que a los seis de antes no
+    les cambia ni un milímetro.
+  */
+  doc.text('J-RIF: ' + d.empresa.rif, TEXTO, y + 10)
+
+  let bajo = y + 10
+  if (d.empresa.domicilio) {
+    doc.setFontSize(6.2)
+    const lineas = (
+      doc.splitTextToSize(d.empresa.domicilio.toUpperCase(), ANCHO_NOMBRE) as string[]
+    ).slice(0, 2)
+    doc.text(lineas, TEXTO, y + 13.4, { lineHeightFactor: 1.3 })
+    bajo = y + 13.4 + (lineas.length - 1) * 2.4
+  }
 
   /*
     A la derecha, el número del documento y su fecha.
@@ -188,11 +219,19 @@ export function membrete(
     doc.text(etiqueta.toUpperCase() + ': ' + valor, DER, alto, { align: 'right' })
   })
 
+  /*
+    La regla se apoya en lo más bajo que haya: el bloque de la izquierda o los
+    datos de la derecha. Con `y + 14` fijo, un domicilio de dos renglones se
+    salía por debajo de la raya.
+  */
+  const finDatos = y + 2 + Math.max(0, (d.datos?.length ?? 1) - 1) * 4.6
+  const regla = Math.max(y + 14, bajo + 3.2, finDatos + 3.2)
+
   // La regla de color, que es lo único teñido de la cabecera.
   doc.setDrawColor(MARCA).setLineWidth(0.8)
-  doc.line(IZQ, y + 14, DER, y + 14)
+  doc.line(IZQ, regla, DER, regla)
 
-  return y + 14
+  return regla
 }
 
 /**
