@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ChipTasa } from '@/components/ChipTasa'
+import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
@@ -390,14 +391,17 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                   </div>
 
                   <div className="sm:col-span-3">
-                    <Input
-                      label="Cantidad"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={fila.cantidad}
-                      onChange={(e) => cambiar(fila.clave, { cantidad: e.target.value })}
+                    {/*
+                      Se pide en litros y se cuenta en bultos, asi que el campo
+                      deja elegir en cual se esta tecleando. Lo que sale de ahi
+                      viene siempre en la unidad del articulo, que es en lo que
+                      se lleva la existencia.
+                    */}
+                    <CantidadDeArticulo
+                      valor={fila.cantidad}
+                      onCambiar={(v) => cambiar(fila.clave, { cantidad: v })}
+                      articulo={articulos?.find((a) => String(a.id) === fila.articulo_id)}
+                      hintSinArticulo=""
                       required
                     />
                   </div>

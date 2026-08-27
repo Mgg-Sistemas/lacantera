@@ -35,6 +35,7 @@ import { ListaEditable } from '@/components/ListaEditable'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { supabase } from '@/lib/supabase'
 import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
+import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
@@ -1179,24 +1180,19 @@ export function Existencias() {
                       />
 
                       <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-                        <Input
-                          label="Cantidad"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          inputMode="decimal"
-                          value={r.cantidad}
-                          onChange={(e) =>
+                        {/*
+                          Aqui es donde mas falta hacia: quien registra la
+                          entrada esta contando bultos bajados de un camion y
+                          tiene que dejar litros en la existencia.
+                        */}
+                        <CantidadDeArticulo
+                          valor={r.cantidad}
+                          onCambiar={(v: string) =>
                             setRenglones((lista) =>
-                              lista.map((x) =>
-                                x.clave === r.clave ? { ...x, cantidad: e.target.value } : x,
-                              ),
+                              lista.map((x) => (x.clave === r.clave ? { ...x, cantidad: v } : x)),
                             )
                           }
-                          // La unidad la trae el artículo. Veinte de algo que
-                          // se mide en pares no es veinte de algo que se mide
-                          // en metros cúbicos.
-                          hint={art ? `En ${art.unidad}` : 'Elige antes el artículo'}
+                          articulo={art}
                         />
 
                         <Input
