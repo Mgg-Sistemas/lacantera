@@ -470,6 +470,45 @@ export function useAutorizaciones() {
   })
 }
 
+/** Lo que devuelve extender varias: cuantas entraron y cuales no, con su motivo. */
+export interface ResumenDeExtension {
+  extendidas: number
+  omitidas: { accion: string; motivo: string }[]
+}
+
+/**
+ * Extender varias casillas de una vez, a la misma persona y con el mismo motivo.
+ *
+ * La base las mete una a una en su propia subtransaccion, asi que la que no
+ * entra no tumba a las demas: marcar cinco y que una ya la tuviera por su rol
+ * no puede dejar las otras cuatro sin extender. Devuelve cuantas entraron y
+ * cuales se quedaron fuera, que es lo que hay que enseñar despues.
+ */
+export function useAutorizarVarias() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: {
+      usuario_id: string
+      acciones: string[]
+      motivo: string
+      desde?: string | null
+      hasta?: string | null
+    }) =>
+      rpc<ResumenDeExtension>('autorizar_varias', {
+        p_usuario_id: v.usuario_id,
+        p_acciones: v.acciones,
+        p_motivo: v.motivo,
+        p_desde: v.desde || null,
+        p_hasta: v.hasta || null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['autorizaciones'] })
+      void qc.invalidateQueries({ queryKey: ['mis-autorizaciones'] })
+      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
+    },
+  })
+}
+
 export function useAutorizar() {
   const qc = useQueryClient()
   return useMutation({
