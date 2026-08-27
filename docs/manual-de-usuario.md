@@ -3666,7 +3666,7 @@ La segunda es **poder ejecutar cada paso**. Aquí no hay un solo rol que registr
 
 **Aquí había una cuarta fila, la de Tesorería.** Ese rol ya no existe: se retiró junto con el módulo. Ver 12.1.
 
-Tesorería no ve las novedades del período a propósito: paga el total aprobado, no revisa las horas extra de cada quien.
+**Quien paga la nómina es recursos humanos o la gerencia general**, no un tesorero: ese rol se retiró (12.1). Lo exige la propia función de la base, y por equivalencia pasa también quien tenga escritura sobre Nómina — que hoy son los mismos.
 
 **Prestaciones sociales la ven los cuatro**, porque para verla basta el mismo permiso sobre Nómina que para ver el resto del módulo. Otra cosa es poder registrar allí: eso está en 11.10 y no se reparte igual.
 
@@ -3681,7 +3681,7 @@ Tesorería no ve las novedades del período a propósito: paga el total aprobado
 | **Abrir período**, **Calcular** y **Anular** | Recursos humanos |
 | Cargar una **Nueva vigencia** de un parámetro | Recursos humanos |
 | **Aprobar la nómina** | **Gerencia general, y nadie más** |
-| **Pagar** | **Tesorería, y nadie más** |
+| **Pagar** | **Recursos humanos o gerencia general** |
 | Ver e imprimir recibos | Cualquiera que vea el módulo |
 | **Cerrar trimestre** e **Intereses del mes**, en prestaciones sociales | Recursos humanos |
 | **Cargar el corte**, **Anticipo**, **Liquidar** y **Pagar y dar de baja** | Solo quien tenga el permiso más alto sobre Nómina. Recursos humanos no lo trae de fábrica |
@@ -3696,12 +3696,18 @@ Si intentas un paso que no te toca, el sistema responde «Esta acción la realiz
 
 Esta sección es el módulo entero. Si solo lees una parte del capítulo, que sea esta.
 
-1. **Abrir período** — lo hace Recursos humanos, en **Nómina › Procesar nómina**. Se elige el tipo (**Semanal — 7 días**, **Quincenal — 15 días**, **Mensual — 30 días** o **Especial — días del calendario**) y las fechas **Desde** y **Hasta**. El período nace en borrador. *Se deshace:* sí, anulándolo.
-2. **Cargar novedades** — Recursos humanos, en **Nómina › Novedades del período**. Horas extra, faltas, bonos y descuentos. *Se deshace:* sí, se corrige y se vuelve a guardar todas las veces que haga falta, mientras el período esté en borrador o calculado.
+1. **Abrir período** — lo hace Recursos humanos, en **Nómina › Nómina del período › 2 · Procesar**
+
+**No es una entrada del menú**: es la segunda pestaña de **Nómina del período**.. Se elige el tipo (**Semanal — 7 días**, **Quincenal — 15 días**, **Mensual — 30 días** o **Especial — días del calendario**) y las fechas **Desde** y **Hasta**. El período nace en borrador. *Se deshace:* sí, anulándolo.
+2. **Cargar novedades** — Recursos humanos, en **Nómina › Nómina del período › 1 · Novedades**
+
+**No es una entrada del menú**: es la primera de las tres pestañas de **Nómina del período**, numeradas en el orden en que se hacen.. Horas extra, faltas, bonos y descuentos. *Se deshace:* sí, se corrige y se vuelve a guardar todas las veces que haga falta, mientras el período esté en borrador o calculado.
 3. **Calcular** — Recursos humanos, desde la tarjeta del período. Genera los recibos y el período pasa a calculado. *Se deshace:* sí. Recalcular borra los recibos anteriores y los rehace enteros; no acumula ni deja nada a medias.
-4. **Ver recibos** — cualquiera que vea el módulo, en **Nómina › Recibos de pago**. Es el paso de revisión. No cambia nada. *Se deshace:* no hace falta, no escribe nada.
+4. **Ver recibos** — cualquiera que vea el módulo, en **Nómina › Nómina del período › 3 · Recibos**
+
+**No es una entrada del menú**: es la tercera pestaña de **Nómina del período**.. Es el paso de revisión. No cambia nada. *Se deshace:* no hace falta, no escribe nada.
 5. **Aprobar la nómina** — **solo gerencia general**. El período pasa a aprobado y le llega un aviso a tesorería y a recursos humanos. *Se deshace:* sí, anulando el período.
-6. **Confirmar el pago** — **solo tesorería**. Se elige de qué cuenta sale el dinero, el saldo de esa cuenta baja y queda una línea en el libro de tesorería. *Se deshace:* **no. Nunca. Por nadie.**
+6. **Confirmar el pago** — **recursos humanos o gerencia general**. Se elige de qué cuenta sale el dinero, el saldo de esa cuenta baja y queda una línea en el libro de tesorería. *Se deshace:* **no. Nunca. Por nadie.**
 
 Los estados que verás en la etiqueta de cada período, y la frase que el sistema pone debajo para decirte qué toca ahora:
 
@@ -3709,7 +3715,7 @@ Los estados que verás en la etiqueta de cada período, y la frase que el sistem
 | --- | --- |
 | **Borrador · cargar novedades** | *"Carga las novedades del período —horas extra, faltas, bonos— y calcula."* |
 | **Calculada · por aprobar** | *"Revisa los recibos. Al aprobar, la nómina queda lista para que tesorería pague."* |
-| **Aprobada · por pagar** | *"Tesorería paga desde una cuenta y el saldo baja."* |
+| **Aprobada · por pagar** | *"Se paga desde una cuenta y queda anotado de dónde salió."* |
 | **Pagada** | *"Cerrada. Los recibos quedan como comprobante."* |
 | **Anulada** | El motivo que se escribió al anularla |
 
@@ -3725,7 +3731,7 @@ El registro de quién trabaja en la empresa. La pantalla lo dice así: *"Quién 
 
 #### Qué se ve
 
-Arriba a la derecha, y solo con el rol de recursos humanos, el botón **Nuevo trabajador**.
+Arriba a la derecha, y solo con el rol de recursos humanos, hay **dos** botones: **Cargar por planilla** y **Nuevo trabajador**. El primero da de alta a toda la gente de una vez, o corrige las fichas que ya están; es el mismo mecanismo que el del catálogo de artículos, con su plantilla de Excel y su vista previa antes de escribir nada.
 
 Debajo, dos filtros: **Buscar**, que acepta el nombre, la cédula o el cargo, y la casilla **Incluir a los desincorporados**, que viene **desmarcada**: la lista trae solo a quien está activo.
 
@@ -3794,6 +3800,14 @@ Y el bloque **Cómo se le paga**:
 
 Cuando una ficha viene de la carga del libro de nómina y su fecha de ingreso nadie la ha revisado, el campo lo dice: *"Esta fecha vino de la carga del libro de nómina y nadie la ha revisado. Corrígela: de aquí salen la antigüedad, el bono vacacional y la liquidación."* Mientras eso siga así, en la lista sale **Por confirmar** y no se le puede emitir una constancia de trabajo.
 
+#### Quién tiene cuenta en el sistema
+
+En la columna del trabajador, junto al nombre, **a quien tiene cuenta le sale un iconito gris de persona**. Al pasar el ratón dice **Entra al sistema como** seguido de su usuario, y lo mismo lee un lector de pantalla.
+
+**A quien no tiene cuenta no le sale nada**, y es a propósito: de la plantilla, solo unos pocos entran al sistema. Marcar a la mayoría con un «no tiene» llenaría la lista de ruido.
+
+Es el espejo de lo que hace la lista de usuarios en Configuración, que dice al revés si esa cuenta es de alguien de la plantilla (13.1).
+
 #### Egresar a un trabajador
 
 1. Pulsa **Egresar** en su fila.
@@ -3803,7 +3817,9 @@ Cuando una ficha viene de la carga del libro de nómina y su fecha de ingreso na
 
 La ventana lo resume: *"Deja de entrar en las nóminas siguientes y queda marcado en la lista. Su historial se conserva entero: no se borra nada."* Desincorporar **no borra nada**: guarda la fecha y el motivo, y la persona deja de aparecer en la lista salvo que marques **Incluir a los desincorporados**.
 
-**Egresar aquí no le calcula la liquidación, y además cierra la puerta para calcularla.** La liquidación se hace en **Nómina › Prestaciones sociales** (ver 11.10), y esa pantalla solo deja liquidar a quien está activo. Si egresas primero, la persona queda con su saldo de prestaciones a la vista y sin forma de cerrarle la cuenta. El sistema no avisa de esto.
+**Egresar aquí no le calcula la liquidación, y además cierra la puerta para calcularla.** La liquidación se hace en **Nómina › Prestaciones y parámetros › Prestaciones sociales**
+
+**No es una entrada del menú**: es la primera pestaña de **Prestaciones y parámetros**. (ver 11.10), y esa pantalla solo deja liquidar a quien está activo. Si egresas primero, la persona queda con su saldo de prestaciones a la vista y sin forma de cerrarle la cuenta. El sistema no avisa de esto.
 
 Por eso, **cuando alguien se va, el orden es liquidarlo primero en Prestaciones sociales**: el botón que paga la liquidación egresa a la persona por su cuenta, con la fecha y el motivo, y no hay que volver a esta pantalla. **Egresar** aquí queda para cuando no hay nada que liquidar.
 
@@ -3837,6 +3853,8 @@ La pantalla se reparte en tres tarjetas, y la primera solo aparece si hace falta
 
 **Quién puede emitir:** recursos humanos, administración y la gerencia general. Los demás ven la lista y nada más.
 
+**La pestaña solo cuenta al personal activo.** A quien egresó no se le pide carnet y no aparece en ninguna de las dos listas, ni siquiera en «N con carnet» si llegó a tener uno. Aquí no hay casilla **Incluir a los desincorporados** como en Personal, y es coherente: a quien ya no trabaja aquí no se le emite carnet.
+
 ### 11.4 La ficha del trabajador
 
 **No está en el menú.** Se llega pinchando el nombre de la persona en la lista de **Personal**, o desde la tabla de fichas desfasadas del tabulador.
@@ -3868,6 +3886,20 @@ A la derecha están los datos, agrupados y **de solo lectura**. Son exactamente 
 
 Lo que no tiene dato sale con un guion. Para cambiar cualquiera de estos datos hay que ir a **Editar datos**: aquí no se escribe.
 
+#### Su firma
+
+Debajo de los datos hay una tarjeta, **Su firma**. La guarda recursos humanos, no el trabajador: el obrero no entra al sistema, así que se carga con él delante.
+
+Bajo la firma guardada hay una etiqueta que dice en qué estado está: **Se estampa en los papeles** o **Guardada, pero sin usar**. Esa segunda es lo que permite tener la firma guardada y apagada mientras se aclara algo, sin borrarla.
+
+**Sirve para el recibo de pago.** Cuando el trabajador tiene firma guardada y encendida, **el recibo sale con ella estampada** sobre la raya de la izquierda. Está en 11.8.
+
+#### Cuenta del sistema
+
+Al pie de la ficha, una tarjeta dice si esa persona entra al sistema: con qué **Usuario**, cuándo se creó la cuenta y qué alcance tiene.
+
+Es lo mismo que el iconito de la lista de Personal, pero con el detalle. Y es lo que hay que mirar **cuando alguien egresa**: saber qué cuenta era suya es lo que evita que se quede abierta.
+
 #### Los documentos
 
 En la tarjeta de abajo hay dos botones: **Ficha completa (PDF)** y **Constancia de trabajo**. El carnet ya no está aquí: tiene tarjeta propia justo debajo, y el porqué está explicado en el apartado siguiente.
@@ -3884,7 +3916,9 @@ Los dos salen con la misma cabecera que la orden de compra, el recibo y la factu
 
 **Solo hay un carnet vigente por persona.** Emitir uno nuevo anula el anterior, y por eso hace falta decir por qué.
 
-**Quién puede emitir:** recursos humanos, administración y la gerencia general. El resto ve la tarjeta y puede imprimir, pero no emitir.
+**Quién puede emitir desde aquí:** recursos humanos y administración. El resto ve la tarjeta y puede imprimir, pero no emitir.
+
+**La gerencia general no ve estos botones en la ficha, aunque sí puede emitir.** Su permiso sobre Nómina se lo permite, y de hecho sí los ve en la pestaña **Carnets**; es la tarjeta de la ficha la que pregunta por el rol de recursos humanos. Es un desajuste, no una regla.
 
 ##### Cuando todavía no tiene carnet
 
@@ -3892,7 +3926,9 @@ La tarjeta lo dice —**Sin emitir**— y explica lo que va a pasar: *"Todavía 
 
 Se pulsa **Emitir el carnet**, se confirma, y el PDF se abre solo. No hay que buscarlo después.
 
-**Hace falta la foto.** Sin foto cargada, la página de verificación no puede comparar ninguna cara con la persona que tienes delante, que es para lo único que la foto está ahí.
+**Sin foto también se emite**, y conviene saberlo porque el botón no avisa. Lo que pasa es que el carnet sale sin cara y **la página del QR no puede comparar a nadie**, que es para lo único que la foto está ahí. Carga la foto antes.
+
+**A quien ya egresó no se le emite carnet.** El sistema lo dice con su nombre: *«… ya no trabaja en la empresa: no se le emite un carnet nuevo.»*
 
 ##### Cuando ya lo tiene
 
@@ -4022,7 +4058,9 @@ Si nadie ha cargado quién firma por recursos humanos, la ventana también lo di
 
 ### 11.5 Tabulador de cargos
 
-**Nómina › Tabulador de cargos**
+**Nómina › Personal › Tabulador de cargos**
+
+**No es una entrada del menú**: es la segunda pestaña de **Personal**.
 
 La escala de sueldos de la empresa: cuánto gana cada cargo al mes. La pantalla lo resume así: *"Cuánto gana cada cargo al mes. El quincenal sale de esa cifra: no se escribe aparte, para que las dos no puedan desfasarse."*
 
@@ -4157,7 +4195,7 @@ Los botones de cada tarjeta cambian según el estado y según tu rol:
 | **Calcular** | Borrador o calculada | Recursos humanos |
 | **Ver recibos** | Cuando ya hay recibos | Cualquiera |
 | **Aprobar la nómina** | Calculada | Gerencia general |
-| **Pagar** | Aprobada | Tesorería |
+| **Pagar** | Aprobada | Recursos humanos o gerencia general |
 | **Anular** | Borrador, calculada o aprobada | Recursos humanos |
 
 En un período anulado no sale ningún botón.
@@ -4196,7 +4234,7 @@ Al aprobar, le llega un aviso a tesorería y a recursos humanos: **Nómina {núm
 
 #### Pagar
 
-Lo hace **tesorería**, y nadie más.
+Lo hacen **recursos humanos y la gerencia general** —y la administración, que pasa por encima de todo—. **No es tesorería: ese rol se retiró** (12.1).
 
 1. Pulsa **Pagar**.
 2. Elige **De qué cuenta sale**. La lista muestra el saldo de cada cuenta.
@@ -4273,7 +4311,9 @@ Bajo el neto sale también el equivalente en dólares, con la palabra **referenc
 
 ### 11.9 Parámetros de nómina
 
-**Nómina › Parámetros de nómina**
+**Nómina › Prestaciones y parámetros › Parámetros de nómina**
+
+**No es una entrada del menú**: es la segunda pestaña de **Prestaciones y parámetros**.
 
 Es la pantalla donde viven los porcentajes, los topes y los días con los que se calcula todo lo demás. La bajada lo dice sin rodeos: *"Ninguna cifra legal está escrita en el código. Todas viven aquí con su fecha de vigencia, porque en Venezuela cambian por decreto."*
 
@@ -4652,7 +4692,7 @@ Son cinco, salen de dos sitios distintos y **todos se abren en pantalla antes de
 - **El carnet** es un PDF de dos páginas, cada una de 54 × 86 mm a 300 dpi, que es lo que pide una imprenta para que no salga pixelado. En el frente van la foto, el nombre, el cargo y cuatro datos: **Cédula**, **Departamento**, **Ingreso** y **Sangre**. En el reverso, la marca, la razón social, el RIF y **el QR de verificación con el código de esa persona**.
 - **El reverso NO es igual para todos.** El código del QR es distinto en cada carnet: es lo que identifica a esa persona cuando alguien escanea. Está explicado entero en 11.4.
 - **La constancia** es la carta que se entrega a un banco o a quien la pida. Va en papel de la empresa, redactada en el tiempo verbal correcto según la persona siga trabajando o ya no, y con el sueldo dentro o fuera según dejes marcada la casilla **Incluir el sueldo**. Lleva un recuadro que repite el nombre, la cédula y la ficha para poder cotejarlos.
-- **El recibo** sale siempre por duplicado, original y copia, y esa es la mitad de su valor: la copia firmada por el trabajador es la constancia de que cobró.
+- **El recibo** sale siempre por duplicado, original y copia, y esa es la mitad de su valor: la copia firmada por el trabajador es la constancia de que cobró. **Si el trabajador tiene firma guardada y encendida en su ficha, el recibo sale ya con ella estampada** sobre la raya de la izquierda; solo queda en blanco si no la tiene o está apagada. **La raya de la empresa, en cambio, sale siempre vacía**: de quien firma por la empresa se guarda el nombre y el cargo, no una imagen.
 
 La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo, y **abren con la misma cabecera que el resto de los papeles del sistema** (13.2). Los que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano. El carnet no lleva pie ni firma: en una tarjeta de 54 mm no cabe, y no hace falta.
 
