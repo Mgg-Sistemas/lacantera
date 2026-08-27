@@ -2522,7 +2522,7 @@ Cuando la instrucción está **Por pagar**, quien tenga el rol **Compras** ve tr
 
 Si en la cuenta elegida no alcanza el saldo, el diálogo lo dice y explica el camino: si el dinero ya está, lo que falta es registrar el ingreso o el saldo de apertura. Para terminar, **Confirmar el pago**.
 
-Si no hay ninguna cuenta en esa moneda, se lee **No hay cuentas en Bolívares** y hay que crearla en **Tesorería › Bancos y cajas**.
+Si no hay ninguna cuenta en esa moneda, se lee **No hay cuentas en Bolívares**. **Bancos y cajas ya no está en el menú**, así que crear una cuenta hoy lo hace el administrador (12.3).
 
 ### 9.10 Facturas de proveedor
 
@@ -2794,7 +2794,7 @@ Conviene saberlo antes de buscarlo:
 - **La factura del proveedor sigue sin enlazarse con su orden de compra.** El formulario de alta no tiene campo para elegir la orden, así que el sistema no coteja lo pedido con lo recibido y lo facturado, y la etiqueta **Orden OC-…** de la ficha no llega a encenderse.
 - **Con qué entrega el proveedor no se puede corregir después.** Se declara una sola vez, en el paso 4, y no hay pantalla para cambiarlo ni para ponerse al día con las órdenes anteriores a que esto existiera.
 - **El sistema sabe qué compras prometieron factura, pero no avisa de las que no la cumplieron.** Ese pendiente existe por dentro y todavía no sale en ninguna pantalla.
-- **Lo que se debe por facturas de proveedor no aparece en la cola de Tesorería › Por pagar**, que sigue mostrando solo las instrucciones de pago de las órdenes. Lo que falta por pagar de una factura solo se ve en la columna **Saldo** de su propia pantalla.
+- **Lo que se debe por facturas de proveedor no aparece en la cola de Compras › Pagos por hacer › Por proveedor**, que sigue mostrando solo las instrucciones de pago de las órdenes. Lo que falta por pagar de una factura solo se ve en la columna **Saldo** de su propia pantalla.
 
 ### 9.13 Cuando el sistema no te deja
 
@@ -4693,7 +4693,7 @@ Una deuda con un proveedor, por lo tanto, **se cierra pagándola desde tesorerí
 
 Dos cosas que conviene entender de aquí. La primera: **el cobro entra en la moneda de la cuenta donde cae el dinero, no en la de la factura**. Si la factura está en dólares y el cliente pagó a la cuenta en bolívares, el cobro es en bolívares. La segunda, que se deriva de la anterior: por eso los saldos de **Cuentas por cobrar** se muestran todos en dólares, porque se cobra en las dos monedas y hay que poder sumarlos.
 
-Registrar un cobro no exige el rol de Tesorería: exige permiso de escritura sobre el módulo Ventas. Quien factura es quien cobra.
+Registrar un cobro exige permiso de escritura sobre el módulo Ventas. Quien factura es quien cobra. (El rol de Tesorería, que es lo que alguien podría esperar aquí, ya no existe: ver 12.1.)
 
 ### 12.3 Bancos y cajas
 
@@ -4915,7 +4915,7 @@ La línea original **se queda en el libro**. Lo que se escribe es una nueva, del
 - **La línea es una de las dos mitades de un traslado.** Reversar solo esa devolvería el dinero al origen dejándolo también en el destino. Se deshace con un traslado en sentido contrario.
 - **La línea es el pago de una nómina.**
 
-Y a esos se suma el de siempre: sin el rol de Tesorería, el botón tampoco se dibuja.
+Y a esos se suma el de siempre: sin el rol **Compras**, el botón tampoco se dibuja. No es el rol de Tesorería, que ya no existe.
 
 ### 12.8 Lo que conviene entender
 
@@ -5165,7 +5165,7 @@ Dentro de cada tarjeta está la matriz, con estas columnas:
 
 **Los tres niveles son una escalera, no tres opciones sueltas.** Marcar **Control total** marca también **Escritura** y **Lectura**; desmarcar **Lectura** apaga las tres. Es así porque escribir sin poder leer no significa nada, y una matriz que lo permitiera solo serviría para dejar gente con permisos que no se pueden usar.
 
-Y la advertencia que conviene repetir: **ningún nivel de esta matriz convierte a nadie en tesorero, ni en gerente, ni en administrador.** Marcarle **Control total** en Tesorería al rol de Almacén no le da el botón de pagar: seguirá chocando con la regla que exige el rol de Tesorería.
+Y la advertencia que conviene repetir: **ningún nivel de esta matriz convierte a nadie en gerente ni en administrador.** Marcarle **Control total** en Tesorería al rol de Almacén no le da el botón de pagar: seguirá chocando con la regla que exige el rol **Compras**, y esa no sale de esta matriz. Para prestarle a alguien una facultad concreta está la tercera pestaña, **Permisos extendidos**.
 
 #### Cambiar un permiso
 
@@ -5626,7 +5626,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **Costo por tonelada.** La producción entra al inventario valorada en cero, porque el costo real depende de la nómina, el gasoil y la voladura, y ese cálculo todavía no existe. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.** Las toneladas sí son confiables.
 
-**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor se registra y su papel se guarda, pero **no se enlaza con su orden de compra**, así que no hay cotejo entre lo pedido, lo recibido y lo facturado. El sistema no calcula retenciones a proveedores. Lo que se debe por facturas no llega a **Tesorería › Cuentas por pagar**, que sigue leyendo solo las instrucciones de pago de las órdenes. **La orden de compra sí se imprime**; la cotización y el tablero, no.
+**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor se registra y su papel se guarda, pero **no se enlaza con su orden de compra**, así que no hay cotejo entre lo pedido, lo recibido y lo facturado. El sistema no calcula retenciones a proveedores. Lo que se debe por facturas no llega a **Compras › Pagos por hacer › Por proveedor**, que sigue leyendo solo las instrucciones de pago de las órdenes. **La orden de compra sí se imprime**; la cotización y el tablero, no.
 
 **En Inventario.** Un artículo ya se puede corregir y borrar, pero **el código sigue sin poder cambiarse**: es con lo que se pide en el almacén y ya está impreso en lo emitido. Y **borrar solo funciona mientras nada lo haya tocado**; en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo.
 
