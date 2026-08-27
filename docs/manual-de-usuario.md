@@ -2,7 +2,7 @@
 
 **Sistema de control interno · Minería Internacional TS, C.A.**
 
-**Versión 1.2 · 21 de agosto de 2026**
+**Versión 1.3 · 26 de agosto de 2026**
 
 ---
 
@@ -24,7 +24,9 @@ El orden de los capítulos es el del camino del material: primero se extrae, lue
 
 ### Por qué hay capítulos que hoy no se alcanzan
 
-El sistema se entrega por partes, y desde el 21 de agosto de 2026 el menú lateral ofrece seis cosas y nada más: **Panel**, **Inventario**, **Compras**, **Nómina**, **Tasas de cambio** y **Configuración**. Lo demás —Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar.
+El sistema se entrega por partes, y el menú va creciendo. Hoy ofrece diez entradas: **Panel**, **Maquinaria**, **Inventario**, **Combustible**, **Asignaciones**, **Compras**, **Nómina**, **Tasas de cambio**, **Configuración** y **Manual de usuario**.
+
+Lo que todavía no sale —**Explotación**, **Despachos**, **Ventas**, el **Organigrama** y **Cuentas por cobrar**— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar. **Tesorería es distinto: dejó de ser un módulo**, y lo que quedaba vivo se lo llevó Compras.
 
 De los dos caminos posibles, este manual eligió el segundo:
 
@@ -52,14 +54,15 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 9 | Compras | Sí |
 | 10 | Ventas | **No, está en obra** |
 | 11 | Nómina | Sí |
-| 12 | Tesorería | **No, está en obra** |
+| 12 | Tesorería | **Retirado: se lo llevó Compras** |
 | 13 | Configuración | Sí |
 | 14 | Las reglas que el sistema impone | — |
 | 15 | Lo que todavía no está construido | — |
 | 16 | Preguntas frecuentes | — |
 | 17 | A quién acudir | — |
+| 18 | Asignaciones | Sí |
 
-Maquinaria, Combustible, Asignaciones y Organigrama tampoco se alcanzan hoy desde el menú. No tienen capítulo propio todavía: lo poco que hay escrito de ellos está repartido entre el capítulo 7 y el 11.
+**Maquinaria**, **Combustible** y **Asignaciones** sí se alcanzan hoy desde el menú, pero **no tienen capítulo propio todavía**: lo poco que hay escrito de ellos está repartido entre el capítulo 7 y el 11. Es el hueco más grande que tiene este manual y está anotado en 15.4. El **Organigrama** tiene apartado propio, el 11.12, y su pantalla sigue en obra.
 
 ---
 
@@ -90,29 +93,34 @@ El capítulo 14 reúne esas reglas y explica el motivo de cada una. Vale la pena
 
 El sistema no reparte el trabajo por persona sino por **módulo**, y a cada usuario se le habilitan los módulos que necesita.
 
-Los módulos son quince. La última columna dice cuáles se ofrecen hoy en el menú lateral y cuáles están en obra; el apartado 1.5 explica qué significa eso exactamente.
+La última columna dice cuáles se ofrecen hoy en el menú lateral y cuáles están en obra; el apartado 1.5 explica qué significa eso exactamente.
 
 | Módulo | De qué se ocupa | Hoy |
 | --- | --- | --- |
 | **Panel** | La pantalla de inicio: qué hay que atender hoy | En el menú |
 | **Explotación** | Frentes y bancos, voladuras, y el parte de producción de cada turno | En obra |
-| **Maquinaria** | Los equipos de la cantera, su horómetro y lo que ha pasado por el taller | En obra |
-| **Combustible** | El gasoil y la gasolina que se despachan a cada máquina | En obra |
+| **Maquinaria** | Los equipos de la cantera, su horómetro y lo que ha pasado por el taller | En el menú |
+| **Combustible** | El gasoil y la gasolina que se despachan a cada máquina | En el menú |
 | **Inventario** | Lo que hay en cada patio y almacén, y todo lo que entra y sale | En el menú |
-| **Asignaciones** | Lo que se le entrega a una persona y hay que recuperar, y lo que se pierde o se daña | En obra |
+| **Asignaciones** | Lo que se le entrega a una persona y hay que recuperar, y lo que se pierde o se daña | En el menú |
 | **Despachos** | El pesaje en la romana y las guías de movilización | En obra |
-| **Compras** | Pedir, cotizar, aprobar, recibir, facturar y pagar lo que la empresa compra | En el menú |
+| **Compras** | Pedir, cotizar, aprobar, recibir, facturar y **pagar** lo que la empresa compra | En el menú |
 | **Ventas** | Clientes, precios, cotizaciones, notas de entrega y facturas | En obra |
 | **Nómina** | Personal, novedades, cálculo, recibos, pagos, prestaciones sociales y el organigrama | En el menú |
-| **Tesorería** | Bancos y cajas, lo que hay que pagar y lo que hay que cobrar | En obra |
+| **Tesorería** | **Ya no es un módulo.** Lo que quedaba vivo se lo llevó Compras | Retirado |
 | **Tasas de cambio** | Las tasas del día, que valorizan todo lo que se registre | En el menú |
 | **Configuración** | Datos de la empresa, documentos legales y auditoría | En el menú |
 | **Usuarios y roles** | Quién entra al sistema y a qué llega cada quien | En el menú |
 | **Respaldo de la base** | La copia completa de los datos, para guardarla fuera | En el menú |
+| **Manual de usuario** | Este documento, dentro del sistema | En el menú |
 
 **Usuarios y roles** y **Respaldo de la base** cuelgan de Configuración en el menú, pero son módulos aparte a la hora de repartir permisos: quien mantiene el catálogo de artículos no tiene por qué poder crear cuentas ni llevarse la base entera en un archivo. El capítulo 13 lo explica.
 
-El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina, porque quien lleva el personal es quien sabe de quién depende quién.
+El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina, porque quien lleva el personal es quien sabe de quién depende quién. Hoy su pantalla está en obra.
+
+**El manual es la única entrada del menú que no comprueba permisos.** Quien acaba de entrar y todavía no tiene ningún módulo asignado la ve igual, y es a propósito: es lo único que tiene mientras espera que administración le reparta lo demás.
+
+**Tesorería dejó de existir como módulo, y conviene entender por qué.** No se escondió mientras se afina: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos. Sus dos piezas vivas —**Pagos por hacer** y **Movimientos de dinero**— cuelgan hoy de **Compras**, que es donde se usan. El capítulo 12 sigue en el manual porque lo que cuenta esas dos pantallas vale, pero su primera línea avisa de dónde están ahora.
 
 ### 1.3 Por dónde entra y por dónde sale el material
 
@@ -136,13 +144,15 @@ Por eso la tasa del día está siempre visible en la parte de arriba de la panta
 
 ### 1.5 Lo que hoy se ofrece, y lo que está en obra
 
-Esto es lo primero que hay que saber antes de buscar una pantalla, porque explica por qué el menú tiene seis entradas y este manual diecisiete capítulos.
+Esto es lo primero que hay que saber antes de buscar una pantalla, porque explica por qué el menú no trae todo lo que este manual cuenta.
 
-**Hoy el menú lateral ofrece esto, y nada más:**
+**Hoy el menú lateral ofrece esto:**
 
-**Panel · Inventario · Compras · Nómina · Tasas de cambio · Configuración**
+**Panel · Maquinaria · Inventario · Combustible · Asignaciones · Compras · Nómina · Tasas de cambio · Configuración · Manual de usuario**
 
-Lo decidió así la líder de sistemas, para entregar primero lo que ya se puede usar todos los días sin sobresaltos. **Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería** no salen en el menú, y tampoco los encuentra la barra buscadora.
+Lo decidió así la líder de sistemas, para entregar primero lo que ya se puede usar todos los días sin sobresaltos, e ir soltando el resto conforme se afina. **El menú ha ido creciendo**: en agosto ofrecía seis entradas y hoy son diez —entraron Maquinaria, Combustible, Asignaciones y el propio manual—, así que si tienes un manual impreso de hace unas semanas, esta lista es la que manda.
+
+**Lo que hoy no sale en el menú son cuatro módulos completos** —**Explotación**, **Despachos**, **Ventas** y **Tesorería**— **y dos pantallas sueltas**: el **Organigrama**, cuyo módulo (Nómina) sí está, y **Cuentas por cobrar**. Tampoco los encuentra la barra buscadora.
 
 Ahora la parte que hay que entender bien, porque no es lo que parece:
 
@@ -157,11 +167,21 @@ Y para que nadie tropiece con una pantalla a medio afinar sin saberlo, **quien l
 Dos consecuencias prácticas que conviene tener presentes:
 
 - **No es un problema de permisos.** Un candado —**Ventas no está a tu alcance**— significa que a tu rol no le abrieron ese módulo, y se resuelve pidiéndoselo a administración. El cartel de obra significa otra cosa: que esa parte todavía no está entregada, y pedir el permiso no lo cambia.
-- **El panel puede mandarte a una obra.** Algunos avisos del panel llevan a **Cuentas** de tesorería, y el tablero de inventario ofrece atajos a Ventas y a Explotación. Los enlaces siguen ahí; lo que hay al otro lado, hoy, es el cartel.
+- **Tesorería es un caso aparte, y no es «todavía no».** Los otros tres módulos escondidos están construidos y esperando. Tesorería **dejó de ser un módulo**: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos, y sus dos pantallas vivas se mudaron a **Compras**. Su capítulo sigue en el manual, con el aviso puesto.
 
 **Este manual sigue contando esos módulos entero**, capítulo por capítulo, porque lo que dicen es cierto y porque el día que vuelvan al menú va a hacer falta. Cada uno abre con un recuadro que recuerda que hoy no se alcanza.
 
-Una última cosa, que despista si nadie la dice: **el propio manual tampoco está en el menú.** Se llega escribiendo `/app/manual` en la barra del navegador, y esa dirección **no** muestra el cartel de obra: se abre normal, porque el manual no contiene ningún dato de la empresa y quien más lo necesita es quien acaba de llegar.
+**El manual sí está en el menú**, al final, en **Sistema**, con un icono de libro. Y es la única entrada que no comprueba permisos: quien acaba de entrar y todavía no tiene ningún módulo asignado la ve igual. Es lo único que tiene mientras espera que administración le reparta lo demás.
+
+#### La pantalla que se abre sin entrar
+
+Hay una sola, y conviene conocerla porque no se parece a nada más del sistema: **la página que abre el QR del carnet**.
+
+Su dirección es **/v** seguida del código del carnet, y **no pide usuario ni clave**. Es deliberado: quien la abre es un vigilante en un portón o un fiscal en la carretera, con el plástico en una mano y el teléfono en la otra, y no tiene cuenta en el sistema ni la va a tener. Tampoco da el cartel de obra, y se ve igual con sesión abierta y sin ella.
+
+Enseña si el carnet vale, la foto y los datos de la persona que hacen falta en un portón o en un accidente. **No enseña el sueldo, ni la cuenta bancaria, ni las incidencias.** Está contada entera en 11.4.
+
+Escribiendo **/v** a secas, sin código, se abre la misma página con un campo para teclearlo a mano: es lo que se usa cuando el plástico está rayado y el QR no lee.
 
 ---
 
@@ -332,23 +352,43 @@ Esto es todo lo que ofrece el menú hoy:
 
 | Grupo | Pantallas |
 | --- | --- |
-| **Inventario** | **Tablero**, **Existencias**, **Talleres**, **Movimientos**, **Transferencias**, **Catálogo de artículos**, **Cargar por planilla**, **Almacenes y patios** |
+| **Maquinaria** | **Equipos**, **Historial de taller** |
+| **Inventario** | **Tablero**, **Existencias**, **Transferencias**, **Almacenes y talleres** |
+| **Combustible** | Enlace directo, sin submenú |
+| **Asignaciones** | **Quién tiene qué**, **Dotación por cargo**, **Incidencias** |
 
 **Administración**
 
 | Grupo | Pantallas |
 | --- | --- |
-| **Compras** | **Tablero**, **Proveedores**, **Recepciones**, **Facturas de proveedor**, **Libro de compras** |
-| **Nómina** | **Tablero**, **Personal**, **Tabulador de cargos**, **Novedades del período**, **Procesar nómina**, **Recibos de pago**, **Parámetros de nómina**, **Prestaciones sociales** |
+| **Compras** | **Tablero**, **Proveedores**, **Recepciones**, **Pagos por hacer**, **Movimientos de dinero**, **Centro de costos**, **Libro de compras**, **Gasto por unidad** |
+| **Nómina** | **Tablero**, **Personal**, **Nómina del período**, **Prestaciones y parámetros** |
 
 **Sistema**
 
 | Grupo | Pantallas |
 | --- | --- |
 | **Tasas de cambio** | Enlace directo, sin submenú |
-| **Configuración** | **Usuarios y roles**, **Datos de la empresa**, **Documentos legales**, **Auditoría**, **Respaldo de la base** |
+| **Configuración** | **Tablero**, **Usuarios y roles**, **Datos de la empresa**, **Documentos legales**, **Auditoría**, **Respaldo de la base** |
+| **Manual de usuario** | Enlace directo. **Es la única entrada que se ve sin tener ningún permiso** |
 
-**Todas las entradas de este menú están construidas.** Ninguna abre ya el aviso de «todavía no construido» que se veía en las versiones anteriores. Si una pantalla no se abre, es por permisos o por conexión, no porque falte.
+**Muchas pantallas ya no están en el menú: están en pestañas.** El menú se quedó con la puerta de cada cosa y el resto se agrupó por dentro, arriba de la pantalla. Es lo que hay que saber para no darlas por perdidas:
+
+| Si buscas | Está en |
+| --- | --- |
+| **Catálogo de artículos**, **Movimientos** | Pestañas de **Inventario › Existencias** |
+| **Talleres** | **Inventario › Almacenes y talleres**, segunda pestaña |
+| **Facturas de proveedor** | **Compras › Proveedores**, segunda pestaña. **Ahí se llama Facturas recibidas** |
+| **Cuentas por pagar** | **Compras › Pagos por hacer**, segunda pestaña. **Ahí se llama Por proveedor** |
+| **Centro de costos**, **Libro de compras**, **Gasto por unidad** | Están en el menú, y además son pestañas entre sí |
+| **Tabulador de cargos**, **Carnets** | Pestañas de **Nómina › Personal** |
+| **Novedades del período**, **Procesar nómina**, **Recibos de pago** | Las tres pestañas de **Nómina › Nómina del período**, numeradas **1 · Novedades**, **2 · Procesar** y **3 · Recibos**, en el orden en que se hacen |
+| **Prestaciones sociales**, **Parámetros de nómina** | Pestañas de **Nómina › Prestaciones y parámetros** |
+| **Cargar por planilla** —artículos, personal o proveedores— | No es pestaña: es un **botón** dentro del Catálogo de artículos, de Personal y de Proveedores. También hay atajos en el Panel |
+
+**La lupa (Ctrl+K) sí las encuentra todas**, aunque no estén en el menú, y por su nombre corriente: buscar «cargar artículo» o «cuentas por pagar» lleva a donde toca.
+
+**Todas las entradas de este menú están construidas.** Ninguna abre el cartel de obra. Si una pantalla no se abre, es por permisos o por conexión, no porque falte.
 
 #### Lo que no sale en el menú, y sigue existiendo
 
@@ -357,14 +397,12 @@ Estas ramas están construidas y funcionando, pero hoy no se ofrecen desde el me
 | Grupo | Pantallas | Capítulo |
 | --- | --- | --- |
 | **Explotación** | **Tablero**, **Frentes y bancos**, **Voladuras**, **Producción por turno** | 6 |
-| **Maquinaria** | **Equipos**, **Historial de taller** | — |
-| **Combustible** | Enlace directo, sin submenú | — |
-| **Asignaciones** | **Quién tiene qué**, **Incidencias** | 11.4 |
 | **Despachos** | **Tablero**, **Tickets de romana**, **Guías de movilización**, **Vehículos** | 8 |
 | **Ventas** | **Tablero**, **Clientes**, **Lista de precios**, **Cotizaciones**, **Notas de entrega**, **Facturación**, **Notas de crédito**, **Libro de ventas** | 10 |
 | **Organigrama** | Enlace directo, sin submenú | 11.12 |
-| **Tesorería** | **Tablero**, **Bancos y cajas**, **Pagos por hacer**, **Cuentas por pagar**, **Libro de tesorería**, **Cuentas por cobrar** | 12 |
-| **Manual de usuario** | Este documento, dentro del sistema | — |
+| **Tesorería** | **Tablero**, **Bancos y cajas**, **Cuentas por cobrar** | 12 |
+
+**Tesorería está en esta lista por otro motivo que los demás.** Los otros cuatro están construidos y esperando. Tesorería **dejó de ser un módulo**: de sus seis pantallas, **Pagos por hacer** y **Movimientos de dinero** —que era el libro de tesorería— se mudaron a **Compras** y sí están en el menú; **Cuentas por pagar** desapareció como pantalla propia. Lo que queda escondido es lo que la empresa decidió no llevar: bancos y cajas.
 
 **Se esconden para todo el mundo, incluido el administrador.** No es un permiso: es que el MVP se enseña desde una cuenta con todos los permisos, y si al administrador le siguiera saliendo el menú entero, esconderlo no habría servido de nada.
 
@@ -867,19 +905,18 @@ La segunda es **poder registrar**: crear frentes, registrar voladuras y cargar p
 
 La tercera es **poder anular**. Anular una voladura o un parte no es una operación del día: un parte anulado le quita material al patio que quizá ya se despachó. Por eso pide el escalón más alto del módulo.
 
+**Hoy no lo alcanza nadie salvo el administrador del sistema.** Sobre Explotación, los otros nueve roles están en **Ninguno**, igual que en Despachos y en Ventas: mientras un módulo esté en obra, tampoco se reparte.
+
+La tabla que sigue es **cómo está previsto repartirlo el día que se ofrezca**, y así es como se comportan las pantallas:
+
 | Rol | Ve el módulo | Registra frentes, voladuras y partes | Anula voladuras y partes |
 | --- | --- | --- | --- |
 | Administrador del sistema | Sí | Sí | Sí |
 | Operaciones | Sí | Sí | Sí |
 | Gerente general | Sí | No | No |
-| Almacén | No | No | No |
-| Compras | No | No | No |
-| Tesorería | No | No | No |
-| Recursos humanos | No | No | No |
-| Solicitante | No | No | No |
-| Consulta | No | No | No |
+| Los otros siete roles | No | No | No |
 
-Este es el reparto con el que arranca el sistema. Administración puede cambiarlo desde la matriz de permisos.
+Administración lo abre desde la matriz de permisos cuando toque.
 
 Fíjate en la fila de Almacén: **quien lleva el patio no entra a Explotación.** Tiene consecuencias que hay que saber, y están explicadas en 6.6.
 
@@ -1193,13 +1230,19 @@ La primera es **ver el módulo**. Depende del permiso sobre Inventario que admin
 
 La segunda es **poder registrar**. Los botones que escriben algo — **Registrar entrada**, **Sacar**, **Contar**, **Reversar**, **Nuevo traslado**, **Deshacer** — solo se dibujan para el rol de Almacén y para administración.
 
-| Rol | Ve el módulo | Ve los botones de registrar |
+| Rol | Ve el módulo | Registra |
 | --- | --- | --- |
-| Almacén | Sí | Sí |
 | Administrador | Sí | Sí |
-| Gerencia general | Sí | No |
-| Compras | Sí | No |
+| Compras | Sí | Sí |
+| Gerencia general | Sí | Sí |
+| Almacén | Sí | Sí |
+| Recursos humanos | Sí | Sí |
 | Operaciones | Sí | No |
+| Ventas | Sí | No |
+| Solicitante | Sí | No |
+| Consulta | Sí | No |
+
+**Inventario es el módulo más repartido del sistema**, y tiene sentido: casi todo el mundo necesita saber qué hay en el patio aunque no toque nada. Nueve de los diez roles lo ven.
 
 Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu rol es de consulta.
 
@@ -1692,6 +1735,10 @@ Para ver el módulo hace falta que administración le haya dado a tu usuario acc
 
 Dentro hay dos alcances distintos. El primero es **el trabajo del día**: pesar camiones y cargar guías. El segundo es **el control total sobre Despachos**, y cubre lo que corrige o lo que exceptúa: anular un pesaje, anular una guía y — esto es lo que más importa — autorizar un despacho de mineral sin guía.
 
+**Hoy no lo alcanza nadie salvo el administrador del sistema.** Sobre Despachos, los otros nueve roles están en **Ninguno**. Es coherente con que el módulo esté en obra: mientras no se ofrezca, tampoco se reparte.
+
+La tabla que sigue es **cómo está previsto repartirlo el día que se ofrezca**, y así es como se comportan las pantallas. Se deja escrita porque el reparto ya está decidido y porque las pantallas ya lo respetan; lo que falta es abrir el permiso.
+
 | Rol | Ve el módulo | Pesa y carga guías | Anula pesajes y guías, y autoriza despachos sin guía |
 | --- | --- | --- | --- |
 | Almacén | Sí | Sí | No |
@@ -1986,8 +2033,10 @@ La segunda es **poder hacer cada paso**. Cada acción exige un rol concreto, y s
 | Operaciones | Sí | Crea pedidos |
 | RRHH | Sí | Crea pedidos |
 | Almacén | Sí, de consulta | Crea pedidos y registra la recepción del material |
-| Tesorería | Sí, de consulta | Registra los pagos y devuelve instrucciones a compras |
 | Consulta | Sí, de consulta | Nada: solo mirar |
+| Ventas, Respaldo | No | — |
+
+**Ya no hay rol de Tesorería.** Lo hubo, y en esta tabla tenía su fila: registraba los pagos. Se retiró junto con el módulo, y **quien paga hoy es el rol Compras** —lo exige la propia función de la base, no la matriz de permisos—. Por eso **Pagos por hacer** cuelga del menú de Compras. Está contado en 12.1.
 
 Si abres una compra y no ves ningún botón, no es una falla: el paso en el que está esa compra le toca a otro rol, y la pantalla te dice a quién estás esperando.
 
@@ -2006,7 +2055,7 @@ Esta es la sección que hay que leer si solo se va a leer una. Todo lo demás de
 | 2 | **Confirmada** *(en la ficha: **Confirmada · indicar proveedores**)* | Compras | Cargar al menos una cotización y pulsar **Proponer al gerente** |
 | 3 | **Confirmar por el gerente** *(en la ficha: **Por confirmar el gerente**)* | Gerencia general | Pulsar **Aprobar la compra**. Ahí nace la orden de compra y el precio queda fijo |
 | 4 | **Aprobada** *(en la ficha: **Aprobada · indicar método de pago**)* | Compras | Decir **con qué entrega el proveedor**, y después **Indicar método de pago** y **Enviar a tesorería** |
-| 5 | **En tesorería** | Tesorería | **Registrar el pago** de cada instrucción, hasta cubrir el total |
+| 5 | **En tesorería** | Compras | **Registrar el pago** de cada instrucción, hasta cubrir el total |
 | 6 | **Pagada** *(en la ficha: **Pagada · pendiente por recepcionar**)* | Almacén | **Recibir material** |
 | 7 | **Recibida parcialmente** | Almacén | Volver a **Recibir material** hasta completar |
 | 8 | **Recibida** | — | Cerrada |
@@ -2101,11 +2150,11 @@ Eso es todo lo que se hace desde aquí. **Ninguna acción cambia el estado de un
 
 El tablero se actualiza solo cuando otra persona mueve algo, y además se recarga cada cinco minutos por si acaso.
 
-#### Sus dos limitaciones
+#### Su limitación
 
 **No hay buscador, ni filtros, ni forma de cambiar el orden.** Las tarjetas vienen siempre de la más reciente a la más antigua.
 
-**Nada de esto se imprime.** El módulo de compras no genera ningún documento en papel ni ningún archivo para enviar: ni la orden de compra, ni la cotización, ni el tablero. Si hoy hace falta mandarle la orden a un proveedor, se hace por fuera del sistema.
+**El tablero no se imprime**, y no hace falta: los dos papeles del módulo —la **orden de compra** y el **comprobante de pago**— salen de la ficha de cada compra, no de aquí. Está en 9.5. Lo que sigue sin imprimirse es la cotización y la factura del proveedor.
 
 ### 9.4 Nuevo pedido
 
@@ -2194,17 +2243,58 @@ En la cabecera de esa misma tarjeta está el botón **Imprimir**, que saca **la 
 
 El archivo se llama `orden-compra-oc-2026-0007.pdf`.
 
-**Sale con el mismo membrete que la factura y la nota de entrega**, porque los cuatro documentos del sistema se maquetan en un solo sitio: si se hicieran por separado acabarían diciéndolo distinto. Lleva el logo, la razón social, el RIF, el domicilio fiscal y el contacto de la empresa, y a la derecha el rótulo **ORDEN DE COMPRA** con su número, la fecha y, si la orden la tiene, la **entrega estimada**.
+**Sale con la misma cabecera que los demás papeles del sistema** (13.2): el logo, la razón social, la actividad, el RIF y el domicilio fiscal de la empresa, y a la derecha tres datos —**N° orden**, **Ref. pedido** y **Emitida**—. Debajo, entre dos rayas finas y centrado, el rótulo **ORDEN DE COMPRA**.
 
-Tres diferencias con una factura, y las tres a propósito:
+Lo que viene después, en este orden:
 
-- **La banda del membrete va en gris**, como la de la cotización, y no en el naranja de la marca. Los dos son papeles que piden algo, no que cobran. Así el proveedor no confunde una orden con una factura.
-- **La contraparte se rotula PROVEEDOR**, no «cliente», y lleva su RIF, su dirección y la **condición** de pago escrita en palabras, nunca en el código interno.
-- **Las firmas están al revés que en una venta**: a la izquierda **Autorizado por** y a la derecha **Recibido por el proveedor**.
+| Bloque | Qué trae |
+| --- | --- |
+| **Proveedor** | Nombre, **RIF**, **Teléfono** y **Dirección**. La empresa no se repite aquí: ya está arriba |
+| **CONDICIONES** | **Departamento**, **Solicitante**, **Solicitada el**, **Finalidad**, **Notas**, **Clasificación**, **Entrega prometida**, **Forma de pago**, **Documentos**, **Aprobada por** y **Aprobada el**, **Confirmada por** y **Confirmada el** |
+| **ÍTEMS** | La tabla: **SKU · Descripción · Categoría · Cantidad · Precio unit. · Subtotal**, y el **TOTAL** con su moneda |
+| Desglose | **Subtotal**, **Descuento**, **Flete** e **IVA**, y **solo si hay algo que desglosar**. Una orden sin descuento, sin flete y exenta no los enseña en cero |
+| **NOTAS / OBSERVACIONES** | Solo si la orden las lleva |
 
-Al pie de la tabla queda anotado de qué pedido salió —**Según pedido SOL-2026-0001**— y, en cada página, el texto legal: *"Esta orden autoriza la compra en los términos y precios indicados. Cualquier variación en cantidad, precio o plazo debe acordarse por escrito antes de despachar. Facture a nombre de la razón social y el RIF del membrete."* Debajo, el número de página, quién lo emitió y la tasa del día con la que se valoró.
+**La forma de pago va escrita en palabras** —«Crédito 30 días»—, nunca en el código interno.
+
+**Una sola firma, centrada: Firma autorizada**, con el nombre debajo. La raya de «recibido por el proveedor» se quitó porque salía en blanco en todas las órdenes: la orden se manda por correo o por WhatsApp, no se le pone delante a nadie para que la firme, y una raya que nunca se llena enseña que las rayas de este papel no se firman. **Si quien autorizó lo hizo con un permiso concedido por otra persona, la firma lo dice**: *Firma autorizada · bajo autorización de* seguido del nombre.
+
+Al pie de cada página: **Documento generado por el sistema**, el número del pedido del que salió y la fecha y hora, y a la derecha **Página 1 de 2** cuando pasa de una hoja.
 
 **Una orden cancelada o anulada sale con el sello ANULADA cruzado en rojo.** Una orden cancelada que se imprimiera sin decirlo es una orden que alguien puede despachar por error.
+
+#### Cuando alguien aprueba con un permiso que no es suyo por el puesto
+
+Aprobar una compra es del gerente general por su puesto. Pero el sistema permite **extenderle esa facultad a una persona concreta y por un plazo** —el gerente se va de viaje, hay que seguir comprando—, y eso cambia dos cosas.
+
+**La orden dice quién autorizó.** El papel impreso no firma solo con el nombre de quien aprobó: dice *Firma autorizada · bajo autorización de* seguido del nombre de quien le extendió el permiso. Quien recibe la orden ve de dónde viene la facultad.
+
+**Y hay que dejar el respaldo.** A quien aprueba por su puesto no se le pide nada más. A quien aprueba con un permiso extendido se le exige subir el papel —el correo, el mensaje, la nota— que lo autorizaba. En la tarjeta **Papeles recibidos** aparece para eso un tipo más: **Respaldo de la autorización**.
+
+**Ese tipo no se le ofrece a todo el mundo.** Solo lo ve quien puede aprobar, y solo sobre una orden que se aprobó de esa manera. A los demás ni siquiera aparece en la lista, porque el sistema se lo rechazaría: va por otra puerta, que pregunta si puedes aprobar en vez de si eres de compras.
+
+#### El comprobante de pago
+
+Cada instrucción **ya pagada** lleva su propio botón, **Comprobante de pago**, que saca un PDF con la misma cabecera que la orden. Es lo que se le manda al proveedor cuando pregunta si ya le pagaron.
+
+Trae la orden y el pedido de los que sale, el proveedor, quién lo solicitó, la condición de pago, el total de la orden, el método con el que se pagó, el monto, la fecha y la referencia.
+
+**Solo aparece cuando la instrucción está pagada.** Antes no hay nada que comprobar.
+
+#### Los papeles que manda el proveedor
+
+Debajo de la orden hay una tarjeta, **Papeles recibidos**: *"Lo que entregó el proveedor: el comprobante del pago, la nota de entrega, la factura. Con los años el papel se pierde; esta copia no."*
+
+Cuelga de la orden, así que **no aparece hasta que la compra tiene orden**. Primero se elige **¿Qué papel es?** y después el archivo — en ese orden, para que nadie suba una factura rotulada como nota de entrega por ir rápido.
+
+| Tipo | Cuándo |
+| --- | --- |
+| **Comprobante de pago** | El que manda el banco o el proveedor |
+| **Nota de entrega** | El papel con el que llegó el material |
+| **Factura del proveedor** | La que da derecho al crédito fiscal |
+| **Otro papel** | Cualquier otra cosa que convenga guardar |
+
+**Los archivos van a un sitio privado**, no a una dirección pública: se abren con un enlace que se firma en el momento y caduca a los cinco minutos. Un enlace público sería eterno y reenviable.
 
 **Lo demás de compras sigue sin imprimirse**: ni la cotización, ni el tablero, ni la factura del proveedor.
 
@@ -2369,17 +2459,24 @@ Una vez respondido, el recuadro desaparece y queda una línea en gris: **El prov
 
 | Campo | Detalle |
 | --- | --- |
-| **Cómo se paga** | **Transferencia bancaria**, **Pago móvil**, **Binance** o **Efectivo**. Empieza en la transferencia |
-| **Moneda** | Empieza en la de la orden. El pago móvil solo existe en bolívares y Binance solo liquida en dólares, así que en esos dos casos no hay nada que elegir |
+| **Cómo se paga** | Sale del catálogo de métodos, no de una lista escrita en la pantalla. Hoy son siete |
+| **Moneda** | Empieza en la de la orden. Cada método decide qué monedas admite, así que a veces no hay nada que elegir |
 | **Monto** | **Falta por pagar:** y la cifra. Empieza en lo que falta, no en el total |
 | **Nota para tesorería** | Llamar antes de transferir, pagar solo en horario de oficina |
 
-Después, en **Datos de la transacción**, cambian los campos según el método:
+**Los métodos de pago son un catálogo, no una lista fija.** Cada uno trae escrito en qué moneda se puede usar y qué datos exige. Estos son los siete activos hoy:
 
-- **Transferencia bancaria**: **Banco**, **Número de cuenta**, **Titular de la cuenta** y **Cédula o RIF del titular**.
-- **Pago móvil**: **Banco**, **Teléfono**, **Cédula o RIF** y **A nombre de**.
-- **Binance**: **Correo o Pay ID de Binance**, **Dirección de la billetera**, **Red** y **Titular de la cuenta**.
-- **Efectivo**: **Quién recibe** y **Cédula de quien recibe**.
+| Método | Moneda | Qué datos pide |
+| --- | --- | --- |
+| **Transferencia bancaria** | Cualquiera | Banco, número de cuenta, titular y su documento |
+| **Pago móvil** | **Solo bolívares** | Banco, teléfono y documento |
+| **Efectivo** | Cualquiera | Quién recibe y su documento |
+| **Zelle** | **Nunca bolívares** | Correo y titular |
+| **Binance / USDT** | **Nunca bolívares** | Titular |
+| **Cheque** | Cualquiera | Banco, número de cuenta y titular |
+| **Otro** | Cualquiera | Ninguno |
+
+**Todos menos el efectivo exigen la referencia al darse por pagados.** Es el número de la transferencia, del cheque o de la operación; en efectivo no hay ninguno que apuntar.
 
 Para terminar, **Enviar a tesorería**.
 
@@ -2389,6 +2486,22 @@ Si la moneda no es el bolívar, el diálogo avisa en naranja: el pago **causa IG
 
 **Cuidado con los datos de la transacción: la pantalla no los marca como obligatorios, pero el sistema los exige al enviar.** Si falta alguno, la respuesta llega al pulsar **Enviar a tesorería**, con la lista completa de lo que hace falta según el método. Conviene rellenarlos todos antes.
 
+#### Cambiar el método en una orden ya aprobada
+
+Pasa a menudo: la orden se aprobó para pagarla por transferencia y el proveedor pide pago móvil, o al revés. **Antes había que devolver la orden a compras y volver a aprobarla.** Ya no.
+
+Sobre una instrucción que siga **Por pagar** hay un tercer botón, **Cambiar el método**, entre **Registrar el pago** y **Devolver a compras**.
+
+> **Cambiar el método de pago.** *La orden sigue aprobada y en la cola. Solo cambia por dónde sale el dinero.*
+
+**Lo que no toca:** ni el monto, ni la moneda, ni el estado de la orden. La aprobación del gerente sigue valiendo, porque lo que él aprobó —qué se compra, a quién y por cuánto— no ha cambiado.
+
+**Solo se ofrecen los métodos que sirven para la moneda que la instrucción ya tiene.** Si está en bolívares no aparecerán Zelle ni Binance, y si está en dólares no aparecerá el pago móvil.
+
+**Hay que decir por qué, y es obligatorio.** El motivo pide un mínimo de cinco caracteres y **queda anotado**: quién lo cambió, cuándo, de qué método a cuál y con qué razón. No es burocracia — es la diferencia entre un cambio de método y un pago desviado a otra cuenta.
+
+**Los datos de la transacción se piden de nuevo**, los que exija el método nuevo. Los del anterior no se conservan: los de una transferencia no sirven para un pago móvil, y dejarlos ahí solo produciría pagos a cuentas equivocadas.
+
 #### Se puede pagar en partes
 
 Una orden admite **varias instrucciones de pago**: mitad ahora y mitad al entregar. Por eso el **Monto** viene con lo que falta y no con el total.
@@ -2397,7 +2510,7 @@ Una orden admite **varias instrucciones de pago**: mitad ahora y mitad al entreg
 
 #### Registrar el pago (tesorería)
 
-Cuando la instrucción está **Por pagar**, el rol Tesorería ve dos botones en ella: **Registrar el pago** y **Devolver a compras**.
+Cuando la instrucción está **Por pagar**, quien tenga el rol **Compras** ve tres botones en ella: **Registrar el pago**, **Cambiar el método** y **Devolver a compras**. **No es tesorería quien paga**: ese rol se retiró con el módulo, y la propia función de la base exige el rol Compras. La cola de pagos vive hoy en **Administración › Compras › Pagos por hacer**.
 
 **Registrar el pago** abre un diálogo con los datos del destino a la vista y tres campos:
 
@@ -2409,15 +2522,17 @@ Cuando la instrucción está **Por pagar**, el rol Tesorería ve dos botones en 
 
 Si en la cuenta elegida no alcanza el saldo, el diálogo lo dice y explica el camino: si el dinero ya está, lo que falta es registrar el ingreso o el saldo de apertura. Para terminar, **Confirmar el pago**.
 
-Si no hay ninguna cuenta en esa moneda, se lee **No hay cuentas en Bolívares** y hay que crearla en **Tesorería › Bancos y cajas**.
+Si no hay ninguna cuenta en esa moneda, se lee **No hay cuentas en Bolívares**. **Bancos y cajas ya no está en el menú**, así que crear una cuenta hoy lo hace el administrador (12.3).
 
 ### 9.10 Facturas de proveedor
 
-**Administración › Compras › Facturas de proveedor**
+**Administración › Compras › Proveedores › Facturas recibidas**
 
-Es donde se copia el papel que emite el proveedor. La pantalla se presenta con una sola frase: **El papel que sustenta el crédito fiscal del IVA.**
+**Ya no es una entrada del menú: es la segunda pestaña de Proveedores**, y allí se llama **Facturas recibidas**. El título de la pantalla es **Facturas recibidas de proveedores**, y se presenta así: *"El papel que manda el proveedor por una orden ya aprobada. Es lo que sustenta el crédito fiscal del IVA."*
 
-Se llega por el menú, como al tablero y a proveedores. No hace falta abrir ninguna compra para entrar.
+**Aquí no se registra ninguna factura**, aunque el manual anterior dijera que sí. Esta pantalla es la lista de lo que ya se recibió. **La factura nace en la ficha de la compra**, con el botón **Registrar factura** de la tarjeta de la orden, y solo cuando el proveedor declaró que entrega con factura. Es lo que impide que se cargue una factura suelta que no case con ninguna orden.
+
+Cuando no hay ninguna, la pantalla lo dice: **Todavía no se ha recibido ninguna factura**.
 
 #### Para qué sirve registrar la factura
 
@@ -2679,7 +2794,7 @@ Conviene saberlo antes de buscarlo:
 - **La factura del proveedor sigue sin enlazarse con su orden de compra.** El formulario de alta no tiene campo para elegir la orden, así que el sistema no coteja lo pedido con lo recibido y lo facturado, y la etiqueta **Orden OC-…** de la ficha no llega a encenderse.
 - **Con qué entrega el proveedor no se puede corregir después.** Se declara una sola vez, en el paso 4, y no hay pantalla para cambiarlo ni para ponerse al día con las órdenes anteriores a que esto existiera.
 - **El sistema sabe qué compras prometieron factura, pero no avisa de las que no la cumplieron.** Ese pendiente existe por dentro y todavía no sale en ninguna pantalla.
-- **Lo que se debe por facturas de proveedor no aparece en la cola de Tesorería › Por pagar**, que sigue mostrando solo las instrucciones de pago de las órdenes. Lo que falta por pagar de una factura solo se ve en la columna **Saldo** de su propia pantalla.
+- **Lo que se debe por facturas de proveedor no aparece en la cola de Compras › Pagos por hacer › Por proveedor**, que sigue mostrando solo las instrucciones de pago de las órdenes. Lo que falta por pagar de una factura solo se ve en la columna **Saldo** de su propia pantalla.
 
 ### 9.13 Cuando el sistema no te deja
 
@@ -2967,7 +3082,7 @@ Pulsa en la fila. Se abre el detalle con el número por título, los chips del e
 
 #### Qué sale de aquí
 
-El PDF lleva **banda gris**, porque la cotización todavía no compromete a nadie. En el membrete van la razón social de la empresa, su RIF, su domicilio y sus contactos; a la derecha, el rótulo **COTIZACIÓN**, el número, la **Fecha** y **Válida hasta**. Después, el recuadro del cliente con **CLIENTE**, **RIF**, **DIRECCIÓN** y **TELÉFONO**, y la tabla **DESCRIPCIÓN · CANTIDAD · UNIDAD · PRECIO · TOTAL**, que se parte en hojas numeradas **Página 2 de 3**.
+El PDF sale con la misma cabecera que los demás papeles del sistema (13.2): la razón social, la actividad, el RIF, el domicilio fiscal y, si están cargados, el teléfono y el correo; a la derecha, **N° COTIZACIÓN**, **FECHA** y **VÁLIDA HASTA**. Debajo, centrado entre dos rayas, el rótulo **COTIZACIÓN**. Después, el recuadro del cliente con **CLIENTE**, **RIF**, **DIRECCIÓN** y **TELÉFONO**, y la tabla **DESCRIPCIÓN · CANTIDAD · UNIDAD · PRECIO · TOTAL**, que se parte en hojas numeradas **Página 2 de 3**.
 
 Bajo los totales sale siempre el equivalente en la otra moneda —**Equivale a Bs 45.320,00**— y, en el pie, la tasa usada: **Tasa del día: 235,4500 Bs/$**. Firman **Por la empresa** y **Aceptado por el cliente**, ambas con **Nombre, cédula y fecha**.
 
@@ -3055,7 +3170,7 @@ Para anular:
 
 #### Qué sale de aquí
 
-El PDF lleva **banda naranja de seguridad**, porque es un papel de patio y se lee con guantes. Trae el rótulo **NOTA DE ENTREGA**, el número y la **Fecha**, y bajo el recuadro del cliente una segunda fila con **VEHÍCULO**, **CHOFER**, **CÉDULA** y **TICKET · PESO NETO**. Firman **Entregado por** y **Recibido conforme**, distintas a propósito de las de la cotización y la factura.
+El PDF sale con la cabecera de la casa, como los demás, **pero el rótulo NOTA DE ENTREGA va en naranja** y no en el azul del resto. Es lo único que cambia de color en todo el sistema, y es a propósito: la nota es un papel de patio, se lee con guantes, y en un fajo de hojas mezcladas el color es lo que la separa de una factura sin tener que leer ninguna. A la derecha van **N° NOTA** y **FECHA**; bajo el recuadro del cliente, una segunda fila con **VEHÍCULO**, **CHOFER**, **CÉDULA** y **TICKET · PESO NETO**. Firman **Entregado por** y **Recibido conforme**, distintas a propósito de las de la cotización y la factura.
 
 El pie es lo más importante del papel: **ESTE DOCUMENTO NO ES UNA FACTURA. Ampara el traslado del material; la factura se emite aparte. Quien recibe firma conforme el material y el peso.**
 
@@ -3131,11 +3246,15 @@ Anular un cobro devuelve la factura de **Cobrada** a **Por cobrar** y, si hubo I
 
 #### Qué sale de aquí
 
-El PDF lleva **banda azul**, el rótulo **FACTURA**, el número, la **Fecha**, el **N.º de control** y el **Vence el**. En el recuadro del cliente van **CLIENTE**, **RIF**, **DIRECCIÓN** y **CONDICIÓN**; cuando hay condición de pago, esa casilla ocupa el sitio del teléfono.
+El PDF sale con la cabecera de la casa (13.2) y, a la derecha, cuatro datos: **N° FACTURA**, **FECHA**, **VENCE EL** y **N° DE CONTROL**. Debajo, centrado, el rótulo **FACTURA**. En el recuadro del cliente van **CLIENTE**, **RIF**, **DIRECCIÓN** y **CONDICIÓN**; cuando hay condición de pago, esa casilla ocupa el sitio del teléfono.
+
+**Un renglón exento de IVA lleva la marca (E)** pegada a su descripción, y al pie de la tabla sale la línea que la explica: **(E) Renglón exento de IVA.** Si ningún renglón es exento, no aparece nada.
 
 Los totales son **Subtotal**, **Descuento**, **Flete**, **IVA 16%**, raya y **TOTAL**, más **IVA retenido por el cliente** y **A pagar** cuando hay retención, y debajo el equivalente en la otra moneda. Firman **Por la empresa** y **Aceptado por el cliente**.
 
 El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.**
+
+> **Lo que esta factura todavía no imprime, y hace falta para que sea completa ante el SENIAT:** la **base imponible**, el **total exento** en los totales, el **desglose por alícuota** —hoy solo admite una, así que una factura mixta no se puede expresar— y los **datos de la imprenta autorizada** con su número de autorización, que no existen en ninguna pantalla del sistema. Está anotado en el capítulo 15.
 
 ### 10.8 Notas de crédito
 
@@ -3391,10 +3510,14 @@ La segunda es **poder ejecutar cada paso**. Aquí no hay un solo rol que registr
 
 | Rol | Personal, fichas, tabulador y recibos | Novedades del período | Períodos y parámetros |
 | --- | --- | --- | --- |
-| Recursos humanos | Sí | Sí | Sí |
-| Gerencia general | Sí | Sí | Sí |
-| Tesorería | Sí | **No** | Sí |
 | Administrador | Sí | Sí | Sí |
+| Gerencia general | Sí | Sí | Sí |
+| Recursos humanos | Sí | Sí | Sí |
+| Los otros siete roles | No | No | No |
+
+**Nómina es el módulo menos repartido del sistema, y es a propósito.** Solo tres roles lo alcanzan. **Consulta queda fuera**, a diferencia de casi todos los demás módulos: «solo lectura» sobre Nómina sigue siendo ver el sueldo de todo el mundo.
+
+**Aquí había una cuarta fila, la de Tesorería.** Ese rol ya no existe: se retiró junto con el módulo. Ver 12.1.
 
 Tesorería no ve las novedades del período a propósito: paga el total aprobado, no revisa las horas extra de cada quien.
 
@@ -3545,6 +3668,28 @@ Por eso, **cuando alguien se va, el orden es liquidarlo primero en Prestaciones 
 
 Si alguien llama a la función vieja —una pestaña abierta desde antes del cambio, por ejemplo—, el sistema responde: *«Las fichas de personal ya no se borran: se desincorporan. Usa "Egresar" con la fecha y el motivo —"cargada por error" también es un motivo—, y esa persona deja de salir entre los activos sin que se pierda lo que decía su ficha.»*
 
+#### La pestaña Carnets
+
+**Nómina › Personal › Carnets**
+
+Es la tercera pestaña de Personal, junto a **Personal** y **Tabulador de cargos**, y responde a una sola pregunta: **quién tiene carnet emitido y quién no**.
+
+Existe para el arranque. Emitir el carnet de veintidós trabajadores desde la ficha de cada uno son veintidós visitas a veintidós pantallas; aquí se hace de una vez.
+
+La pantalla se reparte en tres tarjetas, y la primera solo aparece si hace falta:
+
+| Tarjeta | Qué trae |
+| --- | --- |
+| **N sin carnet** | Los que faltan, con su ficha y su cargo. Arriba a la derecha, el botón **Emitir los N** |
+| **N no se pudieron emitir** | Solo si alguno falló. Se reintenta pulsando otra vez, o desde su ficha |
+| **N con carnet** | Los que ya lo tienen, con su código y la fecha en que se emitió |
+
+**Emitir los N va de uno en uno, aunque el botón sea uno solo, y se ve avanzar.** No es lentitud: cada carnet necesita la foto de esa persona, recortada con su propio encuadre, y eso ocurre en el navegador. Con veintidós fotos que bajar, tarda. **No cierres la pestaña a media faena**; si se corta, los que ya salieron quedan emitidos y los demás siguen en la lista.
+
+**Aquí solo se emiten los que faltan.** A quien ya tiene carnet no se le ofrece ningún botón, y es a propósito: volver a emitir anula el carnet anterior, y eso es una decisión de una persona concreta —se le perdió, se le rompió— que se toma en su ficha y diciendo por qué. Un botón de «reemitir a todos» convertiría en un clic el anular veintidós plásticos que están en veintidós bolsillos. La propia pantalla lo advierte al pie.
+
+**Quién puede emitir:** recursos humanos, administración y la gerencia general. Los demás ven la lista y nada más.
+
 ### 11.4 La ficha del trabajador
 
 **No está en el menú.** Se llega pinchando el nombre de la persona en la lista de **Personal**, o desde la tabla de fichas desfasadas del tabulador.
@@ -3578,13 +3723,86 @@ Lo que no tiene dato sale con un guion. Para cambiar cualquiera de estos datos h
 
 #### Los documentos
 
-En la tarjeta de abajo hay cuatro botones: **Ficha completa (PDF)**, **Carnet · frente**, **Carnet · reverso** y **Constancia de trabajo**. El pie de esa tarjeta explica para qué es cada uno:
+En la tarjeta de abajo hay dos botones: **Ficha completa (PDF)** y **Constancia de trabajo**. El carnet ya no está aquí: tiene tarjeta propia justo debajo, y el porqué está explicado en el apartado siguiente.
 
-> *"Todo se abre en pantalla antes de guardarse. El PDF trae todos los datos en A4. El carnet sale en dos imágenes, cada una de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—, que es lo que pide una imprenta para que no salga pixelado: el frente es de esta persona, y el reverso lleva la marca y el RIF y es igual para todos. La constancia es la carta que se entrega a un banco o a quien la pida."*
+**Los dos se abren primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que pulses **Descargar**. La ficha trae todos los datos en A4. La constancia es la carta que se entrega a un banco o a quien la pida, y avisa: *"Revísala antes de entregarla. La firma va a mano."*
 
-**Todo se abre primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que pulses **Descargar**. El carnet se ve entero, como saldrá impreso, para comprobar antes de mandarlo a la imprenta que la cara está centrada y que ningún dato salió en guion. La constancia además avisa: *"Revísala antes de entregarla. La firma va a mano."*
+Los dos salen con la misma cabecera que la orden de compra, el recibo y la factura: la razón social, el RIF y **el domicilio fiscal completo**, tal como estén cargados en **Configuración › Datos de la empresa** (13.2). Lo que falte ahí, falta en el papel.
 
-**El reverso es el mismo para todos.** No lleva ningún dato del trabajador: solo la marca, la razón social y el RIF. Se baja una vez y se manda a la imprenta una vez; no hace falta repetirlo por cada persona. Sale igual aunque lo pidas desde la ficha de cualquiera.
+#### El carnet
+
+**El carnet dejó de ser una imagen que se baja y pasó a ser un documento que se emite.** El motivo es el QR: cada carnet lleva impreso en el reverso un código propio, distinto para cada persona, y ese código es el que abre la página que dice si el carnet sigue valiendo. Un código que no se ha emitido no verifica nada.
+
+**Ojo si tienes impreso un manual anterior.** Hasta la versión 1.2 el reverso del carnet era igual para todos —solo la marca, la razón social y el RIF— y se mandaba a la imprenta una sola vez. **Eso ya no es cierto y no puede hacerse:** un reverso repetido haría que todos los carnets de la cantera apuntaran a la misma persona al escanearlos.
+
+**Solo hay un carnet vigente por persona.** Emitir uno nuevo anula el anterior, y por eso hace falta decir por qué.
+
+**Quién puede emitir:** recursos humanos, administración y la gerencia general. El resto ve la tarjeta y puede imprimir, pero no emitir.
+
+##### Cuando todavía no tiene carnet
+
+La tarjeta lo dice —**Sin emitir**— y explica lo que va a pasar: *"Todavía no tiene carnet. Al emitirlo sale su PDF listo para la imprenta: dos páginas de 54 × 86 mm a 300 dpi, con el QR de verificación en el reverso."*
+
+Se pulsa **Emitir el carnet**, se confirma, y el PDF se abre solo. No hay que buscarlo después.
+
+**Hace falta la foto.** Sin foto cargada, la página de verificación no puede comparar ninguna cara con la persona que tienes delante, que es para lo único que la foto está ahí.
+
+##### Cuando ya lo tiene
+
+La tarjeta muestra tres cosas y un botón:
+
+| Qué | Para qué sirve |
+| --- | --- |
+| **Código impreso bajo el QR** | El mismo que sale escrito en el plástico, en grupos de seis. Sirve para teclearlo a mano cuando el QR está rayado y no lee |
+| **Adónde lleva el QR** | La dirección completa. El botón **Copiar la dirección** la deja en el portapapeles |
+| **Emitido el** | Fecha y hora |
+| **Imprimir el carnet** | Vuelve a sacar el mismo PDF. **Esto no emite nada ni anula nada** |
+
+**Imprimir es lo que se viene a hacer aquí casi siempre**: el carnet se perdió, se rompió, hace falta otra copia. No hay ningún límite ni ningún registro por imprimir de nuevo; el código sigue siendo el mismo y el carnet que ya está en el bolsillo sigue valiendo.
+
+##### La página que abre el QR
+
+Conviene saber qué enseña, porque quien la abre no es alguien de la empresa: es **un vigilante en un portón o un fiscal en la carretera**, con un teléfono en la mano y sin cuenta en el sistema. Está hecha para leerse en un teléfono, a pleno sol, en menos de tres segundos.
+
+Lo primero y más grande es un sello con una sola palabra:
+
+| Sello | Qué significa |
+| --- | --- |
+| **Vigente** | El carnet vale. La persona trabaja aquí |
+| **Rechazado** | No vale. Debajo dice por qué: **Ya no trabaja aquí** o **Carnet anulado** |
+
+**La foto va dentro del sello**, del mismo color, para que no se pueda leer «Vigente» y mirar una cara que no corresponde sin darse cuenta de que son dos cosas distintas.
+
+Debajo, los datos:
+
+| Bloque | Qué enseña |
+| --- | --- |
+| Identificación | Nombre, **número de ficha**, cargo, cédula |
+| Antigüedad | Desde cuándo trabaja aquí, y cuánto lleva, en años y meses |
+| Edad | Los años cumplidos |
+| **En caso de emergencia** | Grupo sanguíneo, a quién llamar y su teléfono, el teléfono de la persona, y su dirección |
+| Código | El mismo que está impreso bajo el QR |
+
+**Los teléfonos son enlaces**: se pulsan y el teléfono llama. Es la razón por la que ese bloque existe y por la que está separado del resto con su propio rótulo en rojo — si alguien se accidenta en la carretera, quien encuentre el carnet no tiene que copiar un número a mano.
+
+**Lo que NO enseña:** el sueldo, la cuenta bancaria, las incidencias, y el motivo por el que se anuló un carnet anterior. Nada de eso sale a la calle.
+
+Si el QR está rayado y no lee, la dirección **/v** sin código abre la misma página con un campo para teclearlo. Acepta el código escrito con espacios o sin ellos, y corrige las confusiones de siempre —una **O** por un **cero**, una **I** o una **L** por un **uno**—.
+
+##### Volver a emitir, y anular
+
+Debajo hay dos botones pequeños, y solo los ve quien puede emitir:
+
+- **Se perdió** — emite uno nuevo. **El anterior queda anulado**, y si alguien lo encuentra y lo escanea, la página dirá que no vale.
+- **Anular** — deja a la persona sin carnet vigente, sin emitir otro. Para cuando egresa.
+
+Las dos piden un motivo. El de anular es obligatorio; el de reemitir, opcional. **Lo que se escriba ahí no sale publicado**: es una nota interna de nómina, y la página del QR no la enseña.
+
+Si hay carnets anulados, la tarjeta los lista abajo con su código, su fecha y su motivo. Sirve para cuando alguien aparece con un carnet que escanea como no válido y hay que responder de dónde salió.
+
+##### Las dos caras sueltas
+
+Al pie de la tarjeta, en letra pequeña: *"¿Hace falta una cara suelta para retocarla? el frente · el reverso, en PNG."* Son un apaño de taller —mirar o retocar una cara— y nada más. **El carnet que se manda a la imprenta es el PDF**, que ya trae las dos páginas al tamaño y a la resolución que pide.
 
 #### Dotación, asignación e incidencias
 
@@ -4279,18 +4497,17 @@ Son cinco, salen de dos sitios distintos y **todos se abren en pantalla antes de
 | Documento | De dónde sale | Cómo sale |
 | --- | --- | --- |
 | **Ficha completa (PDF)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
-| **Carnet · frente (imagen)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
-| **Carnet · reverso (imagen)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
+| **Carnet (PDF)** | La tarjeta del carnet, en la ficha | Se emite y se abre solo. Después, **Imprimir el carnet** |
 | **Constancia de trabajo** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
 | **Recibo de pago** | Recibos de pago | Se abre en el visor y se descarga desde ahí |
 
 - **La ficha** va en A4 con todos los datos de la pantalla, la foto, el estado de la persona y dos renglones de firma: **Firma del trabajador** y **Recursos humanos**. Al pie lleva quién la emitió y cuándo, y el rótulo **Documento interno**.
-- **El frente del carnet** sale con la medida y la resolución que pide una imprenta para que no salga pixelado. Lleva la foto, el nombre, el cargo y cuatro datos: **Cédula**, **Departamento**, **Ingreso** y **Sangre**.
-- **El reverso del carnet** lleva la marca, la razón social y el RIF, y nada más. Es el mismo para todo el personal: se baja una vez.
+- **El carnet** es un PDF de dos páginas, cada una de 54 × 86 mm a 300 dpi, que es lo que pide una imprenta para que no salga pixelado. En el frente van la foto, el nombre, el cargo y cuatro datos: **Cédula**, **Departamento**, **Ingreso** y **Sangre**. En el reverso, la marca, la razón social, el RIF y **el QR de verificación con el código de esa persona**.
+- **El reverso NO es igual para todos.** El código del QR es distinto en cada carnet: es lo que identifica a esa persona cuando alguien escanea. Está explicado entero en 11.4.
 - **La constancia** es la carta que se entrega a un banco o a quien la pida. Va en papel de la empresa, redactada en el tiempo verbal correcto según la persona siga trabajando o ya no, y con el sueldo dentro o fuera según dejes marcada la casilla **Incluir el sueldo**. Lleva un recuadro que repite el nombre, la cédula y la ficha para poder cotejarlos.
 - **El recibo** sale siempre por duplicado, original y copia, y esa es la mitad de su valor: la copia firmada por el trabajador es la constancia de que cobró.
 
-La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo. Y los que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano. Las dos caras del carnet no llevan pie ni firma: en una tarjeta de 54 mm no cabe, y no hace falta.
+La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo, y **abren con la misma cabecera que el resto de los papeles del sistema** (13.2). Los que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano. El carnet no lleva pie ni firma: en una tarjeta de 54 mm no cabe, y no hace falta.
 
 ### 11.12 Organigrama
 
@@ -4408,7 +4625,18 @@ Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un
 
 ## 12. Tesorería
 
-> **Hoy este módulo no se ofrece en el menú.** Está construido y sus pantallas funcionan —todo lo que cuenta este capítulo es cierto—, pero se dejó fuera del menú lateral mientras se termina de afinar, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Lo que eso significa exactamente está en 1.5. Tiene una consecuencia que hay que prever: **una compra puede llegar hasta tesorería y quedarse ahí**, porque el paso 5 del circuito de Compras —registrar el pago— se ejecuta en este módulo. Mientras Tesorería no vuelva al menú, ese paso lo hace quien tenga el rol y sepa escribir la dirección. El módulo ganó además una primera entrada, **Tablero**, que no existía cuando se escribió este capítulo.
+**Tesorería dejó de ser un módulo, y no es que esté escondida mientras se afina.** La empresa decidió que el sistema **no lleva bancos ni cajas**: anota de dónde salió cada pago, pero no controla ningún saldo. Con esa decisión, la mitad del módulo dejó de tener sentido.
+
+Lo que se usa todos los días **se mudó a Compras y sí está en el menú**. Este capítulo se conserva porque lo que cuenta de esas pantallas sigue valiendo; lo que cambió es dónde se entra:
+
+| Pantalla | Dónde está hoy |
+| --- | --- |
+| **Pagos por hacer** | **Administración › Compras › Pagos por hacer** |
+| **Cuentas por pagar** | La misma pantalla, pestaña **Por proveedor** |
+| **Libro de tesorería** | **Administración › Compras › Movimientos de dinero** |
+| **Tablero**, **Bancos y cajas**, **Cuentas por cobrar** | Siguen fuera del menú. Son lo que la empresa decidió no llevar |
+
+**Ninguna de las seis da el cartel de obra**: las direcciones responden y las pantallas se abren. Lo que las cierra hoy es el permiso, no el cartel — y sobre este módulo **solo el administrador tiene permiso**.
 
 Tesorería es el libro del dinero. Cada banco, cada caja de efectivo y cada billetera digital de la empresa tiene aquí su cuenta, y todo lo que entra y sale de ellas queda escrito en una sola lista, en orden, con la fecha, el concepto, la referencia y el nombre de quien lo registró.
 
@@ -4422,29 +4650,22 @@ Y hay una segunda regla que conviene tener presente desde la primera pantalla: *
 
 ### 12.1 Quién entra y quién puede hacer qué
 
-Hay dos puertas distintas, y conviene no confundirlas.
+**No existe el rol de Tesorería.** Lo hubo y se retiró junto con el módulo. Los roles del sistema son diez y ninguno se llama así; están todos en 13.1.
 
-La primera es **ver el módulo**. Depende del permiso sobre Tesorería que administración le haya dado a tu rol. Si no lo tienes, el grupo Tesorería no aparece en el menú, y si escribes la dirección a mano verás una tarjeta: **Tesorería no está a tu alcance**, con el texto **Tu rol no tiene acceso a este módulo. Si lo necesitas para tu trabajo, pídeselo a quien administra el sistema.** y el enlace **Volver al panel**.
+Hay **tres** puertas distintas, y conviene no confundirlas.
 
-La segunda es **poder mover dinero**. Los botones que escriben algo — **Nueva cuenta**, **Trasladar**, **Saldo de apertura**, **Ingreso**, **Egreso**, **Ajustar**, **Pagar**, **Reversar** — solo se dibujan para el rol de Tesorería y para administración. Quien no lo tenga ve, en lugar de esos botones, uno solo: **Ver datos**.
+**La primera es ver las pantallas del módulo** —Tablero, Bancos y cajas, Cuentas por cobrar—. Depende del permiso sobre Tesorería, y hoy **solo lo tiene el administrador del sistema**. Todos los demás roles están en **Ninguno**, el gerente general y compras incluidos. Quien escriba la dirección ve la tarjeta **Tesorería no está a tu alcance**, con el texto **Tu rol no tiene acceso a este módulo. Si lo necesitas para tu trabajo, pídeselo a quien administra el sistema.** y el enlace **Volver al panel**.
 
-Esta es la situación con la que arranca el sistema. Administración puede cambiar la primera columna desde la matriz de permisos, pero no la segunda: quién paga es una regla que esa pantalla no toca.
+| Rol | Sobre Tesorería |
+| --- | --- |
+| Administrador del sistema | **Total** |
+| Los otros nueve roles | **Ninguno** |
 
-| Rol | Ve las pantallas | Registra movimientos y paga |
-| --- | --- | --- |
-| Administrador del sistema | Sí | Sí |
-| Tesorería | Sí | Sí |
-| Gerente general | Sí | No |
-| Compras | Sí | No |
-| Almacén | No | No |
-| Operaciones | No | No |
-| Recursos humanos | No | No |
-| Solicitante | No | No |
-| Consulta | No | No |
+**La segunda es mover dinero en esas pantallas** —**Nueva cuenta**, **Trasladar**, **Saldo de apertura**, **Ingreso**, **Egreso**, **Ajustar**, **Deshacer una línea**—. Pide permiso de **escritura** sobre Tesorería, que sale de la matriz de permisos como cualquier otro. Hoy, por lo anterior, solo el administrador.
 
-El rol de Consulta queda fuera de Tesorería a propósito, igual que de Nómina. «Solo lectura» de las cuentas de la empresa sigue siendo ver por dónde entra y sale todo el dinero.
+**La tercera es registrar un pago de la cola**, y esta no sale de la matriz: **la exige la propia función de la base y pide el rol Compras**, o ser administrador. Por eso quien paga las órdenes es compras, y por eso «Pagos por hacer» vive en el menú de Compras y no aquí.
 
-Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu rol es de consulta.
+**Esa tercera puerta no se puede abrir desde la matriz de permisos.** Dar permiso sobre Tesorería a alguien no le deja pagar; lo que hace falta es el rol Compras.
 
 ### 12.2 El circuito del dinero
 
@@ -4455,8 +4676,8 @@ Antes de entrar en las pantallas conviene saber por dónde nace y por dónde mue
 1. **Alguien pide material.** Nace un pedido en Compras.
 2. **Compras cotiza y prepara la orden**, y la aprueba el **Gerente general**. Es el único rol que aprueba una compra.
 3. **Compras indica cómo se paga**: el método — **Transferencia bancaria**, **Pago móvil**, **Binance** o **Efectivo** —, la moneda, el monto y los datos de a dónde va el dinero. En ese momento nace la instrucción de pago, y con ella el IGTF ya calculado si la moneda no es el bolívar.
-4. **La instrucción aparece sola en tesorería**, en dos pantallas a la vez: en **Pagos por hacer**, en orden de llegada, y en **Cuentas por pagar**, agrupada por proveedor. Nadie la carga a mano.
-5. **El tesorero pulsa Pagar** y dice de qué cuenta sale el dinero, con qué referencia y en qué fecha.
+4. **La instrucción aparece sola en Compras**, en dos vistas de la misma pantalla: **Pagos por hacer**, en orden de llegada, y su pestaña **Por proveedor**, agrupada. Nadie la carga a mano.
+5. **Quien tenga el rol Compras pulsa Pagar** y dice **por dónde salió** el dinero, con qué referencia y en qué fecha. No hay «tesorero»: ese rol no existe.
 6. **Al pulsar Confirmar el pago**, el sistema hace todo de una vez: escribe la línea **Pago a proveedor** en el libro y baja el saldo de la cuenta; si hay IGTF, escribe una segunda línea **IGTF** aparte; marca la instrucción como pagada; lo anota en la bitácora de la compra; y si con eso la orden queda saldada, la compra pasa a estar pendiente por recepcionar.
 7. **La instrucción desaparece de la cola** y la línea se queda para siempre en el libro.
 
@@ -4472,11 +4693,11 @@ Una deuda con un proveedor, por lo tanto, **se cierra pagándola desde tesorerí
 
 Dos cosas que conviene entender de aquí. La primera: **el cobro entra en la moneda de la cuenta donde cae el dinero, no en la de la factura**. Si la factura está en dólares y el cliente pagó a la cuenta en bolívares, el cobro es en bolívares. La segunda, que se deriva de la anterior: por eso los saldos de **Cuentas por cobrar** se muestran todos en dólares, porque se cobra en las dos monedas y hay que poder sumarlos.
 
-Registrar un cobro no exige el rol de Tesorería: exige permiso de escritura sobre el módulo Ventas. Quien factura es quien cobra.
+Registrar un cobro exige permiso de escritura sobre el módulo Ventas. Quien factura es quien cobra. (El rol de Tesorería, que es lo que alguien podría esperar aquí, ya no existe: ver 12.1.)
 
 ### 12.3 Bancos y cajas
 
-**Administración › Tesorería › Bancos y cajas**
+**Fuera del menú.** Es lo que la empresa decidió no llevar: hoy solo la abre el administrador.
 
 Es la pantalla de cabecera del módulo: dónde está el dinero de la empresa y cuánto hay en cada sitio. Desde aquí se crean las cuentas, se registran los ingresos y egresos que no vienen de una compra ni de una venta, y se traslada dinero de un sitio a otro.
 
@@ -4558,7 +4779,7 @@ De aquí no sale ningún papel imprimible. Lo que produce esta pantalla son lín
 
 ### 12.4 Pagos por hacer
 
-**Administración › Tesorería › Pagos por hacer**
+**Administración › Compras › Pagos por hacer**
 
 Es la cola de trabajo del tesorero: **Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda pendiente por recepcionar.**
 
@@ -4589,13 +4810,15 @@ Si no hay nada pendiente: **No hay nada por pagar**, con el texto **Cuando compr
 5. Rellena la **Fecha del pago** si no es hoy: **Vacío es hoy. Es la fecha que aparece en el estado de cuenta.**
 6. Pulsa **Confirmar el pago**.
 
-**En la lista de cuentas solo salen las que están en la misma moneda de la instrucción.** Si no hay ninguna, la lista dice **No hay cuentas en USD** y debajo **Crea una cuenta en USD en Tesorería › Bancos y cajas.** No es un olvido: pagar una instrucción en dólares desde una cuenta en bolívares obligaría al sistema a inventar la tasa a la que se hizo el cambio, y esa cifra la pone el banco, no el sistema.
+**En la lista de cuentas solo salen las que están en la misma moneda de la instrucción.** Si no hay ninguna, la lista lo dice. **Bancos y cajas ya no está en el menú** —es una de las pantallas que quedaron fuera cuando Tesorería dejó de ser un módulo—, así que crear una cuenta hoy lo hace el administrador. No es un olvido: pagar una instrucción en dólares desde una cuenta en bolívares obligaría al sistema a inventar la tasa a la que se hizo el cambio, y esa cifra la pone el banco, no el sistema.
 
 Si el saldo de la cuenta elegida no alcanza, aparece un aviso naranja que **no impide confirmar**: **En esa cuenta hay $ 200,00 y el pago es de $ 1.287,50. Si el dinero ya está, falta registrar el ingreso o el saldo de apertura.** Avisa porque lo más frecuente no es que falte el dinero, sino que falte registrarlo. Quien sí impide confirmar es el propio libro, más adelante, si al escribir la línea el saldo queda por debajo de cero y la cuenta no admite sobregiro.
 
 ### 12.5 Cuentas por pagar
 
-**Administración › Tesorería › Cuentas por pagar**
+**Administración › Compras › Pagos por hacer › Por proveedor**
+
+Ya no tiene entrada propia en el menú: es la segunda pestaña de **Pagos por hacer**. El título de la pantalla sigue diciendo **Cuentas por pagar**.
 
 Es la misma deuda de la pantalla anterior, pero vista al revés: **Lo que se le debe a cada proveedor, por autorizaciones de compra que todavía no han salido del banco.** La cola sirve para pagar en orden; esta pantalla sirve para decidir a quién se le paga.
 
@@ -4618,7 +4841,7 @@ Si no se debe nada: **No se le debe nada a nadie**, con el texto **Toda compra a
 
 ### 12.6 Cuentas por cobrar
 
-**Administración › Tesorería › Cuentas por cobrar**
+**Fuera del menú.** Es una de las tres pantallas que quedaron escondidas, y hoy solo la abre el administrador.
 
 Lo que deben los clientes: **Facturas emitidas y todavía sin cobrar del todo. El saldo va en dólares porque se cobra en las dos monedas.**
 
@@ -4647,7 +4870,9 @@ Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitida
 
 ### 12.7 Libro de tesorería
 
-**Administración › Tesorería › Libro de tesorería**
+**Administración › Compras › Movimientos de dinero**
+
+En el menú se llama así. El título de la pantalla sigue diciendo **Libro de tesorería**.
 
 Es el libro contable del dinero: **Todo el dinero que entró y salió. No se edita ni se borra: lo que estuvo mal se reversa y las dos líneas quedan.** Aquí no se registra nada nuevo: se consulta, y si algo se registró mal, se escribe la línea contraria.
 
@@ -4690,7 +4915,7 @@ La línea original **se queda en el libro**. Lo que se escribe es una nueva, del
 - **La línea es una de las dos mitades de un traslado.** Reversar solo esa devolvería el dinero al origen dejándolo también en el destino. Se deshace con un traslado en sentido contrario.
 - **La línea es el pago de una nómina.**
 
-Y a esos se suma el de siempre: sin el rol de Tesorería, el botón tampoco se dibuja.
+Y a esos se suma el de siempre: sin el rol **Compras**, el botón tampoco se dibuja. No es el rol de Tesorería, que ya no existe.
 
 ### 12.8 Lo que conviene entender
 
@@ -4816,7 +5041,9 @@ Un efecto secundario que conviene saber: **cargar la tasa del BCV pasó a pedir 
 
 Esta pantalla la maneja el rol de Administrador del sistema. Quien tenga permiso para verla pero no ese rol lee arriba un aviso naranja: **Estás viendo esta pantalla en solo lectura. Crear usuarios y cambiar permisos lo hace quien tiene el rol de administrador del sistema.** No aparecen **Nuevo usuario** ni **Nuevo rol**, no hay botones en las filas y las casillas de la matriz salen apagadas.
 
-La pantalla tiene dos pestañas: **Usuarios** y **Roles y permisos**.
+La pantalla tiene tres pestañas: **Usuarios**, **Roles y permisos** y **Permisos extendidos**.
+
+**El aviso de solo lectura vale para las dos primeras, no para la tercera.** El gerente general lo lee arriba y, sin embargo, **sí puede extender y retirar permisos**: esa pestaña la manejan el administrador del sistema y la gerencia general. Es lo único de esta pantalla que la gerencia puede usar de verdad.
 
 #### La pestaña Usuarios
 
@@ -4829,10 +5056,23 @@ La tabla tiene estas columnas:
 | **Usuario** | El nombre de usuario. En tu propia fila lleva la etiqueta **Tú** |
 | **Nombre** | Nombre y apellido |
 | **Cargo** | El cargo, si se llenó |
+| **Ficha de personal** | Si la cuenta está relacionada con un trabajador. Ver abajo |
 | **Roles** | Una etiqueta por rol. Si no tiene ninguno: **Sin roles** |
 | **Estado** | **Activo** o **Inactivo**, más el botón de la llave para cambiar la clave y el del muñeco para inactivar o reactivar |
 
 Pulsar cualquier parte de la fila abre la ficha del usuario. **No hay buscador ni filtros** en esta pestaña.
+
+#### La columna «Ficha de personal»
+
+Es el espejo de lo que ya hace la ficha del trabajador, que dice si esa persona tiene cuenta. Aquí se lee al revés: si esa cuenta es de alguien de la plantilla.
+
+| Lo que dice | Qué significa |
+| --- | --- |
+| **Ficha 0018 · Jesmary Barco** | La cuenta está atada a ese trabajador |
+| En naranja: **Hay una ficha con su cédula** | No está atada, pero existe un trabajador con la misma cédula. **Es lo único de esta columna sobre lo que hay que hacer algo** |
+| En gris | Ni atada ni hay ficha con esa cédula. Es lo normal en una cuenta de sistemas o de un tercero |
+
+**Sirve para dos cosas distintas.** La primera es no darle dos identidades a la misma persona. La segunda es más útil de lo que parece: cuando alguien egresa, saber qué cuenta era suya es lo que evita que se quede abierta.
 
 #### Crear un usuario
 
@@ -4925,7 +5165,7 @@ Dentro de cada tarjeta está la matriz, con estas columnas:
 
 **Los tres niveles son una escalera, no tres opciones sueltas.** Marcar **Control total** marca también **Escritura** y **Lectura**; desmarcar **Lectura** apaga las tres. Es así porque escribir sin poder leer no significa nada, y una matriz que lo permitiera solo serviría para dejar gente con permisos que no se pueden usar.
 
-Y la advertencia que conviene repetir: **ningún nivel de esta matriz convierte a nadie en tesorero, ni en gerente, ni en administrador.** Marcarle **Control total** en Tesorería al rol de Almacén no le da el botón de pagar: seguirá chocando con la regla que exige el rol de Tesorería.
+Y la advertencia que conviene repetir: **ningún nivel de esta matriz convierte a nadie en gerente ni en administrador.** Marcarle **Control total** en Tesorería al rol de Almacén no le da el botón de pagar: seguirá chocando con la regla que exige el rol **Compras**, y esa no sale de esta matriz. Para prestarle a alguien una facultad concreta está la tercera pestaña, **Permisos extendidos**.
 
 #### Cambiar un permiso
 
@@ -4969,6 +5209,30 @@ Al editar, el **Código** queda bloqueado y la ventana lo explica: **El código 
 
 **Los roles que trae el sistema no se pueden borrar.** Solo se borran los que creó la empresa, y solo si no los tiene nadie. Si un rol del sistema sobra en alguien, el camino no es borrarlo sino quitárselo a quien no deba tenerlo: borrarlo dejaría sin dueño todas las reglas que lo nombran.
 
+#### La pestaña «Permisos extendidos»
+
+Es la tercera capa de autorización del sistema, y la más reciente. Las otras dos reparten por **rol**; esta presta una facultad **a una persona concreta y por un plazo**.
+
+Nació de un caso real: el gerente general es el único que aprueba compras, y cuando no está, la empresa deja de comprar. Extenderle esa facultad a alguien de confianza por dos semanas resuelve el viaje sin repartirle el rol de gerente a nadie.
+
+**Lo que se presta es una acción, no un módulo.** El sistema tiene un catálogo de **153 acciones** repartidas en quince módulos —aprobar una compra, anular un carnet, autorizar un despacho sin guía—, y se extiende una, no el módulo entero.
+
+Con el botón **Extender un permiso** se pide:
+
+| Campo | Detalle |
+| --- | --- |
+| **A quién** | Una persona activa del sistema |
+| **Qué se le extiende** | Una acción del catálogo. La ayuda dice el límite: *"Solo puedes extender lo que tú mismo puedes hacer."* |
+| **Desde** | En blanco, desde hoy |
+| **Hasta** | En blanco, **indefinida**. Conviene poner fecha |
+| **Justificación** | Obligatoria, y la ayuda dice por qué: *"Por qué hace falta. Dentro de un mes es lo único que va a explicar por qué esta persona pudo hacer esto."* |
+
+**Nadie puede extender lo que él mismo no puede hacer.** Es lo que impide que esta pantalla se use para escalar permisos: el administrador puede prestar cualquier cosa porque lo puede todo, pero el gerente general solo presta lo suyo.
+
+**Lo que se hace con un permiso extendido queda marcado como tal.** No es lo mismo aprobar una compra porque es tu puesto que aprobarla porque alguien te prestó la facultad: la orden impresa dice *bajo autorización de* seguido del nombre, y a quien la usa se le exige subir el papel que la respalda. Está contado en 9.5.
+
+**Un permiso extendido se retira**, no se borra, y al retirarlo se pide **Por qué se retira**: queda el rastro de que existió, de quién lo dio, por qué y hasta cuándo.
+
 #### Lo que ni siquiera el administrador puede hacer
 
 Conviene saberlo antes de intentarlo, porque cada límite tiene su razón:
@@ -4987,6 +5251,22 @@ Conviene saberlo antes de intentarlo, porque cada límite tiene su razón:
 
 Guarda la identidad fiscal de la empresa: **Lo que dice el registro. Sale impreso en cada papel que emite el sistema.** De aquí salen los datos de los recibos, los carnets y las guías que emiten los demás módulos, así que un dato mal escrito aquí sale mal escrito en todas partes.
 
+**Los trece papeles del sistema llevan la misma cabecera, y sale entera de esta pantalla.** Todos abren con la razón social, la actividad, el RIF y el domicilio fiscal, tal como estén aquí:
+
+| Módulo | Papeles |
+| --- | --- |
+| Inventario | Nota de salida, acta de existencias, libro de movimientos, constancia de entrega |
+| Combustible | Vale de combustible |
+| Compras | Orden de compra, comprobante de pago |
+| Ventas | Factura, cotización, nota de entrega |
+| Nómina | Recibo de pago, ficha del trabajador, constancia de trabajo |
+
+**El carnet es el único que no.** Mide 54 × 86 mm y tiene su propio diseño; no le cabe una cabecera de hoja A4.
+
+**Cuatro campos forman el domicilio fiscal, y salen impresos juntos.** El sistema arma una sola dirección con **Domicilio fiscal**, **Ciudad**, **Estado** y **Zona postal**, en ese orden. Los cuatro figuran como opcionales porque el sistema funciona sin ellos, pero **una factura con el domicilio fiscal incompleto es una factura mal emitida**, y eso lo mira un fiscal. Llénalos los cuatro.
+
+**El teléfono y el correo también salen impresos**, en el mismo renglón del RIF, si están cargados. Si los dos están vacíos, el renglón lleva solo el RIF y no queda ningún hueco.
+
 **Solo pueden cambiarla el Administrador del sistema y el Gerente general.** Para el resto los campos salen apagados y en lugar del botón aparece: **Solo la gerencia y quien administra el sistema pueden cambiar estos datos.**
 
 Si al RIF le quedan noventa días o menos para vencer, arriba del todo sale un aviso. En naranja si está por vencer — **El RIF vence el 04 jul 2028, dentro de 45 días. Conviene renovarlo antes.** — y en rojo si ya venció: **El RIF venció el 04 jul 2028. Con el RIF vencido no se puede facturar.** Va arriba del todo porque es lo único de esta pantalla que puede detener la operación de un día para otro.
@@ -4999,12 +5279,12 @@ La pantalla es un formulario largo, repartido en dos tarjetas.
 | --- | --- | --- |
 | **RIF** | Sí | Tiene que tener la forma **J-50209170-0**. Si no, sale debajo en rojo: **Debe ser como J-50209170-0.** |
 | **Razón social** | Sí | Se escribe sola en mayúsculas y sin tildes |
-| **Domicilio fiscal** | No | |
-| **Ciudad** | No | |
-| **Estado** | No | |
-| **Zona postal** | No | |
-| **Teléfono** | No | |
-| **Correo** | No | |
+| **Domicilio fiscal** | Conviene | La calle. Es la primera parte de la dirección impresa |
+| **Ciudad** | Conviene | Segunda parte |
+| **Estado** | Conviene | Tercera parte |
+| **Zona postal** | Conviene | Va pegada al estado: **BOLIVAR 8001** |
+| **Teléfono** | No | Sale junto al RIF en la cabecera de los papeles |
+| **Correo** | No | Sale junto al RIF, detrás del teléfono |
 
 **Registro fiscal** — **Del comprobante del SENIAT. Se actualiza cada vez que se renueva el RIF.**
 
@@ -5048,11 +5328,11 @@ Son dos grupos distintos:
 | --- | --- | --- |
 | Administrador del sistema | Sí | Sí |
 | Gerente general | Sí | Sí |
-| Tesorería | Sí | No |
-| Recursos humanos | Sí | No |
+| Almacén | Sí | Sí |
+| Compras | Sí | Sí |
 | El resto de los roles | No | No |
 
-Está repartido así a propósito: cargar y quitar papeles de la empresa es de la gerencia. Tesorería y recursos humanos los consultan para hacer su trabajo, pero no deciden cuáles valen.
+Está repartido así a propósito: cargar y quitar papeles de la empresa es de la gerencia. **Aquí había una fila de Tesorería y ese rol ya no existe** (12.1). Quien consulta estos papeles para hacer su trabajo hoy es compras, que paga contra ellos.
 
 #### Cargar un documento
 
@@ -5296,9 +5576,15 @@ No es vigilancia sobre las personas. Es lo que permite responder una pregunta co
 
 ### 14.8 Las excepciones se conceden, pero se anotan
 
-Algunas reglas admiten excepción para quien tenga el permiso más alto del módulo. Despachar mineral sin guía es la principal: hay días en que el papel llega tarde y el cliente está esperando.
+Hay **dos maneras** de salirse de una regla, y conviene no confundirlas.
 
-La excepción existe porque la operación real no siempre encaja en el procedimiento. Pero **queda registrada en la auditoría**, con el nombre de quien la autorizó. Nunca pasa en silencio.
+**La primera es por control total sobre el módulo.** Algunas reglas admiten excepción para quien tenga el escalón más alto: despachar mineral sin guía —hay días en que el papel llega tarde y el cliente está esperando—, vender por debajo del precio mínimo del artículo, o facturar a crédito por encima del límite del cliente. La facultad viene del nivel de permiso, no de un permiso aparte.
+
+**La segunda es por un permiso extendido**, que es lo contrario: no viene del nivel sino de que alguien te prestó una facultad concreta, a ti y por un plazo. Aprobar una compra sin ser el gerente general es el caso vivo. Está contado en 13.1.
+
+**Las dos quedan registradas en la auditoría**, con el nombre de quien las autorizó. Nunca pasan en silencio.
+
+**Y la segunda deja además rastro en el papel.** Quien aprueba una compra con un permiso extendido no firma como si fuera suyo: la orden impresa dice **bajo autorización de** seguido del nombre de quien se lo extendió, y el sistema le exige subir el papel que lo respalda. **El respaldo se pide solo ahí**: a quien actúa por su puesto no se le pide nada, porque no hay nada que justificar.
 
 ### 14.9 Sobre la separación de funciones
 
@@ -5340,13 +5626,24 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **Costo por tonelada.** La producción entra al inventario valorada en cero, porque el costo real depende de la nómina, el gasoil y la voladura, y ese cálculo todavía no existe. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.** Las toneladas sí son confiables.
 
-**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor se registra y su papel se guarda, pero **no se enlaza con su orden de compra**, así que no hay cotejo entre lo pedido, lo recibido y lo facturado. El sistema no calcula retenciones a proveedores. Lo que se debe por facturas no llega a **Tesorería › Cuentas por pagar**, que sigue leyendo solo las instrucciones de pago de las órdenes. **La orden de compra sí se imprime**; la cotización y el tablero, no.
+**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor se registra y su papel se guarda, pero **no se enlaza con su orden de compra**, así que no hay cotejo entre lo pedido, lo recibido y lo facturado. El sistema no calcula retenciones a proveedores. Lo que se debe por facturas no llega a **Compras › Pagos por hacer › Por proveedor**, que sigue leyendo solo las instrucciones de pago de las órdenes. **La orden de compra sí se imprime**; la cotización y el tablero, no.
 
 **En Inventario.** Un artículo ya se puede corregir y borrar, pero **el código sigue sin poder cambiarse**: es con lo que se pide en el almacén y ya está impreso en lo emitido. Y **borrar solo funciona mientras nada lo haya tocado**; en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo.
 
 **En Despachos.** El sistema comprueba el cliente, el tipo, el estado y la vigencia de los papeles, pero **no compara cifras**: ni el peso neto del ticket contra las cantidades de la nota, ni las toneladas de la guía contra los renglones. Cuadrar eso sigue siendo trabajo de la persona. Además, la nota despachada sin guía **no se marca en ninguna pantalla**: el único rastro está en la auditoría.
 
-**En Ventas.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. Las facturas emitidas desde el sistema no admiten descuento. **La nota de crédito no se imprime**: se registra y se declara, pero el papel que se le entrega al cliente todavía se hace por fuera.
+**En Ventas.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. Las facturas emitidas desde el sistema no admiten descuento. **La nota de crédito no se imprime**: se registra y se declara, pero el papel que se le entrega al cliente todavía se hace por fuera, y fiscalmente es un documento con número de control propio.
+
+**La factura impresa todavía no está completa ante el SENIAT.** Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención y la tasa del día. **Le faltan cuatro cosas:**
+
+| Falta | Por qué importa |
+| --- | --- |
+| **Base imponible** | El dato existe en el sistema y no llega al papel |
+| **Total exento** | Los renglones exentos ya se marcan con **(E)**, pero no se suman aparte |
+| **Desglose por alícuota** | Hoy la factura admite una sola alícuota. Una factura mixta no se puede expresar |
+| **Datos de la imprenta autorizada** | Con su número de autorización. **No existen en ninguna pantalla del sistema**: hay que crearlos primero en Datos de la empresa |
+
+Las tres primeras cambian el cálculo —hay que acordar, por ejemplo, si el flete entra en la base o no—, así que no se tocan sin decidirlo con quien lleva la contabilidad.
 
 **En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla, donde además **hay que volver a elegir a la persona** porque no llega puesta.
 
@@ -5366,8 +5663,11 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 Se dice para que nadie lo lea como verificado:
 
-- **El reparto de permisos que trae el sistema de fábrica.** La tabla de 13.1 se levantó de la base tal como está hoy, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla.
-- **Los capítulos de los módulos escondidos** —Explotación, Despachos, Ventas y Tesorería— no se revisaron pantalla por pantalla en esta versión. Lo que dicen era cierto en la versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte. **Maquinaria y Combustible todavía no tienen capítulo.**
+- **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles de esta versión se levantaron de la base tal como está hoy, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla.
+- **Maquinaria y Combustible están en el menú y no tienen capítulo.** Es el hueco más grande que queda. Son dos módulos que se usan todos los días y de los que este manual no cuenta nada; lo poco que hay está repartido en el capítulo 7.
+- **Los capítulos de los módulos escondidos** —Explotación, Despachos y Ventas— no se revisaron pantalla por pantalla en esta versión. Lo que dicen era cierto en la versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte.
+- **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla, quién puede pagar, que el rol de Tesorería ya no existe— pero las pantallas que quedaron escondidas no se recorrieron una por una.
+- **La factura de venta no está completa ante el SENIAT.** Lo que le falta está en 15.2, y no es un olvido de este manual sino del sistema.
 
 ---
 
@@ -5380,7 +5680,10 @@ Sí. Solo necesitas navegador e internet, con el mismo usuario y la misma clave.
 Si no llegaste a guardar, sí. El sistema necesita conexión para guardar y no trabaja sin señal. Vuelve a registrarlo cuando vuelva el internet.
 
 **Ayer estaba Ventas en el menú y hoy no. ¿Se borró?**
-No. Desde el 21 de agosto de 2026 el menú solo ofrece **Panel, Inventario, Compras, Nómina, Tasas de cambio y Configuración**. Explotación, Maquinaria, Combustible, Asignaciones, Despachos, Ventas, Organigrama y Tesorería siguen construidos y funcionando, pero no se ofrecen mientras se afinan. El apartado 1.5 lo explica entero.
+No. El menú va creciendo por partes y hoy ofrece **Panel, Maquinaria, Inventario, Combustible, Asignaciones, Compras, Nómina, Tasas de cambio, Configuración y Manual de usuario**. Explotación, Despachos, Ventas y el Organigrama siguen construidos y funcionando, pero no se ofrecen mientras se afinan. El apartado 1.5 lo explica entero.
+
+**Antes había Tesorería y ahora no la encuentro.**
+Tesorería **dejó de ser un módulo**. No está escondida: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos. Lo que se usaba todos los días se mudó a **Compras**: **Pagos por hacer** y **Movimientos de dinero** están ahí, en el mismo menú, y funcionan igual. El capítulo 12 las sigue contando.
 
 **Escribí la dirección de Ventas y me salió «En construcción».**
 Es lo previsto. Esa pantalla existe, pero todavía no está entregada, y lo que se haga ahí puede perderse o no cuadrar con el resto. No es un problema de permisos: pedir el permiso no lo cambia.
@@ -5399,6 +5702,21 @@ Tu permiso sobre ese módulo es de consulta. Ver y registrar son dos permisos di
 
 **Quiero cargar la producción del turno y no encuentro dónde.**
 Está en **Operación › Explotación › Producción por turno**. Es la única puerta por la que entra material al patio.
+
+**¿Los precios se escriben con punto o con coma?**
+Con lo que tengas a mano: **el sistema entiende las dos**. Escribas «3,20» o «3.20», guarda tres con veinte. Se hizo así porque en Venezuela el decimal es la coma y el teclado del teléfono ofrece coma, pero antes el campo no la admitía: la gente escribía «320» sin darse cuenta, y en un precio unitario eso no se nota hasta el total.
+
+**Pegué «1.500,25» copiado de una factura y salió bien. ¿Y «1.500» a secas?**
+Cuando hay dos separadores, el decimal es el último y el otro es de millar: «1.500,25» son mil quinientos con veinticinco, como esperabas. Pero **«1.500» a secas el sistema lo lee como uno y medio**, porque es lo que dice tal cual, y no hay forma de acertar siempre. **Si quieres mil quinientos, escríbelo sin punto: 1500.**
+
+**En un campo de número no me deja escribir letras.**
+Es a propósito. Esos campos aceptan cifras, un solo separador decimal y el signo menos delante, y nada más.
+
+**Se perdió el carnet de un trabajador. ¿Qué hago?**
+Entra en su ficha, tarjeta del carnet, y pulsa **Se perdió**. Sale uno nuevo con un código nuevo, y **el anterior queda anulado**: si alguien lo encuentra y lo escanea, la página dirá que no vale. Si el carnet no se perdió y solo hace falta otra copia impresa, usa **Imprimir el carnet**, que no anula nada.
+
+**¿Puedo mandar a la imprenta un solo reverso para todos los carnets?**
+**No.** Antes sí —el reverso era igual para todos— pero desde que lleva QR cada uno es distinto: el código del reverso es el que identifica a esa persona. Un reverso repetido haría que todos los carnets apuntaran al mismo trabajador.
 
 **Un dato está mal. ¿Lo corrijo?**
 Depende de qué sea. Los catálogos —clientes, proveedores, almacenes— se corrigen normalmente. Los movimientos y los documentos ya aprobados no se editan: se corrigen con un documento nuevo que explica la corrección. Si no tienes claro cuál es el caso, pregunta antes de tocar nada.
@@ -5450,3 +5768,140 @@ Cuando reportes un problema a sistemas, la información que sirve es siempre la 
 3. **Qué decía exactamente el mensaje.**
 
 Una fotografía de la pantalla ahorra media hora de ida y vuelta. Si el mensaje trae un número de documento, cópialo tal cual.
+
+---
+
+## 18. Asignaciones
+
+**Va al final del documento y no entre el 7 y el 8, que es donde le tocaría por el menú.** El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlo en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones —«ver 11.9», «está en 13.2»— que hay repartidas por todo el documento.
+
+Es lo que se le entrega a una persona: el casco, las botas, el uniforme, el juego de llaves para montar una banda. Y lo que pasa después: que vuelva, que se pierda, que se rompa, o que haya que descontarlo.
+
+**Existir no es estar disponible.** Un casco prestado sigue contando como existencia —es de la empresa, nadie lo compró de nuevo— pero no se puede volver a entregar. Es la misma idea de 7.12 y aquí es donde se ve: la ficha de un artículo dice **0 disponible · 10 en manos de alguien**.
+
+**Dotación y asignación no se distinguen por si vuelve, sino por para qué se dio.**
+
+| | Qué es |
+| --- | --- |
+| **Dotación** | Lo que le toca por su cargo: casco, botas, uniforme, equipo |
+| **Asignación** | Lo que se le dio para una faena concreta y hay que recuperar |
+
+Una laptop es dotación y vuelve; unas mascarillas son dotación y se gastan; un kit de llaves para montar una banda es asignación. **Si un bien vuelve o no lo dice cada artículo en el catálogo**, en su campo **Al entregarlo a una persona** (7.8), y eso es un eje aparte.
+
+### 18.1 Quién entra y quién puede entregar
+
+Hay dos puertas y hoy dan el mismo resultado, pero salen de sitios distintos y conviene saberlo porque el día que alguien toque los permisos dejarán de coincidir.
+
+**La primera es el permiso sobre Asignaciones**, el de la matriz de 13.1:
+
+| Rol | Sobre Asignaciones |
+| --- | --- |
+| Administrador del sistema | **Total** |
+| Almacén | **Escritura** |
+| Recursos humanos | **Escritura** |
+| Gerente general, Operaciones, Consulta | **Lectura** |
+| Ventas, Solicitante, Respaldo | Ninguno |
+
+**La segunda es el rol.** Los botones que entregan y que cierran casos solo se dibujan para **Almacén**, **Recursos humanos** y **Administrador**. No sale de la matriz: está escrito en la pantalla.
+
+Hoy los dos conjuntos son el mismo, así que nadie ve un botón que luego le falle. **Si algún día administración le da escritura a otro rol y ese rol no ve los botones, no es una falla del permiso: es que la pantalla mira el rol.**
+
+### 18.2 Quién tiene qué
+
+**Operación › Asignaciones › Quién tiene qué**
+
+La pantalla lo dice: *"Quién tiene qué, desde cuándo, y qué queda por entregar. Lo que vuelve no descuenta del almacén: el bien sigue siendo de la empresa."*
+
+Dos filtros: **Buscar** —acepta el trabajador, la ficha, la cédula o el artículo— y **Sitio**.
+
+La columna del estado dice en qué quedó cada cosa:
+
+| Etiqueta | Qué significa |
+| --- | --- |
+| **Entregado** | Se gastó al usarlo. No hay nada que devolver |
+| **En su poder** | Lo tiene, y se le va a pedir de vuelta |
+| **Devuelta** | Ya volvió |
+| **Perdida** | No apareció |
+| **Dañada** | Volvió rota o dejó de servir |
+| **Repuesta** | El caso se cerró: se le descontó, la repuso o se le exoneró |
+
+Desde aquí se saca la **Constancia de entrega**, que es el papel que firma quien recibe.
+
+### 18.3 Entregar a un trabajador
+
+**No está en el menú.** Se llega por el botón de la cabecera de **Quién tiene qué**.
+
+La pantalla lo resume: *"Varias cosas de una vez. Lo que vuelve queda a su nombre; lo que se gasta sale del almacén."*
+
+1. En **A quién y de dónde**: el **Trabajador**, **De qué almacén sale** y la **Fecha**.
+2. En **Qué se lleva**, se escriben las cantidades. La ayuda lo dice: *"Deja en blanco lo que no se entrega."*
+3. La **Nota** es opcional, y su ejemplo dice para qué sirve: *"Opcional: para qué frente, quién autorizó."*
+
+Si el almacén elegido no tiene nada entregable, la pantalla lo dice en vez de enseñar una lista vacía: **En ese almacén no hay nada que entregar**.
+
+**Se entrega de varias cosas a la vez a propósito.** Un trabajador que empieza se lleva casco, botas y uniforme en el mismo acto, y hacerlo en tres pantallas es tres veces la misma ficha.
+
+### 18.4 Dotación por cargo
+
+**Operación › Asignaciones › Dotación por cargo**
+
+*"Qué le corresponde a cada puesto y cada cuánto se repone. De aquí sale la lista de a quién le toca hoy."*
+
+Se define una vez por cargo y sirve para todos los que lo tengan. La ventana **Qué le toca a este cargo** pide: **Cargo**, **Qué se le entrega**, **Cuántas**, **Se repone cada (meses)** y una **Nota**.
+
+Arriba está la tarjeta **A quién le toca ahora**, que es lo que se mira todos los días: quién debería tener algo y no lo tiene, o lo tiene vencido.
+
+**Ojo con esta trampa, que hace perder tiempo:** esa lista **solo ve a quien tenga un cargo del tabulador en su ficha**. Un trabajador con el cargo escrito a mano, sin cargo del tabulador asignado, **no aparece nunca**, por mucha dotación que le corresponda. Si echas de menos a alguien en esa lista, revisa primero su ficha en **Nómina › Personal**, no la dotación.
+
+### 18.5 Incidencias
+
+**Operación › Asignaciones › Incidencias**
+
+*"Bienes perdidos o dañados que siguen sin resolverse. Falta decidir qué pasa con quien los tenía."*
+
+**No es lo mismo que las incidencias de la ficha del trabajador.** Aquí una incidencia es *un bien perdido o dañado*; allí (11.4) es *algo que le pasó a una persona* —una enfermedad, una ausencia, un conflicto—. Comparten palabra y nada más.
+
+Al abrir un caso, la ventana lleva el artículo y el nombre, y arriba dice lo que costaba: **Costaba $ 45,50 el día que se perdió.** Hay que elegir una de tres:
+
+| Opción | Qué hace |
+| --- | --- |
+| **Se le descuenta** | *"Va como deducción en la nómina del período."* |
+| **La repuso** | *"Trajo otra. Entra al almacén por su recepción, no desde aquí."* |
+| **No se le cobra** | *"Se rompió trabajando o se decidió no cobrársela."* |
+
+La **Nota** *"queda en el registro de la asignación"*. Se cierra con **Cerrar el caso**.
+
+#### Qué pasa de verdad al elegir «Se le descuenta»
+
+Esto conviene entenderlo antes de pulsarlo, porque **sale del sueldo de una persona**.
+
+El sistema **mete una deducción de verdad en la nómina**: por el costo del bien **en dólares**, en el último período que todavía admita cambios, y con una nota que deja rastro —el número de la asignación, el artículo, la cantidad y el motivo—, que es lo que se lee en el recibo.
+
+Tres cosas que hay que saber:
+
+**No se puede descontar lo que no tiene costo.** Si la herramienta no tiene costo calculado, el sistema no deja y lo dice: *«Esa herramienta no tiene costo calculado, así que no hay cuánto descontar. Sáldala con reposición o exoneración.»*
+
+**Si no hay ningún período abierto, tampoco.** El mensaje es: *«No hay ningún período de nómina que admita cambios donde cargar el descuento. Abre el período, o sáldala con reposición o exoneración.»*
+
+**Si el período ya está calculado, hay que volver a calcularlo.** La deducción entra igual, pero el recibo no la recoge hasta que se recalcule. El sistema no lo avisa: es cosa de quien lleva la nómina acordarse.
+
+### 18.6 El módulo avisa solo
+
+Asignaciones es de los pocos sitios del sistema que trabajan sin que nadie abra la pantalla. Hay dos avisos automáticos:
+
+| Cuándo | Qué avisa | A quién |
+| --- | --- | --- |
+| **Todos los días** | Cada asignación cuya fecha de vuelta ya pasó y sigue sin devolver, con el número, la persona y los días de retraso | Almacén y administración |
+| **Los lunes** | A quién le toca dotación y no la tiene | Almacén y administración |
+
+**El aviso de retraso sale una sola vez por asignación**, no todos los días hasta que vuelva. Es deliberado: un aviso que se repite se deja de leer.
+
+### 18.7 Cuando el sistema no te deja
+
+| Lo que ves | Qué significa | Qué hacer |
+| --- | --- | --- |
+| «Esa herramienta no tiene costo calculado, así que no hay cuánto descontar. Sáldala con reposición o exoneración.» | El artículo no tiene costo | Ciérralo como reposición o exoneración |
+| «No hay ningún período de nómina que admita cambios donde cargar el descuento. Abre el período, o sáldala con reposición o exoneración.» | Ningún período en borrador ni calculado | Abre el período en Nómina, o cierra el caso de otra forma |
+| «Esa asignación está devuelta: solo se cierra lo que tuvo una incidencia.» | El bien ya volvió | No hay nada que cerrar |
+| **En ese almacén no hay nada que entregar** | El almacén elegido está sin existencias entregables | Elige otro almacén, o carga la entrada primero |
+| No ves el botón de entregar | Tu rol no es Almacén, Recursos humanos ni Administrador | Pídeselo a administración |
