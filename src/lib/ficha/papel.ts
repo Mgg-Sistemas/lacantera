@@ -164,12 +164,29 @@ export function membrete(
     talla -= 0.5
   }
 
+  /*
+    Se apunta hasta dónde llega cada renglón de la izquierda.
+
+    Los datos de la derecha van alineados al margen y crecen hacia la
+    izquierda, así que necesitan saber con qué se van a encontrar. Sin esto se
+    montaban encima: el caso peor medido era un acta de existencias con el
+    almacén «TALLER DE REPARACION DE PLANTA FIJA», que tapaba treinta y seis
+    milímetros del nombre de la empresa.
+  */
+  const ocupado: Array<{ base: number; hasta: number }> = []
+  const anotar = (base: number, texto: string) =>
+    ocupado.push({ base, hasta: TEXTO + doc.getTextWidth(texto) })
+
   doc.setTextColor(MARCA).setFontSize(talla)
-  doc.text(ajustar(doc, nombre, ANCHO_NOMBRE), TEXTO, y + 2)
+  const nombreImpreso = ajustar(doc, nombre, ANCHO_NOMBRE)
+  doc.text(nombreImpreso, TEXTO, y + 2)
+  anotar(y + 2, nombreImpreso)
 
   doc.setFont('helvetica', 'normal').setFontSize(6.8).setTextColor(GRIS)
   if (d.empresa.actividad) {
-    doc.text(ajustar(doc, d.empresa.actividad.toUpperCase(), ANCHO_NOMBRE), TEXTO, y + 6.5)
+    const act = ajustar(doc, d.empresa.actividad.toUpperCase(), ANCHO_NOMBRE)
+    doc.text(act, TEXTO, y + 6.5)
+    anotar(y + 6.5, act)
   }
 
   /*
@@ -197,7 +214,9 @@ export function membrete(
     les cambia ni un milímetro.
   */
   const identidad = ['J-RIF: ' + d.empresa.rif, d.empresa.contacto].filter(Boolean).join('  ·  ')
-  doc.text(ajustar(doc, identidad, ANCHO_NOMBRE), TEXTO, y + 10)
+  const identidadImpresa = ajustar(doc, identidad, ANCHO_NOMBRE)
+  doc.text(identidadImpresa, TEXTO, y + 10)
+  anotar(y + 10, identidadImpresa)
 
   let bajo = y + 10
   if (d.empresa.domicilio) {
@@ -206,6 +225,7 @@ export function membrete(
       doc.splitTextToSize(d.empresa.domicilio.toUpperCase(), ANCHO_NOMBRE) as string[]
     ).slice(0, 2)
     doc.text(lineas, TEXTO, y + 13.4, { lineHeightFactor: 1.3 })
+    lineas.forEach((l, i) => anotar(y + 13.4 + i * 2.4, l))
     bajo = y + 13.4 + (lineas.length - 1) * 2.4
   }
 
@@ -216,17 +236,53 @@ export function membrete(
     busca cuando tiene el papel en la mano y le preguntan por él. Los demás en
     gris pequeño.
   */
+  /*
+    CADA DATO SE ENCOGE HASTA CABER EN LO QUE LE DEJAN, Y NO SE MONTA NUNCA.
+
+    Iban alineados a `DER` sin ningún límite por la izquierda, contando con que
+    siempre serían cortos. Cuatro papeles ya se pisaban: la cotización por 1,2
+    mm —el punto de «C.A.» quedaba bajo la «N» de «N° COTIZACIÓN»—, el libro de
+    movimientos por 1,5, y el acta de existencias por 1,9 con el filtro vacío y
+    por 35,9 con un almacén de nombre largo, que deja el nombre de la empresa
+    ilegible.
+
+    El hueco se mide contra el renglón de la izquierda que comparte su altura,
+    no contra uno fijo: el primer dato compite con la razón social, que es
+    grande, y los de abajo con el domicilio, que es pequeño.
+
+    Se encoge antes de recortar, que es la regla de toda esta hoja. Y solo si
+    ni al mínimo cabe, se recorta el VALOR y no la etiqueta: sin etiqueta, un
+    número suelto en una esquina no dice qué es.
+  */
   const datos = d.datos ?? []
   datos.forEach(([etiqueta, valor], i) => {
     const alto = y + 2 + i * 4.6
-    if (i === 0) {
-      // Del rojo de la empresa, como en el modelo: el número del papel es lo
-      // que se busca cuando alguien lo tiene en la mano y le preguntan por él.
-      doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(MARCA)
-    } else {
-      doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(GRIS)
+
+    const choca = ocupado
+      .filter((o) => Math.abs(o.base - alto) < 2.3)
+      .reduce((max, o) => Math.max(max, o.hasta), TEXTO)
+    const hueco = Math.max(DER - choca - 3, 24)
+
+    const base = i === 0 ? 9 : 7
+    const minima = i === 0 ? 6.5 : 5.5
+    const color = i === 0 ? MARCA : GRIS
+    const rotulo = etiqueta.toUpperCase() + ': '
+
+    // El primer par va en negro y algo mayor: es el número, y es lo que alguien
+    // busca cuando tiene el papel en la mano y le preguntan por él.
+    doc.setFont('helvetica', i === 0 ? 'bold' : 'normal').setTextColor(color)
+
+    let talla = base
+    while (talla > minima) {
+      doc.setFontSize(talla)
+      if (doc.getTextWidth(rotulo + valor) <= hueco) break
+      talla -= 0.25
     }
-    doc.text(etiqueta.toUpperCase() + ': ' + valor, DER, alto, { align: 'right' })
+    doc.setFontSize(talla)
+
+    const anchoRotulo = doc.getTextWidth(rotulo)
+    const texto = rotulo + ajustar(doc, valor, Math.max(hueco - anchoRotulo, 8))
+    doc.text(texto, DER, alto, { align: 'right' })
   })
 
   /*
