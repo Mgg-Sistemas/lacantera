@@ -3545,6 +3545,28 @@ Por eso, **cuando alguien se va, el orden es liquidarlo primero en Prestaciones 
 
 Si alguien llama a la función vieja —una pestaña abierta desde antes del cambio, por ejemplo—, el sistema responde: *«Las fichas de personal ya no se borran: se desincorporan. Usa "Egresar" con la fecha y el motivo —"cargada por error" también es un motivo—, y esa persona deja de salir entre los activos sin que se pierda lo que decía su ficha.»*
 
+#### La pestaña Carnets
+
+**Nómina › Personal › Carnets**
+
+Es la tercera pestaña de Personal, junto a **Personal** y **Tabulador de cargos**, y responde a una sola pregunta: **quién tiene carnet emitido y quién no**.
+
+Existe para el arranque. Emitir el carnet de veintidós trabajadores desde la ficha de cada uno son veintidós visitas a veintidós pantallas; aquí se hace de una vez.
+
+La pantalla se reparte en tres tarjetas, y la primera solo aparece si hace falta:
+
+| Tarjeta | Qué trae |
+| --- | --- |
+| **N sin carnet** | Los que faltan, con su ficha y su cargo. Arriba a la derecha, el botón **Emitir los N** |
+| **N no se pudieron emitir** | Solo si alguno falló. Se reintenta pulsando otra vez, o desde su ficha |
+| **N con carnet** | Los que ya lo tienen, con su código y la fecha en que se emitió |
+
+**Emitir los N va de uno en uno, aunque el botón sea uno solo, y se ve avanzar.** No es lentitud: cada carnet necesita la foto de esa persona, recortada con su propio encuadre, y eso ocurre en el navegador. Con veintidós fotos que bajar, tarda. **No cierres la pestaña a media faena**; si se corta, los que ya salieron quedan emitidos y los demás siguen en la lista.
+
+**Aquí solo se emiten los que faltan.** A quien ya tiene carnet no se le ofrece ningún botón, y es a propósito: volver a emitir anula el carnet anterior, y eso es una decisión de una persona concreta —se le perdió, se le rompió— que se toma en su ficha y diciendo por qué. Un botón de «reemitir a todos» convertiría en un clic el anular veintidós plásticos que están en veintidós bolsillos. La propia pantalla lo advierte al pie.
+
+**Quién puede emitir:** recursos humanos, administración y la gerencia general. Los demás ven la lista y nada más.
+
 ### 11.4 La ficha del trabajador
 
 **No está en el menú.** Se llega pinchando el nombre de la persona en la lista de **Personal**, o desde la tabla de fichas desfasadas del tabulador.
@@ -3578,13 +3600,86 @@ Lo que no tiene dato sale con un guion. Para cambiar cualquiera de estos datos h
 
 #### Los documentos
 
-En la tarjeta de abajo hay cuatro botones: **Ficha completa (PDF)**, **Carnet · frente**, **Carnet · reverso** y **Constancia de trabajo**. El pie de esa tarjeta explica para qué es cada uno:
+En la tarjeta de abajo hay dos botones: **Ficha completa (PDF)** y **Constancia de trabajo**. El carnet ya no está aquí: tiene tarjeta propia justo debajo, y el porqué está explicado en el apartado siguiente.
 
-> *"Todo se abre en pantalla antes de guardarse. El PDF trae todos los datos en A4. El carnet sale en dos imágenes, cada una de 54 × 86 mm a 300 dpi —638 × 1016 píxeles—, que es lo que pide una imprenta para que no salga pixelado: el frente es de esta persona, y el reverso lleva la marca y el RIF y es igual para todos. La constancia es la carta que se entrega a un banco o a quien la pida."*
+**Los dos se abren primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que pulses **Descargar**. La ficha trae todos los datos en A4. La constancia es la carta que se entrega a un banco o a quien la pida, y avisa: *"Revísala antes de entregarla. La firma va a mano."*
 
-**Todo se abre primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que pulses **Descargar**. El carnet se ve entero, como saldrá impreso, para comprobar antes de mandarlo a la imprenta que la cara está centrada y que ningún dato salió en guion. La constancia además avisa: *"Revísala antes de entregarla. La firma va a mano."*
+Los dos salen con la misma cabecera que la orden de compra, el recibo y la factura: la razón social, el RIF y **el domicilio fiscal completo**, tal como estén cargados en **Configuración › Datos de la empresa** (13.2). Lo que falte ahí, falta en el papel.
 
-**El reverso es el mismo para todos.** No lleva ningún dato del trabajador: solo la marca, la razón social y el RIF. Se baja una vez y se manda a la imprenta una vez; no hace falta repetirlo por cada persona. Sale igual aunque lo pidas desde la ficha de cualquiera.
+#### El carnet
+
+**El carnet dejó de ser una imagen que se baja y pasó a ser un documento que se emite.** El motivo es el QR: cada carnet lleva impreso en el reverso un código propio, distinto para cada persona, y ese código es el que abre la página que dice si el carnet sigue valiendo. Un código que no se ha emitido no verifica nada.
+
+> **Ojo si tienes impreso un manual anterior.** Hasta la versión 1.2 el reverso del carnet era igual para todos —solo la marca, la razón social y el RIF— y se mandaba a la imprenta una sola vez. **Eso ya no es cierto y no puede hacerse.** Un reverso repetido haría que todos los carnets de la cantera apuntaran a la misma persona al escanearlos.
+
+**Solo hay un carnet vigente por persona.** Emitir uno nuevo anula el anterior, y por eso hace falta decir por qué.
+
+**Quién puede emitir:** recursos humanos, administración y la gerencia general. El resto ve la tarjeta y puede imprimir, pero no emitir.
+
+##### Cuando todavía no tiene carnet
+
+La tarjeta lo dice —**Sin emitir**— y explica lo que va a pasar: *"Todavía no tiene carnet. Al emitirlo sale su PDF listo para la imprenta: dos páginas de 54 × 86 mm a 300 dpi, con el QR de verificación en el reverso."*
+
+Se pulsa **Emitir el carnet**, se confirma, y el PDF se abre solo. No hay que buscarlo después.
+
+**Hace falta la foto.** Sin foto cargada, la página de verificación no puede comparar ninguna cara con la persona que tienes delante, que es para lo único que la foto está ahí.
+
+##### Cuando ya lo tiene
+
+La tarjeta muestra tres cosas y un botón:
+
+| Qué | Para qué sirve |
+| --- | --- |
+| **Código impreso bajo el QR** | El mismo que sale escrito en el plástico, en grupos de seis. Sirve para teclearlo a mano cuando el QR está rayado y no lee |
+| **Adónde lleva el QR** | La dirección completa. El botón **Copiar la dirección** la deja en el portapapeles |
+| **Emitido el** | Fecha y hora |
+| **Imprimir el carnet** | Vuelve a sacar el mismo PDF. **Esto no emite nada ni anula nada** |
+
+**Imprimir es lo que se viene a hacer aquí casi siempre**: el carnet se perdió, se rompió, hace falta otra copia. No hay ningún límite ni ningún registro por imprimir de nuevo; el código sigue siendo el mismo y el carnet que ya está en el bolsillo sigue valiendo.
+
+##### La página que abre el QR
+
+Conviene saber qué enseña, porque quien la abre no es alguien de la empresa: es **un vigilante en un portón o un fiscal en la carretera**, con un teléfono en la mano y sin cuenta en el sistema. Está hecha para leerse en un teléfono, a pleno sol, en menos de tres segundos.
+
+Lo primero y más grande es un sello con una sola palabra:
+
+| Sello | Qué significa |
+| --- | --- |
+| **Vigente** | El carnet vale. La persona trabaja aquí |
+| **Rechazado** | No vale. Debajo dice por qué: **Ya no trabaja aquí** o **Carnet anulado** |
+
+**La foto va dentro del sello**, del mismo color, para que no se pueda leer «Vigente» y mirar una cara que no corresponde sin darse cuenta de que son dos cosas distintas.
+
+Debajo, los datos:
+
+| Bloque | Qué enseña |
+| --- | --- |
+| Identificación | Nombre, **número de ficha**, cargo, cédula |
+| Antigüedad | Desde cuándo trabaja aquí, y cuánto lleva, en años y meses |
+| Edad | Los años cumplidos |
+| **En caso de emergencia** | Grupo sanguíneo, a quién llamar y su teléfono, el teléfono de la persona, y su dirección |
+| Código | El mismo que está impreso bajo el QR |
+
+**Los teléfonos son enlaces**: se pulsan y el teléfono llama. Es la razón por la que ese bloque existe y por la que está separado del resto con su propio rótulo en rojo — si alguien se accidenta en la carretera, quien encuentre el carnet no tiene que copiar un número a mano.
+
+**Lo que NO enseña:** el sueldo, la cuenta bancaria, las incidencias, y el motivo por el que se anuló un carnet anterior. Nada de eso sale a la calle.
+
+Si el QR está rayado y no lee, la dirección **/v** sin código abre la misma página con un campo para teclearlo. Acepta el código escrito con espacios o sin ellos, y corrige las confusiones de siempre —una **O** por un **cero**, una **I** o una **L** por un **uno**—.
+
+##### Volver a emitir, y anular
+
+Debajo hay dos botones pequeños, y solo los ve quien puede emitir:
+
+- **Se perdió** — emite uno nuevo. **El anterior queda anulado**, y si alguien lo encuentra y lo escanea, la página dirá que no vale.
+- **Anular** — deja a la persona sin carnet vigente, sin emitir otro. Para cuando egresa.
+
+Las dos piden un motivo. El de anular es obligatorio; el de reemitir, opcional. **Lo que se escriba ahí no sale publicado**: es una nota interna de nómina, y la página del QR no la enseña.
+
+Si hay carnets anulados, la tarjeta los lista abajo con su código, su fecha y su motivo. Sirve para cuando alguien aparece con un carnet que escanea como no válido y hay que responder de dónde salió.
+
+##### Las dos caras sueltas
+
+Al pie de la tarjeta, en letra pequeña: *"¿Hace falta una cara suelta para retocarla? el frente · el reverso, en PNG."* Son un apaño de taller —mirar o retocar una cara— y nada más. **El carnet que se manda a la imprenta es el PDF**, que ya trae las dos páginas al tamaño y a la resolución que pide.
 
 #### Dotación, asignación e incidencias
 
@@ -4987,6 +5082,22 @@ Conviene saberlo antes de intentarlo, porque cada límite tiene su razón:
 
 Guarda la identidad fiscal de la empresa: **Lo que dice el registro. Sale impreso en cada papel que emite el sistema.** De aquí salen los datos de los recibos, los carnets y las guías que emiten los demás módulos, así que un dato mal escrito aquí sale mal escrito en todas partes.
 
+**Los trece papeles del sistema llevan la misma cabecera, y sale entera de esta pantalla.** Todos abren con la razón social, la actividad, el RIF y el domicilio fiscal, tal como estén aquí:
+
+| Módulo | Papeles |
+| --- | --- |
+| Inventario | Nota de salida, acta de existencias, libro de movimientos, constancia de entrega |
+| Combustible | Vale de combustible |
+| Compras | Orden de compra, comprobante de pago |
+| Ventas | Factura, cotización, nota de entrega |
+| Nómina | Recibo de pago, ficha del trabajador, constancia de trabajo |
+
+**El carnet es el único que no.** Mide 54 × 86 mm y tiene su propio diseño; no le cabe una cabecera de hoja A4.
+
+**Cuatro campos forman el domicilio fiscal, y salen impresos juntos.** El sistema arma una sola dirección con **Domicilio fiscal**, **Ciudad**, **Estado** y **Zona postal**, en ese orden. Los cuatro figuran como opcionales porque el sistema funciona sin ellos, pero **una factura con el domicilio fiscal incompleto es una factura mal emitida**, y eso lo mira un fiscal. Llénalos los cuatro.
+
+**El teléfono y el correo también salen impresos**, en el mismo renglón del RIF, si están cargados. Si los dos están vacíos, el renglón lleva solo el RIF y no queda ningún hueco.
+
 **Solo pueden cambiarla el Administrador del sistema y el Gerente general.** Para el resto los campos salen apagados y en lugar del botón aparece: **Solo la gerencia y quien administra el sistema pueden cambiar estos datos.**
 
 Si al RIF le quedan noventa días o menos para vencer, arriba del todo sale un aviso. En naranja si está por vencer — **El RIF vence el 04 jul 2028, dentro de 45 días. Conviene renovarlo antes.** — y en rojo si ya venció: **El RIF venció el 04 jul 2028. Con el RIF vencido no se puede facturar.** Va arriba del todo porque es lo único de esta pantalla que puede detener la operación de un día para otro.
@@ -4999,12 +5110,12 @@ La pantalla es un formulario largo, repartido en dos tarjetas.
 | --- | --- | --- |
 | **RIF** | Sí | Tiene que tener la forma **J-50209170-0**. Si no, sale debajo en rojo: **Debe ser como J-50209170-0.** |
 | **Razón social** | Sí | Se escribe sola en mayúsculas y sin tildes |
-| **Domicilio fiscal** | No | |
-| **Ciudad** | No | |
-| **Estado** | No | |
-| **Zona postal** | No | |
-| **Teléfono** | No | |
-| **Correo** | No | |
+| **Domicilio fiscal** | Conviene | La calle. Es la primera parte de la dirección impresa |
+| **Ciudad** | Conviene | Segunda parte |
+| **Estado** | Conviene | Tercera parte |
+| **Zona postal** | Conviene | Va pegada al estado: **BOLIVAR 8001** |
+| **Teléfono** | No | Sale junto al RIF en la cabecera de los papeles |
+| **Correo** | No | Sale junto al RIF, detrás del teléfono |
 
 **Registro fiscal** — **Del comprobante del SENIAT. Se actualiza cada vez que se renueva el RIF.**
 
@@ -5399,6 +5510,21 @@ Tu permiso sobre ese módulo es de consulta. Ver y registrar son dos permisos di
 
 **Quiero cargar la producción del turno y no encuentro dónde.**
 Está en **Operación › Explotación › Producción por turno**. Es la única puerta por la que entra material al patio.
+
+**¿Los precios se escriben con punto o con coma?**
+Con lo que tengas a mano: **el sistema entiende las dos**. Escribas «3,20» o «3.20», guarda tres con veinte. Se hizo así porque en Venezuela el decimal es la coma y el teclado del teléfono ofrece coma, pero antes el campo no la admitía: la gente escribía «320» sin darse cuenta, y en un precio unitario eso no se nota hasta el total.
+
+**Pegué «1.500,25» copiado de una factura y salió bien. ¿Y «1.500» a secas?**
+Cuando hay dos separadores, el decimal es el último y el otro es de millar: «1.500,25» son mil quinientos con veinticinco, como esperabas. Pero **«1.500» a secas el sistema lo lee como uno y medio**, porque es lo que dice tal cual, y no hay forma de acertar siempre. **Si quieres mil quinientos, escríbelo sin punto: 1500.**
+
+**En un campo de número no me deja escribir letras.**
+Es a propósito. Esos campos aceptan cifras, un solo separador decimal y el signo menos delante, y nada más.
+
+**Se perdió el carnet de un trabajador. ¿Qué hago?**
+Entra en su ficha, tarjeta del carnet, y pulsa **Se perdió**. Sale uno nuevo con un código nuevo, y **el anterior queda anulado**: si alguien lo encuentra y lo escanea, la página dirá que no vale. Si el carnet no se perdió y solo hace falta otra copia impresa, usa **Imprimir el carnet**, que no anula nada.
+
+**¿Puedo mandar a la imprenta un solo reverso para todos los carnets?**
+**No.** Antes sí —el reverso era igual para todos— pero desde que lleva QR cada uno es distinto: el código del reverso es el que identifica a esa persona. Un reverso repetido haría que todos los carnets apuntaran al mismo trabajador.
 
 **Un dato está mal. ¿Lo corrijo?**
 Depende de qué sea. Los catálogos —clientes, proveedores, almacenes— se corrigen normalmente. Los movimientos y los documentos ya aprobados no se editan: se corrigen con un documento nuevo que explica la corrección. Si no tienes claro cuál es el caso, pregunta antes de tocar nada.

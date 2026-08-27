@@ -67,7 +67,12 @@ while (i < lineas.length) {
     continue
   }
 
-  const h = l.match(/^(#{1,4})\s+(.*)$/)
+  // Hasta cinco. El quinto nivel entro con el carnet: la ficha del trabajador
+  // ya tenia cuatro --capitulo, seccion, apartado-- y el carnet pide un escalon
+  // mas para separar «cuando todavia no lo tiene» de «cuando ya lo tiene». Con
+  // cuatro, los cinco encabezados salian impresos tal cual: «##### La pagina
+  // que abre el QR» en medio de la pantalla.
+  const h = l.match(/^(#{1,5})\s+(.*)$/)
   if (h) {
     const nivel = h[1].length
     const texto = h[2].trim()
@@ -199,7 +204,7 @@ while (i < lineas.length) {
   while (
     i < lineas.length &&
     lineas[i].trim() !== '' &&
-    !/^(#{1,4}\s|\s*\||[-*]\s|\d+\.\s|>|---\s*$)/.test(lineas[i])
+    !/^(#{1,5}\s|\s*\||[-*]\s|\d+\.\s|>|---\s*$)/.test(lineas[i])
   ) {
     buf.push(lineas[i])
     i++
