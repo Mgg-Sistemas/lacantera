@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import { dinero, fecha } from '@/lib/formato'
-import { useEmpresa } from '@/lib/api/empresa'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
@@ -118,6 +118,10 @@ export function Cotizaciones() {
           nombre: q.cliente,
           rif: q.cliente_rif,
           direccion: clientes?.find((c) => c.id === q.cliente_id)?.direccion ?? null,
+          // El hueco del teléfono existía en el papel desde el primer día y nadie
+          // lo llenaba: salía «TELÉFONO —» en todas las notas y todas las
+          // cotizaciones. El dato está aquí mismo, en la lista de clientes.
+          telefono: clientes?.find((c) => c.id === q.cliente_id)?.telefono ?? null,
         },
         moneda: q.moneda,
         tasa: q.tasa_usd,
@@ -137,13 +141,7 @@ export function Cotizaciones() {
         total: q.total,
         observacion: q.observacion,
         sello: q.estado === 'ANULADA' ? 'ANULADA' : null,
-        empresa: {
-          razonSocial: empresa?.razon_social ?? '',
-          rif: empresa?.rif ?? '',
-          domicilio: empresa?.domicilio_fiscal ?? null,
-          telefono: empresa?.telefono ?? null,
-          correo: empresa?.correo ?? null,
-        },
+        empresa: empresaDelPapel(empresa),
         emitidoPor: yo?.nombre ?? '',
       }),
     )

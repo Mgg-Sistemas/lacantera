@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import { dinero, enteros, fecha } from '@/lib/formato'
-import { useEmpresa } from '@/lib/api/empresa'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useGuias, useTickets } from '@/lib/api/despachos'
@@ -163,6 +163,10 @@ export function Despachos() {
           nombre: n.cliente,
           rif: n.cliente_rif,
           direccion: clientes?.find((c) => c.id === n.cliente_id)?.direccion ?? null,
+          // El hueco del teléfono existía en el papel desde el primer día y nadie
+          // lo llenaba: salía «TELÉFONO —» en todas las notas y todas las
+          // cotizaciones. El dato está aquí mismo, en la lista de clientes.
+          telefono: clientes?.find((c) => c.id === n.cliente_id)?.telefono ?? null,
         },
         despacho: {
           vehiculo: n.vehiculo,
@@ -189,13 +193,7 @@ export function Despachos() {
         total: n.total,
         observacion: n.observacion,
         sello: n.estado === 'ANULADA' ? 'ANULADA' : null,
-        empresa: {
-          razonSocial: empresa?.razon_social ?? '',
-          rif: empresa?.rif ?? '',
-          domicilio: empresa?.domicilio_fiscal ?? null,
-          telefono: empresa?.telefono ?? null,
-          correo: empresa?.correo ?? null,
-        },
+        empresa: empresaDelPapel(empresa),
         emitidoPor: yo?.nombre ?? '',
       }),
     )

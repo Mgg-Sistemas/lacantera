@@ -333,5 +333,6 @@ export function empresaDelPapel(e: Empresa | null | undefined): EmpresaPapel {
     rif: e?.rif || EMPRESA.rif,
     actividad: EMPRESA.actividad,
     domicilio: domicilio || null,
+    contacto: [e?.telefono, e?.correo].filter(Boolean).join(' · ') || null,
   }
 }

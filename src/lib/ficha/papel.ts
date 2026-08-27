@@ -78,8 +78,16 @@ export interface EmpresaPapel {
   rif: string
   /** «OPERACIONES Y LOGÍSTICA MINERA». La segunda línea del membrete. */
   actividad?: string | null
-  /** «ESTADO LA GUAIRA, VENEZUELA». Va junto al RIF en la tercera. */
+  /** «ESTADO LA GUAIRA, VENEZUELA». Va debajo del RIF, partido si hace falta. */
   domicilio?: string | null
+  /**
+   * Teléfono y correo, ya juntos: «0286-9515000 · ventas@…».
+   *
+   * Hoy los dos están vacíos en Configuración, así que ningún papel lo enseña.
+   * Está aquí porque la factura vieja sí lo imprimía y al unificar la cabecera
+   * se habría perdido: el día que alguien los llene, salen solos.
+   */
+  contacto?: string | null
 }
 
 /**
@@ -188,7 +196,8 @@ export function membrete(
     crece solo cuando hay domicilio que enseñar, así que a los seis de antes no
     les cambia ni un milímetro.
   */
-  doc.text('J-RIF: ' + d.empresa.rif, TEXTO, y + 10)
+  const identidad = ['J-RIF: ' + d.empresa.rif, d.empresa.contacto].filter(Boolean).join('  ·  ')
+  doc.text(ajustar(doc, identidad, ANCHO_NOMBRE), TEXTO, y + 10)
 
   let bajo = y + 10
   if (d.empresa.domicilio) {
@@ -242,7 +251,7 @@ export function membrete(
  * archiva de canto es lo que se lee al abrirlo. A la izquierda competía con el
  * nombre de la empresa, que está justo encima y es más grande.
  */
-export function tituloDocumento(doc: Doc, y: number, texto: string): number {
+export function tituloDocumento(doc: Doc, y: number, texto: string, color = ROTULO): number {
   /*
     El título vive en su propia banda, entre dos rayas finas.
 
@@ -253,7 +262,17 @@ export function tituloDocumento(doc: Doc, y: number, texto: string): number {
   doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
   doc.line(IZQ, y + 3, DER, y + 3)
 
-  doc.setFont('helvetica', 'bold').setFontSize(13).setTextColor(ROTULO)
+  /*
+    EL COLOR ES OPCIONAL Y CASI NUNCA SE USA.
+
+    Todos los papeles lo dejan en el azul pizarra de la casa. La excepción es la
+    nota de entrega, que va naranja: es el papel que el chofer lleva en la mano
+    por el patio, y en un fajo de hojas mezcladas el color es lo que deja
+    separarla de una factura sin leer ninguna. Ese naranja estaba antes en una
+    banda llena de arriba abajo, y al pasar al membrete de la casa se habría
+    perdido sin que nadie lo pidiera.
+  */
+  doc.setFont('helvetica', 'bold').setFontSize(13).setTextColor(color)
   doc.text(texto.toUpperCase(), IZQ + ANCHO_UTIL / 2, y + 10.5, { align: 'center' })
 
   doc.line(IZQ, y + 14, DER, y + 14)
