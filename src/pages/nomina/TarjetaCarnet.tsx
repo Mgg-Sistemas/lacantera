@@ -312,7 +312,7 @@ export function TarjetaCarnet({
             ? `El carnet de ${nombre} dejará de valer al escanearlo. No se emite otro.`
             : carnet
               ? `El carnet que ${nombre} tiene ahora quedará anulado y escaneará como no válido. Se emite uno nuevo con otro código.`
-              : `Se le emite a ${nombre} su primer carnet. Después hay que imprimirlo: el código nuevo va dentro del QR.`
+              : `Se le emite a ${nombre} su primer carnet y se abre listo para imprimir.`
         }
         acciones={
           <>
@@ -336,6 +336,14 @@ export function TarjetaCarnet({
           </>
         }
       >
+        {/*
+          EL MOTIVO SOLO APARECE SI HAY ALGO QUE ANULAR.
+
+          Lo pidió Christopher: en un primer carnet no hay carnet anterior donde
+          escribir nada, así que preguntar «por qué se emite otro» es preguntar
+          por algo que no ha pasado. Se entiende solo que es la primera vez.
+        */}
+        {pidiendo === 'anular' || carnet ? (
         <Textarea
           label={pidiendo === 'anular' ? 'Por qué se anula' : 'Por qué se emite otro (opcional)'}
           rows={3}
@@ -352,6 +360,7 @@ export function TarjetaCarnet({
               : 'Queda escrito en el carnet que se anula. Sin motivo se guarda «Se emitió un carnet nuevo».'
           }
         />
+        ) : null}
 
         {/*
           Si se está emitiendo desde otro sitio, se dice.
@@ -377,13 +386,15 @@ export function TarjetaCarnet({
             )}
           >
             <IdCard className="mr-1.5 -mt-0.5 inline size-4" />
-            Al emitir se abre el carnet listo para imprimir.{' '}
             {carnet ? (
               <>
+                Al emitir se abre el carnet nuevo listo para imprimir.{' '}
                 <strong className="text-ink/85">Hay que imprimirlo otra vez</strong>: el código
                 nuevo va dentro del QR y el plástico viejo no lo tiene.
               </>
-            ) : null}
+            ) : (
+              'Al emitir se abre el carnet listo para imprimir.'
+            )}
           </p>
         ) : null}
       </Modal>
