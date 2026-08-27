@@ -763,7 +763,7 @@ Lo primero de la pantalla es **la fila de monedas**: una píldora por cada una, 
 
 **Abre siempre en el dólar**, porque es con lo que se mide todo el sistema; las otras dos están a un clic. Cambiar de moneda **vacía el campo del valor** a propósito: la cifra que ibas a escribir para el dólar no vale para el euro.
 
-**Registrar la tasa del día · $** es la tarjeta ancha de arriba, y el símbolo del final cambia con la moneda elegida. Si tu permiso sobre Tasas de cambio es de consulta, el título dice solo **La tasa del día · $** y el subtítulo explica quién la carga: **La carga administración o tesorería. Aquí se consulta cuál está rigiendo.** Con permiso de escritura, el subtítulo repite la regla: **Una vez registrada no se puede corregir. Si se publica una corrección, se registra una fila nueva.**
+**Registrar la tasa del día · $** es la tarjeta ancha de arriba, y el símbolo del final cambia con la moneda elegida. Si tu permiso sobre Tasas de cambio es de consulta, el título dice solo **La tasa del día · $** y el subtítulo explica de dónde sale: **La toma el sistema del BCV. Aquí se consulta cuál está rigiendo.** Con permiso de escritura, el subtítulo repite la regla: **Una vez registrada no se puede corregir. Si se publica una corrección, se registra una fila nueva.**
 
 Debajo hay un aviso de estado, siempre uno de los dos:
 
@@ -808,7 +808,7 @@ Debajo del campo del valor hay una línea de ayuda que dice qué se pudo consult
 
 Registrar la tasa del dólar apaga el aviso rojo **La tasa de hoy no está cargada** del panel.
 
-**Cargar una tasa exige permiso de escritura sobre Tasas de cambio**, que hoy tienen administración y tesorería. Quien solo la consulta ve la pantalla completa —las monedas, el historial y la calculadora— pero sin el formulario. Esto cambió el 4 de agosto de 2026: antes lo podía hacer cualquiera que entrara al sistema.
+**Cargar una tasa exige permiso de escritura sobre Tasas de cambio**, que hoy tienen **administración, la gerencia general y recursos humanos**. No tesorería: ese rol se retiró (12.1). Quien solo la consulta ve la pantalla completa —las monedas, el historial y la calculadora— pero sin el formulario. Esto cambió el 4 de agosto de 2026: antes lo podía hacer cualquiera que entrara al sistema.
 
 ### 5.3 De dónde salen las tasas
 
@@ -873,7 +873,7 @@ Si escribes una moneda que no existe, te lo dice y, cuando se parece a una que s
 | «Ya existe una tasa BCV para USD/VES del … Las tasas no se corrigen: si el valor cambió, consulte con administración.» | Ya se cargó la tasa de ese día y esa moneda. Es el caso más frecuente | Revisa el historial: la de hoy ya está. Si el valor cargado está mal, habla con administración |
 | «La tasa debe ser mayor que cero (recibido: …)» | Escribiste cero o un valor negativo | Escribe la tasa publicada |
 | «No se puede registrar una tasa con fecha futura» | La fecha es de mañana o después | Corrige la fecha |
-| «Tu usuario no tiene acceso a Tasas de cambio.» | Tu permiso sobre este módulo es de consulta | Que la cargue administración o tesorería |
+| «Tu usuario no tiene acceso a Tasas de cambio.» | Tu permiso sobre este módulo es de consulta | Que la cargue administración, la gerencia o recursos humanos |
 | «No autenticado» | Tu sesión ya no vale | Vuelve a entrar y repite el registro |
 | «Las tasas de cambio no se modifican ni se borran (operación: …). Inserte una tasa nueva.» | Se intentó cambiar o eliminar una tasa ya registrada | Registra una fila nueva. Las tasas anteriores se quedan |
 | **No disponible** en el indicador de la barra superior | No se pudo consultar la tasa pública | Escribe el valor a mano. La consulta pública no hace falta para registrar |
@@ -5220,7 +5220,7 @@ La razón de la segunda capa es la separación de tareas: si «control total en 
 
 **Esto cambió el 4 de agosto de 2026.** Antes la matriz solo cerraba puertas: se le daba Nómina en escritura a un rol propio, la pantalla se abría, la persona llenaba la ficha entera y al guardar le rebotaba «tu usuario no tiene ese rol». Ahora la matriz manda de verdad sobre los módulos de trabajo. **Nadie perdió nada**: los roles que ya existían siguen valiendo igual.
 
-Un efecto secundario que conviene saber: **cargar la tasa del BCV pasó a pedir escritura en Tasas de cambio.** Antes lo podía hacer cualquiera que entrara al sistema, y la tasa es con lo que se valora cada cotización, factura y recibo. Hoy la tienen administración y tesorería; quien solo la consulta ve la pantalla completa pero sin el formulario.
+Un efecto secundario que conviene saber: **cargar la tasa del BCV pasó a pedir escritura en Tasas de cambio.** Antes lo podía hacer cualquiera que entrara al sistema, y la tasa es con lo que se valora cada cotización, factura y recibo. Hoy la tienen administración, la gerencia general y recursos humanos; quien solo la consulta ve la pantalla completa pero sin el formulario.
 
 ### 13.1 Usuarios y permisos
 
