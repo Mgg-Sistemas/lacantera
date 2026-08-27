@@ -3622,7 +3622,7 @@ Los dos salen con la misma cabecera que la orden de compra, el recibo y la factu
 
 **El carnet dejó de ser una imagen que se baja y pasó a ser un documento que se emite.** El motivo es el QR: cada carnet lleva impreso en el reverso un código propio, distinto para cada persona, y ese código es el que abre la página que dice si el carnet sigue valiendo. Un código que no se ha emitido no verifica nada.
 
-> **Ojo si tienes impreso un manual anterior.** Hasta la versión 1.2 el reverso del carnet era igual para todos —solo la marca, la razón social y el RIF— y se mandaba a la imprenta una sola vez. **Eso ya no es cierto y no puede hacerse.** Un reverso repetido haría que todos los carnets de la cantera apuntaran a la misma persona al escanearlos.
+**Ojo si tienes impreso un manual anterior.** Hasta la versión 1.2 el reverso del carnet era igual para todos —solo la marca, la razón social y el RIF— y se mandaba a la imprenta una sola vez. **Eso ya no es cierto y no puede hacerse:** un reverso repetido haría que todos los carnets de la cantera apuntaran a la misma persona al escanearlos.
 
 **Solo hay un carnet vigente por persona.** Emitir uno nuevo anula el anterior, y por eso hace falta decir por qué.
 
