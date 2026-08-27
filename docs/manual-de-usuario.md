@@ -2876,7 +2876,7 @@ El circuito reparte cada paso en un rol distinto:
 | Pedir | Solicitante, Compras, Operaciones, Almacén o RRHH |
 | Confirmar el pedido | Compras |
 | Cargar, eliminar y proponer cotizaciones | Compras |
-| Aprobar la compra | Gerencia general, y nadie más |
+| Aprobar la compra | Gerencia general por su puesto, **y quien tenga ese permiso extendido** (13.1) |
 | Devolver a compras | Gerencia general |
 | Indicar el método de pago | Compras |
 | Registrar el pago o devolver la instrucción | Tesorería |
@@ -4230,7 +4230,7 @@ Si falta algún parámetro, el sistema no calcula a medias: se detiene y te dice
 
 #### Aprobar la nómina
 
-Lo hace **gerencia general**, y nadie más. Solo se aprueba una nómina calculada, y solo si tiene recibos: aprobar un período vacío sería aprobar nada.
+Lo hace **gerencia general** —y la administración del sistema, que pasa por encima de todo—. **Esta sí es de las pocas que no tienen segunda puerta**: aprobar una nómina no se delega por nivel de permiso ni se extiende a nadie. Solo se aprueba una nómina calculada, y solo si tiene recibos: aprobar un período vacío sería aprobar nada.
 
 Al aprobar, le llega un aviso a tesorería y a recursos humanos: **Nómina {número} aprobada**, con cuántos recibos son, por cuánto, y que está lista para pagar.
 
@@ -4863,7 +4863,7 @@ Antes de entrar en las pantallas conviene saber por dónde nace y por dónde mue
 #### Lo que se debe a un proveedor
 
 1. **Alguien pide material.** Nace un pedido en Compras.
-2. **Compras cotiza y prepara la orden**, y la aprueba el **Gerente general**. Es el único rol que aprueba una compra.
+2. **Compras cotiza y prepara la orden**, y la aprueba el **Gerente general**. Es quien la aprueba por su puesto — y, desde que existen los permisos extendidos, también quien tenga esa facultad prestada por un plazo (13.1). Lo aprobado de esa manera queda marcado como tal en la orden impresa.
 3. **Compras indica cómo se paga**: el método — **Transferencia bancaria**, **Pago móvil**, **Binance** o **Efectivo** —, la moneda, el monto y los datos de a dónde va el dinero. En ese momento nace la instrucción de pago, y con ella el IGTF ya calculado si la moneda no es el bolívar.
 4. **La instrucción aparece sola en Compras**, en dos vistas de la misma pantalla: **Pagos por hacer**, en orden de llegada, y su pestaña **Por proveedor**, agrupada. Nadie la carga a mano.
 5. **Quien tenga el rol Compras pulsa Pagar** y dice **por dónde salió** el dinero, con qué referencia y en qué fecha. No hay «tesorero»: ese rol no existe.
@@ -5406,6 +5406,28 @@ Nómina, Tesorería y Ventas quedan fuera del rol de Consulta a propósito: «so
 Al editar, el **Código** queda bloqueado y la ventana lo explica: **El código no cambia: hay funciones de la base que lo nombran.**
 
 **Los roles que trae el sistema no se pueden borrar.** Solo se borran los que creó la empresa, y solo si no los tiene nadie. Si un rol del sistema sobra en alguien, el camino no es borrarlo sino quitárselo a quien no deba tenerlo: borrarlo dejaría sin dueño todas las reglas que lo nombran.
+
+#### Cinco atajos entre el nivel y el rol
+
+Hay una regla del sistema que no se ve en ninguna pantalla y explica muchas sorpresas: **para cinco casos, tener el nivel equivale a tener el rol.**
+
+Cuando una acción pide un rol y no lo tienes, el sistema mira además si tienes el nivel equivalente. Si lo tienes, pasas.
+
+| Tener este rol… | …es lo mismo que tener |
+| --- | --- |
+| **Recursos humanos** | Nómina en **escritura** |
+| **Almacén** | Inventario en **escritura** |
+| **Compras** | Compras en **control total** |
+| **Solicitante** | Compras en **escritura** |
+| **Operaciones** | Explotación en **escritura** |
+
+**Compras va a control total y no a escritura, y no es un descuido.** «Compras en escritura» lo tienen también Solicitante, Operaciones y Recursos humanos, que son quienes **piden** material. Si el comprador y el que pide compartieran nivel, cualquiera podría confirmar un pedido o dar de alta un proveedor. **Pedir es escritura; comprar es total.**
+
+**Esto solo vale para las acciones que piden un rol.** Las que piden un permiso de módulo no tienen atajo: ahí el nivel es el nivel y nada más.
+
+**Y el administrador del sistema pasa siempre**, tenga o no el rol y tenga o no el nivel.
+
+Es la razón por la que en este manual casi nunca se dice «este rol, y nadie más»: casi siempre hay una segunda puerta.
 
 #### La pestaña «Permisos extendidos»
 
