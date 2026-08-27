@@ -6174,6 +6174,24 @@ Arriba está la tarjeta **A quién le toca ahora**, que es lo que se mira todos 
 
 **Ojo con esta trampa, que hace perder tiempo:** esa lista **solo ve a quien tenga un cargo del tabulador en su ficha**. Un trabajador con el cargo escrito a mano, sin cargo del tabulador asignado, **no aparece nunca**, por mucha dotación que le corresponda. Si echas de menos a alguien en esa lista, revisa primero su ficha en **Nómina › Personal**, no la dotación.
 
+#### Entregar desde aquí
+
+Hay dos caminos, y responden a dos formas de trabajar.
+
+**Por la lista**, cuando se va bajando por los pendientes: cada persona lleva un botón **Entregar** en su primer renglón. Se lleva a la pantalla de entrega **con ella puesta y con todo lo que se le debe**, no solo el renglón que se pulsó — quien llega al almacén se lleva de una vez lo suyo, y tres botones iguales en tres renglones seguidos harían pensar que entregan cosas distintas.
+
+**Por la persona**, cuando llega alguien concreto: el botón **Entregar a alguien**, arriba. Se elige el **Cargo** —que es solo un filtro para acortar la lista, y se puede dejar en blanco— y después **A quién**. La ventana enseña lo que se le va a entregar antes de continuar.
+
+| Si la persona… | Se propone |
+| --- | --- |
+| Debe algo | **Lo que se le debe ahora mismo** |
+| Está al día | **Lo que su cargo dice**, por si hay que reponerle unas botas rotas antes de tiempo. La ventana lo advierte |
+| No tiene cargo del tabulador | Nada: el sistema no sabe qué le toca. Se entrega a mano desde **Quién tiene qué** |
+
+**Lo que le toca se rellena al elegir el almacén, no antes.** Lo que le corresponde por su cargo no tiene por qué estar en el almacén desde el que se entrega hoy, y **lo que no esté se dice**: sale un aviso con el nombre de lo que falta. Se le entrega lo que sí hay y el resto después.
+
+**Las cantidades se pueden corregir.** Vienen propuestas, no impuestas: el sistema sabe qué le toca, no cuántas botas quedan en la caja.
+
 ### 18.5 Incidencias
 
 **Operación › Asignaciones › Incidencias**
