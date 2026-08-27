@@ -342,7 +342,14 @@ function TarjetaCotizacion({
             {cotizacion.numero_proveedor ? ` · s/n ${cotizacion.numero_proveedor}` : ''}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        {/*
+          `flex-wrap` y sin `shrink-0`: con cinco chips —aprobada, propuesta y
+          las tres ventajas— la fila medía más que la tarjeta, y como no podía
+          encogerse ni partirse se salía por encima del borde. Ahora envuelve
+          dentro de su bloque, y si aun así no cabe, el bloque entero baja
+          debajo del nombre del proveedor.
+        */}
+        <div className="flex flex-wrap items-center gap-1.5">
           {aprobada ? <Chip tone="success">Aprobada</Chip> : null}
           {cotizacion.propuesta ? <Chip tone="royal">Propuesta al gerente</Chip> : null}
           {ventajas.map((v) => (

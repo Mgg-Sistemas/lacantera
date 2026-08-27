@@ -8,7 +8,12 @@ import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { CONDICIONES_PAGO, useArticulos, useProveedores } from '@/lib/api/catalogo'
+import {
+  CONDICIONES_PAGO,
+  useArticulos,
+  usePresentaciones,
+  useProveedores,
+} from '@/lib/api/catalogo'
 import { useActualizarCotizacion, useRegistrarCotizacion } from '@/lib/api/compras'
 import type { Compra, Cotizacion } from '@/lib/api/compras'
 import { useMonedasUsables, useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
@@ -50,6 +55,7 @@ interface Precio {
 export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props) {
   const { data: proveedores } = useProveedores()
   const { data: articulos } = useArticulos()
+  const { data: presentaciones } = usePresentaciones()
   const { data: tasaVigente } = useTasaVigente()
   const { data: monedas } = useMonedasUsables()
   const registrar = useRegistrarCotizacion()
@@ -315,11 +321,25 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
                 value={precios[r.id]?.marca ?? ''}
                 onChange={(e) => cambiar(r.id, { marca: e.target.value })}
               />
-              <Input
+              {/*
+                De lista, igual que en el catálogo. Aquí también se escribía a
+                mano y el resultado era el mismo: el envase del proveedor y el
+                del artículo puestos con dos palabras distintas, y nada que los
+                junte al comparar dos cotizaciones.
+
+                Si el proveedor lo manda en otro empaque que el habitual, se
+                cambia aquí sin tocar el catálogo: la lista es la misma, la
+                elección es de esta cotización.
+              */}
+              <Select
                 label="Presentación"
-                placeholder="Bidón, barril, paleta, saco…"
+                vacio="Como venga"
                 value={precios[r.id]?.presentacion ?? ''}
                 onChange={(e) => cambiar(r.id, { presentacion: e.target.value })}
+                opciones={(presentaciones ?? []).map((p) => ({
+                  valor: p.codigo,
+                  etiqueta: p.nombre,
+                }))}
               />
             </div>
           </div>

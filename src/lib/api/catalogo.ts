@@ -104,6 +104,19 @@ export interface Articulo {
    */
   presentacion: string | null
   unidades_por_presentacion: string | null
+  /**
+   * Lo que identifica al producto y no cabe en el nombre.
+   *
+   * `marca` es libre pero el formulario ofrece las que ya se han usado: una
+   * lista cerrada de marcas envejece mal —cada compra puede traer una nueva—
+   * pero dejarla a pelo produce MOTUL, Motul y Motul S.A.
+   *
+   * `numero_parte` no tiene catalogo posible: es el serial o la referencia del
+   * fabricante, distinta en cada producto. Es lo que se le dice al proveedor
+   * cuando el nombre no basta para que mande la pieza correcta.
+   */
+  marca: string | null
+  numero_parte: string | null
 }
 
 /**
@@ -165,6 +178,35 @@ export const MODOS_ENTREGA = [
   },
 ]
 
+export interface Presentacion {
+  codigo: string
+  nombre: string
+}
+
+/**
+ * En que viene empacado un articulo.
+ *
+ * ES UNA LISTA Y NO UN CAMPO LIBRE, y es lo primero que se pidió al verlo
+ * escrito a mano: «haran desastre, ej. Bidon, Bidom». Con texto libre, el
+ * mismo envase acaba escrito de cuatro formas y ninguna consulta los junta —
+ * ni la que dice cuánto se compró en bidones, ni la que busca lo que llega en
+ * paletas.
+ *
+ * La medida no va en el nombre. «BIDON DE 20 L» sería otra vez texto libre con
+ * un desplegable delante: la presentación dice BIDON y cuántos litros trae lo
+ * dice el propio artículo, que es donde se puede contar.
+ */
+export function usePresentaciones() {
+  return useQuery({
+    queryKey: ['presentaciones'],
+    queryFn: async () =>
+      desenvolver<Presentacion[]>(
+        await supabase.from('presentaciones').select('codigo, nombre').order('orden'),
+      ),
+    staleTime: Infinity,
+  })
+}
+
 export function useUnidades() {
   return useQuery({
     queryKey: ['unidades'],
@@ -203,11 +245,15 @@ export function useCrearArticulo() {
       modo_entrega?: string
       presentacion?: string | null
       unidades_por_presentacion?: number | null
+      marca?: string | null
+      numero_parte?: string | null
     }) =>
       rpc<number>('crear_articulo', {
         p_reparable: a.reparable ?? null,
         p_presentacion: a.presentacion || null,
         p_unidades_por_presentacion: a.unidades_por_presentacion ?? null,
+        p_marca: a.marca || null,
+        p_numero_parte: a.numero_parte || null,
         p_codigo: a.codigo,
         p_nombre: a.nombre,
         p_categoria: a.categoria,
@@ -243,11 +289,15 @@ export function useEditarArticulo() {
       modo_entrega?: string
       presentacion?: string | null
       unidades_por_presentacion?: number | null
+      marca?: string | null
+      numero_parte?: string | null
     }) =>
       rpc('editar_articulo', {
         p_reparable: a.reparable ?? null,
         p_presentacion: a.presentacion || null,
         p_unidades_por_presentacion: a.unidades_por_presentacion ?? null,
+        p_marca: a.marca || null,
+        p_numero_parte: a.numero_parte || null,
         p_id: a.id,
         p_nombre: a.nombre,
         p_categoria: a.categoria,
