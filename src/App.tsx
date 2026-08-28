@@ -156,6 +156,9 @@ const FormularioTrabajador = pagina(() =>
 const Parametros = pagina(() =>
   import('@/pages/nomina/Parametros').then((m) => ({ default: m.Parametros })),
 )
+const ConceptosDeNomina = pagina(() =>
+  import('@/pages/nomina/Conceptos').then((m) => ({ default: m.Conceptos })),
+)
 const Personal = pagina(() => import('@/pages/nomina/Personal').then((m) => ({ default: m.Personal })))
 const Procesos = pagina(() => import('@/pages/nomina/Procesos').then((m) => ({ default: m.Procesos })))
 const Recibos = pagina(() => import('@/pages/nomina/Recibos').then((m) => ({ default: m.Recibos })))
@@ -312,6 +315,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/nomina/procesos': <Procesos />,
   '/app/nomina/recibos': <Recibos />,
   '/app/nomina/parametros': <Parametros />,
+  '/app/nomina/conceptos': <ConceptosDeNomina />,
   '/app/tesoreria': <TableroTesoreria />,
   '/app/tesoreria/cuentas': <Cuentas />,
   '/app/tesoreria/pagos': <Pagos />,

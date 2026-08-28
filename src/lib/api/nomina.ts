@@ -248,6 +248,23 @@ export interface NovedadMonto {
   monto: string
   moneda: string
   nota: string | null
+  /**
+   * Cómo se paga este monto. Nulo: como se pague el resto de la nómina.
+   *
+   * Un bono puede ir por pago móvil mientras el sueldo va por transferencia, y
+   * eso antes no se podía decir en ninguna parte.
+   */
+  metodo_pago: string | null
+  /**
+   * Qué día se paga. Nulo: con la nómina. Con fecha: diferido a ese día.
+   *
+   * NO HAY UN `pagado_en` AL LADO, Y NO ES UN OLVIDO. Aquí no se está
+   * modelando el estado de un pago sino qué día toca. El recibo impreso dice
+   * lo que se ganó y no lleva marca de pendiente: un papel que dice
+   * «pendiente» sigue diciéndolo el año que viene, cuando ya se pagó, y
+   * entonces es un documento firmado que afirma una deuda que no existe.
+   */
+  pagar_en: string | null
 }
 
 export function useNovedadesMontos(periodoId: number | undefined) {
@@ -348,13 +365,20 @@ export interface Concepto {
   activo: boolean
 }
 
-export function useConceptos() {
+/**
+ * Los conceptos del cálculo.
+ *
+ * Por omisión solo los encendidos, que es lo que se ofrece al cargar una
+ * novedad. Con `soloActivos = false` vienen todos, para la pantalla que los
+ * administra: ahí hay que poder ver el que se apagó para volver a encenderlo.
+ */
+export function useConceptos(soloActivos = true) {
   return useQuery({
-    queryKey: ['nomina', 'conceptos'],
-    queryFn: async () =>
-      desenvolver<Concepto[]>(
-        await supabase.from('nomina_conceptos').select('*').eq('activo', true).order('orden'),
-      ),
+    queryKey: ['nomina', 'conceptos', soloActivos],
+    queryFn: async () => {
+      const q = supabase.from('nomina_conceptos').select('*').order('orden')
+      return desenvolver<Concepto[]>(await (soloActivos ? q.eq('activo', true) : q))
+    },
     staleTime: 10 * 60_000,
   })
 }
@@ -737,6 +761,14 @@ export function useGuardarNovedad() {
   )
 }
 
+/**
+ * Un bono o un descuento suelto, con cómo y cuándo se paga.
+ *
+ * La base solo lo deja mientras la nómina no esté pagada ni anulada — «deberán
+ * poder editarse en todo momento siempre que la nómina no se haya pagado o
+ * cerrado»—, así que la pantalla apaga los botones en esos dos estados para no
+ * mandar a nadie a que le digan que no.
+ */
 export function useGuardarNovedadMonto() {
   return useAccionNomina(
     (n: {
@@ -746,6 +778,9 @@ export function useGuardarNovedadMonto() {
       monto: number
       moneda?: string
       nota?: string
+      metodo_pago?: string | null
+      /** Vacío: se paga con la nómina. Con fecha: diferido a ese día. */
+      pagar_en?: string | null
     }) =>
       rpc<number>('guardar_novedad_monto', {
         p_periodo_id: n.periodo_id,
@@ -754,8 +789,63 @@ export function useGuardarNovedadMonto() {
         p_monto: n.monto,
         p_moneda: n.moneda ?? 'VES',
         p_nota: n.nota || null,
+        p_metodo_pago: n.metodo_pago || null,
+        p_pagar_en: n.pagar_en || null,
       }),
   )
+}
+
+/**
+ * Crear o corregir un concepto de novedad — un bono, un descuento.
+ *
+ * «Desconocemos el motivo o las razones o títulos de estos bonos, por lo tanto
+ * lo correcto es permitirle gestionar.» El catálogo era cerrado y sembrado por
+ * migración; ahora la parte que se carga a mano cada período se administra
+ * desde la pantalla.
+ *
+ * Los `AUTOMATICO` siguen cerrados y la base se niega a tocarlos: esos los
+ * calcula el sistema buscándolos por su código, y apagarlos dejaría el recibo
+ * sin una línea que la ley exige.
+ */
+export function useGuardarConceptoNomina() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (c: {
+      codigo: string
+      nombre: string
+      tipo: 'ASIGNACION' | 'DEDUCCION'
+      incide_normal?: boolean
+      incide_integral?: boolean
+      orden?: number
+      base_legal?: string | null
+    }) =>
+      rpc<string>('guardar_concepto_nomina', {
+        p_codigo: c.codigo,
+        p_nombre: c.nombre,
+        p_tipo: c.tipo,
+        p_incide_normal: c.incide_normal ?? false,
+        p_incide_integral: c.incide_integral ?? false,
+        p_orden: c.orden ?? 500,
+        p_base_legal: c.base_legal || null,
+      }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['nomina', 'conceptos'] }),
+  })
+}
+
+/**
+ * Apagar o encender un concepto. No se borra.
+ *
+ * Uno usado en un período viejo no se puede borrar sin dejar recibos
+ * huérfanos, y esos recibos son documentos que ya se entregaron. Apagado deja
+ * de ofrecerse al cargar novedades y sigue explicando lo que ya está impreso.
+ */
+export function useCambiarEstadoConcepto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (c: { codigo: string; activo: boolean }) =>
+      rpc('cambiar_estado_concepto_nomina', { p_codigo: c.codigo, p_activo: c.activo }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['nomina', 'conceptos'] }),
+  })
 }
 
 export function useEliminarNovedadMonto() {

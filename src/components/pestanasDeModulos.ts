@@ -43,6 +43,9 @@ export const PESTANAS_PERIODO: Pestana[] = [
 export const PESTANAS_REGLAS: Pestana[] = [
   { etiqueta: 'Prestaciones sociales', a: '/app/nomina/prestaciones' },
   { etiqueta: 'Parámetros de nómina', a: '/app/nomina/parametros' },
+  // Los bonos y descuentos que la casa se inventa. Van aquí y no en el período
+  // porque son la lista, no el monto: lo que no cambia cada quincena.
+  { etiqueta: 'Bonos y descuentos', a: '/app/nomina/conceptos' },
 ]
 
 /** A quién se le compra, y qué papeles nos ha pasado. */
