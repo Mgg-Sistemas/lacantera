@@ -242,6 +242,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/tesoreria/cuentas': 'banco caja billetera saldo dinero efectivo zelle binance traslado',
   '/app/tesoreria': 'movimientos ingresos egresos flujo',
   '/app/compras': 'orden pedido oc requisicion comprar',
+  '/app/compras/directa': 'compra rapida ya hecha factura sin cotizar sin gerente contado',
   '/app/compras/proveedores': 'rif suplidor',
   '/app/compras/recepciones': 'recibir entrada mercancia llegada',
   '/app/compras/centro-de-costos': 'gastos presupuesto fondo balance costo por m3 torta grafico categoria',
@@ -451,6 +452,13 @@ export const navigation: NavSection[] = [
           // "requisiciones" por un lado y "órdenes" por otro, porque quien
           // compra no piensa en dos documentos sino en una sola compra.
           { label: 'Tablero', to: '/app/compras' },
+          /*
+            La compra directa es entrada propia y no un boton dentro del
+            tablero, porque no es un paso del camino de un pedido: es otro
+            camino. Quien llega aqui viene con una factura en la mano, no con
+            una necesidad que plantear.
+          */
+          { label: 'Compra directa', to: '/app/compras/directa' },
           // Las facturas del proveedor pasan a ser pestaña de Proveedores: una
           // factura pertenece a alguien, y es ahí donde se busca. Como entrada
           // suelta invitaba a registrarla sin decir contra qué orden.

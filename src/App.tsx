@@ -190,6 +190,9 @@ const FichaProveedor = pagina(() =>
 const Proveedores = pagina(() =>
   import('@/pages/compras/Proveedores').then((m) => ({ default: m.Proveedores })),
 )
+const CompraDirecta = pagina(() =>
+  import('@/pages/compras/CompraDirecta').then((m) => ({ default: m.CompraDirecta })),
+)
 const NuevoPedido = pagina(() =>
   import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
 )
@@ -554,6 +557,7 @@ export default function App() {
                   el tablero, no desde la navegación. */}
               <Route path="despachos/vehiculos/:id" element={<FichaVehiculo />} />
               <Route path="compras/nuevo" element={<NuevoPedido />} />
+              <Route path="compras/directa" element={<CompraDirecta />} />
               <Route path="compras/:id/editar" element={<CorregirPedido />} />
               <Route path="compras/:id" element={<DetalleCompra />} />
               {/* `nuevo` antes que `:id` para leerlo de un vistazo, aunque el
