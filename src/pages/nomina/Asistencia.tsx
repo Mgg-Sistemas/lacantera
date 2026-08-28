@@ -26,6 +26,7 @@ import {
   usePeriodos,
 } from '@/lib/api/nomina'
 import type { Empleado, FaltaDelPeriodo, Periodo } from '@/lib/api/nomina'
+import { opcionesDe, useMetodosPago } from '@/lib/api/metodosPago'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { dinero, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -348,6 +349,7 @@ export function Asistencia() {
   const { data: novedades } = useNovedades(periodoId)
   const { data: montos } = useNovedadesMontos(periodoId)
   const { data: conceptos } = useConceptos()
+  const metodos = useMetodosPago()
 
   const guardar = useGuardarNovedad()
   const guardarMonto = useGuardarNovedadMonto()
@@ -355,10 +357,31 @@ export function Asistencia() {
 
   const [filas, setFilas] = useState<Record<number, Fila>>({})
   const [extra, setExtra] = useState<null | { empleadoId: number; nombre: string }>(null)
-  const [nuevoMonto, setNuevoMonto] = useState({ concepto: '', monto: '', moneda: 'VES', nota: '' })
+  const [nuevoMonto, setNuevoMonto] = useState({
+    concepto: '',
+    monto: '',
+    moneda: 'VES',
+    nota: '',
+    metodo_pago: '',
+    // Vacío quiere decir «con la nómina», que es lo normal. Con fecha, el bono
+    // se paga ese día — los tres o cinco de después que mencionó la líder.
+    pagar_en: '',
+  })
 
   const puedeRRHH = puede('RRHH')
   const abierto = periodo ? ['BORRADOR', 'CALCULADA'].includes(periodo.estado) : false
+
+  /*
+    LOS BONOS SE TOCAN MÁS TIEMPO QUE LAS NOVEDADES.
+
+    «Aunque se carguen los bonos, estos deberán poder editarse en todo momento
+    siempre que la nómina no se haya pagado o cerrado.» Así que también con la
+    nómina APROBADA, que las horas extra y las faltas ya no admiten: esas son
+    hechos del período y se cierran al calcularlo; un bono es una decisión
+    administrativa que puede tomarse hasta el momento de pagar.
+  */
+  const bonosAbiertos = periodo ? !['PAGADA', 'ANULADA'].includes(periodo.estado) : false
+  const bonoTrasAprobar = periodo?.estado === 'APROBADA'
 
   // Las novedades guardadas llenan la tabla. Sin esto, quien vuelve a la
   // pantalla ve ceros y cree que se perdió lo que cargó ayer.
@@ -504,7 +527,18 @@ export function Asistencia() {
                                 <span className="tabular">
                                   {m.concepto} · {dinero(m.moneda, m.monto)}
                                 </span>
-                                {abierto && puedeRRHH ? (
+                                {/*
+                                  El diferimiento se dice aquí, en la pantalla,
+                                  que sí se actualiza. En el recibo no: un papel
+                                  que dice «pendiente» sigue diciéndolo cuando
+                                  ya se pagó.
+                                */}
+                                {m.pagar_en ? (
+                                  <span className="text-warning text-2xs">
+                                    se paga el {fecha(m.pagar_en)}
+                                  </span>
+                                ) : null}
+                                {bonosAbiertos && puedeRRHH ? (
                                   <button
                                     onClick={() => void eliminarMonto.mutateAsync({ id: m.id })}
                                     className="text-danger/70 hover:text-danger"
@@ -518,11 +552,18 @@ export function Asistencia() {
                           </ul>
                         ) : null}
 
-                        {abierto && puedeRRHH ? (
+                        {bonosAbiertos && puedeRRHH ? (
                           <button
                             onClick={() => {
                               setExtra({ empleadoId: e.id, nombre: `${e.nombres} ${e.apellidos}` })
-                              setNuevoMonto({ concepto: '', monto: '', moneda: 'VES', nota: '' })
+                              setNuevoMonto({
+                              concepto: '',
+                              monto: '',
+                              moneda: 'VES',
+                              nota: '',
+                              metodo_pago: '',
+                              pagar_en: '',
+                            })
                             }}
                             className="text-royal-600 dark:text-royal-300 mt-1.5 flex items-center gap-1 text-xs hover:underline"
                           >
@@ -599,6 +640,8 @@ export function Asistencia() {
                     monto: Number(nuevoMonto.monto),
                     moneda: nuevoMonto.moneda,
                     nota: nuevoMonto.nota,
+                    metodo_pago: nuevoMonto.metodo_pago || null,
+                    pagar_en: nuevoMonto.pagar_en || null,
                   })
                   setExtra(null)
                 }}
@@ -609,6 +652,19 @@ export function Asistencia() {
           }
         >
           <div className="space-y-4">
+            {/*
+              Cambiar un bono con la nómina ya aprobada cambia lo que se va a
+              pagar. Es lo que se pidió —se toca hasta que se pague— pero quien
+              lo hace tiene que saber que el total aprobado deja de ser el
+              total que sale.
+            */}
+            {bonoTrasAprobar ? (
+              <p className="border-warning/30 bg-warning-soft rounded-card text-ink/80 border p-3 text-xs">
+                Esta nómina ya está aprobada. Lo que cambies aquí cambia lo que se va a pagar, y
+                el total deja de ser el que se aprobó.
+              </p>
+            ) : null}
+
             <Select
               label="Concepto"
               vacio="Elige el concepto"
@@ -635,12 +691,57 @@ export function Asistencia() {
                 opciones={enSimbolos(monedas.data)}
               />
             </div>
+            {/*
+              CÓMO Y CUÁNDO SE PAGA.
+
+              Un bono puede ir por pago móvil mientras el sueldo va por
+              transferencia, y puede cobrarse días después de la nómina. Las
+              dos cosas pasaban de verdad y ninguna tenía dónde decirse.
+            */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Cómo se paga"
+                vacio="Como el resto de la nómina"
+                value={nuevoMonto.metodo_pago}
+                onChange={(e) => setNuevoMonto((n) => ({ ...n, metodo_pago: e.target.value }))}
+                opciones={opcionesDe(metodos.data)}
+              />
+              <Input
+                label="Cuándo se paga"
+                type="date"
+                value={nuevoMonto.pagar_en}
+                onChange={(e) => setNuevoMonto((n) => ({ ...n, pagar_en: e.target.value }))}
+                hint={
+                  nuevoMonto.pagar_en
+                    ? 'Diferido: se paga ese día, no con la nómina.'
+                    : 'Vacío: se paga con la nómina.'
+                }
+              />
+            </div>
+
             <Input
               label="Nota"
               placeholder="Aparece en el recibo"
               value={nuevoMonto.nota}
               onChange={(e) => setNuevoMonto((n) => ({ ...n, nota: e.target.value }))}
             />
+
+            {/*
+              EL RECIBO NO DICE «PENDIENTE», Y HAY QUE SABERLO AL DIFERIR.
+
+              Lo acotó Christopher: un papel impreso que dice «pendiente» sigue
+              diciéndolo el año que viene, cuando ya se pagó, y entonces es un
+              documento firmado que afirma una deuda que no existe. El recibo
+              dice lo que se ganó; el diferimiento vive aquí, que sí se
+              actualiza.
+            */}
+            {nuevoMonto.pagar_en ? (
+              <p className="border-hairline bg-canvas rounded-card text-ink/60 border p-3 text-xs">
+                El bono sale en el recibo como cualquier otra asignación, sin marca de pendiente:
+                un papel no se actualiza cuando se paga. El día queda aquí, que es lo que se
+                consulta para saber qué falta por sacar de caja.
+              </p>
+            ) : null}
             {guardarMonto.error ? <ErrorDeCarga error={guardarMonto.error} /> : null}
           </div>
         </Modal>

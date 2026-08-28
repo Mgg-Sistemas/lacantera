@@ -301,6 +301,12 @@ export interface Compra {
   destino: string | null
   /** El almacen al que va, cuando el destino es uno del inventario. */
   destino_almacen_id: number | null
+  /**
+   * La compra ya estaba hecha al cargarla: no paso por cotizaciones ni por el
+   * gerente. Lo que cambia es como se lee y que se puede corregir; por debajo
+   * es una orden como cualquier otra.
+   */
+  directa: boolean
   estado: string
   creada_en: string
   enviada_en: string | null
@@ -537,6 +543,118 @@ export function useActualizarPedido() {
         p_solicitante_id: p.solicitante_id || null,
         p_solicitante_nombre: p.solicitante_nombre || null,
         p_solicitante_cargo: p.solicitante_cargo || null,
+      }),
+  )
+}
+
+/** Un renglón de una compra que ya se hizo: lleva su precio puesto. */
+export interface RenglonComprado {
+  articulo_id?: number | null
+  descripcion: string
+  cantidad: number
+  unidad: string
+  precio_unitario: number
+  exento_iva?: boolean
+  marca?: string | null
+  presentacion?: string | null
+  observacion?: string | null
+}
+
+/**
+ * Cargar una compra que ya se hizo, con su factura.
+ *
+ * NO ES UN PEDIDO. Un pedido pregunta; esto declara. Cuando alguien vuelve del
+ * pueblo con dos cajas de guantes y su factura no hay nada que cotizar ni a
+ * quién proponérselo: la compra ya ocurrió y lo único que falta es que el
+ * sistema se entere, valorice el inventario y guarde el papel para el IVA.
+ *
+ * Por debajo recorre la misma escalera de siempre —solicitud, cotización,
+ * orden— en una sola transacción, y por eso devuelve el id de la ORDEN: de ahí
+ * en adelante la recepción, el pago, el libro de compras y el costo promedio
+ * funcionan sin enterarse de que esta compra vino por otro camino. Una tabla
+ * aparte la habría dejado fuera del libro de compras, que es justo donde el
+ * SENIAT la busca.
+ *
+ * `recibir_en_almacen` mete el material en la misma transacción. Va aquí y no
+ * en un segundo botón porque una recepción que falla despues de crear la
+ * compra dejaría a quien la hizo creyendo que el material está en el almacén.
+ */
+export function useComprarDirecto() {
+  return useAccion(
+    (c: {
+      proveedor_id: number
+      moneda: string
+      renglones: RenglonComprado[]
+      titulo: string
+      justificacion?: string | null
+      numero_factura?: string | null
+      fecha?: string | null
+      condicion_pago?: string
+      alicuota_iva?: number
+      descuento?: number
+      flete?: number
+      observacion?: string | null
+      destino_almacen_id?: number | null
+      /** Si viene, el material entra al almacén en el mismo golpe. */
+      recibir_en_almacen?: number | null
+    }) =>
+      rpc<number>('comprar_directo', {
+        p_proveedor_id: c.proveedor_id,
+        p_moneda: c.moneda,
+        p_renglones: c.renglones,
+        p_titulo: c.titulo,
+        p_justificacion: c.justificacion || null,
+        p_numero_factura: c.numero_factura || null,
+        p_fecha: c.fecha || null,
+        p_condicion_pago: c.condicion_pago ?? 'CONTADO',
+        p_alicuota_iva: c.alicuota_iva ?? 16,
+        p_descuento: c.descuento ?? 0,
+        p_flete: c.flete ?? 0,
+        p_observacion: c.observacion || null,
+        p_destino_almacen_id: c.destino_almacen_id ?? null,
+        p_recibir_en_almacen: c.recibir_en_almacen ?? null,
+      }),
+  )
+}
+
+/**
+ * Corregir una compra directa. «Al darle aceptar, pueden editarla.»
+ *
+ * Mientras no se haya recibido ni pagado nada. Después no: los renglones de
+ * una orden recibida ya movieron existencias y costo promedio, y corregirlos
+ * por detrás dejaría el almacén diciendo una cosa y el papel otra.
+ */
+export function useEditarCompraDirecta() {
+  return useAccion(
+    (c: {
+      orden_id: number
+      proveedor_id: number
+      moneda: string
+      renglones: RenglonComprado[]
+      titulo: string
+      justificacion?: string | null
+      numero_factura?: string | null
+      fecha?: string | null
+      condicion_pago?: string
+      alicuota_iva?: number
+      descuento?: number
+      flete?: number
+      observacion?: string | null
+    }) =>
+      rpc<number>('editar_compra_directa', {
+        p_orden_id: c.orden_id,
+        p_proveedor_id: c.proveedor_id,
+        p_moneda: c.moneda,
+        p_renglones: c.renglones,
+        p_titulo: c.titulo,
+        p_justificacion: c.justificacion || null,
+        p_numero_factura: c.numero_factura || null,
+        p_fecha: c.fecha || null,
+        p_condicion_pago: c.condicion_pago ?? 'CONTADO',
+        p_alicuota_iva: c.alicuota_iva ?? 16,
+        p_descuento: c.descuento ?? 0,
+        p_flete: c.flete ?? 0,
+        p_observacion: c.observacion || null,
       }),
   )
 }
