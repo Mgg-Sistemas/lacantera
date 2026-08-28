@@ -318,9 +318,17 @@ export const navigation: NavSection[] = [
     label: 'Operación',
     items: [
       {
+        /*
+          VUELVE AL RIEL, con Despachos y con Ventas.
+
+          Los tres estaban construidos y funcionando desde hacía semanas; lo
+          que los tenía fuera era que nadie los había recorrido pantalla por
+          pantalla, no que les faltara nada. Se devuelven juntos porque son un
+          circuito: se extrae, se pesa y se despacha, y se factura. Devolver uno
+          solo dejaría el camino cortado a la mitad.
+        */
         label: 'Explotación',
         icon: Pickaxe,
-        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/explotacion' },
           { label: 'Frentes y bancos', to: '/app/explotacion/frentes' },
@@ -424,7 +432,6 @@ export const navigation: NavSection[] = [
       {
         label: 'Despachos',
         icon: Truck,
-        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/despachos' },
           { label: 'Tickets de romana', to: '/app/despachos/tickets' },
@@ -505,9 +512,23 @@ export const navigation: NavSection[] = [
         // camión con su nota y al final se factura. Puesto al revés —empezando
         // por facturación, que es lo que más se usa— la primera semana nadie
         // encuentra dónde se carga un cliente.
+        /*
+          OJO AL DEVOLVER VENTAS: HAY UNA ASIMETRIA DE PERMISO SIN CERRAR.
+
+          `guardar_precio_venta` exige VENTAS:TOTAL —«poner precios es decidir a
+          cuanto vende la empresa»— pero `cargar_articulos_por_lote` pisa la
+          misma tabla con solo VENTAS:ESCRITURA. Son las dos unicas escritoras
+          de `precios_venta`.
+
+          Mientras el modulo estuvo aparcado no mordia porque nadie tenia
+          permisos de VENTAS. Al volver el modulo el hueco sigue ahi, pero no se
+          abre por tener el modulo en el menu: se abre al DAR el permiso. Asi
+          que se devuelve la pantalla y se deja escrito que
+          **VENTAS:ESCRITURA no se reparte hasta que corra la migracion
+          `20260828120000_el_precio_pide_total`**, que la iguala.
+        */
         label: 'Ventas',
         icon: ClipboardList,
-        fueraDelMvp: true,
         children: [
           // El tablero va primero y se llama igual que el de compras: los dos
           // modulos son hermanos y quien aprende uno no deberia reaprender el
@@ -523,6 +544,19 @@ export const navigation: NavSection[] = [
           { label: 'Facturación', to: '/app/ventas/facturacion' },
           { label: 'Notas de crédito', to: '/app/ventas/notas-credito' },
           { label: 'Libro de ventas', to: '/app/ventas/libro' },
+          /*
+            SE MUDA AQUI DESDE TESORERIA.
+
+            Lo que deben los clientes es de ventas: nace de una factura y se
+            cierra con un cobro. Vivia en Tesoreria por como se armo el menu al
+            principio, y cuando Tesoreria se retiro se quedo enterrada en un
+            modulo que ya no se ofrece — inalcanzable, aunque la pantalla
+            funcione.
+
+            Devolver Ventas sin esto seria devolver la mitad: se podria
+            facturar y no se podria ver quien debe.
+          */
+          { label: 'Cuentas por cobrar', to: '/app/tesoreria/por-cobrar' },
         ],
       },
       {
@@ -600,7 +634,6 @@ export const navigation: NavSection[] = [
         children: [
           { label: 'Tablero', to: '/app/tesoreria' },
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
-          { label: 'Cuentas por cobrar', to: '/app/tesoreria/por-cobrar' },
         ],
       },
     ],

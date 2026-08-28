@@ -26,7 +26,9 @@ El orden de los capítulos es el del camino del material: primero se extrae, lue
 
 El sistema se entrega por partes, y el menú va creciendo. Hoy ofrece diez entradas: **Panel**, **Maquinaria**, **Inventario**, **Combustible**, **Asignaciones**, **Compras**, **Nómina**, **Tasas de cambio**, **Configuración** y **Manual de usuario**.
 
-Lo que todavía no sale —**Explotación**, **Despachos** y **Ventas**— **existe, funciona y está construido**, pero no se ofrece desde el menú mientras se termina de afinar. El **Organigrama** era de esos y ya no: desde el 27 de agosto de 2026 está en el menú, dentro de Nómina. **Tesorería es distinto: dejó de ser un módulo**, y lo que quedaba vivo se lo llevó Compras.
+**Desde el 28 de agosto de 2026 el menú ofrece el sistema entero.** Explotación, Despachos y Ventas volvieron al riel —estaban construidos y funcionando, y lo que los tenía fuera era que nadie los había recorrido pantalla por pantalla—. El **Organigrama** había vuelto el día antes, dentro de Nómina.
+
+**Tesorería es lo único que no está, y es distinto: dejó de ser un módulo.** No está escondida esperando turno; la empresa decidió no llevar bancos ni cajas, y lo que quedaba vivo se lo llevó Compras. **Cuentas por cobrar** era suya y se mudó a Ventas, que es de donde nace lo que deben los clientes.
 
 De los dos caminos posibles, este manual eligió el segundo:
 
@@ -153,7 +155,9 @@ Esto es lo primero que hay que saber antes de buscar una pantalla, porque explic
 
 Lo decidió así la líder de sistemas, para entregar primero lo que ya se puede usar todos los días sin sobresaltos, e ir soltando el resto conforme se afina. **El menú ha ido creciendo**: en agosto ofrecía seis entradas y hoy son diez —entraron Maquinaria, Combustible, Asignaciones y el propio manual—, así que si tienes un manual impreso de hace unas semanas, esta lista es la que manda.
 
-**Lo que hoy no sale en el menú son cuatro módulos completos**: **Explotación**, **Despachos**, **Ventas** y **Tesorería**. Tampoco los encuentra la barra buscadora. Las pantallas que cuelgan de un módulo escondido —**Cuentas por cobrar**, por ejemplo— no están escondidas por su cuenta: lo está el grupo entero.
+**Hoy solo queda un módulo fuera del menú: Tesorería.** Y no está en obra — se retiró, que es otra cosa (12.1). Tampoco la encuentra la barra buscadora, y lo mismo vale para las pantallas que cuelgan de ella: no están escondidas por su cuenta, lo está el grupo entero.
+
+Explotación, Despachos y Ventas estuvieron aquí hasta el 28 de agosto de 2026 y ya no: volvieron los tres juntos, porque son un circuito —se extrae, se pesa y se despacha, y se factura— y devolver uno solo habría dejado el camino cortado a la mitad.
 
 El **Organigrama** estuvo en esta lista y salió de ella el 27 de agosto de 2026: se rehizo la pantalla —antes era una lista con sangría que no se podía enseñar a nadie— y en cuanto se pudo presentar dejó de tener sentido tenerla detrás de un cartel de obra.
 
@@ -393,19 +397,15 @@ Esto es todo lo que ofrece el menú hoy:
 
 **Todas las entradas de este menú están construidas.** Ninguna abre el cartel de obra. Si una pantalla no se abre, es por permisos o por conexión, no porque falte.
 
-#### Lo que no sale en el menú, y sigue existiendo
+#### Lo que no sale en el menú
 
-Estas ramas están construidas y funcionando, pero hoy no se ofrecen desde el menú lateral ni las encuentra la barra buscadora. El apartado 1.5 explica el porqué y qué se ve al entrar en ellas.
+Una sola rama, y no está en obra: **Tesorería**. El apartado 1.5 explica por qué.
 
 | Grupo | Pantallas | Capítulo |
 | --- | --- | --- |
-| **Explotación** | **Tablero**, **Frentes y bancos**, **Voladuras**, **Producción por turno** | 6 |
-| **Despachos** | **Tablero**, **Tickets de romana**, **Guías de movilización**, **Vehículos** | 8 |
-| **Ventas** | **Tablero**, **Clientes**, **Lista de precios**, **Cotizaciones**, **Notas de entrega**, **Facturación**, **Notas de crédito**, **Libro de ventas** | 10 |
-| **Organigrama** | Enlace directo, sin submenú | 11.12 |
-| **Tesorería** | **Tablero**, **Bancos y cajas**, **Cuentas por cobrar** | 12 |
+| **Tesorería** | **Tablero**, **Bancos y cajas** | 12 |
 
-**Tesorería está en esta lista por otro motivo que los demás.** Los otros cuatro están construidos y esperando. Tesorería **dejó de ser un módulo**: de sus seis pantallas, **Pagos por hacer** y **Movimientos de dinero** —que era el libro de tesorería— se mudaron a **Compras** y sí están en el menú; **Cuentas por pagar** desapareció como pantalla propia. Lo que queda escondido es lo que la empresa decidió no llevar: bancos y cajas.
+**Está aquí por un motivo distinto al que tuvieron los demás.** Explotación, Despachos, Ventas y el Organigrama estuvieron escondidos esperando turno y ya volvieron. Tesorería **dejó de ser un módulo**: de sus seis pantallas, **Pagos por hacer** y **Movimientos de dinero** —que era el libro de tesorería— se mudaron a **Compras**; **Cuentas por cobrar** se mudó a **Ventas**, que es de donde nace lo que deben los clientes; y **Cuentas por pagar** desapareció como pantalla propia. Lo que queda escondido es lo único que la empresa decidió no llevar: bancos y cajas.
 
 **Se esconden para todo el mundo, incluido el administrador.** No es un permiso: es que el MVP se enseña desde una cuenta con todos los permisos, y si al administrador le siguiera saliendo el menú entero, esconderlo no habría servido de nada.
 
@@ -5479,7 +5479,9 @@ Dentro de cada tarjeta está la matriz, con estas columnas:
 
 **Panel · Maquinaria · Combustible · Inventario · Asignaciones · Compras · Nómina · Tasas de cambio · Configuración · Usuarios y roles · Respaldo de la base**
 
-Faltan cuatro de los quince, y no es un olvido: **la matriz esconde los módulos que están en obra** —Explotación, Despachos, Ventas y Tesorería—. Repartir permisos sobre lo que nadie puede abrir solo sirve para que alguien crea que tiene acceso a algo. El día que uno vuelva al menú, vuelve también a la matriz con lo que tuviera repartido.
+Falta uno de los quince, y no es un olvido: **la matriz esconde los módulos que no se ofrecen** —hoy solo **Tesorería**—. Repartir permisos sobre lo que nadie puede abrir solo sirve para que alguien crea que tiene acceso a algo.
+
+Explotación, Despachos y Ventas faltaban aquí hasta el 28 de agosto y ya aparecen, con lo que tuvieran repartido. **Ojo con uno al repartirlos**: mientras no se aplique la corrección pendiente, quien tenga **Ventas en Escritura** puede cambiar precios de venta subiendo una planilla de artículos, aunque poner precios desde su propia pantalla exija Total. Hasta entonces, en Ventas conviene repartir Lectura o Total, no Escritura.
 
 Los quince del sistema, para referencia, son:
 
@@ -5975,7 +5977,7 @@ El sistema se entrega por partes. Este capítulo reúne lo que se espera del dis
 
 No es una lista de fallas. Es el estado real de la obra, y está aquí para que nadie organice su trabajo contando con algo que aún no puede hacer.
 
-Antes de nada, lo primero que hay que saber: **tres módulos construidos no se ofrecen hoy en el menú, más una pantalla suelta.** Explotación, Despachos y Ventas existen y funcionan, pero se dejaron fuera mientras se afinan, y sus direcciones responden con un cartel de obra; lo mismo **Cuentas por cobrar**. **Tesorería es aparte: no está escondida, se retiró** (12.1). Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
+Antes de nada: desde el 28 de agosto de 2026 **el menú ofrece el sistema entero**, salvo Tesorería, que no está escondida sino retirada (12.1). Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
 
 ### 15.1 Puntos donde hay que tener cuidado
 
@@ -6051,7 +6053,7 @@ Sí. Solo necesitas navegador e internet, con el mismo usuario y la misma clave.
 Si no llegaste a guardar, sí. El sistema necesita conexión para guardar y no trabaja sin señal. Vuelve a registrarlo cuando vuelva el internet.
 
 **Ayer estaba Ventas en el menú y hoy no. ¿Se borró?**
-No. El menú va creciendo por partes y hoy ofrece **Panel, Maquinaria, Inventario, Combustible, Asignaciones, Compras, Nómina —con el Organigrama dentro—, Tasas de cambio, Configuración y Manual de usuario**. Explotación, Despachos y Ventas siguen construidos y funcionando, pero no se ofrecen mientras se afinan. El apartado 1.5 lo explica entero.
+Ya no. Desde el 28 de agosto de 2026 el menú ofrece **Panel, Explotación, Despachos, Maquinaria, Inventario, Combustible, Asignaciones, Compras, Ventas, Nómina —con el Organigrama dentro—, Tasas de cambio, Configuración y Manual de usuario**. Lo único que no aparece es **Tesorería**, y no porque falte: se retiró. El apartado 1.5 lo explica entero.
 
 **Antes había Tesorería y ahora no la encuentro.**
 Tesorería **dejó de ser un módulo**. No está escondida: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos. Lo que se usaba todos los días se mudó a **Compras**: **Pagos por hacer** y **Movimientos de dinero** están ahí, en el mismo menú, y funcionan igual. El capítulo 12 las sigue contando.
