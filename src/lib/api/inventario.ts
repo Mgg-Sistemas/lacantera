@@ -308,6 +308,12 @@ export function useRecibirOrdenCompleta() {
  * que trae alguien. Lleva costo propio — al revés que el ajuste de conteo, que
  * hereda el promedio— porque aquí el costo es un dato que se conoce, y sin él
  * el almacén quedaría lleno y valorado en nada.
+ *
+ * `sin_costo` es la excepción declarada a eso, y no un atajo. Llegó combustible
+ * trasladado desde la base principal del grupo, donde ya se registró el gasto:
+ * no hay factura porque no hubo compra aquí. Marcándolo, el costo entra en cero
+ * y la base exige a cambio una explicación entera de dónde vino y quién asumió
+ * el gasto — que dentro de un año es lo único que lo va a contestar.
  */
 export function useRegistrarEntrada() {
   return useAccionInventario(
@@ -319,6 +325,8 @@ export function useRegistrarEntrada() {
       motivo: string
       referencia?: string | null
       fecha?: string
+      /** El gasto lo asumió otra empresa del grupo. Obliga a costo cero. */
+      sin_costo?: boolean
     }) =>
       rpc<number>('registrar_entrada', {
         p_almacen_id: e.almacen_id,
@@ -328,6 +336,7 @@ export function useRegistrarEntrada() {
         p_motivo: e.motivo,
         p_referencia: e.referencia ?? null,
         p_fecha: e.fecha ?? null,
+        p_sin_costo: e.sin_costo ?? false,
       }),
   )
 }

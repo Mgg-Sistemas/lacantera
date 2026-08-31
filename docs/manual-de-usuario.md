@@ -696,7 +696,7 @@ Si hay algo, aparece una lista de recuadros, y cada uno lleva a la pantalla dond
 | Rojo | Cuántas **compras pagadas sin recibir** hay | **Más de una semana esperando material.** Es dinero que ya salió de la empresa | **Compras** |
 | Naranja | Cuántos días lleva **un pago autorizado sin salir** | **El proveedor no reserva el material hasta ver el pago, y la cotización tiene fecha de vencimiento.** Aparece a partir de los tres días | **Pagos por hacer** |
 | Naranja | Cuántas **compras esperan al gerente** | **Hasta que se apruebe no hay orden, y sin orden el proveedor no despacha.** | **Compras** |
-| Naranja | Cuántos **artículos están bajo el mínimo** | **Reponer antes de que pare una máquina cuesta menos que pararla.** | **Existencias** |
+| Naranja | Cuántos **artículos están bajo el mínimo** | **Pedirlo ahora cuesta menos que quedarse sin ello.** | **Existencias** |
 
 **Los avisos también se filtran por tu permiso.** Si el aviso lleva a un módulo que no puedes abrir, no se te muestra: avisarte de algo que no puedes ir a resolver solo sirve para inquietarte. Consecuencia práctica: **el panel de cada persona es distinto**, y que tú no veas un asunto no significa que no exista.
 
