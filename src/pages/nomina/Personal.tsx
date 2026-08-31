@@ -126,34 +126,46 @@ export function Personal() {
         title="Personal"
         description="Quién trabaja aquí, desde cuándo y cuánto gana. De la fecha de ingreso salen la antigüedad, el bono vacacional y las prestaciones. La ficha de cada quien lleva su foto, su carnet y su constancia de trabajo."
         actions={
-          puedeRRHH ? (
-            <>
-              {/*
-                El informe no pide permiso de escritura, pero vive aquí con los
-                demás botones porque es el mismo trabajo: quien administra el
-                personal es quien lo enseña.
-              */}
-              <Button
-                variant="outline"
-                icon={<ClipboardList />}
-                disabled={armando || paraElInforme.length === 0}
-                onClick={() => void sacarInforme(paraElInforme)}
-              >
-                {armando ? 'Preparando…' : 'Informe'}
-              </Button>
-            {/* La carga por planilla vive donde se necesita, no en el menú:
-                quien va a dar de alta a treinta personas está mirando esta
-                lista, no buscándola en el riel. */}
-              <Link to="/app/nomina/personal/carga">
-                <Button variant="outline" icon={<Upload />}>
-                  Cargar por planilla
-                </Button>
-              </Link>
-              <Link to="/app/nomina/personal/nuevo">
-                <Button icon={<Plus />}>Nuevo trabajador</Button>
-              </Link>
-            </>
-          ) : null
+          <>
+            {/*
+              EL INFORME NO VA DETRAS DEL ROL DE RRHH, y los otros dos sí.
+
+              `puede('RRHH')` mira el ROL, no el nivel de permiso: es la puerta
+              de dar de alta a alguien y de cargar treinta fichas de golpe, que
+              son escrituras. Sacar un papel con lo que ya está en la tabla que
+              se está mirando no lo es.
+
+              Quien llega a esta pantalla tiene al menos NOMINA:LECTURA y está
+              viendo ficha, nombre, cédula, cargo y fecha de ingreso de todo el
+              mundo. El informe no enseña ni un dato más — menos, de hecho: no
+              lleva el salario, que la tabla sí. Esconderlo obligaba a quien
+              solo consulta a copiar la lista a mano.
+            */}
+            <Button
+              variant="outline"
+              icon={<ClipboardList />}
+              disabled={armando || paraElInforme.length === 0}
+              onClick={() => void sacarInforme(paraElInforme)}
+            >
+              {armando ? 'Preparando…' : 'Informe'}
+            </Button>
+
+            {puedeRRHH ? (
+              <>
+                {/* La carga por planilla vive donde se necesita, no en el menú:
+                    quien va a dar de alta a treinta personas está mirando esta
+                    lista, no buscándola en el riel. */}
+                <Link to="/app/nomina/personal/carga">
+                  <Button variant="outline" icon={<Upload />}>
+                    Cargar por planilla
+                  </Button>
+                </Link>
+                <Link to="/app/nomina/personal/nuevo">
+                  <Button icon={<Plus />}>Nuevo trabajador</Button>
+                </Link>
+              </>
+            ) : null}
+          </>
         }
       />
 

@@ -137,9 +137,10 @@ const dias = (v: string | number | null | undefined): string => {
 
   El nombre se lleva la parte más grande en los dos, porque es lo único que no
   se puede abreviar sin dejar de reconocer a la persona. Al entrar las cuatro
-  cifras del pago, lo que se estrecha es todo lo demás — y el departamento se
-  cae del todo: en un papel de cierre, lo que se comprueba es cuánto cobró
-  cada quien, no de qué área es.
+  cifras del pago se caen el departamento y el cargo: en un papel de cierre lo
+  que se comprueba es cuánto cobró cada quien, no de qué área es ni de qué se
+  ocupa. Eso lo contesta el otro. Ver `CON_MONTOS` para la cuenta de los
+  milímetros, que es de donde sale la decisión.
 */
 const SIN_MONTOS: Columna[] = [
   { titulo: 'Ficha', ancho: 13 },
@@ -161,28 +162,42 @@ const SIN_MONTOS: Columna[] = [
 ]
 
 /*
-  Los rótulos del dinero van abreviados y no completos, y el nombre se lleva lo
-  que sobra.
+  EL PAPEL DE CIERRE NO LLEVA CARGO, Y ES POR LOS BOLIVARES.
 
-  «Asignac.» en catorce milímetros partía el punto a un renglón suelto —se vio
-  midiendo el papel, el rótulo salía «ASIGNAC» y debajo «.»—. Ensanchar esa
-  columna era robarle al nombre, que es la que ya se parte en la mitad de las
-  filas. Así que se abrevia el rótulo, que es lo que no cuesta nada: «Asign.» y
-  «Deduc.» son como se dice en cualquier nómina de aquí, y al lado de «Neto» no
-  se confunden con otra cosa.
+  Primero se probó con ocho columnas y catorce milímetros para cada cifra. Con
+  los importes del laboratorio —«17.273,79»— entraba. Con los de la nómina de
+  verdad —«199.500,01»— no: `encajar` encoge la letra hasta seis puntos y, como
+  un número no tiene espacios por donde partirlo, `splitTextToSize` lo rompe
+  igual y la celda sale «199.500,0» con un «1» debajo. Una cifra partida en dos
+  renglones en un papel que se usa para cuadrar no es un defecto de estética.
 
-  Los cuatro milímetros que se le quitan a la cédula y a los días —que traen
-  siempre lo mismo, diez caracteres y dos cifras— se los queda el nombre.
+  Un importe en bolívares de seis dígitos con céntimos mide 14,1 mm a ocho
+  puntos, y `tabla` reserva 4 mm de aire por celda: hacen falta 18 de columna,
+  y se le dan 20 y 22 para el neto, que es el que más crece.
+
+  Los 150 mm útiles no dan para eso y para las ocho columnas, así que sale una.
+  Sale el CARGO, y no la cédula: este papel contesta «cuánto cobró cada quien»,
+  y quien lo revise lo va a cotejar contra los recibos, donde la persona se
+  identifica por ficha, nombre y cédula. De qué se ocupa esa persona lo contesta
+  el otro informe, el de personal, que sí lleva cargo y departamento — y que es
+  justamente para lo que existen dos versiones del papel.
+
+  Los rótulos van abreviados por lo mismo que antes: «Asignac.» dejaba el punto
+  solo en un segundo renglón. «Asign.» y «Deduc.» es como se dice en cualquier
+  nómina de aquí.
+
+  Bajar a bolívares enteros habría resuelto el ancho sin quitar columnas, y se
+  descartó: un informe de cierre que no cuadra al céntimo con los recibos que
+  resume no sirve para cuadrar.
 */
 const CON_MONTOS: Columna[] = [
-  { titulo: 'Ficha', ancho: 12 },
-  { titulo: 'Nombre', ancho: 41 },
+  { titulo: 'Ficha', ancho: 11 },
+  { titulo: 'Nombre', ancho: 45 },
   { titulo: 'Cédula', ancho: 20 },
-  { titulo: 'Cargo', ancho: 24 },
-  { titulo: 'Días', ancho: 11, alDerecha: true },
-  { titulo: 'Asign.', ancho: 14, alDerecha: true },
-  { titulo: 'Deduc.', ancho: 14, alDerecha: true },
-  { titulo: 'Neto', ancho: 14, alDerecha: true },
+  { titulo: 'Días', ancho: 12, alDerecha: true },
+  { titulo: 'Asign.', ancho: 20, alDerecha: true },
+  { titulo: 'Deduc.', ancho: 20, alDerecha: true },
+  { titulo: 'Neto', ancho: 22, alDerecha: true },
 ]
 
 function celdas(p: PersonaDelInforme, conMontos: boolean): string[] {
@@ -211,7 +226,6 @@ function celdas(p: PersonaDelInforme, conMontos: boolean): string[] {
     p.ficha,
     p.nombre,
     p.cedula,
-    p.cargo,
     p.pago ? dias(p.pago.dias) : RAYA,
     p.pago ? numero(p.pago.asignaciones) : RAYA,
     p.pago ? numero(p.pago.deducciones) : RAYA,
@@ -289,7 +303,7 @@ export async function armarInformeDePersonal(
     if (gente.length === 0) return
 
     /*
-      UN APARTADO CORTO NO SE PARTE.
+      UN APARTADO CORTO NO SE PARTE. UNO LARGO SÍ, Y DEBE.
 
       `tabla` mira el hueco antes de cada FILA, pero no antes de su cabecera ni
       del rótulo. Por sí sola dejaba «DESINCORPORADOS · 2» con una sola fila al
@@ -297,21 +311,32 @@ export async function armarInformeDePersonal(
       personas partido en dos hojas se lee como si faltara gente, que es
       justamente lo que este papel viene a certificar que no pasa.
 
-      Así que: si el apartado entero cabe en una hoja, o va entero aquí o
-      empieza en la siguiente. Si NO cabe entero en ninguna —una
-      desincorporación masiva— se deja fluir y basta con que quepan el rótulo,
-      la cabecera y un par de filas: exigir lo imposible lo dejaría en blanco.
+      La primera versión de esta regla decía «si cabe entero en una hoja, va
+      entero», y estaba mal. Las veintidós personas de la nómina miden unos
+      204 mm y en una hoja caben 207: cabían enteras, así que la regla exigía
+      los 204 de golpe, no los encontraba debajo del alcance y se llevaba la
+      tabla a la hoja siguiente. La primera hoja salía con el membrete, cuatro
+      renglones de alcance y el resto en blanco. Se vio generándolo con las
+      veintiséis personas de verdad.
 
-      Las medidas son estimaciones y lo son a propósito. 6,5 mm es el alto de
-      fila de `tabla`, que no lo exporta; el 1,35 es el margen por las celdas
-      que se parten en dos renglones. Pasarse solo adelanta un salto de página;
-      quedarse corto vuelve a partir el apartado.
+      Lo que distingue los dos casos no es si cabe: es si es CORTO. Un bloque
+      de dos filas se lee como una unidad y partirlo confunde. Una tabla de
+      veintidós es una tabla, y nadie se extraña de que siga al otro lado —de
+      hecho lo espera—.
+
+      Un tercio de hoja es la frontera. Por encima, basta con lo de siempre
+      contra huérfanos: que quepan el rótulo, la cabecera y tres filas.
+
+      Las medidas son estimaciones a propósito. 6,5 mm es el alto de fila de
+      `tabla`, que no lo exporta; el 1,35 es el margen por las celdas que se
+      parten en dos renglones.
     */
     const ALTO_DE_FILA = 6.5
+    const HUECO_UTIL = ABAJO - 30 - ARRIBA
     const alto =
       4.5 + ALTO_DE_FILA + gente.length * ALTO_DE_FILA * 1.35 + (pie ? ALTO_DE_FILA + 1 : 0) + cola
-    const cabeEntero = alto <= ABAJO - 30 - ARRIBA
-    const hueco = cabeEntero ? alto : 4.5 + ALTO_DE_FILA * (1 + 2 * 1.35)
+    const esCorto = alto <= HUECO_UTIL / 3
+    const hueco = esCorto ? alto : 4.5 + ALTO_DE_FILA * (1 + 3 * 1.35)
 
     if (y + hueco > ABAJO - 30) {
       doc.addPage()
