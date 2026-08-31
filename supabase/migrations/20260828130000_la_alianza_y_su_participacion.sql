@@ -2,8 +2,15 @@
   LA ALIANZA CON LA GOBERNACIÓN, Y LO QUE HAY QUE ENTREGARLE CADA MES.
 
   ————————————————————————————————————————————————————————————————————————
-  SIN APLICAR. Escrita el 28 de agosto de 2026 con el MCP de Supabase caído.
-  Ni ejecutada ni comprobada contra el catálogo.
+  SIN APLICAR TODAVÍA, pero comprobada contra el catálogo el 31 de agosto. Esa
+  comprobación encontró un error que la habría tumbado, y está corregido:
+
+    `cobrado_usd` y `acreditado_usd` NO son columnas de `facturas_venta`. Viven
+    en la vista `v_facturas_venta`, que es de donde las lee el front. La vista
+    de aquí leía la tabla y habría fallado al crearse.
+
+  Y al corregirlo mejoró el cálculo, que es lo que suele pasar cuando se mira
+  el dato de verdad: ver «LAS NOTAS DE CRÉDITO SE RESTAN DONDE TOCA».
   ————————————————————————————————————————————————————————————————————————
 
   DE DÓNDE SALE CADA CIFRA
@@ -154,24 +161,33 @@ on conflict do nothing;
   LAS ANULADAS NO CUENTAN, y las notas de credito restan. Una nota de credito
   es dinero que se le devuelve al cliente: si no restara, la empresa le estaria
   entregando a la Gobernacion el 14 % de una venta que se deshizo.
+
+  LAS NOTAS DE CREDITO SE RESTAN DONDE TOCA, Y NO DONDE SE FIRMARON
+
+  La primera version las agrupaba por la fecha de la propia nota. Al leer el
+  catalogo aparecio que `v_facturas_venta` ya trae `acreditado_usd` por
+  factura, y usar eso no es solo mas corto: es correcto.
+
+  Una nota de credito emitida en septiembre que corrige una factura de agosto
+  pertenece a agosto — es la venta de agosto la que se deshizo. Agrupandola por
+  su propia fecha, agosto quedaria inflado y septiembre rebajado, y las dos
+  cifras irian a la conciliacion con la Gobernacion. La diferencia se paga.
 */
 create or replace view public.v_alianza_mensual as
 with facturado as (
+  /*
+    De la VISTA y no de la tabla: `cobrado_usd` y `acreditado_usd` se calculan
+    ahi —la tabla no los tiene— y ademas vienen ya atribuidos a la factura que
+    corresponde, que es lo que hace que un mes cierre bien.
+  */
   select
     date_trunc('month', f.fecha)::date as mes,
     sum(f.total_usd)                   as facturado_usd,
     sum(f.cobrado_usd)                 as cobrado_usd,
+    sum(f.acreditado_usd)              as acreditado_usd,
     count(*)                           as facturas
-  from public.facturas_venta f
+  from public.v_facturas_venta f
   where f.estado <> 'ANULADA'
-  group by 1
-),
-acreditado as (
-  select
-    date_trunc('month', n.fecha)::date as mes,
-    sum(n.total_usd)                   as acreditado_usd
-  from public.notas_credito n
-  where n.estado <> 'ANULADA'
   group by 1
 )
 select
@@ -182,11 +198,11 @@ select
   a.pct_social,
   f.facturas,
   f.facturado_usd,
-  coalesce(c.acreditado_usd, 0)         as acreditado_usd,
-  f.facturado_usd - coalesce(c.acreditado_usd, 0) as bruto_usd,
-  round((f.facturado_usd - coalesce(c.acreditado_usd, 0)) * a.pct_gobernacion / 100, 2)
+  coalesce(f.acreditado_usd, 0)         as acreditado_usd,
+  f.facturado_usd - coalesce(f.acreditado_usd, 0) as bruto_usd,
+  round((f.facturado_usd - coalesce(f.acreditado_usd, 0)) * a.pct_gobernacion / 100, 2)
                                         as gobernacion_devengado_usd,
-  round((f.facturado_usd - coalesce(c.acreditado_usd, 0)) * a.pct_aliada / 100, 2)
+  round((f.facturado_usd - coalesce(f.acreditado_usd, 0)) * a.pct_aliada / 100, 2)
                                         as aliada_usd,
   f.cobrado_usd,
   round(f.cobrado_usd * a.pct_gobernacion / 100, 2)
@@ -197,7 +213,7 @@ select
     facturado a credito.
   */
   round(
-    (f.facturado_usd - coalesce(c.acreditado_usd, 0)) * a.pct_gobernacion / 100
+    (f.facturado_usd - coalesce(f.acreditado_usd, 0)) * a.pct_gobernacion / 100
     - f.cobrado_usd * a.pct_gobernacion / 100, 2)
                                         as brecha_usd,
   /*
@@ -210,7 +226,6 @@ select
   (f.mes + interval '1 month')::date    as entregar_desde,
   a.dias_habiles_para_entregar
 from facturado f
-left join acreditado c on c.mes = f.mes
 cross join lateral (
   select * from public.alianzas al
    where al.activa and al.desde <= f.mes and (al.hasta is null or al.hasta >= f.mes)
@@ -222,13 +237,9 @@ grant select on public.v_alianza_mensual to authenticated;
 /*
   COMPROBAR DESPUÉS DE APLICARLA
 
-    -- Lo primero: que los nombres existan. Esta migracion da por ciertas
-    -- `facturas_venta(fecha, total_usd, cobrado_usd, estado)` y
-    -- `notas_credito(fecha, total_usd, estado)` leyendo el front, sin catalogo
-    -- delante. La regla 7 dice que eso no se da por bueno.
-    select column_name from information_schema.columns
-     where table_schema='public' and table_name in ('facturas_venta','notas_credito')
-     order by table_name, ordinal_position;
+    -- Los nombres ya se comprobaron el 31 de agosto: `cobrado_usd` y
+    -- `acreditado_usd` estan en `v_facturas_venta` y NO en la tabla, de ahi la
+    -- correccion. `fecha`, `total_usd` y `estado` si estan en las dos.
 
     -- El freno del reparto muerde
     do $x$ begin

@@ -312,6 +312,18 @@ export interface Recibo {
   dias_facturados: string | null
   dias_laborados: string | null
   dias_pagados: string
+  /**
+   * La fecha en que esa persona salio, si salio dentro de este periodo.
+   *
+   * Se congela al calcular y no se lee de la ficha al imprimir: un recibo es un
+   * documento y dice lo que era cierto el dia que se emitio. Si manana se
+   * reincorpora, el recibo de agosto tiene que seguir diciendo que en agosto se
+   * fue.
+   *
+   * Nula en el caso normal, y tambien en los recibos calculados antes de que la
+   * columna existiera — que no es un fallo, es un recibo mas viejo.
+   */
+  egresado_en: string | null
   salario_basico_diario: string
   salario_normal_diario: string
   salario_integral_diario: string
