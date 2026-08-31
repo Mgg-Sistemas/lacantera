@@ -8,6 +8,7 @@ import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useAlmacenes, useRegistrarEntrada } from '@/lib/api/inventario'
 import { useCombustibles } from '@/lib/api/combustible'
 import { hoyEnCaracas } from '@/lib/api/tasas'
+import { cn } from '@/lib/cn'
 
 /*
   CARGAR COMBUSTIBLE AL TANQUE
@@ -57,13 +58,65 @@ export function ModalCargarCombustible({
   const [costo, setCosto] = useState('')
   const [motivo, setMotivo] = useState('')
   const [referencia, setReferencia] = useState('')
+  /*
+    LO QUE LLEGO SIN COSTAR NADA AQUI.
+
+    Jesmary: «ese combustible llego hace ya bastante tiempo y no tiene factura
+    ni una constancia de pago, solo lo llevaron y lo ingresaron a la cantera».
+    Venia de la base principal del grupo, donde se registro el gasto.
+
+    No es una compra sin precio: es un traslado entre empresas. Por eso la
+    casilla dice quien asumio el gasto en vez de dejar el costo en blanco — un
+    costo vacio no se distingue de un descuido, y este no lo es.
+
+    Y VA A SU PROPIO TANQUE, que es lo que decidio Christopher: «sera como un
+    combustible inicial, y lo mantendremos separado del combustible que si tiene
+    precio». El costo promedio se lleva por pareja (almacen, articulo): metiendo
+    20.000 L a cero junto a 1.000 que costaron $0,42, el promedio del conjunto
+    cae veintiuna veces y cada vale carga a la maquina una fraccion de lo que
+    cuesta el gasoil. Separados, cada tanque conserva el suyo.
+
+    La base lo exige —`almacenes.admite_sin_costo`— y aqui el desplegable se
+    estrecha a los que lo admiten. Las dos cosas: la reja para que no pase, y el
+    desplegable para que nadie se choque con la reja.
+  */
+  const [sinCosto, setSinCosto] = useState(false)
   const [dia, setDia] = useState(hoy)
 
-  const tanques = (almacenes ?? []).filter((a) => a.tipo === 'COMBUSTIBLE')
+  /*
+    La separacion va en los dos sentidos.
+
+    Con la casilla marcada solo se ofrecen los tanques que admiten material sin
+    costo. Sin ella, se ofrecen los DEMAS: un tanque que se llama «combustible
+    inicial (sin costo)» y que contuviera gasoil comprado seria justo la mentira
+    que esto viene a evitar, y ademas partiria las existencias con precio entre
+    dos sitios.
+  */
+  const todosLosTanques = (almacenes ?? []).filter((a) => a.tipo === 'COMBUSTIBLE')
+  const tanques = todosLosTanques.filter((a) =>
+    sinCosto ? a.admite_sin_costo : !a.admite_sin_costo,
+  )
+
+  /*
+    Al marcar la casilla la lista se estrecha, y hay que rehacer la eleccion.
+
+    Dos casos, y los dos importan. Si lo elegido ya no se ofrece, quedaria
+    seleccionado un tanque invisible y el guardado rebotaria con un mensaje de
+    la base, que es la peor forma de enterarse. Y si al estrecharse queda UNO
+    solo, se elige solo — igual que al abrir: un desplegable que dice «Elegir»
+    con una sola opcion debajo se lee como si faltara algo.
+  */
+  useEffect(() => {
+    const sigueValiendo = tanque && tanques.some((t) => String(t.id) === tanque)
+    if (sigueValiendo) return
+    setTanque(tanques.length === 1 ? String(tanques[0].id) : '')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sinCosto])
 
   useEffect(() => {
     if (!abierto) return
     // Con un solo tanque no se pregunta a cuál: se elige solo.
+    setSinCosto(false)
     setTanque(tanques.length === 1 ? String(tanques[0].id) : '')
     setArticulo('')
     setCantidad('')
@@ -76,7 +129,8 @@ export function ModalCargarCombustible({
 
   const litros = Number(cantidad)
   const valido =
-    Boolean(tanque) && Boolean(articulo) && litros > 0 && Number(costo) > 0 &&
+    Boolean(tanque) && Boolean(articulo) && litros > 0 &&
+    (sinCosto ? motivo.trim().length >= 15 : Number(costo) > 0) &&
     motivo.trim().length >= 4
 
   const unidad =
@@ -87,7 +141,8 @@ export function ModalCargarCombustible({
       almacen_id: Number(tanque),
       articulo_id: Number(articulo),
       cantidad: litros,
-      costo_usd: Number(costo),
+      costo_usd: sinCosto ? 0 : Number(costo),
+      sin_costo: sinCosto,
       motivo: motivo.trim(),
       referencia: referencia.trim() || null,
       fecha: dia,
@@ -120,7 +175,9 @@ export function ModalCargarCombustible({
           onChange={(e) => setTanque(e.target.value)}
           opciones={tanques.map((t) => ({ valor: String(t.id), etiqueta: t.nombre }))}
           hint={
-            tanques.length === 0
+            sinCosto
+              ? 'Lo que no costó nada va a su propio tanque, para no hundir el costo del que sí tiene precio.'
+              : tanques.length === 0
               ? 'No hay ningún tanque. Se crea en Inventario → Almacenes, con tipo Combustible.'
               : undefined
           }
@@ -153,10 +210,42 @@ export function ModalCargarCombustible({
           min="0"
           step="0.0001"
           inputMode="decimal"
-          value={costo}
+          disabled={sinCosto}
+          value={sinCosto ? '' : costo}
           onChange={(e) => setCosto(e.target.value)}
-          hint="Con esto se valora lo que se despache después. Sin costo, cada vale sale en cero."
+          hint={
+            sinCosto
+              ? 'Entra en cero: el gasto lo asumió la otra empresa.'
+              : 'Con esto se valora lo que se despache después. Sin costo, cada vale sale en cero.'
+          }
         />
+
+        {/*
+          La casilla va debajo del costo y no arriba, a propósito: primero se
+          intenta poner lo que costó, que es el caso de casi siempre. Esto es la
+          salida para cuando de verdad no costó nada AQUÍ.
+        */}
+        <label
+          className={cn(
+            'flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm sm:col-span-2',
+            sinCosto ? 'border-warning/30 bg-warning-soft' : 'border-hairline',
+          )}
+        >
+          <input
+            type="checkbox"
+            className="accent-royal-600 mt-0.5 size-4 shrink-0"
+            checked={sinCosto}
+            onChange={(e) => setSinCosto(e.target.checked)}
+          />
+          <span className="text-ink/80">
+            No costó nada para esta empresa
+            <span className="text-ink/50 mt-0.5 block text-xs">
+              {sinCosto
+                ? 'Va a su propio tanque y escribe abajo de dónde vino y quién asumió el gasto. Queda en el movimiento.'
+                : 'Para material trasladado desde otra empresa del grupo, donde ya se registró el gasto.'}
+            </span>
+          </span>
+        </label>
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">

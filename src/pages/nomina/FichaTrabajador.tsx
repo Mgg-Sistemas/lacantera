@@ -1,13 +1,22 @@
 import { useState } from 'react'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, FileText, Pencil, ScrollText, TriangleAlert, UserX } from 'lucide-react'
+import {
+  ArrowLeft,
+  ClipboardList,
+  FileText,
+  Pencil,
+  ScrollText,
+  TriangleAlert,
+  UserX,
+} from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { MOTIVOS_EGRESO } from '@/lib/api/prestaciones'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
@@ -32,6 +41,7 @@ import {
   useSubirFoto,
   useVincularCuenta,
   useCuentasSinFicha,
+  fichaDelInforme,
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
 import { TarjetaFirma } from '@/components/TarjetaFirma'
@@ -45,6 +55,7 @@ import { TarjetaCarnet } from './TarjetaCarnet'
 import { fotoParaVerificar, urlDeVerificacion, useCarnetVigente } from '@/lib/api/carnets'
 import { armarFicha, type Seccion } from '@/lib/ficha/fichaPdf'
 import { armarConstancia } from '@/lib/ficha/constanciaPdf'
+import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { ENCUADRE_CENTRADO, type Encuadre } from '@/lib/ficha/encuadre'
 import { dinero, fecha } from '@/lib/formato'
@@ -202,6 +213,20 @@ export function FichaTrabajador() {
   const { firma } = useFirmaRrhh()
   const [pidiendo, setPidiendo] = useState(false)
   const [conSueldo, setConSueldo] = useState(true)
+  /*
+    QUE PAPEL SE PIDE.
+
+    «Constancia de trabajo» acredita que alguien trabaja —o trabajo— aqui.
+    «Constancia de cese» acredita que la relacion laboral termino, y es la que
+    pidio la lider. No son el mismo papel con otro titulo: se piden para cosas
+    distintas, y de un desincorporado se pueden querer las dos —la de trabajo
+    para un empleo nuevo, la de cese para un tramite—.
+
+    Solo se elige cuando hay algo que elegir: a quien sigue activo no se le
+    puede certificar un cese, asi que ahi no se pregunta nada.
+  */
+  const [tipoConstancia, setTipoConstancia] = useState<'TRABAJO' | 'CESE'>('TRABAJO')
+  const [conMotivo, setConMotivo] = useState(false)
   const [armando, setArmando] = useState(false)
 
   // La dotación
@@ -410,6 +435,18 @@ export function FichaTrabajador() {
 
     try {
       const pdf = await armarConstancia({
+        tipo: tipoConstancia,
+        /*
+          El motivo solo si se pidio a proposito. Va apagado por omision porque
+          este papel se lo lleva la persona: «despido justificado» escrito en
+          algo que va a ensenar en su proxima entrevista le hace un dano que la
+          empresa no necesita hacerle, y la fecha de salida ya acredita el cese.
+        */
+        motivoEgreso:
+          tipoConstancia === 'CESE' && conMotivo
+            ? (MOTIVOS_EGRESO.find((m) => m.valor === e.motivo_egreso)?.etiqueta ??
+              e.motivo_egreso)
+            : null,
         nombreCompleto: `${e.nombres} ${e.apellidos}`,
         cedula: e.cedula,
         ficha: e.ficha,
@@ -434,10 +471,46 @@ export function FichaTrabajador() {
       })
       setVista({
         archivo: pdf,
-        titulo: 'Constancia de trabajo',
+        titulo:
+          tipoConstancia === 'CESE'
+            ? 'Constancia de cese de actividades laborales'
+            : 'Constancia de trabajo',
         descripcion: 'Revísala antes de entregarla. La firma va a mano.',
       })
       setPidiendo(false)
+    } catch (err) {
+      setFalloExportar(err instanceof Error ? err : new Error(String(err)))
+    } finally {
+      setArmando(false)
+    }
+  }
+
+  /*
+    El informe de esta persona: la misma hoja del lote, con una fila.
+
+    No lleva `filtro` con el nombre porque el papel ya trae el nombre en la
+    fila; repetirlo arriba diría dos veces lo mismo y de paso haría creer que
+    hubo una búsqueda.
+  */
+  async function emitirInforme() {
+    if (!e) return
+    setArmando(true)
+    setFalloExportar(null)
+
+    try {
+      const pdf = await armarInformeDePersonal({
+        conMontos: false,
+        personas: [fichaDelInforme(e)],
+        filtro: 'Una sola persona',
+        empresa: empresaDelPapel(empresa.data),
+        emitidoPor: nombre,
+        momento: new Date(),
+      })
+      setVista({
+        archivo: pdf,
+        titulo: 'Informe de personal',
+        descripcion: `Situación de ${e.nombres} ${e.apellidos}. Sin montos ni datos personales.`,
+      })
     } catch (err) {
       setFalloExportar(err instanceof Error ? err : new Error(String(err)))
     } finally {
@@ -603,23 +676,38 @@ export function FichaTrabajador() {
                 bajarlo. Es un solo objeto y va en un solo sitio. Aquí se queda
                 lo que no es carnet.
               */}
-              <div className="sm:col-span-2">
-                <Button
-                  block
-                  variant="outline"
-                  icon={<ScrollText />}
-                  disabled={armando}
-                  onClick={() => setPidiendo(true)}
-                >
-                  Constancia de trabajo
-                </Button>
-              </div>
+              <Button
+                block
+                variant="outline"
+                icon={<ScrollText />}
+                disabled={armando}
+                onClick={() => setPidiendo(true)}
+              >
+                Constancia de trabajo
+              </Button>
+              {/*
+                El informe de una sola persona es la misma hoja que sale de la
+                lista de personal, con una fila. Sirve para lo que no sirve la
+                ficha completa: enseñar la situación de alguien —dónde está,
+                desde cuándo, si sigue— sin repartir de paso su dirección, su
+                teléfono y su grupo sanguíneo.
+              */}
+              <Button
+                block
+                variant="outline"
+                icon={<ClipboardList />}
+                disabled={armando}
+                onClick={() => void emitirInforme()}
+              >
+                Informe de personal
+              </Button>
             </div>
 
             <p className="text-ink/40 mt-3 text-center text-xs">
-              Los dos se abren en pantalla antes de guardarse. La ficha trae todos los datos en
-              A4; la constancia es la carta que se entrega a un banco o a quien la pida. El
-              carnet se emite y se imprime más arriba.
+              Los tres se abren en pantalla antes de guardarse. La ficha trae todos los datos en
+              A4; la constancia es la carta que se entrega a un banco o a quien la pida; el
+              informe es el resumen sin datos personales ni montos. El carnet se emite y se
+              imprime más arriba.
             </p>
 
             {falloExportar ? <ErrorDeCarga error={falloExportar} className="mt-3" /> : null}
@@ -951,7 +1039,7 @@ export function FichaTrabajador() {
         <Modal
           abierto
           onCerrar={() => setPidiendo(false)}
-          titulo="Constancia de trabajo"
+          titulo={e.activo ? 'Constancia de trabajo' : 'Constancia'}
           descripcion={`Para ${e.nombres} ${e.apellidos}`}
           ancho="sm"
           acciones={
@@ -996,6 +1084,27 @@ export function FichaTrabajador() {
             </div>
           ) : (
             <div className="space-y-4">
+              {/*
+                La eleccion solo aparece si hay algo que elegir: a quien sigue
+                activo no se le puede certificar un cese.
+              */}
+              {!e.activo ? (
+                <Select
+                  label="Qué papel"
+                  value={tipoConstancia}
+                  onChange={(ev) => setTipoConstancia(ev.target.value as 'TRABAJO' | 'CESE')}
+                  opciones={[
+                    { valor: 'TRABAJO', etiqueta: 'Constancia de trabajo' },
+                    { valor: 'CESE', etiqueta: 'Constancia de cese de actividades laborales' },
+                  ]}
+                  hint={
+                    tipoConstancia === 'CESE'
+                      ? 'Acredita que la relación laboral terminó. Para trámites.'
+                      : 'Acredita que trabajó aquí. Para un empleo nuevo, un banco.'
+                  }
+                />
+              ) : null}
+
               <p className="text-ink/70 text-sm leading-relaxed">
                 Va en papel de la empresa, con el logo, y declara que{' '}
                 <strong className="text-ink/90 font-medium">
@@ -1003,7 +1112,38 @@ export function FichaTrabajador() {
                 </strong>{' '}
                 desde el {fecha(e.fecha_ingreso)}
                 {e.activo ? '' : ` hasta el ${fecha(e.fecha_egreso)}`} como {e.cargo}.
+                {tipoConstancia === 'CESE' && !e.activo
+                  ? ' Y que la relación laboral culminó en esa fecha.'
+                  : ''}
               </p>
+
+              {/*
+                El motivo, apagado por omision y con el porque a la vista. No es
+                una preferencia de formato: es lo que decide si la persona sale
+                de aqui con «despido justificado» escrito en un papel que va a
+                ensenar en su proxima entrevista.
+              */}
+              {tipoConstancia === 'CESE' && !e.activo && e.motivo_egreso ? (
+                <label className="text-ink/75 flex cursor-pointer items-start gap-2.5 text-sm select-none">
+                  <input
+                    type="checkbox"
+                    className="accent-royal-600 mt-0.5 size-4"
+                    checked={conMotivo}
+                    onChange={(ev) => setConMotivo(ev.target.checked)}
+                  />
+                  <span>
+                    Decir el motivo de la salida
+                    <span className="text-ink/45 block text-xs">
+                      {conMotivo
+                        ? `Dirá «por ${(
+                            MOTIVOS_EGRESO.find((m) => m.valor === e.motivo_egreso)?.etiqueta ??
+                            e.motivo_egreso
+                          ).toLowerCase()}». Piénsalo: el papel se lo lleva la persona.`
+                        : 'La carta dirá cuándo terminó, no por qué. Suele ser suficiente.'}
+                    </span>
+                  </span>
+                </label>
+              ) : null}
 
               <label className="text-ink/75 flex cursor-pointer items-start gap-2.5 text-sm select-none">
                 <input

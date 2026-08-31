@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { AlertTriangle, FileText, Printer } from 'lucide-react'
+import { AlertTriangle, ClipboardList, FileText, Printer } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_PERIODO } from '@/components/pestanasDeModulos'
@@ -15,6 +15,8 @@ import type { Periodo, Recibo } from '@/lib/api/nomina'
 import { useFirmas } from '@/lib/api/firmas'
 import { useSesion } from '@/lib/sesion'
 import { armarRecibo, armarRecibos } from '@/lib/ficha/reciboPdf'
+import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
+import type { PersonaDelInforme } from '@/lib/ficha/informePersonalPdf'
 import type { DatosRecibo, FirmaEmpresa, PdfArmado } from '@/lib/ficha/reciboPdf'
 import type { EmpresaPapel } from '@/lib/ficha/papel'
 import { Visor } from '@/components/Visor'
@@ -46,6 +48,7 @@ function paraImprimir(
     diasPagados: r.dias_pagados,
     diasFacturados: r.dias_facturados,
     diasLaborados: r.dias_laborados,
+    egresadoEn: r.egresado_en,
 
     ficha: r.empleado?.ficha ?? '—',
     cedula: r.empleado?.cedula ?? '—',
@@ -78,6 +81,37 @@ function paraImprimir(
   }
 }
 
+/**
+ * Del recibo a la fila del informe de cierre.
+ *
+ * La salida se lee de `egresado_en` del RECIBO y no de la ficha, a propósito.
+ * El recibo congela esa fecha el día que se calcula, y este informe certifica
+ * un período: si mañana reincorporan a alguien, el informe de agosto tiene que
+ * seguir diciendo que en agosto se fue. La ficha, para entonces, ya diría otra
+ * cosa.
+ *
+ * El motivo sí sale de la ficha, que es donde vive y donde no cambia.
+ */
+function comoFilaDelInforme(r: Recibo): PersonaDelInforme {
+  return {
+    ficha: r.empleado?.ficha ?? '—',
+    nombre: `${r.empleado?.nombres ?? ''} ${r.empleado?.apellidos ?? ''}`.trim() || '—',
+    cedula: r.empleado?.cedula ?? '—',
+    cargo: r.empleado?.cargo ?? '—',
+    departamento: r.empleado?.departamento ?? null,
+    fechaIngreso: r.empleado?.fecha_ingreso ?? '',
+    fechaEgreso: r.egresado_en,
+    motivoEgreso: r.empleado?.motivo_egreso ?? null,
+    telefono: null,
+    pago: {
+      dias: r.dias_pagados,
+      asignaciones: r.total_asignaciones,
+      deducciones: r.total_deducciones,
+      neto: r.neto,
+    },
+  }
+}
+
 export function Recibos() {
   const [params, setParams] = useSearchParams()
   const { data: periodos } = usePeriodos()
@@ -94,13 +128,51 @@ export function Recibos() {
   const [imprimiendo, setImprimiendo] = useState(false)
   // Se enseña antes de descargarlo: un recibo con la firma sin llenar o el
   // periodo equivocado se ve en dos segundos y no llega al papel.
-  const [vista, setVista] = useState<(PdfArmado & { cuantos: number }) | null>(null)
+  const [vista, setVista] = useState<
+    (PdfArmado & { cuantos: number; informe?: boolean }) | null
+  >(null)
 
   const ordenados = [...(data ?? [])].sort((a, b) =>
     `${a.empleado?.apellidos}`.localeCompare(`${b.empleado?.apellidos}`),
   )
 
   const papelDeEmpresa = empresaDelPapel(empresa)
+
+  /*
+    EL INFORME DEL PERIODO.
+
+    Lo pidió Jesmary: «al final de cuadrar nómina necesita también un informe de
+    personal como el primero pero que este sí refleje lo que cobraron». Es un
+    papel distinto de los recibos: los recibos son veintidós hojas que se
+    reparten, y esto es una que se archiva y se enseña.
+
+    Recibe una lista, así que la misma función saca el del período entero y el
+    de una sola persona — que es lo que se pidió después: «debe poder imprimirse
+    tanto individual como en lote».
+  */
+  const sacarInforme = async (recibos: Recibo[]) => {
+    if (!periodo) return
+    setImprimiendo(true)
+    try {
+      const pdf = await armarInformeDePersonal({
+        conMontos: true,
+        periodo: { numero: periodo.numero, desde: periodo.desde, hasta: periodo.hasta },
+        personas: recibos.map(comoFilaDelInforme),
+        // Se dice de dónde salió la lista. Un informe de una sola persona que
+        // no lo diga se lee como si en la quincena hubiera cobrado una sola.
+        filtro:
+          recibos.length === ordenados.length
+            ? 'Todo el personal con recibo en el período'
+            : `Solo ${recibos.length} de ${ordenados.length} recibos del período`,
+        empresa: papelDeEmpresa,
+        emitidoPor: nombre,
+        momento: new Date(),
+      })
+      setVista({ ...pdf, cuantos: recibos.length, informe: true })
+    } finally {
+      setImprimiendo(false)
+    }
+  }
 
   const sacar = async (recibos: Recibo[]) => {
     if (!periodo) return
@@ -205,14 +277,26 @@ export function Recibos() {
               {ordenados.length} {ordenados.length === 1 ? 'recibo' : 'recibos'} · cada uno con su
               copia, para firmar a mano
             </p>
-            <Button
-              variant="outline"
-              icon={<Printer />}
-              disabled={imprimiendo}
-              onClick={() => void sacar(ordenados)}
-            >
-              {imprimiendo ? 'Preparando…' : 'Imprimir todos'}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* El informe va primero porque es lo que se mira al cuadrar; los
+                  recibos se imprimen cuando ya se cuadró. */}
+              <Button
+                variant="outline"
+                icon={<ClipboardList />}
+                disabled={imprimiendo}
+                onClick={() => void sacarInforme(ordenados)}
+              >
+                Informe del período
+              </Button>
+              <Button
+                variant="outline"
+                icon={<Printer />}
+                disabled={imprimiendo}
+                onClick={() => void sacar(ordenados)}
+              >
+                {imprimiendo ? 'Preparando…' : 'Imprimir todos'}
+              </Button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -296,6 +380,19 @@ export function Recibos() {
             <>
               <Button variant="ghost" onClick={() => setAbierto(null)}>
                 Cerrar
+              </Button>
+              {/*
+                El informe de una sola persona sirve sobre todo para quien se
+                fue: es la hoja que dice qué cobró y que ya no sigue, sin tener
+                que entregar el listado entero de la nómina.
+              */}
+              <Button
+                variant="outline"
+                icon={<ClipboardList />}
+                disabled={imprimiendo}
+                onClick={() => void sacarInforme([abierto])}
+              >
+                Informe
               </Button>
               <Button
                 icon={<Printer />}
@@ -393,11 +490,21 @@ export function Recibos() {
         onCerrar={() => setVista(null)}
         blob={vista?.blob ?? null}
         nombreArchivo={vista?.nombre ?? 'recibo.pdf'}
-        titulo={vista && vista.cuantos > 1 ? `Recibos del periodo ${periodo?.numero ?? ''}` : 'Recibo de pago'}
+        titulo={
+          vista?.informe
+            ? `Informe de nómina · ${periodo?.numero ?? ''}`
+            : vista && vista.cuantos > 1
+              ? `Recibos del periodo ${periodo?.numero ?? ''}`
+              : 'Recibo de pago'
+        }
         descripcion={
-          vista
-            ? `${vista.cuantos} recibo${vista.cuantos === 1 ? '' : 's'} · original y copia, para firmar a mano`
-            : undefined
+          vista?.informe
+            ? // El informe no se firma dos veces ni se reparte: se archiva. La
+              // descripción del recibo aquí mentiría.
+              `${vista.cuantos} ${vista.cuantos === 1 ? 'persona' : 'personas'} · con lo que cobraron y quién quedó desincorporado`
+            : vista
+              ? `${vista.cuantos} recibo${vista.cuantos === 1 ? '' : 's'} · original y copia, para firmar a mano`
+              : undefined
         }
       />
 

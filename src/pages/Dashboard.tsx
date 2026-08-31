@@ -90,7 +90,19 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
     avisos.push({
       tono: 'warning',
       titulo: `${r.articulos_bajo_minimo} artículo${r.articulos_bajo_minimo === 1 ? '' : 's'} bajo el mínimo`,
-      detalle: 'Reponer antes de que pare una máquina cuesta menos que pararla.',
+      /*
+        NO SE DA POR HECHO QUE LO QUE FALTA SEA UN REPUESTO.
+
+        Decia «reponer antes de que pare una maquina cuesta menos que
+        pararla», y Christopher se encontro el aviso apuntando a unas botas de
+        seguridad. La frase estaba escrita pensando en un repuesto, pero bajo
+        el minimo cae lo que sea: un EPP, un insumo, un lubricante.
+
+        Cuando la frase no encaja con lo que uno acaba de ver, deja de leerse
+        como una razon y empieza a leerse como texto de relleno — y entonces
+        tampoco se lee el dia que si era un repuesto.
+      */
+      detalle: 'Pedirlo ahora cuesta menos que quedarse sin ello.',
       ruta: '/app/inventario/existencias',
     })
   }

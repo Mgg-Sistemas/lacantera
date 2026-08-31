@@ -35,6 +35,7 @@ import { ModalCambiarMetodo } from './ModalCambiarMetodo'
 import { ModalRecepcion } from './ModalRecepcion'
 import { PapelesDeCompra } from './PapelesDeCompra'
 import { usePapelesDeCompra, useRespaldarAutorizacion } from '@/lib/api/papelesDeCompra'
+import { useFacturasDeOrden } from '@/lib/api/facturasCompra'
 import { SoltarArchivo } from '@/components/SoltarArchivo'
 import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
 import { usePerfiles, useMisRoles, useArticulos, CONDICIONES_PAGO } from '@/lib/api/catalogo'
@@ -732,6 +733,15 @@ export function DetalleCompra() {
   const confirmar = useConfirmarPedido()
   const cancelarPedido = useCancelarPedido()
   const proponer = useProponerCotizacion()
+  /*
+    Las facturas de esta orden, para poder avisar del doble camino.
+
+    El dinero puede salir por la instrucción de pago de la orden y por el pago
+    registrado sobre la factura del proveedor, y ninguno de los dos sabe del
+    otro. Cruzarlos de verdad es trabajo de la base y no está hecho; enseñarlos
+    juntos sí se puede, porque `facturas_compra.orden_id` ya los ata.
+  */
+  const facturasDeLaOrden = useFacturasDeOrden(orden?.id)
   const retirar = useRetirarCotizacion()
   const declarar = useDeclararComprobante()
   const eliminarCotizacion = useEliminarCotizacion()
@@ -1383,6 +1393,43 @@ export function DetalleCompra() {
                 title="Pagos"
                 subtitle="Lo que compras autorizó pagar y lo que tesorería ya pagó."
               />
+
+              {/*
+                EL AVISO DEL DOBLE CAMINO.
+
+                Esta compra puede pagarse aquí y también desde la factura del
+                proveedor. Los dos descuentan de una cuenta real y ninguno sabe
+                del otro, así que la misma compra se puede pagar dos veces sin
+                que nada se queje.
+
+                Esto no lo arregla —eso es trabajo de la base— pero lo pone
+                delante: la diferencia entre pagar dos veces sin enterarse y
+                pagar dos veces habiéndolo leído. Solo sale cuando de verdad hay
+                algo pagado por el otro lado; un aviso permanente se deja de
+                leer a la tercera vez.
+              */}
+              {(() => {
+                const pagadoPorFactura = (facturasDeLaOrden.data ?? []).filter(
+                  (f) => Number(f.pagado_usd) > 0 && f.estado !== 'ANULADA',
+                )
+                if (pagadoPorFactura.length === 0) return null
+                const suma = pagadoPorFactura.reduce((t, f) => t + Number(f.pagado_usd), 0)
+                return (
+                  <div className="border-warning/30 bg-warning-soft rounded-card mt-3 border p-3">
+                    <p className="text-ink/80 text-sm font-medium">
+                      Esta compra ya tiene pagos registrados por su factura
+                    </p>
+                    <p className="text-ink/70 mt-1 text-xs">
+                      {pagadoPorFactura
+                        .map((f) => `${f.numero_factura}: ${dolares(f.pagado_usd)}`)
+                        .join(' · ')}
+                      {pagadoPorFactura.length > 1 ? ` · en total ${dolares(suma)}` : ''}.{' '}
+                      El sistema no cruza todavía los dos caminos, así que lo que se pague aquí
+                      se suma a eso en vez de descontarse.
+                    </p>
+                  </div>
+                )
+              })()}
               <div className="mt-4 space-y-3">
                 {orden.instrucciones
                   .slice()

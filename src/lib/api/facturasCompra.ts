@@ -127,6 +127,39 @@ export function useFacturasCompra() {
   })
 }
 
+/**
+ * Las facturas de una orden, para que los dos caminos de pago se vean.
+ *
+ * EL PROBLEMA QUE ESTO NO ARREGLA, PERO SÍ ENSEÑA
+ *
+ * El dinero de una compra puede salir por dos sitios: la instrucción de pago
+ * de la orden, y el pago registrado sobre la factura del proveedor. Los dos
+ * descuentan de una cuenta real y **ninguno de los dos sabe del otro**, así que
+ * una misma compra se puede pagar dos veces sin que nada se queje.
+ *
+ * Cruzarlos de verdad —que uno descuente de lo que el otro ya pagó— es trabajo
+ * de la base y no está hecho. Lo que sí se puede hacer hoy es que cada pantalla
+ * enseñe lo que hay en la otra: `facturas_compra.orden_id` ya las ata, así que
+ * el dato existe y solo faltaba mirarlo.
+ *
+ * No es un arreglo. Es la diferencia entre pagar dos veces sin enterarse y
+ * pagar dos veces habiéndolo leído.
+ */
+export function useFacturasDeOrden(ordenId: number | null | undefined) {
+  return useQuery({
+    enabled: !!ordenId,
+    queryKey: ['facturas-compra', 'de-orden', ordenId],
+    queryFn: async () =>
+      desenvolver<FacturaCompra[]>(
+        await supabase
+          .from('v_facturas_compra')
+          .select('*')
+          .eq('orden_id', ordenId!)
+          .order('fecha_emision', { ascending: false }),
+      ),
+  })
+}
+
 export function usePagosCompra(facturaId: number | null) {
   return useQuery({
     queryKey: ['facturas-compra', 'pagos', facturaId],
