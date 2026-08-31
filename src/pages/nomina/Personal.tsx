@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import {
+  ClipboardList,
   IdCard,
   Pencil,
   Plus,
@@ -23,11 +24,17 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
   BASES_SALARIO,
   FRECUENCIAS,
+  fichaDelInforme,
   useEgresarEmpleado,
   useEmpleados,
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import { useSesion } from '@/lib/sesion'
+import { Visor } from '@/components/Visor'
+import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
+import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { dinero, fecha } from '@/lib/formato'
 
 /** Años y meses de servicio. Es lo que decide el bono vacacional y lo que se le debe si sale. */
@@ -47,8 +54,26 @@ function antiguedad(desde: string): string {
 export function Personal() {
   const [verInactivos, setVerInactivos] = useState(false)
   const { data, isPending, error } = useEmpleados(!verInactivos)
+  /*
+    El informe se arma con TODOS, mire lo que mire la pantalla.
+
+    Jesmary lo pidió así: «un PDF o informe del personal activo en nómina […]
+    que en ese reporte incluya un apartado de los desincorporados». O sea que
+    el apartado forma parte del papel, no es una opción. Si el informe saliera
+    de lo que hay en pantalla, con la casilla apagada saldría sin ese apartado
+    —vacío y sin decir por qué— y con ella encendida saldría igual que con ella
+    apagada, que es peor: dos botones que hacen lo mismo salvo cuando no.
+
+    La casilla sigue mandando en la TABLA, que es lo que se está mirando. Son
+    dos cosas distintas y ahora se comportan como tales.
+  */
+  const { data: todos } = useEmpleados(false)
+  const { data: empresa } = useEmpresa()
+  const { nombre } = useSesion()
   const { puede } = useMisRoles()
   const egresar = useEgresarEmpleado()
+  const [armando, setArmando] = useState(false)
+  const [vista, setVista] = useState<(PdfArmado & { cuantos: number }) | null>(null)
 
   const [busca, setBusca] = useState('')
   const [saliendo, setSaliendo] = useState<Empleado | null>(null)
@@ -64,27 +89,83 @@ export function Personal() {
     )
   }, [data, busca])
 
+  /*
+    El mismo buscador que la tabla, aplicado a la lista entera. Buscar
+    «mantenimiento» y sacar el informe tiene que dar el informe de
+    mantenimiento, con sus desincorporados incluidos.
+  */
+  const paraElInforme = useMemo(() => {
+    const t = busca.trim().toLowerCase()
+    if (!t) return todos ?? []
+    return (todos ?? []).filter((e) =>
+      `${e.nombres} ${e.apellidos} ${e.cedula} ${e.cargo} ${e.ficha}`.toLowerCase().includes(t),
+    )
+  }, [todos, busca])
+
+  const sacarInforme = async (gente: Empleado[]) => {
+    if (gente.length === 0) return
+    setArmando(true)
+    try {
+      const pdf = await armarInformeDePersonal({
+        conMontos: false,
+        personas: gente.map(fichaDelInforme),
+        filtro: busca.trim() ? `Coincidencias con «${busca.trim()}»` : null,
+        empresa: empresaDelPapel(empresa),
+        emitidoPor: nombre,
+        momento: new Date(),
+      })
+      setVista({ ...pdf, cuantos: gente.length })
+    } finally {
+      setArmando(false)
+    }
+  }
+
   return (
     <>
       <PageHeader
         title="Personal"
         description="Quién trabaja aquí, desde cuándo y cuánto gana. De la fecha de ingreso salen la antigüedad, el bono vacacional y las prestaciones. La ficha de cada quien lleva su foto, su carnet y su constancia de trabajo."
         actions={
-          puedeRRHH ? (
-            <>
-            {/* La carga por planilla vive donde se necesita, no en el menú:
-                quien va a dar de alta a treinta personas está mirando esta
-                lista, no buscándola en el riel. */}
-              <Link to="/app/nomina/personal/carga">
-                <Button variant="outline" icon={<Upload />}>
-                  Cargar por planilla
-                </Button>
-              </Link>
-              <Link to="/app/nomina/personal/nuevo">
-                <Button icon={<Plus />}>Nuevo trabajador</Button>
-              </Link>
-            </>
-          ) : null
+          <>
+            {/*
+              EL INFORME NO VA DETRAS DEL ROL DE RRHH, y los otros dos sí.
+
+              `puede('RRHH')` mira el ROL, no el nivel de permiso: es la puerta
+              de dar de alta a alguien y de cargar treinta fichas de golpe, que
+              son escrituras. Sacar un papel con lo que ya está en la tabla que
+              se está mirando no lo es.
+
+              Quien llega a esta pantalla tiene al menos NOMINA:LECTURA y está
+              viendo ficha, nombre, cédula, cargo y fecha de ingreso de todo el
+              mundo. El informe no enseña ni un dato más — menos, de hecho: no
+              lleva el salario, que la tabla sí. Esconderlo obligaba a quien
+              solo consulta a copiar la lista a mano.
+            */}
+            <Button
+              variant="outline"
+              icon={<ClipboardList />}
+              disabled={armando || paraElInforme.length === 0}
+              onClick={() => void sacarInforme(paraElInforme)}
+            >
+              {armando ? 'Preparando…' : 'Informe'}
+            </Button>
+
+            {puedeRRHH ? (
+              <>
+                {/* La carga por planilla vive donde se necesita, no en el menú:
+                    quien va a dar de alta a treinta personas está mirando esta
+                    lista, no buscándola en el riel. */}
+                <Link to="/app/nomina/personal/carga">
+                  <Button variant="outline" icon={<Upload />}>
+                    Cargar por planilla
+                  </Button>
+                </Link>
+                <Link to="/app/nomina/personal/nuevo">
+                  <Button icon={<Plus />}>Nuevo trabajador</Button>
+                </Link>
+              </>
+            ) : null}
+          </>
         }
       />
 
@@ -340,6 +421,18 @@ export function Personal() {
         </Modal>
       ) : null}
 
+      <Visor
+        abierto={vista !== null}
+        onCerrar={() => setVista(null)}
+        blob={vista?.blob ?? null}
+        nombreArchivo={vista?.nombre ?? 'informe-de-personal.pdf'}
+        titulo="Informe de personal"
+        descripcion={
+          vista
+            ? `${vista.cuantos} ${vista.cuantos === 1 ? 'persona' : 'personas'} · sin montos, para enseñar fuera de administración`
+            : undefined
+        }
+      />
     </>
   )
 }

@@ -101,7 +101,27 @@ security definer
 set search_path to ''
 as $function$
 declare
-  v_codigo text := upper(regexp_replace(trim(coalesce(p_codigo, '')), '[^A-Za-z0-9_]+', '_', 'g'));
+  /*
+    EL GUION SE QUEDA, Y NO ES UN DETALLE DE FORMATO.
+
+    Este normalizador decia '[^A-Za-z0-9_]+', que convierte el guion en
+    subrayado. Los codigos de esta casa lo llevan: 20 de los 23 que hay
+    —SAL-BAS, DED-IVSS, DED-PRE, PRV-GAR…—. Con el guion fuera del juego pasaban
+    dos cosas, las dos malas:
+
+      1. La reja del AUTOMATICO de mas abajo busca el concepto por su codigo ya
+         normalizado. 'SAL-BAS' se convertia en 'SAL_BAS', no encontraba nada, y
+         la reja dejaba pasar. Se comprobo ejecutando: dejaba editar SAL-BAS.
+
+      2. Editar un concepto existente creaba OTRO. 'DED-PRE' entraba como
+         'DED_PRE', y `calcular_nomina` busca 'DED-PRE' y 'DED-ANT' por su
+         codigo exacto para aplicar el tope de un tercio del sueldo (LOTTT 154).
+         El gemelo con subrayado se saltaba ese tope sin que nadie lo viera.
+
+    El guion sigue siendo el unico signo que se admite ademas del subrayado: lo
+    demas —espacios, acentos, barras— sigue colapsando a subrayado.
+  */
+  v_codigo text := upper(regexp_replace(trim(coalesce(p_codigo, '')), '[^A-Za-z0-9_-]+', '_', 'g'));
   v_origen text;
 begin
   perform private.exigir_rol('ADMIN', 'RRHH');
@@ -208,45 +228,89 @@ grant execute on function public.cambiar_estado_concepto_nomina(text, boolean)
   con otra firma no reemplaza: crea una segunda con el mismo nombre, y a partir
   de ahí PostgREST elige por los argumentos que le manden.
 
-  EL CUERPO SE COPIA DEL QUE ESTÉ VIVO AL APLICAR ESTO. Lo de abajo es lo que
-  la función parecía hacer leyendo la pantalla que la llama; sin catálogo
-  delante no se puede afirmar. Antes de ejecutar, sacar el cuerpo real con
-  `pg_get_functiondef` y añadirle solo los dos parámetros nuevos.
-*/
+  EL CUERPO SE SACÓ DEL VIVO con `pg_get_functiondef` antes de tocarlo, como
+  decía el pendiente. Dos cosas que solo se supieron al mirarlo:
 
--- PENDIENTE: pegar aquí el cuerpo vivo de `guardar_novedad_monto` con
--- `p_metodo_pago` y `p_pagar_en` añadidos al INSERT y al UPDATE. No se
--- escribe a ciegas: esta función escribe dinero que va a un recibo.
---
--- La forma que tiene que quedar, sobre lo que ya haga:
---
---   drop function if exists public.guardar_novedad_monto(bigint, bigint, text, numeric, text, text);
---
---   create function public.guardar_novedad_monto(
---     p_periodo_id   bigint,
---     p_empleado_id  bigint,
---     p_concepto     text,
---     p_monto        numeric,
---     p_moneda       text default 'VES',
---     p_nota         text default null,
---     p_metodo_pago  text default null,
---     p_pagar_en     date default null
---   ) returns bigint
---   …
---     -- El freno que pidió Christopher: «deberán poder editarse en todo
---     -- momento siempre que la nómina no se haya pagado o cerrado».
---     if v_estado not in ('BORRADOR', 'CALCULADA', 'APROBADA') then
---       raise exception 'Esta nómina está en "%": los bonos ya no se tocan.', v_estado
---         using errcode = '55000';
---     end if;
---
---     -- Y la fecha diferida no puede caer antes del pago de la nómina: un
---     -- bono que se paga antes que el sueldo no es diferido, es un error de
---     -- tecleo.
---     if p_pagar_en is not null and p_pagar_en < v_hasta then
---       raise exception 'La fecha de pago del bono es anterior al cierre del período.'
---         using errcode = '22023';
---     end if;
+  1. `p_moneda` es `character`, no `text`. Se deja igual: cambiar el tipo de un
+     parámetro cambia a qué firma resuelve PostgREST.
+
+  2. LA REJA SE QUEDA EN BORRADOR Y CALCULADA, y el borrador quería aflojarla a
+     APROBADA apoyándose en «que se puedan editar siempre que la nómina no se
+     haya pagado o cerrado». Pero `calcular_nomina` solo admite BORRADOR y
+     CALCULADA: una novedad cargada sobre una nómina APROBADA no la recogería
+     ningún recibo. Sería dinero apuntado que nadie cobra, que es peor que un
+     «no se puede». Para tocar una nómina aprobada hay que devolverla, y eso es
+     otra puerta.
+*/
+drop function if exists public.guardar_novedad_monto(bigint, bigint, text, numeric, character, text);
+
+create function public.guardar_novedad_monto(
+  p_periodo_id  bigint,
+  p_empleado_id bigint,
+  p_concepto    text,
+  p_monto       numeric,
+  p_moneda      character default 'VES'::bpchar,
+  p_nota        text default null,
+  p_metodo_pago text default null,
+  p_pagar_en    date default null
+) returns bigint
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+declare
+  v_estado text;
+  v_hasta  date;
+  v_id     bigint;
+begin
+  perform private.exigir_rol('RRHH');
+
+  select estado, hasta into v_estado, v_hasta
+    from public.nomina_periodos where id = p_periodo_id;
+
+  /*
+    LA REJA SE QUEDA EN BORRADOR Y CALCULADA, Y NO SE AFLOJA A APROBADA.
+
+    El borrador de esta migracion queria añadir APROBADA, apoyandose en «que se
+    puedan editar siempre que la nomina no se haya pagado o cerrado». Pero
+    `calcular_nomina` solo admite BORRADOR y CALCULADA: una novedad cargada
+    sobre una nomina APROBADA no la recogeria ningun recibo. Seria dinero
+    apuntado que nadie cobra, que es peor que un «no se puede».
+
+    Para tocar una nomina aprobada hay que devolverla, y eso es otra puerta.
+  */
+  if v_estado not in ('BORRADOR', 'CALCULADA') then
+    raise exception 'El período está en "%" y ya no admite cambios.', v_estado
+      using errcode = '55000';
+  end if;
+
+  -- Un bono que se paga antes de que cierre el periodo no es diferido: es un
+  -- error de tecleo, y se descubre cuando ya se transfirio.
+  if p_pagar_en is not null and p_pagar_en < v_hasta then
+    raise exception 'La fecha de pago del bono (%) es anterior al cierre del período (%).',
+      p_pagar_en, v_hasta using errcode = '22023';
+  end if;
+
+  insert into public.nomina_novedades_montos
+    (periodo_id, empleado_id, concepto, monto, moneda, nota,
+     metodo_pago, pagar_en, registrado_por)
+  values
+    (p_periodo_id, p_empleado_id, p_concepto, p_monto, p_moneda,
+     nullif(trim(coalesce(p_nota, '')), ''),
+     nullif(trim(coalesce(p_metodo_pago, '')), ''), p_pagar_en,
+     (select auth.uid()))
+  returning id into v_id;
+
+  return v_id;
+end;
+$function$;
+
+revoke all on function public.guardar_novedad_monto(
+  bigint, bigint, text, numeric, character, text, text, date
+) from public, anon;
+grant execute on function public.guardar_novedad_monto(
+  bigint, bigint, text, numeric, character, text, text, date
+) to authenticated, service_role;
 
 /*
   COMPROBAR DESPUÉS DE APLICARLA

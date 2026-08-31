@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
+import type { PersonaDelInforme } from '@/lib/ficha/informePersonalPdf'
 
 // ---------------------------------------------------------------------------
 // Personal
@@ -121,6 +122,28 @@ export const JORNADAS = [
   { valor: 'MIXTA', etiqueta: 'Mixta — 7,5 h' },
 ]
 
+
+/**
+ * De la ficha a la fila del informe de personal.
+ *
+ * Vive aquí y no en la pantalla —como `empresaDelPapel`— porque lo usan dos:
+ * la lista de personal, para el informe en lote, y la ficha, para el de una
+ * sola persona. Duplicarlo en las dos sería tener dos informes que se parecen
+ * hasta el día que alguien toque uno.
+ */
+export function fichaDelInforme(e: Empleado): PersonaDelInforme {
+  return {
+    ficha: e.ficha,
+    nombre: `${e.nombres} ${e.apellidos}`.trim(),
+    cedula: e.cedula,
+    cargo: e.cargo,
+    departamento: e.departamento,
+    fechaIngreso: e.fecha_ingreso,
+    fechaEgreso: e.fecha_egreso,
+    motivoEgreso: e.motivo_egreso,
+    telefono: e.telefono,
+  }
+}
 
 export function useEmpleados(soloActivos = true) {
   return useQuery({
@@ -338,6 +361,19 @@ export interface Recibo {
     nombres: string
     apellidos: string
     cargo: string
+    /*
+      Los cuatro de abajo no los usa el recibo: los usa el informe de cierre,
+      que se saca desde la misma pantalla y necesita decir de qué área es cada
+      quien y quién salió y por qué.
+
+      Van en esta consulta y no en una aparte porque son cuatro columnas de una
+      fila que ya se está trayendo; pedirlas de nuevo serían veintidós viajes
+      más para no enterarse de nada nuevo.
+    */
+    departamento: string | null
+    fecha_ingreso: string
+    fecha_egreso: string | null
+    motivo_egreso: string | null
     forma_pago: string
     banco: string | null
     numero_cuenta: string | null
@@ -354,7 +390,7 @@ export function useRecibos(periodoId: number | undefined) {
         await supabase
           .from('nomina_recibos')
           .select(
-            '*, empleado:empleados(ficha, cedula, nombres, apellidos, cargo, forma_pago, banco, numero_cuenta), lineas:nomina_recibo_lineas(*)',
+            '*, empleado:empleados(ficha, cedula, nombres, apellidos, cargo, departamento, fecha_ingreso, fecha_egreso, motivo_egreso, forma_pago, banco, numero_cuenta), lineas:nomina_recibo_lineas(*)',
           )
           .eq('periodo_id', periodoId!),
       ),

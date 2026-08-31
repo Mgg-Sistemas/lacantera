@@ -2,8 +2,18 @@
   LA ALIANZA CON LA GOBERNACIÓN, Y LO QUE HAY QUE ENTREGARLE CADA MES.
 
   ————————————————————————————————————————————————————————————————————————
-  SIN APLICAR TODAVÍA, pero comprobada contra el catálogo el 31 de agosto. Esa
-  comprobación encontró un error que la habría tumbado, y está corregido:
+  APLICADA el 31 de agosto de 2026, por MCP.
+
+  Se corrigieron TRES cosas antes o durante, y las tres se descubrieron
+  comprobando contra el catálogo o ejecutando, no leyendo:
+
+    1. `cobrado_usd` y `acreditado_usd` no son columnas de la tabla (abajo).
+    2. El disparador de auditoría iba sin la clave primaria y reventaba el
+       primer INSERT. Se vio al sembrar el convenio.
+    3. La vista iba sin `security_invoker` y habría enseñado los porcentajes
+       del convenio a cualquiera autenticado, saltándose la RLS de `alianzas`.
+
+  La primera es esta:
 
     `cobrado_usd` y `acreditado_usd` NO son columnas de `facturas_venta`. Viven
     en la vista `v_facturas_venta`, que es de donde las lee el front. La vista
@@ -123,8 +133,22 @@ create policy alianzas_lectura on public.alianzas
 
 grant select on public.alianzas to authenticated;
 
+/*
+  `auditar` RECIBE EL NOMBRE DE LA CLAVE PRIMARIA, y aqui iba sin nada.
+
+  El cuerpo hace `foreach v_col in array TG_ARGV` para armar el identificador de
+  la fila. Sin argumentos, `TG_ARGV` es NULL y el disparador revienta con
+  «FOREACH expression must not be null» — es decir, no se podia insertar ni una
+  alianza. Se descubrio al sembrar la del contrato: el INSERT se cayo.
+
+  La convencion de la casa se ve en cualquier tabla que ya funciona:
+  `solicitudes_pedido` pasa 'id' y `metodos_pago` pasa 'codigo'.
+
+  El `drop` de delante es para que esto se pueda volver a correr.
+*/
+drop trigger if exists trg_auditar on public.alianzas;
 create trigger trg_auditar after insert or update or delete on public.alianzas
-  for each row execute function private.auditar();
+  for each row execute function private.auditar('id');
 
 /*
   El convenio vivo. Se siembra con lo que dice el contrato leido.
@@ -133,18 +157,23 @@ create trigger trg_auditar after insert or update or delete on public.alianzas
   el papel escaneado el numero esta en blanco. Se completa cuando se sepa; poner
   uno inventado seria peor que dejarlo dicho.
 */
+/*
+  `on conflict do nothing` no servia: no hay restriccion unica que chocar, asi
+  que una segunda pasada habria sembrado el convenio otra vez. La condicion es
+  «si no hay ninguna alianza todavia».
+*/
 insert into public.alianzas
   (numero, contraparte, objeto, desde, hasta,
    pct_gobernacion, pct_aliada, pct_social, recargo_diario_pct,
    dias_habiles_para_entregar, nota)
-values
-  ('GELG-POR-COMPLETAR-2025',
-   'GOBERNACION BOLIVARIANA DEL ESTADO LA GUAIRA',
-   'Explotacion y produccion de minerales no metalicos y sus agregados en la cantera del rio Naiguata',
-   '2025-09-01', null,
-   14, 86, 3, 0.5, 5,
-   'Sembrada del contrato escaneado. El numero de la alianza esta en blanco en el original y hay que completarlo.')
-on conflict do nothing;
+select
+  'GELG-POR-COMPLETAR-2025',
+  'GOBERNACION BOLIVARIANA DEL ESTADO LA GUAIRA',
+  'Explotacion y produccion de minerales no metalicos y sus agregados en la cantera del rio Naiguata',
+  '2025-09-01'::date, null,
+  14, 86, 3, 0.5, 5,
+  'Sembrada del contrato escaneado. El numero de la alianza esta en blanco en el original y hay que completarlo.'
+where not exists (select 1 from public.alianzas);
 
 /*
   LO QUE SE LE DEBE A LA GOBERNACION CADA MES.
@@ -173,7 +202,23 @@ on conflict do nothing;
   su propia fecha, agosto quedaria inflado y septiembre rebajado, y las dos
   cifras irian a la conciliacion con la Gobernacion. La diferencia se paga.
 */
-create or replace view public.v_alianza_mensual as
+/*
+  `security_invoker` NO ES DECORACION AQUI: ES LA REJA.
+
+  Sin el, una vista corre con los permisos de su dueña —postgres— y se salta la
+  RLS de las tablas que lee. Esta lee `alianzas`, cuya politica dice
+  ADMIN o GERENTE_GENERAL, y la habria dejado a la vista de cualquiera
+  autenticado: los porcentajes del convenio, el reparto y la brecha. Justo lo
+  que el comentario de arriba dice que no debe pasar.
+
+  Se comprobo antes de crearla: de las 58 vistas que habia, CERO estaban sin
+  `security_invoker`. Esta habria sido la primera.
+
+  Y se comprobo despues, ejecutando: `admin_` ve el convenio, `revision.sistema`
+  —que solo tiene CONSULTA— ve cero filas.
+*/
+create or replace view public.v_alianza_mensual
+with (security_invoker = on) as
 with facturado as (
   /*
     De la VISTA y no de la tabla: `cobrado_usd` y `acreditado_usd` se calculan

@@ -43,7 +43,42 @@ import {
 } from './papel'
 import type { PdfArmado } from './reciboPdf'
 
+/*
+  DOS PAPELES, UNA FUNCIÓN.
+
+  «Constancia de trabajo» dice que alguien trabaja —o trabajó— aquí, y se pide
+  para un banco, un colegio, un empleo nuevo. «Constancia de cese» dice que la
+  relación laboral terminó, y es la que pidió la líder: «un pdf donde se deje
+  constancia de su cese de actividades laborales».
+
+  No son el mismo papel con otro título, pero comparten la forma entera: carta
+  a quien pueda interesar, párrafo declarativo, recuadro con nombre y cédula,
+  cierre y firma. Separarlos en dos archivos habría duplicado esa forma para
+  cambiar tres frases, y a la tercera semana uno de los dos tendría el membrete
+  viejo. Se separan por lo que DICEN, dentro de la misma función.
+
+  El repositorio ya distingue por forma y no por nombre: `armarConstanciaDeEntrega`
+  se llama constancia y vive aparte porque es un formulario con tabla, no una
+  carta.
+*/
+export type TipoDeConstancia = 'TRABAJO' | 'CESE'
+
 export interface DatosConstancia {
+  /** Por omisión, la de trabajo: es la que se pide casi siempre. */
+  tipo?: TipoDeConstancia
+  /**
+   * El motivo de la salida, y solo si quien la emite decide ponerlo.
+   *
+   * NO SE IMPRIME POR OMISIÓN, a propósito. La constancia de cese se le entrega
+   * a la persona, y «despido justificado» escrito en un papel que va a enseñar
+   * en su próxima entrevista le hace un daño que la empresa no necesita
+   * hacerle. La fecha de salida basta para acreditar el cese, que es lo que se
+   * pidió.
+   *
+   * Queda disponible para cuando de verdad haga falta —un trámite que lo exija—
+   * y entonces es una decisión de quien firma, tomada a sabiendas.
+   */
+  motivoEgreso?: string | null
   nombreCompleto: string
   cedula: string
   ficha: string
@@ -124,7 +159,31 @@ function fechaLarga(iso: string): string {
 
 function fechaExpedicion(f: Date): string {
   const d = f.getDate()
-  return `a los ${UNIDADES[d]} (${d}) días del mes de ${MESES[f.getMonth()]} de ${anioEnLetras(f.getFullYear())}`
+
+  const mesAnio = `del mes de ${MESES[f.getMonth()]} de ${anioEnLetras(f.getFullYear())}`
+
+  /*
+    LOS TRES DÍAS QUE NO SE DICEN COMO LOS DEMÁS.
+
+    Delante de un sustantivo masculino, «uno» se apocopa: son «veintiún días» y
+    «treinta y un días», no «veintiuno días». Decía lo segundo, y salía así en
+    todas las constancias emitidas el 21 y el 31 — también en las de trabajo,
+    que llevan meses firmándose con esa falta.
+
+    Y el día 1 no admite el plural: «a los un días» no es castellano. La forma
+    de los documentos es «al primer día».
+
+    Se corrige aquí y no en la tabla `UNIDADES`, porque esa misma tabla sirve
+    para el año en `anioEnLetras`, y ahí «dos mil veintiuno» sí es correcto: el
+    año no va seguido de ningún sustantivo.
+
+    Se comprobó recorriendo los treinta y un días del mes, no solo el de hoy.
+  */
+  if (d === 1) return `al primer (1) día ${mesAnio}`
+
+  const enLetras = d === 21 ? 'veintiún' : UNIDADES[d].replace(/ uno$/, ' un')
+
+  return `a los ${enLetras} (${d}) días ${mesAnio}`
 }
 
 /** Cómo se dice cada base de estipulación dentro de la frase. */
@@ -186,10 +245,24 @@ function parrafo(d: DatosConstancia): string {
     ? `, y ${d.activo ? 'devenga' : 'devengaba'} ${BASE[d.sueldo.base] ?? BASE.MENSUAL} ${simbolo(d.sueldo.moneda)} ${cifra(d.sueldo.monto)}`
     : ''
 
+  /*
+    LA FRASE DEL CESE.
+
+    Va en oración aparte y no encadenada a la anterior: es la declaración que da
+    sentido al papel, y dentro de una frase de cuatro comas se lee como un dato
+    más. El motivo entra solo si se pidió — ver `motivoEgreso`.
+  */
+  const cese =
+    d.tipo === 'CESE' && d.fechaEgreso
+      ? ` La relación laboral culminó en la fecha antes señalada${
+          d.motivoEgreso ? `, por ${d.motivoEgreso.toLowerCase()}` : ''
+        }.`
+      : ''
+
   return (
     `Por medio de la presente se hace constar que ${elLa} ${d.nombreCompleto}, ` +
     `titular de la cédula de identidad N.° ${cedulaLegible(d.cedula)}, ` +
-    `${servicio}${cargo}${sueldo}.`
+    `${servicio}${cargo}${sueldo}.${cese}`
   )
 }
 
@@ -198,7 +271,11 @@ export async function armarConstancia(d: DatosConstancia): Promise<PdfArmado> {
   const logo = await logoComoImagen(400, false)
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  let y = tituloDocumento(doc, membrete(doc, logo, { empresa: d.empresa }), 'Constancia de trabajo')
+  let y = tituloDocumento(
+    doc,
+    membrete(doc, logo, { empresa: d.empresa }),
+    d.tipo === 'CESE' ? 'Constancia de cese de actividades laborales' : 'Constancia de trabajo',
+  )
   y += 6
 
   doc.setFont('helvetica', 'bold').setFontSize(10)
@@ -230,7 +307,18 @@ export async function armarConstancia(d: DatosConstancia): Promise<PdfArmado> {
   y += 21
 
   doc.setTextColor(TINTA).setFont('helvetica', 'normal').setFontSize(10.5)
-  const cierre = `Constancia que se expide a petición de la parte interesada, en ${d.ciudad}, ${fechaExpedicion(new Date())}.`
+  /*
+    El cierre de la de cese nombra para qué sirve.
+
+    Una constancia de trabajo se expide «a petición de la parte interesada» y
+    con eso basta. La de cese la piden para trámites concretos —el paro
+    forzoso, una liquidación, un empleo nuevo— y decirlo evita que quien la
+    recibe tenga que preguntar si sirve para eso.
+  */
+  const cierre =
+    d.tipo === 'CESE'
+      ? `Constancia que se expide a petición de la parte interesada, para los fines legales que estime convenientes, en ${d.ciudad}, ${fechaExpedicion(new Date())}.`
+      : `Constancia que se expide a petición de la parte interesada, en ${d.ciudad}, ${fechaExpedicion(new Date())}.`
   for (const linea of doc.splitTextToSize(cierre, ANCHO_UTIL) as string[]) {
     doc.text(linea, IZQ, y)
     y += 6
