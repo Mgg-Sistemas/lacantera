@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, FileText, Pencil, ScrollText, TriangleAlert, UserX } from 'lucide-react'
+import {
+  ArrowLeft,
+  ClipboardList,
+  FileText,
+  Pencil,
+  ScrollText,
+  TriangleAlert,
+  UserX,
+} from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -33,6 +41,7 @@ import {
   useSubirFoto,
   useVincularCuenta,
   useCuentasSinFicha,
+  fichaDelInforme,
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
 import { TarjetaFirma } from '@/components/TarjetaFirma'
@@ -46,6 +55,7 @@ import { TarjetaCarnet } from './TarjetaCarnet'
 import { fotoParaVerificar, urlDeVerificacion, useCarnetVigente } from '@/lib/api/carnets'
 import { armarFicha, type Seccion } from '@/lib/ficha/fichaPdf'
 import { armarConstancia } from '@/lib/ficha/constanciaPdf'
+import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { ENCUADRE_CENTRADO, type Encuadre } from '@/lib/ficha/encuadre'
 import { dinero, fecha } from '@/lib/formato'
@@ -475,6 +485,39 @@ export function FichaTrabajador() {
     }
   }
 
+  /*
+    El informe de esta persona: la misma hoja del lote, con una fila.
+
+    No lleva `filtro` con el nombre porque el papel ya trae el nombre en la
+    fila; repetirlo arriba diría dos veces lo mismo y de paso haría creer que
+    hubo una búsqueda.
+  */
+  async function emitirInforme() {
+    if (!e) return
+    setArmando(true)
+    setFalloExportar(null)
+
+    try {
+      const pdf = await armarInformeDePersonal({
+        conMontos: false,
+        personas: [fichaDelInforme(e)],
+        filtro: 'Una sola persona',
+        empresa: empresaDelPapel(empresa.data),
+        emitidoPor: nombre,
+        momento: new Date(),
+      })
+      setVista({
+        archivo: pdf,
+        titulo: 'Informe de personal',
+        descripcion: `Situación de ${e.nombres} ${e.apellidos}. Sin montos ni datos personales.`,
+      })
+    } catch (err) {
+      setFalloExportar(err instanceof Error ? err : new Error(String(err)))
+    } finally {
+      setArmando(false)
+    }
+  }
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 py-6">
@@ -633,23 +676,38 @@ export function FichaTrabajador() {
                 bajarlo. Es un solo objeto y va en un solo sitio. Aquí se queda
                 lo que no es carnet.
               */}
-              <div className="sm:col-span-2">
-                <Button
-                  block
-                  variant="outline"
-                  icon={<ScrollText />}
-                  disabled={armando}
-                  onClick={() => setPidiendo(true)}
-                >
-                  Constancia de trabajo
-                </Button>
-              </div>
+              <Button
+                block
+                variant="outline"
+                icon={<ScrollText />}
+                disabled={armando}
+                onClick={() => setPidiendo(true)}
+              >
+                Constancia de trabajo
+              </Button>
+              {/*
+                El informe de una sola persona es la misma hoja que sale de la
+                lista de personal, con una fila. Sirve para lo que no sirve la
+                ficha completa: enseñar la situación de alguien —dónde está,
+                desde cuándo, si sigue— sin repartir de paso su dirección, su
+                teléfono y su grupo sanguíneo.
+              */}
+              <Button
+                block
+                variant="outline"
+                icon={<ClipboardList />}
+                disabled={armando}
+                onClick={() => void emitirInforme()}
+              >
+                Informe de personal
+              </Button>
             </div>
 
             <p className="text-ink/40 mt-3 text-center text-xs">
-              Los dos se abren en pantalla antes de guardarse. La ficha trae todos los datos en
-              A4; la constancia es la carta que se entrega a un banco o a quien la pida. El
-              carnet se emite y se imprime más arriba.
+              Los tres se abren en pantalla antes de guardarse. La ficha trae todos los datos en
+              A4; la constancia es la carta que se entrega a un banco o a quien la pida; el
+              informe es el resumen sin datos personales ni montos. El carnet se emite y se
+              imprime más arriba.
             </p>
 
             {falloExportar ? <ErrorDeCarga error={falloExportar} className="mt-3" /> : null}
