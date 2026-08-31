@@ -1,64 +1,49 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { Bell, BellOff, CheckCheck, List } from 'lucide-react'
 import {
-  Bell,
-  BellOff,
-  Boxes,
-  CheckCheck,
-  ClipboardList,
-  Landmark,
-  Settings,
-  ShoppingCart,
-  Users,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import {
-  useMarcarLeida,
+  agruparPorAsunto,
+  useMarcarLeidas,
   useMarcarTodasLeidas,
   useNotificaciones,
 } from '@/lib/api/notificaciones'
-import type { Importancia, Modulo, Notificacion } from '@/lib/api/notificaciones'
+import type { GrupoDeAvisos } from '@/lib/api/notificaciones'
+import { iconoDe, TONO_DE_IMPORTANCIA } from '@/components/avisos'
+import { TodasLasNotificaciones } from '@/components/TodasLasNotificaciones'
 import { alternarSilencio, silenciado, sonarAviso } from '@/lib/sonido'
 import { hace } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
-const iconos: Record<Modulo, LucideIcon> = {
-  COMPRAS: ShoppingCart,
-  INVENTARIO: Boxes,
-  NOMINA: Users,
-  TESORERIA: Landmark,
-  VENTAS: ClipboardList,
-  SISTEMA: Settings,
-}
-
-const tonos: Record<Importancia, string> = {
-  INFO: 'bg-royal-600/12 text-royal-700 dark:text-royal-300',
-  ATENCION: 'bg-warning/16 text-warning',
-  URGENTE: 'bg-danger/12 text-danger',
-}
-
+/**
+ * Un asunto, una fila.
+ *
+ * Enseña en qué estado está la cosa —el aviso más reciente— y, si llegó ahí
+ * dando pasos, cuántos fueron. Los pasos se ven enteros en el modal de todas:
+ * aquí ocuparían la campana entera para contar una historia que ya terminó.
+ */
 function Fila({
-  notificacion,
+  grupo,
   onAbrir,
 }: {
-  notificacion: Notificacion
-  onAbrir: (n: Notificacion) => void
+  grupo: GrupoDeAvisos
+  onAbrir: (g: GrupoDeAvisos) => void
 }) {
-  const Icono = iconos[notificacion.modulo] ?? Settings
+  const n = grupo.ultimo
+  const Icono = iconoDe(n.modulo)
 
   return (
     <button
       type="button"
-      onClick={() => onAbrir(notificacion)}
+      onClick={() => onAbrir(grupo)}
       className={cn(
         'hover:bg-ink/5 flex w-full gap-3 px-3 py-3 text-left transition-colors',
-        !notificacion.leida && 'bg-royal-600/6',
+        grupo.sinLeer > 0 && 'bg-royal-600/6',
       )}
     >
       <span
         className={cn(
           'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full',
-          tonos[notificacion.importancia],
+          TONO_DE_IMPORTANCIA[n.importancia],
         )}
       >
         <Icono className="size-4" />
@@ -69,25 +54,24 @@ function Fila({
           <span
             className={cn(
               'text-ink/90 flex-1 text-sm leading-snug',
-              !notificacion.leida && 'font-semibold',
+              grupo.sinLeer > 0 && 'font-semibold',
             )}
           >
-            {notificacion.titulo}
+            {n.titulo}
           </span>
-          {!notificacion.leida ? (
+          {grupo.sinLeer > 0 ? (
             <span className="bg-royal-600 mt-1.5 size-2 shrink-0 rounded-full" />
           ) : null}
         </span>
 
-        {notificacion.detalle ? (
-          <span className="text-ink/55 mt-0.5 block text-xs leading-relaxed">
-            {notificacion.detalle}
-          </span>
+        {n.detalle ? (
+          <span className="text-ink/55 mt-0.5 block text-xs leading-relaxed">{n.detalle}</span>
         ) : null}
 
         <span className="text-ink/40 mt-1 block text-2xs">
-          {hace(notificacion.creada_en)}
-          {notificacion.actor ? ` · ${notificacion.actor}` : ''}
+          {hace(n.creada_en)}
+          {n.actor ? ` · ${n.actor}` : ''}
+          {grupo.avisos.length > 1 ? ` · ${grupo.avisos.length} movimientos` : ''}
         </span>
       </span>
     </button>
@@ -97,10 +81,11 @@ function Fila({
 export function Notificaciones() {
   const navigate = useNavigate()
   const { data, isPending } = useNotificaciones()
-  const marcarLeida = useMarcarLeida()
+  const marcarLeidas = useMarcarLeidas()
   const marcarTodas = useMarcarTodasLeidas()
 
   const [abierto, setAbierto] = useState(false)
+  const [viendoTodas, setViendoTodas] = useState(false)
   const [mudo, setMudo] = useState(() => silenciado())
   const contenedor = useRef<HTMLDivElement>(null)
 
@@ -144,14 +129,25 @@ export function Notificaciones() {
     }
   }, [abierto])
 
-  const sinLeer = (data ?? []).filter((n) => !n.leida).length
+  /*
+    La campana cuenta ASUNTOS sin ver, no avisos sin ver.
 
-  const abrir = (n: Notificacion) => {
-    // Se marca leída aunque el aviso no lleve a ningún sitio: leerlo es
-    // haberse enterado, que es lo que la marca significa.
-    if (!n.leida) marcarLeida.mutate({ id: n.id })
+    Es la misma cuenta que se va a encontrar quien la abra: si aprobar una
+    compra deja dos avisos y pedir otra deja dos más, el número decía cuatro y
+    debajo había dos cosas. Un contador que no cuadra con lo que hay debajo
+    enseña a no fiarse del contador.
+  */
+  const grupos = useMemo(() => agruparPorAsunto(data ?? []), [data])
+  const sinLeer = grupos.filter((g) => g.sinLeer > 0).length
+
+  const abrir = (g: GrupoDeAvisos) => {
+    // Se marca leído el asunto entero, y aunque no lleve a ningún sitio: haber
+    // abierto la compra es haberse enterado de cómo está, que es lo que la
+    // marca significa. Ver `useMarcarLeidas`.
+    const pendientes = g.avisos.filter((a) => !a.leida).map((a) => a.id)
+    if (pendientes.length > 0) marcarLeidas.mutate({ ids: pendientes })
     setAbierto(false)
-    if (n.ruta) void navigate(n.ruta)
+    if (g.ultimo.ruta) void navigate(g.ultimo.ruta)
   }
 
   return (
@@ -203,7 +199,7 @@ export function Notificaciones() {
               <p className="text-ink/45 px-3 py-8 text-center text-sm">Cargando…</p>
             ) : null}
 
-            {data && data.length === 0 ? (
+            {grupos.length === 0 && !isPending ? (
               <div className="px-3 py-10 text-center">
                 <Bell className="text-ink/20 mx-auto size-7" />
                 <p className="text-ink/60 mt-2 text-sm">Sin movimientos todavía</p>
@@ -213,26 +209,51 @@ export function Notificaciones() {
               </div>
             ) : null}
 
-            {data?.map((n) => (
-              <Fila key={n.id} notificacion={n} onAbrir={abrir} />
+            {/*
+              Solo los ocho primeros. La campana es un vistazo, no un archivo:
+              lo que no cabe aquí está entero un clic más allá, en «Ver todas».
+            */}
+            {grupos.slice(0, 8).map((g) => (
+              <Fila key={g.clave} grupo={g} onAbrir={abrir} />
             ))}
           </div>
 
-          {sinLeer > 0 ? (
-            <div className="border-hairline border-t px-3 py-2">
+          <div className="border-hairline flex items-center gap-1 border-t px-2 py-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setAbierto(false)
+                setViendoTodas(true)
+              }}
+              className="text-royal-600 hover:bg-royal-600/8 dark:text-royal-300 flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-colors"
+            >
+              <List className="size-4" />
+              Ver todas
+              {grupos.length > 8 ? (
+                <span className="text-ink/40 font-normal">({grupos.length})</span>
+              ) : null}
+            </button>
+
+            {sinLeer > 0 ? (
               <button
                 type="button"
                 onClick={() => marcarTodas.mutate()}
                 disabled={marcarTodas.isPending}
-                className="text-royal-600 hover:bg-royal-600/8 dark:text-royal-300 flex w-full items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-colors disabled:opacity-60"
+                title="Marcar todas como leídas"
+                aria-label="Marcar todas como leídas"
+                className="text-ink/45 hover:bg-ink/6 hover:text-ink/80 rounded-md p-2 transition-colors disabled:opacity-60"
               >
                 <CheckCheck className="size-4" />
-                Marcar todas como leídas
               </button>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
       ) : null}
+
+      <TodasLasNotificaciones
+        abierto={viendoTodas}
+        onCerrar={() => setViendoTodas(false)}
+      />
     </div>
   )
 }
