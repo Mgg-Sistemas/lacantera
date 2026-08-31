@@ -52,6 +52,35 @@ const RESUMEN: Record<Importancia, string> = {
   INFO: 'Informativo',
 }
 
+/*
+  DE UN PASO DE LA HISTORIA, LO QUE LO DISTINGUE DEL ANTERIOR.
+
+  Se vio desplegando una compra real: seis renglones seguidos diciendo «Compra
+  esperando aprobación de gerencia · hace 3 d», idénticos. Una historia en la
+  que todos los pasos se leen igual no cuenta nada — y desplegarla es
+  justamente pedir que cuente algo.
+
+  Lo que los diferencia va en el detalle, después de una raya:
+
+      SOL-2026-0002 · ACEITES … — «Se añadió COT-2026-0002 a lo propuesto»
+      SOL-2026-0002 · ACEITES … — «Se retiró COT-2026-0002; quedan 1 propuestas»
+
+  Lo de delante es el asunto, que ya está en la cabecera del grupo: repetirlo
+  seis veces sería cambiar seis renglones iguales por seis renglones largos e
+  iguales. Se queda la nota.
+
+  Sí, esto lee un formato que arma la base (`private.anotar` concatena con
+  `format(' — «%s»', …)`). Si algún día deja de hacerlo, aquí no se rompe nada:
+  simplemente no hay nota que enseñar y el paso vuelve a mostrarse solo con su
+  título, que es donde estábamos.
+*/
+function notaDe(detalle: string | null): string | null {
+  if (!detalle) return null
+  const i = detalle.indexOf(' — ')
+  if (i === -1) return null
+  return detalle.slice(i + 3).replace(/^«|»$/g, '')
+}
+
 /** Un asunto con su historia plegada. */
 function Asunto({
   grupo,
@@ -117,15 +146,19 @@ function Asunto({
           */}
           {desplegado && hayHistoria ? (
             <ol className="border-hairline mt-3 space-y-2 border-l pl-3">
-              {grupo.avisos.slice(1).map((a) => (
-                <li key={a.id} className="text-2xs">
-                  <span className={cn('text-ink/70', !a.leida && 'font-medium')}>{a.titulo}</span>
-                  <span className="text-ink/35 block">
-                    {hace(a.creada_en)}
-                    {a.actor ? ` · ${a.actor}` : ''}
-                  </span>
-                </li>
-              ))}
+              {grupo.avisos.slice(1).map((a) => {
+                const nota = notaDe(a.detalle)
+                return (
+                  <li key={a.id} className="text-2xs">
+                    <span className={cn('text-ink/70', !a.leida && 'font-medium')}>{a.titulo}</span>
+                    {nota ? <span className="text-ink/55 block">{nota}</span> : null}
+                    <span className="text-ink/35 block">
+                      {hace(a.creada_en)}
+                      {a.actor ? ` · ${a.actor}` : ''}
+                    </span>
+                  </li>
+                )
+              })}
             </ol>
           ) : null}
 
