@@ -2,9 +2,23 @@
   LA COMPRA DIRECTA: LO QUE YA SE COMPRÓ, CON SU FACTURA.
 
   ————————————————————————————————————————————————————————————————————————
-  SIN APLICAR TODAVÍA, pero ya comprobada contra el catálogo el 31 de agosto.
-  Esa comprobación encontró dos cosas que la habrían tumbado en la primera
-  compra, y están corregidas aquí — ver «LO QUE SE CORRIGIÓ AL COMPROBARLA».
+  APLICADA el 31 de agosto de 2026, por MCP y en cuatro trozos: `apply_migration`
+  cerraba el socket con el cuerpo entero, así que la columna y la acción fueron
+  por ahí y las tres funciones por `execute_sql`. En `schema_migrations` solo
+  consta el primer trozo — otra razón para no fiarse de ese registro.
+
+  Los comentarios de dentro de las funciones van aquí tal cual quedaron VIVOS,
+  no más largos: el archivo tiene que decir lo que corrió, incluido lo que se
+  acortó al escribirlo.
+
+  Antes de aplicarla se comprobó contra el catálogo, y esa comprobación encontró
+  dos cosas que la habrían tumbado en la primera compra — ver «LO QUE SE
+  CORRIGIÓ AL COMPROBARLA»— más una tercera al releerla: la bitácora anotaba un
+  estado que la orden nunca tiene.
+
+  Se probó entera en una transacción deshecha: dos renglones, subtotal 49,20,
+  IVA 7,87, total 57,07, orden en PAGADA_POR_RECIBIR y la bitácora anotando ese
+  mismo estado.
   ————————————————————————————————————————————————————————————————————————
 
   LO QUE SE CORRIGIÓ AL COMPROBARLA
@@ -139,6 +153,7 @@ declare
   v_item       jsonb;
   v_linea      smallint := 0;
   v_destino    text;
+  v_estado     text;
 begin
   perform private.exigir_accion('COMPRAS.COMPRA_DIRECTA');
 
@@ -165,12 +180,9 @@ begin
     end if;
   end if;
 
-  /*
-    La solicitud nace aprobada. No es un atajo: el estado dice en qué punto del
-    camino está el papel, y este llegó con el camino andado. Dejarla en
-    CONFIRMADA la pondría en la bandeja de compras esperando cotizaciones que
-    nunca van a llegar.
-  */
+  -- La solicitud nace aprobada: el estado dice en que punto del camino esta el
+  -- papel, y este llego con el camino andado. En CONFIRMADA quedaria en la
+  -- bandeja de compras esperando cotizaciones que nunca van a llegar.
   insert into public.solicitudes_pedido
     (numero, titulo, justificacion, prioridad, estado, directa,
      destino, destino_almacen_id, registrada_por, solicitante_id,
@@ -231,21 +243,12 @@ begin
   join public.solicitud_renglones sr
     on sr.solicitud_id = v_solicitud and sr.linea = n::smallint;
 
-  -- El disparador de totales ya recalculó la cotización al insertar sus
-  -- renglones, así que aquí sus cifras están puestas y se pueden copiar.
-  /*
-    El estado se pone a mano y no se deja en el de omision.
+  -- El estado se pone a mano. El de omision, POR_INDICAR_PAGO, no lo admite
+  -- `registrar_recepcion`, y en una compra directa el material ya esta aqui.
+  -- CONTADO se pago en el acto; lo demas se debe pero puede entrar igual.
+  v_estado := case when coalesce(p_condicion_pago, 'CONTADO') = 'CONTADO'
+                   then 'PAGADA_POR_RECIBIR' else 'POR_RECIBIR' end;
 
-    `ordenes_compra.estado` nace en POR_INDICAR_PAGO, que `registrar_recepcion`
-    NO admite: el circuito normal supone que primero se paga y luego llega el
-    material. En una compra directa el material ya esta aqui, asi que ese orden
-    no aplica.
-
-    CONTADO se pago en el acto: PAGADA_POR_RECIBIR. Lo demas se debe todavia,
-    pero el material puede entrar igual: POR_RECIBIR. Las dos admiten
-    recepcion, que es lo que permite que la pantalla reciba justo despues de
-    colgar la factura.
-  */
   insert into public.ordenes_compra
     (numero, solicitud_id, cotizacion_id, proveedor_id, moneda, tasa, tasa_usd,
      subtotal, descuento, flete, iva, total, dias_entrega, entrega_estimada,
@@ -254,9 +257,7 @@ begin
          c.moneda, c.tasa, c.tasa_usd,
          c.subtotal, c.descuento, c.flete, c.iva, c.total,
          0, v_fecha,
-         v_yo, v_yo, now(), c.condicion_pago,
-         case when c.condicion_pago = 'CONTADO'
-              then 'PAGADA_POR_RECIBIR' else 'POR_RECIBIR' end
+         v_yo, v_yo, now(), c.condicion_pago, v_estado
   from public.cotizaciones c where c.id = v_cotizacion
   returning id into v_orden;
 
@@ -276,16 +277,12 @@ begin
 
   perform private.anotar('SOLICITUD', v_solicitud, null, 'APROBADA',
     'Compra directa: ya estaba hecha al cargarla');
-  perform private.anotar('ORDEN', v_orden, null, 'POR_INDICAR_PAGO', p_numero_factura);
+  -- La bitacora anota el estado que la orden TIENE. Antes decia
+  -- POR_INDICAR_PAGO, que es el de omision y justo el que esta funcion evita.
+  perform private.anotar('ORDEN', v_orden, null, v_estado, p_numero_factura);
 
-  /*
-    Aquí no se recibe. La pantalla cuelga la factura y llama a
-    `registrar_recepcion` después, porque esa función exige el papel del
-    proveedor antes de dejar entrar nada — y en este punto la orden acaba de
-    nacer y todavía no tiene papeles.
-
-    Se probó al revés primero y habría fallado en la primera compra.
-  */
+  -- Aqui no se recibe: la pantalla cuelga la factura y llama despues a
+  -- `registrar_recepcion`, que exige ese papel antes de dejar entrar nada.
   return v_orden;
 end;
 $function$;
@@ -411,11 +408,8 @@ begin
       using errcode = '55000';
   end if;
 
-  /*
-    No hay tabla `recepciones` — se comprobó contra el catálogo—. Lo recibido
-    vive en `orden_renglones.cantidad_recibida`, que es lo que va sumando
-    `registrar_recepcion` a medida que llega el material.
-  */
+  -- No hay tabla `recepciones` — se comprobo contra el catalogo—. Lo recibido
+  -- vive en `orden_renglones.cantidad_recibida`.
   if exists (
     select 1 from public.orden_renglones
      where orden_id = p_orden_id and cantidad_recibida > 0
