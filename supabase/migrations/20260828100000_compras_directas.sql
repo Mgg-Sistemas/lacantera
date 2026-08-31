@@ -2,10 +2,36 @@
   LA COMPRA DIRECTA: LO QUE YA SE COMPRÓ, CON SU FACTURA.
 
   ————————————————————————————————————————————————————————————————————————
-  SIN APLICAR. Escrita el 28 de agosto de 2026 con el MCP de Supabase caído.
-  No se ha ejecutado ni comprobado contra el catálogo. Antes de darla por
-  buena, correr las comprobaciones del final.
+  SIN APLICAR TODAVÍA, pero ya comprobada contra el catálogo el 31 de agosto.
+  Esa comprobación encontró dos cosas que la habrían tumbado en la primera
+  compra, y están corregidas aquí — ver «LO QUE SE CORRIGIÓ AL COMPROBARLA».
   ————————————————————————————————————————————————————————————————————————
+
+  LO QUE SE CORRIGIÓ AL COMPROBARLA
+
+  1. `recepciones` NO EXISTE. `editar_compra_directa` preguntaba por esa tabla
+     para saber si la compra ya había entrado al almacén. Lo recibido vive en
+     `orden_renglones.cantidad_recibida` y en `inventario_movimientos`.
+
+  2. LA COMPRA DIRECTA NO PUEDE RECIBIR DENTRO DE SU PROPIA TRANSACCIÓN, y las
+     dos guardas que lo impiden son correctas:
+
+       a) `registrar_recepcion` exige factura o nota de entrega colgada antes de
+          dejar entrar el material. Los papeles cuelgan de la orden, y aquí la
+          orden acaba de nacer: la factura no puede estar todavía.
+
+       b) Exige que la orden esté en POR_RECIBIR, PAGADA_POR_RECIBIR o
+          RECIBIDA_PARCIAL. El `estado` de `ordenes_compra` nace por omisión en
+          POR_INDICAR_PAGO, que no está en esa lista.
+
+     El arreglo no es saltárselas. La guarda del papel existe por algo —«sin
+     factura o nota de entrega el material no entra»— y una compra directa es
+     justo el caso en que la persona tiene la factura en la mano. Lo que cambia
+     es el orden: crear la compra, colgar la factura, y entonces recibir. La
+     pantalla exige la factura cuando se marca «entra al almacén ahora», y llama
+     a `registrar_recepcion` después de colgarla.
+
+     Así que `p_recibir_en_almacen` desaparece de esta función.
 
   QUÉ ES, SEGÚN LO EXPLICÓ LA LÍDER
 
@@ -39,17 +65,16 @@
   tocar nada de esto — sería una comprobación más en esta misma función— pero
   hoy el control es a quién se le da la casilla.
 
-  RECIBIR EN LA MISMA TRANSACCIÓN, Y NO EN DOS PASOS
+  EL ESTADO CON EL QUE NACE LA ORDEN
 
-  `p_recibir_en_almacen` hace la recepción aquí dentro. Podría dejarse para un
-  segundo botón en la pantalla, pero entonces una recepción que falla —por
-  permiso, por un almacén que no existe— dejaría una compra creada que quien la
-  hizo cree recibida. Es la clase de estado a medias que no se descubre hasta
-  que alguien cuenta el almacén.
+  No el de omisión. Una compra directa ya ocurrió, así que el papel no está
+  esperando a que alguien indique un pago antes de que llegue el material: o se
+  pagó en el acto —y entonces está pagada y por recibir— o se debe, y entonces
+  el material puede entrar igual porque ya está aquí.
 
-  Dentro se llama a `registrar_recepcion`, que conserva su propia exigencia de
-  rol: para meter algo al inventario hay que poder meterlo, y que la compra sea
-  directa no cambia eso.
+  Se deja en PAGADA_POR_RECIBIR cuando la condición es CONTADO, y en
+  POR_RECIBIR en los demás casos. Las dos admiten recepción, que es lo que hace
+  falta para que la pantalla pueda recibir justo después.
 */
 
 alter table public.solicitudes_pedido
@@ -97,8 +122,7 @@ create or replace function public.comprar_directo(
   p_descuento           numeric default 0,
   p_flete               numeric default 0,
   p_observacion         text default null,
-  p_destino_almacen_id  bigint default null,
-  p_recibir_en_almacen  bigint default null
+  p_destino_almacen_id  bigint default null
 ) returns bigint
 language plpgsql
 security definer
@@ -115,7 +139,6 @@ declare
   v_item       jsonb;
   v_linea      smallint := 0;
   v_destino    text;
-  v_recibidos  jsonb;
 begin
   perform private.exigir_accion('COMPRAS.COMPRA_DIRECTA');
 
@@ -210,15 +233,30 @@ begin
 
   -- El disparador de totales ya recalculó la cotización al insertar sus
   -- renglones, así que aquí sus cifras están puestas y se pueden copiar.
+  /*
+    El estado se pone a mano y no se deja en el de omision.
+
+    `ordenes_compra.estado` nace en POR_INDICAR_PAGO, que `registrar_recepcion`
+    NO admite: el circuito normal supone que primero se paga y luego llega el
+    material. En una compra directa el material ya esta aqui, asi que ese orden
+    no aplica.
+
+    CONTADO se pago en el acto: PAGADA_POR_RECIBIR. Lo demas se debe todavia,
+    pero el material puede entrar igual: POR_RECIBIR. Las dos admiten
+    recepcion, que es lo que permite que la pantalla reciba justo despues de
+    colgar la factura.
+  */
   insert into public.ordenes_compra
     (numero, solicitud_id, cotizacion_id, proveedor_id, moneda, tasa, tasa_usd,
      subtotal, descuento, flete, iva, total, dias_entrega, entrega_estimada,
-     creada_por, aprobada_gg_por, aprobada_gg_en, condicion_pago)
+     creada_por, aprobada_gg_por, aprobada_gg_en, condicion_pago, estado)
   select private.siguiente_numero('OC'), v_solicitud, c.id, c.proveedor_id,
          c.moneda, c.tasa, c.tasa_usd,
          c.subtotal, c.descuento, c.flete, c.iva, c.total,
          0, v_fecha,
-         v_yo, v_yo, now(), c.condicion_pago
+         v_yo, v_yo, now(), c.condicion_pago,
+         case when c.condicion_pago = 'CONTADO'
+              then 'PAGADA_POR_RECIBIR' else 'POR_RECIBIR' end
   from public.cotizaciones c where c.id = v_cotizacion
   returning id into v_orden;
 
@@ -241,30 +279,79 @@ begin
   perform private.anotar('ORDEN', v_orden, null, 'POR_INDICAR_PAGO', p_numero_factura);
 
   /*
-    Y si se pidió, entra al almacén aquí mismo. Se reciben las cantidades
-    enteras: una compra directa se carga cuando el material ya está, así que
-    una recepción parcial no tendría a qué referirse.
+    Aquí no se recibe. La pantalla cuelga la factura y llama a
+    `registrar_recepcion` después, porque esa función exige el papel del
+    proveedor antes de dejar entrar nada — y en este punto la orden acaba de
+    nacer y todavía no tiene papeles.
+
+    Se probó al revés primero y habría fallado en la primera compra.
   */
-  if p_recibir_en_almacen is not null then
-    select jsonb_agg(jsonb_build_object('orden_renglon_id', orr.id, 'cantidad', orr.cantidad))
-      into v_recibidos
-    from public.orden_renglones orr where orr.orden_id = v_orden;
-
-    perform public.registrar_recepcion(
-      v_orden, p_recibir_en_almacen, v_recibidos,
-      'Compra directa', v_fecha);
-  end if;
-
   return v_orden;
 end;
 $function$;
 
 revoke all on function public.comprar_directo(
-  bigint, text, jsonb, text, text, text, date, text, numeric, numeric, numeric, text, bigint, bigint
+  bigint, text, jsonb, text, text, text, date, text, numeric, numeric, numeric, text, bigint
 ) from public, anon;
 grant execute on function public.comprar_directo(
-  bigint, text, jsonb, text, text, text, date, text, numeric, numeric, numeric, text, bigint, bigint
+  bigint, text, jsonb, text, text, text, date, text, numeric, numeric, numeric, text, bigint
 ) to authenticated, service_role;
+
+/*
+  RECIBIR LA ORDEN ENTERA, SIN CONOCER SUS RENGLONES.
+
+  `registrar_recepcion` pide la lista de qué llegó y en qué cantidad, con el id
+  de cada renglón de la orden. Eso está bien para una recepción parcial, que es
+  el caso normal: llega media orden y hay que decir qué media.
+
+  Pero quien acaba de cargar una compra directa no tiene esos ids —los acaba de
+  crear la base, dentro de la misma llamada— y tendría que volver a preguntar
+  por ellos solo para devolvérselos. Peor: en una compra directa el material ya
+  está entero, así que no hay nada que elegir.
+
+  Esto arma la lista aquí y llama a la de siempre. No duplica ni una
+  comprobación: la del papel del proveedor, la del estado, la del almacén y la
+  de no recibir de más siguen siendo las de `registrar_recepcion`.
+
+  Sirve igual fuera de la compra directa, para el botón de «recibir todo lo que
+  falta» de una orden normal.
+*/
+create or replace function public.recibir_orden_completa(
+  p_orden_id   bigint,
+  p_almacen_id bigint,
+  p_nota       text default null,
+  p_fecha      date default null
+) returns integer
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+declare
+  v_renglones jsonb;
+begin
+  -- Lo que falta por recibir de cada renglón, no lo pedido: si ya entró una
+  -- parte, esto completa el resto en vez de intentar meterlo dos veces.
+  select jsonb_agg(jsonb_build_object(
+           'orden_renglon_id', r.id,
+           'cantidad', r.cantidad - r.cantidad_recibida))
+    into v_renglones
+  from public.orden_renglones r
+  where r.orden_id = p_orden_id
+    and r.cantidad - r.cantidad_recibida > 0;
+
+  if v_renglones is null then
+    raise exception 'De esta orden ya se recibió todo.' using errcode = '55000';
+  end if;
+
+  return public.registrar_recepcion(
+    p_orden_id, p_almacen_id, v_renglones, p_nota, p_fecha);
+end;
+$function$;
+
+revoke all on function public.recibir_orden_completa(bigint, bigint, text, date)
+  from public, anon;
+grant execute on function public.recibir_orden_completa(bigint, bigint, text, date)
+  to authenticated, service_role;
 
 /*
   CORREGIRLA. «Al darle aceptar, pueden editarla.»
@@ -324,7 +411,15 @@ begin
       using errcode = '55000';
   end if;
 
-  if exists (select 1 from public.recepciones where orden_id = p_orden_id) then
+  /*
+    No hay tabla `recepciones` — se comprobó contra el catálogo—. Lo recibido
+    vive en `orden_renglones.cantidad_recibida`, que es lo que va sumando
+    `registrar_recepcion` a medida que llega el material.
+  */
+  if exists (
+    select 1 from public.orden_renglones
+     where orden_id = p_orden_id and cantidad_recibida > 0
+  ) then
     raise exception 'Esta compra ya entró al almacén: sus renglones movieron existencias y costo. Anúlala si está mal.'
       using errcode = '55000';
   end if;
@@ -443,13 +538,9 @@ grant execute on function public.editar_compra_directa(
      where n.nspname = 'public'
        and p.proname in ('comprar_directo', 'editar_compra_directa');
 
-    -- QUE LOS NOMBRES DE TABLA Y COLUMNA DE AQUÍ EXISTAN. Esta migración se
-    -- escribió sin catálogo delante, así que lo primero que hay que confirmar
-    -- es que `recepciones`, `instrucciones_pago.estado` y las columnas de
-    -- `solicitudes_pedido` que rellena el INSERT se llaman así de verdad.
-    select column_name from information_schema.columns
-     where table_schema='public' and table_name='solicitudes_pedido'
-     order by ordinal_position;
+    -- Los nombres YA se comprobaron el 31 de agosto: las catorce columnas de
+    -- `solicitudes_pedido` existen, `instrucciones_pago` existe, y
+    -- `recepciones` NO —de ahí la corrección—.
 
     -- Y un ensayo entero, deshecho:
     --   begin;

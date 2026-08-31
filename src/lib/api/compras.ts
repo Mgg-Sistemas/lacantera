@@ -575,9 +575,14 @@ export interface RenglonComprado {
  * aparte la habría dejado fuera del libro de compras, que es justo donde el
  * SENIAT la busca.
  *
- * `recibir_en_almacen` mete el material en la misma transacción. Va aquí y no
- * en un segundo botón porque una recepción que falla despues de crear la
- * compra dejaría a quien la hizo creyendo que el material está en el almacén.
+ * NO RECIBE. Se intentó y no puede: `registrar_recepcion` exige que la orden
+ * tenga colgada una factura o una nota de entrega antes de dejar entrar nada, y
+ * en ese momento la orden acaba de nacer y todavía no tiene papeles. La guarda
+ * es correcta y no se saltó — lo que cambia es el orden.
+ *
+ * La pantalla hace los tres pasos: crea la compra, cuelga la factura, y
+ * entonces recibe. Por eso «entra al almacén ahora» exige la factura, que en
+ * una compra directa es justo lo que la persona tiene en la mano.
  */
 export function useComprarDirecto() {
   return useAccion(
@@ -595,8 +600,6 @@ export function useComprarDirecto() {
       flete?: number
       observacion?: string | null
       destino_almacen_id?: number | null
-      /** Si viene, el material entra al almacén en el mismo golpe. */
-      recibir_en_almacen?: number | null
     }) =>
       rpc<number>('comprar_directo', {
         p_proveedor_id: c.proveedor_id,
@@ -612,7 +615,6 @@ export function useComprarDirecto() {
         p_flete: c.flete ?? 0,
         p_observacion: c.observacion || null,
         p_destino_almacen_id: c.destino_almacen_id ?? null,
-        p_recibir_en_almacen: c.recibir_en_almacen ?? null,
       }),
   )
 }
