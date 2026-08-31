@@ -83,20 +83,33 @@ export function ModalCargarCombustible({
   const [sinCosto, setSinCosto] = useState(false)
   const [dia, setDia] = useState(hoy)
 
+  /*
+    La separacion va en los dos sentidos.
+
+    Con la casilla marcada solo se ofrecen los tanques que admiten material sin
+    costo. Sin ella, se ofrecen los DEMAS: un tanque que se llama «combustible
+    inicial (sin costo)» y que contuviera gasoil comprado seria justo la mentira
+    que esto viene a evitar, y ademas partiria las existencias con precio entre
+    dos sitios.
+  */
   const todosLosTanques = (almacenes ?? []).filter((a) => a.tipo === 'COMBUSTIBLE')
-  const tanques = sinCosto
-    ? todosLosTanques.filter((a) => a.admite_sin_costo)
-    : todosLosTanques
+  const tanques = todosLosTanques.filter((a) =>
+    sinCosto ? a.admite_sin_costo : !a.admite_sin_costo,
+  )
 
   /*
-    Al marcar la casilla, el tanque elegido puede dejar de estar en la lista.
-    Sin esto quedaria seleccionado uno que ya no se ofrece y el guardado
-    rebotaria con un mensaje de la base, que es la peor forma de enterarse.
+    Al marcar la casilla la lista se estrecha, y hay que rehacer la eleccion.
+
+    Dos casos, y los dos importan. Si lo elegido ya no se ofrece, quedaria
+    seleccionado un tanque invisible y el guardado rebotaria con un mensaje de
+    la base, que es la peor forma de enterarse. Y si al estrecharse queda UNO
+    solo, se elige solo — igual que al abrir: un desplegable que dice «Elegir»
+    con una sola opcion debajo se lee como si faltara algo.
   */
   useEffect(() => {
-    if (tanque && !tanques.some((t) => String(t.id) === tanque)) {
-      setTanque(tanques.length === 1 ? String(tanques[0].id) : '')
-    }
+    const sigueValiendo = tanque && tanques.some((t) => String(t.id) === tanque)
+    if (sigueValiendo) return
+    setTanque(tanques.length === 1 ? String(tanques[0].id) : '')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sinCosto])
 
@@ -104,7 +117,7 @@ export function ModalCargarCombustible({
     if (!abierto) return
     // Con un solo tanque no se pregunta a cuál: se elige solo.
     setSinCosto(false)
-    setTanque(todosLosTanques.length === 1 ? String(todosLosTanques[0].id) : '')
+    setTanque(tanques.length === 1 ? String(tanques[0].id) : '')
     setArticulo('')
     setCantidad('')
     setCosto('')

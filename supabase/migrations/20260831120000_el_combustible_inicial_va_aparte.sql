@@ -77,7 +77,19 @@ select 'CMB-INI', 'COMBUSTIBLE INICIAL (SIN COSTO)', 'COMBUSTIBLE',
 where not exists (select 1 from public.almacenes where codigo = 'CMB-INI');
 
 /*
-  Y la reja. El cuerpo es el de `20260831110000` con una comprobacion mas.
+  Y la reja, EN LOS DOS SENTIDOS. El cuerpo es el de `20260831110000` con el
+  almacen leido antes de ramificar y dos comprobaciones nuevas.
+
+  Que un tanque marcado admita SOLO material sin costo es lo que hace honesto su
+  nombre: uno que se llama «combustible inicial (sin costo)» y contuviera gasoil
+  comprado seria la mentira que todo esto viene a evitar, y ademas partiria las
+  existencias con precio entre dos sitios.
+
+  QUEDA UNA PUERTA FUERA DE ESTA REJA, y se dice para que no sorprenda:
+  `registrar_entradas` —la que usa la carga por planilla— escribe sin pasar por
+  aqui. Hoy no llega: `CMB-INI` tiene `recibe_compras` en false y habria que
+  teclear su nombre a proposito en una planilla. Si algun dia la carga por lote
+  empieza a apuntar a tanques, esa reja hay que repetirla alli.
 */
 create or replace function public.registrar_entrada(
   p_almacen_id  bigint,
@@ -94,7 +106,7 @@ security definer
 set search_path to ''
 as $function$
 declare
-  v_nota text;
+  v_nota   text;
   v_admite boolean;
 begin
   perform private.exigir_rol('ALMACEN');
@@ -108,41 +120,28 @@ begin
     EL COSTO CERO, CUANDO EL GASTO LO ASUMIO OTRO.
 
     Llego combustible a la cantera que no se compro aqui: venia de la base
-    principal del grupo, donde ya se registro el gasto. No hay factura ni
-    comprobante porque no hubo compra — hubo un traslado entre empresas.
+    principal del grupo, donde ya se registro el gasto. No hay factura porque no
+    hubo compra — hubo un traslado entre empresas.
 
-    Antes esto no tenia puerta. El mensaje de la guarda mandaba a
-    `registrar_ajuste`, y eso habria sido escribir una mentira dos veces: la
-    nota diria «conteo fisico: 5400 contra 0 en sistema» cuando nadie conto
-    nada, y un ajuste positivo es justo la senal que se vigila para detectar
-    descuadres. Habriamos ensuciado el unico indicador que sirve para eso.
+    El mensaje de la guarda mandaba a `registrar_ajuste`, y eso habria sido
+    escribir una mentira dos veces: la nota diria «conteo fisico» cuando nadie
+    conto nada, y un ajuste positivo es justo la senal que se vigila para
+    detectar descuadres.
 
-    Asi que la excepcion se declara en vez de disimularse. `p_sin_costo` obliga
-    a decirlo a proposito, y a explicarlo con algo mas que una palabra: dentro
-    de un ano, «de donde salio esto» solo lo va a contestar esa nota.
+    LA SEPARACION VA EN LOS DOS SENTIDOS, y por eso se lee el almacen antes de
+    ramificar. El costo promedio se lleva por pareja (almacen, articulo):
+    metiendo 20.000 L a cero junto a 1.000 que costaron $0,42, el promedio del
+    conjunto cae a $0,02 —veintiuna veces menos— y cada vale carga a la maquina
+    una fraccion de lo que cuesta el gasoil. Se probo.
 
-    NO SE ABRE LA MANO EN GENERAL. Sin la bandera, la exigencia de costo sigue
-    donde estaba — una entrada valorada en cero diluye el costo promedio y
-    deja el almacen lleno y valorado en nada, que es lo que esa guarda existe
-    para impedir.
+    Si dependiera de elegir bien el tanque, un dia se elegiria mal y no lo
+    notaria nadie: no hay pantalla que avise de que bajo el costo del gasoil.
+    Se descubre cuadrando el mes.
   */
+  select a.admite_sin_costo into v_admite
+    from public.almacenes a where a.id = p_almacen_id;
+
   if p_sin_costo then
-    /*
-      Y AQUI VA APARTE, QUE ES LO QUE LO HACE SEGURO.
-
-      El costo promedio se lleva por pareja (almacen, articulo). Metiendo
-      20.000 L a cero junto a 1.000 L que costaron $0,42, el promedio del
-      conjunto cae a $0,02 — veintiuna veces menos— y a partir de ahi cada vale
-      carga a la maquina una fraccion de lo que cuesta el gasoil. Se probo.
-
-      Por eso el material sin costo solo entra donde esta declarado que puede
-      entrar. Si dependiera de elegir bien el tanque, un dia se elegiria mal y
-      no lo notaria nadie: no hay pantalla que avise de que bajo el costo del
-      gasoil. Se descubre cuadrando el mes.
-    */
-    select a.admite_sin_costo into v_admite
-      from public.almacenes a where a.id = p_almacen_id;
-
     if not coalesce(v_admite, false) then
       raise exception 'Aquí no entra material sin costo: se hundiría el costo promedio de lo que ya hay.'
         using errcode = '22023',
@@ -158,6 +157,15 @@ begin
       raise exception 'Una entrada sin costo hay que explicarla entera: de dónde vino y quién asumió el gasto. Dentro de un año esa nota es lo único que lo va a contestar.'
         using errcode = '22023';
     end if;
+
+  elsif coalesce(v_admite, false) then
+    /*
+      Y AL REVES. Un tanque que se llama «combustible inicial (sin costo)» y que
+      contuviera gasoil comprado seria la mentira que todo esto viene a evitar,
+      y ademas partiria las existencias con precio entre dos sitios.
+    */
+    raise exception 'Aquí solo entra lo que no costó nada. Lo que tiene precio va al tanque de siempre.'
+      using errcode = '22023';
 
   elsif coalesce(p_costo_usd, 0) <= 0 then
     raise exception 'Hay que decir cuánto costó la unidad. Si el gasto lo asumió otra empresa del grupo, marca «no costó nada para esta empresa» y explica de dónde vino.'
@@ -179,8 +187,7 @@ begin
 
   -- La referencia va dentro de la nota y no en columna propia: es texto libre
   -- —el nombre de quien lo trajo, un número de factura de fuera— y darle
-  -- columna invitaría a tratarlo como si fuera un documento del sistema, que
-  -- no lo es.
+  -- columna invitaría a tratarlo como si fuera un documento del sistema.
   v_nota := btrim(p_motivo);
   if nullif(btrim(coalesce(p_referencia, '')), '') is not null then
     v_nota := v_nota || ' · Ref.: ' || btrim(p_referencia);
@@ -206,8 +213,10 @@ $function$;
     select codigo, nombre, tipo, admite_sin_costo
       from public.almacenes where admite_sin_costo;
 
-    -- Los dos ensayos, en transaccion deshecha:
-    --   sin_costo apuntando al tanque de siempre  -> rebota
-    --   sin_costo apuntando a CMB-INI             -> entra
-    --   y despues: el promedio de CMB-TAN no se movio.
+    -- Los cuatro ensayos, en transaccion deshecha. Salieron asi:
+    --   CMB-TAN tras 1.000 L a $0,42 ......... $0.420000
+    --   sin costo apuntando a CMB-TAN ........ rechazado
+    --   con precio apuntando a CMB-INI ....... rechazado
+    --   sin costo apuntando a CMB-INI ........ entro
+    --   CMB-TAN sigue en ..................... $0.420000
 */
