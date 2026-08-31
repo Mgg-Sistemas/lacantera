@@ -14,7 +14,16 @@ export interface Almacen {
   tipo: string
   ubicacion: string | null
   recibe_compras: boolean
-  activo: boolean  /** Cuanto le cabe. Solo en un tanque de combustible. */
+  activo: boolean
+  /**
+   * Aqui puede entrar material que esta empresa no pago.
+   *
+   * El costo promedio se lleva por pareja (almacen, articulo), asi que un sitio
+   * marcado con esto lleva el suyo aparte del resto — que es justamente de lo
+   * que se trata. Hoy solo lo tiene el tanque del combustible inicial.
+   */
+  admite_sin_costo?: boolean
+  /** Cuanto le cabe. Solo en un tanque de combustible. */
   capacidad?: string | null
   /** Cuantas ordenes aguanta a la vez. Solo en un taller. */
   trabajos_a_la_vez?: number | null
