@@ -21,6 +21,7 @@ import {
 } from '@/lib/api/catalogo'
 import { useAlmacenes } from '@/lib/api/inventario'
 import { useComprarDirecto } from '@/lib/api/compras'
+import { useRecibirOrdenCompleta } from '@/lib/api/inventario'
 import { useAdjuntarPapel } from '@/lib/api/papelesDeCompra'
 import { useMonedasUsables, useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
 import { useAlicuotaIva } from '@/lib/api/empresa'
@@ -89,6 +90,7 @@ export function CompraDirecta() {
 
   const comprar = useComprarDirecto()
   const adjuntar = useAdjuntarPapel()
+  const recibir = useRecibirOrdenCompleta()
 
   const [titulo, setTitulo] = useState('')
   const [proveedorId, setProveedorId] = useState('')
@@ -145,8 +147,28 @@ export function CompraDirecta() {
   const listas = filas.filter(
     (f) => f.descripcion.trim() && Number(f.cantidad) > 0 && f.precio !== '',
   )
+
+  /*
+    RECIBIR EXIGE LA FACTURA, y no es un capricho de esta pantalla.
+
+    `registrar_recepcion` se niega a dejar entrar material sin factura o nota de
+    entrega colgada: «sin el papel del proveedor el material no entra». Es una
+    regla del sistema, no de aquí.
+
+    En una compra directa eso no estorba, al contrario: quien la carga tiene la
+    factura en la mano — es de donde está copiando los precios—. Pedirla antes
+    de recibir es pedirle lo que ya trae.
+  */
+  const quiereRecibir = recibirYa && !!almacen
+  const faltaLaFactura = quiereRecibir && !factura
+
+  const enVuelo = comprar.isPending || adjuntar.isPending || recibir.isPending
   const puedeGuardar =
-    !!proveedorId && titulo.trim().length >= 3 && listas.length > 0 && !comprar.isPending
+    !!proveedorId &&
+    titulo.trim().length >= 3 &&
+    listas.length > 0 &&
+    !faltaLaFactura &&
+    !enVuelo
 
   const guardar = async () => {
     setAvisoPapel(null)
@@ -163,7 +185,6 @@ export function CompraDirecta() {
       flete: Number(flete) || 0,
       observacion,
       destino_almacen_id: almacen ? Number(almacen) : null,
-      recibir_en_almacen: recibirYa && almacen ? Number(almacen) : null,
       renglones: listas.map((f) => ({
         articulo_id: f.articulo_id ? Number(f.articulo_id) : null,
         descripcion: f.descripcion.trim(),
@@ -177,20 +198,42 @@ export function CompraDirecta() {
     })
 
     /*
-      La factura se cuelga después, y no puede ser antes: los papeles cuelgan
-      de la orden y la orden nace al guardar.
+      LOS TRES PASOS, EN ESTE ORDEN Y NO EN OTRO.
 
-      Si el archivo falla, la compra YA está hecha. No se disimula ni se
-      deshace —el material puede estar en el almacén— sino que se dice, y la
-      factura se sube desde la pantalla de la compra, que ya tiene su sitio
-      para papeles.
+      Los papeles cuelgan de la orden y la orden nace al guardar, así que la
+      factura no puede ir antes. Y la recepción no puede ir antes de la
+      factura, porque `registrar_recepcion` la exige.
+
+      CADA PASO QUE FALLA SE DICE Y NO SE DESHACE. La compra ya está hecha:
+      fingir que no lo está sería peor que un aviso. Lo que se hace es decir
+      exactamente hasta dónde se llegó y dónde se termina a mano.
     */
     if (factura && ordenId) {
       try {
         await adjuntar.mutateAsync({ orden_id: ordenId, tipo: 'FACTURA', archivo: factura })
       } catch {
         setAvisoPapel(
-          'La compra quedó guardada, pero la factura no se pudo subir. Súbela desde la compra, en «Papeles».',
+          'La compra quedó guardada, pero la factura no se pudo subir, así que el material no entró al almacén. Sube la factura desde la compra, en «Papeles», y recíbela desde ahí.',
+        )
+        return
+      }
+    }
+
+    if (quiereRecibir && ordenId) {
+      try {
+        // Entera, y la lista la arma la base: los ids de los renglones acaban
+        // de nacer ahí dentro y no hay nada que elegir — el material ya está.
+        await recibir.mutateAsync({
+          orden_id: ordenId,
+          almacen_id: Number(almacen),
+          fecha,
+          nota: 'Compra directa',
+        })
+      } catch (e) {
+        setAvisoPapel(
+          `La compra y su factura quedaron guardadas, pero el material no entró al almacén: ${
+            e instanceof Error ? e.message : 'falló la recepción'
+          } Recíbela desde la compra.`,
         )
         return
       }
@@ -489,9 +532,11 @@ export function CompraDirecta() {
               <span className="text-ink/80">
                 Entra al almacén ahora
                 <span className="text-ink/50 mt-0.5 block text-xs">
-                  {almacen
-                    ? 'Se recibe completa en el mismo golpe, con la fecha de la compra.'
-                    : 'Elige antes el almacén.'}
+                  {!almacen
+                  ? 'Elige antes el almacén.'
+                  : faltaLaFactura
+                    ? 'Hace falta la factura: sin el papel del proveedor el material no entra.'
+                    : 'Se recibe completa, con la fecha de la compra.'}
                 </span>
               </span>
             </label>
@@ -527,7 +572,7 @@ export function CompraDirecta() {
             <Button variant="ghost">Cancelar</Button>
           </Link>
           <Button disabled={!puedeGuardar} onClick={() => void guardar()}>
-            {comprar.isPending || adjuntar.isPending ? 'Guardando…' : 'Aceptar la compra'}
+            {enVuelo ? 'Guardando…' : 'Aceptar la compra'}
           </Button>
         </div>
       </div>

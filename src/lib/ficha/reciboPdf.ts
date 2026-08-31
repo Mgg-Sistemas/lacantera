@@ -26,6 +26,7 @@ import { logoComoImagen } from './logo'
 import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, DER, IZQ } from './hoja'
 import type { ArchivoArmado } from './armado'
 import {
+  chip,
   type EmpresaPapel,
   GRIS,
   MARCA,
@@ -69,6 +70,8 @@ export interface DatosRecibo {
   diasFacturados?: string | null
   /** Facturados menos TODAS las faltas: lo que de verdad estuvo. */
   diasLaborados?: string | null
+  /** La fecha en que salio, si salio dentro de este periodo. Congelada al calcular. */
+  egresadoEn?: string | null
 
   ficha: string
   cedula: string
@@ -163,6 +166,42 @@ function trabajador(doc: Doc, d: DatosRecibo, y: number): number {
     )
   } else {
     doc.text(`${Number(d.diasPagados)} días pagados`, DER, y + 5, { align: 'right' })
+  }
+
+  /*
+    DESINCORPORADO, Y SIN DECIR «PENDIENTE» DE NADA.
+
+    Lo pidio Christopher: que el recibo lo indique. Y puso el limite en el mismo
+    sitio en que hay que ponerlo — nada de marcar el bono como «pendiente de
+    pago», «pues al ser un papel, no se actualizara a pagado y puede ser un aval
+    de doble filo». Tiene razon: un papel impreso no cambia de estado, asi que
+    solo puede decir hechos que no caducan.
+
+    «Desincorporado el 26/08/2026» es un hecho de ese periodo y lo sigue siendo
+    dentro de diez anos. Es tambien la constancia que se pedia: quien archive
+    este recibo ve que esa persona ya no sigue en nomina.
+
+    En rojo y no en gris porque es lo unico de la cabecera que cambia el sentido
+    de todo el papel.
+
+    Y EL BLOQUE CRECE CUATRO MILIMETROS, solo cuando hay egreso. Primero se
+    intento meterlo en el hueco que ya existia entre la linea de la cedula
+    (y + 5) y la regla de `salarios()` (y + 11) sin tocar el alto. Se genero el
+    PDF y se midieron las coordenadas: la pastilla quedaba a **0,1 mm** de la
+    regla, o sea pegada. Entre el pie de la cedula y esa regla solo hay 5,4 mm
+    y la pastilla mide 4,8: no cabe con aire.
+
+    Creciendo, queda a 2,2 mm por arriba y 2,4 por abajo. Cuesta 4 mm por copia
+    y solo en los recibos que llevan egreso, que son pocos y son justo los que
+    hay que leer con cuidado. `copia()` encadena `y = pieza(...)` y `hoja()`
+    recalcula si la segunda copia cabe, asi que todo lo de abajo se corre solo.
+
+    Las dos copias lo heredan sin hacer nada: `copia()` pinta esta misma pieza
+    dos veces con el mismo objeto.
+  */
+  if (d.egresadoEn) {
+    chip(doc, IZQ, y + 11, `Desincorporado el ${dia(d.egresadoEn)}`, ROJO)
+    return y + 15
   }
 
   return y + 11

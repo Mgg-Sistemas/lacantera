@@ -8,6 +8,7 @@ import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useAlmacenes, useRegistrarEntrada } from '@/lib/api/inventario'
 import { useCombustibles } from '@/lib/api/combustible'
 import { hoyEnCaracas } from '@/lib/api/tasas'
+import { cn } from '@/lib/cn'
 
 /*
   CARGAR COMBUSTIBLE AL TANQUE
@@ -57,6 +58,18 @@ export function ModalCargarCombustible({
   const [costo, setCosto] = useState('')
   const [motivo, setMotivo] = useState('')
   const [referencia, setReferencia] = useState('')
+  /*
+    LO QUE LLEGO SIN COSTAR NADA AQUI.
+
+    Jesmary: «ese combustible llego hace ya bastante tiempo y no tiene factura
+    ni una constancia de pago, solo lo llevaron y lo ingresaron a la cantera».
+    Venia de la base principal del grupo, donde se registro el gasto.
+
+    No es una compra sin precio: es un traslado entre empresas. Por eso la
+    casilla dice quien asumio el gasto en vez de dejar el costo en blanco — un
+    costo vacio no se distingue de un descuido, y este no lo es.
+  */
+  const [sinCosto, setSinCosto] = useState(false)
   const [dia, setDia] = useState(hoy)
 
   const tanques = (almacenes ?? []).filter((a) => a.tipo === 'COMBUSTIBLE')
@@ -76,7 +89,8 @@ export function ModalCargarCombustible({
 
   const litros = Number(cantidad)
   const valido =
-    Boolean(tanque) && Boolean(articulo) && litros > 0 && Number(costo) > 0 &&
+    Boolean(tanque) && Boolean(articulo) && litros > 0 &&
+    (sinCosto ? motivo.trim().length >= 15 : Number(costo) > 0) &&
     motivo.trim().length >= 4
 
   const unidad =
@@ -87,7 +101,8 @@ export function ModalCargarCombustible({
       almacen_id: Number(tanque),
       articulo_id: Number(articulo),
       cantidad: litros,
-      costo_usd: Number(costo),
+      costo_usd: sinCosto ? 0 : Number(costo),
+      sin_costo: sinCosto,
       motivo: motivo.trim(),
       referencia: referencia.trim() || null,
       fecha: dia,
@@ -153,10 +168,42 @@ export function ModalCargarCombustible({
           min="0"
           step="0.0001"
           inputMode="decimal"
-          value={costo}
+          disabled={sinCosto}
+          value={sinCosto ? '' : costo}
           onChange={(e) => setCosto(e.target.value)}
-          hint="Con esto se valora lo que se despache después. Sin costo, cada vale sale en cero."
+          hint={
+            sinCosto
+              ? 'Entra en cero: el gasto lo asumió la otra empresa.'
+              : 'Con esto se valora lo que se despache después. Sin costo, cada vale sale en cero.'
+          }
         />
+
+        {/*
+          La casilla va debajo del costo y no arriba, a propósito: primero se
+          intenta poner lo que costó, que es el caso de casi siempre. Esto es la
+          salida para cuando de verdad no costó nada AQUÍ.
+        */}
+        <label
+          className={cn(
+            'flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm sm:col-span-2',
+            sinCosto ? 'border-warning/30 bg-warning-soft' : 'border-hairline',
+          )}
+        >
+          <input
+            type="checkbox"
+            className="accent-royal-600 mt-0.5 size-4 shrink-0"
+            checked={sinCosto}
+            onChange={(e) => setSinCosto(e.target.checked)}
+          />
+          <span className="text-ink/80">
+            No costó nada para esta empresa
+            <span className="text-ink/50 mt-0.5 block text-xs">
+              {sinCosto
+                ? 'Escribe abajo de dónde vino y quién asumió el gasto. Queda escrito en el movimiento.'
+                : 'Para material trasladado desde otra empresa del grupo, donde ya se registró el gasto.'}
+            </span>
+          </span>
+        </label>
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">

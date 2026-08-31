@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useMonedasUsables } from '@/lib/api/tasas'
 import { Banknote, FileText, Paperclip } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -816,6 +816,31 @@ export function FacturasProveedor() {
               <p className="text-ink/55 border-hairline mt-2 border-t pt-2">
                 Pagado {dolares(detalle.pagado_usd)} · falta{' '}
                 <span className="text-ink/85 font-semibold">{dolares(detalle.saldo_usd)}</span>
+              </p>
+            ) : null}
+
+            {/*
+              EL OTRO CAMINO DE PAGO, DICHO AQUÍ TAMBIÉN.
+
+              Esta factura se paga desde aquí, y su orden se paga desde Compras.
+              Los dos descuentan de una cuenta real y ninguno sabe del otro.
+
+              El aviso es reciproco a proposito: quien esta en la factura no
+              tiene por que acordarse de mirar la orden, y al reves igual. Solo
+              se dice que la orden existe —cuanto se pago por alla no se sabe
+              desde esta consulta— y con el enlace para ir a verlo.
+            */}
+            {detalle.orden_id ? (
+              <p className="text-ink/55 border-hairline mt-2 border-t pt-2 text-xs">
+                Esta factura va contra la orden{' '}
+                <Link
+                  to={`/app/compras/${detalle.orden_id}`}
+                  className="text-royal-600 dark:text-royal-300 font-medium underline"
+                >
+                  {detalle.orden_numero}
+                </Link>
+                , que tiene su propio camino de pago. El sistema no cruza los dos todavía:
+                comprueba allá antes de pagar aquí.
               </p>
             ) : null}
           </div>

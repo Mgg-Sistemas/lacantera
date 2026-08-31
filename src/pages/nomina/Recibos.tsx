@@ -46,6 +46,7 @@ function paraImprimir(
     diasPagados: r.dias_pagados,
     diasFacturados: r.dias_facturados,
     diasLaborados: r.dias_laborados,
+    egresadoEn: r.egresado_en,
 
     ficha: r.empleado?.ficha ?? '—',
     cedula: r.empleado?.cedula ?? '—',
