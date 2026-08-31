@@ -8,6 +8,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { MOTIVOS_EGRESO } from '@/lib/api/prestaciones'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
@@ -202,6 +203,20 @@ export function FichaTrabajador() {
   const { firma } = useFirmaRrhh()
   const [pidiendo, setPidiendo] = useState(false)
   const [conSueldo, setConSueldo] = useState(true)
+  /*
+    QUE PAPEL SE PIDE.
+
+    «Constancia de trabajo» acredita que alguien trabaja —o trabajo— aqui.
+    «Constancia de cese» acredita que la relacion laboral termino, y es la que
+    pidio la lider. No son el mismo papel con otro titulo: se piden para cosas
+    distintas, y de un desincorporado se pueden querer las dos —la de trabajo
+    para un empleo nuevo, la de cese para un tramite—.
+
+    Solo se elige cuando hay algo que elegir: a quien sigue activo no se le
+    puede certificar un cese, asi que ahi no se pregunta nada.
+  */
+  const [tipoConstancia, setTipoConstancia] = useState<'TRABAJO' | 'CESE'>('TRABAJO')
+  const [conMotivo, setConMotivo] = useState(false)
   const [armando, setArmando] = useState(false)
 
   // La dotación
@@ -410,6 +425,18 @@ export function FichaTrabajador() {
 
     try {
       const pdf = await armarConstancia({
+        tipo: tipoConstancia,
+        /*
+          El motivo solo si se pidio a proposito. Va apagado por omision porque
+          este papel se lo lleva la persona: «despido justificado» escrito en
+          algo que va a ensenar en su proxima entrevista le hace un dano que la
+          empresa no necesita hacerle, y la fecha de salida ya acredita el cese.
+        */
+        motivoEgreso:
+          tipoConstancia === 'CESE' && conMotivo
+            ? (MOTIVOS_EGRESO.find((m) => m.valor === e.motivo_egreso)?.etiqueta ??
+              e.motivo_egreso)
+            : null,
         nombreCompleto: `${e.nombres} ${e.apellidos}`,
         cedula: e.cedula,
         ficha: e.ficha,
@@ -434,7 +461,10 @@ export function FichaTrabajador() {
       })
       setVista({
         archivo: pdf,
-        titulo: 'Constancia de trabajo',
+        titulo:
+          tipoConstancia === 'CESE'
+            ? 'Constancia de cese de actividades laborales'
+            : 'Constancia de trabajo',
         descripcion: 'Revísala antes de entregarla. La firma va a mano.',
       })
       setPidiendo(false)
@@ -951,7 +981,7 @@ export function FichaTrabajador() {
         <Modal
           abierto
           onCerrar={() => setPidiendo(false)}
-          titulo="Constancia de trabajo"
+          titulo={e.activo ? 'Constancia de trabajo' : 'Constancia'}
           descripcion={`Para ${e.nombres} ${e.apellidos}`}
           ancho="sm"
           acciones={
@@ -996,6 +1026,27 @@ export function FichaTrabajador() {
             </div>
           ) : (
             <div className="space-y-4">
+              {/*
+                La eleccion solo aparece si hay algo que elegir: a quien sigue
+                activo no se le puede certificar un cese.
+              */}
+              {!e.activo ? (
+                <Select
+                  label="Qué papel"
+                  value={tipoConstancia}
+                  onChange={(ev) => setTipoConstancia(ev.target.value as 'TRABAJO' | 'CESE')}
+                  opciones={[
+                    { valor: 'TRABAJO', etiqueta: 'Constancia de trabajo' },
+                    { valor: 'CESE', etiqueta: 'Constancia de cese de actividades laborales' },
+                  ]}
+                  hint={
+                    tipoConstancia === 'CESE'
+                      ? 'Acredita que la relación laboral terminó. Para trámites.'
+                      : 'Acredita que trabajó aquí. Para un empleo nuevo, un banco.'
+                  }
+                />
+              ) : null}
+
               <p className="text-ink/70 text-sm leading-relaxed">
                 Va en papel de la empresa, con el logo, y declara que{' '}
                 <strong className="text-ink/90 font-medium">
@@ -1003,7 +1054,38 @@ export function FichaTrabajador() {
                 </strong>{' '}
                 desde el {fecha(e.fecha_ingreso)}
                 {e.activo ? '' : ` hasta el ${fecha(e.fecha_egreso)}`} como {e.cargo}.
+                {tipoConstancia === 'CESE' && !e.activo
+                  ? ' Y que la relación laboral culminó en esa fecha.'
+                  : ''}
               </p>
+
+              {/*
+                El motivo, apagado por omision y con el porque a la vista. No es
+                una preferencia de formato: es lo que decide si la persona sale
+                de aqui con «despido justificado» escrito en un papel que va a
+                ensenar en su proxima entrevista.
+              */}
+              {tipoConstancia === 'CESE' && !e.activo && e.motivo_egreso ? (
+                <label className="text-ink/75 flex cursor-pointer items-start gap-2.5 text-sm select-none">
+                  <input
+                    type="checkbox"
+                    className="accent-royal-600 mt-0.5 size-4"
+                    checked={conMotivo}
+                    onChange={(ev) => setConMotivo(ev.target.checked)}
+                  />
+                  <span>
+                    Decir el motivo de la salida
+                    <span className="text-ink/45 block text-xs">
+                      {conMotivo
+                        ? `Dirá «por ${(
+                            MOTIVOS_EGRESO.find((m) => m.valor === e.motivo_egreso)?.etiqueta ??
+                            e.motivo_egreso
+                          ).toLowerCase()}». Piénsalo: el papel se lo lleva la persona.`
+                        : 'La carta dirá cuándo terminó, no por qué. Suele ser suficiente.'}
+                    </span>
+                  </span>
+                </label>
+              ) : null}
 
               <label className="text-ink/75 flex cursor-pointer items-start gap-2.5 text-sm select-none">
                 <input
