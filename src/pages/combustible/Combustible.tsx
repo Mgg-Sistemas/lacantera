@@ -478,9 +478,32 @@ export function Combustible() {
  * al final, después de la cantidad y la fecha, es preguntarlo cuando ya se dio
  * la vuelta.
  *
- * No es obligatorio. Un generador de emergencia también consume y puede no
- * llevar horómetro; exigirlo obligaría a inventar un número, y un horómetro
- * inventado estropea el cálculo de todos los demás despachos de esa máquina.
+ * ES OBLIGATORIO SI HAY MÁQUINA, Y NO LO ERA
+ *
+ * Lo pidió Christopher el 2 de septiembre de 2026: «cada vez que se echa
+ * combustible a una maquina, se debe marcar el horometro obligatoriamente».
+ * Sin él, el vale no dice a qué altura del contador se echó ese combustible, y
+ * entonces el consumo por hora de esa máquina —que es de lo que se saca si
+ * gasta más de lo que debería— no se puede calcular.
+ *
+ * El razonamiento que había en contra sigue siendo válido y se conserva donde
+ * corresponde: «un generador de emergencia también consume y puede no llevar
+ * horómetro». Pero un generador no es una máquina de la ficha — va por «A qué
+ * se le echó», escrito a mano, y ahí no se pide horómetro ni se ofrece la
+ * casilla. La exigencia solo cae sobre lo que está en Maquinaria.
+ *
+ * Y NO REINICIA NADA. Es una lectura anotada en el vale: no toca el parte
+ * diario ni las horas del mantenimiento.
+ *
+ * TRES VALES AL DÍA POR MÁQUINA
+ *
+ * También suyo: «solo se puede surtir maximo 3 veces al día por maquina, no
+ * mas que eso». Existe para que nadie cargue el mismo tanque cuatro veces sin
+ * que se note. El destino escrito a mano no tiene tope.
+ *
+ * Las tres reglas las impone la base —`despachar_combustible`—. Lo de aquí es
+ * la cortesía de decirlo mientras se llena el vale, en vez de dejar que el
+ * error llegue al guardado.
  */
 function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {
   const despachar = useDespacharCombustible()
@@ -488,6 +511,14 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   const { data: maquinas } = useMaquinaria(true)
   const { data: personas } = usePersonasParaVale()
   const motivos = useMotivosDespacho()
+  /*
+    Los vales que ya hay, para contar los del día y saber por dónde va el reloj.
+
+    Es la misma consulta que usa la lista de abajo, así que react-query la
+    reaprovecha y no hay una petición más. Las 200 últimas cubren de sobra un
+    día de una cantera de doce máquinas.
+  */
+  const { data: vales } = useDespachosCombustible()
 
   const hoy = new Date().toLocaleDateString('en-CA')
   const [tanque, setTanque] = useState('')
@@ -553,6 +584,35 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   const elMotivo = motivos.data?.find((m) => m.codigo === motivo)
   const faltaDetalle = elMotivo?.exige_detalle === true && detalle.trim().length < 3
 
+  /*
+    LAS TRES REGLAS DEL HORÓMETRO Y DEL TOPE, calculadas sobre los vales que ya
+    hay. La base las impone; esto solo las adelanta.
+  */
+  const TOPE_AL_DIA = 3
+
+  const valesDeLaMaquina = maquina
+    ? (vales ?? []).filter((v) => String(v.maquina_id ?? '') === maquina)
+    : []
+
+  const yaSurtidoHoy = valesDeLaMaquina.filter((v) => v.fecha === dia).length
+  const topeAlcanzado = Boolean(maquina) && yaSurtidoHoy >= TOPE_AL_DIA
+
+  // Lo más alto anotado hasta la fecha del vale: el contador es uno, aunque se
+  // apunte en el vale y en el parte diario. Aquí solo se ven los vales, así que
+  // la base puede rechazar por una lectura del parte que esta pantalla no tiene
+  // — y el mensaje de la base lo dirá.
+  const ultimoHorometro = valesDeLaMaquina
+    .filter((v) => v.horometro != null && v.fecha <= dia)
+    .map((v) => Number(v.horometro))
+    .reduce<number | null>((alto, n) => (alto === null || n > alto ? n : alto), null)
+
+  const faltaHorometro = Boolean(maquina) && horometro.trim() === ''
+  const horometroRetrocede =
+    Boolean(maquina) &&
+    horometro.trim() !== '' &&
+    ultimoHorometro !== null &&
+    Number(horometro) < ultimoHorometro
+
   const valido =
     elegido !== undefined &&
     pedidos > 0 &&
@@ -560,6 +620,9 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
     motivo !== '' &&
     !faltaDetalle &&
     hayQuienRecibe &&
+    !topeAlcanzado &&
+    !faltaHorometro &&
+    !horometroRetrocede &&
     (!sinFicha || destino.trim().length >= 3)
 
   const enviar = async () => {
@@ -701,13 +764,34 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
             min="0"
             step="0.01"
             inputMode="decimal"
-            placeholder="Si el reloj se puede leer"
+            placeholder={
+              ultimoHorometro !== null ? `Lo último anotado: ${ultimoHorometro}` : 'Lo que marca el tablero'
+            }
             value={horometro}
             onChange={(e) => setHorometro(e.target.value)}
-            hint="Es lo que convierte los litros en litros por hora."
+            hint={
+              horometroRetrocede
+                ? `Un horómetro no retrocede: lo último anotado marcaba ${ultimoHorometro}.`
+                : faltaHorometro
+                  ? 'Obligatorio al surtir una máquina. No reinicia nada: queda anotado en el vale.'
+                  : 'Es lo que convierte los litros en litros por hora.'
+            }
           />
         </div>
       )}
+
+      {/* El tope, dicho antes de llenar el resto del vale. */}
+      {maquina && yaSurtidoHoy > 0 ? (
+        <p
+          className={
+            topeAlcanzado ? 'text-danger mt-3 text-sm font-medium' : 'text-warning mt-3 text-sm'
+          }
+        >
+          {topeAlcanzado
+            ? `Ya se surtió ${yaSurtidoHoy} veces ese día. Son ${TOPE_AL_DIA} al día como máximo: si de verdad hace falta más, revisa por qué.`
+            : `Es el surtido ${yaSurtidoHoy + 1} de ${TOPE_AL_DIA} de ese día para esta máquina.`}
+        </p>
+      ) : null}
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input
