@@ -13,10 +13,34 @@ import tailwindcss from '@tailwindcss/vite'
   arreglo no sirve" de "el arreglo no llegó". Se pierden horas en el primero
   cuando el problema era el segundo.
 
-  Vercel expone el commit en VERCEL_GIT_COMMIT_SHA durante la compilación. En
-  local no existe y se pone "local".
+  Vercel expone el commit en VERCEL_GIT_COMMIT_SHA durante la compilación.
+  Fuera de Vercel esa variable no existe, y el sello salía «local» — que no
+  distingue un despliegue de otro y deja la pregunta sin contestar justo cuando
+  hace falta.
+
+  Así que si la variable no está, se le pregunta a git. Vale para compilar en
+  el servidor, en un flujo de GitHub Actions o en el portátil, y en Vercel no
+  cambia nada porque la variable gana. Si tampoco hay git —un tarball sin
+  historia— se cae a «local», que es lo que había.
 */
-const commit = (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7)
+function commitDeGit(): string | null {
+  try {
+    // `execSync` en vez de importarlo arriba: solo se usa aquí y solo cuando
+    // hace falta, y así el archivo no arrastra `child_process` sin motivo.
+    const { execSync } = require('node:child_process') as typeof import('node:child_process')
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+  } catch {
+    return null
+  }
+}
+
+const commit = (
+  process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
+  commitDeGit() ??
+  'local'
+)
 const compiladoEn = new Date().toISOString().slice(0, 16).replace('T', ' ')
 
 const VERSION = `${commit} · ${compiladoEn}`
