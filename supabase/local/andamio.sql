@@ -44,6 +44,16 @@ begin
   if not exists (select 1 from pg_roles where rolname = 'service_role') then
     create role service_role nologin noinherit bypassrls;
   end if;
+  -- `authenticator` es con quien PostgREST abre la conexión antes de cambiarse
+  -- a `anon` o a `authenticated` según el token. Aquí no lo usa nadie para
+  -- conectarse, pero tiene que existir: hay migraciones que le ponen ajustes
+  -- encima —`alter role authenticator set timezone`— y sin el rol revientan.
+  -- Se descubrió al replicar las migraciones sobre una base vacía: la número
+  -- 101 de 207 se cayó por esto.
+  if not exists (select 1 from pg_roles where rolname = 'authenticator') then
+    create role authenticator nologin noinherit;
+    grant anon, authenticated, service_role to authenticator;
+  end if;
 end
 $$;
 
