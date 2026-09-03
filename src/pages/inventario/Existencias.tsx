@@ -405,7 +405,17 @@ export function Existencias() {
     })
   }, [datos, busqueda, soloBajas])
 
-  const valorTotal = filtradas.reduce((s, e) => s + Number(e.valor_usd), 0)
+  /*
+    El valor llega NULO a quien no tiene INVENTARIO.VER_VALORACION: la vista
+    `v_existencias` lo anula en la base, no aquí. Hay que distinguir ese nulo
+    del cero, porque `Number(null)` es 0 y esta franja pintaría el inventario
+    valorado en cero dólares — que es justo lo contrario de lo que pasa, y la
+    clase de cifra falsa con la que alguien cerraría un mes.
+  */
+  const puedeValorar = filtradas.some((e) => e.valor_usd !== null)
+  const valorTotal = puedeValorar
+    ? filtradas.reduce((s, e) => s + Number(e.valor_usd ?? 0), 0)
+    : null
 
   /*
     LO QUE ESTE SITIO TIENE, VALE, NECESITA Y MUEVE
@@ -805,10 +815,14 @@ export function Existencias() {
               {filtradas.length} artículo{filtradas.length === 1 ? '' : 's'}
               {enTotal ? ' en toda la empresa' : ''}
             </p>
-            <p className="text-ink/80 text-sm">
-              Valor del inventario:{' '}
-              <span className="tabular font-semibold">{dolares(valorTotal)}</span>
-            </p>
+            {valorTotal !== null ? (
+              <p className="text-ink/80 text-sm">
+                Valor del inventario:{' '}
+                <span className="tabular font-semibold">{dolares(valorTotal)}</span>
+              </p>
+            ) : (
+              <p className="text-ink/45 text-sm">Sin permiso para ver el valor</p>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -1637,7 +1651,8 @@ function Franja({
   sitio: string | null
   conExistencia: number
   listados: number
-  valor: number
+  /** Nulo cuando quien mira no tiene INVENTARIO.VER_VALORACION. */
+  valor: number | null
   porReponer: number
   traslados: number
   onVerBajos: () => void
@@ -1659,11 +1674,13 @@ function Franja({
           </span>
         </div>
 
-        <div className="flex items-baseline gap-1.5">
-          <dt className="text-ink/45 text-xs">Vale</dt>
-          <dd className="text-ink/85 tabular text-sm font-semibold">{dolares(valor)}</dd>
-          <span className="text-ink/40 text-xs">a costo promedio</span>
-        </div>
+        {valor !== null ? (
+          <div className="flex items-baseline gap-1.5">
+            <dt className="text-ink/45 text-xs">Vale</dt>
+            <dd className="text-ink/85 tabular text-sm font-semibold">{dolares(valor)}</dd>
+            <span className="text-ink/40 text-xs">a costo promedio</span>
+          </div>
+        ) : null}
 
         <div className="flex items-baseline gap-1.5">
           <dt className="text-ink/45 text-xs">Por reponer</dt>

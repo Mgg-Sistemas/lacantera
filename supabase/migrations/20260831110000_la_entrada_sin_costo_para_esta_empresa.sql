@@ -52,7 +52,18 @@
   No hace falta `drop function` ni tocar el front que no use la marca.
 */
 
-create or replace function public.registrar_entrada(
+-- Se borra la firma anterior antes de crear esta. `p_sin_costo` es un parametro
+-- nuevo, asi que un `create or replace` no reemplaza nada: crea una SEGUNDA
+-- funcion y deja viva la de siete argumentos. PostgREST resuelve por nombre de
+-- argumento, de modo que cual de las dos atiende dependeria de lo que mande el
+-- navegador —una entrada podria colarse sin pasar por la reja del sin costo—.
+-- En produccion no se vio porque la vieja se retiro a mano y ese borrado nunca
+-- llego a un archivo; al reaplicar las migraciones sobre una base limpia
+-- reaparecian las dos.
+drop function if exists public.registrar_entrada(
+  bigint, bigint, numeric, numeric, text, text, date);
+
+create function public.registrar_entrada(
   p_almacen_id  bigint,
   p_articulo_id bigint,
   p_cantidad    numeric,

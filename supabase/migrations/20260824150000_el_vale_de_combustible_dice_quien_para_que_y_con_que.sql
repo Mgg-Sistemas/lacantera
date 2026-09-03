@@ -450,7 +450,16 @@ grant execute on function public.despachar_combustible(bigint, bigint, numeric, 
 -- Se quita el LEFT JOIN a `empleados`: el nombre ya viene copiado dentro del
 -- vale, así que la vista deja de devolver nulo a quien no puede ver la ficha.
 -- --------------------------------------------------------------------------
-create or replace view public.v_despachos_combustible as
+-- No vale un `create or replace`: Postgres solo deja añadir columnas al final, y
+-- esta redefinición reordena y renombra respecto de la vista que creó
+-- `20260819220000_control_de_combustible.sql`. En producción nunca se vio porque
+-- allí cada migración entró sobre el esquema de su momento; al reaplicarlas
+-- seguidas sobre una base limpia revienta con «cannot change name of view column
+-- "articulo_id" to "hora"». Se borra y se crea, que es justo lo que hace
+-- `20260824200000_los_catalogos_los_lleva_la_empresa.sql` con esta misma vista.
+drop view if exists public.v_despachos_combustible;
+
+create view public.v_despachos_combustible as
 select
   d.id,
   d.numero,
