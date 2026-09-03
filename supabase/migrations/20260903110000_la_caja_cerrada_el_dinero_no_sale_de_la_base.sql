@@ -59,9 +59,30 @@
   las notas de crédito se cierran de verdad con esta casilla; el resto se lee
   igual sin ella». A partir de aquí sí se cierra, así que el aviso sobra.
   Se reutiliza en vez de inventar una acción nueva: decía ya justo esto.
+
+  Y SE LE QUITA EL NIVEL EQUIVALENTE, que es el cambio de fondo.
+
+  Venía en LECTURA, lo que significa que le caía sola a cualquiera que pudiera
+  entrar al módulo de Ventas. Christopher lo corrigió: el dinero de las ventas
+  es «para admin y usuarios con permisos extendidos». Con el nivel puesto, dar
+  `VENTAS: Lectura` a alguien para que despachara le entregaba de paso los
+  precios, los totales y la cartera de cada cliente — sin que quien reparte el
+  permiso llegara a enterarse.
+
+  Sin nivel equivalente no la concede ningún escalón. Solo llega por tres
+  caminos, los tres explícitos:
+
+    · ser ADMIN, que se salta toda la maquinaria por definición;
+    · que alguien la marque en el rol, casilla por casilla;
+    · un permiso extendido, que es una autorización con fecha de inicio y de
+      fin sobre una persona concreta.
+
+  Se comprobó antes de tocarla que no la usaba nadie más: ni una función, ni
+  una política de RLS, ni un rol la tenía marcada a mano. Solo estas vistas.
 */
 update public.acciones
-   set dice = 'Cotizaciones, despachos, facturas, cobros, notas de credito y la cuenta de cada cliente, incluidos los precios y los totales. Sin esta casilla los documentos se ven, pero todas las cifras de dinero llegan vacias, tambien si se consulta la API a mano.'
+   set dice = 'Cotizaciones, despachos, facturas, cobros, notas de credito y la cuenta de cada cliente, incluidos los precios y los totales. Sin esta casilla los documentos se ven, pero todas las cifras de dinero llegan vacias, tambien si se consulta la API a mano. No la concede ningun nivel de modulo: hay que darla a mano o por permiso extendido.',
+       nivel_equivalente = null
  where codigo = 'VENTAS.VER_VENTAS';
 
 insert into public.acciones (codigo, modulo, nombre, dice, orden, nivel_equivalente, activa)
