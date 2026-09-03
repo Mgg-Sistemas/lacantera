@@ -64,6 +64,17 @@ begin
          regexp_replace((select coalesce(cedula,'') from public.perfiles where id = v_perfil), '[^0-9]', '', 'g')
      and regexp_replace(coalesce(cedula,''), '[^0-9]', '', 'g') <> '';
 
+  -- Esta migracion ata datos que solo existen en produccion. Al reaplicar las
+  -- migraciones sobre una base limpia no hay ni cuentas cargadas ni fichas de
+  -- personal, asi que no hay nada que atar y salir es lo correcto. La reja de
+  -- abajo se conserva entera para el caso que de verdad importa: que la cuenta
+  -- este y su ficha no, que es cuando un atado a ciegas colgaria la cuenta de
+  -- una persona de la ficha de otra.
+  if v_perfil is null then
+    raise notice 'Sin la cuenta administradora_: base sin datos, nada que atar.';
+    return;
+  end if;
+
   if v_admin is null or v_perfil is null or v_emp is null then
     raise exception 'No estan las tres piezas: admin=%, perfil=%, empleado=%', v_admin, v_perfil, v_emp;
   end if;
