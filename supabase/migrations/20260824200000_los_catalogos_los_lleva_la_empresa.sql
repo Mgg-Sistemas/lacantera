@@ -454,7 +454,18 @@ comment on view public.v_despachos_combustible is
 -- Solo cambia el bloque del motivo: donde había una lista escrita a mano, ahora
 -- hay una llamada a `private.motivo_del_vale`. Lo demás queda igual.
 -- --------------------------------------------------------------------------
-create or replace function public.despachar_combustible(
+-- Se borra y se vuelve a crear, no se reemplaza. Es la misma razon que deja
+-- escrita `20260824150000_el_vale_de_combustible_dice_quien_para_que_y_con_que`
+-- unas migraciones antes: PostgREST resuelve por nombre de argumento, asi que un
+-- `create or replace` que anade un parametro —aqui `p_motivo_detalle`— no
+-- reemplaza nada, crea una SEGUNDA funcion, y cual de las dos atiende depende de
+-- lo que mande el navegador. En produccion no se noto porque la vieja se borro a
+-- mano y ese borrado nunca llego a un archivo; al reaplicar las migraciones
+-- sobre una base limpia reaparecian las dos.
+drop function if exists public.despachar_combustible(
+  bigint, bigint, numeric, text, bigint, text, numeric, bigint, text, text, date, text);
+
+create function public.despachar_combustible(
   p_articulo_id     bigint,
   p_almacen_id      bigint,
   p_cantidad        numeric,
