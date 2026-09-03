@@ -2,7 +2,7 @@
 
 **Sistema de control interno · Minería Internacional TS, C.A.**
 
-**Versión 1.4 · 27 de agosto de 2026**
+**Versión 1.5 · 31 de agosto de 2026**
 
 ---
 
@@ -24,7 +24,7 @@ El orden de los capítulos es el del camino del material: primero se extrae, lue
 
 ### Por qué hay capítulos que hoy no se alcanzan
 
-El sistema se entrega por partes, y el menú va creciendo. Hoy ofrece diez entradas: **Panel**, **Maquinaria**, **Inventario**, **Combustible**, **Asignaciones**, **Compras**, **Nómina**, **Tasas de cambio**, **Configuración** y **Manual de usuario**.
+El sistema se entrega por partes, y el menú fue creciendo. Hoy ofrece el sistema entero menos Tesorería: **Panel**, **Explotación**, **Maquinaria**, **Inventario**, **Combustible**, **Asignaciones**, **Despachos**, **Compras**, **Ventas**, **Nómina**, **Organigrama**, **Tasas de cambio**, **Configuración** y **Manual de usuario**.
 
 **Desde el 28 de agosto de 2026 el menú ofrece el sistema entero.** Explotación, Despachos y Ventas volvieron al riel —estaban construidos y funcionando, y lo que los tenía fuera era que nadie los había recorrido pantalla por pantalla—. El **Organigrama** había vuelto el día antes, dentro de Nómina.
 
@@ -50,11 +50,11 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 3 | Cómo moverse por el sistema | Sí |
 | 4 | El panel | Sí |
 | 5 | Tasas de cambio | Sí |
-| 6 | Explotación | **No, está en obra** |
+| 6 | Explotación | Sí |
 | 7 | Inventario | Sí |
-| 8 | Despachos | **No, está en obra** |
+| 8 | Despachos | Sí |
 | 9 | Compras | Sí |
-| 10 | Ventas | **No, está en obra** |
+| 10 | Ventas | Sí |
 | 11 | Nómina | Sí |
 | 12 | Tesorería | **No: se retiró, lo absorbió Compras** |
 | 13 | Configuración | Sí |
@@ -66,7 +66,7 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 19 | Maquinaria | Sí |
 | 20 | Combustible | Sí |
 
-**Asignaciones, Maquinaria y Combustible tienen sus capítulos al final** —el 18, el 19 y el 20— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.12.
+**Asignaciones, Maquinaria y Combustible tienen sus capítulos al final** —el 18, el 19 y el 20— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
 
 ---
 
@@ -509,22 +509,58 @@ Sirven para enterarte de lo que pasa en el sistema —pedidos, entradas de inven
 
 Si hay avisos sin leer, la campana lleva una burbuja roja con el número. A partir de cien muestra **99+**.
 
-El panel que se despliega tiene:
+#### Un asunto por línea, no un aviso por línea
+
+Esto es lo que más cambió, y conviene entenderlo antes de mirar el panel.
+
+Una compra no genera un aviso: genera varios. El sistema anota cada paso —el pedido, la confirmación, la propuesta al gerente, la aprobación, la orden sin método de pago— y cada paso es un aviso. Puestos en fila, cinco líneas seguidas hablando de la misma compra parecen el mismo aviso repetido. **No lo son**, pero se leen así.
+
+Desde el 31 de agosto de 2026 **los avisos se agrupan por asunto**: una compra, una línea. La línea enseña **en qué estado está la cosa ahora**, y si llegó ahí dando pasos, dice cuántos fueron —**· 4 movimientos**—.
+
+La cuenta de la campana cuenta **asuntos** sin leer, no avisos. Es la misma cuenta que vas a encontrar debajo: si dijera treinta y debajo hubiera siete, aprenderías a no fiarte del número.
+
+#### Qué se ve en el panel
 
 - La cabecera **Movimientos** y, debajo, cuántos hay sin leer o **Todo al día**.
 - El botón de silencio a la derecha de la cabecera, con el globo **Silenciar el sonido de aviso** o **Activar el sonido de aviso**.
-- La lista de avisos, el más reciente arriba, hasta cuarenta.
-- Al pie, solo si hay sin leer, el botón **Marcar todas como leídas**.
+- Los ocho asuntos que más apuran. La campana es un vistazo, no un archivo.
+- Al pie, **Ver todas** —con el total entre paréntesis si hay más de ocho— y, si queda algo sin leer, el botón de marcarlo todo.
 
-Cada aviso lleva un círculo con el icono de su módulo, el título —en negrita si no lo has leído—, un detalle en letra pequeña y una última línea con el tiempo transcurrido y quién lo provocó. El tiempo se escribe **ahora mismo**, **hace 5 min**, **hace 2 h**, **hace 3 d** o **hace 2 meses**. Las no leídas tienen fondo azul claro y un punto azul a la derecha.
+Cada línea lleva un círculo con el icono de su módulo, el título del último movimiento —en negrita si no lo has leído—, un detalle en letra pequeña y una última línea con el tiempo transcurrido, quién lo provocó y cuántos movimientos lleva el asunto. El tiempo se escribe **ahora mismo**, **hace 5 min**, **hace 2 h**, **hace 3 d** o **hace 2 meses**. Los asuntos con algo sin leer tienen fondo azul claro y un punto azul a la derecha.
 
-El color indica la importancia: azul es informativo, naranja pide atención y rojo es urgente.
+El color indica la importancia: azul es informativo, naranja pide atención y rojo es urgente. **La importancia que manda es la del último movimiento**, no la más alta que haya tenido: una compra en la que el proveedor desistió —urgente— y que después se canceló ya no apura.
 
-Qué se puede hacer:
+#### El orden
 
-1. **Leer un aviso**: púlsalo. Queda marcado como leído aunque no lleve a ninguna pantalla, porque leerlo ya es haberse enterado. Si lleva a algún sitio, el panel se cierra y te deja allí.
-2. **Marcar todas como leídas**: el botón del pie. Mientras trabaja queda deshabilitado.
-3. **Silenciar el sonido**: el botón de la cabecera. Tu decisión se recuerda en ese aparato.
+Primero lo que no se ha leído, y dentro de eso lo que más apura. Después, lo más reciente.
+
+Sin leer manda porque es lo único que dice «esto todavía no lo ha atendido nadie». La importancia va después y no antes: un aviso urgente de la semana pasada que ya se leyó no debe tapar uno que pide atención y que nadie ha abierto hoy.
+
+#### Ver todas
+
+El botón del pie abre una ventana con **el archivo entero**: hasta doscientos asuntos, no ocho. Es donde se contesta «¿qué quedó pendiente de compras?» o «¿qué pasó con aquella orden?».
+
+Trae dos filtros, y solo dos:
+
+- **Todos / Sin leer**, con la cuenta al lado.
+- **Todo** y una pastilla por cada módulo que tenga avisos, con cuántos. Las pastillas salen de lo que hay, no de la lista de módulos posibles: no vas a ver **Combustible (0)**.
+
+*No hay filtro por importancia a propósito*: la importancia ya ordena la lista y ya colorea el icono, y filtrar por ella esconde justo lo que uno no sabía que tenía que mirar.
+
+Cada asunto trae hasta tres botones:
+
+- **Abrir**, que lleva al documento y cierra la ventana.
+- **N pasos antes**, que despliega la historia sin salir de la lista. Cada paso dice qué pasó —«Se añadió COT-2026-0002 a lo propuesto», «Se retiró COT-2026-0002; quedan 1 propuestas»—, cuándo y quién.
+- **Marcar leída**, si queda algo sin leer.
+
+Abrir la historia y abrir el documento son dos preguntas distintas —«¿qué pasó con esto?» y «llévame allí»—, y por eso son dos botones: mezclarlas obligaría a salir de la lista para volver a entrar.
+
+#### Qué se puede hacer
+
+1. **Leer un asunto**: púlsalo en la campana. Queda leído **entero**, con todos sus pasos, aunque no lleve a ninguna pantalla: haber abierto la compra es haberse enterado de cómo está. Si lleva a algún sitio, el panel se cierra y te deja allí.
+2. **Ver el archivo entero**: **Ver todas**.
+3. **Marcar todas como leídas**: el botón del pie del panel, o el de la ventana. Mientras trabaja queda deshabilitado.
+4. **Silenciar el sonido**: el botón de la cabecera. Tu decisión se recuerda en ese aparato.
 
 Sobre el sonido, tres cosas que evitan malentendidos:
 
@@ -532,7 +568,7 @@ Sobre el sonido, tres cosas que evitan malentendidos:
 - **No suena al abrir el sistema**, aunque tengas avisos acumulados de ayer. Solo suena por los que llegan con la pantalla ya abierta.
 - **Puede no sonar la primera vez**: los navegadores no dejan sonar nada hasta que la persona ha pulsado algo en la página.
 
-Si no hay nada, se ve **Sin movimientos todavía** con el texto **Aquí entran los pedidos, las entradas de inventario y los pagos.** Mientras carga, **Cargando…**
+Si no hay nada, se ve **Sin movimientos todavía** con el texto **Aquí entran los pedidos, las entradas de inventario y los pagos.** Mientras carga, **Cargando…** Y si filtras en la ventana y no queda nada, **Nada que enseñar con ese filtro**.
 
 La lista se refresca sola cada cinco minutos y cada vez que vuelves a la pestaña, además del enlace en vivo que trae los avisos en el momento.
 
@@ -888,7 +924,7 @@ Si escribes una moneda que no existe, te lo dice y, cuando se parece a una que s
 
 ## 6. Explotación
 
-> **Hoy este módulo no se ofrece en el menú.** Está construido y sus pantallas funcionan —todo lo que cuenta este capítulo es cierto—, pero se dejó fuera del menú lateral mientras se termina de afinar, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Lo que eso significa exactamente está en 1.5. Consecuencia inmediata: **mientras Explotación no vuelva al menú, no entra piedra al patio por ninguna vía**, porque el parte de turno es la única puerta y vive aquí.
+> **Este módulo volvió al menú el 28 de agosto de 2026.** Estuvo fuera un tiempo —construido y funcionando, pero sin recorrer pantalla por pantalla— y ya se ofrece. Lo que sigue pendiente es el reparto: hoy **solo lo alcanza el administrador**, porque nadie ha decidido todavía qué rol entra aquí. Y conviene saber una consecuencia: **el parte de turno es la única puerta por la que entra piedra al patio**, así que mientras nadie más tenga acceso, nadie más puede cargarlo.
 
 Explotación es el principio de todo lo demás. Aquí se anota dónde se está arrancando el material, qué voladuras se hicieron y cuánto produjo cada turno. De esta última anotación sale la piedra que después se cuenta en el patio, se vende y se despacha.
 
@@ -908,7 +944,7 @@ La segunda es **poder registrar**: crear frentes, registrar voladuras y cargar p
 
 La tercera es **poder anular**. Anular una voladura o un parte no es una operación del día: un parte anulado le quita material al patio que quizá ya se despachó. Por eso pide el escalón más alto del módulo.
 
-**Hoy no lo alcanza nadie salvo el administrador del sistema.** Sobre Explotación, los otros nueve roles están en **Ninguno**, igual que en Despachos y en Ventas: mientras un módulo esté en obra, tampoco se reparte.
+**Hoy no lo alcanza nadie salvo el administrador del sistema.** Sobre Explotación, los otros nueve roles están en **Ninguno**, igual que en Despachos y en Ventas. Ya no es porque el módulo esté en obra —volvió al menú el 28 de agosto— sino porque **todavía no se ha repartido**: la columna está en la matriz esperando que alguien decida quién entra.
 
 La tabla que sigue es **cómo está previsto repartirlo el día que se ofrezca**, y así es como se comportan las pantallas:
 
@@ -1840,7 +1876,7 @@ Del módulo salen cuatro documentos, y **los cuatro llevan la misma cabecera que
 
 ## 8. Despachos
 
-> **Hoy este módulo no se ofrece en el menú.** Está construido y sus pantallas funcionan —todo lo que cuenta este capítulo es cierto—, pero se dejó fuera del menú lateral mientras se termina de afinar, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Lo que eso significa exactamente está en 1.5. La pantalla **Vehículos**, que no existía cuando se escribió este capítulo, cuelga también de aquí.
+> **Este módulo volvió al menú el 28 de agosto de 2026.** Estuvo fuera un tiempo —construido y funcionando, pero sin recorrer pantalla por pantalla— y ya se ofrece. Lo que sigue pendiente es el reparto: hoy **solo lo alcanza el administrador**, porque nadie ha decidido todavía qué rol entra aquí. Este capítulo se escribió antes de que volviera, así que puede llevar detalles que ya no coincidan: dilo y se corrige.
 
 Despachos guarda los dos papeles que acompañan al camión: el pesaje de la romana y la guía de movilización. Los dos se hacían a mano dentro de la nota de entrega, y los dos existen aunque no haya venta. Aquí se producen; Ventas los consume.
 
@@ -1856,7 +1892,7 @@ Para ver el módulo hace falta que administración le haya dado a tu usuario acc
 
 Dentro hay dos alcances distintos. El primero es **el trabajo del día**: pesar camiones y cargar guías. El segundo es **el control total sobre Despachos**, y cubre lo que corrige o lo que exceptúa: anular un pesaje, anular una guía y — esto es lo que más importa — autorizar un despacho de mineral sin guía.
 
-**Hoy no lo alcanza nadie salvo el administrador del sistema.** Sobre Despachos, los otros nueve roles están en **Ninguno**. Es coherente con que el módulo esté en obra: mientras no se ofrezca, tampoco se reparte.
+**Hoy no lo alcanza nadie salvo el administrador del sistema.** Sobre Despachos, los otros nueve roles están en **Ninguno**. El módulo volvió al menú el 28 de agosto, así que ya se puede repartir: **está sin repartir, que es otra cosa.**
 
 La tabla que sigue es **cómo está previsto repartirlo el día que se ofrezca**, y así es como se comportan las pantallas. Se deja escrita porque el reparto ya está decidido y porque las pantallas ya lo respetan; lo que falta es abrir el permiso.
 
@@ -2375,7 +2411,65 @@ Dos avisos sobre el borrador. El primero: **Guardar como borrador no comprueba l
 
 Del pedido sale un número: **SOL-2026-0001**.
 
-### 9.5 El detalle de una compra
+### 9.5 La compra directa
+
+**Administración › Compras › Compra directa**
+
+Para **lo que ya se compró**, con su factura en la mano. No pasa por cotizaciones ni por el gerente.
+
+Lo explicó la líder así: *"Colocan los materiales con los precios y cargan la factura, al darle aceptar, pueden editarla, y además darle recepción al inventario de una vez."*
+
+Un pedido pregunta; esto declara. Cuando alguien vuelve del pueblo con dos cajas de guantes y su factura, no hay nada que cotizar ni a quién proponérselo: la compra ya ocurrió y lo único que falta es que el sistema se entere, valorice el inventario y guarde el papel para el IVA.
+
+#### Quién puede hacerla
+
+**Solo quien tenga la casilla «Hacer una compra directa»**, que se da en **Configuración › Roles y permisos**. No la abre ningún nivel de permiso por sí solo: comprar sin que nadie lo apruebe no es «escritura en compras», es una autoridad aparte.
+
+**No tiene tope de monto.** Quien la tenga la hace por cualquier cantidad, y queda en la auditoría quién la hizo y por cuánto. El control es a quién se le da la casilla.
+
+#### Qué se rellena
+
+| Campo | Qué va |
+| --- | --- |
+| **Proveedor** | A quién se le compró |
+| **N° de la factura** | El número del papel del proveedor |
+| **Qué se compró** | El título que se lee en el tablero. Mínimo tres letras |
+| **Fecha de la compra** | No puede ser futura |
+| **Moneda** y **Forma de pago** | **Contado** o a crédito |
+| Los renglones | Del catálogo o escritos a mano: qué es, cantidad, unidad, precio unitario, marca y presentación |
+| **Descuento**, **Flete**, **IVA %** | Como en una cotización |
+| **A qué almacén entra** | Vacío para un servicio o algo que no se almacena |
+| **Entra al almacén ahora** | Marcada por omisión cuando hay almacén |
+| **Observación** | Lo que no cabe en los demás campos |
+
+Los totales se calculan mientras escribes, y debajo dice con qué tasa se van a congelar: **Se congela con la tasa BCV del … : Bs … por dólar.**
+
+#### Por qué hace falta la factura para que entre el material
+
+Si marcas **Entra al almacén ahora** sin haber adjuntado la factura, la casilla te lo dice: *"Hace falta la factura: sin el papel del proveedor el material no entra."*
+
+No es un capricho de esta pantalla: **es la misma regla de todo el sistema**, la que impide recibir material sin el papel que lo respalda (9.9). Una compra directa es justo el caso en que la persona tiene la factura delante, así que cumplirla no cuesta nada — y saltársela habría abierto una puerta trasera a la única reja que garantiza que lo que entra al almacén tiene respaldo.
+
+Por eso la pantalla hace las cosas en este orden: **crea la compra, cuelga la factura, y entonces recibe.**
+
+#### Qué crea
+
+Una compra directa **no es un camino aparte**: recorre la misma escalera de siempre en una sola operación. Crea la solicitud —ya aprobada—, la cotización con los precios de la factura y la orden. De ahí en adelante todo lo que ya existe funciona igual: el libro de compras, el crédito fiscal, el costo promedio del almacén.
+
+La diferencia queda marcada, y por eso en el tablero se pueden distinguir.
+
+**Si se paga de contado**, la orden nace **pagada y por recibir**. Si es a crédito, **por recibir**: el material puede entrar igual, porque ya está aquí.
+
+#### Corregirla
+
+Se puede, **mientras no se haya recibido ni pagado nada**. Después no:
+
+- Si ya entró al almacén: *"Esta compra ya entró al almacén: sus renglones movieron existencias y costo. Anúlala si está mal."*
+- Si ya tiene pagos indicados: *"Esta compra ya tiene pagos indicados. Retíralos antes de corregirla."*
+
+Y una orden que salió de un pedido normal **no se corrige por aquí**: *"Esta orden salió de un pedido con cotizaciones. Se corrige por su camino, no por aquí."*
+
+### 9.6 El detalle de una compra
 
 Se llega pulsando una tarjeta del tablero. **No está en el menú.**
 
@@ -2501,7 +2595,7 @@ Cinco acciones piden explicación antes de ejecutarse. Todas tienen el mismo cam
 
 El diálogo **Resolver el dinero** es distinto: muestra cuánto se pagó y a quién, y tiene un solo campo, **Qué pasó con el dinero**, con tres opciones — **El proveedor lo devolvió**, **Queda como saldo a favor con el proveedor** y **Se dio por perdido** —. Empieza en la primera.
 
-### 9.6 Proveedores
+### 9.7 Proveedores
 
 **Administración › Compras › Proveedores**
 
@@ -2536,7 +2630,7 @@ No hay que confundir esto con el IVA que retiene un cliente cuando la empresa le
 
 **Un proveedor no se borra.** La única forma de retirarlo es desmarcar **Activo**, y entonces deja de aparecer al cargar cotizaciones. No se borra porque sus cotizaciones y sus órdenes anteriores tienen que seguir explicándose.
 
-### 9.7 Cargar una cotización
+### 9.8 Cargar una cotización
 
 Se llega desde la ficha de una compra confirmada, con el botón **Cargar cotización**. Solo lo ve el rol Compras.
 
@@ -2626,7 +2720,7 @@ La tasa del BCV del día **queda congelada** dentro de la cotización, como evid
 
 Una cotización se puede **Eliminar** mientras no esté propuesta al gerente y no haya generado una orden.
 
-### 9.8 Recibir material
+### 9.9 Recibir material
 
 Se llega desde la ficha de una compra en **Pagada · falta que llegue** o en **Recibida parcialmente**, con el botón **Recibir material**. Solo lo ve el rol Almacén; los demás leen **La recepción la registra almacén.**
 
@@ -2661,7 +2755,7 @@ Debajo, **Lo último que entró**: las últimas treinta entradas al inventario p
 
 El botón **Registrar recepción** solo lo ve quien tiene Inventario en escritura.
 
-### 9.9 Indicar el método de pago
+### 9.10 Indicar el método de pago
 
 Se llega desde la ficha de una compra en **Aprobada · indicar método de pago**, con el botón **Indicar método de pago**. Solo lo ve el rol Compras.
 
@@ -2771,7 +2865,7 @@ Si en la cuenta elegida no alcanza el saldo, el diálogo lo dice y explica el ca
 
 Si no hay ninguna cuenta en esa moneda, se lee **No hay cuentas en Bolívares**. **Bancos y cajas ya no está en el menú**, así que crear una cuenta hoy lo hace el administrador (12.3).
 
-### 9.10 Facturas de proveedor
+### 9.11 Facturas de proveedor
 
 **Administración › Compras › Proveedores › Facturas recibidas**
 
@@ -2949,7 +3043,7 @@ Escribe **Por qué se anula** —queda con tu nombre y la hora— y pulsa **Anul
 - **No se enlaza la factura con su orden de compra.** La pantalla no pregunta a qué orden corresponde, así que **no hay ningún cotejo entre lo que se pidió, lo que llegó y lo que facturaron**: si el proveedor factura más de lo que entregó, el sistema no lo nota. Esa comparación hoy la hace la persona, con los dos documentos delante.
 - **No hay nada que imprimir aquí.** Ni la factura ni un comprobante del pago. Lo que se archiva sigue siendo el papel del proveedor.
 
-### 9.11 El libro de compras
+### 9.12 El libro de compras
 
 **Compras › Libro de compras.** Es la mitad de la declaración del IVA: el crédito fiscal, que es el impuesto que se pagó a los proveedores y que se descuenta del que se le cobró a los clientes. Sin este libro ese dinero se queda en el camino.
 
@@ -2963,7 +3057,7 @@ El **resumen** trae las cuatro cifras que van a la planilla —compras exentas, 
 
 **Las facturas anuladas no aparecen.** El número de control de una factura de compra es del proveedor, no nuestro, así que un salto en su serie no es algo que la empresa tenga que explicar; una factura anulada de este lado es una fila que se cargó mal y no se declara. En el libro de ventas es al revés, y allá se explica por qué.
 
-### 9.12 Lo que conviene entender
+### 9.13 Lo que conviene entender
 
 #### Quién pide, quién aprueba, quién recibe
 
@@ -3043,11 +3137,18 @@ Conviene saberlo antes de buscarlo:
 - **El sistema sabe qué compras prometieron factura, pero no avisa de las que no la cumplieron.** Ese pendiente existe por dentro y todavía no sale en ninguna pantalla.
 - **Lo que se debe por facturas de proveedor no aparece en la cola de Compras › Pagos por hacer › Por proveedor**, que sigue mostrando solo las instrucciones de pago de las órdenes. Lo que falta por pagar de una factura solo se ve en la columna **Saldo** de su propia pantalla.
 
-### 9.13 Cuando el sistema no te deja
+### 9.14 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
 | «Esta acción la realiza: Compras. Tu usuario no tiene ese rol.» | Ese paso le toca a otro rol | Pide el rol a administración, o que lo haga quien lo tenga |
+| «No tienes permiso para hacer una compra directa en Compras.» | No tienes la casilla que la abre | Se da en **Configuración › Roles y permisos**. No la abre ningún nivel por sí solo (9.5) |
+| «Escribe qué se compró: el título es lo que se lee en el tablero.» | El título de una compra directa tiene menos de tres letras | Escríbelo |
+| «Una compra no puede tener fecha futura.» | La fecha de la compra directa es de mañana o más allá | Corrígela |
+| «Esta compra ya entró al almacén: sus renglones movieron existencias y costo. Anúlala si está mal.» | Se intentó corregir una compra directa ya recibida | Ya no se corrige: anúlala |
+| «Esta compra ya tiene pagos indicados. Retíralos antes de corregirla.» | Hay una instrucción de pago viva | Retírala primero |
+| «Esta orden salió de un pedido con cotizaciones. Se corrige por su camino, no por aquí.» | Se intentó corregir por la pantalla de compra directa una compra normal | Corrígela desde su propia ficha |
+| «De esta orden ya se recibió todo.» | Se pulsó recibir sobre una orden completa | No falta nada por entrar |
 | «Ponle un título al pedido: es lo que se lee en el tablero.» | El título tiene menos de cuatro letras | Escribe un título que se entienda desde el tablero |
 | «Explica para qué es. Quien aprueba no está en el frente y necesita el porqué.» | La explicación tiene menos de diez letras | Escribe para qué se necesita |
 | «Indica quién solicita: elige a alguien del sistema o escribe su nombre.» | No se eligió persona ni se escribió un nombre | Elige a alguien de la lista o escribe el nombre |
@@ -3111,7 +3212,7 @@ Conviene saberlo antes de buscarlo:
 
 ## 10. Ventas
 
-> **Hoy este módulo no se ofrece en el menú.** Está construido y sus pantallas funcionan —todo lo que cuenta este capítulo es cierto—, pero se dejó fuera del menú lateral mientras se termina de afinar, y quien escriba su dirección a mano se encuentra primero el cartel de **En construcción**. Lo que eso significa exactamente está en 1.5. El módulo ganó además una primera entrada, **Tablero**, que no existía cuando se escribió este capítulo.
+> **Este módulo volvió al menú el 28 de agosto de 2026.** Estuvo fuera un tiempo —construido y funcionando, pero sin recorrer pantalla por pantalla— y ya se ofrece. Lo que sigue pendiente es el reparto: hoy **solo lo alcanza el administrador**, porque nadie ha decidido todavía qué rol entra aquí. Este capítulo se escribió antes de que volviera, así que puede llevar detalles que ya no coincidan: dilo y se corrige.
 
 Ventas es el camino del material hacia afuera: a quién se le vende, a cuánto, qué se le entregó, qué se le facturó y qué ha pagado. Las cinco pantallas están en el menú en ese mismo orden, que es el orden en que ocurren las cosas.
 
@@ -3927,6 +4028,20 @@ La ventana lo resume: *"Deja de entrar en las nóminas siguientes y queda marcad
 
 Por eso, **cuando alguien se va, el orden es liquidarlo primero en Prestaciones sociales**: el botón que paga la liquidación egresa a la persona por su cuenta, con la fecha y el motivo, y no hay que volver a esta pantalla. **Egresar** aquí queda para cuando no hay nada que liquidar.
 
+#### El informe de personal
+
+Arriba, junto a **Cargar por planilla** y **Nuevo trabajador**, está el botón **Informe**. Saca un PDF con quién trabaja aquí: ficha, nombre, cédula, cargo, departamento y desde cuándo. **Sin sueldos.**
+
+Que no lleve montos no es un olvido. Un listado de quién trabaja aquí se enseña, se pega en una pared, se le manda a un inspector; los sueldos no. Por eso hay dos papeles: este y el del cierre de nómina (11.8), que sí los lleva. Tener las dos versiones es lo que permite dar la que corresponde sin tener que tachar nada.
+
+**Lleva siempre un apartado de desincorporados**, con su fecha de salida y su motivo, aunque en la pantalla tengas la casilla **Incluir a los desincorporados** apagada. La casilla manda en la tabla, que es lo que estás mirando; el apartado forma parte del papel. Si no hay ninguno, el apartado no aparece — un título con una tabla vacía debajo se lee como que falta algo.
+
+**El buscador manda.** Si escribes «mantenimiento» en **Buscar** y pulsas **Informe**, sale el informe de mantenimiento, con sus desincorporados. Arriba, en **Alcance**, el papel dice qué filtro se aplicó, cuántos hay en nómina y cuántos desincorporados. Sin filtro dice **Ninguno: se lista todo el personal**.
+
+Se abre en el visor antes de guardarse, como todos los papeles del sistema.
+
+**Para una sola persona**, el botón está en su ficha (11.4). Es la misma hoja con una fila.
+
 #### Las fichas no se borran
 
 **No existe forma de borrar una ficha de personal.** Antes existía, con candados —solo dejaba borrar a quien no tuviera recibos ni novedades, es decir, a quien nunca había cobrado por el sistema— y aun así se quitó, porque esos candados no comprueban lo que hace falta comprobar. «Nunca cobró por el sistema» no significa «nunca trabajó aquí»: puede ser que su nómina no se haya procesado todavía, que se le pagara por fuera, o que la ficha se cargara ayer.
@@ -4006,9 +4121,30 @@ Es lo mismo que el iconito de la lista de Personal, pero con el detalle. Y es lo
 
 #### Los documentos
 
-En la tarjeta de abajo hay dos botones: **Ficha completa (PDF)** y **Constancia de trabajo**. El carnet ya no está aquí: tiene tarjeta propia justo debajo, y el porqué está explicado en el apartado siguiente.
+En la tarjeta de abajo hay tres botones: **Ficha completa (PDF)**, **Constancia de trabajo** e **Informe de personal**. El carnet ya no está aquí: tiene tarjeta propia justo debajo, y el porqué está explicado en el apartado siguiente.
 
-**Los dos se abren primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que pulses **Descargar**. La ficha trae todos los datos en A4. La constancia es la carta que se entrega a un banco o a quien la pida, y avisa: *"Revísala antes de entregarla. La firma va a mano."*
+**Los tres se abren primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que pulses **Descargar**. La ficha trae todos los datos en A4. La constancia es la carta que se entrega a un banco o a quien la pida, y avisa: *"Revísala antes de entregarla. La firma va a mano."* El informe es el resumen sin datos personales ni montos: la misma hoja que sale de la lista de personal (11.3), con una fila.
+
+##### Dos constancias, no una
+
+**A quien ya no trabaja aquí, el botón pregunta primero qué papel se quiere.** Aparece el desplegable **Qué papel** con dos opciones:
+
+- **Constancia de trabajo** — *"Acredita que trabajó aquí. Para un empleo nuevo, un banco."*
+- **Constancia de cese de actividades laborales** — *"Acredita que la relación laboral terminó. Para trámites."*
+
+No son el mismo papel con otro título: se piden para cosas distintas, y de una misma persona se pueden querer las dos. A quien sigue activo no se le pregunta: no se le puede certificar un cese.
+
+La de cese añade una frase —*"La relación laboral culminó en la fecha antes señalada"*— y cierra diciendo para qué sirve: *"para los fines legales que estime convenientes"*.
+
+##### El motivo de la salida no se imprime salvo que se pida
+
+Debajo aparece la casilla **Decir el motivo de la salida**, **y viene apagada**.
+
+Está apagada a propósito. Este papel se lo lleva la persona, y «despido justificado» escrito en algo que va a enseñar en su próxima entrevista le hace un daño que la empresa no necesita hacerle. **La fecha de salida ya acredita el cese**, que es lo que se pide.
+
+La casilla dice lo que va a pasar antes de que pase. Marcada: *"Dirá «por despido justificado». Piénsalo: el papel se lo lleva la persona."* Sin marcar: *"La carta dirá cuándo terminó, no por qué. Suele ser suficiente."*
+
+Queda disponible para cuando de verdad haga falta —un trámite que lo exija—, y entonces es una decisión de quien firma, tomada a sabiendas.
 
 Los dos salen con la misma cabecera que la orden de compra, el recibo y la factura: la razón social, el RIF y **el domicilio fiscal completo**, tal como estén cargados en **Configuración › Datos de la empresa** (13.2). Lo que falte ahí, falta en el papel.
 
@@ -4269,13 +4405,25 @@ Cada casilla admite medios (0,5) y no admite números negativos.
 #### Cargar un bono o un descuento
 
 1. Pulsa **Bono o descuento** bajo el nombre de la persona.
-2. Elige el **Concepto**. La lista trae, para sumar, **Prima**, **Comisiones** y **Bono en divisas**; y para restar, **Cuota de préstamo**, **Anticipo de prestaciones** y **Otra deducción**. Cada opción dice si suma o resta.
+2. Elige el **Concepto**. La lista la lleva la empresa y se edita en **Bonos y descuentos** (11.11): de fábrica trae, para sumar, **Prima**, **Comisiones** y **Bono en divisas**; y para restar, **Cuota de préstamo**, **Anticipo de prestaciones** y **Otra deducción**. Cada opción dice si suma o resta.
 3. Escribe el **Monto**. Tiene que ser mayor que cero.
 4. Elige la **Moneda**. Empieza en **Bs**.
-5. Escribe la **Nota**. El marcador te recuerda para qué sirve: **Aparece en el recibo**.
-6. Pulsa **Agregar**.
+5. **Cómo se paga**. Empieza en **Como el resto de la nómina**, que es lo normal. Si ese bono se paga por otra vía —en efectivo cuando la nómina va por transferencia, por ejemplo—, elígela aquí.
+6. **Cuándo se paga**. Vacío significa *"se paga con la nómina"*. Con fecha, *"Diferido: se paga ese día, no con la nómina."*
+7. Escribe la **Nota**. El marcador te recuerda para qué sirve: **Aparece en el recibo**.
+8. Pulsa **Agregar**.
 
 La ventana explica qué va aquí y qué no: *"Lo que no sale del contrato ni de las horas: una prima, un bono en divisas, la cuota de un préstamo."*
+
+##### Un bono diferido no sale marcado en el recibo
+
+Al poner fecha aparece un recuadro que conviene leer: **el bono sale en el recibo como cualquier otra asignación, sin marca de pendiente**.
+
+Es deliberado. Un papel impreso que dice «pendiente» **sigue diciéndolo el año que viene**, cuando ya se pagó, y entonces es un documento firmado que afirma una deuda que no existe. El recibo dice lo que se ganó; cuándo se paga vive en esta pantalla, que sí se actualiza.
+
+La fecha diferida **no puede caer antes de que cierre el período**. Si lo intentas: *"La fecha de pago del bono es anterior al cierre del período."* Un bono que se paga antes que el sueldo no es diferido, es un error de tecleo.
+
+**Los bonos se cargan mientras la nómina está en borrador o calculada, y no después.** Sobre una nómina ya aprobada no se pueden cargar, y no es una restricción caprichosa: el cálculo solo rehace períodos en borrador o calculados, así que un bono cargado más tarde **no lo recogería ningún recibo**. Sería dinero apuntado que nadie cobra, que es peor que un «no se puede». Para tocar una nómina aprobada hay que devolverla primero.
 
 **Cuidado con el concepto Anticipo de prestaciones de esta lista.** Desde que existe la pantalla de **Prestaciones sociales**, un anticipo de prestaciones se registra allí, y allí es donde baja el saldo de la persona y sale el dinero de la cuenta. Si además lo cargas aquí como descuento, se le descuenta dos veces: una del saldo de sus prestaciones y otra de su quincena. El sistema no avisa de esa duplicación, así que decidan en la casa por cuál de las dos vías se hace y no se mezclen.
 
@@ -4378,9 +4526,11 @@ El recibo es el documento que justifica el pago, y la pantalla explica por qué 
 
 Arriba, el selector **Período**, que empieza en **Elige el período** y **solo lista los períodos que ya tienen recibos**. Sin período elegido, la pantalla dice **Elige un período** y *"Los recibos aparecen cuando la nómina está calculada."*
 
-Si nadie ha cargado quién firma por la empresa, aparece una tarjeta ámbar: *"Los recibos van a salir sin el nombre de quien firma por la empresa. Se pone una sola vez en Nómina → Parámetros → RRHH_FIRMA_NOMBRE."*
+Si nadie ha cargado quién firma por la empresa, aparece una tarjeta ámbar: *"Falta decir **quién firma por la empresa**. Los recibos saldrían con ese renglón en blanco."* con el botón **Ponerlo ahora**, que lleva directo a la pantalla donde se arregla. No hace falta buscarla.
 
-Sobre la lista, cuántos recibos hay y el botón **Imprimir todos**. La lista trae:
+Sobre la lista, cuántos recibos hay y dos botones: **Informe del período** e **Imprimir todos**. El informe va primero porque es lo que se mira al cuadrar; los recibos se imprimen cuando ya se cuadró.
+
+La lista trae:
 
 | Columna | Qué muestra |
 | --- | --- |
@@ -4391,6 +4541,28 @@ Sobre la lista, cuántos recibos hay y el botón **Imprimir todos**. La lista tr
 | **Neto** | En bolívares y, debajo, el equivalente en dólares |
 
 **Pincha en cualquier parte de la fila** para abrir el detalle. El icono de la impresora, en cambio, saca el papel directamente sin abrir el detalle.
+
+#### El informe del período
+
+**Imprimir todos** saca veintidós hojas que se reparten, una por persona. **Informe del período** saca **una** que se archiva y se enseña: quién cobró, cuántos días, asignaciones, deducciones y neto, con el total al pie.
+
+Es el mismo papel que el informe de personal (11.3) *"pero que este sí refleje lo que cobraron"*. Por eso comparte cabecera, apartados y forma; lo que cambia es que lleva las cifras — y que por eso mismo no se enseña fuera de administración.
+
+**Este papel no lleva cargo ni departamento, y es a propósito.** Los importes en bolívares necesitan sitio: seis dígitos con céntimos no caben en la misma tabla que ocho columnas. Se sacó el cargo y se conservó la cédula, porque este papel contesta «cuánto cobró cada quien» y quien lo revise lo va a cotejar contra los recibos, donde la persona se identifica por ficha, nombre y cédula. De qué se ocupa cada uno lo contesta el otro informe.
+
+Los que salieron dentro del período van en **su propio apartado**, con su fecha de salida y su motivo, y con su propio total. Si no hubo ninguno, el apartado no aparece.
+
+**Para una sola persona**, el botón **Informe** está dentro del detalle del recibo. Sirve sobre todo para quien se fue: es la hoja que dice qué cobró y que ya no sigue, sin tener que entregar el listado entero de la nómina. En **Alcance** dice **Solo 1 de 21 recibos del período**, para que nadie lo lea como si en esa quincena hubiera cobrado una sola persona.
+
+#### Al desincorporado se le paga, y el recibo lo dice
+
+Quien se va a mitad de quincena **cobra los días que trabajó**. El sistema los prorratea solo: si el período va del 16 al 31 y la persona salió el 26, le pagan los días que estuvo, no la quincena entera ni cero.
+
+Hasta el 31 de agosto de 2026 no era así: el cálculo dejaba fuera a quien estuviera marcado como inactivo, y **desincorporar marca inactivo el mismo día**. El resultado era que a quien se iba el 26 no se le pagaba la quincena que había trabajado hasta el 26 — dinero que se le debe. Ya está corregido.
+
+**Su recibo lo dice.** Debajo del nombre sale un distintivo rojo: **Desincorporado el 26 ago. 2026**. Y en el detalle, los **Días** que aparecen son los prorrateados.
+
+La fecha del recibo **se congela el día que se calcula**. Si mañana esa persona se reincorpora, el recibo de agosto tiene que seguir diciendo que en agosto se fue: un recibo es un documento y dice lo que era cierto cuando se emitió.
 
 #### El detalle de un recibo
 
@@ -4693,7 +4865,46 @@ Cuatro límites reales, dichos sin rodeos porque se descubren el primer día:
 - **No cierra el trimestre sola, ni abona los intereses sola.** Las dos cosas hay que acordarse de hacerlas: el trimestre cuando termina, los intereses cuando el Banco Central publica su tasa del mes. Nadie avisa.
 - **La ficha del trabajador no muestra nada de esto.** Para saber cuánto tiene acumulado alguien hay que venir a esta pantalla.
 
-### 11.11 Lo que conviene entender
+### 11.11 Bonos y descuentos
+
+**Nómina › Prestaciones y parámetros › Bonos y descuentos**
+
+**No es una entrada del menú**: es la tercera pestaña de **Prestaciones y parámetros**.
+
+Es **la lista**, no los montos. Aquí se decide qué bonos y qué descuentos existen; cuánto se le carga a cada quien y en qué quincena se hace en **Novedades del período** (11.6). Por eso vive con lo que no cambia cada quincena, junto a las prestaciones y los parámetros.
+
+El título lo dice: **Bonos y descuentos** — *"Los conceptos que se cargan a mano cada período. Los que el sistema calcula solo se enseñan abajo, sin tocar."*
+
+Existe porque el catálogo era cerrado: *"Desconocemos el motivo o las razones o títulos de estos bonos, por lo tanto lo correcto es permitirle gestionar."* La empresa se inventa los suyos sin llamar a nadie.
+
+#### Qué se ve
+
+Dos listas. Arriba, **los de la casa**: los que se pueden crear, corregir, apagar y encender. Abajo, **los que el sistema calcula solo** —el sueldo, el beneficio de alimentación, las horas extra, el seguro social, el FAOV—, que se enseñan para que se sepa que están y **no se pueden tocar**.
+
+Si no hay ninguno propio: **Todavía no hay ninguno** — *"Crea el primero: un bono de transporte, uno por rendimiento, la cuota de un préstamo."*
+
+Cada concepto lleva su código, su nombre, si suma o resta, y dos distintivos cuando corresponde: uno que avisa de que **entra en el salario integral —arrastra prestaciones—** y otro de que **entra en el salario normal**.
+
+#### Crear o corregir uno
+
+1. Pulsa el botón de nuevo, o el de corregir sobre uno existente.
+2. **Cómo se llama.** Es lo que va impreso en el recibo, así que se escribe como se quiere leer.
+3. **Código.** Se normaliza solo a mayúsculas. **El guion se respeta**: los códigos de esta casa lo llevan —`BON-USD`, `DED-PRE`— y cambiarlo por otro signo crearía un concepto distinto con el mismo nombre.
+4. **Qué hace en el recibo**: suma (asignación) o resta (deducción). Desde aquí **solo se crean esas dos**; los aportes y las provisiones los calcula el sistema.
+5. Si incide en el salario normal o en el integral. Esto no es cosmético: **lo que incide en el integral arrastra prestaciones**, y eso se paga.
+6. **Orden en el recibo** y **Base legal**, opcionales.
+
+#### Apagar en vez de borrar
+
+Un concepto **no se borra**: se apaga. Uno usado en un período viejo no se puede borrar sin dejar recibos huérfanos, y esos recibos son documentos que ya se entregaron. Apagado deja de ofrecerse al cargar novedades y sigue explicando lo que ya está impreso.
+
+#### Lo que el sistema calcula solo no se toca
+
+Si intentas corregir o apagar uno de los de abajo, la base se niega: *"El concepto «SAL-BAS» lo calcula el sistema y no se edita aquí."* Y al apagar: *"…apagarlo dejaría el recibo sin una línea que la ley exige."*
+
+Cambiarle el nombre sería inofensivo, pero esta misma puerta permitiría cambiarle el tipo o apagarlo, y entonces el cálculo seguiría corriendo y el recibo saldría sin una línea obligatoria.
+
+### 11.12 Lo que conviene entender
 
 #### La nómina semanal y la quincenal
 
@@ -4808,7 +5019,7 @@ Son cinco, salen de dos sitios distintos y **todos se abren en pantalla antes de
 
 La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo, y **abren con la misma cabecera que el resto de los papeles del sistema** (13.2). Los que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano. El carnet no lleva pie ni firma: en una tarjeta de 54 mm no cabe, y no hace falta.
 
-### 11.12 Organigrama
+### 11.13 Organigrama
 
 Es una sección propia y no una pantalla dentro de Nómina, que es como lo pidió la líder de sistemas. **El permiso sí es el de Nómina**: quien lleva el personal es quien sabe de quién depende quién. Con Nómina en lectura se ve el árbol; para cambiarlo hace falta escritura, y sin ella no aparece ningún botón.
 
@@ -4865,12 +5076,17 @@ Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un
 | «Un cargo no puede depender de sí mismo.» | Elegiste como destino el mismo puesto |
 | «El nombre del cargo o la unidad no puede quedar vacío.» | Falta el nombre |
 
-### 11.13 Cuando el sistema no te deja
+### 11.14 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
 | «Esta acción la realiza: … Tu usuario no tiene ese rol.» | Ese paso lo ejecuta otro rol | Pídele que lo haga a quien tenga el rol que nombra el mensaje |
 | «Sesión no válida. Vuelve a entrar.» | Se cerró tu sesión | Vuelve a entrar al sistema |
+| «El período NOM-… (quincenal) ya cubre esas fechas. Dos nóminas sobre los mismos días pagarían dos veces.» | Ya hay un período abierto sobre esos días que se lleva a la misma gente | Anula el que sobra, o abre este sobre fechas que no se pisen. Ojo: **un período especial choca con cualquier otro**, porque se lleva a todo el personal |
+| «La fecha de pago del bono (…) es anterior al cierre del período (…).» | Se difirió un bono a un día anterior al cierre | Corrige la fecha. Un bono que se paga antes que el sueldo no es diferido, es un error de tecleo |
+| «El concepto "SAL-BAS" lo calcula el sistema y no se edita aquí.» | Se intentó corregir uno de los que el sistema calcula solo | Esos no se tocan. Si hace falta uno parecido, créalo con otro código |
+| «El concepto "…" lo calcula el sistema: apagarlo dejaría el recibo sin una línea que la ley exige.» | Se intentó apagar uno automático | Igual: no se apagan |
+| «El período está en "APROBADA" y ya no admite cambios.» | Se intentó cargar un bono sobre una nómina ya aprobada | Devuélvela primero. Cargado ahí, no lo recogería ningún recibo |
 | «Faltan el nombre y el apellido del trabajador.» | La ficha quedó sin nombre o sin apellido | Complétalos |
 | «La fecha de ingreso decide la antigüedad, el bono vacacional y las prestaciones. No puede quedar vacía.» | Falta la fecha de ingreso | Escríbela. Si no la sabes con certeza, búscala antes de guardar |
 | «La fecha de nacimiento da menos de 14 años. Es la edad mínima para trabajar (LOPNNA art. 96); revísala.» | La fecha de nacimiento está mal tecleada | Corrígela |
@@ -5481,23 +5697,25 @@ Dentro de cada tarjeta está la matriz, con estas columnas:
 
 Falta uno de los quince, y no es un olvido: **la matriz esconde los módulos que no se ofrecen** —hoy solo **Tesorería**—. Repartir permisos sobre lo que nadie puede abrir solo sirve para que alguien crea que tiene acceso a algo.
 
-Explotación, Despachos y Ventas faltaban aquí hasta el 28 de agosto y ya aparecen, con lo que tuvieran repartido. **Ojo con uno al repartirlos**: mientras no se aplique la corrección pendiente, quien tenga **Ventas en Escritura** puede cambiar precios de venta subiendo una planilla de artículos, aunque poner precios desde su propia pantalla exija Total. Hasta entonces, en Ventas conviene repartir Lectura o Total, no Escritura.
+Explotación, Despachos y Ventas faltaban aquí hasta el 28 de agosto y ya aparecen, con lo que tuvieran repartido.
+
+**Había un hueco al repartir Ventas y se cerró el 31 de agosto.** Quien tuviera **Ventas en Escritura** podía cambiar precios de venta subiendo una planilla de artículos, aunque poner precios desde su propia pantalla exigiera Total. Las dos puertas piden ya lo mismo: **Total**. Se corrigió antes de que nadie tuviera ese nivel, que era la condición — una vez repartido, subir el listón le habría quitado a alguien algo que ya usaba.
 
 Los quince del sistema, para referencia, son:
 
 | # | Módulo | |
 | --- | --- | --- |
 | 1 | **Panel** | |
-| 2 | **Explotación** | *(en obra: no sale en la matriz)* |
+| 2 | **Explotación** | |
 | 3 | **Maquinaria** | |
 | 4 | **Combustible** | |
 | 5 | **Inventario** | |
 | 6 | **Asignaciones** | |
-| 7 | **Despachos** | *(en obra: no sale en la matriz)* |
+| 7 | **Despachos** | |
 | 8 | **Compras** | |
-| 9 | **Ventas** | *(en obra: no sale en la matriz)* |
+| 9 | **Ventas** | |
 | 10 | **Nómina** | |
-| 11 | **Tesorería** | *(en obra: no sale en la matriz)* |
+| 11 | **Tesorería** | *(retirada: no sale en la matriz)* |
 | 12 | **Tasas de cambio** | |
 | 13 | **Configuración** | |
 | 14 | **Usuarios y roles** | |
@@ -5983,7 +6201,7 @@ Antes de nada: desde el 28 de agosto de 2026 **el menú ofrece el sistema entero
 
 Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las sabe. Son las más importantes del capítulo.
 
-**Una compra se puede pagar dos veces por caminos distintos.** El dinero puede salir por la instrucción de pago de la orden, en Tesorería, y también por el pago registrado sobre la factura del proveedor. Los dos descuentan de una cuenta real y **ninguno de los dos sabe del otro**. Hasta que eso se cruce, conviene acordar en la empresa un solo camino y usar siempre ese.
+**Una compra se puede pagar dos veces por caminos distintos.** El dinero puede salir por la instrucción de pago de la orden y también por el pago registrado sobre la factura del proveedor. Las dos pantallas viven hoy dentro de Compras. Los dos descuentan de una cuenta real y **ninguno de los dos sabe del otro**. Hasta que eso se cruce, conviene acordar en la empresa un solo camino y usar siempre ese.
 
 **El sistema pregunta con qué entrega el proveedor, pero no comprueba que se cumpla.** Declarar «factura» es obligatorio antes de pagar, y eso sí lo exige. Lo que no hay todavía es una pantalla que enseñe cuáles prometieron factura y no la registraron, ni forma de atar una factura a su orden. El cotejo sigue siendo trabajo de la oficina.
 
@@ -6014,13 +6232,16 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 | Falta | Por qué importa |
 | --- | --- |
 | **Desglose por alícuota** | Hoy la factura admite una sola alícuota. Una factura mixta no se puede expresar |
-| **Dónde escribir los datos de la imprenta** | **La factura ya sabe imprimirlos** (10.7), pero todavía no hay casilla en Configuración para escribirlos, así que el renglón no sale |
 
-**Y la alícuota ya no está escrita en el código.** Sale de la ficha de la empresa; mientras esa casilla no exista, el sistema usa el 16 de respaldo. Las dos cosas —la casilla de la alícuota y las de la imprenta— entran juntas cuando se aplique su migración.
+**Los datos de la imprenta y la alícuota ya se escriben** en **Configuración › Datos de la empresa**, y la factura los imprime (10.7). Lo que falta es solo el desglose.
 
-**En Nómina.** El cálculo recorre a todo el personal activo sin separar a los obreros de pago semanal de los empleados de pago quincenal; conviene confirmarlo antes de montar el procedimiento de la casa. Y aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla. Lo que sí se arregló es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4).
+**En Nómina.** Aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla. Lo que sí se arregló es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4).
 
 **En las incidencias del personal.** Si se elige un tipo que no pide reposo —**Conflicto**, **Llegada tarde** u **Otra**— y a la vez se marca **Varios días**, el campo de los días de reposo no se dibuja y el guardado falla con un mensaje sin traducir. Mientras eso se arregla, **para varios días usa un tipo que pida reposo**, o anota la duración en el motivo.
+
+**El combustible inicial entra valorado en cero, y eso abarata lo que sale de ese tanque.** Los litros trasladados desde la base principal del grupo sí costaron dinero — solo que en la otra empresa, y aquí no se sabe cuánto. Mientras entren a cero, **el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta**. El tanque aparte impide que contamine al resto (20.5), pero no inventa la cifra que falta. Si algún día se sabe lo que se pagó por ellos, entrarlos con ese costo lo arregla.
+
+**El 3 % de obra social de la alianza se guarda y no se calcula.** El convenio con la Gobernación tiene tres porcentajes: 14 % para la Gobernación, 86 % para la empresa y un 3 % sobre los ingresos netos destinado a obra social. Los dos primeros los reparte el sistema; **el tercero está guardado pero no lo aplica ninguna pantalla**, así que hoy no hay dónde ver cuánto se debe por ese concepto. Como 14 y 86 ya suman cien, ese 3 % no sale del mismo bruto: o sale de la parte de la empresa, o es una obligación aparte, y eso es una decisión que todavía no se ha tomado. **Conviene tomarla antes de la primera factura de venta.**
 
 **En Tesorería.** No hay conciliación bancaria: no existe una pantalla que cruce el libro con el estado de cuenta del banco. Tampoco se calcula el diferencial cambiario; lo que sí existe es la tasa congelada en cada línea.
 
@@ -6037,7 +6258,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 Se dice para que nadie lo lea como verificado:
 
 - **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles de esta versión se levantaron de la base tal como está hoy, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla.
-- **Los capítulos de los módulos escondidos** —Explotación y Ventas— no se revisaron pantalla por pantalla. Lo que dicen era cierto en una versión anterior y sus módulos han seguido cambiando; el aviso del principio de cada uno lo advierte. **Despachos sí se revisó** en esta versión, aunque siga en obra.
+- **Los capítulos de Explotación y Ventas** no se revisaron pantalla por pantalla. Lo que dicen era cierto en una versión anterior y sus módulos han seguido cambiando. **Ya no están en obra** —volvieron al menú el 28 de agosto—, así que ahora se pueden recorrer: es lo primero que conviene hacer en la próxima revisión.
 - **Los capítulos 19 y 20, Maquinaria y Combustible, son nuevos.** Se escribieron leyendo las pantallas y la base, no usándolas. Si algo no coincide con lo que hace el módulo en el patio, es de esperar en una primera versión: dilo y se corrige.
 - **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla, quién puede pagar, que el rol de Tesorería ya no existe— pero las pantallas que quedaron escondidas no se recorrieron una por una.
 - **La factura de venta no está completa ante el SENIAT.** Lo que le falta está en 15.2, y no es un olvido de este manual sino del sistema.
@@ -6431,6 +6652,8 @@ El reparto es el mismo que el de Maquinaria, y por el mismo motivo: quien opera 
 
 Arriba, **los tanques con su saldo**. Si no hay ninguno con existencia, la pantalla lo dice: **El tanque está vacío**.
 
+**Hay dos tanques, y no es un error de configuración.** Uno es **Tanque de combustible**, el de siempre. El otro es **Combustible inicial (sin costo)**, y el apartado 20.5 explica por qué existe.
+
 Debajo, **el consumo por máquina** —litros por hora— y la lista de despachos. Cuando una máquina tiene despachos pero le falta el horómetro, sale marcada: **Falta anotar el horómetro en el parte diario**. Sin ese dato los litros no se pueden convertir en litros por hora, así que esa máquina no entra en la comparación.
 
 Si todavía no se ha despachado nada, cada bloque lo dice a su manera: **Todavía no se ha despachado a ninguna máquina** y **Sin despachos todavía**.
@@ -6467,3 +6690,61 @@ Los motivos son seis y salen de un catálogo, no de una lista escrita en la pant
 Cada despacho saca su **Vale de combustible** en papel, con el botón **Imprimir el vale**. Lleva la misma cabecera que el resto de los papeles del sistema (13.2).
 
 **Es el papel que firma quien recibe el combustible**, y por eso se imprime al despachar y no después.
+
+### 20.5 Cargar combustible a mano
+
+El combustible entra normalmente **por una compra recibida**. Para lo demás está el botón **Cargar**: el saldo con el que arranca un tanque, algo comprado por fuera, un traslado.
+
+| Campo | Detalle |
+| --- | --- |
+| **A qué tanque** | Solo se ofrecen tanques, no almacenes |
+| **Qué combustible** | Solo artículos de esa categoría |
+| **Cuántos litros** | Mayor que cero |
+| **Cuánto costó cada litro (USD)** | *"Con esto se valora lo que se despache después. Sin costo, cada vale sale en cero."* |
+| **No costó nada para esta empresa** | Ver abajo. Viene desmarcada |
+| **Entra el** | La fecha |
+| **Referencia** | Texto libre: quién lo trajo, un número de factura de fuera |
+| **Motivo** | De dónde vino. Mínimo cuatro letras |
+
+#### El combustible inicial: lo que llegó sin costar nada aquí
+
+Llegaron a la cantera 20.000 litros trasladados desde la base principal del grupo, donde **ya se registró el gasto**. Como lo dijo Jesmary: *"ese combustible llegó hace ya bastante tiempo y no tiene factura ni una constancia de pago, solo lo llevaron y lo ingresaron a la cantera."*
+
+No es una compra sin precio: **es un traslado entre empresas**. Por eso la casilla dice quién asumió el gasto en vez de dejar el costo en blanco — un costo vacío no se distingue de un descuido, y este no lo es.
+
+Al marcarla:
+
+- El costo se pone en cero y el campo se apaga: *"Entra en cero: el gasto lo asumió la otra empresa."*
+- **El motivo pasa a exigir una explicación entera** —de dónde vino y quién asumió el gasto—, porque dentro de un año esa nota es lo único que lo va a contestar.
+- **El tanque cambia solo** al de combustible inicial: *"Lo que no costó nada va a su propio tanque, para no hundir el costo del que sí tiene precio."*
+
+#### Por qué van en tanques separados
+
+Porque si no, **el costo de todo el combustible se hunde**.
+
+El sistema lleva un costo promedio por tanque. Con 1.000 litros comprados a $0,42 y 20.000 más entrando a cero, el promedio del conjunto cae a $0,02 — **veintiuna veces menos**. A partir de ahí cada vale carga a la máquina una veintiunava parte de lo que cuesta el gasoil, y con él se hunden el consumo por máquina, el gasto por unidad y el centro de costos.
+
+Y no se notaría: **no hay pantalla que avise de que bajó el costo del gasoil**. Se descubre cuadrando el mes, cuando ya se despacharon cien vales mal valorados.
+
+Separados, cada tanque conserva el suyo y cada vale sale valorado según de qué tanque salió — que es la verdad: unos litros costaron y otros no.
+
+**La separación la impide el sistema, no la atención.** Va en los dos sentidos:
+
+- Combustible sin costo al tanque de siempre: *"Aquí no entra material sin costo: se hundiría el costo promedio de lo que ya hay."*
+- Combustible con precio al tanque inicial: *"Aquí solo entra lo que no costó nada. Lo que tiene precio va al tanque de siempre."*
+
+Un tanque que se llama «combustible inicial (sin costo)» y que contuviera gasoil comprado sería justo la confusión que esto viene a evitar.
+
+**Lo que sigue pendiente, y conviene saberlo:** esos 20.000 litros **sí costaron dinero**, solo que en la otra empresa. Mientras entren a cero, el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta. Si algún día se sabe lo que se pagó por ellos, entrarlos con ese costo dejaría bien a la vez el promedio, el costo por máquina y el centro de costos.
+
+### 20.6 Cuando el sistema no te deja
+
+| Lo que ves | Qué significa | Qué hacer |
+| --- | --- | --- |
+| «Aquí no entra material sin costo: se hundiría el costo promedio de lo que ya hay.» | Se marcó **No costó nada para esta empresa** apuntando al tanque de siempre | Mételo en el tanque de combustible inicial, que es el que lo lleva aparte (20.5) |
+| «Aquí solo entra lo que no costó nada. Lo que tiene precio va al tanque de siempre.» | Se intentó meter combustible comprado al tanque inicial | Elige el tanque de siempre y escribe lo que costó |
+| «Una entrada sin costo hay que explicarla entera: de dónde vino y quién asumió el gasto.» | El motivo tiene menos de quince letras | Escribe de dónde vino y quién pagó. Dentro de un año esa nota es lo único que lo va a contestar |
+| «Hay que decir cuánto costó la unidad.» | Se dejó el costo vacío sin marcar la casilla | Escribe el costo, o marca **No costó nada para esta empresa** si de verdad no costó |
+| «Si el material no costó nada para esta empresa, el costo tiene que ir en cero.» | Está marcada la casilla y hay un costo escrito | Quita la marca, o pon el costo en cero |
+| «La cantidad que entra tiene que ser mayor que cero.» | Los litros están vacíos o en cero | Escribe cuántos entran |
+| «Ese almacén no existe o está inactivo.» | El tanque se desactivó mientras tenías la ventana abierta | Recarga la pantalla |

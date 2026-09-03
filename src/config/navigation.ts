@@ -319,16 +319,25 @@ export const navigation: NavSection[] = [
     items: [
       {
         /*
-          VUELVE AL RIEL, con Despachos y con Ventas.
+          FUERA DEL RIEL OTRA VEZ, con Despachos.
 
-          Los tres estaban construidos y funcionando desde hacía semanas; lo
-          que los tenía fuera era que nadie los había recorrido pantalla por
-          pantalla, no que les faltara nada. Se devuelven juntos porque son un
-          circuito: se extrae, se pesa y se despacha, y se factura. Devolver uno
-          solo dejaría el camino cortado a la mitad.
+          Volvieron los tres —Explotación, Despachos y Ventas— el 28 de agosto,
+          y el 31 la empresa pidió esconder estos dos. VENTAS SE QUEDA: no es
+          un paso atrás del circuito entero, es que la cantera todavía no
+          registra ni la extracción ni la salida por el portón, y ofrecer dos
+          módulos que nadie va a usar los llena de pantallas vacías que después
+          nadie sabe si están rotas o sin datos.
+
+          Aquí no se borra nada. Están construidos, funcionan, y su capítulo del
+          manual sigue siendo cierto: lo único que cambia es que el menú no los
+          ofrece y que sus permisos no se reparten mientras tanto — eso último
+          lo calcula `MODULOS_EN_OBRA` solo, leyendo este marbete.
+
+          Devolverlos es quitar esta línea.
         */
         label: 'Explotación',
         icon: Pickaxe,
+        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/explotacion' },
           { label: 'Frentes y bancos', to: '/app/explotacion/frentes' },
@@ -430,8 +439,11 @@ export const navigation: NavSection[] = [
         ],
       },
       {
+        // Fuera del riel desde el 31 de agosto, con Explotación y por lo mismo.
+        // Ver el comentario de aquel.
         label: 'Despachos',
         icon: Truck,
+        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/despachos' },
           { label: 'Tickets de romana', to: '/app/despachos/tickets' },
