@@ -37,10 +37,17 @@ interface LogoProps {
  * lateral necesita una marca cuadrada de 32 píxeles, y un círculo lo llena
  * mejor que cualquier recorte de un logotipo horizontal.
  *
- * PENDIENTE, Y NO ES MENOR: `src/lib/ficha/marca.ts` sigue dibujando el pico
- * azul sobre lienzo, y de ahí lo toman el carnet, las constancias, los recibos
- * de pago y los documentos de venta. Esos papeles salen de la empresa con la
- * marca vieja hasta que se redibujen.
+ * EL PAPEL Y LA PANTALLA BEBEN DE LA MISMA FUENTE
+ *
+ * `marca.ts` —el pico azul dibujado a mano— ya no existe: `src/lib/ficha/logo.ts`
+ * lee este mismo `/media/marca.webp` y de ahí lo toman el carné, las
+ * constancias, los recibos y los documentos de venta. Cambiar esa imagen cambia
+ * la marca en todas partes a la vez, que es justo lo que se quería.
+ *
+ * El 4 de septiembre de 2026 se cambió por la versión que lleva el RIF debajo
+ * de «TS CA». A 32 píxeles ese renglón no se lee y da igual; a 14 mm impresos
+ * sí, que es donde hacía falta. El RIF además se imprime como texto en el
+ * membrete, así que el papel no depende de que la imagen se lea.
  */
 export function Logo({ className, markOnly = false, inverted = false }: LogoProps) {
   return (
