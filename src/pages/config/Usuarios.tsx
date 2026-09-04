@@ -1,5 +1,7 @@
 import { Fragment, useMemo, useState } from 'react'
 import {
+  Archive,
+  ArchiveRestore,
   KeyRound,
   Search,
   Plus,
@@ -28,6 +30,9 @@ import {
   alcanza,
   nivelAlMarcar,
   useActivarUsuario,
+  useArchivarUsuario,
+  useDesarchivarUsuario,
+  useMisAcciones,
   useAsignarRoles,
   useCambiarClave,
   useCrearRol,
@@ -294,7 +299,12 @@ function TarjetaRol({
 // Pestaña de roles
 // ---------------------------------------------------------------------------
 
-const rolVacio = { codigo: '', nombre: '', descripcion: '', a_la_medida: false }
+const rolVacio = {
+  codigo: '',
+  nombre: '',
+  descripcion: '',
+  a_la_medida: false,
+}
 
 function PestanaRoles({ editable }: { editable: boolean }) {
   const roles = useRoles()
@@ -445,7 +455,9 @@ function PestanaRoles({ editable }: { editable: boolean }) {
               })
             }
             onBorrar={() =>
-              eliminarRol.mutate(r.codigo, { onError: (e: Error) => setError(e.message) })
+              eliminarRol.mutate(r.codigo, {
+                onError: (e: Error) => setError(e.message),
+              })
             }
           />
         ))}
@@ -492,7 +504,9 @@ function PestanaRoles({ editable }: { editable: boolean }) {
               value={edicion.codigo}
               disabled={!edicion.nuevo}
               onChange={(e) =>
-                cambiarRol({ codigo: e.target.value.toUpperCase().replace(/\s/g, '_') })
+                cambiarRol({
+                  codigo: e.target.value.toUpperCase().replace(/\s/g, '_'),
+                })
               }
               hint="Mayúsculas y guion bajo. Es el nombre interno y no se puede cambiar después."
               placeholder="SUPERVISOR_PATIO"
@@ -602,16 +616,41 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
   const guardarPerfil = useGuardarPerfil()
   const asignarRoles = useAsignarRoles()
   const activar = useActivarUsuario()
+  const archivar = useArchivarUsuario()
+  const desarchivar = useDesarchivarUsuario()
   const cambiarClave = useCambiarClave()
   const { usuario: yo } = useSesion()
+
+  /*
+    Archivar no es solo del administrador: es una casilla —
+    USUARIOS.ARCHIVAR_USUARIO— que se marca en un rol o se presta por permiso
+    extendido. Por eso no cuelga de `editable`, que es ADMIN literal: quien
+    tenga la casilla ve el botón aunque el resto de la pantalla le salga en solo
+    lectura. El administrador la tiene siempre, porque pasa por encima de todas.
+  */
+  const acciones = useMisAcciones()
+  const archiva = acciones.puede('USUARIOS.ARCHIVAR_USUARIO')
 
   const [edicion, setEdicion] = useState<
     (typeof usuarioVacio & { id?: string; nuevo: boolean }) | null
   >(null)
-  const [clave, setClave] = useState<{ id: string; nombre: string; valor: string } | null>(null)
+  const [clave, setClave] = useState<{
+    id: string
+    nombre: string
+    valor: string
+  } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
   const [cambiandoEstado, setCambiandoEstado] = useState<UsuarioSistema | null>(null)
+
+  // En uso y archivados son dos listas, no un filtro: lo archivado no se mezcla
+  // con lo que trabaja, que es justo lo que se pidió.
+  const [apartado, setApartado] = useState<'en_uso' | 'archivados'>('en_uso')
+  const [archivando, setArchivando] = useState<{
+    cuenta: UsuarioSistema
+    motivo: string
+  } | null>(null)
+  const [desarchivando, setDesarchivando] = useState<UsuarioSistema | null>(null)
 
   // Igual que en la pestaña de roles: se actualiza a partir del valor vigente,
   // no del que tenía este render. Al teclear rápido, o al rellenar el
@@ -667,7 +706,10 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
         onSuccess: () =>
           asignarRoles.mutate(
             { id: edicion.id!, roles: edicion.roles },
-            { onSuccess: () => setEdicion(null), onError: (e: Error) => setError(e.message) },
+            {
+              onSuccess: () => setEdicion(null),
+              onError: (e: Error) => setError(e.message),
+            },
           ),
         onError: (e: Error) => setError(e.message),
       },
@@ -689,6 +731,10 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
   const nombreDeRol = (codigo: string) =>
     roles.data?.find((r) => r.codigo === codigo)?.nombre ?? codigo
 
+  const enUso = (usuarios.data ?? []).filter((u) => u.archivado_en === null)
+  const archivados = (usuarios.data ?? []).filter((u) => u.archivado_en !== null)
+  const lista = apartado === 'en_uso' ? enUso : archivados
+
   return (
     <>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -703,12 +749,45 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
         ) : null}
       </div>
 
+      <div className="mb-3 flex gap-1" role="tablist" aria-label="Qué cuentas se listan">
+        {(
+          [
+            { id: 'en_uso', etiqueta: 'En uso', n: enUso.length },
+            { id: 'archivados', etiqueta: 'Archivados', n: archivados.length },
+          ] as const
+        ).map((a) => (
+          <button
+            key={a.id}
+            type="button"
+            role="tab"
+            aria-selected={apartado === a.id}
+            onClick={() => setApartado(a.id)}
+            className={cn(
+              'rounded-full px-3 py-1 text-xs font-medium transition-colors',
+              apartado === a.id
+                ? 'bg-royal-600/12 text-royal-700 dark:text-royal-300'
+                : 'text-ink/55 hover:text-ink/80',
+            )}
+          >
+            {a.etiqueta} · {a.n}
+          </button>
+        ))}
+      </div>
+
       {usuarios.data && usuarios.data.length === 0 ? (
         <Card>
           <Vacio
             icono={<UsersIcon />}
             titulo="No hay usuarios"
             descripcion="Ni siquiera el administrador. Algo falta por correr en la base."
+          />
+        </Card>
+      ) : apartado === 'archivados' && archivados.length === 0 ? (
+        <Card>
+          <Vacio
+            icono={<Archive />}
+            titulo="Nada en el archivo"
+            descripcion="Las cuentas que se archiven aparecen aquí, con su motivo y quién las archivó. Solo se archiva lo que ya está inactivo."
           />
         </Card>
       ) : (
@@ -720,21 +799,30 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                   <th className="px-5 py-3 font-medium">Usuario</th>
                   <th className="px-3 py-3 font-medium">Nombre</th>
                   <th className="px-3 py-3 font-medium">Cargo</th>
-                  <th className="px-3 py-3 font-medium">Ficha de personal</th>
-                  <th className="px-3 py-3 font-medium">Roles</th>
+                  {apartado === 'en_uso' ? (
+                    <>
+                      <th className="px-3 py-3 font-medium">Ficha de personal</th>
+                      <th className="px-3 py-3 font-medium">Roles</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-3 py-3 font-medium">Archivado el</th>
+                      <th className="px-3 py-3 font-medium">Motivo</th>
+                    </>
+                  )}
                   <th className="px-5 py-3 text-right font-medium">Estado</th>
                 </tr>
               </thead>
               <tbody>
-                {(usuarios.data ?? []).map((u) => (
+                {lista.map((u) => (
                   <tr
                     key={u.id}
                     className={cn(
                       'border-hairline border-b transition-colors last:border-0',
-                      editable && 'hover:bg-ink/3 cursor-pointer',
+                      editable && apartado === 'en_uso' && 'hover:bg-ink/3 cursor-pointer',
                       !u.activo && 'opacity-55',
                     )}
-                    onClick={() => (editable ? abrir(u) : undefined)}
+                    onClick={() => (editable && apartado === 'en_uso' ? abrir(u) : undefined)}
                   >
                     <td className="text-ink/70 px-5 py-3 font-mono text-xs">
                       {u.usuario}
@@ -746,62 +834,119 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                     </td>
                     <td className="text-ink/85 px-3 py-3 font-medium">{u.nombre}</td>
                     <td className="text-ink/60 px-3 py-3">{u.cargo ?? '—'}</td>
-                    <td className="px-3 py-3">
-                      <FichaDeLaCuenta ficha={fichaPorPerfil.get(u.id)} />
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {u.roles.length === 0 ? (
-                          <span className="text-ink/40">Sin roles</span>
-                        ) : (
-                          u.roles.map((r) => (
-                            <Chip key={r} tone={r === 'ADMIN' ? 'safety' : 'neutral'}>
-                              {nombreDeRol(r)}
+                    {apartado === 'archivados' ? (
+                      <>
+                        <td className="text-ink/60 px-3 py-3">
+                          {fecha(u.archivado_en!)}
+                          <span className="text-ink/40 block text-xs">
+                            por {u.archivado_por_nombre ?? '—'}
+                          </span>
+                        </td>
+                        <td className="text-ink/60 px-3 py-3">{u.archivado_motivo}</td>
+                        <td className="px-5 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Chip tone="neutral">Archivado</Chip>
+                            {archiva ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={<ArchiveRestore />}
+                                aria-label={`Sacar del archivo a ${u.nombre}`}
+                                title="Sacar del archivo"
+                                onClick={(ev) => {
+                                  ev.stopPropagation()
+                                  setError(null)
+                                  setDesarchivando(u)
+                                }}
+                              />
+                            ) : null}
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-3 py-3">
+                          <FichaDeLaCuenta ficha={fichaPorPerfil.get(u.id)} />
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {u.roles.length === 0 ? (
+                              <span className="text-ink/40">Sin roles</span>
+                            ) : (
+                              u.roles.map((r) => (
+                                <Chip key={r} tone={r === 'ADMIN' ? 'safety' : 'neutral'}>
+                                  {nombreDeRol(r)}
+                                </Chip>
+                              ))
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Chip tone={u.activo ? 'success' : 'neutral'}>
+                              {u.activo ? 'Activo' : 'Inactivo'}
                             </Chip>
-                          ))
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Chip tone={u.activo ? 'success' : 'neutral'}>
-                          {u.activo ? 'Activo' : 'Inactivo'}
-                        </Chip>
-                        {editable ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={<KeyRound />}
-                            aria-label={`Cambiar la clave de ${u.nombre}`}
-                            title="Cambiar la clave"
-                            onClick={(ev) => {
-                              ev.stopPropagation()
-                              setClave({ id: u.id, nombre: u.nombre, valor: '' })
-                            }}
-                          />
-                        ) : null}
+                            {editable ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={<KeyRound />}
+                                aria-label={`Cambiar la clave de ${u.nombre}`}
+                                title="Cambiar la clave"
+                                onClick={(ev) => {
+                                  ev.stopPropagation()
+                                  setClave({
+                                    id: u.id,
+                                    nombre: u.nombre,
+                                    valor: '',
+                                  })
+                                }}
+                              />
+                            ) : null}
 
-                        {/* Un usuario no se borra: firmó cosas. Inactivar es
-                            el equivalente — deja de poder entrar y su nombre
-                            sigue estando en lo que hizo. El botón va aquí y no
-                            escondido dentro del formulario, que es donde nadie
-                            lo encuentra el día que hay que cortarle el acceso
-                            a alguien deprisa. */}
-                        {editable && u.usuario !== yo ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={u.activo ? <UserX /> : <UserCheck />}
-                            aria-label={`${u.activo ? 'Inactivar' : 'Reactivar'} a ${u.nombre}`}
-                            title={u.activo ? 'Inactivar' : 'Reactivar'}
-                            onClick={(ev) => {
-                              ev.stopPropagation()
-                              setCambiandoEstado(u)
-                            }}
-                          />
-                        ) : null}
-                      </div>
-                    </td>
+                            {/* Un usuario no se borra: firmó cosas. Inactivar es
+                            el equivalente — se queda sin permiso para nada y
+                            su nombre sigue estando en lo que hizo. El botón va
+                            aquí y no escondido dentro del formulario, que es
+                            donde nadie lo encuentra el día que hay que cortarle
+                            el acceso a alguien deprisa. */}
+                            {editable && u.usuario !== yo ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={u.activo ? <UserX /> : <UserCheck />}
+                                aria-label={`${u.activo ? 'Inactivar' : 'Reactivar'} a ${u.nombre}`}
+                                title={u.activo ? 'Inactivar' : 'Reactivar'}
+                                onClick={(ev) => {
+                                  ev.stopPropagation()
+                                  setError(null)
+                                  setCambiandoEstado(u)
+                                }}
+                              />
+                            ) : null}
+
+                            {/* Al archivo solo va lo que ya está apagado: el botón
+                            aparece cuando la cuenta está inactiva, y solo para
+                            quien tiene la casilla. Así la regla se ve antes de
+                            chocar con ella. */}
+                            {archiva && !u.activo && u.usuario !== yo ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={<Archive />}
+                                aria-label={`Archivar a ${u.nombre}`}
+                                title="Archivar"
+                                onClick={(ev) => {
+                                  ev.stopPropagation()
+                                  setError(null)
+                                  setArchivando({ cuenta: u, motivo: '' })
+                                }}
+                              />
+                            ) : null}
+                          </div>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -1031,7 +1176,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                     {
                       onSuccess: () => {
                         setAviso(
-                          `${cambiandoEstado.nombre} ${cambiandoEstado.activo ? 'ya no puede entrar' : 'puede volver a entrar'}.`,
+                          `${cambiandoEstado.nombre} ${cambiandoEstado.activo ? 'quedó inactivo: sin permiso para nada' : 'vuelve a estar activo'}.`,
                         )
                         setCambiandoEstado(null)
                       },
@@ -1057,18 +1202,25 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
 
             {/* Un usuario nunca se borra. Su nombre está en las compras que
                 pidió y en los pagos que hizo, y borrarlo dejaría documentos
-                firmados por nadie. Inactivar le quita la entrada y conserva
-                todo lo demás. */}
+                firmados por nadie. Inactivar le apaga los permisos y conserva
+                todo lo demás.
+
+                Y se dice lo que pasa de verdad: la clave sigue sirviendo para
+                entrar y ver el sistema vacío. Lo que cierra la sesión es
+                reponerle la clave. Antes aquí decía «deja de poder entrar», y
+                era mentira: el catálogo de acciones lo explica al revés. */}
             <p className="text-ink/70 text-sm leading-relaxed">
               {cambiandoEstado.activo ? (
                 <>
-                  Deja de poder entrar al sistema desde ya. Lo que hizo hasta hoy se conserva
-                  entero: su nombre sigue en lo que pidió, aprobó o pagó.
+                  Se queda sin permiso para nada desde ya: si entra con su clave, ve el sistema
+                  vacío. Lo que hizo hasta hoy se conserva entero: su nombre sigue en lo que pidió,
+                  aprobó o pagó. Si se fue de malas, repónle además la clave desde la llave, que es
+                  lo que le cierra la sesión. Una vez inactivo, se puede archivar.
                 </>
               ) : (
                 <>
-                  Vuelve a poder entrar con la misma clave que tenía. Si no la recuerda, cámbiasela
-                  desde la llave.
+                  Recupera sus roles y sus permisos con la misma clave que tenía. Si no la recuerda,
+                  cámbiasela desde la llave.
                 </>
               )}
             </p>
@@ -1076,6 +1228,128 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
               Los usuarios no se borran: un documento firmado por alguien que ya no existe no
               serviría de nada.
             </p>
+          </div>
+        </Modal>
+      ) : null}
+
+      {/* ---------- Archivar ---------- */}
+      {archivando ? (
+        <Modal
+          abierto
+          onCerrar={() => setArchivando(null)}
+          titulo={`Archivar a ${archivando.cuenta.nombre}`}
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setArchivando(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                disabled={archivar.isPending || archivando.motivo.trim().length < 4}
+                onClick={() =>
+                  archivar.mutate(
+                    {
+                      id: archivando.cuenta.id,
+                      motivo: archivando.motivo.trim(),
+                    },
+                    {
+                      onSuccess: () => {
+                        setAviso(`${archivando.cuenta.nombre} quedó en el archivo.`)
+                        setArchivando(null)
+                      },
+                      onError: (e: Error) => setError(e.message),
+                    },
+                  )
+                }
+              >
+                {archivar.isPending ? 'Archivando…' : 'Archivar'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            {error ? (
+              <div
+                role="alert"
+                className="border-danger/25 bg-danger-soft text-danger rounded-[6px] border p-3 text-sm"
+              >
+                {error}
+              </div>
+            ) : null}
+
+            <p className="text-ink/70 text-sm leading-relaxed">
+              Sale de la lista de en uso y queda en el archivo con la fecha, el motivo y tu nombre.
+              Sigue sin poder hacer nada, igual que inactivo, y su nombre sigue en todo lo que
+              firmó. Para volver a encenderlo habrá que sacarlo del archivo primero.
+            </p>
+
+            <Textarea
+              label="Motivo"
+              value={archivando.motivo}
+              rows={2}
+              onChange={(e) => setArchivando((v) => (v ? { ...v, motivo: e.target.value } : v))}
+              hint="Es lo que va a leer quien lo busque dentro de un año."
+            />
+          </div>
+        </Modal>
+      ) : null}
+
+      {/* ---------- Sacar del archivo ---------- */}
+      {desarchivando ? (
+        <Modal
+          abierto
+          onCerrar={() => setDesarchivando(null)}
+          titulo={`Sacar del archivo a ${desarchivando.nombre}`}
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setDesarchivando(null)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={desarchivar.isPending}
+                onClick={() =>
+                  desarchivar.mutate(
+                    { id: desarchivando.id },
+                    {
+                      onSuccess: () => {
+                        setAviso(`${desarchivando.nombre} volvió a la lista de en uso, inactivo.`)
+                        setDesarchivando(null)
+                        setApartado('en_uso')
+                      },
+                      onError: (e: Error) => setError(e.message),
+                    },
+                  )
+                }
+              >
+                {desarchivar.isPending ? 'Sacando…' : 'Sacar del archivo'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            {error ? (
+              <div
+                role="alert"
+                className="border-danger/25 bg-danger-soft text-danger rounded-[6px] border p-3 text-sm"
+              >
+                {error}
+              </div>
+            ) : null}
+
+            {/* Sacar del archivo no es decidir que la persona vuelve a entrar.
+                Vuelve inactiva, y encenderla es el botón del muñeco. */}
+            <p className="text-ink/70 text-sm leading-relaxed">
+              Vuelve a la lista de en uso, pero inactivo. Si tiene que volver a entrar, reactívalo
+              aparte desde su fila.
+            </p>
+            {desarchivando.archivado_motivo ? (
+              <p className="text-ink/50 text-xs leading-relaxed">
+                Se archivó el {fecha(desarchivando.archivado_en!)} por{' '}
+                {desarchivando.archivado_por_nombre ?? '—'}: «{desarchivando.archivado_motivo}».
+              </p>
+            ) : null}
           </div>
         </Modal>
       ) : null}
@@ -1124,7 +1398,13 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
   const [omitidas, setOmitidas] = useState<{ accion: string; motivo: string }[]>([])
 
   const limpiar = () => {
-    setForma({ usuario_id: '', acciones: [], motivo: '', desde: '', hasta: '' })
+    setForma({
+      usuario_id: '',
+      acciones: [],
+      motivo: '',
+      desde: '',
+      hasta: '',
+    })
     setBusca('')
     setError(null)
   }

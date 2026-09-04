@@ -17,6 +17,7 @@ const SUITES = {
   compras: () => import('./compras.mjs'),
   nomina: () => import('./nomina.mjs'),
   tesoreria: () => import('./tesoreria.mjs'),
+  usuarios: () => import('./usuarios.mjs'),
 }
 
 const pedidas = process.argv.slice(2)
