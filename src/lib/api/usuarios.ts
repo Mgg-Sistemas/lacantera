@@ -16,7 +16,12 @@ import { desenvolver, rpc } from './rpc'
  */
 export type Nivel = 'NINGUNO' | 'LECTURA' | 'ESCRITURA' | 'TOTAL'
 
-const RANGO: Record<Nivel, number> = { NINGUNO: 0, LECTURA: 1, ESCRITURA: 2, TOTAL: 3 }
+const RANGO: Record<Nivel, number> = {
+  NINGUNO: 0,
+  LECTURA: 1,
+  ESCRITURA: 2,
+  TOTAL: 3,
+}
 
 export function alcanza(nivel: Nivel | undefined, minimo: Nivel): boolean {
   return RANGO[nivel ?? 'NINGUNO'] >= RANGO[minimo]
@@ -136,9 +141,21 @@ export interface UsuarioSistema {
   activo: boolean
   creado_en: string
   roles: string[]
+  /**
+   * El archivo. Una cuenta archivada está siempre inactiva —lo garantiza la
+   * base— y sale de la lista de en uso. La marca es la fecha: no hay booleano.
+   */
+  archivado_en: string | null
+  archivado_por: string | null
+  /** Resuelto aquí, contra la misma lista: la base guarda solo el uuid. */
+  archivado_por_nombre: string | null
+  archivado_motivo: string | null
 }
 
-export interface MiPerfil extends UsuarioSistema {
+export interface MiPerfil extends Omit<
+  UsuarioSistema,
+  'archivado_en' | 'archivado_por' | 'archivado_por_nombre' | 'archivado_motivo'
+> {
   /** La clave vigente la puso el administrador: todavía no identifica a nadie. */
   debe_cambiar_clave: boolean
 }
@@ -176,10 +193,12 @@ export function useUsuarios() {
   return useQuery({
     queryKey: ['usuarios'],
     queryFn: async () => {
-      const perfiles = desenvolver<Omit<UsuarioSistema, 'roles'>[]>(
+      const perfiles = desenvolver<Omit<UsuarioSistema, 'roles' | 'archivado_por_nombre'>[]>(
         await supabase
           .from('perfiles')
-          .select('id, usuario, nombre, cargo, cedula, telefono, activo, creado_en')
+          .select(
+            'id, usuario, nombre, cargo, cedula, telefono, activo, creado_en, archivado_en, archivado_por, archivado_motivo',
+          )
           .order('nombre'),
       )
 
@@ -194,7 +213,15 @@ export function useUsuarios() {
         porUsuario.set(a.usuario_id, lista)
       }
 
-      return perfiles.map((p) => ({ ...p, roles: porUsuario.get(p.id) ?? [] }))
+      // Quién archivó a quién, con nombre. Sale de esta misma lista: quien
+      // archiva es siempre un usuario del sistema, y la lista los trae a todos.
+      const nombrePorId = new Map(perfiles.map((p) => [p.id, p.nombre]))
+
+      return perfiles.map((p) => ({
+        ...p,
+        roles: porUsuario.get(p.id) ?? [],
+        archivado_por_nombre: p.archivado_por ? (nombrePorId.get(p.archivado_por) ?? null) : null,
+      }))
     },
   })
 }
@@ -279,6 +306,28 @@ export function useActivarUsuario() {
   })
 }
 
+/**
+ * Al archivo. Solo entra una cuenta ya inactiva, y hay que decir por qué: la
+ * base rechaza las dos cosas, esto solo lleva la orden.
+ */
+export function useArchivarUsuario() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { id: string; motivo: string }) =>
+      rpc('archivar_usuario', { p_id: v.id, p_motivo: v.motivo }),
+    onSuccess: () => invalidar(qc),
+  })
+}
+
+/** Del archivo a la lista de en uso — inactiva. Encenderla es otro botón. */
+export function useDesarchivarUsuario() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { id: string }) => rpc('desarchivar_usuario', { p_id: v.id }),
+    onSuccess: () => invalidar(qc),
+  })
+}
+
 export function useCambiarClave() {
   return useMutation({
     mutationFn: (v: { id: string; clave: string }) =>
@@ -300,7 +349,11 @@ export function useGuardarPermiso() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (v: { rol: string; modulo: string; nivel: Nivel }) =>
-      rpc('guardar_permiso_rol', { p_rol: v.rol, p_modulo: v.modulo, p_nivel: v.nivel }),
+      rpc('guardar_permiso_rol', {
+        p_rol: v.rol,
+        p_modulo: v.modulo,
+        p_nivel: v.nivel,
+      }),
     onSuccess: () => invalidarRoles(qc),
   })
 }
@@ -626,9 +679,14 @@ export function useMisAutorizaciones() {
   const consulta = useQuery({
     queryKey: ['mis-autorizaciones'],
     queryFn: () =>
-      rpc<{ accion: string; por_nombre: string; hasta: string | null; motivo: string }[]>(
-        'mis_autorizaciones',
-      ),
+      rpc<
+        {
+          accion: string
+          por_nombre: string
+          hasta: string | null
+          motivo: string
+        }[]
+      >('mis_autorizaciones'),
     staleTime: 5 * 60_000,
   })
 

@@ -5618,9 +5618,9 @@ La tabla tiene estas columnas:
 | **Cargo** | El cargo, si se llenó |
 | **Ficha de personal** | Si la cuenta está relacionada con un trabajador. Ver abajo |
 | **Roles** | Una etiqueta por rol. Si no tiene ninguno: **Sin roles** |
-| **Estado** | **Activo** o **Inactivo**, más el botón de la llave para cambiar la clave y el del muñeco para inactivar o reactivar |
+| **Estado** | **Activo** o **Inactivo**, más el botón de la llave para cambiar la clave, el del muñeco para inactivar o reactivar y, cuando la cuenta ya está inactiva, el de la caja para archivarla |
 
-Pulsar cualquier parte de la fila abre la ficha del usuario. **No hay buscador ni filtros** en esta pestaña.
+Pulsar cualquier parte de la fila abre la ficha del usuario. **No hay buscador** en esta pestaña; lo único que la parte en dos es el selector de arriba, **En uso** y **Archivados**, con el número de cuentas de cada lado.
 
 #### La columna «Ficha de personal»
 
@@ -5672,7 +5672,24 @@ Una advertencia sobre el reparto de roles, y no es menor: el sistema se instala 
 
 **Cambiar la clave.** Pulsa el botón de la llave en la fila. Se abre **Cambiar la clave**, con un solo campo, **Clave nueva**, y la ayuda **Mínimo 8 caracteres.** Cambiarle la clave a alguien **cierra todas sus sesiones abiertas** y le obliga a ponerse una propia la próxima vez que entre. Es lo mismo que pasa con un usuario nuevo, y por el mismo motivo.
 
-**Inactivar.** Pulsa el botón del muñeco. La ventana explica qué pasa: **Deja de poder entrar al sistema desde ya. Lo que hizo hasta hoy se conserva entero: su nombre sigue en lo que pidió, aprobó o pagó.** Y debajo: **Los usuarios no se borran: un documento firmado por alguien que ya no existe no serviría de nada.** Al reactivar, el texto es **Vuelve a poder entrar con la misma clave que tenía. Si no la recuerda, cámbiasela desde la llave.**
+**Inactivar.** Pulsa el botón del muñeco. La ventana explica qué pasa: **Se queda sin permiso para nada desde ya: si entra con su clave, ve el sistema vacío. Lo que hizo hasta hoy se conserva entero: su nombre sigue en lo que pidió, aprobó o pagó. Si se fue de malas, repónle además la clave desde la llave, que es lo que le cierra la sesión. Una vez inactivo, se puede archivar.** Y debajo: **Los usuarios no se borran: un documento firmado por alguien que ya no existe no serviría de nada.** Al reactivar, el texto es **Recupera sus roles y sus permisos con la misma clave que tenía. Si no la recuerda, cámbiasela desde la llave.**
+
+**Hasta el 4 de septiembre de 2026 esa ventana decía «Deja de poder entrar al sistema desde ya», y no era verdad.** Inactivar nunca ha cerrado la puerta: apaga los permisos. La persona puede seguir entrando con su clave y encontrarse el sistema vacío. Lo que de verdad le cierra la sesión es cambiarle la clave.
+
+#### Archivar una cuenta
+
+Una cuenta no se borra, pero tampoco tiene por qué quedarse para siempre en la lista de las que trabajan. **Archivar** la saca de **En uso** y la guarda en **Archivados** con la fecha, el motivo y quién la archivó.
+
+**La regla: primero se inactiva, después se archiva.** El botón de la caja solo aparece en las filas que ya están inactivas. Y no es solo la pantalla: la base no deja archivar una cuenta encendida, ni encender una cuenta archivada.
+
+1. Inactiva la cuenta con el botón del muñeco.
+2. Pulsa el botón de la caja. Se abre **Archivar a …** con el texto **Sale de la lista de en uso y queda en el archivo con la fecha, el motivo y tu nombre. Sigue sin poder hacer nada, igual que inactivo, y su nombre sigue en todo lo que firmó. Para volver a encenderlo habrá que sacarlo del archivo primero.**
+3. Escribe el **Motivo**. Es obligatorio, mínimo cuatro letras: **Es lo que va a leer quien lo busque dentro de un año.**
+4. Pulsa **Archivar**.
+
+En **Archivados** cada fila muestra cuándo se archivó, quién lo hizo y el motivo, con el botón de la caja abierta para **Sacar del archivo**. Al sacarla, la cuenta vuelve a **En uso** pero **inactiva**: sacar algo del archivo no es decidir que la persona vuelve a entrar. Si tiene que entrar, se reactiva aparte con el muñeco.
+
+**Quién puede archivar.** El administrador siempre. Y cualquier persona a la que se le dé la casilla **Archivar o sacar del archivo una cuenta** del módulo Usuarios, ya sea marcada en su rol o por un permiso extendido. Esa casilla no la concede ningún nivel del módulo: hay que darla a mano.
 
 **Un usuario no se borra nunca.** No existe forma de hacerlo. Un usuario firmó cosas: pidió material, aprobó órdenes, pagó facturas. Borrarlo dejaría todos esos documentos firmados por nadie, que es exactamente lo mismo que no estar firmados.
 

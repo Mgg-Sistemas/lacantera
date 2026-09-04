@@ -90,7 +90,10 @@ export function useAuditoria(filtros: FiltrosAuditoria, pagina: number) {
       }
 
       const { data, error, count } = await q
-      return { filas: desenvolver<Movimiento[]>({ data, error }), total: count ?? 0 }
+      return {
+        filas: desenvolver<Movimiento[]>({ data, error }),
+        total: count ?? 0,
+      }
     },
   })
 }
@@ -174,6 +177,9 @@ const CAMPOS: Record<string, string> = {
   activo: 'Activo',
   anulada_en: 'Anulada el',
   aprobada_en: 'Aprobada el',
+  archivado_en: 'Archivado el',
+  archivado_por: 'Archivado por',
+  archivado_motivo: 'Motivo del archivo',
   banco: 'Banco',
   base_estipulacion: 'Salario estipulado',
   cantidad: 'Cantidad',
