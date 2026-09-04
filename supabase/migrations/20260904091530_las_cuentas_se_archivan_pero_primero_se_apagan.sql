@@ -69,7 +69,7 @@
   catálogo vivo y se le añadió una sola guarda encima. No se reescribió de
   memoria.
 
-  APLICADA el 04/09/2026 y PROBADA en transacción deshecha con pruebas/usuarios.mjs.
+  APLICADA en produccion el 04/09/2026 a las 09:15:30 (ese es el sello del archivo, y el que quedo en supabase_migrations) y PROBADA en transacción deshecha con pruebas/usuarios.mjs.
 */
 
 -- ---------------------------------------------------------------------------
