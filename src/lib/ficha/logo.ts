@@ -27,10 +27,10 @@
  */
 
 /*
-  Se lee de `/media/marca.webp` y no de `/logoNuevo2.png`.
+  Se lee de `/media/marca.webp` y no del PNG original.
 
-  El PNG existe en el equipo pero esta en el `.gitignore` —el repositorio es
-  publico y las imagenes de marca no viajan— asi que nunca llego al servidor.
+  El PNG original existe en el equipo pero esta en el `.gitignore` —pesa medio
+  mega y el historial de git es permanente— asi que nunca llego al servidor.
   En produccion daba 404, la promesa se rompia, y como `armarDocumento` la
   espera antes de dibujar nada, el PDF no se generaba: el boton de Imprimir no
   hacia absolutamente nada, sin error visible.

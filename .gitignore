@@ -105,6 +105,7 @@ supabase/cargas/
 # ---------------------------------------------------------------------------
 public/cantera/*.png
 public/logoNuevo*.png
+public/logoCanteraRif.png
 public/paleta_colores.jpeg
 
 # Material de referencia que nos pasa el cliente —papeles de otros sistemas,
