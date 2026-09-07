@@ -155,6 +155,19 @@ export function ModalCargarCombustible({
     que poder.
   */
   const [confirmado, setConfirmado] = useState(false)
+
+  /*
+    LA CASILLA PERTENECE A UN NUMERO, NO AL FORMULARIO.
+
+    Si se marca «es correcto» con un costo y luego se teclea otro, lo que viaja
+    es `confirmado: true` con el numero nuevo, y la base lo acepta sin avisar.
+    El tanque y el combustible cuentan igual: el promedio se lleva por pareja
+    (almacen, articulo), asi que cambiar cualquiera de los dos cambia el numero
+    contra el que se comparo.
+  */
+  useEffect(() => {
+    setConfirmado(false)
+  }, [costo, tanque, articulo])
   const revision = useRevisarCostoDeEntrada(
     sinCosto ? null : Number(tanque) || null,
     sinCosto ? null : Number(articulo) || null,

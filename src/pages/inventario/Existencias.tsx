@@ -1200,7 +1200,18 @@ export function Existencias() {
                 label="A qué almacén entra"
                 vacio="Elige el sitio"
                 valor={aDonde}
-                onCambio={setADonde}
+                /*
+                  CAMBIAR DE ALMACEN OLVIDA TODAS LAS CONFIRMACIONES.
+
+                  El costo promedio se lleva por pareja (almacen, articulo), asi
+                  que mover la entrada de sitio cambia el numero contra el que se
+                  comparan TODOS los renglones. Una confirmacion dada contra el
+                  promedio de un almacen no dice nada del otro.
+                */
+                onCambio={(v) => {
+                  setADonde(v)
+                  setRenglones((lista) => lista.map((x) => ({ ...x, confirmado: false })))
+                }}
                 opciones={(almacenes ?? []).map((a) => ({
                   valor: String(a.id),
                   codigo: a.codigo,
@@ -1272,7 +1283,9 @@ export function Existencias() {
                         valor={r.articulo}
                         onCambio={(v) =>
                           setRenglones((lista) =>
-                            lista.map((x) => (x.clave === r.clave ? { ...x, articulo: v } : x)),
+                            lista.map((x) =>
+                              x.clave === r.clave ? { ...x, articulo: v, confirmado: false } : x,
+                            ),
                           )
                         }
                         opciones={(articulos ?? [])
@@ -1315,7 +1328,18 @@ export function Existencias() {
                           valor={r.costo}
                           onCambiar={(v) =>
                             setRenglones((lista) =>
-                              lista.map((x) => (x.clave === r.clave ? { ...x, costo: v } : x)),
+                              /*
+                              LA CASILLA PERTENECE A UN NUMERO, NO AL RENGLON.
+
+                              Sin esto, marcar «es correcto» con 5 y teclear
+                              luego 5.000 mandaba `confirmado: true` con el
+                              numero nuevo: la base lo aceptaba sin avisar de
+                              nada. Es justo el defecto que este formulario
+                              existe para evitar.
+                            */
+                            lista.map((x) =>
+                              x.clave === r.clave ? { ...x, costo: v, confirmado: false } : x,
+                            ),
                             )
                           }
                           articulo={art}
@@ -1332,7 +1356,11 @@ export function Existencias() {
                           onChange={(e) =>
                             setRenglones((lista) =>
                               lista.map((x) =>
-                                x.clave === r.clave ? { ...x, moneda: e.target.value } : x,
+                                // La moneda tambien: el promedio esta en dolares y la
+                                // conversion la hace la base con la tasa del dia.
+                                x.clave === r.clave
+                                  ? { ...x, moneda: e.target.value, confirmado: false }
+                                  : x,
                               ),
                             )
                           }

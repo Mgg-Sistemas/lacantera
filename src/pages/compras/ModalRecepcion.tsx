@@ -125,7 +125,18 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
           label="Almacén que recibe"
           vacio="Elige el almacén"
           valor={almacenElegido}
-          onCambio={(v) => setAlmacenId(v)}
+          /*
+            CAMBIAR DE ALMACEN OLVIDA LAS CONFIRMACIONES.
+
+            El precio del renglon no cambia —viene de la orden— pero el promedio
+            contra el que se compara si: se lleva por pareja (almacen, articulo).
+            Aceptar un desvio contra el promedio de un sitio no dice nada del
+            otro.
+          */
+          onCambio={(v) => {
+            setAlmacenId(v)
+            setConfirmados({})
+          }}
           opciones={(almacenes ?? []).map((a) => ({
             valor: String(a.id),
             etiqueta: `${a.codigo} · ${a.nombre}`,
