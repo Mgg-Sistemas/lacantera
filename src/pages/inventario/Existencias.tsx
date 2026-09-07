@@ -64,6 +64,17 @@ function cantidad(valor: string | number): string {
 }
 
 /**
+ * Un monto con dos decimales y sin símbolo.
+ *
+ * Sin símbolo a propósito: la moneda la elige el renglón y puede no ser dólares,
+ * así que se escribe al lado. `dolares()` clavaría un «$» que mentiría cuando la
+ * factura viene en bolívares.
+ */
+function monto(valor: number): string {
+  return valor.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/**
  * Lo que hay, empezando por el total de la empresa.
  *
  * PRIMERO TODO, DESPUÉS DÓNDE
@@ -1152,6 +1163,38 @@ export function Existencias() {
               <div className="mt-4 space-y-3">
                 {renglones.map((r, i) => {
                   const art = (articulos ?? []).find((a) => String(a.id) === r.articulo)
+
+                  /*
+                    CUÁNTO SUMA ESTE RENGLÓN, MIENTRAS SE ESCRIBE.
+
+                    El 5 de septiembre de 2026 entraron cinco aceites con el
+                    costo mal transcrito y el inventario pasó a valer 868
+                    millones de dólares. El sistema hizo la aritmética sin un
+                    fallo: guardó lo que recibió. Lo que no hizo fue enseñarlo.
+
+                    El formulario pedía CANTIDAD y COSTO POR UNIDAD y nunca
+                    mostraba el tercer número, que es el único que delata el
+                    error. «208 × 1.318.073,76» no dice nada a nadie;
+                    «274.159.342,08» lo dice todo, y lo dice cuando todavía se
+                    puede borrar y volver a escribir.
+
+                    Va en la moneda que se eligió y sin convertir: convertir aquí
+                    sería calcular una tasa en el navegador, que es justo lo que
+                    la regla 4 de la casa prohíbe. La conversión la hace la base
+                    al guardar.
+                  */
+                  const cant = Number(r.cantidad)
+                  const costo = Number(r.costo)
+                  const suma =
+                    r.cantidad.trim() !== '' &&
+                    r.costo.trim() !== '' &&
+                    Number.isFinite(cant) &&
+                    Number.isFinite(costo) &&
+                    cant > 0 &&
+                    costo > 0
+                      ? cant * costo
+                      : null
+
                   return (
                     <div
                       key={r.clave}
@@ -1243,10 +1286,62 @@ export function Existencias() {
                           opciones={enSimbolos(monedas.data)}
                         />
                       </div>
+
+                      {/* La cuenta hecha, en grande. No es decoración: es la
+                          única señal de que el número tecleado es el que se
+                          quería teclear. */}
+                      {suma !== null ? (
+                        <p className="border-hairline mt-3 border-t pt-2.5 text-sm">
+                          <span className="text-ink/45">
+                            {new Intl.NumberFormat('es-VE', { maximumFractionDigits: 4 }).format(
+                              cant,
+                            )}{' '}
+                            {art?.unidad ?? ''} × {monto(costo)} ={' '}
+                          </span>
+                          <span className="tabular text-ink/90 font-semibold">
+                            {monto(suma)} {r.moneda}
+                          </span>
+                        </p>
+                      ) : null}
                     </div>
                   )
                 })}
               </div>
+
+              {/*
+                EL TOTAL DE LA ENTRADA, y solo cuando todos los renglones van en
+                la misma moneda.
+
+                Con monedas mezcladas habría que convertir para sumar, y aquí no
+                se calcula ninguna tasa —regla 4—. Sumar peras con manzanas y
+                enseñarlo como un total sería peor que no enseñar nada: parecería
+                un dato y no lo sería. Con una sola moneda, que es el caso de una
+                factura, la suma es exacta y no hace falta convertir nada.
+              */}
+              {(() => {
+                const listos = renglones.filter(
+                  (r) =>
+                    r.articulo &&
+                    r.cantidad.trim() !== '' &&
+                    r.costo.trim() !== '' &&
+                    Number(r.cantidad) > 0 &&
+                    Number(r.costo) > 0,
+                )
+                if (listos.length < 2) return null
+                const monedasUsadas = new Set(listos.map((r) => r.moneda))
+                if (monedasUsadas.size > 1) return null
+                const total = listos.reduce((a, r) => a + Number(r.cantidad) * Number(r.costo), 0)
+                return (
+                  <div className="border-hairline mt-3 flex items-baseline justify-between border-t pt-3">
+                    <span className="text-ink/55 text-sm">
+                      Total de la entrada · {listos.length} renglones
+                    </span>
+                    <span className="tabular text-ink/90 text-lg font-semibold">
+                      {monto(total)} {listos[0].moneda}
+                    </span>
+                  </div>
+                )
+              })()}
 
               <Button
                 className="mt-3"

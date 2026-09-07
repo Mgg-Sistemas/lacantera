@@ -286,9 +286,22 @@ export function Movimientos() {
                     </td>
 
                     <td className="px-5 py-3 text-right whitespace-nowrap">
+                      {/*
+                        DE QUE COMPRA VINO, y no solo que vino de una.
+
+                        Una orden normal se aprueba antes de comprar; una compra
+                        directa se registra con la factura ya en la mano. En la
+                        lista se veian igual, y son dos controles distintos: la
+                        primera la autorizo alguien antes, la segunda se revisa
+                        despues. El numero va en el rotulo para no tener que
+                        abrir Compras solo para saber cual era.
+                      */}
                       {m.orden_id ? (
-                        <Chip tone="royal" className="mr-2">
-                          <Link to={`/app/compras`}>Compra</Link>
+                        <Chip tone={m.orden?.solicitud?.directa ? 'warning' : 'royal'} className="mr-2">
+                          <Link to="/app/compras">
+                            {m.orden?.solicitud?.directa ? 'Compra directa' : 'Compra'}
+                            {m.orden?.numero ? ` ${m.orden.numero}` : ''}
+                          </Link>
                         </Chip>
                       ) : null}
                       {/* Solo en las salidas: una entrada no tiene nota de
