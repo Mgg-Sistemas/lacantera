@@ -42,6 +42,7 @@ import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
   useAlmacenes,
   useExistencias,
+  useRevisarCostoDeEntrada,
   useExistenciasDeArticulo,
   useExistenciasTotales,
   useMovimientos,
@@ -325,21 +326,6 @@ export function Existencias() {
     undefined,
     modal?.tipo === 'salidas' || modal?.tipo === 'entrada',
   )
-
-  /**
-   * Lo que viene costando un artículo en un sitio, para avisar antes y no después.
-   *
-   * Nulo cuando nunca ha entrado ahí: la primera entrada no tiene contra qué
-   * compararse, y ese es justo el caso de los cinco aceites del 5 de septiembre.
-   * Ahí no protege esto, sino la cuenta hecha debajo de cada renglón.
-   */
-  const costoQueVieneTeniendo = (almacen: string, articulo: string): number | null => {
-    const e = (todas.data ?? []).find(
-      (x) => String(x.almacen_id) === almacen && String(x.articulo_id) === articulo,
-    )
-    const c = Number(e?.costo_promedio_usd ?? 0)
-    return c > 0 ? c : null
-  }
 
   /** Lo que hay de un artículo en un sitio concreto, para avisar antes y no después. */
   const hayEn = (almacen: string, articulo: string) =>
@@ -1325,119 +1311,29 @@ export function Existencias() {
                         de decirlo mientras se escribe, con la casilla al lado
                         para no tener que guardar, leer el error y volver.
 
-                        SOLO SE ADELANTA EN DÓLARES, y es a propósito: el costo
-                        se teclea en la moneda de la factura y el promedio está
-                        en dólares, así que compararlos pide una conversión. Las
-                        tasas no se calculan en el navegador —regla 4—, así que
-                        con otra moneda esto calla y avisa la base al guardar,
-                        que sí tiene la tasa del día.
-
-                        Y SOLO LE SALE A QUIEN PUEDE VER LA VALORACIÓN.
-                        `v_existencias` devuelve `costo_promedio_usd` en nulo a
-                        quien no tiene INVENTARIO.VER_VALORACION, y el rol
-                        ALMACEN —justo quien registra las entradas— NO lo tiene.
-                        Para esa persona esto no aparece nunca y la red es el
-                        mensaje de la base al guardar, que además está escrito
-                        para no revelarle el costo que la vista le esconde.
-
-                        No se disimula con un aviso vago: enseñar «esto es raro»
-                        sin poder decir cuánto ni respecto a qué es pedirle a
-                        alguien que dude sin darle con qué. Si conviene que quien
-                        teclea los costos pueda verlos, eso es una decisión de
-                        permisos y no se toma desde aquí.
+                        QUIEN DECIDE ES LA BASE, no esta pantalla. Antes se
+                        deducía de `v_existencias`, y eso salió mal de dos
+                        maneras que se tapaban entre sí: la vista esconde el
+                        promedio a quien no ve valoraciones, así que al
+                        almacenista le decía «primera entrada» siempre; y la
+                        comparación solo se hacía en dólares, que no es la
+                        moneda de las facturas de aquí.
                       */}
-                      {(() => {
-                        if (!r.articulo || costo <= 0 || cant <= 0) return null
-                        const viene = costoQueVieneTeniendo(aDonde, r.articulo)
-
-                        /*
-                          LA PRIMERA VEZ NO HAY CONTRA QUE COMPARAR, Y ES CUANDO
-                          MAS DUELE.
-
-                          Los cinco aceites del 5 de septiembre entraban por
-                          primera vez, asi que la reja de las diez veces no
-                          tenia con que medirlos y callo. No hay numero contra
-                          el que avisar; lo que si se puede es decir que NADIE
-                          lo esta comprobando, y que ese costo se convierte en
-                          la referencia de todo lo que venga despues.
-
-                          La base lo exige igual —`registrar_entradas` rechaza
-                          la primera entrada sin confirmar— asi que esto no es
-                          un adorno: sin la casilla, el guardado fallaria con un
-                          error que la pantalla no ofrece como resolver.
-
-                          Se pide una sola vez por articulo y almacen.
-                        */
-                        const esLaPrimera = viene === null
-                        if (esLaPrimera) {
-                          return (
-                            <div className="border-hairline bg-ink/4 rounded-card mt-3 border p-2.5">
-                              <p className="text-ink/80 text-xs leading-relaxed">
-                                <strong>Es la primera vez que entra a este almacén</strong>, así que
-                                no hay con qué comparar el costo. Serán{' '}
-                                <span className="tabular">{cantidad(cant)}</span>{' '}
-                                {art?.unidad ?? ''} a{' '}
-                                <span className="tabular">{monto(costo)}</span> cada una. Este costo
-                                se convierte en la referencia de todo lo que entre después.
-                              </p>
-                              <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
-                                <input
-                                  type="checkbox"
-                                  checked={r.confirmado === true}
-                                  onChange={(e) =>
-                                    setRenglones((lista) =>
-                                      lista.map((x) =>
-                                        x.clave === r.clave
-                                          ? { ...x, confirmado: e.target.checked }
-                                          : x,
-                                      ),
-                                    )
-                                  }
-                                />
-                                Lo comprobé con la factura
-                              </label>
-                            </div>
+                      <AvisoDeCosto
+                        almacenId={Number(aDonde) || null}
+                        articuloId={Number(r.articulo) || null}
+                        costo={costo}
+                        moneda={r.moneda}
+                        cantidad={cant}
+                        unidad={art?.unidad ?? ''}
+                        nombre={art?.nombre ?? 'Este artículo'}
+                        confirmado={r.confirmado === true}
+                        onConfirmar={(v) =>
+                          setRenglones((lista) =>
+                            lista.map((x) => (x.clave === r.clave ? { ...x, confirmado: v } : x)),
                           )
                         }
-
-                        if (r.moneda !== 'USD') return null
-                        const veces = costo / viene
-                        if (veces < 10 && veces > 0.1) return null
-                        return (
-                          <div className="border-warning/40 bg-warning-soft rounded-card mt-3 border p-2.5">
-                            <p className="text-ink/80 text-xs leading-relaxed">
-                              <strong>
-                                {art?.nombre ?? 'Este artículo'} viene costando {monto(viene)}
-                              </strong>{' '}
-                              por {art?.unidad ?? 'unidad'} y lo estás metiendo a {monto(costo)}:{' '}
-                              son{' '}
-                              <strong>
-                                {veces >= 10
-                                  ? `${monto(veces)} veces más`
-                                  : `${monto(1 / veces)} veces menos`}
-                              </strong>
-                              . Comprueba la factura y la moneda: un cero de más aquí se arrastra a
-                              cada salida.
-                            </p>
-                            <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
-                              <input
-                                type="checkbox"
-                                checked={r.confirmado === true}
-                                onChange={(e) =>
-                                  setRenglones((lista) =>
-                                    lista.map((x) =>
-                                      x.clave === r.clave
-                                        ? { ...x, confirmado: e.target.checked }
-                                        : x,
-                                    ),
-                                  )
-                                }
-                              />
-                              Es correcto, guárdalo así — quedará anotado en el movimiento
-                            </label>
-                          </div>
-                        )
-                      })()}
+                      />
 
                       {/* La cuenta hecha, en grande. No es decoración: es la
                           única señal de que el número tecleado es el que se
@@ -2063,5 +1959,124 @@ function ModalDesglose({
         </ul>
       ) : null}
     </Modal>
+  )
+}
+
+/**
+ * El aviso del costo, con la respuesta de la base en vez de una deducción.
+ *
+ * Es un componente y no un trozo suelto porque tiene que preguntar, y preguntar
+ * es un hook. Lo que gana con eso son las dos cosas que antes fallaban en
+ * silencio: sale en cualquier moneda —la conversión la hace la base con la tasa
+ * del día— y distingue de verdad la primera entrada del desvío, aunque quien
+ * teclea no tenga permiso para ver el promedio.
+ *
+ * A esa persona se le dice QUE se sale, no CUANTO. Es poco, pero es cierto, y
+ * es exactamente lo que dice el mensaje de la base cuando rechaza: así lo que
+ * lee antes de guardar y lo que leería después no se contradicen.
+ */
+function AvisoDeCosto({
+  almacenId,
+  articuloId,
+  costo,
+  moneda,
+  cantidad: cant,
+  unidad,
+  nombre,
+  confirmado,
+  onConfirmar,
+}: {
+  almacenId: number | null
+  articuloId: number | null
+  costo: number
+  moneda: string
+  cantidad: number
+  unidad: string
+  nombre: string
+  confirmado: boolean
+  onConfirmar: (valor: boolean) => void
+}) {
+  const revision = useRevisarCostoDeEntrada(almacenId, articuloId, costo, moneda)
+
+  if (!articuloId || costo <= 0 || cant <= 0) return null
+
+  const r = revision.data
+  /*
+    Mientras la base contesta no se pinta nada. Enseñar un hueco reservado que
+    luego casi siempre queda vacío entrena a no mirarlo, que es lo contrario de
+    lo que hace falta aquí.
+  */
+  if (!r || r.estado === 'NORMAL' || r.estado === 'SIN_ARTICULO') return null
+
+  if (r.estado === 'SIN_TASA') {
+    return (
+      <p className="text-ink/50 mt-3 text-xs">
+        No hay tasa del {moneda} para hoy, así que este costo no se puede comparar con lo que el
+        artículo viene costando. La base avisará al guardar.
+      </p>
+    )
+  }
+
+  const casilla = (texto: string) => (
+    <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
+      <input type="checkbox" checked={confirmado} onChange={(e) => onConfirmar(e.target.checked)} />
+      {texto}
+    </label>
+  )
+
+  /*
+    LA PRIMERA VEZ NO HAY CONTRA QUE COMPARAR, Y ES CUANDO MAS DUELE.
+
+    Los cinco aceites del 5 de septiembre entraban por primera vez, así que la
+    reja de las diez veces no tenía con qué medirlos y calló. No hay número
+    contra el que avisar; lo que sí se puede es decir que NADIE lo está
+    comprobando, y que ese costo se convierte en la referencia de todo lo que
+    venga después.
+
+    La base lo exige igual, así que esto no es un adorno: sin la casilla, el
+    guardado fallaría con un error que la pantalla no ofrece cómo resolver.
+  */
+  if (r.estado === 'PRIMERA') {
+    return (
+      <div className="border-hairline bg-ink/4 rounded-card mt-3 border p-2.5">
+        <p className="text-ink/80 text-xs leading-relaxed">
+          <strong>Es la primera vez que entra a este almacén</strong>, así que no hay con qué
+          comparar el costo. Serán <span className="tabular">{cantidad(cant)}</span> {unidad} a{' '}
+          <span className="tabular">{monto(costo)}</span> cada una. Este costo se convierte en la
+          referencia de todo lo que entre después.
+        </p>
+        {casilla('Lo comprobé con la factura')}
+      </div>
+    )
+  }
+
+  const veLasCifras = r.veces != null && r.viene_costando != null && r.entra_a != null
+
+  return (
+    <div className="border-warning/40 bg-warning-soft rounded-card mt-3 border p-2.5">
+      <p className="text-ink/80 text-xs leading-relaxed">
+        {veLasCifras ? (
+          <>
+            <strong>
+              {nombre} viene costando {monto(r.viene_costando!)}
+            </strong>{' '}
+            por {unidad || 'unidad'} y lo estás metiendo a {monto(r.entra_a!)}: son{' '}
+            <strong>
+              {monto(r.veces!)} veces {r.hacia === 'ARRIBA' ? 'más' : 'menos'}
+            </strong>
+            .
+          </>
+        ) : (
+          <>
+            <strong>
+              Este costo se sale mucho de lo que {nombre} viene costando en este almacén
+            </strong>{' '}
+            — es más de diez veces {r.hacia === 'ARRIBA' ? 'más caro' : 'más barato'}.
+          </>
+        )}{' '}
+        Comprueba la factura y la moneda: un cero de más aquí se arrastra a cada salida.
+      </p>
+      {casilla('Es correcto, guárdalo así — quedará anotado en el movimiento')}
+    </div>
   )
 }

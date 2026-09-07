@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { useAlmacenes, useRegistrarEntrada } from '@/lib/api/inventario'
+import {
+  useAlmacenes,
+  useRegistrarEntrada,
+  useRevisarCostoDeEntrada,
+} from '@/lib/api/inventario'
 import { useCombustibles } from '@/lib/api/combustible'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { cn } from '@/lib/cn'
@@ -121,6 +125,7 @@ export function ModalCargarCombustible({
     setArticulo('')
     setCantidad('')
     setCosto('')
+    setConfirmado(false)
     setMotivo('')
     setReferencia('')
     setDia(hoy)
@@ -136,6 +141,28 @@ export function ModalCargarCombustible({
   const unidad =
     (combustibles.data ?? []).find((c) => String(c.id) === articulo)?.unidad ?? 'L'
 
+  /*
+    LA REJA DEL COSTO RARO TAMBIEN PASA POR AQUI.
+
+    `registrar_entrada` rechaza el costo que se sale diez veces del que el
+    combustible viene teniendo en ese tanque. Es un caso real y legitimo: una
+    compra a precio de mercado sobre un promedio subsidiado. Sin la casilla, el
+    mensaje decia «aceptalo» y no habia donde — y este modal existe justamente
+    para que nadie tenga que irse a Existencias a resolverlo.
+
+    Se pregunta a la base y no se deduce de la vista: `costo_promedio_usd` sale
+    nulo a quien no puede ver valoraciones, y quien carga el tanque no tiene por
+    que poder.
+  */
+  const [confirmado, setConfirmado] = useState(false)
+  const revision = useRevisarCostoDeEntrada(
+    sinCosto ? null : Number(tanque) || null,
+    sinCosto ? null : Number(articulo) || null,
+    Number(costo),
+    'USD',
+  )
+  const seSale = revision.data?.estado === 'DESVIA'
+
   const enviar = async () => {
     await entrada.mutateAsync({
       almacen_id: Number(tanque),
@@ -143,6 +170,7 @@ export function ModalCargarCombustible({
       cantidad: litros,
       costo_usd: sinCosto ? 0 : Number(costo),
       sin_costo: sinCosto,
+      confirmado,
       motivo: motivo.trim(),
       referencia: referencia.trim() || null,
       fecha: dia,
@@ -267,6 +295,41 @@ export function ModalCargarCombustible({
           onChange={(e) => setMotivo(e.target.value)}
         />
       </div>
+
+      {seSale ? (
+        <div className="border-warning/40 bg-warning-soft rounded-card mt-4 border p-2.5">
+          <p className="text-ink/80 text-xs leading-relaxed">
+            {revision.data?.veces != null ? (
+              <>
+                <strong>
+                  Este combustible viene costando {revision.data.viene_costando} en ese tanque
+                </strong>{' '}
+                y lo estás metiendo a {revision.data.entra_a}: son{' '}
+                <strong>
+                  {revision.data.veces} veces{' '}
+                  {revision.data.hacia === 'ARRIBA' ? 'más' : 'menos'}
+                </strong>
+                .
+              </>
+            ) : (
+              <>
+                <strong>Este costo se sale mucho del que ese tanque viene teniendo</strong> — es
+                más de diez veces {revision.data?.hacia === 'ARRIBA' ? 'más caro' : 'más barato'}.
+              </>
+            )}{' '}
+            Comprueba la factura: un cero de más aquí se arrastra a cada vale que salga del
+            tanque.
+          </p>
+          <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={confirmado}
+              onChange={(e) => setConfirmado(e.target.checked)}
+            />
+            Es correcto, guárdalo así — quedará anotado en el movimiento
+          </label>
+        </div>
+      ) : null}
 
       {entrada.error ? <ErrorDeCarga error={entrada.error} className="mt-3" /> : null}
     </Modal>

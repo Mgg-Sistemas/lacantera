@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/Input'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { useAlmacenes, useRegistrarRecepcion } from '@/lib/api/inventario'
+import {
+  useAlmacenes,
+  useRegistrarRecepcion,
+  useRevisarCostoDeEntrada,
+} from '@/lib/api/inventario'
 import type { Orden } from '@/lib/api/compras'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 
@@ -58,6 +62,20 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
     Por eso el almacén se enlaza desde la solicitud: quien pide sabe a dónde
     va, y quien recibe no tiene por qué adivinarlo.
   */
+  /*
+    LO QUE SE ACEPTA A SABIENDAS.
+
+    `registrar_recepcion` rechaza el renglón cuyo precio se sale diez veces de
+    lo que el artículo viene costando, salvo que venga confirmado. Y rechaza la
+    recepción ENTERA: sin esta casilla, el mensaje decía «acéptalo y quedará
+    anotado» en una pantalla donde no había nada que aceptar, y de paso se
+    perdían las cantidades ya tecleadas de los demás renglones.
+
+    Aquí el precio no se teclea —viene de la orden— así que la otra salida es
+    corregir la orden. Eso se dice en el aviso.
+  */
+  const [confirmados, setConfirmados] = useState<Record<number, boolean>>({})
+
   const [almacenId, setAlmacenId] = useState(() => String(destinoDelPedido ?? ''))
   const [fecha, setFecha] = useState(hoyEnCaracas())
   const [nota, setNota] = useState('')
@@ -75,6 +93,7 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
         .map((r) => ({
           orden_renglon_id: r.id,
           cantidad: Number(cantidades[r.id] ?? 0),
+          confirmado: confirmados[r.id] === true,
         }))
         .filter((r) => r.cantidad > 0),
     })
@@ -156,6 +175,17 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
               onChange={(e) => setCantidades((c) => ({ ...c, [r.id]: e.target.value }))}
               hint="Déjalo en cero si este renglón no llegó todavía."
             />
+
+            <AvisoDelPrecioDeLaOrden
+              almacenId={Number(almacenElegido) || null}
+              articuloId={r.articulo_id}
+              precio={Number(r.precio_unitario)}
+              moneda={orden.moneda}
+              descripcion={r.descripcion}
+              activo={Number(cantidades[r.id] ?? 0) > 0}
+              confirmado={confirmados[r.id] === true}
+              onConfirmar={(v) => setConfirmados((c) => ({ ...c, [r.id]: v }))}
+            />
           </div>
         ))}
 
@@ -175,5 +205,78 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
 
       {recibir.error ? <ErrorDeCarga error={recibir.error} className="mt-4" /> : null}
     </Modal>
+  )
+}
+
+/**
+ * El precio de esta orden contra lo que el artículo viene costando.
+ *
+ * Se pregunta a la base —`revisar_costo_de_entrada`— y no se deduce de la
+ * vista de existencias, porque esa esconde el promedio a quien no puede ver
+ * valoraciones y entonces el aviso no le saldría nunca a quien recibe.
+ *
+ * Aquí solo importa el desvío. La primera entrada de un artículo no se
+ * confirma en la recepción: el precio ya lo miró alguien al armar la orden, y
+ * `registrar_recepcion` tampoco la exige.
+ */
+function AvisoDelPrecioDeLaOrden({
+  almacenId,
+  articuloId,
+  precio,
+  moneda,
+  descripcion,
+  activo,
+  confirmado,
+  onConfirmar,
+}: {
+  almacenId: number | null
+  articuloId: number | null
+  precio: number
+  moneda: string
+  descripcion: string
+  activo: boolean
+  confirmado: boolean
+  onConfirmar: (valor: boolean) => void
+}) {
+  const revision = useRevisarCostoDeEntrada(
+    activo ? almacenId : null,
+    activo ? articuloId : null,
+    precio,
+    moneda,
+  )
+
+  const r = revision.data
+  if (!activo || !r || r.estado !== 'DESVIA') return null
+
+  const veLasCifras = r.veces != null && r.viene_costando != null && r.entra_a != null
+
+  return (
+    <div className="border-warning/40 bg-warning-soft rounded-card mt-3 border p-2.5">
+      <p className="text-ink/80 text-xs leading-relaxed">
+        {veLasCifras ? (
+          <>
+            <strong>
+              {descripcion} viene costando {r.viene_costando}
+            </strong>{' '}
+            y en esta orden entra a {r.entra_a}: son{' '}
+            <strong>
+              {r.veces} veces {r.hacia === 'ARRIBA' ? 'más' : 'menos'}
+            </strong>
+            .
+          </>
+        ) : (
+          <>
+            <strong>El precio de esta orden se sale mucho de lo que {descripcion} viene costando</strong>{' '}
+            — es más de diez veces {r.hacia === 'ARRIBA' ? 'más caro' : 'más barato'}.
+          </>
+        )}{' '}
+        Si el precio de la orden está mal, corrígelo en la orden antes de recibir: aquí solo se
+        acepta o se para.
+      </p>
+      <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
+        <input type="checkbox" checked={confirmado} onChange={(e) => onConfirmar(e.target.checked)} />
+        El precio de la orden es correcto — quedará anotado en el movimiento
+      </label>
+    </div>
   )
 }

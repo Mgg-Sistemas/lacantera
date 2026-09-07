@@ -294,6 +294,16 @@ function useAccionInventario<A>(fn: (args: A) => Promise<unknown>) {
 export interface RenglonRecibido {
   orden_renglon_id: number
   cantidad: number
+  /**
+   * Alguien vio que el precio de la orden se sale de lo que el artículo viene
+   * costando, y decidió recibirlo igual.
+   *
+   * `registrar_recepcion` tiene la misma reja que las entradas: el precio del
+   * renglón se tecleó en algún momento y de ahí pasa al libro. Sin esta clave
+   * la recepción rebota entera —los demás renglones incluidos— con un mensaje
+   * que dice «acéptalo», y hasta hoy no había nada que aceptar en la pantalla.
+   */
+  confirmado?: boolean
 }
 
 export function useRegistrarRecepcion() {
@@ -364,6 +374,14 @@ export function useRegistrarEntrada() {
       fecha?: string
       /** El gasto lo asumió otra empresa del grupo. Obliga a costo cero. */
       sin_costo?: boolean
+      /**
+       * Alguien vio el aviso de costo raro y decidió guardarlo igual.
+       *
+       * Esta puerta también tiene la reja de las diez veces. Sin mandar esto,
+       * cargar combustible a precio de mercado sobre un promedio subsidiado
+       * fallaba con un «acéptalo» que la pantalla no ofrecía cómo aceptar.
+       */
+      confirmado?: boolean
     }) =>
       rpc<number>('registrar_entrada', {
         p_almacen_id: e.almacen_id,
@@ -374,6 +392,7 @@ export function useRegistrarEntrada() {
         p_referencia: e.referencia ?? null,
         p_fecha: e.fecha ?? null,
         p_sin_costo: e.sin_costo ?? false,
+        p_confirmado: e.confirmado ?? false,
       }),
   )
 }
@@ -393,6 +412,65 @@ export interface RenglonDeEntrada {
    * marcado con el factor.
    */
   confirmado?: boolean
+}
+
+/** Lo que la base contesta sobre un costo que se está tecleando. */
+export interface RevisionDeCosto {
+  /**
+   * `PRIMERA` no hay promedio contra el que comparar · `DESVIA` se sale diez
+   * veces · `NORMAL` nada que decir · `SIN_TASA` no hay tasa de ese día, así
+   * que no se puede comparar · `SIN_ARTICULO` no existe o está inactivo.
+   */
+  estado: 'PRIMERA' | 'DESVIA' | 'NORMAL' | 'SIN_TASA' | 'SIN_ARTICULO'
+  hacia?: 'ARRIBA' | 'ABAJO'
+  /** Las tres cifras vienen nulas a quien no puede ver la valoración. */
+  veces?: number | null
+  viene_costando?: number | null
+  entra_a?: number | null
+}
+
+/**
+ * ¿Este costo es el primero de este artículo aquí, o se sale de lo que viene
+ * costando?
+ *
+ * LA PANTALLA NO PUEDE DEDUCIRLO SOLA, y creerlo costó una reja entera. El
+ * formulario lo sacaba de `v_existencias.costo_promedio_usd`, que devuelve nulo
+ * a quien no tiene INVENTARIO.VER_VALORACION —nivel TOTAL, y ALMACEN tiene
+ * ESCRITURA—. Para el almacenista salía nulo siempre, así que la pantalla decía
+ * «es la primera vez que entra» en la entrada número treinta, y la casilla que
+ * marcaba para poder seguir manda `confirmado`, que en la base vale también
+ * para la reja de las diez veces: el aviso del desvío quedaba aceptado sin
+ * haberse llegado a enseñar.
+ *
+ * La vista filtra para MOSTRAR; esta función contesta para DECIDIR. Dice QUE
+ * pasa a todo el mundo y CUANTO solo a quien puede ver el dinero, igual que los
+ * mensajes de la base.
+ *
+ * Y como la conversión la hace ella con la tasa del día, el aviso también
+ * funciona en bolívares — antes callaba con cualquier moneda que no fuera el
+ * dólar, que es justo la moneda de las facturas de aquí.
+ */
+export function useRevisarCostoDeEntrada(
+  almacenId: number | null,
+  articuloId: number | null,
+  costo: number,
+  moneda: string,
+) {
+  return useQuery({
+    queryKey: ['revision-costo', almacenId, articuloId, costo, moneda],
+    enabled: !!almacenId && !!articuloId && costo > 0,
+    // El costo no cambia solo: lo que conteste para estas cuatro cosas vale
+    // mientras el formulario siga abierto.
+    staleTime: 5 * 60 * 1000,
+    queryFn: () =>
+      rpc<RevisionDeCosto>('revisar_costo_de_entrada', {
+        p_almacen_id: almacenId,
+        p_articulo_id: articuloId,
+        p_costo: costo,
+        p_moneda: moneda,
+        p_fecha: null,
+      }),
+  })
 }
 
 /**
