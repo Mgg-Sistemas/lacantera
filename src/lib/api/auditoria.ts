@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver } from './rpc'
+import { descargarCsv } from './libros'
 
 /**
  * El registro de lo que hace cada quien.
@@ -27,6 +28,22 @@ export interface Movimiento {
   despues: Record<string, unknown> | null
   cambios: string[] | null
   ip: string | null
+  /**
+   * De qué módulo es la tabla tocada.
+   *
+   * Contesta «¿qué pasó ayer en Nómina?» sin que quien pregunta tenga que saber
+   * qué tablas son de Nómina. Sale de `auditoria_modulos`, que es un mapa
+   * corregible, y se congela al escribirse: lo ya registrado sigue diciendo
+   * dónde pasó aunque el mapa cambie después.
+   */
+  modulo: string | null
+  /**
+   * El porqué, cuando la fila lo llevaba.
+   *
+   * Estaba guardado dentro de `despues` y había que abrir el JSON para leerlo.
+   * Ahora sube a columna, así que se puede leer de un vistazo y filtrar por él.
+   */
+  motivo: string | null
 }
 
 export interface FiltrosAuditoria {
@@ -34,6 +51,7 @@ export interface FiltrosAuditoria {
   hasta?: string
   usuario_id?: string
   tabla?: string
+  modulo?: string
   operacion?: string
   texto?: string
   /**
@@ -53,8 +71,17 @@ export function useAuditoria(filtros: FiltrosAuditoria, pagina: number) {
   return useQuery({
     queryKey: ['auditoria', filtros, pagina],
     queryFn: async () => {
+      /*
+        Se lee de `v_auditoria` y no de la tabla.
+
+        La tabla es inmutable —y debe serlo— así que los 1.024 registros
+        anteriores al 7/09/2026 no tienen las columnas nuevas. La vista las
+        deduce al leer: el módulo desde el mapa y el motivo desde el JSON. Así
+        el registro se ve entero desde el primer día sin haber reescrito una
+        sola fila.
+      */
       let q = supabase
-        .from('auditoria')
+        .from('v_auditoria')
         .select('*', { count: 'exact' })
         .order('ocurrido_en', { ascending: false })
         .order('id', { ascending: false })
@@ -83,10 +110,15 @@ export function useAuditoria(filtros: FiltrosAuditoria, pagina: number) {
       if (filtros.hasta) q = q.lte('ocurrido_en', `${filtros.hasta}T23:59:59.999`)
       if (filtros.usuario_id) q = q.eq('usuario_id', filtros.usuario_id)
       if (filtros.tabla) q = q.eq('tabla', filtros.tabla)
+      if (filtros.modulo) q = q.eq('modulo', filtros.modulo)
       if (filtros.operacion) q = q.eq('operacion', filtros.operacion)
       if (filtros.texto?.trim()) {
         const t = filtros.texto.trim()
-        q = q.or(`etiqueta.ilike.%${t}%,usuario.ilike.%${t}%,nombre.ilike.%${t}%`)
+        // El motivo entra en la búsqueda: «¿quién anuló algo por daño?» es una
+        // pregunta que se hace por el porqué y no por el nombre de nadie.
+        q = q.or(
+          `etiqueta.ilike.%${t}%,usuario.ilike.%${t}%,nombre.ilike.%${t}%,motivo.ilike.%${t}%`,
+        )
       }
 
       const { data, error, count } = await q
@@ -114,6 +146,26 @@ export function useTablasAuditadas() {
         await supabase.from('auditoria').select('tabla').limit(5000),
       )
       return [...new Set(filas.map((f) => f.tabla))].sort()
+    },
+  })
+}
+
+/**
+ * Los módulos que aparecen en el registro, para el desplegable.
+ *
+ * Del mapa y no de lo anotado: a diferencia de las tablas, aquí sí interesa
+ * ofrecer un módulo donde todavía no ha pasado nada. Que Explotación salga
+ * vacía es una respuesta —«ahí no se ha tocado nada»— y no un hueco.
+ */
+export function useModulosAuditados() {
+  return useQuery({
+    queryKey: ['auditoria', 'modulos'],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const filas = desenvolver<{ modulo: string }[]>(
+        await supabase.from('auditoria_modulos').select('modulo'),
+      )
+      return [...new Set(filas.map((f) => f.modulo))].sort()
     },
   })
 }
@@ -298,4 +350,121 @@ export function valorLegible(v: unknown): string {
   }
 
   return s
+}
+
+// ---------------------------------------------------------------------------
+// La copia del registro
+// ---------------------------------------------------------------------------
+
+/**
+ * Cuántos renglones se lleva una copia como máximo.
+ *
+ * No es una preferencia: una descarga sin tope es una consulta que puede tumbar
+ * el navegador con el registro de un año. Si se llega al tope se avisa, que es
+ * lo que separa una copia incompleta de una copia incompleta y silenciosa.
+ */
+export const TOPE_DE_COPIA = 5000
+
+/**
+ * El registro filtrado, entero, para llevárselo.
+ *
+ * Respeta los filtros de la pantalla y NO la paginación: quien pide una copia
+ * quiere lo que está mirando, no los sesenta renglones que le caben en el
+ * cristal. Es la misma consulta sin `range`.
+ */
+async function traerParaCopiar(filtros: FiltrosAuditoria): Promise<Movimiento[]> {
+  let q = supabase
+    .from('v_auditoria')
+    .select('*')
+    .order('ocurrido_en', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(TOPE_DE_COPIA)
+
+  if (!filtros.incluirSistema) q = q.not('usuario_id', 'is', null)
+  if (filtros.desde) q = q.gte('ocurrido_en', `${filtros.desde}T00:00:00`)
+  if (filtros.hasta) q = q.lte('ocurrido_en', `${filtros.hasta}T23:59:59.999`)
+  if (filtros.usuario_id) q = q.eq('usuario_id', filtros.usuario_id)
+  if (filtros.tabla) q = q.eq('tabla', filtros.tabla)
+  if (filtros.modulo) q = q.eq('modulo', filtros.modulo)
+  if (filtros.operacion) q = q.eq('operacion', filtros.operacion)
+  if (filtros.texto?.trim()) {
+    const t = filtros.texto.trim()
+    q = q.or(`etiqueta.ilike.%${t}%,usuario.ilike.%${t}%,nombre.ilike.%${t}%,motivo.ilike.%${t}%`)
+  }
+
+  return desenvolver<Movimiento[]>(await q)
+}
+
+const marcaDeTiempo = () =>
+  new Date().toISOString().slice(0, 16).replace('T', '-').replace(':', '')
+
+/**
+ * La copia en CSV, para abrirla en una hoja de cálculo.
+ *
+ * Va sin el `antes` y el `despues` completos a propósito: son dos objetos JSON
+ * que en una celda no se leen y que hacen el archivo diez veces más grande. Lo
+ * que llevan estas columnas es lo que se lee de corrido —quién, cuándo, qué,
+ * dónde, por qué y qué campos cambiaron—, que es para lo que se abre una hoja.
+ *
+ * Quien necesite el detalle completo se lleva el JSON, que está al lado.
+ */
+export async function copiarAuditoriaCsv(filtros: FiltrosAuditoria): Promise<number> {
+  const filas = await traerParaCopiar(filtros)
+
+  descargarCsv(
+    `registro-${marcaDeTiempo()}.csv`,
+    ['Cuándo', 'Usuario', 'Nombre', 'Módulo', 'Qué', 'Operación', 'Cuál', 'Por qué', 'Cambió', 'IP'],
+    filas.map((f) => [
+      valorLegible(f.ocurrido_en),
+      f.usuario ?? '',
+      f.nombre ?? '',
+      f.modulo ?? '',
+      nombreDeTabla(f.tabla),
+      VERBOS[f.operacion] ?? f.operacion,
+      f.etiqueta ?? '',
+      f.motivo ?? '',
+      cambiosDeFondo(f.cambios).map(nombreDeCampo).join(', '),
+      f.ip ?? '',
+    ]),
+  )
+
+  return filas.length
+}
+
+/**
+ * La copia en JSON, con el antes y el después enteros.
+ *
+ * Esta es la que sirve para averiguar qué pasó de verdad: lleva cada fila tal
+ * como quedó registrada, sin traducir ni recortar. Es la que pidió Christopher
+ * pensando en nosotros —«más para nosotros que para el usuario»— y la que
+ * habría convertido la investigación del 5 de septiembre en una consulta.
+ *
+ * Se envuelve en un objeto con la fecha y los filtros usados, y no en un array
+ * pelado: un archivo de registro que no dice de dónde salió ni qué se pidió es
+ * un archivo que dentro de un mes no se puede defender.
+ */
+export async function copiarAuditoriaJson(filtros: FiltrosAuditoria): Promise<number> {
+  const filas = await traerParaCopiar(filtros)
+
+  const contenido = {
+    sistema: 'La Cantera · Minería Internacional TS',
+    extraido_en: new Date().toISOString(),
+    filtros,
+    completo: filas.length < TOPE_DE_COPIA,
+    tope: TOPE_DE_COPIA,
+    renglones: filas.length,
+    registro: filas,
+  }
+
+  const blob = new Blob([JSON.stringify(contenido, null, 2)], {
+    type: 'application/json;charset=utf-8',
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `registro-${marcaDeTiempo()}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+
+  return filas.length
 }
