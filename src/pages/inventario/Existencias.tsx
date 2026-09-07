@@ -1277,8 +1277,25 @@ export function Existencias() {
                           articulo={art}
                         />
 
+                        {/*
+                          EL CAMPO DICE EN QUE UNIDAD ESTA PIDIENDO EL COSTO.
+
+                          Decia «Costo por unidad», que no dice nada. Quien
+                          acaba de teclear 208 litros porque bajo un tambor del
+                          camion sigue pensando en tambores, y escribe el precio
+                          del tambor. Nada en la pantalla le contradice: la
+                          existencia se lleva en litros y el costo tambien, pero
+                          solo uno de los dos campos lo dice.
+
+                          «Costo por LITRO» es una frase que se puede desmentir
+                          leyendola. «Costo por unidad» no.
+
+                          Y si el articulo declara su presentacion, se recuerda
+                          la equivalencia debajo, que es donde nace la confusion:
+                          «1 TAMBOR = 208 L».
+                        */}
                         <Input
-                          label="Costo por unidad"
+                          label={`Costo por ${art?.unidad ?? 'unidad'}`}
                           type="number"
                           min="0"
                           step="0.0001"
@@ -1291,7 +1308,13 @@ export function Existencias() {
                               ),
                             )
                           }
-                          hint="Lo que costó, en la moneda en que se pagó."
+                          hint={
+                            art?.presentacion && Number(art.unidades_por_presentacion) > 1
+                              ? `Por ${art.unidad}, no por ${art.presentacion} (1 ${art.presentacion} = ${cantidad(art.unidades_por_presentacion ?? 0)} ${art.unidad}). En la moneda en que se pagó.`
+                              : art?.unidad
+                                ? `Lo que costó cada ${art.unidad}, en la moneda en que se pagó.`
+                                : 'Lo que costó, en la moneda en que se pagó.'
+                          }
                         />
 
                         {/* La moneda no se asume. El sistema maneja cuatro, y
