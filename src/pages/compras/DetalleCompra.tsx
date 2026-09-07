@@ -27,6 +27,7 @@ import { Visor } from '@/components/Visor'
 import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalCotizacion } from './ModalCotizacion'
@@ -44,6 +45,7 @@ import {
   ordenVigente,
   useAprobarCompra,
   useBitacora,
+  useCorregirPrecioDeOrden,
   useCancelarOrden,
   useCancelarPedido,
   useCompra,
@@ -62,7 +64,7 @@ import {
 // identificador de usuario. Dos cosas distintas no pueden llamarse igual en el
 // mismo archivo sin que una tape a la otra — y taparla es un error silencioso.
 import { useMetodosPago, nombreDe as nombreDelMetodo } from '@/lib/api/metodosPago' 
-import type { Cotizacion, InstruccionPago } from '@/lib/api/compras'
+import type { Cotizacion, InstruccionPago, Orden } from '@/lib/api/compras'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useFirmas } from '@/lib/api/firmas'
 import {
@@ -770,6 +772,10 @@ export function DetalleCompra() {
 
   const [resolucion, setResolucion] = useState('REEMBOLSADO')
 
+  /* Qué renglón se está corrigiendo, y a cuánto está hoy. */
+  const [precio, setPrecio] = useState<{ id: number; que: string; actual: string } | null>(null)
+
+
   /*
     LA ORDEN, EN PAPEL
 
@@ -1320,7 +1326,42 @@ export function DetalleCompra() {
                             </td>
                           ) : null}
                           <td className="tabular text-ink/70 px-3 py-2.5 text-right">
-                            {dinero(orden.moneda, r.precio_unitario)}
+                            {/*
+                              EL PRECIO MAL TECLEADO SE CORRIGE AQUI.
+
+                              Christopher pregunto si equivocarse en el precio
+                              obliga a rehacer la orden desde cero. Lo obligaba:
+                              `editar_compra_directa` solo atiende compras
+                              directas y remitia a un camino que no existia.
+
+                              El boton no sale si ese renglon ya recibio algo
+                              —el precio ya entro al libro, que es inmutable— ni
+                              a quien no tiene la accion. La base comprueba
+                              ademas los pagos y la factura, que desde aqui no
+                              se ven.
+                            */}
+                            {alcanza('COMPRAS.CORREGIR_PRECIO_ORDEN') &&
+                            Number(r.cantidad_recibida) === 0 &&
+                            !['CANCELADA', 'PROVEEDOR_DESISTIO'].includes(orden.estado) ? (
+                              <button
+                                type="button"
+                                className="hover:text-ink underline decoration-dotted underline-offset-4"
+                                title="Corregir este precio"
+                                onClick={() => setPrecio({ id: r.id, que: r.descripcion, actual: r.precio_unitario })}
+                              >
+                                {dinero(orden.moneda, r.precio_unitario)}
+                              </button>
+                            ) : (
+                              dinero(orden.moneda, r.precio_unitario)
+                            )}
+                            {r.motivo ? (
+                              <span
+                                className="text-ink/45 mt-0.5 block text-2xs italic"
+                                title={r.motivo}
+                              >
+                                corregido
+                              </span>
+                            ) : null}
                           </td>
                           <td className="tabular text-ink/85 py-2.5 pr-5 pl-3 text-right">
                             {dinero(orden.moneda, r.subtotal)}
@@ -2013,6 +2054,14 @@ export function DetalleCompra() {
         <ModalRecepcion abierto onCerrar={() => setModal(null)} orden={orden} />
       ) : null}
 
+      {precio && orden ? (
+        <ModalCorregirPrecio
+          orden={orden}
+          renglon={precio}
+          onCerrar={() => setPrecio(null)}
+        />
+      ) : null}
+
       <ModalMotivo
         abierto={modal?.tipo === 'cancelar-pedido'}
         onCerrar={() => setModal(null)}
@@ -2144,5 +2193,108 @@ export function DetalleCompra() {
         titulo="Orden de compra"
       />
     </>
+  )
+}
+
+/**
+ * Corregir un precio mal tecleado sin rehacer la orden.
+ *
+ * Christopher: «¿si el usuario se equivoca desde la orden de compra y el precio
+ * es errado, entonces se debe reversar todo desde cero?». Lo obligaba, y era
+ * caro: un dígito costaba el pedido, la cotización y la aprobación enteros.
+ *
+ * Lo que se corrige aquí también cambia la cotización de la que salió el
+ * precio, porque es de donde se copia al aprobar. Se dice, porque quien
+ * corrige tiene que saber que el papel que mandó el proveedor y el que va a
+ * imprimir la casa dejan de coincidir hasta que se reemita.
+ */
+function ModalCorregirPrecio({
+  orden,
+  renglon,
+  onCerrar,
+}: {
+  orden: Orden
+  renglon: { id: number; que: string; actual: string }
+  onCerrar: () => void
+}) {
+  const corregir = useCorregirPrecioDeOrden()
+  const [nuevo, setNuevo] = useState(renglon.actual)
+  const [porque, setPorque] = useState('')
+
+  const valor = Number(nuevo.replace(',', '.'))
+  const listo =
+    Number.isFinite(valor) &&
+    valor > 0 &&
+    Math.abs(valor - Number(renglon.actual)) > 1e-6 &&
+    porque.trim().length >= 10
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Corregir el precio"
+      descripcion={`${renglon.que} · orden ${orden.numero}`}
+      ancho="sm"
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={!listo || corregir.isPending}
+            onClick={async () => {
+              await corregir.mutateAsync({
+                orden_id: orden.id,
+                renglon_id: renglon.id,
+                precio: valor,
+                motivo: porque.trim(),
+              })
+              onCerrar()
+            }}
+          >
+            {corregir.isPending ? 'Corrigiendo…' : 'Corregir'}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-ink/70 text-sm">
+        Hoy está a{' '}
+        <span className="tabular text-ink/90 font-semibold">
+          {dinero(orden.moneda, renglon.actual)}
+        </span>
+        . Se corrige también en la cotización de la que salió, para que las dos digan lo mismo, y
+        los totales se rehacen solos.
+      </p>
+
+      <Input
+        label={`Precio correcto (${orden.moneda})`}
+        className="mt-4"
+        type="number"
+        min="0"
+        step="0.000001"
+        inputMode="decimal"
+        value={nuevo}
+        onChange={(e) => setNuevo(e.target.value)}
+      />
+
+      <Textarea
+        label="Por qué se corrige"
+        className="mt-4"
+        rows={2}
+        placeholder="Se transcribió mal el precio de la cotización NASELF 000617"
+        value={porque}
+        onChange={(e) => setPorque(e.target.value)}
+        hint="Queda en el registro, junto al precio de antes y al de ahora. Mínimo diez caracteres."
+      />
+
+      {/* La orden ya se imprimió y se mandó. Decirlo aquí es más barato que
+          descubrirlo cuando el proveedor entregue contra el papel viejo. */}
+      <p className="text-ink/55 mt-3 text-xs">
+        Si la orden ya se le envió al proveedor, hay que reemitírsela: el papel que tiene dice el
+        precio de antes.
+      </p>
+
+      {corregir.error ? <ErrorDeCarga error={corregir.error} className="mt-3" /> : null}
+    </Modal>
   )
 }
