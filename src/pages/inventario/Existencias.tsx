@@ -36,6 +36,7 @@ import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { supabase } from '@/lib/supabase'
 import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
+import { CostoDeArticulo } from '@/components/CostoDeArticulo'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
@@ -1278,43 +1279,24 @@ export function Existencias() {
                         />
 
                         {/*
-                          EL CAMPO DICE EN QUE UNIDAD ESTA PIDIENDO EL COSTO.
+                          EL COSTO SE TECLEA COMO VIENE EN LA FACTURA.
 
-                          Decia «Costo por unidad», que no dice nada. Quien
-                          acaba de teclear 208 litros porque bajo un tambor del
-                          camion sigue pensando en tambores, y escribe el precio
-                          del tambor. Nada en la pantalla le contradice: la
-                          existencia se lleva en litros y el costo tambien, pero
-                          solo uno de los dos campos lo dice.
-
-                          «Costo por LITRO» es una frase que se puede desmentir
-                          leyendola. «Costo por unidad» no.
-
-                          Y si el articulo declara su presentacion, se recuerda
-                          la equivalencia debajo, que es donde nace la confusion:
-                          «1 TAMBOR = 208 L».
+                          El gemelo del campo de cantidad. Quien acaba de teclear
+                          «3 tambores» y ver «= 624 L» sigue pensando en tambores
+                          cuando llega aqui, y antes esta casilla pedia el precio
+                          por litro sin decirlo. Ahora se puede teclear el precio
+                          del tambor y el componente lo divide, ensenando la
+                          cuenta con los dos lados escritos.
                         */}
-                        <Input
-                          label={`Costo por ${art?.unidad ?? 'unidad'}`}
-                          type="number"
-                          min="0"
-                          step="0.0001"
-                          inputMode="decimal"
-                          value={r.costo}
-                          onChange={(e) =>
+                        <CostoDeArticulo
+                          valor={r.costo}
+                          onCambiar={(v) =>
                             setRenglones((lista) =>
-                              lista.map((x) =>
-                                x.clave === r.clave ? { ...x, costo: e.target.value } : x,
-                              ),
+                              lista.map((x) => (x.clave === r.clave ? { ...x, costo: v } : x)),
                             )
                           }
-                          hint={
-                            art?.presentacion && Number(art.unidades_por_presentacion) > 1
-                              ? `Por ${art.unidad}, no por ${art.presentacion} (1 ${art.presentacion} = ${cantidad(art.unidades_por_presentacion ?? 0)} ${art.unidad}). En la moneda en que se pagó.`
-                              : art?.unidad
-                                ? `Lo que costó cada ${art.unidad}, en la moneda en que se pagó.`
-                                : 'Lo que costó, en la moneda en que se pagó.'
-                          }
+                          articulo={art}
+                          moneda={r.moneda}
                         />
 
                         {/* La moneda no se asume. El sistema maneja cuatro, y
