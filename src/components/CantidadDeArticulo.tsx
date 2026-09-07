@@ -45,6 +45,15 @@ interface Props {
     | null
   /** Lo que se dice cuando no hay artículo elegido todavía. */
   hintSinArticulo?: string
+  /**
+   * Lo que se dice cuando SÍ lo hay, en vez del «En L» de serie.
+   *
+   * Lo pide la salida, donde el dato que hace falta no es la unidad —que ya se
+   * lee en el selector— sino cuánto queda: sacar de más es el error que ahí se
+   * comete. Sin esto, poner el componente en la salida cambiaba «Hay 624 L» por
+   * «En L», que es cierto y no sirve para nada.
+   */
+  hint?: string
   className?: string
   required?: boolean
   disabled?: boolean
@@ -56,6 +65,7 @@ export function CantidadDeArticulo({
   onCambiar,
   articulo,
   hintSinArticulo = 'Elige antes el artículo',
+  hint,
   className,
   required,
   disabled,
@@ -127,11 +137,8 @@ export function CantidadDeArticulo({
           hint={
             !articulo
               ? hintSinArticulo
-              : convertible
-                ? undefined
-                : unidad
-                  ? `En ${unidad}`
-                  : undefined
+              : (hint ??
+                (convertible ? undefined : unidad ? `En ${unidad}` : undefined))
           }
         />
 

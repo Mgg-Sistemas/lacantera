@@ -1472,6 +1472,12 @@ export function Existencias() {
                     (e) => String(e.articulo_id) === r.articulo && Number(e.disponibles) > 0,
                   )
                   const unidad = sitios[0]?.unidad ?? ''
+                  /*
+                    El articulo del catalogo, que es quien sabe en que viene.
+                    `sitios` sale de las existencias y trae la unidad, pero no
+                    la presentacion: para eso hay que ir al catalogo.
+                  */
+                  const artSale = (articulos ?? []).find((a) => String(a.id) === r.articulo)
                   // Lo que queda para ESTE renglón: lo que hay menos lo que ya
                   // se llevaron los renglones de arriba del mismo par.
                   const disponible =
@@ -1558,20 +1564,34 @@ export function Existencias() {
                           }))}
                         />
 
-                        <Input
-                          label="Cantidad"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          inputMode="decimal"
-                          value={r.cantidad}
-                          onChange={(e) =>
+                        {/*
+                          LA SALIDA TAMBIEN SE CUENTA EN BULTOS.
+
+                          Aqui habia un campo pelado que pedia litros mientras la
+                          entrada, tres pantallas mas arriba, dejaba teclear
+                          tambores y convertia. Esa asimetria es peor que no
+                          tener ninguna de las dos: quien mete «3 tambores» y ve
+                          «= 624 L» aprende que el sistema entiende tambores, y
+                          al sacar teclea «1» pensando en un tambor.
+
+                          Lo levanto Christopher el 7/09/2026 preguntando si el
+                          sistema interpreta tambores en la entrada Y en la
+                          salida. En la entrada si; aqui no lo hacia.
+
+                          El tope de existencia no cambia: `disponible` esta en
+                          la unidad del articulo y el componente devuelve en la
+                          unidad del articulo, asi que la comparacion sigue
+                          siendo entre litros y litros.
+                        */}
+                        <CantidadDeArticulo
+                          valor={r.cantidad}
+                          onCambiar={(v) =>
                             setRenglones((lista) =>
-                              lista.map((x) =>
-                                x.clave === r.clave ? { ...x, cantidad: e.target.value } : x,
-                              ),
+                              lista.map((x) => (x.clave === r.clave ? { ...x, cantidad: v } : x)),
                             )
                           }
+                          articulo={artSale}
+                          hintSinArticulo="Elige antes de dónde sale"
                           hint={
                             r.almacen
                               ? pedidoHasta(i, r.almacen, r.articulo) > 0
