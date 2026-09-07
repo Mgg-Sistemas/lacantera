@@ -220,6 +220,7 @@ export const TIPOS_MOVIMIENTO: Record<string, string> = {
   SALIDA_DESPACHO: 'Salida por despacho',
   SALIDA_MERMA: 'Merma',
   SALIDA_BAJA: 'Baja',
+  AJUSTE_COSTO: 'Corrección de costo',
   AJUSTE_POSITIVO: 'Ajuste por conteo (sobrante)',
   AJUSTE_NEGATIVO: 'Ajuste por conteo (faltante)',
   TRANSFERENCIA_SALIDA: 'Traslado, salida',
@@ -289,6 +290,87 @@ function useAccionInventario<A>(fn: (args: A) => Promise<unknown>) {
       void qc.invalidateQueries({ queryKey: ['notificaciones'] })
     },
   })
+}
+
+/** El parte que da la base antes de corregir un costo. Lo devuelve entero. */
+export interface ImpactoDeCosto {
+  articulo: string
+  unidad: string
+  existencia: number
+  costo_actual: number
+  valor_actual: number
+  costo_correcto: number
+  valor_corregido: number
+  ajuste: number
+  /** Lo que ya salió del almacén cargado al costo equivocado. */
+  ya_salio: number
+  ya_salio_cargado_a: number
+  ya_salio_deberia_ser: number
+  /**
+   * Lo que no se recupera: eso ya se le cargó a una máquina o a un centro de
+   * costo, y corregir hoy no reprecia lo que salió ayer.
+   *
+   * La base lo devuelve a propósito, y por eso la pantalla lo enseña: esconder
+   * la parte incómoda sería peor que no tener la herramienta.
+   */
+  no_se_recupera: number
+}
+
+/**
+ * Qué pasaría si se corrige el costo. Solo lee.
+ *
+ * Va antes de la corrección y no después: «los sistemas deben ser similar a un
+ * runbook, o pasos secuenciales» —Christopher, 7/09/2026—. Quien va a mover
+ * medio millón de dólares de valoración tiene que ver el número antes.
+ */
+export function useImpactoDeCorregirCosto(
+  almacenId: number | null,
+  articuloId: number | null,
+  costo: number,
+) {
+  return useQuery({
+    queryKey: ['impacto-costo', almacenId, articuloId, costo],
+    enabled: !!almacenId && !!articuloId && Number.isFinite(costo) && costo >= 0,
+    queryFn: () =>
+      rpc<ImpactoDeCosto>('impacto_de_corregir_costo', {
+        p_almacen_id: almacenId,
+        p_articulo_id: articuloId,
+        p_costo_correcto: costo,
+      }),
+  })
+}
+
+/**
+ * Corregir el costo promedio de un artículo en un almacén.
+ *
+ * NO EDITA NADA: el libro es inmutable a propósito. Escribe un par de
+ * movimientos —sale todo al costo equivocado, vuelve a entrar todo al
+ * correcto—, así que la existencia no cambia y los dos renglones quedan a la
+ * vista en el historial. Una corrección de esta magnitud tiene que verse.
+ *
+ * Exige `INVENTARIO.AJUSTAR_COSTO`, que el rol ALMACEN NO tiene y es
+ * deliberado: «almacén no tiene interés sobre el precio o valor de las cosas,
+ * pero sí en que sus ítems estén rigurosamente contados» —Christopher—. Esto no
+ * cambia ni una unidad contada; cambia dinero. Y avisa a ADMIN y a
+ * GERENTE_GENERAL, porque el valor del inventario sale en informes de gerencia.
+ */
+export function useCorregirCosto() {
+  return useAccionInventario(
+    (c: {
+      almacen_id: number
+      articulo_id: number
+      costo_correcto: number
+      motivo: string
+      fecha?: string
+    }) =>
+      rpc<number>('corregir_costo', {
+        p_almacen_id: c.almacen_id,
+        p_articulo_id: c.articulo_id,
+        p_costo_correcto: c.costo_correcto,
+        p_motivo: c.motivo,
+        p_fecha: c.fecha ?? null,
+      }),
+  )
 }
 
 export interface RenglonRecibido {

@@ -329,8 +329,13 @@ export function Movimientos() {
                         </Chip>
                       ) : null}
                       {/* Solo en las salidas: una entrada no tiene nota de
-                          salida, y ofrecerla ahí sería un botón que miente. */}
-                      {m.signo < 0 && m.tipo !== 'REVERSO' ? (
+                          salida, y ofrecerla ahí sería un botón que miente.
+
+                          Y la pata negativa de una corrección de costo tampoco
+                          es una salida: no se llevó nadie nada, el material
+                          sigue en el estante. Armarle una nota de entrega sería
+                          fabricar el papel de un despacho que no ocurrió. */}
+                      {m.signo < 0 && m.tipo !== 'REVERSO' && m.tipo !== 'AJUSTE_COSTO' ? (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -342,7 +347,13 @@ export function Movimientos() {
                         </Button>
                       ) : null}
 
-                      {puede('ALMACEN') && m.tipo !== 'REVERSO' ? (
+                      {/* Una corrección de costo no se deshace: se vuelve a
+                          corregir, y la base lo dice igual. Las dos patas están
+                          enlazadas pero `reversar_movimiento` solo sabe
+                          emparejar traslados, así que este botón habría
+                          reversado media corrección y dejado el promedio peor
+                          que antes de corregirlo. */}
+                      {puede('ALMACEN') && m.tipo !== 'REVERSO' && m.tipo !== 'AJUSTE_COSTO' ? (
                         <Button
                           size="sm"
                           variant="ghost"

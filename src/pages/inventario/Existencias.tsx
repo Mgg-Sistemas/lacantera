@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import {
   Boxes,
+  Coins,
   MapPin,
   PackageMinus,
   PackagePlus,
@@ -37,11 +38,13 @@ import { supabase } from '@/lib/supabase'
 import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
-import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
   useAlmacenes,
   useExistencias,
+  useCorregirCosto,
+  useImpactoDeCorregirCosto,
   useRevisarCostoDeEntrada,
   useExistenciasDeArticulo,
   useExistenciasTotales,
@@ -160,6 +163,7 @@ export function Existencias() {
   // lo que exige `guardar_clase_de_salida` (INVENTARIO en TOTAL). Ofrecer el
   // boton a quien la RPC va a rechazar es enseñar una puerta cerrada.
   const { puede: alcanza } = useMisPermisos()
+  const { puede: puedeAccion } = useMisAcciones()
   const salidas = useRegistrarSalidas()
   // Mandar algo al taller no es sacarlo: vuelve. Por eso va en su propio modal
   // y no como un quinto caso del de salidas.
@@ -290,6 +294,9 @@ export function Existencias() {
   const [busqueda, setBusqueda] = useState('')
   const [soloBajas, setSoloBajas] = useState(false)
   const [desglose, setDesglose] = useState<ExistenciaTotal | null>(null)
+  /* Que fila se esta corrigiendo de valoracion. Va aparte de `modal` porque no
+     comparte ni el formulario ni el permiso con las cuatro acciones de almacen. */
+  const [costo, setCosto] = useState<Existencia | null>(null)
   const [modal, setModal] = useState<
     null | { tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada' | 'baja'; fila: Existencia | null }
   >(null)
@@ -991,6 +998,34 @@ export function Existencias() {
                             </Button>
                           </>
                         ) : null}
+
+                        {/*
+                          CORREGIR EL COSTO VA APARTE, Y NO ES UN DESCUIDO.
+
+                          Los cuatro botones de arriba viven dentro de
+                          `puede('ALMACEN')`, y la base le niega esta accion a
+                          ALMACEN a proposito: «almacen no tiene interes sobre
+                          el precio o valor de las cosas, pero si en que sus
+                          items esten rigurosamente contados» —Christopher—.
+                          Metido ahi lo verian justo quienes no pueden usarlo, y
+                          no lo veria GERENTE_GENERAL, que no tiene rol ALMACEN.
+
+                          Y solo por almacen: el costo promedio se lleva por
+                          pareja (almacen, articulo), asi que desde el total no
+                          significa nada.
+                        */}
+                        {!enTotal &&
+                        puedeAccion('INVENTARIO.AJUSTAR_COSTO') &&
+                        Number(fila!.existencia) > 0 ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={<Coins />}
+                            onClick={() => setCosto(fila!)}
+                          >
+                            Corregir el costo
+                          </Button>
+                        ) : null}
                       </td>
                     </tr>
                   )
@@ -1000,6 +1035,8 @@ export function Existencias() {
           </div>
         </Card>
       ) : null}
+
+      {costo ? <ModalCorregirCosto fila={costo} onCerrar={() => setCosto(null)} /> : null}
 
       <ModalDesglose
         articulo={desglose}
@@ -2078,5 +2115,153 @@ function AvisoDeCosto({
       </p>
       {casilla('Es correcto, guárdalo así — quedará anotado en el movimiento')}
     </div>
+  )
+}
+
+/**
+ * Corregir el costo de lo que hay, con el parte delante.
+ *
+ * Hasta hoy esto solo existía en la base: `corregir_costo` estaba escrita,
+ * probada y sin ninguna puerta. Era la única salida real del aceite cargado a
+ * 1.209.012,48 y del gasoil del tanque sin costo, y no la podía usar nadie.
+ *
+ * EL RECORRIDO ES EL DE UN RUNBOOK, que es como lo pidió Christopher: se
+ * escribe el costo correcto, se ve el parte entero —incluida la parte incómoda,
+ * lo que ya salió cargado al costo falso y no se recupera—, se dice por qué, y
+ * se confirma. El parte va antes y no después: quien va a mover medio millón de
+ * dólares de valoración tiene que ver el número primero.
+ *
+ * NO EDITA NADA. La base escribe un par de movimientos —sale todo al costo
+ * equivocado, entra todo al correcto—, así que la existencia no se mueve y los
+ * dos renglones quedan a la vista en el historial. Una corrección de esta
+ * magnitud tiene que verse.
+ */
+function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: () => void }) {
+  const corregir = useCorregirCosto()
+  const [nuevo, setNuevo] = useState('')
+  const [porque, setPorque] = useState('')
+
+  const valor = Number(nuevo.replace(',', '.'))
+  const valido = nuevo.trim() !== '' && Number.isFinite(valor) && valor >= 0
+  const impacto = useImpactoDeCorregirCosto(
+    fila.almacen_id,
+    fila.articulo_id,
+    valido ? valor : NaN,
+  )
+
+  const p = impacto.data
+  /*
+    Las tres exigencias de la base, repetidas en el botón para que nadie tenga
+    que chocar contra ellas: motivo de diez, costo válido, y distinto del que
+    hay.
+  */
+  const listo =
+    valido &&
+    porque.trim().length >= 10 &&
+    p != null &&
+    Math.abs(valor - Number(p.costo_actual)) > 1e-6
+
+  const linea = (que: string, cuanto: string, fuerte?: boolean) => (
+    <div className="flex justify-between gap-4">
+      <dt className="text-ink/55">{que}</dt>
+      <dd className={cn('tabular', fuerte ? 'text-ink/90 font-semibold' : 'text-ink/80')}>
+        {cuanto}
+      </dd>
+    </div>
+  )
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Corregir el costo"
+      descripcion={`${fila.articulo} · ${fila.almacen}`}
+      ancho="sm"
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={!listo || corregir.isPending}
+            onClick={async () => {
+              await corregir.mutateAsync({
+                almacen_id: fila.almacen_id,
+                articulo_id: fila.articulo_id,
+                costo_correcto: valor,
+                motivo: porque.trim(),
+              })
+              onCerrar()
+            }}
+          >
+            {corregir.isPending ? 'Corrigiendo…' : 'Corregir el costo'}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-ink/70 text-sm">
+        Hay <span className="tabular">{cantidad(fila.existencia)}</span> {fila.unidad} a{' '}
+        <span className="tabular text-ink/90 font-semibold">
+          {fila.costo_promedio_usd == null ? '—' : monto(Number(fila.costo_promedio_usd))}
+        </span>{' '}
+        cada una. No se cambia ninguna cantidad: sale todo al costo de ahora y vuelve a entrar al
+        correcto, y los dos renglones quedan en el historial.
+      </p>
+
+      <Input
+        label="Costo correcto por unidad (USD)"
+        className="mt-4"
+        type="number"
+        min="0"
+        step="0.000001"
+        inputMode="decimal"
+        value={nuevo}
+        onChange={(e) => setNuevo(e.target.value)}
+      />
+
+      {p ? (
+        <dl className="border-hairline rounded-card mt-4 space-y-1 border p-3 text-sm">
+          {linea('Valor de ahora', monto(Number(p.valor_actual)))}
+          {linea('Valor corregido', monto(Number(p.valor_corregido)))}
+          {linea(
+            'Ajuste en libros',
+            `${Number(p.ajuste) < 0 ? '−' : '+'}${monto(Math.abs(Number(p.ajuste)))}`,
+            true,
+          )}
+
+          {/*
+            LA PARTE INCÓMODA, y se enseña a propósito.
+
+            Corregir hoy no reprecia lo que salió ayer: eso ya se le cargó a una
+            máquina o a un centro de costo y ahí se queda. La base devuelve este
+            número justamente para que no se esconda.
+          */}
+          {Number(p.no_se_recupera) !== 0 ? (
+            <div className="border-hairline mt-2 border-t pt-2">
+              <p className="text-ink/70 text-xs leading-relaxed">
+                Ya salieron <span className="tabular">{cantidad(p.ya_salio)}</span> {p.unidad}{' '}
+                cargados al costo de ahora.{' '}
+                <strong>{monto(Math.abs(Number(p.no_se_recupera)))} no se recupera</strong>: eso ya
+                se le cargó a una máquina o a un centro de costo, y esto no lo reprecia.
+              </p>
+            </div>
+          ) : null}
+        </dl>
+      ) : null}
+
+      {impacto.error ? <ErrorDeCarga error={impacto.error} className="mt-3" /> : null}
+
+      <Textarea
+        label="Por qué se corrige"
+        className="mt-4"
+        rows={2}
+        placeholder="Se cargó el precio del tambor donde iba el del litro. Factura NASELF 000617."
+        value={porque}
+        onChange={(e) => setPorque(e.target.value)}
+        hint="Queda en el movimiento y se avisa a administración y gerencia. Mínimo diez caracteres."
+      />
+
+      {corregir.error ? <ErrorDeCarga error={corregir.error} className="mt-3" /> : null}
+    </Modal>
   )
 }
