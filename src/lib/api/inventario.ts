@@ -196,6 +196,11 @@ export interface Movimiento {
   articulo: { codigo: string; nombre: string } | null
   /** La compra de la que vino, si vino de una. La marca `directa` cuelga de la solicitud. */
   orden: { numero: string; solicitud: { directa: boolean } | null } | null
+  /**
+   * Cuántas veces se salió el costo del promedio que el artículo ya tenía,
+   * cuando alguien vio el aviso y lo guardó igual. Nulo es lo normal.
+   */
+  aviso_costo: string | null
 }
 
 export const TIPOS_MOVIMIENTO: Record<string, string> = {
@@ -379,6 +384,15 @@ export interface RenglonDeEntrada {
   cantidad: number
   costo: number
   moneda: string
+  /**
+   * Alguien vio el aviso de costo raro y decidió guardarlo igual.
+   *
+   * La base avisa cuando el costo se sale diez veces del promedio que el
+   * artículo ya tenía, y no impide: un precio puede multiplicarse por diez de
+   * verdad. Lo que no deja es aceptarlo en silencio — el movimiento queda
+   * marcado con el factor.
+   */
+  confirmado?: boolean
 }
 
 /**

@@ -296,6 +296,30 @@ export function Movimientos() {
                         despues. El numero va en el rotulo para no tener que
                         abrir Compras solo para saber cual era.
                       */}
+                      {/*
+                        LA MARCA DE QUE SE AVISO Y SE ACEPTO IGUAL.
+
+                        Lo pidio Christopher: que se vea en el historial que ese
+                        costo levanto una sospecha y alguien decidio que estaba
+                        bien. Dentro de un ano, cuadrando el mes, «x20» al lado
+                        de un movimiento dice mas que cualquier auditoria.
+
+                        Lleva el factor y no un simbolo generico porque «se
+                        aviso» no dice nada: «x366» distingue una subida real de
+                        un cero de mas.
+                      */}
+                      {m.aviso_costo ? (
+                        <Chip
+                          tone="warning"
+                          className="mr-2"
+                          title={`El costo se salió ${Number(m.aviso_costo) >= 1 ? Number(m.aviso_costo).toLocaleString('es-VE', { maximumFractionDigits: 2 }) : (1 / Number(m.aviso_costo)).toLocaleString('es-VE', { maximumFractionDigits: 2 })} veces de lo que venía costando. Se avisó y se guardó igual.`}
+                        >
+                          {Number(m.aviso_costo) >= 1
+                            ? `×${Number(m.aviso_costo).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`
+                            : `÷${(1 / Number(m.aviso_costo)).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`}
+                        </Chip>
+                      ) : null}
+
                       {m.orden_id ? (
                         <Chip tone={m.orden?.solicitud?.directa ? 'warning' : 'royal'} className="mr-2">
                           <Link to="/app/compras">

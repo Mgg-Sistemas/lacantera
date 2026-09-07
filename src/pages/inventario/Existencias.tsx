@@ -103,6 +103,12 @@ interface RenglonEnCurso {
   costo: string
   moneda: string
   /**
+   * Solo en la entrada: alguien vio el aviso de costo raro y decidió guardarlo
+   * igual. Va por RENGLÓN y no por formulario: con quince renglones, un solo
+   * «confirmo» aceptaría a ciegas los catorce que nadie miró.
+   */
+  confirmado?: boolean
+  /**
    * Solo en la salida: de qué almacén sale ESTE renglón.
    *
    * En la entrada el sitio se elige una vez arriba, porque lo que entra entra
@@ -314,7 +320,25 @@ export function Existencias() {
     Se pide solo con el formulario abierto: doscientas filas de existencias no
     hacen falta para pintar la pantalla, que ya tiene las suyas.
   */
-  const todas = useExistencias(undefined, modal?.tipo === 'salidas')
+  const todas = useExistencias(
+    undefined,
+    modal?.tipo === 'salidas' || modal?.tipo === 'entrada',
+  )
+
+  /**
+   * Lo que viene costando un artículo en un sitio, para avisar antes y no después.
+   *
+   * Nulo cuando nunca ha entrado ahí: la primera entrada no tiene contra qué
+   * compararse, y ese es justo el caso de los cinco aceites del 5 de septiembre.
+   * Ahí no protege esto, sino la cuenta hecha debajo de cada renglón.
+   */
+  const costoQueVieneTeniendo = (almacen: string, articulo: string): number | null => {
+    const e = (todas.data ?? []).find(
+      (x) => String(x.almacen_id) === almacen && String(x.articulo_id) === articulo,
+    )
+    const c = Number(e?.costo_promedio_usd ?? 0)
+    return c > 0 ? c : null
+  }
 
   /** Lo que hay de un artículo en un sitio concreto, para avisar antes y no después. */
   const hayEn = (almacen: string, articulo: string) =>
@@ -559,6 +583,7 @@ export function Existencias() {
             cantidad: Number(r.cantidad),
             costo: Number(r.costo),
             moneda: r.moneda,
+            confirmado: r.confirmado === true,
           })),
         motivo,
         referencia: referencia || null,
@@ -1286,6 +1311,76 @@ export function Existencias() {
                           opciones={enSimbolos(monedas.data)}
                         />
                       </div>
+
+                      {/*
+                        EL AVISO DEL COSTO RARO.
+
+                        La regla la impone la base —`registrar_entradas` rechaza
+                        el renglón si no viene confirmado— y esto es la cortesía
+                        de decirlo mientras se escribe, con la casilla al lado
+                        para no tener que guardar, leer el error y volver.
+
+                        SOLO SE ADELANTA EN DÓLARES, y es a propósito: el costo
+                        se teclea en la moneda de la factura y el promedio está
+                        en dólares, así que compararlos pide una conversión. Las
+                        tasas no se calculan en el navegador —regla 4—, así que
+                        con otra moneda esto calla y avisa la base al guardar,
+                        que sí tiene la tasa del día.
+
+                        Y SOLO LE SALE A QUIEN PUEDE VER LA VALORACIÓN.
+                        `v_existencias` devuelve `costo_promedio_usd` en nulo a
+                        quien no tiene INVENTARIO.VER_VALORACION, y el rol
+                        ALMACEN —justo quien registra las entradas— NO lo tiene.
+                        Para esa persona esto no aparece nunca y la red es el
+                        mensaje de la base al guardar, que además está escrito
+                        para no revelarle el costo que la vista le esconde.
+
+                        No se disimula con un aviso vago: enseñar «esto es raro»
+                        sin poder decir cuánto ni respecto a qué es pedirle a
+                        alguien que dude sin darle con qué. Si conviene que quien
+                        teclea los costos pueda verlos, eso es una decisión de
+                        permisos y no se toma desde aquí.
+                      */}
+                      {(() => {
+                        const viene = r.articulo ? costoQueVieneTeniendo(aDonde, r.articulo) : null
+                        if (viene === null || r.moneda !== 'USD' || costo <= 0) return null
+                        const veces = costo / viene
+                        if (veces < 10 && veces > 0.1) return null
+                        return (
+                          <div className="border-warning/40 bg-warning-soft rounded-card mt-3 border p-2.5">
+                            <p className="text-ink/80 text-xs leading-relaxed">
+                              <strong>
+                                {art?.nombre ?? 'Este artículo'} viene costando {monto(viene)}
+                              </strong>{' '}
+                              por {art?.unidad ?? 'unidad'} y lo estás metiendo a {monto(costo)}:{' '}
+                              son{' '}
+                              <strong>
+                                {veces >= 10
+                                  ? `${monto(veces)} veces más`
+                                  : `${monto(1 / veces)} veces menos`}
+                              </strong>
+                              . Comprueba la factura y la moneda: un cero de más aquí se arrastra a
+                              cada salida.
+                            </p>
+                            <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
+                              <input
+                                type="checkbox"
+                                checked={r.confirmado === true}
+                                onChange={(e) =>
+                                  setRenglones((lista) =>
+                                    lista.map((x) =>
+                                      x.clave === r.clave
+                                        ? { ...x, confirmado: e.target.checked }
+                                        : x,
+                                    ),
+                                  )
+                                }
+                              />
+                              Es correcto, guárdalo así — quedará anotado en el movimiento
+                            </label>
+                          </div>
+                        )
+                      })()}
 
                       {/* La cuenta hecha, en grande. No es decoración: es la
                           única señal de que el número tecleado es el que se
