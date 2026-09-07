@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, History, Search, ShieldCheck, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Download, History, Search, ShieldCheck, X } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -19,6 +19,10 @@ import {
   useAuditoria,
   useTablasAuditadas,
   valorLegible,
+  useModulosAuditados,
+  copiarAuditoriaCsv,
+  copiarAuditoriaJson,
+  TOPE_DE_COPIA,
 } from '@/lib/api/auditoria'
 import type { FiltrosAuditoria, Movimiento, Operacion } from '@/lib/api/auditoria'
 import { usePerfiles } from '@/lib/api/catalogo'
@@ -140,7 +144,37 @@ function QuienEstaConectado() {
 }
 
 export function Auditoria() {
+  const modulos = useModulosAuditados()
   const [filtros, setFiltros] = useState<FiltrosAuditoria>(sinFiltros)
+  const [copiando, setCopiando] = useState<'csv' | 'json' | null>(null)
+  const [avisoCopia, setAvisoCopia] = useState<string | null>(null)
+
+  /*
+    Se dice CUÁNTOS renglones se llevó, y se avisa si llegó al tope.
+
+    Una descarga que sale sin decir nada deja a quien la pidió sin saber si
+    trajo tres renglones o tres mil, ni si se quedó corta. Y una copia
+    incompleta y silenciosa es peor que ninguna: se usa para defender algo y
+    falta justo lo que faltaba.
+  */
+  const copiar = async (formato: 'csv' | 'json') => {
+    setCopiando(formato)
+    setAvisoCopia(null)
+    try {
+      const n = formato === 'csv'
+        ? await copiarAuditoriaCsv(filtros)
+        : await copiarAuditoriaJson(filtros)
+      setAvisoCopia(
+        n >= TOPE_DE_COPIA
+          ? `Se llevó ${n.toLocaleString('es-VE')} renglones, que es el tope. Acota las fechas para llevarte el resto.`
+          : `${n.toLocaleString('es-VE')} renglones.`,
+      )
+    } catch (e) {
+      setAvisoCopia(e instanceof Error ? e.message : 'No se pudo preparar la copia.')
+    } finally {
+      setCopiando(null)
+    }
+  }
   const [pagina, setPagina] = useState(0)
   const [detalle, setDetalle] = useState<Movimiento | null>(null)
 
@@ -200,9 +234,23 @@ export function Auditoria() {
             onChange={(e) => cambiar({ operacion: e.target.value })}
             opciones={OPERACIONES.map((o) => ({ valor: o.valor, etiqueta: o.etiqueta }))}
           />
+          {/*
+            EL MÓDULO VA ANTES QUE LA TABLA, y no es orden alfabético.
+
+            «¿Qué pasó ayer en Nómina?» es la pregunta que se hace de verdad;
+            «¿qué pasó en nomina_novedades_montos?» la hace quien ya sabe dónde
+            mirar. Poner primero lo ancho deja que quien no sabe llegue igual.
+          */}
+          <Select
+            label="En qué módulo"
+            vacio="Todo el sistema"
+            value={filtros.modulo ?? ''}
+            onChange={(e) => cambiar({ modulo: e.target.value })}
+            opciones={(modulos.data ?? []).map((m) => ({ valor: m, etiqueta: m }))}
+          />
           <Select
             label="Sobre qué"
-            vacio="Todo el sistema"
+            vacio="Todo"
             value={filtros.tabla ?? ''}
             onChange={(e) => cambiar({ tabla: e.target.value })}
             opciones={(tablas.data ?? []).map((t) => ({ valor: t, etiqueta: nombreDeTabla(t) }))}
@@ -232,6 +280,41 @@ export function Auditoria() {
           />
           Mostrar también lo que hizo el sistema
         </label>
+
+        {/*
+          LLEVARSE UNA COPIA DE LO QUE SE ESTÁ MIRANDO.
+
+          Van aquí, con los filtros, porque lo que se descarga es exactamente lo
+          que los filtros dicen — no la página que cabe en el cristal. Ponerlos
+          arriba, junto al título, sugeriría que bajan «el registro» entero y
+          entonces la copia no sería la que alguien creyó pedir.
+
+          Son dos porque son dos preguntas distintas. La hoja de cálculo se abre
+          para leer y para pasarle algo a alguien; el JSON lleva el `antes` y el
+          `después` enteros y es el que sirve para averiguar qué pasó de verdad.
+        */}
+        <div className="border-hairline mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
+          <span className="text-ink/55 mr-1 text-sm">Llevarse una copia:</span>
+          <Button
+            size="sm"
+            variant="outline"
+            icon={<Download />}
+            disabled={copiando !== null}
+            onClick={() => copiar('csv')}
+          >
+            {copiando === 'csv' ? 'Preparando…' : 'Hoja de cálculo'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            icon={<Download />}
+            disabled={copiando !== null}
+            onClick={() => copiar('json')}
+          >
+            {copiando === 'json' ? 'Preparando…' : 'JSON con el detalle'}
+          </Button>
+          {avisoCopia ? <span className="text-ink/55 text-xs">{avisoCopia}</span> : null}
+        </div>
 
         <div className="mt-4 flex items-center justify-between gap-4">
           <p className="text-ink/50 text-sm">
@@ -302,10 +385,31 @@ export function Auditoria() {
                     </td>
                     <td className="px-3 py-3">
                       <Chip tone={TONO[m.operacion]}>{frase(m)}</Chip>
+                      {/* El módulo debajo y en pequeño, no en columna propia: la
+                          tabla ya tiene cinco y una sexta la parte en pantallas
+                          estrechas. Aquí sitúa sin robar sitio. */}
+                      {m.modulo ? (
+                        <span className="text-ink/40 mt-1 block text-2xs tracking-wide uppercase">
+                          {m.modulo}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="text-ink/70 max-w-[260px] px-3 py-3">
                       {m.etiqueta ? (
-                        <span className="line-clamp-2">{m.etiqueta}</span>
+                        <>
+                          <span className="line-clamp-2">{m.etiqueta}</span>
+                          {/* EL PORQUÉ, A LA VISTA Y NO DENTRO DEL JSON.
+                              «El sistema siempre debe de reflejar en lo posible
+                              la razón, para que todo sea transparente»
+                              —Christopher, 7/09/2026—. Estaba guardado desde
+                              siempre, pero había que abrir el detalle para
+                              leerlo, y entonces no se lee. */}
+                          {m.motivo ? (
+                            <span className="text-ink/45 mt-0.5 line-clamp-2 text-xs italic">
+                              «{m.motivo}»
+                            </span>
+                          ) : null}
+                        </>
                       ) : (
                         /* Sin etiqueta queda la clave. Se recorta porque hay
                            tablas cuya clave es un uuid, y treinta y seis

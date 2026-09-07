@@ -36,6 +36,7 @@ import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { supabase } from '@/lib/supabase'
 import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
+import { CostoDeArticulo } from '@/components/CostoDeArticulo'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
@@ -61,6 +62,17 @@ import { cn } from '@/lib/cn'
 function cantidad(valor: string | number): string {
   const n = Number(valor)
   return Number.isInteger(n) ? enteros(n) : n.toLocaleString('es-VE', { maximumFractionDigits: 2 })
+}
+
+/**
+ * Un monto con dos decimales y sin símbolo.
+ *
+ * Sin símbolo a propósito: la moneda la elige el renglón y puede no ser dólares,
+ * así que se escribe al lado. `dolares()` clavaría un «$» que mentiría cuando la
+ * factura viene en bolívares.
+ */
+function monto(valor: number): string {
+  return valor.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 /**
@@ -91,6 +103,12 @@ interface RenglonEnCurso {
   cantidad: string
   costo: string
   moneda: string
+  /**
+   * Solo en la entrada: alguien vio el aviso de costo raro y decidió guardarlo
+   * igual. Va por RENGLÓN y no por formulario: con quince renglones, un solo
+   * «confirmo» aceptaría a ciegas los catorce que nadie miró.
+   */
+  confirmado?: boolean
   /**
    * Solo en la salida: de qué almacén sale ESTE renglón.
    *
@@ -303,7 +321,25 @@ export function Existencias() {
     Se pide solo con el formulario abierto: doscientas filas de existencias no
     hacen falta para pintar la pantalla, que ya tiene las suyas.
   */
-  const todas = useExistencias(undefined, modal?.tipo === 'salidas')
+  const todas = useExistencias(
+    undefined,
+    modal?.tipo === 'salidas' || modal?.tipo === 'entrada',
+  )
+
+  /**
+   * Lo que viene costando un artículo en un sitio, para avisar antes y no después.
+   *
+   * Nulo cuando nunca ha entrado ahí: la primera entrada no tiene contra qué
+   * compararse, y ese es justo el caso de los cinco aceites del 5 de septiembre.
+   * Ahí no protege esto, sino la cuenta hecha debajo de cada renglón.
+   */
+  const costoQueVieneTeniendo = (almacen: string, articulo: string): number | null => {
+    const e = (todas.data ?? []).find(
+      (x) => String(x.almacen_id) === almacen && String(x.articulo_id) === articulo,
+    )
+    const c = Number(e?.costo_promedio_usd ?? 0)
+    return c > 0 ? c : null
+  }
 
   /** Lo que hay de un artículo en un sitio concreto, para avisar antes y no después. */
   const hayEn = (almacen: string, articulo: string) =>
@@ -548,6 +584,7 @@ export function Existencias() {
             cantidad: Number(r.cantidad),
             costo: Number(r.costo),
             moneda: r.moneda,
+            confirmado: r.confirmado === true,
           })),
         motivo,
         referencia: referencia || null,
@@ -1152,6 +1189,38 @@ export function Existencias() {
               <div className="mt-4 space-y-3">
                 {renglones.map((r, i) => {
                   const art = (articulos ?? []).find((a) => String(a.id) === r.articulo)
+
+                  /*
+                    CUÁNTO SUMA ESTE RENGLÓN, MIENTRAS SE ESCRIBE.
+
+                    El 5 de septiembre de 2026 entraron cinco aceites con el
+                    costo mal transcrito y el inventario pasó a valer 868
+                    millones de dólares. El sistema hizo la aritmética sin un
+                    fallo: guardó lo que recibió. Lo que no hizo fue enseñarlo.
+
+                    El formulario pedía CANTIDAD y COSTO POR UNIDAD y nunca
+                    mostraba el tercer número, que es el único que delata el
+                    error. «208 × 1.318.073,76» no dice nada a nadie;
+                    «274.159.342,08» lo dice todo, y lo dice cuando todavía se
+                    puede borrar y volver a escribir.
+
+                    Va en la moneda que se eligió y sin convertir: convertir aquí
+                    sería calcular una tasa en el navegador, que es justo lo que
+                    la regla 4 de la casa prohíbe. La conversión la hace la base
+                    al guardar.
+                  */
+                  const cant = Number(r.cantidad)
+                  const costo = Number(r.costo)
+                  const suma =
+                    r.cantidad.trim() !== '' &&
+                    r.costo.trim() !== '' &&
+                    Number.isFinite(cant) &&
+                    Number.isFinite(costo) &&
+                    cant > 0 &&
+                    costo > 0
+                      ? cant * costo
+                      : null
+
                   return (
                     <div
                       key={r.clave}
@@ -1209,21 +1278,25 @@ export function Existencias() {
                           articulo={art}
                         />
 
-                        <Input
-                          label="Costo por unidad"
-                          type="number"
-                          min="0"
-                          step="0.0001"
-                          inputMode="decimal"
-                          value={r.costo}
-                          onChange={(e) =>
+                        {/*
+                          EL COSTO SE TECLEA COMO VIENE EN LA FACTURA.
+
+                          El gemelo del campo de cantidad. Quien acaba de teclear
+                          «3 tambores» y ver «= 624 L» sigue pensando en tambores
+                          cuando llega aqui, y antes esta casilla pedia el precio
+                          por litro sin decirlo. Ahora se puede teclear el precio
+                          del tambor y el componente lo divide, ensenando la
+                          cuenta con los dos lados escritos.
+                        */}
+                        <CostoDeArticulo
+                          valor={r.costo}
+                          onCambiar={(v) =>
                             setRenglones((lista) =>
-                              lista.map((x) =>
-                                x.clave === r.clave ? { ...x, costo: e.target.value } : x,
-                              ),
+                              lista.map((x) => (x.clave === r.clave ? { ...x, costo: v } : x)),
                             )
                           }
-                          hint="Lo que costó, en la moneda en que se pagó."
+                          articulo={art}
+                          moneda={r.moneda}
                         />
 
                         {/* La moneda no se asume. El sistema maneja cuatro, y
@@ -1243,10 +1316,184 @@ export function Existencias() {
                           opciones={enSimbolos(monedas.data)}
                         />
                       </div>
+
+                      {/*
+                        EL AVISO DEL COSTO RARO.
+
+                        La regla la impone la base —`registrar_entradas` rechaza
+                        el renglón si no viene confirmado— y esto es la cortesía
+                        de decirlo mientras se escribe, con la casilla al lado
+                        para no tener que guardar, leer el error y volver.
+
+                        SOLO SE ADELANTA EN DÓLARES, y es a propósito: el costo
+                        se teclea en la moneda de la factura y el promedio está
+                        en dólares, así que compararlos pide una conversión. Las
+                        tasas no se calculan en el navegador —regla 4—, así que
+                        con otra moneda esto calla y avisa la base al guardar,
+                        que sí tiene la tasa del día.
+
+                        Y SOLO LE SALE A QUIEN PUEDE VER LA VALORACIÓN.
+                        `v_existencias` devuelve `costo_promedio_usd` en nulo a
+                        quien no tiene INVENTARIO.VER_VALORACION, y el rol
+                        ALMACEN —justo quien registra las entradas— NO lo tiene.
+                        Para esa persona esto no aparece nunca y la red es el
+                        mensaje de la base al guardar, que además está escrito
+                        para no revelarle el costo que la vista le esconde.
+
+                        No se disimula con un aviso vago: enseñar «esto es raro»
+                        sin poder decir cuánto ni respecto a qué es pedirle a
+                        alguien que dude sin darle con qué. Si conviene que quien
+                        teclea los costos pueda verlos, eso es una decisión de
+                        permisos y no se toma desde aquí.
+                      */}
+                      {(() => {
+                        if (!r.articulo || costo <= 0 || cant <= 0) return null
+                        const viene = costoQueVieneTeniendo(aDonde, r.articulo)
+
+                        /*
+                          LA PRIMERA VEZ NO HAY CONTRA QUE COMPARAR, Y ES CUANDO
+                          MAS DUELE.
+
+                          Los cinco aceites del 5 de septiembre entraban por
+                          primera vez, asi que la reja de las diez veces no
+                          tenia con que medirlos y callo. No hay numero contra
+                          el que avisar; lo que si se puede es decir que NADIE
+                          lo esta comprobando, y que ese costo se convierte en
+                          la referencia de todo lo que venga despues.
+
+                          La base lo exige igual —`registrar_entradas` rechaza
+                          la primera entrada sin confirmar— asi que esto no es
+                          un adorno: sin la casilla, el guardado fallaria con un
+                          error que la pantalla no ofrece como resolver.
+
+                          Se pide una sola vez por articulo y almacen.
+                        */
+                        const esLaPrimera = viene === null
+                        if (esLaPrimera) {
+                          return (
+                            <div className="border-hairline bg-ink/4 rounded-card mt-3 border p-2.5">
+                              <p className="text-ink/80 text-xs leading-relaxed">
+                                <strong>Es la primera vez que entra a este almacén</strong>, así que
+                                no hay con qué comparar el costo. Serán{' '}
+                                <span className="tabular">{cantidad(cant)}</span>{' '}
+                                {art?.unidad ?? ''} a{' '}
+                                <span className="tabular">{monto(costo)}</span> cada una. Este costo
+                                se convierte en la referencia de todo lo que entre después.
+                              </p>
+                              <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
+                                <input
+                                  type="checkbox"
+                                  checked={r.confirmado === true}
+                                  onChange={(e) =>
+                                    setRenglones((lista) =>
+                                      lista.map((x) =>
+                                        x.clave === r.clave
+                                          ? { ...x, confirmado: e.target.checked }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                />
+                                Lo comprobé con la factura
+                              </label>
+                            </div>
+                          )
+                        }
+
+                        if (r.moneda !== 'USD') return null
+                        const veces = costo / viene
+                        if (veces < 10 && veces > 0.1) return null
+                        return (
+                          <div className="border-warning/40 bg-warning-soft rounded-card mt-3 border p-2.5">
+                            <p className="text-ink/80 text-xs leading-relaxed">
+                              <strong>
+                                {art?.nombre ?? 'Este artículo'} viene costando {monto(viene)}
+                              </strong>{' '}
+                              por {art?.unidad ?? 'unidad'} y lo estás metiendo a {monto(costo)}:{' '}
+                              son{' '}
+                              <strong>
+                                {veces >= 10
+                                  ? `${monto(veces)} veces más`
+                                  : `${monto(1 / veces)} veces menos`}
+                              </strong>
+                              . Comprueba la factura y la moneda: un cero de más aquí se arrastra a
+                              cada salida.
+                            </p>
+                            <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
+                              <input
+                                type="checkbox"
+                                checked={r.confirmado === true}
+                                onChange={(e) =>
+                                  setRenglones((lista) =>
+                                    lista.map((x) =>
+                                      x.clave === r.clave
+                                        ? { ...x, confirmado: e.target.checked }
+                                        : x,
+                                    ),
+                                  )
+                                }
+                              />
+                              Es correcto, guárdalo así — quedará anotado en el movimiento
+                            </label>
+                          </div>
+                        )
+                      })()}
+
+                      {/* La cuenta hecha, en grande. No es decoración: es la
+                          única señal de que el número tecleado es el que se
+                          quería teclear. */}
+                      {suma !== null ? (
+                        <p className="border-hairline mt-3 border-t pt-2.5 text-sm">
+                          <span className="text-ink/45">
+                            {new Intl.NumberFormat('es-VE', { maximumFractionDigits: 4 }).format(
+                              cant,
+                            )}{' '}
+                            {art?.unidad ?? ''} × {monto(costo)} ={' '}
+                          </span>
+                          <span className="tabular text-ink/90 font-semibold">
+                            {monto(suma)} {r.moneda}
+                          </span>
+                        </p>
+                      ) : null}
                     </div>
                   )
                 })}
               </div>
+
+              {/*
+                EL TOTAL DE LA ENTRADA, y solo cuando todos los renglones van en
+                la misma moneda.
+
+                Con monedas mezcladas habría que convertir para sumar, y aquí no
+                se calcula ninguna tasa —regla 4—. Sumar peras con manzanas y
+                enseñarlo como un total sería peor que no enseñar nada: parecería
+                un dato y no lo sería. Con una sola moneda, que es el caso de una
+                factura, la suma es exacta y no hace falta convertir nada.
+              */}
+              {(() => {
+                const listos = renglones.filter(
+                  (r) =>
+                    r.articulo &&
+                    r.cantidad.trim() !== '' &&
+                    r.costo.trim() !== '' &&
+                    Number(r.cantidad) > 0 &&
+                    Number(r.costo) > 0,
+                )
+                if (listos.length < 2) return null
+                const monedasUsadas = new Set(listos.map((r) => r.moneda))
+                if (monedasUsadas.size > 1) return null
+                const total = listos.reduce((a, r) => a + Number(r.cantidad) * Number(r.costo), 0)
+                return (
+                  <div className="border-hairline mt-3 flex items-baseline justify-between border-t pt-3">
+                    <span className="text-ink/55 text-sm">
+                      Total de la entrada · {listos.length} renglones
+                    </span>
+                    <span className="tabular text-ink/90 text-lg font-semibold">
+                      {monto(total)} {listos[0].moneda}
+                    </span>
+                  </div>
+                )
+              })()}
 
               <Button
                 className="mt-3"
@@ -1277,6 +1524,12 @@ export function Existencias() {
                     (e) => String(e.articulo_id) === r.articulo && Number(e.disponibles) > 0,
                   )
                   const unidad = sitios[0]?.unidad ?? ''
+                  /*
+                    El articulo del catalogo, que es quien sabe en que viene.
+                    `sitios` sale de las existencias y trae la unidad, pero no
+                    la presentacion: para eso hay que ir al catalogo.
+                  */
+                  const artSale = (articulos ?? []).find((a) => String(a.id) === r.articulo)
                   // Lo que queda para ESTE renglón: lo que hay menos lo que ya
                   // se llevaron los renglones de arriba del mismo par.
                   const disponible =
@@ -1363,20 +1616,34 @@ export function Existencias() {
                           }))}
                         />
 
-                        <Input
-                          label="Cantidad"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          inputMode="decimal"
-                          value={r.cantidad}
-                          onChange={(e) =>
+                        {/*
+                          LA SALIDA TAMBIEN SE CUENTA EN BULTOS.
+
+                          Aqui habia un campo pelado que pedia litros mientras la
+                          entrada, tres pantallas mas arriba, dejaba teclear
+                          tambores y convertia. Esa asimetria es peor que no
+                          tener ninguna de las dos: quien mete «3 tambores» y ve
+                          «= 624 L» aprende que el sistema entiende tambores, y
+                          al sacar teclea «1» pensando en un tambor.
+
+                          Lo levanto Christopher el 7/09/2026 preguntando si el
+                          sistema interpreta tambores en la entrada Y en la
+                          salida. En la entrada si; aqui no lo hacia.
+
+                          El tope de existencia no cambia: `disponible` esta en
+                          la unidad del articulo y el componente devuelve en la
+                          unidad del articulo, asi que la comparacion sigue
+                          siendo entre litros y litros.
+                        */}
+                        <CantidadDeArticulo
+                          valor={r.cantidad}
+                          onCambiar={(v) =>
                             setRenglones((lista) =>
-                              lista.map((x) =>
-                                x.clave === r.clave ? { ...x, cantidad: e.target.value } : x,
-                              ),
+                              lista.map((x) => (x.clave === r.clave ? { ...x, cantidad: v } : x)),
                             )
                           }
+                          articulo={artSale}
+                          hintSinArticulo="Elige antes de dónde sale"
                           hint={
                             r.almacen
                               ? pedidoHasta(i, r.almacen, r.articulo) > 0

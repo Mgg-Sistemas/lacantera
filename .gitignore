@@ -96,6 +96,18 @@ supabase/cargas/
 # Para versionar uno nuevo a proposito: git add -f, o una excepcion aqui.
 *.md
 
+# Y los .txt de docs, por lo mismo y por algo peor.
+#
+# El 7/09/2026 se colaron en un commit `docs/_bloq_viejo.txt` y
+# `docs/_transf_viejo.txt`: recortes del informe del carril de base de datos
+# describiendo, paso a paso, como cobrar cualquier cifra a cualquier factura.
+# La regla `*.md` no los tapaba porque no son .md, y este repositorio es
+# publico. Se sacaron antes de subir la rama.
+#
+# Un informe de seguridad es exactamente lo que no puede viajar: cuenta el
+# camino aunque el agujero ya este cerrado.
+docs/*.txt
+
 # ---------------------------------------------------------------------------
 # Peso
 #
