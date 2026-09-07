@@ -194,13 +194,28 @@ export interface Movimiento {
   registrado_en: string
   almacen: { nombre: string } | null
   articulo: { codigo: string; nombre: string } | null
+  /** La compra de la que vino, si vino de una. La marca `directa` cuelga de la solicitud. */
+  orden: { numero: string; solicitud: { directa: boolean } | null } | null
+  /**
+   * Cuántas veces se salió el costo del promedio que el artículo ya tenía,
+   * cuando alguien vio el aviso y lo guardó igual. Nulo es lo normal.
+   */
+  aviso_costo: string | null
 }
 
 export const TIPOS_MOVIMIENTO: Record<string, string> = {
   ENTRADA_COMPRA: 'Entrada por compra',
   ENTRADA_PRODUCCION: 'Entrada de producción',
   ENTRADA_DEVOLUCION: 'Devolución',
-  ENTRADA_DIRECTA: 'Entrada directa',
+  /*
+    «Entrada directa» se leia como «compra directa» y significan lo contrario:
+    esta es la que NO tiene compra detras —un saldo inicial, un traslado de otra
+    empresa del grupo, material que ya estaba cuando llego el sistema— mientras
+    que una compra directa SI es una compra, con su orden y su factura, y entra
+    como ENTRADA_COMPRA. Lo pregunto Christopher el 7/09/2026, y si lo pregunta
+    quien conoce el sistema, quien lo usa ya se lo habia preguntado.
+  */
+  ENTRADA_DIRECTA: 'Entrada sin compra',
   SALIDA_CONSUMO: 'Salida a consumo',
   SALIDA_DESPACHO: 'Salida por despacho',
   SALIDA_MERMA: 'Merma',
@@ -220,7 +235,20 @@ export function useMovimientos(
     queryFn: async () => {
       let q = supabase
         .from('inventario_movimientos')
-        .select('*, almacen:almacenes(nombre), articulo:articulos(codigo, nombre)')
+        /*
+          La orden viaja con el movimiento para poder decir DE QUE compra vino.
+          Sin eso las dos se ven igual en la lista, y son distintas: una orden
+          normal se aprueba antes de comprar y la directa se registra con la
+          factura ya en la mano.
+
+          `directa` NO esta en `ordenes_compra` —se comprobo ejecutando, la
+          primera version de esto reventaba con «column ordenes_compra_1.directa
+          does not exist»—. Vive en la solicitud que origino la orden, asi que
+          hay que saltar dos veces: movimiento -> orden -> solicitud.
+        */
+        .select(
+          '*, almacen:almacenes(nombre), articulo:articulos(codigo, nombre), orden:ordenes_compra(numero, solicitud:solicitudes_pedido(directa))',
+        )
         .order('registrado_en', { ascending: false })
         .limit(200)
 
@@ -356,6 +384,15 @@ export interface RenglonDeEntrada {
   cantidad: number
   costo: number
   moneda: string
+  /**
+   * Alguien vio el aviso de costo raro y decidió guardarlo igual.
+   *
+   * La base avisa cuando el costo se sale diez veces del promedio que el
+   * artículo ya tenía, y no impide: un precio puede multiplicarse por diez de
+   * verdad. Lo que no deja es aceptarlo en silencio — el movimiento queda
+   * marcado con el factor.
+   */
+  confirmado?: boolean
 }
 
 /**
