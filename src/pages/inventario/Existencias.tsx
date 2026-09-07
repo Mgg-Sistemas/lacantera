@@ -1347,8 +1347,60 @@ export function Existencias() {
                         permisos y no se toma desde aquí.
                       */}
                       {(() => {
-                        const viene = r.articulo ? costoQueVieneTeniendo(aDonde, r.articulo) : null
-                        if (viene === null || r.moneda !== 'USD' || costo <= 0) return null
+                        if (!r.articulo || costo <= 0 || cant <= 0) return null
+                        const viene = costoQueVieneTeniendo(aDonde, r.articulo)
+
+                        /*
+                          LA PRIMERA VEZ NO HAY CONTRA QUE COMPARAR, Y ES CUANDO
+                          MAS DUELE.
+
+                          Los cinco aceites del 5 de septiembre entraban por
+                          primera vez, asi que la reja de las diez veces no
+                          tenia con que medirlos y callo. No hay numero contra
+                          el que avisar; lo que si se puede es decir que NADIE
+                          lo esta comprobando, y que ese costo se convierte en
+                          la referencia de todo lo que venga despues.
+
+                          La base lo exige igual —`registrar_entradas` rechaza
+                          la primera entrada sin confirmar— asi que esto no es
+                          un adorno: sin la casilla, el guardado fallaria con un
+                          error que la pantalla no ofrece como resolver.
+
+                          Se pide una sola vez por articulo y almacen.
+                        */
+                        const esLaPrimera = viene === null
+                        if (esLaPrimera) {
+                          return (
+                            <div className="border-hairline bg-ink/4 rounded-card mt-3 border p-2.5">
+                              <p className="text-ink/80 text-xs leading-relaxed">
+                                <strong>Es la primera vez que entra a este almacén</strong>, así que
+                                no hay con qué comparar el costo. Serán{' '}
+                                <span className="tabular">{cantidad(cant)}</span>{' '}
+                                {art?.unidad ?? ''} a{' '}
+                                <span className="tabular">{monto(costo)}</span> cada una. Este costo
+                                se convierte en la referencia de todo lo que entre después.
+                              </p>
+                              <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
+                                <input
+                                  type="checkbox"
+                                  checked={r.confirmado === true}
+                                  onChange={(e) =>
+                                    setRenglones((lista) =>
+                                      lista.map((x) =>
+                                        x.clave === r.clave
+                                          ? { ...x, confirmado: e.target.checked }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                />
+                                Lo comprobé con la factura
+                              </label>
+                            </div>
+                          )
+                        }
+
+                        if (r.moneda !== 'USD') return null
                         const veces = costo / viene
                         if (veces < 10 && veces > 0.1) return null
                         return (
