@@ -516,6 +516,17 @@ export interface RenglonDeEntrada {
    * tener ni idea de que existen los tambores.
    */
   presentaciones?: number | null
+  /**
+   * En cuál de las presentaciones se contó.
+   *
+   * SIN ESTO, DOS PRESENTACIONES SON UNA TRAMPA. Un aceite declarado en TAMBOR
+   * (208 L) y en BIDON (20 L) recibe «3 bultos» y la base no tiene forma de
+   * saber cuáles: coge la de por defecto y deja 624 litros donde había 60.
+   *
+   * Nulo cuando el artículo solo tiene una forma —ahí la base la resuelve sola,
+   * que es lo que hace compatible todo lo anterior a esto.
+   */
+  presentacion?: string | null
   costo: number
   moneda: string
   /**
@@ -611,9 +622,10 @@ export function useRegistrarEntradas() {
         p_almacen_id: e.almacen_id,
         p_renglones: e.renglones.map((r) => ({
           ...r,
-          // La clave solo viaja cuando hay bultos: sin ella la base cuenta
-          // exactamente como siempre, que es lo que hace esto compatible.
+          // Las dos claves solo viajan cuando hay bultos: sin ellas la base
+          // cuenta exactamente como siempre, que es lo que hace esto compatible.
           presentaciones: r.presentaciones || undefined,
+          presentacion: (r.presentaciones && r.presentacion) || undefined,
         })),
         p_motivo: e.motivo,
         p_referencia: e.referencia ?? null,
@@ -665,6 +677,8 @@ export function useRegistrarSalidas() {
         cantidad: number
         /** Bultos enteros: la cuenta la hace la base, no el navegador. */
         presentaciones?: number | null
+        /** En cuál se contó. Sin esto, dos presentaciones son una trampa. */
+        presentacion?: string | null
       }>
       motivo: string
       tipo?: string
@@ -676,7 +690,12 @@ export function useRegistrarSalidas() {
           almacen_id: String(r.almacen_id),
           articulo_id: String(r.articulo_id),
           cantidad: String(r.cantidad),
-          ...(r.presentaciones ? { presentaciones: String(r.presentaciones) } : {}),
+          ...(r.presentaciones
+            ? {
+                presentaciones: String(r.presentaciones),
+                ...(r.presentacion ? { presentacion: r.presentacion } : {}),
+              }
+            : {}),
         })),
         p_motivo: s.motivo,
         p_tipo: s.tipo ?? 'SALIDA_CONSUMO',
@@ -699,6 +718,16 @@ export interface RenglonDeNota {
   costo_usd: string
   valor_usd: string
   registrado_en: string
+  /**
+   * Lo que la persona contó, para que el papel lo diga.
+   *
+   * Quien entregó siete tambores y firma un papel que dice «1.466 L» no puede
+   * cotejar lo que firma con lo que sacó del estante. Y ese papel es la única
+   * prueba de la entrega: si mañana falta material, es contra él que se compara.
+   */
+  cantidad_capturada: string | null
+  unidad_capturada: string | null
+  suelto_capturado: string | null
 }
 
 /**
@@ -882,6 +911,8 @@ export function useRegistrarAjuste() {
        * contó para que el movimiento se pueda cuadrar contra su hoja.
        */
       presentaciones?: number | null
+      /** En cuál se contó. Contar un almacén es justo donde más importa. */
+      presentacion?: string | null
       motivo: string
       fecha?: string
     }) =>
@@ -890,6 +921,7 @@ export function useRegistrarAjuste() {
         p_articulo_id: a.articulo_id,
         p_contado: a.contado,
         p_presentaciones: a.presentaciones || null,
+        p_presentacion: (a.presentaciones && a.presentacion) || null,
         p_motivo: a.motivo,
         p_fecha: a.fecha || null,
       }),

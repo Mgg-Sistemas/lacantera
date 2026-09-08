@@ -66,6 +66,17 @@ interface Props {
         unidad?: string | null
         presentacion?: string | null
         unidades_por_presentacion?: string | null
+        /**
+         * Las demás formas de contarlo, cuando hay más de una.
+         *
+         * Aceite en tambor y en bidón; tuercas en pack de 6, de 12 y sueltas.
+         * La existencia sigue siendo UNA: son maneras de contar, no maneras de
+         * almacenar.
+         *
+         * Vienen del llamador y no se piden aquí a propósito: una entrada de
+         * quince renglones haría quince consultas para leer quince filas.
+         */
+        presentaciones?: { presentacion: string; unidades: string | number }[] | null
       }
     | undefined
     | null
@@ -97,8 +108,33 @@ export function CantidadDeArticulo({
   disabled,
 }: Props) {
   const unidad = articulo?.unidad ?? ''
-  const presentacion = articulo?.presentacion ?? ''
-  const porBulto = Number(articulo?.unidades_por_presentacion)
+
+  /*
+    DE CUÁNTAS FORMAS SE PUEDE CONTAR ESTO.
+
+    Si el artículo trae la lista, manda la lista. Si no —porque el llamador no
+    la carga, o porque el artículo solo tiene una— se usan las dos columnas de
+    siempre, y todo se comporta como antes.
+  */
+  const formas =
+    articulo?.presentaciones && articulo.presentaciones.length > 0
+      ? articulo.presentaciones.map((p) => ({
+          nombre: p.presentacion,
+          por: Number(p.unidades),
+        }))
+      : articulo?.presentacion && Number(articulo.unidades_por_presentacion) > 0
+        ? [
+            {
+              nombre: articulo.presentacion,
+              por: Number(articulo.unidades_por_presentacion),
+            },
+          ]
+        : []
+
+  const [cual, setCual] = useState('')
+  const elegida = formas.find((f) => f.nombre === cual) ?? formas[0]
+  const presentacion = elegida?.nombre ?? ''
+  const porBulto = elegida?.por ?? NaN
   const convertible = !!presentacion && Number.isFinite(porBulto) && porBulto > 0
 
   const [enPresentacion, setEnPresentacion] = useState(false)
@@ -154,28 +190,51 @@ export function CantidadDeArticulo({
     avisar(tecleado, crudo, true)
   }
 
-  const cambiarDeUnidad = (aPresentacion: boolean) => {
-    setEnPresentacion(aPresentacion)
-    /*
-      Lo ya escrito se conserva y se reexpresa: cambiar de unidad no es borrar.
-      Al volver a la unidad de operación lo suelto se suma en vez de perderse,
-      porque lo que la persona quiso decir sigue siendo la misma cantidad.
-    */
+  /*
+    REEXPRESAR UN TOTAL EN OTRA PRESENTACIÓN ES REPARTIRLO, NO DIVIDIRLO.
+
+    Costó un bloqueante encontrado en revisión antes de desplegar. La primera
+    versión hacía `total / porBulto` y mandaba el cociente tal cual: 15 PAR
+    cambiados a CAJA (de 20) daban `0,75 CAJA`, y `private.en_unidad_base`
+    rechaza eso —«Los bultos se cuentan enteros»—, así que el guardado reventaba
+    con un mensaje sobre un número que la persona no tecleó. Y de paso borraba
+    lo suelto, que es exactamente lo que la base se niega a hacer: «reescribirle
+    a alguien lo que contó es como se pierde la confianza en un inventario».
+
+    Repartir conserva las dos cosas: los bultos enteros que caben y el resto en
+    la unidad de operación. 634 L en bidones de 20 son 31 bidones y 14 litros,
+    que es como se cuenta un almacén de verdad.
+
+    El redondeo del resto es contra el binario, no contra el usuario: 0,1 × 3 en
+    coma flotante deja 13,999999999999998 y eso no es una cantidad, es un
+    artefacto. Seis decimales están muy por encima de los cuatro que admite el
+    campo.
+  */
+  const repartir = (total: number, por: number) => {
+    const bultos = Math.trunc(total / por)
+    const resto = Number((total - bultos * por).toFixed(6))
+    return { bultos, resto }
+  }
+
+  /**
+   * Vuelve a la unidad de operación conservando lo escrito.
+   *
+   * Solo en ese sentido: hacia una presentación va el selector, que además
+   * tiene que decir CUÁL. La versión anterior admitía los dos sentidos y su
+   * rama de ida quedó inalcanzable el día que el selector pasó a ser una lista
+   * — código muerto pero armado, con el mismo defecto del cociente dentro.
+   */
+  const volverALaUnidad = () => {
+    setEnPresentacion(false)
     const enUnidades = Number(valor)
     if (!Number.isFinite(enUnidades) || valor === '') {
       setTecleado('')
       setSuelto('')
       return
     }
-    if (aPresentacion) {
-      setTecleado(String(enUnidades / porBulto))
-      setSuelto('')
-      avisar(String(enUnidades / porBulto), '', true)
-    } else {
-      setTecleado(String(enUnidades))
-      setSuelto('')
-      avisar(String(enUnidades), '', false)
-    }
+    setTecleado(String(enUnidades))
+    setSuelto('')
+    avisar(String(enUnidades), '', false)
   }
 
   const enEspanol = (n: number) => n.toLocaleString('es-VE', { maximumFractionDigits: 4 })
@@ -222,8 +281,35 @@ export function CantidadDeArticulo({
             <span className="sr-only">En qué se teclea la cantidad</span>
             <select
               disabled={disabled}
-              value={enPresentacion ? 'P' : 'U'}
-              onChange={(e) => cambiarDeUnidad(e.target.value === 'P')}
+              value={enPresentacion ? presentacion : 'U'}
+              /*
+                Con varias formas, el selector ya no es un interruptor: es la
+                lista entera. Elegir una que no es la de ahora reexpresa lo
+                escrito con SU factor, que es lo que hace que cambiar de tambores
+                a bidones no invente una cantidad.
+              */
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === 'U') {
+                  volverALaUnidad()
+                  return
+                }
+                setCual(v)
+                const nueva = formas.find((f) => f.nombre === v)
+                const total = Number(valor)
+                if (nueva && Number.isFinite(total) && valor !== '') {
+                  // Se REPARTE: bultos enteros y lo que sobre, en la unidad.
+                  const { bultos, resto } = repartir(total, nueva.por)
+                  setTecleado(String(bultos))
+                  setSuelto(resto ? String(resto) : '')
+                  onCambiar(String(total), {
+                    presentaciones: bultos || null,
+                    sueltas: resto,
+                    unidad: bultos ? v : null,
+                  })
+                }
+                setEnPresentacion(true)
+              }}
               /*
                 Las mismas medidas que el `Select` de la casa —alto 10, borde
                 `ink/20`, radio de control— para que la caja de al lado y esta
@@ -233,7 +319,11 @@ export function CantidadDeArticulo({
               className="rounded-control bg-surface text-ink/90 border-ink/20 hover:border-ink/32 focus:border-royal-600 focus:ring-royal-600/20 h-10 appearance-none border pr-8 pl-3 text-base transition-[border-color,box-shadow] duration-150 focus:ring-2 focus:outline-none"
             >
               <option value="U">{unidad}</option>
-              <option value="P">{presentacion}</option>
+              {formas.map((f) => (
+                <option key={f.nombre} value={f.nombre}>
+                  {f.nombre}
+                </option>
+              ))}
             </select>
           </label>
         ) : null}
@@ -270,7 +360,9 @@ export function CantidadDeArticulo({
         <p className="text-royal-600 dark:text-royal-300 mt-1 text-xs">{equivale}</p>
       ) : convertible ? (
         <p className="text-ink/45 mt-1 text-xs">
-          {porBulto.toLocaleString('es-VE')} {unidad} por {presentacion}
+          {formas
+            .map((f) => `${f.por.toLocaleString('es-VE')} ${unidad} por ${f.nombre}`)
+            .join(' · ')}
         </p>
       ) : null}
     </div>

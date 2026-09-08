@@ -12,6 +12,7 @@
     "build": "tsc -b && vite build",
     "pretypecheck": "npm run manual",
     "typecheck": "tsc -b",
+    "deriva": "node scripts/deriva.mjs",
     "lint": "oxlint",
     "preview": "vite preview --host",
     "prueba": "node pruebas/correr.mjs"

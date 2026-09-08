@@ -51,6 +51,8 @@ interface Props {
         unidad?: string | null
         presentacion?: string | null
         unidades_por_presentacion?: string | null
+        /** Las demás formas de contarlo. Ver `CantidadDeArticulo`. */
+        presentaciones?: { presentacion: string; unidades: string | number }[] | null
       }
     | undefined
     | null
@@ -71,8 +73,29 @@ export function CostoDeArticulo({
   disabled,
 }: Props) {
   const unidad = articulo?.unidad ?? ''
-  const presentacion = articulo?.presentacion ?? ''
-  const porBulto = Number(articulo?.unidades_por_presentacion)
+
+  // Las mismas formas que ofrece la cantidad, y por la misma razon: la factura
+  // trae el precio del tambor o el del bidon, y quien teclea no deberia tener
+  // que elegir un precio que no viene escrito en ningun papel.
+  const formas =
+    articulo?.presentaciones && articulo.presentaciones.length > 0
+      ? articulo.presentaciones.map((x) => ({
+          nombre: x.presentacion,
+          por: Number(x.unidades),
+        }))
+      : articulo?.presentacion && Number(articulo.unidades_por_presentacion) > 0
+        ? [
+            {
+              nombre: articulo.presentacion,
+              por: Number(articulo.unidades_por_presentacion),
+            },
+          ]
+        : []
+
+  const [cual, setCual] = useState('')
+  const elegida = formas.find((f) => f.nombre === cual) ?? formas[0]
+  const presentacion = elegida?.nombre ?? ''
+  const porBulto = elegida?.por ?? NaN
   const convertible = !!presentacion && Number.isFinite(porBulto) && porBulto > 0
 
   const [enPresentacion, setEnPresentacion] = useState(false)
@@ -96,15 +119,22 @@ export function CostoDeArticulo({
     onCambiar(crudo === '' || !Number.isFinite(n) ? '' : String(n / porBulto))
   }
 
-  const cambiarDeUnidad = (aPresentacion: boolean) => {
-    setEnPresentacion(aPresentacion)
-    // Lo ya escrito se conserva y se reexpresa: cambiar de unidad no es borrar.
+  /**
+   * Vuelve al precio por unidad conservando lo escrito.
+   *
+   * Solo en ese sentido, igual que en el gemelo: hacia una presentación va el
+   * selector, que además tiene que decir cuál. La rama de ida quedó inalcanzable
+   * el día que el selector pasó a ser una lista, y el código muerto que sigue
+   * armado es el que muerde meses después.
+   *
+   * Aquí no hace falta repartir nada: un precio por bulto con decimales es
+   * legítimo —1.352,52 el tambor— y no hay bultos que contar. Es la asimetría
+   * de fondo con la cantidad.
+   */
+  const volverALaUnidad = () => {
+    setEnPresentacion(false)
     const porUnidad = Number(valor)
-    if (!Number.isFinite(porUnidad) || valor === '') {
-      setTecleado('')
-      return
-    }
-    setTecleado(aPresentacion ? String(porUnidad * porBulto) : String(porUnidad))
+    setTecleado(!Number.isFinite(porUnidad) || valor === '' ? '' : String(porUnidad))
   }
 
   const n = (x: number, dec = 4) => x.toLocaleString('es-VE', { maximumFractionDigits: dec })
@@ -148,12 +178,34 @@ export function CostoDeArticulo({
             <span className="sr-only">En qué se teclea el costo</span>
             <select
               disabled={disabled}
-              value={enPresentacion ? 'P' : 'U'}
-              onChange={(e) => cambiarDeUnidad(e.target.value === 'P')}
+              value={enPresentacion ? presentacion : 'U'}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === 'U') {
+                  volverALaUnidad()
+                  return
+                }
+                setCual(v)
+                // Aqui se MULTIPLICA para volver al precio del bulto: es la
+                // operacion contraria a la de la cantidad, y es la que hace que
+                // pasar de tambores a bidones no invente un precio.
+                const nueva = formas.find((f) => f.nombre === v)
+                const porUnidad = Number(valor)
+                setTecleado(
+                  nueva && Number.isFinite(porUnidad) && valor !== ''
+                    ? String(porUnidad * nueva.por)
+                    : '',
+                )
+                setEnPresentacion(true)
+              }}
               className="rounded-control bg-surface text-ink/90 border-ink/20 hover:border-ink/32 focus:border-royal-600 focus:ring-royal-600/20 h-10 appearance-none border pr-8 pl-3 text-base transition-[border-color,box-shadow] duration-150 focus:ring-2 focus:outline-none"
             >
               <option value="U">por {unidad}</option>
-              <option value="P">por {presentacion}</option>
+              {formas.map((f) => (
+                <option key={f.nombre} value={f.nombre}>
+                  por {f.nombre}
+                </option>
+              ))}
             </select>
           </label>
         ) : null}
@@ -172,7 +224,8 @@ export function CostoDeArticulo({
         <p className="text-royal-600 dark:text-royal-300 mt-1 text-xs">{equivale}</p>
       ) : convertible ? (
         <p className="text-ink/45 mt-1 text-xs">
-          Por {unidad}, no por {presentacion} · 1 {presentacion} = {n(porBulto, 2)} {unidad}
+          Por {unidad}, no por bulto ·{' '}
+          {formas.map((f) => `1 ${f.nombre} = ${n(f.por, 2)} ${unidad}`).join(' · ')}
         </p>
       ) : null}
     </div>

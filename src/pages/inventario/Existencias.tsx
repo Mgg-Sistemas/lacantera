@@ -35,7 +35,12 @@ import { ModalAlTaller } from './ModalAlTaller'
 import { ListaEditable } from '@/components/ListaEditable'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { supabase } from '@/lib/supabase'
-import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
+import {
+  conSusFormas,
+  useArticulos,
+  useMisRoles,
+  useTodasLasPresentaciones,
+} from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
 import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
@@ -75,6 +80,25 @@ function cantidad(valor: string | number): string {
  * así que se escribe al lado. `dolares()` clavaría un «$» que mentiría cuando la
  * factura viene en bolívares.
  */
+/**
+ * «7 TAMBOR y 10 L», o nada cuando se contó en la unidad de operación.
+ *
+ * Se arma aquí y no en el PDF porque el PDF no tiene por qué saber cómo se
+ * llama cada columna de la base; recibe una frase y la imprime.
+ */
+function contadoLegible(l: {
+  cantidad_capturada: string | null
+  unidad_capturada: string | null
+  suelto_capturado: string | null
+  unidad: string
+}): string | null {
+  if (!l.cantidad_capturada || !l.unidad_capturada) return null
+  const bultos = `${cantidad(l.cantidad_capturada)} ${l.unidad_capturada}`
+  return Number(l.suelto_capturado)
+    ? `${bultos} y ${cantidad(l.suelto_capturado!)} ${l.unidad}`
+    : bultos
+}
+
 function monto(valor: number): string {
   return valor.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -138,6 +162,15 @@ interface RenglonEnCurso {
    * guardar.
    */
   sueltas?: string
+  /**
+   * En cuál de las presentaciones se contó.
+   *
+   * Con una sola forma declarada sobra —la base la resuelve—, pero desde que un
+   * artículo puede tener varias es el dato que decide la cuenta: «3 bultos» de
+   * un aceite que viene en TAMBOR (208 L) y en BIDON (20 L) son 624 litros o
+   * son 60, y la diferencia no se descubre hasta que alguien cuenta el almacén.
+   */
+  presentacion?: string | null
   /**
    * Solo en la salida: de qué almacén sale ESTE renglón.
    *
@@ -258,6 +291,7 @@ export function Existencias() {
           articulo: l.articulo,
           cantidad: l.cantidad,
           unidad: l.unidad,
+          contado: contadoLegible(l),
           costoUnitarioUsd: l.costo_usd,
           valorUsd: l.valor_usd,
           almacen: l.almacen,
@@ -271,7 +305,11 @@ export function Existencias() {
   const notaDelMovimiento = async (movimientoId: number, clase: string, motivo: string) => {
     const { data } = await supabase
       .from('inventario_movimientos')
-      .select('numero, fecha, cantidad, unidad, costo_usd, valor_usd, almacen_id, articulo_id')
+      .select(
+        // El trio capturado tambien: hoy la baja no cuenta en bultos, pero el
+        // dia que lo haga el papel ya lo dira sin que nadie se acuerde de esto.
+        'numero, fecha, cantidad, unidad, costo_usd, valor_usd, almacen_id, articulo_id, cantidad_capturada, unidad_capturada, suelto_capturado',
+      )
       .eq('id', movimientoId)
       .maybeSingle()
 
@@ -291,6 +329,7 @@ export function Existencias() {
         // falta el formulario, que es lo unico que sigue siendo de una fila.
         renglones: [
           {
+            contado: contadoLegible({ ...data, unidad: data.unidad }),
             articuloCodigo: art?.codigo ?? '',
             articulo: art?.nombre ?? '',
             cantidad: data.cantidad,
@@ -311,6 +350,9 @@ export function Existencias() {
   const baja = useRegistrarBaja()
   const entrada = useRegistrarEntradas()
   const { data: articulos } = useArticulos()
+  // Las formas de contar de todo el catalogo, de un tiron: quince renglones no
+  // pueden ser quince consultas para leer quince filas.
+  const { data: formasDeContar } = useTodasLasPresentaciones()
   const monedas = useMonedasUsables()
   const { data: empresa } = useEmpresa()
   const { nombre: yo } = useSesion()
@@ -331,6 +373,13 @@ export function Existencias() {
     porque contar un almacén es «siete tambores y diez litros», no un número.
   */
   const [bultosContados, setBultosContados] = useState<number | null>(null)
+  /*
+    Y EN CUAL SE CONTO. Desde que un articulo puede declarar varias formas, los
+    bultos solos no dicen nada: «3» son 624 litros en tambores y 60 en bidones.
+    Nulo cuando se conto en la unidad de operacion, que es cuando no hay bulto
+    que nombrar.
+  */
+  const [presentacionContada, setPresentacionContada] = useState<string | null>(null)
   /*
     El total ya sumado, solo para enseñarlo y calcular la diferencia. Lo que
     viaja a la base son `valor` (lo suelto) y `bultosContados` por separado:
@@ -583,6 +632,7 @@ export function Existencias() {
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setTotalContado(tipo === 'ajuste' && fila ? fila.existencia : '')
     setBultosContados(null)
+    setPresentacionContada(null)
     setMotivo('')
     setReferencia('')
     // Abierta desde una fila, el primer renglón viene con ese artículo puesto.
@@ -624,6 +674,7 @@ export function Existencias() {
             */
             cantidad: r.presentaciones ? Number(r.sueltas || 0) : Number(r.cantidad || 0),
             presentaciones: r.presentaciones ?? null,
+            presentacion: r.presentacion ?? null,
             costo: Number(r.costo),
             moneda: r.moneda,
             confirmado: r.confirmado === true,
@@ -646,6 +697,7 @@ export function Existencias() {
           articulo_id: Number(r.articulo),
           cantidad: r.presentaciones ? Number(r.sueltas || 0) : Number(r.cantidad || 0),
           presentaciones: r.presentaciones ?? null,
+          presentacion: r.presentacion ?? null,
         })),
         motivo,
         tipo: clase,
@@ -740,6 +792,7 @@ export function Existencias() {
         articulo_id: modal.fila!.articulo_id,
         contado: Number(valor || 0),
         presentaciones: bultosContados,
+        presentacion: presentacionContada,
         motivo,
       })
     }
@@ -1300,7 +1353,10 @@ export function Existencias() {
 
               <div className="mt-4 space-y-3">
                 {renglones.map((r, i) => {
-                  const art = (articulos ?? []).find((a) => String(a.id) === r.articulo)
+                  const art = conSusFormas(
+                    (articulos ?? []).find((a) => String(a.id) === r.articulo),
+                    formasDeContar,
+                  )
 
                   /*
                     CUÁNTO SUMA ESTE RENGLÓN, MIENTRAS SE ESCRIBE.
@@ -1378,7 +1434,12 @@ export function Existencias() {
                                     ...x,
                                     articulo: v,
                                     cantidad: '',
+                                    // El costo tambien: 6,50 por litro de un
+                                    // aceite no dice nada del articulo nuevo, y
+                                    // dejarlo puesto es ofrecerlo como suyo.
+                                    costo: '',
                                     presentaciones: null,
+                                    presentacion: null,
                                     sueltas: '',
                                     confirmado: false,
                                   }
@@ -1402,7 +1463,19 @@ export function Existencias() {
                           entrada esta contando bultos bajados de un camion y
                           tiene que dejar litros en la existencia.
                         */}
+                        {/*
+                          CAMBIAR DE ARTICULO REMONTA EL CAMPO.
+
+                          El componente guarda por dentro en que presentacion
+                          se esta tecleando, y esa eleccion no significa nada
+                          en el articulo siguiente: el selector se quedaba en
+                          «CAJA» y la linea de equivalencia afirmaba una cuenta
+                          con el factor del anterior. Con la clave, React lo
+                          monta de nuevo y el estado nace limpio — que es lo
+                          mismo que ya hacia el renglon con sus cifras.
+                        */}
                         <CantidadDeArticulo
+                          key={r.articulo}
                           valor={r.cantidad}
                           /*
                             Se guardan las DOS cifras tecleadas, no la suma. La
@@ -1421,6 +1494,7 @@ export function Existencias() {
                                       // filtro, la suma y el aviso del costo.
                                       cantidad: v,
                                       presentaciones: cap.presentaciones,
+                                      presentacion: cap.unidad,
                                       sueltas: String(cap.sueltas ?? ''),
                                       // Cambiar la cantidad no debe arrastrar
                                       // una confirmación dada sobre otra.
@@ -1444,6 +1518,7 @@ export function Existencias() {
                           cuenta con los dos lados escritos.
                         */}
                         <CostoDeArticulo
+                          key={r.articulo}
                           valor={r.costo}
                           onCambiar={(v) =>
                             setRenglones((lista) =>
@@ -1609,7 +1684,10 @@ export function Existencias() {
                     `sitios` sale de las existencias y trae la unidad, pero no
                     la presentacion: para eso hay que ir al catalogo.
                   */
-                  const artSale = (articulos ?? []).find((a) => String(a.id) === r.articulo)
+                  const artSale = conSusFormas(
+                    (articulos ?? []).find((a) => String(a.id) === r.articulo),
+                    formasDeContar,
+                  )
                   // Lo que queda para ESTE renglón: lo que hay menos lo que ya
                   // se llevaron los renglones de arriba del mismo par.
                   const disponible =
@@ -1669,6 +1747,7 @@ export function Existencias() {
                                     // nada.
                                     cantidad: '',
                                     presentaciones: null,
+                                    presentacion: null,
                                     sueltas: '',
                                     almacen: sigueValiendo
                                       ? x.almacen
@@ -1723,6 +1802,7 @@ export function Existencias() {
                           siendo entre litros y litros.
                         */}
                         <CantidadDeArticulo
+                          key={r.articulo}
                           valor={r.cantidad}
                           onCambiar={(v, cap) =>
                             setRenglones((lista) =>
@@ -1732,6 +1812,7 @@ export function Existencias() {
                                       ...x,
                                       cantidad: v,
                                       presentaciones: cap.presentaciones,
+                                      presentacion: cap.unidad,
                                       sueltas: String(cap.sueltas ?? ''),
                                     }
                                   : x,
@@ -1835,20 +1916,35 @@ export function Existencias() {
               */}
               {modal.tipo === 'ajuste' ? (
                 <CantidadDeArticulo
+                    key={modal.fila?.articulo_id}
                   label="Cantidad contada"
                   valor={totalContado}
                   onCambiar={(v, cap) => {
                     setValor(cap.presentaciones ? String(cap.sueltas || '') : v)
                     setBultosContados(cap.presentaciones)
+                    setPresentacionContada(cap.unidad)
                     setTotalContado(v)
                   }}
                   articulo={
                     modal.fila
                       ? {
+                          /*
+                            La unidad sale de la FILA y no del articulo: la fila
+                            es la que se esta contando. Lo demas sale del
+                            articulo, que es donde viven las formas de contarlo.
+                          */
                           unidad: modal.fila.unidad,
                           presentacion: articuloDeLaFila?.presentacion ?? null,
                           unidades_por_presentacion:
                             articuloDeLaFila?.unidades_por_presentacion ?? null,
+                          presentaciones: (formasDeContar ?? [])
+                            .filter((x) => x.articulo_id === articuloDeLaFila?.id && x.activa)
+                            .sort(
+                              (a, b) =>
+                                Number(b.por_defecto) - Number(a.por_defecto) ||
+                                a.presentacion.localeCompare(b.presentacion, 'es'),
+                            )
+                            .map((x) => ({ presentacion: x.presentacion, unidades: x.unidades })),
                         }
                       : null
                   }
@@ -2481,11 +2577,27 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
 
       {impacto.error ? <ErrorDeCarga error={impacto.error} className="mt-3" /> : null}
 
+      {/*
+          EL EJEMPLO DICE QUE ESCRIBIR, NO QUE RESPONDER.
+
+          Aqui habia un caso real entero —«Se cargo el precio del tambor donde
+          iba el del litro. Factura NASELF 000617»— y Christopher lo paro: «es
+          demasiado especifico a un caso puntual en vez de ser generico o de
+          guia».
+
+          Y el problema es peor que la especificidad: un ejemplo que parece una
+          respuesta invita a copiarlo. Con veinte correcciones diciendo todas lo
+          mismo, el campo del porque deja de explicar nada — que es justo lo
+          contrario de por que existe. Ademas metia un numero de factura real en
+          un texto de pantalla.
+
+          Asi que se dice que tiene que llevar: el error y el respaldo.
+        */}
       <Textarea
         label="Por qué se corrige"
         className="mt-4"
         rows={2}
-        placeholder="Se cargó el precio del tambor donde iba el del litro. Factura NASELF 000617."
+        placeholder="Qué se cargó mal y con qué papel se comprueba el costo correcto"
         value={porque}
         onChange={(e) => setPorque(e.target.value)}
         hint="Queda en el movimiento y se avisa a administración y gerencia. Mínimo diez caracteres."
