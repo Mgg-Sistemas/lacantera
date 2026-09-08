@@ -150,8 +150,28 @@ function leerVivas(ruta) {
   if (i === -1 || j === -1) throw new Error(`No encuentro el JSON dentro de ${ruta}`)
   let datos = JSON.parse(texto.slice(i, j + 2))
 
-  // Capas 2 y 3: la fila única de json_agg.
-  if (datos.length === 1 && typeof datos[0].todo === 'string') datos = JSON.parse(datos[0].todo)
+  /*
+    Capas 2 y 3: la fila única de json_agg, venga como venga.
+
+    La primera versión exigía que la columna se llamara `todo` y que su valor
+    fuera una CADENA. Las dos cosas eran supuestos míos: el alias depende de cómo
+    se escriba la consulta —la del comentario de aquí arriba no lleva ninguno, y
+    Postgres la llamaría `json_agg`— y el MCP a veces devuelve el agregado ya
+    parseado como array en vez de como texto.
+
+    Lo encontró el carril de base de datos corriendo esto la primera vez: fallaba
+    con «El volcado no trae f y src» sobre el volcado que la cabecera promete
+    aceptar. Es el tercer fallo de la misma familia en dos días. **Una
+    herramienta de verificación que rechaza la entrada que promete aceptar es
+    peor que no tenerla**, porque quien la corre concluye lo que ella le diga —
+    y ésta al menos falló hacia el lado seguro: se negó a correr en vez de
+    devolver un número inventado.
+  */
+  if (datos.length === 1 && Object.keys(datos[0]).length === 1) {
+    const unica = datos[0][Object.keys(datos[0])[0]]
+    if (typeof unica === 'string') datos = JSON.parse(unica)
+    else if (Array.isArray(unica)) datos = unica
+  }
 
   if (!datos.length || !datos[0].f || typeof datos[0].src !== 'string') {
     throw new Error('El volcado no trae `f` y `src`. Revisa la consulta del comentario de arriba.')
