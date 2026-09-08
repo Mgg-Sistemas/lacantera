@@ -1,4 +1,5 @@
 import { logoComoImagen } from '@/lib/ficha/logo'
+import { dinero } from '@/lib/formato'
 import { ABAJO, ARRIBA, PIE } from '@/lib/ficha/hoja'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import {
@@ -50,8 +51,13 @@ const decimal2 = new Intl.NumberFormat('es-VE', {
 const numero = (v: string | number | null | undefined): string =>
   decimal2.format(Number(v ?? 0))
 
+/*
+  El simbolo lo decide `dinero()`. Aqui vivia `moneda === 'VES' ? 'Bs' : '$'`,
+  la regla que `lib/formato` abandono al entrar el USDT: con cuatro monedas
+  activas, una orden en euros le llega al proveedor diciendo «$».
+*/
 const conMoneda = (moneda: string, v: string | number | null | undefined): string =>
-  `${moneda === 'VES' ? 'Bs' : '$'} ${numero(v)}`
+  dinero(moneda, v ?? 0)
 
 /** Entera si es entera. Ocho mil novecientos litros no se leen «8.900,00». */
 const cantidad = (v: string | number): string => {

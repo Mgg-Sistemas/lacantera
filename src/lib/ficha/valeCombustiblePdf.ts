@@ -1,4 +1,5 @@
 import { logoComoImagen } from '@/lib/ficha/logo'
+import { dinero } from '@/lib/formato'
 import {
   GRIS,
   TINTA,
@@ -150,7 +151,12 @@ export async function armarValeDeCombustible(d: DatosValeCombustible): Promise<V
           ? 'No aplica: no tiene ficha de máquina'
           : 'No se tomó',
     ],
-    ['Costo', d.costoUsd != null ? `$ ${Number(d.costoUsd).toFixed(2)}` : null],
+    /*
+      El costo iba con `toFixed(2)`, que escribe en ingles: en el mismo bloque,
+      el horometro salia «1.234,50 h» y el costo «$ 1234.50». Dos ortografias en
+      filas consecutivas del mismo papel.
+    */
+    ['Costo', d.costoUsd != null ? dinero('USD', d.costoUsd) : null],
   ])
 
   y = bloqueEtiquetado(doc, y, 'Quién', [

@@ -33,6 +33,7 @@
  */
 
 import { logoComoImagen } from './logo'
+import { dinero } from '@/lib/formato'
 import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, CENTRO, DER, IZQ, PIE } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
 import {
@@ -178,8 +179,18 @@ const decimal2 = new Intl.NumberFormat('es-VE', {
 const numero = (v: string | number | null | undefined): string =>
   decimal2.format(typeof v === 'number' ? v : Number(v ?? 0))
 
+/*
+  EL SIMBOLO LO DECIDE `dinero()`, NO ESTE ARCHIVO.
+
+  Aqui vivia `moneda === 'VES' ? 'Bs' : '$'`, que es exactamente la regla que
+  `lib/formato` abandono cuando entro el USDT: hoy hay cuatro monedas activas
+  —EUR, USD, USDT y VES— y con esa regla una factura en euros se imprime «$».
+
+  En pantalla eso ya se arreglo; en el papel no, porque este archivo tiene su
+  propia copia de todo. Y el papel es el que ve el cliente.
+*/
 const conSimbolo = (moneda: string, v: string | number | null | undefined): string =>
-  `${moneda === 'VES' ? 'Bs' : '$'} ${numero(v)}`
+  dinero(moneda, v ?? 0)
 
 const fechaCorta = (iso: string): string =>
   new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(

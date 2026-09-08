@@ -75,6 +75,25 @@ function cantidad(valor: string | number): string {
  * así que se escribe al lado. `dolares()` clavaría un «$» que mentiría cuando la
  * factura viene en bolívares.
  */
+/**
+ * «7 TAMBOR y 10 L», o nada cuando se contó en la unidad de operación.
+ *
+ * Se arma aquí y no en el PDF porque el PDF no tiene por qué saber cómo se
+ * llama cada columna de la base; recibe una frase y la imprime.
+ */
+function contadoLegible(l: {
+  cantidad_capturada: string | null
+  unidad_capturada: string | null
+  suelto_capturado: string | null
+  unidad: string
+}): string | null {
+  if (!l.cantidad_capturada || !l.unidad_capturada) return null
+  const bultos = `${cantidad(l.cantidad_capturada)} ${l.unidad_capturada}`
+  return Number(l.suelto_capturado)
+    ? `${bultos} y ${cantidad(l.suelto_capturado!)} ${l.unidad}`
+    : bultos
+}
+
 function monto(valor: number): string {
   return valor.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -258,6 +277,7 @@ export function Existencias() {
           articulo: l.articulo,
           cantidad: l.cantidad,
           unidad: l.unidad,
+          contado: contadoLegible(l),
           costoUnitarioUsd: l.costo_usd,
           valorUsd: l.valor_usd,
           almacen: l.almacen,
@@ -271,7 +291,11 @@ export function Existencias() {
   const notaDelMovimiento = async (movimientoId: number, clase: string, motivo: string) => {
     const { data } = await supabase
       .from('inventario_movimientos')
-      .select('numero, fecha, cantidad, unidad, costo_usd, valor_usd, almacen_id, articulo_id')
+      .select(
+        // El trio capturado tambien: hoy la baja no cuenta en bultos, pero el
+        // dia que lo haga el papel ya lo dira sin que nadie se acuerde de esto.
+        'numero, fecha, cantidad, unidad, costo_usd, valor_usd, almacen_id, articulo_id, cantidad_capturada, unidad_capturada, suelto_capturado',
+      )
       .eq('id', movimientoId)
       .maybeSingle()
 
@@ -291,6 +315,7 @@ export function Existencias() {
         // falta el formulario, que es lo unico que sigue siendo de una fila.
         renglones: [
           {
+            contado: contadoLegible({ ...data, unidad: data.unidad }),
             articuloCodigo: art?.codigo ?? '',
             articulo: art?.nombre ?? '',
             cantidad: data.cantidad,

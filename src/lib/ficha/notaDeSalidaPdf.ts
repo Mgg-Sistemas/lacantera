@@ -66,6 +66,15 @@ export interface RenglonDeSalida {
   costoUnitarioUsd?: string | number | null
   valorUsd?: string | number | null
   /**
+   * Lo que la persona contó, cuando contó en bultos: «7 TAMBOR y 10».
+   *
+   * Va debajo del nombre del material y no en columna propia: la tabla reparte
+   * ciento cincuenta milímetros exactos y no sobra ninguno. La celda se parte
+   * en dos renglones sola —esta tabla no recorta, ensancha la fila—, así que el
+   * dato cabe sin rediseñar el papel.
+   */
+  contado?: string | null
+  /**
    * De qué almacén sale este renglón.
    *
    * Solo importa cuando la nota mezcla varios sitios, y entonces NO se imprime
@@ -135,7 +144,7 @@ function numero(valor: string | number, decimales = 2): string {
 /** Un renglón, en las seis celdas de la tabla. Es el mismo dibujo con sitio o sin él. */
 const celdas = (r: RenglonDeSalida): string[] => [
   r.articuloCodigo,
-  r.articulo,
+  r.contado ? `${r.articulo} · se contó ${r.contado}` : r.articulo,
   numero(r.cantidad),
   r.unidad,
   r.costoUnitarioUsd != null ? numero(r.costoUnitarioUsd) : '—',

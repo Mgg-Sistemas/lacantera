@@ -699,6 +699,16 @@ export interface RenglonDeNota {
   costo_usd: string
   valor_usd: string
   registrado_en: string
+  /**
+   * Lo que la persona contó, para que el papel lo diga.
+   *
+   * Quien entregó siete tambores y firma un papel que dice «1.466 L» no puede
+   * cotejar lo que firma con lo que sacó del estante. Y ese papel es la única
+   * prueba de la entrega: si mañana falta material, es contra él que se compara.
+   */
+  cantidad_capturada: string | null
+  unidad_capturada: string | null
+  suelto_capturado: string | null
 }
 
 /**
