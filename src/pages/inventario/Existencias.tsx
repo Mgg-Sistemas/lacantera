@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import {
   Boxes,
+  Coins,
   MapPin,
   PackageMinus,
   PackagePlus,
@@ -37,11 +38,14 @@ import { supabase } from '@/lib/supabase'
 import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
-import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
   useAlmacenes,
   useExistencias,
+  useCorregirCosto,
+  useImpactoDeCorregirCosto,
+  useRevisarCostoDeEntrada,
   useExistenciasDeArticulo,
   useExistenciasTotales,
   useMovimientos,
@@ -159,6 +163,7 @@ export function Existencias() {
   // lo que exige `guardar_clase_de_salida` (INVENTARIO en TOTAL). Ofrecer el
   // boton a quien la RPC va a rechazar es enseñar una puerta cerrada.
   const { puede: alcanza } = useMisPermisos()
+  const { puede: puedeAccion } = useMisAcciones()
   const salidas = useRegistrarSalidas()
   // Mandar algo al taller no es sacarlo: vuelve. Por eso va en su propio modal
   // y no como un quinto caso del de salidas.
@@ -289,6 +294,9 @@ export function Existencias() {
   const [busqueda, setBusqueda] = useState('')
   const [soloBajas, setSoloBajas] = useState(false)
   const [desglose, setDesglose] = useState<ExistenciaTotal | null>(null)
+  /* Que fila se esta corrigiendo de valoracion. Va aparte de `modal` porque no
+     comparte ni el formulario ni el permiso con las cuatro acciones de almacen. */
+  const [costo, setCosto] = useState<Existencia | null>(null)
   const [modal, setModal] = useState<
     null | { tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada' | 'baja'; fila: Existencia | null }
   >(null)
@@ -325,21 +333,6 @@ export function Existencias() {
     undefined,
     modal?.tipo === 'salidas' || modal?.tipo === 'entrada',
   )
-
-  /**
-   * Lo que viene costando un artículo en un sitio, para avisar antes y no después.
-   *
-   * Nulo cuando nunca ha entrado ahí: la primera entrada no tiene contra qué
-   * compararse, y ese es justo el caso de los cinco aceites del 5 de septiembre.
-   * Ahí no protege esto, sino la cuenta hecha debajo de cada renglón.
-   */
-  const costoQueVieneTeniendo = (almacen: string, articulo: string): number | null => {
-    const e = (todas.data ?? []).find(
-      (x) => String(x.almacen_id) === almacen && String(x.articulo_id) === articulo,
-    )
-    const c = Number(e?.costo_promedio_usd ?? 0)
-    return c > 0 ? c : null
-  }
 
   /** Lo que hay de un artículo en un sitio concreto, para avisar antes y no después. */
   const hayEn = (almacen: string, articulo: string) =>
@@ -1005,6 +998,34 @@ export function Existencias() {
                             </Button>
                           </>
                         ) : null}
+
+                        {/*
+                          CORREGIR EL COSTO VA APARTE, Y NO ES UN DESCUIDO.
+
+                          Los cuatro botones de arriba viven dentro de
+                          `puede('ALMACEN')`, y la base le niega esta accion a
+                          ALMACEN a proposito: «almacen no tiene interes sobre
+                          el precio o valor de las cosas, pero si en que sus
+                          items esten rigurosamente contados» —Christopher—.
+                          Metido ahi lo verian justo quienes no pueden usarlo, y
+                          no lo veria GERENTE_GENERAL, que no tiene rol ALMACEN.
+
+                          Y solo por almacen: el costo promedio se lleva por
+                          pareja (almacen, articulo), asi que desde el total no
+                          significa nada.
+                        */}
+                        {!enTotal &&
+                        puedeAccion('INVENTARIO.AJUSTAR_COSTO') &&
+                        Number(fila!.existencia) > 0 ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={<Coins />}
+                            onClick={() => setCosto(fila!)}
+                          >
+                            Corregir el costo
+                          </Button>
+                        ) : null}
                       </td>
                     </tr>
                   )
@@ -1014,6 +1035,8 @@ export function Existencias() {
           </div>
         </Card>
       ) : null}
+
+      {costo ? <ModalCorregirCosto fila={costo} onCerrar={() => setCosto(null)} /> : null}
 
       <ModalDesglose
         articulo={desglose}
@@ -1177,13 +1200,37 @@ export function Existencias() {
                 label="A qué almacén entra"
                 vacio="Elige el sitio"
                 valor={aDonde}
-                onCambio={setADonde}
-                opciones={(almacenes ?? []).map((a) => ({
-                  valor: String(a.id),
-                  codigo: a.codigo,
-                  nombre: a.nombre,
-                  detalle: a.tipo,
-                }))}
+                /*
+                  CAMBIAR DE ALMACEN OLVIDA TODAS LAS CONFIRMACIONES.
+
+                  El costo promedio se lleva por pareja (almacen, articulo), asi
+                  que mover la entrada de sitio cambia el numero contra el que se
+                  comparan TODOS los renglones. Una confirmacion dada contra el
+                  promedio de un almacen no dice nada del otro.
+                */
+                onCambio={(v) => {
+                  setADonde(v)
+                  setRenglones((lista) => lista.map((x) => ({ ...x, confirmado: false })))
+                }}
+                /*
+                  EL TANQUE SIN COSTO NO ES DESTINO DE UNA ENTRADA CON PRECIO.
+
+                  Un almacen marcado con `admite_sin_costo` lleva su promedio
+                  aparte, y ese es el motivo de que exista: meterle material con
+                  precio lo contamina igual que sacarlo de ahi contamina al
+                  destino. La base lo rechaza; aqui simplemente no se ofrece.
+
+                  Para meter en ese tanque esta «Cargar combustible al tanque»
+                  con la casilla de «no costó nada para esta empresa».
+                */
+                opciones={(almacenes ?? [])
+                  .filter((a) => !a.admite_sin_costo)
+                  .map((a) => ({
+                    valor: String(a.id),
+                    codigo: a.codigo,
+                    nombre: a.nombre,
+                    detalle: a.tipo,
+                  }))}
               />
 
               <div className="mt-4 space-y-3">
@@ -1249,7 +1296,9 @@ export function Existencias() {
                         valor={r.articulo}
                         onCambio={(v) =>
                           setRenglones((lista) =>
-                            lista.map((x) => (x.clave === r.clave ? { ...x, articulo: v } : x)),
+                            lista.map((x) =>
+                              x.clave === r.clave ? { ...x, articulo: v, confirmado: false } : x,
+                            ),
                           )
                         }
                         opciones={(articulos ?? [])
@@ -1292,7 +1341,18 @@ export function Existencias() {
                           valor={r.costo}
                           onCambiar={(v) =>
                             setRenglones((lista) =>
-                              lista.map((x) => (x.clave === r.clave ? { ...x, costo: v } : x)),
+                              /*
+                              LA CASILLA PERTENECE A UN NUMERO, NO AL RENGLON.
+
+                              Sin esto, marcar «es correcto» con 5 y teclear
+                              luego 5.000 mandaba `confirmado: true` con el
+                              numero nuevo: la base lo aceptaba sin avisar de
+                              nada. Es justo el defecto que este formulario
+                              existe para evitar.
+                            */
+                            lista.map((x) =>
+                              x.clave === r.clave ? { ...x, costo: v, confirmado: false } : x,
+                            ),
                             )
                           }
                           articulo={art}
@@ -1309,7 +1369,11 @@ export function Existencias() {
                           onChange={(e) =>
                             setRenglones((lista) =>
                               lista.map((x) =>
-                                x.clave === r.clave ? { ...x, moneda: e.target.value } : x,
+                                // La moneda tambien: el promedio esta en dolares y la
+                                // conversion la hace la base con la tasa del dia.
+                                x.clave === r.clave
+                                  ? { ...x, moneda: e.target.value, confirmado: false }
+                                  : x,
                               ),
                             )
                           }
@@ -1325,119 +1389,29 @@ export function Existencias() {
                         de decirlo mientras se escribe, con la casilla al lado
                         para no tener que guardar, leer el error y volver.
 
-                        SOLO SE ADELANTA EN DÓLARES, y es a propósito: el costo
-                        se teclea en la moneda de la factura y el promedio está
-                        en dólares, así que compararlos pide una conversión. Las
-                        tasas no se calculan en el navegador —regla 4—, así que
-                        con otra moneda esto calla y avisa la base al guardar,
-                        que sí tiene la tasa del día.
-
-                        Y SOLO LE SALE A QUIEN PUEDE VER LA VALORACIÓN.
-                        `v_existencias` devuelve `costo_promedio_usd` en nulo a
-                        quien no tiene INVENTARIO.VER_VALORACION, y el rol
-                        ALMACEN —justo quien registra las entradas— NO lo tiene.
-                        Para esa persona esto no aparece nunca y la red es el
-                        mensaje de la base al guardar, que además está escrito
-                        para no revelarle el costo que la vista le esconde.
-
-                        No se disimula con un aviso vago: enseñar «esto es raro»
-                        sin poder decir cuánto ni respecto a qué es pedirle a
-                        alguien que dude sin darle con qué. Si conviene que quien
-                        teclea los costos pueda verlos, eso es una decisión de
-                        permisos y no se toma desde aquí.
+                        QUIEN DECIDE ES LA BASE, no esta pantalla. Antes se
+                        deducía de `v_existencias`, y eso salió mal de dos
+                        maneras que se tapaban entre sí: la vista esconde el
+                        promedio a quien no ve valoraciones, así que al
+                        almacenista le decía «primera entrada» siempre; y la
+                        comparación solo se hacía en dólares, que no es la
+                        moneda de las facturas de aquí.
                       */}
-                      {(() => {
-                        if (!r.articulo || costo <= 0 || cant <= 0) return null
-                        const viene = costoQueVieneTeniendo(aDonde, r.articulo)
-
-                        /*
-                          LA PRIMERA VEZ NO HAY CONTRA QUE COMPARAR, Y ES CUANDO
-                          MAS DUELE.
-
-                          Los cinco aceites del 5 de septiembre entraban por
-                          primera vez, asi que la reja de las diez veces no
-                          tenia con que medirlos y callo. No hay numero contra
-                          el que avisar; lo que si se puede es decir que NADIE
-                          lo esta comprobando, y que ese costo se convierte en
-                          la referencia de todo lo que venga despues.
-
-                          La base lo exige igual —`registrar_entradas` rechaza
-                          la primera entrada sin confirmar— asi que esto no es
-                          un adorno: sin la casilla, el guardado fallaria con un
-                          error que la pantalla no ofrece como resolver.
-
-                          Se pide una sola vez por articulo y almacen.
-                        */
-                        const esLaPrimera = viene === null
-                        if (esLaPrimera) {
-                          return (
-                            <div className="border-hairline bg-ink/4 rounded-card mt-3 border p-2.5">
-                              <p className="text-ink/80 text-xs leading-relaxed">
-                                <strong>Es la primera vez que entra a este almacén</strong>, así que
-                                no hay con qué comparar el costo. Serán{' '}
-                                <span className="tabular">{cantidad(cant)}</span>{' '}
-                                {art?.unidad ?? ''} a{' '}
-                                <span className="tabular">{monto(costo)}</span> cada una. Este costo
-                                se convierte en la referencia de todo lo que entre después.
-                              </p>
-                              <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
-                                <input
-                                  type="checkbox"
-                                  checked={r.confirmado === true}
-                                  onChange={(e) =>
-                                    setRenglones((lista) =>
-                                      lista.map((x) =>
-                                        x.clave === r.clave
-                                          ? { ...x, confirmado: e.target.checked }
-                                          : x,
-                                      ),
-                                    )
-                                  }
-                                />
-                                Lo comprobé con la factura
-                              </label>
-                            </div>
+                      <AvisoDeCosto
+                        almacenId={Number(aDonde) || null}
+                        articuloId={Number(r.articulo) || null}
+                        costo={costo}
+                        moneda={r.moneda}
+                        cantidad={cant}
+                        unidad={art?.unidad ?? ''}
+                        nombre={art?.nombre ?? 'Este artículo'}
+                        confirmado={r.confirmado === true}
+                        onConfirmar={(v) =>
+                          setRenglones((lista) =>
+                            lista.map((x) => (x.clave === r.clave ? { ...x, confirmado: v } : x)),
                           )
                         }
-
-                        if (r.moneda !== 'USD') return null
-                        const veces = costo / viene
-                        if (veces < 10 && veces > 0.1) return null
-                        return (
-                          <div className="border-warning/40 bg-warning-soft rounded-card mt-3 border p-2.5">
-                            <p className="text-ink/80 text-xs leading-relaxed">
-                              <strong>
-                                {art?.nombre ?? 'Este artículo'} viene costando {monto(viene)}
-                              </strong>{' '}
-                              por {art?.unidad ?? 'unidad'} y lo estás metiendo a {monto(costo)}:{' '}
-                              son{' '}
-                              <strong>
-                                {veces >= 10
-                                  ? `${monto(veces)} veces más`
-                                  : `${monto(1 / veces)} veces menos`}
-                              </strong>
-                              . Comprueba la factura y la moneda: un cero de más aquí se arrastra a
-                              cada salida.
-                            </p>
-                            <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
-                              <input
-                                type="checkbox"
-                                checked={r.confirmado === true}
-                                onChange={(e) =>
-                                  setRenglones((lista) =>
-                                    lista.map((x) =>
-                                      x.clave === r.clave
-                                        ? { ...x, confirmado: e.target.checked }
-                                        : x,
-                                    ),
-                                  )
-                                }
-                              />
-                              Es correcto, guárdalo así — quedará anotado en el movimiento
-                            </label>
-                          </div>
-                        )
-                      })()}
+                      />
 
                       {/* La cuenta hecha, en grande. No es decoración: es la
                           única señal de que el número tecleado es el que se
@@ -2062,6 +2036,273 @@ function ModalDesglose({
           })}
         </ul>
       ) : null}
+    </Modal>
+  )
+}
+
+/**
+ * El aviso del costo, con la respuesta de la base en vez de una deducción.
+ *
+ * Es un componente y no un trozo suelto porque tiene que preguntar, y preguntar
+ * es un hook. Lo que gana con eso son las dos cosas que antes fallaban en
+ * silencio: sale en cualquier moneda —la conversión la hace la base con la tasa
+ * del día— y distingue de verdad la primera entrada del desvío, aunque quien
+ * teclea no tenga permiso para ver el promedio.
+ *
+ * A esa persona se le dice QUE se sale, no CUANTO. Es poco, pero es cierto, y
+ * es exactamente lo que dice el mensaje de la base cuando rechaza: así lo que
+ * lee antes de guardar y lo que leería después no se contradicen.
+ */
+function AvisoDeCosto({
+  almacenId,
+  articuloId,
+  costo,
+  moneda,
+  cantidad: cant,
+  unidad,
+  nombre,
+  confirmado,
+  onConfirmar,
+}: {
+  almacenId: number | null
+  articuloId: number | null
+  costo: number
+  moneda: string
+  cantidad: number
+  unidad: string
+  nombre: string
+  confirmado: boolean
+  onConfirmar: (valor: boolean) => void
+}) {
+  const revision = useRevisarCostoDeEntrada(almacenId, articuloId, costo, moneda)
+
+  if (!articuloId || costo <= 0 || cant <= 0) return null
+
+  const r = revision.data
+  /*
+    Mientras la base contesta no se pinta nada. Enseñar un hueco reservado que
+    luego casi siempre queda vacío entrena a no mirarlo, que es lo contrario de
+    lo que hace falta aquí.
+  */
+  if (!r || r.estado === 'NORMAL' || r.estado === 'SIN_ARTICULO') return null
+
+  if (r.estado === 'SIN_TASA') {
+    return (
+      <p className="text-ink/50 mt-3 text-xs">
+        No hay tasa del {moneda} para hoy, así que este costo no se puede comparar con lo que el
+        artículo viene costando. La base avisará al guardar.
+      </p>
+    )
+  }
+
+  const casilla = (texto: string) => (
+    <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
+      <input type="checkbox" checked={confirmado} onChange={(e) => onConfirmar(e.target.checked)} />
+      {texto}
+    </label>
+  )
+
+  /*
+    LA PRIMERA VEZ NO HAY CONTRA QUE COMPARAR, Y ES CUANDO MAS DUELE.
+
+    Los cinco aceites del 5 de septiembre entraban por primera vez, así que la
+    reja de las diez veces no tenía con qué medirlos y calló. No hay número
+    contra el que avisar; lo que sí se puede es decir que NADIE lo está
+    comprobando, y que ese costo se convierte en la referencia de todo lo que
+    venga después.
+
+    La base lo exige igual, así que esto no es un adorno: sin la casilla, el
+    guardado fallaría con un error que la pantalla no ofrece cómo resolver.
+  */
+  if (r.estado === 'PRIMERA') {
+    return (
+      <div className="border-hairline bg-ink/4 rounded-card mt-3 border p-2.5">
+        <p className="text-ink/80 text-xs leading-relaxed">
+          <strong>Es la primera vez que entra a este almacén</strong>, así que no hay con qué
+          comparar el costo. Serán <span className="tabular">{cantidad(cant)}</span> {unidad} a{' '}
+          <span className="tabular">{monto(costo)}</span> cada una. Este costo se convierte en la
+          referencia de todo lo que entre después.
+        </p>
+        {casilla('Lo comprobé con la factura')}
+      </div>
+    )
+  }
+
+  const veLasCifras = r.veces != null && r.viene_costando != null && r.entra_a != null
+
+  return (
+    <div className="border-warning/40 bg-warning-soft rounded-card mt-3 border p-2.5">
+      <p className="text-ink/80 text-xs leading-relaxed">
+        {veLasCifras ? (
+          <>
+            <strong>
+              {nombre} viene costando {monto(r.viene_costando!)}
+            </strong>{' '}
+            por {unidad || 'unidad'} y lo estás metiendo a {monto(r.entra_a!)}: son{' '}
+            <strong>
+              {monto(r.veces!)} veces {r.hacia === 'ARRIBA' ? 'más' : 'menos'}
+            </strong>
+            .
+          </>
+        ) : (
+          <>
+            <strong>
+              Este costo se sale mucho de lo que {nombre} viene costando en este almacén
+            </strong>{' '}
+            — es más de diez veces {r.hacia === 'ARRIBA' ? 'más caro' : 'más barato'}.
+          </>
+        )}{' '}
+        Comprueba la factura y la moneda: un cero de más aquí se arrastra a cada salida.
+      </p>
+      {casilla('Es correcto, guárdalo así — quedará anotado en el movimiento')}
+    </div>
+  )
+}
+
+/**
+ * Corregir el costo de lo que hay, con el parte delante.
+ *
+ * Hasta hoy esto solo existía en la base: `corregir_costo` estaba escrita,
+ * probada y sin ninguna puerta. Era la única salida real del aceite cargado a
+ * 1.209.012,48 y del gasoil del tanque sin costo, y no la podía usar nadie.
+ *
+ * EL RECORRIDO ES EL DE UN RUNBOOK, que es como lo pidió Christopher: se
+ * escribe el costo correcto, se ve el parte entero —incluida la parte incómoda,
+ * lo que ya salió cargado al costo falso y no se recupera—, se dice por qué, y
+ * se confirma. El parte va antes y no después: quien va a mover medio millón de
+ * dólares de valoración tiene que ver el número primero.
+ *
+ * NO EDITA NADA. La base escribe un par de movimientos —sale todo al costo
+ * equivocado, entra todo al correcto—, así que la existencia no se mueve y los
+ * dos renglones quedan a la vista en el historial. Una corrección de esta
+ * magnitud tiene que verse.
+ */
+function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: () => void }) {
+  const corregir = useCorregirCosto()
+  const [nuevo, setNuevo] = useState('')
+  const [porque, setPorque] = useState('')
+
+  const valor = Number(nuevo.replace(',', '.'))
+  const valido = nuevo.trim() !== '' && Number.isFinite(valor) && valor >= 0
+  const impacto = useImpactoDeCorregirCosto(
+    fila.almacen_id,
+    fila.articulo_id,
+    valido ? valor : NaN,
+  )
+
+  const p = impacto.data
+  /*
+    Las tres exigencias de la base, repetidas en el botón para que nadie tenga
+    que chocar contra ellas: motivo de diez, costo válido, y distinto del que
+    hay.
+  */
+  const listo =
+    valido &&
+    porque.trim().length >= 10 &&
+    p != null &&
+    Math.abs(valor - Number(p.costo_actual)) > 1e-6
+
+  const linea = (que: string, cuanto: string, fuerte?: boolean) => (
+    <div className="flex justify-between gap-4">
+      <dt className="text-ink/55">{que}</dt>
+      <dd className={cn('tabular', fuerte ? 'text-ink/90 font-semibold' : 'text-ink/80')}>
+        {cuanto}
+      </dd>
+    </div>
+  )
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Corregir el costo"
+      descripcion={`${fila.articulo} · ${fila.almacen}`}
+      ancho="sm"
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={!listo || corregir.isPending}
+            onClick={async () => {
+              await corregir.mutateAsync({
+                almacen_id: fila.almacen_id,
+                articulo_id: fila.articulo_id,
+                costo_correcto: valor,
+                motivo: porque.trim(),
+              })
+              onCerrar()
+            }}
+          >
+            {corregir.isPending ? 'Corrigiendo…' : 'Corregir el costo'}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-ink/70 text-sm">
+        Hay <span className="tabular">{cantidad(fila.existencia)}</span> {fila.unidad} a{' '}
+        <span className="tabular text-ink/90 font-semibold">
+          {fila.costo_promedio_usd == null ? '—' : monto(Number(fila.costo_promedio_usd))}
+        </span>{' '}
+        cada una. No se cambia ninguna cantidad: sale todo al costo de ahora y vuelve a entrar al
+        correcto, y los dos renglones quedan en el historial.
+      </p>
+
+      <Input
+        label="Costo correcto por unidad (USD)"
+        className="mt-4"
+        type="number"
+        min="0"
+        step="0.000001"
+        inputMode="decimal"
+        value={nuevo}
+        onChange={(e) => setNuevo(e.target.value)}
+      />
+
+      {p ? (
+        <dl className="border-hairline rounded-card mt-4 space-y-1 border p-3 text-sm">
+          {linea('Valor de ahora', monto(Number(p.valor_actual)))}
+          {linea('Valor corregido', monto(Number(p.valor_corregido)))}
+          {linea(
+            'Ajuste en libros',
+            `${Number(p.ajuste) < 0 ? '−' : '+'}${monto(Math.abs(Number(p.ajuste)))}`,
+            true,
+          )}
+
+          {/*
+            LA PARTE INCÓMODA, y se enseña a propósito.
+
+            Corregir hoy no reprecia lo que salió ayer: eso ya se le cargó a una
+            máquina o a un centro de costo y ahí se queda. La base devuelve este
+            número justamente para que no se esconda.
+          */}
+          {Number(p.no_se_recupera) !== 0 ? (
+            <div className="border-hairline mt-2 border-t pt-2">
+              <p className="text-ink/70 text-xs leading-relaxed">
+                Ya salieron <span className="tabular">{cantidad(p.ya_salio)}</span> {p.unidad}{' '}
+                cargados al costo de ahora.{' '}
+                <strong>{monto(Math.abs(Number(p.no_se_recupera)))} no se recupera</strong>: eso ya
+                se le cargó a una máquina o a un centro de costo, y esto no lo reprecia.
+              </p>
+            </div>
+          ) : null}
+        </dl>
+      ) : null}
+
+      {impacto.error ? <ErrorDeCarga error={impacto.error} className="mt-3" /> : null}
+
+      <Textarea
+        label="Por qué se corrige"
+        className="mt-4"
+        rows={2}
+        placeholder="Se cargó el precio del tambor donde iba el del litro. Factura NASELF 000617."
+        value={porque}
+        onChange={(e) => setPorque(e.target.value)}
+        hint="Queda en el movimiento y se avisa a administración y gerencia. Mínimo diez caracteres."
+      />
+
+      {corregir.error ? <ErrorDeCarga error={corregir.error} className="mt-3" /> : null}
     </Modal>
   )
 }

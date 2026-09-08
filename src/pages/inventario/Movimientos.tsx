@@ -309,15 +309,37 @@ export function Movimientos() {
                         un cero de mas.
                       */}
                       {m.aviso_costo ? (
-                        <Chip
-                          tone="warning"
-                          className="mr-2"
-                          title={`El costo se salió ${Number(m.aviso_costo) >= 1 ? Number(m.aviso_costo).toLocaleString('es-VE', { maximumFractionDigits: 2 }) : (1 / Number(m.aviso_costo)).toLocaleString('es-VE', { maximumFractionDigits: 2 })} veces de lo que venía costando. Se avisó y se guardó igual.`}
-                        >
-                          {Number(m.aviso_costo) >= 1
-                            ? `×${Number(m.aviso_costo).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`
-                            : `÷${(1 / Number(m.aviso_costo)).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`}
-                        </Chip>
+                        (() => {
+                          /*
+                            EL FACTOR SE INVIERTE AQUI, Y CON UN CERO NO SE PUEDE.
+
+                            La base guarda `costo nuevo / promedio viejo`. Hacia
+                            arriba es un numero comodo —164,62— y hacia abajo es
+                            una fraccion diminuta que hay que invertir para poder
+                            leerla. Cuando ese cociente redondea a cero, dividir
+                            escribia «÷∞», que es justo el caso mas grave: el que
+                            entra doscientas veces mas barato de lo que venia.
+
+                            La base ya guarda seis decimales, asi que el cero solo
+                            queda en los movimientos anteriores a ese arreglo. Se
+                            protege igual: un chip que dice «∞» no informa de nada.
+                          */
+                          const f = Number(m.aviso_costo)
+                          const veces = f >= 1 ? f : f > 0 ? 1 / f : null
+                          const cifra =
+                            veces === null
+                              ? 'muchísimas'
+                              : veces.toLocaleString('es-VE', { maximumFractionDigits: 2 })
+                          return (
+                            <Chip
+                              tone="warning"
+                              className="mr-2"
+                              title={`El costo se salió ${cifra} veces de lo que venía costando. Se avisó y se guardó igual.`}
+                            >
+                              {f >= 1 ? `×${cifra}` : `÷${cifra}`}
+                            </Chip>
+                          )
+                        })()
                       ) : null}
 
                       {m.orden_id ? (
@@ -329,8 +351,13 @@ export function Movimientos() {
                         </Chip>
                       ) : null}
                       {/* Solo en las salidas: una entrada no tiene nota de
-                          salida, y ofrecerla ahí sería un botón que miente. */}
-                      {m.signo < 0 && m.tipo !== 'REVERSO' ? (
+                          salida, y ofrecerla ahí sería un botón que miente.
+
+                          Y la pata negativa de una corrección de costo tampoco
+                          es una salida: no se llevó nadie nada, el material
+                          sigue en el estante. Armarle una nota de entrega sería
+                          fabricar el papel de un despacho que no ocurrió. */}
+                      {m.signo < 0 && m.tipo !== 'REVERSO' && m.tipo !== 'AJUSTE_COSTO' ? (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -342,7 +369,13 @@ export function Movimientos() {
                         </Button>
                       ) : null}
 
-                      {puede('ALMACEN') && m.tipo !== 'REVERSO' ? (
+                      {/* Una corrección de costo no se deshace: se vuelve a
+                          corregir, y la base lo dice igual. Las dos patas están
+                          enlazadas pero `reversar_movimiento` solo sabe
+                          emparejar traslados, así que este botón habría
+                          reversado media corrección y dejado el promedio peor
+                          que antes de corregirlo. */}
+                      {puede('ALMACEN') && m.tipo !== 'REVERSO' && m.tipo !== 'AJUSTE_COSTO' ? (
                         <Button
                           size="sm"
                           variant="ghost"

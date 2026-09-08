@@ -153,7 +153,19 @@ export function descargarPlantilla(
 // ---------------------------------------------------------------------------
 
 export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
-  { columna: 'codigo', obligatoria: true, dice: 'El código con el que se pide. Si ya existe, la fila lo actualiza en vez de crearlo.', ejemplo: 'PRD-ARENA-L', otro: 'SRV-FLETE' },
+  /*
+    EL CODIGO DEJO DE SER OBLIGATORIO, Y EXIGIRLO ES DE DONDE VINO EL PROBLEMA.
+
+    Once de los quince articulos del catalogo llevan el nombre metido en el
+    campo del codigo —«ACEITE AGROFLUIDOS» es a la vez nombre y codigo— porque
+    esta columna lo pedia y quien lleno la planilla no tenia ninguno que
+    escribir. Un codigo que es el nombre no distingue nada: el indice unico deja
+    pasar el mismo articulo dos veces con una letra de diferencia.
+
+    Vacio, la base busca por el nombre; si no encuentra a nadie, pone un codigo
+    con el prefijo de la categoria.
+  */
+  { columna: 'codigo', obligatoria: false, dice: 'El código con el que se pide. Si ya existe, la fila lo actualiza en vez de crearlo. Vacío, se busca por el nombre y, si es nuevo, la base le pone uno.', ejemplo: 'PRD-ARENA-L', otro: '' },
   { columna: 'nombre', obligatoria: true, dice: 'Cómo se llama.', ejemplo: 'Arena lavada', otro: 'Flete por viaje' },
   { columna: 'descripcion', obligatoria: false, dice: 'Detalle. Si se deja vacía en un artículo que ya existe, se respeta la que tenía.', ejemplo: 'Granulometria fina, patio 1' },
   { columna: 'categoria', obligatoria: true, dice: 'PRODUCTO, REPUESTO, INSUMO, COMBUSTIBLE, LUBRICANTE, EPP, HERRAMIENTA, EXPLOSIVO o SERVICIO.', ejemplo: 'PRODUCTO', otro: 'SERVICIO' },

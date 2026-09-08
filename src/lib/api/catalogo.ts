@@ -247,8 +247,19 @@ export function useCrearArticulo() {
       unidades_por_presentacion?: number | null
       marca?: string | null
       numero_parte?: string | null
+      /**
+       * Alguien vio que ya hay un artículo que se llama casi igual y dijo que
+       * el suyo es otra cosa.
+       *
+       * La base para cuando los dos nombres se reducen al mismo núcleo —«Insumos»
+       * e «Insumo», «Repuesto disco de corte 7"» y «Disco de corte 7»— y no
+       * impide: DISCO DE CORTE 7 y DISCO DE CORTE 9 son dos cosas de verdad. Lo
+       * que no puede pasar es que se decida sin verlo.
+       */
+      confirmado?: boolean
     }) =>
       rpc<number>('crear_articulo', {
+        p_confirmado: a.confirmado ?? false,
         p_reparable: a.reparable ?? null,
         p_presentacion: a.presentacion || null,
         p_unidades_por_presentacion: a.unidades_por_presentacion ?? null,
@@ -264,6 +275,45 @@ export function useCrearArticulo() {
         p_modo_entrega: a.modo_entrega ?? null,
       }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['articulos'] }),
+  })
+}
+
+/**
+ * Los que ya están y se llaman parecido.
+ *
+ * Christopher: «debemos asegurar que el sistema impide (o mínimo
+ * advierte/sugiere) duplicados... "Insumos" o "Insumo", "Repuesto disco de
+ * corte 7'" o "Disco de corte 7'"».
+ *
+ * Se pregunta mientras se escribe el nombre, para que el aviso llegue antes de
+ * llenar el resto de la ficha y no al pulsar Guardar. La base compara sin
+ * tildes, sin puntuación, en singular y sin las palabras que no distinguen.
+ */
+export interface ArticuloParecido {
+  id: number
+  codigo: string
+  nombre: string
+  categoria: string
+  unidad: string
+  activo: boolean
+  parecido: number
+  /** Los dos nombres se reducen a lo mismo. Aquí la base para y pide confirmar. */
+  es_el_mismo: boolean
+}
+
+export function useArticulosParecidos(nombre: string, excluir?: number, categoria?: string) {
+  const busca = nombre.trim()
+  return useQuery({
+    queryKey: ['articulos-parecidos', busca, excluir ?? null, categoria ?? null],
+    // Con menos de tres letras todo se parece a todo y el aviso se vuelve ruido.
+    enabled: busca.length >= 3,
+    staleTime: 60_000,
+    queryFn: () =>
+      rpc<ArticuloParecido[]>('articulos_parecidos', {
+        p_nombre: busca,
+        p_excluir: excluir ?? null,
+        p_categoria: categoria || null,
+      }),
   })
 }
 
@@ -291,8 +341,17 @@ export function useEditarArticulo() {
       unidades_por_presentacion?: number | null
       marca?: string | null
       numero_parte?: string | null
+      /** Alguien vio que ya hay otro que se llama casi igual y dijo que es otra cosa. */
+      confirmado?: boolean
     }) =>
       rpc('editar_articulo', {
+        /*
+          Renombrar encima de otro es el camino mas facil de crear un duplicado
+          sin querer: no hace falta crear nada, basta con corregirle el nombre a
+          uno que ya esta. La base para igual que al crear, asi que la
+          confirmacion tiene que poder viajar.
+        */
+        p_confirmado: a.confirmado ?? false,
         p_reparable: a.reparable ?? null,
         p_presentacion: a.presentacion || null,
         p_unidades_por_presentacion: a.unidades_por_presentacion ?? null,

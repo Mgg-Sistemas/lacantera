@@ -934,7 +934,18 @@ function ModalPasarAlTanque({
   const [cuanto, setCuanto] = useState('')
   const [motivo, setMotivo] = useState('')
 
-  const tanques = (almacenes ?? []).filter((a) => a.tipo === 'COMBUSTIBLE')
+  /*
+    El tanque del combustible inicial no es destino de nada.
+
+    `transferir_existencia` rechaza mover entre un sitio que admite material sin
+    costo y uno que no: lo que hay ahi entro sin precio, y mezclarlo con
+    combustible pagado hunde el promedio de los vales. El origen de este modal
+    siempre tiene precio, asi que ese tanque nunca es una opcion valida — y
+    ofrecerlo solo servia para que la base lo negara despues de rellenar todo.
+  */
+  const tanques = (almacenes ?? []).filter(
+    (a) => a.tipo === 'COMBUSTIBLE' && !a.admite_sin_costo,
+  )
 
   useEffect(() => {
     if (!origen) return

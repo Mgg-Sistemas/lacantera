@@ -60,6 +60,16 @@ export function Transferencias() {
   }, [existencias, form.origen, form.articulo])
 
   const activos = (almacenes ?? []).filter((a) => a.activo)
+
+  /*
+    Si el sitio del que sale admite material sin costo, el destino tiene que
+    admitirlo tambien. Indefinido mientras no se haya elegido origen: ahi no hay
+    nada que estrechar todavia.
+  */
+  const origenSinCosto = form.origen
+    ? Boolean(activos.find((a) => String(a.id) === form.origen)?.admite_sin_costo)
+    : undefined
+
   const cantidad = Number(form.cantidad.replace(',', '.'))
   const listo =
     form.origen &&
@@ -212,11 +222,31 @@ export function Transferencias() {
               detalle: a.tipo,
             }))}
           />
+          {/*
+            EL DESTINO SE ESTRECHA SEGUN DE DONDE SALGA.
+
+            `transferir_existencia` rechaza mover entre un almacen que admite
+            material sin costo y uno que no, en los dos sentidos: lo que entro
+            sin costar nada hundiria el promedio del destino, y al reves lo
+            inflaria. La reja esta bien puesta, pero la pantalla seguia
+            ofreciendo la pareja imposible y el operador solo se enteraba al
+            pulsar.
+
+            Se ofrece lo que si se puede y se dice por que falta el resto, que
+            es lo mismo que ya hace el modal de cargar combustible.
+          */}
           <SelectBuscable
             label="Entra en"
             vacio="Elige el almacén"
             valor={form.destino}
             onCambio={(v) => cambiar({ destino: v })}
+            hint={
+              origenSinCosto === undefined
+                ? undefined
+                : origenSinCosto
+                  ? 'Solo salen los sitios que también admiten material sin costo: lo que hay aquí entró sin precio y hundiría el promedio de los demás.'
+                  : 'No sale el tanque del combustible inicial: lo que hay ahí entró sin precio y no se mezcla con lo que sí costó.'
+            }
             error={
               form.destino && form.destino === form.origen
                 ? 'No puede ser el mismo de donde sale.'
@@ -224,6 +254,11 @@ export function Transferencias() {
             }
             opciones={activos
               .filter((a) => String(a.id) !== form.origen)
+              .filter(
+                (a) =>
+                  origenSinCosto === undefined ||
+                  Boolean(a.admite_sin_costo) === origenSinCosto,
+              )
               .map((a) => ({
                 valor: String(a.id),
                 codigo: a.codigo,

@@ -204,6 +204,56 @@ export interface RenglonOrden {
   exento_iva: boolean
   subtotal: string
   cantidad_recibida: string
+  /** Por qué este renglón está como está. Lo escribe corregir el precio. */
+  motivo?: string | null
+}
+
+/** Lo que devuelve corregir un precio: el antes y el después, para poder decirlo. */
+export interface PrecioCorregido {
+  orden: string
+  renglon: string
+  precio_antes: number
+  precio_ahora: number
+  total_antes: number
+  total_ahora: number
+  moneda: string
+}
+
+/**
+ * Corregir un precio mal tecleado sin rehacer la orden entera.
+ *
+ * Christopher: «¿si el usuario se equivoca desde la orden de compra y el precio
+ * es errado, entonces se debe reversar todo desde cero y volver a iniciar la
+ * orden desde cero?». Hasta hoy, en una orden que salió de un pedido con
+ * cotizaciones: sí. Solo quedaba cancelarla.
+ *
+ * La base corrige también el renglón de la cotización de la que salió el
+ * precio, porque es de ahí de donde se copia al aprobar, y recalcula las dos.
+ * Se para si ese renglón ya recibió algo, si hay pagos indicados o si está la
+ * factura del proveedor: pasada cualquiera de las tres, hay que anular.
+ */
+export function useCorregirPrecioDeOrden() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (c: { orden_id: number; renglon_id: number; precio: number; motivo: string }) =>
+      rpc<PrecioCorregido>('corregir_precio_de_orden', {
+        p_orden_id: c.orden_id,
+        p_renglon_id: c.renglon_id,
+        p_precio: c.precio,
+        p_motivo: c.motivo,
+      }),
+    /*
+      `['compras']` es la clave de la casa, y es la que existe.
+
+      El detalle vive en ['compras','detalle',id], el tablero en
+      ['compras','tablero'] y la bitacora en ['compras','bitacora',...]. Las tres
+      claves que ponia antes —['orden'], ['ordenes'], ['cotizaciones']— no las
+      usa ninguna consulta del repositorio: eran tres invalidaciones que no
+      invalidaban nada, y la pantalla se quedaba con el precio viejo hasta
+      recargar.
+    */
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['compras'] }),
+  })
 }
 
 export interface Orden {
