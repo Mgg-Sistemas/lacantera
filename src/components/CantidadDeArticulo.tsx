@@ -190,28 +190,51 @@ export function CantidadDeArticulo({
     avisar(tecleado, crudo, true)
   }
 
-  const cambiarDeUnidad = (aPresentacion: boolean) => {
-    setEnPresentacion(aPresentacion)
-    /*
-      Lo ya escrito se conserva y se reexpresa: cambiar de unidad no es borrar.
-      Al volver a la unidad de operación lo suelto se suma en vez de perderse,
-      porque lo que la persona quiso decir sigue siendo la misma cantidad.
-    */
+  /*
+    REEXPRESAR UN TOTAL EN OTRA PRESENTACIÓN ES REPARTIRLO, NO DIVIDIRLO.
+
+    Costó un bloqueante encontrado en revisión antes de desplegar. La primera
+    versión hacía `total / porBulto` y mandaba el cociente tal cual: 15 PAR
+    cambiados a CAJA (de 20) daban `0,75 CAJA`, y `private.en_unidad_base`
+    rechaza eso —«Los bultos se cuentan enteros»—, así que el guardado reventaba
+    con un mensaje sobre un número que la persona no tecleó. Y de paso borraba
+    lo suelto, que es exactamente lo que la base se niega a hacer: «reescribirle
+    a alguien lo que contó es como se pierde la confianza en un inventario».
+
+    Repartir conserva las dos cosas: los bultos enteros que caben y el resto en
+    la unidad de operación. 634 L en bidones de 20 son 31 bidones y 14 litros,
+    que es como se cuenta un almacén de verdad.
+
+    El redondeo del resto es contra el binario, no contra el usuario: 0,1 × 3 en
+    coma flotante deja 13,999999999999998 y eso no es una cantidad, es un
+    artefacto. Seis decimales están muy por encima de los cuatro que admite el
+    campo.
+  */
+  const repartir = (total: number, por: number) => {
+    const bultos = Math.trunc(total / por)
+    const resto = Number((total - bultos * por).toFixed(6))
+    return { bultos, resto }
+  }
+
+  /**
+   * Vuelve a la unidad de operación conservando lo escrito.
+   *
+   * Solo en ese sentido: hacia una presentación va el selector, que además
+   * tiene que decir CUÁL. La versión anterior admitía los dos sentidos y su
+   * rama de ida quedó inalcanzable el día que el selector pasó a ser una lista
+   * — código muerto pero armado, con el mismo defecto del cociente dentro.
+   */
+  const volverALaUnidad = () => {
+    setEnPresentacion(false)
     const enUnidades = Number(valor)
     if (!Number.isFinite(enUnidades) || valor === '') {
       setTecleado('')
       setSuelto('')
       return
     }
-    if (aPresentacion) {
-      setTecleado(String(enUnidades / porBulto))
-      setSuelto('')
-      avisar(String(enUnidades / porBulto), '', true)
-    } else {
-      setTecleado(String(enUnidades))
-      setSuelto('')
-      avisar(String(enUnidades), '', false)
-    }
+    setTecleado(String(enUnidades))
+    setSuelto('')
+    avisar(String(enUnidades), '', false)
   }
 
   const enEspanol = (n: number) => n.toLocaleString('es-VE', { maximumFractionDigits: 4 })
@@ -268,20 +291,21 @@ export function CantidadDeArticulo({
               onChange={(e) => {
                 const v = e.target.value
                 if (v === 'U') {
-                  cambiarDeUnidad(false)
+                  volverALaUnidad()
                   return
                 }
                 setCual(v)
                 const nueva = formas.find((f) => f.nombre === v)
                 const total = Number(valor)
                 if (nueva && Number.isFinite(total) && valor !== '') {
-                  setTecleado(String(total / nueva.por))
-                  setSuelto('')
-                  const b = total / nueva.por
+                  // Se REPARTE: bultos enteros y lo que sobre, en la unidad.
+                  const { bultos, resto } = repartir(total, nueva.por)
+                  setTecleado(String(bultos))
+                  setSuelto(resto ? String(resto) : '')
                   onCambiar(String(total), {
-                    presentaciones: b || null,
-                    sueltas: 0,
-                    unidad: b ? v : null,
+                    presentaciones: bultos || null,
+                    sueltas: resto,
+                    unidad: bultos ? v : null,
                   })
                 }
                 setEnPresentacion(true)

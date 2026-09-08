@@ -119,15 +119,22 @@ export function CostoDeArticulo({
     onCambiar(crudo === '' || !Number.isFinite(n) ? '' : String(n / porBulto))
   }
 
-  const cambiarDeUnidad = (aPresentacion: boolean) => {
-    setEnPresentacion(aPresentacion)
-    // Lo ya escrito se conserva y se reexpresa: cambiar de unidad no es borrar.
+  /**
+   * Vuelve al precio por unidad conservando lo escrito.
+   *
+   * Solo en ese sentido, igual que en el gemelo: hacia una presentación va el
+   * selector, que además tiene que decir cuál. La rama de ida quedó inalcanzable
+   * el día que el selector pasó a ser una lista, y el código muerto que sigue
+   * armado es el que muerde meses después.
+   *
+   * Aquí no hace falta repartir nada: un precio por bulto con decimales es
+   * legítimo —1.352,52 el tambor— y no hay bultos que contar. Es la asimetría
+   * de fondo con la cantidad.
+   */
+  const volverALaUnidad = () => {
+    setEnPresentacion(false)
     const porUnidad = Number(valor)
-    if (!Number.isFinite(porUnidad) || valor === '') {
-      setTecleado('')
-      return
-    }
-    setTecleado(aPresentacion ? String(porUnidad * porBulto) : String(porUnidad))
+    setTecleado(!Number.isFinite(porUnidad) || valor === '' ? '' : String(porUnidad))
   }
 
   const n = (x: number, dec = 4) => x.toLocaleString('es-VE', { maximumFractionDigits: dec })
@@ -175,7 +182,7 @@ export function CostoDeArticulo({
               onChange={(e) => {
                 const v = e.target.value
                 if (v === 'U') {
-                  cambiarDeUnidad(false)
+                  volverALaUnidad()
                   return
                 }
                 setCual(v)

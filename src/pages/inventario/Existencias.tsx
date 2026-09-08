@@ -1434,6 +1434,10 @@ export function Existencias() {
                                     ...x,
                                     articulo: v,
                                     cantidad: '',
+                                    // El costo tambien: 6,50 por litro de un
+                                    // aceite no dice nada del articulo nuevo, y
+                                    // dejarlo puesto es ofrecerlo como suyo.
+                                    costo: '',
                                     presentaciones: null,
                                     presentacion: null,
                                     sueltas: '',
@@ -1459,7 +1463,19 @@ export function Existencias() {
                           entrada esta contando bultos bajados de un camion y
                           tiene que dejar litros en la existencia.
                         */}
+                        {/*
+                          CAMBIAR DE ARTICULO REMONTA EL CAMPO.
+
+                          El componente guarda por dentro en que presentacion
+                          se esta tecleando, y esa eleccion no significa nada
+                          en el articulo siguiente: el selector se quedaba en
+                          «CAJA» y la linea de equivalencia afirmaba una cuenta
+                          con el factor del anterior. Con la clave, React lo
+                          monta de nuevo y el estado nace limpio — que es lo
+                          mismo que ya hacia el renglon con sus cifras.
+                        */}
                         <CantidadDeArticulo
+                          key={r.articulo}
                           valor={r.cantidad}
                           /*
                             Se guardan las DOS cifras tecleadas, no la suma. La
@@ -1502,6 +1518,7 @@ export function Existencias() {
                           cuenta con los dos lados escritos.
                         */}
                         <CostoDeArticulo
+                          key={r.articulo}
                           valor={r.costo}
                           onCambiar={(v) =>
                             setRenglones((lista) =>
@@ -1785,6 +1802,7 @@ export function Existencias() {
                           siendo entre litros y litros.
                         */}
                         <CantidadDeArticulo
+                          key={r.articulo}
                           valor={r.cantidad}
                           onCambiar={(v, cap) =>
                             setRenglones((lista) =>
@@ -1898,6 +1916,7 @@ export function Existencias() {
               */}
               {modal.tipo === 'ajuste' ? (
                 <CantidadDeArticulo
+                    key={modal.fila?.articulo_id}
                   label="Cantidad contada"
                   valor={totalContado}
                   onCambiar={(v, cap) => {

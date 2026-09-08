@@ -56,9 +56,10 @@
      `normalizar()` es UNA función de este archivo y se aplica a los dos lados.
 
   Y EL CONTROL, que es lo que cazó aquella mentira: se imprimen aparte tres
-  funciones que nadie toca desde julio. **Si alguna de esas sale con deriva, el
-  que miente es el detector.** Un resultado que no puede ser verdad es el mejor
-  control que existe.
+  funciones viejas y estables. **Si alguna sale con deriva sin que nadie la haya
+  tocado, el que miente es el detector.** Un resultado que no puede ser verdad es
+  el mejor control que existe — y hay que curar la lista, porque el día que una
+  de las tres cambie de verdad el control acusa con razón.
 */
 
 import fs from 'node:fs'
@@ -68,8 +69,21 @@ import { fileURLToPath } from 'node:url'
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const MIGRACIONES = path.join(raiz, 'supabase', 'migrations')
 
-/** Las que nadie toca desde julio. Si salen con deriva, el detector miente. */
-const CONTROL = ['private.en_mayuscula', 'private.numero_es', 'private.tasas_del_dia']
+/*
+  EL CONTROL: funciones cuya respuesta se conoce de antemano.
+
+  Un detector que da un número no se puede comprobar contra sí mismo. Éstas son
+  viejas y estables, así que lo esperado es «al día» — y si alguna sale con
+  deriva SIN QUE NADIE LA HAYA TOCADO, el que miente es el detector, no el
+  repositorio. Es lo que cazó el error del md5 del otro carril y lo que cazó el
+  mío.
+
+  La lista hay que curarla: el 8/09/2026 se ensanchó la máscara de
+  `private.numero_es` y el control la marcó, con razón y sin mentir nadie. Por
+  eso el aviso dice «si no la has tocado» en vez de acusar de entrada: un
+  control que grita cuando el cambio es legítimo se deja de mirar.
+*/
+const CONTROL = ['private.en_mayuscula', 'private.tasas_del_dia', 'private.siguiente_numero']
 
 /*
   Se quitan los comentarios y se colapsa el espacio antes de comparar.
@@ -177,8 +191,8 @@ console.log(`  sin archivo .. ${sinArchivo.length}`)
 console.log('\n--- control: las que nadie toca desde julio ---')
 for (const c of CONTROL) {
   const estado = alDia.some((x) => x.f.toLowerCase() === c) ? 'al dia'
-    : conDeriva.some((x) => x.f.toLowerCase() === c) ? 'DERIVA  <- el detector miente'
-    : sinArchivo.some((x) => x.f.toLowerCase() === c) ? 'sin archivo  <- el detector miente'
+    : conDeriva.some((x) => x.f.toLowerCase() === c) ? 'DERIVA  <- si no la has tocado, miente el detector'
+    : sinArchivo.some((x) => x.f.toLowerCase() === c) ? 'sin archivo  <- si no la has tocado, miente el detector'
     : 'no esta en el volcado'
   console.log(`  ${c.padEnd(32)} ${estado}`)
 }

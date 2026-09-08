@@ -44,7 +44,7 @@ interface Props {
 
 export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
   const { data: catalogo } = usePresentaciones()
-  const { data: suyas, isPending } = usePresentacionesDeArticulo(articuloId)
+  const { data: suyas, isPending, error: errorAlLeer } = usePresentacionesDeArticulo(articuloId)
   const guardar = useGuardarPresentacionDeArticulo()
   const cambiarEstado = useCambiarEstadoPresentacion()
 
@@ -52,9 +52,21 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
   const [cuantas, setCuantas] = useState('')
 
   const lista = suyas ?? []
+  /*
+    SIN LA LISTA NO SE AFIRMA NADA, Y SOBRE TODO NO SE REGALA EL «POR DEFECTO».
+
+    Con la consulta fallada o a medio llegar, `lista` es un array vacio — y eso
+    se leia como «este articulo no tiene ninguna forma declarada». Dos danos, y
+    el segundo es el que duele: la pantalla afirmaba en firme algo que no habia
+    podido comprobar, y `anadir` calculaba `por_defecto: true` sobre esa lista
+    vacia, marcando por defecto una forma nueva en un articulo que quiza ya
+    tenia otra. Eso cambia con que factor cuenta la base cuando nadie nombra la
+    presentacion.
+  */
+  const sePudoLeer = !isPending && !errorAlLeer
   const yaEstan = new Set(lista.map((p) => p.presentacion))
   const cuantasNum = Number(cuantas)
-  const listo = Boolean(nombre) && Number.isFinite(cuantasNum) && cuantasNum > 0
+  const listo = sePudoLeer && Boolean(nombre) && Number.isFinite(cuantasNum) && cuantasNum > 0
 
   const anadir = async () => {
     await guardar.mutateAsync({
@@ -62,8 +74,9 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
       presentacion: nombre,
       unidades: cuantasNum,
       // La primera manda; las siguientes se añaden sin quitarle el sitio a la
-      // que ya se estaba usando.
-      por_defecto: lista.filter((p) => p.activa).length === 0,
+      // que ya se estaba usando. Solo se decide con la lista en la mano: ver
+      // arriba por qué.
+      por_defecto: sePudoLeer && lista.filter((p) => p.activa).length === 0,
     })
     setNombre('')
     setCuantas('')
@@ -77,7 +90,11 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
         {unidad || 'su unidad'}.
       </p>
 
-      {isPending ? null : lista.length === 0 ? (
+      {errorAlLeer ? (
+        <ErrorDeCarga error={errorAlLeer} className="mt-3" />
+      ) : isPending ? (
+        <p className="text-ink/45 mt-3 text-xs">Buscando las formas declaradas…</p>
+      ) : lista.length === 0 ? (
         <p className="text-ink/45 mt-3 text-xs">
           Solo se cuenta en {unidad || 'su unidad'}. Añade una forma si llega en bultos.
         </p>
@@ -145,6 +162,10 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
         <Select
           label="Cómo llega"
           vacio="Elige"
+          // Sin la lista leida no se ofrece: el desplegable filtraba «las que ya
+          // estan» contra una lista vacia, asi que ofrecia una ya declarada y al
+          // guardarla le cambiaba el factor sin decirlo.
+          disabled={!sePudoLeer}
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           opciones={(catalogo ?? [])
@@ -162,7 +183,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
           min="0"
           step="0.0001"
           inputMode="decimal"
-          disabled={!nombre}
+          disabled={!sePudoLeer || !nombre}
           value={cuantas}
           onChange={(e) => setCuantas(e.target.value)}
         />

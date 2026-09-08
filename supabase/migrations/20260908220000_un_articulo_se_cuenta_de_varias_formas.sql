@@ -526,6 +526,18 @@ create trigger trg_presentacion_desde_el_articulo
   Las sustituciones van por expresion regular y no por texto exacto, a proposito:
   asi valen tanto sobre la version anterior como sobre la ya parcheada, y este
   archivo se puede volver a correr sin romper nada.
+
+  CORREGIDO EL 8/09/2026, TRAS LA REVISION ADVERSARIAL, y el archivo se edita a
+  sabiendas de que ya corrio: lo que cambia NO altera la base —el cuerpo vivo es
+  correcto— sino lo que pasa si esto se vuelve a correr. Los patrones decian
+  `[^)]*\)`, que para en el PRIMER parentesis; sobre la version ya parcheada
+  —donde el cuarto argumento es `nullif(btrim(coalesce(...)))`— el corte caia
+  dentro del `coalesce` y la sustitucion dejaba dos parentesis colgando. Un
+  archivo que se corrompe al replicarse es peor que uno que no existe: el
+  primero se aplica y revienta la funcion.
+
+  Ahora anclan al fin de la sentencia con `[^;]*\)`, y cada bloque comprueba
+  antes si ya esta puesto.
 */
 
 do $patch$
@@ -550,9 +562,13 @@ begin
       || chr(10) || '    v_nombre_pres := nullif(btrim(coalesce(v_r->>''presentacion'', '''')), '''');');
   end if;
 
-  v_def := regexp_replace(v_def,
-    'private\.en_unidad_base\(v_articulo, v_pres, v_sueltas[^)]*\)',
-    'private.en_unidad_base(v_articulo, v_pres, v_sueltas, v_nombre_pres)', 'g');
+  -- Si ya lleva el cuarto argumento, no se toca: volver a sustituir sobre el
+  -- resultado es como se corrompe una funcion al replicar el archivo.
+  if position('v_sueltas, v_nombre_pres)' in v_def) = 0 then
+    v_def := regexp_replace(v_def,
+      'private\.en_unidad_base\(v_articulo, v_pres, v_sueltas[^;]*\)',
+      'private.en_unidad_base(v_articulo, v_pres, v_sueltas, v_nombre_pres)', 'g');
+  end if;
 
   v_def := regexp_replace(v_def,
     'p_unidad_capturada => case when v_pres > 0 then [^\n]*end,',
@@ -582,9 +598,11 @@ begin
     litros, que es peor que no convertir. El nombre tiene que entrar en los
     tres, y el tercero usa el alias `r` en vez de `v_r`.
   */
-  v_def := regexp_replace(v_def,
-    'private\.en_unidad_base\(v_articulo, v_pres, v_sueltas[^)]*\)',
-    'private.en_unidad_base(v_articulo, v_pres, v_sueltas, ' || v_expr || ')', 'g');
+  if position('v_sueltas, ' || v_expr in v_def) = 0 then
+    v_def := regexp_replace(v_def,
+      'private\.en_unidad_base\(v_articulo, v_pres, v_sueltas[^;]*\)',
+      'private.en_unidad_base(v_articulo, v_pres, v_sueltas, ' || v_expr || ')', 'g');
+  end if;
 
   v_def := replace(v_def,
 '                   coalesce(nullif(btrim(coalesce(r->>''cantidad'', '''')), '''')::numeric, 0)))',

@@ -48,7 +48,11 @@ const AFECTA: Record<string, string[][]> = {
   // Recibir material cierra la compra, mueve las existencias y cambia lo que
   // vale el inventario en el panel, que se lee bajo la clave de tesorería.
   inventario_movimientos: [['movimientos'], ['existencias'], ['compras'], ['tesoreria']],
-  articulos: [['articulos'], ['existencias'], ['tesoreria']],
+  // Las formas de contar cuelgan del artículo y se escriben en la misma
+  // transacción que él: `guardar_presentacion_de_articulo` toca las dos tablas.
+  // Sin esta clave, quien tiene abierta una entrada mientras otro declara un
+  // bidón sigue viendo solo el tambor hasta que recargue.
+  articulos: [['articulos'], ['existencias'], ['tesoreria'], ['presentaciones-articulo']],
   almacenes: [['almacenes'], ['existencias']],
 
   cuentas_tesoreria: [['tesoreria']],

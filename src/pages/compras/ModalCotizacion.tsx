@@ -280,6 +280,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
                 lleva la cotizacion, en la unidad del articulo.
               */}
               <CantidadDeArticulo
+                key={r.articulo_id}
                 valor={precios[r.id]?.cantidad ?? ''}
                 onCambiar={(v) => cambiar(r.id, { cantidad: v })}
                 articulo={conSusFormas(

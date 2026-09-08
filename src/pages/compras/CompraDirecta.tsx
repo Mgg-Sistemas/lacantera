@@ -396,6 +396,7 @@ export function CompraDirecta() {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <CantidadDeArticulo
+                  key={f.articulo_id}
                   valor={f.cantidad}
                   onCambiar={(v) => cambiar(f.clave, { cantidad: v })}
                   articulo={conSusFormas(

@@ -22,6 +22,7 @@ import {
   useArticulosParecidos,
   useCrearArticulo,
   useEditarArticulo,
+  usePresentacionesDeArticulo,
   useEliminarArticulo,
   usePresentaciones,
   useUnidades,
@@ -107,6 +108,17 @@ export function Articulos() {
   const [busqueda, setBusqueda] = useState('')
   const [categoria, setCategoria] = useState('')
   const [form, setForm] = useState<typeof nuevo | null>(null)
+  /*
+    LO QUE EL PANEL DE ABAJO YA DECLARO.
+
+    El modal toma una foto del articulo al abrirse. Si desde el panel se anade o
+    se cambia una presentacion, la foto se queda vieja — y «Guardar» la manda de
+    vuelta, pisando lo que el panel acababa de escribir. Se leyo la lista aqui
+    tambien: react-query la comparte por clave con el panel, asi que no cuesta
+    una consulta mas.
+  */
+  const { data: yaDeclaradas } = usePresentacionesDeArticulo(form?.id ?? null)
+  const laDeDefecto = (yaDeclaradas ?? []).find((x) => x.activa && x.por_defecto)
 
   /*
     La misma consulta que hace el aviso de abajo. React-query la comparte por la
@@ -334,13 +346,22 @@ export function Articulos() {
                   const datos = {
                     ...form,
                     stock_minimo: Number(form.stock_minimo) || 0,
-                    presentacion: form.presentacion || null,
+                    /*
+                      Con presentaciones declaradas manda LA TABLA, no la foto.
+                      `articulos.presentacion` es el reflejo de la de por
+                      defecto y lo mantiene la base; devolverle un valor viejo
+                      es como se deshace un cambio sin que nadie lo vea.
+                    */
+                    presentacion: laDeDefecto
+                      ? laDeDefecto.presentacion
+                      : form.presentacion || null,
                     marca: form.marca.trim() || null,
                     numero_parte: form.numero_parte.trim() || null,
                     // Sin presentación no viaja el número: la base rechaza
                     // decir cuántas trae algo que no dice en qué viene.
-                    unidades_por_presentacion:
-                      form.presentacion && Number(form.unidades_por_presentacion) > 0
+                    unidades_por_presentacion: laDeDefecto
+                      ? Number(laDeDefecto.unidades)
+                      : form.presentacion && Number(form.unidades_por_presentacion) > 0
                         ? Number(form.unidades_por_presentacion)
                         : null,
                   }
@@ -465,7 +486,18 @@ export function Articulos() {
               <Select
                 label="Cómo llega"
                 vacio="Suelto, sin empaque"
-                value={form.presentacion}
+                /*
+                  Cuando el panel de abajo ya lleva las formas, estos dos campos
+                  se apagan en vez de competir con el: dos sitios que escriben lo
+                  mismo es como se pierde un cambio.
+                */
+                disabled={Boolean(laDeDefecto)}
+                hint={
+                  laDeDefecto
+                    ? 'Las formas de contarlo se llevan abajo, en «Otras formas de contarlo».'
+                    : undefined
+                }
+                value={laDeDefecto ? laDeDefecto.presentacion : form.presentacion}
                 onChange={(e) =>
                   setForm({
                     ...form,
@@ -488,13 +520,19 @@ export function Articulos() {
                 min="0"
                 step="0.0001"
                 inputMode="decimal"
-                disabled={!form.presentacion}
+                disabled={Boolean(laDeDefecto) || !form.presentacion}
                 hint={
-                  form.presentacion
-                    ? `Lo que trae ${unNombre(presentaciones, form.presentacion)}.`
-                    : 'Primero di cómo llega.'
+                  laDeDefecto
+                    ? 'Se corrige abajo, en «Otras formas de contarlo».'
+                    : form.presentacion
+                      ? `Lo que trae ${unNombre(presentaciones, form.presentacion)}.`
+                      : 'Primero di cómo llega.'
                 }
-                value={form.unidades_por_presentacion}
+                value={
+                  laDeDefecto
+                    ? String(Number(laDeDefecto.unidades))
+                    : form.unidades_por_presentacion
+                }
                 onChange={(e) =>
                   setForm({ ...form, unidades_por_presentacion: e.target.value })
                 }
@@ -510,7 +548,21 @@ export function Articulos() {
             */}
             {form.id ? (
               <div className="sm:col-span-2">
-                <OtrasPresentaciones articuloId={form.id} unidad={form.unidad} />
+                {/*
+                  LA UNIDAD QUE SE LE PASA ES LA GUARDADA, NO LA DEL FORMULARIO.
+
+                  El panel escribe contra la base al pulsar «Añadir», sin esperar
+                  a que se guarde la ficha. Si arriba se acaba de cambiar la
+                  unidad de PAR a UND y no se ha guardado, el rótulo decía
+                  «Cuántas UND trae» mientras el factor quedaba almacenado contra
+                  PAR — la etiqueta prometiendo una cosa y el dato siendo otra.
+                */}
+                <OtrasPresentaciones
+                  articuloId={form.id}
+                  unidad={
+                    (data ?? []).find((a) => a.id === form.id)?.unidad ?? form.unidad
+                  }
+                />
               </div>
             ) : null}
 

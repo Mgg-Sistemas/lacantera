@@ -401,6 +401,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                       se lleva la existencia.
                     */}
                     <CantidadDeArticulo
+                      key={fila.articulo_id}
                       valor={fila.cantidad}
                       onCambiar={(v) => cambiar(fila.clave, { cantidad: v })}
                       articulo={conSusFormas(
