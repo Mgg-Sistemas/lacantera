@@ -341,8 +341,17 @@ export function useEditarArticulo() {
       unidades_por_presentacion?: number | null
       marca?: string | null
       numero_parte?: string | null
+      /** Alguien vio que ya hay otro que se llama casi igual y dijo que es otra cosa. */
+      confirmado?: boolean
     }) =>
       rpc('editar_articulo', {
+        /*
+          Renombrar encima de otro es el camino mas facil de crear un duplicado
+          sin querer: no hace falta crear nada, basta con corregirle el nombre a
+          uno que ya esta. La base para igual que al crear, asi que la
+          confirmacion tiene que poder viajar.
+        */
+        p_confirmado: a.confirmado ?? false,
         p_reparable: a.reparable ?? null,
         p_presentacion: a.presentacion || null,
         p_unidades_por_presentacion: a.unidades_por_presentacion ?? null,

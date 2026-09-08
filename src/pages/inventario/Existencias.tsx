@@ -1212,12 +1212,25 @@ export function Existencias() {
                   setADonde(v)
                   setRenglones((lista) => lista.map((x) => ({ ...x, confirmado: false })))
                 }}
-                opciones={(almacenes ?? []).map((a) => ({
-                  valor: String(a.id),
-                  codigo: a.codigo,
-                  nombre: a.nombre,
-                  detalle: a.tipo,
-                }))}
+                /*
+                  EL TANQUE SIN COSTO NO ES DESTINO DE UNA ENTRADA CON PRECIO.
+
+                  Un almacen marcado con `admite_sin_costo` lleva su promedio
+                  aparte, y ese es el motivo de que exista: meterle material con
+                  precio lo contamina igual que sacarlo de ahi contamina al
+                  destino. La base lo rechaza; aqui simplemente no se ofrece.
+
+                  Para meter en ese tanque esta «Cargar combustible al tanque»
+                  con la casilla de «no costó nada para esta empresa».
+                */
+                opciones={(almacenes ?? [])
+                  .filter((a) => !a.admite_sin_costo)
+                  .map((a) => ({
+                    valor: String(a.id),
+                    codigo: a.codigo,
+                    nombre: a.nombre,
+                    detalle: a.tipo,
+                  }))}
               />
 
               <div className="mt-4 space-y-3">

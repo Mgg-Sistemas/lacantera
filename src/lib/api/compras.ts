@@ -242,11 +242,17 @@ export function useCorregirPrecioDeOrden() {
         p_precio: c.precio,
         p_motivo: c.motivo,
       }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['orden'] })
-      void qc.invalidateQueries({ queryKey: ['ordenes'] })
-      void qc.invalidateQueries({ queryKey: ['cotizaciones'] })
-    },
+    /*
+      `['compras']` es la clave de la casa, y es la que existe.
+
+      El detalle vive en ['compras','detalle',id], el tablero en
+      ['compras','tablero'] y la bitacora en ['compras','bitacora',...]. Las tres
+      claves que ponia antes —['orden'], ['ordenes'], ['cotizaciones']— no las
+      usa ninguna consulta del repositorio: eran tres invalidaciones que no
+      invalidaban nada, y la pantalla se quedaba con el precio viejo hasta
+      recargar.
+    */
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['compras'] }),
   })
 }
 
