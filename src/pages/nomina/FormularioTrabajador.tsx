@@ -6,6 +6,8 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
+import { CampoTelefono } from '@/components/CampoTelefono'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
@@ -195,11 +197,10 @@ export function FormularioTrabajador() {
           />
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <Input
+            <CampoDocumento
               label="Cédula"
-              placeholder="V-12345678"
-              value={f.cedula}
-              onChange={(e) => cambiar({ cedula: e.target.value.toUpperCase() })}
+              valor={f.cedula}
+              onCambiar={(v) => cambiar({ cedula: v })}
             />
             <Input
               label="Nombres"
@@ -245,10 +246,12 @@ export function FormularioTrabajador() {
               onChange={(e) => cambiar({ grupo_sanguineo: e.target.value })}
               opciones={GRUPOS_SANGUINEOS.map((g) => ({ valor: g, etiqueta: g }))}
             />
-            <Input
-              label="Teléfono"
-              value={f.telefono}
-              onChange={(e) => cambiar({ telefono: e.target.value })}
+            {/* Entre los diecinueve telefonos de empleados habia uno guardado
+                como «O4123917198» —la letra O en vez del cero— y nadie se
+                entero hasta que se midio. La tecla filtrada lo impide. */}
+            <CampoTelefono
+              valor={f.telefono}
+              onCambiar={(v) => cambiar({ telefono: v })}
             />
             <Input
               label="A quién llamar en una emergencia"

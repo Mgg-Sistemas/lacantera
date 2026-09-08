@@ -126,7 +126,11 @@ export function Articulos() {
         (!categoria || a.categoria === categoria) &&
         (!texto ||
           a.nombre.toLowerCase().includes(texto) ||
-          a.codigo.toLowerCase().includes(texto)),
+          a.codigo.toLowerCase().includes(texto) ||
+          // El código de antes también encuentra: once artículos llevaban su
+          // propio nombre ahí, y quien lo apuntó en una planilla suya no tiene
+          // por qué enterarse de que se renumeraron.
+          (a.codigo_anterior ?? '').toLowerCase().includes(texto)),
     )
   }, [data, busqueda, categoria])
 

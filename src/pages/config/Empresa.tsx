@@ -179,15 +179,25 @@ export function Empresa() {
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {campo('Condición ante el IVA', 'condicion_iva')}
+          {/*
+            `type="number"` no es decoracion: es lo que hace que el campo pase
+            por el traductor de la casa. Sin el, teclear «16,5» daba
+            `Number('16,5')` = NaN y la alicuota se guardaba NULA, sin decir
+            nada — y una alicuota nula es la que decide el IVA de cada documento
+            nuevo.
+          */}
           <Input
             label="Retención de IVA"
+            type="number"
             inputMode="decimal"
             value={form.retencion_iva_pct == null ? '' : String(form.retencion_iva_pct)}
-            onChange={(e) =>
+            onChange={(e) => {
+              const n = Number(e.target.value)
               cambiar({
-                retencion_iva_pct: e.target.value === '' ? null : Number(e.target.value),
+                retencion_iva_pct:
+                  e.target.value === '' ? null : Number.isFinite(n) ? n : null,
               })
-            }
+            }}
             disabled={!puedeEditarFicha}
             hint="Porcentaje del impuesto causado que retienen los agentes de retención."
           />
@@ -208,15 +218,25 @@ export function Empresa() {
           En blanco, el sistema usa el 16 de respaldo.
         */}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {/*
+            `type="number"` no es decoracion: es lo que hace que el campo pase
+            por el traductor de la casa. Sin el, teclear «16,5» daba
+            `Number('16,5')` = NaN y la alicuota se guardaba NULA, sin decir
+            nada — y una alicuota nula es la que decide el IVA de cada documento
+            nuevo.
+          */}
           <Input
             label="Alícuota general del IVA"
+            type="number"
             inputMode="decimal"
             value={form.alicuota_iva_pct == null ? '' : String(form.alicuota_iva_pct)}
-            onChange={(e) =>
+            onChange={(e) => {
+              const n = Number(e.target.value)
               cambiar({
-                alicuota_iva_pct: e.target.value === '' ? null : Number(e.target.value),
+                alicuota_iva_pct:
+                  e.target.value === '' ? null : Number.isFinite(n) ? n : null,
               })
-            }
+            }}
             disabled={!puedeEditarFicha}
             hint="La que se propone en los documentos nuevos. Los ya emitidos conservan la suya."
           />

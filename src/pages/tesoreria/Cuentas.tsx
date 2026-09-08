@@ -17,6 +17,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
@@ -487,10 +488,15 @@ export function Cuentas() {
               value={edicion.titular}
               onChange={(e) => cambiar({ titular: e.target.value })}
             />
-            <Input
+            {/* Cedula o RIF en el mismo campo: una cuenta puede ser de una
+                persona o de una empresa. Se valida como RIF porque admite las
+                dos —una cedula es un RIF valido sin verificador— y asi no se
+                rechaza a nadie por el sitio donde le toco escribir. */}
+            <CampoDocumento
               label="Cédula o RIF"
-              value={edicion.documento}
-              onChange={(e) => cambiar({ documento: e.target.value })}
+              tipo="rif"
+              valor={edicion.documento}
+              onCambiar={(v) => cambiar({ documento: v })}
             />
 
             <div className="sm:col-span-2">

@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
+import { CampoTelefono } from '@/components/CampoTelefono'
 import { Modal } from '@/components/ui/Modal'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
@@ -1060,17 +1062,18 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                 onChange={(e) => cambiar({ cargo: e.target.value })}
                 placeholder="Jefe de taller"
               />
-              <Input
+              {/* Aqui vivia el problema medido: seis perfiles guardaban la
+                  cedula SIN la letra —«12460702»— mientras `empleados` la
+                  guardaba con ella, asi que ninguno cruzaba con su propia ficha
+                  de trabajador. */}
+              <CampoDocumento
                 label="Cédula"
-                value={edicion.cedula}
-                onChange={(e) => cambiar({ cedula: e.target.value })}
-                placeholder="V-12345678"
+                valor={edicion.cedula}
+                onCambiar={(v) => cambiar({ cedula: v })}
               />
-              <Input
-                label="Teléfono"
-                value={edicion.telefono}
-                onChange={(e) => cambiar({ telefono: e.target.value })}
-                placeholder="0414-0000000"
+              <CampoTelefono
+                valor={edicion.telefono}
+                onCambiar={(v) => cambiar({ telefono: v })}
               />
             </div>
 

@@ -63,6 +63,16 @@ export interface Unidad {
 export interface Articulo {
   id: number
   codigo: string
+  /**
+   * El código que tenía antes de renumerarlo, cuando lo tuvo.
+   *
+   * Once artículos llevaban su propio nombre en el campo del código —«ACEITE
+   * AGROFLUIDOS» era a la vez nombre y código— porque la planilla exigía uno y
+   * quien la llenó no tenía ninguno que escribir. Al ponerles código de verdad
+   * se guardó el viejo aquí, y la búsqueda lo mira: quien lo apuntó en una
+   * planilla suya sigue encontrando el artículo.
+   */
+  codigo_anterior: string | null
   nombre: string
   descripcion: string | null
   categoria: string

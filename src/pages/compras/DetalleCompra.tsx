@@ -73,7 +73,7 @@ import {
   armarCotizacionDeCompra,
 } from '@/lib/ficha/comprasPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
-import { bolivares, dinero, dolares, fecha, fechaHora } from '@/lib/formato'
+import { bolivares, dinero, dolares, fecha, fechaHora, telefono } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 // ---------------------------------------------------------------------------
@@ -547,7 +547,7 @@ function TarjetaInstruccion({
         {i.telefono ? (
           <div className="flex gap-1.5">
             <dt className="text-ink/40">Teléfono</dt>
-            <dd className="tabular">{i.telefono}</dd>
+            <dd className="tabular">{telefono(i.telefono)}</dd>
           </div>
         ) : null}
         {i.correo_binance ? (

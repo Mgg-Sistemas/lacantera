@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
@@ -836,11 +837,10 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
             value={otroNombre}
             onChange={(e) => setOtroNombre(e.target.value)}
           />
-          <Input
+          <CampoDocumento
             label="Cédula"
-            placeholder="V-12345678"
-            value={otraCedula}
-            onChange={(e) => setOtraCedula(e.target.value)}
+            valor={otraCedula}
+            onCambiar={setOtraCedula}
             hint="Opcional, pero es lo que permite dar con la persona después."
           />
         </div>

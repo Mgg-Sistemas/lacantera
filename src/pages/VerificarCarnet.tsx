@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { documento, telefono } from '@/lib/formato'
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { verificarCarnet, type CarnetVerificado } from '@/lib/api/carnets'
@@ -502,7 +503,7 @@ function Resultado({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
       ) : null}
 
       <dl className="mt-5">
-        <Fila k="Cédula" v={<span className="tabular-nums">{d.cedula}</span>} />
+        <Fila k="Cédula" v={<span className="tabular-nums">{documento(d.cedula)}</span>} />
         {!egresado ? (
           <>
             <Fila k="Departamento" v={d.departamento ?? '—'} />
@@ -584,7 +585,7 @@ function Resultado({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
               <span className="text-[10px] tracking-[.14em] text-[#7a6a5c] uppercase">
                 Su propio teléfono
               </span>
-              <span className="text-[15px] font-semibold tabular-nums">{d.telefono}</span>
+              <span className="text-[15px] font-semibold tabular-nums">{telefono(d.telefono)}</span>
             </a>
           ) : null}
 

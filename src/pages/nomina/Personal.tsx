@@ -35,7 +35,7 @@ import { useSesion } from '@/lib/sesion'
 import { Visor } from '@/components/Visor'
 import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
-import { dinero, fecha } from '@/lib/formato'
+import { dinero, documento, fecha } from '@/lib/formato'
 
 /** Años y meses de servicio. Es lo que decide el bono vacacional y lo que se le debe si sale. */
 function antiguedad(desde: string): string {
@@ -81,11 +81,21 @@ export function Personal() {
 
   const puedeRRHH = puede('RRHH')
 
+  /*
+    Se busca contra las DOS escrituras de la cedula.
+
+    La lista enseña «V-12.345.678» desde que los documentos se visten, y quien
+    teclea lo que ve —o lo pega de la propia pantalla— buscaba contra
+    «V-12345678» y no encontraba nada. Vestir sin ajustar la busqueda convierte
+    una mejora de lectura en un buscador roto.
+  */
   const filtrados = useMemo(() => {
     const t = busca.trim().toLowerCase()
     if (!t) return data ?? []
     return (data ?? []).filter((e) =>
-      `${e.nombres} ${e.apellidos} ${e.cedula} ${e.cargo} ${e.ficha}`.toLowerCase().includes(t),
+      `${e.nombres} ${e.apellidos} ${e.cedula} ${documento(e.cedula)} ${e.cargo} ${e.ficha}`
+        .toLowerCase()
+        .includes(t),
     )
   }, [data, busca])
 
@@ -98,7 +108,9 @@ export function Personal() {
     const t = busca.trim().toLowerCase()
     if (!t) return todos ?? []
     return (todos ?? []).filter((e) =>
-      `${e.nombres} ${e.apellidos} ${e.cedula} ${e.cargo} ${e.ficha}`.toLowerCase().includes(t),
+      `${e.nombres} ${e.apellidos} ${e.cedula} ${documento(e.cedula)} ${e.cargo} ${e.ficha}`
+        .toLowerCase()
+        .includes(t),
     )
   }, [todos, busca])
 
@@ -277,7 +289,7 @@ export function Personal() {
                         ) : null}
                       </span>
                       <p className="text-ink/45 text-xs">
-                        <span className="tabular">{e.cedula} · ficha {e.ficha}</span>
+                        <span className="tabular">{documento(e.cedula)} · ficha {e.ficha}</span>
                       </p>
                       {/* El motivo, en pequeño y solo cuando lo hay. Es la
                           diferencia entre "esta persona ya no está" y saber si

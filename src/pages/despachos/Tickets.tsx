@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
@@ -300,11 +301,10 @@ export function Tickets() {
               value={nuevo.chofer}
               onChange={(e) => setNuevo({ ...nuevo, chofer: e.target.value })}
             />
-            <Input
+            <CampoDocumento
               label="Cédula del chofer"
-              placeholder="V-12345678"
-              value={nuevo.cedula}
-              onChange={(e) => setNuevo({ ...nuevo, cedula: e.target.value })}
+              valor={nuevo.cedula}
+              onCambiar={(v) => setNuevo({ ...nuevo, cedula: v })}
             />
             <SelectBuscable
               label="Material"
