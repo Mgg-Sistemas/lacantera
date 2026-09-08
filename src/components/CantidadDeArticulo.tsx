@@ -251,7 +251,13 @@ export function CantidadDeArticulo({
 
   return (
     <div className={className}>
-      <div className={cn('grid gap-2', convertible && 'grid-cols-[1fr_auto]')}>
+      {/*
+        `minmax(0,auto)` en la columna del campo: una columna de rejilla no baja
+        de su contenido minimo salvo que se le diga, y sin eso el campo empuja
+        al selector fuera cuando el sitio escasea — que es lo que se vio en el
+        modal de entrada, con las cajas aplastadas y los rotulos encimados.
+      */}
+      <div className={cn('grid gap-2', convertible && 'grid-cols-[minmax(0,1fr)_auto]')}>
         <Input
           label={label}
           type="number"

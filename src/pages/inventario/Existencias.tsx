@@ -1249,7 +1249,18 @@ export function Existencias() {
                     ? 'Para lo que dejó de servir: se dañó, quedó obsoleto, venció, no aparece. Sale del inventario y su valor se da por perdido.'
                     : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
           }
-          ancho={modal.tipo === 'salidas' ? 'md' : 'sm'}
+          /*
+            LA ENTRADA NECESITA EL MISMO ANCHO QUE LA SALIDA.
+
+            Estaba en `sm` —max-w-md, 448 px— y su fila pide tres columnas:
+            cantidad, costo y moneda. Descontado el relleno quedan ~408 px, y
+            como la columna de la moneda es `auto` y se lleva lo suyo, las dos
+            de `1fr` se quedaban en unos 40 px: las cajas aplastadas y las
+            etiquetas encimadas que se vieron en pantalla.
+
+            El conteo y la baja siguen en `sm` a proposito: son de un campo.
+          */
+          ancho={modal.tipo === 'salidas' || modal.tipo === 'entrada' ? 'md' : 'sm'}
           acciones={
             <>
               <Button variant="ghost" onClick={() => setModal(null)}>
@@ -1457,7 +1468,15 @@ export function Existencias() {
                           }))}
                       />
 
-                      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                      {/*
+                          `minmax(0,1fr)` y no `1fr`: una columna de rejilla no
+                          baja de su contenido minimo salvo que se le diga, y es
+                          lo que deja que un rotulo largo empuje a la de al lado
+                          en vez de encogerse. Con esto, si el sitio vuelve a
+                          faltar, el campo se estrecha — que se lee mal pero se
+                          lee— en lugar de encimarse.
+                        */}
+                        <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
                         {/*
                           Aqui es donde mas falta hacia: quien registra la
                           entrada esta contando bultos bajados de un camion y
@@ -1762,7 +1781,7 @@ export function Existencias() {
                         opciones={articulosConExistencia}
                       />
 
-                      <div className="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr]">
+                      <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
                         <SelectBuscable
                           label="De dónde sale"
                           vacio={r.articulo ? 'Elige el sitio' : 'Elige antes el material'}
