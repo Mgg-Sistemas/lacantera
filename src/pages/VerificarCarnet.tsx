@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { documento } from '@/lib/formato'
+import { documento, telefono } from '@/lib/formato'
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { verificarCarnet, type CarnetVerificado } from '@/lib/api/carnets'
@@ -585,7 +585,7 @@ function Resultado({ d, codigo }: { d: CarnetVerificado; codigo: string }) {
               <span className="text-[10px] tracking-[.14em] text-[#7a6a5c] uppercase">
                 Su propio teléfono
               </span>
-              <span className="text-[15px] font-semibold tabular-nums">{d.telefono}</span>
+              <span className="text-[15px] font-semibold tabular-nums">{telefono(d.telefono)}</span>
             </a>
           ) : null}
 

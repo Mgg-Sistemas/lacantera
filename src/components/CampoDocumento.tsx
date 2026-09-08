@@ -4,6 +4,7 @@ import {
   documento,
   documentoCanonico,
   NATURALEZA_DEL_DOCUMENTO,
+  soloDocumento,
 } from '@/lib/formato'
 
 /*
@@ -96,7 +97,16 @@ export function CampoDocumento({
         // tecleado tal cual para que el error pueda señalarlo.
         if (canonico) onCambiar(canonico)
       }}
-      onChange={(e) => onCambiar(e.target.value)}
+      /*
+        LA TECLA SE FILTRA, no se avisa despues.
+
+        Christopher: «cedula solo debe permitir ingresar las letras o caracteres
+        relacionados o utiles para ello ejemplo V J G E - .». Y tiene razon en
+        el metodo: en un campo de identidad no hay ninguna otra tecla que
+        signifique algo, asi que dejarlas entrar solo sirve para que el error se
+        descubra al guardar. La letra sube a mayuscula segun se escribe.
+      */
+      onChange={(e) => onCambiar(soloDocumento(e.target.value))}
       error={error}
       hint={
         hint ??

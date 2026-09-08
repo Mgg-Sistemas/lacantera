@@ -124,6 +124,21 @@ interface RenglonEnCurso {
    */
   presentaciones?: number | null
   /**
+   * Lo suelto que acompaña a los bultos: los diez litros del octavo tambor.
+   *
+   * VA APARTE DE `cantidad` A PROPÓSITO, y costó un susto aprenderlo. El primer
+   * intento guardaba lo suelto EN `cantidad` cuando había bultos, y con «3
+   * tambores y 0 sueltos» —el caso normal— eso deja la cadena vacía. Toda la
+   * pantalla mide el renglón por `cantidad`: el botón se quedaba muerto, el
+   * filtro del guardado tiraba el renglón sin decir nada, y el aviso del costo
+   * no se pintaba, así que la casilla que la base exige no llegaba a aparecer.
+   *
+   * `cantidad` es siempre el TOTAL, que es lo que el resto de la pantalla lee y
+   * lo que el componente promete devolver. Lo que se manda a la base se arma al
+   * guardar.
+   */
+  sueltas?: string
+  /**
    * Solo en la salida: de qué almacén sale ESTE renglón.
    *
    * En la entrada el sitio se elige una vez arriba, porque lo que entra entra
@@ -602,7 +617,12 @@ export function Existencias() {
           .filter((r) => r.articulo && r.cantidad && r.costo)
           .map((r) => ({
             articulo_id: Number(r.articulo),
-            cantidad: Number(r.cantidad || 0),
+            /*
+              A la base van las DOS cifras tecleadas y no el total: con bultos,
+              `cantidad` son las sueltas y la suma la hace `en_unidad_base`, que
+              de paso guarda al lado del asiento lo que la persona contó.
+            */
+            cantidad: r.presentaciones ? Number(r.sueltas || 0) : Number(r.cantidad || 0),
             presentaciones: r.presentaciones ?? null,
             costo: Number(r.costo),
             moneda: r.moneda,
@@ -624,7 +644,7 @@ export function Existencias() {
         renglones: buenos.map((r) => ({
           almacen_id: Number(r.almacen),
           articulo_id: Number(r.articulo),
-          cantidad: Number(r.cantidad || 0),
+          cantidad: r.presentaciones ? Number(r.sueltas || 0) : Number(r.cantidad || 0),
           presentaciones: r.presentaciones ?? null,
         })),
         motivo,
@@ -1336,8 +1356,28 @@ export function Existencias() {
                         valor={r.articulo}
                         onCambio={(v) =>
                           setRenglones((lista) =>
+                            /*
+                              CAMBIAR DE ARTICULO LIMPIA LA CANTIDAD.
+
+                              La unidad cambia con el articulo: «3» de tambores
+                              no es «3» de sacos, y los bultos del anterior no
+                              significan nada en el nuevo. Peor si el nuevo no
+                              viene en bultos: el selector desaparece de la
+                              pantalla y `presentaciones` se queda en el renglon
+                              y viaja igual, y la base rechaza con un mensaje
+                              sobre un campo que ya no se ve.
+                            */
                             lista.map((x) =>
-                              x.clave === r.clave ? { ...x, articulo: v, confirmado: false } : x,
+                              x.clave === r.clave
+                                ? {
+                                    ...x,
+                                    articulo: v,
+                                    cantidad: '',
+                                    presentaciones: null,
+                                    sueltas: '',
+                                    confirmado: false,
+                                  }
+                                : x,
                             ),
                           )
                         }
@@ -1372,10 +1412,11 @@ export function Existencias() {
                                 x.clave === r.clave
                                   ? {
                                       ...x,
-                                      cantidad: cap.presentaciones
-                                        ? String(cap.sueltas || '')
-                                        : v,
+                                      // El TOTAL: es lo que lee el botón, el
+                                      // filtro, la suma y el aviso del costo.
+                                      cantidad: v,
                                       presentaciones: cap.presentaciones,
+                                      sueltas: String(cap.sueltas ?? ''),
                                       // Cambiar la cantidad no debe arrastrar
                                       // una confirmación dada sobre otra.
                                       confirmado: false,
@@ -1617,6 +1658,13 @@ export function Existencias() {
                                 ? {
                                     ...x,
                                     articulo: v,
+                                    // Igual que en la entrada: la unidad cambia
+                                    // con el articulo, asi que la cantidad
+                                    // vieja y sus bultos dejan de significar
+                                    // nada.
+                                    cantidad: '',
+                                    presentaciones: null,
+                                    sueltas: '',
                                     almacen: sigueValiendo
                                       ? x.almacen
                                       : conEse.length === 1
@@ -1677,10 +1725,9 @@ export function Existencias() {
                                 x.clave === r.clave
                                   ? {
                                       ...x,
-                                      cantidad: cap.presentaciones
-                                        ? String(cap.sueltas || '')
-                                        : v,
+                                      cantidad: v,
                                       presentaciones: cap.presentaciones,
+                                      sueltas: String(cap.sueltas ?? ''),
                                     }
                                   : x,
                               ),

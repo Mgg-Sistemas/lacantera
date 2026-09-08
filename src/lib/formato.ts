@@ -324,3 +324,74 @@ export function documento(valor: string | null | undefined): string {
   const conPuntos = cifras.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
   return `${letra.toUpperCase()}-${conPuntos}${verificador ? `-${verificador}` : ''}`
 }
+
+// ---------------------------------------------------------------------------
+// Teléfonos
+// ---------------------------------------------------------------------------
+
+/**
+ * Lo que se deja teclear en un teléfono: cifras, y el `+` de un país.
+ *
+ * POR QUÉ SE FILTRA LA TECLA Y NO SOLO SE AVISA DESPUÉS
+ *
+ * Entre los diecinueve teléfonos de empleados hay uno guardado como
+ * `O4123917198`: la letra O en lugar del cero de delante. Es un número que no
+ * sirve para llamar a nadie, y nadie se enteró hasta que se midió. Un aviso al
+ * guardar no lo habría evitado —se lee «04123917198» y parece correcto—; que la
+ * tecla no entre, sí.
+ *
+ * Se admite el `+` solo al principio, que es donde significa algo, y el guion
+ * porque la gente lo escribe. Los espacios y los paréntesis se caen: no aportan
+ * y multiplican las formas de escribir el mismo número.
+ */
+export function comoTelefono(bruto: string): string {
+  const mas = bruto.trimStart().startsWith('+')
+  const resto = bruto.replace(/[^0-9-]/g, '')
+  return (mas ? '+' : '') + resto
+}
+
+/**
+ * El teléfono vestido: `04125551234` se lee `0412-555.1234`.
+ *
+ * Los venezolanos son once cifras —cuatro de operadora y siete de abonado— y
+ * así partidos se dictan por teléfono sin repetir. Con `+58` delante son diez,
+ * porque el cero de la operadora se cae.
+ *
+ * Lo que no reconoce lo devuelve tal cual: un número mal guardado se enseña
+ * como está, y así se ve que está mal.
+ */
+export function telefono(valor: string | null | undefined): string {
+  const s = (valor ?? '').trim()
+  if (s === '') return ''
+
+  const mas = s.startsWith('+')
+  const d = s.replace(/[^0-9]/g, '')
+
+  if (mas && d.startsWith('58') && d.length === 12) {
+    const n = d.slice(2)
+    return `+58 ${n.slice(0, 3)}-${n.slice(3, 6)}.${n.slice(6)}`
+  }
+  if (!mas && d.length === 11 && d.startsWith('0')) {
+    return `${d.slice(0, 4)}-${d.slice(4, 7)}.${d.slice(7)}`
+  }
+  return s
+}
+
+/**
+ * Lo que se deja teclear en una cédula o un RIF.
+ *
+ * Christopher: «cédula solo debe permitir ingresar las letras o caracteres
+ * relacionados o útiles para ello ejemplo "V J G E - ."».
+ *
+ * Las cinco letras que dicen la naturaleza del documento, las cifras, y los dos
+ * separadores que la gente escribe. Nada más: en un campo de identidad no hay
+ * ninguna otra tecla que signifique algo, y dejarlas entrar solo sirve para que
+ * el error se descubra al guardar.
+ *
+ * La letra sube a mayúscula según se escribe. `v-12345678` y `V-12345678` son
+ * el mismo documento, y verlo en mayúscula desde la primera tecla dice que el
+ * sistema ya lo sabe.
+ */
+export function soloDocumento(bruto: string): string {
+  return bruto.toUpperCase().replace(/[^VEJGP0-9.\- ]/g, '')
+}
