@@ -114,6 +114,16 @@ interface RenglonEnCurso {
    */
   confirmado?: boolean
   /**
+   * Bultos enteros, cuando se contó en bultos.
+   *
+   * `cantidad` guarda lo suelto y esto los enteros: «7 tambores y 10 L». La
+   * suma la hace la base con `private.en_unidad_base`, que además anota al lado
+   * del asiento lo que la persona contó. Si aquí se mandara la multiplicación
+   * ya hecha, esas tres cifras se perderían y el movimiento diría «1.466 L» a
+   * quien anotó siete tambores.
+   */
+  presentaciones?: number | null
+  /**
    * Solo en la salida: de qué almacén sale ESTE renglón.
    *
    * En la entrada el sitio se elige una vez arriba, porque lo que entra entra
@@ -301,6 +311,22 @@ export function Existencias() {
     null | { tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada' | 'baja'; fila: Existencia | null }
   >(null)
   const [valor, setValor] = useState('')
+  /*
+    Los bultos enteros del conteo. Aparte de `valor` —que guarda lo suelto—
+    porque contar un almacén es «siete tambores y diez litros», no un número.
+  */
+  const [bultosContados, setBultosContados] = useState<number | null>(null)
+  /*
+    El total ya sumado, solo para enseñarlo y calcular la diferencia. Lo que
+    viaja a la base son `valor` (lo suelto) y `bultosContados` por separado:
+    la suma la hace ella, y así puede guardar al lado lo que la persona contó.
+  */
+  const [totalContado, setTotalContado] = useState('')
+
+  /* El artículo de la fila del modal, para saber si viene en bultos. */
+  const articuloDeLaFila = (articulos ?? []).find(
+    (a) => a.id === modal?.fila?.articulo_id,
+  )
   const [motivo, setMotivo] = useState('')
   // Solo para la entrada: el costo es lo que la distingue de un ajuste, y el
   // almacén y el artículo hacen falta cuando se abre sin fila debajo.
@@ -540,6 +566,8 @@ export function Existencias() {
     setDestino('')
     setClase((clases.data ?? [])[0]?.codigo ?? '')
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
+    setTotalContado(tipo === 'ajuste' && fila ? fila.existencia : '')
+    setBultosContados(null)
     setMotivo('')
     setReferencia('')
     // Abierta desde una fila, el primer renglón viene con ese artículo puesto.
@@ -574,7 +602,8 @@ export function Existencias() {
           .filter((r) => r.articulo && r.cantidad && r.costo)
           .map((r) => ({
             articulo_id: Number(r.articulo),
-            cantidad: Number(r.cantidad),
+            cantidad: Number(r.cantidad || 0),
+            presentaciones: r.presentaciones ?? null,
             costo: Number(r.costo),
             moneda: r.moneda,
             confirmado: r.confirmado === true,
@@ -595,7 +624,8 @@ export function Existencias() {
         renglones: buenos.map((r) => ({
           almacen_id: Number(r.almacen),
           articulo_id: Number(r.articulo),
-          cantidad: Number(r.cantidad),
+          cantidad: Number(r.cantidad || 0),
+          presentaciones: r.presentaciones ?? null,
         })),
         motivo,
         tipo: clase,
@@ -688,7 +718,8 @@ export function Existencias() {
       await ajuste.mutateAsync({
         almacen_id: modal.fila!.almacen_id,
         articulo_id: modal.fila!.articulo_id,
-        contado: Number(valor),
+        contado: Number(valor || 0),
+        presentaciones: bultosContados,
         motivo,
       })
     }
@@ -1149,7 +1180,16 @@ export function Existencias() {
               <Button
                 onClick={() => void guardar()}
                 disabled={
-                  (modal.tipo !== 'entrada' && modal.tipo !== 'salidas' && !valor) ||
+                  /*
+                    El conteo se mide por el TOTAL, no por `valor`: contando
+                    «7 tambores y 0 sueltos» lo suelto queda vacío, y exigirlo
+                    dejaría el botón muerto en el caso más normal de todos.
+                  */
+                  (modal.tipo === 'ajuste' && !totalContado) ||
+                  (modal.tipo !== 'entrada' &&
+                    modal.tipo !== 'salidas' &&
+                    modal.tipo !== 'ajuste' &&
+                    !valor) ||
                   motivo.trim().length < 4 ||
                   (modal.tipo === 'entrada' &&
                     (!aDonde ||
@@ -1319,9 +1359,29 @@ export function Existencias() {
                         */}
                         <CantidadDeArticulo
                           valor={r.cantidad}
-                          onCambiar={(v: string) =>
+                          /*
+                            Se guardan las DOS cifras tecleadas, no la suma. La
+                            suma la vuelve a hacer la base, que además anota al
+                            lado del asiento lo que la persona contó: «7 TAMBOR
+                            + 10 L» junto a «1.466 L». Mandando solo el total,
+                            el movimiento le diría 1.466 a quien contó tambores.
+                          */
+                          onCambiar={(v, cap) =>
                             setRenglones((lista) =>
-                              lista.map((x) => (x.clave === r.clave ? { ...x, cantidad: v } : x)),
+                              lista.map((x) =>
+                                x.clave === r.clave
+                                  ? {
+                                      ...x,
+                                      cantidad: cap.presentaciones
+                                        ? String(cap.sueltas || '')
+                                        : v,
+                                      presentaciones: cap.presentaciones,
+                                      // Cambiar la cantidad no debe arrastrar
+                                      // una confirmación dada sobre otra.
+                                      confirmado: false,
+                                    }
+                                  : x,
+                              ),
                             )
                           }
                           articulo={art}
@@ -1611,9 +1671,19 @@ export function Existencias() {
                         */}
                         <CantidadDeArticulo
                           valor={r.cantidad}
-                          onCambiar={(v) =>
+                          onCambiar={(v, cap) =>
                             setRenglones((lista) =>
-                              lista.map((x) => (x.clave === r.clave ? { ...x, cantidad: v } : x)),
+                              lista.map((x) =>
+                                x.clave === r.clave
+                                  ? {
+                                      ...x,
+                                      cantidad: cap.presentaciones
+                                        ? String(cap.sueltas || '')
+                                        : v,
+                                      presentaciones: cap.presentaciones,
+                                    }
+                                  : x,
+                              ),
                             )
                           }
                           articulo={artSale}
@@ -1699,29 +1769,62 @@ export function Existencias() {
                 </p>
               </div>
 
-              <Input
-                label={
-                  modal.tipo === 'salida'
-                    ? 'Cantidad que sale'
-                    : modal.tipo === 'baja'
-                      ? 'Cantidad que se da de baja'
-                      : 'Cantidad contada'
-                }
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                autoFocus
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                hint={
-                  modal.tipo === 'ajuste' && modal.fila && valor !== ''
-                    ? `Diferencia: ${(Number(valor) - Number(modal.fila.existencia)).toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${modal.fila.unidad}`
-                    : modal.fila
-                      ? `En ${modal.fila.unidad}`
-                      : undefined
-                }
-              />
+              {/*
+                CONTAR ES LO QUE MÁS SE HACE EN BULTOS.
+
+                Nadie recorre un almacén anotando «1.466 litros»: anota siete
+                tambores llenos y uno empezado. Por eso el conteo estrena el
+                componente y la salida de una fila y la baja siguen con el campo
+                simple — ahí se saca una cantidad concreta, no se recuenta.
+
+                La diferencia se calcula contra el TOTAL, que es lo que el
+                componente devuelve ya sumado; lo que viaja son las dos cifras
+                por separado.
+              */}
+              {modal.tipo === 'ajuste' ? (
+                <CantidadDeArticulo
+                  label="Cantidad contada"
+                  valor={totalContado}
+                  onCambiar={(v, cap) => {
+                    setValor(cap.presentaciones ? String(cap.sueltas || '') : v)
+                    setBultosContados(cap.presentaciones)
+                    setTotalContado(v)
+                  }}
+                  articulo={
+                    modal.fila
+                      ? {
+                          unidad: modal.fila.unidad,
+                          presentacion: articuloDeLaFila?.presentacion ?? null,
+                          unidades_por_presentacion:
+                            articuloDeLaFila?.unidades_por_presentacion ?? null,
+                        }
+                      : null
+                  }
+                  hint={
+                    modal.fila && totalContado !== ''
+                      ? `Diferencia: ${(Number(totalContado) - Number(modal.fila.existencia)).toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${modal.fila.unidad}`
+                      : modal.fila
+                        ? `Hay ${cantidad(modal.fila.existencia)} ${modal.fila.unidad} según el sistema`
+                        : undefined
+                  }
+                />
+              ) : (
+                <Input
+                  label={
+                    modal.tipo === 'salida'
+                      ? 'Cantidad que sale'
+                      : 'Cantidad que se da de baja'
+                  }
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  autoFocus
+                  value={valor}
+                  onChange={(e) => setValor(e.target.value)}
+                  hint={modal.fila ? `En ${modal.fila.unidad}` : undefined}
+                />
+              )}
 
               {/*
                 POR QUÉ DEJÓ DE SERVIR

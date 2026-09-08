@@ -12,11 +12,23 @@ import { cn } from '@/lib/cn'
 
   Aquí se elige en qué se está tecleando y el sistema hace la cuenta.
 
+  SIETE TAMBORES Y DIEZ LITROS.
+
+  Christopher, el 7 de septiembre: «el usuario ingresa 7 tambores y 10 L (en sí
+  son 8 tambores, pero se entiende que el 8vo apenas le quedan litros), lo mismo
+  8 rollos de malla y 4 M». Es como se cuenta un almacén de verdad: nadie dice
+  «1.466 litros», dice siete tambores llenos y uno empezado.
+
+  Por eso, al contar en bultos aparece un segundo campo para lo suelto. Contando
+  en la unidad de operación no aparece: ahí no hay nada que acompañar.
+
   LO QUE SALE DE AQUÍ SIEMPRE ESTÁ EN LA UNIDAD DEL ARTÍCULO.
 
-  El que llama no se entera de nada: recibe litros, como antes. La presentación
-  vive dentro de este componente y no se le escapa a nadie, que es lo que
-  permite ponerlo en tres pantallas sin cambiar el estado de ninguna.
+  El que llama recibe litros, como antes, y de propina lo que la persona tecleó
+  —los bultos, la presentación y lo suelto— por si quiere mandárselo a la base.
+  Y conviene que quiera: la base sabe hacer la cuenta desde el 7 de septiembre, y
+  un asiento que guarda «7 TAMBOR + 10 L» al lado de «1.466 L» se puede cuadrar
+  contra la hoja de conteo dentro de un año. Uno que solo guarda 1.466, no.
 
   Y LA CUENTA SE ENSEÑA MIENTRAS SE HACE.
 
@@ -29,12 +41,26 @@ import { cn } from '@/lib/cn'
   barra de acero llega suelta: ahí esto es un campo de cantidad y nada más.
 */
 
+/** Lo que la persona tecleó, tal cual, para que la base pueda guardarlo. */
+export interface CantidadCapturada {
+  /** Bultos enteros. Nulo cuando se contó solo en la unidad de operación. */
+  presentaciones: number | null
+  /** Lo suelto, en la unidad de operación. */
+  sueltas: number
+  /** En qué presentación se contó. Nulo cuando no se contó en bultos. */
+  unidad: string | null
+}
+
 interface Props {
   label?: string
   /** La cantidad, siempre en la unidad del artículo. */
   valor: string
-  /** Devuelve la cantidad ya convertida a la unidad del artículo. */
-  onCambiar: (enUnidades: string) => void
+  /**
+   * La cantidad ya convertida a la unidad del artículo, y aparte lo que se
+   * tecleó. El segundo argumento se puede ignorar: quien no lo use sigue
+   * funcionando exactamente igual que antes.
+   */
+  onCambiar: (enUnidades: string, capturada: CantidadCapturada) => void
   articulo:
     | {
         unidad?: string | null
@@ -85,40 +111,83 @@ export function CantidadDeArticulo({
     mientras se escribe. Se recuerda lo que la persona puso y se deriva de ahí.
   */
   const [tecleado, setTecleado] = useState('')
+  /** Lo que acompaña a los bultos enteros: los diez litros del octavo tambor. */
+  const [suelto, setSuelto] = useState('')
 
   const usandoPresentacion = convertible && enPresentacion
 
-  const escribir = (crudo: string) => {
-    setTecleado(crudo)
-    if (!usandoPresentacion) {
-      onCambiar(crudo)
+  /*
+    La cuenta se hace aquí para ENSEÑARLA, no para que sea lo que viaja. Lo que
+    viaja son las dos cifras tecleadas, y la suma la vuelve a hacer la base con
+    `private.en_unidad_base`. Que las dos den lo mismo es la comprobación; que
+    solo la haga el navegador fue el problema.
+  */
+  const avisar = (bultosCrudo: string, sueltoCrudo: string, enBultos: boolean) => {
+    if (!enBultos) {
+      const n = Number(bultosCrudo)
+      onCambiar(bultosCrudo, {
+        presentaciones: null,
+        sueltas: Number.isFinite(n) ? n : 0,
+        unidad: null,
+      })
       return
     }
-    const n = Number(crudo)
-    onCambiar(crudo === '' || !Number.isFinite(n) ? '' : String(n * porBulto))
+    const b = Number(bultosCrudo)
+    const su = Number(sueltoCrudo)
+    const bultos = bultosCrudo !== '' && Number.isFinite(b) ? b : 0
+    const sueltas = sueltoCrudo !== '' && Number.isFinite(su) ? su : 0
+    const total = bultos * porBulto + sueltas
+    onCambiar(bultosCrudo === '' && sueltoCrudo === '' ? '' : String(total), {
+      presentaciones: bultos || null,
+      sueltas,
+      unidad: bultos ? presentacion : null,
+    })
+  }
+
+  const escribir = (crudo: string) => {
+    setTecleado(crudo)
+    avisar(crudo, suelto, usandoPresentacion)
+  }
+
+  const escribirSuelto = (crudo: string) => {
+    setSuelto(crudo)
+    avisar(tecleado, crudo, true)
   }
 
   const cambiarDeUnidad = (aPresentacion: boolean) => {
     setEnPresentacion(aPresentacion)
-    // Lo ya escrito se conserva y se reexpresa: cambiar de unidad no es borrar.
+    /*
+      Lo ya escrito se conserva y se reexpresa: cambiar de unidad no es borrar.
+      Al volver a la unidad de operación lo suelto se suma en vez de perderse,
+      porque lo que la persona quiso decir sigue siendo la misma cantidad.
+    */
     const enUnidades = Number(valor)
     if (!Number.isFinite(enUnidades) || valor === '') {
       setTecleado('')
+      setSuelto('')
       return
     }
-    setTecleado(aPresentacion ? String(enUnidades / porBulto) : String(enUnidades))
+    if (aPresentacion) {
+      setTecleado(String(enUnidades / porBulto))
+      setSuelto('')
+      avisar(String(enUnidades / porBulto), '', true)
+    } else {
+      setTecleado(String(enUnidades))
+      setSuelto('')
+      avisar(String(enUnidades), '', false)
+    }
   }
+
+  const enEspanol = (n: number) => n.toLocaleString('es-VE', { maximumFractionDigits: 4 })
 
   const equivale =
     usandoPresentacion && valor !== '' && Number.isFinite(Number(valor))
       ? // Los dos lados con el formato de aquí. Sin esto la línea mezclaba
         // convenciones —«2.25 BIDON = 1.234,5 LTS»— y el punto de un lado
         // decía decimal mientras el del otro decía millar.
-        `${Number(tecleado || 0).toLocaleString('es-VE', {
-          maximumFractionDigits: 4,
-        })} ${presentacion} = ${Number(valor).toLocaleString('es-VE', {
-          maximumFractionDigits: 4,
-        })} ${unidad}`
+        `${enEspanol(Number(tecleado || 0))} ${presentacion}${
+          Number(suelto) ? ` y ${enEspanol(Number(suelto))} ${unidad}` : ''
+        } = ${enEspanol(Number(valor))} ${unidad}`
       : null
 
   return (
@@ -169,6 +238,29 @@ export function CantidadDeArticulo({
           </label>
         ) : null}
       </div>
+
+      {/*
+        LO QUE ACOMPAÑA A LOS BULTOS ENTEROS.
+
+        «7 tambores y 10 L»: el octavo tambor está empezado y lo que queda se
+        cuenta en litros. Solo aparece contando en bultos — en la unidad de
+        operación no hay nada que acompañar, y un campo vacío de más es una
+        pregunta que nadie tiene que contestar.
+      */}
+      {usandoPresentacion ? (
+        <Input
+          label={`Y además, sueltos en ${unidad}`}
+          className="mt-2"
+          type="number"
+          min="0"
+          step="0.0001"
+          inputMode="decimal"
+          disabled={disabled}
+          value={suelto}
+          onChange={(e) => escribirSuelto(e.target.value)}
+          hint={`Lo que queda en el último ${presentacion.toLowerCase()} empezado. Déjalo vacío si están todos llenos.`}
+        />
+      ) : null}
 
       {/*
         La cuenta, cuando se está haciendo una. En el color del sistema y no en

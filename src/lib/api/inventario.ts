@@ -201,6 +201,22 @@ export interface Movimiento {
    * cuando alguien vio el aviso y lo guardó igual. Nulo es lo normal.
    */
   aviso_costo: string | null
+  /**
+   * Lo que la persona contó, al lado de lo que el sistema opera.
+   *
+   * «7 TAMBOR + 10 L» junto a «1.466 L». Quien contó siete tambores no
+   * reconoce 1.466 al releerlo dentro de un mes, y entonces no puede cuadrar el
+   * movimiento contra su hoja de conteo. Nulas cuando se contó directamente en
+   * la unidad de operación, que es lo normal.
+   *
+   * No se derivan una de otra a propósito: `unidades_por_presentacion` se puede
+   * editar en el catálogo, y un asiento viejo contaría entonces una mentira
+   * nueva. Un movimiento tiene que poder leerse dentro de diez años sin
+   * depender de una tabla que cambia.
+   */
+  cantidad_capturada: string | null
+  unidad_capturada: string | null
+  suelto_capturado: string | null
 }
 
 export const TIPOS_MOVIMIENTO: Record<string, string> = {
@@ -482,7 +498,24 @@ export function useRegistrarEntrada() {
 /** Un renglón de una entrada: qué, cuánto, y cuánto costó en qué moneda. */
 export interface RenglonDeEntrada {
   articulo_id: number
+  /**
+   * Lo suelto, en la unidad de operación.
+   *
+   * Con `presentaciones` al lado esto son «los diez litros del octavo tambor»;
+   * sin ella, la cantidad entera de siempre.
+   */
   cantidad: number
+  /**
+   * Bultos enteros contados: los siete tambores de «7 tambores y 10 L».
+   *
+   * LA SUMA LA HACE LA BASE, y ése es el punto. `private.en_unidad_base`
+   * multiplica por `unidades_por_presentacion` y guarda al lado lo que la
+   * persona contó —7, TAMBOR, 10— para que el asiento se pueda cuadrar contra
+   * la hoja de conteo dentro de un año. Si el navegador mandara ya la
+   * multiplicación hecha, esas tres cifras se perderían y la base volvería a no
+   * tener ni idea de que existen los tambores.
+   */
+  presentaciones?: number | null
   costo: number
   moneda: string
   /**
@@ -576,7 +609,12 @@ export function useRegistrarEntradas() {
     }) =>
       rpc<number>('registrar_entradas', {
         p_almacen_id: e.almacen_id,
-        p_renglones: e.renglones,
+        p_renglones: e.renglones.map((r) => ({
+          ...r,
+          // La clave solo viaja cuando hay bultos: sin ella la base cuenta
+          // exactamente como siempre, que es lo que hace esto compatible.
+          presentaciones: r.presentaciones || undefined,
+        })),
         p_motivo: e.motivo,
         p_referencia: e.referencia ?? null,
         p_fecha: e.fecha ?? null,
@@ -620,7 +658,14 @@ export function useRegistrarSalidas() {
   return useAccionInventario(
     (s: {
       almacen_id: number | null
-      renglones: Array<{ almacen_id: number; articulo_id: number; cantidad: number }>
+      renglones: Array<{
+        almacen_id: number
+        articulo_id: number
+        /** Lo suelto. Con `presentaciones` al lado, lo que acompaña a los bultos. */
+        cantidad: number
+        /** Bultos enteros: la cuenta la hace la base, no el navegador. */
+        presentaciones?: number | null
+      }>
       motivo: string
       tipo?: string
       fecha?: string
@@ -631,6 +676,7 @@ export function useRegistrarSalidas() {
           almacen_id: String(r.almacen_id),
           articulo_id: String(r.articulo_id),
           cantidad: String(r.cantidad),
+          ...(r.presentaciones ? { presentaciones: String(r.presentaciones) } : {}),
         })),
         p_motivo: s.motivo,
         p_tipo: s.tipo ?? 'SALIDA_CONSUMO',
@@ -825,7 +871,17 @@ export function useRegistrarAjuste() {
     (a: {
       almacen_id: number
       articulo_id: number
+      /** Lo suelto. Con `presentaciones` al lado, lo que acompaña a los bultos. */
       contado: number
+      /**
+       * Bultos enteros contados.
+       *
+       * Contar un almacén es JUSTO lo que se hace en bultos: nadie recorre las
+       * estanterías anotando «1.466 litros», anota siete tambores llenos y uno
+       * empezado. La suma la hace la base, y guarda al lado lo que la persona
+       * contó para que el movimiento se pueda cuadrar contra su hoja.
+       */
+      presentaciones?: number | null
       motivo: string
       fecha?: string
     }) =>
@@ -833,6 +889,7 @@ export function useRegistrarAjuste() {
         p_almacen_id: a.almacen_id,
         p_articulo_id: a.articulo_id,
         p_contado: a.contado,
+        p_presentaciones: a.presentaciones || null,
         p_motivo: a.motivo,
         p_fecha: a.fecha || null,
       }),
