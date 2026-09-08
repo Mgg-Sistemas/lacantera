@@ -44,6 +44,25 @@ interface VisorProps {
    * porque un archivo puede haberse subido llamándose "acta" a secas.
    */
   mime?: string | null
+  /**
+   * En qué moneda se quiere leer el papel, cuando se puede elegir.
+   *
+   * Christopher, el 8 de septiembre: «los pdf aunque puedan ser multimoneda, es
+   * correcto consultar en qué expresión se desea mostrar».
+   *
+   * VA AQUÍ Y NO ANTES DE GENERARLO, y esa es la decisión: preguntando antes,
+   * quien no sabe qué quiere tiene que adivinar y, si se equivoca, cerrar y
+   * volver a empezar. Con el papel delante se cambia y se vuelve a mirar, que
+   * es como se decide de verdad en qué moneda mandarlo.
+   */
+  expresion?: {
+    /** El código que se está leyendo ahora. */
+    actual: string
+    opciones: { valor: string; etiqueta: string }[]
+    onCambiar: (moneda: string) => void
+    /** Mientras se rehace el papel. */
+    rehaciendo?: boolean
+  } | null
 }
 
 const EXTENSIONES_IMAGEN = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif', 'bmp']
@@ -69,6 +88,7 @@ export function Visor({
   nombreArchivo,
   titulo,
   descripcion,
+  expresion,
   mime,
 }: VisorProps) {
   const [deMemoria, setDeMemoria] = useState<string | null>(null)
@@ -161,7 +181,26 @@ export function Visor({
         <header className="border-ink/10 flex items-start gap-3 border-b px-4 py-3 sm:px-5">
           <div className="min-w-0 flex-1">
             <h2 className="text-ink/90 truncate text-base font-semibold">{titulo}</h2>
-            {descripcion ? (
+            {expresion && expresion.opciones.length > 1 ? (
+              <label className="mt-1 flex items-center gap-2">
+                <span className="text-ink/55 text-xs">Leer en</span>
+                <select
+                  value={expresion.actual}
+                  disabled={expresion.rehaciendo}
+                  onChange={(e) => expresion.onCambiar(e.target.value)}
+                  className="rounded-control bg-surface text-ink/90 border-ink/20 hover:border-ink/32 focus:border-royal-600 focus:ring-royal-600/20 h-7 appearance-none border pr-6 pl-2 text-xs transition-[border-color,box-shadow] duration-150 focus:ring-2 focus:outline-none disabled:opacity-50"
+                >
+                  {expresion.opciones.map((o) => (
+                    <option key={o.valor} value={o.valor}>
+                      {o.etiqueta}
+                    </option>
+                  ))}
+                </select>
+                {expresion.rehaciendo ? (
+                  <span className="text-ink/45 text-xs">rehaciendo…</span>
+                ) : null}
+              </label>
+            ) : descripcion ? (
               <p className="text-ink/55 mt-0.5 truncate text-xs">{descripcion}</p>
             ) : null}
           </div>

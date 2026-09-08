@@ -48,8 +48,80 @@ const decimal2 = new Intl.NumberFormat('es-VE', {
   maximumFractionDigits: 2,
 })
 
+/** La tasa lleva cuatro decimales: a 791 Bs/USD, el cuarto ya mueve centimos. */
+const decimal4 = new Intl.NumberFormat('es-VE', {
+  minimumFractionDigits: 4,
+  maximumFractionDigits: 4,
+})
+
 const numero = (v: string | number | null | undefined): string =>
   decimal2.format(Number(v ?? 0))
+
+/**
+ * En qué moneda se lee el papel, y con qué tasa se llegó ahí.
+ *
+ * Christopher, el 8 de septiembre: «los pdf aunque puedan ser multimoneda, es
+ * correcto consultar en qué expresión se desea mostrar». Y hace falta: el
+ * proveedor quiere la orden en bolívares, el archivo la quiere en dólares, y
+ * hoy el papel solo sabe hablar en la moneda en que se emitió.
+ *
+ * LA CONVERSIÓN USA LA TASA DEL DOCUMENTO, NO LA DE HOY. Una orden de
+ * septiembre reimpresa en diciembre tiene que decir lo mismo que decía en
+ * septiembre: es un hecho fechado, no una consulta. Por eso las tasas viajan
+ * con los datos y no se piden al sistema.
+ *
+ * Y SOLO A BOLÍVARES O A DÓLARES, que son las dos tasas que el documento
+ * guarda. Expresarlo en euros pediría una tasa euro-bolívar de aquel día que
+ * nadie registró, y un papel con una cifra que no se puede comprobar es peor
+ * que un papel en otra moneda.
+ */
+export interface Expresion {
+  /** El código al que se convierte. Nulo o igual a la del documento: no se toca. */
+  moneda?: string | null
+  /** La del documento a bolívares. */
+  tasa?: string | number | null
+  /** La del dólar a bolívares el mismo día. */
+  tasaUsd?: string | number | null
+}
+
+/**
+ * El factor y la nota al pie. Devuelve factor 1 y sin nota cuando no hay que
+ * convertir, que es el caso normal.
+ */
+export function comoSeLee(
+  monedaDoc: string,
+  e: Expresion | null | undefined,
+): { moneda: string; factor: number; nota: string | null } {
+  const pedida = e?.moneda ?? null
+  if (!pedida || pedida === monedaDoc) return { moneda: monedaDoc, factor: 1, nota: null }
+
+  const tasa = Number(e?.tasa ?? 0)
+  const tasaUsd = Number(e?.tasaUsd ?? 0)
+
+  // Sin tasa no se convierte: se imprime en su moneda y no se dice nada que no
+  // se pueda comprobar.
+  if (!Number.isFinite(tasa) || tasa <= 0) {
+    return { moneda: monedaDoc, factor: 1, nota: null }
+  }
+
+  if (pedida === 'VES') {
+    return {
+      moneda: 'VES',
+      factor: tasa,
+      nota: `Expresado en bolívares a la tasa de ${decimal4.format(tasa)} Bs por ${monedaDoc}, la del día de la emisión. El documento se emitió en ${monedaDoc}.`,
+    }
+  }
+
+  if (pedida === 'USD' && Number.isFinite(tasaUsd) && tasaUsd > 0) {
+    return {
+      moneda: 'USD',
+      factor: tasa / tasaUsd,
+      nota: `Expresado en dólares a la tasa de ${decimal4.format(tasaUsd)} Bs por USD, la del día de la emisión. El documento se emitió en ${monedaDoc}.`,
+    }
+  }
+
+  return { moneda: monedaDoc, factor: 1, nota: null }
+}
 
 /*
   El simbolo lo decide `dinero()`. Aqui vivia `moneda === 'VES' ? 'Bs' : '$'`,
@@ -131,6 +203,14 @@ export interface DatosOrdenCompra {
   }
 
   moneda: string
+  /**
+   * En qué moneda se quiere leer, y con qué tasas del propio documento.
+   *
+   * Sin esto el papel solo habla en la moneda en que se emitió. El proveedor
+   * suele quererlo en bolívares y el archivo en dólares, y hacer esa cuenta
+   * aparte es exactamente lo que este sistema viene evitando.
+   */
+  expresion?: Expresion | null
   renglones: RenglonDeOrden[]
   subtotal: string | number
   descuento: string | number
@@ -225,6 +305,16 @@ export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoAr
     ['Confirmada el', d.condiciones.confirmadaEl],
   ])
 
+  /*
+    TODO EL PAPEL SE LEE EN LA MISMA MONEDA, o no se lee.
+
+    El factor se calcula una vez y se aplica a los renglones, al desglose y al
+    total. Convertir solo los totales y dejar los precios unitarios en la otra
+    moneda daria un papel donde la suma no cuadra, que es peor que no convertir.
+  */
+  const expr = comoSeLee(d.moneda, d.expresion)
+  const enExpr = (v: string | number | null | undefined) => Number(v ?? 0) * expr.factor
+
   y = seccion(doc, y, 'Ítems')
   y = tabla(
     doc,
@@ -235,22 +325,41 @@ export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoAr
       r.descripcion,
       r.categoria,
       [cantidad(r.cantidad), r.unidad].filter(Boolean).join(' '),
-      numero(r.precioUnitario),
-      numero(r.subtotal),
+      numero(enExpr(r.precioUnitario)),
+      numero(enExpr(r.subtotal)),
     ]),
-    `TOTAL   ${conMoneda(d.moneda, d.total)}`,
+    `TOTAL   ${conMoneda(expr.moneda, enExpr(d.total))}`,
   )
 
   // El desglose solo sale cuando hay algo que desglosar. En una orden sin
   // descuento, sin flete y exenta de IVA, tres renglones en cero repetirían
   // que no pasa nada — y el que sí importa se pierde entre ellos.
   const desglose: Array<[string, string | null]> = []
-  if (Number(d.descuento) > 0) desglose.push(['Descuento', conMoneda(d.moneda, d.descuento)])
-  if (Number(d.flete) > 0) desglose.push(['Flete', conMoneda(d.moneda, d.flete)])
-  if (Number(d.iva) > 0) desglose.push(['IVA', conMoneda(d.moneda, d.iva)])
+  if (Number(d.descuento) > 0) desglose.push(['Descuento', conMoneda(expr.moneda, enExpr(d.descuento))])
+  if (Number(d.flete) > 0) desglose.push(['Flete', conMoneda(expr.moneda, enExpr(d.flete))])
+  if (Number(d.iva) > 0) desglose.push(['IVA', conMoneda(expr.moneda, enExpr(d.iva))])
   if (desglose.length > 0) {
-    desglose.unshift(['Subtotal', conMoneda(d.moneda, d.subtotal)])
+    desglose.unshift(['Subtotal', conMoneda(expr.moneda, enExpr(d.subtotal))])
     y = etiquetaValor(doc, y, desglose, { columnas: 1 })
+  }
+
+  /*
+    LA TASA, JUSTO DEBAJO DE LAS CIFRAS QUE PRODUJO.
+
+    Un papel convertido sin decir con qué tasa es un papel con cifras que nadie
+    puede comprobar — y este va a manos del proveedor, que hará su propia
+    cuenta. Va pegado al desglose y no al pie: una nota al final de la hoja se
+    lee después de haber creído el número.
+
+    Solo aparece cuando de verdad se convirtió; en el caso normal no hay nada
+    que explicar y el papel queda como siempre.
+  */
+  if (expr.nota) {
+    doc.setFont('helvetica', 'italic').setFontSize(7.5).setTextColor('#555555')
+    const lineas = doc.splitTextToSize(expr.nota, 150) as string[]
+    doc.text(lineas, 30, y, { lineHeightFactor: 1.35 })
+    doc.setFont('helvetica', 'normal').setTextColor('#000000')
+    y += lineas.length * 3.4 + 3
   }
 
   if (d.observaciones) {

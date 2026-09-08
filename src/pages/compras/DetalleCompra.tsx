@@ -715,6 +715,15 @@ export function DetalleCompra() {
   const { data: articulos } = useArticulos()
   const { data: metodosDePago } = useMetodosPago()
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
+  /*
+    En qué moneda se está leyendo la orden impresa.
+
+    Vacío = la del documento. Se guarda aparte del PDF porque al cambiarla hay
+    que rehacer el papel entero: las cifras convertidas tienen que ser las
+    mismas en los renglones, en el desglose y en el total, o la suma no cuadra.
+  */
+  const [leerOrdenEn, setLeerOrdenEn] = useState('')
+  const [rehaciendoOrden, setRehaciendoOrden] = useState(false)
   // Se marca a mano cada vez: no se recuerda de una aprobacion a la siguiente.
   const [bajoAutorizacion, setBajoAutorizacion] = useState(false)
   /*
@@ -872,11 +881,19 @@ export function DetalleCompra() {
     )
   }
 
-  const imprimirOrden = async () => {
+  const imprimirOrden = async (expresarEn = leerOrdenEn) => {
     if (!compra || !orden) return
 
     setPdf(
       await armarOrdenDeCompra({
+        /*
+          Las tasas viajan con el papel, no se piden al sistema: una orden de
+          septiembre reimpresa en diciembre tiene que decir lo que decía en
+          septiembre. Es un hecho fechado, no una consulta.
+        */
+        expresion: expresarEn
+          ? { moneda: expresarEn, tasa: orden.tasa, tasaUsd: orden.tasa_usd }
+          : null,
         autoriza: {
           nombre: quienEs(compra.aprobada_gg_por),
           imagen: compra.aprobada_gg_por ? (firmas?.porPerfil[compra.aprobada_gg_por] ?? null) : null,
@@ -2187,10 +2204,37 @@ export function DetalleCompra() {
 
       <Visor
         abierto={pdf !== null}
-        onCerrar={() => setPdf(null)}
+        onCerrar={() => {
+          setPdf(null)
+          setLeerOrdenEn('')
+        }}
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ''}
         titulo="Orden de compra"
+        /*
+          Solo se ofrece en la orden, que es el papel que sale de la casa. Y
+          solo las dos monedas que el documento sabe convertir con sus propias
+          tasas: la suya y la del dólar de aquel día.
+        */
+        expresion={
+          orden && pdf?.nombre?.startsWith('orden')
+            ? {
+                actual: leerOrdenEn || orden.moneda,
+                rehaciendo: rehaciendoOrden,
+                opciones: [
+                  { valor: orden.moneda, etiqueta: `${orden.moneda} · como se emitió` },
+                  ...(orden.moneda !== 'VES' ? [{ valor: 'VES', etiqueta: 'Bolívares' }] : []),
+                  ...(orden.moneda !== 'USD' ? [{ valor: 'USD', etiqueta: 'Dólares' }] : []),
+                ],
+                onCambiar: (m) => {
+                  const pedida = m === orden.moneda ? '' : m
+                  setLeerOrdenEn(pedida)
+                  setRehaciendoOrden(true)
+                  void imprimirOrden(pedida).finally(() => setRehaciendoOrden(false))
+                },
+              }
+            : null
+        }
       />
     </>
   )
