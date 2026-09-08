@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { dinero, fecha as fmtFecha, fechaHora } from '@/lib/formato'
+import { comoNumero, dinero, documento, fecha as fmtFecha, fechaHora } from '@/lib/formato'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useAlmacenes } from '@/lib/api/inventario'
@@ -342,25 +342,29 @@ export function NotasCredito() {
                           ) : null}
                         </td>
                         <td className="px-3 py-2.5">
+                          {/* Como en la celda de al lado: a mano por ir en tabla,
+                              pero con la coma admitida. Una nota de credito
+                              devuelve dinero, y aqui se teclean las dos cifras
+                              que lo deciden. */}
                           <input
-                            type="number"
-                            min="0"
-                            step="0.0001"
+                            type="text"
+                            inputMode="decimal"
                             disabled={!l.usar}
                             value={l.cantidad}
-                            onChange={(e) => cambiar(i, { cantidad: e.target.value })}
+                            onChange={(e) => cambiar(i, { cantidad: comoNumero(e.target.value) })}
                             className="border-hairline tabular bg-surface text-ink/85 w-full rounded-[5px] border px-2 py-1.5 text-right text-sm disabled:opacity-40"
                             aria-label={`Cantidad de ${l.descripcion}`}
                           />
                         </td>
                         <td className="px-3 py-2.5">
                           <input
-                            type="number"
-                            min="0"
-                            step="0.000001"
+                            type="text"
+                            inputMode="decimal"
                             disabled={!l.usar}
                             value={l.precio_unitario}
-                            onChange={(e) => cambiar(i, { precio_unitario: e.target.value })}
+                            onChange={(e) =>
+                              cambiar(i, { precio_unitario: comoNumero(e.target.value) })
+                            }
                             className="border-hairline tabular bg-surface text-ink/85 w-full rounded-[5px] border px-2 py-1.5 text-right text-sm disabled:opacity-40"
                             aria-label={`Precio de ${l.descripcion}`}
                           />
@@ -447,7 +451,7 @@ export function NotasCredito() {
           }
         >
           <div className="grid gap-4 sm:grid-cols-3">
-            <Dato rotulo="Cliente" valor={detalle.cliente} nota={detalle.cliente_rif} />
+            <Dato rotulo="Cliente" valor={detalle.cliente} nota={documento(detalle.cliente_rif)} />
             <Dato
               rotulo="Motivo"
               valor={TIPOS_NOTA_CREDITO.find((t) => t.valor === detalle.tipo)?.etiqueta ?? detalle.tipo}

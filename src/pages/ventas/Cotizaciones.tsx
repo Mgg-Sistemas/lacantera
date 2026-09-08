@@ -12,7 +12,7 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
-import { dinero, fecha } from '@/lib/formato'
+import { dinero, documento, fecha } from '@/lib/formato'
 import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
@@ -282,7 +282,7 @@ export function Cotizaciones() {
                 }}
                 opciones={(clientes ?? []).map((c) => ({
                   valor: String(c.id),
-                  etiqueta: `${c.nombre} · ${c.rif}`,
+                  etiqueta: `${c.nombre} · ${documento(c.rif)}`,
                 }))}
               />
             </div>

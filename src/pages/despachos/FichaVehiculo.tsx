@@ -15,7 +15,7 @@ import {
   useVehiculos,
 } from '@/lib/api/vehiculos'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { enteros, fecha } from '@/lib/formato'
+import { documento, enteros, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 /**
@@ -125,7 +125,7 @@ export function FichaVehiculo() {
                   {anteriores.map((c) => (
                     <li key={c.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2.5">
                       <span className="text-ink/80 text-sm">{c.chofer}</span>
-                      <span className="text-ink/45 text-xs">{c.cedula}</span>
+                      <span className="text-ink/45 text-xs">{documento(c.cedula)}</span>
                       <span className="text-ink/45 ml-auto text-xs">
                         {fecha(c.desde)} — {fecha(c.hasta!)} · {c.dias} día
                         {c.dias === 1 ? '' : 's'}

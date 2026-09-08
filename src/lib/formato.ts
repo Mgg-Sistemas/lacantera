@@ -179,3 +179,219 @@ export function enPlural(unidad: string | null | undefined): string {
   const u = (unidad ?? '').trim().toUpperCase()
   return EN_PALABRAS[u] ?? u.toLowerCase()
 }
+
+// ---------------------------------------------------------------------------
+// Lo que se teclea
+// ---------------------------------------------------------------------------
+
+/**
+ * Un número tal como lo escribe la gente aquí, pasado a lo que entiende el código.
+ *
+ * LA COMA Y EL PUNTO SON LO MISMO
+ *
+ * En Venezuela el separador decimal es la coma —«3,20»— y el teclado numérico
+ * del teléfono ofrece coma, no punto. Con `type="number"` el navegador
+ * sencillamente no la admite: se pulsa y no aparece nada, o peor, aparece y el
+ * campo se queda en blanco al leerlo.
+ *
+ * Vivía dentro de `Input.tsx`, que es donde se usa casi siempre. Sale aquí
+ * porque tres campos del sistema se dibujan a mano, fuera de ese componente
+ * —dos de ellos en notas de crédito, sobre cantidades y precios— y estaban
+ * quedándose con el `type="number"` pelado y su problema entero.
+ *
+ * Cuando hay varios separadores, el decimal es el ÚLTIMO y los de antes son de
+ * millar: pegar «1.500,25» de una factura da mil quinientos con veinticinco.
+ * Con uno solo no hay nada que decidir y es el decimal, así que «1,5» funciona
+ * tecla a tecla. «1.500» a secas es ambiguo y se toma como uno y medio, que es
+ * lo que se lee tal cual.
+ */
+export function comoNumero(bruto: string): string {
+  let s = bruto.replace(/[^0-9.,-]/g, '')
+
+  const negativo = s.startsWith('-')
+  s = s.replace(/-/g, '')
+
+  const ultimo = Math.max(s.lastIndexOf('.'), s.lastIndexOf(','))
+  if (ultimo !== -1) {
+    s = s.slice(0, ultimo).replace(/[.,]/g, '') + '.' + s.slice(ultimo + 1).replace(/[.,]/g, '')
+  }
+
+  return (negativo ? '-' : '') + s
+}
+
+/**
+ * El mismo número, vestido para el ojo: `1209012.48` se lee `1.209.012,48`.
+ *
+ * PARA QUÉ, que es lo que importa
+ *
+ * Un cero de más no se ve en `1209012.48` y salta a la vista en
+ * `1.209.012,48`. El inventario de esta empresa llegó a valer 868 millones de
+ * dólares porque cinco costos se teclearon mal y nadie los leyó: el número
+ * estaba en la pantalla y no se podía mirar.
+ *
+ * SE CONSERVAN LOS DECIMALES QUE SE ESCRIBIERON. Rellenar «3,5» a «3,50» dice
+ * que el sistema sabe algo que no sabe, y quitarle el cero a «3,50» borra una
+ * precisión que alguien puso a propósito. Se enseña lo que hay.
+ *
+ * Devuelve el texto tal cual cuando no es un número acabado —«1.» mientras se
+ * escribe, o el campo vacío—: vestir a medias es peor que no vestir.
+ */
+export function vestido(texto: string): string {
+  if (texto === '' || texto === '-') return texto
+
+  const canonico = comoNumero(texto)
+  const n = Number(canonico)
+  if (!Number.isFinite(n)) return texto
+
+  const punto = canonico.indexOf('.')
+  const decimales = punto === -1 ? 0 : canonico.length - punto - 1
+
+  return new Intl.NumberFormat('es-VE', {
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: Math.max(decimales, 0),
+  }).format(n)
+}
+
+// ---------------------------------------------------------------------------
+// Cédulas y RIF
+// ---------------------------------------------------------------------------
+
+/** Lo que dice la letra de un documento de identidad venezolano. */
+export const NATURALEZA_DEL_DOCUMENTO: Record<string, string> = {
+  V: 'Venezolano',
+  E: 'Extranjero',
+  J: 'Jurídico (empresa)',
+  G: 'Gubernamental',
+  P: 'Pasaporte',
+}
+
+/**
+ * La forma canónica de una cédula o un RIF: letra, guion y cifras, sin puntos.
+ *
+ * `V-12345678` y `J-29820894-5`. Es lo que se guarda, y coincide con
+ * `private.documento_normalizado` de la base a propósito: si las dos versiones
+ * discrepan, el mismo documento se escribe de dos maneras y deja de cruzar
+ * consigo mismo. Ya pasó: `empleados` guarda «V-12460702» y `perfiles`
+ * guardaba «12460702» para la misma persona.
+ *
+ * Devuelve null cuando no se puede normalizar, y en particular cuando falta la
+ * letra. **No se adivina**: poner una V donde nadie la puso escribe una
+ * nacionalidad inventada.
+ */
+export function documentoCanonico(
+  bruto: string,
+  conVerificador = false,
+): string | null {
+  const s = (bruto ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (s === '' || !/^[VEJGP]/.test(s)) return null
+
+  const letra = s[0]
+  const cifras = s.slice(1)
+  if (!/^[0-9]+$/.test(cifras)) return null
+
+  if (conVerificador) {
+    if (cifras.length < 8) return null
+    if (cifras.length === 8) return `${letra}-${cifras}`
+    return `${letra}-${cifras.slice(0, -1)}-${cifras.slice(-1)}`
+  }
+
+  if (cifras.length < 6 || cifras.length > 9) return null
+  return `${letra}-${cifras}`
+}
+
+/**
+ * El documento vestido para el ojo: `V-12345678` se lee `V-12.345.678`.
+ *
+ * Christopher: «la base no necesariamente debe guardar los puntos... pero la
+ * pantalla deberá mostrarlo». Ocho o nueve cifras seguidas no se leen; con los
+ * puntos se comparan de un vistazo contra el carnet que se tiene delante, que
+ * es justo cuando se cazan los dígitos cambiados de sitio.
+ *
+ * El dígito verificador del RIF se queda aparte, detrás de su guion:
+ * `J-29.820.894-5`.
+ *
+ * Lo que no reconoce lo devuelve tal cual. Un documento viejo mal guardado se
+ * enseña como está, y así se ve que está mal.
+ */
+export function documento(valor: string | null | undefined): string {
+  const s = (valor ?? '').trim()
+  if (s === '') return ''
+
+  const m = /^([VEJGP])-?([0-9]+)(?:-([0-9]))?$/i.exec(s.replace(/[.\s]/g, ''))
+  if (!m) return s
+
+  const [, letra, cifras, verificador] = m
+  const conPuntos = cifras.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${letra.toUpperCase()}-${conPuntos}${verificador ? `-${verificador}` : ''}`
+}
+
+// ---------------------------------------------------------------------------
+// Teléfonos
+// ---------------------------------------------------------------------------
+
+/**
+ * Lo que se deja teclear en un teléfono: cifras, y el `+` de un país.
+ *
+ * POR QUÉ SE FILTRA LA TECLA Y NO SOLO SE AVISA DESPUÉS
+ *
+ * Entre los diecinueve teléfonos de empleados hay uno guardado como
+ * `O4123917198`: la letra O en lugar del cero de delante. Es un número que no
+ * sirve para llamar a nadie, y nadie se enteró hasta que se midió. Un aviso al
+ * guardar no lo habría evitado —se lee «04123917198» y parece correcto—; que la
+ * tecla no entre, sí.
+ *
+ * Se admite el `+` solo al principio, que es donde significa algo, y el guion
+ * porque la gente lo escribe. Los espacios y los paréntesis se caen: no aportan
+ * y multiplican las formas de escribir el mismo número.
+ */
+export function comoTelefono(bruto: string): string {
+  const mas = bruto.trimStart().startsWith('+')
+  const resto = bruto.replace(/[^0-9-]/g, '')
+  return (mas ? '+' : '') + resto
+}
+
+/**
+ * El teléfono vestido: `04125551234` se lee `0412-555.1234`.
+ *
+ * Los venezolanos son once cifras —cuatro de operadora y siete de abonado— y
+ * así partidos se dictan por teléfono sin repetir. Con `+58` delante son diez,
+ * porque el cero de la operadora se cae.
+ *
+ * Lo que no reconoce lo devuelve tal cual: un número mal guardado se enseña
+ * como está, y así se ve que está mal.
+ */
+export function telefono(valor: string | null | undefined): string {
+  const s = (valor ?? '').trim()
+  if (s === '') return ''
+
+  const mas = s.startsWith('+')
+  const d = s.replace(/[^0-9]/g, '')
+
+  if (mas && d.startsWith('58') && d.length === 12) {
+    const n = d.slice(2)
+    return `+58 ${n.slice(0, 3)}-${n.slice(3, 6)}.${n.slice(6)}`
+  }
+  if (!mas && d.length === 11 && d.startsWith('0')) {
+    return `${d.slice(0, 4)}-${d.slice(4, 7)}.${d.slice(7)}`
+  }
+  return s
+}
+
+/**
+ * Lo que se deja teclear en una cédula o un RIF.
+ *
+ * Christopher: «cédula solo debe permitir ingresar las letras o caracteres
+ * relacionados o útiles para ello ejemplo "V J G E - ."».
+ *
+ * Las cinco letras que dicen la naturaleza del documento, las cifras, y los dos
+ * separadores que la gente escribe. Nada más: en un campo de identidad no hay
+ * ninguna otra tecla que signifique algo, y dejarlas entrar solo sirve para que
+ * el error se descubra al guardar.
+ *
+ * La letra sube a mayúscula según se escribe. `v-12345678` y `V-12345678` son
+ * el mismo documento, y verlo en mayúscula desde la primera tecla dice que el
+ * sistema ya lo sabe.
+ */
+export function soloDocumento(bruto: string): string {
+  return bruto.toUpperCase().replace(/[^VEJGP0-9.\- ]/g, '')
+}

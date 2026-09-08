@@ -279,6 +279,25 @@ export function Movimientos() {
                         {m.cantidad}
                       </span>
                       <span className="text-ink/45 ml-1 text-xs">{m.unidad}</span>
+
+                      {/*
+                        LO QUE LA PERSONA CONTÓ, DEBAJO DE LO QUE EL SISTEMA OPERA.
+
+                        Quien anotó siete tambores no reconoce «1.466 L» al
+                        releerlo dentro de un mes, y entonces no puede cuadrar
+                        este renglón contra su hoja de conteo. Las dos cifras
+                        juntas son la única forma de que el asiento le hable a
+                        quien lo hizo.
+                      */}
+                      {m.cantidad_capturada ? (
+                        <span className="text-ink/45 mt-0.5 block text-2xs">
+                          contó {Number(m.cantidad_capturada).toLocaleString('es-VE')}{' '}
+                          {m.unidad_capturada}
+                          {Number(m.suelto_capturado)
+                            ? ` y ${Number(m.suelto_capturado).toLocaleString('es-VE')} ${m.unidad}`
+                            : ''}
+                        </span>
+                      ) : null}
                     </td>
 
                     <td className="tabular text-ink/70 px-3 py-3 text-right">

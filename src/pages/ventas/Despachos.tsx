@@ -6,13 +6,14 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
-import { dinero, enteros, fecha } from '@/lib/formato'
+import { dinero, documento, enteros, fecha } from '@/lib/formato'
 import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
@@ -370,7 +371,7 @@ export function Despachos() {
                 }}
                 opciones={(clientes ?? []).map((c) => ({
                   valor: String(c.id),
-                  etiqueta: `${c.nombre} · ${c.rif}`,
+                  etiqueta: `${c.nombre} · ${documento(c.rif)}`,
                 }))}
               />
             </div>
@@ -498,11 +499,10 @@ export function Despachos() {
                 />
               ) : null}
               <Input label="Chofer" value={chofer} onChange={(e) => setChofer(e.target.value)} />
-              <Input
+              <CampoDocumento
                 label="Cédula del chofer"
-                placeholder="V-12345678"
-                value={cedula}
-                onChange={(e) => setCedula(e.target.value)}
+                valor={cedula}
+                onCambiar={setCedula}
               />
               <Input
                 label="Ticket de romana"

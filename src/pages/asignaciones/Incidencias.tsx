@@ -14,7 +14,7 @@ import {
   type Asignacion,
 } from '@/lib/api/asignaciones'
 import { useMisRoles } from '@/lib/api/catalogo'
-import { dolares, fecha } from '@/lib/formato'
+import { documento, dolares, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 import { usePeriodos } from '@/lib/api/nomina'
 
@@ -88,7 +88,7 @@ export function Incidencias() {
                     <div>
                       <p className="text-ink/90 text-sm font-semibold">{p.empleado}</p>
                       <p className="text-ink/45 text-xs">
-                        Ficha {p.ficha} · {p.cedula}
+                        Ficha {p.ficha} · {documento(p.cedula)}
                         {p.cargo ? ` · ${p.cargo}` : ''}
                       </p>
                     </div>

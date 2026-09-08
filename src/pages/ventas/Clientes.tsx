@@ -6,11 +6,13 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
+import { CampoTelefono } from '@/components/CampoTelefono'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { dolares, fecha } from '@/lib/formato'
+import { documento, dolares, fecha } from '@/lib/formato'
 import {
   CONDICIONES_PAGO,
   useClientes,
@@ -132,7 +134,7 @@ export function Clientes() {
                           <p className="text-ink/45 text-xs">{c.nombre_comercial}</p>
                         ) : null}
                       </td>
-                      <td className="tabular text-ink/70 px-3 py-3">{c.rif}</td>
+                      <td className="tabular text-ink/70 px-3 py-3">{documento(c.rif)}</td>
                       <td className="text-ink/70 px-3 py-3">
                         {CONDICIONES_PAGO.find((x) => x.valor === c.condicion_pago)?.etiqueta}
                         {c.contribuyente_especial ? (
@@ -198,11 +200,11 @@ export function Clientes() {
           }
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
+            <CampoDocumento
               label="RIF"
-              placeholder="J-12345678-9"
-              value={edicion.rif}
-              onChange={(e) => cambiar({ rif: e.target.value })}
+              tipo="rif"
+              valor={edicion.rif}
+              onCambiar={(v) => cambiar({ rif: v })}
               required
             />
             <Input
@@ -221,11 +223,9 @@ export function Clientes() {
               value={edicion.contacto}
               onChange={(e) => cambiar({ contacto: e.target.value })}
             />
-            <Input
-              label="Teléfono"
-              inputMode="tel"
-              value={edicion.telefono}
-              onChange={(e) => cambiar({ telefono: e.target.value })}
+            <CampoTelefono
+              valor={edicion.telefono}
+              onCambiar={(v) => cambiar({ telefono: v })}
             />
             <Input
               label="Correo"

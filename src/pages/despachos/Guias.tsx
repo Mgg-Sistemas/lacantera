@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
@@ -390,11 +391,10 @@ export function Guias() {
               value={nueva.chofer}
               onChange={(e) => setNueva({ ...nueva, chofer: e.target.value })}
             />
-            <Input
+            <CampoDocumento
               label="Cédula del chofer"
-              placeholder="V-12345678"
-              value={nueva.cedula}
-              onChange={(e) => setNueva({ ...nueva, cedula: e.target.value })}
+              valor={nueva.cedula}
+              onCambiar={(v) => setNueva({ ...nueva, cedula: v })}
               className="sm:col-span-3"
             />
           </div>

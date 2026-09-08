@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useEmpleados } from '@/lib/api/nomina'
@@ -138,11 +139,10 @@ export function ModalChofer({
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
           />
-          <Input
+          <CampoDocumento
             label="Cédula"
-            placeholder="V-12345678"
-            value={cedula}
-            onChange={(e) => setCedula(e.target.value)}
+            valor={cedula}
+            onCambiar={setCedula}
           />
         </div>
       )}

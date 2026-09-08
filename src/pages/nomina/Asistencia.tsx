@@ -28,7 +28,7 @@ import {
 import type { Empleado, FaltaDelPeriodo, Periodo } from '@/lib/api/nomina'
 import { opcionesDe, useMetodosPago } from '@/lib/api/metodosPago'
 import { useMisRoles } from '@/lib/api/catalogo'
-import { dinero, fecha } from '@/lib/formato'
+import { comoNumero, dinero, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 /** Los campos que se teclean por trabajador y período. */
@@ -574,14 +574,17 @@ export function Asistencia() {
 
                       {CAMPOS.map((c) => (
                         <td key={c.clave} className="px-2 py-3">
+                          {/* Se dibuja a mano porque va dentro de una celda y el
+                              `Input` de la casa trae etiqueta y envoltorio. Lo que
+                              no puede perderse por eso es la coma: aqui se teclean
+                              horas y bonos, y `type="number"` pelado la rechaza o
+                              deja el campo en blanco segun el idioma del equipo. */}
                           <input
-                            type="number"
-                            step="0.5"
-                            min="0"
+                            type="text"
                             inputMode="decimal"
                             disabled={!abierto || !puedeRRHH}
                             value={deNovedad(e.id, c.clave)}
-                            onChange={(ev) => cambiar(e.id, c.clave, ev.target.value)}
+                            onChange={(ev) => cambiar(e.id, c.clave, comoNumero(ev.target.value))}
                             placeholder="0"
                             className="border-hairline bg-canvas text-ink/85 tabular focus:border-royal-500 w-16 rounded-[4px] border px-2 py-1 text-center text-sm outline-none disabled:opacity-50"
                           />
