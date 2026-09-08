@@ -15,7 +15,7 @@ import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { dinero, dolares, fecha, fechaHora } from '@/lib/formato'
+import { dinero, documento, dolares, fecha, fechaHora } from '@/lib/formato'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useTablero } from '@/lib/api/compras'
@@ -320,7 +320,7 @@ export function FacturasProveedor() {
                     </td>
                     <td className="px-3 py-3">
                       <p className="text-ink/70">{f.proveedor}</p>
-                      <p className="text-ink/45 text-xs">{f.proveedor_rif}</p>
+                      <p className="text-ink/45 text-xs">{documento(f.proveedor_rif)}</p>
                     </td>
                     <td className="text-ink/60 px-3 py-3 text-xs">
                       {fecha(f.fecha_emision)}
@@ -440,7 +440,7 @@ export function FacturasProveedor() {
               }
               opciones={(proveedores ?? []).map((p) => ({
                 valor: String(p.id),
-                etiqueta: `${p.rif} · ${p.nombre}`,
+                etiqueta: `${documento(p.rif)} · ${p.nombre}`,
               }))}
               className="sm:col-span-3"
             />

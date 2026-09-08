@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
@@ -22,7 +23,7 @@ import { useMonedasUsables } from '@/lib/api/tasas'
 import { useMetodosPago } from '@/lib/api/metodosPago'
 import { useResumenProveedores } from '@/lib/api/proveedorFicha'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { dolares } from '@/lib/formato'
+import { documento, dolares } from '@/lib/formato'
 
 const vacio = {
   rif: '',
@@ -158,7 +159,7 @@ export function Proveedores() {
                         <p className="text-ink/45 text-xs">{p.nombre_comercial}</p>
                       ) : null}
                     </td>
-                    <td className="tabular text-ink/70 px-3 py-3">{p.rif}</td>
+                    <td className="tabular text-ink/70 px-3 py-3">{documento(p.rif)}</td>
                     <td className="text-ink/70 px-3 py-3">
                       {p.contacto ?? '—'}
                       {p.telefono ? <span className="text-ink/45 block text-xs">{p.telefono}</span> : null}
@@ -228,11 +229,11 @@ export function Proveedores() {
           }
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
+            <CampoDocumento
               label="RIF"
-              placeholder="J-12345678-9"
-              value={edicion.rif}
-              onChange={(e) => cambiar({ rif: e.target.value })}
+              tipo="rif"
+              valor={edicion.rif}
+              onCambiar={(v) => cambiar({ rif: v })}
               required
             />
             <Input

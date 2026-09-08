@@ -3,6 +3,7 @@ import type { InputHTMLAttributes, ReactNode } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { enMayuscula } from '@/lib/texto'
+import { comoNumero, vestido } from '@/lib/formato'
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label: string
@@ -30,58 +31,6 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
   sinNormalizar?: boolean
 }
 
-/**
- * Un número tal como lo escribe la gente aquí, pasado a lo que entiende el código.
- *
- * LA COMA Y EL PUNTO SON LO MISMO
- *
- * En Venezuela el separador decimal es la coma —«3,20»— y el teclado numérico
- * del teléfono ofrece coma, no punto. Con `type="number"` el navegador
- * sencillamente no la admite: se pulsa y no aparece nada, o peor, aparece y el
- * campo se queda en blanco al leerlo. La gente escribía «320» sin decimales sin
- * saber por qué, y eso en un precio unitario no se nota hasta el total.
- *
- * Se traduce a punto, que es lo único que entiende `Number()`, así que todo lo
- * que ya lee `e.target.value` sigue leyendo lo mismo de siempre.
- *
- * Y SE SIGUE SIN PODER ESCRIBIR LETRAS
- *
- * Es lo que se pierde al dejar `type="number"`, que no admitía nada que no
- * fuera un número. Se repone aquí a mano: fuera todo lo que no sea cifra, punto
- * o el signo, un solo punto, y el signo solo delante. Sin esto, cambiar la coma
- * habría abierto la puerta a que en «cantidad» acabara escrito «doce».
- */
-function comoNumero(bruto: string): string {
-  let s = bruto.replace(/[^0-9.,-]/g, '')
-
-  const negativo = s.startsWith('-')
-  s = s.replace(/-/g, '')
-
-  /*
-    Cuando hay varios separadores, el decimal es el ÚLTIMO.
-
-    Los de antes son de millar. Es lo que hace falta para que pegar «1.500,25»
-    —copiado de una factura o de una hoja de cálculo— dé mil quinientos con
-    veinticinco y no uno coma cincuenta mil. Quedarse con el PRIMERO, que es lo
-    primero que se escribe, daba justo eso.
-
-    Con un solo separador no hay nada que decidir y es siempre el decimal, así
-    que escribir «1,5» sigue funcionando tecla a tecla: «1», «1,», «1,5».
-
-    «1.500» a secas es ambiguo —mil quinientos o uno y medio— y aquí se toma
-    como uno y medio, que es lo que se lee tal cual. No hay forma de acertar
-    siempre: quien quiera mil quinientos lo escribe sin punto, como se escribe
-    en un campo.
-  */
-  const ultimo = Math.max(s.lastIndexOf('.'), s.lastIndexOf(','))
-  if (ultimo !== -1) {
-    s =
-      s.slice(0, ultimo).replace(/[.,]/g, '') + '.' + s.slice(ultimo + 1).replace(/[.,]/g, '')
-  }
-
-  return (negativo ? '-' : '') + s
-}
-
 export function Input({
   label,
   ocultarEtiqueta,
@@ -94,12 +43,16 @@ export function Input({
   type = 'text',
   id,
   onChange,
+  onFocus,
+  onBlur,
+  value,
   ...rest
 }: InputProps) {
   const generatedId = useId()
   const inputId = id ?? generatedId
   const describedById = `${inputId}-desc`
   const [revealed, setRevealed] = useState(false)
+  const [enfocado, setEnfocado] = useState(false)
 
   /*
     Los campos de número se dibujan como texto.
@@ -130,6 +83,41 @@ export function Input({
     !sinNormalizar &&
     !revealable &&
     (type === 'text' || type === 'search' || type === undefined)
+
+  /*
+    CRUDO MIENTRAS SE ESCRIBE, VESTIDO EN CUANTO SE SALE.
+
+    Christopher: «el sistema en la pantalla puede dar un formato visual a los
+    números que sirva de guía al ojo del usuario». Y hace falta: un cero de más
+    no se ve en 1209012.48 y salta a la vista en 1.209.012,48. El inventario de
+    esta empresa llegó a valer 868 millones porque cinco costos se teclearon mal
+    y nadie los leyó — el número estaba en la pantalla y no se podía mirar.
+
+    POR QUÉ AL SALIR Y NO MIENTRAS SE TECLEA. Meter puntos de millar tecla a
+    tecla obliga a recolocar el cursor en cada pulsación, y ahí es donde estas
+    cosas se rompen: se escribe en medio de un número y el cursor salta al
+    final. Al salir del campo no hay cursor que mover y el número queda a la
+    vista justo cuando se va a mirar el formulario entero antes de guardar.
+
+    Lo que viaja a `onChange` no cambia nunca: sigue siendo el número canónico
+    con punto decimal, que es lo que todo el sistema ya lee.
+  */
+  const valorVestido =
+    esNumero && !enfocado && typeof value === 'string' && value !== ''
+      ? vestido(value)
+      : value
+
+  /*
+    Y MIENTRAS SE ESCRIBE, EL ECO DEBAJO — solo cuando el número es grande.
+
+    Con cinco cifras o más ya no se lee de un vistazo, que es exactamente donde
+    vive el error de mil veces. Por debajo de eso el eco sería ruido: nadie
+    necesita que le confirmen que 208 es doscientos ocho.
+  */
+  const eco =
+    esNumero && enfocado && typeof value === 'string' && /[0-9]{5}/.test(value.split('.')[0] ?? '')
+      ? vestido(value)
+      : null
 
   const alEscribir = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (esNumero) {
@@ -190,7 +178,16 @@ export function Input({
           // ya sea de texto. Va antes de `...rest` para que quien lo declare a
           // mano —la mayoría lo hace— siga mandando.
           inputMode={esNumero ? 'decimal' : undefined}
+          value={valorVestido}
           onChange={alEscribir}
+          onFocus={(e) => {
+            setEnfocado(true)
+            onFocus?.(e)
+          }}
+          onBlur={(e) => {
+            setEnfocado(false)
+            onBlur?.(e)
+          }}
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? describedById : undefined}
           className={cn(
@@ -231,6 +228,12 @@ export function Input({
         >
           {error ?? hint}
         </p>
+      ) : null}
+
+      {/* El eco va en el color del sistema y no en gris: es lo que hay que
+          leer, no una nota al pie. */}
+      {eco ? (
+        <p className="text-royal-600 dark:text-royal-300 tabular mt-1 text-xs">{eco}</p>
       ) : null}
     </div>
   )

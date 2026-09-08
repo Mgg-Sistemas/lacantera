@@ -6,7 +6,7 @@ import { Card, CardHeader } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { StatCard } from '@/components/StatCard'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { dinero, dolares, dolaresRedondos, fecha } from '@/lib/formato'
+import { dinero, documento, dolares, dolaresRedondos, fecha } from '@/lib/formato'
 import { usePorCobrar, type PorCobrar as Cobranza } from '@/lib/api/ventas'
 
 /**
@@ -118,7 +118,7 @@ export function PorCobrar() {
                 <CardHeader
                   className="p-5 pb-0"
                   title={g.cliente}
-                  subtitle={`${g.rif} · ${g.facturas.length} factura(s)`}
+                  subtitle={`${documento(g.rif)} · ${g.facturas.length} factura(s)`}
                   action={
                     <div className="text-right">
                       <p className="tabular text-ink/90 text-lg font-semibold">{dolares(g.usd)}</p>

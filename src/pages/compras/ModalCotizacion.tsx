@@ -18,7 +18,7 @@ import { useActualizarCotizacion, useRegistrarCotizacion } from '@/lib/api/compr
 import type { Compra, Cotizacion } from '@/lib/api/compras'
 import { useMonedasUsables, useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
 import { useAlicuotaIva } from '@/lib/api/empresa'
-import { bolivares, dolares, tasa as fmtTasa } from '@/lib/formato'
+import { bolivares, documento, dolares, tasa as fmtTasa } from '@/lib/formato'
 
 interface Props {
   abierto: boolean
@@ -244,7 +244,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
           }}
           opciones={(proveedores ?? []).map((p) => ({
             valor: String(p.id),
-            etiqueta: `${p.nombre} · ${p.rif}`,
+            etiqueta: `${p.nombre} · ${documento(p.rif)}`,
           }))}
         />
 
