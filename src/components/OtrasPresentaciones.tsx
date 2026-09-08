@@ -76,7 +76,13 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
       // La primera manda; las siguientes se añaden sin quitarle el sitio a la
       // que ya se estaba usando. Solo se decide con la lista en la mano: ver
       // arriba por qué.
-      por_defecto: sePudoLeer && lista.filter((p) => p.activa).length === 0,
+      /*
+        Corregir una que ya está no le cambia el sitio: se respeta lo que era.
+        Y una nueva solo se propone si no hay ninguna activa.
+      */
+      por_defecto:
+        lista.find((p) => p.presentacion === nombre)?.por_defecto ??
+        (sePudoLeer && lista.filter((p) => p.activa).length === 0),
     })
     setNombre('')
     setCuantas('')
@@ -88,6 +94,19 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
       <p className="text-ink/50 mt-0.5 text-xs">
         El mismo material puede llegar de varias maneras. Sigue habiendo una sola existencia, en{' '}
         {unidad || 'su unidad'}.
+      </p>
+      {/*
+        SE GUARDA AL MOMENTO, Y HAY QUE DECIRLO.
+
+        Lo levantó Christopher: «lo guarda sin que se le haya dado al botón
+        Guardar». Tiene razón en la queja aunque no en el remedio: una
+        presentación cuelga del artículo y se escribe por su propia puerta, así
+        que no puede esperar al «Guardar» de arriba — pero un panel que escribe
+        dentro de un formulario con «Cancelar» al pie promete algo que no
+        cumple. Se dice, que es lo honesto y lo barato.
+      */}
+      <p className="text-ink/45 mt-1 text-2xs">
+        Lo de aquí se guarda al momento: «Cancelar» no lo deshace.
       </p>
 
       {errorAlLeer ? (
@@ -158,7 +177,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
         </ul>
       )}
 
-      <div className="mt-3 grid items-end gap-2 sm:grid-cols-[1fr_1fr_auto]">
+      <div className="mt-3 grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
         <Select
           label="Cómo llega"
           vacio="Elige"
@@ -167,15 +186,35 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
           // guardarla le cambiaba el factor sin decirlo.
           disabled={!sePudoLeer}
           value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value
+            setNombre(v)
+            // Traer el factor que ya tiene: corregirlo empieza por verlo.
+            const ya = lista.find((x) => x.presentacion === v)
+            setCuantas(ya ? String(Number(ya.unidades)) : '')
+          }}
+          /*
+            LAS YA DECLARADAS SÍ SE OFRECEN, Y ES UN ARREGLO.
+
+            Antes se filtraban «para cambiarle el factor se corrige la de
+            arriba» — y ese mismo día los dos campos de arriba se apagaron
+            cuando hay presentaciones declaradas. Entre las dos cosas quedó un
+            callejón sin salida: no había forma de corregir un factor mal
+            puesto. Lo encontró Christopher a la primera.
+
+            Elegir una ya declarada trae su factor y el botón pasa a
+            «Corregir». Si esa presentación ya se usó en un movimiento, una
+            orden o una cotización, la base lo rechaza y explica por qué: el
+            papel viejo dice esa cantidad.
+          */
           opciones={(catalogo ?? [])
-            // La que ya está declarada no se ofrece otra vez: para cambiarle el
-            // factor se corrige la de arriba, no se añade una segunda.
-            .filter((c) => !yaEstan.has(c.codigo))
-            // Ni la que se llama igual que la unidad: «un PAR trae un PAR» no
+            // La que se llama igual que la unidad no: «un PAR trae un PAR» no
             // es una forma de contar, y la base lo rechaza.
             .filter((c) => c.codigo !== unidad.toUpperCase())
-            .map((c) => ({ valor: c.codigo, etiqueta: c.nombre }))}
+            .map((c) => ({
+              valor: c.codigo,
+              etiqueta: yaEstan.has(c.codigo) ? `${c.nombre} — ya declarada` : c.nombre,
+            }))}
         />
         <Input
           label={`Cuántas ${unidad} trae`}
@@ -193,7 +232,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
           disabled={!listo || guardar.isPending}
           onClick={() => void anadir()}
         >
-          Añadir
+          {nombre && yaEstan.has(nombre) ? 'Corregir' : 'Añadir'}
         </Button>
       </div>
 

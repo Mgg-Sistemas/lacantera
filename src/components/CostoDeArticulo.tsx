@@ -146,7 +146,8 @@ export function CostoDeArticulo({
 
   return (
     <div className={className}>
-      <div className={cn('grid gap-2', convertible && 'grid-cols-[1fr_auto]')}>
+      {/* Ver el gemelo: `minmax(0,…)` para que el campo encoja en vez de empujar. */}
+      <div className={cn('grid gap-2', convertible && 'grid-cols-[minmax(0,1fr)_auto]')}>
         <Input
           label={`Costo por ${usandoPresentacion ? presentacion : unidad || 'unidad'}`}
           type="number"
