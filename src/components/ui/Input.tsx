@@ -115,7 +115,19 @@ export function Input({
     necesita que le confirmen que 208 es doscientos ocho.
   */
   const eco =
-    esNumero && enfocado && typeof value === 'string' && /[0-9]{5}/.test(value.split('.')[0] ?? '')
+    esNumero && enfocado && typeof value === 'string' && value !== '' &&
+    /*
+      Con cinco cifras o mas ya no se lee de un vistazo, que es donde vive el
+      error de mil veces.
+
+      Y SOBRE TODO EN CUANTO HAY UN SEPARADOR, que es donde vive la ambiguedad
+      de verdad: «1.500» puede ser mil quinientos —el punto de millar de aqui— o
+      uno y medio, y no hay forma de acertar siempre. La regla de la casa es que
+      con un solo separador manda el decimal, asi que se lee uno y medio; el eco
+      lo dice en voz alta antes de guardar en vez de dejarlo pasar. Quien queria
+      mil quinientos lo ve y borra el punto.
+    */
+    (/[0-9]{5}/.test(value.split('.')[0] ?? '') || value.includes('.'))
       ? vestido(value)
       : null
 
@@ -233,7 +245,26 @@ export function Input({
       {/* El eco va en el color del sistema y no en gris: es lo que hay que
           leer, no una nota al pie. */}
       {eco ? (
-        <p className="text-royal-600 dark:text-royal-300 tabular mt-1 text-xs">{eco}</p>
+        <p className="text-royal-600 dark:text-royal-300 tabular mt-1 text-xs">
+          {eco}
+          {/*
+            EL CASO QUE CUESTA DINERO, DICHO CON TODAS LAS LETRAS.
+
+            «1.500» con exactamente tres cifras detras del punto es la forma
+            clasica del millar de aqui, y la regla de la casa —con un solo
+            separador manda el decimal— lo lee como uno y medio. Las dos
+            lecturas son defendibles y no hay forma de acertar siempre.
+
+            Enseñar solo «1,500» no basta: en ingles eso ES mil quinientos, asi
+            que quien queria mil quinientos lo lee y se queda tranquilo. Un
+            error de mil veces que se confirma solo.
+
+            Asi que en ese caso exacto se dice lo que hay que hacer.
+          */}
+          {/^\d{1,3}[.,]\d{3}$/.test(String(value ?? '')) ? (
+            <span className="text-ink/55"> · si querías mil, quita el punto</span>
+          ) : null}
+        </p>
       ) : null}
     </div>
   )

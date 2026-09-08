@@ -285,6 +285,7 @@ export function Transferencias() {
           />
           <Input
             label="Cantidad"
+            type="number"
             inputMode="decimal"
             value={form.cantidad}
             onChange={(e) => cambiar({ cantidad: e.target.value })}
