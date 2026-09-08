@@ -13,9 +13,11 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import {
   CATEGORIAS_ARTICULO,
+  conSusFormas,
   useArticulos,
   useCrearArticulo,
   usePerfiles,
+  useTodasLasPresentaciones,
   useUnidades,
 } from '@/lib/api/catalogo'
 import { useAlmacenes } from '@/lib/api/inventario'
@@ -102,6 +104,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
   const corrigiendo = !!pedido
   const navigate = useNavigate()
   const { data: articulos } = useArticulos()
+  const { data: formasDeContar } = useTodasLasPresentaciones()
   const { data: almacenes } = useAlmacenes()
   const crearArticulo = useCrearArticulo()
   const { data: unidades } = useUnidades()
@@ -400,7 +403,10 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                     <CantidadDeArticulo
                       valor={fila.cantidad}
                       onCambiar={(v) => cambiar(fila.clave, { cantidad: v })}
-                      articulo={articulos?.find((a) => String(a.id) === fila.articulo_id)}
+                      articulo={conSusFormas(
+                        articulos?.find((a) => String(a.id) === fila.articulo_id),
+                        formasDeContar,
+                      )}
                       hintSinArticulo=""
                       required
                     />

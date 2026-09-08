@@ -484,3 +484,129 @@ export function useGuardarProveedor() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['proveedores'] }),
   })
 }
+
+// ---------------------------------------------------------------------------
+// De cuántas formas se puede contar un artículo
+// ---------------------------------------------------------------------------
+
+/**
+ * Una de las maneras de contar un artículo.
+ *
+ * La existencia sigue siendo UNA, en la unidad de operación: estas son maneras
+ * de contar, no maneras de almacenar. El aceite en tambor y en bidón es el
+ * mismo aceite y el mismo número de litros.
+ */
+export interface PresentacionDeArticulo {
+  id: number
+  articulo_id: number
+  /** El nombre, del catálogo compartido: TAMBOR, CAJA, SACO. */
+  presentacion: string
+  /** Cuántas unidades de operación trae. Exacto, no aproximado. */
+  unidades: string
+  /** La que propone el formulario. Una por artículo. */
+  por_defecto: boolean
+  /** Se apagan, no se borran: los movimientos viejos siguen legibles. */
+  activa: boolean
+}
+
+export function usePresentacionesDeArticulo(articuloId: number | null) {
+  return useQuery({
+    queryKey: ['presentaciones-articulo', articuloId],
+    enabled: articuloId !== null,
+    staleTime: 60_000,
+    queryFn: async () =>
+      desenvolver<PresentacionDeArticulo[]>(
+        await supabase
+          .from('articulo_presentaciones')
+          .select('*')
+          .eq('articulo_id', articuloId!)
+          .order('por_defecto', { ascending: false })
+          .order('presentacion'),
+      ),
+  })
+}
+
+/**
+ * Todas las declaradas y activas, para las pantallas que mueven material.
+ *
+ * Se piden de una vez y no artículo por artículo: una entrada de quince
+ * renglones haría quince consultas, y son quince filas en total.
+ */
+export function useTodasLasPresentaciones(activa = true) {
+  return useQuery({
+    queryKey: ['presentaciones-articulo', 'todas', activa],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      let q = supabase.from('articulo_presentaciones').select('*').order('presentacion')
+      if (activa) q = q.eq('activa', true)
+      return desenvolver<PresentacionDeArticulo[]>(await q)
+    },
+  })
+}
+
+/**
+ * Le cuelga a un artículo sus formas de contarlo, para pasárselo a los campos.
+ *
+ * Existe para que las pantallas que mueven material no tengan que saber nada de
+ * `articulo_presentaciones`: piden la lista entera una vez con
+ * `useTodasLasPresentaciones` y envuelven el artículo elegido con esto.
+ *
+ * La que va por defecto queda primera: es la que el campo propone, y proponer
+ * la que el almacén usa siempre es la mitad del ahorro de teclas.
+ *
+ * Si el artículo no tiene ninguna declarada se devuelve tal cual, y los campos
+ * caen en las dos columnas viejas — que es como se comportaba todo antes.
+ */
+export function conSusFormas<T extends { id: number }>(
+  articulo: T | undefined,
+  todas: PresentacionDeArticulo[] | undefined,
+): T | (T & { presentaciones: { presentacion: string; unidades: string }[] }) | undefined {
+  if (!articulo) return articulo
+  const suyas = (todas ?? [])
+    .filter((p) => p.articulo_id === articulo.id && p.activa)
+    .sort(
+      (a, b) =>
+        Number(b.por_defecto) - Number(a.por_defecto) ||
+        a.presentacion.localeCompare(b.presentacion, 'es'),
+    )
+  if (suyas.length === 0) return articulo
+  return {
+    ...articulo,
+    presentaciones: suyas.map((p) => ({ presentacion: p.presentacion, unidades: p.unidades })),
+  }
+}
+
+export function useGuardarPresentacionDeArticulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (p: {
+      articulo_id: number
+      presentacion: string
+      unidades: number
+      por_defecto?: boolean
+    }) =>
+      rpc<number>('guardar_presentacion_de_articulo', {
+        p_articulo_id: p.articulo_id,
+        p_presentacion: p.presentacion,
+        p_unidades: p.unidades,
+        p_por_defecto: p.por_defecto ?? false,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['presentaciones-articulo'] })
+      // El artículo también: sus dos columnas viejas siguen a la de por defecto.
+      void qc.invalidateQueries({ queryKey: ['articulos'] })
+    },
+  })
+}
+
+export function useCambiarEstadoPresentacion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (p: { id: number; activa: boolean }) =>
+      rpc('cambiar_estado_presentacion', { p_id: p.id, p_activa: p.activa }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['presentaciones-articulo'] })
+      void qc.invalidateQueries({ queryKey: ['articulos'] })
+    },
+  })
+}

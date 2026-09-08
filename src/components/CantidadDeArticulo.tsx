@@ -66,6 +66,17 @@ interface Props {
         unidad?: string | null
         presentacion?: string | null
         unidades_por_presentacion?: string | null
+        /**
+         * Las demás formas de contarlo, cuando hay más de una.
+         *
+         * Aceite en tambor y en bidón; tuercas en pack de 6, de 12 y sueltas.
+         * La existencia sigue siendo UNA: son maneras de contar, no maneras de
+         * almacenar.
+         *
+         * Vienen del llamador y no se piden aquí a propósito: una entrada de
+         * quince renglones haría quince consultas para leer quince filas.
+         */
+        presentaciones?: { presentacion: string; unidades: string | number }[] | null
       }
     | undefined
     | null
@@ -97,8 +108,33 @@ export function CantidadDeArticulo({
   disabled,
 }: Props) {
   const unidad = articulo?.unidad ?? ''
-  const presentacion = articulo?.presentacion ?? ''
-  const porBulto = Number(articulo?.unidades_por_presentacion)
+
+  /*
+    DE CUÁNTAS FORMAS SE PUEDE CONTAR ESTO.
+
+    Si el artículo trae la lista, manda la lista. Si no —porque el llamador no
+    la carga, o porque el artículo solo tiene una— se usan las dos columnas de
+    siempre, y todo se comporta como antes.
+  */
+  const formas =
+    articulo?.presentaciones && articulo.presentaciones.length > 0
+      ? articulo.presentaciones.map((p) => ({
+          nombre: p.presentacion,
+          por: Number(p.unidades),
+        }))
+      : articulo?.presentacion && Number(articulo.unidades_por_presentacion) > 0
+        ? [
+            {
+              nombre: articulo.presentacion,
+              por: Number(articulo.unidades_por_presentacion),
+            },
+          ]
+        : []
+
+  const [cual, setCual] = useState('')
+  const elegida = formas.find((f) => f.nombre === cual) ?? formas[0]
+  const presentacion = elegida?.nombre ?? ''
+  const porBulto = elegida?.por ?? NaN
   const convertible = !!presentacion && Number.isFinite(porBulto) && porBulto > 0
 
   const [enPresentacion, setEnPresentacion] = useState(false)
@@ -222,8 +258,34 @@ export function CantidadDeArticulo({
             <span className="sr-only">En qué se teclea la cantidad</span>
             <select
               disabled={disabled}
-              value={enPresentacion ? 'P' : 'U'}
-              onChange={(e) => cambiarDeUnidad(e.target.value === 'P')}
+              value={enPresentacion ? presentacion : 'U'}
+              /*
+                Con varias formas, el selector ya no es un interruptor: es la
+                lista entera. Elegir una que no es la de ahora reexpresa lo
+                escrito con SU factor, que es lo que hace que cambiar de tambores
+                a bidones no invente una cantidad.
+              */
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === 'U') {
+                  cambiarDeUnidad(false)
+                  return
+                }
+                setCual(v)
+                const nueva = formas.find((f) => f.nombre === v)
+                const total = Number(valor)
+                if (nueva && Number.isFinite(total) && valor !== '') {
+                  setTecleado(String(total / nueva.por))
+                  setSuelto('')
+                  const b = total / nueva.por
+                  onCambiar(String(total), {
+                    presentaciones: b || null,
+                    sueltas: 0,
+                    unidad: b ? v : null,
+                  })
+                }
+                setEnPresentacion(true)
+              }}
               /*
                 Las mismas medidas que el `Select` de la casa —alto 10, borde
                 `ink/20`, radio de control— para que la caja de al lado y esta
@@ -233,7 +295,11 @@ export function CantidadDeArticulo({
               className="rounded-control bg-surface text-ink/90 border-ink/20 hover:border-ink/32 focus:border-royal-600 focus:ring-royal-600/20 h-10 appearance-none border pr-8 pl-3 text-base transition-[border-color,box-shadow] duration-150 focus:ring-2 focus:outline-none"
             >
               <option value="U">{unidad}</option>
-              <option value="P">{presentacion}</option>
+              {formas.map((f) => (
+                <option key={f.nombre} value={f.nombre}>
+                  {f.nombre}
+                </option>
+              ))}
             </select>
           </label>
         ) : null}
@@ -270,7 +336,9 @@ export function CantidadDeArticulo({
         <p className="text-royal-600 dark:text-royal-300 mt-1 text-xs">{equivale}</p>
       ) : convertible ? (
         <p className="text-ink/45 mt-1 text-xs">
-          {porBulto.toLocaleString('es-VE')} {unidad} por {presentacion}
+          {formas
+            .map((f) => `${f.por.toLocaleString('es-VE')} ${unidad} por ${f.nombre}`)
+            .join(' · ')}
         </p>
       ) : null}
     </div>

@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { cn } from '@/lib/cn'
 import { Textarea } from '@/components/ui/Textarea'
+import { OtrasPresentaciones } from '@/components/OtrasPresentaciones'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
   CATEGORIAS_ARTICULO,
@@ -499,6 +500,19 @@ export function Articulos() {
                 }
               />
             </div>
+
+            {/*
+              Y LAS DEMAS FORMAS DE CONTARLO, cuando el articulo ya existe.
+
+              Una presentacion cuelga de un articulo, y mientras el articulo no
+              existe no hay de donde colgarla. Al crear se declara la primera con
+              los dos campos de arriba; desde aqui se anaden las otras.
+            */}
+            {form.id ? (
+              <div className="sm:col-span-2">
+                <OtrasPresentaciones articuloId={form.id} unidad={form.unidad} />
+              </div>
+            ) : null}
 
             {/*
               LO QUE IDENTIFICA AL PRODUCTO, Y NO ESTABA EN NINGUNA PARTE.

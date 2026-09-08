@@ -10,8 +10,10 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import {
   CONDICIONES_PAGO,
+  conSusFormas,
   useArticulos,
   usePresentaciones,
+  useTodasLasPresentaciones,
   useProveedores,
 } from '@/lib/api/catalogo'
 import { useActualizarCotizacion, useRegistrarCotizacion } from '@/lib/api/compras'
@@ -55,6 +57,7 @@ interface Precio {
 export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props) {
   const { data: proveedores } = useProveedores()
   const { data: articulos } = useArticulos()
+  const { data: formasDeContar } = useTodasLasPresentaciones()
   const { data: presentaciones } = usePresentaciones()
   const { data: tasaVigente } = useTasaVigente()
   const { data: monedas } = useMonedasUsables()
@@ -279,7 +282,10 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
               <CantidadDeArticulo
                 valor={precios[r.id]?.cantidad ?? ''}
                 onCambiar={(v) => cambiar(r.id, { cantidad: v })}
-                articulo={articulos?.find((a) => a.id === r.articulo_id)}
+                articulo={conSusFormas(
+                  articulos?.find((a) => a.id === r.articulo_id),
+                  formasDeContar,
+                )}
                 hintSinArticulo=""
               />
               <Input

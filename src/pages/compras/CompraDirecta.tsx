@@ -14,8 +14,10 @@ import { ErrorDeCarga } from '@/components/ui/Estado'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import {
   CONDICIONES_PAGO,
+  conSusFormas,
   useArticulos,
   usePresentaciones,
+  useTodasLasPresentaciones,
   useProveedores,
   useUnidades,
 } from '@/lib/api/catalogo'
@@ -81,6 +83,9 @@ export function CompraDirecta() {
   const navigate = useNavigate()
   const { data: proveedores } = useProveedores()
   const { data: articulos } = useArticulos()
+  // Las formas de contar de todo el catalogo, de un tiron: quince renglones no
+  // pueden ser quince consultas para leer quince filas.
+  const { data: formasDeContar } = useTodasLasPresentaciones()
   const { data: unidades } = useUnidades()
   const { data: presentaciones } = usePresentaciones()
   const { data: almacenes } = useAlmacenes()
@@ -393,7 +398,10 @@ export function CompraDirecta() {
                 <CantidadDeArticulo
                   valor={f.cantidad}
                   onCambiar={(v) => cambiar(f.clave, { cantidad: v })}
-                  articulo={articulos?.find((a) => String(a.id) === f.articulo_id)}
+                  articulo={conSusFormas(
+                    articulos?.find((a) => String(a.id) === f.articulo_id),
+                    formasDeContar,
+                  )}
                   hintSinArticulo=""
                 />
                 <Select

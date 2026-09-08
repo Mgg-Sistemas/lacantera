@@ -35,7 +35,12 @@ import { ModalAlTaller } from './ModalAlTaller'
 import { ListaEditable } from '@/components/ListaEditable'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { supabase } from '@/lib/supabase'
-import { useMisRoles, useArticulos } from '@/lib/api/catalogo'
+import {
+  conSusFormas,
+  useArticulos,
+  useMisRoles,
+  useTodasLasPresentaciones,
+} from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
 import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
@@ -157,6 +162,15 @@ interface RenglonEnCurso {
    * guardar.
    */
   sueltas?: string
+  /**
+   * En cuál de las presentaciones se contó.
+   *
+   * Con una sola forma declarada sobra —la base la resuelve—, pero desde que un
+   * artículo puede tener varias es el dato que decide la cuenta: «3 bultos» de
+   * un aceite que viene en TAMBOR (208 L) y en BIDON (20 L) son 624 litros o
+   * son 60, y la diferencia no se descubre hasta que alguien cuenta el almacén.
+   */
+  presentacion?: string | null
   /**
    * Solo en la salida: de qué almacén sale ESTE renglón.
    *
@@ -336,6 +350,9 @@ export function Existencias() {
   const baja = useRegistrarBaja()
   const entrada = useRegistrarEntradas()
   const { data: articulos } = useArticulos()
+  // Las formas de contar de todo el catalogo, de un tiron: quince renglones no
+  // pueden ser quince consultas para leer quince filas.
+  const { data: formasDeContar } = useTodasLasPresentaciones()
   const monedas = useMonedasUsables()
   const { data: empresa } = useEmpresa()
   const { nombre: yo } = useSesion()
@@ -356,6 +373,13 @@ export function Existencias() {
     porque contar un almacén es «siete tambores y diez litros», no un número.
   */
   const [bultosContados, setBultosContados] = useState<number | null>(null)
+  /*
+    Y EN CUAL SE CONTO. Desde que un articulo puede declarar varias formas, los
+    bultos solos no dicen nada: «3» son 624 litros en tambores y 60 en bidones.
+    Nulo cuando se conto en la unidad de operacion, que es cuando no hay bulto
+    que nombrar.
+  */
+  const [presentacionContada, setPresentacionContada] = useState<string | null>(null)
   /*
     El total ya sumado, solo para enseñarlo y calcular la diferencia. Lo que
     viaja a la base son `valor` (lo suelto) y `bultosContados` por separado:
@@ -608,6 +632,7 @@ export function Existencias() {
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setTotalContado(tipo === 'ajuste' && fila ? fila.existencia : '')
     setBultosContados(null)
+    setPresentacionContada(null)
     setMotivo('')
     setReferencia('')
     // Abierta desde una fila, el primer renglón viene con ese artículo puesto.
@@ -649,6 +674,7 @@ export function Existencias() {
             */
             cantidad: r.presentaciones ? Number(r.sueltas || 0) : Number(r.cantidad || 0),
             presentaciones: r.presentaciones ?? null,
+            presentacion: r.presentacion ?? null,
             costo: Number(r.costo),
             moneda: r.moneda,
             confirmado: r.confirmado === true,
@@ -671,6 +697,7 @@ export function Existencias() {
           articulo_id: Number(r.articulo),
           cantidad: r.presentaciones ? Number(r.sueltas || 0) : Number(r.cantidad || 0),
           presentaciones: r.presentaciones ?? null,
+          presentacion: r.presentacion ?? null,
         })),
         motivo,
         tipo: clase,
@@ -765,6 +792,7 @@ export function Existencias() {
         articulo_id: modal.fila!.articulo_id,
         contado: Number(valor || 0),
         presentaciones: bultosContados,
+        presentacion: presentacionContada,
         motivo,
       })
     }
@@ -1325,7 +1353,10 @@ export function Existencias() {
 
               <div className="mt-4 space-y-3">
                 {renglones.map((r, i) => {
-                  const art = (articulos ?? []).find((a) => String(a.id) === r.articulo)
+                  const art = conSusFormas(
+                    (articulos ?? []).find((a) => String(a.id) === r.articulo),
+                    formasDeContar,
+                  )
 
                   /*
                     CUÁNTO SUMA ESTE RENGLÓN, MIENTRAS SE ESCRIBE.
@@ -1404,6 +1435,7 @@ export function Existencias() {
                                     articulo: v,
                                     cantidad: '',
                                     presentaciones: null,
+                                    presentacion: null,
                                     sueltas: '',
                                     confirmado: false,
                                   }
@@ -1446,6 +1478,7 @@ export function Existencias() {
                                       // filtro, la suma y el aviso del costo.
                                       cantidad: v,
                                       presentaciones: cap.presentaciones,
+                                      presentacion: cap.unidad,
                                       sueltas: String(cap.sueltas ?? ''),
                                       // Cambiar la cantidad no debe arrastrar
                                       // una confirmación dada sobre otra.
@@ -1634,7 +1667,10 @@ export function Existencias() {
                     `sitios` sale de las existencias y trae la unidad, pero no
                     la presentacion: para eso hay que ir al catalogo.
                   */
-                  const artSale = (articulos ?? []).find((a) => String(a.id) === r.articulo)
+                  const artSale = conSusFormas(
+                    (articulos ?? []).find((a) => String(a.id) === r.articulo),
+                    formasDeContar,
+                  )
                   // Lo que queda para ESTE renglón: lo que hay menos lo que ya
                   // se llevaron los renglones de arriba del mismo par.
                   const disponible =
@@ -1694,6 +1730,7 @@ export function Existencias() {
                                     // nada.
                                     cantidad: '',
                                     presentaciones: null,
+                                    presentacion: null,
                                     sueltas: '',
                                     almacen: sigueValiendo
                                       ? x.almacen
@@ -1757,6 +1794,7 @@ export function Existencias() {
                                       ...x,
                                       cantidad: v,
                                       presentaciones: cap.presentaciones,
+                                      presentacion: cap.unidad,
                                       sueltas: String(cap.sueltas ?? ''),
                                     }
                                   : x,
@@ -1865,15 +1903,29 @@ export function Existencias() {
                   onCambiar={(v, cap) => {
                     setValor(cap.presentaciones ? String(cap.sueltas || '') : v)
                     setBultosContados(cap.presentaciones)
+                    setPresentacionContada(cap.unidad)
                     setTotalContado(v)
                   }}
                   articulo={
                     modal.fila
                       ? {
+                          /*
+                            La unidad sale de la FILA y no del articulo: la fila
+                            es la que se esta contando. Lo demas sale del
+                            articulo, que es donde viven las formas de contarlo.
+                          */
                           unidad: modal.fila.unidad,
                           presentacion: articuloDeLaFila?.presentacion ?? null,
                           unidades_por_presentacion:
                             articuloDeLaFila?.unidades_por_presentacion ?? null,
+                          presentaciones: (formasDeContar ?? [])
+                            .filter((x) => x.articulo_id === articuloDeLaFila?.id && x.activa)
+                            .sort(
+                              (a, b) =>
+                                Number(b.por_defecto) - Number(a.por_defecto) ||
+                                a.presentacion.localeCompare(b.presentacion, 'es'),
+                            )
+                            .map((x) => ({ presentacion: x.presentacion, unidades: x.unidades })),
                         }
                       : null
                   }
