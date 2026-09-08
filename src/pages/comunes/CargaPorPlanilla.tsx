@@ -340,6 +340,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                         className={cn(
                           'border-hairline flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b px-5 py-2.5 last:border-b-0',
                           f.estado === 'ERROR' && 'bg-danger/4',
+                          f.estado !== 'ERROR' && f.aviso && 'bg-warning-soft',
                         )}
                       >
                         <span className="text-ink/40 tabular w-14 shrink-0 text-xs">
@@ -347,7 +348,10 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                         </span>
                         <Chip tone={dicho.tono}>{dicho.texto}</Chip>
                         <span className="text-ink/80 text-sm font-medium">
-                          {f.codigo || '(sin identificar)'}
+                          {/* Sin código en una fila nueva no es un problema: la
+                              base le pone uno al guardar. Solo es «sin
+                              identificar» cuando la fila además falló. */}
+                          {f.codigo || (f.estado === 'NUEVO' ? '(se le pondrá uno)' : '(sin identificar)')}
                         </span>
                         <span className="text-ink/55 min-w-0 flex-1 truncate text-sm">
                           {f.nombre}
@@ -355,6 +359,15 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                         {f.motivo ? (
                           <span className="text-danger w-full text-xs sm:w-auto sm:flex-none">
                             {f.motivo}
+                          </span>
+                        ) : null}
+                        {/* El aviso no impide cargar: es lo que hay que mirar
+                            antes de confirmar. Dos artículos casi iguales
+                            acaban con la existencia repartida entre los dos y
+                            ninguno cuadrando. */}
+                        {!f.motivo && f.aviso ? (
+                          <span className="text-ink/70 w-full text-xs sm:w-auto sm:flex-none">
+                            {f.aviso}
                           </span>
                         ) : null}
                       </li>

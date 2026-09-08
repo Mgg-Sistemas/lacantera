@@ -24,6 +24,14 @@ export interface FilaRevisada {
   nombre: string
   estado: EstadoDeFila
   motivo: string | null
+  /**
+   * Se parece a uno que ya está, pero no es el mismo.
+   *
+   * No para la carga: una planilla trae DISCO DE CORTE 7 y DISCO DE CORTE 9 el
+   * mismo día, y pararla obligaría a partirla en dos. Lo que hace falta es que
+   * quien la revisa lo vea antes de confirmar.
+   */
+  aviso?: string | null
 }
 
 export interface InformeDeCarga {

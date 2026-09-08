@@ -10,6 +10,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { cn } from '@/lib/cn'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
@@ -17,6 +18,7 @@ import {
   MODOS_ENTREGA,
   useArticulos,
   useCambiarEstadoArticulo,
+  useArticulosParecidos,
   useCrearArticulo,
   useEditarArticulo,
   useEliminarArticulo,
@@ -39,6 +41,12 @@ const nuevo = {
   unidades_por_presentacion: '',
   marca: '',
   numero_parte: '',
+  /*
+    Alguien vio que ya hay uno que se llama casi igual y dijo que el suyo es
+    otra cosa. Vive en el formulario y no en el envío porque la casilla aparece
+    en pantalla: es una decisión de quien lo está creando, no un ajuste técnico.
+  */
+  confirmado: false,
 }
 
 /*
@@ -91,12 +99,25 @@ export function Articulos() {
   )
   const crear = useCrearArticulo()
   const editar = useEditarArticulo()
+
   const eliminar = useEliminarArticulo()
   const cambiarEstado = useCambiarEstadoArticulo()
 
   const [busqueda, setBusqueda] = useState('')
   const [categoria, setCategoria] = useState('')
   const [form, setForm] = useState<typeof nuevo | null>(null)
+
+  /*
+    La misma consulta que hace el aviso de abajo. React-query la comparte por la
+    clave, así que preguntarla aquí no cuesta una llamada de más — y lo que gana
+    es que el botón no deje chocar contra la reja de la base para enterarse.
+  */
+  const parecidos = useArticulosParecidos(
+    form?.nombre ?? '',
+    form?.id || undefined,
+    form?.categoria,
+  )
+  const hayHomonimo = (parecidos.data ?? []).some((p) => p.es_el_mismo)
 
   const filtrados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
@@ -238,6 +259,7 @@ export function Articulos() {
                           onClick={() =>
                             setForm({
                               id: a.id,
+                              confirmado: false,
                               codigo: a.codigo,
                               nombre: a.nombre,
                               categoria: a.categoria,
@@ -297,7 +319,12 @@ export function Articulos() {
                 Cancelar
               </Button>
               <Button
-                disabled={crear.isPending || editar.isPending || !form.nombre}
+                disabled={
+                  crear.isPending ||
+                  editar.isPending ||
+                  !form.nombre ||
+                  (hayHomonimo && !form.confirmado)
+                }
                 onClick={async () => {
                   const datos = {
                     ...form,
@@ -345,11 +372,27 @@ export function Articulos() {
               value={form.codigo}
               onChange={(e) => setForm({ ...form, codigo: e.target.value.toUpperCase() })}
             />
-            <Input
-              label="Nombre"
-              value={form.nombre}
-              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-            />
+            <div>
+              <Input
+                label="Nombre"
+                value={form.nombre}
+                onChange={(e) =>
+                  /*
+                    Al cambiar el nombre se olvida lo confirmado. Confirmar que
+                    «Disco de corte 9» no es «Disco de corte 7» no dice nada
+                    sobre el nombre que se escriba después.
+                  */
+                  setForm({ ...form, nombre: e.target.value, confirmado: false })
+                }
+              />
+              <ParecidosAEste
+                nombre={form.nombre}
+                excluir={form.id || undefined}
+                categoria={form.categoria}
+                confirmado={form.confirmado}
+                onConfirmar={(v) => setForm((f) => (f ? { ...f, confirmado: v } : f))}
+              />
+            </div>
             <Select
               label="Categoría"
               value={form.categoria}
@@ -555,5 +598,77 @@ export function Articulos() {
         </Modal>
       ) : null}
     </>
+  )
+}
+
+/**
+ * Lo que ya está y se llama parecido a lo que se está escribiendo.
+ *
+ * Christopher: «debemos asegurar que el sistema impide (o mínimo
+ * advierte/sugiere) duplicados... "Insumos" o "Insumo", "Repuesto disco de
+ * corte 7'" o "Disco de corte 7'"».
+ *
+ * ADVIERTE Y SUGIERE, NO IMPIDE. Un almacén de verdad tiene DISCO DE CORTE 7 y
+ * DISCO DE CORTE 9, y son dos cosas distintas: quien sabe cuál es cuál es la
+ * persona. Lo que le faltaba era verlos.
+ *
+ * Solo el homónimo —los dos nombres se reducen a lo mismo— pide la casilla, y
+ * es el único que la base también rechaza. Los demás se enseñan y ya: si uno de
+ * ellos era el que buscaba, ahí tiene su código para irse a buscarlo.
+ */
+function ParecidosAEste({
+  nombre,
+  excluir,
+  categoria,
+  confirmado,
+  onConfirmar,
+}: {
+  nombre: string
+  excluir?: number
+  categoria?: string
+  confirmado: boolean
+  onConfirmar: (valor: boolean) => void
+}) {
+  const { data } = useArticulosParecidos(nombre, excluir, categoria)
+  const lista = data ?? []
+  if (lista.length === 0) return null
+
+  const homonimo = lista.some((p) => p.es_el_mismo)
+
+  return (
+    <div
+      className={cn(
+        'rounded-card mt-2 border p-2.5',
+        homonimo ? 'border-warning/40 bg-warning-soft' : 'border-hairline bg-ink/4',
+      )}
+    >
+      <p className="text-ink/70 text-xs">
+        {homonimo
+          ? 'Ya hay un artículo que se llama igual:'
+          : 'Ya hay artículos que se llaman parecido:'}
+      </p>
+      <ul className="mt-1.5 space-y-1">
+        {lista.map((p) => (
+          <li key={p.id} className="text-ink/85 flex items-baseline gap-2 text-xs">
+            <span className="text-ink/50 shrink-0 font-mono text-2xs">{p.codigo}</span>
+            <span className={p.es_el_mismo ? 'font-semibold' : undefined}>{p.nombre}</span>
+            <span className="text-ink/40 shrink-0">
+              {p.categoria}
+              {p.activo ? '' : ' · inactivo'}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {homonimo ? (
+        <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
+          <input
+            type="checkbox"
+            checked={confirmado}
+            onChange={(e) => onConfirmar(e.target.checked)}
+          />
+          Es otra cosa distinta — créalo aparte
+        </label>
+      ) : null}
+    </div>
   )
 }
