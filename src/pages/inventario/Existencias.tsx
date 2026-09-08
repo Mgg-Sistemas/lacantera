@@ -2481,11 +2481,27 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
 
       {impacto.error ? <ErrorDeCarga error={impacto.error} className="mt-3" /> : null}
 
+      {/*
+          EL EJEMPLO DICE QUE ESCRIBIR, NO QUE RESPONDER.
+
+          Aqui habia un caso real entero —«Se cargo el precio del tambor donde
+          iba el del litro. Factura NASELF 000617»— y Christopher lo paro: «es
+          demasiado especifico a un caso puntual en vez de ser generico o de
+          guia».
+
+          Y el problema es peor que la especificidad: un ejemplo que parece una
+          respuesta invita a copiarlo. Con veinte correcciones diciendo todas lo
+          mismo, el campo del porque deja de explicar nada — que es justo lo
+          contrario de por que existe. Ademas metia un numero de factura real en
+          un texto de pantalla.
+
+          Asi que se dice que tiene que llevar: el error y el respaldo.
+        */}
       <Textarea
         label="Por qué se corrige"
         className="mt-4"
         rows={2}
-        placeholder="Se cargó el precio del tambor donde iba el del litro. Factura NASELF 000617."
+        placeholder="Qué se cargó mal y con qué papel se comprueba el costo correcto"
         value={porque}
         onChange={(e) => setPorque(e.target.value)}
         hint="Queda en el movimiento y se avisa a administración y gerencia. Mínimo diez caracteres."

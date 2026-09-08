@@ -2277,11 +2277,13 @@ function ModalCorregirPrecio({
         onChange={(e) => setNuevo(e.target.value)}
       />
 
+      {/* Como en la correccion de costo: el ejemplo dice que escribir, no
+            que responder. Un caso real entero se copia tal cual. */}
       <Textarea
         label="Por qué se corrige"
         className="mt-4"
         rows={2}
-        placeholder="Se transcribió mal el precio de la cotización NASELF 000617"
+        placeholder="Qué se tecleó mal y de dónde sale el precio correcto"
         value={porque}
         onChange={(e) => setPorque(e.target.value)}
         hint="Queda en el registro, junto al precio de antes y al de ahora. Mínimo diez caracteres."
