@@ -1093,6 +1093,11 @@ export function Existencias() {
         articulo={desglose}
         onCerrar={() => setDesglose(null)}
         puedeMover={puede('ALMACEN')}
+        puedeCorregirCosto={puedeAccion('INVENTARIO.AJUSTAR_COSTO')}
+        onCorregirCosto={(f) => {
+          setDesglose(null)
+          setCosto(f)
+        }}
         onSacar={(f) => {
           setDesglose(null)
           abrir('salida', f)
@@ -2114,14 +2119,18 @@ function ModalDesglose({
   articulo,
   onCerrar,
   puedeMover,
+  puedeCorregirCosto,
   onSacar,
   onContar,
+  onCorregirCosto,
 }: {
   articulo: ExistenciaTotal | null
   onCerrar: () => void
   puedeMover: boolean
+  puedeCorregirCosto: boolean
   onSacar: (fila: Existencia) => void
   onContar: (fila: Existencia) => void
+  onCorregirCosto: (fila: Existencia) => void
 }) {
   const { data, isPending, error } = useExistenciasDeArticulo(articulo?.articulo_id ?? null)
 
@@ -2160,27 +2169,57 @@ function ModalDesglose({
                   </p>
                 </div>
 
-                {puedeMover ? (
-                  <div className="flex gap-1">
+                <div className="flex gap-1">
+                  {puedeMover ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        icon={<PackageMinus />}
+                        disabled={vacio}
+                        onClick={() => onSacar(f)}
+                      >
+                        Sacar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        icon={<Scale />}
+                        onClick={() => onContar(f)}
+                      >
+                        Contar
+                      </Button>
+                    </>
+                  ) : null}
+
+                  {/*
+                    CORREGIR EL COSTO TAMBIEN AQUI, y esta es la puerta que de
+                    verdad se usa.
+
+                    El boton existia solo en la fila de un almacen concreto,
+                    porque el costo promedio se lleva por pareja (almacen,
+                    articulo) y desde el total no significa nada. Cierto, y por
+                    eso INDESCUBRIBLE: la vista de serie es el total, donde la
+                    fila solo ofrece «Ver donde esta», y nadie adivina que hay
+                    que cambiar de vista antes.
+
+                    Este modal ES el sitio: aqui cada renglon ya ES una pareja
+                    (almacen, articulo). Lo pidio Christopher no encontrandolo,
+                    que es la unica forma fiable de saber que algo no se
+                    encuentra.
+                  */}
+                  {puedeCorregirCosto ? (
                     <Button
                       size="sm"
                       variant="ghost"
-                      icon={<PackageMinus />}
+                      icon={<Coins />}
                       disabled={vacio}
-                      onClick={() => onSacar(f)}
+                      onClick={() => onCorregirCosto(f)}
                     >
-                      Sacar
+                      Corregir el costo
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<Scale />}
-                      onClick={() => onContar(f)}
-                    >
-                      Contar
-                    </Button>
-                  </div>
-                ) : null}
+                  ) : null}
+                </div>
               </li>
             )
           })}
