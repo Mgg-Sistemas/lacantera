@@ -2458,7 +2458,11 @@ function QueHayAqui({ articuloId, almacenId }: { articuloId: number; almacenId: 
       <p className="text-ink/35 text-2xs">
         {data.nunca_contado
           ? 'Según lo que entró y salió con su envase anotado'
-          : `Contado el ${data.desde ?? ''}, más lo que se movió después`}
+          : /* La fecha viene de la base en su formato; aquí se lee en el de
+               aquí, que es el único que alguien reconoce de un vistazo. */
+            `Contado el ${
+              data.desde ? new Date(`${data.desde}T12:00:00`).toLocaleDateString('es-VE') : ''
+            }, más lo que se movió después`}
       </p>
     </div>
   )
