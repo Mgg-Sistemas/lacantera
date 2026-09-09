@@ -6,9 +6,11 @@ import { Select } from '@/components/ui/Select'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import {
   useCambiarEstadoPresentacion,
+  useGuardarPresentacion,
   useGuardarPresentacionDeArticulo,
   usePresentaciones,
   usePresentacionesDeArticulo,
+  usePresentacionesParecidas,
 } from '@/lib/api/catalogo'
 import { cn } from '@/lib/cn'
 
@@ -238,6 +240,133 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
 
       {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-2" /> : null}
       {cambiarEstado.error ? <ErrorDeCarga error={cambiarEstado.error} className="mt-2" /> : null}
+
+      {/*
+        LA PUERTA VA DONDE APARECE LA PARED.
+
+        Christopher: hay aceites que vienen en pailas y PAILA no estaba en la
+        lista. El sitio para arreglarlo es éste y no una pantalla de ajustes:
+        aquí es donde la persona se topa con que la palabra que necesita no
+        existe, y mandarla a otro lado con el aceite descargándose en el patio
+        es como se acaba escribiendo cualquier cosa para salir del paso.
+      */}
+      {sePudoLeer ? <NuevaFormaDeLlegada unidad={unidad} onCreada={(c) => {
+        setNombre(c)
+        setCuantas('')
+      }} /> : null}
+    </div>
+  )
+}
+
+/*
+  DAR DE ALTA UNA FORMA DE LLEGADA EN EL CATÁLOGO COMPARTIDO.
+
+  Va plegada: la lista tiene dieciocho entradas y casi siempre la que hace falta
+  ya está. Abrirla de par en par invitaría a crear antes de mirar, que es como se
+  llenan los catálogos de duplicados.
+
+  EL AVISO ES LO QUE HACE «CELOSO» ESTO. La base rechaza el homónimo —«Pailas»
+  no entra al lado de «Paila»— pero no puede distinguir una falta de ortografía
+  de un envase parecido: eso lo decide quien está mirando. Así que lo parecido se
+  enseña ANTES de guardar, que es cuando todavía sirve de algo.
+*/
+function NuevaFormaDeLlegada({
+  unidad,
+  onCreada,
+}: {
+  unidad: string
+  onCreada: (codigo: string) => void
+}) {
+  const [abierto, setAbierto] = useState(false)
+  const [nombre, setNombre] = useState('')
+  const crear = useGuardarPresentacion()
+  const { data: parecidas } = usePresentacionesParecidas(nombre)
+
+  const lista = parecidas ?? []
+  const homonima = lista.find((p) => p.es_la_misma)
+  const limpio = nombre.trim()
+
+  if (!abierto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        className="text-ink/55 hover:text-ink/85 mt-3 text-xs underline underline-offset-2"
+      >
+        ¿No está en la lista? Añadir una forma de llegada
+      </button>
+    )
+  }
+
+  return (
+    <div className="border-hairline rounded-card bg-canvas mt-3 border border-dashed p-3">
+      <p className="text-ink/60 mb-2 text-xs">
+        Se añade a la lista que ven todos los módulos, así que mira primero si ya está con otro
+        nombre. Aquí va solo la palabra del envase: cuántas {unidad} trae se dice arriba, porque
+        eso cambia de un artículo a otro.
+      </p>
+
+      <div className="grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <Input
+          label="Cómo llega"
+          placeholder="Paila"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+        />
+        <Button
+          variant="outline"
+          disabled={limpio.length < 3 || !!homonima || crear.isPending}
+          onClick={async () => {
+            const codigo = await crear.mutateAsync({ nombre: limpio })
+            onCreada(codigo)
+            setNombre('')
+            setAbierto(false)
+          }}
+        >
+          {crear.isPending ? 'Creando…' : 'Crear y usar'}
+        </Button>
+        <Button variant="ghost" onClick={() => { setAbierto(false); setNombre('') }}>
+          Cancelar
+        </Button>
+      </div>
+
+      {lista.length > 0 ? (
+        <div
+          className={cn(
+            'rounded-card mt-2 border p-2.5',
+            homonima ? 'border-warning/40 bg-warning-soft' : 'border-hairline bg-ink/4',
+          )}
+        >
+          <p className="text-ink/70 text-xs">
+            {homonima
+              ? 'Eso ya está en la lista, con este nombre:'
+              : 'Ya hay formas de llegada que se llaman parecido:'}
+          </p>
+          <ul className="mt-1.5 space-y-1">
+            {lista.map((p) => (
+              <li key={p.codigo} className="text-ink/85 flex items-baseline gap-2 text-xs">
+                <span className="text-ink/50 text-2xs shrink-0 font-mono">{p.codigo}</span>
+                <span className={p.es_la_misma ? 'font-semibold' : undefined}>{p.nombre}</span>
+                {p.activa ? null : <span className="text-ink/40 shrink-0">retirada</span>}
+              </li>
+            ))}
+          </ul>
+          {homonima ? (
+            /*
+              AQUÍ NO HAY CASILLA DE «es otra cosa distinta», al revés que en
+              artículos. Allí DISCO DE CORTE 7 y DISCO DE CORTE 9 son dos cosas
+              de verdad; aquí PAILA y PAILAS no son dos envases, ni lo serán. La
+              base también lo rechaza, así que una casilla solo serviría para
+              tropezar con el error un clic más tarde.
+            */
+            <p className="text-ink/60 mt-2 text-xs">
+              Usa <span className="font-semibold">{homonima.nombre}</span> en la lista de arriba.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {crear.error ? <ErrorDeCarga error={crear.error} className="mt-2" /> : null}
     </div>
   )
 }

@@ -211,9 +211,73 @@ export function usePresentaciones() {
     queryKey: ['presentaciones'],
     queryFn: async () =>
       desenvolver<Presentacion[]>(
-        await supabase.from('presentaciones').select('codigo, nombre').order('orden'),
+        // Las retiradas no se ofrecen, pero siguen existiendo: un movimiento que
+        // dijo «Barril» tiene que seguir diciendolo. Retirar no es borrar.
+        await supabase
+          .from('presentaciones')
+          .select('codigo, nombre')
+          .eq('activa', true)
+          .order('orden'),
       ),
-    staleTime: Infinity,
+    // Deja de ser Infinity: ahora la lista se puede ampliar desde la pantalla, y
+    // con Infinity quien acaba de crear PAILA no la veria hasta recargar.
+    staleTime: 5 * 60_000,
+  })
+}
+
+/*
+  LA LISTA SE PUEDE AMPLIAR, PERO CON PORTERO.
+
+  Christopher: «debemos de permitir personalizar estos aspectos, pero de forma
+  celosa o no tan flexible con el tipeado o duplicado». El caso que lo levanto:
+  hay aceites que vienen en pailas y PAILA no estaba en la lista.
+
+  El portero vive en la base —`guardar_presentacion` rechaza el homonimo por
+  nucleo, asi que «Tambores» no entra al lado de «Tambor»— y aqui solo se
+  ensena lo que ya hay parecido ANTES de guardar, que es cuando sirve de algo.
+*/
+export interface PresentacionParecida {
+  codigo: string
+  nombre: string
+  activa: boolean
+  parecido: number
+  /** Los dos nombres se reducen a lo mismo. Esto la base lo rechaza sin casilla. */
+  es_la_misma: boolean
+}
+
+export function usePresentacionesParecidas(nombre: string) {
+  const busca = nombre.trim()
+  return useQuery({
+    queryKey: ['presentaciones-parecidas', busca],
+    // Con menos de tres letras todo se parece a todo y el aviso se vuelve ruido.
+    enabled: busca.length >= 3,
+    staleTime: 60_000,
+    queryFn: () => rpc<PresentacionParecida[]>('presentaciones_parecidas', { p_nombre: busca }),
+  })
+}
+
+export function useGuardarPresentacion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (p: { codigo?: string; nombre: string; orden?: number; activa?: boolean }) =>
+      rpc<string>('guardar_presentacion', {
+        p_codigo: p.codigo ?? null,
+        p_nombre: p.nombre,
+        p_orden: p.orden ?? null,
+        p_activa: p.activa ?? true,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['presentaciones'] })
+      qc.invalidateQueries({ queryKey: ['presentaciones-parecidas'] })
+    },
+  })
+}
+
+export function useBorrarPresentacion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (codigo: string) => rpc<void>('borrar_presentacion', { p_codigo: codigo }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['presentaciones'] }),
   })
 }
 

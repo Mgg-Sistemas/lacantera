@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ChipTasa } from '@/components/ChipTasa'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
+import { ParecidosAEste } from '@/components/ParecidosAEste'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
@@ -46,6 +47,8 @@ interface FilaRenglon {
   /* Solo mientras se crea el artículo desde aquí; no viajan al pedido. */
   nuevo_codigo: string
   nueva_categoria: string
+  /* «Ya vi el parecido y aun así es otra cosa». La base también lo exige. */
+  nuevo_confirmado: boolean
 }
 
 let contador = 0
@@ -58,7 +61,42 @@ const filaVacia = (): FilaRenglon => ({
   observacion: '',
   nuevo_codigo: '',
   nueva_categoria: '',
+  nuevo_confirmado: false,
 })
+
+/*
+  QUÉ UNIDADES SE OFRECEN EN UN RENGLÓN.
+
+  Sin artículo, todas: el renglón es texto libre y no hay nada contra lo que
+  estrechar. Con artículo, la suya y las presentaciones que declaró — pero solo
+  las que además existen como unidad, porque `orden_renglones.unidad` apunta a
+  `unidades` y guardar TAMBOR ahí rompería la clave foránea.
+
+  Hoy eso deja casi siempre una sola opción, y está bien que así sea: la base
+  cuenta el artículo en su unidad y solo en ésa. Lo que se pierde no es
+  flexibilidad, es la posibilidad de escribir algo que el almacén va a leer de
+  otra manera sin avisar.
+*/
+function unidadesDeLaFila(
+  fila: FilaRenglon,
+  articulos: { id: number; unidad: string }[] | undefined,
+  formas: { articulo_id: number; presentacion: string; activa: boolean }[] | undefined,
+  unidades: { codigo: string; nombre: string }[] | undefined,
+): { valor: string; etiqueta: string }[] {
+  const todas = (unidades ?? []).map((u) => ({ valor: u.codigo, etiqueta: u.nombre }))
+  const articulo = (articulos ?? []).find((a) => String(a.id) === fila.articulo_id)
+  if (!articulo) return todas
+
+  const suyas = new Set<string>([articulo.unidad])
+  for (const f of formas ?? []) {
+    if (f.articulo_id === articulo.id && f.activa) suyas.add(f.presentacion)
+  }
+
+  const estrecha = todas.filter((u) => suyas.has(u.valor))
+  // Si la unidad del artículo no estuviera en el catálogo —no debería pasar,
+  // hay clave foránea— se prefiere ofrecer todas antes que una lista vacía.
+  return estrecha.length > 0 ? estrecha : todas
+}
 
 const OTRO_SITIO = 'OTRO'
 
@@ -414,14 +452,39 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                   </div>
 
                   <div className="sm:col-span-3">
+                    {/*
+                      LA LISTA SE ESTRECHA EN CUANTO HAY ARTÍCULO.
+
+                      Christopher: «si se escoge un item que tiene más de una
+                      presentación, el campo o lista unidad deberá de prepararse
+                      con únicamente las presentaciones que el item contiene».
+
+                      Y hay una razón más dura que la comodidad, que se encontró
+                      al ir a hacerlo: `registrar_entradas` toma la unidad DEL
+                      ARTÍCULO —`select unidad from articulos where id = ...`— y
+                      no mira nunca `orden_renglones.unidad`. Ofrecer las trece
+                      unidades era invitar a escribir «4 KG» de algo que el
+                      almacén va a anotar como 4 UND, sin avisar. Es la misma
+                      forma del error del 5/09: un número correcto leído con otra
+                      vara.
+
+                      Las presentaciones del artículo entran en la lista SOLO si
+                      además existen como unidad —CAJA, PAR, ROLLO y SACO son las
+                      cuatro que están en los dos catálogos—. TAMBOR y BIDON no lo
+                      están, y ofrecerlos rompería la clave foránea del renglón.
+                      Para esos, el reparto vive en el campo de cantidad de al
+                      lado, que sí sabe convertirlos.
+                    */}
                     <Select
                       label="Unidad"
                       value={fila.unidad}
                       onChange={(e) => cambiar(fila.clave, { unidad: e.target.value })}
-                      opciones={(unidades ?? []).map((u) => ({
-                        valor: u.codigo,
-                        etiqueta: u.nombre,
-                      }))}
+                      opciones={unidadesDeLaFila(fila, articulos, formasDeContar, unidades)}
+                      hint={
+                        fila.articulo_id
+                          ? 'El almacén cuenta este artículo en esta unidad.'
+                          : undefined
+                      }
                     />
                   </div>
 
@@ -480,16 +543,41 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                               nombre: fila.descripcion.trim(),
                               categoria: fila.nueva_categoria,
                               unidad: fila.unidad,
+                              confirmado: fila.nuevo_confirmado,
                             })
                             cambiar(fila.clave, {
                               articulo_id: String(id),
                               nuevo_codigo: '',
                               nueva_categoria: '',
+                              nuevo_confirmado: false,
                             })
                           }}
                         >
                           {crearArticulo.isPending ? 'Creando…' : 'Crear y usar'}
                         </Button>
+                      </div>
+
+                      {/*
+                        LA DEFENSA YA ESTABA EN LA BASE Y ESTA PANTALLA NO LA
+                        LLAMABA.
+
+                        `crear_articulo` rechaza el homónimo salvo que le llegue
+                        `p_confirmado`, y la ficha de Artículos lleva semanas
+                        enseñando los parecidos antes de crear. Aquí no: se
+                        pulsaba «Crear y usar» y salía un error crudo de la base
+                        sin decir con qué chocaba, o entraba el duplicado.
+
+                        Es justo lo que pidió Christopher —«deberá de estar
+                        validado el campo para evitar duplicados»— y no había que
+                        inventarlo, había que enchufarlo.
+                      */}
+                      <div className="sm:col-span-12">
+                        <ParecidosAEste
+                          nombre={fila.descripcion}
+                          categoria={fila.nueva_categoria}
+                          confirmado={fila.nuevo_confirmado}
+                          onConfirmar={(v) => cambiar(fila.clave, { nuevo_confirmado: v })}
+                        />
                       </div>
                     </div>
                   ) : null}
