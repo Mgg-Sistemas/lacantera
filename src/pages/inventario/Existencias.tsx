@@ -1596,8 +1596,29 @@ export function Existencias() {
                           monta de nuevo y el estado nace limpio — que es lo
                           mismo que ya hacia el renglon con sus cifras.
                         */}
+                        {/*
+                          LA CLAVE LLEVA EL NOMBRE DEL CAMPO, Y NO ES ADORNO.
+
+                          Christopher: «este modal esta acumulando medidas de otros items... se
+                          puede cambiar el item del renglon varias veces pero sus campos de
+                          unidad no alternan con ello, en cambio se adicionan a otro item que no
+                          tiene relacion, ej. tizas de herreria y aceite». El diagnostico era
+                          exacto y la causa estaba a la vista.
+
+                          Este campo y el del costo son HERMANOS en la misma rejilla, y los dos
+                          llevaban `key={r.articulo}`: la misma clave para dos hijos del mismo
+                          padre. React empareja los hijos por clave, y con claves repetidas la
+                          reconciliacion deja de tener una respuesta unica — en vez de reemplazar
+                          el campo viejo por el nuevo, iba apilando uno por cada articulo que se
+                          probaba. De ahi las seis casillas «Cantidad» con las medidas de la tiza
+                          y del aceite a la vez.
+
+                          La clave sigue cambiando con el articulo a proposito: es lo que remonta
+                          el campo y le limpia el estado interno. Lo que se arregla es que ahora
+                          es unica entre hermanos.
+                        */}
                         <CantidadDeArticulo
-                          key={r.articulo}
+                          key={`cantidad-${r.articulo}`}
                           valor={r.cantidad}
                           /*
                             Se guardan las DOS cifras tecleadas, no la suma. La
@@ -1640,7 +1661,7 @@ export function Existencias() {
                           cuenta con los dos lados escritos.
                         */}
                         <CostoDeArticulo
-                          key={r.articulo}
+                          key={`costo-${r.articulo}`}
                           valor={r.costo}
                           onCambiar={(v) =>
                             setRenglones((lista) =>
@@ -1925,7 +1946,7 @@ export function Existencias() {
                           siendo entre litros y litros.
                         */}
                         <CantidadDeArticulo
-                          key={r.articulo}
+                          key={`cantidad-${r.articulo}`}
                           valor={r.cantidad}
                           onCambiar={(v, cap) =>
                             setRenglones((lista) =>
