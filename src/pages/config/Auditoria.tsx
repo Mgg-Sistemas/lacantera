@@ -14,9 +14,11 @@ import {
   VERBOS,
   cambiosDeFondo,
   camposOrdenados,
+  nombreApuntado,
   nombreDeCampo,
   nombreDeTabla,
   useAuditoria,
+  useNombresDeAuditoria,
   useTablasAuditadas,
   valorLegible,
   useModulosAuditados,
@@ -24,7 +26,12 @@ import {
   copiarAuditoriaJson,
   TOPE_DE_COPIA,
 } from '@/lib/api/auditoria'
-import type { FiltrosAuditoria, Movimiento, Operacion } from '@/lib/api/auditoria'
+import type {
+  FiltrosAuditoria,
+  Movimiento,
+  NombresApuntados,
+  Operacion,
+} from '@/lib/api/auditoria'
 import { usePerfiles } from '@/lib/api/catalogo'
 import { usePresencia } from '@/lib/api/usuarios'
 import { fechaHora, hace } from '@/lib/formato'
@@ -46,11 +53,36 @@ const sinFiltros: FiltrosAuditoria = {
   texto: '',
 }
 
-/** La frase de una línea: qué hizo y sobre qué. */
+/*
+  LA FRASE DE UNA LÍNEA: QUÉ HIZO Y SOBRE QUÉ, CON NOMBRE.
+
+  Decía «Creó articulo presentaciones», que describe el esquema y no el hecho.
+  Ahora dice «Creó una forma de contar · BOTAS DE SEGURIDAD · Barril»: el verbo,
+  la cosa en palabras, y la etiqueta que la identifica.
+
+  Las tablas hijas llevan su propio nombre porque el de la tabla no se puede
+  leer: «articulo presentaciones» no es castellano, y «renglón de cotización» sí.
+*/
+const EN_PALABRAS: Record<string, string> = {
+  articulo_presentaciones: 'una forma de contar un artículo',
+  cotizacion_renglones: 'un renglón de cotización',
+  orden_renglones: 'un renglón de pedido',
+  nomina_recibos: 'un recibo de nómina',
+  nomina_faltas: 'una falta',
+  nomina_novedades: 'una novedad de nómina',
+  horometro_lecturas: 'una lectura de horómetro',
+  inventario_movimientos: 'un movimiento de inventario',
+  tasas_cambio: 'una tasa del día',
+  autorizaciones: 'una autorización',
+  instrucciones_pago: 'una instrucción de pago',
+  compras_bitacora: 'una anotación de compras',
+}
+
 function frase(m: Movimiento): string {
   if (m.operacion === 'ACCESO') return 'Entró al sistema'
   if (m.operacion === 'CLAVE') return 'Cambió una clave'
-  return `${VERBOS[m.operacion]} ${nombreDeTabla(m.tabla).toLowerCase()}`
+  const cosa = EN_PALABRAS[m.tabla] ?? nombreDeTabla(m.tabla).toLowerCase()
+  return `${VERBOS[m.operacion]} ${cosa}${m.etiqueta ? ` · ${m.etiqueta}` : ''}`
 }
 
 /**
@@ -529,24 +561,69 @@ export function Auditoria() {
               con cuarenta columnas, mostrarlas todas esconde las dos que
               importan. Un alta o un borrado sí van completos, porque ahí la
               fila entera ES la noticia. */}
-          {detalle.operacion === 'UPDATE' && detalle.cambios?.length ? (
-            <Diferencias movimiento={detalle} />
-          ) : null}
-
-          {detalle.operacion === 'INSERT' && detalle.despues ? (
-            <FilaCompleta titulo="Como quedó" fila={detalle.despues} />
-          ) : null}
-
-          {detalle.operacion === 'DELETE' && detalle.antes ? (
-            <FilaCompleta titulo="Lo que había antes de borrarlo" fila={detalle.antes} />
-          ) : null}
+          <Explicado movimiento={detalle} />
         </Modal>
       ) : null}
     </>
   )
 }
 
-function Diferencias({ movimiento }: { movimiento: Movimiento }) {
+/*
+  Pide los nombres de lo que la fila apunta y se los pasa a las dos vistas. Una
+  sola llamada al abrir la ficha: la lista de arriba no la necesita.
+*/
+function Explicado({ movimiento }: { movimiento: Movimiento }) {
+  const { data: nombres } = useNombresDeAuditoria(movimiento.id)
+
+  if (movimiento.operacion === 'UPDATE' && movimiento.cambios?.length) {
+    return <Diferencias movimiento={movimiento} nombres={nombres} />
+  }
+  if (movimiento.operacion === 'INSERT' && movimiento.despues) {
+    return <FilaCompleta titulo="Cómo quedó" fila={movimiento.despues} nombres={nombres} />
+  }
+  if (movimiento.operacion === 'DELETE' && movimiento.antes) {
+    return (
+      <FilaCompleta
+        titulo="Lo que había antes de borrarlo"
+        fila={movimiento.antes}
+        nombres={nombres}
+      />
+    )
+  }
+  return null
+}
+
+/*
+  Un valor, escrito para leerlo: si la columna apunta a otra fila se escribe su
+  NOMBRE, y el número queda detrás en pequeño por si hace falta rastrearlo. Ese
+  «articulo id 278» suelto es justo lo que no dice nada.
+*/
+function Valor({
+  campo,
+  valor,
+  nombres,
+}: {
+  campo: string
+  valor: unknown
+  nombres: NombresApuntados | undefined
+}) {
+  const nombre = nombreApuntado(nombres, campo, valor)
+  if (!nombre) return <>{valorLegible(valor)}</>
+  return (
+    <>
+      {nombre}
+      <span className="text-ink/40 tabular text-xs"> · {valorLegible(valor)}</span>
+    </>
+  )
+}
+
+function Diferencias({
+  movimiento,
+  nombres,
+}: {
+  movimiento: Movimiento
+  nombres?: NombresApuntados
+}) {
   const campos = cambiosDeFondo(movimiento.cambios)
   const ocultos = (movimiento.cambios?.length ?? 0) - campos.length
 
@@ -579,10 +656,10 @@ function Diferencias({ movimiento }: { movimiento: Movimiento }) {
               <tr key={campo} className="border-hairline border-b last:border-0 align-top">
                 <td className="text-ink/70 py-2.5 pr-3">{nombreDeCampo(campo)}</td>
                 <td className="text-ink/45 px-3 py-2.5 line-through">
-                  {valorLegible(movimiento.antes?.[campo])}
+                  <Valor campo={campo} valor={movimiento.antes?.[campo]} nombres={nombres} />
                 </td>
                 <td className="text-ink/85 py-2.5 pl-3 font-medium">
-                  {valorLegible(movimiento.despues?.[campo])}
+                  <Valor campo={campo} valor={movimiento.despues?.[campo]} nombres={nombres} />
                 </td>
               </tr>
             ))}
@@ -600,7 +677,15 @@ function Diferencias({ movimiento }: { movimiento: Movimiento }) {
   )
 }
 
-function FilaCompleta({ titulo, fila }: { titulo: string; fila: Record<string, unknown> }) {
+function FilaCompleta({
+  titulo,
+  fila,
+  nombres,
+}: {
+  titulo: string
+  fila: Record<string, unknown>
+  nombres?: NombresApuntados
+}) {
   /*
     Fuera lo vacío —no dice nada— y fuera quién guardó y cuándo, que está en la
     cabecera del movimiento y aquí saldría como un identificador ilegible.
@@ -619,7 +704,9 @@ function FilaCompleta({ titulo, fila }: { titulo: string; fila: Record<string, u
         {campos.map(([campo, valor]) => (
           <div key={campo} className="border-hairline border-b py-1.5">
             <dt className="text-ink/45 text-xs">{nombreDeCampo(campo)}</dt>
-            <dd className="text-ink/80 break-words">{valorLegible(valor)}</dd>
+            <dd className="text-ink/80 break-words">
+              <Valor campo={campo} valor={valor} nombres={nombres} />
+            </dd>
           </div>
         ))}
       </dl>

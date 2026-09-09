@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { desenvolver } from './rpc'
+import { desenvolver, rpc } from './rpc'
 import { descargarCsv } from './libros'
 
 /**
@@ -360,6 +360,42 @@ export function camposOrdenados(
     .filter(([k, v]) => v !== null && v !== '' && !esDeRegistro(k))
     .sort(([a], [b]) => peso(a) - peso(b) || rotulo(a).localeCompare(rotulo(b), 'es'))
 }
+
+/*
+  LOS NOMBRES DE LO QUE LA FILA APUNTA.
+
+  Una ficha decía «articulo id 278 · periodo id 3 · empleado id 14»: tres números
+  muertos. Quien lee la auditoría un año después no tiene forma de saber de qué
+  artículo, de qué período ni de qué persona se habla sin abrir otras tres
+  pantallas.
+
+  `auditoria_nombres` los resuelve de una vez, indexados por columna y luego por
+  valor —por columna y no por valor, porque `almacen_id` 9 y `articulo_id` 9 son
+  dos cosas distintas—. Se pide al ABRIR la ficha, no por fila listada.
+
+  Y se resuelve al mostrar, no al escribir, al revés que la etiqueta: la etiqueta
+  es la identidad del asiento y se congela —si el artículo se renombra mañana, el
+  asiento tiene que seguir diciendo cómo se llamaba ese día—; esto es una ayuda
+  de lectura sobre columnas que ya están guardadas en crudo.
+*/
+export type NombresApuntados = Record<string, Record<string, string>>
+
+export function useNombresDeAuditoria(id: number | null) {
+  return useQuery({
+    queryKey: ['auditoria', 'nombres', id],
+    enabled: id !== null,
+    staleTime: 5 * 60_000,
+    queryFn: () => rpc<NombresApuntados>('auditoria_nombres', { p_id: id! }),
+  })
+}
+
+/** El nombre de lo que apunta esa columna con ese valor, si se pudo resolver. */
+export const nombreApuntado = (
+  nombres: NombresApuntados | undefined,
+  campo: string,
+  valor: unknown,
+): string | null =>
+  (valor === null || valor === undefined ? null : nombres?.[campo]?.[String(valor)]) ?? null
 
 /** Los campos que de verdad cambiaron, sin la contabilidad del guardado. */
 export const cambiosDeFondo = (cambios: string[] | null): string[] =>
