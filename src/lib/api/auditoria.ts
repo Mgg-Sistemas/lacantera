@@ -362,6 +362,57 @@ export function camposOrdenados(
 }
 
 /*
+  LO QUE LA FICHA APARTA, PARA QUIEN QUIERA VERLO.
+
+  `camposOrdenados` quita dos cosas: los campos de registro —quien guardo y
+  cuando, que ya estan en la cabecera— y los vacios, que no dicen nada. Es lo
+  correcto para leer de un vistazo y es una perdida cuando lo que se esta
+  haciendo es AUDITAR: ahi «este campo estaba vacio» ES el dato, y hay que poder
+  verlo sin salir de la ficha ni abrir la consola.
+
+  Por eso se apartan y no se tiran: la ficha los ensena detras de un boton. La
+  regla de esta pantalla es que nada de lo que el asiento guarda quede fuera de
+  alcance; lo que se decide es que sale primero, no que se ve y que no.
+*/
+export function camposApartados(
+  fila: Record<string, unknown>,
+  rotulo: (campo: string) => string,
+): { registro: [string, unknown][]; vacios: string[] } {
+  const orden = (a: string, b: string) => rotulo(a).localeCompare(rotulo(b), 'es')
+  const entradas = Object.entries(fila)
+  return {
+    registro: entradas
+      .filter(([k, v]) => esDeRegistro(k) && v !== null && v !== '')
+      .sort(([a], [b]) => orden(a, b)),
+    vacios: entradas
+      .filter(([, v]) => v === null || v === '')
+      .map(([k]) => k)
+      .sort(orden),
+  }
+}
+
+/*
+  EL RESTO DE LA FILA EN UNA MODIFICACION.
+
+  La ficha de un UPDATE ensena solo lo que cambio, y eso esta bien: con cuarenta
+  columnas, ensenarlas todas esconde las dos que importan. Pero deja fuera el
+  contexto —«el costo paso de 5 a 7» sin decir de que articulo ni en que
+  almacen— y una modificacion sin contexto no se puede auditar: no se sabe si el
+  cambio tiene sentido porque no se sabe sobre que se hizo.
+
+  Va detras de un boton, debajo de lo que cambio. Primero la noticia, y para
+  quien la necesite, la fila entera como quedo.
+*/
+export function camposSinCambiar(
+  fila: Record<string, unknown>,
+  cambios: string[] | null,
+  rotulo: (campo: string) => string,
+): [string, unknown][] {
+  const cambiados = new Set(cambios ?? [])
+  return camposOrdenados(fila, rotulo).filter(([c]) => !cambiados.has(c))
+}
+
+/*
   LOS NOMBRES DE LO QUE LA FILA APUNTA.
 
   Una ficha decía «articulo id 278 · periodo id 3 · empleado id 14»: tres números
@@ -424,6 +475,17 @@ const num = (v: unknown): string => {
     ? n.toLocaleString('es-VE', { maximumFractionDigits: 4 })
     : String(v ?? '—')
 }
+
+/**
+ * Un estado del sistema, escrito para leerlo dentro de una frase.
+ *
+ * `POR_CONFIRMAR_GERENTE` se lee «por confirmar gerente». No se traduce a un
+ * rotulo bonito a proposito: la traduccion ya existe en la pantalla de Compras
+ * y copiarla aqui seria tener dos listas que un dia dejarian de decir lo mismo.
+ * Lo que se hace es abrir los guiones y bajar el tono, que no cambia el dato.
+ */
+const comoSeDice = (v: unknown): string =>
+  String(v ?? '').replaceAll('_', ' ').toLowerCase()
 
 const NIVELES: Record<string, string> = {
   NINGUNO: 'no puede entrar',
@@ -491,6 +553,29 @@ export function narracion(
       return `${cant} de ${art} ${hacia}, a ${num(f.costo_usd)} USD cada ${f.unidad ?? 'unidad'}.${contado}`
     }
 
+    /*
+      LA BITACORA DE COMPRAS: EL CASO QUE LEVANTO CHRISTOPHER.
+
+      Su captura era un renglon de `compras_bitacora` que decia «Creo una
+      anotacion de compras» y nada mas. Y resulta que la fila guarda justo lo
+      que hacia falta: de que documento habla, en que estado estaba y en cual
+      quedo. Estaba todo escrito; no estaba dicho.
+
+      El estado se escribe en minuscula y con los guiones abiertos para que la
+      frase se lea —«paso de confirmada a por confirmar gerente»—. El valor
+      literal no se pierde: sale intacto en los campos de abajo, que es donde se
+      va a mirar si hay que discutirlo.
+    */
+    case 'compras_bitacora': {
+      const doc = `${comoSeDice(f.documento_tipo) || 'documento'} n.º ${f.documento_id ?? '—'}`
+      const nota = f.nota ? ` Quedó anotado: «${f.nota}».` : ''
+      if (!f.estado_nuevo) return `Se anotó algo sobre la ${doc}.${nota}`
+      const ahora = comoSeDice(f.estado_nuevo)
+      return f.estado_anterior
+        ? `La ${doc} pasó de ${comoSeDice(f.estado_anterior)} a ${ahora}.${nota}`
+        : `La ${doc} quedó en ${ahora}.${nota}`
+    }
+
     default:
       return null
   }
@@ -544,6 +629,159 @@ export function valorLegible(v: unknown): string {
  * el navegador con el registro de un año. Si se llega al tope se avisa, que es
  * lo que separa una copia incompleta de una copia incompleta y silenciosa.
  */
+/*
+  UN SOLO EVENTO, PARA LLEVÁRSELO.
+
+  Christopher: «¿qué pasa si solo quiero hacer el copy de un evento puntual?».
+  Se podía copiar el registro ENTERO filtrado —CSV o JSON, hasta cinco mil
+  filas— y no se podía copiar UNO. Y es lo que se necesita a diario: mandarle a
+  alguien por WhatsApp qué pasó con una fila, pegarlo en un correo, adjuntarlo a
+  un reclamo.
+
+  Sale como texto plano y no como JSON a propósito: quien lo pega no es un
+  programa, es una persona. Lleva todo lo que la ficha enseña —incluido el
+  porqué y la frase que explica el asiento— para que se entienda fuera del
+  sistema, que es donde se va a leer.
+*/
+/*
+  El salto de línea, en una constante.
+
+  No es un capricho: escribir este archivo desde un script hizo que la barra
+  invertida se perdiera por el camino y dejara literales de cadena partidos por
+  la mitad. Con la constante no hay barra que perder.
+*/
+const SALTO = String.fromCharCode(10)
+
+export function textoDeEvento(
+  m: Movimiento,
+  opciones: {
+    frase: string | null
+    nombreDeTabla: (t: string) => string
+    nombreDeCampo: (c: string) => string
+    nombreApuntado: (campo: string, valor: unknown) => string | null
+  },
+): string {
+  const { frase, nombreDeTabla: tabla, nombreDeCampo: campo, nombreApuntado: apunta } = opciones
+
+  const cuando = new Date(m.ocurrido_en).toLocaleString('es-VE', {
+    day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
+
+  const linea = (r: string, v: string | null | undefined) =>
+    v ? `${r.padEnd(12)}${v}` : null
+
+  const valor = (c: string, v: unknown) => {
+    const n = apunta(c, v)
+    return n ? `${n} · ${valorLegible(v)}` : valorLegible(v)
+  }
+
+  const bloque = (titulo: string, fila: Record<string, unknown>) => {
+    const campos = camposOrdenados(fila, campo)
+    if (!campos.length) return null
+    return [
+      '',
+      titulo,
+      ...campos.map(([c, v]) => `  ${campo(c).padEnd(24)}${valor(c, v)}`),
+    ].join(SALTO)
+  }
+
+  const partes: (string | null)[] = [
+    'REGISTRO DE AUDITORÍA · La Cantera · Minería Internacional TS',
+    `Asiento n.º ${m.id}`,
+    '',
+    linea('Qué pasó', frase ?? `${m.operacion} en ${tabla(m.tabla)}`),
+    frase && m.etiqueta ? `${''.padEnd(12)}Sobre: ${m.etiqueta}` : null,
+    linea('Quién', `${m.nombre ?? '—'} (${m.usuario})`),
+    linea('Cuándo', cuando),
+    linea('Desde', m.ip ?? 'no registrada'),
+    linea('Módulo', m.modulo),
+    linea('Dónde', `${tabla(m.tabla)}${m.fila_id ? ` · fila ${m.fila_id}` : ''}`),
+    linea('Por qué', m.motivo),
+  ]
+
+  if (m.operacion === 'UPDATE' && m.cambios?.length) {
+    const campos = cambiosDeFondo(m.cambios)
+    if (campos.length) {
+      partes.push(
+        '',
+        `Lo que cambió (${campos.length})`,
+        ...campos.map(
+          (c) =>
+            `  ${campo(c).padEnd(24)}${valor(c, m.antes?.[c])}  →  ${valor(c, m.despues?.[c])}`,
+        ),
+      )
+    } else {
+      partes.push('', 'Se volvió a guardar sin cambiar ningún dato.')
+    }
+
+    /*
+      Y DEBAJO, LA FILA ENTERA. Sin ella, «el costo pasó de 5 a 7» no dice de
+      qué artículo se habla, y quien recibe el texto pegado en un correo no
+      tiene la pantalla delante para averiguarlo.
+    */
+    const resto = camposSinCambiar(m.despues ?? {}, m.cambios, campo)
+    if (resto.length) {
+      partes.push(
+        '',
+        'El resto de la fila, que no cambió',
+        ...resto.map(([c, v]) => `  ${campo(c).padEnd(24)}${valor(c, v)}`),
+      )
+    }
+  } else if (m.despues) {
+    partes.push(bloque('Cómo quedó', m.despues))
+  } else if (m.antes) {
+    partes.push(bloque('Lo que había antes de borrarlo', m.antes))
+  }
+
+  return partes.filter((x) => x !== null && x !== undefined).join(SALTO)
+}
+
+/** Lo deja en el portapapeles. Devuelve si se pudo. */
+export async function copiarEvento(texto: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(texto)
+    return true
+  } catch {
+    // Sin permiso de portapapeles —o sin https— no se puede. Se dice, no se
+    // finge: quien copia necesita saber si lo tiene o no.
+    return false
+  }
+}
+
+/*
+  EL MISMO EVENTO, EN CRUDO.
+
+  El texto de arriba está escrito para una persona. Este es para cuando hay que
+  discutir el dato y no la redacción: la fila del registro tal como está
+  guardada, con los nombres de columna sin traducir y los valores sin formato.
+
+  Es lo que se le manda a quien va a comprobarlo contra la base. Las dos formas
+  hacen falta, y no compiten: la de arriba se lee, ésta se coteja.
+*/
+export function jsonDeEvento(m: Movimiento): string {
+  return JSON.stringify(
+    {
+      asiento: m.id,
+      ocurrido_en: m.ocurrido_en,
+      operacion: m.operacion,
+      usuario: m.usuario,
+      nombre: m.nombre,
+      usuario_id: m.usuario_id,
+      ip: m.ip,
+      modulo: m.modulo,
+      tabla: m.tabla,
+      fila_id: m.fila_id,
+      etiqueta: m.etiqueta,
+      motivo: m.motivo,
+      cambios: m.cambios,
+      antes: m.antes,
+      despues: m.despues,
+    },
+    null,
+    2,
+  )
+}
+
 export const TOPE_DE_COPIA = 5000
 
 /**
