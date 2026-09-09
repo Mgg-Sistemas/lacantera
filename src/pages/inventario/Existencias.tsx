@@ -41,6 +41,7 @@ import {
   useMisRoles,
   useTodasLasPresentaciones,
 } from '@/lib/api/catalogo'
+import type { PresentacionDeArticulo } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
 import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
@@ -97,6 +98,59 @@ function contadoLegible(l: {
   return Number(l.suelto_capturado)
     ? `${bultos} y ${cantidad(l.suelto_capturado!)} ${l.unidad}`
     : bultos
+}
+
+/*
+  EL PLURAL, QUE EN CASTELLANO NO ES SIEMPRE UNA ESE.
+
+  «2 tambors» delata que lo escribió una máquina. Terminadas en vocal llevan -s
+  y terminadas en consonante llevan -es, y al añadir -es la tilde de la última
+  sílaba se cae: bidón da bidones, no bidónes. La eñe se queda donde está.
+*/
+const SIN_TILDE: Record<string, string> = { á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u' }
+
+function plural(palabra: string): string {
+  if (/[aeiouáéíóú]$/i.test(palabra)) return `${palabra}s`
+  return `${palabra.replace(/[áéíóú]/gi, (c) => SIN_TILDE[c.toLowerCase()] ?? c)}es`
+}
+
+/*
+  CUÁNTOS ENVASES SON ESOS LITROS.
+
+  Christopher: «¿qué pasa si en el inventario existencias deseo ver cuántos
+  tambores de un item quedan directamente?». La existencia se lleva en la unidad
+  de operación —es lo único que se mide al entrar y al salir— pero nadie camina
+  por el almacén contando litros: camina contando tambores.
+
+  Se enseña la presentación PROPUESTA y no todas: son cuatro columnas de tabla y
+  se llenaría de ruido. Las demás están en la ficha del artículo, con su valor.
+
+  VA CON UN «≈» DELANTE, y no es adorno. Es una equivalencia, no un conteo: los
+  factores son aproximados —Christopher, el 9/09: la paila trae 19 litros «de
+  forma no estricta»— y de los envases abiertos el libro no lleva cuenta. Sin
+  ese signo, el día que el almacén cuente un tambor menos, el sistema parecerá
+  estar mintiendo.
+*/
+function enEnvases(
+  existencia: number,
+  articuloId: number,
+  formas: PresentacionDeArticulo[] | undefined,
+  unidad: string,
+): string | null {
+  const suyas = (formas ?? []).filter((f) => f.articulo_id === articuloId && f.activa)
+  if (suyas.length === 0 || existencia <= 0) return null
+
+  const elegida = suyas.find((f) => f.por_defecto) ?? suyas[0]
+  const por = Number(elegida.unidades)
+  if (!(por > 0) || por === 1) return null
+
+  const enteros = Math.trunc(existencia / por)
+  const resto = Number((existencia - enteros * por).toFixed(4))
+  const nombre = elegida.presentacion.toLowerCase()
+
+  return `≈ ${cantidad(enteros)} ${enteros === 1 ? nombre : plural(nombre)}${
+    resto > 0 ? ` y ${cantidad(resto)} ${unidad}` : ''
+  }`
 }
 
 function monto(valor: number): string {
@@ -1003,6 +1057,17 @@ export function Existencias() {
                             Mínimo {cantidad(e.stock_minimo)}
                           </Chip>
                         ) : null}
+
+                        {/* Los mismos litros, dichos en envases. */}
+                        {(() => {
+                          const eq = enEnvases(
+                            Number(e.existencia),
+                            e.articulo_id,
+                            formasDeContar,
+                            e.unidad,
+                          )
+                          return eq ? <p className="text-ink/50 text-xs">{eq}</p> : null
+                        })()}
 
                         {/*
                           EXISTIR NO ES ESTAR DISPONIBLE
