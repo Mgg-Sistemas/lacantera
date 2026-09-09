@@ -1,4 +1,4 @@
-import { usePresentacionesDeArticulo } from '@/lib/api/catalogo'
+import { useCostoPorPresentacion, usePresentacionesDeArticulo } from '@/lib/api/catalogo'
 import { Card } from '@/components/ui/Card'
 
 /*
@@ -131,6 +131,98 @@ export function ValorPorPresentacion({
         cuenta al entrar y al salir. Por eso la última columna repite el mismo total en cada fila:
         hay un solo montón de {unidad}, mirado de varias maneras.
       </p>
+
+      <ComoSeCompro articuloId={articuloId} unidad={unidad} />
     </Card>
+  )
+}
+
+/*
+  A CUÁNTO SALIÓ EL LITRO CADA VEZ, Y EN QUÉ ENVASE SE COMPRÓ.
+
+  Christopher: «imaginando el caso de que existan dos compras en tiempos
+  distintos, donde se compre tambor y otra donde se compre en galón o paila, sus
+  precios en litro serían diferentes aunque fuera el mismo producto». Es un hecho
+  de mercado, no una rareza: al mayor sale más barato.
+
+  ESTO NO COMPITE CON EL COSTO DE ARRIBA. Arriba está lo que vale el inventario,
+  que es una sola cifra y tiene que serlo: cuando salen veinte litros nadie puede
+  decir de cuál de las dos compras salieron. Aquí está cómo se formó esa cifra, y
+  eso es lo que permite ver que el tambor salió a siete y la paila a nueve, ir al
+  proveedor con el dato y decidir cómo comprar la próxima vez.
+
+  Se calla cuando solo hay una forma de comprar: comparar una fila consigo misma
+  no es una comparación, es ruido.
+*/
+function ComoSeCompro({ articuloId, unidad }: { articuloId: number; unidad: string }) {
+  const { data } = useCostoPorPresentacion(articuloId)
+  const compras = data ?? []
+  if (compras.length < 2) return null
+
+  const porUnidad = compras.map((c) => Number(c.costo_base))
+  const menor = Math.min(...porUnidad)
+  const mayor = Math.max(...porUnidad)
+  // Sobre el menor, que es la referencia útil: «la paila sale un 28% más cara
+  // que el tambor», no «el tambor sale un 22% más barato que la paila».
+  const brecha = menor > 0 ? ((mayor - menor) / menor) * 100 : 0
+
+  return (
+    <div className="border-hairline mt-4 border-t pt-3">
+      <h3 className="text-ink/80 mb-2 text-sm font-semibold">Cómo se compró, y a cómo salió</h3>
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[420px] text-sm">
+          <thead>
+            <tr className="text-ink/45 border-hairline border-b text-left text-xs">
+              <th className="py-2 pr-3 font-medium">Se compró en</th>
+              <th className="px-3 py-2 font-medium">Veces</th>
+              <th className="px-3 py-2 text-right font-medium">Salió a</th>
+              <th className="py-2 pl-3 font-medium">Cuándo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {compras.map((c) => (
+              <tr key={c.presentacion ?? 'base'} className="border-hairline border-b last:border-0">
+                <td className="text-ink/80 py-2.5 pr-3">
+                  {c.presentacion ?? `Suelto, en ${unidad}`}
+                  {c.unidades ? (
+                    <span className="text-ink/45 text-xs">
+                      {' '}
+                      · {cantidad(Number(c.unidades))} {unidad}
+                    </span>
+                  ) : null}
+                </td>
+                <td className="text-ink/65 tabular px-3 py-2.5">{c.veces}</td>
+                <td className="tabular px-3 py-2.5 text-right">
+                  <span
+                    className={c.corregido_despues ? 'text-ink/40 line-through' : 'text-ink/85'}
+                  >
+                    {numero(Number(c.costo_base))} USD
+                  </span>
+                  <span className="text-ink/45 text-xs"> por {unidad}</span>
+                  {c.corregido_despues ? (
+                    <span className="text-ink/50 block text-2xs">
+                      la valoración se corrigió después
+                    </span>
+                  ) : null}
+                </td>
+                <td className="text-ink/50 py-2.5 pl-3 text-xs">
+                  {c.primera === c.ultima ? c.primera : `${c.primera} a ${c.ultima}`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {brecha >= 1 ? (
+        <p className="text-ink/60 mt-2 text-xs leading-relaxed">
+          Entre la forma más barata y la más cara hay un{' '}
+          <span className="text-ink/85 font-semibold">{numero(brecha, 1)}%</span> de diferencia por{' '}
+          {unidad}. El inventario se valora al promedio de todas, que es lo que hace cuadrar el
+          libro; esta tabla es para decidir cómo conviene comprar.
+        </p>
+      ) : null}
+    </div>
   )
 }
