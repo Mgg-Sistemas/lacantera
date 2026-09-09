@@ -705,13 +705,27 @@ export interface CostoDeUnEnvase {
   corregido_despues: boolean
 }
 
-export function useCostoPorPresentacion(articuloId: number | null) {
+/**
+ * A cuánto salió cada envase, en todos los sitios o en uno.
+ *
+ * Con `almacenId` contesta la pregunta de Christopher —«si se compra un tambor
+ * para un almacén, cómo veo esa presentación en ese almacén y con el valor
+ * acorde»—. Sin él mira todos los sitios, que es lo que pregunta la ficha del
+ * artículo: ahí interesa cómo se compra esto, no dónde acabó.
+ *
+ * Hace falta separarlo porque el costo promedio se lleva POR ALMACÉN: mezclar
+ * los sitios daría una media que no rige en ninguno de los dos.
+ */
+export function useCostoPorPresentacion(articuloId: number | null, almacenId?: number | null) {
   return useQuery({
-    queryKey: ['costo-por-presentacion', articuloId],
+    queryKey: ['costo-por-presentacion', articuloId, almacenId ?? null],
     enabled: articuloId !== null,
     staleTime: 60_000,
     queryFn: () =>
-      rpc<CostoDeUnEnvase[]>('costo_por_presentacion', { p_articulo_id: articuloId! }),
+      rpc<CostoDeUnEnvase[]>('costo_por_presentacion', {
+        p_articulo_id: articuloId!,
+        p_almacen_id: almacenId ?? null,
+      }),
   })
 }
 

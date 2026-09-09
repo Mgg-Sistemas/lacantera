@@ -39,6 +39,7 @@ import {
   conSusFormas,
   useArticulos,
   useMisRoles,
+  useCostoPorPresentacion,
   useTodasLasPresentaciones,
 } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
@@ -2339,6 +2340,52 @@ function Franja({
   )
 }
 
+/*
+  CÓMO ENTRÓ ESTE ARTÍCULO A ESTE ALMACÉN.
+
+  Una línea por envase con el que se compró aquí, con lo que costó ese envase y
+  cuándo fue la última vez. Se calla entera si no hay compras con envase
+  anotado: una tabla vacía es peor que ninguna, porque parece que falta un dato
+  en vez de que no lo hay.
+
+  Hoy se calla en todas partes, y es esperable: las ocho entradas que existen son
+  del 5 de septiembre y ninguna capturó el envase, porque ese día el sistema no
+  sabía capturarlo. Empieza a hablar con la próxima compra que se teclee en
+  tambores.
+*/
+function ComoEntroAqui({ articuloId, almacenId }: { articuloId: number; almacenId: number }) {
+  const { data } = useCostoPorPresentacion(articuloId, almacenId)
+
+  // Solo las compras que dijeron en qué envase venían. La fila sin envase es la
+  // compra suelta, y de esa el costo por unidad ya está arriba.
+  const conEnvase = (data ?? []).flatMap((c) =>
+    c.presentacion ? [{ ...c, presentacion: c.presentacion }] : [],
+  )
+  if (conEnvase.length === 0) return null
+
+  return (
+    <div className="mt-1 space-y-0.5">
+      {conEnvase.map((c) => (
+        <p key={c.presentacion} className="text-ink/50 text-xs">
+          Entró en <span className="text-ink/70">{c.presentacion}</span>
+          {c.costo_envase ? (
+            <>
+              {' · '}
+              <span className={c.corregido_despues ? 'line-through' : undefined}>
+                {dolares(c.costo_envase)}
+              </span>{' '}
+              el {c.presentacion.toLowerCase()}
+            </>
+          ) : null}
+          {c.corregido_despues ? (
+            <span className="text-ink/40"> · su valoración se corrigió después</span>
+          ) : null}
+        </p>
+      ))}
+    </div>
+  )
+}
+
 /**
  * En qué sitios está repartido un artículo, y qué se puede hacer en cada uno.
  *
@@ -2398,6 +2445,21 @@ function ModalDesglose({
                     <span className="tabular">{cantidad(f.existencia)}</span> {f.unidad}
                     {f.costo_promedio_usd ? ` · ${dolares(f.costo_promedio_usd)} c/u` : ''}
                   </p>
+
+                  {/*
+                    EN QUÉ ENVASE ENTRÓ AQUÍ, Y A CÓMO.
+
+                    Christopher: «si se compra un tambor para un almacén, ¿cómo
+                    puedo ver expresamente esa forma de medir o presentación del
+                    item en ese almacén y con el valor acorde?».
+
+                    Esto NO es la equivalencia que quitamos hace un rato. Aquella
+                    dividía 604 entre 208 y decía «2 tambores», que nadie contó y
+                    resultó ser falso. Esto es lo que alguien tecleó al recibir:
+                    el envase, el precio y el día. Un hecho cabe en una pantalla
+                    de existencias; una suposición no.
+                  */}
+                  <ComoEntroAqui articuloId={f.articulo_id} almacenId={f.almacen_id} />
 
                 </div>
 
