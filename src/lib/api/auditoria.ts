@@ -554,6 +554,25 @@ export function narracion(
     }
 
     /*
+      LA LISTA COMPARTIDA DE «CÓMO LLEGA».
+
+      Desde hoy se puede ampliar desde la pantalla, y por eso hace falta la
+      frase: un asiento que diga «Creó presentaciones · PAILA» no cuenta lo que
+      de verdad pasó, que es que la lista que ven TODOS los módulos tiene una
+      palabra más. Ampliar un catálogo compartido no es editar una fila: es
+      cambiarle las opciones a gente que no estaba delante.
+    */
+    case 'presentaciones': {
+      const como = f.nombre ?? f.codigo
+      if (borrado) return `«${como}» deja de existir como forma de llegada. No la usaba nadie: la base no deja borrar una que sí.`
+      if (m.operacion === 'UPDATE' && f.activa === false) {
+        return `«${como}» deja de ofrecerse al declarar cómo llega un artículo. Lo ya escrito con ella no se toca: el asiento guarda el nombre, no un puntero.`
+      }
+      if (m.operacion === 'UPDATE') return `La forma de llegada «${como}» se corrigió.`
+      return `Desde ahora cualquier artículo se puede declarar que llega en «${como}». Cuántas unidades trae se dice en cada artículo, porque cambia de uno a otro.`
+    }
+
+    /*
       LA BITACORA DE COMPRAS: EL CASO QUE LEVANTO CHRISTOPHER.
 
       Su captura era un renglon de `compras_bitacora` que decia «Creo una
