@@ -913,10 +913,21 @@ export function useRegistrarAjuste() {
       presentaciones?: number | null
       /** En cuál se contó. Contar un almacén es justo donde más importa. */
       presentacion?: string | null
+      /*
+        LA HOJA DE CONTEO, cuando en el estante hay de varios tipos.
+
+        «1 tambor y 20 pailas» no cabe en un solo envase, y era el caso real del
+        ACEITE HIDRAULICO 68. La base suma cada línea, guarda el total en el
+        libro y anota la hoja aparte, en `conteo_envases`: es el único momento
+        en que alguien sabe de verdad cuántos envases hay, porque los tiene
+        delante.
+      */
+      envases?: { presentacion: string; cantidad: number }[] | null
       motivo: string
       fecha?: string
     }) =>
       rpc<number>('registrar_ajuste', {
+        p_envases: a.envases && a.envases.length > 0 ? a.envases : null,
         p_almacen_id: a.almacen_id,
         p_articulo_id: a.articulo_id,
         p_contado: a.contado,

@@ -42,6 +42,8 @@ import {
   useTodasLasPresentaciones,
 } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
+import { ConteoDeEnvases } from '@/components/ConteoDeEnvases'
+import type { LineaDeConteo } from '@/components/ConteoDeEnvases'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
 import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
@@ -374,6 +376,14 @@ export function Existencias() {
   */
   const [bultosContados, setBultosContados] = useState<number | null>(null)
   /*
+    LA HOJA DE CONTEO, cuando en el estante hay envases de varios tipos.
+
+    Vacía significa «se contó de la forma de siempre». En cuanto tiene una línea
+    manda ella: es lo que la persona vio, y el total sale de sumarla.
+  */
+  const [hoja, setHoja] = useState<LineaDeConteo[]>([])
+  const [sueltosContados, setSueltosContados] = useState('')
+  /*
     Y EN CUAL SE CONTO. Desde que un articulo puede declarar varias formas, los
     bultos solos no dicen nada: «3» son 624 litros en tambores y 60 en bidones.
     Nulo cuando se conto en la unidad de operacion, que es cuando no hay bulto
@@ -622,6 +632,20 @@ export function Existencias() {
   const [clase, setClase] = useState('')
   const claseElegida = (clases.data ?? []).find((c) => c.codigo === clase)
 
+  /*
+    Las formas de contar del artículo que se está tocando. Se calculan aquí y no
+    dentro del modal porque las miran tres sitios: el campo de cantidad, la hoja
+    de conteo y el botón de guardar.
+  */
+  const formasDeLaFila = (formasDeContar ?? [])
+    .filter((x) => x.articulo_id === articuloDeLaFila?.id && x.activa)
+    .sort(
+      (a, b) =>
+        Number(b.por_defecto) - Number(a.por_defecto) ||
+        a.presentacion.localeCompare(b.presentacion, 'es'),
+    )
+    .map((x) => ({ presentacion: x.presentacion, unidades: x.unidades }))
+
   const abrir = (
     tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada' | 'baja',
     fila: Existencia | null,
@@ -631,6 +655,9 @@ export function Existencias() {
     setClase((clases.data ?? [])[0]?.codigo ?? '')
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setTotalContado(tipo === 'ajuste' && fila ? fila.existencia : '')
+    // Una hoja de conteo es de un artículo concreto: abrir otro empieza limpio.
+    setHoja([])
+    setSueltosContados('')
     setBultosContados(null)
     setPresentacionContada(null)
     setMotivo('')
@@ -787,12 +814,21 @@ export function Existencias() {
       }
       return
     } else {
+      /*
+        Con hoja manda la hoja: lo suelto son los litros del envase empezado y
+        los bultos van en las líneas. Sin hoja, la forma de siempre.
+      */
+      const conHoja = hoja.filter((l) => l.presentacion && Number(l.cantidad) > 0)
       await ajuste.mutateAsync({
         almacen_id: modal.fila!.almacen_id,
         articulo_id: modal.fila!.articulo_id,
-        contado: Number(valor || 0),
-        presentaciones: bultosContados,
-        presentacion: presentacionContada,
+        contado: conHoja.length > 0 ? Number(sueltosContados || 0) : Number(valor || 0),
+        presentaciones: conHoja.length > 0 ? null : bultosContados,
+        presentacion: conHoja.length > 0 ? null : presentacionContada,
+        envases: conHoja.map((l) => ({
+          presentacion: l.presentacion,
+          cantidad: Number(l.cantidad),
+        })),
         motivo,
       })
     }
@@ -1959,6 +1995,7 @@ export function Existencias() {
                 por separado.
               */}
               {modal.tipo === 'ajuste' ? (
+                <>
                 <CantidadDeArticulo
                     key={modal.fila?.articulo_id}
                   label="Cantidad contada"
@@ -2000,6 +2037,60 @@ export function Existencias() {
                         : undefined
                   }
                 />
+
+                  {/*
+                    CONTAR UN ALMACÉN DONDE HAY DE TODO.
+
+                    Christopher, del ACEITE HIDRAULICO 68: «hay 1 tambor, y
+                    aproximadamente 21 pailas». Con un solo tipo de envase había
+                    que elegir entre decir «2 tambores» o «31 pailas», y las dos
+                    eran falsas. Solo aparece cuando el artículo tiene más de una
+                    forma declarada: donde no hay mezcla posible, el campo de
+                    arriba basta y este bloque sería una pregunta de más.
+                  */}
+                  {formasDeLaFila.length > 1 ? (
+                    hoja.length === 0 ? (
+                      <button
+                        type="button"
+                        className="text-ink/55 hover:text-ink/85 mt-2 text-xs underline underline-offset-2"
+                        onClick={() =>
+                          setHoja([{ presentacion: formasDeLaFila[0].presentacion, cantidad: '' }])
+                        }
+                      >
+                        ¿Contaste envases de varios tipos?
+                      </button>
+                    ) : (
+                      <div className="mt-3">
+                        <ConteoDeEnvases
+                          formas={formasDeLaFila}
+                          unidad={modal.fila?.unidad ?? ''}
+                          existencia={Number(modal.fila?.existencia ?? 0)}
+                          lineas={hoja}
+                          sueltos={sueltosContados}
+                          onCambiar={(l, su, total) => {
+                            setHoja(l)
+                            setSueltosContados(su)
+                            // El total viene del propio componente, que es el
+                            // que lo enseña: dos cuentas separadas para la misma
+                            // cifra es como dejan de coincidir.
+                            setTotalContado(String(total))
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="text-ink/45 hover:text-ink/75 mt-2 text-xs underline underline-offset-2"
+                          onClick={() => {
+                            setHoja([])
+                            setSueltosContados('')
+                            setTotalContado('')
+                          }}
+                        >
+                          Volver a contar de una sola forma
+                        </button>
+                      </div>
+                    )
+                  ) : null}
+                </>
               ) : (
                 <Input
                   label={
