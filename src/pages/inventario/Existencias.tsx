@@ -1531,14 +1531,26 @@ export function Existencias() {
                       />
 
                       {/*
-                          `minmax(0,1fr)` y no `1fr`: una columna de rejilla no
-                          baja de su contenido minimo salvo que se le diga, y es
-                          lo que deja que un rotulo largo empuje a la de al lado
-                          en vez de encogerse. Con esto, si el sitio vuelve a
-                          faltar, el campo se estrecha — que se lee mal pero se
-                          lee— en lugar de encimarse.
-                        */}
-                        <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                        DOS COLUMNAS Y LA MONEDA DEBAJO, NO TRES EN FILA.
+
+                        Christopher, con la captura: «detalle visual». El renglón
+                        iba en tres columnas y cada una lleva dentro su propio
+                        par campo-selector, así que en la práctica eran seis
+                        cajas en una línea. La del costo quedaba tan estrecha que
+                        «Costo por L» se partía en tres renglones, una palabra
+                        por línea.
+
+                        Cantidad y costo son gemelos y se leen en pareja: van
+                        uno al lado del otro y en columnas iguales. La moneda es
+                        una sola palabra y no necesita compartir fila con nadie:
+                        baja, y de paso deja de comerle sitio al costo.
+
+                        `minmax(0,1fr)` y no `1fr`: una columna de rejilla no
+                        baja de su contenido mínimo salvo que se le diga, y es lo
+                        que deja que un rótulo largo empuje a la de al lado en vez
+                        de encogerse.
+                      */}
+                        <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                         {/*
                           Aqui es donde mas falta hacia: quien registra la
                           entrada esta contando bultos bajados de un camion y
@@ -1627,6 +1639,7 @@ export function Existencias() {
                             base con la tasa del día. */}
                         <Select
                           label="Moneda"
+                          className="sm:col-span-2 sm:max-w-40"
                           value={r.moneda}
                           onChange={(e) =>
                             setRenglones((lista) =>
