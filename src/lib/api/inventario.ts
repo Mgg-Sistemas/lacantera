@@ -943,6 +943,16 @@ export function useTransferir() {
       cantidad: number
       motivo: string
       fecha?: string
+      /*
+        LO QUE SE TECLEÓ, cuando se contó en envases. Se manda además del total
+        y no en su lugar: la base rehace la cuenta con `en_unidad_base` —el
+        mismo ayudante que usan la entrada y la salida— y deja las tres cifras
+        al lado de las dos patas del traslado. Un asiento que solo guarda «213
+        L» no le dice nada a quien cargó un tambor y cinco litros.
+      */
+      presentaciones?: number | null
+      presentacion?: string | null
+      suelto?: number | null
     }) =>
       rpc<number>('transferir_existencia', {
         p_origen_id: t.origen_id,
@@ -951,6 +961,9 @@ export function useTransferir() {
         p_cantidad: t.cantidad,
         p_motivo: t.motivo,
         p_fecha: t.fecha || null,
+        p_presentaciones: t.presentaciones ?? null,
+        p_presentacion: t.presentacion || null,
+        p_suelto: t.suelto ?? null,
       }),
   )
 }

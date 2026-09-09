@@ -1,14 +1,19 @@
 import { useMemo, useState } from 'react'
 import { ArrowRight, MoveRight, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { useArticulos, useMisRoles } from '@/lib/api/catalogo'
+import {
+  conSusFormas,
+  useArticulos,
+  useMisRoles,
+  useTodasLasPresentaciones,
+} from '@/lib/api/catalogo'
 import {
   useAlmacenes,
   useExistencias,
@@ -18,7 +23,25 @@ import {
 } from '@/lib/api/inventario'
 import { fechaHora } from '@/lib/formato'
 
-const VACIO = { origen: '', destino: '', articulo: '', cantidad: '', motivo: '' }
+/*
+  EL RENGLÓN GUARDA EL TOTAL Y ADEMÁS LO QUE SE TECLEÓ.
+
+  `cantidad` es la suma en la unidad de operación —es lo que mira el botón y la
+  comprobación de que alcanza— y las tres de abajo son lo que la persona contó.
+  Se mandan las dos cosas: la base rehace la cuenta y anota al lado del asiento
+  «1 TAMBOR y 5 L» junto a «213 L». Mandando solo el total, el traslado le diría
+  213 a quien cargó un tambor.
+*/
+const VACIO = {
+  origen: '',
+  destino: '',
+  articulo: '',
+  cantidad: '',
+  motivo: '',
+  presentaciones: null as number | null,
+  presentacion: null as string | null,
+  suelto: '',
+}
 
 /**
  * Mover material de un sitio a otro.
@@ -33,6 +56,7 @@ export function Transferencias() {
   const { data: articulos } = useArticulos()
   const { puede } = useMisRoles()
   const transferir = useTransferir()
+  const { data: formasDeContar } = useTodasLasPresentaciones()
   const reversar = useReversarMovimiento()
 
   const [form, setForm] = useState(VACIO)
@@ -89,6 +113,9 @@ export function Transferencias() {
         articulo_id: Number(form.articulo),
         cantidad,
         motivo: form.motivo.trim(),
+        presentaciones: form.presentaciones,
+        presentacion: form.presentacion,
+        suelto: form.suelto ? Number(form.suelto.replace(',', '.')) : null,
       })
       setForm(VACIO)
       setAbierto(false)
@@ -283,22 +310,39 @@ export function Transferencias() {
                 detalle: `${a.categoria} · ${a.unidad}`,
               }))}
           />
-          <Input
-            label="Cantidad"
-            type="number"
-            inputMode="decimal"
-            value={form.cantidad}
-            onChange={(e) => cambiar({ cantidad: e.target.value })}
+          {/*
+            SE CUENTA EN ENVASES, COMO EN LA ENTRADA Y EN LA SALIDA.
+
+            Christopher: «¿es posible hacer una transferencia o traslado para
+            otro almacén de un item y que solo sean pailas o tambores o ambos?».
+            No lo era: ésta era la única de las cuatro puertas del inventario que
+            pedía una cifra pelada, y justo la que se usa con los envases
+            delante, cargándolos en la camioneta, sin ninguna factura que mirar.
+
+            Para mover un tambor Y tres pailas se hacen dos traslados. No es una
+            carencia: son dos hechos, y un solo asiento mezclado diría «455 L»
+            sin decir qué envases se movieron.
+          */}
+          <CantidadDeArticulo
+            key={form.articulo}
+            valor={form.cantidad}
+            onCambiar={(v, cap) =>
+              cambiar({
+                cantidad: v,
+                presentaciones: cap.presentaciones,
+                presentacion: cap.unidad,
+                suelto: String(cap.sueltas ?? ''),
+              })
+            }
+            articulo={conSusFormas(
+              articulos?.find((a) => String(a.id) === form.articulo),
+              formasDeContar,
+            )}
+            hintSinArticulo="Elige almacén y artículo para ver cuánto hay."
             hint={
-              disponible === null
-                ? 'Elige almacén y artículo para ver cuánto hay.'
-                : `Disponible: ${disponible.toLocaleString('es-VE')}`
+              disponible === null ? undefined : `Disponible: ${disponible.toLocaleString('es-VE')}`
             }
-            error={
-              disponible !== null && cantidad > disponible
-                ? `Solo hay ${disponible.toLocaleString('es-VE')}.`
-                : undefined
-            }
+            required
           />
         </div>
 
