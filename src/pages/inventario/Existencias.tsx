@@ -1326,7 +1326,15 @@ export function Existencias() {
 
             El conteo y la baja siguen en `sm` a proposito: son de un campo.
           */
-          ancho={modal.tipo === 'salidas' || modal.tipo === 'entrada' ? 'md' : 'sm'}
+          /*
+            SALIDAS Y ENTRADAS PIDEN SITIO, y se vio en pantalla antes que en el
+            código: el renglón lleva artículo, sitio, cantidad, en qué envase se
+            teclea y los sueltos que acompañan. En `md` las cajas salían
+            aplastadas una contra otra y el selector de envase se comía el campo
+            de cantidad. Los demás modales de aquí siguen en `sm` porque piden
+            una cosa sola.
+          */
+          ancho={modal.tipo === 'salidas' || modal.tipo === 'entrada' ? 'lg' : 'sm'}
           acciones={
             <>
               <Button variant="ghost" onClick={() => setModal(null)}>

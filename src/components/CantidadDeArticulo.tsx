@@ -239,6 +239,14 @@ export function CantidadDeArticulo({
 
   const enEspanol = (n: number) => n.toLocaleString('es-VE', { maximumFractionDigits: 4 })
 
+  /*
+    La pista de la fila, calculada una vez. Va al campo cuando está solo y
+    debajo de la rejilla cuando lleva selector al lado.
+  */
+  const pista = !articulo
+    ? hintSinArticulo
+    : (hint ?? (convertible ? undefined : unidad ? `En ${unidad}` : undefined))
+
   const equivale =
     usandoPresentacion && valor !== '' && Number.isFinite(Number(valor))
       ? // Los dos lados con el formato de aquí. Sin esto la línea mezclaba
@@ -268,12 +276,18 @@ export function CantidadDeArticulo({
           disabled={disabled}
           value={usandoPresentacion ? tecleado : valor}
           onChange={(e) => escribir(e.target.value)}
-          hint={
-            !articulo
-              ? hintSinArticulo
-              : (hint ??
-                (convertible ? undefined : unidad ? `En ${unidad}` : undefined))
-          }
+          /*
+            LA PISTA SALE DEL CAMPO CUANDO HAY SELECTOR AL LADO, y no es un
+            capricho de maquetación: la pista crece por debajo del campo y
+            estira su columna, así que el selector —alineado al final de la
+            fila— se descolgaba y quedaba a la altura del texto gris en vez de
+            a la del campo. Se veía torcido y lo era.
+
+            Fuera de la rejilla, las dos columnas miden lo mismo, el selector
+            queda a ras del campo y la pista pasa a ser de la fila entera, que
+            es lo que siempre fue: «Hay 208 L» habla de los dos.
+          */
+          hint={convertible ? undefined : pista}
         />
 
         {/*
@@ -334,6 +348,8 @@ export function CantidadDeArticulo({
           </label>
         ) : null}
       </div>
+
+      {convertible && pista ? <p className="text-ink/45 mt-1 text-xs">{pista}</p> : null}
 
       {/*
         LO QUE ACOMPAÑA A LOS BULTOS ENTEROS.
