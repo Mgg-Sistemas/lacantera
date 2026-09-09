@@ -895,6 +895,85 @@ export function useRegistrarBaja() {
   )
 }
 
+/*
+  QUÉ ENVASES HAY DE VERDAD AQUÍ, O POR QUÉ NO SE SABE.
+
+  Christopher: «está bien que se pueda denotar en L (base) pero lo que hay
+  realmente es un tambor (sobre la base), ¿cómo se puede expresar así con el
+  valor acorde?».
+
+  NO es una división. Dividir 208 entre 208 acierta por casualidad, y con el
+  HIDRAULICO 68 fallaba: decía «2 tambores» habiendo uno y veintiuna pailas. Esto
+  es un saldo que arranca del último conteo y aplica lo que pasó después.
+
+  Y basta un movimiento sin envase para que devuelva `confiable: false` con el
+  motivo escrito. Es lo contrario de redondear: en vez de contestar siempre y a
+  veces mentir, contesta cuando lo sabe y dice que no cuando no.
+*/
+export interface EnvasesAqui {
+  confiable: boolean
+  por_que?: string
+  desde?: string | null
+  nunca_contado?: boolean
+  unidad?: string
+  envases?: {
+    presentacion: string
+    cuantos: number
+    unidades: number
+    valor_usd: number | null
+  }[]
+  sueltos?: number
+  valor_sueltos?: number | null
+}
+
+export function useEnvasesAqui(articuloId: number | null, almacenId: number | null) {
+  return useQuery({
+    queryKey: ['envases-aqui', articuloId, almacenId],
+    enabled: articuloId !== null && almacenId !== null,
+    staleTime: 60_000,
+    queryFn: () =>
+      rpc<EnvasesAqui>('envases_aqui', {
+        p_articulo_id: articuloId!,
+        p_almacen_id: almacenId!,
+      }),
+  })
+}
+
+/*
+  TRASVASAR: cambiar de envase sin cambiar de cantidad.
+
+  Vaciar un tambor en diez pailas y 18 L sueltos para que los operadores puedan
+  moverlas. La base exige que las dos orillas den el mismo volumen, así que un
+  trasvase mal contado no se puede anotar.
+*/
+export function useReenvasar() {
+  return useAccionInventario((r: {
+    almacen_id: number
+    articulo_id: number
+    desde_presentacion: string | null
+    desde_cantidad: number
+    desde_suelto?: number
+    hacia_presentacion: string | null
+    hacia_cantidad: number
+    hacia_suelto?: number
+    motivo: string
+    fecha?: string
+  }) =>
+    rpc<number>('reenvasar', {
+      p_almacen_id: r.almacen_id,
+      p_articulo_id: r.articulo_id,
+      p_desde_presentacion: r.desde_presentacion,
+      p_desde_cantidad: r.desde_cantidad,
+      p_desde_suelto: r.desde_suelto ?? 0,
+      p_hacia_presentacion: r.hacia_presentacion,
+      p_hacia_cantidad: r.hacia_cantidad,
+      p_hacia_suelto: r.hacia_suelto ?? 0,
+      p_motivo: r.motivo,
+      p_fecha: r.fecha || null,
+    }),
+  )
+}
+
 export function useRegistrarAjuste() {
   return useAccionInventario(
     (a: {
