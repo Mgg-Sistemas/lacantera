@@ -57,6 +57,7 @@ import {
   useExistenciasDeArticulo,
   useExistenciasTotales,
   useMovimientos,
+  useEnvasesAqui,
   useRegistrarAjuste,
   useRegistrarBaja,
   CAUSAS_DE_BAJA,
@@ -100,6 +101,23 @@ function contadoLegible(l: {
   return Number(l.suelto_capturado)
     ? `${bultos} y ${cantidad(l.suelto_capturado!)} ${l.unidad}`
     : bultos
+}
+
+/*
+  EL PLURAL, QUE EN CASTELLANO NO ES SIEMPRE UNA ESE.
+
+  «2 tambors» delata que lo escribió una máquina. Terminadas en vocal llevan -s y
+  en consonante -es, y al añadir -es la tilde de la última sílaba se cae: bidón da
+  bidones, no bidónes. La eñe se queda donde está.
+
+  Volvió a hacer falta al enseñar los envases que de verdad hay, que ya no son
+  una división sino un conteo: ahí las palabras se leen enteras.
+*/
+const SIN_TILDE: Record<string, string> = { á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u' }
+
+function plural(palabra: string): string {
+  if (/[aeiouáéíóú]$/i.test(palabra)) return `${palabra}s`
+  return `${palabra.replace(/[áéíóú]/gi, (c) => SIN_TILDE[c.toLowerCase()] ?? c)}es`
 }
 
 function monto(valor: number): string {
@@ -2354,6 +2372,67 @@ function Franja({
 }
 
 /*
+  QUÉ ENVASES HAY AQUÍ DE VERDAD — O POR QUÉ NO SE SABE.
+
+  Christopher: «está bien que se pueda denotar en L (base) pero lo que hay
+  realmente es un tambor (sobre la base), ¿cómo se puede expresar así con el
+  valor acorde?».
+
+  Y esto NO es la equivalencia que quitamos: no divide la existencia entre el
+  factor. Es un saldo que arranca del último conteo —donde alguien estuvo delante
+  del estante— y aplica lo que pasó después: entradas, salidas y traslados que
+  dijeron su envase, y trasvases.
+
+  LO QUE LO HACE HONESTO ES QUE SE CALLA. Basta un movimiento sin envase para que
+  la base devuelva «no se sabe» con el motivo escrito, y entonces aquí se enseña
+  el motivo en vez de un número. Una cifra que a veces miente es peor que
+  ninguna: con la primera nadie puede trabajar, con la segunda sí.
+*/
+function QueHayAqui({ articuloId, almacenId }: { articuloId: number; almacenId: number }) {
+  const { data } = useEnvasesAqui(articuloId, almacenId)
+  if (!data) return null
+
+  if (!data.confiable) {
+    /*
+      Se dice por qué no se sabe, pero en gris y pequeño: es una advertencia
+      sobre el detalle, no sobre la existencia. Los litros de arriba son exactos
+      y siguen siendo la verdad del libro.
+    */
+    return data.por_que ? (
+      <p className="text-ink/40 text-2xs mt-1 leading-relaxed">{data.por_que}</p>
+    ) : null
+  }
+
+  const envases = data.envases ?? []
+  const sueltos = Number(data.sueltos ?? 0)
+  if (envases.length === 0 && sueltos <= 0) return null
+
+  return (
+    <div className="mt-1 space-y-0.5">
+      {envases.map((e) => (
+        <p key={e.presentacion} className="text-ink/60 text-xs">
+          <span className="text-ink/85 tabular font-medium">{cantidad(e.cuantos)}</span>{' '}
+          {e.cuantos === 1 ? e.presentacion.toLowerCase() : plural(e.presentacion.toLowerCase())}
+          {e.valor_usd !== null ? ` · ${dolares(e.valor_usd)}` : ''}
+        </p>
+      ))}
+      {sueltos > 0 ? (
+        <p className="text-ink/50 text-xs">
+          y {cantidad(sueltos)} {data.unidad} sueltos
+          {data.valor_sueltos != null ? ` · ${dolares(data.valor_sueltos)}` : ''}
+        </p>
+      ) : null}
+      {/* De dónde sale el dato, que es lo que lo separa de una división. */}
+      <p className="text-ink/35 text-2xs">
+        {data.nunca_contado
+          ? 'Según lo que entró y salió con su envase anotado'
+          : `Contado el ${data.desde ?? ''}, más lo que se movió después`}
+      </p>
+    </div>
+  )
+}
+
+/*
   CÓMO ENTRÓ ESTE ARTÍCULO A ESTE ALMACÉN.
 
   Una línea por envase con el que se compró aquí, con lo que costó ese envase y
@@ -2472,6 +2551,7 @@ function ModalDesglose({
                     el envase, el precio y el día. Un hecho cabe en una pantalla
                     de existencias; una suposición no.
                   */}
+                  <QueHayAqui articuloId={f.articulo_id} almacenId={f.almacen_id} />
                   <ComoEntroAqui articuloId={f.articulo_id} almacenId={f.almacen_id} />
 
                 </div>
