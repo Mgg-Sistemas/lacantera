@@ -123,8 +123,23 @@ function plural(palabra: string): string {
   de operación —es lo único que se mide al entrar y al salir— pero nadie camina
   por el almacén contando litros: camina contando tambores.
 
-  Se enseña la presentación PROPUESTA y no todas: son cuatro columnas de tabla y
-  se llenaría de ruido. Las demás están en la ficha del artículo, con su valor.
+  SE ENSEÑAN HASTA DOS FORMAS Y NO UNA, y el motivo lo levantó Christopher con la
+  captura delante: el ACEITE HIDRAULICO 68 salía como «≈ 31 pailas y 15 L» cuando
+  lo que hay es un tambor y el resto en pailas.
+
+  Es un hueco de fondo, no un descuido de pintura. `articulo_presentaciones` no
+  tiene `almacen_id`: las formas de contar son DEL ARTÍCULO y no del sitio, y así
+  debe ser —una paila trae 19 litros aquí y en el patio—. Pero de ahí salía que
+  la pantalla eligiera una por su cuenta y la diera por buena.
+
+  Y NO SE ARREGLA SABIENDO MÁS, porque el sistema no lo sabe ni puede: lleva
+  litros, no envases. Quien recibió dos tambores y quien recibió veintiún pailas
+  dejaron el mismo rastro si los litros coinciden. Tampoco se puede repartir en
+  cascada —«1 tambor y 21 pailas»— sin inventarse el reparto.
+
+  Lo que sí se puede es dejar de elegir por la persona: se enseñan las dos
+  equivalencias completas y lee la que corresponde a lo que tiene delante, que es
+  la única que lo sabe. Dos y no todas: en una tabla, la tercera línea no se lee.
 
   VA CON UN «≈» DELANTE, y no es adorno. Es una equivalencia, no un conteo: los
   factores son aproximados —Christopher, el 9/09: la paila trae 19 litros «de
@@ -137,21 +152,23 @@ function enEnvases(
   articuloId: number,
   formas: PresentacionDeArticulo[] | undefined,
   unidad: string,
-): string | null {
-  const suyas = (formas ?? []).filter((f) => f.articulo_id === articuloId && f.activa)
-  if (suyas.length === 0 || existencia <= 0) return null
+): string[] {
+  if (existencia <= 0) return []
 
-  const elegida = suyas.find((f) => f.por_defecto) ?? suyas[0]
-  const por = Number(elegida.unidades)
-  if (!(por > 0) || por === 1) return null
-
-  const enteros = Math.trunc(existencia / por)
-  const resto = Number((existencia - enteros * por).toFixed(4))
-  const nombre = elegida.presentacion.toLowerCase()
-
-  return `≈ ${cantidad(enteros)} ${enteros === 1 ? nombre : plural(nombre)}${
-    resto > 0 ? ` y ${cantidad(resto)} ${unidad}` : ''
-  }`
+  return (formas ?? [])
+    .filter((f) => f.articulo_id === articuloId && f.activa && Number(f.unidades) > 1)
+    // La propuesta primero: es la que acierta casi siempre.
+    .sort((a, b) => Number(b.por_defecto) - Number(a.por_defecto))
+    .slice(0, 2)
+    .map((f) => {
+      const por = Number(f.unidades)
+      const enteros = Math.trunc(existencia / por)
+      const resto = Number((existencia - enteros * por).toFixed(4))
+      const nombre = f.presentacion.toLowerCase()
+      return `≈ ${cantidad(enteros)} ${enteros === 1 ? nombre : plural(nombre)}${
+        resto > 0 ? ` y ${cantidad(resto)} ${unidad}` : ''
+      }`
+    })
 }
 
 function monto(valor: number): string {
@@ -1059,16 +1076,19 @@ export function Existencias() {
                           </Chip>
                         ) : null}
 
-                        {/* Los mismos litros, dichos en envases. */}
-                        {(() => {
-                          const eq = enEnvases(
-                            Number(e.existencia),
-                            e.articulo_id,
-                            formasDeContar,
-                            e.unidad,
-                          )
-                          return eq ? <p className="text-ink/50 text-xs">{eq}</p> : null
-                        })()}
+                        {/* Los mismos litros, dichos en cada envase que el
+                            artículo declara. Ninguna es «la buena»: son la
+                            misma cantidad mirada de dos maneras. */}
+                        {enEnvases(
+                          Number(e.existencia),
+                          e.articulo_id,
+                          formasDeContar,
+                          e.unidad,
+                        ).map((linea) => (
+                          <p key={linea} className="text-ink/50 text-xs">
+                            {linea}
+                          </p>
+                        ))}
 
                         {/*
                           EXISTIR NO ES ESTAR DISPONIBLE
@@ -2302,8 +2322,25 @@ function Franja({
 
   Es un componente y no un trozo suelto porque necesita su propia consulta: las
   formas de contar de un artículo. Dentro de una lista de almacenes se pediría
-  una vez por almacén, pero react-query las junta bajo la misma clave, así que
-  es una sola llamada por artículo aunque el material esté en cinco sitios.
+  una vez por almacén, pero react-query las junta bajo la misma clave, así que es
+  una sola llamada por artículo aunque el material esté en cinco sitios.
+
+  SE ENSEÑAN TODAS LAS FORMAS, NO SOLO LA PROPUESTA, y lo levantó Christopher con
+  un caso que no se me había ocurrido: «¿cómo procede en el caso de que en un
+  almacén tengo pailas y en otro tengo tambores?».
+
+  Es un hueco real y de fondo. `articulo_presentaciones` no tiene `almacen_id`:
+  las formas de contar son DEL ARTÍCULO, no del sitio, y así debe ser —una paila
+  trae 19 litros en el almacén general y en el patio también—. Pero de ahí salía
+  que la tarjeta enseñara «≈ 21 pailas» en el almacén donde hay dos tambores.
+
+  Y NO SE PUEDE ARREGLAR SABIENDO MÁS, porque el sistema no lo sabe: lleva litros
+  y no envases. Quien recibió dos tambores y quien recibió diez pailas dejaron el
+  mismo rastro si los litros coinciden.
+
+  Lo que sí se puede es no elegir por él. Se enseñan las dos equivalencias y la
+  persona lee la que corresponde a lo que tiene delante, que además es la única
+  que puede saberlo. Tres como mucho: a partir de ahí la tarjeta deja de leerse.
 */
 function EnEnvasesDeAqui({
   articuloId,
@@ -2318,24 +2355,31 @@ function EnEnvasesDeAqui({
 }) {
   const { data } = usePresentacionesDeArticulo(articuloId)
 
-  const suyas = (data ?? []).filter((p) => p.activa && Number(p.unidades) > 1)
+  const suyas = (data ?? [])
+    .filter((p) => p.activa && Number(p.unidades) > 1)
+    // La propuesta primero: es la que acierta casi siempre.
+    .sort((a, b) => Number(b.por_defecto) - Number(a.por_defecto))
+    .slice(0, 3)
+
   if (suyas.length === 0 || existencia <= 0) return null
 
-  const elegida = suyas.find((p) => p.por_defecto) ?? suyas[0]
-  const por = Number(elegida.unidades)
-  const enteros = Math.trunc(existencia / por)
-  const resto = Number((existencia - enteros * por).toFixed(4))
-  const nombre = elegida.presentacion.toLowerCase()
-
   return (
-    <p className="text-ink/50 text-xs">
-      ≈ <span className="tabular">{cantidad(enteros)}</span>{' '}
-      {enteros === 1 ? nombre : plural(nombre)}
-      {resto > 0 ? ` y ${cantidad(resto)} ${unidad}` : ''}
-      {costoPorUnidad !== null
-        ? ` · ${dolares(costoPorUnidad * por)} el ${nombre}`
-        : ''}
-    </p>
+    <>
+      {suyas.map((p) => {
+        const por = Number(p.unidades)
+        const enteros = Math.trunc(existencia / por)
+        const resto = Number((existencia - enteros * por).toFixed(4))
+        const nombre = p.presentacion.toLowerCase()
+        return (
+          <p key={p.id} className="text-ink/50 text-xs">
+            ≈ <span className="tabular">{cantidad(enteros)}</span>{' '}
+            {enteros === 1 ? nombre : plural(nombre)}
+            {resto > 0 ? ` y ${cantidad(resto)} ${unidad}` : ''}
+            {costoPorUnidad !== null ? ` · ${dolares(costoPorUnidad * por)} el ${nombre}` : ''}
+          </p>
+        )
+      })}
+    </>
   )
 }
 
