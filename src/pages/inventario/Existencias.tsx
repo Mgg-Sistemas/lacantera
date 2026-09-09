@@ -10,6 +10,7 @@ import {
   Printer,
   Scale,
   Search,
+  Shuffle,
   TriangleAlert,
   Trash2,
   Wrench,
@@ -40,9 +41,11 @@ import {
   useArticulos,
   useMisRoles,
   useCostoPorPresentacion,
+  usePresentacionesDeArticulo,
   useTodasLasPresentaciones,
 } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
+import { ModalTrasvase } from './ModalTrasvase'
 import { ConteoDeEnvases } from '@/components/ConteoDeEnvases'
 import type { LineaDeConteo } from '@/components/ConteoDeEnvases'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
@@ -385,6 +388,8 @@ export function Existencias() {
   /* Que fila se esta corrigiendo de valoracion. Va aparte de `modal` porque no
      comparte ni el formulario ni el permiso con las cuatro acciones de almacen. */
   const [costo, setCosto] = useState<Existencia | null>(null)
+  /* El trasvase: cambiar de envase sin cambiar de cantidad. */
+  const [trasvase, setTrasvase] = useState<Existencia | null>(null)
   const [modal, setModal] = useState<
     null | { tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada' | 'baja'; fila: Existencia | null }
   >(null)
@@ -1214,11 +1219,17 @@ export function Existencias() {
 
       {costo ? <ModalCorregirCosto fila={costo} onCerrar={() => setCosto(null)} /> : null}
 
+      <ModalTrasvase fila={trasvase} onCerrar={() => setTrasvase(null)} />
+
       <ModalDesglose
         articulo={desglose}
         onCerrar={() => setDesglose(null)}
         puedeMover={puede('ALMACEN')}
         puedeCorregirCosto={puedeAccion('INVENTARIO.AJUSTAR_COSTO')}
+        onTrasvasar={(f) => {
+          setDesglose(null)
+          setTrasvase(f)
+        }}
         onCorregirCosto={(f) => {
           setDesglose(null)
           setCosto(f)
@@ -2493,6 +2504,7 @@ function ModalDesglose({
   onSacar,
   onContar,
   onCorregirCosto,
+  onTrasvasar,
 }: {
   articulo: ExistenciaTotal | null
   onCerrar: () => void
@@ -2501,8 +2513,12 @@ function ModalDesglose({
   onSacar: (fila: Existencia) => void
   onContar: (fila: Existencia) => void
   onCorregirCosto: (fila: Existencia) => void
+  onTrasvasar: (fila: Existencia) => void
 }) {
   const { data, isPending, error } = useExistenciasDeArticulo(articulo?.articulo_id ?? null)
+  /* Un artículo, una consulta: las formas son suyas y no del sitio. */
+  const { data: formasDelArticulo } = usePresentacionesDeArticulo(articulo?.articulo_id ?? null)
+  const tieneEnvases = (formasDelArticulo ?? []).some((x) => x.activa)
 
   return (
     <Modal
@@ -2576,6 +2592,31 @@ function ModalDesglose({
                       >
                         Contar
                       </Button>
+
+                      {/*
+                        CAMBIAR DE ENVASE, JUNTO A CONTAR Y NO ENTRE LAS SALIDAS.
+
+                        Christopher: «más fácil mover pailas que un tambor al
+                        final». Va aquí porque es hermano del conteo: los dos
+                        hablan de la forma y ninguno cambia la cantidad. Entre
+                        las salidas habría que explicar en cada renglón que ésta
+                        no resta.
+
+                        Solo con envases declarados: sin ellos no hay dos orillas
+                        entre las que trasvasar, y el botón sería una promesa que
+                        el modal no puede cumplir.
+                      */}
+                      {tieneEnvases ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          icon={<Shuffle />}
+                          disabled={vacio}
+                          onClick={() => onTrasvasar(f)}
+                        >
+                          Cambiar de envase
+                        </Button>
+                      ) : null}
                     </>
                   ) : null}
 
