@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Cargando } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
 import { Historial } from '@/components/Historial'
+import { ValorPorPresentacion } from '@/components/ValorPorPresentacion'
 import { useArticulos } from '@/lib/api/catalogo'
 import { useHistorialArticulo, useExistenciasTotales } from '@/lib/api/inventario'
 import { enteros } from '@/lib/formato'
@@ -131,6 +132,17 @@ export function FichaArticulo() {
           </p>
         </Card>
       </div>
+
+      {/* --------------------- Lo mismo, dicho en envases ----------------------
+          Va justo debajo del vistazo y encima de la historia: quien abre esta
+          página por «cuánto queda» lo tiene sin bajar, y quien viene por «qué
+          pasó» sigue teniendo la historia a un golpe de rueda. */}
+      <ValorPorPresentacion
+        articuloId={articuloId}
+        unidad={a.unidad}
+        existencia={Number(t?.existencia ?? 0)}
+        costoPorUnidad={t?.costo_promedio_usd == null ? null : Number(t.costo_promedio_usd)}
+      />
 
       {/* -------------------------------- La historia -------------------------------
           Antes esto eran noventa líneas aquí mismo. Se mudó a <Historial>, que
