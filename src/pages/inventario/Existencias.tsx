@@ -39,6 +39,7 @@ import {
   conSusFormas,
   useArticulos,
   useMisRoles,
+  usePresentacionesDeArticulo,
   useTodasLasPresentaciones,
 } from '@/lib/api/catalogo'
 import type { PresentacionDeArticulo } from '@/lib/api/catalogo'
@@ -2288,6 +2289,48 @@ function Franja({
   )
 }
 
+/*
+  LA LÍNEA DE ENVASES DE UN ALMACÉN, DENTRO DEL DESGLOSE.
+
+  Es un componente y no un trozo suelto porque necesita su propia consulta: las
+  formas de contar de un artículo. Dentro de una lista de almacenes se pediría
+  una vez por almacén, pero react-query las junta bajo la misma clave, así que
+  es una sola llamada por artículo aunque el material esté en cinco sitios.
+*/
+function EnEnvasesDeAqui({
+  articuloId,
+  unidad,
+  existencia,
+  costoPorUnidad,
+}: {
+  articuloId: number
+  unidad: string
+  existencia: number
+  costoPorUnidad: number | null
+}) {
+  const { data } = usePresentacionesDeArticulo(articuloId)
+
+  const suyas = (data ?? []).filter((p) => p.activa && Number(p.unidades) > 1)
+  if (suyas.length === 0 || existencia <= 0) return null
+
+  const elegida = suyas.find((p) => p.por_defecto) ?? suyas[0]
+  const por = Number(elegida.unidades)
+  const enteros = Math.trunc(existencia / por)
+  const resto = Number((existencia - enteros * por).toFixed(4))
+  const nombre = elegida.presentacion.toLowerCase()
+
+  return (
+    <p className="text-ink/50 text-xs">
+      ≈ <span className="tabular">{cantidad(enteros)}</span>{' '}
+      {enteros === 1 ? nombre : plural(nombre)}
+      {resto > 0 ? ` y ${cantidad(resto)} ${unidad}` : ''}
+      {costoPorUnidad !== null
+        ? ` · ${dolares(costoPorUnidad * por)} el ${nombre}`
+        : ''}
+    </p>
+  )
+}
+
 /**
  * En qué sitios está repartido un artículo, y qué se puede hacer en cada uno.
  *
@@ -2347,6 +2390,25 @@ function ModalDesglose({
                     <span className="tabular">{cantidad(f.existencia)}</span> {f.unidad}
                     {f.costo_promedio_usd ? ` · ${dolares(f.costo_promedio_usd)} c/u` : ''}
                   </p>
+
+                  {/*
+                    LO MISMO EN ENVASES, Y CUÁNTO VALE UNO.
+
+                    Christopher, con esta tarjeta delante: «hace falta así mismo
+                    identificar en esta tarjeta... es importante que se pueda
+                    expresar el valor en la unidad correspondiente». Aquí se está
+                    decidiendo si sacar material de este sitio, y «604 L» no dice
+                    cuántos tambores hay que bajar del estante ni qué se está
+                    moviendo en dinero.
+                  */}
+                  <EnEnvasesDeAqui
+                    articuloId={f.articulo_id}
+                    unidad={f.unidad}
+                    existencia={Number(f.existencia)}
+                    costoPorUnidad={
+                      f.costo_promedio_usd == null ? null : Number(f.costo_promedio_usd)
+                    }
+                  />
                 </div>
 
                 <div className="flex gap-1">

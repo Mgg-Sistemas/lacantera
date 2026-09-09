@@ -676,6 +676,45 @@ export function conSusFormas<T extends { id: number }>(
   }
 }
 
+/*
+  A CUÁNTO SALIÓ EL LITRO CADA VEZ QUE SE COMPRÓ, Y EN QUÉ ENVASE.
+
+  Christopher: «denotar en caso el precio de ese item en esa otra unidad es
+  diferente (imaginando el caso de que existan dos compras en tiempos distintos,
+  donde se compre tambor y otra donde se compre en galón o paila, sus precios en
+  litro serían diferentes aunque fuera el mismo producto)».
+
+  NO es un segundo costo del inventario. El inventario se valora al promedio, que
+  es una sola cifra, porque una vez en el almacén no hay dos montones y nadie
+  puede decir de cuál compra salieron los litros que salen. Esto es el rastro de
+  cómo se formó ese promedio: la diferencia entre comprar al mayor y comprar al
+  detal deja de estar escondida dentro de una media.
+*/
+export interface CostoDeUnEnvase {
+  /** Nulo cuando la compra se hizo en la unidad de operación. */
+  presentacion: string | null
+  /** Cuántas unidades de operación trae ese envase hoy. Nulo si ya no se declara. */
+  unidades: string | null
+  veces: number
+  cantidad_base: string
+  costo_base: string
+  costo_envase: string | null
+  primera: string
+  ultima: string
+  /** La valoración se corrigió después: el asiento de entrada guarda el número viejo. */
+  corregido_despues: boolean
+}
+
+export function useCostoPorPresentacion(articuloId: number | null) {
+  return useQuery({
+    queryKey: ['costo-por-presentacion', articuloId],
+    enabled: articuloId !== null,
+    staleTime: 60_000,
+    queryFn: () =>
+      rpc<CostoDeUnEnvase[]>('costo_por_presentacion', { p_articulo_id: articuloId! }),
+  })
+}
+
 export function useGuardarPresentacionDeArticulo() {
   const qc = useQueryClient()
   return useMutation({
