@@ -1,5 +1,15 @@
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Download, History, Search, ShieldCheck, X } from 'lucide-react'
+import type { ReactNode } from 'react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Download,
+  History,
+  Search,
+  ShieldCheck,
+  X,
+} from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -13,12 +23,17 @@ import {
   TONO,
   VERBOS,
   cambiosDeFondo,
+  camposApartados,
   camposOrdenados,
+  camposSinCambiar,
+  copiarEvento,
+  jsonDeEvento,
   narracion,
   nombreApuntado,
   nombreDeCampo,
   nombreDeTabla,
   useAuditoria,
+  textoDeEvento,
   useNombresDeAuditoria,
   useTablasAuditadas,
   valorLegible,
@@ -36,6 +51,7 @@ import type {
 import { usePerfiles } from '@/lib/api/catalogo'
 import { usePresencia } from '@/lib/api/usuarios'
 import { fechaHora, hace } from '@/lib/formato'
+import { cn } from '@/lib/cn'
 
 const OPERACIONES: { valor: Operacion; etiqueta: string }[] = [
   { valor: 'INSERT', etiqueta: 'Creaciones' },
@@ -512,7 +528,12 @@ export function Auditoria() {
           titulo={frase(detalle)}
           descripcion={`${detalle.nombre ?? detalle.usuario} · ${fechaHora(detalle.ocurrido_en)}`}
           ancho="lg"
-          acciones={<Button onClick={() => setDetalle(null)}>Cerrar</Button>}
+          acciones={
+            <>
+              <CopiarEvento movimiento={detalle} />
+              <Button onClick={() => setDetalle(null)}>Cerrar</Button>
+            </>
+          }
         >
           <dl className="border-hairline mb-5 grid gap-x-6 gap-y-2 rounded-[6px] border p-4 text-sm sm:grid-cols-2">
             <div>
@@ -532,6 +553,29 @@ export function Auditoria() {
               <div className="sm:col-span-2">
                 <dt className="text-ink/45 text-xs">Referencia</dt>
                 <dd className="text-ink/80">{detalle.etiqueta}</dd>
+              </div>
+            ) : null}
+            {/*
+              LO QUE EL ASIENTO GUARDA Y LA FICHA NO ENSEÑABA.
+
+              El módulo contesta «¿qué pasó ayer en Nómina?» sin saberse qué
+              tablas son de Nómina; el motivo es el porqué que alguien escribió
+              al hacerlo, y es lo primero que se busca cuando algo no cuadra; y
+              el número del asiento es con lo que se señala este renglón en una
+              conversación. Estaban guardados y no se veían.
+            */}
+            <div>
+              <dt className="text-ink/45 text-xs">Módulo</dt>
+              <dd className="text-ink/80">{detalle.modulo ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-ink/45 text-xs">Asiento</dt>
+              <dd className="text-ink/80 tabular">n.º {detalle.id}</dd>
+            </div>
+            {detalle.motivo ? (
+              <div className="sm:col-span-2">
+                <dt className="text-ink/45 text-xs">Por qué se hizo</dt>
+                <dd className="text-ink/85">{detalle.motivo}</dd>
               </div>
             ) : null}
             <div>
@@ -563,9 +607,48 @@ export function Auditoria() {
               importan. Un alta o un borrado sí van completos, porque ahí la
               fila entera ES la noticia. */}
           <Explicado movimiento={detalle} />
+
+          <EnCrudo movimiento={detalle} />
         </Modal>
       ) : null}
     </>
+  )
+}
+
+/*
+  COPIAR UN SOLO EVENTO.
+
+  Lo pidió Christopher: «¿qué pasa si solo quiero hacer el copy de un evento
+  puntual?». Se podía copiar el registro entero filtrado —hasta cinco mil
+  filas— y no se podía copiar uno, que es lo que se necesita a diario para
+  mandárselo a alguien.
+
+  Sale como texto plano y con todo dentro: la frase, quién, cuándo, desde dónde,
+  el módulo, el porqué y los campos con sus nombres resueltos. Quien lo pega no
+  es un programa, es una persona, y lo va a leer fuera del sistema.
+*/
+function CopiarEvento({ movimiento }: { movimiento: Movimiento }) {
+  const { data: nombres } = useNombresDeAuditoria(movimiento.id)
+  const [copiado, setCopiado] = useState(false)
+
+  return (
+    <Button
+      variant="outline"
+      icon={<Copy />}
+      onClick={async () => {
+        const texto = textoDeEvento(movimiento, {
+          frase: narracion(movimiento, (campo, valor) =>
+            nombreApuntado(nombres, campo, valor),
+          ),
+          nombreDeTabla,
+          nombreDeCampo,
+          nombreApuntado: (campo, valor) => nombreApuntado(nombres, campo, valor),
+        })
+        setCopiado(await copiarEvento(texto))
+      }}
+    >
+      {copiado ? 'Copiado' : 'Copiar este evento'}
+    </Button>
   )
 }
 
@@ -646,16 +729,37 @@ function Diferencias({
 }) {
   const campos = cambiosDeFondo(movimiento.cambios)
   const ocultos = (movimiento.cambios?.length ?? 0) - campos.length
+  const resto = camposSinCambiar(movimiento.despues ?? {}, movimiento.cambios, nombreDeCampo)
 
   // Guardar sin cambiar nada de fondo pasa: se abre una ficha, se pulsa
   // guardar y lo único que se movió fue la marca de quién guardó. Decirlo es
   // mejor que enseñar una tabla vacía, que se lee como un fallo.
   if (campos.length === 0) {
     return (
-      <p className="text-ink/55 text-sm leading-relaxed">
-        Se volvió a guardar sin cambiar ningún dato: solo se movió la marca de quién guardó y
-        cuándo, que es justo lo que dice la cabecera de arriba.
-      </p>
+      <>
+        <p className="text-ink/55 mb-3 text-sm leading-relaxed">
+          Se volvió a guardar sin cambiar ningún dato: solo se movió la marca de quién guardó y
+          cuándo, que es justo lo que dice la cabecera de arriba.
+        </p>
+        {/* Aunque no cambiara nada, la fila sigue haciendo falta: enterarse de
+            que alguien abrió y guardó ESTA fila es la mitad del dato. */}
+        <Plegado
+          cuantos={resto.length}
+          abrir={`Ver la fila como está (${resto.length})`}
+          cerrar="Ocultar la fila"
+        >
+          <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+            {resto.map(([campo, valor]) => (
+              <div key={campo} className="border-hairline border-b py-1.5">
+                <dt className="text-ink/45 text-xs">{nombreDeCampo(campo)}</dt>
+                <dd className="text-ink/70 break-words">
+                  <Valor campo={campo} valor={valor} nombres={nombres} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </Plegado>
+      </>
     )
   }
 
@@ -693,6 +797,30 @@ function Diferencias({
           cuándo—, porque es lo mismo que ya dice la cabecera.
         </p>
       ) : null}
+
+      {/*
+        EL CONTEXTO, DEBAJO DE LA NOTICIA.
+
+        «El costo pasó de 5 a 7» no dice de qué artículo ni en qué almacén, y
+        una modificación sin contexto no se puede auditar. Va plegado porque lo
+        primero que hay que ver sigue siendo lo que cambió.
+      */}
+      <Plegado
+        cuantos={resto.length}
+        abrir={`Ver el resto de la fila, que no cambió (${resto.length})`}
+        cerrar="Ocultar el resto de la fila"
+      >
+        <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+          {resto.map(([campo, valor]) => (
+            <div key={campo} className="border-hairline border-b py-1.5">
+              <dt className="text-ink/45 text-xs">{nombreDeCampo(campo)}</dt>
+              <dd className="text-ink/70 break-words">
+                <Valor campo={campo} valor={valor} nombres={nombres} />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </Plegado>
     </>
   )
 }
@@ -716,6 +844,7 @@ function FilaCompleta({
     faltaba — estaba donde nadie la ve.
   */
   const campos = camposOrdenados(fila, nombreDeCampo)
+  const apartados = camposApartados(fila, nombreDeCampo)
 
   return (
     <>
@@ -731,6 +860,125 @@ function FilaCompleta({
         ))}
       </dl>
       {campos.length === 0 ? <p className="text-ink/50 text-sm">La fila estaba vacía.</p> : null}
+
+      {/*
+        NADA DE LO QUE EL ASIENTO GUARDA QUEDA FUERA DE ALCANCE.
+
+        Arriba se aparta lo de registro y lo vacío para que se lea. Aquí se
+        devuelve, porque auditando «este campo estaba vacío» ES el dato: es
+        justo lo que se mira cuando falta una firma, una fecha o un motivo.
+      */}
+      <Plegado
+        cuantos={apartados.registro.length + apartados.vacios.length}
+        abrir="Ver también lo que se apartó: registro del guardado y campos vacíos"
+        cerrar="Ocultar lo apartado"
+      >
+        {apartados.registro.length > 0 ? (
+          <dl className="mb-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+            {apartados.registro.map(([campo, valor]) => (
+              <div key={campo} className="border-hairline border-b py-1.5">
+                <dt className="text-ink/45 text-xs">{nombreDeCampo(campo)}</dt>
+                <dd className="text-ink/70 break-words">
+                  <Valor campo={campo} valor={valor} nombres={nombres} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+
+        {apartados.vacios.length > 0 ? (
+          <p className="text-ink/50 text-xs leading-relaxed">
+            <span className="text-ink/70">Sin valor ({apartados.vacios.length}):</span>{' '}
+            {apartados.vacios.map(nombreDeCampo).join(' · ')}
+          </p>
+        ) : null}
+      </Plegado>
     </>
+  )
+}
+
+/*
+  UN PLIEGUE, PARA QUE «TODO» NO SIGNIFIQUE «UNA PARED».
+
+  La ficha tiene que enseñar todo lo que el asiento guarda —es un registro de
+  auditoría, no un resumen— y a la vez tiene que poderse leer. La salida es el
+  orden: primero lo que importa, y detrás de un botón que dice CUÁNTAS cosas
+  hay, el resto. Nunca un botón que no diga cuánto esconde: eso es lo que hace
+  que nadie lo abra.
+*/
+function Plegado({
+  cuantos,
+  abrir,
+  cerrar,
+  children,
+}: {
+  cuantos: number
+  abrir: string
+  cerrar: string
+  children: ReactNode
+}) {
+  const [visible, setVisible] = useState(false)
+  if (cuantos === 0) return null
+
+  return (
+    <div className="border-hairline mt-4 border-t pt-3">
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        className="text-ink/55 hover:text-ink/85 flex items-center gap-1.5 text-xs"
+      >
+        <ChevronRight className={cn('size-3.5 transition-transform', visible && 'rotate-90')} />
+        {visible ? cerrar : abrir}
+      </button>
+      {visible ? <div className="mt-3">{children}</div> : null}
+    </div>
+  )
+}
+
+/*
+  EL ASIENTO EN CRUDO.
+
+  Lo de arriba está escrito para leerse; esto es para cotejarse. Cuando lo que
+  se discute es el dato y no la redacción, hace falta la fila tal como está
+  guardada: nombres de columna sin traducir, valores sin formato, y las dos
+  caras —antes y después— completas.
+
+  Va cerrado. Quien lo necesita sabe que lo busca, y quien no, no debería
+  tropezarse con un bloque de JSON al abrir una ficha.
+*/
+function EnCrudo({ movimiento }: { movimiento: Movimiento }) {
+  const [visible, setVisible] = useState(false)
+  const [copiado, setCopiado] = useState(false)
+  const texto = jsonDeEvento(movimiento)
+
+  return (
+    <div className="border-hairline mt-5 border-t pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          className="text-ink/55 hover:text-ink/85 flex items-center gap-1.5 text-xs"
+        >
+          <ChevronRight className={cn('size-3.5 transition-transform', visible && 'rotate-90')} />
+          {visible ? 'Ocultar el asiento en crudo' : 'Ver el asiento en crudo, como está guardado'}
+        </button>
+        {visible ? (
+          <button
+            type="button"
+            onClick={async () => setCopiado(await copiarEvento(texto))}
+            className="text-ink/55 hover:text-ink/85 flex items-center gap-1.5 text-xs"
+          >
+            <Copy className="size-3.5" />
+            {copiado ? 'Copiado' : 'Copiar en JSON'}
+          </button>
+        ) : null}
+      </div>
+
+      {visible ? (
+        <pre className="border-hairline bg-ink/4 text-ink/70 mt-3 max-h-80 overflow-auto rounded-[6px] border p-3 text-2xs leading-relaxed">
+          {texto}
+        </pre>
+      ) : null}
+    </div>
   )
 }
