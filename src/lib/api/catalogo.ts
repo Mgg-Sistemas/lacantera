@@ -160,6 +160,20 @@ export const CATEGORIAS_ARTICULO = [
   { valor: 'EPP', etiqueta: 'Equipo de protección' },
   { valor: 'HERRAMIENTA', etiqueta: 'Herramienta' },
   { valor: 'EXPLOSIVO', etiqueta: 'Explosivo' },
+  /*
+    LA QUE FALTABA, Y LA ÚNICA QUE SOLO CLASIFICA.
+
+    Christopher, con el caso delante: «se desea añadir una laptop y eso ya es un
+    equipo electrónico o de oficina, la opción no está». Hasta hoy una laptop se
+    guardaba como INSUMO, lo mismo que un guante.
+
+    Se pudo añadir barata porque no habilita nada: no despacha combustible, no se
+    produce, no se vende, no fuerza retorno. Las otras ocho sí mandan sobre el
+    programa —veintiún objetos de la base se ramifican comparando contra estas
+    palabras— y por eso esta lista no es una tabla que se edite desde la
+    pantalla.
+  */
+  { valor: 'EQUIPO', etiqueta: 'Equipo de oficina y cómputo' },
   { valor: 'SERVICIO', etiqueta: 'Servicio' },
 ]
 
@@ -269,6 +283,28 @@ export function useGuardarPresentacion() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['presentaciones'] })
       qc.invalidateQueries({ queryKey: ['presentaciones-parecidas'] })
+    },
+  })
+}
+
+/*
+  BORRAR UNA FORMA DE CONTAR QUE NO SE USÓ NUNCA.
+
+  Christopher: «necesitamos que elimines de este item el Barril, pues fue puesto
+  por prueba, pero unas botas no llegan en barril». Se podía apagar y no borrar,
+  y apagar deja una fila tachada que dentro de un año hay que explicar.
+
+  La base decide cuál de las dos: si sostiene algún papel se apaga, si no, se
+  borra. Aquí solo se pide.
+*/
+export function useBorrarPresentacionDeArticulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => rpc<void>('borrar_presentacion_de_articulo', { p_id: id }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['presentaciones-articulo'] })
+      // El artículo también: sus dos columnas viejas siguen a la de por defecto.
+      void qc.invalidateQueries({ queryKey: ['articulos'] })
     },
   })
 }
