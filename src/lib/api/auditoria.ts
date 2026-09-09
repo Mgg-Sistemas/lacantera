@@ -397,6 +397,105 @@ export const nombreApuntado = (
 ): string | null =>
   (valor === null || valor === undefined ? null : nombres?.[campo]?.[String(valor)]) ?? null
 
+/*
+  LA FRASE QUE DICE QUÉ SIGNIFICA, no qué columnas cambiaron.
+
+  Christopher, dos veces: «necesitamos un módulo de auditoría extremadamente
+  explícito». Con la etiqueta y los nombres resueltos, la ficha ya dice de qué
+  fila habla y de qué artículo. Lo que sigue faltando es lo que un asiento
+  significa para el almacén:
+
+      antes   Cómo llega: Barril · Cuántas trae: 3 · Activa: Sí
+      ahora   «Desde ahora BOTAS DE SEGURIDAD también se puede contar en
+               Barril: cada uno trae 3 PAR.»
+
+  Se escribe aquí y no en la base a propósito: es presentación, no dato. La base
+  guarda lo que pasó; poner además la frase sería guardar dos veces lo mismo y
+  arriesgarse a que un día no digan lo mismo.
+
+  SOLO LAS TABLAS EN LAS QUE LA CONSECUENCIA NO SE LEE SOLA. Un alta de cliente
+  se entiende con sus campos delante; un permiso, un movimiento de inventario o
+  una forma de contar, no. Donde no hay frase se devuelve nulo y la ficha
+  enseña los campos, que es lo que hacía antes.
+*/
+const num = (v: unknown): string => {
+  const n = Number(v)
+  return Number.isFinite(n)
+    ? n.toLocaleString('es-VE', { maximumFractionDigits: 4 })
+    : String(v ?? '—')
+}
+
+const NIVELES: Record<string, string> = {
+  NINGUNO: 'no puede entrar',
+  LECTURA: 'puede mirar',
+  ESCRITURA: 'puede escribir',
+  TOTAL: 'puede todo',
+}
+
+export function narracion(
+  m: { tabla: string; operacion: string; antes?: Record<string, unknown> | null; despues?: Record<string, unknown> | null },
+  nombre: (campo: string, valor: unknown) => string | null,
+): string | null {
+  const f = m.despues ?? m.antes
+  if (!f) return null
+  const borrado = m.operacion === 'DELETE'
+  const de = (c: string) => nombre(c, f[c]) ?? String(f[c] ?? '')
+
+  switch (m.tabla) {
+    case 'articulo_presentaciones': {
+      const art = de('articulo_id')
+      const pres = de('presentacion')
+      const cuantas = num(f.unidades)
+      if (borrado) return `${art} deja de poder contarse en ${pres}.`
+      const propuesta = f.por_defecto
+        ? ' Es la que se propone en los formularios.'
+        : ''
+      if (f.activa === false) {
+        return `${art} ya no se cuenta en ${pres}. Los movimientos viejos que la usaron siguen legibles: el asiento guarda el nombre, no un puntero.`
+      }
+      return `Desde ahora ${art} también se puede contar en ${pres}: cada uno trae ${cuantas}.${propuesta}`
+    }
+
+    case 'rol_permisos': {
+      const nivel = NIVELES[String(f.nivel)] ?? String(f.nivel)
+      return borrado
+        ? `El rol ${de('rol')} pierde lo que tenía sobre ${de('modulo')}.`
+        : `Quien tenga el rol ${de('rol')} ${nivel} en ${de('modulo')}.`
+    }
+
+    case 'usuarios_roles':
+      return borrado
+        ? `A ${de('usuario_id')} se le quitó el rol ${de('rol')}.`
+        : `A ${de('usuario_id')} se le dio el rol ${de('rol')}.`
+
+    case 'rol_acciones':
+      return borrado
+        ? `El rol ${de('rol')} deja de poder «${de('accion')}».`
+        : `El rol ${de('rol')} pasa a poder «${de('accion')}».`
+
+    case 'tasas_cambio':
+      return `La tasa del ${valorLegible(f.fecha)}: 1 ${de('moneda_origen')} son ${num(f.tasa)} ${de('moneda_destino')}${f.fuente ? `, según ${f.fuente}` : ''}.`
+
+    case 'inventario_movimientos': {
+      const signo = Number(f.signo)
+      const art = de('articulo_id')
+      const alm = de('almacen_id')
+      const cant = `${num(f.cantidad)} ${f.unidad ?? ''}`.trim()
+      const contado =
+        f.cantidad_capturada && f.unidad_capturada
+          ? ` Se contó como ${num(f.cantidad_capturada)} ${f.unidad_capturada}${
+              Number(f.suelto_capturado) ? ` y ${num(f.suelto_capturado)} ${f.unidad}` : ''
+            }.`
+          : ''
+      const hacia = signo < 0 ? `salieron de ${alm}` : `entraron a ${alm}`
+      return `${cant} de ${art} ${hacia}, a ${num(f.costo_usd)} USD cada ${f.unidad ?? 'unidad'}.${contado}`
+    }
+
+    default:
+      return null
+  }
+}
+
 /** Los campos que de verdad cambiaron, sin la contabilidad del guardado. */
 export const cambiosDeFondo = (cambios: string[] | null): string[] =>
   (cambios ?? []).filter((c) => !esDeRegistro(c))

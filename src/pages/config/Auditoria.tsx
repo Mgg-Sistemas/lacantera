@@ -14,6 +14,7 @@ import {
   VERBOS,
   cambiosDeFondo,
   camposOrdenados,
+  narracion,
   nombreApuntado,
   nombreDeCampo,
   nombreDeTabla,
@@ -575,22 +576,41 @@ export function Auditoria() {
 function Explicado({ movimiento }: { movimiento: Movimiento }) {
   const { data: nombres } = useNombresDeAuditoria(movimiento.id)
 
-  if (movimiento.operacion === 'UPDATE' && movimiento.cambios?.length) {
-    return <Diferencias movimiento={movimiento} nombres={nombres} />
-  }
-  if (movimiento.operacion === 'INSERT' && movimiento.despues) {
-    return <FilaCompleta titulo="Cómo quedó" fila={movimiento.despues} nombres={nombres} />
-  }
-  if (movimiento.operacion === 'DELETE' && movimiento.antes) {
-    return (
+  /*
+    LA FRASE VA PRIMERO, Y LOS CAMPOS DEBAJO.
+
+    Es lo que pedía Christopher: que la ficha diga qué significa el asiento, no
+    qué columnas tiene. Los campos se quedan —hacen falta para desmentir la
+    frase— pero dejan de ser lo primero que se lee.
+
+    Se calcula con los nombres ya resueltos, así que la frase dice «BOTAS DE
+    SEGURIDAD» donde el dato guarda un 278.
+  */
+  const frase = narracion(movimiento, (campo, valor) => nombreApuntado(nombres, campo, valor))
+
+  const campos =
+    movimiento.operacion === 'UPDATE' && movimiento.cambios?.length ? (
+      <Diferencias movimiento={movimiento} nombres={nombres} />
+    ) : movimiento.operacion === 'INSERT' && movimiento.despues ? (
+      <FilaCompleta titulo="Cómo quedó" fila={movimiento.despues} nombres={nombres} />
+    ) : movimiento.operacion === 'DELETE' && movimiento.antes ? (
       <FilaCompleta
         titulo="Lo que había antes de borrarlo"
         fila={movimiento.antes}
         nombres={nombres}
       />
-    )
-  }
-  return null
+    ) : null
+
+  return (
+    <>
+      {frase ? (
+        <p className="border-hairline bg-ink/4 rounded-card text-ink/85 mb-4 border p-3 text-sm leading-relaxed">
+          {frase}
+        </p>
+      ) : null}
+      {campos}
+    </>
+  )
 }
 
 /*
