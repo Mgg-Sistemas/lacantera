@@ -20,6 +20,8 @@ import {
   useArticulos,
   useCambiarEstadoArticulo,
   useArticulosParecidos,
+  useRenumerarArticulo,
+  PREFIJO_DE_CATEGORIA,
   useCrearArticulo,
   useEditarArticulo,
   usePresentacionesDeArticulo,
@@ -103,6 +105,7 @@ export function Articulos() {
   const editar = useEditarArticulo()
 
   const eliminar = useEliminarArticulo()
+  const renumerar = useRenumerarArticulo()
   const cambiarEstado = useCambiarEstadoArticulo()
 
   const [busqueda, setBusqueda] = useState('')
@@ -131,6 +134,19 @@ export function Articulos() {
     form?.categoria,
   )
   const hayHomonimo = (parecidos.data ?? []).some((p) => p.es_el_mismo)
+
+  /*
+    ¿EL CÓDIGO SIGUE DICIENDO LA CATEGORÍA VIEJA?
+
+    Solo para decidir si se ofrece la renumeración. Quien decide de verdad es la
+    base, que además comprueba lo que esta pantalla no puede saber: si el
+    artículo ya salió en algún papel.
+  */
+  const desencaja =
+    !!form?.id &&
+    !!form.codigo &&
+    !!PREFIJO_DE_CATEGORIA[form.categoria] &&
+    form.codigo.split('-')[0] !== PREFIJO_DE_CATEGORIA[form.categoria]
 
   const filtrados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
@@ -439,6 +455,42 @@ export function Articulos() {
               }
               opciones={CATEGORIAS_ARTICULO}
             />
+            {/*
+              EL CODIGO NO SIGUE A LA CATEGORIA, PERO PUEDE ALCANZARLA.
+
+              Christopher: «he cambiado de categoria, pero el codigo no actualizo
+              hacia la nueva categoria». Que no la siga es deliberado —el codigo es
+              la identidad, se imprime en ordenes y guias y se escribe en el
+              estante, asi que cambiarlo dejaria esos papeles apuntando a un nombre
+              que ya no existe— pero esa razon no existe si el articulo no ha salido
+              nunca en ninguno.
+
+              Quien decide es la base, mirando: si dejo rastro rechaza y dice donde.
+              Aqui solo se ofrece cuando las tres letras del codigo ya no cuadran con
+              la categoria, que es cuando la pregunta tiene sentido.
+            */}
+            {form.id && desencaja ? (
+              <div className="border-hairline rounded-card bg-canvas border border-dashed p-3 sm:col-span-2">
+                <p className="text-ink/60 text-xs leading-relaxed">
+                  El código empieza por <span className="text-ink/85">{form.codigo.split('-')[0]}</span> y
+                  la categoría ya es otra. Se puede corregir mientras el artículo no haya salido en
+                  ningún papel; después se queda, y pasa a ser solo un nombre propio.
+                </p>
+                <Button
+                  className="mt-2"
+                  size="sm"
+                  variant="outline"
+                  disabled={renumerar.isPending}
+                  onClick={async () => {
+                    const nuevo = await renumerar.mutateAsync(form.id!)
+                    setForm({ ...form, codigo: nuevo })
+                  }}
+                >
+                  {renumerar.isPending ? 'Renumerando…' : 'Ponerle el código que le toca'}
+                </Button>
+                {renumerar.error ? <ErrorDeCarga error={renumerar.error} className="mt-2" /> : null}
+              </div>
+            ) : null}
             <Select
               label="Unidad"
               value={form.unidad}

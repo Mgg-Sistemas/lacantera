@@ -297,6 +297,48 @@ export function useGuardarPresentacion() {
   La base decide cuál de las dos: si sostiene algún papel se apaga, si no, se
   borra. Aquí solo se pide.
 */
+/*
+  PONERLE AL ARTÍCULO EL CÓDIGO QUE LE TOCA POR SU CATEGORÍA.
+
+  Christopher: «he cambiado de categoría, pero el código no actualizó hacia la
+  nueva categoría». Que no la siga es deliberado —el código es la identidad, se
+  imprime en órdenes y guías y se escribe en el estante— pero esa razón no existe
+  si el artículo no ha salido nunca en un papel.
+
+  La base decide mirando: si dejó rastro, rechaza y dice dónde.
+*/
+/*
+  LAS TRES LETRAS CON LAS QUE EMPIEZA EL CODIGO DE CADA CATEGORIA.
+
+  ES UN ESPEJO de `private.prefijo_de_categoria`, y quien manda es la base. Aquí
+  solo sirve para decidir si vale la pena OFRECER la renumeración: si las dos
+  listas se separaran, lo peor que pasa es que el botón aparezca cuando no hacía
+  falta y la base conteste «el código ya corresponde a la categoría».
+
+  Se acepta ese espejo, y no otro, porque el fallo es inofensivo y la alternativa
+  —preguntarle a la base por cada artículo de la lista— sería una consulta por
+  fila para decidir si se pinta un botón.
+*/
+export const PREFIJO_DE_CATEGORIA: Record<string, string> = {
+  COMBUSTIBLE: 'CMB',
+  EPP: 'EPP',
+  EQUIPO: 'EQU',
+  HERRAMIENTA: 'HER',
+  INSUMO: 'INS',
+  LUBRICANTE: 'LUB',
+  PRODUCTO: 'PRD',
+  REPUESTO: 'REP',
+  SERVICIO: 'SRV',
+}
+
+export function useRenumerarArticulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => rpc<string>('renumerar_articulo', { p_id: id }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['articulos'] }),
+  })
+}
+
 export function useBorrarPresentacionDeArticulo() {
   const qc = useQueryClient()
   return useMutation({
