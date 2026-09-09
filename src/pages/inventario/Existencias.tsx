@@ -39,10 +39,8 @@ import {
   conSusFormas,
   useArticulos,
   useMisRoles,
-  usePresentacionesDeArticulo,
   useTodasLasPresentaciones,
 } from '@/lib/api/catalogo'
-import type { PresentacionDeArticulo } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
 import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
@@ -99,76 +97,6 @@ function contadoLegible(l: {
   return Number(l.suelto_capturado)
     ? `${bultos} y ${cantidad(l.suelto_capturado!)} ${l.unidad}`
     : bultos
-}
-
-/*
-  EL PLURAL, QUE EN CASTELLANO NO ES SIEMPRE UNA ESE.
-
-  «2 tambors» delata que lo escribió una máquina. Terminadas en vocal llevan -s
-  y terminadas en consonante llevan -es, y al añadir -es la tilde de la última
-  sílaba se cae: bidón da bidones, no bidónes. La eñe se queda donde está.
-*/
-const SIN_TILDE: Record<string, string> = { á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u' }
-
-function plural(palabra: string): string {
-  if (/[aeiouáéíóú]$/i.test(palabra)) return `${palabra}s`
-  return `${palabra.replace(/[áéíóú]/gi, (c) => SIN_TILDE[c.toLowerCase()] ?? c)}es`
-}
-
-/*
-  CUÁNTOS ENVASES SON ESOS LITROS.
-
-  Christopher: «¿qué pasa si en el inventario existencias deseo ver cuántos
-  tambores de un item quedan directamente?». La existencia se lleva en la unidad
-  de operación —es lo único que se mide al entrar y al salir— pero nadie camina
-  por el almacén contando litros: camina contando tambores.
-
-  SE ENSEÑAN HASTA DOS FORMAS Y NO UNA, y el motivo lo levantó Christopher con la
-  captura delante: el ACEITE HIDRAULICO 68 salía como «≈ 31 pailas y 15 L» cuando
-  lo que hay es un tambor y el resto en pailas.
-
-  Es un hueco de fondo, no un descuido de pintura. `articulo_presentaciones` no
-  tiene `almacen_id`: las formas de contar son DEL ARTÍCULO y no del sitio, y así
-  debe ser —una paila trae 19 litros aquí y en el patio—. Pero de ahí salía que
-  la pantalla eligiera una por su cuenta y la diera por buena.
-
-  Y NO SE ARREGLA SABIENDO MÁS, porque el sistema no lo sabe ni puede: lleva
-  litros, no envases. Quien recibió dos tambores y quien recibió veintiún pailas
-  dejaron el mismo rastro si los litros coinciden. Tampoco se puede repartir en
-  cascada —«1 tambor y 21 pailas»— sin inventarse el reparto.
-
-  Lo que sí se puede es dejar de elegir por la persona: se enseñan las dos
-  equivalencias completas y lee la que corresponde a lo que tiene delante, que es
-  la única que lo sabe. Dos y no todas: en una tabla, la tercera línea no se lee.
-
-  VA CON UN «≈» DELANTE, y no es adorno. Es una equivalencia, no un conteo: los
-  factores son aproximados —Christopher, el 9/09: la paila trae 19 litros «de
-  forma no estricta»— y de los envases abiertos el libro no lleva cuenta. Sin
-  ese signo, el día que el almacén cuente un tambor menos, el sistema parecerá
-  estar mintiendo.
-*/
-function enEnvases(
-  existencia: number,
-  articuloId: number,
-  formas: PresentacionDeArticulo[] | undefined,
-  unidad: string,
-): string[] {
-  if (existencia <= 0) return []
-
-  return (formas ?? [])
-    .filter((f) => f.articulo_id === articuloId && f.activa && Number(f.unidades) > 1)
-    // La propuesta primero: es la que acierta casi siempre.
-    .sort((a, b) => Number(b.por_defecto) - Number(a.por_defecto))
-    .slice(0, 2)
-    .map((f) => {
-      const por = Number(f.unidades)
-      const enteros = Math.trunc(existencia / por)
-      const resto = Number((existencia - enteros * por).toFixed(4))
-      const nombre = f.presentacion.toLowerCase()
-      return `≈ ${cantidad(enteros)} ${enteros === 1 ? nombre : plural(nombre)}${
-        resto > 0 ? ` y ${cantidad(resto)} ${unidad}` : ''
-      }`
-    })
 }
 
 function monto(valor: number): string {
@@ -1076,19 +1004,22 @@ export function Existencias() {
                           </Chip>
                         ) : null}
 
-                        {/* Los mismos litros, dichos en cada envase que el
-                            artículo declara. Ninguna es «la buena»: son la
-                            misma cantidad mirada de dos maneras. */}
-                        {enEnvases(
-                          Number(e.existencia),
-                          e.articulo_id,
-                          formasDeContar,
-                          e.unidad,
-                        ).map((linea) => (
-                          <p key={linea} className="text-ink/50 text-xs">
-                            {linea}
-                          </p>
-                        ))}
+                        {/*
+                          AQUÍ NO VAN LAS EQUIVALENCIAS, Y LO DECIDIÓ CHRISTOPHER
+                          con la pantalla delante: «cuando revisen el inventario,
+                          buscarán existencias reales y no referencias o medidas
+                          de items de conversión; es bueno saberlo pero no es lo
+                          que guía el inventario o puede confundir al usuario».
+
+                          Tenía razón y yo lo había pasado por alto. Esta lista
+                          es donde se REVISA el inventario, y «≈ 2 tambores»
+                          junto a la existencia se lee como que hay dos tambores.
+                          No los hay: hay 604 litros, que es lo único que alguien
+                          midió. Los tambores son una división.
+
+                          La conversión no se pierde: vive en la ficha del
+                          artículo, donde se va a entender algo y no a contar.
+                        */}
 
                         {/*
                           EXISTIR NO ES ESTAR DISPONIBLE
@@ -2317,72 +2248,6 @@ function Franja({
   )
 }
 
-/*
-  LA LÍNEA DE ENVASES DE UN ALMACÉN, DENTRO DEL DESGLOSE.
-
-  Es un componente y no un trozo suelto porque necesita su propia consulta: las
-  formas de contar de un artículo. Dentro de una lista de almacenes se pediría
-  una vez por almacén, pero react-query las junta bajo la misma clave, así que es
-  una sola llamada por artículo aunque el material esté en cinco sitios.
-
-  SE ENSEÑAN TODAS LAS FORMAS, NO SOLO LA PROPUESTA, y lo levantó Christopher con
-  un caso que no se me había ocurrido: «¿cómo procede en el caso de que en un
-  almacén tengo pailas y en otro tengo tambores?».
-
-  Es un hueco real y de fondo. `articulo_presentaciones` no tiene `almacen_id`:
-  las formas de contar son DEL ARTÍCULO, no del sitio, y así debe ser —una paila
-  trae 19 litros en el almacén general y en el patio también—. Pero de ahí salía
-  que la tarjeta enseñara «≈ 21 pailas» en el almacén donde hay dos tambores.
-
-  Y NO SE PUEDE ARREGLAR SABIENDO MÁS, porque el sistema no lo sabe: lleva litros
-  y no envases. Quien recibió dos tambores y quien recibió diez pailas dejaron el
-  mismo rastro si los litros coinciden.
-
-  Lo que sí se puede es no elegir por él. Se enseñan las dos equivalencias y la
-  persona lee la que corresponde a lo que tiene delante, que además es la única
-  que puede saberlo. Tres como mucho: a partir de ahí la tarjeta deja de leerse.
-*/
-function EnEnvasesDeAqui({
-  articuloId,
-  unidad,
-  existencia,
-  costoPorUnidad,
-}: {
-  articuloId: number
-  unidad: string
-  existencia: number
-  costoPorUnidad: number | null
-}) {
-  const { data } = usePresentacionesDeArticulo(articuloId)
-
-  const suyas = (data ?? [])
-    .filter((p) => p.activa && Number(p.unidades) > 1)
-    // La propuesta primero: es la que acierta casi siempre.
-    .sort((a, b) => Number(b.por_defecto) - Number(a.por_defecto))
-    .slice(0, 3)
-
-  if (suyas.length === 0 || existencia <= 0) return null
-
-  return (
-    <>
-      {suyas.map((p) => {
-        const por = Number(p.unidades)
-        const enteros = Math.trunc(existencia / por)
-        const resto = Number((existencia - enteros * por).toFixed(4))
-        const nombre = p.presentacion.toLowerCase()
-        return (
-          <p key={p.id} className="text-ink/50 text-xs">
-            ≈ <span className="tabular">{cantidad(enteros)}</span>{' '}
-            {enteros === 1 ? nombre : plural(nombre)}
-            {resto > 0 ? ` y ${cantidad(resto)} ${unidad}` : ''}
-            {costoPorUnidad !== null ? ` · ${dolares(costoPorUnidad * por)} el ${nombre}` : ''}
-          </p>
-        )
-      })}
-    </>
-  )
-}
-
 /**
  * En qué sitios está repartido un artículo, y qué se puede hacer en cada uno.
  *
@@ -2443,24 +2308,6 @@ function ModalDesglose({
                     {f.costo_promedio_usd ? ` · ${dolares(f.costo_promedio_usd)} c/u` : ''}
                   </p>
 
-                  {/*
-                    LO MISMO EN ENVASES, Y CUÁNTO VALE UNO.
-
-                    Christopher, con esta tarjeta delante: «hace falta así mismo
-                    identificar en esta tarjeta... es importante que se pueda
-                    expresar el valor en la unidad correspondiente». Aquí se está
-                    decidiendo si sacar material de este sitio, y «604 L» no dice
-                    cuántos tambores hay que bajar del estante ni qué se está
-                    moviendo en dinero.
-                  */}
-                  <EnEnvasesDeAqui
-                    articuloId={f.articulo_id}
-                    unidad={f.unidad}
-                    existencia={Number(f.existencia)}
-                    costoPorUnidad={
-                      f.costo_promedio_usd == null ? null : Number(f.costo_promedio_usd)
-                    }
-                  />
                 </div>
 
                 <div className="flex gap-1">
