@@ -13,7 +13,7 @@ import {
   TONO,
   VERBOS,
   cambiosDeFondo,
-  esDeRegistro,
+  camposOrdenados,
   nombreDeCampo,
   nombreDeTabla,
   useAuditoria,
@@ -601,11 +601,16 @@ function Diferencias({ movimiento }: { movimiento: Movimiento }) {
 }
 
 function FilaCompleta({ titulo, fila }: { titulo: string; fila: Record<string, unknown> }) {
-  // Fuera lo vacío —no dice nada— y fuera quién guardó y cuándo, que está en la
-  // cabecera del movimiento y aquí saldría como un identificador ilegible.
-  const campos = Object.entries(fila).filter(
-    ([k, v]) => v !== null && v !== '' && !esDeRegistro(k),
-  )
+  /*
+    Fuera lo vacío —no dice nada— y fuera quién guardó y cuándo, que está en la
+    cabecera del movimiento y aquí saldría como un identificador ilegible.
+
+    Y ORDENADO POR SIGNIFICADO. Antes salía en el orden de `jsonb`, que ordena
+    las claves por longitud del nombre: la ficha de una presentación empezaba
+    por un `id` y dejaba `presentación` la última, debajo del pliegue. No
+    faltaba — estaba donde nadie la ve.
+  */
+  const campos = camposOrdenados(fila, nombreDeCampo)
 
   return (
     <>

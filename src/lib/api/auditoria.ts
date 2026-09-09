@@ -306,18 +306,64 @@ export const TONO: Record<Operacion, 'success' | 'info' | 'danger' | 'royal' | '
  * No se pierden: siguen guardados en la fila del registro, que es inmutable.
  * Lo que se quita es enseñarlos dos veces y peor la segunda.
  */
-const DE_REGISTRO = new Set([
-  'creado_en', 'creado_por',
-  'actualizado_en', 'actualizado_por',
-  'registrado_en', 'registrado_por',
-  'calculado_en', 'modificado_en', 'modificado_por',
-])
+/*
+  ERA UNA LISTA Y FALLABA POR EL GENERO.
 
-export const esDeRegistro = (campo: string): boolean => DE_REGISTRO.has(campo)
+  Estaban `creado_en` y `creado_por`, en masculino, porque asi se llaman en casi
+  todas las tablas. `articulo_presentaciones` los llama `creada_en` y
+  `creada_por` — y por eso la ficha de una presentacion ensenaba
+  «creada por 1b2ce2a7-d656-47ed-a583-8bd61d2af667», justo el identificador
+  ilegible que esta lista existe para quitar.
+
+  Lo levanto Christopher el 8/09/2026 con la ficha delante. Es la misma forma
+  que llevo toda la semana persiguiendo: la regla escrita que no alcanza a la
+  tabla de al lado. Un patron la alcanza; una lista, no.
+*/
+const DE_REGISTRO = /^(cread|actualizad|registrad|modificad|calculad)[oa]_(en|por)$/
+
+export const esDeRegistro = (campo: string): boolean => DE_REGISTRO.test(campo)
+
+/*
+  EL ORDEN LO DECIDE EL SIGNIFICADO, NO `jsonb`.
+
+  `to_jsonb` ordena las claves por LONGITUD DEL NOMBRE y luego alfabeticamente.
+  En una presentacion eso daba:
+
+      id(2) · activa(6) · unidades(8) · creada_en(9) · creada_por(10) ·
+      articulo_id(11) · por_defecto(11) · presentacion(12)
+
+  O sea: lo primero que se leia era un `id`, y `presentacion` —lo unico que
+  identifica la fila— quedaba la ultima, debajo del pliegue. No faltaba: estaba
+  donde nadie la ve.
+
+  Aqui van delante los campos que dicen QUE es la fila. El resto detras, por su
+  rotulo, que al menos es un orden que una persona puede predecir.
+*/
+const PRIMERO = [
+  'numero', 'numero_control', 'numero_guia', 'numero_factura',
+  'nombre', 'nombres', 'apellidos', 'razon_social', 'titulo', 'descripcion',
+  'codigo', 'presentacion', 'unidad', 'unidades', 'cantidad',
+  'articulo_id', 'empleado_id', 'maquina_id', 'almacen_id', 'cliente_id',
+  'proveedor_id', 'periodo_id', 'orden_id',
+]
+
+/** Los campos de una fila, ordenados para leerlos y no para almacenarlos. */
+export function camposOrdenados(
+  fila: Record<string, unknown>,
+  rotulo: (campo: string) => string,
+): [string, unknown][] {
+  const peso = (c: string) => {
+    const i = PRIMERO.indexOf(c)
+    return i === -1 ? PRIMERO.length : i
+  }
+  return Object.entries(fila)
+    .filter(([k, v]) => v !== null && v !== '' && !esDeRegistro(k))
+    .sort(([a], [b]) => peso(a) - peso(b) || rotulo(a).localeCompare(rotulo(b), 'es'))
+}
 
 /** Los campos que de verdad cambiaron, sin la contabilidad del guardado. */
 export const cambiosDeFondo = (cambios: string[] | null): string[] =>
-  (cambios ?? []).filter((c) => !DE_REGISTRO.has(c))
+  (cambios ?? []).filter((c) => !esDeRegistro(c))
 
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/
 
