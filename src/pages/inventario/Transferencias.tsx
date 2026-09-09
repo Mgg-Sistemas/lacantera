@@ -75,11 +75,69 @@ export function Transferencias() {
     [movimientos],
   )
 
-  // Cuánto hay de ese artículo en ese almacén, para decirlo antes de intentarlo.
-  const { data: existencias } = useExistencias(form.origen ? Number(form.origen) : undefined)
+  /*
+    TODAS LAS EXISTENCIAS, NO SOLO LAS DEL ORIGEN.
+
+    Antes se pedían las del almacén elegido, que basta para decir cuánto hay. Ya
+    no basta: las listas se filtran en los dos sentidos —el almacén por lo que
+    tiene, el artículo por dónde está— y para eso hace falta el mapa entero. Es
+    una consulta más ancha y una sola: `v_existencias` sin filtro.
+  */
+  const { data: existencias } = useExistencias()
+  /*
+    LAS DOS LISTAS SE FILTRAN LA UNA A LA OTRA.
+
+    Christopher: «solo pueden aparecer almacenes que tengan algo (¿si no qué
+    pudieran trasladar?) o items que tengan existencia (y esto filtre o reduzca a
+    los almacenes que se puedan escoger, pues de ahí salen), es casi la versión
+    inversa de lo anterior».
+
+    Y es exactamente eso, en los dos sentidos:
+
+      sin artículo elegido .... salen los almacenes que tienen ALGO
+      con artículo elegido .... salen los que tienen ESE artículo
+      sin almacén elegido ..... salen los artículos que hay en algún sitio
+      con almacén elegido ..... salen los que hay AHÍ
+
+    Ofrecer lo imposible no es neutral: el operador elige, pulsa y se come un
+    error por algo que la pantalla ya sabía antes de que empezara a escribir.
+  */
+  const conAlgo = useMemo(
+    () => (existencias ?? []).filter((e) => Number(e.existencia) > 0),
+    [existencias],
+  )
+
+  const almacenesQueSirven = useMemo(() => {
+    const suyos = form.articulo
+      ? conAlgo.filter((e) => String(e.articulo_id) === form.articulo)
+      : conAlgo
+    return new Set(suyos.map((e) => e.almacen_id))
+  }, [conAlgo, form.articulo])
+
+  const articulosQueHay = useMemo(() => {
+    const aqui = form.origen
+      ? conAlgo.filter((e) => String(e.almacen_id) === form.origen)
+      : conAlgo
+    return new Set(aqui.map((e) => e.articulo_id))
+  }, [conAlgo, form.origen])
+
   const disponible = useMemo(() => {
     if (!form.origen || !form.articulo) return null
-    const fila = existencias?.find((e) => String(e.articulo_id) === form.articulo)
+    /*
+      SE BUSCA POR ALMACÉN **Y** POR ARTÍCULO, y ese `and` es nuevo.
+
+      Antes bastaba con el artículo porque la consulta ya venía filtrada por el
+      almacén elegido. Al ensancharla para poder cruzar las dos listas, buscar
+      solo por artículo pasó a devolver la existencia del PRIMER sitio que lo
+      tuviera — otro almacén— y con eso el tope de «solo hay tanto» dejaba pasar
+      traslados imposibles.
+
+      Es el riesgo de ensanchar una consulta que alguien ya está leyendo: lo que
+      antes era redundante se vuelve obligatorio, y sin ruido.
+    */
+    const fila = existencias?.find(
+      (e) => String(e.almacen_id) === form.origen && String(e.articulo_id) === form.articulo,
+    )
     return fila ? Number(fila.existencia) : 0
   }, [existencias, form.origen, form.articulo])
 
@@ -241,13 +299,28 @@ export function Transferencias() {
             label="Sale de"
             vacio="Elige el almacén"
             valor={form.origen}
-            onCambio={(v) => cambiar({ origen: v })}
-            opciones={activos.map((a) => ({
-              valor: String(a.id),
-              codigo: a.codigo,
-              nombre: a.nombre,
-              detalle: a.tipo,
-            }))}
+            onCambio={(v) => {
+              // Y al reves: si el articulo elegido no esta en el almacen nuevo.
+              const sigueEstando =
+                !form.articulo ||
+                conAlgo.some(
+                  (e) => String(e.almacen_id) === v && String(e.articulo_id) === form.articulo,
+                )
+              cambiar({ origen: v, ...(sigueEstando ? {} : { articulo: '', cantidad: '' }) })
+            }}
+            hint={
+              form.articulo
+                ? 'Solo los sitios donde hay ese artículo.'
+                : 'Solo los sitios que tienen algo que trasladar.'
+            }
+            opciones={activos
+              .filter((a) => almacenesQueSirven.has(a.id))
+              .map((a) => ({
+                valor: String(a.id),
+                codigo: a.codigo,
+                nombre: a.nombre,
+                detalle: a.tipo,
+              }))}
           />
           {/*
             EL DESTINO SE ESTRECHA SEGUN DE DONDE SALGA.
@@ -300,9 +373,31 @@ export function Transferencias() {
             label="Artículo"
             vacio="Elige el artículo"
             valor={form.articulo}
-            onCambio={(v) => cambiar({ articulo: v })}
+            /*
+              CAMBIAR DE ARTICULO PUEDE DEJAR HUERFANO EL ALMACEN.
+
+              Si estaba elegido ALMACEN GENERAL y se pasa a un articulo que solo
+              hay en el patio, el almacen deja de estar en su propia lista pero
+              sigue escrito en el formulario: invisible y equivocado. Se suelta.
+
+              Lo mismo al reves lo resuelve el filtro sin ayuda, porque la lista
+              de articulos se rehace con el almacen nuevo.
+            */
+            onCambio={(v) => {
+              const sirveElOrigen =
+                !form.origen ||
+                conAlgo.some(
+                  (e) => String(e.almacen_id) === form.origen && String(e.articulo_id) === v,
+                )
+              cambiar({ articulo: v, ...(sirveElOrigen ? {} : { origen: '' }) })
+            }}
+            hint={
+              form.origen
+                ? 'Solo lo que hay en ese almacén.'
+                : 'Solo lo que hay en algún sitio.'
+            }
             opciones={(articulos ?? [])
-              .filter((a) => a.inventariable && a.activo)
+              .filter((a) => a.inventariable && a.activo && articulosQueHay.has(a.id))
               .map((a) => ({
                 valor: String(a.id),
                 codigo: a.codigo,
