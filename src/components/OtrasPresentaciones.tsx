@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Plus, Power, Star } from 'lucide-react'
+import { Plus, Power, Star, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import {
+  useBorrarPresentacionDeArticulo,
   useCambiarEstadoPresentacion,
   useGuardarPresentacion,
   useGuardarPresentacionDeArticulo,
@@ -49,6 +50,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
   const { data: suyas, isPending, error: errorAlLeer } = usePresentacionesDeArticulo(articuloId)
   const guardar = useGuardarPresentacionDeArticulo()
   const cambiarEstado = useCambiarEstadoPresentacion()
+  const borrar = useBorrarPresentacionDeArticulo()
 
   const [nombre, setNombre] = useState('')
   const [cuantas, setCuantas] = useState('')
@@ -174,6 +176,28 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
               >
                 {p.activa ? 'Apagar' : 'Encender'}
               </Button>
+
+              {/*
+                APAGAR NO ALCANZA CUANDO LA FILA SE PUSO PARA PROBAR.
+
+                Christopher: «necesitamos que elimines de este item el Barril,
+                pues fue puesto por prueba, pero unas botas no llegan en
+                barril». Apagada seguía ahí, tachada, sin significar nada y
+                pidiendo una explicación a quien la viera dentro de un año.
+
+                Quién manda es la base: si la forma sostiene un movimiento, una
+                orden o una cotización, rebota diciendo dónde y manda a apagar.
+                Aquí no se decide nada, se pide.
+              */}
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<Trash2 />}
+                disabled={borrar.isPending}
+                onClick={() => void borrar.mutateAsync(p.id)}
+              >
+                Borrar
+              </Button>
             </li>
           ))}
         </ul>
@@ -240,6 +264,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
 
       {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-2" /> : null}
       {cambiarEstado.error ? <ErrorDeCarga error={cambiarEstado.error} className="mt-2" /> : null}
+      {borrar.error ? <ErrorDeCarga error={borrar.error} className="mt-2" /> : null}
 
       {/*
         LA PUERTA VA DONDE APARECE LA PARED.
