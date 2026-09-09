@@ -20,6 +20,14 @@ import { Card } from '@/components/ui/Card'
   litros sueltos, aquí saldrá «31 pailas y 15 L» aunque en el suelo haya otra
   cosa, porque de los envases abiertos el libro no lleva cuenta.
 
+  Y POR ESO ESTO VIVE AQUÍ Y NO EN EXISTENCIAS. Christopher, el 9/09, con la
+  lista delante: «cuando revisen el inventario, buscarán existencias reales y no
+  referencias o medidas de items de conversión; es bueno saberlo pero no es lo
+  que guía el inventario o puede confundir al usuario». Tenía razón. Puesta al
+  lado de la existencia, la equivalencia se lee como un hecho —«hay 2
+  tambores»— cuando lo único que alguien midió son 604 litros. Aquí, en la
+  ficha, se viene a entender el artículo, no a contarlo.
+
   Y EL FACTOR ES NOMINAL. Christopher, el 9/09: las pailas son «de 19 litros
   aproximadamente, así como los tambores de 208 litros aproximadamente, de forma
   no estricta». Un tambor real trae lo que trae. Por eso esto se enseña como una
@@ -60,7 +68,7 @@ export function ValorPorPresentacion({
   return (
     <Card className="mt-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-ink/90 text-base font-semibold">Cuánto hay, en cada envase</h2>
+        <h2 className="text-ink/90 text-base font-semibold">Equivalencias y valor por envase</h2>
         <span className="text-ink/45 text-xs">
           {cantidad(existencia)} {unidad}
           {costoPorUnidad !== null ? ` · ${numero(costoPorUnidad)} USD por ${unidad}` : ''}
@@ -72,7 +80,7 @@ export function ValorPorPresentacion({
           <thead>
             <tr className="text-ink/45 border-hairline border-b text-left text-xs">
               <th className="py-2 pr-3 font-medium">Envase</th>
-              <th className="px-3 py-2 font-medium">Equivale a</th>
+              <th className="px-3 py-2 font-medium">Los {unidad} de arriba serían</th>
               <th className="px-3 py-2 text-right font-medium">Vale cada uno</th>
               <th className="py-2 pl-3 text-right font-medium">Vale lo que hay</th>
             </tr>
@@ -126,10 +134,11 @@ export function ValorPorPresentacion({
         lleva cuenta.
       */}
       <p className="text-ink/50 mt-3 text-xs leading-relaxed">
-        Es una equivalencia, no un conteo de envases: los factores son aproximados y de los envases
-        abiertos el libro no lleva cuenta. La existencia se mide en {unidad}, que es lo único que se
-        cuenta al entrar y al salir. Por eso la última columna repite el mismo total en cada fila:
-        hay un solo montón de {unidad}, mirado de varias maneras.
+        <span className="text-ink/70">Esto es una conversión, no lo que hay.</span> La existencia se
+        mide en {unidad} y es la única cifra que alguien contó; los envases de esta tabla son una
+        división, con factores aproximados y sin saber cuáles están abiertos. Para saber cuántos
+        envases hay de verdad, hay que contarlos. Por eso la última columna repite el mismo total en
+        cada fila: hay un solo montón de {unidad}, mirado de varias maneras.
       </p>
 
       <ComoSeCompro articuloId={articuloId} unidad={unidad} />
