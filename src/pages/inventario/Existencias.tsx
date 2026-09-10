@@ -27,7 +27,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { DeQuienEs } from '@/components/DeQuienEs'
-import { conDueno, detalleDeDueno, esAjeno } from '@/lib/deQuien'
+import { LA_CASA, conDueno, detalleDeDueno, esAjeno } from '@/lib/deQuien'
 import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
@@ -228,9 +228,39 @@ export function Existencias() {
   // ya elegido. Sin esto el enlace prometía un filtro que no aplicaba.
   const [params, setParams] = useSearchParams()
   const almacenId = params.get('almacen') ?? ''
-  const setAlmacenId = (v: string) =>
-    setParams(v ? { almacen: v } : {}, { replace: true })
+  const setAlmacenId = (v: string) => {
+    // Conserva el dueño elegido: cambiar de almacén no es cambiar de inventario.
+    const siguiente: Record<string, string> = {}
+    if (v) siguiente.almacen = v
+    const d = params.get('dueno')
+    if (d) siguiente.dueno = d
+    setParams(siguiente, { replace: true })
+  }
   const enTotal = almacenId === ''
+  /*
+    SON DOS INVENTARIOS, Y SE MIRAN POR SEPARADO.
+
+    Mensaje de la gobernación, que Christopher trasladó: «son inventarios
+    distintos, los quieren lo más separado posible, ya que el inventario de la
+    gobernación está prácticamente sin hacer y hacerlo se llevaría semanas;
+    entonces quieren separar los insumos de la cantera y de la gobernación, para
+    ir llevando el registro de ambos por separado».
+
+    El modelo ya los tiene separados —el dueño viaja con cada movimiento— pero
+    hasta aquí no había forma de MIRARLOS por separado: el filtro era por
+    almacén, y un almacén puede tener de los dos. Este es el filtro que hacía
+    falta para poder trabajar en uno sin ver el otro.
+
+    Va en la URL como el almacén, para que la vista de un dueño se pueda dejar
+    abierta en una pestaña y compartir por enlace.
+  */
+  const dueno = params.get('dueno') ?? ''
+  const setDueno = (v: string) => {
+    const siguiente: Record<string, string> = {}
+    if (almacenId) siguiente.almacen = almacenId
+    if (v) siguiente.dueno = v
+    setParams(siguiente, { replace: true })
+  }
 
   /*
     LOS SITIOS QUE GUARDAN COSAS DE OTRO DUEÑO.
@@ -582,6 +612,30 @@ export function Existencias() {
   const filtradas = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
     return datos.filter((e) => {
+      /*
+        EL DUEÑO FILTRA POR LO QUE HAY DE ÉL, no por el sitio.
+
+        Mirando un almacén, la fila trae `duenos` y basta con que ese dueño esté
+        entre ellos. Mirando toda la empresa la fila es por artículo y no dice
+        quién tiene cada unidad, así que se usa el reparto: si se pide lo nuestro
+        entran las que tengan algo propio, y si se pide lo ajeno las que tengan
+        algo ajeno.
+
+        Es una aproximación deliberada en la vista total —«esta fila tiene algo
+        de ese dueño», no «esta fila es toda suya»— y por eso la línea del
+        reparto sigue debajo de cada renglón, para que no haya que suponerlo.
+      */
+      if (dueno) {
+        const fila = e as Existencia
+        const total = e as ExistenciaTotal
+        const tiene = fila.duenos
+          ? fila.duenos.includes(dueno)
+          : dueno === LA_CASA
+            ? Number(total.existencia_propia ?? 0) > 0
+            : Number(total.existencia_ajena ?? 0) > 0
+        if (!tiene) return false
+      }
+
       const bajo = Number(e.stock_minimo) > 0 && Number(e.existencia) <= Number(e.stock_minimo)
       if (soloBajas && !bajo) return false
       if (!texto) return true
@@ -589,7 +643,7 @@ export function Existencias() {
         e.articulo.toLowerCase().includes(texto) || e.articulo_codigo.toLowerCase().includes(texto)
       )
     })
-  }, [datos, busqueda, soloBajas])
+  }, [datos, busqueda, soloBajas, dueno])
 
   /*
     El valor llega NULO a quien no tiene INVENTARIO.VER_VALORACION: la vista
@@ -678,6 +732,9 @@ export function Existencias() {
     const filtros = [
       busqueda.trim() ? `Búsqueda: «${busqueda.trim()}»` : null,
       soloBajas ? 'Solo lo que está en el mínimo o por debajo' : null,
+      /* El acta tiene que decir de quién es lo que lista. Un acta de conteo que
+         no dice qué inventario está contando vale para los dos y para ninguno. */
+      dueno ? `Solo lo de ${nombreDeDueno(dueno) ?? dueno}` : null,
     ].filter(Boolean)
 
     setActa(
@@ -689,11 +746,22 @@ export function Existencias() {
           articulo: e.articulo,
           unidad: e.unidad,
           existencia: e.existencia,
-          // Nulo cuando el articulo nunca entro con un costo. Se imprime
-          // cero, que es lo que vale en libros: la alternativa es un hueco,
-          // y un hueco en una columna de dinero se lee como un error.
-          costoUsd: e.costo_promedio_usd ?? 0,
-          valorUsd: e.valor_usd,
+          /*
+            EL PRECIO SOLO SI QUIEN IMPRIME PUEDE VERLO.
+
+            Christopher: «dependiendo de quién genere el reporte y quién acceda a
+            existencias, puede o no ver el precio de las cosas». La reja ya
+            existía —las vistas devuelven nulo sin `INVENTARIO.VER_VALORACION`—
+            pero aquí ese nulo se convertía en un CERO y se imprimía. Un acta
+            firmada diciendo que todo vale 0,00 es peor que una sin la columna:
+            la primera afirma algo falso y la segunda no afirma nada.
+
+            Cuando sí puede verlo, el cero sigue siendo lo correcto para un
+            artículo que nunca entró con costo: es lo que vale en libros, y un
+            hueco en una columna de dinero se lee como un error.
+          */
+          costoUsd: puedeValorar ? (e.costo_promedio_usd ?? 0) : null,
+          valorUsd: puedeValorar ? e.valor_usd : null,
         })),
         empresa: {
           razonSocial: empresa?.razon_social ?? '',
@@ -1028,6 +1096,23 @@ export function Existencias() {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
+          {/*
+            Solo cuando hay más de un dueño registrado. Con uno solo, «de quién»
+            no separa nada y es un desplegable que estorba.
+          */}
+          {(propietarios ?? []).length > 1 ? (
+            <Select
+              label="De quién"
+              vacio="De todos"
+              value={dueno}
+              onChange={(e) => setDueno(e.target.value)}
+              opciones={(propietarios ?? []).map((d) => ({
+                valor: d.codigo,
+                etiqueta: d.es_la_casa ? `${d.nombre} (nosotros)` : d.nombre,
+              }))}
+            />
+          ) : null}
+
           <SelectBuscable
             label="Dónde"
             vacio="Todo el inventario"

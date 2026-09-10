@@ -32,8 +32,19 @@ export interface RenglonDeActa {
   articulo: string
   unidad: string
   existencia: string | number
-  costoUsd: string | number
-  valorUsd: string | number
+  /*
+    NULOS CUANDO QUIEN IMPRIME NO PUEDE VER EL PRECIO.
+
+    Christopher: «dependiendo de quién genere el reporte y quién acceda a
+    existencias, puede o no ver el precio de las cosas». La reja vive en la base
+    —las vistas devuelven nulo sin `INVENTARIO.VER_VALORACION`— y el acta tiene
+    que respetarla en vez de imprimir un cero.
+
+    Un acta firmada diciendo que todo vale 0,00 es peor que una sin las columnas:
+    la primera afirma algo falso y la segunda no afirma nada.
+  */
+  costoUsd: string | number | null
+  valorUsd: string | number | null
 }
 
 export interface DatosActa {
@@ -74,6 +85,11 @@ const COLUMNAS: Columna[] = [
   { titulo: 'Contado', ancho: 17, alDerecha: true },
 ]
 
+/* Las dos columnas de dinero, para poder quitarlas cuando quien emite el acta no
+   tiene permiso para ver precios. Se nombran aquí y no en línea para que añadir
+   una tercera columna de dinero no obligue a acordarse de este sitio. */
+const ES_DINERO = ['Costo unit.', 'Valor']
+
 export async function armarActaExistencias(d: DatosActa): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
   const logo = await logoComoImagen()
@@ -97,13 +113,25 @@ export async function armarActaExistencias(d: DatosActa): Promise<ArchivoArmado>
     `${d.empresa.razonSocial} · RIF ${d.empresa.rif} · Sistema administrativo`,
   )
 
-  const total = d.renglones.reduce((s, r) => s + Number(r.valorUsd ?? 0), 0)
+  /*
+    Si NINGÚN renglón trae precio, quien imprime no puede verlo y el acta sale
+    sin las dos columnas de dinero y sin el total. Se mira sobre todos los
+    renglones y no sobre el primero: un artículo suelto puede no tener costo
+    —nunca entró con uno— sin que eso signifique que falte el permiso.
+  */
+  const conPrecio = d.renglones.some((r) => r.valorUsd !== null || r.costoUsd !== null)
+  const total = conPrecio ? d.renglones.reduce((s, r) => s + Number(r.valorUsd ?? 0), 0) : null
 
   y = seccion(doc, y, 'Alcance')
   y = etiquetaValor(doc, y, [
     ['Sitio', donde],
     ['Artículos listados', String(d.renglones.length)],
-    ['Valor en libros', `$ ${numero(total)}`],
+    ...(conPrecio
+      ? ([['Valor en libros', `$ ${numero(total ?? 0)}`]] as [string, string][])
+      : ([['Valor en libros', 'No se muestra: quien emite el acta no ve precios']] as [
+          string,
+          string,
+        ][])),
     ['Filtro aplicado', d.filtro || 'Ninguno: se lista todo lo que hay'],
     ['Emitida por', d.emitidoPor],
   ])
@@ -112,17 +140,19 @@ export async function armarActaExistencias(d: DatosActa): Promise<ArchivoArmado>
   y = tabla(
     doc,
     y,
-    COLUMNAS,
-    d.renglones.map((r) => [
-      r.codigo,
-      r.articulo,
-      r.unidad,
-      cantidad(r.existencia),
-      numero(r.costoUsd),
-      numero(r.valorUsd),
-      '',
-    ]),
-    `TOTAL EN LIBROS   $ ${numero(total)}`,
+    // Sin permiso para ver precios, las dos columnas de dinero no se dibujan.
+    conPrecio ? COLUMNAS : COLUMNAS.filter((c) => !ES_DINERO.includes(c.titulo)),
+    d.renglones.map((r) =>
+      [
+        r.codigo,
+        r.articulo,
+        r.unidad,
+        cantidad(r.existencia),
+        ...(conPrecio ? [numero(r.costoUsd ?? 0), numero(r.valorUsd ?? 0)] : []),
+        '',
+      ],
+    ),
+    conPrecio ? `TOTAL EN LIBROS   $ ${numero(total ?? 0)}` : '',
   )
 
   // Si las firmas no caben, se van a su propia hoja enteras. Una raya de firma
