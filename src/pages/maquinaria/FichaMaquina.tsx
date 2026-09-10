@@ -75,7 +75,8 @@ const vacio = {
   propietario: 'LACANTERA',
   clase: 'MAQUINA',
   operador_id: '',
-  estado: 'ACTIVA',
+  // La respuesta segura: ver el comentario de ESTADOS_MAQUINA.
+  estado: 'EN_ESPERA',
   marca: '',
   modelo: '',
   serial: '',

@@ -10,6 +10,7 @@ import {
   type Maquina,
 } from '@/lib/api/maquinaria'
 import { cn } from '@/lib/cn'
+import { etiquetaDeMaquina } from '@/lib/maquina'
 
 /**
  * Mover una máquina entre activa, en espera y fuera de servicio.
@@ -61,7 +62,7 @@ export function ModalEstado({
     <Modal
       abierto={abierto}
       onCerrar={onCerrar}
-      titulo={`Estado de ${maquina.nombre}`}
+      titulo={`Estado de ${etiquetaDeMaquina(maquina)}`}
       /* La segunda frase contesta la pregunta que se hizo en voz alta: «¿como se
          saca de circulacion una maquina que ya no funciona o que ya no es de la
          empresa?». La respuesta estaba aqui dentro y la pantalla no la decia en

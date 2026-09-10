@@ -19,6 +19,7 @@ import {
 } from '@/lib/api/maquinaria'
 import { enteros, fecha as formatearFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
+import { etiquetaDeMaquina } from '@/lib/maquina'
 
 /**
  * El paso de una máquina por el taller, que son dos momentos y no uno.
@@ -149,7 +150,7 @@ function Entrada({
     <Modal
       abierto={abierto}
       onCerrar={onCerrar}
-      titulo={`${maquina.nombre} entra al taller`}
+      titulo={`${etiquetaDeMaquina(maquina)} entra al taller`}
       descripcion={`Lleva ${enteros(Number(maquina.horas_desde_mant))} horas desde el último mantenimiento, sobre un tope de ${enteros(Number(maquina.tope_horas))}.`}
       acciones={
         <>
@@ -368,7 +369,7 @@ function Salida({
       abierto={abierto}
       onCerrar={onCerrar}
       ancho="lg"
-      titulo={`${maquina.nombre} sale del taller`}
+      titulo={`${etiquetaDeMaquina(maquina)} sale del taller`}
       descripcion={
         maquina.mantenimiento_desde
           ? `Entró el ${formatearFecha(maquina.mantenimiento_desde)}${

@@ -8,6 +8,7 @@ import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { AvisoBloqueantes, SemaforoMantenimiento } from '@/components/SemaforoMantenimiento'
 import { DeQuienEs } from '@/components/DeQuienEs'
+import { comparar } from '@/lib/maquina'
 import { LA_CASA } from '@/lib/deQuien'
 import { usePropietarios } from '@/lib/api/inventario'
 import { ModalHorometro } from './ModalHorometro'
@@ -112,7 +113,13 @@ export function Maquinaria() {
       [...(data ?? [])].sort(
         (a, b) =>
           orden[a.semaforo] - orden[b.semaforo] ||
-          Number(b.horas_desde_mant) - Number(a.horas_desde_mant),
+          Number(b.horas_desde_mant) - Number(a.horas_desde_mant) ||
+          /*
+            Y a igualdad de urgencia, por código y de forma natural: «PAYLOADER 2»
+            antes que «PAYLOADER 10». Antes no había tercer criterio y el orden
+            dentro de cada grupo lo decidía la base, que es como decir nadie.
+          */
+          comparar(a.codigo, b.codigo),
       ),
     // `orden` es un literal y se recrea en cada pintado; lo que decide es `data`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -129,7 +136,7 @@ export function Maquinaria() {
     ni esconder uno que se añada.
   */
   const tipos = useMemo(
-    () => [...new Set(todas.map((m) => m.tipo))].sort((a, b) => a.localeCompare(b, 'es')),
+    () => [...new Set(todas.map((m) => m.tipo))].sort(comparar),
     [todas],
   )
 
