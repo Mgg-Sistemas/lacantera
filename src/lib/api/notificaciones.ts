@@ -119,8 +119,6 @@ export interface GrupoDeAvisos {
   sinLeer: number
 }
 
-const PESO: Record<Importancia, number> = { URGENTE: 3, ATENCION: 2, INFO: 1 }
-
 export function agruparPorAsunto(avisos: Notificacion[]): GrupoDeAvisos[] {
   const porClave = new Map<string, Notificacion[]>()
 
@@ -145,22 +143,32 @@ export function agruparPorAsunto(avisos: Notificacion[]): GrupoDeAvisos[] {
   }
 
   /*
-    El orden: primero lo que no se ha visto, y dentro de eso lo que más apura.
+    EL ORDEN ES EL TIEMPO, DE LO MÁS NUEVO A LO MÁS VIEJO.
 
-    Sin leer manda porque es lo único que dice «esto todavía no lo ha atendido
-    nadie». La importancia va después y no antes: un URGENTE de la semana pasada
-    que ya se leyó no debe tapar un ATENCION de hoy que nadie ha abierto.
+    Christopher: «el aspecto de las notificaciones deben de organizarse por
+    tiempo más reciente».
 
-    La importancia que cuenta es la del ÚLTIMO aviso, no la más alta del grupo.
-    Una compra en la que el proveedor desistió —URGENTE— y que después se canceló
-    ya no apura: apura lo que es cierto ahora, no lo que llegó a ser.
+    Antes mandaba lo no leído, después lo que más apuraba, y la fecha era el
+    último criterio. Cada regla tenía su motivo, pero juntas hacían que la lista
+    saltara en el tiempo: «hace 18 h», «hace 3 días», «hace 19 h». Un lector no
+    puede confiar en un orden que no entiende, y entonces los lee todos o no lee
+    ninguno.
+
+    Una lista de avisos se lee como una conversación: lo último arriba. Es lo
+    único que no hay que explicar.
+
+    LO QUE HACÍAN LAS OTRAS DOS REGLAS NO SE PIERDE, cambia de sitio: lo no leído
+    lleva su punto naranja y va contado en la campana, y la importancia se ve en
+    el color del icono. Las dos siguen estando; lo que dejan de hacer es pelear
+    con la cronología.
+
+    Se ordena por el ÚLTIMO aviso del grupo, que es lo que el grupo dice hoy: una
+    compra de la que se habló ayer y otra vez esta mañana está arriba por la de
+    esta mañana.
   */
-  return grupos.sort((a, b) => {
-    if ((a.sinLeer > 0) !== (b.sinLeer > 0)) return a.sinLeer > 0 ? -1 : 1
-    const peso = PESO[b.ultimo.importancia] - PESO[a.ultimo.importancia]
-    if (peso !== 0) return peso
-    return Date.parse(b.ultimo.creada_en) - Date.parse(a.ultimo.creada_en)
-  })
+  return grupos.sort(
+    (a, b) => Date.parse(b.ultimo.creada_en) - Date.parse(a.ultimo.creada_en),
+  )
 }
 
 export function useMarcarLeida() {

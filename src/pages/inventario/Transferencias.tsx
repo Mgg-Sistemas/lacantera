@@ -5,8 +5,9 @@ import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
-import { LA_CASA, conDueno, detalleDeDueno, esAjeno } from '@/lib/deQuien'
+import { conDueno, detalleDeDueno } from '@/lib/deQuien'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
@@ -43,6 +44,10 @@ const VACIO = {
   presentaciones: null as number | null,
   presentacion: null as string | null,
   suelto: '',
+  /* De quién sale. Solo se llena cuando en el origen hay mezcla; con un solo
+     dueño la base lo resuelve y preguntar sería hacer trabajar a quien ya sabe
+     la respuesta. */
+  propietario: '',
 }
 
 /**
@@ -160,20 +165,28 @@ export function Transferencias() {
     : undefined
 
   /*
-    Y DE QUIÉN ES LO QUE SALE.
+    DE QUIÉN ES LO QUE SE MUEVE.
 
-    `transferir_existencia` rechaza mover entre dueños distintos: «lo de un dueño
-    no se mezcla con lo de otro». Mover una silla de la gobernación a un almacén
-    nuestro no es un traslado, es un cambio de dueño, y eso pide una salida y una
-    entrada que expliquen por qué dejó de ser de uno.
+    Esto era un filtro y ha dejado de serlo. Mientras el dueño lo ponía el sitio,
+    llevar una silla de la gobernación a un almacén nuestro la volvía nuestra, y
+    por eso la pantalla no ofrecía la pareja. Desde el 10/09/2026 el dueño viaja
+    con el material: la bomba de la gobernación puede estar en nuestro taller sin
+    dejar de ser suya, que es justo lo que hacía falta para poder repararla.
 
-    La reja estaba puesta abajo pero la pantalla seguía ofreciendo la pareja
-    imposible, igual que pasaba con el tanque sin costo. Es el mismo remedio:
-    ofrecer lo que sí se puede y decir por qué falta el resto.
+    Así que ahora todos los destinos se ofrecen, y lo que se pregunta es OTRA
+    cosa: cuando en el origen hay material de varios dueños, de cuál sale. Con un
+    solo dueño no se pregunta, porque no hay nada que decidir.
   */
-  const duenoDelOrigen = form.origen
-    ? (activos.find((a) => String(a.id) === form.origen)?.propietario ?? LA_CASA)
-    : undefined
+  const duenosEnElOrigen = useMemo(
+    () =>
+      (existencias ?? []).find(
+        (e) =>
+          String(e.almacen_id) === form.origen && String(e.articulo_id) === form.articulo,
+      )?.duenos ?? [],
+    [existencias, form.origen, form.articulo],
+  )
+
+  const hayMezcla = duenosEnElOrigen.length > 1
 
   const cantidad = Number(form.cantidad.replace(',', '.'))
   const listo =
@@ -183,7 +196,10 @@ export function Transferencias() {
     form.articulo &&
     cantidad > 0 &&
     (disponible === null || cantidad <= disponible) &&
-    form.motivo.trim().length >= 4
+    form.motivo.trim().length >= 4 &&
+    // Con mezcla en el origen hay que decir de quién sale. La base también lo
+    // para, pero enterarse al pulsar con el formulario lleno llega tarde.
+    (!hayMezcla || Boolean(form.propietario))
 
   const enviar = async () => {
     setError('')
@@ -197,6 +213,8 @@ export function Transferencias() {
         presentaciones: form.presentaciones,
         presentacion: form.presentacion,
         suelto: form.suelto ? Number(form.suelto.replace(',', '.')) : null,
+        // Vacío cuando no hay mezcla: la base lo resuelve mirando lo que hay.
+        propietario: form.propietario || null,
       })
       setForm(VACIO)
       setAbierto(false)
@@ -367,13 +385,11 @@ export function Transferencias() {
             valor={form.destino}
             onCambio={(v) => cambiar({ destino: v })}
             hint={
-              esAjeno(duenoDelOrigen)
-                ? `Solo salen los sitios de ${nombreDeDueno(duenoDelOrigen)}: lo de un dueño no se mezcla con lo de otro.`
-                : origenSinCosto === undefined
-                  ? undefined
-                  : origenSinCosto
-                    ? 'Solo salen los sitios que también admiten material sin costo: lo que hay aquí entró sin precio y hundiría el promedio de los demás.'
-                    : 'No sale el tanque del combustible inicial: lo que hay ahí entró sin precio y no se mezcla con lo que sí costó.'
+              origenSinCosto === undefined
+                ? undefined
+                : origenSinCosto
+                  ? 'Solo salen los sitios que también admiten material sin costo: lo que hay aquí entró sin precio y hundiría el promedio de los demás.'
+                  : 'No sale el tanque del combustible inicial: lo que hay ahí entró sin precio y no se mezcla con lo que sí costó.'
             }
             error={
               form.destino && form.destino === form.origen
@@ -386,11 +402,6 @@ export function Transferencias() {
                 (a) =>
                   origenSinCosto === undefined ||
                   Boolean(a.admite_sin_costo) === origenSinCosto,
-              )
-              .filter(
-                (a) =>
-                  duenoDelOrigen === undefined ||
-                  (a.propietario ?? LA_CASA) === duenoDelOrigen,
               )
               .map((a) => ({
                 valor: String(a.id),
@@ -425,7 +436,13 @@ export function Transferencias() {
                 conAlgo.some(
                   (e) => String(e.almacen_id) === form.origen && String(e.articulo_id) === v,
                 )
-              cambiar({ articulo: v, ...(sirveElOrigen ? {} : { origen: '' }) })
+              cambiar({
+                articulo: v,
+                ...(sirveElOrigen ? {} : { origen: '' }),
+                // Cambiar de artículo invalida el dueño elegido: el que tenía
+                // el anterior puede no tener nada de éste.
+                propietario: '',
+              })
             }}
             hint={
               form.origen
@@ -475,6 +492,31 @@ export function Transferencias() {
             }
             required
           />
+
+          {/*
+            DE QUIÉN SALE, Y SOLO CUANDO HAY DUDA.
+
+            Desde que el dueño viaja con el material, un mismo sitio puede tener
+            cosas de la casa y de la gobernación. Sacar sin decir de quién era
+            sería inventarlo, así que la base se para — y aquí se pregunta antes,
+            que es donde se puede contestar.
+
+            Con un solo dueño no aparece: preguntar lo que ya se sabe enseña a
+            responder sin mirar.
+          */}
+          {hayMezcla ? (
+            <Select
+              label="¿De quién sale?"
+              vacio="Elige el dueño"
+              value={form.propietario}
+              onChange={(e) => cambiar({ propietario: e.target.value })}
+              hint="Aquí hay material de varios dueños. El traslado no cambia de dueño: lo lleva."
+              opciones={duenosEnElOrigen.map((d) => ({
+                valor: d,
+                etiqueta: nombreDeDueno(d) ?? d,
+              }))}
+            />
+          ) : null}
         </div>
 
         <Textarea
