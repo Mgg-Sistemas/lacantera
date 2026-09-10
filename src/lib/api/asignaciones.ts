@@ -191,7 +191,14 @@ export function useEntregarATrabajador() {
     mutationFn: (e: {
       empleado_id: number
       almacen_id: number
-      renglones: { articulo_id: number; cantidad: number }[]
+      /*
+        DE QUIÉN SALE, por renglón.
+
+        Desde que el dueño viaja con el material, un almacén puede tener de la
+        casa y de la gobernación. Entregar sin decir de cuál era sería
+        inventarlo, y la base se para. Solo hace falta cuando ahí hay de varios.
+      */
+      renglones: { articulo_id: number; cantidad: number; propietario?: string | null }[]
       /** Para qué se le da: por su rol o para una actividad concreta. */
       clase: 'DOTACION' | 'ASIGNACION'
       fecha?: string | null

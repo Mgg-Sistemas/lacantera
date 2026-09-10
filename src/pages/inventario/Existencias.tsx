@@ -27,7 +27,8 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { DeQuienEs } from '@/components/DeQuienEs'
-import { LA_CASA, conDueno, detalleDeDueno, esAjeno } from '@/lib/deQuien'
+import { DeQuienSale } from '@/components/DeQuienSale'
+import { LA_CASA, conDueno, detalleDeDueno, esAjeno, faltaDecirDeQuien } from '@/lib/deQuien'
 import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
@@ -312,6 +313,14 @@ export function Existencias() {
   const [alTallerSuelto, setAlTallerSuelto] = useState(false)
   /* Pasar material de un dueño a otro sin moverlo de sitio. */
   const [cambiandoDueno, setCambiandoDueno] = useState<Existencia | null>(null)
+  /*
+    DE QUIÉN SALE, en la salida de una fila y en el conteo.
+
+    Solo hace falta cuando en ese sitio ese artículo es de varios dueños. Se
+    guarda aparte del resto del formulario porque lo comparten dos modales que
+    ya tenían su propio estado.
+  */
+  const [saleDe, setSaleDe] = useState('')
 
   /*
     LA NOTA DE SALIDA
@@ -811,6 +820,9 @@ export function Existencias() {
     fila: Existencia | null,
   ) => {
     setCausa(CAUSAS_DE_BAJA[0].valor)
+    // Cada modal empieza sin dueño elegido: arrastrar el de la fila anterior
+    // sería anotar a nombre de quien no era.
+    setSaleDe('')
     setDestino('')
     setClase((clases.data ?? [])[0]?.codigo ?? '')
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
@@ -924,6 +936,7 @@ export function Existencias() {
         causa,
         motivo,
         destino: destino || null,
+        propietario: saleDe || null,
       })) as number
       await notaDelMovimiento(
         id,
@@ -951,6 +964,7 @@ export function Existencias() {
             almacen_id: modal.fila!.almacen_id,
             articulo_id: modal.fila!.articulo_id,
             cantidad: Number(valor),
+            propietario: saleDe || null,
           },
         ],
         motivo,
@@ -982,6 +996,7 @@ export function Existencias() {
       await ajuste.mutateAsync({
         almacen_id: modal.fila!.almacen_id,
         articulo_id: modal.fila!.articulo_id,
+        propietario: saleDe || null,
         contado: conHoja.length > 0 ? Number(sueltosContados || 0) : Number(valor || 0),
         presentaciones: conHoja.length > 0 ? null : bultosContados,
         presentacion: conHoja.length > 0 ? null : presentacionContada,
@@ -1600,6 +1615,12 @@ export function Existencias() {
                     dejaría el botón muerto en el caso más normal de todos.
                   */
                   (modal.tipo === 'ajuste' && !totalContado) ||
+                  // Con mezcla hay que decir de quién. La base también lo para,
+                  // pero enterarse al pulsar llega tarde.
+                  ((modal.tipo === 'salida' ||
+                    modal.tipo === 'ajuste' ||
+                    modal.tipo === 'baja') &&
+                    faltaDecirDeQuien(modal.fila?.duenos, saleDe)) ||
                   (modal.tipo !== 'entrada' &&
                     modal.tipo !== 'salidas' &&
                     modal.tipo !== 'ajuste' &&
@@ -2303,6 +2324,28 @@ export function Existencias() {
                   {modal.fila?.unidad}
                 </p>
               </div>
+
+              {/*
+                DE QUIÉN SALE, O DE QUIÉN SE CUENTA.
+
+                Solo aparece cuando en ese sitio ese artículo es de varios
+                dueños. En la salida decide a nombre de quién se descuenta; en
+                el conteo, de quién es lo que se contó — porque «veinte» en un
+                estante mezclado no dice cuántas faltan de cada uno.
+
+                La baja no lo lleva: dar de baja es sacar, y usa el mismo camino
+                que la salida.
+              */}
+              {modal.tipo === 'salida' || modal.tipo === 'ajuste' || modal.tipo === 'baja' ? (
+                <div className="mb-4">
+                  <DeQuienSale
+                    duenos={modal.fila?.duenos}
+                    valor={saleDe}
+                    onCambio={setSaleDe}
+                    label={modal.tipo === 'ajuste' ? '¿De quién es lo que contaste?' : '¿De quién sale?'}
+                  />
+                </div>
+              ) : null}
 
               {/*
                 CONTAR ES LO QUE MÁS SE HACE EN BULTOS.
