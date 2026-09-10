@@ -23,6 +23,15 @@ export interface Almacen {
    * que se trata. Hoy solo lo tiene el tanque del combustible inicial.
    */
   admite_sin_costo?: boolean
+  /*
+    DE QUIÉN ES LO QUE HAY AQUÍ.
+
+    Christopher: «hay elementos, sillas, mesas, equipos, etc. que son de la
+    gobernación, entre los items que tiene a disposición la cantera». Va en el
+    ALMACÉN y no en el artículo porque veinte sillas pueden ser ocho de ellos y
+    doce compradas: marcar el artículo obligaría a inventar dos sillas.
+  */
+  propietario?: string
   /** Cuanto le cabe. Solo en un tanque de combustible. */
   capacidad?: string | null
   /** Cuantas ordenes aguanta a la vez. Solo en un taller. */
@@ -65,8 +74,40 @@ export function useGuardarAlmacen() {
         // trabajos a la vez en un taller. La base rechaza lo demas.
         p_capacidad: a.capacidad ?? null,
         p_trabajos_a_la_vez: a.trabajos_a_la_vez ?? null,
+        // Nulo deja el que tenga; en un alta, la base pone la casa.
+        p_propietario: a.propietario ?? null,
       }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['almacenes'] }),
+  })
+}
+
+/*
+  DE QUIÉN PUEDE SER ALGO.
+
+  Una tabla y no un booleano «es de la gobernación» porque ya se sabe que van a
+  ser más de dos: en la conversación de facturación aparecieron la gobernación,
+  Rápido y la comunidad. `es_la_casa` marca cuál somos nosotros, y solo puede
+  haber uno.
+*/
+export interface Propietario {
+  codigo: string
+  nombre: string
+  es_la_casa: boolean
+  activo: boolean
+}
+
+export function usePropietarios() {
+  return useQuery({
+    queryKey: ['propietarios'],
+    staleTime: 5 * 60_000,
+    queryFn: async () =>
+      desenvolver<Propietario[]>(
+        await supabase
+          .from('propietarios')
+          .select('codigo, nombre, es_la_casa, activo')
+          .eq('activo', true)
+          .order('orden'),
+      ),
   })
 }
 

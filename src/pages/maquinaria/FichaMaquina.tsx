@@ -11,7 +11,7 @@ import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { useAlmacenes } from '@/lib/api/inventario'
+import { useAlmacenes, usePropietarios } from '@/lib/api/inventario'
 import { useCombustibles } from '@/lib/api/combustible'
 import {
   ETIQUETA_ESTADO,
@@ -63,6 +63,7 @@ const vacio = {
   codigo: '',
   nombre: '',
   tipo: 'OTRO',
+  propietario: 'LACANTERA',
   marca: '',
   modelo: '',
   serial: '',
@@ -86,6 +87,7 @@ export function FichaMaquina() {
   const { data: almacenes } = useAlmacenes()
   const combustibles = useCombustibles()
   const guardar = useGuardarMaquina()
+  const { data: propietarios } = usePropietarios()
   const subir = useSubirFotoMaquina()
   const quitar = useQuitarFotoMaquina()
   const guardarEncuadre = useGuardarEncuadreMaquina()
@@ -121,6 +123,7 @@ export function FichaMaquina() {
       codigo: maquina.codigo,
       nombre: maquina.nombre,
       tipo: maquina.tipo,
+      propietario: maquina.propietario ?? 'LACANTERA',
       marca: maquina.marca ?? '',
       modelo: maquina.modelo ?? '',
       serial: maquina.serial ?? '',
@@ -174,6 +177,7 @@ export function FichaMaquina() {
       codigo: f.codigo.trim(),
       nombre: f.nombre.trim(),
       tipo: f.tipo,
+      propietario: f.propietario,
       marca: f.marca.trim() || null,
       modelo: f.modelo.trim() || null,
       serial: f.serial.trim() || null,
@@ -341,6 +345,27 @@ export function FichaMaquina() {
                 value={f.tipo}
                 onChange={(e) => cambiar('tipo', e.target.value)}
                 opciones={TIPOS_MAQUINA}
+              />
+
+              {/*
+                DE QUIÉN ES LA MÁQUINA.
+
+                Christopher: «este mismo aspecto se aplica también para las
+                máquinas (ej. algún volvo, chuto con volqueta)». Va en la ficha
+                de la máquina, que es donde vive el activo, y no en el vehículo:
+                allí `propio` contesta otra cosa —si la placa de una guía es de
+                la casa o de un transportista contratado— y un chuto de la
+                gobernación conducido por la cantera no es un transportista
+                contratado.
+              */}
+              <Select
+                label="De quién es"
+                value={f.propietario}
+                onChange={(e) => cambiar('propietario', e.target.value)}
+                opciones={(propietarios ?? []).map((d) => ({
+                  valor: d.codigo,
+                  etiqueta: d.es_la_casa ? `${d.nombre} (nosotros)` : d.nombre,
+                }))}
               />
               <Input
                 label="Marca"
