@@ -194,9 +194,21 @@ export const TIPOS_MAQUINA = [
  * sería una puerta lateral que se salta el contador de horas y el descuento de
  * repuestos.
  */
+/*
+  EL ORDEN DE ESTA LISTA ES LA RESPUESTA POR DEFECTO.
+
+  «En espera» va primera porque es la respuesta segura: una máquina recién
+  registrada casi nunca está trabajando ya, y decir que sí la mete en los conteos
+  de flota operativa y en la vista del inspector antes de que nadie haya decidido
+  nada.
+
+  Es la regla 6 del documento del otro sistema —«toda máquina nueva entra en
+  esperando instrucciones»— adaptada: allí era un valor por defecto silencioso,
+  aquí se pregunta igual, pero lo que viene marcado es lo que no hace daño.
+*/
 export const ESTADOS_MAQUINA = [
-  { valor: 'ACTIVA', etiqueta: 'Activa', detalle: 'Trabajando o asignada a un frente.' },
   { valor: 'EN_ESPERA', etiqueta: 'En espera', detalle: 'Sana y disponible, sin asignar.' },
+  { valor: 'ACTIVA', etiqueta: 'Activa', detalle: 'Trabajando o asignada a un frente.' },
   {
     valor: 'FUERA_DE_SERVICIO',
     etiqueta: 'Fuera de servicio',

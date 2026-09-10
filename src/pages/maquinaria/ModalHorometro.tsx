@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/Input'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useGuardarLectura, useLecturas, type Maquina } from '@/lib/api/maquinaria'
 import { fecha as formatearFecha } from '@/lib/formato'
+import { etiquetaDeMaquina } from '@/lib/maquina'
 
 /**
  * La lectura del horómetro del día.
@@ -99,7 +100,7 @@ export function ModalHorometro({
     <Modal
       abierto={abierto}
       onCerrar={onCerrar}
-      titulo={`Horómetro · ${maquina.nombre}`}
+      titulo={`Horómetro · ${etiquetaDeMaquina(maquina)}`}
       descripcion="Copia los dos números que marca el reloj. La resta la hace el sistema."
       acciones={
         <>
