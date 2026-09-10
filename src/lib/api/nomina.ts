@@ -145,6 +145,37 @@ export function fichaDelInforme(e: Empleado): PersonaDelInforme {
   }
 }
 
+/*
+  DE QUÉ RESPONDE CADA PERSONA.
+
+  Christopher: «en nómina - personal, se debe indicar si la persona tiene o no
+  algún almacén, área o proceso a su cargo».
+
+  Va aparte de `useEmpleados` y no dentro: aquel lo llaman seis pantallas que
+  solo quieren la lista de nombres, y cargarles un cruce con almacenes y
+  máquinas para que ninguna lo use es pagar por nada.
+
+  «Área o proceso» no aparece porque todavía no existe: lo más parecido es el
+  organigrama, cuyo titular es texto libre. Cruzarlo por nombre daría aciertos y
+  fallos indistinguibles, y un «no tiene nada a cargo» falso es peor que no
+  contestar.
+*/
+export interface ACargoDe {
+  empleado_id: number
+  almacenes: number
+  maquinas: number
+  /** Los nombres, ya unidos. Nulo cuando no lleva nada. */
+  detalle: string | null
+}
+
+export function useACargoDe() {
+  return useQuery({
+    queryKey: ['nomina', 'a-cargo'],
+    staleTime: 60_000,
+    queryFn: () => rpc<ACargoDe[]>('a_cargo_de_empleados', {}),
+  })
+}
+
 export function useEmpleados(soloActivos = true) {
   return useQuery({
     queryKey: ['nomina', 'empleados', soloActivos],
