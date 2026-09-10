@@ -10,7 +10,12 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { TIPOS_ALMACEN, useAlmacenes, useGuardarAlmacen } from '@/lib/api/inventario'
+import {
+  TIPOS_ALMACEN,
+  useAlmacenes,
+  useGuardarAlmacen,
+  usePropietarios,
+} from '@/lib/api/inventario'
 import type { Almacen } from '@/lib/api/inventario'
 
 const vacio = {
@@ -20,6 +25,7 @@ const vacio = {
   ubicacion: '',
   recibe_compras: false,
   activo: true,
+  propietario: 'LACANTERA',
   capacidad: '',
   trabajos_a_la_vez: '',
 }
@@ -27,6 +33,7 @@ const vacio = {
 export function Almacenes() {
   const { data, isPending, error } = useAlmacenes(false)
   const guardar = useGuardarAlmacen()
+  const { data: propietarios } = usePropietarios()
   const [edicion, setEdicion] = useState<(typeof vacio & { id?: number }) | null>(null)
 
   const abrir = (a?: Almacen) =>
@@ -40,6 +47,7 @@ export function Almacenes() {
             ubicacion: a.ubicacion ?? '',
             recibe_compras: a.recibe_compras,
             activo: a.activo,
+            propietario: a.propietario ?? 'LACANTERA',
             capacidad: a.capacidad ?? '',
             trabajos_a_la_vez: a.trabajos_a_la_vez ? String(a.trabajos_a_la_vez) : '',
           }
@@ -108,6 +116,21 @@ export function Almacenes() {
                           Recibe compras
                         </Chip>
                       ) : null}
+
+                      {/*
+                        SOLO SE MARCA LO QUE NO ES NUESTRO.
+
+                        Rotular cada almacén con «La Cantera» sería repetir en
+                        once filas lo que se da por supuesto, y entonces la
+                        etiqueta de la gobernación se leería como una más. Se
+                        dice lo que rompe la norma; lo demás se calla.
+                      */}
+                      {a.propietario && a.propietario !== 'LACANTERA' ? (
+                        <Chip tone="warning" className="ml-2">
+                          {(propietarios ?? []).find((d) => d.codigo === a.propietario)?.nombre ??
+                            a.propietario}
+                        </Chip>
+                      ) : null}
                     </td>
                     <td className="text-ink/70 px-3 py-3">
                       {TIPOS_ALMACEN.find((t) => t.valor === a.tipo)?.etiqueta ?? a.tipo}
@@ -174,6 +197,35 @@ export function Almacenes() {
               value={edicion.tipo}
               onChange={(e) => cambiar({ tipo: e.target.value })}
               opciones={TIPOS_ALMACEN}
+            />
+
+            {/*
+              DE QUIÉN ES LO QUE SE GUARDA AQUÍ.
+
+              Christopher: «hay elementos, sillas, mesas, equipos, etc. que son
+              de la gobernación, entre los items que tiene a disposición la
+              cantera». El dueño va en el ALMACÉN y no en el artículo: veinte
+              sillas pueden ser ocho de ellos y doce compradas, y marcar el
+              artículo obligaría a inventar dos sillas distintas.
+
+              La base no deja cambiarlo con el almacén lleno —reescribiría de
+              quién es lo que hay dentro sin un asiento que lo explique— y
+              tampoco deja trasladar entre dueños: eso no es mover, es cambiar
+              de dueño, y no lo decide quien carga una silla.
+            */}
+            <Select
+              label="De quién es lo que guarda"
+              value={edicion.propietario}
+              onChange={(e) => cambiar({ propietario: e.target.value })}
+              hint={
+                edicion.id
+                  ? 'Solo se puede cambiar con el almacén vacío.'
+                  : 'Lo que entre aquí será de este dueño.'
+              }
+              opciones={(propietarios ?? []).map((d) => ({
+                valor: d.codigo,
+                etiqueta: d.es_la_casa ? `${d.nombre} (nosotros)` : d.nombre,
+              }))}
             />
             <Input
               label="Ubicación"

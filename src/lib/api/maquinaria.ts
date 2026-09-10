@@ -36,6 +36,8 @@ export type EstadoMaquina =
 export interface Maquina {
   id: number
   codigo: string
+  /** De quién es. Nulo en filas viejas; la base pone la casa por defecto. */
+  propietario?: string
   nombre: string
   tipo: string
   marca: string | null
@@ -364,6 +366,14 @@ export function useGuardarMaquina() {
       combustible_id?: number | null
       capacidad_combustible?: number | null
       nota?: string | null
+      /*
+        DE QUIÉN ES LA MÁQUINA.
+
+        Christopher: «este mismo aspecto se aplica también para las máquinas (ej.
+        algún volvo, chuto con volqueta)». Nulo deja el que tenga; en un alta, la
+        base pone la casa.
+      */
+      propietario?: string | null
     }) =>
       rpc<number>('guardar_maquina', {
         p_id: m.id ?? null,
@@ -382,6 +392,7 @@ export function useGuardarMaquina() {
         p_nota: m.nota ?? null,
         p_combustible_id: m.combustible_id ?? null,
         p_capacidad_combustible: m.capacidad_combustible ?? null,
+        p_propietario: m.propietario ?? null,
       }),
   )
 }

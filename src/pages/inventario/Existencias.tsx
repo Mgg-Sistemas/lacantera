@@ -226,8 +226,29 @@ export function Existencias() {
     setParams(v ? { almacen: v } : {}, { replace: true })
   const enTotal = almacenId === ''
 
+  /*
+    LOS SITIOS QUE GUARDAN COSAS DE OTRO DUEÑO.
+
+    Hoy no hay ninguno, y por eso esto no cuesta nada: el detalle por almacén se
+    pide solo cuando lo hay. El día que exista uno, la pantalla necesita el
+    detalle aunque se esté mirando la empresa entera, porque la fila de totales
+    no dice en qué almacén está cada cosa.
+  */
+  const ajenos = useMemo(
+    () =>
+      new Set(
+        (almacenes ?? [])
+          .filter((a) => (a.propietario ?? 'LACANTERA') !== 'LACANTERA')
+          .map((a) => a.id),
+      ),
+    [almacenes],
+  )
+
   const totales = useExistenciasTotales(enTotal)
-  const porAlmacen = useExistencias(almacenId ? Number(almacenId) : undefined, !enTotal)
+  const porAlmacen = useExistencias(
+    almacenId ? Number(almacenId) : undefined,
+    !enTotal || ajenos.size > 0,
+  )
   const { isPending, error } = enTotal ? totales : porAlmacen
 
   /*
@@ -569,6 +590,41 @@ export function Existencias() {
   const valorTotal = puedeValorar
     ? filtradas.reduce((s, e) => s + Number(e.valor_usd ?? 0), 0)
     : null
+
+  /*
+    LO AJENO NO SE SUMA A LO NUESTRO.
+
+    Christopher: «hay elementos, sillas, mesas, equipos, etc. que son de la
+    gobernación, entre los items que tiene a disposición la cantera». Contarlos
+    en «valor del inventario» diría que la empresa tiene un patrimonio que no
+    tiene, y esa cifra se usa para cerrar meses.
+
+    Se parte en dos y NO se esconde lo ajeno: sigue estando en el almacén, sigue
+    contándose y sigue haciendo falta saber que está. Lo que cambia es de quién
+    se dice que es.
+
+    La línea solo aparece cuando hay algo de otro dueño. Enseñar «de la cantera:
+    todo · de terceros: 0» en un almacén donde nunca habrá nada ajeno es ruido
+    que enseña a no leer la línea el día que sí dice algo.
+  */
+  const valorAjeno = useMemo(() => {
+    if (!puedeValorar || ajenos.size === 0) return 0
+
+    /*
+      SE SUMA DESDE EL DETALLE POR ALMACÉN, no desde la fila que se está viendo.
+
+      Mirando toda la empresa, cada renglón es la SUMA de un artículo en todos
+      los sitios y ya no dice en cuál está: no hay forma de repartirlo entre
+      dueños desde ahí. El detalle sí lo dice, y se restringe a los artículos
+      que están listados para que la cifra hable de lo que se está mirando.
+    */
+    const listados = new Set(filtradas.map((e) => e.articulo_id))
+    return (porAlmacen.data ?? []).reduce(
+      (s, e) =>
+        s + (ajenos.has(e.almacen_id) && listados.has(e.articulo_id) ? Number(e.valor_usd ?? 0) : 0),
+      0,
+    )
+  }, [puedeValorar, ajenos, filtradas, porAlmacen.data])
 
   /*
     LO QUE ESTE SITIO TIENE, VALE, NECESITA Y MUEVE
@@ -1012,7 +1068,15 @@ export function Existencias() {
             {valorTotal !== null ? (
               <p className="text-ink/80 text-sm">
                 Valor del inventario:{' '}
-                <span className="tabular font-semibold">{dolares(valorTotal)}</span>
+                <span className="tabular font-semibold">
+                  {dolares(valorTotal - valorAjeno)}
+                </span>
+                {valorAjeno > 0 ? (
+                  <span className="text-ink/50">
+                    {' '}
+                    · y {dolares(valorAjeno)} de otros dueños
+                  </span>
+                ) : null}
               </p>
             ) : (
               <p className="text-ink/45 text-sm">Sin permiso para ver el valor</p>
