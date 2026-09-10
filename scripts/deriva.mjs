@@ -187,20 +187,45 @@ if (!rutaVivas) {
 
 const vivas = leerVivas(rutaVivas)
 
-// El último archivo que la crea manda: es el orden en que se aplican.
+/*
+  UNA FUNCIÓN PUEDE ESTAR VARIAS VECES CON EL MISMO NOMBRE, y esto lo ignoraba.
+
+  Se guardaba UN cuerpo por nombre —el del último archivo que la creaba— y se
+  comparaba contra él. Con sobrecargas eso se rompe: `private.existencia` existe
+  como `(bigint, bigint)` y como `(bigint, bigint, text)`, y el detector
+  comparaba el cuerpo de una contra el de la otra. Resultado: DERIVA eterna en
+  tres funciones que estaban perfectamente escritas en su archivo.
+
+  Apareció el 10/09/2026, la primera vez que esta casa usó una sobrecarga. Y es
+  el peor tipo de fallo para una herramienta de verificación: un falso positivo
+  permanente enseña a ignorarla, y entonces deja de servir el día que acierta.
+
+  El arreglo es guardar TODOS los cuerpos de cada nombre y dar por buena la
+  función viva cuyo cuerpo coincida con ALGUNO. Es más débil que comparar por
+  firma exacta —dos sobrecargas con el mismo cuerpo se confundirían— pero eso no
+  puede pasar: si tuvieran el mismo cuerpo serían la misma función. Y sacar los
+  tipos de los argumentos del texto SQL para casar firmas es justo la clase de
+  parseo frágil que ya ha mordido a este script tres veces.
+*/
 const archivoDe = new Map()
 for (const nombre of fs.readdirSync(MIGRACIONES).filter((f) => f.endsWith('.sql')).sort()) {
   const texto = fs.readFileSync(path.join(MIGRACIONES, nombre), 'utf8')
-  for (const [fn, cuerpo] of cuerposDelArchivo(texto)) archivoDe.set(fn, { nombre, cuerpo })
+  for (const [fn, cuerpo] of cuerposDelArchivo(texto)) {
+    if (!archivoDe.has(fn)) archivoDe.set(fn, [])
+    archivoDe.get(fn).push({ nombre, cuerpo })
+  }
 }
 
 const alDia = [], conDeriva = [], sinArchivo = []
 for (const v of vivas) {
   const clave = v.f.toLowerCase()
-  const enArchivo = archivoDe.get(clave)
-  if (!enArchivo) { sinArchivo.push(v); continue }
-  if (normalizar(enArchivo.cuerpo) === normalizar(v.src)) alDia.push(v)
-  else conDeriva.push({ ...v, ultimo: enArchivo.nombre })
+  const versiones = archivoDe.get(clave)
+  if (!versiones || !versiones.length) { sinArchivo.push(v); continue }
+  const vivo = normalizar(v.src)
+  if (versiones.some((x) => normalizar(x.cuerpo) === vivo)) alDia.push(v)
+  // El último archivo que la crea es el que manda al reportar: es el orden en
+  // que se aplican, y por tanto el que habría que mirar.
+  else conDeriva.push({ ...v, ultimo: versiones[versiones.length - 1].nombre })
 }
 
 console.log(`funciones vivas: ${vivas.length}`)

@@ -256,6 +256,20 @@ export interface Existencia {
   valor_usd: string
   costo_promedio_usd: string | null
   ultimo_movimiento: string | null
+  /*
+    DE QUIÉN ES LO QUE HAY AQUÍ.
+
+    Desde que el dueño viaja con el material, un almacén puede tener tres bombas
+    nuestras y ocho de la gobernación. La fila sigue siendo una —partirla habría
+    roto todas las pantallas que cuentan renglones— con el reparto dentro.
+
+    `duenos` es un arreglo y no dos columnas porque los dueños son N. Solo entran
+    los que tienen saldo positivo ahí: uno que ya se llevó lo suyo no está en ese
+    almacén, y ofrecerlo en un desplegable sería ofrecer un cero.
+  */
+  existencia_propia: string
+  existencia_ajena: string
+  duenos: string[]
 }
 
 export function useExistencias(almacenId?: number, activa = true) {
@@ -422,6 +436,16 @@ export const TIPOS_MOVIMIENTO: Record<string, string> = {
   AJUSTE_NEGATIVO: 'Ajuste por conteo (faltante)',
   TRANSFERENCIA_SALIDA: 'Traslado, salida',
   TRANSFERENCIA_ENTRADA: 'Traslado, entrada',
+  /*
+    CAMBIAR DE DUEÑO NO ES UN TRASLADO, y por eso lleva nombre propio.
+
+    Los dos mueven material de una columna a otra, pero un traslado contesta
+    «se movió de patio» y esto contesta «dejó de ser nuestro». Con el mismo
+    rótulo, ningún reporte podría distinguirlos, y la segunda es la que le
+    interesa a quien cuadra con el ente.
+  */
+  CAMBIO_DUENO_SALIDA: 'Dejó de ser suyo',
+  CAMBIO_DUENO_ENTRADA: 'Pasó a ser suyo',
   REVERSO: 'Reverso',
 }
 
@@ -1224,6 +1248,14 @@ export function useTransferir() {
       presentaciones?: number | null
       presentacion?: string | null
       suelto?: number | null
+      /*
+        DE QUIÉN ES LO QUE SE MUEVE.
+
+        Un traslado no cambia de dueño: lo lleva. Solo hace falta decirlo cuando
+        en el origen hay material de varios dueños; con uno solo la base lo
+        resuelve y preguntar sería hacer trabajar a quien ya sabe la respuesta.
+      */
+      propietario?: string | null
     }) =>
       rpc<number>('transferir_existencia', {
         p_origen_id: t.origen_id,
@@ -1235,6 +1267,48 @@ export function useTransferir() {
         p_presentaciones: t.presentaciones ?? null,
         p_presentacion: t.presentacion || null,
         p_suelto: t.suelto ?? null,
+        p_propietario: t.propietario ?? null,
+      }),
+  )
+}
+
+/*
+  PASAR MATERIAL DE UN DUEÑO A OTRO.
+
+  Christopher: «¿cómo se hace una transferencia de dueño de uno o N items?».
+
+  No mueve nada de sitio: las sillas de la gobernación que pasan a ser nuestras
+  siguen donde estaban. Lo que cambia es de quién son, y por eso las dos patas
+  del asiento van en el mismo almacén.
+
+  El valor con el que entran en los libros del nuevo dueño es, por defecto, el
+  mismo con el que estaban. Se puede declarar otro —una donación puede acordarse
+  en un valor distinto del que tenía en los papeles de quien la entrega— y
+  entonces queda escrito que se declaró.
+*/
+export function useCambiarDuenoDeMaterial() {
+  return useAccionInventario(
+    (c: {
+      almacen_id: number
+      articulo_id: number
+      cantidad: number
+      de: string
+      a: string
+      /** Diez letras como mínimo: dentro de un año es lo único que lo explica. */
+      motivo: string
+      fecha?: string | null
+      /** El valor TOTAL declarado, no el unitario. Nulo deja el que tenía. */
+      valor_usd?: number | null
+    }) =>
+      rpc<number>('cambiar_dueno_de_material', {
+        p_almacen_id: c.almacen_id,
+        p_articulo_id: c.articulo_id,
+        p_cantidad: c.cantidad,
+        p_de: c.de,
+        p_a: c.a,
+        p_motivo: c.motivo,
+        p_fecha: c.fecha || null,
+        p_valor_usd: c.valor_usd ?? null,
       }),
   )
 }
