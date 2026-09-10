@@ -57,6 +57,17 @@ export interface Maquina {
   */
   operador_id?: number | null
   operador?: string | null
+  /*
+    QUÉ CLASE DE COSA ES.
+
+    Christopher: «segmentar si es una maquinaria (ej. volvo, chuto,
+    retroexcavadora, etc) o vehículo (ej. camioneta)».
+
+    NO se deduce de `tipo`: él llama maquinaria a un chuto —que es un camión— y
+    vehículo a una camioneta —que también lo es—, así que el corte no es «tiene
+    ruedas» sino para qué está la cosa. Y eso no está escrito en el tipo.
+  */
+  clase?: ClaseDeMaquina
   estado: EstadoMaquina
   tope_horas: string
   aviso_horas: string
@@ -197,6 +208,25 @@ export const ESTADOS_MAQUINA = [
     detalle: 'Ya no es de la flota. Se conserva por su historial.',
   },
 ]
+
+export type ClaseDeMaquina = 'MAQUINA' | 'VEHICULO' | 'EQUIPO'
+
+/*
+  EQUIPO existe para lo que no es ninguna de las dos —una planta eléctrica, un
+  generador— y está para que nadie tenga que meterlo a la fuerza en otra. Un
+  generador clasificado como «vehículo» rompería el conteo.
+*/
+export const CLASES_DE_MAQUINA: { valor: ClaseDeMaquina; etiqueta: string; pista: string }[] = [
+  { valor: 'MAQUINA', etiqueta: 'Maquinaria', pista: 'Trabaja en la mina: un volvo, un chuto, una retroexcavadora' },
+  { valor: 'VEHICULO', etiqueta: 'Vehículo', pista: 'Lleva gente y encargos: una camioneta' },
+  { valor: 'EQUIPO', etiqueta: 'Equipo', pista: 'Ni una cosa ni la otra: una planta, un generador' },
+]
+
+export const ETIQUETA_CLASE: Record<ClaseDeMaquina, string> = {
+  MAQUINA: 'Maquinaria',
+  VEHICULO: 'Vehículo',
+  EQUIPO: 'Equipo',
+}
 
 export const ETIQUETA_ESTADO: Record<EstadoMaquina, string> = {
   ACTIVA: 'Activa',
@@ -421,6 +451,8 @@ export function useGuardarMaquina() {
         para que se pueda dejar en nadie.
       */
       operador_id?: number | null
+      /** Maquinaria, vehículo o equipo. Nulo deja la que tenga. */
+      clase?: string | null
     }) =>
       rpc<number>('guardar_maquina', {
         p_id: m.id ?? null,
@@ -443,6 +475,7 @@ export function useGuardarMaquina() {
         p_estado: m.estado ?? null,
         p_fotos: m.fotos && m.fotos.length > 0 ? m.fotos : null,
         p_operador_id: m.operador_id ?? null,
+        p_clase: m.clase ?? null,
       }),
   )
 }
