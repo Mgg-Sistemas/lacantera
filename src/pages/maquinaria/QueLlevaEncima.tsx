@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { useArticulos } from '@/lib/api/catalogo'
+import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import {
   useAgregadosDeMaquina,
   useMontarAgregado,
@@ -61,6 +62,13 @@ export function QueLlevaEncima({
 }) {
   const { data, isPending, error } = useAgregadosDeMaquina(maquinaId)
   const { data: articulos } = useArticulos()
+  /*
+    DE DÓNDE PUEDE SALIR. Se piden las existencias enteras para saber en qué
+    almacenes hay cada artículo: ofrecer un sitio donde no hay ninguno es
+    ofrecer un error, igual que ya se corrigió en Transferencias.
+  */
+  const { data: existencias } = useExistencias()
+  const { data: almacenes } = useAlmacenes()
   const montar = useMontarAgregado()
   const retirar = useRetirarAgregado()
 
@@ -72,6 +80,7 @@ export function QueLlevaEncima({
     motivo: '',
     hecho_por: '',
     articulo_id: '',
+    almacen_id: '',
     serial: '',
     cantidad: '',
     fecha: hoyEnCaracas(),
@@ -80,6 +89,13 @@ export function QueLlevaEncima({
   }
   const [f, setF] = useState(vacio)
   const [motivo, setMotivo] = useState('')
+  const [destino, setDestino] = useState('')
+
+  /* Los sitios que tienen el artículo elegido, con cuánto hay en cada uno. */
+  const dondeHay = (existencias ?? []).filter(
+    (e) => String(e.articulo_id) === f.articulo_id && Number(e.disponibles) > 0,
+  )
+  const hayAqui = dondeHay.find((e) => String(e.almacen_id) === f.almacen_id)
 
   const puestos = (data ?? []).filter((a) => !a.retirado_el)
   const quitados = (data ?? []).filter((a) => a.retirado_el)
@@ -141,6 +157,7 @@ export function QueLlevaEncima({
                     variant="ghost"
                     onClick={() => {
                       setMotivo('')
+                      setDestino('')
                       setQuitando(a)
                     }}
                   >
@@ -168,6 +185,7 @@ export function QueLlevaEncima({
                     {enFecha(a.retirado_el!)}
                   </Chip>{' '}
                   {a.motivo_retiro}
+                  {a.destino_id ? ' · volvió al almacén' : ''}
                 </li>
               ))}
             </ul>
@@ -181,7 +199,7 @@ export function QueLlevaEncima({
           abierto
           onCerrar={() => setMontando(false)}
           titulo="Montarle algo a la máquina"
-          descripcion="Queda en su ficha y en su historia, con la fecha. No descuenta nada del almacén."
+          descripcion="Queda en su ficha y en su historia, con la fecha."
           acciones={
             <>
               <Button variant="outline" onClick={() => setMontando(false)}>
@@ -193,7 +211,16 @@ export function QueLlevaEncima({
                   montar.isPending ||
                   f.nombre.trim().length < 3 ||
                   // Lo mismo que exige la base, dicho antes de pulsar.
-                  f.motivo.trim().length < 4
+                  f.motivo.trim().length < 4 ||
+                  // Para descontar de un estante hace falta cuántos, y que
+                  // alcance. La base también lo para, pero enterarse al pulsar
+                  // con el formulario lleno llega tarde.
+                  Boolean(f.almacen_id && !(Number(f.cantidad.replace(',', '.')) > 0)) ||
+                  Boolean(
+                    f.almacen_id &&
+                      hayAqui &&
+                      Number(f.cantidad.replace(',', '.')) > Number(hayAqui.disponibles),
+                  )
                 }
                 onClick={async () => {
                   await montar.mutateAsync({
@@ -202,6 +229,7 @@ export function QueLlevaEncima({
                     motivo: f.motivo.trim(),
                     hecho_por: f.hecho_por.trim() || null,
                     articulo_id: f.articulo_id ? Number(f.articulo_id) : null,
+                    almacen_id: f.almacen_id ? Number(f.almacen_id) : null,
                     serial: f.serial.trim() || null,
                     cantidad: f.cantidad ? Number(f.cantidad.replace(',', '.')) : null,
                     fecha: f.fecha || null,
@@ -238,9 +266,12 @@ export function QueLlevaEncima({
                   // El nombre se rellena solo, y se puede corregir: «cauchos
                   // 29.5» puede querer decirse «cauchos 29.5 delanteros».
                   nombre: art ? art.nombre : x.nombre,
+                  // Cambiar de artículo invalida el almacén elegido: el sitio
+                  // que tenía el anterior puede no tener este.
+                  almacen_id: '',
                 }))
               }}
-              hint="Solo para que el nombre no se escriba de seis maneras. No descuenta del almacén."
+              hint="Elegirlo rellena el nombre, y es lo único que permite después descontarlo de un almacén."
               opciones={(articulos ?? []).map((a) => ({
                 valor: String(a.id),
                 codigo: a.codigo,
@@ -248,6 +279,49 @@ export function QueLlevaEncima({
                 detalle: a.unidad,
               }))}
             />
+
+            {/*
+              DE DÓNDE SALIÓ, QUE ES LA PREGUNTA QUE FALTABA.
+
+              Christopher: «la antena puede no ser descontada, pero tampoco podrá
+              estar disponible». Yo había dejado esta puerta sin tocar el
+              inventario, y para lo comprado afuera está bien — pero si los
+              cauchos salen de un estante, el saldo no puede seguir diciendo que
+              están ahí.
+
+              Solo aparece con un artículo elegido: sin saber QUÉ es y CUÁNTOS,
+              el libro no tiene nada que descontar. Y solo se ofrecen los sitios
+              que de verdad lo tienen, con cuánto hay en cada uno — ofrecer un
+              almacén vacío es ofrecer un error.
+            */}
+            {f.articulo_id && dondeHay.length > 0 ? (
+              <SelectBuscable
+                label="¿De qué almacén salió?"
+                vacio="De ninguno: vino de fuera"
+                valor={f.almacen_id}
+                onCambio={(v) => setF((x) => ({ ...x, almacen_id: v }))}
+                hint={
+                  f.almacen_id
+                    ? 'Se descuenta de ese almacén al guardar: deja de estar disponible.'
+                    : 'Sin almacén no se descuenta nada. Es el caso de lo que se compró afuera y se instaló.'
+                }
+                opciones={dondeHay.map((e) => ({
+                  valor: String(e.almacen_id),
+                  codigo: e.almacen_codigo,
+                  nombre: e.almacen,
+                  detalle: `hay ${e.disponibles} ${e.unidad}`,
+                }))}
+              />
+            ) : null}
+
+            {/* Sin sitios donde haya, se dice por qué no se pregunta, en vez de
+                dejar un desplegable mudo. */}
+            {f.articulo_id && dondeHay.length === 0 ? (
+              <p className="text-ink/45 text-xs leading-relaxed">
+                De ese artículo no hay existencia disponible en ningún almacén, así que no puede
+                salir de uno. Se anota igual: queda dicho qué lleva la máquina.
+              </p>
+            ) : null}
 
             <Input
               label="Qué se le montó"
@@ -303,9 +377,19 @@ export function QueLlevaEncima({
                 min="0"
                 step="0.01"
                 inputMode="decimal"
-                placeholder="Opcional"
+                placeholder={f.almacen_id ? 'Hace falta' : 'Opcional'}
                 value={f.cantidad}
                 onChange={(e) => setF({ ...f, cantidad: e.target.value })}
+                hint={
+                  hayAqui ? `Ahí hay ${hayAqui.disponibles} ${hayAqui.unidad}` : undefined
+                }
+                error={
+                  f.almacen_id &&
+                  hayAqui &&
+                  Number(f.cantidad.replace(',', '.')) > Number(hayAqui.disponibles)
+                    ? 'Ahí no hay tantos.'
+                    : undefined
+                }
               />
               <Input
                 label="Cuándo se le montó"
@@ -315,22 +399,27 @@ export function QueLlevaEncima({
                 onChange={(e) => setF({ ...f, fecha: e.target.value })}
               />
               {/*
-                LO QUE COSTÓ ES INFORMATIVO, y se dice para que nadie lo
-                confunda con la valoración del inventario. Esta puerta no toca
-                el libro: un número que nadie puede comprobar contra un asiento
-                sería ruido en la contabilidad.
+                EL COSTO SOLO SE PREGUNTA CUANDO NO SALE DE UN ALMACÉN.
+
+                Si sale de uno, el costo lo pone el libro —el promedio de ese
+                almacén— y preguntarlo sería invitar a escribir un número que
+                compite con el asiento. Cuando viene de fuera no hay asiento
+                contra el que comprobarlo, y entonces es lo único que hay: se
+                pregunta, y se dice claramente que es referencia.
               */}
-              <Input
-                label="Lo que costó (USD)"
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                placeholder="Opcional"
-                value={f.costo_usd}
-                onChange={(e) => setF({ ...f, costo_usd: e.target.value })}
-                hint="Solo como referencia: no entra en el valor del inventario."
-              />
+              {f.almacen_id ? null : (
+                <Input
+                  label="Lo que costó (USD)"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  placeholder="Opcional"
+                  value={f.costo_usd}
+                  onChange={(e) => setF({ ...f, costo_usd: e.target.value })}
+                  hint="Solo como referencia: no entra en el valor del inventario."
+                />
+              )}
             </div>
 
             <Input
@@ -339,6 +428,17 @@ export function QueLlevaEncima({
               value={f.nota}
               onChange={(e) => setF({ ...f, nota: e.target.value })}
             />
+
+            {/* Lo que va a pasar con el inventario, dicho antes de pulsar y no
+                después: descontar es lo que no se puede deshacer con un clic. */}
+            {f.almacen_id && hayAqui ? (
+              <p className="border-warning/40 bg-warning/10 text-warning rounded-lg border px-3 py-2 text-xs leading-relaxed">
+                Al guardar sale de {hayAqui.almacen}: quedarán{' '}
+                {Number(hayAqui.disponibles) - Number(f.cantidad.replace(',', '.') || 0)}{' '}
+                {hayAqui.unidad} y dejará de estar disponible. El costo lo pone el libro, al
+                promedio de ese almacén.
+              </p>
+            ) : null}
 
             {montar.error ? <ErrorDeCarga error={montar.error} /> : null}
           </div>
@@ -360,7 +460,11 @@ export function QueLlevaEncima({
               <Button
                 disabled={retirar.isPending || motivo.trim().length < 4}
                 onClick={async () => {
-                  await retirar.mutateAsync({ id: quitando.id, motivo: motivo.trim() })
+                  await retirar.mutateAsync({
+                    id: quitando.id,
+                    motivo: motivo.trim(),
+                    destino_id: destino ? Number(destino) : null,
+                  })
                   setQuitando(null)
                 }}
               >
@@ -382,6 +486,40 @@ export function QueLlevaEncima({
             onChange={(e) => setMotivo(e.target.value)}
             hint="Se pasó a otra máquina, se gastó, se lo llevó el dueño. Dentro de un año esto es lo único que quedará."
           />
+          {/*
+            ¿VUELVE AL ESTANTE?
+
+            Unos cauchos que se desmontan buenos vuelven al almacén y tienen que
+            volver a contarse; si no, se quedarían fuera del libro para siempre.
+            Lo gastado, lo que se pasó a otra máquina y lo que se llevó su dueño
+            no vuelven a ningún sitio, y ahí el silencio es la respuesta correcta.
+
+            Solo se pregunta si el libro sabe contarlo: sin artículo y sin
+            cantidad no hay nada que devolver, y ofrecerlo sería ofrecer un
+            error. Entra al mismo costo con el que salió.
+          */}
+          {quitando.articulo_id && Number(quitando.cantidad ?? 0) > 0 ? (
+            <div className="mt-4">
+              <SelectBuscable
+                label="¿Vuelve a algún almacén?"
+                vacio="No vuelve: se gastó o se fue"
+                valor={destino}
+                onCambio={setDestino}
+                hint={
+                  destino
+                    ? 'Vuelve a contarse ahí, al mismo costo con el que salió.'
+                    : 'Lo gastado, lo que se pasó a otra máquina y lo que se llevó su dueño no vuelven a ningún estante.'
+                }
+                opciones={(almacenes ?? []).map((a) => ({
+                  valor: String(a.id),
+                  codigo: a.codigo,
+                  nombre: a.nombre,
+                  detalle: a.tipo,
+                }))}
+              />
+            </div>
+          ) : null}
+
           {retirar.error ? <ErrorDeCarga error={retirar.error} className="mt-4" /> : null}
         </Modal>
       ) : null}
