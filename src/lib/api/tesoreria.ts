@@ -224,8 +224,12 @@ export interface ResumenPanel {
   /** Lo NUESTRO. Se pregunta por `propietarios.es_la_casa`, no escribiendo el
    *  nombre de la empresa dentro de la consulta. */
   inventario_usd: string
-  /** Lo que se custodia y es de otro. No suma arriba: no es patrimonio. */
+  /** Lo que se custodia y es de otro. Se valora igual: entra con su valor
+   *  declarado, y esconderlo no lo hace desaparecer. */
   inventario_ajeno_usd: string
+  /** Todo lo que hay, sea de quien sea. Es lo que se custodia y lo que se
+   *  asegura, y es una pregunta distinta de las otras dos. */
+  inventario_total_usd: string
   articulos_bajo_minimo: number
   tasa_de_hoy: boolean
 }

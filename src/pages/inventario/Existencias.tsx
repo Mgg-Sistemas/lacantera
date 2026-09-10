@@ -234,10 +234,10 @@ export function Existencias() {
   /*
     LOS SITIOS QUE GUARDAN COSAS DE OTRO DUEÑO.
 
-    Hoy no hay ninguno, y por eso esto no cuesta nada: el detalle por almacén se
-    pide solo cuando lo hay. El día que exista uno, la pantalla necesita el
-    detalle aunque se esté mirando la empresa entera, porque la fila de totales
-    no dice en qué almacén está cada cosa.
+    Ya no hace falta pedir el detalle por almacén para saber cuánto de lo que se
+    ve es ajeno: desde el 10/09/2026 `v_existencias_totales` trae el reparto en
+    la propia fila. Esto queda para saber si el ALMACÉN que se está mirando es de
+    otro, que es una pregunta de una sola comparación.
   */
   const ajenos = useMemo(
     () =>
@@ -254,10 +254,7 @@ export function Existencias() {
     (propietarios ?? []).find((d) => d.codigo === codigo)?.nombre ?? codigo ?? undefined
 
   const totales = useExistenciasTotales(enTotal)
-  const porAlmacen = useExistencias(
-    almacenId ? Number(almacenId) : undefined,
-    !enTotal || ajenos.size > 0,
-  )
+  const porAlmacen = useExistencias(almacenId ? Number(almacenId) : undefined, !enTotal)
   const { isPending, error } = enTotal ? totales : porAlmacen
 
   /*
@@ -604,39 +601,39 @@ export function Existencias() {
     : null
 
   /*
-    LO AJENO NO SE SUMA A LO NUESTRO.
+    CUÁNTO DE ESE VALOR ES DE OTRO DUEÑO.
 
-    Christopher: «hay elementos, sillas, mesas, equipos, etc. que son de la
-    gobernación, entre los items que tiene a disposición la cantera». Contarlos
-    en «valor del inventario» diría que la empresa tiene un patrimonio que no
-    tiene, y esa cifra se usa para cerrar meses.
+    Christopher: «no podemos omitir la pregunta de ¿cuánto vale todo el
+    inventario? ¿cuánto vale lo de la cantera o lo de la gobernación por
+    separado?». Son tres preguntas y las tres son legítimas: el total es lo que
+    se custodia, lo nuestro es el patrimonio —y esa cifra se usa para cerrar
+    meses— y lo ajeno es lo que hay que devolver.
 
-    Se parte en dos y NO se esconde lo ajeno: sigue estando en el almacén, sigue
-    contándose y sigue haciendo falta saber que está. Lo que cambia es de quién
-    se dice que es.
+    Mirando TODA LA EMPRESA la cifra sale de la propia fila: `v_existencias_totales`
+    trae el reparto desde el 10/09/2026. Antes había que sumarlo desde el detalle
+    por almacén, porque el renglón del total no decía en qué sitio estaba cada
+    cosa; ese rodeo obligaba a cargar los once almacenes para poder contestar, y
+    daba cero mientras no hubieran llegado todos.
+
+    Mirando UN ALMACÉN, el almacén entero es de un dueño: o todo cuenta o nada.
 
     La línea solo aparece cuando hay algo de otro dueño. Enseñar «de la cantera:
     todo · de terceros: 0» en un almacén donde nunca habrá nada ajeno es ruido
     que enseña a no leer la línea el día que sí dice algo.
   */
   const valorAjeno = useMemo(() => {
-    if (!puedeValorar || ajenos.size === 0) return 0
+    if (!puedeValorar) return 0
 
-    /*
-      SE SUMA DESDE EL DETALLE POR ALMACÉN, no desde la fila que se está viendo.
+    if (enTotal) {
+      return filtradas.reduce(
+        (s, e) => s + Number((e as ExistenciaTotal).valor_ajeno_usd ?? 0),
+        0,
+      )
+    }
 
-      Mirando toda la empresa, cada renglón es la SUMA de un artículo en todos
-      los sitios y ya no dice en cuál está: no hay forma de repartirlo entre
-      dueños desde ahí. El detalle sí lo dice, y se restringe a los artículos
-      que están listados para que la cifra hable de lo que se está mirando.
-    */
-    const listados = new Set(filtradas.map((e) => e.articulo_id))
-    return (porAlmacen.data ?? []).reduce(
-      (s, e) =>
-        s + (ajenos.has(e.almacen_id) && listados.has(e.articulo_id) ? Number(e.valor_usd ?? 0) : 0),
-      0,
-    )
-  }, [puedeValorar, ajenos, filtradas, porAlmacen.data])
+    // Un almacén tiene un solo dueño: si es ajeno, lo es todo lo que hay dentro.
+    return ajenos.has(Number(almacenId)) ? (valorTotal ?? 0) : 0
+  }, [puedeValorar, enTotal, filtradas, ajenos, almacenId, valorTotal])
 
   /*
     LO QUE ESTE SITIO TIENE, VALE, NECESITA Y MUEVE
@@ -1091,15 +1088,24 @@ export function Existencias() {
               {enTotal ? ' en toda la empresa' : ''}
             </p>
             {valorTotal !== null ? (
+              /*
+                LAS TRES CIFRAS, PORQUE SON TRES PREGUNTAS.
+
+                Antes decía lo nuestro y mencionaba lo ajeno de pasada, y así
+                «cuánto vale todo» quedaba sin contestar. Christopher: «no
+                podemos omitir la pregunta de ¿cuánto vale todo el inventario?
+                ¿cuánto vale lo de la cantera o lo de la gobernación por
+                separado?». El total es lo que se custodia, lo nuestro es el
+                patrimonio, y lo de cada otro es lo que hay que devolver.
+              */
               <p className="text-ink/80 text-sm">
                 Valor del inventario:{' '}
-                <span className="tabular font-semibold">
-                  {dolares(valorTotal - valorAjeno)}
-                </span>
+                <span className="tabular font-semibold">{dolares(valorTotal)}</span>
                 {valorAjeno > 0 ? (
                   <span className="text-ink/50">
                     {' '}
-                    · y {dolares(valorAjeno)} de otros dueños
+                    · {dolares(valorTotal - valorAjeno)} de La Cantera ·{' '}
+                    <span className="text-warning">{dolares(valorAjeno)} de otros dueños</span>
                   </span>
                 ) : null}
               </p>
@@ -1181,6 +1187,28 @@ export function Existencias() {
                           disponibles» en cada renglón enseñaría a no leerlo, y
                           entonces no se leería el día que dice cero.
                         */}
+                        {/*
+                          Y CUÁNTAS SON NUESTRAS.
+
+                          Solo en la vista de toda la empresa, y solo cuando hay
+                          material de otro dueño en ese artículo. En la vista de
+                          un almacén no hace falta: el almacén ya tiene un dueño
+                          y lo dice la cabecera.
+
+                          Es la respuesta a «¿son dos items o uno?»: uno, con el
+                          reparto escrito debajo. El código no se toca.
+                        */}
+                        {total && Number(total.existencia_ajena) > 0 ? (
+                          <p className="text-2xs mt-0.5">
+                            <span className="text-ink/50">
+                              {cantidad(total.existencia_propia)} de La Cantera
+                            </span>{' '}
+                            <span className="text-warning">
+                              · {cantidad(total.existencia_ajena)} de otros dueños
+                            </span>
+                          </p>
+                        ) : null}
+
                         {Number(e.prestadas) > 0 ? (
                           <p
                             className={cn(

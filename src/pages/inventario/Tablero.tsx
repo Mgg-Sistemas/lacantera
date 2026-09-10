@@ -15,7 +15,12 @@ import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
-import { useAlmacenes, useExistencias, useMovimientos } from '@/lib/api/inventario'
+import {
+  useAlmacenes,
+  useExistencias,
+  useInventarioPorDueno,
+  useMovimientos,
+} from '@/lib/api/inventario'
 import { esAjeno } from '@/lib/deQuien'
 import { dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -172,6 +177,7 @@ export function TableroInventario() {
   const { data: existencias, isPending, error } = useExistencias()
   const { data: movimientos } = useMovimientos()
   const { data: almacenes } = useAlmacenes()
+  const { data: duenos } = useInventarioPorDueno()
 
 
   const filas = existencias ?? []
@@ -181,27 +187,36 @@ export function TableroInventario() {
   const conExistencia = filas.filter((e) => Number(e.existencia) > 0)
 
   /*
-    «VALOR DEL INVENTARIO» TIENE QUE SER EL NUESTRO.
+    LAS TRES PREGUNTAS DEL VALOR, Y NINGUNA SOBRA.
 
-    Esta tarjeta sumaba el valor de TODOS los almacenes, y desde que existen los
-    dueños eso incluye lo de la gobernación. Un número grande y bien formateado
-    que dice «Valor del inventario» se lee como patrimonio de la empresa, y las
-    sillas prestadas no lo son.
+    Esta tarjeta sumaba TODOS los almacenes, y desde que hay dueños eso incluye
+    lo de la gobernación: un número grande bajo «Valor del inventario» se lee
+    como patrimonio, y las sillas prestadas no lo son.
 
-    Es el mismo arreglo que ya lleva Existencias: se reparte en dos, y lo ajeno
-    se dice aparte en vez de esconderse. Esconderlo tampoco serviría — hay que
-    saber cuánto material de otro se está custodiando.
+    Al partirlo me pasé de frenada y dejé sin responder cuánto vale todo.
+    Christopher: «no podemos omitir la pregunta de ¿cuánto vale todo el
+    inventario? ¿cuánto vale lo de la cantera o lo de la gobernación por
+    separado?». Son tres cosas distintas —lo que se custodia, lo que es
+    patrimonio, lo que hay que devolver— y aquí, que hay sitio, se enseñan las
+    tres.
+
+    El reparto sale de `v_inventario_por_dueno` y no de contar aquí: una fila por
+    dueño aguanta el tercero y el cuarto sin tocar nada, y ya se sabe que van a
+    aparecer.
   */
+  const porDueno = (duenos ?? []).filter((d) => Number(d.valor_usd) > 0)
+  const valorNuestro = (duenos ?? [])
+    .filter((d) => d.es_la_casa)
+    .reduce((s, d) => s + Number(d.valor_usd), 0)
+  const valorAjeno = (duenos ?? [])
+    .filter((d) => !d.es_la_casa)
+    .reduce((s, d) => s + Number(d.valor_usd), 0)
+  const valorTodo = valorNuestro + valorAjeno
+
+  /* Para «bajo el mínimo», que es una señal de compra y solo se compra lo
+     propio. Ver más abajo. */
   const deAjenos = new Set(
     (almacenes ?? []).filter((a) => esAjeno(a.propietario)).map((a) => a.id),
-  )
-  const valorNuestro = filas.reduce(
-    (s, e) => s + (deAjenos.has(e.almacen_id) ? 0 : Number(e.valor_usd)),
-    0,
-  )
-  const valorAjeno = filas.reduce(
-    (s, e) => s + (deAjenos.has(e.almacen_id) ? Number(e.valor_usd) : 0),
-    0,
   )
 
   /*
@@ -260,19 +275,41 @@ export function TableroInventario() {
 
             <Card>
               <p className="text-ink/45 text-2xs font-mono tracking-[0.16em] uppercase">
-                Valor del inventario
+                {porDueno.length > 1 ? 'Valor del inventario, todo' : 'Valor del inventario'}
               </p>
               <p className="text-ink/90 tabular mt-3 text-3xl font-light">
-                {dolares(valorNuestro)}
+                {dolares(valorTodo)}
               </p>
               <p className="text-ink/45 mt-2 text-xs">A costo promedio, no a precio de venta</p>
-              {/* Lo de otros dueños, dicho aparte. No suma arriba porque no es
-                  patrimonio de la empresa, y no se calla porque hay que saber
-                  cuánto material ajeno se está custodiando. */}
-              {valorAjeno > 0 ? (
-                <p className="text-warning mt-1 text-xs">
-                  Y {dolares(valorAjeno)} de otros dueños, que no es suyo
-                </p>
+
+              {/*
+                EL REPARTO, UNA LÍNEA POR DUEÑO.
+
+                Solo cuando hay más de uno con material: repartir un total que es
+                todo nuestro sería decir dos veces lo mismo. Lo de la casa lleva
+                la palabra «suyo» porque es la única de las cifras que va al
+                balance; lo demás se custodia y se devuelve.
+              */}
+              {porDueno.length > 1 ? (
+                <ul className="border-hairline mt-3 space-y-1 border-t pt-3">
+                  {porDueno.map((d) => (
+                    <li key={d.propietario} className="flex items-baseline justify-between gap-3">
+                      <span className={d.es_la_casa ? 'text-ink/70 text-xs' : 'text-warning text-xs'}>
+                        {d.nombre}
+                        {d.es_la_casa ? ' (suyo)' : ''}
+                      </span>
+                      <span
+                        className={
+                          d.es_la_casa
+                            ? 'text-ink/80 tabular text-xs font-medium'
+                            : 'text-warning tabular text-xs font-medium'
+                        }
+                      >
+                        {dolares(Number(d.valor_usd))}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               ) : null}
             </Card>
 
