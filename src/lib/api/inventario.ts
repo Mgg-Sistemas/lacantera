@@ -199,6 +199,41 @@ export function useGuardarPropietario() {
   })
 }
 
+/*
+  CUÁNTO VALE LO DE CADA DUEÑO.
+
+  Christopher: «no podemos omitir la pregunta de ¿cuánto vale todo el inventario?
+  ¿cuánto vale lo de la cantera o lo de la gobernación por separado?».
+
+  Son tres preguntas y las tres son legítimas: lo que se custodia, lo que es
+  patrimonio y lo que hay que devolver. Un número solo no contesta ninguna sin
+  ambigüedad, y el material ajeno SÍ se valora — entra con su valor declarado
+  como cualquier otra entrada.
+
+  Una fila por dueño y no dos columnas fijas: «por separado» hoy son dos y mañana
+  cuatro. El dueño sale aunque no tenga nada, porque un cero es una respuesta.
+*/
+export interface InventarioDeDueno {
+  propietario: string
+  nombre: string
+  es_la_casa: boolean
+  orden: number
+  articulos: number
+  valor_usd: string
+  almacenes: number
+}
+
+export function useInventarioPorDueno() {
+  return useQuery({
+    queryKey: ['existencias', 'por-dueno'],
+    staleTime: 60_000,
+    queryFn: async () =>
+      desenvolver<InventarioDeDueno[]>(
+        await supabase.from('v_inventario_por_dueno').select('*').order('orden'),
+      ),
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Existencias
 // ---------------------------------------------------------------------------
@@ -264,6 +299,23 @@ export interface ExistenciaTotal {
   /** En cuántos almacenes o talleres ha pasado por el libro. */
   almacenes: number
   ultimo_movimiento: string | null
+  /*
+    EL REPARTO POR DUEÑO, DENTRO DE LA MISMA FILA.
+
+    Christopher preguntó si unas botas que tienen los dos dueños son dos
+    artículos, y si habría que retocar el código para diferenciarlas en los
+    reportes. No: son unas botas, y partir el código dejaría «¿cuántas botas
+    hay?» sin respuesta a menos que uno se sepa los dos códigos.
+
+    La diferenciación se hace con la dimensión del dueño, que es lo que son
+    estas cuatro columnas. Una fila por artículo con el desglose dentro, en vez
+    de dos filas que ya no se pueden sumar.
+  */
+  existencia_propia: string
+  existencia_ajena: string
+  /** Nulos sin INVENTARIO.VER_VALORACION, igual que `valor_usd`. */
+  valor_propio_usd: string | null
+  valor_ajeno_usd: string | null
 }
 
 export function useExistenciasTotales(activa = true) {

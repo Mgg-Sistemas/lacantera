@@ -349,26 +349,40 @@ export function Dashboard() {
             ) : null}
             {veInventario ? (
               /*
-                ESTE NÚMERO ES LO NUESTRO, Y AHORA LO ES DE VERDAD.
+                TRES PREGUNTAS, Y LA TARJETA CONTESTA LAS TRES.
 
-                Sumaba el valor de todos los almacenes, y desde que hay dueños
-                eso incluía el material de la gobernación. En la portada del
-                sistema, en grande y bajo el rótulo «Valor del inventario»,
-                nadie lo lee como «lo que custodiamos»: se lee como patrimonio.
+                Primero sumaba todos los almacenes, y desde que hay dueños eso
+                incluía el material de la gobernación: en la portada, en grande y
+                bajo «Valor del inventario», eso se lee como patrimonio.
 
-                `v_panel_resumen` lo parte en dos desde el 10/09/2026. Lo ajeno
-                no se esconde: cuando lo hay, ocupa la línea de abajo, que es
-                donde va lo que matiza la cifra sin competir con ella.
+                Al partirlo me pasé de frenada y dejé el total sin responder.
+                Christopher: «no podemos omitir la pregunta de ¿cuánto vale todo
+                el inventario? ¿cuánto vale lo de la cantera o lo de la
+                gobernación por separado?».
+
+                Son tres cosas distintas y ninguna sobra: el total es lo que se
+                custodia y lo que se asegura; lo nuestro es el patrimonio; lo de
+                cada otro es lo que hay que devolver. La cifra grande es el
+                total, con la etiqueta diciendo que es todo, y el reparto va
+                debajo — donde va lo que matiza sin competir.
+
+                Mientras no haya material de nadie más, la línea de abajo vuelve
+                a ser la del mínimo: repartir un total que es todo nuestro sería
+                decir dos veces lo mismo.
               */
               <StatCard
                 a="/app/inventario/existencias"
-                label="Valor del inventario"
-                value={dolaresRedondos(r.inventario_usd)}
+                label={
+                  Number(r.inventario_ajeno_usd) > 0
+                    ? 'Valor del inventario, todo'
+                    : 'Valor del inventario'
+                }
+                value={dolaresRedondos(r.inventario_total_usd)}
                 icon={<Boxes />}
                 tone="info"
                 deltaLabel={
                   Number(r.inventario_ajeno_usd) > 0
-                    ? `Y ${dolaresRedondos(r.inventario_ajeno_usd)} de otros dueños`
+                    ? `${dolaresRedondos(r.inventario_usd)} de La Cantera · ${dolaresRedondos(r.inventario_ajeno_usd)} de otros`
                     : r.articulos_bajo_minimo === 0
                       ? 'Ningún artículo bajo mínimo'
                       : `${r.articulos_bajo_minimo} bajo el mínimo`
