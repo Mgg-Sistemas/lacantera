@@ -270,6 +270,14 @@ export interface Existencia {
   existencia_propia: string
   existencia_ajena: string
   duenos: string[]
+  /*
+    CUÁNTO DE ESO NO TIENE PRECIO.
+
+    «20 sillas · 120,00 USD» contesta a medias sin avisar: quien lo lee saca que
+    cada silla vale 6, y no vale 6 ninguna. La cifra del valor es cierta —vale eso
+    lo que está valorado— y esto dice cuánto queda fuera de la cuenta.
+  */
+  existencia_sin_valorar: string
 }
 
 export function useExistencias(almacenId?: number, activa = true) {
@@ -330,6 +338,8 @@ export interface ExistenciaTotal {
   /** Nulos sin INVENTARIO.VER_VALORACION, igual que `valor_usd`. */
   valor_propio_usd: string | null
   valor_ajeno_usd: string | null
+  /** Cuánto de eso no tiene precio declarado. Ver `Existencia`. */
+  existencia_sin_valorar: string
 }
 
 export function useExistenciasTotales(activa = true) {
@@ -685,6 +695,18 @@ export function useRegistrarEntrada() {
        * fallaba con un «acéptalo» que la pantalla no ofrecía cómo aceptar.
        */
       confirmado?: boolean
+      /*
+        NO SE SABE CUÁNTO VALE, que no es lo mismo que no costó nada.
+
+        `sin_costo` dice «lo pagó otra empresa»: es un cero comprobable. Esto
+        dice que no hay cifra. Las sillas de la gobernación llegan así, y
+        escribir cero diría que no valen nada.
+
+        Lo pidió Christopher, y el porqué llegó después: el inventario de la
+        gobernación está sin hacer, van a cargar cientos de renglones sin precio,
+        y exigir una cifra obligaría a inventarla.
+      */
+      sin_valor?: boolean
     }) =>
       rpc<number>('registrar_entrada', {
         p_almacen_id: e.almacen_id,
@@ -696,6 +718,7 @@ export function useRegistrarEntrada() {
         p_fecha: e.fecha ?? null,
         p_sin_costo: e.sin_costo ?? false,
         p_confirmado: e.confirmado ?? false,
+        p_sin_valor: e.sin_valor ?? false,
       }),
   )
 }
