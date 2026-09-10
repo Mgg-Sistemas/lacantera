@@ -51,21 +51,59 @@ export interface Almacen {
   trabajos_a_la_vez?: number | null
 }
 
+/*
+  LOS TIPOS DE SITIO.
+
+  `guardaMaterial` no es decoración: un patio de máquinas no lleva existencias, y
+  la base lo rechaza en `private.registrar_movimiento` —el único sitio de toda la
+  base que escribe el libro—. Aquí sirve para no ofrecerlo, que es la otra mitad
+  de la misma regla: la base rechaza y la pantalla no propone.
+*/
 export const TIPOS_ALMACEN = [
   { valor: 'ALMACEN', etiqueta: 'Almacén' },
   { valor: 'PATIO', etiqueta: 'Patio de material' },
   { valor: 'TALLER', etiqueta: 'Taller' },
   { valor: 'COMBUSTIBLE', etiqueta: 'Combustible' },
   { valor: 'TRANSITO', etiqueta: 'En tránsito' },
+  /*
+    Christopher: «debemos ampliar las opciones, incluso añadir un lugar que sea
+    un patio, pero no de material, pensado por ejemplo para patio de máquinas o
+    vehículos». Es un tipo y no una casilla sobre los que ya hay: una casilla
+    dejaría marcar un taller como que no guarda material, y un taller así no
+    podría recibir el repuesto que va a montar.
+  */
+  { valor: 'PATIO_MAQUINAS', etiqueta: 'Patio de máquinas y vehículos' },
 ]
 
-export function useAlmacenes(soloActivos = true) {
+/** Los tipos donde de verdad se puede llevar existencia. */
+export const SITIOS_SIN_MATERIAL = ['PATIO_MAQUINAS']
+
+export const guardaMaterial = (tipo?: string | null) =>
+  !SITIOS_SIN_MATERIAL.includes(tipo ?? '')
+
+/**
+ * Los sitios.
+ *
+ * POR QUÉ LOS QUE NO GUARDAN MATERIAL SE ESCONDEN POR DEFECTO
+ *
+ * Este gancho lo llaman veinte pantallas, y diecinueve de ellas preguntan
+ * «¿a qué almacén?» para mover material. Un patio de máquinas no lleva
+ * existencias —la base lo rechaza— así que ofrecerlo en esos veinte
+ * desplegables sería ofrecer diecinueve puertas cerradas.
+ *
+ * El defecto es el que no puede hacer daño: se esconden, y las dos pantallas
+ * que sí los necesitan —la lista de sitios y «dónde se resguarda» de una
+ * máquina— los piden a propósito. Al revés habría hecho falta acordarse de
+ * filtrar en diecinueve sitios, y de eso uno se olvida.
+ */
+export function useAlmacenes(soloActivos = true, conSitiosSinMaterial = false) {
   return useQuery({
-    queryKey: ['almacenes', soloActivos],
+    queryKey: ['almacenes', soloActivos, conSitiosSinMaterial],
     queryFn: async () => {
       let q = supabase.from('almacenes').select('*').order('nombre')
       if (soloActivos) q = q.eq('activo', true)
-      return desenvolver<Almacen[]>(await q)
+      const filas = await desenvolver<Almacen[]>(await q)
+      return conSitiosSinMaterial ? filas : filas.filter((a) => guardaMaterial(a.tipo))
     },
     staleTime: 5 * 60_000,
   })

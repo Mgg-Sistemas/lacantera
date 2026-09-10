@@ -221,7 +221,11 @@ export interface ResumenPanel {
   disponible_usd: string
   disponible_ves: string
   cuentas_sin_abrir: number
+  /** Lo NUESTRO. Se pregunta por `propietarios.es_la_casa`, no escribiendo el
+   *  nombre de la empresa dentro de la consulta. */
   inventario_usd: string
+  /** Lo que se custodia y es de otro. No suma arriba: no es patrimonio. */
+  inventario_ajeno_usd: string
   articulos_bajo_minimo: number
   tasa_de_hoy: boolean
 }

@@ -348,6 +348,18 @@ export function Dashboard() {
               />
             ) : null}
             {veInventario ? (
+              /*
+                ESTE NÚMERO ES LO NUESTRO, Y AHORA LO ES DE VERDAD.
+
+                Sumaba el valor de todos los almacenes, y desde que hay dueños
+                eso incluía el material de la gobernación. En la portada del
+                sistema, en grande y bajo el rótulo «Valor del inventario»,
+                nadie lo lee como «lo que custodiamos»: se lee como patrimonio.
+
+                `v_panel_resumen` lo parte en dos desde el 10/09/2026. Lo ajeno
+                no se esconde: cuando lo hay, ocupa la línea de abajo, que es
+                donde va lo que matiza la cifra sin competir con ella.
+              */
               <StatCard
                 a="/app/inventario/existencias"
                 label="Valor del inventario"
@@ -355,9 +367,11 @@ export function Dashboard() {
                 icon={<Boxes />}
                 tone="info"
                 deltaLabel={
-                  r.articulos_bajo_minimo === 0
-                    ? 'Ningún artículo bajo mínimo'
-                    : `${r.articulos_bajo_minimo} bajo el mínimo`
+                  Number(r.inventario_ajeno_usd) > 0
+                    ? `Y ${dolaresRedondos(r.inventario_ajeno_usd)} de otros dueños`
+                    : r.articulos_bajo_minimo === 0
+                      ? 'Ningún artículo bajo mínimo'
+                      : `${r.articulos_bajo_minimo} bajo el mínimo`
                 }
               />
             ) : null}

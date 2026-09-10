@@ -8,6 +8,8 @@ import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { AvisoBloqueantes, SemaforoMantenimiento } from '@/components/SemaforoMantenimiento'
 import { DeQuienEs } from '@/components/DeQuienEs'
+import { LA_CASA } from '@/lib/deQuien'
+import { usePropietarios } from '@/lib/api/inventario'
 import { ModalHorometro } from './ModalHorometro'
 import { ModalTaller } from './ModalTaller'
 import { ModalEstado } from './ModalEstado'
@@ -64,10 +66,20 @@ export function Maquinaria() {
   */
   const { data, isPending, error } = useMaquinaria(false)
   const { puede } = useMisPermisos()
+  const { data: propietarios } = usePropietarios()
 
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [tipo, setTipo] = useState('')
+  /*
+    DE QUIÉN ES.
+
+    Christopher: «este filtro deberá también filtrar por propietario (La Cantera,
+    Gobernación)». La pastilla ya decía de quién era cada máquina, pero decirlo
+    máquina por máquina no contesta «enséñame lo de la gobernación», que es la
+    pregunta que se hace al preparar una devolución o al cuadrar con el ente.
+  */
+  const [dueno, setDueno] = useState('')
   const [soloPendientes, setSoloPendientes] = useState(false)
 
   const [horometro, setHorometro] = useState<Maquina | null>(null)
@@ -104,6 +116,17 @@ export function Maquinaria() {
     [todas],
   )
 
+  /*
+    Los dueños salen de las máquinas cargadas, igual que los tipos: ofrecer
+    «Gobernación» cuando no hay ninguna suya es ofrecer una lista vacía. Y con un
+    solo dueño el desplegable no aparece — un filtro con una opción es un adorno,
+    que es el mismo criterio que ya sigue el de tipo.
+  */
+  const duenos = useMemo(
+    () => [...new Set(todas.map((m) => m.propietario ?? LA_CASA))].sort(),
+    [todas],
+  )
+
   const maquinas = useMemo(() => {
     // Sin tildes y por trozos sueltos: «450 john» encuentra la EXCAVADORA 450
     // JOHN DEERE, y «maquina» encuentra «MÁQUINA». Es el mismo criterio del
@@ -121,6 +144,9 @@ export function Maquinaria() {
       if (!filtroEstado && !m.en_la_flota) return false
       if (filtroEstado && m.estado !== filtroEstado) return false
       if (tipo && m.tipo !== tipo) return false
+      // Nulo cuenta como nuestro: las filas anteriores a que existiera la
+      // pregunta eran de la casa, y la columna nació con ese valor por defecto.
+      if (dueno && (m.propietario ?? LA_CASA) !== dueno) return false
       if (soloPendientes && m.semaforo === 'OK') return false
       if (trozos.length === 0) return true
 
@@ -131,7 +157,7 @@ export function Maquinaria() {
 
       return trozos.every((t) => heno.includes(t))
     })
-  }, [todas, busqueda, filtroEstado, tipo, soloPendientes])
+  }, [todas, busqueda, filtroEstado, tipo, dueno, soloPendientes])
 
   /*
     Los avisos se cuentan sobre TODAS y no sobre las filtradas.
@@ -143,7 +169,7 @@ export function Maquinaria() {
   */
   const bloqueantes = todas.filter((m) => m.semaforo === 'BLOQUEANTE' && m.en_la_flota).length
   const pendientes = todas.filter((m) => m.semaforo !== 'OK' && m.en_la_flota).length
-  const hayFiltro = Boolean(busqueda.trim() || filtroEstado || tipo || soloPendientes)
+  const hayFiltro = Boolean(busqueda.trim() || filtroEstado || tipo || dueno || soloPendientes)
 
   return (
     <>
@@ -183,7 +209,7 @@ export function Maquinaria() {
               «no hay máquinas» son tres campos que estorban. */}
           {todas.length > 0 ? (
             <Card className="mb-4">
-              <div className="grid gap-3 sm:grid-cols-[1fr_190px_190px]">
+              <div className="grid gap-3 sm:grid-cols-[1fr_190px_190px] lg:grid-cols-[1fr_190px_190px_190px]">
                 <Input
                   label="Buscar"
                   icon={<Search />}
@@ -214,6 +240,23 @@ export function Maquinaria() {
                     opciones={tipos.map((t) => ({ valor: t, etiqueta: t }))}
                   />
                 ) : null}
+
+                {/* Y el dueño, con el mismo criterio: solo si hay más de uno.
+                    Mientras toda la flota sea nuestra, este filtro no tiene nada
+                    que separar. */}
+                {duenos.length > 1 ? (
+                  <Select
+                    label="De quién es"
+                    vacio="De cualquiera"
+                    value={dueno}
+                    onChange={(e) => setDueno(e.target.value)}
+                    opciones={duenos.map((d) => ({
+                      valor: d,
+                      etiqueta:
+                        (propietarios ?? []).find((x) => x.codigo === d)?.nombre ?? d,
+                    }))}
+                  />
+                ) : null}
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -242,6 +285,7 @@ export function Maquinaria() {
                       setBusqueda('')
                       setFiltroEstado('')
                       setTipo('')
+                      setDueno('')
                       setSoloPendientes(false)
                     }}
                     className="text-ink/45 hover:text-ink/75 text-xs underline underline-offset-2"
@@ -290,6 +334,7 @@ export function Maquinaria() {
                         setBusqueda('')
                         setFiltroEstado('')
                         setTipo('')
+                        setDueno('')
                         setSoloPendientes(false)
                       }}
                     >
