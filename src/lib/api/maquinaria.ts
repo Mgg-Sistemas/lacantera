@@ -333,7 +333,13 @@ export function useMaquinasQueUrgen() {
 // Escribir — todo por función de la base
 // ---------------------------------------------------------------------------
 
-function useAccion<A>(fn: (args: A) => Promise<unknown>) {
+/*
+  Se hizo generico tambien en lo que DEVUELVE. Antes prometia `unknown`, y con
+  eso cualquier hook que necesitara su resultado —el que sube las fotos del alta
+  devuelve las rutas— tenia que forzarlo con un molde. Un molde es una promesa
+  que el compilador deja de comprobar, y aqui no hace falta ninguna.
+*/
+function useAccion<A, R = unknown>(fn: (args: A) => Promise<R>) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: fn,
@@ -374,6 +380,18 @@ export function useGuardarMaquina() {
         base pone la casa.
       */
       propietario?: string | null
+      /*
+        EL ESTADO CON EL QUE NACE. Christopher: «se desean registrar maquinas que
+        no estan activas». Solo se atiende en el alta: cambiarlo despues es un
+        hecho que `cambiar_estado_maquina` obliga a explicar con un motivo.
+      */
+      estado?: string | null
+      /*
+        LAS FOTOS DEL ALTA, ya subidas al almacen de ficheros. Van como rutas y
+        no como ficheros porque la base cuenta cuantas hay y las anota; los
+        megabytes viajan por su propia tuberia, no por una funcion.
+      */
+      fotos?: { path: string; nota?: string | null }[] | null
     }) =>
       rpc<number>('guardar_maquina', {
         p_id: m.id ?? null,
@@ -393,6 +411,8 @@ export function useGuardarMaquina() {
         p_combustible_id: m.combustible_id ?? null,
         p_capacidad_combustible: m.capacidad_combustible ?? null,
         p_propietario: m.propietario ?? null,
+        p_estado: m.estado ?? null,
+        p_fotos: m.fotos && m.fotos.length > 0 ? m.fotos : null,
       }),
   )
 }
@@ -562,6 +582,37 @@ export function useSubirFotoMaquina() {
     if (anterior) await supabase.storage.from(BUCKET_MAQUINAS).remove([anterior])
 
     return ruta
+  })
+}
+
+/*
+  SUBIR LAS FOTOS ANTES DE QUE LA MAQUINA EXISTA.
+
+  «Obligatorio al registrar» solo significa algo si la maquina no puede nacer sin
+  ellas, y para eso las rutas tienen que viajar EN el alta. Pero la ruta de
+  siempre empieza por el id, y el id todavia no existe.
+
+  Van a una carpeta `nuevas/<algo irrepetible>/`, que no necesita id. Si el alta
+  falla despues, quedan ficheros sueltos ahi: es el precio de que no pueda haber
+  una maquina sin fotos, y es el lado bueno del que equivocarse — un fichero
+  huerfano no le miente a nadie, una maquina sin registro fotografico si.
+*/
+export function useSubirFotosDeAlta() {
+  return useAccion(async (f: { archivos: File[] }) => {
+    const carpeta = `nuevas/${crypto.randomUUID()}`
+    const rutas: { path: string }[] = []
+
+    for (const [i, archivo] of f.archivos.entries()) {
+      const extension = archivo.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+      const ruta = `${carpeta}/${i + 1}.${extension}`
+      const { error } = await supabase.storage
+        .from(BUCKET_MAQUINAS)
+        .upload(ruta, archivo, { contentType: archivo.type, upsert: false })
+      if (error) throw error
+      rutas.push({ path: ruta })
+    }
+
+    return rutas
   })
 }
 
