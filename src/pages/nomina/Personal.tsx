@@ -26,9 +26,10 @@ import {
   FRECUENCIAS,
   fichaDelInforme,
   useEgresarEmpleado,
+  useACargoDe,
   useEmpleados,
 } from '@/lib/api/nomina'
-import type { Empleado } from '@/lib/api/nomina'
+import type { ACargoDe, Empleado } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
@@ -51,6 +52,22 @@ function antiguedad(desde: string): string {
   return `${anios} a ${resto} m`
 }
 
+/*
+  Cómo se dice en dos palabras de qué responde alguien.
+
+  «2 almacenes · 1 máquina» y no «3 cosas a cargo»: un almacén y una máquina se
+  entregan de maneras distintas y a personas distintas, y juntarlos en un número
+  obliga a abrir la ficha para saber qué son.
+*/
+function resumenACargo(c: ACargoDe) {
+  return [
+    c.almacenes > 0 ? `${c.almacenes} almacén${c.almacenes === 1 ? '' : 'es'}` : null,
+    c.maquinas > 0 ? `${c.maquinas} máquina${c.maquinas === 1 ? '' : 's'}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
+
 export function Personal() {
   const [verInactivos, setVerInactivos] = useState(false)
   const { data, isPending, error } = useEmpleados(!verInactivos)
@@ -69,6 +86,17 @@ export function Personal() {
   */
   const { data: todos } = useEmpleados(false)
   const { data: empresa } = useEmpresa()
+  const { data: cargos } = useACargoDe()
+
+  /*
+    De qué responde una persona: los almacenes que lleva y las máquinas que
+    tiene asignadas. Devuelve nada cuando no lleva ninguna de las dos, para que
+    quien lo use no tenga que comprobar los dos ceros.
+  */
+  const aCargoDe = (id: number) => {
+    const c = (cargos ?? []).find((x) => x.empleado_id === id)
+    return c && (c.almacenes > 0 || c.maquinas > 0) ? c : null
+  }
   const { nombre } = useSesion()
   const { puede } = useMisRoles()
   const egresar = useEgresarEmpleado()
@@ -303,6 +331,30 @@ export function Personal() {
                       {e.cargo}
                       {e.departamento ? (
                         <span className="text-ink/45 block text-xs">{e.departamento}</span>
+                      ) : null}
+
+                      {/*
+                        DE QUÉ RESPONDE, DEBAJO DEL CARGO.
+
+                        Christopher: «se debe indicar si la persona tiene o no
+                        algún almacén, área o proceso a su cargo». Va aquí y no
+                        en columna propia porque es lo mismo que el cargo visto
+                        de cerca: el cargo dice qué hace, esto dice de qué
+                        responde.
+
+                        Solo se marca a quien lleva algo. Escribir «no lleva
+                        nada» en veinticuatro filas para que destaquen dos es
+                        llenar la tabla de ruido; el silencio ya significa eso,
+                        y la ficha lo dice con palabras para quien lo dude.
+                      */}
+                      {aCargoDe(e.id) ? (
+                        <Chip
+                          tone="royal"
+                          className="mt-1 flex w-fit"
+                          title={aCargoDe(e.id)!.detalle ?? undefined}
+                        >
+                          {resumenACargo(aCargoDe(e.id)!)}
+                        </Chip>
                       ) : null}
                     </td>
                     <td className="text-ink/70 px-3 py-3 whitespace-nowrap">

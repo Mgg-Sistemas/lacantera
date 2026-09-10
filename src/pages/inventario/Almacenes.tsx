@@ -35,7 +35,9 @@ const vacio = {
 }
 
 export function Almacenes() {
-  const { data, isPending, error } = useAlmacenes(false)
+  // `true` al final: esta es la pantalla donde se administran, así que aquí
+  // sí aparecen los sitios que no guardan material.
+  const { data, isPending, error } = useAlmacenes(false, true)
   const guardar = useGuardarAlmacen()
   const { data: propietarios } = usePropietarios()
   const { data: empleados } = useEmpleados(true)

@@ -94,7 +94,9 @@ export function FichaMaquina() {
   const esNueva = !id
 
   const { data, isPending } = useMaquinaria(false)
-  const { data: almacenes } = useAlmacenes()
+  // Con los sitios que no guardan material: un patio de máquinas es
+  // justamente donde se resguarda una máquina.
+  const { data: almacenes } = useAlmacenes(true, true)
   const combustibles = useCombustibles()
   const guardar = useGuardarMaquina()
   const { data: propietarios } = usePropietarios()
@@ -635,12 +637,40 @@ export function FichaMaquina() {
               />
             </div>
 
+          </Card>
+
+          {/* ------------------------- Observaciones ------------------------- */}
+          {/*
+            LA NOTA ERA DE LA MÁQUINA Y PARECÍA DEL HORÓMETRO.
+
+            Christopher: «las máquinas requieren de un campo llamado nota, u
+            observación de la máquina (el campo nota que existe es del
+            horómetro)».
+
+            En la base nunca fue del horómetro: `maquinaria.nota` es de la
+            máquina y siempre lo fue. Lo que engañaba era dónde estaba puesta —al
+            final de la tarjeta «Cuándo avisar», debajo de tres umbrales de horas
+            y de los días de taller—, y una etiqueta que dice «Nota» ahí solo
+            puede leerse como una nota sobre eso.
+
+            Por eso NO se añade una segunda columna. Habría dos sitios donde
+            escribir lo mismo, y la observación de una máquina acabaría repartida
+            entre las dos sin que nadie supiera cuál mirar. Se saca a su propia
+            tarjeta y se dice qué es, que es lo que faltaba.
+          */}
+          <Card>
+            <CardHeader
+              title="Observaciones"
+              subtitle="Lo que hay que saber de esta máquina y no cabe en un campo: de dónde vino, qué manías tiene, qué se le prometió a quien la presta."
+            />
             <div className="mt-4">
               <Textarea
-                label="Nota"
-                rows={2}
+                label="Observación de la máquina"
+                rows={4}
+                placeholder="Llegó con el vidrio lateral partido. La bomba hidráulica es reconstruida."
                 value={f.nota}
                 onChange={(e) => cambiar('nota', e.target.value)}
+                hint="No es del horómetro ni del mantenimiento: es de la máquina."
               />
             </div>
           </Card>

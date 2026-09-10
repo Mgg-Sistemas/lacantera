@@ -15,7 +15,8 @@ import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
-import { useExistencias, useMovimientos } from '@/lib/api/inventario'
+import { useAlmacenes, useExistencias, useMovimientos } from '@/lib/api/inventario'
+import { esAjeno } from '@/lib/deQuien'
 import { dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -170,6 +171,7 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
 export function TableroInventario() {
   const { data: existencias, isPending, error } = useExistencias()
   const { data: movimientos } = useMovimientos()
+  const { data: almacenes } = useAlmacenes()
 
 
   const filas = existencias ?? []
@@ -177,7 +179,30 @@ export function TableroInventario() {
   // Solo cuenta lo que tiene existencia: un catálogo de veintiocho artículos
   // con cero en todos no son «28 artículos en el patio».
   const conExistencia = filas.filter((e) => Number(e.existencia) > 0)
-  const valor = filas.reduce((s, e) => s + Number(e.valor_usd), 0)
+
+  /*
+    «VALOR DEL INVENTARIO» TIENE QUE SER EL NUESTRO.
+
+    Esta tarjeta sumaba el valor de TODOS los almacenes, y desde que existen los
+    dueños eso incluye lo de la gobernación. Un número grande y bien formateado
+    que dice «Valor del inventario» se lee como patrimonio de la empresa, y las
+    sillas prestadas no lo son.
+
+    Es el mismo arreglo que ya lleva Existencias: se reparte en dos, y lo ajeno
+    se dice aparte en vez de esconderse. Esconderlo tampoco serviría — hay que
+    saber cuánto material de otro se está custodiando.
+  */
+  const deAjenos = new Set(
+    (almacenes ?? []).filter((a) => esAjeno(a.propietario)).map((a) => a.id),
+  )
+  const valorNuestro = filas.reduce(
+    (s, e) => s + (deAjenos.has(e.almacen_id) ? 0 : Number(e.valor_usd)),
+    0,
+  )
+  const valorAjeno = filas.reduce(
+    (s, e) => s + (deAjenos.has(e.almacen_id) ? Number(e.valor_usd) : 0),
+    0,
+  )
 
   /*
     Bajo mínimo es la única cifra que pide acción.
@@ -188,7 +213,16 @@ export function TableroInventario() {
     resolver.
   */
   const bajoMinimo = filas.filter(
-    (e) => Number(e.stock_minimo) > 0 && Number(e.existencia) < Number(e.stock_minimo),
+    (e) =>
+      Number(e.stock_minimo) > 0 &&
+      Number(e.existencia) < Number(e.stock_minimo) &&
+      /*
+        Y SOLO LO NUESTRO. «Bajo el mínimo» es una señal de COMPRA, y solo se
+        compra lo propio: dos sillas de la gobernación por debajo del mínimo del
+        artículo encenderían la alerta y el panel pediría comprar sillas para
+        reponer las de otro.
+      */
+      !deAjenos.has(e.almacen_id),
   )
 
   const movimientosHoy = (movimientos ?? []).filter(
@@ -228,8 +262,18 @@ export function TableroInventario() {
               <p className="text-ink/45 text-2xs font-mono tracking-[0.16em] uppercase">
                 Valor del inventario
               </p>
-              <p className="text-ink/90 tabular mt-3 text-3xl font-light">{dolares(valor)}</p>
+              <p className="text-ink/90 tabular mt-3 text-3xl font-light">
+                {dolares(valorNuestro)}
+              </p>
               <p className="text-ink/45 mt-2 text-xs">A costo promedio, no a precio de venta</p>
+              {/* Lo de otros dueños, dicho aparte. No suma arriba porque no es
+                  patrimonio de la empresa, y no se calla porque hay que saber
+                  cuánto material ajeno se está custodiando. */}
+              {valorAjeno > 0 ? (
+                <p className="text-warning mt-1 text-xs">
+                  Y {dolares(valorAjeno)} de otros dueños, que no es suyo
+                </p>
+              ) : null}
             </Card>
 
             {/* La única tarjeta que se enciende, y solo cuando hay algo que

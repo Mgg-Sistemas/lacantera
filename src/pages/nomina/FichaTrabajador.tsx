@@ -42,6 +42,7 @@ import {
   useVincularCuenta,
   useCuentasSinFicha,
   fichaDelInforme,
+  useACargoDe,
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
 import { TarjetaFirma } from '@/components/TarjetaFirma'
@@ -247,6 +248,14 @@ export function FichaTrabajador() {
     y el siguiente, y React tumba la pantalla entera. No lo ve el compilador.
   */
   const { data: carnetVigente } = useCarnetVigente(e?.id)
+
+  /* De qué responde esta persona: los almacenes que lleva y las máquinas que
+     tiene asignadas. `undefined` mientras carga, para poder distinguir «todavía
+     no se sabe» de «no lleva nada» — que en una ficha no es lo mismo. */
+  const cargos = useACargoDe()
+  const aCargo = cargos.isPending
+    ? undefined
+    : ((cargos.data ?? []).find((x) => x.empleado_id === e?.id) ?? null)
 
   const entregado = useEntregadoATrabajador(e?.id)
   const incidencias = useIncidencias(e?.id)
@@ -877,6 +886,50 @@ export function FichaTrabajador() {
         INCIDENCIA no es una cosa, es un hecho: se enfermó, se lesionó, faltó,
         tuvo un altercado. Antes no tenía dónde vivir.
       */}
+
+      {/*
+        DE QUÉ RESPONDE, ANTES DE LO QUE SE LE ENTREGÓ.
+
+        Christopher: «se debe indicar si la persona tiene o no algún almacén,
+        área o proceso a su cargo».
+
+        Va delante de la dotación porque es de otro peso. Un casco entregado se
+        devuelve en una bolsa; un almacén a cargo hay que entregarlo con un
+        conteo delante. Cuando alguien renuncia, esto es lo primero que hay que
+        mirar y lo último que se puede improvisar.
+
+        Aquí SÍ se dice cuando no lleva nada, al contrario que en la lista: allí
+        escribirlo en veinticuatro filas sería ruido, y aquí la pregunta se está
+        haciendo sobre esta persona concreta. «No aparece» y «no tiene» se
+        distinguen mal en una ficha.
+      */}
+      <Card className="mt-4">
+        <CardHeader
+          title="De qué responde"
+          subtitle="Los sitios y las máquinas que tiene a su cargo. Al irse, esto es lo que hay que entregar."
+        />
+        {aCargo === undefined ? (
+          <Cargando />
+        ) : aCargo === null || (aCargo.almacenes === 0 && aCargo.maquinas === 0) ? (
+          <p className="text-ink/45 mt-4 text-sm">No tiene ningún almacén ni máquina a su cargo.</p>
+        ) : (
+          <>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {aCargo.almacenes > 0 ? (
+                <Chip tone="royal">
+                  {aCargo.almacenes} almacén{aCargo.almacenes === 1 ? '' : 'es'}
+                </Chip>
+              ) : null}
+              {aCargo.maquinas > 0 ? (
+                <Chip tone="royal">
+                  {aCargo.maquinas} máquina{aCargo.maquinas === 1 ? '' : 's'}
+                </Chip>
+              ) : null}
+            </div>
+            <p className="text-ink/60 mt-3 text-sm leading-relaxed">{aCargo.detalle}</p>
+          </>
+        )}
+      </Card>
 
       {[
         {
