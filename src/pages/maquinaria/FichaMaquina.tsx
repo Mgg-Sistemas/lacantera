@@ -12,13 +12,16 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useAlmacenes, usePropietarios } from '@/lib/api/inventario'
+import { FotosDeLaMaquina, FOTOS_MINIMAS } from '@/components/FotosDeLaMaquina'
 import { useCombustibles } from '@/lib/api/combustible'
 import {
   ETIQUETA_ESTADO,
+  ESTADOS_MAQUINA,
   TIPOS_MAQUINA,
   useFotoMaquina,
   useGuardarEncuadreMaquina,
   useGuardarMaquina,
+  useSubirFotosDeAlta,
   useMaquinaria,
   useQuitarFotoMaquina,
   useHistorialMaquina,
@@ -64,6 +67,7 @@ const vacio = {
   nombre: '',
   tipo: 'OTRO',
   propietario: 'LACANTERA',
+  estado: 'ACTIVA',
   marca: '',
   modelo: '',
   serial: '',
@@ -88,6 +92,9 @@ export function FichaMaquina() {
   const combustibles = useCombustibles()
   const guardar = useGuardarMaquina()
   const { data: propietarios } = usePropietarios()
+  const subirFotos = useSubirFotosDeAlta()
+  /* Dos huecos abiertos desde el principio: el minimo se ve antes de empezar. */
+  const [fotos, setFotos] = useState<(File | null)[]>([null, null])
   const subir = useSubirFotoMaquina()
   const quitar = useQuitarFotoMaquina()
   const guardarEncuadre = useGuardarEncuadreMaquina()
@@ -124,6 +131,8 @@ export function FichaMaquina() {
       nombre: maquina.nombre,
       tipo: maquina.tipo,
       propietario: maquina.propietario ?? 'LACANTERA',
+      // Se rellena para que el formulario cuadre; al corregir no viaja.
+      estado: maquina.estado,
       marca: maquina.marca ?? '',
       modelo: maquina.modelo ?? '',
       serial: maquina.serial ?? '',
@@ -151,7 +160,12 @@ export function FichaMaquina() {
   const alarma = Number(f.alarma_horas)
   const tope = Number(f.tope_horas)
   const umbralesEnOrden = aviso <= alarma && alarma <= tope
-  const listo = Boolean(f.codigo.trim() && f.nombre.trim() && tope > 0 && umbralesEnOrden)
+  /* La base no deja nacer una máquina con menos de dos: aquí se dice antes. */
+  const faltanFotos = !maquina && fotos.filter(Boolean).length < FOTOS_MINIMAS
+
+  const listo = Boolean(
+    f.codigo.trim() && f.nombre.trim() && tope > 0 && umbralesEnOrden && !faltanFotos,
+  )
 
   if (!esNueva && isPending) return <Cargando />
 
@@ -172,6 +186,19 @@ export function FichaMaquina() {
   }
 
   const enviar = async (seguirCargando: boolean) => {
+    /*
+      LAS FOTOS PRIMERO, Y SOLO EN EL ALTA.
+
+      La base cuenta las rutas que le llegan y no deja nacer una maquina con
+      menos de dos, asi que tienen que estar subidas ANTES de crearla. Si el alta
+      falla despues, quedan ficheros sueltos en la carpeta temporal: es el lado
+      bueno del que equivocarse, porque un fichero huerfano no le miente a nadie
+      y una maquina sin registro fotografico si.
+    */
+    const rutas = maquina
+      ? null
+      : await subirFotos.mutateAsync({ archivos: fotos.filter((x): x is File => x !== null) })
+
     const guardado = await guardar.mutateAsync({
       id: maquina?.id ?? null,
       codigo: f.codigo.trim(),
@@ -190,6 +217,9 @@ export function FichaMaquina() {
       alarma_horas: Number(f.alarma_horas),
       dias_mantenimiento: f.dias_mantenimiento ? Number(f.dias_mantenimiento) : null,
       nota: f.nota.trim() || null,
+      // Solo al nacer: la base ignora los dos en la correccion.
+      estado: maquina ? null : f.estado,
+      fotos: rutas,
     })
 
     if (seguirCargando) {
@@ -198,6 +228,7 @@ export function FichaMaquina() {
       // vuelta son dos clics que no aportan nada.
       setF(vacio)
       window.scrollTo({ top: 0 })
+      setFotos([null, null])
       return
     }
 
@@ -367,6 +398,47 @@ export function FichaMaquina() {
                   etiqueta: d.es_la_casa ? `${d.nombre} (nosotros)` : d.nombre,
                 }))}
               />
+
+              {/*
+                CÓMO LLEGA, Y SOLO AL DARLA DE ALTA.
+
+                Christopher: «se desean registrar máquinas que no están activas o
+                que directamente están en mantenimiento en algún taller». Antes
+                toda máquina nacía ACTIVA, así que una que llegó rota había que
+                darla de alta como buena y corregirla después — y en medio el
+                sistema decía que estaba disponible.
+
+                Al corregir no aparece: cambiar el estado es un hecho que se
+                explica con un motivo, y para eso está el botón de la ficha. Y
+                «en mantenimiento» no está en la lista a propósito: eso lo pone
+                el mantenimiento al abrirse, que además dice en qué taller.
+              */}
+              {!maquina ? (
+                <Select
+                  label="Cómo llega"
+                  value={f.estado}
+                  onChange={(e) => cambiar('estado', e.target.value)}
+                  hint="Después se cambia desde la ficha, explicando por qué."
+                  opciones={ESTADOS_MAQUINA}
+                />
+              ) : null}
+
+              {/*
+                LAS DOS FOTOS, SOLO AL DAR DE ALTA.
+
+                Christopher: «al registrar una máquina, debe incluir como mínimo
+                y obligatorio 2 fotos o imágenes de ese vehículo». Al corregir no
+                se piden: la única máquina que hay se registró antes de esta
+                regla, y bloquear su ficha por una foto que nadie le pidió sería
+                castigarla por haber llegado primero.
+              */}
+              {!maquina ? (
+                <FotosDeLaMaquina
+                  fotos={fotos}
+                  onCambiar={setFotos}
+                  deshabilitado={guardar.isPending || subirFotos.isPending}
+                />
+              ) : null}
               <Input
                 label="Marca"
                 value={f.marca}
@@ -530,7 +602,7 @@ export function FichaMaquina() {
               {esNueva ? (
                 <Button
                   variant="outline"
-                  disabled={!listo || guardar.isPending}
+                  disabled={!listo || guardar.isPending || subirFotos.isPending}
                   onClick={() => void enviar(true)}
                 >
                   Guardar y crear otra
@@ -539,10 +611,14 @@ export function FichaMaquina() {
 
               <Button
                 icon={<Save />}
-                disabled={!listo || guardar.isPending}
+                disabled={!listo || guardar.isPending || subirFotos.isPending}
                 onClick={() => void enviar(false)}
               >
-                {guardar.isPending ? 'Guardando…' : 'Guardar'}
+                {subirFotos.isPending
+                  ? 'Subiendo las fotos…'
+                  : guardar.isPending
+                    ? 'Guardando…'
+                    : 'Guardar'}
               </Button>
             </div>
           ) : null}
