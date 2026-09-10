@@ -36,6 +36,7 @@ import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalAlTaller } from './ModalAlTaller'
+import { ModalCambioDeDueno } from './ModalCambioDeDueno'
 import { ListaEditable } from '@/components/ListaEditable'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { supabase } from '@/lib/supabase'
@@ -279,6 +280,8 @@ export function Existencias() {
   const [alTaller, setAlTaller] = useState<Existencia | null>(null)
   // Abierto desde la cabecera, sin fila: el modal pregunta que y de donde.
   const [alTallerSuelto, setAlTallerSuelto] = useState(false)
+  /* Pasar material de un dueño a otro sin moverlo de sitio. */
+  const [cambiandoDueno, setCambiandoDueno] = useState<Existencia | null>(null)
 
   /*
     LA NOTA DE SALIDA
@@ -1294,6 +1297,29 @@ export function Existencias() {
                             >
                               Dar de baja
                             </Button>
+
+                            {/*
+                              CAMBIAR DE DUEÑO NO ES UNA OPERACIÓN DE ALMACÉN.
+
+                              Christopher: «¿cómo se hace una transferencia de
+                              dueño de uno o N items?». Mueve patrimonio de un
+                              lado a otro sin que nada se mueva de sitio, así que
+                              pide INVENTARIO en TOTAL y no la escritura que basta
+                              para sacar un saco.
+
+                              Y solo aparece si hay más de un dueño registrado:
+                              con uno solo no hay a quién pasárselo.
+                            */}
+                            {alcanza('INVENTARIO', 'TOTAL') && (propietarios ?? []).length > 1 ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                icon={<Landmark />}
+                                onClick={() => setCambiandoDueno(fila!)}
+                              >
+                                Cambiar de dueño
+                              </Button>
+                            ) : null}
                           </>
                         ) : null}
 
@@ -1360,6 +1386,12 @@ export function Existencias() {
           abrir('ajuste', f)
         }}
       />
+
+      {/* Pasar material de un dueño a otro sin moverlo de sitio. Vive en su
+          propio archivo: esta pantalla ya tiene cuatro modales dentro. */}
+      {cambiandoDueno ? (
+        <ModalCambioDeDueno fila={cambiandoDueno} onCerrar={() => setCambiandoDueno(null)} />
+      ) : null}
 
       <ModalAlTaller
         fila={alTaller}
