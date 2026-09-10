@@ -32,6 +32,19 @@ export interface Almacen {
     doce compradas: marcar el artículo obligaría a inventar dos sillas.
   */
   propietario?: string
+  /*
+    QUIÉN RESPONDE POR ESTE SITIO.
+
+    Christopher: «se nos solicita que un empleado pueda ser responsable de algún
+    área, como almacén(es), es decir, un empleado puede tener a su cargo uno o
+    más almacenes». Por eso el cargo vive aquí y no una lista de almacenes en la
+    ficha del empleado: así una persona puede aparecer en varios sin que nada lo
+    impida, y cada sitio sigue teniendo una sola respuesta a «¿quién responde?».
+
+    Puede quedar vacío. Un almacén sin encargado es un hecho —pasa cuando alguien
+    se va— y obligar a rellenarlo solo consigue que se ponga a cualquiera.
+  */
+  responsable_id?: number | null
   /** Cuanto le cabe. Solo en un tanque de combustible. */
   capacidad?: string | null
   /** Cuantas ordenes aguanta a la vez. Solo en un taller. */
@@ -76,6 +89,9 @@ export function useGuardarAlmacen() {
         p_trabajos_a_la_vez: a.trabajos_a_la_vez ?? null,
         // Nulo deja el que tenga; en un alta, la base pone la casa.
         p_propietario: a.propietario ?? null,
+        // Este SÍ viaja tal cual: soltar el cargo es una decisión, y si nulo
+        // significara «déjalo como está» no habría manera de soltarlo.
+        p_responsable_id: a.responsable_id ?? null,
       }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['almacenes'] }),
   })
@@ -96,18 +112,52 @@ export interface Propietario {
   activo: boolean
 }
 
-export function usePropietarios() {
+/**
+ * Los dueños.
+ *
+ * `soloActivos` en falso solo lo pide la pantalla que los administra: en un
+ * desplegable, ofrecer un dueño retirado es ofrecer una puerta cerrada.
+ */
+export function usePropietarios(soloActivos = true) {
   return useQuery({
-    queryKey: ['propietarios'],
+    queryKey: ['propietarios', soloActivos],
     staleTime: 5 * 60_000,
-    queryFn: async () =>
-      desenvolver<Propietario[]>(
-        await supabase
-          .from('propietarios')
-          .select('codigo, nombre, es_la_casa, activo')
-          .eq('activo', true)
-          .order('orden'),
-      ),
+    queryFn: async () => {
+      let q = supabase.from('propietarios').select('codigo, nombre, es_la_casa, activo')
+      if (soloActivos) q = q.eq('activo', true)
+      return desenvolver<Propietario[]>(await q.order('orden'))
+    },
+  })
+}
+
+/*
+  ALTA Y CORRECCIÓN DE UN DUEÑO.
+
+  Christopher: «no se apreció dónde ubicar lo de la gobernación o registrarlo».
+  Hasta hoy la tabla tenía sus dos filas metidas a mano en una migración y
+  ninguna puerta.
+
+  `es_la_casa` NO viaja, y la función tampoco lo acepta: de esa marca cuelga
+  «cuánto vale lo nuestro», y moverla desde un formulario de catálogo cambiaría
+  esa respuesta sin que nadie relacionara las dos cosas.
+*/
+export function useGuardarPropietario() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: { codigo: string; nombre: string; activo?: boolean; orden?: number }) =>
+      rpc<string>('guardar_propietario', {
+        p_codigo: d.codigo,
+        p_nombre: d.nombre,
+        p_activo: d.activo ?? true,
+        p_orden: d.orden ?? null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['propietarios'] })
+      // El nombre del dueño se pinta en almacenes y máquinas: si cambia, ahí
+      // también.
+      void qc.invalidateQueries({ queryKey: ['almacenes'] })
+      void qc.invalidateQueries({ queryKey: ['maquinaria'] })
+    },
   })
 }
 

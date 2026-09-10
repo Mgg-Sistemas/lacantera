@@ -47,6 +47,16 @@ export interface Maquina {
   almacen_id: number | null
   almacen: string | null
   almacen_tipo: string | null
+  /*
+    QUIÉN LA LLEVA.
+
+    Christopher: «una máquina necesita de un conductor, operador o responsable
+    para funcionar o trasladarse». Es un cargo, no el turno de ayer: quién la
+    condujo un día concreto vive en la lectura del horómetro y en el despacho.
+    Nulo es una respuesta válida —una máquina en espera no tiene a nadie.
+  */
+  operador_id?: number | null
+  operador?: string | null
   estado: EstadoMaquina
   tope_horas: string
   aviso_horas: string
@@ -349,6 +359,16 @@ function useAccion<A, R = unknown>(fn: (args: A) => Promise<R>) {
       // se esté mirando en otra pestaña ya no es el que hay.
       void qc.invalidateQueries({ queryKey: ['existencias'] })
       void qc.invalidateQueries({ queryKey: ['existencias-totales'] })
+      /*
+        Y LA FICHA, QUE ES DONDE SE MIRA LO QUE PASÓ.
+
+        Nadie invalidaba esta clave. Anotar el horómetro o cerrar una orden
+        dejaba el historial de la ficha con lo de antes hasta recargar la
+        página, y el hecho recién anotado no aparecía — que es justo el que se
+        acaba de mirar. Apareció al montar los agregados, pero venía de antes.
+      */
+      void qc.invalidateQueries({ queryKey: ['historial-maquina'] })
+      void qc.invalidateQueries({ queryKey: ['agregados-maquina'] })
     },
   })
 }
@@ -392,6 +412,15 @@ export function useGuardarMaquina() {
         megabytes viajan por su propia tuberia, no por una funcion.
       */
       fotos?: { path: string; nota?: string | null }[] | null
+      /*
+        QUIÉN LA CONDUCE U OPERA. Christopher: «una máquina necesita de un
+        conductor, operador o responsable para funcionar o trasladarse».
+
+        Viaja TAL CUAL y no con `?? null` que signifique «déjalo igual»: soltar
+        el puesto es una decisión, y la base lo escribe sin coalesce justamente
+        para que se pueda dejar en nadie.
+      */
+      operador_id?: number | null
     }) =>
       rpc<number>('guardar_maquina', {
         p_id: m.id ?? null,
@@ -413,6 +442,7 @@ export function useGuardarMaquina() {
         p_propietario: m.propietario ?? null,
         p_estado: m.estado ?? null,
         p_fotos: m.fotos && m.fotos.length > 0 ? m.fotos : null,
+        p_operador_id: m.operador_id ?? null,
       }),
   )
 }
@@ -447,6 +477,109 @@ export function useHistorialMaquina(maquinaId: number | null) {
         p_limite: 200,
       }),
   })
+}
+
+/*
+  LO QUE LA MÁQUINA LLEVA ENCIMA.
+
+  Christopher: «debemos permitir que las máquinas puedan modificarse (añadir
+  elementos o incluir características adicionales, ej. antenas Starlink, cauchos
+  especiales, etc), eso estará incluido en el historial de la máquina».
+
+  No es un repuesto. Un repuesto REPONE algo que la máquina ya tenía y contesta
+  «cuánto me ha costado mantenerla»; un agregado AÑADE algo que no tenía y
+  contesta «qué lleva encima ahora mismo» — la pregunta que se hace al mandarla a
+  una faena o al devolvérsela a su dueño.
+*/
+export interface Agregado {
+  id: number
+  maquina_id: number
+  nombre: string
+  /*
+    POR QUÉ SE MODIFICÓ. Christopher: «cuando se realiza la modificación de la
+    máquina, es importante indicar quién lo hizo o la razón de por qué se
+    modificó». Obligatorio: dentro de un año, «tiene una antena» no explica nada
+    y «se le puso para tener señal en el frente norte» explica si sigue haciendo
+    falta.
+  */
+  motivo: string
+  /*
+    QUIÉN HIZO EL TRABAJO, que no es quien lo anotó. Texto libre y opcional: el
+    taller de la esquina y el proveedor no tienen ficha de nómina, y a veces la
+    máquina llega con la antena ya puesta y de verdad no se sabe.
+  */
+  hecho_por: string | null
+  articulo_id: number | null
+  serial: string | null
+  cantidad: string | null
+  fecha: string
+  costo_usd: string | null
+  nota: string | null
+  retirado_el: string | null
+  motivo_retiro: string | null
+}
+
+export function useAgregadosDeMaquina(maquinaId: number | null) {
+  return useQuery({
+    queryKey: ['agregados-maquina', maquinaId],
+    enabled: maquinaId != null,
+    queryFn: async () =>
+      desenvolver<Agregado[]>(
+        await supabase
+          .from('maquina_agregados')
+          .select(
+            'id, maquina_id, nombre, motivo, hecho_por, articulo_id, serial, cantidad, fecha, costo_usd, nota, retirado_el, motivo_retiro',
+          )
+          .eq('maquina_id', maquinaId!)
+          // Lo que sigue puesto arriba: es lo que se viene a mirar. Lo quitado
+          // queda debajo, en orden de cuándo se puso.
+          .order('retirado_el', { ascending: true, nullsFirst: true })
+          .order('fecha', { ascending: false }),
+      ),
+  })
+}
+
+export function useMontarAgregado() {
+  return useAccion(
+    async (a: {
+      maquina_id: number
+      nombre: string
+      /** Obligatorio. La base lo exige con al menos cuatro letras. */
+      motivo: string
+      /** Quién hizo el trabajo. Opcional: a veces no se sabe. */
+      hecho_por?: string | null
+      articulo_id?: number | null
+      serial?: string | null
+      cantidad?: number | null
+      fecha?: string | null
+      costo_usd?: number | null
+      nota?: string | null
+    }) =>
+      rpc<number>('montar_agregado', {
+        p_maquina_id: a.maquina_id,
+        p_nombre: a.nombre,
+        p_motivo: a.motivo,
+        p_hecho_por: a.hecho_por ?? null,
+        p_articulo_id: a.articulo_id ?? null,
+        p_serial: a.serial ?? null,
+        p_cantidad: a.cantidad ?? null,
+        p_fecha: a.fecha ?? null,
+        p_costo_usd: a.costo_usd ?? null,
+        p_nota: a.nota ?? null,
+      }),
+  )
+}
+
+/** Se quita, no se borra: el historial se quedaría sin la mitad de la historia. */
+export function useRetirarAgregado() {
+  return useAccion(
+    async (a: { id: number; motivo: string; fecha?: string | null }) =>
+      rpc<number>('retirar_agregado', {
+        p_id: a.id,
+        p_motivo: a.motivo,
+        p_fecha: a.fecha ?? null,
+      }),
+  )
 }
 
 export function useGuardarLectura() {

@@ -716,6 +716,39 @@ export function Articulos() {
             </span>
           </label>
 
+          {/*
+            DE QUIÉN ES NO SE PREGUNTA AQUÍ, Y HAY QUE DECIRLO.
+
+            Christopher: «lo que sea de la gobernación debe de ser visiblemente
+            diferente o diferenciable de lo que pertenezca a la cantera. Así
+            mismo en la opción de darle entrada o formulario para crear el item».
+
+            En la entrada sí se decide —el almacén de destino dice de quién será
+            lo que entre— pero en el ALTA DEL ARTÍCULO no puede decidirse, y el
+            motivo es el que sostiene todo el modelo: veinte sillas pueden ser
+            ocho de la gobernación y doce compradas. Un dueño en la ficha del
+            artículo obligaría a inventar dos sillas distintas, y a partir de ahí
+            nadie podría preguntar cuántas sillas hay.
+
+            Callarlo sería peor que no tenerlo: quien viene buscando el campo se
+            va creyendo que el sistema no distingue. Así que se dice dónde está.
+          */}
+          {form.inventariable ? (
+            <p className="border-hairline text-ink/50 mt-4 rounded-lg border border-dashed px-3 py-2 text-xs leading-relaxed">
+              <span className="text-ink/70 font-medium">De quién es no se dice aquí.</span> Se dice
+              al darle entrada, eligiendo el almacén: veinte sillas pueden ser ocho de la
+              gobernación y doce compradas, y un dueño en la ficha del artículo obligaría a
+              inventar dos sillas distintas. Los dueños y sus almacenes se administran en{' '}
+              <Link
+                to="/app/inventario/duenos"
+                className="text-royal-700 dark:text-royal-300 underline underline-offset-2"
+              >
+                Dueños del material
+              </Link>
+              .
+            </p>
+          ) : null}
+
           {crear.error ? <ErrorDeCarga error={crear.error} className="mt-4" /> : null}
         </Modal>
       ) : null}
