@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { AvisoBloqueantes, SemaforoMantenimiento } from '@/components/SemaforoMantenimiento'
+import { DeQuienEs } from '@/components/DeQuienEs'
 import { ModalHorometro } from './ModalHorometro'
 import { ModalTaller } from './ModalTaller'
 import { ModalEstado } from './ModalEstado'
@@ -123,7 +124,7 @@ export function Maquinaria() {
       if (soloPendientes && m.semaforo === 'OK') return false
       if (trozos.length === 0) return true
 
-      const heno = `${m.codigo} ${m.nombre} ${m.tipo} ${m.marca ?? ''} ${m.modelo ?? ''} ${m.serial ?? ''} ${m.almacen ?? ''}`
+      const heno = `${m.codigo} ${m.nombre} ${m.tipo} ${m.marca ?? ''} ${m.modelo ?? ''} ${m.serial ?? ''} ${m.almacen ?? ''} ${m.operador ?? ''}`
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
@@ -331,6 +332,25 @@ export function Maquinaria() {
                           {m.almacen ? ` · ${m.almacen}` : ''}
                         </p>
 
+                        {/*
+                          QUIÉN LA LLEVA.
+
+                          Christopher: «una máquina necesita de un conductor,
+                          operador o responsable para funcionar o trasladarse».
+                          Con muchas máquinas de viaje, el sitio contesta poco y
+                          la persona contesta todo: es a quien se llama.
+
+                          Cuando no hay nadie se dice, y no se calla: una máquina
+                          sin conductor asignado es justo la que hay que mirar.
+                        */}
+                        <p className="text-ink/50 mt-0.5 truncate text-xs">
+                          {m.operador ? (
+                            <>Lleva la máquina: {m.operador}</>
+                          ) : (
+                            <span className="text-ink/35">Sin conductor asignado</span>
+                          )}
+                        </p>
+
                         {/* Dónde está la máquina ahora. Va debajo del nombre y
                             no junto al semáforo porque son dos cosas
                             distintas: una dice si le toca mantenimiento y la
@@ -350,6 +370,11 @@ export function Maquinaria() {
                           >
                             {ETIQUETA_ESTADO[m.estado]}
                           </Chip>
+
+                          {/* Lo de la gobernación se distingue de lo nuestro sin
+                              abrir la ficha, con la misma marca que en los
+                              almacenes. */}
+                          <DeQuienEs propietario={m.propietario} />
                           {m.dias_en_taller !== null ? (
                             <span
                               className={cn(

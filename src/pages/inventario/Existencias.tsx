@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import {
   Boxes,
   Coins,
+  Landmark,
   MapPin,
   PackageMinus,
   PackagePlus,
@@ -25,6 +26,8 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
+import { DeQuienEs } from '@/components/DeQuienEs'
+import { conDueno, detalleDeDueno, esAjeno } from '@/lib/deQuien'
 import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
@@ -53,6 +56,7 @@ import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import {
   useAlmacenes,
+  usePropietarios,
   useExistencias,
   useCorregirCosto,
   useImpactoDeCorregirCosto,
@@ -217,6 +221,7 @@ const renglonVacio = (articulo: string, almacen = ''): RenglonEnCurso => ({
 
 export function Existencias() {
   const { data: almacenes } = useAlmacenes()
+  const { data: propietarios } = usePropietarios()
 
   // El sitio puede venir en la URL: desde Talleres se llega aquí con el taller
   // ya elegido. Sin esto el enlace prometía un filtro que no aplicaba.
@@ -243,6 +248,10 @@ export function Existencias() {
       ),
     [almacenes],
   )
+
+  /* El rótulo del dueño, para las listas donde no cabe una pastilla. */
+  const nombreDeDueno = (codigo?: string | null) =>
+    (propietarios ?? []).find((d) => d.codigo === codigo)?.nombre ?? codigo ?? undefined
 
   const totales = useExistenciasTotales(enTotal)
   const porAlmacen = useExistencias(
@@ -451,6 +460,9 @@ export function Existencias() {
   // almacén y el artículo hacen falta cuando se abre sin fila debajo.
   const [referencia, setReferencia] = useState('')
   const [aDonde, setADonde] = useState('')
+  /* El sitio elegido como destino de la entrada, para poder avisar de quién
+     será lo que entre antes de que se guarde. */
+  const almacenDeEntrada = (almacenes ?? []).find((a) => String(a.id) === aDonde)
   /*
     LA ENTRADA ES DE VARIOS RENGLONES
 
@@ -1024,6 +1036,11 @@ export function Existencias() {
             opciones={(almacenes ?? []).map((a) => ({
               valor: String(a.id),
               etiqueta: `${a.nombre}${a.tipo === 'TALLER' ? ' · taller' : ''}`,
+              /* De quién es el sitio. Dentro de una lista desplegable no cabe
+                 una pastilla, y aquí es donde más falta hace: quien mira las
+                 existencias de un almacén de la gobernación está mirando
+                 material prestado, no patrimonio de la empresa. */
+              detalle: detalleDeDueno(a.propietario, nombreDeDueno(a.propietario)),
             }))}
           />
         </div>
@@ -1035,6 +1052,14 @@ export function Existencias() {
       {!isPending && !error && datos.length > 0 ? (
         <Franja
           sitio={enTotal ? null : (almacenes ?? []).find((a) => String(a.id) === almacenId)?.nombre ?? null}
+          /* Y de quién es ese sitio. Christopher: «lo que sea de la gobernación
+             debe de ser visiblemente diferente». Mirando el saldo de un almacén
+             ajeno hay que saber que ese valor no es patrimonio de la empresa. */
+          dueno={
+            enTotal
+              ? undefined
+              : (almacenes ?? []).find((a) => String(a.id) === almacenId)?.propietario
+          }
           conExistencia={conExistencia}
           listados={filtradas.length}
           valor={valorTotal}
@@ -1513,9 +1538,33 @@ export function Existencias() {
                     valor: String(a.id),
                     codigo: a.codigo,
                     nombre: a.nombre,
-                    detalle: a.tipo,
+                    /*
+                      Y DE QUIÉN VA A SER LO QUE ENTRE.
+
+                      Christopher: «así mismo en la opción de darle entrada o
+                      formulario para crear el item». Aquí es donde de verdad se
+                      decide: el dueño vive en el almacén, así que elegir el
+                      destino ES elegir de quién será la silla que entra.
+                      Enterarse después de guardar llega tarde — mover material
+                      entre dueños no es un traslado y la base no lo permite.
+                    */
+                    detalle: conDueno(
+                      a.tipo,
+                      detalleDeDueno(a.propietario, nombreDeDueno(a.propietario)),
+                    ),
                   }))}
               />
+
+              {/* Y dicho en grande una vez elegido, porque la línea de la lista
+                  desaparece en cuanto se cierra el desplegable. */}
+              {esAjeno(almacenDeEntrada?.propietario) ? (
+                <p className="border-warning/40 bg-warning/10 text-warning mt-2 rounded-lg border px-3 py-2 text-xs leading-relaxed">
+                  <Landmark className="mr-1 inline size-3.5 align-[-2px]" />
+                  Lo que entre aquí será de {nombreDeDueno(almacenDeEntrada?.propietario)}, no de
+                  La Cantera. Después no se puede trasladar a un almacén nuestro: eso no sería
+                  mover material, sería cambiarlo de dueño.
+                </p>
+              ) : null}
 
               <div className="mt-4 space-y-3">
                 {renglones.map((r, i) => {
@@ -2396,6 +2445,7 @@ export function Existencias() {
 */
 function Franja({
   sitio,
+  dueno,
   conExistencia,
   listados,
   valor,
@@ -2404,6 +2454,8 @@ function Franja({
   onVerBajos,
 }: {
   sitio: string | null
+  /** De quién es el sitio. Sin valor —o siendo nuestro— no se dibuja nada. */
+  dueno?: string | null
   conExistencia: number
   listados: number
   /** Nulo cuando quien mira no tiene INVENTARIO.VER_VALORACION. */
@@ -2414,9 +2466,22 @@ function Franja({
 }) {
   return (
     <div className="border-hairline mb-4 rounded-[6px] border px-4 py-3">
-      <p className="text-ink/40 text-2xs font-mono tracking-[0.16em] uppercase">
-        {sitio ?? 'Toda la empresa'}
-      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-ink/40 text-2xs font-mono tracking-[0.16em] uppercase">
+          {sitio ?? 'Toda la empresa'}
+        </p>
+        <DeQuienEs propietario={dueno} />
+      </div>
+
+      {/* Dicho con palabras además de con la pastilla: la cifra de «Vale» que va
+          justo debajo es lo que más se malinterpreta de esta franja, porque se
+          lee como patrimonio de la empresa. */}
+      {esAjeno(dueno) ? (
+        <p className="text-warning/85 mt-1 text-xs leading-relaxed">
+          Este material está a disposición de la cantera pero no es suyo: lo que valga no suma
+          al patrimonio de la empresa.
+        </p>
+      ) : null}
 
       <dl className="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-2">
         <div className="flex items-baseline gap-1.5">

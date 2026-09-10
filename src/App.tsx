@@ -58,6 +58,9 @@ const Tasas = pagina(() => import('@/pages/Tasas').then((m) => ({ default: m.Tas
 const Almacenes = pagina(() =>
   import('@/pages/inventario/Almacenes').then((m) => ({ default: m.Almacenes })),
 )
+const Duenos = pagina(() =>
+  import('@/pages/inventario/Duenos').then((m) => ({ default: m.Duenos })),
+)
 const Articulos = pagina(() =>
   import('@/pages/inventario/Articulos').then((m) => ({ default: m.Articulos })),
 )
@@ -335,6 +338,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/nomina/personal/carga': <CargarPersonal />,
   '/app/compras/proveedores/carga': <CargarProveedores />,
   '/app/inventario/almacenes': <Almacenes />,
+  '/app/inventario/duenos': <Duenos />,
   '/app/inventario/transferencias': <Transferencias />,
   '/app/config/empresa': <Empresa />,
   '/app/config/documentos': <Documentos />,
