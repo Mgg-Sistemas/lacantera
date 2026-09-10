@@ -510,13 +510,27 @@ export interface Agregado {
   */
   hecho_por: string | null
   articulo_id: number | null
+  /*
+    DE QUÉ ALMACÉN SALIÓ, SI SALIÓ DE ALGUNO.
+
+    Christopher: «la antena puede no ser descontada, pero tampoco podrá estar
+    disponible». Cuando esto tiene valor, el agregado DESCONTÓ de verdad y
+    `movimiento_id` apunta al asiento. Nulo es una respuesta legítima: lo
+    comprado afuera nunca pasó por un estante.
+  */
+  almacen_id: number | null
+  movimiento_id: number | null
   serial: string | null
   cantidad: string | null
   fecha: string
   costo_usd: string | null
+  /** El unitario con el que salió, para devolverlo al mismo si vuelve. */
+  costo_unitario: string | null
   nota: string | null
   retirado_el: string | null
   motivo_retiro: string | null
+  /** A qué almacén volvió al quitarlo, si volvió. */
+  destino_id: number | null
 }
 
 export function useAgregadosDeMaquina(maquinaId: number | null) {
@@ -528,7 +542,7 @@ export function useAgregadosDeMaquina(maquinaId: number | null) {
         await supabase
           .from('maquina_agregados')
           .select(
-            'id, maquina_id, nombre, motivo, hecho_por, articulo_id, serial, cantidad, fecha, costo_usd, nota, retirado_el, motivo_retiro',
+            'id, maquina_id, nombre, motivo, hecho_por, articulo_id, almacen_id, movimiento_id, serial, cantidad, fecha, costo_usd, costo_unitario, nota, retirado_el, motivo_retiro, destino_id',
           )
           .eq('maquina_id', maquinaId!)
           // Lo que sigue puesto arriba: es lo que se viene a mirar. Lo quitado
@@ -549,6 +563,12 @@ export function useMontarAgregado() {
       /** Quién hizo el trabajo. Opcional: a veces no se sabe. */
       hecho_por?: string | null
       articulo_id?: number | null
+      /*
+        DE QUÉ ALMACÉN SALE. Con esto la base descuenta de verdad —cerrojo,
+        comprobación y asiento al costo promedio— porque lo montado no puede
+        seguir disponible. Sin esto no se mueve nada.
+      */
+      almacen_id?: number | null
       serial?: string | null
       cantidad?: number | null
       fecha?: string | null
@@ -561,6 +581,7 @@ export function useMontarAgregado() {
         p_motivo: a.motivo,
         p_hecho_por: a.hecho_por ?? null,
         p_articulo_id: a.articulo_id ?? null,
+        p_almacen_id: a.almacen_id ?? null,
         p_serial: a.serial ?? null,
         p_cantidad: a.cantidad ?? null,
         p_fecha: a.fecha ?? null,
@@ -573,11 +594,19 @@ export function useMontarAgregado() {
 /** Se quita, no se borra: el historial se quedaría sin la mitad de la historia. */
 export function useRetirarAgregado() {
   return useAccion(
-    async (a: { id: number; motivo: string; fecha?: string | null }) =>
+    async (a: {
+      id: number
+      motivo: string
+      fecha?: string | null
+      /** A qué almacén vuelve. Sin esto no vuelve a contarse: se gastó, se pasó
+       *  a otra máquina, se lo llevó su dueño. */
+      destino_id?: number | null
+    }) =>
       rpc<number>('retirar_agregado', {
         p_id: a.id,
         p_motivo: a.motivo,
         p_fecha: a.fecha ?? null,
+        p_destino_id: a.destino_id ?? null,
       }),
   )
 }
