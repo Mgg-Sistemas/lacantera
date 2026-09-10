@@ -34,3 +34,12 @@ export function detalleDeDueno(propietario: string | null | undefined, nombre?: 
 export function conDueno(detalle: string | undefined, dueno: string | undefined) {
   return [detalle, dueno].filter(Boolean).join(' · ') || undefined
 }
+
+/**
+ * Si hace falta elegir dueño antes de poder guardar.
+ *
+ * Vive aquí y no junto al campo porque un archivo que exporta un componente y
+ * además una función rompe el refresco en caliente de Vite.
+ */
+export const faltaDecirDeQuien = (duenos: string[] | undefined, elegido: string) =>
+  Boolean(duenos && duenos.length > 1 && !elegido)

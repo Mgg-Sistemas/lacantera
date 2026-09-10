@@ -907,6 +907,14 @@ export function useRegistrarSalidas() {
         presentaciones?: number | null
         /** En cuál se contó. Sin esto, dos presentaciones son una trampa. */
         presentacion?: string | null
+        /*
+          DE QUIÉN SALE. Por renglón y no por nota: una salida de cinco cosas
+          donde solo una es material ajeno no debería partirse en dos.
+
+          Solo hace falta cuando en ese sitio ese artículo es de varios dueños;
+          con uno solo la base lo resuelve.
+        */
+        propietario?: string | null
       }>
       motivo: string
       tipo?: string
@@ -918,6 +926,7 @@ export function useRegistrarSalidas() {
           almacen_id: String(r.almacen_id),
           articulo_id: String(r.articulo_id),
           cantidad: String(r.cantidad),
+          ...(r.propietario ? { propietario: r.propietario } : {}),
           ...(r.presentaciones
             ? {
                 presentaciones: String(r.presentaciones),
@@ -1110,6 +1119,14 @@ export function useRegistrarBaja() {
       motivo: string
       destino?: string | null
       fecha?: string
+      /*
+        DE QUIÉN ES LO QUE SE DA DE BAJA.
+
+        De las salidas es donde más importa: dar de baja material de la
+        gobernación cargándolo a la cuenta de la cantera sería regalarle una
+        pérdida al que no la tuvo. Solo hace falta si ahí hay de varios.
+      */
+      propietario?: string | null
     }) =>
       rpc<number>('registrar_baja', {
         p_almacen_id: b.almacen_id,
@@ -1119,6 +1136,7 @@ export function useRegistrarBaja() {
         p_motivo: b.motivo,
         p_destino: b.destino || null,
         p_fecha: b.fecha || null,
+        p_propietario: b.propietario ?? null,
       }),
   )
 }
@@ -1232,6 +1250,16 @@ export function useRegistrarAjuste() {
       envases?: { presentacion: string; cantidad: number }[] | null
       motivo: string
       fecha?: string
+      /*
+        DE QUIÉN ES LO QUE SE CONTÓ.
+
+        Un conteo de un sitio mezclado cuenta lo de UN dueño: contar veinte
+        sillas cuando ocho son de la gobernación no dice cuántas faltan de cada
+        uno, y el ajuste no sabría a quién cargarle la diferencia.
+
+        Solo hace falta cuando ahí hay de varios.
+      */
+      propietario?: string | null
     }) =>
       rpc<number>('registrar_ajuste', {
         p_envases: a.envases && a.envases.length > 0 ? a.envases : null,
@@ -1242,6 +1270,7 @@ export function useRegistrarAjuste() {
         p_presentacion: (a.presentaciones && a.presentacion) || null,
         p_motivo: a.motivo,
         p_fecha: a.fecha || null,
+        p_propietario: a.propietario ?? null,
       }),
   )
 }
