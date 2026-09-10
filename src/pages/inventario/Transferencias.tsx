@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
+import { LA_CASA, conDueno, detalleDeDueno, esAjeno } from '@/lib/deQuien'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
@@ -16,6 +17,7 @@ import {
 } from '@/lib/api/catalogo'
 import {
   useAlmacenes,
+  usePropietarios,
   useExistencias,
   useMovimientos,
   useReversarMovimiento,
@@ -53,6 +55,11 @@ const VACIO = {
  */
 export function Transferencias() {
   const { data: almacenes } = useAlmacenes()
+  const { data: propietarios } = usePropietarios()
+
+  /* El rótulo del dueño, para donde no cabe una pastilla. */
+  const nombreDeDueno = (codigo?: string | null) =>
+    (propietarios ?? []).find((d) => d.codigo === codigo)?.nombre ?? codigo ?? undefined
   const { data: articulos } = useArticulos()
   const { puede } = useMisRoles()
   const transferir = useTransferir()
@@ -150,6 +157,22 @@ export function Transferencias() {
   */
   const origenSinCosto = form.origen
     ? Boolean(activos.find((a) => String(a.id) === form.origen)?.admite_sin_costo)
+    : undefined
+
+  /*
+    Y DE QUIÉN ES LO QUE SALE.
+
+    `transferir_existencia` rechaza mover entre dueños distintos: «lo de un dueño
+    no se mezcla con lo de otro». Mover una silla de la gobernación a un almacén
+    nuestro no es un traslado, es un cambio de dueño, y eso pide una salida y una
+    entrada que expliquen por qué dejó de ser de uno.
+
+    La reja estaba puesta abajo pero la pantalla seguía ofreciendo la pareja
+    imposible, igual que pasaba con el tanque sin costo. Es el mismo remedio:
+    ofrecer lo que sí se puede y decir por qué falta el resto.
+  */
+  const duenoDelOrigen = form.origen
+    ? (activos.find((a) => String(a.id) === form.origen)?.propietario ?? LA_CASA)
     : undefined
 
   const cantidad = Number(form.cantidad.replace(',', '.'))
@@ -319,7 +342,10 @@ export function Transferencias() {
                 valor: String(a.id),
                 codigo: a.codigo,
                 nombre: a.nombre,
-                detalle: a.tipo,
+                detalle: conDueno(
+                  a.tipo,
+                  detalleDeDueno(a.propietario, nombreDeDueno(a.propietario)),
+                ),
               }))}
           />
           {/*
@@ -341,11 +367,13 @@ export function Transferencias() {
             valor={form.destino}
             onCambio={(v) => cambiar({ destino: v })}
             hint={
-              origenSinCosto === undefined
-                ? undefined
-                : origenSinCosto
-                  ? 'Solo salen los sitios que también admiten material sin costo: lo que hay aquí entró sin precio y hundiría el promedio de los demás.'
-                  : 'No sale el tanque del combustible inicial: lo que hay ahí entró sin precio y no se mezcla con lo que sí costó.'
+              esAjeno(duenoDelOrigen)
+                ? `Solo salen los sitios de ${nombreDeDueno(duenoDelOrigen)}: lo de un dueño no se mezcla con lo de otro.`
+                : origenSinCosto === undefined
+                  ? undefined
+                  : origenSinCosto
+                    ? 'Solo salen los sitios que también admiten material sin costo: lo que hay aquí entró sin precio y hundiría el promedio de los demás.'
+                    : 'No sale el tanque del combustible inicial: lo que hay ahí entró sin precio y no se mezcla con lo que sí costó.'
             }
             error={
               form.destino && form.destino === form.origen
@@ -359,11 +387,19 @@ export function Transferencias() {
                   origenSinCosto === undefined ||
                   Boolean(a.admite_sin_costo) === origenSinCosto,
               )
+              .filter(
+                (a) =>
+                  duenoDelOrigen === undefined ||
+                  (a.propietario ?? LA_CASA) === duenoDelOrigen,
+              )
               .map((a) => ({
                 valor: String(a.id),
                 codigo: a.codigo,
                 nombre: a.nombre,
-                detalle: a.tipo,
+                detalle: conDueno(
+                  a.tipo,
+                  detalleDeDueno(a.propietario, nombreDeDueno(a.propietario)),
+                ),
               }))}
           />
         </div>

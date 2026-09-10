@@ -19,10 +19,19 @@ export const PESTANAS_MATERIAL: Pestana[] = [
   { etiqueta: 'Movimientos', a: '/app/inventario/movimientos' },
 ]
 
-/** Dónde se guarda: un taller es un almacén con máquinas dentro. */
+/**
+ * Dónde se guarda: un taller es un almacén con máquinas dentro.
+ *
+ * Los dueños van aquí y no en Configuración porque no son un ajuste del
+ * sistema: son una propiedad del sitio donde se guarda el material, y se eligen
+ * desde el formulario que está dos pestañas más allá. Quien viene a crear un
+ * almacén de la gobernación y descubre que el dueño no existe lo tiene a un
+ * clic, no a tres menús.
+ */
 export const PESTANAS_SITIOS: Pestana[] = [
   { etiqueta: 'Almacenes y patios', a: '/app/inventario/almacenes' },
   { etiqueta: 'Talleres', a: '/app/inventario/talleres' },
+  { etiqueta: 'Dueños del material', a: '/app/inventario/duenos' },
 ]
 
 /** Quién trabaja aquí, y cuánto cobra su cargo. */

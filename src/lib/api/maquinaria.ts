@@ -47,6 +47,16 @@ export interface Maquina {
   almacen_id: number | null
   almacen: string | null
   almacen_tipo: string | null
+  /*
+    QUIÉN LA LLEVA.
+
+    Christopher: «una máquina necesita de un conductor, operador o responsable
+    para funcionar o trasladarse». Es un cargo, no el turno de ayer: quién la
+    condujo un día concreto vive en la lectura del horómetro y en el despacho.
+    Nulo es una respuesta válida —una máquina en espera no tiene a nadie.
+  */
+  operador_id?: number | null
+  operador?: string | null
   estado: EstadoMaquina
   tope_horas: string
   aviso_horas: string
@@ -392,6 +402,15 @@ export function useGuardarMaquina() {
         megabytes viajan por su propia tuberia, no por una funcion.
       */
       fotos?: { path: string; nota?: string | null }[] | null
+      /*
+        QUIÉN LA CONDUCE U OPERA. Christopher: «una máquina necesita de un
+        conductor, operador o responsable para funcionar o trasladarse».
+
+        Viaja TAL CUAL y no con `?? null` que signifique «déjalo igual»: soltar
+        el puesto es una decisión, y la base lo escribe sin coalesce justamente
+        para que se pueda dejar en nadie.
+      */
+      operador_id?: number | null
     }) =>
       rpc<number>('guardar_maquina', {
         p_id: m.id ?? null,
@@ -413,6 +432,7 @@ export function useGuardarMaquina() {
         p_propietario: m.propietario ?? null,
         p_estado: m.estado ?? null,
         p_fotos: m.fotos && m.fotos.length > 0 ? m.fotos : null,
+        p_operador_id: m.operador_id ?? null,
       }),
   )
 }

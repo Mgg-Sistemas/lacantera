@@ -12,7 +12,11 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useAlmacenes, usePropietarios } from '@/lib/api/inventario'
+import { useEmpleados } from '@/lib/api/nomina'
+import { DeQuienEs } from '@/components/DeQuienEs'
+import { detalleDeDueno } from '@/lib/deQuien'
 import { FotosDeLaMaquina, FOTOS_MINIMAS } from '@/components/FotosDeLaMaquina'
+import { cn } from '@/lib/cn'
 import { useCombustibles } from '@/lib/api/combustible'
 import {
   ETIQUETA_ESTADO,
@@ -67,6 +71,7 @@ const vacio = {
   nombre: '',
   tipo: 'OTRO',
   propietario: 'LACANTERA',
+  operador_id: '',
   estado: 'ACTIVA',
   marca: '',
   modelo: '',
@@ -92,6 +97,7 @@ export function FichaMaquina() {
   const combustibles = useCombustibles()
   const guardar = useGuardarMaquina()
   const { data: propietarios } = usePropietarios()
+  const { data: empleados } = useEmpleados(true)
   const subirFotos = useSubirFotosDeAlta()
   /* Dos huecos abiertos desde el principio: el minimo se ve antes de empezar. */
   const [fotos, setFotos] = useState<(File | null)[]>([null, null])
@@ -131,6 +137,7 @@ export function FichaMaquina() {
       nombre: maquina.nombre,
       tipo: maquina.tipo,
       propietario: maquina.propietario ?? 'LACANTERA',
+      operador_id: maquina.operador_id ? String(maquina.operador_id) : '',
       // Se rellena para que el formulario cuadre; al corregir no viaja.
       estado: maquina.estado,
       marca: maquina.marca ?? '',
@@ -205,6 +212,9 @@ export function FichaMaquina() {
       nombre: f.nombre.trim(),
       tipo: f.tipo,
       propietario: f.propietario,
+      // Tal cual, sin coalesce: dejarlo en nadie es una decisión, y si vacío
+      // significara «déjalo como está» no habría manera de soltar el puesto.
+      operador_id: f.operador_id ? Number(f.operador_id) : null,
       marca: f.marca.trim() || null,
       modelo: f.modelo.trim() || null,
       serial: f.serial.trim() || null,
@@ -273,6 +283,11 @@ export function FichaMaquina() {
                   {ETIQUETA_ESTADO[maquina.estado]}
                 </Chip>
 
+                {/* Y de quién es, al lado del estado, con la misma marca que en
+                    los almacenes: un chuto de la gobernación tiene que
+                    distinguirse de uno nuestro sin abrir el formulario. */}
+                <DeQuienEs propietario={maquina.propietario} />
+
                 {editable ? (
                   <Button
                     variant="ghost"
@@ -301,20 +316,33 @@ export function FichaMaquina() {
         onCerrar={() => setCambiandoEstado(false)}
       />
 
-      <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+      {/*
+        DOS PANELES DE FOTO A LA VEZ SE CONTRADECÍAN.
+
+        Christopher: «estas 2 indicaciones FOTO están chocando». Y era verdad: a
+        la izquierda ponía «guarda primero la máquina y la foto se podrá subir
+        aquí» y en el formulario, dos huecos que impiden guardar sin llenarlos.
+        Una decía que no se puede subir todavía y la otra que sin subir no se
+        guarda.
+
+        Al dar de alta, el panel de la cara desaparece. No es un capricho de
+        maquetación: la cara es una imagen recortada que se elige entre las que
+        ya hay, y mientras no haya ninguna no hay nada que elegir. Pedir tres
+        fotos —dos de registro y una de cara— para crear una máquina es pedir
+        una de más.
+      */}
+      <div
+        className={cn(
+          'grid gap-4',
+          esNueva ? 'lg:grid-cols-1' : 'lg:grid-cols-[260px_minmax(0,1fr)]',
+        )}
+      >
         {/* --------------------------------- Foto --------------------------------- */}
+        {!esNueva ? (
         <Card>
           <CardHeader title="Foto" subtitle="Para reconocerla de un vistazo." />
 
-          {esNueva ? (
-            /* Hasta que la máquina no tiene número no hay carpeta donde dejar el
-               archivo. Se dice, en vez de enseñar un recuadro que no responde. */
-            <p className="text-ink/45 mt-4 text-sm leading-relaxed">
-              Guarda primero la máquina y la foto se podrá subir aquí. Hace falta su número para
-              saber dónde guardarla.
-            </p>
-          ) : (
-            <div className="mt-4">
+          <div className="mt-4">
               <EncuadreFoto
                 url={foto}
                 encuadre={encuadre}
@@ -345,10 +373,10 @@ export function FichaMaquina() {
                 </div>
               ) : null}
 
-              {subir.error ? <ErrorDeCarga error={subir.error} className="mt-3" /> : null}
-            </div>
-          )}
+            {subir.error ? <ErrorDeCarga error={subir.error} className="mt-3" /> : null}
+          </div>
         </Card>
+        ) : null}
 
         <div className="grid gap-4">
           {/* ------------------------------ Cuál es ------------------------------ */}
@@ -462,15 +490,57 @@ export function FichaMaquina() {
                 value={f.anio}
                 onChange={(e) => cambiar('anio', e.target.value)}
               />
+              {/*
+                QUIÉN LA LLEVA.
+
+                Christopher: «una máquina necesita de un conductor, operador o
+                responsable para funcionar o trasladarse». Y en el mismo mensaje:
+                «una máquina no necesariamente tiene un único sitio de resguardo,
+                puede estar en constante exploración o traslado y viajes».
+
+                Las dos cosas dicen lo mismo: lo que ata una máquina no es un
+                sitio, es una persona. Por eso este campo va ANTES que el del
+                resguardo, que pasa a ser el opcional de los dos.
+
+                Es un cargo, no el turno de ayer: quién la condujo un día
+                concreto ya se anota en la lectura del horómetro y en el
+                despacho. Puede quedar en nadie —una máquina en espera, que
+                todavía no ha llegado, no tiene a quién asignarle— y exigirlo
+                solo conseguiría que se pusiera a cualquiera.
+              */}
               <div className="sm:col-span-2">
                 <SelectBuscable
-                  label="Dónde vive"
-                  vacio="Sin asignar"
+                  label="Quién la conduce u opera"
+                  vacio="Nadie por ahora"
+                  valor={f.operador_id}
+                  onCambio={(v) => cambiar('operador_id', v)}
+                  hint="Quien responde por ella para funcionar o trasladarse. Una máquina en espera puede quedarse sin nadie."
+                  opciones={(empleados ?? []).map((e) => ({
+                    valor: String(e.id),
+                    codigo: e.ficha,
+                    nombre: `${e.nombres} ${e.apellidos}`,
+                    detalle: e.cargo,
+                  }))}
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <SelectBuscable
+                  label="Dónde se resguarda, si tiene un sitio fijo"
+                  vacio="No tiene sitio fijo"
                   valor={f.almacen_id}
                   onCambio={(v) => cambiar('almacen_id', v)}
+                  hint="Muchas andan de viaje o en exploración y no paran en un solo lado: dejarlo vacío es una respuesta válida."
                   opciones={(almacenes ?? []).map((a) => ({
                     valor: String(a.id),
                     etiqueta: `${a.nombre}${a.tipo === 'TALLER' ? ' (taller)' : ''}`,
+                    /* De quién es el sitio, porque no cabe una pastilla dentro
+                       de la lista. Guardar una máquina nuestra en un almacén de
+                       la gobernación se puede hacer, pero se ve. */
+                    detalle: detalleDeDueno(
+                      a.propietario,
+                      (propietarios ?? []).find((d) => d.codigo === a.propietario)?.nombre,
+                    ),
                   }))}
                 />
               </div>
