@@ -34,7 +34,10 @@ const AFECTA: Record<string, string[][]> = {
   // flota, donde se ve su semáforo antes de cargarlo. Y al cerrarla con
   // repuestos se descuenta del almacén, así que el inventario también queda
   // viejo.
-  maquinaria: [['maquinaria'], ['vehiculos']],
+  maquinaria: [['maquinaria'], ['vehiculos'], ['historial-maquina']],
+  // Lo que se le monta a una maquina sale en dos sitios de la misma ficha: la
+  // tarjeta de «que lleva encima» y su historia.
+  maquina_agregados: [['agregados-maquina'], ['historial-maquina']],
   horometro_lecturas: [['maquinaria']],
   mantenimientos: [['maquinaria'], ['vehiculos']],
   mantenimiento_repuestos: [['maquinaria'], ['existencias'], ['existencias-totales']],

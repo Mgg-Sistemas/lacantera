@@ -16,6 +16,7 @@ import { useEmpleados } from '@/lib/api/nomina'
 import { DeQuienEs } from '@/components/DeQuienEs'
 import { detalleDeDueno } from '@/lib/deQuien'
 import { FotosDeLaMaquina, FOTOS_MINIMAS } from '@/components/FotosDeLaMaquina'
+import { QueLlevaEncima } from './QueLlevaEncima'
 import { cn } from '@/lib/cn'
 import { useCombustibles } from '@/lib/api/combustible'
 import {
@@ -646,13 +647,36 @@ export function FichaMaquina() {
 
           {guardar.error ? <ErrorDeCarga error={guardar.error} /> : null}
 
+          {/*
+            QUÉ LLEVA ENCIMA, ENTRE EL FORMULARIO Y LA HISTORIA.
+
+            Christopher: «debemos permitir que las máquinas puedan modificarse
+            (añadir elementos o incluir características adicionales, ej. antenas
+            Starlink, cauchos especiales, etc), eso estará incluido en el
+            historial de la máquina».
+
+            Va aquí y no dentro del formulario porque no es un campo de la
+            máquina: es una lista que crece con el tiempo, y meterla entre el
+            serial y el año la convertiría en algo que se guarda con el botón de
+            abajo — cuando cada apunte se guarda solo, con su fecha.
+
+            Y va ENCIMA de la historia porque contesta el presente: «qué lleva
+            ahora». La historia, debajo, contesta el pasado.
+
+            En una máquina nueva no aparece: todavía no existe a qué montarle
+            nada.
+          */}
+          {!esNueva && maquina ? (
+            <QueLlevaEncima maquinaId={maquina.id} editable={editable} />
+          ) : null}
+
           {/* Debajo del formulario y no encima: quien entra a corregir un campo
               lo tiene a la vista, y quien entra a mirar qué le pasó baja una
               vez. En una máquina nueva no hay historia que contar todavía. */}
           {!esNueva ? (
             <Historial
               titulo="Su historia"
-              subtitulo="Combustible, horas trabajadas, pasos por el taller, repuestos y cambios de estado, de lo más reciente a lo más viejo."
+              subtitulo="Combustible, horas trabajadas, pasos por el taller, repuestos, modificaciones y cambios de estado, de lo más reciente a lo más viejo."
               hechos={historial.data}
               cargando={historial.isPending}
               error={historial.error}
