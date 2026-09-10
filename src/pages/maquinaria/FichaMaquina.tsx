@@ -22,6 +22,7 @@ import { useCombustibles } from '@/lib/api/combustible'
 import {
   ETIQUETA_ESTADO,
   ESTADOS_MAQUINA,
+  CLASES_DE_MAQUINA,
   TIPOS_MAQUINA,
   useFotoMaquina,
   useGuardarEncuadreMaquina,
@@ -72,6 +73,7 @@ const vacio = {
   nombre: '',
   tipo: 'OTRO',
   propietario: 'LACANTERA',
+  clase: 'MAQUINA',
   operador_id: '',
   estado: 'ACTIVA',
   marca: '',
@@ -140,6 +142,7 @@ export function FichaMaquina() {
       nombre: maquina.nombre,
       tipo: maquina.tipo,
       propietario: maquina.propietario ?? 'LACANTERA',
+      clase: maquina.clase ?? 'MAQUINA',
       operador_id: maquina.operador_id ? String(maquina.operador_id) : '',
       // Se rellena para que el formulario cuadre; al corregir no viaja.
       estado: maquina.estado,
@@ -215,6 +218,7 @@ export function FichaMaquina() {
       nombre: f.nombre.trim(),
       tipo: f.tipo,
       propietario: f.propietario,
+      clase: f.clase,
       // Tal cual, sin coalesce: dejarlo en nadie es una decisión, y si vacío
       // significara «déjalo como está» no habría manera de soltar el puesto.
       operador_id: f.operador_id ? Number(f.operador_id) : null,
@@ -401,6 +405,27 @@ export function FichaMaquina() {
                 placeholder="Excavadora del frente norte"
                 value={f.nombre}
                 onChange={(e) => cambiar('nombre', e.target.value)}
+              />
+              {/*
+                QUÉ CLASE DE COSA ES, ANTES QUE DE QUÉ TIPO.
+
+                Christopher: «segmentar si es una maquinaria (ej. volvo, chuto,
+                retroexcavadora) o vehículo (ej. camioneta)».
+
+                Va delante del tipo porque es la pregunta más gruesa, y no se
+                deduce de él: un chuto es un camión y para él es maquinaria; una
+                camioneta también es un camión y es vehículo. El corte no es
+                «tiene ruedas», es para qué está la cosa.
+              */}
+              <Select
+                label="Qué es"
+                value={f.clase}
+                onChange={(e) => cambiar('clase', e.target.value)}
+                hint={CLASES_DE_MAQUINA.find((c) => c.valor === f.clase)?.pista}
+                opciones={CLASES_DE_MAQUINA.map((c) => ({
+                  valor: c.valor,
+                  etiqueta: c.etiqueta,
+                }))}
               />
               <Select
                 label="Tipo"
