@@ -13,9 +13,11 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useEmpleados } from '@/lib/api/nomina'
 import { useEntregables, useEntregarATrabajador } from '@/lib/api/asignaciones'
 import type { Entregable } from '@/lib/api/asignaciones'
-import { useAlmacenes } from '@/lib/api/inventario'
+import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useArticulos, useMisRoles } from '@/lib/api/catalogo'
 import { hoyEnCaracas } from '@/lib/api/tasas'
+import { DeQuienSale } from '@/components/DeQuienSale'
+import { faltaDecirDeQuien } from '@/lib/deQuien'
 
 /**
  * La cantidad como se dice, no como se guarda.
@@ -100,6 +102,23 @@ export function Entregar() {
   )
   const [nota, setNota] = useState('')
   const [cuantas, setCuantas] = useState<Record<number, string>>({})
+  /*
+    DE QUIÉN SALE CADA RENGLÓN.
+
+    Desde que el dueño viaja con el material, un almacén puede tener botas de la
+    casa y de la gobernación. Entregar sin decir de cuál eran sería inventarlo, y
+    la base se para.
+
+    Por renglón y no por entrega: una entrega de cinco cosas donde solo una es
+    material ajeno no debería partirse en dos.
+  */
+  const [saleDe, setSaleDe] = useState<Record<number, string>>({})
+
+  /* Quién tiene qué en este almacén. `v_entregables` no lo dice, así que se
+     pregunta a la existencia, que sí. */
+  const existencias = useExistencias(almacen ? Number(almacen) : undefined, Boolean(almacen))
+  const duenosDe = (articuloId: number) =>
+    (existencias.data ?? []).find((e) => e.articulo_id === articuloId)?.duenos
 
   const disponibles = useEntregables(almacen ? Number(almacen) : undefined)
 
@@ -134,9 +153,13 @@ export function Entregar() {
   const renglones = useMemo(
     () =>
       Object.entries(cuantas)
-        .map(([articulo_id, c]) => ({ articulo_id: Number(articulo_id), cantidad: Number(c) }))
+        .map(([articulo_id, c]) => ({
+          articulo_id: Number(articulo_id),
+          cantidad: Number(c),
+          propietario: saleDe[Number(articulo_id)] || null,
+        }))
         .filter((r) => r.cantidad > 0),
-    [cuantas],
+    [cuantas, saleDe],
   )
 
   /*
@@ -169,7 +192,13 @@ export function Entregar() {
     )
   }
 
-  const listo = empleado && almacen && renglones.length > 0
+  /*
+    Y no se puede enviar mientras falte decir de quién sale alguno. La base
+    también lo para, pero enterarse al pulsar con la hoja llena llega tarde.
+  */
+  const faltaDueno = renglones.some((r) => faltaDecirDeQuien(duenosDe(r.articulo_id), r.propietario ?? ''))
+
+  const listo = empleado && almacen && renglones.length > 0 && !faltaDueno
 
   const enviar = async () => {
     await entregar.mutateAsync({
@@ -377,6 +406,21 @@ export function Entregar() {
                             setCuantas((c) => ({ ...c, [a.articulo_id]: e.target.value }))
                           }
                         />
+
+                        {/* Solo si de eso hay de varios dueños aquí, y solo
+                            cuando de verdad se va a entregar algo: preguntarlo
+                            en las veinte filas de la lista sería ruido. */}
+                        {Number(cuantas[a.articulo_id] ?? 0) > 0 ? (
+                          <div className="mt-2">
+                            <DeQuienSale
+                              duenos={duenosDe(a.articulo_id)}
+                              valor={saleDe[a.articulo_id] ?? ''}
+                              onCambio={(v) =>
+                                setSaleDe((d) => ({ ...d, [a.articulo_id]: v }))
+                              }
+                            />
+                          </div>
+                        ) : null}
                       </td>
                     </tr>
                   ))}
