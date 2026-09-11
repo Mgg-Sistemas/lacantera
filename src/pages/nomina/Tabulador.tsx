@@ -282,7 +282,7 @@ export function Tabulador() {
           abierto
           onCerrar={() => setEdicion(null)}
           titulo={edicion.id ? `Editar ${edicion.cargo}` : 'Nuevo cargo del tabulador'}
-          descripcion="Solo se guarda el sueldo mensual. La quincena se calcula a partir de él."
+          descripcion="Solo se guarda el sueldo mensual, y es lo que la persona recibe: de ahí salen el beneficio de alimentación y las retenciones de ley. La quincena es la mitad."
           ancho="md"
           acciones={
             <>

@@ -379,10 +379,18 @@ export function FormularioTrabajador() {
                 type="number"
                 step="0.01"
                 inputMode="decimal"
+                /*
+                  Este renglón es el que provocó el reclamo de los 267,17 $: se
+                  escribía 500 creyendo que la quincena daría 250, y daba 267
+                  porque encima se sumaba el cestaticket. Ahora el número
+                  significa lo que la persona recibe, y eso hay que decirlo
+                  donde se escribe, no en un manual.
+                */
                 hint={
-                  f.tabulador_id
-                    ? 'Sale del tabulador. Si lo cambias aquí, esta ficha aparecerá como desfasada hasta que alguien sincronice o corrija el nivel.'
-                    : undefined
+                  'Es lo que recibe, todo incluido: de aquí salen el beneficio de alimentación y las retenciones de ley. Los bonos y las penalizaciones se cargan aparte, en cada período.' +
+                  (f.tabulador_id
+                    ? ' Sale del tabulador: si lo cambias aquí, la ficha quedará desfasada hasta que alguien sincronice o corrija el nivel.'
+                    : '')
                 }
                 value={f.salario_base}
                 onChange={(e) => cambiar({ salario_base: e.target.value })}
