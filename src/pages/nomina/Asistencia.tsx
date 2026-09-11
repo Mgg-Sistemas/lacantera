@@ -16,7 +16,7 @@ import {
   ESTADOS_PERIODO,
   useConceptos,
   useEliminarNovedadMonto,
-  useEmpleados,
+  useEmpleadosDelPeriodo,
   useGuardarNovedad,
   useFaltas,
   useMarcarFalta,
@@ -90,6 +90,47 @@ function diasDelPeriodo(desde: string, hasta: string): string[] {
   return dias
 }
 
+/**
+ * Cuántas fechas hay de una a otra, contando las dos puntas.
+ *
+ * En UTC por el mismo motivo que `diasDelPeriodo`: las fechas de la base son
+ * `date` sin hora, y leerlas en la zona local correría el día en Caracas.
+ */
+function diasEntre(desde: string, hasta: string): number {
+  const a = Date.parse(desde + 'T00:00:00Z')
+  const b = Date.parse(hasta + 'T00:00:00Z')
+  return Math.round((b - a) / 86400000) + 1
+}
+
+/**
+ * Los días que le factura el período a una persona.
+ *
+ * NO son siempre los del período. Quien entra o sale a mitad de quincena cobra
+ * la parte que le toca, y el motor la saca del solape entre el rango y el
+ * tiempo que estuvo empleada. Aquí se repite esa misma cuenta para que los tres
+ * números que se leen mientras se marcan faltas digan lo que va a decir el
+ * recibo.
+ *
+ * Sin esto, a Cortez —que entró el 24/08 y salió el 01/09— la pantalla le
+ * enseñaba «Facturados 15» mientras el motor le facturaba uno. Las fechas son
+ * cadenas ISO, así que compararlas como texto ya las ordena bien.
+ */
+function diasQueLeFactura(periodo: Periodo, quien?: Empleado): number {
+  const total = Number(periodo.dias)
+  if (!quien) return total
+
+  const desdeEmp = quien.fecha_ingreso > periodo.desde ? quien.fecha_ingreso : periodo.desde
+  const finEmp = quien.fecha_egreso ?? periodo.hasta
+  const hastaEmp = finEmp < periodo.hasta ? finEmp : periodo.hasta
+
+  const dentro = diasEntre(desdeEmp, hastaEmp)
+  if (dentro <= 0) return 0
+
+  const rango = diasEntre(periodo.desde, periodo.hasta)
+  if (dentro >= rango) return total
+  return Math.round((total * dentro * 100) / rango) / 100
+}
+
 function DiasDelPeriodo({
   periodo,
   empleados,
@@ -135,7 +176,7 @@ function DiasDelPeriodo({
   */
   const inj = quien ? cuenta(quien, 'INJUSTIFICADA') : 0
   const jus = quien ? cuenta(quien, 'JUSTIFICADA') : 0
-  const facturados = Number(periodo.dias)
+  const facturados = diasQueLeFactura(periodo, trabajador)
   const laborados = Math.max(facturados - inj - jus, 0)
   const aPagar = Math.max(facturados - inj, 0)
 
@@ -340,11 +381,30 @@ export function Asistencia() {
   const monedas = useMonedasUsables()
   const [params, setParams] = useSearchParams()
   const { data: periodos } = usePeriodos()
-  const { data: empleados, isPending, error } = useEmpleados(true)
   const { puede } = useMisRoles()
 
   const periodoId = params.get('periodo') ? Number(params.get('periodo')) : undefined
   const periodo = (periodos ?? []).find((p) => p.id === periodoId)
+
+  /*
+    LOS DEL PERÍODO, NO LOS ACTIVOS.
+
+    Christopher: «hay un desincorporado, Cortez Hernán, que hay que quitarle un
+    día pero no me aparece en novedades».
+
+    Esta pantalla pedía `useEmpleados(true)`, o sea solo los activos, mientras
+    que el motor paga a quien estuvo dentro del período aunque se haya ido a
+    mitad. Cortez entró el 24/08 y salió el 01/09: el motor le factura ese día y
+    se lo paga, y aquí no salía, así que no había dónde marcarle una falta. Se
+    le podía pagar de más y no se podía corregir.
+
+    `useEmpleadosDelPeriodo` usa la misma condición de fechas que el motor.
+  */
+  const {
+    data: empleados,
+    isPending,
+    error,
+  } = useEmpleadosDelPeriodo(periodo?.desde, periodo?.hasta)
 
   const { data: novedades } = useNovedades(periodoId)
   const { data: montos } = useNovedadesMontos(periodoId)
