@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { Gauge, ToggleLeft, Wrench } from 'lucide-react'
+import { Eye, Gauge, ToggleLeft, Wrench } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -144,7 +144,15 @@ export function FichaDeMaquina({ m, acc }: { m: Maquina; acc: Acciones }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-ink/45 text-2xs font-mono tracking-[0.14em]">{m.codigo}</p>
-          <h2 className="text-ink/90 mt-1 truncate text-lg font-medium">{m.nombre}</h2>
+          {/* El nombre lleva a la ficha, como la fila de la lista y la loseta del
+              patio. Las tres vistas se entran igual. */}
+          <button
+            type="button"
+            onClick={() => acc.onAbrir(m)}
+            className="hover:text-ink/70 block max-w-full truncate text-left"
+          >
+            <h2 className="text-ink/90 mt-1 truncate text-lg font-medium">{m.nombre}</h2>
+          </button>
           <p className="text-ink/50 mt-0.5 truncate text-xs">
             {[m.marca, m.modelo].filter(Boolean).join(' ') || 'Sin marca ni modelo'}
             {m.almacen ? ` · ${m.almacen}` : ''}
@@ -219,33 +227,58 @@ export function FichaDeMaquina({ m, acc }: { m: Maquina; acc: Acciones }) {
 
       <div className="grow" />
 
-      {acc.puedeEscribir ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="soft"
-            icon={<Gauge />}
-            disabled={enTaller}
-            onClick={() => acc.onHorometro(m)}
-          >
-            Horómetro
-          </Button>
-          <Button
-            size="sm"
-            variant={bloquea || enTaller ? 'primary' : 'outline'}
-            icon={<Wrench />}
-            onClick={() => acc.onTaller(m)}
-          >
-            {enTaller ? 'Sacar del taller' : 'Meter al taller'}
-          </Button>
-          <Button size="sm" variant="ghost" icon={<ToggleLeft />} onClick={() => acc.onEstado(m)}>
-            Cambiar estado
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => acc.onAbrir(m)}>
-            Editar
-          </Button>
-        </div>
-      ) : null}
+      {/*
+        ENTRAR A LA FICHA NO ES UN PRIVILEGIO DE ESCRITURA.
+
+        Christopher: «aquellas personas que no puedan editar la máquina aún deben
+        poder ver su detalle, por tanto el botón editar debe cambiar por el botón
+        Ver, o directamente click en la tarjeta».
+
+        Toda esta fila colgaba de `puedeEscribir`, así que quien solo puede
+        consultar se quedaba sin puerta: ni fotos, ni historial, ni qué lleva
+        encima. Y las otras dos vistas —la lista y el patio— sí dejaban entrar
+        pulsando, con lo cual el permiso dependía de en qué vista estuvieras.
+
+        Ahora la fila se dibuja siempre. Lo que cuelga del permiso son las tres
+        acciones que ESCRIBEN; la de entrar se queda, y cambia de nombre según lo
+        que se vaya a poder hacer dentro. Un botón que dice «Editar» a quien no
+        puede editar promete lo que no hay.
+      */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {acc.puedeEscribir ? (
+          <>
+            <Button
+              size="sm"
+              variant="soft"
+              icon={<Gauge />}
+              disabled={enTaller}
+              onClick={() => acc.onHorometro(m)}
+            >
+              Horómetro
+            </Button>
+            <Button
+              size="sm"
+              variant={bloquea || enTaller ? 'primary' : 'outline'}
+              icon={<Wrench />}
+              onClick={() => acc.onTaller(m)}
+            >
+              {enTaller ? 'Sacar del taller' : 'Meter al taller'}
+            </Button>
+            <Button size="sm" variant="ghost" icon={<ToggleLeft />} onClick={() => acc.onEstado(m)}>
+              Cambiar estado
+            </Button>
+          </>
+        ) : null}
+
+        <Button
+          size="sm"
+          variant={acc.puedeEscribir ? 'ghost' : 'outline'}
+          icon={acc.puedeEscribir ? undefined : <Eye />}
+          onClick={() => acc.onAbrir(m)}
+        >
+          {acc.puedeEscribir ? 'Editar' : 'Ver'}
+        </Button>
+      </div>
     </Card>
   )
 }
@@ -332,6 +365,9 @@ export function ListaDeFlota({ maquinas, acc }: { maquinas: Maquina[]; acc: Acci
                   </div>
                 </td>
                 <td className="px-5 py-2.5 text-right">
+                  {/* La fila entera ya lleva a la ficha; esto es el atajo al
+                      horómetro para quien puede anotarlo. Sin permiso no se
+                      dibuja nada: entrar se hace pulsando la fila. */}
                   {acc.puedeEscribir ? (
                     <Button
                       size="sm"
