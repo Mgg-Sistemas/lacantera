@@ -823,6 +823,129 @@ export function useSubirFotosDeAlta() {
   })
 }
 
+/*
+  LAS FOTOS DEL REGISTRO DE UNA MÁQUINA.
+
+  Christopher, abriendo una ficha: «¿dónde está la foto o las fotos? En caso de
+  que exista imagen deben ser mínimo dos, y se deben poder apreciar».
+
+  Estaban guardadas desde el primer día —la reja del alta funcionó, las seis
+  máquinas cargadas tienen sus doce fotos— y no había forma de leerlas. La ficha
+  solo pintaba la foto de perfil, así que enseñaba «Sin foto» sobre un registro
+  fotográfico completo.
+
+  Obligar a subir algo que después nadie puede mirar es peor que no pedirlo:
+  cuesta el mismo trabajo y no sirve para lo único que tenía que servir — que el
+  día que se discuta un golpe esté lo que se fotografió al recibirla.
+*/
+export interface FotoDeMaquina {
+  id: number
+  maquina_id: number
+  path: string
+  nota: string | null
+  orden: number
+  subida_en: string
+}
+
+export function useFotosDeMaquina(maquinaId: number | null) {
+  return useQuery({
+    queryKey: ['maquinaria', 'fotos', maquinaId],
+    enabled: maquinaId != null,
+    queryFn: async () =>
+      desenvolver<FotoDeMaquina[]>(
+        await supabase
+          .from('maquina_fotos')
+          .select('id, maquina_id, path, nota, orden, subida_en')
+          .eq('maquina_id', maquinaId!)
+          .order('orden'),
+      ),
+  })
+}
+
+/*
+  LAS IMÁGENES, LISTAS PARA PINTAR.
+
+  Se descargan y se envuelven en URLs de objeto, igual que la foto de perfil y por
+  el mismo motivo: una URL firmada apunta a otro dominio y el navegador prohíbe
+  exportar un lienzo que tocó una imagen de otro origen.
+
+  Se revocan al desmontar. Sin eso, abrir veinte fichas deja veinte imágenes
+  colgadas en memoria hasta recargar la página.
+*/
+export function useImagenesDeMaquina(paths: string[]) {
+  const [urls, setUrls] = useState<Record<string, string>>({})
+  const clave = paths.join('|')
+
+  useEffect(() => {
+    if (paths.length === 0) {
+      setUrls({})
+      return
+    }
+
+    let vigente = true
+    const objetos: string[] = []
+
+    void Promise.all(
+      paths.map(async (path) => {
+        const { data } = await supabase.storage.from(BUCKET_MAQUINAS).download(path)
+        return data ? { path, url: URL.createObjectURL(data) } : null
+      }),
+    ).then((lista) => {
+      const mapa: Record<string, string> = {}
+      for (const x of lista) {
+        if (!x) continue
+        objetos.push(x.url)
+        mapa[x.path] = x.url
+      }
+      if (vigente) setUrls(mapa)
+      else objetos.forEach((u) => URL.revokeObjectURL(u))
+    })
+
+    return () => {
+      vigente = false
+      objetos.forEach((u) => URL.revokeObjectURL(u))
+    }
+    // `clave` resume la lista: sin ella, un arreglo nuevo en cada pintado
+    // volvería a descargarlo todo en bucle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clave])
+
+  return urls
+}
+
+/** Sube una foto más al registro de una máquina que ya existe. */
+export function useAgregarFotoMaquina() {
+  return useAccion(async (f: { maquina_id: number; archivo: File; nota?: string | null }) => {
+    const extension = f.archivo.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    // Bajo el id de la máquina, que es donde vive todo lo suyo. Las del alta van
+    // a `nuevas/` porque entonces todavía no hay id.
+    const ruta = `${f.maquina_id}/${crypto.randomUUID()}.${extension}`
+
+    const { error } = await supabase.storage
+      .from(BUCKET_MAQUINAS)
+      .upload(ruta, f.archivo, { contentType: f.archivo.type, upsert: false })
+    if (error) throw error
+
+    return rpc<number>('agregar_foto_maquina', {
+      p_maquina_id: f.maquina_id,
+      p_path: ruta,
+      p_nota: f.nota ?? null,
+    })
+  })
+}
+
+/*
+  Quita una foto. La base se niega a dejar la máquina con menos de dos, así que
+  el fichero solo se borra si la fila se borró: al revés se perdería la imagen de
+  una foto que sigue registrada.
+*/
+export function useQuitarFotoDeMaquina() {
+  return useAccion(async (f: { id: number }) => {
+    const ruta = await rpc<string | null>('quitar_foto_de_maquina', { p_id: f.id })
+    if (ruta) await supabase.storage.from(BUCKET_MAQUINAS).remove([ruta])
+  })
+}
+
 export function useGuardarEncuadreMaquina() {
   return useAccion((e: { maquina_id: number; zoom: number; x: number; y: number }) =>
     rpc<string | null>('guardar_foto_maquina', {
