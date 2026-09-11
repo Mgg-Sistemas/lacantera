@@ -17,6 +17,7 @@ import { DeQuienEs } from '@/components/DeQuienEs'
 import { detalleDeDueno } from '@/lib/deQuien'
 import { FotosDeLaMaquina, FOTOS_MINIMAS } from '@/components/FotosDeLaMaquina'
 import { QueLlevaEncima } from './QueLlevaEncima'
+import { FotosDelRegistro } from './FotosDelRegistro'
 import { cn } from '@/lib/cn'
 import { useCombustibles } from '@/lib/api/combustible'
 import {
@@ -702,6 +703,24 @@ export function FichaMaquina() {
           </Card>
 
           {guardar.error ? <ErrorDeCarga error={guardar.error} /> : null}
+
+          {/*
+            LAS FOTOS DEL REGISTRO, DEBAJO DE LA FICHA.
+
+            Christopher: «¿dónde está la foto o las fotos? En caso de que exista
+            imagen deben ser mínimo dos, y se deben poder apreciar».
+
+            Estaban guardadas y no se veían por ningún lado: la pantalla solo
+            pintaba la foto de perfil, así que decía «Sin foto» encima de un
+            registro fotográfico completo.
+
+            Va después del formulario y antes de la historia porque contesta una
+            pregunta del presente —cómo está— igual que «qué lleva encima». La
+            historia, más abajo, contesta el pasado.
+          */}
+          {!esNueva && maquina ? (
+            <FotosDelRegistro maquinaId={maquina.id} editable={editable} />
+          ) : null}
 
           {/*
             QUÉ LLEVA ENCIMA, ENTRE EL FORMULARIO Y LA HISTORIA.
