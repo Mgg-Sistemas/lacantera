@@ -10,7 +10,13 @@ import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { ESTADOS_PERIODO, useFirmaRrhh, usePeriodos, useRecibos } from '@/lib/api/nomina'
+import {
+  ESTADOS_PERIODO,
+  useEmpleadosDelPeriodo,
+  useFirmaRrhh,
+  usePeriodos,
+  useRecibos,
+} from '@/lib/api/nomina'
 import type { Periodo, Recibo } from '@/lib/api/nomina'
 import { useFirmas } from '@/lib/api/firmas'
 import { useSesion } from '@/lib/sesion'
@@ -137,6 +143,25 @@ export function Recibos() {
 
   const ordenados = [...(data ?? [])].sort((a, b) =>
     `${a.empleado?.apellidos}`.localeCompare(`${b.empleado?.apellidos}`),
+  )
+
+  /*
+    QUIÉN PERTENECÍA AL PERÍODO Y NO TIENE RECIBO.
+
+    Christopher: «hay un desincorporado, Cortez Hernán, que hay que quitarle un
+    día». Al quitárselo se queda sin días que pagar, y el motor lo salta sin
+    emitir recibo. Eso está bien —no trabajó, no cobra— y así se decidió dejarlo,
+    pero el silencio no: la lista pasaba de veintisiete a veintiséis y nada decía
+    quién faltaba ni por qué.
+
+    Se calcula aquí y no en la base porque la pantalla ya tiene las dos listas:
+    quién pertenece al período por fechas, y quién tiene recibo. La diferencia es
+    exactamente lo que hay que nombrar, y no cuesta ni una consulta nueva.
+  */
+  const { data: delPeriodo } = useEmpleadosDelPeriodo(periodo?.desde, periodo?.hasta)
+
+  const sinRecibo = (delPeriodo ?? []).filter(
+    (e) => !(data ?? []).some((r) => r.empleado_id === e.id),
   )
 
   const papelDeEmpresa = empresaDelPapel(empresa)
@@ -301,6 +326,18 @@ export function Recibos() {
               </Button>
             </div>
           </div>
+
+          {sinRecibo.length > 0 ? (
+            <p className="border-warning/40 bg-warning-soft text-warning mx-5 mb-4 rounded-[6px] border p-3 text-xs">
+              {sinRecibo.length === 1
+                ? 'Una persona del período no tiene recibo, porque no le quedaron días que pagar: '
+                : `${sinRecibo.length} personas del período no tienen recibo, porque no les quedaron días que pagar: `}
+              <span className="font-medium">
+                {sinRecibo.map((e) => `${e.apellidos}, ${e.nombres}`).join(' · ')}
+              </span>
+              . Se revisa en Novedades, marcando o quitando los días.
+            </p>
+          ) : null}
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[780px] text-sm">

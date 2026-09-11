@@ -192,6 +192,42 @@ export function useEmpleados(soloActivos = true) {
 }
 
 /**
+ * Quién pertenece a un período de nómina.
+ *
+ * NO es lo mismo que «quién está activo», y confundirlos ya costó dos veces.
+ *
+ * La primera fue dentro de `calcular_nomina`, que filtraba por `activo` y por
+ * eso dejaba de pagarle la quincena a quien se daba de baja el día 26: había
+ * trabajado hasta el 26 y ese dinero se le debía. Se quitó aquel filtro y se
+ * dejó solo la ventana de fechas, que es la que de verdad dice quién entra.
+ *
+ * La segunda fue en la pantalla de novedades, que seguía pidiendo los activos.
+ * Christopher: «hay un desincorporado, Cortez Hernán, que hay que quitarle un
+ * día pero no me aparece en novedades». El motor le pagaba su día y la pantalla
+ * no dejaba tocarlo: se le podía pagar de más y no había dónde corregirlo.
+ *
+ * La condición de abajo es la MISMA que la del motor, palabra por palabra:
+ * entró antes de que el período terminara y no se había ido antes de que
+ * empezara. Si un día cambia allí, cambia aquí.
+ */
+export function useEmpleadosDelPeriodo(desde?: string, hasta?: string) {
+  return useQuery({
+    queryKey: ['nomina', 'empleados-del-periodo', desde, hasta],
+    enabled: Boolean(desde && hasta),
+    queryFn: async () =>
+      desenvolver<Empleado[]>(
+        await supabase
+          .from('empleados')
+          .select(SELECT_EMPLEADO)
+          .lte('fecha_ingreso', hasta!)
+          .or(`fecha_egreso.is.null,fecha_egreso.gte.${desde!}`)
+          .order('apellidos')
+          .order('nombres'),
+      ),
+  })
+}
+
+/**
  * Un trabajador, o nada si esa ficha no existe.
  *
  * Con `single()` una ficha inexistente devolvía error, y react-query lo
