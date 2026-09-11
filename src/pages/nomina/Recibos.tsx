@@ -70,6 +70,9 @@ function paraImprimir(
     totalDeducciones: r.total_deducciones,
     neto: r.neto,
     netoUsd: r.neto_usd,
+    // La del período, no la de hoy: un recibo dice lo que valía el día que se
+    // emitió. Es la misma con la que se calculó cada línea.
+    tasaUsd: periodo.tasa_usd,
 
     formaPago: r.empleado?.forma_pago ?? 'EFECTIVO',
     banco: r.empleado?.banco ?? null,
@@ -422,6 +425,19 @@ export function Recibos() {
               </div>
             </dl>
 
+            {/*
+              Estos tres números son más chicos que el sueldo de la ficha, y sin
+              esta línea eso parece un error. No lo es: el sueldo de la ficha es
+              lo que la persona recibe, y de ahí salen el beneficio de
+              alimentación y las retenciones. Lo que queda es el básico, y es el
+              que manda en prestaciones, vacaciones y utilidades.
+            */}
+            <p className="text-ink/45 -mt-3 text-xs">
+              El sueldo de la ficha es lo que recibe. El básico es lo que queda al
+              descontarle el beneficio de alimentación y las retenciones de ley, y es
+              el que cuenta para prestaciones, vacaciones y utilidades.
+            </p>
+
             {(['ASIGNACION', 'DEDUCCION', 'APORTE', 'PROVISION'] as const).map((tipo) => {
               const lineas = abierto.lineas
                 .filter((l) => l.tipo === tipo)
@@ -457,8 +473,25 @@ export function Recibos() {
                             <span className="text-ink/40 text-xs"> · {Number(l.cantidad)}</span>
                           ) : null}
                         </span>
-                        <span className="text-ink/85 tabular shrink-0 text-sm">
-                          {bolivares(l.monto)}
+                        {/*
+                          EL BOLÍVAR ES LA CIFRA; EL DÓLAR, LA REFERENCIA.
+
+                          Los sueldos se estipulan en dólares y la gente piensa
+                          en dólares, pero se paga por transferencia en
+                          bolívares y el recibo es un documento en bolívares. Sin
+                          la referencia, el cestaticket se lee «16.649,77» y
+                          nadie lo ata con los 20 $ que es: por eso nadie
+                          entendió de dónde salían los 17,17 $ de más.
+                        */}
+                        <span className="shrink-0 text-right">
+                          <span className="text-ink/85 tabular block text-sm">
+                            {bolivares(l.monto)}
+                          </span>
+                          {periodo?.tasa_usd && Number(periodo.tasa_usd) > 0 ? (
+                            <span className="text-ink/40 tabular text-2xs block">
+                              {dolares(Number(l.monto) / Number(periodo.tasa_usd))}
+                            </span>
+                          ) : null}
                         </span>
                       </li>
                     ))}

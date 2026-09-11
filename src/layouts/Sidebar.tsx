@@ -224,6 +224,23 @@ function ramaActiva(hijos: NavChild[], pathname: string): string | null {
   return mejor
 }
 
+/*
+  A DÓNDE LLEVA UN GRUPO CUANDO SE PULSA ENTERO.
+
+  Al tablero del módulo, que es el hijo cuya dirección es raíz de las de sus
+  hermanos: «/app/inventario» frente a «/app/inventario/articulos». Es el mismo
+  criterio que ya usa `ramaActiva` para no encender tres entradas a la vez, y por
+  eso se reconoce igual — si un día cambia la forma de las direcciones, las dos
+  cosas se rompen juntas y se arreglan juntas.
+
+  Sin tablero propio, el primer hijo. Un módulo puede no tener portada, pero
+  siempre tiene una primera pantalla, y llevar ahí es mejor que no llevar.
+*/
+function tableroDelGrupo(hijos: NavChild[]): string | null {
+  const raiz = hijos.find((h) => hijos.some((otro) => otro !== h && otro.to.startsWith(h.to + '/')))
+  return raiz?.to ?? hijos[0]?.to ?? null
+}
+
 function SidebarItem({ item, collapsed, open, onToggle, onNavigate }: SidebarItemProps) {
   const { pathname } = useLocation()
   const Icon = item.icon
@@ -254,6 +271,49 @@ function SidebarItem({ item, collapsed, open, onToggle, onNavigate }: SidebarIte
         >
           <Icon className="size-[20px] shrink-0" />
           {!collapsed && <span className="truncate text-base">{item.label}</span>}
+        </NavLink>
+      </li>
+    )
+  }
+
+  /*
+    COLAPSADA, UN GRUPO NO SE ABRE: SE ENTRA.
+
+    Christopher: «hay un problema, la barra reducida no permite ser clickeable
+    (por defecto en ese modo debería al tablero)».
+
+    El fallo estaba a la vista una vez dicho: el grupo es un botón que alterna
+    `open`, y el submenú solo se dibuja con `!collapsed && open`. Colapsada, el
+    clic cambiaba un estado que nadie podía ver — la barra parecía muerta.
+
+    No se arregla enseñando el submenú: en una columna de sesenta píxeles no
+    cabe, y desplegarlo encima del contenido sería inventar un menú flotante que
+    esta casa no tiene en ningún otro sitio.
+
+    Se arregla yendo a donde el grupo lleva, que es su tablero. Es además lo que
+    ya hace el icono grande de la parte de arriba y lo que espera cualquiera:
+    pulsar «Inventario» abre inventario.
+  */
+  const destino = item.children ? tableroDelGrupo(item.children) : null
+
+  if (collapsed && destino) {
+    return (
+      <li>
+        <NavLink
+          to={destino}
+          onClick={onNavigate}
+          title={item.label}
+          className={cn(
+            baseRow,
+            isGroupActive
+              ? 'bg-royal-600 shadow-primary text-white'
+              : 'text-ink/70 hover:bg-ink/6 hover:text-ink/90',
+          )}
+        >
+          <Icon className="size-[20px] shrink-0" />
+          {item.badge ? (
+            <span className="bg-danger ring-surface absolute top-1.5 right-1.5 size-2 rounded-full ring-2" />
+          ) : null}
         </NavLink>
       </li>
     )

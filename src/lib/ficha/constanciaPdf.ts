@@ -298,7 +298,7 @@ export async function armarConstancia(d: DatosConstancia): Promise<PdfArmado> {
   // compara contra el documento que le presentan, y buscarlos dentro de un
   // párrafo justificado es justo lo que hace que un dígito cambiado pase.
   y += 5
-  doc.setFillColor('#F4F6FC')
+  doc.setFillColor('#F7F3F1')
   doc.rect(IZQ, y - 5, ANCHO_UTIL, 15, 'F')
   doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(11)
   doc.text(ajustar(doc, d.nombreCompleto, ANCHO_UTIL - 8), IZQ + 4, y + 1)

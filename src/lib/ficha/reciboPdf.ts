@@ -87,6 +87,15 @@ export interface DatosRecibo {
   totalDeducciones: string
   neto: string
   netoUsd: string
+  /**
+   * La tasa del período, para poner cada renglón también en dólares.
+   *
+   * El bolívar es la cifra del documento —así se paga y así se declara—, pero
+   * los sueldos se estipulan en divisas y nadie ata «16.649,77 Bs» con los 20 $
+   * del cestaticket sin dividir a mano. Nula en los recibos viejos, y entonces
+   * simplemente no se pinta la referencia.
+   */
+  tasaUsd?: string | null
 
   formaPago: string
   banco: string | null
@@ -244,6 +253,8 @@ function bloque(doc: Doc, d: DatosRecibo, tipo: LineaImpresa['tipo'], y: number)
   doc.setTextColor(MARCA).setFont('helvetica', 'bold').setFontSize(6.5)
   doc.text(TITULOS[tipo], IZQ, y)
 
+  const tasa = Number(d.tasaUsd ?? 0)
+
   let fila = y + 4
   for (const l of lineas) {
     doc.setTextColor(TINTA).setFont('helvetica', 'normal').setFontSize(8)
@@ -252,6 +263,20 @@ function bloque(doc: Doc, d: DatosRecibo, tipo: LineaImpresa['tipo'], y: number)
     // 140 fijo que con el ancho nuevo dejaba la descripción encima del monto.
     doc.text(ajustar(doc, etiqueta, COL_TOTAL - IZQ - 6), IZQ + 2, fila)
     doc.text(cifra(l.monto), DER, fila, { align: 'right' })
+
+    /*
+      La referencia en divisas, a la izquierda de la cifra y en gris pequeño.
+
+      Va en la misma fila y no debajo a propósito: debajo crecería el bloque
+      unos veinte milímetros y las dos copias por hoja dejarían de caber. Y va
+      sin rótulo por línea porque el rótulo ya está en el neto —«referencia»—,
+      que es donde alguien podría confundirlo con una deuda en divisas.
+    */
+    if (tasa > 0) {
+      doc.setTextColor(GRIS_SUAVE).setFontSize(6.5)
+      doc.text(`$ ${cifra(String(Number(l.monto) / tasa))}`, DER - 34, fila, { align: 'right' })
+    }
+
     fila += 4.4
   }
 
@@ -280,7 +305,7 @@ function bloque(doc: Doc, d: DatosRecibo, tipo: LineaImpresa['tipo'], y: number)
 }
 
 function neto(doc: Doc, d: DatosRecibo, y: number): number {
-  doc.setFillColor('#F2F5FD')
+  doc.setFillColor('#F7F3F1')
   doc.rect(IZQ, y, DER - IZQ, 13, 'F')
 
   doc.setTextColor(TINTA).setFont('helvetica', 'bold').setFontSize(9)

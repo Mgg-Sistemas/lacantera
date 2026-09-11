@@ -38,6 +38,39 @@ function siguiente(p: Periodo): string {
   return p.motivo_anulacion ?? 'Anulada.'
 }
 
+/*
+  LAS FECHAS NO DECIDEN CUÁNTO SE PAGA, Y ESO HAY QUE DECIRLO EN VOZ ALTA.
+
+  Christopher trajo el reclamo: «lo puse desde el 1 al 14 y me arroja el mismo
+  monto». Era cierto, y es a propósito: una quincena paga 15 días vengan las
+  fechas que vengan, igual que agosto del 16 al 31 —dieciséis días de
+  calendario— también pagó 15. El salario mensual se divide siempre entre 30.
+
+  El fallo no era el cálculo: era que el sistema aceptaba en silencio unas
+  fechas que no iban a hacer lo que quien las escribía creía. El `hint` del
+  selector ya lo contaba en general, pero un aviso general no se lee; uno que
+  aparece justo cuando el caso ocurre, sí.
+
+  No se prohíbe abrirlo. Un período corto es legítimo —un cierre, una
+  liquidación— y prohibirlo quitaría flexibilidad real para atajar un error de
+  tecleo. Se avisa y se deja seguir, que es lo que se decidió.
+*/
+const DIAS_QUE_PAGA: Record<string, number> = { SEMANAL: 7, QUINCENAL: 15, MENSUAL: 30 }
+
+function avisoDeFechas(tipo: string, desde: string, hasta: string): string | null {
+  const paga = DIAS_QUE_PAGA[tipo]
+  if (!paga || !desde || !hasta) return null
+
+  const d = new Date(desde + 'T00:00:00')
+  const h = new Date(hasta + 'T00:00:00')
+  if (Number.isNaN(d.getTime()) || Number.isNaN(h.getTime()) || h < d) return null
+
+  const calendario = Math.round((h.getTime() - d.getTime()) / 86400000) + 1
+  if (calendario === paga) return null
+
+  return `Estas fechas abarcan ${calendario} ${calendario === 1 ? 'día' : 'días'} de calendario, pero este período pagará ${paga} igual: las fechas no cambian el monto. Sirven para prorratear a quien entre o salga a mitad de período, y para que dos nóminas no se pisen.`
+}
+
 export function Procesos() {
   const { data, isPending, error } = usePeriodos()
   const { data: cuentas } = useCuentas(true)
@@ -284,6 +317,14 @@ export function Procesos() {
                 onChange={(e) => setNuevo((n) => (n ? { ...n, hasta: e.target.value } : n))}
               />
             </div>
+            {(() => {
+              const aviso = avisoDeFechas(nuevo.tipo, nuevo.desde, nuevo.hasta)
+              return aviso ? (
+                <p className="border-warning/40 bg-warning-soft text-warning rounded-[6px] border p-3 text-xs">
+                  {aviso}
+                </p>
+              ) : null
+            })()}
             <Input
               label="Descripción"
               placeholder="Segunda quincena de julio"

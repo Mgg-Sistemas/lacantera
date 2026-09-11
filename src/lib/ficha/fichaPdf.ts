@@ -78,7 +78,7 @@ function persona(doc: Doc, d: DatosFicha, y: number): number {
   if (d.foto) {
     doc.addImage(fotoRecortada(d.foto, 32, 40, d.encuadre), 'JPEG', IZQ, y, 32, 40)
   } else {
-    doc.setFillColor('#EEF0F6')
+    doc.setFillColor('#F7F3F1')
     doc.rect(IZQ, y, 32, 40, 'F')
     doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(8)
     doc.text('Sin foto', IZQ + 16, y + 21, { align: 'center' })
