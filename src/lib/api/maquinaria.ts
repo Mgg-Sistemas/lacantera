@@ -946,6 +946,21 @@ export function useQuitarFotoDeMaquina() {
   })
 }
 
+/*
+  LA FOTO DE PERFIL, QUE YA NO USA NINGUNA PANTALLA.
+
+  Era una imagen recortada «para reconocerla de un vistazo» y resultó que no se
+  veía en ningún otro sitio: solo en la propia ficha que la dejaba subir.
+  Christopher lo señaló el 11/09 —«eliminaremos este elemento y adaptaremos el
+  Fotos del equipo, pues la imagen es una de las primeras cosas que desean ver en
+  el detalle»— y la tarjeta se fue.
+
+  Los tres ganchos y las dos funciones de la base SE QUEDAN, sin llamar a nadie, a
+  propósito: las columnas `foto_path`, `foto_zoom`, `foto_x` y `foto_y` siguen
+  existiendo con lo que hubiera dentro, y borrar el código que sabe leerlas
+  dejaría esos datos sin forma de recuperarse. Si dentro de un mes nadie las echa
+  de menos, se van las dos cosas juntas — el código y las columnas — y no antes.
+*/
 export function useGuardarEncuadreMaquina() {
   return useAccion((e: { maquina_id: number; zoom: number; x: number; y: number }) =>
     rpc<string | null>('guardar_foto_maquina', {

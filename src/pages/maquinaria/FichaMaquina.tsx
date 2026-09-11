@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft, Save, ToggleLeft } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
-import { EncuadreFoto } from '@/components/EncuadreFoto'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { Button } from '@/components/ui/Button'
@@ -18,21 +17,16 @@ import { detalleDeDueno } from '@/lib/deQuien'
 import { FotosDeLaMaquina, FOTOS_MINIMAS } from '@/components/FotosDeLaMaquina'
 import { QueLlevaEncima } from './QueLlevaEncima'
 import { FotosDelRegistro } from './FotosDelRegistro'
-import { cn } from '@/lib/cn'
 import { useCombustibles } from '@/lib/api/combustible'
 import {
   ETIQUETA_ESTADO,
   ESTADOS_MAQUINA,
   CLASES_DE_MAQUINA,
   TIPOS_MAQUINA,
-  useFotoMaquina,
-  useGuardarEncuadreMaquina,
   useGuardarMaquina,
   useSubirFotosDeAlta,
   useMaquinaria,
-  useQuitarFotoMaquina,
   useHistorialMaquina,
-  useSubirFotoMaquina,
 } from '@/lib/api/maquinaria'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { Historial } from '@/components/Historial'
@@ -108,9 +102,6 @@ export function FichaMaquina() {
   const subirFotos = useSubirFotosDeAlta()
   /* Dos huecos abiertos desde el principio: el minimo se ve antes de empezar. */
   const [fotos, setFotos] = useState<(File | null)[]>([null, null])
-  const subir = useSubirFotoMaquina()
-  const quitar = useQuitarFotoMaquina()
-  const guardarEncuadre = useGuardarEncuadreMaquina()
 
   const { puede } = useMisPermisos()
   const editable = puede('MAQUINARIA', 'ESCRITURA')
@@ -119,10 +110,7 @@ export function FichaMaquina() {
 
   const [f, setF] = useState(vacio)
   const [cargado, setCargado] = useState(false)
-  const [encuadre, setEncuadre] = useState({ zoom: 1, x: 0.5, y: 0.5 })
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
-
-  const foto = useFotoMaquina(maquina?.foto_path)
 
   /*
     La ficha era hasta hoy un formulario y nada más: decía qué ES la máquina y
@@ -160,11 +148,6 @@ export function FichaMaquina() {
       alarma_horas: maquina.alarma_horas,
       dias_mantenimiento: maquina.dias_mantenimiento ? String(maquina.dias_mantenimiento) : '',
       nota: maquina.nota ?? '',
-    })
-    setEncuadre({
-      zoom: Number(maquina.foto_zoom ?? 1),
-      x: Number(maquina.foto_x ?? 0.5),
-      y: Number(maquina.foto_y ?? 0.5),
     })
     setCargado(true)
   }, [esNueva, maquina, cargado])
@@ -326,65 +309,28 @@ export function FichaMaquina() {
       />
 
       {/*
-        DOS PANELES DE FOTO A LA VEZ SE CONTRADECÍAN.
+        LAS FOTOS PRIMERO, Y SIN TARJETA DE PERFIL.
 
-        Christopher: «estas 2 indicaciones FOTO están chocando». Y era verdad: a
-        la izquierda ponía «guarda primero la máquina y la foto se podrá subir
-        aquí» y en el formulario, dos huecos que impiden guardar sin llenarlos.
-        Una decía que no se puede subir todavía y la otra que sin subir no se
-        guarda.
+        Christopher: «el problema persiste acá, por tanto eliminaremos este
+        elemento y adaptaremos el "Fotos del equipo", pues la imagen es una de
+        las primeras cosas que desean ver en el detalle».
 
-        Al dar de alta, el panel de la cara desaparece. No es un capricho de
-        maquetación: la cara es una imagen recortada que se elige entre las que
-        ya hay, y mientras no haya ninguna no hay nada que elegir. Pedir tres
-        fotos —dos de registro y una de cara— para crear una máquina es pedir
-        una de más.
+        La tarjeta de «Foto» era una foto de perfil recortada que NO SE VEÍA EN
+        NINGUNA OTRA PANTALLA — comprobado buscando quién leía `foto_path`: solo
+        esta ficha. O sea que pedía recortar y encuadrar una imagen para
+        enseñarla exactamente donde ya se estaba. Y encima salía vacía encima de
+        un registro fotográfico completo, que es lo que él venía señalando.
+
+        Se va, y las fotos del registro suben a su sitio: arriba del todo y a
+        todo el ancho, porque es lo primero que se quiere ver y porque en una
+        columna de 260 píxeles no se aprecia una raya en la carrocería.
+
+        (La columna estrecha desaparece con ella. Al dar de alta no había nada a
+        la izquierda de todos modos.)
       */}
-      <div
-        className={cn(
-          'grid gap-4',
-          esNueva ? 'lg:grid-cols-1' : 'lg:grid-cols-[260px_minmax(0,1fr)]',
-        )}
-      >
-        {/* --------------------------------- Foto --------------------------------- */}
-        {!esNueva ? (
-        <Card>
-          <CardHeader title="Foto" subtitle="Para reconocerla de un vistazo." />
-
-          <div className="mt-4">
-              <EncuadreFoto
-                url={foto}
-                encuadre={encuadre}
-                editable={editable}
-                guardando={subir.isPending || quitar.isPending}
-                onEncuadre={setEncuadre}
-                onArchivo={(archivo) => subir.mutate({ maquina_id: maquina!.id, archivo })}
-                onQuitar={() => quitar.mutate({ maquina_id: maquina!.id })}
-              />
-
-              {editable && foto ? (
-                <div className="mt-4 flex justify-center">
-                  <Button
-                    size="sm"
-                    variant="soft"
-                    disabled={guardarEncuadre.isPending}
-                    onClick={() =>
-                      guardarEncuadre.mutate({
-                        maquina_id: maquina!.id,
-                        zoom: encuadre.zoom,
-                        x: encuadre.x,
-                        y: encuadre.y,
-                      })
-                    }
-                  >
-                    {guardarEncuadre.isPending ? 'Guardando…' : 'Guardar el encuadre'}
-                  </Button>
-                </div>
-              ) : null}
-
-            {subir.error ? <ErrorDeCarga error={subir.error} className="mt-3" /> : null}
-          </div>
-        </Card>
+      <div className="grid gap-4">
+        {!esNueva && maquina ? (
+          <FotosDelRegistro maquinaId={maquina.id} editable={editable} />
         ) : null}
 
         <div className="grid gap-4">
@@ -703,24 +649,6 @@ export function FichaMaquina() {
           </Card>
 
           {guardar.error ? <ErrorDeCarga error={guardar.error} /> : null}
-
-          {/*
-            LAS FOTOS DEL REGISTRO, DEBAJO DE LA FICHA.
-
-            Christopher: «¿dónde está la foto o las fotos? En caso de que exista
-            imagen deben ser mínimo dos, y se deben poder apreciar».
-
-            Estaban guardadas y no se veían por ningún lado: la pantalla solo
-            pintaba la foto de perfil, así que decía «Sin foto» encima de un
-            registro fotográfico completo.
-
-            Va después del formulario y antes de la historia porque contesta una
-            pregunta del presente —cómo está— igual que «qué lleva encima». La
-            historia, más abajo, contesta el pasado.
-          */}
-          {!esNueva && maquina ? (
-            <FotosDelRegistro maquinaId={maquina.id} editable={editable} />
-          ) : null}
 
           {/*
             QUÉ LLEVA ENCIMA, ENTRE EL FORMULARIO Y LA HISTORIA.
