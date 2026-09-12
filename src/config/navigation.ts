@@ -275,6 +275,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/config/auditoria': 'quien hizo rastro historial cambios',
   '/app/explotacion/voladuras': 'explosivo barreno detonante',
   '/app/explotacion/produccion': 'turno tonelada extraccion',
+  '/app/explotacion/viajes': 'acarreo camion transportista flete planilla',
 }
 
 /** El módulo al que pertenece una ruta. El panel es la raíz. */
@@ -319,30 +320,46 @@ export const navigation: NavSection[] = [
     items: [
       {
         /*
-          FUERA DEL RIEL OTRA VEZ, con Despachos.
+          VUELVE AL RIEL, el 12 de septiembre de 2026.
 
-          Volvieron los tres —Explotación, Despachos y Ventas— el 28 de agosto,
-          y el 31 la empresa pidió esconder estos dos. VENTAS SE QUEDA: no es
-          un paso atrás del circuito entero, es que la cantera todavía no
+          Se escondió el 31 de agosto con esta razón: «la cantera todavía no
           registra ni la extracción ni la salida por el portón, y ofrecer dos
           módulos que nadie va a usar los llena de pantallas vacías que después
-          nadie sabe si están rotas o sin datos.
+          nadie sabe si están rotas o sin datos».
 
-          Aquí no se borra nada. Están construidos, funcionan, y su capítulo del
-          manual sigue siendo cierto: lo único que cambia es que el menú no los
-          ofrece y que sus permisos no se reparten mientras tanto — eso último
-          lo calcula `MODULOS_EN_OBRA` solo, leyendo este marbete.
+          Esa razón se acabó: la extracción ya se registra. «Viajes de camiones»
+          cuenta lo que baja de la mina y lo que se le paga a cada transportista,
+          que es lo que hoy se lleva en tres hojas de Excel.
 
-          Devolverlos es quitar esta línea.
+          PERO NO VUELVE ENTERO, Y ESO ES A PROPÓSITO. El marbete tiene dos
+          alturas y aquí se usa la de abajo: el módulo se ofrece y las pantallas
+          que todavía no pueden guardar nada siguen escondidas, cada una con su
+          motivo escrito al lado. Traerlas también sería repetir justo lo que se
+          quiso evitar en agosto.
+
+          Ojo con lo que esto arrastra, que no es solo el menú: mientras el
+          módulo estaba marcado, `ExigePermiso` BLOQUEABA sus rutas —ni
+          escribiendo la dirección se entraba— y `MODULOS_EN_OBRA` lo sacaba de
+          la matriz de permisos, así que no se le podía dar Explotación a ningún
+          rol. Las dos cosas se sueltan solas al quitar la marca.
         */
         label: 'Explotación',
         icon: Pickaxe,
-        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/explotacion' },
+          { label: 'Viajes de camiones', to: '/app/explotacion/viajes' },
           { label: 'Frentes y bancos', to: '/app/explotacion/frentes' },
-          { label: 'Voladuras', to: '/app/explotacion/voladuras' },
-          { label: 'Producción por turno', to: '/app/explotacion/produccion' },
+          // Las dos que siguen en obra, y por qué cada una:
+          //
+          // Voladuras no se usa: la cantera arranca el material con máquina, no
+          // con explosivo, y el módulo pide barrenos y cantidad de detonante.
+          //
+          // Producción por turno es el parte de planta y está construido, pero
+          // hoy no puede guardar nada: exige un frente y un producto, y no hay
+          // ni frentes ni artículos con categoría PRODUCTO cargados. Vuelve en
+          // la fase 3, cuando estén los ocho agregados y sus dos patios.
+          { label: 'Voladuras', to: '/app/explotacion/voladuras', fueraDelMvp: true },
+          { label: 'Producción por turno', to: '/app/explotacion/produccion', fueraDelMvp: true },
         ],
       },
       {
@@ -443,14 +460,13 @@ export const navigation: NavSection[] = [
         // Ver el comentario de aquel.
         label: 'Despachos',
         icon: Truck,
-        fueraDelMvp: true,
         children: [
-          { label: 'Tablero', to: '/app/despachos' },
-          { label: 'Tickets de romana', to: '/app/despachos/tickets' },
+          { label: 'Tablero', to: '/app/despachos', fueraDelMvp: true },
+          { label: 'Tickets de romana', to: '/app/despachos/tickets', fueraDelMvp: true },
           // "De movilización" y no "de despacho": es el permiso del ministerio
           // para que el camión circule con el mineral, no el papel que se le
           // entrega al cliente. Ese es la nota de entrega y vive en Ventas.
-          { label: 'Guías de movilización', to: '/app/despachos/guias' },
+          { label: 'Guías de movilización', to: '/app/despachos/guias', fueraDelMvp: true },
           // Los da de alta quien ve llegar el camión, no quien administra el
           // sistema; en Configuración nadie los cargaría y la placa seguiría
           // escribiéndose a mano.
