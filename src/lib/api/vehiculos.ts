@@ -25,6 +25,14 @@ export interface Vehiculo {
   capacidad_m3: string
   /** Nula hasta que se pese. No se deduce de los metros cúbicos. */
   capacidad_ton: string | null
+  /**
+   * Lo que de verdad trae en cada viaje, no lo que le cabe.
+   *
+   * Es de donde salen los metros cúbicos de un viaje de camión. Nula mientras
+   * nadie la mida: deducirla de la capacidad contaría material que nunca bajó
+   * de la mina.
+   */
+  carga_util_m3: string | null
   propio: boolean
   transportista: string | null
   maquina_id: number | null
@@ -131,6 +139,35 @@ export function useGuardarVehiculo() {
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['vehiculos'] })
+    },
+  })
+}
+
+/**
+ * La carga útil del camión.
+ *
+ * VA POR SU PROPIA FUNCIÓN Y NO DENTRO DE `guardar_vehiculo`
+ *
+ * Porque tiene que poder borrarse. Metida como un parámetro más con valor por
+ * defecto, no habría manera de distinguir «no me la mandes, déjala como está»
+ * de «quítasela»: las dos llegarían nulas. Separada, mandar nulo significa
+ * quitarla y no mandarla significa no tocarla.
+ *
+ * También invalida los acarreos: los metros cúbicos de los viajes ya
+ * cargados se calculan con este número, así que cambiarlo cambia el total del
+ * día que está en pantalla.
+ */
+export function useFijarCargaUtil() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: { vehiculo_id: number; carga_util: number | null }) =>
+      rpc('fijar_carga_util', {
+        p_vehiculo_id: a.vehiculo_id,
+        p_carga_util: a.carga_util,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['vehiculos'] })
+      void qc.invalidateQueries({ queryKey: ['acarreos'] })
     },
   })
 }
