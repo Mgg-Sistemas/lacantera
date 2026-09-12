@@ -46,7 +46,11 @@ import {
 import { useVehiculos, type Vehiculo } from '@/lib/api/vehiculos'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { descargarCsv } from '@/lib/api/libros'
-import { armarRegistroDePago, armarRegistroDeViajes } from '@/lib/ficha/viajesPdf'
+import {
+  armarPagoDelDia,
+  armarRegistroDePago,
+  armarRegistroDeViajes,
+} from '@/lib/ficha/viajesPdf'
 import { copiarAlPortapapeles, textoDelReporteDiario } from '@/lib/ficha/reporteDiario'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { useSesion } from '@/lib/sesion'
@@ -871,14 +875,35 @@ function CambiarTarifa({ onCerrar }: { onCerrar: () => void }) {
 
 function PestanaPago() {
   const [mes, setMes] = useState(hoyEnCaracas().slice(0, 7))
+  /* Vacíos quieren decir «todo»: el mes entero y todas las empresas. */
+  const [diaPedido, setDiaPedido] = useState('')
+  const [empresaPedida, setEmpresaPedida] = useState('')
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
   const pago = usePagoDeAcarreos(mes)
   const { data: laEmpresa } = useEmpresa()
   const { nombre: yo } = useSesion()
 
-  const filas = pago.data ?? []
+  const todas = pago.data ?? []
+  const empresasDelMes = [...new Set(todas.map((f) => f.transportista))].sort()
+  const diasDelMes = [...new Set(todas.map((f) => f.fecha))].sort()
+
+  /* Al cambiar de mes, el día y la empresa elegidos pueden no existir allí.
+     En vez de enseñar una tabla vacía sin explicación, el filtro se suelta. */
+  const dia = diasDelMes.includes(diaPedido) ? diaPedido : ''
+  const empresa = empresasDelMes.includes(empresaPedida) ? empresaPedida : ''
+  const porDia = dia !== ''
+
+  const filas = todas.filter(
+    (f) => (dia === '' || f.fecha === dia) && (empresa === '' || f.transportista === empresa),
+  )
+
   const empresas = [...new Set(filas.map((f) => f.transportista))].sort()
-  const dias = [...new Set(filas.map((f) => f.fecha))].sort()
+  // Las columnas de la matriz son los días del mes, los tenga esta empresa o no.
+  const dias = diasDelMes
+
+  const totalFilas = filas.every((f) => f.monto_usd === null)
+    ? null
+    : String(filas.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0))
 
   const enCruce = (empresa: string, dia: string) =>
     filas.find((f) => f.transportista === empresa && f.fecha === dia)
@@ -896,6 +921,27 @@ function PestanaPago() {
   }
 
   const imprimir = async () => {
+    const papel = { empresa_papel: empresaDelPapel(laEmpresa), emitidoPor: yo ?? '', momento: new Date() }
+
+    /* Dos papeles distintos, no uno recortado: el del día es el que se le
+       entrega al transportista y dice solo cuánto se le debe por hoy. */
+    if (porDia) {
+      setPdf(
+        await armarPagoDelDia({
+          dia,
+          empresa: empresa === '' ? null : empresa,
+          lineas: filas.map((f) => ({
+            transportista: f.transportista,
+            viajes: f.viajes,
+            m3: f.m3,
+            monto_usd: f.monto_usd,
+          })),
+          ...papel,
+        }),
+      )
+      return
+    }
+
     setPdf(
       await armarRegistroDePago({
         mes,
@@ -907,9 +953,7 @@ function PestanaPago() {
           monto_usd: f.monto_usd,
           acumulado_usd: f.acumulado_usd,
         })),
-        empresa_papel: empresaDelPapel(laEmpresa),
-        emitidoPor: yo ?? '',
-        momento: new Date(),
+        ...papel,
       }),
     )
   }
@@ -917,7 +961,16 @@ function PestanaPago() {
   /* El CSV sale con los montos crudos, sin formatear: así la hoja de cálculo
      los lee como números y el acumulado se puede recalcular allí. Es el
      archivo que reproduce la matriz tal como la llevan hoy. */
-  const exportar = () =>
+  const exportar = () => {
+    if (porDia) {
+      descargarCsv(
+        `pago-viajes-${dia}.csv`,
+        ['Empresa', 'Fecha', 'Viajes', 'Metros cubicos', 'Monto USD'],
+        filas.map((f) => [f.transportista, f.fecha, f.viajes, f.m3 ?? '', f.monto_usd ?? '']),
+      )
+      return
+    }
+
     descargarCsv(
       `pago-viajes-${mes}.csv`,
       ['Empresa', 'Fecha', 'Viajes', 'Metros cubicos', 'Monto USD', 'Acumulado USD'],
@@ -930,6 +983,7 @@ function PestanaPago() {
         f.acumulado_usd ?? '',
       ]),
     )
+  }
 
   return (
     <>
@@ -941,6 +995,28 @@ function PestanaPago() {
           onChange={(e) => setMes(e.target.value)}
           className="w-48"
         />
+        {/* Solo se ofrecen los días que tienen viajes: así no se puede pedir
+            un papel vacío ni hay que acordarse de qué días se trabajó. */}
+        <Select
+          label="Ver"
+          value={dia}
+          onChange={(e) => setDiaPedido(e.target.value)}
+          opciones={[
+            { valor: '', etiqueta: 'Todo el mes' },
+            ...diasDelMes.map((d) => ({ valor: d, etiqueta: fmtFecha(d) })),
+          ]}
+          className="w-52"
+        />
+        <Select
+          label="Empresa"
+          value={empresa}
+          onChange={(e) => setEmpresaPedida(e.target.value)}
+          opciones={[
+            { valor: '', etiqueta: 'Todas' },
+            ...empresasDelMes.map((x) => ({ valor: x, etiqueta: x })),
+          ]}
+          className="w-56"
+        />
         <Button
           variant="outline"
           icon={<Printer />}
@@ -948,7 +1024,7 @@ function PestanaPago() {
           onClick={() => void imprimir()}
           className="mb-0.5"
         >
-          Imprimir
+          {porDia ? 'Imprimir el día' : 'Imprimir el mes'}
         </Button>
         <Button
           variant="outline"
@@ -957,7 +1033,7 @@ function PestanaPago() {
           onClick={exportar}
           className="mb-0.5"
         >
-          Descargar
+          {porDia ? 'Descargar el día' : 'Descargar el mes'}
         </Button>
       </div>
 
@@ -968,13 +1044,66 @@ function PestanaPago() {
         <Card>
           <Vacio
             icono={<Coins />}
-            titulo="Ese mes no tiene viajes registrados"
-            descripcion="En cuanto se carguen viajes, esta matriz enseña lo que se le debe a cada empresa por día, con su acumulado."
+            titulo={
+              todas.length === 0
+                ? 'Ese mes no tiene viajes registrados'
+                : 'Con ese filtro no queda nada'
+            }
+            descripcion={
+              todas.length === 0
+                ? 'En cuanto se carguen viajes, esta matriz enseña lo que se le debe a cada empresa por día, con su acumulado.'
+                : 'Esa empresa no hizo viajes el día elegido. Prueba con otro día, o pon la empresa en «Todas».'
+            }
           />
         </Card>
       ) : null}
 
-      {filas.length > 0 ? (
+      {filas.length > 0 && porDia ? (
+        <Card flush>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-ink/45 border-hairline border-b text-left text-xs">
+                  <th className="px-5 py-3 font-medium">Empresa</th>
+                  <th className="px-3 py-3 text-right font-medium">Viajes</th>
+                  <th className="px-3 py-3 text-right font-medium">m³</th>
+                  <th className="px-5 py-3 text-right font-medium">Monto a pagar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filas.map((f) => (
+                  <tr key={f.transportista} className="border-hairline border-b last:border-0">
+                    <td className="text-ink/85 px-5 py-3 font-medium">{f.transportista}</td>
+                    <td className="tabular text-ink/75 px-3 py-3 text-right">
+                      {enteros(f.viajes)}
+                    </td>
+                    <td className="tabular text-ink/75 px-3 py-3 text-right">
+                      <Cifra valor={f.m3} />
+                    </td>
+                    <td className="tabular text-ink/90 px-5 py-3 text-right font-semibold">
+                      <Cifra valor={f.monto_usd} comoDinero />
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-ink/4">
+                  <td className="text-ink/85 px-5 py-3 text-sm font-semibold">
+                    Total del {fmtFecha(dia)}
+                  </td>
+                  <td className="tabular text-ink/85 px-3 py-3 text-right text-sm font-semibold">
+                    {enteros(filas.reduce((s, f) => s + f.viajes, 0))}
+                  </td>
+                  <td />
+                  <td className="tabular text-ink/90 px-5 py-3 text-right text-sm font-semibold">
+                    <Cifra valor={totalFilas} comoDinero />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : null}
+
+      {filas.length > 0 && !porDia ? (
         <Card flush>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -1021,14 +1150,7 @@ function PestanaPago() {
                     </td>
                   ))}
                   <td className="tabular text-ink/90 px-5 py-3 text-right text-sm font-semibold">
-                    <Cifra
-                      valor={
-                        filas.every((f) => f.monto_usd === null)
-                          ? null
-                          : String(filas.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0))
-                      }
-                      comoDinero
-                    />
+                    <Cifra valor={totalFilas} comoDinero />
                   </td>
                 </tr>
               </tbody>
@@ -1042,7 +1164,7 @@ function PestanaPago() {
         onCerrar={() => setPdf(null)}
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ''}
-        titulo="Registro de pago de viajes"
+        titulo={porDia ? 'Pago de viajes del día' : 'Registro de pago de viajes'}
       />
     </>
   )
