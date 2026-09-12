@@ -17,6 +17,14 @@
   que la dibuja entera, y el CSV, que se abre en la hoja de cálculo con la
   misma forma que tiene hoy. Las tres salen de la misma vista, así que no
   pueden discrepar.
+
+  EL PAGO DEL DÍA ES UN TERCER PAPEL Y NO UN RECORTE DEL DEL MES
+
+  Porque responde otra pregunta. El del mes sirve para cuadrar y para ver la
+  tendencia; el del día se le enseña al transportista y dice una sola cosa:
+  cuánto se le debe por lo de hoy. Meter ahí el acumulado, los otros días o la
+  matriz sería contestarle algo que no preguntó. Sale de la misma vista que
+  los otros dos, filtrada por fecha.
 */
 import { logoComoImagen } from '@/lib/ficha/logo'
 import { ABAJO, ARRIBA } from '@/lib/ficha/hoja'
@@ -301,4 +309,111 @@ export async function armarRegistroDePago(d: DatosRegistroDePago): Promise<Archi
   doc.setProperties({ title: `Registro de pago de viajes — ${d.mes}` })
 
   return { blob: doc.output('blob'), nombre: `pago-viajes-${d.mes}.pdf` }
+}
+
+export interface LineaDelDia {
+  transportista: string
+  viajes: number
+  m3: string | null
+  monto_usd: string | null
+}
+
+export interface DatosPagoDelDia {
+  dia: string
+  /** Cuando se filtró por una empresa, su nombre. Nulo si salen todas. */
+  empresa: string | null
+  lineas: LineaDelDia[]
+  empresa_papel: EmpresaPapel
+  emitidoPor: string
+  momento: Date
+}
+
+/* Los anchos suman los 150 mm útiles. Cuatro columnas y ninguna más: es un
+   papel que se lee de un vistazo, no una hoja de cálculo. */
+const COLUMNAS_DIA: Columna[] = [
+  { titulo: 'Empresa', ancho: 74 },
+  { titulo: 'Viajes', ancho: 22, alDerecha: true },
+  { titulo: 'm³', ancho: 24, alDerecha: true },
+  { titulo: 'Monto a pagar', ancho: 30, alDerecha: true },
+]
+
+/** «3 empresas», «1 empresa». El plural de mentira se nota. */
+const empresasDice = (n: number): string => (n === 1 ? '1 empresa' : `${cantidad(n)} empresas`)
+
+/**
+ * Lo que se le debe a cada transportista por un solo día.
+ *
+ * Es el papel que se le entrega al transportista. Con `empresa` puesta sale
+ * solo la suya, que es como se entrega.
+ */
+export async function armarPagoDelDia(d: DatosPagoDelDia): Promise<ArchivoArmado> {
+  const { jsPDF } = await import('jspdf')
+  const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
+
+  const hayDinero = d.lineas.some((l) => l.monto_usd !== null)
+  const total = d.lineas.reduce((s, l) => s + Number(l.monto_usd ?? 0), 0)
+  const viajes = d.lineas.reduce((s, l) => s + l.viajes, 0)
+
+  // Los metros cúbicos solo se suman de quien los sabe, y si no los sabe
+  // nadie la línea dice un guion en vez de un cero.
+  const conM3 = d.lineas.filter((l) => l.m3 !== null)
+  const m3 = conM3.reduce((s, l) => s + Number(l.m3), 0)
+
+  let y = membrete(doc, logo, {
+    empresa: d.empresa_papel,
+    datos: [
+      ['Día', fechaCorta(d.dia)],
+      ['Generado', fechaLarga(d.momento)],
+    ],
+  })
+
+  y = tituloDocumento(doc, y, 'Pago de viajes del día')
+  y = lineaEmpresa(
+    doc,
+    y,
+    `${d.empresa_papel.razonSocial} · RIF ${d.empresa_papel.rif} · Transporte interno`,
+  )
+
+  y = seccion(doc, y, 'Resumen del día')
+  y = etiquetaValor(doc, y, [
+    ['Empresa', d.empresa ?? 'Todas'],
+    ['Transportistas', String(d.lineas.length)],
+    ['Viajes', cantidad(viajes)],
+    [
+      'Metros cúbicos',
+      conM3.length === 0
+        ? '—'
+        : conM3.length < d.lineas.length
+          ? `${cantidad(m3)} (parcial)`
+          : cantidad(m3),
+    ],
+    ...(hayDinero
+      ? ([['Total a pagar', `$ ${numero(total)}`]] as Array<[string, string]>)
+      : ([['Montos', 'No se muestran: hace falta la casilla de ver el pago']] as Array<
+          [string, string]
+        >)),
+  ])
+
+  y = seccion(doc, y, 'Lo que se le debe a cada empresa')
+  tabla(
+    doc,
+    y,
+    COLUMNAS_DIA,
+    d.lineas.map((l) => [
+      l.transportista,
+      cantidad(l.viajes),
+      oNada(l.m3),
+      oNada(l.monto_usd, true),
+    ]),
+    hayDinero
+      ? `${empresasDice(d.lineas.length)} · ${cantidad(viajes)} viajes   $ ${numero(total)}`
+      : `${empresasDice(d.lineas.length)} · ${cantidad(viajes)} viajes`,
+  )
+
+  pieDePagina(doc, `Pago de viajes · ${fechaCorta(d.dia)} · emitido por ${d.emitidoPor}`)
+  doc.setProperties({ title: `Pago de viajes — ${d.dia}` })
+
+  const sufijo = (d.empresa ?? 'todas').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  return { blob: doc.output('blob'), nombre: `pago-viajes-${d.dia}-${sufijo}.pdf` }
 }
