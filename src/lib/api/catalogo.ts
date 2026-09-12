@@ -151,6 +151,19 @@ export function comoLlega(
   return `${cuantas} ${a.unidad ?? ''} por ${a.presentacion}`.replace(/\s+/g, ' ').trim()
 }
 
+/*
+  TIENE UN GEMELO EN LA BASE, Y CONVIENE SABERLO.
+
+  `public.categorias_de_articulo` devuelve estos mismos pares —el codigo sale
+  del CHECK de la tabla, el nombre de un CASE escrito alli— porque la carga por
+  planilla los necesita del otro lado: el desplegable del Excel ofrece el nombre
+  y el cargador tiene que reconocerlo.
+
+  Esta lista manda en los formularios; aquella, en la planilla. Si los NOMBRES se
+  separan, lo que pasa es que la planilla ofrece una palabra y la pantalla otra
+  — feo, pero no rompe nada: el cargador admite tambien el codigo. Lo que no
+  puede separarse son los CODIGOS, y de eso se encarga el CHECK.
+*/
 export const CATEGORIAS_ARTICULO = [
   { valor: 'PRODUCTO', etiqueta: 'Producto de cantera' },
   { valor: 'REPUESTO', etiqueta: 'Repuesto' },
@@ -366,6 +379,25 @@ export function useUnidades() {
       desenvolver<Unidad[]>(
         await supabase.from('unidades').select('codigo, nombre, tipo').order('orden'),
       ),
+    staleTime: Infinity,
+  })
+}
+
+/**
+ * Las categorías que admite un artículo, dichas por la base.
+ *
+ * No es una lista escrita aquí a propósito. Había tres diciendo cosas
+ * distintas —el CHECK de la tabla con diez, la carga por lote con nueve y el
+ * texto de la plantilla con nueve— y la planilla rechazaba EQUIPO, que la tabla
+ * sí admite y que es la categoría de la laptop donada que destapó todo esto.
+ *
+ * `public.categorias_de_articulo` las lee del propio CHECK, así que el día que
+ * se añada una, la plantilla la ofrece sin que nadie toque nada.
+ */
+export function useCategoriasDeArticulo() {
+  return useQuery({
+    queryKey: ['categorias-de-articulo'],
+    queryFn: () => rpc<{ codigo: string; etiqueta: string }[]>('categorias_de_articulo', {}),
     staleTime: Infinity,
   })
 }
