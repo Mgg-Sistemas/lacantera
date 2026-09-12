@@ -168,6 +168,17 @@ interface RenglonEnCurso {
    */
   confirmado?: boolean
   /**
+   * Solo en la entrada: no se sabe cuánto costó.
+   *
+   * Quien carga el inventario: «esa laptop fue una donación desde la base, no
+   * tenemos factura ni un precio aproximado de cuánto costó, y como eso no
+   * salió del presupuesto de la cantera tampoco puedo ponerle un costo».
+   *
+   * No es cero. Cero diría que no vale nada y abarataría cada salida futura del
+   * artículo. Marcado, el renglón entra sin cifra y queda pendiente de valorar.
+   */
+  sinValor?: boolean
+  /**
    * Bultos enteros, cuando se contó en bultos.
    *
    * `cantidad` guarda lo suelto y esto los enteros: «7 tambores y 10 L». La
@@ -863,7 +874,9 @@ export function Existencias() {
       await entrada.mutateAsync({
         almacen_id: Number(aDonde),
         renglones: renglones
-          .filter((r) => r.articulo && r.cantidad && r.costo)
+          // Un renglón sin valorar no trae costo a propósito: sin esto el
+          // filtro lo tiraba en silencio y la laptop donada no llegaba nunca.
+          .filter((r) => r.articulo && r.cantidad && (r.costo || r.sinValor))
           .map((r) => ({
             articulo_id: Number(r.articulo),
             /*
@@ -874,9 +887,10 @@ export function Existencias() {
             cantidad: r.presentaciones ? Number(r.sueltas || 0) : Number(r.cantidad || 0),
             presentaciones: r.presentaciones ?? null,
             presentacion: r.presentacion ?? null,
-            costo: Number(r.costo),
+            costo: Number(r.costo || 0),
             moneda: r.moneda,
             confirmado: r.confirmado === true,
+            sin_valor: r.sinValor === true,
           })),
         motivo,
         referencia: referencia || null,
@@ -1628,7 +1642,8 @@ export function Existencias() {
                   motivo.trim().length < 4 ||
                   (modal.tipo === 'entrada' &&
                     (!aDonde ||
-                      renglones.filter((r) => r.articulo && r.cantidad && r.costo).length === 0)) ||
+                      renglones.filter((r) => r.articulo && r.cantidad && (r.costo || r.sinValor))
+                        .length === 0)) ||
                   /*
                     La salida se para si algún renglón pide más de lo que hay.
                     La base también lo para —y nombra el renglón—, pero
@@ -1960,6 +1975,10 @@ export function Existencias() {
                           }
                           articulo={art}
                           moneda={r.moneda}
+                          // Marcado «no se sabe», el campo se apaga en vez de
+                          // esconderse: quien lo mire tiene que ver que ahí
+                          // había una cifra que se decidió no poner.
+                          disabled={r.sinValor === true}
                         />
 
                         {/* La moneda no se asume. El sistema maneja cuatro, y
@@ -1983,6 +2002,67 @@ export function Existencias() {
                           }
                           opciones={enSimbolos(monedas.data)}
                         />
+
+                        {/*
+                          NO SE SABE NO ES CERO, Y ESA ES TODA LA RAZÓN DE ESTA
+                          CASILLA.
+
+                          Quien carga el inventario: «esa laptop fue una
+                          donación desde la base, no tenemos factura ni un precio
+                          aproximado de cuánto costó, y como eso no salió del
+                          presupuesto de la cantera tampoco puedo ponerle un
+                          costo». Antes la pantalla solo ofrecía escribir una
+                          cifra, y la base mandaba a hacer un ajuste de conteo —
+                          que valora heredando el promedio del almacén, o sea
+                          que le pone un precio inventado.
+
+                          Escribir cero sería peor: ese cero se promedia con lo
+                          que el artículo ya tenía y abarata cada salida futura,
+                          en silencio y para siempre.
+
+                          Marcada, el renglón entra con el costo en NULO. El
+                          hueco se guarda como hueco y se cuenta aparte, así que
+                          la existencia dice cuánto de ella está sin valorar en
+                          vez de dar una cifra completa que no lo es.
+                        */}
+                        <label
+                          className={cn(
+                            'flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm sm:col-span-2',
+                            r.sinValor ? 'border-warning/30 bg-warning-soft' : 'border-hairline',
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                            checked={r.sinValor === true}
+                            onChange={(e) =>
+                              setRenglones((lista) =>
+                                lista.map((x) =>
+                                  x.clave === r.clave
+                                    ? {
+                                        ...x,
+                                        sinValor: e.target.checked,
+                                        // El costo se borra al marcar: dejarlo
+                                        // escrito y apagado haría creer que
+                                        // viajó, y la base rechaza las dos cosas
+                                        // juntas.
+                                        costo: e.target.checked ? '' : x.costo,
+                                        confirmado: false,
+                                      }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                          <span className="text-ink/80">
+                            No se sabe cuánto costó
+                            <span className="text-ink/50 mt-0.5 block text-xs">
+                              {r.sinValor
+                                ? 'Entra sin cifra y queda pendiente de valorar. Escribe abajo de dónde vino: dentro de un año esa nota es lo único que lo va a contestar.'
+                                : 'Para lo donado o lo que llegó sin factura. No es lo mismo que costar cero: un cero abarataría cada salida futura de este artículo.'}
+                            </span>
+                          </span>
+                        </label>
                       </div>
 
                       {/*
