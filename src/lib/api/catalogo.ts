@@ -151,6 +151,19 @@ export function comoLlega(
   return `${cuantas} ${a.unidad ?? ''} por ${a.presentacion}`.replace(/\s+/g, ' ').trim()
 }
 
+/*
+  TIENE UN GEMELO EN LA BASE, Y CONVIENE SABERLO.
+
+  `public.categorias_de_articulo` devuelve estos mismos pares —el codigo sale
+  del CHECK de la tabla, el nombre de un CASE escrito alli— porque la carga por
+  planilla los necesita del otro lado: el desplegable del Excel ofrece el nombre
+  y el cargador tiene que reconocerlo.
+
+  Esta lista manda en los formularios; aquella, en la planilla. Si los NOMBRES se
+  separan, lo que pasa es que la planilla ofrece una palabra y la pantalla otra
+  — feo, pero no rompe nada: el cargador admite tambien el codigo. Lo que no
+  puede separarse son los CODIGOS, y de eso se encarga el CHECK.
+*/
 export const CATEGORIAS_ARTICULO = [
   { valor: 'PRODUCTO', etiqueta: 'Producto de cantera' },
   { valor: 'REPUESTO', etiqueta: 'Repuesto' },
@@ -384,7 +397,7 @@ export function useUnidades() {
 export function useCategoriasDeArticulo() {
   return useQuery({
     queryKey: ['categorias-de-articulo'],
-    queryFn: () => rpc<string[]>('categorias_de_articulo', {}),
+    queryFn: () => rpc<{ codigo: string; etiqueta: string }[]>('categorias_de_articulo', {}),
     staleTime: Infinity,
   })
 }
