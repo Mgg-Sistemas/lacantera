@@ -45,7 +45,9 @@ export function CargaPorLote() {
       unidad: (unidades ?? []).map((u) => u.codigo),
       // Sin datos todavía manda la lista escrita en la plantilla, que es la
       // misma del CHECK. Cuando llega la de la base, gana la de la base.
-      categoria: categorias ?? undefined,
+      // El nombre y no el codigo: «EQUIPO» no dice oficina, y quien busca
+      // donde poner una laptop busca lo que la pantalla le enseña.
+      categoria: (categorias ?? []).map((c) => c.etiqueta),
       moneda: (monedas.data ?? []).map((m) => m.valor),
     }
 
