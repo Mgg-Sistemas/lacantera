@@ -164,11 +164,46 @@ export interface CeldaDeLibro {
   estilo?: number
 }
 
+/**
+ * Una celda que solo admite lo que hay en una lista.
+ *
+ * Excel la pinta con la flechita del desplegable y rechaza lo tecleado a mano.
+ * Es la diferencia entre que alguien escriba «almacen general» y que elija
+ * «ALM-GEN»: la carga por planilla rechaza la fila entera por una tilde, y
+ * quien la llena no tiene la pantalla delante para saber cómo se escribe.
+ */
+export interface ValidacionDeLista {
+  /** Columna a la que se aplica, empezando en cero. */
+  columna: number
+  /** Primera fila con datos, empezando en uno como las cuenta Excel. */
+  desde: number
+  /** Última fila a la que llega la lista. */
+  hasta: number
+  /**
+   * De dónde salen los valores, en la sintaxis de Excel.
+   *
+   * Se apunta a un rango de otra hoja —`Listas!$A$2:$A$13`— y no a la lista
+   * escrita entre comillas, porque esa forma se corta a los 255 caracteres y
+   * doce almacenes con su nombre ya los pasan.
+   */
+  origen: string
+}
+
 export interface HojaDelLibro {
   nombre: string
   /** Ancho de cada columna, en caracteres. */
   anchos: number[]
   filas: CeldaDeLibro[][]
+  /** Los desplegables de esta hoja. */
+  validaciones?: ValidacionDeLista[]
+  /**
+   * Que la hoja no se vea.
+   *
+   * La de las listas existe para que los desplegables tengan de dónde leer, no
+   * para que nadie la mire. Visible, invita a que alguien la edite y deje los
+   * desplegables apuntando a celdas vacías.
+   */
+  oculta?: boolean
 }
 
 const escapar = (s: string) =>
@@ -179,7 +214,7 @@ const escapar = (s: string) =>
     .replace(/"/g, '&quot;')
 
 /** `0` → `A`, `26` → `AA`. */
-function letraDeColumna(n: number): string {
+export function letraDeColumna(n: number): string {
   let s = ''
   let x = n + 1
   while (x > 0) {
@@ -209,10 +244,34 @@ function xmlDeHoja(hoja: HojaDelLibro): string {
     })
     .join('')
 
+  /*
+    EL ORDEN DE LOS HIJOS DE `worksheet` NO ES LIBRE.
+
+    El esquema los declara en secuencia, así que `dataValidations` va DESPUÉS de
+    `sheetData` y no antes. Puesto delante, Excel abre el archivo diciendo que
+    está dañado y ofrece repararlo — y al repararlo se lleva por delante los
+    desplegables, que es justo lo que se quería.
+  */
+  const validaciones = (hoja.validaciones ?? [])
+    .map((v) => {
+      const col = letraDeColumna(v.columna)
+      return (
+        `<dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1"` +
+        ` errorTitle="Valor no admitido" error="Elige uno de la lista."` +
+        ` sqref="${col}${v.desde}:${col}${v.hasta}">` +
+        `<formula1>${escapar(v.origen)}</formula1></dataValidation>`
+      )
+    })
+    .join('')
+
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
-    `<cols>${cols}</cols><sheetData>${filas}</sheetData></worksheet>`
+    `<cols>${cols}</cols><sheetData>${filas}</sheetData>` +
+    (validaciones
+      ? `<dataValidations count="${hoja.validaciones?.length ?? 0}">${validaciones}</dataValidations>`
+      : '') +
+    '</worksheet>'
   )
 }
 
@@ -260,7 +319,9 @@ export function armarLibro(hojas: HojaDelLibro[]): Blob {
   const refs = hojas
     .map(
       (h, i) =>
-        `<sheet name="${escapar(h.nombre)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`,
+        `<sheet name="${escapar(h.nombre)}" sheetId="${i + 1}"` +
+        (h.oculta ? ' state="hidden"' : '') +
+        ` r:id="rId${i + 1}"/>`,
     )
     .join('')
 
