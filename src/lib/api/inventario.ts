@@ -766,6 +766,20 @@ export interface RenglonDeEntrada {
    * marcado con el factor.
    */
   confirmado?: boolean
+  /**
+   * No se sabe cuánto costó, que NO es lo mismo que no costó nada.
+   *
+   * Una laptop donada desde otra base: sin factura, sin precio aproximado, y
+   * sin haber salido del presupuesto de aquí. Escribir cero diría que no vale
+   * nada, y ese cero se promedia con lo que el artículo ya tenía y abarata cada
+   * salida futura.
+   *
+   * Marcado, el renglón entra con el costo en nulo. El hueco se guarda como
+   * hueco: fuera del promedio por los dos lados de la división, y contado en
+   * `existencia_sin_valorar` para que una valoración a medias no se lea como
+   * completa.
+   */
+  sin_valor?: boolean
 }
 
 /** Lo que la base contesta sobre un costo que se está tecleando. */

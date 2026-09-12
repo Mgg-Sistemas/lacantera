@@ -1,4 +1,4 @@
-import { armarLibro, ESTILO } from '@/lib/hojas/escribirLibro'
+import { armarLibro, ESTILO, letraDeColumna } from '@/lib/hojas/escribirLibro'
 import type { CeldaDeLibro } from '@/lib/hojas/escribirLibro'
 
 /*
@@ -56,7 +56,55 @@ export interface ColumnaPlantilla {
    * entera y quien la llena no entiende por que.
    */
   fecha?: boolean
+  /**
+   * Los valores admitidos, cuando son una lista cerrada.
+   *
+   * Christopher: «quien la use pueda alimentar el catálogo y existencias, por
+   * tanto el campo de almacén necesitará ser una lista desplegable».
+   *
+   * Con esto la celda se convierte en un desplegable de Excel y deja de admitir
+   * lo tecleado a mano. Es la diferencia entre escribir «almacen general» y
+   * elegir «ALM-GEN»: la carga rechaza la fila entera por una tilde, y quien
+   * llena la planilla lo hace con la pantalla cerrada, sin manera de saber cómo
+   * se escribe.
+   *
+   * Las listas que la empresa puede cambiar —almacenes, unidades, monedas— no
+   * se escriben aquí: se las pasa la pantalla desde la base, para que la
+   * plantilla que se baja hoy traiga los almacenes de hoy.
+   */
+  opciones?: string[]
 }
+
+/** La fila donde empiezan los datos: título, línea de ayuda, hueco, cabecera. */
+const PRIMERA_FILA_DE_DATOS = 5
+/** Hasta dónde llega el desplegable. Nadie carga quinientos renglones a mano. */
+const ULTIMA_FILA_CON_LISTA = 500
+
+/** Lo que admite una casilla de sí o no en cualquier planilla. */
+export const SI_NO = ['SI', 'NO']
+
+/*
+  LAS CATEGORIAS SON LAS DE LA BASE, Y FALTABA UNA.
+
+  La planilla enumeraba nueve y el CHECK de `articulos.categoria` admite diez:
+  faltaba EQUIPO, que es justo la de la laptop donada que trajo todo esto. Quien
+  llenaba la planilla no tenia forma de saber que existia.
+
+  Es una lista cerrada por CHECK y no una tabla, asi que se escribe aqui. Si
+  algun dia se abre, esto pasa a leerse de la base como los almacenes.
+*/
+export const CATEGORIAS_DE_ARTICULO = [
+  'PRODUCTO',
+  'REPUESTO',
+  'INSUMO',
+  'COMBUSTIBLE',
+  'LUBRICANTE',
+  'EPP',
+  'HERRAMIENTA',
+  'EXPLOSIVO',
+  'EQUIPO',
+  'SERVICIO',
+]
 
 const celda = (texto: string, estilo?: number): CeldaDeLibro => ({ texto, estilo })
 
@@ -78,10 +126,59 @@ export function libroDePlantilla(
 ): Blob {
   const obligatorias = columnas.filter((c) => c.obligatoria).map((c) => c.columna)
 
+  /*
+    LOS DESPLEGABLES VIVEN EN UNA HOJA ESCONDIDA.
+
+    Excel admite la lista escrita a mano entre comillas, pero se corta a los 255
+    caracteres y doce almacenes con su código ya los pasan. Apuntando a un rango
+    de otra hoja no hay tope, y de paso la lista se puede leer entera si alguien
+    necesita comprobarla.
+
+    La hoja va oculta: existe para que los desplegables tengan de dónde leer, no
+    para que nadie la edite. Visible, invita a que alguien borre una fila y deje
+    media columna sin opciones.
+
+    Una columna por cada campo con lista, en el mismo orden que en la plantilla.
+  */
+  const conLista = columnas
+    .map((c, i) => ({ c, i }))
+    .filter((x) => x.c.opciones && x.c.opciones.length > 0)
+
+  const hojaDeListas =
+    conLista.length > 0
+      ? [
+          {
+            nombre: 'Listas',
+            oculta: true,
+            anchos: conLista.map((x) => Math.min(38, Math.max(14, x.c.columna.length + 3))),
+            filas: [
+              conLista.map((x) => celda(x.c.columna, ESTILO.cabecera)),
+              // Tantas filas como valores tenga la lista más larga.
+              ...Array.from(
+                { length: Math.max(...conLista.map((x) => x.c.opciones!.length)) },
+                (_, f) => conLista.map((x) => celda(x.c.opciones![f] ?? '')),
+              ),
+            ],
+          },
+        ]
+      : []
+
+  const validaciones = conLista.map((x, orden) => {
+    const col = letraDeColumna(orden)
+    return {
+      columna: x.i,
+      desde: PRIMERA_FILA_DE_DATOS,
+      hasta: ULTIMA_FILA_CON_LISTA,
+      // Fila 1 es la cabecera de la hoja de listas; los valores empiezan en la 2.
+      origen: `Listas!$${col}$2:$${col}$${x.c.opciones!.length + 1}`,
+    }
+  })
+
   return armarLibro([
     {
       nombre: 'Plantilla',
       anchos: columnas.map(anchoDe),
+      validaciones,
       filas: [
         [celda(`Carga de ${queSeCarga} — Minería Internacional TS`, ESTILO.titulo)],
         [
@@ -132,6 +229,7 @@ export function libroDePlantilla(
         ],
       ],
     },
+    ...hojaDeListas,
   ])
 }
 
@@ -168,11 +266,11 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
   { columna: 'codigo', obligatoria: false, dice: 'El código con el que se pide. Si ya existe, la fila lo actualiza en vez de crearlo. Vacío, se busca por el nombre y, si es nuevo, la base le pone uno.', ejemplo: 'PRD-ARENA-L', otro: '' },
   { columna: 'nombre', obligatoria: true, dice: 'Cómo se llama.', ejemplo: 'Arena lavada', otro: 'Flete por viaje' },
   { columna: 'descripcion', obligatoria: false, dice: 'Detalle. Si se deja vacía en un artículo que ya existe, se respeta la que tenía.', ejemplo: 'Granulometria fina, patio 1' },
-  { columna: 'categoria', obligatoria: true, dice: 'PRODUCTO, REPUESTO, INSUMO, COMBUSTIBLE, LUBRICANTE, EPP, HERRAMIENTA, EXPLOSIVO o SERVICIO.', ejemplo: 'PRODUCTO', otro: 'SERVICIO' },
-  { columna: 'unidad', obligatoria: true, dice: 'UND, M3, TON, KG, L, GAL, M, PAR, JGO, CAJA, SACO, ROLLO, HORA o SERV.', ejemplo: 'M3', otro: 'SERV' },
-  { columna: 'inventariable', obligatoria: false, dice: 'SI o NO. En uno nuevo, vacío es SI; en uno que ya existe, vacío respeta lo que tenía. Un SERVICIO tiene que ser NO.', ejemplo: 'SI', otro: 'NO' },
-  { columna: 'modo_entrega', obligatoria: false, dice: 'Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. En uno nuevo, vacío es CONSUMIBLE; en uno que ya existe, vacío respeta lo que tenía.', ejemplo: 'CONSUMIBLE', otro: 'NO' },
-  { columna: 'reparable', obligatoria: false, dice: 'SI o NO: si esto se puede mandar al taller y vuelve arreglado. Vacío se deduce de la categoría — un repuesto o una herramienta sí, lo demás no. En un artículo que ya existe, vacío respeta lo que tenía.', ejemplo: 'NO', otro: 'SI' },
+  { columna: 'categoria', obligatoria: true, dice: 'Elige una de la lista.', ejemplo: 'PRODUCTO', otro: 'SERVICIO', opciones: CATEGORIAS_DE_ARTICULO },
+  { columna: 'unidad', obligatoria: true, dice: 'Con qué se mide. Elige una de la lista: sale de las unidades que la empresa tiene cargadas.', ejemplo: 'M3', otro: 'SERV' },
+  { columna: 'inventariable', obligatoria: false, dice: 'SI o NO. En uno nuevo, vacío es SI; en uno que ya existe, vacío respeta lo que tenía. Un SERVICIO tiene que ser NO.', ejemplo: 'SI', otro: 'NO', opciones: SI_NO },
+  { columna: 'modo_entrega', obligatoria: false, dice: 'Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. En uno nuevo, vacío es CONSUMIBLE; en uno que ya existe, vacío respeta lo que tenía.', ejemplo: 'CONSUMIBLE', otro: 'NO', opciones: ['RETORNABLE', 'CONSUMIBLE', 'NO'] },
+  { columna: 'reparable', obligatoria: false, dice: 'SI o NO: si esto se puede mandar al taller y vuelve arreglado. Vacío se deduce de la categoría — un repuesto o una herramienta sí, lo demás no. En un artículo que ya existe, vacío respeta lo que tenía.', ejemplo: 'NO', otro: 'SI', opciones: SI_NO },
   { columna: 'stock_minimo', obligatoria: false, dice: 'A partir de cuánto avisa. En uno nuevo, vacío es cero —que es no avisar—; en uno que ya existe, vacío respeta lo que tenía.', ejemplo: '50' },
   { columna: 'densidad_ton_m3', obligatoria: false, dice: 'Toneladas por metro cúbico. Solo para lo que se pesa y se mide de las dos formas.', ejemplo: '1.6' },
   { columna: 'precio', obligatoria: false, dice: 'Precio de venta. Poner precio exige permiso de escritura en Ventas.', ejemplo: '18.50', otro: '40' },
@@ -193,8 +291,42 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
     son dos columnas y el texto lo dice en las dos.
   */
   { columna: 'almacen', obligatoria: false, dice: 'Dónde está lo que hay. Se escribe el código o el nombre, como se lee en la pantalla de almacenes. Va con cantidad y costo: las tres o ninguna.', ejemplo: 'ALM-GEN', otro: '' },
+  /*
+    DE QUIÉN ES LO QUE ENTRA.
+
+    Christopher: «debes considerar que ahora los ítems tienen dueño, esto también
+    es una celda con lista desplegable».
+
+    VACÍA NO ES «LA CANTERA»: es «el del almacén». La base ya resuelve esa parte
+    —al entrar, el material es del dueño del sitio salvo que se diga— y repetir
+    la regla aquí sería tener dos sitios opinando de lo mismo.
+
+    Hace falta desde que el dueño viaja con el material: el inventario de la
+    gobernación se está cargando renglón a renglón, y sus cosas pueden acabar en
+    un almacén nuestro sin dejar de ser suyas.
+  */
+  { columna: 'propietario', obligatoria: false, dice: 'De quién es lo que entra. Vacío significa «del dueño del almacén», que es lo normal. Se llena cuando el material es de otro: cosas de la gobernación guardadas en un almacén nuestro.', ejemplo: '', otro: '' },
   { columna: 'cantidad', obligatoria: false, dice: 'Cuánto hay de esto en ese almacén. Entra como carga inicial, con su movimiento y su fecha.', ejemplo: '120', otro: '' },
-  { columna: 'costo', obligatoria: false, dice: 'Cuánto vale la unidad de lo que entra. NO es el precio de venta: de este número salen el valor del inventario y lo que costará cada salida futura.', ejemplo: '0.75', otro: '' },
+  { columna: 'costo', obligatoria: false, dice: 'Cuánto vale la unidad de lo que entra. NO es el precio de venta: de este número salen el valor del inventario y lo que costará cada salida futura. Si nadie sabe cuánto costó, déjalo vacío y escribe SI en la siguiente.', ejemplo: '0.75', otro: '' },
+
+  /*
+    LO DONADO ENTRA SIN CIFRA, Y NO CON UN CERO.
+
+    Christopher: «tenemos que considerar que puede ser una donación de otra
+    empresa o entidad o fuente, así que por ello no tiene una factura o costo».
+    El caso que lo trajo fue una laptop donada desde otra base: sin factura, sin
+    precio aproximado, y sin haber salido del presupuesto de la cantera.
+
+    Escribir cero ahí diría que no vale nada, y ese cero se promedia con lo que
+    el artículo ya tenía y abarata cada salida futura, en silencio y para
+    siempre. Marcando esta columna el renglón entra con el costo en nulo: el
+    hueco se guarda como hueco, queda fuera del promedio por los dos lados, y se
+    cuenta aparte para que una valoración a medias no se lea como completa.
+
+    Va al final y vacía significa NO, que es lo que tiene que pasar: quien no
+    sepa que existe sigue teniendo que escribir el costo.
+  */
+  { columna: 'sin_valorar', obligatoria: false, dice: 'SI cuando llegó sin saber cuánto costó: una donación, algo sin factura. Va con cantidad y con el costo VACÍO. Entra pendiente de valorar, y no se cuenta como si valiera cero. Vacío es NO.', ejemplo: '', otro: 'SI', opciones: SI_NO },
 ]
 
 // ---------------------------------------------------------------------------

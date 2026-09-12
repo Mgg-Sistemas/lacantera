@@ -370,6 +370,25 @@ export function useUnidades() {
   })
 }
 
+/**
+ * Las categorías que admite un artículo, dichas por la base.
+ *
+ * No es una lista escrita aquí a propósito. Había tres diciendo cosas
+ * distintas —el CHECK de la tabla con diez, la carga por lote con nueve y el
+ * texto de la plantilla con nueve— y la planilla rechazaba EQUIPO, que la tabla
+ * sí admite y que es la categoría de la laptop donada que destapó todo esto.
+ *
+ * `public.categorias_de_articulo` las lee del propio CHECK, así que el día que
+ * se añada una, la plantilla la ofrece sin que nadie toque nada.
+ */
+export function useCategoriasDeArticulo() {
+  return useQuery({
+    queryKey: ['categorias-de-articulo'],
+    queryFn: () => rpc<string[]>('categorias_de_articulo', {}),
+    staleTime: Infinity,
+  })
+}
+
 export function useArticulos(soloActivos = true) {
   return useQuery({
     queryKey: ['articulos', soloActivos],
