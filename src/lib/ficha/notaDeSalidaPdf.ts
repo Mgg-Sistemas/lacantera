@@ -86,6 +86,8 @@ export interface RenglonDeSalida {
 }
 
 export interface DatosNotaDeSalida {
+  /** Si el papel lleva las cifras de dinero. Ver `NotaArmada`. */
+  conCostos?: boolean
   numero: string
   fecha: string
 
@@ -105,6 +107,22 @@ export interface DatosNotaDeSalida {
   momento: Date
 }
 
+/**
+ * Si el papel lleva las cifras de dinero.
+ *
+ * Christopher, con el pedido de quien lo usa: «quitarle el costo a la nota de
+ * salida, Jesmary la pide sin costo». Y preguntando de paso si no se habia
+ * resuelto por permiso: no, y aunque se hubiera, no le serviria — ella tiene
+ * COMPRAS, que da INVENTARIO en TOTAL, asi que el costo lo veria igual.
+ *
+ * NO ES UNA CUESTION DE QUIEN, ES DE QUE PAPEL. Una nota de salida es lo que
+ * firma quien recibe el material; el costo es cuenta interna. Pero el argumento
+ * de por que estaba —«quien firma tiene derecho a saber por cuanto firma»— vale
+ * cuando quien firma es quien autoriza, no quien recibe un par de guantes.
+ *
+ * Asi que se elige al imprimir, con el papel delante, igual que la moneda del
+ * visor. Por defecto sin cifras, que es el uso corriente.
+ */
 export interface NotaArmada {
   blob: Blob
   nombre: string
@@ -130,6 +148,21 @@ const COLUMNAS: Columna[] = [
 ]
 
 /*
+  EL MISMO PAPEL SIN DINERO, Y SIGUE SUMANDO 150.
+
+  Los treinta y seis milimetros de las dos columnas de cifras se los queda
+  «Material», que es la que siempre se queda corta: un nombre largo con su «se
+  contó 7 TAMBOR y 10» partia en tres renglones. Repartirlos entre todas dejaria
+  cuatro columnas anchas y ninguna util.
+*/
+const COLUMNAS_SIN_DINERO: Columna[] = [
+  { titulo: 'Código', ancho: 26 },
+  { titulo: 'Material', ancho: 91 },
+  { titulo: 'Cantidad', ancho: 18, alDerecha: true },
+  { titulo: 'Unidad', ancho: 15 },
+]
+
+/*
   Dos decimales, siempre. Es lo predeterminado de la casa, y en un papel que se
   firma importa mas que en una pantalla: tres cifras con distinta cantidad de
   decimales en la misma columna no se pueden comparar de un vistazo.
@@ -141,15 +174,21 @@ function numero(valor: string | number, decimales = 2): string {
   })
 }
 
-/** Un renglón, en las seis celdas de la tabla. Es el mismo dibujo con sitio o sin él. */
-const celdas = (r: RenglonDeSalida): string[] => [
-  r.articuloCodigo,
-  r.contado ? `${r.articulo} · se contó ${r.contado}` : r.articulo,
-  numero(r.cantidad),
-  r.unidad,
-  r.costoUnitarioUsd != null ? numero(r.costoUnitarioUsd) : '—',
-  r.valorUsd != null ? numero(r.valorUsd) : '—',
-]
+/** Un renglón, en las celdas de la tabla. Es el mismo dibujo con sitio o sin él. */
+const celdas = (r: RenglonDeSalida, conCostos: boolean): string[] => {
+  const base = [
+    r.articuloCodigo,
+    r.contado ? `${r.articulo} · se contó ${r.contado}` : r.articulo,
+    numero(r.cantidad),
+    r.unidad,
+  ]
+  if (!conCostos) return base
+  return [
+    ...base,
+    r.costoUnitarioUsd != null ? numero(r.costoUnitarioUsd) : '—',
+    r.valorUsd != null ? numero(r.valorUsd) : '—',
+  ]
+}
 
 export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmada> {
   const { jsPDF } = await import('jspdf')
@@ -205,6 +244,8 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
     y += lineas.length * 4.6 + 6
   }
 
+  const conCostos = d.conCostos === true
+  const columnas = conCostos ? COLUMNAS : COLUMNAS_SIN_DINERO
   const total = d.renglones.reduce((s, r) => s + Number(r.valorUsd ?? 0), 0)
 
   /*
@@ -263,12 +304,21 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
       const suma = suyos.reduce((t, r) => t + Number(r.valorUsd ?? 0), 0)
       // `tabla` deja ocho milimetros detras, que separan de lo que venga
       // despues. Entre bloques del mismo cuadro sobran cuatro.
-      y = tabla(doc, y, COLUMNAS, suyos.map(celdas), `Subtotal   $ ${numero(suma)}`) - 4
+      y =
+        tabla(
+          doc,
+          y,
+          columnas,
+          suyos.map((r) => celdas(r, conCostos)),
+          conCostos ? `Subtotal   $ ${numero(suma)}` : undefined,
+        ) - 4
     }
 
     // El total de la nota, con el mismo peso que en una nota de un solo sitio:
     // es la cifra por la que se firma, y quedarse en los subtotales obligaría a
-    // sumarlos de cabeza.
+    // sumarlos de cabeza. Sin cifras no hay banda: una franja vacía con el color
+    // de la casa solo ocuparía sitio.
+    if (conCostos) {
     doc.setFillColor(MARCA)
     doc.rect(IZQ, y - 4, ANCHO_UTIL, 8, 'F')
     doc.setFont('helvetica', 'bold').setFontSize(9.5).setTextColor('#FFFFFF')
@@ -276,13 +326,14 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
       align: 'right',
     })
     y += 10
+    }
   } else {
     y = tabla(
       doc,
       y,
-      COLUMNAS,
-      d.renglones.map(celdas),
-      total > 0 ? `TOTAL   $ ${numero(total)}` : undefined,
+      columnas,
+      d.renglones.map((r) => celdas(r, conCostos)),
+      conCostos && total > 0 ? `TOTAL   $ ${numero(total)}` : undefined,
     )
   }
 

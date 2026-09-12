@@ -40,6 +40,7 @@ import { ModalAlTaller } from './ModalAlTaller'
 import { ModalCambioDeDueno } from './ModalCambioDeDueno'
 import { ListaEditable } from '@/components/ListaEditable'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
+import type { DatosNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { supabase } from '@/lib/supabase'
 import {
   conSusFormas,
@@ -347,6 +348,21 @@ export function Existencias() {
     material lo comprueba antes de imprimirlo y de que alguien lo firme.
   */
   const [nota, setNota] = useState<{ blob: Blob; nombre: string } | null>(null)
+  /*
+    LOS DATOS DEL PAPEL, NO SOLO EL PAPEL.
+
+    La casilla de «incluir costos» rehace la nota sin cerrar el visor, y para
+    rehacerla hacen falta los datos con los que se armó. Guardando solo el blob
+    habría que volver a consultar la base en cada clic.
+  */
+  const [datosNota, setDatosNota] = useState<DatosNotaDeSalida | null>(null)
+  /*
+    Por defecto SIN cifras. Una nota de salida es lo que firma quien recibe el
+    material, y el costo es cuenta interna: quien lo necesita lo pide, y no al
+    revés. Ver el comentario de `NotaArmada` en el papel.
+  */
+  const [notaConCostos, setNotaConCostos] = useState(false)
+  const [rehaciendoNota, setRehaciendoNota] = useState(false)
 
   /*
     Cuando la salida se registro pero el papel no salio.
@@ -383,8 +399,8 @@ export function Existencias() {
     const lineas = await leerNotaDeSalida(numero)
     if (lineas.length === 0) return
 
-    setNota(
-      await armarNotaDeSalida({
+    const datos: DatosNotaDeSalida = {
+        conCostos: notaConCostos,
         numero,
         fecha: fecha(lineas[0].fecha),
         almacen: lineas[0].almacen,
@@ -402,8 +418,9 @@ export function Existencias() {
         })),
         empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
         momento: new Date(),
-      }),
-    )
+    }
+    setDatosNota(datos)
+    setNota(await armarNotaDeSalida(datos))
   }
 
   const notaDelMovimiento = async (movimientoId: number, clase: string, motivo: string) => {
@@ -422,8 +439,8 @@ export function Existencias() {
     const alm = (almacenes ?? []).find((a) => a.id === data.almacen_id)
     const art = (articulos ?? []).find((a) => a.id === data.articulo_id)
 
-    setNota(
-      await armarNotaDeSalida({
+    const datos: DatosNotaDeSalida = {
+        conCostos: notaConCostos,
         numero: data.numero,
         fecha: fecha(data.fecha),
         almacen: alm?.nombre ?? '',
@@ -447,8 +464,9 @@ export function Existencias() {
           rif: empresa?.rif ?? '',
         },
         momento: new Date(),
-      }),
-    )
+    }
+    setDatosNota(datos)
+    setNota(await armarNotaDeSalida(datos))
   }
   const ajuste = useRegistrarAjuste()
   const baja = useRegistrarBaja()
@@ -1562,11 +1580,37 @@ export function Existencias() {
 
       <Visor
         abierto={nota !== null}
-        onCerrar={() => setNota(null)}
+        onCerrar={() => {
+          setNota(null)
+          setDatosNota(null)
+        }}
         blob={nota?.blob ?? null}
         nombreArchivo={nota?.nombre ?? 'nota-salida.pdf'}
         titulo="Nota de salida"
         descripcion="Compruébala antes de imprimirla: es lo que va a firmar quien recibe el material."
+        /*
+          La casilla rehace el papel sin cerrarlo, igual que el selector de
+          moneda de los otros documentos. Se decide con la nota delante, que es
+          como se decide de verdad si esas cifras deben ir o no.
+        */
+        casilla={
+          datosNota
+            ? {
+                etiqueta: 'Incluir costos',
+                marcada: notaConCostos,
+                rehaciendo: rehaciendoNota,
+                onCambiar: async (marcada) => {
+                  setNotaConCostos(marcada)
+                  setRehaciendoNota(true)
+                  try {
+                    setNota(await armarNotaDeSalida({ ...datosNota, conCostos: marcada }))
+                  } finally {
+                    setRehaciendoNota(false)
+                  }
+                },
+              }
+            : null
+        }
       />
 
       {modal ? (

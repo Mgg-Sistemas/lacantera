@@ -63,6 +63,21 @@ interface VisorProps {
     /** Mientras se rehace el papel. */
     rehaciendo?: boolean
   } | null
+  /**
+   * Una casilla que cambia el papel sin cerrarlo.
+   *
+   * La misma idea que `expresion` y por la misma razón: con el documento
+   * delante se marca y se vuelve a mirar, que es como se decide de verdad.
+   * Preguntarlo antes obliga a adivinar y, al fallar, a cerrar y empezar otra
+   * vez.
+   */
+  casilla?: {
+    etiqueta: string
+    marcada: boolean
+    onCambiar: (marcada: boolean) => void
+    /** Mientras se rehace el papel. */
+    rehaciendo?: boolean
+  } | null
 }
 
 const EXTENSIONES_IMAGEN = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif', 'bmp']
@@ -89,6 +104,7 @@ export function Visor({
   titulo,
   descripcion,
   expresion,
+  casilla,
   mime,
 }: VisorProps) {
   const [deMemoria, setDeMemoria] = useState<string | null>(null)
@@ -251,9 +267,22 @@ export function Visor({
         </div>
 
         <footer className="border-ink/10 flex items-center justify-between gap-3 border-t px-4 py-3 sm:px-5">
-          <span className="text-ink/45 hidden truncate font-mono text-xs sm:block">
-            {nombreArchivo}
-          </span>
+          {casilla ? (
+            <label className="text-ink/70 flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="accent-royal-600 size-4 shrink-0"
+                checked={casilla.marcada}
+                disabled={casilla.rehaciendo}
+                onChange={(e) => casilla.onCambiar(e.target.checked)}
+              />
+              {casilla.rehaciendo ? 'Rehaciendo…' : casilla.etiqueta}
+            </label>
+          ) : (
+            <span className="text-ink/45 hidden truncate font-mono text-xs sm:block">
+              {nombreArchivo}
+            </span>
+          )}
           <div className="flex flex-1 justify-end gap-2 sm:flex-none">
             <Button variant="ghost" onClick={onCerrar}>
               Cerrar
