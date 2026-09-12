@@ -297,12 +297,11 @@ export function useFijarTarifaAcarreo() {
   )
 }
 
-/** La carga útil del camión: lo que suele llevar, no lo que le cabe. */
-export function useFijarCargaUtil() {
-  return useAccion((a: { vehiculo_id: number; carga_util: number | null }) =>
-    rpc('fijar_carga_util', {
-      p_vehiculo_id: a.vehiculo_id,
-      p_carga_util: a.carga_util,
-    }),
-  )
-}
+/*
+  La carga útil del camión vive en `vehiculos.ts`, no aquí.
+
+  Es un dato del vehículo, no del viaje, y se teclea en la ficha del camión
+  junto a la capacidad. Estuvo aquí sin que ninguna pantalla la llamara, que
+  es como el campo acabó sin existir en el formulario y los metros cúbicos
+  saliendo en cero.
+*/
