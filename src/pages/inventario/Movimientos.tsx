@@ -320,8 +320,25 @@ export function Movimientos() {
                       ) : null}
                     </td>
 
+                    {/*
+                      NULO NO ES CERO, Y EL LIBRO YA LO DISTINGUE.
+
+                      Christopher, viendo la laptop donada: «este ítem no debe
+                      tener precio pues fue una donación». El libro lo tenía
+                      bien —entró con el valor en nulo— y era esta celda la que
+                      lo enseñaba como «$ 0,00», que es justo lo contrario de lo
+                      que dice: cero afirma que no vale nada.
+
+                      Aquí un nulo solo puede significar una cosa. La regla de
+                      lectura de esta tabla es por fila y no tapa columnas, así
+                      que nadie ve nulos por no tener permiso de ver precios.
+                    */}
                     <td className="tabular text-ink/70 px-3 py-3 text-right">
-                      {dolares(m.valor_usd)}
+                      {m.valor_usd === null ? (
+                        <span className="text-ink/40 text-xs">sin valorar</span>
+                      ) : (
+                        dolares(m.valor_usd)
+                      )}
                     </td>
 
                     <td className="px-5 py-3 text-right whitespace-nowrap">
