@@ -243,6 +243,9 @@ const Voladuras = pagina(() =>
 const ProduccionTurno = pagina(() =>
   import('@/pages/explotacion/Produccion').then((m) => ({ default: m.Produccion })),
 )
+const ViajesDeCamiones = pagina(() =>
+  import('@/pages/explotacion/Viajes').then((m) => ({ default: m.Viajes })),
+)
 const TableroDespachos = pagina(() =>
   import('@/pages/despachos/Tablero').then((m) => ({ default: m.TableroDespachos })),
 )
@@ -284,6 +287,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/explotacion/frentes': <Frentes />,
   '/app/explotacion/voladuras': <Voladuras />,
   '/app/explotacion/produccion': <ProduccionTurno />,
+  '/app/explotacion/viajes': <ViajesDeCamiones />,
   '/app/despachos': <TableroDespachos />,
   '/app/despachos/tickets': <Tickets />,
   '/app/despachos/guias': <Guias />,
