@@ -24,6 +24,7 @@ import {
 import type { Movimiento } from '@/lib/api/inventario'
 import { leerNotaDeSalida } from '@/lib/api/inventario'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
+import type { DatosNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
@@ -73,8 +74,9 @@ export function Movimientos() {
       const lineas = m.nota_salida ? await leerNotaDeSalida(m.nota_salida) : null
 
       setTituloDoc(`Nota de salida ${m.nota_salida ?? m.numero}`)
-      setPdf(
-        await armarNotaDeSalida({
+
+      const datos: DatosNotaDeSalida = {
+          conCostos: notaConCostos,
           numero: m.nota_salida ?? m.numero,
           fecha: fecha(m.fecha),
           almacen: m.almacen?.nombre ?? '',
@@ -108,8 +110,10 @@ export function Movimientos() {
             rif: empresa?.rif ?? '',
           },
           momento: new Date(),
-        }),
-      )
+      }
+
+      setDatosNota(datos)
+      setPdf(await armarNotaDeSalida(datos))
     } finally {
       setArmando(null)
     }
@@ -126,6 +130,20 @@ export function Movimientos() {
   const [reversando, setReversando] = useState<{ id: number; numero: string } | null>(null)
   const [motivo, setMotivo] = useState('')
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
+  /*
+    LOS DATOS DE LA NOTA, PARA PODER REHACERLA.
+
+    Esta pantalla enseña dos papeles con el mismo visor: el libro de movimientos
+    y la nota de salida. La casilla de «incluir costos» es solo de la nota, así
+    que colgar de esto es lo que la hace aparecer únicamente cuando toca.
+
+    Y hacen falta los datos, no solo el blob: marcar la casilla rehace el papel
+    sin cerrar el visor, y sin ellos habría que volver a consultar la base.
+  */
+  const [datosNota, setDatosNota] = useState<DatosNotaDeSalida | null>(null)
+  // Por defecto sin cifras: la nota es lo que firma quien recibe el material.
+  const [notaConCostos, setNotaConCostos] = useState(false)
+  const [rehaciendoNota, setRehaciendoNota] = useState(false)
   const [tituloDoc, setTituloDoc] = useState('Libro de movimientos')
   const { data: empresa } = useEmpresa()
   const { nombre: yo } = useSesion()
@@ -145,6 +163,8 @@ export function Movimientos() {
 
   const imprimirLibro = async () => {
     setTituloDoc('Libro de movimientos')
+    // El libro no lleva casilla: es un informe interno y siempre va con cifras.
+    setDatosNota(null)
     setPdf(
       await armarLibroDeMovimientos({
         almacen: sitio?.nombre ?? null,
@@ -454,10 +474,31 @@ export function Movimientos() {
 
       <Visor
         abierto={pdf !== null}
-        onCerrar={() => setPdf(null)}
+        onCerrar={() => {
+          setPdf(null)
+          setDatosNota(null)
+        }}
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ''}
         titulo={tituloDoc}
+        casilla={
+          datosNota
+            ? {
+                etiqueta: 'Incluir costos',
+                marcada: notaConCostos,
+                rehaciendo: rehaciendoNota,
+                onCambiar: async (marcada) => {
+                  setNotaConCostos(marcada)
+                  setRehaciendoNota(true)
+                  try {
+                    setPdf(await armarNotaDeSalida({ ...datosNota, conCostos: marcada }))
+                  } finally {
+                    setRehaciendoNota(false)
+                  }
+                },
+              }
+            : null
+        }
       />
     </>
   )
