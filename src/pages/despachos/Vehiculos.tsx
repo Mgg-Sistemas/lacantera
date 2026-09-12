@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { Plus, Truck } from 'lucide-react'
+import { Building2, Plus, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -93,10 +93,11 @@ export function Vehiculos() {
       {ajenos.length > 0 ? (
         <Grupo
           titulo="De transportistas"
-          nota="No se les lleva mantenimiento: no son de la empresa. Se cargan por la capacidad y para no volver a escribir la placa."
+          nota="No se les lleva mantenimiento: no son de la empresa. Van agrupados por la empresa a la que pertenecen, que es a quien se le paga el acarreo."
           vehiculos={ajenos}
           puedeEscribir={puedeEscribir}
           onEditar={setEditando}
+          porEmpresa
         />
       ) : null}
 
@@ -109,85 +110,159 @@ export function Vehiculos() {
   )
 }
 
+/**
+ * Un grupo de vehículos.
+ *
+ * LOS AJENOS SE SUBDIVIDEN POR EMPRESA
+ *
+ * A quien se le paga el acarreo es a la empresa, no al camión, así que la
+ * lista se lee como se lee el registro de pago: primero de quién son, después
+ * cuáles. Es además la única forma de ver de un vistazo que la misma empresa
+ * no quedó escrita de dos maneras — dos bloques con nombres parecidos saltan,
+ * dos tarjetas sueltas no.
+ */
 function Grupo({
   titulo,
   nota,
   vehiculos,
   puedeEscribir,
   onEditar,
+  porEmpresa = false,
 }: {
   titulo: string
   nota: string
   vehiculos: Vehiculo[]
   puedeEscribir: boolean
   onEditar: (v: Vehiculo) => void
+  porEmpresa?: boolean
 }) {
+  const bloques = new Map<string | null, Vehiculo[]>()
+
+  if (porEmpresa) {
+    for (const v of vehiculos) {
+      const empresa = v.transportista ?? 'Sin empresa'
+      bloques.set(empresa, [...(bloques.get(empresa) ?? []), v])
+    }
+  } else {
+    bloques.set(null, vehiculos)
+  }
+
+  const ordenados = [...bloques.entries()].sort(([a], [b]) =>
+    a === null || b === null ? 0 : a.localeCompare(b, 'es'),
+  )
+
   return (
     <section className="mb-6">
       <h2 className="text-ink/80 text-sm font-semibold">{titulo}</h2>
       <p className="text-ink/50 mt-0.5 mb-3 text-xs leading-relaxed">{nota}</p>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {vehiculos.map((v) => (
-          <Card key={v.id} className={cn('flex h-full flex-col', !v.activo && 'opacity-55')}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-ink/90 font-mono text-lg font-semibold tracking-[0.06em]">
-                  {v.placa}
-                </p>
-                <p className="text-ink/50 mt-0.5 truncate text-xs">
-                  {TIPOS_VEHICULO.find((t) => t.valor === v.tipo)?.etiqueta ?? v.tipo}
-                  {v.descripcion ? ` · ${v.descripcion}` : ''}
-                </p>
-              </div>
-              {v.semaforo_mantenimiento ? (
-                <SemaforoMantenimiento estado={v.semaforo_mantenimiento} />
-              ) : null}
-            </div>
+      {ordenados.map(([empresa, lista]) => (
+        <div key={empresa ?? '·'} className={empresa === null ? '' : 'mb-4'}>
+          {empresa === null ? null : (
+            <h3 className="text-ink/70 mb-2 text-xs font-semibold tracking-wide uppercase">
+              {empresa}
+              <span className="text-ink/40 ml-2 font-normal normal-case">
+                {lista.length === 1 ? '1 camión' : `${lista.length} camiones`}
+              </span>
+            </h3>
+          )}
 
-            <p className="text-ink/85 mt-3 text-sm">
-              Carga <span className="tabular font-semibold">{metros(v.capacidad_m3)}</span>
-              {v.capacidad_ton ? (
-                <span className="text-ink/50">
-                  {' '}
-                  · {Number(v.capacidad_ton).toLocaleString('es-VE')} TON
-                </span>
-              ) : null}
-            </p>
-
-            {v.transportista ? (
-              <p className="text-ink/55 mt-1 text-xs">{v.transportista}</p>
-            ) : null}
-            {v.maquina ? (
-              <p className="text-ink/45 mt-1 text-xs">
-                Ficha: {v.maquina_codigo} · {v.maquina}
-              </p>
-            ) : null}
-            {v.chofer_actual ? (
-              <p className="text-ink/55 mt-1 text-xs">Lo maneja {v.chofer_actual}</p>
-            ) : null}
-
-            <div className="grow" />
-
-            <div className="mt-3 flex items-center justify-between gap-2">
-              {!v.activo ? <Chip tone="neutral">Fuera de servicio</Chip> : <span />}
-              <div className="flex gap-1">
-                <Link to={`/app/despachos/vehiculos/${v.id}`}>
-                  <Button size="sm" variant="soft">
-                    Ver ficha
-                  </Button>
-                </Link>
-                {puedeEscribir ? (
-                  <Button size="sm" variant="ghost" onClick={() => onEditar(v)}>
-                    Editar
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {lista.map((v) => (
+              <TarjetaVehiculo
+                key={v.id}
+                vehiculo={v}
+                puedeEscribir={puedeEscribir}
+                onEditar={onEditar}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </section>
+  )
+}
+
+/**
+ * La tarjeta de un camión.
+ *
+ * DE QUIÉN ES VA EN PASTILLA, NO EN LETRA GRIS
+ *
+ * Estaba como una línea tenue debajo de la capacidad y no se veía. Es el dato
+ * por el que se agrupa el pago del acarreo: quien revisa la flota necesita
+ * verlo antes de leer nada más.
+ */
+function TarjetaVehiculo({
+  vehiculo: v,
+  puedeEscribir,
+  onEditar,
+}: {
+  vehiculo: Vehiculo
+  puedeEscribir: boolean
+  onEditar: (v: Vehiculo) => void
+}) {
+  return (
+    <Card className={cn('flex h-full flex-col', !v.activo && 'opacity-55')}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-ink/90 font-mono text-lg font-semibold tracking-[0.06em]">{v.placa}</p>
+          <p className="text-ink/50 mt-0.5 truncate text-xs">
+            {TIPOS_VEHICULO.find((t) => t.valor === v.tipo)?.etiqueta ?? v.tipo}
+            {v.descripcion ? ` · ${v.descripcion}` : ''}
+          </p>
+        </div>
+        {v.semaforo_mantenimiento ? (
+          <SemaforoMantenimiento estado={v.semaforo_mantenimiento} />
+        ) : null}
+      </div>
+
+      <div className="mt-2">
+        <Chip
+          tone={v.propio ? 'royal' : 'info'}
+          icon={<Building2 />}
+          title="Empresa a la que pertenece el vehículo"
+        >
+          {v.propio ? 'Flota propia' : (v.transportista ?? 'Sin empresa')}
+        </Chip>
+      </div>
+
+      <p className="text-ink/85 mt-3 text-sm">
+        Carga <span className="tabular font-semibold">{metros(v.capacidad_m3)}</span>
+        {v.capacidad_ton ? (
+          <span className="text-ink/50">
+            {' '}
+            · {Number(v.capacidad_ton).toLocaleString('es-VE')} TON
+          </span>
+        ) : null}
+      </p>
+
+      {v.maquina ? (
+        <p className="text-ink/45 mt-1 text-xs">
+          Ficha: {v.maquina_codigo} · {v.maquina}
+        </p>
+      ) : null}
+      {v.chofer_actual ? (
+        <p className="text-ink/55 mt-1 text-xs">Lo maneja {v.chofer_actual}</p>
+      ) : null}
+
+      <div className="grow" />
+
+      <div className="mt-3 flex items-center justify-between gap-2">
+        {!v.activo ? <Chip tone="neutral">Fuera de servicio</Chip> : <span />}
+        <div className="flex gap-1">
+          <Link to={`/app/despachos/vehiculos/${v.id}`}>
+            <Button size="sm" variant="soft">
+              Ver ficha
+            </Button>
+          </Link>
+          {puedeEscribir ? (
+            <Button size="sm" variant="ghost" onClick={() => onEditar(v)}>
+              Editar
+            </Button>
+          ) : null}
+        </div>
+      </div>
+    </Card>
   )
 }
 
@@ -211,6 +286,24 @@ function ModalVehiculo({
 }) {
   const guardar = useGuardarVehiculo()
   const { data: maquinas } = useMaquinaria(true)
+  const { data: flota } = useVehiculos(false)
+
+  /*
+    LA EMPRESA SE ELIGE DE LAS QUE YA HAY, Y SOLO SE ESCRIBE LA NUEVA.
+
+    Era un campo de texto libre, y el registro de pago agrupa por ese texto
+    exacto: «Transporte Peña», «TRANSPORTE PEÑA» y «Transporte Peña C.A.» son
+    tres empresas distintas para la base, tres bloques en la pantalla de viajes
+    y tres pagos donde hay uno. La lista sale de los vehículos ya cargados, así
+    que no hace falta mantener un catálogo aparte para que deje de partirse.
+  */
+  const [otraEmpresa, setOtraEmpresa] = useState(false)
+
+  const empresas = [
+    ...new Set(
+      (flota ?? []).map((v) => v.transportista).filter((x): x is string => Boolean(x?.trim())),
+    ),
+  ].sort((a, b) => a.localeCompare(b, 'es'))
 
   const [f, setF] = useState({
     placa: '',
@@ -227,6 +320,7 @@ function ModalVehiculo({
 
   useEffect(() => {
     if (!abierto) return
+    setOtraEmpresa(false)
     setF({
       placa: vehiculo?.placa ?? '',
       tipo: vehiculo?.tipo ?? 'VOLTEO',
@@ -350,7 +444,7 @@ function ModalVehiculo({
           {
             propio: false,
             titulo: 'De un transportista',
-            detalle: 'Solo se registra para despachar.',
+            detalle: 'Se dice de qué empresa es: a ella se le paga el acarreo.',
           },
         ].map((o) => (
           <button
@@ -385,13 +479,33 @@ function ModalVehiculo({
           />
         </div>
       ) : (
-        <div className="mt-4">
-          <Input
-            label="Transportista"
-            placeholder="Nombre de la empresa o del dueño"
-            value={f.transportista}
-            onChange={(e) => cambiar('transportista', e.target.value)}
-          />
+        <div className="mt-4 grid gap-4">
+          {empresas.length > 0 ? (
+            <Select
+              label="Empresa a la que pertenece"
+              vacio="Elige la empresa"
+              value={otraEmpresa ? '__otra__' : f.transportista}
+              onChange={(e) => {
+                const v = e.target.value
+                setOtraEmpresa(v === '__otra__')
+                cambiar('transportista', v === '__otra__' ? '' : v)
+              }}
+              opciones={[
+                ...empresas.map((x) => ({ valor: x, etiqueta: x })),
+                { valor: '__otra__', etiqueta: 'Otra empresa…' },
+              ]}
+              hint="Se elige de las ya cargadas para que la misma empresa no quede escrita de dos maneras: el registro de pago de los viajes agrupa por este nombre."
+            />
+          ) : null}
+
+          {empresas.length === 0 || otraEmpresa ? (
+            <Input
+              label={empresas.length === 0 ? 'Empresa a la que pertenece' : 'Nombre de la empresa'}
+              placeholder="Nombre de la empresa o del dueño"
+              value={f.transportista}
+              onChange={(e) => cambiar('transportista', e.target.value)}
+            />
+          ) : null}
         </div>
       )}
 
