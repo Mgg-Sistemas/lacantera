@@ -2054,12 +2054,24 @@ export function Existencias() {
                               )
                             }
                           />
+                          {/*
+                            El rótulo nombra el caso y la consecuencia.
+
+                            Christopher: «así como no se sabe cuánto costó, puede
+                            ser donación, se desea solo ajustar el texto para
+                            incluir Donación». Decía únicamente lo segundo, y
+                            quien recibe algo donado no se pregunta si conoce el
+                            precio: se pregunta dónde se marca que fue donado.
+                            Van las dos, porque no siempre coinciden — una
+                            donación puede venir con su factura, y algo comprado
+                            hace años puede haber perdido la suya.
+                          */}
                           <span className="text-ink/80">
-                            No se sabe cuánto costó
+                            Donación, o no se sabe cuánto costó
                             <span className="text-ink/50 mt-0.5 block text-xs">
                               {r.sinValor
                                 ? 'Entra sin cifra y queda pendiente de valorar. Escribe abajo de dónde vino: dentro de un año esa nota es lo único que lo va a contestar.'
-                                : 'Para lo donado o lo que llegó sin factura. No es lo mismo que costar cero: un cero abarataría cada salida futura de este artículo.'}
+                                : 'Para lo que llegó donado o sin factura, y nadie sabe cuánto costó. No es lo mismo que costar cero: un cero abarataría cada salida futura de este artículo.'}
                             </span>
                           </span>
                         </label>
