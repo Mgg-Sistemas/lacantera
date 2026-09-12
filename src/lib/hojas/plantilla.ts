@@ -84,26 +84,33 @@ const ULTIMA_FILA_CON_LISTA = 500
 export const SI_NO = ['SI', 'NO']
 
 /*
-  LAS CATEGORIAS SON LAS DE LA BASE, Y FALTABA UNA.
+  LAS CATEGORIAS, CON EL NOMBRE CON EL QUE SE VEN.
 
-  La planilla enumeraba nueve y el CHECK de `articulos.categoria` admite diez:
-  faltaba EQUIPO, que es justo la de la laptop donada que trajo todo esto. Quien
-  llenaba la planilla no tenia forma de saber que existia.
+  Dos cosas estaban mal a la vez. La planilla enumeraba nueve y el CHECK de
+  `articulos.categoria` admite diez —faltaba la de la laptop donada—, y ofrecia
+  los codigos en crudo. Christopher, con el desplegable abierto: «¿donde esta el
+  equipo de oficina? Necesita estar, y la categoria necesita aparecer en la
+  planilla exactamente como en el sistema».
 
-  Es una lista cerrada por CHECK y no una tabla, asi que se escribe aqui. Si
-  algun dia se abre, esto pasa a leerse de la base como los almacenes.
+  Estaba: es EQUIPO. Pero «EQUIPO» no dice oficina, y quien busca donde poner una
+  laptop busca lo que la pantalla le enseña.
+
+  Esto es solo el respaldo de mientras carga la consulta: la lista buena la manda
+  `public.categorias_de_articulo`, que saca los codigos del propio CHECK y les
+  pone su nombre. El cargador admite el nombre y el codigo, asi que una planilla
+  bajada antes de hoy sigue entrando.
 */
 export const CATEGORIAS_DE_ARTICULO = [
-  'PRODUCTO',
-  'REPUESTO',
-  'INSUMO',
-  'COMBUSTIBLE',
-  'LUBRICANTE',
-  'EPP',
-  'HERRAMIENTA',
-  'EXPLOSIVO',
-  'EQUIPO',
-  'SERVICIO',
+  'Combustible',
+  'Equipo de oficina y cómputo',
+  'Equipo de protección',
+  'Explosivo',
+  'Herramienta',
+  'Insumo',
+  'Lubricante',
+  'Producto de cantera',
+  'Repuesto',
+  'Servicio',
 ]
 
 const celda = (texto: string, estilo?: number): CeldaDeLibro => ({ texto, estilo })
@@ -266,7 +273,7 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
   { columna: 'codigo', obligatoria: false, dice: 'El código con el que se pide. Si ya existe, la fila lo actualiza en vez de crearlo. Vacío, se busca por el nombre y, si es nuevo, la base le pone uno.', ejemplo: 'PRD-ARENA-L', otro: '' },
   { columna: 'nombre', obligatoria: true, dice: 'Cómo se llama.', ejemplo: 'Arena lavada', otro: 'Flete por viaje' },
   { columna: 'descripcion', obligatoria: false, dice: 'Detalle. Si se deja vacía en un artículo que ya existe, se respeta la que tenía.', ejemplo: 'Granulometria fina, patio 1' },
-  { columna: 'categoria', obligatoria: true, dice: 'Elige una de la lista.', ejemplo: 'PRODUCTO', otro: 'SERVICIO', opciones: CATEGORIAS_DE_ARTICULO },
+  { columna: 'categoria', obligatoria: true, dice: 'Elige una de la lista. Son las mismas que ofrece el sistema al crear un artículo, con el mismo nombre.', ejemplo: 'Producto de cantera', otro: 'Servicio', opciones: CATEGORIAS_DE_ARTICULO },
   { columna: 'unidad', obligatoria: true, dice: 'Con qué se mide. Elige una de la lista: sale de las unidades que la empresa tiene cargadas.', ejemplo: 'M3', otro: 'SERV' },
   { columna: 'inventariable', obligatoria: false, dice: 'SI o NO. En uno nuevo, vacío es SI; en uno que ya existe, vacío respeta lo que tenía. Un SERVICIO tiene que ser NO.', ejemplo: 'SI', otro: 'NO', opciones: SI_NO },
   { columna: 'modo_entrega', obligatoria: false, dice: 'Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. En uno nuevo, vacío es CONSUMIBLE; en uno que ya existe, vacío respeta lo que tenía.', ejemplo: 'CONSUMIBLE', otro: 'NO', opciones: ['RETORNABLE', 'CONSUMIBLE', 'NO'] },
