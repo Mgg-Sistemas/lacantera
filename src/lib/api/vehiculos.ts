@@ -144,6 +144,24 @@ export function useGuardarVehiculo() {
 }
 
 /**
+ * Elimina un vehículo cargado por error.
+ *
+ * Solo pasa si nunca movió nada: ni viajes, ni pesajes, ni guías, ni notas de
+ * entrega. Si ya tiene historia, la base lo impide y el mensaje dice cuánta
+ * tiene, para que quede claro que lo que se quiere es sacarlo de servicio.
+ * Pide la casilla `DESPACHOS.ELIMINAR_VEHICULO`, que viene con Total.
+ */
+export function useEliminarVehiculo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: { id: number }) => rpc('eliminar_vehiculo', { p_id: a.id }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['vehiculos'] })
+    },
+  })
+}
+
+/**
  * La carga útil del camión.
  *
  * VA POR SU PROPIA FUNCIÓN Y NO DENTRO DE `guardar_vehiculo`
