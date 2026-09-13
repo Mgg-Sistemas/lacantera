@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { Building2, Plus, Truck } from 'lucide-react'
+import { Building2, Plus, Trash2, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -12,20 +12,29 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { SemaforoMantenimiento } from '@/components/SemaforoMantenimiento'
 import { useMaquinaria } from '@/lib/api/maquinaria'
+import { useEmpresa } from '@/lib/api/empresa'
 import {
   TIPOS_VEHICULO,
+  useEliminarVehiculo,
   useFijarCargaUtil,
   useGuardarVehiculo,
   useVehiculos,
 } from '@/lib/api/vehiculos'
 import type { Vehiculo } from '@/lib/api/vehiculos'
-import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
 import { cn } from '@/lib/cn'
 
 function metros(valor: string | null): string {
   if (valor === null) return '—'
   return `${Number(valor).toLocaleString('es-VE', { maximumFractionDigits: 2 })} m³`
 }
+
+/** Las dos opciones de la lista de empresas que no son un nombre. */
+const PROPIA = '__propia__'
+const OTRA = '__otra__'
+
+/** Un numérico de la base al texto del formulario. Llega como número: ver `ModalVehiculo`. */
+const aTexto = (v: string | number | null | undefined): string => (v == null ? '' : String(v))
 
 /**
  * Los vehículos que entran al patio.
@@ -299,23 +308,37 @@ function ModalVehiculo({
 }) {
   const guardar = useGuardarVehiculo()
   const fijarCarga = useFijarCargaUtil()
+  const eliminar = useEliminarVehiculo()
   const { data: maquinas } = useMaquinaria(true)
   const { data: flota } = useVehiculos(false)
+  const { data: laEmpresa } = useEmpresa()
+  const { puede: alcanza } = useMisAcciones()
+  const [confirmandoBorrado, setConfirmandoBorrado] = useState(false)
 
   /*
-    LA EMPRESA SE ELIGE DE LAS QUE YA HAY, Y SOLO SE ESCRIBE LA NUEVA.
+    LA EMPRESA SE ELIGE DE UNA LISTA, Y LA PROPIA VA PRIMERO.
 
     Era un campo de texto libre, y el registro de pago agrupa por ese texto
     exacto: «Transporte Peña», «TRANSPORTE PEÑA» y «Transporte Peña C.A.» son
     tres empresas distintas para la base, tres bloques en la pantalla de viajes
     y tres pagos donde hay uno. La lista sale de los vehículos ya cargados, así
     que no hace falta mantener un catálogo aparte para que deje de partirse.
+
+    Y ESTÁ SIEMPRE A LA VISTA. Antes solo aparecía después de marcar «De un
+    transportista», y el formulario arrancaba marcado «De la empresa»: así
+    quedaron los seis primeros camiones, porque nadie cambió lo que ya venía
+    puesto y nadie vio el campo. Ahora un camión nuevo empieza sin empresa y no
+    se guarda hasta que alguien diga de quién es.
   */
-  const [otraEmpresa, setOtraEmpresa] = useState(false)
+  const [empresaElegida, setEmpresaElegida] = useState('')
+  const propio = empresaElegida === PROPIA
+  const otraEmpresa = empresaElegida === OTRA
 
   const empresas = [
     ...new Set(
-      (flota ?? []).map((v) => v.transportista).filter((x): x is string => Boolean(x?.trim())),
+      [...(flota ?? []).map((v) => v.transportista), vehiculo?.transportista].filter(
+        (x): x is string => Boolean(x?.trim()),
+      ),
     ),
   ].sort((a, b) => a.localeCompare(b, 'es'))
 
@@ -326,7 +349,6 @@ function ModalVehiculo({
     capacidad_m3: '',
     capacidad_ton: '',
     carga_util_m3: '',
-    propio: true,
     transportista: '',
     maquina_id: '',
     activo: true,
@@ -335,20 +357,32 @@ function ModalVehiculo({
 
   useEffect(() => {
     if (!abierto) return
-    setOtraEmpresa(false)
+    setConfirmandoBorrado(false)
+    eliminar.reset()
+    setEmpresaElegida(
+      vehiculo ? (vehiculo.propio ? PROPIA : (vehiculo.transportista ?? '')) : '',
+    )
     setF({
       placa: vehiculo?.placa ?? '',
       tipo: vehiculo?.tipo ?? 'VOLTEO',
       descripcion: vehiculo?.descripcion ?? '',
-      capacidad_m3: vehiculo?.capacidad_m3 ?? '',
-      capacidad_ton: vehiculo?.capacidad_ton ?? '',
-      carga_util_m3: vehiculo?.carga_util_m3 ?? '',
-      propio: vehiculo?.propio ?? true,
-      transportista: vehiculo?.transportista ?? '',
+      /*
+        Los numéricos llegan de la base como número, aunque el tipo diga texto:
+        PostgREST los manda como número en el JSON. El formulario trabaja en
+        texto, y sin convertirlos el primer `.trim()` revienta y la ventana se
+        queda en blanco. Es lo que pasaba al editar un camión con carga útil;
+        los que no la tenían abrían bien porque les llegaba vacía.
+      */
+      capacidad_m3: aTexto(vehiculo?.capacidad_m3),
+      capacidad_ton: aTexto(vehiculo?.capacidad_ton),
+      carga_util_m3: aTexto(vehiculo?.carga_util_m3),
+      transportista: '',
       maquina_id: vehiculo?.maquina_id ? String(vehiculo.maquina_id) : '',
       activo: vehiculo?.activo ?? true,
       nota: vehiculo?.nota ?? '',
     })
+    // `eliminar` cambia de identidad en cada render; reiniciarlo solo importa al abrir.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierto, vehiculo])
 
   const cambiar = (k: keyof typeof f, v: string | boolean) => setF((x) => ({ ...x, [k]: v }))
@@ -367,11 +401,20 @@ function ModalVehiculo({
           ? `No puede pasar de los ${cabe} m³ que le caben.`
           : undefined
 
+  const nombreNuevo = f.transportista.trim()
+
+  // La empresa nueva no puede ser una que ya está escrita con otras mayúsculas
+  // o sin acento: sería justo la partición que la lista existe para evitar.
+  const yaExiste = otraEmpresa
+    ? empresas.find((e) => e.localeCompare(nombreNuevo, 'es', { sensitivity: 'base' }) === 0)
+    : undefined
+
   const valido =
     f.placa.trim().length >= 4 &&
     cabe > 0 &&
     errorCargaUtil === undefined &&
-    (f.propio || f.transportista.trim().length > 0)
+    empresaElegida !== '' &&
+    (!otraEmpresa || (nombreNuevo.length > 0 && yaExiste === undefined))
 
   const enviar = async () => {
     const id = await guardar.mutateAsync({
@@ -381,9 +424,9 @@ function ModalVehiculo({
       descripcion: f.descripcion.trim() || null,
       capacidad_m3: f.capacidad_m3,
       capacidad_ton: f.capacidad_ton || null,
-      propio: f.propio,
-      transportista: f.propio ? null : f.transportista.trim(),
-      maquina_id: f.propio && f.maquina_id ? Number(f.maquina_id) : null,
+      propio,
+      transportista: propio ? null : otraEmpresa ? nombreNuevo : empresaElegida,
+      maquina_id: propio && f.maquina_id ? Number(f.maquina_id) : null,
       activo: f.activo,
       nota: f.nota.trim() || null,
     } as never)
@@ -494,40 +537,49 @@ function ModalVehiculo({
         </div>
       </div>
 
-      <h3 className="text-ink/85 mt-6 mb-3 text-sm font-semibold">De quién es</h3>
+      <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">De quién es</h3>
+      <p className="text-ink/50 mb-3 text-xs leading-relaxed">
+        La empresa es a quien se le paga el acarreo: los viajes de este camión se agrupan por ella
+        en el registro de pago.
+      </p>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {[
-          {
-            propio: true,
-            titulo: 'De la empresa',
-            detalle: 'Se le lleva horómetro y mantenimiento.',
-          },
-          {
-            propio: false,
-            titulo: 'De un transportista',
-            detalle: 'Se dice de qué empresa es: a ella se le paga el acarreo.',
-          },
-        ].map((o) => (
-          <button
-            key={String(o.propio)}
-            type="button"
-            onClick={() => cambiar('propio', o.propio)}
-            className={cn(
-              'rounded-card border p-3 text-left transition-colors',
-              f.propio === o.propio
-                ? 'border-royal-600 bg-royal-600/5'
-                : 'border-hairline hover:border-royal-300',
-            )}
-          >
-            <p className="text-ink/90 text-sm font-medium">{o.titulo}</p>
-            <p className="text-ink/50 mt-0.5 text-xs">{o.detalle}</p>
-          </button>
-        ))}
-      </div>
+      <div className="grid gap-4">
+        <Select
+          label="Empresa a la que pertenece"
+          vacio="Elige la empresa"
+          value={empresaElegida}
+          onChange={(e) => {
+            setEmpresaElegida(e.target.value)
+            cambiar('transportista', '')
+          }}
+          opciones={[
+            {
+              valor: PROPIA,
+              etiqueta: `${laEmpresa?.razon_social || 'La empresa'} · flota propia`,
+            },
+            ...empresas.map((x) => ({ valor: x, etiqueta: x })),
+            { valor: OTRA, etiqueta: 'Otra empresa…' },
+          ]}
+          hint={
+            empresaElegida === ''
+              ? 'Hace falta para guardar.'
+              : propio
+                ? 'Se le lleva horómetro y mantenimiento.'
+                : 'Se elige de las ya cargadas para que la misma empresa no quede escrita de dos maneras.'
+          }
+        />
 
-      {f.propio ? (
-        <div className="mt-4">
+        {otraEmpresa ? (
+          <Input
+            label="Nombre de la empresa nueva"
+            placeholder="Nombre de la empresa o del dueño"
+            value={f.transportista}
+            onChange={(e) => cambiar('transportista', e.target.value)}
+            error={yaExiste ? `Ya está cargada como «${yaExiste}»: elígela de la lista.` : undefined}
+          />
+        ) : null}
+
+        {propio ? (
           <Select
             label="Ficha en Maquinaria"
             vacio="Sin enlazar"
@@ -539,37 +591,8 @@ function ModalVehiculo({
             }))}
             hint="Enlazarlo hace que el semáforo de mantenimiento se vea aquí y al momento de despachar."
           />
-        </div>
-      ) : (
-        <div className="mt-4 grid gap-4">
-          {empresas.length > 0 ? (
-            <Select
-              label="Empresa a la que pertenece"
-              vacio="Elige la empresa"
-              value={otraEmpresa ? '__otra__' : f.transportista}
-              onChange={(e) => {
-                const v = e.target.value
-                setOtraEmpresa(v === '__otra__')
-                cambiar('transportista', v === '__otra__' ? '' : v)
-              }}
-              opciones={[
-                ...empresas.map((x) => ({ valor: x, etiqueta: x })),
-                { valor: '__otra__', etiqueta: 'Otra empresa…' },
-              ]}
-              hint="Se elige de las ya cargadas para que la misma empresa no quede escrita de dos maneras: el registro de pago de los viajes agrupa por este nombre."
-            />
-          ) : null}
-
-          {empresas.length === 0 || otraEmpresa ? (
-            <Input
-              label={empresas.length === 0 ? 'Empresa a la que pertenece' : 'Nombre de la empresa'}
-              placeholder="Nombre de la empresa o del dueño"
-              value={f.transportista}
-              onChange={(e) => cambiar('transportista', e.target.value)}
-            />
-          ) : null}
-        </div>
-      )}
+        ) : null}
+      </div>
 
       <div className="mt-4">
         <Textarea
@@ -595,6 +618,62 @@ function ModalVehiculo({
       {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-3" /> : null}
       {/* El vehículo ya quedó guardado si esto falla: la carga útil va aparte. */}
       {fijarCarga.error ? <ErrorDeCarga error={fijarCarga.error} className="mt-3" /> : null}
+
+      {/*
+        Eliminar va separado y abajo, con su propia confirmación: es lo único
+        del formulario que no se deshace. Solo sale al editar y a quien tiene la
+        casilla, que viene con Total.
+      */}
+      {vehiculo && alcanza('DESPACHOS.ELIMINAR_VEHICULO') ? (
+        <div className="border-hairline mt-6 border-t pt-4">
+          {confirmandoBorrado ? (
+            <div className="rounded-card border-danger/30 bg-danger/5 border p-3">
+              <p className="text-ink/85 text-sm font-medium">¿Eliminar {vehiculo.placa}?</p>
+              <p className="text-ink/60 mt-1 text-xs leading-relaxed">
+                Es para un camión cargado por error. Si ya hizo viajes, pesajes o guías no se va a
+                poder, y lo que corresponde es desmarcar «En servicio»: deja de ofrecerse y lo
+                registrado sigue cuadrando.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  variant="danger"
+                  size="sm"
+                  disabled={eliminar.isPending}
+                  onClick={() =>
+                    void eliminar
+                      .mutateAsync({ id: vehiculo.id })
+                      .then(onCerrar)
+                      .catch(() => {})
+                  }
+                >
+                  {eliminar.isPending ? 'Eliminando…' : 'Sí, eliminar'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setConfirmandoBorrado(false)
+                    eliminar.reset()
+                  }}
+                >
+                  No eliminar
+                </Button>
+              </div>
+              {eliminar.error ? <ErrorDeCarga error={eliminar.error} className="mt-3" /> : null}
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-danger"
+              icon={<Trash2 />}
+              onClick={() => setConfirmandoBorrado(true)}
+            >
+              Eliminar vehículo
+            </Button>
+          )}
+        </div>
+      ) : null}
     </Modal>
   )
 }
