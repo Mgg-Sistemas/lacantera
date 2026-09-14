@@ -185,9 +185,6 @@ const PorPagar = pagina(() =>
 const DetalleCompra = pagina(() =>
   import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
 )
-const CentroDeCostos = pagina(() =>
-  import('@/pages/compras/CentroDeCostos').then((m) => ({ default: m.CentroDeCostos })),
-)
 const GastoPorUnidad = pagina(() =>
   import('@/pages/compras/GastoPorUnidad').then((m) => ({ default: m.GastoPorUnidad })),
 )
@@ -247,6 +244,12 @@ const ProduccionTurno = pagina(() =>
 const ViajesDeCamiones = pagina(() =>
   import('@/pages/explotacion/Viajes').then((m) => ({ default: m.Viajes })),
 )
+const SalidasDePlanta = pagina(() =>
+  import('@/pages/explotacion/SalidasDePlanta').then((m) => ({ default: m.SalidasDePlanta })),
+)
+const CentroDeCosto = pagina(() =>
+  import('@/pages/costos/CentroDeCosto').then((m) => ({ default: m.CentroDeCosto })),
+)
 const TableroDespachos = pagina(() =>
   import('@/pages/despachos/Tablero').then((m) => ({ default: m.TableroDespachos })),
 )
@@ -289,13 +292,17 @@ const paginas: Record<string, ReactNode> = {
   '/app/explotacion/voladuras': <Voladuras />,
   '/app/explotacion/produccion': <ProduccionTurno />,
   '/app/explotacion/viajes': <ViajesDeCamiones />,
+  '/app/explotacion/salidas': <SalidasDePlanta />,
+  '/app/costos': <CentroDeCosto />,
   '/app/despachos': <TableroDespachos />,
   '/app/despachos/tickets': <Tickets />,
   '/app/despachos/guias': <Guias />,
   '/app/compras': <TableroCompras />,
   '/app/compras/proveedores': <Proveedores />,
   '/app/compras/proveedores/:id': <FichaProveedor />,
-  '/app/compras/centro-de-costos': <CentroDeCostos />,
+  // El centro de costos viejo de Compras se retiró el 14/09/2026. Quien tenga
+  // la dirección guardada cae en el módulo que lo sustituye.
+  '/app/compras/centro-de-costos': <Navigate to="/app/costos" replace />,
   '/app/compras/gasto': <GastoPorUnidad />,
   '/app/compras/recepciones': <Recepciones />,
   '/app/compras/facturas': <FacturasProveedor />,

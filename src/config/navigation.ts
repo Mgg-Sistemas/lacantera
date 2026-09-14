@@ -117,6 +117,9 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   // Tesorería. Se notó al vaciar Tesorería por estar en obra: la entrada seguía
   // en el menú de Compras y daba el candado.
   ['/app/tesoreria/movimientos', 'COMPRAS'],
+  // El centro de costo es su propio módulo: acepta viajes, cierra cajas y
+  // enseña dinero, y nada de eso es tarea de quien compra.
+  ['/app/costos', 'COSTOS'],
   ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
@@ -245,7 +248,6 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/compras/directa': 'compra rapida ya hecha factura sin cotizar sin gerente contado',
   '/app/compras/proveedores': 'rif suplidor',
   '/app/compras/recepciones': 'recibir entrada mercancia llegada',
-  '/app/compras/centro-de-costos': 'gastos presupuesto fondo balance costo por m3 torta grafico categoria',
   '/app/compras/libro': 'iva impuesto seniat fiscal credito',
   '/app/ventas/facturacion': 'factura fac cobrar emitir',
   '/app/ventas/despachos': 'nota de entrega ne remision',
@@ -276,6 +278,9 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/explotacion/voladuras': 'explosivo barreno detonante',
   '/app/explotacion/produccion': 'turno tonelada extraccion',
   '/app/explotacion/viajes': 'acarreo camion transportista flete planilla',
+  '/app/explotacion/salidas': 'salida planta producto arena piedra m3 camion sale estimado',
+  '/app/costos':
+    'caja costo por m3 metro cubico fondo entregado deuda casa matriz socio gastos fijos cerrar caja tasa referencial precio',
 }
 
 /** El módulo al que pertenece una ruta. El panel es la raíz. */
@@ -348,6 +353,10 @@ export const navigation: NavSection[] = [
         children: [
           { label: 'Tablero', to: '/app/explotacion' },
           { label: 'Viajes de camiones', to: '/app/explotacion/viajes' },
+          // Lo que sale de la planta, camión por camión. Es el denominador
+          // del costo por m³ y va separado de facturación: la salida no
+          // espera a la factura.
+          { label: 'Salidas de planta', to: '/app/explotacion/salidas' },
           { label: 'Frentes y bancos', to: '/app/explotacion/frentes' },
           // Las dos que siguen en obra, y por qué cada una:
           //
@@ -479,6 +488,20 @@ export const navigation: NavSection[] = [
     label: 'Administración',
     items: [
       {
+        /*
+          El centro de costo, con entrada propia.
+
+          Sustituye al «Centro de costos» que abría el análisis de Compras y
+          leía un libro de tesorería vacío. Este es una caja: lo que entra
+          para operar, lo que cuesta producir y a cuánto sale el metro cúbico,
+          congelado al cerrar. Va antes de Compras porque es la pregunta de
+          gerencia, y las compras son una de sus respuestas.
+        */
+        label: 'Centro de costo',
+        icon: Landmark,
+        to: '/app/costos',
+      },
+      {
         label: 'Compras',
         icon: ShoppingCart,
         children: [
@@ -523,10 +546,9 @@ export const navigation: NavSection[] = [
           // El libro cuelga de Compras y no de un módulo fiscal propio porque
           // quien lo saca es quien cargó las facturas, y porque así el permiso
           // que ya gobierna las facturas gobierna también su libro.
-          // El centro de costos abre el grupo de analisis: es la pregunta de
-          // gerencia —cuanto se entrego, cuanto queda, a cuanto sale el metro
-          // cubico— y las otras dos son maneras de desglosarla.
-          { label: 'Centro de costos', to: '/app/compras/centro-de-costos' },
+          // El centro de costos que abría este grupo se retiró el 14/09/2026:
+          // leía un libro de tesorería vacío. Lo sustituye el módulo «Centro
+          // de costo», con entrada propia en Administración.
           { label: 'Libro de compras', to: '/app/compras/libro' },
           // A dónde va el dinero. La líder preguntó qué unidad genera más
           // gasto, y la respuesta sale de las mismas compras que alimentan el
