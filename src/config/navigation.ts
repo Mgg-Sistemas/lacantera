@@ -117,6 +117,9 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   // Tesorería. Se notó al vaciar Tesorería por estar en obra: la entrada seguía
   // en el menú de Compras y daba el candado.
   ['/app/tesoreria/movimientos', 'COMPRAS'],
+  // El centro de costo es su propio módulo: acepta viajes, cierra cajas y
+  // enseña dinero, y nada de eso es tarea de quien compra.
+  ['/app/costos', 'COSTOS'],
   ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
@@ -276,6 +279,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/explotacion/produccion': 'turno tonelada extraccion',
   '/app/explotacion/viajes': 'acarreo camion transportista flete planilla',
   '/app/explotacion/salidas': 'salida planta producto arena piedra m3 camion sale estimado',
+  '/app/costos':
+    'caja costo por m3 metro cubico fondo entregado deuda casa matriz socio gastos fijos cerrar caja tasa referencial precio',
 }
 
 /** El módulo al que pertenece una ruta. El panel es la raíz. */
@@ -482,6 +487,20 @@ export const navigation: NavSection[] = [
   {
     label: 'Administración',
     items: [
+      {
+        /*
+          El centro de costo, con entrada propia.
+
+          Sustituye al «Centro de costos» que abría el análisis de Compras y
+          leía un libro de tesorería vacío. Este es una caja: lo que entra
+          para operar, lo que cuesta producir y a cuánto sale el metro cúbico,
+          congelado al cerrar. Va antes de Compras porque es la pregunta de
+          gerencia, y las compras son una de sus respuestas.
+        */
+        label: 'Centro de costo',
+        icon: Landmark,
+        to: '/app/costos',
+      },
       {
         label: 'Compras',
         icon: ShoppingCart,
