@@ -275,19 +275,22 @@ export interface Periodo {
   total_aportes: string
   total_neto_usd: string
   /**
-   * Con qué régimen se CALCULÓ esta quincena: cierto si fue «solo lo pactado»
-   * (sueldo, bonos y descuentos manuales y faltas; sin cestaticket aparte,
-   * retenciones de ley, aportes, recargos ni prestaciones). Lo guarda
-   * `calcular_nomina`; si nunca se calculó, es el que rige para su fecha. Es el que
-   * manda para enseñar sus recibos.
+   * Los conceptos de ley con que se CALCULÓ esta quincena, en su orden; vacía si fue
+   * solo lo pactado (sueldo, bonos y descuentos manuales y faltas). La guarda
+   * `calcular_nomina`; si nunca se calculó, son los que rigen para su fecha. Es la
+   * que manda para enseñar sus recibos.
+   *
+   * La vista trae también `solo_lo_pactado` y `solo_lo_pactado_vigente`, derivadas,
+   * para las pantallas de antes que sigan abiertas. Aquí no se declaran a propósito:
+   * no dicen qué conceptos, y nada nuevo debe leerlas.
    */
-  solo_lo_pactado: boolean
+  conceptos_de_ley: ConceptoDeLey[]
   /**
-   * El régimen que rige HOY para su fecha: el que usaría un cálculo nuevo. Si no
-   * coincide con `solo_lo_pactado`, el interruptor se movió después de calcular, y
-   * la base no deja aprobarla sin volver a calcular.
+   * Los que rigen HOY para su fecha: los que usaría un cálculo nuevo. Si no
+   * coinciden con `conceptos_de_ley`, algún interruptor se movió después de
+   * calcular, y la base no deja aprobarla sin volver a calcular.
    */
-  solo_lo_pactado_vigente: boolean
+  conceptos_de_ley_vigentes: ConceptoDeLey[]
 }
 
 export const ESTADOS_PERIODO: Record<
@@ -540,14 +543,65 @@ export function useParametros() {
 }
 
 /**
- * ¿Manda «solo lo pactado» en esa fecha?
- *
- * La misma regla que `private.nomina_solo_lo_pactado` y que la columna
- * `solo_lo_pactado` de la vista de períodos: la vigencia más reciente de
- * `regimen_nomina` que cubra la fecha. Sin fila, el régimen es DE LEY. Sirve
- * donde no hay un período del que leerlo, como la pantalla de prestaciones.
+ * Los conceptos de ley que la nómina puede calcular, en el orden en que los guarda la
+ * base (`private.conceptos_de_ley_todos`). Lo pactado —sueldo de la ficha, bonos y
+ * descuentos, faltas— se calcula siempre; esto es lo que va encima, cada uno con su
+ * interruptor en Parámetros de nómina.
  */
-export function soloLoPactadoEn(parametros: Parametro[], fecha: string): boolean {
+export const CONCEPTOS_DE_LEY = [
+  {
+    codigo: 'CESTATICKET',
+    nombre: 'Cestaticket aparte',
+    detalle: 'El beneficio de alimentación va en su propia línea del recibo.',
+  },
+  {
+    codigo: 'IVSS',
+    nombre: 'Seguro social (IVSS)',
+    detalle: 'Retención al trabajador y aporte del patrono.',
+  },
+  {
+    codigo: 'RPE',
+    nombre: 'Paro forzoso (RPE)',
+    detalle: 'Retención al trabajador y aporte del patrono.',
+  },
+  {
+    codigo: 'FAOV',
+    nombre: 'Vivienda (FAOV)',
+    detalle: 'Retención al trabajador y aporte del patrono, sobre el salario integral.',
+  },
+  {
+    codigo: 'RECARGOS',
+    nombre: 'Recargos',
+    detalle: 'Horas extra, bono nocturno, feriados y descansos trabajados, que se cargan en las novedades.',
+  },
+  {
+    codigo: 'PRESTACIONES',
+    nombre: 'Prestaciones sociales',
+    detalle: 'Lo que se aparta en cada recibo, y la pantalla de prestaciones.',
+  },
+] as const
+
+export type ConceptoDeLey = (typeof CONCEPTOS_DE_LEY)[number]['codigo']
+
+/**
+ * Lo que dice el texto de `regimen_nomina`: la lista separada por comas, o SOLO LO
+ * PACTADO si no hay ninguno. Se devuelve en el orden de la base.
+ */
+export function conceptosDelRegimen(texto: string | null): ConceptoDeLey[] {
+  if (!texto || texto === 'SOLO LO PACTADO') return []
+  const puestos = texto.split(', ')
+  return CONCEPTOS_DE_LEY.map((c) => c.codigo).filter((c) => puestos.includes(c))
+}
+
+/**
+ * Los conceptos de ley que se calculan en una fecha.
+ *
+ * La misma regla que `private.conceptos_de_ley` y que las columnas de la vista de
+ * períodos: la vigencia más reciente de `regimen_nomina` que cubra la fecha, y sin
+ * fila, todos. Sirve donde no hay un período del que leerlo, como los interruptores o
+ * la pantalla de prestaciones.
+ */
+export function conceptosDeLeyEn(parametros: Parametro[], fecha: string): ConceptoDeLey[] {
   const vigente = parametros
     .filter(
       (p) =>
@@ -556,7 +610,22 @@ export function soloLoPactadoEn(parametros: Parametro[], fecha: string): boolean
         (p.vigencia_hasta === null || p.vigencia_hasta >= fecha),
     )
     .sort((a, b) => b.vigencia_desde.localeCompare(a.vigencia_desde))[0]
-  return vigente?.valor_texto === 'SOLO LO PACTADO'
+  return vigente ? conceptosDelRegimen(vigente.valor_texto) : CONCEPTOS_DE_LEY.map((c) => c.codigo)
+}
+
+/** Qué se enciende y qué se apaga al pasar de una lista a otra, ya con sus nombres. */
+export function cambioDeConceptos(antes: readonly string[], despues: readonly string[]) {
+  const nombre = (c: string) => CONCEPTOS_DE_LEY.find((x) => x.codigo === c)?.nombre ?? c
+  return {
+    encendidos: despues.filter((c) => !antes.includes(c)).map(nombre),
+    apagados: antes.filter((c) => !despues.includes(c)).map(nombre),
+  }
+}
+
+/** «A», «A y B», «A, B y C». */
+export function enLista(nombres: readonly string[]): string {
+  if (nombres.length < 2) return nombres.join('')
+  return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
 }
 
 // ---------------------------------------------------------------------------
@@ -1030,16 +1099,18 @@ export function useGuardarParametro() {
 }
 
 /**
- * El interruptor de los conceptos de ley: pone el régimen de la nómina desde un día.
+ * Los interruptores de los conceptos de ley: pone desde un día la lista de los que
+ * calcula la nómina.
  *
- * Tiene su puerta propia y no pasa por la de los parámetros: el régimen no se
- * teclea. Lo decide gerencia general, y la base no deja cambiarlo por debajo de una
- * nómina aprobada ni por delante de un cambio ya programado.
+ * Tiene su puerta propia y no pasa por la de los parámetros: no se teclea. Va la lista
+ * entera de los que quedan encendidos, no un interruptor suelto. Lo decide gerencia
+ * general, y la base no deja cambiarla por debajo de una nómina aprobada ni por
+ * delante de un cambio ya programado.
  */
-export function useCambiarRegimenNomina() {
-  return useAccionNomina((p: { soloLoPactado: boolean; desde: string }) =>
-    rpc<number>('cambiar_regimen_nomina', {
-      p_solo_lo_pactado: p.soloLoPactado,
+export function useCambiarConceptosDeLey() {
+  return useAccionNomina((p: { conceptos: ConceptoDeLey[]; desde: string }) =>
+    rpc<number>('cambiar_conceptos_de_ley', {
+      p_conceptos: p.conceptos,
       p_desde: p.desde,
     }),
   )

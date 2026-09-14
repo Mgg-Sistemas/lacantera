@@ -4,7 +4,7 @@ import { AlertTriangle, Pencil, Plus, Scale } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_REGLAS } from '@/components/pestanasDeModulos'
-import { Card } from '@/components/ui/Card'
+import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
@@ -13,8 +13,12 @@ import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import {
-  soloLoPactadoEn,
-  useCambiarRegimenNomina,
+  CONCEPTOS_DE_LEY,
+  cambioDeConceptos,
+  conceptosDeLeyEn,
+  conceptosDelRegimen,
+  enLista,
+  useCambiarConceptosDeLey,
   useCerrarParametro,
   useEliminarParametro,
   useGuardarParametro,
@@ -22,7 +26,7 @@ import {
   usePeriodos,
 } from '@/lib/api/nomina'
 import { Interruptor } from '@/components/ui/Interruptor'
-import type { Parametro } from '@/lib/api/nomina'
+import type { ConceptoDeLey, Parametro } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { fecha } from '@/lib/formato'
 import { hoyEnCaracas } from '@/lib/api/tasas'
@@ -62,29 +66,47 @@ function diaSiguiente(f: string): string {
   return d.toISOString().slice(0, 10)
 }
 
+const mismosConceptos = (a: readonly string[], b: readonly string[]) =>
+  a.length === b.length && a.every((c) => b.includes(c))
+
+/** «se encienden A y B, y se apaga C». Vacío si no cambia nada. */
+function describirCambio(c: { encendidos: string[]; apagados: string[] }): string {
+  return [
+    c.encendidos.length > 0
+      ? `${c.encendidos.length === 1 ? 'se enciende' : 'se encienden'} ${enLista(c.encendidos)}`
+      : null,
+    c.apagados.length > 0
+      ? `${c.apagados.length === 1 ? 'se apaga' : 'se apagan'} ${enLista(c.apagados)}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(', y ')
+}
+
 export function Parametros() {
   const { data, isPending, error } = useParametros()
   const { puede } = useMisRoles()
   const guardar = useGuardarParametro()
   const cerrar = useCerrarParametro()
   const eliminar = useEliminarParametro()
-  const cambiarRegimen = useCambiarRegimenNomina()
+  const cambiarConceptos = useCambiarConceptosDeLey()
   const { data: periodos } = usePeriodos()
 
   /*
-    EL INTERRUPTOR DE LOS CONCEPTOS DE LEY
+    LOS INTERRUPTORES DE LOS CONCEPTOS DE LEY
 
     Christopher: «escribir DE LEY en cada intento no es adecuado, no es un switch
-    adecuado». El régimen era un parámetro de texto más, y se cambiaba tecleando en
-    el formulario de abajo, donde una palabra de más lo dejaba en DE LEY sin avisar.
+    adecuado». Y después: «si enciendo el switch, ¿tomará todas las normas? ¿Podemos
+    hacer que sea elegible?». Así que hay uno por concepto, para toda la nómina.
 
-    Ahora es un interruptor con su propia puerta (`cambiar_regimen_nomina`). Al
-    moverlo solo se confirma desde qué día: se propone el siguiente al cierre de la
-    última quincena calculada. Lo mueve gerencia general, que es quien aprueba la
-    nómina; la base no deja ponerlo por debajo de una nómina aprobada ni por delante
+    Enseñan lo que rige hoy. Moverlos no guarda nada: debajo aparece qué cambia y
+    desde qué día —se propone el siguiente al cierre de la última quincena
+    calculada—, y al guardar va la lista entera por su puerta
+    (`cambiar_conceptos_de_ley`). Los mueve gerencia general, que es quien aprueba la
+    nómina; la base no deja ponerlos por debajo de una nómina aprobada ni por delante
     de un cambio ya programado.
   */
-  const [regimen, setRegimen] = useState<null | { soloLoPactado: boolean; desde: string }>(null)
+  const [borrador, setBorrador] = useState<null | { conceptos: ConceptoDeLey[]; desde: string }>(null)
 
   const [nuevo, setNuevo] = useState<null | {
     /*
@@ -123,10 +145,9 @@ export function Parametros() {
     (data ?? []).filter((p) => p.clave !== 'regimen_nomina').length - vigentes.length
 
   const hoy = hoyEnCaracas()
-  const regimenes = (data ?? []).filter((p) => p.clave === 'regimen_nomina')
-  const pactadoHoy = soloLoPactadoEn(data ?? [], hoy)
-  const programado = regimenes
-    .filter((p) => p.vigencia_desde.slice(0, 10) > hoy)
+  const conceptosHoy = conceptosDeLeyEn(data ?? [], hoy)
+  const programado = (data ?? [])
+    .filter((p) => p.clave === 'regimen_nomina' && p.vigencia_desde.slice(0, 10) > hoy)
     .sort((a, b) => a.vigencia_desde.localeCompare(b.vigencia_desde))[0]
   const puedeRegimen = puede('GERENTE_GENERAL')
   const ultimoCierre = (periodos ?? [])
@@ -134,6 +155,37 @@ export function Parametros() {
     .map((p) => p.hasta.slice(0, 10))
     .sort()
     .at(-1)
+
+  const enPantalla = borrador?.conceptos ?? conceptosHoy
+  // Lo que cambia se cuenta contra lo que regiría ese día, no contra hoy: si antes
+  // hay un cambio programado, se parte de ese.
+  const cambio =
+    borrador && borrador.desde
+      ? cambioDeConceptos(conceptosDeLeyEn(data ?? [], borrador.desde), borrador.conceptos)
+      : null
+  const sinCambio = cambio !== null && cambio.encendidos.length === 0 && cambio.apagados.length === 0
+  const antesDelProgramado =
+    borrador !== null &&
+    programado !== undefined &&
+    borrador.desde !== '' &&
+    borrador.desde < programado.vigencia_desde.slice(0, 10)
+
+  const alternar = (codigo: ConceptoDeLey, encender: boolean) => {
+    const base = borrador?.conceptos ?? conceptosHoy
+    const siguientes = CONCEPTOS_DE_LEY.map((c) => c.codigo).filter((c) =>
+      c === codigo ? encender : base.includes(c),
+    )
+    // Dejarlos otra vez como hoy es no haber tocado nada, salvo que haya un cambio
+    // programado: entonces volver a lo de hoy es justo la manera de deshacerlo.
+    if (!programado && mismosConceptos(siguientes, conceptosHoy)) {
+      setBorrador(null)
+      return
+    }
+    setBorrador({
+      conceptos: siguientes,
+      desde: borrador?.desde ?? (ultimoCierre ? diaSiguiente(ultimoCierre) : hoy),
+    })
+  }
 
   /*
     CORREGIR UNA EQUIVOCACIÓN NO ES ABRIR UNA VIGENCIA
@@ -184,28 +236,107 @@ export function Parametros() {
       <Pestanas pestanas={PESTANAS_REGLAS} />
 
       <Card className="mb-4">
-        <Interruptor
-          encendido={!pactadoHoy}
-          deshabilitado={!puedeRegimen || !data}
-          onCambio={(encender) =>
-            setRegimen({
-              soloLoPactado: !encender,
-              desde: ultimoCierre ? diaSiguiente(ultimoCierre) : hoy,
-            })
-          }
-          etiqueta="Conceptos de ley"
-          // Dice qué hace, no el caso de hoy: la posición del interruptor ya enseña el estado.
-          detalle="Seguro social, régimen de empleo, FAOV, cestaticket aparte, aportes del patrono, recargos y prestaciones sociales. Encendidos, la nómina los calcula con los parámetros de abajo; apagados, calcula solo lo pactado: sueldo de la ficha, bonos y descuentos, y faltas."
+        {/* Dice qué hacen, no el caso de hoy: la posición de cada interruptor ya enseña el estado. */}
+        <CardHeader
+          title="Conceptos de ley"
+          subtitle="La nómina siempre calcula lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas. Encima calcula los conceptos encendidos, con los parámetros de abajo. El sueldo de la ficha sigue siendo lo que la persona recibe: el cestaticket y las retenciones salen de él."
         />
-        {programado ? (
-          <p className="text-warning mt-3 text-xs">
-            Programado: los conceptos de ley se{' '}
-            {programado.valor_texto === 'SOLO LO PACTADO' ? 'apagan' : 'encienden'} el{' '}
-            {fecha(programado.vigencia_desde)}.
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {CONCEPTOS_DE_LEY.map((c) => (
+            <Interruptor
+              key={c.codigo}
+              encendido={enPantalla.includes(c.codigo)}
+              deshabilitado={!puedeRegimen || !data || cambiarConceptos.isPending}
+              onCambio={(encender) => alternar(c.codigo, encender)}
+              etiqueta={c.nombre}
+              detalle={c.detalle}
+            />
+          ))}
+        </div>
+
+        {programado && !borrador ? (
+          <p className="text-warning mt-4 text-xs">
+            Programado desde el {fecha(programado.vigencia_desde)}:{' '}
+            {describirCambio(
+              cambioDeConceptos(conceptosHoy, conceptosDelRegimen(programado.valor_texto)),
+            ) || 'sin cambios'}
+            .
           </p>
         ) : null}
+
         {!puedeRegimen ? (
-          <p className="text-ink/45 mt-3 text-xs">Este interruptor lo mueve gerencia general.</p>
+          <p className="text-ink/45 mt-4 text-xs">Estos interruptores los mueve gerencia general.</p>
+        ) : null}
+
+        {borrador ? (
+          <div className="border-hairline mt-4 border-t pt-4">
+            <p className="text-ink/80 text-sm">
+              {cambio === null
+                ? 'Elige desde qué día.'
+                : sinCambio
+                  ? 'Ese día la nómina ya calcula exactamente esto: no hay nada que guardar.'
+                  : `Desde ese día ${describirCambio(cambio)}.`}
+            </p>
+            {cambio && cambio.encendidos.length > 0 ? (
+              <p className="text-ink/50 mt-1 text-xs">
+                Revisa antes los parámetros de abajo: el salario mínimo o el cestaticket pueden
+                haber cambiado.
+              </p>
+            ) : null}
+
+            <div className="mt-3 flex flex-wrap items-end gap-3">
+              <div className="w-full sm:w-56">
+                <Input
+                  label="Desde"
+                  type="date"
+                  value={borrador.desde}
+                  onChange={(e) => setBorrador((b) => (b ? { ...b, desde: e.target.value } : b))}
+                />
+              </div>
+              <Button
+                variant="ghost"
+                disabled={cambiarConceptos.isPending}
+                onClick={() => {
+                  setBorrador(null)
+                  cambiarConceptos.reset()
+                }}
+              >
+                Descartar
+              </Button>
+              <Button
+                disabled={
+                  cambiarConceptos.isPending || !borrador.desde || sinCambio || antesDelProgramado
+                }
+                onClick={async () => {
+                  await cambiarConceptos.mutateAsync({
+                    conceptos: borrador.conceptos,
+                    desde: borrador.desde,
+                  })
+                  setBorrador(null)
+                }}
+              >
+                {cambiarConceptos.isPending ? 'Guardando…' : 'Guardar'}
+              </Button>
+            </div>
+
+            <p className="text-ink/45 mt-2 text-xs">
+              El primer día de la quincena que ya debe calcularse así. Las quincenas aprobadas o
+              pagadas no cambian; si una calculada queda dentro, hay que volver a calcularla antes
+              de aprobarla.
+            </p>
+            {antesDelProgramado && programado ? (
+              <p className="text-warning mt-2 text-xs">
+                Hay un cambio programado desde el {fecha(programado.vigencia_desde)}: elige ese día
+                o uno posterior.
+              </p>
+            ) : null}
+            {cambiarConceptos.error ? (
+              <div className="mt-3">
+                <ErrorDeCarga error={cambiarConceptos.error} />
+              </div>
+            ) : null}
+          </div>
         ) : null}
       </Card>
 
@@ -470,51 +601,6 @@ export function Parametros() {
             {guardar.error ? <ErrorDeCarga error={guardar.error} /> : null}
             {cerrar.error ? <ErrorDeCarga error={cerrar.error} /> : null}
             {eliminar.error ? <ErrorDeCarga error={eliminar.error} /> : null}
-          </div>
-        </Modal>
-      ) : null}
-
-      {regimen ? (
-        <Modal
-          abierto
-          onCerrar={() => setRegimen(null)}
-          titulo={regimen.soloLoPactado ? 'Apagar los conceptos de ley' : 'Encender los conceptos de ley'}
-          descripcion="Cada quincena se calcula con lo que rija el día en que cierra. Las ya aprobadas o pagadas no cambian."
-          ancho="sm"
-          acciones={
-            <>
-              <Button variant="ghost" onClick={() => setRegimen(null)}>
-                Cancelar
-              </Button>
-              <Button
-                disabled={cambiarRegimen.isPending || !regimen.desde}
-                onClick={async () => {
-                  await cambiarRegimen.mutateAsync({
-                    soloLoPactado: regimen.soloLoPactado,
-                    desde: regimen.desde,
-                  })
-                  setRegimen(null)
-                }}
-              >
-                {cambiarRegimen.isPending ? 'Guardando…' : regimen.soloLoPactado ? 'Apagar' : 'Encender'}
-              </Button>
-            </>
-          }
-        >
-          <div className="space-y-4">
-            <p className="text-ink/70 text-sm leading-relaxed">
-              {regimen.soloLoPactado
-                ? 'Desde ese día la nómina calcula solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas. No lleva seguro social, régimen de empleo, FAOV, cestaticket aparte, aportes, recargos ni prestaciones, y la pantalla de prestaciones queda deshabilitada.'
-                : 'Desde ese día la nómina vuelve a calcular seguro social, régimen de empleo, FAOV, cestaticket aparte, aportes, recargos y prestaciones, con los parámetros de esta pantalla. Revísalos antes: el salario mínimo o el cestaticket pueden haber cambiado.'}
-            </p>
-            <Input
-              label="Desde"
-              type="date"
-              hint="El primer día de la quincena que ya debe calcularse así. Si una quincena calculada queda dentro, hay que volver a calcularla antes de aprobarla."
-              value={regimen.desde}
-              onChange={(e) => setRegimen((r) => (r ? { ...r, desde: e.target.value } : r))}
-            />
-            {cambiarRegimen.error ? <ErrorDeCarga error={cambiarRegimen.error} /> : null}
           </div>
         </Modal>
       ) : null}

@@ -20,7 +20,7 @@ import {
 import type { Periodo, Recibo } from '@/lib/api/nomina'
 import { useFirmas } from '@/lib/api/firmas'
 import { useSesion } from '@/lib/sesion'
-import { armarRecibo, armarRecibos } from '@/lib/ficha/reciboPdf'
+import { armarRecibo, armarRecibos, salariosDelRecibo } from '@/lib/ficha/reciboPdf'
 import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
 import type { PersonaDelInforme } from '@/lib/ficha/informePersonalPdf'
 import type { DatosRecibo, FirmaEmpresa, PdfArmado } from '@/lib/ficha/reciboPdf'
@@ -64,7 +64,7 @@ function paraImprimir(
     salarioBasicoDiario: r.salario_basico_diario,
     salarioNormalDiario: r.salario_normal_diario,
     salarioIntegralDiario: r.salario_integral_diario,
-    soloLoPactado: periodo.solo_lo_pactado,
+    conceptosDeLey: periodo.conceptos_de_ley,
 
     lineas: r.lineas.map((l) => ({
       descripcion: l.descripcion,
@@ -89,6 +89,50 @@ function paraImprimir(
     emitidoPor,
     firmaTrabajador: firmasGuardadas[r.empleado_id] ?? null,
   }
+}
+
+/** Los salarios diarios del recibo abierto: solo los que usaron sus conceptos de ley. */
+function SalariosDiarios({
+  recibo,
+  conceptos,
+}: {
+  recibo: Recibo
+  conceptos: readonly string[] | undefined
+}) {
+  const s = salariosDelRecibo(conceptos)
+  const cifras: [string, string][] = [[s.basico, recibo.salario_basico_diario]]
+  if (s.normal) cifras.push(['Salario normal diario', recibo.salario_normal_diario])
+  if (s.integral) cifras.push(['Salario integral diario', recibo.salario_integral_diario])
+
+  return (
+    <>
+      <dl
+        className={`border-hairline bg-canvas rounded-card grid gap-3 border p-3 text-xs ${
+          cifras.length === 3 ? 'sm:grid-cols-3' : cifras.length === 2 ? 'sm:grid-cols-2' : ''
+        }`}
+      >
+        {cifras.map(([clave, valor]) => (
+          <div key={clave}>
+            <dt className="text-ink/45">{clave}</dt>
+            <dd className="text-ink/80 tabular">{bolivares(valor)}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {/*
+        Sin esta línea, un básico más chico que el sueldo de la ficha parece un error.
+        No lo es: el sueldo de la ficha es lo que la persona recibe, y de ahí salen el
+        beneficio de alimentación y las retenciones que se calculen.
+      */}
+      {s.despejado ? (
+        <p className="text-ink/45 -mt-3 text-xs">
+          El sueldo de la ficha es lo que recibe. El básico es lo que queda al descontarle
+          lo que se calcula aparte —beneficio de alimentación y retenciones de ley—, y es el
+          que cuenta para prestaciones, vacaciones y utilidades.
+        </p>
+      ) : null}
+    </>
+  )
 }
 
 /**
@@ -446,52 +490,7 @@ export function Recibos() {
           }
         >
           <div className="space-y-5">
-            {periodo?.solo_lo_pactado ? (
-              /*
-                Con «solo lo pactado» no hay básico despejado: el diario es el sueldo
-                de la ficha entre treinta. El normal y el integral son medidas de ley
-                —para prestaciones, vacaciones y utilidades— que este régimen no usa,
-                y con comisión saldrían por encima del básico, como si contaran.
-              */
-              <dl className="border-hairline bg-canvas rounded-card grid gap-3 border p-3 text-xs">
-                <div>
-                  <dt className="text-ink/45">Salario diario</dt>
-                  <dd className="text-ink/80 tabular">{bolivares(abierto.salario_basico_diario)}</dd>
-                </div>
-              </dl>
-            ) : (
-              <>
-                <dl className="border-hairline bg-canvas rounded-card grid gap-3 border p-3 text-xs sm:grid-cols-3">
-                  <div>
-                    <dt className="text-ink/45">Salario básico diario</dt>
-                    <dd className="text-ink/80 tabular">{bolivares(abierto.salario_basico_diario)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-ink/45">Salario normal diario</dt>
-                    <dd className="text-ink/80 tabular">{bolivares(abierto.salario_normal_diario)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-ink/45">Salario integral diario</dt>
-                    <dd className="text-ink/80 tabular">
-                      {bolivares(abierto.salario_integral_diario)}
-                    </dd>
-                  </div>
-                </dl>
-
-                {/*
-                  Estos tres números son más chicos que el sueldo de la ficha, y sin
-                  esta línea eso parece un error. No lo es: el sueldo de la ficha es
-                  lo que la persona recibe, y de ahí salen el beneficio de
-                  alimentación y las retenciones. Lo que queda es el básico, y es el
-                  que manda en prestaciones, vacaciones y utilidades.
-                */}
-                <p className="text-ink/45 -mt-3 text-xs">
-                  El sueldo de la ficha es lo que recibe. El básico es lo que queda al
-                  descontarle el beneficio de alimentación y las retenciones de ley, y es
-                  el que cuenta para prestaciones, vacaciones y utilidades.
-                </p>
-              </>
-            )}
+            <SalariosDiarios recibo={abierto} conceptos={periodo?.conceptos_de_ley} />
 
             {(['ASIGNACION', 'DEDUCCION', 'APORTE', 'PROVISION'] as const).map((tipo) => {
               const lineas = abierto.lineas

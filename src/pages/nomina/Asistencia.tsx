@@ -444,15 +444,16 @@ export function Asistencia() {
   const bonoTrasAprobar = periodo?.estado === 'APROBADA'
 
   /*
-    CON «SOLO LO PACTADO» NO SE CARGAN HORAS NI RECARGOS.
+    CON LOS RECARGOS APAGADOS NO SE CARGAN HORAS.
 
-    La base no los calcula en ese régimen (`regimen_nomina`), así que dejar las
-    casillas sería invitar a teclear horas que no van a salir en el recibo. Lo
-    que haya que pagar de más va como bono, en «Bono o descuento».
+    La base no los calcula si ese concepto de ley está apagado, así que dejar las
+    casillas sería invitar a teclear horas que no van a salir en el recibo. Lo que
+    haya que pagar de más va como bono, en «Bono o descuento».
   */
-  // Mientras se puede recalcular manda el régimen que rige; cerrada, el que se usó.
-  const pactadoAqui = abierto ? periodo?.solo_lo_pactado_vigente : periodo?.solo_lo_pactado
-  const campos: readonly (typeof CAMPOS)[number][] = pactadoAqui ? [] : CAMPOS
+  // Mientras se puede recalcular mandan los conceptos que rigen; cerrada, los que se usaron.
+  const conceptosAqui = abierto ? periodo?.conceptos_de_ley_vigentes : periodo?.conceptos_de_ley
+  const sinRecargos = conceptosAqui ? !conceptosAqui.includes('RECARGOS') : false
+  const campos: readonly (typeof CAMPOS)[number][] = sinRecargos ? [] : CAMPOS
 
   // Las novedades guardadas llenan la tabla. Sin esto, quien vuelve a la
   // pantalla ve ceros y cree que se perdió lo que cargó ayer.
@@ -559,10 +560,10 @@ export function Asistencia() {
         <Card flush>
           <div className="p-5 pb-2">
             <CardHeader
-              title={pactadoAqui ? 'Bonos y descuentos' : 'Horas y recargos'}
+              title={sinRecargos ? 'Bonos y descuentos' : 'Horas y recargos'}
               subtitle={
-                pactadoAqui
-                  ? 'Esta quincena calcula solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas del calendario. Las horas extra y los recargos no se cargan; lo que haya que pagar de más va como bono.'
+                sinRecargos
+                  ? 'Esta quincena no calcula recargos: las horas extra, nocturnas, feriados y descansos no se cargan, y lo que haya que pagar de más va como bono. Las faltas se marcan en el calendario.'
                   : 'Horas extra, nocturnas y días trabajados de descanso o feriado. Se guarda por trabajador; lo que no se toca queda en cero.'
               }
             />

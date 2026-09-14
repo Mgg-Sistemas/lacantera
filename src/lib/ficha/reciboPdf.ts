@@ -37,6 +37,30 @@ import {
   tituloDocumento,
 } from './papel'
 
+/**
+ * Qué salarios diarios enseña un recibo, según los conceptos de ley con que se calculó.
+ *
+ * El normal y el integral son medidas de ley: el normal manda en el seguro social y
+ * el régimen de empleo, y el integral —con las alícuotas— en el FAOV y las
+ * prestaciones. Si no se calculó ninguno de los que los usan, no sirven para nada y,
+ * con comisión, saldrían por encima del básico como si contaran: no se pintan. Y si
+ * al sueldo de la ficha no se le sacó nada, el básico es ese sueldo por día y se
+ * llama así, salario diario.
+ */
+export function salariosDelRecibo(conceptos: readonly string[] | undefined) {
+  const c = conceptos ?? ['CESTATICKET', 'IVSS', 'RPE', 'FAOV', 'RECARGOS', 'PRESTACIONES']
+  const hay = (...xs: string[]) => xs.some((x) => c.includes(x))
+  const normal = hay('IVSS', 'RPE', 'FAOV', 'PRESTACIONES')
+  const despejado = hay('CESTATICKET', 'IVSS', 'RPE', 'FAOV')
+  return {
+    basico: normal || despejado ? 'Salario básico diario' : 'Salario diario',
+    normal,
+    integral: hay('FAOV', 'PRESTACIONES'),
+    /** Al sueldo de la ficha se le sacó algo: el básico es más chico que él. */
+    despejado,
+  }
+}
+
 const ROJO = '#C0392B'
 
 /** Donde arranca la columna de subtotales: el último tercio del ancho útil. */
@@ -82,10 +106,10 @@ export interface DatosRecibo {
   salarioNormalDiario: string
   salarioIntegralDiario: string
   /**
-   * La quincena se calculó con «solo lo pactado»: no hay básico despejado ni
-   * salario integral, así que el papel enseña un solo salario diario.
+   * Los conceptos de ley con que se calculó la quincena. Deciden qué salarios
+   * diarios se enseñan (`salariosDelRecibo`). Sin lista, los tres.
    */
-  soloLoPactado?: boolean
+  conceptosDeLey?: readonly string[]
 
   lineas: LineaImpresa[]
   totalAsignaciones: string
@@ -225,15 +249,11 @@ function salarios(doc: Doc, d: DatosRecibo, y: number): number {
   doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
   doc.line(IZQ, y, DER, y)
 
-  // Con «solo lo pactado» el normal y el integral no sirven para nada —son medidas
-  // de ley— y, con comisión, saldrían por encima del básico: se pinta solo el diario.
-  const campos: [string, string][] = d.soloLoPactado
-    ? [['Salario diario', cifra(d.salarioBasicoDiario)]]
-    : [
-        ['Salario básico diario', cifra(d.salarioBasicoDiario)],
-        ['Salario normal diario', cifra(d.salarioNormalDiario)],
-        ['Salario integral diario', cifra(d.salarioIntegralDiario)],
-      ]
+  // Solo los salarios que usaron los conceptos de ley de la quincena.
+  const s = salariosDelRecibo(d.conceptosDeLey)
+  const campos: [string, string][] = [[s.basico, cifra(d.salarioBasicoDiario)]]
+  if (s.normal) campos.push(['Salario normal diario', cifra(d.salarioNormalDiario)])
+  if (s.integral) campos.push(['Salario integral diario', cifra(d.salarioIntegralDiario)])
 
   const ancho = (DER - IZQ) / 3
   for (const [i, [clave, valor]] of campos.entries()) {

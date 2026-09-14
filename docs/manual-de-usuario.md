@@ -3860,7 +3860,7 @@ Hay una idea que conviene entender antes de tocar nada, porque explica casi todo
 
 La segunda idea es de la que depende que este módulo no te cueste dinero: **un período se abre, se calcula, se aprueba y se paga, en ese orden y en tres manos distintas.** Hasta el momento de pagar, todo se puede rehacer. Después de pagar, nada. Esa frontera está explicada con detalle en 11.2 y en 11.11, y es lo primero que hay que aprenderse de este capítulo.
 
-> **Qué calcula la nómina lo decide el interruptor Conceptos de ley**, en Parámetros de nómina (ver 11.9). **Encendido**, la nómina calcula todo lo que cuenta este capítulo. **Apagado**, calcula solo lo pactado: el recibo lleva el sueldo de la ficha, los bonos y descuentos que se cargan a mano y las faltas injustificadas; no lleva el beneficio de alimentación aparte, ni seguro social, régimen de empleo o FAOV, ni aportes del patrono, ni lo que se aparta para prestaciones; no calcula recargos de horas extra, nocturnas, feriados ni descansos, y las prestaciones sociales quedan deshabilitadas. Apagarlo no borra nada: al encenderlo vuelve el cálculo completo.
+> **Qué calcula la nómina lo deciden los interruptores de los conceptos de ley**, en Parámetros de nómina (ver 11.9). Lo pactado se calcula siempre: el sueldo de la ficha, los bonos y descuentos que se cargan a mano y las faltas injustificadas. Encima, cada concepto de ley se calcula solo si está encendido: el beneficio de alimentación aparte; el seguro social, el paro forzoso y el FAOV, cada uno con su retención y el aporte del patrono; los recargos de horas extra, nocturnas, feriados y descansos, y las prestaciones sociales, que apagadas quedan deshabilitadas. Con todos encendidos, la nómina calcula todo lo que cuenta este capítulo. Apagar uno no borra nada: al encenderlo vuelve su cálculo.
 
 ### 11.1 Quién entra y quién puede hacer qué
 
@@ -4391,7 +4391,7 @@ Si no eliges ninguno, la pantalla dice **Elige un período** y *"Las novedades s
 
 Si el período ya no admite cambios, el aviso es claro: *"Este período está en «{estado}» y ya no admite cambios. Lo que se ve es lo que se usó para calcular."* En ese caso todas las casillas quedan apagadas y desaparecen los botones. No es una falla: los recibos ya están emitidos con esos números y cambiarlos ahora dejaría el papel diciendo una cosa y el sistema otra.
 
-**Con la nómina en solo lo pactado** la tabla se titula **Bonos y descuentos** y no trae las columnas de horas ni de recargos: *"Esta quincena calcula solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas del calendario. Las horas extra y los recargos no se cargan; lo que haya que pagar de más va como bono."* Las faltas se siguen marcando en el calendario de arriba, y cada trabajador sigue teniendo su enlace **Bono o descuento**.
+**Con los recargos apagados en los conceptos de ley** la tabla se titula **Bonos y descuentos** y no trae las columnas de horas ni de recargos: *"Esta quincena no calcula recargos: las horas extra, nocturnas, feriados y descansos no se cargan, y lo que haya que pagar de más va como bono. Las faltas se marcan en el calendario."* Las faltas se siguen marcando en el calendario de arriba, y cada trabajador sigue teniendo su enlace **Bono o descuento**. Mientras la quincena se puede recalcular manda lo que rige hoy; ya aprobada, lo que se usó al calcularla.
 
 La tabla se titula **Personal activo**, con el subtítulo *"Se guarda por trabajador. Lo que no se toca queda en cero."* Sus columnas:
 
@@ -4478,7 +4478,9 @@ En un período anulado no sale ningún botón.
 4. Escribe la **Descripción**, si quieres. Es el nombre con el que lo vas a reconocer después.
 5. Pulsa **Abrir**.
 
-Dos cosas que hay que saber antes de pulsar:
+Tres cosas que hay que saber antes de pulsar:
+
+**El período trae los conceptos de ley que rijan el día que cierra.** No se eligen en esta ventana: los deciden los interruptores de **Parámetros de nómina** (ver 11.9). Con las fechas puestas, la ventana lo dice: *"Además de lo pactado, este período calculará: …"*, o *"Este período calculará solo lo pactado…"* si no hay ninguno encendido. Se guardan al calcular el período, y desde ese momento esos recibos quedan con sus conceptos aunque los interruptores se muevan después.
 
 **La tasa se congela al abrir el período, no al pagar.** La propia ventana lo dice: *"La tasa del BCV se congela al abrirlo: si se moviera, el mismo recibo valdría distinto cada vez."* Todo lo que se calcule en ese período usa esa tasa: los montos en dólares de las novedades, y el equivalente en dólares que sale en los recibos.
 
@@ -4595,7 +4597,7 @@ Los dos últimos bloques son los que más confusión generan cuando alguien lee 
 
 El bloque **Se aparta para prestaciones** dice lo que se apartó **en ese período**. Lo que la persona lleva acumulado en total, con sus intereses y sus adelantos, está en **Nómina › Prestaciones y parámetros › Prestaciones sociales**, explicado en 11.10. Son la misma cosa vista en dos sitios: el recibo enseña el aporte de esa quincena, la otra pantalla enseña la cuenta completa.
 
-**Con la nómina en solo lo pactado el detalle es más corto.** Arriba, una sola cifra: **Salario diario**. Debajo, solo **Lo que se gana** y **Lo que se descuenta**: esa quincena no calcula beneficio de alimentación aparte, retenciones de ley, aportes del patrono ni lo que se aparta para prestaciones, así que esos bloques no aparecen. El papel impreso sigue la misma regla.
+**El detalle enseña solo lo que la quincena calculó.** Los bloques sin líneas no aparecen: sin seguro social, paro forzoso ni FAOV no hay **Aportes del patrono**, y sin prestaciones no hay **Se aparta para prestaciones**. Los salarios de arriba siguen la misma idea: el **Salario normal diario** sale si se calculó el seguro social, el paro forzoso, el FAOV o las prestaciones, y el **Salario integral diario**, si se calculó el FAOV o las prestaciones. Si no se calculó ninguno de ellos ni el beneficio de alimentación aparte, queda una sola cifra: **Salario diario**. El papel impreso sigue la misma regla.
 
 #### Imprimir
 
@@ -4603,7 +4605,7 @@ Pulsa **Imprimir recibo** en el detalle, el icono de impresora en la fila, o **I
 
 **Cada recibo sale siempre por duplicado**: **Original — para la empresa** y **Copia — para el trabajador**. Si caben en la misma hoja, van separados por una línea roja punteada con el rótulo **corte aquí**; si no caben, la copia va en su propia hoja.
 
-Cada copia trae el nombre, la cédula, la ficha, el cargo, las fechas y los días pagados; los tres salarios diarios; los cuatro bloques; la franja **NETO A COBRAR**; la declaración **Recibí conforme la cantidad indicada y estoy de acuerdo con los conceptos detallados.**; el renglón **Fecha de recibido:**; y dos firmas, la del trabajador y la de la empresa.
+Cada copia trae el nombre, la cédula, la ficha, el cargo, las fechas y los días pagados; los salarios diarios que correspondan; los bloques que tengan líneas; la franja **NETO A COBRAR**; la declaración **Recibí conforme la cantidad indicada y estoy de acuerdo con los conceptos detallados.**; el renglón **Fecha de recibido:**; y dos firmas, la del trabajador y la de la empresa.
 
 Bajo el neto sale también el equivalente en dólares, con la palabra **referencia** delante. Es intencional: **no es lo que se paga, es lo que valía ese día**.
 
@@ -4640,22 +4642,30 @@ Cada valor se muestra según su unidad: con el símbolo de porcentaje, con **Bs*
 
 **Un valor nuevo no borra el anterior.** La ventana lo explica: *"No sustituye el valor anterior: lo cierra el día antes y empieza uno nuevo."* Y aquí **no hay borrado de ninguna clase**: lo único que se puede hacer es cargar una vigencia nueva.
 
-#### El interruptor de los conceptos de ley
+#### Los interruptores de los conceptos de ley
 
-Arriba de la lista hay un interruptor, **Conceptos de ley**, que decide qué calcula la nómina.
+Arriba de la lista está la tarjeta **Conceptos de ley**, con un interruptor por concepto. Lo pactado se calcula siempre: el sueldo de la ficha, los bonos y descuentos y las faltas. Cada interruptor decide si, encima, la nómina calcula ese concepto:
 
-- **Apagado**: la nómina calcula solo lo pactado. El recibo lleva el sueldo de la ficha, los bonos y descuentos cargados a mano y las faltas injustificadas; no calcula beneficio de alimentación aparte, retenciones de ley, aportes, recargos ni prestaciones, y la pantalla de prestaciones queda deshabilitada.
-- **Encendido**: el cálculo completo que describe el resto de este capítulo, con los parámetros de esta pantalla.
+| Interruptor | Qué calcula encendido |
+| --- | --- |
+| **Cestaticket aparte** | El beneficio de alimentación, en su propia línea del recibo |
+| **Seguro social (IVSS)** | La retención al trabajador y el aporte del patrono |
+| **Paro forzoso (RPE)** | La retención al trabajador y el aporte del patrono |
+| **Vivienda (FAOV)** | La retención al trabajador y el aporte del patrono, sobre el salario integral |
+| **Recargos** | Horas extra, bono nocturno, feriados y descansos trabajados, que se cargan en las novedades |
+| **Prestaciones sociales** | Lo que se aparta en cada recibo, y la pantalla de prestaciones; apagadas, esa pantalla queda deshabilitada |
 
-**Solo lo mueve gerencia general**, y administración. Al pulsarlo se abre una ventana que pide **Desde**: propone el día siguiente al cierre de la última quincena calculada, y se puede cambiar. No se teclea nada más. Si ya hay un cambio programado para más adelante, lo dice debajo del interruptor.
+**El sueldo de la ficha sigue siendo lo que la persona recibe**: el cestaticket y las retenciones que estén encendidos salen de él, no se suman encima. Los recargos sí se suman, porque pagan horas de más.
+
+**Solo los mueve gerencia general**, y administración. Los interruptores enseñan lo que rige hoy, y moverlos no guarda nada: debajo aparece qué cambia —*"Desde ese día se enciende…"*, *"…y se apaga…"*— y el campo **Desde**, que propone el día siguiente al cierre de la última quincena calculada y se puede cambiar. **Guardar** lo deja escrito; **Descartar** los devuelve a como estaban.
 
 Lo que conviene saber:
 
-- **Cada quincena se calcula con lo que rija el día en que cierra, y guarda con qué se calculó.** Mover el interruptor no cambia cómo se ven las quincenas ya calculadas.
-- **No se puede poner una fecha dentro de una quincena ya aprobada o pagada**, ni por delante de un cambio ya programado: la ventana lo dice.
-- **Si una quincena calculada y sin aprobar queda del otro lado del cambio**, Procesar nómina avisa *"Los conceptos de ley se encendieron después de calcular esta quincena. Vuelve a calcularla antes de aprobarla."*, y el sistema no deja aprobarla hasta recalcularla.
-- **Antes de encenderlo, revisa los parámetros de ley**: el salario mínimo o el cestaticket pueden haber cambiado mientras estuvo apagado.
-- El régimen **no aparece en la lista de parámetros**, y desde ella no se puede corregir, cerrar ni eliminar.
+- **Cada quincena se calcula con lo que rija el día en que cierra, y guarda con qué se calculó.** Mover un interruptor no cambia cómo se ven las quincenas ya calculadas.
+- **No se puede poner una fecha dentro de una quincena ya aprobada o pagada**, ni por delante de un cambio ya programado. Si hay uno programado, lo dice debajo de los interruptores.
+- **Si una quincena calculada y sin aprobar queda del otro lado del cambio**, Procesar nómina dice qué se encendió o se apagó después de calcularla y pide *"Vuelve a calcularla antes de aprobarla."*; el sistema no deja aprobarla hasta recalcularla.
+- **Antes de encender un concepto, revisa sus parámetros**: el salario mínimo o el cestaticket pueden haber cambiado mientras estuvo apagado. La tarjeta lo recuerda.
+- Los conceptos de ley **no aparecen en la lista de parámetros**, y desde ella no se pueden corregir, cerrar ni eliminar.
 
 #### Quién firma los recibos y las constancias
 
@@ -4671,7 +4681,7 @@ Hay un detalle que conviene conocer: **el sistema trata el texto «Por definir»
 
 Es la cuenta de lo que la empresa le debe a cada trabajador por el tiempo que lleva trabajando aquí. La pantalla lo dice en una línea: *"Lo que la empresa le debe a cada quien por el tiempo trabajado."*
 
-> **Con la nómina en solo lo pactado, esta pantalla está deshabilitada.** En lugar de la lista dice **Las prestaciones sociales están deshabilitadas** y cómo se vuelven a habilitar, y el sistema se niega a liquidar, cerrar trimestre, calcular intereses o adelantar. Lo que hubiera guardado no se borra.
+> **Con las prestaciones apagadas en los conceptos de ley, esta pantalla está deshabilitada.** En lugar de la lista dice **Las prestaciones sociales están deshabilitadas** y cómo se vuelven a habilitar, y el sistema se niega a liquidar, cerrar trimestre, calcular intereses o adelantar. Lo que hubiera guardado no se borra.
 
 Esta cuenta se lleva dentro del sistema, no en una hoja aparte, y se lleva separada de la nómina de la quincena. La razón es que no es dinero que se pague ahora: se acumula a favor del trabajador y solo sale de la empresa en dos momentos, cuando se le adelanta una parte y cuando se le liquida.
 
