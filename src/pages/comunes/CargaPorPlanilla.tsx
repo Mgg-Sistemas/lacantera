@@ -64,6 +64,19 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
   const [informe, setInforme] = useState<InformeDeCarga | null>(null)
   const [errorLectura, setErrorLectura] = useState<string | null>(null)
   const [avisos, setAvisos] = useState<string | null>(null)
+  /*
+    LOS COSTOS RAROS SE MIRAN ANTES DE CONFIRMAR.
+
+    La planilla carga sus renglones con `confirmado: true`: la revisión fila por
+    fila hace de confirmación, que es lo que en el formulario hace la casilla de
+    cada renglón. Pero la revisión no enseñaba los costos, así que un artículo
+    nuevo podía entrar a un precio disparatado sin que nadie lo mirara — el
+    escenario de los cinco aceites del 5 de septiembre, por la vía de lote.
+
+    La base ahora marca esas filas y dice cuántas son. Aquí no se deja cargar sin
+    que alguien diga que las miró.
+  */
+  const [costosRevisados, setCostosRevisados] = useState(false)
   const [cargado, setCargado] = useState<InformeDeCarga | null>(null)
 
   const entrada = useRef<HTMLInputElement>(null)
@@ -197,6 +210,8 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
       setFilas(limpias)
       // Se revisa sola al soltar el archivo. Obligar a pulsar «Revisar» sería
       // un paso más para llegar al mismo sitio.
+      // Un informe nuevo trae otros costos: lo marcado sobre el anterior no vale.
+      setCostosRevisados(false)
       setInforme(await p.revisar.mutateAsync(limpias))
     } catch (e) {
       setFilas(null)
@@ -311,10 +326,39 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                   <Chip tone="neutral">{informe.total} filas en total</Chip>
                 </div>
 
+                {(informe.avisos_de_costo ?? 0) > 0 && informe.errores === 0 ? (
+                  <label
+                    className={`mt-4 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm ${
+                      costosRevisados ? 'border-hairline' : 'border-warning/30 bg-warning-soft'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                      checked={costosRevisados}
+                      onChange={(e) => setCostosRevisados(e.target.checked)}
+                    />
+                    <span className="text-ink/80">
+                      {informe.avisos_de_costo === 1
+                        ? 'Revisé el costo marcado abajo'
+                        : `Revisé los ${informe.avisos_de_costo} costos marcados abajo`}
+                      <span className="text-ink/50 mt-0.5 block text-xs">
+                        Lo que entra por primera vez pasa a ser la referencia de todo lo que
+                        venga después, y un cero de más no lo corrige nadie. Compruébalos con
+                        la factura antes de cargar.
+                      </span>
+                    </span>
+                  </label>
+                ) : null}
+
                 <div className="mt-4 flex flex-wrap gap-2 pb-4">
                   <Button
                     icon={<Check />}
-                    disabled={ocupado || informe.errores > 0}
+                    disabled={
+                      ocupado ||
+                      informe.errores > 0 ||
+                      ((informe.avisos_de_costo ?? 0) > 0 && !costosRevisados)
+                    }
                     onClick={() => void confirmar()}
                   >
                     {informe.errores > 0
