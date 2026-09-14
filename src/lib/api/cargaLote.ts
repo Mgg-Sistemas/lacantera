@@ -40,6 +40,15 @@ export interface InformeDeCarga {
   actualizados: number
   errores: number
   aplicado: boolean
+  /**
+   * Cuántas filas traen un costo que hay que mirar antes de confirmar: primera
+   * vez que entra a ese almacén, o diez veces fuera de lo que viene costando.
+   *
+   * Solo lo devuelve la planilla de artículos. Al cargar, la base mete esos
+   * renglones con `confirmado: true` porque la revisión ES la confirmación; así
+   * que la pantalla no deja confirmar sin que alguien diga que los miró.
+   */
+  avisos_de_costo?: number
   filas: FilaRevisada[]
 }
 

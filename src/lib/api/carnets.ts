@@ -163,24 +163,33 @@ export async function verificarCarnet(codigo: string): Promise<CarnetVerificado>
 /**
  * Dónde vive la página que verifica. NO se adivina.
  *
- * ESTO YA SALIÓ MAL UNA VEZ Y POR ESO ESTÁ ESCRITO ASÍ.
+ * ESTO YA SALIÓ MAL DOS VECES Y POR ESO ESTÁ ESCRITO ASÍ.
  *
- * Escribí una muestra del QR poniendo `lacantera.vercel.app` de ejemplo, dando
- * por hecho que sería el dominio. Existe, y es de otra empresa: al escanearla
- * se llegaba a la aplicación de un desconocido. El dominio de verdad es
- * `lacantera-omega.vercel.app` —comprobado pidiéndole `/version.json`, que
- * devuelve el commit que se publicó hoy—.
+ * La primera, escribí una muestra del QR poniendo `lacantera.vercel.app` de
+ * ejemplo, dando por hecho que sería el dominio. Existe, y es de otra empresa:
+ * al escanearla se llegaba a la aplicación de un desconocido.
+ *
+ * La segunda, esta constante siguió diciendo `lacantera-omega.vercel.app`
+ * después del 4 de septiembre de 2026, cuando la producción pasó al droplet con
+ * el dominio propio y Vercel quedó para pruebas. El servidor compila sin
+ * `VITE_URL_PUBLICA` —su `lacantera.env` solo trae las dos de Supabase—, así que
+ * todo carnet que se imprimió desde el dominio grabó la dirección de pruebas.
+ * Esos QR abren mientras Vercel siga publicando, porque la página verifica
+ * contra la misma base; el día que no, dejan de abrir. Reimprimirlos da el mismo
+ * código con la dirección buena: el QR se arma al imprimir desde aquí, no se guarda.
  *
  * Un QR impreso no se corrige: lo que se grabó en el plástico apunta ahí para
  * siempre. Así que la dirección sale de una constante y no de dónde esté abierta
- * la aplicación: un carnet emitido por descuido desde un despliegue de prueba
- * habría quedado apuntando a una dirección temporal que un día deja de existir.
+ * la aplicación: un carnet impreso desde un despliegue de prueba tiene que
+ * apuntar igual a producción. Comprobado el 14-sep que el dominio sirve
+ * `/version.json` y la página `/v/<código>`.
  *
- * `VITE_URL_PUBLICA` la sobreescribe, para el día que la empresa ponga su
- * dominio propio. Se cambia AHÍ y no aquí.
+ * `VITE_URL_PUBLICA` la sobreescribe si algún día hiciera falta otra. Hoy no está
+ * puesta en ningún entorno que se conozca, y así conviene: dos sitios que dicen
+ * la dirección son dos sitios que se pueden contradecir.
  */
 export const URL_PUBLICA = (
-  (import.meta.env.VITE_URL_PUBLICA as string | undefined) ?? 'https://lacantera-omega.vercel.app'
+  (import.meta.env.VITE_URL_PUBLICA as string | undefined) ?? 'https://mineriainternacionalts.com'
 ).replace(/\/+$/, '')
 
 export function urlDeVerificacion(codigo: string): string {
