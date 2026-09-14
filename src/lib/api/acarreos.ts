@@ -212,17 +212,29 @@ export function useEquiposEnOperacion(fecha: string) {
   })
 }
 
-/** El registro de pago de un mes. `mes` en formato AAAA-MM. */
-export function usePagoDeAcarreos(mes: string) {
+/**
+ * Lo que se le debe a cada transportista, día por día, entre dos fechas.
+ *
+ * Las dos fechas entran: un solo día es `desde === hasta`.
+ *
+ * EL ACUMULADO DE LA VISTA NO SIRVE PARA UN RANGO. La vista lo suma desde el
+ * primero del mes, así que en un rango que empieza el 15 arrastraría la
+ * primera quincena, y en uno que cruza de mes se reiniciaría a mitad. La
+ * pantalla lo recalcula dentro del rango pedido. `acumulado_usd` sigue en el
+ * tipo porque la vista lo trae, no para usarlo aquí.
+ */
+export function usePagoDeAcarreosEntre(desde: string, hasta: string) {
+  const esFecha = /^\d{4}-\d{2}-\d{2}$/
   return useQuery({
-    queryKey: ['acarreos', 'pago', mes],
-    enabled: /^\d{4}-\d{2}$/.test(mes),
+    queryKey: ['acarreos', 'pago', desde, hasta],
+    enabled: esFecha.test(desde) && esFecha.test(hasta) && desde <= hasta,
     queryFn: async () =>
       desenvolver<PagoDeAcarreo[]>(
         await supabase
           .from('v_acarreo_pago_mensual')
           .select('*')
-          .eq('mes', `${mes}-01`)
+          .gte('fecha', desde)
+          .lte('fecha', hasta)
           .order('transportista')
           .order('fecha'),
       ),

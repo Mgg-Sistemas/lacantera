@@ -36,7 +36,7 @@ import {
   useEquiposEnOperacion,
   useCorregirAcarreo,
   useFijarTarifaAcarreo,
-  usePagoDeAcarreos,
+  usePagoDeAcarreosEntre,
   useRegistrarAcarreos,
   useTarifasAcarreo,
   type Acarreo,
@@ -873,58 +873,133 @@ function CambiarTarifa({ onCerrar }: { onCerrar: () => void }) {
 
 /* ════════════════════════════════════════════════════ el registro de pago */
 
+const esFecha = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v)
+
+/** Suma días a una fecha AAAA-MM-DD sin pasar por la zona horaria del navegador. */
+function sumarDias(iso: string, dias: number): string {
+  const d = new Date(`${iso}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + dias)
+  return d.toISOString().slice(0, 10)
+}
+
+interface Periodo {
+  desde: string
+  hasta: string
+}
+
+/**
+ * Los atajos de fecha, calculados desde hoy en Caracas.
+ *
+ * Son los que se piden de verdad: el día para pagarle a un transportista, la
+ * semana y el mes para cuadrar. Cualquier otro rango se escribe a mano.
+ */
+function atajos(hoy: string): Array<{ id: string; etiqueta: string; periodo: Periodo }> {
+  const deLunes = (new Date(`${hoy}T12:00:00Z`).getUTCDay() + 6) % 7
+  const primeroDelMes = `${hoy.slice(0, 8)}01`
+  const finDelMesPasado = sumarDias(primeroDelMes, -1)
+  const ayer = sumarDias(hoy, -1)
+
+  return [
+    { id: 'hoy', etiqueta: 'Hoy', periodo: { desde: hoy, hasta: hoy } },
+    { id: 'ayer', etiqueta: 'Ayer', periodo: { desde: ayer, hasta: ayer } },
+    {
+      id: 'semana',
+      etiqueta: 'Esta semana',
+      periodo: { desde: sumarDias(hoy, -deLunes), hasta: hoy },
+    },
+    { id: 'mes', etiqueta: 'Este mes', periodo: { desde: primeroDelMes, hasta: hoy } },
+    {
+      id: 'mes-pasado',
+      etiqueta: 'Mes pasado',
+      periodo: { desde: `${finDelMesPasado.slice(0, 8)}01`, hasta: finDelMesPasado },
+    },
+  ]
+}
+
+/*
+  UN DÍA O UN RANGO, Y NO «MES» CON «VER»
+
+  Antes se elegía el mes y dentro de él un día de los que tenían viajes. Eso
+  no dejaba ver del 25 al 5, ni una quincena, ni dos meses seguidos. Ahora se
+  elige lo que se quiere mirar: un día, o un rango con sus dos fechas. El mes
+  sigue a un clic en los atajos.
+
+  Los dos modos no son el mismo papel recortado. El día es lo que se le
+  entrega a un transportista y dice solo cuánto se le debe. El rango es para
+  cuadrar: la matriz de días con el acumulado de cada empresa dentro de esas
+  fechas.
+*/
 function PestanaPago() {
-  const [mes, setMes] = useState(hoyEnCaracas().slice(0, 7))
-  /* Vacíos quieren decir «todo»: el mes entero y todas las empresas. */
-  const [diaPedido, setDiaPedido] = useState('')
+  const hoy = hoyEnCaracas()
+  const [modo, setModo] = useState<'dia' | 'rango'>('rango')
+  const [dia, setDia] = useState(hoy)
+  const [desde, setDesde] = useState(`${hoy.slice(0, 8)}01`)
+  const [hasta, setHasta] = useState(hoy)
+  /* Vacía quiere decir «todas». */
   const [empresaPedida, setEmpresaPedida] = useState('')
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
-  const pago = usePagoDeAcarreos(mes)
   const { data: laEmpresa } = useEmpresa()
   const { nombre: yo } = useSesion()
 
+  const porDia = modo === 'dia'
+  const periodo: Periodo = porDia ? { desde: dia, hasta: dia } : { desde, hasta }
+  const periodoValido =
+    esFecha(periodo.desde) && esFecha(periodo.hasta) && periodo.desde <= periodo.hasta
+
+  const pago = usePagoDeAcarreosEntre(periodo.desde, periodo.hasta)
+
+  const elegir = (p: Periodo) => {
+    if (p.desde === p.hasta) {
+      setModo('dia')
+      setDia(p.desde)
+    } else {
+      setModo('rango')
+      setDesde(p.desde)
+      setHasta(p.hasta)
+    }
+  }
+
   const todas = pago.data ?? []
-  const empresasDelMes = [...new Set(todas.map((f) => f.transportista))].sort()
-  const diasDelMes = [...new Set(todas.map((f) => f.fecha))].sort()
+  const empresasDelPeriodo = [...new Set(todas.map((f) => f.transportista))].sort()
 
-  /* Al cambiar de mes, el día y la empresa elegidos pueden no existir allí.
+  /* Al cambiar de fechas, la empresa elegida puede no tener viajes en ellas.
      En vez de enseñar una tabla vacía sin explicación, el filtro se suelta. */
-  const dia = diasDelMes.includes(diaPedido) ? diaPedido : ''
-  const empresa = empresasDelMes.includes(empresaPedida) ? empresaPedida : ''
-  const porDia = dia !== ''
+  const empresa = empresasDelPeriodo.includes(empresaPedida) ? empresaPedida : ''
 
-  const filas = todas.filter(
-    (f) => (dia === '' || f.fecha === dia) && (empresa === '' || f.transportista === empresa),
-  )
+  const filas = todas.filter((f) => empresa === '' || f.transportista === empresa)
+
+  /* El acumulado se calcula aquí, dentro del período, y no se toma de la
+     vista: el de la vista cuenta desde el primero del mes. Las filas llegan
+     ordenadas por empresa y fecha, así que basta con ir sumando. */
+  const corrido = new Map<string, number>()
+  const conAcumulado = filas.map((f) => {
+    if (f.monto_usd === null) return { ...f, acumulado: null as string | null }
+    const suma = (corrido.get(f.transportista) ?? 0) + Number(f.monto_usd)
+    corrido.set(f.transportista, suma)
+    return { ...f, acumulado: String(suma) }
+  })
 
   const empresas = [...new Set(filas.map((f) => f.transportista))].sort()
-  // Las columnas de la matriz son los días del mes, los tenga esta empresa o no.
-  const dias = diasDelMes
+  // Las columnas de la matriz son los días que tienen viajes dentro del período.
+  const dias = [...new Set(todas.map((f) => f.fecha))].sort()
 
-  const totalFilas = filas.every((f) => f.monto_usd === null)
-    ? null
-    : String(filas.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0))
+  const sumaDinero = (lista: typeof filas) =>
+    lista.every((f) => f.monto_usd === null)
+      ? null
+      : String(lista.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0))
 
-  const enCruce = (empresa: string, dia: string) =>
-    filas.find((f) => f.transportista === empresa && f.fecha === dia)
+  const totalFilas = sumaDinero(filas)
 
-  const acumulado = (empresa: string) => {
-    const suyas = filas.filter((f) => f.transportista === empresa)
-    if (suyas.every((f) => f.monto_usd === null)) return null
-    return String(suyas.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0))
-  }
-
-  const totalDia = (dia: string) => {
-    const suyas = filas.filter((f) => f.fecha === dia)
-    if (suyas.every((f) => f.monto_usd === null)) return null
-    return String(suyas.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0))
-  }
+  const enCruce = (e: string, d: string) =>
+    filas.find((f) => f.transportista === e && f.fecha === d)
 
   const imprimir = async () => {
-    const papel = { empresa_papel: empresaDelPapel(laEmpresa), emitidoPor: yo ?? '', momento: new Date() }
+    const papel = {
+      empresa_papel: empresaDelPapel(laEmpresa),
+      emitidoPor: yo ?? '',
+      momento: new Date(),
+    }
 
-    /* Dos papeles distintos, no uno recortado: el del día es el que se le
-       entrega al transportista y dice solo cuánto se le debe por hoy. */
     if (porDia) {
       setPdf(
         await armarPagoDelDia({
@@ -944,14 +1019,16 @@ function PestanaPago() {
 
     setPdf(
       await armarRegistroDePago({
-        mes,
-        lineas: filas.map((f) => ({
+        desde,
+        hasta,
+        empresa: empresa === '' ? null : empresa,
+        lineas: conAcumulado.map((f) => ({
           transportista: f.transportista,
           fecha: f.fecha,
           viajes: f.viajes,
           m3: f.m3,
           monto_usd: f.monto_usd,
-          acumulado_usd: f.acumulado_usd,
+          acumulado_usd: f.acumulado,
         })),
         ...papel,
       }),
@@ -959,8 +1036,7 @@ function PestanaPago() {
   }
 
   /* El CSV sale con los montos crudos, sin formatear: así la hoja de cálculo
-     los lee como números y el acumulado se puede recalcular allí. Es el
-     archivo que reproduce la matriz tal como la llevan hoy. */
+     los lee como números y el acumulado se puede recalcular allí. */
   const exportar = () => {
     if (porDia) {
       descargarCsv(
@@ -972,48 +1048,98 @@ function PestanaPago() {
     }
 
     descargarCsv(
-      `pago-viajes-${mes}.csv`,
+      `pago-viajes-${desde}_a_${hasta}.csv`,
       ['Empresa', 'Fecha', 'Viajes', 'Metros cubicos', 'Monto USD', 'Acumulado USD'],
-      filas.map((f) => [
+      conAcumulado.map((f) => [
         f.transportista,
         f.fecha,
         f.viajes,
         f.m3 ?? '',
         f.monto_usd ?? '',
-        f.acumulado_usd ?? '',
+        f.acumulado ?? '',
       ]),
     )
   }
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <Input
-          label="Mes"
-          type="month"
-          value={mes}
-          onChange={(e) => setMes(e.target.value)}
-          className="w-48"
-        />
-        {/* Solo se ofrecen los días que tienen viajes: así no se puede pedir
-            un papel vacío ni hay que acordarse de qué días se trabajó. */}
-        <Select
-          label="Ver"
-          value={dia}
-          onChange={(e) => setDiaPedido(e.target.value)}
-          opciones={[
-            { valor: '', etiqueta: 'Todo el mes' },
-            ...diasDelMes.map((d) => ({ valor: d, etiqueta: fmtFecha(d) })),
-          ]}
-          className="w-52"
-        />
+      <div className="mb-3 flex flex-wrap items-end gap-3">
+        <div>
+          <p className="text-ink/75 mb-1.5 text-sm font-medium">Ver</p>
+          <div
+            role="group"
+            aria-label="Qué fechas ver"
+            className="rounded-control border-ink/20 inline-flex h-10 items-center border p-0.5"
+          >
+            {(
+              [
+                ['dia', 'Un día'],
+                ['rango', 'Rango de fechas'],
+              ] as const
+            ).map(([id, etiqueta]) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={modo === id}
+                onClick={() => setModo(id)}
+                className={cn(
+                  'h-full rounded-[5px] px-3 text-sm font-medium whitespace-nowrap transition-colors',
+                  modo === id ? 'bg-royal-600 text-white' : 'text-ink/65 hover:text-ink/90',
+                )}
+              >
+                {etiqueta}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {porDia ? (
+          <Input
+            label="Día"
+            type="date"
+            value={dia}
+            max={hoy}
+            onChange={(e) => setDia(e.target.value)}
+            className="w-48"
+          />
+        ) : (
+          <>
+            {/* Una fecha no puede quedar del lado equivocado de la otra: si
+                se mueve una más allá, la otra la sigue. */}
+            <Input
+              label="Desde"
+              type="date"
+              value={desde}
+              max={hoy}
+              onChange={(e) => {
+                const v = e.target.value
+                setDesde(v)
+                if (esFecha(v) && esFecha(hasta) && v > hasta) setHasta(v)
+              }}
+              className="w-48"
+            />
+            <Input
+              label="Hasta"
+              type="date"
+              value={hasta}
+              max={hoy}
+              onChange={(e) => {
+                const v = e.target.value
+                setHasta(v)
+                if (esFecha(v) && esFecha(desde) && v < desde) setDesde(v)
+              }}
+              className="w-48"
+            />
+          </>
+        )}
+
         <Select
           label="Empresa"
           value={empresa}
           onChange={(e) => setEmpresaPedida(e.target.value)}
           opciones={[
             { valor: '', etiqueta: 'Todas' },
-            ...empresasDelMes.map((x) => ({ valor: x, etiqueta: x })),
+            ...empresasDelPeriodo.map((x) => ({ valor: x, etiqueta: x })),
           ]}
           className="w-56"
         />
@@ -1024,7 +1150,7 @@ function PestanaPago() {
           onClick={() => void imprimir()}
           className="mb-0.5"
         >
-          {porDia ? 'Imprimir el día' : 'Imprimir el mes'}
+          {porDia ? 'Imprimir el día' : 'Imprimir el período'}
         </Button>
         <Button
           variant="outline"
@@ -1033,26 +1159,61 @@ function PestanaPago() {
           onClick={exportar}
           className="mb-0.5"
         >
-          {porDia ? 'Descargar el día' : 'Descargar el mes'}
+          {porDia ? 'Descargar el día' : 'Descargar el período'}
         </Button>
       </div>
 
-      {pago.isPending ? <Cargando /> : null}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-ink/45 text-xs">Atajos</span>
+        {atajos(hoy).map((a) => {
+          const activo = periodo.desde === a.periodo.desde && periodo.hasta === a.periodo.hasta
+          return (
+            <button
+              key={a.id}
+              type="button"
+              aria-pressed={activo}
+              onClick={() => elegir(a.periodo)}
+              className={cn(
+                'rounded-full border px-2.5 py-1 text-xs transition-colors',
+                activo
+                  ? 'border-royal-600 bg-royal-600/10 text-royal-700 dark:text-royal-300'
+                  : 'border-hairline text-ink/65 hover:border-royal-300',
+              )}
+            >
+              {a.etiqueta}
+            </button>
+          )
+        })}
+      </div>
+
+      {!periodoValido ? (
+        <Card>
+          <Vacio
+            icono={<Coins />}
+            titulo={porDia ? 'Elige un día' : 'Elige las dos fechas'}
+            descripcion="Con la fecha completa aparece lo que se le debe a cada empresa."
+          />
+        </Card>
+      ) : null}
+
+      {periodoValido && pago.isLoading ? <Cargando /> : null}
       {pago.error ? <ErrorDeCarga error={pago.error} /> : null}
 
-      {!pago.isPending && !pago.error && filas.length === 0 ? (
+      {periodoValido && !pago.isLoading && !pago.error && filas.length === 0 ? (
         <Card>
           <Vacio
             icono={<Coins />}
             titulo={
               todas.length === 0
-                ? 'Ese mes no tiene viajes registrados'
+                ? porDia
+                  ? 'Ese día no tiene viajes registrados'
+                  : 'Esas fechas no tienen viajes registrados'
                 : 'Con ese filtro no queda nada'
             }
             descripcion={
               todas.length === 0
-                ? 'En cuanto se carguen viajes, esta matriz enseña lo que se le debe a cada empresa por día, con su acumulado.'
-                : 'Esa empresa no hizo viajes el día elegido. Prueba con otro día, o pon la empresa en «Todas».'
+                ? 'Prueba con otras fechas, o carga los viajes en la pestaña «Viajes del día».'
+                : 'Esa empresa no hizo viajes en esas fechas. Prueba con otras, o pon la empresa en «Todas».'
             }
           />
         </Card>
@@ -1135,7 +1296,10 @@ function PestanaPago() {
                       )
                     })}
                     <td className="tabular text-ink/90 px-5 py-3 text-right font-semibold">
-                      <Cifra valor={acumulado(e)} comoDinero />
+                      <Cifra
+                        valor={sumaDinero(filas.filter((f) => f.transportista === e))}
+                        comoDinero
+                      />
                     </td>
                   </tr>
                 ))}
@@ -1146,7 +1310,7 @@ function PestanaPago() {
                       key={d}
                       className="tabular text-ink/85 px-3 py-3 text-right text-sm font-semibold"
                     >
-                      <Cifra valor={totalDia(d)} comoDinero />
+                      <Cifra valor={sumaDinero(filas.filter((f) => f.fecha === d))} comoDinero />
                     </td>
                   ))}
                   <td className="tabular text-ink/90 px-5 py-3 text-right text-sm font-semibold">
