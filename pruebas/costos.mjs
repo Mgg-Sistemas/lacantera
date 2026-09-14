@@ -152,6 +152,117 @@ export default async function pruebaCostos(tx) {
   comprobar(/permiso|no tiene/i.test(sinFondo ?? ''), 'registrar una entrega exige Total')
   await como(tx, c.gerente)
 
-  // Lo que sigue lo llenan las piezas 3 a 5.
+  // ═══════════════════════════════════════════════════════════════════════
+  grupo('Centro de costo · lo que entra se acepta, y el dinero se tapa')
+
+  await comoDueno(tx)
+  const [camion] = await tx`
+    insert into public.vehiculos (placa, tipo, capacidad_m3, carga_util_m3, propio, transportista, activo)
+    values ('PRC001', 'VOLTEO', 16, 14, false, 'TRANSPORTE DE PRUEBA COSTOS', true)
+    returning id`
+  const [propio] = await tx`
+    insert into public.vehiculos (placa, tipo, capacidad_m3, carga_util_m3, propio, activo)
+    values ('PRC002', 'VOLTEO', 16, 14, true, true)
+    returning id`
+  await como(tx, c.gerente)
+  await tx`select public.registrar_acarreos(${c.hoy}, ${camion.id}, 'MINA_PLANTA', 2)`
+  await tx`select public.registrar_acarreos(${c.hoy}, ${propio.id}, 'MINA_PLANTA', 1)`
+
+  const cand = await tx`
+    select * from public.costo_candidatos() where origen = 'ACARREO' order by origen_id`
+  comprobar(cand.length === 3, `tres viajes por aceptar (${cand.length})`)
+  comprobar(
+    cand.filter((x) => x.vehiculo_id === propio.id).every((x) => x.monto === null && Number(x.m3) === 14),
+    'el camion propio trae m3 pero no precio',
+  )
+  comprobar(
+    cand.filter((x) => x.vehiculo_id === camion.id).every((x) => Number(x.monto) === 12),
+    'el de terceros trae el precio del tramo',
+  )
+
+  // Sin la casilla del pago, el precio llega nulo y no se puede aceptar.
+  await como(tx, c.acepta)
+  const tapado = await tx`
+    select monto from public.costo_candidatos() where origen = 'ACARREO' and vehiculo_id = ${camion.id}`
+  comprobar(tapado.every((x) => x.monto === null), 'sin VER_PAGO_VIAJES el precio viene en blanco')
+  const noPuede = await debeFallar(
+    tx,
+    (sp) => sp`select public.costo_aceptar('ACARREO', ${cand[0].origen_id})`,
+  )
+  comprobar(/pago|permiso|no tiene/i.test(noPuede ?? ''), 'y tampoco se puede aceptar')
+
+  await como(tx, c.gerente)
+  const [{ aceptados, saltados }] = await tx`select * from public.costo_aceptar_dia(${c.hoy}, 'ACARREO')`
+  comprobar(aceptados === 3 && saltados === 0, `aceptar el dia copia los tres (${aceptados}/${saltados})`)
+  const quedan = await tx`select 1 from public.costo_candidatos() where origen = 'ACARREO'`
+  comprobar(quedan.length === 0, 'ya no quedan viajes por aceptar')
+
+  const dosVeces = await debeFallar(
+    tx,
+    (sp) => sp`select public.costo_aceptar('ACARREO', ${cand[0].origen_id})`,
+  )
+  comprobar(/ya se decidio/i.test(dosVeces ?? ''), 'el mismo viaje no entra dos veces')
+
+  const corregir = await debeFallar(
+    tx,
+    (sp) => sp`select public.corregir_acarreo(${cand[0].origen_id}, null, null, 99)`,
+  )
+  comprobar(/centro de costo/i.test(corregir ?? ''), 'un viaje aceptado no se corrige: se anula y se carga de nuevo')
+
+  await tx`select public.anular_acarreo(${cand[0].origen_id}, 'Se cargo de mas en la prueba')`
+  const rev = await tx`select * from public.costo_reversos_pendientes()`
+  comprobar(rev.length === 1, 'el anulado aparece en reversos pendientes')
+  await tx`select public.costo_reversar(${rev[0].movimiento_id}, 'Viaje anulado')`
+  const otraVez = await debeFallar(
+    tx,
+    (sp) => sp`select public.costo_reversar(${rev[0].movimiento_id}, 'otra vez')`,
+  )
+  comprobar(/ya tiene reverso/i.test(otraVez ?? ''), 'no se reversa dos veces')
+  const [elReverso] = await tx`
+    select id from public.costo_movimientos where reversa_a = ${rev[0].movimiento_id}`
+  const reversoDeReverso = await debeFallar(
+    tx,
+    (sp) => sp`select public.costo_reversar(${elReverso.id}, 'de nuevo')`,
+  )
+  comprobar(/no se reversa/i.test(reversoDeReverso ?? ''), 'ni se reversa un reverso')
+
+  // ── Rechazar y deshacer ─────────────────────────────────────────────────
+  await tx`select public.registrar_acarreos(${c.hoy}, ${camion.id}, 'PLANTA_LAVADO', 1)`
+  const [nuevo] = await tx`select origen_id from public.costo_candidatos() where origen = 'ACARREO'`
+  const cortoMotivo = await debeFallar(
+    tx,
+    (sp) => sp`select public.costo_rechazar('ACARREO', ${nuevo.origen_id}, 'no')`,
+  )
+  comprobar(/por que/i.test(cortoMotivo ?? ''), 'rechazar pide motivo')
+  const [{ costo_rechazar: decId }] = await tx`
+    select public.costo_rechazar('ACARREO', ${nuevo.origen_id}, 'Viaje repetido')`
+  const fuera = await tx`select 1 from public.costo_candidatos() where origen = 'ACARREO'`
+  comprobar(fuera.length === 0, 'el rechazado sale de la cola')
+
+  await como(tx, c.acepta)
+  const sinTotal2 = await debeFallar(tx, (sp) => sp`select public.costo_deshacer_rechazo(${decId})`)
+  comprobar(/permiso|no tiene/i.test(sinTotal2 ?? ''), 'deshacer un rechazo exige Total')
+  await como(tx, c.gerente)
+  await tx`select public.costo_deshacer_rechazo(${decId})`
+  const vuelve = await tx`
+    select 1 from public.costo_candidatos() where origen = 'ACARREO' and origen_id = ${nuevo.origen_id}`
+  comprobar(vuelve.length === 1, 'deshecho el rechazo, vuelve a estar por aceptar')
+
+  // ── Gasto fijo: aparece por aceptar y se acepta con otro monto ──────────
+  await tx`select public.costo_guardar_gasto_fijo(null, 'Energia de planta', 'USD', 300, 'SERVICIOS')`
+  const [fijo] = await tx`select * from public.costo_candidatos() where origen = 'FIJO'`
+  comprobar(Number(fijo?.monto) === 300, 'el gasto fijo aparece por aceptar con su monto')
+  await tx`select public.costo_aceptar('FIJO', ${fijo.origen_id}, 280, 'Este mes fue menos')`
+  const [fijoLibro] = await tx`
+    select monto_usd, categoria from public.costo_movimientos
+     where origen = 'FIJO' and caja_id = ${c.caja1}`
+  comprobar(
+    Number(fijoLibro.monto_usd) === 280 && fijoLibro.categoria === 'SERVICIOS',
+    'y entra con el monto que se dijo al aceptar y su categoria',
+  )
+
+  c.camion = camion.id
+
+  // Lo que sigue lo llenan las piezas 4 y 5.
   globalThis.__costos = c
 }
