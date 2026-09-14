@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dinero, fecha } from '@/lib/formato'
 import { hoyEnCaracas } from '@/lib/api/tasas'
+import { soloLoPactadoEn, useParametros } from '@/lib/api/nomina'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useCuentas } from '@/lib/api/tesoreria'
 import {
@@ -61,6 +62,7 @@ export function Prestaciones() {
   const calcularLiquidacion = useCalcularLiquidacion()
   const pagarLiquidacion = usePagarLiquidacion()
   const { puede } = useMisPermisos()
+  const { data: parametros } = useParametros()
 
   const [detalleId, setDetalleId] = useState<number | null>(null)
   const [corte, setCorte] = useState<Prestacion | null>(null)
@@ -111,6 +113,36 @@ export function Prestaciones() {
 
   const totalDebido = porMoneda((p) => Number(p.saldo))
   const totalAnticipos = porMoneda((p) => Number(p.anticipos) + Number(p.corte_anticipos))
+
+  /*
+    DESHABILITADAS, NO BORRADAS.
+
+    Con la nómina en «solo lo pactado» (`regimen_nomina`) no se liquida, no se
+    cierra trimestre, no se calculan intereses ni se adelanta: la base se niega a
+    las cuatro cosas. Aquí se dice por qué, en vez de enseñar botones que
+    fallarían. Lo que hubiera guardado sigue en la base, intacto, y vuelve a verse
+    el día que el régimen sea DE LEY.
+  */
+  if (parametros && soloLoPactadoEn(parametros, hoy)) {
+    return (
+      <>
+        <PageHeader
+          title="Prestaciones sociales"
+          description="Lo que la empresa le debe a cada quien por el tiempo trabajado."
+        />
+
+        <Pestanas pestanas={PESTANAS_REGLAS} />
+
+        <Card>
+          <Vacio
+            icono={<PiggyBank />}
+            titulo="Las prestaciones sociales están deshabilitadas"
+            descripcion="La nómina calcula solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas. Se vuelven a habilitar cargando el régimen DE LEY en Parámetros de nómina, desde la fecha que corresponda."
+          />
+        </Card>
+      </>
+    )
+  }
 
   return (
     <>
