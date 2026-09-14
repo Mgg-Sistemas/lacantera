@@ -263,6 +263,80 @@ export default async function pruebaCostos(tx) {
 
   c.camion = camion.id
 
-  // Lo que sigue lo llenan las piezas 4 y 5.
+  // ═══════════════════════════════════════════════════════════════════════
+  grupo('Centro de costo · el cierre congela')
+
+  await como(tx, c.gerente)
+  const [{ costo_resumen_caja: r }] = await tx`select public.costo_resumen_caja()`
+  comprobar(
+    Number(r.costo_usd) > 0 && Number(r.m3_mina) > 0,
+    `el resumen suma costo (${r.costo_usd}) y m3 de mina (${r.m3_mina})`,
+  )
+  comprobar(r.costo_por_m3 === null, 'sin m3 de planta el costo por m3 es nulo, no cero')
+  comprobar(
+    r.incluye.includes('VIAJE') && r.incluye.includes('GASTO') && r.incluye.includes('FIJO'),
+    `dice que incluye viajes, gastos y fijos (${r.incluye.join(', ')})`,
+  )
+  // 12 + 12 (uno reversado) + 8 rechazado-y-deshecho no aceptado + 280 fijo + 140 gastos.
+  comprobar(Number(r.costo_usd) === 12 + 280 + 140, `el costo neto descuenta el reverso (${r.costo_usd})`)
+
+  await como(tx, c.mira)
+  const [{ costo_resumen_caja: tapado2 }] = await tx`select public.costo_resumen_caja()`
+  comprobar(
+    tapado2.costo_usd === null && tapado2.dinero_tapado === true,
+    'sin VER_PAGO_VIAJES el costo sale nulo y avisa',
+  )
+
+  await como(tx, c.gerente)
+  // Queda un viaje por aceptar (el rechazo deshecho). Con DEJAR se queda.
+  const [{ costo_cerrar_caja: caja2 }] = await tx`
+    select public.costo_cerrar_caja(${c.hoy}, 'Siguiente', 'DEJAR')`
+  const [cerrada] = await tx`
+    select estado, fecha_fin, resumen_json from public.costo_cajas where id = ${c.caja1}`
+  comprobar(
+    cerrada.estado === 'CERRADA' && cerrada.resumen_json?.costo_usd !== undefined,
+    'la caja cerro con su foto',
+  )
+  const [nueva] = await tx`
+    select numero, fecha_inicio::text as fecha_inicio, saldo_inicial_usd, estado
+      from public.costo_cajas where id = ${caja2}`
+  comprobar(nueva.estado === 'ABIERTA' && nueva.numero === 2, 'se abrio la caja 2')
+  const esperado =
+    Number(cerrada.resumen_json.fondo_usd) -
+    Number(cerrada.resumen_json.costo_usd) -
+    Number(cerrada.resumen_json.ajustes_tardios_usd)
+  comprobar(
+    Math.abs(Number(nueva.saldo_inicial_usd) - esperado) < 0.005,
+    `el saldo inicial es fondo menos costo menos tardios (${nueva.saldo_inicial_usd})`,
+  )
+  const diaSiguiente = (await tx`select (${c.hoy}::date + 1)::text as d`)[0].d
+  comprobar(nueva.fecha_inicio === diaSiguiente, 'y arranca el dia siguiente')
+
+  const quedaPendiente = await tx`select 1 from public.costo_candidatos() where origen = 'ACARREO'`
+  comprobar(quedaPendiente.length === 1, 'lo dejado sigue por aceptar en la caja nueva')
+
+  // La caja nueva empieza mañana: lo de hoy y lo de hace diez días llegan tarde.
+  await tx`select public.costo_registrar_gasto(${c.hace10}, 'USD', 5, 'Factura vieja', null)`
+  const [tarde] = await tx`
+    select llego_tarde, caja_id from public.costo_movimientos where descripcion ilike 'factura vieja'`
+  comprobar(
+    tarde.llego_tarde === true && Number(tarde.caja_id) === Number(caja2),
+    'un gasto con fecha de la caja cerrada llega tarde a la abierta',
+  )
+  const [{ costo_resumen_caja: r2 }] = await tx`select public.costo_resumen_caja()`
+  comprobar(
+    Number(r2.ajustes_tardios_usd) === 5 && Number(r2.costo_usd) === 0,
+    'y va en ajustes, fuera del costo corriente',
+  )
+  comprobar(r2.tendencia.length === 1 && r2.tendencia[0].numero === 1, 'la tendencia trae el cierre anterior')
+
+  // No hay reabrir.
+  const [{ count: fn }] = await tx`
+    select count(*)::int from pg_proc where proname = 'costo_reabrir_caja'`
+  comprobar(fn === 0, 'no existe reabrir')
+
+  c.caja2 = Number(caja2)
+
+  // Lo que sigue lo llena la pieza 5.
   globalThis.__costos = c
 }
