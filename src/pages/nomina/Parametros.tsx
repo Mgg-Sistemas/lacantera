@@ -125,11 +125,6 @@ export function Parametros() {
   const hoy = hoyEnCaracas()
   const regimenes = (data ?? []).filter((p) => p.clave === 'regimen_nomina')
   const pactadoHoy = soloLoPactadoEn(data ?? [], hoy)
-  const regimenDeHoy = regimenes.find(
-    (p) =>
-      p.vigencia_desde.slice(0, 10) <= hoy &&
-      (p.vigencia_hasta === null || p.vigencia_hasta.slice(0, 10) >= hoy),
-  )
   const programado = regimenes
     .filter((p) => p.vigencia_desde.slice(0, 10) > hoy)
     .sort((a, b) => a.vigencia_desde.localeCompare(b.vigencia_desde))[0]
@@ -199,11 +194,8 @@ export function Parametros() {
             })
           }
           etiqueta="Conceptos de ley"
-          detalle={
-            pactadoHoy
-              ? `Apagados${regimenDeHoy ? ` desde el ${fecha(regimenDeHoy.vigencia_desde)}` : ''}: la nómina calcula solo lo pactado —sueldo de la ficha, bonos y descuentos, faltas— y las prestaciones están deshabilitadas.`
-              : `Encendidos${regimenDeHoy ? ` desde el ${fecha(regimenDeHoy.vigencia_desde)}` : ''}: la nómina calcula seguro social, régimen de empleo, FAOV, cestaticket aparte, aportes, recargos y prestaciones con los parámetros de abajo.`
-          }
+          // Dice qué hace, no el caso de hoy: la posición del interruptor ya enseña el estado.
+          detalle="Seguro social, régimen de empleo, FAOV, cestaticket aparte, aportes del patrono, recargos y prestaciones sociales. Encendidos, la nómina los calcula con los parámetros de abajo; apagados, calcula solo lo pactado: sueldo de la ficha, bonos y descuentos, y faltas."
         />
         {programado ? (
           <p className="text-warning mt-3 text-xs">

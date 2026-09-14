@@ -3860,7 +3860,7 @@ Hay una idea que conviene entender antes de tocar nada, porque explica casi todo
 
 La segunda idea es de la que depende que este módulo no te cueste dinero: **un período se abre, se calcula, se aprueba y se paga, en ese orden y en tres manos distintas.** Hasta el momento de pagar, todo se puede rehacer. Después de pagar, nada. Esa frontera está explicada con detalle en 11.2 y en 11.11, y es lo primero que hay que aprenderse de este capítulo.
 
-> **Desde el 01/09/2026 la nómina calcula solo lo pactado.** El recibo lleva el sueldo de la ficha, los bonos y descuentos que se cargan a mano y las faltas injustificadas. No lleva el beneficio de alimentación aparte, ni seguro social, régimen de empleo o FAOV, ni aportes del patrono, ni lo que se aparta para prestaciones, y no calcula recargos de horas extra, nocturnas, feriados ni descansos. Las prestaciones sociales quedan deshabilitadas. **No se borró nada**: lo decide el interruptor **Conceptos de ley** de Parámetros de nómina, y el día que se encienda vuelve el cálculo completo (ver 11.9). Lo que este capítulo cuenta de los conceptos de ley vale para las quincenas calculadas con ese régimen.
+> **Qué calcula la nómina lo decide el interruptor Conceptos de ley**, en Parámetros de nómina (ver 11.9). **Encendido**, la nómina calcula todo lo que cuenta este capítulo. **Apagado**, calcula solo lo pactado: el recibo lleva el sueldo de la ficha, los bonos y descuentos que se cargan a mano y las faltas injustificadas; no lleva el beneficio de alimentación aparte, ni seguro social, régimen de empleo o FAOV, ni aportes del patrono, ni lo que se aparta para prestaciones; no calcula recargos de horas extra, nocturnas, feriados ni descansos, y las prestaciones sociales quedan deshabilitadas. Apagarlo no borra nada: al encenderlo vuelve el cálculo completo.
 
 ### 11.1 Quién entra y quién puede hacer qué
 
@@ -4642,7 +4642,7 @@ Cada valor se muestra según su unidad: con el símbolo de porcentaje, con **Bs*
 
 #### El interruptor de los conceptos de ley
 
-Arriba de la lista hay un interruptor, **Conceptos de ley**, que decide qué calcula la nómina. Desde el 01/09/2026 está **apagado**.
+Arriba de la lista hay un interruptor, **Conceptos de ley**, que decide qué calcula la nómina.
 
 - **Apagado**: la nómina calcula solo lo pactado. El recibo lleva el sueldo de la ficha, los bonos y descuentos cargados a mano y las faltas injustificadas; no calcula beneficio de alimentación aparte, retenciones de ley, aportes, recargos ni prestaciones, y la pantalla de prestaciones queda deshabilitada.
 - **Encendido**: el cálculo completo que describe el resto de este capítulo, con los parámetros de esta pantalla.
