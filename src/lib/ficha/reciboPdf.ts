@@ -225,7 +225,8 @@ function salarios(doc: Doc, d: DatosRecibo, y: number): number {
   doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
   doc.line(IZQ, y, DER, y)
 
-  // Con «solo lo pactado» los tres saldrían iguales: se pinta uno, con su nombre.
+  // Con «solo lo pactado» el normal y el integral no sirven para nada —son medidas
+  // de ley— y, con comisión, saldrían por encima del básico: se pinta solo el diario.
   const campos: [string, string][] = d.soloLoPactado
     ? [['Salario diario', cifra(d.salarioBasicoDiario)]]
     : [
