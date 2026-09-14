@@ -276,6 +276,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/explotacion/voladuras': 'explosivo barreno detonante',
   '/app/explotacion/produccion': 'turno tonelada extraccion',
   '/app/explotacion/viajes': 'acarreo camion transportista flete planilla',
+  '/app/explotacion/salidas': 'salida planta producto arena piedra m3 camion sale estimado',
 }
 
 /** El módulo al que pertenece una ruta. El panel es la raíz. */
@@ -348,6 +349,10 @@ export const navigation: NavSection[] = [
         children: [
           { label: 'Tablero', to: '/app/explotacion' },
           { label: 'Viajes de camiones', to: '/app/explotacion/viajes' },
+          // Lo que sale de la planta, camión por camión. Es el denominador
+          // del costo por m³ y va separado de facturación: la salida no
+          // espera a la factura.
+          { label: 'Salidas de planta', to: '/app/explotacion/salidas' },
           { label: 'Frentes y bancos', to: '/app/explotacion/frentes' },
           // Las dos que siguen en obra, y por qué cada una:
           //

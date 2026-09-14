@@ -247,6 +247,9 @@ const ProduccionTurno = pagina(() =>
 const ViajesDeCamiones = pagina(() =>
   import('@/pages/explotacion/Viajes').then((m) => ({ default: m.Viajes })),
 )
+const SalidasDePlanta = pagina(() =>
+  import('@/pages/explotacion/SalidasDePlanta').then((m) => ({ default: m.SalidasDePlanta })),
+)
 const TableroDespachos = pagina(() =>
   import('@/pages/despachos/Tablero').then((m) => ({ default: m.TableroDespachos })),
 )
@@ -289,6 +292,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/explotacion/voladuras': <Voladuras />,
   '/app/explotacion/produccion': <ProduccionTurno />,
   '/app/explotacion/viajes': <ViajesDeCamiones />,
+  '/app/explotacion/salidas': <SalidasDePlanta />,
   '/app/despachos': <TableroDespachos />,
   '/app/despachos/tickets': <Tickets />,
   '/app/despachos/guias': <Guias />,

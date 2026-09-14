@@ -337,6 +337,59 @@ export default async function pruebaCostos(tx) {
 
   c.caja2 = Number(caja2)
 
-  // Lo que sigue lo llena la pieza 5.
-  globalThis.__costos = c
+  // ═══════════════════════════════════════════════════════════════════════
+  grupo('Salidas de planta · lo que sale se cuenta por camion')
+
+  await comoDueno(tx)
+  const [arena] = await tx`
+    insert into public.articulos (codigo, nombre, categoria, unidad, inventariable, activo)
+    values ('PRB-ARENA', 'ARENA LAVADA DE PRUEBA', 'PRODUCTO', 'M3', true, true)
+    returning id`
+  const [apagado] = await tx`
+    insert into public.articulos (codigo, nombre, categoria, unidad, inventariable, activo)
+    values ('PRB-APAG', 'PRODUCTO APAGADO DE PRUEBA', 'PRODUCTO', 'M3', true, false)
+    returning id`
+
+  await como(tx, c.gerente)
+  const [{ registrar_salida_planta: sal }] = await tx`
+    select public.registrar_salida_planta(${c.hoy}, ${c.camion}, ${arena.id})`
+  const [s] = await tx`select m3, numero from public.salidas_planta where id = ${sal}`
+  comprobar(
+    Number(s.m3) === 14 && /^SAL-/.test(s.numero),
+    `la salida toma la carga util del camion (${s.m3}) y su numero (${s.numero})`,
+  )
+
+  const apag = await debeFallar(
+    tx,
+    (sp) => sp`select public.registrar_salida_planta(${c.hoy}, ${c.camion}, ${apagado.id})`,
+  )
+  comprobar(/apagado/i.test(apag ?? ''), 'un producto apagado no se registra')
+
+  const deMas = await debeFallar(
+    tx,
+    (sp) => sp`select public.registrar_salida_planta(${c.hoy}, ${c.camion}, ${arena.id}, 99)`,
+  )
+  comprobar(/no carga/i.test(deMas ?? ''), 'mas de lo que cabe no se registra')
+
+  const productos = await tx`select * from public.productos_de_planta()`
+  comprobar(
+    productos.some((p) => p.id === arena.id) && !productos.some((p) => p.id === apagado.id),
+    'la lista de productos trae los activos y no los apagados',
+  )
+
+  // Llega tarde: la caja 2 empieza mañana y la salida es de hoy.
+  const [k] = await tx`
+    select m3, medida from public.costo_candidatos()
+     where origen = 'SALIDA_PLANTA' and origen_id = ${sal}`
+  comprobar(Number(k?.m3) === 14 && k.medida === 'PLANTA', 'la salida aparece por aceptar como m3 de planta')
+  await tx`select public.costo_aceptar('SALIDA_PLANTA', ${sal})`
+  const [{ costo_resumen_caja: r3 }] = await tx`select public.costo_resumen_caja()`
+  comprobar(
+    Number(r3.m3_planta) === 14 && r3.por_producto.length === 1,
+    `y suma a los m3 de planta por producto (${r3.m3_planta})`,
+  )
+
+  await tx`select public.anular_salida_planta(${sal}, 'Se anoto dos veces')`
+  const rev2 = await tx`select * from public.costo_reversos_pendientes()`
+  comprobar(rev2.length === 1, 'la salida anulada aparece para reversar')
 }
