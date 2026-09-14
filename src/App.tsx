@@ -185,9 +185,6 @@ const PorPagar = pagina(() =>
 const DetalleCompra = pagina(() =>
   import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
 )
-const CentroDeCostos = pagina(() =>
-  import('@/pages/compras/CentroDeCostos').then((m) => ({ default: m.CentroDeCostos })),
-)
 const GastoPorUnidad = pagina(() =>
   import('@/pages/compras/GastoPorUnidad').then((m) => ({ default: m.GastoPorUnidad })),
 )
@@ -299,7 +296,9 @@ const paginas: Record<string, ReactNode> = {
   '/app/compras': <TableroCompras />,
   '/app/compras/proveedores': <Proveedores />,
   '/app/compras/proveedores/:id': <FichaProveedor />,
-  '/app/compras/centro-de-costos': <CentroDeCostos />,
+  // El centro de costos viejo de Compras se retiró el 14/09/2026. Quien tenga
+  // la dirección guardada cae en el módulo que lo sustituye.
+  '/app/compras/centro-de-costos': <Navigate to="/app/costos" replace />,
   '/app/compras/gasto': <GastoPorUnidad />,
   '/app/compras/recepciones': <Recepciones />,
   '/app/compras/facturas': <FacturasProveedor />,

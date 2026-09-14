@@ -245,7 +245,6 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/compras/directa': 'compra rapida ya hecha factura sin cotizar sin gerente contado',
   '/app/compras/proveedores': 'rif suplidor',
   '/app/compras/recepciones': 'recibir entrada mercancia llegada',
-  '/app/compras/centro-de-costos': 'gastos presupuesto fondo balance costo por m3 torta grafico categoria',
   '/app/compras/libro': 'iva impuesto seniat fiscal credito',
   '/app/ventas/facturacion': 'factura fac cobrar emitir',
   '/app/ventas/despachos': 'nota de entrega ne remision',
@@ -528,10 +527,9 @@ export const navigation: NavSection[] = [
           // El libro cuelga de Compras y no de un módulo fiscal propio porque
           // quien lo saca es quien cargó las facturas, y porque así el permiso
           // que ya gobierna las facturas gobierna también su libro.
-          // El centro de costos abre el grupo de analisis: es la pregunta de
-          // gerencia —cuanto se entrego, cuanto queda, a cuanto sale el metro
-          // cubico— y las otras dos son maneras de desglosarla.
-          { label: 'Centro de costos', to: '/app/compras/centro-de-costos' },
+          // El centro de costos que abría este grupo se retiró el 14/09/2026:
+          // leía un libro de tesorería vacío. Lo sustituye el módulo «Centro
+          // de costo», con entrada propia en Administración.
           { label: 'Libro de compras', to: '/app/compras/libro' },
           // A dónde va el dinero. La líder preguntó qué unidad genera más
           // gasto, y la respuesta sale de las mismas compras que alimentan el
