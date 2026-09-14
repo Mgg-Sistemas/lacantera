@@ -584,15 +584,25 @@ La portada es la única pantalla que no obedece al tema: siempre va azul.
 
 ### 3.5 El aviso de versión nueva
 
-De vez en cuando se publica una versión nueva del sistema. Lo normal es que no te enteres: el sistema lo comprueba al abrirlo, cada cinco minutos y cada vez que vuelves a la pestaña, y **se recarga solo, sin preguntar**. Verás la pantalla refrescarse y nada más.
+De vez en cuando se publica una versión nueva del sistema. El sistema lo comprueba al abrirlo, cada cinco minutos y cada vez que vuelves a la pestaña, y **no se recarga solo**: te avisa y tú eliges cuándo actualizar, para que puedas terminar y guardar lo que estés haciendo.
 
-Si después de recargarse una vez el navegador sigue trayendo la versión vieja, entonces sí aparece un recuadro naranja, abajo a la derecha —abajo y centrado en el teléfono—, por encima de todo lo demás:
+El aviso es un recuadro naranja, abajo a la derecha —abajo y centrado en el teléfono—, por encima de todo lo demás:
+
+- Título **Hay una versión nueva del sistema**
+- Detalle **Termina y guarda lo que estés haciendo. Cuando quieras, pulsa Actualizar: nada se recarga solo.**
+- Botones **Actualizar** y **Más tarde**
+
+**Más tarde** no lo quita: lo reduce a una etiqueta pequeña, **Versión nueva**, en la misma esquina, y pulsándola se vuelve a abrir. Mientras no actualices sigues trabajando con la versión que tenías abierta. Si mientras tanto se publica otra, el aviso se vuelve a abrir solo.
+
+Si entras a una pantalla que cambió con la versión nueva y ya no se puede traer desde la que tienes abierta, en su lugar aparece **Esta pantalla es de la versión nueva del sistema**, con los botones **Volver** y **Actualizar**. Si lo que falló es la conexión, dice **No se pudo abrir esta pantalla** y el botón es **Recargar**.
+
+Si pulsas **Actualizar** y el navegador sigue trayendo la versión vieja, el aviso cambia:
 
 - Título **Estás viendo una versión antigua del sistema**
 - Detalle **Hay una más reciente publicada y tu navegador sigue trayendo la anterior. Recarga con Ctrl+Shift+R, o abre el sistema en una ventana de incógnito.**
 - Botón **Recargar**
 
-**El aviso no se puede cerrar ni posponer**: no tiene X ni botón de "más tarde". Se va solo cuando el navegador consiga traer la versión nueva. Es incómodo a propósito: trabajar sobre una versión vieja creyendo que estás al día es peor que la molestia del recuadro.
+**Ese no se puede cerrar ni posponer**: trabajar sobre una versión vieja creyendo que estás al día es peor que la molestia del recuadro. Se va solo cuando el navegador consiga traer la versión nueva.
 
 El aviso aparece en cualquier pantalla, incluidas la portada y la de entrar. Y sin conexión no avisa de nada, porque no saber no es motivo para molestar.
 

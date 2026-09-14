@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Que la aplicación se entere de que está vieja.
+ * Que la aplicación se entere de que está vieja, y que actualizar lo decida
+ * quien la está usando.
  *
  * El HTML es el único archivo sin hash en el nombre: es quien dice cuál de
  * todos los `index-*.js` hay que cargar. Si el navegador, un proxy o la red de
@@ -11,15 +12,27 @@ import { useEffect, useState } from 'react'
  * de distinguir "el arreglo no sirve" de "el arreglo no llegó".
  *
  * `version.json` se genera en cada compilación y se pide sin caché. Si lo que
- * hay publicado no es lo que está corriendo, se recarga sola.
+ * hay publicado no es lo que está corriendo, se avisa.
+ *
+ * SE AVISA Y NO SE RECARGA. Hasta el 14-sep se recargaba sola, y eso se llevaba
+ * por delante lo que la persona tuviera a medio escribir: el formulario a medio
+ * llenar desaparecía sin preguntar. Se pidió así: «que no recargue de inmediato,
+ * que sea elección del usuario, para que pueda terminar lo que está haciendo y
+ * guardar antes de recargar a la nueva versión».
+ *
+ * Mientras no actualice, la pestaña sigue con su versión. En el droplet los
+ * archivos de la anterior se quedan publicados unos días (`~/desplegar.sh`), así
+ * que hasta las pantallas que no había abierto siguen llegando. En Vercel no se
+ * quedan: ahí, lo que no llegue lo explica `cargarPagina.ts`.
  */
 
 const CLAVE_INTENTO = 'lacantera:recarga-por-version'
 const CADA_MS = 5 * 60_000
+const EVENTO_REVISAR = 'lacantera:revisar-version'
 
-export type EstadoVersion = 'al-dia' | 'vieja-y-atascada'
+export type EstadoVersion = 'al-dia' | 'nueva' | 'vieja-y-atascada'
 
-async function versionPublicada(): Promise<string | null> {
+export async function versionPublicada(): Promise<string | null> {
   try {
     // `no-store` en la petición además de la cabecera del servidor: si el
     // archivo llegara de la caché, diría lo mismo que ya tenemos y no
@@ -35,31 +48,51 @@ async function versionPublicada(): Promise<string | null> {
   }
 }
 
-export function useVersion(): EstadoVersion {
+/**
+ * Lo que hace el botón «Actualizar».
+ *
+ * Antes de recargar se apunta qué versión se fue a buscar. Si al volver sigue la
+ * vieja, el HTML no viene del navegador sino de más atrás —un proxy, la caché de
+ * la operadora— y otro botón igual no lo arreglaría: entonces el aviso cambia y
+ * dice qué hacer.
+ */
+export function actualizarAhora(publicada: string | null) {
+  try {
+    if (publicada) sessionStorage.setItem(CLAVE_INTENTO, publicada)
+  } catch {
+    // Sin almacenamiento de sesión no se detecta el atasco, pero actualizar sí.
+  }
+  location.reload()
+}
+
+/**
+ * Pide revisar ya, sin esperar al reloj. La usa quien se topa con un archivo que
+ * no llegó: puede ser la señal de que salió una versión nueva hace un minuto.
+ */
+export function revisarVersionAhora() {
+  window.dispatchEvent(new Event(EVENTO_REVISAR))
+}
+
+export function useVersion(): { estado: EstadoVersion; publicada: string | null } {
   const [estado, setEstado] = useState<EstadoVersion>('al-dia')
+  const [publicada, setPublicada] = useState<string | null>(null)
 
   useEffect(() => {
     let vigente = true
 
     const revisar = async () => {
-      const publicada = await versionPublicada()
-      if (!vigente || !publicada || publicada === __VERSION__) return
+      const v = await versionPublicada()
+      if (!vigente || !v || v === __VERSION__) return
 
-      /*
-        Recargar una sola vez por versión.
-
-        Si tras recargar seguimos con la vieja, el HTML no viene del navegador
-        sino de más atrás —un proxy, la caché de la red— y volver a recargar
-        entraría en un bucle que deja la pantalla parpadeando sin arreglar
-        nada. En ese caso se avisa y decide la persona.
-      */
-      if (sessionStorage.getItem(CLAVE_INTENTO) === publicada) {
-        setEstado('vieja-y-atascada')
-        return
+      let intentada: string | null = null
+      try {
+        intentada = sessionStorage.getItem(CLAVE_INTENTO)
+      } catch {
+        // Modo privado sin almacenamiento: cuenta como primera vez.
       }
 
-      sessionStorage.setItem(CLAVE_INTENTO, publicada)
-      location.reload()
+      setPublicada(v)
+      setEstado(intentada === v ? 'vieja-y-atascada' : 'nueva')
     }
 
     void revisar()
@@ -69,16 +102,19 @@ export function useVersion(): EstadoVersion {
     const alVolver = () => {
       if (document.visibilityState === 'visible') void revisar()
     }
+    const alPedirlo = () => void revisar()
 
     const reloj = setInterval(() => void revisar(), CADA_MS)
     document.addEventListener('visibilitychange', alVolver)
+    window.addEventListener(EVENTO_REVISAR, alPedirlo)
 
     return () => {
       vigente = false
       clearInterval(reloj)
       document.removeEventListener('visibilitychange', alVolver)
+      window.removeEventListener(EVENTO_REVISAR, alPedirlo)
     }
   }, [])
 
-  return estado
+  return { estado, publicada }
 }
