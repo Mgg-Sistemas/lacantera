@@ -223,8 +223,12 @@ export interface LineaDePago {
 }
 
 export interface DatosRegistroDePago {
-  /** El mes, en AAAA-MM. */
-  mes: string
+  /** El período, con las dos fechas incluidas, en AAAA-MM-DD. */
+  desde: string
+  hasta: string
+  /** Cuando se filtró por una empresa, su nombre. Nulo si salen todas. */
+  empresa: string | null
+  /** El acumulado de cada línea tiene que venir calculado dentro del período. */
   lineas: LineaDePago[]
   empresa_papel: EmpresaPapel
   emitidoPor: string
@@ -240,7 +244,13 @@ const COLUMNAS_PAGO: Columna[] = [
   { titulo: 'Acumulado', ancho: 18, alDerecha: true },
 ]
 
-/** El registro de pago del mes, empresa por empresa y día por día. */
+/** «01/09/2026 al 11/09/2026», o una sola fecha si el período es de un día. */
+const periodoDice = (desde: string, hasta: string): string => {
+  const f = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`
+  return desde === hasta ? f(desde) : `${f(desde)} al ${f(hasta)}`
+}
+
+/** El registro de pago de un período, empresa por empresa y día por día. */
 export async function armarRegistroDePago(d: DatosRegistroDePago): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
   const logo = await logoComoImagen()
@@ -253,7 +263,7 @@ export async function armarRegistroDePago(d: DatosRegistroDePago): Promise<Archi
   let y = membrete(doc, logo, {
     empresa: d.empresa_papel,
     datos: [
-      ['Mes', d.mes],
+      ['Período', periodoDice(d.desde, d.hasta)],
       ['Generado', fechaLarga(d.momento)],
     ],
   })
@@ -265,12 +275,13 @@ export async function armarRegistroDePago(d: DatosRegistroDePago): Promise<Archi
     `${d.empresa_papel.razonSocial} · RIF ${d.empresa_papel.rif} · Transporte interno`,
   )
 
-  y = seccion(doc, y, 'Resumen del mes')
+  y = seccion(doc, y, 'Resumen del período')
   y = etiquetaValor(doc, y, [
+    ['Empresa', d.empresa ?? 'Todas'],
     ['Transportistas', String(empresas.length)],
     ['Viajes', cantidad(d.lineas.reduce((s, l) => s + l.viajes, 0))],
     ...(hayDinero
-      ? ([['Total del mes', `$ ${numero(total)}`]] as Array<[string, string]>)
+      ? ([['Total del período', `$ ${numero(total)}`]] as Array<[string, string]>)
       : ([['Montos', 'No se muestran: hace falta la casilla de ver el pago']] as Array<
           [string, string]
         >)),
@@ -305,10 +316,15 @@ export async function armarRegistroDePago(d: DatosRegistroDePago): Promise<Archi
     )
   }
 
-  pieDePagina(doc, `Registro de pago de viajes · ${d.mes} · emitido por ${d.emitidoPor}`)
-  doc.setProperties({ title: `Registro de pago de viajes — ${d.mes}` })
+  const periodo = periodoDice(d.desde, d.hasta)
+  pieDePagina(doc, `Registro de pago de viajes · ${periodo} · emitido por ${d.emitidoPor}`)
+  doc.setProperties({ title: `Registro de pago de viajes — ${periodo}` })
 
-  return { blob: doc.output('blob'), nombre: `pago-viajes-${d.mes}.pdf` }
+  const sufijo = d.empresa ? `-${d.empresa.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : ''
+  return {
+    blob: doc.output('blob'),
+    nombre: `pago-viajes-${d.desde}_a_${d.hasta}${sufijo}.pdf`,
+  }
 }
 
 export interface LineaDelDia {
