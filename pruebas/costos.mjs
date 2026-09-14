@@ -101,6 +101,57 @@ export default async function pruebaCostos(tx) {
   const [conf] = await tx`select corte_mensual from public.costo_configuracion`
   comprobar(conf.corte_mensual === true, 'el corte mensual se guarda')
 
-  // Lo que sigue lo llenan las piezas 2 a 5.
-  globalThis.__costos = { gerente, acepta, mira, caja1: Number(caja1), hoy, hace10 }
+  const c = { gerente, acepta, mira, caja1: Number(caja1), hoy, hace10 }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  grupo('Centro de costo · el fondo y el gasto suelto')
+
+  await como(tx, c.gerente)
+  await tx`select public.costo_registrar_entrega(${c.hoy}, 'CASA_MATRIZ', 'USD', 500, 'Primera entrega')`
+  await tx`select public.costo_registrar_gasto(${c.hoy}, 'USD', 40, 'Comida del turno', 'COMEDOR')`
+  await tx`select public.costo_registrar_gasto(${c.hoy}, 'VES', 3650, 'Peaje', null)`
+
+  const [libro] = await tx`
+    select count(*)::int as n,
+           sum(monto_usd) filter (where clase = 'ENTREGA') as entregado,
+           sum(monto_usd) filter (where clase = 'GASTO')   as gastado,
+           count(*) filter (where categoria is null and clase = 'GASTO')::int as sin_clase
+      from public.costo_movimientos
+     where caja_id = ${c.caja1}`
+  comprobar(libro.n === 3, 'tres filas en el libro')
+  comprobar(Number(libro.entregado) === 500, 'la entrega suma 500 al fondo')
+  // El peaje en bolívares se valora con la tasa BCV del día del hecho. Contra
+  // la base local, `asegurarTasaBcv` puso 36,5 y 3650 son 100; contra otra
+  // base la tasa es la real, así que solo se exige que valga más que cero.
+  comprobar(
+    Number(libro.gastado) > 40,
+    `el peaje en bolivares se valoro en dolares (${libro.gastado} en total)`,
+  )
+  comprobar(libro.sin_clase === 1, 'el gasto sin categoria queda sin clasificar, no inventado')
+
+  const [deuda] = await tx`
+    select deuda_usd from public.v_costo_deuda_por_origen where origen_fondo = 'CASA_MATRIZ'`
+  comprobar(Number(deuda.deuda_usd) === 500, 'la casa matriz figura con 500 de deuda')
+
+  const abonoDeMas = await debeFallar(
+    tx,
+    (sp) => sp`select public.costo_registrar_abono(${c.hoy}, 'CASA_MATRIZ', 'USD', 600, 'Devolucion')`,
+  )
+  comprobar(/negativo/i.test(abonoDeMas ?? ''), 'un abono no deja la deuda en negativo')
+
+  await tx`select public.costo_registrar_abono(${c.hoy}, 'CASA_MATRIZ', 'USD', 100, 'Devolucion parcial')`
+  const [deuda2] = await tx`
+    select deuda_usd from public.v_costo_deuda_por_origen where origen_fondo = 'CASA_MATRIZ'`
+  comprobar(Number(deuda2.deuda_usd) === 400, 'y uno que cabe la baja a 400')
+
+  await como(tx, c.acepta)
+  const sinFondo = await debeFallar(
+    tx,
+    (sp) => sp`select public.costo_registrar_entrega(${c.hoy}, 'CASA_MATRIZ', 'USD', 1, 'x')`,
+  )
+  comprobar(/permiso|no tiene/i.test(sinFondo ?? ''), 'registrar una entrega exige Total')
+  await como(tx, c.gerente)
+
+  // Lo que sigue lo llenan las piezas 3 a 5.
+  globalThis.__costos = c
 }
