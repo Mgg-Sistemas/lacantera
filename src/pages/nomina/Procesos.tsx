@@ -14,7 +14,12 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
+  CONCEPTOS_DE_LEY,
   ESTADOS_PERIODO,
+  cambioDeConceptos,
+  conceptosDeLeyEn,
+  enLista,
+  useParametros,
   useAbrirPeriodo,
   useAnularPeriodo,
   useAprobarNomina,
@@ -26,6 +31,31 @@ import type { Periodo } from '@/lib/api/nomina'
 import { useCuentas } from '@/lib/api/tesoreria'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { bolivares, dinero, dolares, fecha } from '@/lib/formato'
+
+/** Qué conceptos de ley cambiaron desde que se calculó la quincena, si cambió alguno. */
+function AvisoConceptosCambiados({ periodo }: { periodo: Periodo }) {
+  const { encendidos, apagados } = cambioDeConceptos(
+    periodo.conceptos_de_ley,
+    periodo.conceptos_de_ley_vigentes,
+  )
+  if (encendidos.length === 0 && apagados.length === 0) return null
+
+  const partes = [
+    encendidos.length > 0
+      ? `${encendidos.length === 1 ? 'se encendió' : 'se encendieron'} ${enLista(encendidos)}`
+      : null,
+    apagados.length > 0
+      ? `${apagados.length === 1 ? 'se apagó' : 'se apagaron'} ${enLista(apagados)}`
+      : null,
+  ].filter(Boolean)
+
+  return (
+    <p className="border-warning/30 bg-warning-soft text-ink/80 mt-3 rounded-[6px] border p-3 text-sm">
+      Después de calcular esta quincena {partes.join(' y ')}. Vuelve a calcularla antes de
+      aprobarla.
+    </p>
+  )
+}
 
 /** Qué toca hacer ahora con este período. Una sola acción por estado. */
 function siguiente(p: Periodo): string {
@@ -81,6 +111,7 @@ export function Procesos() {
   const aprobar = useAprobarNomina()
   const anular = useAnularPeriodo()
   const pagar = usePagarNomina()
+  const { data: parametros } = useParametros()
 
   const [nuevo, setNuevo] = useState<null | {
     tipo: string
@@ -166,18 +197,14 @@ export function Procesos() {
               <p className="text-ink/60 mt-3 text-sm">{siguiente(p)}</p>
 
               {/*
-                EL INTERRUPTOR SE MOVIÓ DESPUÉS DE CALCULAR.
+                UN INTERRUPTOR SE MOVIÓ DESPUÉS DE CALCULAR.
 
-                Los recibos están hechos con un régimen que ya no rige para esta
-                quincena, y la base no deja aprobarla así. Se dice aquí, antes de
-                que alguien pulse «Aprobar la nómina» y se encuentre el rechazo.
+                Los recibos están hechos con conceptos de ley que ya no rigen para
+                esta quincena, y la base no deja aprobarla así. Se dice aquí, y
+                cuáles, antes de que alguien pulse «Aprobar la nómina» y se
+                encuentre el rechazo.
               */}
-              {p.estado === 'CALCULADA' && p.solo_lo_pactado !== p.solo_lo_pactado_vigente ? (
-                <p className="border-warning/30 bg-warning-soft text-ink/80 mt-3 rounded-[6px] border p-3 text-sm">
-                  Los conceptos de ley se {p.solo_lo_pactado_vigente ? 'apagaron' : 'encendieron'}{' '}
-                  después de calcular esta quincena. Vuelve a calcularla antes de aprobarla.
-                </p>
-              ) : null}
+              {p.estado === 'CALCULADA' ? <AvisoConceptosCambiados periodo={p} /> : null}
 
               {Number(p.recibos ?? 0) > 0 ? (
                 <dl className="border-hairline mt-4 grid gap-4 border-t pt-4 sm:grid-cols-4">
@@ -339,6 +366,29 @@ export function Procesos() {
                 </p>
               ) : null
             })()}
+            {/*
+              EL PERÍODO TRAE LOS CONCEPTOS DE LEY QUE RIJAN PARA SU CIERRE.
+
+              No se eligen aquí: los deciden los interruptores de Parámetros de
+              nómina, por fecha. Se dice antes de abrir para que nadie se entere
+              al ver los recibos de que no llevan, o sí llevan, seguro social.
+            */}
+            {nuevo.hasta && parametros
+              ? (() => {
+                  const nombres = conceptosDeLeyEn(parametros, nuevo.hasta).map(
+                    (c) => CONCEPTOS_DE_LEY.find((x) => x.codigo === c)?.nombre ?? c,
+                  )
+                  return (
+                    <p className="border-hairline bg-canvas text-ink/70 rounded-[6px] border p-3 text-xs">
+                      {nombres.length === 0
+                        ? 'Este período calculará solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas.'
+                        : `Además de lo pactado, este período calculará: ${enLista(nombres)}.`}{' '}
+                      Son los conceptos de ley que rigen el día que cierra; se cambian en Parámetros de
+                      nómina y se guardan al calcularlo.
+                    </p>
+                  )
+                })()
+              : null}
             <Input
               label="Descripción"
               placeholder="Segunda quincena de julio"
