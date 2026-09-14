@@ -11,7 +11,7 @@ import {
   ArrowRight,
   BookOpen,
 } from 'lucide-react'
-import { useCategoriasGasto } from '@/lib/api/centroDeCostos'
+import { useCategoriasGasto } from '@/lib/api/categoriasGasto'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'

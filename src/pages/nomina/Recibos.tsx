@@ -448,9 +448,10 @@ export function Recibos() {
           <div className="space-y-5">
             {periodo?.solo_lo_pactado ? (
               /*
-                Con «solo lo pactado» no hay básico despejado ni salario integral:
-                el diario es el sueldo de la ficha entre treinta, y los otros dos
-                números saldrían iguales sin decir nada.
+                Con «solo lo pactado» no hay básico despejado: el diario es el sueldo
+                de la ficha entre treinta. El normal y el integral son medidas de ley
+                —para prestaciones, vacaciones y utilidades— que este régimen no usa,
+                y con comisión saldrían por encima del básico, como si contaran.
               */
               <dl className="border-hairline bg-canvas rounded-card grid gap-3 border p-3 text-xs">
                 <div>

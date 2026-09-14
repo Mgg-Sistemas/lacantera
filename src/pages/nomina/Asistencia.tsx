@@ -450,7 +450,9 @@ export function Asistencia() {
     casillas sería invitar a teclear horas que no van a salir en el recibo. Lo
     que haya que pagar de más va como bono, en «Bono o descuento».
   */
-  const campos: readonly (typeof CAMPOS)[number][] = periodo?.solo_lo_pactado ? [] : CAMPOS
+  // Mientras se puede recalcular manda el régimen que rige; cerrada, el que se usó.
+  const pactadoAqui = abierto ? periodo?.solo_lo_pactado_vigente : periodo?.solo_lo_pactado
+  const campos: readonly (typeof CAMPOS)[number][] = pactadoAqui ? [] : CAMPOS
 
   // Las novedades guardadas llenan la tabla. Sin esto, quien vuelve a la
   // pantalla ve ceros y cree que se perdió lo que cargó ayer.
@@ -557,9 +559,9 @@ export function Asistencia() {
         <Card flush>
           <div className="p-5 pb-2">
             <CardHeader
-              title={periodo.solo_lo_pactado ? 'Bonos y descuentos' : 'Horas y recargos'}
+              title={pactadoAqui ? 'Bonos y descuentos' : 'Horas y recargos'}
               subtitle={
-                periodo.solo_lo_pactado
+                pactadoAqui
                   ? 'Esta quincena calcula solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas del calendario. Las horas extra y los recargos no se cargan; lo que haya que pagar de más va como bono.'
                   : 'Horas extra, nocturnas y días trabajados de descanso o feriado. Se guarda por trabajador; lo que no se toca queda en cero.'
               }

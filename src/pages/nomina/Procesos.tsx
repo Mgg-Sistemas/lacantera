@@ -165,6 +165,20 @@ export function Procesos() {
 
               <p className="text-ink/60 mt-3 text-sm">{siguiente(p)}</p>
 
+              {/*
+                EL INTERRUPTOR SE MOVIÓ DESPUÉS DE CALCULAR.
+
+                Los recibos están hechos con un régimen que ya no rige para esta
+                quincena, y la base no deja aprobarla así. Se dice aquí, antes de
+                que alguien pulse «Aprobar la nómina» y se encuentre el rechazo.
+              */}
+              {p.estado === 'CALCULADA' && p.solo_lo_pactado !== p.solo_lo_pactado_vigente ? (
+                <p className="border-warning/30 bg-warning-soft text-ink/80 mt-3 rounded-[6px] border p-3 text-sm">
+                  Los conceptos de ley se {p.solo_lo_pactado_vigente ? 'apagaron' : 'encendieron'}{' '}
+                  después de calcular esta quincena. Vuelve a calcularla antes de aprobarla.
+                </p>
+              ) : null}
+
               {Number(p.recibos ?? 0) > 0 ? (
                 <dl className="border-hairline mt-4 grid gap-4 border-t pt-4 sm:grid-cols-4">
                   <div>

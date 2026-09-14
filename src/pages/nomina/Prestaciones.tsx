@@ -137,7 +137,7 @@ export function Prestaciones() {
           <Vacio
             icono={<PiggyBank />}
             titulo="Las prestaciones sociales están deshabilitadas"
-            descripcion="La nómina calcula solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas. Se vuelven a habilitar cargando el régimen DE LEY en Parámetros de nómina, desde la fecha que corresponda."
+            descripcion="La nómina calcula solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas. Se vuelven a habilitar encendiendo los conceptos de ley en Parámetros de nómina."
           />
         </Card>
       </>
