@@ -3860,7 +3860,7 @@ Hay una idea que conviene entender antes de tocar nada, porque explica casi todo
 
 La segunda idea es de la que depende que este módulo no te cueste dinero: **un período se abre, se calcula, se aprueba y se paga, en ese orden y en tres manos distintas.** Hasta el momento de pagar, todo se puede rehacer. Después de pagar, nada. Esa frontera está explicada con detalle en 11.2 y en 11.11, y es lo primero que hay que aprenderse de este capítulo.
 
-> **Desde el 01/09/2026 la nómina calcula solo lo pactado.** El recibo lleva el sueldo de la ficha, los bonos y descuentos que se cargan a mano y las faltas injustificadas. No lleva el beneficio de alimentación aparte, ni seguro social, régimen de empleo o FAOV, ni aportes del patrono, ni lo que se aparta para prestaciones, y no calcula recargos de horas extra, nocturnas, feriados ni descansos. Las prestaciones sociales quedan deshabilitadas. **No se borró nada**: lo decide un parámetro con fecha, el régimen de la nómina, y el día que diga **DE LEY** vuelve el cálculo completo (ver 11.9). Lo que este capítulo cuenta de los conceptos de ley vale para las quincenas calculadas con ese régimen.
+> **Desde el 01/09/2026 la nómina calcula solo lo pactado.** El recibo lleva el sueldo de la ficha, los bonos y descuentos que se cargan a mano y las faltas injustificadas. No lleva el beneficio de alimentación aparte, ni seguro social, régimen de empleo o FAOV, ni aportes del patrono, ni lo que se aparta para prestaciones, y no calcula recargos de horas extra, nocturnas, feriados ni descansos. Las prestaciones sociales quedan deshabilitadas. **No se borró nada**: lo decide el interruptor **Conceptos de ley** de Parámetros de nómina, y el día que se encienda vuelve el cálculo completo (ver 11.9). Lo que este capítulo cuenta de los conceptos de ley vale para las quincenas calculadas con ese régimen.
 
 ### 11.1 Quién entra y quién puede hacer qué
 
@@ -4640,14 +4640,22 @@ Cada valor se muestra según su unidad: con el símbolo de porcentaje, con **Bs*
 
 **Un valor nuevo no borra el anterior.** La ventana lo explica: *"No sustituye el valor anterior: lo cierra el día antes y empieza uno nuevo."* Y aquí **no hay borrado de ninguna clase**: lo único que se puede hacer es cargar una vigencia nueva.
 
-#### El régimen de la nómina
+#### El interruptor de los conceptos de ley
 
-Un parámetro de texto decide qué calcula la nómina, con su fecha como todos: **SOLO LO PACTADO** o **DE LEY**. Desde el 01/09/2026 dice **SOLO LO PACTADO**.
+Arriba de la lista hay un interruptor, **Conceptos de ley**, que decide qué calcula la nómina. Desde el 01/09/2026 está **apagado**.
 
-- **SOLO LO PACTADO**: el recibo lleva el sueldo de la ficha, los bonos y descuentos cargados a mano y las faltas injustificadas. No calcula beneficio de alimentación aparte, retenciones de ley, aportes, recargos ni prestaciones, y la pantalla de prestaciones queda deshabilitada.
-- **DE LEY**: el cálculo completo que describe el resto de este capítulo.
+- **Apagado**: la nómina calcula solo lo pactado. El recibo lleva el sueldo de la ficha, los bonos y descuentos cargados a mano y las faltas injustificadas; no calcula beneficio de alimentación aparte, retenciones de ley, aportes, recargos ni prestaciones, y la pantalla de prestaciones queda deshabilitada.
+- **Encendido**: el cálculo completo que describe el resto de este capítulo, con los parámetros de esta pantalla.
 
-Para volver al cálculo completo se carga una **Nueva vigencia** de ese parámetro con **DE LEY** y la fecha desde la que rige. Se lee por la fecha de cierre de cada quincena, así que las anteriores conservan el régimen con que se calcularon, y una quincena ya aprobada o pagada no cambia.
+**Solo lo mueve gerencia general**, y administración. Al pulsarlo se abre una ventana que pide **Desde**: propone el día siguiente al cierre de la última quincena calculada, y se puede cambiar. No se teclea nada más. Si ya hay un cambio programado para más adelante, lo dice debajo del interruptor.
+
+Lo que conviene saber:
+
+- **Cada quincena se calcula con lo que rija el día en que cierra, y guarda con qué se calculó.** Mover el interruptor no cambia cómo se ven las quincenas ya calculadas.
+- **No se puede poner una fecha dentro de una quincena ya aprobada o pagada**, ni por delante de un cambio ya programado: la ventana lo dice.
+- **Si una quincena calculada y sin aprobar queda del otro lado del cambio**, Procesar nómina avisa *"Los conceptos de ley se encendieron después de calcular esta quincena. Vuelve a calcularla antes de aprobarla."*, y el sistema no deja aprobarla hasta recalcularla.
+- **Antes de encenderlo, revisa los parámetros de ley**: el salario mínimo o el cestaticket pueden haber cambiado mientras estuvo apagado.
+- El régimen **no aparece en la lista de parámetros**, y desde ella no se puede corregir, cerrar ni eliminar.
 
 #### Quién firma los recibos y las constancias
 

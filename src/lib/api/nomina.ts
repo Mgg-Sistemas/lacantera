@@ -275,12 +275,19 @@ export interface Periodo {
   total_aportes: string
   total_neto_usd: string
   /**
-   * Con qué régimen se calcula esta quincena, leído por su fecha de cierre.
-   * Cierto cuando manda «solo lo pactado»: sueldo, bonos y descuentos manuales y
-   * faltas, sin cestaticket aparte, retenciones de ley, aportes, recargos ni
-   * prestaciones. Lo dice la base (`regimen_nomina`), no la pantalla.
+   * Con qué régimen se CALCULÓ esta quincena: cierto si fue «solo lo pactado»
+   * (sueldo, bonos y descuentos manuales y faltas; sin cestaticket aparte,
+   * retenciones de ley, aportes, recargos ni prestaciones). Lo guarda
+   * `calcular_nomina`; si nunca se calculó, es el que rige para su fecha. Es el que
+   * manda para enseñar sus recibos.
    */
   solo_lo_pactado: boolean
+  /**
+   * El régimen que rige HOY para su fecha: el que usaría un cálculo nuevo. Si no
+   * coincide con `solo_lo_pactado`, el interruptor se movió después de calcular, y
+   * la base no deja aprobarla sin volver a calcular.
+   */
+  solo_lo_pactado_vigente: boolean
 }
 
 export const ESTADOS_PERIODO: Record<
@@ -1019,6 +1026,22 @@ export function useGuardarParametro() {
         p_texto: p.unidad === 'TEXTO' ? (p.texto ?? null) : null,
         p_fuente: p.fuente || null,
       }),
+  )
+}
+
+/**
+ * El interruptor de los conceptos de ley: pone el régimen de la nómina desde un día.
+ *
+ * Tiene su puerta propia y no pasa por la de los parámetros: el régimen no se
+ * teclea. Lo decide gerencia general, y la base no deja cambiarlo por debajo de una
+ * nómina aprobada ni por delante de un cambio ya programado.
+ */
+export function useCambiarRegimenNomina() {
+  return useAccionNomina((p: { soloLoPactado: boolean; desde: string }) =>
+    rpc<number>('cambiar_regimen_nomina', {
+      p_solo_lo_pactado: p.soloLoPactado,
+      p_desde: p.desde,
+    }),
   )
 }
 

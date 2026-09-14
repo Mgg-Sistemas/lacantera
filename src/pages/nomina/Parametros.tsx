@@ -13,11 +13,15 @@ import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import {
+  soloLoPactadoEn,
+  useCambiarRegimenNomina,
   useCerrarParametro,
   useEliminarParametro,
   useGuardarParametro,
   useParametros,
+  usePeriodos,
 } from '@/lib/api/nomina'
+import { Interruptor } from '@/components/ui/Interruptor'
 import type { Parametro } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { fecha } from '@/lib/formato'
@@ -51,12 +55,36 @@ function valorLegible(p: Parametro): string {
   return f
 }
 
+/** El día siguiente a una fecha AAAA-MM-DD, sin que la zona horaria lo corra. */
+function diaSiguiente(f: string): string {
+  const d = new Date(`${f.slice(0, 10)}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
 export function Parametros() {
   const { data, isPending, error } = useParametros()
   const { puede } = useMisRoles()
   const guardar = useGuardarParametro()
   const cerrar = useCerrarParametro()
   const eliminar = useEliminarParametro()
+  const cambiarRegimen = useCambiarRegimenNomina()
+  const { data: periodos } = usePeriodos()
+
+  /*
+    EL INTERRUPTOR DE LOS CONCEPTOS DE LEY
+
+    Christopher: «escribir DE LEY en cada intento no es adecuado, no es un switch
+    adecuado». El régimen era un parámetro de texto más, y se cambiaba tecleando en
+    el formulario de abajo, donde una palabra de más lo dejaba en DE LEY sin avisar.
+
+    Ahora es un interruptor con su propia puerta (`cambiar_regimen_nomina`). Al
+    moverlo solo se confirma desde qué día: se propone el siguiente al cierre de la
+    última quincena calculada. Lo mueve gerencia general, que es quien aprueba la
+    nómina; la base no deja ponerlo por debajo de una nómina aprobada ni por delante
+    de un cambio ya programado.
+  */
+  const [regimen, setRegimen] = useState<null | { soloLoPactado: boolean; desde: string }>(null)
 
   const [nuevo, setNuevo] = useState<null | {
     /*
@@ -83,13 +111,34 @@ export function Parametros() {
   const vigentes = useMemo(() => {
     const vistas = new Set<string>()
     return (data ?? []).filter((p) => {
+      // El régimen no es una cifra: tiene su interruptor arriba y no se corrige aquí.
+      if (p.clave === 'regimen_nomina') return false
       if (vistas.has(p.clave)) return false
       vistas.add(p.clave)
       return true
     })
   }, [data])
 
-  const historicos = (data ?? []).length - vigentes.length
+  const historicos =
+    (data ?? []).filter((p) => p.clave !== 'regimen_nomina').length - vigentes.length
+
+  const hoy = hoyEnCaracas()
+  const regimenes = (data ?? []).filter((p) => p.clave === 'regimen_nomina')
+  const pactadoHoy = soloLoPactadoEn(data ?? [], hoy)
+  const regimenDeHoy = regimenes.find(
+    (p) =>
+      p.vigencia_desde.slice(0, 10) <= hoy &&
+      (p.vigencia_hasta === null || p.vigencia_hasta.slice(0, 10) >= hoy),
+  )
+  const programado = regimenes
+    .filter((p) => p.vigencia_desde.slice(0, 10) > hoy)
+    .sort((a, b) => a.vigencia_desde.localeCompare(b.vigencia_desde))[0]
+  const puedeRegimen = puede('GERENTE_GENERAL')
+  const ultimoCierre = (periodos ?? [])
+    .filter((p) => p.estado !== 'ANULADA' && p.estado !== 'BORRADOR')
+    .map((p) => p.hasta.slice(0, 10))
+    .sort()
+    .at(-1)
 
   /*
     CORREGIR UNA EQUIVOCACIÓN NO ES ABRIR UNA VIGENCIA
@@ -138,6 +187,35 @@ export function Parametros() {
       />
 
       <Pestanas pestanas={PESTANAS_REGLAS} />
+
+      <Card className="mb-4">
+        <Interruptor
+          encendido={!pactadoHoy}
+          deshabilitado={!puedeRegimen || !data}
+          onCambio={(encender) =>
+            setRegimen({
+              soloLoPactado: !encender,
+              desde: ultimoCierre ? diaSiguiente(ultimoCierre) : hoy,
+            })
+          }
+          etiqueta="Conceptos de ley"
+          detalle={
+            pactadoHoy
+              ? `Apagados${regimenDeHoy ? ` desde el ${fecha(regimenDeHoy.vigencia_desde)}` : ''}: la nómina calcula solo lo pactado —sueldo de la ficha, bonos y descuentos, faltas— y las prestaciones están deshabilitadas.`
+              : `Encendidos${regimenDeHoy ? ` desde el ${fecha(regimenDeHoy.vigencia_desde)}` : ''}: la nómina calcula seguro social, régimen de empleo, FAOV, cestaticket aparte, aportes, recargos y prestaciones con los parámetros de abajo.`
+          }
+        />
+        {programado ? (
+          <p className="text-warning mt-3 text-xs">
+            Programado: los conceptos de ley se{' '}
+            {programado.valor_texto === 'SOLO LO PACTADO' ? 'apagan' : 'encienden'} el{' '}
+            {fecha(programado.vigencia_desde)}.
+          </p>
+        ) : null}
+        {!puedeRegimen ? (
+          <p className="text-ink/45 mt-3 text-xs">Este interruptor lo mueve gerencia general.</p>
+        ) : null}
+      </Card>
 
       {puedeRRHH ? (
         <p className="text-ink/50 mb-4 text-sm">
@@ -400,6 +478,51 @@ export function Parametros() {
             {guardar.error ? <ErrorDeCarga error={guardar.error} /> : null}
             {cerrar.error ? <ErrorDeCarga error={cerrar.error} /> : null}
             {eliminar.error ? <ErrorDeCarga error={eliminar.error} /> : null}
+          </div>
+        </Modal>
+      ) : null}
+
+      {regimen ? (
+        <Modal
+          abierto
+          onCerrar={() => setRegimen(null)}
+          titulo={regimen.soloLoPactado ? 'Apagar los conceptos de ley' : 'Encender los conceptos de ley'}
+          descripcion="Cada quincena se calcula con lo que rija el día en que cierra. Las ya aprobadas o pagadas no cambian."
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setRegimen(null)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={cambiarRegimen.isPending || !regimen.desde}
+                onClick={async () => {
+                  await cambiarRegimen.mutateAsync({
+                    soloLoPactado: regimen.soloLoPactado,
+                    desde: regimen.desde,
+                  })
+                  setRegimen(null)
+                }}
+              >
+                {cambiarRegimen.isPending ? 'Guardando…' : regimen.soloLoPactado ? 'Apagar' : 'Encender'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-ink/70 text-sm leading-relaxed">
+              {regimen.soloLoPactado
+                ? 'Desde ese día la nómina calcula solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas. No lleva seguro social, régimen de empleo, FAOV, cestaticket aparte, aportes, recargos ni prestaciones, y la pantalla de prestaciones queda deshabilitada.'
+                : 'Desde ese día la nómina vuelve a calcular seguro social, régimen de empleo, FAOV, cestaticket aparte, aportes, recargos y prestaciones, con los parámetros de esta pantalla. Revísalos antes: el salario mínimo o el cestaticket pueden haber cambiado.'}
+            </p>
+            <Input
+              label="Desde"
+              type="date"
+              hint="El primer día de la quincena que ya debe calcularse así. Si una quincena calculada queda dentro, hay que volver a calcularla antes de aprobarla."
+              value={regimen.desde}
+              onChange={(e) => setRegimen((r) => (r ? { ...r, desde: e.target.value } : r))}
+            />
+            {cambiarRegimen.error ? <ErrorDeCarga error={cambiarRegimen.error} /> : null}
           </div>
         </Modal>
       ) : null}
