@@ -274,6 +274,13 @@ export interface Periodo {
   total_deducido: string
   total_aportes: string
   total_neto_usd: string
+  /**
+   * Con qué régimen se calcula esta quincena, leído por su fecha de cierre.
+   * Cierto cuando manda «solo lo pactado»: sueldo, bonos y descuentos manuales y
+   * faltas, sin cestaticket aparte, retenciones de ley, aportes, recargos ni
+   * prestaciones. Lo dice la base (`regimen_nomina`), no la pantalla.
+   */
+  solo_lo_pactado: boolean
 }
 
 export const ESTADOS_PERIODO: Record<
@@ -523,6 +530,26 @@ export function useParametros() {
           .order('vigencia_desde', { ascending: false }),
       ),
   })
+}
+
+/**
+ * ¿Manda «solo lo pactado» en esa fecha?
+ *
+ * La misma regla que `private.nomina_solo_lo_pactado` y que la columna
+ * `solo_lo_pactado` de la vista de períodos: la vigencia más reciente de
+ * `regimen_nomina` que cubra la fecha. Sin fila, el régimen es DE LEY. Sirve
+ * donde no hay un período del que leerlo, como la pantalla de prestaciones.
+ */
+export function soloLoPactadoEn(parametros: Parametro[], fecha: string): boolean {
+  const vigente = parametros
+    .filter(
+      (p) =>
+        p.clave === 'regimen_nomina' &&
+        p.vigencia_desde <= fecha &&
+        (p.vigencia_hasta === null || p.vigencia_hasta >= fecha),
+    )
+    .sort((a, b) => b.vigencia_desde.localeCompare(a.vigencia_desde))[0]
+  return vigente?.valor_texto === 'SOLO LO PACTADO'
 }
 
 // ---------------------------------------------------------------------------

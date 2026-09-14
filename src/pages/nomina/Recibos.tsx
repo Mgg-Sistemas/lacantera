@@ -64,6 +64,7 @@ function paraImprimir(
     salarioBasicoDiario: r.salario_basico_diario,
     salarioNormalDiario: r.salario_normal_diario,
     salarioIntegralDiario: r.salario_integral_diario,
+    soloLoPactado: periodo.solo_lo_pactado,
 
     lineas: r.lineas.map((l) => ({
       descripcion: l.descripcion,
@@ -445,35 +446,51 @@ export function Recibos() {
           }
         >
           <div className="space-y-5">
-            <dl className="border-hairline bg-canvas rounded-card grid gap-3 border p-3 text-xs sm:grid-cols-3">
-              <div>
-                <dt className="text-ink/45">Salario básico diario</dt>
-                <dd className="text-ink/80 tabular">{bolivares(abierto.salario_basico_diario)}</dd>
-              </div>
-              <div>
-                <dt className="text-ink/45">Salario normal diario</dt>
-                <dd className="text-ink/80 tabular">{bolivares(abierto.salario_normal_diario)}</dd>
-              </div>
-              <div>
-                <dt className="text-ink/45">Salario integral diario</dt>
-                <dd className="text-ink/80 tabular">
-                  {bolivares(abierto.salario_integral_diario)}
-                </dd>
-              </div>
-            </dl>
+            {periodo?.solo_lo_pactado ? (
+              /*
+                Con «solo lo pactado» no hay básico despejado ni salario integral:
+                el diario es el sueldo de la ficha entre treinta, y los otros dos
+                números saldrían iguales sin decir nada.
+              */
+              <dl className="border-hairline bg-canvas rounded-card grid gap-3 border p-3 text-xs">
+                <div>
+                  <dt className="text-ink/45">Salario diario</dt>
+                  <dd className="text-ink/80 tabular">{bolivares(abierto.salario_basico_diario)}</dd>
+                </div>
+              </dl>
+            ) : (
+              <>
+                <dl className="border-hairline bg-canvas rounded-card grid gap-3 border p-3 text-xs sm:grid-cols-3">
+                  <div>
+                    <dt className="text-ink/45">Salario básico diario</dt>
+                    <dd className="text-ink/80 tabular">{bolivares(abierto.salario_basico_diario)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink/45">Salario normal diario</dt>
+                    <dd className="text-ink/80 tabular">{bolivares(abierto.salario_normal_diario)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink/45">Salario integral diario</dt>
+                    <dd className="text-ink/80 tabular">
+                      {bolivares(abierto.salario_integral_diario)}
+                    </dd>
+                  </div>
+                </dl>
 
-            {/*
-              Estos tres números son más chicos que el sueldo de la ficha, y sin
-              esta línea eso parece un error. No lo es: el sueldo de la ficha es
-              lo que la persona recibe, y de ahí salen el beneficio de
-              alimentación y las retenciones. Lo que queda es el básico, y es el
-              que manda en prestaciones, vacaciones y utilidades.
-            */}
-            <p className="text-ink/45 -mt-3 text-xs">
-              El sueldo de la ficha es lo que recibe. El básico es lo que queda al
-              descontarle el beneficio de alimentación y las retenciones de ley, y es
-              el que cuenta para prestaciones, vacaciones y utilidades.
-            </p>
+                {/*
+                  Estos tres números son más chicos que el sueldo de la ficha, y sin
+                  esta línea eso parece un error. No lo es: el sueldo de la ficha es
+                  lo que la persona recibe, y de ahí salen el beneficio de
+                  alimentación y las retenciones. Lo que queda es el básico, y es el
+                  que manda en prestaciones, vacaciones y utilidades.
+                */}
+                <p className="text-ink/45 -mt-3 text-xs">
+                  El sueldo de la ficha es lo que recibe. El básico es lo que queda al
+                  descontarle el beneficio de alimentación y las retenciones de ley, y es
+                  el que cuenta para prestaciones, vacaciones y utilidades.
+                </p>
+              </>
+            )}
 
             {(['ASIGNACION', 'DEDUCCION', 'APORTE', 'PROVISION'] as const).map((tipo) => {
               const lineas = abierto.lineas

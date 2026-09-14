@@ -3860,6 +3860,8 @@ Hay una idea que conviene entender antes de tocar nada, porque explica casi todo
 
 La segunda idea es de la que depende que este módulo no te cueste dinero: **un período se abre, se calcula, se aprueba y se paga, en ese orden y en tres manos distintas.** Hasta el momento de pagar, todo se puede rehacer. Después de pagar, nada. Esa frontera está explicada con detalle en 11.2 y en 11.11, y es lo primero que hay que aprenderse de este capítulo.
 
+> **Desde el 01/09/2026 la nómina calcula solo lo pactado.** El recibo lleva el sueldo de la ficha, los bonos y descuentos que se cargan a mano y las faltas injustificadas. No lleva el beneficio de alimentación aparte, ni seguro social, régimen de empleo o FAOV, ni aportes del patrono, ni lo que se aparta para prestaciones, y no calcula recargos de horas extra, nocturnas, feriados ni descansos. Las prestaciones sociales quedan deshabilitadas. **No se borró nada**: lo decide un parámetro con fecha, el régimen de la nómina, y el día que diga **DE LEY** vuelve el cálculo completo (ver 11.9). Lo que este capítulo cuenta de los conceptos de ley vale para las quincenas calculadas con ese régimen.
+
 ### 11.1 Quién entra y quién puede hacer qué
 
 Hay dos puertas distintas, y en este módulo conviene no confundirlas.
@@ -4389,6 +4391,8 @@ Si no eliges ninguno, la pantalla dice **Elige un período** y *"Las novedades s
 
 Si el período ya no admite cambios, el aviso es claro: *"Este período está en «{estado}» y ya no admite cambios. Lo que se ve es lo que se usó para calcular."* En ese caso todas las casillas quedan apagadas y desaparecen los botones. No es una falla: los recibos ya están emitidos con esos números y cambiarlos ahora dejaría el papel diciendo una cosa y el sistema otra.
 
+**Con la nómina en solo lo pactado** la tabla se titula **Bonos y descuentos** y no trae las columnas de horas ni de recargos: *"Esta quincena calcula solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas del calendario. Las horas extra y los recargos no se cargan; lo que haya que pagar de más va como bono."* Las faltas se siguen marcando en el calendario de arriba, y cada trabajador sigue teniendo su enlace **Bono o descuento**.
+
 La tabla se titula **Personal activo**, con el subtítulo *"Se guarda por trabajador. Lo que no se toca queda en cero."* Sus columnas:
 
 | Columna | Qué se carga |
@@ -4591,6 +4595,8 @@ Los dos últimos bloques son los que más confusión generan cuando alguien lee 
 
 El bloque **Se aparta para prestaciones** dice lo que se apartó **en ese período**. Lo que la persona lleva acumulado en total, con sus intereses y sus adelantos, está en **Nómina › Prestaciones y parámetros › Prestaciones sociales**, explicado en 11.10. Son la misma cosa vista en dos sitios: el recibo enseña el aporte de esa quincena, la otra pantalla enseña la cuenta completa.
 
+**Con la nómina en solo lo pactado el detalle es más corto.** Arriba, una sola cifra: **Salario diario**. Debajo, solo **Lo que se gana** y **Lo que se descuenta**: esa quincena no calcula beneficio de alimentación aparte, retenciones de ley, aportes del patrono ni lo que se aparta para prestaciones, así que esos bloques no aparecen. El papel impreso sigue la misma regla.
+
 #### Imprimir
 
 Pulsa **Imprimir recibo** en el detalle, el icono de impresora en la fila, o **Imprimir todos** para el período completo. El recibo se abre primero en el visor, y solo se descarga si pulsas **Descargar**.
@@ -4634,6 +4640,15 @@ Cada valor se muestra según su unidad: con el símbolo de porcentaje, con **Bs*
 
 **Un valor nuevo no borra el anterior.** La ventana lo explica: *"No sustituye el valor anterior: lo cierra el día antes y empieza uno nuevo."* Y aquí **no hay borrado de ninguna clase**: lo único que se puede hacer es cargar una vigencia nueva.
 
+#### El régimen de la nómina
+
+Un parámetro de texto decide qué calcula la nómina, con su fecha como todos: **SOLO LO PACTADO** o **DE LEY**. Desde el 01/09/2026 dice **SOLO LO PACTADO**.
+
+- **SOLO LO PACTADO**: el recibo lleva el sueldo de la ficha, los bonos y descuentos cargados a mano y las faltas injustificadas. No calcula beneficio de alimentación aparte, retenciones de ley, aportes, recargos ni prestaciones, y la pantalla de prestaciones queda deshabilitada.
+- **DE LEY**: el cálculo completo que describe el resto de este capítulo.
+
+Para volver al cálculo completo se carga una **Nueva vigencia** de ese parámetro con **DE LEY** y la fecha desde la que rige. Se lee por la fecha de cierre de cada quincena, así que las anteriores conservan el régimen con que se calcularon, y una quincena ya aprobada o pagada no cambia.
+
 #### Quién firma los recibos y las constancias
 
 El nombre, el cargo y la cédula de quien firma por recursos humanos también se cargan aquí, como parámetros de texto. La razón es la misma: el día que cambie la persona, eso lo corrige recursos humanos desde su pantalla.
@@ -4647,6 +4662,8 @@ Hay un detalle que conviene conocer: **el sistema trata el texto «Por definir»
 **No es una entrada del menú**: es la primera pestaña de **Prestaciones y parámetros**.
 
 Es la cuenta de lo que la empresa le debe a cada trabajador por el tiempo que lleva trabajando aquí. La pantalla lo dice en una línea: *"Lo que la empresa le debe a cada quien por el tiempo trabajado."*
+
+> **Con la nómina en solo lo pactado, esta pantalla está deshabilitada.** En lugar de la lista dice **Las prestaciones sociales están deshabilitadas** y cómo se vuelven a habilitar, y el sistema se niega a liquidar, cerrar trimestre, calcular intereses o adelantar. Lo que hubiera guardado no se borra.
 
 Esta cuenta se lleva dentro del sistema, no en una hoja aparte, y se lleva separada de la nómina de la quincena. La razón es que no es dinero que se pague ahora: se acumula a favor del trabajador y solo sale de la empresa en dos momentos, cuando se le adelanta una parte y cuando se le liquida.
 

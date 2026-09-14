@@ -443,6 +443,15 @@ export function Asistencia() {
   const bonosAbiertos = periodo ? !['PAGADA', 'ANULADA'].includes(periodo.estado) : false
   const bonoTrasAprobar = periodo?.estado === 'APROBADA'
 
+  /*
+    CON «SOLO LO PACTADO» NO SE CARGAN HORAS NI RECARGOS.
+
+    La base no los calcula en ese régimen (`regimen_nomina`), así que dejar las
+    casillas sería invitar a teclear horas que no van a salir en el recibo. Lo
+    que haya que pagar de más va como bono, en «Bono o descuento».
+  */
+  const campos: readonly (typeof CAMPOS)[number][] = periodo?.solo_lo_pactado ? [] : CAMPOS
+
   // Las novedades guardadas llenan la tabla. Sin esto, quien vuelve a la
   // pantalla ve ceros y cree que se perdió lo que cargó ayer.
   useEffect(() => {
@@ -548,8 +557,12 @@ export function Asistencia() {
         <Card flush>
           <div className="p-5 pb-2">
             <CardHeader
-              title="Horas y recargos"
-              subtitle="Horas extra, nocturnas y días trabajados de descanso o feriado. Se guarda por trabajador; lo que no se toca queda en cero."
+              title={periodo.solo_lo_pactado ? 'Bonos y descuentos' : 'Horas y recargos'}
+              subtitle={
+                periodo.solo_lo_pactado
+                  ? 'Esta quincena calcula solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas del calendario. Las horas extra y los recargos no se cargan; lo que haya que pagar de más va como bono.'
+                  : 'Horas extra, nocturnas y días trabajados de descanso o feriado. Se guarda por trabajador; lo que no se toca queda en cero.'
+              }
             />
           </div>
 
@@ -558,7 +571,7 @@ export function Asistencia() {
               <thead>
                 <tr className="text-ink/45 border-hairline border-y text-left text-xs">
                   <th className="px-5 py-2.5 font-medium">Trabajador</th>
-                  {CAMPOS.map((c) => (
+                  {campos.map((c) => (
                     <th key={c.clave} className="px-2 py-2.5 text-center font-medium">
                       {c.etiqueta}
                     </th>
@@ -632,7 +645,7 @@ export function Asistencia() {
                         ) : null}
                       </td>
 
-                      {CAMPOS.map((c) => (
+                      {campos.map((c) => (
                         <td key={c.clave} className="px-2 py-3">
                           {/* Se dibuja a mano porque va dentro de una celda y el
                               `Input` de la casa trae etiqueta y envoltorio. Lo que
@@ -652,7 +665,7 @@ export function Asistencia() {
                       ))}
 
                       <td className="px-5 py-3 text-right">
-                        {abierto && puedeRRHH ? (
+                        {abierto && puedeRRHH && campos.length > 0 ? (
                           <Button
                             size="sm"
                             variant="ghost"

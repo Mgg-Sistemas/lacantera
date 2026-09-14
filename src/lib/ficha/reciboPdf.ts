@@ -81,6 +81,11 @@ export interface DatosRecibo {
   salarioBasicoDiario: string
   salarioNormalDiario: string
   salarioIntegralDiario: string
+  /**
+   * La quincena se calculó con «solo lo pactado»: no hay básico despejado ni
+   * salario integral, así que el papel enseña un solo salario diario.
+   */
+  soloLoPactado?: boolean
 
   lineas: LineaImpresa[]
   totalAsignaciones: string
@@ -220,11 +225,14 @@ function salarios(doc: Doc, d: DatosRecibo, y: number): number {
   doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
   doc.line(IZQ, y, DER, y)
 
-  const campos: [string, string][] = [
-    ['Salario básico diario', cifra(d.salarioBasicoDiario)],
-    ['Salario normal diario', cifra(d.salarioNormalDiario)],
-    ['Salario integral diario', cifra(d.salarioIntegralDiario)],
-  ]
+  // Con «solo lo pactado» los tres saldrían iguales: se pinta uno, con su nombre.
+  const campos: [string, string][] = d.soloLoPactado
+    ? [['Salario diario', cifra(d.salarioBasicoDiario)]]
+    : [
+        ['Salario básico diario', cifra(d.salarioBasicoDiario)],
+        ['Salario normal diario', cifra(d.salarioNormalDiario)],
+        ['Salario integral diario', cifra(d.salarioIntegralDiario)],
+      ]
 
   const ancho = (DER - IZQ) / 3
   for (const [i, [clave, valor]] of campos.entries()) {
