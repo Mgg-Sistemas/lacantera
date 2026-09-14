@@ -1,18 +1,19 @@
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
-import { conReintento } from '@/lib/cargarPagina'
+import { conAvisoSiNoLlega } from '@/lib/cargarPagina'
 
 /*
   Cada pantalla se carga aparte, y con red de seguridad.
 
-  `conReintento` cubre el caso de desplegar con la pestaña abierta: los trozos
-  viejos ya no existen y `lazy` se queda en blanco sin decir nada.
+  `conAvisoSiNoLlega` cubre el caso de desplegar con la pestaña abierta: si el
+  trozo de una pantalla ya no está, `lazy` se quedaría en blanco sin decir nada.
+  En su lugar se explica y se deja el botón de actualizar, sin recargar sola.
 */
 // `any` es el mismo que usa el tipo de `lazy` en React: la firma tiene que
 // admitir componentes con props distintas, y estrecharlo rompe los que las
 // llevan.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function pagina<T extends ComponentType<any>>(importar: () => Promise<{ default: T }>) {
-  return lazy(conReintento(importar))
+  return lazy(conAvisoSiNoLlega(importar))
 }
 import { salioAProposito } from '@/lib/auth'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router'
