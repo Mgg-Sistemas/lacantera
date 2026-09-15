@@ -178,9 +178,10 @@ export async function armarValeDeCombustible(d: DatosValeCombustible): Promise<V
     siempre en el mismo sitio y quien lo maneja a diario no debe tener que
     buscarlas. Pero eso obliga a comprobar que lo de arriba no llegue hasta
     ahi: una nota larga se les echaria encima y el papel saldria con el texto
-    pisado. Si no cabe, se pasa a otra hoja entera.
+    pisado. Si no cabe, se pasa a otra hoja entera. Sin el aviso que iba encima,
+    basta con dejar libre el hueco de la firma estampada, como en las notas.
   */
-  if (y > ABAJO - 46) {
+  if (y > ABAJO - 40) {
     doc.addPage()
     y = membrete(doc, logo, {
       empresa: d.empresa,
@@ -191,19 +192,8 @@ export async function armarValeDeCombustible(d: DatosValeCombustible): Promise<V
     })
   }
 
-  /*
-    La advertencia va encima de las firmas y no al pie.
-
-    Al pie nadie la lee. Justo antes de la raya, sí — es el único sitio del
-    papel donde quien firma se para un segundo.
-  */
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-  const aviso = doc.splitTextToSize(
-    'Al firmar, quien recibe declara que se le entregó la cantidad indicada arriba. Este vale respalda una salida de inventario y no se puede anular sin dejar constancia.',
-    ANCHO_UTIL,
-  ) as string[]
-  doc.text(aviso, IZQ, Math.max(y + 4, ABAJO - 40), { lineHeightFactor: 1.4 })
-
+  // Encima de las firmas iba un aviso —«Al firmar, quien recibe declara…»—, y
+  // Christopher pidió quitarlo de los papeles.
   firmas(
     doc,
     ABAJO - 24,

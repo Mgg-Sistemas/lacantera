@@ -1,6 +1,5 @@
 import { logoComoImagen } from '@/lib/ficha/logo'
 import {
-  GRIS,
   MARCA,
   TINTA,
   bloqueEtiquetado,
@@ -340,38 +339,24 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
   }
 
   /*
-    Las firmas van a altura fija —abajo del todo— porque una nota se firma
-    siempre en el mismo sitio y quien maneja veinte al día no debe buscarlas.
-    Eso obliga a comprobar que la tabla no llegue hasta ahí: con quince
-    renglones se pisarían.
-  */
-  /*
     DÓNDE EMPIEZA LA ZONA DE FIRMAS
 
     Las firmas van a altura fija —abajo del todo— porque una nota se firma
     siempre en el mismo sitio y quien maneja veinte al día no debe buscarlas. Eso
-    obliga a comprobar que la tabla no llegue hasta ahí.
+    obliga a comprobar que la tabla no llegue hasta ahí: con quince renglones se
+    pisarían.
 
-    Antes la comprobación era un número redondo, «cuarenta y seis milímetros», y
-    con material de tres almacenes se pasaba por 1,7 mm: la nota se iba a dos
-    hojas con cuatro renglones y la segunda llevaba solo las firmas. Medido, no
-    supuesto: el aviso ocupa lo que ocupa según en cuántas líneas parta, y de ahí
-    hacia arriba es donde puede acabar la tabla.
+    Encima de la raya iba un aviso —«Al firmar, quien recibe declara…»— y
+    Christopher pidió quitarlo de los papeles. Lo que se reserva ahora es el
+    hueco de la firma estampada, trece milímetros sobre la raya, y algo de aire.
+    Si la tabla llega hasta ahí, las firmas pasan a una hoja de continuación.
   */
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-  const aviso = doc.splitTextToSize(
-    'Al firmar, quien recibe declara que se le entregó el material relacionado arriba en las cantidades indicadas. Esta nota respalda una salida de inventario y queda registrada en el libro de movimientos.',
-    ANCHO_UTIL,
-  ) as string[]
-
   const LINEA_DE_FIRMAS = ABAJO - 24
-  // Cuatro milímetros de aire entre la última línea del aviso y la raya donde
-  // se firma: pegados se leen como una sola cosa.
-  const ARRANQUE_DEL_AVISO = LINEA_DE_FIRMAS - 4 - aviso.length * 3.8
+  const ARRANQUE_DE_FIRMAS = LINEA_DE_FIRMAS - 16
 
-  if (y > ARRANQUE_DEL_AVISO) {
+  if (y > ARRANQUE_DE_FIRMAS) {
     doc.addPage()
-    y = membrete(doc, logo, {
+    membrete(doc, logo, {
       empresa: d.empresa,
       datos: [
         ['N° nota', d.numero],
@@ -379,11 +364,6 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
       ],
     })
   }
-
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-  doc.text(aviso, IZQ, Math.max(y + 6, ARRANQUE_DEL_AVISO), {
-    lineHeightFactor: 1.4,
-  })
 
   firmas(
     doc,
