@@ -37,12 +37,13 @@ import {
   traslado tiene y la salida no: un sitio de donde sale, otro donde entra, y una
   firma en cada punta.
 
-  EL NÚMERO ES EL DEL MOVIMIENTO
+  EL NÚMERO ES EL DEL TRASLADO
 
-  El traslado todavía no tiene numeración propia: nace y termina en el mismo
-  instante, como dos movimientos hermanos. Se usa el de la salida, que es la
-  cabeza de la pareja y la que se deshace. La numeración propia llegará con la
-  solicitud de traslado, cuando un traslado pueda tardar en llegar.
+  Desde que el traslado pasa por solicitud, aceptada y recibida, tiene número
+  propio —TRA— y el papel lleva ese, con el paso en el que está: la nota que se
+  imprime al aceptar dice «De camino», y la misma nota impresa al recibir dice
+  «Recibido». Los traslados de antes, sin número propio, siguen saliendo con
+  el de su movimiento de salida.
 */
 
 export interface DatosNotaDeTraslado {
@@ -53,6 +54,8 @@ export interface DatosNotaDeTraslado {
   origen: string
   destino: string
   motivo?: string | null
+  /** El paso, dicho como se lee: «De camino». Solo en los traslados con número. */
+  estado?: string | null
   renglones: RenglonDeSalida[]
   empresa: { razonSocial: string; rif: string }
   momento: Date
@@ -79,6 +82,7 @@ export async function armarNotaDeTraslado(d: DatosNotaDeTraslado): Promise<NotaA
     ['Sale de', d.origen],
     ['Entra en', d.destino],
     ['Fecha', d.fecha],
+    ...(d.estado ? ([['Estado', d.estado]] as Array<[string, string]>) : []),
   ])
 
   // El motivo antes de la tabla, como en la nota de salida: explica todos los

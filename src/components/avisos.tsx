@@ -27,6 +27,8 @@ export const ICONO_DE_MODULO: Record<Modulo, LucideIcon> = {
   MAQUINARIA: Wrench,
   COMBUSTIBLE: Fuel,
   ASIGNACIONES: HandHelping,
+  // Los traslados avisan desde el 15/09/2026: el mismo icono que Inventario en el riel.
+  INVENTARIO: Boxes,
   SISTEMA: Settings,
 }
 
@@ -36,6 +38,7 @@ export const NOMBRE_DE_MODULO: Record<Modulo, string> = {
   MAQUINARIA: 'Maquinaria',
   COMBUSTIBLE: 'Combustible',
   ASIGNACIONES: 'Asignaciones',
+  INVENTARIO: 'Inventario',
   SISTEMA: 'Sistema',
 }
 

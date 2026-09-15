@@ -9,9 +9,10 @@ import { conDueno, detalleDeDueno } from '@/lib/deQuien'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
 import {
   useAlmacenes,
+  useComoActuoEnTraslados,
   useExistencias,
   usePropietarios,
-  useTransferir,
+  useSolicitarTraslado,
 } from '@/lib/api/inventario'
 
 /*
@@ -36,6 +37,8 @@ const VACIO = {
      dueño la base lo resuelve y preguntar sería hacer trabajar a quien ya sabe
      la respuesta. */
   propietario: '',
+  /* Hacerlo ya: sale y llega en este momento, sin pasar por «En camino». */
+  inmediato: false,
 }
 
 /*
@@ -70,17 +73,23 @@ export function ModalTraslado({
   onCerrar: () => void
   /** El almacén que la pantalla tiene elegido, para proponerlo como origen. */
   origen?: string
-  /** Con el traslado hecho recibe su salida, que es la cabeza de la pareja, para sacar la nota. */
-  onTrasladado?: (idSalida: number) => void
+  /**
+   * Con el traslado pedido o hecho recibe su id. Si se hizo en el acto, el
+   * material ya se movió y la pantalla saca la nota; si solo se pidió, todavía no.
+   */
+  onTrasladado?: (t: { id: number; inmediato: boolean }) => void
 }) {
   const { data: almacenes } = useAlmacenes()
   const { data: propietarios } = usePropietarios()
+  const { data: yo } = useComoActuoEnTraslados()
+  /* De dónde sale lo que se acaba de pedir, para decir a quién le toca ahora. */
+  const [pedido, setPedido] = useState<string | null>(null)
 
   /* El rótulo del dueño, para donde no cabe una pastilla. */
   const nombreDeDueno = (codigo?: string | null) =>
     (propietarios ?? []).find((d) => d.codigo === codigo)?.nombre ?? codigo ?? undefined
   const { data: articulos } = useArticulos()
-  const transferir = useTransferir()
+  const solicitar = useSolicitarTraslado()
   const { data: formasDeContar } = useTodasLasPresentaciones()
 
   const [form, setForm] = useState(VACIO)
@@ -215,6 +224,25 @@ export function ModalTraslado({
 
   const hayMezcla = duenosEnElOrigen.length > 1
 
+  /*
+    PEDIRLO O HACERLO YA.
+
+    Christopher: «un traslado no necesariamente es inmediato (aunque hay que
+    dejar abierta la posibilidad con alguna opción)». Hacerlo ya es aceptar en el
+    origen y recibir en el destino a la vez, así que la casilla solo aparece para
+    quien responde por los dos sitios, o para administración.
+
+    Lo que entró sin costo no pasa por «En camino» —se mezclaría con lo que sí
+    costó—, así que desde ahí solo se puede en el acto.
+  */
+  const puedeHacerloYa =
+    yo != null &&
+    Boolean(form.origen && form.destino) &&
+    (yo.respaldo ||
+      (yo.sitios.includes(Number(form.origen)) && yo.sitios.includes(Number(form.destino))))
+  const soloEnElActo = origenSinCosto === true
+  const inmediato = soloEnElActo || (form.inmediato && puedeHacerloYa)
+
   const cantidad = Number(form.cantidad.replace(',', '.'))
   const listo =
     form.origen &&
@@ -226,17 +254,20 @@ export function ModalTraslado({
     form.motivo.trim().length >= 4 &&
     // Con mezcla en el origen hay que decir de quién sale. La base también lo
     // para, pero enterarse al pulsar con el formulario lleno llega tarde.
-    (!hayMezcla || Boolean(form.propietario))
+    (!hayMezcla || Boolean(form.propietario)) &&
+    (!soloEnElActo || puedeHacerloYa)
 
   const cerrar = () => {
     setError('')
+    setPedido(null)
     onCerrar()
   }
 
   const enviar = async () => {
     setError('')
     try {
-      const idSalida = await transferir.mutateAsync({
+      const deDonde = activos.find((a) => String(a.id) === form.origen)?.nombre ?? 'el origen'
+      const id = await solicitar.mutateAsync({
         origen_id: Number(form.origen),
         destino_id: Number(form.destino),
         articulo_id: Number(form.articulo),
@@ -247,11 +278,19 @@ export function ModalTraslado({
         suelto: form.suelto ? Number(form.suelto.replace(',', '.')) : null,
         // Vacío cuando no hay mezcla: la base lo resuelve mirando lo que hay.
         propietario: form.propietario || null,
+        inmediato,
       })
       setForm(VACIO)
-      onCerrar()
-      // El papel sale en el acto, como la nota de salida: viaja con el material.
-      onTrasladado?.(Number(idSalida))
+      if (inmediato) {
+        onCerrar()
+        // El papel sale en el acto, como la nota de salida: viaja con el material.
+        onTrasladado?.({ id: Number(id), inmediato: true })
+      } else {
+        // Queda pedido. Se dice aquí, en la misma ventana, a quién le toca ahora:
+        // cerrarla sin más dejaría a quien pidió sin saber si llegó a algún sitio.
+        setPedido(deDonde)
+        onTrasladado?.({ id: Number(id), inmediato: false })
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     }
@@ -261,19 +300,39 @@ export function ModalTraslado({
     <Modal
       abierto={abierto}
       onCerrar={cerrar}
-      titulo="Nuevo traslado"
-      descripcion="El costo del material viaja con él. Trasladar no cambia lo que vale."
+      titulo={pedido ? 'Traslado pedido' : 'Nuevo traslado'}
+      descripcion={
+        pedido
+          ? undefined
+          : 'Se pide; lo acepta quien responde por el sitio de donde sale y lo recibe quien responde por el de destino. El costo viaja con el material.'
+      }
       acciones={
-        <>
-          <Button variant="ghost" onClick={cerrar}>
-            Cancelar
-          </Button>
-          <Button onClick={enviar} disabled={!listo || transferir.isPending}>
-            {transferir.isPending ? 'Trasladando…' : 'Trasladar'}
-          </Button>
-        </>
+        pedido ? (
+          <>
+            <Button variant="ghost" onClick={() => setPedido(null)}>
+              Pedir otro
+            </Button>
+            <Button onClick={cerrar}>Listo</Button>
+          </>
+        ) : (
+          <>
+            <Button variant="ghost" onClick={cerrar}>
+              Cancelar
+            </Button>
+            <Button onClick={enviar} disabled={!listo || solicitar.isPending}>
+              {solicitar.isPending ? 'Enviando…' : inmediato ? 'Trasladar ya' : 'Pedir traslado'}
+            </Button>
+          </>
+        )
       }
     >
+      {pedido ? (
+        <p className="text-ink/80 text-sm">
+          Queda pedido. Lo acepta quien responde por «{pedido}», o administración, y hasta
+          entonces el material no se mueve. Lo sigues en Transferencias.
+        </p>
+      ) : (
+      <>
       {/* Once almacenes con nombres largos —«TALLER DE REPARACION DE PLANTA
           FIJA»— no se eligen en un desplegable: hay que abrirlo, recorrerlo
           con la vista y acertar. Escribiendo «planta» sale solo, y de paso
@@ -472,7 +531,40 @@ export function ModalTraslado({
         hint="Dentro de seis meses esto será lo único que explique el movimiento."
       />
 
+      {form.origen && form.destino ? (
+        soloEnElActo && !puedeHacerloYa ? (
+          <p className="text-danger mt-3 text-sm">
+            Lo que hay en ese sitio entró sin costo y solo se traslada en el acto. Eso lo hace
+            quien responde por los dos sitios, o administración.
+          </p>
+        ) : puedeHacerloYa ? (
+          <label className="border-hairline mt-4 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+            <input
+              type="checkbox"
+              className="accent-royal-600 mt-0.5 size-4 shrink-0"
+              checked={inmediato}
+              disabled={soloEnElActo}
+              onChange={(e) => cambiar({ inmediato: e.target.checked })}
+            />
+            <span className="text-ink/80">
+              Hacerlo ya
+              <span className="text-ink/50 mt-0.5 block text-xs">
+                {soloEnElActo
+                  ? 'Lo que entró sin costo no pasa por «En camino»: sale y llega en este momento.'
+                  : `Sale y llega en este momento, sin esperar a que lo acepten y lo reciban. ${
+                      yo?.respaldo
+                        ? 'Lo puedes hacer como administración.'
+                        : 'Lo puedes hacer porque respondes por los dos sitios.'
+                    }`}
+              </span>
+            </span>
+          </label>
+        ) : null
+      ) : null}
+
       {error ? <p className="text-danger mt-3 text-sm">{error}</p> : null}
+      </>
+      )}
     </Modal>
   )
 }

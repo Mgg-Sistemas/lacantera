@@ -57,6 +57,10 @@ const AFECTA: Record<string, string[][]> = {
   // bidón sigue viendo solo el tambor hasta que recargue.
   articulos: [['articulos'], ['existencias'], ['tesoreria'], ['presentaciones-articulo']],
   almacenes: [['almacenes'], ['existencias']],
+  // Cada paso de un traslado escribe en el libro —aceptar saca del origen,
+  // recibir mete en el destino— y avisa. La lista de Transferencias lo sigue en
+  // vivo, y Existencias también, porque lo que va de camino se ve ahí.
+  traslados: [['traslados'], ['existencias'], ['movimientos'], ['notificaciones']],
   // El nombre del dueño se pinta en los almacenes y en las máquinas: si alguien
   // registra a la gobernación mientras otro tiene abierto el formulario del
   // almacén, el desplegable tiene que ofrecerla sin recargar.

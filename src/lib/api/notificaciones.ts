@@ -30,6 +30,7 @@ export type Modulo =
   | 'MAQUINARIA'
   | 'COMBUSTIBLE'
   | 'ASIGNACIONES'
+  | 'INVENTARIO'
   | 'SISTEMA'
 
 export type Importancia = 'INFO' | 'ATENCION' | 'URGENTE'
