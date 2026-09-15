@@ -10,6 +10,7 @@ import {
   Landmark,
   Network,
   Pickaxe,
+  Receipt,
   Settings,
   ShoppingCart,
   Truck,
@@ -129,6 +130,10 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/inventario', 'INVENTARIO'],
   ['/app/despachos', 'DESPACHOS'],
   ['/app/compras', 'COMPRAS'],
+  // La facturación es su propio módulo desde el 15/09/2026: gasta números de
+  // control, entra al libro y deja a alguien debiendo, y eso no es tarea de
+  // quien cotiza ni de quien despacha.
+  ['/app/facturacion', 'FACTURACION'],
   ['/app/ventas', 'VENTAS'],
   ['/app/organigrama', 'NOMINA'],
   ['/app/nomina', 'NOMINA'],
@@ -249,10 +254,12 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/compras/proveedores': 'rif suplidor',
   '/app/compras/recepciones': 'recibir entrada mercancia llegada',
   '/app/compras/libro': 'iva impuesto seniat fiscal credito',
-  '/app/ventas/facturacion': 'factura fac cobrar emitir',
+  '/app/facturacion': 'factura fac cobrar cobro emitir fiscal numero de control',
+  '/app/facturacion/notas-credito': 'nota de credito ncr devolucion descuento correccion',
+  '/app/facturacion/por-cobrar': 'deuda deben clientes cartera vencida saldo cobranza',
+  '/app/facturacion/libro-ventas': 'iva impuesto seniat fiscal debito',
   '/app/ventas/despachos': 'nota de entrega ne remision',
   '/app/ventas/clientes': 'rif comprador',
-  '/app/ventas/libro': 'iva impuesto seniat fiscal debito',
   '/app/ventas/precios': 'tarifa lista precio',
   '/app/inventario/existencias': 'stock cuanto hay disponible sacar salida dar de baja merma consumo desechar danado obsoleto contar conteo ajuste',
   '/app/inventario/articulos': 'catalogo repuesto insumo herramienta epp material',
@@ -543,9 +550,11 @@ export const navigation: NavSection[] = [
           // menú y la pantalla daba el cartel de obra: se dijo al mover los
           // pagos que el historial venía con ellos, y no vino.
           { label: 'Movimientos de dinero', to: '/app/tesoreria/movimientos' },
-          // El libro cuelga de Compras y no de un módulo fiscal propio porque
-          // quien lo saca es quien cargó las facturas, y porque así el permiso
-          // que ya gobierna las facturas gobierna también su libro.
+          // El libro cuelga de Compras porque quien lo saca es quien cargó las
+          // facturas del proveedor, y así el permiso que ya gobierna esas
+          // facturas gobierna también su libro. Se quedó aquí cuando Facturación
+          // pasó a módulo propio (15/09/2026): ese módulo es lo que la empresa
+          // emite, y este libro es lo que recibe.
           // El centro de costos que abría este grupo se retiró el 14/09/2026:
           // leía un libro de tesorería vacío. Lo sustituye el módulo «Centro
           // de costo», con entrada propia en Administración.
@@ -591,22 +600,31 @@ export const navigation: NavSection[] = [
           { label: 'Lista de precios', to: '/app/ventas/precios' },
           { label: 'Cotizaciones', to: '/app/ventas/cotizaciones' },
           { label: 'Notas de entrega', to: '/app/ventas/despachos' },
-          { label: 'Facturación', to: '/app/ventas/facturacion' },
-          { label: 'Notas de crédito', to: '/app/ventas/notas-credito' },
-          { label: 'Libro de ventas', to: '/app/ventas/libro' },
-          /*
-            SE MUDA AQUI DESDE TESORERIA.
+        ],
+      },
+      {
+        /*
+          FACTURACIÓN, MÓDULO PROPIO DESDE EL 15/09/2026.
 
-            Lo que deben los clientes es de ventas: nace de una factura y se
-            cierra con un cobro. Vivia en Tesoreria por como se armo el menu al
-            principio, y cuando Tesoreria se retiro se quedo enterrada en un
-            modulo que ya no se ofrece — inalcanzable, aunque la pantalla
-            funcione.
+          Facturas, notas de crédito, lo que deben los clientes y el libro de
+          ventas vivían dentro de Ventas y con su mismo permiso. Se separan
+          porque son otra cosa: gastan número de control, entran al libro y dejan
+          a alguien debiendo. Quien lleva eso —administración, el contador— no
+          tiene por qué poder cotizar ni despachar, ni al revés.
 
-            Devolver Ventas sin esto seria devolver la mitad: se podria
-            facturar y no se podria ver quien debe.
-          */
-          { label: 'Cuentas por cobrar', to: '/app/tesoreria/por-cobrar' },
+          Ventas se queda con el camino del material: cliente, precio, cotización
+          y nota de entrega. La factura se hace aquí, sobre esas notas.
+
+          El orden es el del trabajo: se factura, se corrige lo facturado, se
+          cobra lo que se debe y al cierre del mes se saca el libro.
+        */
+        label: 'Facturación',
+        icon: Receipt,
+        children: [
+          { label: 'Facturas', to: '/app/facturacion' },
+          { label: 'Notas de crédito', to: '/app/facturacion/notas-credito' },
+          { label: 'Cuentas por cobrar', to: '/app/facturacion/por-cobrar' },
+          { label: 'Libro de ventas', to: '/app/facturacion/libro-ventas' },
         ],
       },
       {

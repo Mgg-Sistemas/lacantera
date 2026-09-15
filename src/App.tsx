@@ -224,10 +224,10 @@ const Despachos = pagina(() =>
   import('@/pages/ventas/Despachos').then((m) => ({ default: m.Despachos })),
 )
 const Facturacion = pagina(() =>
-  import('@/pages/ventas/Facturacion').then((m) => ({ default: m.Facturacion })),
+  import('@/pages/facturacion/Facturacion').then((m) => ({ default: m.Facturacion })),
 )
 const PorCobrar = pagina(() =>
-  import('@/pages/tesoreria/PorCobrar').then((m) => ({ default: m.PorCobrar })),
+  import('@/pages/facturacion/PorCobrar').then((m) => ({ default: m.PorCobrar })),
 )
 const TableroExplotacion = pagina(() =>
   import('@/pages/explotacion/Tablero').then((m) => ({ default: m.TableroExplotacion })),
@@ -270,10 +270,10 @@ const LibroCompras = pagina(() =>
   import('@/pages/compras/LibroCompras').then((m) => ({ default: m.LibroCompras })),
 )
 const LibroVentas = pagina(() =>
-  import('@/pages/ventas/LibroVentas').then((m) => ({ default: m.LibroVentas })),
+  import('@/pages/facturacion/LibroVentas').then((m) => ({ default: m.LibroVentas })),
 )
 const NotasCredito = pagina(() =>
-  import('@/pages/ventas/NotasCredito').then((m) => ({ default: m.NotasCredito })),
+  import('@/pages/facturacion/NotasCredito').then((m) => ({ default: m.NotasCredito })),
 )
 // El manual pesa medio megabyte de texto. Partido, solo lo descarga quien lo abre.
 const Manual = pagina(() => import('@/pages/Manual').then((m) => ({ default: m.Manual })))
@@ -307,8 +307,20 @@ const paginas: Record<string, ReactNode> = {
   '/app/compras/recepciones': <Recepciones />,
   '/app/compras/facturas': <FacturasProveedor />,
   '/app/compras/libro': <LibroCompras />,
-  '/app/ventas/notas-credito': <NotasCredito />,
-  '/app/ventas/libro': <LibroVentas />,
+  /*
+    LA FACTURACIÓN ES SU PROPIO MÓDULO DESDE EL 15/09/2026.
+
+    Sus cuatro pantallas vivían en Ventas y en Tesorería. Quien tenga guardada
+    una dirección vieja cae en la nueva en vez de en la portada.
+  */
+  '/app/facturacion': <Facturacion />,
+  '/app/facturacion/notas-credito': <NotasCredito />,
+  '/app/facturacion/por-cobrar': <PorCobrar />,
+  '/app/facturacion/libro-ventas': <LibroVentas />,
+  '/app/ventas/facturacion': <Navigate to="/app/facturacion" replace />,
+  '/app/ventas/notas-credito': <Navigate to="/app/facturacion/notas-credito" replace />,
+  '/app/ventas/libro': <Navigate to="/app/facturacion/libro-ventas" replace />,
+  '/app/tesoreria/por-cobrar': <Navigate to="/app/facturacion/por-cobrar" replace />,
   '/app/nomina/prestaciones': <Prestaciones />,
   '/app/maquinaria': <Maquinaria />,
   '/app/maquinaria/nueva': <FichaMaquina />,
@@ -336,13 +348,11 @@ const paginas: Record<string, ReactNode> = {
   '/app/tesoreria/pagos': <Pagos />,
   '/app/tesoreria/por-pagar': <PorPagar />,
   '/app/tesoreria/movimientos': <MovimientosTesoreria />,
-  '/app/tesoreria/por-cobrar': <PorCobrar />,
   '/app/ventas': <TableroVentas />,
   '/app/ventas/clientes': <ClientesVenta />,
   '/app/ventas/precios': <PreciosVenta />,
   '/app/ventas/cotizaciones': <CotizacionesVenta />,
   '/app/ventas/despachos': <Despachos />,
-  '/app/ventas/facturacion': <Facturacion />,
   '/app/config': <TableroConfiguracion />,
   '/app/config/usuarios': <Usuarios />,
   '/app/inventario/articulos': <Articulos />,

@@ -5,7 +5,8 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
-import { useCotizacionesVenta, useFacturas, useNotasEntrega } from '@/lib/api/ventas'
+import { useCotizacionesVenta, useNotasEntrega } from '@/lib/api/ventas'
+import { useFacturas } from '@/lib/api/facturacion'
 import { dolares } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -78,7 +79,7 @@ const PASOS: Paso[] = [
     titulo: 'Se factura',
     espera: 'notas por facturar',
     icono: Receipt,
-    ruta: '/app/ventas/facturacion',
+    ruta: '/app/facturacion',
     accion: 'Facturar',
   },
   {
@@ -86,7 +87,7 @@ const PASOS: Paso[] = [
     titulo: 'Se cobra',
     espera: 'facturas por cobrar',
     icono: Wallet,
-    ruta: '/app/ventas/facturacion',
+    ruta: '/app/facturacion',
     accion: 'Registrar cobro',
   },
 ]
@@ -211,7 +212,7 @@ export function TableroVentas() {
                     Lista de precios
                   </Button>
                 </Link>
-                <Link to="/app/ventas/libro">
+                <Link to="/app/facturacion/libro-ventas">
                   <Button variant="outline" size="sm">
                     Libro de ventas
                   </Button>
@@ -228,7 +229,7 @@ export function TableroVentas() {
                 Saldo de las facturas emitidas. Lo cobrado a medias ya no cuenta.
               </p>
 
-              <Link to="/app/ventas/facturacion" className="mt-4 block">
+              <Link to="/app/facturacion" className="mt-4 block">
                 <Button variant="soft" size="sm" block icon={<ArrowRight />}>
                   Ver facturación
                 </Button>

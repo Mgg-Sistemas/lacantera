@@ -76,14 +76,14 @@ const FUENTES: Fuente[] = [
     to: () => '/app/compras/proveedores',
   },
   {
-    modulo: 'VENTAS',
+    modulo: 'FACTURACION',
     tabla: 'facturas_venta',
     columnas: ['numero'],
     seleccion: 'id, numero, estado',
     tipo: 'Factura',
     titulo: (f) => texto(f.numero),
     detalle: (f) => texto(f.estado).replaceAll('_', ' '),
-    to: () => '/app/ventas/facturacion',
+    to: () => '/app/facturacion',
   },
   {
     modulo: 'VENTAS',

@@ -13,15 +13,15 @@ import { comoNumero, dinero, documento, fecha as fmtFecha, fechaHora } from '@/l
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useAlmacenes } from '@/lib/api/inventario'
+import { useRenglones } from '@/lib/api/ventas'
 import {
   TIPOS_NOTA_CREDITO,
   useAnularNotaCredito,
   useEmitirNotaCredito,
   useFacturas,
   useNotasCredito,
-  useRenglones,
   type NotaCredito,
-} from '@/lib/api/ventas'
+} from '@/lib/api/facturacion'
 
 /**
  * Notas de crédito.
@@ -144,7 +144,7 @@ export function NotasCredito() {
         title="Notas de crédito"
         description="El papel que corrige una factura que ya salió de la empresa."
         actions={
-          puede('VENTAS', 'TOTAL') ? (
+          puede('FACTURACION', 'TOTAL') ? (
             <Button icon={<Plus />} onClick={() => setEmitiendo(true)}>
               Emitir nota de crédito
             </Button>
@@ -431,7 +431,7 @@ export function NotasCredito() {
           descripcion={`Corrige la factura ${detalle.factura_numero} · control ${detalle.numero_control}`}
           acciones={
             <>
-              {detalle.estado === 'EMITIDA' && puede('VENTAS', 'TOTAL') ? (
+              {detalle.estado === 'EMITIDA' && puede('FACTURACION', 'TOTAL') ? (
                 <Button
                   variant="outline"
                   icon={<Undo2 />}

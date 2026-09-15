@@ -178,7 +178,8 @@ export function Despachos() {
           pesoNeto: n.peso_neto ? `${enteros(n.peso_neto)} kg` : null,
         },
         moneda: n.moneda,
-        tasa: n.tasa_usd,
+        tasa: n.tasa,
+        tasaUsd: n.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
           cantidad: r.cantidad,

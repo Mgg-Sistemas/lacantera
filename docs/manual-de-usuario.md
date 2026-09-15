@@ -3224,7 +3224,7 @@ Conviene saberlo antes de buscarlo:
 
 > **Este módulo volvió al menú el 28 de agosto de 2026.** Estuvo fuera un tiempo —construido y funcionando, pero sin recorrer pantalla por pantalla— y ya se ofrece. Lo que sigue pendiente es el reparto: hoy **solo lo alcanza el administrador**, porque nadie ha decidido todavía qué rol entra aquí. Este capítulo se escribió antes de que volviera, así que puede llevar detalles que ya no coincidan: dilo y se corrige.
 
-Ventas es el camino del material hacia afuera: a quién se le vende, a cuánto, qué se le entregó, qué se le facturó y qué ha pagado. Las cinco pantallas están en el menú en ese mismo orden, que es el orden en que ocurren las cosas.
+Ventas es el camino del material hacia afuera: a quién se le vende, a cuánto y qué se le entregó. **Lo que se le factura y lo que paga tiene módulo propio desde el 15 de septiembre de 2026, Facturación**, explicado en el capítulo 21: allí se emite la factura sobre las notas de entrega que salen de aquí.
 
 Hay una idea que conviene entender antes de tocar nada, porque es la que ordena todo el módulo:
 
@@ -3236,15 +3236,15 @@ De ahí se desprende lo demás: una nota de entrega mal hecha se corrige en el p
 
 Para ver el módulo hace falta que administración le haya dado a tu usuario acceso a Ventas. Si no lo tiene, el grupo Ventas no aparece en el menú.
 
-Dentro del módulo hay dos alcances distintos. El primero es **el trabajo del día**: cotizar, despachar, facturar y registrar cobros. El segundo es **el control total sobre Ventas**, que es como lo llaman las propias pantallas, y cubre las decisiones que comprometen dinero de la empresa: poner precios, dar crédito, vender por debajo del mínimo y anular.
+Dentro del módulo hay dos alcances distintos. El primero es **el trabajo del día**: cotizar y despachar. El segundo es **el control total sobre Ventas**, que es como lo llaman las propias pantallas, y cubre las decisiones que comprometen dinero de la empresa: poner precios, dar crédito, vender por debajo del mínimo y anular.
 
-| Rol | Ve el módulo | Cotiza, despacha, factura y cobra | Pone precios, da crédito, vende bajo el mínimo y anula |
+| Rol | Ve el módulo | Cotiza y despacha | Pone precios, da crédito, vende bajo el mínimo y anula despachos |
 | --- | --- | --- | --- |
-| Ventas | Sí | Sí | No |
 | Administrador | Sí | Sí | Sí |
-| Gerencia general | Sí | Sí | Sí |
 
-El rol Ventas está descrito así: **Cotiza, despacha material, factura y registra cobros.** Es el reparto de siempre en una empresa: quien despacha no decide a cuánto vende la empresa ni a quién se le fía.
+Hoy **solo el administrador** tiene acceso a Ventas: el reparto a los demás roles está por decidir. Facturar, cobrar y emitir notas de crédito no dependen de este permiso sino del de **Facturación** (21.1).
+
+El rol Ventas está descrito así: **Cotiza, despacha material, factura y registra cobros.** Desde que la facturación tiene módulo propio, facturar y cobrar dependen además del permiso sobre Facturación. Es el reparto de siempre en una empresa: quien despacha no decide a cuánto vende la empresa ni a quién se le fía.
 
 **Cuando te falta permiso, el sistema no te dice cuál.** Siempre ves el mismo texto: «Tu usuario no tiene permiso para esta acción.» No es una falla ni un mensaje incompleto: es el único que llega hasta la pantalla. Si te sale al guardar un precio, al fijar un crédito o al anular, lo que falta es el control total sobre Ventas.
 
@@ -3260,10 +3260,10 @@ Esta es la sección que hay que leer aunque no se lea ninguna otra. Del cliente 
 2. **Se le pone precio a lo que se vende.** **Ventas › Lista de precios**. Cada producto lleva un **Precio de lista**, que es el que se propone solo al cotizar y al despachar, y un **Precio mínimo**, que es el suelo. Un producto sin precio se puede elegir igual, pero hay que teclear el precio a mano.
 3. **Se cotiza, si hace falta.** **Ventas › Cotizaciones › Nueva cotización**. Nace en **Enviada**. Desde el detalle se cierra con **La aceptó**, y pasa a **Aceptada**, o con **La rechazó**, y pasa a **Rechazada**. Este paso es opcional: se puede despachar sin haber cotizado. Una cotización no compromete existencias, así que aceptarla no aparta material.
 4. **Sale el camión.** **Ventas › Notas de entrega › Despachar**. Hacen falta un cliente activo, el patio de donde sale, al menos un renglón con producto y cantidad, material suficiente en ese patio y la tasa del día registrada. **Y si en la nota va mineral, hace falta además una guía de movilización vigente**, que se carga antes en Despachos. La nota nace en **Por facturar**. **Este es el único paso que descuenta el patio.**
-5. **Se emite la factura.** **Ventas › Facturación › Facturar**. Se marcan una o varias notas que estén en **Por facturar**, del mismo cliente y de la misma moneda. Si la condición es a crédito, el cliente tiene que tener límite fijado y la factura tiene que caber dentro de él. Las notas pasan a **Facturada** y la factura nace en **Por cobrar**.
+5. **Se emite la factura.** **Facturación › Facturas › Facturar**. Se marcan una o varias notas que estén en **Por facturar**, del mismo cliente y de la misma moneda. Si la condición es a crédito, el cliente tiene que tener límite fijado y la factura tiene que caber dentro de él. Las notas pasan a **Facturada** y la factura nace en **Por cobrar**.
 6. **Se cobra.** Botón **Registrar cobro** dentro de la factura. Se pueden registrar varios abonos, en cualquiera de las dos monedas. **Cuando el saldo baja de un centavo de dólar, la factura pasa sola a Cobrada.** Nadie tiene que marcarla.
 
-**Las vueltas atrás.** Todas exigen el control total sobre Ventas y todas dejan rastro:
+**Las vueltas atrás.** Todas dejan rastro. La de la nota de entrega exige el control total sobre Ventas; las de la factura y el cobro, el control total sobre Facturación:
 
 - **Anular una nota que está en Por facturar** devuelve el material al patio y la nota queda en **Anulada**, a la vista. Pide motivo.
 - **Anular una factura que está en Por cobrar** deja la factura en **Anulada** con su número, y **sus notas de entrega vuelven a estar en Por facturar**, listas para facturarse otra vez. Pide motivo y exige que no haya cobros vivos.
@@ -3536,146 +3536,15 @@ El pie es lo más importante del papel: **ESTE DOCUMENTO NO ES UNA FACTURA. Ampa
 
 ### 10.7 Facturación
 
-**Ventas › Facturación**
-
-Se factura contra notas de entrega: una, o todas las de la semana de un cliente.
-
-#### Qué se ve
-
-El botón principal **cambia de texto según haya cola**: **Facturar (3 por facturar)** cuando hay notas esperando, o **Facturar** a secas y **apagado** cuando no hay ninguna. No es un fallo: **sin nota de entrega no hay nada que facturar.**
-
-| Columna | Qué muestra |
-| --- | --- |
-| **Factura** | **FAC-2026-0012** y, debajo, el número de control **00-00000034** |
-| **Cliente** | Razón social |
-| **Fecha** | La de emisión y, debajo, **vence 03 sep 2026** o, en rojo, **vencida hace 12 d** |
-| **Total** | En la moneda de la factura |
-| **Saldo** | **Siempre en dólares**, y solo mientras la factura está en **Por cobrar** |
-| **Estado** | **Por cobrar** en azul, **Cobrada** en verde, **Anulada** en gris |
-
-#### Emitir una factura
-
-1. Pulsa **Facturar (3 por facturar)**. Se abre **Emitir factura**, con la regla: **Marca las notas de entrega que van en esta factura. Tienen que ser del mismo cliente y la misma moneda.**
-2. Marca las notas. Cada una muestra su número, el cliente, la fecha, la placa y cuántos renglones trae.
-3. **En cuanto marcas la primera, las que no son compatibles se apagan solas.** Compatible quiere decir mismo cliente y misma moneda: una factura es de un solo cliente, y bolívares y dólares no se pueden sumar en el mismo total.
-4. Elige la **Condición de pago**, o déjala en **La que tenga el cliente**. La ayuda avisa: **A crédito, el sistema comprueba el límite del cliente antes de emitir.**
-5. Escribe la **Observación**, si hace falta.
-6. Revisa el resumen sombreado: **2 nota(s) de ACME C.A.** con el total sumado.
-7. Pulsa **Emitir la factura**.
-
-Si abres la ventana y no hay cola, dentro dice **No hay notas por facturar** y **Todo lo despachado ya está facturado.**
-
-#### Ver una factura y cobrarla
-
-Pulsa en la fila. El título trae el número y el número de control. Dentro están los chips del estado, la condición de pago, **Vencida hace 12 días** si aplica y **Retiene IVA** si el cliente retiene; la tarjeta **Renglones**; y el bloque de totales, que **cuando hay retención añade dos líneas**: **IVA que retiene el cliente**, en negativo, y **A cobrar**.
-
-Mientras la factura está en **Por cobrar** verás debajo **Abonado $ 400,00 · falta $ 800,00** y la explicación **El saldo se lleva en dólares porque se cobra en las dos monedas.**
-
-Si hay cobros, aparece la tarjeta **Cobros**: cada uno con su número y su método, la fecha y la hora, la cuenta, la referencia y el **IGTF** si lo hubo. Los anulados se ven más pálidos, con el sufijo **· anulado**.
-
-| Botón | Cuándo aparece | Qué hace |
-| --- | --- | --- |
-| **Cerrar** | Siempre | Cierra la ventana |
-| **Imprimir** | Siempre | Genera el PDF y lo abre en el visor **Factura** |
-| **Registrar cobro** | Solo mientras está **Por cobrar** | Abre la ventana de cobro |
-| **Anular** | Solo mientras está **Por cobrar** | Abre la ventana de anulación |
-
-Para registrar un cobro se abre **Cobrar la factura FAC-2026-0012**, con el cliente y cuánto falta en el subtítulo.
-
-| Campo | ¿Hace falta? | Detalle |
-| --- | --- | --- |
-| **A qué cuenta entró** | Sí | Solo cuentas activas. Ayuda: **El cobro se registra en la moneda de la cuenta.** |
-| **Monto** | Sí | La etiqueta cambia a **Monto en USD** o **Monto en VES** al elegir la cuenta |
-| **Cómo pagó** | Sí | **Transferencia**, **Pago móvil**, **Efectivo**, **Zelle**, **Binance**, **Cheque** u **Otro**. Empieza en **Transferencia** |
-| **Referencia** | No | **Número de la transferencia** |
-| **Cobrarle el IGTF del 3%** | No | Viene marcada cuando la cuenta no es en bolívares. Se puede desmarcar |
-
-La casilla del IGTF lo explica en su propia letra chica: **Grava los pagos en divisas. No abona la factura: es un impuesto que se recauda y se entera al SENIAT, y va en su propio asiento del libro.** Es decir: **el IGTF no baja el saldo.** Si el cliente debe $800 y le cobras el impuesto, sigue debiendo $800 hasta que pague los $800.
-
-Se pueden registrar tantos abonos como haga falta. **Cuando el saldo baja de un centavo de dólar, la factura pasa sola a Cobrada.**
-
-#### Anular una factura y anular un cobro
-
-Anular la factura abre **Anular la factura FAC-2026-0012**, que empieza aclarando qué pasa: **La factura no se borra: se queda con su número, marcada como anulada. Sus notas de entrega vuelven a estar por facturar.** Y dentro, el límite de la herramienta: **Anular sirve mientras la factura no haya salido de la empresa. Una que ya está en manos del cliente se corrige con nota de crédito, no anulándola.**
-
-El motivo es obligatorio y el botón **Anular la factura** está apagado hasta las cuatro letras. **Una factura con cobros registrados no se anula**: primero se anulan los cobros, porque el dinero entró y tiene que salir del libro con su propio asiento.
-
-Los cobros se anulan con el botón **Anular** de la tarjeta **Cobros**. **No pide motivo**: el sistema graba uno fijo. Conviene saberlo, porque el registro de auditoría de ese cobro no va a explicar nada; si la anulación necesita explicación, escríbela en la observación de la factura o déjala anotada donde la empresa lleve esas cosas.
-
-Anular un cobro devuelve la factura de **Cobrada** a **Por cobrar** y, si hubo IGTF, también lo reversa. Como toda anulación del módulo, exige el control total sobre Ventas.
-
-#### Qué sale de aquí
-
-El PDF sale con la cabecera de la casa (13.2) y, a la derecha, cuatro datos: **N° FACTURA**, **FECHA**, **VENCE EL** y **N° DE CONTROL**. Debajo, centrado, el rótulo **FACTURA**. En el recuadro del cliente van **CLIENTE**, **RIF**, **DIRECCIÓN** y **CONDICIÓN**; cuando hay condición de pago, esa casilla ocupa el sitio del teléfono.
-
-**Un renglón exento de IVA lleva la marca (E)** pegada a su descripción, y al pie de la tabla sale la línea que la explica: **(E) Renglón exento de IVA.** Si ningún renglón es exento, no aparece nada.
-
-Los totales son **Subtotal**, **Descuento**, **Flete**, **IVA 16%**, raya y **TOTAL**, más **IVA retenido por el cliente** y **A pagar** cuando hay retención, y debajo el equivalente en la otra moneda. Firman **Por la empresa** y **Aceptado por el cliente**.
-
-El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.** Y detrás, **cuando la empresa tenga cargados los datos de su imprenta autorizada**, el renglón que exige el SENIAT: **Imprenta:** el nombre, su RIF y el número de autorización. **Solo en la factura** — una cotización o una nota de entrega no lo llevan, y ponérselo les daría un aire fiscal que no tienen.
-
-**Si esos datos no están cargados, el renglón no sale.** Un pie que dijera «Imprenta: —» no cumpliría el requisito y encima parecería que el sistema se dejó algo.
-
-> **Lo que esta factura todavía no imprime, y hace falta para que sea completa ante el SENIAT:** la **base imponible**, el **total exento** en los totales, el **desglose por alícuota** —hoy solo admite una, así que una factura mixta no se puede expresar— y los **datos de la imprenta autorizada** con su número de autorización, que no existen en ninguna pantalla del sistema. Está anotado en el capítulo 15.
+**Se mudó a su propio módulo el 15 de septiembre de 2026.** Está en el capítulo 21 (21.2). Desde Ventas se llega hasta la nota de entrega; la factura se emite en **Facturación › Facturas**, sobre las notas que estén en **Por facturar**.
 
 ### 10.8 Notas de crédito
 
-**Ventas › Notas de crédito.** Es el papel que corrige una factura que ya salió de la empresa. Solo lo emite quien tiene Ventas en control total.
-
-Sirve para cuatro cosas, y se elige cuál en **Por qué se corrige**:
-
-| Motivo | Cuándo |
-| --- | --- |
-| **Devolución de material** | El cliente devolvió lo despachado |
-| **Se facturó de más** | El precio o la cantidad quedaron por encima de lo acordado |
-| **Descuento posterior** | Una rebaja acordada después de emitir la factura |
-| **Dejar la factura sin efecto** | La venta no ocurrió, pero la factura ya estaba en manos del cliente |
-
-#### Cómo se emite
-
-Con **Emitir nota de crédito**. Primero se elige la factura; **las anuladas no aparecen**, porque a una factura sin efecto no hay nada que restarle.
-
-Al elegirla, **la nota se arma sobre los renglones de esa factura**, no en blanco. Corregir es decir «de esto que facturé, esto de aquí sobra», y para eso hay que tener delante lo que se facturó. Se marca el renglón que sobra y se ajusta la cantidad o el precio.
-
-| Campo | ¿Hace falta? | Detalle |
-| --- | --- | --- |
-| **Factura que se corrige** | Sí | Solo las que siguen en pie |
-| **Fecha de la nota** | Sí | Empieza en hoy. **No puede ser anterior a la factura** |
-| **Por qué se corrige** | Sí | Los cuatro motivos de arriba |
-| **Motivo** | Sí | Lo lee el cliente, lo lee el SENIAT y lo lee quien abra esto en un año |
-| **¿Vuelve al patio?** | No | Por renglón. El almacén al que entra el material devuelto |
-
-**El material puede volver o no volver.** Si se despachó piedra 2 cuando pidieron piedra 1 y el cliente la devuelve, ese renglón lleva almacén y el material entra al inventario con su propio movimiento. Si lo que se corrige es el precio, no se mueve ninguna piedra. Es el mismo papel para las dos cosas porque para el SENIAT lo es.
-
-#### Lo que la nota hace y lo que no hace
-
-- **Congela la tasa de la factura, no la de hoy.** Una nota que devuelve cien dólares de una factura de hace tres semanas tiene que restar los mismos bolívares que aquella sumó. Con la tasa de hoy restaría otra cosa y la factura no cerraría nunca en cero. La pantalla lo dice al elegir la factura.
-- **Gasta su propio número de control**, de la misma serie que las facturas: la numeración autorizada de la imprenta corre continua sobre todos los documentos fiscales, no una por cada tipo de papel.
-- **Baja lo que el cliente debe**, y también lo que tiene consumido de su cupo de crédito.
-- **No mueve dinero.** Si la factura ya estaba cobrada, eso es plata que hay que devolverle al cliente y sale de tesorería con su propio asiento. La nota baja lo que se debe; no firma cheques.
-- **No puede pasarse.** Entre todas las notas de una factura no se devuelve más de lo que la factura cobró. La pantalla descuenta lo que esa factura ya tiene acreditado y lo dice con números antes de dejar guardar.
-
-#### Anular una nota
-
-Desde su ficha, con **Anular**. El número de control se gastó y no vuelve: queda la nota anulada con su motivo, que es lo que el SENIAT espera encontrar. Si había entrado material, vuelve a salir.
-
-**No se puede anular si ese material ya se vendió otra vez**: deshacer la devolución dejaría el patio en negativo. El sistema lo dice con la cantidad exacta que falta.
-
-#### Corregir o anular, no las dos
-
-Una factura que ya tiene notas de crédito **no se puede anular**. O se corrige con notas o se deja sin efecto, porque si no quedarían notas colgando de una factura que ya no existe. Si de verdad hay que anularla, primero se anulan sus notas.
+**Se mudaron a Facturación.** Están en el capítulo 21 (21.3).
 
 ### 10.9 El libro de ventas
 
-**Ventas › Libro de ventas.** La otra mitad de la declaración: el débito fiscal, que es el IVA que se le cobró a los clientes.
-
-Funciona igual que el libro de compras —se elige el mes, empieza en el pasado, se descarga en CSV, todo en bolívares a la tasa de cada documento—, con dos diferencias que conviene entender:
-
-**Las notas de crédito van en este mismo libro, en negativo.** No son un anexo ni un libro aparte: para el SENIAT son ventas del período con signo contrario. Cada una dice a qué número de control corrige.
-
-**Las facturas anuladas sí aparecen, en cero y marcadas.** Aquí el número de control es el nuestro y tiene que correr continua. Un salto sin explicación en la serie es lo primero que se busca en una fiscalización; una fila que dice «anulada» lo explica sola.
-
-Al pie, la suma del período con las notas ya restadas. Es lo que va a la planilla.
+**Se mudó a Facturación.** Está en el capítulo 21 (21.5).
 
 ### 10.10 Lo que conviene entender
 
@@ -3747,7 +3616,7 @@ El límite se fija en la ficha del cliente, en dólares, y **solo aparece si su 
 Al emitir hay dos rechazos distintos:
 
 - **Sin límite fijado, no hay crédito.** El sistema dice «A "ACME C.A." no se le tiene autorizado crédito. Fija su límite o factúrale de contado.» Un límite en cero no significa crédito ilimitado: significa que no se le vende a crédito.
-- **Con la factura por encima del límite**, el sistema dice cuánto quedaría debiendo y cuál es su tope: «Con esta factura "ACME C.A." quedaría debiendo 5400.00 $ y su límite es 5000.00 $.» Solo lo puede pasar quien tenga el control total sobre Ventas, porque pasarse del límite es ampliar el crédito, y eso es una decisión de quien lo fijó.
+- **Con la factura por encima del límite**, el sistema dice cuánto quedaría debiendo y cuál es su tope: «Con esta factura "ACME C.A." quedaría debiendo 5400.00 $ y su límite es 5000.00 $.» Solo lo puede pasar quien tenga el control total sobre Facturación, porque pasarse del límite es ampliar el crédito, y eso es una decisión de quien lo fijó.
 
 La deuda del cliente y su límite **se llevan siempre en dólares**, igual que el saldo de las facturas, porque una factura en dólares se abona con transferencias en bolívares más de lo que se cree, y restar bolívares de dólares no se puede.
 
@@ -3839,7 +3708,7 @@ Sobre la moneda: cada documento **congela la tasa del día** al crearse, y esa e
 | «Las notas están en monedas distintas y no se pueden sumar en una factura.» | Hay notas en dólares y en bolívares | Sepáralas por moneda |
 | «Las notas llevan alícuotas de IVA distintas. Factúralas por separado.» | Una nota es exenta y otra no | Emite una factura para las exentas y otra para las gravadas |
 | «A "ACME C.A." no se le tiene autorizado crédito. Fija su límite o factúrale de contado.» | El cliente no tiene límite fijado | Fija el límite en su ficha, o cambia la condición a **De contado** |
-| «Con esta factura "ACME C.A." quedaría debiendo 5400.00 $ y su límite es 5000.00 $.» | La factura pasa el límite | Cóbrale lo pendiente, factura de contado, o que lo autorice quien tenga control total sobre Ventas |
+| «Con esta factura "ACME C.A." quedaría debiendo 5400.00 $ y su límite es 5000.00 $.» | La factura pasa el límite | Cóbrale lo pendiente, factura de contado, o que lo autorice quien tenga control total sobre Facturación |
 | «La factura FAC-2026-0012 está cobrada y no admite cobros.» | Ya no queda saldo | Revisa los cobros de la factura antes de registrar otro |
 | «A la factura FAC-2026-0012 le faltan 800.00 $ y se están abonando 900.00 $. …» | El abono es mayor que lo que falta | Registra el monto que falta. Si el cliente pagó de más, regístralo como dos cobros o revisa la tasa del día |
 | «El monto del cobro tiene que ser mayor que cero.» | El monto quedó vacío o en cero | Escribe lo que entró |
@@ -5198,7 +5067,8 @@ Lo que se usa todos los días **se mudó a Compras y sí está en el menú**. Es
 | **Pagos por hacer** | **Administración › Compras › Pagos por hacer** |
 | **Cuentas por pagar** | La misma pantalla, pestaña **Por proveedor** |
 | **Libro de tesorería** | **Administración › Compras › Movimientos de dinero** |
-| **Tablero**, **Bancos y cajas**, **Cuentas por cobrar** | Siguen fuera del menú. Son lo que la empresa decidió no llevar |
+| **Tablero**, **Bancos y cajas** | Siguen fuera del menú. Son lo que la empresa decidió no llevar |
+| **Cuentas por cobrar** | Se mudó a Facturación (21.4) |
 
 **Ninguna de las seis da el cartel de obra**: las direcciones responden y las pantallas se abren. Lo que las cierra hoy es el permiso, no el cartel — y sobre este módulo **solo el administrador tiene permiso**.
 
@@ -5218,7 +5088,7 @@ Y hay una segunda regla que conviene tener presente desde la primera pantalla: *
 
 Hay **tres** puertas distintas, y conviene no confundirlas.
 
-**La primera es ver las pantallas del módulo** —Tablero, Bancos y cajas, Cuentas por cobrar—. Depende del permiso sobre Tesorería, y hoy **solo lo tiene el administrador del sistema**. Todos los demás roles están en **Ninguno**, el gerente general y compras incluidos. Quien escriba la dirección ve la tarjeta **Tesorería no está a tu alcance**, con el texto **Tu rol no tiene acceso a este módulo. Si lo necesitas para tu trabajo, pídeselo a quien administra el sistema.** y el enlace **Volver al panel**.
+**La primera es ver las pantallas del módulo** —Tablero y Bancos y cajas—. Depende del permiso sobre Tesorería, y hoy **solo lo tiene el administrador del sistema**. Todos los demás roles están en **Ninguno**, el gerente general y compras incluidos. Quien escriba la dirección ve la tarjeta **Tesorería no está a tu alcance**, con el texto **Tu rol no tiene acceso a este módulo. Si lo necesitas para tu trabajo, pídeselo a quien administra el sistema.** y el enlace **Volver al panel**.
 
 | Rol | Sobre Tesorería |
 | --- | --- |
@@ -5249,9 +5119,9 @@ Una deuda con un proveedor, por lo tanto, **se cierra pagándola desde tesorerí
 
 #### Lo que debe un cliente
 
-1. **Ventas emite una factura.** Si queda con saldo, la deuda aparece sola en **Cuentas por cobrar**. Tampoco esta se carga a mano.
+1. **Facturación emite una factura.** Si queda con saldo, la deuda aparece sola en **Facturación › Cuentas por cobrar**. Tampoco esta se carga a mano.
 2. **Se llama al cliente.** La lista está ordenada por antigüedad, no por monto, para que se vea a quién hay que llamar primero.
-3. **El cobro se registra en Ventas › Facturación**, abriendo la factura. No se cobra desde tesorería. Ahí se elige la cuenta donde cayó el dinero, el monto, el método, la fecha, la referencia y si se le cobra el IGTF.
+3. **El cobro se registra en Facturación › Facturas**, abriendo la factura. No se cobra desde tesorería. Ahí se elige la cuenta donde cayó el dinero, el monto, el método, la fecha, la referencia y si se le cobra el IGTF.
 4. **El cobro escribe su línea en el libro de tesorería**, de tipo **Ingreso**, con el concepto de la factura, y sube el saldo de la cuenta. Si hay IGTF, va en una línea aparte.
 5. **Cuando el saldo de la factura llega a cero**, la factura queda cobrada y desaparece de la lista.
 
@@ -5428,32 +5298,7 @@ Si no se debe nada: **No se le debe nada a nadie**, con el texto **Toda compra a
 
 ### 12.6 Cuentas por cobrar
 
-**Fuera del menú.** Es una de las tres pantallas que quedaron escondidas, y hoy solo la abre el administrador.
-
-Lo que deben los clientes: **Facturas emitidas y todavía sin cobrar del todo. El saldo va en dólares porque se cobra en las dos monedas.**
-
-Arriba, tres indicadores: **Por cobrar**, con el total en dólares sin céntimos; **Vencido**, en rojo si hay algo vencido y en verde si no; y **Clientes que deben**.
-
-Debajo, una tarjeta por cliente, ordenadas por la deuda más vieja y, a igualdad de días, por la mayor. En la cabecera van el nombre, el RIF, cuántas facturas y el total, con una etiqueta roja con lo vencido o una verde que dice **Al día**.
-
-Dentro de cada tarjeta:
-
-| Columna | Qué muestra |
-| --- | --- |
-| **Factura** | El número y, debajo, el número de control |
-| **Emitida** | La fecha de emisión |
-| **Vence** | La fecha de vencimiento |
-| **Total** | El importe de la factura |
-| **Saldo** | Lo que falta por cobrar |
-| **Antigüedad** | **Al día**, **Hasta 30 días**, **31 a 60 días**, **61 a 90 días** o **Más de 90 días**. En rojo si la factura está vencida |
-
-**El orden es por antigüedad y no por monto, a propósito.** Una deuda de 400 dólares de hace noventa días es un problema distinto de una de 4.000 emitida ayer, y una lista ordenada por monto las pone justo al revés de como hay que atenderlas.
-
-Al pie de la pantalla queda dicho dónde se cobra: **Los cobros se registran desde Ventas › Facturación, abriendo la factura.** El texto es un enlace.
-
-Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitidas están cobradas. Las nuevas aparecen aquí en cuanto se emiten a crédito o quedan con saldo.**
-
-**Desde aquí no se cobra.** No hay filtros, ni acciones, ni exportación.
+**Se mudó a Facturación el 15 de septiembre de 2026.** Está en el capítulo 21 (21.4).
 
 ### 12.7 Libro de tesorería
 
@@ -6287,7 +6132,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **En Despachos.** El sistema comprueba el cliente, el tipo, el estado y la vigencia de los papeles, pero **no compara cifras**: ni el peso neto del ticket contra las cantidades de la nota, ni las toneladas de la guía contra los renglones. Cuadrar eso sigue siendo trabajo de la persona. Además, la nota despachada sin guía **no se marca en ninguna pantalla**: el único rastro está en la auditoría.
 
-**En Ventas.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. Las facturas emitidas desde el sistema no admiten descuento. **La nota de crédito no se imprime**: se registra y se declara, pero el papel que se le entrega al cliente todavía se hace por fuera, y fiscalmente es un documento con número de control propio.
+**En Facturación.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. Las facturas emitidas desde el sistema no admiten descuento. **La nota de crédito no se imprime**: se registra y se declara, pero el papel que se le entrega al cliente todavía se hace por fuera, y fiscalmente es un documento con número de control propio.
 
 **La factura impresa todavía no está completa ante el SENIAT**, aunque ya le falta menos. Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención, la tasa del día y —desde el 27 de agosto— la **base imponible** y el **total exento** (10.7). **Le faltan dos cosas:**
 
@@ -6295,7 +6140,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 | --- | --- |
 | **Desglose por alícuota** | Hoy la factura admite una sola alícuota. Una factura mixta no se puede expresar |
 
-**Los datos de la imprenta y la alícuota ya se escriben** en **Configuración › Datos de la empresa**, y la factura los imprime (10.7). Lo que falta es solo el desglose.
+**Los datos de la imprenta y la alícuota ya se escriben** en **Configuración › Datos de la empresa**, y la factura los imprime (21.2). Lo que falta es solo el desglose.
 
 **En Nómina.** Aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla. Lo que sí se arregló es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4).
 
@@ -6810,3 +6655,211 @@ Un tanque que se llama «combustible inicial (sin costo)» y que contuviera gaso
 | «Si el material no costó nada para esta empresa, el costo tiene que ir en cero.» | Está marcada la casilla y hay un costo escrito | Quita la marca, o pon el costo en cero |
 | «La cantidad que entra tiene que ser mayor que cero.» | Los litros están vacíos o en cero | Escribe cuántos entran |
 | «Ese almacén no existe o está inactivo.» | El tanque se desactivó mientras tenías la ventana abierta | Recarga la pantalla |
+
+## 21. Facturación
+
+**Es un módulo propio desde el 15 de septiembre de 2026.** Hasta entonces sus pantallas vivían dentro de Ventas —y la de cuentas por cobrar, en Tesorería— con el mismo permiso. Se separaron porque son otra cosa: una factura gasta un número de control que no se recupera, entra al libro de ventas y deja a un cliente debiendo. Quien lleva eso —administración, el contador— no tiene por qué poder cotizar ni despachar, y quien despacha no tiene por qué poder facturar.
+
+Aquí empieza lo que en Ventas termina. **Ventas saca el material con la nota de entrega; Facturación convierte esas notas en factura**, corrige lo facturado con notas de crédito, registra lo que pagan los clientes y, al cierre del mes, entrega el libro de ventas.
+
+Las cuatro pantallas están en el menú en el orden del trabajo: **Facturas**, **Notas de crédito**, **Cuentas por cobrar** y **Libro de ventas**. Quien tenga guardada una dirección de las de antes, en Ventas o en Tesorería, cae en la nueva.
+
+### 21.1 Quién entra y quién puede hacer qué
+
+Para ver el módulo hace falta el permiso sobre **Facturación**, que administración reparte en **Usuarios y roles**, igual que los demás. Hoy **solo lo tiene el administrador**: al separarse, cada rol recibió en Facturación exactamente lo que tenía en Ventas, y ningún otro rol tenía nada.
+
+Como en el resto del sistema, hay dos alcances:
+
+| Alcance | Qué permite |
+| --- | --- |
+| **El trabajo del día** | Emitir facturas y registrar cobros |
+| **Control total sobre Facturación** | Anular facturas y cobros, emitir y anular notas de crédito, y dejar pasar una factura por encima del límite de crédito del cliente |
+
+**Ver las cifras de dinero es una casilla aparte**, **Ver las facturas y lo que deben los clientes**. Sin ella los documentos se ven, pero los montos llegan vacíos. No la da ningún nivel del módulo: se concede a mano. Ventas tiene la suya para cotizaciones y notas de entrega.
+
+**Los clientes y las notas de entrega siguen siendo de Ventas.** Desde aquí se leen para poder facturar, pero se registran y se corrigen allá. Poner o quitar el crédito a un cliente también es de Ventas.
+
+### 21.2 Facturas
+
+**Facturación › Facturas**
+
+Se factura contra notas de entrega: una, o todas las de la semana de un cliente.
+
+#### Qué se ve
+
+El botón principal **cambia de texto según haya cola**: **Facturar (3 por facturar)** cuando hay notas esperando, o **Facturar** a secas y **apagado** cuando no hay ninguna. No es un fallo: **sin nota de entrega no hay nada que facturar.**
+
+| Columna | Qué muestra |
+| --- | --- |
+| **Factura** | **FAC-2026-0012** y, debajo, el número de control **00-00000034** |
+| **Cliente** | Razón social |
+| **Fecha** | La de emisión y, debajo, **vence 03 sep 2026** o, en rojo, **vencida hace 12 d** |
+| **Total** | En la moneda de la factura |
+| **Saldo** | **Siempre en dólares**, y solo mientras la factura está en **Por cobrar** |
+| **Estado** | **Por cobrar** en naranja, **Cobrada** en verde —o **Saldada con nota de crédito**, cuando lo que la dejó sin saldo fue una nota de crédito y no entró dinero—, **Anulada** en gris |
+
+#### Emitir una factura
+
+1. Pulsa **Facturar (3 por facturar)**. Se abre **Emitir factura**, con la regla: **Marca las notas de entrega que van en esta factura. Tienen que ser del mismo cliente y la misma moneda.**
+2. Marca las notas. Cada una muestra su número, el cliente, la fecha, la placa y cuántos renglones trae.
+3. **En cuanto marcas la primera, las que no son compatibles se apagan solas.** Compatible quiere decir mismo cliente y misma moneda: una factura es de un solo cliente, y bolívares y dólares no se pueden sumar en el mismo total.
+4. Elige la **Condición de pago**, o déjala en **La que tenga el cliente**. La ayuda avisa: **A crédito, el sistema comprueba el límite del cliente antes de emitir.**
+5. Escribe la **Observación**, si hace falta.
+6. Revisa el resumen sombreado: **2 nota(s) de ACME C.A.** con el total sumado.
+7. Pulsa **Emitir la factura**.
+
+Si abres la ventana y no hay cola, dentro dice **No hay notas por facturar** y **Todo lo despachado ya está facturado.**
+
+#### Ver una factura y cobrarla
+
+Pulsa en la fila. El título trae el número y el número de control. Dentro están los chips del estado, la condición de pago, **Vencida hace 12 días** si aplica y **Retiene IVA** si el cliente retiene; la tarjeta **Renglones**; y el bloque de totales, que **cuando hay retención añade dos líneas**: **IVA que retiene el cliente**, en negativo, y **A cobrar**.
+
+Mientras la factura está en **Por cobrar** verás debajo **Abonado $ 400,00 · falta $ 800,00** y la explicación **El saldo se lleva en dólares porque se cobra en las dos monedas.**
+
+Si hay cobros, aparece la tarjeta **Cobros**: cada uno con su número y su método, la fecha y la hora, la cuenta, la referencia y el **IGTF** si lo hubo. Los anulados se ven más pálidos, con el sufijo **· anulado**.
+
+| Botón | Cuándo aparece | Qué hace |
+| --- | --- | --- |
+| **Cerrar** | Siempre | Cierra la ventana |
+| **Imprimir** | Siempre | Genera el PDF y lo abre en el visor **Factura** |
+| **Registrar cobro** | Solo mientras está **Por cobrar** | Abre la ventana de cobro |
+| **Anular** | Solo mientras está **Por cobrar** | Abre la ventana de anulación |
+
+Para registrar un cobro se abre **Cobrar la factura FAC-2026-0012**, con el cliente y cuánto falta en el subtítulo.
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **A qué cuenta entró** | Sí | Solo cuentas activas. Ayuda: **El cobro se registra en la moneda de la cuenta.** |
+| **Monto** | Sí | La etiqueta cambia a **Monto en USD** o **Monto en VES** al elegir la cuenta |
+| **Cómo pagó** | Sí | **Transferencia**, **Pago móvil**, **Efectivo**, **Zelle**, **Binance**, **Cheque** u **Otro**. Empieza en **Transferencia**. **Pago móvil** solo entra a cuentas en bolívares, y **Zelle** y **Binance** nunca a una en bolívares: si no casan con la cuenta, el cobro no se registra |
+| **Referencia** | No | **Número de la transferencia** |
+| **Cobrarle el IGTF del 3%** | No | Viene marcada cuando la cuenta no es en bolívares. Se puede desmarcar |
+
+La casilla del IGTF lo explica en su propia letra chica: **Grava los pagos en divisas. No abona la factura: es un impuesto que se recauda y se entera al SENIAT, y va en su propio asiento del libro.** Es decir: **el IGTF no baja el saldo.** Si el cliente debe $800 y le cobras el impuesto, sigue debiendo $800 hasta que pague los $800.
+
+Se pueden registrar tantos abonos como haga falta. **Cuando el saldo baja de un centavo de dólar, la factura pasa sola a Cobrada.**
+
+#### Anular una factura y anular un cobro
+
+Anular la factura abre **Anular la factura FAC-2026-0012**, que empieza aclarando qué pasa: **La factura no se borra: se queda con su número, marcada como anulada. Sus notas de entrega vuelven a estar por facturar.** Y dentro, el límite de la herramienta: **Anular sirve mientras la factura no haya salido de la empresa. Una que ya está en manos del cliente se corrige con nota de crédito, no anulándola.**
+
+El motivo es obligatorio y el botón **Anular la factura** está apagado hasta las cuatro letras. **Una factura con cobros registrados no se anula**: primero se anulan los cobros, porque el dinero entró y tiene que salir del libro con su propio asiento.
+
+Los cobros se anulan con el botón **Anular** de la tarjeta **Cobros**. **No pide motivo**: el sistema graba uno fijo. Conviene saberlo, porque el registro de auditoría de ese cobro no va a explicar nada; si la anulación necesita explicación, escríbela en la observación de la factura o déjala anotada donde la empresa lleve esas cosas.
+
+Anular un cobro devuelve la factura de **Cobrada** a **Por cobrar** y, si hubo IGTF, también lo reversa. Como toda anulación del módulo, exige el control total sobre Facturación.
+
+#### Qué sale de aquí
+
+El PDF sale con la cabecera de la casa (13.2) y, a la derecha, cuatro datos: **N° FACTURA**, **FECHA**, **VENCE EL** y **N° DE CONTROL**. Debajo, centrado, el rótulo **FACTURA**. En el recuadro del cliente van **CLIENTE**, **RIF**, **DIRECCIÓN** y **CONDICIÓN**; cuando hay condición de pago, esa casilla ocupa el sitio del teléfono.
+
+**Un renglón exento de IVA lleva la marca (E)** pegada a su descripción, y al pie de la tabla sale la línea que la explica: **(E) Renglón exento de IVA.** Si ningún renglón es exento, no aparece nada.
+
+Los totales son **Subtotal**, **Descuento**, **Flete**, **IVA 16%**, raya y **TOTAL**, más **IVA retenido por el cliente** y **A pagar** cuando hay retención, y debajo el equivalente en la otra moneda. Firman **Por la empresa** y **Aceptado por el cliente**.
+
+El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.** Y detrás, **cuando la empresa tenga cargados los datos de su imprenta autorizada**, el renglón que exige el SENIAT: **Imprenta:** el nombre, su RIF y el número de autorización. **Solo en la factura** — una cotización o una nota de entrega no lo llevan, y ponérselo les daría un aire fiscal que no tienen.
+
+**Si esos datos no están cargados, el renglón no sale.** Un pie que dijera «Imprenta: —» no cumpliría el requisito y encima parecería que el sistema se dejó algo.
+
+> **Lo que esta factura todavía no puede expresar:** el **desglose por alícuota** —admite una sola, así que una factura con tarifa general y reducida no se puede emitir—. La **base imponible** y el **total exento** ya salen en los totales, y el renglón de la **imprenta autorizada** sale en cuanto sus datos están cargados en **Configuración › Datos de la empresa**. Lo que falta está en 21.6.
+
+### 21.3 Notas de crédito
+
+**Facturación › Notas de crédito.** Es el papel que corrige una factura que ya salió de la empresa. Solo lo emite quien tiene Facturación en control total.
+
+Sirve para cuatro cosas, y se elige cuál en **Por qué se corrige**:
+
+| Motivo | Cuándo |
+| --- | --- |
+| **Devolución de material** | El cliente devolvió lo despachado |
+| **Se facturó de más** | El precio o la cantidad quedaron por encima de lo acordado |
+| **Descuento posterior** | Una rebaja acordada después de emitir la factura |
+| **Dejar la factura sin efecto** | La venta no ocurrió, pero la factura ya estaba en manos del cliente |
+
+#### Cómo se emite
+
+Con **Emitir nota de crédito**. Primero se elige la factura; **las anuladas no aparecen**, porque a una factura sin efecto no hay nada que restarle.
+
+Al elegirla, **la nota se arma sobre los renglones de esa factura**, no en blanco. Corregir es decir «de esto que facturé, esto de aquí sobra», y para eso hay que tener delante lo que se facturó. Se marca el renglón que sobra y se ajusta la cantidad o el precio.
+
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Factura que se corrige** | Sí | Solo las que siguen en pie |
+| **Fecha de la nota** | Sí | Empieza en hoy. **No puede ser anterior a la factura** |
+| **Por qué se corrige** | Sí | Los cuatro motivos de arriba |
+| **Motivo** | Sí | Lo lee el cliente, lo lee el SENIAT y lo lee quien abra esto en un año |
+| **¿Vuelve al patio?** | No | Por renglón. El almacén al que entra el material devuelto |
+
+**El material puede volver o no volver.** Si se despachó piedra 2 cuando pidieron piedra 1 y el cliente la devuelve, ese renglón lleva almacén y el material entra al inventario con su propio movimiento. Si lo que se corrige es el precio, no se mueve ninguna piedra. Es el mismo papel para las dos cosas porque para el SENIAT lo es.
+
+#### Lo que la nota hace y lo que no hace
+
+- **Congela la tasa de la factura, no la de hoy.** Una nota que devuelve cien dólares de una factura de hace tres semanas tiene que restar los mismos bolívares que aquella sumó. Con la tasa de hoy restaría otra cosa y la factura no cerraría nunca en cero. La pantalla lo dice al elegir la factura.
+- **Gasta su propio número de control**, de la misma serie que las facturas: la numeración autorizada de la imprenta corre continua sobre todos los documentos fiscales, no una por cada tipo de papel.
+- **Baja lo que el cliente debe**, y también lo que tiene consumido de su cupo de crédito.
+- **Si deja la factura sin nada que cobrar, la cierra.** En la lista de facturas se lee entonces **Saldada con nota de crédito**. Si después se anula la nota y la factura vuelve a deber, regresa sola a **Por cobrar**.
+- **No mueve dinero.** Si la factura ya estaba cobrada, eso es plata que hay que devolverle al cliente y sale de tesorería con su propio asiento. La nota baja lo que se debe; no firma cheques.
+- **No puede pasarse.** Entre todas las notas de una factura no se devuelve más de lo que la factura cobró. La pantalla descuenta lo que esa factura ya tiene acreditado y lo dice con números antes de dejar guardar.
+
+#### Anular una nota
+
+Desde su ficha, con **Anular**. El número de control se gastó y no vuelve: queda la nota anulada con su motivo, que es lo que el SENIAT espera encontrar. Si había entrado material, vuelve a salir.
+
+**No se puede anular si ese material ya se vendió otra vez**: deshacer la devolución dejaría el patio en negativo. El sistema lo dice con la cantidad exacta que falta.
+
+#### Corregir o anular, no las dos
+
+Una factura que ya tiene notas de crédito **no se puede anular**. O se corrige con notas o se deja sin efecto, porque si no quedarían notas colgando de una factura que ya no existe. Si de verdad hay que anularla, primero se anulan sus notas.
+
+### 21.4 Cuentas por cobrar
+
+**Facturación › Cuentas por cobrar**
+
+Lo que deben los clientes: **Facturas emitidas y todavía sin cobrar del todo. El saldo va en dólares porque se cobra en las dos monedas.**
+
+Arriba, tres indicadores: **Por cobrar**, con el total en dólares sin céntimos; **Vencido**, en rojo si hay algo vencido y en verde si no; y **Clientes que deben**.
+
+Debajo, una tarjeta por cliente, ordenadas por la deuda más vieja y, a igualdad de días, por la mayor. En la cabecera van el nombre, el RIF, cuántas facturas y el total, con una etiqueta roja con lo vencido o una verde que dice **Al día**.
+
+Dentro de cada tarjeta:
+
+| Columna | Qué muestra |
+| --- | --- |
+| **Factura** | El número y, debajo, el número de control |
+| **Emitida** | La fecha de emisión |
+| **Vence** | La fecha de vencimiento |
+| **Total** | El importe de la factura |
+| **Saldo** | Lo que falta por cobrar |
+| **Antigüedad** | **Al día**, **Hasta 30 días**, **31 a 60 días**, **61 a 90 días** o **Más de 90 días**. En rojo si la factura está vencida |
+
+**El orden es por antigüedad y no por monto, a propósito.** Una deuda de 400 dólares de hace noventa días es un problema distinto de una de 4.000 emitida ayer, y una lista ordenada por monto las pone justo al revés de como hay que atenderlas.
+
+Al pie de la pantalla queda dicho dónde se cobra: **Los cobros se registran desde Facturación › Facturas, abriendo la factura.** El texto es un enlace.
+
+Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitidas están cobradas. Las nuevas aparecen aquí en cuanto se emiten a crédito o quedan con saldo.**
+
+**Desde aquí no se cobra.** No hay filtros, ni acciones, ni exportación.
+
+### 21.5 El libro de ventas
+
+**Facturación › Libro de ventas.** La otra mitad de la declaración: el débito fiscal, que es el IVA que se le cobró a los clientes.
+
+Funciona igual que el libro de compras —se elige el mes, empieza en el pasado, se descarga en CSV, todo en bolívares a la tasa de cada documento—, con dos diferencias que conviene entender:
+
+**Las notas de crédito van en este mismo libro, en negativo.** No son un anexo ni un libro aparte: para el SENIAT son ventas del período con signo contrario. Cada una dice a qué número de control corrige.
+
+**Las facturas anuladas sí aparecen, en cero y marcadas.** Aquí el número de control es el nuestro y tiene que correr continua. Un salto sin explicación en la serie es lo primero que se busca en una fiscalización; una fila que dice «anulada» lo explica sola.
+
+Al pie, la suma del período con las notas ya restadas. Es lo que va a la planilla.
+
+**Lo que se vende sin IVA va en la columna de exentas.** Cuando un documento no lleva IVA —porque el cliente está marcado como exento o porque se desmarcó la casilla del IVA—, todo su monto es exento y la base imponible queda en cero. Hasta el 15 de septiembre de 2026 entraba como base al 0 %, que en la planilla no es lo mismo.
+
+### 21.6 Lo que todavía falta
+
+Lo que el módulo no hace todavía, para que nadie lo descubra con una factura en la mano:
+
+- **Nota de débito.** No existe: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura.
+- **Varias alícuotas en una misma factura.** Admite una sola, así que una factura con tarifa general y reducida no se puede expresar.
+- **Papeles.** Todavía no salen en PDF la nota de crédito, el recibo de un cobro, el libro de ventas —hoy se descarga en CSV— ni el estado de cuenta de un cliente.
+- **El comprobante de retención que entrega el cliente.** La retención se descuenta al emitir la factura, pero no hay dónde anotar el número, la fecha ni el período del comprobante.
+- **Cómo se asigna el número de control.** Hoy lo pone el propio sistema, en una sola serie continua para facturas y notas de crédito. Si la empresa emite con imprenta digital o con máquina fiscal, eso cambia, y es una decisión que se toma con el contador.
