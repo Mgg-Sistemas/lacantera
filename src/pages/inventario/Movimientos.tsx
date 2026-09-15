@@ -8,6 +8,7 @@ import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
 import { PESTANAS_MATERIAL } from '@/components/pestanasDeModulos'
 import { NotaRecortada } from '@/components/NotaRecortada'
+import { useNotaDeTraslado } from './NotaDeTraslado'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -61,6 +62,7 @@ export function Movimientos() {
   const { data: perfiles } = usePerfiles()
   const { puede } = useMisRoles()
   const reversar = useReversarMovimiento()
+  const notaDeTraslado = useNotaDeTraslado()
 
   /*
     LA NOTA, DESDE EL MOVIMIENTO
@@ -430,16 +432,24 @@ export function Movimientos() {
                           Y la pata negativa de una corrección de costo tampoco
                           es una salida: no se llevó nadie nada, el material
                           sigue en el estante. Armarle una nota de entrega sería
-                          fabricar el papel de un despacho que no ocurrió. */}
+                          fabricar el papel de un despacho que no ocurrió.
+
+                          La salida de un traslado saca su nota de traslado, no
+                          una de salida: la de salida no decía a dónde iba el
+                          material ni tenía dónde firmar quien lo recibe. */}
                       {m.signo < 0 && m.tipo !== 'REVERSO' && m.tipo !== 'AJUSTE_COSTO' ? (
                         <Button
                           size="sm"
                           variant="ghost"
                           icon={<FileText />}
-                          disabled={armando === m.id}
-                          onClick={() => void verLaNota(m)}
+                          disabled={armando === m.id || notaDeTraslado.armando === m.id}
+                          onClick={() =>
+                            void (m.tipo === 'TRANSFERENCIA_SALIDA'
+                              ? notaDeTraslado.abrir(m.id)
+                              : verLaNota(m))
+                          }
                         >
-                          {armando === m.id ? 'Armando…' : 'Nota'}
+                          {armando === m.id || notaDeTraslado.armando === m.id ? 'Armando…' : 'Nota'}
                         </Button>
                       ) : null}
 
@@ -514,6 +524,8 @@ export function Movimientos() {
           onCerrar={() => setDetalle(null)}
         />
       ) : null}
+
+      {notaDeTraslado.visor}
 
       <Visor
         abierto={pdf !== null}

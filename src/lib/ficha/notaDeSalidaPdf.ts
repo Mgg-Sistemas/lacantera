@@ -135,7 +135,9 @@ export interface NotaArmada {
   hueco de su número más largo. Repartir mirando los rótulos de la cabecera deja
   la primera nota con cifras grandes escribiendo una columna encima de otra.
 */
-const COLUMNAS: Columna[] = [
+// Se exportan porque la nota de traslado usa las mismas: un papel de almacén se
+// lee igual venga de una salida o de un traslado.
+export const COLUMNAS: Columna[] = [
   { titulo: 'Código', ancho: 26 },
   { titulo: 'Material', ancho: 55 },
   { titulo: 'Cantidad', ancho: 18, alDerecha: true },
@@ -155,7 +157,7 @@ const COLUMNAS: Columna[] = [
   contó 7 TAMBOR y 10» partia en tres renglones. Repartirlos entre todas dejaria
   cuatro columnas anchas y ninguna util.
 */
-const COLUMNAS_SIN_DINERO: Columna[] = [
+export const COLUMNAS_SIN_DINERO: Columna[] = [
   { titulo: 'Código', ancho: 26 },
   { titulo: 'Material', ancho: 91 },
   { titulo: 'Cantidad', ancho: 18, alDerecha: true },
@@ -167,7 +169,7 @@ const COLUMNAS_SIN_DINERO: Columna[] = [
   firma importa mas que en una pantalla: tres cifras con distinta cantidad de
   decimales en la misma columna no se pueden comparar de un vistazo.
 */
-function numero(valor: string | number, decimales = 2): string {
+export function numero(valor: string | number, decimales = 2): string {
   return Number(valor).toLocaleString('es-VE', {
     minimumFractionDigits: decimales,
     maximumFractionDigits: decimales,
@@ -175,7 +177,7 @@ function numero(valor: string | number, decimales = 2): string {
 }
 
 /** Un renglón, en las celdas de la tabla. Es el mismo dibujo con sitio o sin él. */
-const celdas = (r: RenglonDeSalida, conCostos: boolean): string[] => {
+export const celdas = (r: RenglonDeSalida, conCostos: boolean): string[] => {
   const base = [
     r.articuloCodigo,
     r.contado ? `${r.articulo} · se contó ${r.contado}` : r.articulo,
