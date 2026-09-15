@@ -1496,6 +1496,8 @@ Es el libro. Aquí no se registra nada nuevo: se consulta lo que pasó y, si alg
 
 Cada línea muestra el número del movimiento — **MOV-2026-0001**, que se reinicia cada año —, el tipo, la fecha y hora, quién lo registró y, entre comillas angulares, la nota que se escribió.
 
+Si la nota no cabe en dos líneas se corta, y debajo aparece **Ver detalle**: abre una ventana con la nota entera y, al lado, de qué artículo habla, en qué almacén, la cantidad, el día en que pasó, el costo por unidad y el valor. Así una corrección con una explicación larga no estira la fila ni empuja el resto del libro fuera de la pantalla.
+
 La cantidad va **en verde con un más** si entró material y **en rojo con un menos** si salió.
 
 **La pantalla muestra los 200 movimientos más recientes.** No hay paginación ni botón de ver más. Es una limitación real: en un patio con mucho tránsito, un movimiento de hace unas semanas deja de aparecer aquí aunque siga en el libro — y para eso están los filtros.
