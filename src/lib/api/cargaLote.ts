@@ -25,6 +25,13 @@ export interface FilaRevisada {
   estado: EstadoDeFila
   motivo: string | null
   /**
+   * La columna del problema, cuando la base sabe cuál es.
+   *
+   * Hoy solo la moneda de la planilla de artículos: la pantalla abre esa fila
+   * para corregirla con el cursor puesto ahí.
+   */
+  campo?: string | null
+  /**
    * Se parece a uno que ya está, pero no es el mismo.
    *
    * No para la carga: una planilla trae DISCO DE CORTE 7 y DISCO DE CORTE 9 el
