@@ -436,6 +436,11 @@ export interface Movimiento {
   cantidad_capturada: string | null
   unidad_capturada: string | null
   suelto_capturado: string | null
+  /** De quién es lo que se movió. */
+  propietario?: string | null
+  /** El costo tal como se tecleó, antes de pasarlo a dólares, y en qué moneda. */
+  costo_capturado?: string | null
+  moneda_capturada?: string | null
 }
 
 export const TIPOS_MOVIMIENTO: Record<string, string> = {
@@ -1324,6 +1329,28 @@ export const CAUSAS_DE_BAJA: Array<{ valor: string; etiqueta: string; dice: stri
     dice: 'Falta, y hay motivos para creer que se lo llevaron.',
   },
 ]
+
+/**
+ * La causa de una baja, para enseñarla con su movimiento.
+ *
+ * Vive en su propia tabla, colgada del movimiento, y el libro no la traía: el
+ * detalle de una baja decía «Baja» sin decir por qué.
+ */
+export function useBajaDeMovimiento(movimientoId: number, activo: boolean) {
+  return useQuery({
+    queryKey: ['baja-de-movimiento', movimientoId],
+    enabled: activo,
+    staleTime: 5 * 60_000,
+    queryFn: async () =>
+      desenvolver<{ causa: string; destino: string | null } | null>(
+        await supabase
+          .from('inventario_bajas')
+          .select('causa, destino')
+          .eq('movimiento_id', movimientoId)
+          .maybeSingle(),
+      ),
+  })
+}
 
 /**
  * Saca del inventario lo que dejó de servir.

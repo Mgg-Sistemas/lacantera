@@ -37,6 +37,10 @@ import {
   useNombresDeAuditoria,
   useTablasAuditadas,
   valorLegible,
+  accionCorta,
+  codigoEnPalabras,
+  conQueSeHizo,
+  useOperacionCompleta,
   useModulosAuditados,
   copiarAuditoriaCsv,
   copiarAuditoriaJson,
@@ -98,6 +102,10 @@ const EN_PALABRAS: Record<string, string> = {
 function frase(m: Movimiento): string {
   if (m.operacion === 'ACCESO') return 'Entró al sistema'
   if (m.operacion === 'CLAVE') return 'Cambió una clave'
+  // Donde el hecho tiene verbo propio —«Dio de baja», «Aceptó un traslado»— se
+  // dice ese, y no «Creó» más el nombre de una tabla.
+  const propia = accionCorta(m)
+  if (propia) return `${propia}${m.etiqueta ? ` · ${m.etiqueta}` : ''}`
   const cosa = EN_PALABRAS[m.tabla] ?? nombreDeTabla(m.tabla).toLowerCase()
   return `${VERBOS[m.operacion]} ${cosa}${m.etiqueta ? ` · ${m.etiqueta}` : ''}`
 }
@@ -572,6 +580,23 @@ export function Auditoria() {
               <dt className="text-ink/45 text-xs">Asiento</dt>
               <dd className="text-ink/80 tabular">n.º {detalle.id}</dd>
             </div>
+            {/*
+              CON QUÉ SE HIZO: la puerta que abrió la pantalla. Solo existe en lo
+              anotado desde que la base la guarda; en lo anterior se dice que no
+              consta, en vez de adivinarlo por el tipo de fila.
+            */}
+            {detalle.operacion !== 'ACCESO' && detalle.operacion !== 'CLAVE' ? (
+              <div className="sm:col-span-2">
+                <dt className="text-ink/45 text-xs">Hecho con</dt>
+                <dd className="text-ink/80">
+                  {conQueSeHizo(detalle.origen) ?? (
+                    <span className="text-ink/45">
+                      No consta: esto se anotó antes de que se guardara con qué se hace
+                    </span>
+                  )}
+                </dd>
+              </div>
+            ) : null}
             {detalle.motivo ? (
               <div className="sm:col-span-2">
                 <dt className="text-ink/45 text-xs">Por qué se hizo</dt>
@@ -691,8 +716,72 @@ function Explicado({ movimiento }: { movimiento: Movimiento }) {
           {frase}
         </p>
       ) : null}
+      {/* Lo demás que escribió la misma operación, antes de los campos de esta
+          fila: en una baja, la fila pulsada es la de la causa y lo que se dio de
+          baja está en la otra. */}
+      <OperacionCompleta movimiento={movimiento} />
       {campos}
     </>
+  )
+}
+
+/*
+  LO DEMÁS QUE ESCRIBIÓ LA MISMA OPERACIÓN.
+
+  Christopher: «no tengo los detalles de ese movimiento, no sé los datos que
+  llenó del formulario». Estaban, repartidos en dos filas del registro con la
+  misma hora, y la ficha enseñaba una sola. Aquí van las otras, cada una con su
+  frase y sus datos, para que la operación se lea entera desde cualquiera de sus
+  piezas.
+*/
+function OperacionCompleta({ movimiento }: { movimiento: Movimiento }) {
+  const { data } = useOperacionCompleta(movimiento)
+  const otras = (data ?? []).filter((o) => o.id !== movimiento.id)
+  if (otras.length === 0) return null
+
+  return (
+    <div className="border-hairline mb-5 rounded-[6px] border p-4">
+      <h3 className="text-ink/85 text-sm font-semibold">
+        En la misma operación también se escribió ({otras.length})
+      </h3>
+      <p className="text-ink/50 mt-0.5 mb-3 text-xs">
+        Misma persona y mismo instante: son partes de un solo guardado.
+      </p>
+      <ul className="space-y-3">
+        {otras.map((o) => (
+          <PiezaDeOperacion key={o.id} pieza={o} />
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function PiezaDeOperacion({ pieza }: { pieza: Movimiento }) {
+  const { data: nombres } = useNombresDeAuditoria(pieza.id)
+  const texto = narracion(pieza, (campo, valor) => nombreApuntado(nombres, campo, valor))
+  const campos = camposOrdenados(pieza.despues ?? pieza.antes ?? {}, nombreDeCampo)
+
+  return (
+    <li className="border-hairline border-t pt-3 first:border-t-0 first:pt-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <Chip tone={TONO[pieza.operacion]}>{frase(pieza)}</Chip>
+        <span className="text-ink/40 tabular text-2xs">
+          {nombreDeTabla(pieza.tabla)} · asiento n.º {pieza.id}
+        </span>
+      </div>
+      {texto ? <p className="text-ink/80 mt-2 text-sm leading-relaxed">{texto}</p> : null}
+      {/* Los datos van a la vista y no plegados: son justo lo que faltaba. */}
+      <dl className="mt-2 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
+        {campos.map(([campo, valor]) => (
+          <div key={campo} className="border-hairline border-b py-1">
+            <dt className="text-ink/45 text-xs">{nombreDeCampo(campo)}</dt>
+            <dd className="text-ink/80 break-words">
+              <Valor campo={campo} valor={valor} nombres={nombres} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </li>
   )
 }
 
@@ -710,7 +799,17 @@ function Valor({
   valor: unknown
   nombres: NombresApuntados | undefined
 }) {
-  const nombre = nombreApuntado(nombres, campo, valor)
+  const { data: perfiles } = usePerfiles()
+  /*
+    Tres formas de ponerle nombre a un valor, por este orden: lo que la fila
+    apunta —el artículo 513—, el código traducido —SALIDA_BAJA es «Baja»— y la
+    persona detrás de un identificador de usuario, que las columnas «pedida
+    por» guardan crudo porque apuntan fuera de las tablas que se resuelven.
+  */
+  const nombre =
+    nombreApuntado(nombres, campo, valor) ??
+    codigoEnPalabras(campo, valor) ??
+    (typeof valor === 'string' ? (perfiles ?? []).find((p) => p.id === valor)?.nombre ?? null : null)
   if (!nombre) return <>{valorLegible(valor)}</>
   return (
     <>
