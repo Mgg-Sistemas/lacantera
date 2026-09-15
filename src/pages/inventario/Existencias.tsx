@@ -58,7 +58,7 @@ import { ConteoDeEnvases } from '@/components/ConteoDeEnvases'
 import type { LineaDeConteo } from '@/components/ConteoDeEnvases'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
 import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
-import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
+import { useMonedasUsables, enSimbolos, hoyEnCaracas } from '@/lib/api/tasas'
 import {
   useAlmacenes,
   usePropietarios,
@@ -3304,6 +3304,20 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
   const corregir = useCorregirCosto()
   const [nuevo, setNuevo] = useState('')
   const [porque, setPorque] = useState('')
+  /*
+    LA MONEDA DE LA FACTURA, NO LA DEL SISTEMA.
+
+    Christopher, con la cafetera delante: «aunque quiera corregir el costo, no me
+    deja cambiar la moneda». La ventana pedía dólares y la factura estaba en
+    bolívares, así que corregir obligaba a dividir entre la tasa de cabeza —el
+    mismo error que se estaba corrigiendo—. Ahora se escribe lo que dice el
+    papel, en su moneda, y la base lo convierte con la tasa del día de la
+    factura: no con la de hoy, que para una factura vieja daría otro número.
+  */
+  const monedas = useMonedasUsables()
+  const [moneda, setMoneda] = useState('USD')
+  const [fechaFactura, setFechaFactura] = useState(hoyEnCaracas())
+  const enDolares = moneda === 'USD'
 
   const valor = Number(nuevo.replace(',', '.'))
   const valido = nuevo.trim() !== '' && Number.isFinite(valor) && valor >= 0
@@ -3311,19 +3325,22 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
     fila.almacen_id,
     fila.articulo_id,
     valido ? valor : NaN,
+    moneda,
+    enDolares ? null : fechaFactura || null,
   )
 
   const p = impacto.data
   /*
     Las tres exigencias de la base, repetidas en el botón para que nadie tenga
     que chocar contra ellas: motivo de diez, costo válido, y distinto del que
-    hay.
+    hay. Lo distinto se mide en dólares, con la cifra que ya convirtió la base.
   */
   const listo =
     valido &&
+    (enDolares || Boolean(fechaFactura)) &&
     porque.trim().length >= 10 &&
     p != null &&
-    Math.abs(valor - Number(p.costo_actual)) > 1e-6
+    Math.abs(Number(p.costo_correcto) - Number(p.costo_actual)) > 1e-6
 
   const linea = (que: string, cuanto: string, fuerte?: boolean) => (
     <div className="flex justify-between gap-4">
@@ -3354,6 +3371,8 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
                 articulo_id: fila.articulo_id,
                 costo_correcto: valor,
                 motivo: porque.trim(),
+                moneda,
+                fecha_tasa: enDolares ? null : fechaFactura,
               })
               onCerrar()
             }}
@@ -3366,32 +3385,74 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
       <p className="text-ink/70 text-sm">
         Hay <span className="tabular">{cantidad(fila.existencia)}</span> {fila.unidad} a{' '}
         <span className="tabular text-ink/90 font-semibold">
-          {fila.costo_promedio_usd == null ? '—' : monto(Number(fila.costo_promedio_usd))}
+          {fila.costo_promedio_usd == null ? '—' : dolares(fila.costo_promedio_usd)}
         </span>{' '}
         cada una. No se cambia ninguna cantidad: sale todo al costo de ahora y vuelve a entrar al
         correcto, y los dos renglones quedan en el historial.
       </p>
 
-      <Input
-        label="Costo correcto por unidad (USD)"
-        className="mt-4"
-        type="number"
-        min="0"
-        step="0.000001"
-        inputMode="decimal"
-        value={nuevo}
-        onChange={(e) => setNuevo(e.target.value)}
-      />
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem]">
+        <Input
+          label="Costo correcto por unidad"
+          type="number"
+          min="0"
+          step="0.000001"
+          inputMode="decimal"
+          value={nuevo}
+          onChange={(e) => setNuevo(e.target.value)}
+        />
+        <Select
+          label="Moneda de la factura"
+          value={moneda}
+          onChange={(e) => setMoneda(e.target.value)}
+          opciones={(monedas.data ?? []).map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
+        />
+      </div>
+
+      {/* Solo fuera del dólar: en dólares no hay nada que convertir. */}
+      {!enDolares ? (
+        <Input
+          label="Fecha de la factura"
+          className="mt-3"
+          type="date"
+          max={hoyEnCaracas()}
+          value={fechaFactura}
+          onChange={(e) => setFechaFactura(e.target.value)}
+        />
+      ) : null}
 
       {p ? (
         <dl className="border-hairline rounded-card mt-4 space-y-1 border p-3 text-sm">
-          {linea('Valor de ahora', monto(Number(p.valor_actual)))}
-          {linea('Valor corregido', monto(Number(p.valor_corregido)))}
+          {/*
+            LO QUE SE VA A GUARDAR, EN DÓLARES Y ANTES DE GUARDARLO.
+
+            Con la tasa que usó la base a la vista: quien corrige desde una
+            factura en bolívares tiene que ver aquí en cuántos dólares se queda,
+            y no descubrirlo después en el historial.
+          */}
+          {!enDolares
+            ? linea(
+                'Costo correcto en dólares',
+                `${dolares(p.costo_correcto)} por ${fila.unidad || 'unidad'}`,
+                true,
+              )
+            : null}
+          {linea('Valor de ahora', dolares(p.valor_actual))}
+          {linea('Valor corregido', dolares(p.valor_corregido))}
           {linea(
             'Ajuste en libros',
-            `${Number(p.ajuste) < 0 ? '−' : '+'}${monto(Math.abs(Number(p.ajuste)))}`,
+            `${Number(p.ajuste) < 0 ? '−' : '+'}${dolares(Math.abs(Number(p.ajuste)))}`,
             true,
           )}
+          {!enDolares ? (
+            <div className="text-ink/50 pt-1 text-xs">
+              Tasa del {fecha(p.fecha_tasa)}: 1 USD ={' '}
+              {Number(p.tasa_usd).toLocaleString('es-VE', { maximumFractionDigits: 4 })} Bs
+              {p.moneda !== 'VES'
+                ? ` · 1 ${p.moneda} = ${Number(p.tasa).toLocaleString('es-VE', { maximumFractionDigits: 4 })} Bs`
+                : ''}
+            </div>
+          ) : null}
 
           {/*
             LA PARTE INCÓMODA, y se enseña a propósito.
@@ -3405,7 +3466,7 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
               <p className="text-ink/70 text-xs leading-relaxed">
                 Ya salieron <span className="tabular">{cantidad(p.ya_salio)}</span> {p.unidad}{' '}
                 cargados al costo de ahora.{' '}
-                <strong>{monto(Math.abs(Number(p.no_se_recupera)))} no se recupera</strong>: eso ya
+                <strong>{dolares(Math.abs(Number(p.no_se_recupera)))} no se recupera</strong>: eso ya
                 se le cargó a una máquina o a un centro de costo, y esto no lo reprecia.
               </p>
             </div>
