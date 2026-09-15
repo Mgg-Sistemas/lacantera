@@ -5,6 +5,7 @@ import {
   Coins,
   Landmark,
   MapPin,
+  MoveRight,
   PackageMinus,
   PackagePlus,
   Plus,
@@ -52,6 +53,7 @@ import {
 } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { ModalTrasvase } from './ModalTrasvase'
+import { ModalTraslado } from './ModalTraslado'
 import { ConteoDeEnvases } from '@/components/ConteoDeEnvases'
 import type { LineaDeConteo } from '@/components/ConteoDeEnvases'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
@@ -323,6 +325,9 @@ export function Existencias() {
   const [alTaller, setAlTaller] = useState<Existencia | null>(null)
   // Abierto desde la cabecera, sin fila: el modal pregunta que y de donde.
   const [alTallerSuelto, setAlTallerSuelto] = useState(false)
+  // El traslado, abierto desde la cabecera. Si arriba hay un almacén elegido,
+  // llega puesto como origen.
+  const [trasladando, setTrasladando] = useState(false)
   /* Pasar material de un dueño a otro sin moverlo de sitio. */
   const [cambiandoDueno, setCambiandoDueno] = useState<Existencia | null>(null)
   /*
@@ -1095,6 +1100,23 @@ export function Existencias() {
                 Registrar salida
               </Button>
               {/*
+                EL TRASLADO, DESDE DONDE SE MIRA EL MATERIAL.
+
+                Christopher: «debemos incluir un botón para hacer un traslado
+                de un almacén a otro, o de un punto a otro». Existía, pero en
+                Transferencias: quien veía aquí que al patio le sobra y al
+                taller le falta tenía que irse de pantalla y empezar de cero.
+                Es la misma ventana que allá, y si arriba hay un almacén
+                elegido llega puesto como origen.
+              */}
+              <Button
+                variant="outline"
+                icon={<MoveRight />}
+                onClick={() => setTrasladando(true)}
+              >
+                Trasladar
+              </Button>
+              {/*
                 El «Al taller» existia desde ayer, pero solo dentro de una fila —y
                 las filas solo salen cuando se elige un almacen, asi que desde
                 «Todo el inventario», que es como se entra, no habia ninguno.
@@ -1532,6 +1554,12 @@ export function Existencias() {
           setAlTaller(null)
           setAlTallerSuelto(false)
         }}
+      />
+
+      <ModalTraslado
+        abierto={trasladando}
+        onCerrar={() => setTrasladando(false)}
+        origen={almacenId || undefined}
       />
 
       {falloElPapel ? (
