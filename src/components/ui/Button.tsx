@@ -6,7 +6,7 @@ type Variant = 'primary' | 'soft' | 'outline' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 const variants: Record<Variant, string> = {
-  // La sombra teñida de azul bajo el botón primario es un gesto de Materio:
+  // La sombra teñida del naranja de la casa bajo el botón primario es un gesto de Materio:
   // levanta la acción principal sin subir su saturación.
   primary:
     'bg-royal-600 text-white shadow-primary hover:bg-royal-700 active:bg-royal-800 disabled:bg-royal-600/50 disabled:shadow-none',

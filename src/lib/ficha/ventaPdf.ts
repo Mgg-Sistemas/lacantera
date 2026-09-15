@@ -11,7 +11,7 @@
  *
  * Lo que cambia entre ellos:
  *
- *   - EL RÓTULO Y EL COLOR de la banda. La factura va en azul de la casa, la
+ *   - EL RÓTULO Y EL COLOR de la banda. La factura va en el marrón de la casa, la
  *     nota de entrega en naranja de seguridad —es un papel de patio, se lee con
  *     guantes— y la cotización en gris, porque todavía no compromete a nadie.
  *
@@ -53,7 +53,7 @@ import type { PdfArmado } from './reciboPdf'
 /*
   El naranja de la nota de entrega es el único color propio que queda.
 
-  Los demás documentos toman el azul pizarra de la casa. La nota no: es el papel
+  Los demás documentos toman el marrón de rótulo de la casa. La nota no: es el papel
   que el chofer lleva encima por el patio, y en un fajo mezclado el color es lo
   que la separa de una factura sin leer ninguna. Antes eso era una banda llena
   de arriba abajo; ahora tiñe el rótulo del documento y la banda de las hojas

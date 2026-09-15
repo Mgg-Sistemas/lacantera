@@ -44,15 +44,20 @@ type Doc = import('jspdf').jsPDF
 
   Son dos colores y no uno, y esa es la parte que no se ve hasta tenerlo
   delante: el ROJO identifica a la empresa —el nombre arriba, la cabecera de la
-  tabla— y el AZUL PIZARRA ordena el documento —el título, las etiquetas—. Con
+  tabla— y el MARRÓN ordena el documento —el título, las etiquetas—. Con
   un solo color todo compite por la misma atención; con dos, el ojo separa
   «quién emite esto» de «qué dice».
+
+  El modelo traía ese segundo color en azul pizarra, y Christopher lo quitó el
+  15/09/2026: el azul no existe en el sistema, y el papel es parte del sistema.
+  Es el marrón del suelo de la paleta, apagado para que no se lea como un rojo
+  más oscuro.
 */
 
 /** El rojo ladrillo del membrete y de las cabeceras de tabla. */
 export const MARCA = '#8c2f1f'
-/** El azul pizarra del título del documento y de las etiquetas. */
-export const ROTULO = '#2f5063'
+/** El marrón del título del documento y de las etiquetas. */
+export const ROTULO = '#4f3a2c'
 /** La etiqueta teñida —la prioridad—, más viva que el membrete a propósito. */
 export const REALCE = '#e1503c'
 
@@ -332,7 +337,7 @@ export function tituloDocumento(doc: Doc, y: number, texto: string, color = ROTU
   /*
     EL COLOR ES OPCIONAL Y CASI NUNCA SE USA.
 
-    Todos los papeles lo dejan en el azul pizarra de la casa. La excepción es la
+    Todos los papeles lo dejan en el marrón de rótulo de la casa. La excepción es la
     nota de entrega, que va naranja: es el papel que el chofer lleva en la mano
     por el patio, y en un fajo de hojas mezcladas el color es lo que deja
     separarla de una factura sin leer ninguna. Ese naranja estaba antes en una
@@ -471,7 +476,7 @@ export function etiquetaValor(
       const x = IZQ + j * MITAD
 
       /*
-        La etiqueta en azul pizarra y con dos puntos; el valor en tinta.
+        La etiqueta en el marrón de rótulo y con dos puntos; el valor en tinta.
 
         Antes era al revés de lo que pide el modelo: etiqueta negra y valor
         gris, o sea el dato más apagado que su rótulo. Se lee buscando el VALOR,

@@ -37,16 +37,21 @@ export interface Porcion {
   porcentaje: number
 }
 
-/** El degradado del azul de la marca, de la porción mayor a la menor. */
+/**
+ * El degradado de la tierra de la marca, de la porción mayor a la menor.
+ *
+ * Era el azul del tema anterior y se había quedado así cuando todo lo demás
+ * pasó a tierra. Son los mismos pasos de la escala de `index.css`.
+ */
 const ESCALA = [
-  '#1e3a8a',
-  '#1d4ed8',
-  '#2563eb',
-  '#3b82f6',
-  '#60a5fa',
-  '#93c5fd',
-  '#bfdbfe',
-  '#dbeafe',
+  '#55290b',
+  '#7a3b06',
+  '#9e4c01',
+  '#cc3f00',
+  '#de7331',
+  '#e99c63',
+  '#f3c39b',
+  '#fae2cc',
 ]
 
 const SIN_CLASIFICAR = '#a8a29e'
