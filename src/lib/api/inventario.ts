@@ -530,7 +530,15 @@ export interface ImpactoDeCosto {
   existencia: number
   costo_actual: number
   valor_actual: number
+  /** Ya en dólares: lo convirtió la base. */
   costo_correcto: number
+  /** La cifra tal como se tecleó, en `moneda`. */
+  costo_declarado: number
+  moneda: string
+  /** Con qué se convirtió: la tasa de `moneda` y la del dólar, del día de la factura. */
+  tasa: number
+  tasa_usd: number
+  fecha_tasa: string
   valor_corregido: number
   ajuste: number
   /** Lo que ya salió del almacén cargado al costo equivocado. */
@@ -558,15 +566,24 @@ export function useImpactoDeCorregirCosto(
   almacenId: number | null,
   articuloId: number | null,
   costo: number,
+  /*
+    La moneda de la factura y el día de su tasa. La conversión la hace la base
+    —regla 4— y devuelve la cifra en dólares junto a la tasa que usó, para que la
+    pantalla enseñe lo que se va a guardar antes de guardarlo.
+  */
+  moneda = 'USD',
+  fechaTasa: string | null = null,
 ) {
   return useQuery({
-    queryKey: ['impacto-costo', almacenId, articuloId, costo],
+    queryKey: ['impacto-costo', almacenId, articuloId, costo, moneda, fechaTasa],
     enabled: !!almacenId && !!articuloId && Number.isFinite(costo) && costo >= 0,
     queryFn: () =>
       rpc<ImpactoDeCosto>('impacto_de_corregir_costo', {
         p_almacen_id: almacenId,
         p_articulo_id: articuloId,
         p_costo_correcto: costo,
+        p_moneda: moneda,
+        p_fecha_tasa: fechaTasa,
       }),
   })
 }
@@ -590,9 +607,13 @@ export function useCorregirCosto() {
     (c: {
       almacen_id: number
       articulo_id: number
+      /** En la moneda de la factura: la base lo pasa a dólares con la tasa de ese día. */
       costo_correcto: number
       motivo: string
       fecha?: string
+      moneda?: string
+      /** El día de la factura, cuya tasa convierte. Sin él, el del movimiento. */
+      fecha_tasa?: string | null
     }) =>
       rpc<number>('corregir_costo', {
         p_almacen_id: c.almacen_id,
@@ -600,6 +621,8 @@ export function useCorregirCosto() {
         p_costo_correcto: c.costo_correcto,
         p_motivo: c.motivo,
         p_fecha: c.fecha ?? null,
+        p_moneda: c.moneda ?? 'USD',
+        p_fecha_tasa: c.fecha_tasa ?? null,
       }),
   )
 }
