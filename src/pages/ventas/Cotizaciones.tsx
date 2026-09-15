@@ -125,7 +125,8 @@ export function Cotizaciones() {
           telefono: clientes?.find((c) => c.id === q.cliente_id)?.telefono ?? null,
         },
         moneda: q.moneda,
-        tasa: q.tasa_usd,
+        tasa: q.tasa,
+        tasaUsd: q.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
           cantidad: r.cantidad,

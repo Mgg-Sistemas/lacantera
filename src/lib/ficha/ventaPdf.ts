@@ -119,7 +119,17 @@ export interface DatosDocumento {
   } | null
 
   moneda: string
+  /** Bolívares por una unidad de la moneda del documento: por euro si va en euros. */
   tasa: string | number
+  /**
+   * Bolívares por dólar, congelada con el documento.
+   *
+   * Hace falta aparte de `tasa`: un documento en bolívares tiene `tasa` 1 y su
+   * equivalente en dólares sale de esta. Hasta el 15/09/2026 las pantallas
+   * pasaban esta como `tasa`, y en euros o USDT el equivalente en bolívares
+   * salía multiplicado por la tasa del dólar.
+   */
+  tasaUsd?: string | number | null
   renglones: RenglonImpreso[]
 
   subtotal: string | number
@@ -485,7 +495,7 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
   doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(GRIS)
   const otra =
     d.moneda === 'VES'
-      ? `Equivale a $ ${numero(Number(d.total) / Number(d.tasa || 1))}`
+      ? `Equivale a $ ${numero(Number(d.total) / Number(d.tasaUsd || d.tasa || 1))}`
       : `Equivale a Bs ${numero(Number(d.total) * Number(d.tasa || 1))}`
   doc.text(otra, DER - 3, fila, { align: 'right' })
 
