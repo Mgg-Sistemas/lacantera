@@ -7,6 +7,7 @@ import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
 import { PESTANAS_MATERIAL } from '@/components/pestanasDeModulos'
+import { NotaRecortada } from '@/components/NotaRecortada'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -40,6 +41,19 @@ function fechaHora(iso: string): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(iso))
+}
+
+/**
+ * «contó 7 TAMBOR y 10 L», o nada si se contó directamente en la unidad de
+ * operación. Sale de aquí para que la fila y el detalle lo digan igual.
+ */
+function loQueSeConto(m: Movimiento): string | null {
+  if (!m.cantidad_capturada) return null
+  const suelto = Number(m.suelto_capturado)
+  return (
+    `contó ${Number(m.cantidad_capturada).toLocaleString('es-VE')} ${m.unidad_capturada ?? ''}` +
+    (suelto ? ` y ${suelto.toLocaleString('es-VE')} ${m.unidad}` : '')
+  )
 }
 
 export function Movimientos() {
@@ -128,6 +142,9 @@ export function Movimientos() {
   })
 
   const [reversando, setReversando] = useState<{ id: number; numero: string } | null>(null)
+  // El movimiento entero y no su número: el libro no se edita, así que lo que
+  // se abrió no puede quedarse viejo mientras la ventana sigue abierta.
+  const [detalle, setDetalle] = useState<Movimiento | null>(null)
   const [motivo, setMotivo] = useState('')
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
   /*
@@ -250,7 +267,10 @@ export function Movimientos() {
             <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-                  <th className="px-5 py-3 font-medium">Movimiento</th>
+                  {/* Con ancho mínimo: cuando las otras columnas traen
+                      botones, la tabla encogía ésta hasta partir la fecha en
+                      dos renglones y una nota corta en cinco. */}
+                  <th className="min-w-60 px-5 py-3 font-medium">Movimiento</th>
                   <th className="px-3 py-3 font-medium">Artículo</th>
                   <th className="px-3 py-3 font-medium">Almacén</th>
                   <th className="px-3 py-3 text-right font-medium">Cantidad</th>
@@ -270,7 +290,11 @@ export function Movimientos() {
                         {fechaHora(m.registrado_en)} · {nombreDe(m.registrado_por)}
                       </p>
                       {m.nota ? (
-                        <p className="text-ink/55 mt-0.5 max-w-xs text-xs italic">«{m.nota}»</p>
+                        <NotaRecortada
+                          texto={m.nota}
+                          className="text-ink/55 mt-0.5 max-w-xs text-xs italic"
+                          onVerMas={() => setDetalle(m)}
+                        />
                       ) : null}
                     </td>
 
@@ -310,13 +334,7 @@ export function Movimientos() {
                         quien lo hizo.
                       */}
                       {m.cantidad_capturada ? (
-                        <span className="text-ink/45 mt-0.5 block text-2xs">
-                          contó {Number(m.cantidad_capturada).toLocaleString('es-VE')}{' '}
-                          {m.unidad_capturada}
-                          {Number(m.suelto_capturado)
-                            ? ` y ${Number(m.suelto_capturado).toLocaleString('es-VE')} ${m.unidad}`
-                            : ''}
-                        </span>
+                        <span className="text-ink/45 mt-0.5 block text-2xs">{loQueSeConto(m)}</span>
                       ) : null}
                     </td>
 
@@ -489,6 +507,14 @@ export function Movimientos() {
         </Modal>
       ) : null}
 
+      {detalle ? (
+        <DetalleDelMovimiento
+          m={detalle}
+          quien={nombreDe(detalle.registrado_por)}
+          onCerrar={() => setDetalle(null)}
+        />
+      ) : null}
+
       <Visor
         abierto={pdf !== null}
         onCerrar={() => {
@@ -518,5 +544,71 @@ export function Movimientos() {
         }
       />
     </>
+  )
+}
+
+/**
+ * La nota entera y los datos del movimiento, sin salir del libro.
+ *
+ * La fila corta la nota en dos líneas; esto la enseña completa, con lo que
+ * hace falta al lado para entenderla —qué artículo, en qué almacén, cuánto y a
+ * qué costo—, para no tener que volver a la tabla a buscar de qué hablaba.
+ *
+ * Solo se lee. Deshacer y sacar la nota de salida siguen en la fila, que es
+ * donde se deciden: repetirlos aquí haría dos sitios para lo mismo.
+ */
+function DetalleDelMovimiento({
+  m,
+  quien,
+  onCerrar,
+}: {
+  m: Movimiento
+  quien: string
+  onCerrar: () => void
+}) {
+  const contado = loQueSeConto(m)
+  const datos: [string, string][] = [
+    [
+      'Artículo',
+      m.articulo ? `${m.articulo.nombre}${m.articulo.codigo ? ` · ${m.articulo.codigo}` : ''}` : '—',
+    ],
+    ['Almacén', m.almacen?.nombre ?? '—'],
+    ['Cantidad', `${m.signo > 0 ? '+' : '−'}${m.cantidad} ${m.unidad}${contado ? ` (${contado})` : ''}`],
+    // El día en que pasó, que puede no ser el día en que se escribió: ése va arriba.
+    ['Día del movimiento', fecha(m.fecha)],
+    ['Costo por unidad', m.costo_usd === null ? 'sin valorar' : dolares(m.costo_usd)],
+    ['Valor', m.valor_usd === null ? 'sin valorar' : dolares(m.valor_usd)],
+  ]
+  if (m.orden?.numero) {
+    datos.push([m.orden.solicitud?.directa ? 'Compra directa' : 'Compra', m.orden.numero])
+  }
+  if (m.nota_salida) datos.push(['Nota de salida', m.nota_salida])
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo={TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo}
+      descripcion={`${m.numero} · ${fechaHora(m.registrado_en)} · ${quien}`}
+      acciones={
+        <Button variant="ghost" onClick={onCerrar}>
+          Cerrar
+        </Button>
+      }
+    >
+      <p className="text-ink/45 text-xs">Nota</p>
+      <p className="text-ink/85 mt-1 text-sm leading-relaxed break-words whitespace-pre-line">
+        {m.nota}
+      </p>
+
+      <dl className="border-hairline mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 text-sm">
+        {datos.map(([k, v]) => (
+          <div key={k} className="min-w-0">
+            <dt className="text-ink/45 text-xs">{k}</dt>
+            <dd className="tabular text-ink/80 break-words">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </Modal>
   )
 }
