@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
+import { Segmento } from '@/components/ui/Segmento'
 import { DeQuienEs } from '@/components/DeQuienEs'
 import { DeQuienSale } from '@/components/DeQuienSale'
 import { LA_CASA, conDueno, detalleDeDueno, esAjeno, faltaDecirDeQuien } from '@/lib/deQuien'
@@ -232,7 +233,8 @@ const renglonVacio = (articulo: string, almacen = ''): RenglonEnCurso => ({
   articulo,
   cantidad: '',
   costo: '',
-  moneda: 'USD',
+  // Sin moneda: se elige. Nacer en dólares es como entró mal la cafetera.
+  moneda: '',
   almacen,
 })
 
@@ -1721,7 +1723,12 @@ export function Existencias() {
                   (modal.tipo === 'entrada' &&
                     (!aDonde ||
                       renglones.filter((r) => r.articulo && r.cantidad && (r.costo || r.sinValor))
-                        .length === 0)) ||
+                        .length === 0 ||
+                      // Un costo sin moneda no se manda: la base lo rechaza, y
+                      // descartarlo en silencio sería peor.
+                      renglones.some(
+                        (r) => r.articulo && r.cantidad && r.costo && !r.sinValor && !r.moneda,
+                      ))) ||
                   /*
                     La salida se para si algún renglón pide más de lo que hay.
                     La base también lo para —y nombra el renglón—, pero
@@ -2062,11 +2069,22 @@ export function Existencias() {
                         {/* La moneda no se asume. El sistema maneja cuatro, y
                             convertir de cabeza es como se cargan los costos
                             equivocados. La conversión a dólares la hace la
-                            base con la tasa del día. */}
+                            base con la tasa del día.
+
+                            Y ahora de verdad no se asume: el renglón nacía en
+                            dólares, y así entró a 39.332,15 dólares una
+                            cafetera con factura en bolívares. Nace vacío y hay
+                            que elegirla. */}
                         <Select
                           label="Moneda"
+                          vacio="Elige"
                           className="sm:col-span-2 sm:max-w-40"
                           value={r.moneda}
+                          error={
+                            !r.sinValor && r.costo.trim() !== '' && !r.moneda
+                              ? 'Falta la moneda'
+                              : undefined
+                          }
                           onChange={(e) =>
                             setRenglones((lista) =>
                               lista.map((x) =>
@@ -2225,7 +2243,8 @@ export function Existencias() {
                     r.cantidad.trim() !== '' &&
                     r.costo.trim() !== '' &&
                     Number(r.cantidad) > 0 &&
-                    Number(r.costo) > 0,
+                    Number(r.costo) > 0 &&
+                    r.moneda !== '',
                 )
                 if (listos.length < 2) return null
                 const monedasUsadas = new Set(listos.map((r) => r.moneda))
@@ -3244,15 +3263,36 @@ function AvisoDeCosto({
     guardado fallaría con un error que la pantalla no ofrece cómo resolver.
   */
   if (r.estado === 'PRIMERA') {
+    /*
+      CON LA MONEDA Y SU EQUIVALENTE EN LA OTRA.
+
+      Decía «a 39.332,15 cada una», y con una factura en bolívares esa cifra
+      coincidía con el papel: la casilla se marcó de buena fe y la cafetera entró
+      en dólares. Ahora dice la moneda y cuánto es en la otra —la cuenta la hace
+      la base con la tasa del día—, que es donde un error así se ve: treinta y
+      tres millones de bolívares por una cafetera no pasan desapercibidos.
+    */
+    const rotulo = (m: string) => (m === 'VES' ? 'Bs' : m)
     return (
       <div className="border-hairline bg-ink/4 rounded-card mt-3 border p-2.5">
         <p className="text-ink/80 text-xs leading-relaxed">
           <strong>Es la primera vez que entra a este almacén</strong>, así que no hay con qué
           comparar el costo. Serán <span className="tabular">{cantidad(cant)}</span> {unidad} a{' '}
-          <span className="tabular">{monto(costo)}</span> cada una. Este costo se convierte en la
-          referencia de todo lo que entre después.
+          <span className="tabular font-semibold">
+            {monto(costo)} {rotulo(moneda)}
+          </span>{' '}
+          cada una
+          {r.equivale != null && r.equivale_en ? (
+            <>
+              , que son{' '}
+              <span className="tabular font-semibold">
+                {monto(r.equivale)} {rotulo(r.equivale_en)}
+              </span>
+            </>
+          ) : null}
+          . Este costo se convierte en la referencia de todo lo que entre después.
         </p>
-        {casilla('Lo comprobé con la factura')}
+        {casilla('Lo comprobé con la factura, también la moneda')}
       </div>
     )
   }
@@ -3321,9 +3361,21 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
     factura: no con la de hoy, que para una factura vieja daría otro número.
   */
   const monedas = useMonedasUsables()
-  const [moneda, setMoneda] = useState('USD')
+  /*
+    QUÉ SE CARGÓ MAL: LA CIFRA O LA MONEDA.
+
+    Christopher: «si se va a ajustar la moneda, no puede ajustarse a la misma, es
+    decir, USD no puede ajustarse a USD». Y a la vez tiene que poder arreglarse
+    una cifra mal tecleada en dólares, que es lo que pasó con los aceites. Son
+    dos errores distintos y se corrigen distinto: la cifra, en dólares; la
+    moneda, eligiendo cuál era de verdad —nunca el dólar, que es en la que ya
+    está— y el día de su factura.
+  */
+  const [queFallo, setQueFallo] = useState<'MONTO' | 'MONEDA'>('MONTO')
+  const [moneda, setMoneda] = useState('VES')
   const [fechaFactura, setFechaFactura] = useState(hoyEnCaracas())
-  const enDolares = moneda === 'USD'
+  const monedaDeLaFactura = queFallo === 'MONTO' ? 'USD' : moneda
+  const enDolares = monedaDeLaFactura === 'USD'
 
   const valor = Number(nuevo.replace(',', '.'))
   const valido = nuevo.trim() !== '' && Number.isFinite(valor) && valor >= 0
@@ -3331,7 +3383,7 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
     fila.almacen_id,
     fila.articulo_id,
     valido ? valor : NaN,
-    moneda,
+    monedaDeLaFactura,
     enDolares ? null : fechaFactura || null,
   )
 
@@ -3377,7 +3429,7 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
                 articulo_id: fila.articulo_id,
                 costo_correcto: valor,
                 motivo: porque.trim(),
-                moneda,
+                moneda: monedaDeLaFactura,
                 fecha_tasa: enDolares ? null : fechaFactura,
               })
               onCerrar()
@@ -3397,9 +3449,39 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
         correcto, y los dos renglones quedan en el historial.
       </p>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem]">
+      <div className="mt-4">
+        <p className="text-ink/75 mb-1.5 text-sm font-medium">Qué se cargó mal</p>
+        <Segmento
+          opciones={[
+            { valor: 'MONTO', etiqueta: 'La cifra' },
+            { valor: 'MONEDA', etiqueta: 'La moneda' },
+          ]}
+          valor={queFallo}
+          onCambio={(v) => {
+            const siguiente = v === 'MONEDA' ? 'MONEDA' : 'MONTO'
+            setQueFallo(siguiente)
+            // Cuando lo equivocado es la moneda, la cifra suele estar bien: se
+            // propone la que hay, para no teclearla otra vez.
+            if (siguiente === 'MONEDA' && nuevo.trim() === '' && fila.costo_promedio_usd != null) {
+              setNuevo(String(Number(fila.costo_promedio_usd)))
+            }
+          }}
+        />
+        <p className="text-ink/50 mt-1.5 text-xs">
+          {queFallo === 'MONTO'
+            ? 'La cifra estaba mal y era en dólares: escribe la correcta.'
+            : 'La cifra era de otra moneda: elige cuál y el día de la factura. El dólar no se ofrece, porque es en la que ya está.'}
+        </p>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem]">
         <Input
-          label="Costo correcto por unidad"
+          label={
+            queFallo === 'MONTO'
+              ? 'Costo correcto por unidad (USD)'
+              : 'Costo por unidad, como dice la factura'
+          }
+          className={queFallo === 'MONTO' ? 'sm:col-span-2' : undefined}
           type="number"
           min="0"
           step="0.000001"
@@ -3407,12 +3489,16 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
           value={nuevo}
           onChange={(e) => setNuevo(e.target.value)}
         />
-        <Select
-          label="Moneda de la factura"
-          value={moneda}
-          onChange={(e) => setMoneda(e.target.value)}
-          opciones={(monedas.data ?? []).map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
-        />
+        {queFallo === 'MONEDA' ? (
+          <Select
+            label="Moneda de la factura"
+            value={moneda}
+            onChange={(e) => setMoneda(e.target.value)}
+            opciones={(monedas.data ?? [])
+              .filter((m) => m.valor !== 'USD')
+              .map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
+          />
+        ) : null}
       </div>
 
       {/* Solo fuera del dólar: en dólares no hay nada que convertir. */}
