@@ -27,7 +27,6 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
-import { Segmento } from '@/components/ui/Segmento'
 import { DeQuienEs } from '@/components/DeQuienEs'
 import { DeQuienSale } from '@/components/DeQuienSale'
 import { LA_CASA, conDueno, detalleDeDueno, esAjeno, faltaDecirDeQuien } from '@/lib/deQuien'
@@ -3361,21 +3360,9 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
     factura: no con la de hoy, que para una factura vieja daría otro número.
   */
   const monedas = useMonedasUsables()
-  /*
-    QUÉ SE CARGÓ MAL: LA CIFRA O LA MONEDA.
-
-    Christopher: «si se va a ajustar la moneda, no puede ajustarse a la misma, es
-    decir, USD no puede ajustarse a USD». Y a la vez tiene que poder arreglarse
-    una cifra mal tecleada en dólares, que es lo que pasó con los aceites. Son
-    dos errores distintos y se corrigen distinto: la cifra, en dólares; la
-    moneda, eligiendo cuál era de verdad —nunca el dólar, que es en la que ya
-    está— y el día de su factura.
-  */
-  const [queFallo, setQueFallo] = useState<'MONTO' | 'MONEDA'>('MONTO')
-  const [moneda, setMoneda] = useState('VES')
+  const [moneda, setMoneda] = useState('USD')
   const [fechaFactura, setFechaFactura] = useState(hoyEnCaracas())
-  const monedaDeLaFactura = queFallo === 'MONTO' ? 'USD' : moneda
-  const enDolares = monedaDeLaFactura === 'USD'
+  const enDolares = moneda === 'USD'
 
   const valor = Number(nuevo.replace(',', '.'))
   const valido = nuevo.trim() !== '' && Number.isFinite(valor) && valor >= 0
@@ -3383,7 +3370,7 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
     fila.almacen_id,
     fila.articulo_id,
     valido ? valor : NaN,
-    monedaDeLaFactura,
+    moneda,
     enDolares ? null : fechaFactura || null,
   )
 
@@ -3393,12 +3380,24 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
     que chocar contra ellas: motivo de diez, costo válido, y distinto del que
     hay. Lo distinto se mide en dólares, con la cifra que ya convirtió la base.
   */
+  /*
+    X USD A X USD NO ES UNA CORRECCIÓN.
+
+    Christopher: la regla es para «el error humano de ajustar x usd a x usd». La
+    base ya lo para —«ya viene costando…: no hay nada que corregir»— y aquí el
+    botón se apagaba sin decir por qué, que es como alguien acaba creyendo que la
+    pantalla está rota. Se compara en dólares, con la cifra que ya convirtió la
+    base: 39.332,15 Bs no son 39.332,15 USD, y eso sí es corregir.
+  */
+  const mismoCosto =
+    valido && p != null && Math.abs(Number(p.costo_correcto) - Number(p.costo_actual)) <= 1e-6
+
   const listo =
     valido &&
     (enDolares || Boolean(fechaFactura)) &&
     porque.trim().length >= 10 &&
     p != null &&
-    Math.abs(Number(p.costo_correcto) - Number(p.costo_actual)) > 1e-6
+    !mismoCosto
 
   const linea = (que: string, cuanto: string, fuerte?: boolean) => (
     <div className="flex justify-between gap-4">
@@ -3429,7 +3428,7 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
                 articulo_id: fila.articulo_id,
                 costo_correcto: valor,
                 motivo: porque.trim(),
-                moneda: monedaDeLaFactura,
+                moneda,
                 fecha_tasa: enDolares ? null : fechaFactura,
               })
               onCerrar()
@@ -3449,39 +3448,9 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
         correcto, y los dos renglones quedan en el historial.
       </p>
 
-      <div className="mt-4">
-        <p className="text-ink/75 mb-1.5 text-sm font-medium">Qué se cargó mal</p>
-        <Segmento
-          opciones={[
-            { valor: 'MONTO', etiqueta: 'La cifra' },
-            { valor: 'MONEDA', etiqueta: 'La moneda' },
-          ]}
-          valor={queFallo}
-          onCambio={(v) => {
-            const siguiente = v === 'MONEDA' ? 'MONEDA' : 'MONTO'
-            setQueFallo(siguiente)
-            // Cuando lo equivocado es la moneda, la cifra suele estar bien: se
-            // propone la que hay, para no teclearla otra vez.
-            if (siguiente === 'MONEDA' && nuevo.trim() === '' && fila.costo_promedio_usd != null) {
-              setNuevo(String(Number(fila.costo_promedio_usd)))
-            }
-          }}
-        />
-        <p className="text-ink/50 mt-1.5 text-xs">
-          {queFallo === 'MONTO'
-            ? 'La cifra estaba mal y era en dólares: escribe la correcta.'
-            : 'La cifra era de otra moneda: elige cuál y el día de la factura. El dólar no se ofrece, porque es en la que ya está.'}
-        </p>
-      </div>
-
-      <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem]">
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem]">
         <Input
-          label={
-            queFallo === 'MONTO'
-              ? 'Costo correcto por unidad (USD)'
-              : 'Costo por unidad, como dice la factura'
-          }
-          className={queFallo === 'MONTO' ? 'sm:col-span-2' : undefined}
+          label="Costo correcto por unidad"
           type="number"
           min="0"
           step="0.000001"
@@ -3489,16 +3458,12 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
           value={nuevo}
           onChange={(e) => setNuevo(e.target.value)}
         />
-        {queFallo === 'MONEDA' ? (
-          <Select
-            label="Moneda de la factura"
-            value={moneda}
-            onChange={(e) => setMoneda(e.target.value)}
-            opciones={(monedas.data ?? [])
-              .filter((m) => m.valor !== 'USD')
-              .map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
-          />
-        ) : null}
+        <Select
+          label="Moneda de la factura"
+          value={moneda}
+          onChange={(e) => setMoneda(e.target.value)}
+          opciones={(monedas.data ?? []).map((m) => ({ valor: m.valor, etiqueta: m.etiqueta }))}
+        />
       </div>
 
       {/* Solo fuera del dólar: en dólares no hay nada que convertir. */}
@@ -3511,6 +3476,14 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
           value={fechaFactura}
           onChange={(e) => setFechaFactura(e.target.value)}
         />
+      ) : null}
+
+      {mismoCosto && p ? (
+        <p className="border-warning/40 bg-warning-soft text-ink/80 rounded-card mt-3 border p-2.5 text-xs leading-relaxed">
+          <strong>Es el mismo costo que ya tiene</strong> —{dolares(p.costo_actual)} por{' '}
+          {fila.unidad || 'unidad'}—: no hay nada que corregir. Si lo que estaba mal era la moneda,
+          elige la de la factura.
+        </p>
       ) : null}
 
       {p ? (
