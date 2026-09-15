@@ -270,7 +270,11 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
     Vacio, la base busca por el nombre; si no encuentra a nadie, pone un codigo
     con el prefijo de la categoria.
   */
-  { columna: 'codigo', obligatoria: false, dice: 'El código con el que se pide. Si ya existe, la fila lo actualiza en vez de crearlo. Vacío, se busca por el nombre y, si es nuevo, la base le pone uno.', ejemplo: 'PRD-ARENA-L', otro: '' },
+  /*
+    Y UN CÓDIGO QUE NO EXISTE YA NO CREA NADA. Christopher pidió validar el
+    «intento de nuevos códigos»: para uno nuevo, el código va vacío.
+  */
+  { columna: 'codigo', obligatoria: false, dice: 'Solo para corregir un artículo que ya está: escribe su código. Para uno nuevo, déjalo vacío y la base le pone uno. Un código que no existe no entra.', ejemplo: '', otro: '' },
   { columna: 'nombre', obligatoria: true, dice: 'Cómo se llama.', ejemplo: 'Arena lavada', otro: 'Flete por viaje' },
   { columna: 'descripcion', obligatoria: false, dice: 'Detalle. Si se deja vacía en un artículo que ya existe, se respeta la que tenía.', ejemplo: 'Granulometria fina, patio 1' },
   { columna: 'categoria', obligatoria: true, dice: 'Elige una de la lista. Son las mismas que ofrece el sistema al crear un artículo, con el mismo nombre.', ejemplo: 'Producto de cantera', otro: 'Servicio', opciones: CATEGORIAS_DE_ARTICULO },

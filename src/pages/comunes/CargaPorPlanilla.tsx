@@ -88,6 +88,19 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
     que alguien diga que las miró.
   */
   const [costosRevisados, setCostosRevisados] = useState(false)
+  /*
+    Y DOS COSAS MÁS QUE HAY QUE DECIR QUE SE MIRARON.
+
+    Los parecidos: un artículo nuevo que se llama casi igual que uno del
+    catálogo acaba con la existencia repartida entre dos fichas. No se para
+    —DISCO DE CORTE 7 y 9 son dos—, pero se pide mirarlo.
+
+    La planilla sin existencia: un usuario cargó 130 artículos creyendo que
+    metía lo que había en el almacén, y solo entró el catálogo. Cuando ninguna
+    fila trae existencia, se dice con todas las letras y se pide entenderlo.
+  */
+  const [parecidosRevisados, setParecidosRevisados] = useState(false)
+  const [soloCatalogoEntendido, setSoloCatalogoEntendido] = useState(false)
   const [cargado, setCargado] = useState<InformeDeCarga | null>(null)
   /*
     LA FILA MALA SE CORRIGE AQUÍ, SIN VOLVER AL ARCHIVO.
@@ -244,6 +257,8 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
       // un paso más para llegar al mismo sitio.
       // Un informe nuevo trae otros costos: lo marcado sobre el anterior no vale.
       setCostosRevisados(false)
+      setParecidosRevisados(false)
+      setSoloCatalogoEntendido(false)
       setInforme(await p.revisar.mutateAsync(limpias))
     } catch (e) {
       setFilas(null)
@@ -277,6 +292,8 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
     setCorregidas((antes) => (antes.includes(fila) ? antes : [...antes, fila]))
     // Un informe nuevo trae otros costos: lo marcado sobre el anterior no vale.
     setCostosRevisados(false)
+    setParecidosRevisados(false)
+    setSoloCatalogoEntendido(false)
     try {
       setInforme(await p.revisar.mutateAsync(nuevas))
     } catch {
@@ -285,6 +302,20 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
       setInforme(null)
     }
   }
+
+  /* «Es el mismo»: la fila pasa a corregir el artículo que ya está, en vez de crear otro. */
+  const usarElQueYaEsta = (fila: number, codigo: string) => {
+    if (!filas) return
+    void guardarCorreccion(fila, { ...(filas[fila - 1] ?? {}), codigo })
+  }
+
+  // Solo la planilla de artículos cuenta la existencia; en las otras no aplica.
+  const soloCatalogo = informe != null && informe.errores === 0 && informe.con_existencia === 0
+  const faltaMirar =
+    informe != null &&
+    (((informe.avisos_de_costo ?? 0) > 0 && !costosRevisados) ||
+      ((informe.avisos_de_parecido ?? 0) > 0 && !parecidosRevisados) ||
+      (soloCatalogo && !soloCatalogoEntendido))
 
   return (
     <>
@@ -378,6 +409,9 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                     <Chip tone="danger">{informe.errores} con problemas</Chip>
                   ) : null}
                   <Chip tone="neutral">{informe.total} filas en total</Chip>
+                  {(informe.con_existencia ?? 0) > 0 ? (
+                    <Chip tone="royal">{informe.con_existencia} con existencia</Chip>
+                  ) : null}
                 </div>
 
                 {corregidas.length > 0 ? (
@@ -415,14 +449,58 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                   </label>
                 ) : null}
 
+                {(informe.avisos_de_parecido ?? 0) > 0 && informe.errores === 0 ? (
+                  <label
+                    className={`mt-3 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm ${
+                      parecidosRevisados ? 'border-hairline' : 'border-warning/30 bg-warning-soft'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                      checked={parecidosRevisados}
+                      onChange={(e) => setParecidosRevisados(e.target.checked)}
+                    />
+                    <span className="text-ink/80">
+                      {informe.avisos_de_parecido === 1
+                        ? 'Revisé el artículo nuevo que se parece a uno del catálogo'
+                        : `Revisé los ${informe.avisos_de_parecido} artículos nuevos que se parecen a uno del catálogo`}
+                      <span className="text-ink/50 mt-0.5 block text-xs">
+                        Si es el mismo, pulsa «Es el mismo» en su fila y se actualiza ese en vez
+                        de crear otro. Dos fichas del mismo artículo acaban con la existencia
+                        repartida y ninguna cuadra.
+                      </span>
+                    </span>
+                  </label>
+                ) : null}
+
+                {soloCatalogo ? (
+                  <label
+                    className={`mt-3 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm ${
+                      soloCatalogoEntendido ? 'border-hairline' : 'border-warning/30 bg-warning-soft'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                      checked={soloCatalogoEntendido}
+                      onChange={(e) => setSoloCatalogoEntendido(e.target.checked)}
+                    />
+                    <span className="text-ink/80">
+                      Entendido: esta planilla solo carga el catálogo, sin existencia
+                      <span className="text-ink/50 mt-0.5 block text-xs">
+                        Ninguna fila dice cuánto hay en un almacén, así que los artículos quedan
+                        creados con cero. Si querías meter lo que hay, llena almacén, cantidad,
+                        costo y moneda en cada fila y vuelve a subirla.
+                      </span>
+                    </span>
+                  </label>
+                ) : null}
+
                 <div className="mt-4 flex flex-wrap gap-2 pb-4">
                   <Button
                     icon={<Check />}
-                    disabled={
-                      ocupado ||
-                      informe.errores > 0 ||
-                      ((informe.avisos_de_costo ?? 0) > 0 && !costosRevisados)
-                    }
+                    disabled={ocupado || informe.errores > 0 || faltaMirar}
                     onClick={() => void confirmar()}
                   >
                     {informe.errores > 0
@@ -498,6 +576,17 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                           <span className="text-ink/70 w-full text-xs sm:w-auto sm:flex-none">
                             {f.aviso}
                           </span>
+                        ) : null}
+                        {f.estado === 'NUEVO' && f.parecido_codigo && filas ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="sm:ml-auto"
+                            disabled={ocupado}
+                            onClick={() => usarElQueYaEsta(f.fila, f.parecido_codigo!)}
+                          >
+                            Es el mismo ({f.parecido_codigo})
+                          </Button>
                         ) : null}
                       </li>
                     )
