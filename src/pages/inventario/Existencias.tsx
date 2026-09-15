@@ -54,6 +54,7 @@ import {
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { ModalTrasvase } from './ModalTrasvase'
 import { ModalTraslado } from './ModalTraslado'
+import { useNotaDeTraslado } from './NotaDeTraslado'
 import { ConteoDeEnvases } from '@/components/ConteoDeEnvases'
 import type { LineaDeConteo } from '@/components/ConteoDeEnvases'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
@@ -328,6 +329,8 @@ export function Existencias() {
   // El traslado, abierto desde la cabecera. Si arriba hay un almacén elegido,
   // llega puesto como origen.
   const [trasladando, setTrasladando] = useState(false)
+  // Y su nota, que se abre sola al terminar el traslado.
+  const notaDeTraslado = useNotaDeTraslado()
   /* Pasar material de un dueño a otro sin moverlo de sitio. */
   const [cambiandoDueno, setCambiandoDueno] = useState<Existencia | null>(null)
   /*
@@ -1560,7 +1563,10 @@ export function Existencias() {
         abierto={trasladando}
         onCerrar={() => setTrasladando(false)}
         origen={almacenId || undefined}
+        onTrasladado={(id) => void notaDeTraslado.abrir(id)}
       />
+
+      {notaDeTraslado.visor}
 
       {falloElPapel ? (
         <Modal

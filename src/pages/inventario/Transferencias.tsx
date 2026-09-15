@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowRight, MoveRight, Undo2 } from 'lucide-react'
+import { ArrowRight, FileText, MoveRight, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,6 +10,7 @@ import { useMisRoles } from '@/lib/api/catalogo'
 import { useAlmacenes, useMovimientos, useReversarMovimiento } from '@/lib/api/inventario'
 import { fechaHora } from '@/lib/formato'
 import { ModalTraslado } from './ModalTraslado'
+import { useNotaDeTraslado } from './NotaDeTraslado'
 
 /**
  * Mover material de un sitio a otro.
@@ -26,6 +27,8 @@ export function Transferencias() {
   const { data: almacenes } = useAlmacenes()
   const { puede } = useMisRoles()
   const reversar = useReversarMovimiento()
+  // La nota de cada traslado, con su casilla de costos.
+  const nota = useNotaDeTraslado()
 
   const [abierto, setAbierto] = useState(false)
   const [error, setError] = useState('')
@@ -112,7 +115,16 @@ export function Transferencias() {
                     </span>
                   </td>
                   <td className="text-ink/55 px-4 py-3 text-xs">{fechaHora(m.registrado_en)}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<FileText className="size-4" />}
+                      disabled={nota.armando === m.id}
+                      onClick={() => void nota.abrir(m.id)}
+                    >
+                      {nota.armando === m.id ? 'Armando…' : 'Nota'}
+                    </Button>
                     {puede('ALMACEN') ? (
                       <Button
                         variant="ghost"
@@ -131,7 +143,13 @@ export function Transferencias() {
         </Card>
       )}
 
-      <ModalTraslado abierto={abierto} onCerrar={() => setAbierto(false)} />
+      <ModalTraslado
+        abierto={abierto}
+        onCerrar={() => setAbierto(false)}
+        onTrasladado={(id) => void nota.abrir(id)}
+      />
+
+      {nota.visor}
 
       <Modal
         abierto={deshaciendo !== null}

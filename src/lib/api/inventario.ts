@@ -1015,6 +1015,98 @@ export function leerNotaDeSalida(numero: string) {
   return rpc<RenglonDeNota[]>('nota_de_salida', { p_numero: numero })
 }
 
+/** Lo que hace falta para armar la nota de un traslado, leído del libro. */
+export interface TrasladoParaNota {
+  numero: string
+  fecha: string
+  origen: string
+  destino: string
+  motivo: string | null
+  articuloCodigo: string
+  articulo: string
+  cantidad: string
+  unidad: string
+  costoUsd: string | null
+  valorUsd: string | null
+  /** «7 TAMBOR y 10 L», cuando se contó en bultos. */
+  contado: string | null
+}
+
+/**
+ * Un traslado, leído desde su salida, para imprimir su nota.
+ *
+ * La entrada cuelga de la salida por `movimiento_origen` —así la escribe
+ * `transferir_existencia`— y de ella sale el destino. La nota de la salida
+ * también lo dice («Traslado a …»), pero sacarlo del texto fallaría con el
+ * primer almacén que lleve un punto en el nombre.
+ *
+ * Como `leerNotaDeSalida`, no es un hook: se lee cuando alguien pide el papel.
+ */
+export async function leerTraslado(idSalida: number): Promise<TrasladoParaNota> {
+  const salida = desenvolver<{
+    numero: string
+    fecha: string
+    cantidad: string
+    unidad: string
+    costo_usd: string | null
+    valor_usd: string | null
+    nota: string | null
+    cantidad_capturada: string | null
+    unidad_capturada: string | null
+    suelto_capturado: string | null
+    almacen: { nombre: string } | null
+    articulo: { codigo: string; nombre: string } | null
+  }>(
+    await supabase
+      .from('inventario_movimientos')
+      .select(
+        'numero, fecha, cantidad, unidad, costo_usd, valor_usd, nota, cantidad_capturada, unidad_capturada, suelto_capturado, almacen:almacenes(nombre), articulo:articulos(codigo, nombre)',
+      )
+      .eq('id', idSalida)
+      .eq('tipo', 'TRANSFERENCIA_SALIDA')
+      .single(),
+  )
+
+  const entrada = desenvolver<{ almacen: { nombre: string } | null } | null>(
+    await supabase
+      .from('inventario_movimientos')
+      .select('almacen:almacenes(nombre)')
+      .eq('movimiento_origen', idSalida)
+      .eq('tipo', 'TRANSFERENCIA_ENTRADA')
+      .maybeSingle(),
+  )
+
+  const origen = salida.almacen?.nombre ?? '—'
+  const destino = entrada?.almacen?.nombre ?? '—'
+
+  // La nota empieza por «Traslado a DESTINO.», y en el papel el destino ya va
+  // arriba: aquí solo queda el motivo.
+  const prefijo = `TRASLADO A ${destino}.`.toUpperCase()
+  const nota = (salida.nota ?? '').trim()
+  const motivo = nota.toUpperCase().startsWith(prefijo) ? nota.slice(prefijo.length).trim() : nota
+
+  const suelto = Number(salida.suelto_capturado)
+  const contado = salida.cantidad_capturada
+    ? `${Number(salida.cantidad_capturada).toLocaleString('es-VE')} ${salida.unidad_capturada ?? ''}` +
+      (suelto ? ` y ${suelto.toLocaleString('es-VE')} ${salida.unidad}` : '')
+    : null
+
+  return {
+    numero: salida.numero,
+    fecha: salida.fecha,
+    origen,
+    destino,
+    motivo: motivo || null,
+    articuloCodigo: salida.articulo?.codigo ?? '',
+    articulo: salida.articulo?.nombre ?? '',
+    cantidad: salida.cantidad,
+    unidad: salida.unidad,
+    costoUsd: salida.costo_usd,
+    valorUsd: salida.valor_usd,
+    contado,
+  }
+}
+
 /*
   DE QUÉ CLASE ES UNA SALIDA, Y ESA LISTA LA LLEVA LA EMPRESA
 

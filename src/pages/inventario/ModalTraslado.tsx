@@ -64,11 +64,14 @@ export function ModalTraslado({
   abierto,
   onCerrar,
   origen,
+  onTrasladado,
 }: {
   abierto: boolean
   onCerrar: () => void
   /** El almacén que la pantalla tiene elegido, para proponerlo como origen. */
   origen?: string
+  /** Con el traslado hecho recibe su salida, que es la cabeza de la pareja, para sacar la nota. */
+  onTrasladado?: (idSalida: number) => void
 }) {
   const { data: almacenes } = useAlmacenes()
   const { data: propietarios } = usePropietarios()
@@ -233,7 +236,7 @@ export function ModalTraslado({
   const enviar = async () => {
     setError('')
     try {
-      await transferir.mutateAsync({
+      const idSalida = await transferir.mutateAsync({
         origen_id: Number(form.origen),
         destino_id: Number(form.destino),
         articulo_id: Number(form.articulo),
@@ -247,6 +250,8 @@ export function ModalTraslado({
       })
       setForm(VACIO)
       onCerrar()
+      // El papel sale en el acto, como la nota de salida: viaja con el material.
+      onTrasladado?.(Number(idSalida))
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     }
