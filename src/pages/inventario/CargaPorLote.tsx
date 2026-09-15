@@ -40,7 +40,9 @@ export function CargaPorLote() {
 
   const columnas = useMemo<ColumnaPlantilla[]>(() => {
     const enVivo: Record<string, string[] | undefined> = {
-      almacen: (almacenes ?? []).map((a) => a.codigo),
+      // Sin los tanques que solo admiten lo que no costó nada: la planilla no
+      // carga ahí, y la base lo rechaza.
+      almacen: (almacenes ?? []).filter((a) => !a.admite_sin_costo).map((a) => a.codigo),
       propietario: (propietarios ?? []).map((d) => d.codigo),
       unidad: (unidades ?? []).map((u) => u.codigo),
       // Sin datos todavía manda la lista escrita en la plantilla, que es la

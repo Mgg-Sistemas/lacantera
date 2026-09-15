@@ -230,7 +230,7 @@ export function libroDePlantilla(
           celda(
             'No entra ninguna. Es a propósito: una carga a medias deja a nadie sabiendo qué quedó dentro, ' +
               'y el archivo ya no sirve para volver a intentarlo. El sistema dice el número de fila y el motivo, ' +
-              'se corrige aquí y se sube otra vez.',
+              'y esa fila se puede corregir ahí mismo en la pantalla, o aquí y subir el archivo otra vez.',
             ESTILO.parrafo,
           ),
         ],
@@ -270,7 +270,11 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
     Vacio, la base busca por el nombre; si no encuentra a nadie, pone un codigo
     con el prefijo de la categoria.
   */
-  { columna: 'codigo', obligatoria: false, dice: 'El código con el que se pide. Si ya existe, la fila lo actualiza en vez de crearlo. Vacío, se busca por el nombre y, si es nuevo, la base le pone uno.', ejemplo: 'PRD-ARENA-L', otro: '' },
+  /*
+    Y UN CÓDIGO QUE NO EXISTE YA NO CREA NADA. Christopher pidió validar el
+    «intento de nuevos códigos»: para uno nuevo, el código va vacío.
+  */
+  { columna: 'codigo', obligatoria: false, dice: 'Solo para corregir un artículo que ya está: escribe su código. Para uno nuevo, déjalo vacío y la base le pone uno. Un código que no existe no entra.', ejemplo: '', otro: '' },
   { columna: 'nombre', obligatoria: true, dice: 'Cómo se llama.', ejemplo: 'Arena lavada', otro: 'Flete por viaje' },
   { columna: 'descripcion', obligatoria: false, dice: 'Detalle. Si se deja vacía en un artículo que ya existe, se respeta la que tenía.', ejemplo: 'Granulometria fina, patio 1' },
   { columna: 'categoria', obligatoria: true, dice: 'Elige una de la lista. Son las mismas que ofrece el sistema al crear un artículo, con el mismo nombre.', ejemplo: 'Producto de cantera', otro: 'Servicio', opciones: CATEGORIAS_DE_ARTICULO },
@@ -282,7 +286,14 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
   { columna: 'densidad_ton_m3', obligatoria: false, dice: 'Toneladas por metro cúbico. Solo para lo que se pesa y se mide de las dos formas.', ejemplo: '1.6' },
   { columna: 'precio', obligatoria: false, dice: 'Precio de venta. Poner precio exige permiso de escritura en Ventas.', ejemplo: '18.50', otro: '40' },
   { columna: 'precio_minimo', obligatoria: false, dice: 'Lo más bajo que se puede vender. Vacío es cero: sin suelo.', ejemplo: '16' },
-  { columna: 'moneda', obligatoria: false, dice: 'La moneda del precio y del costo. Vacío es USD.', ejemplo: 'USD', otro: 'USD' },
+  /*
+    VACÍA YA NO ES USD.
+
+    Christopher: «si viene sin moneda, la sigue rellenando en dólares». Un costo
+    en bolívares entraba como dólares y nadie lo veía. Ahora una fila con precio
+    o con costo y sin moneda no entra: se avisa y se corrige en la pantalla.
+  */
+  { columna: 'moneda', obligatoria: false, dice: 'La moneda del precio y del costo. Si la fila trae precio o costo, hace falta: vacía, esa fila no entra y el sistema la marca para corregirla.', ejemplo: 'USD', otro: 'USD' },
 
   /*
     LAS TRES DE LA EXISTENCIA

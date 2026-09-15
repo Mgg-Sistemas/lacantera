@@ -25,6 +25,18 @@ export interface FilaRevisada {
   estado: EstadoDeFila
   motivo: string | null
   /**
+   * La columna del problema, cuando la base sabe cuál es.
+   *
+   * Hoy solo la moneda de la planilla de artículos: la pantalla abre esa fila
+   * para corregirla con el cursor puesto ahí.
+   */
+  campo?: string | null
+  /**
+   * El código del artículo al que se parece, cuando la fila es nueva y su
+   * nombre se parece a uno del catálogo. La pantalla ofrece «es el mismo».
+   */
+  parecido_codigo?: string | null
+  /**
    * Se parece a uno que ya está, pero no es el mismo.
    *
    * No para la carga: una planilla trae DISCO DE CORTE 7 y DISCO DE CORTE 9 el
@@ -49,6 +61,15 @@ export interface InformeDeCarga {
    * que la pantalla no deja confirmar sin que alguien diga que los miró.
    */
   avisos_de_costo?: number
+  /** Cuántas filas nuevas se parecen a un artículo que ya está. Solo artículos. */
+  avisos_de_parecido?: number
+  /**
+   * Cuántas filas meten existencia en un almacén. Solo artículos.
+   *
+   * En cero, la planilla solo carga catálogo, y la pantalla lo pregunta: el lote
+   * del 12/09 creó 130 artículos sin un solo asiento y nadie se enteró.
+   */
+  con_existencia?: number
   filas: FilaRevisada[]
 }
 

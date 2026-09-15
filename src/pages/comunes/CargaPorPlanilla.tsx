@@ -1,12 +1,23 @@
-import { useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowLeft, Download, Upload, FileSpreadsheet, Check, TriangleAlert } from 'lucide-react'
+import {
+  ArrowLeft,
+  Download,
+  Upload,
+  FileSpreadsheet,
+  Check,
+  Pencil,
+  TriangleAlert,
+} from 'lucide-react'
 import type { UseMutationResult } from '@tanstack/react-query'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { ErrorDeCarga } from '@/components/ui/Estado'
+import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
+import { Select } from '@/components/ui/Select'
 import { cn } from '@/lib/cn'
 import { leerHoja, ErrorDePlanilla } from '@/lib/hojas/leerHoja'
 import type { FilaDeHoja } from '@/lib/hojas/leerHoja'
@@ -77,7 +88,39 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
     que alguien diga que las miró.
   */
   const [costosRevisados, setCostosRevisados] = useState(false)
+  /*
+    Y DOS COSAS MÁS QUE HAY QUE DECIR QUE SE MIRARON.
+
+    Los parecidos: un artículo nuevo que se llama casi igual que uno del
+    catálogo acaba con la existencia repartida entre dos fichas. No se para
+    —DISCO DE CORTE 7 y 9 son dos—, pero se pide mirarlo.
+
+    La planilla sin existencia: un usuario cargó 130 artículos creyendo que
+    metía lo que había en el almacén, y solo entró el catálogo. Cuando ninguna
+    fila trae existencia, se dice con todas las letras y se pide entenderlo.
+  */
+  const [parecidosRevisados, setParecidosRevisados] = useState(false)
+  const [soloCatalogoEntendido, setSoloCatalogoEntendido] = useState(false)
   const [cargado, setCargado] = useState<InformeDeCarga | null>(null)
+  /*
+    LA FILA MALA SE CORRIGE AQUÍ, SIN VOLVER AL ARCHIVO.
+
+    Christopher: el sistema «recibe los datos, pero no los guarda directamente,
+    ofrece opción directa a editar esa fila». Antes la única salida era abrir la
+    planilla, buscar la fila, arreglarla y subirla entera otra vez — por una
+    moneda olvidada en una fila de trescientas.
+
+    Lo corregido se vuelve a revisar con la misma función de la base, así que lo
+    que se enseña sigue siendo lo que se va a escribir. El archivo guardado en el
+    equipo no cambia, y por eso se cuentan las filas tocadas aquí: quien lo vuelva
+    a subir mañana tiene que saber que trae el error de hoy.
+  */
+  const [corrigiendo, setCorrigiendo] = useState<{
+    fila: number
+    campo: string | null
+    motivo: string | null
+  } | null>(null)
+  const [corregidas, setCorregidas] = useState<number[]>([])
 
   const entrada = useRef<HTMLInputElement>(null)
   const ocupado = p.revisar.isPending || p.cargar.isPending
@@ -152,6 +195,8 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
     setAvisos(null)
     setInforme(null)
     setCargado(null)
+    setCorrigiendo(null)
+    setCorregidas([])
     setNombreArchivo(archivo.name)
 
     try {
@@ -212,6 +257,8 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
       // un paso más para llegar al mismo sitio.
       // Un informe nuevo trae otros costos: lo marcado sobre el anterior no vale.
       setCostosRevisados(false)
+      setParecidosRevisados(false)
+      setSoloCatalogoEntendido(false)
       setInforme(await p.revisar.mutateAsync(limpias))
     } catch (e) {
       setFilas(null)
@@ -228,9 +275,47 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
     setCargado(await p.cargar.mutateAsync(filas))
     setInforme(null)
     setFilas(null)
+    setCorregidas([])
     setNombreArchivo(null)
     if (entrada.current) entrada.current.value = ''
   }
+
+  async function guardarCorreccion(fila: number, borrador: FilaDeHoja) {
+    if (!filas) return
+    // Pasa por la misma limpieza que el archivo: sin espacios de sobra y con
+    // las fechas traducidas. `?? borrador` es la fila que se dejó toda vacía,
+    // que la base rechazará diciendo qué falta.
+    const nueva = preparar([borrador])[0] ?? borrador
+    const nuevas = filas.map((f, i) => (i === fila - 1 ? nueva : f))
+    setFilas(nuevas)
+    setCorrigiendo(null)
+    setCorregidas((antes) => (antes.includes(fila) ? antes : [...antes, fila]))
+    // Un informe nuevo trae otros costos: lo marcado sobre el anterior no vale.
+    setCostosRevisados(false)
+    setParecidosRevisados(false)
+    setSoloCatalogoEntendido(false)
+    try {
+      setInforme(await p.revisar.mutateAsync(nuevas))
+    } catch {
+      // El error ya se enseña bajo el archivo. El informe viejo no describe las
+      // filas nuevas, así que no se deja a la vista.
+      setInforme(null)
+    }
+  }
+
+  /* «Es el mismo»: la fila pasa a corregir el artículo que ya está, en vez de crear otro. */
+  const usarElQueYaEsta = (fila: number, codigo: string) => {
+    if (!filas) return
+    void guardarCorreccion(fila, { ...(filas[fila - 1] ?? {}), codigo })
+  }
+
+  // Solo la planilla de artículos cuenta la existencia; en las otras no aplica.
+  const soloCatalogo = informe != null && informe.errores === 0 && informe.con_existencia === 0
+  const faltaMirar =
+    informe != null &&
+    (((informe.avisos_de_costo ?? 0) > 0 && !costosRevisados) ||
+      ((informe.avisos_de_parecido ?? 0) > 0 && !parecidosRevisados) ||
+      (soloCatalogo && !soloCatalogoEntendido))
 
   return (
     <>
@@ -312,7 +397,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                   title="3 · Esto es lo que va a pasar"
                   subtitle={
                     informe.errores > 0
-                      ? 'Con una sola fila mal no entra ninguna. Corrige la planilla y vuelve a subirla.'
+                      ? 'Con una sola fila mal no entra ninguna. Corrígela aquí con «Corregir», o en el archivo y súbelo otra vez.'
                       : 'Nada se ha escrito todavía.'
                   }
                 />
@@ -324,7 +409,20 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                     <Chip tone="danger">{informe.errores} con problemas</Chip>
                   ) : null}
                   <Chip tone="neutral">{informe.total} filas en total</Chip>
+                  {(informe.con_existencia ?? 0) > 0 ? (
+                    <Chip tone="royal">{informe.con_existencia} con existencia</Chip>
+                  ) : null}
                 </div>
+
+                {corregidas.length > 0 ? (
+                  <p className="text-ink/55 mt-3 text-xs">
+                    {corregidas.length === 1
+                      ? 'Corregiste 1 fila aquí.'
+                      : `Corregiste ${corregidas.length} filas aquí.`}{' '}
+                    Se carga con la corrección, pero el archivo que tienes guardado sigue como
+                    estaba.
+                  </p>
+                ) : null}
 
                 {(informe.avisos_de_costo ?? 0) > 0 && informe.errores === 0 ? (
                   <label
@@ -351,14 +449,58 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                   </label>
                 ) : null}
 
+                {(informe.avisos_de_parecido ?? 0) > 0 && informe.errores === 0 ? (
+                  <label
+                    className={`mt-3 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm ${
+                      parecidosRevisados ? 'border-hairline' : 'border-warning/30 bg-warning-soft'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                      checked={parecidosRevisados}
+                      onChange={(e) => setParecidosRevisados(e.target.checked)}
+                    />
+                    <span className="text-ink/80">
+                      {informe.avisos_de_parecido === 1
+                        ? 'Revisé el artículo nuevo que se parece a uno del catálogo'
+                        : `Revisé los ${informe.avisos_de_parecido} artículos nuevos que se parecen a uno del catálogo`}
+                      <span className="text-ink/50 mt-0.5 block text-xs">
+                        Si es el mismo, pulsa «Es el mismo» en su fila y se actualiza ese en vez
+                        de crear otro. Dos fichas del mismo artículo acaban con la existencia
+                        repartida y ninguna cuadra.
+                      </span>
+                    </span>
+                  </label>
+                ) : null}
+
+                {soloCatalogo ? (
+                  <label
+                    className={`mt-3 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm ${
+                      soloCatalogoEntendido ? 'border-hairline' : 'border-warning/30 bg-warning-soft'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                      checked={soloCatalogoEntendido}
+                      onChange={(e) => setSoloCatalogoEntendido(e.target.checked)}
+                    />
+                    <span className="text-ink/80">
+                      Entendido: esta planilla solo carga el catálogo, sin existencia
+                      <span className="text-ink/50 mt-0.5 block text-xs">
+                        Ninguna fila dice cuánto hay en un almacén, así que los artículos quedan
+                        creados con cero. Si querías meter lo que hay, llena almacén, cantidad,
+                        costo y moneda en cada fila y vuelve a subirla.
+                      </span>
+                    </span>
+                  </label>
+                ) : null}
+
                 <div className="mt-4 flex flex-wrap gap-2 pb-4">
                   <Button
                     icon={<Check />}
-                    disabled={
-                      ocupado ||
-                      informe.errores > 0 ||
-                      ((informe.avisos_de_costo ?? 0) > 0 && !costosRevisados)
-                    }
+                    disabled={ocupado || informe.errores > 0 || faltaMirar}
                     onClick={() => void confirmar()}
                   >
                     {informe.errores > 0
@@ -391,6 +533,9 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                           Fila {f.fila}
                         </span>
                         <Chip tone={dicho.tono}>{dicho.texto}</Chip>
+                        {f.estado !== 'ERROR' && corregidas.includes(f.fila) ? (
+                          <Chip tone="neutral">Corregida aquí</Chip>
+                        ) : null}
                         <span className="text-ink/80 text-sm font-medium">
                           {/* Sin código en una fila nueva no es un problema: la
                               base le pone uno al guardar. Solo es «sin
@@ -405,6 +550,24 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                             {f.motivo}
                           </span>
                         ) : null}
+                        {f.estado === 'ERROR' && filas ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            icon={<Pencil />}
+                            className="sm:ml-auto"
+                            disabled={ocupado}
+                            onClick={() =>
+                              setCorrigiendo({
+                                fila: f.fila,
+                                campo: f.campo ?? null,
+                                motivo: f.motivo,
+                              })
+                            }
+                          >
+                            Corregir
+                          </Button>
+                        ) : null}
                         {/* El aviso no impide cargar: es lo que hay que mirar
                             antes de confirmar. Dos artículos casi iguales
                             acaban con la existencia repartida entre los dos y
@@ -413,6 +576,17 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                           <span className="text-ink/70 w-full text-xs sm:w-auto sm:flex-none">
                             {f.aviso}
                           </span>
+                        ) : null}
+                        {f.estado === 'NUEVO' && f.parecido_codigo && filas ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="sm:ml-auto"
+                            disabled={ocupado}
+                            onClick={() => usarElQueYaEsta(f.fila, f.parecido_codigo!)}
+                          >
+                            Es el mismo ({f.parecido_codigo})
+                          </Button>
                         ) : null}
                       </li>
                     )
@@ -470,6 +644,139 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
           </ul>
         </Card>
       </div>
+
+      {corrigiendo && filas ? (
+        <CorregirFila
+          key={corrigiendo.fila}
+          fila={corrigiendo.fila}
+          campo={corrigiendo.campo}
+          motivo={corrigiendo.motivo}
+          valores={filas[corrigiendo.fila - 1] ?? {}}
+          columnas={p.columnas}
+          ocupado={p.revisar.isPending}
+          onCerrar={() => setCorrigiendo(null)}
+          onGuardar={(borrador) => void guardarCorreccion(corrigiendo.fila, borrador)}
+        />
+      ) : null}
     </>
+  )
+}
+
+/*
+  LA FILA, CASILLA POR CASILLA
+
+  Las mismas columnas de la plantilla y con las mismas listas: donde el archivo
+  ofrecía un desplegable, aquí también, para que la corrección no pueda escribir
+  lo que la planilla no admitía.
+
+  La casilla del problema va primero, con el motivo debajo y el cursor dentro,
+  cuando la base sabe cuál es. Cuando no lo sabe —«hay un número que no se
+  entiende»— el motivo va arriba y se enseña la fila entera.
+*/
+function CorregirFila({
+  fila,
+  campo,
+  motivo,
+  valores,
+  columnas,
+  ocupado,
+  onCerrar,
+  onGuardar,
+}: {
+  fila: number
+  campo: string | null
+  motivo: string | null
+  valores: FilaDeHoja
+  columnas: ColumnaPlantilla[]
+  ocupado: boolean
+  onCerrar: () => void
+  onGuardar: (borrador: FilaDeHoja) => void
+}) {
+  const [borrador, setBorrador] = useState<FilaDeHoja>(() => ({ ...valores }))
+  const base = useId()
+
+  const conocida = campo != null && columnas.some((c) => c.columna === campo)
+  const orden = conocida
+    ? [
+        ...columnas.filter((c) => c.columna === campo),
+        ...columnas.filter((c) => c.columna !== campo),
+      ]
+    : columnas
+
+  // El cursor va a la casilla del problema al abrir. Va después del foco que
+  // pone el modal en su panel: los efectos del hijo corren antes que los de
+  // quien lo monta.
+  const idDelProblema = conocida ? `${base}-${campo}` : null
+  useEffect(() => {
+    if (idDelProblema) document.getElementById(idDelProblema)?.focus()
+  }, [idDelProblema])
+
+  const poner = (columna: string, valor: string) =>
+    setBorrador((b) => ({ ...b, [columna]: valor }))
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      ancho="lg"
+      titulo={`Corregir la fila ${fila}`}
+      descripcion="Vale solo para esta carga y se vuelve a revisar al instante. No se guarda nada hasta que pulses «Cargar»."
+      acciones={
+        <>
+          <Button variant="outline" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button icon={<Check />} disabled={ocupado} onClick={() => onGuardar(borrador)}>
+            Revisar otra vez
+          </Button>
+        </>
+      }
+    >
+      {motivo && !conocida ? <p className="text-danger mb-4 text-sm">{motivo}</p> : null}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {orden.map((c) => {
+          const esElProblema = conocida && c.columna === campo
+          const valor = borrador[c.columna] ?? ''
+          const comun = {
+            id: `${base}-${c.columna}`,
+            label: c.columna,
+            value: valor,
+            error: esElProblema ? (motivo ?? undefined) : undefined,
+            className: esElProblema ? 'sm:col-span-2' : undefined,
+          }
+
+          if (c.opciones && c.opciones.length > 0) {
+            const opciones = c.opciones.map((o) => ({ valor: o, etiqueta: o }))
+            // Lo que el archivo trae y la lista no —mal escrito, o de una
+            // plantilla vieja— se enseña tal cual. Si no, el desplegable lo
+            // cambiaría en silencio por otro valor.
+            if (valor !== '' && !c.opciones.includes(valor)) {
+              opciones.unshift({ valor, etiqueta: valor })
+            }
+            return (
+              <Select
+                key={c.columna}
+                {...comun}
+                opciones={opciones}
+                vacio="Vacía"
+                onChange={(e) => poner(c.columna, e.target.value)}
+              />
+            )
+          }
+
+          return (
+            <Input
+              key={c.columna}
+              {...comun}
+              // Tal como la trae la planilla: la base ya pone la mayúscula al
+              // guardar, y un número o una fecha no se tocan.
+              sinNormalizar
+              onChange={(e) => poner(c.columna, e.target.value)}
+            />
+          )
+        })}
+      </div>
+    </Modal>
   )
 }
