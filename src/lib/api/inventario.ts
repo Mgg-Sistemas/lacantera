@@ -818,6 +818,13 @@ export interface RevisionDeCosto {
   veces?: number | null
   viene_costando?: number | null
   entra_a?: number | null
+  /**
+   * Solo en la primera vez: la moneda de lo tecleado y cuánto es en la otra
+   * —en bolívares si se tecleó en dólares, en dólares si no—. Sin tasa no viene.
+   */
+  moneda?: string
+  equivale?: number | null
+  equivale_en?: string
 }
 
 /**
@@ -849,7 +856,8 @@ export function useRevisarCostoDeEntrada(
 ) {
   return useQuery({
     queryKey: ['revision-costo', almacenId, articuloId, costo, moneda],
-    enabled: !!almacenId && !!articuloId && costo > 0,
+    // Sin moneda no hay nada que preguntar: el renglón todavía no la tiene.
+    enabled: !!almacenId && !!articuloId && costo > 0 && !!moneda,
     // El costo no cambia solo: lo que conteste para estas cuatro cosas vale
     // mientras el formulario siga abierto.
     staleTime: 5 * 60 * 1000,
