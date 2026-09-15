@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
 import { descargarCsv } from './libros'
+import { CAUSAS_DE_BAJA, TIPOS_MOVIMIENTO } from './inventario'
 
 /**
  * El registro de lo que hace cada quien.
@@ -44,6 +45,13 @@ export interface Movimiento {
    * Ahora sube a columna, así que se puede leer de un vistazo y filtrar por él.
    */
   motivo: string | null
+  /**
+   * Con qué se hizo: la ruta de la petición, `/rpc/registrar_baja`.
+   *
+   * Solo en lo anotado desde que la base la guarda. Lo anterior, y lo que corre
+   * sin petición —una migración, una tarea programada—, va nulo.
+   */
+  origen?: string | null
 }
 
 export interface FiltrosAuditoria {
@@ -191,6 +199,17 @@ const NOMBRES: Record<string, string> = {
   empresa_documentos: 'Documento legal',
   instrucciones_pago: 'Instrucción de pago',
   inventario_movimientos: 'Movimiento de inventario',
+  // «inventario bajas» salía tal cual en la ficha de una baja.
+  inventario_bajas: 'Baja de inventario',
+  traslados: 'Traslado',
+  articulo_presentaciones: 'Forma de contar un artículo',
+  precios_venta: 'Precio de venta',
+  propietarios: 'Dueño',
+  asignaciones_herramienta: 'Entrega a un trabajador',
+  despachos_combustible: 'Despacho de combustible',
+  mantenimientos: 'Mantenimiento',
+  maquinaria: 'Máquina',
+  vehiculos: 'Vehículo',
   modulos: 'Módulo',
   monedas: 'Moneda',
   nomina_conceptos: 'Concepto de nómina',
@@ -267,10 +286,80 @@ const CAMPOS: Record<string, string> = {
   telefono_pago: 'Teléfono de pago móvil',
   total: 'Total',
   valor: 'Valor',
+
+  // Inventario y traslados. La ficha de una baja decía «causa», «movimiento
+  // id» y «solicitada por», con identificadores detrás.
+  almacen_id: 'Almacén',
+  articulo_id: 'Artículo',
+  aviso_costo: 'Veces fuera de su costo',
+  cantidad_capturada: 'Cantidad contada',
+  causa: 'Causa',
+  costo_capturado: 'Costo tecleado',
+  costo_unidad_capturada: 'Costo tecleado por',
+  costo_usd: 'Costo por unidad (USD)',
+  destino: 'Destino',
+  destino_id: 'Entra en',
+  empleado_id: 'Trabajador',
+  entrega_clase: 'Clase de entrega',
+  fecha: 'Fecha',
+  moneda_capturada: 'Moneda tecleada',
+  motivo: 'Motivo',
+  motivo_cancelacion: 'Motivo de la cancelación',
+  movimiento_id: 'Movimiento',
+  movimiento_origen: 'Viene del movimiento',
+  nota_salida: 'Nota de salida',
+  orden_id: 'Orden de compra',
+  orden_renglon_id: 'Renglón de la orden',
+  origen_id: 'Sale de',
+  propietario: 'Dueño',
+  signo: 'Sentido',
+  solicitada_por: 'Pedida por',
+  solicitado_por: 'Pedido por',
+  suelto_capturado: 'Sueltas',
+  tipo: 'Tipo',
+  unidad: 'Unidad',
+  unidad_capturada: 'Contada en',
+  valor_usd: 'Valor (USD)',
 }
 
 export const nombreDeCampo = (campo: string): string =>
   CAMPOS[campo] ?? campo.replaceAll('_', ' ')
+
+/*
+  LOS CÓDIGOS, EN PALABRAS.
+
+  La ficha de una baja decía «tipo SALIDA_BAJA · signo -1 · causa ROBADO»: lo
+  que guarda la base, no lo que pasó. Se traducen con las MISMAS listas que usa
+  la pantalla de Inventario —importadas, no copiadas—, para que la auditoría y
+  el libro no digan cosas distintas del mismo movimiento. El código queda al
+  lado, en pequeño, por si hay que buscarlo.
+
+  `tipo` también existe en almacenes y en máquinas: si el valor no es un tipo de
+  movimiento, no se traduce.
+*/
+export function codigoEnPalabras(campo: string, valor: unknown): string | null {
+  if (valor === null || valor === undefined || valor === '') return null
+  const v = String(valor)
+  if (campo === 'tipo') return TIPOS_MOVIMIENTO[v] ?? null
+  if (campo === 'causa') return CAUSAS_DE_BAJA.find((c) => c.valor === v)?.etiqueta ?? null
+  if (campo === 'signo') return Number(v) < 0 ? 'Sale' : Number(v) > 0 ? 'Entra' : null
+  return null
+}
+
+/*
+  CON QUÉ SE HIZO.
+
+  La base guarda la ruta de la petición —`/rpc/registrar_baja`— y aquí se dice
+  en palabras abriendo los guiones: «registrar baja». Las funciones de este
+  sistema se llaman en castellano, así que eso ya se lee. No se traduce a un
+  nombre de pantalla inventado: una misma función la llaman a veces dos
+  pantallas, y decir la equivocada sería escribir algo falso en la auditoría.
+*/
+export function conQueSeHizo(origen: string | null | undefined): string | null {
+  if (!origen) return null
+  const funcion = /\/rpc\/([a-z0-9_]+)/i.exec(origen)
+  return funcion ? funcion[1].replaceAll('_', ' ') : origen
+}
 
 /** Qué hizo, en una palabra. */
 export const VERBOS: Record<Operacion, string> = {
@@ -440,6 +529,39 @@ export function useNombresDeAuditoria(id: number | null) {
   })
 }
 
+/*
+  LA OPERACIÓN ENTERA, NO SOLO UNA DE SUS FILAS.
+
+  Christopher, con la ficha de una baja delante: «no tengo los detalles de ese
+  movimiento, no sé qué módulo es eso, no sé los datos que llenó del
+  formulario». Dar de baja escribe dos filas en el mismo instante —el movimiento
+  con el artículo, el almacén, la cantidad y la nota, y la causa aparte— y la
+  ficha enseñaba solo la que se había pulsado: la de la causa, que no dice nada
+  de lo que se dio de baja.
+
+  Todas las filas de una operación comparten la hora EXACTA, al microsegundo:
+  la pone `now()`, que es la del inicio de la transacción. Esa hora y la misma
+  persona juntan las piezas. Dos operaciones distintas de la misma persona no
+  empiezan en el mismo microsegundo.
+*/
+export function useOperacionCompleta(m: Movimiento | null) {
+  return useQuery({
+    queryKey: ['auditoria', 'operacion', m?.id],
+    enabled: m !== null && m.operacion !== 'ACCESO' && m.operacion !== 'CLAVE',
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      let q = supabase
+        .from('v_auditoria')
+        .select('*')
+        .eq('ocurrido_en', m!.ocurrido_en)
+        .order('id')
+        .limit(200)
+      q = m!.usuario_id ? q.eq('usuario_id', m!.usuario_id) : q.is('usuario_id', null)
+      return desenvolver<Movimiento[]>(await q)
+    },
+  })
+}
+
 /** El nombre de lo que apunta esa columna con ese valor, si se pudo resolver. */
 export const nombreApuntado = (
   nombres: NombresApuntados | undefined,
@@ -494,6 +616,65 @@ const NIVELES: Record<string, string> = {
   TOTAL: 'puede todo',
 }
 
+/*
+  QUÉ HIZO, EN LA LISTA.
+
+  «Creó inventario bajas · MOV-2026-0086» describe una tabla. Lo que pasó fue que
+  alguien dio de baja 16 M3 de piedra, y eso escribió dos filas: el movimiento y
+  la causa. Cada una se dice por lo que es, con el verbo de quien lo hizo.
+*/
+const HIZO_EN_INVENTARIO: Record<string, string> = {
+  ENTRADA_COMPRA: 'Recibió de una compra',
+  ENTRADA_PRODUCCION: 'Registró producción',
+  ENTRADA_DEVOLUCION: 'Registró una devolución',
+  ENTRADA_DIRECTA: 'Registró una entrada sin compra',
+  SALIDA_CONSUMO: 'Sacó a consumo',
+  SALIDA_DESPACHO: 'Despachó',
+  SALIDA_MERMA: 'Anotó una merma',
+  SALIDA_BAJA: 'Dio de baja',
+  AJUSTE_COSTO: 'Corrigió un costo',
+  AJUSTE_POSITIVO: 'Ajustó por conteo (sobrante)',
+  AJUSTE_NEGATIVO: 'Ajustó por conteo (faltante)',
+  TRANSFERENCIA_SALIDA: 'Trasladó (sale)',
+  TRANSFERENCIA_ENTRADA: 'Trasladó (entra)',
+  REVERSO: 'Reversó un movimiento',
+  CAMBIO_DUENO_SALIDA: 'Cambió de dueño (sale)',
+  CAMBIO_DUENO_ENTRADA: 'Cambió de dueño (entra)',
+}
+
+const HIZO_EN_TRASLADO: Record<string, string> = {
+  SOLICITUD: 'Pidió un traslado',
+  ACEPTADA: 'Aceptó un traslado',
+  RECIBIDA: 'Recibió un traslado',
+  CANCELADA: 'Canceló un traslado',
+}
+
+/** Lo que hizo, dicho por el hecho y no por la tabla. Nulo donde no hay frase propia. */
+export function accionCorta(m: {
+  tabla: string
+  operacion: string
+  antes?: Record<string, unknown> | null
+  despues?: Record<string, unknown> | null
+  cambios?: string[] | null
+}): string | null {
+  const f = m.despues ?? m.antes
+  if (!f || m.operacion === 'DELETE') return null
+
+  if (m.tabla === 'inventario_movimientos' && m.operacion === 'INSERT') {
+    return HIZO_EN_INVENTARIO[String(f.tipo)] ?? null
+  }
+  if (m.tabla === 'inventario_bajas' && m.operacion === 'INSERT') {
+    return `Anotó la causa de una baja: ${codigoEnPalabras('causa', f.causa) ?? String(f.causa ?? '—')}`
+  }
+  if (m.tabla === 'traslados') {
+    if (m.operacion === 'INSERT') {
+      return f.inmediato === true ? 'Trasladó en el acto' : HIZO_EN_TRASLADO.SOLICITUD
+    }
+    if (m.cambios?.includes('estado')) return HIZO_EN_TRASLADO[String(f.estado)] ?? null
+  }
+  return null
+}
+
 export function narracion(
   m: { tabla: string; operacion: string; antes?: Record<string, unknown> | null; despues?: Record<string, unknown> | null },
   nombre: (campo: string, valor: unknown) => string | null,
@@ -538,19 +719,76 @@ export function narracion(
     case 'tasas_cambio':
       return `La tasa del ${valorLegible(f.fecha)}: 1 ${de('moneda_origen')} son ${num(f.tasa)} ${de('moneda_destino')}${f.fuente ? `, según ${f.fuente}` : ''}.`
 
+    /*
+      EL MOVIMIENTO, CON TODO LO QUE LLEVA.
+
+      Decía «16 M3 de PIEDRA salieron de PATIO DE PLANTA FIJA, a — USD», sin
+      decir que era una baja, con un costo que no existía y sin la nota de
+      salida que respalda el papel firmado. Ahora dice el tipo, «sin valorar»
+      cuando no hay costo, la moneda en que se tecleó y el papel.
+    */
     case 'inventario_movimientos': {
       const signo = Number(f.signo)
       const art = de('articulo_id')
       const alm = de('almacen_id')
+      const unidad = String(f.unidad ?? 'unidad')
       const cant = `${num(f.cantidad)} ${f.unidad ?? ''}`.trim()
+      const tipo = String(f.tipo ?? '')
       const contado =
         f.cantidad_capturada && f.unidad_capturada
           ? ` Se contó como ${num(f.cantidad_capturada)} ${f.unidad_capturada}${
               Number(f.suelto_capturado) ? ` y ${num(f.suelto_capturado)} ${f.unidad}` : ''
             }.`
           : ''
+      const costo =
+        f.costo_usd === null || f.costo_usd === undefined
+          ? ', sin valorar'
+          : `, a ${num(f.costo_usd)} USD cada ${unidad}`
+      const tecleado =
+        f.costo_capturado !== null && f.costo_capturado !== undefined && f.moneda_capturada
+          ? ` Se tecleó ${num(f.costo_capturado)} ${f.moneda_capturada}.`
+          : ''
+      const papel = f.nota_salida ? ` Con la nota de salida ${f.nota_salida}.` : ''
+
+      if (tipo === 'AJUSTE_COSTO') {
+        return `Se corrigió el costo de ${art} en ${alm}${costo}.${tecleado}`
+      }
+
+      const que = TIPOS_MOVIMIENTO[tipo] ?? (signo < 0 ? 'Salida' : 'Entrada')
       const hacia = signo < 0 ? `salieron de ${alm}` : `entraron a ${alm}`
-      return `${cant} de ${art} ${hacia}, a ${num(f.costo_usd)} USD cada ${f.unidad ?? 'unidad'}.${contado}`
+      return `${que}: ${cant} de ${art} ${hacia}${costo}.${contado}${tecleado}${papel}`
+    }
+
+    /*
+      LA CAUSA DE UNA BAJA, QUE SOLA NO DICE QUÉ SE DIO DE BAJA.
+
+      La fila solo guarda la causa y a qué movimiento pertenece. Se dice así, y
+      se avisa de dónde está el resto: en el movimiento, escrito en la misma
+      operación, que la ficha enseña justo debajo.
+    */
+    case 'inventario_bajas': {
+      const causa = codigoEnPalabras('causa', f.causa) ?? String(f.causa ?? '—')
+      const destino = f.destino ? ` Destino: ${f.destino}.` : ''
+      return `La baja ${de('movimiento_id')} se anotó como «${causa}».${destino} El artículo, el almacén y la cantidad están en el movimiento, escrito en la misma operación.`
+    }
+
+    case 'traslados': {
+      const que = `${num(f.cantidad)} de ${de('articulo_id')}, de ${de('origen_id')} a ${de('destino_id')}`
+      const n = f.numero ? `${f.numero}: ` : ''
+      switch (String(f.estado)) {
+        case 'SOLICITUD':
+          return `${n}se pidió mover ${que}. Motivo: «${f.motivo ?? '—'}».`
+        case 'ACEPTADA':
+          return `${n}se aceptó mover ${que}. El material salió y va de camino.`
+        case 'RECIBIDA':
+          return f.inmediato
+            ? `${n}se trasladó en el acto ${que}.`
+            : `${n}se recibió ${que}.`
+        case 'CANCELADA':
+          return `${n}se canceló el traslado de ${que}. Motivo: «${f.motivo_cancelacion ?? '—'}».`
+        default:
+          return null
+      }
     }
 
     /*

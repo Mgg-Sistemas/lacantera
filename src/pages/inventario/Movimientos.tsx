@@ -18,8 +18,10 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMisRoles, usePerfiles } from '@/lib/api/catalogo'
 import {
+  CAUSAS_DE_BAJA,
   TIPOS_MOVIMIENTO,
   useAlmacenes,
+  useBajaDeMovimiento,
   useMovimientos,
   useReversarMovimiento,
 } from '@/lib/api/inventario'
@@ -595,6 +597,31 @@ function DetalleDelMovimiento({
     datos.push([m.orden.solicitud?.directa ? 'Compra directa' : 'Compra', m.orden.numero])
   }
   if (m.nota_salida) datos.push(['Nota de salida', m.nota_salida])
+
+  /*
+    LO QUE EL MOVIMIENTO GUARDA Y EL DETALLE NO DECÍA.
+
+    Christopher, con una baja delante: «necesitamos todo explícito en el
+    movimiento o detalle». Una baja decía «Baja» sin decir por qué —la causa vive
+    en otra tabla—, y no decía de quién era lo que salió ni en qué moneda se
+    tecleó el costo.
+  */
+  const { data: baja } = useBajaDeMovimiento(m.id, m.tipo === 'SALIDA_BAJA')
+  if (baja) {
+    datos.push([
+      'Causa de la baja',
+      CAUSAS_DE_BAJA.find((c) => c.valor === baja.causa)?.etiqueta ?? baja.causa,
+    ])
+    if (baja.destino) datos.push(['Destino', baja.destino])
+  }
+  if (m.propietario) datos.push(['Dueño', m.propietario])
+  if (m.costo_capturado && m.moneda_capturada) {
+    datos.push([
+      'Costo tecleado',
+      `${Number(m.costo_capturado).toLocaleString('es-VE', { maximumFractionDigits: 4 })} ${m.moneda_capturada}`,
+    ])
+  }
+  datos.push(['Registró', quien])
 
   return (
     <Modal
