@@ -216,7 +216,8 @@ export function Almacenes() {
               label="Tipo"
               value={edicion.tipo}
               onChange={(e) => cambiar({ tipo: e.target.value })}
-              opciones={TIPOS_ALMACEN}
+              // «En camino» lo lleva el sistema y la base no deja crearlo.
+              opciones={TIPOS_ALMACEN.filter((t) => t.valor !== 'TRANSITO')}
             />
 
             {/*

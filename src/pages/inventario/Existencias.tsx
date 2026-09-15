@@ -1415,6 +1415,12 @@ export function Existencias() {
                           >
                             Ver dónde está
                           </Button>
+                        ) : fila!.almacen_tipo === 'TRANSITO' ? (
+                          /* Lo que va de camino no se saca, ni se cuenta, ni se da
+                             de baja aquí: la base lo cierra, y ofrecerlo sería
+                             enseñar puertas cerradas. Se recibe o se cancela
+                             desde su traslado. */
+                          <span className="text-ink/45 text-xs">Lo mueve su traslado</span>
                         ) : puede('ALMACEN') ? (
                           <>
                             <Button
@@ -1497,6 +1503,7 @@ export function Existencias() {
                           significa nada.
                         */}
                         {!enTotal &&
+                        fila!.almacen_tipo !== 'TRANSITO' &&
                         puedeAccion('INVENTARIO.AJUSTAR_COSTO') &&
                         Number(fila!.existencia) > 0 ? (
                           <Button
@@ -1564,7 +1571,11 @@ export function Existencias() {
         abierto={trasladando}
         onCerrar={() => setTrasladando(false)}
         origen={almacenId || undefined}
-        onTrasladado={(id) => void notaDeTraslado.abrir(id)}
+        // El papel sale solo cuando el material se movió en el acto: una
+        // solicitud todavía no mueve nada, y su nota se saca al aceptarla.
+        onTrasladado={(t) => {
+          if (t.inmediato) void notaDeTraslado.abrirTraslado(t.id)
+        }}
       />
 
       {notaDeTraslado.visor}

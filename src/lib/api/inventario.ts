@@ -64,7 +64,7 @@ export const TIPOS_ALMACEN = [
   { valor: 'PATIO', etiqueta: 'Patio de material' },
   { valor: 'TALLER', etiqueta: 'Taller' },
   { valor: 'COMBUSTIBLE', etiqueta: 'Combustible' },
-  { valor: 'TRANSITO', etiqueta: 'En tránsito' },
+  { valor: 'TRANSITO', etiqueta: 'En camino' },
   /*
     Christopher: «debemos ampliar las opciones, incluso añadir un lugar que sea
     un patio, pero no de material, pensado por ejemplo para patio de máquinas o
@@ -80,6 +80,16 @@ export const SITIOS_SIN_MATERIAL = ['PATIO_MAQUINAS']
 
 export const guardaMaterial = (tipo?: string | null) =>
   !SITIOS_SIN_MATERIAL.includes(tipo ?? '')
+
+/*
+  «EN CAMINO» SÍ LLEVA EXISTENCIA, PERO NO SE OFRECE.
+
+  Es donde espera lo que ya salió de un sitio y todavía no llegó al otro, y solo
+  lo mueven los traslados: la base cierra cualquier otra puerta. Ofrecerlo en un
+  desplegable sería ofrecer una puerta cerrada. Lo que hay ahí se ve igual en
+  Existencias, que no lee de esta lista.
+*/
+export const SITIOS_DEL_SISTEMA = ['TRANSITO']
 
 /**
  * Los sitios.
@@ -102,7 +112,9 @@ export function useAlmacenes(soloActivos = true, conSitiosSinMaterial = false) {
     queryFn: async () => {
       let q = supabase.from('almacenes').select('*').order('nombre')
       if (soloActivos) q = q.eq('activo', true)
-      const filas = await desenvolver<Almacen[]>(await q)
+      const filas = (await desenvolver<Almacen[]>(await q)).filter(
+        (a) => !SITIOS_DEL_SISTEMA.includes(a.tipo),
+      )
       return conSitiosSinMaterial ? filas : filas.filter((a) => guardaMaterial(a.tipo))
     },
     staleTime: 5 * 60_000,
@@ -242,6 +254,8 @@ export interface Existencia {
   almacen_id: number
   almacen_codigo: string
   almacen: string
+  /** El tipo de sitio. «TRANSITO» es «En camino»: ahí solo mueven los traslados. */
+  almacen_tipo?: string | null
   articulo_id: number
   articulo_codigo: string
   articulo: string
@@ -519,6 +533,8 @@ function useAccionInventario<A>(fn: (args: A) => Promise<unknown>) {
       void qc.invalidateQueries({ queryKey: ['movimientos'] })
       void qc.invalidateQueries({ queryKey: ['compras'] })
       void qc.invalidateQueries({ queryKey: ['notificaciones'] })
+      // Aceptar o recibir un traslado mueve existencias y cambia su estado.
+      void qc.invalidateQueries({ queryKey: ['traslados'] })
     },
   })
 }
@@ -1038,6 +1054,8 @@ export interface TrasladoParaNota {
   valorUsd: string | null
   /** «7 TAMBOR y 10 L», cuando se contó en bultos. */
   contado: string | null
+  /** El paso en el que está, cuando el traslado tiene número propio. */
+  estado?: EstadoTraslado | null
 }
 
 /**
@@ -1051,6 +1069,33 @@ export interface TrasladoParaNota {
  * Como `leerNotaDeSalida`, no es un hook: se lee cuando alguien pide el papel.
  */
 export async function leerTraslado(idSalida: number): Promise<TrasladoParaNota> {
+  /*
+    SI EL ASIENTO ES DE UN TRASLADO CON NÚMERO, LA NOTA ES LA DEL TRASLADO.
+
+    Desde que el traslado pasa por «En camino», una salida puede ser medio paso
+    —del origen a «En camino», o de ahí al destino— y su pareja ya no es el
+    destino. El papel tiene que decir de dónde sale y a dónde va de verdad, y
+    eso lo sabe el traslado. Se le reconoce por su salida, o porque este asiento
+    cuelga de su entrada en «En camino».
+  */
+  const { data: asiento } = await supabase
+    .from('inventario_movimientos')
+    .select('movimiento_origen')
+    .eq('id', idSalida)
+    .maybeSingle()
+  const deCamino = (asiento as { movimiento_origen: number | null } | null)?.movimiento_origen
+  const { data: cabeza } = await supabase
+    .from('traslados')
+    .select('id')
+    .or(
+      deCamino
+        ? `mov_salida.eq.${idSalida},mov_en_camino.eq.${deCamino}`
+        : `mov_salida.eq.${idSalida}`,
+    )
+    .limit(1)
+    .maybeSingle()
+  if (cabeza) return leerTrasladoPorId((cabeza as { id: number }).id)
+
   const salida = desenvolver<{
     numero: string
     fecha: string
@@ -1112,6 +1157,47 @@ export async function leerTraslado(idSalida: number): Promise<TrasladoParaNota> 
     costoUsd: salida.costo_usd,
     valorUsd: salida.valor_usd,
     contado,
+  }
+}
+
+/** Un traslado con número, para su nota: de dónde sale y a dónde va de verdad. */
+export async function leerTrasladoPorId(id: number): Promise<TrasladoParaNota> {
+  const t = desenvolver<Traslado>(
+    await supabase.from('v_traslados').select('*').eq('id', id).single(),
+  )
+
+  // El costo es el del asiento de salida, que ya lo cubre el permiso del libro.
+  // Una solicitud todavía no tiene salida, y su papel va sin cifras.
+  const salida = t.mov_salida
+    ? desenvolver<{ costo_usd: string | null; valor_usd: string | null }>(
+        await supabase
+          .from('inventario_movimientos')
+          .select('costo_usd, valor_usd')
+          .eq('id', t.mov_salida)
+          .single(),
+      )
+    : null
+
+  const suelto = Number(t.suelto)
+  const contado = t.presentaciones
+    ? `${Number(t.presentaciones).toLocaleString('es-VE')} ${t.presentacion ?? ''}` +
+      (suelto ? ` y ${suelto.toLocaleString('es-VE')} ${t.unidad ?? ''}` : '')
+    : null
+
+  return {
+    numero: t.numero,
+    fecha: t.fecha,
+    origen: t.origen ?? '—',
+    destino: t.destino ?? '—',
+    motivo: t.motivo || null,
+    articuloCodigo: t.articulo_codigo ?? '',
+    articulo: t.articulo ?? '',
+    cantidad: t.cantidad,
+    unidad: t.unidad ?? '',
+    costoUsd: salida?.costo_usd ?? null,
+    valorUsd: salida?.valor_usd ?? null,
+    contado,
+    estado: t.estado,
   }
 }
 
@@ -1458,6 +1544,176 @@ export function useTransferir() {
         p_suelto: t.suelto ?? null,
         p_propietario: t.propietario ?? null,
       }),
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Traslados con pasos
+// ---------------------------------------------------------------------------
+
+/*
+  EL TRASLADO PASA POR SOLICITUD, ACEPTADA Y RECIBIDA.
+
+  Christopher: «Un traslado puede pasar por Solicitud, Aceptada,
+  Recibida/Finalizada, Cancelada». El material sale del origen al aceptarse,
+  espera en «En camino» y entra al destino al recibirse. Acepta quien responde
+  por el origen y recibe quien responde por el destino; administración
+  —Administrador y Gerente general— puede hacer las dos cosas.
+
+  Los estados se dicen como se leen en el patio: nadie dice «solicitud», dice
+  que está por aceptar.
+*/
+export type EstadoTraslado = 'SOLICITUD' | 'ACEPTADA' | 'RECIBIDA' | 'CANCELADA'
+
+export const ESTADO_TRASLADO: Record<
+  EstadoTraslado,
+  { texto: string; tono: 'warning' | 'royal' | 'success' | 'neutral' }
+> = {
+  SOLICITUD: { texto: 'Por aceptar', tono: 'warning' },
+  ACEPTADA: { texto: 'De camino', tono: 'royal' },
+  RECIBIDA: { texto: 'Recibido', tono: 'success' },
+  CANCELADA: { texto: 'Cancelado', tono: 'neutral' },
+}
+
+export interface Traslado {
+  id: number
+  numero: string
+  estado: EstadoTraslado
+  inmediato: boolean
+  fecha: string
+  origen_id: number
+  origen_codigo: string | null
+  origen: string | null
+  destino_id: number
+  destino_codigo: string | null
+  destino: string | null
+  articulo_id: number
+  articulo_codigo: string | null
+  articulo: string | null
+  unidad: string | null
+  cantidad: string
+  presentaciones: string | null
+  presentacion: string | null
+  suelto: string | null
+  propietario: string
+  motivo: string
+  solicitado_por: string | null
+  solicitado_por_nombre: string | null
+  solicitado_en: string
+  aceptado_por: string | null
+  aceptado_por_nombre: string | null
+  aceptado_en: string | null
+  aceptado_de_respaldo: boolean | null
+  recibido_por: string | null
+  recibido_por_nombre: string | null
+  recibido_en: string | null
+  recibido_de_respaldo: boolean | null
+  cancelado_por: string | null
+  cancelado_por_nombre: string | null
+  cancelado_en: string | null
+  motivo_cancelacion: string | null
+  mov_salida: number | null
+  mov_en_camino: number | null
+  mov_llegada: number | null
+  mov_vuelta: number | null
+}
+
+export function useTraslados() {
+  return useQuery({
+    queryKey: ['traslados'],
+    queryFn: async () =>
+      desenvolver<Traslado[]>(
+        await supabase
+          .from('v_traslados')
+          .select('*')
+          .order('solicitado_en', { ascending: false })
+          .limit(300),
+      ),
+  })
+}
+
+/** Quién soy para los traslados: si soy respaldo y de qué sitios respondo. */
+export interface ComoActuoEnTraslados {
+  yo: string
+  respaldo: boolean
+  sitios: number[]
+}
+
+export function useComoActuoEnTraslados() {
+  return useQuery({
+    queryKey: ['traslados', 'como-actuo'],
+    queryFn: () => rpc<ComoActuoEnTraslados>('como_actuo_en_traslados'),
+    staleTime: 60_000,
+  })
+}
+
+/**
+ * Lo que la pantalla ofrece en cada fila.
+ *
+ * Es la misma regla que aplica la base, dicha aquí solo para no enseñar
+ * botones que van a fallar. Quien decide sigue siendo la base al pulsar.
+ */
+export function quePuedoHacer(t: Traslado, yo?: ComoActuoEnTraslados | null) {
+  if (!yo) return { aceptar: false, recibir: false, cancelar: false }
+  const respondoPor = (sitio: number) => yo.respaldo || yo.sitios.includes(sitio)
+  return {
+    aceptar: t.estado === 'SOLICITUD' && respondoPor(t.origen_id),
+    recibir: t.estado === 'ACEPTADA' && respondoPor(t.destino_id),
+    cancelar:
+      (t.estado === 'SOLICITUD' &&
+        (t.solicitado_por === yo.yo || respondoPor(t.origen_id) || respondoPor(t.destino_id))) ||
+      (t.estado === 'ACEPTADA' && (respondoPor(t.origen_id) || respondoPor(t.destino_id))),
+  }
+}
+
+/**
+ * Pide un traslado, o lo hace en el acto.
+ *
+ * Devuelve el id del traslado. En el acto es aceptar y recibir a la vez, así
+ * que solo lo puede quien responde por los dos sitios, o administración.
+ */
+export function useSolicitarTraslado() {
+  return useAccionInventario(
+    (t: {
+      origen_id: number
+      destino_id: number
+      articulo_id: number
+      cantidad: number
+      motivo: string
+      fecha?: string
+      presentaciones?: number | null
+      presentacion?: string | null
+      suelto?: number | null
+      propietario?: string | null
+      inmediato: boolean
+    }) =>
+      rpc<number>('solicitar_traslado', {
+        p_origen_id: t.origen_id,
+        p_destino_id: t.destino_id,
+        p_articulo_id: t.articulo_id,
+        p_cantidad: t.cantidad,
+        p_motivo: t.motivo,
+        p_fecha: t.fecha || null,
+        p_presentaciones: t.presentaciones ?? null,
+        p_presentacion: t.presentacion || null,
+        p_suelto: t.suelto ?? null,
+        p_propietario: t.propietario ?? null,
+        p_inmediato: t.inmediato,
+      }),
+  )
+}
+
+export function useAceptarTraslado() {
+  return useAccionInventario((id: number) => rpc<number>('aceptar_traslado', { p_id: id }))
+}
+
+export function useRecibirTraslado() {
+  return useAccionInventario((id: number) => rpc<number>('recibir_traslado', { p_id: id }))
+}
+
+export function useCancelarTraslado() {
+  return useAccionInventario((c: { id: number; motivo: string }) =>
+    rpc<number>('cancelar_traslado', { p_id: c.id, p_motivo: c.motivo }),
   )
 }
 

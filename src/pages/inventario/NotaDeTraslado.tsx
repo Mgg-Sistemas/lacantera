@@ -5,7 +5,8 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useEmpresa } from '@/lib/api/empresa'
-import { leerTraslado } from '@/lib/api/inventario'
+import { ESTADO_TRASLADO, leerTraslado, leerTrasladoPorId } from '@/lib/api/inventario'
+import type { TrasladoParaNota } from '@/lib/api/inventario'
 import { armarNotaDeTraslado } from '@/lib/ficha/notaDeTrasladoPdf'
 import type { DatosNotaDeTraslado } from '@/lib/ficha/notaDeTrasladoPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
@@ -21,12 +22,19 @@ import { fecha } from '@/lib/formato'
   enseñarlo con la casilla de costos. Escrito tres veces, la casilla acabaría
   marcada por defecto en una de ellas.
 
+  DOS PUERTAS, UN PAPEL. Transferencias conoce el traslado y lo pide por su id;
+  Movimientos solo conoce el asiento y lo pide por él. Las dos acaban en la
+  misma nota: `leerTraslado` reconoce si el asiento es de un traslado con número.
+
   POR DEFECTO SIN COSTOS, como la nota de salida: el papel lo firma quien recibe
   el material, y el costo es cuenta interna. Se marca al imprimir, con el papel
   delante.
 */
 export function useNotaDeTraslado(): {
+  /** Desde un asiento del libro: la salida del traslado. */
   abrir: (idSalida: number) => Promise<void>
+  /** Desde el traslado mismo, por su id. */
+  abrirTraslado: (id: number) => Promise<void>
   armando: number | null
   visor: ReactNode
 } {
@@ -38,11 +46,11 @@ export function useNotaDeTraslado(): {
   const [rehaciendo, setRehaciendo] = useState(false)
   const [fallo, setFallo] = useState<Error | null>(null)
 
-  const abrir = async (idSalida: number) => {
-    setArmando(idSalida)
+  const armar = async (clave: number, leer: () => Promise<TrasladoParaNota>) => {
+    setArmando(clave)
     setFallo(null)
     try {
-      const t = await leerTraslado(idSalida)
+      const t = await leer()
       const d: DatosNotaDeTraslado = {
         conCostos,
         numero: t.numero,
@@ -50,6 +58,7 @@ export function useNotaDeTraslado(): {
         origen: t.origen,
         destino: t.destino,
         motivo: t.motivo,
+        estado: t.estado ? ESTADO_TRASLADO[t.estado].texto : null,
         renglones: [
           {
             articuloCodigo: t.articuloCodigo,
@@ -72,6 +81,9 @@ export function useNotaDeTraslado(): {
       setArmando(null)
     }
   }
+
+  const abrir = (idSalida: number) => armar(idSalida, () => leerTraslado(idSalida))
+  const abrirTraslado = (id: number) => armar(id, () => leerTrasladoPorId(id))
 
   const visor = (
     <>
@@ -122,5 +134,5 @@ export function useNotaDeTraslado(): {
     </>
   )
 
-  return { abrir, armando, visor }
+  return { abrir, abrirTraslado, armando, visor }
 }
