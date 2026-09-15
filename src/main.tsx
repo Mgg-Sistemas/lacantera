@@ -43,7 +43,7 @@ function pantallaDeFallo(mensaje: string) {
   caja.setAttribute(
     'style',
     'max-width:42rem;margin:12vh auto;padding:2rem;font-family:system-ui,sans-serif;' +
-      'color:#262c3d;background:#fff;border:1px solid #e6e9f2;border-radius:6px;line-height:1.6',
+      'color:#351e0e;background:#fff;border:1px solid #dedede;border-radius:6px;line-height:1.6',
   )
 
   const titulo = document.createElement('h1')
@@ -52,7 +52,7 @@ function pantallaDeFallo(mensaje: string) {
 
   const detalle = document.createElement('p')
   detalle.textContent = mensaje
-  detalle.setAttribute('style', 'margin:0;font-size:.9375rem;color:#5a6072')
+  detalle.setAttribute('style', 'margin:0;font-size:.9375rem;color:#6d6d6d')
 
   caja.append(titulo, detalle)
   raiz.append(caja)

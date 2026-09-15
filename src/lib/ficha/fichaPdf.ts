@@ -30,8 +30,8 @@ import {
   tituloDocumento,
 } from './papel'
 
-// La ficha se tiñe con la paleta compartida: los rótulos de sección en azul
-// pizarra, como en todos los demás papeles. El verde se queda —es el único
+// La ficha se tiñe con la paleta compartida: los rótulos de sección en el
+// marrón de rótulo, como en todos los demás papeles. El verde se queda —es el único
 // sitio donde el color dice un dato, activo o egresado— y ya no hay dos tintas
 // distintas rondando el mismo documento.
 const MARCA_SUAVE = ROTULO
@@ -84,7 +84,8 @@ function persona(doc: Doc, d: DatosFicha, y: number): number {
     doc.text('Sin foto', IZQ + 16, y + 21, { align: 'center' })
   }
 
-  doc.setDrawColor('#E6E9F2').setLineWidth(0.3)
+  // El marco de la foto en el filete cálido de los papeles; era un gris azulado.
+  doc.setDrawColor('#E7E5E4').setLineWidth(0.3)
   doc.rect(IZQ, y, 32, 40)
 
   const x = IZQ + 38

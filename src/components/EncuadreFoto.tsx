@@ -133,7 +133,7 @@ export function EncuadreFoto({
         onPointerDown={iniciarArrastre}
         style={{ width: PREVIO_ANCHO, height: PREVIO_ALTO, ...estilo }}
         className={cn(
-          'rounded-card border-hairline relative overflow-hidden border bg-[#cfd6e6] bg-no-repeat',
+          'rounded-card border-hairline relative overflow-hidden border bg-[#e2d9d2] bg-no-repeat',
           editable && url && 'cursor-grab touch-none',
           arrastrando && 'cursor-grabbing',
         )}

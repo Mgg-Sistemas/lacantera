@@ -19,9 +19,9 @@
   de texto es rgba(46,38,61) — un ciruela, no un gris. Ese subtono compartido
   es lo que hace que el template se vea cohesionado.
 
-  Aquí el primario es azul rey, así que el neutro se rota al mismo lugar del
-  otro lado del círculo: #262C3D, un carbón con subtono azul. Si se dejara el
-  ciruela de Materio, pelearía con el azul en cada superficie gris.
+  Cuando el primario era azul rey, el neutro se rotó a su lado del círculo. La
+  paleta pasó a tierra y el neutro con ella: ver «Neutro» más abajo. El azul y
+  sus tonalidades ya no existen en el sistema.
 */
 
 @theme {
@@ -165,8 +165,10 @@
   --color-warning-soft: #fff6da;
   --color-danger: #b3261e;
   --color-danger-soft: #fbeae9;
-  --color-info: #5a6b72;
-  --color-info-soft: #eceff0;
+  /* Informativo en gris cálido. Era un gris pizarra —azulado— y el azul no
+     existe en el sistema bajo ningún concepto. */
+  --color-info: #6b625c;
+  --color-info-soft: #efebe8;
 
   /* ---------- Acento de dominio ---------- */
   /* El naranja de seguridad: el de los conos, los chalecos y la maquinaria.
@@ -219,7 +221,7 @@
   --color-success-soft: #10261a;
   --color-warning-soft: #2b2109;
   --color-danger-soft: #2e1512;
-  --color-info-soft: #1b2124;
+  --color-info-soft: #231e1a;
   --color-safety-soft: #2e1508;
 
   /* Las sombras casi desaparecen en oscuro; se conservan solo para el
@@ -262,6 +264,73 @@
   }
   .scrollbar-none::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/*
+  LAS LISTAS DESPLEGABLES, EN TIERRA.
+
+  Christopher: el azul no existe en el sistema bajo ningún concepto. Quedaba
+  uno que no era nuestro: al abrir una lista, la opción señalada salía en el
+  azul que pone Windows o el navegador, y ninguna clase llegaba hasta ahí.
+
+  Los navegadores que ya dejan dibujar la lista entera —Chrome y Edge desde
+  2025— la pintan aquí con los tokens del sistema, así que el tema oscuro sale
+  solo. Donde no lo dejan, la lista sigue siendo la del equipo: es lo único que
+  queda fuera de alcance.
+
+  VA FUERA DE LAS CAPAS A PROPÓSITO. Las listas llevan `appearance-none`, que
+  vive en la capa de utilidades de Tailwind, y una regla sin capa le gana sin
+  importar la especificidad. Dentro de una capa no se aplicaría nunca.
+
+  La flecha del navegador se esconde solo donde la lista ya dibujaba la suya
+  —las que llevan `appearance-none`—; las que usaban la del equipo la conservan.
+*/
+@supports (appearance: base-select) {
+  select,
+  ::picker(select) {
+    appearance: base-select;
+  }
+
+  /* La lista dibujable no centra sola el texto en un alto fijo: se quedaba
+     pegado arriba de la caja. */
+  select {
+    align-items: center;
+    align-content: center;
+  }
+
+  select.appearance-none::picker-icon {
+    display: none;
+  }
+
+  ::picker(select) {
+    margin-block: 4px;
+    padding: 4px;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: var(--shadow-popover);
+  }
+
+  select option {
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+
+  select option::checkmark {
+    color: var(--color-tierra-600);
+  }
+
+  select option:hover,
+  select option:focus-visible {
+    background: color-mix(in srgb, var(--color-tierra-500) 12%, transparent);
+    outline: none;
+  }
+
+  select option:checked {
+    background: color-mix(in srgb, var(--color-tierra-500) 20%, transparent);
+    font-weight: 500;
   }
 }
 

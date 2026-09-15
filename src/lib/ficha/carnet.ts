@@ -30,9 +30,11 @@ const pt = (v: number) => (v / 72) * DPI
 const MARCA_BANDA = '#cc3f00'
 const MARCA_CARGO = '#9e4c01'
 const AMARILLO = '#F0A128'
-const TINTA = '#262C3D'
-const GRIS = '#7B839A'
-const HAIRLINE = '#EEF0F6'
+// Neutros cálidos. Venían del tema azul anterior —un carbón y unos grises con
+// subtono azul— y el carnet es de lo que más se enseña fuera de la oficina.
+const TINTA = '#351E0E'
+const GRIS = '#7A706A'
+const HAIRLINE = '#F0EBE7'
 
 const FUENTE = "'Inter Variable', Inter, system-ui, 'Segoe UI', sans-serif"
 
@@ -214,7 +216,7 @@ function frente(ctx: CanvasRenderingContext2D, d: DatosCarnet, logo: HTMLImageEl
   const iw = mm(24)
   const ih = mm(27)
 
-  ctx.fillStyle = '#CFD6E6'
+  ctx.fillStyle = '#E2D9D2'
   ctx.fillRect(ix, iy, iw, ih)
 
   if (d.foto) {
