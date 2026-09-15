@@ -7,7 +7,7 @@ import { Chip } from '@/components/ui/Chip'
 import { StatCard } from '@/components/StatCard'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dinero, documento, dolares, dolaresRedondos, fecha } from '@/lib/formato'
-import { usePorCobrar, type PorCobrar as Cobranza } from '@/lib/api/ventas'
+import { usePorCobrar, type PorCobrar as Cobranza } from '@/lib/api/facturacion'
 
 /**
  * Lo que deben los clientes.
@@ -174,8 +174,8 @@ export function PorCobrar() {
 
           <p className="text-ink/45 mt-4 text-center text-xs">
             Los cobros se registran desde{' '}
-            <Link to="/app/ventas/facturacion" className="text-royal-600 underline">
-              Ventas › Facturación
+            <Link to="/app/facturacion" className="text-royal-600 underline">
+              Facturación › Facturas
             </Link>
             , abriendo la factura.
           </p>

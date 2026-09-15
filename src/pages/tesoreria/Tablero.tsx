@@ -63,7 +63,7 @@ export function TableroTesoreria() {
       titulo: 'Cuentas por cobrar',
       detalle: 'Facturas emitidas con saldo. Lo cobrado a medias ya no se debe.',
       icono: Wallet,
-      ruta: '/app/tesoreria/por-cobrar',
+      ruta: '/app/facturacion/por-cobrar',
     },
   ]
 

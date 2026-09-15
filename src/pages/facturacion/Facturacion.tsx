@@ -17,19 +17,17 @@ import { useMiPerfil } from '@/lib/api/usuarios'
 import { useCuentas } from '@/lib/api/tesoreria'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
+import { CONDICIONES_PAGO, useNotasEntrega, useRenglones } from '@/lib/api/ventas'
 import {
-  CONDICIONES_PAGO,
   useAnularCobro,
   useAnularFactura,
   useCobros,
   useFacturarNotas,
   useFacturas,
-  useNotasEntrega,
   useRegistrarCobro,
-  useRenglones,
   type FacturaVenta,
-} from '@/lib/api/ventas'
-import { TablaRenglones, Totales } from './Cotizaciones'
+} from '@/lib/api/facturacion'
+import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
 import { useMetodosPago, nombreDe, opcionesDe } from '@/lib/api/metodosPago'
 
 const TONO: Record<string, 'royal' | 'success' | 'neutral'> = {
@@ -42,6 +40,24 @@ const ETIQUETA: Record<string, string> = {
   EMITIDA: 'Por cobrar',
   COBRADA: 'Cobrada',
   ANULADA: 'Anulada',
+}
+
+/**
+ * Lo que se enseña del estado de una factura.
+ *
+ * COBRADA quiere decir «ya no se le debe nada», y desde el 15/09/2026 también
+ * llega ahí una factura que una nota de crédito dejó en cero. Llamarla «Cobrada»
+ * cuando no entró dinero sería decirle otra cosa a quien la mira.
+ */
+function etiquetaDe(f: Pick<FacturaVenta, 'estado' | 'cobrado_usd' | 'acreditado_usd'>): string {
+  if (
+    f.estado === 'COBRADA' &&
+    Number(f.cobrado_usd ?? 0) <= 0.005 &&
+    Number(f.acreditado_usd ?? 0) > 0
+  ) {
+    return 'Saldada con nota de crédito'
+  }
+  return ETIQUETA[f.estado] ?? f.estado
 }
 
 export function Facturacion() {
@@ -130,7 +146,8 @@ export function Facturacion() {
         condicionPago: CONDICIONES_PAGO.find((c) => c.valor === f.condicion_pago)?.etiqueta ?? null,
         contraparte: { nombre: f.cliente, rif: f.cliente_rif, direccion: f.cliente_direccion },
         moneda: f.moneda,
-        tasa: f.tasa_usd,
+        tasa: f.tasa,
+        tasaUsd: f.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
           cantidad: r.cantidad,
@@ -236,7 +253,7 @@ export function Facturacion() {
                       )}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <Chip tone={TONO[f.estado] ?? 'neutral'}>{ETIQUETA[f.estado]}</Chip>
+                      <Chip tone={TONO[f.estado] ?? 'neutral'}>{etiquetaDe(f)}</Chip>
                     </td>
                   </tr>
                 ))}
@@ -408,7 +425,7 @@ export function Facturacion() {
           }
         >
           <div className="flex flex-wrap items-center gap-2">
-            <Chip tone={TONO[detalle.estado] ?? 'neutral'}>{ETIQUETA[detalle.estado]}</Chip>
+            <Chip tone={TONO[detalle.estado] ?? 'neutral'}>{etiquetaDe(detalle)}</Chip>
             <Chip tone="neutral">
               {CONDICIONES_PAGO.find((c) => c.valor === detalle.condicion_pago)?.etiqueta}
             </Chip>
