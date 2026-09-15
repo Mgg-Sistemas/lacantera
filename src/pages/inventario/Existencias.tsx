@@ -14,7 +14,6 @@ import {
   Search,
   Shuffle,
   TriangleAlert,
-  Trash2,
   Wrench,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -42,7 +41,6 @@ import { ModalCambioDeDueno } from './ModalCambioDeDueno'
 import { ListaEditable } from '@/components/ListaEditable'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { DatosNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
-import { supabase } from '@/lib/supabase'
 import {
   conSusFormas,
   useArticulos,
@@ -72,8 +70,6 @@ import {
   useMovimientos,
   useEnvasesAqui,
   useRegistrarAjuste,
-  useRegistrarBaja,
-  CAUSAS_DE_BAJA,
   useClasesDeSalida,
   useGuardarClaseDeSalida,
   useBorrarClaseDeSalida,
@@ -432,53 +428,7 @@ export function Existencias() {
     setNota(await armarNotaDeSalida(datos))
   }
 
-  const notaDelMovimiento = async (movimientoId: number, clase: string, motivo: string) => {
-    const { data } = await supabase
-      .from('inventario_movimientos')
-      .select(
-        // El trio capturado tambien: hoy la baja no cuenta en bultos, pero el
-        // dia que lo haga el papel ya lo dira sin que nadie se acuerde de esto.
-        'numero, fecha, cantidad, unidad, costo_usd, valor_usd, almacen_id, articulo_id, cantidad_capturada, unidad_capturada, suelto_capturado',
-      )
-      .eq('id', movimientoId)
-      .maybeSingle()
-
-    if (!data) return
-
-    const alm = (almacenes ?? []).find((a) => a.id === data.almacen_id)
-    const art = (articulos ?? []).find((a) => a.id === data.articulo_id)
-
-    const datos: DatosNotaDeSalida = {
-        conCostos: notaConCostos,
-        numero: data.numero,
-        fecha: fecha(data.fecha),
-        almacen: alm?.nombre ?? '',
-        clase,
-        motivo,
-        // Un renglon hoy. El papel ya sabe llevar varios, y la base tambien:
-        // falta el formulario, que es lo unico que sigue siendo de una fila.
-        renglones: [
-          {
-            contado: contadoLegible({ ...data, unidad: data.unidad }),
-            articuloCodigo: art?.codigo ?? '',
-            articulo: art?.nombre ?? '',
-            cantidad: data.cantidad,
-            unidad: data.unidad,
-            costoUnitarioUsd: data.costo_usd,
-            valorUsd: data.valor_usd,
-          },
-        ],
-        empresa: {
-          razonSocial: empresa?.razon_social ?? '',
-          rif: empresa?.rif ?? '',
-        },
-        momento: new Date(),
-    }
-    setDatosNota(datos)
-    setNota(await armarNotaDeSalida(datos))
-  }
   const ajuste = useRegistrarAjuste()
-  const baja = useRegistrarBaja()
   const entrada = useRegistrarEntradas()
   const { data: articulos } = useArticulos()
   // Las formas de contar de todo el catalogo, de un tiron: quince renglones no
@@ -498,7 +448,7 @@ export function Existencias() {
   /* El trasvase: cambiar de envase sin cambiar de cantidad. */
   const [trasvase, setTrasvase] = useState<Existencia | null>(null)
   const [modal, setModal] = useState<
-    null | { tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada' | 'baja'; fila: Existencia | null }
+    null | { tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada'; fila: Existencia | null }
   >(null)
   const [valor, setValor] = useState('')
   /*
@@ -821,15 +771,17 @@ export function Existencias() {
   }
 
   /*
-    LA BAJA NO ES UNA SALIDA MÁS
+    YA NO HAY «DAR DE BAJA» APARTE.
 
-    Sacar material es darlo a quien lo va a usar; darlo de baja es decir que
-    dejó de existir para la empresa. Comparten el formulario porque preguntan
-    casi lo mismo, pero la causa solo aparece en la baja: es lo que después
-    permite responder cuánto se perdió por obsolescencia y cuánto por robo.
+    Christopher, 15/09/2026: «debemos eliminar la opción de dar de baja a los
+    artículos, si algo va a salir que sea por registrar salida». Las cuatro
+    bajas que existían eran ventas, despachos y una donación anotados como
+    robo: la puerta aparte daba un papel, y por eso se usaba para eso.
+
+    Dañado, vencido, obsoleto, extraviado y robado son clases de la salida, con
+    el nombre dicho tal cual —«lo que sea robado, explícitamente dice robado»—,
+    y la base sigue anotando la causa de la baja igual que antes.
   */
-  const [causa, setCausa] = useState(CAUSAS_DE_BAJA[0].valor)
-  const [destino, setDestino] = useState('')
   /*
     La lista ya no está escrita aquí: la lleva la empresa y llega por la red, así
     que al montar todavía no hay ninguna. Arranca vacía y se pone la primera en
@@ -854,14 +806,12 @@ export function Existencias() {
     .map((x) => ({ presentacion: x.presentacion, unidades: x.unidades }))
 
   const abrir = (
-    tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada' | 'baja',
+    tipo: 'salida' | 'salidas' | 'ajuste' | 'entrada',
     fila: Existencia | null,
   ) => {
-    setCausa(CAUSAS_DE_BAJA[0].valor)
     // Cada modal empieza sin dueño elegido: arrastrar el de la fila anterior
     // sería anotar a nombre de quien no era.
     setSaleDe('')
-    setDestino('')
     setClase((clases.data ?? [])[0]?.codigo ?? '')
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setTotalContado(tipo === 'ajuste' && fila ? fila.existencia : '')
@@ -969,21 +919,6 @@ export function Existencias() {
         console.error(e)
       }
       return
-    } else if (modal.tipo === 'baja') {
-      const id = (await baja.mutateAsync({
-        almacen_id: modal.fila!.almacen_id,
-        articulo_id: modal.fila!.articulo_id,
-        cantidad: Number(valor),
-        causa,
-        motivo,
-        destino: destino || null,
-        propietario: saleDe || null,
-      })) as number
-      await notaDelMovimiento(
-        id,
-        `Baja · ${CAUSAS_DE_BAJA.find((c) => c.valor === causa)?.etiqueta ?? causa}`,
-        motivo,
-      )
     } else if (modal.tipo === 'salida') {
       /*
         Sacar una sola fila va por la MISMA puerta que sacar varias.
@@ -1453,14 +1388,6 @@ export function Existencias() {
                                 Al taller
                               </Button>
                             ) : null}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              icon={<Trash2 />}
-                              onClick={() => abrir('baja', fila!)}
-                            >
-                              Dar de baja
-                            </Button>
 
                             {/*
                               CAMBIAR DE DUEÑO NO ES UNA OPERACIÓN DE ALMACÉN.
@@ -1670,9 +1597,7 @@ export function Existencias() {
                 ? 'Salida de material'
                 : modal.tipo === 'salida'
                   ? 'Sacar material'
-                  : modal.tipo === 'baja'
-                    ? 'Dar de baja'
-                    : 'Conteo físico'
+                  : 'Conteo físico'
           }
           descripcion={
             modal.tipo === 'entrada'
@@ -1680,10 +1605,8 @@ export function Existencias() {
               : modal.tipo === 'salidas'
                 ? 'Todo lo que sale para un mismo trabajo, en un solo papel. Cada renglón dice qué se lleva y de qué sitio: el aceite puede estar en el almacén y las varillas en el patio.'
                 : modal.tipo === 'salida'
-                  ? 'Sale del almacén al costo promedio que tiene ahora. Di por qué sale: lo que se usa trabajando, lo que se pierde en el manejo y lo que se da de baja se miran por separado.'
-                  : modal.tipo === 'baja'
-                    ? 'Para lo que dejó de servir: se dañó, quedó obsoleto, venció, no aparece. Sale del inventario y su valor se da por perdido.'
-                    : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
+                  ? 'Sale del almacén al costo promedio que tiene ahora. Di por qué sale: lo que se usa trabajando, lo que se pierde en el manejo, y lo dañado, vencido, obsoleto, extraviado o robado, cada uno por su nombre.'
+                  : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
           }
           /*
             LA ENTRADA NECESITA EL MISMO ANCHO QUE LA SALIDA.
@@ -1721,9 +1644,7 @@ export function Existencias() {
                   (modal.tipo === 'ajuste' && !totalContado) ||
                   // Con mezcla hay que decir de quién. La base también lo para,
                   // pero enterarse al pulsar llega tarde.
-                  ((modal.tipo === 'salida' ||
-                    modal.tipo === 'ajuste' ||
-                    modal.tipo === 'baja') &&
+                  ((modal.tipo === 'salida' || modal.tipo === 'ajuste') &&
                     faltaDecirDeQuien(modal.fila?.duenos, saleDe)) ||
                   (modal.tipo !== 'entrada' &&
                     modal.tipo !== 'salidas' &&
@@ -1752,19 +1673,12 @@ export function Existencias() {
                   ((modal.tipo === 'salidas' || modal.tipo === 'salida') &&
                     (claseElegida?.tipo === 'SALIDA_BAJA' || claseElegida?.exige_detalle) &&
                     motivo.trim().length < 10) ||
-                  // Una baja pide más explicación: es lo único que quedará
-                  // dentro de un año para justificar la pérdida.
-                  (modal.tipo === 'baja' && motivo.trim().length < 10) ||
                   salidas.isPending ||
                   ajuste.isPending ||
-                  entrada.isPending ||
-                  baja.isPending
+                  entrada.isPending
                 }
               >
-                {                salidas.isPending ||
-                ajuste.isPending ||
-                entrada.isPending ||
-                baja.isPending
+                {salidas.isPending || ajuste.isPending || entrada.isPending
                   ? 'Guardando…'
                   : 'Registrar'}
               </Button>
@@ -2531,11 +2445,8 @@ export function Existencias() {
                 dueños. En la salida decide a nombre de quién se descuenta; en
                 el conteo, de quién es lo que se contó — porque «veinte» en un
                 estante mezclado no dice cuántas faltan de cada uno.
-
-                La baja no lo lleva: dar de baja es sacar, y usa el mismo camino
-                que la salida.
               */}
-              {modal.tipo === 'salida' || modal.tipo === 'ajuste' || modal.tipo === 'baja' ? (
+              {modal.tipo === 'salida' || modal.tipo === 'ajuste' ? (
                 <div className="mb-4">
                   <DeQuienSale
                     duenos={modal.fila?.duenos}
@@ -2697,61 +2608,9 @@ export function Existencias() {
                     }))}
                   />
 
-                  {/*
-                    EL PUENTE A LA OTRA PUERTA
-
-                    Christopher: «esta lista no da las opciones necesarias... esta
-                    el caso en que no se dano, no se perdio, pero es obsoleto».
-
-                    Y obsoleto SI existe — con danado, vencido, extraviado y
-                    robado— pero vive en Dar de baja. El reparto es correcto:
-                    sacar es haberlo gastado o perdido moviendolo; dar de baja es
-                    que dejo de servir. Meter «obsoleto» aqui partiria la misma
-                    pregunta en dos sitios y ninguno respondería entero.
-
-                    Lo que faltaba era decirlo desde aqui. Quien abrio esta
-                    puerta no tiene por que saber que hay otra al lado, y menos
-                    con la lista delante pareciendo incompleta.
-                  */}
-                  <div className="border-hairline rounded-[6px] border p-3">
-                    <p className="text-ink/60 text-xs leading-relaxed">
-                      ¿Se dañó, venció, quedó obsoleto, se extravió o se lo llevaron? Eso no es
-                      sacarlo: es <strong className="text-ink/80">darlo de baja</strong>, y ahí
-                      sí está cada una de esas causas.
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => abrir('baja', modal.fila)}
-                    >
-                      Darlo de baja
-                    </Button>
-                  </div>
                 </>
               ) : null}
 
-              {modal.tipo === 'baja' ? (
-                <>
-                  <Select
-                    label="¿Por qué?"
-                    value={causa}
-                    onChange={(e) => setCausa(e.target.value)}
-                    hint={CAUSAS_DE_BAJA.find((c) => c.valor === causa)?.dice}
-                    opciones={CAUSAS_DE_BAJA.map((c) => ({
-                      valor: c.valor,
-                      etiqueta: c.etiqueta,
-                    }))}
-                  />
-
-                  <Input
-                    label="¿Y qué se hizo con eso?"
-                    value={destino}
-                    onChange={(e) => setDestino(e.target.value)}
-                    hint="Opcional. Se desechó, se vendió como chatarra, se guardó para repuestos — para que nadie lo salga a buscar después."
-                  />
-                </>
-              ) : null}
             </>
           )}
 
@@ -2783,16 +2642,15 @@ export function Existencias() {
                   ? clase === 'SALIDA_MERMA'
                     ? 'Qué pasó'
                     : 'Para qué sale'
-                  : modal.tipo === 'baja'
-                    ? 'Qué pasó'
-                    : 'Qué explica la diferencia'
+                  : 'Qué explica la diferencia'
             }
             className="mt-4"
             rows={3}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             hint={
-              modal.tipo === 'baja'
+              (modal.tipo === 'salida' || modal.tipo === 'salidas') &&
+              claseElegida?.tipo === 'SALIDA_BAJA'
                 ? 'Con detalle: dentro de un año esta frase será lo único que quede para justificar la pérdida. Queda en el libro y no se puede editar.'
                 : 'Queda en el libro y no se puede editar después.'
             }
@@ -2804,7 +2662,6 @@ export function Existencias() {
           {salidas.error ? <ErrorDeCarga error={salidas.error} className="mt-3" /> : null}
           {ajuste.error ? <ErrorDeCarga error={ajuste.error} className="mt-3" /> : null}
           {entrada.error ? <ErrorDeCarga error={entrada.error} className="mt-3" /> : null}
-          {baja.error ? <ErrorDeCarga error={baja.error} className="mt-3" /> : null}
         </Modal>
       ) : null}
 

@@ -18,10 +18,10 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMisRoles, usePerfiles } from '@/lib/api/catalogo'
 import {
-  CAUSAS_DE_BAJA,
-  TIPOS_MOVIMIENTO,
+  bajaDe,
+  causaDeBaja,
+  nombreDeMovimiento,
   useAlmacenes,
-  useBajaDeMovimiento,
   useMovimientos,
   useReversarMovimiento,
 } from '@/lib/api/inventario'
@@ -98,7 +98,7 @@ export function Movimientos() {
           numero: m.nota_salida ?? m.numero,
           fecha: fecha(m.fecha),
           almacen: m.almacen?.nombre ?? '',
-          clase: TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo,
+          clase: nombreDeMovimiento(m),
           motivo: m.nota,
           renglones:
             lineas && lineas.length > 0
@@ -193,7 +193,7 @@ export function Movimientos() {
         renglones: (data ?? []).map((m) => ({
           numero: m.numero,
           fecha: fechaHora(m.registrado_en),
-          tipo: TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo,
+          tipo: nombreDeMovimiento(m),
           articulo: m.articulo?.nombre ?? '—',
           almacen: m.almacen?.nombre ?? '—',
           cantidad: m.cantidad,
@@ -288,7 +288,7 @@ export function Movimientos() {
                     <td className="px-5 py-3">
                       <p className="text-ink/45 font-mono text-2xs">{m.numero}</p>
                       <p className="text-ink/85 font-medium">
-                        {TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo}
+                        {nombreDeMovimiento(m)}
                       </p>
                       <p className="text-ink/45 text-xs">
                         {fechaHora(m.registrado_en)} · {nombreDe(m.registrado_por)}
@@ -606,12 +606,9 @@ function DetalleDelMovimiento({
     en otra tabla—, y no decía de quién era lo que salió ni en qué moneda se
     tecleó el costo.
   */
-  const { data: baja } = useBajaDeMovimiento(m.id, m.tipo === 'SALIDA_BAJA')
+  const baja = bajaDe(m)
   if (baja) {
-    datos.push([
-      'Causa de la baja',
-      CAUSAS_DE_BAJA.find((c) => c.valor === baja.causa)?.etiqueta ?? baja.causa,
-    ])
+    datos.push(['Causa de la baja', causaDeBaja(baja.causa) ?? baja.causa])
     if (baja.destino) datos.push(['Destino', baja.destino])
   }
   if (m.propietario) datos.push(['Dueño', m.propietario])
@@ -627,7 +624,7 @@ function DetalleDelMovimiento({
     <Modal
       abierto
       onCerrar={onCerrar}
-      titulo={TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo}
+      titulo={nombreDeMovimiento(m)}
       descripcion={`${m.numero} · ${fechaHora(m.registrado_en)} · ${quien}`}
       acciones={
         <Button variant="ghost" onClick={onCerrar}>

@@ -436,6 +436,15 @@ export interface Movimiento {
   cantidad_capturada: string | null
   unidad_capturada: string | null
   suelto_capturado: string | null
+  /**
+   * La causa, cuando el movimiento es una baja. Viaja con el libro para decir
+   * «Baja · Robado» en la misma fila. Según cómo lo resuelva el servidor llega
+   * como objeto o como lista de uno: ver `bajaDe`.
+   */
+  baja?:
+    | { causa: string; destino: string | null }
+    | Array<{ causa: string; destino: string | null }>
+    | null
   /** De quién es lo que se movió. */
   propietario?: string | null
   /** El costo tal como se tecleó, antes de pasarlo a dólares, y en qué moneda. */
@@ -498,7 +507,7 @@ export function useMovimientos(
           hay que saltar dos veces: movimiento -> orden -> solicitud.
         */
         .select(
-          '*, almacen:almacenes(nombre), articulo:articulos(codigo, nombre), orden:ordenes_compra(numero, solicitud:solicitudes_pedido(directa))',
+          '*, almacen:almacenes(nombre), articulo:articulos(codigo, nombre), orden:ordenes_compra(numero, solicitud:solicitudes_pedido(directa)), baja:inventario_bajas(causa, destino)',
         )
         .order('registrado_en', { ascending: false })
         .limit(200)
@@ -1305,7 +1314,7 @@ export function useBorrarClaseDeSalida() {
 export const CAUSAS_DE_BAJA: Array<{ valor: string; etiqueta: string; dice: string }> = [
   {
     valor: 'DANADO',
-    etiqueta: 'Dañado sin reparación',
+    etiqueta: 'Dañado',
     dice: 'Se rompió y no compensa arreglarlo.',
   },
   {
@@ -1330,26 +1339,27 @@ export const CAUSAS_DE_BAJA: Array<{ valor: string; etiqueta: string; dice: stri
   },
 ]
 
-/**
- * La causa de una baja, para enseñarla con su movimiento.
- *
- * Vive en su propia tabla, colgada del movimiento, y el libro no la traía: el
- * detalle de una baja decía «Baja» sin decir por qué.
- */
-export function useBajaDeMovimiento(movimientoId: number, activo: boolean) {
-  return useQuery({
-    queryKey: ['baja-de-movimiento', movimientoId],
-    enabled: activo,
-    staleTime: 5 * 60_000,
-    queryFn: async () =>
-      desenvolver<{ causa: string; destino: string | null } | null>(
-        await supabase
-          .from('inventario_bajas')
-          .select('causa, destino')
-          .eq('movimiento_id', movimientoId)
-          .maybeSingle(),
-      ),
-  })
+/** La causa de una baja, dicha tal cual: «Robado», «Extraviado». */
+export const causaDeBaja = (causa?: string | null): string | null =>
+  causa ? (CAUSAS_DE_BAJA.find((c) => c.valor === causa)?.etiqueta ?? causa) : null
+
+/** La baja de un movimiento, venga como objeto o como lista de uno. */
+export const bajaDe = (m: Pick<Movimiento, 'baja'>) =>
+  (Array.isArray(m.baja) ? m.baja[0] : m.baja) ?? null
+
+/*
+  EL TIPO, CON SU CAUSA CUANDO ES UNA BAJA.
+
+  Christopher: «sé explícito con los motivos: lo que sea robado, explícitamente
+  dice robado; lo que dice extraviado, explícitamente debe aparecer como tal». La
+  fila del libro decía «Baja» y la causa había que ir a buscarla a la auditoría.
+  Ahora dice «Baja · Robado» en la fila, en el detalle, en el papel y en el libro
+  impreso.
+*/
+export function nombreDeMovimiento(m: Pick<Movimiento, 'tipo' | 'baja'>): string {
+  const tipo = TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo
+  const causa = causaDeBaja(bajaDe(m)?.causa)
+  return causa ? `${tipo} · ${causa}` : tipo
 }
 
 /**
