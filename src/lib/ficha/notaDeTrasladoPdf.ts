@@ -1,6 +1,5 @@
 import { logoComoImagen } from '@/lib/ficha/logo'
 import {
-  GRIS,
   TINTA,
   bloqueEtiquetado,
   fechaLarga,
@@ -104,21 +103,16 @@ export async function armarNotaDeTraslado(d: DatosNotaDeTraslado): Promise<NotaA
 
   /*
     Las firmas van abajo del todo y a altura fija, con la misma cuenta que la
-    nota de salida: se mide cuánto ocupa el aviso y de ahí hacia arriba es donde
-    puede acabar la tabla. Si no cabe, pasan a una hoja de continuación.
+    nota de salida: sin aviso encima —Christopher pidió quitarlo de los papeles—,
+    lo que se reserva es el hueco de la firma estampada. Si la tabla llega hasta
+    ahí, las firmas pasan a una hoja de continuación.
   */
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-  const aviso = doc.splitTextToSize(
-    'Al firmar, quien recibe en el destino declara que llegó el material relacionado arriba en las cantidades indicadas. Un traslado cambia el material de sitio y no de valor, y queda registrado en el libro de movimientos.',
-    ANCHO_UTIL,
-  ) as string[]
-
   const LINEA_DE_FIRMAS = ABAJO - 24
-  const ARRANQUE_DEL_AVISO = LINEA_DE_FIRMAS - 4 - aviso.length * 3.8
+  const ARRANQUE_DE_FIRMAS = LINEA_DE_FIRMAS - 16
 
-  if (y > ARRANQUE_DEL_AVISO) {
+  if (y > ARRANQUE_DE_FIRMAS) {
     doc.addPage()
-    y = membrete(doc, logo, {
+    membrete(doc, logo, {
       empresa: d.empresa,
       datos: [
         ['N° traslado', d.numero],
@@ -126,9 +120,6 @@ export async function armarNotaDeTraslado(d: DatosNotaDeTraslado): Promise<NotaA
       ],
     })
   }
-
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-  doc.text(aviso, IZQ, Math.max(y + 6, ARRANQUE_DEL_AVISO), { lineHeightFactor: 1.4 })
 
   // Una firma en cada punta. Sin nombre: el sistema todavía no captura quién
   // carga ni quién recibe, y se firma a mano.
