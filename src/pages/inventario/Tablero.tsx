@@ -110,8 +110,8 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
           exige: 'ESCRITURA',
         },
         {
-          titulo: 'Sacar o dar de baja material',
-          detalle: 'Consumo, merma, o lo que se perdió. Sale al costo promedio que tiene.',
+          titulo: 'Sacar material',
+          detalle: 'Por consumo, merma u otra razón de la lista. Sale al costo promedio que tiene.',
           icono: PackageMinus,
           a: '/app/inventario/existencias',
           exige: 'ESCRITURA',

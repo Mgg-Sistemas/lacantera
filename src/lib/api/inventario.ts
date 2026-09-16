@@ -437,9 +437,15 @@ export interface Movimiento {
   unidad_capturada: string | null
   suelto_capturado: string | null
   /**
-   * La causa, cuando el movimiento es una baja. Viaja con el libro para decir
-   * «Baja · Robado» en la misma fila. Según cómo lo resuelva el servidor llega
-   * como objeto o como lista de uno: ver `bajaDe`.
+   * Por qué salió, con las palabras que la razón tenía en la lista ese día:
+   * «VENTA», «SE USO TRABAJANDO». Es lo que dicen la fila, el detalle, el papel
+   * y la auditoría. Nula en lo anterior al 15/09/2026: ver `motivoDeSalida`.
+   */
+  razon_salida?: string | null
+  /**
+   * La causa de las salidas viejas que se anotaron como baja —«Robado»—. Ya no
+   * se escriben; las que hay se siguen leyendo. Según cómo lo resuelva el
+   * servidor llega como objeto o como lista de uno: ver `bajaDe`.
    */
   baja?:
     | { causa: string; destino: string | null }
@@ -468,7 +474,9 @@ export const TIPOS_MOVIMIENTO: Record<string, string> = {
   SALIDA_CONSUMO: 'Salida a consumo',
   SALIDA_DESPACHO: 'Salida por despacho',
   SALIDA_MERMA: 'Merma',
-  SALIDA_BAJA: 'Baja',
+  // «Todo será englobado por Salida» —Christopher, 15/09/2026—. Ya no se
+  // escribe: lo llevan solo las salidas viejas, que se leen «Salida · Robado».
+  SALIDA_BAJA: 'Salida',
   AJUSTE_COSTO: 'Corrección de costo',
   AJUSTE_POSITIVO: 'Ajuste por conteo (sobrante)',
   AJUSTE_NEGATIVO: 'Ajuste por conteo (faltante)',
@@ -1234,7 +1242,10 @@ export async function leerTrasladoPorId(id: number): Promise<TrasladoParaNota> {
 
   Desde el patio, «sacar material» es UNA acción. Que el sistema la parta en dos
   funciones es asunto nuestro. Así que la lista es una y cada opción sabe si va a
-  consumo, a merma o a baja —y con qué causa—; la base encamina.
+  consumo o a merma; la base encamina. Las que daban el material por perdido se
+  quitaron el 15/09/2026: «todos los motivos referentes a baja deben ser
+  eliminados del sistema, si se necesita sacar algún material se hará por
+  salidas».
 
   Y es editable, como pidió la líder para los motivos del vale: «igual debe ser
   editable, no quiero nos llamen a cada rato por cosas así». Es la tercera lista
@@ -1297,19 +1308,12 @@ export function useBorrarClaseDeSalida() {
 }
 
 /*
-  LAS CAUSAS POR LAS QUE UN BIEN DEJA DE SERVIR
+  LAS CAUSAS DE LAS SALIDAS VIEJAS QUE SE ANOTARON COMO BAJA
 
-  La líder: «el inventario registra entradas, pero no registra salidas que no
-  necesariamente son ventas (ej. equipo dañado e irreparable, desechado,
-  obsoleto, etc.)».
-
-  Ninguna de las tres salidas que había servía. Consumo es haberlo gastado
-  trabajando; merma es lo que se pierde en el manejo —y su porcentaje se vigila
-  para detectar robo, así que meter ahí un taladro quemado lo dispararía por
-  una razón que no tiene nada que ver—; despacho es haberlo vendido.
-
-  No hay «otro» a propósito: con esa opción acaba todo ahí, y en un año nadie
-  puede responder cuánto se perdió por obsolescencia.
+  Ya no se escriben: el 15/09/2026 se quitaron del sistema todos los motivos de
+  baja, y lo que sale, sale por salidas. La lista se queda para leer las cuatro
+  que hay, que no se tocan, con la misma palabra en el libro, en el papel y en
+  la auditoría.
 */
 export const CAUSAS_DE_BAJA: Array<{ valor: string; etiqueta: string; dice: string }> = [
   {
@@ -1339,66 +1343,63 @@ export const CAUSAS_DE_BAJA: Array<{ valor: string; etiqueta: string; dice: stri
   },
 ]
 
-/** La causa de una baja, dicha tal cual: «Robado», «Extraviado». */
+/** La causa de una salida vieja anotada como baja, dicha tal cual: «Robado». */
 export const causaDeBaja = (causa?: string | null): string | null =>
   causa ? (CAUSAS_DE_BAJA.find((c) => c.valor === causa)?.etiqueta ?? causa) : null
 
-/** La baja de un movimiento, venga como objeto o como lista de uno. */
+/** Esa causa, venga como objeto o como lista de uno. */
 export const bajaDe = (m: Pick<Movimiento, 'baja'>) =>
   (Array.isArray(m.baja) ? m.baja[0] : m.baja) ?? null
 
 /*
-  EL TIPO, CON SU CAUSA CUANDO ES UNA BAJA.
+  POR QUÉ SALIÓ, CON LAS MISMAS PALABRAS EN TODAS PARTES.
 
-  Christopher: «sé explícito con los motivos: lo que sea robado, explícitamente
-  dice robado; lo que dice extraviado, explícitamente debe aparecer como tal». La
-  fila del libro decía «Baja» y la causa había que ir a buscarla a la auditoría.
-  Ahora dice «Baja · Robado» en la fila, en el detalle, en el papel y en el libro
-  impreso.
+  Christopher: «el motivo que aparezca en pantalla debe ser fiel al motivo que
+  aparezca en el pdf y auditoría, no puede ser que en la pantalla diga "Se lo
+  llevaron" y en otro sitio diga "Robado"».
+
+  Pasaba porque la salida no guardaba la razón elegida: el papel del momento la
+  tomaba del formulario, y el libro, la reimpresión y la auditoría solo tenían el
+  tipo, o la causa de la baja con otra palabra. Ahora el movimiento guarda la
+  razón tal como se leía en la lista, y todo sitio que diga por qué salió algo lo
+  dice desde aquí. Lo de antes no la tiene y no se inventa: dice su causa si la
+  anotó, y si no, nada.
 */
-export function nombreDeMovimiento(m: Pick<Movimiento, 'tipo' | 'baja'>): string {
-  const tipo = TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo
-  const causa = causaDeBaja(bajaDe(m)?.causa)
-  return causa ? `${tipo} · ${causa}` : tipo
+export function motivoDeSalida(m: Pick<Movimiento, 'razon_salida' | 'baja'>): string | null {
+  return m.razon_salida?.trim() || causaDeBaja(bajaDe(m)?.causa)
 }
 
-/**
- * Saca del inventario lo que dejó de servir.
- *
- * Pide más explicación que una salida normal —diez caracteres frente a
- * cuatro— porque una baja destruye valor en libros y lo único que quedará para
- * justificarla dentro de un año es esa frase.
- */
-export function useRegistrarBaja() {
-  return useAccionInventario(
-    (b: {
-      almacen_id: number
-      articulo_id: number
-      cantidad: number
-      causa: string
-      motivo: string
-      destino?: string | null
-      fecha?: string
-      /*
-        DE QUIÉN ES LO QUE SE DA DE BAJA.
+/** El tipo, con su motivo al lado cuando lo tiene: «Salida a consumo · VENTA». */
+export function nombreDeMovimiento(
+  m: Pick<Movimiento, 'tipo' | 'razon_salida' | 'baja'>,
+): string {
+  const tipo = TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo
+  const motivo = motivoDeSalida(m)
+  return motivo ? `${tipo} · ${motivo}` : tipo
+}
 
-        De las salidas es donde más importa: dar de baja material de la
-        gobernación cargándolo a la cuenta de la cantera sería regalarle una
-        pérdida al que no la tuvo. Solo hace falta si ahí hay de varios.
-      */
-      propietario?: string | null
-    }) =>
-      rpc<number>('registrar_baja', {
-        p_almacen_id: b.almacen_id,
-        p_articulo_id: b.articulo_id,
-        p_cantidad: b.cantidad,
-        p_causa: b.causa,
-        p_motivo: b.motivo,
-        p_destino: b.destino || null,
-        p_fecha: b.fecha || null,
-        p_propietario: b.propietario ?? null,
-      }),
+/** Lo que la nota de salida pone como motivo: el guardado, o el tipo si no hay. */
+export const motivoParaLaNota = (m: Pick<Movimiento, 'tipo' | 'razon_salida' | 'baja'>) =>
+  motivoDeSalida(m) ?? TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo
+
+/*
+  EL MOTIVO DE UNA NOTA, LEÍDO DEL LIBRO Y NO DEL FORMULARIO.
+
+  Es el mismo camino que usa Movimientos al reimprimir. Si el papel del momento
+  lo tomara de la lista que tiene abierta la pantalla, bastaría que alguien
+  corrigiera el nombre de una razón entretanto para que la misma nota saliera con
+  dos motivos distintos.
+*/
+export async function leerMotivoDeNota(numero: string): Promise<string> {
+  const fila = desenvolver<Pick<Movimiento, 'tipo' | 'razon_salida' | 'baja'>>(
+    await supabase
+      .from('inventario_movimientos')
+      .select('*, baja:inventario_bajas(causa, destino)')
+      .eq('nota_salida', numero)
+      .limit(1)
+      .single(),
   )
+  return motivoParaLaNota(fila)
 }
 
 /*

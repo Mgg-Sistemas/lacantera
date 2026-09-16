@@ -91,7 +91,11 @@ export interface DatosNotaDeSalida {
   fecha: string
 
   almacen: string
-  /** «Salida a consumo», «Baja por daño»… ya en palabras. */
+  /**
+   * Por qué sale, con las palabras que guardó el libro: «VENTA», «SE USO
+   * TRABAJANDO». Lo arma `motivoParaLaNota`, que es de donde lo toman también
+   * la lista de movimientos y la auditoría.
+   */
   clase: string
   motivo?: string | null
   /** A dónde va, cuando se sabe. */
@@ -228,17 +232,19 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
     (
       [
         ['De qué almacén', mezclada ? 'Varios · se indica en cada renglón' : d.almacen],
-        ['Clase', d.clase],
+        ['Motivo', d.clase],
         ['A dónde va', d.destino],
         ['Fecha', d.fecha],
       ] as Array<[string, string | null | undefined]>
     ).filter(([, valor]) => Boolean(valor && String(valor).trim())),
   )
 
-  // El motivo va antes de la tabla y no al final: es lo que explica todos los
-  // renglones, y leerlo después de la lista obliga a volver a subir.
+  // El relato va antes de la tabla y no al final: es lo que explica todos los
+  // renglones, y leerlo después de la lista obliga a volver a subir. Se titula
+  // «Detalle» y no «Por qué sale»: por qué sale es la razón de la lista, que va
+  // arriba como «Motivo», y con dos títulos iguales el papel decía dos cosas.
   if (d.motivo) {
-    y = seccion(doc, y, 'Por qué sale')
+    y = seccion(doc, y, 'Detalle')
     doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(TINTA)
     const lineas = doc.splitTextToSize(d.motivo, ANCHO_UTIL) as string[]
     doc.text(lineas, IZQ, y, { lineHeightFactor: 1.45 })

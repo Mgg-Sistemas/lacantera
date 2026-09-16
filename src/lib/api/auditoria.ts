@@ -200,7 +200,7 @@ const NOMBRES: Record<string, string> = {
   instrucciones_pago: 'Instrucción de pago',
   inventario_movimientos: 'Movimiento de inventario',
   // «inventario bajas» salía tal cual en la ficha de una baja.
-  inventario_bajas: 'Baja de inventario',
+  inventario_bajas: 'Motivo de una salida',
   traslados: 'Traslado',
   articulo_presentaciones: 'Forma de contar un artículo',
   precios_venta: 'Precio de venta',
@@ -293,7 +293,7 @@ const CAMPOS: Record<string, string> = {
   articulo_id: 'Artículo',
   aviso_costo: 'Veces fuera de su costo',
   cantidad_capturada: 'Cantidad contada',
-  causa: 'Causa',
+  causa: 'Motivo',
   costo_capturado: 'Costo tecleado',
   costo_unidad_capturada: 'Costo tecleado por',
   costo_usd: 'Costo por unidad (USD)',
@@ -312,6 +312,7 @@ const CAMPOS: Record<string, string> = {
   orden_renglon_id: 'Renglón de la orden',
   origen_id: 'Sale de',
   propietario: 'Dueño',
+  razon_salida: 'Motivo',
   signo: 'Sentido',
   solicitada_por: 'Pedida por',
   solicitado_por: 'Pedido por',
@@ -631,7 +632,7 @@ const HIZO_EN_INVENTARIO: Record<string, string> = {
   SALIDA_CONSUMO: 'Sacó a consumo',
   SALIDA_DESPACHO: 'Despachó',
   SALIDA_MERMA: 'Anotó una merma',
-  SALIDA_BAJA: 'Dio de baja',
+  SALIDA_BAJA: 'Registró una salida',
   AJUSTE_COSTO: 'Corrigió un costo',
   AJUSTE_POSITIVO: 'Ajustó por conteo (sobrante)',
   AJUSTE_NEGATIVO: 'Ajustó por conteo (faltante)',
@@ -661,10 +662,13 @@ export function accionCorta(m: {
   if (!f || m.operacion === 'DELETE') return null
 
   if (m.tabla === 'inventario_movimientos' && m.operacion === 'INSERT') {
-    return HIZO_EN_INVENTARIO[String(f.tipo)] ?? null
+    const hizo = HIZO_EN_INVENTARIO[String(f.tipo)] ?? null
+    // Con el motivo al lado, y con las mismas palabras que la fila del libro y
+    // el papel: es lo que se eligió en la pantalla.
+    return hizo && f.razon_salida ? `${hizo} · ${String(f.razon_salida)}` : hizo
   }
   if (m.tabla === 'inventario_bajas' && m.operacion === 'INSERT') {
-    return `Anotó la causa de una baja: ${codigoEnPalabras('causa', f.causa) ?? String(f.causa ?? '—')}`
+    return `Anotó el motivo de la salida: ${codigoEnPalabras('causa', f.causa) ?? String(f.causa ?? '—')}`
   }
   if (m.tabla === 'traslados') {
     if (m.operacion === 'INSERT') {
@@ -754,7 +758,8 @@ export function narracion(
         return `Se corrigió el costo de ${art} en ${alm}${costo}.${tecleado}`
       }
 
-      const que = TIPOS_MOVIMIENTO[tipo] ?? (signo < 0 ? 'Salida' : 'Entrada')
+      const motivo = f.razon_salida ? ` · ${String(f.razon_salida)}` : ''
+      const que = `${TIPOS_MOVIMIENTO[tipo] ?? (signo < 0 ? 'Salida' : 'Entrada')}${motivo}`
       const hacia = signo < 0 ? `salieron de ${alm}` : `entraron a ${alm}`
       return `${que}: ${cant} de ${art} ${hacia}${costo}.${contado}${tecleado}${papel}`
     }
@@ -769,7 +774,7 @@ export function narracion(
     case 'inventario_bajas': {
       const causa = codigoEnPalabras('causa', f.causa) ?? String(f.causa ?? '—')
       const destino = f.destino ? ` Destino: ${f.destino}.` : ''
-      return `La baja ${de('movimiento_id')} se anotó como «${causa}».${destino} El artículo, el almacén y la cantidad están en el movimiento, escrito en la misma operación.`
+      return `La salida ${de('movimiento_id')} tiene como motivo «${causa}».${destino} El artículo, el almacén y la cantidad están en el movimiento, escrito en la misma operación.`
     }
 
     case 'traslados': {

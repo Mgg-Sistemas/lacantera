@@ -75,6 +75,7 @@ import {
   useBorrarClaseDeSalida,
   useRegistrarEntradas,
   useRegistrarSalidas,
+  leerMotivoDeNota,
   leerNotaDeSalida,
 } from '@/lib/api/inventario'
 import type { Existencia, ExistenciaTotal } from '@/lib/api/inventario'
@@ -400,8 +401,13 @@ export function Existencias() {
     quedan en el papel que alguien firma. Un papel con cifras del navegador y un
     libro con otras es exactamente el problema que la nota venía a resolver.
   */
-  const notaCompleta = async (numero: string, clase: string, motivo: string) => {
-    const lineas = await leerNotaDeSalida(numero)
+  const notaCompleta = async (numero: string, motivo: string) => {
+    // El motivo también se relee: es el que guardó la base, con las mismas
+    // palabras que dirán el libro, la reimpresión y la auditoría.
+    const [lineas, motivoGuardado] = await Promise.all([
+      leerNotaDeSalida(numero),
+      leerMotivoDeNota(numero),
+    ])
     if (lineas.length === 0) return
 
     const datos: DatosNotaDeSalida = {
@@ -409,7 +415,7 @@ export function Existencias() {
         numero,
         fecha: fecha(lineas[0].fecha),
         almacen: lineas[0].almacen,
-        clase,
+        clase: motivoGuardado,
         motivo,
         renglones: lineas.map((l) => ({
           articuloCodigo: l.articulo_codigo,
@@ -778,9 +784,10 @@ export function Existencias() {
     bajas que existían eran ventas, despachos y una donación anotados como
     robo: la puerta aparte daba un papel, y por eso se usaba para eso.
 
-    Dañado, vencido, obsoleto, extraviado y robado son clases de la salida, con
-    el nombre dicho tal cual —«lo que sea robado, explícitamente dice robado»—,
-    y la base sigue anotando la causa de la baja igual que antes.
+    Y después, el mismo día: «todos los motivos referentes a baja deben ser
+    eliminados del sistema, si se necesita sacar algún material se hará por
+    salidas». Dañado, vencido, obsoleto, extraviado y robado salieron también de
+    la lista de razones; lo que se registró antes con ellas no se toca.
   */
   /*
     La lista ya no está escrita aquí: la lleva la empresa y llega por la red, así
@@ -907,11 +914,7 @@ export function Existencias() {
       // Y si el papel no se puede armar, la salida sigue estando bien hecha: se
       // reimprime desde Movimientos. Tragarse el error aquí es peor que decirlo.
       try {
-        await notaCompleta(
-          numero,
-          (clases.data ?? []).find((c) => c.codigo === clase)?.nombre ?? clase,
-          motivo,
-        )
+        await notaCompleta(numero, motivo)
       } catch (e) {
         setFalloElPapel(
           `La salida ${numero} quedó registrada, pero no se pudo armar el papel. Búscala en Movimientos y pulsa «Nota».`,
@@ -929,7 +932,7 @@ export function Existencias() {
         —'QUEDO_OBSOLETO'—, y esa funcion no sabe encaminarla. Habria reventado.
 
         Se podia traducir el codigo aqui antes de enviarlo. No se hace: seria un
-        segundo sitio donde vive la regla de que «obsoleto» es una baja, y el dia
+        segundo sitio donde vive la regla de a donde va cada razon, y el dia
         que alguien añada una razon nueva por la pantalla, este camino no se
         enteraria. Un renglon es una lista de uno.
       */
@@ -951,11 +954,7 @@ export function Existencias() {
       // el papel, o el segundo toque registra una salida entera de mas.
       setModal(null)
       try {
-        await notaCompleta(
-          numero,
-          (clases.data ?? []).find((c) => c.codigo === clase)?.nombre ?? clase,
-          motivo,
-        )
+        await notaCompleta(numero, motivo)
       } catch (e) {
         setFalloElPapel(
           `La salida ${numero} quedo registrada, pero no se pudo armar el papel. Buscala en Movimientos y pulsa «Nota».`,
@@ -1351,8 +1350,8 @@ export function Existencias() {
                             Ver dónde está
                           </Button>
                         ) : fila!.almacen_tipo === 'TRANSITO' ? (
-                          /* Lo que va de camino no se saca, ni se cuenta, ni se da
-                             de baja aquí: la base lo cierra, y ofrecerlo sería
+                          /* Lo que va de camino no se saca ni se cuenta
+                             aquí: la base lo cierra, y ofrecerlo sería
                              enseñar puertas cerradas. Se recibe o se cancela
                              desde su traslado. */
                           <span className="text-ink/45 text-xs">Lo mueve su traslado</span>
@@ -1526,7 +1525,7 @@ export function Existencias() {
           abierto
           onCerrar={() => setOrdenandoClases(false)}
           titulo="Por qué puede salir un material"
-          descripcion="La lista que aparece al sacar material. Cada razón ya sabe si es consumo, merma o baja: eso no se cambia desde aquí, porque movería de sitio salidas ya registradas."
+          descripcion="La lista que aparece al sacar material. Cada razón ya sabe si es consumo o merma: eso no se cambia desde aquí, porque movería de sitio salidas ya registradas."
           ancho="sm"
           acciones={<Button onClick={() => setOrdenandoClases(false)}>Listo</Button>}
         >
@@ -1617,7 +1616,7 @@ export function Existencias() {
             de `1fr` se quedaban en unos 40 px: las cajas aplastadas y las
             etiquetas encimadas que se vieron en pantalla.
 
-            El conteo y la baja siguen en `sm` a proposito: son de un campo.
+            El conteo sigue en `sm` a proposito: es de un campo.
           */
           /*
             SALIDAS Y ENTRADAS PIDEN SITIO, y se vio en pantalla antes que en el
@@ -1668,10 +1667,10 @@ export function Existencias() {
                     escribe la cantidad.
                   */
                   (modal.tipo === 'salidas' && !salidaEnPie) ||
-                  // Lo mismo que exige la base, dicho antes de pulsar. Una baja
-                  // y un «Otro» piden diez caracteres, no cuatro.
+                  // Lo mismo que exige la base, dicho antes de pulsar. Un «Otro»
+                  // pide diez caracteres, no cuatro.
                   ((modal.tipo === 'salidas' || modal.tipo === 'salida') &&
-                    (claseElegida?.tipo === 'SALIDA_BAJA' || claseElegida?.exige_detalle) &&
+                    claseElegida?.exige_detalle === true &&
                     motivo.trim().length < 10) ||
                   salidas.isPending ||
                   ajuste.isPending ||
@@ -2404,16 +2403,6 @@ export function Existencias() {
                   }))}
                 />
 
-                {/* Cuando la clase es una baja, el papel deja de ser una salida
-                    corriente: destruye valor en libros. Decirlo aquí, y no al
-                    guardar, es lo que evita darse cuenta después. */}
-                {claseElegida?.tipo === 'SALIDA_BAJA' ? (
-                  <p className="text-ink/55 mt-2 text-xs leading-relaxed">
-                    Esto es una <strong className="text-ink/75">baja</strong>: el material sale del
-                    inventario y su valor se da por perdido. Hay que explicar qué pasó.
-                  </p>
-                ) : null}
-
                 {/* ESCRITURA y no TOTAL: con TOTAL el boton solo lo veian las
                     cuatro cuentas de administrador, y la lista se hizo editable
                     justamente para que no nos llamaran por ella. */}
@@ -2462,8 +2451,8 @@ export function Existencias() {
 
                 Nadie recorre un almacén anotando «1.466 litros»: anota siete
                 tambores llenos y uno empezado. Por eso el conteo estrena el
-                componente y la salida de una fila y la baja siguen con el campo
-                simple — ahí se saca una cantidad concreta, no se recuenta.
+                componente y la salida de una fila sigue con el campo simple —
+                ahí se saca una cantidad concreta, no se recuenta.
 
                 La diferencia se calcula contra el TOTAL, que es lo que el
                 componente devuelve ya sumado; lo que viaja son las dos cifras
@@ -2568,11 +2557,7 @@ export function Existencias() {
                 </>
               ) : (
                 <Input
-                  label={
-                    modal.tipo === 'salida'
-                      ? 'Cantidad que sale'
-                      : 'Cantidad que se da de baja'
-                  }
+                  label="Cantidad que sale"
                   type="number"
                   min="0"
                   step="0.01"
@@ -2585,12 +2570,12 @@ export function Existencias() {
               )}
 
               {/*
-                POR QUÉ DEJÓ DE SERVIR
+                POR QUÉ SALE
 
-                Debajo de la cantidad y antes del motivo: primero cuánto, luego
-                de qué clase de pérdida se trata, y al final el relato. La causa
-                es lo que después deja responder «cuánto se perdió por
-                obsolescencia» sin leer doscientas notas a mano.
+                Debajo de la cantidad y antes del relato: primero cuánto, luego
+                la razón de la lista, y al final lo que pasó. La razón se guarda
+                con el movimiento con estas mismas palabras, y es la que dirán
+                después el libro, el papel y la auditoría.
               */}
               {modal.tipo === 'salida' ? (
                 <>
@@ -2628,32 +2613,23 @@ export function Existencias() {
             label={
               modal.tipo === 'entrada'
                 ? 'De dónde vino'
-                : modal.tipo === 'salidas'
-                  ? // «Para qué sale» no encaja con una merma ni con una baja:
-                    // nada se derrama para algo. Cada clase pregunta lo que de
-                    // verdad se responde.
+                : modal.tipo === 'salidas' || modal.tipo === 'salida'
+                  ? /* «Para qué sale» no encaja con una merma: nada se derrama
+                       para algo. Cada razón pregunta lo que de verdad se
+                       responde. La de una fila miraba `clase === 'SALIDA_MERMA'`,
+                       que dejó de poder ser cierto cuando `clase` pasó a ser el
+                       código de una razón: preguntaba «para qué» hasta en una
+                       merma. */
                     claseElegida?.tipo === 'SALIDA_CONSUMO' && !claseElegida?.exige_detalle
                     ? 'Para qué sale'
                     : 'Qué pasó'
-                  : modal.tipo === 'salida'
-                  // «Para qué sale» no encaja con una merma: nada se derrama
-                  // para algo. Cada clase pregunta lo que de verdad se
-                  // responde.
-                  ? clase === 'SALIDA_MERMA'
-                    ? 'Qué pasó'
-                    : 'Para qué sale'
                   : 'Qué explica la diferencia'
             }
             className="mt-4"
             rows={3}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            hint={
-              (modal.tipo === 'salida' || modal.tipo === 'salidas') &&
-              claseElegida?.tipo === 'SALIDA_BAJA'
-                ? 'Con detalle: dentro de un año esta frase será lo único que quede para justificar la pérdida. Queda en el libro y no se puede editar.'
-                : 'Queda en el libro y no se puede editar después.'
-            }
+            hint="Queda en el libro y no se puede editar después."
           />
 
           {/* El de `salidas` faltaba, y era el unico de los cinco. La base para

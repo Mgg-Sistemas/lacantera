@@ -170,8 +170,8 @@ export function GastoPorUnidad() {
             <TrendingUp className="mt-0.5 size-3.5 shrink-0" />
             <span>
               Comprado cuenta órdenes aprobadas, en dólares a la tasa de cada una. Consumido es lo
-              que salió del almacén y se usó; no incluye lo que se dio de baja, porque perder algo
-              no es gastarlo. La barra compara contra la unidad que más gasta.
+              que salió del almacén y se usó; no incluye mermas ni pérdidas, porque perder algo no
+              es gastarlo. La barra compara contra la unidad que más gasta.
             </span>
           </p>
         </>
