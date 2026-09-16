@@ -10,6 +10,8 @@ import {
   paraQuienSalio,
   useGruposDeSalida,
 } from '@/lib/api/inventario'
+import { densidadesDeArticulos } from '@/lib/api/catalogo'
+import { equivalenciaEnPapel } from '@/lib/medidas'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { DatosNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
@@ -77,6 +79,13 @@ export function useNotaDeSalida(): {
       ])
       if (lineas.length === 0) return
 
+      // La otra medida, solo en lo que tiene densidad: ver `lib/medidas.ts`.
+      const densidades = await densidadesDeArticulos({
+        codigos: lineas.map((l) => l.articulo_codigo),
+      })
+      const densidadDe = (codigo: string) =>
+        densidades.find((a) => a.codigo === codigo)?.densidad_ton_m3 ?? null
+
       const armados: DatosNotaDeSalida = {
         conCostos,
         numero,
@@ -91,6 +100,7 @@ export function useNotaDeSalida(): {
           cantidad: l.cantidad,
           unidad: l.unidad,
           contado: contadoLegible(l),
+          equivalencia: equivalenciaEnPapel(l.cantidad, l.unidad, densidadDe(l.articulo_codigo)),
           costoUnitarioUsd: l.costo_usd,
           valorUsd: l.valor_usd,
           almacen: l.almacen,

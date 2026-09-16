@@ -16,7 +16,7 @@ import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { useMisRoles, usePerfiles } from '@/lib/api/catalogo'
+import { densidadesDeArticulos, useMisRoles, usePerfiles } from '@/lib/api/catalogo'
 import {
   bajaDe,
   motivoDeSalida,
@@ -37,6 +37,7 @@ import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarLibroDeMovimientos } from '@/lib/ficha/libroMovimientos'
+import { equivalenciaEnPapel } from '@/lib/medidas'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { dolares, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -194,6 +195,8 @@ export function Movimientos() {
     setTituloDoc('Libro de movimientos')
     // El libro no lleva casilla: es un informe interno y siempre va con cifras.
     setDatosNota(null)
+    // La otra medida, solo en lo que tiene densidad: ver `lib/medidas.ts`.
+    const densidades = await densidadesDeArticulos({ ids: (data ?? []).map((m) => m.articulo_id) })
     setPdf(
       await armarLibroDeMovimientos({
         almacen: sitio?.nombre ?? null,
@@ -203,9 +206,14 @@ export function Movimientos() {
           fecha: fechaHora(m.registrado_en),
           tipo: nombreDeMovimiento(m),
           articulo: m.articulo?.nombre ?? '—',
+          equivalencia: equivalenciaEnPapel(
+            m.cantidad,
+            m.unidad,
+            densidades.find((a) => a.id === m.articulo_id)?.densidad_ton_m3,
+          ),
           almacen: m.almacen?.nombre ?? '—',
           cantidad: m.cantidad,
-          unidad: '',
+          unidad: m.unidad,
           signo: m.signo,
           valorUsd: Number(m.cantidad) * Number(m.costo_usd ?? 0),
           quien: nombreDe(m.registrado_por),

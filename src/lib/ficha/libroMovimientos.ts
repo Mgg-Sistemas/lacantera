@@ -33,6 +33,8 @@ export interface RenglonDelLibro {
   fecha: string
   tipo: string
   articulo: string
+  /** La cantidad en la otra medida, si hay densidad. Ver `lib/medidas.ts`. */
+  equivalencia?: string | null
   almacen: string
   cantidad: string
   unidad: string
@@ -124,7 +126,7 @@ export async function armarLibroDeMovimientos(d: DatosLibro): Promise<ArchivoArm
       r.numero,
       r.fecha,
       r.tipo,
-      r.articulo,
+      r.equivalencia ? `${r.articulo} · ${r.equivalencia}` : r.articulo,
       // El signo delante y no una columna aparte: en una lista de cien
       // renglones, el ojo busca el signo pegado a la cifra.
       `${r.signo > 0 ? '+' : r.signo < 0 ? '−' : ''}${cantidad(r.cantidad)} ${r.unidad}`,

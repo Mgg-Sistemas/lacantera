@@ -74,6 +74,12 @@ export interface RenglonDeSalida {
    */
   contado?: string | null
   /**
+   * La misma cantidad en la otra medida, «equivale a 40,32 TON aprox.». Nula
+   * cuando el artículo no tiene densidad: ver `lib/medidas.ts`. Va junto al
+   * material, igual que lo contado, por la misma razón de ancho.
+   */
+  equivalencia?: string | null
+  /**
    * De qué almacén sale este renglón.
    *
    * Solo importa cuando la nota mezcla varios sitios, y entonces NO se imprime
@@ -185,7 +191,9 @@ export function numero(valor: string | number, decimales = 2): string {
 export const celdas = (r: RenglonDeSalida, conCostos: boolean): string[] => {
   const base = [
     r.articuloCodigo,
-    r.contado ? `${r.articulo} · se contó ${r.contado}` : r.articulo,
+    [r.articulo, r.contado ? `se contó ${r.contado}` : null, r.equivalencia]
+      .filter(Boolean)
+      .join(' · '),
     numero(r.cantidad),
     r.unidad,
   ]

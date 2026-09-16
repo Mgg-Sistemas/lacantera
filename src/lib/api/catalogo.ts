@@ -411,6 +411,24 @@ export function useCategoriasDeArticulo() {
   })
 }
 
+/**
+ * La densidad de unos artículos, para el papel que se arma en el momento.
+ *
+ * No es un hook: se lee cuando alguien pide el PDF, con solo los artículos que
+ * lleva ese papel. Se buscan por id o por código, porque las notas de salida
+ * guardan el código y los documentos de venta el id. Ver `lib/medidas.ts`.
+ */
+export async function densidadesDeArticulos(
+  filtro: { ids?: number[]; codigos?: string[] },
+): Promise<{ id: number; codigo: string; densidad_ton_m3: string | null }[]> {
+  const ids = [...new Set(filtro.ids ?? [])]
+  const codigos = [...new Set(filtro.codigos ?? [])]
+  if (ids.length === 0 && codigos.length === 0) return []
+  let q = supabase.from('articulos').select('id, codigo, densidad_ton_m3')
+  q = ids.length > 0 ? q.in('id', ids) : q.in('codigo', codigos)
+  return desenvolver<{ id: number; codigo: string; densidad_ton_m3: string | null }[]>(await q)
+}
+
 export function useArticulos(soloActivos = true) {
   return useQuery({
     queryKey: ['articulos', soloActivos],

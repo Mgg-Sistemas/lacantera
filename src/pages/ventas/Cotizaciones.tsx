@@ -16,6 +16,7 @@ import { dinero, documento, fecha } from '@/lib/formato'
 import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useTasaVigente } from '@/lib/api/tasas'
+import { densidadesDeArticulos } from '@/lib/api/catalogo'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
@@ -31,6 +32,7 @@ import {
 import { Renglones } from './Renglones'
 import {
   aRenglones,
+  detalleDeRenglon,
   faltaEnFila,
   filaVacia,
   gravadoDe,
@@ -130,6 +132,7 @@ export function Cotizaciones() {
 
   const imprimir = async (q: CotizacionVenta) => {
     const renglones = renglonesDetalle.data ?? []
+    const densidades = await densidadesDeArticulos({ ids: renglones.map((r) => r.articulo_id) })
     setPdf(
       await armarDocumento({
         tipo: 'COTIZACION',
@@ -150,7 +153,11 @@ export function Cotizaciones() {
         tasaUsd: q.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
-          detalle: renglonEnPalabras(r, q.moneda) || null,
+          detalle: detalleDeRenglon(
+            r,
+            q.moneda,
+            densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3,
+          ),
           cantidad: r.cantidad,
           unidad: r.unidad,
           precio_unitario: r.precio_unitario,
