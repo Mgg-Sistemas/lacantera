@@ -33,12 +33,14 @@ import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarActaExistencias } from '@/lib/ficha/actaExistencias'
+import { equivalenciaEnPapel } from '@/lib/medidas'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalAlTaller } from './ModalAlTaller'
 import { ModalCambioDeDueno } from './ModalCambioDeDueno'
 import {
+  densidadesDeArticulos,
   conSusFormas,
   useArticulos,
   useMisRoles,
@@ -513,6 +515,8 @@ export function Existencias() {
   */
   const imprimirActa = async () => {
     const sitio = almacenes?.find((a) => String(a.id) === almacenId)
+    // La otra medida, solo en lo que tiene densidad: ver `lib/medidas.ts`.
+    const densidades = await densidadesDeArticulos({ ids: filtradas.map((e) => e.articulo_id) })
     const filtros = [
       busqueda.trim() ? `Búsqueda: «${busqueda.trim()}»` : null,
       soloBajas ? 'Solo lo que está en el mínimo o por debajo' : null,
@@ -530,6 +534,11 @@ export function Existencias() {
           articulo: e.articulo,
           unidad: e.unidad,
           existencia: e.existencia,
+          equivalencia: equivalenciaEnPapel(
+            e.existencia,
+            e.unidad,
+            densidades.find((a) => a.id === e.articulo_id)?.densidad_ton_m3,
+          ),
           /*
             EL PRECIO SOLO SI QUIEN IMPRIME PUEDE VERLO.
 

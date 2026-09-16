@@ -1,4 +1,5 @@
 import { dinero } from '@/lib/formato'
+import { equivalenciaEnPapel } from '@/lib/medidas'
 import type {
   CondicionVenta,
   PrecioVenta,
@@ -264,4 +265,27 @@ export function renglonEnPalabras(r: RenglonGuardado, moneda: string): string {
 
   const texto = partes.join(' · ')
   return texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : ''
+}
+
+/**
+ * La línea gris que va debajo del renglón en el papel: su condición y su
+ * medida, y además la misma cantidad en la otra medida cuando hay densidad.
+ *
+ * Si el renglón ya se convirtió al despachar —pesado o estimado—, esa frase ya
+ * dice lo que salió del patio y no se repite. La densidad buena es la que se
+ * usó al despachar; si no se usó ninguna, la del catálogo.
+ */
+export function detalleDeRenglon(
+  r: RenglonGuardado,
+  moneda: string,
+  densidadDelCatalogo: string | number | null | undefined,
+): string | null {
+  const partes = [renglonEnPalabras(r, moneda)]
+  if (r.medida !== 'ROMANA' && r.medida !== 'ESTIMADA') {
+    partes.push(
+      equivalenciaEnPapel(r.cantidad, r.unidad, r.densidad_usada ?? densidadDelCatalogo) ?? '',
+    )
+  }
+  const texto = partes.filter(Boolean).join(' · ')
+  return texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : null
 }

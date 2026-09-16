@@ -17,6 +17,7 @@ import { dinero, documento, enteros, fecha } from '@/lib/formato'
 import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
+import { densidadesDeArticulos } from '@/lib/api/catalogo'
 import { useGuias, useTickets } from '@/lib/api/despachos'
 import { useVehiculos } from '@/lib/api/vehiculos'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
@@ -41,11 +42,11 @@ import { Renglones } from '@/pages/ventas/Renglones'
 import {
   aRenglones,
   conRomana,
+  detalleDeRenglon,
   faltaEnFila,
   filaVacia,
   gravadoDe,
   m3EnCamion,
-  renglonEnPalabras,
   repreciar,
   subtotalDe,
   type FilaRenglon,
@@ -199,6 +200,7 @@ export function NotasDeEntrega() {
 
   const imprimir = async (n: NotaEntrega) => {
     const renglones = renglonesDetalle.data ?? []
+    const densidades = await densidadesDeArticulos({ ids: renglones.map((r) => r.articulo_id) })
     setPdf(
       await armarDocumento({
         tipo: 'NOTA',
@@ -225,7 +227,11 @@ export function NotasDeEntrega() {
         tasaUsd: n.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
-          detalle: renglonEnPalabras(r, n.moneda) || null,
+          detalle: detalleDeRenglon(
+            r,
+            n.moneda,
+            densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3,
+          ),
           cantidad: r.cantidad,
           unidad: r.unidad,
           precio_unitario: r.precio_unitario,

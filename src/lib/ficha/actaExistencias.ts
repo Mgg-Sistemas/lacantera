@@ -32,6 +32,8 @@ export interface RenglonDeActa {
   articulo: string
   unidad: string
   existencia: string | number
+  /** La existencia en la otra medida, si hay densidad. Ver `lib/medidas.ts`. */
+  equivalencia?: string | null
   /*
     NULOS CUANDO QUIEN IMPRIME NO PUEDE VER EL PRECIO.
 
@@ -145,7 +147,7 @@ export async function armarActaExistencias(d: DatosActa): Promise<ArchivoArmado>
     d.renglones.map((r) =>
       [
         r.codigo,
-        r.articulo,
+        r.equivalencia ? `${r.articulo} · ${r.equivalencia}` : r.articulo,
         r.unidad,
         cantidad(r.existencia),
         ...(conPrecio ? [numero(r.costoUsd ?? 0), numero(r.valorUsd ?? 0)] : []),
