@@ -4,8 +4,22 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { dinero } from '@/lib/formato'
 import { useTasaVigente } from '@/lib/api/tasas'
-import type { PrecioVenta } from '@/lib/api/ventas'
-import { filaVacia, type FilaRenglon } from './filas'
+import { useMisAcciones } from '@/lib/api/usuarios'
+import {
+  CONDICION_VENTA,
+  unidadesDeVenta,
+  type CondicionVenta,
+  type PrecioVenta,
+} from '@/lib/api/ventas'
+import {
+  cantidadDelPatio,
+  conPrecio,
+  faltaEnFila,
+  filaVacia,
+  listaEnMoneda,
+  precioDeLista,
+  type FilaRenglon,
+} from './filas'
 
 /**
  * Los renglones de un documento de venta.
@@ -15,11 +29,16 @@ import { filaVacia, type FilaRenglon } from './filas'
  * que no dice exactamente lo que decía la cotización es una discusión con el
  * cliente.
  *
- * EL PRECIO SE TRAE DE LA LISTA Y SE PUEDE PISAR. Traerlo evita que cada quien
- * teclee el suyo; dejarlo editable es necesario porque se negocia. Lo que no se
- * negocia es el mínimo, y de eso se encarga la base: aquí solo se avisa en
- * amarillo antes de enviar, para que quien no tenga permiso no descubra el
- * rechazo después de llenar el formulario.
+ * CADA RENGLÓN DICE A QUÉ PRECIO SALE. Antes el precio de la lista se traía y
+ * se podía pisar sin decir nada, y un 9 donde la lista decía 12 no se sabía si
+ * era un descuento o un dedo. Ahora se elige: de lista, con descuento (en
+ * porcentaje o en monto por unidad), sin cargo con su motivo, o acordado
+ * cuando esa unidad no tiene precio de lista. La cifra la calcula la base con
+ * la misma cuenta que se enseña aquí; ninguna oferta se ata a un cliente.
+ *
+ * Y EN QUÉ UNIDAD. Lo que tiene densidad se vende en metros cúbicos o en
+ * toneladas; en la nota se enseña cuánto sale del patio y que es estimado, o
+ * que lo dice la romana.
  */
 
 interface Props {
@@ -29,87 +48,171 @@ interface Props {
   moneda: string
   /** Existencia por artículo, cuando el documento saca material del patio. */
   existencias?: Record<number, number>
+  /**
+   * Las toneladas del ticket de romana elegido. Con un solo material del patio
+   * vendido en toneladas, su cantidad es esta y no se teclea.
+   */
+  toneladasDeRomana?: number | null
 }
 
-export function Renglones({ filas, onCambiar, precios, moneda, existencias }: Props) {
+export function Renglones({
+  filas,
+  onCambiar,
+  precios,
+  moneda,
+  existencias,
+  toneladasDeRomana,
+}: Props) {
   const { data: tasaHoy } = useTasaVigente()
   const tasa = Number(tasaHoy?.tasa ?? 0)
+  const { puede } = useMisAcciones()
+  const puedeRegalar = puede('VENTAS.VENDER_BAJO_MINIMO')
+
+  // Un artículo sale una vez en el selector aunque tenga precio en dos unidades.
+  const articulos = precios.filter(
+    (p, i) => p.activo && precios.findIndex((x) => x.articulo_id === p.articulo_id) === i,
+  )
+
+  const delPatio = filas.filter(
+    (f) => f.articulo_id && articulos.find((a) => String(a.articulo_id) === f.articulo_id)?.categoria === 'PRODUCTO',
+  )
+  const claveDeRomana =
+    toneladasDeRomana && delPatio.length === 1 && delPatio[0].unidad === 'TON'
+      ? delPatio[0].clave
+      : null
+
+  const listaDe = (f: FilaRenglon) =>
+    listaEnMoneda(precioDeLista(precios, f.articulo_id, f.unidad), moneda, tasa)
 
   /**
-   * El mínimo del artículo, puesto en la moneda del documento.
-   *
-   * El precio de lista puede estar en dólares y el documento salir en
-   * bolívares, que es lo normal aquí: material en divisas, clientes que
-   * facturan en bolívares. Comparar los dos números crudos avisaba de un
-   * "precio por debajo del mínimo" cada vez que se tecleaba una cifra en
-   * bolívares —siempre más grande que el mínimo en dólares—, y callaba en el
-   * caso contrario. La base sí convierte antes de comparar; esto hace lo mismo.
-   *
-   * Devuelve null cuando no se puede saber: sin tasa del día registrada, un
-   * aviso inventado es peor que ninguno.
+   * El mínimo de esa unidad, puesto en la moneda del documento. Null cuando no
+   * se puede saber: sin tasa, un aviso inventado es peor que ninguno.
    */
-  const minimoEnMoneda = (p: PrecioVenta | undefined): number | null => {
-    const minimo = Number(p?.precio_minimo ?? 0)
-    if (!p || minimo <= 0) return null
-    if (p.moneda === moneda) return minimo
-    if (!tasa) return null
-    if (p.moneda === 'USD' && moneda === 'VES') return minimo * tasa
-    if (p.moneda === 'VES' && moneda === 'USD') return minimo / tasa
-    return null
+  const minimoEnMoneda = (f: FilaRenglon): number | null => {
+    const p = precioDeLista(precios, f.articulo_id, f.unidad)
+    if (!p || !(Number(p.precio_minimo) > 0)) return null
+    return listaEnMoneda({ ...p, precio: p.precio_minimo }, moneda, tasa)
   }
 
   const cambiar = (clave: number, cambios: Partial<FilaRenglon>) =>
-    onCambiar(filas.map((f) => (f.clave === clave ? { ...f, ...cambios } : f)))
+    onCambiar(
+      filas.map((f) => {
+        if (f.clave !== clave) return f
+        const nueva = { ...f, ...cambios }
+        return conPrecio(nueva, listaDe(nueva))
+      }),
+    )
 
-  const elegir = (clave: number, id: string) => {
-    const p = precios.find((x) => String(x.articulo_id) === id)
+  const elegirArticulo = (clave: number, id: string) => {
+    const a = articulos.find((x) => String(x.articulo_id) === id)
+    const unidad = a?.unidad_articulo ?? ''
+    const hayLista = a ? precioDeLista(precios, id, unidad) !== undefined : false
     cambiar(clave, {
       articulo_id: id,
-      descripcion: p?.nombre ?? '',
-      unidad: p?.unidad ?? '',
-      precio: p?.precio ? String(Number(p.precio)) : '',
+      descripcion: a?.nombre ?? '',
+      unidad,
+      precio: '',
+      condicion: hayLista ? 'LISTA' : '',
+      descuento: '',
+      motivo: '',
     })
   }
 
-  const opciones = precios
-    .filter((p) => p.activo)
-    .map((p) => ({
-      valor: String(p.articulo_id),
-      etiqueta: `${p.codigo} · ${p.nombre}${p.precio ? ` — ${dinero(p.moneda, p.precio)}` : ' — sin precio'}`,
-    }))
+  const elegirUnidad = (f: FilaRenglon, unidad: string) => {
+    const hayLista = precioDeLista(precios, f.articulo_id, unidad) !== undefined
+    // La condición que ya no cabe se borra: sin lista no hay lista ni descuento.
+    const condicion: FilaRenglon['condicion'] =
+      f.condicion === 'SIN_CARGO'
+        ? 'SIN_CARGO'
+        : hayLista
+          ? f.condicion === 'DESCUENTO'
+            ? 'DESCUENTO'
+            : 'LISTA'
+          : ''
+    cambiar(f.clave, { unidad, condicion, precio: condicion === '' ? '' : f.precio })
+  }
 
   return (
     <div className="space-y-3">
       {filas.map((fila, indice) => {
-        const precio = precios.find((p) => String(p.articulo_id) === fila.articulo_id)
-        const minimo = minimoEnMoneda(precio)
-        const bajoMinimo = minimo !== null && Number(fila.precio) > 0 && Number(fila.precio) < minimo
-        const avisoMinimo =
-          bajoMinimo && minimo !== null
-            ? `Por debajo del mínimo de ${dinero(moneda, minimo)}`
-            : undefined
+        const articulo = articulos.find((a) => String(a.articulo_id) === fila.articulo_id)
+        const unidades = articulo ? unidadesDeVenta(articulo) : []
+        const hayLista = precioDeLista(precios, fila.articulo_id, fila.unidad) !== undefined
+        const lista = listaDe(fila)
+        const deRomana = claveDeRomana === fila.clave
+        const cantidad = deRomana ? String(Math.round(toneladasDeRomana! * 1e4) / 1e4) : fila.cantidad
 
+        const minimo = minimoEnMoneda(fila)
+        const bajoMinimo =
+          fila.condicion === 'DESCUENTO' &&
+          minimo !== null &&
+          Number(fila.precio) > 0 &&
+          Number(fila.precio) < minimo
+
+        const patio = articulo ? cantidadDelPatio({ ...fila, cantidad }, precios) : null
         const disponible = fila.articulo_id ? existencias?.[Number(fila.articulo_id)] : undefined
-        const sinMaterial =
-          disponible !== undefined && Number(fila.cantidad) > 0 && Number(fila.cantidad) > disponible
+        const sinMaterial = disponible !== undefined && patio !== null && patio > disponible
+        const convertida = articulo && fila.unidad && fila.unidad !== articulo.unidad_articulo
 
-        const total = (Number(fila.cantidad) || 0) * (Number(fila.precio) || 0)
+        const total = (Number(cantidad) || 0) * (Number(fila.precio) || 0)
+        const falta = faltaEnFila({ ...fila, cantidad }, precios)
+
+        const opcionesCondicion: { valor: CondicionVenta; etiqueta: string }[] = hayLista
+          ? [
+              {
+                valor: 'LISTA',
+                etiqueta: `De lista${lista !== null ? ` · ${dinero(moneda, lista)} por ${fila.unidad}` : ''}`,
+              },
+              { valor: 'DESCUENTO', etiqueta: 'Con descuento sobre la lista' },
+              { valor: 'SIN_CARGO', etiqueta: 'Sin cargo' },
+            ]
+          : [
+              { valor: 'ACORDADO', etiqueta: 'Precio acordado (no hay lista)' },
+              { valor: 'SIN_CARGO', etiqueta: 'Sin cargo' },
+            ]
 
         return (
           <div
             key={fila.clave}
             className="border-hairline rounded-card grid gap-3 border p-3 sm:grid-cols-12"
           >
-            <div className="sm:col-span-12">
+            <div className="sm:col-span-8">
               <Select
                 label={`Renglón ${indice + 1}`}
                 vacio="Elige el producto"
                 value={fila.articulo_id}
-                onChange={(e) => elegir(fila.clave, e.target.value)}
-                opciones={opciones}
+                onChange={(e) => elegirArticulo(fila.clave, e.target.value)}
+                opciones={articulos.map((p) => ({
+                  valor: String(p.articulo_id),
+                  etiqueta: `${p.codigo} · ${p.nombre}`,
+                }))}
                 hint={
-                  disponible !== undefined
-                    ? `Hay ${disponible.toLocaleString('es-VE')} ${fila.unidad || ''} en el patio elegido.`
+                  disponible !== undefined && articulo
+                    ? `Hay ${disponible.toLocaleString('es-VE')} ${articulo.unidad_articulo} en el patio elegido.`
+                    : undefined
+                }
+              />
+            </div>
+
+            <div className="sm:col-span-4">
+              <Select
+                label="Se vende por"
+                value={fila.unidad}
+                disabled={!articulo}
+                onChange={(e) => elegirUnidad(fila, e.target.value)}
+                opciones={
+                  unidades.length > 0
+                    ? unidades.map((u) => ({
+                        valor: u,
+                        etiqueta: precioDeLista(precios, fila.articulo_id, u)
+                          ? u
+                          : `${u} · sin precio de lista`,
+                      }))
+                    : [{ valor: '', etiqueta: '—' }]
+                }
+                hint={
+                  articulo && unidades.length === 1 && articulo.categoria === 'PRODUCTO'
+                    ? 'Sin densidad en el catálogo solo se vende en su unidad.'
                     : undefined
                 }
               />
@@ -117,27 +220,50 @@ export function Renglones({ filas, onCambiar, precios, moneda, existencias }: Pr
 
             <div className="sm:col-span-4">
               <Input
-                label="Cantidad"
+                label={`Cantidad${fila.unidad ? ` (${fila.unidad})` : ''}`}
                 type="number"
                 min="0"
                 step="0.01"
                 inputMode="decimal"
-                value={fila.cantidad}
+                value={cantidad}
+                disabled={deRomana}
                 onChange={(e) => cambiar(fila.clave, { cantidad: e.target.value })}
                 error={sinMaterial ? 'No hay tanto en el patio' : undefined}
+                hint={
+                  deRomana
+                    ? 'Las toneladas del ticket de romana.'
+                    : convertida && patio !== null && existencias
+                      ? `Salen del patio unos ${patio.toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${articulo!.unidad_articulo}, estimado con ${Number(articulo!.densidad_ton_m3).toLocaleString('es-VE')} t/m³.`
+                      : undefined
+                }
               />
             </div>
 
             <div className="sm:col-span-4">
-              <Input
-                label={`Precio por ${fila.unidad || 'unidad'}`}
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                value={fila.precio}
-                onChange={(e) => cambiar(fila.clave, { precio: e.target.value })}
-                hint={avisoMinimo}
+              <Select
+                label="A qué precio sale"
+                vacio={fila.articulo_id ? 'Elige la condición' : '—'}
+                value={fila.condicion}
+                disabled={!fila.articulo_id}
+                onChange={(e) =>
+                  cambiar(fila.clave, {
+                    condicion: e.target.value as FilaRenglon['condicion'],
+                    precio: e.target.value === 'ACORDADO' ? '' : fila.precio,
+                  })
+                }
+                opciones={opcionesCondicion}
+                error={
+                  fila.condicion === 'SIN_CARGO' && !puedeRegalar
+                    ? 'Sin cargo lo autoriza quien pueda vender bajo el mínimo, y no tienes esa casilla.'
+                    : undefined
+                }
+                hint={
+                  fila.condicion
+                    ? fila.condicion === 'LISTA' && lista === null && hayLista
+                      ? 'La lista está en otra moneda: la cifra la pone la base al guardar.'
+                      : CONDICION_VENTA[fila.condicion].ayuda
+                    : undefined
+                }
               />
             </div>
 
@@ -157,15 +283,87 @@ export function Renglones({ filas, onCambiar, precios, moneda, existencias }: Pr
               </Button>
             </div>
 
-            <label className="text-ink/60 flex cursor-pointer items-center gap-2 text-xs select-none sm:col-span-12">
-              <input
-                type="checkbox"
-                className="accent-royal-600 size-3.5"
-                checked={fila.exento}
-                onChange={(e) => cambiar(fila.clave, { exento: e.target.checked })}
-              />
-              Exento de IVA
-            </label>
+            {fila.condicion === 'DESCUENTO' ? (
+              <>
+                <div className="sm:col-span-4">
+                  <Input
+                    label="Descuento"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={fila.descuento}
+                    onChange={(e) => cambiar(fila.clave, { descuento: e.target.value })}
+                  />
+                </div>
+                <div className="sm:col-span-4">
+                  <Select
+                    label="En"
+                    value={fila.descuentoEn}
+                    onChange={(e) =>
+                      cambiar(fila.clave, {
+                        descuentoEn: e.target.value as FilaRenglon['descuentoEn'],
+                      })
+                    }
+                    opciones={[
+                      { valor: 'PORCENTAJE', etiqueta: 'Porcentaje de la lista' },
+                      { valor: 'MONTO', etiqueta: `${moneda} menos por ${fila.unidad || 'unidad'}` },
+                    ]}
+                  />
+                </div>
+                <div className="flex items-end sm:col-span-4">
+                  <p className="text-ink/60 text-sm">
+                    {Number(fila.precio) > 0 && lista !== null
+                      ? `Queda en ${dinero(moneda, fila.precio)} por ${fila.unidad}, de ${dinero(moneda, lista)}.`
+                      : 'Escribe el descuento para ver en cuánto queda.'}
+                    {bajoMinimo ? (
+                      <span className="text-warning block text-xs">
+                        Por debajo del mínimo de {dinero(moneda, minimo!)}: lo autoriza quien pueda
+                        vender bajo el mínimo.
+                      </span>
+                    ) : null}
+                  </p>
+                </div>
+              </>
+            ) : null}
+
+            {fila.condicion === 'SIN_CARGO' ? (
+              <div className="sm:col-span-12">
+                <Input
+                  label="Por qué sale sin cargo"
+                  value={fila.motivo}
+                  onChange={(e) => cambiar(fila.clave, { motivo: e.target.value })}
+                  hint="Queda escrito en el renglón y en el papel."
+                />
+              </div>
+            ) : null}
+
+            {fila.condicion === 'ACORDADO' ? (
+              <div className="sm:col-span-4">
+                <Input
+                  label={`Precio acordado por ${fila.unidad || 'unidad'}`}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={fila.precio}
+                  onChange={(e) => cambiar(fila.clave, { precio: e.target.value })}
+                />
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-12">
+              <label className="text-ink/60 flex cursor-pointer items-center gap-2 text-xs select-none">
+                <input
+                  type="checkbox"
+                  className="accent-royal-600 size-3.5"
+                  checked={fila.exento}
+                  onChange={(e) => cambiar(fila.clave, { exento: e.target.checked })}
+                />
+                Exento de IVA
+              </label>
+              {falta && fila.articulo_id ? <p className="text-warning text-xs">{falta}</p> : null}
+            </div>
           </div>
         )
       })}

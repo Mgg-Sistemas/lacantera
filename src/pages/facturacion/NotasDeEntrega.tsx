@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMonedasUsables } from '@/lib/api/tasas'
+import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
 import { Printer, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -38,7 +38,18 @@ import {
   numeración y deja a alguien debiendo, no porque su formulario sea otro.
 */
 import { Renglones } from '@/pages/ventas/Renglones'
-import { aRenglones, filaVacia, gravadoDe, subtotalDe, type FilaRenglon } from '@/pages/ventas/filas'
+import {
+  aRenglones,
+  conRomana,
+  faltaEnFila,
+  filaVacia,
+  gravadoDe,
+  m3EnCamion,
+  renglonEnPalabras,
+  repreciar,
+  subtotalDe,
+  type FilaRenglon,
+} from '@/pages/ventas/filas'
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
 import { CasillaIva } from '@/pages/ventas/CasillaIva'
 import { useIvaPorDefecto } from '@/pages/ventas/ivaPorDefecto'
@@ -66,6 +77,7 @@ export function NotasDeEntrega() {
   const { data: yo } = useMiPerfil()
   const despachar = useDespachar()
   const anular = useAnularNota()
+  const { data: tasaHoy } = useTasaVigente()
   /* La nota es de Facturación también en la base desde el 16/09/2026: despachar
      pide Facturación en escritura y anular, total. Sin eso no se enseña el
      botón que la base iba a rechazar. */
@@ -104,6 +116,16 @@ export function NotasDeEntrega() {
   const ticketsLibres = (tickets ?? []).filter((t) => t.tipo === 'SALIDA')
 
   /*
+    Con el ticket elegido de la báscula, un solo material del patio vendido en
+    toneladas lleva las toneladas del ticket: la base las pone así al guardar, y
+    aquí se enseña lo mismo antes. Los pesos tecleados a mano no cuentan: no
+    salen de la báscula.
+  */
+  const ticketElegido = ticketsLibres.find((t) => String(t.id) === ticketId) ?? null
+  const toneladasDeRomana = ticketElegido ? Number(ticketElegido.peso_neto) / 1000 : null
+  const filasEfectivas = conRomana(filas, precios ?? [], toneladasDeRomana)
+
+  /*
     LA CAPACIDAD DEL CAMIÓN, CONTRASTADA CON LO QUE SE VA A CARGAR
 
     Es la razón de que exista el catálogo de vehículos. La cantera despacha en
@@ -116,17 +138,17 @@ export function NotasDeEntrega() {
     para algo legítimo; callarlo dejaría pasar el error de tecleo. El aviso es
     la única de las tres opciones que respeta las dos situaciones.
 
-    Solo cuenta los renglones en M³. Un renglón en sacos o en unidades no ocupa
-    la volqueta del mismo modo y sumarlo daría un número sin sentido.
+    Solo cuenta lo que el patio lleva en M³, también cuando se vende en
+    toneladas: esas se pasan a metros con la densidad. Un renglón en sacos o en
+    unidades no ocupa la volqueta del mismo modo y sumarlo daría un número sin
+    sentido.
   */
   const porPlaca = (placa: string) =>
     (vehiculos ?? []).find((v) => v.placa === placa.trim().toUpperCase().replace(/\s+/g, ''))
 
   const vehiculoElegido = (vehiculos ?? []).find((v) => String(v.id) === vehiculoId) ?? null
 
-  const m3EnLaCarga = filas
-    .filter((f) => f.unidad === 'M3')
-    .reduce((suma, f) => suma + Number(f.cantidad || 0), 0)
+  const m3EnLaCarga = m3EnCamion(filasEfectivas, precios ?? [])
 
   const excedeCapacidad =
     vehiculoElegido !== null && m3EnLaCarga > Number(vehiculoElegido.capacidad_m3)
@@ -144,11 +166,18 @@ export function NotasDeEntrega() {
   // nota de entrega de un cliente exento decía 0 en pantalla y 16 en el libro.
   const alicuotaVigente = useAlicuotaIva()
   const alicuota = cliente?.exento_iva || !conIva ? 0 : alicuotaVigente
-  const subtotal = subtotalDe(filas)
-  const gravado = gravadoDe(filas)
+  const subtotal = subtotalDe(filasEfectivas)
+  const gravado = gravadoDe(filasEfectivas)
   const base = gravado + (Number(flete) || 0)
   const iva = (base * alicuota) / 100
   const total = subtotal + (Number(flete) || 0) + iva
+  const incompletas = filasEfectivas.some((f) => faltaEnFila(f, precios ?? []) !== null)
+
+  // La lista en bolívares no es el mismo número que en dólares.
+  const cambiarMoneda = (nueva: string) => {
+    setMoneda(nueva)
+    setFilas((actuales) => repreciar(actuales, precios ?? [], nueva, Number(tasaHoy?.tasa ?? 0)))
+  }
 
   const limpiar = () => {
     setClienteId('')
@@ -196,6 +225,7 @@ export function NotasDeEntrega() {
         tasaUsd: n.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
+          detalle: renglonEnPalabras(r, n.moneda) || null,
           cantidad: r.cantidad,
           unidad: r.unidad,
           precio_unitario: r.precio_unitario,
@@ -348,13 +378,14 @@ export function NotasDeEntrega() {
                   despachar.isPending ||
                   !clienteId ||
                   !almacenId ||
-                  aRenglones(filas).length === 0
+                  incompletas ||
+                  aRenglones(filasEfectivas).length === 0
                 }
                 onClick={async () => {
                   await despachar.mutateAsync({
                     cliente_id: Number(clienteId),
                     almacen_id: Number(almacenId),
-                    renglones: aRenglones(filas),
+                    renglones: aRenglones(filasEfectivas),
                     moneda,
                     alicuota_iva: alicuota,
                     vehiculo: vehiculo || null,
@@ -386,7 +417,7 @@ export function NotasDeEntrega() {
                 onCambio={(v) => {
                   setClienteId(v)
                   const c = clientes?.find((x) => String(x.id) === v)
-                  if (c) setMoneda(c.moneda_preferida)
+                  if (c) cambiarMoneda(c.moneda_preferida)
                 }}
                 opciones={(clientes ?? []).map((c) => ({
                   valor: String(c.id),
@@ -397,7 +428,7 @@ export function NotasDeEntrega() {
             <Select
               label="Moneda"
               value={moneda}
-              onChange={(e) => setMoneda(e.target.value)}
+              onChange={(e) => cambiarMoneda(e.target.value)}
               opciones={monedas.data ?? []}
             />
             <div className="sm:col-span-3">
@@ -421,13 +452,15 @@ export function NotasDeEntrega() {
               precios={precios ?? []}
               moneda={moneda}
               existencias={almacenId ? porArticulo : undefined}
+              toneladasDeRomana={toneladasDeRomana}
             />
           </div>
 
           <div className="border-hairline rounded-card mt-4 border border-dashed p-3">
             <p className="text-ink/60 mb-3 text-xs">
-              Datos del camión y de la romana. El peso no cambia lo que se factura: es la prueba
-              del día que alguien discuta la cantidad.
+              Datos del camión y de la romana. Si se vende en metros cúbicos, el peso no cambia lo
+              que se factura: es la prueba del día que alguien discuta la cantidad. Si se vende un
+              solo material en toneladas, las toneladas son las del ticket.
             </p>
 
             {/* El pesaje y la guía se eligen de lo que la garita ya registró.

@@ -28,6 +28,7 @@ import {
   type FacturaVenta,
 } from '@/lib/api/facturacion'
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
+import { renglonEnPalabras } from '@/pages/ventas/filas'
 import { useMetodosPago, nombreDe, opcionesDe } from '@/lib/api/metodosPago'
 
 const TONO: Record<string, 'royal' | 'success' | 'neutral'> = {
@@ -150,6 +151,7 @@ export function Facturacion() {
         tasaUsd: f.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
+          detalle: renglonEnPalabras(r, f.moneda) || null,
           cantidad: r.cantidad,
           unidad: r.unidad,
           precio_unitario: r.precio_unitario,

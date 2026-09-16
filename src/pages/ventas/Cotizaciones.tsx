@@ -15,6 +15,7 @@ import { Visor } from '@/components/Visor'
 import { dinero, documento, fecha } from '@/lib/formato'
 import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
+import { useTasaVigente } from '@/lib/api/tasas'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
@@ -25,9 +26,19 @@ import {
   usePrecios,
   useRenglones,
   type CotizacionVenta,
+  type RenglonGuardado,
 } from '@/lib/api/ventas'
 import { Renglones } from './Renglones'
-import { aRenglones, filaVacia, gravadoDe, subtotalDe, type FilaRenglon } from './filas'
+import {
+  aRenglones,
+  faltaEnFila,
+  filaVacia,
+  gravadoDe,
+  renglonEnPalabras,
+  repreciar,
+  subtotalDe,
+  type FilaRenglon,
+} from './filas'
 import { CasillaIva } from './CasillaIva'
 import { useIvaPorDefecto } from './ivaPorDefecto'
 
@@ -54,6 +65,7 @@ export function Cotizaciones() {
   const { data: yo } = useMiPerfil()
   const crear = useCrearCotizacion()
   const cerrar = useCerrarCotizacion()
+  const { data: tasaHoy } = useTasaVigente()
 
   const [nueva, setNueva] = useState(false)
   const [detalle, setDetalle] = useState<CotizacionVenta | null>(null)
@@ -62,7 +74,6 @@ export function Cotizaciones() {
   const [clienteId, setClienteId] = useState('')
   const [moneda, setMoneda] = useState('USD')
   const [validez, setValidez] = useState('15')
-  const [descuento, setDescuento] = useState('')
   const [flete, setFlete] = useState('')
   const [observacion, setObservacion] = useState('')
   const [filas, setFilas] = useState<FilaRenglon[]>([filaVacia()])
@@ -89,19 +100,29 @@ export function Cotizaciones() {
   */
   const alicuotaVigente = useAlicuotaIva()
   const alicuota = cliente?.exento_iva || !conIva ? 0 : alicuotaVigente
+  /*
+    SIN DESCUENTO GLOBAL. El descuento va en cada renglón, dicho sobre la lista:
+    dos maneras de descontar en el mismo papel dejaban sin saber de qué precio
+    salía cada cosa. La columna del documento se queda para lo ya emitido.
+  */
   const subtotal = subtotalDe(filas)
   const gravado = gravadoDe(filas)
-  const baseDescuento = subtotal > 0 ? (Number(descuento) || 0) * (gravado / subtotal) : 0
-  const base = Math.max(gravado - baseDescuento, 0) + (Number(flete) || 0)
+  const base = gravado + (Number(flete) || 0)
   const iva = (base * alicuota) / 100
-  const total = subtotal - (Number(descuento) || 0) + (Number(flete) || 0) + iva
+  const total = subtotal + (Number(flete) || 0) + iva
+  const incompletas = filas.some((f) => faltaEnFila(f, precios ?? []) !== null)
+
+  // La lista en bolívares no es el mismo número que en dólares.
+  const cambiarMoneda = (nueva: string) => {
+    setMoneda(nueva)
+    setFilas((actuales) => repreciar(actuales, precios ?? [], nueva, Number(tasaHoy?.tasa ?? 0)))
+  }
 
   const limpiar = () => {
     setConIva(ivaPorDefecto)
     setClienteId('')
     setMoneda('USD')
     setValidez('15')
-    setDescuento('')
     setFlete('')
     setObservacion('')
     setFilas([filaVacia()])
@@ -129,6 +150,7 @@ export function Cotizaciones() {
         tasaUsd: q.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
+          detalle: renglonEnPalabras(r, q.moneda) || null,
           cantidad: r.cantidad,
           unidad: r.unidad,
           precio_unitario: r.precio_unitario,
@@ -236,7 +258,7 @@ export function Cotizaciones() {
             limpiar()
           }}
           titulo="Nueva cotización"
-          descripcion="El precio sale de la lista y se puede ajustar. La tasa queda congelada en el documento."
+          descripcion="Cada renglón dice a qué precio sale: de lista, con descuento, sin cargo o acordado. La tasa queda congelada en el documento."
           acciones={
             <>
               <Button
@@ -249,7 +271,9 @@ export function Cotizaciones() {
                 Cancelar
               </Button>
               <Button
-                disabled={crear.isPending || !clienteId || aRenglones(filas).length === 0}
+                disabled={
+                  crear.isPending || !clienteId || incompletas || aRenglones(filas).length === 0
+                }
                 onClick={async () => {
                   await crear.mutateAsync({
                     cliente_id: Number(clienteId),
@@ -257,7 +281,6 @@ export function Cotizaciones() {
                     moneda,
                     alicuota_iva: alicuota,
                     validez_dias: Number(validez) || 15,
-                    descuento: Number(descuento) || 0,
                     flete: Number(flete) || 0,
                     observacion: observacion || null,
                   })
@@ -279,7 +302,7 @@ export function Cotizaciones() {
                 onCambio={(v) => {
                   setClienteId(v)
                   const c = clientes?.find((x) => String(x.id) === v)
-                  if (c) setMoneda(c.moneda_preferida)
+                  if (c) cambiarMoneda(c.moneda_preferida)
                 }}
                 opciones={(clientes ?? []).map((c) => ({
                   valor: String(c.id),
@@ -290,7 +313,7 @@ export function Cotizaciones() {
             <Select
               label="Moneda"
               value={moneda}
-              onChange={(e) => setMoneda(e.target.value)}
+              onChange={(e) => cambiarMoneda(e.target.value)}
               opciones={monedas.data ?? []}
             />
           </div>
@@ -304,22 +327,13 @@ export function Cotizaciones() {
             />
           </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Input
               label="Válida por (días)"
               type="number"
               min="1"
               value={validez}
               onChange={(e) => setValidez(e.target.value)}
-            />
-            <Input
-              label="Descuento"
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              value={descuento}
-              onChange={(e) => setDescuento(e.target.value)}
             />
             <Input
               label="Flete"
@@ -350,7 +364,7 @@ export function Cotizaciones() {
             <Totales
               moneda={moneda}
               subtotal={subtotal}
-              descuento={Number(descuento) || 0}
+              descuento={0}
               flete={Number(flete) || 0}
               alicuota={alicuota}
               iva={iva}
@@ -522,15 +536,7 @@ export function TablaRenglones({
   cargando,
 }: {
   moneda: string
-  renglones: {
-    id: number
-    descripcion: string
-    cantidad: string
-    unidad: string
-    precio_unitario: string
-    subtotal: string
-    exento_iva: boolean
-  }[]
+  renglones: RenglonGuardado[]
   cargando: boolean
 }) {
   if (cargando) return <Cargando texto="Trayendo los renglones…" />
@@ -557,6 +563,9 @@ export function TablaRenglones({
                     <Chip tone="neutral" className="ml-2">
                       Exento
                     </Chip>
+                  ) : null}
+                  {renglonEnPalabras(r, moneda) ? (
+                    <span className="text-ink/50 block text-xs">{renglonEnPalabras(r, moneda)}</span>
                   ) : null}
                 </td>
                 <td className="tabular text-ink/70 py-2 text-right">
