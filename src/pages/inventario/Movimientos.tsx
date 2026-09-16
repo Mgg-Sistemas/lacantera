@@ -99,6 +99,18 @@ export function Movimientos() {
       // Con número de nota se trae la nota entera; sin él, este renglón solo.
       const lineas = m.nota_salida ? await leerNotaDeSalida(m.nota_salida) : null
 
+      /*
+        La densidad, para la columna «Conversión». Esta nota se arma aquí y no en
+        `useNotaDeSalida`, así que tiene que pedirla ella: la primera vez se pidió
+        solo allá, y NS-2026-0009 abierta desde este libro seguía saliendo sin la
+        columna.
+      */
+      const densidades = await densidadesDeArticulos({
+        codigos: lineas && lineas.length > 0 ? lineas.map((l) => l.articulo_codigo) : [m.articulo?.codigo ?? ''],
+      })
+      const densidadDe = (codigo: string) =>
+        densidades.find((a) => a.codigo === codigo)?.densidad_ton_m3 ?? null
+
       setTituloDoc(`Nota de salida ${m.nota_salida ?? m.numero}`)
 
       const datos: DatosNotaDeSalida = {
@@ -118,6 +130,7 @@ export function Movimientos() {
                   unidad: l.unidad,
                   costoUnitarioUsd: l.costo_usd,
                   valorUsd: l.valor_usd,
+                  densidad: densidadDe(l.articulo_codigo),
                   // Una nota puede llevar material de varios sitios: el papel
                   // se parte en un bloque por almacén y necesita saberlo.
                   almacen: l.almacen,
@@ -130,6 +143,7 @@ export function Movimientos() {
                     unidad: m.unidad,
                     costoUnitarioUsd: m.costo_usd,
                     valorUsd: m.valor_usd,
+                    densidad: densidadDe(m.articulo?.codigo ?? ''),
                   },
                 ],
           empresa: {
