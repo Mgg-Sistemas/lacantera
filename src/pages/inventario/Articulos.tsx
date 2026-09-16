@@ -29,6 +29,7 @@ import {
   usePresentaciones,
   useUnidades,
 } from '@/lib/api/catalogo'
+import { useMovimientos } from '@/lib/api/inventario'
 
 const nuevo = {
   id: 0,
@@ -111,6 +112,18 @@ export function Articulos() {
   const [busqueda, setBusqueda] = useState('')
   const [categoria, setCategoria] = useState('')
   const [form, setForm] = useState<typeof nuevo | null>(null)
+
+  /*
+    La unidad con la que está guardado lo que se está corrigiendo, y si ya se
+    movió alguna vez. Las dos solo se piden con el formulario abierto: nadie
+    necesita doscientos movimientos para pintar el catálogo.
+  */
+  const unidadDeAntes = (data ?? []).find((a) => a.id === form?.id)?.unidad
+  const movimientosDelArticulo = useMovimientos(
+    { articuloId: form?.id ?? undefined },
+    Boolean(form?.id),
+  )
+  const seHaMovido = (movimientosDelArticulo.data?.length ?? 0) > 0
   /*
     LO QUE EL PANEL DE ABAJO YA DECLARO.
 
@@ -497,6 +510,28 @@ export function Articulos() {
               onChange={(e) => setForm({ ...form, unidad: e.target.value })}
               opciones={(unidades ?? []).map((u) => ({ valor: u.codigo, etiqueta: u.nombre }))}
             />
+
+            {/*
+              CAMBIARLE LA UNIDAD A ALGO QUE YA SE MOVIÓ.
+
+              Christopher, 16/09/2026, con ARENA LAVADA delante —entró en UND y
+              salió en M3—: «sí, pero solo avisar». El movimiento guarda la
+              unidad del día que se escribió y la existencia suma cantidades sin
+              mirarla, así que a partir del cambio ese saldo mezcla dos medidas.
+
+              Avisa y deja pasar, que es lo que se pidió: a veces la unidad de
+              verdad cambió y lo que toca después es un conteo. La planilla, en
+              cambio, lo niega — y ahí sigue, porque una carga de cien filas no
+              se lee renglón a renglón.
+            */}
+            {form.id && unidadDeAntes && form.unidad !== unidadDeAntes && seHaMovido ? (
+              <p className="text-warning -mt-2 text-xs leading-relaxed">
+                Ojo: ya tiene movimientos anotados en {unidadDeAntes}. Esas cantidades seguirán
+                diciendo el número que se escribió, así que la existencia quedará sumando{' '}
+                {unidadDeAntes} con {form.unidad}. Si la unidad de verdad cambió, cuenta el
+                almacén después para dejar el saldo bueno.
+              </p>
+            ) : null}
             <Input
               label="Existencia mínima"
               type="number"

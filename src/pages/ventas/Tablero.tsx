@@ -71,7 +71,7 @@ const PASOS: Paso[] = [
     titulo: 'Se despacha',
     espera: 'notas despachadas',
     icono: Truck,
-    ruta: '/app/ventas/despachos',
+    ruta: '/app/facturacion/notas-entrega',
     accion: 'Despachar',
   },
   {
@@ -126,7 +126,7 @@ export function TableroVentas() {
         title="Ventas"
         description="Del pedido del cliente hasta el cobro. Cada paso muestra qué está esperando ahí."
         actions={
-          <Link to="/app/ventas/despachos">
+          <Link to="/app/facturacion/notas-entrega">
             <Button icon={<Truck />}>Despachar material</Button>
           </Link>
         }

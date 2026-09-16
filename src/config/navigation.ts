@@ -265,7 +265,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/facturacion/notas-credito': 'nota de credito ncr devolucion descuento correccion',
   '/app/facturacion/por-cobrar': 'deuda deben clientes cartera vencida saldo cobranza',
   '/app/facturacion/libro-ventas': 'iva impuesto seniat fiscal debito',
-  '/app/ventas/despachos': 'nota de entrega ne remision',
+  '/app/facturacion/notas-entrega': 'nota de entrega ne remision despachar material',
   '/app/ventas/clientes': 'rif comprador',
   '/app/ventas/precios': 'tarifa lista precio',
   '/app/inventario/existencias': 'stock cuanto hay disponible sacar salida merma consumo motivo razon contar conteo ajuste',
@@ -625,7 +625,6 @@ export const navigation: NavSection[] = [
           { label: 'Clientes', to: '/app/ventas/clientes' },
           { label: 'Lista de precios', to: '/app/ventas/precios' },
           { label: 'Cotizaciones', to: '/app/ventas/cotizaciones' },
-          { label: 'Notas de entrega', to: '/app/ventas/despachos' },
         ],
       },
       {
@@ -647,6 +646,12 @@ export const navigation: NavSection[] = [
         label: 'Facturación',
         icon: Receipt,
         children: [
+          /*
+            La nota de entrega abre el ciclo que cierran las facturas: se
+            despacha, se factura lo despachado y se cobra. Estaba en Ventas, que
+            es donde se cotiza; Christopher la mudó aquí el 16/09/2026.
+          */
+          { label: 'Notas de entrega', to: '/app/facturacion/notas-entrega' },
           { label: 'Facturas', to: '/app/facturacion' },
           { label: 'Notas de crédito', to: '/app/facturacion/notas-credito' },
           { label: 'Cuentas por cobrar', to: '/app/facturacion/por-cobrar' },

@@ -534,8 +534,15 @@ export function useMovimientos(
     */
     tipos?: string[]
   } = {},
+  /*
+    Para quien solo quiere saber SI hay movimientos —el formulario del artículo,
+    antes de dejar cambiarle la unidad— y no quiere traerse doscientos mientras
+    nadie mira. Por defecto se pide, que es lo que hace el libro.
+  */
+  habilitado = true,
 ) {
   return useQuery({
+    enabled: habilitado,
     queryKey: ['movimientos', filtros],
     queryFn: async () => {
       let q = supabase

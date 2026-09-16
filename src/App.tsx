@@ -226,8 +226,8 @@ const PreciosVenta = pagina(() =>
 const CotizacionesVenta = pagina(() =>
   import('@/pages/ventas/Cotizaciones').then((m) => ({ default: m.Cotizaciones })),
 )
-const Despachos = pagina(() =>
-  import('@/pages/ventas/Despachos').then((m) => ({ default: m.Despachos })),
+const NotasDeEntrega = pagina(() =>
+  import('@/pages/facturacion/NotasDeEntrega').then((m) => ({ default: m.NotasDeEntrega })),
 )
 const Facturacion = pagina(() =>
   import('@/pages/facturacion/Facturacion').then((m) => ({ default: m.Facturacion })),
@@ -358,7 +358,13 @@ const paginas: Record<string, ReactNode> = {
   '/app/ventas/clientes': <ClientesVenta />,
   '/app/ventas/precios': <PreciosVenta />,
   '/app/ventas/cotizaciones': <CotizacionesVenta />,
-  '/app/ventas/despachos': <Despachos />,
+  /*
+    La nota de entrega vive en Facturación desde el 16/09/2026: gasta
+    numeración y deja a alguien debiendo. La dirección vieja sigue llevando
+    allí, que hay quien la tiene en marcadores.
+  */
+  '/app/ventas/despachos': <Navigate to="/app/facturacion/notas-entrega" replace />,
+  '/app/facturacion/notas-entrega': <NotasDeEntrega />,
   '/app/config': <TableroConfiguracion />,
   '/app/config/usuarios': <Usuarios />,
   '/app/inventario/articulos': <Articulos />,
