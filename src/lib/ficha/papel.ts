@@ -67,6 +67,28 @@ export const GRIS_SUAVE = '#a8a29e'
 export const FILA_ALTERNA = '#f7f4f1'
 export const HAIRLINE = '#e7e5e4'
 
+/*
+  LOS BORDES DE LA HOJA, CUANDO LA HOJA NO ES LA DE SIEMPRE
+
+  Todos los papeles del sistema son A4 vertical, y por eso el membrete, el título
+  y el pie leían los bordes de `hoja.ts` sin preguntar. El organigrama es el
+  primero apaisado, y lo pagó entero: la regla del membrete se quedaba a dos
+  tercios del ancho, la fecha de emisión se apretaba contra el nombre de la
+  empresa y el pie —a 265 mm de arriba en una hoja de 210— no se imprimía.
+  Christopher: «el membrete está cortado».
+
+  Quien no pasa bordes sigue teniendo los de siempre, al milímetro: los
+  papeles que ya existen no cambian.
+*/
+export interface Bordes {
+  izq: number
+  der: number
+  /** La línea base del pie. */
+  pie: number
+}
+
+export const BORDES_A4: Bordes = { izq: IZQ, der: DER, pie: PIE }
+
 /** Lo que un renglón de tabla necesita saber de su columna. */
 export interface Columna {
   titulo: string
@@ -147,14 +169,17 @@ export function membrete(
      * margen, como siempre.
      */
     desde?: number
+    /** Los bordes, si la hoja no es A4 vertical. */
+    bordes?: Bordes
   },
 ): number {
   const y = d.desde ?? ARRIBA
+  const { izq, der } = d.bordes ?? BORDES_A4
 
   // El logo, centrado con los tres renglones de texto que tiene al lado.
-  if (logo) doc.addImage(logo, 'PNG', IZQ, y - 2.5, 14, 14)
+  if (logo) doc.addImage(logo, 'PNG', izq, y - 2.5, 14, 14)
 
-  const TEXTO = logo ? IZQ + 17 : IZQ
+  const TEXTO = logo ? izq + 17 : izq
   const ANCHO_NOMBRE = logo ? 88 : 105
 
   /*
@@ -277,7 +302,7 @@ export function membrete(
     const choca = ocupado
       .filter((o) => Math.abs(o.base - alto) < 2.3)
       .reduce((max, o) => Math.max(max, o.hasta), TEXTO)
-    const hueco = Math.max(DER - choca - 3, 24)
+    const hueco = Math.max(der - choca - 3, 24)
 
     const base = i === 0 ? 9 : 7
     const minima = i === 0 ? 6.5 : 5.5
@@ -298,7 +323,7 @@ export function membrete(
 
     const anchoRotulo = doc.getTextWidth(rotulo)
     const texto = rotulo + ajustar(doc, valor, Math.max(hueco - anchoRotulo, 8))
-    doc.text(texto, DER, alto, { align: 'right' })
+    doc.text(texto, der, alto, { align: 'right' })
   })
 
   /*
@@ -311,7 +336,7 @@ export function membrete(
 
   // La regla de color, que es lo único teñido de la cabecera.
   doc.setDrawColor(MARCA).setLineWidth(0.8)
-  doc.line(IZQ, regla, DER, regla)
+  doc.line(izq, regla, der, regla)
 
   return regla
 }
@@ -323,7 +348,14 @@ export function membrete(
  * archiva de canto es lo que se lee al abrirlo. A la izquierda competía con el
  * nombre de la empresa, que está justo encima y es más grande.
  */
-export function tituloDocumento(doc: Doc, y: number, texto: string, color = ROTULO): number {
+export function tituloDocumento(
+  doc: Doc,
+  y: number,
+  texto: string,
+  color = ROTULO,
+  bordes: Bordes = BORDES_A4,
+): number {
+  const { izq, der } = bordes
   /*
     El título vive en su propia banda, entre dos rayas finas.
 
@@ -332,7 +364,7 @@ export function tituloDocumento(doc: Doc, y: number, texto: string, color = ROTU
     golpes —quién la emite, qué es, qué dice— en vez de como un bloque continuo.
   */
   doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
-  doc.line(IZQ, y + 3, DER, y + 3)
+  doc.line(izq, y + 3, der, y + 3)
 
   /*
     EL COLOR ES OPCIONAL Y CASI NUNCA SE USA.
@@ -345,9 +377,9 @@ export function tituloDocumento(doc: Doc, y: number, texto: string, color = ROTU
     perdido sin que nadie lo pidiera.
   */
   doc.setFont('helvetica', 'bold').setFontSize(13).setTextColor(color)
-  doc.text(texto.toUpperCase(), IZQ + ANCHO_UTIL / 2, y + 10.5, { align: 'center' })
+  doc.text(texto.toUpperCase(), (izq + der) / 2, y + 10.5, { align: 'center' })
 
-  doc.line(IZQ, y + 14, DER, y + 14)
+  doc.line(izq, y + 14, der, y + 14)
 
   return y + 21
 }
@@ -773,18 +805,19 @@ export function firmas(
  * documento no está armado no se sabe cuántas son. Dice de dónde salió el
  * papel: meses después, en una carpeta, es lo único que lo ata al sistema.
  */
-export function pieDePagina(doc: Doc, texto: string): void {
+export function pieDePagina(doc: Doc, texto: string, bordes: Bordes = BORDES_A4): void {
+  const { izq, der, pie } = bordes
   const paginas = doc.getNumberOfPages()
 
   for (let p = 1; p <= paginas; p++) {
     doc.setPage(p)
     doc.setDrawColor(HAIRLINE).setLineWidth(0.3)
-    doc.line(IZQ, PIE - 5, DER, PIE - 5)
+    doc.line(izq, pie - 5, der, pie - 5)
 
     doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS_SUAVE)
-    doc.text(texto, IZQ, PIE)
+    doc.text(texto, izq, pie)
     if (paginas > 1) {
-      doc.text(`Página ${p} de ${paginas}`, DER, PIE, { align: 'right' })
+      doc.text(`Página ${p} de ${paginas}`, der, pie, { align: 'right' })
     }
   }
 }

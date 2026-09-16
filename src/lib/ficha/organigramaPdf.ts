@@ -3,14 +3,15 @@ import type { ArchivoArmado } from '@/lib/ficha/armado'
 import {
   membrete,
   tituloDocumento,
-  lineaEmpresa,
   pieDePagina,
   fechaLarga,
   MARCA,
   ROTULO,
   TINTA,
   GRIS,
-  HAIRLINE,
+  GRIS_SUAVE,
+  FILA_ALTERNA,
+  type Bordes,
   type EmpresaPapel,
 } from '@/lib/ficha/papel'
 
@@ -27,14 +28,44 @@ import {
 
   POR QUÉ UN ÁRBOL TUMBADO
 
-  De arriba abajo, un organigrama de cinco niveles pide una hoja cada vez más
+  De arriba abajo, un organigrama de siete niveles pide una hoja cada vez más
   ancha y acaba con las cajas del último nivel del tamaño de un sello. Tumbado
   —la raíz a la izquierda y las ramas creciendo a la derecha— el ancho lo marcan
   los NIVELES, que son pocos y no crecen, y el alto lo marcan las hojas, que es
-  lo que de verdad crece cuando entra gente. Con eso cabe en apaisado y se lee.
+  lo que de verdad crece cuando entra gente.
 
-  Cada caja dice el nombre y, debajo, quién lo ocupa o cuántos puestos tiene. Lo
-  apagado no sale: un organigrama es lo que la empresa es hoy.
+  LO QUE FALLÓ LA PRIMERA VEZ, Y POR QUÉ
+
+  Christopher, al abrir la primera versión: «las líneas conectoras no se ven, el
+  membrete está cortado, los núcleos no tienen el nombre de algún responsable
+  (si lo hay), los títulos de los núcleos están cortados o incompletos». Las
+  cuatro cosas eran ciertas y tenían una causa cada una:
+
+    - Las líneas iban en el gris de las rayas finas de tabla, que en blanco es
+      casi blanco. Van ahora en el gris de las notas, y más gruesas.
+
+    - El membrete y el pie leían los bordes de la hoja vertical: en una
+      apaisada la regla se quedaba a dos tercios y el pie caía fuera del papel.
+      Ahora se les pasan los bordes de ESTA hoja.
+
+    - Cada fila medía lo mismo, repartiendo el alto de la hoja entre las hojas
+      del árbol; con diecisiete filas la caja no llegaba a los nueve milímetros
+      y el titular no cabía, así que no se pintaba. Y el nombre se cortaba en
+      su primer renglón: «AYUDANTES DE», «COORDINADOR DE».
+
+  Así que se invierte el orden: primero se mide cada caja con TODO lo que tiene
+  que decir —el nombre entero, partido en los renglones que haga falta, y quién
+  la ocupa—, y después la hoja crece hasta que quepa. Un organigrama que no cabe
+  en A4 sale en una hoja más alta: se imprime ajustado a la página y se lee
+  entero. Encoger la letra hasta que quepa era la otra opción, y con veinte
+  cajas más dejaría un papel que no lee nadie.
+
+  CADA CAJA DICE QUIÉN, O DICE QUE NO HAY NADIE
+
+  Una unidad sin responsable escrito dice «Sin responsable asignado». Dejar el
+  hueco en blanco obliga a adivinar si falta el dato o si falló el papel, y la
+  norma es no dejar suponer. Lo apagado no sale: un organigrama es lo que la
+  empresa es hoy.
 */
 
 export interface NodoParaPapel {
@@ -54,27 +85,77 @@ export interface DatosOrganigrama {
   momento: Date
 }
 
-/** Milímetros. El alto de fila se ajusta a lo que haya; el resto es fijo. */
-const IZQ = 12
-const SEPARACION = 6
-const ALTO_MINIMO = 7
-const ALTO_MAXIMO = 14
+/** Milímetros. */
+const MARGEN = 12
+const SEPARACION = 8
+const HUECO_ENTRE_CAJAS = 3
+const HUECO_ENTRE_RAICES = 8
+const ANCHO_MINIMO_CAJA = 32
+const ANCHO_MAXIMO_CAJA = 56
+const ANCHO_A4 = 297
+const ALTO_A4 = 210
+/** Lo que ocupa el pie, desde el final del árbol hasta el borde. */
+const ESPACIO_DEL_PIE = 20
 
-interface Colocado extends NodoParaPapel {
+const RELLENO = 2.2
+const TALLA_NOMBRE = 7.5
+const RENGLON_NOMBRE = 3.1
+const SUBE_NOMBRE = 2.0
+const TALLA_DETALLE = 6.6
+const RENGLON_DETALLE = 2.8
+const SUBE_DETALLE = 1.8
+const ENTRE_NOMBRE_Y_DETALLE = 0.7
+const ALTO_MINIMO_CAJA = 9
+
+type Doc = import('jspdf').jsPDF
+
+interface Detalle {
+  texto: string
+  /** Lo que dice que falta va apagado, para que no se lea como un nombre. */
+  apagado: boolean
+}
+
+interface Caja {
+  nodo: NodoParaPapel
   nivel: number
-  /** Cuántas hojas cuelgan de él: es su altura en filas. */
-  filas: number
-  /** Fila donde se centra, en filas desde arriba. */
+  hijos: Caja[]
+  nombre: string[]
+  detalles: string[][]
+  apagados: boolean[]
+  alto: number
+  /** Alto de la caja con todo lo que cuelga de ella. */
+  rama: number
+  arriba: number
   centro: number
 }
 
-/**
- * Coloca el árbol: cada hoja ocupa una fila y cada padre se centra en las suyas.
- *
- * Es el reparto de toda la vida y no necesita más: con veinte nodos, calcular
- * posiciones «bonitas» cuesta más de lo que mejora.
- */
-function colocar(nodos: NodoParaPapel[]): Colocado[] {
+/** Qué se escribe debajo del nombre. */
+function detallesDe(n: NodoParaPapel): Detalle[] {
+  const titular = n.titular?.trim() || null
+
+  if (n.tipo === 'UNIDAD') {
+    return [
+      titular
+        ? { texto: `Responsable: ${titular}`, apagado: false }
+        : { texto: 'Sin responsable asignado', apagado: true },
+    ]
+  }
+
+  const detalles: Detalle[] = []
+  if (titular) detalles.push({ texto: `Titular: ${titular}`, apagado: false })
+  if (n.cuantos > 0) {
+    const puestos = `${n.cuantos} puesto${n.cuantos === 1 ? '' : 's'}`
+    detalles.push(
+      titular || n.cuantos > 1
+        ? { texto: puestos, apagado: false }
+        : { texto: `${puestos} · sin titular asignado`, apagado: true },
+    )
+  }
+  return detalles
+}
+
+/** Arma el árbol con lo vivo. Las raíces: sin padre, o con el padre apagado. */
+function armarArbol(nodos: NodoParaPapel[]): Caja[] {
   const vivos = nodos.filter((n) => n.activo)
   const hijosDe = new Map<number | null, NodoParaPapel[]>()
   for (const n of vivos) {
@@ -86,118 +167,219 @@ function colocar(nodos: NodoParaPapel[]): Colocado[] {
     lista.sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre, 'es'))
   }
 
-  const colocados: Colocado[] = []
-  let filaLibre = 0
+  const crear = (n: NodoParaPapel, nivel: number): Caja => ({
+    nodo: n,
+    nivel,
+    hijos: (hijosDe.get(n.id) ?? []).map((h) => crear(h, nivel + 1)),
+    nombre: [],
+    detalles: [],
+    apagados: [],
+    alto: 0,
+    rama: 0,
+    arriba: 0,
+    centro: 0,
+  })
 
-  const recorrer = (n: NodoParaPapel, nivel: number): Colocado => {
-    const hijos = hijosDe.get(n.id) ?? []
-    if (hijos.length === 0) {
-      const puesto: Colocado = { ...n, nivel, filas: 1, centro: filaLibre + 0.5 }
-      filaLibre += 1
-      colocados.push(puesto)
-      return puesto
-    }
-    const puestos = hijos.map((h) => recorrer(h, nivel + 1))
-    const primero = puestos[0]
-    const ultimo = puestos[puestos.length - 1]
-    const puesto: Colocado = {
-      ...n,
-      nivel,
-      filas: puestos.reduce((t, p) => t + p.filas, 0),
-      centro: (primero.centro + ultimo.centro) / 2,
-    }
-    colocados.push(puesto)
-    return puesto
-  }
-
-  // Las raíces son las que no tienen padre, o cuyo padre está apagado.
   const vivosPorId = new Set(vivos.map((n) => n.id))
-  for (const n of vivos) {
-    if (n.padre_id === null || !vivosPorId.has(n.padre_id)) recorrer(n, 0)
-  }
+  return vivos
+    .filter((n) => n.padre_id === null || !vivosPorId.has(n.padre_id))
+    .sort((a, b) => a.orden - b.orden)
+    .map((n) => crear(n, 0))
+}
 
-  return colocados
+const todas = (cajas: Caja[]): Caja[] => cajas.flatMap((c) => [c, ...todas(c.hijos)])
+
+/** Mide cada caja con su texto entero, partido al ancho que le toca. */
+function medir(doc: Doc, cajas: Caja[], anchoCaja: number) {
+  const dentro = anchoCaja - RELLENO * 2
+  for (const c of todas(cajas)) {
+    doc.setFont('helvetica', 'bold').setFontSize(TALLA_NOMBRE)
+    c.nombre = doc.splitTextToSize(c.nodo.nombre, dentro) as string[]
+
+    doc.setFont('helvetica', 'normal').setFontSize(TALLA_DETALLE)
+    const detalles = detallesDe(c.nodo)
+    c.detalles = detalles.map((d) => doc.splitTextToSize(d.texto, dentro) as string[])
+    c.apagados = detalles.map((d) => d.apagado)
+
+    const renglonesDeDetalle = c.detalles.reduce((t, r) => t + r.length, 0)
+    c.alto = Math.max(
+      ALTO_MINIMO_CAJA,
+      RELLENO * 2 +
+        c.nombre.length * RENGLON_NOMBRE +
+        (renglonesDeDetalle > 0 ? ENTRE_NOMBRE_Y_DETALLE + renglonesDeDetalle * RENGLON_DETALLE : 0) -
+        0.9,
+    )
+  }
+}
+
+/** El alto de cada rama: su caja, o lo que suman sus hijos, lo que sea mayor. */
+function medirRamas(c: Caja): number {
+  const hijos = c.hijos.map(medirRamas)
+  const deLosHijos = hijos.reduce((t, h) => t + h, 0) + HUECO_ENTRE_CAJAS * Math.max(0, hijos.length - 1)
+  c.rama = Math.max(c.alto, deLosHijos)
+  return c.rama
+}
+
+/**
+ * Coloca la rama empezando en `arriba`.
+ *
+ * Los hijos se apilan centrados en el alto de la rama, y el padre se centra
+ * entre el primero y el último: es el reparto de toda la vida y, con veinte
+ * cajas, no necesita más.
+ */
+function colocar(c: Caja, arriba: number) {
+  if (c.hijos.length === 0) {
+    c.arriba = arriba + (c.rama - c.alto) / 2
+  } else {
+    const deLosHijos =
+      c.hijos.reduce((t, h) => t + h.rama, 0) + HUECO_ENTRE_CAJAS * (c.hijos.length - 1)
+    let cursor = arriba + (c.rama - deLosHijos) / 2
+    for (const h of c.hijos) {
+      colocar(h, cursor)
+      cursor += h.rama + HUECO_ENTRE_CAJAS
+    }
+    const entreHijos = (c.hijos[0].centro + c.hijos[c.hijos.length - 1].centro) / 2
+    c.arriba = Math.min(Math.max(entreHijos - c.alto / 2, arriba), arriba + c.rama - c.alto)
+  }
+  c.centro = c.arriba + c.alto / 2
+}
+
+/** Membrete y título: lo que va encima del árbol. Devuelve dónde acaba. */
+function cabecera(doc: Doc, logo: string, d: DatosOrganigrama, bordes: Bordes): number {
+  let y = membrete(doc, logo, {
+    empresa: d.empresa,
+    datos: [['Emitido', fechaLarga(d.momento)]],
+    desde: MARGEN + 2,
+    bordes,
+  })
+  y = tituloDocumento(doc, y, 'Organigrama', undefined, bordes)
+
+  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
+  doc.text(
+    'Recuadro rojo con fondo: unidad o dependencia.  Recuadro gris: cargo.  Debajo del nombre, quién responde o lo ocupa, y cuántos puestos tiene.',
+    bordes.izq,
+    y - 2,
+  )
+  return y + 4
 }
 
 export async function armarOrganigrama(d: DatosOrganigrama): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
   const logo = await logoComoImagen()
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape', compress: true })
 
-  const ancho = doc.internal.pageSize.getWidth()
-  const alto = doc.internal.pageSize.getHeight()
+  const raices = armarArbol(d.nodos)
+  const niveles = Math.max(0, ...todas(raices).map((c) => c.nivel)) + 1
 
-  let y = membrete(doc, logo, {
-    empresa: d.empresa,
-    datos: [['Emitido', fechaLarga(d.momento)]],
+  const ancho = Math.max(
+    ANCHO_A4,
+    MARGEN * 2 + niveles * ANCHO_MINIMO_CAJA + (niveles - 1) * SEPARACION,
+  )
+  const anchoCaja = Math.min(
+    ANCHO_MAXIMO_CAJA,
+    (ancho - MARGEN * 2 - (niveles - 1) * SEPARACION) / niveles,
+  )
+
+  /*
+    PRIMERO SE MIDE, EN UNA HOJA DE BORRADOR.
+
+    jsPDF convierte cada coordenada con el alto de la hoja en el momento de
+    escribir, así que la hoja no se puede estirar después. Se mide en una hoja
+    de prueba —la cabecera y las cajas— y el papel de verdad nace ya del tamaño
+    que hace falta.
+  */
+  const borrador = new jsPDF({ unit: 'mm', format: [ancho, ALTO_A4], orientation: 'landscape' })
+  const bordesBorrador: Bordes = { izq: MARGEN, der: ancho - MARGEN, pie: ALTO_A4 - 10 }
+  const inicioDelArbol = cabecera(borrador, logo, d, bordesBorrador)
+
+  medir(borrador, raices, anchoCaja)
+  const altoDelArbol =
+    raices.reduce((t, r) => t + medirRamas(r), 0) + HUECO_ENTRE_RAICES * Math.max(0, raices.length - 1)
+
+  const alto = Math.max(ALTO_A4, inicioDelArbol + altoDelArbol + ESPACIO_DEL_PIE)
+  const bordes: Bordes = { izq: MARGEN, der: ancho - MARGEN, pie: alto - 10 }
+
+  const doc = new jsPDF({
+    unit: 'mm',
+    format: [ancho, alto],
+    orientation: ancho >= alto ? 'landscape' : 'portrait',
+    compress: true,
   })
-  y = tituloDocumento(doc, y, 'Organigrama')
-  y = lineaEmpresa(doc, y, `${d.empresa.razonSocial} · RIF ${d.empresa.rif}`)
+  cabecera(doc, logo, d, bordes)
 
-  const colocados = colocar(d.nodos)
-
-  if (colocados.length === 0) {
+  if (raices.length === 0) {
     doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(GRIS)
-    doc.text('El organigrama está vacío.', IZQ, y + 6)
+    doc.text('El organigrama está vacío.', bordes.izq, inicioDelArbol + 6)
   } else {
-    const niveles = Math.max(...colocados.map((n) => n.nivel)) + 1
-    const filas = Math.max(...colocados.map((n) => n.centro + 0.5))
-
-    const anchoUtil = ancho - IZQ * 2
-    const anchoCaja = (anchoUtil - SEPARACION * (niveles - 1)) / niveles
-    const altoDisponible = alto - y - 14
-    const altoFila = Math.min(ALTO_MAXIMO, Math.max(ALTO_MINIMO, altoDisponible / filas))
-    const altoCaja = altoFila - 2.5
-
-    const xDe = (nivel: number) => IZQ + nivel * (anchoCaja + SEPARACION)
-    const yDe = (centro: number) => y + 4 + centro * altoFila - altoCaja / 2
-
-    // Primero las líneas, para que las cajas queden encima y tapen los cruces.
-    doc.setDrawColor(HAIRLINE)
-    doc.setLineWidth(0.3)
-    for (const n of colocados) {
-      if (n.padre_id === null) continue
-      const padre = colocados.find((p) => p.id === n.padre_id)
-      if (!padre) continue
-
-      const xPadre = xDe(padre.nivel) + anchoCaja
-      const xHijo = xDe(n.nivel)
-      const yPadre = yDe(padre.centro) + altoCaja / 2
-      const yHijo = yDe(n.centro) + altoCaja / 2
-      const codo = xPadre + SEPARACION / 2
-
-      doc.line(xPadre, yPadre, codo, yPadre)
-      doc.line(codo, yPadre, codo, yHijo)
-      doc.line(codo, yHijo, xHijo, yHijo)
+    let cursor = inicioDelArbol
+    for (const r of raices) {
+      colocar(r, cursor)
+      cursor += r.rama + HUECO_ENTRE_RAICES
     }
 
-    for (const n of colocados) {
-      const x = xDe(n.nivel)
-      const caja = yDe(n.centro)
+    // Si sobran niveles de ancho, el árbol se centra en vez de quedarse pegado.
+    const usado = niveles * anchoCaja + (niveles - 1) * SEPARACION
+    const desde = bordes.izq + Math.max(0, (bordes.der - bordes.izq - usado) / 2)
+    const xDe = (nivel: number) => desde + nivel * (anchoCaja + SEPARACION)
+
+    const cajas = todas(raices)
+
+    // Primero las líneas, para que las cajas queden encima y tapen las puntas.
+    doc.setDrawColor(GRIS_SUAVE).setLineWidth(0.4)
+    for (const c of cajas) {
+      if (c.hijos.length === 0) continue
+      const salida = xDe(c.nivel) + anchoCaja
+      const codo = salida + SEPARACION / 2
+      const alturas = [c.centro, ...c.hijos.map((h) => h.centro)]
+
+      doc.line(salida, c.centro, codo, c.centro)
+      doc.line(codo, Math.min(...alturas), codo, Math.max(...alturas))
+      for (const h of c.hijos) doc.line(codo, h.centro, xDe(h.nivel), h.centro)
+    }
+
+    for (const c of cajas) {
+      const x = xDe(c.nivel)
 
       /*
-        La unidad lleva el borde de la casa y el cargo lo lleva suave: en un
-        vistazo se distingue una dependencia de un puesto sin leer una palabra.
+        La unidad lleva el borde de la casa y un fondo; el cargo, borde gris y
+        nada más. En un vistazo se distingue una dependencia de un puesto sin
+        leer una palabra, y la leyenda de arriba lo dice por si acaso.
       */
-      doc.setDrawColor(n.tipo === 'UNIDAD' ? MARCA : HAIRLINE)
-      doc.setLineWidth(n.tipo === 'UNIDAD' ? 0.5 : 0.3)
-      doc.roundedRect(x, caja, anchoCaja, altoCaja, 1.2, 1.2)
-
-      const dentro = anchoCaja - 4
-      doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(ROTULO)
-      const nombre = (doc.splitTextToSize(n.nombre, dentro) as string[])[0]
-      doc.text(nombre, x + 2, caja + (altoCaja > 9 ? 4 : altoCaja / 2 + 1))
-
-      const debajo = n.titular ?? (n.cuantos > 0 ? `${n.cuantos} puesto${n.cuantos === 1 ? '' : 's'}` : null)
-      if (debajo && altoCaja > 9) {
-        doc.setFont('helvetica', 'normal').setFontSize(6.5).setTextColor(TINTA)
-        const linea = (doc.splitTextToSize(debajo, dentro) as string[])[0]
-        doc.text(linea, x + 2, caja + 7.5)
+      if (c.nodo.tipo === 'UNIDAD') {
+        doc.setDrawColor(MARCA).setFillColor(FILA_ALTERNA).setLineWidth(0.5)
+        doc.roundedRect(x, c.arriba, anchoCaja, c.alto, 1.2, 1.2, 'FD')
+      } else {
+        doc.setDrawColor(GRIS_SUAVE).setFillColor('#FFFFFF').setLineWidth(0.35)
+        doc.roundedRect(x, c.arriba, anchoCaja, c.alto, 1.2, 1.2, 'FD')
       }
+
+      let linea = c.arriba + RELLENO + SUBE_NOMBRE
+      doc.setFont('helvetica', 'bold').setFontSize(TALLA_NOMBRE).setTextColor(ROTULO)
+      for (const renglon of c.nombre) {
+        doc.text(renglon, x + RELLENO, linea)
+        linea += RENGLON_NOMBRE
+      }
+
+      // `linea` quedó un renglón de nombre por debajo del último: de ahí al
+      // primer renglón de detalle se cambia la subida de una letra por la otra.
+      linea += ENTRE_NOMBRE_Y_DETALLE + SUBE_DETALLE - SUBE_NOMBRE
+      c.detalles.forEach((renglones, i) => {
+        doc
+          .setFont('helvetica', c.apagados[i] ? 'italic' : 'normal')
+          .setFontSize(TALLA_DETALLE)
+          .setTextColor(c.apagados[i] ? GRIS : TINTA)
+        for (const renglon of renglones) {
+          doc.text(renglon, x + RELLENO, linea)
+          linea += RENGLON_DETALLE
+        }
+      })
     }
   }
 
-  pieDePagina(doc, 'Organigrama · lo edita quien lleva la nómina; esta copia la puede sacar cualquiera.')
+  pieDePagina(
+    doc,
+    'Organigrama · generado por el sistema. Lo edita quien lleva la nómina; esta copia la puede sacar cualquiera.',
+    bordes,
+  )
 
   const blob = doc.output('blob')
   return { blob, nombre: `organigrama-${d.momento.toISOString().slice(0, 10)}.pdf` }

@@ -110,10 +110,10 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
           exige: 'ESCRITURA',
         },
         {
-          titulo: 'Sacar material',
-          detalle: 'Por consumo, merma u otra razón de la lista. Sale al costo promedio que tiene.',
+          titulo: 'Sacar o pedir material',
+          detalle: 'En Salidas y traslados, pestaña «Salidas»: pedir material o registrar una salida directa.',
           icono: PackageMinus,
-          a: '/app/inventario/existencias',
+          a: '/app/salidas/solicitudes',
           exige: 'ESCRITURA',
         },
         {

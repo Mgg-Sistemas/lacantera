@@ -693,9 +693,9 @@ export function Existencias() {
               <Button
                 variant="outline"
                 icon={<PackageMinus />}
-                onClick={() => void navegar('/app/salidas?sacar=1')}
+                onClick={() => void navegar('/app/salidas/solicitudes?sacar=1')}
               >
-                Registrar salida
+                Registrar salida directa
               </Button>
               {/*
                 EL TRASLADO, DESDE DONDE SE MIRA EL MATERIAL.
@@ -1023,7 +1023,7 @@ export function Existencias() {
                               icon={<PackageMinus />}
                               onClick={() =>
                                 void navegar(
-                                  `/app/salidas?sacar=1&articulo=${fila!.articulo_id}&almacen=${fila!.almacen_id}`,
+                                  `/app/salidas/solicitudes?sacar=1&articulo=${fila!.articulo_id}&almacen=${fila!.almacen_id}`,
                                 )
                               }
                             >
@@ -1134,7 +1134,7 @@ export function Existencias() {
         }}
         onSacar={(f) => {
           setDesglose(null)
-          void navegar(`/app/salidas?sacar=1&articulo=${f.articulo_id}&almacen=${f.almacen_id}`)
+          void navegar(`/app/salidas/solicitudes?sacar=1&articulo=${f.articulo_id}&almacen=${f.almacen_id}`)
         }}
         onContar={(f) => {
           setDesglose(null)
@@ -1161,10 +1161,10 @@ export function Existencias() {
         abierto={trasladando}
         onCerrar={() => setTrasladando(false)}
         origen={almacenId || undefined}
-        // El papel sale solo cuando el material se movió en el acto: una
-        // solicitud todavía no mueve nada, y su nota se saca al aceptarla.
+        // El papel sale cuando el material ya salió —enviado o directo—: un
+        // pedido todavía no mueve nada, y su nota sale al aprobarlo y enviarlo.
         onTrasladado={(t) => {
-          if (t.inmediato) void notaDeTraslado.abrirTraslado(t.id)
+          if (t.forma !== 'PEDIR') void notaDeTraslado.abrirTraslado(t.id)
         }}
       />
 

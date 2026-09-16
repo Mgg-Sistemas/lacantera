@@ -1755,7 +1755,13 @@ export function useTransferir() {
   —Administrador y Gerente general— puede hacer las dos cosas.
 
   Los estados se dicen como se leen en el patio: nadie dice «solicitud», dice
-  que está por aceptar.
+  que está pedido y que todavía no lo han enviado.
+
+  «ACEPTAR» Y «RECIBIR» YA NO SE DICEN ASÍ. Christopher, 16/09/2026: «no se
+  entiende… necesitamos no dejar asumir al usuario, mantener lo explícito como
+  norma». Aceptar un traslado era, en la práctica, aprobarlo y despacharlo; y
+  recibirlo, confirmar que llegó. Los botones, los estados y los errores de la
+  base dicen ahora eso mismo, con esas palabras.
 */
 export type EstadoTraslado = 'SOLICITUD' | 'ACEPTADA' | 'RECIBIDA' | 'CANCELADA'
 
@@ -1763,10 +1769,65 @@ export const ESTADO_TRASLADO: Record<
   EstadoTraslado,
   { texto: string; tono: 'warning' | 'royal' | 'success' | 'neutral' }
 > = {
-  SOLICITUD: { texto: 'Por aceptar', tono: 'warning' },
-  ACEPTADA: { texto: 'De camino', tono: 'royal' },
-  RECIBIDA: { texto: 'Recibido', tono: 'success' },
+  SOLICITUD: { texto: 'Pedido, sin enviar', tono: 'warning' },
+  ACEPTADA: { texto: 'En camino', tono: 'royal' },
+  RECIBIDA: { texto: 'Llegó', tono: 'success' },
   CANCELADA: { texto: 'Cancelado', tono: 'neutral' },
+}
+
+/*
+  TRES FORMAS DE MOVER MATERIAL, ELEGIDAS DELANTE.
+
+  Christopher, al ver «Nuevo traslado»: «si hago una solicitud, ¿es para pedir
+  material? ¿no puedo hacer una solicitud para entregar material?». No se podía:
+  el traslado solo sabía nacer pedido, y quien quería mandar material tenía que
+  pedírselo a sí mismo y aprobárselo. «Hacerlo ya» era una casilla que solo
+  aparecía a veces.
+
+  Ahora son tres opciones a la vista, y cada una dice quién hace qué. La base
+  sigue siendo quien decide: aquí solo se evita ofrecer lo que va a rechazar.
+*/
+export type FormaDeTraslado = 'PEDIR' | 'ENVIAR' | 'DIRECTO'
+
+export const FORMA_DE_TRASLADO: Record<
+  FormaDeTraslado,
+  { titulo: string; explica: string; boton: string; enLaLista: string }
+> = {
+  PEDIR: {
+    titulo: 'Pedir material de otro almacén',
+    explica:
+      'Queda pedido y todavía no se mueve nada. Lo aprueba y envía quien responde por el almacén de donde sale; quien responde por el de destino confirma que llegó.',
+    boton: 'Pedir traslado',
+    enLaLista: 'Pedido',
+  },
+  ENVIAR: {
+    titulo: 'Enviar material a otro almacén',
+    explica:
+      'Sale ahora de un almacén por el que respondes y queda «En camino». Quien responde por el de destino confirma que llegó.',
+    boton: 'Enviar ahora',
+    enLaLista: 'Enviado',
+  },
+  DIRECTO: {
+    titulo: 'Traslado directo',
+    explica:
+      'Sale y llega en este mismo momento, sin esperar a nadie. Solo si respondes por los dos almacenes, o eres administración.',
+    boton: 'Trasladar ahora',
+    enLaLista: 'Directo',
+  },
+}
+
+export const formaDelTraslado = (t: Pick<Traslado, 'inmediato' | 'enviado'>): FormaDeTraslado =>
+  t.inmediato ? 'DIRECTO' : t.enviado ? 'ENVIAR' : 'PEDIR'
+
+/** Lo que le falta a un traslado abierto, y a quién le toca. Null si ya terminó. */
+export function queFaltaAlTraslado(t: Traslado): string | null {
+  if (t.estado === 'SOLICITUD') {
+    return `Falta que lo apruebe y envíe quien responde por ${t.origen ?? 'el almacén de origen'}.`
+  }
+  if (t.estado === 'ACEPTADA') {
+    return `Falta que quien responde por ${t.destino ?? 'el almacén de destino'} confirme que llegó.`
+  }
+  return null
 }
 
 export interface Traslado {
@@ -1810,6 +1871,8 @@ export interface Traslado {
   mov_en_camino: number | null
   mov_llegada: number | null
   mov_vuelta: number | null
+  /** Nació enviado por quien responde por el origen, sin pedido previo. */
+  enviado: boolean
 }
 
 export function useTraslados() {
@@ -1861,10 +1924,10 @@ export function quePuedoHacer(t: Traslado, yo?: ComoActuoEnTraslados | null) {
 }
 
 /**
- * Pide un traslado, o lo hace en el acto.
+ * Pide, envía o hace directo un traslado.
  *
- * Devuelve el id del traslado. En el acto es aceptar y recibir a la vez, así
- * que solo lo puede quien responde por los dos sitios, o administración.
+ * Devuelve el id del traslado. Enviar lo puede quien responde por el origen;
+ * directo, quien responde por los dos sitios. Administración, las dos cosas.
  */
 export function useSolicitarTraslado() {
   return useAccionInventario(
@@ -1879,7 +1942,7 @@ export function useSolicitarTraslado() {
       presentacion?: string | null
       suelto?: number | null
       propietario?: string | null
-      inmediato: boolean
+      forma: FormaDeTraslado
     }) =>
       rpc<number>('solicitar_traslado', {
         p_origen_id: t.origen_id,
@@ -1892,7 +1955,8 @@ export function useSolicitarTraslado() {
         p_presentacion: t.presentacion || null,
         p_suelto: t.suelto ?? null,
         p_propietario: t.propietario ?? null,
-        p_inmediato: t.inmediato,
+        p_inmediato: t.forma === 'DIRECTO',
+        p_enviar: t.forma === 'ENVIAR',
       }),
   )
 }

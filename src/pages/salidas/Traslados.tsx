@@ -9,9 +9,12 @@ import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { useMisRoles } from '@/lib/api/catalogo'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import {
   ESTADO_TRASLADO,
+  FORMA_DE_TRASLADO,
+  formaDelTraslado,
+  queFaltaAlTraslado,
   quePuedoHacer,
   useAceptarTraslado,
   useCancelarTraslado,
@@ -48,9 +51,14 @@ import { useNotaDeTraslado } from './NotaDeTraslado'
   YA NO HAY «DESHACER». Lo pedido o lo que va de camino se cancela —y si ya
   salió, vuelve—; lo recibido se devuelve con un traslado de vuelta, que deja
   escrito que hubo ida y vuelta.
+
+  CADA FILA DICE CÓMO NACIÓ Y QUÉ LE FALTA. Christopher, 16/09/2026: «necesitamos
+  no dejar asumir al usuario, mantener lo explícito como norma». Un «Por
+  aceptar» a secas obligaba a saber de memoria quién acepta; ahora la fila dice
+  si fue pedido, enviado o directo, y qué falta y a quién le toca.
 */
 export function Traslados() {
-  const { puede } = useMisRoles()
+  const { puede } = useMisPermisos()
   const { data: traslados, isPending, error: fallo } = useTraslados()
   const { data: yo } = useComoActuoEnTraslados()
   const aceptar = useAceptarTraslado()
@@ -106,9 +114,9 @@ export function Traslados() {
     <>
       <PageHeader
         title="Traslados"
-        description="Material que cambia de sitio. Se pide, lo acepta quien responde por el sitio de donde sale y lo recibe quien responde por el de destino."
+        description="Material que cambia de almacén. Se pide, se envía o se hace directo; cada fila dice qué falta y a quién le toca."
         actions={
-          puede('ALMACEN') ? (
+          puede('SALIDAS', 'ESCRITURA') ? (
             <Button icon={<MoveRight className="size-[18px]" />} onClick={() => setAbierto(true)}>
               Nuevo traslado
             </Button>
@@ -136,11 +144,11 @@ export function Traslados() {
       ) : lista.length === 0 ? (
         <Vacio
           icono={<MoveRight className="size-6" />}
-          titulo={verTodos ? 'Todavía no se ha movido nada de sitio' : 'No hay traslados pendientes'}
+          titulo={verTodos ? 'Todavía no se ha movido nada de almacén' : 'No hay traslados pendientes'}
           descripcion={
             verTodos
-              ? 'Cuando alguien pida mover material de un sitio a otro, el traslado queda aquí con cada uno de sus pasos.'
-              : 'Nada espera a que lo acepten ni va de camino. Lo terminado está en «Todos».'
+              ? 'Cuando alguien pida, envíe o haga directo un traslado, queda aquí con cada uno de sus pasos.'
+              : 'Ningún pedido espera que lo envíen y nada va en camino. Lo terminado está en «Todos».'
           }
         />
       ) : (
@@ -152,7 +160,7 @@ export function Traslados() {
                 <th className="px-4 py-3 font-medium">Artículo</th>
                 <th className="px-4 py-3 text-right font-medium">Cantidad</th>
                 <th className="px-4 py-3 font-medium">Recorrido</th>
-                <th className="px-4 py-3 font-medium">Último paso</th>
+                <th className="px-4 py-3 font-medium">Qué pasó y qué falta</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -161,6 +169,7 @@ export function Traslados() {
                 const puedo = quePuedoHacer(t, yo)
                 const estado = ESTADO_TRASLADO[t.estado]
                 const paso = ultimoPaso(t)
+                const falta = queFaltaAlTraslado(t)
                 const ocupado = enCurso === t.id
                 return (
                   <tr key={t.id} className="hover:bg-ink/3 align-top">
@@ -169,6 +178,9 @@ export function Traslados() {
                       <div className="mt-1">
                         <Chip tone={estado.tono}>{estado.texto}</Chip>
                       </div>
+                      <span className="text-ink/45 mt-1 block text-2xs">
+                        {FORMA_DE_TRASLADO[formaDelTraslado(t)].enLaLista}
+                      </span>
                     </td>
                     <td className="text-ink/85 px-4 py-3">
                       {t.articulo ?? '—'}
@@ -190,6 +202,7 @@ export function Traslados() {
                       {t.estado === 'CANCELADA' && t.motivo_cancelacion ? (
                         <span className="text-ink/45 line-clamp-2 block">{t.motivo_cancelacion}</span>
                       ) : null}
+                      {falta ? <span className="text-warning mt-1 block">{falta}</span> : null}
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       {puedo.aceptar ? (
@@ -199,7 +212,7 @@ export function Traslados() {
                           disabled={ocupado}
                           onClick={() => void darPaso(t, 'aceptar')}
                         >
-                          {ocupado ? 'Aceptando…' : 'Aceptar'}
+                          {ocupado ? 'Enviando…' : 'Aprobar y enviar'}
                         </Button>
                       ) : null}
                       {puedo.recibir ? (
@@ -209,7 +222,7 @@ export function Traslados() {
                           disabled={ocupado}
                           onClick={() => void darPaso(t, 'recibir')}
                         >
-                          {ocupado ? 'Recibiendo…' : 'Recibir'}
+                          {ocupado ? 'Confirmando…' : 'Confirmar llegada'}
                         </Button>
                       ) : null}
                       {/* La nota existe desde que el material sale: una solicitud
@@ -252,9 +265,9 @@ export function Traslados() {
       <ModalTraslado
         abierto={abierto}
         onCerrar={() => setAbierto(false)}
-        // En el acto el material ya se movió y su papel sale al momento.
+        // Enviado o directo, el material ya salió y su papel sale al momento.
         onTrasladado={(t) => {
-          if (t.inmediato) void nota.abrirTraslado(t.id)
+          if (t.forma !== 'PEDIR') void nota.abrirTraslado(t.id)
         }}
       />
 
@@ -266,7 +279,7 @@ export function Traslados() {
         titulo={`Cancelar ${cancelando?.numero ?? ''}`}
         descripcion={
           cancelando?.estado === 'ACEPTADA'
-            ? `El material ya salió de ${cancelando?.origen ?? 'su origen'}: al cancelar vuelve ahí, al mismo costo con el que salió.`
+            ? `El material ya salió de ${cancelando?.origen ?? 'su origen'} y va en camino: al cancelar vuelve ahí, al mismo costo con el que salió.`
             : 'Todavía no se ha movido nada: se anula el pedido.'
         }
         ancho="sm"
@@ -309,14 +322,16 @@ function ultimoPaso(t: Traslado): { quien: string; cuando: string | null } {
       return { quien: `Pedido por ${t.solicitado_por_nombre ?? '—'}`, cuando: t.solicitado_en }
     case 'ACEPTADA':
       return {
-        quien: `Aceptado por ${t.aceptado_por_nombre ?? '—'}${deRespaldo(t.aceptado_de_respaldo)}`,
+        quien: t.enviado
+          ? `Enviado por ${t.aceptado_por_nombre ?? '—'}${deRespaldo(t.aceptado_de_respaldo)}`
+          : `Pedido por ${t.solicitado_por_nombre ?? '—'}; aprobado y enviado por ${t.aceptado_por_nombre ?? '—'}${deRespaldo(t.aceptado_de_respaldo)}`,
         cuando: t.aceptado_en,
       }
     case 'RECIBIDA':
       return t.inmediato
-        ? { quien: `En el acto, por ${t.recibido_por_nombre ?? '—'}`, cuando: t.recibido_en }
+        ? { quien: `Directo, por ${t.recibido_por_nombre ?? '—'}`, cuando: t.recibido_en }
         : {
-            quien: `Recibido por ${t.recibido_por_nombre ?? '—'}${deRespaldo(t.recibido_de_respaldo)}`,
+            quien: `Llegada confirmada por ${t.recibido_por_nombre ?? '—'}${deRespaldo(t.recibido_de_respaldo)}`,
             cuando: t.recibido_en,
           }
     default:

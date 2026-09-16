@@ -382,11 +382,11 @@ export function ModalSalida({
         <Modal
           abierto
           onCerrar={onCerrar}
-          titulo={modo === 'pedir' ? 'Pedir material' : 'Sacar material'}
+          titulo={modo === 'pedir' ? 'Pedir material' : 'Registrar salida directa'}
           descripcion={
             modo === 'pedir'
-              ? 'Lo pide quien lo necesita y lo aprueba quien responde por el almacén. No mueve nada hasta que se entrega.'
-              : 'Todo lo que sale para un mismo trabajo, en un solo papel. Cada renglón dice qué se lleva y de qué sitio: el aceite puede estar en el almacén y las varillas en el patio.'
+              ? 'Queda como solicitud y no descuenta nada. La aprueba quien responde por el almacén, y el material sale cuando alguien de almacén la entrega.'
+              : 'Descuenta del inventario en este momento, sin solicitud. Todo lo que sale para un mismo trabajo va en un solo papel, y cada renglón dice qué se lleva y de qué sitio.'
           }
           ancho="lg"
           acciones={
@@ -410,8 +410,8 @@ export function ModalSalida({
                 {salidas.isPending || pedido.isPending
                   ? 'Guardando…'
                   : modo === 'pedir'
-                    ? 'Pedir'
-                    : 'Registrar'}
+                    ? 'Enviar solicitud'
+                    : 'Registrar salida'}
               </Button>
             </>
           }
