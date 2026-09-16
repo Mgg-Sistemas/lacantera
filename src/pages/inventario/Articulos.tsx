@@ -29,7 +29,9 @@ import {
   usePresentaciones,
   useUnidades,
 } from '@/lib/api/catalogo'
+import type { Articulo } from '@/lib/api/catalogo'
 import { useMovimientos } from '@/lib/api/inventario'
+import { fecha } from '@/lib/formato'
 
 const nuevo = {
   id: 0,
@@ -115,6 +117,22 @@ export function Articulos() {
   const [form, setForm] = useState<typeof nuevo | null>(null)
 
   /*
+    LO DESACTIVADO NO SE VE, PERO SE PUEDE TRAER DE VUELTA.
+
+    Christopher, 16/09/2026: «todo producto que sea desactivado, tenga
+    movimientos o no, deberá ser ocultado, no obstante, podrá activarlo
+    nuevamente; para ambos casos necesitará justificar o dar motivo de la
+    acción». La lista normal es la de activos. Los desactivados están detrás de
+    su propio botón, con el motivo a la vista, y desde ahí se reactivan. El
+    cambio ya no es un clic sobre una etiqueta: abre una ventana que pregunta
+    por qué, y la base no lo acepta sin eso.
+  */
+  const [verDesactivados, setVerDesactivados] = useState(false)
+  const [cambiando, setCambiando] = useState<Articulo | null>(null)
+  const [motivoEstado, setMotivoEstado] = useState('')
+  const desactivados = (data ?? []).filter((a) => !a.activo).length
+
+  /*
     La unidad con la que está guardado lo que se está corrigiendo, y si ya se
     movió alguna vez. Las dos solo se piden con el formulario abierto: nadie
     necesita doscientos movimientos para pintar el catálogo.
@@ -166,6 +184,7 @@ export function Articulos() {
     const texto = busqueda.trim().toLowerCase()
     return (data ?? []).filter(
       (a) =>
+        a.activo !== verDesactivados &&
         (!categoria || a.categoria === categoria) &&
         (!texto ||
           a.nombre.toLowerCase().includes(texto) ||
@@ -175,7 +194,7 @@ export function Articulos() {
           // por qué enterarse de que se renumeraron.
           (a.codigo_anterior ?? '').toLowerCase().includes(texto)),
     )
-  }, [data, busqueda, categoria])
+  }, [data, busqueda, categoria, verDesactivados])
 
   return (
     <>
@@ -218,6 +237,27 @@ export function Articulos() {
             opciones={CATEGORIAS_ARTICULO}
           />
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant={verDesactivados ? 'ghost' : 'soft'}
+            onClick={() => setVerDesactivados(false)}
+          >
+            Activos
+          </Button>
+          <Button
+            size="sm"
+            variant={verDesactivados ? 'soft' : 'ghost'}
+            onClick={() => setVerDesactivados(true)}
+          >
+            Desactivados{data ? ` (${desactivados})` : ''}
+          </Button>
+          <p className="text-ink/45 text-xs">
+            {verDesactivados
+              ? 'No aparecen en ningún formulario. Desde aquí se vuelven a activar, diciendo por qué.'
+              : 'Solo lo que está en uso. Lo desactivado está en «Desactivados».'}
+          </p>
+        </div>
       </Card>
 
       {isPending ? <Cargando /> : null}
@@ -227,7 +267,13 @@ export function Articulos() {
         <Card>
           <Vacio
             icono={<Boxes />}
-            titulo={data.length === 0 ? 'El catálogo está vacío' : 'Nada coincide con la búsqueda'}
+            titulo={
+              data.length === 0
+                ? 'El catálogo está vacío'
+                : verDesactivados && desactivados === 0
+                  ? 'No hay artículos desactivados'
+                  : 'Nada coincide con la búsqueda'
+            }
             descripcion={
               data.length === 0
                 ? 'Las migraciones traen un catálogo inicial de cantera. Si no aparece, todavía no se han corrido.'
@@ -249,7 +295,7 @@ export function Articulos() {
                   <th className="px-3 py-3 font-medium">Unidad</th>
                   <th className="px-3 py-3 font-medium">Al entregarlo</th>
                   <th className="px-3 py-3 text-right font-medium">Mínimo</th>
-                  <th className="px-3 py-3 text-right font-medium">Estado</th>
+                  <th className="px-3 py-3 text-right font-medium" />
                   <th className="px-5 py-3 text-right font-medium" />
                 </tr>
               </thead>
@@ -269,6 +315,13 @@ export function Articulos() {
                       {a.descripcion ? (
                         <p className="text-ink/45 text-xs">{a.descripcion}</p>
                       ) : null}
+                      {!a.activo ? (
+                        <p className="text-ink/55 mt-0.5 text-xs">
+                          {a.motivo_estado
+                            ? `Desactivado${a.estado_cambiado_en ? ` el ${fecha(a.estado_cambiado_en)}` : ''}: ${a.motivo_estado}`
+                            : 'Desactivado antes de que se pidiera el motivo.'}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="text-ink/70 px-3 py-3">
                       {CATEGORIAS_ARTICULO.find((c) => c.valor === a.categoria)?.etiqueta ??
@@ -284,17 +337,18 @@ export function Articulos() {
                     <td className="tabular text-ink/70 px-3 py-3 text-right">
                       {Number(a.stock_minimo) > 0 ? a.stock_minimo : '—'}
                     </td>
-                    <td className="px-3 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void cambiarEstado.mutate({ id: a.id, activo: !a.activo })
-                        }
+                    <td className="px-3 py-3 text-right" onClick={(ev) => ev.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          cambiarEstado.reset()
+                          setMotivoEstado('')
+                          setCambiando(a)
+                        }}
                       >
-                        <Chip tone={a.activo ? 'success' : 'neutral'}>
-                          {a.activo ? 'Activo' : 'Inactivo'}
-                        </Chip>
-                      </button>
+                        {a.activo ? 'Desactivar' : 'Volver a activar'}
+                      </Button>
                     </td>
                     <td className="px-5 py-3 text-right" onClick={(ev) => ev.stopPropagation()}>
                       <div className="flex justify-end gap-1">
@@ -351,10 +405,66 @@ export function Articulos() {
       ) : null}
 
       {eliminar.error ? <ErrorDeCarga error={eliminar.error} className="mt-3" /> : null}
-      {/* Desactivar ya no pasa siempre: con existencia, o dentro de una cotización
-          enviada o de un traslado, la base lo niega y dice por qué. Sin esto el
-          clic no hacía nada visible. */}
-      {cambiarEstado.error ? <ErrorDeCarga error={cambiarEstado.error} className="mt-3" /> : null}
+
+      {cambiando ? (
+        <Modal
+          abierto
+          onCerrar={() => setCambiando(null)}
+          titulo={
+            cambiando.activo ? `Desactivar ${cambiando.nombre}` : `Volver a activar ${cambiando.nombre}`
+          }
+          descripcion={
+            cambiando.activo
+              ? 'Deja de verse en el catálogo y en los formularios. Su historia no cambia, y se puede volver a activar desde «Desactivados».'
+              : 'Vuelve a verse en el catálogo y en los formularios.'
+          }
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setCambiando(null)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={cambiarEstado.isPending || motivoEstado.trim().length < 10}
+                onClick={async () => {
+                  await cambiarEstado.mutateAsync({
+                    id: cambiando.id,
+                    activo: !cambiando.activo,
+                    motivo: motivoEstado,
+                  })
+                  setCambiando(null)
+                }}
+              >
+                {cambiarEstado.isPending
+                  ? 'Guardando…'
+                  : cambiando.activo
+                    ? 'Desactivar'
+                    : 'Volver a activar'}
+              </Button>
+            </>
+          }
+        >
+          {!cambiando.activo ? (
+            <p className="text-ink/60 mb-3 text-sm">
+              {cambiando.motivo_estado
+                ? `Se desactivó porque: ${cambiando.motivo_estado}`
+                : 'Se desactivó antes de que se pidiera el motivo.'}
+            </p>
+          ) : null}
+          <Textarea
+            label={cambiando.activo ? '¿Por qué se desactiva?' : '¿Por qué se vuelve a activar?'}
+            rows={3}
+            value={motivoEstado}
+            onChange={(e) => setMotivoEstado(e.target.value)}
+            hint="Queda guardado con tu nombre y la fecha. Al menos diez letras."
+          />
+          {/* Desactivar no pasa siempre: con existencia, o dentro de una
+              cotización enviada o de un traslado, la base lo niega y dice por
+              qué. */}
+          {cambiarEstado.error ? (
+            <ErrorDeCarga error={cambiarEstado.error} className="mt-3" />
+          ) : null}
+        </Modal>
+      ) : null}
 
       {form ? (
         <Modal
