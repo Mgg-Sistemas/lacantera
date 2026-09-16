@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { ArrowDownLeft, ArrowUpRight, FileText, Printer, ScrollText, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
@@ -16,7 +17,9 @@ import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { densidadesDeArticulos, useMisRoles, usePerfiles } from '@/lib/api/catalogo'
+import { densidadesDeArticulos, leerPerfiles, useMisRoles, usePerfiles } from '@/lib/api/catalogo'
+import { leerFirmasEncendidas } from '@/lib/api/firmas'
+import { leerOrdenDeLaNota, ordenEnPapel } from '@/lib/api/salidas'
 import {
   bajaDe,
   motivoDeSalida,
@@ -92,12 +95,29 @@ export function Movimientos() {
     es que no agrupa.
   */
   const [armando, setArmando] = useState<number | null>(null)
+  const qc = useQueryClient()
 
   const verLaNota = async (m: Movimiento) => {
     setArmando(m.id)
     try {
       // Con número de nota se trae la nota entera; sin él, este renglón solo.
       const lineas = m.nota_salida ? await leerNotaDeSalida(m.nota_salida) : null
+
+      /*
+        LA ORDEN DE LA QUE SALIÓ, igual que al abrirla desde Salidas: fecha de la
+        orden, de entrega, estado, quién solicitó y quién autorizó, con las firmas
+        que cada uno eligió poner. Quien reimprime sin permiso de Salidas no ve la
+        orden, y la nota sale sin ella antes que no salir.
+      */
+      const [laOrden, perfilesTodos, firmasEncendidas] = m.nota_salida
+        ? await Promise.all([
+            leerOrdenDeLaNota(m.nota_salida).catch(() => null),
+            qc.fetchQuery({ queryKey: ['perfiles'], queryFn: leerPerfiles, staleTime: 5 * 60_000 }),
+            qc.fetchQuery({ queryKey: ['firmas'], queryFn: leerFirmasEncendidas, staleTime: 5 * 60_000 }),
+          ])
+        : [null, [], { porPerfil: {} as Record<string, string> }]
+      const nombreDelPerfil = (uid: string | null) =>
+        (uid && perfilesTodos.find((p) => p.id === uid)?.nombre) || null
 
       /*
         La densidad, para la columna «Conversión». Esta nota se arma aquí y no en
@@ -114,6 +134,8 @@ export function Movimientos() {
       setTituloDoc(`Nota de salida ${m.nota_salida ?? m.numero}`)
 
       const datos: DatosNotaDeSalida = {
+          tipo: 'NOTA',
+          orden: laOrden ? ordenEnPapel(laOrden, nombreDelPerfil, firmasEncendidas.porPerfil) : null,
           conCostos: notaConCostos,
           numero: m.nota_salida ?? m.numero,
           fecha: fecha(m.fecha),

@@ -13,6 +13,7 @@ import { ListaEditable } from '@/components/ListaEditable'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { palabraDeVenta, usePedirSalida } from '@/lib/api/salidas'
+import { useMiFirma } from '@/lib/api/firmas'
 import {
   grupoEnCorto,
   useBorrarClaseDeSalida,
@@ -235,6 +236,14 @@ export function ModalSalida({
   const { puede: alcanza } = useMisPermisos()
   const salidas = useRegistrarSalidas()
   const pedido = usePedirSalida()
+  /*
+    LA FIRMA DE QUIEN SOLICITA LA DECIDE ÉL. Christopher: «si el usuario tiene
+    firma, ofrecer la opción de usar esa firma digital; si indica que no o no
+    tiene, sale en blanco». Sin marcar por defecto: lo que tiene que llevar todo
+    papel es la de quien autoriza, y esa se pregunta al aprobar.
+  */
+  const { data: miFirma } = useMiFirma()
+  const [conMiFirma, setConMiFirma] = useState(false)
   const clases = useClasesDeSalida()
   const todasLasClases = useClasesDeSalida(true)
   const guardarClase = useGuardarClaseDeSalida()
@@ -416,6 +425,7 @@ export function ModalSalida({
       })),
       motivo,
       ...paraQuienVa(ambito, grupo, externo, responsable),
+      con_firma: miFirma?.usar === true && conMiFirma,
     })) as string
 
     onRegistrada(numero, motivo)
@@ -722,6 +732,23 @@ export function ModalSalida({
                     : undefined
                 }
               />
+
+              {miFirma?.usar ? (
+                <label className="border-hairline mt-4 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                    checked={conMiFirma}
+                    onChange={(e) => setConMiFirma(e.target.checked)}
+                  />
+                  <span className="text-ink/80">
+                    Poner mi firma digital en «Solicitado por»
+                    <span className="text-ink/50 mt-0.5 block text-xs">
+                      Sin marcar, la raya de la orden sale en blanco con tu nombre debajo.
+                    </span>
+                  </span>
+                </label>
+              ) : null}
             </>
           ) : (
             <>

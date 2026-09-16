@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { fechaHora } from '@/lib/formato'
+import type { OrdenEnPapel } from '@/lib/ficha/notaDeSalidaPdf'
 import { desenvolver, rpc } from './rpc'
 
 /*
@@ -88,6 +90,16 @@ export interface SolicitudDeSalida {
   nota_salida: string | null
   /** Por qué se rechazó o se canceló. */
   cierre_motivo: string | null
+  /**
+   * Si quien la solicitó eligió poner su firma digital en la orden. Nula en las
+   * de antes de preguntarlo: van sin su firma.
+   */
+  firma_de_quien_pide: boolean | null
+  /**
+   * Si quien la aprobó eligió poner su firma. Nula en las de antes: van con su
+   * firma si la tiene encendida, que es lo de por defecto.
+   */
+  firma_de_quien_aprueba: boolean | null
   almacen?: { nombre: string } | null
   renglones?: RenglonDeSolicitud[]
 }
@@ -144,6 +156,8 @@ export function usePedirSalida() {
       grupo_id?: number | null
       externo?: string | null
       responsable?: string | null
+      /** Si quien solicita pone su firma digital en la orden. Por defecto no. */
+      con_firma?: boolean
     }) =>
       rpc<string>('pedir_salida', {
         p_almacen_id: s.almacen_id,
@@ -159,14 +173,72 @@ export function usePedirSalida() {
         p_grupo_id: s.grupo_id ?? null,
         p_externo: s.externo || null,
         p_responsable: s.responsable || null,
+        p_con_firma: s.con_firma ?? false,
       }),
   )
 }
 
+/**
+ * Aprobar, diciendo si la firma de quien aprueba va en la orden.
+ *
+ * Christopher eligió que la firma la decide su dueño al actuar, y que por
+ * defecto vaya la de quien autoriza. La base guarda solo lo que se puede
+ * estampar: sin firma encendida queda en falso aunque llegue en cierto.
+ */
 export function useAprobarSolicitud() {
-  return useAccionDeSolicitud((id: number) =>
-    rpc<number>('aprobar_solicitud_salida', { p_id: id }),
+  return useAccionDeSolicitud((a: { id: number; con_firma: boolean }) =>
+    rpc<number>('aprobar_solicitud_salida', { p_id: a.id, p_con_firma: a.con_firma }),
   )
+}
+
+/** La orden de la que salió una nota, o nula si la nota es de una salida directa. */
+export async function leerOrdenDeLaNota(nota: string): Promise<SolicitudDeSalida | null> {
+  return desenvolver<SolicitudDeSalida | null>(
+    await supabase.from('solicitudes_salida').select('*').eq('nota_salida', nota).maybeSingle(),
+  )
+}
+
+/**
+ * La orden, lista para el papel: nombres, fechas legibles y solo las firmas
+ * que tocan.
+ *
+ * Aquí se aplica lo que eligió cada dueño: la de quien pide va si dijo que sí;
+ * la de quien aprueba va salvo que haya dicho que no —en las órdenes de antes
+ * de preguntarlo no dijo nada, y por defecto va—. En las dos, solo si la firma
+ * sigue guardada y encendida: `firmas` trae únicamente esas.
+ */
+export function ordenEnPapel(
+  s: SolicitudDeSalida,
+  nombreDe: (uid: string | null) => string | null,
+  firmas: Record<string, string>,
+): OrdenEnPapel {
+  const aprobada = s.estado === 'APROBADA' || s.estado === 'ENTREGADA'
+  return {
+    numero: s.numero,
+    estado: ESTADO_DE_SOLICITUD[s.estado].texto,
+    sello: s.estado === 'RECHAZADA' ? 'NO APROBADA' : s.estado === 'CANCELADA' ? 'CANCELADA' : null,
+    fechaOrden: fechaHora(s.pedida_en),
+    solicito: {
+      nombre: nombreDe(s.pedida_por),
+      firma: s.firma_de_quien_pide === true && s.pedida_por ? (firmas[s.pedida_por] ?? null) : null,
+    },
+    autorizo: {
+      nombre: s.aprobada_por ? nombreDe(s.aprobada_por) : null,
+      fecha: s.aprobada_en ? fechaHora(s.aprobada_en) : null,
+      deRespaldo: aprobada && s.aprobada_de_respaldo === true,
+      noAprobo: s.estado === 'RECHAZADA',
+      firma:
+        aprobada && s.firma_de_quien_aprueba !== false && s.aprobada_por
+          ? (firmas[s.aprobada_por] ?? null)
+          : null,
+    },
+    entrego: {
+      nombre: s.entregada_por ? nombreDe(s.entregada_por) : null,
+      fecha: s.entregada_en ? fechaHora(s.entregada_en) : null,
+    },
+    notaSalida: s.nota_salida,
+    cierre: s.estado === 'RECHAZADA' || s.estado === 'CANCELADA' ? s.cierre_motivo : null,
+  }
 }
 
 export function useRechazarSolicitud() {
