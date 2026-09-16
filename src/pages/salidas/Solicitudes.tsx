@@ -107,7 +107,7 @@ export function Solicitudes() {
   const paraQuien = (s: SolicitudDeSalida) =>
     nombreDeGrupo(grupos.data, s.grupo_id) ??
     (s.destino_externo
-      ? `${s.destino_externo}${s.responsable_externo ? ` · ${s.responsable_externo}` : ''}`
+      ? `${s.destino_externo}, de fuera de la empresa${s.responsable_externo ? ` · responde ${s.responsable_externo}` : ''}`
       : '—')
 
   const todas = solicitudes ?? []
