@@ -527,15 +527,87 @@ export function useReabrirSitio() {
   return useAccion((id: number) => rpc('reabrir_sitio', { p_id: id }))
 }
 
-export function useCambiarOperadorSitio() {
-  return useAccion((a: { id: number; operador: string; desde: string; motivo: string }) =>
-    rpc('cambiar_operador_sitio', {
-      p_id: a.id,
-      p_operador: a.operador,
-      p_desde: a.desde,
-      p_motivo: a.motivo,
-    }),
-  )
+/** Lo que bloquea o avisa antes de cerrar algo. Lo calcula la base, la misma que después se niega. */
+export interface Comprobacion {
+  nivel: 'BLOQUEA' | 'AVISA'
+  que: string
+  cuantos: number
+  detalle: string
+}
+
+export function useQueImpideCerrarSitio(sitioId: number | null) {
+  return useQuery({
+    queryKey: ['sitios', 'cierre', sitioId],
+    enabled: sitioId !== null,
+    queryFn: () => rpc<Comprobacion[]>('que_impide_cerrar_sitio', { p_id: sitioId }),
+  })
+}
+
+export interface FaltaDeSitio {
+  sitio_id: number
+  que: string
+  detalle: string
+}
+
+/** Lo que le falta a cada sitio abierto para operar: patio, responsable, rutas con tarifa. */
+export function useLoQueLeFaltaALosSitios() {
+  return useQuery({
+    queryKey: ['sitios', 'faltas'],
+    queryFn: () => rpc<FaltaDeSitio[]>('lo_que_le_falta_a_los_sitios'),
+  })
+}
+
+export interface LoQueHayEnSitio {
+  tipo: 'MATERIAL' | 'MAQUINA'
+  id: number
+  codigo: string
+  nombre: string
+  unidad: string | null
+  /** De quién es hoy. */
+  propietario: string
+  /** Solo en el material. */
+  cantidad: string | null
+}
+
+/** El material de su patio, por dueño, y las máquinas ubicadas ahí. Para decidir qué pasa en una cesión. */
+export function useQueHayEnSitio(sitioId: number | null) {
+  return useQuery({
+    queryKey: ['sitios', 'que-hay', sitioId],
+    enabled: sitioId !== null,
+    queryFn: () => rpc<LoQueHayEnSitio[]>('que_hay_en_sitio', { p_id: sitioId }),
+  })
+}
+
+/**
+ * Cambia quién opera el sitio desde una fecha y, si se marca, le pasa material y
+ * máquinas. Lo que no se marca sigue siendo de quien era.
+ */
+export function useCederSitio() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: {
+      id: number
+      operador: string
+      desde: string
+      motivo: string
+      material: Array<{ articulo_id: number; de: string; cantidad: number }>
+      maquinas: number[]
+    }) =>
+      rpc<{ material: number; maquinas: number }>('ceder_sitio', {
+        p_id: a.id,
+        p_operador: a.operador,
+        p_desde: a.desde,
+        p_motivo: a.motivo,
+        p_material: a.material,
+        p_maquinas: a.maquinas,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['sitios'] })
+      void qc.invalidateQueries({ queryKey: ['existencias'] })
+      void qc.invalidateQueries({ queryKey: ['movimientos'] })
+      void qc.invalidateQueries({ queryKey: ['maquinaria'] })
+    },
+  })
 }
 
 export function useGuardarRuta() {
