@@ -250,9 +250,9 @@ export function ModalTraslado({
     está a mi alcance se enseña apagada y dice por qué: esconderla dejaría
     pensando que no existe.
 
-    EL DIRECTO SE APAGÓ el 16/09/2026 por la tarde, y ese sí se esconde: no es
-    que a alguien le falte permiso, es que por ahora no existe para nadie. Ver
-    `FORMAS_DE_TRASLADO_ABIERTAS`.
+    Una forma que se apague para todos —como el directo, apagado y devuelto la
+    mañana del 16/09/2026— no se enseña apagada: se quita de
+    `FORMAS_DE_TRASLADO_ABIERTAS`, porque no es que a alguien le falte permiso.
   */
   const respondoPor = (sitio: number) => yo != null && (yo.respaldo || yo.sitios.includes(sitio))
 
@@ -450,7 +450,7 @@ export function ModalTraslado({
               ? 'Solo los sitios donde hay ese artículo.'
               : 'Solo los sitios que tienen algo que trasladar.',
             form.forma !== 'DIRECTO' && hayOrigenSinCosto
-              ? 'Lo que entró sin costo no aparece aquí: no pasa por «En camino», y el traslado directo está apagado por ahora.'
+              ? 'Lo que entró sin costo no aparece aquí: solo sale con «Traslado directo».'
               : null,
           ]
             .filter(Boolean)
