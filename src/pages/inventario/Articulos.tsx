@@ -351,6 +351,10 @@ export function Articulos() {
       ) : null}
 
       {eliminar.error ? <ErrorDeCarga error={eliminar.error} className="mt-3" /> : null}
+      {/* Desactivar ya no pasa siempre: con existencia, o dentro de una cotización
+          enviada o de un traslado, la base lo niega y dice por qué. Sin esto el
+          clic no hacía nada visible. */}
+      {cambiarEstado.error ? <ErrorDeCarga error={cambiarEstado.error} className="mt-3" /> : null}
 
       {form ? (
         <Modal

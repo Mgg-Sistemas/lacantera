@@ -35,12 +35,15 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
   TIPO_DE_SITIO,
   tarifaEnPalabras,
-  useCambiarOperadorSitio,
+  useCederSitio,
   useCerrarSitio,
   useFijarTarifaRuta,
   useGuardarRuta,
   useGuardarSitio,
+  useLoQueLeFaltaALosSitios,
   useOperadoresDeSitio,
+  useQueHayEnSitio,
+  useQueImpideCerrarSitio,
   useReabrirSitio,
   useRutasAcarreo,
   useSitiosDeOperacion,
@@ -58,6 +61,7 @@ import { dolares, fecha as fmtFecha } from '@/lib/formato'
 export function Plantas() {
   const sitios = useSitiosDeOperacion()
   const rutas = useRutasAcarreo()
+  const faltas = useLoQueLeFaltaALosSitios()
   const { puede: tieneCasilla } = useMisAcciones()
   const gestiona = tieneCasilla('EXPLOTACION.GESTIONAR_SITIOS')
   const tarifa = tieneCasilla('EXPLOTACION.FIJAR_TARIFAS')
@@ -142,6 +146,14 @@ export function Plantas() {
                       <td className="px-5 py-3">
                         <p className="text-ink/85 font-medium">{s.nombre}</p>
                         <p className="text-ink/45 font-mono text-2xs">{s.codigo}</p>
+                        {/* Lo que le falta para operar, dicho por la base. */}
+                        {(faltas.data ?? [])
+                          .filter((f) => f.sitio_id === s.id)
+                          .map((f) => (
+                            <p key={`${f.que}-${f.detalle}`} className="text-warning mt-1 max-w-72 text-xs leading-snug">
+                              {f.detalle}
+                            </p>
+                          ))}
                       </td>
                       <td className="text-ink/70 px-3 py-3">{TIPO_DE_SITIO[s.tipo]}</td>
                       <td className="text-ink/75 px-3 py-3">
@@ -179,7 +191,7 @@ export function Plantas() {
                           </Button>
                         ) : null}
                         <Button size="sm" variant="ghost" icon={<History />} onClick={() => setOperador(s)}>
-                          {gestiona ? 'Operador' : 'Historia'}
+                          {gestiona ? 'Ceder u operador' : 'Historia'}
                         </Button>
                         {gestiona && s.estado === 'ACTIVO' ? (
                           <Button size="sm" variant="ghost" className="text-danger" onClick={() => setCerrando(s)}>
@@ -456,18 +468,30 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
   )
 }
 
+/*
+  CERRAR ENSEÑA ANTES LO QUE LA BASE VA A MIRAR.
+
+  Christopher decidió que cerrar con pendientes se bloquea hasta resolverlos, y
+  que el patio de una planta cerrada sigue abierto. La lista la calcula la base
+  con la misma función que usa para negarse: lo que dice esta ventana y lo que
+  hace el botón no se pueden separar.
+*/
 function CerrarSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion; onCerrar: () => void }) {
   const cerrar = useCerrarSitio()
+  const comprobacion = useQueImpideCerrarSitio(sitio.id)
   const [fecha, setFecha] = useState(hoyEnCaracas())
   const [motivo, setMotivo] = useState('')
+
+  const bloquea = (comprobacion.data ?? []).filter((c) => c.nivel === 'BLOQUEA')
+  const avisa = (comprobacion.data ?? []).filter((c) => c.nivel === 'AVISA')
 
   return (
     <Modal
       abierto
       onCerrar={onCerrar}
       titulo={`Cerrar ${sitio.nombre}`}
-      descripcion="Desde esa fecha no se pueden cargar viajes que salgan de este sitio o lleguen a él. Los viajes de antes se quedan como están, y el sitio se puede reabrir."
-      ancho="sm"
+      descripcion="Desde esa fecha no se pueden cargar viajes que salgan de este sitio o lleguen a él. Los viajes de antes se quedan como están, su patio sigue abierto y el sitio se puede reabrir."
+      ancho="lg"
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -475,7 +499,13 @@ function CerrarSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion; onCerrar: (
           </Button>
           <Button
             variant="danger"
-            disabled={cerrar.isPending || motivo.trim().length < 4 || !fecha}
+            disabled={
+              cerrar.isPending ||
+              comprobacion.isPending ||
+              bloquea.length > 0 ||
+              motivo.trim().length < 4 ||
+              !fecha
+            }
             onClick={async () => {
               await cerrar.mutateAsync({ id: sitio.id, fecha, motivo })
               onCerrar()
@@ -486,6 +516,33 @@ function CerrarSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion; onCerrar: (
         </>
       }
     >
+      {comprobacion.isPending ? <Cargando /> : null}
+      {comprobacion.error ? <ErrorDeCarga error={comprobacion.error} /> : null}
+
+      {bloquea.length > 0 ? (
+        <div className="border-danger/40 mb-4 rounded-[6px] border p-3">
+          <p className="text-danger text-sm font-medium">No se puede cerrar todavía</p>
+          <ul className="text-ink/75 mt-1.5 list-disc space-y-1 pl-5 text-sm">
+            {bloquea.map((c) => (
+              <li key={c.que}>{c.detalle}</li>
+            ))}
+          </ul>
+        </div>
+      ) : comprobacion.data ? (
+        <p className="text-ink/55 mb-4 text-sm">Nada pendiente impide cerrarlo.</p>
+      ) : null}
+
+      {avisa.length > 0 ? (
+        <div className="border-hairline mb-4 rounded-[6px] border p-3">
+          <p className="text-ink/80 text-sm font-medium">Al cerrarlo, ten presente</p>
+          <ul className="text-ink/65 mt-1.5 list-disc space-y-1 pl-5 text-sm">
+            {avisa.map((c) => (
+              <li key={c.que}>{c.detalle}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <Input label="Cerrado desde" type="date" max={hoyEnCaracas()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
       <Textarea className="mt-3" label="Por qué se cierra" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       {cerrar.error ? <ErrorDeCarga error={cerrar.error} className="mt-3" /> : null}
@@ -504,20 +561,35 @@ function OperadorDelSitio({
 }) {
   const historia = useOperadoresDeSitio(sitio.id)
   const { data: duenos } = usePropietarios(false)
-  const cambiar = useCambiarOperadorSitio()
+  const cambiar = useCederSitio()
+  const queHay = useQueHayEnSitio(puedeCambiar ? sitio.id : null)
   const [operador, setOperador] = useState('')
   const [desde, setDesde] = useState('')
   const [motivo, setMotivo] = useState('')
+  /* Lo marcado para pasar: clave «MATERIAL-articulo-dueño» con su cantidad, o «MAQUINA-id». */
+  const [pasa, setPasa] = useState<Record<string, string>>({})
 
   const nombreDe = (codigo: string) => (duenos ?? []).find((d) => d.codigo === codigo)?.nombre ?? codigo
   const listo = operador !== '' && operador !== sitio.operador && desde !== '' && motivo.trim().length >= 4
+
+  /* Solo se ofrece lo que hoy es de otro: lo que ya es del nuevo operador no tiene que pasar. */
+  const cedible = (queHay.data ?? []).filter((x) => operador !== '' && x.propietario !== operador)
+  const claveDe = (x: { tipo: string; id: number; propietario: string }) =>
+    x.tipo === 'MATERIAL' ? `MATERIAL-${x.id}-${x.propietario}` : `MAQUINA-${x.id}`
+  const marcados = cedible.filter((x) => pasa[claveDe(x)] !== undefined)
+  const cantidadesBien = marcados
+    .filter((x) => x.tipo === 'MATERIAL')
+    .every((x) => {
+      const n = Number(pasa[claveDe(x)])
+      return n > 0 && n <= Number(x.cantidad)
+    })
 
   return (
     <Modal
       abierto
       onCerrar={onCerrar}
       titulo={`Quién opera ${sitio.nombre}`}
-      descripcion="Ceder, transferir o sumar un aliado es cambiar el operador desde una fecha. El de antes queda en la historia hasta el día anterior."
+      descripcion="Ceder, transferir o sumar un aliado es cambiar el operador desde una fecha. El de antes queda en la historia hasta el día anterior. El material del patio y las máquinas ubicadas ahí solo pasan si se marcan."
       ancho="lg"
       acciones={
         <>
@@ -526,15 +598,29 @@ function OperadorDelSitio({
           </Button>
           {puedeCambiar ? (
             <Button
-              disabled={!listo || cambiar.isPending}
+              disabled={!listo || !cantidadesBien || cambiar.isPending}
               onClick={async () => {
-                await cambiar.mutateAsync({ id: sitio.id, operador, desde, motivo })
+                await cambiar.mutateAsync({
+                  id: sitio.id,
+                  operador,
+                  desde,
+                  motivo,
+                  material: marcados
+                    .filter((x) => x.tipo === 'MATERIAL')
+                    .map((x) => ({ articulo_id: x.id, de: x.propietario, cantidad: Number(pasa[claveDe(x)]) })),
+                  maquinas: marcados.filter((x) => x.tipo === 'MAQUINA').map((x) => x.id),
+                })
                 setOperador('')
                 setDesde('')
                 setMotivo('')
+                setPasa({})
               }}
             >
-              {cambiar.isPending ? 'Guardando…' : 'Cambiar el operador'}
+              {cambiar.isPending
+                ? 'Guardando…'
+                : marcados.length > 0
+                  ? `Ceder, con ${marcados.length} ${marcados.length === 1 ? 'cosa' : 'cosas'} marcadas`
+                  : 'Cambiar el operador'}
             </Button>
           ) : null}
         </>
@@ -580,6 +666,79 @@ function OperadorDelSitio({
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
           />
+
+          {/*
+            QUÉ PASA CON LO QUE HAY. Christopher decidió que se pregunte en cada
+            cesión: nada pasa solo. Lo marcado cambia de dueño con su asiento en
+            el libro, el mismo día de la cesión; lo demás sigue siendo de quien es.
+          */}
+          {operador !== '' ? (
+            <div className="mt-4">
+              <p className="text-ink/80 text-sm font-medium">
+                ¿Pasa algo de lo que hay con el nuevo operador?
+              </p>
+              <p className="text-ink/50 mt-0.5 text-xs">
+                Lo que no marques sigue siendo de quien es hoy. Lo marcado cambia de dueño el día de la
+                cesión, así que esa fecha no puede ser futura. El material pide Inventario total; las
+                máquinas, Maquinaria en escritura.
+              </p>
+              {queHay.isPending ? <Cargando /> : null}
+              {queHay.error ? <ErrorDeCarga error={queHay.error} className="mt-2" /> : null}
+              {queHay.data && cedible.length === 0 ? (
+                <p className="text-ink/45 mt-2 text-xs italic">
+                  {sitio.almacen
+                    ? 'En su patio no hay material ni máquinas de otro dueño.'
+                    : 'Este sitio no tiene patio: no hay material ni máquinas que pasar.'}
+                </p>
+              ) : null}
+              <ul className="divide-hairline mt-2 divide-y text-sm">
+                {cedible.map((x) => {
+                  const clave = claveDe(x)
+                  const marcado = pasa[clave] !== undefined
+                  return (
+                    <li key={clave} className="flex flex-wrap items-center gap-3 py-2">
+                      <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-2.5">
+                        <input
+                          type="checkbox"
+                          className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                          checked={marcado}
+                          onChange={(e) =>
+                            setPasa((v) => {
+                              const nuevo = { ...v }
+                              if (e.target.checked) nuevo[clave] = x.tipo === 'MATERIAL' ? String(Number(x.cantidad)) : ''
+                              else delete nuevo[clave]
+                              return nuevo
+                            })
+                          }
+                        />
+                        <span className="text-ink/80">
+                          {x.tipo === 'MAQUINA' ? 'Máquina: ' : ''}
+                          {x.nombre}
+                          <span className="text-ink/45 block text-xs">
+                            {x.tipo === 'MATERIAL'
+                              ? `${Number(x.cantidad).toLocaleString('es-VE')} ${x.unidad ?? ''} de ${nombreDe(x.propietario)}`
+                              : `${x.codigo} · de ${nombreDe(x.propietario)}`}
+                          </span>
+                        </span>
+                      </label>
+                      {marcado && x.tipo === 'MATERIAL' ? (
+                        <Input
+                          label="Cuánto pasa"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          inputMode="decimal"
+                          value={pasa[clave]}
+                          onChange={(e) => setPasa((v) => ({ ...v, [clave]: e.target.value }))}
+                          className="w-40"
+                        />
+                      ) : null}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : null}
       {cambiar.error ? <ErrorDeCarga error={cambiar.error} className="mt-3" /> : null}
