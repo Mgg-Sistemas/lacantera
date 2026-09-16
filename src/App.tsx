@@ -71,6 +71,9 @@ const Traslados = pagina(() =>
 const Salidas = pagina(() =>
   import('@/pages/salidas/Salidas').then((m) => ({ default: m.Salidas })),
 )
+const SolicitudesDeSalida = pagina(() =>
+  import('@/pages/salidas/Solicitudes').then((m) => ({ default: m.Solicitudes })),
+)
 const Empresa = pagina(() => import('@/pages/config/Empresa').then((m) => ({ default: m.Empresa })))
 const Documentos = pagina(() =>
   import('@/pages/config/Documentos').then((m) => ({ default: m.Documentos })),
@@ -371,6 +374,7 @@ const paginas: Record<string, ReactNode> = {
   */
   '/app/inventario/transferencias': <Navigate to="/app/salidas/traslados" replace />,
   '/app/salidas': <Salidas />,
+  '/app/salidas/solicitudes': <SolicitudesDeSalida />,
   '/app/salidas/traslados': <Traslados />,
   '/app/config/empresa': <Empresa />,
   '/app/config/documentos': <Documentos />,

@@ -29,6 +29,7 @@ export const PESTANAS_MATERIAL: Pestana[] = [
  */
 export const PESTANAS_SALIDAS: Pestana[] = [
   { etiqueta: 'Salidas y traslados', a: '/app/salidas' },
+  { etiqueta: 'Solicitudes', a: '/app/salidas/solicitudes' },
   { etiqueta: 'Traslados', a: '/app/salidas/traslados' },
 ]
 
