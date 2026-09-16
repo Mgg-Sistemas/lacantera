@@ -192,9 +192,11 @@ export function TableroVentas() {
                 Si es la primera vez
               </p>
               <p className="text-ink/75 mt-3 text-sm leading-relaxed">
-                Una venta se registra <strong>despachando</strong>. La nota de entrega es el papel
-                con el que sale el camión y lo que descuenta el material del patio; la factura se
-                emite después, contra una nota o contra todas las de la semana de un cliente.
+                Una venta se registra <strong>despachando</strong>, y eso se hace en{' '}
+                <strong>Facturación</strong>: la nota de entrega es el papel con el que sale el
+                camión y lo que descuenta el material del patio; la factura se emite después, contra
+                una nota o contra todas las de la semana de un cliente. Aquí quedan los clientes, la
+                lista de precios y las cotizaciones.
               </p>
               <p className="text-ink/50 mt-2 text-sm leading-relaxed">
                 Cotizar es opcional: sirve cuando el cliente pide precio antes de decidir. Si el

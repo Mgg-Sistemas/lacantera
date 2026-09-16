@@ -86,7 +86,7 @@ const FUENTES: Fuente[] = [
     to: () => '/app/facturacion',
   },
   {
-    modulo: 'VENTAS',
+    modulo: 'FACTURACION',
     tabla: 'notas_entrega',
     columnas: ['numero'],
     seleccion: 'id, numero, estado',
