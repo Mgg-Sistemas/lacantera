@@ -92,7 +92,52 @@ export interface RenglonDeSalida {
   almacen?: string | null
 }
 
+/*
+  LA ORDEN DE LA QUE SALIÓ, EN EL PAPEL
+
+  Christopher, 16/09/2026, con NS-2026-0008 delante, que solo decía «Entregó» y
+  «Recibió conforme»: la orden tiene que decir la fecha de la orden, la de
+  entrega, el estado y quién autorizó, y en el lugar de firma van quien la
+  solicitó y quien la autorizó, cada uno con su firma digital si eligió ponerla.
+  «Todo pdf creado por defecto debe salir como mínimo la firma de quien
+  autoriza».
+
+  El mismo papel sirve para dos momentos: la ORDEN, que se imprime en cualquier
+  estado, y la NOTA, que sale al entregar y lleva además los renglones con lo
+  que de verdad salió. Las dos dicen lo mismo de la orden.
+
+  Las firmas llegan ya decididas: aquí no se elige nada. Lo decide su dueño al
+  solicitar y al aprobar, y quien arma los datos (`ordenEnPapel`) solo pasa la
+  imagen cuando tocaba.
+*/
+export interface OrdenEnPapel {
+  numero: string
+  /** Como lo dice la pantalla: «Por aprobar», «Entregada», «No aprobada». */
+  estado: string
+  /** Una orden que no sigue lleva un sello cruzado, para que no se use. */
+  sello?: 'NO APROBADA' | 'CANCELADA' | null
+  fechaOrden: string
+  solicito: { nombre: string | null; firma?: string | null }
+  autorizo: {
+    nombre: string | null
+    firma?: string | null
+    fecha: string | null
+    /** La aprobó quien tiene la casilla, no quien responde por el almacén. */
+    deRespaldo?: boolean
+    /** La resolvió diciendo que no: el nombre no va en la raya de «Autorizado por». */
+    noAprobo?: boolean
+  }
+  entrego: { nombre: string | null; fecha: string | null }
+  notaSalida?: string | null
+  /** Por qué no se aprobó o se canceló. */
+  cierre?: string | null
+}
+
 export interface DatosNotaDeSalida {
+  /** NOTA al entregar, que es lo de siempre; ORDEN, la solicitud en cualquier estado. */
+  tipo?: 'NOTA' | 'ORDEN'
+  /** La orden de la que salió. Nula en las salidas directas de antes. */
+  orden?: OrdenEnPapel | null
   /** Si el papel lleva las cifras de dinero. Ver `NotaArmada`. */
   conCostos?: boolean
   numero: string
@@ -241,16 +286,26 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
   const logo = await logoComoImagen()
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
+  const esOrden = d.tipo === 'ORDEN'
+  const orden = d.orden ?? null
+
   let y = membrete(doc, logo, {
     empresa: d.empresa,
-    datos: [
-      ['N° nota', d.numero],
-      ['Fecha', d.fecha],
-      ['Generado', fechaLarga(d.momento)],
-    ],
+    datos: esOrden
+      ? [
+          ['N° orden', d.numero],
+          ['Estado', orden?.estado ?? '—'],
+          ['Generado', fechaLarga(d.momento)],
+        ]
+      : [
+          ['N° nota', d.numero],
+          ...(orden ? ([['N° orden', orden.numero]] as Array<[string, string]>) : []),
+          ['Fecha', d.fecha],
+          ['Generado', fechaLarga(d.momento)],
+        ],
   })
 
-  y = tituloDocumento(doc, y, 'Nota de salida')
+  y = tituloDocumento(doc, y, esOrden ? 'Orden de salida' : 'Nota de salida')
 
   y = lineaEmpresa(doc, y, `${d.empresa.razonSocial} · RIF ${d.empresa.rif}`)
 
@@ -260,23 +315,63 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
   const mezclada = sitios.size > 1
 
   /*
-    Las filas vacias no se pintan.
+    LA ORDEN Y LA SALIDA, EN UN SOLO CUADRO.
 
-    «A dónde va — » no dice nada y ocupa lo mismo que una fila con contenido: en
-    una nota con material de tres sitios, esos milimetros eran justo los que
-    empujaban las firmas a una segunda hoja. Un dato que no se tiene se calla.
+    Primero lo de la orden —quién la pidió, quién la autorizó y cuándo pasó cada
+    cosa—, que es lo primero que se busca en un papel de almacén cuando algo no
+    cuadra. Las salidas directas de antes no tienen orden, y el papel lo dice en
+    vez de callarlo.
+
+    Un cuadro y no dos: con dos títulos y las firmas en dos filas, una nota de
+    dos renglones ya empujaba las firmas a otra hoja. Por lo mismo, con orden no
+    se repiten el motivo —siempre es «entrega por solicitud»— ni la fecha, que
+    ya dicen la orden y la entrega.
+
+    Las filas vacías no se pintan. «A dónde va — » no dice nada y ocupa lo mismo
+    que una fila con contenido. Un dato que no se tiene se calla.
   */
+  const filasDeLaOrden: Array<[string, string | null | undefined]> = []
+  if (orden) {
+    const autorizado = orden.autorizo.noAprobo
+      ? `No la aprobó ${orden.autorizo.nombre ?? '—'}${orden.autorizo.fecha ? ` · ${orden.autorizo.fecha}` : ''}`
+      : orden.autorizo.nombre
+        ? `${orden.autorizo.nombre}${orden.autorizo.fecha ? ` · ${orden.autorizo.fecha}` : ''}${orden.autorizo.deRespaldo ? ' · con la casilla de aprobar salidas' : ''}`
+        : orden.sello
+          ? '—'
+          : 'Pendiente: todavía no se aprueba'
+    const entregado = orden.entrego.fecha
+      ? `${orden.entrego.fecha}${orden.entrego.nombre ? ` · entregó ${orden.entrego.nombre}` : ''}${esOrden && orden.notaSalida ? ` · nota ${orden.notaSalida}` : ''}`
+      : orden.sello
+        ? 'No se entregó'
+        : 'Pendiente: todavía no se entrega'
+
+    filasDeLaOrden.push(
+      esOrden ? ['Estado', orden.estado] : ['Orden de salida', `${orden.numero} · ${orden.estado}`],
+      ['Fecha de la orden', orden.fechaOrden],
+      ['Solicitado por', orden.solicito.nombre],
+      ['Autorizado por', autorizado],
+      ['Fecha de entrega', entregado],
+      [orden.sello === 'CANCELADA' ? 'Por qué se canceló' : 'Por qué no se aprobó', orden.cierre],
+    )
+  } else if (!esOrden) {
+    filasDeLaOrden.push([
+      'Orden de salida',
+      'Sin orden: salida directa, de antes de que toda salida se autorizara',
+    ])
+  }
+
   y = bloqueEtiquetado(
     doc,
     y,
-    'La salida',
+    esOrden ? 'La orden' : 'La salida',
     (
       [
+        ...filasDeLaOrden,
         ['De qué almacén', mezclada ? 'Varios · se indica en cada renglón' : d.almacen],
-        ['Motivo', d.clase],
+        ['Motivo', orden ? null : d.clase],
         ['Para quién', d.paraQuien],
         ['A dónde va', d.destino],
-        ['Fecha', d.fecha],
+        ['Fecha', orden ? null : d.fecha],
       ] as Array<[string, string | null | undefined]>
     ).filter(([, valor]) => Boolean(valor && String(valor).trim())),
   )
@@ -402,38 +497,82 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
     hueco de la firma estampada, trece milímetros sobre la raya, y algo de aire.
     Si la tabla llega hasta ahí, las firmas pasan a una hoja de continuación.
   */
+  /*
+    Con orden, las firmas son dos filas: arriba quien la solicitó y quien la
+    autorizó; abajo quien la entregó y quien la recibe. Cada fila son trece
+    milímetros de firma sobre la raya y el nombre debajo, así que entre las dos
+    rayas van veintiocho.
+  */
   const LINEA_DE_FIRMAS = ABAJO - 24
-  const ARRANQUE_DE_FIRMAS = LINEA_DE_FIRMAS - 16
+  const LINEA_DE_ARRIBA = LINEA_DE_FIRMAS - 28
+  const ARRANQUE_DE_FIRMAS = (orden ? LINEA_DE_ARRIBA : LINEA_DE_FIRMAS) - 16
 
   if (y > ARRANQUE_DE_FIRMAS) {
     doc.addPage()
     membrete(doc, logo, {
       empresa: d.empresa,
       datos: [
-        ['N° nota', d.numero],
+        [esOrden ? 'N° orden' : 'N° nota', d.numero],
         ['', '(continuación)'],
       ],
     })
   }
 
-  firmas(
-    doc,
-    LINEA_DE_FIRMAS,
-    {
-      texto: 'Entregó',
-      nombre: d.entrego ?? null,
-      imagen: d.entregoFirma ?? null,
-    },
-    // Sin nombre: el sistema todavía no captura quién retira. Se firma a mano.
-    { texto: 'Recibió conforme', nombre: null },
-  )
+  if (orden) {
+    firmas(
+      doc,
+      LINEA_DE_ARRIBA,
+      { texto: 'Solicitado por', nombre: orden.solicito.nombre, imagen: orden.solicito.firma ?? null },
+      {
+        texto: 'Autorizado por',
+        nombre: orden.autorizo.noAprobo ? null : orden.autorizo.nombre,
+        imagen: orden.autorizo.noAprobo ? null : (orden.autorizo.firma ?? null),
+      },
+    )
+    firmas(
+      doc,
+      LINEA_DE_FIRMAS,
+      { texto: 'Entregado por', nombre: orden.entrego.nombre },
+      // Quien retira no está en el sistema: se firma a mano.
+      { texto: 'Recibido conforme', nombre: null },
+    )
+  } else {
+    firmas(
+      doc,
+      LINEA_DE_FIRMAS,
+      {
+        texto: 'Entregó',
+        nombre: d.entrego ?? null,
+        imagen: d.entregoFirma ?? null,
+      },
+      // Sin nombre: el sistema todavía no captura quién retira. Se firma a mano.
+      { texto: 'Recibió conforme', nombre: null },
+    )
+  }
+
+  /*
+    UNA ORDEN QUE NO SIGUE SE VE CRUZADA. Imprimir una orden no aprobada o
+    cancelada es legítimo —para archivarla, para explicar por qué no salió—,
+    pero no puede servir para retirar material.
+  */
+  if (orden?.sello) {
+    for (let pagina = 1; pagina <= doc.getNumberOfPages(); pagina++) {
+      doc.setPage(pagina)
+      doc.saveGraphicsState()
+      // @ts-expect-error jsPDF expone GState por el objeto global, sin tipo propio.
+      doc.setGState(new doc.GState({ opacity: 0.14 }))
+      doc.setTextColor('#DE3B40').setFont('helvetica', 'bold').setFontSize(54)
+      doc.text(orden.sello, IZQ + ANCHO_UTIL / 2, 165, { align: 'center', angle: 28 })
+      doc.restoreGraphicsState()
+    }
+  }
 
   pieDePagina(doc, `Documento generado por el sistema · ${d.numero} · ${fechaLarga(d.momento)}`)
 
-  doc.setProperties({ title: `Nota de salida ${d.numero}` })
+  doc.setProperties({ title: `${esOrden ? 'Orden' : 'Nota'} de salida ${d.numero}` })
 
   return {
     blob: doc.output('blob'),
-    nombre: `nota-salida-${d.numero.toLowerCase()}.pdf`,
+    nombre: `${esOrden ? 'orden' : 'nota'}-salida-${d.numero.toLowerCase()}.pdf`,
   }
 }

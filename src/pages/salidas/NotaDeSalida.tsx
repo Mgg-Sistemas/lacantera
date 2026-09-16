@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Visor } from '@/components/Visor'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -10,7 +11,9 @@ import {
   paraQuienSalio,
   useGruposDeSalida,
 } from '@/lib/api/inventario'
-import { densidadesDeArticulos } from '@/lib/api/catalogo'
+import { densidadesDeArticulos, leerPerfiles } from '@/lib/api/catalogo'
+import { leerFirmasEncendidas } from '@/lib/api/firmas'
+import { leerOrdenDeLaNota, ordenEnPapel, type SolicitudDeSalida } from '@/lib/api/salidas'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { DatosNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
@@ -53,10 +56,31 @@ function contadoLegible(l: {
 export function useNotaDeSalida(): {
   /** Arma y enseña la nota de ese número. El motivo es el relato de la salida. */
   abrir: (numero: string, motivo: string) => Promise<void>
+  /** Arma y enseña la orden de salida de esa solicitud, en el estado en que esté. */
+  abrirOrden: (s: SolicitudDeSalida) => Promise<void>
   visor: ReactNode
 } {
   const { data: empresa } = useEmpresa()
   const grupos = useGruposDeSalida()
+  const qc = useQueryClient()
+
+  /*
+    LOS NOMBRES Y LAS FIRMAS, TRAÍDOS AL ARMAR.
+
+    Se piden aquí y no se toman de lo que la pantalla tenga cargado: la nota se
+    abre justo después de entregar, y si la lista de firmas todavía viene en
+    camino el papel saldría sin la de quien autorizó, que es la que debe ir.
+    React-query la comparte con el resto de pantallas por la clave.
+  */
+  const nombresYFirmas = async () => {
+    const [perfiles, firmas] = await Promise.all([
+      qc.fetchQuery({ queryKey: ['perfiles'], queryFn: leerPerfiles, staleTime: 5 * 60_000 }),
+      qc.fetchQuery({ queryKey: ['firmas'], queryFn: leerFirmasEncendidas, staleTime: 5 * 60_000 }),
+    ])
+    const nombreDe = (uid: string | null) =>
+      (uid && perfiles.find((p) => p.id === uid)?.nombre) || null
+    return { nombreDe, firmas: firmas.porPerfil }
+  }
 
   const [nota, setNota] = useState<ArchivoArmado | null>(null)
   const [datos, setDatos] = useState<DatosNotaDeSalida | null>(null)
@@ -72,9 +96,12 @@ export function useNotaDeSalida(): {
         valor de cada renglón los calcula la base al mover, y son justo las
         cifras que quedan en el papel que alguien firma.
       */
-      const [lineas, cabecera] = await Promise.all([
+      const [lineas, cabecera, laOrden, { nombreDe, firmas }] = await Promise.all([
         leerNotaDeSalida(numero),
         leerCabeceraDeNota(numero),
+        // Quien reimprime sin permiso de Salidas no la ve: la nota sale sin orden.
+        leerOrdenDeLaNota(numero).catch(() => null),
+        nombresYFirmas(),
       ])
       if (lineas.length === 0) return
 
@@ -86,6 +113,8 @@ export function useNotaDeSalida(): {
         densidades.find((a) => a.codigo === codigo)?.densidad_ton_m3 ?? null
 
       const armados: DatosNotaDeSalida = {
+        tipo: 'NOTA',
+        orden: laOrden ? ordenEnPapel(laOrden, nombreDe, firmas) : null,
         conCostos,
         numero,
         fecha: fecha(lineas[0].fecha),
@@ -122,6 +151,53 @@ export function useNotaDeSalida(): {
     }
   }
 
+  /*
+    LA ORDEN, EN CUALQUIER ESTADO.
+
+    Christopher eligió que la solicitud se pueda imprimir como «Orden de salida»
+    antes de entregarse —por aprobar, aprobada, no aprobada o cancelada—, con su
+    estado a la vista. Lleva lo que se pidió, no lo que salió: eso lo dice la
+    nota. Sin costos, porque todavía no ha salido nada que costar.
+  */
+  const abrirOrden = async (s: SolicitudDeSalida) => {
+    try {
+      const renglones = s.renglones ?? []
+      const [densidades, { nombreDe, firmas }] = await Promise.all([
+        densidadesDeArticulos({ ids: renglones.map((r) => r.articulo_id) }),
+        nombresYFirmas(),
+      ])
+
+      const armados: DatosNotaDeSalida = {
+        tipo: 'ORDEN',
+        orden: ordenEnPapel(s, nombreDe, firmas),
+        conCostos: false,
+        numero: s.numero,
+        fecha: fecha(s.pedida_en),
+        almacen: s.almacen?.nombre ?? '',
+        clase: '',
+        paraQuien: paraQuienSalio(s, grupos.data),
+        motivo: s.motivo,
+        renglones: renglones.map((r) => ({
+          articuloCodigo: r.articulo?.codigo ?? '',
+          articulo: r.propietario ? `${r.articulo?.nombre ?? '—'} · de ${r.propietario}` : (r.articulo?.nombre ?? '—'),
+          cantidad: r.cantidad,
+          unidad: r.articulo?.unidad ?? '',
+          contado: r.presentaciones
+            ? `${numeroLegible(r.presentaciones)} ${r.presentacion ?? ''}${Number(r.suelto) ? ` y ${numeroLegible(r.suelto ?? 0)} ${r.articulo?.unidad ?? ''}` : ''}`.trim()
+            : null,
+          densidad: densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3 ?? null,
+        })),
+        empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+        momento: new Date(),
+      }
+      setDatos(armados)
+      setNota(await armarNotaDeSalida(armados))
+    } catch (e) {
+      setFallo(`No se pudo armar la orden ${s.numero}. Vuelve a intentarlo; la solicitud no cambió.`)
+      console.error(e)
+    }
+  }
+
   const visor = (
     <>
       <Visor
@@ -132,15 +208,20 @@ export function useNotaDeSalida(): {
         }}
         blob={nota?.blob ?? null}
         nombreArchivo={nota?.nombre ?? 'nota-salida.pdf'}
-        titulo="Nota de salida"
-        descripcion="Compruébala antes de imprimirla: es lo que va a firmar quien recibe el material."
+        titulo={datos?.tipo === 'ORDEN' ? 'Orden de salida' : 'Nota de salida'}
+        descripcion={
+          datos?.tipo === 'ORDEN'
+            ? 'Lo que se solicitó y en qué estado está. Lo que de verdad sale lo dice la nota, al entregar.'
+            : 'Compruébala antes de imprimirla: es lo que va a firmar quien recibe el material.'
+        }
         /*
           La casilla rehace el papel sin cerrarlo, igual que el selector de
           moneda de los otros documentos. Se decide con la nota delante, que es
-          como se decide de verdad si esas cifras deben ir o no.
+          como se decide de verdad si esas cifras deben ir o no. La orden no la
+          lleva: todavía no ha salido nada que costar.
         */
         casilla={
-          datos
+          datos && datos.tipo !== 'ORDEN'
             ? {
                 etiqueta: 'Incluir costos',
                 marcada: conCostos,
@@ -163,7 +244,7 @@ export function useNotaDeSalida(): {
         <Modal
           abierto
           onCerrar={() => setFallo(null)}
-          titulo="La salida quedó hecha, el papel no"
+          titulo="No se pudo armar el papel"
           ancho="sm"
           acciones={<Button onClick={() => setFallo(null)}>Entendido</Button>}
         >
@@ -173,5 +254,5 @@ export function useNotaDeSalida(): {
     </>
   )
 
-  return { abrir, visor }
+  return { abrir, abrirOrden, visor }
 }

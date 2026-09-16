@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { ClipboardList, PackageCheck, PackageMinus, SendHorizontal, X } from 'lucide-react'
+import { ClipboardList, FileText, PackageCheck, PackageMinus, SendHorizontal, X } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_SALIDAS } from '@/components/pestanasDeModulos'
@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { usePerfiles } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMiFirma } from '@/lib/api/firmas'
 import { nombreDeGrupo, useGruposDeSalida } from '@/lib/api/inventario'
 import {
   ESTADO_DE_SOLICITUD,
@@ -68,6 +69,18 @@ export function Solicitudes() {
   const [cerrando, setCerrando] = useState<{ s: SolicitudDeSalida; como: 'RECHAZAR' | 'CANCELAR' } | null>(null)
   const [motivo, setMotivo] = useState('')
   const [fallo, setFallo] = useState<string | null>(null)
+  /*
+    APROBAR PREGUNTA POR LA FIRMA, SI HAY FIRMA QUE PONER.
+
+    Christopher eligió que la firma la decide su dueño al actuar, y que todo
+    papel lleve por defecto la de quien autoriza. Quien tiene su firma guardada
+    y encendida la ve marcada y puede quitarla; quien no tiene, aprueba sin que
+    se le pregunte nada: no hay nada que poner.
+  */
+  const { data: miFirma } = useMiFirma()
+  const tengoFirma = miFirma?.usar === true
+  const [aprobando, setAprobando] = useState<SolicitudDeSalida | null>(null)
+  const [conMiFirma, setConMiFirma] = useState(true)
 
   const { data: solicitudes, isPending, error } = useSolicitudesDeSalida()
   const { data: perfiles } = usePerfiles()
@@ -258,14 +271,33 @@ export function Solicitudes() {
                       disabled={aprobar.isPending}
                       onClick={() => {
                         setFallo(null)
-                        aprobar.mutate(s.id, {
-                          onError: (e) => setFallo(e instanceof Error ? e.message : String(e)),
-                        })
+                        if (tengoFirma) {
+                          setConMiFirma(true)
+                          setAprobando(s)
+                          return
+                        }
+                        aprobar.mutate(
+                          { id: s.id, con_firma: false },
+                          { onError: (e) => setFallo(e instanceof Error ? e.message : String(e)) },
+                        )
                       }}
                     >
                       Aprobar
                     </Button>
                   ) : null}
+
+                  {/* La orden se imprime en cualquier estado, con el suyo a la vista. */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={<FileText />}
+                    onClick={() => {
+                      setFallo(null)
+                      void nota.abrirOrden(s)
+                    }}
+                  >
+                    Orden
+                  </Button>
 
                   {puedo.rechazar ? (
                     <Button
@@ -369,6 +401,56 @@ export function Solicitudes() {
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
           />
+        </Modal>
+      ) : null}
+
+      {aprobando ? (
+        <Modal
+          abierto
+          onCerrar={() => setAprobando(null)}
+          titulo={`Aprobar ${aprobando.numero}`}
+          descripcion="Tu nombre va en «Autorizado por» de la orden y de la nota que salga al entregarla."
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setAprobando(null)}>
+                Volver
+              </Button>
+              <Button
+                icon={<PackageCheck />}
+                disabled={aprobar.isPending}
+                onClick={() =>
+                  aprobar.mutate(
+                    { id: aprobando.id, con_firma: conMiFirma },
+                    {
+                      onSuccess: () => setAprobando(null),
+                      onError: (e) => {
+                        setAprobando(null)
+                        setFallo(e instanceof Error ? e.message : String(e))
+                      },
+                    },
+                  )
+                }
+              >
+                {aprobar.isPending ? 'Aprobando…' : 'Aprobar'}
+              </Button>
+            </>
+          }
+        >
+          <label className="border-hairline flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+            <input
+              type="checkbox"
+              className="accent-royal-600 mt-0.5 size-4 shrink-0"
+              checked={conMiFirma}
+              onChange={(e) => setConMiFirma(e.target.checked)}
+            />
+            <span className="text-ink/80">
+              Poner mi firma digital en «Autorizado por»
+              <span className="text-ink/50 mt-0.5 block text-xs">
+                Sin marcar, la raya sale en blanco con tu nombre debajo, para firmarla a mano.
+              </span>
+            </span>
+          </label>
         </Modal>
       ) : null}
 

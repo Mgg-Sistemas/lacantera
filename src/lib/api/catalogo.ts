@@ -39,15 +39,16 @@ export function useMisRoles() {
 export function usePerfiles() {
   return useQuery({
     queryKey: ['perfiles'],
-    queryFn: async () =>
-      desenvolver(
-        await supabase
-          .from('perfiles')
-          .select('id, usuario, nombre, cargo, activo')
-          .order('nombre'),
-      ),
+    queryFn: leerPerfiles,
     staleTime: 5 * 60_000,
   })
+}
+
+/** Lo mismo que `usePerfiles`, para quien arma un papel y no puede esperar a la pantalla. */
+export async function leerPerfiles() {
+  return desenvolver<{ id: string; usuario: string; nombre: string; cargo: string | null; activo: boolean }[]>(
+    await supabase.from('perfiles').select('id, usuario, nombre, cargo, activo').order('nombre'),
+  )
 }
 
 // ---------------------------------------------------------------------------

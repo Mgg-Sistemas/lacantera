@@ -86,21 +86,27 @@ export function useFirmaDeEmpleado(empleadoId: number | null | undefined) {
 export function useFirmas() {
   return useQuery({
     queryKey: ['firmas'],
-    queryFn: async () => {
-      const filas = desenvolver<Firma[]>(
-        await supabase.from('firmas').select('*').eq('usar', true),
-      )
-      return {
-        porPerfil: Object.fromEntries(
-          filas.filter((f) => f.perfil_id).map((f) => [f.perfil_id!, f.imagen]),
-        ) as Record<string, string>,
-        porEmpleado: Object.fromEntries(
-          filas.filter((f) => f.empleado_id).map((f) => [f.empleado_id!, f.imagen]),
-        ) as Record<number, string>,
-      }
-    },
+    queryFn: leerFirmasEncendidas,
     staleTime: 5 * 60_000,
   })
+}
+
+/**
+ * Lo mismo que `useFirmas`, para quien lo necesita en el momento de armar un
+ * papel y no puede esperar a que la pantalla lo tenga cargado: una orden de
+ * salida que se imprime con la consulta todavía en camino saldría sin la firma
+ * que su dueño eligió poner.
+ */
+export async function leerFirmasEncendidas() {
+  const filas = desenvolver<Firma[]>(await supabase.from('firmas').select('*').eq('usar', true))
+  return {
+    porPerfil: Object.fromEntries(
+      filas.filter((f) => f.perfil_id).map((f) => [f.perfil_id!, f.imagen]),
+    ) as Record<string, string>,
+    porEmpleado: Object.fromEntries(
+      filas.filter((f) => f.empleado_id).map((f) => [f.empleado_id!, f.imagen]),
+    ) as Record<number, string>,
+  }
 }
 
 function useAccionFirma<A>(fn: (a: A) => Promise<unknown>) {
