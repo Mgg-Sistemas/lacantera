@@ -90,6 +90,9 @@ export interface Acarreo {
   decidido_como: 'RESPONSABLE' | 'CASILLA' | 'RESPALDO' | null
   motivo_rechazo: string | null
   anterior_a_la_aprobacion: boolean
+  /** El precio que traía de su ruta, si quien aprueba lo ajustó. Nulo sin la casilla del dinero. */
+  precio_antes_de_ajuste: string | null
+  motivo_ajuste: string | null
 }
 
 export interface AcarreoDia {
@@ -456,6 +459,16 @@ export function useRegistrarViajes() {
 
 export function useAprobarViajes() {
   return useAccion((ids: number[]) => rpc<number>('aprobar_viajes', { p_ids: ids }))
+}
+
+/**
+ * Le pone otro precio a viajes que esperan aprobación: un parcial, un vacío.
+ * Christopher: «lo decide quien aprueba». Queda el precio de la ruta y el motivo.
+ */
+export function useAjustarPrecioDeViajes() {
+  return useAccion((a: { ids: number[]; precio: number; motivo: string }) =>
+    rpc<number>('ajustar_precio_de_viajes', { p_ids: a.ids, p_precio: a.precio, p_motivo: a.motivo }),
+  )
 }
 
 export function useRechazarViajes() {
