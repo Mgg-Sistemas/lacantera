@@ -19,7 +19,8 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMisRoles, usePerfiles } from '@/lib/api/catalogo'
 import {
   bajaDe,
-  causaDeBaja,
+  motivoDeSalida,
+  motivoParaLaNota,
   nombreDeMovimiento,
   useAlmacenes,
   useMovimientos,
@@ -98,7 +99,7 @@ export function Movimientos() {
           numero: m.nota_salida ?? m.numero,
           fecha: fecha(m.fecha),
           almacen: m.almacen?.nombre ?? '',
-          clase: nombreDeMovimiento(m),
+          clase: motivoParaLaNota(m),
           motivo: m.nota,
           renglones:
             lineas && lineas.length > 0
@@ -601,16 +602,16 @@ function DetalleDelMovimiento({
   /*
     LO QUE EL MOVIMIENTO GUARDA Y EL DETALLE NO DECÍA.
 
-    Christopher, con una baja delante: «necesitamos todo explícito en el
-    movimiento o detalle». Una baja decía «Baja» sin decir por qué —la causa vive
-    en otra tabla—, y no decía de quién era lo que salió ni en qué moneda se
-    tecleó el costo.
+    Christopher: «necesitamos todo explícito en el movimiento o detalle». Una
+    salida no decía por qué salió —la razón no se guardaba, y la causa de las
+    viejas vivía en otra tabla—, ni de quién era lo que salió, ni en qué moneda
+    se tecleó el costo. El motivo sale de `motivoDeSalida`, el mismo que usan la
+    fila, el papel y la auditoría.
   */
-  const baja = bajaDe(m)
-  if (baja) {
-    datos.push(['Causa de la baja', causaDeBaja(baja.causa) ?? baja.causa])
-    if (baja.destino) datos.push(['Destino', baja.destino])
-  }
+  const motivoGuardado = motivoDeSalida(m)
+  if (motivoGuardado) datos.push(['Motivo', motivoGuardado])
+  const destino = bajaDe(m)?.destino
+  if (destino) datos.push(['Destino', destino])
   if (m.propietario) datos.push(['Dueño', m.propietario])
   if (m.costo_capturado && m.moneda_capturada) {
     datos.push([

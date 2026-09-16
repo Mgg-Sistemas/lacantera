@@ -102,7 +102,7 @@ const EN_PALABRAS: Record<string, string> = {
 function frase(m: Movimiento): string {
   if (m.operacion === 'ACCESO') return 'Entró al sistema'
   if (m.operacion === 'CLAVE') return 'Cambió una clave'
-  // Donde el hecho tiene verbo propio —«Dio de baja», «Aceptó un traslado»— se
+  // Donde el hecho tiene verbo propio —«Registró una salida», «Aceptó un traslado»— se
   // dice ese, y no «Creó» más el nombre de una tabla.
   const propia = accionCorta(m)
   if (propia) return `${propia}${m.etiqueta ? ` · ${m.etiqueta}` : ''}`
@@ -802,7 +802,7 @@ function Valor({
   const { data: perfiles } = usePerfiles()
   /*
     Tres formas de ponerle nombre a un valor, por este orden: lo que la fila
-    apunta —el artículo 513—, el código traducido —SALIDA_BAJA es «Baja»— y la
+    apunta —el artículo 513—, el código traducido —SALIDA_BAJA es «Salida»— y la
     persona detrás de un identificador de usuario, que las columnas «pedida
     por» guardan crudo porque apuntan fuera de las tablas que se resuelven.
   */
