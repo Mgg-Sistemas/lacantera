@@ -699,6 +699,106 @@ export function useMisAutorizaciones() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Restricciones: lo que se le quita a UNA PERSONA aunque su rol se lo dé
+//
+// Christopher, 16/09/2026: «así como hay permisos extendidos, deberían haber
+// permisos reducidos o revocados». Es el espejo de lo de arriba, con la misma
+// forma: la casilla, quién la restringió, desde cuándo, hasta cuándo y por qué.
+// Manda sobre el rol y sobre lo extendido, y al administrador no se le pone.
+//
+// Solo se ofrecen las casillas que la base pregunta por su nombre. Las demás
+// las decide el nivel del módulo en el rol, y restringirlas escondería el
+// botón sin frenar a la base: quien la puso creería que está puesta.
+// ---------------------------------------------------------------------------
+
+export interface RestriccionDelSistema {
+  id: number
+  accion: string
+  accion_nombre: string
+  modulo: string
+  modulo_nombre: string
+  a_usuario: string
+  a_nombre: string
+  /** Si hoy tiene el rol de administrador, la restricción no le aplica. */
+  a_es_administrador: boolean
+  por_usuario: string
+  por_nombre: string
+  desde: string
+  /** Nulo es sin fecha de fin. */
+  hasta: string | null
+  motivo: string
+  /** Ya calculado por la base: ni levantada, ni por empezar, ni vencida, ni de un administrador. */
+  vigente: boolean
+  levantada_en: string | null
+  levantada_por: string | null
+  levantada_nombre: string | null
+  levantada_motivo: string | null
+  creada_en: string
+}
+
+/** Quien las gestiona las ve todas; los demás, solo las suyas. */
+export function useRestricciones() {
+  return useQuery({
+    queryKey: ['restricciones'],
+    queryFn: () => rpc<RestriccionDelSistema[]>('restricciones_del_sistema'),
+  })
+}
+
+/** Los códigos de las casillas que la base pregunta por su nombre. */
+export function useAccionesRestringibles() {
+  return useQuery({
+    queryKey: ['acciones', 'restringibles'],
+    queryFn: () => rpc<string[]>('acciones_restringibles'),
+    staleTime: 10 * 60_000,
+  })
+}
+
+/** Lo que devuelve restringir varias: cuántas entraron y cuáles no, con su motivo. */
+export interface ResumenDeRestriccion {
+  restringidas: number
+  omitidas: { accion: string; motivo: string }[]
+}
+
+export function useRestringirVarias() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: {
+      usuario_id: string
+      acciones: string[]
+      motivo: string
+      desde?: string | null
+      hasta?: string | null
+    }) =>
+      rpc<ResumenDeRestriccion>('restringir_varias', {
+        p_usuario_id: v.usuario_id,
+        p_acciones: v.acciones,
+        p_motivo: v.motivo,
+        p_desde: v.desde || null,
+        p_hasta: v.hasta || null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['restricciones'] })
+      // Restringir retira en el mismo paso lo extendido de esa casilla.
+      void qc.invalidateQueries({ queryKey: ['autorizaciones'] })
+      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
+      void qc.invalidateQueries({ queryKey: ['mis-autorizaciones'] })
+    },
+  })
+}
+
+export function useLevantarRestriccion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { id: number; motivo: string }) =>
+      rpc('levantar_restriccion', { p_id: v.id, p_motivo: v.motivo }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['restricciones'] })
+      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
+    },
+  })
+}
+
 export function useEliminarRol() {
   const qc = useQueryClient()
   return useMutation({

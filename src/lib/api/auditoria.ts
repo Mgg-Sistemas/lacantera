@@ -191,6 +191,13 @@ const INTENTOS_EN_PALABRAS: Record<string, string> = {
   crear_cotizacion_venta: 'Hacer una cotización',
   cambiar_estado_articulo: 'Activar o desactivar un artículo',
   guardar_clase_de_salida: 'Guardar una razón de salida',
+  rechazar_solicitud_salida: 'No aprobar una solicitud de salida',
+  cancelar_solicitud_salida: 'Cancelar una solicitud de salida',
+  aprobar_compra: 'Aprobar una compra',
+  devolver_a_cotizacion: 'Devolverle un pedido a compras',
+  autorizar_varias: 'Extender permisos',
+  restringir_varias: 'Restringir permisos',
+  levantar_restriccion: 'Levantar una restricción',
 }
 
 export const intentoEnPalabras = (funcion: string): string =>
@@ -277,6 +284,8 @@ const NOMBRES: Record<string, string> = {
   proveedores: 'Proveedor',
   rol_permisos: 'Permiso de un rol',
   roles: 'Rol',
+  autorizaciones: 'Permiso extendido',
+  restricciones: 'Permiso restringido',
   solicitud_renglones: 'Renglón de pedido',
   solicitudes_pedido: 'Pedido',
   tasas_cambio: 'Tasa de cambio',

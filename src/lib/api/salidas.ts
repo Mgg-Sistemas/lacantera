@@ -188,6 +188,32 @@ export function useEntregarSolicitud() {
 }
 
 /**
+ * Cómo apruebo las solicitudes de salida: `respaldo` si tengo la casilla y
+ * apruebo en cualquier almacén, `sitios` los almacenes por los que respondo, y
+ * `restringida` si se me quitó, que deja las otras dos vacías.
+ *
+ * Es la regla de `private.como_aprueba_salida`, dicha a la pantalla. Ya no es
+ * la del traslado: desde el 16/09 aprobar una salida tiene casilla propia, que
+ * se extiende y se restringe por persona, y aceptar un traslado no.
+ */
+export interface ComoAprueboSalidas {
+  yo: string
+  respaldo: boolean
+  restringida: boolean
+  sitios: number[]
+}
+
+export function useComoAprueboSalidas() {
+  return useQuery({
+    // Bajo `mis-acciones` a propósito: extender o restringir una casilla
+    // invalida esa clave, y esto cambia con ellas.
+    queryKey: ['mis-acciones', 'aprobar-salidas'],
+    queryFn: () => rpc<ComoAprueboSalidas>('como_apruebo_salidas'),
+    staleTime: 60_000,
+  })
+}
+
+/**
  * Lo que la pantalla ofrece en cada solicitud.
  *
  * Es la misma regla que aplica la base, dicha aquí solo para no enseñar botones
