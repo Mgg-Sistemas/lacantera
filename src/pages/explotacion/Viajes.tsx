@@ -14,9 +14,37 @@
      guion en los metros cúbicos, no un cero, y el pie de la lista dice cuántos
      camiones no están sumando. Un total corto sin explicación es peor que no
      tener total.
+
+  Y DESDE EL 16/09/2026, TRES MÁS
+
+  3. Las columnas son RUTAS, no tres tramos fijos. Christopher: «¿qué pasa si
+     mañana cierra o abre una nueva planta?». Una ruta nueva aparece sola como
+     columna, y una apagada deja de ofrecerse sin que desaparezcan sus viajes.
+
+  4. Todo viaje nuevo nace POR APROBAR y no cuenta para el pago hasta que lo
+     aprueba «por lo mínimo un analista o responsable». La tabla enseña los que
+     cuentan y, al lado, los que esperan; arriba está lo que hay que decidir.
+
+  5. El viaje dice cómo volvió: completo, parcial o vacío. «En cada viaje se
+     debe obtener material, aunque debemos evaluar la posibilidad de que algún
+     camión vuelva sin carga o sin carga completa».
 */
 import { useState } from 'react'
-import { Ban, Check, ClipboardCopy, Coins, Download, MessageSquare, Pencil, Plus, Printer, Truck } from 'lucide-react'
+import { Link } from 'react-router'
+import {
+  Ban,
+  Check,
+  ClipboardCopy,
+  Coins,
+  Download,
+  MessageSquare,
+  Pencil,
+  Plus,
+  Printer,
+  Route,
+  Truck,
+  X,
+} from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -28,20 +56,27 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import {
-  TRAMOS,
+  CARGA_DEL_VIAJE,
+  ESTADO_VIAJE,
+  puedoDecidirViaje,
+  tarifaEnPalabras,
   useAcarreosDelDia,
-  useAcarreosDeVehiculo,
+  useAcarreosDeEquipo,
   useAcarreosDia,
   useAnularAcarreo,
-  useEquiposEnOperacion,
+  useAprobarViajes,
+  useComoApruebo,
   useCorregirAcarreo,
-  useFijarTarifaAcarreo,
+  useEquiposEnOperacion,
+  useMaquinasParaViajes,
   usePagoDeAcarreosEntre,
-  useRegistrarAcarreos,
-  useTarifasAcarreo,
+  useRechazarViajes,
+  useRegistrarViajes,
+  useRutasAcarreo,
   type Acarreo,
   type AcarreoDia,
-  type Tramo,
+  type CargaDelViaje,
+  type RutaAcarreo,
 } from '@/lib/api/acarreos'
 import { useVehiculos, type Vehiculo } from '@/lib/api/vehiculos'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
@@ -59,13 +94,22 @@ import { hoyEnCaracas } from '@/lib/api/tasas'
 import { dolares, enteros, fecha as fmtFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
-const OPCIONES_TRAMO = TRAMOS.map((t) => ({ valor: t.valor, etiqueta: t.etiqueta }))
-
 /** Un número que puede no saberse. El guion es la respuesta, no un hueco. */
 function Cifra({ valor, comoDinero = false }: { valor: string | null; comoDinero?: boolean }) {
   if (valor === null) return <span className="text-ink/25">—</span>
   return <>{comoDinero ? dolares(valor) : enteros(valor)}</>
 }
+
+/** Quién hizo los viajes: un camión de tercero o una máquina propia. */
+interface Equipo {
+  vehiculoId: number | null
+  maquinaId: number | null
+  placa: string
+  detalle: string
+}
+
+const esDe = (f: { vehiculo_id: number | null; maquina_id: number | null }, e: Equipo) =>
+  e.vehiculoId !== null ? f.vehiculo_id === e.vehiculoId : f.maquina_id === e.maquinaId
 
 export function Viajes() {
   const [pestana, setPestana] = useState<'dia' | 'pago'>('dia')
@@ -74,7 +118,14 @@ export function Viajes() {
     <>
       <PageHeader
         title="Viajes de camiones"
-        description="Cuántos viajes hizo cada camión y a dónde. Es la medida del material que bajó de la mina y lo que se le debe a cada transportista."
+        description="Cuántos viajes hizo cada camión o máquina y por qué ruta. Cada viaje nuevo espera a que lo apruebe el responsable de la mina o planta, o quien tenga la casilla de aprobar: hasta entonces no cuenta para el pago."
+        actions={
+          <Link to="/app/explotacion/plantas">
+            <Button variant="outline" icon={<Route />}>
+              Plantas y rutas
+            </Button>
+          </Link>
+        }
       />
 
       <div className="border-hairline mb-5 flex gap-1 border-b">
@@ -110,11 +161,13 @@ export function Viajes() {
 
 function PestanaDia() {
   const [dia, setDia] = useState(hoyEnCaracas())
-  const [detalle, setDetalle] = useState<Vehiculo | null>(null)
+  const [detalle, setDetalle] = useState<Equipo | null>(null)
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
   const [reporte, setReporte] = useState(false)
 
   const vehiculos = useVehiculos(true)
+  const maquinas = useMaquinasParaViajes()
+  const rutas = useRutasAcarreo()
   const dias = useAcarreosDia(dia)
   const todos = useAcarreosDelDia(dia)
   const { data: laEmpresa } = useEmpresa()
@@ -124,12 +177,24 @@ function PestanaDia() {
 
   const filas = dias.data ?? []
   const flota = vehiculos.data ?? []
+  const listaRutas = rutas.data ?? []
+  const usables = listaRutas.filter((r) => r.se_puede_usar)
 
-  // Lo que ya tiene cada camión hoy, para poder decir «quedarán 8».
-  const yaTiene = (vehiculoId: number, tramo: Tramo) =>
-    filas.find((f) => f.vehiculo_id === vehiculoId && f.tramo === tramo)?.viajes ?? 0
+  /* Las columnas: las rutas que se pueden usar, y además las que tienen
+     viajes ese día aunque ya estén apagadas o su planta cerrada. Un viaje no
+     desaparece de la tabla porque su ruta se apague después. */
+  const columnas = listaRutas.filter(
+    (r) => r.se_puede_usar || filas.some((f) => f.ruta_id === r.id),
+  )
+
+  // Lo que ya tiene cada equipo hoy en una ruta, esperen o no, para decir «quedarán 8».
+  const yaTiene = (e: Equipo, rutaId: number) =>
+    filas
+      .filter((f) => esDe(f, e) && f.ruta_id === rutaId)
+      .reduce((s, f) => s + f.viajes + f.por_aprobar, 0)
 
   const totalViajes = filas.reduce((s, f) => s + f.viajes, 0)
+  const totalPorAprobar = filas.reduce((s, f) => s + f.por_aprobar, 0)
   const totalM3 = filas.reduce((s, f) => s + Number(f.m3 ?? 0), 0)
   const sinCarga = filas.reduce((s, f) => s + f.sin_carga, 0)
   const hayDinero = filas.some((f) => f.monto_usd !== null)
@@ -143,18 +208,28 @@ function PestanaDia() {
     porEmpresa.set(empresa, [...(porEmpresa.get(empresa) ?? []), v])
   }
 
+  const deCamion = (v: Vehiculo): Equipo => ({
+    vehiculoId: v.id,
+    maquinaId: null,
+    placa: v.placa,
+    detalle: [v.chofer_actual, v.descripcion].filter(Boolean).join(' · ') || 'Sin chofer asignado',
+  })
+
+  const listaMaquinas = maquinas.data ?? []
+  const maquinasDelDia = listaMaquinas.filter((m) => filas.some((f) => f.maquina_id === m.id))
+
   /* El papel se arma de los viajes sueltos, no de la vista agrupada: la
      planilla imprime viaje por viaje, con su número y su hora. */
   const imprimir = async () => {
     const viajes = todos.data ?? []
-    const placas = [...new Set(viajes.map((v) => v.placa))]
+    const placas = [...new Set(viajes.map((v) => v.placa ?? '—'))]
 
     setPdf(
       await armarRegistroDeViajes({
         dia,
         empresa: null,
         camiones: placas.map((placa) => {
-          const suyos = viajes.filter((v) => v.placa === placa)
+          const suyos = viajes.filter((v) => (v.placa ?? '—') === placa)
           return {
             placa,
             vehiculo: suyos[0]?.vehiculo ?? null,
@@ -167,7 +242,7 @@ function PestanaDia() {
               carga_m3: v.carga_m3,
               precio_usd: v.precio_usd,
               estado: v.estado,
-              motivo_anulacion: v.motivo_anulacion,
+              motivo_anulacion: v.motivo_anulacion ?? v.motivo_rechazo,
             })),
           }
         }),
@@ -177,6 +252,39 @@ function PestanaDia() {
       }),
     )
   }
+
+  const tabla = (equipos: Equipo[]) => (
+    <Card flush>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] text-sm">
+          <thead>
+            <tr className="text-ink/45 border-hairline border-b text-left text-xs">
+              <th className="px-5 py-3 font-medium">Camión o máquina</th>
+              {columnas.map((r) => (
+                <th key={r.id} className="max-w-40 px-3 py-3 text-right font-medium" title={r.nombre}>
+                  {r.nombre}
+                </th>
+              ))}
+              <th className="px-3 py-3 text-right font-medium">m³</th>
+              <th className="px-3 py-3 text-right font-medium">Se le debe</th>
+              <th className="px-5 py-3 text-right font-medium" />
+            </tr>
+          </thead>
+          <tbody>
+            {equipos.map((e) => (
+              <FilaEquipo
+                key={`${e.vehiculoId ?? 'm'}-${e.maquinaId ?? 'v'}`}
+                equipo={e}
+                columnas={columnas}
+                filas={filas.filter((f) => esDe(f, e))}
+                onDetalle={() => setDetalle(e)}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  )
 
   return (
     <>
@@ -208,12 +316,25 @@ function PestanaDia() {
             Reporte de operaciones
           </Button>
         </div>
-        <CajaDeTarifas />
+        <CajaDeTarifas rutas={usables} />
       </div>
 
-      {vehiculos.isPending || dias.isPending ? <Cargando /> : null}
+      {vehiculos.isPending || dias.isPending || rutas.isPending ? <Cargando /> : null}
       {vehiculos.error ? <ErrorDeCarga error={vehiculos.error} /> : null}
       {dias.error ? <ErrorDeCarga error={dias.error} /> : null}
+      {rutas.error ? <ErrorDeCarga error={rutas.error} /> : null}
+
+      <PorAprobar viajes={todos.data ?? []} />
+
+      {!rutas.isPending && usables.length === 0 ? (
+        <Card className="mb-4">
+          <Vacio
+            icono={<Route />}
+            titulo="No hay ninguna ruta abierta"
+            descripcion="Los viajes se cargan por ruta, de un sitio a otro. Se crean en Explotación › Plantas y rutas."
+          />
+        </Card>
+      ) : null}
 
       {!vehiculos.isPending && !vehiculos.error && flota.length === 0 ? (
         <Card>
@@ -225,55 +346,78 @@ function PestanaDia() {
         </Card>
       ) : null}
 
-      {flota.length > 0 ? (
+      {flota.length > 0 || maquinasDelDia.length > 0 ? (
         <div className="space-y-5">
           {[...porEmpresa.entries()].map(([empresa, camiones]) => (
             <section key={empresa}>
               <h2 className="text-ink/80 mb-2 text-sm font-semibold">{empresa}</h2>
-              <Card flush>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[760px] text-sm">
-                    <thead>
-                      <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-                        <th className="px-5 py-3 font-medium">Camión</th>
-                        {TRAMOS.map((t) => (
-                          <th key={t.valor} className="px-3 py-3 text-right font-medium">
-                            {t.corto}
-                          </th>
-                        ))}
-                        <th className="px-3 py-3 text-right font-medium">m³</th>
-                        <th className="px-3 py-3 text-right font-medium">Se le debe</th>
-                        <th className="px-5 py-3 text-right font-medium" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {camiones.map((v) => (
-                        <FilaCamion
-                          key={v.id}
-                          vehiculo={v}
-                          filas={filas.filter((f) => f.vehiculo_id === v.id)}
-                          onDetalle={() => setDetalle(v)}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
+              {tabla(camiones.map(deCamion))}
 
               {escribe ? (
-                <CargarViajes dia={dia} camiones={camiones} yaTiene={yaTiene} />
+                <CargarViajes
+                  dia={dia}
+                  equipos={camiones.map(deCamion)}
+                  rutas={usables}
+                  yaTiene={yaTiene}
+                />
               ) : null}
             </section>
           ))}
 
+          {/*
+            LAS MÁQUINAS PROPIAS, APARTE.
+
+            Un payloader o un articulado que mueve material entre la mina y las
+            plantas no es un camión de tercero ni se le paga a una empresa. Sale
+            aquí para que su viaje quede contado con su ruta; cuánto se paga, lo
+            dice la ruta como con cualquier otro.
+          */}
+          {escribe || maquinasDelDia.length > 0 ? (
+            <section>
+              <h2 className="text-ink/80 mb-2 text-sm font-semibold">Máquinas propias</h2>
+              {maquinasDelDia.length > 0 ? (
+                tabla(
+                  maquinasDelDia.map((m) => ({
+                    vehiculoId: null,
+                    maquinaId: m.id,
+                    placa: m.codigo,
+                    detalle: m.nombre,
+                  })),
+                )
+              ) : (
+                <p className="text-ink/45 text-xs">Ninguna máquina propia hizo viajes este día.</p>
+              )}
+              {escribe && listaMaquinas.length > 0 ? (
+                <CargarViajes
+                  dia={dia}
+                  equipos={listaMaquinas.map((m) => ({
+                    vehiculoId: null,
+                    maquinaId: m.id,
+                    placa: m.codigo,
+                    detalle: m.nombre,
+                  }))}
+                  rutas={usables}
+                  yaTiene={yaTiene}
+                />
+              ) : null}
+            </section>
+          ) : null}
+
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-ink/45 text-xs">Total del día</p>
+                <p className="text-ink/45 text-xs">Total del día (lo aprobado y lo anterior a la aprobación)</p>
                 <p className="tabular text-ink/90 text-lg font-semibold">
                   {enteros(totalViajes)} viajes · {enteros(totalM3)} m³
                   {hayDinero ? ` · ${dolares(totalUsd)}` : ''}
                 </p>
+                {totalPorAprobar > 0 ? (
+                  <p className="text-warning mt-0.5 text-xs">
+                    Además, {enteros(totalPorAprobar)}{' '}
+                    {totalPorAprobar === 1 ? 'viaje espera' : 'viajes esperan'} aprobación y todavía no
+                    cuentan.
+                  </p>
+                ) : null}
               </div>
               {sinCarga > 0 ? (
                 <p className="text-warning max-w-md text-xs leading-relaxed">
@@ -288,7 +432,7 @@ function PestanaDia() {
       ) : null}
 
       {detalle ? (
-        <DetalleDelCamion dia={dia} vehiculo={detalle} onCerrar={() => setDetalle(null)} />
+        <DetalleDelEquipo dia={dia} equipo={detalle} onCerrar={() => setDetalle(null)} />
       ) : null}
 
       {reporte ? (
@@ -311,6 +455,195 @@ function PestanaDia() {
   )
 }
 
+/* ═════════════════════════════════════════════════════════════ por aprobar */
+
+interface GrupoPorAprobar {
+  clave: string
+  ruta: string
+  equipo: string
+  origen_id: number | null
+  destino_id: number | null
+  ids: number[]
+  cargas: Record<CargaDelViaje, number>
+  m3: number
+  hayM3: boolean
+  monto: number
+  hayDinero: boolean
+}
+
+/**
+ * Lo que espera una decisión, arriba y agrupado.
+ *
+ * Por equipo y ruta, porque así se aprueba en la vida real: «los 12 del
+ * A74AB3P a la planta fija». Cada grupo dice cómo volvieron sus viajes —un
+ * vacío no se aprueba sin verlo— y los botones solo salen a quien puede
+ * decidir sobre esa ruta.
+ */
+function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
+  const como = useComoApruebo()
+  const aprobar = useAprobarViajes()
+  const [rechazando, setRechazando] = useState<GrupoPorAprobar | null>(null)
+
+  const esperando = viajes.filter((v) => v.estado === 'POR_APROBAR')
+  if (esperando.length === 0) return null
+
+  const grupos = new Map<string, GrupoPorAprobar>()
+  for (const v of esperando) {
+    const clave = `${v.ruta_id}-${v.vehiculo_id ?? ''}-${v.maquina_id ?? ''}`
+    const g = grupos.get(clave) ?? {
+      clave,
+      ruta: v.tramo_dice,
+      equipo: v.placa ?? '—',
+      origen_id: v.origen_id,
+      destino_id: v.destino_id,
+      ids: [],
+      cargas: { COMPLETA: 0, PARCIAL: 0, VACIO: 0 },
+      m3: 0,
+      hayM3: false,
+      monto: 0,
+      hayDinero: false,
+    }
+    g.ids.push(v.id)
+    if (v.carga) g.cargas[v.carga] += 1
+    if (v.carga_m3 !== null) {
+      g.m3 += Number(v.carga_m3)
+      g.hayM3 = true
+    }
+    if (v.precio_usd !== null) {
+      g.monto += Number(v.precio_usd)
+      g.hayDinero = true
+    }
+    grupos.set(clave, g)
+  }
+
+  const lista = [...grupos.values()]
+  const decidibles = lista.filter((g) => puedoDecidirViaje(como.data, g))
+
+  const comoVolvieron = (c: Record<CargaDelViaje, number>) =>
+    [
+      c.COMPLETA ? `${c.COMPLETA} completo${c.COMPLETA === 1 ? '' : 's'}` : null,
+      c.PARCIAL ? `${c.PARCIAL} parcial${c.PARCIAL === 1 ? '' : 'es'}` : null,
+      c.VACIO ? `${c.VACIO} vacío${c.VACIO === 1 ? '' : 's'}` : null,
+    ]
+      .filter(Boolean)
+      .join(', ')
+
+  return (
+    <Card className="border-warning/40 mb-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-ink/85 text-sm font-semibold">
+            Por aprobar · {enteros(esperando.length)} {esperando.length === 1 ? 'viaje' : 'viajes'}
+          </h2>
+          <p className="text-ink/55 mt-0.5 max-w-2xl text-xs leading-relaxed">
+            Todavía no cuentan para el pago. Los aprueba o rechaza el responsable de la mina o
+            planta de origen o de destino, o quien tenga la casilla «Aprobar o rechazar viajes».
+            {decidibles.length === 0
+              ? ' Tú no puedes decidir sobre ninguno de estos.'
+              : ''}
+          </p>
+        </div>
+        {decidibles.length > 1 ? (
+          <Button
+            size="sm"
+            icon={<Check />}
+            disabled={aprobar.isPending}
+            onClick={() => aprobar.mutate(decidibles.flatMap((g) => g.ids))}
+          >
+            Aprobar los {enteros(decidibles.reduce((s, g) => s + g.ids.length, 0))} que puedo
+          </Button>
+        ) : null}
+      </div>
+
+      <ul className="divide-hairline mt-3 divide-y">
+        {lista.map((g) => {
+          const puedo = puedoDecidirViaje(como.data, g)
+          return (
+            <li key={g.clave} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
+              <div className="min-w-0 text-sm">
+                <p className="text-ink/85">
+                  <span className="tabular font-medium">{g.equipo}</span> · {g.ruta}
+                </p>
+                <p className="text-ink/50 text-xs">
+                  {enteros(g.ids.length)} {g.ids.length === 1 ? 'viaje' : 'viajes'}:{' '}
+                  {comoVolvieron(g.cargas) || 'sin decir cómo volvieron'}
+                  {g.hayM3 ? ` · ${enteros(g.m3)} m³` : ''}
+                  {g.hayDinero ? ` · ${dolares(g.monto)}` : ''}
+                </p>
+              </div>
+              {puedo ? (
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    icon={<Check />}
+                    disabled={aprobar.isPending}
+                    onClick={() => aprobar.mutate(g.ids)}
+                  >
+                    Aprobar
+                  </Button>
+                  <Button size="sm" variant="ghost" icon={<X />} onClick={() => setRechazando(g)}>
+                    Rechazar
+                  </Button>
+                </div>
+              ) : (
+                <span className="text-ink/40 text-xs">Lo decide el responsable</span>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+
+      {aprobar.error ? <ErrorDeCarga error={aprobar.error} className="mt-3" /> : null}
+
+      {rechazando ? (
+        <RechazarViajes grupo={rechazando} onCerrar={() => setRechazando(null)} />
+      ) : null}
+    </Card>
+  )
+}
+
+function RechazarViajes({ grupo, onCerrar }: { grupo: GrupoPorAprobar; onCerrar: () => void }) {
+  const rechazar = useRechazarViajes()
+  const [motivo, setMotivo] = useState('')
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo={`Rechazar ${grupo.ids.length === 1 ? 'el viaje' : `los ${grupo.ids.length} viajes`} de ${grupo.equipo}`}
+      descripcion={`${grupo.ruta}. Un viaje rechazado no cuenta ni se paga, y no se puede volver a aprobar: si fue un error de carga, se carga de nuevo.`}
+      ancho="sm"
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Volver
+          </Button>
+          <Button
+            variant="danger"
+            disabled={rechazar.isPending || motivo.trim().length < 4}
+            onClick={async () => {
+              await rechazar.mutateAsync({ ids: grupo.ids, motivo })
+              onCerrar()
+            }}
+          >
+            {rechazar.isPending ? 'Rechazando…' : 'Rechazar'}
+          </Button>
+        </>
+      }
+    >
+      <Textarea
+        label="Por qué se rechazan"
+        hint="Quien los cargó va a leerlo."
+        rows={3}
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+        required
+      />
+      {rechazar.error ? <ErrorDeCarga error={rechazar.error} className="mt-3" /> : null}
+    </Modal>
+  )
+}
+
 /* ════════════════════════════════════ el mensaje del reporte de operaciones */
 
 /**
@@ -319,6 +652,9 @@ function PestanaDia() {
  * Se enseña el texto completo y se copia de un botón. No se guarda en ningún
  * sitio: es un mensaje, no un documento. Las novedades se teclean aquí porque
  * son lo único que el sistema no puede saber.
+ *
+ * Cuenta también lo que espera aprobación: el reporte dice lo que pasó ese día,
+ * y la aprobación suele llegar después de mandarlo.
  */
 function ReporteDeOperaciones({
   dia,
@@ -335,11 +671,12 @@ function ReporteDeOperaciones({
   const [novedades, setNovedades] = useState('')
   const [copiado, setCopiado] = useState(false)
 
-  const placas = [...new Set(filas.map((f) => f.placa))]
+  const placas = [...new Set(filas.map((f) => f.placa ?? '—'))]
   const camiones = placas.map((placa) => {
-    const suyas = filas.filter((f) => f.placa === placa)
+    const suyas = filas.filter((f) => (f.placa ?? '—') === placa)
     const conM3 = suyas.some((f) => f.m3 !== null)
-    const porTramo = (t: Tramo) => suyas.find((f) => f.tramo === t)?.viajes ?? 0
+    const porTramo = (t: string) =>
+      suyas.filter((f) => f.tramo === t).reduce((s, f) => s + f.viajes + f.por_aprobar, 0)
     return {
       placa,
       transportista: suyas[0]?.transportista ?? '',
@@ -379,7 +716,7 @@ function ReporteDeOperaciones({
       abierto
       onCerrar={onCerrar}
       titulo="Reporte diario de operaciones"
-      descripcion="El mensaje que se manda por WhatsApp. Se copia y se pega tal cual: no se guarda en el sistema."
+      descripcion="El mensaje que se manda por WhatsApp. Se copia y se pega tal cual: no se guarda en el sistema. Cuenta los viajes a planta fija, a lavado y de coraza, también los que esperan aprobación."
       ancho="lg"
       acciones={
         <>
@@ -423,36 +760,43 @@ function ReporteDeOperaciones({
   )
 }
 
-function FilaCamion({
-  vehiculo,
+function FilaEquipo({
+  equipo,
+  columnas,
   filas,
   onDetalle,
 }: {
-  vehiculo: Vehiculo
+  equipo: Equipo
+  columnas: RutaAcarreo[]
   filas: AcarreoDia[]
   onDetalle: () => void
 }) {
-  const viajes = (tramo: Tramo) => filas.find((f) => f.tramo === tramo)?.viajes ?? 0
-  const total = filas.reduce((s, f) => s + f.viajes, 0)
+  const deRuta = (rutaId: number) => filas.filter((f) => f.ruta_id === rutaId)
+  const total = filas.reduce((s, f) => s + f.viajes + f.por_aprobar + f.rechazados + f.anulados, 0)
   const m3 = filas.reduce((s, f) => s + Number(f.m3 ?? 0), 0)
   const hayM3 = filas.some((f) => f.m3 !== null)
   const hayDinero = filas.some((f) => f.monto_usd !== null)
   const monto = filas.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0)
-  const chofer = filas.find((f) => f.chofer)?.chofer ?? vehiculo.chofer_actual
 
   return (
     <tr className="border-hairline hover:bg-ink/3 border-b transition-colors last:border-0">
       <td className="px-5 py-3">
-        <p className="tabular text-ink/85 font-medium">{vehiculo.placa}</p>
-        <p className="text-ink/45 text-xs">
-          {[chofer, vehiculo.descripcion].filter(Boolean).join(' · ') || 'Sin chofer asignado'}
-        </p>
+        <p className="tabular text-ink/85 font-medium">{equipo.placa}</p>
+        <p className="text-ink/45 text-xs">{equipo.detalle}</p>
       </td>
-      {TRAMOS.map((t) => (
-        <td key={t.valor} className="tabular text-ink/75 px-3 py-3 text-right">
-          {viajes(t.valor) > 0 ? enteros(viajes(t.valor)) : <span className="text-ink/20">—</span>}
-        </td>
-      ))}
+      {columnas.map((r) => {
+        const suyas = deRuta(r.id)
+        const cuentan = suyas.reduce((s, f) => s + f.viajes, 0)
+        const esperan = suyas.reduce((s, f) => s + f.por_aprobar, 0)
+        return (
+          <td key={r.id} className="tabular text-ink/75 px-3 py-3 text-right">
+            {cuentan > 0 ? enteros(cuentan) : esperan > 0 ? null : <span className="text-ink/20">—</span>}
+            {esperan > 0 ? (
+              <span className="text-warning block text-2xs">+{enteros(esperan)} por aprobar</span>
+            ) : null}
+          </td>
+        )
+      })}
       <td className="tabular text-ink/85 px-3 py-3 text-right font-medium">
         <Cifra valor={hayM3 ? String(m3) : null} />
       </td>
@@ -470,58 +814,124 @@ function FilaCamion({
   )
 }
 
-/** El formulario de carga, uno por empresa: camión, tramo y cuántos. */
+/** El formulario de carga: quién, por qué ruta, cómo volvió y cuántos. */
 function CargarViajes({
   dia,
-  camiones,
+  equipos,
+  rutas,
   yaTiene,
 }: {
   dia: string
-  camiones: Vehiculo[]
-  yaTiene: (vehiculoId: number, tramo: Tramo) => number
+  equipos: Equipo[]
+  rutas: RutaAcarreo[]
+  yaTiene: (e: Equipo, rutaId: number) => number
 }) {
-  const registrar = useRegistrarAcarreos()
-  const [vehiculo, setVehiculo] = useState('')
-  const [tramo, setTramo] = useState<Tramo>('MINA_PLANTA')
+  const registrar = useRegistrarViajes()
+  const [indice, setIndice] = useState('')
+  const [rutaId, setRutaId] = useState('')
+  const [carga, setCarga] = useState<CargaDelViaje>('COMPLETA')
+  const [m3, setM3] = useState('')
   const [cantidad, setCantidad] = useState('')
   const [precio, setPrecio] = useState('')
+  const [cargados, setCargados] = useState<number | null>(null)
 
-  const id = Number(vehiculo)
+  const equipo = indice === '' ? null : equipos[Number(indice)]
+  const ruta = rutas.find((r) => String(r.id) === rutaId) ?? null
   const cuantos = Number(cantidad)
-  const coraza = tramo === 'MINA_BASE'
+  const deMaquina = equipo?.maquinaId !== null && equipo !== null
+
+  const pideM3 = carga === 'PARCIAL'
+  const ofreceM3 = pideM3 || (carga === 'COMPLETA' && deMaquina)
+
   const valido =
-    id > 0 && cuantos >= 1 && cuantos <= 60 && (!coraza || Number(precio) >= 0) && (!coraza || precio !== '')
+    equipo !== null &&
+    ruta !== null &&
+    cuantos >= 1 &&
+    cuantos <= 60 &&
+    (!pideM3 || Number(m3) > 0) &&
+    (!ruta.pide_precio || (precio !== '' && Number(precio) >= 0))
+
+  const pistaPrecio = !ruta
+    ? undefined
+    : ruta.precio_libre
+      ? 'Esta ruta no tiene tarifa fija: se cuadra con el pedido.'
+      : ruta.precio_hasta_usd !== null && ruta.precio_usd !== null
+        ? `La tarifa va de ${dolares(ruta.precio_usd)} a ${dolares(ruta.precio_hasta_usd)}.`
+        : 'La tarifa de esta ruta es un rango: di cuánto se paga.'
 
   const enviar = async () => {
+    if (!equipo || !ruta) return
     await registrar.mutateAsync({
       fecha: dia,
-      vehiculo_id: id,
-      tramo,
+      ruta_id: ruta.id,
+      carga,
       cantidad: cuantos,
-      precio_usd: coraza ? Number(precio) : null,
+      vehiculo_id: equipo.vehiculoId,
+      maquina_id: equipo.maquinaId,
+      carga_m3: ofreceM3 && m3 !== '' ? Number(m3) : null,
+      precio_usd: ruta.pide_precio ? Number(precio) : null,
     })
+    setCargados(cuantos)
     setCantidad('')
     setPrecio('')
+    setM3('')
   }
 
   return (
     <div className="border-hairline mt-2 rounded-[6px] border border-dashed p-3">
       <div className="flex flex-wrap items-end gap-3">
         <Select
-          label="Camión"
-          vacio="Elige el camión"
-          value={vehiculo}
-          onChange={(e) => setVehiculo(e.target.value)}
-          opciones={camiones.map((c) => ({ valor: String(c.id), etiqueta: c.placa }))}
-          className="w-44"
+          label={equipos[0]?.maquinaId != null ? 'Máquina' : 'Camión'}
+          vacio={equipos[0]?.maquinaId != null ? 'Elige la máquina' : 'Elige el camión'}
+          value={indice}
+          onChange={(e) => {
+            setIndice(e.target.value)
+            setCargados(null)
+          }}
+          opciones={equipos.map((e, i) => ({
+            valor: String(i),
+            etiqueta: e.maquinaId !== null ? `${e.placa} · ${e.detalle}` : e.placa,
+          }))}
+          className="w-52"
         />
         <Select
-          label="A dónde"
-          value={tramo}
-          onChange={(e) => setTramo(e.target.value as Tramo)}
-          opciones={OPCIONES_TRAMO}
+          label="Por qué ruta"
+          vacio="Elige la ruta"
+          value={rutaId}
+          onChange={(e) => {
+            setRutaId(e.target.value)
+            setPrecio('')
+            setCargados(null)
+          }}
+          opciones={rutas.map((r) => ({ valor: String(r.id), etiqueta: r.nombre }))}
+          className="w-72"
+        />
+        <Select
+          label="Cómo volvió"
+          value={carga}
+          onChange={(e) => {
+            setCarga(e.target.value as CargaDelViaje)
+            setM3('')
+          }}
+          opciones={(Object.keys(CARGA_DEL_VIAJE) as CargaDelViaje[]).map((c) => ({
+            valor: c,
+            etiqueta: CARGA_DEL_VIAJE[c].texto,
+          }))}
+          hint={CARGA_DEL_VIAJE[carga].explica}
           className="w-56"
         />
+        {ofreceM3 ? (
+          <Input
+            label={pideM3 ? 'Cuántos m³ traía' : 'Metros cúbicos (si se sabe)'}
+            type="number"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={m3}
+            onChange={(e) => setM3(e.target.value)}
+            className="w-44"
+          />
+        ) : null}
         <Input
           label="Cuántos viajes"
           type="number"
@@ -529,25 +939,28 @@ function CargarViajes({
           max="60"
           inputMode="numeric"
           value={cantidad}
-          onChange={(e) => setCantidad(e.target.value)}
+          onChange={(e) => {
+            setCantidad(e.target.value)
+            setCargados(null)
+          }}
           hint={
-            id > 0 && cuantos >= 1
-              ? `Ya tiene ${yaTiene(id, tramo)}: quedarán ${yaTiene(id, tramo) + cuantos}.`
+            equipo && ruta && cuantos >= 1
+              ? `Ya tiene ${yaTiene(equipo, ruta.id)} en esta ruta: quedarán ${yaTiene(equipo, ruta.id) + cuantos}.`
               : 'Se suma a los que ya tenga.'
           }
           className="w-44"
         />
-        {coraza ? (
+        {ruta?.pide_precio ? (
           <Input
-            label="Precio del viaje"
+            label="Precio de cada viaje"
             type="number"
             min="0"
             step="0.01"
             inputMode="decimal"
             value={precio}
             onChange={(e) => setPrecio(e.target.value)}
-            hint="La coraza no tiene tarifa fija: se cuadra con el pedido."
-            className="w-48"
+            hint={pistaPrecio}
+            className="w-52"
           />
         ) : null}
         <Button
@@ -559,23 +972,29 @@ function CargarViajes({
           {registrar.isPending ? 'Cargando…' : 'Cargar'}
         </Button>
       </div>
+      {cargados !== null ? (
+        <p className="text-ink/55 mt-2 text-xs">
+          {cargados === 1 ? 'Cargado 1 viaje' : `Cargados ${cargados} viajes`}: quedan por aprobar y
+          todavía no cuentan para el pago.
+        </p>
+      ) : null}
       {registrar.error ? <ErrorDeCarga error={registrar.error} className="mt-3" /> : null}
     </div>
   )
 }
 
-/* ═══════════════════════════════════════════════════ el detalle del camión */
+/* ═══════════════════════════════════════════════════ el detalle del equipo */
 
-function DetalleDelCamion({
+function DetalleDelEquipo({
   dia,
-  vehiculo,
+  equipo,
   onCerrar,
 }: {
   dia: string
-  vehiculo: Vehiculo
+  equipo: Equipo
   onCerrar: () => void
 }) {
-  const viajes = useAcarreosDeVehiculo(dia, vehiculo.id)
+  const viajes = useAcarreosDeEquipo(dia, equipo)
   const [anulando, setAnulando] = useState<Acarreo | null>(null)
   const [corrigiendo, setCorrigiendo] = useState<Acarreo | null>(null)
   const { puede } = useMisPermisos()
@@ -585,7 +1004,7 @@ function DetalleDelCamion({
       <Modal
         abierto
         onCerrar={onCerrar}
-        titulo={vehiculo.placa}
+        titulo={equipo.placa}
         descripcion={`Viaje por viaje · ${fmtFecha(dia)}`}
         ancho="lg"
       >
@@ -594,70 +1013,80 @@ function DetalleDelCamion({
 
         {(viajes.data ?? []).length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-sm">
+            <table className="w-full min-w-[680px] text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="py-2 pr-3 font-medium">N.º</th>
-                  <th className="px-3 py-2 font-medium">A dónde</th>
+                  <th className="px-3 py-2 font-medium">Ruta</th>
                   <th className="px-3 py-2 font-medium">Hora</th>
+                  <th className="px-3 py-2 font-medium">Cómo volvió</th>
                   <th className="px-3 py-2 text-right font-medium">m³</th>
                   <th className="px-3 py-2 text-right font-medium">Precio</th>
+                  <th className="px-3 py-2 font-medium">Estado</th>
                   <th className="py-2 pl-3 text-right font-medium" />
                 </tr>
               </thead>
               <tbody>
-                {(viajes.data ?? []).map((v) => (
-                  <tr
-                    key={v.id}
-                    className={cn(
-                      'border-hairline border-b last:border-0',
-                      v.estado === 'ANULADO' && 'opacity-45',
-                    )}
-                  >
-                    <td className="tabular text-ink/70 py-2 pr-3">{v.secuencia}</td>
-                    <td className="text-ink/70 px-3 py-2">{v.tramo_dice}</td>
-                    <td className="tabular text-ink/60 px-3 py-2">
-                      {v.hora?.slice(0, 5) ?? <span className="text-ink/25">—</span>}
-                    </td>
-                    <td className="tabular text-ink/80 px-3 py-2 text-right">
-                      <Cifra valor={v.carga_m3} />
-                    </td>
-                    <td className="tabular text-ink/80 px-3 py-2 text-right">
-                      <Cifra valor={v.precio_usd} comoDinero />
-                    </td>
-                    <td className="py-2 pl-3 text-right whitespace-nowrap">
-                      {v.estado === 'ANULADO' ? (
-                        <Chip tone="neutral" title={v.motivo_anulacion ?? ''}>
-                          Anulado
+                {(viajes.data ?? []).map((v) => {
+                  const estado = ESTADO_VIAJE[v.estado]
+                  const muerto = v.estado === 'ANULADO' || v.estado === 'RECHAZADO'
+                  return (
+                    <tr
+                      key={v.id}
+                      className={cn('border-hairline border-b last:border-0', muerto && 'opacity-55')}
+                    >
+                      <td className="tabular text-ink/70 py-2 pr-3">{v.secuencia}</td>
+                      <td className="text-ink/70 px-3 py-2">{v.tramo_dice}</td>
+                      <td className="tabular text-ink/60 px-3 py-2">
+                        {v.hora?.slice(0, 5) ?? <span className="text-ink/25">—</span>}
+                      </td>
+                      <td className="text-ink/60 px-3 py-2 text-xs">
+                        {v.carga ? CARGA_DEL_VIAJE[v.carga].texto : <span className="text-ink/25">—</span>}
+                      </td>
+                      <td className="tabular text-ink/80 px-3 py-2 text-right">
+                        <Cifra valor={v.carga_m3} />
+                      </td>
+                      <td className="tabular text-ink/80 px-3 py-2 text-right">
+                        <Cifra valor={v.precio_usd} comoDinero />
+                      </td>
+                      <td className="px-3 py-2">
+                        <Chip
+                          tone={estado.tono}
+                          title={v.motivo_rechazo ?? v.motivo_anulacion ?? v.decidido_por_nombre ?? ''}
+                        >
+                          {estado.texto}
                         </Chip>
-                      ) : (
-                        <>
-                          {puede('EXPLOTACION', 'ESCRITURA') ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              icon={<Pencil />}
-                              onClick={() => setCorrigiendo(v)}
-                            >
-                              Corregir
-                            </Button>
-                          ) : null}
-                          {puede('EXPLOTACION', 'TOTAL') ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              icon={<Ban />}
-                              className="text-danger"
-                              onClick={() => setAnulando(v)}
-                            >
-                              Anular
-                            </Button>
-                          ) : null}
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                        {v.motivo_rechazo ? (
+                          <span className="text-ink/45 mt-0.5 block text-2xs">{v.motivo_rechazo}</span>
+                        ) : null}
+                      </td>
+                      <td className="py-2 pl-3 text-right whitespace-nowrap">
+                        {(v.estado === 'POR_APROBAR' || v.estado === 'REGISTRADO') &&
+                        puede('EXPLOTACION', 'ESCRITURA') ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={<Pencil />}
+                            onClick={() => setCorrigiendo(v)}
+                          >
+                            Corregir
+                          </Button>
+                        ) : null}
+                        {!muerto && puede('EXPLOTACION', 'TOTAL') ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={<Ban />}
+                            className="text-danger"
+                            onClick={() => setAnulando(v)}
+                          >
+                            Anular
+                          </Button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -681,13 +1110,14 @@ function CorregirViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => vo
   // El precio solo se enseña a quien lo puede ver. A quien no, la vista se lo
   // manda nulo y corregirlo a ciegas sería escribir sobre algo que no ve.
   const veElDinero = viaje.precio_usd !== null
+  const volvioVacio = viaje.carga === 'VACIO'
 
   return (
     <Modal
       abierto
       onCerrar={onCerrar}
-      titulo={`Viaje ${viaje.secuencia} · ${viaje.placa}`}
-      descripcion={viaje.tramo_dice}
+      titulo={`Viaje ${viaje.secuencia} · ${viaje.placa ?? ''}`}
+      descripcion={`${viaje.tramo_dice}. Solo se corrige lo que todavía no se ha aprobado.`}
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -699,7 +1129,7 @@ function CorregirViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => vo
               await corregir.mutateAsync({
                 id: viaje.id,
                 hora: hora === '' ? null : hora,
-                carga_m3: carga === '' ? null : Number(carga),
+                carga_m3: volvioVacio || carga === '' ? null : Number(carga),
                 precio_usd: veElDinero && precio !== '' ? Number(precio) : null,
               })
               onCerrar()
@@ -712,16 +1142,26 @@ function CorregirViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => vo
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <Input label="Hora" type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
-        <Input
-          label="Metros cúbicos"
-          type="number"
-          min="0"
-          step="0.01"
-          inputMode="decimal"
-          value={carga}
-          onChange={(e) => setCarga(e.target.value)}
-          hint={`El camión carga hasta ${enteros(viaje.capacidad_m3)} m³.`}
-        />
+        {volvioVacio ? (
+          <p className="text-ink/55 self-end text-xs">
+            Volvió vacío: no lleva metros cúbicos. Si traía carga, anúlalo y cárgalo de nuevo.
+          </p>
+        ) : (
+          <Input
+            label="Metros cúbicos"
+            type="number"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={carga}
+            onChange={(e) => setCarga(e.target.value)}
+            hint={
+              viaje.capacidad_m3 !== null
+                ? `El camión carga hasta ${enteros(viaje.capacidad_m3)} m³.`
+                : undefined
+            }
+          />
+        )}
         {veElDinero ? (
           <Input
             label="Precio del viaje"
@@ -747,7 +1187,7 @@ function AnularViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => void
     <Modal
       abierto
       onCerrar={onCerrar}
-      titulo={`Anular el viaje ${viaje.secuencia} de ${viaje.placa}`}
+      titulo={`Anular el viaje ${viaje.secuencia} de ${viaje.placa ?? ''}`}
       descripcion="El viaje deja de contar y de cobrarse, pero la fila se queda. Su número tampoco se reutiliza: el hueco queda a la vista para poder explicarlo."
       acciones={
         <>
@@ -781,93 +1221,30 @@ function AnularViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => void
 
 /* ═══════════════════════════════════════════════════════════ las tarifas */
 
-function CajaDeTarifas() {
-  const tarifas = useTarifasAcarreo()
-  const { puede } = useMisPermisos()
-  const [abierta, setAbierta] = useState(false)
-
-  // Sin la casilla del dinero la vista llega vacía. No es un error: es que
-  // esta persona no tiene por qué ver cuánto se paga.
-  if ((tarifas.data ?? []).length === 0) return null
-
-  return (
-    <>
-      <div className="border-hairline flex items-center gap-3 rounded-[6px] border px-3 py-2">
-        <Coins className="text-ink/35 size-4 shrink-0" />
-        <div className="text-xs">
-          <p className="text-ink/45">Se paga por viaje</p>
-          <p className="text-ink/80 tabular">
-            {(tarifas.data ?? [])
-              .map((t) => `${t.tramo_dice}: ${dolares(t.precio_usd)}`)
-              .join(' · ')}
-          </p>
-        </div>
-        {puede('EXPLOTACION', 'TOTAL') ? (
-          <Button size="sm" variant="ghost" onClick={() => setAbierta(true)}>
-            Cambiar
-          </Button>
-        ) : null}
-      </div>
-
-      {abierta ? <CambiarTarifa onCerrar={() => setAbierta(false)} /> : null}
-    </>
-  )
-}
-
-function CambiarTarifa({ onCerrar }: { onCerrar: () => void }) {
-  const fijar = useFijarTarifaAcarreo()
-  const [tramo, setTramo] = useState<Tramo>('MINA_PLANTA')
-  const [precio, setPrecio] = useState('')
-  const [desde, setDesde] = useState(hoyEnCaracas())
+/**
+ * Lo que se paga hoy por cada ruta abierta.
+ *
+ * Cambiar una tarifa ya no se hace aquí: vive con las rutas, en Plantas y
+ * rutas, que es donde se decide qué rutas existen. Sin la casilla del dinero
+ * las tarifas llegan nulas y la caja no se dibuja.
+ */
+function CajaDeTarifas({ rutas }: { rutas: RutaAcarreo[] }) {
+  const conDinero = rutas.filter((r) => r.precio_usd !== null)
+  if (conDinero.length === 0) return null
 
   return (
-    <Modal
-      abierto
-      onCerrar={onCerrar}
-      titulo="Cambiar lo que se paga por viaje"
-      descripcion="La tarifa anterior se queda guardada. Los viajes ya registrados no cambian de precio: cada uno lleva copiado el suyo."
-      acciones={
-        <>
-          <Button variant="ghost" onClick={onCerrar}>
-            Cancelar
-          </Button>
-          <Button
-            disabled={fijar.isPending || precio === '' || Number(precio) < 0}
-            onClick={async () => {
-              await fijar.mutateAsync({ tramo, precio: Number(precio), desde })
-              onCerrar()
-            }}
-          >
-            {fijar.isPending ? 'Guardando…' : 'Poner la tarifa'}
-          </Button>
-        </>
-      }
-    >
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Select
-          label="Tramo"
-          value={tramo}
-          onChange={(e) => setTramo(e.target.value as Tramo)}
-          opciones={OPCIONES_TRAMO}
-        />
-        <Input
-          label="Precio por viaje"
-          type="number"
-          min="0"
-          step="0.01"
-          inputMode="decimal"
-          value={precio}
-          onChange={(e) => setPrecio(e.target.value)}
-        />
-        <Input
-          label="Rige desde"
-          type="date"
-          value={desde}
-          onChange={(e) => setDesde(e.target.value)}
-        />
+    <div className="border-hairline flex items-center gap-3 rounded-[6px] border px-3 py-2">
+      <Coins className="text-ink/35 size-4 shrink-0" />
+      <div className="text-xs">
+        <p className="text-ink/45">Se paga por viaje</p>
+        <p className="text-ink/80 tabular">
+          {rutas
+            .filter((r) => r.precio_usd !== null || r.precio_libre)
+            .map((r) => `${r.nombre}: ${tarifaEnPalabras(r, dolares)}`)
+            .join(' · ')}
+        </p>
       </div>
-      {fijar.error ? <ErrorDeCarga error={fijar.error} className="mt-4" /> : null}
-    </Modal>
+    </div>
   )
 }
 

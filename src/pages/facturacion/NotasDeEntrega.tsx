@@ -42,6 +42,7 @@ import { aRenglones, filaVacia, gravadoDe, subtotalDe, type FilaRenglon } from '
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
 import { CasillaIva } from '@/pages/ventas/CasillaIva'
 import { useIvaPorDefecto } from '@/pages/ventas/ivaPorDefecto'
+import { useMisPermisos } from '@/lib/api/usuarios'
 
 const TONO: Record<string, 'safety' | 'success' | 'neutral'> = {
   DESPACHADA: 'safety',
@@ -65,6 +66,12 @@ export function NotasDeEntrega() {
   const { data: yo } = useMiPerfil()
   const despachar = useDespachar()
   const anular = useAnularNota()
+  /* La nota es de Facturación también en la base desde el 16/09/2026: despachar
+     pide Facturación en escritura y anular, total. Sin eso no se enseña el
+     botón que la base iba a rechazar. */
+  const { puede } = useMisPermisos()
+  const puedeDespachar = puede('FACTURACION', 'ESCRITURA')
+  const puedeAnular = puede('FACTURACION', 'TOTAL')
 
   const [nuevo, setNuevo] = useState(false)
   const [detalle, setDetalle] = useState<NotaEntrega | null>(null)
@@ -216,9 +223,11 @@ export function NotasDeEntrega() {
         title="Notas de entrega"
         description="El papel con el que sale el camión. Al despachar, el material se descuenta del patio."
         actions={
-          <Button icon={<Truck />} onClick={() => setNuevo(true)}>
-            Despachar
-          </Button>
+          puedeDespachar ? (
+            <Button icon={<Truck />} onClick={() => setNuevo(true)}>
+              Despachar
+            </Button>
+          ) : null
         }
       />
 
@@ -232,9 +241,11 @@ export function NotasDeEntrega() {
             titulo="Todavía no ha salido ningún camión"
             descripcion="Cada despacho rebaja el patio y queda esperando por facturar. Si el patio está en cero, carga primero la producción desde Inventario › Existencias."
             accion={
-              <Button icon={<Truck />} onClick={() => setNuevo(true)}>
-                Despachar
-              </Button>
+              puedeDespachar ? (
+                <Button icon={<Truck />} onClick={() => setNuevo(true)}>
+                  Despachar
+                </Button>
+              ) : undefined
             }
           />
         </Card>
@@ -600,7 +611,7 @@ export function NotasDeEntrega() {
               >
                 Imprimir
               </Button>
-              {detalle.estado === 'DESPACHADA' ? (
+              {detalle.estado === 'DESPACHADA' && puedeAnular ? (
                 <Button
                   variant="outline"
                   className="text-danger"

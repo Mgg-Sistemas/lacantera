@@ -97,14 +97,14 @@ export function TableroDespachos() {
               <p>
                 Aquí no se registra la venta: se registra <strong>el peso y el permiso</strong>. Si
                 lo que buscas es despachar material a un cliente y dejarlo listo para facturar, eso
-                está en Ventas.
+                es la nota de entrega, y está en Facturación.
               </p>
               <p>
                 <Link
-                  to="/app/ventas"
+                  to="/app/facturacion/notas-entrega"
                   className="text-royal-600 hover:text-royal-700 dark:text-royal-300 font-medium"
                 >
-                  Ir al tablero de ventas
+                  Ir a las notas de entrega
                 </Link>
               </p>
               <p className="text-ink/50">

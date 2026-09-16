@@ -116,7 +116,10 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
   const logo = await logoComoImagen()
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  const vivos = (c: CamionDelPapel) => c.viajes.filter((v) => v.estado !== 'ANULADO')
+  // Cuentan lo aprobado y lo anterior a la aprobación. Lo que espera, lo
+  // rechazado y lo anulado sale en su renglón, pero no suma.
+  const vivos = (c: CamionDelPapel) =>
+    c.viajes.filter((v) => v.estado === 'REGISTRADO' || v.estado === 'APROBADO')
 
   const totalViajes = d.camiones.reduce((s, c) => s + vivos(c).length, 0)
   const conCarga = d.camiones.flatMap((c) => vivos(c)).filter((v) => v.carga_m3 !== null)
@@ -194,7 +197,9 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
         v.hora?.slice(0, 5) ?? '—',
         oNada(v.carga_m3),
         oNada(v.precio_usd, true),
-        v.estado === 'ANULADO' ? 'Anulado' : '',
+        ({ ANULADO: 'Anulado', RECHAZADO: 'Rechazado', POR_APROBAR: 'Por aprobar' } as Record<string, string>)[
+          v.estado
+        ] ?? '',
       ]),
       suDinero
         ? `${camion.placa} · ${cantidad(suyosVivos.length)} viajes   $ ${numero(suMonto)}`
