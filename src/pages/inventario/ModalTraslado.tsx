@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
 import {
   FORMA_DE_TRASLADO,
+  FORMAS_DE_TRASLADO_ABIERTAS,
   useAlmacenes,
   useComoActuoEnTraslados,
   useExistencias,
@@ -248,6 +249,10 @@ export function ModalTraslado({
     costó—, así que ese origen solo sale en «Traslado directo». Una opción que no
     está a mi alcance se enseña apagada y dice por qué: esconderla dejaría
     pensando que no existe.
+
+    EL DIRECTO SE APAGÓ el 16/09/2026 por la tarde, y ese sí se esconde: no es
+    que a alguien le falte permiso, es que por ahora no existe para nadie. Ver
+    `FORMAS_DE_TRASLADO_ABIERTAS`.
   */
   const respondoPor = (sitio: number) => yo != null && (yo.respaldo || yo.sitios.includes(sitio))
 
@@ -388,7 +393,7 @@ export function ModalTraslado({
       <fieldset>
         <legend className="text-ink/80 mb-2 text-sm font-medium">¿Qué quieres hacer?</legend>
         <div className="grid gap-2">
-          {(Object.keys(FORMA_DE_TRASLADO) as FormaDeTraslado[]).map((f) => {
+          {FORMAS_DE_TRASLADO_ABIERTAS.map((f) => {
             const opcion = FORMA_DE_TRASLADO[f]
             const apagada = porQueNo[f]
             return (
@@ -445,7 +450,7 @@ export function ModalTraslado({
               ? 'Solo los sitios donde hay ese artículo.'
               : 'Solo los sitios que tienen algo que trasladar.',
             form.forma !== 'DIRECTO' && hayOrigenSinCosto
-              ? 'Lo que entró sin costo no aparece aquí: solo sale con «Traslado directo».'
+              ? 'Lo que entró sin costo no aparece aquí: no pasa por «En camino», y el traslado directo está apagado por ahora.'
               : null,
           ]
             .filter(Boolean)

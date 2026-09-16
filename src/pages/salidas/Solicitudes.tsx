@@ -41,13 +41,18 @@ import { fechaHora } from '@/lib/formato'
   Ni pedir ni aprobar mueven material: la existencia baja al entregar, y ahí
   sale el papel que alguien firma.
 
-  LA PESTAÑA SE LLAMA «SALIDAS» Y TIENE LAS DOS FORMAS. Christopher, al verla
-  como «Solicitudes»: «¿atiende qué exactamente? ¿Solicitudes de salida y
-  traslado por igual?». Solo atendía salidas, no lo decía, y la salida directa
-  vivía en otra pestaña. Ahora pedir y registrar la salida directa están juntos,
-  cada botón con su nombre entero, y los traslados tienen las suyas en
-  «Traslados»: «Necesitamos no dejar asumir al usuario, mantener lo explícito
-  como norma».
+  LA PESTAÑA SE LLAMA «SALIDAS». Christopher, al verla como «Solicitudes»:
+  «¿atiende qué exactamente? ¿Solicitudes de salida y traslado por igual?». Solo
+  atendía salidas y no lo decía. Los traslados tienen las suyas en «Traslados»:
+  «Necesitamos no dejar asumir al usuario, mantener lo explícito como norma».
+
+  Y DESDE LA TARDE DEL 16/09 SOLO HAY UNA FORMA. Se encontraron salidas de
+  material anotadas como venta desde la salida directa, y Christopher: «todas
+  las salidas necesitarán de autorización, ocultaremos las salidas y traslados
+  directos por ahora». El botón de la salida directa se quitó, y la base la
+  rechaza aunque alguien la llame a mano. Lo que llega de Existencias con
+  `?solicitar=` —o con el `?sacar=` de antes— abre la solicitud con el material
+  y el sitio puestos.
 */
 
 const ESPERAN = ['PEDIDA', 'APROBADA']
@@ -58,7 +63,6 @@ const cantidadLegible = (v: string | number): string =>
 export function Solicitudes() {
   const [verTodas, setVerTodas] = useState(false)
   const [pidiendo, setPidiendo] = useState(false)
-  const [sacando, setSacando] = useState(false)
   const [desdeFila, setDesdeFila] = useState<{ articulo?: string; almacen?: string }>({})
   const [cerrando, setCerrando] = useState<{ s: SolicitudDeSalida; como: 'RECHAZAR' | 'CANCELAR' } | null>(null)
   const [motivo, setMotivo] = useState('')
@@ -79,20 +83,21 @@ export function Solicitudes() {
   const puedoSacar = alcanza('SALIDAS', 'ESCRITURA')
 
   /*
-    LA SALIDA DIRECTA, TAMBIÉN DESDE UNA FILA DE EXISTENCIAS.
+    LA SOLICITUD, TAMBIÉN DESDE UNA FILA DE EXISTENCIAS.
 
     Existencias enseña lo que hay y manda aquí con el artículo y el sitio en la
     dirección; el formulario se abre con el primer renglón puesto. La marca se
-    borra de la dirección en cuanto se usa: recargar no vuelve a abrirlo.
+    borra de la dirección en cuanto se usa: recargar no vuelve a abrirlo. Un
+    enlace viejo con `?sacar=` abre lo mismo: la salida directa ya no existe.
   */
   const [parametros, setParametros] = useSearchParams()
   useEffect(() => {
-    if (!parametros.has('sacar')) return
+    if (!parametros.has('solicitar') && !parametros.has('sacar')) return
     setDesdeFila({
       articulo: parametros.get('articulo') ?? undefined,
       almacen: parametros.get('almacen') ?? undefined,
     })
-    setSacando(true)
+    setPidiendo(true)
     setParametros(new URLSearchParams(), { replace: true })
   }, [parametros, setParametros])
 
@@ -128,22 +133,11 @@ export function Solicitudes() {
     <>
       <PageHeader
         title="Salidas"
-        description="Sacar material que ya hay en un almacén, de una de dos formas. «Solicitar salida» deja una solicitud: no descuenta nada hasta que la aprueba quien responde por el almacén y alguien de almacén la entrega. «Registrar salida directa» descuenta en este momento, sin solicitud. Comprar lo que no hay se hace en Compras."
+        description="Sacar material que ya hay en un almacén. Toda salida se solicita: no descuenta nada hasta que la aprueba quien responde por el almacén y alguien de almacén la entrega. Una venta no sale por aquí, sino por Facturación › Notas de entrega. Comprar lo que no hay se hace en Compras."
         actions={
-          <>
-            <Button
-              variant={puedoSacar ? 'outline' : 'primary'}
-              icon={<SendHorizontal />}
-              onClick={() => setPidiendo(true)}
-            >
-              Solicitar salida
-            </Button>
-            {puedoSacar ? (
-              <Button icon={<PackageMinus />} onClick={() => setSacando(true)}>
-                Registrar salida directa
-              </Button>
-            ) : null}
-          </>
+          <Button icon={<SendHorizontal />} onClick={() => setPidiendo(true)}>
+            Solicitar salida
+          </Button>
         }
       />
 
@@ -152,7 +146,8 @@ export function Solicitudes() {
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-ink/85 font-titular text-lg">Solicitudes de salida</h2>
         <p className="text-ink/45 text-xs">
-          Las salidas directas no pasan por solicitud: se ven en «Historial».
+          Por ahora no hay salida directa: todo pasa por solicitud. Las de antes están en
+          «Historial».
         </p>
       </div>
 
@@ -316,30 +311,15 @@ export function Solicitudes() {
       <ModalSalida
         abierto={pidiendo}
         modo="pedir"
-        onCerrar={() => setPidiendo(false)}
-        onRegistrada={() => setPidiendo(false)}
-      />
-
-      <ModalSalida
-        abierto={sacando}
         articuloInicial={desdeFila.articulo}
         almacenInicial={desdeFila.almacen}
         onCerrar={() => {
-          setSacando(false)
+          setPidiendo(false)
           setDesdeFila({})
         }}
-        onRegistrada={(numero, motivo) => {
-          /*
-            El modal se cierra AQUÍ, antes de armar el papel.
-
-            Armarlo tarda: dos viajes de red y la descarga del trozo de jsPDF la
-            primera vez. Durante esa espera el botón vuelve a dejarse pulsar, y
-            el segundo toque registra una SEGUNDA salida completa, con su propio
-            número de nota, sin que nadie se entere.
-          */
-          setSacando(false)
+        onRegistrada={() => {
+          setPidiendo(false)
           setDesdeFila({})
-          void nota.abrir(numero, motivo)
         }}
       />
 

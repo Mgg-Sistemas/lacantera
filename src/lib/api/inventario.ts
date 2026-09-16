@@ -1816,6 +1816,15 @@ export const FORMA_DE_TRASLADO: Record<
   },
 }
 
+/**
+ * Las formas que se ofrecen hoy. El traslado directo está apagado: Christopher,
+ * 16/09/2026, «todas las salidas necesitarán de autorización, ocultaremos las
+ * salidas y traslados directos por ahora». La base también lo rechaza. La forma
+ * sigue en el catálogo porque los traslados directos de antes están en la lista
+ * y hay que poder nombrarlos.
+ */
+export const FORMAS_DE_TRASLADO_ABIERTAS: FormaDeTraslado[] = ['PEDIR', 'ENVIAR']
+
 export const formaDelTraslado = (t: Pick<Traslado, 'inmediato' | 'enviado'>): FormaDeTraslado =>
   t.inmediato ? 'DIRECTO' : t.enviado ? 'ENVIAR' : 'PEDIR'
 

@@ -111,7 +111,7 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
         },
         {
           titulo: 'Sacar material',
-          detalle: 'En Salidas y traslados, pestaña «Salidas»: solicitar una salida o registrar una salida directa.',
+          detalle: 'En Salidas y traslados, pestaña «Salidas»: se solicita, y sale cuando la aprueba quien responde por el almacén.',
           icono: PackageMinus,
           a: '/app/salidas/solicitudes',
           exige: 'ESCRITURA',
