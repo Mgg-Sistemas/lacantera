@@ -9,6 +9,7 @@ import {
   Gauge,
   Landmark,
   Network,
+  PackageMinus,
   Pickaxe,
   Receipt,
   Settings,
@@ -127,6 +128,12 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/maquinaria', 'MAQUINARIA'],
   ['/app/combustible', 'COMBUSTIBLE'],
   ['/app/asignaciones', 'ASIGNACIONES'],
+  /*
+    Salidas y traslados son su propio módulo desde el 16/09/2026: lo que sale
+    del almacén y lo que se mueve entre almacenes se mira junto, y quien lo
+    mira no tiene por qué poder tocar el catálogo ni los conteos.
+  */
+  ['/app/salidas', 'SALIDAS'],
   ['/app/inventario', 'INVENTARIO'],
   ['/app/despachos', 'DESPACHOS'],
   ['/app/compras', 'COMPRAS'],
@@ -264,7 +271,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/inventario/existencias': 'stock cuanto hay disponible sacar salida merma consumo motivo razon contar conteo ajuste',
   '/app/inventario/articulos': 'catalogo repuesto insumo herramienta epp material',
   '/app/organigrama': 'organizacion estructura jerarquia cargos quien depende de quien departamentos arbol',
-  '/app/inventario/transferencias': 'mover traspaso entre almacenes',
+  '/app/salidas': 'salidas traslados que se entrego a quien almacenista grupo consulta',
+  '/app/salidas/traslados': 'mover traspaso entre almacenes traslado',
   '/app/despachos/guias': 'permiso movilizacion ministerio guia',
   '/app/despachos/tickets': 'romana pesaje peso bruto tara',
   '/app/despachos/vehiculos': 'camion volteo chuto gandola placa chofer',
@@ -422,8 +430,24 @@ export const navigation: NavSection[] = [
         children: [
           { label: 'Tablero', to: '/app/inventario' },
           { label: 'Existencias', to: '/app/inventario/existencias' },
-          { label: 'Transferencias', to: '/app/inventario/transferencias' },
           { label: 'Almacenes y talleres', to: '/app/inventario/almacenes' },
+        ],
+      },
+      {
+        /*
+          SALIDAS Y TRASLADOS, FUERA DE INVENTARIO
+
+          Christopher, 16/09/2026: «debemos extraer de inventario las salidas y
+          los traslados, convirtiéndolos en un módulo que se alimenta de
+          inventario». Inventario se queda con lo que hay y lo que puede haber;
+          aquí vive lo que se entrega y lo que se mueve, que es lo que la gente
+          viene a preguntar: qué se le dio a quién, cuándo y por qué.
+        */
+        label: 'Salidas y traslados',
+        icon: PackageMinus,
+        children: [
+          { label: 'Salidas y traslados', to: '/app/salidas' },
+          { label: 'Traslados', to: '/app/salidas/traslados' },
         ],
       },
       {

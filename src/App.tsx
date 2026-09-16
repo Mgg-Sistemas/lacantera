@@ -65,8 +65,11 @@ const Duenos = pagina(() =>
 const Articulos = pagina(() =>
   import('@/pages/inventario/Articulos').then((m) => ({ default: m.Articulos })),
 )
-const Transferencias = pagina(() =>
-  import('@/pages/inventario/Transferencias').then((m) => ({ default: m.Transferencias })),
+const Traslados = pagina(() =>
+  import('@/pages/salidas/Traslados').then((m) => ({ default: m.Traslados })),
+)
+const Salidas = pagina(() =>
+  import('@/pages/salidas/Salidas').then((m) => ({ default: m.Salidas })),
 )
 const Empresa = pagina(() => import('@/pages/config/Empresa').then((m) => ({ default: m.Empresa })))
 const Documentos = pagina(() =>
@@ -361,7 +364,14 @@ const paginas: Record<string, ReactNode> = {
   '/app/compras/proveedores/carga': <CargarProveedores />,
   '/app/inventario/almacenes': <Almacenes />,
   '/app/inventario/duenos': <Duenos />,
-  '/app/inventario/transferencias': <Transferencias />,
+  /*
+    Salidas y traslados son su propio módulo desde el 16/09/2026. La dirección
+    vieja sigue viva y lleva a la nueva: hay quien la tiene en marcadores, y una
+    página en blanco se lee como «se rompió», no como «se mudó».
+  */
+  '/app/inventario/transferencias': <Navigate to="/app/salidas/traslados" replace />,
+  '/app/salidas': <Salidas />,
+  '/app/salidas/traslados': <Traslados />,
   '/app/config/empresa': <Empresa />,
   '/app/config/documentos': <Documentos />,
   '/app/config/auditoria': <Auditoria />,

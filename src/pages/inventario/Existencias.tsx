@@ -52,7 +52,7 @@ import {
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { ModalTrasvase } from './ModalTrasvase'
 import { ModalTraslado } from './ModalTraslado'
-import { useNotaDeTraslado } from './NotaDeTraslado'
+import { useNotaDeTraslado } from '@/pages/salidas/NotaDeTraslado'
 import { ConteoDeEnvases } from '@/components/ConteoDeEnvases'
 import type { LineaDeConteo } from '@/components/ConteoDeEnvases'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'

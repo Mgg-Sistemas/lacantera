@@ -20,6 +20,19 @@ export const PESTANAS_MATERIAL: Pestana[] = [
 ]
 
 /**
+ * Lo que sale y lo que se mueve, que es una sola pregunta partida en dos.
+ *
+ * Christopher, 16/09/2026: «nos solicitan querer ver las salidas y los
+ * traslados en una misma pantalla». Estaban los dos en el libro, mezclados con
+ * las entradas y sin forma de cruzarlos con el artículo, el almacenista o el
+ * grupo que los recibió.
+ */
+export const PESTANAS_SALIDAS: Pestana[] = [
+  { etiqueta: 'Salidas y traslados', a: '/app/salidas' },
+  { etiqueta: 'Traslados', a: '/app/salidas/traslados' },
+]
+
+/**
  * Dónde se guarda: un taller es un almacén con máquinas dentro.
  *
  * Los dueños van aquí y no en Configuración porque no son un ajuste del
