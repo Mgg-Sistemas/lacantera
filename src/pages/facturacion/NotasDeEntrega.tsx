@@ -30,6 +30,7 @@ import {
   usePrecios,
   useRenglones,
   type NotaEntrega,
+  type RenglonGuardado,
 } from '@/lib/api/ventas'
 /*
   Los renglones, el IVA y sus totales se quedaron en Ventas: son los mismos que
@@ -42,11 +43,13 @@ import { Renglones } from '@/pages/ventas/Renglones'
 import {
   aRenglones,
   conRomana,
+  conversionDeRenglon,
   detalleDeRenglon,
   faltaEnFila,
   filaVacia,
   gravadoDe,
   m3EnCamion,
+  notaDeConversionDeVenta,
   repreciar,
   subtotalDe,
   type FilaRenglon,
@@ -201,6 +204,8 @@ export function NotasDeEntrega() {
   const imprimir = async (n: NotaEntrega) => {
     const renglones = renglonesDetalle.data ?? []
     const densidades = await densidadesDeArticulos({ ids: renglones.map((r) => r.articulo_id) })
+    const densidadDe = (r: RenglonGuardado) =>
+      densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3
     setPdf(
       await armarDocumento({
         tipo: 'NOTA',
@@ -227,17 +232,15 @@ export function NotasDeEntrega() {
         tasaUsd: n.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
-          detalle: detalleDeRenglon(
-            r,
-            n.moneda,
-            densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3,
-          ),
+          detalle: detalleDeRenglon(r, n.moneda),
           cantidad: r.cantidad,
           unidad: r.unidad,
+          conversion: conversionDeRenglon(r, densidadDe(r)),
           precio_unitario: r.precio_unitario,
           subtotal: r.subtotal,
           exento_iva: r.exento_iva,
         })),
+        notaConversion: notaDeConversionDeVenta(renglones, densidadDe),
         subtotal: n.subtotal,
         descuento: n.descuento,
         flete: n.flete,

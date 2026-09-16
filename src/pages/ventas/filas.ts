@@ -1,5 +1,5 @@
 import { dinero } from '@/lib/formato'
-import { equivalenciaEnPapel } from '@/lib/medidas'
+import { enLaOtraMedida, notaDeConversion } from '@/lib/medidas'
 import type {
   CondicionVenta,
   PrecioVenta,
@@ -268,24 +268,60 @@ export function renglonEnPalabras(r: RenglonGuardado, moneda: string): string {
 }
 
 /**
- * La línea gris que va debajo del renglón en el papel: su condición y su
- * medida, y además la misma cantidad en la otra medida cuando hay densidad.
+ * La línea gris que va debajo del renglón en el papel: su condición y cómo se
+ * midió, o nada si el renglón no tiene nada fuera de lo normal.
  *
- * Si el renglón ya se convirtió al despachar —pesado o estimado—, esa frase ya
- * dice lo que salió del patio y no se repite. La densidad buena es la que se
- * usó al despachar; si no se usó ninguna, la del catálogo.
+ * La misma cantidad en la otra medida iba aquí también, y ya no: tiene su
+ * columna (`conversionDeRenglon`). Christopher, 16/09/2026: «se desea que todo
+ * producto de venta se exprese en m3 y ton por igual», y en letra pequeña bajo
+ * el renglón no se leía por igual.
  */
-export function detalleDeRenglon(
+export function detalleDeRenglon(r: RenglonGuardado, moneda: string): string | null {
+  return renglonEnPalabras(r, moneda) || null
+}
+
+const dosDecimales = new Intl.NumberFormat('es-VE', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
+/**
+ * La cantidad del renglón en la otra medida, para la columna «Conversión».
+ *
+ * Si se pesó o se estimó al despachar, es lo que salió del patio y se escribe
+ * tal cual: ya no es una cuenta. Si no, sale de la densidad —la que se usó, o
+ * la del catálogo— y la nota bajo la tabla dice que es aproximada. Nulo si el
+ * renglón no va en M3 ni en TON, o si su material no tiene densidad: sin la
+ * contraparte no se supone nada.
+ */
+export function conversionDeRenglon(
   r: RenglonGuardado,
-  moneda: string,
   densidadDelCatalogo: string | number | null | undefined,
 ): string | null {
-  const partes = [renglonEnPalabras(r, moneda)]
-  if (r.medida !== 'ROMANA' && r.medida !== 'ESTIMADA') {
-    partes.push(
-      equivalenciaEnPapel(r.cantidad, r.unidad, r.densidad_usada ?? densidadDelCatalogo) ?? '',
-    )
+  if (r.unidad !== 'M3' && r.unidad !== 'TON') return null
+  if ((r.medida === 'ROMANA' || r.medida === 'ESTIMADA') && r.cantidad_inventario != null) {
+    return `${dosDecimales.format(Number(r.cantidad_inventario))} ${r.unidad === 'TON' ? 'M3' : 'TON'}`
   }
-  const texto = partes.filter(Boolean).join(' · ')
-  return texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : null
+  const otra = enLaOtraMedida(r.cantidad, r.unidad, r.densidad_usada ?? densidadDelCatalogo)
+  return otra ? `${dosDecimales.format(otra.cantidad)} ${otra.unidad}` : null
+}
+
+/**
+ * La nota bajo la tabla: con qué densidad se convirtió cada material. Los
+ * renglones pesados o estimados al despachar no entran, porque su línea de
+ * detalle ya dice cómo se midió lo que salió.
+ */
+export function notaDeConversionDeVenta(
+  renglones: RenglonGuardado[],
+  densidadDelCatalogo: (r: RenglonGuardado) => string | number | null | undefined,
+): string | null {
+  return notaDeConversion(
+    renglones
+      .filter((r) => r.medida !== 'ROMANA' && r.medida !== 'ESTIMADA')
+      .map((r) => ({
+        articulo: r.descripcion,
+        unidad: r.unidad,
+        densidad: r.densidad_usada ?? densidadDelCatalogo(r),
+      })),
+  )
 }

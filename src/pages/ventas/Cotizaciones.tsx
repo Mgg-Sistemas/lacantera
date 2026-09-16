@@ -32,10 +32,12 @@ import {
 import { Renglones } from './Renglones'
 import {
   aRenglones,
+  conversionDeRenglon,
   detalleDeRenglon,
   faltaEnFila,
   filaVacia,
   gravadoDe,
+  notaDeConversionDeVenta,
   renglonEnPalabras,
   repreciar,
   subtotalDe,
@@ -133,6 +135,8 @@ export function Cotizaciones() {
   const imprimir = async (q: CotizacionVenta) => {
     const renglones = renglonesDetalle.data ?? []
     const densidades = await densidadesDeArticulos({ ids: renglones.map((r) => r.articulo_id) })
+    const densidadDe = (r: RenglonGuardado) =>
+      densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3
     setPdf(
       await armarDocumento({
         tipo: 'COTIZACION',
@@ -153,17 +157,15 @@ export function Cotizaciones() {
         tasaUsd: q.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
-          detalle: detalleDeRenglon(
-            r,
-            q.moneda,
-            densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3,
-          ),
+          detalle: detalleDeRenglon(r, q.moneda),
           cantidad: r.cantidad,
           unidad: r.unidad,
+          conversion: conversionDeRenglon(r, densidadDe(r)),
           precio_unitario: r.precio_unitario,
           subtotal: r.subtotal,
           exento_iva: r.exento_iva,
         })),
+        notaConversion: notaDeConversionDeVenta(renglones, densidadDe),
         subtotal: q.subtotal,
         descuento: q.descuento,
         flete: q.flete,

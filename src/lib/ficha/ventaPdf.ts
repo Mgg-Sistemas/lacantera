@@ -86,13 +86,23 @@ export interface RenglonImpreso {
   detalle?: string | null
   cantidad: string | number
   unidad: string
+  /**
+   * La misma cantidad en la otra medida, ya escrita: «40,32 TON». La resuelve
+   * la pantalla, que sabe si el renglón se pesó al despachar o si sale de la
+   * densidad. Nulo si no se puede saber: en la columna sale «—».
+   */
+  conversion?: string | null
   precio_unitario: string | number
   subtotal: string | number
   exento_iva?: boolean
 }
 
-/** Seis milímetros un renglón; nueve si lleva su línea de detalle. */
-const altoRenglon = (r: RenglonImpreso) => (r.detalle ? 9 : 6)
+/** Lo que crece un renglón por cada línea de más, de descripción o de detalle. */
+const LINEA_DE_MAS = 3.4
+
+/** Seis milímetros un renglón, más una línea por la segunda de descripción y otra por el detalle. */
+const altoRenglon = (lineas: number, r: RenglonImpreso) =>
+  6 + (lineas - 1) * LINEA_DE_MAS + (r.detalle ? 3 : 0)
 
 export interface DatosDocumento {
   tipo: TipoDocumento
@@ -161,6 +171,11 @@ export interface DatosDocumento {
   retencionIva?: string | number | null
 
   observacion?: string | null
+  /**
+   * Con qué densidad se convirtió cada material, para debajo de la tabla. Solo
+   * se imprime si el papel lleva la columna de conversión.
+   */
+  notaConversion?: string | null
   /** Marca de agua: ANULADA, o nada. */
   sello?: string | null
 
@@ -230,12 +245,62 @@ const fechaCorta = (iso: string): string =>
 // larga que cabe, no lo que queda hasta la columna. Con el reparto anterior la
 // descripción llegaba hasta el número y salía «PIEDRA PICADA N.º 1 DE
 // GRANULOMETRIA CONT32,50», que en una factura es un renglón ilegible.
+//
+// Y HAY DOS REPARTOS. Christopher, 16/09/2026: «se desea que todo producto de
+// venta se exprese en m3 y ton por igual». La otra medida iba en la línea gris
+// de detalle, en letra pequeña, y así no se lee por igual. Ahora tiene columna,
+// que aparece solo si algún renglón tiene con qué convertirse, como en los
+// papeles de inventario. Le quita quince milímetros a la descripción, y por eso
+// la descripción puede ocupar dos renglones en vez de cortarse antes.
 // ---------------------------------------------------------------------------
-const COL_CANT = IZQ + 86
-const COL_UNID = IZQ + 100
-const COL_PREC = IZQ + 124
-const COL_TOTAL = DER
-const ANCHO_DESCRIPCION = 68
+interface Columnas {
+  /** Lo que mide la descripción desde su margen. */
+  descripcion: number
+  cant: number
+  unid: number
+  /** Nulo cuando el papel no lleva conversión. */
+  conv: number | null
+  prec: number
+  total: number
+}
+
+const SIN_CONVERSION: Columnas = {
+  descripcion: 68,
+  cant: IZQ + 86,
+  unid: IZQ + 100,
+  conv: null,
+  prec: IZQ + 124,
+  total: DER,
+}
+
+/*
+  Medido en Helvetica a 8 puntos con las cifras más largas que se esperan:
+  «12.345,67» ocupa 12,6 mm, «12.345,67 TON» 19,3 mm, un precio «123.456,78»
+  14,1 mm y un total «12.345.678,90» en negrita 18 mm. Con estas marcas quedan
+  al menos dos milímetros entre una columna y la siguiente.
+*/
+const CON_CONVERSION: Columnas = {
+  descripcion: 53,
+  cant: IZQ + 71,
+  unid: IZQ + 83,
+  conv: IZQ + 106,
+  prec: IZQ + 124,
+  total: DER,
+}
+
+/** Lo que dejan libre los totales a su izquierda, para las notas bajo la tabla. */
+const ANCHO_NOTAS = 76
+
+/**
+ * La descripción en una o dos líneas. Una tercera ya no cabe con dignidad en un
+ * renglón de factura: lo que sobra se corta con puntos suspensivos, como antes.
+ */
+function lineasDeDescripcion(doc: Doc, texto: string, ancho: number): string[] {
+  doc.setFont('helvetica', 'normal').setFontSize(8)
+  const partes = doc.splitTextToSize(texto, ancho) as string[]
+  if (partes.length <= 2) return partes
+  return [partes[0], ajustar(doc, partes.slice(1).join(' '), ancho)]
+}
 
 /**
  * El recuadro del cliente y, en la nota, el del camión.
@@ -321,16 +386,17 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
   return y + alto + 6
 }
 
-function cabeceraTabla(doc: Doc, y: number): number {
+function cabeceraTabla(doc: Doc, y: number, col: Columnas): number {
   doc.setFillColor(TINTA)
   doc.rect(IZQ, y, ANCHO_UTIL, 6.5, 'F')
 
   doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(7)
   doc.text('DESCRIPCIÓN', IZQ + 3, y + 4.4)
-  doc.text('CANTIDAD', COL_CANT, y + 4.4, { align: 'right' })
-  doc.text('UNIDAD', COL_UNID, y + 4.4, { align: 'right' })
-  doc.text('PRECIO', COL_PREC, y + 4.4, { align: 'right' })
-  doc.text('TOTAL', COL_TOTAL - 3, y + 4.4, { align: 'right' })
+  doc.text('CANTIDAD', col.cant, y + 4.4, { align: 'right' })
+  doc.text('UNIDAD', col.unid, y + 4.4, { align: 'right' })
+  if (col.conv !== null) doc.text('CONVERSIÓN', col.conv, y + 4.4, { align: 'right' })
+  doc.text('PRECIO', col.prec, y + 4.4, { align: 'right' })
+  doc.text('TOTAL', col.total - 3, y + 4.4, { align: 'right' })
 
   return y + 6.5
 }
@@ -585,21 +651,31 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
     tituloDocumento(doc, cabecera, rotulo.titulo, rotulo.color),
   )
 
+  // La columna de conversión va si algún renglón tiene con qué convertirse, y
+  // con ella cambia el reparto entero: se decide antes de medir nada.
+  const col = d.renglones.some((r) => r.conversion) ? CON_CONVERSION : SIN_CONVERSION
+
+  // Cuántas líneas ocupa cada descripción depende del ancho que le tocó, y el
+  // reparto en hojas depende de eso: se miden todas antes de repartir.
+  const lineas = d.renglones.map((r) => lineasDeDescripcion(doc, r.descripcion, col.descripcion))
+  const altoDe = (i: number) => altoRenglon(lineas[i].length, d.renglones[i])
+
   // Ahora sí se reparten las hojas, sin pintar: hace falta saber cuántas son
-  // para poder escribir "página 1 de 3" ya en la primera.
-  const hojas: RenglonImpreso[][] = []
+  // para poder escribir "página 1 de 3" ya en la primera. Cada hoja guarda la
+  // posición de sus renglones, que es la que tienen sus líneas medidas.
+  const hojas: number[][] = []
   {
     let y = yPrimera + 6.5
-    let actual: RenglonImpreso[] = []
+    let actual: number[] = []
 
-    for (const r of d.renglones) {
-      if (y + altoRenglon(r) > topeTabla) {
+    for (const i of d.renglones.keys()) {
+      if (y + altoDe(i) > topeTabla) {
         hojas.push(actual)
         actual = []
         y = ARRIBA + 12 + 6.5
       }
-      actual.push(r)
-      y += altoRenglon(r)
+      actual.push(i)
+      y += altoDe(i)
     }
     hojas.push(actual)
 
@@ -607,7 +683,7 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
     if (y + cierre > ABAJO) hojas.push([])
   }
 
-  for (const [indice, renglones] of hojas.entries()) {
+  for (const [indice, posiciones] of hojas.entries()) {
     if (indice > 0) doc.addPage()
 
     let y: number
@@ -631,21 +707,25 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
       y = ARRIBA + 12
     }
 
-    y = cabeceraTabla(doc, y)
+    y = cabeceraTabla(doc, y, col)
 
-    for (const [i, r] of renglones.entries()) {
-      if (i % 2 === 1) {
+    for (const [k, i] of posiciones.entries()) {
+      const r = d.renglones[i]
+      const descripcion = lineas[i]
+      const bajada = (descripcion.length - 1) * LINEA_DE_MAS
+
+      if (k % 2 === 1) {
         doc.setFillColor(FILA_ALTERNA)
-        doc.rect(IZQ, y, ANCHO_UTIL, altoRenglon(r), 'F')
+        doc.rect(IZQ, y, ANCHO_UTIL, altoDe(i), 'F')
       }
 
       doc.setTextColor(TINTA).setFont('helvetica', 'normal').setFontSize(8)
-      const descripcion = ajustar(doc, r.descripcion, ANCHO_DESCRIPCION)
-      doc.text(descripcion, IZQ + 3, y + 4.2)
+      descripcion.forEach((linea, j) => doc.text(linea, IZQ + 3, y + 4.2 + j * LINEA_DE_MAS))
       // Se mide a los ocho puntos con los que se pintó, no a los seis y medio
       // de la marca: midiéndolo después de bajar el cuerpo, el «(E)» caía
-      // encima de la última letra —«FLETE HASTA OBR(E)»—.
-      const finDescripcion = IZQ + 3 + doc.getTextWidth(descripcion)
+      // encima de la última letra —«FLETE HASTA OBR(E)»—. Va detrás de la
+      // última línea de la descripción, que es donde termina.
+      const finDescripcion = IZQ + 3 + doc.getTextWidth(descripcion[descripcion.length - 1] ?? '')
 
       /*
         UN RENGLÓN EXENTO TIENE QUE VERSE EXENTO.
@@ -662,46 +742,69 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
       */
       if (r.exento_iva) {
         doc.setTextColor(GRIS).setFontSize(6.5)
-        doc.text('(E)', finDescripcion + 1.2, y + 4.2)
+        doc.text('(E)', finDescripcion + 1.2, y + 4.2 + bajada)
         doc.setTextColor(TINTA).setFontSize(8)
       }
 
-      doc.text(numero(r.cantidad), COL_CANT, y + 4.2, { align: 'right' })
+      doc.text(numero(r.cantidad), col.cant, y + 4.2, { align: 'right' })
 
       doc.setTextColor(GRIS).setFontSize(7)
-      doc.text(r.unidad, COL_UNID, y + 4.2, { align: 'right' })
+      doc.text(r.unidad, col.unid, y + 4.2, { align: 'right' })
+
+      // En la misma letra que la cantidad: se pidió que las dos medidas se
+      // lean por igual. El guion, en gris, es «este renglón no se puede
+      // convertir», no un cero.
+      if (col.conv !== null) {
+        doc.setTextColor(r.conversion ? TINTA : GRIS).setFontSize(8)
+        doc.text(r.conversion ?? '—', col.conv, y + 4.2, { align: 'right' })
+      }
 
       doc.setTextColor(TINTA).setFontSize(8)
-      doc.text(numero(r.precio_unitario), COL_PREC, y + 4.2, { align: 'right' })
+      doc.text(numero(r.precio_unitario), col.prec, y + 4.2, { align: 'right' })
       doc.setFont('helvetica', 'bold')
-      doc.text(numero(r.subtotal), COL_TOTAL - 3, y + 4.2, { align: 'right' })
+      doc.text(numero(r.subtotal), col.total - 3, y + 4.2, { align: 'right' })
 
       if (r.detalle) {
         doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
-        doc.text(ajustar(doc, r.detalle, ANCHO_UTIL - 6), IZQ + 3, y + 7.6)
+        doc.text(ajustar(doc, r.detalle, ANCHO_UTIL - 6), IZQ + 3, y + 7.6 + bajada)
       }
 
-      y += altoRenglon(r)
+      y += altoDe(i)
     }
 
     doc.setDrawColor(HAIRLINE).setLineWidth(0.3)
     doc.line(IZQ, y, DER, y)
 
     if (indice === hojas.length - 1) {
+      // Las notas bajo la tabla se apilan a la izquierda, en el ancho que dejan
+      // los totales, cada una debajo de la anterior.
+      let yNota = y + 3.5
+
       // La marca (E) no se explica sola, y una letra suelta en un papel fiscal
       // que nadie sabe leer es peor que no ponerla.
       if (d.renglones.some((r) => r.exento_iva)) {
         doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
-        doc.text('(E) Renglón exento de IVA.', IZQ, y + 3.5)
+        doc.text('(E) Renglón exento de IVA.', IZQ, yNota)
+        yNota += 3.2
+      }
+
+      /*
+        DE DÓNDE SALEN LAS TONELADAS. Una columna de conversión sin decirlo se
+        lee como si todo se hubiera pesado en la romana. Los renglones pesados o
+        estimados al despachar lo dicen en su propia línea; esta nota es para
+        los que salen de la densidad.
+      */
+      if (col.conv !== null && d.notaConversion) {
+        doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
+        let nota = doc.splitTextToSize(d.notaConversion, ANCHO_NOTAS) as string[]
+        if (nota.length > 3) nota = [...nota.slice(0, 2), ajustar(doc, nota.slice(2).join(' '), ANCHO_NOTAS)]
+        nota.forEach((linea, j) => doc.text(linea, IZQ, yNota + j * 2.9))
+        yNota += nota.length * 2.9 + 0.3
       }
 
       if (d.observacion) {
         doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7)
-        doc.text(
-          ajustar(doc, `Observación: ${d.observacion}`, ANCHO_UTIL * 0.5),
-          IZQ,
-          d.renglones.some((r) => r.exento_iva) ? y + 8 : y + 6,
-        )
+        doc.text(ajustar(doc, `Observación: ${d.observacion}`, ANCHO_UTIL * 0.5), IZQ, yNota + 2.5)
       }
 
       const finTotales = totales(doc, d, y)

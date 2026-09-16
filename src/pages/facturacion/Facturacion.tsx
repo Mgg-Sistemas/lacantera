@@ -17,7 +17,12 @@ import { useMiPerfil } from '@/lib/api/usuarios'
 import { useCuentas } from '@/lib/api/tesoreria'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
-import { CONDICIONES_PAGO, useNotasEntrega, useRenglones } from '@/lib/api/ventas'
+import {
+  CONDICIONES_PAGO,
+  useNotasEntrega,
+  useRenglones,
+  type RenglonGuardado,
+} from '@/lib/api/ventas'
 import {
   useAnularCobro,
   useAnularFactura,
@@ -28,7 +33,11 @@ import {
   type FacturaVenta,
 } from '@/lib/api/facturacion'
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
-import { detalleDeRenglon } from '@/pages/ventas/filas'
+import {
+  conversionDeRenglon,
+  detalleDeRenglon,
+  notaDeConversionDeVenta,
+} from '@/pages/ventas/filas'
 import { densidadesDeArticulos } from '@/lib/api/catalogo'
 import { useMetodosPago, nombreDe, opcionesDe } from '@/lib/api/metodosPago'
 
@@ -139,6 +148,8 @@ export function Facturacion() {
   const imprimir = async (f: FacturaVenta) => {
     const renglones = renglonesDetalle.data ?? []
     const densidades = await densidadesDeArticulos({ ids: renglones.map((r) => r.articulo_id) })
+    const densidadDe = (r: RenglonGuardado) =>
+      densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3
     setPdf(
       await armarDocumento({
         tipo: 'FACTURA',
@@ -153,17 +164,15 @@ export function Facturacion() {
         tasaUsd: f.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
-          detalle: detalleDeRenglon(
-            r,
-            f.moneda,
-            densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3,
-          ),
+          detalle: detalleDeRenglon(r, f.moneda),
           cantidad: r.cantidad,
           unidad: r.unidad,
+          conversion: conversionDeRenglon(r, densidadDe(r)),
           precio_unitario: r.precio_unitario,
           subtotal: r.subtotal,
           exento_iva: r.exento_iva,
         })),
+        notaConversion: notaDeConversionDeVenta(renglones, densidadDe),
         subtotal: f.subtotal,
         descuento: f.descuento,
         flete: f.flete,
