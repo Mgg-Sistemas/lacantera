@@ -37,13 +37,19 @@ export interface RamaOrganigrama extends NodoOrganigrama {
   previstosEnRama: number
 }
 
+/*
+  Se lee por una función y no por la vista.
+
+  `organigrama_nodos` lo cierra su RLS a quien tiene nómina, y desde el
+  16/09/2026 el organigrama lo puede MIRAR cualquiera con sesión —«todos
+  deberían poder descargarlo en pdf o imagen»—. Abrir la tabla habría abierto
+  también lo que cuelga de ella; la función devuelve el árbol y nada más.
+  Editarlo sigue pidiendo nómina, y lo niega la base.
+*/
 export function useOrganigrama() {
   return useQuery({
     queryKey: ['organigrama'],
-    queryFn: async () =>
-      desenvolver<NodoOrganigrama[]>(
-        await supabase.from('v_organigrama').select('*').order('camino'),
-      ),
+    queryFn: () => rpc<NodoOrganigrama[]>('organigrama_para_todos'),
   })
 }
 
