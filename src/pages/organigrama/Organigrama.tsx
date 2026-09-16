@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, Pencil, Plus, Trash2, Move, X } from 'lucide-react'
+import { Check, Download, Pencil, Plus, Trash2, Move, X } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -9,6 +9,8 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useEmpresa } from '@/lib/api/empresa'
+import { armarOrganigrama } from '@/lib/ficha/organigramaPdf'
 import {
   armarArbol,
   useOrganigrama,
@@ -172,6 +174,34 @@ export function Organigrama() {
   const [moviendo, setMoviendo] = useState<number | null>(null)
   const [enfocado, setEnfocado] = useState<number | null>(null)
 
+  /*
+    EL PAPEL, QUE LO PUEDE SACAR CUALQUIERA.
+
+    Se descarga en vez de enseñarse en el visor porque no es un documento que
+    alguien firme: es una copia para tenerla a mano, y el paso de más sobra.
+  */
+  const { data: empresa } = useEmpresa()
+  const [armando, setArmando] = useState(false)
+
+  const descargar = async () => {
+    setArmando(true)
+    try {
+      const archivo = await armarOrganigrama({
+        nodos: nodos ?? [],
+        empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+        momento: new Date(),
+      })
+      const url = URL.createObjectURL(archivo.blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = archivo.nombre
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setArmando(false)
+    }
+  }
+
   const arbol = useMemo(() => armarArbol(nodos ?? []), [nodos])
   const ocupado = guardar.isPending || mover.isPending || eliminar.isPending
 
@@ -247,6 +277,21 @@ export function Organigrama() {
         eyebrow="Organización"
         title="Organigrama"
         description="Quién depende de quién, y cuánta gente hay prevista en cada puesto. Pulsa un puesto para seguir su línea de mando."
+        actions={
+          /*
+            Descargarlo lo puede hacer cualquiera, aunque no pueda tocar ni una
+            caja: es la mitad de lo que pidió Christopher el 16/09/2026, y la
+            que le ahorra a media empresa preguntar a quién le toca qué.
+          */
+          <Button
+            variant="outline"
+            icon={<Download />}
+            disabled={(nodos ?? []).length === 0 || armando}
+            onClick={() => void descargar()}
+          >
+            {armando ? 'Armando…' : 'Descargar'}
+          </Button>
+        }
       />
 
       {/* ------------------------------ De un vistazo ----------------------------- */}

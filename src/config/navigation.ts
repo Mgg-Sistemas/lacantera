@@ -315,7 +315,14 @@ export function moduloDeRuta(ruta: string): string {
  * empresa, solo explica cómo se usa el sistema. Cerrarlo por permisos no
  * protegería nada y dejaría sin instrucciones a quien acaba de llegar.
  */
-const RUTAS_PROPIAS = ['/app/cuenta', '/app/manual']
+/*
+  El organigrama entra aquí el 16/09/2026, y solo para MIRARLO. Christopher:
+  «solo personas autorizadas pueden editar el organigrama, aunque todos deberían
+  poder descargarlo en pdf o imagen». Editar sigue pidiendo nómina —lo niega la
+  base, no la pantalla—; saber a quién le toca qué no le hace daño a nadie y le
+  ahorra a media empresa preguntarlo.
+*/
+const RUTAS_PROPIAS = ['/app/cuenta', '/app/manual', '/app/organigrama']
 
 export function esRutaPropia(ruta: string): boolean {
   return RUTAS_PROPIAS.some((prefijo) => ruta.startsWith(prefijo))
