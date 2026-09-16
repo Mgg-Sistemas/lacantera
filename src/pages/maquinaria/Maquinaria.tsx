@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ClipboardList, Plus, Search } from 'lucide-react'
+import { ClipboardList, Cog, Plus, Search, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -25,8 +25,19 @@ import {
   type Maquina,
 } from '@/lib/api/maquinaria'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { useNavigate } from 'react-router'
+import { useVehiculos, type Vehiculo } from '@/lib/api/vehiculos'
+import { usePermisosDeCamion } from '@/lib/camiones'
+import { Modal } from '@/components/ui/Modal'
+import { CamionesDeLaFlota, ModalCamion } from './Camiones'
+import { useLocation, useNavigate } from 'react-router'
 import { cn } from '@/lib/cn'
+
+/** Sin tildes y en minúsculas, para comparar lo escrito con lo guardado. */
+const aplanar = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
 
 /**
  * Las máquinas y cómo van de mantenimiento.
@@ -136,6 +147,28 @@ export function Maquinaria() {
 
   const puedeEscribir = puede('MAQUINARIA', 'ESCRITURA')
 
+  /*
+    LOS CAMIONES, EN LA MISMA PANTALLA.
+
+    Christopher, 16/09/2026: la maquinaria y los vehículos se llevan en un solo
+    sitio, como en el otro sistema que ya usa. Siguen siendo dos tablas —a los
+    camiones les cuelgan los viajes, los pesajes y el centro de costo—, así que
+    no se mezclan en el orden por gravedad ni en el pulso: un camión de un
+    transportista no tiene horómetro ni taller, y meterlo ahí sería inventarle
+    un semáforo. Van en su bloque, debajo, con el mismo buscador.
+
+    Los filtros que son preguntas de máquina —estado, tipo, clase, «las que hay
+    que atender»— los esconden: nadie que pregunta qué está en el taller quiere
+    ver volteos. El dueño también: La Cantera enseña sus camiones propios, y la
+    gobernación ninguno, porque los transportistas no están en ese catálogo.
+  */
+  const flota = useVehiculos(false)
+  const permisosCamion = usePermisosDeCamion()
+  const [verFueraDeServicio, setVerFueraDeServicio] = useState(false)
+  const [camionEditando, setCamionEditando] = useState<Vehiculo | null | undefined>(undefined)
+  const [eligiendoAlta, setEligiendoAlta] = useState(false)
+  const { hash } = useLocation()
+
   const orden = { BLOQUEANTE: 0, ALARMA: 1, AVISO: 2, OK: 3 } as const
   const todas = useMemo(
     () =>
@@ -222,6 +255,46 @@ export function Maquinaria() {
     })
   }, [todas, busqueda, filtroEstado, tipo, dueno, clase, soloPendientes])
 
+  // Un filtro que solo sabe de máquinas deja los camiones fuera de la vista.
+  const soloMaquinas = Boolean(filtroEstado || tipo || clase || soloPendientes)
+  const todosLosCamiones = useMemo(() => flota.data ?? [], [flota.data])
+
+  /* Los camiones que pasan la búsqueda y el dueño, con y sin los fuera de servicio. */
+  const camionesBuscados = useMemo(() => {
+    if (soloMaquinas) return []
+    const trozos = aplanar(busqueda).split(/\s+/).filter(Boolean)
+    return todosLosCamiones.filter((v) => {
+      if (dueno && dueno !== LA_CASA) return false
+      if (dueno === LA_CASA && !v.propio) return false
+      if (trozos.length === 0) return true
+      const heno = aplanar(
+        `${v.placa} ${v.tipo} ${v.descripcion ?? ''} ${v.transportista ?? ''} ${v.chofer_actual ?? ''} ${v.maquina_codigo ?? ''}`,
+      )
+      return trozos.every((t) => heno.includes(t))
+    })
+  }, [todosLosCamiones, soloMaquinas, busqueda, dueno])
+
+  // Fuera de servicio no se ofrecen por defecto, igual que las desincorporadas.
+  const camiones = verFueraDeServicio ? camionesBuscados : camionesBuscados.filter((v) => v.activo)
+  const camionesEscondidos = camionesBuscados.length - camiones.length
+
+  /* Si se llega desde la ficha de un camión, se baja hasta ellos. */
+  useEffect(() => {
+    if (hash === '#camiones' && todosLosCamiones.length > 0) {
+      document.getElementById('camiones')?.scrollIntoView({ block: 'start' })
+    }
+  }, [hash, todosLosCamiones.length])
+
+  /*
+    «Agregar» pregunta qué se va a dar de alta solo si hay que preguntarlo: quien
+    puede una sola de las dos cosas va directo a ella.
+  */
+  const agregar = () => {
+    if (puedeEscribir && permisosCamion.editar) setEligiendoAlta(true)
+    else if (puedeEscribir) void navegar('/app/maquinaria/nueva')
+    else setCamionEditando(null)
+  }
+
   /*
     Los avisos se cuentan sobre TODAS y no sobre las filtradas.
 
@@ -301,7 +374,7 @@ export function Maquinaria() {
     <>
       <PageHeader
         title="Maquinaria"
-        description="Cada equipo, lo que lleva trabajado y cuánto le falta para su mantenimiento."
+        description="Cada equipo y cada camión: lo que lleva trabajado, cuánto le falta para su mantenimiento y lo que carga."
         actions={
           <>
             <Button
@@ -311,9 +384,9 @@ export function Maquinaria() {
             >
               Historial de taller
             </Button>
-            {puedeEscribir ? (
-              <Button icon={<Plus />} onClick={() => void navegar('/app/maquinaria/nueva')}>
-                Nueva máquina
+            {puedeEscribir || permisosCamion.editar ? (
+              <Button icon={<Plus />} onClick={agregar}>
+                Agregar
               </Button>
             ) : null}
           </>
@@ -411,13 +484,13 @@ export function Maquinaria() {
           {/* La barra no se pinta si no hay nada que filtrar: con el sistema
               recién arrancado, tres campos vacíos encima de un cartel que dice
               «no hay máquinas» son tres campos que estorban. */}
-          {todas.length > 0 ? (
+          {todas.length > 0 || todosLosCamiones.length > 0 ? (
             <Card className="mb-4">
               <div className="grid gap-3 sm:grid-cols-[1fr_190px]">
                 <Input
                   label="Buscar"
                   icon={<Search />}
-                  placeholder="Código, nombre, marca, modelo o serial"
+                  placeholder="Código, nombre, marca, serial, placa o transportista"
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                 />
@@ -485,14 +558,32 @@ export function Maquinaria() {
                   </button>
                 ) : null}
 
+                {/* Las dos cuentas por separado: sumarlas diría «22 equipos» y
+                    nadie sabría cuántos tienen horómetro. */}
                 <span className="text-ink/45 ml-auto text-xs">
                   {maquinas.length} de {todas.length} máquina{todas.length === 1 ? '' : 's'}
+                  {todosLosCamiones.length > 0 ? (
+                    soloMaquinas ? (
+                      ' · los camiones no se filtran por eso'
+                    ) : (
+                      <>
+                        {' · '}
+                        <a href="#camiones" className="hover:text-ink/75 underline underline-offset-2">
+                          {camiones.length === 1 ? '1 camión' : `${camiones.length} camiones`}
+                        </a>
+                      </>
+                    )
+                  ) : null}
                 </span>
               </div>
             </Card>
           ) : null}
 
-          {maquinas.length === 0 ? (
+          {/* La búsqueda encontró camiones y ninguna máquina: una línea basta.
+              El cartel grande taparía justo lo que se encontró. */}
+          {maquinas.length === 0 && todas.length > 0 && hayFiltro && camiones.length > 0 ? (
+            <p className="text-ink/45 mb-2 text-sm">Ninguna máquina coincide.</p>
+          ) : maquinas.length === 0 ? (
             <Card>
               {/* Dos ceros que parecen el mismo y no lo son: uno dice que falta
                   cargar máquinas y el otro que la búsqueda no encontró. Darles
@@ -551,8 +642,72 @@ export function Maquinaria() {
               )}
             </>
           )}
+
+          {flota.error ? <ErrorDeCarga error={flota.error} className="mt-6" /> : null}
+
+          {!soloMaquinas && (camionesBuscados.length > 0 || (hayFiltro && todosLosCamiones.length > 0)) ? (
+            <CamionesDeLaFlota
+              camiones={camiones}
+              fueraDeServicio={camionesEscondidos}
+              verFueraDeServicio={verFueraDeServicio}
+              onVerFueraDeServicio={setVerFueraDeServicio}
+              puedeEditar={permisosCamion.editar}
+              onEditar={setCamionEditando}
+            />
+          ) : null}
         </>
       ) : null}
+
+      {/* Qué se va a dar de alta. Es la única vez que la pantalla pregunta si es
+          una máquina o un camión: el listado ya lo dice solo. */}
+      <Modal
+        abierto={eligiendoAlta}
+        onCerrar={() => setEligiendoAlta(false)}
+        titulo="¿Qué vas a agregar?"
+        descripcion="Son dos fichas distintas: la máquina lleva horómetro y taller; el camión, lo que carga y a quién se le pagan sus viajes."
+        ancho="sm"
+      >
+        <div className="grid gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setEligiendoAlta(false)
+              void navegar('/app/maquinaria/nueva')
+            }}
+            className="border-hairline hover:border-royal-600/50 hover:bg-royal-600/5 rounded-card flex min-h-14 items-center gap-3 border p-4 text-left"
+          >
+            <Cog className="text-ink/50 size-5 shrink-0" />
+            <span>
+              <span className="text-ink/90 block text-sm font-medium">Máquina o equipo</span>
+              <span className="text-ink/50 block text-xs">
+                Excavadora, cargador, planta, generador, vehículo liviano
+              </span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEligiendoAlta(false)
+              setCamionEditando(null)
+            }}
+            className="border-hairline hover:border-royal-600/50 hover:bg-royal-600/5 rounded-card flex min-h-14 items-center gap-3 border p-4 text-left"
+          >
+            <Truck className="text-ink/50 size-5 shrink-0" />
+            <span>
+              <span className="text-ink/90 block text-sm font-medium">Camión</span>
+              <span className="text-ink/50 block text-xs">
+                Volteo, chuto, gandola: propio o de un transportista
+              </span>
+            </span>
+          </button>
+        </div>
+      </Modal>
+
+      <ModalCamion
+        abierto={camionEditando !== undefined}
+        vehiculo={camionEditando ?? null}
+        onCerrar={() => setCamionEditando(undefined)}
+      />
 
       <ModalHorometro
         abierto={horometro !== null}
