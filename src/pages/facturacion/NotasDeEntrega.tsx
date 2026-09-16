@@ -30,11 +30,18 @@ import {
   useRenglones,
   type NotaEntrega,
 } from '@/lib/api/ventas'
-import { Renglones } from './Renglones'
-import { aRenglones, filaVacia, gravadoDe, subtotalDe, type FilaRenglon } from './filas'
-import { TablaRenglones, Totales } from './Cotizaciones'
-import { CasillaIva } from './CasillaIva'
-import { useIvaPorDefecto } from './ivaPorDefecto'
+/*
+  Los renglones, el IVA y sus totales se quedaron en Ventas: son los mismos que
+  arma una cotización, y partirlos en dos copias sería tener dos formas de sumar
+  la misma factura. La nota de entrega se mudó a Facturación —«la nota de
+  entrega debe moverse a Facturación», Christopher, 16/09/2026— porque gasta
+  numeración y deja a alguien debiendo, no porque su formulario sea otro.
+*/
+import { Renglones } from '@/pages/ventas/Renglones'
+import { aRenglones, filaVacia, gravadoDe, subtotalDe, type FilaRenglon } from '@/pages/ventas/filas'
+import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
+import { CasillaIva } from '@/pages/ventas/CasillaIva'
+import { useIvaPorDefecto } from '@/pages/ventas/ivaPorDefecto'
 
 const TONO: Record<string, 'safety' | 'success' | 'neutral'> = {
   DESPACHADA: 'safety',
@@ -48,7 +55,7 @@ const ETIQUETA: Record<string, string> = {
   ANULADA: 'Anulada',
 }
 
-export function Despachos() {
+export function NotasDeEntrega() {
   const monedas = useMonedasUsables()
   const { data, isPending, error } = useNotasEntrega()
   const { data: clientes } = useClientes(true)

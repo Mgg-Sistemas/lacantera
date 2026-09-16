@@ -93,7 +93,7 @@ const FUENTES: Fuente[] = [
     tipo: 'Nota de entrega',
     titulo: (f) => texto(f.numero),
     detalle: (f) => texto(f.estado).replaceAll('_', ' '),
-    to: () => '/app/ventas/despachos',
+    to: () => '/app/facturacion/notas-entrega',
   },
   {
     modulo: 'VENTAS',
