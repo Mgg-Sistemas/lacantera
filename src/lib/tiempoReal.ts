@@ -61,6 +61,15 @@ const AFECTA: Record<string, string[][]> = {
   // recibir mete en el destino— y avisa. La lista de Transferencias lo sigue en
   // vivo, y Existencias también, porque lo que va de camino se ve ahí.
   traslados: [['traslados'], ['existencias'], ['movimientos'], ['notificaciones']],
+  // Una solicitud la pide uno y la aprueba otro, casi siempre con las dos
+  // pantallas abiertas a la vez: sin esto, quien aprueba sigue viendo «por
+  // aprobar» después de haberla aprobado desde el móvil.
+  solicitudes_salida: [
+    ['solicitudes-salida'],
+    ['existencias'],
+    ['movimientos'],
+    ['notificaciones'],
+  ],
   // El nombre del dueño se pinta en los almacenes y en las máquinas: si alguien
   // registra a la gobernación mientras otro tiene abierto el formulario del
   // almacén, el desplegable tiene que ofrecerla sin recargar.

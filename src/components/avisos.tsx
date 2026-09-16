@@ -1,4 +1,13 @@
-import { Boxes, Fuel, HandHelping, Settings, ShoppingCart, Users, Wrench } from 'lucide-react'
+import {
+  Boxes,
+  Fuel,
+  HandHelping,
+  PackageMinus,
+  Settings,
+  ShoppingCart,
+  Users,
+  Wrench,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Importancia, Modulo } from '@/lib/api/notificaciones'
 
@@ -29,6 +38,8 @@ export const ICONO_DE_MODULO: Record<Modulo, LucideIcon> = {
   ASIGNACIONES: HandHelping,
   // Los traslados avisan desde el 15/09/2026: el mismo icono que Inventario en el riel.
   INVENTARIO: Boxes,
+  // Las solicitudes de salida avisan desde el 16/09/2026, con el icono de su módulo.
+  SALIDAS: PackageMinus,
   SISTEMA: Settings,
 }
 
@@ -39,6 +50,7 @@ export const NOMBRE_DE_MODULO: Record<Modulo, string> = {
   COMBUSTIBLE: 'Combustible',
   ASIGNACIONES: 'Asignaciones',
   INVENTARIO: 'Inventario',
+  SALIDAS: 'Salidas y traslados',
   SISTEMA: 'Sistema',
 }
 

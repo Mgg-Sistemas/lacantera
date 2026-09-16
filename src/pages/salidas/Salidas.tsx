@@ -7,20 +7,15 @@ import { PESTANAS_SALIDAS } from '@/components/pestanasDeModulos'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
-import { Visor } from '@/components/Visor'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { Modal } from '@/components/ui/Modal'
 import { useArticulos, usePerfiles } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { useEmpresa } from '@/lib/api/empresa'
 import {
   grupoEnCorto,
-  leerCabeceraDeNota,
-  leerNotaDeSalida,
   nombreDeMovimiento,
   paraQuienSalio,
   puertaEnPalabras,
@@ -29,10 +24,8 @@ import {
   useMovimientos,
 } from '@/lib/api/inventario'
 import { ModalSalida } from './ModalSalida'
-import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
-import type { DatosNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
-import type { ArchivoArmado } from '@/lib/ficha/armado'
-import { fecha, fechaHora } from '@/lib/formato'
+import { useNotaDeSalida } from './NotaDeSalida'
+import { fechaHora } from '@/lib/formato'
 
 /*
   LO QUE SALIÓ Y LO QUE SE MOVIÓ, EN UNA SOLA PANTALLA
@@ -70,25 +63,6 @@ const VISTAS: Record<string, Vista> = {
 const numeroLegible = (v: string | number): string =>
   Number(v).toLocaleString('es-VE', { maximumFractionDigits: 2 })
 
-/**
- * «7 TAMBOR y 10 L», o nada cuando se contó en la unidad de operación.
- *
- * Se arma aquí y no en el PDF porque el PDF no tiene por qué saber cómo se
- * llama cada columna de la base: recibe una frase y la imprime.
- */
-function contadoLegible(l: {
-  cantidad_capturada: string | null
-  unidad_capturada: string | null
-  suelto_capturado: string | null
-  unidad: string
-}): string | null {
-  if (!l.cantidad_capturada || !l.unidad_capturada) return null
-  const bultos = `${numeroLegible(l.cantidad_capturada)} ${l.unidad_capturada}`
-  return Number(l.suelto_capturado)
-    ? `${bultos} y ${numeroLegible(l.suelto_capturado ?? 0)} ${l.unidad}`
-    : bultos
-}
-
 export function Salidas() {
   const [vista, setVista] = useState('TODO')
   const [almacenId, setAlmacenId] = useState('')
@@ -101,8 +75,9 @@ export function Salidas() {
   const { data: almacenes } = useAlmacenes()
   const { data: articulos } = useArticulos()
   const { data: perfiles } = usePerfiles()
-  const { data: empresa } = useEmpresa()
   const grupos = useGruposDeSalida()
+  // El papel lo arma el gancho del módulo, que lo comparte con las solicitudes.
+  const nota = useNotaDeSalida()
 
   const { data, isPending, error } = useMovimientos({
     tipos: (VISTAS[vista] ?? VISTAS.TODO).tipos,
@@ -134,53 +109,6 @@ export function Salidas() {
     setSacando(true)
     setParametros(new URLSearchParams(), { replace: true })
   }, [parametros, setParametros])
-
-  const [nota, setNota] = useState<ArchivoArmado | null>(null)
-  const [datosNota, setDatosNota] = useState<DatosNotaDeSalida | null>(null)
-  // Por defecto sin cifras: la nota es lo que firma quien recibe el material.
-  const [notaConCostos, setNotaConCostos] = useState(false)
-  const [rehaciendoNota, setRehaciendoNota] = useState(false)
-  const [falloElPapel, setFalloElPapel] = useState<string | null>(null)
-
-  /*
-    La nota entera, releída de la base por su número.
-
-    No se arma con lo que hay en el formulario: el costo promedio y el valor de
-    cada renglón los calcula la base al mover, y son justo las cifras que quedan
-    en el papel que alguien firma. Un papel con cifras del navegador y un libro
-    con otras es exactamente el problema que la nota venía a resolver.
-  */
-  const armarLaNota = async (numero: string, motivo: string) => {
-    const [lineas, cabecera] = await Promise.all([
-      leerNotaDeSalida(numero),
-      leerCabeceraDeNota(numero),
-    ])
-    if (lineas.length === 0) return
-
-    const datos: DatosNotaDeSalida = {
-      conCostos: notaConCostos,
-      numero,
-      fecha: fecha(lineas[0].fecha),
-      almacen: lineas[0].almacen,
-      clase: cabecera.motivo,
-      paraQuien: paraQuienSalio(cabecera.para, grupos.data),
-      motivo,
-      renglones: lineas.map((l) => ({
-        articuloCodigo: l.articulo_codigo,
-        articulo: l.articulo,
-        cantidad: l.cantidad,
-        unidad: l.unidad,
-        contado: contadoLegible(l),
-        costoUnitarioUsd: l.costo_usd,
-        valorUsd: l.valor_usd,
-        almacen: l.almacen,
-      })),
-      empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
-      momento: new Date(),
-    }
-    setDatosNota(datos)
-    setNota(await armarNotaDeSalida(datos))
-  }
 
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
@@ -406,58 +334,11 @@ export function Salidas() {
           */
           setSacando(false)
           setDesdeFila({})
-          void armarLaNota(numero, motivo).catch((e: unknown) => {
-            // Y si el papel no se puede armar, la salida sigue estando bien
-            // hecha: se reimprime desde Movimientos.
-            setFalloElPapel(
-              `La salida ${numero} quedó registrada, pero no se pudo armar el papel. Búscala en Movimientos y pulsa «Nota».`,
-            )
-            console.error(e)
-          })
+          void nota.abrir(numero, motivo)
         }}
       />
 
-      <Visor
-        abierto={nota !== null}
-        onCerrar={() => {
-          setNota(null)
-          setDatosNota(null)
-        }}
-        blob={nota?.blob ?? null}
-        nombreArchivo={nota?.nombre ?? 'nota-salida.pdf'}
-        titulo="Nota de salida"
-        descripcion="Compruébala antes de imprimirla: es lo que va a firmar quien recibe el material."
-        casilla={
-          datosNota
-            ? {
-                etiqueta: 'Incluir costos',
-                marcada: notaConCostos,
-                rehaciendo: rehaciendoNota,
-                onCambiar: async (marcada: boolean) => {
-                  setNotaConCostos(marcada)
-                  setRehaciendoNota(true)
-                  try {
-                    setNota(await armarNotaDeSalida({ ...datosNota, conCostos: marcada }))
-                  } finally {
-                    setRehaciendoNota(false)
-                  }
-                },
-              }
-            : undefined
-        }
-      />
-
-      {falloElPapel ? (
-        <Modal
-          abierto
-          onCerrar={() => setFalloElPapel(null)}
-          titulo="La salida quedó registrada"
-          ancho="sm"
-          acciones={<Button onClick={() => setFalloElPapel(null)}>Entendido</Button>}
-        >
-          <p className="text-ink/70 text-sm leading-relaxed">{falloElPapel}</p>
-        </Modal>
-      ) : null}
+      {nota.visor}
     </>
   )
 }
