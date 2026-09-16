@@ -486,7 +486,7 @@ Cuatro cosas de su funcionamiento que evitan malentendidos:
 - Hay que escribir **al menos dos letras**. Con menos dice **Escribe al menos dos letras.**
 - Los documentos se buscan en la base, así que espera un instante después de que dejes de teclear. Mientras tanto dice **Buscando…**
 - **Solo encuentra lo que tu permiso alcanza.** Ofrecer un atajo a una pantalla que va a rebotar por falta de permiso es enseñar una puerta cerrada. Si no hay nada, dice **Nada con ese nombre, ni en las pantallas ni en los documentos que puedes ver.**
-- **Las pantallas escondidas del menú tampoco salen aquí.** La lupa es otra puerta al mismo menú, y un módulo escondido que se encontrara escribiendo su nombre no estaría escondido. Con una salvedad que conviene conocer: **los documentos sí salen**. Una factura o una placa de vehículo pueden aparecer en la lista, y al pulsarlas se llega al cartel de obra.
+- **Las pantallas escondidas del menú tampoco salen aquí.** La lupa es otra puerta al mismo menú, y un módulo escondido que se encontrara escribiendo su nombre no estaría escondido. Con una salvedad que conviene conocer: **los documentos sí salen**. Una factura puede aparecer en la lista, y al pulsarla se llega al cartel de obra. Las placas de los camiones ya no: desde el 16 de septiembre de 2026 llevan a su ficha en Maquinaria.
 
 Solo tres resultados llevan al registro concreto —la orden de compra, el trabajador y el vehículo—; los demás dejan en la lista donde ese registro vive.
 
@@ -1988,7 +1988,7 @@ Los tickets anulados se ven más pálidos, pero siguen en la lista.
 
 1. Pulsa **Pesar**. La ventana avisa: **El neto sale solo. Si el bruto no supera a la tara, algo se escribió al revés.**
 2. Elige el **Tipo**: **Salida — material que se va** o **Entrada — algo que llega**.
-3. Elige el **Vehículo**. Sale del catálogo de **Despachos › Vehículos** y trae la placa, lo que carga y el transportista; **al elegirlo, el transportista se rellena solo**. Si el camión no está en el catálogo —el que viene una vez y no vuelve— se elige **Otro — escribo la placa** y aparece el campo **Placa** para teclearla.
+3. Elige el **Vehículo**. Sale del catálogo de camiones de **Maquinaria › Equipos** y trae la placa, lo que carga y el transportista; **al elegirlo, el transportista se rellena solo**. Si el camión no está en el catálogo —el que viene una vez y no vuelve— se elige **Otro — escribo la placa** y aparece el campo **Placa** para teclearla.
 4. Escribe el **Peso bruto (kg)** y la **Tara (kg)**. Debajo, el recuadro **Neto** hace la resta mientras tecleas.
 5. Completa lo que sepas: **Transportista**, **Chofer**, **Cédula del chofer**, **Material**, y el **Cliente** si es una salida o el **Proveedor** si es una entrada.
 6. Revisa la **Fecha**, que viene puesta en hoy, y escribe la **Hora** si la llevas.
@@ -2097,9 +2097,16 @@ Una guía que ya amparó un despacho no se anula desde aquí: el sistema respond
 
 ### 8.6 Vehículos
 
-**Operación › Despachos › Vehículos**
+**Operación › Maquinaria › Equipos**, en el bloque **Camiones**, debajo de las máquinas
 
-*"La flota propia y la de los transportistas, con lo que carga cada uno. Es lo que permite saber si un despacho cabe en el camión."*
+**Desde el 16 de septiembre de 2026 los camiones ya no están en Despachos.** Viven en la misma pantalla que las máquinas, como un solo catálogo con dos fichas distintas: la máquina lleva horómetro y taller; el camión, lo que carga y a quién se le pagan sus viajes. La dirección vieja sigue funcionando y lleva a la nueva.
+
+- **Para dar de alta** se pulsa **Agregar** y se elige **Camión**. Quien solo puede una de las dos cosas va directo a ella.
+- **El buscador de Equipos busca también camiones**: por placa, tipo, descripción, transportista o chofer. El contador da las dos cuentas por separado.
+- **Los filtros de máquina esconden los camiones**: un estado, un tipo, una clase o «las que hay que atender». El dueño **La Cantera** enseña los camiones propios; **Gobernación**, ninguno.
+- **Los fuera de servicio no salen** hasta que se pulsa **Ver los fuera de servicio**.
+- **Quién puede:** con Maquinaria en escritura se da de alta un camión, se le corrige la placa, el tipo, la descripción y la nota, se saca de servicio y se le asigna chofer. **Cambiarle de quién es, lo que le cabe o su ficha de máquina** a un camión que ya existe pide la casilla **Dar de alta y corregir un vehículo**, porque decide a quién se le pagan los viajes. La **carga útil** y **eliminar** siguen con sus casillas. Esos campos se ven apagados, con la razón debajo.
+- La clase **Vehículo** de las máquinas se llama ahora **Vehículo liviano**: es la camioneta que lleva gente, no un camión de carga.
 
 Es el catálogo del que salen los desplegables **Vehículo** del ticket y de la guía. Cada ficha lleva:
 
@@ -2109,7 +2116,7 @@ Es el catálogo del que salen los desplegables **Vehículo** del ticket y de la 
 | **Tipo** | Volteo, chuto, gandola… |
 | **Descripción** | Lo que ayude a reconocerlo |
 | **Metros cúbicos** y **Toneladas** | Lo que carga. Es el dato que responde si un despacho cabe |
-| **Ficha en Maquinaria** | Si el camión es de la empresa, se ata a su ficha de Maquinaria |
+| **Ficha de máquina** | Si el camión es de la empresa, se ata a su ficha de máquina |
 | **Transportista** | Si es de un tercero. Es lo que se rellena solo en el ticket al elegir el vehículo |
 | **Nota** | |
 
@@ -6122,7 +6129,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **El USDT no tiene tasa oficial.** El dólar y el euro salen de lo que publica el BCV; el USDT sale de la mediana del mercado entre particulares de Binance y se registra como **PARALELO**. Es una referencia de mercado, no una publicación con respaldo. Confírmala con quien cierra las operaciones antes de registrarla.
 
-**La barra buscadora encuentra documentos de módulos escondidos.** Las pantallas escondidas no salen, pero una factura, una nota de entrega o una placa de vehículo sí pueden aparecer en la lista, y al pulsarlas se llega al cartel de obra. No es un fallo del buscador: es que el documento existe y su pantalla todavía no se ofrece.
+**La barra buscadora encuentra documentos de módulos escondidos.** Las pantallas escondidas no salen, pero una factura o una nota de entrega sí pueden aparecer en la lista, y al pulsarlas se llega al cartel de obra. No es un fallo del buscador: es que el documento existe y su pantalla todavía no se ofrece.
 
 ### 15.2 Lo que falta dentro de módulos que sí funcionan
 
