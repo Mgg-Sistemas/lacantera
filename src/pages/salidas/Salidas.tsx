@@ -87,7 +87,8 @@ export function Salidas() {
 
   /*
     Un enlace viejo que traiga `?sacar=` —guardado, o de antes de ordenar las
-    pestañas— sigue abriendo el formulario, ahora en «Salidas», que es donde vive.
+    pestañas— sigue abriendo el formulario en «Salidas», que es donde vive. Desde
+    el 16/09/2026 abre la solicitud: la salida directa está apagada.
   */
   const [parametros] = useSearchParams()
   const navegar = useNavigate()

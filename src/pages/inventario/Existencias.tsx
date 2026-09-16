@@ -6,12 +6,12 @@ import {
   Landmark,
   MapPin,
   MoveRight,
-  PackageMinus,
   PackagePlus,
   Plus,
   Printer,
   Scale,
   Search,
+  SendHorizontal,
   Shuffle,
   TriangleAlert,
   Wrench,
@@ -689,13 +689,17 @@ export function Existencias() {
                 salidas y los traslados». El formulario vive en su módulo y esta
                 pantalla se queda con lo suyo: enseñar lo que hay. El botón sigue
                 estando donde la gente lo busca, y lleva allá con lo que ya sabe.
+
+                Desde la tarde del 16/09 toda salida se solicita: «todas las
+                salidas necesitarán de autorización, ocultaremos las salidas y
+                traslados directos por ahora».
               */}
               <Button
                 variant="outline"
-                icon={<PackageMinus />}
-                onClick={() => void navegar('/app/salidas/solicitudes?sacar=1')}
+                icon={<SendHorizontal />}
+                onClick={() => void navegar('/app/salidas/solicitudes?solicitar=1')}
               >
-                Registrar salida directa
+                Solicitar salida
               </Button>
               {/*
                 EL TRASLADO, DESDE DONDE SE MIRA EL MATERIAL.
@@ -1020,14 +1024,14 @@ export function Existencias() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              icon={<PackageMinus />}
+                              icon={<SendHorizontal />}
                               onClick={() =>
                                 void navegar(
-                                  `/app/salidas/solicitudes?sacar=1&articulo=${fila!.articulo_id}&almacen=${fila!.almacen_id}`,
+                                  `/app/salidas/solicitudes?solicitar=1&articulo=${fila!.articulo_id}&almacen=${fila!.almacen_id}`,
                                 )
                               }
                             >
-                              Sacar
+                              Solicitar salida
                             </Button>
                             <Button
                               size="sm"
@@ -1132,9 +1136,9 @@ export function Existencias() {
           setDesglose(null)
           setCosto(f)
         }}
-        onSacar={(f) => {
+        onSolicitarSalida={(f) => {
           setDesglose(null)
-          void navegar(`/app/salidas/solicitudes?sacar=1&articulo=${f.articulo_id}&almacen=${f.almacen_id}`)
+          void navegar(`/app/salidas/solicitudes?solicitar=1&articulo=${f.articulo_id}&almacen=${f.almacen_id}`)
         }}
         onContar={(f) => {
           setDesglose(null)
@@ -2139,7 +2143,7 @@ function ModalDesglose({
   onCerrar,
   puedeMover,
   puedeCorregirCosto,
-  onSacar,
+  onSolicitarSalida,
   onContar,
   onCorregirCosto,
   onTrasvasar,
@@ -2148,7 +2152,7 @@ function ModalDesglose({
   onCerrar: () => void
   puedeMover: boolean
   puedeCorregirCosto: boolean
-  onSacar: (fila: Existencia) => void
+  onSolicitarSalida: (fila: Existencia) => void
   onContar: (fila: Existencia) => void
   onCorregirCosto: (fila: Existencia) => void
   onTrasvasar: (fila: Existencia) => void
@@ -2216,11 +2220,11 @@ function ModalDesglose({
                       <Button
                         size="sm"
                         variant="ghost"
-                        icon={<PackageMinus />}
+                        icon={<SendHorizontal />}
                         disabled={vacio}
-                        onClick={() => onSacar(f)}
+                        onClick={() => onSolicitarSalida(f)}
                       >
-                        Sacar
+                        Solicitar salida
                       </Button>
                       <Button
                         size="sm"
