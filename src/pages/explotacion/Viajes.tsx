@@ -63,6 +63,7 @@ import {
   useAcarreosDelDia,
   useAcarreosDeEquipo,
   useAcarreosDia,
+  useAjustarPrecioDeViajes,
   useAnularAcarreo,
   useAprobarViajes,
   useComoApruebo,
@@ -463,6 +464,8 @@ interface GrupoPorAprobar {
   equipo: string
   origen_id: number | null
   destino_id: number | null
+  deMaquina: boolean
+  viajes: Acarreo[]
   ids: number[]
   cargas: Record<CargaDelViaje, number>
   m3: number
@@ -483,6 +486,7 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
   const como = useComoApruebo()
   const aprobar = useAprobarViajes()
   const [rechazando, setRechazando] = useState<GrupoPorAprobar | null>(null)
+  const [ajustando, setAjustando] = useState<GrupoPorAprobar | null>(null)
 
   const esperando = viajes.filter((v) => v.estado === 'POR_APROBAR')
   if (esperando.length === 0) return null
@@ -496,6 +500,8 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
       equipo: v.placa ?? '—',
       origen_id: v.origen_id,
       destino_id: v.destino_id,
+      deMaquina: v.maquina_id !== null,
+      viajes: [],
       ids: [],
       cargas: { COMPLETA: 0, PARCIAL: 0, VACIO: 0 },
       m3: 0,
@@ -504,6 +510,7 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
       hayDinero: false,
     }
     g.ids.push(v.id)
+    g.viajes.push(v)
     if (v.carga) g.cargas[v.carga] += 1
     if (v.carga_m3 !== null) {
       g.m3 += Number(v.carga_m3)
@@ -568,11 +575,23 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
                   {enteros(g.ids.length)} {g.ids.length === 1 ? 'viaje' : 'viajes'}:{' '}
                   {comoVolvieron(g.cargas) || 'sin decir cómo volvieron'}
                   {g.hayM3 ? ` · ${enteros(g.m3)} m³` : ''}
-                  {g.hayDinero ? ` · ${dolares(g.monto)}` : ''}
+                  {g.deMaquina ? ' · máquina propia: no se paga por viaje' : g.hayDinero ? ` · ${dolares(g.monto)}` : ''}
                 </p>
+                {g.viajes.some((v) => v.motivo_ajuste) ? (
+                  <p className="text-ink/45 text-xs">
+                    Precio ajustado en {g.viajes.filter((v) => v.motivo_ajuste).length} de ellos.
+                  </p>
+                ) : null}
               </div>
               {puedo ? (
                 <div className="flex gap-2">
+                  {/* Un parcial o un vacío se paga lo que diga quien aprueba. Para
+                      decidirlo hay que ver el dinero, y una máquina propia no cobra. */}
+                  {!g.deMaquina && g.hayDinero ? (
+                    <Button size="sm" variant="ghost" icon={<Coins />} onClick={() => setAjustando(g)}>
+                      Ajustar precio
+                    </Button>
+                  ) : null}
                   <Button
                     size="sm"
                     icon={<Check />}
@@ -598,7 +617,109 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
       {rechazando ? (
         <RechazarViajes grupo={rechazando} onCerrar={() => setRechazando(null)} />
       ) : null}
+      {ajustando ? (
+        <AjustarPrecio grupo={ajustando} onCerrar={() => setAjustando(null)} />
+      ) : null}
     </Card>
+  )
+}
+
+/*
+  AJUSTAR EL PRECIO ANTES DE APROBAR.
+
+  Christopher, sobre un viaje que vuelve a medias o vacío: «lo decide quien
+  aprueba». Aquí se ve cómo volvió cada uno y lo que trae de su ruta, y se le
+  pone otro precio a los que se marquen, con motivo. Vienen marcados los
+  parciales y los vacíos, que son los que suelen cambiar; los completos se marcan
+  a mano si también hace falta.
+*/
+function AjustarPrecio({ grupo, onCerrar }: { grupo: GrupoPorAprobar; onCerrar: () => void }) {
+  const ajustar = useAjustarPrecioDeViajes()
+  const [marcados, setMarcados] = useState<number[]>(
+    grupo.viajes.filter((v) => v.carga === 'PARCIAL' || v.carga === 'VACIO').map((v) => v.id),
+  )
+  const [precio, setPrecio] = useState('')
+  const [motivo, setMotivo] = useState('')
+
+  const listo = marcados.length > 0 && precio !== '' && Number(precio) >= 0 && motivo.trim().length >= 4
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo={`Ajustar el precio · ${grupo.equipo}`}
+      descripcion={`${grupo.ruta}. El precio nuevo se pone a los viajes marcados. Queda escrito lo que traían de la ruta y por qué cambió.`}
+      ancho="lg"
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Volver
+          </Button>
+          <Button
+            disabled={!listo || ajustar.isPending}
+            onClick={async () => {
+              await ajustar.mutateAsync({ ids: marcados, precio: Number(precio), motivo })
+              onCerrar()
+            }}
+          >
+            {ajustar.isPending
+              ? 'Guardando…'
+              : `Ajustar ${marcados.length} ${marcados.length === 1 ? 'viaje' : 'viajes'}`}
+          </Button>
+        </>
+      }
+    >
+      <ul className="divide-hairline mb-4 divide-y text-sm">
+        {grupo.viajes.map((v) => (
+          <li key={v.id}>
+            <label className="flex cursor-pointer items-center gap-3 py-2">
+              <input
+                type="checkbox"
+                className="accent-royal-600 size-4 shrink-0"
+                checked={marcados.includes(v.id)}
+                onChange={(e) =>
+                  setMarcados((m) => (e.target.checked ? [...m, v.id] : m.filter((x) => x !== v.id)))
+                }
+              />
+              <span className="tabular text-ink/70 w-10">N.º {v.secuencia}</span>
+              <span className="text-ink/80 flex-1">
+                {v.carga ? CARGA_DEL_VIAJE[v.carga].texto : 'Sin decir cómo volvió'}
+                {v.carga_m3 !== null ? ` · ${enteros(v.carga_m3)} m³` : ''}
+              </span>
+              <span className="tabular text-ink/85 text-right">
+                <Cifra valor={v.precio_usd} comoDinero />
+                {v.precio_antes_de_ajuste !== null ? (
+                  <span className="text-ink/45 block text-2xs">
+                    de la ruta: {dolares(v.precio_antes_de_ajuste)}
+                  </span>
+                ) : null}
+              </span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Input
+          label="Precio nuevo de cada viaje marcado (USD)"
+          type="number"
+          min="0"
+          step="0.01"
+          inputMode="decimal"
+          value={precio}
+          onChange={(e) => setPrecio(e.target.value)}
+          hint="Cero si no se paga."
+        />
+      </div>
+      <Textarea
+        className="mt-3"
+        label="Por qué cambia"
+        placeholder="Volvió vacío por falla de la pala; se paga la mitad por medio viaje…"
+        rows={2}
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+      />
+      {ajustar.error ? <ErrorDeCarga error={ajustar.error} className="mt-3" /> : null}
+    </Modal>
   )
 }
 
@@ -842,6 +963,8 @@ function CargarViajes({
 
   const pideM3 = carga === 'PARCIAL'
   const ofreceM3 = pideM3 || (carga === 'COMPLETA' && deMaquina)
+  // Una máquina propia no se paga por viaje: no se le pregunta precio aunque la ruta lo pida.
+  const pidePrecio = Boolean(ruta?.pide_precio) && !deMaquina
 
   const valido =
     equipo !== null &&
@@ -849,7 +972,7 @@ function CargarViajes({
     cuantos >= 1 &&
     cuantos <= 60 &&
     (!pideM3 || Number(m3) > 0) &&
-    (!ruta.pide_precio || (precio !== '' && Number(precio) >= 0))
+    (!pidePrecio || (precio !== '' && Number(precio) >= 0))
 
   const pistaPrecio = !ruta
     ? undefined
@@ -869,7 +992,7 @@ function CargarViajes({
       vehiculo_id: equipo.vehiculoId,
       maquina_id: equipo.maquinaId,
       carga_m3: ofreceM3 && m3 !== '' ? Number(m3) : null,
-      precio_usd: ruta.pide_precio ? Number(precio) : null,
+      precio_usd: pidePrecio ? Number(precio) : null,
     })
     setCargados(cuantos)
     setCantidad('')
@@ -950,7 +1073,7 @@ function CargarViajes({
           }
           className="w-44"
         />
-        {ruta?.pide_precio ? (
+        {pidePrecio ? (
           <Input
             label="Precio de cada viaje"
             type="number"
@@ -972,10 +1095,16 @@ function CargarViajes({
           {registrar.isPending ? 'Cargando…' : 'Cargar'}
         </Button>
       </div>
+      {equipos[0]?.maquinaId != null ? (
+        <p className="text-ink/45 mt-2 text-xs">
+          Las máquinas propias no se pagan por viaje: el viaje queda contado sin precio.
+        </p>
+      ) : null}
       {cargados !== null ? (
         <p className="text-ink/55 mt-2 text-xs">
           {cargados === 1 ? 'Cargado 1 viaje' : `Cargados ${cargados} viajes`}: quedan por aprobar y
-          todavía no cuentan para el pago.
+          todavía no cuentan para el pago. Si alguno volvió a medias o vacío, quien aprueba ajusta su
+          precio.
         </p>
       ) : null}
       {registrar.error ? <ErrorDeCarga error={registrar.error} className="mt-3" /> : null}
@@ -1048,6 +1177,11 @@ function DetalleDelEquipo({
                       </td>
                       <td className="tabular text-ink/80 px-3 py-2 text-right">
                         <Cifra valor={v.precio_usd} comoDinero />
+                        {v.precio_antes_de_ajuste !== null ? (
+                          <span className="text-ink/45 block text-2xs" title={v.motivo_ajuste ?? ''}>
+                            ajustado; de la ruta {dolares(v.precio_antes_de_ajuste)}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-3 py-2">
                         <Chip
@@ -1108,8 +1242,9 @@ function CorregirViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => vo
   const [precio, setPrecio] = useState(viaje.precio_usd ?? '')
 
   // El precio solo se enseña a quien lo puede ver. A quien no, la vista se lo
-  // manda nulo y corregirlo a ciegas sería escribir sobre algo que no ve.
-  const veElDinero = viaje.precio_usd !== null
+  // manda nulo y corregirlo a ciegas sería escribir sobre algo que no ve. Y el
+  // de un viaje por aprobar es de quien aprueba: se ajusta desde «Por aprobar».
+  const veElDinero = viaje.precio_usd !== null && viaje.estado !== 'POR_APROBAR'
   const volvioVacio = viaje.carga === 'VACIO'
 
   return (
