@@ -77,6 +77,15 @@ export interface Articulo {
   descripcion: string | null
   categoria: string
   unidad: string
+  /**
+   * Toneladas por metro cúbico, para leer lo mismo en las dos medidas.
+   *
+   * Solo tiene sentido en lo que se mide de las dos formas —lo que baja de la
+   * mina y sale de la planta—. Los seis productos llevan 1,44 desde el
+   * 16/09/2026: es el estimado de la casa, puesto porque nadie ha pesado
+   * todavía. Quien lo mida, que lo cambie en la ficha.
+   */
+  densidad_ton_m3: string | null
   inventariable: boolean
   /**
    * Si esto se puede mandar al taller y volver arreglado.
@@ -525,6 +534,8 @@ export function useEditarArticulo() {
       unidades_por_presentacion?: number | null
       marca?: string | null
       numero_parte?: string | null
+      /** Toneladas por metro cúbico. Lo que no se manda no se pisa. */
+      densidad_ton_m3?: number | null
       /** Alguien vio que ya hay otro que se llama casi igual y dijo que es otra cosa. */
       confirmado?: boolean
     }) =>
@@ -535,6 +546,7 @@ export function useEditarArticulo() {
           uno que ya esta. La base para igual que al crear, asi que la
           confirmacion tiene que poder viajar.
         */
+        p_densidad_ton_m3: a.densidad_ton_m3 ?? null,
         p_confirmado: a.confirmado ?? false,
         p_reparable: a.reparable ?? null,
         p_presentacion: a.presentacion || null,

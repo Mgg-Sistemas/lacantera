@@ -41,6 +41,7 @@ const nuevo = {
   inventariable: true,
   reparable: false,
   stock_minimo: '0',
+  densidad_ton_m3: '',
   modo_entrega: 'CONSUMIBLE',
   presentacion: '',
   unidades_por_presentacion: '',
@@ -322,6 +323,8 @@ export function Articulos() {
                                 a.unidades_por_presentacion == null
                                   ? ''
                                   : String(Number(a.unidades_por_presentacion)),
+                              densidad_ton_m3:
+                                a.densidad_ton_m3 == null ? '' : String(Number(a.densidad_ton_m3)),
                             })
                           }
                         />
@@ -393,6 +396,11 @@ export function Articulos() {
                       : form.presentacion && Number(form.unidades_por_presentacion) > 0
                         ? Number(form.unidades_por_presentacion)
                         : null,
+                    // Vacío significa «no lo sé», y lo que no se manda no se
+                    // pisa: la base se queda con lo que ya tenía.
+                    densidad_ton_m3: Number(form.densidad_ton_m3) > 0
+                      ? Number(form.densidad_ton_m3)
+                      : null,
                   }
                   if (form.id) await editar.mutateAsync(datos)
                   else await crear.mutateAsync(datos)
@@ -524,6 +532,33 @@ export function Articulos() {
               cambio, lo niega — y ahí sigue, porque una carga de cien filas no
               se lee renglón a renglón.
             */}
+            {/*
+              LO QUE SE MIDE DE DOS FORMAS.
+
+              Un metro cúbico de piedra son mil cuatrocientas y pico de
+              toneladas, y en la cantera se habla de las dos maneras según con
+              quién: el cliente pide metros, la romana pesa toneladas. Con este
+              número la pantalla enseña la equivalencia al lado de la
+              existencia; sin él se calla, que es lo que hacía —la columna
+              estaba vacía en todo el catálogo y nadie tenía dónde escribirla,
+              porque hasta el 16/09/2026 solo entraba por la planilla.
+
+              Solo aparece donde significa algo: lo que se mide en volumen o en
+              peso. Preguntarle su densidad a un par de botas es ruido.
+            */}
+            {form.unidad === 'M3' || form.unidad === 'TON' ? (
+              <Input
+                label="Toneladas por metro cúbico"
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                hint="Para poder leer lo mismo en metros y en toneladas. Vacío: no se sabe y no se supone."
+                value={form.densidad_ton_m3}
+                onChange={(e) => setForm({ ...form, densidad_ton_m3: e.target.value })}
+              />
+            ) : null}
+
             {form.id && unidadDeAntes && form.unidad !== unidadDeAntes && seHaMovido ? (
               <p className="text-warning -mt-2 text-xs leading-relaxed">
                 Ojo: ya tiene movimientos anotados en {unidadDeAntes}. Esas cantidades seguirán
