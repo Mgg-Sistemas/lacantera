@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { useQueryClient } from '@tanstack/react-query'
 import { ArrowDownLeft, ArrowUpRight, FileText, Printer, ScrollText, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
@@ -10,6 +9,7 @@ import type { Rango } from '@/components/rango'
 import { PESTANAS_MATERIAL } from '@/components/pestanasDeModulos'
 import { NotaRecortada } from '@/components/NotaRecortada'
 import { useNotaDeTraslado } from '@/pages/salidas/NotaDeTraslado'
+import { useNotaDeSalida } from '@/pages/salidas/NotaDeSalida'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -17,13 +17,10 @@ import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { densidadesDeArticulos, leerPerfiles, useMisRoles, usePerfiles } from '@/lib/api/catalogo'
-import { leerFirmasEncendidas } from '@/lib/api/firmas'
-import { leerOrdenDeLaNota, ordenEnPapel } from '@/lib/api/salidas'
+import { densidadesDeArticulos, useMisRoles, usePerfiles } from '@/lib/api/catalogo'
 import {
   bajaDe,
   motivoDeSalida,
-  motivoParaLaNota,
   nombreDeMovimiento,
   paraQuienSalio,
   puertaEnPalabras,
@@ -33,9 +30,6 @@ import {
   useReversarMovimiento,
 } from '@/lib/api/inventario'
 import type { Movimiento } from '@/lib/api/inventario'
-import { leerNotaDeSalida } from '@/lib/api/inventario'
-import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
-import type { DatosNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
@@ -94,93 +88,7 @@ export function Movimientos() {
     propio movimiento. La forma del documento es la misma; lo único que cambia
     es que no agrupa.
   */
-  const [armando, setArmando] = useState<number | null>(null)
-  const qc = useQueryClient()
-
-  const verLaNota = async (m: Movimiento) => {
-    setArmando(m.id)
-    try {
-      // Con número de nota se trae la nota entera; sin él, este renglón solo.
-      const lineas = m.nota_salida ? await leerNotaDeSalida(m.nota_salida) : null
-
-      /*
-        LA ORDEN DE LA QUE SALIÓ, igual que al abrirla desde Salidas: fecha de la
-        orden, de entrega, estado, quién solicitó y quién autorizó, con las firmas
-        que cada uno eligió poner. Quien reimprime sin permiso de Salidas no ve la
-        orden, y la nota sale sin ella antes que no salir.
-      */
-      const [laOrden, perfilesTodos, firmasEncendidas] = m.nota_salida
-        ? await Promise.all([
-            leerOrdenDeLaNota(m.nota_salida).catch(() => null),
-            qc.fetchQuery({ queryKey: ['perfiles'], queryFn: leerPerfiles, staleTime: 5 * 60_000 }),
-            qc.fetchQuery({ queryKey: ['firmas'], queryFn: leerFirmasEncendidas, staleTime: 5 * 60_000 }),
-          ])
-        : [null, [], { porPerfil: {} as Record<string, string> }]
-      const nombreDelPerfil = (uid: string | null) =>
-        (uid && perfilesTodos.find((p) => p.id === uid)?.nombre) || null
-
-      /*
-        La densidad, para la columna «Conversión». Esta nota se arma aquí y no en
-        `useNotaDeSalida`, así que tiene que pedirla ella: la primera vez se pidió
-        solo allá, y NS-2026-0009 abierta desde este libro seguía saliendo sin la
-        columna.
-      */
-      const densidades = await densidadesDeArticulos({
-        codigos: lineas && lineas.length > 0 ? lineas.map((l) => l.articulo_codigo) : [m.articulo?.codigo ?? ''],
-      })
-      const densidadDe = (codigo: string) =>
-        densidades.find((a) => a.codigo === codigo)?.densidad_ton_m3 ?? null
-
-      setTituloDoc(`Nota de salida ${m.nota_salida ?? m.numero}`)
-
-      const datos: DatosNotaDeSalida = {
-          tipo: 'NOTA',
-          orden: laOrden ? ordenEnPapel(laOrden, nombreDelPerfil, firmasEncendidas.porPerfil) : null,
-          conCostos: notaConCostos,
-          numero: m.nota_salida ?? m.numero,
-          fecha: fecha(m.fecha),
-          almacen: m.almacen?.nombre ?? '',
-          clase: motivoParaLaNota(m),
-          paraQuien: paraQuienSalio(m, grupos.data),
-          motivo: m.nota,
-          renglones:
-            lineas && lineas.length > 0
-              ? lineas.map((l) => ({
-                  articuloCodigo: l.articulo_codigo,
-                  articulo: l.articulo,
-                  cantidad: l.cantidad,
-                  unidad: l.unidad,
-                  costoUnitarioUsd: l.costo_usd,
-                  valorUsd: l.valor_usd,
-                  densidad: densidadDe(l.articulo_codigo),
-                  // Una nota puede llevar material de varios sitios: el papel
-                  // se parte en un bloque por almacén y necesita saberlo.
-                  almacen: l.almacen,
-                }))
-              : [
-                  {
-                    articuloCodigo: m.articulo?.codigo ?? '',
-                    articulo: m.articulo?.nombre ?? '',
-                    cantidad: m.cantidad,
-                    unidad: m.unidad,
-                    costoUnitarioUsd: m.costo_usd,
-                    valorUsd: m.valor_usd,
-                    densidad: densidadDe(m.articulo?.codigo ?? ''),
-                  },
-                ],
-          empresa: {
-            razonSocial: empresa?.razon_social ?? '',
-            rif: empresa?.rif ?? '',
-          },
-          momento: new Date(),
-      }
-
-      setDatosNota(datos)
-      setPdf(await armarNotaDeSalida(datos))
-    } finally {
-      setArmando(null)
-    }
-  }
+  const notaDeSalida = useNotaDeSalida()
 
   const [almacenId, setAlmacenId] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
@@ -196,20 +104,6 @@ export function Movimientos() {
   const [detalle, setDetalle] = useState<Movimiento | null>(null)
   const [motivo, setMotivo] = useState('')
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
-  /*
-    LOS DATOS DE LA NOTA, PARA PODER REHACERLA.
-
-    Esta pantalla enseña dos papeles con el mismo visor: el libro de movimientos
-    y la nota de salida. La casilla de «incluir costos» es solo de la nota, así
-    que colgar de esto es lo que la hace aparecer únicamente cuando toca.
-
-    Y hacen falta los datos, no solo el blob: marcar la casilla rehace el papel
-    sin cerrar el visor, y sin ellos habría que volver a consultar la base.
-  */
-  const [datosNota, setDatosNota] = useState<DatosNotaDeSalida | null>(null)
-  // Por defecto sin cifras: la nota es lo que firma quien recibe el material.
-  const [notaConCostos, setNotaConCostos] = useState(false)
-  const [rehaciendoNota, setRehaciendoNota] = useState(false)
   const [tituloDoc, setTituloDoc] = useState('Libro de movimientos')
   const { data: empresa } = useEmpresa()
   const { nombre: yo } = useSesion()
@@ -229,8 +123,6 @@ export function Movimientos() {
 
   const imprimirLibro = async () => {
     setTituloDoc('Libro de movimientos')
-    // El libro no lleva casilla: es un informe interno y siempre va con cifras.
-    setDatosNota(null)
     // La otra medida, solo en lo que tiene densidad: ver `lib/medidas.ts`.
     const densidades = await densidadesDeArticulos({ ids: (data ?? []).map((m) => m.articulo_id) })
     setPdf(
@@ -498,14 +390,16 @@ export function Movimientos() {
                           size="sm"
                           variant="ghost"
                           icon={<FileText />}
-                          disabled={armando === m.id || notaDeTraslado.armando === m.id}
+                          disabled={notaDeSalida.armando === m.id || notaDeTraslado.armando === m.id}
                           onClick={() =>
                             void (m.tipo === 'TRANSFERENCIA_SALIDA'
                               ? notaDeTraslado.abrir(m.id)
-                              : verLaNota(m))
+                              : notaDeSalida.abrirMovimiento(m))
                           }
                         >
-                          {armando === m.id || notaDeTraslado.armando === m.id ? 'Armando…' : 'Nota'}
+                          {notaDeSalida.armando === m.id || notaDeTraslado.armando === m.id
+                            ? 'Armando…'
+                            : 'Nota'}
                         </Button>
                       ) : null}
 
@@ -583,33 +477,14 @@ export function Movimientos() {
 
       {notaDeTraslado.visor}
 
+      {notaDeSalida.visor}
+
       <Visor
         abierto={pdf !== null}
-        onCerrar={() => {
-          setPdf(null)
-          setDatosNota(null)
-        }}
+        onCerrar={() => setPdf(null)}
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ''}
         titulo={tituloDoc}
-        casilla={
-          datosNota
-            ? {
-                etiqueta: 'Incluir costos',
-                marcada: notaConCostos,
-                rehaciendo: rehaciendoNota,
-                onCambiar: async (marcada) => {
-                  setNotaConCostos(marcada)
-                  setRehaciendoNota(true)
-                  try {
-                    setPdf(await armarNotaDeSalida({ ...datosNota, conCostos: marcada }))
-                  } finally {
-                    setRehaciendoNota(false)
-                  }
-                },
-              }
-            : null
-        }
       />
     </>
   )

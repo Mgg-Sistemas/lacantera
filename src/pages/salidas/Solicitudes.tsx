@@ -221,14 +221,24 @@ export function Solicitudes() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-ink/70 tabular font-mono text-xs">{s.numero}</span>
+                    <span className="text-ink/70 tabular font-mono text-xs">
+                      Orden {s.numero}
+                    </span>
                     <Chip tone={estado.tono}>{estado.texto}</Chip>
-                    {s.nota_salida ? (
-                      <span className="text-ink/45 tabular font-mono text-2xs">
-                        nota {s.nota_salida}
-                      </span>
-                    ) : null}
                   </div>
+
+                  {/*
+                    LA NOTA QUE SALIÓ DE ESTA ORDEN, DICHA ENTERA. Decía «nota
+                    NS-2026-0010» en letra de código al lado del número, y
+                    Christopher: «no se está apreciando su correlación».
+                  */}
+                  {s.nota_salida ? (
+                    <p className="text-ink/60 mt-1 text-xs">
+                      Se entregó con la nota de salida{' '}
+                      <span className="tabular text-ink/80 font-mono">{s.nota_salida}</span>
+                      {s.entregada_en ? ` · ${fechaHora(s.entregada_en)}` : ''}
+                    </p>
+                  ) : null}
 
                   <p className="text-ink/85 mt-1.5 text-sm font-medium">
                     De {s.almacen?.nombre ?? '—'} · para {paraQuien(s)}
@@ -296,8 +306,22 @@ export function Solicitudes() {
                       void nota.abrirOrden(s)
                     }}
                   >
-                    Orden
+                    Orden {s.numero}
                   </Button>
+
+                  {s.nota_salida ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      icon={<FileText />}
+                      onClick={() => {
+                        setFallo(null)
+                        void nota.abrir(s.nota_salida!, s.motivo)
+                      }}
+                    >
+                      Nota {s.nota_salida}
+                    </Button>
+                  ) : null}
 
                   {puedo.rechazar ? (
                     <Button

@@ -8,8 +8,10 @@ import { useEmpresa } from '@/lib/api/empresa'
 import {
   leerCabeceraDeNota,
   leerNotaDeSalida,
+  motivoParaLaNota,
   paraQuienSalio,
   useGruposDeSalida,
+  type Movimiento,
 } from '@/lib/api/inventario'
 import { densidadesDeArticulos, leerPerfiles } from '@/lib/api/catalogo'
 import { leerFirmasEncendidas } from '@/lib/api/firmas'
@@ -58,6 +60,13 @@ export function useNotaDeSalida(): {
   abrir: (numero: string, motivo: string) => Promise<void>
   /** Arma y enseña la orden de salida de esa solicitud, en el estado en que esté. */
   abrirOrden: (s: SolicitudDeSalida) => Promise<void>
+  /**
+   * Desde un asiento del libro: la nota entera si tiene número, o ese renglón
+   * solo si es de antes de que las notas se numeraran.
+   */
+  abrirMovimiento: (m: Movimiento) => Promise<void>
+  /** El asiento cuyo papel se está armando, para decir «Armando…» en su fila. */
+  armando: number | null
   visor: ReactNode
 } {
   const { data: empresa } = useEmpresa()
@@ -88,6 +97,7 @@ export function useNotaDeSalida(): {
   const [conCostos, setConCostos] = useState(false)
   const [rehaciendo, setRehaciendo] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
+  const [armando, setArmando] = useState<number | null>(null)
 
   const abrir = async (numero: string, motivo: string) => {
     try {
@@ -198,6 +208,59 @@ export function useNotaDeSalida(): {
     }
   }
 
+  /*
+    DESDE EL LIBRO, Y DESDE EL HISTORIAL.
+
+    Vivía en el libro de movimientos, copiado, y el historial de Salidas no tenía
+    papel: Christopher, 16/09/2026, «aquí no hay pdf tampoco, y se necesita». Se
+    trajo aquí para que las tres pantallas armen la misma nota.
+
+    LOS MOVIMIENTOS VIEJOS NO TIENEN NÚMERO DE NOTA. En vez de negarles el papel,
+    se les arma una nota de un renglón con el número del propio movimiento: la
+    forma es la misma, y lo único que cambia es que no agrupa.
+  */
+  const abrirMovimiento = async (m: Movimiento) => {
+    setArmando(m.id)
+    try {
+      if (m.nota_salida) {
+        await abrir(m.nota_salida, m.nota ?? '')
+        return
+      }
+      const densidades = await densidadesDeArticulos({ codigos: [m.articulo?.codigo ?? ''] })
+      const armados: DatosNotaDeSalida = {
+        tipo: 'NOTA',
+        orden: null,
+        conCostos,
+        numero: m.numero,
+        fecha: fecha(m.fecha),
+        almacen: m.almacen?.nombre ?? '',
+        clase: motivoParaLaNota(m),
+        paraQuien: paraQuienSalio(m, grupos.data),
+        motivo: m.nota,
+        renglones: [
+          {
+            articuloCodigo: m.articulo?.codigo ?? '',
+            articulo: m.articulo?.nombre ?? '',
+            cantidad: m.cantidad,
+            unidad: m.unidad,
+            costoUnitarioUsd: m.costo_usd,
+            valorUsd: m.valor_usd,
+            densidad: densidades[0]?.densidad_ton_m3 ?? null,
+          },
+        ],
+        empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+        momento: new Date(),
+      }
+      setDatos(armados)
+      setNota(await armarNotaDeSalida(armados))
+    } catch (e) {
+      setFallo(`No se pudo armar la nota de ${m.numero}. Vuelve a intentarlo; el movimiento no cambió.`)
+      console.error(e)
+    } finally {
+      setArmando(null)
+    }
+  }
+
   const visor = (
     <>
       <Visor
@@ -254,5 +317,5 @@ export function useNotaDeSalida(): {
     </>
   )
 
-  return { abrir, abrirOrden, visor }
+  return { abrir, abrirOrden, abrirMovimiento, armando, visor }
 }

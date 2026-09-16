@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { PackageMinus } from 'lucide-react'
+import { FileText, PackageMinus } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_SALIDAS } from '@/components/pestanasDeModulos'
@@ -22,6 +23,10 @@ import {
   useMovimientos,
 } from '@/lib/api/inventario'
 import { fechaHora } from '@/lib/formato'
+import { useSolicitudesDeSalida, type SolicitudDeSalida } from '@/lib/api/salidas'
+import type { Movimiento } from '@/lib/api/inventario'
+import { useNotaDeSalida } from './NotaDeSalida'
+import { useNotaDeTraslado } from './NotaDeTraslado'
 
 /*
   LO QUE SALIÓ Y LO QUE SE MOVIÓ, EN UNA SOLA PANTALLA
@@ -74,6 +79,13 @@ export function Salidas() {
   const { data: articulos } = useArticulos()
   const { data: perfiles } = usePerfiles()
   const grupos = useGruposDeSalida()
+  const notaDeSalida = useNotaDeSalida()
+  const notaDeTraslado = useNotaDeTraslado()
+  // La orden de cada nota, para enseñar las dos con su número en la fila.
+  const { data: ordenes } = useSolicitudesDeSalida()
+  const ordenPorNota = new Map(
+    (ordenes ?? []).filter((o) => o.nota_salida).map((o) => [o.nota_salida!, o]),
+  )
 
   const { data, isPending, error } = useMovimientos({
     tipos: (VISTAS[vista] ?? VISTAS.TODO).tipos,
@@ -272,6 +284,20 @@ export function Salidas() {
                           {m.nota}
                         </p>
                       ) : null}
+
+                      {/*
+                        LOS PAPELES, AQUÍ MISMO. Christopher, 16/09/2026: «aquí no
+                        hay pdf tampoco, y se necesita», y con SS-2026-0001 y
+                        NS-2026-0010 delante: «no se está apreciando su
+                        correlación». Cada salida saca su nota, y si salió de una
+                        orden, la orden también, con los dos números a la vista.
+                      */}
+                      <PapelesDelMovimiento
+                        m={m}
+                        orden={ordenPorNota.get(m.nota_salida ?? '')}
+                        notaDeSalida={notaDeSalida}
+                        notaDeTraslado={notaDeTraslado}
+                      />
                     </td>
 
                     <td className="text-ink/75 px-3 py-3">{m.articulo?.nombre ?? '—'}</td>
@@ -291,15 +317,74 @@ export function Salidas() {
         </Card>
       ) : null}
 
-      {/* El detalle de un movimiento y la reimpresión de su nota viven en el
-          libro, que es una sola pantalla y no dos que se copian. */}
+      {/* El detalle entero de un movimiento vive en el libro. Los papeles ya no:
+          se sacan desde cada fila, con el mismo gancho que usa el libro. */}
       <p className="text-ink/40 mt-4 text-xs">
-        ¿Hace falta el detalle de un movimiento o reimprimir su nota?{' '}
+        ¿Hace falta el detalle completo de un movimiento?{' '}
         <Link className="underline underline-offset-2" to="/app/inventario/movimientos">
           Está en el libro de movimientos
         </Link>
         .
       </p>
+
+      {notaDeSalida.visor}
+      {notaDeTraslado.visor}
     </>
+  )
+}
+
+/**
+ * Los papeles de una fila: la nota de salida, la orden de la que salió, o la
+ * nota del traslado.
+ *
+ * Se dicen con su número —«Orden SS-2026-0001 · Nota NS-2026-0010»— y no con un
+ * icono solo: la correlación es justo lo que se echaba de menos, y un botón sin
+ * número no la enseña.
+ */
+function PapelesDelMovimiento({
+  m,
+  orden,
+  notaDeSalida,
+  notaDeTraslado,
+}: {
+  m: Movimiento
+  orden: SolicitudDeSalida | undefined
+  notaDeSalida: ReturnType<typeof useNotaDeSalida>
+  notaDeTraslado: ReturnType<typeof useNotaDeTraslado>
+}) {
+  const esSalida = m.signo < 0 && SALIDAS.includes(m.tipo)
+  const esTraslado = m.tipo === 'TRANSFERENCIA_SALIDA'
+  if (!esSalida && !esTraslado) return null
+
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+      {orden ? (
+        <Button size="sm" variant="ghost" icon={<FileText />} onClick={() => void notaDeSalida.abrirOrden(orden)}>
+          Orden {orden.numero}
+        </Button>
+      ) : null}
+      {esSalida ? (
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={<FileText />}
+          disabled={notaDeSalida.armando === m.id}
+          onClick={() => void notaDeSalida.abrirMovimiento(m)}
+        >
+          {notaDeSalida.armando === m.id ? 'Armando…' : `Nota ${m.nota_salida ?? m.numero}`}
+        </Button>
+      ) : null}
+      {esTraslado ? (
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={<FileText />}
+          disabled={notaDeTraslado.armando === m.id}
+          onClick={() => void notaDeTraslado.abrir(m.id)}
+        >
+          {notaDeTraslado.armando === m.id ? 'Armando…' : 'Nota de traslado'}
+        </Button>
+      ) : null}
+    </div>
   )
 }

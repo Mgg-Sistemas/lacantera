@@ -498,14 +498,16 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
     Si la tabla llega hasta ahí, las firmas pasan a una hoja de continuación.
   */
   /*
-    Con orden, las firmas son dos filas: arriba quien la solicitó y quien la
-    autorizó; abajo quien la entregó y quien la recibe. Cada fila son trece
-    milímetros de firma sobre la raya y el nombre debajo, así que entre las dos
-    rayas van veintiocho.
+    DOS FIRMAS, PORQUE PARTICIPAN DOS.
+
+    La primera versión ponía cuatro rayas: quien solicita y quien autoriza, y
+    debajo quien entrega y quien recibe. Christopher, con NS-2026-0010 delante:
+    «no podemos tener más de 2 firmas en el documento; si te das cuenta, solo
+    participan dos usuarios». Van quien la solicitó y quien la autorizó. Quién la
+    entregó y cuándo lo dice el cuadro de arriba, en «Fecha de entrega».
   */
   const LINEA_DE_FIRMAS = ABAJO - 24
-  const LINEA_DE_ARRIBA = LINEA_DE_FIRMAS - 28
-  const ARRANQUE_DE_FIRMAS = (orden ? LINEA_DE_ARRIBA : LINEA_DE_FIRMAS) - 16
+  const ARRANQUE_DE_FIRMAS = LINEA_DE_FIRMAS - 16
 
   if (y > ARRANQUE_DE_FIRMAS) {
     doc.addPage()
@@ -521,20 +523,13 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
   if (orden) {
     firmas(
       doc,
-      LINEA_DE_ARRIBA,
+      LINEA_DE_FIRMAS,
       { texto: 'Solicitado por', nombre: orden.solicito.nombre, imagen: orden.solicito.firma ?? null },
       {
         texto: 'Autorizado por',
         nombre: orden.autorizo.noAprobo ? null : orden.autorizo.nombre,
         imagen: orden.autorizo.noAprobo ? null : (orden.autorizo.firma ?? null),
       },
-    )
-    firmas(
-      doc,
-      LINEA_DE_FIRMAS,
-      { texto: 'Entregado por', nombre: orden.entrego.nombre },
-      // Quien retira no está en el sistema: se firma a mano.
-      { texto: 'Recibido conforme', nombre: null },
     )
   } else {
     firmas(
