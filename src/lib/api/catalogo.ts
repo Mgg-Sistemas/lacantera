@@ -98,6 +98,14 @@ export interface Articulo {
   stock_minimo: string
   activo: boolean
   /**
+   * Por qué se desactivó o se volvió a activar la última vez, quién y cuándo.
+   * Nulos en lo que nunca cambió con motivo: se pide desde el 16/09/2026, y lo
+   * de antes no lo tiene. La historia completa está en la auditoría.
+   */
+  motivo_estado: string | null
+  estado_cambiado_por: string | null
+  estado_cambiado_en: string | null
+  /**
    * Qué pasa cuando se le entrega a una persona.
    *
    * `NO` no se entrega a nadie, `RETORNABLE` se presta y vuelve, `CONSUMIBLE`
@@ -605,8 +613,8 @@ export function useEliminarArticulo() {
 export function useCambiarEstadoArticulo() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (a: { id: number; activo: boolean }) =>
-      rpc('cambiar_estado_articulo', { p_id: a.id, p_activo: a.activo }),
+    mutationFn: (a: { id: number; activo: boolean; motivo: string }) =>
+      rpc('cambiar_estado_articulo', { p_id: a.id, p_activo: a.activo, p_motivo: a.motivo }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['articulos'] }),
   })
 }
