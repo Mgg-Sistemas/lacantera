@@ -14,12 +14,15 @@ import {
   useChoferesDeVehiculo,
   useVehiculos,
 } from '@/lib/api/vehiculos'
-import { useMisPermisos } from '@/lib/api/usuarios'
+import { usePermisosDeCamion } from '@/lib/camiones'
 import { documento, enteros, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 /**
- * La hoja de vida de un vehículo.
+ * La hoja de vida de un camión.
+ *
+ * VIVE EN MAQUINARIA DESDE EL 16/09/2026, con el resto de los equipos. Antes
+ * colgaba de Despachos, que hoy solo abre la administración.
  *
  * TRES PREGUNTAS QUE ESTABAN EN TRES SITIOS
  *
@@ -36,7 +39,7 @@ import { cn } from '@/lib/cn'
  * Por eso cada chofer es una fila con su desde y su hasta, y asignar uno nuevo
  * cierra el anterior solo.
  */
-export function FichaVehiculo() {
+export function FichaCamion() {
   const { id } = useParams()
   const vehiculoId = Number(id)
 
@@ -45,18 +48,17 @@ export function FichaVehiculo() {
   // `historial` ya esta cogido mas abajo por la lista de choferes, que es
   // otra cosa: periodos de quien lo manejo, no hechos con fecha.
   const hilo = useHistorialVehiculo(vehiculoId || null)
-  const { puede } = useMisPermisos()
+  const permisos = usePermisosDeCamion()
   const [asignando, setAsignando] = useState(false)
 
   const v = (vehiculos ?? []).find((x) => x.id === vehiculoId)
-  const puedeEscribir = puede('DESPACHOS', 'ESCRITURA')
 
   if (isPending) return <Cargando />
   if (error) return <ErrorDeCarga error={error} />
   if (!v) {
     return (
       <Card>
-        <Vacio titulo="Ese vehículo no existe" descripcion="Puede que se haya eliminado." />
+        <Vacio titulo="Ese camión no existe" descripcion="Puede que se haya eliminado." />
       </Card>
     )
   }
@@ -76,9 +78,9 @@ export function FichaVehiculo() {
           .filter(Boolean)
           .join(' · ')}
         actions={
-          <Link to="/app/despachos/vehiculos">
+          <Link to="/app/maquinaria#camiones">
             <Button variant="outline" icon={<ArrowLeft />}>
-              Volver a la flota
+              Volver a los equipos
             </Button>
           </Link>
         }
@@ -95,7 +97,7 @@ export function FichaVehiculo() {
                   : 'Nadie lo tiene asignado ahora mismo.'
               }
               action={
-                puedeEscribir ? (
+                permisos.chofer ? (
                   <Button size="sm" variant="soft" icon={<UserRound />} onClick={() => setAsignando(true)}>
                     {v.chofer_actual ? 'Traspasar' : 'Asignar chofer'}
                   </Button>
@@ -198,9 +200,9 @@ export function FichaVehiculo() {
                 horas desde el último, sobre un tope de{' '}
                 <span className="tabular">{enteros(Number(v.tope_horas ?? 0))}</span>.
               </p>
-              <Link to="/app/maquinaria" className="mt-3 inline-block">
+              <Link to={`/app/maquinaria/${v.maquina_id}`} className="mt-3 inline-block">
                 <Button size="sm" variant="outline">
-                  Ver en Maquinaria
+                  Ver su ficha de máquina
                 </Button>
               </Link>
             </Card>

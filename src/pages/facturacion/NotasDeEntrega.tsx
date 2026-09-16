@@ -543,7 +543,7 @@ export function NotasDeEntrega() {
                 }))}
                 hint={
                   (vehiculos ?? []).length === 0
-                    ? 'No hay vehículos cargados. Se dan de alta en Despachos › Vehículos.'
+                    ? 'No hay vehículos cargados. Se dan de alta en Maquinaria › Equipos.'
                     : undefined
                 }
               />

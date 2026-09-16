@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { Building2, Plus, Trash2, Truck } from 'lucide-react'
-import { PageHeader } from '@/components/PageHeader'
+import { Building2, Trash2, Truck } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -9,7 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
-import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
+import { ErrorDeCarga } from '@/components/ui/Estado'
 import { SemaforoMantenimiento } from '@/components/SemaforoMantenimiento'
 import { useMaquinaria } from '@/lib/api/maquinaria'
 import { useEmpresa } from '@/lib/api/empresa'
@@ -21,7 +20,7 @@ import {
   useVehiculos,
 } from '@/lib/api/vehiculos'
 import type { Vehiculo } from '@/lib/api/vehiculos'
-import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
+import { usePermisosDeCamion } from '@/lib/camiones'
 import { cn } from '@/lib/cn'
 
 function metros(valor: string | null): string {
@@ -33,74 +32,88 @@ function metros(valor: string | null): string {
 const PROPIA = '__propia__'
 const OTRA = '__otra__'
 
-/** Un numérico de la base al texto del formulario. Llega como número: ver `ModalVehiculo`. */
+/** Un numérico de la base al texto del formulario. Llega como número: ver `ModalCamion`. */
 const aTexto = (v: string | number | null | undefined): string => (v == null ? '' : String(v))
 
 /**
- * Los vehículos que entran al patio.
+ * Los camiones, debajo de las máquinas.
  *
- * ESTÁ AQUÍ Y NO EN CONFIGURACIÓN
+ * VIVÍAN EN DESPACHOS, CON SU PROPIA PANTALLA
  *
- * Quien da de alta un camión es quien lo ve llegar, no quien administra el
- * sistema. Escondido en Configuración, el día que aparece un transportista
- * nuevo nadie lo carga y la placa vuelve a escribirse a mano.
+ * Christopher, 16/09/2026: la maquinaria y los vehículos se llevan en una sola
+ * pantalla, como en el otro sistema que ya usa. Son dos tablas y lo siguen
+ * siendo —a los camiones les cuelgan los viajes, los pesajes, las guías y el
+ * centro de costo—, pero se miran en un solo sitio, con un solo buscador.
  *
- * LO PRIMERO DE CADA FILA ES CUÁNTO CARGA
+ * ESTO ES UN BLOQUE, NO UNA PANTALLA
  *
- * Es el dato por el que existe la pantalla. La placa identifica; la capacidad
+ * No trae cabecera, ni botón de alta, ni consulta propia: todo eso lo pone
+ * Equipos, que es quien sabe qué se está buscando y qué filtro está puesto. Si
+ * este bloque pidiera sus camiones por su cuenta, escribir una placa en el
+ * buscador de arriba no le llegaría.
+ *
+ * LO PRIMERO DE CADA TARJETA ES CUÁNTO CARGA
+ *
+ * Es el dato por el que existe el catálogo. La placa identifica; la capacidad
  * es lo que se consulta.
  */
-export function Vehiculos() {
-  const { data, isPending, error } = useVehiculos(false)
-  const { puede } = useMisPermisos()
-  const [editando, setEditando] = useState<Vehiculo | null | undefined>(undefined)
-
-  const puedeEscribir = puede('DESPACHOS', 'ESCRITURA')
-
-  const propios = (data ?? []).filter((v) => v.propio)
-  const ajenos = (data ?? []).filter((v) => !v.propio)
+export function CamionesDeLaFlota({
+  camiones,
+  fueraDeServicio,
+  verFueraDeServicio,
+  onVerFueraDeServicio,
+  puedeEditar,
+  onEditar,
+}: {
+  camiones: Vehiculo[]
+  /** Cuántos fuera de servicio quedaron escondidos por no haberlos pedido. */
+  fueraDeServicio: number
+  verFueraDeServicio: boolean
+  onVerFueraDeServicio: (ver: boolean) => void
+  puedeEditar: boolean
+  onEditar: (v: Vehiculo) => void
+}) {
+  const propios = camiones.filter((v) => v.propio)
+  const ajenos = camiones.filter((v) => !v.propio)
 
   return (
-    <>
-      <PageHeader
-        title="Vehículos"
-        description="La flota propia y la de los transportistas, con lo que carga cada uno. Es lo que permite saber si un despacho cabe en el camión."
-        actions={
-          puedeEscribir ? (
-            <Button icon={<Plus />} onClick={() => setEditando(null)}>
-              Nuevo vehículo
-            </Button>
-          ) : undefined
-        }
-      />
+    <section id="camiones" className="mt-8 scroll-mt-6">
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 className="text-ink/85 flex items-center gap-2 text-base font-semibold">
+          <Truck className="text-ink/45 size-4" />
+          Camiones
+        </h2>
+        <span className="text-ink/45 text-xs">
+          {camiones.length === 1 ? '1 camión' : `${camiones.length} camiones`}
+        </span>
+        {fueraDeServicio > 0 || verFueraDeServicio ? (
+          <button
+            type="button"
+            onClick={() => onVerFueraDeServicio(!verFueraDeServicio)}
+            className="text-ink/55 hover:text-ink/80 ml-auto text-xs underline underline-offset-2"
+          >
+            {verFueraDeServicio
+              ? 'Esconder los fuera de servicio'
+              : `Ver los fuera de servicio (${fueraDeServicio})`}
+          </button>
+        ) : null}
+      </div>
 
-      {isPending ? <Cargando /> : null}
-      {error ? <ErrorDeCarga error={error} /> : null}
-
-      {!isPending && !error && (data ?? []).length === 0 ? (
-        <Card>
-          <Vacio
-            icono={<Truck />}
-            titulo="No hay vehículos cargados"
-            descripcion="Mientras no los haya, la placa se sigue escribiendo a mano en cada pesaje y nadie contrasta lo despachado con lo que cabe."
-            accion={
-              puedeEscribir ? (
-                <Button icon={<Plus />} onClick={() => setEditando(null)}>
-                  Cargar el primero
-                </Button>
-              ) : undefined
-            }
-          />
-        </Card>
+      {camiones.length === 0 ? (
+        <p className="text-ink/45 text-sm">
+          {fueraDeServicio > 0
+            ? 'Los que coinciden están fuera de servicio.'
+            : 'Ningún camión coincide con la búsqueda.'}
+        </p>
       ) : null}
 
       {propios.length > 0 ? (
         <Grupo
           titulo="De la empresa"
-          nota="Llevan horómetro y mantenimiento. El semáforo viene de su ficha en Maquinaria."
-          vehiculos={propios}
-          puedeEscribir={puedeEscribir}
-          onEditar={setEditando}
+          nota="Llevan horómetro y mantenimiento. El semáforo viene de su ficha de máquina."
+          camiones={propios}
+          puedeEditar={puedeEditar}
+          onEditar={onEditar}
         />
       ) : null}
 
@@ -108,24 +121,18 @@ export function Vehiculos() {
         <Grupo
           titulo="De transportistas"
           nota="No se les lleva mantenimiento: no son de la empresa. Van agrupados por la empresa a la que pertenecen, que es a quien se le paga el acarreo."
-          vehiculos={ajenos}
-          puedeEscribir={puedeEscribir}
-          onEditar={setEditando}
+          camiones={ajenos}
+          puedeEditar={puedeEditar}
+          onEditar={onEditar}
           porEmpresa
         />
       ) : null}
-
-      <ModalVehiculo
-        abierto={editando !== undefined}
-        vehiculo={editando ?? null}
-        onCerrar={() => setEditando(undefined)}
-      />
-    </>
+    </section>
   )
 }
 
 /**
- * Un grupo de vehículos.
+ * Un grupo de camiones.
  *
  * LOS AJENOS SE SUBDIVIDEN POR EMPRESA
  *
@@ -134,31 +141,36 @@ export function Vehiculos() {
  * cuáles. Es además la única forma de ver de un vistazo que la misma empresa
  * no quedó escrita de dos maneras — dos bloques con nombres parecidos saltan,
  * dos tarjetas sueltas no.
+ *
+ * No se mezclan con los dueños de las máquinas: el dueño de una máquina sale de
+ * un catálogo (La Cantera, la gobernación) y el de un camión es el
+ * transportista al que se le paga. No hay forma honrada de ponerlos bajo el
+ * mismo encabezado.
  */
 function Grupo({
   titulo,
   nota,
-  vehiculos,
-  puedeEscribir,
+  camiones,
+  puedeEditar,
   onEditar,
   porEmpresa = false,
 }: {
   titulo: string
   nota: string
-  vehiculos: Vehiculo[]
-  puedeEscribir: boolean
+  camiones: Vehiculo[]
+  puedeEditar: boolean
   onEditar: (v: Vehiculo) => void
   porEmpresa?: boolean
 }) {
   const bloques = new Map<string | null, Vehiculo[]>()
 
   if (porEmpresa) {
-    for (const v of vehiculos) {
+    for (const v of camiones) {
       const empresa = v.transportista ?? 'Sin empresa'
       bloques.set(empresa, [...(bloques.get(empresa) ?? []), v])
     }
   } else {
-    bloques.set(null, vehiculos)
+    bloques.set(null, camiones)
   }
 
   const ordenados = [...bloques.entries()].sort(([a], [b]) =>
@@ -166,34 +178,29 @@ function Grupo({
   )
 
   return (
-    <section className="mb-6">
-      <h2 className="text-ink/80 text-sm font-semibold">{titulo}</h2>
+    <div className="mb-6">
+      <h3 className="text-ink/80 text-sm font-semibold">{titulo}</h3>
       <p className="text-ink/50 mt-0.5 mb-3 text-xs leading-relaxed">{nota}</p>
 
       {ordenados.map(([empresa, lista]) => (
         <div key={empresa ?? '·'} className={empresa === null ? '' : 'mb-4'}>
           {empresa === null ? null : (
-            <h3 className="text-ink/70 mb-2 text-xs font-semibold tracking-wide uppercase">
+            <h4 className="text-ink/70 mb-2 text-xs font-semibold tracking-wide uppercase">
               {empresa}
               <span className="text-ink/40 ml-2 font-normal normal-case">
                 {lista.length === 1 ? '1 camión' : `${lista.length} camiones`}
               </span>
-            </h3>
+            </h4>
           )}
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {lista.map((v) => (
-              <TarjetaVehiculo
-                key={v.id}
-                vehiculo={v}
-                puedeEscribir={puedeEscribir}
-                onEditar={onEditar}
-              />
+              <TarjetaCamion key={v.id} camion={v} puedeEditar={puedeEditar} onEditar={onEditar} />
             ))}
           </div>
         </div>
       ))}
-    </section>
+    </div>
   )
 }
 
@@ -206,13 +213,13 @@ function Grupo({
  * por el que se agrupa el pago del acarreo: quien revisa la flota necesita
  * verlo antes de leer nada más.
  */
-function TarjetaVehiculo({
-  vehiculo: v,
-  puedeEscribir,
+function TarjetaCamion({
+  camion: v,
+  puedeEditar,
   onEditar,
 }: {
-  vehiculo: Vehiculo
-  puedeEscribir: boolean
+  camion: Vehiculo
+  puedeEditar: boolean
   onEditar: (v: Vehiculo) => void
 }) {
   return (
@@ -234,7 +241,7 @@ function TarjetaVehiculo({
         <Chip
           tone={v.propio ? 'royal' : 'info'}
           icon={<Building2 />}
-          title="Empresa a la que pertenece el vehículo"
+          title="Empresa a la que pertenece el camión"
         >
           {v.propio ? 'Flota propia' : (v.transportista ?? 'Sin empresa')}
         </Chip>
@@ -258,9 +265,18 @@ function TarjetaVehiculo({
         <p className="text-warning mt-1 text-xs">Sin carga útil: sus viajes no suman m³</p>
       )}
 
-      {v.maquina ? (
+      {/* Un camión propio enlazado sale también arriba, entre las máquinas: es
+          dos cosas a la vez. Se dice aquí para que nadie crea que está repetido. */}
+      {v.maquina_id ? (
         <p className="text-ink/45 mt-1 text-xs">
-          Ficha: {v.maquina_codigo} · {v.maquina}
+          También es la máquina{' '}
+          <Link
+            to={`/app/maquinaria/${v.maquina_id}`}
+            className="hover:text-ink/75 underline underline-offset-2"
+          >
+            {v.maquina_codigo}
+          </Link>
+          {v.maquina ? ` · ${v.maquina}` : ''}
         </p>
       ) : null}
       {v.chofer_actual ? (
@@ -272,12 +288,12 @@ function TarjetaVehiculo({
       <div className="mt-3 flex items-center justify-between gap-2">
         {!v.activo ? <Chip tone="neutral">Fuera de servicio</Chip> : <span />}
         <div className="flex gap-1">
-          <Link to={`/app/despachos/vehiculos/${v.id}`}>
+          <Link to={`/app/maquinaria/camiones/${v.id}`}>
             <Button size="sm" variant="soft">
               Ver ficha
             </Button>
           </Link>
-          {puedeEscribir ? (
+          {puedeEditar ? (
             <Button size="sm" variant="ghost" onClick={() => onEditar(v)}>
               Editar
             </Button>
@@ -289,15 +305,23 @@ function TarjetaVehiculo({
 }
 
 /**
- * Alta y corrección de un vehículo.
+ * Alta y corrección de un camión.
  *
  * LA CAPACIDAD EN TONELADAS SE DEJA VACÍA SI NADIE LA PESÓ
  *
  * Se podría deducir de los metros cúbicos multiplicando por una densidad, y
  * saldría un número redondo y falso: depende del material que lleve. Vacía, la
  * pantalla simplemente no la muestra. Deducida, alguien carga de más.
+ *
+ * LO QUE MUEVE DINERO SE VE, PERO NO SE TOCA SIN LA CASILLA
+ *
+ * Desde que los camiones viven en Maquinaria, quien lleva los equipos los da de
+ * alta y les corrige la placa. Cambiarle a un camión que ya existe de quién es,
+ * lo que le cabe o su ficha decide a quién se le pagan los viajes, y eso sigue
+ * pidiendo la casilla de Despachos. Los campos quedan a la vista y apagados, con
+ * la razón debajo: esconderlos haría creer que no existen.
  */
-function ModalVehiculo({
+export function ModalCamion({
   abierto,
   vehiculo,
   onCerrar,
@@ -312,8 +336,13 @@ function ModalVehiculo({
   const { data: maquinas } = useMaquinaria(true)
   const { data: flota } = useVehiculos(false)
   const { data: laEmpresa } = useEmpresa()
-  const { puede: alcanza } = useMisAcciones()
+  const permisos = usePermisosDeCamion()
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false)
+
+  // Al dar de alta no hay dinero en juego todavía: el camión no tiene viajes.
+  const duenoBloqueado = vehiculo !== null && !permisos.cambiarDueno
+  const RAZON_DUENO =
+    'Cambiarlo decide a quién se le pagan sus viajes: pide la casilla «Dar de alta y corregir un vehículo».'
 
   /*
     LA EMPRESA SE ELIGE DE UNA LISTA, Y LA PROPIA VA PRIMERO.
@@ -359,6 +388,8 @@ function ModalVehiculo({
     if (!abierto) return
     setConfirmandoBorrado(false)
     eliminar.reset()
+    guardar.reset()
+    fijarCarga.reset()
     setEmpresaElegida(
       vehiculo ? (vehiculo.propio ? PROPIA : (vehiculo.transportista ?? '')) : '',
     )
@@ -381,7 +412,7 @@ function ModalVehiculo({
       activo: vehiculo?.activo ?? true,
       nota: vehiculo?.nota ?? '',
     })
-    // `eliminar` cambia de identidad en cada render; reiniciarlo solo importa al abrir.
+    // Las mutaciones cambian de identidad en cada render; reiniciarlas solo importa al abrir.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierto, vehiculo])
 
@@ -389,6 +420,7 @@ function ModalVehiculo({
 
   const cabe = Number(f.capacidad_m3)
   const cargaUtil = f.carga_util_m3.trim() === '' ? null : Number(f.carga_util_m3)
+  const antes = vehiculo?.carga_util_m3 == null ? null : Number(vehiculo.carga_util_m3)
 
   // La base también lo comprueba. Aquí se comprueba para poder decirlo antes
   // de guardar, con el número delante.
@@ -400,6 +432,13 @@ function ModalVehiculo({
         : cabe > 0 && cargaUtil > cabe
           ? `No puede pasar de los ${cabe} m³ que le caben.`
           : undefined
+
+  // Sin la casilla de la carga útil, lo que le quepa no puede quedar por debajo
+  // de la que ya trae: la base lo rechazaría y quien edita no podría arreglarlo.
+  const errorCapacidad =
+    !permisos.cargaUtil && antes !== null && cabe > 0 && cabe < antes
+      ? `Trae ${antes} m³ por viaje: lo que le cabe no puede quedar por debajo.`
+      : undefined
 
   const nombreNuevo = f.transportista.trim()
 
@@ -413,23 +452,25 @@ function ModalVehiculo({
     f.placa.trim().length >= 4 &&
     cabe > 0 &&
     errorCargaUtil === undefined &&
+    errorCapacidad === undefined &&
     empresaElegida !== '' &&
     (!otraEmpresa || (nombreNuevo.length > 0 && yaExiste === undefined))
 
   const enviar = async () => {
-    const id = await guardar.mutateAsync({
-      ...(vehiculo ? { id: vehiculo.id } : {}),
-      placa: f.placa.trim(),
-      tipo: f.tipo,
-      descripcion: f.descripcion.trim() || null,
-      capacidad_m3: f.capacidad_m3,
-      capacidad_ton: f.capacidad_ton || null,
-      propio,
-      transportista: propio ? null : otraEmpresa ? nombreNuevo : empresaElegida,
-      maquina_id: propio && f.maquina_id ? Number(f.maquina_id) : null,
-      activo: f.activo,
-      nota: f.nota.trim() || null,
-    } as never)
+    const guardarCamion = () =>
+      guardar.mutateAsync({
+        ...(vehiculo ? { id: vehiculo.id } : {}),
+        placa: f.placa.trim(),
+        tipo: f.tipo,
+        descripcion: f.descripcion.trim() || null,
+        capacidad_m3: f.capacidad_m3,
+        capacidad_ton: f.capacidad_ton || null,
+        propio,
+        transportista: propio ? null : otraEmpresa ? nombreNuevo : empresaElegida,
+        maquina_id: propio && f.maquina_id ? Number(f.maquina_id) : null,
+        activo: f.activo,
+        nota: f.nota.trim() || null,
+      } as never)
 
     /*
       La carga útil va en su propia llamada y solo si cambió.
@@ -437,10 +478,24 @@ function ModalVehiculo({
       Es otra función en la base porque tiene que poder borrarse, y se salta
       cuando no cambió para no exigirle la casilla de fijarla a quien entró
       solo a corregir una placa.
+
+      Y EL ORDEN IMPORTA. La base no deja que lo que le cabe quede por debajo de
+      la carga útil. Si las dos bajan a la vez, primero baja la carga útil y
+      después la capacidad; si suben, al revés. En un camión nuevo no hay
+      orden que elegir: primero tiene que existir.
     */
-    const antes = vehiculo?.carga_util_m3 == null ? null : Number(vehiculo.carga_util_m3)
-    if (cargaUtil !== antes) {
-      await fijarCarga.mutateAsync({ vehiculo_id: Number(id), carga_util: cargaUtil })
+    const cambiaCarga = cargaUtil !== antes
+    const bajaPrimero =
+      vehiculo !== null && cambiaCarga && (cargaUtil === null || (antes !== null && cargaUtil < antes))
+
+    if (bajaPrimero) {
+      await fijarCarga.mutateAsync({ vehiculo_id: vehiculo.id, carga_util: cargaUtil })
+      await guardarCamion()
+    } else {
+      const id = await guardarCamion()
+      if (cambiaCarga) {
+        await fijarCarga.mutateAsync({ vehiculo_id: Number(id), carga_util: cargaUtil })
+      }
     }
 
     onCerrar()
@@ -453,7 +508,7 @@ function ModalVehiculo({
     <Modal
       abierto={abierto}
       onCerrar={onCerrar}
-      titulo={vehiculo ? `Editar ${vehiculo.placa}` : 'Nuevo vehículo'}
+      titulo={vehiculo ? `Editar ${vehiculo.placa}` : 'Nuevo camión'}
       descripcion="La placa se guarda en mayúsculas y sin espacios: es un identificador, no un texto libre."
       acciones={
         <>
@@ -461,7 +516,7 @@ function ModalVehiculo({
             Cancelar
           </Button>
           <Button
-            onClick={() => void enviar()}
+            onClick={() => void enviar().catch(() => {})}
             disabled={!valido || guardar.isPending || fijarCarga.isPending}
           >
             {guardar.isPending || fijarCarga.isPending ? 'Guardando…' : 'Guardar'}
@@ -492,6 +547,71 @@ function ModalVehiculo({
         </div>
       </div>
 
+      <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">De quién es</h3>
+      <p className="text-ink/50 mb-3 text-xs leading-relaxed">
+        La empresa es a quien se le paga el acarreo: los viajes de este camión se agrupan por ella
+        en el registro de pago.
+      </p>
+
+      <div className="grid gap-4">
+        <Select
+          label="Empresa a la que pertenece"
+          vacio="Elige la empresa"
+          value={empresaElegida}
+          disabled={duenoBloqueado}
+          onChange={(e) => {
+            setEmpresaElegida(e.target.value)
+            cambiar('transportista', '')
+          }}
+          opciones={[
+            {
+              valor: PROPIA,
+              etiqueta: `${laEmpresa?.razon_social || 'La empresa'} · flota propia`,
+            },
+            ...empresas.map((x) => ({ valor: x, etiqueta: x })),
+            { valor: OTRA, etiqueta: 'Otra empresa…' },
+          ]}
+          hint={
+            duenoBloqueado
+              ? RAZON_DUENO
+              : empresaElegida === ''
+                ? 'Hace falta para guardar.'
+                : propio
+                  ? 'Se le lleva horómetro y mantenimiento.'
+                  : 'Se elige de las ya cargadas para que la misma empresa no quede escrita de dos maneras.'
+          }
+        />
+
+        {otraEmpresa ? (
+          <Input
+            label="Nombre de la empresa nueva"
+            placeholder="Nombre de la empresa o del dueño"
+            value={f.transportista}
+            onChange={(e) => cambiar('transportista', e.target.value)}
+            error={yaExiste ? `Ya está cargada como «${yaExiste}»: elígela de la lista.` : undefined}
+          />
+        ) : null}
+
+        {propio ? (
+          <Select
+            label="Ficha de máquina"
+            vacio="Sin enlazar"
+            value={f.maquina_id}
+            disabled={duenoBloqueado}
+            onChange={(e) => cambiar('maquina_id', e.target.value)}
+            opciones={rodantes.map((m) => ({
+              valor: String(m.id),
+              etiqueta: `${m.codigo} · ${m.nombre}`,
+            }))}
+            hint={
+              duenoBloqueado
+                ? RAZON_DUENO
+                : 'Enlazarlo hace que el semáforo de mantenimiento se vea aquí y al momento de despachar.'
+            }
+          />
+        ) : null}
+      </div>
+
       <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Cuánto carga</h3>
       <p className="text-ink/50 mb-3 text-xs leading-relaxed">
         Los metros cúbicos son obligatorios: es la medida con la que se despacha hoy. Las toneladas
@@ -508,7 +628,10 @@ function ModalVehiculo({
           inputMode="decimal"
           placeholder="18"
           value={f.capacidad_m3}
+          disabled={duenoBloqueado}
           onChange={(e) => cambiar('capacidad_m3', e.target.value)}
+          error={errorCapacidad}
+          hint={duenoBloqueado ? 'Es el tope de metros de cada viaje: pide la misma casilla.' : undefined}
         />
         <Input
           label="Toneladas"
@@ -530,68 +653,16 @@ function ModalVehiculo({
             inputMode="decimal"
             placeholder="Vacía mientras nadie la mida"
             value={f.carga_util_m3}
+            disabled={!permisos.cargaUtil}
             onChange={(e) => cambiar('carga_util_m3', e.target.value)}
             error={errorCargaUtil}
-            hint="Lo que de verdad baja de la mina en cada viaje, que los supervisores miden por paladas. Siempre va por debajo de la capacidad. De aquí salen los metros cúbicos de los viajes de camiones: sin ella esos viajes cuentan y cobran, pero suman cero."
+            hint={
+              permisos.cargaUtil
+                ? 'Lo que de verdad baja de la mina en cada viaje, que los supervisores miden por paladas. Siempre va por debajo de la capacidad. De aquí salen los metros cúbicos de los viajes de camiones: sin ella esos viajes cuentan y cobran, pero suman cero.'
+                : 'De aquí salen los metros cúbicos de los viajes y el costo por m³: la pone quien tiene la casilla «Poner la carga útil de un camión».'
+            }
           />
         </div>
-      </div>
-
-      <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">De quién es</h3>
-      <p className="text-ink/50 mb-3 text-xs leading-relaxed">
-        La empresa es a quien se le paga el acarreo: los viajes de este camión se agrupan por ella
-        en el registro de pago.
-      </p>
-
-      <div className="grid gap-4">
-        <Select
-          label="Empresa a la que pertenece"
-          vacio="Elige la empresa"
-          value={empresaElegida}
-          onChange={(e) => {
-            setEmpresaElegida(e.target.value)
-            cambiar('transportista', '')
-          }}
-          opciones={[
-            {
-              valor: PROPIA,
-              etiqueta: `${laEmpresa?.razon_social || 'La empresa'} · flota propia`,
-            },
-            ...empresas.map((x) => ({ valor: x, etiqueta: x })),
-            { valor: OTRA, etiqueta: 'Otra empresa…' },
-          ]}
-          hint={
-            empresaElegida === ''
-              ? 'Hace falta para guardar.'
-              : propio
-                ? 'Se le lleva horómetro y mantenimiento.'
-                : 'Se elige de las ya cargadas para que la misma empresa no quede escrita de dos maneras.'
-          }
-        />
-
-        {otraEmpresa ? (
-          <Input
-            label="Nombre de la empresa nueva"
-            placeholder="Nombre de la empresa o del dueño"
-            value={f.transportista}
-            onChange={(e) => cambiar('transportista', e.target.value)}
-            error={yaExiste ? `Ya está cargada como «${yaExiste}»: elígela de la lista.` : undefined}
-          />
-        ) : null}
-
-        {propio ? (
-          <Select
-            label="Ficha en Maquinaria"
-            vacio="Sin enlazar"
-            value={f.maquina_id}
-            onChange={(e) => cambiar('maquina_id', e.target.value)}
-            opciones={rodantes.map((m) => ({
-              valor: String(m.id),
-              etiqueta: `${m.codigo} · ${m.nombre}`,
-            }))}
-            hint="Enlazarlo hace que el semáforo de mantenimiento se vea aquí y al momento de despachar."
-          />
-        ) : null}
       </div>
 
       <div className="mt-4">
@@ -616,7 +687,7 @@ function ModalVehiculo({
       ) : null}
 
       {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-3" /> : null}
-      {/* El vehículo ya quedó guardado si esto falla: la carga útil va aparte. */}
+      {/* Si esto falla, lo otro puede haber quedado guardado: la carga útil va aparte. */}
       {fijarCarga.error ? <ErrorDeCarga error={fijarCarga.error} className="mt-3" /> : null}
 
       {/*
@@ -624,7 +695,7 @@ function ModalVehiculo({
         del formulario que no se deshace. Solo sale al editar y a quien tiene la
         casilla, que viene con Total.
       */}
-      {vehiculo && alcanza('DESPACHOS.ELIMINAR_VEHICULO') ? (
+      {vehiculo && permisos.eliminar ? (
         <div className="border-hairline mt-6 border-t pt-4">
           {confirmandoBorrado ? (
             <div className="rounded-card border-danger/30 bg-danger/5 border p-3">
@@ -669,7 +740,7 @@ function ModalVehiculo({
               icon={<Trash2 />}
               onClick={() => setConfirmandoBorrado(true)}
             >
-              Eliminar vehículo
+              Eliminar camión
             </Button>
           )}
         </div>

@@ -16,7 +16,7 @@ function pagina<T extends ComponentType<any>>(importar: () => Promise<{ default:
   return lazy(conAvisoSiNoLlega(importar))
 }
 import { salioAProposito } from '@/lib/auth'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router'
 import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
 import { ModuloPendiente } from '@/pages/ModuloPendiente'
@@ -112,11 +112,8 @@ const Dotacion = pagina(() =>
 const Talleres = pagina(() =>
   import('@/pages/inventario/Talleres').then((m) => ({ default: m.Talleres })),
 )
-const FichaVehiculo = pagina(() =>
-  import('@/pages/despachos/FichaVehiculo').then((m) => ({ default: m.FichaVehiculo })),
-)
-const Vehiculos = pagina(() =>
-  import('@/pages/despachos/Vehiculos').then((m) => ({ default: m.Vehiculos })),
+const FichaCamion = pagina(() =>
+  import('@/pages/maquinaria/FichaCamion').then((m) => ({ default: m.FichaCamion })),
 )
 const Mantenimientos = pagina(() =>
   import('@/pages/maquinaria/Mantenimientos').then((m) => ({ default: m.Mantenimientos })),
@@ -344,7 +341,6 @@ const paginas: Record<string, ReactNode> = {
   '/app/asignaciones/incidencias': <Incidencias />,
   '/app/asignaciones/dotacion': <Dotacion />,
   '/app/nomina/carnets': <CarnetsDelPersonal />,
-  '/app/despachos/vehiculos': <Vehiculos />,
   '/app/nomina': <TableroNomina />,
   '/app/nomina/personal': <Personal />,
   '/app/nomina/tabulador': <Tabulador />,
@@ -467,6 +463,12 @@ function Cargando() {
  * quien se le venció la sesión trabajando, y devolverlo a la portada le
  * añadiría un clic para volver a donde estaba.
  */
+/** La ficha vieja de un vehículo lleva a la de su camión, con el mismo número. */
+function AFichaDeCamion() {
+  const { id } = useParams()
+  return <Navigate to={`/app/maquinaria/camiones/${id ?? ''}`} replace />
+}
+
 function RutaProtegida({ children }: { children: ReactNode }) {
   const { session, cargando } = useSesion()
   const lugar = useLocation()
@@ -600,6 +602,19 @@ export default function App() {
             {/* Capa sin ruta propia: cuelga de ella todo lo que hay dentro del
                 sistema, para que el permiso del módulo se compruebe en un solo
                 sitio y no una vez por pantalla. */}
+            {/*
+              LOS CAMIONES SE MUDARON A MAQUINARIA (16/09/2026), y la dirección
+              vieja tiene que seguir llevando a algún sitio: está en marcadores,
+              en mensajes y en el historial del navegador.
+
+              Van FUERA de la reja y no en el mapa de pantallas. Despachos quedó
+              sin ninguna pantalla que se ofrezca, así que la reja pintaría el
+              cartel de obra antes de llegar a redirigir. La pantalla de destino
+              ya comprueba su propio permiso.
+            */}
+            <Route path="despachos/vehiculos" element={<Navigate to="/app/maquinaria#camiones" replace />} />
+            <Route path="despachos/vehiculos/:id" element={<AFichaDeCamion />} />
+
             <Route element={<ExigePermiso />}>
               <Route index element={<Dashboard />} />
 
@@ -609,7 +624,6 @@ export default function App() {
 
               {/* Pantallas que no están en el menú porque se llega a ellas desde
                   el tablero, no desde la navegación. */}
-              <Route path="despachos/vehiculos/:id" element={<FichaVehiculo />} />
               <Route path="compras/nuevo" element={<NuevoPedido />} />
               <Route path="compras/directa" element={<CompraDirecta />} />
               <Route path="compras/:id/editar" element={<CorregirPedido />} />
@@ -620,6 +634,8 @@ export default function App() {
               {/* La ficha de una maquina. `nueva` no esta aqui sino en el mapa
                   de pantallas de arriba, que es donde viven las rutas fijas. */}
               <Route path="maquinaria/:id" element={<FichaMaquina />} />
+              {/* La ficha de un camión. Vivía en Despachos hasta el 16/09/2026. */}
+              <Route path="maquinaria/camiones/:id" element={<FichaCamion />} />
               <Route path="inventario/articulos/:id" element={<FichaArticulo />} />
               <Route path="nomina/personal/nuevo" element={<FormularioTrabajador />} />
               <Route path="nomina/personal/:id/editar" element={<FormularioTrabajador />} />
