@@ -120,7 +120,7 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
           titulo: 'Trasladar a otro almacén',
           detalle: 'No cambia cuánto hay, cambia dónde está.',
           icono: ArrowLeftRight,
-          a: '/app/inventario/transferencias',
+          a: '/app/salidas/traslados',
           exige: 'ESCRITURA',
         },
       ],

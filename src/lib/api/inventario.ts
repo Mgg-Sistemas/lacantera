@@ -456,6 +456,12 @@ export interface Movimiento {
   destino_externo?: string | null
   responsable_externo?: string | null
   /**
+   * Por qué puerta pasó: la ruta de la petición que lo escribió. Nulo en lo
+   * anterior al 16/09/2026 y en lo que corre sin petición. Ver
+   * `puertaEnPalabras`.
+   */
+  hecho_con?: string | null
+  /**
    * La causa de las salidas viejas que se anotaron como baja —«Robado»—. Ya no
    * se escriben; las que hay se siguen leyendo. Según cómo lo resuelva el
    * servidor llega como objeto o como lista de uno: ver `bajaDe`.
@@ -509,7 +515,25 @@ export const TIPOS_MOVIMIENTO: Record<string, string> = {
 }
 
 export function useMovimientos(
-  filtros: { almacenId?: number; articuloId?: number; desde?: string; hasta?: string } = {},
+  filtros: {
+    almacenId?: number
+    articuloId?: number
+    desde?: string
+    hasta?: string
+    /** Quién lo registró. */
+    registradoPor?: string
+    /** A qué grupo del organigrama salió. */
+    grupoId?: number
+    /*
+      QUÉ TIPOS SE QUIEREN VER.
+
+      El libro los trae todos; la pantalla de salidas y traslados pide solo los
+      suyos. Se filtra en la BASE y no aquí porque la consulta devuelve los 200
+      más recientes: filtrar después dejaría una lista de salidas con tres filas
+      porque las otras ciento noventa y siete eran entradas.
+    */
+    tipos?: string[]
+  } = {},
 ) {
   return useQuery({
     queryKey: ['movimientos', filtros],
@@ -535,6 +559,9 @@ export function useMovimientos(
 
       if (filtros.almacenId) q = q.eq('almacen_id', filtros.almacenId)
       if (filtros.articuloId) q = q.eq('articulo_id', filtros.articuloId)
+      if (filtros.registradoPor) q = q.eq('registrado_por', filtros.registradoPor)
+      if (filtros.grupoId) q = q.eq('grupo_id', filtros.grupoId)
+      if (filtros.tipos && filtros.tipos.length > 0) q = q.in('tipo', filtros.tipos)
 
       /*
         Se filtra por `fecha`, no por `registrado_en`.
@@ -1376,6 +1403,32 @@ export const grupoEnCorto = (g: GrupoDeSalida) => g.camino.split(' › ').slice(
 /** El nombre del grupo de un movimiento, buscado en la lista. */
 export const nombreDeGrupo = (grupos: GrupoDeSalida[] | undefined, id?: number | null) =>
   (id ? (grupos ?? []).find((g) => g.id === id)?.nombre : null) ?? null
+
+/*
+  POR QUÉ PUERTA PASÓ, EN PALABRAS.
+
+  Christopher: «las entradas que se hagan mediante planilla, ¿se diferencian de
+  alguna que sea por Registrar entrada? De no ser así, es positivo
+  distinguirlo». No se diferenciaban: la planilla llama a la misma función y
+  deja la misma fila.
+
+  Se dice con el nombre de la función, que en esta casa está en castellano y ya
+  se lee —«registrar recepcion», «despachar combustible»—, salvo dos que no se
+  entenderían fuera del código. No se traduce a nombres de pantalla inventados:
+  una misma función la llaman a veces dos pantallas, y decir la equivocada sería
+  escribir algo falso en el libro. Es la misma regla que sigue la auditoría.
+*/
+const PUERTAS: Record<string, string> = {
+  cargar_articulos_por_lote: 'planilla',
+  registrar_entradas: 'registrar entrada',
+}
+
+export function puertaEnPalabras(hechoCon?: string | null): string | null {
+  if (!hechoCon) return null
+  const funcion = /\/rpc\/([a-z0-9_]+)/i.exec(hechoCon)?.[1]
+  if (!funcion) return null
+  return PUERTAS[funcion] ?? funcion.replaceAll('_', ' ')
+}
 
 /*
   PARA QUIÉN SALIÓ, SEA DE LA CASA O DE FUERA.

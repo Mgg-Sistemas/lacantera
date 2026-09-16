@@ -8,7 +8,7 @@ import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
 import { PESTANAS_MATERIAL } from '@/components/pestanasDeModulos'
 import { NotaRecortada } from '@/components/NotaRecortada'
-import { useNotaDeTraslado } from './NotaDeTraslado'
+import { useNotaDeTraslado } from '@/pages/salidas/NotaDeTraslado'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -23,6 +23,7 @@ import {
   motivoParaLaNota,
   nombreDeMovimiento,
   paraQuienSalio,
+  puertaEnPalabras,
   useAlmacenes,
   useGruposDeSalida,
   useMovimientos,
@@ -301,6 +302,9 @@ export function Movimientos() {
                         {fechaHora(m.registrado_en)} · {nombreDe(m.registrado_por)}
                         {paraQuienSalio(m, grupos.data)
                           ? ` · para ${paraQuienSalio(m, grupos.data)}`
+                          : ''}
+                        {puertaEnPalabras(m.hecho_con)
+                          ? ` · por ${puertaEnPalabras(m.hecho_con)}`
                           : ''}
                       </p>
                       {m.nota ? (
@@ -631,6 +635,10 @@ function DetalleDelMovimiento({
       `${Number(m.costo_capturado).toLocaleString('es-VE', { maximumFractionDigits: 4 })} ${m.moneda_capturada}`,
     ])
   }
+  // Por dónde pasó: distingue una entrada de planilla de una tecleada a mano,
+  // que hasta el 16/09/2026 eran indistinguibles en el libro.
+  const puerta = puertaEnPalabras(m.hecho_con)
+  if (puerta) datos.push(['Hecho con', puerta])
   datos.push(['Registró', quien])
 
   return (

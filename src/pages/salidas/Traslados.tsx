@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { ArrowRight, FileText, MoveRight, PackageCheck, X } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas } from '@/components/Pestanas'
+import { PESTANAS_SALIDAS } from '@/components/pestanasDeModulos'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -19,7 +21,12 @@ import {
 } from '@/lib/api/inventario'
 import type { Traslado } from '@/lib/api/inventario'
 import { fechaHora } from '@/lib/formato'
-import { ModalTraslado } from './ModalTraslado'
+/*
+  El modal de pedir un traslado se quedó en Inventario: se abre desde una fila
+  de Existencias, que es donde está el material. Cuando el formulario de sacar
+  se mude aquí, se muda con él.
+*/
+import { ModalTraslado } from '@/pages/inventario/ModalTraslado'
 import { useNotaDeTraslado } from './NotaDeTraslado'
 
 /*
@@ -42,7 +49,7 @@ import { useNotaDeTraslado } from './NotaDeTraslado'
   salió, vuelve—; lo recibido se devuelve con un traslado de vuelta, que deja
   escrito que hubo ida y vuelta.
 */
-export function Transferencias() {
+export function Traslados() {
   const { puede } = useMisRoles()
   const { data: traslados, isPending, error: fallo } = useTraslados()
   const { data: yo } = useComoActuoEnTraslados()
@@ -98,7 +105,7 @@ export function Transferencias() {
   return (
     <>
       <PageHeader
-        title="Transferencias"
+        title="Traslados"
         description="Material que cambia de sitio. Se pide, lo acepta quien responde por el sitio de donde sale y lo recibe quien responde por el de destino."
         actions={
           puede('ALMACEN') ? (
@@ -108,6 +115,8 @@ export function Transferencias() {
           ) : null
         }
       />
+
+      <Pestanas pestanas={PESTANAS_SALIDAS} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Button size="sm" variant={verTodos ? 'ghost' : 'soft'} onClick={() => setVerTodos(false)}>
