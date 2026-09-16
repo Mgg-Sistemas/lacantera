@@ -78,10 +78,10 @@ import {
   grupoEnCorto,
   leerCabeceraDeNota,
   leerNotaDeSalida,
-  nombreDeGrupo,
+  paraQuienSalio,
   useGruposDeSalida,
 } from '@/lib/api/inventario'
-import type { Existencia, ExistenciaTotal } from '@/lib/api/inventario'
+import type { Existencia, ExistenciaTotal, GrupoDeSalida } from '@/lib/api/inventario'
 import { dolares, enteros, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -236,6 +236,85 @@ const renglonVacio = (articulo: string, almacen = ''): RenglonEnCurso => ({
   moneda: '',
   almacen,
 })
+
+/*
+  ¿PARA QUIÉN SALE?
+
+  Christopher, con el molde de MGG delante: «puede ser bien de la empresa o bien
+  puede ser a un externo (debe indicar el responsable, empresa o persona)». En
+  MGG el destino es un interruptor —almacén o persona— y en una salida el
+  almacén no se ofrece, porque mandar material a otro almacén es un traslado.
+
+  Aquí la lista es el organigrama de la empresa, y al final una opción para lo
+  que se va fuera; solo entonces se piden los dos datos. Un desplegable para el
+  caso de todos los días, y dos campos más para el raro.
+
+  Los dos datos y no uno: dentro de un año «FERRETERIA OSMAIRA» sin un nombre
+  detrás no sirve para reclamarle nada a nadie.
+*/
+const FUERA_DE_LA_EMPRESA = '__FUERA__'
+
+function ParaQuienSale({
+  grupos,
+  grupo,
+  onGrupo,
+  externo,
+  onExterno,
+  responsable,
+  onResponsable,
+}: {
+  grupos: GrupoDeSalida[] | undefined
+  grupo: string
+  onGrupo: (v: string) => void
+  externo: string
+  onExterno: (v: string) => void
+  responsable: string
+  onResponsable: (v: string) => void
+}) {
+  return (
+    <div className="mt-4">
+      <Select
+        label="¿Para quién sale?"
+        vacio="Elige a quién"
+        hint="El área o el cargo que lo recibe, del organigrama de la empresa."
+        value={grupo}
+        onChange={(e) => onGrupo(e.target.value)}
+        opciones={[
+          ...(grupos ?? [])
+            .filter((g) => g.activo)
+            .map((g) => ({ valor: String(g.id), etiqueta: grupoEnCorto(g) })),
+          { valor: FUERA_DE_LA_EMPRESA, etiqueta: 'Alguien de fuera de la empresa' },
+        ]}
+      />
+
+      {grupo === FUERA_DE_LA_EMPRESA ? (
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Input
+            label="¿A quién?"
+            hint="La empresa o la persona que lo recibe."
+            value={externo}
+            onChange={(e) => onExterno(e.target.value)}
+          />
+          <Input
+            label="Responsable"
+            hint="Quien responde por ello y firma la nota."
+            value={responsable}
+            onChange={(e) => onResponsable(e.target.value)}
+          />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+/*
+  Lo que viaja a la base: o el grupo, o los dos datos de fuera. Nunca los dos
+  —es justo lo que la base rechaza— y nunca ninguno.
+*/
+const paraQuienVa = (grupo: string, externo: string, responsable: string) =>
+  grupo === FUERA_DE_LA_EMPRESA
+    ? { externo: externo.trim(), responsable: responsable.trim() }
+    : { grupo_id: Number(grupo) }
 
 export function Existencias() {
   const { data: almacenes } = useAlmacenes()
@@ -419,7 +498,7 @@ export function Existencias() {
         fecha: fecha(lineas[0].fecha),
         almacen: lineas[0].almacen,
         clase: cabecera.motivo,
-        paraQuien: nombreDeGrupo(grupos.data, cabecera.grupoId),
+        paraQuien: paraQuienSalio(cabecera.para, grupos.data),
         motivo,
         renglones: lineas.map((l) => ({
           articuloCodigo: l.articulo_codigo,
@@ -814,6 +893,8 @@ export function Existencias() {
   */
   const grupos = useGruposDeSalida()
   const [grupo, setGrupo] = useState('')
+  const [externo, setExterno] = useState('')
+  const [responsable, setResponsable] = useState('')
 
   /*
     Las formas de contar del artículo que se está tocando. Se calculan aquí y no
@@ -838,6 +919,8 @@ export function Existencias() {
     setSaleDe('')
     setClase((clases.data ?? [])[0]?.codigo ?? '')
     setGrupo('')
+    setExterno('')
+    setResponsable('')
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setTotalContado(tipo === 'ajuste' && fila ? fila.existencia : '')
     // Una hoja de conteo es de un artículo concreto: abrir otro empieza limpio.
@@ -916,7 +999,7 @@ export function Existencias() {
         })),
         motivo,
         tipo: clase,
-        grupo_id: Number(grupo),
+        ...paraQuienVa(grupo, externo, responsable),
       })) as string
 
       /*
@@ -967,7 +1050,7 @@ export function Existencias() {
         ],
         motivo,
         tipo: clase,
-        grupo_id: Number(grupo),
+        ...paraQuienVa(grupo, externo, responsable),
       })) as string
 
       // Igual que en la de varios renglones: el modal se cierra antes de armar
@@ -1692,8 +1775,12 @@ export function Existencias() {
                   ((modal.tipo === 'salidas' || modal.tipo === 'salida') &&
                     claseElegida?.exige_detalle === true &&
                     motivo.trim().length < 10) ||
-                  // Sin grupo la base rechaza la salida: mejor no dejar pulsar.
-                  ((modal.tipo === 'salidas' || modal.tipo === 'salida') && !grupo) ||
+                  // Sin decir para quién, la base rechaza la salida: mejor no
+                  // dejar pulsar. Y lo de fuera va con su responsable o no va.
+                  ((modal.tipo === 'salidas' || modal.tipo === 'salida') &&
+                    (!grupo ||
+                      (grupo === FUERA_DE_LA_EMPRESA &&
+                        (externo.trim().length < 3 || responsable.trim().length < 3)))) ||
                   salidas.isPending ||
                   ajuste.isPending ||
                   entrada.isPending
@@ -2425,16 +2512,14 @@ export function Existencias() {
                   }))}
                 />
 
-                <Select
-                  className="mt-4"
-                  label="¿Para quién sale?"
-                  vacio="Elige el grupo"
-                  hint="El área o el cargo que lo recibe, del organigrama de la empresa."
-                  value={grupo}
-                  onChange={(e) => setGrupo(e.target.value)}
-                  opciones={(grupos.data ?? [])
-                    .filter((g) => g.activo)
-                    .map((g) => ({ valor: String(g.id), etiqueta: grupoEnCorto(g) }))}
+                <ParaQuienSale
+                  grupos={grupos.data}
+                  grupo={grupo}
+                  onGrupo={setGrupo}
+                  externo={externo}
+                  onExterno={setExterno}
+                  responsable={responsable}
+                  onResponsable={setResponsable}
                 />
 
                 {/* ESCRITURA y no TOTAL: con TOTAL el boton solo lo veian las
@@ -2627,16 +2712,14 @@ export function Existencias() {
                     }))}
                   />
 
-                  <Select
-                    className="mt-4"
-                    label="¿Para quién sale?"
-                    vacio="Elige el grupo"
-                    hint="El área o el cargo que lo recibe, del organigrama de la empresa."
-                    value={grupo}
-                    onChange={(e) => setGrupo(e.target.value)}
-                    opciones={(grupos.data ?? [])
-                      .filter((g) => g.activo)
-                      .map((g) => ({ valor: String(g.id), etiqueta: grupoEnCorto(g) }))}
+                  <ParaQuienSale
+                    grupos={grupos.data}
+                    grupo={grupo}
+                    onGrupo={setGrupo}
+                    externo={externo}
+                    onExterno={setExterno}
+                    responsable={responsable}
+                    onResponsable={setResponsable}
                   />
                 </>
               ) : null}

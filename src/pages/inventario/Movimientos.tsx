@@ -21,8 +21,8 @@ import {
   bajaDe,
   motivoDeSalida,
   motivoParaLaNota,
-  nombreDeGrupo,
   nombreDeMovimiento,
+  paraQuienSalio,
   useAlmacenes,
   useGruposDeSalida,
   useMovimientos,
@@ -105,7 +105,7 @@ export function Movimientos() {
           fecha: fecha(m.fecha),
           almacen: m.almacen?.nombre ?? '',
           clase: motivoParaLaNota(m),
-          paraQuien: nombreDeGrupo(grupos.data, m.grupo_id),
+          paraQuien: paraQuienSalio(m, grupos.data),
           motivo: m.nota,
           renglones:
             lineas && lineas.length > 0
@@ -299,8 +299,8 @@ export function Movimientos() {
                       </p>
                       <p className="text-ink/45 text-xs">
                         {fechaHora(m.registrado_en)} · {nombreDe(m.registrado_por)}
-                        {nombreDeGrupo(grupos.data, m.grupo_id)
-                          ? ` · para ${nombreDeGrupo(grupos.data, m.grupo_id)}`
+                        {paraQuienSalio(m, grupos.data)
+                          ? ` · para ${paraQuienSalio(m, grupos.data)}`
                           : ''}
                       </p>
                       {m.nota ? (
@@ -620,7 +620,7 @@ function DetalleDelMovimiento({
   */
   const motivoGuardado = motivoDeSalida(m)
   if (motivoGuardado) datos.push(['Motivo', motivoGuardado])
-  const paraQuien = nombreDeGrupo(grupos.data, m.grupo_id)
+  const paraQuien = paraQuienSalio(m, grupos.data)
   if (paraQuien) datos.push(['Para quién', paraQuien])
   const destino = bajaDe(m)?.destino
   if (destino) datos.push(['Destino', destino])

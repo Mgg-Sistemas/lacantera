@@ -449,6 +449,13 @@ export interface Movimiento {
    */
   grupo_id?: number | null
   /**
+   * Cuando la salida no va a un grupo de la empresa: a quién va —una empresa o
+   * una persona— y quién responde por ello. Van juntas o no van: ver
+   * `paraQuienSalio`.
+   */
+  destino_externo?: string | null
+  responsable_externo?: string | null
+  /**
    * La causa de las salidas viejas que se anotaron como baja —«Robado»—. Ya no
    * se escriben; las que hay se siguen leyendo. Según cómo lo resuelva el
    * servidor llega como objeto o como lista de uno: ver `bajaDe`.
@@ -1011,9 +1018,12 @@ export function useRegistrarSalidas() {
       /*
         PARA QUIÉN SALE, y la base no acepta una salida sin ello: es lo que
         después contesta «¿cuántas mascarillas se le han dado al personal de
-        cribado?». Es el nodo del organigrama que recibe el material.
+        cribado?». O el nodo del organigrama que lo recibe, o —si sale de la
+        empresa— a quién va y quién responde. Nunca las dos cosas.
       */
-      grupo_id: number
+      grupo_id?: number | null
+      externo?: string | null
+      responsable?: string | null
     }) =>
       rpc<string>('registrar_salidas', {
         p_almacen_id: s.almacen_id,
@@ -1032,7 +1042,9 @@ export function useRegistrarSalidas() {
         p_motivo: s.motivo,
         p_tipo: s.tipo ?? 'SALIDA_CONSUMO',
         p_fecha: s.fecha || null,
-        p_grupo_id: s.grupo_id,
+        p_grupo_id: s.grupo_id ?? null,
+        p_externo: s.externo || null,
+        p_responsable: s.responsable || null,
       }),
   )
 }
@@ -1366,6 +1378,23 @@ export const nombreDeGrupo = (grupos: GrupoDeSalida[] | undefined, id?: number |
   (id ? (grupos ?? []).find((g) => g.id === id)?.nombre : null) ?? null
 
 /*
+  PARA QUIÉN SALIÓ, SEA DE LA CASA O DE FUERA.
+
+  Christopher: «puede ser bien de la empresa o bien puede ser a un externo (debe
+  indicar el responsable, empresa o persona)». Lo de fuera se dice con las dos
+  cosas —«FERRETERIA OSMAIRA · JOSE PEREZ»—, porque un nombre de empresa sin
+  nadie detrás no sirve para reclamar nada.
+*/
+export const paraQuienSalio = (
+  m: Pick<Movimiento, 'grupo_id' | 'destino_externo' | 'responsable_externo'>,
+  grupos: GrupoDeSalida[] | undefined,
+): string | null =>
+  nombreDeGrupo(grupos, m.grupo_id) ??
+  (m.destino_externo
+    ? `${m.destino_externo}${m.responsable_externo ? ` · ${m.responsable_externo}` : ''}`
+    : null)
+
+/*
   LAS CAUSAS DE LAS SALIDAS VIEJAS QUE SE ANOTARON COMO BAJA
 
   Ya no se escriben: el 15/09/2026 se quitaron del sistema todos los motivos de
@@ -1449,10 +1478,16 @@ export const motivoParaLaNota = (m: Pick<Movimiento, 'tipo' | 'razon_salida' | '
   corrigiera el nombre de una razón entretanto para que la misma nota saliera con
   dos motivos distintos.
 */
-export async function leerCabeceraDeNota(
-  numero: string,
-): Promise<{ motivo: string; grupoId: number | null }> {
-  const fila = desenvolver<Pick<Movimiento, 'tipo' | 'razon_salida' | 'baja' | 'grupo_id'>>(
+export async function leerCabeceraDeNota(numero: string): Promise<{
+  motivo: string
+  para: Pick<Movimiento, 'grupo_id' | 'destino_externo' | 'responsable_externo'>
+}> {
+  const fila = desenvolver<
+    Pick<
+      Movimiento,
+      'tipo' | 'razon_salida' | 'baja' | 'grupo_id' | 'destino_externo' | 'responsable_externo'
+    >
+  >(
     await supabase
       .from('inventario_movimientos')
       .select('*, baja:inventario_bajas(causa, destino)')
@@ -1460,7 +1495,7 @@ export async function leerCabeceraDeNota(
       .limit(1)
       .single(),
   )
-  return { motivo: motivoParaLaNota(fila), grupoId: fila.grupo_id ?? null }
+  return { motivo: motivoParaLaNota(fila), para: fila }
 }
 
 /*
