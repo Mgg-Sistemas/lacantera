@@ -21,8 +21,10 @@ import {
   bajaDe,
   motivoDeSalida,
   motivoParaLaNota,
+  nombreDeGrupo,
   nombreDeMovimiento,
   useAlmacenes,
+  useGruposDeSalida,
   useMovimientos,
   useReversarMovimiento,
 } from '@/lib/api/inventario'
@@ -63,6 +65,9 @@ function loQueSeConto(m: Movimiento): string | null {
 export function Movimientos() {
   const { data: almacenes } = useAlmacenes()
   const { data: perfiles } = usePerfiles()
+  // Para poder decir «para CHOFERES» sin traerse el organigrama entero, que
+  // además está cerrado a quien no tiene nómina.
+  const grupos = useGruposDeSalida()
   const { puede } = useMisRoles()
   const reversar = useReversarMovimiento()
   const notaDeTraslado = useNotaDeTraslado()
@@ -100,6 +105,7 @@ export function Movimientos() {
           fecha: fecha(m.fecha),
           almacen: m.almacen?.nombre ?? '',
           clase: motivoParaLaNota(m),
+          paraQuien: nombreDeGrupo(grupos.data, m.grupo_id),
           motivo: m.nota,
           renglones:
             lineas && lineas.length > 0
@@ -293,6 +299,9 @@ export function Movimientos() {
                       </p>
                       <p className="text-ink/45 text-xs">
                         {fechaHora(m.registrado_en)} · {nombreDe(m.registrado_por)}
+                        {nombreDeGrupo(grupos.data, m.grupo_id)
+                          ? ` · para ${nombreDeGrupo(grupos.data, m.grupo_id)}`
+                          : ''}
                       </p>
                       {m.nota ? (
                         <NotaRecortada
@@ -581,6 +590,7 @@ function DetalleDelMovimiento({
   quien: string
   onCerrar: () => void
 }) {
+  const grupos = useGruposDeSalida()
   const contado = loQueSeConto(m)
   const datos: [string, string][] = [
     [
@@ -610,6 +620,8 @@ function DetalleDelMovimiento({
   */
   const motivoGuardado = motivoDeSalida(m)
   if (motivoGuardado) datos.push(['Motivo', motivoGuardado])
+  const paraQuien = nombreDeGrupo(grupos.data, m.grupo_id)
+  if (paraQuien) datos.push(['Para quién', paraQuien])
   const destino = bajaDe(m)?.destino
   if (destino) datos.push(['Destino', destino])
   if (m.propietario) datos.push(['Dueño', m.propietario])
