@@ -12,7 +12,7 @@ import { DeQuienSale } from '@/components/DeQuienSale'
 import { ListaEditable } from '@/components/ListaEditable'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { palabraDeVenta, usePedirSalida } from '@/lib/api/salidas'
+import { palabraDeVenta, usePedirSalida, usePersonasDeLaEmpresa } from '@/lib/api/salidas'
 import { useMiFirma } from '@/lib/api/firmas'
 import {
   grupoEnCorto,
@@ -180,15 +180,78 @@ function ParaQuienSale({
             value={externo}
             onChange={(e) => onExterno(e.target.value)}
           />
-          <Input
-            label="¿Quién responde por ello?"
-            hint="El nombre de la persona que responde por lo que sale y firma la nota."
-            value={responsable}
-            onChange={(e) => onResponsable(e.target.value)}
-          />
+          <QuienResponde responsable={responsable} onResponsable={onResponsable} />
         </div>
       ) : null}
     </fieldset>
+  )
+}
+
+const OTRA_PERSONA = 'OTRA'
+
+/*
+  QUIÉN RESPONDE: ALGUIEN DE LA EMPRESA, O UN NOMBRE ESCRITO.
+
+  Christopher, 16/09/2026: el campo «puede ser texto libre o bien puede ser
+  alguien de la empresa». Lo que sale hacia fuera muchas veces lo lleva un
+  trabajador de la casa, y elegirlo de la lista evita que el mismo nombre quede
+  escrito de tres maneras. Si no es de la empresa, «Otra persona» abre la casilla
+  para escribirlo, como en el pedido de compras.
+
+  Lo que viaja a la base es el nombre en los dos casos: la nota lo imprime igual.
+  Un nombre que no está en la lista —escrito a mano, o de alguien que ya no está
+  activo— se enseña en su casilla, no se pierde.
+*/
+function QuienResponde({
+  responsable,
+  onResponsable,
+}: {
+  responsable: string
+  onResponsable: (v: string) => void
+}) {
+  const { data: personas } = usePersonasDeLaEmpresa()
+  const [escribiendo, setEscribiendo] = useState(false)
+
+  const escrito = responsable.trim().toUpperCase()
+  const deLaEmpresa = escrito
+    ? (personas ?? []).find((p) => p.nombre.toUpperCase() === escrito)
+    : undefined
+  const aMano = escribiendo || (escrito !== '' && personas !== undefined && !deLaEmpresa)
+
+  return (
+    <div className="space-y-3">
+      <SelectBuscable
+        label="¿Quién responde por ello?"
+        vacio="Elige a alguien de la empresa u «Otra persona»"
+        hint="Firma la nota. Si no es de la empresa, elige «Otra persona» y escribe su nombre."
+        valor={aMano ? OTRA_PERSONA : deLaEmpresa ? String(deLaEmpresa.id) : ''}
+        onCambio={(v) => {
+          if (v === OTRA_PERSONA) {
+            setEscribiendo(true)
+            onResponsable('')
+            return
+          }
+          setEscribiendo(false)
+          onResponsable((personas ?? []).find((p) => String(p.id) === v)?.nombre ?? '')
+        }}
+        opciones={[
+          ...(personas ?? []).map((p) => ({
+            valor: String(p.id),
+            nombre: p.nombre,
+            detalle: p.cargo ?? undefined,
+          })),
+          { valor: OTRA_PERSONA, nombre: 'Otra persona — no es de la empresa' },
+        ]}
+      />
+      {aMano ? (
+        <Input
+          label="Nombre de quien responde"
+          hint="La persona que responde por lo que sale."
+          value={responsable}
+          onChange={(e) => onResponsable(e.target.value)}
+        />
+      ) : null}
+    </div>
   )
 }
 

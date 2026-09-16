@@ -275,6 +275,26 @@ export interface ComoAprueboSalidas {
   sitios: number[]
 }
 
+/*
+  LA GENTE DE LA EMPRESA, PARA DECIR QUIÉN RESPONDE POR LO QUE SALE.
+
+  Solo nombre y cargo, y solo los activos: `empleados` lo lee nómina, y aquí no
+  hace falta nada más de la ficha para reconocer a alguien.
+*/
+export interface PersonaDeLaEmpresa {
+  id: number
+  nombre: string
+  cargo: string | null
+}
+
+export function usePersonasDeLaEmpresa() {
+  return useQuery({
+    queryKey: ['personas-de-la-empresa'],
+    queryFn: () => rpc<PersonaDeLaEmpresa[]>('personas_de_la_empresa', {}),
+    staleTime: 5 * 60_000,
+  })
+}
+
 export function useComoAprueboSalidas() {
   return useQuery({
     // Bajo `mis-acciones` a propósito: extender o restringir una casilla
