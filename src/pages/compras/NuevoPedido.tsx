@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
+import { useMiFirma } from '@/lib/api/firmas'
 import {
   CATEGORIAS_ARTICULO,
   conSusFormas,
@@ -157,6 +158,15 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
   )
   const [otroNombre, setOtroNombre] = useState(pedido?.solicitante_nombre ?? '')
   const [otroCargo, setOtroCargo] = useState(pedido?.solicitante_cargo ?? '')
+  /*
+    LA FIRMA EN «SOLICITADO POR», SOLO DE QUIEN PIDE.
+
+    Se ofrece a quien carga su propio pedido y tiene una firma encendida, sin
+    marcar: quien pide no autoriza nada. A quien carga el pedido de otro no se
+    le ofrece, porque no puede poner la firma de ese otro.
+  */
+  const { data: miFirma } = useMiFirma()
+  const [conMiFirma, setConMiFirma] = useState(pedido?.firma_de_quien_pide === true)
 
   const [titulo, setTitulo] = useState(pedido?.titulo ?? '')
   const [justificacion, setJustificacion] = useState(pedido?.justificacion ?? '')
@@ -191,6 +201,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
   // Mientras la lista de perfiles carga, el selector todavía no tiene opciones;
   // el valor por defecto es uno mismo, que es el caso más común.
   const seleccion = quienPide || yo
+  const ofrecerFirma = miFirma?.usar === true && seleccion === yo
 
   const cambiar = (clave: number, cambios: Partial<FilaRenglon>) =>
     setFilas((f) => f.map((fila) => (fila.clave === clave ? { ...fila, ...cambios } : fila)))
@@ -233,12 +244,20 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
     }
 
     if (pedido) {
-      await actualizar.mutateAsync({ id: pedido.id, ...comun })
+      await actualizar.mutateAsync({
+        id: pedido.id,
+        ...comun,
+        con_firma: ofrecerFirma ? conMiFirma : null,
+      })
       void navigate(`/app/compras/${pedido.id}`)
       return
     }
 
-    const id = await crear.mutateAsync({ ...comun, enviar: enviarAhora })
+    const id = await crear.mutateAsync({
+      ...comun,
+      enviar: enviarAhora,
+      con_firma: ofrecerFirma && conMiFirma,
+    })
     void navigate(`/app/compras/${id}`)
   }
 
@@ -343,6 +362,23 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                   onChange={(e) => setOtroCargo(e.target.value)}
                 />
               </div>
+            ) : null}
+
+            {ofrecerFirma ? (
+              <label className="border-hairline flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                  checked={conMiFirma}
+                  onChange={(e) => setConMiFirma(e.target.checked)}
+                />
+                <span className="text-ink/80">
+                  Poner mi firma digital en «Solicitado por»
+                  <span className="text-ink/50 mt-0.5 block text-xs">
+                    Sin marcar, la raya de la orden de compra sale en blanco con tu nombre debajo.
+                  </span>
+                </span>
+              </label>
             ) : null}
 
             <Select

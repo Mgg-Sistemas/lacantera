@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ArrowLeft,
@@ -66,7 +67,7 @@ import {
 import { useMetodosPago, nombreDe as nombreDelMetodo } from '@/lib/api/metodosPago' 
 import type { Cotizacion, InstruccionPago, Orden } from '@/lib/api/compras'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
-import { useFirmas } from '@/lib/api/firmas'
+import { leerFirmasEncendidas, useMiFirma } from '@/lib/api/firmas'
 import {
   armarOrdenDeCompra,
   armarComprobanteDePago,
@@ -710,7 +711,9 @@ export function DetalleCompra() {
   )
   const { data: bitacora } = useBitacora(compraId, orden?.id)
   const { data: perfiles } = usePerfiles()
-  const { data: firmas } = useFirmas()
+  const qc = useQueryClient()
+  const { data: miFirma } = useMiFirma()
+  const tengoFirma = miFirma?.usar === true
   const { data: empresa } = useEmpresa()
   const { data: articulos } = useArticulos()
   const { data: metodosDePago } = useMetodosPago()
@@ -726,6 +729,12 @@ export function DetalleCompra() {
   const [rehaciendoOrden, setRehaciendoOrden] = useState(false)
   // Se marca a mano cada vez: no se recuerda de una aprobacion a la siguiente.
   const [bajoAutorizacion, setBajoAutorizacion] = useState(false)
+  /*
+    La firma de quien aprueba, marcada de entrada: «todo pdf creado por defecto
+    debe salir como mínimo la firma de quien autoriza». Se desmarca si no se
+    quiere, y solo se pregunta a quien tiene una firma encendida.
+  */
+  const [conMiFirma, setConMiFirma] = useState(true)
   /*
     Cuál de las propuestas aprueba el gerente.
 
@@ -884,6 +893,16 @@ export function DetalleCompra() {
   const imprimirOrden = async (expresarEn = leerOrdenEn) => {
     if (!compra || !orden) return
 
+    // Leídas al armar: con la consulta todavía en camino, la orden saldría sin
+    // las firmas que sus dueños eligieron poner.
+    const firmas = await qc.fetchQuery({
+      queryKey: ['firmas'],
+      queryFn: leerFirmasEncendidas,
+      staleTime: 5 * 60_000,
+    })
+    const firmaDe = (elegida: boolean, uid: string | null) =>
+      elegida && uid ? (firmas.porPerfil[uid] ?? null) : null
+
     setPdf(
       await armarOrdenDeCompra({
         /*
@@ -894,9 +913,14 @@ export function DetalleCompra() {
         expresion: expresarEn
           ? { moneda: expresarEn, tasa: orden.tasa, tasaUsd: orden.tasa_usd }
           : null,
+        solicita: {
+          nombre: compra.solicitante_nombre ?? quienEs(compra.solicitante_id),
+          imagen: firmaDe(compra.firma_de_quien_pide === true, compra.solicitante_id),
+        },
         autoriza: {
           nombre: quienEs(compra.aprobada_gg_por),
-          imagen: compra.aprobada_gg_por ? (firmas?.porPerfil[compra.aprobada_gg_por] ?? null) : null,
+          // Nula es de antes de preguntarlo: se firmaba siempre, y así sigue.
+          imagen: firmaDe(compra.firma_de_quien_aprueba !== false, compra.aprobada_gg_por),
           porAutorizacionDe: quienEs(compra.aprobada_por_autorizacion_de),
         },
         numero: orden.numero,
@@ -1746,6 +1770,23 @@ export function DetalleCompra() {
                         className="mb-3"
                       />
                     ) : null}
+                    {tengoFirma ? (
+                      <label className="border-hairline mb-3 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={conMiFirma}
+                          onChange={(e) => setConMiFirma(e.target.checked)}
+                          className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                        />
+                        <span className="text-ink/80">
+                          Poner mi firma digital en «Autorizado por»
+                          <span className="text-ink/50 mt-0.5 block text-xs">
+                            Sin marcar, la raya de la orden de compra sale en blanco con tu nombre
+                            debajo, para firmarla a mano.
+                          </span>
+                        </span>
+                      </label>
+                    ) : null}
                     <Button
                       block
                       icon={<BadgeCheck />}
@@ -1762,6 +1803,7 @@ export function DetalleCompra() {
                           const ordenId = await aprobar.mutateAsync({
                             solicitud_id: compra.id,
                             cotizacion_id: cualAprobar,
+                            con_firma: tengoFirma && conMiFirma,
                           })
                           /*
                             Si el archivo falla, la compra YA está aprobada: eso

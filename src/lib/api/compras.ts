@@ -378,6 +378,13 @@ export interface Compra {
    * autorizacion de» en el papel y en el resumen del pedido.
    */
   aprobada_por_autorizacion_de: string | null
+  /**
+   * Si quien pidió y quien aprobó eligieron poner su firma digital en la orden
+   * de compra. Nula en la de quien pide: no se preguntó, y va sin ella. Nula en
+   * la de quien aprueba: se aprobó antes de preguntarlo, y va con ella.
+   */
+  firma_de_quien_pide: boolean | null
+  firma_de_quien_aprueba: boolean | null
   motivo_cancelacion: string | null
   renglones: RenglonPedido[]
   cotizaciones: Cotizacion[]
@@ -537,6 +544,8 @@ export function useCrearPedido() {
       /** Quien pide y no tiene usuario: el mecánico, el operador del frente. */
       solicitante_nombre?: string | null
       solicitante_cargo?: string | null
+      /** Quien pide y carga su propio pedido: si su firma va en «Solicitado por». */
+      con_firma?: boolean
     }) =>
       rpc<number>('crear_pedido', {
         p_titulo: p.titulo,
@@ -550,6 +559,7 @@ export function useCrearPedido() {
         p_solicitante_id: p.solicitante_id || null,
         p_solicitante_nombre: p.solicitante_nombre || null,
         p_solicitante_cargo: p.solicitante_cargo || null,
+        p_con_firma: p.con_firma === true,
       }),
   )
 }
@@ -580,6 +590,11 @@ export function useActualizarPedido() {
       solicitante_id?: string | null
       solicitante_nombre?: string | null
       solicitante_cargo?: string | null
+      /**
+       * Nulo cuando no se preguntó —quien corrige no es quien pide—: la base
+       * deja lo que había, salvo que cambie quien pide.
+       */
+      con_firma?: boolean | null
     }) =>
       rpc('actualizar_pedido', {
         p_id: p.id,
@@ -593,6 +608,7 @@ export function useActualizarPedido() {
         p_solicitante_id: p.solicitante_id || null,
         p_solicitante_nombre: p.solicitante_nombre || null,
         p_solicitante_cargo: p.solicitante_cargo || null,
+        p_con_firma: p.con_firma ?? null,
       }),
   )
 }
@@ -650,6 +666,8 @@ export function useComprarDirecto() {
       flete?: number
       observacion?: string | null
       destino_almacen_id?: number | null
+      /** Pide y autoriza la misma persona: su firma va en las dos rayas o en ninguna. */
+      con_firma?: boolean
     }) =>
       rpc<number>('comprar_directo', {
         p_proveedor_id: c.proveedor_id,
@@ -665,6 +683,7 @@ export function useComprarDirecto() {
         p_flete: c.flete ?? 0,
         p_observacion: c.observacion || null,
         p_destino_almacen_id: c.destino_almacen_id ?? null,
+        p_con_firma: c.con_firma === true,
       }),
   )
 }
@@ -868,12 +887,20 @@ export function useProponerCotizacion() {
  * no decidió.
  */
 export function useAprobarCompra() {
-  return useAccion((p: { solicitud_id: number; cotizacion_id?: number | null; nota?: string }) =>
-    rpc<number>('aprobar_compra', {
-      p_solicitud_id: p.solicitud_id,
-      p_cotizacion_id: p.cotizacion_id ?? null,
-      p_nota: p.nota ?? null,
-    }),
+  return useAccion(
+    (p: {
+      solicitud_id: number
+      cotizacion_id?: number | null
+      nota?: string
+      /** Si la firma de quien aprueba va en «Autorizado por». */
+      con_firma: boolean
+    }) =>
+      rpc<number>('aprobar_compra', {
+        p_solicitud_id: p.solicitud_id,
+        p_cotizacion_id: p.cotizacion_id ?? null,
+        p_nota: p.nota ?? null,
+        p_con_firma: p.con_firma,
+      }),
   )
 }
 

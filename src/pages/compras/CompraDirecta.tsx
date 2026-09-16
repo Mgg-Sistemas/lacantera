@@ -23,6 +23,7 @@ import {
 } from '@/lib/api/catalogo'
 import { useAlmacenes } from '@/lib/api/inventario'
 import { useComprarDirecto } from '@/lib/api/compras'
+import { useMiFirma } from '@/lib/api/firmas'
 import { useRecibirOrdenCompleta } from '@/lib/api/inventario'
 import { useAdjuntarPapel } from '@/lib/api/papelesDeCompra'
 import { useMonedasUsables, useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
@@ -108,6 +109,13 @@ export function CompraDirecta() {
   const [flete, setFlete] = useState('0')
   const [observacion, setObservacion] = useState('')
   const [almacen, setAlmacen] = useState('')
+  /*
+    En la compra directa pide y autoriza la misma persona, así que su firma va
+    en las dos rayas de la orden o en ninguna. Marcada de entrada: la compra ya
+    está autorizada por quien la carga.
+  */
+  const { data: miFirma } = useMiFirma()
+  const [conMiFirma, setConMiFirma] = useState(true)
   const [recibirYa, setRecibirYa] = useState(true)
   const [factura, setFactura] = useState<File | null>(null)
   const [filas, setFilas] = useState<Fila[]>([filaVacia()])
@@ -190,6 +198,7 @@ export function CompraDirecta() {
       flete: Number(flete) || 0,
       observacion,
       destino_almacen_id: almacen ? Number(almacen) : null,
+      con_firma: miFirma?.usar === true && conMiFirma,
       renglones: listas.map((f) => ({
         articulo_id: f.articulo_id ? Number(f.articulo_id) : null,
         descripcion: f.descripcion.trim(),
@@ -567,6 +576,23 @@ export function CompraDirecta() {
             value={observacion}
             onChange={(e) => setObservacion(e.target.value)}
           />
+
+          {miFirma?.usar ? (
+            <label className="border-hairline flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+              <input
+                type="checkbox"
+                className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                checked={conMiFirma}
+                onChange={(e) => setConMiFirma(e.target.checked)}
+              />
+              <span className="text-ink/80">
+                Poner mi firma digital en «Solicitado por» y en «Autorizado por»
+                <span className="text-ink/50 mt-0.5 block text-xs">
+                  Sin marcar, las dos rayas de la orden de compra salen en blanco con tu nombre debajo.
+                </span>
+              </span>
+            </label>
+          ) : null}
         </Card>
 
         {comprar.error ? <ErrorDeCarga error={comprar.error} /> : null}
