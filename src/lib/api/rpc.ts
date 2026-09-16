@@ -35,12 +35,61 @@ function traducir(error: PostgrestError): string {
   return error.hint ? `${mensaje} ${error.hint}` : mensaje
 }
 
+/*
+  LO QUE FALLA TAMBIÉN QUEDA ESCRITO.
+
+  Christopher, 16/09/2026, cuando nadie pudo montar una solicitud de salida y la
+  auditoría no decía nada: «auditoría no me está informando si hubo errores en
+  alguna solicitud». La auditoría la escriben disparadores al guardar, y un
+  intento que la base rechaza se deshace entero: no quedaba ni quién, ni qué
+  escribió, ni qué le contestó el sistema.
+
+  Aquí, cuando una función se niega, se le cuenta a `registrar_intento_fallido`
+  en otra llamada, que sí se guarda y que la pantalla de auditoría enseña. No se
+  espera por ella: si el registro falla, quien intentaba sigue viendo su mensaje
+  igual. Lo que tiene nombre de secreto no se manda, y un texto larguísimo va
+  recortado.
+*/
+const NO_SE_GUARDA = /contrase|password|clave|token|secret|firma|foto|imagen|archivo|base64/i
+
+function loQueSeGuarda(args: Record<string, unknown>): Record<string, unknown> {
+  const guardado: Record<string, unknown> = {}
+  for (const [clave, valor] of Object.entries(args)) {
+    if (NO_SE_GUARDA.test(clave)) guardado[clave] = '(no se guarda)'
+    else if (typeof valor === 'string' && valor.length > 500) guardado[clave] = `${valor.slice(0, 500)}…`
+    else guardado[clave] = valor
+  }
+  return guardado
+}
+
+function contarElFallo(nombre: string, args: Record<string, unknown>, error: PostgrestError) {
+  // Sin conexión no hay a quién contárselo, y contarlo fallaría otra vez.
+  if (nombre === 'registrar_intento_fallido' || (error.message ?? '').includes('Failed to fetch')) {
+    return
+  }
+  void supabase
+    .rpc('registrar_intento_fallido', {
+      p_funcion: nombre,
+      p_codigo: error.code ?? null,
+      p_mensaje: error.message ?? '',
+      p_datos: loQueSeGuarda(args),
+      p_pantalla: typeof window === 'undefined' ? null : window.location.pathname,
+    })
+    .then(
+      () => undefined,
+      () => undefined,
+    )
+}
+
 export async function rpc<T = unknown>(
   nombre: string,
   args: Record<string, unknown> = {},
 ): Promise<T> {
   const { data, error } = await supabase.rpc(nombre, args)
-  if (error) throw new Error(traducir(error))
+  if (error) {
+    contarElFallo(nombre, args, error)
+    throw new Error(traducir(error))
+  }
   return data as T
 }
 

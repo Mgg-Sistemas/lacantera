@@ -17,6 +17,30 @@ import { desenvolver, rpc } from './rpc'
   nota que sale queda guardado en la solicitud, así que el papel firmado y lo
   que lo pidió se encuentran el uno al otro.
 */
+/*
+  LA PALABRA QUE HACE DE UNA SOLICITUD UNA VENTA
+
+  Es la misma regla que aplica la base (`private.palabra_de_venta`): una venta
+  no sale por una solicitud, sino por Facturación. Se mira aquí también para
+  avisar mientras se escribe, junto al campo, y no después de enviar: los
+  primeros cinco intentos rechazados se leyeron como «un error del sistema». Si
+  la base y esto discrepan, manda la base.
+*/
+const PALABRAS_DE_VENTA =
+  /\b(VENTA|VENDER|VENDID[OA]S?|VENDIO|SE VENDE|CLIENTES?|PERMUTAS?|TRUEQUES?|CANJES?|CRUCE DE FACTURAS?|PAGO CON MATERIAL(?:ES)?|PAGO EN MATERIAL(?:ES)?|PAGO EN ESPECIE)\b/
+
+/** La palabra que nombra una venta en el texto, en minúscula, o null. */
+export function palabraDeVenta(texto: string): string | null {
+  const limpio = texto
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/_/g, ' ')
+    // Parte del nombre de un artículo del catálogo, no una venta.
+    .replace(/MATERIAL DE VENTA/g, ' ')
+  return PALABRAS_DE_VENTA.exec(limpio)?.[1]?.toLowerCase() ?? null
+}
+
 export type EstadoDeSolicitud = 'PEDIDA' | 'APROBADA' | 'ENTREGADA' | 'RECHAZADA' | 'CANCELADA'
 
 /** Cómo se dice cada estado en pantalla, y de qué color se pinta. */

@@ -42,6 +42,8 @@ import {
   conQueSeHizo,
   useOperacionCompleta,
   useModulosAuditados,
+  useIntentosFallidos,
+  intentoEnPalabras,
   copiarAuditoriaCsv,
   copiarAuditoriaJson,
   TOPE_DE_COPIA,
@@ -123,6 +125,102 @@ function frase(m: Movimiento): string {
  * navegador manda una señal cada dos, asi que se puede perder una sin que la
  * persona desaparezca; pero nadie se apaga en el momento exacto en que cierra.
  */
+/*
+  LO QUE SE INTENTÓ Y NO SE PUDO
+
+  Christopher, 16/09/2026: «auditoría no me está informando si hubo errores en
+  alguna solicitud». El historial de abajo cuenta lo que se guardó; esto cuenta
+  lo que la base rechazó, con el mensaje que vio la persona y lo que escribió.
+  Va arriba porque es lo que se viene a buscar cuando alguien dice «me da
+  error».
+*/
+function LoQueNoSePudoHacer() {
+  const { data, isPending, error } = useIntentosFallidos()
+  const perfiles = usePerfiles()
+  const [abierto, setAbierto] = useState<number | null>(null)
+
+  const nombreDe = (uid: string | null) =>
+    (uid && (perfiles.data ?? []).find((p) => p.id === uid)?.nombre) || 'Alguien sin nombre'
+
+  const intentos = data ?? []
+  const deHoy = intentos.filter(
+    (i) => new Date(i.ocurrido_en).toDateString() === new Date().toDateString(),
+  ).length
+
+  return (
+    <Card className="mb-4">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-ink/90 text-base font-semibold">Lo que se intentó y no se pudo</h2>
+        <span className="text-ink/45 text-xs">
+          {isPending
+            ? 'Cargando…'
+            : intentos.length === 0
+              ? 'Ningún intento rechazado'
+              : `${deHoy} hoy · los últimos ${intentos.length}`}
+        </span>
+      </div>
+
+      <p className="text-ink/55 mb-3 text-xs">
+        Cuando el sistema rechaza algo, no se guarda y no sale en el historial de abajo. Queda aquí:
+        quién, qué intentaba, qué le contestó el sistema y lo que había escrito.
+      </p>
+
+      {error ? <ErrorDeCarga error={error} /> : null}
+
+      {intentos.length > 0 ? (
+        <ul className="divide-hairline max-h-96 divide-y overflow-y-auto">
+          {intentos.map((i) => {
+            const datos = Object.entries(i.datos ?? {}).filter(
+              ([, v]) => v !== null && v !== undefined && v !== '',
+            )
+            return (
+              <li key={i.id} className="py-2.5 text-sm">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="text-ink/85 font-medium">
+                    {intentoEnPalabras(i.funcion)}
+                    <span className="text-ink/50 font-normal"> · {nombreDe(i.usuario)}</span>
+                  </p>
+                  <span className="text-ink/45 text-xs">
+                    {fechaHora(i.ocurrido_en)} · {hace(i.ocurrido_en)}
+                  </span>
+                </div>
+                <p className="text-danger mt-0.5 text-xs">{i.mensaje}</p>
+                {datos.length > 0 ? (
+                  <button
+                    type="button"
+                    className="text-ink/45 hover:text-ink/75 mt-1 text-xs underline underline-offset-2"
+                    onClick={() => setAbierto(abierto === i.id ? null : i.id)}
+                  >
+                    {abierto === i.id ? 'Ocultar lo que escribió' : 'Ver lo que escribió'}
+                  </button>
+                ) : null}
+                {abierto === i.id ? (
+                  <dl className="bg-ink/4 rounded-card mt-1.5 grid gap-x-3 gap-y-1 p-2.5 text-xs sm:grid-cols-[max-content_1fr]">
+                    {datos.map(([clave, valor]) => (
+                      <div key={clave} className="contents">
+                        <dt className="text-ink/50">{clave.replace(/^p_/, '').replaceAll('_', ' ')}</dt>
+                        <dd className="text-ink/80 break-words">
+                          {typeof valor === 'string' ? valor : JSON.stringify(valor)}
+                        </dd>
+                      </div>
+                    ))}
+                    {i.pantalla ? (
+                      <div className="contents">
+                        <dt className="text-ink/50">pantalla</dt>
+                        <dd className="text-ink/80">{i.pantalla}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
+      ) : null}
+    </Card>
+  )
+}
+
 function QuienEstaConectado() {
   const { data, isPending } = usePresencia()
 
@@ -262,6 +360,8 @@ export function Auditoria() {
       />
 
       <QuienEstaConectado />
+
+      <LoQueNoSePudoHacer />
 
       {/* ------------------------------ Filtros ------------------------------ */}
       <Card className="mb-4">

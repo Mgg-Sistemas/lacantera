@@ -145,6 +145,58 @@ export function useAuditoria(filtros: FiltrosAuditoria, pagina: number) {
  * filtro nunca ofrece una tabla en la que no ha pasado nada, ni deja fuera una
  * que se añadió después.
  */
+/*
+  LO QUE SE INTENTÓ Y NO SE PUDO
+
+  La auditoría de abajo cuenta lo que se guardó. Un intento que la base rechaza
+  se deshace entero y ahí no aparece, así que lo anota la propia aplicación en
+  `intentos_fallidos` (ver `lib/api/rpc.ts`). Solo lo lee administración.
+*/
+export interface IntentoFallido {
+  id: number
+  ocurrido_en: string
+  usuario: string | null
+  funcion: string
+  codigo: string | null
+  mensaje: string
+  datos: Record<string, unknown> | null
+  pantalla: string | null
+}
+
+export function useIntentosFallidos(limite = 50) {
+  return useQuery({
+    queryKey: ['auditoria', 'intentos-fallidos', limite],
+    queryFn: async () =>
+      desenvolver<IntentoFallido[]>(
+        await supabase
+          .from('intentos_fallidos')
+          .select('*')
+          .order('ocurrido_en', { ascending: false })
+          .limit(limite),
+      ),
+    staleTime: 30_000,
+  })
+}
+
+/** Lo que se intentaba, dicho como una acción. Las que no están aquí se leen por su nombre. */
+const INTENTOS_EN_PALABRAS: Record<string, string> = {
+  pedir_salida: 'Solicitar una salida',
+  aprobar_solicitud_salida: 'Aprobar una solicitud de salida',
+  entregar_solicitud_salida: 'Entregar una solicitud de salida',
+  registrar_salidas: 'Registrar una salida',
+  solicitar_traslado: 'Hacer un traslado',
+  despachar: 'Despachar a un cliente',
+  facturar_notas: 'Facturar',
+  registrar_cobro: 'Registrar un cobro',
+  crear_cotizacion_venta: 'Hacer una cotización',
+  cambiar_estado_articulo: 'Activar o desactivar un artículo',
+  guardar_clase_de_salida: 'Guardar una razón de salida',
+}
+
+export const intentoEnPalabras = (funcion: string): string =>
+  INTENTOS_EN_PALABRAS[funcion] ??
+  funcion.replaceAll('_', ' ').replace(/^./, (l) => l.toUpperCase())
+
 export function useTablasAuditadas() {
   return useQuery({
     queryKey: ['auditoria', 'tablas'],
