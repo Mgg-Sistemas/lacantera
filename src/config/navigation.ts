@@ -293,7 +293,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/config/auditoria': 'quien hizo rastro historial cambios',
   '/app/explotacion/voladuras': 'explosivo barreno detonante',
   '/app/explotacion/produccion': 'turno tonelada extraccion',
-  '/app/explotacion/viajes': 'acarreo camion transportista flete planilla',
+  '/app/explotacion/viajes': 'acarreo camion transportista flete planilla aprobar viaje vacio',
+  '/app/explotacion/plantas': 'planta mina ruta tarifa operador gobernacion aliado ceder cerrar abrir sitio',
   '/app/explotacion/salidas': 'salida planta producto arena piedra m3 camion sale estimado',
   '/app/costos':
     'caja costo por m3 metro cubico fondo entregado deuda casa matriz socio gastos fijos cerrar caja tasa referencial precio',
@@ -376,6 +377,10 @@ export const navigation: NavSection[] = [
         children: [
           { label: 'Tablero', to: '/app/explotacion' },
           { label: 'Viajes de camiones', to: '/app/explotacion/viajes' },
+          // Las minas, plantas y bases, quién las opera y las rutas con su
+          // tarifa. Existe desde que Christopher preguntó qué pasaba si mañana
+          // abre o cierra una planta, o la cede la gobernación.
+          { label: 'Plantas y rutas', to: '/app/explotacion/plantas' },
           // Lo que sale de la planta, camión por camión. Es el denominador
           // del costo por m³ y va separado de facturación: la salida no
           // espera a la factura.
