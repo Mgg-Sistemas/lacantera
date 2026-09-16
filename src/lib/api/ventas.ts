@@ -128,11 +128,16 @@ export function useGuardarCliente() {
 // Lista de precios
 // ---------------------------------------------------------------------------
 
+/**
+ * Una fila por cada precio: arena a 12 por M3 y a 9 por TON son dos. Lo que
+ * todavía no tiene ninguno sale una vez, en la unidad del artículo y sin cifra.
+ */
 export interface PrecioVenta {
   articulo_id: number
   codigo: string
   nombre: string
   categoria: string
+  /** La unidad en que se vende a este precio. Sin precio, la del artículo. */
   unidad: string
   /** Nulos cuando el artículo todavía no tiene precio puesto. */
   moneda: string | null
@@ -141,6 +146,10 @@ export interface PrecioVenta {
   nota: string | null
   actualizado_en: string | null
   activo: boolean
+  /** La unidad en que lo lleva el patio. */
+  unidad_articulo: string
+  /** Toneladas por metro cúbico. Sin ella no se vende en la otra unidad. */
+  densidad_ton_m3: string | null
 }
 
 export function usePrecios() {
@@ -148,9 +157,28 @@ export function usePrecios() {
     queryKey: ['precios-venta'],
     queryFn: async () =>
       desenvolver<PrecioVenta[]>(
-        await supabase.from('v_precios_venta').select('*').order('categoria').order('nombre'),
+        await supabase
+          .from('v_precios_venta')
+          .select('*')
+          .order('categoria')
+          .order('nombre')
+          .order('unidad'),
       ),
   })
+}
+
+/**
+ * En qué unidades se puede vender un artículo.
+ *
+ * La suya siempre. La otra entre metros cúbicos y toneladas solo si tiene
+ * densidad, porque sin ella no se sabe cuánto sale del patio. Es la misma regla
+ * con la que la base guarda un precio y carga un renglón.
+ */
+export function unidadesDeVenta(p: Pick<PrecioVenta, 'unidad_articulo' | 'densidad_ton_m3'>): string[] {
+  if (!p.densidad_ton_m3) return [p.unidad_articulo]
+  if (p.unidad_articulo === 'M3') return ['M3', 'TON']
+  if (p.unidad_articulo === 'TON') return ['TON', 'M3']
+  return [p.unidad_articulo]
 }
 
 export function useGuardarPrecio() {
@@ -158,6 +186,7 @@ export function useGuardarPrecio() {
   return useMutation({
     mutationFn: (p: {
       articulo_id: number
+      unidad: string
       precio: number
       precio_minimo?: number
       moneda?: string
@@ -169,7 +198,18 @@ export function useGuardarPrecio() {
         p_minimo: p.precio_minimo ?? 0,
         p_moneda: p.moneda ?? 'USD',
         p_nota: p.nota || null,
+        p_unidad: p.unidad,
       }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['precios-venta'] }),
+  })
+}
+
+/** Lo ya emitido no cambia: cada renglón guardó el precio de lista que tenía. */
+export function useQuitarPrecio() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (p: { articulo_id: number; unidad: string }) =>
+      rpc<void>('quitar_precio_venta', { p_articulo_id: p.articulo_id, p_unidad: p.unidad }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['precios-venta'] }),
   })
 }
@@ -178,13 +218,46 @@ export function useGuardarPrecio() {
 // Lo que se escribe en un documento de venta
 // ---------------------------------------------------------------------------
 
+/**
+ * A qué precio sale un renglón. Lo dice quien vende y la base calcula el precio
+ * a partir de ahí: la lista no se copia a mano ni un cero se cuela sin motivo.
+ */
+export type CondicionVenta = 'LISTA' | 'DESCUENTO' | 'SIN_CARGO' | 'ACORDADO'
+
+export const CONDICION_VENTA: Record<CondicionVenta, { etiqueta: string; ayuda: string }> = {
+  LISTA: {
+    etiqueta: 'Precio de lista',
+    ayuda: 'El de Ventas › Lista de precios, en la moneda del documento.',
+  },
+  DESCUENTO: {
+    etiqueta: 'Con descuento',
+    ayuda: 'Sobre el precio de lista, en porcentaje o en monto por unidad.',
+  },
+  SIN_CARGO: {
+    etiqueta: 'Sin cargo',
+    ayuda: 'Sale sin cobrarse. Se dice por qué, y lo autoriza quien pueda vender bajo el mínimo.',
+  },
+  ACORDADO: {
+    etiqueta: 'Precio acordado',
+    ayuda: 'Esa unidad no tiene precio de lista: se escribe el que se acordó.',
+  },
+}
+
+/** Cómo se supo lo que salió del patio. Solo en notas y facturas. */
+export type MedidaRenglon = 'DIRECTA' | 'ROMANA' | 'ESTIMADA'
+
 export interface RenglonVenta {
   articulo_id: number
   descripcion?: string
   cantidad: number
   unidad?: string
+  /** Solo cuenta con precio acordado: en los demás lo calcula la base. */
   precio_unitario: number
   exento_iva?: boolean
+  condicion: CondicionVenta
+  descuento_pct?: number | null
+  descuento_unitario?: number | null
+  motivo_condicion?: string | null
 }
 
 /**
@@ -253,6 +326,16 @@ export interface RenglonGuardado {
   precio_unitario: string
   exento_iva: boolean
   subtotal: string
+  /** Las notas de crédito no llevan condición: corrigen, no venden. */
+  condicion?: CondicionVenta
+  precio_lista?: string | null
+  descuento_pct?: string | null
+  descuento_unitario?: string | null
+  motivo_condicion?: string | null
+  /** Solo notas de entrega y facturas: lo que salió del patio, en su unidad. */
+  cantidad_inventario?: string | null
+  medida?: MedidaRenglon | null
+  densidad_usada?: string | null
 }
 
 export function useCotizacionesVenta(estado?: string) {

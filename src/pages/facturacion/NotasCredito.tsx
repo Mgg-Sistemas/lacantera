@@ -40,6 +40,8 @@ const TONO: Record<string, 'royal' | 'neutral'> = { EMITIDA: 'royal', ANULADA: '
 
 interface Linea {
   usar: boolean
+  /** El renglón de la factura: con él lo devuelto vuelve al patio con la cuenta con que salió. */
+  renglon_factura_id: number
   articulo_id: number
   descripcion: string
   unidad: string
@@ -89,6 +91,7 @@ export function NotasCredito() {
     setLineas(
       renglones.data.map((r) => ({
         usar: false,
+        renglon_factura_id: r.id,
         articulo_id: r.articulo_id,
         descripcion: r.descripcion,
         unidad: r.unidad,
@@ -257,6 +260,7 @@ export function NotasCredito() {
                       precio_unitario: Number(l.precio_unitario),
                       exento_iva: l.exento_iva,
                       almacen_id: l.almacen_id ? Number(l.almacen_id) : null,
+                      renglon_factura_id: l.renglon_factura_id,
                     })),
                   })
                   cerrar()

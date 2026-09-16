@@ -204,6 +204,12 @@ export interface RenglonNotaCredito {
   exento_iva?: boolean
   /** Con almacén el material vuelve al patio. Sin almacén solo se corrige plata. */
   almacen_id?: number | null
+  /**
+   * El renglón de la factura que se devuelve. Con él la base convierte lo
+   * devuelto a la unidad del patio con la misma cuenta con que salió: unas
+   * toneladas pesadas en la romana no vuelven con la densidad del catálogo.
+   */
+  renglon_factura_id?: number | null
 }
 
 export function useEmitirNotaCredito() {

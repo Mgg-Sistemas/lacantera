@@ -77,12 +77,22 @@ export type TipoDocumento = 'COTIZACION' | 'NOTA' | 'FACTURA'
 
 export interface RenglonImpreso {
   descripcion: string
+  /**
+   * A qué precio salió y cómo se midió, cuando no es lo normal: «20 % de
+   * descuento sobre 12,00», «sin cargo: …», «estimado con 1,44 t/m³». Va en una
+   * segunda línea gris a todo lo ancho. Un 0,00 sin explicación en un papel
+   * fiscal obliga a llamar a alguien para saber si fue un regalo o un error.
+   */
+  detalle?: string | null
   cantidad: string | number
   unidad: string
   precio_unitario: string | number
   subtotal: string | number
   exento_iva?: boolean
 }
+
+/** Seis milímetros un renglón; nueve si lleva su línea de detalle. */
+const altoRenglon = (r: RenglonImpreso) => (r.detalle ? 9 : 6)
 
 export interface DatosDocumento {
   tipo: TipoDocumento
@@ -583,13 +593,13 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
     let actual: RenglonImpreso[] = []
 
     for (const r of d.renglones) {
-      if (y + 6 > topeTabla) {
+      if (y + altoRenglon(r) > topeTabla) {
         hojas.push(actual)
         actual = []
         y = ARRIBA + 12 + 6.5
       }
       actual.push(r)
-      y += 6
+      y += altoRenglon(r)
     }
     hojas.push(actual)
 
@@ -626,7 +636,7 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
     for (const [i, r] of renglones.entries()) {
       if (i % 2 === 1) {
         doc.setFillColor(FILA_ALTERNA)
-        doc.rect(IZQ, y, ANCHO_UTIL, 6, 'F')
+        doc.rect(IZQ, y, ANCHO_UTIL, altoRenglon(r), 'F')
       }
 
       doc.setTextColor(TINTA).setFont('helvetica', 'normal').setFontSize(8)
@@ -666,7 +676,12 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
       doc.setFont('helvetica', 'bold')
       doc.text(numero(r.subtotal), COL_TOTAL - 3, y + 4.2, { align: 'right' })
 
-      y += 6
+      if (r.detalle) {
+        doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
+        doc.text(ajustar(doc, r.detalle, ANCHO_UTIL - 6), IZQ + 3, y + 7.6)
+      }
+
+      y += altoRenglon(r)
     }
 
     doc.setDrawColor(HAIRLINE).setLineWidth(0.3)
