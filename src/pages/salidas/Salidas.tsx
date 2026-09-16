@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { PackageMinus } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
@@ -8,12 +8,10 @@ import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
 import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useArticulos, usePerfiles } from '@/lib/api/catalogo'
-import { useMisPermisos } from '@/lib/api/usuarios'
 import {
   grupoEnCorto,
   nombreDeMovimiento,
@@ -23,8 +21,6 @@ import {
   useGruposDeSalida,
   useMovimientos,
 } from '@/lib/api/inventario'
-import { ModalSalida } from './ModalSalida'
-import { useNotaDeSalida } from './NotaDeSalida'
 import { fechaHora } from '@/lib/formato'
 
 /*
@@ -41,9 +37,12 @@ import { fechaHora } from '@/lib/formato'
   contesta «qué pasó en el almacén»; esta pantalla contesta «qué se entregó, a
   quién y cuánto», que es otra pregunta y la hace otra gente.
 
-  Y aquí se saca el material, que es lo primero que preguntó al verla: «¿dónde
-  puedo realizar una salida?». El formulario es `ModalSalida` y vive en este
-  módulo; Existencias se quedó con enseñar lo que hay.
+  AQUÍ SOLO SE CONSULTA. Unas horas tuvo el botón de sacar material, porque fue
+  lo primero que se preguntó al verla. Luego Christopher preguntó qué atendía
+  exactamente la pestaña de solicitudes, y la respuesta ordenó el módulo:
+  «Salidas» tiene pedir y la salida directa, «Traslados» tiene sus tres formas,
+  y esta es el historial de lo que ya movió existencia. Un botón de acción en
+  una consulta vuelve a dejar la duda de dónde se hace cada cosa.
 */
 
 interface Vista {
@@ -71,13 +70,10 @@ export function Salidas() {
   const [grupoId, setGrupoId] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
 
-  const { puede: alcanza } = useMisPermisos()
   const { data: almacenes } = useAlmacenes()
   const { data: articulos } = useArticulos()
   const { data: perfiles } = usePerfiles()
   const grupos = useGruposDeSalida()
-  // El papel lo arma el gancho del módulo, que lo comparte con las solicitudes.
-  const nota = useNotaDeSalida()
 
   const { data, isPending, error } = useMovimientos({
     tipos: (VISTAS[vista] ?? VISTAS.TODO).tipos,
@@ -90,25 +86,16 @@ export function Salidas() {
   })
 
   /*
-    SACAR MATERIAL DESDE AQUÍ, Y TAMBIÉN DESDE UNA FILA DE EXISTENCIAS.
-
-    Existencias enseña lo que hay y manda aquí con el artículo y el sitio en la
-    dirección; el formulario se abre con el primer renglón puesto. La marca se
-    borra de la dirección en cuanto se usa: recargar no vuelve a abrirlo.
+    Un enlace viejo que traiga `?sacar=` —guardado, o de antes de ordenar las
+    pestañas— sigue abriendo el formulario, ahora en «Salidas», que es donde vive.
   */
-  const [parametros, setParametros] = useSearchParams()
-  const [sacando, setSacando] = useState(false)
-  const [desdeFila, setDesdeFila] = useState<{ articulo?: string; almacen?: string }>({})
-
+  const [parametros] = useSearchParams()
+  const navegar = useNavigate()
   useEffect(() => {
-    if (!parametros.has('sacar')) return
-    setDesdeFila({
-      articulo: parametros.get('articulo') ?? undefined,
-      almacen: parametros.get('almacen') ?? undefined,
-    })
-    setSacando(true)
-    setParametros(new URLSearchParams(), { replace: true })
-  }, [parametros, setParametros])
+    if (parametros.has('sacar')) {
+      void navegar(`/app/salidas/solicitudes?${parametros.toString()}`, { replace: true })
+    }
+  }, [parametros, navegar])
 
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
@@ -151,15 +138,8 @@ export function Salidas() {
   return (
     <>
       <PageHeader
-        title="Salidas y traslados"
-        description="Lo que se entregó y lo que se movió entre almacenes."
-        actions={
-          alcanza('SALIDAS', 'ESCRITURA') ? (
-            <Button icon={<PackageMinus />} onClick={() => setSacando(true)}>
-              Registrar salida
-            </Button>
-          ) : null
-        }
+        title="Historial de salidas y traslados"
+        description="Lo que ya salió del inventario y lo que ya se movió entre almacenes. Aquí solo se consulta: para sacar o pedir material ve a «Salidas», y para mover material entre almacenes, a «Traslados»."
       />
 
       <Pestanas pestanas={PESTANAS_SALIDAS} />
@@ -226,8 +206,13 @@ export function Salidas() {
           />
         </div>
 
+        <p className="text-ink/45 mt-3 text-xs">
+          Solo aparece lo que ya movió existencia. Una solicitud de salida sin entregar o un
+          traslado pedido sin enviar todavía no está aquí: se ven en su pestaña.
+        </p>
+
         {resumen ? (
-          <p className="text-ink/50 mt-3 text-xs">
+          <p className="text-ink/50 mt-2 text-xs">
             {resumen}
             {(data ?? []).length === 200
               ? ' · el libro trae los 200 más recientes: acota las fechas para ver más atrás'
@@ -314,31 +299,6 @@ export function Salidas() {
         </Link>
         .
       </p>
-
-      <ModalSalida
-        abierto={sacando}
-        articuloInicial={desdeFila.articulo}
-        almacenInicial={desdeFila.almacen}
-        onCerrar={() => {
-          setSacando(false)
-          setDesdeFila({})
-        }}
-        onRegistrada={(numero, motivo) => {
-          /*
-            El modal se cierra AQUÍ, antes de armar el papel.
-
-            Armarlo tarda: dos viajes de red y la descarga del trozo de jsPDF la
-            primera vez. Durante esa espera el botón vuelve a dejarse pulsar, y
-            el segundo toque registra una SEGUNDA salida completa, con su propio
-            número de nota, sin que nadie se entere.
-          */
-          setSacando(false)
-          setDesdeFila({})
-          void nota.abrir(numero, motivo)
-        }}
-      />
-
-      {nota.visor}
     </>
   )
 }

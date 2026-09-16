@@ -27,9 +27,15 @@ export const PESTANAS_MATERIAL: Pestana[] = [
  * las entradas y sin forma de cruzarlos con el artículo, el almacenista o el
  * grupo que los recibió.
  */
+/*
+  Christopher, 16/09/2026, sobre la pestaña «Solicitudes»: «¿atiende qué
+  exactamente? ¿Solicitudes de salida y traslado por igual?». Solo atendía
+  salidas, y no lo decía. Ahora cada pestaña de acción tiene lo suyo entero —sus
+  solicitudes y su forma directa—, y la consulta se llama por lo que es.
+*/
 export const PESTANAS_SALIDAS: Pestana[] = [
-  { etiqueta: 'Salidas y traslados', a: '/app/salidas' },
-  { etiqueta: 'Solicitudes', a: '/app/salidas/solicitudes' },
+  { etiqueta: 'Historial', a: '/app/salidas' },
+  { etiqueta: 'Salidas', a: '/app/salidas/solicitudes' },
   { etiqueta: 'Traslados', a: '/app/salidas/traslados' },
 ]
 

@@ -6,14 +6,17 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { conDueno, detalleDeDueno } from '@/lib/deQuien'
+import { cn } from '@/lib/cn'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
 import {
+  FORMA_DE_TRASLADO,
   useAlmacenes,
   useComoActuoEnTraslados,
   useExistencias,
   usePropietarios,
   useSolicitarTraslado,
 } from '@/lib/api/inventario'
+import type { FormaDeTraslado } from '@/lib/api/inventario'
 
 /*
   EL RENGLÓN GUARDA EL TOTAL Y ADEMÁS LO QUE SE TECLEÓ.
@@ -37,8 +40,9 @@ const VACIO = {
      dueño la base lo resuelve y preguntar sería hacer trabajar a quien ya sabe
      la respuesta. */
   propietario: '',
-  /* Hacerlo ya: sale y llega en este momento, sin pasar por «En camino». */
-  inmediato: false,
+  /* Pedir, enviar o directo. Vacío hasta que se elige: no se propone ninguna,
+     porque cada una deja a otra persona con algo que hacer. */
+  forma: '' as '' | FormaDeTraslado,
 }
 
 /*
@@ -74,10 +78,10 @@ export function ModalTraslado({
   /** El almacén que la pantalla tiene elegido, para proponerlo como origen. */
   origen?: string
   /**
-   * Con el traslado pedido o hecho recibe su id. Si se hizo en el acto, el
-   * material ya se movió y la pantalla saca la nota; si solo se pidió, todavía no.
+   * Con el traslado hecho recibe su id y cómo nació. Enviado o directo, el
+   * material ya salió y la pantalla saca la nota; pedido, todavía no.
    */
-  onTrasladado?: (t: { id: number; inmediato: boolean }) => void
+  onTrasladado?: (t: { id: number; forma: FormaDeTraslado }) => void
 }) {
   const { data: almacenes } = useAlmacenes()
   const { data: propietarios } = usePropietarios()
@@ -225,28 +229,71 @@ export function ModalTraslado({
   const hayMezcla = duenosEnElOrigen.length > 1
 
   /*
-    PEDIRLO O HACERLO YA.
+    PEDIR, ENVIAR O DIRECTO, ELEGIDO PRIMERO.
 
-    Christopher: «un traslado no necesariamente es inmediato (aunque hay que
-    dejar abierta la posibilidad con alguna opción)». Hacerlo ya es aceptar en el
-    origen y recibir en el destino a la vez, así que la casilla solo aparece para
-    quien responde por los dos sitios, o para administración.
+    Christopher, 16/09/2026: «si hago una solicitud, ¿es para pedir material?
+    ¿no puedo hacer una solicitud para entregar material? Necesitamos no dejar
+    asumir al usuario». Antes la ventana solo sabía pedir, con una casilla «Hacerlo
+    ya» que aparecía o no según los sitios elegidos: quien quería mandar material
+    no tenía forma de decirlo, y la casilla no se encontraba hasta haber llenado
+    medio formulario.
+
+    Ahora se elige primero, y lo que se elige estrecha las listas:
+
+      pedir ..... cualquier origen con material; lo decide quien responde por él
+      enviar .... solo los orígenes por los que respondo
+      directo ... origen Y destino por los que respondo
 
     Lo que entró sin costo no pasa por «En camino» —se mezclaría con lo que sí
-    costó—, así que desde ahí solo se puede en el acto.
+    costó—, así que ese origen solo sale en «Traslado directo». Una opción que no
+    está a mi alcance se enseña apagada y dice por qué: esconderla dejaría
+    pensando que no existe.
   */
-  const puedeHacerloYa =
-    yo != null &&
-    Boolean(form.origen && form.destino) &&
-    (yo.respaldo ||
-      (yo.sitios.includes(Number(form.origen)) && yo.sitios.includes(Number(form.destino))))
-  const soloEnElActo = origenSinCosto === true
-  const inmediato = soloEnElActo || (form.inmediato && puedeHacerloYa)
+  const respondoPor = (sitio: number) => yo != null && (yo.respaldo || yo.sitios.includes(sitio))
+
+  const porQueNo: Record<FormaDeTraslado, string | null> = {
+    PEDIR: null,
+    ENVIAR:
+      yo == null || yo.respaldo || yo.sitios.length > 0
+        ? null
+        : 'No respondes por ningún almacén, así que no puedes enviar: pide el material.',
+    DIRECTO:
+      yo == null || yo.respaldo || yo.sitios.length > 1
+        ? null
+        : 'Hace falta responder por el almacén de origen y por el de destino, o ser administración.',
+  }
+
+  const origenSirve = (id: number, forma = form.forma): boolean => {
+    const sitio = activos.find((a) => a.id === id)
+    if (!sitio) return false
+    if (forma === 'DIRECTO') return respondoPor(id)
+    if (sitio.admite_sin_costo) return false
+    return forma === 'ENVIAR' ? respondoPor(id) : true
+  }
+  const destinoSirve = (id: number, forma = form.forma): boolean =>
+    forma !== 'DIRECTO' || respondoPor(id)
+
+  /* Cambiar de forma puede dejar elegido un sitio que ya no vale: se suelta. */
+  const elegirForma = (forma: FormaDeTraslado) =>
+    setForm((v) => ({
+      ...v,
+      forma,
+      ...(v.origen && !origenSirve(Number(v.origen), forma) ? { origen: '', propietario: '' } : {}),
+      ...(v.destino && !destinoSirve(Number(v.destino), forma) ? { destino: '' } : {}),
+    }))
+
+  const hayOrigenSinCosto = activos.some(
+    (a) => a.admite_sin_costo && almacenesQueSirven.has(a.id),
+  )
 
   const cantidad = Number(form.cantidad.replace(',', '.'))
   const listo =
+    form.forma &&
+    !porQueNo[form.forma] &&
     form.origen &&
+    origenSirve(Number(form.origen)) &&
     form.destino &&
+    destinoSirve(Number(form.destino)) &&
     form.origen !== form.destino &&
     form.articulo &&
     cantidad > 0 &&
@@ -254,8 +301,7 @@ export function ModalTraslado({
     form.motivo.trim().length >= 4 &&
     // Con mezcla en el origen hay que decir de quién sale. La base también lo
     // para, pero enterarse al pulsar con el formulario lleno llega tarde.
-    (!hayMezcla || Boolean(form.propietario)) &&
-    (!soloEnElActo || puedeHacerloYa)
+    (!hayMezcla || Boolean(form.propietario))
 
   const cerrar = () => {
     setError('')
@@ -264,8 +310,10 @@ export function ModalTraslado({
   }
 
   const enviar = async () => {
+    if (!form.forma) return
     setError('')
     try {
+      const forma = form.forma
       const deDonde = activos.find((a) => String(a.id) === form.origen)?.nombre ?? 'el origen'
       const id = await solicitar.mutateAsync({
         origen_id: Number(form.origen),
@@ -278,19 +326,18 @@ export function ModalTraslado({
         suelto: form.suelto ? Number(form.suelto.replace(',', '.')) : null,
         // Vacío cuando no hay mezcla: la base lo resuelve mirando lo que hay.
         propietario: form.propietario || null,
-        inmediato,
+        forma,
       })
       setForm(VACIO)
-      if (inmediato) {
-        onCerrar()
-        // El papel sale en el acto, como la nota de salida: viaja con el material.
-        onTrasladado?.({ id: Number(id), inmediato: true })
-      } else {
+      if (forma === 'PEDIR') {
         // Queda pedido. Se dice aquí, en la misma ventana, a quién le toca ahora:
         // cerrarla sin más dejaría a quien pidió sin saber si llegó a algún sitio.
         setPedido(deDonde)
-        onTrasladado?.({ id: Number(id), inmediato: false })
+      } else {
+        // Enviado o directo, el material ya salió y su papel viaja con él.
+        onCerrar()
       }
+      onTrasladado?.({ id: Number(id), forma })
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     }
@@ -304,7 +351,7 @@ export function ModalTraslado({
       descripcion={
         pedido
           ? undefined
-          : 'Se pide; lo acepta quien responde por el sitio de donde sale y lo recibe quien responde por el de destino. El costo viaja con el material.'
+          : 'Elige qué quieres hacer: cada opción dice quién hace cada paso. El costo viaja siempre con el material.'
       }
       acciones={
         pedido ? (
@@ -320,7 +367,11 @@ export function ModalTraslado({
               Cancelar
             </Button>
             <Button onClick={enviar} disabled={!listo || solicitar.isPending}>
-              {solicitar.isPending ? 'Enviando…' : inmediato ? 'Trasladar ya' : 'Pedir traslado'}
+              {solicitar.isPending
+                ? 'Guardando…'
+                : form.forma
+                  ? FORMA_DE_TRASLADO[form.forma].boton
+                  : 'Elige qué quieres hacer'}
             </Button>
           </>
         )
@@ -328,17 +379,53 @@ export function ModalTraslado({
     >
       {pedido ? (
         <p className="text-ink/80 text-sm">
-          Queda pedido. Lo acepta quien responde por «{pedido}», o administración, y hasta
-          entonces el material no se mueve. Lo sigues en Transferencias.
+          Queda pedido y todavía no se ha movido nada. Lo aprueba y envía quien responde por
+          «{pedido}», o administración; después, quien responde por el almacén de destino
+          confirma que llegó. Lo sigues en Salidas y traslados, pestaña «Traslados».
         </p>
       ) : (
+      <>
+      <fieldset>
+        <legend className="text-ink/80 mb-2 text-sm font-medium">¿Qué quieres hacer?</legend>
+        <div className="grid gap-2">
+          {(Object.keys(FORMA_DE_TRASLADO) as FormaDeTraslado[]).map((f) => {
+            const opcion = FORMA_DE_TRASLADO[f]
+            const apagada = porQueNo[f]
+            return (
+              <label
+                key={f}
+                className={cn(
+                  'border-hairline flex items-start gap-2.5 rounded-[6px] border p-3 text-sm',
+                  apagada ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
+                  form.forma === f && 'border-royal-600 bg-royal-600/8',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="forma-del-traslado"
+                  className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                  checked={form.forma === f}
+                  disabled={Boolean(apagada)}
+                  onChange={() => elegirForma(f)}
+                />
+                <span>
+                  <span className="text-ink/85 block font-medium">{opcion.titulo}</span>
+                  <span className="text-ink/55 mt-0.5 block text-xs">{apagada ?? opcion.explica}</span>
+                </span>
+              </label>
+            )
+          })}
+        </div>
+      </fieldset>
+
+      {form.forma ? (
       <>
       {/* Once almacenes con nombres largos —«TALLER DE REPARACION DE PLANTA
           FIJA»— no se eligen en un desplegable: hay que abrirlo, recorrerlo
           con la vista y acertar. Escribiendo «planta» sale solo, y de paso
           se ve el código y el tipo de sitio, que es lo que distingue un
           taller de un patio cuando los dos empiezan igual. */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <SelectBuscable
           label="Sale de"
           vacio="Elige el almacén"
@@ -352,13 +439,19 @@ export function ModalTraslado({
               )
             cambiar({ origen: v, ...(sigueEstando ? {} : { articulo: '', cantidad: '' }) })
           }}
-          hint={
+          hint={[
+            form.forma !== 'PEDIR' && !yo?.respaldo ? 'Solo los almacenes por los que respondes.' : null,
             form.articulo
               ? 'Solo los sitios donde hay ese artículo.'
-              : 'Solo los sitios que tienen algo que trasladar.'
-          }
+              : 'Solo los sitios que tienen algo que trasladar.',
+            form.forma !== 'DIRECTO' && hayOrigenSinCosto
+              ? 'Lo que entró sin costo no aparece aquí: solo sale con «Traslado directo».'
+              : null,
+          ]
+            .filter(Boolean)
+            .join(' ')}
           opciones={activos
-            .filter((a) => almacenesQueSirven.has(a.id))
+            .filter((a) => almacenesQueSirven.has(a.id) && origenSirve(a.id))
             .map((a) => ({
               valor: String(a.id),
               codigo: a.codigo,
@@ -388,11 +481,18 @@ export function ModalTraslado({
           valor={form.destino}
           onCambio={(v) => cambiar({ destino: v })}
           hint={
-            origenSinCosto === undefined
-              ? undefined
-              : origenSinCosto
-                ? 'Solo salen los sitios que también admiten material sin costo: lo que hay aquí entró sin precio y hundiría el promedio de los demás.'
-                : 'No sale el tanque del combustible inicial: lo que hay ahí entró sin precio y no se mezcla con lo que sí costó.'
+            [
+              form.forma === 'DIRECTO' && !yo?.respaldo
+                ? 'Solo los almacenes por los que respondes.'
+                : null,
+              origenSinCosto === undefined
+                ? null
+                : origenSinCosto
+                  ? 'Solo salen los sitios que también admiten material sin costo: lo que hay aquí entró sin precio y hundiría el promedio de los demás.'
+                  : 'No sale el tanque del combustible inicial: lo que hay ahí entró sin precio y no se mezcla con lo que sí costó.',
+            ]
+              .filter(Boolean)
+              .join(' ') || undefined
           }
           error={
             form.destino && form.destino === form.origen
@@ -400,7 +500,7 @@ export function ModalTraslado({
               : undefined
           }
           opciones={activos
-            .filter((a) => String(a.id) !== form.origen)
+            .filter((a) => String(a.id) !== form.origen && destinoSirve(a.id))
             .filter(
               (a) =>
                 origenSinCosto === undefined ||
@@ -531,35 +631,7 @@ export function ModalTraslado({
         hint="Dentro de seis meses esto será lo único que explique el movimiento."
       />
 
-      {form.origen && form.destino ? (
-        soloEnElActo && !puedeHacerloYa ? (
-          <p className="text-danger mt-3 text-sm">
-            Lo que hay en ese sitio entró sin costo y solo se traslada en el acto. Eso lo hace
-            quien responde por los dos sitios, o administración.
-          </p>
-        ) : puedeHacerloYa ? (
-          <label className="border-hairline mt-4 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
-            <input
-              type="checkbox"
-              className="accent-royal-600 mt-0.5 size-4 shrink-0"
-              checked={inmediato}
-              disabled={soloEnElActo}
-              onChange={(e) => cambiar({ inmediato: e.target.checked })}
-            />
-            <span className="text-ink/80">
-              Hacerlo ya
-              <span className="text-ink/50 mt-0.5 block text-xs">
-                {soloEnElActo
-                  ? 'Lo que entró sin costo no pasa por «En camino»: sale y llega en este momento.'
-                  : `Sale y llega en este momento, sin esperar a que lo acepten y lo reciban. ${
-                      yo?.respaldo
-                        ? 'Lo puedes hacer como administración.'
-                        : 'Lo puedes hacer porque respondes por los dos sitios.'
-                    }`}
-              </span>
-            </span>
-          </label>
-        ) : null
+      </>
       ) : null}
 
       {error ? <p className="text-danger mt-3 text-sm">{error}</p> : null}
