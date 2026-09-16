@@ -1,17 +1,24 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Visor } from '@/components/Visor'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useEmpresa } from '@/lib/api/empresa'
-import { ESTADO_TRASLADO, leerTraslado, leerTrasladoPorId } from '@/lib/api/inventario'
-import type { TrasladoParaNota } from '@/lib/api/inventario'
+import {
+  ESTADO_TRASLADO,
+  formaDelTraslado,
+  leerTraslado,
+  leerTrasladoPorId,
+} from '@/lib/api/inventario'
+import type { Traslado, TrasladoParaNota } from '@/lib/api/inventario'
 import { densidadesDeArticulos } from '@/lib/api/catalogo'
+import { leerFirmasEncendidas } from '@/lib/api/firmas'
 import { armarNotaDeTraslado } from '@/lib/ficha/notaDeTrasladoPdf'
-import type { DatosNotaDeTraslado } from '@/lib/ficha/notaDeTrasladoPdf'
+import type { DatosNotaDeTraslado, TrasladoEnPapel } from '@/lib/ficha/notaDeTrasladoPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
-import { fecha } from '@/lib/formato'
+import { fecha, fechaHora } from '@/lib/formato'
 
 /*
   LA NOTA DE UN TRASLADO, DESDE CUALQUIER SITIO DONDE SE VEA UNO.
@@ -40,6 +47,7 @@ export function useNotaDeTraslado(): {
   visor: ReactNode
 } {
   const { data: empresa } = useEmpresa()
+  const qc = useQueryClient()
   const [armando, setArmando] = useState<number | null>(null)
   const [datos, setDatos] = useState<DatosNotaDeTraslado | null>(null)
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
@@ -52,7 +60,14 @@ export function useNotaDeTraslado(): {
     setFallo(null)
     try {
       const t = await leer()
-      const [articulo] = await densidadesDeArticulos({ codigos: [t.articuloCodigo] })
+      // Las firmas se leen al armar y no se esperan de la pantalla: la nota que
+      // sale justo al enviar no puede salir sin la firma que se acaba de elegir.
+      const [[articulo], firmas] = await Promise.all([
+        densidadesDeArticulos({ codigos: [t.articuloCodigo] }),
+        t.traslado
+          ? qc.fetchQuery({ queryKey: ['firmas'], queryFn: leerFirmasEncendidas, staleTime: 5 * 60_000 })
+          : null,
+      ])
       const d: DatosNotaDeTraslado = {
         conCostos,
         numero: t.numero,
@@ -61,6 +76,7 @@ export function useNotaDeTraslado(): {
         destino: t.destino,
         motivo: t.motivo,
         estado: t.estado ? ESTADO_TRASLADO[t.estado].texto : null,
+        pasos: t.traslado ? trasladoEnPapel(t.traslado, firmas?.porPerfil ?? {}) : null,
         renglones: [
           {
             articuloCodigo: t.articuloCodigo,
@@ -138,4 +154,51 @@ export function useNotaDeTraslado(): {
   )
 
   return { abrir, abrirTraslado, armando, visor }
+}
+
+/**
+ * Quién hizo cada paso, para el papel.
+ *
+ * La imagen de cada firma solo pasa si su dueño eligió ponerla al actuar. Un
+ * traslado cancelado conserva los nombres —el cuadro cuenta lo que pasó—, pero
+ * ninguna firma: el papel no autoriza nada.
+ */
+function trasladoEnPapel(t: Traslado, firmas: Record<string, string>): TrasladoEnPapel {
+  const forma = formaDelTraslado(t)
+  const cancelado = t.estado === 'CANCELADA'
+  const firmaDe = (elegida: boolean | null, uid: string | null) =>
+    !cancelado && elegida === true && uid ? (firmas[uid] ?? null) : null
+
+  return {
+    forma:
+      forma === 'PEDIR'
+        ? 'Pedido: lo aprueba y envía quien responde por el origen'
+        : forma === 'ENVIAR'
+          ? 'Enviado sin pedido, por quien responde por el origen'
+          : 'Directo: salió y llegó en el mismo momento',
+    directo: forma === 'DIRECTO',
+    pidio:
+      forma === 'PEDIR'
+        ? { nombre: t.solicitado_por_nombre, fecha: fechaHora(t.solicitado_en) }
+        : null,
+    envio: {
+      nombre: t.aceptado_por_nombre,
+      fecha: t.aceptado_en ? fechaHora(t.aceptado_en) : null,
+      deRespaldo: t.aceptado_de_respaldo === true,
+      firma: firmaDe(t.firma_de_quien_envia, t.aceptado_por),
+    },
+    recibio: {
+      nombre: t.recibido_por_nombre,
+      fecha: t.recibido_en ? fechaHora(t.recibido_en) : null,
+      deRespaldo: t.recibido_de_respaldo === true,
+      firma: firmaDe(t.firma_de_quien_recibe, t.recibido_por),
+    },
+    cancelo: cancelado
+      ? {
+          nombre: t.cancelado_por_nombre,
+          fecha: t.cancelado_en ? fechaHora(t.cancelado_en) : null,
+          motivo: t.motivo_cancelacion,
+        }
+      : null,
+  }
 }

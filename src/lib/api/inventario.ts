@@ -1137,6 +1137,12 @@ export interface TrasladoParaNota {
   contado: string | null
   /** El paso en el que está, cuando el traslado tiene número propio. */
   estado?: EstadoTraslado | null
+  /**
+   * El traslado entero, cuando tiene número propio: quién hizo cada paso y si
+   * eligió poner su firma. Los de antes no lo tienen, y su papel sale con las
+   * rayas en blanco.
+   */
+  traslado?: Traslado | null
 }
 
 /**
@@ -1279,6 +1285,7 @@ export async function leerTrasladoPorId(id: number): Promise<TrasladoParaNota> {
     valorUsd: salida?.valor_usd ?? null,
     contado,
     estado: t.estado,
+    traslado: t,
   }
 }
 
@@ -1883,6 +1890,12 @@ export interface Traslado {
   mov_vuelta: number | null
   /** Nació enviado por quien responde por el origen, sin pedido previo. */
   enviado: boolean
+  /**
+   * Si quien envió y quien confirmó la llegada eligieron poner su firma digital
+   * en la nota. Nula mientras ese paso no se ha dado.
+   */
+  firma_de_quien_envia: boolean | null
+  firma_de_quien_recibe: boolean | null
 }
 
 export function useTraslados() {
@@ -1953,6 +1966,8 @@ export function useSolicitarTraslado() {
       suelto?: number | null
       propietario?: string | null
       forma: FormaDeTraslado
+      /** Enviado o directo: si quien lo hace pone su firma en la nota. */
+      con_firma?: boolean
     }) =>
       rpc<number>('solicitar_traslado', {
         p_origen_id: t.origen_id,
@@ -1967,16 +1982,29 @@ export function useSolicitarTraslado() {
         p_propietario: t.propietario ?? null,
         p_inmediato: t.forma === 'DIRECTO',
         p_enviar: t.forma === 'ENVIAR',
+        p_con_firma: t.con_firma === true,
       }),
   )
 }
 
+/*
+  LA FIRMA LA DECIDE QUIEN ACTÚA, AL ACTUAR.
+
+  Como en la orden de salida: quien aprueba y envía dice si su firma va en
+  «Envió», y quien confirma la llegada, si va en «Recibió». La base guarda lo
+  que de verdad se puede estampar —sin firma encendida, queda en falso—, así
+  que aquí basta con pasar lo que se marcó.
+*/
 export function useAceptarTraslado() {
-  return useAccionInventario((id: number) => rpc<number>('aceptar_traslado', { p_id: id }))
+  return useAccionInventario((a: { id: number; con_firma: boolean }) =>
+    rpc<number>('aceptar_traslado', { p_id: a.id, p_con_firma: a.con_firma }),
+  )
 }
 
 export function useRecibirTraslado() {
-  return useAccionInventario((id: number) => rpc<number>('recibir_traslado', { p_id: id }))
+  return useAccionInventario((a: { id: number; con_firma: boolean }) =>
+    rpc<number>('recibir_traslado', { p_id: a.id, p_con_firma: a.con_firma }),
+  )
 }
 
 export function useCancelarTraslado() {

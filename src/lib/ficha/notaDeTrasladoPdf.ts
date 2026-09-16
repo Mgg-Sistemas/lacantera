@@ -45,7 +45,30 @@ import {
   imprime al aceptar dice «De camino», y la misma nota impresa al recibir dice
   «Recibido». Los traslados de antes, sin número propio, siguen saliendo con
   el de su movimiento de salida.
+
+  DOS FIRMAS: ENVIÓ Y RECIBIÓ
+
+  Christopher, 16/09/2026: la firma «aplica para todo aquello que en el sistema
+  pueda generar una solicitud u orden y pueda ser aceptado», y en el traslado
+  firman quien envió y quien recibió. Quien lo pidió no firma —participan dos—
+  y su nombre va en el cuadro de datos, con cuándo pasó cada cosa.
+
+  Las firmas llegan ya decididas. Cada uno eligió al actuar si ponía la suya;
+  aquí solo se estampa la imagen cuando tocaba.
 */
+
+/** Quién hizo cada paso del traslado, para el cuadro de datos y las rayas. */
+export interface TrasladoEnPapel {
+  /** Cómo nació, dicho como se lee. */
+  forma: string
+  /** Una sola persona, en un solo paso: el cuadro no repite «envió» y «recibió». */
+  directo: boolean
+  /** Solo en los pedidos: enviado o directo, quien lo pide es quien lo envía. */
+  pidio: { nombre: string | null; fecha: string | null } | null
+  envio: { nombre: string | null; fecha: string | null; firma?: string | null; deRespaldo?: boolean }
+  recibio: { nombre: string | null; fecha: string | null; firma?: string | null; deRespaldo?: boolean }
+  cancelo: { nombre: string | null; fecha: string | null; motivo: string | null } | null
+}
 
 export interface DatosNotaDeTraslado {
   /** Si el papel lleva las cifras de dinero. Por defecto, sin ellas. */
@@ -57,6 +80,8 @@ export interface DatosNotaDeTraslado {
   motivo?: string | null
   /** El paso, dicho como se lee: «De camino». Solo en los traslados con número. */
   estado?: string | null
+  /** Quién hizo cada paso. Nulo en los traslados de antes, sin número propio. */
+  pasos?: TrasladoEnPapel | null
   renglones: RenglonDeSalida[]
   empresa: { razonSocial: string; rif: string }
   momento: Date
@@ -79,12 +104,57 @@ export async function armarNotaDeTraslado(d: DatosNotaDeTraslado): Promise<NotaA
   y = tituloDocumento(doc, y, 'Nota de traslado')
   y = lineaEmpresa(doc, y, `${d.empresa.razonSocial} · RIF ${d.empresa.rif}`)
 
-  y = bloqueEtiquetado(doc, y, 'El traslado', [
-    ['Sale de', d.origen],
-    ['Entra en', d.destino],
-    ['Fecha', d.fecha],
-    ...(d.estado ? ([['Estado', d.estado]] as Array<[string, string]>) : []),
-  ])
+  /*
+    QUIÉN HIZO CADA PASO, EN EL MISMO CUADRO.
+
+    Un cuadro y no dos, como en la nota de salida: con dos títulos, las firmas
+    se van a otra hoja. Las filas vacías no se pintan; lo que falta por hacer se
+    dice, para que el papel no deje suponer que ya pasó.
+  */
+  const p = d.pasos
+  const quienYCuando = (x: { nombre: string | null; fecha: string | null }) =>
+    [x.nombre ?? '—', x.fecha].filter(Boolean).join(' · ')
+  const comoAdministracion = (si?: boolean) => (si ? ' · como administración' : '')
+
+  const filasDeLosPasos: Array<[string, string | null | undefined]> = !p
+    ? []
+    : p.directo
+      ? [['Hecho por', `${quienYCuando(p.envio)}${comoAdministracion(p.envio.deRespaldo)}`]]
+      : [
+          ['Pedido por', p.pidio ? quienYCuando(p.pidio) : null],
+          [
+            'Enviado por',
+            p.envio.nombre
+              ? `${quienYCuando(p.envio)}${comoAdministracion(p.envio.deRespaldo)}`
+              : null,
+          ],
+          [
+            'Llegada confirmada por',
+            p.recibio.nombre
+              ? `${quienYCuando(p.recibio)}${comoAdministracion(p.recibio.deRespaldo)}`
+              : p.cancelo
+                ? 'No llegó: se canceló'
+                : 'Pendiente: todavía no se confirma',
+          ],
+          ['Cancelado por', p.cancelo ? quienYCuando(p.cancelo) : null],
+          ['Por qué se canceló', p.cancelo?.motivo],
+        ]
+
+  y = bloqueEtiquetado(
+    doc,
+    y,
+    'El traslado',
+    (
+      [
+        ['Sale de', d.origen],
+        ['Entra en', d.destino],
+        ['Fecha', d.fecha],
+        ['Estado', d.estado],
+        ['Cómo nació', p?.forma],
+        ...filasDeLosPasos,
+      ] as Array<[string, string | null | undefined]>
+    ).filter(([, valor]) => Boolean(valor && String(valor).trim())),
+  )
 
   // El motivo antes de la tabla, como en la nota de salida: explica todos los
   // renglones, y leerlo después de la lista obliga a volver a subir.
@@ -128,14 +198,31 @@ export async function armarNotaDeTraslado(d: DatosNotaDeTraslado): Promise<NotaA
     })
   }
 
-  // Una firma en cada punta. Sin nombre: el sistema todavía no captura quién
-  // carga ni quién recibe, y se firma a mano.
+  // Una firma en cada punta, con el nombre de quien dio ese paso. La raya de
+  // un paso que todavía no se da sale en blanco, para firmarla a mano.
   firmas(
     doc,
     LINEA_DE_FIRMAS,
-    { texto: 'Entregó en el origen', nombre: null },
-    { texto: 'Recibió en el destino', nombre: null },
+    { texto: 'Envió', nombre: p?.envio.nombre ?? null, imagen: p?.envio.firma ?? null },
+    { texto: 'Recibió', nombre: p?.recibio.nombre ?? null, imagen: p?.recibio.firma ?? null },
   )
+
+  /*
+    UN TRASLADO CANCELADO SE VE CRUZADO. Su papel se puede imprimir —para
+    archivarlo, para explicar por qué volvió el material—, pero no puede servir
+    para mover nada.
+  */
+  if (p?.cancelo) {
+    for (let pagina = 1; pagina <= doc.getNumberOfPages(); pagina++) {
+      doc.setPage(pagina)
+      doc.saveGraphicsState()
+      // @ts-expect-error jsPDF expone GState por el objeto global, sin tipo propio.
+      doc.setGState(new doc.GState({ opacity: 0.14 }))
+      doc.setTextColor('#DE3B40').setFont('helvetica', 'bold').setFontSize(54)
+      doc.text('CANCELADO', IZQ + ANCHO_UTIL / 2, 165, { align: 'center', angle: 28 })
+      doc.restoreGraphicsState()
+    }
+  }
 
   pieDePagina(doc, `Documento generado por el sistema · ${d.numero} · ${fechaLarga(d.momento)}`)
   doc.setProperties({ title: `Nota de traslado ${d.numero}` })

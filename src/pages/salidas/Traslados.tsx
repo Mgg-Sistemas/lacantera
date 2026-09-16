@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMiFirma } from '@/lib/api/firmas'
 import {
   ESTADO_TRASLADO,
   FORMA_DE_TRASLADO,
@@ -56,6 +57,11 @@ import { useNotaDeTraslado } from './NotaDeTraslado'
   no dejar asumir al usuario, mantener lo explícito como norma». Un «Por
   aceptar» a secas obligaba a saber de memoria quién acepta; ahora la fila dice
   si fue pedido, enviado o directo, y qué falta y a quién le toca.
+
+  LA FIRMA SE ELIGE AL DAR EL PASO. Quien envía dice si su firma va en «Envió»
+  de la nota —marcado de entrada: enviar es autorizar que salga—, y quien
+  confirma la llegada, si va en «Recibió», sin marcar. A quien no tiene firma
+  encendida no se le pregunta nada: su raya sale en blanco con su nombre.
 */
 export function Traslados() {
   const { puede } = useMisPermisos()
@@ -65,8 +71,14 @@ export function Traslados() {
   const recibir = useRecibirTraslado()
   const cancelar = useCancelarTraslado()
   const nota = useNotaDeTraslado()
+  const { data: miFirma } = useMiFirma()
+  const tengoFirma = miFirma?.usar === true
 
   const [abierto, setAbierto] = useState(false)
+  const [firmando, setFirmando] = useState<{ t: Traslado; paso: 'aceptar' | 'recibir' } | null>(
+    null,
+  )
+  const [conMiFirma, setConMiFirma] = useState(true)
   const [verTodos, setVerTodos] = useState(false)
   const [error, setError] = useState('')
   const [enCurso, setEnCurso] = useState<number | null>(null)
@@ -80,22 +92,32 @@ export function Traslados() {
   )
   const lista = verTodos ? (traslados ?? []) : pendientes
 
-  const darPaso = async (t: Traslado, paso: 'aceptar' | 'recibir') => {
+  const darPaso = async (t: Traslado, paso: 'aceptar' | 'recibir', conFirma: boolean) => {
     setError('')
     setEnCurso(t.id)
     try {
       if (paso === 'aceptar') {
-        await aceptar.mutateAsync(t.id)
+        await aceptar.mutateAsync({ id: t.id, con_firma: conFirma })
         // Al aceptar sale el material, y el papel viaja con él.
         void nota.abrirTraslado(t.id)
       } else {
-        await recibir.mutateAsync(t.id)
+        await recibir.mutateAsync({ id: t.id, con_firma: conFirma })
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
       setEnCurso(null)
     }
+  }
+
+  /* Con firma encendida se pregunta antes; sin ella, el paso se da y la raya sale en blanco. */
+  const pedirPaso = (t: Traslado, paso: 'aceptar' | 'recibir') => {
+    if (tengoFirma) {
+      setConMiFirma(paso === 'aceptar')
+      setFirmando({ t, paso })
+      return
+    }
+    void darPaso(t, paso, false)
   }
 
   const confirmarCancelacion = async () => {
@@ -210,7 +232,7 @@ export function Traslados() {
                           size="sm"
                           icon={<MoveRight className="size-4" />}
                           disabled={ocupado}
-                          onClick={() => void darPaso(t, 'aceptar')}
+                          onClick={() => pedirPaso(t, 'aceptar')}
                         >
                           {ocupado ? 'Enviando…' : 'Aprobar y enviar'}
                         </Button>
@@ -220,7 +242,7 @@ export function Traslados() {
                           size="sm"
                           icon={<PackageCheck className="size-4" />}
                           disabled={ocupado}
-                          onClick={() => void darPaso(t, 'recibir')}
+                          onClick={() => pedirPaso(t, 'recibir')}
                         >
                           {ocupado ? 'Confirmando…' : 'Confirmar llegada'}
                         </Button>
@@ -272,6 +294,62 @@ export function Traslados() {
       />
 
       {nota.visor}
+
+      {firmando ? (
+        <Modal
+          abierto
+          onCerrar={() => setFirmando(null)}
+          titulo={
+            firmando.paso === 'aceptar'
+              ? `Aprobar y enviar ${firmando.t.numero}`
+              : `Confirmar la llegada de ${firmando.t.numero}`
+          }
+          descripcion={
+            firmando.paso === 'aceptar'
+              ? `El material sale de ${firmando.t.origen ?? 'su origen'} y tu nombre va en «Envió» de la nota de traslado.`
+              : `El material entra en ${firmando.t.destino ?? 'su destino'} y tu nombre va en «Recibió» de la nota de traslado.`
+          }
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setFirmando(null)}>
+                Volver
+              </Button>
+              <Button
+                icon={
+                  firmando.paso === 'aceptar' ? (
+                    <MoveRight className="size-4" />
+                  ) : (
+                    <PackageCheck className="size-4" />
+                  )
+                }
+                onClick={() => {
+                  const { t, paso } = firmando
+                  setFirmando(null)
+                  void darPaso(t, paso, conMiFirma)
+                }}
+              >
+                {firmando.paso === 'aceptar' ? 'Aprobar y enviar' : 'Confirmar llegada'}
+              </Button>
+            </>
+          }
+        >
+          <label className="border-hairline flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+            <input
+              type="checkbox"
+              className="accent-royal-600 mt-0.5 size-4 shrink-0"
+              checked={conMiFirma}
+              onChange={(e) => setConMiFirma(e.target.checked)}
+            />
+            <span className="text-ink/80">
+              Poner mi firma digital en «{firmando.paso === 'aceptar' ? 'Envió' : 'Recibió'}»
+              <span className="text-ink/50 mt-0.5 block text-xs">
+                Sin marcar, la raya sale en blanco con tu nombre debajo, para firmarla a mano.
+              </span>
+            </span>
+          </label>
+        </Modal>
+      ) : null}
 
       <Modal
         abierto={cancelando !== null}
