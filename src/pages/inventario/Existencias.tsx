@@ -33,7 +33,7 @@ import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarActaExistencias } from '@/lib/ficha/actaExistencias'
-import { equivalenciaEnPapel } from '@/lib/medidas'
+
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
@@ -534,11 +534,7 @@ export function Existencias() {
           articulo: e.articulo,
           unidad: e.unidad,
           existencia: e.existencia,
-          equivalencia: equivalenciaEnPapel(
-            e.existencia,
-            e.unidad,
-            densidades.find((a) => a.id === e.articulo_id)?.densidad_ton_m3,
-          ),
+          densidad: densidades.find((a) => a.id === e.articulo_id)?.densidad_ton_m3 ?? null,
           /*
             EL PRECIO SOLO SI QUIEN IMPRIME PUEDE VERLO.
 

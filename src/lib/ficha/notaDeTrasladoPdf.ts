@@ -6,16 +6,17 @@ import {
   firmas,
   lineaEmpresa,
   membrete,
+  notaBajoLaTabla,
   pieDePagina,
   seccion,
   tabla,
   tituloDocumento,
 } from '@/lib/ficha/papel'
 import { ABAJO, ANCHO_UTIL, IZQ } from '@/lib/ficha/hoja'
+import { hayConversion, notaDeConversion } from '@/lib/medidas'
 import {
-  COLUMNAS,
-  COLUMNAS_SIN_DINERO,
   celdas,
+  columnasDeNota,
   numero,
   type NotaArmada,
   type RenglonDeSalida,
@@ -96,14 +97,16 @@ export async function armarNotaDeTraslado(d: DatosNotaDeTraslado): Promise<NotaA
   }
 
   const conCostos = d.conCostos === true
+  const conConversion = hayConversion(d.renglones)
   const total = d.renglones.reduce((s, r) => s + Number(r.valorUsd ?? 0), 0)
   y = tabla(
     doc,
     y,
-    conCostos ? COLUMNAS : COLUMNAS_SIN_DINERO,
-    d.renglones.map((r) => celdas(r, conCostos)),
+    columnasDeNota(conCostos, conConversion),
+    d.renglones.map((r) => celdas(r, conCostos, conConversion)),
     conCostos && total > 0 ? `TOTAL   $ ${numero(total)}` : undefined,
   )
+  y = notaBajoLaTabla(doc, y, notaDeConversion(d.renglones))
 
   /*
     Las firmas van abajo del todo y a altura fija, con la misma cuenta que la

@@ -11,8 +11,10 @@ import {
   firmas,
   pieDePagina,
   fechaLarga,
+  notaBajoLaTabla,
   type Columna,
 } from '@/lib/ficha/papel'
+import { conversionEnCelda, hayConversion, notaDeConversion } from '@/lib/medidas'
 
 /*
   EL ACTA DE EXISTENCIAS
@@ -32,8 +34,8 @@ export interface RenglonDeActa {
   articulo: string
   unidad: string
   existencia: string | number
-  /** La existencia en la otra medida, si hay densidad. Ver `lib/medidas.ts`. */
-  equivalencia?: string | null
+  /** La densidad del catálogo, para la columna «Conversión». Ver `lib/medidas.ts`. */
+  densidad?: string | number | null
   /*
     NULOS CUANDO QUIEN IMPRIME NO PUEDE VER EL PRECIO.
 
@@ -92,6 +94,18 @@ const COLUMNAS: Columna[] = [
    una tercera columna de dinero no obligue a acordarse de este sitio. */
 const ES_DINERO = ['Costo unit.', 'Valor']
 
+/* Con la columna de la conversión, sigue sumando 150: la pagan un poco todas. */
+const COLUMNAS_CON_CONVERSION: Columna[] = [
+  { titulo: 'Código', ancho: 20 },
+  { titulo: 'Artículo', ancho: 34 },
+  { titulo: 'Unidad', ancho: 13 },
+  { titulo: 'Existencia', ancho: 18, alDerecha: true },
+  { titulo: 'Conversión', ancho: 20, alDerecha: true },
+  { titulo: 'Costo unit.', ancho: 15, alDerecha: true },
+  { titulo: 'Valor', ancho: 15, alDerecha: true },
+  { titulo: 'Contado', ancho: 15, alDerecha: true },
+]
+
 export async function armarActaExistencias(d: DatosActa): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
   const logo = await logoComoImagen()
@@ -139,23 +153,27 @@ export async function armarActaExistencias(d: DatosActa): Promise<ArchivoArmado>
   ])
 
   y = seccion(doc, y, 'Existencias')
+  const conConversion = hayConversion(d.renglones)
+  const columnas = conConversion ? COLUMNAS_CON_CONVERSION : COLUMNAS
   y = tabla(
     doc,
     y,
     // Sin permiso para ver precios, las dos columnas de dinero no se dibujan.
-    conPrecio ? COLUMNAS : COLUMNAS.filter((c) => !ES_DINERO.includes(c.titulo)),
+    conPrecio ? columnas : columnas.filter((c) => !ES_DINERO.includes(c.titulo)),
     d.renglones.map((r) =>
       [
         r.codigo,
-        r.equivalencia ? `${r.articulo} · ${r.equivalencia}` : r.articulo,
+        r.articulo,
         r.unidad,
         cantidad(r.existencia),
+        ...(conConversion ? [conversionEnCelda(r.existencia, r.unidad, r.densidad)] : []),
         ...(conPrecio ? [numero(r.costoUsd ?? 0), numero(r.valorUsd ?? 0)] : []),
         '',
       ],
     ),
     conPrecio ? `TOTAL EN LIBROS   $ ${numero(total ?? 0)}` : '',
   )
+  y = notaBajoLaTabla(doc, y, notaDeConversion(d.renglones))
 
   // Si las firmas no caben, se van a su propia hoja enteras. Una raya de firma
   // partida entre dos páginas no la firma nadie.

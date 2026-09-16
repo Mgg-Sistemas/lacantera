@@ -680,6 +680,19 @@ export function tabla(
 }
 
 /**
+ * Una nota pequeña bajo una tabla, en el hueco que `tabla` deja detrás: «la
+ * conversión es aproximada…». Devuelve dónde sigue el papel; sin texto, no
+ * dibuja nada.
+ */
+export function notaBajoLaTabla(doc: Doc, y: number, texto: string | null): number {
+  if (!texto) return y
+  doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(GRIS)
+  const lineas = doc.splitTextToSize(texto, ANCHO_UTIL) as string[]
+  doc.text(lineas, IZQ, y - 4, { lineHeightFactor: 1.35 })
+  return y + (lineas.length - 1) * 3.4 + 1
+}
+
+/**
  * Un bloque con cabecera teñida y filas alternas de etiqueta y valor.
  *
  * Es la forma del comprobante de pago del modelo: en vez de una tabla de
@@ -704,21 +717,29 @@ export function bloqueEtiquetado(
   fila += ALTO
 
   filas.forEach(([etiqueta, valor], i) => {
+    /*
+      EL VALOR SE PARTE EN RENGLONES; NO SE CORTA.
+
+      Se cortaba con puntos suspensivos, y en una nota de salida quedó «FERRE-
+      MATERIALES VICTORIA, de fuera de la empresa · respo…»: justo el nombre de
+      quien responde, que es para lo que está el renglón. Christopher: «sale
+      incompleto». Igual que en la tabla, la fila crece y el dato queda entero.
+    */
+    doc.setFont('helvetica', 'normal').setFontSize(8.5)
+    const lineas = doc.splitTextToSize(valor || '—', ANCHO_UTIL - ANCHO_ETIQUETA - 6) as string[]
+    const alto = ALTO + (lineas.length - 1) * 4.1
+
     if (i % 2 === 0) {
       doc.setFillColor(FILA_ALTERNA)
-      doc.rect(IZQ, fila, ANCHO_UTIL, ALTO, 'F')
+      doc.rect(IZQ, fila, ANCHO_UTIL, alto, 'F')
     }
 
     doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(TINTA)
     doc.text(etiqueta, IZQ + 3, fila + 4.8)
 
     doc.setFont('helvetica', 'normal').setTextColor(GRIS)
-    doc.text(
-      ajustar(doc, valor || '—', ANCHO_UTIL - ANCHO_ETIQUETA - 6),
-      IZQ + ANCHO_ETIQUETA,
-      fila + 4.8,
-    )
-    fila += ALTO
+    doc.text(lineas, IZQ + ANCHO_ETIQUETA, fila + 4.8, { lineHeightFactor: 1.35 })
+    fila += alto
   })
 
   return fila + 8

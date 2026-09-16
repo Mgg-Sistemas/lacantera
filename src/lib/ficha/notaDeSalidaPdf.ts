@@ -7,6 +7,7 @@ import {
   firmas,
   lineaEmpresa,
   membrete,
+  notaBajoLaTabla,
   tituloDocumento,
   pieDePagina,
   seccion,
@@ -14,6 +15,7 @@ import {
   type Columna,
 } from '@/lib/ficha/papel'
 import { ABAJO, ANCHO_UTIL, ARRIBA, DER, IZQ } from '@/lib/ficha/hoja'
+import { conversionEnCelda, hayConversion, notaDeConversion } from '@/lib/medidas'
 
 /** Lo que mide una fila en `tabla`. Si cambia alli, cambia aqui. */
 const ALTO_FILA = 6.5
@@ -74,11 +76,11 @@ export interface RenglonDeSalida {
    */
   contado?: string | null
   /**
-   * La misma cantidad en la otra medida, «equivale a 40,32 TON aprox.». Nula
-   * cuando el artículo no tiene densidad: ver `lib/medidas.ts`. Va junto al
-   * material, igual que lo contado, por la misma razón de ancho.
+   * La densidad del catálogo, con la que se llena la columna «Conversión».
+   * Nula cuando el artículo no la tiene, y entonces su celda dice «—». Ver
+   * `lib/medidas.ts`.
    */
-  equivalencia?: string | null
+  densidad?: string | number | null
   /**
    * De qué almacén sale este renglón.
    *
@@ -176,6 +178,36 @@ export const COLUMNAS_SIN_DINERO: Columna[] = [
 ]
 
 /*
+  LA COLUMNA DE LA CONVERSIÓN, Y SIGUE SUMANDO 150.
+
+  Veintidós milímetros caben «111,97 TON». Los pagan «Material», que es la que
+  más tiene, y en el papel con cifras también un poco el código y la unidad.
+  Solo se pide cuando algún renglón tiene densidad: una columna de rayas en
+  todos los renglones no dice nada.
+*/
+export function columnasDeNota(conCostos: boolean, conConversion: boolean): Columna[] {
+  if (!conConversion) return conCostos ? COLUMNAS : COLUMNAS_SIN_DINERO
+  const conversion: Columna = { titulo: 'Conversión', ancho: 22, alDerecha: true }
+  return conCostos
+    ? [
+        { titulo: 'Código', ancho: 22 },
+        { titulo: 'Material', ancho: 39 },
+        { titulo: 'Cantidad', ancho: 18, alDerecha: true },
+        { titulo: 'Unidad', ancho: 13 },
+        conversion,
+        { titulo: 'Costo', ancho: 18, alDerecha: true },
+        { titulo: 'Total', ancho: 18, alDerecha: true },
+      ]
+    : [
+        { titulo: 'Código', ancho: 26 },
+        { titulo: 'Material', ancho: 69 },
+        { titulo: 'Cantidad', ancho: 18, alDerecha: true },
+        { titulo: 'Unidad', ancho: 15 },
+        conversion,
+      ]
+}
+
+/*
   Dos decimales, siempre. Es lo predeterminado de la casa, y en un papel que se
   firma importa mas que en una pantalla: tres cifras con distinta cantidad de
   decimales en la misma columna no se pueden comparar de un vistazo.
@@ -188,14 +220,13 @@ export function numero(valor: string | number, decimales = 2): string {
 }
 
 /** Un renglón, en las celdas de la tabla. Es el mismo dibujo con sitio o sin él. */
-export const celdas = (r: RenglonDeSalida, conCostos: boolean): string[] => {
+export const celdas = (r: RenglonDeSalida, conCostos: boolean, conConversion = false): string[] => {
   const base = [
     r.articuloCodigo,
-    [r.articulo, r.contado ? `se contó ${r.contado}` : null, r.equivalencia]
-      .filter(Boolean)
-      .join(' · '),
+    r.contado ? `${r.articulo} · se contó ${r.contado}` : r.articulo,
     numero(r.cantidad),
     r.unidad,
+    ...(conConversion ? [conversionEnCelda(r.cantidad, r.unidad, r.densidad)] : []),
   ]
   if (!conCostos) return base
   return [
@@ -263,7 +294,8 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
   }
 
   const conCostos = d.conCostos === true
-  const columnas = conCostos ? COLUMNAS : COLUMNAS_SIN_DINERO
+  const conConversion = hayConversion(d.renglones)
+  const columnas = columnasDeNota(conCostos, conConversion)
   const total = d.renglones.reduce((s, r) => s + Number(r.valorUsd ?? 0), 0)
 
   /*
@@ -327,7 +359,7 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
           doc,
           y,
           columnas,
-          suyos.map((r) => celdas(r, conCostos)),
+          suyos.map((r) => celdas(r, conCostos, conConversion)),
           conCostos ? `Subtotal   $ ${numero(suma)}` : undefined,
         ) - 4
     }
@@ -350,10 +382,12 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
       doc,
       y,
       columnas,
-      d.renglones.map((r) => celdas(r, conCostos)),
+      d.renglones.map((r) => celdas(r, conCostos, conConversion)),
       conCostos && total > 0 ? `TOTAL   $ ${numero(total)}` : undefined,
     )
   }
+
+  y = notaBajoLaTabla(doc, y, notaDeConversion(d.renglones))
 
   /*
     DÓNDE EMPIEZA LA ZONA DE FIRMAS

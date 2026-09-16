@@ -9,8 +9,10 @@ import {
   tabla,
   pieDePagina,
   fechaLarga,
+  notaBajoLaTabla,
   type Columna,
 } from '@/lib/ficha/papel'
+import { conversionEnCelda, hayConversion, notaDeConversion } from '@/lib/medidas'
 
 /*
   EL LIBRO DE MOVIMIENTOS, EN PAPEL
@@ -33,8 +35,8 @@ export interface RenglonDelLibro {
   fecha: string
   tipo: string
   articulo: string
-  /** La cantidad en la otra medida, si hay densidad. Ver `lib/medidas.ts`. */
-  equivalencia?: string | null
+  /** La densidad del catálogo, para la columna «Conversión». Ver `lib/medidas.ts`. */
+  densidad?: string | number | null
   almacen: string
   cantidad: string
   unidad: string
@@ -82,6 +84,17 @@ const COLUMNAS: Columna[] = [
   { titulo: 'Valor', ancho: 22, alDerecha: true },
 ]
 
+/* Con la columna de la conversión, sigue sumando 150: la pagan un poco todas. */
+const COLUMNAS_CON_CONVERSION: Columna[] = [
+  { titulo: 'Movimiento', ancho: 22 },
+  { titulo: 'Fecha', ancho: 16 },
+  { titulo: 'Concepto', ancho: 26 },
+  { titulo: 'Artículo', ancho: 30 },
+  { titulo: 'Cantidad', ancho: 20, alDerecha: true },
+  { titulo: 'Conversión', ancho: 20, alDerecha: true },
+  { titulo: 'Valor', ancho: 16, alDerecha: true },
+]
+
 export async function armarLibroDeMovimientos(d: DatosLibro): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
   const logo = await logoComoImagen()
@@ -118,21 +131,28 @@ export async function armarLibroDeMovimientos(d: DatosLibro): Promise<ArchivoArm
   ])
 
   y = seccion(doc, y, 'Movimientos')
-  tabla(
+  const conConversion = hayConversion(d.renglones)
+  const signoDe = (r: RenglonDelLibro) => (r.signo > 0 ? '+' : r.signo < 0 ? '−' : '')
+  y = tabla(
     doc,
     y,
-    COLUMNAS,
-    d.renglones.map((r) => [
-      r.numero,
-      r.fecha,
-      r.tipo,
-      r.equivalencia ? `${r.articulo} · ${r.equivalencia}` : r.articulo,
-      // El signo delante y no una columna aparte: en una lista de cien
-      // renglones, el ojo busca el signo pegado a la cifra.
-      `${r.signo > 0 ? '+' : r.signo < 0 ? '−' : ''}${cantidad(r.cantidad)} ${r.unidad}`,
-      numero(r.valorUsd),
-    ]),
+    conConversion ? COLUMNAS_CON_CONVERSION : COLUMNAS,
+    d.renglones.map((r) => {
+      const convertida = conversionEnCelda(r.cantidad, r.unidad, r.densidad)
+      return [
+        r.numero,
+        r.fecha,
+        r.tipo,
+        r.articulo,
+        // El signo delante y no una columna aparte: en una lista de cien
+        // renglones, el ojo busca el signo pegado a la cifra.
+        `${signoDe(r)}${cantidad(r.cantidad)} ${r.unidad}`,
+        ...(conConversion ? [convertida === '—' ? convertida : `${signoDe(r)}${convertida}`] : []),
+        numero(r.valorUsd),
+      ]
+    }),
   )
+  notaBajoLaTabla(doc, y, notaDeConversion(d.renglones))
 
   pieDePagina(
     doc,

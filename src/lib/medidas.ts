@@ -33,6 +33,46 @@ export function enLaOtraMedida(
   return null
 }
 
+/*
+  EN COLUMNA EN LOS PAPELES DE INVENTARIO. La primera versión lo decía en una
+  frase junto al material, y Christopher lo pidió en su columna: «sigue sin
+  mostrar la columna de la conversión en ton». La columna solo aparece si algún
+  renglón tiene con qué convertirse, y debajo de la tabla va una nota con la
+  densidad de cada material.
+*/
+
+/** Si algún renglón tiene con qué convertirse: decide si el papel lleva la columna. */
+export const hayConversion = (
+  renglones: { unidad: string; densidad?: string | number | null }[],
+): boolean => renglones.some((r) => enLaOtraMedida(1, r.unidad, r.densidad) !== null)
+
+/** «111,97 TON» para la columna «Conversión», o «—» si ese renglón no se puede convertir. */
+export function conversionEnCelda(
+  cantidad: string | number,
+  unidad: string,
+  densidad: string | number | null | undefined,
+): string {
+  const otra = enLaOtraMedida(cantidad, unidad, densidad)
+  return otra ? `${dos.format(otra.cantidad)} ${otra.unidad}` : '—'
+}
+
+/** La nota bajo la tabla: con qué densidad se convirtió cada material. Null si ninguno. */
+export function notaDeConversion(
+  renglones: { articulo: string; unidad: string; densidad?: string | number | null }[],
+): string | null {
+  const porMaterial = new Map<string, string>()
+  for (const r of renglones) {
+    if (enLaOtraMedida(1, r.unidad, r.densidad) === null) continue
+    porMaterial.set(r.articulo, Number(r.densidad).toLocaleString('es-VE'))
+  }
+  if (porMaterial.size === 0) return null
+  return `Conversión aproximada, con la densidad del catálogo en toneladas por metro cúbico: ${[
+    ...porMaterial,
+  ]
+    .map(([articulo, densidad]) => `${articulo} ${densidad}`)
+    .join(' · ')}.`
+}
+
 /** «equivale a 40,32 TON aprox. (1,44 t/m³)», o null si no se puede saber. */
 export function equivalenciaEnPapel(
   cantidad: string | number,

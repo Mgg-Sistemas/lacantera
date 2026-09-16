@@ -8,7 +8,6 @@ import { useEmpresa } from '@/lib/api/empresa'
 import { ESTADO_TRASLADO, leerTraslado, leerTrasladoPorId } from '@/lib/api/inventario'
 import type { TrasladoParaNota } from '@/lib/api/inventario'
 import { densidadesDeArticulos } from '@/lib/api/catalogo'
-import { equivalenciaEnPapel } from '@/lib/medidas'
 import { armarNotaDeTraslado } from '@/lib/ficha/notaDeTrasladoPdf'
 import type { DatosNotaDeTraslado } from '@/lib/ficha/notaDeTrasladoPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
@@ -71,7 +70,7 @@ export function useNotaDeTraslado(): {
             costoUnitarioUsd: t.costoUsd,
             valorUsd: t.valorUsd,
             contado: t.contado,
-            equivalencia: equivalenciaEnPapel(t.cantidad, t.unidad, articulo?.densidad_ton_m3),
+            densidad: articulo?.densidad_ton_m3 ?? null,
           },
         ],
         empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
