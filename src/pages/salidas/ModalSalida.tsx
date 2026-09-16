@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -76,15 +76,38 @@ const renglonVacio = (articulo = '', almacen = ''): RenglonEnCurso => ({
   MGG el destino es un interruptor —almacén o persona— y en una salida el
   almacén no se ofrece, porque mandar material a otro almacén es un traslado.
 
-  Aquí la lista es el organigrama de la empresa, y al final una opción para lo
-  que se va fuera; solo entonces se piden los dos datos. Los dos y no uno:
-  dentro de un año «FERRETERIA OSMAIRA» sin un nombre detrás no sirve para
-  reclamarle nada a nadie.
+  Aquí lo de dentro es el organigrama de la empresa, y lo de fuera pide dos
+  datos. Los dos y no uno: dentro de un año «FERRETERIA OSMAIRA» sin un nombre
+  detrás no sirve para reclamarle nada a nadie.
+
+  DENTRO O FUERA, ELEGIDO PRIMERO Y A LA VISTA. Christopher, 16/09/2026, con la
+  solicitud delante: «una salida puede ser para alguien dentro de la empresa,
+  como literalmente salida del inventario, pero si no es de la empresa debe
+  haber un responsable, eso te lo había mencionado». Lo había dicho y estaba
+  hecho, pero no se veía: lo de fuera era la última opción de una lista de
+  áreas, bajo una ayuda que solo hablaba del organigrama. Quien abría el
+  formulario no tenía cómo saber que existía. Ahora son dos opciones con lo que
+  pide cada una, igual que las formas del traslado.
 */
-const FUERA_DE_LA_EMPRESA = '__FUERA__'
+type AmbitoDeSalida = '' | 'EMPRESA' | 'FUERA'
+
+const AMBITOS: { valor: Exclude<AmbitoDeSalida, ''>; titulo: string; explica: string }[] = [
+  {
+    valor: 'EMPRESA',
+    titulo: 'Alguien de la empresa',
+    explica: 'Un área o un cargo del organigrama. El material sale del inventario para el trabajo de la casa.',
+  },
+  {
+    valor: 'FUERA',
+    titulo: 'Alguien de fuera de la empresa',
+    explica: 'Una empresa o una persona. Hace falta quién responde por lo que sale: su nombre va en la nota.',
+  },
+]
 
 function ParaQuienSale({
   pregunta,
+  ambito,
+  onAmbito,
   grupos,
   grupo,
   onGrupo,
@@ -95,6 +118,8 @@ function ParaQuienSale({
 }: {
   /** Quien solicita habla de lo que va a pasar; quien registra, de lo que pasa. */
   pregunta: string
+  ambito: AmbitoDeSalida
+  onAmbito: (v: AmbitoDeSalida) => void
   grupos: GrupoDeSalida[] | undefined
   grupo: string
   onGrupo: (v: string) => void
@@ -103,23 +128,50 @@ function ParaQuienSale({
   responsable: string
   onResponsable: (v: string) => void
 }) {
-  return (
-    <div className="mt-4">
-      <Select
-        label={pregunta}
-        vacio="Elige a quién"
-        hint="El área o el cargo que lo recibe, del organigrama de la empresa."
-        value={grupo}
-        onChange={(e) => onGrupo(e.target.value)}
-        opciones={[
-          ...(grupos ?? [])
-            .filter((g) => g.activo)
-            .map((g) => ({ valor: String(g.id), etiqueta: grupoEnCorto(g) })),
-          { valor: FUERA_DE_LA_EMPRESA, etiqueta: 'Alguien de fuera de la empresa' },
-        ]}
-      />
+  const nombre = useId()
 
-      {grupo === FUERA_DE_LA_EMPRESA ? (
+  return (
+    <fieldset className="mt-4">
+      <legend className="text-ink/80 mb-2 text-sm font-medium">{pregunta}</legend>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {AMBITOS.map((a) => (
+          <label
+            key={a.valor}
+            className={cn(
+              'border-hairline flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm',
+              ambito === a.valor && 'border-royal-600 bg-royal-600/8',
+            )}
+          >
+            <input
+              type="radio"
+              name={nombre}
+              className="accent-royal-600 mt-0.5 size-4 shrink-0"
+              checked={ambito === a.valor}
+              onChange={() => onAmbito(a.valor)}
+            />
+            <span>
+              <span className="text-ink/85 block font-medium">{a.titulo}</span>
+              <span className="text-ink/55 mt-0.5 block text-xs">{a.explica}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {ambito === 'EMPRESA' ? (
+        <Select
+          className="mt-3"
+          label="¿Qué área o cargo?"
+          vacio="Elige del organigrama"
+          hint="Si no está, lo añade quien lleva el organigrama: desde aquí no se crea."
+          value={grupo}
+          onChange={(e) => onGrupo(e.target.value)}
+          opciones={(grupos ?? [])
+            .filter((g) => g.activo)
+            .map((g) => ({ valor: String(g.id), etiqueta: grupoEnCorto(g) }))}
+        />
+      ) : null}
+
+      {ambito === 'FUERA' ? (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Input
             label="¿A quién?"
@@ -128,14 +180,14 @@ function ParaQuienSale({
             onChange={(e) => onExterno(e.target.value)}
           />
           <Input
-            label="Responsable"
-            hint="Quien responde por ello y firma la nota."
+            label="¿Quién responde por ello?"
+            hint="El nombre de la persona que responde por lo que sale y firma la nota."
             value={responsable}
             onChange={(e) => onResponsable(e.target.value)}
           />
         </div>
       ) : null}
-    </div>
+    </fieldset>
   )
 }
 
@@ -143,8 +195,8 @@ function ParaQuienSale({
   Lo que viaja a la base: o el grupo, o los dos datos de fuera. Nunca los dos
   —es justo lo que la base rechaza— y nunca ninguno.
 */
-const paraQuienVa = (grupo: string, externo: string, responsable: string) =>
-  grupo === FUERA_DE_LA_EMPRESA
+const paraQuienVa = (ambito: AmbitoDeSalida, grupo: string, externo: string, responsable: string) =>
+  ambito === 'FUERA'
     ? { externo: externo.trim(), responsable: responsable.trim() }
     : { grupo_id: Number(grupo) }
 
@@ -201,6 +253,7 @@ export function ModalSalida({
   /** Solo al pedir: el almacén del que sale todo, que es quien decide quién aprueba. */
   const [almacenPedido, setAlmacenPedido] = useState('')
   const [clase, setClase] = useState('')
+  const [ambito, setAmbito] = useState<AmbitoDeSalida>('')
   const [grupo, setGrupo] = useState('')
   const [externo, setExterno] = useState('')
   const [responsable, setResponsable] = useState('')
@@ -216,6 +269,7 @@ export function ModalSalida({
     if (!abierto) return
     setRenglones([renglonVacio(articuloInicial ?? '', almacenInicial ?? '')])
     setAlmacenPedido(almacenInicial ?? '')
+    setAmbito('')
     setGrupo('')
     setExterno('')
     setResponsable('')
@@ -343,9 +397,9 @@ export function ModalSalida({
       ? motivo.trim().length < 10
       : claseElegida?.exige_detalle === true && motivo.trim().length < 10
   const faltaDecirParaQuien =
-    !grupo ||
-    (grupo === FUERA_DE_LA_EMPRESA &&
-      (externo.trim().length < 3 || responsable.trim().length < 3))
+    !ambito ||
+    (ambito === 'EMPRESA' && !grupo) ||
+    (ambito === 'FUERA' && (externo.trim().length < 3 || responsable.trim().length < 3))
 
   const pedir = async () => {
     const numero = (await pedido.mutateAsync({
@@ -358,7 +412,7 @@ export function ModalSalida({
         propietario: r.propietario || null,
       })),
       motivo,
-      ...paraQuienVa(grupo, externo, responsable),
+      ...paraQuienVa(ambito, grupo, externo, responsable),
     })) as string
 
     onRegistrada(numero, motivo)
@@ -382,7 +436,7 @@ export function ModalSalida({
       })),
       motivo,
       tipo: clase,
-      ...paraQuienVa(grupo, externo, responsable),
+      ...paraQuienVa(ambito, grupo, externo, responsable),
     })) as string
 
     onRegistrada(numero, motivo)
@@ -639,6 +693,8 @@ export function ModalSalida({
             <>
               <ParaQuienSale
                 pregunta="¿Quién lo va a recibir?"
+                ambito={ambito}
+                onAmbito={setAmbito}
                 grupos={grupos.data}
                 grupo={grupo}
                 onGrupo={setGrupo}
@@ -689,6 +745,8 @@ export function ModalSalida({
 
               <ParaQuienSale
                 pregunta="¿Quién lo recibe?"
+                ambito={ambito}
+                onAmbito={setAmbito}
                 grupos={grupos.data}
                 grupo={grupo}
                 onGrupo={setGrupo}

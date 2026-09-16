@@ -1442,8 +1442,9 @@ export function puertaEnPalabras(hechoCon?: string | null): string | null {
 
   Christopher: «puede ser bien de la empresa o bien puede ser a un externo (debe
   indicar el responsable, empresa o persona)». Lo de fuera se dice con las dos
-  cosas —«FERRETERIA OSMAIRA · JOSE PEREZ»—, porque un nombre de empresa sin
-  nadie detrás no sirve para reclamar nada.
+  cosas y diciendo que es de fuera —«FERRETERIA OSMAIRA, de fuera de la empresa ·
+  responde JOSE PEREZ»—, porque un nombre de empresa sin nadie detrás no sirve
+  para reclamar nada, y un nombre suelto no dice si es de la casa.
 */
 export const paraQuienSalio = (
   m: Pick<Movimiento, 'grupo_id' | 'destino_externo' | 'responsable_externo'>,
@@ -1451,7 +1452,7 @@ export const paraQuienSalio = (
 ): string | null =>
   nombreDeGrupo(grupos, m.grupo_id) ??
   (m.destino_externo
-    ? `${m.destino_externo}${m.responsable_externo ? ` · ${m.responsable_externo}` : ''}`
+    ? `${m.destino_externo}, de fuera de la empresa${m.responsable_externo ? ` · responde ${m.responsable_externo}` : ''}`
     : null)
 
 /*
