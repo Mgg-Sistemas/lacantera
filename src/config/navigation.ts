@@ -276,8 +276,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/salidas/traslados': 'mover traspaso entre almacenes traslado',
   '/app/despachos/guias': 'permiso movilizacion ministerio guia',
   '/app/despachos/tickets': 'romana pesaje peso bruto tara',
-  '/app/despachos/vehiculos': 'camion volteo chuto gandola placa chofer',
-  '/app/maquinaria': 'excavadora cargador equipo horometro',
+  '/app/maquinaria': 'excavadora cargador equipo horometro camion vehiculo volteo chuto gandola placa chofer transportista carga util flota',
   '/app/maquinaria/nueva': 'nueva maquina alta equipo cargar flota foto combustible capacidad',
   '/app/maquinaria/mantenimientos': 'reparacion taller averia servicio',
   '/app/nomina/personal': 'trabajador empleado ficha cedula contratar incidencia enfermedad lesion ausencia accidente reposo conflicto dotacion asignacion',
@@ -521,10 +520,10 @@ export const navigation: NavSection[] = [
           // para que el camión circule con el mineral, no el papel que se le
           // entrega al cliente. Ese es la nota de entrega y vive en Ventas.
           { label: 'Guías de movilización', to: '/app/despachos/guias', fueraDelMvp: true },
-          // Los da de alta quien ve llegar el camión, no quien administra el
-          // sistema; en Configuración nadie los cargaría y la placa seguiría
-          // escribiéndose a mano.
-          { label: 'Vehículos', to: '/app/despachos/vehiculos' },
+          // Los vehículos vivían aquí. Desde el 16/09/2026 los camiones están
+          // en Maquinaria › Equipos, con las máquinas: Christopher los lleva en
+          // un solo catálogo en su otro sistema. Con eso Despachos no ofrece
+          // ninguna pantalla y queda en obra, como ya estaban las otras tres.
         ],
       },
     ],

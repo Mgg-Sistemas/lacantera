@@ -230,13 +230,13 @@ export type ClaseDeMaquina = 'MAQUINA' | 'VEHICULO' | 'EQUIPO'
 */
 export const CLASES_DE_MAQUINA: { valor: ClaseDeMaquina; etiqueta: string; pista: string }[] = [
   { valor: 'MAQUINA', etiqueta: 'Maquinaria', pista: 'Trabaja en la mina: un volvo, un chuto, una retroexcavadora' },
-  { valor: 'VEHICULO', etiqueta: 'Vehículo', pista: 'Lleva gente y encargos: una camioneta' },
+  { valor: 'VEHICULO', etiqueta: 'Vehículo liviano', pista: 'Lleva gente y encargos: una camioneta. Los camiones de carga van aparte, en su bloque' },
   { valor: 'EQUIPO', etiqueta: 'Equipo', pista: 'Ni una cosa ni la otra: una planta, un generador' },
 ]
 
 export const ETIQUETA_CLASE: Record<ClaseDeMaquina, string> = {
   MAQUINA: 'Maquinaria',
-  VEHICULO: 'Vehículo',
+  VEHICULO: 'Vehículo liviano',
   EQUIPO: 'Equipo',
 }
 

@@ -136,14 +136,15 @@ const FUENTES: Fuente[] = [
     to: () => '/app/maquinaria',
   },
   {
-    modulo: 'DESPACHOS',
+    // Los camiones viven en Maquinaria desde el 16/09/2026.
+    modulo: 'MAQUINARIA',
     tabla: 'vehiculos',
     columnas: ['placa'],
     seleccion: 'id, placa, tipo',
-    tipo: 'Vehículo',
+    tipo: 'Camión',
     titulo: (f) => texto(f.placa),
     detalle: (f) => texto(f.tipo) || null,
-    to: (f) => `/app/despachos/vehiculos/${f.id}`,
+    to: (f) => `/app/maquinaria/camiones/${f.id}`,
   },
 ]
 
