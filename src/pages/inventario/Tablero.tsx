@@ -110,8 +110,8 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
           exige: 'ESCRITURA',
         },
         {
-          titulo: 'Sacar o pedir material',
-          detalle: 'En Salidas y traslados, pestaña «Salidas»: pedir material o registrar una salida directa.',
+          titulo: 'Sacar material',
+          detalle: 'En Salidas y traslados, pestaña «Salidas»: solicitar una salida o registrar una salida directa.',
           icono: PackageMinus,
           a: '/app/salidas/solicitudes',
           exige: 'ESCRITURA',
