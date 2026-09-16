@@ -10,7 +10,7 @@ import {
   etiquetaValor,
   bloqueEtiquetado,
   tabla,
-  firmaCentrada,
+  firmas,
   pieDePagina,
   fechaLarga,
   fechaCorta,
@@ -153,11 +153,21 @@ export interface RenglonDeOrden {
 
 export interface DatosOrdenCompra {
   /*
-    Quién autoriza, con su firma si la tiene guardada.
+    Quién pidió, con su firma solo si la eligió poner al pedir.
+
+    Puede ser alguien sin usuario —el mecánico del frente— y entonces la raya
+    sale en blanco con su nombre, para firmarla a mano.
+  */
+  solicita?: {
+    nombre?: string | null
+    imagen?: string | null
+  }
+  /*
+    Quién autoriza, con su firma si eligió ponerla al aprobar.
 
     Es el gerente que aprobó, no quien imprime: el papel dice quién autorizó la
-    compra, y eso no cambia porque lo imprima otro después. Sin firma guardada
-    la raya sale en blanco, que es como salía antes y se firma a mano.
+    compra, y eso no cambia porque lo imprima otro después. Sin firma la raya
+    sale en blanco con su nombre, y se firma a mano.
   */
   autoriza?: {
     nombre?: string | null
@@ -383,21 +393,40 @@ export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoAr
     una segunda hoja donde no había nada más. Una orden de compra firmada en una
     hoja en blanco es exactamente lo que no se quiere entregar a un proveedor.
   */
-  const hueco = d.autoriza?.imagen ? 18 : 8
-  if (y + hueco + 10 > PIE - 3) {
+  const hueco = d.autoriza?.imagen || d.solicita?.imagen ? 18 : 8
+  if (y + hueco + 14 > PIE - 3) {
     doc.addPage()
     y = ARRIBA
   }
-  // Una sola firma, la de quien autoriza. La raya de «recibido por el
-  // proveedor» salió en blanco en todas las órdenes emitidas: la orden se manda
-  // por correo, no se le pone delante al proveedor para que la firme.
-  firmaCentrada(doc, Math.max(y + hueco, ABAJO - 26), {
-    texto: d.autoriza?.porAutorizacionDe
-      ? `Firma autorizada · bajo autorización de ${d.autoriza.porAutorizacionDe}`
-      : 'Firma autorizada',
-    nombre: d.autoriza?.nombre ?? null,
-    imagen: d.autoriza?.imagen ?? null,
-  })
+  /*
+    DOS FIRMAS: QUIEN LA PIDIÓ Y QUIEN LA AUTORIZÓ.
+
+    Hasta el 16/09/2026 iba una sola, centrada, la de quien autoriza: la raya de
+    «recibido por el proveedor» salía en blanco en todas las órdenes, porque la
+    orden se manda por correo y no se le pone delante al proveedor. Esa sigue
+    fuera. Christopher, al extender las firmas a todo lo que se pide y se
+    acepta: la orden de compra lleva «Solicitado y autorizado», las dos
+    personas que de verdad participan.
+
+    La autoridad prestada va debajo del nombre, en su propia línea.
+  */
+  firmas(
+    doc,
+    Math.max(y + hueco, ABAJO - 26),
+    {
+      texto: 'Solicitado por',
+      nombre: d.solicita?.nombre ?? null,
+      imagen: d.solicita?.imagen ?? null,
+    },
+    {
+      texto: 'Autorizado por',
+      nombre: d.autoriza?.nombre ?? null,
+      imagen: d.autoriza?.imagen ?? null,
+      nota: d.autoriza?.porAutorizacionDe
+        ? `Bajo autorización de ${d.autoriza.porAutorizacionDe}`
+        : null,
+    },
+  )
 
   pieDePagina(doc, `Documento generado por el sistema · ${d.refPedido} · ${fechaLarga(d.momento)}`)
   doc.setProperties({ title: `Orden de compra ${d.numero} — ${d.proveedor.nombre}` })
