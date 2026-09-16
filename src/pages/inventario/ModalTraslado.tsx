@@ -8,6 +8,7 @@ import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { conDueno, detalleDeDueno } from '@/lib/deQuien'
 import { cn } from '@/lib/cn'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
+import { useMiFirma } from '@/lib/api/firmas'
 import {
   FORMA_DE_TRASLADO,
   FORMAS_DE_TRASLADO_ABIERTAS,
@@ -99,6 +100,13 @@ export function ModalTraslado({
 
   const [form, setForm] = useState(VACIO)
   const [error, setError] = useState('')
+  /*
+    Enviado o directo, quien lo hace es quien envía, y su firma va en «Envió»
+    —en el directo, también en «Recibió»—. Marcada de entrada: es autorizar que
+    el material salga. Solo se pregunta a quien tiene firma encendida.
+  */
+  const { data: miFirma } = useMiFirma()
+  const [conMiFirma, setConMiFirma] = useState(true)
 
   const cambiar = (parte: Partial<typeof VACIO>) => setForm((v) => ({ ...v, ...parte }))
 
@@ -332,8 +340,10 @@ export function ModalTraslado({
         // Vacío cuando no hay mezcla: la base lo resuelve mirando lo que hay.
         propietario: form.propietario || null,
         forma,
+        con_firma: miFirma?.usar === true && conMiFirma,
       })
       setForm(VACIO)
+      setConMiFirma(true)
       if (forma === 'PEDIR') {
         // Queda pedido. Se dice aquí, en la misma ventana, a quién le toca ahora:
         // cerrarla sin más dejaría a quien pidió sin saber si llegó a algún sitio.
@@ -635,6 +645,25 @@ export function ModalTraslado({
         onChange={(e) => cambiar({ motivo: e.target.value })}
         hint="Dentro de seis meses esto será lo único que explique el movimiento."
       />
+
+      {miFirma?.usar && (form.forma === 'ENVIAR' || form.forma === 'DIRECTO') ? (
+        <label className="border-hairline mt-4 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+          <input
+            type="checkbox"
+            className="accent-royal-600 mt-0.5 size-4 shrink-0"
+            checked={conMiFirma}
+            onChange={(e) => setConMiFirma(e.target.checked)}
+          />
+          <span className="text-ink/80">
+            {form.forma === 'DIRECTO'
+              ? 'Poner mi firma digital en «Envió» y en «Recibió»'
+              : 'Poner mi firma digital en «Envió»'}
+            <span className="text-ink/50 mt-0.5 block text-xs">
+              Sin marcar, la raya de la nota de traslado sale en blanco con tu nombre debajo.
+            </span>
+          </span>
+        </label>
+      ) : null}
 
       </>
       ) : null}
