@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
+import { ConversionDeCantidad } from '@/components/ConversionDeCantidad'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
@@ -13,6 +14,7 @@ import { comoNumero, dinero, documento, fecha as fmtFecha, fechaHora } from '@/l
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useAlmacenes } from '@/lib/api/inventario'
+import { useArticulos } from '@/lib/api/catalogo'
 import { useRenglones } from '@/lib/api/ventas'
 import {
   TIPOS_NOTA_CREDITO,
@@ -50,12 +52,19 @@ interface Linea {
   precio_unitario: string
   /** Vacío = no vuelve material, solo se corrige plata. */
   almacen_id: string
+  /**
+   * La densidad con que se convirtió al despachar, si se convirtió. Si no, la
+   * conversión de lo devuelto sale con la del catálogo.
+   */
+  densidad_usada: string | null
 }
 
 export function NotasCredito() {
   const { data, isPending, error } = useNotasCredito()
   const facturas = useFacturas()
   const { data: almacenes } = useAlmacenes()
+  // Solo por la densidad, para enseñar lo devuelto en la otra medida.
+  const { data: articulos } = useArticulos(false)
   const emitir = useEmitirNotaCredito()
   const anular = useAnularNotaCredito()
   const { puede } = useMisPermisos()
@@ -99,6 +108,7 @@ export function NotasCredito() {
         cantidad: r.cantidad,
         precio_unitario: r.precio_unitario,
         almacen_id: '',
+        densidad_usada: r.densidad_usada ?? null,
       })),
     )
   }
@@ -359,6 +369,19 @@ export function NotasCredito() {
                             className="border-hairline tabular bg-surface text-ink/85 w-full rounded-[5px] border px-2 py-1.5 text-right text-sm disabled:opacity-40"
                             aria-label={`Cantidad de ${l.descripcion}`}
                           />
+                          {/* Lo devuelto, también en la otra medida: con la
+                              densidad con que salió, o la del catálogo. */}
+                          {l.usar ? (
+                            <ConversionDeCantidad
+                              className="text-right"
+                              cantidad={l.cantidad}
+                              unidad={l.unidad}
+                              densidad={
+                                l.densidad_usada ??
+                                articulos?.find((a) => a.id === l.articulo_id)?.densidad_ton_m3
+                              }
+                            />
+                          ) : null}
                         </td>
                         <td className="px-3 py-2.5">
                           <input

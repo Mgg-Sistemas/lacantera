@@ -86,6 +86,14 @@ export interface Articulo {
    * todavía. Quien lo mida, que lo cambie en la ficha.
    */
   densidad_ton_m3: string | null
+  /**
+   * Por qué se cambió la densidad la última vez, quién y cuándo. Desde el
+   * 16/09/2026 cambiarla pide motivo: los papeles convierten con la densidad
+   * del día en que se imprimen, también los viejos.
+   */
+  densidad_motivo?: string | null
+  densidad_cambiada_por?: string | null
+  densidad_cambiada_en?: string | null
   inventariable: boolean
   /**
    * Si esto se puede mandar al taller y volver arreglado.
@@ -476,8 +484,11 @@ export function useCrearArticulo() {
        * que no puede pasar es que se decida sin verlo.
        */
       confirmado?: boolean
+      /** Toneladas por metro cúbico. Sin ella no nace nada en M3 ni en TON. */
+      densidad_ton_m3?: number | null
     }) =>
       rpc<number>('crear_articulo', {
+        p_densidad_ton_m3: a.densidad_ton_m3 ?? null,
         p_confirmado: a.confirmado ?? false,
         p_reparable: a.reparable ?? null,
         p_presentacion: a.presentacion || null,
@@ -562,10 +573,13 @@ export function useEditarArticulo() {
       numero_parte?: string | null
       /** Toneladas por metro cúbico. Lo que no se manda no se pisa. */
       densidad_ton_m3?: number | null
+      /** Por qué cambia la densidad que ya tenía. La base lo exige para cambiarla. */
+      motivo_densidad?: string | null
       /** Alguien vio que ya hay otro que se llama casi igual y dijo que es otra cosa. */
       confirmado?: boolean
     }) =>
       rpc('editar_articulo', {
+        p_motivo_densidad: a.motivo_densidad || null,
         /*
           Renombrar encima de otro es el camino mas facil de crear un duplicado
           sin querer: no hace falta crear nada, basta con corregirle el nombre a

@@ -26,6 +26,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
+import { ConversionDeCantidad } from '@/components/ConversionDeCantidad'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
@@ -53,6 +54,7 @@ import {
   type TipoDeSitio,
 } from '@/lib/api/acarreos'
 import { useAlmacenes, usePropietarios } from '@/lib/api/inventario'
+import { useArticulos } from '@/lib/api/catalogo'
 import { useEmpleados } from '@/lib/api/nomina'
 import { useMisAcciones } from '@/lib/api/usuarios'
 import { hoyEnCaracas } from '@/lib/api/tasas'
@@ -563,6 +565,8 @@ function OperadorDelSitio({
   const { data: duenos } = usePropietarios(false)
   const cambiar = useCederSitio()
   const queHay = useQueHayEnSitio(puedeCambiar ? sitio.id : null)
+  // Solo por la densidad del material que pasa, que la lista del patio no trae.
+  const { data: articulos } = useArticulos(false)
   const [operador, setOperador] = useState('')
   const [desde, setDesde] = useState('')
   const [motivo, setMotivo] = useState('')
@@ -722,16 +726,22 @@ function OperadorDelSitio({
                         </span>
                       </label>
                       {marcado && x.tipo === 'MATERIAL' ? (
-                        <Input
-                          label="Cuánto pasa"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          inputMode="decimal"
-                          value={pasa[clave]}
-                          onChange={(e) => setPasa((v) => ({ ...v, [clave]: e.target.value }))}
-                          className="w-40"
-                        />
+                        <div className="w-48">
+                          <Input
+                            label="Cuánto pasa"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={pasa[clave]}
+                            onChange={(e) => setPasa((v) => ({ ...v, [clave]: e.target.value }))}
+                          />
+                          <ConversionDeCantidad
+                            cantidad={pasa[clave]}
+                            unidad={x.unidad}
+                            densidad={articulos?.find((a) => a.id === x.id)?.densidad_ton_m3}
+                          />
+                        </div>
                       ) : null}
                     </li>
                   )

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ConversionDeCantidad } from '@/components/ConversionDeCantidad'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/cn'
 
@@ -77,6 +78,11 @@ interface Props {
          * quince renglones haría quince consultas para leer quince filas.
          */
         presentaciones?: { presentacion: string; unidades: string | number }[] | null
+        /**
+         * Toneladas por metro cúbico. Con ella, lo que se cuenta en M3 o en TON
+         * se enseña también en la otra medida mientras se escribe.
+         */
+        densidad_ton_m3?: string | number | null
       }
     | undefined
     | null
@@ -387,6 +393,15 @@ export function CantidadDeArticulo({
             .join(' · ')}
         </p>
       ) : null}
+
+      {/*
+        Y EN LA OTRA MEDIDA. Christopher, 16/09/2026: «en los formularios al
+        cargar algo en m3, debe pedir directamente su densidad y expresar su
+        conversión a ton, viceversa de ton a m3». Aquí se ponen de acuerdo las
+        siete pantallas que cuentan con este campo; la densidad es la del
+        catálogo, que desde ese día no deja un material en M3 o TON sin ella.
+      */}
+      <ConversionDeCantidad cantidad={valor} unidad={unidad} densidad={articulo?.densidad_ton_m3} />
     </div>
   )
 }

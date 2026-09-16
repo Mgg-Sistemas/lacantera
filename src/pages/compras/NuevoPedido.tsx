@@ -528,6 +528,31 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                         />
                       </div>
 
+                      {/*
+                        LO QUE SE MIDE EN M3 O EN TON SE CREA EN EL CATÁLOGO.
+
+                        Nace con su densidad, y la densidad no es cosa de quien
+                        pide una compra. Christopher, 16/09/2026: «el formulario
+                        de compra no debería consultar la densidad (pero sí
+                        mostrar la conversión); de eso se habrá encargado
+                        Catálogo». La base no crea uno en esas medidas sin ella,
+                        así que aquí no se ofrece el botón: se dice dónde se crea.
+                      */}
+                      {fila.unidad === 'M3' || fila.unidad === 'TON' ? (
+                        <p className="text-ink/60 text-xs sm:col-span-12">
+                          Lo que se mide en {fila.unidad === 'M3' ? 'metros cúbicos' : 'toneladas'} se
+                          crea en{' '}
+                          <Link
+                            to="/app/inventario/articulos"
+                            className="text-royal-700 dark:text-royal-300 underline underline-offset-2"
+                          >
+                            Artículos
+                          </Link>
+                          , con su densidad: sin ella no se puede expresar en la otra medida. Después
+                          vuelve y elígelo en este renglón.
+                        </p>
+                      ) : null}
+
                       <div className="flex items-end sm:col-span-3">
                         <Button
                           variant="outline"
@@ -535,6 +560,8 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                           disabled={
                             !fila.nuevo_codigo.trim() ||
                             !fila.nueva_categoria ||
+                            fila.unidad === 'M3' ||
+                            fila.unidad === 'TON' ||
                             crearArticulo.isPending
                           }
                           onClick={async () => {

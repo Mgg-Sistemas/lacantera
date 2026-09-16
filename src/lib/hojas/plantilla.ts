@@ -283,7 +283,7 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
   { columna: 'modo_entrega', obligatoria: false, dice: 'Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. En uno nuevo, vacío es CONSUMIBLE; en uno que ya existe, vacío respeta lo que tenía.', ejemplo: 'CONSUMIBLE', otro: 'NO', opciones: ['RETORNABLE', 'CONSUMIBLE', 'NO'] },
   { columna: 'reparable', obligatoria: false, dice: 'SI o NO: si esto se puede mandar al taller y vuelve arreglado. Vacío se deduce de la categoría — un repuesto o una herramienta sí, lo demás no. En un artículo que ya existe, vacío respeta lo que tenía.', ejemplo: 'NO', otro: 'SI', opciones: SI_NO },
   { columna: 'stock_minimo', obligatoria: false, dice: 'A partir de cuánto avisa. En uno nuevo, vacío es cero —que es no avisar—; en uno que ya existe, vacío respeta lo que tenía.', ejemplo: '50' },
-  { columna: 'densidad_ton_m3', obligatoria: false, dice: 'Toneladas por metro cúbico. Solo para lo que se pesa y se mide de las dos formas.', ejemplo: '1.6' },
+  { columna: 'densidad_ton_m3', obligatoria: false, dice: 'Toneladas por metro cúbico. Obligatoria en lo nuevo que se mide en M3 o en TON: sin ella no se puede expresar en la otra medida. En uno que ya la tiene, vacía la respeta; otra distinta no entra, porque cambiarla pide motivo y se hace en el catálogo.', ejemplo: '1.6' },
   { columna: 'precio', obligatoria: false, dice: 'Precio de venta. Poner precio exige permiso de escritura en Ventas.', ejemplo: '18.50', otro: '40' },
   { columna: 'precio_minimo', obligatoria: false, dice: 'Lo más bajo que se puede vender. Vacío es cero: sin suelo.', ejemplo: '16' },
   /*

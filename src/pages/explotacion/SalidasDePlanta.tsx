@@ -22,12 +22,14 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
+import { ConversionDeCantidad } from '@/components/ConversionDeCantidad'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useVehiculos } from '@/lib/api/vehiculos'
+import { useArticulos } from '@/lib/api/catalogo'
 import {
   useAnularSalida,
   useProductosDePlanta,
@@ -115,6 +117,7 @@ export function SalidasDePlanta() {
 function AnotarSalida({ dia }: { dia: string }) {
   const camiones = useVehiculos(true)
   const productos = useProductosDePlanta()
+  const articulos = useArticulos(false)
   const registrar = useRegistrarSalida()
   const { puede } = useMisAcciones()
 
@@ -150,6 +153,13 @@ function AnotarSalida({ dia }: { dia: string }) {
       />
     )
   }
+
+  /*
+    Los metros del camión, también en toneladas. La capacidad del camión no se
+    convierte —un camión no tiene densidad—, pero lo que lleva sí, en cuanto se
+    sabe qué producto es.
+  */
+  const densidadDelProducto = articulos.data?.find((a) => a.id === Number(producto))?.densidad_ton_m3
 
   const enviar = async () => {
     await registrar.mutateAsync({
@@ -200,6 +210,14 @@ function AnotarSalida({ dia }: { dia: string }) {
                 : `${elegido.placa} no tiene carga útil cargada: pon los m³ o queda sin medir.`
           }
         />
+        {producto ? (
+          <ConversionDeCantidad
+            className="-mt-3"
+            cantidad={m3Efectivo}
+            unidad="M3"
+            densidad={densidadDelProducto}
+          />
+        ) : null}
         <Button
           icon={<Plus />}
           size="lg"

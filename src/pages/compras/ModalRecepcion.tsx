@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ConversionDeCantidad } from '@/components/ConversionDeCantidad'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -12,6 +13,7 @@ import {
 } from '@/lib/api/inventario'
 import type { Orden } from '@/lib/api/compras'
 import { hoyEnCaracas } from '@/lib/api/tasas'
+import { useArticulos } from '@/lib/api/catalogo'
 
 interface Props {
   abierto: boolean
@@ -21,6 +23,9 @@ interface Props {
 
 export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
   const { data: almacenes } = useAlmacenes()
+  // Solo por la densidad: el renglón de la orden no la trae, y lo que llega en
+  // M3 o en TON se enseña también en la otra medida.
+  const { data: articulos } = useArticulos(false)
   const recibir = useRegistrarRecepcion()
 
   const pendientes = orden.renglones
@@ -185,6 +190,11 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
               value={cantidades[r.id] ?? ''}
               onChange={(e) => setCantidades((c) => ({ ...c, [r.id]: e.target.value }))}
               hint="Déjalo en cero si este renglón no llegó todavía."
+            />
+            <ConversionDeCantidad
+              cantidad={cantidades[r.id]}
+              unidad={r.unidad}
+              densidad={articulos?.find((x) => x.id === r.articulo_id)?.densidad_ton_m3}
             />
 
             <AvisoDelPrecioDeLaOrden

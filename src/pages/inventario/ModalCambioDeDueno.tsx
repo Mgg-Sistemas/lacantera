@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Landmark } from 'lucide-react'
+import { ConversionDeCantidad } from '@/components/ConversionDeCantidad'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
@@ -12,6 +13,7 @@ import {
   type Existencia,
 } from '@/lib/api/inventario'
 import { hoyEnCaracas } from '@/lib/api/tasas'
+import { useArticulos } from '@/lib/api/catalogo'
 /* El mismo formato que usa Existencias para una cantidad: entera cuando lo es,
    y con dos decimales cuando no. Se repite aquí porque allí es una función
    local de la pantalla, y sacarla a `formato` es una limpieza aparte. */
@@ -59,6 +61,7 @@ export function ModalCambioDeDueno({
   onCerrar: () => void
 }) {
   const { data: propietarios } = usePropietarios()
+  const { data: articulos } = useArticulos(false)
   const cambiar = useCambiarDuenoDeMaterial()
 
   /* De quién puede salir: solo los que de verdad tienen algo aquí. */
@@ -144,15 +147,23 @@ export function ModalCambioDeDueno({
               etiqueta: d.es_la_casa ? `${d.nombre} (nosotros)` : d.nombre,
             }))}
         />
-        <Input
-          label={`Cuántas ${fila.unidad}`}
-          type="number"
-          min="0"
-          step="0.0001"
-          inputMode="decimal"
-          value={cuanto}
-          onChange={(e) => setCuanto(e.target.value)}
-        />
+        <div>
+          <Input
+            label={`Cuántas ${fila.unidad}`}
+            type="number"
+            min="0"
+            step="0.0001"
+            inputMode="decimal"
+            value={cuanto}
+            onChange={(e) => setCuanto(e.target.value)}
+          />
+          {/* La fila de existencia no trae la densidad: sale del catálogo. */}
+          <ConversionDeCantidad
+            cantidad={cuanto}
+            unidad={fila.unidad}
+            densidad={articulos?.find((x) => x.id === fila.articulo_id)?.densidad_ton_m3}
+          />
+        </div>
         <Input
           label="Cuándo"
           type="date"

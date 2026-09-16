@@ -1810,6 +1810,7 @@ export function Existencias() {
                             articulo, que es donde viven las formas de contarlo.
                           */
                           unidad: modal.fila.unidad,
+                          densidad_ton_m3: articuloDeLaFila?.densidad_ton_m3 ?? null,
                           presentacion: articuloDeLaFila?.presentacion ?? null,
                           unidades_por_presentacion:
                             articuloDeLaFila?.unidades_por_presentacion ?? null,
