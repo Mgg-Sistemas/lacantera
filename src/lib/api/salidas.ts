@@ -115,8 +115,8 @@ export function usePedirSalida() {
         suelto?: number | null
         propietario?: string | null
       }>
+      /** Para qué se necesita. Una solicitud no elige razón de salida. */
       motivo: string
-      tipo: string
       grupo_id?: number | null
       externo?: string | null
       responsable?: string | null
@@ -132,7 +132,6 @@ export function usePedirSalida() {
           ...(r.propietario ? { propietario: r.propietario } : {}),
         })),
         p_motivo: s.motivo,
-        p_tipo: s.tipo,
         p_grupo_id: s.grupo_id ?? null,
         p_externo: s.externo || null,
         p_responsable: s.responsable || null,

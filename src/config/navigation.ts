@@ -272,7 +272,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/inventario/articulos': 'catalogo repuesto insumo herramienta epp material',
   '/app/organigrama': 'organizacion estructura jerarquia cargos quien depende de quien departamentos arbol',
   '/app/salidas': 'historial salidas traslados que se entrego a quien almacenista grupo consulta',
-  '/app/salidas/solicitudes': 'salida sacar pedir material solicitud aprobar entregar requisicion vale directa',
+  '/app/salidas/solicitudes': 'salida sacar solicitar solicitud material aprobar entregar requisicion vale directa',
   '/app/salidas/traslados': 'mover traspaso entre almacenes traslado',
   '/app/despachos/guias': 'permiso movilizacion ministerio guia',
   '/app/despachos/tickets': 'romana pesaje peso bruto tara',

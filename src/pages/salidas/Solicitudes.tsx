@@ -128,7 +128,7 @@ export function Solicitudes() {
     <>
       <PageHeader
         title="Salidas"
-        description="Sacar material del inventario, de una de dos formas. «Pedir material» deja una solicitud: no descuenta nada hasta que la aprueba quien responde por el almacén y alguien de almacén la entrega. «Registrar salida directa» descuenta en este momento, sin solicitud."
+        description="Sacar material que ya hay en un almacén, de una de dos formas. «Solicitar salida» deja una solicitud: no descuenta nada hasta que la aprueba quien responde por el almacén y alguien de almacén la entrega. «Registrar salida directa» descuenta en este momento, sin solicitud. Comprar lo que no hay se hace en Compras."
         actions={
           <>
             <Button
@@ -136,7 +136,7 @@ export function Solicitudes() {
               icon={<SendHorizontal />}
               onClick={() => setPidiendo(true)}
             >
-              Pedir material
+              Solicitar salida
             </Button>
             {puedoSacar ? (
               <Button icon={<PackageMinus />} onClick={() => setSacando(true)}>
@@ -176,7 +176,7 @@ export function Solicitudes() {
             titulo={verTodas ? 'Todavía no hay solicitudes' : 'Nada esperando'}
             descripcion={
               verTodas
-                ? 'Cuando alguien pida material, aparecerá aquí antes de que se entregue.'
+                ? 'Cuando alguien solicite una salida, aparecerá aquí antes de que se entregue.'
                 : 'Ninguna solicitud espera aprobación ni entrega. Las cerradas están en «Todas».'
             }
           />
@@ -211,7 +211,7 @@ export function Solicitudes() {
                   <p className="text-ink/85 mt-1.5 text-sm font-medium">
                     De {s.almacen?.nombre ?? '—'} · para {paraQuien(s)}
                   </p>
-                  <p className="text-ink/55 text-xs">{s.motivo}</p>
+                  <p className="text-ink/55 text-xs">Para: {s.motivo}</p>
 
                   <ul className="text-ink/75 mt-2 space-y-0.5 text-sm">
                     {(s.renglones ?? []).map((r) => (
@@ -226,7 +226,7 @@ export function Solicitudes() {
                   </ul>
 
                   <p className="text-ink/40 mt-2 text-xs">
-                    La pidió {nombreDe(s.pedida_por)} · {fechaHora(s.pedida_en)}
+                    La solicitó {nombreDe(s.pedida_por)} · {fechaHora(s.pedida_en)}
                     {s.aprobada_en
                       ? ` · ${s.estado === 'RECHAZADA' ? 'la resolvió' : 'la aprobó'} ${nombreDe(s.aprobada_por)}`
                       : ''}
@@ -309,8 +309,9 @@ export function Solicitudes() {
       </div>
 
       {/*
-        PEDIR ES EL MISMO FORMULARIO QUE SACAR, y por eso es el mismo
-        componente: lo que se pide es exactamente lo que se entrega.
+        SOLICITAR Y SACAR COMPARTEN COMPONENTE por los renglones: lo que se
+        solicita es exactamente lo que se entrega. Las preguntas no son las
+        mismas: al solicitar no se elige razón, se escribe para qué.
       */}
       <ModalSalida
         abierto={pidiendo}

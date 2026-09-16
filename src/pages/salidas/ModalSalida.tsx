@@ -84,6 +84,7 @@ const renglonVacio = (articulo = '', almacen = ''): RenglonEnCurso => ({
 const FUERA_DE_LA_EMPRESA = '__FUERA__'
 
 function ParaQuienSale({
+  pregunta,
   grupos,
   grupo,
   onGrupo,
@@ -92,6 +93,8 @@ function ParaQuienSale({
   responsable,
   onResponsable,
 }: {
+  /** Quien solicita habla de lo que va a pasar; quien registra, de lo que pasa. */
+  pregunta: string
   grupos: GrupoDeSalida[] | undefined
   grupo: string
   onGrupo: (v: string) => void
@@ -103,7 +106,7 @@ function ParaQuienSale({
   return (
     <div className="mt-4">
       <Select
-        label="¿Para quién sale?"
+        label={pregunta}
         vacio="Elige a quién"
         hint="El área o el cargo que lo recibe, del organigrama de la empresa."
         value={grupo}
@@ -155,15 +158,20 @@ export function ModalSalida({
 }: {
   abierto: boolean
   /*
-    PEDIR Y ENTREGAR SON EL MISMO FORMULARIO.
+    SOLICITAR Y REGISTRAR COMPARTEN LOS RENGLONES, NO LAS PREGUNTAS.
 
-    Lo que se pide es lo que se entrega: los mismos renglones, la misma razón y
-    el mismo «para quién». Hacer dos pantallas parecidas es la forma segura de
-    que dentro de un mes pregunten distinto.
+    Lo que se solicita es lo que se entrega: los mismos renglones y el mismo
+    «quién lo recibe». Eso sigue siendo un solo componente.
 
-    Cambian tres cosas: quien pide elige UN almacén para todo —aprobar es
-    responder por lo que sale de un sitio—, el botón dice otra cosa, y lo que
-    devuelve la base es un número de solicitud en vez de uno de nota.
+    Lo que NO se comparte es la razón. Christopher, al verlo: «¿cómo que pido
+    material y me pregunta para quién sale? Y si me pregunta el motivo, me dice
+    "se usó" o "se perdió"… ¿por qué pediría merma?». La lista de razones cuenta
+    lo que YA salió; quien solicita solo sabe para qué lo necesita. Así que al
+    solicitar no hay lista: se escribe para qué, y la entrega sale con la razón
+    ENTREGA POR SOLICITUD, que pone la base.
+
+    Y cambian las palabras: quien solicita elige UN almacén para todo —aprobar
+    es responder por lo que sale de un sitio—, y las preguntas hablan en futuro.
   */
   modo?: 'registrar' | 'pedir'
   /** Cuando se llega desde una fila de existencias, el primer renglón viene puesto. */
@@ -221,10 +229,11 @@ export function ModalSalida({
   }, [modo, almacenPedido])
 
   // La razón se propone sola en cuanto llega la lista, que viene por la red.
+  // Solo al registrar: una solicitud no elige razón.
   useEffect(() => {
-    if (!abierto || clase) return
+    if (!abierto || modo === 'pedir' || clase) return
     setClase((clases.data ?? [])[0]?.codigo ?? '')
-  }, [abierto, clase, clases.data])
+  }, [abierto, modo, clase, clases.data])
 
   const claseElegida = (clases.data ?? []).find((c) => c.codigo === clase)
 
@@ -328,7 +337,11 @@ export function ModalSalida({
         Number(r.cantidad) + pedidoHasta(i, r.almacen, r.articulo) <= hayEn(r.almacen, r.articulo),
     )
 
-  const faltaElDetalle = claseElegida?.exige_detalle === true && motivo.trim().length < 10
+  // Al solicitar, «para qué» es lo único que lee quien aprueba: se exige entero.
+  const faltaElDetalle =
+    modo === 'pedir'
+      ? motivo.trim().length < 10
+      : claseElegida?.exige_detalle === true && motivo.trim().length < 10
   const faltaDecirParaQuien =
     !grupo ||
     (grupo === FUERA_DE_LA_EMPRESA &&
@@ -345,7 +358,6 @@ export function ModalSalida({
         propietario: r.propietario || null,
       })),
       motivo,
-      tipo: clase,
       ...paraQuienVa(grupo, externo, responsable),
     })) as string
 
@@ -382,10 +394,10 @@ export function ModalSalida({
         <Modal
           abierto
           onCerrar={onCerrar}
-          titulo={modo === 'pedir' ? 'Pedir material' : 'Registrar salida directa'}
+          titulo={modo === 'pedir' ? 'Solicitar salida de material' : 'Registrar salida directa'}
           descripcion={
             modo === 'pedir'
-              ? 'Queda como solicitud y no descuenta nada. La aprueba quien responde por el almacén, y el material sale cuando alguien de almacén la entrega.'
+              ? 'Pide al almacén que entregue material que ya tiene. No descuenta nada hasta que la aprueba quien responde por el almacén y alguien de almacén la entrega. Para comprar lo que no hay, se hace un pedido en Compras.'
               : 'Descuenta del inventario en este momento, sin solicitud. Todo lo que sale para un mismo trabajo va en un solo papel, y cada renglón dice qué se lleva y de qué sitio.'
           }
           ancho="lg"
@@ -397,7 +409,7 @@ export function ModalSalida({
               <Button
                 disabled={
                   !enPie ||
-                  !clase ||
+                  (modo === 'registrar' && !clase) ||
                   (modo === 'pedir' && !almacenPedido) ||
                   faltaDecirParaQuien ||
                   faltaElDetalle ||
@@ -419,7 +431,7 @@ export function ModalSalida({
           {modo === 'pedir' ? (
             <div className="mb-4">
               <SelectBuscable
-                label="¿De qué almacén?"
+                label="¿De qué almacén debe salir?"
                 vacio="Elige el sitio"
                 valor={almacenPedido}
                 onCambio={(v) => setAlmacenPedido(v)}
@@ -469,7 +481,7 @@ export function ModalSalida({
                   </div>
 
                   <SelectBuscable
-                    label="Qué sale"
+                    label={modo === 'pedir' ? '¿Qué material?' : 'Qué sale'}
                     vacio="Busca el material"
                     valor={r.articulo}
                     onCambio={(v) => {
@@ -623,58 +635,88 @@ export function ModalSalida({
             Añadir otro material
           </Button>
 
-          <div className="mt-4">
-            <Select
-              /* Decía «¿De qué clase?». Christopher: «falta aclarar un poco,
-                 ¿clase de salida? ¿de qué clase... salida?». Era un rótulo
-                 escrito por quien ya sabía la respuesta. */
-              label="¿Por qué sale?"
-              value={clase}
-              onChange={(e) => setClase(e.target.value)}
-              hint={claseElegida?.pista ?? undefined}
-              opciones={(clases.data ?? []).map((c) => ({ valor: c.codigo, etiqueta: c.nombre }))}
-            />
+          {modo === 'pedir' ? (
+            <>
+              <ParaQuienSale
+                pregunta="¿Quién lo va a recibir?"
+                grupos={grupos.data}
+                grupo={grupo}
+                onGrupo={setGrupo}
+                externo={externo}
+                onExterno={setExterno}
+                responsable={responsable}
+                onResponsable={setResponsable}
+              />
 
-            <ParaQuienSale
-              grupos={grupos.data}
-              grupo={grupo}
-              onGrupo={setGrupo}
-              externo={externo}
-              onExterno={setExterno}
-              responsable={responsable}
-              onResponsable={setResponsable}
-            />
+              <Textarea
+                label="¿Para qué se necesita?"
+                className="mt-4"
+                rows={3}
+                placeholder="Mascarillas para el turno de cribado"
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                hint="Es lo que lee quien la aprueba, y queda en la nota cuando se entregue."
+              />
+            </>
+          ) : (
+            <>
+              <div className="mt-4">
+                <Select
+                  /* Decía «¿De qué clase?». Christopher: «falta aclarar un poco,
+                     ¿clase de salida? ¿de qué clase... salida?». Era un rótulo
+                     escrito por quien ya sabía la respuesta. */
+                  label="¿Por qué sale?"
+                  value={clase}
+                  onChange={(e) => setClase(e.target.value)}
+                  hint={claseElegida?.pista ?? undefined}
+                  opciones={(clases.data ?? []).map((c) => ({ valor: c.codigo, etiqueta: c.nombre }))}
+                />
 
-            {/* ESCRITURA y no TOTAL: con TOTAL el botón solo lo veían las cuatro
-                cuentas de administrador, y la lista se hizo editable justamente
-                para que no nos llamaran por ella. */}
-            {alcanza('SALIDAS', 'ESCRITURA') ? (
-              <button
-                type="button"
-                className="text-ink/45 hover:text-ink/75 mt-2 text-xs underline underline-offset-2"
-                onClick={() => setOrdenandoClases(true)}
-              >
-                ¿Falta una razón? Editar la lista
-              </button>
-            ) : null}
-          </div>
+                {/* ESCRITURA y no TOTAL: con TOTAL el botón solo lo veían las cuatro
+                    cuentas de administrador, y la lista se hizo editable justamente
+                    para que no nos llamaran por ella. Va pegado a la razón, que es
+                    lo que edita: debajo de «quién lo recibe» parecía de esa lista. */}
+                {alcanza('SALIDAS', 'ESCRITURA') ? (
+                  <button
+                    type="button"
+                    className="text-ink/45 hover:text-ink/75 mt-2 text-xs underline underline-offset-2"
+                    onClick={() => setOrdenandoClases(true)}
+                  >
+                    ¿Falta una razón? Editar la lista
+                  </button>
+                ) : null}
+              </div>
 
-          <Textarea
-            label={
-              /* «Para qué sale» no encaja con una merma: nada se derrama para
-                 algo. Cada razón pregunta lo que de verdad se responde. */
-              claseElegida?.tipo === 'SALIDA_CONSUMO' && !claseElegida?.exige_detalle
-                ? 'Para qué sale'
-                : 'Qué pasó'
-            }
-            className="mt-4"
-            rows={3}
-            value={motivo}
-            onChange={(e) => setMotivo(e.target.value)}
-            hint="Queda en el libro y no se puede editar después."
-          />
+              <ParaQuienSale
+                pregunta="¿Quién lo recibe?"
+                grupos={grupos.data}
+                grupo={grupo}
+                onGrupo={setGrupo}
+                externo={externo}
+                onExterno={setExterno}
+                responsable={responsable}
+                onResponsable={setResponsable}
+              />
+
+              <Textarea
+                label={
+                  /* «Para qué sale» no encaja con una merma: nada se derrama para
+                     algo. Cada razón pregunta lo que de verdad se responde. */
+                  claseElegida?.tipo === 'SALIDA_CONSUMO' && !claseElegida?.exige_detalle
+                    ? 'Para qué sale'
+                    : 'Qué pasó'
+                }
+                className="mt-4"
+                rows={3}
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                hint="Queda en el libro y no se puede editar después."
+              />
+            </>
+          )}
 
           {salidas.error ? <ErrorDeCarga error={salidas.error} className="mt-3" /> : null}
+          {pedido.error ? <ErrorDeCarga error={pedido.error} className="mt-3" /> : null}
         </Modal>
       ) : null}
 
