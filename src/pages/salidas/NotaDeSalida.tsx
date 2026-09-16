@@ -11,7 +11,6 @@ import {
   useGruposDeSalida,
 } from '@/lib/api/inventario'
 import { densidadesDeArticulos } from '@/lib/api/catalogo'
-import { equivalenciaEnPapel } from '@/lib/medidas'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { DatosNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
@@ -100,7 +99,7 @@ export function useNotaDeSalida(): {
           cantidad: l.cantidad,
           unidad: l.unidad,
           contado: contadoLegible(l),
-          equivalencia: equivalenciaEnPapel(l.cantidad, l.unidad, densidadDe(l.articulo_codigo)),
+          densidad: densidadDe(l.articulo_codigo),
           costoUnitarioUsd: l.costo_usd,
           valorUsd: l.valor_usd,
           almacen: l.almacen,

@@ -37,7 +37,7 @@ import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarLibroDeMovimientos } from '@/lib/ficha/libroMovimientos'
-import { equivalenciaEnPapel } from '@/lib/medidas'
+
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { dolares, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -206,11 +206,7 @@ export function Movimientos() {
           fecha: fechaHora(m.registrado_en),
           tipo: nombreDeMovimiento(m),
           articulo: m.articulo?.nombre ?? '—',
-          equivalencia: equivalenciaEnPapel(
-            m.cantidad,
-            m.unidad,
-            densidades.find((a) => a.id === m.articulo_id)?.densidad_ton_m3,
-          ),
+          densidad: densidades.find((a) => a.id === m.articulo_id)?.densidad_ton_m3 ?? null,
           almacen: m.almacen?.nombre ?? '—',
           cantidad: m.cantidad,
           unidad: m.unidad,

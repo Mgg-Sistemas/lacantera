@@ -12,7 +12,7 @@ import { DeQuienSale } from '@/components/DeQuienSale'
 import { ListaEditable } from '@/components/ListaEditable'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { usePedirSalida } from '@/lib/api/salidas'
+import { palabraDeVenta, usePedirSalida } from '@/lib/api/salidas'
 import {
   grupoEnCorto,
   useBorrarClaseDeSalida,
@@ -396,6 +396,9 @@ export function ModalSalida({
     modo === 'pedir'
       ? motivo.trim().length < 10
       : claseElegida?.exige_detalle === true && motivo.trim().length < 10
+  // Al solicitar, un «para qué» que nombra una venta no se puede enviar.
+  const ventaEnElMotivo = modo === 'pedir' ? palabraDeVenta(motivo) : null
+
   const faltaDecirParaQuien =
     !ambito ||
     (ambito === 'EMPRESA' && !grupo) ||
@@ -467,6 +470,7 @@ export function ModalSalida({
                   (modo === 'pedir' && !almacenPedido) ||
                   faltaDecirParaQuien ||
                   faltaElDetalle ||
+                  ventaEnElMotivo !== null ||
                   motivo.trim().length < 4 ||
                   salidas.isPending ||
                   pedido.isPending
@@ -712,6 +716,11 @@ export function ModalSalida({
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 hint="Es lo que lee quien la aprueba, y queda en la nota cuando se entregue."
+                error={
+                  ventaEnElMotivo
+                    ? `Dice «${ventaEnElMotivo}»: una venta no se solicita aquí, se registra en Facturación › Notas de entrega. Si no es una venta, dilo sin esa palabra; quien la aprueba lee el texto entero.`
+                    : undefined
+                }
               />
             </>
           ) : (
