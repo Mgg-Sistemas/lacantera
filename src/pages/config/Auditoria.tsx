@@ -97,6 +97,7 @@ const EN_PALABRAS: Record<string, string> = {
   inventario_movimientos: 'un movimiento de inventario',
   tasas_cambio: 'una tasa del día',
   autorizaciones: 'una autorización',
+  restricciones: 'un permiso restringido',
   instrucciones_pago: 'una instrucción de pago',
   compras_bitacora: 'una anotación de compras',
 }

@@ -1072,6 +1072,12 @@ export function DetalleCompra() {
     nada: la casilla va sembrada en el gerente general.
   */
   const puedeAprobar = alcanza('COMPRAS.APROBAR_COMPRA')
+  /*
+    Devolver tiene su propia casilla. Colgaba del rol de gerente en la base y
+    de la casilla de aprobar aquí: quien aprobaba con un permiso extendido veía
+    «Devolver a compras» y la base le decía que no.
+  */
+  const puedeDevolver = alcanza('COMPRAS.DEVOLVER_A_COTIZACION')
   const autorizaAprobar = misAutorizaciones.de('COMPRAS.APROBAR_COMPRA')
   const puedeCambiarMetodo = alcanza('COMPRAS.CAMBIAR_METODO_PAGO')
 
@@ -1772,14 +1778,16 @@ export function DetalleCompra() {
                     >
                       Aprobar la compra
                     </Button>
-                    <Button
-                      block
-                      variant="outline"
-                      icon={<Undo2 />}
-                      onClick={() => setModal({ tipo: 'devolver-gerencia' })}
-                    >
-                      Devolver a compras
-                    </Button>
+                    {puedeDevolver ? (
+                      <Button
+                        block
+                        variant="outline"
+                        icon={<Undo2 />}
+                        onClick={() => setModal({ tipo: 'devolver-gerencia' })}
+                      >
+                        Devolver a compras
+                      </Button>
+                    ) : null}
                   </>
                 ) : (
                   <p className="text-ink/60 text-sm">

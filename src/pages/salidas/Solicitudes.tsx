@@ -12,12 +12,13 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { usePerfiles } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { nombreDeGrupo, useComoActuoEnTraslados, useGruposDeSalida } from '@/lib/api/inventario'
+import { nombreDeGrupo, useGruposDeSalida } from '@/lib/api/inventario'
 import {
   ESTADO_DE_SOLICITUD,
   quePuedoHacerConLaSolicitud,
   useAprobarSolicitud,
   useCancelarSolicitud,
+  useComoAprueboSalidas,
   useEntregarSolicitud,
   useRechazarSolicitud,
   useSolicitudesDeSalida,
@@ -72,8 +73,13 @@ export function Solicitudes() {
   const { data: perfiles } = usePerfiles()
   const { puede: alcanza } = useMisPermisos()
   const grupos = useGruposDeSalida()
-  // Los sitios por los que respondo: la misma lista que usa el traslado.
-  const { data: comoActuo } = useComoActuoEnTraslados()
+  /*
+    Quién aprueba ya no se decide como en el traslado. Desde el 16/09 es una
+    casilla: la gerencia la trae por su rol, se le extiende a quien haga falta,
+    y a quien se le restringe no aprueba ni respondiendo por el almacén. Lo
+    pidió Christopher al repartir las aprobaciones: «mediante permisos».
+  */
+  const { data: comoApruebo } = useComoAprueboSalidas()
 
   const aprobar = useAprobarSolicitud()
   const rechazar = useRechazarSolicitud()
@@ -151,6 +157,14 @@ export function Solicitudes() {
         </p>
       </div>
 
+      {/* Se dice, en vez de dejar que lo descubra buscando un botón que no está. */}
+      {comoApruebo?.restringida ? (
+        <p className="text-ink/60 mb-3 text-sm">
+          Aprobar salidas se te restringió: puedes solicitarlas y cancelar las tuyas, y las aprueba
+          quien tenga ese permiso.
+        </p>
+      ) : null}
+
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Button size="sm" variant={verTodas ? 'ghost' : 'soft'} onClick={() => setVerTodas(false)}>
           Esperan{solicitudes ? ` (${esperando.length})` : ''}
@@ -181,10 +195,10 @@ export function Solicitudes() {
       <div className="space-y-3">
         {alaVista.map((s) => {
           const estado = ESTADO_DE_SOLICITUD[s.estado]
-          const puedo = quePuedoHacerConLaSolicitud(s, comoActuo, puedoSacar)
+          const puedo = quePuedoHacerConLaSolicitud(s, comoApruebo, puedoSacar)
           const falta =
             s.estado === 'PEDIDA'
-              ? `Falta que la apruebe quien responde por ${s.almacen?.nombre ?? 'el almacén'}, o administración.`
+              ? `Falta que la apruebe quien responde por ${s.almacen?.nombre ?? 'el almacén'} o quien tenga el permiso de aprobar salidas.`
               : s.estado === 'APROBADA'
                 ? 'Aprobada. Falta que alguien de almacén la entregue: al entregarla sale la nota y se descuenta la existencia.'
                 : null

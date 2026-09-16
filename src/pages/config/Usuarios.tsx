@@ -50,6 +50,10 @@ import {
   useAutorizaciones,
   useAutorizarVarias,
   useRetirarAutorizacion,
+  useRestricciones,
+  useAccionesRestringibles,
+  useRestringirVarias,
+  useLevantarRestriccion,
   useAccionesDeLosRoles,
   useMarcarAccion,
   useUsuarios,
@@ -59,6 +63,7 @@ import {
 import type {
   AccionDelSistema,
   AutorizacionDelSistema,
+  RestriccionDelSistema,
   Nivel,
   RolSistema,
   UsuarioSistema,
@@ -1790,11 +1795,420 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
+// Restricciones: lo que se le quita a una persona aunque su rol se lo dé
+//
+// Christopher, 16/09/2026, al repartir quién aprueba: hay quien solicita
+// salidas, compras y ventas sin poder aprobarlas, y eso «se debe manejar tal
+// como se intenta, mediante permisos». Y enseguida: «así como hay permisos
+// extendidos, deberían haber permisos reducidos o revocados».
+//
+// Es la otra cara de la pestaña de arriba, y tiene su misma forma a propósito:
+// quien sabe extender sabe restringir. La diferencia está en qué se ofrece:
+// solo las casillas que la base pregunta por su nombre, porque una restricción
+// que no frena es peor que ninguna.
+// ---------------------------------------------------------------------------
+
+function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
+  const restricciones = useRestricciones()
+  const usuarios = useUsuarios()
+  const acciones = useAcciones()
+  const restringibles = useAccionesRestringibles()
+  const restringir = useRestringirVarias()
+  const levantar = useLevantarRestriccion()
+
+  const [abierto, setAbierto] = useState(false)
+  const [levantando, setLevantando] = useState<RestriccionDelSistema | null>(null)
+  const [motivoLevantar, setMotivoLevantar] = useState('')
+  const [errorLevantar, setErrorLevantar] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [forma, setForma] = useState({
+    usuario_id: '',
+    acciones: [] as string[],
+    motivo: '',
+    desde: '',
+    hasta: '',
+  })
+  const [busca, setBusca] = useState('')
+  const [omitidas, setOmitidas] = useState<{ accion: string; motivo: string }[]>([])
+
+  const limpiar = () => {
+    setForma({ usuario_id: '', acciones: [], motivo: '', desde: '', hasta: '' })
+    setBusca('')
+    setError(null)
+    setOmitidas([])
+  }
+
+  const marcar = (codigo: string) =>
+    setForma((f) => ({
+      ...f,
+      acciones: f.acciones.includes(codigo)
+        ? f.acciones.filter((x) => x !== codigo)
+        : [...f.acciones, codigo],
+    }))
+
+  /*
+    Solo las que la base pregunta por su nombre, agrupadas por módulo.
+
+    Las demás las decide el nivel que el rol da en el módulo. Ofrecerlas sería
+    dejar que alguien restrinja algo que la base sigue permitiendo y se vaya
+    creyendo que quedó cerrado.
+  */
+  const porModulo = useMemo(() => {
+    const codigos = new Set(restringibles.data ?? [])
+    const q = busca.trim().toLowerCase()
+    const mapa = new Map<string, AccionDelSistema[]>()
+    for (const a of acciones.data ?? []) {
+      if (!codigos.has(a.codigo)) continue
+      const cabe =
+        !q ||
+        a.nombre.toLowerCase().includes(q) ||
+        (a.modulo_nombre ?? '').toLowerCase().includes(q) ||
+        (a.dice ?? '').toLowerCase().includes(q)
+      if (!cabe) continue
+      const clave = a.modulo_nombre ?? a.modulo
+      mapa.set(clave, [...(mapa.get(clave) ?? []), a])
+    }
+    return [...mapa.entries()]
+  }, [acciones.data, restringibles.data, busca])
+
+  // Al administrador no se le restringe nada, así que ni se ofrece.
+  const opcionesPersona = (usuarios.data ?? [])
+    .filter((u) => u.activo && !u.roles.includes('ADMIN'))
+    .map((u) => ({
+      valor: u.id,
+      etiqueta: u.nombre,
+      detalle: u.cargo ?? u.usuario,
+    }))
+
+  const guardar = () => {
+    setError(null)
+    setOmitidas([])
+    restringir.mutate(
+      {
+        usuario_id: forma.usuario_id,
+        acciones: forma.acciones,
+        motivo: forma.motivo,
+        desde: forma.desde || null,
+        hasta: forma.hasta || null,
+      },
+      {
+        onSuccess: (r) => {
+          // Igual que al extender: si alguna no entró, el modal no se cierra y
+          // dice cuál y por qué.
+          if (r?.omitidas?.length) {
+            setOmitidas(r.omitidas)
+            setForma((f) => ({ ...f, acciones: [] }))
+            return
+          }
+          setAbierto(false)
+          limpiar()
+        },
+        onError: (e: Error) => setError(e.message),
+      },
+    )
+  }
+
+  if (restricciones.isPending) return <Cargando />
+  if (restricciones.error) return <ErrorDeCarga error={restricciones.error} />
+
+  const filas = restricciones.data ?? []
+  const vivas = filas.filter((r) => r.vigente)
+  const pasadas = filas.filter((r) => !r.vigente)
+
+  const estado = (r: RestriccionDelSistema) =>
+    r.vigente
+      ? { texto: 'Vigente', tono: 'warning' as const }
+      : r.levantada_en
+        ? { texto: 'Levantada', tono: 'neutral' as const }
+        : r.a_es_administrador
+          ? { texto: 'No aplica: es administrador', tono: 'neutral' as const }
+          : { texto: 'Fuera de fecha', tono: 'neutral' as const }
+
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <p className="text-ink/60 max-w-[62ch] text-sm">
+          Algo que el rol de una persona le da y ella no debe poder hacer: solicitar sin aprobar,
+          por ejemplo. Se le quita a ella sola, por un tiempo o sin fecha de fin, y manda también
+          sobre lo que se le haya extendido.
+        </p>
+        {gestionable ? (
+          <Button icon={<Plus />} onClick={() => setAbierto(true)}>
+            Restringir un permiso
+          </Button>
+        ) : null}
+      </div>
+
+      {filas.length === 0 ? (
+        <Vacio
+          titulo="No hay permisos restringidos"
+          descripcion="Cuando alguien no deba poder algo que su rol le da, se le restringe desde aquí, con la razón escrita. Sus compañeros de rol no pierden nada."
+        />
+      ) : (
+        <div className="space-y-2.5">
+          {[...vivas, ...pasadas].map((r) => {
+            const e = estado(r)
+            return (
+              <Card key={r.id} flush className={cn('overflow-hidden', !r.vigente && 'opacity-60')}>
+                <div className="flex flex-wrap items-start justify-between gap-3 p-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-ink/85 font-medium">{r.a_nombre}</span>
+                      <Chip tone={e.tono}>{e.texto}</Chip>
+                    </div>
+
+                    <p className="text-ink/70 mt-1 text-sm">
+                      No puede: {r.accion_nombre}
+                      <span className="text-ink/40"> · {r.modulo_nombre}</span>
+                    </p>
+
+                    <p className="text-ink/50 mt-1.5 text-xs">
+                      Restringida por <span className="text-ink/70">{r.por_nombre}</span>
+                      {' · desde '}
+                      {fecha(r.desde)}
+                      {r.hasta ? ` hasta ${fecha(r.hasta)}` : ' · sin fecha de fin'}
+                    </p>
+
+                    <p className="text-ink/60 mt-1.5 text-sm italic">«{r.motivo}»</p>
+
+                    {r.levantada_en ? (
+                      <p className="text-ink/45 mt-1.5 text-xs">
+                        Levantada por {r.levantada_nombre ?? '—'} el {fecha(r.levantada_en)}
+                        {r.levantada_motivo ? ` · ${r.levantada_motivo}` : ''}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {gestionable && !r.levantada_en ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setLevantando(r)
+                        setMotivoLevantar('')
+                        setErrorLevantar(null)
+                      }}
+                    >
+                      Levantar
+                    </Button>
+                  ) : null}
+                </div>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ---------------- Restringir ---------------- */}
+      <Modal
+        abierto={abierto}
+        onCerrar={() => {
+          setAbierto(false)
+          limpiar()
+        }}
+        titulo="Restringir un permiso"
+        descripcion="Se le quita a una persona concreta algo que su rol le daría. Si lo tenía extendido, se le retira en el mismo paso."
+        acciones={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setAbierto(false)
+                limpiar()
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              disabled={
+                restringir.isPending ||
+                !forma.usuario_id ||
+                forma.acciones.length === 0 ||
+                forma.motivo.trim().length < 5
+              }
+              onClick={guardar}
+            >
+              {forma.acciones.length > 1
+                ? `Restringir las ${forma.acciones.length}`
+                : 'Restringir'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <SelectBuscable
+            label="A quién"
+            opciones={opcionesPersona}
+            valor={forma.usuario_id}
+            onCambio={(v: string) => setForma((f) => ({ ...f, usuario_id: v }))}
+            vacio="Elige a la persona"
+            hint="Los administradores no aparecen: a ellos no se les restringe nada. Si no deben poder algo, se les quita el rol."
+          />
+
+          <div>
+            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+              <span className="text-ink/80 text-sm font-medium">Qué no debe poder</span>
+              {forma.acciones.length > 0 ? (
+                <button
+                  type="button"
+                  className="text-royal-600 dark:text-royal-300 text-xs underline"
+                  onClick={() => setForma((f) => ({ ...f, acciones: [] }))}
+                >
+                  {forma.acciones.length} marcada{forma.acciones.length === 1 ? '' : 's'} · quitar
+                  todas
+                </button>
+              ) : null}
+            </div>
+
+            <Input
+              label="Buscar"
+              ocultarEtiqueta
+              icon={<Search />}
+              placeholder="Filtra por casilla o por módulo"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+
+            <div className="border-hairline rounded-card mt-2 max-h-64 overflow-y-auto border">
+              {restringibles.isPending || acciones.isPending ? (
+                <p className="text-ink/45 p-3 text-sm">Cargando las casillas…</p>
+              ) : porModulo.length === 0 ? (
+                <p className="text-ink/45 p-3 text-sm">Ninguna casilla coincide.</p>
+              ) : (
+                porModulo.map(([modulo, lista]) => (
+                  <div key={modulo}>
+                    <p className="bg-canvas text-ink/50 text-2xs sticky top-0 px-3 py-1.5 tracking-wide uppercase">
+                      {modulo}
+                    </p>
+                    {lista.map((a) => (
+                      <label
+                        key={a.codigo}
+                        className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 px-3 py-2"
+                      >
+                        <input
+                          type="checkbox"
+                          className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                          checked={forma.acciones.includes(a.codigo)}
+                          onChange={() => marcar(a.codigo)}
+                        />
+                        <span className="min-w-0">
+                          <span className="text-ink/85 block text-sm">{a.nombre}</span>
+                          {a.dice ? (
+                            <span className="text-ink/45 block text-xs">{a.dice}</span>
+                          ) : null}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+            <p className="text-ink/45 mt-1.5 text-xs">
+              Aparecen las casillas que el sistema comprueba una por una. Lo demás depende del nivel
+              que el rol da en cada módulo: para quitarlo, se le cambia el rol. La misma
+              justificación vale para todas las que marques.
+            </p>
+          </div>
+
+          {omitidas.length > 0 ? (
+            <div className="border-warning/30 bg-warning-soft rounded-card border p-3">
+              <p className="text-ink/80 text-sm font-medium">
+                {omitidas.length === 1 ? 'Una no entró:' : `${omitidas.length} no entraron:`}
+              </p>
+              <ul className="text-ink/70 mt-1.5 space-y-1 text-xs">
+                {omitidas.map((o) => (
+                  <li key={o.accion}>
+                    <strong>{o.accion}</strong> — {o.motivo}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Desde"
+              type="date"
+              value={forma.desde}
+              onChange={(e) => setForma((f) => ({ ...f, desde: e.target.value }))}
+              hint="Vacío, desde hoy."
+            />
+            <Input
+              label="Hasta"
+              type="date"
+              value={forma.hasta}
+              onChange={(e) => setForma((f) => ({ ...f, hasta: e.target.value }))}
+              hint="Vacío, sin fecha de fin."
+            />
+          </div>
+
+          <Textarea
+            label="Justificación"
+            value={forma.motivo}
+            onChange={(e) => setForma((f) => ({ ...f, motivo: e.target.value }))}
+            rows={3}
+            hint="Por qué no debe poder hacerlo. Es lo que va a leer quien pregunte, y la propia persona."
+          />
+
+          {error ? <ErrorDeCarga error={new Error(error)} /> : null}
+        </div>
+      </Modal>
+
+      {/* ---------------- Levantar ---------------- */}
+      <Modal
+        abierto={!!levantando}
+        onCerrar={() => setLevantando(null)}
+        titulo="Levantar la restricción"
+        descripcion={
+          levantando
+            ? `${levantando.a_nombre} vuelve a poder «${levantando.accion_nombre}» si su rol o un permiso extendido se lo dan.`
+            : ''
+        }
+        acciones={
+          <>
+            <Button variant="ghost" onClick={() => setLevantando(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={levantar.isPending || motivoLevantar.trim().length < 5}
+              onClick={() =>
+                levantando &&
+                levantar.mutate(
+                  { id: levantando.id, motivo: motivoLevantar },
+                  {
+                    onSuccess: () => setLevantando(null),
+                    onError: (e: Error) => setErrorLevantar(e.message),
+                  },
+                )
+              }
+            >
+              Levantar
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Textarea
+            label="Por qué se levanta"
+            value={motivoLevantar}
+            onChange={(e) => setMotivoLevantar(e.target.value)}
+            rows={2}
+            hint="Obligatorio: se restringió con una razón, y devolverlo también la lleva."
+          />
+          {errorLevantar ? <ErrorDeCarga error={new Error(errorLevantar)} /> : null}
+        </div>
+      </Modal>
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Pantalla
 // ---------------------------------------------------------------------------
 
 export function Usuarios() {
-  const [pestana, setPestana] = useState<'usuarios' | 'roles' | 'autorizaciones'>('usuarios')
+  const [pestana, setPestana] = useState<
+    'usuarios' | 'roles' | 'autorizaciones' | 'restricciones'
+  >('usuarios')
   const { puede, isPending } = useMisRoles()
 
   // Administrar usuarios exige ADMIN en la base. Sin él la pantalla se lee,
@@ -1803,13 +2217,14 @@ export function Usuarios() {
   const editable = puede('ADMIN')
 
   /*
-    Las autorizaciones las manejan administración Y la gerencia.
+    Las autorizaciones y las restricciones las manejan administración Y la
+    gerencia.
 
     Es lo único de esta pantalla que el gerente general puede usar de verdad: la
-    matriz le da el módulo entero, pero las funciones de las otras dos pestañas
-    exigen el rol de administrador y le contestan que no. Aquí no, porque
-    `autorizar_accion` admite a los dos — y tiene sentido, ya que la autoridad
-    que se invoca en el papel es suya.
+    matriz le da el módulo entero, pero las funciones de usuarios y roles exigen
+    el rol de administrador y le contestan que no. Aquí no, porque
+    `autorizar_accion` y `restringir_accion` admiten a los dos — y tiene
+    sentido, ya que la autoridad que se invoca es suya.
   */
   const gestionaAutorizaciones = puede('ADMIN', 'GERENTE_GENERAL')
 
@@ -1836,6 +2251,7 @@ export function Usuarios() {
             { id: 'usuarios', etiqueta: 'Usuarios' },
             { id: 'roles', etiqueta: 'Roles y permisos' },
             { id: 'autorizaciones', etiqueta: 'Permisos extendidos' },
+            { id: 'restricciones', etiqueta: 'Permisos restringidos' },
           ] as const
         ).map((p) => (
           <button
@@ -1859,8 +2275,10 @@ export function Usuarios() {
         <PestanaUsuarios editable={editable} />
       ) : pestana === 'roles' ? (
         <PestanaRoles editable={editable} />
-      ) : (
+      ) : pestana === 'autorizaciones' ? (
         <PestanaAutorizaciones gestionable={gestionaAutorizaciones} />
+      ) : (
+        <PestanaRestricciones gestionable={gestionaAutorizaciones} />
       )}
     </>
   )
