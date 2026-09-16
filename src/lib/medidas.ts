@@ -73,6 +73,47 @@ export function notaDeConversion(
     .join(' · ')}.`
 }
 
+/*
+  EN LOS FORMULARIOS, MIENTRAS SE ESCRIBE. Christopher, 16/09/2026: «en los
+  formularios al cargar algo en m3, debe pedir directamente su densidad y
+  expresar su conversión a ton, viceversa de ton a m3». Preguntado, eligió una
+  densidad por material, la del catálogo: el formulario la enseña al lado de la
+  cuenta, y el catálogo no deja un material en M3 o TON sin ella.
+*/
+
+/** La densidad escrita sin ceros de relleno: «1,44», no «1,4400». */
+export const densidadLegible = (densidad: string | number): string =>
+  Number(densidad).toLocaleString('es-VE', { maximumFractionDigits: 4 })
+
+/** «1 m³ pesa 1,44 t · 1 t ocupa 0,69 m³», o null si no hay densidad. */
+export function densidadEnPalabras(densidad: string | number | null | undefined): string | null {
+  const d = Number(densidad)
+  if (!(d > 0)) return null
+  return `1 m³ pesa ${densidadLegible(d)} t · 1 t ocupa ${dos.format(1 / d)} m³`
+}
+
+/**
+ * La línea bajo una cantidad en M3 o TON: «Equivale a 25,92 t, con 1,44 t/m³».
+ *
+ * Null si la unidad no es M3 ni TON o todavía no hay cantidad. Si falta la
+ * densidad lo dice, en vez de callarse: un formulario que no enseña la otra
+ * medida parece que se olvidó, y aquí se pidió que la enseñe siempre.
+ */
+export function conversionMientrasSeEscribe(
+  cantidad: string | number,
+  unidad: string | null | undefined,
+  densidad: string | number | null | undefined,
+): string | null {
+  if (unidad !== 'M3' && unidad !== 'TON') return null
+  const c = Number(cantidad)
+  if (!(c > 0)) return null
+  const otra = enLaOtraMedida(c, unidad, densidad)
+  if (!otra) {
+    return `Este material no tiene densidad en el catálogo, así que no se puede expresar en ${unidad === 'M3' ? 'toneladas' : 'metros cúbicos'}.`
+  }
+  return `Equivale a ${dos.format(otra.cantidad)} ${otra.unidad === 'TON' ? 't' : 'm³'}, con ${densidadLegible(Number(densidad))} t/m³.`
+}
+
 /** «equivale a 40,32 TON aprox. (1,44 t/m³)», o null si no se puede saber. */
 export function equivalenciaEnPapel(
   cantidad: string | number,

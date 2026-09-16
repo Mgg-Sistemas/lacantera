@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react'
+import { ConversionDeCantidad } from '@/components/ConversionDeCantidad'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -153,6 +154,14 @@ export function Renglones({
         const disponible = fila.articulo_id ? existencias?.[Number(fila.articulo_id)] : undefined
         const sinMaterial = disponible !== undefined && patio !== null && patio > disponible
         const convertida = articulo && fila.unidad && fila.unidad !== articulo.unidad_articulo
+        /*
+          Lo que sale del patio en otra medida ya lo dice la pista de la nota de
+          entrega; en ese caso la línea de conversión lo repetiría con otras
+          palabras. En los demás —la cotización, o vendido en la unidad del
+          patio— se enseña la otra medida: «se desea que todo producto de venta
+          se exprese en m3 y ton por igual».
+        */
+        const pistaDelPatio = !deRomana && !!convertida && patio !== null && !!existencias
 
         const total = (Number(cantidad) || 0) * (Number(fila.precio) || 0)
         const falta = faltaEnFila({ ...fila, cantidad }, precios)
@@ -232,11 +241,18 @@ export function Renglones({
                 hint={
                   deRomana
                     ? 'Las toneladas del ticket de romana.'
-                    : convertida && patio !== null && existencias
-                      ? `Salen del patio unos ${patio.toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${articulo!.unidad_articulo}, estimado con ${Number(articulo!.densidad_ton_m3).toLocaleString('es-VE')} t/m³.`
+                    : pistaDelPatio
+                      ? `Salen del patio unos ${patio!.toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${articulo!.unidad_articulo}, estimado con ${Number(articulo!.densidad_ton_m3).toLocaleString('es-VE')} t/m³.`
                       : undefined
                 }
               />
+              {pistaDelPatio ? null : (
+                <ConversionDeCantidad
+                  cantidad={cantidad}
+                  unidad={fila.unidad}
+                  densidad={articulo?.densidad_ton_m3}
+                />
+              )}
             </div>
 
             <div className="sm:col-span-4">

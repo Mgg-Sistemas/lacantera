@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { Boxes, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { ParecidosAEste } from '@/components/ParecidosAEste'
+import { ConversionDeCantidad } from '@/components/ConversionDeCantidad'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_MATERIAL } from '@/components/pestanasDeModulos'
 import { Card } from '@/components/ui/Card'
@@ -32,6 +33,7 @@ import {
 import type { Articulo } from '@/lib/api/catalogo'
 import { useMovimientos } from '@/lib/api/inventario'
 import { fecha } from '@/lib/formato'
+import { densidadEnPalabras, densidadLegible } from '@/lib/medidas'
 
 const nuevo = {
   id: 0,
@@ -44,6 +46,8 @@ const nuevo = {
   reparable: false,
   stock_minimo: '0',
   densidad_ton_m3: '',
+  /** Solo se pide si cambia una densidad que ya estaba. */
+  motivo_densidad: '',
   modo_entrega: 'CONSUMIBLE',
   presentacion: '',
   unidades_por_presentacion: '',
@@ -138,6 +142,25 @@ export function Articulos() {
     necesita doscientos movimientos para pintar el catálogo.
   */
   const unidadDeAntes = (data ?? []).find((a) => a.id === form?.id)?.unidad
+
+  /*
+    LA DENSIDAD, UNA POR MATERIAL.
+
+    Christopher, 16/09/2026: «en los formularios al cargar algo en m3, debe pedir
+    directamente su densidad y expresar su conversión». Lo que se mide en M3 o en
+    TON no se guarda sin ella —la base tampoco lo acepta—, y cambiar la que ya
+    tenía pide motivo, porque los papeles convierten con la del día en que se
+    imprimen, también los viejos. Ponerla por primera vez no lo pide.
+  */
+  const articuloAbierto = (data ?? []).find((a) => a.id === form?.id)
+  const densidadDeAntes = articuloAbierto?.densidad_ton_m3 ?? null
+  const pideDensidad = form?.unidad === 'M3' || form?.unidad === 'TON'
+  const densidadEscrita = Number(form?.densidad_ton_m3)
+  const cambiaDensidad =
+    !!form?.id &&
+    densidadDeAntes !== null &&
+    densidadEscrita > 0 &&
+    densidadEscrita !== Number(densidadDeAntes)
   const movimientosDelArticulo = useMovimientos(
     { articuloId: form?.id ?? undefined },
     Boolean(form?.id),
@@ -379,6 +402,7 @@ export function Articulos() {
                                   : String(Number(a.unidades_por_presentacion)),
                               densidad_ton_m3:
                                 a.densidad_ton_m3 == null ? '' : String(Number(a.densidad_ton_m3)),
+                              motivo_densidad: '',
                             })
                           }
                         />
@@ -486,7 +510,9 @@ export function Articulos() {
                   crear.isPending ||
                   editar.isPending ||
                   !form.nombre ||
-                  (hayHomonimo && !form.confirmado)
+                  (hayHomonimo && !form.confirmado) ||
+                  (pideDensidad && !(densidadEscrita > 0)) ||
+                  (cambiaDensidad && form.motivo_densidad.trim().length < 10)
                 }
                 onClick={async () => {
                   const datos = {
@@ -515,6 +541,7 @@ export function Articulos() {
                     densidad_ton_m3: Number(form.densidad_ton_m3) > 0
                       ? Number(form.densidad_ton_m3)
                       : null,
+                    motivo_densidad: cambiaDensidad ? form.motivo_densidad.trim() : null,
                   }
                   if (form.id) await editar.mutateAsync(datos)
                   else await crear.mutateAsync(datos)
@@ -659,18 +686,45 @@ export function Articulos() {
 
               Solo aparece donde significa algo: lo que se mide en volumen o en
               peso. Preguntarle su densidad a un par de botas es ruido.
+
+              Y desde el 16/09 por la tarde es obligatoria ahí, y dice en
+              palabras lo que significa: un «1,44» suelto no le dice a quien lo
+              escribe si puso toneladas por metro o al revés.
             */}
-            {form.unidad === 'M3' || form.unidad === 'TON' ? (
-              <Input
-                label="Toneladas por metro cúbico"
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                hint="Para poder leer lo mismo en metros y en toneladas. Vacío: no se sabe y no se supone."
-                value={form.densidad_ton_m3}
-                onChange={(e) => setForm({ ...form, densidad_ton_m3: e.target.value })}
-              />
+            {pideDensidad ? (
+              <div>
+                <Input
+                  label="Densidad, en toneladas por metro cúbico"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  hint={
+                    densidadEnPalabras(form.densidad_ton_m3) ??
+                    `Obligatoria: sin ella no se puede expresar en ${form.unidad === 'M3' ? 'toneladas' : 'metros cúbicos'}.`
+                  }
+                  value={form.densidad_ton_m3}
+                  onChange={(e) => setForm({ ...form, densidad_ton_m3: e.target.value })}
+                />
+                {articuloAbierto?.densidad_cambiada_en ? (
+                  <p className="text-ink/45 mt-1 text-xs">
+                    Se puso o cambió el {fecha(articuloAbierto.densidad_cambiada_en)}
+                    {articuloAbierto.densidad_motivo ? `: «${articuloAbierto.densidad_motivo}»` : ''}.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {cambiaDensidad ? (
+              <div className="sm:col-span-2">
+                <Textarea
+                  label="¿Por qué cambia la densidad?"
+                  rows={2}
+                  value={form.motivo_densidad}
+                  onChange={(e) => setForm({ ...form, motivo_densidad: e.target.value })}
+                  hint={`Era ${densidadLegible(densidadDeAntes ?? 0)} t/m³. Cambiarla cambia la conversión de todo lo que se imprima desde ahora, también de papeles viejos. Queda con tu nombre y la fecha; al menos diez letras.`}
+                />
+              </div>
             ) : null}
 
             {form.id && unidadDeAntes && form.unidad !== unidadDeAntes && seHaMovido ? (
@@ -681,15 +735,22 @@ export function Articulos() {
                 almacén después para dejar el saldo bueno.
               </p>
             ) : null}
-            <Input
-              label="Existencia mínima"
-              type="number"
-              min="0"
-              step="0.01"
-              hint="Cero significa que no se controla."
-              value={form.stock_minimo}
-              onChange={(e) => setForm({ ...form, stock_minimo: e.target.value })}
-            />
+            <div>
+              <Input
+                label="Existencia mínima"
+                type="number"
+                min="0"
+                step="0.01"
+                hint="Cero significa que no se controla."
+                value={form.stock_minimo}
+                onChange={(e) => setForm({ ...form, stock_minimo: e.target.value })}
+              />
+              <ConversionDeCantidad
+                cantidad={form.stock_minimo}
+                unidad={form.unidad}
+                densidad={form.densidad_ton_m3}
+              />
+            </div>
 
             {/*
               CÓMO LLEGA, QUE NO ES CÓMO SE USA.
@@ -934,6 +995,10 @@ export function Articulos() {
           ) : null}
 
           {crear.error ? <ErrorDeCarga error={crear.error} className="mt-4" /> : null}
+          {/* Corregir también puede fallar —un homónimo, la densidad sin motivo—
+              y el mensaje no se enseñaba: el modal se quedaba abierto sin decir
+              por qué. */}
+          {editar.error ? <ErrorDeCarga error={editar.error} className="mt-4" /> : null}
         </Modal>
       ) : null}
     </>
