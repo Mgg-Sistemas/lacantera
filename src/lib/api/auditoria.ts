@@ -302,6 +302,7 @@ const CAMPOS: Record<string, string> = {
   empleado_id: 'Trabajador',
   entrega_clase: 'Clase de entrega',
   fecha: 'Fecha',
+  grupo_id: 'Para quién',
   moneda_capturada: 'Moneda tecleada',
   motivo: 'Motivo',
   motivo_cancelacion: 'Motivo de la cancelación',

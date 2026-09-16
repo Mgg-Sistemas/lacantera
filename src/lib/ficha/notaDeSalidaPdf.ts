@@ -97,6 +97,8 @@ export interface DatosNotaDeSalida {
    * la lista de movimientos y la auditoría.
    */
   clase: string
+  /** Para qué grupo de gente salió: «CHOFERES», «PLANTA». */
+  paraQuien?: string | null
   motivo?: string | null
   /** A dónde va, cuando se sabe. */
   destino?: string | null
@@ -233,6 +235,7 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
       [
         ['De qué almacén', mezclada ? 'Varios · se indica en cada renglón' : d.almacen],
         ['Motivo', d.clase],
+        ['Para quién', d.paraQuien],
         ['A dónde va', d.destino],
         ['Fecha', d.fecha],
       ] as Array<[string, string | null | undefined]>

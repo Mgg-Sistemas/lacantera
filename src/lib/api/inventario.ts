@@ -443,6 +443,12 @@ export interface Movimiento {
    */
   razon_salida?: string | null
   /**
+   * Para qué grupo de gente salió: el nodo del organigrama —un área o un
+   * cargo— que lo recibe. Obligatorio al sacar desde el 16/09/2026; nulo en lo
+   * anterior y en lo que no es una salida. El nombre, en `useGruposDeSalida`.
+   */
+  grupo_id?: number | null
+  /**
    * La causa de las salidas viejas que se anotaron como baja —«Robado»—. Ya no
    * se escriben; las que hay se siguen leyendo. Según cómo lo resuelva el
    * servidor llega como objeto o como lista de uno: ver `bajaDe`.
@@ -1002,6 +1008,12 @@ export function useRegistrarSalidas() {
       motivo: string
       tipo?: string
       fecha?: string
+      /*
+        PARA QUIÉN SALE, y la base no acepta una salida sin ello: es lo que
+        después contesta «¿cuántas mascarillas se le han dado al personal de
+        cribado?». Es el nodo del organigrama que recibe el material.
+      */
+      grupo_id: number
     }) =>
       rpc<string>('registrar_salidas', {
         p_almacen_id: s.almacen_id,
@@ -1020,6 +1032,7 @@ export function useRegistrarSalidas() {
         p_motivo: s.motivo,
         p_tipo: s.tipo ?? 'SALIDA_CONSUMO',
         p_fecha: s.fecha || null,
+        p_grupo_id: s.grupo_id,
       }),
   )
 }
@@ -1308,6 +1321,51 @@ export function useBorrarClaseDeSalida() {
 }
 
 /*
+  PARA QUIÉN SALE EL MATERIAL
+
+  Christopher: «¿cuántas mascarillas se le han dado al personal de cribado?,
+  ¿cuántos lentes de sol se le han dado a los conductores?, ¿en agosto el
+  almacenista X dio algún insumo a los operadores?». Ninguna se podía contestar:
+  el libro decía qué salió y quién lo sacó, pero no para qué grupo de gente.
+
+  El grupo es un nodo del organigrama —un área o un cargo—, que es la lista que
+  la empresa ya mantiene. Hacer otra al lado sería tener dos organigramas que se
+  contradicen al mes.
+
+  No se lee del organigrama directamente: esa tabla la cierra su RLS a quien
+  tiene nómina, y quien saca material no la tiene. La base abre una puerta
+  estrecha, `grupos_de_salida`, que solo devuelve el nombre y el camino.
+*/
+export interface GrupoDeSalida {
+  id: number
+  nombre: string
+  /** «PRESIDENCIA › … › PERSONAL › CHOFERES», para distinguir dos que se llamen igual. */
+  camino: string
+  tipo: 'UNIDAD' | 'CARGO'
+  activo: boolean
+}
+
+export function useGruposDeSalida() {
+  return useQuery({
+    queryKey: ['grupos-de-salida'],
+    queryFn: () => rpc<GrupoDeSalida[]>('grupos_de_salida', {}),
+  })
+}
+
+/*
+  Las dos últimas ramas del camino: «PERSONAL › CHOFERES».
+
+  El camino entero no cabe en una lista desplegable y el nombre suelto no basta:
+  «MANTENIMIENTO» es a la vez un cargo del almacén y un departamento de la
+  gente. Con el padre delante ya no hay dos iguales.
+*/
+export const grupoEnCorto = (g: GrupoDeSalida) => g.camino.split(' › ').slice(-2).join(' › ')
+
+/** El nombre del grupo de un movimiento, buscado en la lista. */
+export const nombreDeGrupo = (grupos: GrupoDeSalida[] | undefined, id?: number | null) =>
+  (id ? (grupos ?? []).find((g) => g.id === id)?.nombre : null) ?? null
+
+/*
   LAS CAUSAS DE LAS SALIDAS VIEJAS QUE SE ANOTARON COMO BAJA
 
   Ya no se escriben: el 15/09/2026 se quitaron del sistema todos los motivos de
@@ -1383,15 +1441,18 @@ export const motivoParaLaNota = (m: Pick<Movimiento, 'tipo' | 'razon_salida' | '
   motivoDeSalida(m) ?? TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo
 
 /*
-  EL MOTIVO DE UNA NOTA, LEÍDO DEL LIBRO Y NO DEL FORMULARIO.
+  LA CABECERA DE UNA NOTA —EL MOTIVO Y PARA QUIÉN—, LEÍDA DEL LIBRO Y NO DEL
+  FORMULARIO.
 
   Es el mismo camino que usa Movimientos al reimprimir. Si el papel del momento
   lo tomara de la lista que tiene abierta la pantalla, bastaría que alguien
   corrigiera el nombre de una razón entretanto para que la misma nota saliera con
   dos motivos distintos.
 */
-export async function leerMotivoDeNota(numero: string): Promise<string> {
-  const fila = desenvolver<Pick<Movimiento, 'tipo' | 'razon_salida' | 'baja'>>(
+export async function leerCabeceraDeNota(
+  numero: string,
+): Promise<{ motivo: string; grupoId: number | null }> {
+  const fila = desenvolver<Pick<Movimiento, 'tipo' | 'razon_salida' | 'baja' | 'grupo_id'>>(
     await supabase
       .from('inventario_movimientos')
       .select('*, baja:inventario_bajas(causa, destino)')
@@ -1399,7 +1460,7 @@ export async function leerMotivoDeNota(numero: string): Promise<string> {
       .limit(1)
       .single(),
   )
-  return motivoParaLaNota(fila)
+  return { motivo: motivoParaLaNota(fila), grupoId: fila.grupo_id ?? null }
 }
 
 /*

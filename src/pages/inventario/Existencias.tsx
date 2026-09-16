@@ -75,8 +75,11 @@ import {
   useBorrarClaseDeSalida,
   useRegistrarEntradas,
   useRegistrarSalidas,
-  leerMotivoDeNota,
+  grupoEnCorto,
+  leerCabeceraDeNota,
   leerNotaDeSalida,
+  nombreDeGrupo,
+  useGruposDeSalida,
 } from '@/lib/api/inventario'
 import type { Existencia, ExistenciaTotal } from '@/lib/api/inventario'
 import { dolares, enteros, fecha } from '@/lib/formato'
@@ -404,9 +407,9 @@ export function Existencias() {
   const notaCompleta = async (numero: string, motivo: string) => {
     // El motivo también se relee: es el que guardó la base, con las mismas
     // palabras que dirán el libro, la reimpresión y la auditoría.
-    const [lineas, motivoGuardado] = await Promise.all([
+    const [lineas, cabecera] = await Promise.all([
       leerNotaDeSalida(numero),
-      leerMotivoDeNota(numero),
+      leerCabeceraDeNota(numero),
     ])
     if (lineas.length === 0) return
 
@@ -415,7 +418,8 @@ export function Existencias() {
         numero,
         fecha: fecha(lineas[0].fecha),
         almacen: lineas[0].almacen,
-        clase: motivoGuardado,
+        clase: cabecera.motivo,
+        paraQuien: nombreDeGrupo(grupos.data, cabecera.grupoId),
         motivo,
         renglones: lineas.map((l) => ({
           articuloCodigo: l.articulo_codigo,
@@ -799,6 +803,19 @@ export function Existencias() {
   const claseElegida = (clases.data ?? []).find((c) => c.codigo === clase)
 
   /*
+    PARA QUIÉN SALE.
+
+    Christopher: «¿cuántas mascarillas se le han dado al personal de cribado?,
+    ¿cuántos lentes de sol a los conductores?». La lista es el organigrama de la
+    empresa —áreas y cargos— y no una nueva: dos listas de lo mismo se
+    contradicen al mes. Arranca en blanco a propósito, porque la base no acepta
+    una salida sin ello y dejar uno puesto es que se registre el de la fila
+    anterior sin que nadie lo mire.
+  */
+  const grupos = useGruposDeSalida()
+  const [grupo, setGrupo] = useState('')
+
+  /*
     Las formas de contar del artículo que se está tocando. Se calculan aquí y no
     dentro del modal porque las miran tres sitios: el campo de cantidad, la hoja
     de conteo y el botón de guardar.
@@ -820,6 +837,7 @@ export function Existencias() {
     // sería anotar a nombre de quien no era.
     setSaleDe('')
     setClase((clases.data ?? [])[0]?.codigo ?? '')
+    setGrupo('')
     setValor(tipo === 'ajuste' && fila ? fila.existencia : '')
     setTotalContado(tipo === 'ajuste' && fila ? fila.existencia : '')
     // Una hoja de conteo es de un artículo concreto: abrir otro empieza limpio.
@@ -898,6 +916,7 @@ export function Existencias() {
         })),
         motivo,
         tipo: clase,
+        grupo_id: Number(grupo),
       })) as string
 
       /*
@@ -948,6 +967,7 @@ export function Existencias() {
         ],
         motivo,
         tipo: clase,
+        grupo_id: Number(grupo),
       })) as string
 
       // Igual que en la de varios renglones: el modal se cierra antes de armar
@@ -1672,6 +1692,8 @@ export function Existencias() {
                   ((modal.tipo === 'salidas' || modal.tipo === 'salida') &&
                     claseElegida?.exige_detalle === true &&
                     motivo.trim().length < 10) ||
+                  // Sin grupo la base rechaza la salida: mejor no dejar pulsar.
+                  ((modal.tipo === 'salidas' || modal.tipo === 'salida') && !grupo) ||
                   salidas.isPending ||
                   ajuste.isPending ||
                   entrada.isPending
@@ -2403,6 +2425,18 @@ export function Existencias() {
                   }))}
                 />
 
+                <Select
+                  className="mt-4"
+                  label="¿Para quién sale?"
+                  vacio="Elige el grupo"
+                  hint="El área o el cargo que lo recibe, del organigrama de la empresa."
+                  value={grupo}
+                  onChange={(e) => setGrupo(e.target.value)}
+                  opciones={(grupos.data ?? [])
+                    .filter((g) => g.activo)
+                    .map((g) => ({ valor: String(g.id), etiqueta: grupoEnCorto(g) }))}
+                />
+
                 {/* ESCRITURA y no TOTAL: con TOTAL el boton solo lo veian las
                     cuatro cuentas de administrador, y la lista se hizo editable
                     justamente para que no nos llamaran por ella. */}
@@ -2593,6 +2627,17 @@ export function Existencias() {
                     }))}
                   />
 
+                  <Select
+                    className="mt-4"
+                    label="¿Para quién sale?"
+                    vacio="Elige el grupo"
+                    hint="El área o el cargo que lo recibe, del organigrama de la empresa."
+                    value={grupo}
+                    onChange={(e) => setGrupo(e.target.value)}
+                    opciones={(grupos.data ?? [])
+                      .filter((g) => g.activo)
+                      .map((g) => ({ valor: String(g.id), etiqueta: grupoEnCorto(g) }))}
+                  />
                 </>
               ) : null}
 
