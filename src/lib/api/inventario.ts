@@ -492,6 +492,8 @@ export const TIPOS_MOVIMIENTO: Record<string, string> = {
   ENTRADA_DIRECTA: 'Entrada sin compra',
   SALIDA_CONSUMO: 'Salida a consumo',
   SALIDA_DESPACHO: 'Salida por despacho',
+  // Compra por intercambio (17/09/2026): el material pagó una orden de compra.
+  SALIDA_INTERCAMBIO: 'Salida como pago de una compra',
   SALIDA_MERMA: 'Merma',
   // «Todo será englobado por Salida» —Christopher, 15/09/2026—. Ya no se
   // escribe: lo llevan solo las salidas viejas, que se leen «Salida · Robado».

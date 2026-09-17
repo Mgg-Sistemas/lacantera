@@ -695,6 +695,7 @@ const HIZO_EN_INVENTARIO: Record<string, string> = {
   ENTRADA_DIRECTA: 'Registró una entrada sin compra',
   SALIDA_CONSUMO: 'Sacó a consumo',
   SALIDA_DESPACHO: 'Despachó',
+  SALIDA_INTERCAMBIO: 'Entregó material como pago de una compra',
   SALIDA_MERMA: 'Anotó una merma',
   SALIDA_BAJA: 'Registró una salida',
   AJUSTE_COSTO: 'Corrigió un costo',
