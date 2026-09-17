@@ -3,6 +3,8 @@ import { Input } from '@/components/ui/Input'
 import {
   documento,
   documentoCanonico,
+  esCedula,
+  identificacionCanonica,
   NATURALEZA_DEL_DOCUMENTO,
   soloDocumento,
 } from '@/lib/formato'
@@ -43,8 +45,11 @@ interface Props {
   valor: string
   /** Devuelve el canónico, o el texto crudo mientras aún no lo es. */
   onCambiar: (valor: string) => void
-  /** Un RIF lleva dígito verificador; una cédula no. */
-  tipo?: 'cedula' | 'rif'
+  /**
+   * Un RIF lleva dígito verificador; una cédula no. `identificacion` acepta las
+   * dos, para quien puede ser una empresa o una persona natural sin RIF.
+   */
+  tipo?: 'cedula' | 'rif' | 'identificacion'
   hint?: string
   className?: string
   required?: boolean
@@ -63,7 +68,8 @@ export function CampoDocumento({
 }: Props) {
   const [enfocado, setEnfocado] = useState(false)
 
-  const canonico = documentoCanonico(valor, tipo === 'rif')
+  const canonico =
+    tipo === 'identificacion' ? identificacionCanonica(valor) : documentoCanonico(valor, tipo === 'rif')
   const hayAlgo = valor.trim() !== ''
 
   /*
@@ -75,7 +81,11 @@ export function CampoDocumento({
     !enfocado && hayAlgo && canonico === null
       ? /^[0-9]/.test(valor.trim())
         ? 'Falta la letra delante: V, E, J, G o P.'
-        : 'No se entiende. Se escribe como V-12.345.678.'
+        : tipo === 'identificacion'
+          ? /^[JGP]/i.test(valor.trim())
+            ? 'A este RIF le falta el dígito del final: J-12.345.678-9.'
+            : 'No se entiende. Una cédula se escribe V-12.345.678; un RIF, J-12.345.678-9.'
+          : 'No se entiende. Se escribe como V-12.345.678.'
       : undefined
 
   const letra = canonico?.[0]
@@ -88,7 +98,13 @@ export function CampoDocumento({
       disabled={disabled}
       sinNormalizar
       autoComplete="off"
-      placeholder={tipo === 'rif' ? 'J-12.345.678-9' : 'V-12.345.678'}
+      placeholder={
+        tipo === 'rif'
+          ? 'J-12.345.678-9'
+          : tipo === 'identificacion'
+            ? 'V-12.345.678 o J-12.345.678-9'
+            : 'V-12.345.678'
+      }
       value={enfocado ? valor : hayAlgo ? documento(valor) : ''}
       onFocus={() => setEnfocado(true)}
       onBlur={() => {
@@ -111,8 +127,12 @@ export function CampoDocumento({
       hint={
         hint ??
         (letra
-          ? NATURALEZA_DEL_DOCUMENTO[letra]
-          : 'Con la letra delante: V, E, J, G o P.')
+          ? tipo === 'identificacion'
+            ? `${NATURALEZA_DEL_DOCUMENTO[letra]} · ${esCedula(canonico) ? 'cédula' : 'RIF'}`
+            : NATURALEZA_DEL_DOCUMENTO[letra]
+          : tipo === 'identificacion'
+            ? 'Cédula si es una persona sin RIF; RIF con su dígito si es una empresa.'
+            : 'Con la letra delante: V, E, J, G o P.')
       }
     />
   )

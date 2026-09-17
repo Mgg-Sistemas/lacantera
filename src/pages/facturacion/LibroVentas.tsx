@@ -57,7 +57,7 @@ export function LibroVentas() {
       `libro-ventas-${mes}.csv`,
       [
         'Fecha',
-        'RIF',
+        'RIF o cédula',
         'Cliente',
         'Documento',
         'Número',
