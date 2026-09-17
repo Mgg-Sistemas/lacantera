@@ -216,7 +216,8 @@ export function CompraDirecta() {
         precio_unitario: Number(f.precio),
         exento_iva: f.exento,
         marca: f.marca || null,
-        presentacion: f.presentacion || null,
+        // Una presentación elegida y luego soltado el artículo no viaja.
+        presentacion: f.articulo_id ? f.presentacion || null : null,
       })),
     })
 
@@ -446,16 +447,29 @@ export function CompraDirecta() {
                   value={f.marca}
                   onChange={(e) => cambiar(f.clave, { marca: e.target.value })}
                 />
-                <Select
-                  label="Presentación"
-                  vacio="Como venga"
-                  value={f.presentacion}
-                  onChange={(e) => cambiar(f.clave, { presentacion: e.target.value })}
-                  opciones={(presentaciones ?? []).map((p) => ({
-                    valor: p.codigo,
-                    etiqueta: p.nombre,
-                  }))}
-                />
+                {/*
+                  LA PRESENTACIÓN ES DEL MATERIAL. Christopher, 17/09/2026: «si
+                  está comprando un servicio, no entiendo cómo permite usar
+                  Presentación y guardar saco, rollo». Sin artículo el renglón
+                  es un servicio, y un servicio no viene en sacos: el campo sale
+                  cuando hay artículo.
+                */}
+                {f.articulo_id ? (
+                  <Select
+                    label="Presentación"
+                    vacio="Como venga"
+                    value={f.presentacion}
+                    onChange={(e) => cambiar(f.clave, { presentacion: e.target.value })}
+                    opciones={(presentaciones ?? []).map((p) => ({
+                      valor: p.codigo,
+                      etiqueta: p.nombre,
+                    }))}
+                  />
+                ) : (
+                  <p className="text-ink/45 self-end pb-2.5 text-xs">
+                    Sin presentación: sin artículo es un servicio.
+                  </p>
+                )}
                 <label className="text-ink/70 flex cursor-pointer items-center gap-2 self-end pb-2.5 text-sm select-none">
                   <input
                     type="checkbox"
