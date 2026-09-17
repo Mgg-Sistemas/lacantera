@@ -286,8 +286,11 @@ export function ModalSalida({
     solicitar no hay lista: se escribe para qué, y la entrega sale con la razón
     ENTREGA POR SOLICITUD, que pone la base.
 
-    Y cambian las palabras: quien solicita elige UN almacén para todo —aprobar
-    es responder por lo que sale de un sitio—, y las preguntas hablan en futuro.
+    Y cambian las palabras: las preguntas hablan en futuro. Quien solicita
+    elige arriba el almacén de todo, y desde el 17/09/2026 cada renglón puede
+    decir otro —«el mismo caso» que el despacho, pidió Christopher—. Aprobar
+    sigue siendo responder por lo que sale de un sitio, así que se envía una
+    solicitud por almacén.
   */
   modo?: 'registrar' | 'pedir'
   /** Cuando se llega desde una fila de existencias, el primer renglón viene puesto. */
@@ -339,20 +342,18 @@ export function ModalSalida({
   */
   useEffect(() => {
     if (!abierto) return
-    setRenglones([renglonVacio(articuloInicial ?? '', almacenInicial ?? '')])
+    // Al pedir, un renglón sin almacén propio sale del de arriba.
+    setRenglones([renglonVacio(articuloInicial ?? '', modo === 'pedir' ? '' : (almacenInicial ?? ''))])
     setAlmacenPedido(almacenInicial ?? '')
     setAmbito('')
     setGrupo('')
     setExterno('')
     setResponsable('')
     setMotivo('')
-  }, [abierto, articuloInicial, almacenInicial])
+  }, [abierto, modo, articuloInicial, almacenInicial])
 
-  // Al pedir, el sitio es uno para todos los renglones: el de arriba manda.
-  useEffect(() => {
-    if (modo !== 'pedir') return
-    setRenglones((lista) => lista.map((r) => ({ ...r, almacen: almacenPedido })))
-  }, [modo, almacenPedido])
+  /** El almacén de un renglón: el suyo, o al pedir, el de arriba. */
+  const sitioDe = (r: RenglonEnCurso) => r.almacen || (modo === 'pedir' ? almacenPedido : '')
 
   // La razón se propone sola en cuanto llega la lista, que viene por la red.
   // Solo al registrar: una solicitud no elige razón.
@@ -380,7 +381,7 @@ export function ModalSalida({
   const pedidoHasta = (indice: number, almacen: string, articulo: string) =>
     renglones
       .slice(0, indice)
-      .filter((x) => x.almacen === almacen && x.articulo === articulo)
+      .filter((x) => sitioDe(x) === almacen && x.articulo === articulo)
       .reduce((total, x) => total + Number(x.cantidad || 0), 0)
 
   /*
@@ -436,31 +437,20 @@ export function ModalSalida({
     }))
   }, [todas.data])
 
-  /** Al pedir, el artículo se elige de lo que hay EN ESE SITIO. */
-  const articulosDelSitio = useMemo(
-    () =>
-      (todas.data ?? [])
-        .filter((e) => String(e.almacen_id) === almacenPedido && Number(e.disponibles) > 0)
-        .map((e) => ({
-          valor: String(e.articulo_id),
-          codigo: e.articulo_codigo,
-          nombre: e.articulo,
-          detalle: `hay ${cantidad(e.disponibles)} ${e.unidad}`,
-        })),
-    [todas.data, almacenPedido],
-  )
-
   /** Los renglones que cuentan: uno a medio escribir no invalida los demás. */
-  const buenos = renglones.filter((r) => r.articulo && r.almacen && Number(r.cantidad) > 0)
+  const buenos = renglones.filter((r) => r.articulo && sitioDe(r) && Number(r.cantidad) > 0)
+  /** Al pedir, cuántas solicitudes salen: una por almacén. */
+  const solicitudesQueSalen = new Set(buenos.map(sitioDe)).size
+  const materialSinAlmacen = renglones.some((r) => r.articulo && !sitioDe(r))
 
   const enPie =
     buenos.length > 0 &&
     renglones.every(
       (r, i) =>
         !r.articulo ||
-        !r.almacen ||
+        !sitioDe(r) ||
         Number(r.cantidad || 0) <= 0 ||
-        Number(r.cantidad) + pedidoHasta(i, r.almacen, r.articulo) <= hayEn(r.almacen, r.articulo),
+        Number(r.cantidad) + pedidoHasta(i, sitioDe(r), r.articulo) <= hayEn(sitioDe(r), r.articulo),
     )
 
   // Al solicitar, «para qué» es lo único que lee quien aprueba: se exige entero.
@@ -477,9 +467,9 @@ export function ModalSalida({
     (ambito === 'FUERA' && (externo.trim().length < 3 || responsable.trim().length < 3))
 
   const pedir = async () => {
-    const numero = (await pedido.mutateAsync({
-      almacen_id: Number(almacenPedido),
+    const numeros = (await pedido.mutateAsync({
       renglones: buenos.map((r) => ({
+        almacen_id: Number(sitioDe(r)),
         articulo_id: Number(r.articulo),
         cantidad: r.presentaciones ? Number(r.sueltas || 0) : Number(r.cantidad || 0),
         presentaciones: r.presentaciones ?? null,
@@ -489,9 +479,9 @@ export function ModalSalida({
       motivo,
       ...paraQuienVa(ambito, grupo, externo, responsable),
       con_firma: miFirma?.usar === true && conMiFirma,
-    })) as string
+    })) as string[]
 
-    onRegistrada(numero, motivo)
+    onRegistrada(numeros.join(', '), motivo)
   }
 
   const registrar = async () => {
@@ -540,7 +530,7 @@ export function ModalSalida({
                 disabled={
                   !enPie ||
                   (modo === 'registrar' && !clase) ||
-                  (modo === 'pedir' && !almacenPedido) ||
+                  (modo === 'pedir' && materialSinAlmacen) ||
                   faltaDecirParaQuien ||
                   faltaElDetalle ||
                   ventaEnElMotivo !== null ||
@@ -553,7 +543,9 @@ export function ModalSalida({
                 {salidas.isPending || pedido.isPending
                   ? 'Guardando…'
                   : modo === 'pedir'
-                    ? 'Enviar solicitud'
+                    ? solicitudesQueSalen > 1
+                      ? `Enviar ${solicitudesQueSalen} solicitudes`
+                      : 'Enviar solicitud'
                     : 'Registrar salida'}
               </Button>
             </>
@@ -569,8 +561,9 @@ export function ModalSalida({
                 opciones={sitiosConMaterial}
               />
               <p className="text-ink/45 mt-1.5 text-xs">
-                Una solicitud es de un sitio: la aprueba quien responde por él. Si hace falta
-                material de dos almacenes, son dos solicitudes.
+                Es el de todos los renglones que no digan otro. Una solicitud es de un sitio: la
+                aprueba quien responde por él. Si algún material sale de otro almacén, se elige en
+                su renglón y se envía una solicitud por cada almacén.
               </p>
             </div>
           ) : null}
@@ -590,9 +583,10 @@ export function ModalSalida({
                 (articulos ?? []).find((a) => String(a.id) === r.articulo),
                 formasDeContar,
               )
-              const disponible = hayEn(r.almacen, r.articulo) - pedidoHasta(i, r.almacen, r.articulo)
-              const pasado = Boolean(r.articulo && r.almacen && Number(r.cantidad) > disponible)
-              const sitioElegido = sitios.find((e) => String(e.almacen_id) === r.almacen)
+              const sitio = sitioDe(r)
+              const disponible = hayEn(sitio, r.articulo) - pedidoHasta(i, sitio, r.articulo)
+              const pasado = Boolean(r.articulo && sitio && Number(r.cantidad) > disponible)
+              const sitioElegido = sitios.find((e) => String(e.almacen_id) === sitio)
 
               return (
                 <div key={r.clave} className="border-hairline rounded-card border border-dashed p-3">
@@ -626,7 +620,7 @@ export function ModalSalida({
                       const conEse = (todas.data ?? []).filter(
                         (e) => String(e.articulo_id) === v && Number(e.disponibles) > 0,
                       )
-                      const sigueValiendo = conEse.some((e) => String(e.almacen_id) === r.almacen)
+                      const sigueValiendo = conEse.some((e) => String(e.almacen_id) === sitio)
                       setRenglones((lista) =>
                         lista.map((x) =>
                           x.clave === r.clave
@@ -651,39 +645,32 @@ export function ModalSalida({
                         ),
                       )
                     }}
-                    opciones={modo === 'pedir' ? articulosDelSitio : articulosConExistencia}
+                    opciones={articulosConExistencia}
                   />
 
-                  <div
-                    className={cn(
-                      'mt-3 grid gap-3',
-                      modo === 'registrar' && 'sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]',
-                    )}
-                  >
-                    {/* Al pedir, el sitio se eligió arriba y es uno para todo:
-                        repetirlo en cada renglón sería invitar a contradecirlo. */}
-                    {modo === 'registrar' ? (
-                      <SelectBuscable
-                        label="De dónde sale"
-                        vacio={r.articulo ? 'Elige el sitio' : 'Elige antes el material'}
-                        valor={r.almacen}
-                        onCambio={(v) =>
-                          setRenglones((lista) =>
-                            lista.map((x) =>
-                              x.clave === r.clave ? { ...x, almacen: v, propietario: undefined } : x,
-                            ),
-                          )
-                        }
-                        // Solo los sitios que tienen ese material, con lo que hay
-                        // en cada uno: es la información que decide.
-                        opciones={sitios.map((e) => ({
-                          valor: String(e.almacen_id),
-                          codigo: e.almacen_codigo,
-                          nombre: e.almacen,
-                          detalle: `hay ${cantidad(e.disponibles)} ${e.unidad}`,
-                        }))}
-                      />
-                    ) : null}
+                  <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+                    {/* Al pedir, arranca en el almacén de arriba y se cambia
+                        solo si este material sale de otro. */}
+                    <SelectBuscable
+                      label={modo === 'pedir' ? '¿De qué almacén sale?' : 'De dónde sale'}
+                      vacio={r.articulo ? 'Elige el sitio' : 'Elige antes el material'}
+                      valor={sitio}
+                      onCambio={(v) =>
+                        setRenglones((lista) =>
+                          lista.map((x) =>
+                            x.clave === r.clave ? { ...x, almacen: v, propietario: undefined } : x,
+                          ),
+                        )
+                      }
+                      // Solo los sitios que tienen ese material, con lo que hay
+                      // en cada uno: es la información que decide.
+                      opciones={sitios.map((e) => ({
+                        valor: String(e.almacen_id),
+                        codigo: e.almacen_codigo,
+                        nombre: e.almacen,
+                        detalle: `hay ${cantidad(e.disponibles)} ${e.unidad}`,
+                      }))}
+                    />
 
                     {/*
                       LA SALIDA TAMBIÉN SE CUENTA EN BULTOS. Quien mete «3
@@ -712,8 +699,8 @@ export function ModalSalida({
                       articulo={artSale}
                       hintSinArticulo="Elige antes de dónde sale"
                       hint={
-                        r.almacen
-                          ? pedidoHasta(i, r.almacen, r.articulo) > 0
+                        sitio
+                          ? pedidoHasta(i, sitio, r.articulo) > 0
                             ? `Quedan ${cantidad(disponible)} ${unidad} tras los renglones de arriba`
                             : `Hay ${cantidad(disponible)} ${unidad}`
                           : 'Elige antes de dónde sale'
@@ -744,7 +731,7 @@ export function ModalSalida({
 
                   {pasado ? (
                     <p className="text-danger mt-2 text-xs">
-                      {pedidoHasta(i, r.almacen, r.articulo) > 0
+                      {pedidoHasta(i, sitio, r.articulo) > 0
                         ? `Ya lo pediste más arriba: ahí solo quedan ${cantidad(disponible)} ${unidad}.`
                         : `Ahí solo quedan ${cantidad(disponible)} ${unidad}.`}
                     </p>
@@ -760,7 +747,7 @@ export function ModalSalida({
             variant="outline"
             icon={<Plus />}
             onClick={() =>
-              setRenglones((v) => [...v, renglonVacio('', modo === 'pedir' ? almacenPedido : '')])
+              setRenglones((v) => [...v, renglonVacio()])
             }
           >
             Añadir otro material

@@ -139,11 +139,20 @@ function useAccionDeSolicitud<A>(fn: (a: A) => Promise<unknown>) {
   })
 }
 
+/**
+ * Pedir material, de uno o de varios almacenes.
+ *
+ * UNA SOLICITUD POR ALMACÉN. Christopher, 17/09/2026: cada renglón puede decir
+ * de qué almacén sale, y sale una solicitud por almacén, porque aprobar es
+ * responder por lo que sale de un sitio. Los renglones se agrupan aquí, en el
+ * orden en que aparecen; la base crea todas en una sola transacción, así que o
+ * quedan todas o ninguna. Devuelve sus números.
+ */
 export function usePedirSalida() {
   return useAccionDeSolicitud(
     (s: {
-      almacen_id: number
       renglones: Array<{
+        almacen_id: number
         articulo_id: number
         cantidad: number
         presentaciones?: number | null
@@ -159,15 +168,19 @@ export function usePedirSalida() {
       /** Si quien solicita pone su firma digital en la orden. Por defecto no. */
       con_firma?: boolean
     }) =>
-      rpc<string>('pedir_salida', {
-        p_almacen_id: s.almacen_id,
-        p_renglones: s.renglones.map((r) => ({
-          articulo_id: String(r.articulo_id),
-          cantidad: String(r.cantidad),
-          ...(r.presentaciones ? { presentaciones: String(r.presentaciones) } : {}),
-          ...(r.presentacion ? { presentacion: r.presentacion } : {}),
-          ...(r.suelto ? { suelto: String(r.suelto) } : {}),
-          ...(r.propietario ? { propietario: r.propietario } : {}),
+      rpc<string[]>('pedir_salidas', {
+        p_por_almacen: [...new Set(s.renglones.map((r) => r.almacen_id))].map((almacen_id) => ({
+          almacen_id,
+          renglones: s.renglones
+            .filter((r) => r.almacen_id === almacen_id)
+            .map((r) => ({
+              articulo_id: String(r.articulo_id),
+              cantidad: String(r.cantidad),
+              ...(r.presentaciones ? { presentaciones: String(r.presentaciones) } : {}),
+              ...(r.presentacion ? { presentacion: r.presentacion } : {}),
+              ...(r.suelto ? { suelto: String(r.suelto) } : {}),
+              ...(r.propietario ? { propietario: r.propietario } : {}),
+            })),
         })),
         p_motivo: s.motivo,
         p_grupo_id: s.grupo_id ?? null,
