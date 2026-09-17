@@ -443,9 +443,15 @@ function pie(doc: Doc, d: DatosDocumento, pagina: number, de: number) {
 
   doc.text(`Página ${pagina} de ${de}`, DER, PIE - 4.5, { align: 'right' })
   doc.text(`Emitido por ${d.emitidoPor} · ${EMPRESA.marca}`, IZQ, PIE)
-  doc.setTextColor(GRIS_SUAVE)
-  doc.text(`Tasa del día: ${numero(d.tasa)} Bs/$`, DER, PIE, { align: 'right' })
-
+  /*
+    La tasa, solo fuera de la nota de entrega: «cualquier otra nota no debe ir»
+    (Christopher, 17/09/2026). Y la del dólar: en un documento en bolívares
+    `tasa` es 1, y el pie decía «Tasa del día: 1,00 Bs/$».
+  */
+  if (d.tipo !== 'NOTA') {
+    doc.setTextColor(GRIS_SUAVE)
+    doc.text(`Tasa del día: ${numero(d.tasaUsd || d.tasa)} Bs/$`, DER, PIE, { align: 'right' })
+  }
 }
 
 /** ANULADA, cruzada sobre la hoja. Un papel anulado tiene que verse anulado. */
