@@ -31,6 +31,7 @@
 */
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Ban,
   Check,
@@ -80,6 +81,8 @@ import {
   type RutaAcarreo,
 } from '@/lib/api/acarreos'
 import { useVehiculos, type Vehiculo } from '@/lib/api/vehiculos'
+import { leerFirmasEncendidas, useMiFirma } from '@/lib/api/firmas'
+import type { FirmaDelDia, FirmasDelDia } from '@/lib/ficha/viajesPdf'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { descargarCsv } from '@/lib/api/libros'
 import {
@@ -172,6 +175,7 @@ function PestanaDia() {
   const dias = useAcarreosDia(dia)
   const todos = useAcarreosDelDia(dia)
   const { data: laEmpresa } = useEmpresa()
+  const qc = useQueryClient()
   const { nombre: yo } = useSesion()
   const { puede } = useMisPermisos()
   const escribe = puede('EXPLOTACION', 'ESCRITURA')
@@ -224,11 +228,19 @@ function PestanaDia() {
   const imprimir = async () => {
     const viajes = todos.data ?? []
     const placas = [...new Set(viajes.map((v) => v.placa ?? '—'))]
+    // Leídas al armar: con la consulta en camino, el papel saldría sin las
+    // firmas que sus dueños eligieron poner.
+    const guardadas = await qc.fetchQuery({
+      queryKey: ['firmas'],
+      queryFn: leerFirmasEncendidas,
+      staleTime: 5 * 60_000,
+    })
 
     setPdf(
       await armarRegistroDeViajes({
         dia,
         empresa: null,
+        firmas: quienesFirmanElDia(viajes, guardadas.porPerfil),
         camiones: placas.map((placa) => {
           const suyos = viajes.filter((v) => (v.placa ?? '—') === placa)
           return {
@@ -487,6 +499,15 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
   const aprobar = useAprobarViajes()
   const [rechazando, setRechazando] = useState<GrupoPorAprobar | null>(null)
   const [ajustando, setAjustando] = useState<GrupoPorAprobar | null>(null)
+  /*
+    La firma de quien aprueba, marcada de entrada y una sola vez para toda la
+    bandeja: aprobar es de a grupos, y preguntarlo en cada botón sería pedir lo
+    mismo doce veces. Solo a quien tiene una firma encendida.
+  */
+  const { data: miFirma } = useMiFirma()
+  const tengoFirma = miFirma?.usar === true
+  const [conMiFirma, setConMiFirma] = useState(true)
+  const conFirma = tengoFirma && conMiFirma
 
   const esperando = viajes.filter((v) => v.estado === 'POR_APROBAR')
   if (esperando.length === 0) return null
@@ -555,12 +576,32 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
             size="sm"
             icon={<Check />}
             disabled={aprobar.isPending}
-            onClick={() => aprobar.mutate(decidibles.flatMap((g) => g.ids))}
+            onClick={() =>
+              aprobar.mutate({ ids: decidibles.flatMap((g) => g.ids), con_firma: conFirma })
+            }
           >
             Aprobar los {enteros(decidibles.reduce((s, g) => s + g.ids.length, 0))} que puedo
           </Button>
         ) : null}
       </div>
+
+      {tengoFirma && decidibles.length > 0 ? (
+        <label className="border-hairline mt-3 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+          <input
+            type="checkbox"
+            className="accent-royal-600 mt-0.5 size-4 shrink-0"
+            checked={conMiFirma}
+            onChange={(e) => setConMiFirma(e.target.checked)}
+          />
+          <span className="text-ink/80">
+            Poner mi firma digital en «Aprobado por» del registro del día
+            <span className="text-ink/50 mt-0.5 block text-xs">
+              Vale para lo que apruebes aquí. Sin marcar, la raya sale en blanco con tu nombre
+              debajo.
+            </span>
+          </span>
+        </label>
+      ) : null}
 
       <ul className="divide-hairline mt-3 divide-y">
         {lista.map((g) => {
@@ -596,7 +637,7 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
                     size="sm"
                     icon={<Check />}
                     disabled={aprobar.isPending}
-                    onClick={() => aprobar.mutate(g.ids)}
+                    onClick={() => aprobar.mutate({ ids: g.ids, con_firma: conFirma })}
                   >
                     Aprobar
                   </Button>
@@ -935,6 +976,62 @@ function FilaEquipo({
   )
 }
 
+/*
+  QUIÉN VA EN CADA RAYA DEL REGISTRO DEL DÍA.
+
+  Firma quien más viajes cargó —o aprobó—, y los demás se nombran en el resumen.
+  Su firma digital solo se estampa si la eligió en TODOS sus viajes de ese día:
+  una tanda cargada sin firma basta para no ponerla en un papel que también
+  cubre esa tanda.
+*/
+function quienesFirmanElDia(viajes: Acarreo[], firmas: Record<string, string>): FirmasDelDia {
+  const firmaDe = (
+    lista: Acarreo[],
+    quien: (v: Acarreo) => string | null,
+    nombre: (v: Acarreo) => string | null,
+    eligio: (v: Acarreo) => boolean | null,
+  ): FirmaDelDia => {
+    const porPersona = new Map<string, { nombre: string; viajes: Acarreo[] }>()
+    for (const v of lista) {
+      const uid = quien(v)
+      if (!uid) continue
+      const suyo = porPersona.get(uid) ?? { nombre: nombre(v) ?? '—', viajes: [] }
+      suyo.viajes.push(v)
+      porPersona.set(uid, suyo)
+    }
+    const [primero, ...resto] = [...porPersona.entries()].sort(
+      (a, b) => b[1].viajes.length - a[1].viajes.length,
+    )
+    if (!primero) return { nombre: null, cuantos: 0, imagen: null, otros: null }
+    const [uid, suyo] = primero
+    return {
+      nombre: suyo.nombre,
+      cuantos: suyo.viajes.length,
+      imagen: suyo.viajes.every((v) => eligio(v) === true) ? (firmas[uid] ?? null) : null,
+      otros:
+        resto.length > 0
+          ? resto.map(([, o]) => `${o.nombre} (${enteros(o.viajes.length)})`).join(', ')
+          : null,
+    }
+  }
+
+  return {
+    registro: firmaDe(
+      viajes,
+      (v) => v.registrado_por,
+      (v) => v.registrado_por_nombre,
+      (v) => v.firma_de_quien_registra,
+    ),
+    aprobacion: firmaDe(
+      viajes.filter((v) => v.estado === 'APROBADO'),
+      (v) => v.decidido_por,
+      (v) => v.decidido_por_nombre,
+      (v) => v.firma_de_quien_aprueba,
+    ),
+    porAprobar: viajes.filter((v) => v.estado === 'POR_APROBAR').length,
+  }
+}
+
 /** El formulario de carga: quién, por qué ruta, cómo volvió y cuántos. */
 function CargarViajes({
   dia,
@@ -948,6 +1045,9 @@ function CargarViajes({
   yaTiene: (e: Equipo, rutaId: number) => number
 }) {
   const registrar = useRegistrarViajes()
+  // Quien carga no autoriza nada: su firma se ofrece sin marcar.
+  const { data: miFirma } = useMiFirma()
+  const [conMiFirma, setConMiFirma] = useState(false)
   const [indice, setIndice] = useState('')
   const [rutaId, setRutaId] = useState('')
   const [carga, setCarga] = useState<CargaDelViaje>('COMPLETA')
@@ -993,6 +1093,7 @@ function CargarViajes({
       maquina_id: equipo.maquinaId,
       carga_m3: ofreceM3 && m3 !== '' ? Number(m3) : null,
       precio_usd: pidePrecio ? Number(precio) : null,
+      con_firma: miFirma?.usar === true && conMiFirma,
     })
     setCargados(cuantos)
     setCantidad('')
@@ -1095,6 +1196,22 @@ function CargarViajes({
           {registrar.isPending ? 'Cargando…' : 'Cargar'}
         </Button>
       </div>
+      {miFirma?.usar ? (
+        <label className="text-ink/75 mt-3 flex cursor-pointer items-start gap-2.5 text-sm">
+          <input
+            type="checkbox"
+            className="accent-royal-600 mt-0.5 size-4 shrink-0"
+            checked={conMiFirma}
+            onChange={(e) => setConMiFirma(e.target.checked)}
+          />
+          <span>
+            Poner mi firma digital en «Registrado por» del registro del día
+            <span className="text-ink/50 mt-0.5 block text-xs">
+              Solo se estampa si la pones en todos los viajes que cargues ese día.
+            </span>
+          </span>
+        </label>
+      ) : null}
       {equipos[0]?.maquinaId != null ? (
         <p className="text-ink/45 mt-2 text-xs">
           Las máquinas propias no se pagan por viaje: el viaje queda contado sin precio.

@@ -93,6 +93,12 @@ export interface Acarreo {
   /** El precio que traía de su ruta, si quien aprueba lo ajustó. Nulo sin la casilla del dinero. */
   precio_antes_de_ajuste: string | null
   motivo_ajuste: string | null
+  /** Quién cargó y quién decidió, por persona: la firma se busca por aquí y no por el nombre. */
+  registrado_por: string | null
+  decidido_por: string | null
+  /** Si eligieron poner su firma digital en el registro del día. */
+  firma_de_quien_registra: boolean | null
+  firma_de_quien_aprueba: boolean | null
 }
 
 export interface AcarreoDia {
@@ -440,6 +446,8 @@ export function useRegistrarViajes() {
       carga_m3?: number | null
       precio_usd?: number | null
       nota?: string | null
+      /** Si la firma de quien carga va en «Registrado por». */
+      con_firma?: boolean
     }) =>
       rpc<number>('registrar_viajes', {
         p_fecha: a.fecha,
@@ -453,12 +461,15 @@ export function useRegistrarViajes() {
         p_precio_usd: a.precio_usd ?? null,
         p_frente_id: null,
         p_nota: a.nota ?? null,
+        p_con_firma: a.con_firma === true,
       }),
   )
 }
 
 export function useAprobarViajes() {
-  return useAccion((ids: number[]) => rpc<number>('aprobar_viajes', { p_ids: ids }))
+  return useAccion((a: { ids: number[]; con_firma: boolean }) =>
+    rpc<number>('aprobar_viajes', { p_ids: a.ids, p_con_firma: a.con_firma }),
+  )
 }
 
 /**
