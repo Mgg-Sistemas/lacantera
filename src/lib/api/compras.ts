@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
+import { SELECT_MATERIAL, type PagoConMaterial } from './intercambio'
 
 // ---------------------------------------------------------------------------
 // Las siete columnas del tablero
@@ -170,7 +171,8 @@ export interface Cotizacion {
 
 export interface InstruccionPago {
   id: number
-  metodo: 'TRANSFERENCIA' | 'PAGO_MOVIL' | 'BINANCE' | 'EFECTIVO'
+  /** Un código de `metodos_pago`: también INTERCAMBIO (material) y SALDO_A_FAVOR. */
+  metodo: string
   moneda: string
   monto: string
   monto_bs: string
@@ -191,6 +193,8 @@ export interface InstruccionPago {
   fecha_pago: string | null
   creada_en: string
   motivo_devolucion: string | null
+  /** Solo en los pagos con material (INTERCAMBIO): qué, cuánto y su salida. */
+  material?: PagoConMaterial | null
 }
 
 export interface RenglonOrden {
@@ -404,7 +408,7 @@ const SELECT_DETALLE = `
     proveedor:proveedores(id, nombre, rif, metodo_pago_preferido, direccion, telefono),
   solicitud:solicitudes_pedido(destino, destino_almacen_id),
     renglones:orden_renglones(*),
-    instrucciones:instrucciones_pago(*)
+    instrucciones:instrucciones_pago(*, ${SELECT_MATERIAL})
   )
 `
 

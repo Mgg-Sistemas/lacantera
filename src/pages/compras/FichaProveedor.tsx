@@ -14,6 +14,7 @@ import {
   useResumenProveedor,
 } from '@/lib/api/proveedorFicha'
 import { enlaceDelPapel, TIPOS_DE_PAPEL } from '@/lib/api/papelesDeCompra'
+import { SaldosDelProveedor } from './SaldosDelProveedor'
 import { dolares, enteros, fecha, fechaHora } from '@/lib/formato'
 
 /*
@@ -255,6 +256,8 @@ export function FichaProveedor() {
           </div>
         </>
       )}
+
+      <SaldosDelProveedor proveedorId={proveedorId} />
 
       <Visor
         abierto={viendo !== null}
