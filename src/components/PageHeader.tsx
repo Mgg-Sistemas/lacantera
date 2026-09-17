@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Ayuda, BotonAyuda } from '@/components/Ayuda'
 
 interface PageHeaderProps {
   title: string
@@ -39,7 +40,11 @@ export function PageHeader({ title, description, eyebrow, actions }: PageHeaderP
           </p>
         ) : null}
         <h1 className="text-ink/90 text-2xl font-semibold tracking-tight">{title}</h1>
-        {description ? <p className="text-ink/55 mt-1 text-base">{description}</p> : null}
+        {description ? (
+          <Ayuda>
+            <p className="text-ink/55 mt-1 text-base">{description}</p>
+          </Ayuda>
+        ) : null}
       </div>
       {/*
         Los botones se parten de línea antes que empujar la página.
@@ -54,7 +59,12 @@ export function PageHeader({ title, description, eyebrow, actions }: PageHeaderP
         De `sm` para arriba se comportan como antes: no se encogen, y el título
         cede si hace falta. Debajo, mandan las líneas.
       */}
-      {actions ? <div className="flex flex-wrap gap-2 sm:shrink-0">{actions}</div> : null}
+      {actions || description ? (
+        <div className="flex flex-wrap gap-2 sm:shrink-0">
+          {actions}
+          {description ? <BotonAyuda /> : null}
+        </div>
+      ) : null}
     </div>
   )
 }
