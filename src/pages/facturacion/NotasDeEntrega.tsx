@@ -54,14 +54,22 @@ import {
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
 import { useMisPermisos } from '@/lib/api/usuarios'
 
-const TONO: Record<string, 'safety' | 'success' | 'neutral'> = {
-  DESPACHADA: 'safety',
+/*
+  LA NOTA NO ESTÁ ESPERANDO UNA FACTURA. Christopher, 17/09/2026: «una nota de
+  entrega no necesariamente llevará o se anexará a una factura; manejarán sus
+  estados de forma independiente hasta que se decida o no hacer factura (ahí
+  cambiaría a facturada y se enlaza con el correlativo de la factura)». Por eso
+  despachada se dice «Despachada», no «Por facturar», y no va en color de
+  pendiente: no le falta nada.
+*/
+const TONO: Record<string, 'success' | 'neutral'> = {
+  DESPACHADA: 'neutral',
   FACTURADA: 'success',
   ANULADA: 'neutral',
 }
 
 const ETIQUETA: Record<string, string> = {
-  DESPACHADA: 'Por facturar',
+  DESPACHADA: 'Despachada',
   FACTURADA: 'Facturada',
   ANULADA: 'Anulada',
 }
@@ -276,7 +284,7 @@ export function NotasDeEntrega() {
           <Vacio
             icono={<Truck />}
             titulo="Todavía no ha salido ningún camión"
-            descripcion="Cada despacho rebaja el patio y queda esperando por facturar. Si el patio está en cero, carga primero la producción desde Inventario › Existencias."
+            descripcion="Cada despacho rebaja el patio y vale por sí solo. Si se decide facturarlo, se hace en Facturación y la nota queda enlazada a su factura. Si el patio está en cero, carga primero la producción desde Inventario › Existencias."
             accion={
               puedeDespachar ? (
                 <Button icon={<Truck />} onClick={() => setNuevo(true)}>

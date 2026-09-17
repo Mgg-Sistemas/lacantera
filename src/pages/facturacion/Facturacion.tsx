@@ -225,7 +225,7 @@ export function Facturacion() {
         description="Se factura contra notas de entrega: una, o todas las de la semana de un cliente."
         actions={
           <Button icon={<Receipt />} disabled={notas.length === 0} onClick={() => setEmitiendo(true)}>
-            Facturar{notas.length > 0 ? ` (${notas.length} por facturar)` : ''}
+            Facturar{notas.length > 0 ? ` (${notas.length} sin factura)` : ''}
           </Button>
         }
       />
@@ -342,8 +342,8 @@ export function Facturacion() {
           {notas.length === 0 ? (
             <Vacio
               icono={<Receipt />}
-              titulo="No hay notas por facturar"
-              descripcion="Todo lo despachado ya está facturado."
+              titulo="No hay notas sin factura"
+              descripcion="Todas las notas despachadas ya están en una factura. Una nota no tiene por qué facturarse: solo aparecen aquí las que todavía no lo están."
             />
           ) : (
             <div className="space-y-2">
@@ -723,7 +723,7 @@ export function Facturacion() {
           abierto
           onCerrar={() => setAnulando(null)}
           titulo={`Anular la factura ${anulando.numero}`}
-          descripcion="La factura no se borra: se queda con su número, marcada como anulada. Sus notas de entrega vuelven a estar por facturar."
+          descripcion="La factura no se borra: se queda con su número, marcada como anulada. Sus notas de entrega vuelven a quedar despachadas, sin factura."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setAnulando(null)}>
