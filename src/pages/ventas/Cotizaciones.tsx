@@ -44,7 +44,8 @@ import {
   type FilaRenglon,
 } from './filas'
 import { CasillaIva } from './CasillaIva'
-import { useIvaPorDefecto } from './ivaPorDefecto'
+import { CasillaIgtf } from './CasillaIgtf'
+import { IGTF_POR_DEFECTO, tributoElegido } from './ivaPorDefecto'
 
 const TONO: Record<string, 'royal' | 'success' | 'danger' | 'neutral'> = {
   ENVIADA: 'royal',
@@ -81,10 +82,17 @@ export function Cotizaciones() {
   const [flete, setFlete] = useState('')
   const [observacion, setObservacion] = useState('')
   const [filas, setFilas] = useState<FilaRenglon[]>([filaVacia()])
-  const ivaPorDefecto = useIvaPorDefecto()
-  const [conIva, setConIva] = useState(ivaPorDefecto)
+  /*
+    SIN IMPUESTOS SI NO SE MARCAN. Christopher, 17/09/2026: «una casilla
+    opcional, que sea elección del usuario si usar IVA o IGTF según considere
+    aplique el caso; por defecto que no lleve IVA o IGTF, y que para aplicarlo
+    deba usar esa casilla y marcar el porcentaje si lo desea (16 % y 3 %)».
+  */
+  const [conIva, setConIva] = useState(false)
   // El porcentaje, si quien emite lo cambió. Nulo: el de la ficha de la empresa.
   const [alicuotaEscrita, setAlicuotaEscrita] = useState<string | null>(null)
+  const [conIgtf, setConIgtf] = useState(false)
+  const [igtfEscrito, setIgtfEscrito] = useState<string | null>(null)
 
   const renglonesDetalle = useRenglones(
     'cotizacion_venta_renglones',
@@ -119,7 +127,9 @@ export function Cotizaciones() {
   const gravado = gravadoDe(filas)
   const base = gravado + (Number(flete) || 0)
   const iva = (base * alicuota) / 100
-  const total = subtotal + (Number(flete) || 0) + iva
+  const igtf = tributoElegido({ aplica: conIgtf, escrito: igtfEscrito, porDefecto: IGTF_POR_DEFECTO })
+  const montoIgtf = Math.round((subtotal + (Number(flete) || 0) + iva) * igtf.vale) / 100
+  const total = subtotal + (Number(flete) || 0) + iva + montoIgtf
   const incompletas = filas.some((f) => faltaEnFila(f, precios ?? []) !== null)
 
   // La lista en bolívares no es el mismo número que en dólares.
@@ -129,8 +139,10 @@ export function Cotizaciones() {
   }
 
   const limpiar = () => {
-    setConIva(ivaPorDefecto)
+    setConIva(false)
     setAlicuotaEscrita(null)
+    setConIgtf(false)
+    setIgtfEscrito(null)
     setClienteId('')
     setMoneda('USD')
     setValidez('15')
@@ -179,6 +191,8 @@ export function Cotizaciones() {
         baseImponible: q.base_imponible,
         iva: q.iva,
         alicuotaIva: q.alicuota_iva,
+        alicuotaIgtf: q.alicuota_igtf,
+        igtf: q.igtf,
         total: q.total,
         observacion: q.observacion,
         sello: q.estado === 'ANULADA' ? 'ANULADA' : null,
@@ -288,7 +302,12 @@ export function Cotizaciones() {
               </Button>
               <Button
                 disabled={
-                  crear.isPending || !clienteId || incompletas || alicuotaMala || aRenglones(filas).length === 0
+                  crear.isPending ||
+                  !clienteId ||
+                  incompletas ||
+                  alicuotaMala ||
+                  igtf.malo ||
+                  aRenglones(filas).length === 0
                 }
                 onClick={async () => {
                   await crear.mutateAsync({
@@ -296,6 +315,7 @@ export function Cotizaciones() {
                     renglones: aRenglones(filas),
                     moneda,
                     alicuota_iva: alicuota,
+                    alicuota_igtf: igtf.vale,
                     validez_dias: Number(validez) || 15,
                     flete: Number(flete) || 0,
                     observacion: observacion || null,
@@ -382,6 +402,14 @@ export function Cotizaciones() {
             />
           ) : null}
 
+          <CasillaIgtf
+            aplica={conIgtf}
+            onCambiar={setConIgtf}
+            alicuota={igtfEscrito ?? undefined}
+            onAlicuota={setIgtfEscrito}
+            className="mt-3"
+          />
+
           <div className="bg-ink/4 rounded-card mt-4 p-4">
             <Totales
               moneda={moneda}
@@ -390,7 +418,10 @@ export function Cotizaciones() {
               flete={Number(flete) || 0}
               alicuota={alicuota}
               iva={iva}
+              alicuotaIgtf={igtf.vale}
+              igtf={montoIgtf}
               total={total}
+              sinIva={alicuota === 0}
             />
             {cliente?.exento_iva ? (
               <p className="text-ink/50 mt-2 text-xs">
@@ -474,7 +505,10 @@ export function Cotizaciones() {
               flete={Number(detalle.flete)}
               alicuota={Number(detalle.alicuota_iva)}
               iva={Number(detalle.iva)}
+              alicuotaIgtf={Number(detalle.alicuota_igtf ?? 0)}
+              igtf={Number(detalle.igtf ?? 0)}
               total={Number(detalle.total)}
+              sinIva={Number(detalle.alicuota_iva) === 0}
             />
           </div>
 
@@ -511,6 +545,8 @@ export function Totales({
   total,
   retencion,
   sinIva,
+  alicuotaIgtf,
+  igtf,
 }: {
   moneda: string
   subtotal: number
@@ -522,6 +558,9 @@ export function Totales({
   retencion?: number
   /** Una nota de entrega: no menciona el IVA, que es cosa de la factura. */
   sinIva?: boolean
+  /** El IGTF, si lo lleva. Sin él no hay línea. */
+  alicuotaIgtf?: number
+  igtf?: number
 }) {
   const linea = (rotulo: string, valor: number, fuerte = false) => (
     <div className="flex items-baseline justify-between gap-4">
@@ -542,6 +581,7 @@ export function Totales({
       {descuento > 0 ? linea('Descuento', -descuento) : null}
       {flete > 0 ? linea('Flete', flete) : null}
       {sinIva ? null : linea(`IVA ${alicuota}%`, iva)}
+      {igtf && igtf > 0 ? linea(`IGTF ${alicuotaIgtf ?? 0}%`, igtf) : null}
       <div className="border-hairline border-t pt-1.5">{linea('Total', total, true)}</div>
       {retencion && retencion > 0 ? (
         <>

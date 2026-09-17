@@ -15,7 +15,9 @@ import { dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useClientes } from '@/lib/api/ventas'
 import { CasillaIva } from '@/pages/ventas/CasillaIva'
-import { useIvaPorDefecto } from '@/pages/ventas/ivaPorDefecto'
+import { CasillaIgtf } from '@/pages/ventas/CasillaIgtf'
+import { IGTF_POR_DEFECTO, tributoElegido, useIvaPorDefecto } from '@/pages/ventas/ivaPorDefecto'
+import { ModalFacturaDirecta } from './FacturaDirecta'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useCuentas } from '@/lib/api/tesoreria'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
@@ -88,6 +90,7 @@ export function Facturacion() {
   const anularCobro = useAnularCobro()
 
   const [emitiendo, setEmitiendo] = useState(false)
+  const [directa, setDirecta] = useState(false)
   const [detalleId, setDetalleId] = useState<number | null>(null)
   const [cobrando, setCobrando] = useState<FacturaVenta | null>(null)
   const [anulando, setAnulando] = useState<FacturaVenta | null>(null)
@@ -99,6 +102,8 @@ export function Facturacion() {
   // El IVA de la factura. Nulo: lo que diga la ficha de la empresa.
   const [conIva, setConIva] = useState<boolean | null>(null)
   const [alicuotaEscrita, setAlicuotaEscrita] = useState<string | null>(null)
+  const [conIgtf, setConIgtf] = useState(false)
+  const [igtfEscrito, setIgtfEscrito] = useState<string | null>(null)
   const ivaPorDefecto = useIvaPorDefecto()
   const alicuotaVigente = useAlicuotaIva()
   const { data: clientes } = useClientes()
@@ -141,6 +146,8 @@ export function Facturacion() {
     setObservacion('')
     setConIva(null)
     setAlicuotaEscrita(null)
+    setConIgtf(false)
+    setIgtfEscrito(null)
   }
 
   // Solo se pueden juntar notas del mismo cliente y la misma moneda: una
@@ -169,6 +176,11 @@ export function Facturacion() {
     .filter((n) => elegidas.includes(n.id))
     .reduce((s, n) => s + Number(n.total) - Number(n.iva), 0)
   const ivaElegido = Math.round(baseElegida * alicuotaFactura) / 100
+  const igtfFactura = tributoElegido({ aplica: conIgtf, escrito: igtfEscrito, porDefecto: IGTF_POR_DEFECTO })
+  const igtfElegido = Math.round((baseElegida + ivaElegido) * igtfFactura.vale) / 100
+  // «Las facturas sí o sí tendrán IVA o IGTF» (Christopher, 17/09/2026).
+  const sinTributo =
+    !!primera && !clienteElegido?.exento_iva && alicuotaFactura === 0 && igtfFactura.vale === 0
 
   const cuenta = cuentas?.find((c) => String(c.id) === cuentaId)
   const metodosDeLaCuenta = metodosParaMoneda(metodos, cuenta?.moneda)
@@ -208,6 +220,8 @@ export function Facturacion() {
         baseImponible: f.base_imponible,
         iva: f.iva,
         alicuotaIva: f.alicuota_iva,
+        alicuotaIgtf: f.alicuota_igtf,
+        igtf: f.igtf,
         total: f.total,
         retencionIva: f.retencion_iva,
         observacion: f.observacion,
@@ -222,11 +236,16 @@ export function Facturacion() {
     <>
       <PageHeader
         title="Facturación"
-        description="Se factura contra notas de entrega: una, o todas las de la semana de un cliente."
+        description="Contra notas de entrega —una, o todas las de la semana de un cliente— o sin nota, con sus propios renglones."
         actions={
-          <Button icon={<Receipt />} disabled={notas.length === 0} onClick={() => setEmitiendo(true)}>
-            Facturar{notas.length > 0 ? ` (${notas.length} sin factura)` : ''}
-          </Button>
+          <>
+            <Button variant="outline" icon={<Receipt />} onClick={() => setDirecta(true)}>
+              Factura sin nota
+            </Button>
+            <Button icon={<Receipt />} disabled={notas.length === 0} onClick={() => setEmitiendo(true)}>
+              Facturar notas{notas.length > 0 ? ` (${notas.length} sin factura)` : ''}
+            </Button>
+          </>
         }
       />
 
@@ -241,14 +260,18 @@ export function Facturacion() {
             descripcion={
               notas.length > 0
                 ? `Hay ${notas.length} nota(s) de entrega esperando factura.`
-                : 'Primero se despacha con nota de entrega; la factura sale de ahí.'
+                : 'Se factura a partir de notas de entrega, o sin nota con sus propios renglones.'
             }
             accion={
               notas.length > 0 ? (
                 <Button icon={<Receipt />} onClick={() => setEmitiendo(true)}>
-                  Facturar
+                  Facturar notas
                 </Button>
-              ) : undefined
+              ) : (
+                <Button icon={<Receipt />} onClick={() => setDirecta(true)}>
+                  Factura sin nota
+                </Button>
+              )
             }
           />
         </Card>
@@ -323,13 +346,20 @@ export function Facturacion() {
                 Cancelar
               </Button>
               <Button
-                disabled={facturar.isPending || elegidas.length === 0 || alicuotaMala}
+                disabled={
+                  facturar.isPending ||
+                  elegidas.length === 0 ||
+                  alicuotaMala ||
+                  igtfFactura.malo ||
+                  sinTributo
+                }
                 onClick={async () => {
                   await facturar.mutateAsync({
                     notas: elegidas,
                     condicion_pago: condicion || null,
                     observacion: observacion || null,
                     alicuota_iva: alicuotaFactura,
+                    alicuota_igtf: igtfFactura.vale,
                   })
                   cerrarEmision()
                 }}
@@ -420,6 +450,20 @@ export function Facturacion() {
                 />
               )}
 
+              <CasillaIgtf
+                aplica={conIgtf}
+                onCambiar={setConIgtf}
+                alicuota={igtfEscrito ?? undefined}
+                onAlicuota={setIgtfEscrito}
+                className="mt-3"
+              />
+
+              {sinTributo ? (
+                <p className="text-warning mt-2 text-sm">
+                  Una factura lleva IVA, IGTF o los dos: marca al menos uno.
+                </p>
+              ) : null}
+
               <div className="bg-ink/4 rounded-card mt-4 space-y-1.5 p-4">
                 <div className="flex items-baseline justify-between gap-4">
                   <span className="text-ink/60 text-sm">
@@ -437,10 +481,18 @@ export function Facturacion() {
                     </span>
                   </div>
                 ) : null}
+                {igtfFactura.vale > 0 ? (
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="text-ink/55 text-sm">IGTF {igtfFactura.vale}%</span>
+                    <span className="tabular text-ink/75 text-sm">
+                      {dinero(primera?.moneda ?? 'USD', igtfElegido)}
+                    </span>
+                  </div>
+                ) : null}
                 <div className="border-hairline flex items-baseline justify-between gap-4 border-t pt-1.5">
                   <span className="text-ink/85 text-sm font-semibold">Total de la factura</span>
                   <span className="tabular text-ink/90 text-lg font-semibold">
-                    {dinero(primera?.moneda ?? 'USD', baseElegida + ivaElegido)}
+                    {dinero(primera?.moneda ?? 'USD', baseElegida + ivaElegido + igtfElegido)}
                   </span>
                 </div>
               </div>
@@ -449,6 +501,10 @@ export function Facturacion() {
 
           {facturar.error ? <ErrorDeCarga error={facturar.error} className="mt-4" /> : null}
         </Modal>
+      ) : null}
+
+      {directa ? (
+        <ModalFacturaDirecta onCerrar={() => setDirecta(false)} onEmitida={(id) => setDetalleId(id)} />
       ) : null}
 
       {/* ------------------------------------------------------ detalle */}
@@ -512,6 +568,13 @@ export function Facturacion() {
             {Number(detalle.retencion_iva) > 0 ? (
               <Chip tone="warning">Retiene IVA</Chip>
             ) : null}
+            {detalle.origen === 'DIRECTA' ? (
+              <Chip tone="neutral">
+                {detalle.saca_material
+                  ? 'Sin nota · sacó el material del patio'
+                  : 'Sin nota · el material sale con notas enlazadas'}
+              </Chip>
+            ) : null}
           </div>
 
           {detalle.motivo_anulacion ? (
@@ -532,6 +595,8 @@ export function Facturacion() {
               flete={Number(detalle.flete)}
               alicuota={Number(detalle.alicuota_iva)}
               iva={Number(detalle.iva)}
+              alicuotaIgtf={Number(detalle.alicuota_igtf)}
+              igtf={Number(detalle.igtf)}
               total={Number(detalle.total)}
               retencion={Number(detalle.retencion_iva)}
             />
@@ -700,7 +765,8 @@ export function Facturacion() {
               <input
                 type="checkbox"
                 className="accent-royal-600 mt-0.5 size-4"
-                checked={igtf ?? (aplicaIgtf && cuenta.moneda !== 'VES')}
+                // Una factura que ya lleva su IGTF no se lo vuelve a cobrar.
+                checked={igtf ?? (aplicaIgtf && cuenta.moneda !== 'VES' && !(Number(cobrando.igtf) > 0))}
                 onChange={(e) => setIgtf(e.target.checked)}
               />
               <span>

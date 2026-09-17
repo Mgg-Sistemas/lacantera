@@ -310,6 +310,9 @@ export interface CotizacionVenta {
   total: string
   total_bs: string
   total_usd: string
+  /** Cero si no se marcó. */
+  alicuota_igtf?: string
+  igtf?: string
   estado: string
   observacion: string | null
   motivo_cierre: string | null
@@ -377,6 +380,7 @@ export function useCrearCotizacion() {
       moneda?: string
       validez_dias?: number
       alicuota_iva?: number
+      alicuota_igtf?: number
       descuento?: number
       flete?: number
       fecha?: string
@@ -389,11 +393,12 @@ export function useCrearCotizacion() {
       p_renglones: c.renglones,
       p_moneda: c.moneda ?? null,
       p_validez_dias: c.validez_dias ?? 15,
-      p_alicuota_iva: c.alicuota_iva ?? null,
+      p_alicuota_iva: c.alicuota_iva ?? 0,
       p_descuento: c.descuento ?? 0,
       p_flete: c.flete ?? 0,
       p_fecha: c.fecha || null,
       p_observacion: c.observacion || null,
+      p_alicuota_igtf: c.alicuota_igtf ?? 0,
     }),
   )
 }
