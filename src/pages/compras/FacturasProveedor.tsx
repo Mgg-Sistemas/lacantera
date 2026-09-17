@@ -22,7 +22,7 @@ import { useTablero } from '@/lib/api/compras'
 import { useProveedores } from '@/lib/api/catalogo'
 import { useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useCuentas } from '@/lib/api/tesoreria'
-import { useMetodosPago, nombreDe, opcionesDe } from '@/lib/api/metodosPago'
+import { useMetodosPago, nombreDe, opcionesDe, metodosParaMoneda } from '@/lib/api/metodosPago'
 import {
   CONDICIONES_COMPRA,
   useAnularFacturaCompra,
@@ -199,6 +199,8 @@ export function FacturasProveedor() {
   const pagos = usePagosCompra(detalleId)
 
   const cuenta = cuentas?.find((c) => String(c.id) === cuentaId)
+  const metodosDeLaCuenta = metodosParaMoneda(metodos, cuenta?.moneda)
+  const metodoNoVale = !!cuenta && !metodosDeLaCuenta.some((m) => m.codigo === metodo)
 
   // El IVA se propone desde la base y la alícuota, pero se puede pisar: lo que
   // vale es lo que dice el papel, y a veces el papel redondea distinto.
@@ -995,7 +997,7 @@ export function FacturasProveedor() {
                 Cancelar
               </Button>
               <Button
-                disabled={pagar.isPending || !cuentaId || !Number(monto)}
+                disabled={pagar.isPending || !cuentaId || !Number(monto) || metodoNoVale}
                 onClick={async () => {
                   await pagar.mutateAsync({
                     factura_id: pagando.id,
@@ -1022,6 +1024,12 @@ export function FacturasProveedor() {
               onCambio={(v) => {
                 setCuentaId(v)
                 setIgtf(null)
+                // Un pago móvil elegido antes que una cuenta en dólares no se
+                // queda puesto: vuelve a la transferencia, que vale en todas.
+                const moneda = cuentas?.find((c) => String(c.id) === v)?.moneda
+                if (!metodosParaMoneda(metodos, moneda).some((m) => m.codigo === metodo)) {
+                  setMetodo('TRANSFERENCIA')
+                }
               }}
               opciones={(cuentas ?? [])
                 .filter((c) => c.activa)
@@ -1042,7 +1050,13 @@ export function FacturasProveedor() {
               label="Cómo se pagó"
               value={metodo}
               onChange={(e) => setMetodo(e.target.value)}
-              opciones={opcionesDe(metodos)}
+              opciones={opcionesDe(metodosDeLaCuenta)}
+              hint={
+                cuenta
+                  ? 'Queda guardado en el pago y en los movimientos de dinero.'
+                  : 'Elige primero la cuenta: el pago móvil solo va en bolívares.'
+              }
+              error={metodoNoVale ? `${nombreDe(metodos, metodo)} no se usa en ${cuenta?.moneda}.` : undefined}
             />
             <Input
               label="Referencia"

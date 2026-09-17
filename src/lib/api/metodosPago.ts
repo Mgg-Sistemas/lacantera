@@ -81,6 +81,20 @@ export function nombreDe(metodos: MetodoPago[] | undefined, codigo: string | nul
 }
 
 /**
+ * Los métodos que valen para una moneda.
+ *
+ * El pago móvil solo mueve bolívares, y Zelle y Binance nunca. Con una cuenta
+ * ya elegida, ofrecer los demás es ofrecer algo que la base va a rechazar. Sin
+ * moneda todavía se ofrecen todos.
+ */
+export function metodosParaMoneda(metodos: MetodoPago[] | undefined, moneda: string | null | undefined) {
+  if (!moneda) return metodos ?? []
+  return (metodos ?? []).filter((m) =>
+    moneda === 'VES' ? m.moneda_regla !== 'NUNCA_VES' : m.moneda_regla !== 'SOLO_VES',
+  )
+}
+
+/**
  * Las monedas que admite un método.
  *
  * Se filtra la lista que se le pase en vez de devolver uno fijo: así el mismo
