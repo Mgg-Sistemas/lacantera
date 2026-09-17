@@ -34,6 +34,11 @@ export interface MetodoPago {
   /** El efectivo no lo lleva: se entrega en mano y lo que queda es la firma. */
   exige_comprobante: boolean
   activo: boolean
+  /**
+   * Falso en pagar con material o con un saldo a favor. No se ofrecen en los
+   * formularios de dinero: tienen su propio botón en la orden de compra.
+   */
+  mueve_dinero: boolean
 }
 
 export function useMetodosPago() {
@@ -46,8 +51,13 @@ export function useMetodosPago() {
       desenvolver<MetodoPago[]>(
         await supabase
           .from('metodos_pago')
-          .select('codigo, nombre, orden, moneda_regla, campos_exigidos, exige_comprobante, activo')
+          .select(
+            'codigo, nombre, orden, moneda_regla, campos_exigidos, exige_comprobante, activo, mueve_dinero',
+          )
           .eq('activo', true)
+          // Los formularios que usan esta lista mueven dinero. Material (intercambio)
+          // y saldo a favor los pone su propia función, y la base los rechaza aquí.
+          .eq('mueve_dinero', true)
           .order('orden'),
       ),
   })
