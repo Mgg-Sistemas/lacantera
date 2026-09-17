@@ -166,6 +166,9 @@ export interface DatosDocumento {
   baseImponible?: string | number | null
   iva: string | number
   alicuotaIva: string | number
+  /** El IGTF, si lo lleva. Sin él no hay línea. */
+  alicuotaIgtf?: string | number | null
+  igtf?: string | number | null
   total: string | number
   /** Solo la factura, y solo si el cliente es contribuyente especial. */
   retencionIva?: string | number | null
@@ -490,7 +493,8 @@ function sello(doc: Doc, texto: string) {
 */
 function totalExento(d: DatosDocumento): number {
   if (d.baseImponible != null) {
-    const resto = Number(d.total) - Number(d.iva) - Number(d.baseImponible)
+    // El IGTF también está dentro del total y no es exento: se saca igual que el IVA.
+    const resto = Number(d.total) - Number(d.iva) - Number(d.igtf ?? 0) - Number(d.baseImponible)
     // Las milésimas de redondeo no son un exento: por debajo de un céntimo, cero.
     return resto > 0.005 ? resto : 0
   }
@@ -507,14 +511,26 @@ function totalExento(d: DatosDocumento): number {
 */
 const mencionaImpuestos = (d: DatosDocumento) => d.tipo !== 'NOTA'
 
+/*
+  La línea del IVA. La factura la lleva siempre; la cotización, solo si quien la
+  hizo marcó el IVA: «por defecto que no lleve IVA o IGTF» (Christopher,
+  17/09/2026).
+*/
+const lineaDeIva = (d: DatosDocumento) =>
+  d.tipo === 'FACTURA' || (d.tipo === 'COTIZACION' && Number(d.alicuotaIva) > 0)
+
+const lineaDeIgtf = (d: DatosDocumento) => mencionaImpuestos(d) && Number(d.igtf ?? 0) > 0
+
 function altoTotales(d: DatosDocumento): number {
   if (!mencionaImpuestos(d)) return 15
   const filas =
-    (mencionaImpuestos(d) ? 3 : 2) + // subtotal, IVA, total
+    2 + // subtotal, total
+    (lineaDeIva(d) ? 1 : 0) +
+    (lineaDeIgtf(d) ? 1 : 0) +
     (Number(d.descuento) > 0 ? 1 : 0) +
     (Number(d.flete) > 0 ? 1 : 0) +
-    (mencionaImpuestos(d) && totalExento(d) > 0 ? 1 : 0) +
-    (mencionaImpuestos(d) && d.baseImponible != null ? 1 : 0) +
+    (lineaDeIva(d) && totalExento(d) > 0 ? 1 : 0) +
+    (lineaDeIva(d) && d.baseImponible != null ? 1 : 0) +
     (Number(d.retencionIva ?? 0) > 0 ? 2 : 0)
   return filas * 5 + 10
 }
@@ -564,7 +580,7 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
     Cada una sale solo si tiene sentido: sin renglones exentos no se enseña un
     cero, que en una factura se lee como una afirmación.
   */
-  if (mencionaImpuestos(d)) {
+  if (lineaDeIva(d)) {
     const exento = totalExento(d)
     if (exento > 0) linea('Total exento', conSimbolo(d.moneda, exento))
     if (d.baseImponible != null) linea('Base imponible', conSimbolo(d.moneda, d.baseImponible))
@@ -575,6 +591,14 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
     linea(
       `IVA ${Number.isInteger(alicuota) ? alicuota : numero(alicuota)}%`,
       conSimbolo(d.moneda, d.iva),
+    )
+  }
+
+  if (lineaDeIgtf(d)) {
+    const alicuotaIgtf = Number(d.alicuotaIgtf ?? 0)
+    linea(
+      `IGTF ${Number.isInteger(alicuotaIgtf) ? alicuotaIgtf : numero(alicuotaIgtf)}%`,
+      conSimbolo(d.moneda, d.igtf ?? 0),
     )
   }
 

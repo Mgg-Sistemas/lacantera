@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
+import type { RenglonVenta } from './ventas'
 
 /**
  * Facturación: facturas de venta, notas de crédito, cobros y cuentas por cobrar.
@@ -78,6 +79,14 @@ export interface FacturaVenta {
   saldo_usd: string
   dias_vencida: number
   renglones: number
+  /** El IGTF de la factura: sobre el total con IVA. Cero si no lleva. */
+  alicuota_igtf: string
+  igtf: string
+  /** NOTAS: salió de notas de entrega. DIRECTA: con sus propios renglones. */
+  origen: 'NOTAS' | 'DIRECTA'
+  /** Solo en una directa: el material salió del patio al emitirla. */
+  saca_material: boolean
+  almacen_id: number | null
 }
 
 export function useFacturas(estado?: string) {
@@ -105,6 +114,7 @@ export function useFacturarNotas() {
       observacion?: string | null
       /** La decide la factura: las notas de entrega no llevan IVA. */
       alicuota_iva: number
+      alicuota_igtf: number
     },
     number
   >((f) =>
@@ -114,7 +124,66 @@ export function useFacturarNotas() {
       p_fecha: f.fecha || null,
       p_observacion: f.observacion || null,
       p_alicuota_iva: f.alicuota_iva,
+      p_alicuota_igtf: f.alicuota_igtf,
     }),
+  )
+}
+
+/**
+ * La factura sin nota de entrega, con sus propios renglones.
+ *
+ * Christopher, 17/09/2026: «que se pueda crear una factura sin necesidad de nota
+ * de entrega y viceversa». Si el material sale con ella, la base lo descuenta
+ * del patio de cada renglón al emitirla; si no, sale después con notas que se
+ * enlazan a esta factura. Devuelve el id de la factura.
+ */
+export function useFacturarDirecto() {
+  return useAccionFacturacion<
+    {
+      cliente_id: number
+      renglones: RenglonVenta[]
+      moneda: string
+      condicion_pago?: string | null
+      fecha?: string
+      observacion?: string | null
+      alicuota_iva: number
+      alicuota_igtf: number
+      saca_material: boolean
+      /** El patio por defecto de los renglones que no digan otro. */
+      almacen_id: number | null
+    },
+    number
+  >((f) =>
+    rpc<number>('facturar_directo', {
+      p_cliente_id: f.cliente_id,
+      p_renglones: f.renglones,
+      p_moneda: f.moneda,
+      p_condicion_pago: f.condicion_pago || null,
+      p_fecha: f.fecha || null,
+      p_observacion: f.observacion || null,
+      p_alicuota_iva: f.alicuota_iva,
+      p_alicuota_igtf: f.alicuota_igtf,
+      p_saca_material: f.saca_material,
+      p_almacen_id: f.almacen_id,
+    }),
+  )
+}
+
+/**
+ * Enlazar una nota de entrega a una factura que ya existe: la nota pasa a
+ * facturada con ese número y la factura no cambia. Solo a una factura sin nota
+ * que no haya sacado el material, o se contaría dos veces.
+ */
+export function useEnlazarNotaAFactura() {
+  return useAccionFacturacion((e: { nota_id: number; factura_id: number }) =>
+    rpc<void>('enlazar_nota_a_factura', { p_nota_id: e.nota_id, p_factura_id: e.factura_id }),
+  )
+}
+
+/** Deshacer un enlace hecho por error. Una nota de la que salió la factura no se suelta. */
+export function useDesenlazarNota() {
+  return useAccionFacturacion((notaId: number) =>
+    rpc<void>('desenlazar_nota_de_factura', { p_nota_id: notaId }),
   )
 }
 

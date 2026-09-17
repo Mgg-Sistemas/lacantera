@@ -53,6 +53,7 @@ import {
 } from '@/pages/ventas/filas'
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useDesenlazarNota, useEnlazarNotaAFactura, useFacturas } from '@/lib/api/facturacion'
 
 /*
   LA NOTA NO ESTÁ ESPERANDO UNA FACTURA. Christopher, 17/09/2026: «una nota de
@@ -95,6 +96,17 @@ export function NotasDeEntrega() {
   const [nuevo, setNuevo] = useState(false)
   const [detalle, setDetalle] = useState<NotaEntrega | null>(null)
   const [anulando, setAnulando] = useState<NotaEntrega | null>(null)
+  /*
+    ENLAZAR A UNA FACTURA QUE YA EXISTE. Christopher, 17/09/2026: la nota y la
+    factura van por separado, y una nota hecha aparte se enlaza después a una
+    factura del mismo cliente. Solo a una factura sin nota que no haya sacado el
+    material: si lo sacó, esta nota lo contaría dos veces.
+  */
+  const [enlazando, setEnlazando] = useState<NotaEntrega | null>(null)
+  const [facturaElegida, setFacturaElegida] = useState('')
+  const facturas = useFacturas()
+  const enlazar = useEnlazarNotaAFactura()
+  const desenlazar = useDesenlazarNota()
   const [motivo, setMotivo] = useState('')
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
 
@@ -675,6 +687,31 @@ export function NotasDeEntrega() {
                   Anular
                 </Button>
               ) : null}
+              {detalle.estado === 'DESPACHADA' && puedeDespachar ? (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEnlazando(detalle)
+                    setFacturaElegida('')
+                  }}
+                >
+                  Enlazar a una factura
+                </Button>
+              ) : null}
+              {detalle.estado === 'FACTURADA' &&
+              puedeAnular &&
+              (facturas.data ?? []).find((f) => f.id === detalle.factura_id)?.origen === 'DIRECTA' ? (
+                <Button
+                  variant="outline"
+                  disabled={desenlazar.isPending}
+                  onClick={async () => {
+                    await desenlazar.mutateAsync(detalle.id)
+                    setDetalle(null)
+                  }}
+                >
+                  Soltar de la factura
+                </Button>
+              ) : null}
             </>
           }
         >
@@ -713,6 +750,56 @@ export function NotasDeEntrega() {
               sinIva
             />
           </div>
+        </Modal>
+      ) : null}
+
+      {enlazando ? (
+        <Modal
+          abierto
+          onCerrar={() => setEnlazando(null)}
+          titulo={`Enlazar la nota ${enlazando.numero}`}
+          descripcion="La nota pasa a facturada con el número de esa factura. La factura no cambia: sus montos siguen siendo los suyos."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setEnlazando(null)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={enlazar.isPending || !facturaElegida}
+                onClick={async () => {
+                  await enlazar.mutateAsync({ nota_id: enlazando.id, factura_id: Number(facturaElegida) })
+                  setEnlazando(null)
+                  setDetalle(null)
+                }}
+              >
+                {enlazar.isPending ? 'Enlazando…' : 'Enlazar'}
+              </Button>
+            </>
+          }
+        >
+          {(() => {
+            const posibles = (facturas.data ?? []).filter(
+              (f) =>
+                f.cliente_id === enlazando.cliente_id &&
+                f.estado !== 'ANULADA' &&
+                f.origen === 'DIRECTA' &&
+                !f.saca_material,
+            )
+            return (
+              <Select
+                label="Factura"
+                vacio={posibles.length ? 'Elige la factura' : 'No hay ninguna disponible'}
+                value={facturaElegida}
+                onChange={(e) => setFacturaElegida(e.target.value)}
+                opciones={posibles.map((f) => ({
+                  valor: String(f.id),
+                  etiqueta: `${f.numero} · ${fecha(f.fecha)} · ${dinero(f.moneda, f.total)}`,
+                }))}
+                hint="Solo facturas de este cliente emitidas sin nota y que no sacaron el material del patio."
+              />
+            )
+          })()}
+          {enlazar.error ? <ErrorDeCarga error={enlazar.error} className="mt-4" /> : null}
         </Modal>
       ) : null}
 
