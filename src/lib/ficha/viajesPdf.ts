@@ -27,13 +27,14 @@
   los otros dos, filtrada por fecha.
 */
 import { logoComoImagen } from '@/lib/ficha/logo'
-import { ABAJO, ARRIBA } from '@/lib/ficha/hoja'
+import { ABAJO, ARRIBA, PIE } from '@/lib/ficha/hoja'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import {
   TINTA,
   fechaCorta,
   fechaLarga,
   etiquetaValor,
+  firmas,
   lineaEmpresa,
   membrete,
   pieDePagina,
@@ -86,11 +87,37 @@ export interface CamionDelPapel {
   viajes: ViajeDelPapel[]
 }
 
+/*
+  QUIÉN FIRMA UN DÍA QUE CARGARON O APROBARON VARIOS.
+
+  Christopher, 16/09/2026: el registro diario lleva «Registrado y aprobado», y
+  nunca más de dos rayas. Pero un día lo pueden cargar dos personas y aprobarlo
+  otras dos. Firma en cada raya quien más viajes cargó o aprobó, y los demás se
+  nombran en el resumen con cuántos: el papel no calla a nadie que participó.
+*/
+export interface FirmaDelDia {
+  nombre: string | null
+  /** Cuántos viajes cargó o aprobó quien firma. */
+  cuantos: number
+  imagen: string | null
+  /** Los demás que también cargaron o aprobaron ese día, con cuántos viajes. */
+  otros: string | null
+}
+
+export interface FirmasDelDia {
+  registro: FirmaDelDia
+  aprobacion: FirmaDelDia
+  /** Los que todavía esperan: sin ellos, «Aprobado por» se leería completo. */
+  porAprobar: number
+}
+
 export interface DatosRegistroDiario {
   dia: string
   /** Cuando se filtró por una empresa, su nombre. Nulo si salen todas. */
   empresa: string | null
   camiones: CamionDelPapel[]
+  /** Quién va en «Registrado por» y en «Aprobado por». */
+  firmas?: FirmasDelDia | null
   empresa_papel: EmpresaPapel
   emitidoPor: string
   momento: Date
@@ -146,6 +173,20 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
     `${d.empresa_papel.razonSocial} · RIF ${d.empresa_papel.rif} · Transporte interno`,
   )
 
+  const f = d.firmas
+  const quienYCuantos = (x: FirmaDelDia) =>
+    x.nombre
+      ? `${x.nombre}${x.otros ? ` (${cantidad(x.cuantos)}) · también ${x.otros}` : ''}`
+      : null
+  const registradoPor = f ? quienYCuantos(f.registro) : null
+  const aprobadoPor = !f
+    ? null
+    : f.aprobacion.nombre
+      ? `${quienYCuantos(f.aprobacion)}${f.porAprobar > 0 ? ` · ${cantidad(f.porAprobar)} por aprobar` : ''}`
+      : f.porAprobar > 0
+        ? `Pendiente: ${cantidad(f.porAprobar)} ${f.porAprobar === 1 ? 'viaje' : 'viajes'} por aprobar`
+        : null
+
   y = seccion(doc, y, 'Resumen del día')
   y = etiquetaValor(doc, y, [
     ['Empresa', d.empresa ?? 'Todas'],
@@ -161,13 +202,34 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
           ],
         ] as Array<[string, string]>)
       : []),
+    ...(registradoPor ? ([['Registrado por', registradoPor]] as Array<[string, string]>) : []),
+    ...(aprobadoPor ? ([['Aprobado por', aprobadoPor]] as Array<[string, string]>) : []),
   ])
 
-  for (const camion of d.camiones) {
+  // Lo que ocupan las dos rayas con su nombre debajo, y la firma encima si la hay.
+  const huecoDeFirmas = f ? (f.registro.imagen || f.aprobacion.imagen ? 18 : 8) : 0
+  const altoDeFirmas = f ? huecoDeFirmas + 14 : 0
+
+  for (const [i, camion] of d.camiones.entries()) {
     // Un bloque no se parte dejando el rótulo solo al final de la hoja: si no
     // caben el título y tres renglones, se empieza en la siguiente.
     const hueco = 4.5 + 6.5 + Math.min(camion.viajes.length, 3) * 8.8 + 8
-    if (y + hueco > ABAJO - 30) {
+    /*
+      EL ÚLTIMO CAMIÓN SE LLEVA LAS FIRMAS. Si con ellas no cabe en lo que queda
+      de hoja, empieza la siguiente y las rayas van debajo de él: cabiendo el
+      camión solo, las firmas se iban a una hoja en blanco, que es un papel que
+      nadie quiere firmar. El alto es una cuenta aproximada —un renglón que se
+      parte ocupa más—; si falla, las firmas saltan de hoja igual, abajo.
+    */
+    const todoElBloque = 4.5 + 6.5 + camion.viajes.length * 8.8 + 8
+    const esElUltimo = i === d.camiones.length - 1
+    if (
+      y + hueco > ABAJO - 30 ||
+      (esElUltimo &&
+        f &&
+        y + todoElBloque + altoDeFirmas > PIE - 3 &&
+        ARRIBA + todoElBloque + altoDeFirmas <= PIE - 3)
+    ) {
       doc.addPage()
       y = ARRIBA
     }
@@ -204,6 +266,23 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
       suDinero
         ? `${camion.placa} · ${cantidad(suyosVivos.length)} viajes   $ ${numero(suMonto)}`
         : `${camion.placa} · ${cantidad(suyosVivos.length)} viajes`,
+    )
+  }
+
+  /*
+    Las dos rayas, después del último camión y enteras en una hoja: una firma
+    partida entre dos páginas no la firma nadie.
+  */
+  if (f) {
+    if (y + altoDeFirmas > PIE - 3) {
+      doc.addPage()
+      y = ARRIBA
+    }
+    firmas(
+      doc,
+      Math.max(y + huecoDeFirmas, ABAJO - 26),
+      { texto: 'Registrado por', nombre: f.registro.nombre, imagen: f.registro.imagen },
+      { texto: 'Aprobado por', nombre: f.aprobacion.nombre, imagen: f.aprobacion.imagen },
     )
   }
 
