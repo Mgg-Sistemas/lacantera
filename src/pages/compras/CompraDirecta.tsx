@@ -11,7 +11,7 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { SoltarArchivo } from '@/components/SoltarArchivo'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
+import { CantidadDeArticulo, type CantidadCapturada } from '@/components/CantidadDeArticulo'
 import { ParecidosAEste } from '@/components/ParecidosAEste'
 import {
   CATEGORIAS_ARTICULO,
@@ -19,7 +19,6 @@ import {
   conSusFormas,
   useArticulos,
   useCrearArticulo,
-  usePresentaciones,
   useTodasLasPresentaciones,
   useProveedores,
   useUnidades,
@@ -68,6 +67,11 @@ interface Fila {
   exento: boolean
   presentacion: string
   marca: string
+  /**
+   * Lo que se tecleó en la cantidad: los bultos y en qué presentación. Con
+   * bultos, el precio que se escribe es el del bulto.
+   */
+  capturada: CantidadCapturada | null
   /** Para crearlo en el catálogo desde el renglón, si no está. */
   nueva_categoria: string
   nuevo_confirmado: boolean
@@ -84,6 +88,7 @@ const filaVacia = (): Fila => ({
   exento: false,
   presentacion: '',
   marca: '',
+  capturada: null,
   nueva_categoria: '',
   nuevo_confirmado: false,
 })
@@ -96,7 +101,6 @@ export function CompraDirecta() {
   // pueden ser quince consultas para leer quince filas.
   const { data: formasDeContar } = useTodasLasPresentaciones()
   const { data: unidades } = useUnidades()
-  const { data: presentaciones } = usePresentaciones()
   const { data: almacenes } = useAlmacenes()
   const { data: monedas } = useMonedasUsables()
   const { data: tasaVigente } = useTasaVigente()
@@ -142,9 +146,56 @@ export function CompraDirecta() {
       articulo_id: id,
       descripcion: a ? a.nombre : '',
       unidad: a ? a.unidad : 'UND',
-      presentacion: a?.presentacion ?? '',
+      // La presentación la dice la cantidad cuando se cuenta en bultos.
+      presentacion: '',
+      capturada: null,
       marca: a?.marca ?? '',
     })
+  }
+
+  /*
+    LA UNIDAD, LA PRESENTACIÓN Y EL PRECIO SON DEL ARTÍCULO.
+
+    Christopher, 17/09/2026: «si algo tiene presentación, una bolsa de clavos, y
+    por unidad compra 5 clavos, ¿cuántos clavos traía la presentación? Si el
+    producto ya está en el catálogo, ¿por qué permite comprar otras unidades o
+    presentaciones que no están asociadas a ese producto? ¿Qué ocurre si se va a
+    comprar por presentación y no por unidad?».
+
+    Ocurría esto: la unidad y la presentación eran dos listas con todo lo que
+    existe, sueltas del artículo, y el precio se tomaba siempre por unidad. Tres
+    bolsas de clavos a 10 $ la bolsa entraban como 300 clavos a 10 $ cada uno.
+
+    Ahora, con artículo: la unidad es la suya y no se elige; la presentación se
+    elige en la cantidad, solo entre las que el catálogo le declara —y es el
+    catálogo el que dice cuántos clavos trae la bolsa—; y si se cuenta en bultos
+    el precio que se escribe es el del bulto, que es el que trae la factura, y
+    se guarda dividido entre lo que trae cada uno. Sin artículo es un servicio y
+    no hay bulto ni presentación.
+  */
+  const articuloDe = (f: Fila) =>
+    conSusFormas(
+      articulos?.find((a) => String(a.id) === f.articulo_id),
+      formasDeContar,
+    )
+
+  /** Cuántas unidades trae el bulto en que se contó; nulo si no se contó en bultos. */
+  const porBultoDe = (f: Fila): number | null => {
+    const nombre = f.capturada?.presentaciones ? f.capturada.unidad : null
+    const a = articuloDe(f)
+    if (!nombre || !a) return null
+    const lista = 'presentaciones' in a ? a.presentaciones : null
+    const n =
+      lista?.find((p) => p.presentacion === nombre)?.unidades ??
+      (a.presentacion === nombre ? a.unidades_por_presentacion : null)
+    return Number(n) > 0 ? Number(n) : null
+  }
+
+  /** El precio de una unidad del artículo, que es el que se guarda. */
+  const precioUnitarioDe = (f: Fila) => {
+    const precio = Number(f.precio || 0)
+    const porBulto = porBultoDe(f)
+    return porBulto ? precio / porBulto : precio
   }
 
   // Espejo del cálculo de la base. El que vale es el de Postgres; este existe
@@ -154,7 +205,7 @@ export function CompraDirecta() {
     let subtotal = 0
     let gravado = 0
     for (const f of filas) {
-      const linea = Number(f.cantidad || 0) * Number(f.precio || 0)
+      const linea = Number(f.cantidad || 0) * precioUnitarioDe(f)
       if (!Number.isFinite(linea)) continue
       subtotal += linea
       if (!f.exento) gravado += linea
@@ -212,12 +263,13 @@ export function CompraDirecta() {
         articulo_id: f.articulo_id ? Number(f.articulo_id) : null,
         descripcion: f.descripcion.trim(),
         cantidad: Number(f.cantidad),
-        unidad: f.unidad,
-        precio_unitario: Number(f.precio),
+        // Con artículo, su unidad: es la que el inventario cuenta.
+        unidad: articuloDe(f)?.unidad ?? f.unidad,
+        precio_unitario: Math.round(precioUnitarioDe(f) * 1e6) / 1e6,
         exento_iva: f.exento,
         marca: f.marca || null,
-        // Una presentación elegida y luego soltado el artículo no viaja.
-        presentacion: f.articulo_id ? f.presentacion || null : null,
+        // En qué vino, si se contó en bultos. Sin artículo no hay bulto.
+        presentacion: f.articulo_id ? (f.capturada?.unidad ?? null) : null,
       })),
     })
 
@@ -417,27 +469,45 @@ export function CompraDirecta() {
                 <CantidadDeArticulo
                   key={f.articulo_id}
                   valor={f.cantidad}
-                  onCambiar={(v) => cambiar(f.clave, { cantidad: v })}
+                  onCambiar={(v, capturada) => cambiar(f.clave, { cantidad: v, capturada })}
                   articulo={conSusFormas(
                     articulos?.find((a) => String(a.id) === f.articulo_id),
                     formasDeContar,
                   )}
                   hintSinArticulo=""
                 />
-                <Select
-                  label="Unidad"
-                  value={f.unidad}
-                  onChange={(e) => cambiar(f.clave, { unidad: e.target.value })}
-                  opciones={(unidades ?? []).map((u) => ({ valor: u.codigo, etiqueta: u.nombre }))}
-                />
+                {articuloDe(f) ? (
+                  <Input
+                    label="Unidad"
+                    value={articuloDe(f)!.unidad}
+                    disabled
+                    hint="La del artículo: el inventario lo cuenta así."
+                  />
+                ) : (
+                  <Select
+                    label="Unidad"
+                    value={f.unidad}
+                    onChange={(e) => cambiar(f.clave, { unidad: e.target.value })}
+                    opciones={(unidades ?? []).map((u) => ({ valor: u.codigo, etiqueta: u.nombre }))}
+                  />
+                )}
                 <Input
-                  label="Precio unitario"
+                  label={
+                    porBultoDe(f)
+                      ? `Precio por ${f.capturada!.unidad!.toLowerCase()}`
+                      : `Precio por ${(articuloDe(f)?.unidad ?? f.unidad).toLowerCase()}`
+                  }
                   type="number"
                   min="0"
                   step="0.000001"
                   inputMode="decimal"
                   value={f.precio}
                   onChange={(e) => cambiar(f.clave, { precio: e.target.value })}
+                  hint={
+                    porBultoDe(f) && f.precio !== ''
+                      ? `Trae ${porBultoDe(f)} ${articuloDe(f)!.unidad}: sale a ${formato(precioUnitarioDe(f))} cada ${articuloDe(f)!.unidad}.`
+                      : undefined
+                  }
                 />
               </div>
 
@@ -454,22 +524,13 @@ export function CompraDirecta() {
                   es un servicio, y un servicio no viene en sacos: el campo sale
                   cuando hay artículo.
                 */}
-                {f.articulo_id ? (
-                  <Select
-                    label="Presentación"
-                    vacio="Como venga"
-                    value={f.presentacion}
-                    onChange={(e) => cambiar(f.clave, { presentacion: e.target.value })}
-                    opciones={(presentaciones ?? []).map((p) => ({
-                      valor: p.codigo,
-                      etiqueta: p.nombre,
-                    }))}
-                  />
-                ) : (
-                  <p className="text-ink/45 self-end pb-2.5 text-xs">
-                    Sin presentación: sin artículo es un servicio.
-                  </p>
-                )}
+                <p className="text-ink/45 self-end pb-2.5 text-xs">
+                  {!articuloDe(f)
+                    ? 'Sin presentación: sin artículo es un servicio.'
+                    : 'presentaciones' in articuloDe(f)! || articuloDe(f)!.presentacion
+                      ? 'Si vino en bultos, elige la presentación junto a la cantidad: el catálogo sabe cuánto trae cada una.'
+                      : `El catálogo no le declara presentación: se compra por ${articuloDe(f)!.unidad}. Para comprarlo por bolsa o caja, decláralo en Artículos.`}
+                </p>
                 <label className="text-ink/70 flex cursor-pointer items-center gap-2 self-end pb-2.5 text-sm select-none">
                   <input
                     type="checkbox"
