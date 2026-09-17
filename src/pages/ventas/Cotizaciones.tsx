@@ -83,6 +83,8 @@ export function Cotizaciones() {
   const [filas, setFilas] = useState<FilaRenglon[]>([filaVacia()])
   const ivaPorDefecto = useIvaPorDefecto()
   const [conIva, setConIva] = useState(ivaPorDefecto)
+  // El porcentaje, si quien emite lo cambió. Nulo: el de la ficha de la empresa.
+  const [alicuotaEscrita, setAlicuotaEscrita] = useState<string | null>(null)
 
   const renglonesDetalle = useRenglones(
     'cotizacion_venta_renglones',
@@ -103,7 +105,11 @@ export function Cotizaciones() {
     dice su ficha— o esta operación en concreto no lleva IVA.
   */
   const alicuotaVigente = useAlicuotaIva()
-  const alicuota = cliente?.exento_iva || !conIva ? 0 : alicuotaVigente
+  const alicuotaElegida =
+    alicuotaEscrita === null ? alicuotaVigente : Number(alicuotaEscrita.replace(',', '.'))
+  const alicuotaMala =
+    conIva && !cliente?.exento_iva && !(alicuotaElegida >= 0 && alicuotaElegida <= 100)
+  const alicuota = cliente?.exento_iva || !conIva || alicuotaMala ? 0 : alicuotaElegida
   /*
     SIN DESCUENTO GLOBAL. El descuento va en cada renglón, dicho sobre la lista:
     dos maneras de descontar en el mismo papel dejaban sin saber de qué precio
@@ -124,6 +130,7 @@ export function Cotizaciones() {
 
   const limpiar = () => {
     setConIva(ivaPorDefecto)
+    setAlicuotaEscrita(null)
     setClienteId('')
     setMoneda('USD')
     setValidez('15')
@@ -281,7 +288,7 @@ export function Cotizaciones() {
               </Button>
               <Button
                 disabled={
-                  crear.isPending || !clienteId || incompletas || aRenglones(filas).length === 0
+                  crear.isPending || !clienteId || incompletas || alicuotaMala || aRenglones(filas).length === 0
                 }
                 onClick={async () => {
                   await crear.mutateAsync({
@@ -366,7 +373,13 @@ export function Cotizaciones() {
 
           {/* La decisión va pegada al total: es lo que la cambia. */}
           {!cliente?.exento_iva ? (
-            <CasillaIva aplica={conIva} onCambiar={setConIva} className="mt-4" />
+            <CasillaIva
+              aplica={conIva}
+              onCambiar={setConIva}
+              alicuota={alicuotaEscrita ?? String(alicuotaVigente)}
+              onAlicuota={setAlicuotaEscrita}
+              className="mt-4"
+            />
           ) : null}
 
           <div className="bg-ink/4 rounded-card mt-4 p-4">

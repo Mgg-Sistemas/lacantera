@@ -74,7 +74,11 @@ export function useEmpresa() {
  */
 export function useAlicuotaIva(): number {
   const { data } = useEmpresa()
-  const v = Number(data?.alicuota_iva_pct)
+  // Una ficha sin alícuota no dice «cero»: dice que no se ha cargado. Number(null)
+  // da 0, y así salió «lleva IVA (0 %)» en las ventas del 17/09/2026.
+  const bruto = data?.alicuota_iva_pct
+  if (bruto === null || bruto === undefined || String(bruto).trim() === '') return 16
+  const v = Number(bruto)
   return Number.isFinite(v) && v >= 0 ? v : 16
 }
 

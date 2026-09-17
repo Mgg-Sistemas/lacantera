@@ -102,6 +102,8 @@ export function NotasDeEntrega() {
   const [vehiculoId, setVehiculoId] = useState('')
   const ivaPorDefecto = useIvaPorDefecto()
   const [conIva, setConIva] = useState(ivaPorDefecto)
+  // El porcentaje, si quien emite lo cambió. Nulo: el de la ficha de la empresa.
+  const [alicuotaEscrita, setAlicuotaEscrita] = useState<string | null>(null)
   const [chofer, setChofer] = useState('')
   const [cedula, setCedula] = useState('')
   const [ticket, setTicket] = useState('')
@@ -169,7 +171,11 @@ export function NotasDeEntrega() {
   // para el total de la pantalla y el documento salía con el 16 por defecto: la
   // nota de entrega de un cliente exento decía 0 en pantalla y 16 en el libro.
   const alicuotaVigente = useAlicuotaIva()
-  const alicuota = cliente?.exento_iva || !conIva ? 0 : alicuotaVigente
+  const alicuotaElegida =
+    alicuotaEscrita === null ? alicuotaVigente : Number(alicuotaEscrita.replace(',', '.'))
+  const alicuotaMala =
+    conIva && !cliente?.exento_iva && !(alicuotaElegida >= 0 && alicuotaElegida <= 100)
+  const alicuota = cliente?.exento_iva || !conIva || alicuotaMala ? 0 : alicuotaElegida
   const subtotal = subtotalDe(filasEfectivas)
   const gravado = gravadoDe(filasEfectivas)
   const base = gravado + (Number(flete) || 0)
@@ -189,6 +195,7 @@ export function NotasDeEntrega() {
     setVehiculo('')
     setVehiculoId('')
     setConIva(ivaPorDefecto)
+    setAlicuotaEscrita(null)
     setChofer('')
     setCedula('')
     setTicket('')
@@ -388,6 +395,7 @@ export function NotasDeEntrega() {
                   !clienteId ||
                   !almacenId ||
                   incompletas ||
+                  alicuotaMala ||
                   aRenglones(filasEfectivas).length === 0
                 }
                 onClick={async () => {
@@ -617,7 +625,13 @@ export function NotasDeEntrega() {
           </div>
 
           {!cliente?.exento_iva ? (
-            <CasillaIva aplica={conIva} onCambiar={setConIva} className="mt-4" />
+            <CasillaIva
+              aplica={conIva}
+              onCambiar={setConIva}
+              alicuota={alicuotaEscrita ?? String(alicuotaVigente)}
+              onAlicuota={setAlicuotaEscrita}
+              className="mt-4"
+            />
           ) : null}
 
           <div className="bg-ink/4 rounded-card mt-4 p-4">
