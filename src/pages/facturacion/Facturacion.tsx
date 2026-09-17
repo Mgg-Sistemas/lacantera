@@ -39,7 +39,7 @@ import {
   notaDeConversionDeVenta,
 } from '@/pages/ventas/filas'
 import { densidadesDeArticulos } from '@/lib/api/catalogo'
-import { useMetodosPago, nombreDe, opcionesDe } from '@/lib/api/metodosPago'
+import { useMetodosPago, nombreDe, opcionesDe, metodosParaMoneda } from '@/lib/api/metodosPago'
 
 const TONO: Record<string, 'royal' | 'success' | 'neutral'> = {
   EMITIDA: 'royal',
@@ -144,6 +144,8 @@ export function Facturacion() {
     .reduce((s, n) => s + Number(n.total), 0)
 
   const cuenta = cuentas?.find((c) => String(c.id) === cuentaId)
+  const metodosDeLaCuenta = metodosParaMoneda(metodos, cuenta?.moneda)
+  const metodoNoVale = !!cuenta && !metodosDeLaCuenta.some((m) => m.codigo === metodo)
 
   const imprimir = async (f: FacturaVenta) => {
     const renglones = renglonesDetalle.data ?? []
@@ -556,7 +558,7 @@ export function Facturacion() {
                 Cancelar
               </Button>
               <Button
-                disabled={cobrar.isPending || !cuentaId || !Number(monto)}
+                disabled={cobrar.isPending || !cuentaId || !Number(monto) || metodoNoVale}
                 onClick={async () => {
                   await cobrar.mutateAsync({
                     factura_id: cobrando.id,
@@ -583,6 +585,12 @@ export function Facturacion() {
               onCambio={(v) => {
                 setCuentaId(v)
                 setIgtf(null)
+                // Un pago móvil elegido antes que una cuenta en dólares no se
+                // queda puesto: vuelve a la transferencia, que vale en todas.
+                const moneda = cuentas?.find((c) => String(c.id) === v)?.moneda
+                if (!metodosParaMoneda(metodos, moneda).some((m) => m.codigo === metodo)) {
+                  setMetodo('TRANSFERENCIA')
+                }
               }}
               opciones={(cuentas ?? [])
                 .filter((c) => c.activa)
@@ -606,7 +614,13 @@ export function Facturacion() {
               label="Cómo pagó"
               value={metodo}
               onChange={(e) => setMetodo(e.target.value)}
-              opciones={opcionesDe(metodos)}
+              opciones={opcionesDe(metodosDeLaCuenta)}
+              hint={
+                cuenta
+                  ? 'Queda guardado en el cobro y en los movimientos de dinero.'
+                  : 'Elige primero la cuenta: el pago móvil solo va en bolívares.'
+              }
+              error={metodoNoVale ? `${nombreDe(metodos, metodo)} no se usa en ${cuenta?.moneda}.` : undefined}
             />
             <Input
               label="Referencia"
