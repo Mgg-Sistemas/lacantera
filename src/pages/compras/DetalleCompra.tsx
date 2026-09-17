@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   Ban,
   BadgeCheck,
+  Boxes,
+  Wallet,
   Check,
   CircleDollarSign,
   Download,
@@ -33,6 +35,19 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
+import {
+  ModalPagoConMaterial,
+  ModalRegistrarPagoConMaterial,
+  ModalUsarSaldo,
+} from './ModalPagoConMaterial'
+import {
+  CONDICION_DEL_MATERIAL,
+  EXCEDENTE_COMO,
+  PASO_DE_LA_SALIDA,
+  pendienteDeOrden,
+  useSaldosAFavor,
+  type PagoConMaterial,
+} from '@/lib/api/intercambio'
 import { ModalCambiarMetodo } from './ModalCambiarMetodo'
 import { ModalRecepcion } from './ModalRecepcion'
 import { PapelesDeCompra } from './PapelesDeCompra'
@@ -475,11 +490,81 @@ function TarjetaCotizacion({
 
 // ---------------------------------------------------------------------------
 
+/*
+  EL MATERIAL DE UN PAGO POR INTERCAMBIO, Y EN QUÉ VA SU SALIDA.
+
+  Quien pagó con material necesita ver lo mismo que ve un pago en dinero —cuánto
+  y cuándo— y además lo que el dinero no tiene: qué salió, de qué patio, a qué
+  precio, y si almacén ya lo entregó. La orden de salida vive en Salidas; aquí
+  se dice su número y su paso para no tener que ir a buscarla.
+*/
+function MaterialDelPago({ m, moneda }: { m: PagoConMaterial; moneda: string }) {
+  const cant = (v: string) => Number(v).toLocaleString('es-VE', { maximumFractionDigits: 4 })
+  const paso = m.solicitud ? PASO_DE_LA_SALIDA[m.solicitud.estado] : null
+
+  return (
+    <div className="bg-ink/3 mt-3 rounded-[6px] p-3 text-sm">
+      <p className="text-ink/85">
+        {cant(m.cantidad)} {m.unidad} de <strong>{m.articulo?.nombre ?? 'material'}</strong>, de{' '}
+        {m.almacen?.nombre ?? 'su patio'}
+      </p>
+      {m.medida === 'ESTIMADA' ? (
+        <p className="text-ink/50 text-xs">
+          Del patio salen {cant(m.cantidad_inventario)} {m.articulo?.unidad}, estimado con la densidad{' '}
+          {Number(m.densidad_usada).toLocaleString('es-VE')} t/m³.
+        </p>
+      ) : null}
+      <p className="text-ink/60 mt-1 text-xs">
+        {CONDICION_DEL_MATERIAL[m.condicion]}: {dinero(m.moneda, m.precio_unitario)} por {m.unidad} ·
+        vale {dinero(m.moneda, m.valor)}
+      </p>
+      {Number(m.excedente) > 0 ? (
+        <p className="text-ink/60 text-xs">
+          A esta orden se aplican {dinero(moneda, m.aplicado)}. Sobran {dinero(m.moneda, m.excedente)},
+          que quedan {EXCEDENTE_COMO[m.excedente_como ?? 'CREDITO'].corto}
+          {m.saldo ? ` (${m.saldo.numero})` : ' cuando almacén entregue el material'}.
+        </p>
+      ) : null}
+      {m.solicitud && paso ? (
+        <p className="mt-2 text-xs">
+          <span className="text-ink/60">Orden de salida </span>
+          <span className="text-ink/85 font-mono">{m.solicitud.numero}</span>
+          <span className="text-ink/60">: </span>
+          <span
+            className={cn(
+              paso.tono === 'success' && 'text-success',
+              paso.tono === 'warning' && 'text-warning',
+              paso.tono === 'danger' && 'text-danger',
+              paso.tono === 'neutral' && 'text-ink/55',
+            )}
+          >
+            {paso.texto}
+          </span>
+          {m.solicitud.nota_salida ? (
+            <span className="text-ink/60">
+              {' '}con la nota <span className="text-ink/85 font-mono">{m.solicitud.nota_salida}</span>
+            </span>
+          ) : null}
+          {m.solicitud.cierre_motivo && ['RECHAZADA', 'CANCELADA'].includes(m.solicitud.estado) ? (
+            <span className="text-ink/55"> — {m.solicitud.cierre_motivo}</span>
+          ) : null}
+          .
+        </p>
+      ) : (
+        <p className="text-ink/45 mt-2 text-xs">
+          La orden de salida para almacén nace al registrar el pago.
+        </p>
+      )}
+    </div>
+  )
+}
+
 function TarjetaInstruccion({
   instruccion,
   puedePagar,
   puedeCambiarMetodo,
   onPagar,
+  onRegistrarMaterial,
   onDevolver,
   onCambiarMetodo,
   onComprobante,
@@ -489,6 +574,8 @@ function TarjetaInstruccion({
   /** Corregir por dónde se paga sin retroceder la orden. */
   puedeCambiarMetodo: boolean
   onPagar: () => void
+  /** El «pagar» de un pago con material: manda la orden de salida a almacén. */
+  onRegistrarMaterial: () => void
   onDevolver: () => void
   onCambiarMetodo: () => void
   /** Solo cuando ya está pagada: antes no hay nada que comprobar. */
@@ -496,12 +583,19 @@ function TarjetaInstruccion({
 }) {
   const { data: metodos } = useMetodosPago()
   const i = instruccion
+  // Los dos métodos que no mueven dinero no están en la lista de los de dinero.
+  const conMaterial = i.metodo === 'INTERCAMBIO'
+  const nombre = conMaterial
+    ? 'Con material (intercambio)'
+    : i.metodo === 'SALDO_A_FAVOR'
+      ? 'Con saldo a favor'
+      : nombreDelMetodo(metodos, i.metodo)
 
   return (
     <div className="border-hairline rounded-card border p-3.5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-ink/90 text-base font-medium">{nombreDelMetodo(metodos, i.metodo)}</p>
+          <p className="text-ink/90 text-base font-medium">{nombre}</p>
           <p className="text-ink/50 text-xs">Cargada el {fechaHora(i.creada_en)}</p>
         </div>
         <Chip
@@ -595,14 +689,17 @@ function TarjetaInstruccion({
         ) : null}
       </dl>
 
+      {i.material ? <MaterialDelPago m={i.material} moneda={i.moneda} /> : null}
+
       {i.nota ? <p className="text-ink/55 mt-2 text-sm italic">«{i.nota}»</p> : null}
       {i.motivo_devolucion ? (
         <p className="text-danger mt-2 text-sm">Devuelta: {i.motivo_devolucion}</p>
       ) : null}
 
       {/* El comprobante solo existe cuando ya se pagó. Ofrecerlo antes
-          sería ofrecer papel de algo que todavía no pasó. */}
-      {i.estado === 'PAGADA' ? (
+          sería ofrecer papel de algo que todavía no pasó. El de un pago con
+          material o con saldo son su orden y su nota de salida, o el saldo. */}
+      {i.estado === 'PAGADA' && !conMaterial && i.metodo !== 'SALDO_A_FAVOR' ? (
         <div className="mt-3">
           <Button size="sm" variant="outline" icon={<Printer />} onClick={onComprobante}>
             Comprobante de pago
@@ -612,7 +709,11 @@ function TarjetaInstruccion({
 
       {i.estado === 'POR_PAGAR' && (puedePagar || puedeCambiarMetodo) ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          {puedePagar ? (
+          {puedePagar && conMaterial ? (
+            <Button size="sm" icon={<Check />} onClick={onRegistrarMaterial}>
+              Registrar el pago con material
+            </Button>
+          ) : puedePagar ? (
             <Button size="sm" icon={<Check />} onClick={onPagar}>
               Registrar el pago
             </Button>
@@ -625,7 +726,7 @@ function TarjetaInstruccion({
             en la cola. Devolverla rehace un paso que estaba bien, así que se
             deja de última y sin destacar.
           */}
-          {puedeCambiarMetodo ? (
+          {puedeCambiarMetodo && !conMaterial ? (
             <Button size="sm" variant="outline" icon={<Repeat />} onClick={onCambiarMetodo}>
               Cambiar el método
             </Button>
@@ -714,6 +815,11 @@ export function DetalleCompra() {
   const qc = useQueryClient()
   const { data: miFirma } = useMiFirma()
   const tengoFirma = miFirma?.usar === true
+  /*
+    Los créditos que un intercambio anterior dejó con este proveedor, en la
+    moneda de la orden. Son los que pueden pagarla sin mover dinero.
+  */
+  const saldosDelProveedor = useSaldosAFavor(orden?.proveedor?.id)
   const { data: empresa } = useEmpresa()
   const { data: articulos } = useArticulos()
   const { data: metodosDePago } = useMetodosPago()
@@ -777,6 +883,9 @@ export function DetalleCompra() {
     | null
     | { tipo: 'cotizacion'; corregir?: Cotizacion }
     | { tipo: 'pago' }
+    | { tipo: 'pago-material' }
+    | { tipo: 'registrar-material'; instruccion: InstruccionPago }
+    | { tipo: 'usar-saldo' }
     | { tipo: 'recepcion' }
     | { tipo: 'cancelar-pedido' }
     | { tipo: 'devolver-gerencia' }
@@ -1086,6 +1195,49 @@ export function DetalleCompra() {
   )
 
   const puedeCompras = puede('COMPRAS')
+
+  const creditosDelProveedor = (saldosDelProveedor.data ?? []).filter(
+    (s) =>
+      s.estado === 'ABIERTO' &&
+      s.a_favor_de === 'EMPRESA' &&
+      s.forma === 'CREDITO' &&
+      s.moneda === orden?.moneda,
+  )
+
+  /*
+    LAS OTRAS DOS FORMAS DE PAGAR, debajo del dinero y sin quitarle el sitio:
+    con material de la empresa (compra por intercambio, 17/09/2026) y con un
+    crédito que un intercambio anterior dejó con este proveedor. El saldo solo se
+    ofrece si lo hay.
+  */
+  const otrasFormasDePago = (deshabilitado: boolean) => (
+    <div className="mt-2 space-y-2">
+      <Button
+        block
+        variant="outline"
+        icon={<Boxes />}
+        disabled={deshabilitado}
+        onClick={() => setModal({ tipo: 'pago-material' })}
+      >
+        Pagar con material
+      </Button>
+      {creditosDelProveedor.length > 0 ? (
+        <Button
+          block
+          variant="outline"
+          icon={<Wallet />}
+          disabled={deshabilitado}
+          onClick={() => setModal({ tipo: 'usar-saldo' })}
+        >
+          Usar saldo a favor ·{' '}
+          {dinero(
+            orden?.moneda,
+            creditosDelProveedor.reduce((s, c) => s + Number(c.pendiente), 0),
+          )}
+        </Button>
+      ) : null}
+    </div>
+  )
   const puedeGerente = puede('GERENTE_GENERAL')
 
   /*
@@ -1529,6 +1681,7 @@ export function DetalleCompra() {
                       puedePagar={puedeCompras}
                       puedeCambiarMetodo={puedeCambiarMetodo}
                       onPagar={() => setModal({ tipo: 'registrar-pago', instruccion: i })}
+                      onRegistrarMaterial={() => setModal({ tipo: 'registrar-material', instruccion: i })}
                       onDevolver={() => setModal({ tipo: 'devolver-instruccion', instruccion: i })}
                       onCambiarMetodo={() => setModal({ tipo: 'cambiar-metodo', instruccion: i })}
                       onComprobante={() => void imprimirComprobante(i)}
@@ -1903,6 +2056,7 @@ export function DetalleCompra() {
                     >
                       Indicar método de pago
                     </Button>
+                    {otrasFormasDePago(!orden.comprobante_tipo)}
                   </>
                 ) : (
                   <p className="text-ink/60 text-sm">Compras está cargando el método de pago.</p>
@@ -1911,10 +2065,33 @@ export function DetalleCompra() {
 
               {orden?.estado === 'EN_TESORERIA' ? (
                 puedeCompras ? (
-                  <p className="text-ink/60 text-sm">
-                    Registra el pago abajo, en el pago autorizado. Al hacerlo, la compra queda
-                    esperando que llegue el material.
-                  </p>
+                  <>
+                    <p className="text-ink/60 text-sm">
+                      Registra el pago abajo, en el pago autorizado. Al hacerlo, la compra queda
+                      esperando que llegue el material.
+                    </p>
+                    {/*
+                      LO QUE FALTA SE PUEDE PAGAR DE OTRA FORMA. Un intercambio
+                      rara vez cubre la orden justa: parte en material y el resto
+                      en dinero, o con un saldo a favor. Solo mientras falte algo.
+                    */}
+                    {pendienteDeOrden(orden) > 0.01 ? (
+                      <div className="border-hairline mt-3 border-t pt-3">
+                        <p className="text-ink/60 mb-2 text-xs">
+                          Falta instruir {dinero(orden.moneda, pendienteDeOrden(orden))}.
+                        </p>
+                        <Button
+                          block
+                          variant="outline"
+                          icon={<CircleDollarSign />}
+                          onClick={() => setModal({ tipo: 'pago' })}
+                        >
+                          Indicar otro pago en dinero
+                        </Button>
+                        {otrasFormasDePago(false)}
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   <p className="text-ink/60 text-sm">
                     Tesorería tiene la orden para pagar.
@@ -2115,6 +2292,18 @@ export function DetalleCompra() {
 
       {modal?.tipo === 'pago' && orden ? (
         <ModalPago abierto onCerrar={() => setModal(null)} orden={orden} />
+      ) : null}
+
+      {modal?.tipo === 'pago-material' && orden ? (
+        <ModalPagoConMaterial orden={orden} onCerrar={() => setModal(null)} />
+      ) : null}
+
+      {modal?.tipo === 'registrar-material' ? (
+        <ModalRegistrarPagoConMaterial instruccion={modal.instruccion} onCerrar={() => setModal(null)} />
+      ) : null}
+
+      {modal?.tipo === 'usar-saldo' && orden ? (
+        <ModalUsarSaldo orden={orden} saldos={creditosDelProveedor} onCerrar={() => setModal(null)} />
       ) : null}
 
       {modal?.tipo === 'recepcion' && orden ? (

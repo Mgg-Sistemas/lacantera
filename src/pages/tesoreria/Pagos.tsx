@@ -287,7 +287,10 @@ export function Pagos() {
     veía el botón ausente sin saber por qué.
   */
   const puedePagar = puede('COMPRAS')
-  const pendientes = data ?? []
+  // Un pago con material no sale de una cuenta: se registra en su orden de
+  // compra, y eso manda la orden de salida a almacén. No entra en esta cola.
+  const conMaterial = (data ?? []).filter((p) => p.metodo === 'INTERCAMBIO')
+  const pendientes = (data ?? []).filter((p) => p.metodo !== 'INTERCAMBIO')
 
   // Lo que hay que pagar, en dólares, para compararlo con lo que hay. Es la
   // única cifra que responde "¿alcanza?" cuando las instrucciones vienen en
@@ -357,6 +360,29 @@ export function Pagos() {
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
+
+      {conMaterial.length > 0 ? (
+        <Card className="mb-4">
+          <p className="text-ink/80 text-sm">
+            {conMaterial.length === 1
+              ? 'Hay 1 pago con material por registrar.'
+              : `Hay ${conMaterial.length} pagos con material por registrar.`}{' '}
+            No salen de una cuenta: se registran en su orden de compra, y eso manda la salida a
+            almacén.
+          </p>
+          <p className="mt-1 flex flex-wrap gap-x-3 text-xs">
+            {conMaterial.map((p) => (
+              <Link
+                key={p.instruccion_id}
+                to={`/app/compras/${p.solicitud_id}`}
+                className="text-royal-600 dark:text-royal-300 font-mono hover:underline"
+              >
+                {p.orden_numero} · {p.proveedor ?? 'Sin proveedor'}
+              </Link>
+            ))}
+          </p>
+        </Card>
+      ) : null}
 
       {pendientes.length > 0 ? (
         <>

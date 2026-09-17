@@ -170,7 +170,8 @@ export interface PorPagar {
   proveedor_id: number | null
   proveedor: string | null
   rif: string | null
-  metodo: 'TRANSFERENCIA' | 'PAGO_MOVIL' | 'BINANCE' | 'EFECTIVO'
+  /** Un código de `metodos_pago`. INTERCAMBIO no se paga desde una cuenta. */
+  metodo: string
   moneda: string
   monto: string
   monto_bs: string
