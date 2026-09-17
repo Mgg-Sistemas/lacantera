@@ -77,10 +77,12 @@ const PASOS: Paso[] = [
   {
     romano: 'III',
     titulo: 'Se factura',
-    espera: 'notas por facturar',
+    espera: 'notas sin factura',
     icono: Receipt,
     ruta: '/app/facturacion',
     accion: 'Facturar',
+    // Una nota de entrega no tiene por qué facturarse (Christopher, 17/09/2026).
+    opcional: true,
   },
   {
     romano: 'IV',
@@ -200,7 +202,8 @@ export function TableroVentas() {
               </p>
               <p className="text-ink/50 mt-2 text-sm leading-relaxed">
                 Cotizar es opcional: sirve cuando el cliente pide precio antes de decidir. Si el
-                camión ya está en la romana, se va directo a despachar.
+                camión ya está en la romana, se va directo a despachar. Facturar también lo es: la
+                nota de entrega vale por sí sola, y si se factura queda enlazada a su factura.
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
