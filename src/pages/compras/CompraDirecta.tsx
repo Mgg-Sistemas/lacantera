@@ -19,6 +19,8 @@ import {
   conSusFormas,
   useArticulos,
   useCrearArticulo,
+  useGuardarPresentacionDeArticulo,
+  usePresentaciones,
   useTodasLasPresentaciones,
   useProveedores,
   useUnidades,
@@ -57,8 +59,21 @@ import { cn } from '@/lib/cn'
   vuelve útil a esta pantalla.
 */
 
+/*
+  Los tres caminos de un renglón. Se elige al principio y cada uno pide solo lo
+  suyo: del catálogo se busca, lo nuevo se da de alta, y un servicio se paga sin
+  entrar al inventario.
+*/
+const MODOS = [
+  { valor: 'CATALOGO', etiqueta: 'Está en el catálogo' },
+  { valor: 'NUEVO', etiqueta: 'Es nuevo: darlo de alta' },
+  { valor: 'SERVICIO', etiqueta: 'Es un servicio' },
+] as const
+type Modo = (typeof MODOS)[number]['valor']
+
 interface Fila {
   clave: number
+  modo: Modo
   articulo_id: string
   descripcion: string
   cantidad: string
@@ -72,14 +87,20 @@ interface Fila {
    * bultos, el precio que se escribe es el del bulto.
    */
   capturada: CantidadCapturada | null
-  /** Para crearlo en el catálogo desde el renglón, si no está. */
+  /** Para darlo de alta en el catálogo desde el renglón, si es nuevo. */
   nueva_categoria: string
   nuevo_confirmado: boolean
+  /** En qué se le da salida: la unidad del inventario. */
+  nueva_unidad: string
+  /** En qué viene al comprarlo, y cuántas de su unidad trae cada una. */
+  nueva_presentacion: string
+  nuevas_por_presentacion: string
 }
 
 let contador = 0
 const filaVacia = (): Fila => ({
   clave: contador++,
+  modo: 'CATALOGO',
   articulo_id: '',
   descripcion: '',
   cantidad: '',
@@ -91,6 +112,9 @@ const filaVacia = (): Fila => ({
   capturada: null,
   nueva_categoria: '',
   nuevo_confirmado: false,
+  nueva_unidad: '',
+  nueva_presentacion: '',
+  nuevas_por_presentacion: '',
 })
 
 export function CompraDirecta() {
@@ -101,6 +125,7 @@ export function CompraDirecta() {
   // pueden ser quince consultas para leer quince filas.
   const { data: formasDeContar } = useTodasLasPresentaciones()
   const { data: unidades } = useUnidades()
+  const { data: presentaciones } = usePresentaciones()
   const { data: almacenes } = useAlmacenes()
   const { data: monedas } = useMonedasUsables()
   const { data: tasaVigente } = useTasaVigente()
@@ -108,6 +133,7 @@ export function CompraDirecta() {
 
   const comprar = useComprarDirecto()
   const crearArticulo = useCrearArticulo()
+  const guardarPresentacion = useGuardarPresentacionDeArticulo()
   const adjuntar = useAdjuntarPapel()
   const recibir = useRecibirOrdenCompleta()
 
@@ -191,6 +217,78 @@ export function CompraDirecta() {
     return Number(n) > 0 ? Number(n) : null
   }
 
+  /** Cambiar de camino deja el renglón limpio: lo de un camino no sirve en otro. */
+  const cambiarModo = (f: Fila, modo: Modo) =>
+    cambiar(f.clave, {
+      modo,
+      articulo_id: '',
+      cantidad: '',
+      capturada: null,
+      presentacion: '',
+      unidad: modo === 'SERVICIO' ? 'SERV' : 'UND',
+      nueva_categoria: '',
+      nuevo_confirmado: false,
+      nueva_unidad: '',
+      nueva_presentacion: '',
+      nuevas_por_presentacion: '',
+    })
+
+  // En qué se le da salida a algo. M3 y TON se crean en Artículos, con densidad;
+  // un servicio o una hora no son algo que se guarde.
+  const unidadesDeUso = (unidades ?? [])
+    .filter((u) => !['M3', 'TON', 'SERV', 'HORA'].includes(u.codigo))
+    .map((u) => ({ valor: u.codigo, etiqueta: u.nombre }))
+
+  const listoParaAlta = (f: Fila) =>
+    f.descripcion.trim().length >= 3 &&
+    !!f.nueva_categoria &&
+    !!f.nueva_unidad &&
+    f.nueva_unidad !== 'M3' &&
+    f.nueva_unidad !== 'TON' &&
+    (!f.nueva_presentacion || Number(f.nuevas_por_presentacion) > 0)
+
+  const enAlta = crearArticulo.isPending || guardarPresentacion.isPending
+  const errorDeAlta = crearArticulo.error ?? guardarPresentacion.error
+
+  /*
+    DOS PASOS, Y SI FALLA EL SEGUNDO NO SE REPITE EL PRIMERO.
+
+    El artículo nace en su unidad de uso y después se le declara la
+    presentación de compra. Si la presentación no entra, el artículo ya existe:
+    el renglón pasa a usarlo igual —volver a pulsar lo crearía dos veces— y el
+    error dice qué falta declarar en Artículos.
+  */
+  const darDeAlta = async (f: Fila) => {
+    const id = await crearArticulo.mutateAsync({
+      // Vacío: el código lo pone la base.
+      codigo: '',
+      nombre: f.descripcion.trim(),
+      categoria: f.nueva_categoria,
+      unidad: f.nueva_unidad,
+      marca: f.marca || null,
+      confirmado: f.nuevo_confirmado,
+    })
+    cambiar(f.clave, {
+      modo: 'CATALOGO',
+      articulo_id: String(id),
+      descripcion: f.descripcion.trim().toUpperCase(),
+      unidad: f.nueva_unidad,
+      nueva_categoria: '',
+      nuevo_confirmado: false,
+      nueva_unidad: '',
+      nueva_presentacion: '',
+      nuevas_por_presentacion: '',
+    })
+    if (f.nueva_presentacion) {
+      await guardarPresentacion.mutateAsync({
+        articulo_id: id,
+        presentacion: f.nueva_presentacion,
+        unidades: Number(f.nuevas_por_presentacion),
+        por_defecto: true,
+      })
+    }
+  }
+
   /** El precio de una unidad del artículo, que es el que se guarda. */
   const precioUnitarioDe = (f: Fila) => {
     const precio = Number(f.precio || 0)
@@ -218,8 +316,14 @@ export function CompraDirecta() {
   }, [filas, descuento, flete, alicuota])
 
   const listas = filas.filter(
-    (f) => f.descripcion.trim() && Number(f.cantidad) > 0 && f.precio !== '',
+    (f) =>
+      f.descripcion.trim() &&
+      Number(f.cantidad) > 0 &&
+      f.precio !== '' &&
+      (f.modo === 'SERVICIO' || (f.modo === 'CATALOGO' && !!f.articulo_id)),
   )
+  // Un renglón nuevo a medio dar de alta no se guarda callado: se para la compra.
+  const altasPendientes = filas.some((f) => f.modo === 'NUEVO' && f.descripcion.trim())
 
   /*
     RECIBIR EXIGE LA FACTURA, y no es un capricho de esta pantalla.
@@ -240,6 +344,7 @@ export function CompraDirecta() {
     !!proveedorId &&
     titulo.trim().length >= 3 &&
     listas.length > 0 &&
+    !altasPendientes &&
     !faltaLaFactura &&
     !enVuelo
 
@@ -260,7 +365,7 @@ export function CompraDirecta() {
       destino_almacen_id: almacen ? Number(almacen) : null,
       con_firma: miFirma?.usar === true && conMiFirma,
       renglones: listas.map((f) => ({
-        articulo_id: f.articulo_id ? Number(f.articulo_id) : null,
+        articulo_id: f.modo === 'CATALOGO' && f.articulo_id ? Number(f.articulo_id) : null,
         descripcion: f.descripcion.trim(),
         cantidad: Number(f.cantidad),
         // Con artículo, su unidad: es la que el inventario cuenta.
@@ -427,209 +532,278 @@ export function CompraDirecta() {
             </Button>
           </div>
 
-          {filas.map((f, i) => (
-            <div key={f.clave} className="border-hairline rounded-card border p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-ink/40 text-2xs tracking-wide uppercase">
-                  Renglón {i + 1}
-                </span>
-                {filas.length > 1 ? (
-                  <button
-                    type="button"
-                    className="text-ink/40 hover:text-danger"
-                    onClick={() => setFilas((x) => x.filter((y) => y.clave !== f.clave))}
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                ) : null}
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <SelectBuscable
-                  label="Del catálogo"
-                  opciones={(articulos ?? []).map((a) => ({
-                    valor: String(a.id),
-                    etiqueta: a.nombre,
-                    detalle: a.codigo,
-                  }))}
-                  valor={f.articulo_id}
-                  onCambio={(v: string) => elegirArticulo(f.clave, v)}
-                  vacio="Sin catálogo"
-                  hint="Si no está, créalo en el renglón: sin artículo no entra al inventario."
-                />
-                <Input
-                  label="Qué es"
-                  value={f.descripcion}
-                  onChange={(e) => cambiar(f.clave, { descripcion: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                <CantidadDeArticulo
-                  key={f.articulo_id}
-                  valor={f.cantidad}
-                  onCambiar={(v, capturada) => cambiar(f.clave, { cantidad: v, capturada })}
-                  articulo={conSusFormas(
-                    articulos?.find((a) => String(a.id) === f.articulo_id),
-                    formasDeContar,
-                  )}
-                  hintSinArticulo=""
-                />
-                {articuloDe(f) ? (
-                  <Input
-                    label="Unidad"
-                    value={articuloDe(f)!.unidad}
-                    disabled
-                    hint="La del artículo: el inventario lo cuenta así."
-                  />
-                ) : (
-                  <Select
-                    label="Unidad"
-                    value={f.unidad}
-                    onChange={(e) => cambiar(f.clave, { unidad: e.target.value })}
-                    opciones={(unidades ?? []).map((u) => ({ valor: u.codigo, etiqueta: u.nombre }))}
-                  />
-                )}
-                <Input
-                  label={
-                    porBultoDe(f)
-                      ? `Precio por ${f.capturada!.unidad!.toLowerCase()}`
-                      : `Precio por ${(articuloDe(f)?.unidad ?? f.unidad).toLowerCase()}`
-                  }
-                  type="number"
-                  min="0"
-                  step="0.000001"
-                  inputMode="decimal"
-                  value={f.precio}
-                  onChange={(e) => cambiar(f.clave, { precio: e.target.value })}
-                  hint={
-                    porBultoDe(f) && f.precio !== ''
-                      ? `Trae ${porBultoDe(f)} ${articuloDe(f)!.unidad}: sale a ${formato(precioUnitarioDe(f))} cada ${articuloDe(f)!.unidad}.`
-                      : undefined
-                  }
-                />
-              </div>
-
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                <Input
-                  label="Marca"
-                  value={f.marca}
-                  onChange={(e) => cambiar(f.clave, { marca: e.target.value })}
-                />
-                {/*
-                  LA PRESENTACIÓN ES DEL MATERIAL. Christopher, 17/09/2026: «si
-                  está comprando un servicio, no entiendo cómo permite usar
-                  Presentación y guardar saco, rollo». Sin artículo el renglón
-                  es un servicio, y un servicio no viene en sacos: el campo sale
-                  cuando hay artículo.
-                */}
-                <p className="text-ink/45 self-end pb-2.5 text-xs">
-                  {!articuloDe(f)
-                    ? 'Sin presentación: sin artículo es un servicio.'
-                    : 'presentaciones' in articuloDe(f)! || articuloDe(f)!.presentacion
-                      ? 'Si vino en bultos, elige la presentación junto a la cantidad: el catálogo sabe cuánto trae cada una.'
-                      : `El catálogo no le declara presentación: se compra por ${articuloDe(f)!.unidad}. Para comprarlo por bolsa o caja, decláralo en Artículos.`}
-                </p>
-                <label className="text-ink/70 flex cursor-pointer items-center gap-2 self-end pb-2.5 text-sm select-none">
-                  <input
-                    type="checkbox"
-                    className="accent-royal-600 size-4"
-                    checked={f.exento}
-                    onChange={(e) => cambiar(f.clave, { exento: e.target.checked })}
-                  />
-                  Exento de IVA
-                </label>
-              </div>
-
-              {/*
-                SIN ARTÍCULO NO ENTRA AL INVENTARIO, Y AHORA SE DICE.
-
-                Una compradora, 17/09/2026: «lo que voy subiendo por compras
-                directas, ¿se va subiendo en el catálogo o en el inventario?
-                Porque no lo veo». Cargaba el material escribiendo el nombre,
-                sin artículo, y la recepción lo daba por recibido sin anotar
-                nada: un renglón sin artículo es un servicio —un flete, una
-                reparación— y no hay estante donde ponerlo. La pantalla no lo
-                avisaba. Christopher eligió que se cree aquí mismo, como en el
-                pedido: el código lo pone la base, y los parecidos se enseñan
-                antes de crear.
-              */}
-              {!f.articulo_id && f.descripcion.trim().length >= 3 ? (
-                <div className="border-hairline rounded-card bg-canvas mt-3 grid gap-3 border border-dashed p-3 sm:grid-cols-12">
-                  <p className="text-warning text-xs sm:col-span-12">
-                    Sin artículo del catálogo este renglón no entra al inventario: queda como un
-                    servicio, un flete o una reparación. Si es material, créalo aquí y entra con la
-                    compra.
-                  </p>
-
-                  {f.unidad === 'M3' || f.unidad === 'TON' ? (
-                    <p className="text-ink/60 text-xs sm:col-span-12">
-                      Lo que se mide en {f.unidad === 'M3' ? 'metros cúbicos' : 'toneladas'} se crea
-                      en{' '}
-                      <Link
-                        to="/app/inventario/articulos"
-                        className="text-royal-700 dark:text-royal-300 underline underline-offset-2"
-                      >
-                        Artículos
-                      </Link>
-                      , con su densidad. Después vuelve y elígelo en este renglón.
-                    </p>
-                  ) : (
-                    <>
-                      <div className="sm:col-span-8">
-                        <Select
-                          label="Categoría"
-                          vacio="Elige"
-                          value={f.nueva_categoria}
-                          onChange={(e) => cambiar(f.clave, { nueva_categoria: e.target.value })}
-                          opciones={CATEGORIAS_ARTICULO}
-                          hint={`Se crea como «${f.descripcion.trim().toUpperCase()}», en ${f.unidad}.`}
-                        />
-                      </div>
-                      <div className="flex items-end sm:col-span-4">
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          disabled={!f.nueva_categoria || crearArticulo.isPending}
-                          onClick={async () => {
-                            const id = await crearArticulo.mutateAsync({
-                              // Vacío: el código lo pone la base.
-                              codigo: '',
-                              nombre: f.descripcion.trim(),
-                              categoria: f.nueva_categoria,
-                              unidad: f.unidad,
-                              marca: f.marca || null,
-                              confirmado: f.nuevo_confirmado,
-                            })
-                            cambiar(f.clave, {
-                              articulo_id: String(id),
-                              nueva_categoria: '',
-                              nuevo_confirmado: false,
-                            })
-                          }}
-                        >
-                          {crearArticulo.isPending ? 'Creando…' : 'Crear en el catálogo'}
-                        </Button>
-                      </div>
-                      <div className="sm:col-span-12">
-                        <ParecidosAEste
-                          nombre={f.descripcion}
-                          categoria={f.nueva_categoria}
-                          confirmado={f.nuevo_confirmado}
-                          onConfirmar={(v) => cambiar(f.clave, { nuevo_confirmado: v })}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {crearArticulo.error ? (
-                    <ErrorDeCarga error={crearArticulo.error} className="sm:col-span-12" />
+          {filas.map((f, i) => {
+            const articulo = articuloDe(f)
+            const tieneFormas = !!articulo && ('presentaciones' in articulo || !!articulo.presentacion)
+            return (
+              <div key={f.clave} className="border-hairline rounded-card border p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-ink/40 text-2xs tracking-wide uppercase">
+                    Renglón {i + 1}
+                  </span>
+                  {filas.length > 1 ? (
+                    <button
+                      type="button"
+                      className="text-ink/40 hover:text-danger"
+                      onClick={() => setFilas((x) => x.filter((y) => y.clave !== f.clave))}
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
                   ) : null}
                 </div>
-              ) : null}
-            </div>
-          ))}
+
+                {/*
+                  LO PRIMERO ES DECIR QUÉ ES.
+
+                  Christopher, 17/09/2026, con diez sacos de pollo que la cocina
+                  va a sacar de cuatro en cuatro: «la opción "Del catálogo" se
+                  deja vacía porque el producto no está y lo desean crear ahí
+                  mismo, y por tanto el usuario se pierde». El renglón tenía un
+                  selector vacío, un «Qué es» y, más abajo y después, una caja
+                  para crearlo. Tres caminos distintos sin decir cuál se estaba
+                  tomando.
+
+                  Ahora se elige al principio: está en el catálogo, es nuevo, o
+                  es un servicio. Cada camino pide solo lo suyo.
+                */}
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Qué es este renglón">
+                  {MODOS.map((m) => (
+                    <button
+                      type="button"
+                      key={m.valor}
+                      aria-pressed={f.modo === m.valor}
+                      onClick={() => cambiarModo(f, m.valor)}
+                      className={cn(
+                        'rounded-full border px-3 py-1.5 text-xs transition-colors',
+                        f.modo === m.valor
+                          ? 'border-royal-600 bg-royal-600/12 text-ink/90 font-medium'
+                          : 'border-hairline text-ink/60 hover:text-ink/85',
+                      )}
+                    >
+                      {m.etiqueta}
+                    </button>
+                  ))}
+                </div>
+
+                {f.modo === 'CATALOGO' ? (
+                  <div className="mt-3">
+                    <SelectBuscable
+                      label="Artículo"
+                      opciones={(articulos ?? []).map((a) => ({
+                        valor: String(a.id),
+                        etiqueta: a.nombre,
+                        detalle: a.codigo,
+                      }))}
+                      valor={f.articulo_id}
+                      onCambio={(v: string) => elegirArticulo(f.clave, v)}
+                      vacio="Busca el artículo"
+                      hint="¿No aparece? Marca arriba «Es nuevo» y dalo de alta sin salir de la compra."
+                    />
+                  </div>
+                ) : null}
+
+                {/*
+                  DARLO DE ALTA ES DECIR CÓMO SE USA Y CÓMO SE COMPRA.
+
+                  Diez sacos de pollo no dicen cuántos pollos hay. Si el artículo
+                  naciera con la unidad del renglón —SACO—, el inventario
+                  contaría sacos y la cocina no podría sacar cuatro pollos. Así
+                  que se pregunta en ese orden: en qué se le da salida (la unidad
+                  del inventario) y en qué viene al comprarlo, con cuántas trae
+                  cada una. La presentación queda declarada en el catálogo y la
+                  compra se cuenta en sacos sin perder los pollos.
+                */}
+                {f.modo === 'NUEVO' ? (
+                  <div className="border-hairline rounded-card bg-canvas mt-3 grid gap-3 border border-dashed p-3 sm:grid-cols-12">
+                    <p className="text-ink/60 text-xs sm:col-span-12">
+                      Primero se da de alta en el catálogo: cómo se llama, en qué se le da salida y
+                      cómo viene. Después se dice cuánto se compró y a qué precio.
+                    </p>
+                    <div className="sm:col-span-8">
+                      <Input
+                        label="Cómo se llama"
+                        placeholder="POLLO ENTERO"
+                        value={f.descripcion}
+                        onChange={(e) => cambiar(f.clave, { descripcion: e.target.value })}
+                      />
+                    </div>
+                    <div className="sm:col-span-4">
+                      <Select
+                        label="Categoría"
+                        vacio="Elige"
+                        value={f.nueva_categoria}
+                        onChange={(e) => cambiar(f.clave, { nueva_categoria: e.target.value })}
+                        opciones={CATEGORIAS_ARTICULO}
+                      />
+                    </div>
+                    <div className="sm:col-span-4">
+                      <Select
+                        label="Se le da salida por"
+                        vacio="Elige"
+                        value={f.nueva_unidad}
+                        onChange={(e) => cambiar(f.clave, { nueva_unidad: e.target.value })}
+                        opciones={unidadesDeUso}
+                        hint="La unidad del inventario: lo que se saca. Pollos sueltos, UND; si se pesan, KG."
+                      />
+                    </div>
+                    <div className="sm:col-span-4">
+                      <Select
+                        label="Se compra en"
+                        vacio="Suelto, en esa unidad"
+                        value={f.nueva_presentacion}
+                        onChange={(e) =>
+                          cambiar(f.clave, { nueva_presentacion: e.target.value, nuevas_por_presentacion: '' })
+                        }
+                        opciones={(presentaciones ?? []).map((p) => ({ valor: p.codigo, etiqueta: p.nombre }))}
+                      />
+                    </div>
+                    <div className="sm:col-span-4">
+                      {f.nueva_presentacion ? (
+                        <Input
+                          label={`Cuántos ${f.nueva_unidad || 'de su unidad'} trae cada ${f.nueva_presentacion.toLowerCase()}`}
+                          type="number"
+                          min="0"
+                          step="0.0001"
+                          inputMode="decimal"
+                          value={f.nuevas_por_presentacion}
+                          onChange={(e) => cambiar(f.clave, { nuevas_por_presentacion: e.target.value })}
+                          hint={
+                            Number(f.nuevas_por_presentacion) > 0 && f.nueva_unidad
+                              ? `10 ${f.nueva_presentacion.toLowerCase()} serán ${Number(f.nuevas_por_presentacion) * 10} ${f.nueva_unidad}.`
+                              : 'Sin esto nadie sabe cuántos hay en lo que se compró.'
+                          }
+                        />
+                      ) : null}
+                    </div>
+                    {f.nueva_unidad === 'M3' || f.nueva_unidad === 'TON' ? (
+                      <p className="text-ink/60 text-xs sm:col-span-12">
+                        Lo que se mide en {f.nueva_unidad === 'M3' ? 'metros cúbicos' : 'toneladas'} se
+                        crea en{' '}
+                        <Link
+                          to="/app/inventario/articulos"
+                          className="text-royal-700 dark:text-royal-300 underline underline-offset-2"
+                        >
+                          Artículos
+                        </Link>
+                        , con su densidad.
+                      </p>
+                    ) : null}
+                    <div className="sm:col-span-12">
+                      <ParecidosAEste
+                        nombre={f.descripcion}
+                        categoria={f.nueva_categoria}
+                        confirmado={f.nuevo_confirmado}
+                        onConfirmar={(v) => cambiar(f.clave, { nuevo_confirmado: v })}
+                      />
+                    </div>
+                    <div className="flex justify-end sm:col-span-12">
+                      <Button disabled={!listoParaAlta(f) || enAlta} onClick={() => void darDeAlta(f)}>
+                        {enAlta ? 'Dando de alta…' : 'Dar de alta y seguir'}
+                      </Button>
+                    </div>
+                    {errorDeAlta ? (
+                      <ErrorDeCarga error={errorDeAlta} className="sm:col-span-12" />
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {f.modo === 'SERVICIO' ? (
+                  <div className="mt-3">
+                    <Input
+                      label="Qué servicio"
+                      placeholder="Flete desde Ciudad Bolívar"
+                      value={f.descripcion}
+                      onChange={(e) => cambiar(f.clave, { descripcion: e.target.value })}
+                      hint="Un servicio se paga, pero no entra al inventario."
+                    />
+                  </div>
+                ) : null}
+
+                {f.modo !== 'NUEVO' ? (
+                  <>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      {f.modo === 'CATALOGO' ? (
+                        <CantidadDeArticulo
+                          key={f.articulo_id}
+                          valor={f.cantidad}
+                          onCambiar={(v, capturada) => cambiar(f.clave, { cantidad: v, capturada })}
+                          articulo={articulo}
+                          hintSinArticulo="Elige antes el artículo"
+                        />
+                      ) : (
+                        <Input
+                          label="Cantidad"
+                          type="number"
+                          min="0"
+                          step="0.0001"
+                          inputMode="decimal"
+                          value={f.cantidad}
+                          onChange={(e) => cambiar(f.clave, { cantidad: e.target.value, capturada: null })}
+                        />
+                      )}
+                      {f.modo === 'SERVICIO' ? (
+                        <Select
+                          label="Unidad"
+                          value={f.unidad}
+                          onChange={(e) => cambiar(f.clave, { unidad: e.target.value })}
+                          opciones={(unidades ?? []).map((u) => ({ valor: u.codigo, etiqueta: u.nombre }))}
+                        />
+                      ) : (
+                        <Input
+                          label="Unidad"
+                          value={articulo?.unidad ?? '—'}
+                          disabled
+                          hint="La del artículo: el inventario lo cuenta así."
+                        />
+                      )}
+                      <Input
+                        label={
+                          porBultoDe(f)
+                            ? `Precio por ${f.capturada!.unidad!.toLowerCase()}`
+                            : `Precio por ${(articulo?.unidad ?? f.unidad).toLowerCase()}`
+                        }
+                        type="number"
+                        min="0"
+                        step="0.000001"
+                        inputMode="decimal"
+                        value={f.precio}
+                        onChange={(e) => cambiar(f.clave, { precio: e.target.value })}
+                        hint={
+                          porBultoDe(f) && f.precio !== ''
+                            ? `Trae ${porBultoDe(f)} ${articulo!.unidad}: sale a ${formato(precioUnitarioDe(f))} cada ${articulo!.unidad}.`
+                            : undefined
+                        }
+                      />
+                    </div>
+
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      <Input
+                        label="Marca"
+                        value={f.marca}
+                        onChange={(e) => cambiar(f.clave, { marca: e.target.value })}
+                      />
+                      <p className="text-ink/45 self-end pb-2.5 text-xs">
+                        {f.modo === 'SERVICIO' || !articulo
+                          ? ''
+                          : tieneFormas
+                            ? 'Si vino en bultos, elige la presentación junto a la cantidad: el catálogo sabe cuánto trae cada una.'
+                            : `El catálogo no le declara presentación: se compra por ${articulo.unidad}. Para comprarlo por saco o caja, decláralo en Artículos.`}
+                      </p>
+                      <label className="text-ink/70 flex cursor-pointer items-center gap-2 self-end pb-2.5 text-sm select-none">
+                        <input
+                          type="checkbox"
+                          className="accent-royal-600 size-4"
+                          checked={f.exento}
+                          onChange={(e) => cambiar(f.clave, { exento: e.target.checked })}
+                        />
+                        Exento de IVA
+                      </label>
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            )
+          })}
 
           <div className="grid gap-4 sm:grid-cols-3">
             <Input
@@ -771,6 +945,12 @@ export function CompraDirecta() {
           <Card className="border-warning/30 bg-warning-soft">
             <p className="text-ink/80 text-sm">{avisoPapel}</p>
           </Card>
+        ) : null}
+
+        {altasPendientes ? (
+          <p className="text-warning text-right text-sm">
+            Hay un renglón nuevo sin dar de alta: termínalo o cámbialo de camino antes de aceptar.
+          </p>
         ) : null}
 
         <div className="flex flex-wrap justify-end gap-2 pb-8">
