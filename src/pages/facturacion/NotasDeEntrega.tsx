@@ -475,7 +475,7 @@ export function NotasDeEntrega() {
             {/* El pesaje y la guía se eligen de lo que la garita ya registró.
                 Elegir un ticket trae sus pesos y su placa: volver a teclearlos
                 es la forma de que el papel y la báscula digan cosas distintas.
-                Sin guía, la base rechaza el despacho de mineral. */}
+                La guía es opcional desde el 17/09/2026. */}
             <div className="mb-4 grid gap-4 sm:grid-cols-2">
               <Select
                 label="Ticket de romana"
@@ -516,12 +516,16 @@ export function NotasDeEntrega() {
                   valor: String(g.id),
                   etiqueta: `${g.numero_guia} · ${g.articulo} · ${enteros(g.cantidad)} ${g.unidad === 'TON' ? 't' : 'm³'}`,
                 }))}
-                error={
+                /*
+                  OPCIONAL DESDE EL 17/09/2026. Christopher: «No tenemos guía».
+                  Decía en rojo que sin guía el despacho se rechazaría, y la
+                  base lo cumplía. Si la hay, se engancha; si no, sale igual.
+                */
+                hint={
                   guiasVigentes.length === 0
-                    ? 'No hay guías vigentes: el despacho de mineral se rechazará'
-                    : undefined
+                    ? 'Opcional. No hay guías cargadas: el despacho sale sin guía.'
+                    : 'Opcional. Si este despacho lleva guía de movilización, elígela.'
                 }
-                hint="Ninguna salida de mineral viaja sin guía."
               />
             </div>
 
