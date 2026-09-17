@@ -47,8 +47,18 @@ interface Props {
   onCambiar: (filas: FilaRenglon[]) => void
   precios: PrecioVenta[]
   moneda: string
-  /** Existencia por artículo, cuando el documento saca material del patio. */
-  existencias?: Record<number, number>
+  /**
+   * Los patios, cuando el documento saca material. Christopher, 17/09/2026:
+   * «que se permita escoger (opcional) de dónde sale cada renglón». Sin elegir,
+   * el renglón sale del patio de la nota.
+   */
+  patios?: {
+    opciones: { valor: string; etiqueta: string }[]
+    /** El de la nota. Vacío mientras no se elija. */
+    deLaNota: string
+    /** La existencia por artículo en ese patio. */
+    existencias: (almacenId: string) => Record<number, number> | undefined
+  }
   /**
    * Las toneladas del ticket de romana elegido. Con un solo material del patio
    * vendido en toneladas, su cantidad es esta y no se teclea.
@@ -61,7 +71,7 @@ export function Renglones({
   onCambiar,
   precios,
   moneda,
-  existencias,
+  patios,
   toneladasDeRomana,
 }: Props) {
   const { data: tasaHoy } = useTasaVigente()
@@ -151,6 +161,9 @@ export function Renglones({
           Number(fila.precio) < minimo
 
         const patio = articulo ? cantidadDelPatio({ ...fila, cantidad }, precios) : null
+        const patioDelRenglon = fila.almacen_id || patios?.deLaNota || ''
+        const nombreDelPatio = patios?.opciones.find((o) => o.valor === patioDelRenglon)?.etiqueta
+        const existencias = patios && patioDelRenglon ? patios.existencias(patioDelRenglon) : undefined
         const disponible = fila.articulo_id ? existencias?.[Number(fila.articulo_id)] : undefined
         const sinMaterial = disponible !== undefined && patio !== null && patio > disponible
         const convertida = articulo && fila.unidad && fila.unidad !== articulo.unidad_articulo
@@ -185,7 +198,7 @@ export function Renglones({
             key={fila.clave}
             className="border-hairline rounded-card grid gap-3 border p-3 sm:grid-cols-12"
           >
-            <div className="sm:col-span-8">
+            <div className={patios ? 'sm:col-span-5' : 'sm:col-span-8'}>
               <Select
                 label={`Renglón ${indice + 1}`}
                 vacio="Elige el producto"
@@ -197,13 +210,29 @@ export function Renglones({
                 }))}
                 hint={
                   disponible !== undefined && articulo
-                    ? `Hay ${disponible.toLocaleString('es-VE')} ${articulo.unidad_articulo} en el patio elegido.`
+                    ? `Hay ${disponible.toLocaleString('es-VE')} ${articulo.unidad_articulo} en ${nombreDelPatio ?? 'el patio elegido'}.`
                     : undefined
                 }
               />
             </div>
 
-            <div className="sm:col-span-4">
+            {patios ? (
+              <div className="sm:col-span-4">
+                <Select
+                  label="De qué patio sale"
+                  vacio={
+                    patios.deLaNota
+                      ? `El de la nota (${patios.opciones.find((o) => o.valor === patios.deLaNota)?.etiqueta ?? '—'})`
+                      : 'El de la nota'
+                  }
+                  value={fila.almacen_id}
+                  onChange={(e) => cambiar(fila.clave, { almacen_id: e.target.value })}
+                  opciones={patios.opciones}
+                />
+              </div>
+            ) : null}
+
+            <div className={patios ? 'sm:col-span-3' : 'sm:col-span-4'}>
               <Select
                 label="Se vende por"
                 value={fila.unidad}
