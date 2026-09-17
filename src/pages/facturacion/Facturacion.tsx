@@ -12,7 +12,10 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import { dinero, dolares, fecha, fechaHora } from '@/lib/formato'
-import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
+import { useClientes } from '@/lib/api/ventas'
+import { CasillaIva } from '@/pages/ventas/CasillaIva'
+import { useIvaPorDefecto } from '@/pages/ventas/ivaPorDefecto'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useCuentas } from '@/lib/api/tesoreria'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
@@ -93,6 +96,12 @@ export function Facturacion() {
 
   const [elegidas, setElegidas] = useState<number[]>([])
   const [condicion, setCondicion] = useState('')
+  // El IVA de la factura. Nulo: lo que diga la ficha de la empresa.
+  const [conIva, setConIva] = useState<boolean | null>(null)
+  const [alicuotaEscrita, setAlicuotaEscrita] = useState<string | null>(null)
+  const ivaPorDefecto = useIvaPorDefecto()
+  const alicuotaVigente = useAlicuotaIva()
+  const { data: clientes } = useClientes()
   const [observacion, setObservacion] = useState('')
 
   const [cuentaId, setCuentaId] = useState('')
@@ -130,6 +139,8 @@ export function Facturacion() {
     setElegidas([])
     setCondicion('')
     setObservacion('')
+    setConIva(null)
+    setAlicuotaEscrita(null)
   }
 
   // Solo se pueden juntar notas del mismo cliente y la misma moneda: una
@@ -139,9 +150,25 @@ export function Facturacion() {
   const compatible = (n: (typeof notas)[number]) =>
     !primera || (n.cliente_id === primera.cliente_id && n.moneda === primera.moneda)
 
-  const totalElegido = notas
+  /*
+    EL IVA LO DECIDE LA FACTURA. Christopher, 17/09/2026: «solo la factura
+    tendrá mención de IVA o IGTF». Las notas de entrega ya no lo llevan, así que
+    se elige aquí, con la alícuota de la empresa por delante y editable. La
+    cifra exacta la calcula la base al emitir; esto es para ver antes cuánto va.
+  */
+  const clienteElegido = clientes?.find((c) => c.id === primera?.cliente_id)
+  const aplicaIva = conIva ?? ivaPorDefecto
+  const alicuotaElegida =
+    alicuotaEscrita === null ? alicuotaVigente : Number(alicuotaEscrita.replace(',', '.'))
+  const alicuotaMala =
+    aplicaIva && !clienteElegido?.exento_iva && !(alicuotaElegida >= 0 && alicuotaElegida <= 100)
+  const alicuotaFactura =
+    clienteElegido?.exento_iva || !aplicaIva || alicuotaMala ? 0 : alicuotaElegida
+  // Lo de las notas sin impuesto: una nota vieja que lo llevara no lo suma dos veces.
+  const baseElegida = notas
     .filter((n) => elegidas.includes(n.id))
-    .reduce((s, n) => s + Number(n.total), 0)
+    .reduce((s, n) => s + Number(n.total) - Number(n.iva), 0)
+  const ivaElegido = Math.round(baseElegida * alicuotaFactura) / 100
 
   const cuenta = cuentas?.find((c) => String(c.id) === cuentaId)
   const metodosDeLaCuenta = metodosParaMoneda(metodos, cuenta?.moneda)
@@ -296,12 +323,13 @@ export function Facturacion() {
                 Cancelar
               </Button>
               <Button
-                disabled={facturar.isPending || elegidas.length === 0}
+                disabled={facturar.isPending || elegidas.length === 0 || alicuotaMala}
                 onClick={async () => {
                   await facturar.mutateAsync({
                     notas: elegidas,
                     condicion_pago: condicion || null,
                     observacion: observacion || null,
+                    alicuota_iva: alicuotaFactura,
                   })
                   cerrarEmision()
                 }}
@@ -378,13 +406,43 @@ export function Facturacion() {
                 />
               </div>
 
-              <div className="bg-ink/4 rounded-card mt-4 flex items-baseline justify-between p-4">
-                <span className="text-ink/60 text-sm">
-                  {elegidas.length} nota(s) de {primera?.cliente}
-                </span>
-                <span className="tabular text-ink/90 text-lg font-semibold">
-                  {dinero(primera?.moneda ?? 'USD', totalElegido)}
-                </span>
+              {clienteElegido?.exento_iva ? (
+                <p className="text-ink/55 mt-4 text-sm">
+                  {clienteElegido.nombre} es exento de IVA: la factura sale sin IVA.
+                </p>
+              ) : (
+                <CasillaIva
+                  aplica={aplicaIva}
+                  onCambiar={setConIva}
+                  alicuota={alicuotaEscrita ?? String(alicuotaVigente)}
+                  onAlicuota={setAlicuotaEscrita}
+                  className="mt-4"
+                />
+              )}
+
+              <div className="bg-ink/4 rounded-card mt-4 space-y-1.5 p-4">
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="text-ink/60 text-sm">
+                    {elegidas.length} nota(s) de {primera?.cliente}
+                  </span>
+                  <span className="tabular text-ink/75 text-sm">
+                    {dinero(primera?.moneda ?? 'USD', baseElegida)}
+                  </span>
+                </div>
+                {alicuotaFactura > 0 ? (
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="text-ink/55 text-sm">IVA {alicuotaFactura}%</span>
+                    <span className="tabular text-ink/75 text-sm">
+                      {dinero(primera?.moneda ?? 'USD', ivaElegido)}
+                    </span>
+                  </div>
+                ) : null}
+                <div className="border-hairline flex items-baseline justify-between gap-4 border-t pt-1.5">
+                  <span className="text-ink/85 text-sm font-semibold">Total de la factura</span>
+                  <span className="tabular text-ink/90 text-lg font-semibold">
+                    {dinero(primera?.moneda ?? 'USD', baseElegida + ivaElegido)}
+                  </span>
+                </div>
               </div>
             </>
           ) : null}

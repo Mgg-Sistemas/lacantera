@@ -201,7 +201,9 @@ const ROTULOS: Record<
 const PIES: Record<TipoDocumento, string> = {
   COTIZACION:
     'Los precios están expresados con la tasa del día indicada arriba y se ajustan al momento de facturar. Esta cotización no compromete existencias.',
-  NOTA: 'ESTE DOCUMENTO NO ES UNA FACTURA. Ampara el traslado del material; la factura se emite aparte. Quien recibe firma conforme el material y el peso.',
+  // Sin leyenda: «en la nota de entrega únicamente dejemos el total; cualquier
+  // otra nota no debe ir» (Christopher, 17/09/2026).
+  NOTA: '',
   FACTURA:
     'La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.',
 }
@@ -491,13 +493,22 @@ function totalExento(d: DatosDocumento): number {
     .reduce((s, r) => s + Number(r.subtotal ?? 0), 0)
 }
 
+/*
+  LA NOTA DE ENTREGA NO MENCIONA IMPUESTOS. Christopher, 17/09/2026: «solo la
+  factura tendrá mención de IVA o IGTF; las notas de entrega en su PDF literal
+  deben decir NOTA DE ENTREGA». Ni la línea del IVA, ni la base, ni el exento,
+  ni la marca (E) en los renglones.
+*/
+const mencionaImpuestos = (d: DatosDocumento) => d.tipo !== 'NOTA'
+
 function altoTotales(d: DatosDocumento): number {
+  if (!mencionaImpuestos(d)) return 15
   const filas =
-    3 + // subtotal, IVA, total
+    (mencionaImpuestos(d) ? 3 : 2) + // subtotal, IVA, total
     (Number(d.descuento) > 0 ? 1 : 0) +
     (Number(d.flete) > 0 ? 1 : 0) +
-    (totalExento(d) > 0 ? 1 : 0) +
-    (d.baseImponible != null ? 1 : 0) +
+    (mencionaImpuestos(d) && totalExento(d) > 0 ? 1 : 0) +
+    (mencionaImpuestos(d) && d.baseImponible != null ? 1 : 0) +
     (Number(d.retencionIva ?? 0) > 0 ? 2 : 0)
   return filas * 5 + 10
 }
@@ -513,6 +524,16 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
     doc.setTextColor(TINTA)
     doc.text(valor, DER - 3, fila, { align: 'right' })
     fila += 5
+  }
+
+  /*
+    LA NOTA DE ENTREGA, SOLO EL TOTAL. Christopher, 17/09/2026: «en la nota de
+    entrega únicamente dejemos el total; cualquier otra nota no debe ir». Sin
+    subtotal, sin flete aparte y sin la equivalencia en la otra moneda.
+  */
+  if (!mencionaImpuestos(d)) {
+    linea('TOTAL', conSimbolo(d.moneda, d.total), true)
+    return fila
   }
 
   linea('Subtotal', conSimbolo(d.moneda, d.subtotal))
@@ -537,17 +558,19 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
     Cada una sale solo si tiene sentido: sin renglones exentos no se enseña un
     cero, que en una factura se lee como una afirmación.
   */
-  const exento = totalExento(d)
-  if (exento > 0) linea('Total exento', conSimbolo(d.moneda, exento))
-  if (d.baseImponible != null) linea('Base imponible', conSimbolo(d.moneda, d.baseImponible))
+  if (mencionaImpuestos(d)) {
+    const exento = totalExento(d)
+    if (exento > 0) linea('Total exento', conSimbolo(d.moneda, exento))
+    if (d.baseImponible != null) linea('Base imponible', conSimbolo(d.moneda, d.baseImponible))
 
-  // «IVA 16%», no «IVA 16,00%»: dos decimales en una alícuota entera solo
-  // ocupan sitio. Los lleva cuando de verdad los tiene.
-  const alicuota = Number(d.alicuotaIva)
-  linea(
-    `IVA ${Number.isInteger(alicuota) ? alicuota : numero(alicuota)}%`,
-    conSimbolo(d.moneda, d.iva),
-  )
+    // «IVA 16%», no «IVA 16,00%»: dos decimales en una alícuota entera solo
+    // ocupan sitio. Los lleva cuando de verdad los tiene.
+    const alicuota = Number(d.alicuotaIva)
+    linea(
+      `IVA ${Number.isInteger(alicuota) ? alicuota : numero(alicuota)}%`,
+      conSimbolo(d.moneda, d.iva),
+    )
+  }
 
   doc.setDrawColor(TINTA).setLineWidth(0.4)
   doc.line(x, fila - 3.5, DER - 3, fila - 3.5)
@@ -741,7 +764,7 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
         mixta. Eso ya no es maquetación —cambia el cálculo y hay que acordar con
         la líder cómo entra el flete— y va aparte.
       */
-      if (r.exento_iva) {
+      if (r.exento_iva && mencionaImpuestos(d)) {
         doc.setTextColor(GRIS).setFontSize(6.5)
         doc.text('(E)', finDescripcion + 1.2, y + 4.2 + bajada)
         doc.setTextColor(TINTA).setFontSize(8)
@@ -783,7 +806,7 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
 
       // La marca (E) no se explica sola, y una letra suelta en un papel fiscal
       // que nadie sabe leer es peor que no ponerla.
-      if (d.renglones.some((r) => r.exento_iva)) {
+      if (mencionaImpuestos(d) && d.renglones.some((r) => r.exento_iva)) {
         doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
         doc.text('(E) Renglón exento de IVA.', IZQ, yNota)
         yNota += 3.2
