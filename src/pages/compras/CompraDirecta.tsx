@@ -12,10 +12,13 @@ import { Textarea } from '@/components/ui/Textarea'
 import { SoltarArchivo } from '@/components/SoltarArchivo'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
+import { ParecidosAEste } from '@/components/ParecidosAEste'
 import {
+  CATEGORIAS_ARTICULO,
   CONDICIONES_PAGO,
   conSusFormas,
   useArticulos,
+  useCrearArticulo,
   usePresentaciones,
   useTodasLasPresentaciones,
   useProveedores,
@@ -65,6 +68,9 @@ interface Fila {
   exento: boolean
   presentacion: string
   marca: string
+  /** Para crearlo en el catálogo desde el renglón, si no está. */
+  nueva_categoria: string
+  nuevo_confirmado: boolean
 }
 
 let contador = 0
@@ -78,6 +84,8 @@ const filaVacia = (): Fila => ({
   exento: false,
   presentacion: '',
   marca: '',
+  nueva_categoria: '',
+  nuevo_confirmado: false,
 })
 
 export function CompraDirecta() {
@@ -95,6 +103,7 @@ export function CompraDirecta() {
   const alicuotaVigente = useAlicuotaIva()
 
   const comprar = useComprarDirecto()
+  const crearArticulo = useCrearArticulo()
   const adjuntar = useAdjuntarPapel()
   const recibir = useRecibirOrdenCompleta()
 
@@ -393,7 +402,7 @@ export function CompraDirecta() {
                   valor={f.articulo_id}
                   onCambio={(v: string) => elegirArticulo(f.clave, v)}
                   vacio="Sin catálogo"
-                  hint="Vacío si lo que trajo no está dado de alta."
+                  hint="Si no está, créalo en el renglón: sin artículo no entra al inventario."
                 />
                 <Input
                   label="Qué es"
@@ -457,6 +466,93 @@ export function CompraDirecta() {
                   Exento de IVA
                 </label>
               </div>
+
+              {/*
+                SIN ARTÍCULO NO ENTRA AL INVENTARIO, Y AHORA SE DICE.
+
+                Una compradora, 17/09/2026: «lo que voy subiendo por compras
+                directas, ¿se va subiendo en el catálogo o en el inventario?
+                Porque no lo veo». Cargaba el material escribiendo el nombre,
+                sin artículo, y la recepción lo daba por recibido sin anotar
+                nada: un renglón sin artículo es un servicio —un flete, una
+                reparación— y no hay estante donde ponerlo. La pantalla no lo
+                avisaba. Christopher eligió que se cree aquí mismo, como en el
+                pedido: el código lo pone la base, y los parecidos se enseñan
+                antes de crear.
+              */}
+              {!f.articulo_id && f.descripcion.trim().length >= 3 ? (
+                <div className="border-hairline rounded-card bg-canvas mt-3 grid gap-3 border border-dashed p-3 sm:grid-cols-12">
+                  <p className="text-warning text-xs sm:col-span-12">
+                    Sin artículo del catálogo este renglón no entra al inventario: queda como un
+                    servicio, un flete o una reparación. Si es material, créalo aquí y entra con la
+                    compra.
+                  </p>
+
+                  {f.unidad === 'M3' || f.unidad === 'TON' ? (
+                    <p className="text-ink/60 text-xs sm:col-span-12">
+                      Lo que se mide en {f.unidad === 'M3' ? 'metros cúbicos' : 'toneladas'} se crea
+                      en{' '}
+                      <Link
+                        to="/app/inventario/articulos"
+                        className="text-royal-700 dark:text-royal-300 underline underline-offset-2"
+                      >
+                        Artículos
+                      </Link>
+                      , con su densidad. Después vuelve y elígelo en este renglón.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="sm:col-span-8">
+                        <Select
+                          label="Categoría"
+                          vacio="Elige"
+                          value={f.nueva_categoria}
+                          onChange={(e) => cambiar(f.clave, { nueva_categoria: e.target.value })}
+                          opciones={CATEGORIAS_ARTICULO}
+                          hint={`Se crea como «${f.descripcion.trim().toUpperCase()}», en ${f.unidad}.`}
+                        />
+                      </div>
+                      <div className="flex items-end sm:col-span-4">
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          disabled={!f.nueva_categoria || crearArticulo.isPending}
+                          onClick={async () => {
+                            const id = await crearArticulo.mutateAsync({
+                              // Vacío: el código lo pone la base.
+                              codigo: '',
+                              nombre: f.descripcion.trim(),
+                              categoria: f.nueva_categoria,
+                              unidad: f.unidad,
+                              marca: f.marca || null,
+                              confirmado: f.nuevo_confirmado,
+                            })
+                            cambiar(f.clave, {
+                              articulo_id: String(id),
+                              nueva_categoria: '',
+                              nuevo_confirmado: false,
+                            })
+                          }}
+                        >
+                          {crearArticulo.isPending ? 'Creando…' : 'Crear en el catálogo'}
+                        </Button>
+                      </div>
+                      <div className="sm:col-span-12">
+                        <ParecidosAEste
+                          nombre={f.descripcion}
+                          categoria={f.nueva_categoria}
+                          confirmado={f.nuevo_confirmado}
+                          onConfirmar={(v) => cambiar(f.clave, { nuevo_confirmado: v })}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {crearArticulo.error ? (
+                    <ErrorDeCarga error={crearArticulo.error} className="sm:col-span-12" />
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ))}
 
