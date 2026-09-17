@@ -510,6 +510,7 @@ export function Totales({
   iva,
   total,
   retencion,
+  sinIva,
 }: {
   moneda: string
   subtotal: number
@@ -519,6 +520,8 @@ export function Totales({
   iva: number
   total: number
   retencion?: number
+  /** Una nota de entrega: no menciona el IVA, que es cosa de la factura. */
+  sinIva?: boolean
 }) {
   const linea = (rotulo: string, valor: number, fuerte = false) => (
     <div className="flex items-baseline justify-between gap-4">
@@ -538,7 +541,7 @@ export function Totales({
       {linea('Subtotal', subtotal)}
       {descuento > 0 ? linea('Descuento', -descuento) : null}
       {flete > 0 ? linea('Flete', flete) : null}
-      {linea(`IVA ${alicuota}%`, iva)}
+      {sinIva ? null : linea(`IVA ${alicuota}%`, iva)}
       <div className="border-hairline border-t pt-1.5">{linea('Total', total, true)}</div>
       {retencion && retencion > 0 ? (
         <>
@@ -557,10 +560,13 @@ export function TablaRenglones({
   renglones,
   cargando,
   patioDe,
+  sinIva,
 }: {
   moneda: string
   renglones: RenglonGuardado[]
   cargando: boolean
+  /** Una nota de entrega: sin marcas de exento, que son cosa de la factura. */
+  sinIva?: boolean
   /** En una nota de entrega: el patio del renglón, si no salió del de la nota. */
   patioDe?: (r: RenglonGuardado) => string | null
 }) {
@@ -584,7 +590,7 @@ export function TablaRenglones({
               <tr key={r.id} className="border-hairline border-b last:border-0">
                 <td className="text-ink/80 py-2">
                   {r.descripcion}
-                  {r.exento_iva ? (
+                  {r.exento_iva && !sinIva ? (
                     <Chip tone="neutral" className="ml-2">
                       Exento
                     </Chip>

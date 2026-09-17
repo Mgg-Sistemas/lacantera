@@ -64,6 +64,8 @@ interface Props {
    * vendido en toneladas, su cantidad es esta y no se teclea.
    */
   toneladasDeRomana?: number | null
+  /** Una nota de entrega: no pregunta por el IVA, que lo decide la factura. */
+  sinIva?: boolean
 }
 
 export function Renglones({
@@ -73,6 +75,7 @@ export function Renglones({
   moneda,
   patios,
   toneladasDeRomana,
+  sinIva,
 }: Props) {
   const { data: tasaHoy } = useTasaVigente()
   const tasa = Number(tasaHoy?.tasa ?? 0)
@@ -398,15 +401,19 @@ export function Renglones({
             ) : null}
 
             <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-12">
-              <label className="text-ink/60 flex cursor-pointer items-center gap-2 text-xs select-none">
-                <input
-                  type="checkbox"
-                  className="accent-royal-600 size-3.5"
-                  checked={fila.exento}
-                  onChange={(e) => cambiar(fila.clave, { exento: e.target.checked })}
-                />
-                Exento de IVA
-              </label>
+              {sinIva ? (
+                <span />
+              ) : (
+                <label className="text-ink/60 flex cursor-pointer items-center gap-2 text-xs select-none">
+                  <input
+                    type="checkbox"
+                    className="accent-royal-600 size-3.5"
+                    checked={fila.exento}
+                    onChange={(e) => cambiar(fila.clave, { exento: e.target.checked })}
+                  />
+                  Exento de IVA
+                </label>
+              )}
               {falta && fila.articulo_id ? <p className="text-warning text-xs">{falta}</p> : null}
             </div>
           </div>

@@ -98,7 +98,14 @@ export function useFacturas(estado?: string) {
 
 export function useFacturarNotas() {
   return useAccionFacturacion<
-    { notas: number[]; condicion_pago?: string | null; fecha?: string; observacion?: string | null },
+    {
+      notas: number[]
+      condicion_pago?: string | null
+      fecha?: string
+      observacion?: string | null
+      /** La decide la factura: las notas de entrega no llevan IVA. */
+      alicuota_iva: number
+    },
     number
   >((f) =>
     rpc<number>('facturar_notas', {
@@ -106,6 +113,7 @@ export function useFacturarNotas() {
       p_condicion_pago: f.condicion_pago || null,
       p_fecha: f.fecha || null,
       p_observacion: f.observacion || null,
+      p_alicuota_iva: f.alicuota_iva,
     }),
   )
 }

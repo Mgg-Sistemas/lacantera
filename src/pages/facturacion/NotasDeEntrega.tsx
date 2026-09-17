@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import { dinero, documento, enteros, fecha } from '@/lib/formato'
-import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { densidadesDeArticulos } from '@/lib/api/catalogo'
@@ -44,19 +44,14 @@ import {
   aRenglones,
   conRomana,
   conversionDeRenglon,
-  detalleDeRenglon,
   faltaEnFila,
   filaVacia,
-  gravadoDe,
   m3EnCamion,
-  notaDeConversionDeVenta,
   repreciar,
   subtotalDe,
   type FilaRenglon,
 } from '@/pages/ventas/filas'
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
-import { CasillaIva } from '@/pages/ventas/CasillaIva'
-import { useIvaPorDefecto } from '@/pages/ventas/ivaPorDefecto'
 import { useMisPermisos } from '@/lib/api/usuarios'
 
 const TONO: Record<string, 'safety' | 'success' | 'neutral'> = {
@@ -100,10 +95,6 @@ export function NotasDeEntrega() {
   const [moneda, setMoneda] = useState('USD')
   const [vehiculo, setVehiculo] = useState('')
   const [vehiculoId, setVehiculoId] = useState('')
-  const ivaPorDefecto = useIvaPorDefecto()
-  const [conIva, setConIva] = useState(ivaPorDefecto)
-  // El porcentaje, si quien emite lo cambió. Nulo: el de la ficha de la empresa.
-  const [alicuotaEscrita, setAlicuotaEscrita] = useState<string | null>(null)
   const [chofer, setChofer] = useState('')
   const [cedula, setCedula] = useState('')
   const [ticket, setTicket] = useState('')
@@ -173,21 +164,15 @@ export function NotasDeEntrega() {
   const nombreDePatio = (id: number | null | undefined) =>
     id ? ((almacenes ?? []).find((a) => a.id === id)?.nombre ?? null) : null
 
-  const cliente = clientes?.find((c) => String(c.id) === clienteId)
-  // La alícuota que se pinta es la que viaja a la base. Antes se calculaba solo
-  // para el total de la pantalla y el documento salía con el 16 por defecto: la
-  // nota de entrega de un cliente exento decía 0 en pantalla y 16 en el libro.
-  const alicuotaVigente = useAlicuotaIva()
-  const alicuotaElegida =
-    alicuotaEscrita === null ? alicuotaVigente : Number(alicuotaEscrita.replace(',', '.'))
-  const alicuotaMala =
-    conIva && !cliente?.exento_iva && !(alicuotaElegida >= 0 && alicuotaElegida <= 100)
-  const alicuota = cliente?.exento_iva || !conIva || alicuotaMala ? 0 : alicuotaElegida
+  /*
+    LA NOTA DE ENTREGA NO LLEVA IVA. Christopher, 17/09/2026: «solo la factura
+    tendrá mención de IVA o IGTF; las notas de entrega deben decir NOTA DE
+    ENTREGA», y «nota de entrega es una cosa y factura otra posterior». La
+    casilla del IVA que había aquí pasó a «Emitir factura», y la base guarda la
+    nota al 0 % aunque le llegue otra cosa.
+  */
   const subtotal = subtotalDe(filasEfectivas)
-  const gravado = gravadoDe(filasEfectivas)
-  const base = gravado + (Number(flete) || 0)
-  const iva = (base * alicuota) / 100
-  const total = subtotal + (Number(flete) || 0) + iva
+  const total = subtotal + (Number(flete) || 0)
   const incompletas = filasEfectivas.some((f) => faltaEnFila(f, precios ?? []) !== null)
 
   // La lista en bolívares no es el mismo número que en dólares.
@@ -201,8 +186,6 @@ export function NotasDeEntrega() {
     setMoneda('USD')
     setVehiculo('')
     setVehiculoId('')
-    setConIva(ivaPorDefecto)
-    setAlicuotaEscrita(null)
     setChofer('')
     setCedula('')
     setTicket('')
@@ -246,7 +229,8 @@ export function NotasDeEntrega() {
         tasaUsd: n.tasa_usd,
         renglones: renglones.map((r) => ({
           descripcion: r.descripcion,
-          detalle: detalleDeRenglon(r, n.moneda),
+          // Sin línea de detalle: la nota no lleva más notas que el total.
+          detalle: null,
           cantidad: r.cantidad,
           unidad: r.unidad,
           conversion: conversionDeRenglon(r, densidadDe(r)),
@@ -254,7 +238,7 @@ export function NotasDeEntrega() {
           subtotal: r.subtotal,
           exento_iva: r.exento_iva,
         })),
-        notaConversion: notaDeConversionDeVenta(renglones, densidadDe),
+        notaConversion: null,
         subtotal: n.subtotal,
         descuento: n.descuento,
         flete: n.flete,
@@ -402,7 +386,6 @@ export function NotasDeEntrega() {
                   !clienteId ||
                   !almacenId ||
                   incompletas ||
-                  alicuotaMala ||
                   aRenglones(filasEfectivas).length === 0
                 }
                 onClick={async () => {
@@ -411,7 +394,7 @@ export function NotasDeEntrega() {
                     almacen_id: Number(almacenId),
                     renglones: aRenglones(filasEfectivas),
                     moneda,
-                    alicuota_iva: alicuota,
+                    alicuota_iva: 0,
                     vehiculo: vehiculo || null,
                     chofer: chofer || null,
                     cedula_chofer: cedula || null,
@@ -478,6 +461,7 @@ export function NotasDeEntrega() {
                 deLaNota: almacenId,
                 existencias: (id) => (existencias ? (porPatio[id] ?? {}) : undefined),
               }}
+              sinIva
               toneladasDeRomana={toneladasDeRomana}
             />
           </div>
@@ -633,25 +617,16 @@ export function NotasDeEntrega() {
             />
           </div>
 
-          {!cliente?.exento_iva ? (
-            <CasillaIva
-              aplica={conIva}
-              onCambiar={setConIva}
-              alicuota={alicuotaEscrita ?? String(alicuotaVigente)}
-              onAlicuota={setAlicuotaEscrita}
-              className="mt-4"
-            />
-          ) : null}
-
           <div className="bg-ink/4 rounded-card mt-4 p-4">
             <Totales
               moneda={moneda}
               subtotal={subtotal}
               descuento={0}
               flete={Number(flete) || 0}
-              alicuota={alicuota}
-              iva={iva}
+              alicuota={0}
+              iva={0}
               total={total}
+              sinIva
             />
           </div>
 
@@ -715,6 +690,7 @@ export function NotasDeEntrega() {
             renglones={renglonesDetalle.data ?? []}
             cargando={renglonesDetalle.isPending}
             patioDe={(r) => (r.almacen_id && r.almacen_id !== detalle.almacen_id ? nombreDePatio(r.almacen_id) : null)}
+            sinIva
           />
 
           <div className="bg-ink/4 rounded-card mt-4 p-4">
@@ -723,9 +699,10 @@ export function NotasDeEntrega() {
               subtotal={Number(detalle.subtotal)}
               descuento={Number(detalle.descuento)}
               flete={Number(detalle.flete)}
-              alicuota={Number(detalle.alicuota_iva)}
-              iva={Number(detalle.iva)}
-              total={Number(detalle.total)}
+              alicuota={0}
+              iva={0}
+              total={Number(detalle.total) - Number(detalle.iva)}
+              sinIva
             />
           </div>
         </Modal>
