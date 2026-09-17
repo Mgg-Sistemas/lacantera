@@ -258,6 +258,8 @@ export interface RenglonVenta {
   descuento_pct?: number | null
   descuento_unitario?: number | null
   motivo_condicion?: string | null
+  /** Solo en el despacho: el patio de este renglón, si no es el de la nota. */
+  almacen_id?: number | null
 }
 
 /**
@@ -336,6 +338,8 @@ export interface RenglonGuardado {
   cantidad_inventario?: string | null
   medida?: MedidaRenglon | null
   densidad_usada?: string | null
+  /** Solo notas de entrega: el patio del renglón, si no fue el de la nota. */
+  almacen_id?: number | null
 }
 
 export function useCotizacionesVenta(estado?: string) {

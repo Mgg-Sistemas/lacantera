@@ -556,10 +556,13 @@ export function TablaRenglones({
   moneda,
   renglones,
   cargando,
+  patioDe,
 }: {
   moneda: string
   renglones: RenglonGuardado[]
   cargando: boolean
+  /** En una nota de entrega: el patio del renglón, si no salió del de la nota. */
+  patioDe?: (r: RenglonGuardado) => string | null
 }) {
   if (cargando) return <Cargando texto="Trayendo los renglones…" />
 
@@ -588,6 +591,9 @@ export function TablaRenglones({
                   ) : null}
                   {renglonEnPalabras(r, moneda) ? (
                     <span className="text-ink/50 block text-xs">{renglonEnPalabras(r, moneda)}</span>
+                  ) : null}
+                  {patioDe?.(r) ? (
+                    <span className="text-ink/50 block text-xs">Salió de {patioDe(r)}</span>
                   ) : null}
                 </td>
                 <td className="tabular text-ink/70 py-2 text-right">

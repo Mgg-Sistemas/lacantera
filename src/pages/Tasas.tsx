@@ -150,8 +150,8 @@ export function Tasas() {
             title={puedeRegistrar ? `Registrar la tasa del día · ${unidad}` : `La tasa del día · ${unidad}`}
             subtitle={
               puedeRegistrar
-                ? 'El sistema la toma solo del BCV varias veces al día. Aquí se comprueba, se enmienda la de hoy si leyó mal, y se cargan las monedas sin fuente pública.'
-                : 'La toma el sistema del BCV. Aquí se consulta cuál está rigiendo.'
+                ? 'El sistema la toma sola varias veces al día: el dólar y el euro del BCV, el USDT del P2P de Binance. Aquí se comprueba, se enmienda la de hoy si leyó mal, y se cargan las monedas sin fuente pública.'
+                : `La toma el sistema ${porBinance ? 'del P2P de Binance' : 'del BCV'}. Aquí se consulta cuál está rigiendo.`
             }
           />
 
@@ -165,7 +165,8 @@ export function Tasas() {
                 {laTomoElSistema && deHoy.data ? (
                   <>
                     {' '}
-                    La tomó el sistema a las {hora(deHoy.data.registrado_en)}, del BCV. Si el
+                    La tomó el sistema a las {hora(deHoy.data.registrado_en)},{' '}
+                    {porBinance ? 'del P2P de Binance' : 'del BCV'}. Si el
                     número no cuadra, hoy todavía se puede enmendar.
                   </>
                 ) : null}
@@ -184,15 +185,23 @@ export function Tasas() {
 
                 {/* El sistema la toma a las 08:15, 11:15, 14:15 y 17:15. Quien
                     llega antes y necesita emitir no tiene por qué esperar a la
-                    próxima pasada ni teclear el número a mano. */}
-                {puedeRegistrar && conFuentePublica && !porBinance ? (
+                    próxima pasada ni teclear el número a mano. El USDT también
+                    desde el 17/09/2026: la base consulta el libro de Binance con
+                    la misma cuenta que «Ahora mismo». */}
+                {puedeRegistrar && conFuentePublica ? (
                   <Button
                     variant="outline"
                     className="mt-3"
                     disabled={tomarAhora.isPending}
                     onClick={() => tomarAhora.mutate(codigo)}
                   >
-                    {tomarAhora.isPending ? 'Consultando al BCV…' : 'Tomarla del BCV ahora'}
+                    {tomarAhora.isPending
+                      ? porBinance
+                        ? 'Consultando a Binance…'
+                        : 'Consultando al BCV…'
+                      : porBinance
+                        ? 'Tomarla de Binance ahora'
+                        : 'Tomarla del BCV ahora'}
                   </Button>
                 ) : null}
               </div>

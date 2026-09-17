@@ -36,6 +36,8 @@ export interface FilaRenglon {
   descuentoEn: 'PORCENTAJE' | 'MONTO'
   descuento: string
   motivo: string
+  /** El patio de este renglón en un despacho. Vacío: el de la nota. */
+  almacen_id: string
 }
 
 let contador = 0
@@ -52,6 +54,7 @@ export const filaVacia = (): FilaRenglon => ({
   descuentoEn: 'PORCENTAJE',
   descuento: '',
   motivo: '',
+  almacen_id: '',
 })
 
 const redondo6 = (n: number) => Math.round(n * 1e6) / 1e6
@@ -162,6 +165,7 @@ export function aRenglones(filas: FilaRenglon[]): RenglonVenta[] {
       descuento_unitario:
         f.condicion === 'DESCUENTO' && f.descuentoEn === 'MONTO' ? Number(f.descuento) : null,
       motivo_condicion: f.motivo.trim() || null,
+      almacen_id: f.almacen_id ? Number(f.almacen_id) : null,
     }))
 }
 

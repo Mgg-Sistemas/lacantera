@@ -160,11 +160,18 @@ export function NotasDeEntrega() {
     vehiculoElegido !== null && m3EnLaCarga > Number(vehiculoElegido.capacidad_m3)
   const guiasVigentes = (guias ?? []).filter((g) => !g.vencida)
 
-  const { data: existencias } = useExistencias(almacenId ? Number(almacenId) : undefined)
+  // Todos los patios: cada renglón puede salir de uno distinto.
+  const { data: existencias } = useExistencias(undefined, nuevo)
   const renglonesDetalle = useRenglones('nota_entrega_renglones', 'nota_id', detalle?.id ?? null)
 
-  const porArticulo: Record<number, number> = {}
-  for (const e of existencias ?? []) porArticulo[e.articulo_id] = Number(e.existencia)
+  const porPatio: Record<string, Record<number, number>> = {}
+  for (const e of existencias ?? []) {
+    const deEse = (porPatio[String(e.almacen_id)] ??= {})
+    deEse[e.articulo_id] = Number(e.existencia)
+  }
+  const opcionesDePatio = (almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))
+  const nombreDePatio = (id: number | null | undefined) =>
+    id ? ((almacenes ?? []).find((a) => a.id === id)?.nombre ?? null) : null
 
   const cliente = clientes?.find((c) => String(c.id) === clienteId)
   // La alícuota que se pinta es la que viaja a la base. Antes se calculaba solo
@@ -454,10 +461,8 @@ export function NotasDeEntrega() {
                 vacio="Elige el patio o almacén"
                 valor={almacenId}
                 onCambio={(v) => setAlmacenId(v)}
-                opciones={(almacenes ?? []).map((a) => ({
-                  valor: String(a.id),
-                  etiqueta: a.nombre,
-                }))}
+                opciones={opcionesDePatio}
+                hint="Si un renglón sale de otro patio, se elige en el renglón."
               />
             </div>
           </div>
@@ -468,7 +473,11 @@ export function NotasDeEntrega() {
               onCambiar={setFilas}
               precios={precios ?? []}
               moneda={moneda}
-              existencias={almacenId ? porArticulo : undefined}
+              patios={{
+                opciones: opcionesDePatio,
+                deLaNota: almacenId,
+                existencias: (id) => (existencias ? (porPatio[id] ?? {}) : undefined),
+              }}
               toneladasDeRomana={toneladasDeRomana}
             />
           </div>
@@ -705,6 +714,7 @@ export function NotasDeEntrega() {
             moneda={detalle.moneda}
             renglones={renglonesDetalle.data ?? []}
             cargando={renglonesDetalle.isPending}
+            patioDe={(r) => (r.almacen_id && r.almacen_id !== detalle.almacen_id ? nombreDePatio(r.almacen_id) : null)}
           />
 
           <div className="bg-ink/4 rounded-card mt-4 p-4">
