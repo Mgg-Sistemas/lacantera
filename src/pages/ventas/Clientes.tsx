@@ -109,7 +109,7 @@ export function Clientes() {
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Cliente</th>
-                  <th className="px-3 py-3 font-medium">RIF</th>
+                  <th className="px-3 py-3 font-medium">Identificación</th>
                   <th className="px-3 py-3 font-medium">Condición</th>
                   <th className="px-3 py-3 text-right font-medium">Debe</th>
                   <th className="px-3 py-3 text-right font-medium">Última venta</th>
@@ -177,7 +177,7 @@ export function Clientes() {
           abierto
           onCerrar={() => setEdicion(null)}
           titulo={edicion.id ? 'Editar cliente' : 'Nuevo cliente'}
-          descripcion="El RIF y la dirección salen impresos en la factura."
+          descripcion="La identificación y la dirección salen impresas en la factura."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setEdicion(null)}>
@@ -200,9 +200,15 @@ export function Clientes() {
           }
         >
           <div className="grid gap-4 sm:grid-cols-2">
+            {/*
+              «IDENTIFICACIÓN» Y NO «RIF». Christopher, 17/09/2026: el rótulo
+              asumía una empresa, y «si es persona natural, no puede tener RIF».
+              El campo acepta la cédula de quien no tiene RIF, y la factura dice
+              cuál de las dos es.
+            */}
             <CampoDocumento
-              label="RIF"
-              tipo="rif"
+              label="Identificación"
+              tipo="identificacion"
               valor={edicion.rif}
               onCambiar={(v) => cambiar({ rif: v })}
               required

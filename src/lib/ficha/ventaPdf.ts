@@ -33,7 +33,7 @@
  */
 
 import { logoComoImagen } from './logo'
-import { dinero } from '@/lib/formato'
+import { dinero, esCedula } from '@/lib/formato'
 import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, CENTRO, DER, IZQ, PIE } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
 import {
@@ -351,7 +351,8 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
   etiqueta('Cliente', x1, y + 5)
   parrafo(nombre, x1, y + 9.5)
 
-  etiqueta('RIF', x2, y + 5)
+  // Una persona sin RIF se factura con su cédula, y el papel dice cuál es.
+  etiqueta(esCedula(d.contraparte.rif) ? 'Cédula' : 'RIF', x2, y + 5)
   valor(d.contraparte.rif, x2, y + 9.5, 50)
 
   etiqueta('Dirección', x1, y + yDireccion)

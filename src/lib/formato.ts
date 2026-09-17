@@ -300,6 +300,39 @@ export function documentoCanonico(
 }
 
 /**
+ * La identificación de un cliente: su RIF con el dígito del final o, si es una
+ * persona natural sin RIF, su cédula.
+ *
+ * Christopher, 17/09/2026: «no me deja registrar clientes por cédula», y sobre el
+ * rótulo «RIF»: «si es persona natural, no puede tener RIF». Así que se aceptan
+ * las dos formas, y se distinguen por las cifras:
+ *
+ *   nueve cifras ......... RIF      J-12345678-9, V-12345678-9
+ *   seis a ocho, V o E ... cédula   V-12345678, E-1234567
+ *
+ * Una empresa (J, G) con ocho cifras no es nada: a su RIF le falta el dígito. Es
+ * la misma regla que `clientes_rif_formato` en la base.
+ */
+export function identificacionCanonica(bruto: string): string | null {
+  const s = (bruto ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (s === '' || !/^[VEJGP]/.test(s)) return null
+
+  const letra = s[0]
+  const cifras = s.slice(1)
+  if (!/^[0-9]+$/.test(cifras)) return null
+
+  if (cifras.length === 9) return `${letra}-${cifras.slice(0, 8)}-${cifras.slice(-1)}`
+  if ((letra === 'V' || letra === 'E') && cifras.length >= 6 && cifras.length <= 8) {
+    return `${letra}-${cifras}`
+  }
+  return null
+}
+
+/** Si una identificación ya guardada es una cédula y no un RIF. */
+export const esCedula = (valor: string | null | undefined) =>
+  /^[VE]-[0-9]{6,8}$/.test((valor ?? '').trim())
+
+/**
  * El documento vestido para el ojo: `V-12345678` se lee `V-12.345.678`.
  *
  * Christopher: «la base no necesariamente debe guardar los puntos... pero la
