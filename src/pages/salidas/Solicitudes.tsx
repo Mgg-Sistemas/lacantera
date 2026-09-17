@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { ClipboardList, FileText, PackageCheck, PackageMinus, SendHorizontal, X } from 'lucide-react'
+import { Ayuda } from '@/components/Ayuda'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_SALIDAS } from '@/components/pestanasDeModulos'
@@ -164,10 +165,12 @@ export function Solicitudes() {
 
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-ink/85 font-titular text-lg">Solicitudes de salida</h2>
-        <p className="text-ink/45 text-xs">
-          Por ahora no hay salida directa: todo pasa por solicitud. Las de antes están en
-          «Historial».
-        </p>
+        <Ayuda>
+          <p className="text-ink/45 text-xs">
+            Por ahora no hay salida directa: todo pasa por solicitud. Las de antes están en
+            «Historial».
+          </p>
+        </Ayuda>
       </div>
 
       {/* Se dice, en vez de dejar que lo descubra buscando un botón que no está. */}

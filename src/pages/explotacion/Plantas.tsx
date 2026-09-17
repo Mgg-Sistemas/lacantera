@@ -22,6 +22,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { ArrowRight, Factory, History, Pencil, Plus, Route, Truck } from 'lucide-react'
+import { Ayuda } from '@/components/Ayuda'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -108,11 +109,13 @@ export function Plantas() {
       {/* ─────────────────────────────────────────────────────────── sitios */}
       <section className="mb-8">
         <h2 className="text-ink/85 font-titular mb-1 text-lg">Sitios</h2>
-        <p className="text-ink/50 mb-3 max-w-3xl text-xs leading-relaxed">
-          Cada sitio dice quién lo opera —la empresa, la gobernación o un aliado— y desde cuándo.
-          El responsable es quien aprueba los viajes que salen de él o llegan a él. Un sitio
-          cerrado deja de ofrecerse para viajes nuevos desde su fecha de cierre.
-        </p>
+        <Ayuda>
+          <p className="text-ink/50 mb-3 max-w-3xl text-xs leading-relaxed">
+            Cada sitio dice quién lo opera —la empresa, la gobernación o un aliado— y desde cuándo.
+            El responsable es quien aprueba los viajes que salen de él o llegan a él. Un sitio
+            cerrado deja de ofrecerse para viajes nuevos desde su fecha de cierre.
+          </p>
+        </Ayuda>
 
         {sitios.isPending ? <Cargando /> : null}
         {sitios.error ? <ErrorDeCarga error={sitios.error} /> : null}
@@ -224,12 +227,14 @@ export function Plantas() {
       {/* ──────────────────────────────────────────────────────────── rutas */}
       <section>
         <h2 className="text-ink/85 font-titular mb-1 text-lg">Rutas</h2>
-        <p className="text-ink/50 mb-3 max-w-3xl text-xs leading-relaxed">
-          Por donde se cargan los viajes. Entre los mismos dos sitios puede haber más de una ruta, y
-          cada ruta puede tener una tarifa fija, un rango («de 12 a 12,5 $», y cada viaje dice cuánto)
-          o precio libre. Una tarifa nueva rige desde su fecha: la anterior queda en la historia y
-          los viajes ya cargados no cambian de precio.
-        </p>
+        <Ayuda>
+          <p className="text-ink/50 mb-3 max-w-3xl text-xs leading-relaxed">
+            Por donde se cargan los viajes. Entre los mismos dos sitios puede haber más de una ruta, y
+            cada ruta puede tener una tarifa fija, un rango («de 12 a 12,5 $», y cada viaje dice cuánto)
+            o precio libre. Una tarifa nueva rige desde su fecha: la anterior queda en la historia y
+            los viajes ya cargados no cambian de precio.
+          </p>
+        </Ayuda>
 
         {rutas.isPending ? <Cargando /> : null}
         {rutas.error ? <ErrorDeCarga error={rutas.error} /> : null}
