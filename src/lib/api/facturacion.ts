@@ -105,27 +105,33 @@ export function useFacturas(estado?: string) {
   })
 }
 
+export interface FacturaDeNotas {
+  notas: number[]
+  condicion_pago?: string | null
+  fecha?: string
+  observacion?: string | null
+  /** La decide la factura: las notas de entrega no llevan IVA. */
+  alicuota_iva: number
+  alicuota_igtf: number
+}
+
+/*
+  Los parámetros de `facturar_notas`, en un solo sitio. Emitir y enviar a
+  autorizar mandan exactamente lo mismo: la factura por autorizar guarda estos
+  parámetros y la base los usa tal cual al autorizarla.
+*/
+const argumentosDeNotas = (f: FacturaDeNotas) => ({
+  p_notas: f.notas,
+  p_condicion_pago: f.condicion_pago || null,
+  p_fecha: f.fecha || null,
+  p_observacion: f.observacion || null,
+  p_alicuota_iva: f.alicuota_iva,
+  p_alicuota_igtf: f.alicuota_igtf,
+})
+
 export function useFacturarNotas() {
-  return useAccionFacturacion<
-    {
-      notas: number[]
-      condicion_pago?: string | null
-      fecha?: string
-      observacion?: string | null
-      /** La decide la factura: las notas de entrega no llevan IVA. */
-      alicuota_iva: number
-      alicuota_igtf: number
-    },
-    number
-  >((f) =>
-    rpc<number>('facturar_notas', {
-      p_notas: f.notas,
-      p_condicion_pago: f.condicion_pago || null,
-      p_fecha: f.fecha || null,
-      p_observacion: f.observacion || null,
-      p_alicuota_iva: f.alicuota_iva,
-      p_alicuota_igtf: f.alicuota_igtf,
-    }),
+  return useAccionFacturacion<FacturaDeNotas, number>((f) =>
+    rpc<number>('facturar_notas', argumentosDeNotas(f)),
   )
 }
 
@@ -137,35 +143,36 @@ export function useFacturarNotas() {
  * del patio de cada renglón al emitirla; si no, sale después con notas que se
  * enlazan a esta factura. Devuelve el id de la factura.
  */
+export interface FacturaDirectaNueva {
+  cliente_id: number
+  renglones: RenglonVenta[]
+  moneda: string
+  condicion_pago?: string | null
+  fecha?: string
+  observacion?: string | null
+  alicuota_iva: number
+  alicuota_igtf: number
+  saca_material: boolean
+  /** El patio por defecto de los renglones que no digan otro. */
+  almacen_id: number | null
+}
+
+const argumentosDirectos = (f: FacturaDirectaNueva) => ({
+  p_cliente_id: f.cliente_id,
+  p_renglones: f.renglones,
+  p_moneda: f.moneda,
+  p_condicion_pago: f.condicion_pago || null,
+  p_fecha: f.fecha || null,
+  p_observacion: f.observacion || null,
+  p_alicuota_iva: f.alicuota_iva,
+  p_alicuota_igtf: f.alicuota_igtf,
+  p_saca_material: f.saca_material,
+  p_almacen_id: f.almacen_id,
+})
+
 export function useFacturarDirecto() {
-  return useAccionFacturacion<
-    {
-      cliente_id: number
-      renglones: RenglonVenta[]
-      moneda: string
-      condicion_pago?: string | null
-      fecha?: string
-      observacion?: string | null
-      alicuota_iva: number
-      alicuota_igtf: number
-      saca_material: boolean
-      /** El patio por defecto de los renglones que no digan otro. */
-      almacen_id: number | null
-    },
-    number
-  >((f) =>
-    rpc<number>('facturar_directo', {
-      p_cliente_id: f.cliente_id,
-      p_renglones: f.renglones,
-      p_moneda: f.moneda,
-      p_condicion_pago: f.condicion_pago || null,
-      p_fecha: f.fecha || null,
-      p_observacion: f.observacion || null,
-      p_alicuota_iva: f.alicuota_iva,
-      p_alicuota_igtf: f.alicuota_igtf,
-      p_saca_material: f.saca_material,
-      p_almacen_id: f.almacen_id,
-    }),
+  return useAccionFacturacion<FacturaDirectaNueva, number>((f) =>
+    rpc<number>('facturar_directo', argumentosDirectos(f)),
   )
 }
 
@@ -190,6 +197,105 @@ export function useDesenlazarNota() {
 export function useAnularFactura() {
   return useAccionFacturacion((f: { id: number; motivo: string }) =>
     rpc<void>('anular_factura', { p_id: f.id, p_motivo: f.motivo }),
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Facturas por autorizar
+//
+// Christopher, 18/09/2026: a quien se le restringe «Autorizar y emitir
+// facturas» prepara la factura «pero hasta ahí»: queda por autorizar. No gasta
+// número de control ni toca el patio ni el libro hasta que alguien con la
+// casilla la autoriza, y en ese momento la base la emite con los mismos
+// parámetros que habría usado quien la preparó.
+// ---------------------------------------------------------------------------
+
+/** La casilla que decide si una factura se emite o queda por autorizar. */
+export const AUTORIZAR_FACTURA = 'FACTURACION.AUTORIZAR_FACTURA'
+
+export type EstadoPorAutorizar = 'POR_AUTORIZAR' | 'AUTORIZADA' | 'RECHAZADA' | 'RETIRADA'
+
+export interface FacturaPorAutorizar {
+  id: number
+  numero: string
+  origen: 'NOTAS' | 'DIRECTA'
+  estado: EstadoPorAutorizar
+  cliente_id: number
+  cliente: string
+  cliente_rif: string | null
+  moneda: string
+  total_estimado: string
+  notas: string | null
+  cuantos: number
+  observacion: string | null
+  preparada_por: string
+  preparada_por_nombre: string | null
+  preparada_en: string
+  decidida_por: string | null
+  decidida_por_nombre: string | null
+  decidida_en: string | null
+  motivo: string | null
+  factura_id: number | null
+  factura_numero: string | null
+}
+
+/**
+ * Las por autorizar, y las decididas de la última semana: quien preparó una
+ * tiene que poder ver que se la rechazaron y por qué.
+ */
+export function useFacturasPorAutorizar() {
+  return useQuery({
+    queryKey: ['ventas', 'por-autorizar'],
+    queryFn: async () => {
+      const hace = new Date(Date.now() - 7 * 86_400_000).toISOString()
+      return desenvolver<FacturaPorAutorizar[]>(
+        await supabase
+          .from('v_facturas_por_autorizar')
+          .select('*')
+          .or(`estado.eq.POR_AUTORIZAR,decidida_en.gte.${hace}`)
+          .order('id', { ascending: false })
+          .limit(100),
+      )
+    },
+    // No hay tiempo real sobre esta tabla: quien autoriza la ve llegar sin recargar.
+    refetchInterval: 60_000,
+  })
+}
+
+export function useEnviarNotasAAutorizar() {
+  return useAccionFacturacion((f: FacturaDeNotas & { total_estimado: number }) =>
+    rpc<number>('enviar_factura_a_autorizar', {
+      p_origen: 'NOTAS',
+      p_argumentos: argumentosDeNotas(f),
+      p_total_estimado: Math.max(0, f.total_estimado),
+    }),
+  )
+}
+
+export function useEnviarDirectaAAutorizar() {
+  return useAccionFacturacion((f: FacturaDirectaNueva & { total_estimado: number }) =>
+    rpc<number>('enviar_factura_a_autorizar', {
+      p_origen: 'DIRECTA',
+      p_argumentos: argumentosDirectos(f),
+      p_total_estimado: Math.max(0, f.total_estimado),
+    }),
+  )
+}
+
+/** Autorizar es emitir: devuelve el id de la factura que se emitió. */
+export function useAutorizarFactura() {
+  return useAccionFacturacion((id: number) => rpc<number>('autorizar_factura', { p_id: id }))
+}
+
+export function useRechazarFacturaPorAutorizar() {
+  return useAccionFacturacion((f: { id: number; motivo: string }) =>
+    rpc<void>('rechazar_factura_por_autorizar', { p_id: f.id, p_motivo: f.motivo }),
+  )
+}
+
+export function useRetirarFacturaPorAutorizar() {
+  return useAccionFacturacion((f: { id: number; motivo: string }) =>
+    rpc<void>('retirar_factura_por_autorizar', { p_id: f.id, p_motivo: f.motivo }),
   )
 }
 

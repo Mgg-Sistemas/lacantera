@@ -10,7 +10,12 @@ import { useAlicuotaIva } from '@/lib/api/empresa'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
 import { CONDICIONES_PAGO, useClientes, usePrecios } from '@/lib/api/ventas'
-import { useFacturarDirecto } from '@/lib/api/facturacion'
+import {
+  AUTORIZAR_FACTURA,
+  useEnviarDirectaAAutorizar,
+  useFacturarDirecto,
+} from '@/lib/api/facturacion'
+import { useMisAcciones } from '@/lib/api/usuarios'
 import { Renglones } from '@/pages/ventas/Renglones'
 import { Totales } from '@/pages/ventas/Cotizaciones'
 import { CasillaIva } from '@/pages/ventas/CasillaIva'
@@ -57,6 +62,11 @@ export function ModalFacturaDirecta({
   const { data: tasaHoy } = useTasaVigente()
   const { data: existencias } = useExistencias(undefined, true)
   const facturar = useFacturarDirecto()
+  // Sin la casilla de emitir, la factura queda por autorizar (18/09/2026).
+  // Mientras no se sabe, el botón espera: no se envía a autorizar por no haber cargado.
+  const { puede: casilla, resuelto: accionesListas } = useMisAcciones()
+  const emite = casilla(AUTORIZAR_FACTURA)
+  const enviar = useEnviarDirectaAAutorizar()
   const ivaPorDefecto = useIvaPorDefecto()
   const alicuotaVigente = useAlicuotaIva()
 
@@ -117,6 +127,8 @@ export function ModalFacturaDirecta({
           <Button
             disabled={
               facturar.isPending ||
+              enviar.isPending ||
+              !accionesListas ||
               !clienteId ||
               incompletas ||
               iva.malo ||
@@ -125,7 +137,7 @@ export function ModalFacturaDirecta({
               aRenglones(filas).length === 0
             }
             onClick={async () => {
-              const id = await facturar.mutateAsync({
+              const factura = {
                 cliente_id: Number(clienteId),
                 renglones: aRenglones(filas).map((r) => (sacaMaterial ? r : { ...r, almacen_id: null })),
                 moneda,
@@ -135,12 +147,19 @@ export function ModalFacturaDirecta({
                 alicuota_igtf: igtf.vale,
                 saca_material: sacaMaterial,
                 almacen_id: sacaMaterial && almacenId ? Number(almacenId) : null,
-              })
-              onEmitida?.(id)
+              }
+              if (emite) onEmitida?.(await facturar.mutateAsync(factura))
+              else await enviar.mutateAsync({ ...factura, total_estimado: total })
               onCerrar()
             }}
           >
-            {facturar.isPending ? 'Emitiendo…' : 'Emitir la factura'}
+            {emite
+              ? facturar.isPending
+                ? 'Emitiendo…'
+                : 'Emitir la factura'
+              : enviar.isPending
+                ? 'Enviando…'
+                : 'Enviar a autorizar'}
           </Button>
         </>
       }
@@ -284,6 +303,14 @@ export function ModalFacturaDirecta({
       </div>
 
       {facturar.error ? <ErrorDeCarga error={facturar.error} className="mt-4" /> : null}
+      {enviar.error ? <ErrorDeCarga error={enviar.error} className="mt-4" /> : null}
+      {!emite ? (
+        <p className="text-ink/55 mt-4 text-xs leading-relaxed">
+          Tu usuario prepara facturas pero no las emite: esta queda por autorizar, sin número de
+          control y sin tocar el patio, hasta que alguien con la casilla «Autorizar y emitir
+          facturas» la emita o la rechace.
+        </p>
+      ) : null}
     </Modal>
   )
 }
