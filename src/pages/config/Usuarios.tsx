@@ -1460,6 +1460,31 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
     return [...mapa.entries()]
   }, [prestables, busca])
 
+  /*
+    MARCAR TODAS DE UNA VEZ.
+
+    Christopher, 18/09/2026: «que pueda seleccionar todos los permisos de una
+    vez». Marca las que se ven: sin buscar son todas; buscando «compras», las
+    de compras. Así el mismo botón sirve para «todo» y para «todo lo de esto».
+
+    Lo que la persona ya tiene por su rol no se filtra aquí: la base lo deja
+    fuera y lo dice, y el aviso de abajo lo resume en una línea.
+  */
+  const visibles = porModulo.flatMap(([, lista]) => lista.map((a) => a.codigo))
+  const todasMarcadas =
+    visibles.length > 0 && visibles.every((c) => forma.acciones.includes(c))
+  const marcarVarias = (codigos: string[], marcadas: boolean) =>
+    setForma((f) => ({
+      ...f,
+      acciones: marcadas
+        ? [...new Set([...f.acciones, ...codigos])]
+        : f.acciones.filter((x) => !codigos.includes(x)),
+    }))
+
+  // Las que ya tenía por su rol no son un problema: no hacía falta prestarlas.
+  const porSuRol = omitidas.filter((o) => o.motivo.includes('por su rol'))
+  const otrasOmitidas = omitidas.filter((o) => !o.motivo.includes('por su rol'))
+
   const opcionesPersona = (usuarios.data ?? [])
     .filter((u) => u.activo)
     .map((u) => ({
@@ -1638,16 +1663,29 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
           <div>
             <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
               <span className="text-ink/80 text-sm font-medium">Qué se le extiende</span>
-              {forma.acciones.length > 0 ? (
-                <button
-                  type="button"
-                  className="text-royal-600 dark:text-royal-300 text-xs underline"
-                  onClick={() => setForma((f) => ({ ...f, acciones: [] }))}
-                >
-                  {forma.acciones.length} marcada{forma.acciones.length === 1 ? '' : 's'} · quitar
-                  todas
-                </button>
-              ) : null}
+              <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                {visibles.length > 0 && !todasMarcadas ? (
+                  <button
+                    type="button"
+                    className="text-royal-600 dark:text-royal-300 text-xs underline"
+                    onClick={() => marcarVarias(visibles, true)}
+                  >
+                    {busca.trim()
+                      ? `Marcar las ${visibles.length} que se ven`
+                      : `Marcar todas (${visibles.length})`}
+                  </button>
+                ) : null}
+                {forma.acciones.length > 0 ? (
+                  <button
+                    type="button"
+                    className="text-royal-600 dark:text-royal-300 text-xs underline"
+                    onClick={() => setForma((f) => ({ ...f, acciones: [] }))}
+                  >
+                    {forma.acciones.length} marcada{forma.acciones.length === 1 ? '' : 's'} ·
+                    quitar todas
+                  </button>
+                ) : null}
+              </span>
             </div>
 
             <Input
@@ -1663,37 +1701,48 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
               {porModulo.length === 0 ? (
                 <p className="text-ink/45 p-3 text-sm">Ninguna casilla coincide.</p>
               ) : (
-                porModulo.map(([modulo, lista]) => (
-                  <div key={modulo}>
-                    <p className="bg-canvas text-ink/50 text-2xs sticky top-0 px-3 py-1.5 tracking-wide uppercase">
-                      {modulo}
-                    </p>
-                    {lista.map((a) => (
-                      <label
-                        key={a.codigo}
-                        className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 px-3 py-2"
-                      >
-                        <input
-                          type="checkbox"
-                          className="accent-royal-600 mt-0.5 size-4 shrink-0"
-                          checked={forma.acciones.includes(a.codigo)}
-                          onChange={() => marcar(a.codigo)}
-                        />
-                        <span className="min-w-0">
-                          <span className="text-ink/85 block text-sm">{a.nombre}</span>
-                          {a.dice ? (
-                            <span className="text-ink/45 block text-xs">{a.dice}</span>
-                          ) : null}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                ))
+                porModulo.map(([modulo, lista]) => {
+                  const codigos = lista.map((a) => a.codigo)
+                  const todoElModulo = codigos.every((c) => forma.acciones.includes(c))
+                  return (
+                    <div key={modulo}>
+                      <div className="bg-canvas sticky top-0 flex items-baseline justify-between gap-2 px-3 py-1.5">
+                        <p className="text-ink/50 text-2xs tracking-wide uppercase">{modulo}</p>
+                        <button
+                          type="button"
+                          className="text-royal-600 dark:text-royal-300 text-2xs underline"
+                          onClick={() => marcarVarias(codigos, !todoElModulo)}
+                        >
+                          {todoElModulo ? 'quitar el módulo' : 'todo el módulo'}
+                        </button>
+                      </div>
+                      {lista.map((a) => (
+                        <label
+                          key={a.codigo}
+                          className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 px-3 py-2"
+                        >
+                          <input
+                            type="checkbox"
+                            className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                            checked={forma.acciones.includes(a.codigo)}
+                            onChange={() => marcar(a.codigo)}
+                          />
+                          <span className="min-w-0">
+                            <span className="text-ink/85 block text-sm">{a.nombre}</span>
+                            {a.dice ? (
+                              <span className="text-ink/45 block text-xs">{a.dice}</span>
+                            ) : null}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )
+                })
               )}
             </div>
             <p className="text-ink/45 mt-1.5 text-xs">
               Solo puedes extender lo que tú mismo puedes hacer. La misma justificación vale para
-              todas las que marques.
+              todas las que marques; las que ya tenga por su rol se saltan solas.
             </p>
           </div>
 
@@ -1709,13 +1758,27 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
                   ? 'Una no entró:'
                   : `${omitidas.length} no entraron:`}
               </p>
-              <ul className="text-ink/70 mt-1.5 space-y-1 text-xs">
-                {omitidas.map((o) => (
-                  <li key={o.accion}>
-                    <strong>{o.accion}</strong> — {o.motivo}
-                  </li>
-                ))}
-              </ul>
+              {/*
+                Con «marcar todas» las que ya tenía por su rol son decenas, y
+                listarlas una a una taparía las que de verdad hay que leer.
+              */}
+              {porSuRol.length > 0 ? (
+                <p className="text-ink/70 mt-1.5 text-xs">
+                  {porSuRol.length === 1
+                    ? 'Una ya la tenía por su rol'
+                    : `${porSuRol.length} ya las tenía por su rol`}
+                  : no hacía falta extenderlas.
+                </p>
+              ) : null}
+              {otrasOmitidas.length > 0 ? (
+                <ul className="text-ink/70 mt-1.5 max-h-40 space-y-1 overflow-y-auto text-xs">
+                  {otrasOmitidas.map((o) => (
+                    <li key={o.accion}>
+                      <strong>{o.accion}</strong> — {o.motivo}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           ) : null}
 

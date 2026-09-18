@@ -5724,17 +5724,19 @@ Es la tercera capa de autorización del sistema, y la más reciente. Las otras d
 
 Nació de un caso real: el gerente general es el único que aprueba compras, y cuando no está, la empresa deja de comprar. Extenderle esa facultad a alguien de confianza por dos semanas resuelve el viaje sin repartirle el rol de gerente a nadie.
 
-**Lo que se presta es una acción, no un módulo.** El sistema tiene un catálogo de **153 acciones** repartidas en quince módulos —aprobar una compra, anular un carnet, autorizar un despacho sin guía—, y se extiende una, no el módulo entero.
+**Lo que se presta es una acción, no un módulo.** El sistema tiene un catálogo de unas **180 acciones** repartidas en dieciocho módulos —aprobar una compra, anular un carnet, autorizar un despacho sin guía—, y se extienden acciones sueltas, no el módulo como tal.
 
 Con el botón **Extender un permiso** se pide:
 
 | Campo | Detalle |
 | --- | --- |
 | **A quién** | Una persona activa del sistema |
-| **Qué se le extiende** | Una acción del catálogo. La ayuda dice el límite: *"Solo puedes extender lo que tú mismo puedes hacer."* |
+| **Qué se le extiende** | Una o varias acciones del catálogo, agrupadas por módulo y con buscador. La misma justificación vale para todas. La ayuda dice el límite: *"Solo puedes extender lo que tú mismo puedes hacer."* |
 | **Desde** | En blanco, desde hoy |
 | **Hasta** | En blanco, **indefinida**. Conviene poner fecha |
 | **Justificación** | Obligatoria, y la ayuda dice por qué: *"Por qué hace falta. Dentro de un mes es lo único que va a explicar por qué esta persona pudo hacer esto."* |
+
+**Para marcar muchas de una vez** está **Marcar todas**, encima de la lista: sin buscar nada marca el catálogo entero, y buscando algo —«compras»— marca solo las que se ven. Cada módulo tiene además su **todo el módulo**. Las que la persona ya tiene por su rol se saltan solas, y al terminar se dice en una línea cuántas fueron; las que no entraron por otra razón se listan con el porqué, y la ventana no se cierra hasta que se leen.
 
 **Nadie puede extender lo que él mismo no puede hacer.** Es lo que impide que esta pantalla se use para escalar permisos: el administrador puede prestar cualquier cosa porque lo puede todo, pero el gerente general solo presta lo suyo.
 
