@@ -43,7 +43,7 @@ export default async function pruebaVentas(tx) {
   await tx`select public.guardar_precio_venta(${piedra.id}, 10, 5, 'USD', null)`
 
   const [nota] = await tx`
-    select public.despachar(
+    select private.despachar(
       ${cli.id}, ${patio.id},
       ${renglones([{ articulo_id: Number(piedra.id), cantidad: 20, precio_unitario: 10 }])},
       'USD') as id`
@@ -181,7 +181,7 @@ export default async function pruebaVentas(tx) {
   // patio hecho un nudo y lo que se prueba aquí no es eso.
   const disponible = await enPatio()
   await tx`
-    select public.despachar(
+    select private.despachar(
       ${cli.id}, ${patio.id},
       ${renglones([
         { articulo_id: Number(piedra.id), cantidad: disponible - 2, precio_unitario: 10 },
@@ -200,7 +200,7 @@ export default async function pruebaVentas(tx) {
   grupo('Notas de crédito · sobre lo que ya no existe')
 
   const [nota2] = await tx`
-    select public.despachar(
+    select private.despachar(
       ${cli.id}, ${patio.id},
       ${renglones([{ articulo_id: Number(piedra.id), cantidad: 1, precio_unitario: 10 }])},
       'USD') as id`

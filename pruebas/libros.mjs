@@ -47,7 +47,7 @@ export default async function pruebaLibros(tx) {
   await tx`select public.guardar_precio_venta(${piedra.id}, 10, 5, 'USD', null)`
 
   const [nota] = await tx`
-    select public.despachar(
+    select private.despachar(
       ${cli.id}, ${patio.id},
       ${renglones([{ articulo_id: Number(piedra.id), cantidad: 30, precio_unitario: 10 }])},
       'USD') as id`
@@ -112,7 +112,7 @@ export default async function pruebaLibros(tx) {
   grupo('Libro de ventas · la anulada no deja hueco')
 
   const [nota2] = await tx`
-    select public.despachar(
+    select private.despachar(
       ${cli.id}, ${patio.id},
       ${renglones([{ articulo_id: Number(piedra.id), cantidad: 4, precio_unitario: 10 }])},
       'USD') as id`

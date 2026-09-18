@@ -492,30 +492,122 @@ export interface Despacho {
   guia_id?: number | null
 }
 
-export function useDespachar() {
-  return useAccionVentas<Despacho, number>((d) =>
-    rpc<number>('despachar', {
+/*
+  EL DESPACHO SE PIDE Y SE APRUEBA. Angélica, 18/09/2026: «quiero que las notas
+  de entrega lleven igual un nivel de autorización», y que salgan siempre con
+  chofer, cédula y placa. Pedir no mueve nada; al aprobar corre el despacho de
+  siempre y nace la nota de entrega. Desde el navegador ya no se puede
+  despachar sin pasar por aquí: la base lo mudó a un esquema privado.
+*/
+export interface PedidoDeDespacho extends Despacho {
+  vehiculo: string
+  chofer: string
+  cedula_chofer: string
+  /** Marca y modelo. Solo hace falta si la placa no está en el catálogo. */
+  vehiculo_descripcion?: string | null
+}
+
+export function useSolicitarDespacho() {
+  return useAccionVentas<PedidoDeDespacho, string>((d) =>
+    rpc<string>('solicitar_despacho', {
       p_cliente_id: d.cliente_id,
       p_almacen_id: d.almacen_id,
       p_renglones: d.renglones,
+      p_vehiculo: d.vehiculo,
+      p_chofer: d.chofer,
+      p_cedula_chofer: d.cedula_chofer,
+      p_vehiculo_descripcion: d.vehiculo_descripcion || null,
       p_moneda: d.moneda ?? null,
       p_cotizacion_id: d.cotizacion_id ?? null,
-      p_vehiculo: d.vehiculo || null,
-      p_chofer: d.chofer || null,
-      p_cedula_chofer: d.cedula_chofer || null,
       p_peso_bruto: d.peso_bruto ?? null,
       p_peso_tara: d.peso_tara ?? null,
       p_ticket: d.ticket || null,
-      p_alicuota_iva: d.alicuota_iva ?? null,
       p_descuento: d.descuento ?? 0,
       p_flete: d.flete ?? 0,
-      p_fecha: d.fecha || null,
       p_observacion: d.observacion || null,
       // Los dos papeles de la garita. Con ticket, los pesos y la placa salen
-      // de la báscula; sin guía, la base rechaza el despacho de mineral.
+      // de la báscula.
       p_ticket_id: d.ticket_id ?? null,
       p_guia_id: d.guia_id ?? null,
     }),
+  )
+}
+
+export type EstadoDeDespacho = 'PEDIDA' | 'APROBADA' | 'RECHAZADA' | 'CANCELADA'
+
+export interface SolicitudDeDespacho {
+  id: number
+  numero: string
+  estado: EstadoDeDespacho
+  cliente_id: number
+  cliente: string
+  cliente_rif: string
+  almacen_id: number
+  almacen: string
+  moneda: string | null
+  vehiculo: string
+  vehiculo_descripcion: string | null
+  chofer: string
+  cedula_chofer: string
+  ticket: string | null
+  peso_bruto: string | null
+  peso_tara: string | null
+  flete: string
+  observacion: string | null
+  pedida_por: string | null
+  pedida_en: string
+  resuelta_por: string | null
+  resuelta_en: string | null
+  motivo_cierre: string | null
+  nota_id: number | null
+  nota_numero: string | null
+  renglones: Array<{
+    articulo_id: number
+    articulo: string | null
+    descripcion?: string
+    cantidad: number
+    unidad?: string
+    /** Solo llega a quien ve los montos. */
+    precio_unitario?: number
+  }>
+}
+
+export function useSolicitudesDespacho() {
+  return useQuery({
+    queryKey: ['ventas', 'solicitudes-despacho'],
+    queryFn: async () =>
+      desenvolver<SolicitudDeDespacho[]>(
+        await supabase
+          .from('v_solicitudes_despacho')
+          .select('*')
+          .order('pedida_en', { ascending: false })
+          .limit(200),
+      ),
+  })
+}
+
+/** Si quien mira tiene la casilla de aprobar despachos (propia o prestada, y no restringida). */
+export function usePuedoAprobarDespachos() {
+  return useQuery({
+    queryKey: ['mis-acciones', 'aprobar-despachos'],
+    queryFn: () => rpc<boolean>('puedo_aprobar_despachos'),
+    staleTime: 60_000,
+  })
+}
+
+export function useAprobarDespacho() {
+  return useAccionVentas((id: number) => rpc<number>('aprobar_despacho', { p_id: id }))
+}
+
+export function useRechazarDespacho() {
+  return useAccionVentas((r: { id: number; motivo: string }) =>
+    rpc<void>('rechazar_despacho', { p_id: r.id, p_motivo: r.motivo }),
+  )
+}
+
+export function useCancelarDespacho() {
+  return useAccionVentas((r: { id: number; motivo: string }) =>
+    rpc<void>('cancelar_despacho', { p_id: r.id, p_motivo: r.motivo }),
   )
 }
 

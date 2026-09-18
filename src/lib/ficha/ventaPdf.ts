@@ -685,6 +685,7 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
   const rotulo = ROTULOS[d.tipo]
   const cabecera = membrete(doc, logo, {
     empresa: d.empresa,
+    conDomicilio: d.tipo === 'FACTURA',
     datos: [
       [rotulo.numero, d.numero],
       ['FECHA', fechaCorta(d.fecha)],
