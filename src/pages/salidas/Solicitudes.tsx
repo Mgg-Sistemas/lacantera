@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { ClipboardList, FileText, PackageCheck, PackageMinus, SendHorizontal, X } from 'lucide-react'
 import { Ayuda } from '@/components/Ayuda'
+import { FotosDeCarga } from '@/components/FotosDeCarga'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_SALIDAS } from '@/components/pestanasDeModulos'
@@ -274,6 +275,12 @@ export function Solicitudes() {
                   ) : null}
 
                   {falta ? <p className="text-warning mt-1 text-xs">{falta}</p> : null}
+
+                  <FotosDeCarga
+                    origen="SALIDA"
+                    referencia={s.numero}
+                    puedeAnadir={puedoSacar && s.estado !== 'RECHAZADA' && s.estado !== 'CANCELADA'}
+                  />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -390,9 +397,10 @@ export function Solicitudes() {
           setPidiendo(false)
           setDesdeFila({})
         }}
-        onRegistrada={() => {
+        onRegistrada={(_numero, _motivo, aviso) => {
           setPidiendo(false)
           setDesdeFila({})
+          if (aviso) setFallo(aviso)
         }}
       />
 

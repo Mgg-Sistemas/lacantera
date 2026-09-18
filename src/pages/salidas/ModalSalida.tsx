@@ -9,11 +9,13 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { DeQuienSale } from '@/components/DeQuienSale'
+import { ElegirArchivosDeCarga } from '@/components/FotosDeCarga'
 import { ListaEditable } from '@/components/ListaEditable'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { palabraDeVenta, usePedirSalida, usePersonasDeLaEmpresa } from '@/lib/api/salidas'
 import { useMiFirma } from '@/lib/api/firmas'
+import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
 import {
   grupoEnCorto,
   useBorrarClaseDeSalida,
@@ -297,7 +299,8 @@ export function ModalSalida({
   articuloInicial?: string
   almacenInicial?: string
   onCerrar: () => void
-  onRegistrada: (numero: string, motivo: string) => void
+  /** `aviso`: la salida se creó, pero algo menor falló (hoy, subir las fotos). */
+  onRegistrada: (numero: string, motivo: string, aviso?: string) => void
 }) {
   const { puede: alcanza } = useMisPermisos()
   const salidas = useRegistrarSalidas()
@@ -310,6 +313,12 @@ export function ModalSalida({
   */
   const { data: miFirma } = useMiFirma()
   const [conMiFirma, setConMiFirma] = useState(false)
+  // Las fotos del vehículo que se lo lleva: suben en cuanto la solicitud tiene número.
+  const [archivos, setArchivos] = useState<File[]>([])
+  const [subiendo, setSubiendo] = useState(false)
+  useEffect(() => {
+    if (!abierto) setArchivos([])
+  }, [abierto])
   const clases = useClasesDeSalida()
   const todasLasClases = useClasesDeSalida(true)
   const guardarClase = useGuardarClaseDeSalida()
@@ -481,7 +490,18 @@ export function ModalSalida({
       con_firma: miFirma?.usar === true && conMiFirma,
     })) as string[]
 
-    onRegistrada(numeros.join(', '), motivo)
+    let aviso: string | undefined
+    if (archivos.length > 0) {
+      setSubiendo(true)
+      try {
+        await subirFotosDeCarga('SALIDA', numeros, archivos)
+      } catch (e) {
+        aviso = `La solicitud ${numeros.join(', ')} quedó hecha, pero las fotos no subieron (${e instanceof Error ? e.message : String(e)}). Añádelas desde su tarjeta.`
+      } finally {
+        setSubiendo(false)
+      }
+    }
+    onRegistrada(numeros.join(', '), motivo, aviso)
   }
 
   const registrar = async () => {
@@ -536,7 +556,8 @@ export function ModalSalida({
                   ventaEnElMotivo !== null ||
                   motivo.trim().length < 4 ||
                   salidas.isPending ||
-                  pedido.isPending
+                  pedido.isPending ||
+                  subiendo
                 }
                 onClick={() => void (modo === 'pedir' ? pedir() : registrar())}
               >
@@ -799,6 +820,10 @@ export function ModalSalida({
                   </span>
                 </label>
               ) : null}
+
+              <div className="mt-4">
+                <ElegirArchivosDeCarga archivos={archivos} onCambiar={setArchivos} />
+              </div>
             </>
           ) : (
             <>

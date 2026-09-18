@@ -1,6 +1,18 @@
 import { useState } from 'react'
 import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
-import { Printer, Truck } from 'lucide-react'
+import { Check, Printer, Truck, X } from 'lucide-react'
+import { CatalogoTransporte } from '@/components/CatalogoTransporte'
+import { ElegirArchivosDeCarga, FotosDeCarga } from '@/components/FotosDeCarga'
+import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
+import { usePerfiles } from '@/lib/api/catalogo'
+import {
+  cedulaComparable,
+  placaLimpia,
+  useChoferes,
+  useGuardarChofer,
+  useGuardarVehiculoDeDespacho,
+  useVehiculosDeDespacho,
+} from '@/lib/api/transporte'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -13,7 +25,7 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
-import { dinero, documento, enteros, fecha } from '@/lib/formato'
+import { dinero, documento, enteros, fecha, fechaHora } from '@/lib/formato'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
@@ -24,13 +36,19 @@ import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
   useAnularNota,
+  useAprobarDespacho,
+  useCancelarDespacho,
   useClientes,
-  useDespachar,
   useNotasEntrega,
   usePrecios,
+  usePuedoAprobarDespachos,
+  useRechazarDespacho,
   useRenglones,
+  useSolicitarDespacho,
+  useSolicitudesDespacho,
   type NotaEntrega,
   type RenglonGuardado,
+  type SolicitudDeDespacho,
 } from '@/lib/api/ventas'
 /*
   Los renglones, el IVA y sus totales se quedaron en Ventas: son los mismos que
@@ -83,8 +101,21 @@ export function NotasDeEntrega() {
   const { data: almacenes } = useAlmacenes()
   const { data: empresa } = useEmpresa()
   const { data: yo } = useMiPerfil()
-  const despachar = useDespachar()
+  const despachar = useSolicitarDespacho()
   const anular = useAnularNota()
+  const solicitudes = useSolicitudesDespacho()
+  const { data: puedoAprobar } = usePuedoAprobarDespachos()
+  const aprobar = useAprobarDespacho()
+  const rechazar = useRechazarDespacho()
+  const cancelar = useCancelarDespacho()
+  const { data: perfiles } = usePerfiles()
+  const [verResueltas, setVerResueltas] = useState(false)
+  const [cerrando, setCerrando] = useState<{ s: SolicitudDeDespacho; como: 'RECHAZAR' | 'CANCELAR' } | null>(null)
+  const [motivoCierre, setMotivoCierre] = useState('')
+  const [falloDespacho, setFalloDespacho] = useState<string | null>(null)
+  const [catalogo, setCatalogo] = useState(false)
+  const nombreDe = (uid: string | null) =>
+    (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
   const { data: tasaHoy } = useTasaVigente()
   /* La nota es de Facturación también en la base desde el 16/09/2026: despachar
      pide Facturación en escritura y anular, total. Sin eso no se enseña el
@@ -113,10 +144,18 @@ export function NotasDeEntrega() {
   const [clienteId, setClienteId] = useState('')
   const [almacenId, setAlmacenId] = useState('')
   const [moneda, setMoneda] = useState('USD')
-  const [vehiculo, setVehiculo] = useState('')
-  const [vehiculoId, setVehiculoId] = useState('')
-  const [chofer, setChofer] = useState('')
-  const [cedula, setCedula] = useState('')
+  /*
+    CHOFER Y VEHÍCULO, OBLIGATORIOS Y DEL CATÁLOGO. Se elige del catálogo o, si
+    no está, se escribe al lado y se añade —con «+ Añadir» o, si no se pulsa,
+    al enviar: la base lo añade sola—.
+  */
+  const [choferId, setChoferId] = useState('')
+  const [nuevoChofer, setNuevoChofer] = useState('')
+  const [nuevaCedula, setNuevaCedula] = useState('')
+  const [vehiculoDespId, setVehiculoDespId] = useState('')
+  const [nuevoVehiculo, setNuevoVehiculo] = useState('')
+  const [nuevaPlaca, setNuevaPlaca] = useState('')
+  const [archivos, setArchivos] = useState<File[]>([])
   const [ticket, setTicket] = useState('')
   const [ticketId, setTicketId] = useState('')
   const [guiaId, setGuiaId] = useState('')
@@ -127,6 +166,16 @@ export function NotasDeEntrega() {
   const [filas, setFilas] = useState<FilaRenglon[]>([filaVacia()])
 
   const { data: vehiculos } = useVehiculos()
+  const { data: choferes } = useChoferes()
+  const { data: vehiculosDesp } = useVehiculosDeDespacho()
+  const guardarChofer = useGuardarChofer()
+  const guardarVehiculo = useGuardarVehiculoDeDespacho()
+  const choferElegido = (choferes ?? []).find((c) => String(c.id) === choferId) ?? null
+  const vehiculoDespElegido = (vehiculosDesp ?? []).find((v) => String(v.id) === vehiculoDespId) ?? null
+  const chofer = choferElegido ? choferElegido.nombre : nuevoChofer.trim()
+  const cedula = choferElegido ? choferElegido.cedula : nuevaCedula.trim()
+  const vehiculo = vehiculoDespElegido ? vehiculoDespElegido.placa : placaLimpia(nuevaPlaca)
+  const faltaTransporte = chofer.length < 3 || cedulaComparable(cedula).length < 5 || vehiculo.length < 4
   const { data: tickets } = useTickets('LIBRE')
   const { data: guias } = useGuias('VIGENTE')
 
@@ -163,7 +212,8 @@ export function NotasDeEntrega() {
   const porPlaca = (placa: string) =>
     (vehiculos ?? []).find((v) => v.placa === placa.trim().toUpperCase().replace(/\s+/g, ''))
 
-  const vehiculoElegido = (vehiculos ?? []).find((v) => String(v.id) === vehiculoId) ?? null
+  // Si la placa es de la flota, su capacidad y su mantenimiento entran en juego.
+  const vehiculoElegido = vehiculo ? (porPlaca(vehiculo) ?? null) : null
 
   const m3EnLaCarga = m3EnCamion(filasEfectivas, precios ?? [])
 
@@ -204,10 +254,13 @@ export function NotasDeEntrega() {
   const limpiar = () => {
     setClienteId('')
     setMoneda('USD')
-    setVehiculo('')
-    setVehiculoId('')
-    setChofer('')
-    setCedula('')
+    setChoferId('')
+    setNuevoChofer('')
+    setNuevaCedula('')
+    setVehiculoDespId('')
+    setNuevoVehiculo('')
+    setNuevaPlaca('')
+    setArchivos([])
     setTicket('')
     setTicketId('')
     setGuiaId('')
@@ -278,15 +331,144 @@ export function NotasDeEntrega() {
     <>
       <PageHeader
         title="Notas de entrega"
-        description="El papel con el que sale el camión. Al despachar, el material se descuenta del patio."
+        description="El papel con el que sale el camión. El despacho se pide con chofer, cédula y placa; al aprobarlo nace la nota y el material se descuenta del patio."
         actions={
-          puedeDespachar ? (
-            <Button icon={<Truck />} onClick={() => setNuevo(true)}>
-              Despachar
+          <>
+            <Button variant="outline" icon={<Truck />} onClick={() => setCatalogo(true)}>
+              Choferes / Vehículos
             </Button>
-          ) : null
+            {puedeDespachar ? (
+              <Button icon={<Truck />} onClick={() => setNuevo(true)}>
+                Pedir despacho
+              </Button>
+            ) : null}
+          </>
         }
       />
+
+      {/* ------------------------------------------ despachos por aprobar */}
+      {(() => {
+        const todas = solicitudes.data ?? []
+        const esperando = todas.filter((s) => s.estado === 'PEDIDA')
+        const resueltas = todas.filter((s) => s.estado === 'RECHAZADA' || s.estado === 'CANCELADA')
+        const aLaVista = verResueltas ? [...esperando, ...resueltas] : esperando
+        if (todas.length === 0 && !solicitudes.error) return null
+        return (
+          <section className="mb-6">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-ink/85 font-titular text-lg">
+                Despachos por aprobar{esperando.length ? ` (${esperando.length})` : ''}
+              </h2>
+              {resueltas.length > 0 ? (
+                <Button size="sm" variant="ghost" onClick={() => setVerResueltas((v) => !v)}>
+                  {verResueltas ? 'Ocultar los no aprobados' : `Ver los no aprobados (${resueltas.length})`}
+                </Button>
+              ) : null}
+            </div>
+            {solicitudes.error ? <ErrorDeCarga error={solicitudes.error} /> : null}
+            {falloDespacho ? <p className="text-danger mb-2 text-sm">{falloDespacho}</p> : null}
+            {aLaVista.length === 0 ? (
+              <p className="text-ink/50 text-sm">Ningún despacho espera aprobación.</p>
+            ) : null}
+            <div className="space-y-3">
+              {aLaVista.map((s) => (
+                <Card key={s.id}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-ink/70 tabular font-mono text-xs">Despacho {s.numero}</span>
+                        <Chip tone={s.estado === 'PEDIDA' ? 'warning' : 'neutral'}>
+                          {s.estado === 'PEDIDA' ? 'Por aprobar' : s.estado === 'RECHAZADA' ? 'No aprobado' : 'Cancelado'}
+                        </Chip>
+                      </div>
+                      <p className="text-ink/85 mt-1.5 text-sm font-medium">
+                        {s.cliente} · sale de {s.almacen}
+                      </p>
+                      <p className="text-ink/60 text-xs">
+                        {s.vehiculo}
+                        {s.vehiculo_descripcion ? ` · ${s.vehiculo_descripcion}` : ''} · {s.chofer} ·{' '}
+                        {documento(s.cedula_chofer)}
+                      </p>
+                      <ul className="text-ink/75 mt-2 space-y-0.5 text-sm">
+                        {s.renglones.map((r, i) => (
+                          <li key={i}>
+                            {Number(r.cantidad).toLocaleString('es-VE', { maximumFractionDigits: 2 })}{' '}
+                            {r.unidad ?? ''} · {r.descripcion || r.articulo || '—'}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-ink/40 mt-2 text-xs">
+                        Lo pidió {nombreDe(s.pedida_por)} · {fechaHora(s.pedida_en)}
+                        {s.resuelta_en ? ` · lo cerró ${nombreDe(s.resuelta_por)} · ${fechaHora(s.resuelta_en)}` : ''}
+                      </p>
+                      {s.motivo_cierre ? (
+                        <p className="text-ink/55 mt-1 text-xs italic">{s.motivo_cierre}</p>
+                      ) : null}
+                      <FotosDeCarga
+                        origen="DESPACHO"
+                        referencia={s.numero}
+                        puedeAnadir={puedeDespachar && s.estado === 'PEDIDA'}
+                      />
+                    </div>
+                    {s.estado === 'PEDIDA' ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        {puedoAprobar ? (
+                          <>
+                            <Button
+                              size="sm"
+                              icon={<Check />}
+                              disabled={aprobar.isPending}
+                              onClick={() => {
+                                setFalloDespacho(null)
+                                aprobar.mutate(s.id, {
+                                  onError: (e) => setFalloDespacho(e instanceof Error ? e.message : String(e)),
+                                })
+                              }}
+                            >
+                              {aprobar.isPending ? 'Aprobando…' : 'Aprobar'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              icon={<X />}
+                              onClick={() => {
+                                setMotivoCierre('')
+                                setCerrando({ s, como: 'RECHAZAR' })
+                              }}
+                            >
+                              No aprobar
+                            </Button>
+                          </>
+                        ) : null}
+                        {s.pedida_por === yo?.id || puedeAnular ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setMotivoCierre('')
+                              setCerrando({ s, como: 'CANCELAR' })
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                </Card>
+              ))}
+            </div>
+            {esperando.length > 0 && !puedoAprobar ? (
+              <p className="text-ink/50 mt-2 text-xs">
+                Los aprueba quien tenga el permiso «Aprobar los despachos» (la gerencia general, o a quien
+                se le preste).
+              </p>
+            ) : null}
+          </section>
+        )
+      })()}
+
+      <h2 className="text-ink/85 font-titular mb-2 text-lg">Notas de entrega</h2>
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
@@ -296,11 +478,11 @@ export function NotasDeEntrega() {
           <Vacio
             icono={<Truck />}
             titulo="Todavía no ha salido ningún camión"
-            descripcion="Cada despacho rebaja el patio y vale por sí solo. Si se decide facturarlo, se hace en Facturación y la nota queda enlazada a su factura. Si el patio está en cero, carga primero la producción desde Inventario › Existencias."
+            descripcion="Cada despacho se pide y, al aprobarlo, rebaja el patio y vale por sí solo. Si se decide facturarlo, se hace en Facturación y la nota queda enlazada a su factura. Si el patio está en cero, carga primero la producción desde Inventario › Existencias."
             accion={
               puedeDespachar ? (
                 <Button icon={<Truck />} onClick={() => setNuevo(true)}>
-                  Despachar
+                  Pedir despacho
                 </Button>
               ) : undefined
             }
@@ -364,8 +546,8 @@ export function NotasDeEntrega() {
             setNuevo(false)
             limpiar()
           }}
-          titulo="Despachar material"
-          descripcion="Esto rebaja el patio en el acto. Si el camión no sale, hay que anular la nota."
+          titulo="Pedir despacho"
+          descripcion="No rebaja nada todavía. Al aprobarlo quien tiene el permiso, nace la nota de entrega y el material sale del patio."
           acciones={
             <>
               {/* Ocupa toda la fila para que no compita con los botones: es
@@ -406,18 +588,20 @@ export function NotasDeEntrega() {
                   !clienteId ||
                   !almacenId ||
                   incompletas ||
+                  faltaTransporte ||
                   aRenglones(filasEfectivas).length === 0
                 }
                 onClick={async () => {
-                  await despachar.mutateAsync({
+                  const numero = await despachar.mutateAsync({
                     cliente_id: Number(clienteId),
                     almacen_id: Number(almacenId),
                     renglones: aRenglones(filasEfectivas),
                     moneda,
                     alicuota_iva: 0,
-                    vehiculo: vehiculo || null,
-                    chofer: chofer || null,
-                    cedula_chofer: cedula || null,
+                    vehiculo,
+                    vehiculo_descripcion: vehiculoDespElegido ? null : nuevoVehiculo.trim() || null,
+                    chofer,
+                    cedula_chofer: cedula,
                     ticket: ticket || null,
                     peso_bruto: Number(bruto) || null,
                     peso_tara: Number(tara) || null,
@@ -426,11 +610,20 @@ export function NotasDeEntrega() {
                     ticket_id: Number(ticketId) || null,
                     guia_id: Number(guiaId) || null,
                   })
+                  if (archivos.length > 0) {
+                    try {
+                      await subirFotosDeCarga('DESPACHO', [numero], archivos)
+                    } catch (e) {
+                      setFalloDespacho(
+                        `El despacho ${numero} quedó pedido, pero las fotos no subieron (${e instanceof Error ? e.message : String(e)}). Añádelas desde su tarjeta.`,
+                      )
+                    }
+                  }
                   setNuevo(false)
                   limpiar()
                 }}
               >
-                {despachar.isPending ? 'Despachando…' : 'Despachar'}
+                {despachar.isPending ? 'Enviando…' : 'Enviar a aprobación'}
               </Button>
             </>
           }
@@ -506,13 +699,20 @@ export function NotasDeEntrega() {
                   setTicketId(e.target.value)
                   const t = ticketsLibres.find((x) => String(x.id) === e.target.value)
                   if (t) {
-                    setVehiculo(t.vehiculo)
-                    // La báscula guarda la placa como texto. Si ese
-                    // camión está en el catálogo, se engancha para
-                    // que su capacidad entre en juego sin pedirla.
-                    setVehiculoId(String(porPlaca(t.vehiculo)?.id ?? ''))
-                    setChofer(t.chofer ?? '')
-                    setCedula(t.cedula_chofer ?? '')
+                    // La báscula guarda placa, chofer y cédula como texto. Si
+                    // están en el catálogo se eligen; si no, quedan escritos
+                    // al lado para añadirlos.
+                    const v = (vehiculosDesp ?? []).find(
+                      (x) => x.activo && x.placa === placaLimpia(t.vehiculo),
+                    )
+                    setVehiculoDespId(v ? String(v.id) : '')
+                    setNuevaPlaca(v ? '' : t.vehiculo)
+                    const c = (choferes ?? []).find(
+                      (x) => x.activo && cedulaComparable(x.cedula) === cedulaComparable(t.cedula_chofer ?? ''),
+                    )
+                    setChoferId(c ? String(c.id) : '')
+                    setNuevoChofer(c ? '' : (t.chofer ?? ''))
+                    setNuevaCedula(c ? '' : (t.cedula_chofer ?? ''))
                     setBruto(String(Number(t.peso_bruto)))
                     setTara(String(Number(t.peso_tara)))
                     setTicket(t.numero)
@@ -550,46 +750,129 @@ export function NotasDeEntrega() {
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <SelectBuscable
-                label="Vehículo"
-                vacio="Otro (escribir la placa)"
-                valor={vehiculoId}
-                onCambio={(elegido) => {
-                  setVehiculoId(elegido)
-                  const veh = (vehiculos ?? []).find((x) => String(x.id) === elegido)
-                  // La placa sigue viajando como texto: es lo que se imprime
-                  // en la nota, y un documento emitido no puede cambiar
-                  // porque después se corrija el catálogo.
-                  setVehiculo(veh ? veh.placa : '')
-                }}
-                opciones={(vehiculos ?? []).map((v) => ({
-                  valor: String(v.id),
-                  etiqueta: `${v.placa} · ${Number(v.capacidad_m3)} m³${
-                    v.transportista ? ` · ${v.transportista}` : ''
-                  }`,
-                }))}
-                hint={
-                  (vehiculos ?? []).length === 0
-                    ? 'No hay vehículos cargados. Se dan de alta en Maquinaria › Equipos.'
-                    : undefined
-                }
-              />
-              {vehiculoId === '' ? (
-                <Input
-                  label="Placa del vehículo"
-                  placeholder="A12BC3D"
-                  value={vehiculo}
-                  onChange={(e) => setVehiculo(e.target.value)}
-                  hint="No está en el catálogo: no se podrá contrastar con su capacidad."
+            {/*
+              DATOS DEL DESPACHO, como el modelo que mandó Angélica: a la
+              izquierda el chofer, a la derecha el vehículo; arriba se busca en
+              el catálogo y debajo, si no está, se escribe y se añade. Los tres
+              datos —nombre, cédula, placa— son obligatorios.
+            */}
+            <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">
+              Datos del despacho
+            </p>
+            <div className="mb-4 grid gap-4 lg:grid-cols-2">
+              <div>
+                <SelectBuscable
+                  label="Chofer / responsable"
+                  vacio="Busca el chofer…"
+                  valor={choferId}
+                  onCambio={(v) => {
+                    setChoferId(v)
+                    if (v) {
+                      setNuevoChofer('')
+                      setNuevaCedula('')
+                    }
+                  }}
+                  opciones={(choferes ?? [])
+                    .filter((c) => c.activo)
+                    .map((c) => ({ valor: String(c.id), etiqueta: `${c.nombre} · ${c.cedula}` }))}
                 />
-              ) : null}
-              <Input label="Chofer" value={chofer} onChange={(e) => setChofer(e.target.value)} />
-              <CampoDocumento
-                label="Cédula del chofer"
-                valor={cedula}
-                onCambiar={setCedula}
-              />
+                {choferId === '' ? (
+                  <div className="mt-2 grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
+                    <Input
+                      label="¿No está? Nombre del chofer"
+                      value={nuevoChofer}
+                      onChange={(e) => setNuevoChofer(e.target.value)}
+                    />
+                    <CampoDocumento label="Cédula" valor={nuevaCedula} onCambiar={setNuevaCedula} />
+                    <div className="flex items-end">
+                      <Button
+                        variant="outline"
+                        disabled={
+                          guardarChofer.isPending ||
+                          nuevoChofer.trim().length < 3 ||
+                          cedulaComparable(nuevaCedula).length < 5
+                        }
+                        onClick={() =>
+                          guardarChofer.mutate(
+                            { nombre: nuevoChofer, cedula: nuevaCedula },
+                            {
+                              onSuccess: (id) => {
+                                setChoferId(String(id))
+                                setNuevoChofer('')
+                                setNuevaCedula('')
+                              },
+                            },
+                          )
+                        }
+                      >
+                        + Añadir
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+                {guardarChofer.error ? <ErrorDeCarga error={guardarChofer.error} className="mt-2" /> : null}
+              </div>
+
+              <div>
+                <SelectBuscable
+                  label="Vehículo"
+                  vacio="Busca el vehículo…"
+                  valor={vehiculoDespId}
+                  onCambio={(v) => {
+                    setVehiculoDespId(v)
+                    if (v) {
+                      setNuevoVehiculo('')
+                      setNuevaPlaca('')
+                    }
+                  }}
+                  opciones={(vehiculosDesp ?? [])
+                    .filter((v) => v.activo)
+                    .map((v) => ({
+                      valor: String(v.id),
+                      etiqueta: `${v.placa}${v.descripcion ? ` · ${v.descripcion}` : ''}`,
+                    }))}
+                />
+                {vehiculoDespId === '' ? (
+                  <div className="mt-2 grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
+                    <Input
+                      label="¿No está? Vehículo (marca/modelo)"
+                      value={nuevoVehiculo}
+                      onChange={(e) => setNuevoVehiculo(e.target.value)}
+                    />
+                    <Input
+                      label="Placa"
+                      value={nuevaPlaca}
+                      onChange={(e) => setNuevaPlaca(e.target.value)}
+                    />
+                    <div className="flex items-end">
+                      <Button
+                        variant="outline"
+                        disabled={guardarVehiculo.isPending || placaLimpia(nuevaPlaca).length < 4}
+                        onClick={() =>
+                          guardarVehiculo.mutate(
+                            { placa: nuevaPlaca, descripcion: nuevoVehiculo },
+                            {
+                              onSuccess: (id) => {
+                                setVehiculoDespId(String(id))
+                                setNuevoVehiculo('')
+                                setNuevaPlaca('')
+                              },
+                            },
+                          )
+                        }
+                      >
+                        + Añadir
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+                {guardarVehiculo.error ? (
+                  <ErrorDeCarga error={guardarVehiculo.error} className="mt-2" />
+                ) : null}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
               <Input
                 label="Ticket de romana"
                 value={ticket}
@@ -636,6 +919,24 @@ export function NotasDeEntrega() {
               onChange={(e) => setObservacion(e.target.value)}
             />
           </div>
+
+          <div className="mt-4">
+            <ElegirArchivosDeCarga archivos={archivos} onCambiar={setArchivos} />
+          </div>
+
+          {faltaTransporte ? (
+            <p className="text-ink/60 mt-3 text-xs">
+              Para enviarlo falta{' '}
+              {[
+                chofer.length < 3 ? 'el nombre del chofer' : null,
+                cedulaComparable(cedula).length < 5 ? 'su cédula' : null,
+                vehiculo.length < 4 ? 'la placa del vehículo' : null,
+              ]
+                .filter(Boolean)
+                .join(', ')}
+              .
+            </p>
+          ) : null}
 
           <div className="bg-ink/4 rounded-card mt-4 p-4">
             <Totales
@@ -729,6 +1030,30 @@ export function NotasDeEntrega() {
           {detalle.motivo_anulacion ? (
             <p className="text-danger mt-3 text-sm">Anulada: {detalle.motivo_anulacion}</p>
           ) : null}
+
+          {/* De qué despacho salió: quién lo pidió, quién lo aprobó, y sus fotos. */}
+          {(() => {
+            const s = (solicitudes.data ?? []).find((x) => x.nota_id === detalle.id)
+            if (!s) return null
+            return (
+              <div className="mt-3">
+                <p className="text-ink/50 text-xs">
+                  Despacho {s.numero} · lo pidió {nombreDe(s.pedida_por)} · {fechaHora(s.pedida_en)}
+                  {s.resuelta_en ? ` · lo aprobó ${nombreDe(s.resuelta_por)} · ${fechaHora(s.resuelta_en)}` : ''}
+                </p>
+                <p className="text-ink/60 text-xs">
+                  {s.vehiculo}
+                  {s.vehiculo_descripcion ? ` · ${s.vehiculo_descripcion}` : ''} · {s.chofer} ·{' '}
+                  {documento(s.cedula_chofer)}
+                </p>
+                <FotosDeCarga
+                  origen="DESPACHO"
+                  referencia={s.numero}
+                  puedeAnadir={puedeDespachar && detalle.estado !== 'ANULADA'}
+                />
+              </div>
+            )
+          })()}
 
           <TablaRenglones
             moneda={detalle.moneda}
@@ -839,6 +1164,53 @@ export function NotasDeEntrega() {
           {anular.error ? <ErrorDeCarga error={anular.error} className="mt-4" /> : null}
         </Modal>
       ) : null}
+
+      {cerrando ? (
+        <Modal
+          abierto
+          ancho="sm"
+          onCerrar={() => setCerrando(null)}
+          titulo={cerrando.como === 'RECHAZAR' ? `No aprobar ${cerrando.s.numero}` : `Cancelar ${cerrando.s.numero}`}
+          descripcion={
+            cerrando.como === 'RECHAZAR'
+              ? 'Quien lo pidió va a leer el motivo, así que conviene que diga algo.'
+              : 'Queda escrito y no se puede editar después.'
+          }
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setCerrando(null)}>
+                Volver
+              </Button>
+              <Button
+                disabled={motivoCierre.trim().length < 4 || rechazar.isPending || cancelar.isPending}
+                onClick={async () => {
+                  const accion = cerrando.como === 'RECHAZAR' ? rechazar : cancelar
+                  await accion.mutateAsync({ id: cerrando.s.id, motivo: motivoCierre })
+                  setCerrando(null)
+                }}
+              >
+                {rechazar.isPending || cancelar.isPending ? 'Guardando…' : 'Confirmar'}
+              </Button>
+            </>
+          }
+        >
+          <Textarea
+            label={cerrando.como === 'RECHAZAR' ? 'Por qué no se aprueba' : 'Por qué se cancela'}
+            rows={3}
+            autoFocus
+            value={motivoCierre}
+            onChange={(e) => setMotivoCierre(e.target.value)}
+          />
+          {rechazar.error ? <ErrorDeCarga error={rechazar.error} className="mt-3" /> : null}
+          {cancelar.error ? <ErrorDeCarga error={cancelar.error} className="mt-3" /> : null}
+        </Modal>
+      ) : null}
+
+      <CatalogoTransporte
+        abierto={catalogo}
+        onCerrar={() => setCatalogo(false)}
+        puedeEditar={puedeDespachar}
+      />
 
       <Visor
         abierto={pdf !== null}
