@@ -171,6 +171,15 @@ export function membrete(
     desde?: number
     /** Los bordes, si la hoja no es A4 vertical. */
     bordes?: Bordes
+    /**
+     * Si se imprime el domicilio debajo del RIF. Solo la factura lo lleva.
+     *
+     * Angélica, 18/09/2026, sobre la nota de entrega: «quítame la dirección del
+     * RIF, solo que salga el número de RIF». Vale para todos los papeles menos
+     * la factura, que por norma del SENIAT tiene que decir el domicilio fiscal
+     * de quien la emite.
+     */
+    conDomicilio?: boolean
   },
 ): number {
   const y = d.desde ?? ARRIBA
@@ -260,7 +269,7 @@ export function membrete(
   anotar(y + 10, identidadImpresa)
 
   let bajo = y + 10
-  if (d.empresa.domicilio) {
+  if (d.conDomicilio && d.empresa.domicilio) {
     doc.setFontSize(6.2)
     const lineas = (
       doc.splitTextToSize(d.empresa.domicilio.toUpperCase(), ANCHO_NOMBRE) as string[]
