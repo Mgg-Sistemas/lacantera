@@ -30,7 +30,6 @@ import {
   type RenglonGuardado,
 } from '@/lib/api/ventas'
 import {
-  AUTORIZAR_FACTURA,
   useAnularCobro,
   useAnularFactura,
   useCobros,
@@ -95,8 +94,14 @@ export function Facturacion() {
     mismo; cambia el botón y lo que pasa al pulsarlo.
   */
   // Mientras no se sabe, el botón espera: no se envía a autorizar por no haber cargado.
-  const { puede: casilla, resuelto: accionesListas } = useMisAcciones()
-  const emite = casilla(AUTORIZAR_FACTURA)
+  const { resuelto: accionesListas } = useMisAcciones()
+  /*
+    TODA FACTURA SE AUTORIZA. Angélica, 18/09/2026: «las ventas, las facturas,
+    las notas de entrega y las notas de salida llevan autorización: los usuarios
+    hacen su solicitud y luego otro usuario con permisos aprueba». Ya no hay
+    emisión directa, tampoco para quien tiene la casilla: la emite otro.
+  */
+  const emite = false
   const enviar = useEnviarNotasAAutorizar()
   const porAutorizar = useFacturasPorAutorizar()
   // Una nota que ya está en una factura por autorizar no entra en otra.
@@ -545,8 +550,8 @@ export function Facturacion() {
           {enviar.error ? <ErrorDeCarga error={enviar.error} className="mt-4" /> : null}
           {!emite ? (
             <p className="text-ink/55 mt-4 text-xs leading-relaxed">
-              Tu usuario prepara facturas pero no las emite: esta queda por autorizar, sin número de
-              control y sin tocar el patio, hasta que alguien con la casilla «Autorizar y emitir
+              Toda factura queda por autorizar, sin número de
+              control y sin tocar el patio, hasta que otro usuario con la casilla «Autorizar y emitir
               facturas» la emita o la rechace.
             </p>
           ) : null}

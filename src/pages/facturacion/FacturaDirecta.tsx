@@ -11,7 +11,6 @@ import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
 import { CONDICIONES_PAGO, useClientes, usePrecios } from '@/lib/api/ventas'
 import {
-  AUTORIZAR_FACTURA,
   useEnviarDirectaAAutorizar,
   useFacturarDirecto,
 } from '@/lib/api/facturacion'
@@ -64,8 +63,14 @@ export function ModalFacturaDirecta({
   const facturar = useFacturarDirecto()
   // Sin la casilla de emitir, la factura queda por autorizar (18/09/2026).
   // Mientras no se sabe, el botón espera: no se envía a autorizar por no haber cargado.
-  const { puede: casilla, resuelto: accionesListas } = useMisAcciones()
-  const emite = casilla(AUTORIZAR_FACTURA)
+  const { resuelto: accionesListas } = useMisAcciones()
+  /*
+    TODA FACTURA SE AUTORIZA. Angélica, 18/09/2026: «las ventas, las facturas,
+    las notas de entrega y las notas de salida llevan autorización: los usuarios
+    hacen su solicitud y luego otro usuario con permisos aprueba». Ya no hay
+    emisión directa, tampoco para quien tiene la casilla: la emite otro.
+  */
+  const emite = false
   const enviar = useEnviarDirectaAAutorizar()
   const ivaPorDefecto = useIvaPorDefecto()
   const alicuotaVigente = useAlicuotaIva()
@@ -306,8 +311,8 @@ export function ModalFacturaDirecta({
       {enviar.error ? <ErrorDeCarga error={enviar.error} className="mt-4" /> : null}
       {!emite ? (
         <p className="text-ink/55 mt-4 text-xs leading-relaxed">
-          Tu usuario prepara facturas pero no las emite: esta queda por autorizar, sin número de
-          control y sin tocar el patio, hasta que alguien con la casilla «Autorizar y emitir
+          Toda factura queda por autorizar, sin número de
+          control y sin tocar el patio, hasta que otro usuario con la casilla «Autorizar y emitir
           facturas» la emita o la rechace.
         </p>
       ) : null}
