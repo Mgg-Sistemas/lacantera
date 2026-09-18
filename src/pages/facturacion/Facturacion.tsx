@@ -18,7 +18,8 @@ import { CasillaIva } from '@/pages/ventas/CasillaIva'
 import { CasillaIgtf } from '@/pages/ventas/CasillaIgtf'
 import { IGTF_POR_DEFECTO, tributoElegido, useIvaPorDefecto } from '@/pages/ventas/ivaPorDefecto'
 import { ModalFacturaDirecta } from './FacturaDirecta'
-import { useMiPerfil } from '@/lib/api/usuarios'
+import { useMiPerfil, useMisAcciones } from '@/lib/api/usuarios'
+import { FacturasPorAutorizar } from './PorAutorizar'
 import { useCuentas } from '@/lib/api/tesoreria'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
@@ -29,10 +30,13 @@ import {
   type RenglonGuardado,
 } from '@/lib/api/ventas'
 import {
+  AUTORIZAR_FACTURA,
   useAnularCobro,
   useAnularFactura,
   useCobros,
+  useEnviarNotasAAutorizar,
   useFacturarNotas,
+  useFacturasPorAutorizar,
   useFacturas,
   useRegistrarCobro,
   type FacturaVenta,
@@ -85,6 +89,22 @@ export function Facturacion() {
   const { data: cuentas } = useCuentas()
 
   const facturar = useFacturarNotas()
+  /*
+    A quien le restringieron «Autorizar y emitir facturas» la factura no se
+    emite: se envía a autorizar (Christopher, 18/09/2026). El formulario es el
+    mismo; cambia el botón y lo que pasa al pulsarlo.
+  */
+  // Mientras no se sabe, el botón espera: no se envía a autorizar por no haber cargado.
+  const { puede: casilla, resuelto: accionesListas } = useMisAcciones()
+  const emite = casilla(AUTORIZAR_FACTURA)
+  const enviar = useEnviarNotasAAutorizar()
+  const porAutorizar = useFacturasPorAutorizar()
+  // Una nota que ya está en una factura por autorizar no entra en otra.
+  const enEspera = new Map<string, string>()
+  for (const s of porAutorizar.data ?? []) {
+    if (s.estado !== 'POR_AUTORIZAR' || s.origen !== 'NOTAS') continue
+    for (const numero of (s.notas ?? '').split(', ')) if (numero) enEspera.set(numero, s.numero)
+  }
   const anular = useAnularFactura()
   const cobrar = useRegistrarCobro()
   const anularCobro = useAnularCobro()
@@ -148,6 +168,8 @@ export function Facturacion() {
     setAlicuotaEscrita(null)
     setConIgtf(false)
     setIgtfEscrito(null)
+    facturar.reset()
+    enviar.reset()
   }
 
   // Solo se pueden juntar notas del mismo cliente y la misma moneda: una
@@ -249,6 +271,10 @@ export function Facturacion() {
         }
       />
 
+      {/* Lo que espera autorización va antes que lo emitido: es lo único aquí
+          que está esperando a alguien. */}
+      <FacturasPorAutorizar onEmitida={setDetalleId} />
+
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
@@ -338,7 +364,7 @@ export function Facturacion() {
           abierto
           ancho="lg"
           onCerrar={cerrarEmision}
-          titulo="Emitir factura"
+          titulo={emite ? 'Emitir factura' : 'Preparar factura'}
           descripcion="Marca las notas de entrega que van en esta factura. Tienen que ser del mismo cliente y la misma moneda."
           acciones={
             <>
@@ -348,23 +374,37 @@ export function Facturacion() {
               <Button
                 disabled={
                   facturar.isPending ||
+                  enviar.isPending ||
+                  !accionesListas ||
                   elegidas.length === 0 ||
                   alicuotaMala ||
                   igtfFactura.malo ||
                   sinTributo
                 }
                 onClick={async () => {
-                  await facturar.mutateAsync({
+                  const factura = {
                     notas: elegidas,
                     condicion_pago: condicion || null,
                     observacion: observacion || null,
                     alicuota_iva: alicuotaFactura,
                     alicuota_igtf: igtfFactura.vale,
-                  })
+                  }
+                  if (emite) await facturar.mutateAsync(factura)
+                  else
+                    await enviar.mutateAsync({
+                      ...factura,
+                      total_estimado: baseElegida + ivaElegido + igtfElegido,
+                    })
                   cerrarEmision()
                 }}
               >
-                {facturar.isPending ? 'Emitiendo…' : 'Emitir la factura'}
+                {emite
+                  ? facturar.isPending
+                    ? 'Emitiendo…'
+                    : 'Emitir la factura'
+                  : enviar.isPending
+                    ? 'Enviando…'
+                    : 'Enviar a autorizar'}
               </Button>
             </>
           }
@@ -379,7 +419,8 @@ export function Facturacion() {
             <div className="space-y-2">
               {notas.map((n) => {
                 const marcada = elegidas.includes(n.id)
-                const puede = compatible(n)
+                const esperando = enEspera.get(n.numero)
+                const puede = compatible(n) && !esperando
 
                 return (
                   <label
@@ -406,6 +447,7 @@ export function Facturacion() {
                       <p className="text-ink/50 text-xs">
                         {fecha(n.fecha)}
                         {n.vehiculo ? ` · ${n.vehiculo}` : ''} · {n.renglones} renglón(es)
+                        {esperando ? ` · por autorizar en ${esperando}` : ''}
                       </p>
                     </div>
                     <span className="tabular text-ink/80 shrink-0 text-sm font-medium">
@@ -500,6 +542,14 @@ export function Facturacion() {
           ) : null}
 
           {facturar.error ? <ErrorDeCarga error={facturar.error} className="mt-4" /> : null}
+          {enviar.error ? <ErrorDeCarga error={enviar.error} className="mt-4" /> : null}
+          {!emite ? (
+            <p className="text-ink/55 mt-4 text-xs leading-relaxed">
+              Tu usuario prepara facturas pero no las emite: esta queda por autorizar, sin número de
+              control y sin tocar el patio, hasta que alguien con la casilla «Autorizar y emitir
+              facturas» la emita o la rechace.
+            </p>
+          ) : null}
         </Modal>
       ) : null}
 

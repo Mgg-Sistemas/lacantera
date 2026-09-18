@@ -6772,6 +6772,17 @@ El pie dice: **La retención del IVA, cuando aplica, la declara y entera el comp
 
 > **Lo que esta factura todavía no puede expresar:** el **desglose por alícuota** —admite una sola, así que una factura con tarifa general y reducida no se puede emitir—. La **base imponible** y el **total exento** ya salen en los totales, y el renglón de la **imprenta autorizada** sale en cuanto sus datos están cargados en **Configuración › Datos de la empresa**. Lo que falta está en 21.6.
 
+#### Facturas por autorizar
+
+**Desde el 18 de septiembre de 2026 se puede dejar a alguien preparando facturas sin que pueda emitirlas.** Se hace con un permiso restringido (ver **Usuarios y roles**): a esa persona se le restringe la casilla **Autorizar y emitir facturas**, con el motivo y, si se quiere, una fecha de fin. Nadie más cambia: la casilla la trae por su nivel todo el que factura, así que sin restricción se sigue emitiendo como antes.
+
+- **Quien tiene la restricción** llena la factura igual que siempre, contra notas o sin nota, pero el botón dice **Enviar a autorizar**. La factura queda con un número **PRE-2026-0001** y **todavía no es una factura**: no gasta número de control, no descuenta el patio, no entra al libro de ventas y nadie debe nada por ella.
+- **Quien puede autorizar** la ve arriba de todo en **Facturación › Facturas**, en la tarjeta **Facturas por autorizar**, con el cliente, lo que suma y quién la preparó. **Autorizar y emitir** la emite en ese momento, **con la fecha y la tasa de ese día**; en bolívares el total puede no ser el que vio quien la preparó. **Rechazar** pide el motivo, que quien la preparó lee.
+- **Quien la preparó no la autoriza**, aunque tenga la casilla: si pudiera, no haría falta pedirlo. Sí puede **Retirarla** mientras espera.
+- **Una nota de entrega que está en una factura por autorizar no entra en otra.** En la lista de notas sale apagada, con el número de la factura que la espera.
+- Si al autorizar algo ya no cuadra —el patio no alcanza, el cliente pasó su límite de crédito—, **no se emite nada** y la factura sigue por autorizar, para rechazarla con el motivo.
+- Quien la preparó ve durante una semana qué pasó con ella: el número de la factura que salió, o por qué se rechazó.
+
 ### 21.3 Notas de crédito
 
 **Facturación › Notas de crédito.** Es el papel que corrige una factura que ya salió de la empresa. Solo lo emite quien tiene Facturación en control total.
