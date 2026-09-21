@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { cn } from '@/lib/cn'
 import { esRutaFueraDelMvp, moduloDeRuta } from '@/config/navigation'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useAyudaVisible } from '@/lib/ayuda'
 
 /*
   LA MITAD DE ABAJO DE UN TABLERO
@@ -59,6 +60,8 @@ export function QueHacer({
   titulo?: string
 }) {
   const { puede } = useMisPermisos()
+  // El paso a paso es ayuda: se va con el «(?)» de la cabecera, como los demás textos.
+  const ayudaVisible = useAyudaVisible()
 
   /*
     Se esconde lo que no se puede abrir y lo que hoy no se ofrece.
@@ -91,7 +94,7 @@ export function QueHacer({
     })
     .filter((g) => g.acciones.length > 0)
 
-  if (visibles.length === 0) return null
+  if (!ayudaVisible || visibles.length === 0) return null
 
   return (
     <section className="mt-8">
