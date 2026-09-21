@@ -1861,7 +1861,7 @@ Del módulo salen cuatro documentos, y **los cuatro llevan la misma cabecera que
 
 | Papel | De dónde sale |
 | --- | --- |
-| **Nota de salida** | Se arma sola al registrar una salida y se ve en el visor antes de imprimirla. Se vuelve a sacar desde **Movimientos**, con el botón **Nota** de esa línea |
+| **Nota de salida** | Se arma sola al registrar una salida y se ve en el visor antes de imprimirla. Se vuelve a sacar desde **Movimientos**, con el botón **Nota** de esa línea. Si salió hacia fuera, desde ese mismo visor puede dejar su **nota de entrega** de respaldo (10.10) |
 | **Acta de conteo físico** | Desde la cabecera de **Existencias**. Trae lo que el sistema dice que hay, para salir a contar contra el papel |
 | **Libro de movimientos** | Desde la cabecera de **Movimientos**, con el botón **Imprimir el libro**: saca en PDF lo que se está viendo, con los filtros puestos |
 | **Constancia de entrega** | Desde **Asignaciones**. Es el papel que firma quien recibe (18.2) |
@@ -3556,6 +3556,32 @@ El pie es lo más importante del papel: **ESTE DOCUMENTO NO ES UNA FACTURA. Ampa
 **Se mudó a Facturación.** Está en el capítulo 21 (21.5).
 
 ### 10.10 Lo que conviene entender
+
+#### La nota de entrega que deja una nota de salida
+
+No toda nota de entrega nace de un despacho. Hay material que sale del almacén con una **nota de salida** hacia alguien de fuera —una ferretería, un contratista, un particular— y que conviene dejar respaldado también del lado de facturación. Para eso, en el visor donde se imprime la nota de salida aparece, en negrita, la casilla **Generar nota de entrega**.
+
+**No todas las salidas la llevan**, y por eso es una casilla y no algo automático: se marca solo cuando hace falta.
+
+Al marcarla se abre un cuadro con tres cosas, y ninguna es obligatoria:
+
+| Campo | Detalle |
+| --- | --- |
+| **Cliente** | Si el destino escrito en la salida coincide con un cliente del sistema, ya viene puesto. Si no, se elige otro, se crea en **Ventas › Clientes**, o se deja sin cliente |
+| **Precios** | Vienen vacíos, porque la nota de salida no tiene precios. Se teclean ahí mismo o se dejan para después |
+| **Se podrá facturar** | Marcada, la nota podrá cobrarse más adelante. Desmarcada, queda **solo de respaldo** y nunca aparece en Facturación para cobrarla |
+
+**Si le falta el cliente o algún precio, la nota nace pendiente.** Se ve en **Facturación › Notas de entrega** con la etiqueta **Pendiente por completar**, se puede imprimir —sale con el sello **PENDIENTE**— y no se puede facturar hasta que alguien con acceso a Facturación la abra y pulse **Completar**.
+
+<p class="regla"><strong>El material no se descuenta dos veces.</strong> La salida ya lo rebajó del almacén; esta nota de entrega solo documenta ese mismo movimiento. Por eso <strong>anularla no devuelve nada al almacén</strong>: si hay que devolver el material, lo que se deshace es la salida.</p>
+
+**Al cliente se le entrega solo la nota de salida.** La de entrega es para el archivo, y las dos se imprimen cuando haga falta: la de salida desde **Salidas** o **Movimientos**, y desde ese mismo visor —donde antes estaba la casilla— ahora dice **Dejó la nota de entrega NE-2026-0016** con un botón **Verla**. También está en **Facturación › Notas de entrega**, donde dice de qué salida viene.
+
+**Una salida deja una sola nota de entrega.** Si se anula, se puede generar otra.
+
+**Quién puede marcar la casilla.** Nadie por su rol ni por su nivel: es la casilla **Generar la nota de entrega de una salida**, del módulo Salidas, y solo se tiene si el administrador la presta desde **Configuración › Usuarios › Permisos extendidos** (13.1). Quien no la tiene imprime su nota de salida como siempre y no ve la casilla.
+
+**No aparece** en las salidas hacia un área de la empresa —ahí no hay cliente a quien entregarle nada— ni en las que pagaron una compra con material, que son una compra y no una entrega.
 
 #### La nota de entrega y la factura no son el mismo papel
 

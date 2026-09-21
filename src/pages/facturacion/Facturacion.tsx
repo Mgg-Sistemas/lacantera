@@ -159,7 +159,8 @@ export function Facturacion() {
   const renglonesDetalle = useRenglones('factura_venta_renglones', 'factura_id', detalleId)
   const cobros = useCobros(detalleId)
 
-  const notas = porFacturar.data ?? []
+  // La que se dejó como solo respaldo de una nota de salida no se cobra: no se ofrece.
+  const notas = (porFacturar.data ?? []).filter((n) => n.facturable !== false)
 
   // Cerrar el checklist lo deja vacío, sin importar por cuál de los dos botones
   // se abrió. Limpiar solo en el que abre deja la selección puesta cuando se

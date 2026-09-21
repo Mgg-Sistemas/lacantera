@@ -260,6 +260,8 @@ export interface RenglonVenta {
   motivo_condicion?: string | null
   /** Solo en el despacho: el patio de este renglón, si no es el de la nota. */
   almacen_id?: number | null
+  /** Nació de una nota de salida, sin precio, y todavía lo espera. */
+  precio_pendiente?: boolean
 }
 
 /**
@@ -420,9 +422,10 @@ export function useCerrarCotizacion() {
 export interface NotaEntrega {
   id: number
   numero: string
-  cliente_id: number
-  cliente: string
-  cliente_rif: string
+  /** Nulo solo en la que nació de una salida y todavía no tiene cliente. */
+  cliente_id: number | null
+  cliente: string | null
+  cliente_rif: string | null
   cotizacion_id: number | null
   almacen_id: number
   almacen: string
@@ -453,6 +456,13 @@ export interface NotaEntrega {
   despachada_en: string
   motivo_anulacion: string | null
   renglones: number
+  /** El NS del que nació, cuando una nota de salida dejó su nota de entrega. */
+  nota_salida: string | null
+  solicitud_salida_id: number | null
+  /** Falso: es solo respaldo y no entra nunca a una factura. */
+  facturable: boolean
+  /** Renglones que nacieron sin precio y todavía lo esperan. */
+  precios_pendientes: number
 }
 
 export function useNotasEntrega(estado?: string) {

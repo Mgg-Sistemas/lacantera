@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { fechaHora } from '@/lib/formato'
 import type { OrdenEnPapel } from '@/lib/ficha/notaDeSalidaPdf'
 import { desenvolver, rpc } from './rpc'
+import type { NotaEntrega } from './ventas'
 
 /*
   LAS SOLICITUDES DE SALIDA
@@ -339,4 +340,127 @@ export function quePuedoHacerConLaSolicitud(
       (s.pedida_por === yo.yo || respondoPorElAlmacen),
     entregar: s.estado === 'APROBADA' && puedoEntregar,
   }
+}
+
+// ---------------------------------------------------------------------------
+// LA NOTA DE ENTREGA QUE DEJA UNA SALIDA
+//
+// Christopher, 21/09/2026: al imprimir una nota de salida hacia fuera se puede
+// marcar que deje además su nota de entrega. Al cliente se le entrega solo la de
+// salida; la de entrega queda de respaldo y se imprime cuando haga falta.
+//
+// La casilla no la da ningún nivel ni ningún rol: «que sea un permiso
+// extendido». Se presta persona por persona en Configuración › Usuarios.
+//
+// No mueve inventario: documenta los mismos asientos que ya escribió la salida.
+// ---------------------------------------------------------------------------
+
+export const GENERAR_NOTA_ENTREGA = 'SALIDAS.GENERAR_NOTA_ENTREGA'
+
+/** Un asiento de la salida que sigue en pie: lo que será un renglón de la nota. */
+export interface AsientoDeLaSalida {
+  id: number
+  articulo_id: number
+  articulo: string
+  cantidad: string
+  unidad: string
+}
+
+export async function leerAsientosDeLaSalida(numero: string): Promise<AsientoDeLaSalida[]> {
+  const asientos = desenvolver<
+    { id: number; articulo_id: number; cantidad: string; unidad: string; articulo: { nombre: string } | null }[]
+  >(
+    await supabase
+      .from('inventario_movimientos')
+      // Con «*» el cliente no intenta adivinar la forma del enlace a artículos.
+      .select('*, articulo:articulos(nombre)')
+      .eq('nota_salida', numero)
+      .eq('signo', -1)
+      .neq('tipo', 'REVERSO')
+      .order('id'),
+  )
+  if (asientos.length === 0) return []
+
+  // Lo que se deshizo después no se respalda: la base tampoco lo cuenta.
+  const deshechos = desenvolver<{ movimiento_origen: number | null }[]>(
+    await supabase
+      .from('inventario_movimientos')
+      .select('movimiento_origen')
+      .eq('tipo', 'REVERSO')
+      .in(
+        'movimiento_origen',
+        asientos.map((a) => a.id),
+      ),
+  )
+  const fuera = new Set(deshechos.map((d) => d.movimiento_origen))
+
+  return asientos
+    .filter((a) => !fuera.has(a.id))
+    .map((a) => ({
+      id: a.id,
+      articulo_id: a.articulo_id,
+      articulo: a.articulo?.nombre ?? '—',
+      cantidad: a.cantidad,
+      unidad: a.unidad,
+    }))
+}
+
+/** La nota de entrega viva que dejó esa salida, si dejó alguna. */
+export async function leerNotaDeEntregaDeLaSalida(numero: string): Promise<NotaEntrega | null> {
+  const filas = desenvolver<NotaEntrega[]>(
+    await supabase
+      .from('v_notas_entrega')
+      .select('*')
+      .eq('nota_salida', numero)
+      .neq('estado', 'ANULADA')
+      .limit(1),
+  )
+  return filas[0] ?? null
+}
+
+/** El cliente al que se parece el destino escrito a mano, si es uno y solo uno. */
+export const clienteQueSeParece = (nombre: string) =>
+  rpc<number | null>('cliente_que_se_parece', { p_nombre: nombre })
+
+export function useGenerarNotaDeEntrega() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: {
+      nota_salida: string
+      cliente_id: number | null
+      precios: { movimiento_id: number; precio: number }[]
+      facturable: boolean
+    }) =>
+      rpc<number>('generar_nota_de_entrega', {
+        p_nota_salida: v.nota_salida,
+        p_cliente_id: v.cliente_id,
+        p_precios: v.precios,
+        p_facturable: v.facturable,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['ventas', 'notas'] })
+    },
+  })
+}
+
+export function useCompletarNotaDeEntrega() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: {
+      id: number
+      cliente_id: number | null
+      precios: { renglon_id: number; precio: number }[]
+      facturable: boolean
+    }) =>
+      rpc<'PENDIENTE' | 'DESPACHADA'>('completar_nota_de_entrega', {
+        p_id: v.id,
+        p_cliente_id: v.cliente_id,
+        p_precios: v.precios,
+        p_moneda: null,
+        p_facturable: v.facturable,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['ventas'] })
+    },
+  })
 }

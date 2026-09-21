@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Visor } from '@/components/Visor'
@@ -15,7 +15,23 @@ import {
 } from '@/lib/api/inventario'
 import { densidadesDeArticulos, leerPerfiles } from '@/lib/api/catalogo'
 import { leerFirmasEncendidas } from '@/lib/api/firmas'
-import { leerOrdenDeLaNota, ordenEnPapel, type SolicitudDeSalida } from '@/lib/api/salidas'
+import {
+  GENERAR_NOTA_ENTREGA,
+  leerAsientosDeLaSalida,
+  leerNotaDeEntregaDeLaSalida,
+  leerOrdenDeLaNota,
+  ordenEnPapel,
+  useGenerarNotaDeEntrega,
+  type AsientoDeLaSalida,
+  type SolicitudDeSalida,
+} from '@/lib/api/salidas'
+import { useMiPerfil, useMisAcciones } from '@/lib/api/usuarios'
+import { supabase } from '@/lib/supabase'
+import { desenvolver } from '@/lib/api/rpc'
+import type { Cliente, NotaEntrega, RenglonGuardado } from '@/lib/api/ventas'
+import { armarNotaDeEntrega } from '@/lib/ficha/notaDeEntregaPapel'
+import { Chip } from '@/components/ui/Chip'
+import { ModalNotaDeEntrega } from './ModalNotaDeEntrega'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { DatosNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
@@ -99,6 +115,60 @@ export function useNotaDeSalida(): {
   const [fallo, setFallo] = useState<string | null>(null)
   const [armando, setArmando] = useState<number | null>(null)
 
+  /*
+    LA NOTA DE ENTREGA QUE PUEDE DEJAR ESTA SALIDA.
+
+    Christopher, 21/09/2026: «esto debe aparecer al momento de imprimir la nota
+    de salida, debe colocarse en negrita. Esto es porque no todas las notas de
+    salida generarán una nota de entrega». Por eso vive aquí, en el visor, y no
+    en el formulario de la salida: se decide con el papel delante.
+
+    Solo para lo que salió hacia FUERA —a un área de la empresa no hay a quién
+    entregarle nada— y solo para quien tenga la casilla, que se presta desde
+    Permisos extendidos. Si la salida ya dejó su nota, en vez de preguntar otra
+    vez se ofrece verla: las dos se imprimen en cualquier momento.
+  */
+  const { data: yo } = useMiPerfil()
+  const { puede: casillaDe } = useMisAcciones()
+  const generar = useGenerarNotaDeEntrega()
+  const [haciaFuera, setHaciaFuera] = useState<{ numero: string; destino: string } | null>(null)
+  const [deEntrega, setDeEntrega] = useState<NotaEntrega | null>(null)
+  const [asientos, setAsientos] = useState<AsientoDeLaSalida[] | null>(null)
+  const [papelDeEntrega, setPapelDeEntrega] = useState<ArchivoArmado | null>(null)
+  const [armandoEntrega, setArmandoEntrega] = useState(false)
+  /*
+    Leer los asientos tarda, y la casilla se puede desmarcar antes de que
+    lleguen. Sin este turno, la respuesta vieja volvería a marcarla sola y
+    abriría el cuadro que la persona acababa de descartar.
+  */
+  const turnoDeAsientos = useRef(0)
+
+  const verLaDeEntrega = async (n: NotaEntrega) => {
+    setArmandoEntrega(true)
+    try {
+      const [renglones, clientes] = await Promise.all([
+        supabase.from('nota_entrega_renglones').select('*').eq('nota_id', n.id).order('linea'),
+        supabase.from('v_clientes').select('*').eq('id', n.cliente_id ?? -1).limit(1),
+      ])
+      setPapelDeEntrega(
+        await armarNotaDeEntrega({
+          nota: n,
+          renglones: desenvolver<RenglonGuardado[]>(renglones),
+          cliente: desenvolver<Cliente[]>(clientes)[0] ?? null,
+          empresa,
+          emitidoPor: yo?.nombre ?? '',
+        }),
+      )
+    } catch (e) {
+      setFallo(
+        `La nota ${n.numero} existe, pero no se pudo armar su papel. Búscala en Facturación › Notas de entrega.`,
+      )
+      console.error(e)
+    } finally {
+      setArmandoEntrega(false)
+    }
+  }
+
   const abrir = async (numero: string, motivo: string) => {
     try {
       /*
@@ -114,6 +184,12 @@ export function useNotaDeSalida(): {
         nombresYFirmas(),
       ])
       if (lineas.length === 0) return
+
+      // Si salió hacia fuera, se mira si ya dejó su nota de entrega. Que esto
+      // falle no debe impedir imprimir la de salida.
+      const destino = cabecera.para.destino_externo
+      setHaciaFuera(destino ? { numero, destino } : null)
+      setDeEntrega(destino ? await leerNotaDeEntregaDeLaSalida(numero).catch(() => null) : null)
 
       // La otra medida, solo en lo que tiene densidad: ver `lib/medidas.ts`.
       const densidades = await densidadesDeArticulos({
@@ -266,8 +342,17 @@ export function useNotaDeSalida(): {
       <Visor
         abierto={nota !== null}
         onCerrar={() => {
+          /*
+            Escape lo oyen todas las ventanas abiertas a la vez. Con el cuadro de
+            la nota de entrega —o su papel— encima, esa tecla es para lo de
+            encima: esta se queda como estaba.
+          */
+          if (asientos !== null || papelDeEntrega !== null) return
+          turnoDeAsientos.current++
           setNota(null)
           setDatos(null)
+          setHaciaFuera(null)
+          setDeEntrega(null)
         }}
         blob={nota?.blob ?? null}
         nombreArchivo={nota?.nombre ?? 'nota-salida.pdf'}
@@ -301,6 +386,88 @@ export function useNotaDeSalida(): {
               }
             : undefined
         }
+        extra={
+          datos?.tipo === 'NOTA' && haciaFuera ? (
+            deEntrega ? (
+              <span className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-ink/85 font-bold">
+                  Dejó la nota de entrega {deEntrega.numero}
+                </span>
+                {deEntrega.estado === 'PENDIENTE' ? <Chip tone="warning">Pendiente</Chip> : null}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={armandoEntrega}
+                  onClick={() => void verLaDeEntrega(deEntrega)}
+                >
+                  {armandoEntrega ? 'Armando…' : 'Verla'}
+                </Button>
+              </span>
+            ) : casillaDe(GENERAR_NOTA_ENTREGA) ? (
+              <label className="text-ink/90 flex cursor-pointer items-center gap-2 text-sm font-bold">
+                <input
+                  type="checkbox"
+                  className="accent-royal-600 size-4 shrink-0"
+                  checked={asientos !== null}
+                  onChange={(e) => {
+                    const turno = ++turnoDeAsientos.current
+                    if (!e.target.checked) return setAsientos(null)
+                    generar.reset()
+                    void leerAsientosDeLaSalida(haciaFuera.numero)
+                      .then((leidos) => {
+                        if (turnoDeAsientos.current === turno) setAsientos(leidos)
+                      })
+                      .catch(() => {
+                        if (turnoDeAsientos.current === turno)
+                          setFallo('No se pudo leer lo que sacó esa salida. Vuelve a intentarlo.')
+                      })
+                  }}
+                />
+                Generar nota de entrega
+              </label>
+            ) : null
+          ) : null
+        }
+      />
+
+      {asientos !== null && haciaFuera ? (
+        <ModalNotaDeEntrega
+          modo="generar"
+          titulo={`Nota de entrega de ${haciaFuera.numero}`}
+          destino={haciaFuera.destino}
+          lineas={asientos}
+          guardando={generar.isPending}
+          error={generar.error}
+          onCerrar={() => {
+            turnoDeAsientos.current++
+            setAsientos(null)
+          }}
+          onGuardar={(resp) =>
+            void generar
+              .mutateAsync({
+                nota_salida: haciaFuera.numero,
+                cliente_id: resp.cliente_id,
+                precios: resp.precios.map((x) => ({ movimiento_id: x.id, precio: x.precio })),
+                facturable: resp.facturable,
+              })
+              .then(async () => {
+                setAsientos(null)
+                const hecha = await leerNotaDeEntregaDeLaSalida(haciaFuera.numero)
+                setDeEntrega(hecha)
+                if (hecha) await verLaDeEntrega(hecha)
+              })
+              .catch(() => {})
+          }
+        />
+      ) : null}
+
+      <Visor
+        abierto={papelDeEntrega !== null}
+        onCerrar={() => setPapelDeEntrega(null)}
+        blob={papelDeEntrega?.blob ?? null}
+        nombreArchivo={papelDeEntrega?.nombre ?? 'nota-entrega.pdf'}
+        titulo="Nota de entrega"
+        descripcion="Es el respaldo para el archivo. Al cliente se le entrega la nota de salida."
       />
 
       {fallo ? (
