@@ -181,6 +181,9 @@ const Cuentas = pagina(() =>
 const MovimientosTesoreria = pagina(() =>
   import('@/pages/tesoreria/Movimientos').then((m) => ({ default: m.MovimientosTesoreria })),
 )
+const ReportesTesoreria = pagina(() =>
+  import('@/pages/tesoreria/Reportes').then((m) => ({ default: m.ReportesTesoreria })),
+)
 const Pagos = pagina(() => import('@/pages/tesoreria/Pagos').then((m) => ({ default: m.Pagos })))
 const PorPagar = pagina(() =>
   import('@/pages/tesoreria/PorPagar').then((m) => ({ default: m.PorPagar })),
@@ -351,6 +354,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/nomina/conceptos': <ConceptosDeNomina />,
   '/app/tesoreria': <TableroTesoreria />,
   '/app/tesoreria/cuentas': <Cuentas />,
+  '/app/tesoreria/reportes': <ReportesTesoreria />,
   '/app/tesoreria/pagos': <Pagos />,
   '/app/tesoreria/por-pagar': <PorPagar />,
   '/app/tesoreria/movimientos': <MovimientosTesoreria />,
