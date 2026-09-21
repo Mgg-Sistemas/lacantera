@@ -167,6 +167,8 @@ function PestanaDia() {
   const [dia, setDia] = useState(hoyEnCaracas())
   const [detalle, setDetalle] = useState<Equipo | null>(null)
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
+  const [conDescartados, setConDescartados] = useState(false)
+  const [rehaciendo, setRehaciendo] = useState(false)
   const [reporte, setReporte] = useState(false)
 
   const vehiculos = useVehiculos(true)
@@ -225,7 +227,7 @@ function PestanaDia() {
 
   /* El papel se arma de los viajes sueltos, no de la vista agrupada: la
      planilla imprime viaje por viaje, con su número y su hora. */
-  const imprimir = async () => {
+  const imprimir = async (conDescartados = false) => {
     const viajes = todos.data ?? []
     const placas = [...new Set(viajes.map((v) => v.placa ?? '—'))]
     // Leídas al armar: con la consulta en camino, el papel saldría sin las
@@ -240,7 +242,14 @@ function PestanaDia() {
       await armarRegistroDeViajes({
         dia,
         empresa: null,
-        firmas: quienesFirmanElDia(viajes, guardadas.porPerfil),
+        // Quien solo cargó viajes que luego se descartaron no firma un papel
+        // que no los lista.
+        firmas: quienesFirmanElDia(
+          conDescartados
+            ? viajes
+            : viajes.filter((v) => v.estado !== 'ANULADO' && v.estado !== 'RECHAZADO'),
+          guardadas.porPerfil,
+        ),
         camiones: placas.map((placa) => {
           const suyos = viajes.filter((v) => (v.placa ?? '—') === placa)
           return {
@@ -259,12 +268,21 @@ function PestanaDia() {
             })),
           }
         }),
+        conDescartados,
         empresa_papel: empresaDelPapel(laEmpresa),
         emitidoPor: yo ?? '',
         momento: new Date(),
       }),
     )
   }
+
+  /*
+    Lo anulado y lo rechazado no va en el papel salvo que se pida. La casilla
+    solo aparece si ese día hubo alguno: sin ninguno, no hay nada que decidir.
+  */
+  const hayDescartados = (todos.data ?? []).some(
+    (v) => v.estado === 'ANULADO' || v.estado === 'RECHAZADO',
+  )
 
   const tabla = (equipos: Equipo[]) => (
     <Card flush>
@@ -463,6 +481,29 @@ function PestanaDia() {
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ''}
         titulo="Registro diario de viajes"
+        descripcion={
+          hayDescartados && !conDescartados
+            ? 'No lista los viajes anulados ni los rechazados: nunca sumaron. Siguen en la pantalla.'
+            : undefined
+        }
+        casilla={
+          hayDescartados
+            ? {
+                etiqueta: 'Incluir anulados y rechazados',
+                marcada: conDescartados,
+                rehaciendo,
+                onCambiar: async (marcada: boolean) => {
+                  setConDescartados(marcada)
+                  setRehaciendo(true)
+                  try {
+                    await imprimir(marcada)
+                  } finally {
+                    setRehaciendo(false)
+                  }
+                },
+              }
+            : undefined
+        }
       />
     </>
   )
