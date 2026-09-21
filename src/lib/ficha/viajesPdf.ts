@@ -116,6 +116,17 @@ export interface DatosRegistroDiario {
   /** Cuando se filtró por una empresa, su nombre. Nulo si salen todas. */
   empresa: string | null
   camiones: CamionDelPapel[]
+  /**
+   * Listar también los viajes anulados y los rechazados.
+   *
+   * Por defecto NO salen. Christopher, 21/09/2026: el 17 y el 18 se cargaron
+   * viajes con la fecha mal y hubo que anularlos y rechazarlos; el papel que
+   * iba a administración los listaba mezclados con los buenos y «se confunde».
+   * Nunca sumaron —ni viajes, ni m³, ni dinero—, así que quitarlos de la lista
+   * no cambia ninguna cifra. Siguen en la pantalla y en la base: no se borra
+   * nada, y esta casilla los devuelve al papel cuando haga falta revisarlos.
+   */
+  conDescartados?: boolean
   /** Quién va en «Registrado por» y en «Aprobado por». */
   firmas?: FirmasDelDia | null
   empresa_papel: EmpresaPapel
@@ -143,18 +154,33 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
   const logo = await logoComoImagen()
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  // Cuentan lo aprobado y lo anterior a la aprobación. Lo que espera, lo
-  // rechazado y lo anulado sale en su renglón, pero no suma.
+  /*
+    Lo descartado no sale, salvo que se pida. Un camión al que solo le queden
+    viajes descartados tampoco: no hizo ningún viaje que contar. Y al quitarlos
+    se renumera, para que el papel no salte del 11 al 35 sin explicación.
+  */
+  const descartado = (v: { estado: string }) => v.estado === 'ANULADO' || v.estado === 'RECHAZADO'
+  const camiones: CamionDelPapel[] = d.conDescartados
+    ? d.camiones
+    : d.camiones
+        .map((c) => ({
+          ...c,
+          viajes: c.viajes.filter((v) => !descartado(v)).map((v, i) => ({ ...v, secuencia: i + 1 })),
+        }))
+        .filter((c) => c.viajes.length > 0)
+
+  // Cuentan lo aprobado y lo anterior a la aprobación. Lo que espera sale en
+  // su renglón, pero no suma.
   const vivos = (c: CamionDelPapel) =>
     c.viajes.filter((v) => v.estado === 'REGISTRADO' || v.estado === 'APROBADO')
 
-  const totalViajes = d.camiones.reduce((s, c) => s + vivos(c).length, 0)
-  const conCarga = d.camiones.flatMap((c) => vivos(c)).filter((v) => v.carga_m3 !== null)
+  const totalViajes = camiones.reduce((s, c) => s + vivos(c).length, 0)
+  const conCarga = camiones.flatMap((c) => vivos(c)).filter((v) => v.carga_m3 !== null)
   const sinCarga = totalViajes - conCarga.length
   const totalM3 = conCarga.reduce((s, v) => s + Number(v.carga_m3), 0)
 
-  const hayDinero = d.camiones.some((c) => vivos(c).some((v) => v.precio_usd !== null))
-  const totalUsd = d.camiones
+  const hayDinero = camiones.some((c) => vivos(c).some((v) => v.precio_usd !== null))
+  const totalUsd = camiones
     .flatMap((c) => vivos(c))
     .reduce((s, v) => s + Number(v.precio_usd ?? 0), 0)
 
@@ -190,7 +216,7 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
   y = seccion(doc, y, 'Resumen del día')
   y = etiquetaValor(doc, y, [
     ['Empresa', d.empresa ?? 'Todas'],
-    ['Camiones', String(d.camiones.length)],
+    ['Camiones', String(camiones.length)],
     ['Viajes', cantidad(totalViajes)],
     ['Metros cúbicos', sinCarga > 0 ? `${cantidad(totalM3)} (parcial)` : cantidad(totalM3)],
     ...(hayDinero ? ([['Total a pagar', `$ ${numero(totalUsd)}`]] as Array<[string, string]>) : []),
@@ -210,7 +236,7 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
   const huecoDeFirmas = f ? (f.registro.imagen || f.aprobacion.imagen ? 18 : 8) : 0
   const altoDeFirmas = f ? huecoDeFirmas + 14 : 0
 
-  for (const [i, camion] of d.camiones.entries()) {
+  for (const [i, camion] of camiones.entries()) {
     // Un bloque no se parte dejando el rótulo solo al final de la hoja: si no
     // caben el título y tres renglones, se empieza en la siguiente.
     const hueco = 4.5 + 6.5 + Math.min(camion.viajes.length, 3) * 8.8 + 8
@@ -222,7 +248,7 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
       parte ocupa más—; si falla, las firmas saltan de hoja igual, abajo.
     */
     const todoElBloque = 4.5 + 6.5 + camion.viajes.length * 8.8 + 8
-    const esElUltimo = i === d.camiones.length - 1
+    const esElUltimo = i === camiones.length - 1
     if (
       y + hueco > ABAJO - 30 ||
       (esElUltimo &&
@@ -255,7 +281,8 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
       COLUMNAS_VIAJE,
       camion.viajes.map((v) => [
         String(v.secuencia),
-        v.tramo_dice,
+        // La flecha de la pantalla no existe en la letra del PDF: salía «!'».
+        v.tramo_dice.replace(/\s*(→|->)\s*/g, ' a '),
         v.hora?.slice(0, 5) ?? '—',
         oNada(v.carga_m3),
         oNada(v.precio_usd, true),
