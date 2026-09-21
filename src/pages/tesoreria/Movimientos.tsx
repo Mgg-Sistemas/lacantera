@@ -76,7 +76,7 @@ export function MovimientosTesoreria() {
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
 
-  // El módulo está en obra: hasta que vuelva al riel solo lo abre administración.
+  // Tesorería volvió al riel el 21/09/2026: manda el nivel que se le dé a cada rol.
   const puedeReversar = puede('TESORERIA', 'ESCRITURA')
 
   return (
