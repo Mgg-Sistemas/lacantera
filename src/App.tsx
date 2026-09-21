@@ -256,6 +256,9 @@ const SalidasDePlanta = pagina(() =>
 const PlantasYRutas = pagina(() =>
   import('@/pages/explotacion/Plantas').then((m) => ({ default: m.Plantas })),
 )
+const ControlDespacho = pagina(() =>
+  import('@/pages/controlDespacho/ControlDespacho').then((m) => ({ default: m.ControlDespacho })),
+)
 const CentroDeCosto = pagina(() =>
   import('@/pages/costos/CentroDeCosto').then((m) => ({ default: m.CentroDeCosto })),
 )
@@ -304,6 +307,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/explotacion/plantas': <PlantasYRutas />,
   '/app/explotacion/salidas': <SalidasDePlanta />,
   '/app/costos': <CentroDeCosto />,
+  '/app/control-despacho': <ControlDespacho />,
   '/app/despachos': <TableroDespachos />,
   '/app/despachos/tickets': <Tickets />,
   '/app/despachos/guias': <Guias />,
