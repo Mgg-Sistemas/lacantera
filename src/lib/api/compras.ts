@@ -208,6 +208,9 @@ export interface RenglonOrden {
   exento_iva: boolean
   subtotal: string
   cantidad_recibida: string
+  /** La marca y la forma en que viene, cuando la cotización las dijo. */
+  marca?: string | null
+  presentacion?: string | null
   /** Por qué este renglón está como está. Lo escribe corregir el precio. */
   motivo?: string | null
 }
@@ -729,6 +732,62 @@ export function useEditarCompraDirecta() {
         p_alicuota_iva: c.alicuota_iva ?? 16,
         p_descuento: c.descuento ?? 0,
         p_flete: c.flete ?? 0,
+        p_observacion: c.observacion || null,
+      }),
+  )
+}
+
+/** Lo que devuelve editar una orden: si tuvo que volver a la gerencia y por cuánto. */
+export interface OrdenEditada {
+  orden_id: number
+  solicitud_id: number
+  vuelve_a_gerencia: boolean
+  total_usd_antes: string
+  total_usd_despues: string
+}
+
+/**
+ * Editar una orden de compra entera: proveedor, renglones, cantidades, precios.
+ *
+ * Angélica, 21/09/2026: se edita aunque la gerencia ya la haya aprobado. Lo que
+ * no se edita es lo que ya entró al almacén o ya tiene pagos indicados: eso se
+ * anula. Y si la edición la encarece en más de 100 $, la orden se cancela y el
+ * pedido vuelve a la gerencia, que aprueba de nuevo y emite otra orden.
+ *
+ * El inventario se sincroniza solo: la recepción lee los renglones de la orden,
+ * así que corregirlos antes de que llegue el material es lo que hace que el
+ * almacén reciba lo corregido.
+ */
+export function useEditarOrdenDeCompra() {
+  return useAccion(
+    (c: {
+      orden_id: number
+      proveedor_id: number
+      moneda: string
+      renglones: RenglonComprado[]
+      motivo: string
+      titulo?: string | null
+      justificacion?: string | null
+      numero_factura?: string | null
+      condicion_pago?: string | null
+      alicuota_iva?: number | null
+      descuento?: number | null
+      flete?: number | null
+      observacion?: string | null
+    }) =>
+      rpc<OrdenEditada>('editar_orden_de_compra', {
+        p_orden_id: c.orden_id,
+        p_proveedor_id: c.proveedor_id,
+        p_moneda: c.moneda,
+        p_renglones: c.renglones,
+        p_motivo: c.motivo,
+        p_titulo: c.titulo || null,
+        p_justificacion: c.justificacion || null,
+        p_numero_factura: c.numero_factura || null,
+        p_condicion_pago: c.condicion_pago || null,
+        p_alicuota_iva: c.alicuota_iva ?? null,
+        p_descuento: c.descuento ?? null,
+        p_flete: c.flete ?? null,
         p_observacion: c.observacion || null,
       }),
   )
