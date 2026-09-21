@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
-import { FileSpreadsheet, Search, Settings2, TriangleAlert } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router'
+import { Download, FileSpreadsheet, FileText, Search, Settings2, TriangleAlert, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,10 +11,13 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Modal } from '@/components/ui/Modal'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { useMisPermisos } from '@/lib/api/usuarios'
+import { Visor } from '@/components/Visor'
+import { useMiPerfil, useMisPermisos } from '@/lib/api/usuarios'
+import { useEmpresa } from '@/lib/api/empresa'
 import { useClientes } from '@/lib/api/ventas'
 import {
   ROTULO_DEL_DOCUMENTO,
+  useCargarControlDeDespacho,
   useColumnaLibre,
   useControlDeDespacho,
   useEstadosDeControl,
@@ -21,8 +25,14 @@ import {
   useGuardarEstadoDeControl,
   useGuardarFilaDeControl,
   useVincularClienteDeDestino,
+  type EstadoDeControl,
   type FilaDeControl,
 } from '@/lib/api/controlDespacho'
+import { armarControlDeDespacho } from '@/lib/ficha/controlDespachoPdf'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
+import { bajarArchivo, escribirXlsx, leerHoja } from '@/lib/xlsx'
+import { moduloDeRuta } from '@/config/navigation'
+import { hojaDeLaPlanilla, interpretarCarga, plantillaDeCarga, type CargaInterpretada } from './hojas'
 import { fecha as fmtFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -42,7 +52,22 @@ import { cn } from '@/lib/cn'
   NADA DE AQUÍ ESCRIBE EN OTRO MÓDULO. Ni siquiera al decir a qué cliente
   corresponde un nombre escrito a mano: eso se apunta en una tabla de este
   módulo, y la ficha del cliente no se entera.
+
+  EL NÚMERO DE LA NOTA ES UN ENLACE a su pantalla, para quien tiene permiso de
+  entrar en ella; para quien no, es solo el número. Tocar el resto de la fila
+  sigue abriendo lo que se escribe a mano.
+
+  LO QUE SE MARCA ES LO QUE SALE. El Excel, el PDF y la plantilla de carga
+  llevan las filas marcadas; sin ninguna marcada, llevan todo lo que se ve.
 */
+
+/** Dónde vive cada nota. Lo que no tiene documento detrás no lleva a ningún lado. */
+const rutaDeLaNota = (f: FilaDeControl): string | null =>
+  f.estado_doc === 'SIN_DOCUMENTO'
+    ? null
+    : f.origen === 'NOTA_ENTREGA'
+      ? `/app/facturacion/notas-entrega?nota=${encodeURIComponent(f.documento)}`
+      : `/app/salidas?nota=${encodeURIComponent(f.documento)}`
 
 const hoyEnCaracas = () =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(new Date())
@@ -60,11 +85,18 @@ export function ControlDespacho() {
   const [soloDespachado, setSoloDespachado] = useState(false)
   const [editando, setEditando] = useState<FilaDeControl | null>(null)
   const [ajustes, setAjustes] = useState(false)
+  const [cargando, setCargando] = useState(false)
+  const [marcadas, setMarcadas] = useState<ReadonlySet<string>>(new Set())
+  const [papel, setPapel] = useState<ArchivoArmado | null>(null)
+  const [armando, setArmando] = useState(false)
+  const [falloPapel, setFalloPapel] = useState<unknown>(null)
 
   const planilla = useControlDeDespacho(desde || null, hasta || null)
   const estados = useEstadosDeControl()
   const { data: columnaLibre = 'Otra' } = useColumnaLibre()
   const { puede } = useMisPermisos()
+  const { data: empresa } = useEmpresa()
+  const { data: yo } = useMiPerfil()
   const puedeEscribir = puede('CONTROL_DESPACHO', 'ESCRITURA')
   const puedeAjustar = puede('CONTROL_DESPACHO', 'TOTAL')
 
@@ -91,45 +123,59 @@ export function ControlDespacho() {
   const sinRif = vigentes.filter((f) => f.falta_rif).length
   const sinPrecio = vigentes.filter((f) => f.precio === null).length
 
+  // Marcada y a la vista: lo que un filtro escondió no sale aunque siguiera marcado.
+  const elegidas = filas.filter((f) => marcadas.has(f.clave))
+  const paraSacar = elegidas.length > 0 ? elegidas : filas
+  const todasMarcadas = filas.length > 0 && elegidas.length === filas.length
+  const marcar = (clave: string) =>
+    setMarcadas((m) => {
+      const n = new Set(m)
+      if (!n.delete(clave)) n.add(clave)
+      return n
+    })
+  const nombreBase = `control-de-despacho-${desde || 'inicio'}-a-${hasta || hoy}`
+
   /*
-    LA HOJA DE CÁLCULO. Lo que se está viendo, con los filtros puestos. CSV con
-    punto y coma y marca de orden de bytes: Excel en español lo abre de un doble
-    clic, con los acentos bien y cada dato en su celda.
+    EL EXCEL. Un libro de verdad, con la cabecera en el color del sistema y los
+    números como números, para poder sumarlos allá.
   */
-  const bajarHoja = () => {
-    const celda = (v: string) => `"${v.replaceAll('"', '""')}"`
-    const num = (v: number | string | null) => (v === null || v === '' ? '' : Number(v).toFixed(2).replace('.', ','))
-    const lineas = [
-      ['# NOTA', 'FECHA', 'CLIENTE', 'RIF', 'MATERIAL', 'CANTIDAD', 'UNIDAD', 'PRECIO US$', 'MONTO US$', 'STATUS', 'OBSERVACIONES', columnaLibre.toUpperCase(), 'DOCUMENTO'],
-      ...filas.map((f) => [
-        f.documento,
-        f.fecha ?? '',
-        f.cliente ?? '',
-        f.rif ?? '',
-        f.material ?? '',
-        num(f.cantidad),
-        f.unidad ?? '',
-        num(f.precio),
-        num(f.monto),
-        f.estado_control_nombre ?? '',
-        f.observacion ?? '',
-        f.extra ?? '',
-        ROTULO_DEL_DOCUMENTO[f.estado_doc],
-      ]),
-    ]
-    const texto = '﻿' + lineas.map((l) => l.map((c) => celda(String(c))).join(';')).join('\r\n')
-    const enlace = document.createElement('a')
-    enlace.href = URL.createObjectURL(new Blob([texto], { type: 'text/csv;charset=utf-8' }))
-    enlace.download = `control-de-despacho-${desde || 'inicio'}-a-${hasta || hoy}.csv`
-    enlace.click()
-    setTimeout(() => URL.revokeObjectURL(enlace.href), 1000)
+  const bajarHoja = () => bajarArchivo(escribirXlsx(hojaDeLaPlanilla(paraSacar, columnaLibre)), `${nombreBase}.xlsx`)
+
+  const verPapel = async () => {
+    setArmando(true)
+    setFalloPapel(null)
+    try {
+      const alcance = [
+        elegidas.length > 0 ? `Las ${elegidas.length} filas marcadas` : soloDespachado ? 'Solo lo despachado' : 'La serie entera',
+        status === '—' ? 'sin status' : status ? `status ${estados.data?.find((e) => e.codigo === status)?.nombre ?? status}` : '',
+        busca.trim() ? `búsqueda «${busca.trim()}»` : '',
+      ]
+        .filter(Boolean)
+        .join(' · ')
+      setPapel(
+        await armarControlDeDespacho({
+          empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+          emitidoPor: yo?.nombre ?? '',
+          momento: new Date(),
+          desde: desde || null,
+          hasta: hasta || null,
+          alcance,
+          columnaLibre,
+          filas: paraSacar,
+        }),
+      )
+    } catch (e) {
+      setFalloPapel(e)
+    } finally {
+      setArmando(false)
+    }
   }
 
   return (
     <>
       <PageHeader
         title="Control de despacho"
-        description="Lo que salió, de qué nota, para quién y en cuánto. El número, la fecha, el cliente, el material y la cantidad vienen de las notas; el RIF, el precio, el status y las observaciones se escriben aquí. No cambia nada en ningún otro módulo."
+        description="Lo que salió, de qué nota, para quién y en cuánto. El número, la fecha, el cliente, el material y la cantidad vienen de las notas; el RIF, el precio, el status y las observaciones se escriben aquí."
         actions={
           <>
             {puedeAjustar ? (
@@ -137,8 +183,16 @@ export function ControlDespacho() {
                 Status y columna
               </Button>
             ) : null}
+            {puedeEscribir ? (
+              <Button variant="ghost" icon={<Upload />} onClick={() => setCargando(true)}>
+                Cargar desde Excel
+              </Button>
+            ) : null}
             <Button variant="outline" icon={<FileSpreadsheet />} disabled={filas.length === 0} onClick={bajarHoja}>
-              Hoja de cálculo
+              Excel{elegidas.length > 0 ? ` (${elegidas.length})` : ''}
+            </Button>
+            <Button variant="outline" icon={<FileText />} disabled={filas.length === 0 || armando} onClick={() => void verPapel()}>
+              {armando ? 'Armando…' : `PDF${elegidas.length > 0 ? ` (${elegidas.length})` : ''}`}
             </Button>
           </>
         }
@@ -188,6 +242,8 @@ export function ControlDespacho() {
         </label>
       </Card>
 
+      {falloPapel ? <ErrorDeCarga error={falloPapel} /> : null}
+
       {planilla.isPending ? (
         <Cargando />
       ) : planilla.error ? (
@@ -214,6 +270,14 @@ export function ControlDespacho() {
                 {sinRif} sin RIF
               </Chip>
             ) : null}
+            {elegidas.length > 0 ? (
+              <span className="text-royal-700 font-medium">
+                {elegidas.length} marcada{elegidas.length === 1 ? '' : 's'}: el Excel y el PDF llevan solo esas ·{' '}
+                <button type="button" className="underline" onClick={() => setMarcadas(new Set())}>
+                  quitar marcas
+                </button>
+              </span>
+            ) : null}
           </div>
 
           <Card flush>
@@ -221,7 +285,16 @@ export function ControlDespacho() {
               <table className="w-full min-w-[1080px] text-sm">
                 <thead>
                   <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-                    <th className="px-4 py-3 font-medium"># Nota</th>
+                    <th className="py-3 pr-1 pl-4">
+                      <input
+                        type="checkbox"
+                        aria-label="Marcar todas las que se ven"
+                        className="accent-royal-600 size-4 align-middle"
+                        checked={todasMarcadas}
+                        onChange={() => setMarcadas(todasMarcadas ? new Set() : new Set(filas.map((f) => f.clave)))}
+                      />
+                    </th>
+                    <th className="px-3 py-3 font-medium"># Nota</th>
                     <th className="px-3 py-3 font-medium">Fecha</th>
                     <th className="px-3 py-3 font-medium">Cliente</th>
                     <th className="px-3 py-3 font-medium">RIF</th>
@@ -237,6 +310,8 @@ export function ControlDespacho() {
                 <tbody>
                   {filas.map((f) => {
                     const viva = f.estado_doc === 'VIGENTE'
+                    const ruta = rutaDeLaNota(f)
+                    const puedeIr = ruta !== null && puede(moduloDeRuta(ruta.split('?')[0]))
                     return (
                       <tr
                         key={f.clave}
@@ -246,7 +321,29 @@ export function ControlDespacho() {
                           viva ? (puedeEscribir ? 'hover:bg-ink/3 cursor-pointer transition-colors' : '') : 'text-ink/40 bg-ink/2',
                         )}
                       >
-                        <td className="tabular px-4 py-2.5 font-medium whitespace-nowrap">{f.documento}</td>
+                        <td className="py-2.5 pr-1 pl-4" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            aria-label={`Marcar ${f.documento}`}
+                            className="accent-royal-600 size-4 align-middle"
+                            checked={marcadas.has(f.clave)}
+                            onChange={() => marcar(f.clave)}
+                          />
+                        </td>
+                        <td className="tabular px-3 py-2.5 font-medium whitespace-nowrap">
+                          {puedeIr && ruta ? (
+                            <Link
+                              to={ruta}
+                              onClick={(e) => e.stopPropagation()}
+                              title={f.origen === 'NOTA_ENTREGA' ? 'Ir a la nota de entrega' : 'Ir a la nota de salida'}
+                              className="text-royal-700 underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                            >
+                              {f.documento}
+                            </Link>
+                          ) : (
+                            f.documento
+                          )}
+                        </td>
                         <td className="px-3 py-2.5 whitespace-nowrap">{f.fecha ? fmtFecha(f.fecha) : ''}</td>
                         {viva ? (
                           <>
@@ -301,6 +398,25 @@ export function ControlDespacho() {
         <EditarFila fila={editando} columnaLibre={columnaLibre} onCerrar={() => setEditando(null)} />
       ) : null}
       {ajustes ? <Ajustes columnaLibre={columnaLibre} onCerrar={() => setAjustes(false)} /> : null}
+      {cargando ? (
+        <CargaDesdeExcel
+          filas={planilla.data ?? []}
+          paraLaPlantilla={paraSacar}
+          marcadas={elegidas.length}
+          estados={estados.data ?? []}
+          columnaLibre={columnaLibre}
+          nombrePlantilla={`plantilla-${nombreBase}.xlsx`}
+          onCerrar={() => setCargando(false)}
+        />
+      ) : null}
+      <Visor
+        abierto={papel !== null}
+        onCerrar={() => setPapel(null)}
+        blob={papel?.blob ?? null}
+        nombreArchivo={papel?.nombre ?? 'control-de-despacho.pdf'}
+        titulo="Control de despacho"
+        descripcion="Revísalo antes de descargarlo o imprimirlo."
+      />
     </>
   )
 }
@@ -441,6 +557,184 @@ function EditarFila({
         <Input label={columnaLibre} value={extra} onChange={(e) => setExtra(e.target.value)} />
 
         {error ? <ErrorDeCarga error={error} /> : null}
+      </div>
+    </Modal>
+  )
+}
+
+/* ─────────────────────────────────────────────────── la carga desde Excel */
+
+/*
+  TRES PASOS, Y EL DEL MEDIO ES EL QUE IMPORTA: antes de guardar se enseña qué
+  va a cambiar, fila por fila. Una hoja mal pegada —una columna corrida, un
+  filtro que desordenó— se ve aquí y no después, con cuarenta precios cambiados.
+
+  Se guarda todo o nada. Si la hoja trae un error, no se ofrece guardar: se
+  corrige la hoja y se vuelve a subir.
+*/
+function CargaDesdeExcel({
+  filas,
+  paraLaPlantilla,
+  marcadas,
+  estados,
+  columnaLibre,
+  nombrePlantilla,
+  onCerrar,
+}: {
+  filas: FilaDeControl[]
+  paraLaPlantilla: FilaDeControl[]
+  marcadas: number
+  estados: EstadoDeControl[]
+  columnaLibre: string
+  nombrePlantilla: string
+  onCerrar: () => void
+}) {
+  const cargar = useCargarControlDeDespacho()
+  const selector = useRef<HTMLInputElement>(null)
+  const [archivo, setArchivo] = useState('')
+  const [leida, setLeida] = useState<CargaInterpretada | null>(null)
+  const [fallo, setFallo] = useState<unknown>(null)
+  const [guardadas, setGuardadas] = useState<number | null>(null)
+
+  const vigentes = paraLaPlantilla.filter((f) => f.estado_doc === 'VIGENTE').length
+
+  const leer = async (f: File | undefined) => {
+    if (!f) return
+    setArchivo(f.name)
+    setLeida(null)
+    setFallo(null)
+    setGuardadas(null)
+    cargar.reset()
+    try {
+      setLeida(interpretarCarga(await leerHoja(f), filas, estados, columnaLibre))
+    } catch (e) {
+      setFallo(e)
+    }
+  }
+
+  const sePuede = leida !== null && leida.errores.length === 0 && leida.cambios.length > 0
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Cargar desde Excel"
+      descripcion="Para llenar muchas filas de una vez: RIF, precio, status, observaciones y la columna libre. El número, la fecha, el cliente, el material y la cantidad siguen viniendo de las notas y no se cargan."
+      acciones={
+        guardadas !== null ? (
+          <Button onClick={onCerrar}>Listo</Button>
+        ) : (
+          <>
+            <Button variant="ghost" onClick={onCerrar}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!sePuede || cargar.isPending}
+              onClick={() =>
+                cargar.mutate(
+                  (leida?.cambios ?? []).map((c) => c.paraGuardar),
+                  { onSuccess: (n) => setGuardadas(n) },
+                )
+              }
+            >
+              {cargar.isPending ? 'Guardando…' : sePuede ? `Guardar ${leida.cambios.length} fila${leida.cambios.length === 1 ? '' : 's'}` : 'Guardar'}
+            </Button>
+          </>
+        )
+      }
+    >
+      <div className="space-y-5 text-sm">
+        <div>
+          <p className="text-ink/90 font-medium">1. Baja la plantilla</p>
+          <p className="text-ink/60 mt-1">
+            Trae {marcadas > 0 ? `las ${vigentes} filas marcadas` : `los ${vigentes} despachos que se ven en pantalla`}, con lo que
+            ya tengan escrito. Las columnas de cabecera roja clara son las que se llenan. No toques la columna CLAVE: es lo
+            que ata cada fila a la suya.
+          </p>
+          <Button
+            className="mt-2"
+            size="sm"
+            variant="outline"
+            icon={<Download />}
+            disabled={vigentes === 0}
+            onClick={() => bajarArchivo(escribirXlsx(plantillaDeCarga(paraLaPlantilla, columnaLibre)), nombrePlantilla)}
+          >
+            Descargar plantilla
+          </Button>
+        </div>
+
+        <div>
+          <p className="text-ink/90 font-medium">2. Llénala en Excel y súbela</p>
+          <p className="text-ink/60 mt-1">
+            Lo que subas es cómo queda la fila: una celda vacía borra lo que había. El status tiene que ser uno de la lista
+            {estados.some((e) => e.activo) ? ` (${estados.filter((e) => e.activo).map((e) => e.nombre).join(', ')})` : ''}.
+          </p>
+          <input
+            ref={selector}
+            type="file"
+            accept=".xlsx,.csv"
+            className="hidden"
+            onChange={(e) => {
+              void leer(e.target.files?.[0])
+              e.target.value = ''
+            }}
+          />
+          <div className="mt-2 flex items-center gap-3">
+            <Button size="sm" variant="outline" icon={<Upload />} onClick={() => selector.current?.click()}>
+              Elegir archivo
+            </Button>
+            {archivo ? <span className="text-ink/50 truncate">{archivo}</span> : null}
+          </div>
+        </div>
+
+        {fallo ? <ErrorDeCarga error={fallo} /> : null}
+
+        {leida && guardadas === null ? (
+          <div>
+            <p className="text-ink/90 font-medium">3. Revisa antes de guardar</p>
+            <p className="text-ink/60 mt-1">
+              {leida.cambios.length} fila{leida.cambios.length === 1 ? '' : 's'} con cambios · {leida.iguales} igual
+              {leida.iguales === 1 ? '' : 'es'} a como están
+              {leida.errores.length > 0 ? ` · ${leida.errores.length} con error` : ''}
+            </p>
+
+            {leida.errores.length > 0 ? (
+              <div className="border-warning/40 bg-warning/5 rounded-card mt-2 border p-3">
+                <p className="text-warning font-medium">No se guarda nada hasta que la hoja venga sin errores:</p>
+                <ul className="text-ink/70 mt-1 list-disc space-y-0.5 pl-5">
+                  {leida.errores.slice(0, 12).map((e) => (
+                    <li key={e}>{e}</li>
+                  ))}
+                  {leida.errores.length > 12 ? <li>…y {leida.errores.length - 12} más.</li> : null}
+                </ul>
+              </div>
+            ) : null}
+
+            {leida.cambios.length > 0 ? (
+              <ul className="divide-hairline border-hairline rounded-card mt-2 max-h-64 divide-y overflow-y-auto border">
+                {leida.cambios.map((c) => (
+                  <li key={c.fila.clave} className="px-3 py-2">
+                    <span className="tabular font-medium">{c.fila.documento}</span>
+                    <span className="text-ink/50">
+                      {' '}
+                      · {c.fila.cliente} · {c.fila.material}
+                    </span>
+                    <span className="text-ink/70 block text-xs">{c.resumen.join(' · ')}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : leida.errores.length === 0 ? (
+              <p className="text-ink/50 mt-2">La hoja dice lo mismo que el sistema: no hay nada que guardar.</p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {guardadas !== null ? (
+          <p className="text-success font-medium">
+            Se guardaron {guardadas} fila{guardadas === 1 ? '' : 's'}.
+          </p>
+        ) : null}
+        {cargar.error ? <ErrorDeCarga error={cargar.error} /> : null}
       </div>
     </Modal>
   )
