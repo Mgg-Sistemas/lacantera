@@ -465,6 +465,14 @@ export interface NotaEntrega {
   precios_pendientes: number
 }
 
+/** Una nota por su número: para abrirla desde un enlace aunque la lista no la traiga. */
+export async function leerNotaEntregaPorNumero(numero: string): Promise<NotaEntrega | null> {
+  return (
+    desenvolver<NotaEntrega[]>(await supabase.from('v_notas_entrega').select('*').eq('numero', numero).limit(1))[0] ??
+    null
+  )
+}
+
 export function useNotasEntrega(estado?: string) {
   return useQuery({
     queryKey: ['ventas', 'notas', estado ?? 'todas'],

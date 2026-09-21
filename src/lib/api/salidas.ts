@@ -366,6 +366,14 @@ export interface AsientoDeLaSalida {
   unidad: string
 }
 
+/** El relato que se escribió al sacar: la nota de salida lo lleva impreso. */
+export async function leerMotivoDeLaSalida(numero: string): Promise<string> {
+  const asientos = desenvolver<{ nota: string | null }[]>(
+    await supabase.from('inventario_movimientos').select('nota').eq('nota_salida', numero).order('id').limit(1),
+  )
+  return asientos[0]?.nota ?? ''
+}
+
 export async function leerAsientosDeLaSalida(numero: string): Promise<AsientoDeLaSalida[]> {
   const asientos = desenvolver<
     { id: number; articulo_id: number; cantidad: string; unidad: string; articulo: { nombre: string } | null }[]
