@@ -50,6 +50,7 @@ import {
 } from '@/lib/api/intercambio'
 import { ModalCambiarMetodo } from './ModalCambiarMetodo'
 import { ModalRecepcion } from './ModalRecepcion'
+import { ModalEditarOrden } from './ModalEditarOrden'
 import { PapelesDeCompra } from './PapelesDeCompra'
 import { usePapelesDeCompra, useRespaldarAutorizacion } from '@/lib/api/papelesDeCompra'
 import { useFacturasDeOrden } from '@/lib/api/facturasCompra'
@@ -890,6 +891,7 @@ export function DetalleCompra() {
     | { tipo: 'cancelar-pedido' }
     | { tipo: 'devolver-gerencia' }
     | { tipo: 'cancelar-orden' }
+    | { tipo: 'editar-orden' }
     | { tipo: 'desistir' }
     | { tipo: 'resolver' }
     | { tipo: 'registrar-pago'; instruccion: InstruccionPago }
@@ -1747,6 +1749,30 @@ export function DetalleCompra() {
             <CardHeader title="Qué sigue" />
 
             <div className="mt-4 space-y-2">
+              {/*
+                EDITAR LA ORDEN ENTERA. Angélica, 21/09/2026: «permite desde
+                compras poder editar la orden por completo… si ya fue aprobada
+                por el Gerente General, sí puede modificar».
+
+                Va arriba y en cualquier estado que admita cambios: no es «lo
+                que sigue» del circuito, es lo que se hace cuando lo que hay
+                está mal. Desaparece en cuanto llega material —ese ya movió
+                existencias— y la base comprueba además los pagos y la factura.
+              */}
+              {orden &&
+              alcanza('COMPRAS.EDITAR_ORDEN') &&
+              !['CANCELADA', 'PROVEEDOR_DESISTIO'].includes(orden.estado) &&
+              !orden.renglones?.some((r) => Number(r.cantidad_recibida) > 0) ? (
+                <Button
+                  block
+                  variant="outline"
+                  icon={<Pencil />}
+                  onClick={() => setModal({ tipo: 'editar-orden' })}
+                >
+                  Editar la orden
+                </Button>
+              ) : null}
+
               {compra.estado === 'BORRADOR' ? (
                 <>
                   <p className="text-ink/60 mb-3 text-sm">
@@ -2288,6 +2314,10 @@ export function DetalleCompra() {
           compra={compra}
           cotizacion={modal.corregir}
         />
+      ) : null}
+
+      {modal?.tipo === 'editar-orden' && orden && compra ? (
+        <ModalEditarOrden abierto onCerrar={() => setModal(null)} compra={compra} orden={orden} />
       ) : null}
 
       {modal?.tipo === 'pago' && orden ? (
