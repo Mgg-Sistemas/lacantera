@@ -26,13 +26,12 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import { dinero, documento, enteros, fecha, fechaHora } from '@/lib/formato'
-import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import { useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
-import { densidadesDeArticulos } from '@/lib/api/catalogo'
 import { useGuias, useTickets } from '@/lib/api/despachos'
 import { useVehiculos } from '@/lib/api/vehiculos'
-import { armarDocumento } from '@/lib/ficha/ventaPdf'
+import { armarNotaDeEntrega } from '@/lib/ficha/notaDeEntregaPapel'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
   useAnularNota,
@@ -47,9 +46,10 @@ import {
   useSolicitarDespacho,
   useSolicitudesDespacho,
   type NotaEntrega,
-  type RenglonGuardado,
   type SolicitudDeDespacho,
 } from '@/lib/api/ventas'
+import { useCompletarNotaDeEntrega } from '@/lib/api/salidas'
+import { ModalNotaDeEntrega } from '@/pages/salidas/ModalNotaDeEntrega'
 /*
   Los renglones, el IVA y sus totales se quedaron en Ventas: son los mismos que
   arma una cotización, y partirlos en dos copias sería tener dos formas de sumar
@@ -61,7 +61,6 @@ import { Renglones } from '@/pages/ventas/Renglones'
 import {
   aRenglones,
   conRomana,
-  conversionDeRenglon,
   faltaEnFila,
   filaVacia,
   m3EnCamion,
@@ -81,13 +80,16 @@ import { useDesenlazarNota, useEnlazarNotaAFactura, useFacturas } from '@/lib/ap
   despachada se dice «Despachada», no «Por facturar», y no va en color de
   pendiente: no le falta nada.
 */
-const TONO: Record<string, 'success' | 'neutral'> = {
+const TONO: Record<string, 'success' | 'neutral' | 'warning'> = {
+  // La que nació de una nota de salida y le falta cliente o algún precio.
+  PENDIENTE: 'warning',
   DESPACHADA: 'neutral',
   FACTURADA: 'success',
   ANULADA: 'neutral',
 }
 
 const ETIQUETA: Record<string, string> = {
+  PENDIENTE: 'Pendiente por completar',
   DESPACHADA: 'Despachada',
   FACTURADA: 'Facturada',
   ANULADA: 'Anulada',
@@ -127,6 +129,14 @@ export function NotasDeEntrega() {
   const [nuevo, setNuevo] = useState(false)
   const [detalle, setDetalle] = useState<NotaEntrega | null>(null)
   const [anulando, setAnulando] = useState<NotaEntrega | null>(null)
+  /*
+    COMPLETAR LA QUE NACIÓ DE UNA NOTA DE SALIDA. Christopher, 21/09/2026: nace
+    con lo mismo que la salida —sin precios, y sin cliente si el destino no
+    coincide con ninguno— y se ve marcada hasta que alguien le pone lo que falta.
+    Ponerle precio a una venta es de Facturación, así que se completa aquí.
+  */
+  const completar = useCompletarNotaDeEntrega()
+  const [completando, setCompletando] = useState<NotaEntrega | null>(null)
   /*
     ENLAZAR A UNA FACTURA QUE YA EXISTE. Christopher, 17/09/2026: la nota y la
     factura van por separado, y una nota hecha aparte se enlaza después a una
@@ -271,57 +281,15 @@ export function NotasDeEntrega() {
     setFilas([filaVacia()])
   }
 
+  // El papel se arma en un solo sitio: también lo imprime Salidas, cuando una
+  // nota de salida dejó su nota de entrega de respaldo.
   const imprimir = async (n: NotaEntrega) => {
-    const renglones = renglonesDetalle.data ?? []
-    const densidades = await densidadesDeArticulos({ ids: renglones.map((r) => r.articulo_id) })
-    const densidadDe = (r: RenglonGuardado) =>
-      densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3
     setPdf(
-      await armarDocumento({
-        tipo: 'NOTA',
-        numero: n.numero,
-        fecha: n.fecha,
-        contraparte: {
-          nombre: n.cliente,
-          rif: n.cliente_rif,
-          direccion: clientes?.find((c) => c.id === n.cliente_id)?.direccion ?? null,
-          // El hueco del teléfono existía en el papel desde el primer día y nadie
-          // lo llenaba: salía «TELÉFONO —» en todas las notas y todas las
-          // cotizaciones. El dato está aquí mismo, en la lista de clientes.
-          telefono: clientes?.find((c) => c.id === n.cliente_id)?.telefono ?? null,
-        },
-        despacho: {
-          vehiculo: n.vehiculo,
-          chofer: n.chofer,
-          cedulaChofer: n.cedula_chofer,
-          ticket: n.ticket_romana,
-          pesoNeto: n.peso_neto ? `${enteros(n.peso_neto)} kg` : null,
-        },
-        moneda: n.moneda,
-        tasa: n.tasa,
-        tasaUsd: n.tasa_usd,
-        renglones: renglones.map((r) => ({
-          descripcion: r.descripcion,
-          // Sin línea de detalle: la nota no lleva más notas que el total.
-          detalle: null,
-          cantidad: r.cantidad,
-          unidad: r.unidad,
-          conversion: conversionDeRenglon(r, densidadDe(r)),
-          precio_unitario: r.precio_unitario,
-          subtotal: r.subtotal,
-          exento_iva: r.exento_iva,
-        })),
-        notaConversion: null,
-        subtotal: n.subtotal,
-        descuento: n.descuento,
-        flete: n.flete,
-        baseImponible: n.base_imponible,
-        iva: n.iva,
-        alicuotaIva: n.alicuota_iva,
-        total: n.total,
-        observacion: n.observacion,
-        sello: n.estado === 'ANULADA' ? 'ANULADA' : null,
-        empresa: empresaDelPapel(empresa),
+      await armarNotaDeEntrega({
+        nota: n,
+        renglones: renglonesDetalle.data ?? [],
+        cliente: clientes?.find((c) => c.id === n.cliente_id) ?? null,
+        empresa,
         emitidoPor: yo?.nombre ?? '',
       }),
     )
@@ -517,7 +485,15 @@ export function NotasDeEntrega() {
                         <span className="text-ink/45 block text-xs">{n.factura_numero}</span>
                       ) : null}
                     </td>
-                    <td className="text-ink/70 px-3 py-3">{n.cliente}</td>
+                    <td className="text-ink/70 px-3 py-3">
+                      {n.cliente ?? <span className="text-ink/40 italic">Cliente por concretar</span>}
+                      {n.nota_salida ? (
+                        <span className="text-ink/45 block text-xs">
+                          Respalda la salida {n.nota_salida}
+                          {n.facturable ? '' : ' · solo respaldo'}
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="text-ink/60 px-3 py-3 text-xs">
                       {n.vehiculo ?? '—'}
                       {n.chofer ? <span className="block">{n.chofer}</span> : null}
@@ -962,7 +938,7 @@ export function NotasDeEntrega() {
           ancho="lg"
           onCerrar={() => setDetalle(null)}
           titulo={detalle.numero}
-          descripcion={`${detalle.cliente} · ${fecha(detalle.fecha)} · sale de ${detalle.almacen}`}
+          descripcion={`${detalle.cliente ?? 'Cliente por concretar'} · ${fecha(detalle.fecha)} · sale de ${detalle.almacen}${detalle.nota_salida ? ` · respalda la nota de salida ${detalle.nota_salida}` : ''}`}
           acciones={
             <>
               <Button variant="ghost" onClick={() => setDetalle(null)}>
@@ -976,7 +952,18 @@ export function NotasDeEntrega() {
               >
                 Imprimir
               </Button>
-              {detalle.estado === 'DESPACHADA' && puedeAnular ? (
+              {detalle.estado === 'PENDIENTE' && puedeDespachar ? (
+                <Button
+                  disabled={renglonesDetalle.isPending}
+                  onClick={() => {
+                    completar.reset()
+                    setCompletando(detalle)
+                  }}
+                >
+                  Completar
+                </Button>
+              ) : null}
+              {(detalle.estado === 'DESPACHADA' || detalle.estado === 'PENDIENTE') && puedeAnular ? (
                 <Button
                   variant="outline"
                   className="text-danger"
@@ -988,7 +975,7 @@ export function NotasDeEntrega() {
                   Anular
                 </Button>
               ) : null}
-              {detalle.estado === 'DESPACHADA' && puedeDespachar ? (
+              {detalle.estado === 'DESPACHADA' && detalle.facturable && puedeDespachar ? (
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -1211,6 +1198,43 @@ export function NotasDeEntrega() {
         onCerrar={() => setCatalogo(false)}
         puedeEditar={puedeDespachar}
       />
+
+      {completando ? (
+        <ModalNotaDeEntrega
+          modo="completar"
+          titulo={`Completar ${completando.numero}`}
+          destino={null}
+          clienteInicial={completando.cliente_id}
+          facturableInicial={completando.facturable}
+          moneda={completando.moneda}
+          lineas={(renglonesDetalle.data ?? []).map((r) => ({
+            id: r.id,
+            articulo: r.descripcion,
+            cantidad: r.cantidad,
+            unidad: r.unidad,
+            precio: r.precio_unitario,
+          }))}
+          guardando={completar.isPending}
+          error={completar.error}
+          onCerrar={() => setCompletando(null)}
+          onGuardar={(resp) =>
+            void completar
+              .mutateAsync({
+                id: completando.id,
+                cliente_id: resp.cliente_id,
+                precios: resp.precios.map((x) => ({ renglon_id: x.id, precio: x.precio })),
+                facturable: resp.facturable,
+              })
+              .then(() => {
+                // La lista se vuelve a pedir sola; el detalle abierto es una
+                // copia vieja, así que se cierra para no enseñar lo de antes.
+                setCompletando(null)
+                setDetalle(null)
+              })
+              .catch(() => {})
+          }
+        />
+      ) : null}
 
       <Visor
         abierto={pdf !== null}

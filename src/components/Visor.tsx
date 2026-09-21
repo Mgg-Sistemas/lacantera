@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Download, FileWarning, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -78,6 +79,13 @@ interface VisorProps {
     /** Mientras se rehace el papel. */
     rehaciendo?: boolean
   } | null
+  /**
+   * Algo más que decidir con el papel delante, al lado de la casilla.
+   *
+   * El visor no sabe qué es: la nota de salida pone aquí «Generar nota de
+   * entrega», que no cambia este papel sino que deja otro.
+   */
+  extra?: ReactNode
 }
 
 const EXTENSIONES_IMAGEN = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif', 'bmp']
@@ -105,6 +113,7 @@ export function Visor({
   descripcion,
   expresion,
   casilla,
+  extra,
   mime,
 }: VisorProps) {
   const [deMemoria, setDeMemoria] = useState<string | null>(null)
@@ -266,23 +275,26 @@ export function Visor({
           )}
         </div>
 
-        <footer className="border-ink/10 flex items-center justify-between gap-3 border-t px-4 py-3 sm:px-5">
-          {casilla ? (
-            <label className="text-ink/70 flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="accent-royal-600 size-4 shrink-0"
-                checked={casilla.marcada}
-                disabled={casilla.rehaciendo}
-                onChange={(e) => casilla.onCambiar(e.target.checked)}
-              />
-              {casilla.rehaciendo ? 'Rehaciendo…' : casilla.etiqueta}
-            </label>
-          ) : (
-            <span className="text-ink/45 hidden truncate font-mono text-xs sm:block">
-              {nombreArchivo}
-            </span>
-          )}
+        <footer className="border-ink/10 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t px-4 py-3 sm:px-5">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2">
+            {casilla ? (
+              <label className="text-ink/70 flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="accent-royal-600 size-4 shrink-0"
+                  checked={casilla.marcada}
+                  disabled={casilla.rehaciendo}
+                  onChange={(e) => casilla.onCambiar(e.target.checked)}
+                />
+                {casilla.rehaciendo ? 'Rehaciendo…' : casilla.etiqueta}
+              </label>
+            ) : (
+              <span className="text-ink/45 hidden truncate font-mono text-xs sm:block">
+                {nombreArchivo}
+              </span>
+            )}
+            {extra}
+          </div>
           <div className="flex flex-1 justify-end gap-2 sm:flex-none">
             <Button variant="ghost" onClick={onCerrar}>
               Cerrar
