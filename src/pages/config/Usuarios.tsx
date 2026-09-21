@@ -1402,6 +1402,8 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
     hasta: '',
   })
   const [busca, setBusca] = useState('')
+  /** El buscador de la lista, que no es el del modal: aquí se busca lo ya dado. */
+  const [filtro, setFiltro] = useState('')
   /** Lo que la base dejó fuera y por qué, para decirlo al cerrar. */
   const [omitidas, setOmitidas] = useState<{ accion: string; motivo: string }[]>([])
 
@@ -1529,9 +1531,25 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
   if (autorizaciones.isPending) return <Cargando />
   if (autorizaciones.error) return <ErrorDeCarga error={autorizaciones.error} />
 
+  /*
+    BUSCAR ENTRE LO YA EXTENDIDO.
+
+    Christopher, 21/09/2026. Con una docena de permisos prestados la lista ya
+    no se lee de un vistazo, y lo que se busca es siempre lo mismo: «qué tiene
+    fulano» o «quién puede aprobar compras». Por eso filtra por persona,
+    casilla, módulo, quién lo extendió y el motivo escrito.
+  */
   const filas = autorizaciones.data ?? []
-  const vivas = filas.filter((a) => a.vigente)
-  const pasadas = filas.filter((a) => !a.vigente)
+  const q = filtro.trim().toLowerCase()
+  const coinciden = q
+    ? filas.filter((a) =>
+        [a.a_nombre, a.accion_nombre, a.modulo_nombre, a.por_nombre, a.motivo].some((t) =>
+          (t ?? '').toLowerCase().includes(q),
+        ),
+      )
+    : filas
+  const vivas = coinciden.filter((a) => a.vigente)
+  const pasadas = coinciden.filter((a) => !a.vigente)
 
   return (
     <>
@@ -1547,48 +1565,84 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
         ) : null}
       </div>
 
+      {filas.length > 0 ? (
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="min-w-[16rem] flex-1">
+            <Input
+              label="Buscar"
+              ocultarEtiqueta
+              icon={<Search />}
+              placeholder="Por persona, casilla, módulo, quién lo dio o el motivo"
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+            />
+          </div>
+          <span className="text-ink/45 text-xs">
+            {q ? `${coinciden.length} de ${filas.length}` : `${filas.length} en total`}
+            {vivas.length > 0 ? ` · ${vivas.length} vigente${vivas.length === 1 ? '' : 's'}` : ''}
+          </span>
+        </div>
+      ) : null}
+
       {filas.length === 0 ? (
         <Vacio
           titulo="No hay permisos extendidos"
           descripcion="Cuando alguien tenga que hacer algo que no le compete —el gerente de viaje y una orden que no puede esperar— se le extiende desde aquí, con la razón escrita."
         />
+      ) : coinciden.length === 0 ? (
+        <p className="text-ink/45 py-8 text-center text-sm">
+          Ningún permiso extendido coincide con «{filtro.trim()}».
+        </p>
       ) : (
-        <div className="space-y-2.5">
+        /*
+          EN TARJETAS, NO EN RENGLONES.
+
+          Cada permiso extendido es un caso con su propia historia —a quién, qué,
+          por qué, hasta cuándo y quién respondió por él—, y leído como renglón
+          largo esa historia se aplasta contra el borde de la pantalla. En
+          tarjeta cada uno ocupa su cuadro y la vista cabe de un vistazo.
+        */
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {[...vivas, ...pasadas].map((a) => (
-            <Card key={a.id} flush className={cn('overflow-hidden', !a.vigente && 'opacity-60')}>
-              <div className="flex flex-wrap items-start justify-between gap-3 p-4">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-ink/85 font-medium">{a.a_nombre}</span>
-                    <Chip tone={a.vigente ? 'success' : 'neutral'}>
-                      {a.vigente ? 'Vigente' : a.revocada_en ? 'Retirada' : 'Fuera de fecha'}
-                    </Chip>
-                  </div>
-
-                  <p className="text-ink/70 mt-1 text-sm">
-                    {a.accion_nombre}
-                    <span className="text-ink/40"> · {a.modulo_nombre}</span>
-                  </p>
-
-                  <p className="text-ink/50 mt-1.5 text-xs">
-                    Bajo autorización de <span className="text-ink/70">{a.por_nombre}</span>
-                    {' · desde '}
-                    {fecha(a.desde)}
-                    {a.hasta ? ` hasta ${fecha(a.hasta)}` : ' · sin fecha de fin'}
-                  </p>
-
-                  <p className="text-ink/60 mt-1.5 text-sm italic">«{a.motivo}»</p>
-
-                  {a.revocada_en ? (
-                    <p className="text-ink/45 mt-1.5 text-xs">
-                      Retirada por {a.revocada_nombre ?? '—'} el {fecha(a.revocada_en)}
-                      {a.revocada_motivo ? ` · ${a.revocada_motivo}` : ''}
-                    </p>
-                  ) : null}
+            <Card
+              key={a.id}
+              flush
+              className={cn('flex flex-col overflow-hidden', !a.vigente && 'opacity-60')}
+            >
+              <div className="min-w-0 flex-1 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-ink/85 font-medium">{a.a_nombre}</span>
+                  <Chip tone={a.vigente ? 'success' : 'neutral'}>
+                    {a.vigente ? 'Vigente' : a.revocada_en ? 'Retirada' : 'Fuera de fecha'}
+                  </Chip>
                 </div>
 
-                {gestionable && a.vigente ? (
+                <p className="text-ink/70 mt-1 text-sm">
+                  {a.accion_nombre}
+                  <span className="text-ink/40"> · {a.modulo_nombre}</span>
+                </p>
+
+                <p className="text-ink/60 mt-1.5 text-sm italic">«{a.motivo}»</p>
+
+                <p className="text-ink/50 mt-1.5 text-xs">
+                  Bajo autorización de <span className="text-ink/70">{a.por_nombre}</span>
+                  {' · desde '}
+                  {fecha(a.desde)}
+                  {a.hasta ? ` hasta ${fecha(a.hasta)}` : ' · sin fecha de fin'}
+                </p>
+
+                {a.revocada_en ? (
+                  <p className="text-ink/45 mt-1.5 text-xs">
+                    Retirada por {a.revocada_nombre ?? '—'} el {fecha(a.revocada_en)}
+                    {a.revocada_motivo ? ` · ${a.revocada_motivo}` : ''}
+                  </p>
+                ) : null}
+              </div>
+
+              {gestionable && a.vigente ? (
+                <div className="border-hairline flex justify-end border-t p-3">
                   <Button
+                    size="sm"
                     variant="outline"
                     className="text-danger border-danger/30"
                     onClick={() => {
@@ -1598,8 +1652,8 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
                   >
                     Retirar
                   </Button>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
             </Card>
           ))}
         </div>
