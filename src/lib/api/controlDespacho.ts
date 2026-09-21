@@ -103,7 +103,7 @@ export function useColumnaLibre() {
   })
 }
 
-function useAccion<T>(hacer: (v: T) => Promise<unknown>) {
+function useAccion<T, R = unknown>(hacer: (v: T) => Promise<R>) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: hacer,
@@ -131,6 +131,23 @@ export function useGuardarFilaDeControl() {
         p_extra: v.extra,
       }),
   )
+}
+
+/** Una fila de la hoja de Excel, ya interpretada: cómo queda lo que se escribe a mano. */
+export interface FilaParaCargar {
+  origen: FilaDeControl['origen']
+  /** El renglón de la nota de entrega o el asiento de la salida, según el origen. */
+  id: number
+  rif: string | null
+  precio: number | null
+  estado: string | null
+  observacion: string | null
+  extra: string | null
+}
+
+/** Todas de una vez, y todo o nada: si una fila falla, no se guarda ninguna. */
+export function useCargarControlDeDespacho() {
+  return useAccion((filas: FilaParaCargar[]) => rpc<number>('cargar_control_despacho', { p_filas: filas }))
 }
 
 /** A qué cliente registrado corresponde un nombre escrito a mano. Nulo lo suelta. */

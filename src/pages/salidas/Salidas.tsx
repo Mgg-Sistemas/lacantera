@@ -23,7 +23,7 @@ import {
   useMovimientos,
 } from '@/lib/api/inventario'
 import { fechaHora } from '@/lib/formato'
-import { useSolicitudesDeSalida, type SolicitudDeSalida } from '@/lib/api/salidas'
+import { leerMotivoDeLaSalida, useSolicitudesDeSalida, type SolicitudDeSalida } from '@/lib/api/salidas'
 import type { Movimiento } from '@/lib/api/inventario'
 import { useNotaDeSalida } from './NotaDeSalida'
 import { useNotaDeTraslado } from './NotaDeTraslado'
@@ -109,6 +109,23 @@ export function Salidas() {
       void navegar(`/app/salidas/solicitudes?${parametros.toString()}`, { replace: true })
     }
   }, [parametros, navegar])
+
+  /*
+    UN ENLACE QUE TRAE `?nota=NS-2026-0012` ABRE ESA NOTA DE SALIDA. Es como
+    llega quien toca el número en Control de despacho. El parámetro se quita al
+    abrir: cerrar el visor no debe volver a abrirlo.
+  */
+  const notaPedida = parametros.get('nota')
+  const abrirNota = notaDeSalida.abrir
+  useEffect(() => {
+    if (!notaPedida) return
+    void navegar('/app/salidas', { replace: true })
+    void leerMotivoDeLaSalida(notaPedida)
+      .catch(() => '')
+      .then((motivo) => abrirNota(notaPedida, motivo))
+    // Solo cuando cambia la nota pedida: `abrir` se rehace en cada pintada.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notaPedida])
 
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'

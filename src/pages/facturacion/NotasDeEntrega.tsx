@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
 import { Check, Printer, Truck, X } from 'lucide-react'
 import { CatalogoTransporte } from '@/components/CatalogoTransporte'
@@ -39,6 +40,7 @@ import {
   useCancelarDespacho,
   useClientes,
   useNotasEntrega,
+  leerNotaEntregaPorNumero,
   usePrecios,
   usePuedoAprobarDespachos,
   useRechazarDespacho,
@@ -129,6 +131,28 @@ export function NotasDeEntrega() {
   const [nuevo, setNuevo] = useState(false)
   const [detalle, setDetalle] = useState<NotaEntrega | null>(null)
   const [anulando, setAnulando] = useState<NotaEntrega | null>(null)
+  /*
+    UN ENLACE QUE TRAE `?nota=NE-2026-0012` ABRE ESA NOTA. Es como llega quien
+    toca el número en Control de despacho. Si la nota es más vieja que las 200
+    que carga la lista, se pide por su número. El parámetro se quita al abrir:
+    cerrar el detalle no debe volver a abrirlo.
+  */
+  const [parametros, setParametros] = useSearchParams()
+  const notaPedida = parametros.get('nota')
+  useEffect(() => {
+    if (!notaPedida || !data) return
+    let vigente = true
+    const abrirla = async () => {
+      const laNota = data.find((n) => n.numero === notaPedida) ?? (await leerNotaEntregaPorNumero(notaPedida))
+      if (!vigente) return
+      if (laNota) setDetalle(laNota)
+      setParametros({}, { replace: true })
+    }
+    void abrirla().catch(() => setParametros({}, { replace: true }))
+    return () => {
+      vigente = false
+    }
+  }, [notaPedida, data, setParametros])
   /*
     COMPLETAR LA QUE NACIÓ DE UNA NOTA DE SALIDA. Christopher, 21/09/2026: nace
     con lo mismo que la salida —sin precios, y sin cliente si el destino no
