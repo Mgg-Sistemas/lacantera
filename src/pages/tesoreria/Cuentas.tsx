@@ -200,7 +200,7 @@ export function Cuentas() {
   } | null>(null)
   const [traslado, setTraslado] = useState(false)
 
-  // El módulo está en obra: hasta que vuelva al riel solo lo abre administración.
+  // Tesorería volvió al riel el 21/09/2026: manda el nivel que se le dé a cada rol.
   const puedeMover = puede('TESORERIA', 'ESCRITURA')
 
   const abrir = (c?: Cuenta) =>

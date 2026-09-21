@@ -5093,16 +5093,18 @@ Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un
 
 ## 12. Tesorería
 
-**Tesorería dejó de ser un módulo, y no es que esté escondida mientras se afina.** La empresa decidió que el sistema **no lleva bancos ni cajas**: anota de dónde salió cada pago, pero no controla ningún saldo. Con esa decisión, la mitad del módulo dejó de tener sentido.
+**Tesorería volvió al menú el 21 de septiembre de 2026.** Estuvo unas semanas fuera porque la empresa había decidido no llevar bancos ni cajas; ahora sí los lleva, y el módulo regresó con todo lo que tenía —las cajas, el libro, los traslados— más lo único que le faltaba: los **reportes** (12.10).
 
-Lo que se usa todos los días **se mudó a Compras y sí está en el menú**. Este capítulo se conserva porque lo que cuenta de esas pantallas sigue valiendo; lo que cambió es dónde se entra:
+Las cajas de arranque ya existen: una **en dólares**, una **en bolívares** y la billetera **en USDT**, además de Zelle y dos bancos. Se crean más desde **Bancos y cajas** (12.3). Todas nacen con saldo cero: lo primero que hay que hacer con cada una es registrar su **saldo de apertura** con lo que de verdad tiene hoy.
+
+Lo que se usa todos los días para pagar **sigue ofreciéndose desde Compras**, que es donde la gente ya lo busca:
 
 | Pantalla | Dónde está hoy |
 | --- | --- |
 | **Pagos por hacer** | **Administración › Compras › Pagos por hacer** |
 | **Cuentas por pagar** | La misma pantalla, pestaña **Por proveedor** |
 | **Libro de tesorería** | **Administración › Compras › Movimientos de dinero** |
-| **Tablero**, **Bancos y cajas** | Siguen fuera del menú. Son lo que la empresa decidió no llevar |
+| **Tablero**, **Bancos y cajas**, **Reportes** | **Administración › Tesorería** |
 | **Cuentas por cobrar** | Se mudó a Facturación (21.4) |
 
 **Ninguna de las seis da el cartel de obra**: las direcciones responden y las pantallas se abren. Lo que las cierra hoy es el permiso, no el cartel — y sobre este módulo **solo el administrador tiene permiso**.
@@ -5502,6 +5504,27 @@ Corregir tiene tres caminos, según qué se haya registrado mal:
 | «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
 
 ---
+
+### 12.10 Reportes
+
+Están en **Administración › Tesorería › Reportes**. Son cuatro, y los cuatro obedecen la misma regla: **nada se suma entre monedas**. Un bolívar y un dólar no son la misma cosa, así que no existe un «total general»: cada moneda va en su fila o en su sección.
+
+Arriba se elige el **período** —por defecto, el mes en curso—, que manda sobre el resumen, los libros y los gastos. **Todo se ve antes de descargarse**: cada reporte se abre en el visor, y desde ahí se imprime o se guarda.
+
+| Reporte | Qué trae |
+| --- | --- |
+| **Resumen por moneda** | Una fila por moneda con **Debe**, **Haber**, **Saldo en cajas**, **Por pagar** y **Por cobrar**, y debajo el saldo de cada caja, banco y billetera. **Al tocar una moneda se abre su libro** |
+| **Libro de una caja** | El libro clásico de siete columnas —fecha, caja, concepto, beneficiario, Debe, Haber y saldo— de la cuenta elegida, con su **saldo anterior** y su saldo al final |
+| **Gastos por categoría** | En qué se fue el dinero: categoría, subcategoría, monto y porcentaje, por moneda. **No cuenta los traslados** entre cuentas propias |
+| **Cierre de mes** | El resultado del mes por moneda (ingresos, gastos, resultado) y cómo **empezó y terminó cada caja**, más los gastos del mes. En PDF y en **hoja de cálculo**, que además trae todos los movimientos del mes |
+
+<p class="regla"><strong>En el resumen conviven dos clases de número, y el propio papel lo dice al pie.</strong> Debe y Haber suman lo movido <em>en el período</em>. Saldo en cajas, Por pagar y Por cobrar son <em>a hoy</em>, no al final del período.</p>
+
+**Un mes cerrado vuelve a salir igual.** El cierre no guarda una foto porque no le hace falta: el libro no se edita ni se borra, así que sumar septiembre dentro de un año da exactamente lo que dio en septiembre. El **saldo inicial** de cada caja tampoco se guarda: es el final menos lo que se movió en el mes, para que no exista un segundo número que pueda decir otra cosa.
+
+**Ni los traslados ni los saldos de apertura son ingresos o gastos.** El dinero que pasa de una caja a otra no entró ni salió de la empresa, y el saldo con que arranca una cuenta tampoco. Aparecen en el Debe y el Haber de cada caja —ahí sí se movió— pero no en el resultado del mes.
+
+**Por cobrar** se lleva en bolívares y en dólares: lo facturado en otra divisa va en la fila del dólar por su equivalente. Quien no tenga permiso para ver lo que se debe o lo que deben ve una raya en esa columna.
 
 ## 13. Configuración
 

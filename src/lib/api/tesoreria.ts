@@ -54,7 +54,7 @@ export interface MovimientoTesoreria {
   id: number
   numero: string
   fecha: string
-  /** EN RETIRADA: la empresa ya no lleva cajas ni bancos. Nulo en lo nuevo. */
+  /** De qué caja, banco o billetera. Toda función que mueve dinero la exige; nulo solo en lo anterior al 21/09/2026. */
   cuenta_id: number | null
   /** Cómo se pagó. Ocupa el sitio que tenía la cuenta. */
   metodo: string | null

@@ -256,6 +256,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/tasas': 'convertir calculadora conversor cambio divisa dolar euro usdt bcv paralelo binance',
   '/app/tesoreria/cuentas': 'banco caja billetera saldo dinero efectivo zelle binance traslado',
   '/app/tesoreria': 'movimientos ingresos egresos flujo',
+  '/app/tesoreria/reportes':
+    'reporte reportes libro mayor debe haber saldo cierre mes gastos categoria resumen moneda pdf excel',
   '/app/compras': 'orden pedido oc requisicion comprar',
   '/app/compras/directa': 'compra rapida ya hecha factura sin cotizar sin gerente contado',
   '/app/compras/proveedores': 'rif suplidor',
@@ -736,14 +738,21 @@ export const navigation: NavSection[] = [
         Las rutas siguen abiertas —`/app/tesoreria/cuentas` y las demás— y
         quedan fuera del MVP: el día que la empresa quiera llevar sus cuentas,
         el módulo está entero y basta con devolverlo al riel.
+
+        ESE DÍA FUE EL 21/09/2026. Christopher: «su caja de $, su caja de
+        bolívares, su caja de USDT, pero que también pueda crear otras cajas,
+        sus entradas, salidas, sus monedas, todo con sus reportes». Vuelve con
+        lo que tenía —las cajas, el libro, los traslados— y con lo único que le
+        faltaba, que eran los reportes. Los pagos y los movimientos siguen
+        ofreciéndose desde Compras, que es donde la gente ya los busca.
       */
       {
         label: 'Tesorería',
         icon: Landmark,
-        fueraDelMvp: true,
         children: [
           { label: 'Tablero', to: '/app/tesoreria' },
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
+          { label: 'Reportes', to: '/app/tesoreria/reportes' },
         ],
       },
     ],
