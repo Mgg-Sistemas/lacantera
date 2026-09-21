@@ -122,6 +122,9 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   // El centro de costo es su propio módulo: acepta viajes, cierra cajas y
   // enseña dinero, y nada de eso es tarea de quien compra.
   ['/app/costos', 'COSTOS'],
+  // La planilla de lo despachado. Módulo propio, aparte de DESPACHOS (romana y
+  // guías): quien lleva esta planilla no tiene por qué ver el pesaje.
+  ['/app/control-despacho', 'CONTROL_DESPACHO'],
   ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
@@ -297,6 +300,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/explotacion/viajes': 'acarreo camion transportista flete planilla aprobar viaje vacio',
   '/app/explotacion/plantas': 'planta mina ruta tarifa operador gobernacion aliado ceder cerrar abrir sitio',
   '/app/explotacion/salidas': 'salida planta producto arena piedra m3 camion sale estimado',
+  '/app/control-despacho':
+    'control despacho planilla excel nota entrega salida cliente rif material m3 precio monto status contado cruce autorizado observaciones correlativo',
   '/app/costos':
     'caja costo por m3 metro cubico fondo entregado deuda casa matriz socio gastos fijos cerrar caja tasa referencial precio',
 }
@@ -639,6 +644,17 @@ export const navigation: NavSection[] = [
           { label: 'Lista de precios', to: '/app/ventas/precios' },
           { label: 'Cotizaciones', to: '/app/ventas/cotizaciones' },
         ],
+      },
+      {
+        /*
+          CONTROL DE DESPACHO, 21/09/2026. La planilla de Excel de Christopher
+          con la mitad izquierda llenándose sola: lee las notas de entrega y las
+          de salida, y no escribe en ningún otro módulo. Va antes de Facturación
+          porque es lo que se mira para saber qué falta por cobrar.
+        */
+        label: 'Control de despacho',
+        icon: ClipboardList,
+        to: '/app/control-despacho',
       },
       {
         /*
