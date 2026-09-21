@@ -175,7 +175,6 @@ export function ControlDespacho() {
     <>
       <PageHeader
         title="Control de despacho"
-        description="Lo que salió, de qué nota, para quién y en cuánto. El número, la fecha, el cliente, el material y la cantidad vienen de las notas; el RIF, el precio, el status y las observaciones se escriben aquí."
         actions={
           <>
             {puedeAjustar ? (
