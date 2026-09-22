@@ -286,6 +286,110 @@ export default async function pruebaNomina(tx) {
     'y al llegar a cero el préstamo se salda solo',
   )
 
+  /*
+    EL BONO VACACIONAL, QUE ES EL SÉPTIMO CONCEPTO DE LEY.
+
+    Lo que se comprueba no es que aparezca una línea, sino las DOS decisiones
+    del diseño:
+
+      1. Que los días de vacaciones NO se pagan aparte. Las faltas
+         justificadas no bajan `v_dias_pagados`, así que ya los cobra por
+         SAL-BAS: una línea más por esos días pagaría dos veces.
+      2. Que los días del bono salen de `private.dias_bono_vacacional` —la
+         misma cuenta que usa la liquidación— y no de una fórmula nueva.
+
+    El trabajador de prueba entró hace 3 años, así que le tocan 15 + 3 = 18.
+
+    Se lee un recibo fresco después de recalcular: el de arriba quedó con otro
+    id y compararlo contra él daría un falso verde.
+  */
+  grupo('Nómina · el bono vacacional')
+
+  /*
+    Se enciende el concepto solo si estaba apagado.
+
+    `cambiar_regimen_nomina` falla a propósito cuando no hay nada que cambiar
+    —«ya calcula exactamente esos conceptos»—, así que llamarlo a ciegas rompe
+    la prueba en la base donde ya están todos encendidos, que es el caso de la
+    local recién levantada.
+  */
+  const [reg] = await tx`
+    select valor_texto from public.nomina_parametros
+     where clave = 'regimen_nomina'
+       and vigencia_desde <= current_date
+       and (vigencia_hasta is null or vigencia_hasta >= current_date)
+     order by vigencia_desde desc limit 1`
+
+  /*
+    Sin fila vigente son TODOS, que es el estado de una base recién levantada.
+
+    Se lee por `nomina_parametros` y no por `private.conceptos_de_ley`: el rol
+    con el que corre la prueba no entra al esquema `private`, y es correcto que
+    no entre. La interfaz hace exactamente esta misma lectura.
+  */
+  const encendidos =
+    reg === undefined
+      ? null
+      : reg.valor_texto === 'SOLO LO PACTADO'
+        ? []
+        : String(reg.valor_texto).split(', ')
+
+  /*
+    La vigencia nueva arranca el primer día del período, no en el año 2000.
+
+    `conceptos_de_ley` se lee por la fecha de CIERRE del período, y la vigencia
+    que manda es la más reciente que lo cubra. Con una fecha antiquísima la
+    vigencia vieja —«SOLO LO PACTADO», del 1/9— seguiría siendo la más reciente
+    y no cambiaría nada; la función lo dice tal cual y falla.
+  */
+  if (encendidos !== null && !encendidos.includes('VACACIONES')) {
+    await tx`select public.cambiar_regimen_nomina(false, ${per1.desde}::date)`
+  }
+
+  await tx`select public.guardar_vacaciones(${periodo.id}, ${emp.id}, 15::numeric, true)`
+  await tx`select public.calcular_nomina(${periodo.id})`
+
+  const [recVac] = await tx`
+    select * from public.nomina_recibos
+     where periodo_id = ${periodo.id} and empleado_id = ${emp.id}`
+
+  const [bonVac] = await tx`
+    select * from public.nomina_recibo_lineas
+     where recibo_id = ${recVac.id} and concepto = 'BON-VAC'`
+
+  comprobar(!!bonVac, 'con el concepto encendido y la casilla marcada, el recibo lleva el bono')
+
+  if (bonVac) {
+    comprobar(
+      Number(bonVac.cantidad) === 18,
+      `son 18 días: 15 de base más 3 años de servicio (${bonVac.cantidad})`,
+    )
+    comprobar(
+      cerca(bonVac.monto, Number(recVac.salario_normal_diario) * 18),
+      'y el monto es el salario normal diario por esos días',
+    )
+  }
+
+  // La comprobación que importa de verdad: los días NO se pagan dos veces.
+  const [salConVac] = await tx`
+    select * from public.nomina_recibo_lineas
+     where recibo_id = ${recVac.id} and concepto = 'SAL-BAS'`
+  comprobar(
+    Number(salConVac.cantidad) === 7,
+    'y el salario del período sigue pagando sus 7 días, ni uno más',
+  )
+
+  // Sin la casilla no hay línea, aunque las vacaciones estén anotadas.
+  await tx`select public.guardar_vacaciones(${periodo.id}, ${emp.id}, 15::numeric, false)`
+  await tx`select public.calcular_nomina(${periodo.id})`
+  const [recSin] = await tx`
+    select * from public.nomina_recibos
+     where periodo_id = ${periodo.id} and empleado_id = ${emp.id}`
+  const [sinBono] = await tx`
+    select count(*) as n from public.nomina_recibo_lineas
+     where recibo_id = ${recSin.id} and concepto = 'BON-VAC'`
+  comprobar(Number(sinBono.n) === 0, 'sin la casilla no hay bono, aunque las vacaciones estén anotadas')
+
   grupo('Nómina · las capas del cálculo')
 
   // La comprobación que justifica todo el orden por capas: la hora extra se

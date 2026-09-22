@@ -599,6 +599,12 @@ export const CONCEPTOS_DE_LEY = [
     nombre: 'Prestaciones sociales',
     detalle: 'Lo que se aparta en cada recibo, y la pantalla de prestaciones.',
   },
+  {
+    codigo: 'VACACIONES',
+    nombre: 'Bono vacacional',
+    detalle:
+      'Permite añadir el bono al recibo de quien sale de vacaciones. Los días no se pagan aparte: las faltas justificadas no bajan el salario, así que ya los cobra.',
+  },
 ] as const
 
 export type ConceptoDeLey = (typeof CONCEPTOS_DE_LEY)[number]['codigo']
@@ -953,6 +959,68 @@ export async function urlDeDocumentoDeEmpleado(ruta: string): Promise<string> {
     throw new Error(`No se pudo abrir el documento: ${error?.message ?? 'sin respuesta'}`)
   }
   return data.signedUrl
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   LAS VACACIONES DEL PERÍODO
+
+   Una fila por persona y período. Los DÍAS no se pagan aquí: las faltas
+   justificadas no bajan lo que se paga, así que quien está de vacaciones ya
+   cobra su salario completo por `SAL-BAS`. Lo que decide esta fila es si el
+   recibo lleva además la línea del **bono vacacional**, y lo decide RRHH con
+   una casilla, caso por caso.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+export interface VacacionesDelPeriodo {
+  id: number
+  periodo_id: number
+  empleado_id: number
+  dias: string
+  desde: string | null
+  hasta: string | null
+  /** La casilla: si el recibo de ESTE período lleva el bono. */
+  paga_bono: boolean
+  nota: string | null
+}
+
+export function useVacacionesDelPeriodo(periodoId: number | undefined) {
+  return useQuery({
+    enabled: periodoId !== undefined,
+    queryKey: ['nomina', 'vacaciones', periodoId],
+    queryFn: async () =>
+      desenvolver<VacacionesDelPeriodo[]>(
+        await supabase
+          .from('nomina_vacaciones')
+          .select('*')
+          .eq('periodo_id', periodoId!),
+      ),
+  })
+}
+
+export function useGuardarVacaciones() {
+  return useAccionNomina((v: {
+    periodo_id: number
+    empleado_id: number
+    dias: number
+    paga_bono?: boolean
+    desde?: string | null
+    hasta?: string | null
+    nota?: string | null
+  }) =>
+    rpc<number>('guardar_vacaciones', {
+      p_periodo_id: v.periodo_id,
+      p_empleado_id: v.empleado_id,
+      p_dias: v.dias,
+      p_paga_bono: v.paga_bono ?? false,
+      p_desde: v.desde || null,
+      p_hasta: v.hasta || null,
+      p_nota: v.nota || null,
+    }),
+  )
+}
+
+export function useEliminarVacaciones() {
+  return useAccionNomina((id: number) => rpc<void>('eliminar_vacaciones', { p_id: id }))
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
