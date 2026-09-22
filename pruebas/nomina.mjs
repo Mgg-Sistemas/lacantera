@@ -306,12 +306,16 @@ export default async function pruebaNomina(tx) {
   grupo('Nómina · el bono vacacional')
 
   /*
-    Se enciende el concepto solo si estaba apagado.
+    Se enciende el régimen AQUÍ y no en la preparación.
 
-    `cambiar_regimen_nomina` falla a propósito cuando no hay nada que cambiar
-    —«ya calcula exactamente esos conceptos»—, así que llamarlo a ciegas rompe
-    la prueba en la base donde ya están todos encendidos, que es el caso de la
-    local recién levantada.
+    Se intentó encenderlo antes de abrir el período —para que la prueba llegara
+    más lejos— y sale peor: con el cestaticket y el seguro social encendidos, el
+    cálculo hace el «despeje del básico» y el salario diario deja de ser los
+    1.200 exactos que comprueban las líneas de arriba (da 1.165,63). Esas
+    comprobaciones están escritas para el régimen «solo lo pactado».
+
+    Así que el bono vacacional se prueba después de ellas, encendiendo el
+    régimen sobre un período que ya cerró sus cuentas.
   */
   const [reg] = await tx`
     select valor_texto from public.nomina_parametros
@@ -320,13 +324,9 @@ export default async function pruebaNomina(tx) {
        and (vigencia_hasta is null or vigencia_hasta >= current_date)
      order by vigencia_desde desc limit 1`
 
-  /*
-    Sin fila vigente son TODOS, que es el estado de una base recién levantada.
-
-    Se lee por `nomina_parametros` y no por `private.conceptos_de_ley`: el rol
-    con el que corre la prueba no entra al esquema `private`, y es correcto que
-    no entre. La interfaz hace exactamente esta misma lectura.
-  */
+  // Sin fila vigente son TODOS. Se lee por `nomina_parametros` y no por
+  // `private.conceptos_de_ley`: el rol de la prueba no entra a `private`, y es
+  // correcto que no entre.
   const encendidos =
     reg === undefined
       ? null
@@ -334,14 +334,6 @@ export default async function pruebaNomina(tx) {
         ? []
         : String(reg.valor_texto).split(', ')
 
-  /*
-    La vigencia nueva arranca el primer día del período, no en el año 2000.
-
-    `conceptos_de_ley` se lee por la fecha de CIERRE del período, y la vigencia
-    que manda es la más reciente que lo cubra. Con una fecha antiquísima la
-    vigencia vieja —«SOLO LO PACTADO», del 1/9— seguiría siendo la más reciente
-    y no cambiaría nada; la función lo dice tal cual y falla.
-  */
   if (encendidos !== null && !encendidos.includes('VACACIONES')) {
     await tx`select public.cambiar_regimen_nomina(false, ${per1.desde}::date)`
   }

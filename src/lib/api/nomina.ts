@@ -961,6 +961,23 @@ export async function urlDeDocumentoDeEmpleado(ruta: string): Promise<string> {
   return data.signedUrl
 }
 
+/**
+ * Pone el período a la tasa BCV de un día, normalmente hoy.
+ *
+ * **No recalcula.** Cambiar la tasa deja los recibos viejos en la mesa a
+ * propósito: quien los mire tiene que verlos cambiar porque pulsó «Calcular»,
+ * no como efecto lateral de otro botón. De que nadie pague sin recalcular se
+ * encarga `pagar_nomina`, que se niega si la tasa del recibo no es la del día.
+ */
+export function useActualizarTasaDelPeriodo() {
+  return useAccionNomina((p: { periodo_id: number; fecha?: string | null }) =>
+    rpc<string>('actualizar_tasa_del_periodo', {
+      p_periodo_id: p.periodo_id,
+      p_fecha: p.fecha || null,
+    }),
+  )
+}
+
 /* ────────────────────────────────────────────────────────────────────────────
    LAS VACACIONES DEL PERÍODO
 

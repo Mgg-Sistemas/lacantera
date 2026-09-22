@@ -28,7 +28,35 @@ import {
   usePeriodos,
 } from '@/lib/api/nomina'
 import type { Periodo } from '@/lib/api/nomina'
+import { useActualizarTasaDelPeriodo } from '@/lib/api/nomina'
 import { useCuentas } from '@/lib/api/tesoreria'
+import { useTasaVigente } from '@/lib/api/tasas'
+
+/**
+ * El aviso de que el período va con una tasa que ya no es la de hoy, o `null`.
+ *
+ * Solo para los períodos que todavía pueden cobrar: en uno pagado o anulado la
+ * tasa vieja es historia y avisar sobraría. Y el umbral es la cuarta cifra
+ * decimal, la misma con la que compara `pagar_nomina`, para que la pantalla no
+ * avise de algo que la base deja pasar ni al revés.
+ */
+function avisoDeTasa(p: Periodo, tasaHoy: number | null): string | null {
+  if (tasaHoy === null || !['BORRADOR', 'CALCULADA', 'APROBADA'].includes(p.estado)) return null
+
+  const delPeriodo = Number(p.tasa_usd ?? 0)
+  if (delPeriodo <= 0) return null
+  if (Math.round(delPeriodo * 1e4) === Math.round(tasaHoy * 1e4)) return null
+
+  const diferencia = (tasaHoy / delPeriodo - 1) * 100
+  const menos = diferencia > 0
+
+  return (
+    `Esta nómina va con ${delPeriodo.toFixed(4)} Bs por dólar y hoy el BCV está en ` +
+    `${tasaHoy.toFixed(4)}. Pagarla así le ${menos ? 'descuenta' : 'suma'} un ` +
+    `${Math.abs(diferencia).toFixed(2)} % a cada trabajador. ` +
+    `Hay que actualizar la tasa y volver a calcular antes de pagar.`
+  )
+}
 import { useMisRoles } from '@/lib/api/catalogo'
 import { bolivares, dinero, dolares, fecha } from '@/lib/formato'
 
@@ -111,6 +139,9 @@ export function Procesos() {
   const aprobar = useAprobarNomina()
   const anular = useAnularPeriodo()
   const pagar = usePagarNomina()
+  const actualizarTasa = useActualizarTasaDelPeriodo()
+  const { data: tasaHoy } = useTasaVigente('USD', 'BCV')
+  const tasaDeHoy = tasaHoy?.tasa ? Number(tasaHoy.tasa) : null
   const { data: parametros } = useParametros()
 
   const [nuevo, setNuevo] = useState<null | {
@@ -228,6 +259,35 @@ export function Procesos() {
                     <dd className="text-ink/40 tabular text-xs">{dolares(p.total_neto_usd)}</dd>
                   </div>
                 </dl>
+              ) : null}
+
+              {/*
+                LA TASA DEL RECIBO CONTRA LA DE HOY.
+
+                31 de 32 sueldos están pactados en dólares, así que la tasa del
+                período no decora: con ella se convierte lo que cobra cada
+                quien. Una nómina calculada el día 11 y pagada el 22 le paga a
+                todo el mundo la devaluación de esos once días de menos —el
+                22/09/2026 eran 2,39 %—.
+
+                `pagar_nomina` ya se niega a pagar así. Esto es el aviso que lo
+                dice ANTES, para que nadie llegue al botón y se lleve un error
+                sin entender por qué.
+              */}
+              {avisoDeTasa(p, tasaDeHoy) ? (
+                <p className="border-warning/40 bg-warning-soft text-warning mt-4 rounded-[6px] border p-3 text-xs">
+                  {avisoDeTasa(p, tasaDeHoy)}
+                  {puedeRRHH && ['BORRADOR', 'CALCULADA'].includes(p.estado) ? (
+                    <button
+                      type="button"
+                      className="ml-2 font-medium underline underline-offset-4"
+                      disabled={actualizarTasa.isPending}
+                      onClick={() => void actualizarTasa.mutateAsync({ periodo_id: p.id })}
+                    >
+                      Poner la tasa de hoy
+                    </button>
+                  ) : null}
+                </p>
               ) : null}
 
               {p.estado !== 'ANULADA' ? (
