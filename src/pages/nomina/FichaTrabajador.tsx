@@ -19,6 +19,7 @@ import { Select } from '@/components/ui/Select'
 import { MOTIVOS_EGRESO } from '@/lib/api/prestaciones'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
+import { Interruptor } from '@/components/ui/Interruptor'
 import { EncuadreFoto } from '@/components/EncuadreFoto'
 import { useEntregadoATrabajador } from '@/lib/api/asignaciones'
 import { Visor } from '@/components/Visor'
@@ -32,6 +33,7 @@ import {
   useFirmaRrhh,
   useFoto,
   useGuardarEncuadre,
+  useMarcarEventual,
   useEmpleados,
   useIncidencias,
   useRegistrarIncidencia,
@@ -206,6 +208,7 @@ export function FichaTrabajador() {
   const subir = useSubirFoto()
   const guardarEncuadre = useGuardarEncuadre()
   const quitar = useQuitarFoto()
+  const marcarEventual = useMarcarEventual()
 
   const [encuadre, setEncuadre] = useState<Encuadre>(ENCUADRE_CENTRADO)
   const [encuadreGuardado, setEncuadreGuardado] = useState('')
@@ -559,6 +562,9 @@ export function FichaTrabajador() {
           <Chip tone={e.activo ? 'success' : 'danger'}>
             {e.activo ? 'Activo' : 'Desincorporado'}
           </Chip>
+          {/* Al lado del estado y no escondido en la ficha: que alguien sea
+              eventual cambia si cobra en el ciclo, así que se ve de entrada. */}
+          {e.eventual ? <Chip tone="warning">Eventual</Chip> : null}
           {puedeRRHH ? (
             <Link to={`/app/nomina/personal/${e.id}/editar`}>
               <Button size="sm" variant="outline" icon={<Pencil />}>
@@ -912,6 +918,38 @@ export function FichaTrabajador() {
         alguien no debería pasar por los almacenes que tiene a cargo.
       */}
       <PapelesDelTrabajador empleadoId={e.id} puedeEditar={puedeRRHH} />
+
+      {/*
+        LA CONDICIÓN DE EVENTUAL, EN SU PROPIA TARJETA.
+
+        No está en «Editar datos» a propósito: decide si esta persona cobra en
+        la quincena, y eso no puede cambiarse de refilón mientras se corrige un
+        teléfono. Aquí es un gesto deliberado y con su aviso delante.
+      */}
+      {puedeRRHH ? (
+        <Card className="mt-4">
+          <CardHeader
+            title="Condición de contratación"
+            subtitle="Quien es eventual no entra en las nóminas que corren solas. Se le paga abriendo un período especial."
+          />
+          <div className="mt-4">
+            <Interruptor
+              encendido={e.eventual}
+              deshabilitado={marcarEventual.isPending}
+              onCambio={(v) => marcarEventual.mutate({ id: e.id, eventual: v })}
+              etiqueta="Contratado por día o por proyecto puntual"
+              detalle={
+                e.eventual
+                  ? 'Ahora mismo NO entra en la nómina semanal, quincenal ni mensual.'
+                  : 'Ahora mismo entra en la nómina de su frecuencia, como todos.'
+              }
+            />
+          </div>
+          {marcarEventual.error ? (
+            <ErrorDeCarga error={marcarEventual.error} className="mt-3" />
+          ) : null}
+        </Card>
+      ) : null}
 
       {/* Van detrás de los papeles y delante de «de qué responde», por lo
           mismo que dice el comentario de arriba: la carga familiar y la salud

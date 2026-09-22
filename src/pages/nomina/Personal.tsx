@@ -129,6 +129,7 @@ export function Personal() {
   const [carga, setCarga] = useState('')
   const [dependientes, setDependientes] = useState('')
   const [salud, setSalud] = useState('')
+  const [condicion, setCondicion] = useState('')
 
   // Las cuentas de familiares y salud, por persona, en una sola consulta.
   const { data: cargas } = useCargasDeEmpleados()
@@ -182,9 +183,13 @@ export function Personal() {
       if (dependientes && (c?.tiene_dependientes ?? false) !== (dependientes === 'SI')) return false
       if (salud && (c?.tiene_condicion_salud ?? false) !== (salud === 'SI')) return false
 
+      // Ser eventual decide si cobra en el ciclo, así que se filtra como los
+      // demás: es la pregunta «¿a quién no le toca esta quincena?».
+      if (condicion && e.eventual !== (condicion === 'SI')) return false
+
       return true
     }
-  }, [busca, genero, estadoCivil, carga, dependientes, salud, cargaDe])
+  }, [busca, genero, estadoCivil, carga, dependientes, salud, condicion, cargaDe])
 
   const filtrados = useMemo(() => (data ?? []).filter(pasaElFiltro), [data, pasaElFiltro])
 
@@ -234,8 +239,11 @@ export function Personal() {
         salud === 'SI' ? 'con alguna condición de salud' : 'sin condiciones de salud declaradas',
       )
     }
+    if (condicion) {
+      partes.push(condicion === 'SI' ? 'eventuales' : 'de nómina ordinaria')
+    }
     return partes.length > 0 ? partes.join(' · ') : null
-  }, [busca, genero, estadoCivil, carga, dependientes, salud])
+  }, [busca, genero, estadoCivil, carga, dependientes, salud, condicion])
 
   const hayFiltro = criterio !== null
 
@@ -376,6 +384,17 @@ export function Personal() {
               { valor: 'NO', etiqueta: 'Sin condiciones' },
             ]}
           />
+          <Select
+            label="Contratación"
+            className="w-48"
+            vacio="Todos"
+            value={condicion}
+            onChange={(e) => setCondicion(e.target.value)}
+            opciones={[
+              { valor: 'NO', etiqueta: 'Nómina ordinaria' },
+              { valor: 'SI', etiqueta: 'Eventual' },
+            ]}
+          />
 
           <label className="text-ink/70 flex cursor-pointer items-center gap-2 pb-2 text-sm select-none">
             <input
@@ -401,6 +420,7 @@ export function Personal() {
                 setCarga('')
                 setDependientes('')
                 setSalud('')
+                setCondicion('')
               }}
             >
               Limpiar filtros

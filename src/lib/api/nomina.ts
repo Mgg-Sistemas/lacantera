@@ -64,6 +64,18 @@ export interface Empleado {
   telefono_pago: string | null
   telefono: string | null
   activo: boolean
+  /**
+   * Contratado por día o por proyecto puntual.
+   *
+   * Decide si entra en las nóminas que corren solas. Un eventual queda fuera
+   * de la semanal, la quincenal y la mensual, y entra en un período ESPECIAL,
+   * que es el que alguien abre a propósito.
+   *
+   * No se guarda con el resto de la ficha: va por `marcar_empleado_eventual`,
+   * porque decide si alguien cobra y eso no puede ser un efecto colateral de
+   * corregirle el teléfono.
+   */
+  eventual: boolean
   nota: string | null
 
   /**
@@ -941,6 +953,19 @@ export async function urlDeDocumentoDeEmpleado(ruta: string): Promise<string> {
     throw new Error(`No se pudo abrir el documento: ${error?.message ?? 'sin respuesta'}`)
   }
   return data.signedUrl
+}
+
+/**
+ * Marca o desmarca a alguien como eventual.
+ *
+ * Aparte de `useGuardarEmpleado` a propósito: esto decide si una persona entra
+ * o no en la nómina del ciclo, y no puede pasar de refilón al guardar la ficha.
+ * La base además lo rechaza si hay un período sin cerrar que ya la recogió.
+ */
+export function useMarcarEventual() {
+  return useAccionNomina((e: { id: number; eventual: boolean }) =>
+    rpc<boolean>('marcar_empleado_eventual', { p_id: e.id, p_eventual: e.eventual }),
+  )
 }
 
 /* ────────────────────────────────────────────────────────────────────────────

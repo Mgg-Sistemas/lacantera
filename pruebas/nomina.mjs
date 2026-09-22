@@ -150,6 +150,65 @@ export default async function pruebaNomina(tx) {
     'a quien cobra por mes no se le abre recibo en un período semanal',
   )
 
+  /*
+    EL EVENTUAL NO ENTRA EN LA NÓMINA QUE CORRE SOLA.
+
+    Es la comprobación que justifica la casilla. Sin la reja de
+    `calcular_nomina`, este trabajador —contratado por tres días— cobraría su
+    salario prorrateado TODAS las semanas, sin que nadie lo pidiera y sin dar
+    error. Un recibo de más, callado, cada ciclo.
+
+    Se crea con la misma frecuencia que el del período a propósito: si se le
+    pusiera otra, la prueba pasaría por la frecuencia y no por lo que se quiere
+    probar, y seguiría pasando el día que la reja se caiga.
+  */
+  const [empEventual] = await tx`
+    select public.guardar_empleado(
+      p_cedula        => 'V-99999997',
+      p_nombres       => 'EVENTUAL',
+      p_apellidos     => 'DE PRUEBA',
+      p_cargo         => 'JORNALERO DE PRUEBA',
+      p_departamento  => 'OPERACIONES',
+      p_fecha_ingreso => ((current_date - 1) - interval '3 years')::date,
+      p_frecuencia    => 'SEMANAL',
+      p_base          => 'DIARIO',
+      p_salario       => 1200::numeric,
+      p_moneda        => 'VES',
+      p_jornada       => 'DIURNA') as id`
+
+  await tx`select public.marcar_empleado_eventual(${empEventual.id}, true)`
+
+  const [esEventual] = await tx`
+    select eventual from public.empleados where id = ${empEventual.id}`
+  comprobar(esEventual.eventual === true, 'el jornalero queda marcado como eventual')
+
+  // Se recalcula con él dentro de la base: si la reja no estuviera, ahora
+  // saldrían dos recibos en vez de uno.
+  const [conEventual] = await tx`select public.calcular_nomina(${periodo.id}) as n`
+  comprobar(
+    Number(conEventual.n) === 1,
+    'el eventual no entra en la nómina semanal aunque su frecuencia coincida',
+  )
+
+  const [delEventual] = await tx`
+    select count(*) as n from public.nomina_recibos
+     where periodo_id = ${periodo.id} and empleado_id = ${empEventual.id}`
+  comprobar(Number(delEventual.n) === 0, 'y no se le abre recibo')
+
+  /*
+    Y se le quita la marca por la misma puerta, no con un `update`.
+
+    Un `update public.empleados` directo aquí da «permission denied»: esta base
+    no concede escritura a nadie sobre las tablas —se escribe por función— y la
+    prueba corre con el rol de verdad. Que falle así es exactamente lo que se
+    quiere de este diseño, y de paso esto comprueba el camino de vuelta.
+  */
+  await tx`select public.marcar_empleado_eventual(${empEventual.id}, false)`
+
+  const [yaNoEsEventual] = await tx`
+    select eventual from public.empleados where id = ${empEventual.id}`
+  comprobar(yaNoEsEventual.eventual === false, 'y la marca se puede quitar')
+
   const [recibo] = await tx`
     select * from public.nomina_recibos where periodo_id = ${periodo.id} and empleado_id = ${emp.id}`
 
