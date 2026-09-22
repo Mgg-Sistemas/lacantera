@@ -7094,7 +7094,7 @@ Arriba de la pantalla, la tarjeta **Marcar**. Hay tres maneras, y en las tres **
 | Cómo | Detalle |
 | --- | --- |
 | **Lector USB** | Se escanea el QR del carnet con el campo «Carnet» activo. El lector teclea la dirección y pulsa Enter solo. Es la manera para un puesto fijo |
-| **Cámara** | El botón **Cámara**, en el teléfono o el computador, con Chrome o Edge. Apunta al QR del reverso y marca en cuanto lo lee. Donde el navegador no sabe leer códigos, el botón no aparece |
+| **Cámara** | El botón **Cámara**, en el teléfono o el computador, con cualquier navegador. La primera vez el navegador pregunta si permite la cámara: hay que decir que sí. Apunta al QR del reverso y marca en cuanto lo lee. Si dice que la cámara está bloqueada, se permite desde el candado junto a la dirección |
 | **A mano** | Se busca a la persona por nombre o ficha y se pulsa **Marcar**. Para quien dejó el carnet en casa |
 
 Debajo aparece en grande lo que pasó: **Entrada · 07:12 · Nombre**, o **Salida**. Si salió mal —carnet anulado, persona que ya no está en el personal, doble escaneo—, lo dice ahí mismo.

@@ -145,9 +145,11 @@ export function useGuardarAjustesDeAsistencia() {
   )
 }
 
-/** Chrome y Edge traen lector de códigos; Firefox y Safari de escritorio, no. */
-export const hayCamaraQueLeaQr = (): boolean =>
-  typeof window !== 'undefined' && 'BarcodeDetector' in window && Boolean(navigator.mediaDevices?.getUserMedia)
+/**
+ * Basta con que el navegador dé acceso a la cámara (sitio seguro): el QR lo
+ * descifra el lector nativo donde lo hay y `jsqr` donde no (iPhone, Windows).
+ */
+export const hayCamaraQueLeaQr = (): boolean => typeof window !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia)
 
 /* ───────────────────────────────────────────────── horas, en Caracas */
 
