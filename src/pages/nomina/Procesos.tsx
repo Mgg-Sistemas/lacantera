@@ -28,9 +28,12 @@ import {
   usePeriodos,
 } from '@/lib/api/nomina'
 import type { Periodo } from '@/lib/api/nomina'
-import { useActualizarTasaDelPeriodo } from '@/lib/api/nomina'
+import { useActualizarTasaDelPeriodo, useDevolverNomina } from '@/lib/api/nomina'
 import { useCuentas } from '@/lib/api/tesoreria'
 import { useTasaVigente } from '@/lib/api/tasas'
+
+import { useMisRoles } from '@/lib/api/catalogo'
+import { bolivares, dinero, dolares, fecha } from '@/lib/formato'
 
 /**
  * El aviso de que el período va con una tasa que ya no es la de hoy, o `null`.
@@ -50,15 +53,26 @@ function avisoDeTasa(p: Periodo, tasaHoy: number | null): string | null {
   const diferencia = (tasaHoy / delPeriodo - 1) * 100
   const menos = diferencia > 0
 
+  /*
+    EL AVISO DICE QUÉ HACER **EN ESTE ESTADO**, y no una receta genérica.
+
+    La primera versión decía siempre «hay que actualizar la tasa y volver a
+    calcular». En una nómina APROBADA eso es un callejón sin salida: no admite
+    cambios de tasa ni recálculo, y hasta hoy tampoco había forma de devolverla.
+    El usuario lo encontró en la primera pantalla que miró, y tenía razón: un
+    aviso que manda a hacer algo imposible desde ahí es peor que no avisar.
+  */
+  const queHacer =
+    p.estado === 'APROBADA'
+      ? 'Hay que devolverla a calculada, ponerle la tasa de hoy, recalcular y volver a aprobarla.'
+      : 'Hay que ponerle la tasa de hoy y volver a calcular antes de aprobar.'
+
   return (
     `Esta nómina va con ${delPeriodo.toFixed(4)} Bs por dólar y hoy el BCV está en ` +
     `${tasaHoy.toFixed(4)}. Pagarla así le ${menos ? 'descuenta' : 'suma'} un ` +
-    `${Math.abs(diferencia).toFixed(2)} % a cada trabajador. ` +
-    `Hay que actualizar la tasa y volver a calcular antes de pagar.`
+    `${Math.abs(diferencia).toFixed(2)} % a cada trabajador. ${queHacer}`
   )
 }
-import { useMisRoles } from '@/lib/api/catalogo'
-import { bolivares, dinero, dolares, fecha } from '@/lib/formato'
 
 /** Qué conceptos de ley cambiaron desde que se calculó la quincena, si cambió alguno. */
 function AvisoConceptosCambiados({ periodo }: { periodo: Periodo }) {
@@ -140,6 +154,7 @@ export function Procesos() {
   const anular = useAnularPeriodo()
   const pagar = usePagarNomina()
   const actualizarTasa = useActualizarTasaDelPeriodo()
+  const devolver = useDevolverNomina()
   const { data: tasaHoy } = useTasaVigente('USD', 'BCV')
   const tasaDeHoy = tasaHoy?.tasa ? Number(tasaHoy.tasa) : null
   const { data: parametros } = useParametros()
@@ -277,6 +292,10 @@ export function Procesos() {
               {avisoDeTasa(p, tasaDeHoy) ? (
                 <p className="border-warning/40 bg-warning-soft text-warning mt-4 rounded-[6px] border p-3 text-xs">
                   {avisoDeTasa(p, tasaDeHoy)}
+
+                  {/* El botón que corresponde al estado. En una aprobada, lo
+                      primero es devolverla: sin eso no admite ni tasa ni
+                      recálculo, y el aviso quedaría mandando al vacío. */}
                   {puedeRRHH && ['BORRADOR', 'CALCULADA'].includes(p.estado) ? (
                     <button
                       type="button"
@@ -284,8 +303,33 @@ export function Procesos() {
                       disabled={actualizarTasa.isPending}
                       onClick={() => void actualizarTasa.mutateAsync({ periodo_id: p.id })}
                     >
-                      Poner la tasa de hoy
+                      {actualizarTasa.isPending ? 'Poniendo…' : 'Poner la tasa de hoy'}
                     </button>
+                  ) : null}
+
+                  {puedeGerente && p.estado === 'APROBADA' ? (
+                    <button
+                      type="button"
+                      className="ml-2 font-medium underline underline-offset-4"
+                      disabled={devolver.isPending}
+                      onClick={() =>
+                        void devolver.mutateAsync({
+                          periodo_id: p.id,
+                          motivo: 'La tasa del período ya no es la del día',
+                        })
+                      }
+                    >
+                      {devolver.isPending ? 'Devolviendo…' : 'Devolver a calculada'}
+                    </button>
+                  ) : null}
+
+                  {/* Quien no aprueba tampoco desaprueba: quitar una
+                      aprobación es un acto de control. Se dice a quién
+                      pedírselo en vez de dejar un aviso sin salida. */}
+                  {!puedeGerente && p.estado === 'APROBADA' ? (
+                    <span className="ml-1 font-medium">
+                      Pídele a gerencia general que la devuelva a calculada.
+                    </span>
                   ) : null}
                 </p>
               ) : null}

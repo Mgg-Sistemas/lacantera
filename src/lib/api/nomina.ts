@@ -969,6 +969,20 @@ export async function urlDeDocumentoDeEmpleado(ruta: string): Promise<string> {
  * no como efecto lateral de otro botón. De que nadie pague sin recalcular se
  * encarga `pagar_nomina`, que se niega si la tasa del recibo no es la del día.
  */
+/**
+ * Devuelve una nómina aprobada a calculada, para poder corregirla.
+ *
+ * Existe porque el candado de la tasa la dejaba atrapada: una aprobada no
+ * admite cambios de tasa ni recálculo, y lo único que había para salir de ahí
+ * era anularla entera. Aprobar no mueve dinero —solo marca estado, quién y
+ * cuándo—, así que devolver es deshacer esas tres marcas y nada más.
+ */
+export function useDevolverNomina() {
+  return useAccionNomina((p: { periodo_id: number; motivo?: string | null }) =>
+    rpc<void>('devolver_nomina', { p_periodo_id: p.periodo_id, p_motivo: p.motivo || null }),
+  )
+}
+
 export function useActualizarTasaDelPeriodo() {
   return useAccionNomina((p: { periodo_id: number; fecha?: string | null }) =>
     rpc<string>('actualizar_tasa_del_periodo', {
