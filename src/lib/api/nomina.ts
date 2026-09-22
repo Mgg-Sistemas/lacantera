@@ -13,6 +13,14 @@ export interface Empleado {
   /** Cuatro dígitos, correlativo de por vida. La asigna la base, no la pantalla. */
   ficha: string
   cedula: string
+  /**
+   * El RIF de la persona, V-12345678-9. Nulo mientras no se sepa.
+   *
+   * No se deriva de la cédula aunque suela parecerse: quien tiene firma
+   * personal lleva J, y el dígito verificador se calcula. Un RIF que el
+   * sistema se inventa acaba impreso en una constancia.
+   */
+  rif: string | null
   nombres: string
   apellidos: string
   cargo: string
@@ -693,6 +701,15 @@ export function useGuardarEmpleado() {
     rpc<number>('guardar_empleado', {
       p_id: e.id ?? null,
       p_cedula: e.cedula,
+      /*
+        SIEMPRE SE MANDA, Y VACÍO QUIERE DECIR «BÓRRALO».
+
+        La base distingue no recibirlo —no lo toca— de recibirlo en blanco
+        —lo borra—, para que una pantalla vieja que no lo conoce no arrase
+        con el RIF de alguien al guardar un teléfono. Esta pantalla sí lo
+        conoce, así que manda lo que tenga el formulario, incluso vacío.
+      */
+      p_rif: e.rif ?? '',
       p_nombres: e.nombres,
       p_apellidos: e.apellidos,
       p_cargo: e.cargo,
@@ -793,6 +810,137 @@ export function useSubirFoto() {
 
     return ruta
   })
+}
+
+// ---------------------------------------------------------------------------
+// Los papeles del trabajador
+//
+// Christopher, 22/09/2026: «Documentación del Trabajador (Cédula, Rif,
+// Currículum)». Van al MISMO depósito privado que las fotos, bajo
+// `<ficha>/documentos/`: ese depósito ya tiene sus reglas puestas —escriben
+// ADMIN y RRHH— y son las que le tocan a la cédula de alguien.
+//
+// NUNCA HAY UNA DIRECCIÓN PÚBLICA: el enlace lo firma el servidor contra la
+// sesión de quien lo pide y caduca. La cédula de un trabajador no puede quedar
+// colgada de una dirección que se reenvía por WhatsApp.
+// ---------------------------------------------------------------------------
+
+/** Diez minutos: lo que se tarda en mirar un papel, no en repartirlo. */
+const VIGENCIA_ENLACE = 600
+
+export interface TipoDeDocumento {
+  codigo: string
+  nombre: string
+  orden: number
+  activo: boolean
+}
+
+export interface DocumentoDeEmpleado {
+  id: number
+  empleado_id: number
+  tipo: string
+  nombre: string
+  archivo_path: string
+  mime: string | null
+  bytes: number | null
+  emitido_el: string | null
+  vence_el: string | null
+  nota: string | null
+  subido_por: string | null
+  subido_en: string
+}
+
+export function useTiposDeDocumento() {
+  return useQuery({
+    queryKey: ['nomina', 'tipos-documento'],
+    staleTime: 30 * 60_000,
+    queryFn: async () =>
+      desenvolver<TipoDeDocumento[]>(
+        await supabase.from('tipos_documento_personal').select('*').order('orden'),
+      ),
+  })
+}
+
+export function useDocumentosDeEmpleado(empleadoId: number | undefined) {
+  return useQuery({
+    enabled: empleadoId !== undefined,
+    queryKey: ['nomina', 'documentos', empleadoId],
+    queryFn: async () =>
+      desenvolver<DocumentoDeEmpleado[]>(
+        await supabase
+          .from('empleado_documentos')
+          .select('*')
+          .eq('empleado_id', empleadoId!)
+          .order('subido_en', { ascending: false }),
+      ),
+  })
+}
+
+/**
+ * Sube el archivo y solo después lo anota.
+ *
+ * En ese orden a propósito: si la subida falla no queda una fila señalando un
+ * archivo que no existe, que es un renglón que al pulsarlo no abre nada. Al
+ * revés el fallo es más benigno —un archivo que nadie ve— y aun así se retira.
+ */
+export function useSubirDocumentoDeEmpleado() {
+  return useAccionNomina(async (d: {
+    empleado_id: number
+    tipo: string
+    nombre: string
+    archivo: File
+    emitido_el?: string
+    vence_el?: string
+    nota?: string
+  }) => {
+    const extension = d.archivo.name.split('.').pop()?.toLowerCase() ?? 'pdf'
+    // El nombre en el depósito no es el visible: dos cédulas se llaman igual y
+    // una ruta repetida pisaría la anterior.
+    const ruta = `${d.empleado_id}/documentos/${crypto.randomUUID()}.${extension}`
+
+    const { error } = await supabase.storage.from(BUCKET_FOTOS).upload(ruta, d.archivo, {
+      contentType: d.archivo.type || 'application/octet-stream',
+      upsert: false,
+    })
+    if (error) throw new Error(`No se pudo subir el archivo: ${error.message}`)
+
+    try {
+      return await rpc<number>('registrar_documento_de_empleado', {
+        p_empleado_id: d.empleado_id,
+        p_tipo: d.tipo,
+        p_nombre: d.nombre,
+        p_archivo: ruta,
+        p_mime: d.archivo.type || null,
+        p_bytes: d.archivo.size,
+        p_emitido_el: d.emitido_el || null,
+        p_vence_el: d.vence_el || null,
+        p_nota: d.nota || null,
+      })
+    } catch (e) {
+      await supabase.storage.from(BUCKET_FOTOS).remove([ruta])
+      throw e
+    }
+  })
+}
+
+export function useEliminarDocumentoDeEmpleado() {
+  return useAccionNomina(async (id: number) => {
+    // La función devuelve la ruta justamente para poder llevarse el archivo.
+    const ruta = await rpc<string>('eliminar_documento_de_empleado', { p_id: id })
+    if (ruta) await supabase.storage.from(BUCKET_FOTOS).remove([ruta])
+  })
+}
+
+/** Una dirección firmada para mirar un papel. Caduca en diez minutos. */
+export async function urlDeDocumentoDeEmpleado(ruta: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(BUCKET_FOTOS)
+    .createSignedUrl(ruta, VIGENCIA_ENLACE)
+
+  if (error || !data) {
+    throw new Error(`No se pudo abrir el documento: ${error?.message ?? 'sin respuesta'}`)
+  }
+  return data.signedUrl
 }
 
 export function useGuardarEncuadre() {

@@ -47,6 +47,7 @@ import {
 import type { Empleado } from '@/lib/api/nomina'
 import { TarjetaFirma } from '@/components/TarjetaFirma'
 import { useMisRoles } from '@/lib/api/catalogo'
+import { PapelesDelTrabajador } from './PapelesDelTrabajador'
 import { useMisAcciones, useRoles } from '@/lib/api/usuarios'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
@@ -109,6 +110,7 @@ function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] 
       titulo: 'Identificación',
       campos: [
         { clave: 'Cédula', valor: e.cedula },
+        { clave: 'RIF', valor: e.rif ?? '—' },
         { clave: 'Fecha de nacimiento', valor: e.fecha_nacimiento ? fecha(e.fecha_nacimiento) : '—' },
         { clave: 'Edad', valor: edad(e.fecha_nacimiento) },
         { clave: 'Grupo sanguíneo', valor: e.grupo_sanguineo ?? '—' },
@@ -903,6 +905,13 @@ export function FichaTrabajador() {
         haciendo sobre esta persona concreta. «No aparece» y «no tiene» se
         distinguen mal en una ficha.
       */}
+      {/*
+        LOS PAPELES VAN ANTES QUE «DE QUÉ RESPONDE» porque son de la persona y
+        lo otro es de su puesto: quien abre una ficha buscando la cédula de
+        alguien no debería pasar por los almacenes que tiene a cargo.
+      */}
+      <PapelesDelTrabajador empleadoId={e.id} puedeEditar={puedeRRHH} />
+
       <Card className="mt-4">
         <CardHeader
           title="De qué responde"
