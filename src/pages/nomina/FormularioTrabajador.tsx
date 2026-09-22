@@ -48,6 +48,7 @@ import { dinero } from '@/lib/formato'
 
 const vacio = {
   cedula: 'V-',
+  rif: '',
   nombres: '',
   apellidos: '',
   tabulador_id: '',
@@ -103,6 +104,7 @@ export function FormularioTrabajador() {
     setF({
       id: quien.id,
       cedula: quien.cedula,
+      rif: quien.rif ?? '',
       nombres: quien.nombres,
       apellidos: quien.apellidos,
       tabulador_id: quien.tabulador_id ? String(quien.tabulador_id) : '',
@@ -201,6 +203,20 @@ export function FormularioTrabajador() {
               label="Cédula"
               valor={f.cedula}
               onCambiar={(v) => cambiar({ cedula: v })}
+            />
+            {/*
+              EL RIF NO SE RELLENA SOLO CON LA CÉDULA, aunque en la mayoría de
+              los casos sea la misma cifra con un dígito detrás. Ese dígito se
+              calcula, quien tiene firma personal lleva J, y un RIF que el
+              sistema se inventa termina impreso en una constancia que lee el
+              banco. Se pide, no se adivina.
+            */}
+            <CampoDocumento
+              label="RIF"
+              tipo="rif"
+              valor={f.rif}
+              onCambiar={(v) => cambiar({ rif: v })}
+              hint="Opcional. Con su dígito verificador: V-12.345.678-9."
             />
             <Input
               label="Nombres"
