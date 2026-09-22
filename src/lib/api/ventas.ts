@@ -463,6 +463,28 @@ export interface NotaEntrega {
   facturable: boolean
   /** Renglones que nacieron sin precio y todavía lo esperan. */
   precios_pendientes: number
+  /**
+   * Los camiones de la nota, en orden. Desde el 22/09/2026 una nota puede
+   * llevar varios —un convenio que sale en dos gandolas— y la que nace de una
+   * salida, que no traía ninguno, los recibe después. Vacío en las notas de
+   * antes: esas siguen diciendo su camión en `vehiculo`, `chofer` y
+   * `cedula_chofer`, y el papel imprime lo uno o lo otro.
+   */
+  camiones: CamionDeNota[]
+}
+
+/** Un camión de una nota de entrega: la foto del momento, no el catálogo. */
+export interface CamionDeNota {
+  id: number
+  orden: number
+  vehiculo_id: number | null
+  chofer_id: number | null
+  /** «A11A56G · IVECO VOLTEO»: placa y descripción, ya juntas. */
+  vehiculo: string | null
+  chofer: string | null
+  cedula_chofer: string | null
+  ticket: string | null
+  peso_neto: number | string | null
 }
 
 /** Una nota por su número: para abrirla desde un enlace aunque la lista no la traiga. */

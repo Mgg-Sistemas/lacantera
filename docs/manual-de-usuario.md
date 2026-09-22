@@ -3572,6 +3572,7 @@ Al marcarla se abre un cuadro con tres cosas, y ninguna es obligatoria:
 | **Cliente** | Si el destino escrito en la salida coincide con un cliente del sistema, ya viene puesto. Si no, se elige otro, se crea en **Ventas › Clientes**, o se deja sin cliente |
 | **Precios** | Vienen vacíos, porque la nota de salida no tiene precios. Se teclean ahí mismo o se dejan para después |
 | **Se podrá facturar** | Marcada, la nota podrá cobrarse más adelante. Desmarcada, queda **solo de respaldo** y nunca aparece en Facturación para cobrarla |
+| **Camiones** | Con qué se llevó el material: chofer, vehículo y, si los hay, ticket de romana y peso neto. **Uno o varios**, con «Otro camión». La nota de salida no lo trae, y por eso se pregunta aquí |
 
 **Si le falta el cliente o algún precio, la nota nace pendiente.** Se ve en **Facturación › Notas de entrega** con la etiqueta **Pendiente por completar**, se puede imprimir —sale con el sello **PENDIENTE**— y no se puede facturar hasta que alguien con acceso a Facturación la abra y pulse **Completar**.
 
@@ -3580,6 +3581,26 @@ Al marcarla se abre un cuadro con tres cosas, y ninguna es obligatoria:
 **Al cliente se le entrega solo la nota de salida.** La de entrega es para el archivo, y las dos se imprimen cuando haga falta: la de salida desde **Salidas** o **Movimientos**, y desde ese mismo visor —donde antes estaba la casilla— ahora dice **Dejó la nota de entrega NE-2026-0016** con un botón **Verla**. También está en **Facturación › Notas de entrega**, donde dice de qué salida viene.
 
 **Una salida deja una sola nota de entrega.** Si se anula, se puede generar otra.
+
+#### Los camiones de una nota de entrega, los que hagan falta
+
+**Desde el 22 de septiembre de 2026 una nota de entrega puede llevar varios camiones.** Antes tenía sitio para uno —el que se pone al despachar—, y la que nacía de una salida no traía ninguno. Quien despacha lo pidió así: *«fueron 2 camiones, si se puede adjuntar la información de los 2 de una vez»*.
+
+Se ponen en tres sitios, y en los tres es la misma lista:
+
+| Dónde | Cuándo |
+| --- | --- |
+| En el cuadro **Generar nota de entrega**, desde la nota de salida | Al nacer |
+| En **Completar**, en Facturación › Notas de entrega | Al ponerle lo que le falta |
+| Con el botón **Camiones** del detalle de la nota, o del visor de la nota de salida que la dejó | En cualquier momento, mientras no esté anulada |
+
+De cada camión se dice el **chofer** y el **vehículo** —del catálogo, y si no están se añaden ahí mismo con nombre y cédula, o placa y descripción— y, si los hay, el **ticket de romana** y el **peso neto**. Un camión necesita al menos chofer o vehículo: un ticket solo no es un camión.
+
+**En el papel salen uno debajo del otro**, en el recuadro donde siempre fue el camión. Con uno solo, la nota se imprime igual que siempre.
+
+<p class="regla"><strong>Lo que se imprime es la foto del momento.</strong> Placa, chofer y cédula se copian a la nota al guardar, además de apuntar al catálogo. Si mañana se corrige el nombre de un chofer en el catálogo, la nota que ya se imprimió sigue diciendo lo que decía.</p>
+
+**Quién puede ponerlos.** Quien escribe en Facturación, sobre cualquier nota. Y quien tiene la casilla de generar la nota de entrega desde la salida, sobre las notas que nacieron de una salida: es la misma persona que la generó, poniéndole lo que la salida no tenía.
 
 **Quién puede marcar la casilla.** Nadie por su rol ni por su nivel: es la casilla **Generar la nota de entrega de una salida**, del módulo Salidas, y solo se tiene si el administrador la presta desde **Configuración › Usuarios › Permisos extendidos** (13.1). Quien no la tiene imprime su nota de salida como siempre y no ve la casilla.
 
@@ -3595,7 +3616,7 @@ Es la confusión más común, y sale cara: quien la tiene, o le entrega al clien
 | Lo dice el propio papel | **ESTE DOCUMENTO NO ES UNA FACTURA.** | — |
 | Numeración | **NE-2026-0001** | **FAC-2026-0012** más el número de control **00-00000034** |
 | ¿Mueve el patio? | Sí, en el acto | No. El material ya salió con la nota |
-| Cuántas | Una por camión | Una puede juntar varias notas del mismo cliente y misma moneda |
+| Cuántas | Una por despacho, con uno o varios camiones | Una puede juntar varias notas del mismo cliente y misma moneda |
 | Datos propios | Vehículo, chofer, cédula, ticket de romana, peso, guía de movilización | Número de control, condición de pago, vencimiento, retención |
 | Color de la banda | Naranja de seguridad | Azul de la casa |
 | Firmas | **Entregado por** / **Recibido conforme** | **Por la empresa** / **Aceptado por el cliente** |

@@ -32,6 +32,8 @@ import type { Cliente, NotaEntrega, RenglonGuardado } from '@/lib/api/ventas'
 import { armarNotaDeEntrega } from '@/lib/ficha/notaDeEntregaPapel'
 import { Chip } from '@/components/ui/Chip'
 import { ModalNotaDeEntrega } from './ModalNotaDeEntrega'
+import { ModalCamiones } from '@/pages/facturacion/CamionesDeLaNota'
+import { useGuardarCamionesDeNota } from '@/lib/api/salidas'
 import { armarNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { DatosNotaDeSalida } from '@/lib/ficha/notaDeSalidaPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
@@ -131,6 +133,8 @@ export function useNotaDeSalida(): {
   const { data: yo } = useMiPerfil()
   const { puede: casillaDe } = useMisAcciones()
   const generar = useGenerarNotaDeEntrega()
+  const guardarCamiones = useGuardarCamionesDeNota()
+  const [camionesDe, setCamionesDe] = useState<NotaEntrega | null>(null)
   const [haciaFuera, setHaciaFuera] = useState<{ numero: string; destino: string } | null>(null)
   const [deEntrega, setDeEntrega] = useState<NotaEntrega | null>(null)
   const [asientos, setAsientos] = useState<AsientoDeLaSalida[] | null>(null)
@@ -402,6 +406,11 @@ export function useNotaDeSalida(): {
                 >
                   {armandoEntrega ? 'Armando…' : 'Verla'}
                 </Button>
+                {deEntrega.estado !== 'ANULADA' && casillaDe(GENERAR_NOTA_ENTREGA) ? (
+                  <Button size="sm" variant="outline" onClick={() => setCamionesDe(deEntrega)}>
+                    Camiones{deEntrega.camiones?.length ? ` (${deEntrega.camiones.length})` : ''}
+                  </Button>
+                ) : null}
               </span>
             ) : casillaDe(GENERAR_NOTA_ENTREGA) ? (
               <label className="text-ink/90 flex cursor-pointer items-center gap-2 text-sm font-bold">
@@ -436,8 +445,8 @@ export function useNotaDeSalida(): {
           titulo={`Nota de entrega de ${haciaFuera.numero}`}
           destino={haciaFuera.destino}
           lineas={asientos}
-          guardando={generar.isPending}
-          error={generar.error}
+          guardando={generar.isPending || guardarCamiones.isPending}
+          error={generar.error ?? guardarCamiones.error}
           onCerrar={() => {
             turnoDeAsientos.current++
             setAsientos(null)
@@ -450,6 +459,13 @@ export function useNotaDeSalida(): {
                 precios: resp.precios.map((x) => ({ movimiento_id: x.id, precio: x.precio })),
                 facturable: resp.facturable,
               })
+              // La nota ya existe; los camiones se le ponen con su número. Si
+              // esto falla, la nota queda y el error se ve en el mismo cuadro.
+              .then((id) =>
+                resp.camiones.length > 0
+                  ? guardarCamiones.mutateAsync({ nota_id: id, camiones: resp.camiones })
+                  : undefined,
+              )
               .then(async () => {
                 setAsientos(null)
                 const hecha = await leerNotaDeEntregaDeLaSalida(haciaFuera.numero)
@@ -458,6 +474,21 @@ export function useNotaDeSalida(): {
               })
               .catch(() => {})
           }
+        />
+      ) : null}
+
+      {camionesDe ? (
+        <ModalCamiones
+          notaId={camionesDe.id}
+          numero={camionesDe.numero}
+          camiones={camionesDe.camiones ?? []}
+          onCerrar={async () => {
+            setCamionesDe(null)
+            // Se relee: el papel debe salir con los camiones recién puestos.
+            if (haciaFuera) {
+              setDeEntrega(await leerNotaDeEntregaDeLaSalida(haciaFuera.numero).catch(() => null))
+            }
+          }}
         />
       ) : null}
 
