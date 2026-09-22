@@ -5,7 +5,15 @@ import { Input } from '@/components/ui/Input'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useClientes } from '@/lib/api/ventas'
-import { clienteQueSeParece } from '@/lib/api/salidas'
+import { clienteQueSeParece, type CamionParaGuardar } from '@/lib/api/salidas'
+import type { CamionDeNota } from '@/lib/api/ventas'
+import { CamionesDeLaNota } from '@/pages/facturacion/CamionesDeLaNota'
+import {
+  camionesParaEditar,
+  camionesParaGuardar,
+  faltaEnLosCamiones,
+  type CamionEnEdicion,
+} from '@/pages/facturacion/camiones'
 
 /*
   LO QUE SE LE PREGUNTA A UNA NOTA DE ENTREGA QUE NACE DE UNA SALIDA.
@@ -38,6 +46,13 @@ export interface RespuestaDeLaNota {
   cliente_id: number | null
   precios: { id: number; precio: number }[]
   facturable: boolean
+  /**
+   * Con qué se llevó el material. La nota de salida no lo trae, y por eso se
+   * pregunta aquí: quien despacha, 22/09/2026, «necesito que cuando se genere
+   * la nota de entrega se pueda subir la información de los camiones y los
+   * choferes». Vacío si no se dijo nada.
+   */
+  camiones: CamionParaGuardar[]
 }
 
 const numeroLegible = (v: string | number) =>
@@ -49,6 +64,7 @@ export function ModalNotaDeEntrega({
   destino,
   clienteInicial,
   facturableInicial = true,
+  camionesIniciales,
   moneda,
   lineas,
   guardando,
@@ -62,6 +78,8 @@ export function ModalNotaDeEntrega({
   destino: string | null
   clienteInicial?: number | null
   facturableInicial?: boolean
+  /** Al completar: los camiones que la nota ya tiene, para corregirlos aquí mismo. */
+  camionesIniciales?: CamionDeNota[]
   /** En qué moneda se leen los precios. Al generar sin cliente es USD. */
   moneda?: string
   lineas: LineaPorPreciar[]
@@ -77,6 +95,8 @@ export function ModalNotaDeEntrega({
     Object.fromEntries(lineas.map((l) => [l.id, Number(l.precio) > 0 ? String(l.precio) : ''])),
   )
   const [facturable, setFacturable] = useState(facturableInicial)
+  const [camiones, setCamiones] = useState<CamionEnEdicion[]>(() => camionesParaEditar(camionesIniciales))
+  const faltaEnCamiones = faltaEnLosCamiones(camiones)
 
   // El destino de la salida se busca entre los clientes UNA vez, al abrir.
   useEffect(() => {
@@ -123,7 +143,7 @@ export function ModalNotaDeEntrega({
             Cancelar
           </Button>
           <Button
-            disabled={guardando || conNegativo}
+            disabled={guardando || conNegativo || faltaEnCamiones !== null}
             onClick={() =>
               onGuardar({
                 cliente_id: clienteId ? Number(clienteId) : null,
@@ -131,6 +151,7 @@ export function ModalNotaDeEntrega({
                   .filter((l) => valorDe(l.id) > 0)
                   .map((l) => ({ id: l.id, precio: valorDe(l.id) })),
                 facturable,
+                camiones: camionesParaGuardar(camiones),
               })
             }
           >
@@ -198,6 +219,14 @@ export function ModalNotaDeEntrega({
               Suma {numeroLegible(total)} {monedaLeida}
             </p>
           ) : null}
+        </div>
+
+        <div>
+          <p className="text-ink/80 mb-2 text-sm font-medium">
+            Camiones <span className="text-ink/45 font-normal">· con qué se llevó el material, opcional</span>
+          </p>
+          <CamionesDeLaNota filas={camiones} onCambio={setCamiones} />
+          {faltaEnCamiones ? <p className="text-warning mt-2 text-xs">{faltaEnCamiones}</p> : null}
         </div>
 
         <label className="flex cursor-pointer items-start gap-2.5">

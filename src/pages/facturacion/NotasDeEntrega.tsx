@@ -50,8 +50,9 @@ import {
   type NotaEntrega,
   type SolicitudDeDespacho,
 } from '@/lib/api/ventas'
-import { useCompletarNotaDeEntrega } from '@/lib/api/salidas'
+import { useCompletarNotaDeEntrega, useGuardarCamionesDeNota } from '@/lib/api/salidas'
 import { ModalNotaDeEntrega } from '@/pages/salidas/ModalNotaDeEntrega'
+import { ListaDeCamiones, ModalCamiones } from './CamionesDeLaNota'
 /*
   Los renglones, el IVA y sus totales se quedaron en Ventas: son los mismos que
   arma una cotización, y partirlos en dos copias sería tener dos formas de sumar
@@ -160,7 +161,12 @@ export function NotasDeEntrega() {
     Ponerle precio a una venta es de Facturación, así que se completa aquí.
   */
   const completar = useCompletarNotaDeEntrega()
+  const guardarCamiones = useGuardarCamionesDeNota()
   const [completando, setCompletando] = useState<NotaEntrega | null>(null)
+  // Los camiones se ponen o se corrigen aparte, en cualquier nota que no esté
+  // anulada: la que nació de una salida llegó sin ninguno, y a la de siempre
+  // puede faltarle el segundo.
+  const [camionesDe, setCamionesDe] = useState<NotaEntrega | null>(null)
   /*
     ENLAZAR A UNA FACTURA QUE YA EXISTE. Christopher, 17/09/2026: la nota y la
     factura van por separado, y una nota hecha aparte se enlaza después a una
@@ -987,6 +993,11 @@ export function NotasDeEntrega() {
                   Completar
                 </Button>
               ) : null}
+              {detalle.estado !== 'ANULADA' && puedeDespachar ? (
+                <Button variant="outline" icon={<Truck />} onClick={() => setCamionesDe(detalle)}>
+                  Camiones
+                </Button>
+              ) : null}
               {(detalle.estado === 'DESPACHADA' || detalle.estado === 'PENDIENTE') && puedeAnular ? (
                 <Button
                   variant="outline"
@@ -1041,6 +1052,8 @@ export function NotasDeEntrega() {
           {detalle.motivo_anulacion ? (
             <p className="text-danger mt-3 text-sm">Anulada: {detalle.motivo_anulacion}</p>
           ) : null}
+
+          <ListaDeCamiones camiones={detalle.camiones ?? []} />
 
           {/* De qué despacho salió: quién lo pidió, quién lo aprobó, y sus fotos. */}
           {(() => {
@@ -1223,6 +1236,19 @@ export function NotasDeEntrega() {
         puedeEditar={puedeDespachar}
       />
 
+      {camionesDe ? (
+        <ModalCamiones
+          notaId={camionesDe.id}
+          numero={camionesDe.numero}
+          camiones={camionesDe.camiones ?? []}
+          onCerrar={() => {
+            setCamionesDe(null)
+            // El detalle abierto es una copia vieja: se cierra para no enseñar lo de antes.
+            setDetalle(null)
+          }}
+        />
+      ) : null}
+
       {completando ? (
         <ModalNotaDeEntrega
           modo="completar"
@@ -1230,6 +1256,7 @@ export function NotasDeEntrega() {
           destino={null}
           clienteInicial={completando.cliente_id}
           facturableInicial={completando.facturable}
+          camionesIniciales={completando.camiones}
           moneda={completando.moneda}
           lineas={(renglonesDetalle.data ?? []).map((r) => ({
             id: r.id,
@@ -1238,8 +1265,8 @@ export function NotasDeEntrega() {
             unidad: r.unidad,
             precio: r.precio_unitario,
           }))}
-          guardando={completar.isPending}
-          error={completar.error}
+          guardando={completar.isPending || guardarCamiones.isPending}
+          error={completar.error ?? guardarCamiones.error}
           onCerrar={() => setCompletando(null)}
           onGuardar={(resp) =>
             void completar
@@ -1249,6 +1276,9 @@ export function NotasDeEntrega() {
                 precios: resp.precios.map((x) => ({ renglon_id: x.id, precio: x.precio })),
                 facturable: resp.facturable,
               })
+              // Los camiones van aparte y después: si fallan, la nota ya quedó
+              // completada y el error se enseña en el mismo cuadro.
+              .then(() => guardarCamiones.mutateAsync({ nota_id: completando.id, camiones: resp.camiones }))
               .then(() => {
                 // La lista se vuelve a pedir sola; el detalle abierto es una
                 // copia vieja, así que se cierra para no enseñar lo de antes.
