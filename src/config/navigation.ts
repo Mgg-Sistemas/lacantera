@@ -1,4 +1,5 @@
 import {
+  ScanLine,
   Banknote,
   Fuel,
   HandHelping,
@@ -125,6 +126,7 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   // La planilla de lo despachado. Módulo propio, aparte de DESPACHOS (romana y
   // guías): quien lleva esta planilla no tiene por qué ver el pesaje.
   ['/app/control-despacho', 'CONTROL_DESPACHO'],
+  ['/app/asistencia', 'ASISTENCIA'],
   ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
@@ -302,6 +304,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/explotacion/salidas': 'salida planta producto arena piedra m3 camion sale estimado',
   '/app/control-despacho':
     'control despacho planilla excel nota entrega salida cliente rif material m3 precio monto status contado cruce autorizado observaciones correlativo',
+  '/app/asistencia':
+    'asistencia carnet qr escanear entrada salida hora jornada calendario presente marcar turno noche dia horas trabajadas',
   '/app/costos':
     'caja costo por m3 metro cubico fondo entregado deuda casa matriz socio gastos fijos cerrar caja tasa referencial precio',
 }
@@ -655,6 +659,16 @@ export const navigation: NavSection[] = [
         label: 'Control de despacho',
         icon: ClipboardList,
         to: '/app/control-despacho',
+      },
+      {
+        /*
+          CONTROL DE ASISTENCIA, 22/09/2026. El carnet con QR ya existía para
+          verificar; ahora también marca. Una fila por jornada, con la entrada y
+          la salida juntas, y la hora la pone la base.
+        */
+        label: 'Control de asistencia',
+        icon: ScanLine,
+        to: '/app/asistencia',
       },
       {
         /*

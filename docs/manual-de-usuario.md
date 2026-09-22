@@ -67,8 +67,9 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 20 | Combustible | Sí |
 | 21 | Facturación | Sí |
 | 22 | Control de despacho | Solo el administrador, hasta que se reparta su permiso |
+| 23 | Control de asistencia | Solo el administrador, hasta que se reparta su permiso |
 
-**Asignaciones, Maquinaria, Combustible, Facturación y Control de despacho tienen sus capítulos al final** —del 18 al 22— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
+**Asignaciones, Maquinaria, Combustible, Facturación, Control de despacho y Control de asistencia tienen sus capítulos al final** —del 18 al 23— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
 
 ---
 
@@ -7061,3 +7062,70 @@ La columna libre está para lo que no encaja en ninguna otra —un número de gu
 No emite ni anula notas, no corrige lo que dice una nota, no mueve inventario, no crea clientes, no factura y no registra cobros: el status que se pone aquí es una anotación, no un pago. Cada una de esas cosas se hace en su pantalla.
 
 Lo que le falta y podría tener: **escribir directo en la celda** sin abrir la ventana de la fila, **totales por cliente o por material** dentro de la misma pantalla, y **un aviso** cuando aparece un número sin documento.
+
+---
+
+## 23. Control de asistencia
+
+**Existe desde el 22 de septiembre de 2026** y está en **Administración › Control de asistencia**. Sirve para saber quién entró, quién salió y a qué hora: con el **carnet** —el mismo que ya tiene el QR de verificación— o cargado a mano por quien tenga permiso.
+
+### 23.1 La idea que lo ordena: la jornada, no la marca
+
+Otros sistemas guardan marcas sueltas —entrada, salida, entrada…— y después intentan emparejarlas. Eso se rompe con el turno de noche, con la salida que alguien olvidó marcar, y con dos lectores escaneando a la vez.
+
+Aquí **cada fila es una jornada entera**: la entrada y la salida juntas, de una misma persona. Una jornada con la salida en blanco está **abierta**. Corregir es cambiar dos horas de una fila. Y una salida olvidada es una fila abierta que se ve, se completa a mano o se queda así: **la entrada del día siguiente nunca la cierra**.
+
+<p class="regla"><strong>La hora la pone el sistema, no el teléfono.</strong> Al escanear, la hora es la del servidor. Un teléfono con el reloj mal puesto no cambia a qué hora entró alguien. Solo la carga a mano trae sus propias horas, y por eso queda marcada como cargada a mano y con el nombre de quien la cargó.</p>
+
+### 23.2 Quién entra y quién puede hacer qué
+
+| Nivel | Qué permite |
+| --- | --- |
+| **Lectura** | Ver el día de hoy, el calendario y sacar el reporte |
+| **Escritura** | Además, **marcar** con el carnet o eligiendo a la persona, **cargar a mano** y **corregir** horas |
+| **Control total** | Además, **anular** una jornada y cambiar los **ajustes** |
+
+El módulo nació con el permiso en **Ninguno para todos los roles**: hasta que administración lo reparta en **Usuarios y roles**, solo lo ve el administrador.
+
+### 23.3 Marcar
+
+Arriba de la pantalla, la tarjeta **Marcar**. Hay tres maneras, y en las tres **el sistema decide si es entrada o salida**:
+
+| Cómo | Detalle |
+| --- | --- |
+| **Lector USB** | Se escanea el QR del carnet con el campo «Carnet» activo. El lector teclea la dirección y pulsa Enter solo. Es la manera para un puesto fijo |
+| **Cámara** | El botón **Cámara**, en el teléfono o el computador, con Chrome o Edge. Apunta al QR del reverso y marca en cuanto lo lee. Donde el navegador no sabe leer códigos, el botón no aparece |
+| **A mano** | Se busca a la persona por nombre o ficha y se pulsa **Marcar**. Para quien dejó el carnet en casa |
+
+Debajo aparece en grande lo que pasó: **Entrada · 07:12 · Nombre**, o **Salida**. Si salió mal —carnet anulado, persona que ya no está en el personal, doble escaneo—, lo dice ahí mismo.
+
+**Cómo decide.** Si la persona tiene una jornada abierta con menos de **16 horas** (se ajusta), el toque es su **salida**. Si no tiene ninguna, o la que tiene ya se pasó de las 16 horas, el toque es una **entrada nueva**, y la vieja queda abierta para que alguien la revise: el propio aviso lo dice.
+
+**Dos toques seguidos** del mismo carnet en menos de **2 minutos** (se ajusta): el segundo se rechaza. Es un candado, no un aviso.
+
+### 23.4 Hoy
+
+Quién está **adentro** ahora mismo, quién **ya salió** con sus horas, y —aparte y en amarillo— las jornadas de **otros días que quedaron sin salida**, que son las que hay que corregir.
+
+### 23.5 El calendario
+
+Un mes de un vistazo, con cuántas personas marcaron cada día y cuántas jornadas quedaron sin salida. Se puede filtrar a **una sola persona**. Al tocar un día se ve su gente: entrada, salida, horas, turno (☀️ día si entró entre las 6 y las 18, 🌙 noche el resto), y si vino del carnet o se cargó a mano.
+
+Desde ahí, con permiso:
+
+- **Corregir**: cambiar la entrada, la salida o la nota. Queda anotado quién y cuándo.
+- **Anular**: con un motivo. No se borra: queda anulada y a la vista.
+
+### 23.6 Cargar a mano
+
+El botón **Cargar a mano**. Persona, entrada, salida —opcional: vacía, la jornada queda abierta— y una nota. El sistema no deja cargar una jornada que se cruce con otra de la misma persona, ni una de más de 24 horas: si fueron dos días, se cargan como dos.
+
+### 23.7 El reporte
+
+El botón **Reporte**: un período y, si se quiere, una sola persona. Sale con el membrete de la empresa, en dos tablas: **por persona** —días, horas, jornadas sin salida— y **jornada por jornada**. Se ve en el visor antes de descargarlo.
+
+<p class="regla"><strong>Una jornada sin salida cuenta como día presente pero no suma horas.</strong> Nadie sabe a qué hora se fue esa persona, y sumarle cero es mentir menos que inventarle ocho.</p>
+
+### 23.8 Lo que no hace
+
+**No alimenta la nómina.** Las horas se ven y se imprimen, y ahí terminan: las faltas y las horas extra se siguen cargando en Nómina › Novedades. Si algún día conviene que salgan de aquí, es una decisión aparte. Tampoco calcula retardos ni amonestaciones.
