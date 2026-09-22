@@ -425,6 +425,15 @@ export interface LineaRecibo {
 
 export interface Recibo {
   id: number
+  /**
+   * `REC-AAAA-NNNN`, el número con el que se archiva y se reclama.
+   *
+   * No es el `id`: el `id` cambia en cada recálculo, porque `calcular_nomina`
+   * borra los recibos y los rehace. El número no — vive en
+   * `nomina_recibo_numeros` y vuelve igual. Nulo solo en recibos anteriores al
+   * 22/09/2026 que no llegara a numerar el rellenado.
+   */
+  numero: string | null
   periodo_id: number
   empleado_id: number
   /*

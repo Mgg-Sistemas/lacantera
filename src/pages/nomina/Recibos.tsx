@@ -58,6 +58,7 @@ function paraImprimir(
     diasLaborados: r.dias_laborados,
     egresadoEn: r.egresado_en,
 
+    numero: r.numero,
     ficha: r.empleado?.ficha ?? '—',
     cedula: r.empleado?.cedula ?? '—',
     nombreCompleto: `${r.empleado?.nombres ?? ''} ${r.empleado?.apellidos ?? ''}`.trim(),

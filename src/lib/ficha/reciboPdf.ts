@@ -97,6 +97,14 @@ export interface DatosRecibo {
   /** La fecha en que salio, si salio dentro de este periodo. Congelada al calcular. */
   egresadoEn?: string | null
 
+  /**
+   * `REC-AAAA-NNNN`. Es por lo que se busca un recibo en una carpeta.
+   *
+   * Nulo en los emitidos antes de que existiera la numeración; entonces la
+   * cabecera simplemente no lo pone, en vez de escribir un hueco.
+   */
+  numero?: string | null
+
   ficha: string
   cedula: string
   nombreCompleto: string
@@ -546,7 +554,11 @@ function copia(
     doc,
     membrete(doc, logo, {
       empresa: d.empresa,
+      /* El número va PRIMERO de los tres: es el dato por el que se busca este
+         papel dentro de una carpeta. El período dice de cuándo es y el
+         ejemplar de quién es, pero ninguno de los dos lo identifica. */
       datos: [
+        ...(d.numero ? ([['RECIBO', d.numero]] as [string, string][]) : []),
         ['PERÍODO', d.periodo],
         ['EJEMPLAR', rotulo],
       ],
@@ -663,7 +675,11 @@ export async function armarRecibo(d: DatosRecibo): Promise<PdfArmado> {
   const apellido = d.nombreCompleto.split(' ').pop()?.toLowerCase() ?? ''
   return {
     blob: doc.output('blob'),
-    nombre: `recibo-${d.periodo}-${d.ficha}-${apellido}.pdf`,
+    // El número delante cuando lo hay: así la carpeta de descargas se ordena
+    // sola en el mismo orden en que se archivan los papeles.
+    nombre: d.numero
+      ? `${d.numero}-${d.ficha}-${apellido}.pdf`
+      : `recibo-${d.periodo}-${d.ficha}-${apellido}.pdf`,
   }
 }
 
