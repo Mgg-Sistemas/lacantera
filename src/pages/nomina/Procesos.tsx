@@ -171,6 +171,22 @@ export function Procesos() {
   const [anulando, setAnulando] = useState<Periodo | null>(null)
   const [motivo, setMotivo] = useState('')
 
+  /*
+    DEVOLVER PREGUNTA ANTES, Y NO ES CELO: PASÓ.
+
+    Salió como botón de un solo clic y el usuario lo pulsó por error sobre la
+    NOM-2026-0001, que estaba aprobada desde el 14 de septiembre. Se recuperó
+    —la auditoría guarda la fila entera, así que el carril BD restauró estado,
+    aprobador y fecha originales— pero se recuperó de casualidad: si esa tabla
+    no guardara el `antes` completo, la aprobación de Antoni Vargas del día 14
+    se habría perdido y la habría vuelto a firmar quien pulsara.
+
+    Quitar una aprobación es un acto de control. Pide confirmación y motivo,
+    igual que anular.
+  */
+  const [devolviendo, setDevolviendo] = useState<Periodo | null>(null)
+  const [motivoDevolver, setMotivoDevolver] = useState('')
+
   const puedeRRHH = puede('RRHH')
   const puedeGerente = puede('GERENTE_GENERAL')
   /*
@@ -378,15 +394,12 @@ export function Procesos() {
                       size="sm"
                       variant="ghost"
                       icon={<Undo2 />}
-                      disabled={devolver.isPending}
-                      onClick={() =>
-                        void devolver.mutateAsync({
-                          periodo_id: p.id,
-                          motivo: 'Hay algo que corregir antes de pagar',
-                        })
-                      }
+                      onClick={() => {
+                        setDevolviendo(p)
+                        setMotivoDevolver('')
+                      }}
                     >
-                      {devolver.isPending ? 'Devolviendo…' : 'Devolver a calculada'}
+                      Devolver a calculada
                     </Button>
                   ) : null}
 
@@ -602,6 +615,52 @@ export function Procesos() {
             hint="La nómina es un documento con consecuencias legales."
           />
           {anular.error ? <ErrorDeCarga error={anular.error} className="mt-3" /> : null}
+        </Modal>
+      ) : null}
+
+      {devolviendo ? (
+        <Modal
+          abierto
+          onCerrar={() => setDevolviendo(null)}
+          titulo={`Devolver ${devolviendo.numero} a calculada`}
+          descripcion="Vuelve a admitir cambios y habrá que aprobarla otra vez. Los recibos y sus montos no se tocan."
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setDevolviendo(null)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={devolver.isPending || motivoDevolver.trim().length < 10}
+                onClick={async () => {
+                  await devolver.mutateAsync({
+                    periodo_id: devolviendo.id,
+                    motivo: motivoDevolver,
+                  })
+                  setDevolviendo(null)
+                }}
+              >
+                {devolver.isPending ? 'Devolviendo…' : 'Devolver'}
+              </Button>
+            </>
+          }
+        >
+          {/* Se dice lo que se va a perder, porque es lo que no se ve: la
+              aprobación lleva nombre y fecha, y al devolverla se borran. */}
+          <p className="text-ink/70 mb-4 text-sm">
+            Se retira la aprobación: <strong>quién la aprobó y cuándo</strong> dejan de constar.
+            Si solo hay que actualizar la tasa, <strong>no hace falta devolverla</strong> — el
+            refresco la deja aprobada.
+          </p>
+          <Textarea
+            label="Por qué se devuelve"
+            rows={3}
+            autoFocus
+            value={motivoDevolver}
+            onChange={(e) => setMotivoDevolver(e.target.value)}
+            hint="Queda en la notificación y en la auditoría."
+          />
+          {devolver.error ? <ErrorDeCarga error={devolver.error} className="mt-3" /> : null}
         </Modal>
       ) : null}
     </>
