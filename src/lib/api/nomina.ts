@@ -983,6 +983,24 @@ export function useDevolverNomina() {
   )
 }
 
+/**
+ * Pone la tasa del día y recalcula, en un solo acto.
+ *
+ * **Una nómina aprobada sigue aprobada**, con su aprobador original: lo que se
+ * aprueba es quién cobra y cuántos días, y eso no cambia —`calcular_nomina` no
+ * usa la fecha de hoy en ninguna cuenta—. Lo único que se mueve es la tasa del
+ * BCV, que no es una decisión que nadie tenga que aprobar dos veces. Queda la
+ * notificación con las dos tasas y el porcentaje.
+ */
+export function useRefrescarTasaDeNomina() {
+  return useAccionNomina((p: { periodo_id: number; fecha?: string | null }) =>
+    rpc<string>('refrescar_tasa_de_nomina', {
+      p_periodo_id: p.periodo_id,
+      p_fecha: p.fecha || null,
+    }),
+  )
+}
+
 export function useActualizarTasaDelPeriodo() {
   return useAccionNomina((p: { periodo_id: number; fecha?: string | null }) =>
     rpc<string>('actualizar_tasa_del_periodo', {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { BadgeCheck, Ban, Calculator, CalendarPlus, Wallet } from 'lucide-react'
+import { BadgeCheck, Ban, Calculator, CalendarPlus, Undo2, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_PERIODO } from '@/components/pestanasDeModulos'
@@ -28,7 +28,7 @@ import {
   usePeriodos,
 } from '@/lib/api/nomina'
 import type { Periodo } from '@/lib/api/nomina'
-import { useActualizarTasaDelPeriodo, useDevolverNomina } from '@/lib/api/nomina'
+import { useDevolverNomina, useRefrescarTasaDeNomina } from '@/lib/api/nomina'
 import { useCuentas } from '@/lib/api/tesoreria'
 import { useTasaVigente } from '@/lib/api/tasas'
 
@@ -54,23 +54,24 @@ function avisoDeTasa(p: Periodo, tasaHoy: number | null): string | null {
   const menos = diferencia > 0
 
   /*
-    EL AVISO DICE QUÉ HACER **EN ESTE ESTADO**, y no una receta genérica.
+    UN SOLO GESTO, Y LA APROBADA SIGUE APROBADA.
 
-    La primera versión decía siempre «hay que actualizar la tasa y volver a
-    calcular». En una nómina APROBADA eso es un callejón sin salida: no admite
-    cambios de tasa ni recálculo, y hasta hoy tampoco había forma de devolverla.
-    El usuario lo encontró en la primera pantalla que miró, y tenía razón: un
-    aviso que manda a hacer algo imposible desde ahí es peor que no avisar.
+    Esto pasó por dos versiones antes de quedar así, y las dos se cayeron por la
+    misma razón: el aviso mandaba a hacer algo que desde esa pantalla no se
+    podía. Primero «actualiza la tasa y recalcula», imposible en una aprobada.
+    Después «devuélvela a calculada y vuelve a aprobarla», que sí se podía pero
+    obligaba a molestar dos veces a gerencia general por una conversión que
+    publica el BCV.
+
+    Decisión del usuario: refrescar la tasa no desaprueba nada. Así que el aviso
+    dice lo mismo en los tres estados, porque ahora se hace lo mismo.
   */
-  const queHacer =
-    p.estado === 'APROBADA'
-      ? 'Hay que devolverla a calculada, ponerle la tasa de hoy, recalcular y volver a aprobarla.'
-      : 'Hay que ponerle la tasa de hoy y volver a calcular antes de aprobar.'
-
   return (
     `Esta nómina va con ${delPeriodo.toFixed(4)} Bs por dólar y hoy el BCV está en ` +
     `${tasaHoy.toFixed(4)}. Pagarla así le ${menos ? 'descuenta' : 'suma'} un ` +
-    `${Math.abs(diferencia).toFixed(2)} % a cada trabajador. ${queHacer}`
+    `${Math.abs(diferencia).toFixed(2)} % a cada trabajador. ` +
+    `Hay que ponerle la tasa de hoy y recalcular` +
+    `${p.estado === 'APROBADA' ? ' — seguirá aprobada' : ''}.`
   )
 }
 
@@ -153,7 +154,7 @@ export function Procesos() {
   const aprobar = useAprobarNomina()
   const anular = useAnularPeriodo()
   const pagar = usePagarNomina()
-  const actualizarTasa = useActualizarTasaDelPeriodo()
+  const refrescarTasa = useRefrescarTasaDeNomina()
   const devolver = useDevolverNomina()
   const { data: tasaHoy } = useTasaVigente('USD', 'BCV')
   const tasaDeHoy = tasaHoy?.tasa ? Number(tasaHoy.tasa) : null
@@ -293,43 +294,19 @@ export function Procesos() {
                 <p className="border-warning/40 bg-warning-soft text-warning mt-4 rounded-[6px] border p-3 text-xs">
                   {avisoDeTasa(p, tasaDeHoy)}
 
-                  {/* El botón que corresponde al estado. En una aprobada, lo
-                      primero es devolverla: sin eso no admite ni tasa ni
-                      recálculo, y el aviso quedaría mandando al vacío. */}
-                  {puedeRRHH && ['BORRADOR', 'CALCULADA'].includes(p.estado) ? (
+                  {/* Un solo botón para los tres estados: pone la tasa y
+                      recalcula. Si estaba aprobada, sigue aprobada. */}
+                  {puedeRRHH ? (
                     <button
                       type="button"
                       className="ml-2 font-medium underline underline-offset-4"
-                      disabled={actualizarTasa.isPending}
-                      onClick={() => void actualizarTasa.mutateAsync({ periodo_id: p.id })}
+                      disabled={refrescarTasa.isPending}
+                      onClick={() => void refrescarTasa.mutateAsync({ periodo_id: p.id })}
                     >
-                      {actualizarTasa.isPending ? 'Poniendo…' : 'Poner la tasa de hoy'}
+                      {refrescarTasa.isPending
+                        ? 'Actualizando…'
+                        : 'Poner la tasa de hoy y recalcular'}
                     </button>
-                  ) : null}
-
-                  {puedeGerente && p.estado === 'APROBADA' ? (
-                    <button
-                      type="button"
-                      className="ml-2 font-medium underline underline-offset-4"
-                      disabled={devolver.isPending}
-                      onClick={() =>
-                        void devolver.mutateAsync({
-                          periodo_id: p.id,
-                          motivo: 'La tasa del período ya no es la del día',
-                        })
-                      }
-                    >
-                      {devolver.isPending ? 'Devolviendo…' : 'Devolver a calculada'}
-                    </button>
-                  ) : null}
-
-                  {/* Quien no aprueba tampoco desaprueba: quitar una
-                      aprobación es un acto de control. Se dice a quién
-                      pedírselo en vez de dejar un aviso sin salida. */}
-                  {!puedeGerente && p.estado === 'APROBADA' ? (
-                    <span className="ml-1 font-medium">
-                      Pídele a gerencia general que la devuelva a calculada.
-                    </span>
                   ) : null}
                 </p>
               ) : null}
@@ -383,6 +360,33 @@ export function Procesos() {
                       }}
                     >
                       Pagar
+                    </Button>
+                  ) : null}
+
+                  {/*
+                    DEVOLVER NO ES PARA LA TASA —de eso se encarga el refresco,
+                    que no desaprueba nada— sino para lo que SÍ es una decisión:
+                    una novedad mal puesta, un bono que faltaba, una falta que
+                    no era. Hasta hoy no existía y la única salida era anularla
+                    entera.
+
+                    Lo hace gerencia general, el mismo rol que aprueba: quien no
+                    puede dar una aprobación tampoco debería retirarla.
+                  */}
+                  {puedeGerente && p.estado === 'APROBADA' ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      icon={<Undo2 />}
+                      disabled={devolver.isPending}
+                      onClick={() =>
+                        void devolver.mutateAsync({
+                          periodo_id: p.id,
+                          motivo: 'Hay algo que corregir antes de pagar',
+                        })
+                      }
+                    >
+                      {devolver.isPending ? 'Devolviendo…' : 'Devolver a calculada'}
                     </Button>
                   ) : null}
 
