@@ -4014,7 +4014,7 @@ A la derecha están los datos, agrupados y **de solo lectura**. Son exactamente 
 
 | Bloque | Qué trae |
 | --- | --- |
-| **Identificación** | **Cédula**, **Fecha de nacimiento**, **Edad**, **Grupo sanguíneo**, **Género**, **Nacionalidad**, **Estado civil** |
+| **Identificación** | **Cédula**, **RIF**, **Fecha de nacimiento**, **Edad**, **Grupo sanguíneo**, **Género**, **Nacionalidad**, **Estado civil** |
 | **Contacto** | **Teléfono**, **En una emergencia, llamar a**, **Dirección** |
 | **Datos laborales** | **Cargo**, **Departamento**, **Fecha de ingreso**, **Antigüedad**, **Jornada**, **Utilidades** |
 | **Cómo se le paga** | **Salario**, **Frecuencia**, **Forma de pago**, **Cuenta** |
@@ -4065,6 +4065,30 @@ La casilla dice lo que va a pasar antes de que pase. Marcada: *"Dirá «por desp
 Queda disponible para cuando de verdad haga falta —un trámite que lo exija—, y entonces es una decisión de quien firma, tomada a sabiendas.
 
 Los dos salen con la misma cabecera que la orden de compra, el recibo y la factura: la razón social, el RIF y **el domicilio fiscal completo**, tal como estén cargados en **Configuración › Datos de la empresa** (13.2). Lo que falte ahí, falta en el papel.
+
+#### Los papeles que se adjuntan
+
+**Desde el 22 de septiembre de 2026 la ficha guarda los papeles de la persona**: la cédula, el RIF, el currículum y los que hagan falta. Antes lo único que se adjuntaba era la foto, y esos documentos vivían en la carpeta del computador de alguien.
+
+Están en la tarjeta **Papeles**, y se agregan con **Agregar papel**. De cada uno se dice **qué papel es** —de una lista: cédula, RIF, currículum, partida de nacimiento, título, licencia de conducir, certificado médico, antecedentes, contrato, carta bancaria u otro—, un **nombre**, el **archivo** —PDF o foto, hasta 50 MB—, y si hace falta, **cuándo se emitió**, **cuándo vence** y una **nota**.
+
+**Falta la cédula** y **falta el RIF** se avisan arriba de la lista. Son los dos que se piden para todo; que falte el currículum no detiene ningún trámite, así que no se convierte en un aviso que se aprende a ignorar.
+
+**Lo que caduca se ve venir.** La cédula, la licencia y el certificado médico vencen: cuando quedan sesenta días o menos, la fila lo dice, y si ya venció, también.
+
+<p class="regla"><strong>Los archivos no tienen dirección pública.</strong> Se guardan en el mismo depósito privado que las fotos del personal, y el enlace para mirarlos lo firma el servidor contra tu sesión y <strong>caduca a los diez minutos</strong>. La cédula de un trabajador no puede quedar colgada de una dirección que se reenvía por WhatsApp.</p>
+
+**Quitar un papel borra el archivo y no se recupera.** La fila se puede volver a subir; el escaneo, no. Por eso se pregunta antes.
+
+**Quién puede.** Verlos, quien pueda ver el personal. Agregarlos y quitarlos, **Recursos Humanos** —o quien tenga escritura en Nómina—, igual que para editar la ficha.
+
+#### El RIF
+
+**Es un campo aparte de la cédula, y opcional.** Se escribe en el formulario del trabajador, al lado de la cédula, con su dígito verificador: **V-12.345.678-9**.
+
+**El sistema no lo deduce de la cédula**, aunque en la mayoría de los casos sea la misma cifra con un dígito detrás. Ese dígito se calcula con una fórmula, quien tiene firma personal lleva **J** en vez de **V**, y un RIF que el sistema se invente termina impreso en una constancia que lee un banco. Se pide; no se adivina.
+
+**Hoy ninguna de las fichas lo tiene**, porque el campo acaba de existir. Se va llenando según se vayan teniendo los papeles.
 
 #### El carnet
 
