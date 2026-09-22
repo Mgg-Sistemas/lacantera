@@ -30,7 +30,7 @@ import {
 import type { Periodo } from '@/lib/api/nomina'
 import { useDevolverNomina, useRefrescarTasaDeNomina } from '@/lib/api/nomina'
 import { useCuentas } from '@/lib/api/tesoreria'
-import { useTasaVigente } from '@/lib/api/tasas'
+import { hoyEnCaracas, useTasaDeFecha, useTasaVigente } from '@/lib/api/tasas'
 
 import { useMisRoles } from '@/lib/api/catalogo'
 import { bolivares, dinero, dolares, fecha } from '@/lib/formato'
@@ -56,21 +56,21 @@ function avisoDeTasa(p: Periodo, tasaHoy: number | null): string | null {
   /*
     UN SOLO GESTO, Y LA APROBADA SIGUE APROBADA.
 
-    Esto pasó por dos versiones antes de quedar así, y las dos se cayeron por la
-    misma razón: el aviso mandaba a hacer algo que desde esa pantalla no se
-    podía. Primero «actualiza la tasa y recalcula», imposible en una aprobada.
-    Después «devuélvela a calculada y vuelve a aprobarla», que sí se podía pero
-    obligaba a molestar dos veces a gerencia general por una conversión que
-    publica el BCV.
+    Esto pasó por tres versiones antes de quedar así. Las dos primeras mandaban
+    a hacer algo que desde esa pantalla no se podía —«actualiza la tasa y
+    recalcula», imposible en una aprobada; luego «devuélvela y vuelve a
+    aprobarla», que obligaba a molestar dos veces a gerencia general—.
 
-    Decisión del usuario: refrescar la tasa no desaprueba nada. Así que el aviso
-    dice lo mismo en los tres estados, porque ahora se hace lo mismo.
+    La tercera imponía la tasa de HOY, y tampoco servía: la nómina del 1-15 se
+    pagó el día del cierre y se registró después. Su tasa correcta es la del 15,
+    no la de la tarde en que alguien abre la pantalla. Por eso el aviso ya no
+    dice qué día: lo elige quien sabe cuándo salió el dinero.
   */
   return (
     `Esta nómina va con ${delPeriodo.toFixed(4)} Bs por dólar y hoy el BCV está en ` +
     `${tasaHoy.toFixed(4)}. Pagarla así le ${menos ? 'descuenta' : 'suma'} un ` +
     `${Math.abs(diferencia).toFixed(2)} % a cada trabajador. ` +
-    `Hay que ponerle la tasa de hoy y recalcular` +
+    `Hay que recalcularla con la tasa del día en que se pague` +
     `${p.estado === 'APROBADA' ? ' — seguirá aprobada' : ''}.`
   )
 }
@@ -186,6 +186,18 @@ export function Procesos() {
   */
   const [devolviendo, setDevolviendo] = useState<Periodo | null>(null)
   const [motivoDevolver, setMotivoDevolver] = useState('')
+
+  /*
+    LA FECHA DE LA TASA LA ELIGE QUIEN PAGA, NO LA PANTALLA.
+
+    Hoy se sugiere, pero no se impone: la nómina del 1-15 se pagó el día del
+    cierre y se registró después, así que su tasa correcta es la del 15 y no la
+    de la tarde en que alguien abre esta pantalla. Forzar «hoy» obligaría a
+    recalcular a una tasa con la que nunca se pagó.
+  */
+  const [refrescando, setRefrescando] = useState<Periodo | null>(null)
+  const [fechaTasa, setFechaTasa] = useState('')
+  const { data: tasaElegida } = useTasaDeFecha(refrescando ? fechaTasa : undefined)
 
   const puedeRRHH = puede('RRHH')
   const puedeGerente = puede('GERENTE_GENERAL')
@@ -310,18 +322,18 @@ export function Procesos() {
                 <p className="border-warning/40 bg-warning-soft text-warning mt-4 rounded-[6px] border p-3 text-xs">
                   {avisoDeTasa(p, tasaDeHoy)}
 
-                  {/* Un solo botón para los tres estados: pone la tasa y
-                      recalcula. Si estaba aprobada, sigue aprobada. */}
+                  {/* Abre el diálogo en vez de actuar: la fecha la elige quien
+                      sabe qué día salió el dinero, no la pantalla. */}
                   {puedeRRHH ? (
                     <button
                       type="button"
                       className="ml-2 font-medium underline underline-offset-4"
-                      disabled={refrescarTasa.isPending}
-                      onClick={() => void refrescarTasa.mutateAsync({ periodo_id: p.id })}
+                      onClick={() => {
+                        setRefrescando(p)
+                        setFechaTasa(hoyEnCaracas())
+                      }}
                     >
-                      {refrescarTasa.isPending
-                        ? 'Actualizando…'
-                        : 'Poner la tasa de hoy y recalcular'}
+                      Poner la tasa y recalcular
                     </button>
                   ) : null}
                 </p>
@@ -661,6 +673,79 @@ export function Procesos() {
             hint="Queda en la notificación y en la auditoría."
           />
           {devolver.error ? <ErrorDeCarga error={devolver.error} className="mt-3" /> : null}
+        </Modal>
+      ) : null}
+
+      {refrescando ? (
+        <Modal
+          abierto
+          onCerrar={() => setRefrescando(null)}
+          titulo={`Poner la tasa y recalcular ${refrescando.numero}`}
+          descripcion="Los recibos se rehacen con la tasa del día que elijas. Si la nómina estaba aprobada, sigue aprobada."
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setRefrescando(null)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={refrescarTasa.isPending || !fechaTasa || !tasaElegida}
+                onClick={async () => {
+                  await refrescarTasa.mutateAsync({
+                    periodo_id: refrescando.id,
+                    fecha: fechaTasa,
+                  })
+                  setRefrescando(null)
+                }}
+              >
+                {refrescarTasa.isPending ? 'Recalculando…' : 'Recalcular'}
+              </Button>
+            </>
+          }
+        >
+          <Input
+            label="Tasa del día"
+            type="date"
+            autoFocus
+            max={hoyEnCaracas()}
+            value={fechaTasa}
+            onChange={(e) => setFechaTasa(e.target.value)}
+            hint="El día en que salió el dinero. Hoy es una sugerencia, no una obligación."
+          />
+
+          {/*
+            Se enseña la cifra ANTES de comprometerla, y de dónde sale.
+
+            «Arrastrada» significa que el BCV no publicó ese día —un domingo, un
+            feriado— y vale la del día anterior. No es lo mismo y hay que poder
+            verlo antes de rehacer veinticinco recibos.
+          */}
+          <div className="border-hairline bg-canvas rounded-card mt-4 border p-3">
+            {tasaElegida ? (
+              <>
+                <p className="text-ink/80 text-sm">
+                  Se recalculará a <strong>{Number(tasaElegida.tasa).toFixed(4)} Bs</strong> por
+                  dólar.
+                </p>
+                <p className="text-ink/45 mt-1 text-xs">
+                  {tasaElegida.arrastrada
+                    ? `El BCV no publicó tasa ese día: se arrastra la del ${fecha(tasaElegida.fecha)}.`
+                    : `Tasa del ${fecha(tasaElegida.fecha)}, fuente ${tasaElegida.fuente}.`}
+                  {Number(refrescando.tasa_usd ?? 0) > 0
+                    ? ` Ahora va con ${Number(refrescando.tasa_usd).toFixed(4)}.`
+                    : ''}
+                </p>
+              </>
+            ) : (
+              <p className="text-ink/60 text-sm">
+                No hay tasa registrada para ese día. Cárgala en Tesorería antes de recalcular.
+              </p>
+            )}
+          </div>
+
+          {refrescarTasa.error ? (
+            <ErrorDeCarga error={refrescarTasa.error} className="mt-3" />
+          ) : null}
         </Modal>
       ) : null}
     </>
