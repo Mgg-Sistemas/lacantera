@@ -7,6 +7,7 @@ import { PESTANAS_PERIODO } from '@/components/pestanasDeModulos'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
+import { Interruptor } from '@/components/ui/Interruptor'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
@@ -45,6 +46,7 @@ function paraImprimir(
   // filtran al leerlas, para que ningún papel tenga que acordarse de mirarlo.
   firmasGuardadas: Record<number, string> = {},
   empresa: EmpresaPapel,
+  mostrarUsd = true,
 ): DatosRecibo {
   return {
     empresa,
@@ -80,6 +82,7 @@ function paraImprimir(
     // La del período, no la de hoy: un recibo dice lo que valía el día que se
     // emitió. Es la misma con la que se calculó cada línea.
     tasaUsd: periodo.tasa_usd,
+    mostrarUsd,
 
     formaPago: r.empleado?.forma_pago ?? 'EFECTIVO',
     banco: r.empleado?.banco ?? null,
@@ -180,6 +183,16 @@ export function Recibos() {
   const { data, isPending, error } = useRecibos(periodoId)
   const [abierto, setAbierto] = useState<Recibo | null>(null)
   const [imprimiendo, setImprimiendo] = useState(false)
+  /*
+    Encendido de salida, que es lo que el recibo venía haciendo siempre.
+
+    La casilla existe para poder APAGARLO —hay quien prefiere no repartir la
+    conversión renglón a renglón—, no para tener que acordarse de encenderlo.
+    Un papel no cambia de contenido porque se añada un interruptor.
+
+    No se guarda: se decide por tanda, que es como se imprime.
+  */
+  const [conDolares, setConDolares] = useState(true)
   // Se enseña antes de descargarlo: un recibo con la firma sin llenar o el
   // periodo equivocado se ve en dos segundos y no llega al papel.
   const [vista, setVista] = useState<
@@ -252,7 +265,15 @@ export function Recibos() {
     setImprimiendo(true)
     try {
       const hojas = recibos.map((r) =>
-        paraImprimir(r, periodo, firma, nombre, firmas?.porEmpleado ?? {}, papelDeEmpresa),
+        paraImprimir(
+          r,
+          periodo,
+          firma,
+          nombre,
+          firmas?.porEmpleado ?? {},
+          papelDeEmpresa,
+          conDolares,
+        ),
       )
       const pdf =
         hojas.length === 1 ? await armarRecibo(hojas[0]) : await armarRecibos(hojas, periodo.numero)
@@ -351,6 +372,18 @@ export function Recibos() {
               copia, para firmar a mano
             </p>
             <div className="flex flex-wrap items-center gap-2">
+              {/* Solo si el período trae tasa: sin ella no hay nada que
+                  convertir y el interruptor no gobernaría nada. La tasa del pie
+                  no depende de esto — esa se imprime siempre que la haya. */}
+              {Number(periodo?.tasa_usd ?? 0) > 0 ? (
+                <Interruptor
+                  encendido={conDolares}
+                  onCambio={setConDolares}
+                  etiqueta="Equivalencia en dólares"
+                  className="mr-2"
+                />
+              ) : null}
+
               {/* El informe va primero porque es lo que se mira al cuadrar; los
                   recibos se imprimen cuando ya se cuadró. */}
               <Button

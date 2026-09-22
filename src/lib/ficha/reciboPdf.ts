@@ -125,6 +125,18 @@ export interface DatosRecibo {
    * simplemente no se pinta la referencia.
    */
   tasaUsd?: string | null
+  /**
+   * Si el recibo enseña además cada cifra en dólares.
+   *
+   * La tasa del pie NO depende de esto: se imprime siempre que la haya, porque
+   * es con la que se calculó la quincena y sin ella nadie puede rehacer la
+   * cuenta. Lo que este interruptor apaga es la conversión renglón a renglón,
+   * que es lo que algunos prefieren no repartir.
+   *
+   * Sin decir nada, se enseña — que es lo que venía haciendo el recibo desde
+   * siempre. Un papel no cambia de contenido porque se añada una casilla.
+   */
+  mostrarUsd?: boolean
 
   formaPago: string
   banco: string | null
@@ -282,7 +294,7 @@ function bloque(doc: Doc, d: DatosRecibo, tipo: LineaImpresa['tipo'], y: number)
   doc.setTextColor(MARCA).setFont('helvetica', 'bold').setFontSize(6.5)
   doc.text(TITULOS[tipo], IZQ, y)
 
-  const tasa = Number(d.tasaUsd ?? 0)
+  const tasa = d.mostrarUsd === false ? 0 : Number(d.tasaUsd ?? 0)
 
   let fila = y + 4
   for (const l of lineas) {
@@ -345,7 +357,7 @@ function neto(doc: Doc, d: DatosRecibo, y: number): number {
 
   // La referencia en dólares no es lo que se paga: es lo que valía ese día.
   // Sin el rótulo, un recibo viejo parece una deuda en divisas.
-  if (Number(d.netoUsd) > 0) {
+  if (d.mostrarUsd !== false && Number(d.netoUsd) > 0) {
     doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
     doc.text(`referencia: $ ${cifra(d.netoUsd)}`, DER - 4, y + 12, { align: 'right' })
   }
@@ -452,8 +464,34 @@ function pie(doc: Doc, d: DatosRecibo, y: number) {
   })
 
   doc.setTextColor(GRIS_SUAVE).setFont('helvetica', 'normal').setFontSize(6.5)
-  doc.text(ajustar(doc, `Emitido el ${hoy} por ${d.emitidoPor}`, ANCHO_UTIL * 0.45), IZQ, y)
+  doc.text(ajustar(doc, `Emitido el ${hoy} por ${d.emitidoPor}`, ANCHO_UTIL * 0.35), IZQ, y)
   doc.text(`RIF ${d.empresa.rif}`, DER, y, { align: 'right' })
+
+  /*
+    LA TASA CON LA QUE SE CALCULÓ, EN EL PIE Y SIN PROTAGONISMO.
+
+    El recibo se paga en bolívares y esa es su cifra. Pero hasta ahora la tasa
+    se usaba solo como divisor —cada renglón salía también en dólares— y no se
+    escribía en ninguna parte. Un papel que enseña cifras en divisas sin decir a
+    qué tasa las convirtió no se puede verificar: quien lo recibe no puede
+    rehacer la cuenta, y quien lo archiva no sabe con qué se hizo.
+
+    Va aquí, en gris pequeño y entre el emisor y el RIF, por eso mismo: es un
+    dato de procedencia, como ellos, no una cifra del documento.
+
+    Y es LA DEL PERÍODO, no la de hoy. Un recibo reimpreso dentro de tres meses
+    tiene que seguir diciendo la de su quincena, o deja de cuadrar con el
+    original que ya se firmó.
+
+    Se imprime aunque la conversión por renglón esté apagada: apagar el dólar
+    oculta una comodidad, no la procedencia de lo calculado.
+  */
+  const tasa = Number(d.tasaUsd ?? 0)
+  if (tasa > 0) {
+    doc.text(`Tasa BCV del período · 1 $ = Bs ${cifra(String(tasa))}`, IZQ + ANCHO_UTIL / 2, y, {
+      align: 'center',
+    })
+  }
 }
 
 /** Una copia completa, empezando en `y0`. Devuelve dónde terminó. */
