@@ -955,6 +955,144 @@ export async function urlDeDocumentoDeEmpleado(ruta: string): Promise<string> {
   return data.signedUrl
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+   EL LIBRO DE PRÉSTAMOS
+
+   El cálculo ya sabía descontar `DED-PRE`; lo que faltaba era el préstamo.
+   Aquí el saldo NO se guarda: sale de `v_prestamos`, que resta los abonos cada
+   vez. Guardado se quedaría viejo en cuanto entrara un abono por otra vía, y
+   esa vía existe — el trabajador puede pagar por fuera de la nómina.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+export interface Prestamo {
+  id: number
+  empleado_id: number
+  ficha: string
+  trabajador: string
+  fecha: string
+  capital: string
+  moneda: string
+  motivo: string
+  /** Lo pactado, que es una intención y no un calendario. */
+  cuotas_pactadas: number | null
+  estado: 'VIGENTE' | 'SALDADO' | 'ANULADO'
+  nota: string | null
+  abonado: string
+  saldo: string
+  abonos: number
+  ultimo_abono: string | null
+}
+
+export interface AbonoDePrestamo {
+  id: number
+  prestamo_id: number
+  fecha: string
+  monto: string
+  /** `NOMINA` si se descontó del recibo; `DIRECTO` si lo trajo la persona. */
+  origen: 'NOMINA' | 'DIRECTO'
+  novedad_id: number | null
+  periodo_id: number | null
+  nota: string | null
+}
+
+export function usePrestamosDeEmpleado(empleadoId: number | undefined) {
+  return useQuery({
+    enabled: empleadoId !== undefined,
+    queryKey: ['nomina', 'prestamos', empleadoId],
+    queryFn: async () =>
+      desenvolver<Prestamo[]>(
+        await supabase
+          .from('v_prestamos')
+          .select('*')
+          .eq('empleado_id', empleadoId!)
+          .order('fecha', { ascending: false }),
+      ),
+  })
+}
+
+export function useAbonosDePrestamo(prestamoId: number | undefined) {
+  return useQuery({
+    enabled: prestamoId !== undefined,
+    queryKey: ['nomina', 'prestamo-abonos', prestamoId],
+    queryFn: async () =>
+      desenvolver<AbonoDePrestamo[]>(
+        await supabase
+          .from('prestamo_abonos')
+          .select('*')
+          .eq('prestamo_id', prestamoId!)
+          .order('fecha'),
+      ),
+  })
+}
+
+export function useRegistrarPrestamo() {
+  return useAccionNomina((p: {
+    empleado_id: number
+    capital: number
+    motivo: string
+    fecha?: string | null
+    moneda?: string
+    cuotas?: number | null
+    nota?: string | null
+  }) =>
+    rpc<number>('registrar_prestamo', {
+      p_empleado_id: p.empleado_id,
+      p_capital: p.capital,
+      p_motivo: p.motivo,
+      p_fecha: p.fecha || null,
+      p_moneda: p.moneda ?? 'VES',
+      p_cuotas: p.cuotas ?? null,
+      p_nota: p.nota || null,
+    }),
+  )
+}
+
+/**
+ * Cobra una cuota por nómina.
+ *
+ * Escribe el renglón del recibo Y el abono que baja el saldo, en la misma
+ * transacción. Es lo que impide que un préstamo se cobre dos veces por dos
+ * caminos distintos.
+ */
+export function useCobrarCuota() {
+  return useAccionNomina((c: {
+    prestamo_id: number
+    monto: number
+    periodo_id?: number | null
+    nota?: string | null
+  }) =>
+    rpc<number>('cobrar_cuota_de_prestamo', {
+      p_prestamo_id: c.prestamo_id,
+      p_monto: c.monto,
+      p_periodo_id: c.periodo_id ?? null,
+      p_nota: c.nota || null,
+    }),
+  )
+}
+
+/** Un pago que trae el propio trabajador, por fuera de la nómina. */
+export function useAbonarPrestamo() {
+  return useAccionNomina((a: {
+    prestamo_id: number
+    monto: number
+    fecha?: string | null
+    nota?: string | null
+  }) =>
+    rpc<number>('abonar_prestamo', {
+      p_prestamo_id: a.prestamo_id,
+      p_monto: a.monto,
+      p_fecha: a.fecha || null,
+      p_nota: a.nota || null,
+    }),
+  )
+}
+
+export function useAnularPrestamo() {
+  return useAccionNomina((a: { id: number; motivo: string }) =>
+    rpc<void>('anular_prestamo', { p_id: a.id, p_motivo: a.motivo }),
+  )
+}
+
 /**
  * Marca o desmarca a alguien como eventual.
  *

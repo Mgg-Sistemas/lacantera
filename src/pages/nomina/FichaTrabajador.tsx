@@ -51,6 +51,7 @@ import { TarjetaFirma } from '@/components/TarjetaFirma'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { PapelesDelTrabajador } from './PapelesDelTrabajador'
 import { CargaFamiliarYSalud } from './CargaFamiliarYSalud'
+import { PrestamosDelTrabajador } from './PrestamosDelTrabajador'
 import { useMisAcciones, useRoles } from '@/lib/api/usuarios'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
@@ -955,6 +956,8 @@ export function FichaTrabajador() {
           mismo que dice el comentario de arriba: la carga familiar y la salud
           son de la PERSONA, y lo de más abajo es de su puesto. */}
       <CargaFamiliarYSalud empleadoId={e.id} puedeEditar={puedeRRHH} />
+
+      <PrestamosDelTrabajador empleadoId={e.id} puedeEditar={puedeRRHH} />
 
       <Card className="mt-4">
         <CardHeader

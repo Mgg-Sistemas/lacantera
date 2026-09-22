@@ -228,6 +228,66 @@ export default async function pruebaNomina(tx) {
   const salBas = await linea('SAL-BAS')
   comprobar(cerca(salBas.monto, 8400), `el salario del período son 1.200 × 7 = 8.400 (${salBas.monto})`)
 
+  /*
+    EL LIBRO DE PRÉSTAMOS.
+
+    Lo que se comprueba aquí no es la aritmética —restar es fácil— sino la
+    propiedad que justifica el diseño: **los tres caminos de cobro descuentan
+    del mismo saldo**. Un préstamo cobrado por nómina que además se abona a
+    mano, si no comparten saldo, se cobra dos veces. Ese es el defecto que esta
+    pieza existe para no tener.
+  */
+  grupo('Nómina · el libro de préstamos')
+
+  const [pres] = await tx`
+    select public.registrar_prestamo(
+      ${emp.id}, 3000::numeric, 'PRUEBA: adelanto por urgencia médica',
+      current_date, 'VES', 3::smallint) as id`
+
+  const saldoDe = async (id) => {
+    const [f] = await tx`select saldo, estado from public.v_prestamos where id = ${id}`
+    return f
+  }
+
+  comprobar(Number((await saldoDe(pres.id)).saldo) === 3000, 'un préstamo nace debiendo su capital')
+
+  // 1. Cobrado por nómina: tiene que escribir la novedad Y bajar el saldo.
+  await tx`select public.cobrar_cuota_de_prestamo(${pres.id}, 1000::numeric, ${periodo.id})`
+  comprobar(Number((await saldoDe(pres.id)).saldo) === 2000, 'cobrar una cuota por nómina baja el saldo')
+
+  const [enElRecibo] = await tx`
+    select count(*) as n from public.nomina_novedades_montos
+     where periodo_id = ${periodo.id} and empleado_id = ${emp.id} and concepto = 'DED-PRE'`
+  comprobar(Number(enElRecibo.n) === 1, 'y deja su renglón para que el recibo lo descuente')
+
+  // 2. Pagado por el propio trabajador: el MISMO saldo.
+  await tx`select public.abonar_prestamo(${pres.id}, 500::numeric, current_date, 'PRUEBA: lo trajo él')`
+  comprobar(
+    Number((await saldoDe(pres.id)).saldo) === 1500,
+    'un abono directo baja el mismo saldo que la cuota de nómina',
+  )
+
+  // 3. Y no se puede cobrar más de lo que queda, que es lo que evita cobrarlo
+  //    dos veces por dos caminos distintos.
+  const pasaDelSaldo = await debeFallar(
+    tx,
+    (sp) => sp`select public.abonar_prestamo(${pres.id}, 9999::numeric)`,
+  )
+  comprobar(
+    pasaDelSaldo !== null && /le quedan/i.test(pasaDelSaldo),
+    'no se puede abonar más de lo que se debe',
+  )
+
+  // 4. Al quedar en cero se cierra solo: nadie tiene que acordarse.
+  await tx`select public.abonar_prestamo(${pres.id}, 1500::numeric)`
+  const cerrado = await saldoDe(pres.id)
+  comprobar(
+    Number(cerrado.saldo) === 0 && cerrado.estado === 'SALDADO',
+    'y al llegar a cero el préstamo se salda solo',
+  )
+
+  grupo('Nómina · las capas del cálculo')
+
   // La comprobación que justifica todo el orden por capas: la hora extra se
   // paga sobre la hora básica (150), no sobre una hora sacada del acumulado.
   const heDiu = await linea('HE-DIU')
