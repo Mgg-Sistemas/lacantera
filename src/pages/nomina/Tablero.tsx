@@ -140,6 +140,31 @@ const QUE_HACER: GrupoDeAcciones[] = [
   },
 ]
 
+/** Una cifra del tablero. Las cuatro se ven igual; solo cambia el énfasis. */
+function Cifra({
+  titulo,
+  valor,
+  nota,
+  tenue,
+}: {
+  titulo: string
+  valor: number
+  nota: string
+  tenue?: boolean
+}) {
+  return (
+    <Card>
+      <p className="text-ink/45 text-2xs font-mono tracking-[0.16em] uppercase">{titulo}</p>
+      <p
+        className={`${tenue ? 'text-ink/50' : 'text-ink/90'} tabular mt-3 text-3xl font-light`}
+      >
+        {enteros(valor)}
+      </p>
+      <p className="text-ink/45 mt-2 text-xs">{nota}</p>
+    </Card>
+  )
+}
+
 export function TableroNomina() {
   const { data: periodos, isPending, error } = usePeriodos()
   const { data: empleados } = useEmpleados(true)
@@ -150,6 +175,23 @@ export function TableroNomina() {
   const abiertos = (periodos ?? []).filter((p) => !['PAGADA', 'ANULADA'].includes(p.estado))
   const actual = abiertos[0] ?? (periodos ?? [])[0]
   const paso = actual ? PASOS_DEL_PERIODO[actual.estado] : undefined
+
+  /*
+    EL DESGLOSE POR GÉNERO TIENE QUE SUMAR EL TOTAL, SIEMPRE.
+
+    `genero` es anulable a propósito —una ficha se puede cargar antes de tener
+    todos los datos— y hoy hay fichas sin él. Si solo se enseñaran masculino y
+    femenino, las dos cifras no darían el total de arriba y eso se lee como un
+    fallo del total, que lleva meses siendo correcto.
+
+    Por eso el tercero se saca RESTANDO y no filtrando por `null`: así los tres
+    suman el total por construcción, pase lo que pase con los valores. Y solo
+    aparece cuando hay alguno, porque una tarjeta en cero no señala nada.
+  */
+  const activos = empleados ?? []
+  const masculino = activos.filter((e) => e.genero === 'MASCULINO').length
+  const femenino = activos.filter((e) => e.genero === 'FEMENINO').length
+  const sinGenero = activos.length - masculino - femenino
 
   return (
     <>
@@ -204,15 +246,24 @@ export function TableroNomina() {
               )}
             </Card>
 
-            <Card>
-              <p className="text-ink/45 text-2xs font-mono tracking-[0.16em] uppercase">
-                Personal activo
-              </p>
-              <p className="text-ink/90 tabular mt-3 text-3xl font-light">
-                {enteros((empleados ?? []).length)}
-              </p>
-              <p className="text-ink/45 mt-2 text-xs">Trabajadores que entran en la nómina</p>
-            </Card>
+            <Cifra
+              titulo="Personal activo"
+              valor={activos.length}
+              nota="Trabajadores que entran en la nómina"
+            />
+
+            {/* El desglose va debajo del total y no a su lado: primero cuántos
+                somos, después de qué se compone. Las tres llenan la fila. */}
+            <Cifra titulo="Masculino" valor={masculino} nota="Del personal activo" />
+            <Cifra titulo="Femenino" valor={femenino} nota="Del personal activo" />
+            {sinGenero > 0 ? (
+              <Cifra
+                titulo="Sin género cargado"
+                valor={sinGenero}
+                nota="Completa su ficha en Personal para que el desglose cuadre"
+                tenue
+              />
+            ) : null}
           </div>
 
           <QueHacer grupos={QUE_HACER} />

@@ -150,6 +150,65 @@ export default async function pruebaNomina(tx) {
     'a quien cobra por mes no se le abre recibo en un período semanal',
   )
 
+  /*
+    EL EVENTUAL NO ENTRA EN LA NÓMINA QUE CORRE SOLA.
+
+    Es la comprobación que justifica la casilla. Sin la reja de
+    `calcular_nomina`, este trabajador —contratado por tres días— cobraría su
+    salario prorrateado TODAS las semanas, sin que nadie lo pidiera y sin dar
+    error. Un recibo de más, callado, cada ciclo.
+
+    Se crea con la misma frecuencia que el del período a propósito: si se le
+    pusiera otra, la prueba pasaría por la frecuencia y no por lo que se quiere
+    probar, y seguiría pasando el día que la reja se caiga.
+  */
+  const [empEventual] = await tx`
+    select public.guardar_empleado(
+      p_cedula        => 'V-99999997',
+      p_nombres       => 'EVENTUAL',
+      p_apellidos     => 'DE PRUEBA',
+      p_cargo         => 'JORNALERO DE PRUEBA',
+      p_departamento  => 'OPERACIONES',
+      p_fecha_ingreso => ((current_date - 1) - interval '3 years')::date,
+      p_frecuencia    => 'SEMANAL',
+      p_base          => 'DIARIO',
+      p_salario       => 1200::numeric,
+      p_moneda        => 'VES',
+      p_jornada       => 'DIURNA') as id`
+
+  await tx`select public.marcar_empleado_eventual(${empEventual.id}, true)`
+
+  const [esEventual] = await tx`
+    select eventual from public.empleados where id = ${empEventual.id}`
+  comprobar(esEventual.eventual === true, 'el jornalero queda marcado como eventual')
+
+  // Se recalcula con él dentro de la base: si la reja no estuviera, ahora
+  // saldrían dos recibos en vez de uno.
+  const [conEventual] = await tx`select public.calcular_nomina(${periodo.id}) as n`
+  comprobar(
+    Number(conEventual.n) === 1,
+    'el eventual no entra en la nómina semanal aunque su frecuencia coincida',
+  )
+
+  const [delEventual] = await tx`
+    select count(*) as n from public.nomina_recibos
+     where periodo_id = ${periodo.id} and empleado_id = ${empEventual.id}`
+  comprobar(Number(delEventual.n) === 0, 'y no se le abre recibo')
+
+  /*
+    Y se le quita la marca por la misma puerta, no con un `update`.
+
+    Un `update public.empleados` directo aquí da «permission denied»: esta base
+    no concede escritura a nadie sobre las tablas —se escribe por función— y la
+    prueba corre con el rol de verdad. Que falle así es exactamente lo que se
+    quiere de este diseño, y de paso esto comprueba el camino de vuelta.
+  */
+  await tx`select public.marcar_empleado_eventual(${empEventual.id}, false)`
+
+  const [yaNoEsEventual] = await tx`
+    select eventual from public.empleados where id = ${empEventual.id}`
+  comprobar(yaNoEsEventual.eventual === false, 'y la marca se puede quitar')
+
   const [recibo] = await tx`
     select * from public.nomina_recibos where periodo_id = ${periodo.id} and empleado_id = ${emp.id}`
 
@@ -168,6 +227,162 @@ export default async function pruebaNomina(tx) {
 
   const salBas = await linea('SAL-BAS')
   comprobar(cerca(salBas.monto, 8400), `el salario del período son 1.200 × 7 = 8.400 (${salBas.monto})`)
+
+  /*
+    EL LIBRO DE PRÉSTAMOS.
+
+    Lo que se comprueba aquí no es la aritmética —restar es fácil— sino la
+    propiedad que justifica el diseño: **los tres caminos de cobro descuentan
+    del mismo saldo**. Un préstamo cobrado por nómina que además se abona a
+    mano, si no comparten saldo, se cobra dos veces. Ese es el defecto que esta
+    pieza existe para no tener.
+  */
+  grupo('Nómina · el libro de préstamos')
+
+  const [pres] = await tx`
+    select public.registrar_prestamo(
+      ${emp.id}, 3000::numeric, 'PRUEBA: adelanto por urgencia médica',
+      current_date, 'VES', 3::smallint) as id`
+
+  const saldoDe = async (id) => {
+    const [f] = await tx`select saldo, estado from public.v_prestamos where id = ${id}`
+    return f
+  }
+
+  comprobar(Number((await saldoDe(pres.id)).saldo) === 3000, 'un préstamo nace debiendo su capital')
+
+  // 1. Cobrado por nómina: tiene que escribir la novedad Y bajar el saldo.
+  await tx`select public.cobrar_cuota_de_prestamo(${pres.id}, 1000::numeric, ${periodo.id})`
+  comprobar(Number((await saldoDe(pres.id)).saldo) === 2000, 'cobrar una cuota por nómina baja el saldo')
+
+  const [enElRecibo] = await tx`
+    select count(*) as n from public.nomina_novedades_montos
+     where periodo_id = ${periodo.id} and empleado_id = ${emp.id} and concepto = 'DED-PRE'`
+  comprobar(Number(enElRecibo.n) === 1, 'y deja su renglón para que el recibo lo descuente')
+
+  // 2. Pagado por el propio trabajador: el MISMO saldo.
+  await tx`select public.abonar_prestamo(${pres.id}, 500::numeric, current_date, 'PRUEBA: lo trajo él')`
+  comprobar(
+    Number((await saldoDe(pres.id)).saldo) === 1500,
+    'un abono directo baja el mismo saldo que la cuota de nómina',
+  )
+
+  // 3. Y no se puede cobrar más de lo que queda, que es lo que evita cobrarlo
+  //    dos veces por dos caminos distintos.
+  const pasaDelSaldo = await debeFallar(
+    tx,
+    (sp) => sp`select public.abonar_prestamo(${pres.id}, 9999::numeric)`,
+  )
+  comprobar(
+    pasaDelSaldo !== null && /le quedan/i.test(pasaDelSaldo),
+    'no se puede abonar más de lo que se debe',
+  )
+
+  // 4. Al quedar en cero se cierra solo: nadie tiene que acordarse.
+  await tx`select public.abonar_prestamo(${pres.id}, 1500::numeric)`
+  const cerrado = await saldoDe(pres.id)
+  comprobar(
+    Number(cerrado.saldo) === 0 && cerrado.estado === 'SALDADO',
+    'y al llegar a cero el préstamo se salda solo',
+  )
+
+  /*
+    EL BONO VACACIONAL, QUE ES EL SÉPTIMO CONCEPTO DE LEY.
+
+    Lo que se comprueba no es que aparezca una línea, sino las DOS decisiones
+    del diseño:
+
+      1. Que los días de vacaciones NO se pagan aparte. Las faltas
+         justificadas no bajan `v_dias_pagados`, así que ya los cobra por
+         SAL-BAS: una línea más por esos días pagaría dos veces.
+      2. Que los días del bono salen de `private.dias_bono_vacacional` —la
+         misma cuenta que usa la liquidación— y no de una fórmula nueva.
+
+    El trabajador de prueba entró hace 3 años, así que le tocan 15 + 3 = 18.
+
+    Se lee un recibo fresco después de recalcular: el de arriba quedó con otro
+    id y compararlo contra él daría un falso verde.
+  */
+  grupo('Nómina · el bono vacacional')
+
+  /*
+    Se enciende el régimen AQUÍ y no en la preparación.
+
+    Se intentó encenderlo antes de abrir el período —para que la prueba llegara
+    más lejos— y sale peor: con el cestaticket y el seguro social encendidos, el
+    cálculo hace el «despeje del básico» y el salario diario deja de ser los
+    1.200 exactos que comprueban las líneas de arriba (da 1.165,63). Esas
+    comprobaciones están escritas para el régimen «solo lo pactado».
+
+    Así que el bono vacacional se prueba después de ellas, encendiendo el
+    régimen sobre un período que ya cerró sus cuentas.
+  */
+  const [reg] = await tx`
+    select valor_texto from public.nomina_parametros
+     where clave = 'regimen_nomina'
+       and vigencia_desde <= current_date
+       and (vigencia_hasta is null or vigencia_hasta >= current_date)
+     order by vigencia_desde desc limit 1`
+
+  // Sin fila vigente son TODOS. Se lee por `nomina_parametros` y no por
+  // `private.conceptos_de_ley`: el rol de la prueba no entra a `private`, y es
+  // correcto que no entre.
+  const encendidos =
+    reg === undefined
+      ? null
+      : reg.valor_texto === 'SOLO LO PACTADO'
+        ? []
+        : String(reg.valor_texto).split(', ')
+
+  if (encendidos !== null && !encendidos.includes('VACACIONES')) {
+    await tx`select public.cambiar_regimen_nomina(false, ${per1.desde}::date)`
+  }
+
+  await tx`select public.guardar_vacaciones(${periodo.id}, ${emp.id}, 15::numeric, true)`
+  await tx`select public.calcular_nomina(${periodo.id})`
+
+  const [recVac] = await tx`
+    select * from public.nomina_recibos
+     where periodo_id = ${periodo.id} and empleado_id = ${emp.id}`
+
+  const [bonVac] = await tx`
+    select * from public.nomina_recibo_lineas
+     where recibo_id = ${recVac.id} and concepto = 'BON-VAC'`
+
+  comprobar(!!bonVac, 'con el concepto encendido y la casilla marcada, el recibo lleva el bono')
+
+  if (bonVac) {
+    comprobar(
+      Number(bonVac.cantidad) === 18,
+      `son 18 días: 15 de base más 3 años de servicio (${bonVac.cantidad})`,
+    )
+    comprobar(
+      cerca(bonVac.monto, Number(recVac.salario_normal_diario) * 18),
+      'y el monto es el salario normal diario por esos días',
+    )
+  }
+
+  // La comprobación que importa de verdad: los días NO se pagan dos veces.
+  const [salConVac] = await tx`
+    select * from public.nomina_recibo_lineas
+     where recibo_id = ${recVac.id} and concepto = 'SAL-BAS'`
+  comprobar(
+    Number(salConVac.cantidad) === 7,
+    'y el salario del período sigue pagando sus 7 días, ni uno más',
+  )
+
+  // Sin la casilla no hay línea, aunque las vacaciones estén anotadas.
+  await tx`select public.guardar_vacaciones(${periodo.id}, ${emp.id}, 15::numeric, false)`
+  await tx`select public.calcular_nomina(${periodo.id})`
+  const [recSin] = await tx`
+    select * from public.nomina_recibos
+     where periodo_id = ${periodo.id} and empleado_id = ${emp.id}`
+  const [sinBono] = await tx`
+    select count(*) as n from public.nomina_recibo_lineas
+     where recibo_id = ${recSin.id} and concepto = 'BON-VAC'`
+  comprobar(Number(sinBono.n) === 0, 'sin la casilla no hay bono, aunque las vacaciones estén anotadas')
+
+  grupo('Nómina · las capas del cálculo')
 
   // La comprobación que justifica todo el orden por capas: la hora extra se
   // paga sobre la hora básica (150), no sobre una hora sacada del acumulado.

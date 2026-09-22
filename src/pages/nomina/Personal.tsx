@@ -21,15 +21,19 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
+import { Select } from '@/components/ui/Select'
 import {
   BASES_SALARIO,
+  ESTADOS_CIVILES,
   FRECUENCIAS,
+  GENEROS,
   fichaDelInforme,
+  useCargasDeEmpleados,
   useEgresarEmpleado,
   useACargoDe,
   useEmpleados,
 } from '@/lib/api/nomina'
-import type { ACargoDe, Empleado } from '@/lib/api/nomina'
+import type { ACargoDe, CargasDeEmpleado, Empleado } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
@@ -110,37 +114,138 @@ export function Personal() {
   const puedeRRHH = puede('RRHH')
 
   /*
-    Se busca contra las DOS escrituras de la cedula.
+    LOS FILTROS DE RRHH
 
-    La lista enseña «V-12.345.678» desde que los documentos se visten, y quien
-    teclea lo que ve —o lo pega de la propia pantalla— buscaba contra
-    «V-12345678» y no encontraba nada. Vestir sin ajustar la busqueda convierte
-    una mejora de lectura en un buscador roto.
+    Se pidió poder organizar al personal por carga familiar, estado civil,
+    dependientes, género y condiciones de salud, y sacar el informe de lo
+    filtrado. Los cinco viven aquí y se aplican en un solo sitio — ver
+    `pasaElFiltro`.
+
+    `''` es «todos» en los cinco. No se usa `null` para que el `<select>` no
+    tenga que distinguir entre no elegido y elegido vacío.
   */
-  const filtrados = useMemo(() => {
-    const t = busca.trim().toLowerCase()
-    if (!t) return data ?? []
-    return (data ?? []).filter((e) =>
-      `${e.nombres} ${e.apellidos} ${e.cedula} ${documento(e.cedula)} ${e.cargo} ${e.ficha}`
-        .toLowerCase()
-        .includes(t),
-    )
-  }, [data, busca])
+  const [genero, setGenero] = useState('')
+  const [estadoCivil, setEstadoCivil] = useState('')
+  const [carga, setCarga] = useState('')
+  const [dependientes, setDependientes] = useState('')
+  const [salud, setSalud] = useState('')
+  const [condicion, setCondicion] = useState('')
+
+  // Las cuentas de familiares y salud, por persona, en una sola consulta.
+  const { data: cargas } = useCargasDeEmpleados()
+  const cargaDe = useMemo(() => {
+    const m = new Map<number, CargasDeEmpleado>()
+    for (const c of cargas ?? []) m.set(c.empleado_id, c)
+    return m
+  }, [cargas])
 
   /*
-    El mismo buscador que la tabla, aplicado a la lista entera. Buscar
+    EL CRITERIO, ESCRITO UNA SOLA VEZ.
+
+    Antes la búsqueda se repetía en dos `useMemo` —uno para la tabla y otro
+    para el informe— y eran dos copias del mismo `filter`. Con cinco filtros
+    más, dos copias es la forma segura de que un día la tabla enseñe una cosa y
+    el papel diga otra. Ahora las dos listas llaman aquí.
+
+    Se busca contra las DOS escrituras de la cédula: la lista enseña
+    «V-12.345.678» desde que los documentos se visten, y quien teclea lo que ve
+    —o lo pega de la propia pantalla— buscaba contra «V-12345678» y no
+    encontraba nada.
+  */
+  const pasaElFiltro = useMemo(() => {
+    const t = busca.trim().toLowerCase()
+
+    return (e: Empleado) => {
+      if (
+        t &&
+        !`${e.nombres} ${e.apellidos} ${e.cedula} ${documento(e.cedula)} ${e.cargo} ${e.ficha}`
+          .toLowerCase()
+          .includes(t)
+      ) {
+        return false
+      }
+
+      // `SIN` es una opción de verdad y no un descuido: hay fichas a medias, y
+      // «¿a quién le falta el género?» es justo una pregunta que RRHH hace.
+      if (genero === 'SIN' ? e.genero !== null : genero && e.genero !== genero) return false
+      if (
+        estadoCivil === 'SIN'
+          ? e.estado_civil !== null
+          : estadoCivil && e.estado_civil !== estadoCivil
+      ) {
+        return false
+      }
+
+      // Sin fila en la vista, la persona no tiene nada cargado. Eso es «no
+      // tiene», no «no se sabe»: la vista cuenta a todos los empleados.
+      const c = cargaDe.get(e.id)
+      if (carga && (c?.tiene_carga_familiar ?? false) !== (carga === 'SI')) return false
+      if (dependientes && (c?.tiene_dependientes ?? false) !== (dependientes === 'SI')) return false
+      if (salud && (c?.tiene_condicion_salud ?? false) !== (salud === 'SI')) return false
+
+      // Ser eventual decide si cobra en el ciclo, así que se filtra como los
+      // demás: es la pregunta «¿a quién no le toca esta quincena?».
+      if (condicion && e.eventual !== (condicion === 'SI')) return false
+
+      return true
+    }
+  }, [busca, genero, estadoCivil, carga, dependientes, salud, condicion, cargaDe])
+
+  const filtrados = useMemo(() => (data ?? []).filter(pasaElFiltro), [data, pasaElFiltro])
+
+  /*
+    El mismo criterio que la tabla, aplicado a la lista entera. Filtrar por
     «mantenimiento» y sacar el informe tiene que dar el informe de
     mantenimiento, con sus desincorporados incluidos.
   */
-  const paraElInforme = useMemo(() => {
-    const t = busca.trim().toLowerCase()
-    if (!t) return todos ?? []
-    return (todos ?? []).filter((e) =>
-      `${e.nombres} ${e.apellidos} ${e.cedula} ${documento(e.cedula)} ${e.cargo} ${e.ficha}`
-        .toLowerCase()
-        .includes(t),
-    )
-  }, [todos, busca])
+  const paraElInforme = useMemo(() => (todos ?? []).filter(pasaElFiltro), [todos, pasaElFiltro])
+
+  /*
+    EL CRITERIO, DICHO EN PALABRAS PARA EL PAPEL.
+
+    Un informe titulado «Personal» que trae 6 de 32 personas es engañoso si no
+    dice por qué. El PDF ya reserva el renglón «Filtro aplicado»; lo que
+    faltaba era contarle qué se filtró.
+
+    No es cosmético: ese papel se le enseña a un inspector, y un papel que
+    omite su propio recorte miente por omisión.
+  */
+  const criterio = useMemo(() => {
+    const partes: string[] = []
+    if (busca.trim()) partes.push(`coincidencias con «${busca.trim()}»`)
+    if (genero) {
+      partes.push(
+        genero === 'SIN'
+          ? 'sin género cargado'
+          : `género ${GENEROS.find((g) => g.valor === genero)?.etiqueta.toLowerCase() ?? genero}`,
+      )
+    }
+    if (estadoCivil) {
+      partes.push(
+        estadoCivil === 'SIN'
+          ? 'sin estado civil cargado'
+          : `estado civil ${
+              ESTADOS_CIVILES.find((x) => x.valor === estadoCivil)?.etiqueta.toLowerCase() ??
+              estadoCivil
+            }`,
+      )
+    }
+    if (carga) partes.push(carga === 'SI' ? 'con carga familiar' : 'sin carga familiar')
+    if (dependientes) {
+      partes.push(dependientes === 'SI' ? 'con dependientes' : 'sin dependientes')
+    }
+    if (salud) {
+      partes.push(
+        salud === 'SI' ? 'con alguna condición de salud' : 'sin condiciones de salud declaradas',
+      )
+    }
+    if (condicion) {
+      partes.push(condicion === 'SI' ? 'eventuales' : 'de nómina ordinaria')
+    }
+    return partes.length > 0 ? partes.join(' · ') : null
+  }, [busca, genero, estadoCivil, carga, dependientes, salud, condicion])
+
+  const hayFiltro = criterio !== null
 
   const sacarInforme = async (gente: Empleado[]) => {
     if (gente.length === 0) return
@@ -149,7 +254,7 @@ export function Personal() {
       const pdf = await armarInformeDePersonal({
         conMontos: false,
         personas: gente.map(fichaDelInforme),
-        filtro: busca.trim() ? `Coincidencias con «${busca.trim()}»` : null,
+        filtro: criterio,
         empresa: empresaDelPapel(empresa),
         emitidoPor: nombre,
         momento: new Date(),
@@ -222,6 +327,75 @@ export function Personal() {
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
+          {/*
+            LOS CINCO FILTROS DE RRHH.
+
+            Van en la misma tarjeta que la búsqueda y no escondidos tras un
+            «filtros avanzados»: son la forma de trabajar que se pidió, no una
+            rareza. `w-40` los mantiene en una fila en pantalla ancha y los
+            apila solos en el teléfono.
+          */}
+          <Select
+            label="Género"
+            className="w-40"
+            vacio="Todos"
+            value={genero}
+            onChange={(e) => setGenero(e.target.value)}
+            opciones={[...GENEROS, { valor: 'SIN', etiqueta: 'Sin cargar' }]}
+          />
+          <Select
+            label="Estado civil"
+            className="w-44"
+            vacio="Todos"
+            value={estadoCivil}
+            onChange={(e) => setEstadoCivil(e.target.value)}
+            opciones={[...ESTADOS_CIVILES, { valor: 'SIN', etiqueta: 'Sin cargar' }]}
+          />
+          <Select
+            label="Carga familiar"
+            className="w-40"
+            vacio="Todos"
+            value={carga}
+            onChange={(e) => setCarga(e.target.value)}
+            opciones={[
+              { valor: 'SI', etiqueta: 'Tiene' },
+              { valor: 'NO', etiqueta: 'No tiene' },
+            ]}
+          />
+          <Select
+            label="Dependientes"
+            className="w-40"
+            vacio="Todos"
+            value={dependientes}
+            onChange={(e) => setDependientes(e.target.value)}
+            opciones={[
+              { valor: 'SI', etiqueta: 'Tiene' },
+              { valor: 'NO', etiqueta: 'No tiene' },
+            ]}
+          />
+          <Select
+            label="Salud"
+            className="w-48"
+            vacio="Todos"
+            value={salud}
+            onChange={(e) => setSalud(e.target.value)}
+            opciones={[
+              { valor: 'SI', etiqueta: 'Con alguna condición' },
+              { valor: 'NO', etiqueta: 'Sin condiciones' },
+            ]}
+          />
+          <Select
+            label="Contratación"
+            className="w-48"
+            vacio="Todos"
+            value={condicion}
+            onChange={(e) => setCondicion(e.target.value)}
+            opciones={[
+              { valor: 'NO', etiqueta: 'Nómina ordinaria' },
+              { valor: 'SI', etiqueta: 'Eventual' },
+            ]}
+          />
+
           <label className="text-ink/70 flex cursor-pointer items-center gap-2 pb-2 text-sm select-none">
             <input
               type="checkbox"
@@ -231,7 +405,36 @@ export function Personal() {
             />
             Incluir a los desincorporados
           </label>
+
+          {/* Con cinco filtros, volver a «todos» a mano son cinco gestos. Y un
+              filtro olvidado es la causa más común de «faltan personas en la
+              lista». Solo aparece si hay algo que limpiar. */}
+          {hayFiltro ? (
+            <button
+              type="button"
+              className="text-royal-600 hover:text-royal-700 pb-2 text-sm underline-offset-4 hover:underline"
+              onClick={() => {
+                setBusca('')
+                setGenero('')
+                setEstadoCivil('')
+                setCarga('')
+                setDependientes('')
+                setSalud('')
+                setCondicion('')
+              }}
+            >
+              Limpiar filtros
+            </button>
+          ) : null}
         </div>
+
+        {/* Que el recorte se vea en pantalla y no solo en el papel: quien mira
+            una lista corta tiene que saber que la acortó él. */}
+        {hayFiltro ? (
+          <p className="text-ink/45 mt-3 text-xs">
+            Filtrando por {criterio}. Se ven {filtrados.length} de {(data ?? []).length}.
+          </p>
+        ) : null}
       </Card>
 
       {isPending ? <Cargando /> : null}

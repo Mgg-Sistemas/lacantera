@@ -97,6 +97,14 @@ export interface DatosRecibo {
   /** La fecha en que salio, si salio dentro de este periodo. Congelada al calcular. */
   egresadoEn?: string | null
 
+  /**
+   * `REC-AAAA-NNNN`. Es por lo que se busca un recibo en una carpeta.
+   *
+   * Nulo en los emitidos antes de que existiera la numeración; entonces la
+   * cabecera simplemente no lo pone, en vez de escribir un hueco.
+   */
+  numero?: string | null
+
   ficha: string
   cedula: string
   nombreCompleto: string
@@ -125,6 +133,18 @@ export interface DatosRecibo {
    * simplemente no se pinta la referencia.
    */
   tasaUsd?: string | null
+  /**
+   * Si el recibo enseña además cada cifra en dólares.
+   *
+   * La tasa del pie NO depende de esto: se imprime siempre que la haya, porque
+   * es con la que se calculó la quincena y sin ella nadie puede rehacer la
+   * cuenta. Lo que este interruptor apaga es la conversión renglón a renglón,
+   * que es lo que algunos prefieren no repartir.
+   *
+   * Sin decir nada, se enseña — que es lo que venía haciendo el recibo desde
+   * siempre. Un papel no cambia de contenido porque se añada una casilla.
+   */
+  mostrarUsd?: boolean
 
   formaPago: string
   banco: string | null
@@ -282,7 +302,7 @@ function bloque(doc: Doc, d: DatosRecibo, tipo: LineaImpresa['tipo'], y: number)
   doc.setTextColor(MARCA).setFont('helvetica', 'bold').setFontSize(6.5)
   doc.text(TITULOS[tipo], IZQ, y)
 
-  const tasa = Number(d.tasaUsd ?? 0)
+  const tasa = d.mostrarUsd === false ? 0 : Number(d.tasaUsd ?? 0)
 
   let fila = y + 4
   for (const l of lineas) {
@@ -345,7 +365,7 @@ function neto(doc: Doc, d: DatosRecibo, y: number): number {
 
   // La referencia en dólares no es lo que se paga: es lo que valía ese día.
   // Sin el rótulo, un recibo viejo parece una deuda en divisas.
-  if (Number(d.netoUsd) > 0) {
+  if (d.mostrarUsd !== false && Number(d.netoUsd) > 0) {
     doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
     doc.text(`referencia: $ ${cifra(d.netoUsd)}`, DER - 4, y + 12, { align: 'right' })
   }
@@ -452,12 +472,76 @@ function pie(doc: Doc, d: DatosRecibo, y: number) {
   })
 
   doc.setTextColor(GRIS_SUAVE).setFont('helvetica', 'normal').setFontSize(6.5)
-  doc.text(ajustar(doc, `Emitido el ${hoy} por ${d.emitidoPor}`, ANCHO_UTIL * 0.45), IZQ, y)
+  doc.text(ajustar(doc, `Emitido el ${hoy} por ${d.emitidoPor}`, ANCHO_UTIL * 0.35), IZQ, y)
   doc.text(`RIF ${d.empresa.rif}`, DER, y, { align: 'right' })
+
+  /*
+    LA TASA CON LA QUE SE CALCULÓ, EN EL PIE Y SIN PROTAGONISMO.
+
+    El recibo se paga en bolívares y esa es su cifra. Pero hasta ahora la tasa
+    se usaba solo como divisor —cada renglón salía también en dólares— y no se
+    escribía en ninguna parte. Un papel que enseña cifras en divisas sin decir a
+    qué tasa las convirtió no se puede verificar: quien lo recibe no puede
+    rehacer la cuenta, y quien lo archiva no sabe con qué se hizo.
+
+    Va aquí, en gris pequeño y entre el emisor y el RIF, por eso mismo: es un
+    dato de procedencia, como ellos, no una cifra del documento.
+
+    SE NOMBRA EL DÍA, Y NO «EL PERÍODO».
+
+    La primera versión decía «Tasa BCV del período», y era engañoso: hacía
+    entender que 832,49 fue la tasa durante los quince días, y eso es falso —en
+    quince días el bolívar se mueve—. Lo que de verdad guarda el período es
+    UNA tasa, la de un solo día: `abrir_periodo` la congela con
+    `private.tasas_del_dia('USD', p_hasta)`, o sea la del día de cierre.
+
+    Así que el papel dice esa fecha. Una cifra fechada se puede comprobar
+    contra el BCV; una cifra que se atribuye a una quincena entera, no.
+
+    Y es la del período, no la de hoy: un recibo reimpreso dentro de tres meses
+    tiene que seguir diciendo la suya, o deja de cuadrar con el original que ya
+    se firmó.
+
+    Se imprime aunque la conversión por renglón esté apagada: apagar el dólar
+    oculta una comodidad, no la procedencia de lo calculado.
+  */
+  const tasa = Number(d.tasaUsd ?? 0)
+  if (tasa > 0) {
+    doc.text(
+      `Tasa BCV del ${dia(d.hasta)} · 1 $ = Bs ${cifra(String(tasa))}`,
+      IZQ + ANCHO_UTIL / 2,
+      y,
+      { align: 'center' },
+    )
+  }
 }
 
-/** Una copia completa, empezando en `y0`. Devuelve dónde terminó. */
-function copia(doc: Doc, d: DatosRecibo, y0: number, rotulo: string, logo: string): number {
+/**
+ * Una copia completa, empezando en `y0`. Devuelve dónde terminó.
+ *
+ * `pisoDelPie` es hasta dónde puede estirarse: la firma y el pie se bajan hasta
+ * ahí en vez de quedarse pegados al neto. Sin él, la copia ocupa lo que ocupa.
+ *
+ * POR QUÉ HACE FALTA ESTIRAR
+ *
+ * Medido el 22/09/2026: una copia mide entre 139 y 173 mm según los conceptos
+ * que lleve, y el alto útil de la hoja son 237. Como dos copias no caben nunca
+ * —ver `hoja()`—, cada una va sola y sobraban casi cien milímetros al final.
+ * El papel salía «cortado a la mitad», con media hoja en blanco debajo de la
+ * firma, y parecía un fallo de impresión.
+ *
+ * Con la firma y el pie abajo, la hoja se lee entera y deliberada: los
+ * conceptos arriba, la firma donde se firma. Es como está maquetado cualquier
+ * documento que se firma a mano.
+ */
+function copia(
+  doc: Doc,
+  d: DatosRecibo,
+  y0: number,
+  rotulo: string,
+  logo: string,
+  pisoDelPie?: number,
+): number {
   /*
     EL EJEMPLAR VA EN LA CABECERA, no suelto debajo de ella.
 
@@ -470,7 +554,11 @@ function copia(doc: Doc, d: DatosRecibo, y0: number, rotulo: string, logo: strin
     doc,
     membrete(doc, logo, {
       empresa: d.empresa,
+      /* El número va PRIMERO de los tres: es el dato por el que se busca este
+         papel dentro de una carpeta. El período dice de cuándo es y el
+         ejemplar de quién es, pero ninguno de los dos lo identifica. */
       datos: [
+        ...(d.numero ? ([['RECIBO', d.numero]] as [string, string][]) : []),
         ['PERÍODO', d.periodo],
         ['EJEMPLAR', rotulo],
       ],
@@ -485,10 +573,19 @@ function copia(doc: Doc, d: DatosRecibo, y0: number, rotulo: string, logo: strin
     y = bloque(doc, d, tipo, y)
   }
   y = neto(doc, d, y)
-  firmas(doc, d, y + 8)
-  pie(doc, d, y + 34)
 
-  return y + 38
+  /*
+    La cola —declaración, firmas y pie— mide 38 mm y va junta: bajarla es
+    moverle el ancla, no separar sus piezas. Nunca sube por encima de su sitio
+    natural, así que un recibo largo se comporta exactamente como antes.
+  */
+  const COLA = 38
+  const base = pisoDelPie === undefined ? y : Math.max(y, pisoDelPie - COLA)
+
+  firmas(doc, d, base + 8)
+  pie(doc, d, base + 34)
+
+  return base + COLA
 }
 
 /**
@@ -505,15 +602,16 @@ function copia(doc: Doc, d: DatosRecibo, y0: number, rotulo: string, logo: strin
  * midiendo y decidiendo— pero el resultado habitual es otro, y se imprime el
  * doble de papel. Es el precio del margen, no un fallo.
  */
-function hoja(doc: Doc, d: DatosRecibo, logo: string) {
-  const fin = copia(doc, d, ARRIBA, 'Original — para la empresa', logo)
+function hoja(doc: Doc, d: DatosRecibo, logo: string, alto: number) {
+  // Lo que mide una copia, más el corte, más otra igual: ¿cabe antes del
+  // margen de abajo? Se pregunta ANTES de dibujar, porque de la respuesta
+  // depende dónde va la firma de la primera.
+  const cabenDos = alto + 4 + 4 + alto <= ABAJO - ARRIBA
 
-  // Lo que ocupó la primera, más el corte, más otra igual: ¿cabe antes del
-  // margen de abajo?
-  const corte = fin + 4
-  const cabe = corte + 4 + (fin - ARRIBA) <= ABAJO
+  if (cabenDos) {
+    const fin = copia(doc, d, ARRIBA, 'Original — para la empresa', logo)
+    const corte = fin + 4
 
-  if (cabe) {
     doc.setDrawColor(ROJO).setLineWidth(0.2).setLineDashPattern([1.5, 1.5], 0)
     doc.line(IZQ, corte, DER, corte)
     doc.setLineDashPattern([], 0)
@@ -522,10 +620,19 @@ function hoja(doc: Doc, d: DatosRecibo, logo: string) {
     doc.text('corte aquí', IZQ, corte - 1.5)
 
     copia(doc, d, corte + 4, 'Copia — para el trabajador', logo)
-  } else {
-    doc.addPage()
-    copia(doc, d, ARRIBA, 'Copia — para el trabajador', logo)
+    return
   }
+
+  /*
+    Una por hoja, y cada una ocupando la hoja entera.
+
+    `ABAJO` como piso del pie es lo que quita la media hoja en blanco: sin él,
+    la firma se quedaba justo debajo del neto y sobraban ~98 mm de papel vacío
+    en cada una de las dos páginas.
+  */
+  copia(doc, d, ARRIBA, 'Original — para la empresa', logo, ABAJO)
+  doc.addPage()
+  copia(doc, d, ARRIBA, 'Copia — para el trabajador', logo, ABAJO)
 }
 
 /**
@@ -537,12 +644,27 @@ function hoja(doc: Doc, d: DatosRecibo, logo: string) {
  */
 export type PdfArmado = ArchivoArmado
 
+/**
+ * Cuánto mide una copia, sin ensuciar el documento de verdad.
+ *
+ * Se dibuja entera en un jsPDF de usar y tirar y se mide lo que ocupó. Se
+ * intentó deducirlo sumando alturas y no sale: el membrete y los rótulos
+ * dependen de cuánto texto quepa, y eso solo lo sabe el motor de tipografía.
+ *
+ * Dibujar dos veces cuesta poco —un recibo son 7 kB— y evita la alternativa,
+ * que era añadir y borrar páginas del documento bueno para medir en él.
+ */
+function altoDeUnaCopia(Constructor: typeof import('jspdf').jsPDF, d: DatosRecibo, logo: string) {
+  const regla = new Constructor({ unit: 'mm', format: 'a4' })
+  return copia(regla, d, ARRIBA, 'Original — para la empresa', logo) - ARRIBA
+}
+
 export async function armarRecibo(d: DatosRecibo): Promise<PdfArmado> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
   const logo = await logoComoImagen()
-  hoja(doc, d, logo)
+  hoja(doc, d, logo, altoDeUnaCopia(jsPDF, d, logo))
 
   doc.setProperties({
     title: `Recibo ${d.periodo} — ${d.nombreCompleto}`,
@@ -553,7 +675,11 @@ export async function armarRecibo(d: DatosRecibo): Promise<PdfArmado> {
   const apellido = d.nombreCompleto.split(' ').pop()?.toLowerCase() ?? ''
   return {
     blob: doc.output('blob'),
-    nombre: `recibo-${d.periodo}-${d.ficha}-${apellido}.pdf`,
+    // El número delante cuando lo hay: así la carpeta de descargas se ordena
+    // sola en el mismo orden en que se archivan los papeles.
+    nombre: d.numero
+      ? `${d.numero}-${d.ficha}-${apellido}.pdf`
+      : `recibo-${d.periodo}-${d.ficha}-${apellido}.pdf`,
   }
 }
 
@@ -569,9 +695,11 @@ export async function armarRecibos(
   // convertir el PNG cincuenta veces.
   const logo = await logoComoImagen()
 
+  // Se mide cada uno: dos recibos del mismo período pueden llevar distinto
+  // número de conceptos, así que no sirve medir el primero y aplicarlo a todos.
   for (const [i, d] of recibos.entries()) {
     if (i > 0) doc.addPage()
-    hoja(doc, d, logo)
+    hoja(doc, d, logo, altoDeUnaCopia(jsPDF, d, logo))
   }
 
   doc.setProperties({

@@ -126,6 +126,35 @@ export function useTasaVigente(origen = 'USD', fuente = 'BCV') {
 }
 
 /**
+ * La tasa de un día concreto, para enseñarla antes de comprometerla.
+ *
+ * `useTasaVigente` pregunta siempre por hoy, y hay casos donde la fecha que
+ * importa no es hoy: una nómina que se pagó el día del cierre y se registra
+ * después tiene que recalcularse con la tasa de ESE día, no con la de ahora.
+ *
+ * `arrastrada` dice si esa fecha no tiene tasa propia y se está usando la
+ * anterior. Importa enseñarlo: no es lo mismo «el BCV publicó esto» que «el
+ * BCV no publicó ese día y vale lo del día antes».
+ */
+export function useTasaDeFecha(fecha: string | undefined, origen = 'USD', fuente = 'BCV') {
+  return useQuery({
+    enabled: Boolean(fecha),
+    queryKey: ['tasa-de-fecha', origen, fuente, fecha],
+    queryFn: async () => {
+      const filas = await rpc<TasaVigente[]>('obtener_tasa', {
+        p_origen: origen,
+        p_destino: 'VES',
+        p_fecha: fecha!,
+        p_fuente: fuente,
+      })
+
+      return filas?.[0] ?? null
+    },
+    staleTime: 5 * 60_000,
+  })
+}
+
+/**
  * La tasa vigente de varias monedas a la vez.
  *
  * Va con `enabled` porque el indicador de la barra solo necesita las demás

@@ -64,6 +64,18 @@ export interface Empleado {
   telefono_pago: string | null
   telefono: string | null
   activo: boolean
+  /**
+   * Contratado por día o por proyecto puntual.
+   *
+   * Decide si entra en las nóminas que corren solas. Un eventual queda fuera
+   * de la semanal, la quincenal y la mensual, y entra en un período ESPECIAL,
+   * que es el que alguien abre a propósito.
+   *
+   * No se guarda con el resto de la ficha: va por `marcar_empleado_eventual`,
+   * porque decide si alguien cobra y eso no puede ser un efecto colateral de
+   * corregirle el teléfono.
+   */
+  eventual: boolean
   nota: string | null
 
   /**
@@ -413,6 +425,15 @@ export interface LineaRecibo {
 
 export interface Recibo {
   id: number
+  /**
+   * `REC-AAAA-NNNN`, el número con el que se archiva y se reclama.
+   *
+   * No es el `id`: el `id` cambia en cada recálculo, porque `calcular_nomina`
+   * borra los recibos y los rehace. El número no — vive en
+   * `nomina_recibo_numeros` y vuelve igual. Nulo solo en recibos anteriores al
+   * 22/09/2026 que no llegara a numerar el rellenado.
+   */
+  numero: string | null
   periodo_id: number
   empleado_id: number
   /*
@@ -586,6 +607,12 @@ export const CONCEPTOS_DE_LEY = [
     codigo: 'PRESTACIONES',
     nombre: 'Prestaciones sociales',
     detalle: 'Lo que se aparta en cada recibo, y la pantalla de prestaciones.',
+  },
+  {
+    codigo: 'VACACIONES',
+    nombre: 'Bono vacacional',
+    detalle:
+      'Permite añadir el bono al recibo de quien sale de vacaciones. Los días no se pagan aparte: las faltas justificadas no bajan el salario, así que ya los cobra.',
   },
 ] as const
 
@@ -941,6 +968,472 @@ export async function urlDeDocumentoDeEmpleado(ruta: string): Promise<string> {
     throw new Error(`No se pudo abrir el documento: ${error?.message ?? 'sin respuesta'}`)
   }
   return data.signedUrl
+}
+
+/**
+ * Pone el período a la tasa BCV de un día, normalmente hoy.
+ *
+ * **No recalcula.** Cambiar la tasa deja los recibos viejos en la mesa a
+ * propósito: quien los mire tiene que verlos cambiar porque pulsó «Calcular»,
+ * no como efecto lateral de otro botón. De que nadie pague sin recalcular se
+ * encarga `pagar_nomina`, que se niega si la tasa del recibo no es la del día.
+ */
+/**
+ * Devuelve una nómina aprobada a calculada, para poder corregirla.
+ *
+ * Existe porque el candado de la tasa la dejaba atrapada: una aprobada no
+ * admite cambios de tasa ni recálculo, y lo único que había para salir de ahí
+ * era anularla entera. Aprobar no mueve dinero —solo marca estado, quién y
+ * cuándo—, así que devolver es deshacer esas tres marcas y nada más.
+ */
+export function useDevolverNomina() {
+  return useAccionNomina((p: { periodo_id: number; motivo?: string | null }) =>
+    rpc<void>('devolver_nomina', { p_periodo_id: p.periodo_id, p_motivo: p.motivo || null }),
+  )
+}
+
+/**
+ * Pone la tasa del día y recalcula, en un solo acto.
+ *
+ * **Una nómina aprobada sigue aprobada**, con su aprobador original: lo que se
+ * aprueba es quién cobra y cuántos días, y eso no cambia —`calcular_nomina` no
+ * usa la fecha de hoy en ninguna cuenta—. Lo único que se mueve es la tasa del
+ * BCV, que no es una decisión que nadie tenga que aprobar dos veces. Queda la
+ * notificación con las dos tasas y el porcentaje.
+ */
+export function useRefrescarTasaDeNomina() {
+  return useAccionNomina((p: { periodo_id: number; fecha?: string | null }) =>
+    rpc<string>('refrescar_tasa_de_nomina', {
+      p_periodo_id: p.periodo_id,
+      p_fecha: p.fecha || null,
+    }),
+  )
+}
+
+export function useActualizarTasaDelPeriodo() {
+  return useAccionNomina((p: { periodo_id: number; fecha?: string | null }) =>
+    rpc<string>('actualizar_tasa_del_periodo', {
+      p_periodo_id: p.periodo_id,
+      p_fecha: p.fecha || null,
+    }),
+  )
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   LAS VACACIONES DEL PERÍODO
+
+   Una fila por persona y período. Los DÍAS no se pagan aquí: las faltas
+   justificadas no bajan lo que se paga, así que quien está de vacaciones ya
+   cobra su salario completo por `SAL-BAS`. Lo que decide esta fila es si el
+   recibo lleva además la línea del **bono vacacional**, y lo decide RRHH con
+   una casilla, caso por caso.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+export interface VacacionesDelPeriodo {
+  id: number
+  periodo_id: number
+  empleado_id: number
+  dias: string
+  desde: string | null
+  hasta: string | null
+  /** La casilla: si el recibo de ESTE período lleva el bono. */
+  paga_bono: boolean
+  nota: string | null
+}
+
+export function useVacacionesDelPeriodo(periodoId: number | undefined) {
+  return useQuery({
+    enabled: periodoId !== undefined,
+    queryKey: ['nomina', 'vacaciones', periodoId],
+    queryFn: async () =>
+      desenvolver<VacacionesDelPeriodo[]>(
+        await supabase
+          .from('nomina_vacaciones')
+          .select('*')
+          .eq('periodo_id', periodoId!),
+      ),
+  })
+}
+
+export function useGuardarVacaciones() {
+  return useAccionNomina((v: {
+    periodo_id: number
+    empleado_id: number
+    dias: number
+    paga_bono?: boolean
+    desde?: string | null
+    hasta?: string | null
+    nota?: string | null
+  }) =>
+    rpc<number>('guardar_vacaciones', {
+      p_periodo_id: v.periodo_id,
+      p_empleado_id: v.empleado_id,
+      p_dias: v.dias,
+      p_paga_bono: v.paga_bono ?? false,
+      p_desde: v.desde || null,
+      p_hasta: v.hasta || null,
+      p_nota: v.nota || null,
+    }),
+  )
+}
+
+export function useEliminarVacaciones() {
+  return useAccionNomina((id: number) => rpc<void>('eliminar_vacaciones', { p_id: id }))
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   EL LIBRO DE PRÉSTAMOS
+
+   El cálculo ya sabía descontar `DED-PRE`; lo que faltaba era el préstamo.
+   Aquí el saldo NO se guarda: sale de `v_prestamos`, que resta los abonos cada
+   vez. Guardado se quedaría viejo en cuanto entrara un abono por otra vía, y
+   esa vía existe — el trabajador puede pagar por fuera de la nómina.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+export interface Prestamo {
+  id: number
+  empleado_id: number
+  ficha: string
+  trabajador: string
+  fecha: string
+  capital: string
+  moneda: string
+  motivo: string
+  /** Lo pactado, que es una intención y no un calendario. */
+  cuotas_pactadas: number | null
+  estado: 'VIGENTE' | 'SALDADO' | 'ANULADO'
+  nota: string | null
+  abonado: string
+  saldo: string
+  abonos: number
+  ultimo_abono: string | null
+}
+
+export interface AbonoDePrestamo {
+  id: number
+  prestamo_id: number
+  fecha: string
+  monto: string
+  /** `NOMINA` si se descontó del recibo; `DIRECTO` si lo trajo la persona. */
+  origen: 'NOMINA' | 'DIRECTO'
+  novedad_id: number | null
+  periodo_id: number | null
+  nota: string | null
+}
+
+export function usePrestamosDeEmpleado(empleadoId: number | undefined) {
+  return useQuery({
+    enabled: empleadoId !== undefined,
+    queryKey: ['nomina', 'prestamos', empleadoId],
+    queryFn: async () =>
+      desenvolver<Prestamo[]>(
+        await supabase
+          .from('v_prestamos')
+          .select('*')
+          .eq('empleado_id', empleadoId!)
+          .order('fecha', { ascending: false }),
+      ),
+  })
+}
+
+export function useAbonosDePrestamo(prestamoId: number | undefined) {
+  return useQuery({
+    enabled: prestamoId !== undefined,
+    queryKey: ['nomina', 'prestamo-abonos', prestamoId],
+    queryFn: async () =>
+      desenvolver<AbonoDePrestamo[]>(
+        await supabase
+          .from('prestamo_abonos')
+          .select('*')
+          .eq('prestamo_id', prestamoId!)
+          .order('fecha'),
+      ),
+  })
+}
+
+export function useRegistrarPrestamo() {
+  return useAccionNomina((p: {
+    empleado_id: number
+    capital: number
+    motivo: string
+    fecha?: string | null
+    moneda?: string
+    cuotas?: number | null
+    nota?: string | null
+  }) =>
+    rpc<number>('registrar_prestamo', {
+      p_empleado_id: p.empleado_id,
+      p_capital: p.capital,
+      p_motivo: p.motivo,
+      p_fecha: p.fecha || null,
+      p_moneda: p.moneda ?? 'VES',
+      p_cuotas: p.cuotas ?? null,
+      p_nota: p.nota || null,
+    }),
+  )
+}
+
+/**
+ * Cobra una cuota por nómina.
+ *
+ * Escribe el renglón del recibo Y el abono que baja el saldo, en la misma
+ * transacción. Es lo que impide que un préstamo se cobre dos veces por dos
+ * caminos distintos.
+ */
+export function useCobrarCuota() {
+  return useAccionNomina((c: {
+    prestamo_id: number
+    monto: number
+    periodo_id?: number | null
+    nota?: string | null
+  }) =>
+    rpc<number>('cobrar_cuota_de_prestamo', {
+      p_prestamo_id: c.prestamo_id,
+      p_monto: c.monto,
+      p_periodo_id: c.periodo_id ?? null,
+      p_nota: c.nota || null,
+    }),
+  )
+}
+
+/** Un pago que trae el propio trabajador, por fuera de la nómina. */
+export function useAbonarPrestamo() {
+  return useAccionNomina((a: {
+    prestamo_id: number
+    monto: number
+    fecha?: string | null
+    nota?: string | null
+  }) =>
+    rpc<number>('abonar_prestamo', {
+      p_prestamo_id: a.prestamo_id,
+      p_monto: a.monto,
+      p_fecha: a.fecha || null,
+      p_nota: a.nota || null,
+    }),
+  )
+}
+
+export function useAnularPrestamo() {
+  return useAccionNomina((a: { id: number; motivo: string }) =>
+    rpc<void>('anular_prestamo', { p_id: a.id, p_motivo: a.motivo }),
+  )
+}
+
+/**
+ * Marca o desmarca a alguien como eventual.
+ *
+ * Aparte de `useGuardarEmpleado` a propósito: esto decide si una persona entra
+ * o no en la nómina del ciclo, y no puede pasar de refilón al guardar la ficha.
+ * La base además lo rechaza si hay un período sin cerrar que ya la recogió.
+ */
+export function useMarcarEventual() {
+  return useAccionNomina((e: { id: number; eventual: boolean }) =>
+    rpc<boolean>('marcar_empleado_eventual', { p_id: e.id, p_eventual: e.eventual }),
+  )
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   LA CARGA FAMILIAR Y LA SALUD
+
+   Dos tablas hijas de `empleados`, cada una con N filas por persona. Se leen
+   con el permiso de Nómina —nunca abiertas— porque llevan lo más sensible que
+   guarda esta base: condiciones de salud, y nombres y fechas de nacimiento de
+   posibles menores.
+
+   Se escriben por función, como todo lo demás aquí: no hay policies de
+   escritura en ninguna tabla de este sistema.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+export interface Parentesco {
+  codigo: string
+  nombre: string
+  orden: number
+  activo: boolean
+}
+
+export interface TipoCondicionSalud {
+  codigo: string
+  nombre: string
+  orden: number
+  activo: boolean
+}
+
+export interface FamiliarDeEmpleado {
+  id: number
+  empleado_id: number
+  nombres: string
+  apellidos: string
+  parentesco: string
+  /** La fecha, no la edad: una edad guardada es falsa a los doce meses. */
+  fecha_nacimiento: string | null
+  /** Opcional a propósito — los menores no la tienen. */
+  cedula: string | null
+  depende: boolean
+  nota: string | null
+  creado_en: string
+}
+
+export interface CondicionDeSalud {
+  id: number
+  empleado_id: number
+  tipo: string
+  descripcion: string
+  detalle: string | null
+  desde: string | null
+  creado_en: string
+}
+
+/** Lo que preguntan los filtros de Personal, ya contado por la base. */
+export interface CargasDeEmpleado {
+  empleado_id: number
+  familiares: number
+  dependientes: number
+  tiene_carga_familiar: boolean
+  tiene_dependientes: boolean
+  condiciones_salud: number
+  tiene_condicion_salud: boolean
+}
+
+/**
+ * Los años cumplidos a día de hoy, o `null` si no se sabe la fecha.
+ *
+ * Se calcula al enseñar y no se guarda, que es el motivo de que la tabla tenga
+ * `fecha_nacimiento` y no `edad`. Cuenta el cumpleaños: restar los años sin
+ * mirar el mes daría un año de más a casi la mitad de la gente.
+ */
+export function edadEnAnios(fechaNacimiento: string | null): number | null {
+  if (!fechaNacimiento) return null
+  const nace = new Date(`${fechaNacimiento}T00:00:00`)
+  if (Number.isNaN(nace.getTime())) return null
+  const hoy = new Date()
+  let anios = hoy.getFullYear() - nace.getFullYear()
+  const mes = hoy.getMonth() - nace.getMonth()
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nace.getDate())) anios -= 1
+  return anios < 0 ? null : anios
+}
+
+export function useParentescos() {
+  return useQuery({
+    queryKey: ['nomina', 'parentescos'],
+    queryFn: async () =>
+      desenvolver<Parentesco[]>(
+        await supabase.from('parentescos').select('*').eq('activo', true).order('orden'),
+      ),
+  })
+}
+
+export function useTiposCondicionSalud() {
+  return useQuery({
+    queryKey: ['nomina', 'tipos-condicion-salud'],
+    queryFn: async () =>
+      desenvolver<TipoCondicionSalud[]>(
+        await supabase.from('tipos_condicion_salud').select('*').eq('activo', true).order('orden'),
+      ),
+  })
+}
+
+export function useFamiliaresDeEmpleado(empleadoId: number | undefined) {
+  return useQuery({
+    enabled: empleadoId !== undefined,
+    queryKey: ['nomina', 'familiares', empleadoId],
+    queryFn: async () =>
+      desenvolver<FamiliarDeEmpleado[]>(
+        await supabase
+          .from('empleado_familiares')
+          .select('*')
+          .eq('empleado_id', empleadoId!)
+          .order('depende', { ascending: false })
+          .order('apellidos'),
+      ),
+  })
+}
+
+export function useGuardarFamiliar() {
+  return useAccionNomina((f: {
+    id?: number
+    empleado_id: number
+    nombres: string
+    apellidos: string
+    parentesco: string
+    fecha_nacimiento?: string | null
+    cedula?: string | null
+    depende?: boolean
+    nota?: string | null
+  }) =>
+    rpc<number>('guardar_familiar_de_empleado', {
+      p_id: f.id ?? null,
+      p_empleado_id: f.empleado_id,
+      p_nombres: f.nombres,
+      p_apellidos: f.apellidos,
+      p_parentesco: f.parentesco,
+      p_fecha_nacimiento: f.fecha_nacimiento || null,
+      p_cedula: f.cedula || null,
+      p_depende: f.depende ?? false,
+      p_nota: f.nota || null,
+    }),
+  )
+}
+
+export function useEliminarFamiliar() {
+  return useAccionNomina((id: number) =>
+    rpc<void>('eliminar_familiar_de_empleado', { p_id: id }),
+  )
+}
+
+export function useSaludDeEmpleado(empleadoId: number | undefined) {
+  return useQuery({
+    enabled: empleadoId !== undefined,
+    queryKey: ['nomina', 'salud', empleadoId],
+    queryFn: async () =>
+      desenvolver<CondicionDeSalud[]>(
+        await supabase
+          .from('empleado_salud')
+          .select('*')
+          .eq('empleado_id', empleadoId!)
+          .order('tipo'),
+      ),
+  })
+}
+
+export function useGuardarCondicionDeSalud() {
+  return useAccionNomina((c: {
+    id?: number
+    empleado_id: number
+    tipo: string
+    descripcion: string
+    detalle?: string | null
+    desde?: string | null
+  }) =>
+    rpc<number>('guardar_condicion_de_salud', {
+      p_id: c.id ?? null,
+      p_empleado_id: c.empleado_id,
+      p_tipo: c.tipo,
+      p_descripcion: c.descripcion,
+      p_detalle: c.detalle || null,
+      p_desde: c.desde || null,
+    }),
+  )
+}
+
+export function useEliminarCondicionDeSalud() {
+  return useAccionNomina((id: number) =>
+    rpc<void>('eliminar_condicion_de_salud', { p_id: id }),
+  )
+}
+
+/**
+ * Las cargas de todos, para filtrar la lista de personal.
+ *
+ * Una consulta y no una por persona: la pantalla filtra sobre 32 fichas y
+ * pedir 32 cuentas separadas sería 32 viajes para contestar una pregunta que
+ * la vista ya contesta de una vez.
+ */
+export function useCargasDeEmpleados() {
+  return useQuery({
+    queryKey: ['nomina', 'cargas'],
+    queryFn: async () =>
+      desenvolver<CargasDeEmpleado[]>(await supabase.from('v_empleado_cargas').select('*')),
+  })
 }
 
 export function useGuardarEncuadre() {

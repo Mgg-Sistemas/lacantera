@@ -26,6 +26,8 @@ import {
   usePeriodos,
 } from '@/lib/api/nomina'
 import type { Empleado, FaltaDelPeriodo, Periodo } from '@/lib/api/nomina'
+import { conceptosDeLeyEn, useParametros } from '@/lib/api/nomina'
+import { VacacionesDelPeriodo } from './VacacionesDelPeriodo'
 import { opcionesDe, useMetodosPago } from '@/lib/api/metodosPago'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { comoNumero, dinero, fecha } from '@/lib/formato'
@@ -387,6 +389,16 @@ export function Asistencia() {
   const periodo = (periodos ?? []).find((p) => p.id === periodoId)
 
   /*
+    Los conceptos de ley que rigen para ESTE período, no para hoy.
+
+    Se lee por su fecha de cierre, igual que hace `calcular_nomina`: si el
+    régimen cambió después, un período viejo sigue con los suyos y la pantalla
+    tiene que enseñar lo mismo que el cálculo va a hacer.
+  */
+  const { data: parametros } = useParametros()
+  const conceptosDeLey = conceptosDeLeyEn(parametros ?? [], periodo?.hasta ?? '')
+
+  /*
     LOS DEL PERÍODO, NO LOS ACTIVOS.
 
     Christopher: «hay un desincorporado, Cortez Hernán, que hay que quitarle un
@@ -695,6 +707,18 @@ export function Asistencia() {
       ) : null}
 
       {/* --------------------- Bono o descuento suelto --------------------- */}
+      {/* Debajo de las novedades y no en pestaña aparte: quien carga la
+          quincena ya está aquí, y «quién estuvo de vacaciones» es una novedad
+          del período como las horas extra o las faltas. */}
+      {periodo && conceptosDeLey.includes('VACACIONES') ? (
+        <VacacionesDelPeriodo
+          periodoId={periodo.id}
+          empleados={empleados ?? []}
+          puedeEditar={puedeRRHH}
+          abierto={abierto}
+        />
+      ) : null}
+
       {extra ? (
         <Modal
           abierto

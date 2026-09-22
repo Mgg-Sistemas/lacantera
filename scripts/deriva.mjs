@@ -4,10 +4,19 @@
       node scripts/deriva.mjs <volcado.json>
       node scripts/deriva.mjs <volcado.json> --volcar <destino.sql>
 
-  El registro de migraciones no dice la verdad —es la regla 7 del CLAUDE.md— y
-  por eso hay que comprobar contra el catálogo. Esto compara el cuerpo VIVO de
-  cada función contra el último archivo de `supabase/migrations` que la CREA. Si
-  no coinciden, reconstruir la base desde cero da otra cosa que la que corre.
+  El registro de migraciones no dice la verdad, y por eso hay que comprobar
+  contra el catálogo. Esto compara el cuerpo VIVO de cada función contra el
+  último archivo de `supabase/migrations` que la CREA. Si no coinciden,
+  reconstruir la base desde cero da otra cosa que la que corre.
+
+  Cuánto de verdad, medido el 22/09/2026: `supabase_migrations` registra 457
+  migraciones y en disco hay 426; **coinciden exactamente 53**. Y al levantar
+  una base desde cero con los archivos, 57 de 433 no aplican. O sea que no es
+  una sospecha: el archivo no reconstruye lo que corre.
+
+  (Este párrafo citaba «la regla 7 del CLAUDE.md». Ese archivo se reescribió
+  entero y no tiene regla 7, así que la referencia mandaba a leer algo que no
+  existe. Se sustituye por el dato, que no se queda huérfano.)
 
   Lo levantó el carril de base de datos el 8/09/2026, por tercera vez en un día,
   y con el diagnóstico correcto: **el hueco no es de disciplina, es de orden.**

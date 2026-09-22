@@ -237,10 +237,34 @@ const sql = pg(url(BASE), opciones)
  * muchas sentencias en un solo texto, y el protocolo extendido solo admite una.
  * Ese es también el motivo de `prepare: false`.
  */
+/*
+  `--seguir` NO ES UN «IGNORAR ERRORES». ES UN DIAGNÓSTICO.
+
+  El 22/09/2026 esto murió en la migración 200 de 433 con «Falta
+  public.corregir_costo»: esa función existe en producción pero ninguna
+  migración del archivo la crea, porque se aplicó por MCP sin dejar archivo.
+
+  Muriendo en la primera, cada intento cuesta una ejecución entera y solo
+  revela un hueco. Con `--seguir`, una ejecución revela TODOS: se sigue
+  adelante, se apunta cuál falló y por qué, y al final se imprime la lista.
+
+  Sin la bandera se muere en la primera, como siempre. Una base a medias que
+  no avisa es peor que ninguna, y eso no cambia: al terminar con `--seguir`
+  se dice bien claro que la base NO está completa.
+*/
+const SEGUIR = process.argv.includes('--seguir')
+const fallos = []
+
 const aplicar = async (guion, comoSeLlama) => {
   try {
     await sql.unsafe(guion).simple()
+    return true
   } catch (e) {
+    const porque = [e.message, e.detail, e.hint].filter(Boolean).join(' · ')
+    if (SEGUIR) {
+      fallos.push({ archivo: comoSeLlama, porque })
+      return false
+    }
     await sql.end({ timeout: 5 }).catch(() => {})
     morir(
       `Falló al aplicar ${comoSeLlama}.`,
@@ -270,6 +294,23 @@ for (const archivo of archivos) {
 }
 
 console.log(`${archivos.length} migraciones aplicadas`)
+
+/*
+  EL PARTE DE LO QUE NO ENTRÓ.
+
+  Se imprime al final y no según va pasando: intercalado entre los contadores
+  de 25 en 25 se pierde de vista, y esta lista es el resultado más valioso de
+  una ejecución con `--seguir`. Cada renglón es un sitio donde el archivo no
+  reconstruye lo que hay en producción.
+*/
+if (fallos.length > 0) {
+  console.log(`\n${'─'.repeat(75)}`)
+  console.log(`NO ENTRARON ${fallos.length} DE ${archivos.length} MIGRACIONES`)
+  console.log(`${'─'.repeat(75)}\n`)
+  for (const f of fallos) console.log(`  ${f.archivo}\n    ${f.porque}\n`)
+  console.log('Esta base NO es un espejo del esquema: le falta lo de esa lista.')
+  console.log('Sirve para lo que no dependa de ello. Comprueba antes de fiarte.\n')
+}
 
 const [{ tablas }] = await sql`
   select count(*)::int as tablas
