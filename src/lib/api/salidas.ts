@@ -451,6 +451,34 @@ export function useGenerarNotaDeEntrega() {
   })
 }
 
+/** Lo que la pantalla manda por cada camión. Con vehículo, con chofer, o con los dos. */
+export interface CamionParaGuardar {
+  vehiculo_id: number | null
+  chofer_id: number | null
+  ticket: string | null
+  peso_neto: number | null
+}
+
+/**
+ * Los camiones de una nota de entrega: se manda la lista entera y queda esa.
+ *
+ * Lo puede hacer quien escribe en Facturación, y también quien generó la nota
+ * desde la salida, sobre esa nota. La base copia placa, chofer y cédula como
+ * texto al guardar: si mañana se corrige el catálogo, el papel ya emitido
+ * sigue diciendo lo que decía.
+ */
+export function useGuardarCamionesDeNota() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { nota_id: number; camiones: CamionParaGuardar[] }) =>
+      rpc<number>('guardar_camiones_de_nota', { p_nota_id: v.nota_id, p_camiones: v.camiones }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['ventas'] })
+      void qc.invalidateQueries({ queryKey: ['salidas'] })
+    },
+  })
+}
+
 export function useCompletarNotaDeEntrega() {
   const qc = useQueryClient()
   return useMutation({

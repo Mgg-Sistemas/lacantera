@@ -136,6 +136,17 @@ export interface DatosDocumento {
     cedulaChofer?: string | null
     ticket?: string | null
     pesoNeto?: string | null
+    /**
+     * Cuando la nota lleva varios camiones, uno por fila. Si viene con algo,
+     * manda sobre los cuatro de arriba, que son el camión único de siempre.
+     */
+    camiones?: {
+      vehiculo?: string | null
+      chofer?: string | null
+      cedulaChofer?: string | null
+      ticket?: string | null
+      pesoNeto?: string | null
+    }[]
   } | null
 
   moneda: string
@@ -343,7 +354,9 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
 
   const yDireccion = 14.5 + (nombre.length - 1) * RENGLON
   const altoDatos = yDireccion + 4.5 + (direccion.length - 1) * RENGLON + 3
-  const alto = altoDatos + (d.despacho ? 14 : 0)
+  // Un camión ocupa 14 mm; cada camión de más, un renglón de 5.
+  const camiones = d.despacho?.camiones?.length ? d.despacho.camiones : d.despacho ? [d.despacho] : []
+  const alto = altoDatos + (d.despacho ? 14 + Math.max(0, camiones.length - 1) * 5 : 0)
 
   doc.setFillColor(FILA_ALTERNA)
   doc.rect(IZQ, y, ANCHO_UTIL, alto, 'F')
@@ -374,19 +387,32 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
     // placa son siete caracteres y el nombre de un chofer, treinta. Repartido
     // en cuartos, el chofer salía como «JOSE GREGORIO RO…», que es justo el
     // dato por el que se pregunta cuando hay que llamar al camión.
-    const trozos = [
-      ['Vehículo', d.despacho.vehiculo, 24],
-      ['Chofer', d.despacho.chofer, 50],
-      ['Cédula', d.despacho.cedulaChofer, 28],
-      ['Ticket · peso neto', [d.despacho.ticket, d.despacho.pesoNeto].filter(Boolean).join(' · '), 40],
+    // Seis milímetros que antes sobraban en «ticket · peso neto» pasan al
+    // vehículo: con 24 la descripción salía «IVECO CAM…», y la placa sola no
+    // dice qué camión era.
+    const columnas = [
+      ['Vehículo', 30],
+      ['Chofer', 50],
+      ['Cédula', 28],
+      ['Ticket · peso neto', 34],
     ] as const
 
+    // Las etiquetas una sola vez; debajo, un renglón por camión. Con uno solo
+    // es el papel de siempre; con dos, el segundo va justo debajo del primero.
     let x = IZQ + 4
-    for (const [rot, val, ancho] of trozos) {
-      etiqueta(rot, x, y + altoDatos + 4)
-      valor(val ?? '', x, y + altoDatos + 7.5, ancho - 3)
+    for (const [rot, ancho] of columnas) {
+      etiqueta(camiones.length > 1 && rot === 'Vehículo' ? `Vehículos (${camiones.length})` : rot, x, y + altoDatos + 4)
       x += ancho
     }
+    camiones.forEach((c, i) => {
+      const fila = y + altoDatos + 7.5 + i * 5
+      const valores = [c.vehiculo, c.chofer, c.cedulaChofer, [c.ticket, c.pesoNeto].filter(Boolean).join(' · ')]
+      let cx = IZQ + 4
+      columnas.forEach(([, ancho], j) => {
+        valor(valores[j] ?? '', cx, fila, ancho - 3)
+        cx += ancho
+      })
+    })
   }
 
   return y + alto + 6

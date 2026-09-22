@@ -48,6 +48,14 @@ export async function armarNotaDeEntrega(d: {
       cedulaChofer: n.cedula_chofer,
       ticket: n.ticket_romana,
       pesoNeto: n.peso_neto ? `${enteros(n.peso_neto)} kg` : null,
+      // Los de la tabla de camiones, cuando los hay: mandan sobre el de arriba.
+      camiones: (n.camiones ?? []).map((c) => ({
+        vehiculo: c.vehiculo,
+        chofer: c.chofer,
+        cedulaChofer: c.cedula_chofer,
+        ticket: c.ticket,
+        pesoNeto: c.peso_neto ? `${enteros(c.peso_neto)} kg` : null,
+      })),
     },
     moneda: n.moneda,
     tasa: n.tasa,
