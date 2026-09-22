@@ -82,5 +82,26 @@ export default defineConfig({
     // Vite imprime la URL de red (http://192.168.x.x:5173) al arrancar.
     host: true,
     strictPort: true,
+    watch: {
+      /*
+        LA BASE LOCAL NO SE VIGILA.
+
+        `supabase/local/preparar.mjs` descomprime ahí 314 MB de binarios de
+        PostgreSQL y después les hace correr un servidor con su directorio de
+        datos dentro. Las dos cosas rompen al vigilante de Vite:
+
+          Error: EBUSY: resource busy or locked, watch
+          '…\supabase\local\pg\pgsql\bin\clusterdb.exe'
+
+        Y no es un aviso: **tumba el servidor de desarrollo entero**. Pasó el
+        22/09/2026 levantando la base local con `npm run dev` abierto, que es
+        exactamente lo que va a hacer cualquiera que siga las instrucciones del
+        andamio —trabajar y, a media tarde, querer correr las pruebas—.
+
+        Está en `.gitignore`, pero eso solo lo esconde de git. El vigilante mira
+        el disco, no el índice.
+      */
+      ignored: ['**/supabase/local/**'],
+    },
   },
 })
