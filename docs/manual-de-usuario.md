@@ -56,7 +56,7 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 9 | Compras | Sí |
 | 10 | Ventas | Sí |
 | 11 | Nómina | Sí |
-| 12 | Tesorería | **No: se retiró, lo absorbió Compras** |
+| 12 | Tesorería | Sí, desde el 21 de septiembre de 2026 |
 | 13 | Configuración | Sí |
 | 14 | Las reglas que el sistema impone | — |
 | 15 | Lo que todavía no está construido | — |
@@ -65,8 +65,10 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 18 | Asignaciones | Sí |
 | 19 | Maquinaria | Sí |
 | 20 | Combustible | Sí |
+| 21 | Facturación | Sí |
+| 22 | Control de despacho | Solo el administrador, hasta que se reparta su permiso |
 
-**Asignaciones, Maquinaria y Combustible tienen sus capítulos al final** —el 18, el 19 y el 20— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
+**Asignaciones, Maquinaria, Combustible, Facturación y Control de despacho tienen sus capítulos al final** —del 18 al 22— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
 
 ---
 
@@ -6934,3 +6936,83 @@ Lo que el módulo no hace todavía, para que nadie lo descubra con una factura e
 - **Papeles.** Todavía no salen en PDF la nota de crédito, el recibo de un cobro, el libro de ventas —hoy se descarga en CSV— ni el estado de cuenta de un cliente.
 - **El comprobante de retención que entrega el cliente.** La retención se descuenta al emitir la factura, pero no hay dónde anotar el número, la fecha ni el período del comprobante.
 - **Cómo se asigna el número de control.** Hoy lo pone el propio sistema, en una sola serie continua para facturas y notas de crédito. Si la empresa emite con imprenta digital o con máquina fiscal, eso cambia, y es una decisión que se toma con el contador.
+
+---
+
+## 22. Control de despacho
+
+**Es la planilla de lo que salió, y existe desde el 21 de septiembre de 2026.** Se entra por **Administración › Control de despacho**, justo antes de Facturación, porque es lo que se mira para saber qué falta por cobrar.
+
+Esa planilla se llevaba en Excel y se llenaba entera a mano: había que copiar el número de la nota, la fecha, el cliente, el material y la cantidad de cada despacho antes de poder anotar lo único que no está en ninguna parte del sistema —el precio acordado, el estado del cobro y las observaciones—. **Aquí la mitad izquierda se llena sola**, leyendo las notas de entrega y las notas de salida, y solo quedan cinco cosas por escribir.
+
+### 22.1 Las tres ideas que lo ordenan
+
+**La mitad izquierda se lee de la nota cada vez, y aquí no se edita.** El número, la fecha, el cliente, el material y la cantidad no se copian a esta planilla: se consultan. Por eso, si mañana se corrige la nota, la planilla se corrige sola; y por eso una cantidad equivocada se arregla en la nota, no aquí.
+
+**Este módulo recibe información y no la manda a ningún lado.** Todo lo que se escribe se guarda en las tablas propias de Control de despacho. Ninguna de sus funciones escribe en notas de entrega, notas de salida, inventario, clientes ni facturación: solo los lee. No hay forma de dañar un documento desde esta pantalla, ni siquiera siendo administrador.
+
+**La serie se enseña entera, con sus huecos.** No lista solo las notas que existen: lista todos los números que la numeración gastó. El que no tiene documento detrás sale diciendo «Sin documento», y eso es un despacho que pudo salir sin registrarse. Es justo lo que en el Excel se escribía a mano poniendo «SISTEMA» en la fila.
+
+### 22.2 Quién entra y quién puede hacer qué
+
+| Nivel | Qué permite |
+| --- | --- |
+| **Lectura** | Ver la planilla, filtrar, buscar y descargar el Excel y el PDF |
+| **Escritura** | Además, llenar las filas a mano, cargar desde Excel y decir a qué cliente corresponde un nombre escrito a mano |
+| **Control total** | Además, cambiar la lista de status y el nombre de la columna libre |
+
+El módulo nació con el permiso en **Ninguno para todos los roles**: hasta que administración lo reparta en **Usuarios y roles**, solo lo ve el administrador.
+
+### 22.3 La pantalla
+
+Se filtra por **período** —arranca en el día 1 del mes en curso—, por **status** —donde «Sin status todavía» deja la lista de lo que falta por revisar— y por un **buscador** que mira a la vez el número, el cliente, el RIF, el material y las observaciones. La casilla **«Solo lo despachado»** quita lo anulado, las salidas internas y los números sin documento: es la vista para pasar el informe.
+
+Sobre la tabla, una línea dice cuántos despachos hay, la cantidad **separada por unidad** —los metros cúbicos no se suman con las toneladas—, el monto en dólares y dos avisos: cuántas filas van **sin precio** y cuántas **sin RIF**.
+
+Una nota con tres materiales son **tres filas**, porque cada material tiene su cantidad y su precio. **El número de cada fila es un enlace** a su nota, para quien tenga permiso de esa pantalla. Y las filas que no suman se ven en gris, diciendo qué pasó con ese número: anulada, salida interna, deshecha, respaldo de una salida o sin documento.
+
+### 22.4 Lo que se escribe aquí
+
+Cinco columnas, y solo cinco: **RIF**, **precio en dólares**, **status**, **observaciones** y una **columna libre** que se llama «Otra» hasta que se le cambie el nombre. El **monto** no se teclea: es cantidad por precio.
+
+Dos de ellas pueden venir puestas:
+
+- **El RIF**, cuando la nota trae un cliente registrado. No se copia: se consulta, así que si el RIF se corrige en la ficha del cliente, todas las filas pasan a decir el correcto. El que se escribe a mano manda sobre ese.
+- **El precio**, cuando la nota de entrega está **en dólares**. Una nota en bolívares llega sin precio y la fila lo dice, porque traerlo a una columna en dólares obligaría a inventar una tasa que nadie eligió. Las notas de salida nunca traen precio: son documentos de almacén.
+
+**El destino de una nota de salida es texto libre**, y así viene escrito. Como no coincide con el nombre de ningún cliente registrado, la primera vez se dice a qué cliente corresponde ese nombre; desde ahí, toda salida escrita igual trae su cliente y su RIF sola. Esa equivalencia se apunta en una tabla del módulo: **la ficha del cliente no se toca**.
+
+### 22.5 Cargar muchas filas desde Excel
+
+Para completar veinte o cuarenta despachos de una sentada. Son tres pasos y están en el botón **Cargar desde Excel**:
+
+1. **Descargar la plantilla.** No es una hoja en blanco: trae las filas que se ven en pantalla —o solo las marcadas—, ya identificadas y con lo que tengan escrito. Las columnas que se llenan van con la cabecera en otro color.
+2. **Llenarla y subirla.** Admite archivos .xlsx y .csv.
+3. **Revisar antes de guardar.** El sistema enseña fila por fila qué va a cambiar, y cuántas vienen iguales. Una hoja mal pegada se ve aquí y no después.
+
+Tres reglas que conviene tener claras:
+
+- **La columna CLAVE es lo que ata cada fila de Excel con la suya**, y no se toca. El número de nota no sirve, porque una nota puede ser varias filas. Sin esa columna, la carga se rechaza entera.
+- **Lo que se sube es cómo queda la fila**: una celda vacía borra lo que había. Como la plantilla baja con lo que ya está escrito, subirla tal cual no pierde nada.
+- **Una columna que falte entera, en cambio, se respeta.** Así se carga un solo campo: se deja CLAVE y PRECIO, se borran las demás, y se cargan precios sin rozar los RIF ni las observaciones.
+
+**Se guarda todo o no se guarda nada.** Si una fila trae un error —un status que no existe, un precio negativo, una clave repetida— no se guarda ninguna: se corrige la hoja y se vuelve a subir. El límite es de 2.000 filas por carga.
+
+### 22.6 Sacar la información
+
+**Lo que se marca es lo que sale.** Cada fila tiene su casilla y la cabecera marca todas las que se ven; sin ninguna marcada, sale todo lo que hay en pantalla con los filtros puestos.
+
+- **Excel.** Un libro de verdad: cabecera de color, los números como números para poder sumarlos allá, y el RIF y el número de nota como texto para que no pierdan los ceros.
+- **PDF.** El papel con el membrete de la empresa. Se ve en el visor antes de descargarlo. Arriba deja constancia del alcance —período, si son las filas marcadas, cuántos despachos, monto, lo que falta por completar y quién lo emitió— y al pie el total de lo despachado.
+
+### 22.7 La lista de status y la columna libre
+
+En el botón **Status y columna**, con control total sobre el módulo. La lista de status empieza con **CONTADO**, **CRUCE** y **AUTORIZADO**, que son los que ya usaba el Excel, y se le agregan los que hagan falta. **Un status que ya se usó no se borra: se apaga**, deja de ofrecerse y las filas que lo tienen lo conservan.
+
+La columna libre está para lo que no encaja en ninguna otra —un número de guía, una placa, una referencia—. Al renombrarla cambia en la tabla, en el Excel, en el PDF y en la plantilla, y lo ya escrito en ella no se pierde.
+
+### 22.8 Lo que este módulo no hace
+
+No emite ni anula notas, no corrige lo que dice una nota, no mueve inventario, no crea clientes, no factura y no registra cobros: el status que se pone aquí es una anotación, no un pago. Cada una de esas cosas se hace en su pantalla.
+
+Lo que le falta y podría tener: **escribir directo en la celda** sin abrir la ventana de la fila, **totales por cliente o por material** dentro de la misma pantalla, y **un aviso** cuando aparece un número sin documento.
