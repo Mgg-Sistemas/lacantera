@@ -4470,6 +4470,8 @@ La ayuda del primer campo explica qué pasa si pagas desde una cuenta en divisas
 
 Al confirmar, el saldo de esa cuenta baja, queda una línea de egreso en el libro de tesorería con el concepto **Nómina {número} — {n} trabajadores**, y les llega un aviso a gerencia general, a recursos humanos y a tesorería.
 
+**La nómina no espera al saldo.** Desde el 22/09/2026, si la cuenta elegida no tiene fondos registrados —porque falta el saldo de apertura o un ingreso—, el pago sale igual: la cuenta queda en negativo y a tesorería le llega un segundo aviso, **{cuenta} quedó en negativo: nómina {número}**, con las dos cifras y el camino para arreglarlo desde Bancos y cajas. El candado de «no alcanza» sigue vivo para compras y egresos sueltos; el dinero a la gente —nómina, liquidación y anticipo de prestaciones— pasa por encima. Nómina termina su proceso y tesorería recibe el movimiento y el aviso.
+
 **Antes de pulsar Confirmar el pago, lee 11.11.** Este botón es el punto de no retorno del módulo.
 
 #### Anular
