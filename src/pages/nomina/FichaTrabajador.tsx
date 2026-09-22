@@ -48,6 +48,7 @@ import type { Empleado } from '@/lib/api/nomina'
 import { TarjetaFirma } from '@/components/TarjetaFirma'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { PapelesDelTrabajador } from './PapelesDelTrabajador'
+import { CargaFamiliarYSalud } from './CargaFamiliarYSalud'
 import { useMisAcciones, useRoles } from '@/lib/api/usuarios'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
@@ -911,6 +912,11 @@ export function FichaTrabajador() {
         alguien no debería pasar por los almacenes que tiene a cargo.
       */}
       <PapelesDelTrabajador empleadoId={e.id} puedeEditar={puedeRRHH} />
+
+      {/* Van detrás de los papeles y delante de «de qué responde», por lo
+          mismo que dice el comentario de arriba: la carga familiar y la salud
+          son de la PERSONA, y lo de más abajo es de su puesto. */}
+      <CargaFamiliarYSalud empleadoId={e.id} puedeEditar={puedeRRHH} />
 
       <Card className="mt-4">
         <CardHeader

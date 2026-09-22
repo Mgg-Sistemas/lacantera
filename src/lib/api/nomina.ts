@@ -943,6 +943,210 @@ export async function urlDeDocumentoDeEmpleado(ruta: string): Promise<string> {
   return data.signedUrl
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+   LA CARGA FAMILIAR Y LA SALUD
+
+   Dos tablas hijas de `empleados`, cada una con N filas por persona. Se leen
+   con el permiso de Nómina —nunca abiertas— porque llevan lo más sensible que
+   guarda esta base: condiciones de salud, y nombres y fechas de nacimiento de
+   posibles menores.
+
+   Se escriben por función, como todo lo demás aquí: no hay policies de
+   escritura en ninguna tabla de este sistema.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+export interface Parentesco {
+  codigo: string
+  nombre: string
+  orden: number
+  activo: boolean
+}
+
+export interface TipoCondicionSalud {
+  codigo: string
+  nombre: string
+  orden: number
+  activo: boolean
+}
+
+export interface FamiliarDeEmpleado {
+  id: number
+  empleado_id: number
+  nombres: string
+  apellidos: string
+  parentesco: string
+  /** La fecha, no la edad: una edad guardada es falsa a los doce meses. */
+  fecha_nacimiento: string | null
+  /** Opcional a propósito — los menores no la tienen. */
+  cedula: string | null
+  depende: boolean
+  nota: string | null
+  creado_en: string
+}
+
+export interface CondicionDeSalud {
+  id: number
+  empleado_id: number
+  tipo: string
+  descripcion: string
+  detalle: string | null
+  desde: string | null
+  creado_en: string
+}
+
+/** Lo que preguntan los filtros de Personal, ya contado por la base. */
+export interface CargasDeEmpleado {
+  empleado_id: number
+  familiares: number
+  dependientes: number
+  tiene_carga_familiar: boolean
+  tiene_dependientes: boolean
+  condiciones_salud: number
+  tiene_condicion_salud: boolean
+}
+
+/**
+ * Los años cumplidos a día de hoy, o `null` si no se sabe la fecha.
+ *
+ * Se calcula al enseñar y no se guarda, que es el motivo de que la tabla tenga
+ * `fecha_nacimiento` y no `edad`. Cuenta el cumpleaños: restar los años sin
+ * mirar el mes daría un año de más a casi la mitad de la gente.
+ */
+export function edadEnAnios(fechaNacimiento: string | null): number | null {
+  if (!fechaNacimiento) return null
+  const nace = new Date(`${fechaNacimiento}T00:00:00`)
+  if (Number.isNaN(nace.getTime())) return null
+  const hoy = new Date()
+  let anios = hoy.getFullYear() - nace.getFullYear()
+  const mes = hoy.getMonth() - nace.getMonth()
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nace.getDate())) anios -= 1
+  return anios < 0 ? null : anios
+}
+
+export function useParentescos() {
+  return useQuery({
+    queryKey: ['nomina', 'parentescos'],
+    queryFn: async () =>
+      desenvolver<Parentesco[]>(
+        await supabase.from('parentescos').select('*').eq('activo', true).order('orden'),
+      ),
+  })
+}
+
+export function useTiposCondicionSalud() {
+  return useQuery({
+    queryKey: ['nomina', 'tipos-condicion-salud'],
+    queryFn: async () =>
+      desenvolver<TipoCondicionSalud[]>(
+        await supabase.from('tipos_condicion_salud').select('*').eq('activo', true).order('orden'),
+      ),
+  })
+}
+
+export function useFamiliaresDeEmpleado(empleadoId: number | undefined) {
+  return useQuery({
+    enabled: empleadoId !== undefined,
+    queryKey: ['nomina', 'familiares', empleadoId],
+    queryFn: async () =>
+      desenvolver<FamiliarDeEmpleado[]>(
+        await supabase
+          .from('empleado_familiares')
+          .select('*')
+          .eq('empleado_id', empleadoId!)
+          .order('depende', { ascending: false })
+          .order('apellidos'),
+      ),
+  })
+}
+
+export function useGuardarFamiliar() {
+  return useAccionNomina((f: {
+    id?: number
+    empleado_id: number
+    nombres: string
+    apellidos: string
+    parentesco: string
+    fecha_nacimiento?: string | null
+    cedula?: string | null
+    depende?: boolean
+    nota?: string | null
+  }) =>
+    rpc<number>('guardar_familiar_de_empleado', {
+      p_id: f.id ?? null,
+      p_empleado_id: f.empleado_id,
+      p_nombres: f.nombres,
+      p_apellidos: f.apellidos,
+      p_parentesco: f.parentesco,
+      p_fecha_nacimiento: f.fecha_nacimiento || null,
+      p_cedula: f.cedula || null,
+      p_depende: f.depende ?? false,
+      p_nota: f.nota || null,
+    }),
+  )
+}
+
+export function useEliminarFamiliar() {
+  return useAccionNomina((id: number) =>
+    rpc<void>('eliminar_familiar_de_empleado', { p_id: id }),
+  )
+}
+
+export function useSaludDeEmpleado(empleadoId: number | undefined) {
+  return useQuery({
+    enabled: empleadoId !== undefined,
+    queryKey: ['nomina', 'salud', empleadoId],
+    queryFn: async () =>
+      desenvolver<CondicionDeSalud[]>(
+        await supabase
+          .from('empleado_salud')
+          .select('*')
+          .eq('empleado_id', empleadoId!)
+          .order('tipo'),
+      ),
+  })
+}
+
+export function useGuardarCondicionDeSalud() {
+  return useAccionNomina((c: {
+    id?: number
+    empleado_id: number
+    tipo: string
+    descripcion: string
+    detalle?: string | null
+    desde?: string | null
+  }) =>
+    rpc<number>('guardar_condicion_de_salud', {
+      p_id: c.id ?? null,
+      p_empleado_id: c.empleado_id,
+      p_tipo: c.tipo,
+      p_descripcion: c.descripcion,
+      p_detalle: c.detalle || null,
+      p_desde: c.desde || null,
+    }),
+  )
+}
+
+export function useEliminarCondicionDeSalud() {
+  return useAccionNomina((id: number) =>
+    rpc<void>('eliminar_condicion_de_salud', { p_id: id }),
+  )
+}
+
+/**
+ * Las cargas de todos, para filtrar la lista de personal.
+ *
+ * Una consulta y no una por persona: la pantalla filtra sobre 32 fichas y
+ * pedir 32 cuentas separadas sería 32 viajes para contestar una pregunta que
+ * la vista ya contesta de una vez.
+ */
+export function useCargasDeEmpleados() {
+  return useQuery({
+    queryKey: ['nomina', 'cargas'],
+    queryFn: async () =>
+      desenvolver<CargasDeEmpleado[]>(await supabase.from('v_empleado_cargas').select('*')),
+  })
+}
+
 export function useGuardarEncuadre() {
   return useAccionNomina((e: { empleado_id: number; zoom: number; x: number; y: number }) =>
     rpc<string | null>('guardar_foto_empleado', {
