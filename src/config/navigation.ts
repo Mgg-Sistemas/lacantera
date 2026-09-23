@@ -395,8 +395,17 @@ export const navigation: NavSection[] = [
           // del costo por m³ y va separado de facturación: la salida no
           // espera a la factura.
           { label: 'Salidas de planta', to: '/app/explotacion/salidas' },
-          { label: 'Frentes y bancos', to: '/app/explotacion/frentes' },
-          // Las dos que siguen en obra, y por qué cada una:
+          // Las TRES que siguen en obra, y por qué cada una:
+          //
+          // Frentes y bancos está vacío y nada cuelga de él. Comprobado contra
+          // producción el 23/09/2026: 0 frentes cargados, 0 acarreos apuntando
+          // a uno, 0 turnos de producción y 0 voladuras. Una pestaña que solo
+          // sabe enseñar «no hay nada» le cuesta a quien la abre el mismo clic
+          // que una que sirve, y le enseña que el módulo está vacío.
+          //
+          // Y se va antes que las otras dos porque es la que las bloquea: el
+          // parte de planta exige un frente para poder guardar, así que
+          // mientras esto esté vacío aquello no puede entrar.
           //
           // Voladuras no se usa: la cantera arranca el material con máquina, no
           // con explosivo, y el módulo pide barrenos y cantidad de detonante.
@@ -405,6 +414,11 @@ export const navigation: NavSection[] = [
           // hoy no puede guardar nada: exige un frente y un producto, y no hay
           // ni frentes ni artículos con categoría PRODUCTO cargados. Vuelve en
           // la fase 3, cuando estén los ocho agregados y sus dos patios.
+          //
+          // Las tres vuelven quitándoles el marbete: la lista de rutas cerradas
+          // se arma sola a partir de él, así que no hay segunda lista que nadie
+          // se acuerde de actualizar.
+          { label: 'Frentes y bancos', to: '/app/explotacion/frentes', fueraDelMvp: true },
           { label: 'Voladuras', to: '/app/explotacion/voladuras', fueraDelMvp: true },
           { label: 'Producción por turno', to: '/app/explotacion/produccion', fueraDelMvp: true },
         ],
