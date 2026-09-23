@@ -96,6 +96,12 @@ supabase/cargas/
 # Para versionar uno nuevo a proposito: git add -f, o una excepcion aqui.
 *.md
 
+# Excepcion (23/09/2026): como llega el dist/ al servidor no estaba escrito en
+# ninguna parte y el unico que lo sabia era quien acababa de desplegar. Eso no
+# es andamiaje: es lo que hace falta para publicar o para volver atras.
+# No lleva direccion, usuario, llave ni claves; esas siguen fuera del repo.
+!docs/despliegue-en-el-servidor.md
+
 # Y los .txt de docs, por lo mismo y por algo peor.
 #
 # El 7/09/2026 se colaron en un commit `docs/_bloq_viejo.txt` y
