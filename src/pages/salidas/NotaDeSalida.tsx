@@ -25,6 +25,7 @@ import {
   type AsientoDeLaSalida,
   type SolicitudDeSalida,
 } from '@/lib/api/salidas'
+import { useVehiculos } from '@/lib/api/vehiculos'
 import { useMiPerfil, useMisAcciones } from '@/lib/api/usuarios'
 import { supabase } from '@/lib/supabase'
 import { desenvolver } from '@/lib/api/rpc'
@@ -71,6 +72,32 @@ function contadoLegible(l: {
   return Number(l.suelto_capturado)
     ? `${bultos} y ${numeroLegible(l.suelto_capturado ?? 0)} ${l.unidad}`
     : bultos
+}
+
+/*
+  LO QUE EL PAPEL DICE DE QUIÉN SE LO LLEVA.
+
+  Sale de la solicitud, y el vehículo puede venir de dos sitios: de la lista
+  —`vehiculo_id`, y entonces se enseña la placa con su descripción— o escrito a
+  mano cuando no estaba cargado. Se prefiere la lista: es el dato bueno.
+
+  Devuelve los campos ya en la forma que espera el PDF, para que las tres ramas
+  que arman una nota no repitan la misma traducción de tres maneras.
+*/
+function comoSeLoLlevan(
+  s: { vehiculo_id: number | null; vehiculo: string | null; recibio_nombre: string | null; recibio_cedula: string | null; lleva_recibido_conforme: boolean } | null | undefined,
+  vehiculos: Array<{ id: number; placa: string; descripcion: string | null }> | undefined,
+) {
+  if (!s) return {}
+  const dela = s.vehiculo_id ? vehiculos?.find((v) => v.id === s.vehiculo_id) : null
+  return {
+    vehiculo: dela
+      ? `${dela.placa}${dela.descripcion ? ` · ${dela.descripcion}` : ''}`
+      : (s.vehiculo ?? null),
+    recibio: s.recibio_nombre,
+    recibioCedula: s.recibio_cedula,
+    llevaRecibidoConforme: s.lleva_recibido_conforme,
+  }
 }
 
 export function useNotaDeSalida(): {
@@ -136,6 +163,8 @@ export function useNotaDeSalida(): {
   const guardarCamiones = useGuardarCamionesDeNota()
   const [camionesDe, setCamionesDe] = useState<NotaEntrega | null>(null)
   const [haciaFuera, setHaciaFuera] = useState<{ numero: string; destino: string } | null>(null)
+  // Para traducir el id del vehículo a su placa en el papel.
+  const { data: vehiculos } = useVehiculos(false)
   const [deEntrega, setDeEntrega] = useState<NotaEntrega | null>(null)
   const [asientos, setAsientos] = useState<AsientoDeLaSalida[] | null>(null)
   const [papelDeEntrega, setPapelDeEntrega] = useState<ArchivoArmado | null>(null)
@@ -211,6 +240,7 @@ export function useNotaDeSalida(): {
         almacen: lineas[0].almacen,
         clase: cabecera.motivo,
         paraQuien: paraQuienSalio(cabecera.para, grupos.data),
+        ...comoSeLoLlevan(laOrden, vehiculos),
         motivo,
         renglones: lineas.map((l) => ({
           articuloCodigo: l.articulo_codigo,
@@ -266,6 +296,7 @@ export function useNotaDeSalida(): {
         almacen: s.almacen?.nombre ?? '',
         clase: '',
         paraQuien: paraQuienSalio(s, grupos.data),
+        ...comoSeLoLlevan(s, vehiculos),
         motivo: s.motivo,
         renglones: renglones.map((r) => ({
           articuloCodigo: r.articulo?.codigo ?? '',

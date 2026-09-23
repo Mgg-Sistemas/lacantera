@@ -11,6 +11,7 @@ import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { DeQuienSale } from '@/components/DeQuienSale'
 import { ElegirArchivosDeCarga } from '@/components/FotosDeCarga'
 import { ListaEditable } from '@/components/ListaEditable'
+import { useVehiculos } from '@/lib/api/vehiculos'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { palabraDeVenta, usePedirSalida, usePersonasDeLaEmpresa } from '@/lib/api/salidas'
@@ -313,6 +314,24 @@ export function ModalSalida({
   */
   const { data: miFirma } = useMiFirma()
   const [conMiFirma, setConMiFirma] = useState(false)
+
+  /*
+    EN QUÉ SE LO LLEVAN Y QUIÉN LO RECIBE — todo detrás de un interruptor.
+
+    Lo pidió el usuario así, y tiene razón: la mayoría de las salidas son dos
+    guantes y un casco que alguien se lleva en la mano. Cuatro campos siempre a
+    la vista, vacíos en nueve de cada diez salidas, son cuatro campos que la
+    gente aprende a saltarse — y el día que hacen falta ya nadie los mira.
+
+    Apagado, el papel sale exactamente como salía: con su raya de «Recibió
+    conforme» en blanco.
+  */
+  const [llevaRecibido, setLlevaRecibido] = useState(false)
+  const [vehiculoId, setVehiculoId] = useState('')
+  const [vehiculoEscrito, setVehiculoEscrito] = useState('')
+  const [recibeNombre, setRecibeNombre] = useState('')
+  const [recibeCedula, setRecibeCedula] = useState('')
+  const { data: vehiculos } = useVehiculos()
   // Las fotos del vehículo que se lo lleva: suben en cuanto la solicitud tiene número.
   const [archivos, setArchivos] = useState<File[]>([])
   const [subiendo, setSubiendo] = useState(false)
@@ -488,6 +507,17 @@ export function ModalSalida({
       motivo,
       ...paraQuienVa(ambito, grupo, externo, responsable),
       con_firma: miFirma?.usar === true && conMiFirma,
+      // Apagado el interruptor, no viaja nada: una salida que no lo usa queda
+      // igual de limpia que antes de que esto existiera.
+      ...(llevaRecibido
+        ? {
+            vehiculo_id: vehiculoId ? Number(vehiculoId) : null,
+            vehiculo: vehiculoId ? null : vehiculoEscrito,
+            recibio_nombre: recibeNombre,
+            recibio_cedula: recibeCedula,
+            lleva_recibido: true,
+          }
+        : {}),
     })) as string[]
 
     let aviso: string | undefined
@@ -819,6 +849,73 @@ export function ModalSalida({
                     </span>
                   </span>
                 </label>
+              ) : null}
+
+              {/*
+                Va junto al otro interruptor de firma y no en otra pestaña: los
+                dos deciden lo mismo —qué rayas lleva el papel— y separarlos
+                obligaría a buscar en dos sitios para armar una sola hoja.
+              */}
+              <label className="border-hairline mt-4 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="accent-tierra-600 mt-0.5 size-4 shrink-0"
+                  checked={llevaRecibido}
+                  onChange={(e) => setLlevaRecibido(e.target.checked)}
+                />
+                <span className="text-ink/80">
+                  Se lo lleva un vehículo y alguien lo recibe
+                  <span className="text-ink/50 mt-0.5 block text-xs">
+                    El papel sale con «Recibió conforme» y su nombre debajo de la raya. Sin marcar,
+                    la raya queda en blanco como hasta ahora.
+                  </span>
+                </span>
+              </label>
+
+              {llevaRecibido ? (
+                <div className="border-hairline bg-canvas mt-3 grid gap-3 rounded-[6px] border border-dashed p-3 sm:grid-cols-2">
+                  {/*
+                    De la lista o escrito, como en la nota de entrega. Un almacén
+                    despacha lo mismo a un volteo de la flota que al carro de
+                    quien vino a buscarlo, y obligar a cargar ese carro para
+                    sacar dos sacos es parar el trabajo por una ficha que nadie
+                    va a volver a mirar.
+                  */}
+                  <SelectBuscable
+                    label="Vehículo"
+                    vacio="No está en la lista"
+                    valor={vehiculoId}
+                    onCambio={(v) => {
+                      setVehiculoId(v)
+                      if (v) setVehiculoEscrito('')
+                    }}
+                    opciones={(vehiculos ?? []).map((v) => ({
+                      valor: String(v.id),
+                      etiqueta: v.descripcion ? `${v.placa} · ${v.descripcion}` : v.placa,
+                    }))}
+                  />
+                  <Input
+                    label="…o escríbelo"
+                    placeholder="Placa, o cómo se reconoce"
+                    hint={vehiculoId ? 'Ya elegiste uno de la lista.' : undefined}
+                    disabled={Boolean(vehiculoId)}
+                    value={vehiculoEscrito}
+                    onChange={(e) => setVehiculoEscrito(e.target.value)}
+                  />
+                  <Input
+                    label="Quién lo recibe"
+                    placeholder="Nombre y apellido"
+                    value={recibeNombre}
+                    onChange={(e) => setRecibeNombre(e.target.value)}
+                  />
+                  <Input
+                    label="Su cédula"
+                    placeholder="V-12345678"
+                    hint="Va debajo del nombre, en el papel que firma."
+                    value={recibeCedula}
+                    onChange={(e) => setRecibeCedula(e.target.value)}
+                  />
+                </div>
               ) : null}
 
               <div className="mt-4">
