@@ -111,7 +111,51 @@ export function useQuitarFotoDeCarga() {
   })
 }
 
-/** El archivo, listo para enseñar: una URL de objeto que hay que revocar al terminar. */
+/*
+  LA MINIATURA SE PIDE PEQUEÑA, NO SE ENCOGE AL PINTARLA.
+
+  Hasta hoy la lista bajaba el ORIGINAL de cada foto —170 kB de media, hasta
+  311— y lo pintaba en un recuadro de 80 × 80 píxeles. Unas cuarenta veces lo
+  necesario, por miniatura, y al montar la tarjeta: no es una `<img>` con
+  dirección remota, era una descarga a mano, así que ni `loading="lazy"` la
+  salvaba.
+
+  Se ve poco porque las fotos de hoy son pequeñas. Pero este bucket crece a
+  **9,6 archivos al día** —seis veces más rápido que el de maquinaria— y cada
+  miniatura es además una petición firmada aparte, que paga su propia
+  comprobación de permisos. Cuarenta miniaturas no son cuarenta descargas
+  grandes: son cuarenta descargas grandes MÁS cuarenta comprobaciones.
+
+  Storage sabe redimensionar al firmar, y el plan de la organización lo trae.
+  Así que se pide del tamaño en que se va a ver y se acabó.
+
+  EL DOBLE DEL LADO, a propósito: en una pantalla de densidad doble —cualquier
+  portátil moderno— un recuadro de 80 puntos son 160 píxeles de verdad, y una
+  imagen de 80 se vería lavada justo donde hay que reconocer una placa.
+
+  Y esto NO sirve para los PDF: la transformación es de imágenes. Quien los
+  llama ya los distingue antes de pedir nada.
+*/
+const LADO_MINIATURA = 80
+
+export async function miniaturaDeFotoDeCarga(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 600, {
+    transform: {
+      width: LADO_MINIATURA * 2,
+      height: LADO_MINIATURA * 2,
+      // `cover` y no `contain`: el recuadro es cuadrado y las fotos no, y una
+      // foto encajada dentro deja dos franjas vacías que se leen como que la
+      // imagen no cargó del todo.
+      resize: 'cover',
+      quality: 60,
+    },
+  })
+
+  if (error || !data) throw new Error('No se pudo abrir la miniatura.')
+  return data.signedUrl
+}
+
+/** El archivo entero, para abrirlo. Una URL de objeto que hay que revocar al terminar. */
 export async function abrirFotoDeCarga(path: string): Promise<string> {
   const { data, error } = await supabase.storage.from(BUCKET).download(path)
   if (error || !data) throw new Error('No se pudo abrir el archivo.')
