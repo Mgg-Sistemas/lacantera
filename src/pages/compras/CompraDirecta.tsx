@@ -61,12 +61,24 @@ import { cn } from '@/lib/cn'
 
 /*
   Los tres caminos de un renglón. Se elige al principio y cada uno pide solo lo
-  suyo: del catálogo se busca, lo nuevo se da de alta, y un servicio se paga sin
+  suyo: del catálogo se busca, lo nuevo se agrega, y un servicio se paga sin
   entrar al inventario.
+
+  AQUÍ SE DECÍA «DAR DE ALTA», Y SE ENTENDÍA AL REVÉS.
+
+  Es la expresión de toda la vida para registrar algo, pero en esta casa se leía
+  como su hermana gemela —«dar de baja»— y más de uno creyó que el botón sacaba
+  el artículo de la compra o lo borraba del catálogo. Un botón que la gente teme
+  pulsar es un botón roto, por mucho que la palabra sea correcta.
+
+  «Agregar al catálogo» dice las dos cosas que hacían falta: que suma en vez de
+  quitar, y a dónde va a parar. Los nombres del código —`darDeAlta`,
+  `altasPendientes`— se quedan: renombrarlos no le aclara nada a nadie y ensucia
+  el historial de un archivo de mil líneas.
 */
 const MODOS = [
   { valor: 'CATALOGO', etiqueta: 'Está en el catálogo' },
-  { valor: 'NUEVO', etiqueta: 'Es nuevo: darlo de alta' },
+  { valor: 'NUEVO', etiqueta: 'Es nuevo: agregarlo al catálogo' },
   { valor: 'SERVICIO', etiqueta: 'Es un servicio' },
 ] as const
 type Modo = (typeof MODOS)[number]['valor']
@@ -165,7 +177,7 @@ export function CompraDirecta() {
 
   // Elegir del catálogo rellena lo que el catálogo ya sabe. Se sigue pudiendo
   // escribir a mano: en una compra de pueblo lo que se trae no siempre está
-  // dado de alta, y obligar a crearlo antes pararía la carga.
+  // agregado al catálogo, y obligar a crearlo antes pararía la carga.
   const elegirArticulo = (clave: number, id: string) => {
     const a = articulos?.find((x) => String(x.id) === id)
     cambiar(clave, {
@@ -322,7 +334,7 @@ export function CompraDirecta() {
       f.precio !== '' &&
       (f.modo === 'SERVICIO' || (f.modo === 'CATALOGO' && !!f.articulo_id)),
   )
-  // Un renglón nuevo a medio dar de alta no se guarda callado: se para la compra.
+  // Un renglón nuevo a medio agregar no se guarda callado: se para la compra.
   const altasPendientes = filas.some((f) => f.modo === 'NUEVO' && f.descripcion.trim())
 
   /*
@@ -597,13 +609,13 @@ export function CompraDirecta() {
                       valor={f.articulo_id}
                       onCambio={(v: string) => elegirArticulo(f.clave, v)}
                       vacio="Busca el artículo"
-                      hint="¿No aparece? Marca arriba «Es nuevo» y dalo de alta sin salir de la compra."
+                      hint="¿No aparece? Marca arriba «Es nuevo» y agrégalo al catálogo sin salir de la compra."
                     />
                   </div>
                 ) : null}
 
                 {/*
-                  DARLO DE ALTA ES DECIR CÓMO SE USA Y CÓMO SE COMPRA.
+                  AGREGARLO AL CATÁLOGO ES DECIR CÓMO SE USA Y CÓMO SE COMPRA.
 
                   Diez sacos de pollo no dicen cuántos pollos hay. Si el artículo
                   naciera con la unidad del renglón —SACO—, el inventario
@@ -616,8 +628,8 @@ export function CompraDirecta() {
                 {f.modo === 'NUEVO' ? (
                   <div className="border-hairline rounded-card bg-canvas mt-3 grid gap-3 border border-dashed p-3 sm:grid-cols-12">
                     <p className="text-ink/60 text-xs sm:col-span-12">
-                      Primero se da de alta en el catálogo: cómo se llama, en qué se le da salida y
-                      cómo viene. Después se dice cuánto se compró y a qué precio.
+                      Primero se agrega al catálogo: cómo se llama, en qué se le da salida y cómo
+                      viene. Después se dice cuánto se compró y a qué precio.
                     </p>
                     <div className="sm:col-span-8">
                       <Input
@@ -698,7 +710,7 @@ export function CompraDirecta() {
                     </div>
                     <div className="flex justify-end sm:col-span-12">
                       <Button disabled={!listoParaAlta(f) || enAlta} onClick={() => void darDeAlta(f)}>
-                        {enAlta ? 'Dando de alta…' : 'Dar de alta y seguir'}
+                        {enAlta ? 'Agregando al catálogo…' : 'Agregar al catálogo y seguir'}
                       </Button>
                     </div>
                     {errorDeAlta ? (
@@ -949,7 +961,8 @@ export function CompraDirecta() {
 
         {altasPendientes ? (
           <p className="text-warning text-right text-sm">
-            Hay un renglón nuevo sin dar de alta: termínalo o cámbialo de camino antes de aceptar.
+            Hay un renglón nuevo que todavía no está en el catálogo: termínalo o cámbialo de
+            camino antes de aceptar.
           </p>
         ) : null}
 
