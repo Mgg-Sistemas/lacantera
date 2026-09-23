@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { HandCoins, Plus, Receipt, Wallet, XCircle } from 'lucide-react'
+import { FileText, HandCoins, Plus, Receipt, Wallet, XCircle } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
+import { Visor } from '@/components/Visor'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
@@ -17,6 +18,10 @@ import {
   type Prestamo,
 } from '@/lib/api/nomina'
 import { dinero, fecha as fmtFecha } from '@/lib/formato'
+import type { Empleado } from '@/lib/api/nomina'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import { armarReciboDePrestamo } from '@/lib/ficha/prestamoPdf'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
 
 /*
   LOS PRÉSTAMOS DE UN TRABAJADOR
@@ -48,15 +53,66 @@ const TONO: Record<Prestamo['estado'], 'success' | 'warning' | 'neutral'> = {
 export function PrestamosDelTrabajador({
   empleadoId,
   puedeEditar,
+  empleado,
 }: {
   empleadoId: number
   puedeEditar: boolean
+  /**
+   * La ficha entera, para el recibo.
+   *
+   * Llega del padre en vez de volver a pedirla: la ficha ya la tiene cargada,
+   * y una segunda consulta por los mismos datos solo sirve para que el nombre
+   * del papel y el de la pantalla puedan discrepar un instante.
+   */
+  empleado?: Empleado
 }) {
   const prestamos = usePrestamosDeEmpleado(empleadoId)
   const registrar = useRegistrarPrestamo()
   const cobrar = useCobrarCuota()
   const abonar = useAbonarPrestamo()
   const anular = useAnularPrestamo()
+  const { data: empresa } = useEmpresa()
+  const [recibo, setRecibo] = useState<ArchivoArmado | null>(null)
+
+  /*
+    EL RECIBO SE ARMA AL PEDIRLO, NO AL CARGAR LA FICHA.
+
+    Son tres o cuatro préstamos por persona y cada PDF pesa. Armarlos todos
+    por si acaso cuesta medio segundo de ficha a cambio de nada: casi siempre
+    no se imprime ninguno.
+  */
+  const imprimir = async (p: Prestamo) => {
+    if (!empleado || !empresa) return
+    setRecibo(
+      await armarReciboDePrestamo({
+        empresa: empresaDelPapel(empresa),
+        momento: new Date(),
+        trabajador: {
+          nombre: `${empleado.nombres} ${empleado.apellidos}`.trim(),
+          cedula: empleado.cedula,
+          ficha: empleado.ficha,
+          cargo: empleado.cargo,
+          telefono: empleado.telefono,
+          activo: empleado.activo,
+          banco: empleado.banco,
+          numeroCuenta: empleado.numero_cuenta,
+          telefonoPago: empleado.telefono_pago,
+        },
+        prestamo: {
+          id: p.id,
+          fecha: p.fecha,
+          capital: Number(p.capital),
+          moneda: p.moneda,
+          motivo: p.motivo,
+          cuotasPactadas: p.cuotas_pactadas,
+          estado: p.estado,
+          abonado: Number(p.abonado),
+          saldo: Number(p.saldo),
+          nota: p.nota,
+        },
+      }),
+    )
+  }
 
   const [nuevo, setNuevo] = useState<{
     capital: string
@@ -173,6 +229,14 @@ export function PrestamosDelTrabajador({
                         ? 'Saldado'
                         : 'Anulado'}
                   </Chip>
+
+                  {/* Imprimir no cambia nada, así que no pide permiso de
+                      escritura: quien ve el préstamo puede sacar su recibo. */}
+                  {empleado ? (
+                    <Button size="sm" variant="ghost" icon={<FileText />} onClick={() => void imprimir(p)}>
+                      Recibo
+                    </Button>
+                  ) : null}
 
                   {puedeEditar && p.estado === 'VIGENTE' ? (
                     <>
@@ -395,6 +459,15 @@ export function PrestamosDelTrabajador({
           />
         </Modal>
       ) : null}
+
+      <Visor
+        abierto={recibo !== null}
+        onCerrar={() => setRecibo(null)}
+        blob={recibo?.blob ?? null}
+        nombreArchivo={recibo?.nombre ?? ''}
+        titulo="Recibo de préstamo"
+        descripcion="Se imprime y se firma: quien recibe el dinero reconoce la deuda y autoriza el descuento."
+      />
     </>
   )
 }
