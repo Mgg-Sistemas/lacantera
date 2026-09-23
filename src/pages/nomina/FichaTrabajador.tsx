@@ -957,7 +957,7 @@ export function FichaTrabajador() {
           son de la PERSONA, y lo de más abajo es de su puesto. */}
       <CargaFamiliarYSalud empleadoId={e.id} puedeEditar={puedeRRHH} />
 
-      <PrestamosDelTrabajador empleadoId={e.id} puedeEditar={puedeRRHH} />
+      <PrestamosDelTrabajador empleadoId={e.id} puedeEditar={puedeRRHH} empleado={e} />
 
       <Card className="mt-4">
         <CardHeader
