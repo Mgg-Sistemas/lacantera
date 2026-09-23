@@ -372,7 +372,7 @@ function PestanaDia() {
           <Vacio
             icono={<Truck />}
             titulo="Todavía no hay camiones cargados"
-            descripcion="Los viajes se anotan por camión, así que primero hay que dar de alta la flota en Maquinaria › Equipos, con su placa y su capacidad."
+            descripcion="Los viajes se anotan por camión, así que primero hay que cargar la flota en Maquinaria › Equipos, con su placa y su capacidad."
           />
         </Card>
       ) : null}

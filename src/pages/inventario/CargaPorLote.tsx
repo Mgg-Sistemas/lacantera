@@ -65,7 +65,7 @@ export function CargaPorLote() {
     <CargaPorPlanilla
       eyebrow="Inventario"
       titulo="Cargar artículos por planilla"
-      descripcion="Para dar de alta muchos artículos de una vez, o corregir los que ya están."
+      descripcion="Para cargar muchos artículos de una vez, o corregir los que ya están."
       loQueSeCarga="artículos"
       columnas={columnas}
       nombrePlantilla="plantilla-articulos.xlsx"
