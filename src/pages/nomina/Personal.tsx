@@ -317,10 +317,23 @@ export function Personal() {
 
       <Card className="mb-4">
         <div className="flex flex-wrap items-end gap-4">
-          <div className="min-w-0 flex-1 sm:max-w-xs">
+          {/*
+            ANCHO PROPIO Y NO «LO QUE SOBRE».
+
+            Llevaba `flex-1`, que es basis 0: en el reparto de la fila no pedía
+            nada y se quedaba con el hueco que dejaran los seis desplegables. Con
+            dos filtros eso sobraba; con seis no sobra nada, y el campo se
+            encogió hasta el ancho del icono de la lupa. Se podía escribir en él
+            —y no se veía ni una letra de lo escrito—, que es la peor forma de
+            fallar: la lista se recorta y nadie ve por qué.
+
+            Ahora mide como sus vecinos. En el teléfono ocupa la fila entera,
+            que es donde de verdad se busca por nombre.
+          */}
+          <div className="w-full sm:w-72">
             <Input
               label="Buscar"
-              placeholder="Nombre, cédula, cargo"
+              placeholder="Nombre, cédula, cargo o ficha"
               icon={<Search />}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
