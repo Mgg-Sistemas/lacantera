@@ -154,8 +154,14 @@ export function Respaldo() {
               MIENTRAS TANTO.
 
               Va dentro de la misma tarjeta del botón y no en un modal: quien
-              está esperando tiene que poder seguir viendo qué pidió. Un diálogo
-              encima tapa la pantalla y hace la espera más larga de lo que es.
+              está esperando tiene que poder seguir viendo qué pidió —las 145
+              tablas, la fecha del último respaldo— y un diálogo encima tapa
+              justo eso.
+
+              Esto solo funciona porque el modal de confirmación se cierra al
+              pulsar. La primera versión lo dejaba abierto hasta que la descarga
+              terminaba, y entonces este panel quedaba detrás del velo: escrito,
+              correcto y sin que nadie lo viera.
             */}
             {descargar.isPending ? (
               <div className="border-hairline mt-4 border-t pt-4">
@@ -260,14 +266,33 @@ export function Respaldo() {
             <Button variant="ghost" onClick={() => setConfirmando(false)}>
               Cancelar
             </Button>
+            {/*
+              EL MODAL SE CIERRA AL PULSAR, NO AL TERMINAR.
+
+              Estaba al revés: se esperaba a que la descarga acabara y solo
+              entonces se cerraba. Durante ese minuto el modal se quedaba encima
+              con un botón que decía «Armando…» y el contador corriendo detrás,
+              atenuado por el velo. El usuario lo dijo exacto: «es como si no
+              estuviera».
+
+              Su trabajo —avisar de lo que lleva el archivo y pedir
+              confirmación— termina en el momento en que se pulsa. Lo que viene
+              después es esperar, y para esperar hay que poder VER la pantalla.
+
+              `mutate` y no `mutateAsync`: el segundo devuelve una promesa que
+              aquí ya no espera nadie, y cuando la base falla esa promesa queda
+              sin capturar. Es lo que llenó la consola del usuario de «Uncaught
+              (in promise)» cuando el respaldo se agotaba por tiempo. Con
+              `mutate` el error llega igual, por `descargar.error`, que es donde
+              la pantalla ya lo enseña.
+            */}
             <Button
-              disabled={descargar.isPending}
-              onClick={async () => {
-                await descargar.mutateAsync()
+              onClick={() => {
                 setConfirmando(false)
+                descargar.mutate()
               }}
             >
-              {descargar.isPending ? 'Armando…' : 'Descargar'}
+              Descargar
             </Button>
           </>
         }
