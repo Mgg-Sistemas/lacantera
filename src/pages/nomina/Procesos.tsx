@@ -106,7 +106,8 @@ function siguiente(p: Periodo): string {
     return 'Carga las novedades del período —horas extra, faltas, bonos— y calcula.'
   if (p.estado === 'CALCULADA')
     return 'Revisa los recibos. Al aprobar, la nómina queda lista para que tesorería pague.'
-  if (p.estado === 'APROBADA') return 'Tesorería paga desde una cuenta y el saldo baja.'
+  if (p.estado === 'APROBADA')
+    return 'Se paga desde una cuenta y el saldo baja. Si la cuenta no tiene saldo registrado, sale igual y tesorería recibe el aviso.'
   if (p.estado === 'PAGADA') return 'Cerrada. Los recibos quedan como comprobante.'
   return p.motivo_anulacion ?? 'Anulada.'
 }
@@ -573,7 +574,7 @@ export function Procesos() {
                 valor: String(c.id),
                 etiqueta: `${c.nombre} — ${dinero(c.moneda, c.saldo)}`,
               }))}
-              hint="Los recibos están en bolívares. Desde una cuenta en divisas sale el equivalente a la tasa del período, la misma con la que se calculó."
+              hint="Los recibos están en bolívares. Desde una cuenta en divisas sale el equivalente a la tasa del período, la misma con la que se calculó. La nómina no espera al saldo: si la cuenta no tiene fondos registrados, el pago sale igual, la cuenta queda en negativo y a tesorería le llega el aviso para registrar el ingreso o el saldo de apertura."
             />
             <Input
               label="Referencia"
