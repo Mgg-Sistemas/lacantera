@@ -10,6 +10,7 @@ import {
   MAXIMO_DE_ARCHIVOS,
   TIPOS_ADMITIDOS,
   abrirFotoDeCarga,
+  miniaturaDeFotoDeCarga,
   problemaDelArchivo,
   useFotosDeCarga,
   useQuitarFotoDeCarga,
@@ -121,17 +122,47 @@ function Miniatura({ foto }: { foto: FotoDeCarga }) {
   const [url, setUrl] = useState<string | null>(null)
   const esPdf = foto.tipo === 'application/pdf'
 
+  /*
+    Se pide la miniatura, no el original.
+
+    Y con eso desaparece el baile de los blobs: una dirección firmada va directa
+    al `src` de la imagen, así que no hay `createObjectURL` que crear ni
+    `revokeObjectURL` que acordarse de soltar. Lo único que queda por vigilar es
+    no escribir en un componente que ya se desmontó.
+  */
   useEffect(() => {
     if (esPdf) return
     let vigente = true
     let creada: string | null = null
-    abrirFotoDeCarga(foto.path)
-      .then((u) => {
+
+    /*
+      Y SI LA MINIATURA NO SALE, SE CAE AL ORIGINAL.
+
+      La transformación de imágenes de Storage depende del plan contratado.
+      Está —se comprobó que la organización va en `pro`— pero eso es una
+      condición de la cuenta, no del código: un cambio de plan, o un bucket con
+      otra configuración, lo apagarían sin avisar a nadie.
+
+      Sin esta red, ese día las fotos **desaparecerían en silencio**: el fallo
+      se traga, el recuadro queda con el icono de cámara y nadie relaciona una
+      cosa con la otra. Con ella, el peor caso es volver a lo de siempre —bajar
+      el original— que es exactamente lo que se hacía ayer.
+
+      Una red que solo se paga cuando hace falta: si la miniatura sale, el
+      segundo camino no se recorre nunca.
+    */
+    void miniaturaDeFotoDeCarga(foto.path)
+      .catch(async () => {
+        const u = await abrirFotoDeCarga(foto.path)
         creada = u
+        return u
+      })
+      .then((u) => {
         if (vigente) setUrl(u)
-        else URL.revokeObjectURL(u)
+        else if (creada) URL.revokeObjectURL(creada)
       })
       .catch(() => undefined)
+
     return () => {
       vigente = false
       if (creada) URL.revokeObjectURL(creada)

@@ -161,3 +161,31 @@ docs/renovado/
 public/firma*
 public/*firma*
 firmas/
+
+# ---------------------------------------------------------------------------
+# Carriles de trabajo
+#
+# El trabajo se reparte en carriles: uno principal y uno con foco unico en la
+# base de datos, mas los efimeros que hagan falta. Es la norma de un equipo y
+# no del repositorio, asi que casi todas sus reglas viven en .git/info/exclude,
+# que no viaja. Aqui solo estan las dos que conviene que protejan a cualquiera
+# que clone, porque ninguna de las dos obliga a trabajar de otra manera: solo
+# impiden publicar lo que no debe publicarse.
+# ---------------------------------------------------------------------------
+
+# El contrato de los carriles, y el contexto que Claude Code carga solo.
+#
+# Va en la raiz porque es el unico sitio donde el harness lo lee sin que nadie
+# tenga que acordarse. No describe el producto —eso es el README—: describe
+# como trabaja un equipo concreto, y no tiene por que viajar con el codigo.
+CLAUDE.md
+
+# El cuaderno de los carriles: bitacora diaria, pendientes, conversaciones e
+# informes.
+#
+# Se corta la CARPETA y no la extension, y es lo importante de esta regla. El
+# 7/09/2026 se colaron docs/_bloq_viejo.txt y docs/_transf_viejo.txt porque la
+# regla *.md no los tapaba: no eran .md. Aqui dentro van los informes del
+# carril de base de datos —los que cuentan el camino aunque el agujero ya este
+# cerrado— asi que da igual como se llame el archivo o que extension traiga.
+docs/carriles/
