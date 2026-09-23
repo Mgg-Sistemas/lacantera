@@ -98,7 +98,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
       {
         titulo: 'Cargar personal por planilla',
         detalle:
-          'Para dar de alta a toda la gente de una vez. Se baja la plantilla, se llena y el sistema comprueba fila por fila antes de escribir nada.',
+          'Para cargar a toda la gente de una vez. Se baja la plantilla, se llena y el sistema comprueba fila por fila antes de escribir nada.',
         icono: Upload,
         a: '/app/nomina/personal/carga',
         exige: 'ESCRITURA',

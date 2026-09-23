@@ -14,7 +14,7 @@ export function CargarProveedores() {
     <CargaPorPlanilla
       eyebrow="Compras"
       titulo="Cargar proveedores por planilla"
-      descripcion="Para dar de alta a todos los proveedores de una vez, o corregir los que ya están."
+      descripcion="Para cargar a todos los proveedores de una vez, o corregir los que ya están."
       loQueSeCarga="proveedores"
       columnas={COLUMNAS_PROVEEDORES}
       nombrePlantilla="plantilla-proveedores.xlsx"

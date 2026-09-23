@@ -280,7 +280,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
       {
         titulo: 'Cargar proveedores por planilla',
         detalle:
-          'Para dar de alta a todos de una vez. Manda el RIF: el mismo proveedor con dos RIF distintos es como se paga dos veces la misma factura.',
+          'Para cargarlos a todos de una vez. Manda el RIF: el mismo proveedor con dos RIF distintos es como se paga dos veces la misma factura.',
         icono: Upload,
         a: '/app/compras/proveedores/carga',
         exige: 'ESCRITURA',
