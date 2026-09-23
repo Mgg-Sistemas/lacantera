@@ -75,20 +75,6 @@ function resumenACargo(c: ACargoDe) {
 export function Personal() {
   const [verInactivos, setVerInactivos] = useState(false)
   const { data, isPending, error } = useEmpleados(!verInactivos)
-  /*
-    El informe se arma con TODOS, mire lo que mire la pantalla.
-
-    Jesmary lo pidió así: «un PDF o informe del personal activo en nómina […]
-    que en ese reporte incluya un apartado de los desincorporados». O sea que
-    el apartado forma parte del papel, no es una opción. Si el informe saliera
-    de lo que hay en pantalla, con la casilla apagada saldría sin ese apartado
-    —vacío y sin decir por qué— y con ella encendida saldría igual que con ella
-    apagada, que es peor: dos botones que hacen lo mismo salvo cuando no.
-
-    La casilla sigue mandando en la TABLA, que es lo que se está mirando. Son
-    dos cosas distintas y ahora se comportan como tales.
-  */
-  const { data: todos } = useEmpleados(false)
   const { data: empresa } = useEmpresa()
   const { data: cargos } = useACargoDe()
 
@@ -194,13 +180,6 @@ export function Personal() {
   const filtrados = useMemo(() => (data ?? []).filter(pasaElFiltro), [data, pasaElFiltro])
 
   /*
-    El mismo criterio que la tabla, aplicado a la lista entera. Filtrar por
-    «mantenimiento» y sacar el informe tiene que dar el informe de
-    mantenimiento, con sus desincorporados incluidos.
-  */
-  const paraElInforme = useMemo(() => (todos ?? []).filter(pasaElFiltro), [todos, pasaElFiltro])
-
-  /*
     EL CRITERIO, DICHO EN PALABRAS PARA EL PAPEL.
 
     Un informe titulado «Personal» que trae 6 de 32 personas es engañoso si no
@@ -247,6 +226,26 @@ export function Personal() {
 
   const hayFiltro = criterio !== null
 
+  /*
+    LA CASILLA MANDA TAMBIÉN EN EL PAPEL.
+
+    Antes no. El informe se armaba con la lista entera para que el apartado de
+    desincorporados —que pidió Jesmary— saliera siempre, esté marcada la casilla
+    o no. Suena razonable hasta que se mira: la pantalla dice «se ven 2 de 24» y
+    el PDF trae una tercera persona que ahí no aparecía y que nadie pidió.
+
+    El apartado no se pierde: sale cuando se marca «incluir a los
+    desincorporados», que es exactamente cuando se está preguntando por ellos.
+    Lo que se imprime es lo que se está mirando, y eso es lo único que no admite
+    sorpresa: ese papel se firma y se entrega.
+
+    Y el recorte va escrito en el renglón del filtro. Sin él, un informe sin
+    desincorporados se lee como «no hay ninguno», que es distinto de «no se
+    pidieron».
+  */
+  const alcance = verInactivos ? 'incluye a los desincorporados' : 'solo personal activo'
+  const filtroDelPapel = criterio ? `${criterio} · ${alcance}` : alcance
+
   const sacarInforme = async (gente: Empleado[]) => {
     if (gente.length === 0) return
     setArmando(true)
@@ -254,7 +253,7 @@ export function Personal() {
       const pdf = await armarInformeDePersonal({
         conMontos: false,
         personas: gente.map(fichaDelInforme),
-        filtro: criterio,
+        filtro: filtroDelPapel,
         empresa: empresaDelPapel(empresa),
         emitidoPor: nombre,
         momento: new Date(),
@@ -289,8 +288,8 @@ export function Personal() {
             <Button
               variant="outline"
               icon={<ClipboardList />}
-              disabled={armando || paraElInforme.length === 0}
-              onClick={() => void sacarInforme(paraElInforme)}
+              disabled={armando || filtrados.length === 0}
+              onClick={() => void sacarInforme(filtrados)}
             >
               {armando ? 'Preparando…' : 'Informe'}
             </Button>
