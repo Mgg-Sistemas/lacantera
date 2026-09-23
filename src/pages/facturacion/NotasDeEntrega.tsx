@@ -98,6 +98,39 @@ const ETIQUETA: Record<string, string> = {
   ANULADA: 'Anulada',
 }
 
+/*
+  LO QUE SE APRUEBA, EN DINERO.
+
+  La tarjeta de aprobación enseñaba cantidades y descripciones, y ni un monto.
+  Los responsables lo dijeron con sus palabras: «estamos aprobando casi a
+  ciegas». Y es literal — aprobar un despacho saca material del patio y crea una
+  nota de entrega al cliente, así que es la última puerta antes de que la
+  mercancía se vaya y haya que cobrarla.
+
+  El precio unitario solo llega a quien tiene permiso de ver montos: la vista lo
+  omite para los demás. Por eso la cuenta puede salir incompleta, y cuando sale
+  incompleta hay que DECIRLO en vez de enseñar un total más bajo del real, que
+  sería peor que no enseñar ninguno.
+*/
+function cuentaDelDespacho(s: SolicitudDeDespacho) {
+  const conPrecio = s.renglones.filter((r) => r.precio_unitario != null)
+  const material = conPrecio.reduce(
+    (suma, r) => suma + Number(r.cantidad) * Number(r.precio_unitario ?? 0),
+    0,
+  )
+  const flete = Number(s.flete ?? 0)
+
+  return {
+    material,
+    flete,
+    total: material + flete,
+    /** Falso cuando algún renglón vino sin precio: el total no es de fiar. */
+    completa: conPrecio.length === s.renglones.length,
+    /** Ni un precio: no es que la cuenta esté a medias, es que no hay permiso. */
+    sinPermiso: conPrecio.length === 0 && s.renglones.length > 0,
+  }
+}
+
 export function NotasDeEntrega() {
   const monedas = useMonedasUsables()
   const { data, isPending, error } = useNotasEntrega()
@@ -387,14 +420,87 @@ export function NotasDeEntrega() {
                         {s.vehiculo_descripcion ? ` · ${s.vehiculo_descripcion}` : ''} · {s.chofer} ·{' '}
                         {documento(s.cedula_chofer)}
                       </p>
+                      {/*
+                        Cada renglón con su precio y su importe, y el importe
+                        alineado a la derecha: una columna de cifras que no se
+                        puede recorrer con el dedo no sirve para cuadrar nada.
+                      */}
                       <ul className="text-ink/75 mt-2 space-y-0.5 text-sm">
                         {s.renglones.map((r, i) => (
-                          <li key={i}>
-                            {Number(r.cantidad).toLocaleString('es-VE', { maximumFractionDigits: 2 })}{' '}
-                            {r.unidad ?? ''} · {r.descripcion || r.articulo || '—'}
+                          <li key={i} className="flex flex-wrap items-baseline justify-between gap-x-3">
+                            <span className="min-w-0">
+                              {Number(r.cantidad).toLocaleString('es-VE', { maximumFractionDigits: 2 })}{' '}
+                              {r.unidad ?? ''} · {r.descripcion || r.articulo || '—'}
+                              {r.precio_unitario != null ? (
+                                <span className="text-ink/45">
+                                  {' '}· {dinero(s.moneda, r.precio_unitario)} c/u
+                                </span>
+                              ) : null}
+                            </span>
+                            {r.precio_unitario != null ? (
+                              <span className="text-ink/85 tabular shrink-0 font-medium">
+                                {dinero(s.moneda, Number(r.cantidad) * Number(r.precio_unitario))}
+                              </span>
+                            ) : null}
                           </li>
                         ))}
                       </ul>
+
+                      {/* EL TOTAL, QUE ES LO QUE SE ESTABA APROBANDO A CIEGAS. */}
+                      {(() => {
+                        const c = cuentaDelDespacho(s)
+                        if (c.sinPermiso) {
+                          return (
+                            <p className="text-ink/45 border-hairline mt-2 border-t pt-2 text-xs">
+                              Los montos de este despacho no se muestran con tu permiso.
+                            </p>
+                          )
+                        }
+                        return (
+                          <div className="border-hairline mt-2 space-y-0.5 border-t pt-2 text-sm">
+                            {c.flete > 0 ? (
+                              <>
+                                <p className="text-ink/60 flex justify-between gap-3">
+                                  <span>Material</span>
+                                  <span className="tabular">{dinero(s.moneda, c.material)}</span>
+                                </p>
+                                <p className="text-ink/60 flex justify-between gap-3">
+                                  <span>Flete</span>
+                                  <span className="tabular">{dinero(s.moneda, c.flete)}</span>
+                                </p>
+                              </>
+                            ) : null}
+                            <p className="text-ink/90 flex justify-between gap-3 font-medium">
+                              <span>Total del despacho</span>
+                              <span className="tabular">{dinero(s.moneda, c.total)}</span>
+                            </p>
+                            {!c.completa ? (
+                              <p className="text-warning text-xs">
+                                Falta el precio de algún renglón: el total está incompleto.
+                              </p>
+                            ) : null}
+                          </div>
+                        )
+                      })()}
+                      {/*
+                        LOS CORRELATIVOS, JUNTOS Y ANTES DE DECIDIR.
+
+                        Estaban repartidos: el del despacho arriba, el de la nota
+                        solo cuando ya existía, y el ticket de romana en ninguna
+                        parte. Quien aprueba necesita poder decir «este despacho
+                        es el del ticket tal», que es como se cotejan los papeles
+                        en el patio.
+
+                        Solo aparecen los que hay. Un renglón con tres rayas no
+                        informa de nada y ocupa el sitio de lo que sí importa.
+                      */}
+                      {s.ticket || s.nota_numero ? (
+                        <p className="text-ink/55 mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-xs">
+                          {s.ticket ? <span>Ticket {s.ticket}</span> : null}
+                          {s.nota_numero ? <span>Nota {s.nota_numero}</span> : null}
+                        </p>
+                      ) : null}
+
                       <p className="text-ink/40 mt-2 text-xs">
                         Lo pidió {nombreDe(s.pedida_por)} · {fechaHora(s.pedida_en)}
                         {s.resuelta_en ? ` · lo cerró ${nombreDe(s.resuelta_por)} · ${fechaHora(s.resuelta_en)}` : ''}
