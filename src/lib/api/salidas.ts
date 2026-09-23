@@ -101,6 +101,41 @@ export interface SolicitudDeSalida {
    * firma si la tiene encendida, que es lo de por defecto.
    */
   firma_de_quien_aprueba: boolean | null
+
+  /*
+    EN QUÉ SE LO LLEVAN Y QUIÉN LO RECIBE.
+
+    De la lista cuando el vehículo está cargado —`vehiculo_id`— y escrito a mano
+    cuando no —`vehiculo`—, que es lo que ya hace la nota de entrega. Un almacén
+    despacha lo mismo a un volteo de la flota que al carro de quien vino a
+    buscarlo, y obligar a dar de alta ese carro para poder sacar dos sacos es
+    parar el trabajo por una ficha que nadie va a volver a mirar.
+  */
+  vehiculo_id: number | null
+  vehiculo: string | null
+
+  /*
+    Quién retira, para que el papel diga sobre qué raya firma.
+
+    No es un usuario del sistema: es el chofer o el encargado que viene a
+    buscarlo. Por eso van nombre y cédula sueltos y no un `empleado_id`.
+  */
+  recibio_nombre: string | null
+  recibio_cedula: string | null
+
+  /*
+    El interruptor, y NO se llama `firma_de_quien_recibe` a propósito.
+
+    Toda la familia `firma_de_quien_*` de esta base quiere decir lo mismo: que
+    se estampa la firma digital GUARDADA de un usuario con cuenta. Esto es lo
+    contrario — una raya en blanco para que un tercero firme a mano. Mismo
+    nombre, significado opuesto, y quien leyera los dos supondría que hacen
+    igual.
+
+    El nombre sale del propio papel: `notaDeSalidaPdf` ya imprime el bloque
+    «Recibió conforme». Esto dice si va con nombre y cédula debajo.
+  */
+  lleva_recibido_conforme: boolean
   almacen?: { nombre: string } | null
   renglones?: RenglonDeSolicitud[]
 }
@@ -168,6 +203,14 @@ export function usePedirSalida() {
       responsable?: string | null
       /** Si quien solicita pone su firma digital en la orden. Por defecto no. */
       con_firma?: boolean
+      /** En qué se lo llevan: de la lista o escrito. Las dos pueden ir vacías. */
+      vehiculo_id?: number | null
+      vehiculo?: string | null
+      /** Quién retira. No es un usuario: firma a mano en el papel. */
+      recibio_nombre?: string | null
+      recibio_cedula?: string | null
+      /** Si el papel lleva el bloque «Recibió conforme» con su nombre debajo. */
+      lleva_recibido?: boolean
     }) =>
       rpc<string[]>('pedir_salidas', {
         p_por_almacen: [...new Set(s.renglones.map((r) => r.almacen_id))].map((almacen_id) => ({
@@ -188,8 +231,44 @@ export function usePedirSalida() {
         p_externo: s.externo || null,
         p_responsable: s.responsable || null,
         p_con_firma: s.con_firma ?? false,
+        p_vehiculo_id: s.vehiculo_id ?? null,
+        p_vehiculo: s.vehiculo?.trim() || null,
+        p_recibio_nombre: s.recibio_nombre?.trim() || null,
+        p_recibio_cedula: s.recibio_cedula?.trim() || null,
+        p_lleva_recibido: s.lleva_recibido ?? false,
       }),
   )
+}
+
+/**
+ * Corregir el vehículo y quién recibe, mientras la salida no se haya entregado.
+ *
+ * Se puede porque el dato se pide al crear la solicitud y no al entregarla, y
+ * entre las dos cosas pasa el tiempo: se pide el jueves para el viernes y el
+ * viernes viene otro camión. La base solo lo admite en PEDIDA y APROBADA —lista
+ * de permitidos, no de prohibidos, para que un estado nuevo no se cuele.
+ */
+export function useGuardarVehiculoDeSalida() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: {
+      id: number
+      vehiculo_id?: number | null
+      vehiculo?: string | null
+      recibio_nombre?: string | null
+      recibio_cedula?: string | null
+      lleva_recibido?: boolean
+    }) =>
+      rpc<number>('guardar_vehiculo_de_salida', {
+        p_id: v.id,
+        p_vehiculo_id: v.vehiculo_id ?? null,
+        p_vehiculo: v.vehiculo?.trim() || null,
+        p_recibio_nombre: v.recibio_nombre?.trim() || null,
+        p_recibio_cedula: v.recibio_cedula?.trim() || null,
+        p_lleva_recibido: v.lleva_recibido ?? false,
+      }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['solicitudes-salida'] }),
+  })
 }
 
 /**

@@ -161,6 +161,27 @@ export interface DatosNotaDeSalida {
   entrego?: string | null
   entregoFirma?: string | null
 
+  /*
+    EN QUÉ SE LO LLEVAN Y QUIÉN LO RECIBE.
+
+    Ya venía escrito aquí al lado que el hueco de «Recibió conforme» iba sin
+    nombre «porque el sistema todavía no captura quién retira». Ya lo captura.
+
+    El vehículo llega armado desde fuera —placa de la lista o lo que se
+    escribió— porque el papel no tiene por qué saber de dónde salió cada uno.
+  */
+  vehiculo?: string | null
+  /** Quién retira. No es un usuario del sistema: firma a mano sobre la raya. */
+  recibio?: string | null
+  recibioCedula?: string | null
+  /**
+   * Si el bloque «Recibió conforme» sale con el nombre debajo.
+   *
+   * Apagado no quita la raya: la deja en blanco, como estaba antes. Un papel de
+   * almacén sin sitio donde firmar no sirve, tenga o no nombre quien firme.
+   */
+  llevaRecibidoConforme?: boolean
+
   empresa: { razonSocial: string; rif: string }
   momento: Date
 }
@@ -371,6 +392,15 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
         ['Motivo', orden ? null : d.clase],
         ['Para quién', d.paraQuien],
         ['A dónde va', d.destino],
+        // Solo si se sabe. El filtro de abajo se lleva las filas vacías, así
+        // que una salida que se llevaron a pie sale igual que siempre.
+        ['En qué sale', d.vehiculo],
+        [
+          'Lo recibe',
+          d.recibio
+            ? `${d.recibio}${d.recibioCedula ? ` · ${d.recibioCedula}` : ''}`
+            : null,
+        ],
         ['Fecha', orden ? null : d.fecha],
       ] as Array<[string, string | null | undefined]>
     ).filter(([, valor]) => Boolean(valor && String(valor).trim())),
@@ -540,8 +570,19 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
         nombre: d.entrego ?? null,
         imagen: d.entregoFirma ?? null,
       },
-      // Sin nombre: el sistema todavía no captura quién retira. Se firma a mano.
-      { texto: 'Recibió conforme', nombre: null },
+      /*
+        Se sigue firmando a mano —quien retira no tiene cuenta ni firma
+        guardada—, pero ya se puede decir QUIÉN firma.
+
+        Con el interruptor apagado la raya se queda como estaba: en blanco. Es
+        deliberado y no un descuido: el papel tiene que poder salir antes de
+        saber quién va a venir a buscarlo.
+      */
+      {
+        texto: 'Recibió conforme',
+        nombre: d.llevaRecibidoConforme ? (d.recibio ?? null) : null,
+        nota: d.llevaRecibidoConforme && d.recibio ? (d.recibioCedula ?? null) : null,
+      },
     )
   }
 
