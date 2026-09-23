@@ -159,8 +159,19 @@ export function Respaldo() {
             */}
             {descargar.isPending ? (
               <div className="border-hairline mt-4 border-t pt-4">
+                {/*
+                  El girador va NEUTRO y del tamaño del de la casa, no en tierra.
+
+                  `Cargando` en `Estado.tsx` ya resuelve esto desde siempre:
+                  `Loader2` a `size-4` y `text-ink/45`, sin color. Esperar no es
+                  una llamada a la acción, y un girador en tierra compite por la
+                  atención con el único botón primario de la pantalla.
+
+                  Lo que sí tiene que verse es el número, y ese ya va en
+                  `text-ink/85`.
+                */}
                 <div className="flex items-center gap-3">
-                  <Loader2 className="text-tierra-600 dark:text-tierra-300 size-5 shrink-0 animate-spin" />
+                  <Loader2 className="text-ink/45 size-4 shrink-0 animate-spin" />
                   <div className="min-w-0 flex-1">
                     <p className="text-ink/85 text-sm font-medium">{comoVa(segundos)}</p>
                     <p className="text-ink/45 mt-0.5 text-xs">
