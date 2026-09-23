@@ -1,5 +1,11 @@
 # Poner el sistema en línea (Vercel)
 
+> **Esto ya no es lo que corre.** Producción es un servidor propio, no Vercel:
+> el navegador se sirve desde `mineriainternacionalts.com` con nginx. Cómo llega
+> el `dist/` hasta ahí está en `despliegue-en-el-servidor.md`. Lo de abajo se
+> conserva porque el apartado «Antes de exponerlo a internet» sigue valiendo
+> entero, y porque volver a Vercel seguiría siendo posible.
+
 Vercel sirve el navegador. La base de datos, la autenticación, el almacenamiento
 de las fotos y el tiempo real siguen en Supabase y no se mueven de ahí. Esto es
 importante para entender qué se despliega y qué no: **subir a Vercel no aplica
