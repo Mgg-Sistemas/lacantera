@@ -150,7 +150,30 @@ function SalariosDiarios({
  *
  * El motivo sí sale de la ficha, que es donde vive y donde no cambia.
  */
-function comoFilaDelInforme(r: Recibo): PersonaDelInforme {
+/*
+  LA TASA SE DEDUCE DEL PROPIO RECIBO, NO SE TOMA LA DE HOY.
+
+  `neto_usd` viene sellado: es lo que se le pagó a esa persona. Dividir su neto
+  entre ese dólar devuelve la tasa EXACTA con que se calculó su recibo, aunque
+  el período se haya recalculado después o la tasa haya cambiado veinte veces
+  desde entonces.
+
+  Y con esa misma tasa se convierten las asignaciones y las deducciones, para
+  que las tres cifras de la fila cuadren entre sí: asignaciones menos
+  deducciones tiene que dar el neto también en dólares, o el papel se
+  contradice solo.
+*/
+function tasaDelRecibo(r: Recibo, periodo: Periodo): number {
+  const neto = Number(r.neto)
+  const netoUsd = Number(r.neto_usd)
+  if (neto > 0 && netoUsd > 0) return neto / netoUsd
+  return Number(periodo.tasa_usd ?? 0)
+}
+
+function comoFilaDelInforme(r: Recibo, periodo: Periodo): PersonaDelInforme {
+  const tasa = tasaDelRecibo(r, periodo)
+  const enUsd = (bs: string | number) => (tasa > 0 ? Number(bs) / tasa : 0)
+
   return {
     ficha: r.empleado?.ficha ?? '—',
     nombre: `${r.empleado?.nombres ?? ''} ${r.empleado?.apellidos ?? ''}`.trim() || '—',
@@ -164,6 +187,8 @@ function comoFilaDelInforme(r: Recibo): PersonaDelInforme {
     pago: {
       dias: r.dias_pagados,
       netoUsd: r.neto_usd,
+      asignacionesUsd: enUsd(r.total_asignaciones),
+      deduccionesUsd: enUsd(r.total_deducciones),
       asignaciones: r.total_asignaciones,
       deducciones: r.total_deducciones,
       neto: r.neto,
@@ -245,7 +270,7 @@ export function Recibos() {
       const pdf = await armarInformeDePersonal({
         conMontos: true,
         periodo: { numero: periodo.numero, desde: periodo.desde, hasta: periodo.hasta },
-        personas: recibos.map(comoFilaDelInforme),
+        personas: recibos.map((r) => comoFilaDelInforme(r, periodo)),
         // Se dice de dónde salió la lista. Un informe de una sola persona que
         // no lo diga se lee como si en la quincena hubiera cobrado una sola.
         filtro:

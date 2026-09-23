@@ -78,8 +78,16 @@ export interface PersonaDelInforme {
   */
   pago?: {
     dias: string | number
-    /** Lo que se le pagó en dólares, sellado en su recibo. Nulo en los viejos. */
+    /*
+      Lo mismo en dólares. Los tres van juntos o no va ninguno: media fila
+      convertida se lee como un error de cálculo.
+
+      `netoUsd` viene SELLADO del recibo; los otros dos salen de la misma tasa
+      que lo produjo, no de la de hoy.
+    */
     netoUsd?: string | number | null
+    asignacionesUsd?: string | number | null
+    deduccionesUsd?: string | number | null
     asignaciones: string | number
     deducciones: string | number
     neto: string | number
@@ -224,7 +232,24 @@ const CON_MONTOS: Columna[] = [
   { titulo: 'Neto', ancho: 22, alDerecha: true },
 ]
 
-function celdas(p: PersonaDelInforme, conMontos: boolean): string[] {
+/*
+  LA CIFRA EN BOLÍVARES, Y DEBAJO LA MISMA EN DÓLARES.
+
+  Sin columna nueva: la tabla suma exactos los 150 mm útiles y el único sitio de
+  donde se podría sacar ancho es el nombre, que ya parte en dos renglones con
+  los nombres largos de esta nómina.
+
+  Así que se aprovecha que `tabla` reparte los trozos de una celda por
+  renglones: «208.122,08 $244,15» no cabe de ancho, se parte en dos, y el dólar
+  queda debajo — que es exactamente «sin protagonismo», sin quitarle sitio a
+  nadie.
+*/
+function conEquivalente(bs: string | number, usd: string | number | null | undefined): string {
+  const n = Number(usd ?? 0)
+  return n > 0 ? `${numero(bs)} ${numero(n)}` : numero(bs)
+}
+
+function celdas(p: PersonaDelInforme, conMontos: boolean, enDolares = false): string[] {
   if (!conMontos) {
     return [
       p.ficha,
@@ -251,9 +276,21 @@ function celdas(p: PersonaDelInforme, conMontos: boolean): string[] {
     p.nombre,
     p.cedula,
     p.pago ? dias(p.pago.dias) : RAYA,
-    p.pago ? numero(p.pago.asignaciones) : RAYA,
-    p.pago ? numero(p.pago.deducciones) : RAYA,
-    p.pago ? numero(p.pago.neto) : RAYA,
+    p.pago
+      ? enDolares
+        ? conEquivalente(p.pago.asignaciones, p.pago.asignacionesUsd)
+        : numero(p.pago.asignaciones)
+      : RAYA,
+    p.pago
+      ? enDolares
+        ? conEquivalente(p.pago.deducciones, p.pago.deduccionesUsd)
+        : numero(p.pago.deducciones)
+      : RAYA,
+    p.pago
+      ? enDolares
+        ? conEquivalente(p.pago.neto, p.pago.netoUsd)
+        : numero(p.pago.neto)
+      : RAYA,
   ]
 }
 
@@ -305,8 +342,28 @@ export async function armarInformeDePersonal(
   const tasa = Number(d.tasaUsd ?? 0)
   const enDolares = d.mostrarUsd !== false && tasa > 0
   const netoUsd = d.personas.reduce((s, p) => s + Number(p.pago?.netoUsd ?? 0), 0)
+  /*
+    EL SÍMBOLO VA PEGADO A SU CIFRA, SIN ESPACIO.
+
+    `encajar` parte el texto por cualquier espacio en blanco y reparte los
+    trozos por renglones. Con «$ 5.933,20» el «$» es un trozo suelto, y la
+    primera versión de esto lo dejó al final de un renglón con su número en el
+    siguiente:
+
+        Bs 4.939.316,81 · $
+        5.933,20
+
+    Una moneda separada de su cifra en un papel de nómina no es un detalle de
+    maquetación: es una cifra sin unidad. Pegado, «$5.933,20» es un solo trozo y
+    no hay corte que lo pueda partir. No sirve un espacio duro —en JavaScript
+    `s` también lo casa—, así que va sin espacio y punto.
+  */
+  const enDol = (usd: number) => `${numero(usd)}`
+  const enBs = (bs: number) => `Bs ${numero(bs)}`
+
+  /** Para el pie de un bloque, donde sí cabe todo de una vez. */
   const conUsd = (bs: number, usd: number) =>
-    enDolares && usd > 0 ? `Bs ${numero(bs)} · $ ${numero(usd)}` : `Bs ${numero(bs)}`
+    enDolares && usd > 0 ? `${enBs(bs)} · ${enDol(usd)}` : enBs(bs)
 
   y = seccion(doc, y, 'Alcance')
   y = etiquetaValor(doc, y, [
@@ -316,10 +373,15 @@ export async function armarInformeDePersonal(
     ['En nómina', String(activos.length)],
     ['Desincorporados', String(salidos.length)],
     ...(d.conMontos
-      ? ([['Neto del período', conUsd(neto, netoUsd)]] as Array<[string, string]>)
+      ? ([['Neto del período', enBs(neto)]] as Array<[string, string]>)
+      : []),
+    // En su propio renglón y no pegado al de bolívares: ahí cabe entero, y
+    // además queda debajo, que es donde tiene que estar lo secundario.
+    ...(d.conMontos && enDolares && netoUsd > 0
+      ? ([['Equivale a', enDol(netoUsd)]] as Array<[string, string]>)
       : []),
     ...(d.conMontos && enDolares
-      ? ([['Tasa BCV', `1 $ = Bs ${numero(tasa)}${d.periodo ? ` · del ${fechaCorta(d.periodo.hasta)}` : ''}`]] as Array<[string, string]>)
+      ? ([['Tasa BCV', `1 $ = Bs ${numero(tasa)}${d.periodo ? ` · del ${fechaCorta(d.periodo.hasta)}` : ''}`]] as Array<[string, string]>)
       : []),
     ['Filtro aplicado', d.filtro || 'Ninguno: se lista todo el personal'],
     ['Emitido por', d.emitidoPor],
@@ -385,7 +447,7 @@ export async function armarInformeDePersonal(
     doc.text(rotulo.toUpperCase(), IZQ, y)
     y += 4.5
 
-    y = tabla(doc, y, columnas, gente.map((p) => celdas(p, d.conMontos)), pie) - 4
+    y = tabla(doc, y, columnas, gente.map((p) => celdas(p, d.conMontos, enDolares)), pie) - 4
   }
 
   bloque(
