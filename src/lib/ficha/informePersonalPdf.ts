@@ -78,6 +78,8 @@ export interface PersonaDelInforme {
   */
   pago?: {
     dias: string | number
+    /** Lo que se le pagó en dólares, sellado en su recibo. Nulo en los viejos. */
+    netoUsd?: string | number | null
     asignaciones: string | number
     deducciones: string | number
     neto: string | number
@@ -101,6 +103,28 @@ export interface DatosInformePersonal {
   emitidoPor: string
   /** Cuándo se generó. Se pasa desde fuera para no depender del reloj aquí. */
   momento: Date
+
+  /*
+    LA EQUIVALENCIA EN DÓLARES, CUANDO LA PANTALLA LA PIDE.
+
+    El mismo interruptor que gobierna los recibos gobierna este papel. Estaba
+    encendido y el informe salía solo en bolívares: dos papeles del mismo cierre
+    diciendo cosas distintas, y el que resume es justo el que se lleva a una
+    reunión.
+
+    DÓNDE VA Y DÓNDE NO. Va en los totales —el neto del período y el de cada
+    apartado— y no en la fila de cada persona. La tabla es de bolívares, que es
+    la moneda en que se paga y en que está firmado cada recibo; una columna de
+    dólares al lado convertiría el informe en un papel de dos monedas y quitaría
+    protagonismo justo a la cifra que manda.
+
+    Y la tasa se dice una vez, abajo, del día que acota el período — la misma
+    frase que ya usa el recibo, para que un contador que tenga los dos delante
+    no tenga que preguntarse si hablan de lo mismo.
+  */
+  tasaUsd?: string | number | null
+  /** Apagado deja el papel solo en bolívares. Por defecto, encendido. */
+  mostrarUsd?: boolean
 }
 
 const decimal2 = new Intl.NumberFormat('es-VE', {
@@ -273,6 +297,17 @@ export async function armarInformeDePersonal(
 
   const neto = d.personas.reduce((s, p) => s + Number(p.pago?.neto ?? 0), 0)
 
+  /*
+    Se suman los dólares SELLADOS de cada recibo, no se divide el total por la
+    tasa de hoy. Un período pagado a 832 y mirado a 852 daría dos cifras
+    distintas, y la buena es la que se le pagó a la gente.
+  */
+  const tasa = Number(d.tasaUsd ?? 0)
+  const enDolares = d.mostrarUsd !== false && tasa > 0
+  const netoUsd = d.personas.reduce((s, p) => s + Number(p.pago?.netoUsd ?? 0), 0)
+  const conUsd = (bs: number, usd: number) =>
+    enDolares && usd > 0 ? `Bs ${numero(bs)} · $ ${numero(usd)}` : `Bs ${numero(bs)}`
+
   y = seccion(doc, y, 'Alcance')
   y = etiquetaValor(doc, y, [
     ...(d.periodo
@@ -281,7 +316,10 @@ export async function armarInformeDePersonal(
     ['En nómina', String(activos.length)],
     ['Desincorporados', String(salidos.length)],
     ...(d.conMontos
-      ? ([['Neto del período', `Bs ${numero(neto)}`]] as Array<[string, string]>)
+      ? ([['Neto del período', conUsd(neto, netoUsd)]] as Array<[string, string]>)
+      : []),
+    ...(d.conMontos && enDolares
+      ? ([['Tasa BCV', `1 $ = Bs ${numero(tasa)}${d.periodo ? ` · del ${fechaCorta(d.periodo.hasta)}` : ''}`]] as Array<[string, string]>)
       : []),
     ['Filtro aplicado', d.filtro || 'Ninguno: se lista todo el personal'],
     ['Emitido por', d.emitidoPor],
@@ -354,7 +392,10 @@ export async function armarInformeDePersonal(
     `En nómina · ${activos.length}`,
     activos,
     d.conMontos
-      ? `NETO EN NÓMINA   Bs ${numero(activos.reduce((s, p) => s + Number(p.pago?.neto ?? 0), 0))}`
+      ? `NETO EN NÓMINA   ${conUsd(
+          activos.reduce((s, p) => s + Number(p.pago?.neto ?? 0), 0),
+          activos.reduce((s, p) => s + Number(p.pago?.netoUsd ?? 0), 0),
+        )}`
       : undefined,
   )
 
@@ -370,7 +411,10 @@ export async function armarInformeDePersonal(
       `Desincorporados · ${salidos.length}`,
       salidos,
       d.conMontos
-        ? `NETO DE DESINCORPORADOS   Bs ${numero(salidos.reduce((s, p) => s + Number(p.pago?.neto ?? 0), 0))}`
+        ? `NETO DE DESINCORPORADOS   ${conUsd(
+            salidos.reduce((s, p) => s + Number(p.pago?.neto ?? 0), 0),
+            salidos.reduce((s, p) => s + Number(p.pago?.netoUsd ?? 0), 0),
+          )}`
         : undefined,
       // La lista de fechas y motivos cuenta como parte del apartado: separarla
       // de su tabla deja las salidas sin la gente a la que pertenecen.

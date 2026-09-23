@@ -163,6 +163,7 @@ function comoFilaDelInforme(r: Recibo): PersonaDelInforme {
     telefono: null,
     pago: {
       dias: r.dias_pagados,
+      netoUsd: r.neto_usd,
       asignaciones: r.total_asignaciones,
       deducciones: r.total_deducciones,
       neto: r.neto,
@@ -251,6 +252,11 @@ export function Recibos() {
           recibos.length === ordenados.length
             ? 'Todo el personal con recibo en el período'
             : `Solo ${recibos.length} de ${ordenados.length} recibos del período`,
+        // El mismo interruptor que gobierna los recibos. Estaba encendido y
+        // el informe salía solo en bolívares: dos papeles del mismo cierre
+        // diciendo cosas distintas.
+        tasaUsd: periodo.tasa_usd,
+        mostrarUsd: conDolares,
         empresa: papelDeEmpresa,
         emitidoPor: nombre,
         momento: new Date(),
