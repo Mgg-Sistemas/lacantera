@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Database, Download, Lock, ShieldAlert } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Database, Download, Loader2, Lock, ShieldAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,6 +10,50 @@ import { fechaHora } from '@/lib/formato'
 
 const peso = (bytes: number) =>
   bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.round(bytes / 1024)} kB`
+
+/*
+  LOS SEGUNDOS QUE LLEVA, CONTADOS A LA VISTA.
+
+  El respaldo tarda cerca de un minuto: la base lo arma en un segundo y el resto
+  es bajar varios megas por la red de la cantera. Hasta ahora el botón se
+  limitaba a decir «Armando el respaldo…» y quedarse quieto, y un minuto sin que
+  nada cambie no se lee como que está trabajando: se lee como que se colgó.
+
+  Por eso un número que sube y no una barra de progreso. Nadie sabe cuánto falta
+  —ni la base ni el navegador—, y una barra que avanza inventando sería peor que
+  no tener ninguna: la primera vez que se parara a la mitad nadie volvería a
+  creérsela.
+*/
+function useSegundos(corriendo: boolean): number {
+  const [segundos, setSegundos] = useState(0)
+
+  useEffect(() => {
+    if (!corriendo) {
+      setSegundos(0)
+      return
+    }
+    const desde = Date.now()
+    const reloj = setInterval(() => setSegundos(Math.floor((Date.now() - desde) / 1000)), 250)
+    return () => clearInterval(reloj)
+  }, [corriendo])
+
+  return segundos
+}
+
+/*
+  Y lo que se le dice mientras espera, que cambia con el tiempo.
+
+  No es adorno: a los diez segundos la pregunta de quien mira es «¿esto va?», y
+  al minuto es «¿esto se rompió?». Son preguntas distintas y merecen respuestas
+  distintas. La última nombra el archivo y la red, que es lo que de verdad
+  explica la espera.
+*/
+function comoVa(segundos: number): string {
+  if (segundos < 8) return 'Leyendo las tablas…'
+  if (segundos < 25) return 'Armando el archivo…'
+  if (segundos < 75) return 'Bajando el archivo. Son varios megas por la red de la cantera.'
+  return 'Sigue bajando. Con la red lenta puede pasar de dos minutos.'
+}
 
 /**
  * La copia de todos los datos, para llevársela.
@@ -28,6 +72,7 @@ export function Respaldo() {
   const { data: resumen, isPending, error } = useResumenRespaldo()
   const descargar = useDescargarRespaldo()
   const [confirmando, setConfirmando] = useState(false)
+  const segundos = useSegundos(descargar.isPending)
 
   if (isPending) return <Cargando />
   if (error) return <ErrorDeCarga error={error} />
@@ -104,6 +149,45 @@ export function Respaldo() {
                 {descargar.isPending ? 'Armando el respaldo…' : 'Descargar respaldo'}
               </Button>
             </div>
+
+            {/*
+              MIENTRAS TANTO.
+
+              Va dentro de la misma tarjeta del botón y no en un modal: quien
+              está esperando tiene que poder seguir viendo qué pidió. Un diálogo
+              encima tapa la pantalla y hace la espera más larga de lo que es.
+            */}
+            {descargar.isPending ? (
+              <div className="border-hairline mt-4 border-t pt-4">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="text-tierra-600 dark:text-tierra-300 size-5 shrink-0 animate-spin" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-ink/85 text-sm font-medium">{comoVa(segundos)}</p>
+                    <p className="text-ink/45 mt-0.5 text-xs">
+                      <span className="tabular">{segundos}</span> segundo
+                      {segundos === 1 ? '' : 's'} · no cierres esta pestaña
+                    </p>
+                  </div>
+                </div>
+
+                {/*
+                  El aviso del F5, y solo cuando ya es plausible que lo esté
+                  pensando. Ponerlo desde el segundo cero sería sugerirlo.
+
+                  Y no es una advertencia de cortesía: recargar NO cancela el
+                  trabajo del servidor —PostgreSQL no comprueba si el navegador
+                  sigue ahí mientras la consulta corre—, así que cada recarga
+                  deja otro respaldo armándose además del que ya iba.
+                */}
+                {segundos >= 20 ? (
+                  <p className="border-hairline text-ink/55 mt-3 border-t pt-3 text-xs leading-relaxed">
+                    <strong className="text-ink/75 font-medium">Recargar no lo acelera.</strong> Si
+                    pulsas F5, el servidor no se entera y sigue armando el mismo archivo: lo único
+                    que consigues es que se arme dos veces y tener que empezar la espera de nuevo.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             {descargar.error ? <ErrorDeCarga error={descargar.error} className="mt-4" /> : null}
 
@@ -189,6 +273,20 @@ export function Respaldo() {
           Va a quedar anotado en la auditoría que lo descargaste tú, con la fecha y la hora. Si esta
           computadora la usa alguien más, guarda el archivo en otro sitio y bórralo de la carpeta de
           descargas.
+        </p>
+
+        {/*
+          CUÁNTO VA A TARDAR, DICHO ANTES DE EMPEZAR.
+
+          Es la mitad que de verdad evita el F5. Un minuto de espera avisado se
+          aguanta; un minuto de espera sin avisar se interpreta como que algo
+          falló, y entonces se recarga. El contador de después ayuda, pero llega
+          tarde: para entonces ya está esperando sin saber cuánto.
+        */}
+        <p className="border-hairline text-ink/65 mt-4 border-t pt-3 text-xs leading-relaxed">
+          <strong className="text-ink/85 font-medium">Tarda cerca de un minuto.</strong> Son varios
+          megas y la mayor parte del tiempo es la descarga, no la base. Mientras tanto verás los
+          segundos correr aquí mismo: si el número se mueve, está trabajando.
         </p>
       </Modal>
     </>
