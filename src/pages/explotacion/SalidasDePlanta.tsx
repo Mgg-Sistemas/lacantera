@@ -32,10 +32,42 @@
   repetidos treinta veces al día. Pasados doce vuelve a ser un desplegable,
   porque una rejilla de veinte placas ya no se lee de un vistazo.
 
-  EL PRODUCTO SÍ SIGUE SIENDO DESPLEGABLE. Son dieciocho, no caben en rejilla, y
-  se descartó el buscador con teclado a propósito: en planta, con guantes y
-  polvo, escribir es peor que recorrer. El desplegable del teléfono se abre a
-  pantalla completa y con renglones grandes, que es justo lo que hace falta.
+  EL PRODUCTO SÍ SIGUE SIENDO DESPLEGABLE. No caben en rejilla, y se descartó el
+  buscador con teclado a propósito: en planta, con guantes y polvo, escribir es
+  peor que recorrer. El desplegable del teléfono se abre a pantalla completa y
+  con renglones grandes, que es justo lo que hace falta.
+
+  ─────────────────────────────────────────────────────────────────────────
+
+  CORREGIDO EL 24/09/2026, Y LO REPORTÓ EL USUARIO MIRANDO LA PANTALLA
+
+  PEDÍA METROS CÚBICOS DE UN TROFEO. La lista de productos salía de
+  `productos_de_planta`, que devuelve todo artículo con categoría PRODUCTO. Esa
+  categoría no quiere decir «sale de la planta»: quiere decir que la empresa lo
+  produce o lo vende. De los dieciocho que devolvía, **siete están en M3** —arena
+  lavada, arena cernida, arena integral, coraza, filtro, piedra y piedra
+  1/100— y los otros once son pintura por galón y trofeos, tablas de pino y un
+  WD-40 por unidad. La pantalla los ofrecía todos y para cualquiera pedía m³.
+
+  SE FILTRA POR LA UNIDAD DEL ARTÍCULO, que es lo que de verdad decide. Una
+  salida de planta se mide en metros cúbicos —lo dice el campo y lo dice el
+  encargo, que los m³ son la carga útil del camión— así que solo puede tratar
+  con lo que está registrado en M3. No es una lista escrita a mano: si mañana se
+  carga un agregado nuevo en M3, entra solo; si alguien registra un producto en
+  toneladas, no aparece aquí, y hace bien en no aparecer.
+
+  El arreglo de fondo va en `productos_de_planta` —la función no debería
+  devolver un trofeo— y eso le toca al carril BD. Esto no espera a aquello: la
+  pantalla es la que le pide el dato a alguien.
+
+  Y SE ENSEÑA EL CÓDIGO junto al nombre, que es como se piden en el patio.
+
+  LOS CAMIONES, CUANDO SEAN MUCHOS. Sobre doce ya no caben en rejilla y antes
+  caían en un desplegable normal; con cincuenta placas eso es una lista
+  interminable que hay que recorrer con la vista. Ahora caen en el desplegable
+  BUSCABLE, que es el que ya usa el sistema para el catálogo entero: se escriben
+  tres letras de la placa y aparece. La rejilla se queda para el caso de hoy,
+  que es el bueno.
 
   LA CONFIRMACIÓN DICE QUÉ SE ANOTÓ. «Anotada» no responde a la pregunta que se
   hace quien acaba de pulsar, que es «¿anoté ESTE camión o el anterior?». Ahora
@@ -55,6 +87,7 @@ import { ConversionDeCantidad } from '@/components/ConversionDeCantidad'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useVehiculos } from '@/lib/api/vehiculos'
@@ -188,7 +221,17 @@ function AnotarSalida({ dia }: { dia: string }) {
   const [ultima, setUltima] = useState<Anotada | null>(null)
 
   const listaCamiones = camiones.data ?? []
-  const listaProductos = productos.data ?? []
+
+  /*
+    Solo lo que se mide en metros cúbicos. La unidad la manda el artículo, no
+    esta pantalla: se cruza por id contra el catálogo, que es donde vive.
+
+    Mientras el catálogo no ha llegado no se filtra nada —si no, la lista
+    parpadearía vacía y diría «no hay productos», que es mentira—. Por eso la
+    espera de `articulos` se añade a la de más abajo.
+  */
+  const unidadDe = new Map((articulos.data ?? []).map((a) => [a.id, a.unidad]))
+  const listaProductos = (productos.data ?? []).filter((p) => unidadDe.get(p.id) === 'M3')
 
   const elegido = listaCamiones.find((c) => String(c.id) === vehiculo)
   const sugerido = aTexto(elegido?.carga_util_m3)
@@ -208,7 +251,7 @@ function AnotarSalida({ dia }: { dia: string }) {
     )
   }
 
-  if (productos.isPending || camiones.isPending) {
+  if (productos.isPending || camiones.isPending || articulos.isPending) {
     return (
       <Card>
         <Cargando />
@@ -218,12 +261,21 @@ function AnotarSalida({ dia }: { dia: string }) {
   if (productos.error) return <ErrorDeCarga error={productos.error} />
 
   if (listaProductos.length === 0) {
+    const hayAlgunProducto = (productos.data ?? []).length > 0
     return (
       <Card>
         <Vacio
           icono={<Truck />}
-          titulo="Todavía no hay productos de planta"
-          descripcion="Cárgalos por la planilla de artículos con categoría PRODUCTO (arena lavada, piedra picada…). Sin ellos no hay qué anotar."
+          titulo={
+            hayAlgunProducto
+              ? 'Ningún producto se mide en metros cúbicos'
+              : 'Todavía no hay productos de planta'
+          }
+          descripcion={
+            hayAlgunProducto
+              ? 'De la planta sale material a granel y se mide en m³. Los productos cargados están en otras unidades, así que ninguno se puede anotar aquí. Revisa la unidad en el catálogo de artículos.'
+              : 'Cárgalos por la planilla de artículos con categoría PRODUCTO (arena lavada, piedra picada…). Sin ellos no hay qué anotar.'
+          }
         />
       </Card>
     )
@@ -274,9 +326,10 @@ function AnotarSalida({ dia }: { dia: string }) {
           vacio="Elige el producto"
           value={producto}
           onChange={(e) => setProducto(e.target.value)}
+          hint="Solo los que se miden en metros cúbicos: es lo que sale a granel de la planta."
           opciones={listaProductos.map((p) => ({
             valor: String(p.id),
-            etiqueta: p.nombre,
+            etiqueta: `${p.codigo} · ${p.nombre}`,
           }))}
         />
 
@@ -352,16 +405,27 @@ function ElCamion({
   valor: string
   onCambio: (id: string) => void
 }) {
+  /*
+    Pasados doce, buscable y no un desplegable normal.
+
+    Lo pidió el usuario pensando en el día que haya muchos: una lista de
+    cincuenta placas se recorre con la vista y eso es justo lo que la rejilla
+    venía a evitar. El buscable es el mismo que el sistema usa para el catálogo
+    de trescientos artículos —se escriben tres letras de la placa y aparece— y
+    enseña el transportista en su columna, que es como se distinguen dos
+    camiones parecidos.
+  */
   if (camiones.length > CABEN_EN_REJILLA) {
     return (
-      <Select
+      <SelectBuscable
         label="Camión"
         vacio="Elige el camión"
-        value={valor}
-        onChange={(e) => onCambio(e.target.value)}
+        valor={valor}
+        onCambio={onCambio}
         opciones={camiones.map((c) => ({
           valor: String(c.id),
-          etiqueta: c.transportista ? `${c.placa} · ${c.transportista}` : c.placa,
+          codigo: c.placa,
+          nombre: c.transportista ?? '',
         }))}
       />
     )

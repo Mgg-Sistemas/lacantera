@@ -5,9 +5,12 @@ import {
   Building2,
   ClipboardList,
   FileText,
+  Gauge,
   HandCoins,
+  History,
   PackageCheck,
   Plus,
+  ShoppingBag,
   Upload,
   User,
 } from 'lucide-react'
@@ -274,6 +277,37 @@ const QUE_HACER: GrupoDeAcciones[] = [
       },
     ],
   },
+  /*
+    LA COMPRA QUE NO PASA POR LA CADENA.
+
+    Faltaba entera en este tablero, y son cuarenta y cinco compras. Se ofrecía
+    en el menú y no aquí, que es donde alguien va a buscar por dónde se empieza.
+
+    Va en su propio grupo y no dentro de la cadena a propósito: meterla entre
+    «pedir» y «cotizar» diría que es un paso más del mismo camino, y es lo
+    contrario —es el camino corto, para lo que se paga en el acto—.
+  */
+  {
+    titulo: 'La compra que no pasa por la cadena',
+    detalle: 'Para lo que se paga en el acto y no espera aprobación.',
+    acciones: [
+      {
+        titulo: 'Registrar una compra directa',
+        detalle:
+          'Se paga y se recibe sin pedir ni cotizar. Es para el repuesto que hace falta hoy, con la factura en la mano.',
+        icono: ShoppingBag,
+        a: '/app/compras/directa',
+        exige: 'ESCRITURA',
+      },
+      {
+        titulo: 'Historial de directas',
+        detalle:
+          'En qué quedó cada una: qué se pagó, qué falta por llegar y cuánto lleva esperando.',
+        icono: History,
+        a: '/app/compras/directa/historial',
+      },
+    ],
+  },
   {
     titulo: 'Alrededor de la compra',
     acciones: [
@@ -296,6 +330,12 @@ const QUE_HACER: GrupoDeAcciones[] = [
         detalle: 'El papel que respalda cada compra, guardado donde se pueda encontrar.',
         icono: FileText,
         a: '/app/compras/facturas',
+      },
+      {
+        titulo: 'Gasto por unidad',
+        detalle: 'En qué se va el dinero, repartido por lo que se compró y para qué.',
+        icono: Gauge,
+        a: '/app/compras/gasto',
       },
       /*
         AQUÍ ESTABA EL LIBRO DE COMPRAS, y se quita en vez de reapuntarlo.

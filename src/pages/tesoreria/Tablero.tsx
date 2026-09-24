@@ -1,5 +1,13 @@
 import { Link } from 'react-router'
-import { ArrowLeftRight, BookOpen, HandCoins, Landmark, Wallet } from 'lucide-react'
+import {
+  ArrowLeftRight,
+  BarChart3,
+  BookOpen,
+  HandCoins,
+  Landmark,
+  Scale,
+  Wallet,
+} from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -81,6 +89,24 @@ export function TableroTesoreria() {
       detalle: 'Todo lo que entró y salió, en orden. No se edita: se corrige con un asiento.',
       icono: BookOpen,
       ruta: '/app/tesoreria/movimientos',
+    },
+    /*
+      Las dos que faltaban. El Libro Mayor llegó aquí el 24/09/2026 —juntando el
+      libro de compras con el de ventas— y se le hizo sitio en el menú y en las
+      rutas, pero no en este tablero, que es donde alguien va a buscarlo.
+    */
+    {
+      titulo: 'Libro Mayor',
+      detalle:
+        'Los dos libros fiscales juntos: lo que se compró y lo que se vendió, con su IVA. Es lo que pide el SENIAT.',
+      icono: Scale,
+      ruta: '/app/tesoreria/libro-mayor',
+    },
+    {
+      titulo: 'Reportes',
+      detalle: 'Los cortes de tesorería para mirar un período entero, no el día.',
+      icono: BarChart3,
+      ruta: '/app/tesoreria/reportes',
     },
   ]
 

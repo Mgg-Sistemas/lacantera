@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { Truck } from 'lucide-react'
+import { Map, Route, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -28,9 +28,15 @@ import { enteros } from '@/lib/formato'
  * el tablero no se enteró. Es justo lo que un tablero no puede permitirse,
  * porque es lo primero que se ve al entrar al módulo.
  *
- * LO QUE HAY ABIERTO HOY ES UNA SOLA PANTALLA: salidas de planta. Así que el
- * tablero habla de ella y dice en una línea qué falta y cuándo vuelve. Un
- * módulo que está arrancando se ve mejor diciéndolo que enseñando tres ceros.
+ * LO QUE HAY ABIERTO SON TRES PANTALLAS: salidas de planta, viajes de camiones
+ * y plantas y rutas. Las tres se ofrecen aquí.
+ *
+ * Y CONVIENE DECIR QUE EL PRIMER INTENTO SE QUEDÓ CORTO. Al rehacerlo esa misma
+ * mañana se miró qué estaba `fueraDelMvp` y se dejó solo salidas de planta,
+ * olvidando las otras dos, que nunca estuvieron en obra. Lo vio el usuario a la
+ * primera: el menú ofrecía cuatro entradas y el tablero una. Un tablero que
+ * ofrece menos que el menú de al lado es peor que no tenerlo, porque enseña que
+ * el módulo tiene menos de lo que tiene.
  *
  * Y CONVIENE SABERLO AL MIRAR LA CIFRA: `salidas_planta` no tiene ni una fila
  * desde que existe. El cero de aquí es verdad y no un fallo. Está preguntado a
@@ -48,6 +54,13 @@ export function TableroExplotacion() {
   const vivas = (salidas ?? []).filter((s) => s.estado === 'REGISTRADO')
   const m3 = vivas.reduce((s, x) => s + Number(x.m3 ?? 0), 0)
 
+  /*
+    En el orden en que se usan, no en el que se explican.
+
+    Las salidas se anotan todos los días —veinte o treinta veces—, los viajes se
+    revisan al cuadrar el acarreo, y las plantas y rutas se tocan cuando abre o
+    cierra un sitio o cambia una tarifa. Lo que más se usa, primero.
+  */
   const pasos: Accion[] = [
     {
       titulo: 'Anotar una salida',
@@ -58,13 +71,27 @@ export function TableroExplotacion() {
       cuenta: vivas.length,
       exigeEscritura: true,
     },
+    {
+      titulo: 'Viajes de camiones',
+      detalle:
+        'El acarreo: qué camión movió qué, de dónde a dónde, y cuánto se le paga al transportista por ello.',
+      icono: Route,
+      ruta: '/app/explotacion/viajes',
+    },
+    {
+      titulo: 'Plantas y rutas',
+      detalle:
+        'Las minas, plantas y bases, quién las opera y las rutas con su tarifa. Se toca cuando abre o cierra un sitio.',
+      icono: Map,
+      ruta: '/app/explotacion/plantas',
+    },
   ]
 
   return (
     <>
       <PageHeader
         title="Explotación"
-        description="Lo que sale de la planta, camión por camión. El resto del módulo está en obra."
+        description="El acarreo y lo que sale de la planta, camión por camión. Los frentes y el parte de turno siguen en obra."
         actions={
           puedeEscribir ? (
             <Link to="/app/explotacion/salidas">
@@ -106,9 +133,12 @@ export function TableroExplotacion() {
 
             <PrimeraVez>
               <p>
-                De este módulo hoy está abierta <strong>una sola pantalla</strong>: las salidas de
-                planta. Se anota cada camión que sale con producto, y los metros cúbicos se llenan
-                solos con la carga útil del camión.
+                Tres pantallas abiertas y cada una contesta una pregunta distinta.{' '}
+                <strong>Salidas de planta</strong> es lo que sale con producto, camión por camión —y
+                los metros cúbicos se llenan solos con la carga útil—.{' '}
+                <strong>Viajes de camiones</strong> es el acarreo y lo que se le paga al
+                transportista. <strong>Plantas y rutas</strong> es dónde están los sitios y qué
+                tarifa tiene cada ruta.
               </p>
               <p className="text-ink/50">
                 Frentes y bancos, voladuras y el parte de turno están en obra y vuelven en la fase
