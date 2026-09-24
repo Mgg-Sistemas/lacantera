@@ -102,6 +102,28 @@ const EN_PALABRAS: Record<string, string> = {
   compras_bitacora: 'una anotación de compras',
 }
 
+/*
+  EL MOTIVO DEL FALLO, EN CASTELLANO.
+
+  La base los guarda como una lista cerrada en mayúsculas —es lo que permite
+  contarlos y compararlos entre meses—, pero SIN_DESTINATARIO no es algo que
+  nadie deba leer en una pantalla.
+
+  Lo que no esté en el mapa se enseña tal cual antes que esconderlo: un motivo
+  nuevo que aparezca sin traducir se ve feo y se arregla; uno que desaparezca no
+  se ve nunca.
+*/
+const MOTIVOS_DE_ENVIO: Record<string, string> = {
+  SIN_DESTINATARIO: 'no había a quién mandarlo',
+  RECHAZADO: 'el servicio de correo lo rechazó',
+  TOPE_ALCANZADO: 'se alcanzó el tope de correos por hora',
+  SIN_CONFIGURAR: 'el correo todavía no está configurado',
+  ERROR_DE_RED: 'no se pudo contactar al servicio',
+  DESCONOCIDO: 'por un motivo que no se pudo clasificar',
+}
+
+const enPalabras = (motivo: string) => MOTIVOS_DE_ENVIO[motivo] ?? motivo
+
 function frase(m: Movimiento): string {
   if (m.operacion === 'ACCESO') return 'Entró al sistema'
   if (m.operacion === 'CLAVE') return 'Cambió una clave'
@@ -553,6 +575,35 @@ export function Auditoria() {
                       ) : null}
                     </td>
                     <td className="text-ink/70 max-w-[260px] px-3 py-3">
+                      {/*
+                        SI EL RESPALDO SALIÓ POR CORREO, EN EL MISMO RENGLÓN.
+
+                        Lo pidió el usuario así —«que lo diga el renglón»— y por
+                        eso no es una fila aparte: el renglón de auditoría no se
+                        puede completar después, así que el dato vive en la
+                        tabla de correos y la vista los junta.
+
+                        Nulo quiere decir que esta fila NO ES UN RESPALDO, que
+                        son el 99,95% de la auditoría. Ahí no se pinta nada.
+                      */}
+                      {m.envio_correo ? (
+                        <span
+                          className={`mb-1 block text-2xs font-medium tracking-wide uppercase ${
+                            m.envio_correo === 'ENVIADO'
+                              ? 'text-success'
+                              : m.envio_correo === 'NO ENVIADO'
+                                ? 'text-warning'
+                                : 'text-ink/40'
+                          }`}
+                        >
+                          {m.envio_correo === 'ENVIADO'
+                            ? 'Mandado por correo'
+                            : m.envio_correo === 'NO ENVIADO'
+                              ? `No se pudo mandar${m.envio_motivo ? ` · ${enPalabras(m.envio_motivo)}` : ''}`
+                              : 'Sin constancia de envío'}
+                        </span>
+                      ) : null}
+
                       {m.etiqueta ? (
                         <>
                           <span className="line-clamp-2">{m.etiqueta}</span>

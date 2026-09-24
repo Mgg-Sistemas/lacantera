@@ -1,0 +1,322 @@
+/*
+  EL ÚNICO SITIO POR DONDE SALE UN CORREO
+
+  Adaptado del módulo compartido de Golden Touch, que ya resolvió esto y aprendió
+  lo caro. Su comentario de cabecera explica por qué no basta con un `fetch`:
+
+    «Las seis funciones enviar-* repetían el mismo fetch, cada una con su propia
+    (y laxa) validación. Eso las volvía un relay de phishing: cualquier usuario
+    activo podía mandar, desde el remitente verificado de la empresa (SPF/DKIM
+    válidos), cualquier adjunto a cualquier lista de correos.»
+
+  Ese es el riesgo de verdad. Un servicio de correo con el dominio de la empresa
+  verificado manda mensajes que pasan todos los filtros: si cualquiera puede
+  decidir el destinatario y el adjunto, lo que se ha construido es una máquina de
+  suplantar a la empresa con su propia firma.
+
+  QUÉ CAMBIA RESPECTO AL ORIGINAL
+
+  · Resend en vez de Brevo: otro endpoint, otra cabecera y otra forma del cuerpo.
+  · El modelo de permisos de esta casa —`private.tiene_permiso`— en vez del
+    `role` de Golden Touch.
+  · El adjunto es `.sql.gz` y no `.sql.txt`: el respaldo se comprime porque a
+    16,5 MB en crudo son 22 en base64, y en un mes deja de caber en los 40 MB
+    que admite Resend. Ver `docs/carriles/evaluaciones/`.
+  · Castellano de esta casa, no de la otra.
+
+  Secretos: RESEND_API_KEY · RESEND_FROM_EMAIL · RESEND_FROM_NAME
+*/
+
+export const MAX_DESTINATARIOS = 10
+export const MAX_ASUNTO = 150
+/** 25 MB en base64 ≈ 33 MB de payload, con holgura bajo los 40 de Resend. */
+export const MAX_ADJUNTO_BYTES = 25 * 1024 * 1024
+export const MAX_CORREOS_POR_HORA = 30
+
+const PREFIJO_ASUNTO = '[La Cantera] '
+const REMITENTE_POR_DEFECTO = 'Sistema · Minería Internacional TS'
+const RESEND_URL = 'https://api.resend.com/emails'
+
+/*
+  Un correo y solo uno. Sin espacios, comas ni punto y coma: es lo que impide
+  que «a@b.com,d@e.com» entre como si fuera una dirección y acabe siendo dos.
+*/
+const RX_CORREO = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/
+const RX_NOMBRE_PDF = /^[\w.\- ]{1,120}\.pdf$/
+const RX_NOMBRE_RESPALDO = /^[\w.\- ]{1,120}\.sql\.gz$/
+const RX_BASE64 = /^[A-Za-z0-9+/]*={0,2}$/
+
+export function escaparHtml(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/** Error con mensaje pensado para enseñárselo a quien lo provocó. */
+export class ErrorCorreo extends Error {
+  constructor(
+    message: string,
+    public status = 400,
+  ) {
+    super(message)
+  }
+}
+
+export function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  })
+}
+
+export function validarDestinatarios(entrada: unknown): string[] {
+  const crudos = Array.isArray(entrada) ? entrada : entrada == null || entrada === '' ? [] : [entrada]
+  const lista: string[] = []
+  for (const e of crudos) {
+    if (typeof e !== 'string') throw new ErrorCorreo('Hay un destinatario que no es un correo.')
+    const limpio = e.trim().toLowerCase()
+    if (!limpio) continue
+    if (limpio.length > 254 || !RX_CORREO.test(limpio)) {
+      throw new ErrorCorreo('Hay un correo de destino que no es válido.')
+    }
+    if (!lista.includes(limpio)) lista.push(limpio)
+  }
+  if (lista.length > MAX_DESTINATARIOS) {
+    throw new ErrorCorreo(`No se puede mandar a más de ${MAX_DESTINATARIOS} correos a la vez.`)
+  }
+  return lista
+}
+
+/*
+  El asunto, en una sola línea.
+
+  Los saltos de línea se quitan y no es cosmético: un asunto con un `\n` dentro
+  permite inyectar cabeceras en algunos servidores de correo, y ahí se acaba
+  mandando copia oculta a quien no debía.
+*/
+export function normalizarAsunto(asunto: string): string {
+  let s = String(asunto ?? '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+  if (!s) s = 'Aviso del sistema'
+  if (!s.startsWith(PREFIJO_ASUNTO.trim())) s = PREFIJO_ASUNTO + s
+  return s.length > MAX_ASUNTO ? `${s.slice(0, MAX_ASUNTO - 1)}…` : s
+}
+
+/**
+ * Sanea el nombre del adjunto y exige una extensión de las conocidas.
+ *
+ * El `.sql.gz` solo se admite si quien llama lo habilita: es el respaldo de la
+ * base, y no debe poder colarse desde una función que manda un PDF.
+ */
+export function normalizarNombreAdjunto(nombre: string, permitirRespaldo: boolean): string {
+  const limpio = String(nombre ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^\w.\- ]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^[.\- ]+/, '')
+    .trim()
+  if (RX_NOMBRE_PDF.test(limpio)) return limpio
+  if (permitirRespaldo && RX_NOMBRE_RESPALDO.test(limpio)) return limpio
+  throw new ErrorCorreo('Ese tipo de adjunto no se puede mandar.')
+}
+
+/**
+ * Comprueba el base64 antes de mandarlo: forma, tamaño y que sea lo que dice.
+ *
+ * El tamaño se calcula sin decodificar. Decodificar 25 MB para medirlos es
+ * gastar la memoria de la función en averiguar si cabe.
+ */
+function validarContenido(base64: string, esPdf: boolean, esGz: boolean): void {
+  const b64 = String(base64 ?? '').replace(/\s+/g, '')
+  if (!b64 || b64.length % 4 !== 0 || !RX_BASE64.test(b64)) {
+    throw new ErrorCorreo('El adjunto llegó mal formado.')
+  }
+  const bytes = (b64.length / 4) * 3 - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0)
+  if (bytes > MAX_ADJUNTO_BYTES) {
+    throw new ErrorCorreo(
+      `El adjunto pesa más de ${Math.round(MAX_ADJUNTO_BYTES / 1048576)} MB y no se puede mandar por correo.`,
+      413,
+    )
+  }
+
+  let cabecera: string
+  try {
+    cabecera = atob(b64.slice(0, 8))
+  } catch {
+    throw new ErrorCorreo('El adjunto llegó mal formado.')
+  }
+  // Un PDF empieza por %PDF y un gzip por 0x1f 0x8b. Comprobarlo cuesta nada y
+  // evita que el nombre diga una cosa y el contenido sea otra.
+  if (esPdf && !cabecera.startsWith('%PDF')) {
+    throw new ErrorCorreo('Ese archivo no es un PDF.')
+  }
+  if (esGz && !(cabecera.charCodeAt(0) === 0x1f && cabecera.charCodeAt(1) === 0x8b)) {
+    throw new ErrorCorreo('Ese archivo no es un comprimido válido.')
+  }
+}
+
+/** El cuerpo del correo, con la marca de la casa. */
+export function plantillaHtml(titulo: string, cuerpoHtml: string): string {
+  return `
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#1f1a17">
+      <h2 style="border-bottom:3px solid #CC3F00;padding-bottom:8px;margin-top:0">${escaparHtml(titulo)}</h2>
+      ${cuerpoHtml}
+      <p style="color:#8a8079;font-size:12px;margin-top:32px;border-top:1px solid #e3ddd7;padding-top:12px">
+        MINERÍA INTERNACIONAL TS, C.A. · Sistema administrativo · Este correo lo generó el sistema
+      </p>
+    </div>`
+}
+
+export type Adjunto = { nombre: string; base64: string }
+
+export type OpcionesCorreo = {
+  /** Cómo se llama la función que manda. Queda escrito en el registro. */
+  funcion: string
+  /** Para contar cuántos lleva mandados esta persona en la última hora. */
+  usuarioId: string
+  /** Cliente con la llave de servicio, para leer y escribir el registro. */
+  admin: {
+    from: (tabla: string) => any
+  }
+  to: string[]
+  subject: string
+  html: string
+  adjunto?: Adjunto
+  /** Habilita el `.sql.gz`. Solo la función del respaldo lo enciende. */
+  permitirRespaldo?: boolean
+}
+
+export type ResultadoCorreo = { destinatarios: string[]; id: string | null }
+
+/**
+ * Manda el correo. Es el único sitio del sistema que habla con Resend.
+ *
+ * Valida, cuenta, manda y registra — en ese orden. Si algo falla, lo que sale
+ * hacia quien llamó es un mensaje genérico; el detalle queda en el registro de
+ * la función, sin destinatarios.
+ */
+export async function enviarCorreo(o: OpcionesCorreo): Promise<ResultadoCorreo> {
+  const destinatarios = validarDestinatarios(o.to)
+  if (!destinatarios.length) throw new ErrorCorreo('Hace falta al menos un correo de destino.')
+  const subject = normalizarAsunto(o.subject)
+
+  let attachments: { filename: string; content: string }[] | undefined
+  if (o.adjunto) {
+    const nombre = normalizarNombreAdjunto(o.adjunto.nombre, Boolean(o.permitirRespaldo))
+    const content = String(o.adjunto.base64 ?? '').replace(/\s+/g, '')
+    validarContenido(content, nombre.endsWith('.pdf'), nombre.endsWith('.gz'))
+    attachments = [{ filename: nombre, content }]
+  }
+
+  /*
+    EL TOPE POR PERSONA, QUE ES LO QUE CONVIERTE UN FALLO EN UN INCIDENTE.
+
+    Sin él, una llave filtrada o un bucle mal escrito mandan miles de correos
+    firmados por la empresa antes de que nadie lo note, y lo que se pierde no es
+    la cuota: es la reputación del dominio, que tarda meses en volver.
+  */
+  const desde = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+  const { count, error: errorCuenta } = await o.admin
+    .from('correos_enviados')
+    .select('id', { count: 'exact', head: true })
+    .eq('usuario_id', o.usuarioId)
+    .gte('enviado_en', desde)
+  if (errorCuenta) {
+    console.error(`[${o.funcion}] no se pudo leer correos_enviados:`, errorCuenta.message)
+    throw new ErrorCorreo('No se pudo mandar el correo. Vuelve a intentarlo en un rato.', 500)
+  }
+  if ((count ?? 0) >= MAX_CORREOS_POR_HORA) {
+    throw new ErrorCorreo(
+      `Llegaste al límite de ${MAX_CORREOS_POR_HORA} correos por hora. Prueba más tarde.`,
+      429,
+    )
+  }
+
+  const llave = Deno.env.get('RESEND_API_KEY')
+  const remitente = Deno.env.get('RESEND_FROM_EMAIL')
+  const nombreRemitente = Deno.env.get('RESEND_FROM_NAME') || REMITENTE_POR_DEFECTO
+  if (!llave || !remitente) {
+    console.error(`[${o.funcion}] faltan los secretos de Resend`)
+    throw new ErrorCorreo('El envío de correo todavía no está configurado.', 500)
+  }
+
+  let resp: Response
+  try {
+    resp = await fetch(RESEND_URL, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${llave}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: `${nombreRemitente} <${remitente}>`,
+        to: destinatarios,
+        subject,
+        html: o.html,
+        ...(attachments ? { attachments } : {}),
+      }),
+      // Resend tarda poco; treinta segundos es de sobra incluso con adjunto
+      // grande, y sin tope la función se queda colgada hasta que la maten.
+      signal: AbortSignal.timeout(30_000),
+    })
+  } catch (e) {
+    console.error(
+      `[${o.funcion}] no se pudo contactar a Resend (${destinatarios.length} destinatario/s):`,
+      e instanceof Error ? e.name : String(e),
+    )
+    throw new ErrorCorreo('No se pudo contactar al servicio de correo. Vuelve a intentarlo.', 502)
+  }
+
+  const texto = await resp.text()
+  let cuerpo: { id?: string; message?: string; name?: string } | null = null
+  try {
+    cuerpo = texto ? JSON.parse(texto) : null
+  } catch {
+    /* Resend contestó algo que no era JSON */
+  }
+  if (!resp.ok) {
+    console.error(
+      `[${o.funcion}] Resend HTTP ${resp.status} ${cuerpo?.name ?? '-'}:`,
+      (cuerpo?.message ?? texto).slice(0, 300),
+    )
+    throw new ErrorCorreo('El servicio de correo rechazó el envío.', 502)
+  }
+
+  const { error: errorRegistro } = await o.admin.from('correos_enviados').insert({
+    usuario_id: o.usuarioId,
+    funcion: o.funcion,
+    destinatarios: destinatarios.length,
+    asunto: subject,
+    mensaje_id: cuerpo?.id ?? null,
+  })
+  // Que no se pueda anotar no deshace un correo ya mandado: se avisa y sigue.
+  if (errorRegistro) {
+    console.error(`[${o.funcion}] no se pudo registrar el envío:`, errorRegistro.message)
+  }
+
+  return { destinatarios, id: cuerpo?.id ?? null }
+}
+
+/** Convierte cualquier error en una respuesta que se puede enseñar. */
+export function respuestaDeError(funcion: string, e: unknown): Response {
+  if (e instanceof ErrorCorreo) return json({ error: e.message }, e.status)
+  console.error(`[${funcion}] error inesperado:`, e instanceof Error ? e.message : String(e))
+  return json({ error: 'No se pudo mandar el correo.' }, 500)
+}
+
+/** Lee el cuerpo JSON de la petición, o falla con un mensaje claro. */
+export async function leerJson<T>(req: Request): Promise<T> {
+  try {
+    const b = await req.json()
+    if (!b || typeof b !== 'object') throw new Error('no es un objeto')
+    return b as T
+  } catch {
+    throw new ErrorCorreo('La petición no traía un cuerpo JSON válido.')
+  }
+}

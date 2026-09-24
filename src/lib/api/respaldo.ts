@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
 import { rpc } from './rpc'
 
 /**
@@ -65,7 +66,124 @@ export function useDescargarRespaldo() {
       enlace.remove()
       setTimeout(() => URL.revokeObjectURL(url), 60_000)
 
-      return { bytes: blob.size, nombre: enlace.download }
+      /*
+        Y ADEMÁS POR CORREO, PERO SIN JUGARSE LA DESCARGA.
+
+        Lo pidió la líder: que el respaldo se baje al navegador Y llegue al
+        correo. El orden importa — primero se baja, y solo entonces se intenta
+        mandar. Si el correo falla, la persona ya tiene su archivo.
+
+        Por eso el fallo no se propaga: se devuelve dicho, para que la pantalla
+        lo cuente, y no como excepción, que tiraría abajo una descarga que salió
+        bien.
+      */
+      let correo: { enviado: boolean; fallo?: string }
+      try {
+        await mandarPorCorreo(sql, enlace.download)
+        correo = { enviado: true }
+        await anotar(true, null)
+      } catch (e) {
+        const fallo = e instanceof Error ? e.message : String(e)
+        correo = { enviado: false, fallo }
+        await anotar(false, motivoDelFallo(fallo))
+      }
+
+      return { bytes: blob.size, nombre: enlace.download, correo }
     },
   })
+}
+
+/*
+  QUE LA AUDITORÍA DIGA SI SALIÓ.
+
+  El renglón de auditoría nace al armar el respaldo, antes de que se sepa nada
+  del correo — y no puede completarse después: la tabla tiene un disparador que
+  prohíbe modificarla, y el mensaje de ese disparador dice por qué. «El registro
+  de auditoría no se modifica ni se borra. Es lo único que lo hace valer.»
+
+  Así que el resultado se anota aparte, en la tabla de correos, enlazado al
+  renglón. La vista los junta y en pantalla sigue siendo una sola línea, que es
+  lo que pidió el usuario.
+
+  Anotar no puede tumbar nada: si esto falla, el respaldo ya está descargado y
+  el correo ya salió o ya no. Lo único que se pierde es la constancia, y eso se
+  dice en el registro del navegador en vez de reventarle la pantalla a nadie.
+*/
+async function anotar(enviado: boolean, motivo: string | null): Promise<void> {
+  try {
+    await rpc('anotar_envio_del_respaldo', {
+      p_enviado: enviado,
+      p_mensaje_id: null,
+      p_motivo: motivo,
+    })
+  } catch (e) {
+    console.error('No se pudo anotar el envío del respaldo:', e)
+  }
+}
+
+/*
+  DEL FALLO AL MOTIVO, QUE ES UNA LISTA CERRADA.
+
+  La base solo admite estos seis y lo hace cumplir con un CHECK. Es a propósito:
+  el texto crudo del servicio de correo no debe llegar nunca a una pantalla de
+  auditoría —puede traer direcciones, cabeceras o el detalle de por qué se
+  rechazó—, y un motivo de lista se puede contar y comparar entre meses, que un
+  texto libre no.
+
+  Lo que no se reconoce es DESCONOCIDO y no se fuerza a parecerse a otro: un
+  motivo mal clasificado es peor que uno sin clasificar.
+*/
+function motivoDelFallo(fallo: string): string {
+  const t = fallo.toLowerCase()
+  if (t.includes('no está configurado') || t.includes('configurad')) return 'SIN_CONFIGURAR'
+  if (t.includes('límite') || t.includes('429')) return 'TOPE_ALCANZADO'
+  if (t.includes('rechazó') || t.includes('502')) return 'RECHAZADO'
+  if (t.includes('destino') || t.includes('destinatario')) return 'SIN_DESTINATARIO'
+  if (t.includes('fetch') || t.includes('network') || t.includes('contactar')) return 'ERROR_DE_RED'
+  return 'DESCONOCIDO'
+}
+
+/*
+  EL RESPALDO COMPRIMIDO, CAMINO DEL CORREO.
+
+  Se comprime aquí y no en el servidor por una razón medida: son 16,5 MB, y
+  subirlos desde la cantera a unos 300 kB/s es casi un minuto de espera por algo
+  que el navegador ya tiene en la mano. Comprimido son uno o dos megas.
+
+  Y hace falta comprimir de todos modos: en base64 el crudo son 22 MB, Resend
+  admite 40, y `auditoria` crece 509 filas al día — la cuenta da unos treinta
+  días hasta que deje de caber. Ver `docs/carriles/evaluaciones/`.
+
+  `CompressionStream` es nativo del navegador desde 2023. No hay librería que
+  instalar ni que mantener.
+*/
+async function mandarPorCorreo(sql: string, nombreSql: string): Promise<void> {
+  const crudo = new Blob([sql]).stream()
+  const comprimido = crudo.pipeThrough(new CompressionStream('gzip'))
+  const bytes = new Uint8Array(await new Response(comprimido).arrayBuffer())
+
+  /*
+    A base64 por trozos.
+
+    `btoa(String.fromCharCode(...bytes))` es lo que se escribe primero y revienta
+    con archivos grandes: los argumentos de una llamada tienen tope y un mega de
+    bytes lo pasa. Se hace de 32 kB en 32 kB.
+  */
+  let binario = ''
+  const TROZO = 32768
+  for (let i = 0; i < bytes.length; i += TROZO) {
+    binario += String.fromCharCode(...bytes.subarray(i, i + TROZO))
+  }
+
+  const { data: sesion } = await supabase.auth.getSession()
+  const token = sesion.session?.access_token
+  if (!token) throw new Error('La sesión caducó: vuelve a entrar para que se mande el correo.')
+
+  const { error } = await supabase.functions.invoke('respaldo-por-correo', {
+    body: {
+      archivo: btoa(binario),
+      nombre: `${nombreSql}.gz`,
+    },
+  })
+  if (error) throw error
 }
