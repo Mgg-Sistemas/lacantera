@@ -5281,7 +5281,17 @@ Al lado, la advertencia de cómo está hecha esa suma: **Convertido con las tasa
 
 Si falta la tasa del día y hay cuentas en bolívares, la cifra se sustituye por **—** y el texto pasa a ser **Falta la tasa del día para convertir los bolívares. Regístrala en Sistema › Tasas de cambio; mientras tanto, el saldo de cada cuenta sí es exacto.** El sistema prefiere no dar el total antes que darlo mal.
 
-Debajo, una tarjeta por cuenta. Cada una muestra el nombre, debajo el número de cuenta o el titular, la etiqueta de moneda arriba a la derecha — **VES** o **USD** —, el rótulo **Saldo** con el importe en la moneda de esa cuenta, en rojo si es negativo, y una línea final: **Sin movimientos todavía**, o el número de movimientos y la fecha del último. Las cuentas inactivas se ven atenuadas.
+Debajo, una tarjeta por cuenta. Cada una muestra el nombre, debajo el número de cuenta o el titular, la etiqueta de moneda arriba a la derecha — **VES** o **USD** —, el rótulo **Saldo** con el importe en la moneda de esa cuenta, en rojo si es negativo, y una línea final: **Sin movimientos todavía**, o el número de movimientos y la fecha del último. Las cuentas archivadas van en un bloque aparte al final, **Archivadas (n)**, atenuadas y con la etiqueta **Archivada**.
+
+**Quién ve las cuentas.** Desde el 24/09/2026 las ven, además de tesorería y compras, quien tiene lectura en Facturación y quien tiene escritura en Nómina: el cobro de una factura pide en qué cuenta entra el dinero, y el pago de la nómina de cuál sale. Antes esos selectores les salían vacíos. Crear, editar, mover dinero y archivar sigue siendo de tesorería.
+
+#### Editar y archivar una cuenta
+
+**Editar** abre los mismos campos con los que se creó. Se puede cambiar cualquiera, la moneda incluida mientras la cuenta no tenga movimientos.
+
+**Las cuentas no se borran: se archivan.** Una cuenta con movimientos es la contraparte de cada línea del libro, de cada cobro y de cada pago; borrarla dejaría asientos apuntando a nada. Pulsa **Archivar** en la tarjeta y confirma. La cuenta deja de salir en los selectores y en el disponible, pasa al bloque de archivadas, y el libro conserva todo. **Desarchivar**, en la misma tarjeta, la devuelve.
+
+**Con saldo no se archiva.** El disponible suma solo cuentas activas, y archivar una con saldo haría desaparecer ese dinero del total sin que nadie lo moviera. El botón sale apagado y dice por qué; primero se traslada el saldo a otra cuenta o se ajusta a cero. Archivar y desarchivar piden control total sobre Tesorería.
 
 **No hay buscador ni filtros en esta pantalla.**
 

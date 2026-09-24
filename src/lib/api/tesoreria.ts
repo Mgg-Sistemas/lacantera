@@ -351,6 +351,17 @@ export function useGuardarCuenta() {
   )
 }
 
+/**
+ * Archiva o desarchiva una cuenta. Nada se borra: una cuenta con movimientos
+ * es la contraparte de cada línea del libro. Con saldo no se archiva; la base
+ * lo dice con la cifra.
+ */
+export function useArchivarCuenta() {
+  return useAccionTesoreria((a: { id: number; archivar: boolean }) =>
+    rpc('archivar_cuenta', { p_id: a.id, p_archivar: a.archivar }),
+  )
+}
+
 export function useRegistrarApertura() {
   return useAccionTesoreria((a: { cuenta_id: number; monto: number; fecha?: string; nota?: string }) =>
     rpc<number>('registrar_apertura', {
