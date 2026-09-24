@@ -35,6 +35,11 @@
   es disparar un envío al destinatario ya configurado, que es una dirección de la
   empresa. Si se fuera la llave de servicio, se iría la base entera.
 
+  Y la llamada del cron trae además una cabecera `Authorization` con la llave
+  ANÓNIMA del proyecto. Eso no autoriza nada: es solo para que el portero de
+  Supabase deje pasar, porque esta función exige JWT. Quien autoriza es el
+  secreto, que se comprueba abajo.
+
   Y contesta **202 antes de hacer el trabajo**, a propósito. La extensión `http`
   de Postgres es SÍNCRONA: mientras esto no responda, el cron mantiene ocupado un
   worker de la base. Si se respondiera al terminar, el cron esperaría a que se
@@ -103,46 +108,29 @@ function comoElSistema() {
 
 const cifra = (n: number) => new Intl.NumberFormat('es-VE').format(n)
 
-/**
- * Compara dos secretos sin delatar cuánto se acertó.
- *
- * Un `===` sobre cadenas para en la primera letra distinta, y ese tiempo se
- * puede medir: probando letra por letra se reconstruye el secreto entero. Esto
- * recorre siempre lo mismo pase lo que pase.
- */
-function mismoSecreto(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-  let diferencia = 0
-  for (let i = 0; i < a.length; i++) diferencia |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return diferencia === 0
-}
+/*
+  QUIÉN COMPRUEBA EL SECRETO DEL CRON, Y POR QUÉ NO SE LEE AQUÍ.
 
-/** El nombre del secreto compartido, tal como lo guarda el vault. */
-const SECRETO_CRON = 'respaldo_cron_secreto'
+  Antes esto leía `vault.decrypted_secrets` y comparaba a mano. No funcionaba, y
+  no por configuración: **PostgREST no expone el esquema `vault`**, igual que no
+  expone `private`. Esa vía no podía funcionar nunca, y el fallo no se veía
+  porque el portero de Supabase cortaba antes —la llamada del cron iba sin
+  cabecera `Authorization`— así que el 401 tapaba al 500 que venía detrás.
 
-/**
- * Lee el secreto del vault con la llave de servicio.
- *
- * `vault.decrypted_secrets` solo la puede leer `service_role`, así que esto no
- * se alcanza desde el navegador por mucho que se intente.
- */
-async function secretoDelVault(
-  sistema: NonNullable<ReturnType<typeof comoElSistema>>,
-): Promise<string | null> {
-  const { data, error } = await sistema
-    .schema('vault')
-    .from('decrypted_secrets')
-    .select('decrypted_secret')
-    .eq('name', SECRETO_CRON)
-    .maybeSingle()
-  if (error) {
-    console.error(`[${FUNCION}] no se pudo leer el vault:`, error.message)
-    return null
-  }
-  return data?.decrypted_secret ?? null
-}
+  Se arregló el portero y apareció este. Tres eslabones en fila, cada uno
+  escondiendo al siguiente.
 
-/** El `.sql` comprimido y en base64, igual que lo hace el navegador. */
+  AHORA PREGUNTA EN VEZ DE LEER. `respaldo_cron_autorizado` recibe el secreto y
+  contesta sí o no, y eso es mejor que lo que había aunque la lectura hubiera
+  funcionado: el secreto del proyecto ya no pasa por el runtime de esta función
+  en cada ejecución. Compara por digest, así que no delata ni el largo ni cuánto
+  se acertó, y solo `service_role` puede llamarla — un usuario con sesión recibe
+  42501 y no le sirve de oráculo para adivinarla a fuerza de intentos.
+
+  Por eso también se fue `mismoSecreto` de aquí: la comparación en tiempo
+  constante sigue existiendo, pero donde vive el secreto.
+*/
+
 /*
   UN ZIP DE UN SOLO ARCHIVO.
 
@@ -325,17 +313,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
         throw new ErrorCorreo('El envío programado todavía no está configurado.', 500)
       }
       /*
-        El secreto se lee del vault de la base, no de una variable de esta
-        función. Así hay UNA copia y no dos: dos copias de un secreto son dos
-        sitios donde caduca distinto, y el día que alguien rote una y no la otra
-        el cron deja de funcionar sin que nadie sepa por qué.
+        Se pregunta, no se lee. El secreto sigue viviendo en el vault y esta
+        función nunca lo tiene delante: manda el que recibió y la base contesta.
       */
-      const esperado = await secretoDelVault(sistema)
-      if (!esperado) {
-        console.error(`[${FUNCION}] no hay secreto ${SECRETO_CRON} en el vault`)
+      const { data: vale, error: errorSecreto } = await sistema.rpc('respaldo_cron_autorizado', {
+        p_secreto: secretoRecibido,
+      })
+      if (errorSecreto) {
+        console.error(`[${FUNCION}] no se pudo comprobar el secreto:`, errorSecreto.message)
         throw new ErrorCorreo('El envío programado todavía no está configurado.', 500)
       }
-      if (!mismoSecreto(secretoRecibido, esperado)) {
+      if (!vale) {
         console.error(`[${FUNCION}] secreto del cron incorrecto`)
         throw new ErrorCorreo('No autorizado.', 401)
       }
