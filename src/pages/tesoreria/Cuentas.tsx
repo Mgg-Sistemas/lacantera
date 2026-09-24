@@ -12,6 +12,7 @@ import {
   BookOpen,
 } from 'lucide-react'
 import { useCategoriasGasto } from '@/lib/api/categoriasGasto'
+import { BotonesDelPaso, PanelDelPaso, RielDePasos, usePasos } from '@/components/FormularioPorPasos'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -393,152 +394,19 @@ export function Cuentas() {
 
       {/* ------------------------------ Cuenta ------------------------------ */}
       {edicion ? (
-        <Modal
-          abierto
+        <ModalCuenta
+          edicion={edicion}
+          cambiar={cambiar}
+          monedas={monedas.data ?? []}
+          puedeMover={puedeMover}
+          guardando={guardar.isPending}
+          error={guardar.error}
           onCerrar={() => setEdicion(null)}
-          titulo={edicion.id ? 'Editar cuenta' : 'Nueva cuenta'}
-          descripcion="Una cuenta, una moneda. Mezclarlas obliga a inventar un saldo que ya no coincide con el del banco."
-          acciones={
-            <>
-              <Button variant="ghost" onClick={() => setEdicion(null)}>
-                Cancelar
-              </Button>
-              {puedeMover ? (
-                <Button
-                  disabled={guardar.isPending || !edicion.nombre}
-                  onClick={async () => {
-                    await guardar.mutateAsync(edicion)
-                    setEdicion(null)
-                  }}
-                >
-                  {guardar.isPending ? 'Guardando…' : 'Guardar'}
-                </Button>
-              ) : null}
-            </>
-          }
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              label="Tipo"
-              value={edicion.tipo}
-              onChange={(e) => cambiar({ tipo: e.target.value })}
-              opciones={TIPOS_CUENTA}
-            />
-            <Select
-              label="Moneda"
-              value={edicion.moneda}
-              onChange={(e) => cambiar({ moneda: e.target.value })}
-              opciones={(monedas.data ?? []).map((m) => ({ valor: m.codigo, etiqueta: m.nombre }))}
-              hint={edicion.id ? 'No cambia si ya tiene movimientos.' : undefined}
-            />
-
-            <div className="sm:col-span-2">
-              <Input
-                label="Nombre"
-                placeholder="Banesco · cuenta corriente Bs"
-                value={edicion.nombre}
-                onChange={(e) => cambiar({ nombre: e.target.value })}
-              />
-            </div>
-
-            {edicion.tipo === 'BANCO' ? (
-              <>
-                <Select
-                  label="Banco"
-                  vacio="Elige el banco"
-                  value={edicion.banco}
-                  onChange={(e) => cambiar({ banco: e.target.value })}
-                  opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}
-                />
-                <Input
-                  label="Número de cuenta"
-                  placeholder="0134-0000-00-0000000000"
-                  value={edicion.numero_cuenta}
-                  onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
-                />
-              </>
-            ) : null}
-
-            {edicion.tipo === 'BILLETERA' ? (
-              <>
-                <Input
-                  label="Correo de la plataforma"
-                  placeholder="pagos@lacantera.com"
-                  value={edicion.correo_binance}
-                  onChange={(e) => cambiar({ correo_binance: e.target.value })}
-                />
-                {/* Una billetera se identifica por el correo o por la dirección
-                    de la wallet: hay quien solo tiene la segunda. */}
-                <Input
-                  label="Dirección de la billetera"
-                  value={edicion.numero_cuenta}
-                  onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
-                />
-                <Input
-                  label="Red"
-                  placeholder="TRC20"
-                  value={edicion.red_cripto}
-                  onChange={(e) => cambiar({ red_cripto: e.target.value })}
-                />
-              </>
-            ) : null}
-
-            <Input
-              label={edicion.tipo === 'CAJA' ? 'Quién responde por el efectivo' : 'Titular'}
-              value={edicion.titular}
-              onChange={(e) => cambiar({ titular: e.target.value })}
-            />
-            {/* Cedula o RIF en el mismo campo: una cuenta puede ser de una
-                persona o de una empresa. Se valida como RIF porque admite las
-                dos —una cedula es un RIF valido sin verificador— y asi no se
-                rechaza a nadie por el sitio donde le toco escribir. */}
-            <CampoDocumento
-              label="Cédula o RIF"
-              tipo="rif"
-              valor={edicion.documento}
-              onCambiar={(v) => cambiar({ documento: v })}
-            />
-
-            <div className="sm:col-span-2">
-              <Textarea
-                label="Nota"
-                rows={2}
-                placeholder="Solo para pagos a proveedores del interior."
-                value={edicion.nota}
-                onChange={(e) => cambiar({ nota: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-2">
-            <label className="text-ink/75 flex cursor-pointer items-start gap-2 text-sm select-none">
-              <input
-                type="checkbox"
-                className="accent-royal-600 mt-0.5 size-4"
-                checked={edicion.permite_sobregiro}
-                onChange={(e) => cambiar({ permite_sobregiro: e.target.checked })}
-              />
-              <span>
-                Admite sobregiro
-                <span className="text-ink/45 block text-xs">
-                  Solo si el banco dio línea de crédito. Una caja chica no entrega billetes
-                  que no tiene.
-                </span>
-              </span>
-            </label>
-            <label className="text-ink/75 flex cursor-pointer items-center gap-2 text-sm select-none">
-              <input
-                type="checkbox"
-                className="accent-royal-600 size-4"
-                checked={edicion.activa}
-                onChange={(e) => cambiar({ activa: e.target.checked })}
-              />
-              Activa
-            </label>
-          </div>
-
-          {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-4" /> : null}
-        </Modal>
+          onGuardar={async () => {
+            await guardar.mutateAsync(edicion)
+            setEdicion(null)
+          }}
+        />
       ) : null}
 
       {/* ---------------------------- Movimiento ---------------------------- */}
@@ -894,6 +762,211 @@ function ModalTraslado({
 
         {error ? <ErrorDeCarga error={error} /> : null}
       </div>
+    </Modal>
+  )
+}
+
+/*
+  LA CUENTA SE ABRE EN DOS PASOS: QUÉ CUENTA ES, Y DE QUIÉN RESPONDE.
+
+  Entra el 24/09/2026 con la evaluación del frontend. Hay que decir que este
+  formulario ya se defendía solo: enseña los campos del banco, de la billetera
+  o de ninguno según el tipo, así que nunca se ven los once a la vez. Lo que
+  gana al partirse no es sitio, es orden — el número de cuenta y el titular son
+  dos preguntas distintas y antes vivían en la misma rejilla.
+
+  El corte sigue la misma lógica que en la ficha del trabajador y en el sitio de
+  una planta: primero lo que identifica, después quién responde.
+
+  VIVE EN SU PROPIO COMPONENTE, y no dentro de `Cuentas`, porque el modal se
+  dibuja condicionalmente —`{edicion ? … : null}`— y un gancho no puede vivir
+  dentro de una condición. Además así los pasos vuelven al primero cada vez que
+  se abre, que es lo que se espera: abrir una cuenta nueva y aparecer en el
+  paso dos sería el resultado de reutilizar el estado.
+*/
+function ModalCuenta({
+  edicion,
+  cambiar,
+  monedas,
+  puedeMover,
+  guardando,
+  error,
+  onCerrar,
+  onGuardar,
+}: {
+  edicion: Edicion
+  cambiar: (c: Partial<Edicion>) => void
+  monedas: { codigo: string; nombre: string }[]
+  puedeMover: boolean
+  guardando: boolean
+  error: unknown
+  onCerrar: () => void
+  onGuardar: () => void
+}) {
+  const pasos = [
+    {
+      id: 'que-cuenta',
+      titulo: 'Qué cuenta es',
+      subtitulo: 'Una cuenta, una moneda. Los datos de abajo cambian según el tipo.',
+      // Es lo único que el formulario exigía antes de guardar, y se pide aquí
+      // porque es aquí donde se escribe.
+      falta: !edicion.nombre.trim() ? 'Falta ponerle nombre a la cuenta.' : null,
+      contenido: (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Select
+            label="Tipo"
+            value={edicion.tipo}
+            onChange={(e) => cambiar({ tipo: e.target.value })}
+            opciones={TIPOS_CUENTA}
+          />
+          <Select
+            label="Moneda"
+            value={edicion.moneda}
+            onChange={(e) => cambiar({ moneda: e.target.value })}
+            opciones={monedas.map((m) => ({ valor: m.codigo, etiqueta: m.nombre }))}
+            hint={edicion.id ? 'No cambia si ya tiene movimientos.' : undefined}
+          />
+
+          <div className="sm:col-span-2">
+            <Input
+              label="Nombre"
+              placeholder="Banesco · cuenta corriente Bs"
+              value={edicion.nombre}
+              onChange={(e) => cambiar({ nombre: e.target.value })}
+            />
+          </div>
+
+          {edicion.tipo === 'BANCO' ? (
+            <>
+              <Select
+                label="Banco"
+                vacio="Elige el banco"
+                value={edicion.banco}
+                onChange={(e) => cambiar({ banco: e.target.value })}
+                opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}
+              />
+              <Input
+                label="Número de cuenta"
+                placeholder="0134-0000-00-0000000000"
+                value={edicion.numero_cuenta}
+                onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
+              />
+            </>
+          ) : null}
+
+          {edicion.tipo === 'BILLETERA' ? (
+            <>
+              <Input
+                label="Correo de la plataforma"
+                placeholder="pagos@lacantera.com"
+                value={edicion.correo_binance}
+                onChange={(e) => cambiar({ correo_binance: e.target.value })}
+              />
+              {/* Una billetera se identifica por el correo o por la dirección
+                  de la wallet: hay quien solo tiene la segunda. */}
+              <Input
+                label="Dirección de la billetera"
+                value={edicion.numero_cuenta}
+                onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
+              />
+              <Input
+                label="Red"
+                placeholder="TRC20"
+                value={edicion.red_cripto}
+                onChange={(e) => cambiar({ red_cripto: e.target.value })}
+              />
+            </>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      id: 'de-quien',
+      titulo: 'De quién responde, y cómo se comporta',
+      subtitulo: 'Se puede dejar en blanco y completarlo después.',
+      contenido: (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label={edicion.tipo === 'CAJA' ? 'Quién responde por el efectivo' : 'Titular'}
+              value={edicion.titular}
+              onChange={(e) => cambiar({ titular: e.target.value })}
+            />
+            {/* Cedula o RIF en el mismo campo: una cuenta puede ser de una
+                persona o de una empresa. Se valida como RIF porque admite las
+                dos —una cedula es un RIF valido sin verificador— y asi no se
+                rechaza a nadie por el sitio donde le toco escribir. */}
+            <CampoDocumento
+              label="Cédula o RIF"
+              tipo="rif"
+              valor={edicion.documento}
+              onCambiar={(v) => cambiar({ documento: v })}
+            />
+
+            <div className="sm:col-span-2">
+              <Textarea
+                label="Nota"
+                rows={2}
+                placeholder="Solo para pagos a proveedores del interior."
+                value={edicion.nota}
+                onChange={(e) => cambiar({ nota: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <label className="text-ink/75 flex cursor-pointer items-start gap-2 text-sm select-none">
+              <input
+                type="checkbox"
+                className="accent-royal-600 mt-0.5 size-4"
+                checked={edicion.permite_sobregiro}
+                onChange={(e) => cambiar({ permite_sobregiro: e.target.checked })}
+              />
+              <span>
+                Admite sobregiro
+                <span className="text-ink/45 block text-xs">
+                  Solo si el banco dio línea de crédito. Una caja chica no entrega billetes
+                  que no tiene.
+                </span>
+              </span>
+            </label>
+            <label className="text-ink/75 flex cursor-pointer items-center gap-2 text-sm select-none">
+              <input
+                type="checkbox"
+                className="accent-royal-600 size-4"
+                checked={edicion.activa}
+                onChange={(e) => cambiar({ activa: e.target.checked })}
+              />
+              Activa
+            </label>
+          </div>
+        </>
+      ),
+    },
+  ]
+
+  const paso = usePasos(pasos)
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo={edicion.id ? 'Editar cuenta' : 'Nueva cuenta'}
+      descripcion="Una cuenta, una moneda. Mezclarlas obliga a inventar un saldo que ya no coincide con el del banco."
+      acciones={
+        <BotonesDelPaso
+          pasos={paso}
+          cancelar={onCerrar}
+          etiquetaFinal="Guardar"
+          guardando={guardando}
+          onTerminar={onGuardar}
+          puedeGuardar={puedeMover}
+        />
+      }
+    >
+      <RielDePasos pasos={pasos} actual={paso.actual} masLejos={paso.masLejos} onIr={paso.ir} />
+      <PanelDelPaso paso={paso.paso} />
+      {error ? <ErrorDeCarga error={error} className="mt-4" /> : null}
     </Modal>
   )
 }
