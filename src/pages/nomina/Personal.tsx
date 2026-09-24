@@ -4,6 +4,7 @@ import {
   ClipboardList,
   IdCard,
   Pencil,
+  FileText,
   Plus,
   Search,
   Upload,
@@ -39,6 +40,7 @@ import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { Visor } from '@/components/Visor'
 import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
+import { armarPlanillaDeIngreso } from '@/lib/ficha/planillaIngresoPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { dinero, documento, fecha } from '@/lib/formato'
 
@@ -91,7 +93,16 @@ export function Personal() {
   const { puede } = useMisRoles()
   const egresar = useEgresarEmpleado()
   const [armando, setArmando] = useState(false)
-  const [vista, setVista] = useState<(PdfArmado & { cuantos: number }) | null>(null)
+  const [preguntandoHuella, setPreguntandoHuella] = useState(false)
+  /*
+    El visor sirve para dos papeles distintos desde el 24/09/2026 —el informe y
+    la planilla en blanco— así que el título y la explicación viajan con el PDF
+    en vez de estar escritos en el visor. Escribirlos allí obligaba a adivinar
+    cuál de los dos se está enseñando.
+  */
+  const [vista, setVista] = useState<
+    (PdfArmado & { titulo: string; descripcion: string }) | null
+  >(null)
 
   const [busca, setBusca] = useState('')
   const [saliendo, setSaliendo] = useState<Empleado | null>(null)
@@ -246,6 +257,34 @@ export function Personal() {
   const alcance = verInactivos ? 'incluye a los desincorporados' : 'solo personal activo'
   const filtroDelPapel = criterio ? `${criterio} · ${alcance}` : alcance
 
+  /*
+    LA PLANILLA EN BLANCO, PARA LA ENTREVISTA.
+
+    No lleva datos: es el papel que se imprime y se llena a mano delante del
+    aspirante, y después alguien lo transcribe. Por eso no depende de lo que
+    esté filtrado en la tabla ni de que haya alguien seleccionado.
+
+    Va aquí y no en el menú porque quien entrevista sale de esta pantalla: mira
+    quién hay, ve que falta gente, y de ahí va a buscar. El papel está donde se
+    decide que hace falta.
+  */
+  const sacarPlanilla = async (conHuella: boolean) => {
+    setPreguntandoHuella(false)
+    setArmando(true)
+    try {
+      const pdf = await armarPlanillaDeIngreso({ empresa: empresaDelPapel(empresa), conHuella })
+      setVista({
+        ...pdf,
+        titulo: 'Planilla de ingreso',
+        descripcion: conHuella
+          ? 'En blanco, para llenar a mano en la entrevista · dos hojas · con recuadro para la huella'
+          : 'En blanco, para llenar a mano en la entrevista · dos hojas',
+      })
+    } finally {
+      setArmando(false)
+    }
+  }
+
   const sacarInforme = async (gente: Empleado[]) => {
     if (gente.length === 0) return
     setArmando(true)
@@ -258,7 +297,11 @@ export function Personal() {
         emitidoPor: nombre,
         momento: new Date(),
       })
-      setVista({ ...pdf, cuantos: gente.length })
+      setVista({
+        ...pdf,
+        titulo: 'Informe de personal',
+        descripcion: `${gente.length} ${gente.length === 1 ? 'persona' : 'personas'} · sin montos, para enseñar fuera de administración`,
+      })
     } finally {
       setArmando(false)
     }
@@ -292,6 +335,20 @@ export function Personal() {
               onClick={() => void sacarInforme(filtrados)}
             >
               {armando ? 'Preparando…' : 'Informe'}
+            </Button>
+
+            {/*
+              LA PLANILLA NO PIDE EL ROL DE RRHH, por lo mismo que el informe: es
+              un papel EN BLANCO. No enseña ni un dato de nadie, así que pedir
+              permiso para imprimirlo sería pedir permiso para gastar papel.
+            */}
+            <Button
+              variant="outline"
+              icon={<FileText />}
+              disabled={armando}
+              onClick={() => setPreguntandoHuella(true)}
+            >
+              Planilla de ingreso
             </Button>
 
             {puedeRRHH ? (
@@ -700,17 +757,53 @@ export function Personal() {
         </Modal>
       ) : null}
 
+      {/*
+        SE PREGUNTA ANTES DE IMPRIMIR, Y NO SE DEJA PUESTO.
+
+        La huella no siempre hace falta: se pide cuando la firma de alguien no
+        es constante, que es una decisión de quien entrevista y cambia de
+        persona a persona. Dejar el recuadro en todas las planillas lo
+        convertiría en un hueco que casi siempre se queda vacío, y un papel con
+        huecos vacíos enseña que no hace falta llenarlo entero.
+
+        Es una pregunta de dos botones y no una casilla con un «Generar»
+        detrás: son dos caminos y los dos llevan al mismo sitio, así que
+        obligar a marcar y luego confirmar sería un clic de más para nada.
+      */}
+      <Modal
+        abierto={preguntandoHuella}
+        onCerrar={() => setPreguntandoHuella(false)}
+        titulo="Planilla de ingreso"
+        descripcion="Sale en blanco, para llenarla a mano durante la entrevista."
+        ancho="sm"
+        acciones={
+          <>
+            <Button variant="ghost" onClick={() => setPreguntandoHuella(false)}>
+              Cancelar
+            </Button>
+            <Button variant="outline" onClick={() => void sacarPlanilla(false)}>
+              Sin huella
+            </Button>
+            <Button onClick={() => void sacarPlanilla(true)}>Con huella</Button>
+          </>
+        }
+      >
+        <p className="text-ink/70 text-sm leading-relaxed">
+          ¿Le pones un recuadro para la <strong>huella del pulgar</strong> al lado de las firmas?
+        </p>
+        <p className="text-ink/55 mt-2 text-sm leading-relaxed">
+          Sirve cuando la firma de alguien no sale igual dos veces. Si no hace falta, el pie queda
+          con las dos rayas de firma y nada más.
+        </p>
+      </Modal>
+
       <Visor
         abierto={vista !== null}
         onCerrar={() => setVista(null)}
         blob={vista?.blob ?? null}
-        nombreArchivo={vista?.nombre ?? 'informe-de-personal.pdf'}
-        titulo="Informe de personal"
-        descripcion={
-          vista
-            ? `${vista.cuantos} ${vista.cuantos === 1 ? 'persona' : 'personas'} · sin montos, para enseñar fuera de administración`
-            : undefined
-        }
+        nombreArchivo={vista?.nombre ?? 'papel.pdf'}
+        titulo={vista?.titulo ?? ''}
+        descripcion={vista?.descripcion}
       />
     </>
   )
