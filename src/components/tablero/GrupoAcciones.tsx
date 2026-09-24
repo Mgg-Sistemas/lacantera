@@ -1,6 +1,6 @@
-import { Link } from 'react-router'
 import type { LucideIcon } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { TarjetaDeAccion } from '@/components/tablero/TarjetaDeAccion'
 import { esRutaFueraDelMvp } from '@/config/navigation'
 import { cn } from '@/lib/cn'
 
@@ -18,6 +18,18 @@ import { cn } from '@/lib/cn'
  * el objetivo del encargo era justo el contrario: que quien aprende un módulo
  * no tenga que reaprender el siguiente. La consistencia entre módulos no se
  * consigue con disciplina, se consigue compartiendo la pieza.
+ *
+ * Y LA PRUEBA DE QUE ESO ERA CIERTO LLEGÓ EL 24/09/2026. Esto compartía el
+ * grupo pero no la tarjeta, y `QueHacer` dibujaba la suya —casi idéntica, con
+ * su propio comentario diciendo lo mismo que este— sin que ninguno de los dos
+ * supiera del otro. Ventas tenía una tercera a mano. La tarjeta se sacó a
+ * `TarjetaDeAccion` y ahora las tres son la misma.
+ *
+ * Lo que queda aquí es lo que de verdad distingue a este componente de
+ * `QueHacer`: esto es el CUERPO del tablero y se ve siempre, mientras que
+ * aquello es la mitad de abajo y se esconde con el «(?)» de ayuda. Se
+ * descartó juntarlos en uno con un interruptor: son dos papeles distintos, no
+ * dos configuraciones del mismo.
  *
  * LO QUE NO SE PUEDE HACER, NO SE OFRECE
  *
@@ -78,49 +90,18 @@ export function GrupoAcciones({
           columnas === 3 ? 'sm:grid-cols-2 xl:grid-cols-3' : 'sm:grid-cols-2',
         )}
       >
-        {visibles.map((a) => {
-          const Icono = a.icono
-          const espera = (a.cuenta ?? 0) > 0
-
-          return (
-            <Link key={a.titulo} to={a.ruta} className="block">
-              <Card
-                className={cn(
-                  'hover:border-royal-300 h-full border transition-colors',
-                  // Solo se enciende lo que tiene algo esperando. Si todo
-                  // llamara la atención, no la llamaría nada.
-                  espera ? 'border-warning/40' : 'border-hairline',
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <Icono
-                    className={cn(
-                      'mt-0.5 size-[18px] shrink-0',
-                      espera ? 'text-warning' : 'text-ink/30',
-                    )}
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="text-ink/90 text-base font-medium">{a.titulo}</p>
-                      {a.cuenta !== undefined ? (
-                        <span
-                          className={cn(
-                            'tabular shrink-0 text-lg font-light',
-                            espera ? 'text-warning' : 'text-ink/25',
-                          )}
-                        >
-                          {a.cuenta}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="text-ink/55 mt-1 text-sm leading-relaxed">{a.detalle}</p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          )
-        })}
+        {visibles.map((a) => (
+          <TarjetaDeAccion
+            key={a.titulo}
+            accion={{
+              titulo: a.titulo,
+              detalle: a.detalle,
+              icono: a.icono,
+              a: a.ruta,
+              cuenta: a.cuenta,
+            }}
+          />
+        ))}
       </div>
     </div>
   )
