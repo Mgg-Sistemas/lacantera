@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react'
-import { Database, Download, Loader2, Lock, Mail, Plus, ShieldAlert, X } from 'lucide-react'
+import {
+  Database,
+  Download,
+  Loader2,
+  Lock,
+  Mail,
+  Pencil,
+  Plus,
+  ShieldAlert,
+  X,
+} from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import {
   CORREO_POR_DEFECTO,
@@ -13,8 +24,11 @@ import {
   limpiarCorreos,
   useDescargarRespaldo,
   useEnviarRespaldoPorCorreo,
+  useDestinatariosDelRespaldo,
+  useGuardarDestinatarioDelRespaldo,
   useResumenRespaldo,
 } from '@/lib/api/respaldo'
+import { useMisRoles } from '@/lib/api/catalogo'
 import { fechaHora } from '@/lib/formato'
 
 const peso = (bytes: number) =>
@@ -291,6 +305,9 @@ export function Respaldo() {
             ) : null}
           </Card>
 
+          {/* -------------------- El envío automático -------------------- */}
+          <ElEnvioAutomatico />
+
           {/* -------------------- Qué lleva y qué no -------------------- */}
           <Card className="mt-4">
             <h2 className="text-royal-600 dark:text-royal-300 border-royal-600 dark:border-royal-300 mb-3 border-b pb-1.5 text-xs font-bold tracking-wider uppercase">
@@ -564,5 +581,226 @@ export function Respaldo() {
         </p>
       </Modal>
     </>
+  )
+}
+
+/*
+  EL ENVÍO AUTOMÁTICO, Y A QUIÉN LE LLEGA.
+
+  Faltaba desde el encargo original del 24/09/2026 —«el correo se indica después
+  en sistema, justificando el porqué, en caso de edición una vez añadido»—. La
+  tabla y la función se construyeron ese día y la pantalla no, así que el envío
+  mensual no se ha podido encender nunca: no hay a quién mandárselo.
+
+  LA PANTALLA DICE SI ESTÁ ENCENDIDO DE VERDAD, no si está configurado. Son dos
+  cosas distintas y confundirlas es lo que hace que alguien dé por hecho que
+  tiene respaldos y no los tenga. Hoy hacen falta dos piezas y ninguna está: un
+  destinatario —esto— y un secreto en el vault de la base, que lo pone quien
+  administra Supabase y no se puede poner desde aquí.
+
+  QUIÉN LO VE Y QUIÉN LO CAMBIA NO SON LOS MISMOS. Lo lee quien tenga permiso de
+  Respaldo; lo cambia solo el rol de administrador, y lo exige la función de la
+  base. Por eso el botón aparece según el rol y no según la pantalla: si un día
+  cambia la regla, cambia en la base y aquí se sigue.
+
+  LOS ANTERIORES SE ENSEÑAN. No es adorno: el motivo de por qué el archivo con
+  las cédulas y los sueldos de todo el personal iba a una dirección concreta es
+  exactamente lo que alguien va a querer leer dentro de un año.
+*/
+function ElEnvioAutomatico() {
+  const { data: destinatarios, isPending, error } = useDestinatariosDelRespaldo()
+  const { puede: tieneRol } = useMisRoles()
+  const [editando, setEditando] = useState(false)
+
+  const puedeCambiarlo = tieneRol('ADMIN')
+  const activo = (destinatarios ?? []).find((d) => d.activo) ?? null
+  const anteriores = (destinatarios ?? []).filter((d) => !d.activo)
+
+  return (
+    <Card className="mt-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-royal-600 dark:text-royal-300 border-royal-600 dark:border-royal-300 mb-3 border-b pb-1.5 text-xs font-bold tracking-wider uppercase">
+            El envío automático
+          </h2>
+          <p className="text-ink/60 text-sm">
+            Una copia del respaldo, sola y sin que nadie la pida, a una dirección de la empresa.
+          </p>
+        </div>
+
+        {puedeCambiarlo ? (
+          <Button
+            variant="outline"
+            size="sm"
+            icon={activo ? <Pencil /> : <Plus />}
+            onClick={() => setEditando(true)}
+          >
+            {activo ? 'Cambiar a quién' : 'Poner a quién'}
+          </Button>
+        ) : null}
+      </div>
+
+      {isPending ? <Cargando /> : null}
+      {error ? <ErrorDeCarga error={error} className="mt-3" /> : null}
+
+      {!isPending && !error ? (
+        <div className="mt-4">
+          {/*
+            EL AVISO DE QUE NO ESTÁ ENCENDIDO VA PRIMERO Y EN ÁMBAR.
+
+            Quien abre esta pantalla viene a comprobar que la empresa tiene
+            respaldos. Enseñarle la configuración sin decirle que no está
+            corriendo sería dejarle creer que sí.
+          */}
+          {!activo ? (
+            <div className="border-warning/30 bg-warning/5 rounded-md border px-4 py-3">
+              <p className="text-ink/80 text-sm leading-relaxed">
+                <strong>El envío automático está apagado.</strong> No hay ninguna dirección
+                configurada, así que la tarea mensual se despierta, ve que no tiene a quién
+                mandárselo y no hace nada.
+              </p>
+              {!puedeCambiarlo ? (
+                <p className="text-ink/55 mt-2 text-xs">
+                  Lo pone quien tenga el rol de administrador.
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="border-hairline rounded-md border px-4 py-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <p className="text-ink/90 text-sm font-medium">
+                  {activo.correo}
+                  {activo.nombre ? <span className="text-ink/45"> · {activo.nombre}</span> : null}
+                </p>
+                <p className="text-ink/45 text-xs">Desde el {fechaHora(activo.puesto_en)}</p>
+              </div>
+              <p className="text-ink/60 mt-1.5 text-sm leading-relaxed">{activo.motivo}</p>
+            </div>
+          )}
+
+          {/*
+            LO QUE FALTA APARTE DEL DESTINATARIO.
+
+            El secreto del vault no se puede poner desde aquí y nunca se va a
+            poder: vive en la base y lo pone quien administra Supabase. Decirlo
+            es lo que evita que alguien configure el correo, se quede tranquilo
+            y descubra en tres meses que no llegó ninguno.
+          */}
+          <p className="text-ink/45 mt-3 text-xs leading-relaxed">
+            Aunque haya destinatario, el envío no sale hasta que exista el secreto{' '}
+            <code className="text-ink/60">respaldo_cron_secreto</code> en el vault de la base. Ese
+            se pone en Supabase, no aquí.
+          </p>
+
+          {anteriores.length > 0 ? (
+            <div className="mt-5">
+              <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">
+                A quién se le mandaba antes
+              </p>
+              <ul className="divide-hairline mt-2 divide-y">
+                {anteriores.map((d) => (
+                  <li key={d.id} className="py-2.5">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                      <p className="text-ink/70 text-sm">{d.correo}</p>
+                      <p className="text-ink/40 text-xs">{fechaHora(d.puesto_en)}</p>
+                    </div>
+                    <p className="text-ink/45 mt-0.5 text-xs leading-relaxed">{d.motivo}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {editando ? <ModalDestinatario onCerrar={() => setEditando(false)} hay={!!activo} /> : null}
+    </Card>
+  )
+}
+
+/** Poner o cambiar a quién le llega el respaldo mensual. */
+function ModalDestinatario({ onCerrar, hay }: { onCerrar: () => void; hay: boolean }) {
+  const guardar = useGuardarDestinatarioDelRespaldo()
+  const [correo, setCorreo] = useState('')
+  const [nombre, setNombre] = useState('')
+  const [motivo, setMotivo] = useState('')
+
+  // Las mismas dos reglas que exige la base, dichas antes de pulsar y no
+  // después: el correo tiene que valer y el motivo tiene que estar escrito.
+  const falta = !correoValido(correo)
+    ? 'Falta una dirección de correo válida.'
+    : motivo.trim().length < 4
+      ? 'Falta decir por qué va a esa dirección.'
+      : null
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo={hay ? 'Cambiar a quién le llega' : 'A quién le llega el respaldo'}
+      descripcion="Una sola dirección a la vez. La anterior deja de recibirlo, y queda guardada con su motivo."
+      ancho="md"
+      acciones={
+        <>
+          {falta ? <p className="text-ink/45 mr-auto text-left text-xs">{falta}</p> : null}
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={!!falta || guardar.isPending}
+            onClick={async () => {
+              await guardar.mutateAsync({ correo, motivo, nombre })
+              onCerrar()
+            }}
+          >
+            {guardar.isPending ? 'Guardando…' : 'Guardar'}
+          </Button>
+        </>
+      }
+    >
+      {/*
+        EL AVISO ANTES DE LOS CAMPOS, NO DESPUÉS.
+
+        Es el mismo criterio que el modal de descargar: quien está a punto de
+        decidir a qué buzón va este archivo tiene que saber qué lleva dentro
+        ANTES de escribir la dirección, no al pulsar.
+      */}
+      <div className="border-danger/30 bg-danger/5 mb-4 flex gap-3 rounded-md border px-4 py-3">
+        <ShieldAlert className="text-danger mt-0.5 size-[18px] shrink-0" aria-hidden="true" />
+        <p className="text-ink/75 text-sm leading-relaxed">
+          Esta dirección va a recibir, sola y cada vez, el archivo con las cédulas, los sueldos y
+          las cuentas bancarias de todo el personal. Que sea una dirección de la empresa y de
+          alguien que ya podría descargarlo por su cuenta.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input
+          label="Correo"
+          type="email"
+          placeholder="administracion@mineriainternacionalts.com"
+          value={correo}
+          onChange={(e) => setCorreo(e.target.value)}
+        />
+        <Input
+          label="De quién es"
+          hint="Opcional. Ayuda a saber de quién era la dirección dentro de un año."
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+        />
+      </div>
+
+      <div className="mt-4">
+        <Textarea
+          label="Por qué va a esa dirección"
+          rows={3}
+          hint="Lo pide la base, no la pantalla. Un «campo obligatorio» se rellena con un punto; una razón escrita se escribe."
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+        />
+      </div>
+
+      {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-3" /> : null}
+    </Modal>
   )
 }

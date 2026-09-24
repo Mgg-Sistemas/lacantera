@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { zipDeUnArchivo } from '@/lib/zip'
 import { rpc } from './rpc'
@@ -369,4 +369,68 @@ async function razonDelFallo(error: unknown): Promise<string> {
     return 'El servicio de correo contestó con un error y no dijo cuál. Mira el registro de la función en Supabase.'
   }
   return crudo
+}
+
+// ---------------------------------------------------------------------------
+// A quién se manda el respaldo automático
+// ---------------------------------------------------------------------------
+
+/*
+  EL DESTINATARIO DEL ENVÍO MENSUAL, QUE HASTA HOY NO TENÍA PANTALLA.
+
+  La tabla y la función existen desde el 24/09/2026 y nadie podía llenarlas: el
+  envío automático no se ha podido encender nunca porque no hay a quién
+  mandárselo. Esto es lo que faltaba del encargo original —«el correo se indica
+  después en sistema, justificando el porqué»—.
+
+  UNO SOLO ACTIVO, Y LOS ANTERIORES SE GUARDAN. Lo garantiza un índice único en
+  la base, y `guardar_destinatario_del_respaldo` apaga el anterior antes de
+  poner el nuevo. Los viejos no se borran: quedan con su motivo y su fecha, que
+  es lo que convierte esto en un rastro y no en un campo.
+
+  QUIÉN LO VE Y QUIÉN LO CAMBIA NO SON LOS MISMOS. Leerlo lo puede quien tenga
+  RESPALDO en lectura; cambiarlo, solo el rol de administrador —lo exige la
+  función, no la pantalla—. Por eso la pantalla enseña el destinatario a quien
+  puede verlo y el botón solo a quien puede tocarlo: un botón que va a rebotar
+  contra un permiso manda a alguien a que el sistema le diga que no.
+*/
+export interface DestinatarioDelRespaldo {
+  id: number
+  correo: string
+  nombre: string | null
+  activo: boolean
+  motivo: string
+  puesto_en: string
+}
+
+export function useDestinatariosDelRespaldo() {
+  return useQuery({
+    queryKey: ['respaldo', 'destinatarios'],
+    queryFn: async (): Promise<DestinatarioDelRespaldo[]> => {
+      const { data, error } = await supabase
+        .from('respaldo_destinatarios')
+        .select('id, correo, nombre, activo, motivo, puesto_en')
+        // El activo primero y el resto por fecha: arriba lo que rige hoy,
+        // debajo la historia de a quién se le mandó antes y por qué.
+        .order('activo', { ascending: false })
+        .order('puesto_en', { ascending: false })
+      if (error) throw error
+      return (data ?? []) as DestinatarioDelRespaldo[]
+    },
+  })
+}
+
+export function useGuardarDestinatarioDelRespaldo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: { correo: string; motivo: string; nombre?: string | null }) =>
+      rpc<number>('guardar_destinatario_del_respaldo', {
+        p_correo: d.correo,
+        p_motivo: d.motivo,
+        p_nombre: d.nombre ?? null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['respaldo'] })
+    },
+  })
 }
