@@ -5169,6 +5169,57 @@ De ahí sale la consecuencia práctica: **para cambiar un saldo hay que escribir
 
 Y hay una segunda regla que conviene tener presente desde la primera pantalla: **una cuenta, una moneda**. Una cuenta en bolívares no guarda dólares y una cuenta en dólares no guarda bolívares. La razón está en la sección 12.8.
 
+### 12.0 Lo esencial, en una hoja
+
+Esto es lo mínimo para trabajar con el módulo. Todo lo que sigue en el capítulo lo explica despacio; esta hoja es la que conviene tener al lado las primeras semanas.
+
+**Una idea, y de ella sale todo lo demás.** El saldo no está guardado en ningún sitio: se suma del libro cada vez que abres la pantalla. Por eso **para cambiar un saldo hay que escribir un movimiento**. No se corrige el número a mano, ni siendo administrador.
+
+**Tesorería no decide qué se paga.** Las órdenes llegan ya aprobadas desde Compras, con su método, su moneda y su monto. Aquí solo se dice **de qué cuenta sale** y se confirma que salió.
+
+#### Lo primero, y una sola vez por cuenta
+
+Registra el **saldo de apertura** de cada banco, caja y billetera con lo que de verdad tiene hoy. Todas nacen en cero. Si el disponible parece bajo, esto es lo primero que hay que mirar.
+
+#### Dónde está cada cosa
+
+| Para | Ve a |
+| --- | --- |
+| Pagar una orden aprobada | Compras › **Pagos por hacer** |
+| Ver a quién se le debe | La misma pantalla, pestaña **Por proveedor** |
+| Ver todo lo que entró y salió | Compras › **Movimientos de dinero** |
+| Crear cuentas y ver cuánto hay | Tesorería › **Bancos y cajas** |
+| Informes | Tesorería › **Reportes** |
+| Ver a quién le cobras | Facturación › **Cuentas por cobrar** |
+
+#### El día a día
+
+1. Abre **Pagos por hacer**. Lo que está ahí ya fue autorizado.
+2. Elige la instrucción y di **de qué cuenta sale**. Tiene que ser una cuenta **de la misma moneda** que el pago.
+3. Pon el **número de referencia** del banco o de la plataforma. Solo el efectivo se libra de él.
+4. Confirma. La línea queda escrita en el libro con tu nombre y la hora, y la orden pasa a pagada.
+
+Lo que no viene de una orden —un ingreso suelto, un gasto de caja chica, pasar dinero de una cuenta a otra— se registra desde **Bancos y cajas** con **Ingreso**, **Egreso** o **Trasladar**.
+
+#### Cuatro reglas que el sistema hace cumplir
+
+- **Una cuenta, una moneda.** Una cuenta en bolívares no guarda dólares. Si te equivocaste de moneda al crearla y ya tiene movimientos, no se cambia: se crea otra y se desactiva la vieja.
+- **No hay sobregiro.** No puedes sacar más de lo que el libro dice que hay. Si el dinero está de verdad, es que falta registrar su entrada.
+- **No hay fechas futuras.** Nada se registra con fecha de mañana.
+- **El libro no se edita ni se borra.** Una línea equivocada se corrige **reversándola**: quedan las dos, la mala y la que la anula, y se entiende qué pasó. El pago de una compra se devuelve desde la compra, y un traslado se deshace con otro traslado en sentido contrario.
+
+#### Los tres tropiezos más comunes
+
+| Lo que ves | Qué pasó de verdad |
+| --- | --- |
+| «En esa cuenta hay $ 200,00 y el pago es de $ 1.287,50» | El dinero está en el banco pero no en el libro. Falta el saldo de apertura o un ingreso. |
+| «La instrucción es por USD y la cuenta está en VES» | Elegiste una cuenta de otra moneda. Cambia de cuenta, o pide a compras que cambie la instrucción. |
+| «No hay tasa BCV registrada para esa fecha» | Falta la tasa del día. Se registra en Sistema › Tasas de cambio y se repite la operación. |
+
+**El IGTF lo pone el sistema, no tú.** Se aplica solo cuando la moneda del pago no es el bolívar, y se calcula al indicar el pago en Compras. Nadie lo activa ni lo desactiva a mano.
+
+**Dos cosas que este módulo todavía no hace:** no calcula diferencial cambiario y no concilia contra el estado de cuenta del banco. Conciliar se puede, pero a mano: cada línea lleva su fecha, su referencia y su concepto.
+
 ### 12.1 Quién entra y quién puede hacer qué
 
 **No existe el rol de Tesorería.** Lo hubo y se retiró junto con el módulo. Los roles del sistema son diez y ninguno se llama así; están todos en 13.1.

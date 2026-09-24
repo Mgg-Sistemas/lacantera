@@ -1,6 +1,16 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { Download, FileSpreadsheet, FileText, Search, Settings2, TriangleAlert, Upload } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Search,
+  Settings2,
+  TriangleAlert,
+  Upload,
+} from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -83,6 +93,12 @@ export function ControlDespacho() {
   const [busca, setBusca] = useState('')
   const [status, setStatus] = useState('')
   const [soloDespachado, setSoloDespachado] = useState(false)
+  /*
+    Empieza de la más vieja a la más nueva, que es como venía la lista hasta
+    hoy. Cambiar además el orden al añadir el botón sería moverle el suelo a
+    quien ya se sabe esta pantalla de memoria.
+  */
+  const [orden, setOrden] = useState<'ASC' | 'DESC'>('ASC')
   const [editando, setEditando] = useState<FilaDeControl | null>(null)
   const [ajustes, setAjustes] = useState(false)
   const [cargando, setCargando] = useState(false)
@@ -102,7 +118,7 @@ export function ControlDespacho() {
 
   const filas = useMemo(() => {
     const q = busca.trim().toLowerCase()
-    return (planilla.data ?? []).filter((f) => {
+    const vistas = (planilla.data ?? []).filter((f) => {
       if (soloDespachado && f.estado_doc !== 'VIGENTE') return false
       if (status === '—' ? f.estado_control !== null || f.estado_doc !== 'VIGENTE' : status && f.estado_control !== status)
         return false
@@ -111,7 +127,40 @@ export function ControlDespacho() {
         (t) => (t ?? '').toLowerCase().includes(q),
       )
     })
-  }, [planilla.data, busca, status, soloDespachado])
+
+    /*
+      EL ORDEN POR FECHA, QUE AHORA SE ELIGE.
+
+      Lo pidió la líder el 24/09/2026: de mayor a menor y al revés. Antes
+      llegaba en el orden que quisiera la base y no había forma de darle la
+      vuelta; para pasar el informe del mes se quiere lo último arriba, y para
+      cuadrar contra el talonario se quiere lo primero.
+
+      Las fechas vienen de la base como `2026-09-24`, así que compararlas como
+      texto ordena igual que compararlas como fechas — y sin construir 52
+      objetos `Date` en cada tecla que se escribe en el buscador.
+
+      A IGUAL FECHA, MANDA EL NÚMERO DE NOTA. Sin ese desempate, dos despachos
+      del mismo día se colocan como quiera el navegador y la lista baila entre
+      un render y el siguiente; con él, el orden es siempre el mismo y además
+      es el que tiene sentido, porque los números se dan en orden.
+
+      `filter` ya devolvió un arreglo nuevo, así que ordenarlo aquí no toca lo
+      que guarda la caché de la consulta.
+    */
+    return vistas.sort((a, b) => {
+      const fa = a.fecha ?? ''
+      const fb = b.fecha ?? ''
+      if (fa !== fb) {
+        // Lo que no tiene fecha se va al fondo en los dos sentidos. Arriba del
+        // todo se leería como lo más antiguo, y no lo es: es que no se sabe.
+        if (!fa) return 1
+        if (!fb) return -1
+        return orden === 'ASC' ? (fa < fb ? -1 : 1) : fa < fb ? 1 : -1
+      }
+      return a.documento.localeCompare(b.documento, 'es', { numeric: true })
+    })
+  }, [planilla.data, busca, status, soloDespachado, orden])
 
   const vigentes = filas.filter((f) => f.estado_doc === 'VIGENTE')
   const totalMonto = vigentes.reduce((s, f) => s + Number(f.monto ?? 0), 0)
@@ -294,7 +343,33 @@ export function ControlDespacho() {
                       />
                     </th>
                     <th className="px-3 py-3 font-medium"># Nota</th>
-                    <th className="px-3 py-3 font-medium">Fecha</th>
+                    {/*
+                      La única columna que ordena, y se dice sola.
+
+                      La flecha no aparece al pasar por encima: está siempre,
+                      porque también es la que cuenta cómo está ordenada la
+                      lista ahora mismo. Una cabecera que solo se delata al
+                      acercarle el ratón no la encuentra quien no la busca.
+                    */}
+                    <th className="px-3 py-3 font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setOrden((o) => (o === 'ASC' ? 'DESC' : 'ASC'))}
+                        aria-label={
+                          orden === 'ASC'
+                            ? 'Ordenado de la fecha más vieja a la más nueva. Pulsa para darle la vuelta.'
+                            : 'Ordenado de la fecha más nueva a la más vieja. Pulsa para darle la vuelta.'
+                        }
+                        className="text-ink/45 hover:text-ink/85 focus-visible:outline-royal-600 -mx-1 -my-0.5 flex items-center gap-1 rounded-[4px] px-1 py-0.5 font-medium transition-colors focus-visible:outline-2"
+                      >
+                        Fecha
+                        {orden === 'ASC' ? (
+                          <ArrowUp className="size-3.5 shrink-0" />
+                        ) : (
+                          <ArrowDown className="size-3.5 shrink-0" />
+                        )}
+                      </button>
+                    </th>
                     <th className="px-3 py-3 font-medium">Cliente</th>
                     <th className="px-3 py-3 font-medium">RIF</th>
                     <th className="px-3 py-3 font-medium">Material</th>
