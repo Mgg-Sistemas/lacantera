@@ -115,11 +115,28 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   */
   ['/app/tesoreria/pagos', 'COMPRAS'],
   ['/app/tesoreria/por-pagar', 'COMPRAS'],
-  // «Movimientos de dinero» cuelga de Compras en el menú, al lado de «Pagos
-  // por hacer», pero se había quedado sin su línea aquí y por prefijo caía en
-  // Tesorería. Se notó al vaciar Tesorería por estar en obra: la entrada seguía
-  // en el menú de Compras y daba el candado.
-  ['/app/tesoreria/movimientos', 'COMPRAS'],
+  /*
+    AQUÍ ESTABA EL LIBRO DE TESORERÍA ATADO A COMPRAS, y se quita el 24/09/2026.
+
+    La línea existía porque la entrada colgaba del menú de Compras, y esa
+    entrada se puso al mover allí la cola de pagos: se dijo que el historial de
+    lo pagado venía con ellos. Pero la pantalla no es el historial de una
+    compra: es «todo el dinero que entró y salió», el libro entero de la
+    empresa, con sus ingresos y sus traslados entre cuentas.
+
+    Lo vio el usuario de un vistazo —«en compras hay un libro de tesorería, no
+    tiene sentido alguno que eso esté ahí»— y al medirlo resultó peor que un
+    problema de menú: COMPRAS lo tienen los QUINCE usuarios, incluidos ALMACEN,
+    CONSULTA y SOLICITANTE. Un jefe de cuadrilla que solo puede pedir material
+    tenía delante todo el movimiento de dinero de la empresa.
+
+    Es el mismo fallo que el panel ya había corregido para sus tarjetas —«poder
+    pedir algo no es llevar las compras»— y que a esta pantalla no le llegó.
+
+    Al quitar la línea cae por prefijo en TESORERIA, que es de donde es. Y para
+    que quien registra los pagos no se quede sin el libro, el rol COMPRAS gana
+    Tesorería en lectura; eso va en la matriz de la base, no aquí.
+  */
   // El centro de costo es su propio módulo: acepta viajes, cierra cajas y
   // enseña dinero, y nada de eso es tarea de quien compra.
   ['/app/costos', 'COSTOS'],
@@ -612,10 +629,13 @@ export const navigation: NavSection[] = [
             punto va cada compra.
           */
           { label: 'Pagos por hacer', to: '/app/tesoreria/pagos' },
-          // Y lo que ya se pagó. Sin esta entrada, el libro quedaba fuera del
-          // menú y la pantalla daba el cartel de obra: se dijo al mover los
-          // pagos que el historial venía con ellos, y no vino.
-          { label: 'Movimientos de dinero', to: '/app/tesoreria/movimientos' },
+          /*
+            AQUÍ ESTABA «MOVIMIENTOS DE DINERO» y se fue a Tesorería el
+            24/09/2026. No era el historial de lo pagado en una compra: era el
+            libro entero de la empresa. Lo que Compras necesita de verdad —qué
+            se pagó de ESTA compra— sigue estando en la ficha de cada una, que
+            tiene su bloque de pagos.
+          */
           // El centro de costos que abría este grupo se retiró el 14/09/2026:
           // leía un libro de tesorería vacío. Lo sustituye el módulo «Centro
           // de costo», con entrada propia en Administración.
@@ -807,6 +827,13 @@ export const navigation: NavSection[] = [
             cuentas.
           */
           { label: 'Libro Mayor', to: '/app/tesoreria/libro-mayor' },
+          /*
+            El libro de tesorería, que hasta el 24/09/2026 colgaba del menú de
+            Compras. Se llama aquí como se llama en su propia pantalla: lo de
+            «Movimientos de dinero» era el nombre que le pusieron para que
+            encajara donde no le tocaba.
+          */
+          { label: 'Libro de tesorería', to: '/app/tesoreria/movimientos' },
         ],
       },
     ],
