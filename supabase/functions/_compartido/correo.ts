@@ -16,7 +16,8 @@
 
   QUÉ CAMBIA RESPECTO AL ORIGINAL
 
-  · Resend en vez de Brevo: otro endpoint, otra cabecera y otra forma del cuerpo.
+  · Dos servicios posibles, Brevo o Resend: otro endpoint, otra cabecera y otra
+    forma del cuerpo. Manda Brevo si está su llave; si no, Resend.
   · El modelo de permisos de esta casa —`private.tiene_permiso`— en vez del
     `role` de Golden Touch.
   · El adjunto es `.sql.gz` y no `.sql.txt`: el respaldo se comprime porque a
@@ -24,18 +25,44 @@
     que admite Resend. Ver `docs/carriles/evaluaciones/`.
   · Castellano de esta casa, no de la otra.
 
-  Secretos: RESEND_API_KEY · RESEND_FROM_EMAIL · RESEND_FROM_NAME
+  Secretos, Brevo:  BREVO_API_KEY  · BREVO_FROM_EMAIL  · BREVO_FROM_NAME
+  Secretos, Resend: RESEND_API_KEY · RESEND_FROM_EMAIL · RESEND_FROM_NAME
+
+  POR QUÉ SE ELIGE SOLO Y NO CON UN INTERRUPTOR
+
+  Angélica, 24/09/2026, pidió mandar por Brevo. Cambiar de servicio es poner
+  tres secretos, no tocar código ni volver a desplegar: mientras BREVO_API_KEY
+  esté puesta manda Brevo, y quitarla devuelve el sistema a Resend sin que nadie
+  se quede sin correo entre una cosa y la otra.
+
+  EL ADJUNTO NO PESA LO MISMO EN LOS DOS. Resend admite 40 MB de payload y Brevo
+  10: el respaldo de la base va comprimido y hoy cabe en los dos, pero el tope
+  cambia con el servicio para que el error salga aquí, con su explicación, y no
+  como un rechazo del servicio que nadie sabe leer.
 */
 
 export const MAX_DESTINATARIOS = 10
 export const MAX_ASUNTO = 150
 /** 25 MB en base64 ≈ 33 MB de payload, con holgura bajo los 40 de Resend. */
 export const MAX_ADJUNTO_BYTES = 25 * 1024 * 1024
+/** Brevo admite 10 MB de payload: 6 MB en crudo son ~8 en base64, con holgura. */
+export const MAX_ADJUNTO_BYTES_BREVO = 6 * 1024 * 1024
 export const MAX_CORREOS_POR_HORA = 30
 
 const PREFIJO_ASUNTO = '[La Cantera] '
 const REMITENTE_POR_DEFECTO = 'Sistema · Minería Internacional TS'
 const RESEND_URL = 'https://api.resend.com/emails'
+const BREVO_URL = 'https://api.brevo.com/v3/smtp/email'
+
+/** Quién manda hoy. Lo decide la llave que esté puesta, y Brevo tiene prioridad. */
+export function servicioDeCorreo(): 'BREVO' | 'RESEND' {
+  return Deno.env.get('BREVO_API_KEY') ? 'BREVO' : 'RESEND'
+}
+
+/** Lo que admite de adjunto el servicio que manda hoy. */
+export function topeDeAdjunto(): number {
+  return servicioDeCorreo() === 'BREVO' ? MAX_ADJUNTO_BYTES_BREVO : MAX_ADJUNTO_BYTES
+}
 
 /*
   Un correo y solo uno. Sin espacios, comas ni punto y coma: es lo que impide
@@ -138,9 +165,10 @@ function validarContenido(base64: string, esPdf: boolean, esGz: boolean): void {
     throw new ErrorCorreo('El adjunto llegó mal formado.')
   }
   const bytes = (b64.length / 4) * 3 - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0)
-  if (bytes > MAX_ADJUNTO_BYTES) {
+  const tope = topeDeAdjunto()
+  if (bytes > tope) {
     throw new ErrorCorreo(
-      `El adjunto pesa más de ${Math.round(MAX_ADJUNTO_BYTES / 1048576)} MB y no se puede mandar por correo.`,
+      `El adjunto pesa más de ${Math.round(tope / 1048576)} MB y no se puede mandar por correo.`,
       413,
     )
   }
@@ -195,7 +223,7 @@ export type OpcionesCorreo = {
 export type ResultadoCorreo = { destinatarios: string[]; id: string | null }
 
 /**
- * Manda el correo. Es el único sitio del sistema que habla con Resend.
+ * Manda el correo. Es el único sitio del sistema que habla con Brevo o Resend.
  *
  * Valida, cuenta, manda y registra — en ese orden. Si algo falla, lo que sale
  * hacia quien llamó es un mensaje genérico; el detalle queda en el registro de
@@ -238,51 +266,75 @@ export async function enviarCorreo(o: OpcionesCorreo): Promise<ResultadoCorreo> 
     )
   }
 
-  const llave = Deno.env.get('RESEND_API_KEY')
-  const remitente = Deno.env.get('RESEND_FROM_EMAIL')
-  const nombreRemitente = Deno.env.get('RESEND_FROM_NAME') || REMITENTE_POR_DEFECTO
+  const servicio = servicioDeCorreo()
+  const esBrevo = servicio === 'BREVO'
+  const llave = Deno.env.get(esBrevo ? 'BREVO_API_KEY' : 'RESEND_API_KEY')
+  const remitente = Deno.env.get(esBrevo ? 'BREVO_FROM_EMAIL' : 'RESEND_FROM_EMAIL')
+  const nombreRemitente =
+    Deno.env.get(esBrevo ? 'BREVO_FROM_NAME' : 'RESEND_FROM_NAME') || REMITENTE_POR_DEFECTO
   if (!llave || !remitente) {
-    console.error(`[${o.funcion}] faltan los secretos de Resend`)
+    console.error(`[${o.funcion}] faltan los secretos de ${servicio}`)
     throw new ErrorCorreo('El envío de correo todavía no está configurado.', 500)
   }
 
-  let resp: Response
-  try {
-    resp = await fetch(RESEND_URL, {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${llave}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
+  /*
+    El remitente tiene que estar verificado en el servicio. Si no lo está, la
+    respuesta es un rechazo del servicio y el correo no sale: queda en el
+    registro de la función, no en la pantalla de quien lo pidió.
+  */
+  const url = esBrevo ? BREVO_URL : RESEND_URL
+  const cabeceras: Record<string, string> = esBrevo
+    ? { 'api-key': llave, 'content-type': 'application/json', accept: 'application/json' }
+    : { authorization: `Bearer ${llave}`, 'content-type': 'application/json' }
+  const cuerpoPeticion = esBrevo
+    ? {
+        sender: { name: nombreRemitente, email: remitente },
+        to: destinatarios.map((email) => ({ email })),
+        subject,
+        htmlContent: o.html,
+        ...(attachments
+          ? { attachment: attachments.map((a) => ({ name: a.filename, content: a.content })) }
+          : {}),
+      }
+    : {
         from: `${nombreRemitente} <${remitente}>`,
         to: destinatarios,
         subject,
         html: o.html,
         ...(attachments ? { attachments } : {}),
-      }),
-      // Resend tarda poco; treinta segundos es de sobra incluso con adjunto
+      }
+
+  let resp: Response
+  try {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers: cabeceras,
+      body: JSON.stringify(cuerpoPeticion),
+      // Los dos tardan poco; treinta segundos es de sobra incluso con adjunto
       // grande, y sin tope la función se queda colgada hasta que la maten.
       signal: AbortSignal.timeout(30_000),
     })
   } catch (e) {
     console.error(
-      `[${o.funcion}] no se pudo contactar a Resend (${destinatarios.length} destinatario/s):`,
+      `[${o.funcion}] no se pudo contactar a ${servicio} (${destinatarios.length} destinatario/s):`,
       e instanceof Error ? e.name : String(e),
     )
     throw new ErrorCorreo('No se pudo contactar al servicio de correo. Vuelve a intentarlo.', 502)
   }
 
   const texto = await resp.text()
-  let cuerpo: { id?: string; message?: string; name?: string } | null = null
+  // Brevo devuelve `messageId`; Resend, `id`. El registro guarda el que venga.
+  let cuerpo:
+    | { id?: string; messageId?: string; message?: string; name?: string; code?: string }
+    | null = null
   try {
     cuerpo = texto ? JSON.parse(texto) : null
   } catch {
-    /* Resend contestó algo que no era JSON */
+    /* el servicio contestó algo que no era JSON */
   }
   if (!resp.ok) {
     console.error(
-      `[${o.funcion}] Resend HTTP ${resp.status} ${cuerpo?.name ?? '-'}:`,
+      `[${o.funcion}] ${servicio} HTTP ${resp.status} ${cuerpo?.name ?? cuerpo?.code ?? '-'}:`,
       (cuerpo?.message ?? texto).slice(0, 300),
     )
     throw new ErrorCorreo('El servicio de correo rechazó el envío.', 502)
@@ -293,14 +345,14 @@ export async function enviarCorreo(o: OpcionesCorreo): Promise<ResultadoCorreo> 
     funcion: o.funcion,
     destinatarios: destinatarios.length,
     asunto: subject,
-    mensaje_id: cuerpo?.id ?? null,
+    mensaje_id: cuerpo?.id ?? cuerpo?.messageId ?? null,
   })
   // Que no se pueda anotar no deshace un correo ya mandado: se avisa y sigue.
   if (errorRegistro) {
     console.error(`[${o.funcion}] no se pudo registrar el envío:`, errorRegistro.message)
   }
 
-  return { destinatarios, id: cuerpo?.id ?? null }
+  return { destinatarios, id: cuerpo?.id ?? cuerpo?.messageId ?? null }
 }
 
 /** Convierte cualquier error en una respuesta que se puede enseñar. */
