@@ -33,6 +33,7 @@ import {
   useGuardarDestinatarioDelRespaldo,
   useProgramacionDelRespaldo,
   useProgramarRespaldo,
+  useUltimoIntentoDelRespaldo,
   type Cadencia,
   useResumenRespaldo,
 } from '@/lib/api/respaldo'
@@ -923,8 +924,52 @@ function LaProgramacion() {
         )}
       </div>
 
+      <ElUltimoIntento />
+
       {editando ? <ModalProgramacion actual={data} onCerrar={() => setEditando(false)} /> : null}
     </>
+  )
+}
+
+/*
+  SI SE DESPERTÓ Y QUÉ HIZO.
+
+  Es la respuesta a «no se aprecia ni detecta que el cron esté funcionando». El
+  cron sí funcionaba —se despertó a las 12:45:00 en punto— y no había dónde
+  verlo: el rastro vive en la auditoría, que esconde por defecto lo que hace el
+  sistema y además pide ser administrador.
+
+  TRES ESTADOS Y NO DOS, porque hay un caso intermedio que no se puede callar:
+  que se haya despertado y no haya quedado constancia de lo que hizo. Pasa con
+  las pasadas anteriores a que existiera el rastro, y pasaría si algún día la
+  función muriera antes de poder anotar. Decir «se despertó y no sabemos qué
+  hizo» es incómodo y es la verdad; inventarse un «todo bien» sería peor.
+*/
+function ElUltimoIntento() {
+  const { data } = useUltimoIntentoDelRespaldo()
+
+  // Sin ninguna pasada todavía no se dice nada: un «nunca ha corrido» al lado
+  // de «está apagado» es decir dos veces lo mismo.
+  if (!data?.cuando) return null
+
+  const seSabeQueHizo = data.resultado !== null
+
+  return (
+    <p className="text-ink/55 mt-3 text-xs leading-relaxed">
+      Se despertó el <span className="text-ink/75">{fechaHora(data.cuando)}</span>
+      {seSabeQueHizo ? (
+        <>
+          {' · '}
+          <span className={data.enviado ? 'text-success' : 'text-warning'}>{data.resultado}</span>
+        </>
+      ) : (
+        <span className="text-ink/45">
+          {' '}
+          · no quedó constancia de lo que hizo, porque esa pasada es anterior a que se empezara a
+          anotar
+        </span>
+      )}
+    </p>
   )
 }
 
