@@ -26,6 +26,21 @@ export const EMPRESA = {
   marca: 'Minería Internacional',
   rif: 'J-50209170-0',
   actividad: 'Explotación de piedra',
+  /**
+   * El correo de contacto, para el membrete de todo lo que se imprime.
+   *
+   * Lo pidió la empresa el 24/09/2026: «en todos los pdf». Vive aquí y no solo
+   * en Configuración por lo mismo que la razón social y el RIF —los dos están
+   * tres renglones más arriba—: si la fila de la base no ha cargado, o nadie la
+   * ha llenado nunca, el papel sale igual con el dato correcto en vez de sin
+   * él. Lo que se escriba en Configuración manda sobre esto.
+   *
+   * No es lo mismo que la dirección que se quitó de este archivo. Aquella era
+   * la ubicación de la explotación y no debía publicarse; un buzón genérico
+   * está impreso en todo lo que sale de la empresa y su razón de ser es
+   * justamente que lo lea cualquiera.
+   */
+  correo: 'info@mineriainternacionalts.com',
   /*
     Aquí había un campo `estado` con la ubicación. Se quitó por instrucción de
     la dirección de Sistemas, por dos motivos a la vez: el dato no era correcto
