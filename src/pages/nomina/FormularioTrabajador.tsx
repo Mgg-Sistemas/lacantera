@@ -163,6 +163,15 @@ export function FormularioTrabajador() {
     )
   }
 
+  /*
+    EL NIVEL QUE TIENE PUESTO, PARA PODER COMPARARLO CON EL CARGO.
+
+    Hacía falta desde que se vio que dos fichas tenían un cargo que no era el de
+    su nivel y no había forma de arreglarlo. Ver el aviso de más abajo.
+  */
+  const nivelPuesto = (niveles.data ?? []).find((n) => String(n.id) === f.tabulador_id) ?? null
+  const cargoDesalineado = Boolean(nivelPuesto) && f.cargo !== nivelPuesto?.cargo
+
   const faltaQuien = !f.nombres || !f.apellidos ? 'Faltan los nombres y los apellidos.' : null
   const faltaContrato =
     !f.cargo || !f.fecha_ingreso ? 'Faltan el cargo y la fecha de ingreso.' : null
@@ -349,14 +358,59 @@ export function FormularioTrabajador() {
                         etiqueta: `${n.cargo} — ${dinero(n.moneda, n.sueldo_mensual)}`,
                       }))}
                   />
-                  <Input
-                    label="Cargo"
-                    placeholder="Operador de trituradora"
-                    hint={f.tabulador_id ? 'Lo pone el tabulador.' : undefined}
-                    disabled={Boolean(f.tabulador_id)}
-                    value={f.cargo}
-                    onChange={(e) => cambiar({ cargo: e.target.value })}
-                  />
+                  <div>
+                    <Input
+                      label="Cargo"
+                      placeholder="Operador de trituradora"
+                      hint={f.tabulador_id ? 'Lo pone el tabulador.' : undefined}
+                      disabled={Boolean(f.tabulador_id)}
+                      value={f.cargo}
+                      onChange={(e) => cambiar({ cargo: e.target.value })}
+                    />
+
+                    {/*
+                      CUANDO EL CARGO NO ES EL DE SU NIVEL, SE DICE Y SE ARREGLA.
+
+                      El campo se bloquea en cuanto hay nivel, y está bien: el
+                      cargo lo manda el tabulador. Lo que faltaba era la salida
+                      para las fichas que se quedaron descuadradas antes de que
+                      existiera ese candado.
+
+                      Y no se podían arreglar ni queriendo. El cargo se copia
+                      del nivel en el `onChange` del desplegable, así que hacía
+                      falta CAMBIAR de nivel para que se copiara — volver a
+                      elegir el mismo no dispara nada en un `select`. Quedaban
+                      atrapadas: campo bloqueado por un lado, y por el otro la
+                      única puerta que lo escribía sin abrirse nunca.
+
+                      Lo reportaron dos personas el 24/09/2026 y eran justo las
+                      dos fichas descuadradas de las veintitrés activas:
+                      «ANALISTA ADMINISTRATIVO» con nivel de gerente
+                      administrativo, y «SISTEMA E INVENTARIO» con nivel de
+                      sistema.
+
+                      Se enseña lo que dice cada uno en vez de arreglarlo solo
+                      al guardar. Cambiarle el cargo a alguien sin avisar es de
+                      las cosas que se descubren en un recibo.
+                    */}
+                    {cargoDesalineado ? (
+                      <div className="border-warning/30 bg-warning/5 mt-2 rounded-md border px-3 py-2">
+                        <p className="text-ink/75 text-xs leading-relaxed">
+                          El tabulador dice{' '}
+                          <strong className="text-ink/90">{nivelPuesto?.cargo}</strong> y la ficha
+                          dice <strong className="text-ink/90">{f.cargo || 'nada'}</strong>.
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1 -ml-2"
+                          onClick={() => cambiar({ cargo: nivelPuesto?.cargo ?? '' })}
+                        >
+                          Ponerlo como el tabulador
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
                   <Input
                     label="Departamento o frente"
                     placeholder="Planta"
