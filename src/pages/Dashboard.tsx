@@ -4,9 +4,11 @@ import {
   Banknote,
   Boxes,
   ClipboardCheck,
+  Cog,
   Users,
   HandCoins,
   Info,
+  Mountain,
   ShoppingCart,
   Calculator,
   Truck,
@@ -104,6 +106,61 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
       */
       detalle: 'Pedirlo ahora cuesta menos que quedarse sin ello.',
       ruta: '/app/inventario/existencias',
+    })
+  }
+
+  /*
+    LO QUE ESPERA EN LOS OTROS MÓDULOS.
+
+    Hasta el 24/09/2026 este panel hablaba de compras, tesorería e inventario y
+    de nada más. Quien lleva nómina, ventas, explotación o el patio entraba cada
+    mañana a una pantalla sobre el trabajo de otros.
+
+    No hacía falta pedirle nada a la base: los contadores ya estaban en
+    `v_panel_resumen` desde que el carril BD la amplió, devolviendo NULL a quien
+    no tiene permiso en ese módulo. El panel simplemente no los leía.
+
+    Entran como AVISOS y no como tarjetas porque son colas —cosas esperando a
+    alguien— y este bloque ya es el sitio de lo que espera. Lo que es una cifra
+    para mirar, y no una cola, va arriba en las tarjetas.
+  */
+  if (Number(r.salidas_por_aprobar) > 0) {
+    avisos.push({
+      tono: 'warning',
+      titulo: `${r.salidas_por_aprobar} salida${r.salidas_por_aprobar === 1 ? '' : 's'} esperando aprobación`,
+      detalle:
+        'Hasta que se apruebe, el material no sale del patio y quien lo pidió sigue esperando.',
+      ruta: '/app/salidas/solicitudes',
+    })
+  }
+
+  if (Number(r.despachos_por_aprobar) > 0) {
+    avisos.push({
+      tono: 'warning',
+      titulo: `${r.despachos_por_aprobar} despacho${r.despachos_por_aprobar === 1 ? '' : 's'} pedido${r.despachos_por_aprobar === 1 ? '' : 's'} sin aprobar`,
+      detalle: 'Se aprueban desde la nota de entrega, que es donde se piden.',
+      ruta: '/app/facturacion/notas-entrega',
+    })
+  }
+
+  if (Number(r.notas_sin_facturar) > 0) {
+    avisos.push({
+      tono: 'warning',
+      titulo: `${r.notas_sin_facturar} nota${r.notas_sin_facturar === 1 ? '' : 's'} de entrega sin facturar`,
+      // Se cuentan solo las facturables: hay notas que a propósito no lo son, y
+      // meterlas en la cuenta haría que el aviso no bajara nunca de cero.
+      detalle: 'El material ya salió. Mientras no se facture, no se puede cobrar.',
+      ruta: '/app/facturacion/notas-entrega',
+    })
+  }
+
+  if (Number(r.maquinas_fuera) > 0) {
+    avisos.push({
+      tono: 'warning',
+      titulo: `${r.maquinas_fuera} máquina${r.maquinas_fuera === 1 ? '' : 's'} fuera de servicio`,
+      detalle:
+        'Una máquina parada no produce y sigue costando. En el taller es distinto: ahí ya la están atendiendo.',
+      ruta: '/app/maquinaria',
     })
   }
 
@@ -227,7 +284,17 @@ export function Dashboard() {
     que esta persona no puede abrir, avisarle de algo que no puede ir a
     resolver solo sirve para inquietarla.
   */
-  const avisos = avisosDe(r).filter((a) => puede(moduloDeRuta(a.ruta)))
+  /*
+    Rojo arriba, y dentro de cada color el orden en que se escribieron.
+
+    Antes salían en el orden del código y daba igual porque eran cinco. Con los
+    de los otros módulos son nueve, y una lista de nueve donde lo urgente puede
+    caer séptimo es una lista que se lee por encima.
+  */
+  const PESO = { danger: 0, warning: 1, info: 2 }
+  const avisos = avisosDe(r)
+    .filter((a) => puede(moduloDeRuta(a.ruta)))
+    .sort((a, b) => PESO[a.tono] - PESO[b.tono])
   const veTesoreria = puede('TESORERIA')
   const veCompras = puede('COMPRAS')
   const veInventario = puede('INVENTARIO')
@@ -386,6 +453,68 @@ export function Dashboard() {
                     : r.articulos_bajo_minimo === 0
                       ? 'Ningún artículo bajo mínimo'
                       : `${r.articulos_bajo_minimo} bajo el mínimo`
+                }
+              />
+            ) : null}
+            {/*
+              LAS TRES QUE FALTABAN, Y POR QUÉ SON TARJETA Y NO AVISO.
+
+              Un acarreo hecho, una máquina andando y un trabajador activo no
+              esperan a nadie: son el pulso, no una cola. Lo que espera está
+              arriba, en «requiere atención».
+
+              Se pintan solo si el contador NO es nulo. Nulo quiere decir que
+              este módulo no le toca a quien mira, y en ese caso la tarjeta no
+              aparece —ni siquiera en cero—: un cero afirma que no hay nada, y
+              eso es una afirmación que no se le puede hacer a quien no tiene
+              permiso para saberlo.
+            */}
+            {r.acarreos_7d !== null ? (
+              <StatCard
+                a="/app/explotacion/viajes"
+                label="Acarreado en 7 días"
+                value={`${enteros(Number(r.acarreos_m3_7d ?? 0))} m³`}
+                icon={<Mountain />}
+                tone="info"
+                deltaLabel={
+                  r.acarreos_7d === 0
+                    ? 'Ningún viaje esta semana'
+                    : `${enteros(r.acarreos_7d)} viaje${r.acarreos_7d === 1 ? '' : 's'}`
+                }
+              />
+            ) : null}
+
+            {r.maquinas_activas !== null ? (
+              <StatCard
+                a="/app/maquinaria"
+                label="Máquinas activas"
+                value={enteros(r.maquinas_activas)}
+                icon={<Cog />}
+                tone={Number(r.maquinas_fuera) > 0 ? 'warning' : 'success'}
+                deltaLabel={
+                  Number(r.maquinas_fuera) === 0 && Number(r.maquinas_en_taller) === 0
+                    ? 'Ninguna parada'
+                    : [
+                        Number(r.maquinas_fuera) > 0 ? `${r.maquinas_fuera} fuera de servicio` : null,
+                        Number(r.maquinas_en_taller) > 0 ? `${r.maquinas_en_taller} en taller` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')
+                }
+              />
+            ) : null}
+
+            {r.nomina_empleados !== null ? (
+              <StatCard
+                a="/app/nomina/personal"
+                label="Trabajadores activos"
+                value={enteros(r.nomina_empleados)}
+                icon={<Users />}
+                tone="info"
+                deltaLabel={
+                  Number(r.nomina_periodos_abiertos) === 0
+                    ? 'Ningún período abierto'
+                    : `${r.nomina_periodos_abiertos} período${r.nomina_periodos_abiertos === 1 ? '' : 's'} sin pagar`
                 }
               />
             ) : null}

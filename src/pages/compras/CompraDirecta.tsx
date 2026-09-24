@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas } from '@/components/Pestanas'
+import { PESTANAS_COMPRA_DIRECTA } from '@/components/pestanasDeModulos'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ChipTasa } from '@/components/ChipTasa'
@@ -460,6 +462,8 @@ export function CompraDirecta() {
           </>
         }
       />
+
+      <Pestanas pestanas={PESTANAS_COMPRA_DIRECTA} />
 
       <div className="max-w-3xl space-y-4">
         {!tasaVigente ? (

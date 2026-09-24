@@ -1,7 +1,7 @@
-import { Link } from 'react-router'
 import type { LucideIcon } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
-import { esRutaFueraDelMvp } from '@/config/navigation'
+import { TarjetaDeAccion } from '@/components/tablero/TarjetaDeAccion'
+import { esRutaFueraDelMvp, moduloDeRuta } from '@/config/navigation'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { cn } from '@/lib/cn'
 
 /**
@@ -18,6 +18,18 @@ import { cn } from '@/lib/cn'
  * el objetivo del encargo era justo el contrario: que quien aprende un módulo
  * no tenga que reaprender el siguiente. La consistencia entre módulos no se
  * consigue con disciplina, se consigue compartiendo la pieza.
+ *
+ * Y LA PRUEBA DE QUE ESO ERA CIERTO LLEGÓ EL 24/09/2026. Esto compartía el
+ * grupo pero no la tarjeta, y `QueHacer` dibujaba la suya —casi idéntica, con
+ * su propio comentario diciendo lo mismo que este— sin que ninguno de los dos
+ * supiera del otro. Ventas tenía una tercera a mano. La tarjeta se sacó a
+ * `TarjetaDeAccion` y ahora las tres son la misma.
+ *
+ * Lo que queda aquí es lo que de verdad distingue a este componente de
+ * `QueHacer`: esto es el CUERPO del tablero y se ve siempre, mientras que
+ * aquello es la mitad de abajo y se esconde con el «(?)» de ayuda. Se
+ * descartó juntarlos en uno con un interruptor: son dos papeles distintos, no
+ * dos configuraciones del mismo.
  *
  * LO QUE NO SE PUEDE HACER, NO SE OFRECE
  *
@@ -41,16 +53,15 @@ export interface Accion {
 export function GrupoAcciones({
   titulo,
   acciones,
-  puedeEscribir,
   columnas = 2,
   className,
 }: {
   titulo?: string
   acciones: Accion[]
-  puedeEscribir: boolean
   columnas?: 2 | 3
   className?: string
 }) {
+  const { puede } = useMisPermisos()
   /*
     Lo que hoy no se ofrece no se ofrece tampoco desde un tablero.
 
@@ -60,9 +71,24 @@ export function GrupoAcciones({
 
     Hizo falta al entrar Tesorería, que ofrece «cuentas por cobrar» y ventas
     sigue fuera del MVP.
+
+    Y EL PERMISO SE MIRA POR LA RUTA, no por el módulo del tablero.
+
+    Hasta el 24/09/2026 esto recibía un `puedeEscribir` de fuera —el del módulo
+    que dibujaba el grupo— y con eso decidía. Servía mientras todas las tarjetas
+    apuntaran dentro de casa, y dejó de servir en cuanto dejaron de hacerlo:
+    Tesorería ofrece «cuentas por cobrar», que es de Facturación, y Explotación
+    ofrece las máquinas, que son de Maquinaria. A quien no tiene ese otro módulo
+    se le estaba enseñando una tarjeta que lleva a un candado.
+
+    Ahora se resuelve como lo hace `QueHacer`: el módulo sale de la ruta. Para
+    una tarjeta de casa da exactamente lo mismo que antes —la ruta es del propio
+    módulo— y para una de fuera, acierta.
   */
   const visibles = acciones.filter(
-    (a) => (!a.exigeEscritura || puedeEscribir) && !esRutaFueraDelMvp(a.ruta),
+    (a) =>
+      !esRutaFueraDelMvp(a.ruta) &&
+      puede(moduloDeRuta(a.ruta), a.exigeEscritura ? 'ESCRITURA' : 'LECTURA'),
   )
   if (visibles.length === 0) return null
 
@@ -78,67 +104,19 @@ export function GrupoAcciones({
           columnas === 3 ? 'sm:grid-cols-2 xl:grid-cols-3' : 'sm:grid-cols-2',
         )}
       >
-        {visibles.map((a) => {
-          const Icono = a.icono
-          const espera = (a.cuenta ?? 0) > 0
-
-          return (
-            <Link key={a.titulo} to={a.ruta} className="block">
-              <Card
-                className={cn(
-                  'hover:border-royal-300 h-full border transition-colors',
-                  // Solo se enciende lo que tiene algo esperando. Si todo
-                  // llamara la atención, no la llamaría nada.
-                  espera ? 'border-warning/40' : 'border-hairline',
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <Icono
-                    className={cn(
-                      'mt-0.5 size-[18px] shrink-0',
-                      espera ? 'text-warning' : 'text-ink/30',
-                    )}
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="text-ink/90 text-base font-medium">{a.titulo}</p>
-                      {a.cuenta !== undefined ? (
-                        <span
-                          className={cn(
-                            'tabular shrink-0 text-lg font-light',
-                            espera ? 'text-warning' : 'text-ink/25',
-                          )}
-                        >
-                          {a.cuenta}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="text-ink/55 mt-1 text-sm leading-relaxed">{a.detalle}</p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          )
-        })}
+        {visibles.map((a) => (
+          <TarjetaDeAccion
+            key={a.titulo}
+            accion={{
+              titulo: a.titulo,
+              detalle: a.detalle,
+              icono: a.icono,
+              a: a.ruta,
+              cuenta: a.cuenta,
+            }}
+          />
+        ))}
       </div>
     </div>
-  )
-}
-
-/**
- * La explicación para quien entra por primera vez.
- *
- * Va al final de cada tablero y no arriba: quien ya sabe no tiene que
- * saltársela cada mañana, y quien no sabe la encuentra al terminar de mirar.
- */
-export function PrimeraVez({ children }: { children: React.ReactNode }) {
-  return (
-    <Card>
-      <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">
-        Si es la primera vez
-      </p>
-      <div className="text-ink/75 mt-3 space-y-2 text-sm leading-relaxed">{children}</div>
-    </Card>
   )
 }

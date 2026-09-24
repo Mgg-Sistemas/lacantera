@@ -1,8 +1,5 @@
-import { Link } from 'react-router'
-import { ArrowRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
-import { cn } from '@/lib/cn'
+import { TarjetaDeAccion } from '@/components/tablero/TarjetaDeAccion'
 import { esRutaFueraDelMvp, moduloDeRuta } from '@/config/navigation'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useAyudaVisible } from '@/lib/ayuda'
@@ -43,6 +40,8 @@ export interface Accion {
   exige?: 'LECTURA' | 'ESCRITURA'
   /** Se pinta apagada y sin enlace: el paso todavía no toca. */
   bloqueada?: string
+  /** Cuántos hay esperando aquí. Sin esto no se enseña ninguna cifra. */
+  cuenta?: number
 }
 
 export interface GrupoDeAcciones {
@@ -110,60 +109,12 @@ export function QueHacer({
 
             <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {g.acciones.map((a) => (
-                <Tarjeta key={a.titulo} accion={a} />
+                <TarjetaDeAccion key={a.titulo} accion={a} />
               ))}
             </div>
           </div>
         ))}
       </div>
     </section>
-  )
-}
-
-function Tarjeta({ accion: a }: { accion: Accion }) {
-  const Icono = a.icono
-
-  const cuerpo = (
-    <Card
-      className={cn(
-        'border-hairline h-full border transition-colors',
-        a.bloqueada ? 'opacity-55' : 'hover:border-royal-300 hover:bg-royal-600/[0.03]',
-      )}
-    >
-      <div className="flex items-start gap-3">
-        {/* El número donde hay orden; el icono donde no. Los dos ocupan el
-            mismo hueco para que las tarjetas se alineen entre grupos. */}
-        {a.paso !== undefined ? (
-          <span className="bg-royal-600/12 text-royal-700 dark:text-royal-300 tabular mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-            {a.paso}
-          </span>
-        ) : (
-          <Icono className="text-ink/30 mt-0.5 size-[18px] shrink-0" aria-hidden="true" />
-        )}
-
-        <div className="min-w-0 flex-1">
-          <p className="text-ink/90 flex items-center gap-1.5 text-base font-medium">
-            {a.titulo}
-            {!a.bloqueada ? (
-              <ArrowRight className="text-ink/25 size-4 shrink-0" aria-hidden="true" />
-            ) : null}
-          </p>
-          <p className="text-ink/55 mt-1 text-sm leading-relaxed">{a.detalle}</p>
-          {a.bloqueada ? (
-            <p className="text-ink/40 mt-1.5 text-xs italic">{a.bloqueada}</p>
-          ) : null}
-        </div>
-      </div>
-    </Card>
-  )
-
-  // Bloqueada no es un enlace apagado: es que no hay a dónde ir todavía. Un
-  // enlace que no lleva a ningún sitio se pulsa igual, y desconcierta.
-  return a.bloqueada ? (
-    <div>{cuerpo}</div>
-  ) : (
-    <Link to={a.a} className="block">
-      {cuerpo}
-    </Link>
   )
 }
