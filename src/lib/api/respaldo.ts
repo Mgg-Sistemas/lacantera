@@ -538,3 +538,52 @@ export function loQueImpideProgramar(p: {
   if (p.motivo.trim().length < 4) return 'Falta decir por qué se programa así.'
   return null
 }
+
+/*
+  EL ÚLTIMO INTENTO DEL PROGRAMADOR, PARA PODER DECIRLO EN LA TARJETA.
+
+  Nació de un reporte del usuario que valía por cuatro: «no se aprecia ni
+  detecta que el cron esté funcionando». Y el cron SÍ estaba funcionando —se
+  despertó a las 12:45:00 en punto— pero no había dónde verlo.
+
+  El rastro acabó existiendo en la auditoría, y aun así no bastaba por dos
+  motivos que solo se ven juntos: la pantalla de auditoría **esconde por
+  defecto** lo que hace el sistema, y además pide el rol de administrador,
+  mientras que esta pantalla la abre quien tenga el de Respaldo. O sea que el
+  encargado de los respaldos no podía ver si su propio envío había corrido.
+
+  Por eso el dato viene aquí, donde alguien ya está mirando cuando se pregunta
+  si esto funciona. La auditoría sigue teniendo la historia completa; esto es
+  el semáforo, que es otra pregunta.
+
+  `cuando` SALE DEL CRON Y NO DE LA CONSTANCIA, a propósito. Son dos cosas
+  distintas —cuándo se despertó y cuándo dejó dicho algo— y hoy ni siquiera
+  coinciden: corrió a las 12:45 y el rastro se montó a las 13:46. Leyéndolo del
+  cron, la tarjeta dice la verdad aunque algún día la función muera antes de
+  poder anotar nada.
+
+  Y `resultado` VIENE ESCRITO DE LA BASE. Es la misma frase que se guarda en la
+  auditoría. Componerla aquí daría dos redacciones de lo mismo, y dos
+  redacciones de lo mismo se separan.
+*/
+export interface UltimoIntentoDelRespaldo {
+  /** Cuándo se despertó la tarea. Nulo si no ha corrido nunca. */
+  cuando: string | null
+  /** Lo que dice pg_cron: `succeeded` o `failed`. */
+  estado: string | null
+  /** Nulo cuando la pasada es anterior a que existiera el rastro. */
+  enviado: boolean | null
+  motivo: string | null
+  resultado: string | null
+}
+
+export function useUltimoIntentoDelRespaldo() {
+  return useQuery({
+    queryKey: ['respaldo', 'ultimo-intento'],
+    queryFn: async (): Promise<UltimoIntentoDelRespaldo | null> => {
+      const filas = await rpc<UltimoIntentoDelRespaldo[]>('respaldo_ultimo_intento')
+      const fila = Array.isArray(filas) ? filas[0] : filas
+      return fila ?? null
+    },
+  })
+}
