@@ -11,14 +11,24 @@
  * la ficha que el papel no pregunta se rellena de memoria una semana después,
  * que es como se escriben los teléfonos equivocados.
  *
- * Por eso donde el sistema ofrece una lista cerrada —estado civil, jornada,
- * forma de pago— el papel ofrece las MISMAS opciones con su casilla, y no una
- * raya en blanco. Una raya invita a escribir «unión libre», y luego en pantalla
- * hay que elegir entre cinco que no lo dicen así.
+ * Por eso donde el sistema ofrece una lista cerrada —estado civil, jornada— el
+ * papel ofrece las MISMAS opciones con su casilla, y no una raya. Una raya
+ * invita a escribir «unión libre», y luego en pantalla hay que elegir entre
+ * cinco que no lo dicen así.
  *
- * NO SE PREGUNTA EL SUELDO NI LA FECHA DE INGRESO. Los dos salen del tabulador
- * y de la decisión de contratar, no de la entrevista; ponerlos aquí invitaría a
- * prometerlos en la mesa.
+ * LA EXCEPCIÓN, Y HAY QUE DECIRLA: el tipo de cuenta —corriente o ahorro— lo
+ * pidió el usuario y HOY EL SISTEMA NO LO GUARDA. Es el único hueco de este
+ * papel sin sitio donde transcribirse, y está anotado como pendiente. Se pone
+ * igual porque el dato hace falta al pagar; lo que no se puede es olvidar que
+ * la ficha todavía no tiene dónde meterlo.
+ *
+ * LO QUE NO SE PREGUNTA, Y POR QUÉ
+ *
+ *   · El sueldo y la fecha de ingreso salen del tabulador y de la decisión de
+ *     contratar. Ponerlos aquí invitaría a prometerlos en la mesa.
+ *   · La forma de pago la decide nómina después, según lo que la empresa use
+ *     con cada quien. Preguntarla es dejar que se elija donde no se elige. Los
+ *     DATOS bancarios sí se piden, para tenerlos el día que haya que pagar.
  *
  * DOS HOJAS Y NO UNA, a propósito. Apretando cabría en una, con rayas de cuatro
  * milímetros donde no entra una firma ni un nombre largo. El papel es barato y
@@ -44,11 +54,22 @@ import {
 
 type Doc = import('jspdf').jsPDF
 
-/** Lo que mide un renglón para escribir a mano. Medido con letra normal. */
+/** Lo que mide un renglón para escribir a mano. Menos no admite una letra normal. */
 const ALTO_RENGLON = 11
 const SEPARA_COL = 8
 const ANCHO_COL = (ANCHO_UTIL - SEPARA_COL) / 2
 const COL2 = IZQ + ANCHO_COL + SEPARA_COL
+
+/** La raya de firmar. Todo el pie se mide desde aquí. */
+const RAYA_FIRMA = ABAJO - 27
+
+/**
+ * Dónde empieza el bloque del pie, contando el recuadro de la huella.
+ *
+ * Es el techo que la declaración tiene que respetar, así que vive fuera de las
+ * dos funciones que lo miran: un número compartido no se desincroniza.
+ */
+const ARRANQUE_DEL_PIE = RAYA_FIRMA - 12
 
 /**
  * Un hueco para escribir: el rótulo arriba, pequeño, y la raya debajo.
@@ -63,7 +84,7 @@ function hueco(doc: Doc, x: number, y: number, ancho: number, rotulo: string, pi
 
   if (pista) {
     const usado = doc.getTextWidth(rotulo.toUpperCase())
-    doc.setFontSize(6.5).setTextColor(HAIRLINE === '#e7e5e4' ? '#b5b0ab' : GRIS)
+    doc.setFontSize(6.5).setTextColor('#b5b0ab')
     doc.text(pista, x + usado + 2, y)
   }
 
@@ -90,12 +111,19 @@ function opciones(doc: Doc, x: number, y: number, rotulo: string, lista: string[
   return y + ALTO_RENGLON
 }
 
+/** Una línea de ayuda debajo del título de una sección. */
+function pistaDeSeccion(doc: Doc, y: number, texto: string): number {
+  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
+  doc.text(texto, IZQ, y)
+  return y + 6
+}
+
 /**
- * La tabla de la carga familiar, con las filas vacías.
+ * Una tabla con las filas vacías, para escribir dentro.
  *
- * Cinco filas y no tres: la carga familiar de esta casa llega a cuatro y cinco
- * hijos con normalidad, y una tabla que se queda corta se continúa en el margen
- * con una flecha que nadie transcribe.
+ * Las columnas se dan con su ancho en milímetros y tienen que sumar el ancho
+ * útil: repartirlo aquí sería adivinar cuánto ocupa «fecha de nacimiento»
+ * escrito a mano, y quien arma la tabla sí lo sabe.
  */
 function tablaEnBlanco(doc: Doc, y: number, columnas: [string, number][], filas: number): number {
   const ALTO_FILA = 9
@@ -110,10 +138,7 @@ function tablaEnBlanco(doc: Doc, y: number, columnas: [string, number][], filas:
   const arriba = y + 2
   doc.setDrawColor(HAIRLINE).setLineWidth(0.3)
 
-  for (let f = 0; f <= filas; f++) {
-    const linea = arriba + f * ALTO_FILA
-    doc.line(IZQ, linea, DER, linea)
-  }
+  for (let f = 0; f <= filas; f++) doc.line(IZQ, arriba + f * ALTO_FILA, DER, arriba + f * ALTO_FILA)
 
   x = IZQ
   for (const [, ancho] of columnas) {
@@ -126,19 +151,16 @@ function tablaEnBlanco(doc: Doc, y: number, columnas: [string, number][], filas:
 }
 
 /*
-  EL PIE FIRMADO, ANCLADO ABAJO.
+  EL PIE FIRMADO: EXACTAMENTE DOS FIRMAS.
 
-  Va pegado al margen inferior y no al final de lo que haya encima, para que
-  caiga siempre a la misma altura: es donde la gente lo busca al repasar una
-  pila de planillas, y donde se apoya la mano para firmar.
+  Firma quien da los datos y firma quien los tomó. Una planilla con una sola
+  firma no dice quién estuvo delante, y a los tres meses eso es justo lo que se
+  pregunta. Y no hay una tercera.
 
-  DOS RAYAS Y NO UNA. Firma quien da los datos y firma quien los tomó. Una
-  planilla con una sola firma no dice quién estuvo delante, y a los tres meses
-  eso es justo lo que se pregunta.
-
-  Y DEBAJO DE CADA RAYA, EL NOMBRE Y LA CÉDULA. Una firma sola no identifica a
-  nadie: media plantilla firma con una rúbrica que no se lee. El nombre en letra
-  de molde debajo es lo que convierte el garabato en un dato.
+  EL NOMBRE VA DE LEYENDA, NO EN SU PROPIA RAYA. Llevaba una segunda raya debajo
+  para el nombre y la cédula, y el pie pasaba a leerse como CUATRO campos de
+  firma. Lo dijo el usuario mirándolo. Ahora es texto pequeño bajo la única
+  raya: dice qué escribir sin parecer otro sitio donde firmar.
 
   LA HUELLA ES OPCIONAL Y SE DECIDE ANTES DE IMPRIMIR. Hay quien no firma igual
   dos veces, y para esos casos la huella del pulgar vale más que la rúbrica.
@@ -147,9 +169,6 @@ function tablaEnBlanco(doc: Doc, y: number, columnas: [string, number][], filas:
   papel no se llena entero.
 */
 function pieFirmado(doc: Doc, conHuella: boolean): void {
-  const RAYA = ABAJO - 27
-  const SEGUNDA = RAYA + 12
-
   const anchoHuella = 26
   const desdeX = conHuella ? IZQ + anchoHuella + 8 : IZQ
   const SEPARA = 16
@@ -158,26 +177,26 @@ function pieFirmado(doc: Doc, conHuella: boolean): void {
   doc.setDrawColor('#9c9690').setLineWidth(0.3)
 
   if (conHuella) {
-    // El recuadro sube hasta encima de la primera raya y baja hasta la segunda:
-    // así ocupa el alto de las dos y el pie se lee como un solo bloque.
-    const alto = SEGUNDA - RAYA + 18
-    doc.rect(IZQ, RAYA - 12, anchoHuella, alto)
-    doc.setFont('helvetica', 'normal').setFontSize(6.5).setTextColor(GRIS)
-    doc.text('HUELLA', IZQ + anchoHuella / 2, RAYA - 15, { align: 'center' })
-    doc.text('Pulgar derecho', IZQ + anchoHuella / 2, SEGUNDA + 9, { align: 'center' })
+    doc.rect(IZQ, ARRANQUE_DEL_PIE, anchoHuella, 24)
+    // El rótulo va DENTRO del recuadro: encima se comía la línea que necesita
+    // la declaración, y dentro no estorba a la huella, que se estampa al medio.
+    doc.setFont('helvetica', 'normal').setFontSize(6).setTextColor(GRIS)
+    doc.text('HUELLA', IZQ + anchoHuella / 2, ARRANQUE_DEL_PIE + 4, { align: 'center' })
+    doc.text('Pulgar derecho', IZQ + anchoHuella / 2, ARRANQUE_DEL_PIE + 28, { align: 'center' })
   }
 
-  const lados = ['Firma del aspirante', 'Firma de quien entrevista']
-  for (const [i, texto] of lados.entries()) {
+  for (const [i, texto] of ['Firma del aspirante', 'Firma de quien entrevista'].entries()) {
     const x = desdeX + i * (ancho + SEPARA)
 
-    doc.line(x, RAYA, x + ancho, RAYA)
-    doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-    doc.text(texto, x + ancho / 2, RAYA + 4, { align: 'center' })
+    doc.line(x, RAYA_FIRMA, x + ancho, RAYA_FIRMA)
 
-    doc.line(x, SEGUNDA, x + ancho, SEGUNDA)
-    doc.setFontSize(6.5)
-    doc.text('Nombre en letra de molde y cédula', x + ancho / 2, SEGUNDA + 4, { align: 'center' })
+    doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
+    doc.text(texto, x + ancho / 2, RAYA_FIRMA + 4, { align: 'center' })
+
+    doc.setFontSize(6.5).setTextColor('#b5b0ab')
+    doc.text('nombre en letra de molde y cédula', x + ancho / 2, RAYA_FIRMA + 8, {
+      align: 'center',
+    })
   }
 }
 
@@ -194,7 +213,7 @@ export async function armarPlanillaDeIngreso(
   const logo = await logoComoImagen(400, false)
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  // ─────────────────────────────────────────────── hoja 1
+  // ═════════════════════════════════════════════════════════════════ hoja 1
   let y = tituloDocumento(
     doc,
     membrete(doc, logo, { empresa: d.empresa }),
@@ -209,7 +228,7 @@ export async function armarPlanillaDeIngreso(
   )
   y += 12
 
-  // ── 1. Quién es ──────────────────────────────────────────────────────────
+  // ── 1 · Quién es ─────────────────────────────────────────────────────────
   y = seccion(doc, y, '1 · Quién es')
 
   hueco(doc, IZQ, y, ANCHO_COL, 'Cédula')
@@ -234,20 +253,9 @@ export async function armarPlanillaDeIngreso(
 
   y = opciones(doc, IZQ, y, 'Género', ['Masculino', 'Femenino'])
 
-  /*
-    El grupo sanguíneo va en el carnet y en una emergencia es lo primero que se
-    busca. Se pregunta en la entrevista porque después nadie vuelve a preguntarlo.
-  */
-  y = opciones(doc, IZQ, y, 'Grupo sanguíneo', [
-    'O+',
-    'O-',
-    'A+',
-    'A-',
-    'B+',
-    'B-',
-    'AB+',
-    'AB-',
-  ])
+  // El grupo sanguíneo va en el carnet y en una emergencia es lo primero que se
+  // busca. Se pregunta aquí porque después nadie vuelve a preguntarlo.
+  y = opciones(doc, IZQ, y, 'Grupo sanguíneo', ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'])
 
   hueco(doc, IZQ, y, ANCHO_COL, 'Teléfono')
   hueco(doc, COL2, y, ANCHO_COL, 'Correo electrónico', '(si tiene)')
@@ -260,16 +268,13 @@ export async function armarPlanillaDeIngreso(
   doc.line(IZQ, y + 1, DER, y + 1)
   y += 10
 
-  // ── 2. Carga familiar ────────────────────────────────────────────────────
+  // ── 2 · Carga familiar ───────────────────────────────────────────────────
   y = seccion(doc, y, '2 · Carga familiar y dependientes')
-
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-  doc.text(
-    'Parentesco: cónyuge, concubino/a, hijo/a, padre, madre, hermano/a, abuelo/a, nieto/a u otro familiar.',
-    IZQ,
+  y = pistaDeSeccion(
+    doc,
     y,
+    'Parentesco: cónyuge, concubino/a, hijo/a, padre, madre, hermano/a, abuelo/a, nieto/a u otro familiar.',
   )
-  y += 6
 
   y = tablaEnBlanco(
     doc,
@@ -286,45 +291,43 @@ export async function armarPlanillaDeIngreso(
 
   pieDePagina(doc, 'Hoja 1 de 2 · Hoja de ingreso y registro de personal')
 
-  // ─────────────────────────────────────────────── hoja 2
+  // ═════════════════════════════════════════════════════════════════ hoja 2
   doc.addPage()
-  y = tituloDocumento(
-    doc,
-    membrete(doc, logo, { empresa: d.empresa }),
-    'Hoja de ingreso — continuación',
-  )
-  y += 6
+  y =
+    tituloDocumento(
+      doc,
+      membrete(doc, logo, { empresa: d.empresa }),
+      'Hoja de ingreso — continuación',
+    ) + 6
 
-  // ── 3. Salud ─────────────────────────────────────────────────────────────
+  // ── 3 · Salud ────────────────────────────────────────────────────────────
   y = seccion(doc, y, '3 · Salud')
 
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-  doc.text(
-    'Alergias, condiciones crónicas, tratamientos o limitaciones que haya que tener en cuenta en el trabajo.',
-    IZQ,
-    y,
-  )
-  y += 6
-
+  /*
+    La explicación va en la cabecera de la primera columna y no en un renglón
+    aparte. Un renglón de ayuda cuesta seis milímetros, y en esta hoja los seis
+    milímetros son la diferencia entre que la declaración quepa encima de las
+    firmas o se le monte. Dos filas por lo mismo: lo normal es ninguna o una, y
+    lo que no quepa se sigue en la nota del sistema al transcribir.
+  */
   y = tablaEnBlanco(
     doc,
     y,
     [
-      ['Qué es', 45],
-      ['Detalle', 75],
+      ['Qué es (alergia, condición, tratamiento)', 80],
+      ['Detalle', 40],
       ['Desde cuándo', 30],
     ],
-    3,
+    2,
   )
 
-  // ── 4. A quién avisar ────────────────────────────────────────────────────
+  // ── 4 · A quién avisar ───────────────────────────────────────────────────
   y = seccion(doc, y, '4 · A quién avisar en una emergencia')
-
   hueco(doc, IZQ, y, ANCHO_COL, 'Nombre y parentesco', '(ej.: Marta Arias, esposa)')
   hueco(doc, COL2, y, ANCHO_COL, 'Teléfono de esa persona')
-  y += ALTO_RENGLON + 4
+  y += ALTO_RENGLON + 2
 
-  // ── 5. El puesto ─────────────────────────────────────────────────────────
+  // ── 5 · El puesto ────────────────────────────────────────────────────────
   y = seccion(doc, y, '5 · El puesto')
 
   hueco(doc, IZQ, y, ANCHO_COL, 'Cargo al que aspira')
@@ -333,60 +336,57 @@ export async function armarPlanillaDeIngreso(
 
   y = opciones(doc, IZQ, y, 'Jornada', ['Diurna — 8 h', 'Nocturna — 7 h', 'Mixta — 7,5 h'])
 
-  hueco(doc, IZQ, y, ANCHO_UTIL, 'Desde cuándo puede empezar')
-  y += ALTO_RENGLON + 4
+  hueco(doc, IZQ, y, ANCHO_COL, 'Desde cuándo puede empezar')
+  hueco(doc, COL2, y, ANCHO_COL, 'Lugar y fecha de la entrevista')
+  y += ALTO_RENGLON + 2
 
-  // ── 6. Cómo cobraría ─────────────────────────────────────────────────────
-  // (la fecha va abajo, junto a las firmas)
-  y = seccion(doc, y, '6 · Cómo cobraría')
-
-  y = opciones(doc, IZQ, y, 'Forma de pago', [
-    'Transferencia',
-    'Pago móvil',
-    'Efectivo',
-    'Zelle',
-    'Binance / USDT',
-  ])
+  // ── 6 · Dónde cobraría ───────────────────────────────────────────────────
+  y = seccion(doc, y, '6 · Dónde cobraría')
 
   hueco(doc, IZQ, y, ANCHO_COL, 'Banco')
   hueco(doc, COL2, y, ANCHO_COL, 'Número de cuenta')
   y += ALTO_RENGLON
 
-  hueco(doc, IZQ, y, ANCHO_COL, 'Teléfono del pago móvil')
+  /*
+    EL TIPO DE CUENTA NO TIENE DÓNDE GUARDARSE TODAVÍA.
+
+    Lo pidió el usuario y hace falta: transferir a una cuenta de ahorro cuando
+    es corriente lo rebota el banco. Pero `empleados` no tiene la columna, así
+    que hoy este es el único hueco del papel que no se puede transcribir. Queda
+    anotado como pendiente; el papel va por delante a propósito, que fue lo que
+    se pidió.
+  */
+  const finTipo = opciones(doc, IZQ, y, 'Tipo de cuenta', ['Corriente', 'Ahorro'])
   hueco(doc, COL2, y, ANCHO_COL, 'Cédula del titular', '(si no es la suya)')
-  y += ALTO_RENGLON + 4
+  y = finTipo
+
+  hueco(doc, IZQ, y, ANCHO_COL, 'Teléfono del pago móvil')
 
   /*
-    LA DECLARACIÓN SE ANCLA AL PIE, como las firmas, y no al final de lo de
-    arriba.
-    
-    Calculado: con las seis secciones encima, el texto terminaba a 1,5 mm de la
-    raya de firmar si se partía en tres renglones en vez de dos — y de cuántos
-    renglones se parte depende del lector de PDF, no de nosotros. Anclado abajo,
-    la distancia es la misma siempre y lo que se mueve es el hueco de arriba,
-    que es hueco.
+    LA DECLARACIÓN SE APOYA SOBRE EL PIE, y su sitio se calcula hacia arriba.
+
+    Estuvo anclada a una altura fija y se montó encima del último bloque: se vio
+    en el PDF antes de que nadie lo probara. El fallo no era la altura elegida
+    sino elegir una — cualquier número fijo choca con lo de arriba el día que
+    una sección crece, o con las firmas el día que el texto se parte en un
+    renglón más, y de eso decide el lector de PDF y no nosotros.
+
+    Así que se mide el texto, se mira dónde empieza el pie y se resta. Lo que
+    queda flojo es el hueco del medio, que es hueco.
   */
-  y = ABAJO - 48
   doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(TINTA)
   const declaracion = doc.splitTextToSize(
-    'Declaro que los datos escritos aquí son ciertos y están al día, y autorizo a la empresa a ' +
-      'comprobarlos si lo necesita. Me comprometo a avisar si alguno cambia.',
+    'Declaro que los datos escritos aquí son ciertos, y autorizo a la empresa a comprobarlos si lo necesita.',
     ANCHO_UTIL,
   ) as string[]
+
+  let yDeclaracion = ARRANQUE_DEL_PIE - 6 - declaracion.length * 4.5
   for (const linea of declaracion) {
-    doc.text(linea, IZQ, y)
-    y += 4.5
+    doc.text(linea, IZQ, yDeclaracion)
+    yDeclaracion += 4.5
   }
 
-  // La fecha, encima de las firmas. Un papel firmado sin fecha no dice cuándo
-  // era cierto lo que dice, que en una planilla de datos es medio dato.
-  y += 3
-  hueco(doc, IZQ, y, 60, 'Lugar y fecha de la entrevista')
-
-  // Las firmas se anclan al pie y no al final del texto: así caen a la misma
-  // altura en cualquier impresión, que es donde la gente las busca.
   pieFirmado(doc, d.conHuella)
-
   pieDePagina(doc, 'Hoja 2 de 2 · Hoja de ingreso y registro de personal')
 
   return { blob: doc.output('blob'), nombre: 'planilla-de-ingreso.pdf' }
