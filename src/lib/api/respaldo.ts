@@ -434,3 +434,107 @@ export function useGuardarDestinatarioDelRespaldo() {
     },
   })
 }
+
+// ---------------------------------------------------------------------------
+// Cada cuánto se manda
+// ---------------------------------------------------------------------------
+
+/*
+  LA PROGRAMACIÓN DEL ENVÍO AUTOMÁTICO.
+
+  La hora es SIEMPRE de Caracas, aquí y en la base. La conversión a la hora del
+  servidor —que corre en GMT— la hace `programar_respaldo`, y no es un detalle:
+  el cron estaba puesto en `0 8 1 * *` creyendo que eran las 8:00 y eran las
+  4:00 de la madrugada. Tres de los cuatro trabajos programados de la casa sí
+  llevaban la conversión hecha; el del respaldo no.
+
+  `encendido` NO ES `activo`. Activo es lo que alguien pidió; encendido es si de
+  verdad va a salir un correo, que además necesita el secreto del vault y un
+  destinatario. `por_que_no` dice qué falta, con las razones unidas por ' · '.
+
+  Y `proxima_vez` ES NULA MIENTRAS NO ESTÉ ENCENDIDO, a propósito: una pantalla
+  que dice «el próximo sale el lunes» cuando no va a salir ninguno es peor que
+  una que calla.
+*/
+export type Cadencia = 'SEMANAL' | 'QUINCENAL' | 'MENSUAL'
+
+export interface ProgramacionDelRespaldo {
+  cadencia: Cadencia | null
+  /** SEMANAL: 1 lunes … 7 domingo. MENSUAL: 1..28. QUINCENAL: nulo, son el 1 y el 16. */
+  dia: number | null
+  hora: number | null
+  minuto: number | null
+  activo: boolean | null
+  motivo: string | null
+  puesto_en: string | null
+  /** Si quien mira puede siquiera verla. Es columna y no excepción, como en `respaldo_resumen`. */
+  autorizado: boolean
+  encendido: boolean
+  por_que_no: string | null
+  proxima_vez: string | null
+}
+
+export function useProgramacionDelRespaldo() {
+  return useQuery({
+    queryKey: ['respaldo', 'programacion'],
+    queryFn: async (): Promise<ProgramacionDelRespaldo> => {
+      const filas = await rpc<ProgramacionDelRespaldo[]>('respaldo_programacion_actual')
+      return Array.isArray(filas) ? filas[0] : filas
+    },
+  })
+}
+
+export function useProgramarRespaldo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (p: {
+      cadencia: Cadencia
+      dia: number | null
+      hora: number
+      minuto: number
+      activo: boolean
+      motivo: string
+    }) =>
+      rpc<void>('programar_respaldo', {
+        p_cadencia: p.cadencia,
+        p_dia: p.dia,
+        p_hora: p.hora,
+        p_minuto: p.minuto,
+        p_activo: p.activo,
+        p_motivo: p.motivo,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['respaldo'] })
+    },
+  })
+}
+
+/*
+  EL DÍA 28 CON HORA TARDÍA SE SALTA FEBRERO, Y HAY QUE FRENARLO ANTES.
+
+  El día del mes se topa en 28 para que «el 31» no se salte los meses cortos.
+  Pero la conversión a la hora del servidor vuelve a crear ese mismo fallo en el
+  borde: el 28 a las 21:00 de Caracas es el 29 en GMT, y el 29 no existe en
+  febrero de un año común. Ese mes se saltaría sin avisar.
+
+  La base lo rechaza —tiene que hacerlo, porque a la función se puede llamar sin
+  pasar por aquí— y la pantalla lo dice antes de que se pulse. Lo que no hace
+  ninguna de las dos es moverlo en silencio al 27 o a las 19:00: una
+  programación que no es la que alguien escribió es una que nadie va a volver a
+  mirar.
+*/
+export const HORA_QUE_YA_CRUZA = 20
+
+export function loQueImpideProgramar(p: {
+  cadencia: Cadencia
+  dia: number | null
+  hora: number
+  motivo: string
+}): string | null {
+  if (p.cadencia !== 'QUINCENAL' && !p.dia) return 'Falta elegir el día.'
+  if (p.cadencia === 'MENSUAL' && p.dia === 28 && p.hora >= HORA_QUE_YA_CRUZA) {
+    return `El día 28 a las ${String(p.hora).padStart(2, '0')}:00 de Caracas cae el día 29 en la hora del servidor, y febrero no tiene 29: ese mes se saltaría. Elige un día anterior, o una hora antes de las ${HORA_QUE_YA_CRUZA}:00.`
+  }
+  if (p.motivo.trim().length < 4) return 'Falta decir por qué se programa así.'
+  return null
+}
