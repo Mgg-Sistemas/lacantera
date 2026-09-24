@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import {
   Archive,
   ArchiveRestore,
+  Trash2,
   ArrowLeftRight,
   ArrowDownCircle,
   ArrowUpCircle,
@@ -30,6 +31,7 @@ import {
   useAjustarCuenta,
   useArchivarCuenta,
   useCuentas,
+  useEliminarCuenta,
   useGuardarCuenta,
   useRegistrarApertura,
   useRegistrarEgreso,
@@ -82,6 +84,7 @@ function TarjetaCuenta({
   onEditar,
   onMover,
   onArchivar,
+  onEliminar,
 }: {
   cuenta: Cuenta
   puedeMover: boolean
@@ -90,6 +93,7 @@ function TarjetaCuenta({
   onEditar: () => void
   onMover: (accion: 'apertura' | 'ingreso' | 'egreso' | 'ajuste') => void
   onArchivar: () => void
+  onEliminar: () => void
 }) {
   const Icono = iconos[cuenta.tipo] ?? Landmark
   const sinAbrir = !cuenta.movimientos
@@ -209,9 +213,19 @@ function TarjetaCuenta({
             Ver datos
           </Button>
           {puedeArchivar && !cuenta.activa ? (
-            <Button size="sm" variant="ghost" icon={<ArchiveRestore />} onClick={onArchivar}>
-              Desarchivar
-            </Button>
+            <>
+              <Button size="sm" variant="ghost" icon={<ArchiveRestore />} onClick={onArchivar}>
+                Desarchivar
+              </Button>
+              {/* Solo la que nunca movió dinero: una cuenta con historia es la
+                  contraparte de cada asiento y se queda archivada. La base lo
+                  vuelve a comprobar; aquí se ahorra el viaje. */}
+              {sinAbrir ? (
+                <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 />} onClick={onEliminar}>
+                  Eliminar
+                </Button>
+              ) : null}
+            </>
           ) : null}
         </div>
       )}
@@ -243,6 +257,8 @@ export function Cuentas() {
   const puedeArchivar = puede('TESORERIA', 'TOTAL')
   const archivar = useArchivarCuenta()
   const [archivando, setArchivando] = useState<Cuenta | null>(null)
+  const eliminar = useEliminarCuenta()
+  const [eliminando, setEliminando] = useState<Cuenta | null>(null)
 
   // Las archivadas van aparte y al final: siguen existiendo para el libro,
   // pero no compiten a la vista con las que se usan a diario.
@@ -416,6 +432,7 @@ export function Cuentas() {
                 onEditar={() => abrir(c)}
                 onMover={(accion) => setMovimiento({ cuenta: c, accion })}
                 onArchivar={() => setArchivando(c)}
+                onEliminar={() => setEliminando(c)}
               />
             ))}
           </div>
@@ -435,6 +452,7 @@ export function Cuentas() {
                     onEditar={() => abrir(c)}
                     onMover={(accion) => setMovimiento({ cuenta: c, accion })}
                     onArchivar={() => setArchivando(c)}
+                onEliminar={() => setEliminando(c)}
                   />
                 ))}
               </div>
@@ -497,6 +515,42 @@ export function Cuentas() {
           }
         >
           {archivar.error ? <ErrorDeCarga error={archivar.error} /> : <p className="text-ink/60 text-sm">Nada se borra.</p>}
+        </Modal>
+      ) : null}
+
+      {/* ---------------------------- Eliminar ---------------------------- */}
+      {eliminando ? (
+        <Modal
+          abierto
+          onCerrar={() => setEliminando(null)}
+          titulo={`Eliminar ${eliminando.nombre}`}
+          descripcion="Solo se elimina una cuenta archivada que nunca movió dinero. Desaparece de la lista y no hay vuelta atrás; la base guarda quién la eliminó."
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setEliminando(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                disabled={eliminar.isPending}
+                onClick={() =>
+                  eliminar.mutate(eliminando.id, { onSuccess: () => setEliminando(null) })
+                }
+              >
+                {eliminar.isPending ? 'Eliminando…' : 'Eliminar'}
+              </Button>
+            </>
+          }
+        >
+          {eliminar.error ? (
+            <ErrorDeCarga error={eliminar.error} />
+          ) : (
+            <p className="text-ink/60 text-sm">
+              Si alguna vez tuvo un movimiento, la base se negará y la cuenta se quedará archivada:
+              una cuenta con historia no se borra.
+            </p>
+          )}
         </Modal>
       ) : null}
 

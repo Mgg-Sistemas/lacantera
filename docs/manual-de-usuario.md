@@ -1288,6 +1288,9 @@ La segunda es **poder registrar**. Los botones que escriben algo solo se dibujan
 | En cada fila | **Contar**, **Sacar**, **Al taller**, **Dar de baja** |
 | **Transferencias** | **Nuevo traslado** |
 | **Movimientos** | **Deshacer** |
+| Tablero, tarjeta **Material de clientes por recibir** | **Llegó** |
+
+**Material de clientes por recibir.** Desde el 24/09/2026, cuando un cliente paga una factura con material (21.2), el tablero de Inventario enseña arriba una tarjeta con lo que está por llegar: cuánto, de qué, de quién, a qué patio y cuánto vale. **La factura no baja hasta que almacén pulse Llegó y confirme.** Al confirmar, el material entra al patio con el costo acordado, el cobro se registra y, si el material valía más que la factura, la diferencia queda como crédito del cliente o por pagarle. No se deshace: si no llegó completo, no se confirma, y Facturación anula ese cobro y lo registra con la cantidad real.
 
 **El botón «Al taller» de la fila no siempre está.** Solo aparece en los artículos marcados como reparables en su ficha: un pote de aceite no se manda a arreglar. Está en 7.8.
 
@@ -5367,6 +5370,8 @@ De aquí no sale ningún papel imprimible. Lo que produce esta pantalla son lín
 
 Es la cola de trabajo de quien paga: **Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda esperando que llegue el material.**
 
+**Por pagar a clientes.** Desde el 24/09/2026, encima de la cola hay una tarjeta con lo que la empresa **le debe a sus clientes**: pagaron una factura con material que valía más de lo que debían, y quien cobró eligió devolverles la diferencia en dinero (21.2). Cada deuda dice el cliente, el saldo que la originó, la factura, desde cuándo y cuánto queda. **Pagar** pide de qué cuenta sale —solo cuentas en la misma moneda de la deuda—, cuánto, referencia y fecha; escribe un egreso en el libro y baja la deuda. Lo hace quien tiene escritura en Tesorería. Si no se debe nada, la tarjeta no aparece.
+
 #### Qué se ve
 
 Arriba, dos tarjetas de resumen:
@@ -6910,6 +6915,26 @@ La casilla del IGTF lo explica en su propia letra chica: **Grava los pagos en di
 
 Se pueden registrar tantos abonos como haga falta. **Cuando el saldo baja de un centavo de dólar, la factura pasa sola a Cobrada.**
 
+#### Cobrar en varias líneas, con crédito del cliente o con material
+
+**Desde el 24 de septiembre de 2026 la ventana de cobro admite varias líneas de una vez**, y se registran todas o ninguna: si una no pasa, no queda ninguna a medias. Hay tres clases de línea.
+
+**En dinero.** Las de siempre, pero varias: el botón **Otra cuenta o método** añade una línea con su cuenta, su monto, su método y su referencia. Así un cliente que paga parte por transferencia y parte en efectivo se registra en un solo gesto. Cada línea lleva su propia casilla del IGTF.
+
+**Con crédito del cliente.** Si el cliente tiene un crédito abierto —lo que le sobró de un intercambio anterior—, aparece el botón **Usar el crédito que tiene** con la cifra. Se elige cuál y cuánto; solo se descuenta de facturas en la misma moneda del crédito.
+
+**Con material.** El botón **El cliente paga con material** abre la línea del intercambio: qué material trae, a qué patio entra, cuánto y en qué unidad, y a qué precio se toma: **de lista**, **con descuento** o **acordado**. La ventana calcula cuánto vale, cuánto se le aplica a la factura y cuánto sobra. Tres reglas que conviene saber:
+
+- **La factura no baja al registrarlo.** Baja cuando **almacén confirma que el material llegó**, desde la tarjeta **Material de clientes por recibir** del tablero de Inventario (7). Hasta entonces la ventana lo avisa: **Esta factura ya tiene material por recibir… No lo vuelvas a registrar.** Es a propósito: evita cobrar con piedra que nunca llegó, y separa a quien vende de quien cuenta.
+- **Por encima de la lista lo firma control total.** Al vender, el riesgo es regalar; al recibir material del cliente, el riesgo es pagarle de más. Valorar su material por encima del precio de lista, o sin lista contra qué comparar, exige control total sobre Facturación.
+- **Si el material vale más de lo que falta, hay que decir qué pasa con lo que sobra** antes de guardar: **Crédito del cliente**, que se le descuenta de su próxima factura, o **Por pagarle**, que aparece en **Pagos por hacer** de Tesorería y se le devuelve desde una cuenta (12.4).
+
+Cuando almacén confirma, el material **entra al inventario con costo**: lo que se le descontó al cliente por cada unidad, en dólares a la tasa de la factura. Es una compra, aunque se pague con una venta. El cobro aparece en la tarjeta **Cobros** con el método **Intercambio** y sin cuenta, y la entrada en Movimientos del inventario con la referencia de la factura.
+
+**Un cobro con material ya recibido no se anula.** El material ya está en el patio y pudo consumirse. Se corrige como todo lo que ya salió de la empresa: nota de crédito para la factura y una salida para devolver el material. Mientras esté por recibir sí se anula, con motivo y control total, porque no movió nada.
+
+Las cifras de la ventana son estimadas con la tasa de hoy; las que valen las pone la base con la tasa congelada de cada documento.
+
 #### Anular una factura y anular un cobro
 
 Anular la factura abre **Anular la factura FAC-2026-0012**, que empieza aclarando qué pasa: **La factura no se borra: se queda con su número, marcada como anulada. Sus notas de entrega vuelven a estar por facturar.** Y dentro, el límite de la herramienta: **Anular sirve mientras la factura no haya salido de la empresa. Una que ya está en manos del cliente se corrige con nota de crédito, no anulándola.**
@@ -7016,9 +7041,11 @@ Dentro de cada tarjeta:
 
 **El orden es por antigüedad y no por monto, a propósito.** Una deuda de 400 dólares de hace noventa días es un problema distinto de una de 4.000 emitida ayer, y una lista ordenada por monto las pone justo al revés de como hay que atenderlas.
 
-Al pie de la pantalla queda dicho dónde se cobra: **Los cobros se registran desde Facturación › Facturas, abriendo la factura.** El texto es un enlace.
+**Proveedores que deben.** Desde el 24/09/2026, debajo de los clientes hay un segundo bloque con los proveedores que le deben dinero a la empresa: pagaron una compra con material que valía más que la orden y Compras dejó la diferencia **por cobrar** (12.5 y el pago con material). Cada saldo va en la moneda de su orden, con la compra de la que viene, desde cuándo y cuánto queda; al total de arriba solo suman los que están en dólares, porque esos saldos no llevan tasa congelada y convertirlos con la de hoy sería inventar. Antes no salían aquí y la pantalla decía que nadie debía nada.
 
-Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitidas están cobradas. Las nuevas aparecen aquí en cuanto se emiten a crédito o quedan con saldo.**
+Al pie de la pantalla queda dicho dónde se cobra: **Los cobros a clientes se registran desde Facturación › Facturas, abriendo la factura. Lo que debe un proveedor se cobra desde Compras › Proveedores, en sus saldos.** Los dos textos son enlaces.
+
+Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitidas están cobradas y ningún proveedor debe diferencia. Las nuevas aparecen aquí en cuanto se emiten a crédito, quedan con saldo, o un pago con material deja dinero por cobrar.**
 
 **Desde aquí no se cobra.** No hay filtros, ni acciones, ni exportación.
 
