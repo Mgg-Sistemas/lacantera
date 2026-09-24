@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ClipboardList, Cog, Plus, Search, Truck } from 'lucide-react'
+import { ClipboardList, Plus, Search } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -27,7 +27,6 @@ import {
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useVehiculos, type Vehiculo } from '@/lib/api/vehiculos'
 import { usePermisosDeCamion } from '@/lib/camiones'
-import { Modal } from '@/components/ui/Modal'
 import { CamionesDeLaFlota, ModalCamion } from './Camiones'
 import { useLocation, useNavigate } from 'react-router'
 import { cn } from '@/lib/cn'
@@ -168,7 +167,6 @@ export function Maquinaria() {
   const permisosCamion = usePermisosDeCamion()
   const [verFueraDeServicio, setVerFueraDeServicio] = useState(false)
   const [camionEditando, setCamionEditando] = useState<Vehiculo | null | undefined>(undefined)
-  const [eligiendoAlta, setEligiendoAlta] = useState(false)
   const { hash } = useLocation()
 
   const orden = { BLOQUEANTE: 0, ALARMA: 1, AVISO: 2, OK: 3 } as const
@@ -288,14 +286,21 @@ export function Maquinaria() {
   }, [hash, todosLosCamiones.length])
 
   /*
-    «Agregar» pregunta qué se va a dar de alta solo si hay que preguntarlo: quien
-    puede una sola de las dos cosas va directo a ella.
+    DOS COSAS DISTINTAS, DOS BOTONES.
+
+    Había un botón «Agregar» que abría una ventana a preguntar si era una
+    máquina o un camión. La ventana explicaba bien la diferencia, pero costaba
+    un clic y un diálogo para contestar algo que cabe en la etiqueta del botón,
+    y quien ya lo sabía lo pagaba todas las veces.
+
+    Se quita con la revisión de los 178 modales del 24/09/2026. Lo que decía la
+    ventana —que la máquina lleva horómetro y taller, y el camión lo que carga y
+    a quién se le pagan los viajes— no se pierde: va en el título emergente de
+    cada botón, que es donde lo busca quien duda y no estorba a quien no.
+
+    El reparto de permisos que ya hacía el botón sigue igual: quien solo puede
+    una de las dos ve una sola, y por eso se comprueban por separado.
   */
-  const agregar = () => {
-    if (puedeEscribir && permisosCamion.editar) setEligiendoAlta(true)
-    else if (puedeEscribir) void navegar('/app/maquinaria/nueva')
-    else setCamionEditando(null)
-  }
 
   /*
     Los avisos se cuentan sobre TODAS y no sobre las filtradas.
@@ -386,9 +391,23 @@ export function Maquinaria() {
             >
               Historial de taller
             </Button>
-            {puedeEscribir || permisosCamion.editar ? (
-              <Button icon={<Plus />} onClick={agregar}>
-                Agregar
+            {puedeEscribir ? (
+              <Button
+                icon={<Plus />}
+                title="Excavadora, cargador, planta, generador, vehículo liviano. Lleva horómetro y taller."
+                onClick={() => void navegar('/app/maquinaria/nueva')}
+              >
+                Nueva máquina
+              </Button>
+            ) : null}
+            {permisosCamion.editar ? (
+              <Button
+                icon={<Plus />}
+                variant={puedeEscribir ? 'outline' : undefined}
+                title="Lleva lo que carga y a quién se le pagan sus viajes."
+                onClick={() => setCamionEditando(null)}
+              >
+                Nuevo camión
               </Button>
             ) : null}
           </>
@@ -659,51 +678,6 @@ export function Maquinaria() {
           ) : null}
         </>
       ) : null}
-
-      {/* Qué se va a dar de alta. Es la única vez que la pantalla pregunta si es
-          una máquina o un camión: el listado ya lo dice solo. */}
-      <Modal
-        abierto={eligiendoAlta}
-        onCerrar={() => setEligiendoAlta(false)}
-        titulo="¿Qué vas a agregar?"
-        descripcion="Son dos fichas distintas: la máquina lleva horómetro y taller; el camión, lo que carga y a quién se le pagan sus viajes."
-        ancho="sm"
-      >
-        <div className="grid gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setEligiendoAlta(false)
-              void navegar('/app/maquinaria/nueva')
-            }}
-            className="border-hairline hover:border-royal-600/50 hover:bg-royal-600/5 rounded-card flex min-h-14 items-center gap-3 border p-4 text-left"
-          >
-            <Cog className="text-ink/50 size-5 shrink-0" />
-            <span>
-              <span className="text-ink/90 block text-sm font-medium">Máquina o equipo</span>
-              <span className="text-ink/50 block text-xs">
-                Excavadora, cargador, planta, generador, vehículo liviano
-              </span>
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setEligiendoAlta(false)
-              setCamionEditando(null)
-            }}
-            className="border-hairline hover:border-royal-600/50 hover:bg-royal-600/5 rounded-card flex min-h-14 items-center gap-3 border p-4 text-left"
-          >
-            <Truck className="text-ink/50 size-5 shrink-0" />
-            <span>
-              <span className="text-ink/90 block text-sm font-medium">Camión</span>
-              <span className="text-ink/50 block text-xs">
-                Volteo, chuto, gandola: propio o de un transportista
-              </span>
-            </span>
-          </button>
-        </div>
-      </Modal>
 
       <ModalCamion
         abierto={camionEditando !== undefined}

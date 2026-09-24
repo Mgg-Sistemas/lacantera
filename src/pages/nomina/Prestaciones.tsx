@@ -165,6 +165,30 @@ export function Prestaciones() {
 
       <Pestanas pestanas={PESTANAS_REGLAS} />
 
+      {/*
+        LO QUE SALIÓ DEL CÁLCULO, ENCIMA DE LAS CIFRAS QUE ACABA DE MOVER.
+
+        Era un modal titulado «Listo» con un botón «Entendido». Cerrar la
+        ventana del cálculo para abrir otra ventana que dice que el cálculo
+        terminó es interrumpir dos veces para dar una noticia buena, y encima
+        tapa la tabla —que es donde se comprueba que de verdad cambió algo—.
+
+        Aquí queda a la vista mientras se miran los números, y se va cuando
+        quien lo leyó lo cierra. Entra con la revisión de los 178 modales del
+        24/09/2026: era el único aviso de éxito en ventana de todo el sistema.
+      */}
+      {aviso ? (
+        <div
+          role="status"
+          className="anim-surgir border-success/30 bg-success/5 mb-5 flex items-start gap-3 rounded-md border px-4 py-3"
+        >
+          <p className="text-ink/80 flex-1 text-sm leading-relaxed">{aviso}</p>
+          <Button variant="ghost" size="sm" onClick={() => setAviso(null)}>
+            Entendido
+          </Button>
+        </div>
+      ) : null}
+
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
@@ -917,17 +941,6 @@ export function Prestaciones() {
         </Modal>
       ) : null}
 
-      {/* -------------------------------------------------------- aviso */}
-      {aviso ? (
-        <Modal
-          abierto
-          onCerrar={() => setAviso(null)}
-          titulo="Listo"
-          acciones={<Button onClick={() => setAviso(null)}>Entendido</Button>}
-        >
-          <p className="text-ink/70 text-sm leading-relaxed">{aviso}</p>
-        </Modal>
-      ) : null}
     </>
   )
 }
