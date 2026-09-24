@@ -31,6 +31,7 @@ import { Modal } from '@/components/ui/Modal'
 import { CamionesDeLaFlota, ModalCamion } from './Camiones'
 import { useLocation, useNavigate } from 'react-router'
 import { cn } from '@/lib/cn'
+import { useFiltroEnLaDireccion } from '@/lib/enLaDireccion'
 
 /** Sin tildes y en minúsculas, para comparar lo escrito con lo guardado. */
 const aplanar = (s: string) =>
@@ -87,7 +88,8 @@ export function Maquinaria() {
   const { puede } = useMisPermisos()
   const { data: propietarios } = usePropietarios()
 
-  const [busqueda, setBusqueda] = useState('')
+  // En la dirección y no en el estado, para poder compartir el filtro.
+  const [busqueda, setBusqueda] = useFiltroEnLaDireccion()
   const [filtroEstado, setFiltroEstado] = useState('')
   const [tipo, setTipo] = useState('')
   /*

@@ -1,10 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import {
-  Plus,
-  Truck,
-  Upload,
-} from 'lucide-react'
+import { Plus, Search, Truck, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_PROVEEDORES } from '@/components/pestanasDeModulos'
@@ -23,6 +19,8 @@ import type { Proveedor } from '@/lib/api/catalogo'
 import { useMonedasUsables } from '@/lib/api/tasas'
 import { useMetodosPago } from '@/lib/api/metodosPago'
 import { useResumenProveedores } from '@/lib/api/proveedorFicha'
+import { useFiltroEnLaDireccion } from '@/lib/enLaDireccion'
+import { enMayuscula } from '@/lib/texto'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { documento, dolares, telefono } from '@/lib/formato'
 
@@ -45,6 +43,26 @@ const vacio = {
 export function Proveedores() {
   const navegar = useNavigate()
   const { data, isPending, error } = useProveedores(false)
+
+  /*
+    VEINTISIETE PROVEEDORES SIN DÓNDE BUSCAR.
+
+    La pantalla los listaba todos y no ofrecía filtro ninguno, así que dar con
+    uno era recorrer la tabla con la vista. Entra con el arreglo del buscador
+    global del 24/09/2026 —que ahora lleva a la ficha, no aquí— pero se justifica
+    sola: la lista solo crece.
+
+    Se compara en mayúscula y sin tildes porque así lo guarda la base, y porque
+    quien escribe «minería» quiere encontrar «MINERIA».
+  */
+  const [busqueda, setBusqueda] = useFiltroEnLaDireccion()
+  const filtrados = useMemo(() => {
+    const aguja = enMayuscula(busqueda.trim())
+    if (!aguja) return data ?? []
+    return (data ?? []).filter((p) =>
+      [p.nombre, p.rif, p.contacto].some((c) => enMayuscula(c ?? '').includes(aguja)),
+    )
+  }, [data, busqueda])
   const { data: resumen } = useResumenProveedores()
   const { puede } = useMisPermisos()
   const puedeEscribir = puede('COMPRAS', 'ESCRITURA')
@@ -120,6 +138,29 @@ export function Proveedores() {
       ) : null}
 
       {data && data.length > 0 ? (
+        <Card className="mb-4">
+          <Input
+            label="Buscar"
+            icon={<Search />}
+            placeholder="Nombre, RIF o contacto"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full sm:w-80"
+          />
+        </Card>
+      ) : null}
+
+      {data && data.length > 0 && filtrados.length === 0 ? (
+        <Card>
+          <Vacio
+            icono={<Search />}
+            titulo="Ningún proveedor coincide"
+            descripcion="Prueba con parte del nombre o con el RIF sin guiones."
+          />
+        </Card>
+      ) : null}
+
+      {filtrados.length > 0 ? (
         <Card flush>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
@@ -143,7 +184,7 @@ export function Proveedores() {
                 </tr>
               </thead>
               <tbody>
-                {data.map((p) => {
+                {filtrados.map((p) => {
                   const r = resumen?.find((x) => x.proveedor_id === p.id)
                   return (
                   <tr

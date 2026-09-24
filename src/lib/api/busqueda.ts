@@ -19,12 +19,26 @@ import { enMayuscula } from '@/lib/texto'
 
   La RLS de la base es la red de debajo, no la de arriba.
 
-  TRES LLEVAN AL DOCUMENTO; EL RESTO, A SU PANTALLA
+  CADA HALLAZGO LLEVA A DONDE VIVE
 
-  Solo tres rutas admiten un identificador —la orden de compra, la ficha del
-  trabajador y la del vehículo—, así que solo esas tres abren el registro. Las
-  demás dejan en la lista donde está. Es media victoria y se prefiere a no
-  encontrarlo: al menos dice que existe y dónde vive.
+  Hasta el 24/09/2026 solo tres rutas abrían el registro —la orden de compra, la
+  ficha del trabajador y la del vehículo— y las demás dejaban en la lista. Se
+  llamó «media victoria» y se prefirió a no encontrar nada, pero el usuario dio
+  con lo que costaba de verdad: buscar «aceite» llevaba al catálogo entero, 328
+  artículos, y había que volver a escribir «aceite» al llegar. El buscador tenía
+  el término en la mano y lo soltaba en la puerta.
+
+  Al mirarlo resultó que casi todas TENÍAN dónde aterrizar y nadie las estaba
+  usando: el artículo, el proveedor y la máquina llevan ficha propia desde hace
+  meses, y la nota de entrega ya sabía abrirse sola con `?nota=`. No hubo que
+  construir destino ninguno; hubo que apuntar a él.
+
+  El cliente es el único que no tiene ficha, así que ese sí va a su lista con el
+  nombre puesto en la dirección, y la lista lo filtra al abrirse. La factura se
+  queda como estaba: no tiene ficha ni filtro, y hoy no hay ninguna.
+
+  NADA DE ESTO ABRE UNA PUERTA. El permiso sale de `pathname`, que no incluye lo
+  que va detrás del `?`, así que la ficha exige el mismo módulo que la lista.
 
   SE BUSCA EN MAYÚSCULA Y SIN TILDES
 
@@ -73,7 +87,7 @@ const FUENTES: Fuente[] = [
     tipo: 'Proveedor',
     titulo: (f) => texto(f.nombre),
     detalle: (f) => texto(f.rif) || null,
-    to: () => '/app/compras/proveedores',
+    to: (f) => `/app/compras/proveedores/${f.id}`,
   },
   {
     modulo: 'FACTURACION',
@@ -93,7 +107,9 @@ const FUENTES: Fuente[] = [
     tipo: 'Nota de entrega',
     titulo: (f) => texto(f.numero),
     detalle: (f) => texto(f.estado).replaceAll('_', ' '),
-    to: () => '/app/facturacion/notas-entrega',
+    // La pantalla ya sabe abrir una nota por su número, y se quita el
+    // parámetro al abrirla: cerrar el detalle no la vuelve a abrir.
+    to: (f) => `/app/facturacion/notas-entrega?nota=${encodeURIComponent(texto(f.numero))}`,
   },
   {
     modulo: 'VENTAS',
@@ -103,7 +119,9 @@ const FUENTES: Fuente[] = [
     tipo: 'Cliente',
     titulo: (f) => texto(f.nombre),
     detalle: (f) => texto(f.rif) || null,
-    to: () => '/app/ventas/clientes',
+    // El único sin ficha. Va a la lista con el nombre puesto, que es lo más
+    // preciso que se le puede dar: filtra a ese cliente y a ninguno más.
+    to: (f) => `/app/ventas/clientes?q=${encodeURIComponent(texto(f.nombre))}`,
   },
   {
     modulo: 'INVENTARIO',
@@ -113,7 +131,7 @@ const FUENTES: Fuente[] = [
     tipo: 'Artículo',
     titulo: (f) => `${texto(f.codigo)} · ${texto(f.nombre)}`,
     detalle: (f) => `${texto(f.categoria)} · ${texto(f.unidad)}`,
-    to: () => '/app/inventario/articulos',
+    to: (f) => `/app/inventario/articulos/${f.id}`,
   },
   {
     modulo: 'NOMINA',
@@ -133,7 +151,7 @@ const FUENTES: Fuente[] = [
     tipo: 'Máquina',
     titulo: (f) => `${texto(f.codigo)} · ${texto(f.nombre)}`,
     detalle: (f) => texto(f.estado).replaceAll('_', ' '),
-    to: () => '/app/maquinaria',
+    to: (f) => `/app/maquinaria/${f.id}`,
   },
   {
     // Los camiones viven en Maquinaria desde el 16/09/2026.

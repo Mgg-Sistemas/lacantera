@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMonedasUsables } from '@/lib/api/tasas'
-import { Building2, Plus } from 'lucide-react'
+import { Building2, Plus, Search } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -13,6 +13,8 @@ import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { documento, dolares, fecha } from '@/lib/formato'
+import { useFiltroEnLaDireccion } from '@/lib/enLaDireccion'
+import { enMayuscula } from '@/lib/texto'
 import {
   CONDICIONES_PAGO,
   useClientes,
@@ -41,6 +43,23 @@ const vacio = {
 export function Clientes() {
   const monedas = useMonedasUsables()
   const { data, isPending, error } = useClientes()
+
+  /*
+    El buscador global aterriza aquí con el nombre puesto —el cliente es el
+    único de las nueve fuentes que no tiene ficha propia— y esta caja es lo que
+    lo recoge. Sirve igual escribiendo a mano: quince clientes hoy, y la lista
+    solo crece.
+  */
+  const [busqueda, setBusqueda] = useFiltroEnLaDireccion()
+  const filtrados = useMemo(() => {
+    const aguja = enMayuscula(busqueda.trim())
+    if (!aguja) return data ?? []
+    return (data ?? []).filter((c) =>
+      [c.nombre, c.nombre_comercial, c.rif, c.contacto].some((x) =>
+        enMayuscula(x ?? '').includes(aguja),
+      ),
+    )
+  }, [data, busqueda])
   const guardar = useGuardarCliente()
   const [edicion, setEdicion] = useState<(typeof vacio & { id?: number }) | null>(null)
 
@@ -103,6 +122,29 @@ export function Clientes() {
       ) : null}
 
       {data && data.length > 0 ? (
+        <Card className="mb-4">
+          <Input
+            label="Buscar"
+            icon={<Search />}
+            placeholder="Nombre, RIF o contacto"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full sm:w-80"
+          />
+        </Card>
+      ) : null}
+
+      {data && data.length > 0 && filtrados.length === 0 ? (
+        <Card>
+          <Vacio
+            icono={<Search />}
+            titulo="Ningún cliente coincide"
+            descripcion="Prueba con parte del nombre o con el RIF sin guiones."
+          />
+        </Card>
+      ) : null}
+
+      {filtrados.length > 0 ? (
         <Card flush>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
@@ -117,7 +159,7 @@ export function Clientes() {
                 </tr>
               </thead>
               <tbody>
-                {data.map((c) => {
+                {filtrados.map((c) => {
                   const debe = Number(c.deuda_usd)
                   const limite = Number(c.limite_credito)
                   const pasado = limite > 0 && debe > limite
