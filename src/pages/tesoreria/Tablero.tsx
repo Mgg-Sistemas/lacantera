@@ -15,7 +15,6 @@ import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { GrupoAcciones, type Accion } from '@/components/tablero/GrupoAcciones'
 import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { useCuentas, usePorPagar, useResumenPanel } from '@/lib/api/tesoreria'
-import { useMisPermisos } from '@/lib/api/usuarios'
 import { bolivares, dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
@@ -42,9 +41,6 @@ export function TableroTesoreria() {
   const { data: r, isPending, error } = useResumenPanel()
   const { data: cuentas } = useCuentas()
   const { data: porPagar } = usePorPagar()
-  const { puede } = useMisPermisos()
-
-  const puedeEscribir = puede('TESORERIA', 'ESCRITURA')
 
   const sinAbrir = r?.cuentas_sin_abrir ?? 0
   const activas = (cuentas ?? []).filter((c) => c.activa).length
@@ -187,9 +183,9 @@ export function TableroTesoreria() {
           </div>
 
           <div className="mt-8 space-y-8">
-            <GrupoAcciones titulo="Sale plata" acciones={colaPagos} puedeEscribir={puedeEscribir} />
-            <GrupoAcciones titulo="Entra plata" acciones={colaCobros} puedeEscribir={puedeEscribir} />
-            <GrupoAcciones titulo="Se mueve" acciones={movimientos} puedeEscribir={puedeEscribir} />
+            <GrupoAcciones titulo="Sale plata" acciones={colaPagos} />
+            <GrupoAcciones titulo="Entra plata" acciones={colaCobros} />
+            <GrupoAcciones titulo="Se mueve" acciones={movimientos} />
 
             <PrimeraVez>
               <p>

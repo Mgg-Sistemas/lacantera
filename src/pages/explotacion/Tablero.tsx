@@ -129,7 +129,7 @@ export function TableroExplotacion() {
           </div>
 
           <div className="mt-8 space-y-8">
-            <GrupoAcciones acciones={pasos} puedeEscribir={puedeEscribir} />
+            <GrupoAcciones acciones={pasos} />
 
             <PrimeraVez>
               <p>

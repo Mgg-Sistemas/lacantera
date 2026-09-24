@@ -7,7 +7,6 @@ import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { GrupoAcciones, type Accion } from '@/components/tablero/GrupoAcciones'
 import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { useGuias, useTickets } from '@/lib/api/despachos'
-import { useMisPermisos } from '@/lib/api/usuarios'
 import { enteros } from '@/lib/formato'
 
 /**
@@ -30,9 +29,6 @@ import { enteros } from '@/lib/formato'
 export function TableroDespachos() {
   const { data: tickets, isPending, error } = useTickets()
   const { data: guias } = useGuias()
-  const { puede } = useMisPermisos()
-
-  const puedeEscribir = puede('DESPACHOS', 'ESCRITURA')
 
   const libres = (tickets ?? []).filter((t) => t.estado === 'LIBRE').length
   const vigentes = (guias ?? []).filter((g) => g.estado === 'VIGENTE').length
@@ -92,7 +88,7 @@ export function TableroDespachos() {
           </div>
 
           <div className="mt-8 space-y-8">
-            <GrupoAcciones titulo="El trámite" acciones={pasos} puedeEscribir={puedeEscribir} />
+            <GrupoAcciones titulo="El trámite" acciones={pasos} />
 
             <PrimeraVez>
               <p>

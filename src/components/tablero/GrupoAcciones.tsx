@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import { TarjetaDeAccion } from '@/components/tablero/TarjetaDeAccion'
-import { esRutaFueraDelMvp } from '@/config/navigation'
+import { esRutaFueraDelMvp, moduloDeRuta } from '@/config/navigation'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { cn } from '@/lib/cn'
 
 /**
@@ -52,16 +53,15 @@ export interface Accion {
 export function GrupoAcciones({
   titulo,
   acciones,
-  puedeEscribir,
   columnas = 2,
   className,
 }: {
   titulo?: string
   acciones: Accion[]
-  puedeEscribir: boolean
   columnas?: 2 | 3
   className?: string
 }) {
+  const { puede } = useMisPermisos()
   /*
     Lo que hoy no se ofrece no se ofrece tampoco desde un tablero.
 
@@ -71,9 +71,24 @@ export function GrupoAcciones({
 
     Hizo falta al entrar Tesorería, que ofrece «cuentas por cobrar» y ventas
     sigue fuera del MVP.
+
+    Y EL PERMISO SE MIRA POR LA RUTA, no por el módulo del tablero.
+
+    Hasta el 24/09/2026 esto recibía un `puedeEscribir` de fuera —el del módulo
+    que dibujaba el grupo— y con eso decidía. Servía mientras todas las tarjetas
+    apuntaran dentro de casa, y dejó de servir en cuanto dejaron de hacerlo:
+    Tesorería ofrece «cuentas por cobrar», que es de Facturación, y Explotación
+    ofrece las máquinas, que son de Maquinaria. A quien no tiene ese otro módulo
+    se le estaba enseñando una tarjeta que lleva a un candado.
+
+    Ahora se resuelve como lo hace `QueHacer`: el módulo sale de la ruta. Para
+    una tarjeta de casa da exactamente lo mismo que antes —la ruta es del propio
+    módulo— y para una de fuera, acierta.
   */
   const visibles = acciones.filter(
-    (a) => (!a.exigeEscritura || puedeEscribir) && !esRutaFueraDelMvp(a.ruta),
+    (a) =>
+      !esRutaFueraDelMvp(a.ruta) &&
+      puede(moduloDeRuta(a.ruta), a.exigeEscritura ? 'ESCRITURA' : 'LECTURA'),
   )
   if (visibles.length === 0) return null
 
