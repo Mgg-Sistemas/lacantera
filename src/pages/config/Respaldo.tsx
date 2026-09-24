@@ -294,24 +294,6 @@ export function Respaldo() {
                   {peso(descargar.data.bytes)}
                 </p>
 
-                {/*
-                  EL CORREO SE CUENTA APARTE, Y SU FALLO NO ES UN ERROR ROJO.
-
-                  Son dos cosas distintas: el archivo ya está en la computadora
-                  de quien lo pidió. Que el correo no saliera es un aviso, no un
-                  fracaso — pintarlo en rojo haría creer que la descarga falló,
-                  que es justo lo contrario de lo que pasó.
-                */}
-                {descargar.data.correo.enviado ? (
-                  <p className="text-ink/55 mt-1 text-xs">
-                    Se mandó también a tu correo, comprimido.
-                  </p>
-                ) : (
-                  <p className="text-warning mt-1 text-xs">
-                    El archivo se descargó bien, pero no se pudo mandar por correo:{' '}
-                    {descargar.data.correo.fallo}
-                  </p>
-                )}
               </div>
             ) : null}
           </Card>
