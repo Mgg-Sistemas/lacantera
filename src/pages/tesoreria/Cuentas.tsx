@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import {
+  Archive,
+  ArchiveRestore,
   ArrowLeftRight,
   ArrowDownCircle,
   ArrowUpCircle,
@@ -26,6 +28,7 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
   TIPOS_CUENTA,
   useAjustarCuenta,
+  useArchivarCuenta,
   useCuentas,
   useGuardarCuenta,
   useRegistrarApertura,
@@ -75,16 +78,30 @@ const iconos: Record<string, typeof Landmark> = {
 function TarjetaCuenta({
   cuenta,
   puedeMover,
+  puedeArchivar,
   onEditar,
   onMover,
+  onArchivar,
 }: {
   cuenta: Cuenta
   puedeMover: boolean
+  /** Archivar y desarchivar piden control total: cambian qué cuentas existen para todos. */
+  puedeArchivar: boolean
   onEditar: () => void
   onMover: (accion: 'apertura' | 'ingreso' | 'egreso' | 'ajuste') => void
+  onArchivar: () => void
 }) {
   const Icono = iconos[cuenta.tipo] ?? Landmark
   const sinAbrir = !cuenta.movimientos
+  /*
+    CON SALDO NO SE ARCHIVA, Y EL BOTÓN LO DICE ANTES DE QUE LA BASE LO DIGA.
+
+    El disponible suma solo cuentas activas: archivar una con saldo haría
+    desaparecer ese dinero del total sin que nadie lo moviera. La base lo
+    rechaza igual; aquí el botón se apaga y el título explica qué hacer, para
+    no mandar a la gente a chocar contra el error.
+  */
+  const conSaldo = Number(cuenta.saldo) !== 0
 
   return (
     <Card className={cuenta.activa ? undefined : 'opacity-60'}>
@@ -100,7 +117,10 @@ function TarjetaCuenta({
             </p>
           </div>
         </div>
-        <Chip tone={cuenta.moneda === 'VES' ? 'neutral' : 'info'}>{cuenta.moneda}</Chip>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {!cuenta.activa ? <Chip tone="neutral">Archivada</Chip> : null}
+          <Chip tone={cuenta.moneda === 'VES' ? 'neutral' : 'info'}>{cuenta.moneda}</Chip>
+        </div>
       </div>
 
       <div className="mt-4">
@@ -136,7 +156,7 @@ function TarjetaCuenta({
         )}
       </div>
 
-      {puedeMover ? (
+      {puedeMover && cuenta.activa ? (
         <div className="mt-4 flex flex-wrap gap-2">
           {sinAbrir ? (
             <Button size="sm" variant="soft" icon={<Scale />} onClick={() => onMover('apertura')}>
@@ -165,6 +185,18 @@ function TarjetaCuenta({
           <Button size="sm" variant="ghost" onClick={onEditar}>
             Editar
           </Button>
+          {puedeArchivar ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<Archive />}
+              disabled={conSaldo}
+              title={conSaldo ? 'Con saldo no se archiva: trasládalo o ajústalo a cero primero.' : undefined}
+              onClick={onArchivar}
+            >
+              Archivar
+            </Button>
+          ) : null}
         </div>
       ) : (
         <div className="mt-4 flex flex-wrap gap-2">
@@ -176,6 +208,11 @@ function TarjetaCuenta({
           <Button size="sm" variant="ghost" onClick={onEditar}>
             Ver datos
           </Button>
+          {puedeArchivar && !cuenta.activa ? (
+            <Button size="sm" variant="ghost" icon={<ArchiveRestore />} onClick={onArchivar}>
+              Desarchivar
+            </Button>
+          ) : null}
         </div>
       )}
     </Card>
@@ -203,6 +240,14 @@ export function Cuentas() {
 
   // Tesorería volvió al riel el 21/09/2026: manda el nivel que se le dé a cada rol.
   const puedeMover = puede('TESORERIA', 'ESCRITURA')
+  const puedeArchivar = puede('TESORERIA', 'TOTAL')
+  const archivar = useArchivarCuenta()
+  const [archivando, setArchivando] = useState<Cuenta | null>(null)
+
+  // Las archivadas van aparte y al final: siguen existiendo para el libro,
+  // pero no compiten a la vista con las que se usan a diario.
+  const activas = (data ?? []).filter((c) => c.activa)
+  const archivadas = (data ?? []).filter((c) => !c.activa)
 
   const abrir = (c?: Cuenta) =>
     setEdicion(
@@ -362,16 +407,39 @@ export function Cuentas() {
           </Card>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {data.map((c) => (
+            {activas.map((c) => (
               <TarjetaCuenta
                 key={c.id}
                 cuenta={c}
                 puedeMover={puedeMover}
+                puedeArchivar={puedeArchivar}
                 onEditar={() => abrir(c)}
                 onMover={(accion) => setMovimiento({ cuenta: c, accion })}
+                onArchivar={() => setArchivando(c)}
               />
             ))}
           </div>
+
+          {archivadas.length > 0 ? (
+            <>
+              <h2 className="text-ink/60 mt-8 mb-3 text-sm font-semibold">
+                Archivadas ({archivadas.length})
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {archivadas.map((c) => (
+                  <TarjetaCuenta
+                    key={c.id}
+                    cuenta={c}
+                    puedeMover={puedeMover}
+                    puedeArchivar={puedeArchivar}
+                    onEditar={() => abrir(c)}
+                    onMover={(accion) => setMovimiento({ cuenta: c, accion })}
+                    onArchivar={() => setArchivando(c)}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
         </>
       ) : null}
 
@@ -390,6 +458,46 @@ export function Cuentas() {
             }
           />
         </Card>
+      ) : null}
+
+      {/* ---------------------------- Archivar ---------------------------- */}
+      {archivando ? (
+        <Modal
+          abierto
+          onCerrar={() => setArchivando(null)}
+          titulo={archivando.activa ? `Archivar ${archivando.nombre}` : `Desarchivar ${archivando.nombre}`}
+          descripcion={
+            archivando.activa
+              ? 'Deja de salir en los selectores y en el disponible. El libro conserva sus movimientos y se puede desarchivar cuando haga falta.'
+              : 'Vuelve a salir en los selectores y en el disponible, como antes.'
+          }
+          ancho="sm"
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setArchivando(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant={archivando.activa ? 'danger' : 'primary'}
+                disabled={archivar.isPending}
+                onClick={() =>
+                  archivar.mutate(
+                    { id: archivando.id, archivar: archivando.activa },
+                    { onSuccess: () => setArchivando(null) },
+                  )
+                }
+              >
+                {archivar.isPending
+                  ? 'Un momento…'
+                  : archivando.activa
+                    ? 'Archivar'
+                    : 'Desarchivar'}
+              </Button>
+            </>
+          }
+        >
+          {archivar.error ? <ErrorDeCarga error={archivar.error} /> : <p className="text-ink/60 text-sm">Nada se borra.</p>}
+        </Modal>
       ) : null}
 
       {/* ------------------------------ Cuenta ------------------------------ */}
