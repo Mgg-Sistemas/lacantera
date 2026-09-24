@@ -40,6 +40,10 @@
   Supabase deje pasar, porque esta función exige JWT. Quien autoriza es el
   secreto, que se comprueba abajo.
 
+  VA A TODOS LOS DESTINATARIOS ACTIVOS, hasta diez. Hasta el 24/09/2026 la base
+  solo admitía uno y esto leía el primero; al abrirse a varios, leer uno pasó de
+  ser correcto a ser un fallo que no avisa.
+
   Y contesta **202 antes de hacer el trabajo**, a propósito. La extensión `http`
   de Postgres es SÍNCRONA: mientras esto no responda, el cron mantiene ocupado un
   worker de la base. Si se respondiera al terminar, el cron esperaría a que se
@@ -58,6 +62,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 import {
   ErrorCorreo,
+  MAX_DESTINATARIOS,
   enviarCorreo,
   escaparHtml,
   leerJson,
@@ -243,14 +248,31 @@ async function comprimirABase64(nombreDentro: string, sql: string): Promise<stri
  */
 async function enviarElProgramado(sistema: NonNullable<ReturnType<typeof comoElSistema>>) {
   try {
-    const { data: destino, error: errorDestino } = await sistema
+    /*
+      TODOS LOS ACTIVOS, NO EL PRIMERO QUE SALGA.
+
+      Esto pedía `limit(1).maybeSingle()` porque la base solo admitía un
+      destinatario activo: un índice único lo garantizaba. Desde el 24/09/2026
+      admite varios —el usuario lo pidió— y lo que antes era correcto pasó a ser
+      un fallo callado: con dos configurados habría seguido mandando a uno, y
+      encima al primero que saliera sin orden definido. Peor que mandar siempre
+      al mismo, porque cambia sin motivo.
+
+      Se ordenan por antigüedad para que el correo diga siempre lo mismo, y se
+      topan en `MAX_DESTINATARIOS`: `enviarCorreo` lo comprobaría igual, pero
+      fallar entero por haber configurado once direcciones sería no mandar el
+      respaldo a las diez que sí valían.
+    */
+    const { data: destinos, error: errorDestino } = await sistema
       .from('respaldo_destinatarios')
       .select('correo')
       .eq('activo', true)
-      .limit(1)
-      .maybeSingle()
-    if (errorDestino) throw new Error(`destinatario: ${errorDestino.message}`)
-    if (!destino?.correo) {
+      .order('puesto_en', { ascending: true })
+      .limit(MAX_DESTINATARIOS)
+    if (errorDestino) throw new Error(`destinatarios: ${errorDestino.message}`)
+
+    const correos = (destinos ?? []).map((d) => d.correo).filter(Boolean)
+    if (correos.length === 0) {
       console.error(`[${FUNCION}] no hay destinatario configurado; no se manda nada`)
       return
     }
@@ -277,7 +299,7 @@ async function enviarElProgramado(sistema: NonNullable<ReturnType<typeof comoElS
       */
       usuarioId: null,
       admin: sistema,
-      to: [destino.correo],
+      to: correos,
       subject: `Respaldo mensual de la base · ${hoy}`,
       permitirRespaldo: true,
       adjunto: {
