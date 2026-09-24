@@ -324,7 +324,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/control-despacho':
     'control despacho planilla excel nota entrega salida cliente rif material m3 precio monto status contado cruce autorizado observaciones correlativo',
   '/app/asistencia':
-    'asistencia carnet qr escanear entrada salida hora jornada calendario presente marcar turno noche dia horas trabajadas',
+    'asistencia carnet qr escanear entrada salida hora jornada calendario presente marcar turno noche dia horas trabajadas visitantes visita visitante garita gente de afuera',
   '/app/contactos':
     'contactos directorio agenda telefono celular whatsapp correo email empresa persona cargo direccion etiqueta cliente proveedor prospecto socio importar exportar excel vcard duplicados',
   '/app/costos':

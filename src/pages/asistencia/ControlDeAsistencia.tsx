@@ -49,6 +49,7 @@ import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { fecha as fmtFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 import { EscanerDeCarnet } from './EscanerDeCarnet'
+import { Visitantes } from './Visitantes'
 
 /*
   CONTROL DE ASISTENCIA
@@ -60,7 +61,9 @@ import { EscanerDeCarnet } from './EscanerDeCarnet'
      salida y pone la hora; aquí solo se enseña grande lo que pasó.
   2. HOY. Quién está adentro ahora mismo y quién ya salió. También lo que quedó
      abierto de otros días, porque eso es lo que hay que revisar.
-  3. EL CALENDARIO. Un mes de un vistazo, y al tocar un día, su gente. Desde
+  3. LOS VISITANTES. Gente de afuera que entró: quién sigue adentro, con su
+     botón de salida, y las visitas del día elegido. No tocan la nómina.
+  4. EL CALENDARIO. Un mes de un vistazo, y al tocar un día, su gente. Desde
      ahí se corrige una hora o se anula una jornada, con permiso.
 
   LA HORA ES DE CARACAS SIEMPRE, se mire desde donde se mire. Un teléfono con
@@ -142,6 +145,9 @@ export function ControlDeAsistencia() {
       {puedeMarcar ? <Marcador hoy={hoy} /> : null}
 
       <Hoy hoy={hoy} />
+
+      {/* VISITANTES, 24/09/2026: gente de afuera, con la misma lógica de la jornada. */}
+      <Visitantes hoy={hoy} dia={dia} mes={mes} />
 
       {/* ------------------------------------------------------ calendario */}
       <Card className="mt-4">

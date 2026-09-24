@@ -7221,6 +7221,24 @@ El botón **Reporte**: un período y, si se quiere, una sola persona. Sale con e
 
 **No alimenta la nómina.** Las horas se ven y se imprimen, y ahí terminan: las faltas y las horas extra se siguen cargando en Nómina › Novedades. Si algún día conviene que salgan de aquí, es una decisión aparte. Tampoco calcula retardos ni amonestaciones.
 
+### 23.9 Los visitantes
+
+**Existe desde el 24 de septiembre de 2026.** Gente de afuera que entra a la cantera —un chofer de otra empresa, un inspector, un cliente que viene a ver el material, un técnico— y que no está en la nómina ni tiene carnet. La tarjeta **Visitantes**, debajo de **Hoy**, es donde se les registra la entrada y la salida. Usa el mismo permiso del módulo: quien marca al personal registra visitantes; quien anula jornadas anula visitas.
+
+**La misma idea que la jornada.** Una fila por visita, con la entrada y la salida juntas. Una visita sin salida es alguien que **sigue adentro**, y se queda así hasta que se le registre la salida: no se cierra sola.
+
+| Qué | Cómo |
+| --- | --- |
+| **Registrar visitante** | El botón de la tarjeta. Nombre (obligatorio), cédula o pasaporte, empresa, teléfono, **a quién visita** del personal, motivo, placa del vehículo y nota. Con la **entrada vacía, la hora la pone el sistema** en ese momento. Si se llena, es para cargar una visita de antes, con su salida si ya se fue |
+| **Del directorio** | Si el visitante ya está en **Contactos**, se elige arriba del formulario y se rellenan solos el nombre, la cédula, la empresa y el teléfono. Solo lo ve quien tiene lectura en Contactos; los demás escriben todo a mano |
+| **Salida** | Al lado de cada persona que está adentro. La hora la pone el sistema ahora mismo. Si se fue antes y nadie lo anotó, la casilla **poner la hora real** deja escribirla |
+| **Corregir** y **Anular** | En la lista de visitas del día elegido en el calendario, como con las jornadas: corregir cambia cualquier dato y queda anotado quién lo hizo; anular pide motivo y control total, y no borra |
+| **Excel del mes** | Saca las visitas del mes que muestra el calendario, una por fila, con todas sus columnas |
+
+<p class="regla"><strong>Con la cédula, el sistema no deja registrar adentro dos veces a la misma persona.</strong> Si alguien con esa cédula sigue adentro, el aviso dice desde qué hora, y hay que registrarle la salida antes de otra entrada. Sin cédula no hay con qué comparar, así que conviene pedirla.</p>
+
+Las visitas de otros días que quedaron sin salida aparecen en la misma lista de **Adentro ahora**, con la marca amarilla **Sin salida**, para que se cierren con la hora real. Los visitantes **no entran al calendario del personal, ni al reporte de asistencia, ni a la nómina**: son otra tabla, y se sacan por su propio Excel.
+
 ## 24. Contactos
 
 **Administración › Contactos**
