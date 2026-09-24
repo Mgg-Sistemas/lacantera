@@ -362,6 +362,14 @@ export function useArchivarCuenta() {
   )
 }
 
+/**
+ * Elimina una cuenta archivada que nunca tuvo movimientos. La que movió dinero
+ * alguna vez se queda archivada: la base lo dice con cuántos movimientos tiene.
+ */
+export function useEliminarCuenta() {
+  return useAccionTesoreria((id: number) => rpc('eliminar_cuenta', { p_id: id }))
+}
+
 export function useRegistrarApertura() {
   return useAccionTesoreria((a: { cuenta_id: number; monto: number; fecha?: string; nota?: string }) =>
     rpc<number>('registrar_apertura', {

@@ -17,6 +17,7 @@ import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { dinero, dolares, hace } from '@/lib/formato'
 import { ModalRegistrarPago } from './ModalRegistrarPago'
+import { PorPagarAClientes } from './PorPagarAClientes'
 
 /** El destino del dinero, dicho de la forma en que se paga por ese método. */
 function destinoDe(p: PorPagar): string {
@@ -383,6 +384,10 @@ export function Pagos() {
           </p>
         </Card>
       ) : null}
+
+      {/* Lo que se le debe a un cliente por un intercambio que valió de más.
+          Es deuda en dinero, así que vive aquí y sale de una cuenta. */}
+      <PorPagarAClientes />
 
       {pendientes.length > 0 ? (
         <>
