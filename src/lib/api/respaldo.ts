@@ -81,13 +81,66 @@ export function useDescargarRespaldo() {
       try {
         await mandarPorCorreo(sql, enlace.download)
         correo = { enviado: true }
+        await anotar(true, null)
       } catch (e) {
-        correo = { enviado: false, fallo: e instanceof Error ? e.message : String(e) }
+        const fallo = e instanceof Error ? e.message : String(e)
+        correo = { enviado: false, fallo }
+        await anotar(false, motivoDelFallo(fallo))
       }
 
       return { bytes: blob.size, nombre: enlace.download, correo }
     },
   })
+}
+
+/*
+  QUE LA AUDITORÍA DIGA SI SALIÓ.
+
+  El renglón de auditoría nace al armar el respaldo, antes de que se sepa nada
+  del correo — y no puede completarse después: la tabla tiene un disparador que
+  prohíbe modificarla, y el mensaje de ese disparador dice por qué. «El registro
+  de auditoría no se modifica ni se borra. Es lo único que lo hace valer.»
+
+  Así que el resultado se anota aparte, en la tabla de correos, enlazado al
+  renglón. La vista los junta y en pantalla sigue siendo una sola línea, que es
+  lo que pidió el usuario.
+
+  Anotar no puede tumbar nada: si esto falla, el respaldo ya está descargado y
+  el correo ya salió o ya no. Lo único que se pierde es la constancia, y eso se
+  dice en el registro del navegador en vez de reventarle la pantalla a nadie.
+*/
+async function anotar(enviado: boolean, motivo: string | null): Promise<void> {
+  try {
+    await rpc('anotar_envio_del_respaldo', {
+      p_enviado: enviado,
+      p_mensaje_id: null,
+      p_motivo: motivo,
+    })
+  } catch (e) {
+    console.error('No se pudo anotar el envío del respaldo:', e)
+  }
+}
+
+/*
+  DEL FALLO AL MOTIVO, QUE ES UNA LISTA CERRADA.
+
+  La base solo admite estos seis y lo hace cumplir con un CHECK. Es a propósito:
+  el texto crudo del servicio de correo no debe llegar nunca a una pantalla de
+  auditoría —puede traer direcciones, cabeceras o el detalle de por qué se
+  rechazó—, y un motivo de lista se puede contar y comparar entre meses, que un
+  texto libre no.
+
+  Lo que no se reconoce es DESCONOCIDO y no se fuerza a parecerse a otro: un
+  motivo mal clasificado es peor que uno sin clasificar.
+*/
+function motivoDelFallo(fallo: string): string {
+  const t = fallo.toLowerCase()
+  if (t.includes('no está configurado') || t.includes('configurad')) return 'SIN_CONFIGURAR'
+  if (t.includes('límite') || t.includes('429')) return 'TOPE_ALCANZADO'
+  if (t.includes('rechazó') || t.includes('502')) return 'RECHAZADO'
+  if (t.includes('destino') || t.includes('destinatario')) return 'SIN_DESTINATARIO'
+  if (t.includes('fetch') || t.includes('network') || t.includes('contactar')) return 'ERROR_DE_RED'
+  return 'DESCONOCIDO'
 }
 
 /*

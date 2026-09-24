@@ -38,6 +38,25 @@ export interface Movimiento {
    * dónde pasó aunque el mapa cambie después.
    */
   modulo: string | null
+
+  /*
+    SI EL RESPALDO SALIÓ POR CORREO — y solo tiene sentido en los respaldos.
+
+    Tres estados, no dos. El tercero se llama SIN CONSTANCIA y no «no se
+    intentó», que es la diferencia entre decir lo que se sabe y decir lo que se
+    supone: si la función de correo se cayera antes de anotar, tampoco habría
+    constancia, y «no se intentó» sería falso.
+
+    Con un booleano, la pantalla habría acusado al correo de fallos que eran
+    pestañas cerradas.
+
+    Y NULO no es un cuarto estado: quiere decir que esta fila no es un respaldo.
+    Son el 99,95% de la auditoría —15.181 de 15.188—, así que ahí no se pinta
+    nada.
+  */
+  envio_correo: 'ENVIADO' | 'NO ENVIADO' | 'SIN CONSTANCIA' | null
+  /** Por qué no salió. De una lista cerrada; nunca el texto crudo de Resend. */
+  envio_motivo: string | null
   /**
    * El porqué, cuando la fila lo llevaba.
    *
