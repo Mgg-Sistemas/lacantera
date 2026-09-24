@@ -119,6 +119,19 @@ export const PESTANAS_ANALISIS: Pestana[] = [
 
   Así que una pantalla, dos pestañas, y cada libro entero por dentro.
 */
+/*
+  REGISTRAR Y REPASAR, QUE SON DOS OFICIOS.
+
+  La pantalla de compra directa solo registraba, y quien quería ver lo
+  registrado no tenía dónde. Son dos momentos distintos —se compra con la
+  factura en la mano, se repasa al cuadrar el mes— así que son dos pestañas y no
+  una pantalla con una lista debajo del formulario.
+*/
+export const PESTANAS_COMPRA_DIRECTA: Pestana[] = [
+  { etiqueta: 'Registrar', a: '/app/compras/directa' },
+  { etiqueta: 'Historial', a: '/app/compras/directa/historial' },
+]
+
 export const PESTANAS_LIBRO_MAYOR: Pestana[] = [
   { etiqueta: 'Compras', a: '/app/tesoreria/libro-mayor' },
   { etiqueta: 'Ventas', a: '/app/tesoreria/libro-mayor/ventas' },

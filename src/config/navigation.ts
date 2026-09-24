@@ -586,6 +586,10 @@ export const navigation: NavSection[] = [
             una necesidad que plantear.
           */
           { label: 'Compra directa', to: '/app/compras/directa' },
+          // El historial de lo comprado así. Entra el 24/09/2026: la pantalla
+          // de al lado solo registraba, y cuarenta y cinco compras no tenían
+          // dónde repasarse.
+          { label: 'Historial de directas', to: '/app/compras/directa/historial' },
           // Las facturas del proveedor pasan a ser pestaña de Proveedores: una
           // factura pertenece a alguien, y es ahí donde se busca. Como entrada
           // suelta invitaba a registrarla sin decir contra qué orden.

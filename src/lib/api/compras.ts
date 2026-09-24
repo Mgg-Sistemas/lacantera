@@ -330,6 +330,56 @@ const SELECT_ORDEN = `
   instrucciones:instrucciones_pago(*)
 `
 
+/*
+  EL HISTORIAL DE LAS COMPRAS DIRECTAS.
+
+  «Nos solicitan permitir visualizar un historial o vista que permita revisar el
+  estatus de las órdenes por compra directa» —el usuario, 24/09/2026—.
+
+  Hasta ahora la pantalla de compra directa solo REGISTRABA: no había dónde
+  repasar lo registrado. Cuarenta y cinco compras por unos 8.700 dólares y
+  ninguna lista donde verlas.
+
+  Se reconoce por la solicitud que la originó: `solicitudes_pedido.directa`. No
+  hay marca en la orden y no hacía falta ponerla — la relación ya existe, y
+  añadir una segunda forma de saber lo mismo es añadir un sitio donde puedan
+  discrepar.
+
+  El filtro va en la BASE y no aquí: `!inner` obliga a que la solicitud exista y
+  sea directa, así que lo que llega ya son solo las directas. Filtrar después
+  traería las cien más recientes de todas y dejaría diez en la lista.
+*/
+export function useComprasDirectas() {
+  return useQuery({
+    queryKey: ['compras', 'directas'],
+    queryFn: async () =>
+      desenvolver<Orden[]>(
+        await supabase
+          .from('ordenes_compra')
+          /*
+            El mismo select de siempre pero con `!inner` en la solicitud: se
+            escribe entero y no con un `replace` sobre la constante porque
+            Supabase infiere el tipo de la CADENA LITERAL. Con una cadena
+            calculada pierde el tipo y devuelve `GenericStringError[]`.
+          */
+          .select(
+            `
+              *,
+              proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
+              solicitud:solicitudes_pedido!inner(destino, destino_almacen_id, directa),
+              renglones:orden_renglones(*),
+              instrucciones:instrucciones_pago(*)
+            `,
+          )
+          .eq('solicitud.directa', true)
+          // Lo último arriba: quien viene a repasar busca lo de esta semana, no
+          // lo de septiembre pasado.
+          .order('creada_en', { ascending: false })
+          .limit(300),
+      ),
+  })
+}
+
 export function useOrdenesPorRecibir() {
   return useQuery({
     queryKey: ['compras', 'por-recibir'],
