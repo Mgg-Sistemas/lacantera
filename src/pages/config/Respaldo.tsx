@@ -8,6 +8,7 @@ import {
   CalendarClock,
   Pencil,
   Plus,
+  Trash2,
   ShieldAlert,
   X,
 } from 'lucide-react'
@@ -30,7 +31,10 @@ import {
   useEnviarRespaldoPorCorreo,
   loQueImpideProgramar,
   useDestinatariosDelRespaldo,
+  useCambiarDestinatarioDelRespaldo,
   useGuardarDestinatarioDelRespaldo,
+  useQuitarDestinatarioDelRespaldo,
+  type DestinatarioDelRespaldo,
   useProgramacionDelRespaldo,
   useProgramarRespaldo,
   useUltimoIntentoDelRespaldo,
@@ -620,9 +624,11 @@ function ElEnvioAutomatico() {
   const { data: destinatarios, isPending, error } = useDestinatariosDelRespaldo()
   const { puede: tieneRol } = useMisRoles()
   const [editando, setEditando] = useState(false)
+  const [corrigiendo, setCorrigiendo] = useState<DestinatarioDelRespaldo | null>(null)
+  const [quitando, setQuitando] = useState<DestinatarioDelRespaldo | null>(null)
 
   const puedeCambiarlo = tieneRol('ADMIN')
-  const activo = (destinatarios ?? []).find((d) => d.activo) ?? null
+  const activos = (destinatarios ?? []).filter((d) => d.activo)
   const anteriores = (destinatarios ?? []).filter((d) => !d.activo)
 
   return (
@@ -638,13 +644,10 @@ function ElEnvioAutomatico() {
         </div>
 
         {puedeCambiarlo ? (
-          <Button
-            variant="outline"
-            size="sm"
-            icon={activo ? <Pencil /> : <Plus />}
-            onClick={() => setEditando(true)}
-          >
-            {activo ? 'Cambiar a quién' : 'Poner a quién'}
+          <Button variant="outline" size="sm" icon={<Plus />} onClick={() => setEditando(true)}>
+            {/* «Añadir» y no «cambiar»: desde el 24/09/2026 puede haber varios,
+                y el botón tiene que decir lo que de verdad hace. */}
+            Añadir un correo
           </Button>
         ) : null}
       </div>
@@ -676,12 +679,11 @@ function ElEnvioAutomatico() {
             respaldos. Enseñarle la configuración sin decirle que no está
             corriendo sería dejarle creer que sí.
           */}
-          {!activo ? (
+          {activos.length === 0 ? (
             <div className="border-warning/30 bg-warning/5 rounded-md border px-4 py-3">
               <p className="text-ink/80 text-sm leading-relaxed">
-                <strong>El envío automático está apagado.</strong> No hay ninguna dirección
-                configurada, así que la tarea mensual se despierta, ve que no tiene a quién
-                mandárselo y no hace nada.
+                <strong>No hay ninguna dirección configurada.</strong> La tarea programada se
+                despierta, ve que no tiene a quién mandárselo y no hace nada.
               </p>
               {!puedeCambiarlo ? (
                 <p className="text-ink/55 mt-2 text-xs">
@@ -690,31 +692,52 @@ function ElEnvioAutomatico() {
               ) : null}
             </div>
           ) : (
-            <div className="border-hairline rounded-md border px-4 py-3">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <p className="text-ink/90 text-sm font-medium">
-                  {activo.correo}
-                  {activo.nombre ? <span className="text-ink/45"> · {activo.nombre}</span> : null}
-                </p>
-                <p className="text-ink/45 text-xs">Desde el {fechaHora(activo.puesto_en)}</p>
-              </div>
-              <p className="text-ink/60 mt-1.5 text-sm leading-relaxed">{activo.motivo}</p>
-            </div>
+            <ul className="space-y-2">
+              {activos.map((d) => (
+                <li key={d.id} className="border-hairline rounded-md border px-4 py-3">
+                  <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                    <div className="min-w-0">
+                      <p className="text-ink/90 text-sm font-medium">
+                        {d.correo}
+                        {d.nombre ? <span className="text-ink/45"> · {d.nombre}</span> : null}
+                      </p>
+                      <p className="text-ink/45 text-xs">Desde el {fechaHora(d.puesto_en)}</p>
+                      <p className="text-ink/60 mt-1.5 text-sm leading-relaxed">{d.motivo}</p>
+                    </div>
+
+                    {puedeCambiarlo ? (
+                      <div className="flex shrink-0 gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Pencil />}
+                          onClick={() => setCorrigiendo(d)}
+                        >
+                          Corregir
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Trash2 />}
+                          onClick={() => setQuitando(d)}
+                        >
+                          Quitar
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
 
           {/*
-            LO QUE FALTA APARTE DEL DESTINATARIO.
-
-            El secreto del vault no se puede poner desde aquí y nunca se va a
-            poder: vive en la base y lo pone quien administra Supabase. Decirlo
-            es lo que evita que alguien configure el correo, se quede tranquilo
-            y descubra en tres meses que no llegó ninguno.
+            AQUÍ ESTABA EL AVISO DEL SECRETO DEL VAULT, y se quita el 24/09/2026
+            porque ya está puesto y el envío sale. Lo que falte lo dice arriba
+            `por_que_no`, que lo calcula la base en cada consulta; un texto fijo
+            avisando de algo que puede haberse resuelto envejece mal y acaba
+            diciendo lo contrario de lo que pasa.
           */}
-          <p className="text-ink/45 mt-3 text-xs leading-relaxed">
-            Aunque haya destinatario, el envío no sale hasta que exista el secreto{' '}
-            <code className="text-ink/60">respaldo_cron_secreto</code> en el vault de la base. Ese
-            se pone en Supabase, no aquí.
-          </p>
 
           {anteriores.length > 0 ? (
             <div className="mt-5">
@@ -737,7 +760,15 @@ function ElEnvioAutomatico() {
         </div>
       ) : null}
 
-      {editando ? <ModalDestinatario onCerrar={() => setEditando(false)} hay={!!activo} /> : null}
+      {editando ? (
+        <ModalDestinatario onCerrar={() => setEditando(false)} hay={activos.length > 0} />
+      ) : null}
+      {corrigiendo ? (
+        <ModalCorregir destinatario={corrigiendo} onCerrar={() => setCorrigiendo(null)} />
+      ) : null}
+      {quitando ? (
+        <ModalQuitar destinatario={quitando} onCerrar={() => setQuitando(null)} />
+      ) : null}
     </Card>
   )
 }
@@ -956,18 +987,14 @@ function ElUltimoIntento() {
 
   return (
     <p className="text-ink/55 mt-3 text-xs leading-relaxed">
-      Se despertó el <span className="text-ink/75">{fechaHora(data.cuando)}</span>
+      Último intento: <span className="text-ink/75">{fechaHora(data.cuando)}</span>
       {seSabeQueHizo ? (
         <>
           {' · '}
           <span className={data.enviado ? 'text-success' : 'text-warning'}>{data.resultado}</span>
         </>
       ) : (
-        <span className="text-ink/45">
-          {' '}
-          · no quedó constancia de lo que hizo, porque esa pasada es anterior a que se empezara a
-          anotar
-        </span>
+        <span className="text-ink/45"> · no quedó constancia de lo que hizo</span>
       )}
     </p>
   )
@@ -1123,6 +1150,127 @@ function ModalProgramacion({
       </div>
 
       {programar.error ? <ErrorDeCarga error={programar.error} className="mt-3" /> : null}
+    </Modal>
+  )
+}
+
+/** Corregir una dirección que ya estaba puesta. */
+function ModalCorregir({
+  destinatario,
+  onCerrar,
+}: {
+  destinatario: DestinatarioDelRespaldo
+  onCerrar: () => void
+}) {
+  const cambiar = useCambiarDestinatarioDelRespaldo()
+  const [correo, setCorreo] = useState(destinatario.correo)
+  const [nombre, setNombre] = useState(destinatario.nombre ?? '')
+  const [motivo, setMotivo] = useState('')
+
+  const falta = !correoValido(correo)
+    ? 'Falta una dirección de correo válida.'
+    : motivo.trim().length < 4
+      ? 'Falta decir por qué se corrige.'
+      : null
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Corregir la dirección"
+      descripcion="Queda guardado quién la corrigió, cuándo y por qué."
+      ancho="md"
+      acciones={
+        <>
+          {falta ? <p className="text-ink/45 mr-auto text-left text-xs">{falta}</p> : null}
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={!!falta || cambiar.isPending}
+            onClick={async () => {
+              await cambiar.mutateAsync({ id: destinatario.id, correo, motivo, nombre })
+              onCerrar()
+            }}
+          >
+            {cambiar.isPending ? 'Guardando…' : 'Guardar'}
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input
+          label="Correo"
+          type="email"
+          value={correo}
+          onChange={(e) => setCorreo(e.target.value)}
+        />
+        <Input label="De quién es" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+      </div>
+      <div className="mt-4">
+        <Textarea
+          label="Por qué se corrige"
+          rows={2}
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+        />
+      </div>
+      {cambiar.error ? <ErrorDeCarga error={cambiar.error} className="mt-3" /> : null}
+    </Modal>
+  )
+}
+
+/*
+  Quitar a alguien de la lista.
+
+  No borra: apaga. La fila se queda con quién lo quitó, cuándo y por qué, y eso
+  es deliberado — un destinatario que desaparece sin rastro es justo lo que no
+  se puede permitir en la lista de quién recibe las cédulas y los sueldos de
+  toda la plantilla.
+*/
+function ModalQuitar({
+  destinatario,
+  onCerrar,
+}: {
+  destinatario: DestinatarioDelRespaldo
+  onCerrar: () => void
+}) {
+  const quitar = useQuitarDestinatarioDelRespaldo()
+  const [motivo, setMotivo] = useState('')
+  const falta = motivo.trim().length < 4 ? 'Falta decir por qué deja de recibirlo.' : null
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo={`Quitar a ${destinatario.correo}`}
+      descripcion="Deja de recibir el respaldo. No se borra: queda en la lista de los anteriores con el motivo."
+      ancho="sm"
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            No quitar
+          </Button>
+          <Button
+            variant="danger"
+            disabled={!!falta || quitar.isPending}
+            onClick={async () => {
+              await quitar.mutateAsync({ id: destinatario.id, motivo })
+              onCerrar()
+            }}
+          >
+            {quitar.isPending ? 'Quitando…' : 'Sí, quitar'}
+          </Button>
+        </>
+      }
+    >
+      <Textarea
+        label="Por qué deja de recibirlo"
+        rows={2}
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+      />
+      {quitar.error ? <ErrorDeCarga error={quitar.error} className="mt-3" /> : null}
     </Modal>
   )
 }

@@ -587,3 +587,43 @@ export function useUltimoIntentoDelRespaldo() {
     },
   })
 }
+
+/*
+  VARIOS DESTINATARIOS, DESDE EL 24/09/2026.
+
+  Hasta ese día la base solo admitía uno: un índice único sobre `activo` lo
+  garantizaba, y `guardar_destinatario_del_respaldo` apagaba el anterior antes
+  de poner el nuevo. El usuario pidió poder mandar a varios, y el índice pasó a
+  ser `unique (lower(correo)) where activo` — o sea que ya no impide tener dos
+  destinatarios, impide tener dos veces el mismo. No se quitó una garantía: se
+  cambió por la que hacía falta.
+
+  `guardar_…` mantuvo su firma pero cambió de significado: AÑADE en vez de
+  sustituir. Por eso el botón dejó de llamarse «cambiar a quién».
+
+  QUITAR ES APAGAR Y NO BORRAR. La fila se queda con quién lo quitó, cuándo y
+  por qué. Un destinatario que desaparece sin rastro es justo lo que no se puede
+  permitir en la lista de quién recibe las cédulas y los sueldos de la plantilla.
+*/
+export function useCambiarDestinatarioDelRespaldo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: { id: number; correo: string; motivo: string; nombre?: string | null }) =>
+      rpc<void>('cambiar_destinatario_del_respaldo', {
+        p_id: d.id,
+        p_correo: d.correo,
+        p_motivo: d.motivo,
+        p_nombre: d.nombre ?? null,
+      }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['respaldo'] }),
+  })
+}
+
+export function useQuitarDestinatarioDelRespaldo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: { id: number; motivo: string }) =>
+      rpc<void>('quitar_destinatario_del_respaldo', { p_id: d.id, p_motivo: d.motivo }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['respaldo'] }),
+  })
+}

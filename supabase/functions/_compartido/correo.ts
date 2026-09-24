@@ -224,8 +224,14 @@ export type Adjunto = { nombre: string; base64: string }
 export type OpcionesCorreo = {
   /** Cómo se llama la función que manda. Queda escrito en el registro. */
   funcion: string
-  /** Para contar cuántos lleva mandados esta persona en la última hora. */
-  usuarioId: string
+  /**
+   * Para contar cuántos lleva mandados esta persona en la última hora.
+   *
+   * NULO cuando no hay persona detrás, que es el envío programado. Es la
+   * misma marca que usa la auditoría de la casa: sistema es `usuario_id`
+   * nulo, no un nombre ni un identificador inventado.
+   */
+  usuarioId: string | null
   /** Cliente con la llave de servicio, para leer y escribir el registro. */
   admin: {
     from: (tabla: string) => any
@@ -268,11 +274,15 @@ export async function enviarCorreo(o: OpcionesCorreo): Promise<ResultadoCorreo> 
     la cuota: es la reputación del dominio, que tarda meses en volver.
   */
   const desde = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-  const { count, error: errorCuenta } = await o.admin
+  // `eq` no casa con nulos en PostgREST: para el envío del sistema hay que
+  // preguntar con `is`, o el tope se contaría siempre contra cero.
+  const cuenta = o.admin
     .from('correos_enviados')
     .select('id', { count: 'exact', head: true })
-    .eq('usuario_id', o.usuarioId)
     .gte('enviado_en', desde)
+  const { count, error: errorCuenta } = await (o.usuarioId
+    ? cuenta.eq('usuario_id', o.usuarioId)
+    : cuenta.is('usuario_id', null))
   if (errorCuenta) {
     console.error(`[${o.funcion}] no se pudo leer correos_enviados:`, errorCuenta.message)
     throw new ErrorCorreo('No se pudo mandar el correo. Vuelve a intentarlo en un rato.', 500)
