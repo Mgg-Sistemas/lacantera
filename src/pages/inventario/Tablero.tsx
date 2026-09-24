@@ -10,6 +10,7 @@ import {
   Warehouse,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { QueHacer } from '@/components/QueHacer'
 import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { Card } from '@/components/ui/Card'
@@ -359,27 +360,22 @@ export function TableroInventario() {
 
           <QueHacer grupos={QUE_HACER(bajoMinimo.length)} />
 
-          {/* Para quien entra por primera vez. Va al final y no arriba: quien
-              ya sabe no tiene que saltárselo cada mañana. */}
-          <Card className="mt-8">
-            <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">
-              Si es la primera vez
-            </p>
-            <p className="text-ink/75 mt-3 text-sm leading-relaxed">
+          <PrimeraVez className="mt-8">
+            <p>
               La existencia <strong>no se escribe: se deduce</strong>. Es la suma del libro de
               movimientos, y cada cosa que entra, sale o se traslada deja su renglón.
             </p>
-            <p className="text-ink/50 mt-2 text-sm leading-relaxed">
+            <p className="text-ink/50">
               Registrar una entrada tampoco es escribirla a mano: es anotar que entraron
               cuarenta y cuánto costaron, y la existencia sube como consecuencia. La diferencia
               importa el día que alguien pregunte de dónde salieron.
             </p>
-            <p className="text-ink/50 mt-2 text-sm leading-relaxed">
+            <p className="text-ink/50">
               Por eso no hay un botón de «poner existencia en 40». Si el conteo no cuadra con el
               sistema, se corrige con un ajuste, que queda anotado con su motivo y con quién lo
               hizo.
             </p>
-          </Card>
+          </PrimeraVez>
 
         </>
       ) : null}

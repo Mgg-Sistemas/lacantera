@@ -2,17 +2,20 @@ import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
 import {
   AlertTriangle,
-  BookOpen,
   Building2,
   ClipboardList,
   FileText,
+  Gauge,
   HandCoins,
+  History,
   PackageCheck,
   Plus,
+  ShoppingBag,
   Upload,
   User,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { QueHacer } from '@/components/QueHacer'
 import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { Button } from '@/components/ui/Button'
@@ -274,6 +277,37 @@ const QUE_HACER: GrupoDeAcciones[] = [
       },
     ],
   },
+  /*
+    LA COMPRA QUE NO PASA POR LA CADENA.
+
+    Faltaba entera en este tablero, y son cuarenta y cinco compras. Se ofrecía
+    en el menú y no aquí, que es donde alguien va a buscar por dónde se empieza.
+
+    Va en su propio grupo y no dentro de la cadena a propósito: meterla entre
+    «pedir» y «cotizar» diría que es un paso más del mismo camino, y es lo
+    contrario —es el camino corto, para lo que se paga en el acto—.
+  */
+  {
+    titulo: 'La compra que no pasa por la cadena',
+    detalle: 'Para lo que se paga en el acto y no espera aprobación.',
+    acciones: [
+      {
+        titulo: 'Registrar una compra directa',
+        detalle:
+          'Se paga y se recibe sin pedir ni cotizar. Es para el repuesto que hace falta hoy, con la factura en la mano.',
+        icono: ShoppingBag,
+        a: '/app/compras/directa',
+        exige: 'ESCRITURA',
+      },
+      {
+        titulo: 'Historial de directas',
+        detalle:
+          'En qué quedó cada una: qué se pagó, qué falta por llegar y cuánto lleva esperando.',
+        icono: History,
+        a: '/app/compras/directa/historial',
+      },
+    ],
+  },
   {
     titulo: 'Alrededor de la compra',
     acciones: [
@@ -298,11 +332,24 @@ const QUE_HACER: GrupoDeAcciones[] = [
         a: '/app/compras/facturas',
       },
       {
-        titulo: 'Libro de compras',
-        detalle: 'Lo que va al SENIAT: base imponible, IVA y crédito fiscal del período.',
-        icono: BookOpen,
-        a: '/app/compras/libro',
+        titulo: 'Gasto por unidad',
+        detalle: 'En qué se va el dinero, repartido por lo que se compró y para qué.',
+        icono: Gauge,
+        a: '/app/compras/gasto',
       },
+      /*
+        AQUÍ ESTABA EL LIBRO DE COMPRAS, y se quita en vez de reapuntarlo.
+
+        Se fue al Libro Mayor de Tesorería el 24/09/2026, y con él su permiso:
+        ahora pide TESORERIA. De las quince personas que ven este tablero, siete
+        no tienen ese permiso.
+
+        Dejar el enlace apuntando allí les pondría delante una tarjeta que al
+        pulsarla contesta «Tesorería no está a tu alcance». Ya hay precedente
+        escrito de ese error en el mapa de módulos del menú, cuando la cola de
+        pagos pasó a Compras. Un enlace que no se puede seguir es peor que no
+        tenerlo: promete algo y lo niega en el clic siguiente.
+      */
     ],
   },
 ]
@@ -378,6 +425,19 @@ export function TableroCompras() {
       ) : null}
 
       <QueHacer grupos={QUE_HACER} />
+
+      <PrimeraVez className="mt-8">
+        <p>
+          Una compra pasa por una cadena, y el orden no es burocracia:{' '}
+          <strong>hasta que el gerente no aprueba, no hay orden</strong>, y sin orden el proveedor
+          no despacha. Se pide, se cotiza, se aprueba, se paga y se recibe.
+        </p>
+        <p className="text-ink/50">
+          La <strong>compra directa</strong> es el atajo para lo que se paga en el acto —un
+          repuesto que hace falta hoy— y no pasa por la cadena. Tiene su propio historial, que es
+          donde se ve qué se pagó y qué falta por llegar.
+        </p>
+      </PrimeraVez>
     </>
   )
 }

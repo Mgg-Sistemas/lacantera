@@ -401,6 +401,22 @@
     animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
     animation-fill-mode: both;
   }
+  /*
+    EL PASO DE UN FORMULARIO QUE ENTRA.
+
+    Mismo fotograma y misma curva que `anim-surgir`, que es la que usa la
+    portada: se pidió que el formulario por pasos se moviera como el landing
+    para que no pareciera pegado de otro sistema. Lo único que cambia es la
+    duración. Los 0,8 s de la portada son para algo que se ve una vez al
+    entrar; aquí se ven tres veces seguidas llenando una ficha, y a esa
+    velocidad el formulario se siente lento en vez de tranquilo.
+  */
+  .anim-paso {
+    animation-name: surgir;
+    animation-duration: 0.35s;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }
   .anim-aparecer {
     animation-name: aparecer;
     animation-duration: 1.2s;

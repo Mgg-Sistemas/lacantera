@@ -233,6 +233,45 @@ export interface ResumenPanel {
   inventario_total_usd: string
   articulos_bajo_minimo: number
   tasa_de_hoy: boolean
+
+  /*
+    LO QUE NO ES COMPRAS NI TESORERÍA, Y NULO CUANDO NO TE TOCA.
+
+    La vista trae estos diez desde que el carril BD la amplió, y el panel no los
+    miraba: ni siquiera estaban declarados aquí, así que TypeScript no sabía que
+    existían. Entran el 24/09/2026 con la remodelación del panel.
+
+    SON `number | null` Y EL NULO SIGNIFICA ALGO. La vista devuelve NULL cuando
+    quien pregunta no tiene permiso de lectura en ese módulo, y cero cuando lo
+    tiene y no hay nada. Son dos cosas distintas y por eso no se juntan: pintar
+    un cero donde el nulo dice «esto no te toca» afirma que no hay máquinas
+    fuera de servicio a quien no puede saberlo.
+
+    En la práctica, `null > 0` es falso en JavaScript, así que una condición
+    escrita al derecho ya hace lo correcto sin preguntar por el nulo. Lo que sí
+    hay que escribir a mano es el caso de la tarjeta: se pinta si NO es nula.
+  */
+  /** Acarreos de los últimos siete días. Pide EXPLOTACION. */
+  acarreos_7d: number | null
+  /** Metros cúbicos acarreados en esos siete días. Pide EXPLOTACION. */
+  acarreos_m3_7d: string | null
+  /** Pide MAQUINARIA. */
+  maquinas_activas: number | null
+  /** Pide MAQUINARIA. Estado `FUERA_DE_SERVICIO`. */
+  maquinas_fuera: number | null
+  /** Pide MAQUINARIA. Estado `EN_MANTENIMIENTO`. */
+  maquinas_en_taller: number | null
+  /** Períodos que no están ni pagados ni anulados. Pide NOMINA. */
+  nomina_periodos_abiertos: number | null
+  /** Empleados activos. Pide NOMINA. */
+  nomina_empleados: number | null
+  /** Notas facturables, no anuladas y sin factura. Pide SALIDAS **o** FACTURACION. */
+  notas_sin_facturar: number | null
+  /** Solicitudes de salida en `PEDIDA`. Pide SALIDAS. */
+  salidas_por_aprobar: number | null
+  /** Solicitudes de despacho en `PEDIDA`. Pide FACTURACION, no DESPACHOS:
+   *  el despacho se pide y se aprueba desde la nota de entrega. */
+  despachos_por_aprobar: number | null
 }
 
 /**

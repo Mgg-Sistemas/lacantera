@@ -66,6 +66,16 @@ function loQueSeConto(m: Movimiento): string | null {
 const TOPE = 1000
 
 /*
+  CUÁNTAS FILAS SE ENSEÑAN ANTES DE PEDIR EL RESTO.
+
+  Ocho, que es lo que cabe sin empujar la lista fuera de la pantalla en un
+  portátil. No es un número redondo por gusto: por debajo de seis el resumen deja
+  de resumir, y por encima de diez ya hay que hacer scroll para llegar al detalle
+  que el resumen venía a encabezar.
+*/
+const VISIBLES = 8
+
+/*
   LAS TRES CLASES QUE LA GENTE DISTINGUE, Y NO LOS DIEZ TIPOS QUE GUARDA LA BASE.
 
   El usuario habló de «salidas, entradas o traslados». La base guarda diez tipos
@@ -162,6 +172,20 @@ function agrupar(
     : lista.sort((a, b) => b.cuantos - a.cuantos)
 }
 
+/*
+  QUÉ GRUPOS SE PUEDEN PULSAR PARA FILTRAR.
+
+  Material y persona sí: los dos son un filtro que ya existe arriba. El mes no,
+  porque el rango de fechas es un control con sus dos extremos y meterle un mes
+  desde aquí dejaría la pantalla diciendo una cosa y el control otra.
+
+  Y los grupos sin dato —«Sin artículo», «Sin registrar quién»— tampoco: no hay
+  nada que poner en el filtro.
+*/
+const puedeFiltrarse = (por: string, clave: string) =>
+  (por === 'articulo' && clave !== 'sin-articulo') ||
+  (por === 'persona' && clave !== 'sin-nombre')
+
 const cantidadLegible = (porUnidad: Map<string, number>) =>
   [...porUnidad.entries()]
     .map(([unidad, total]) => `${total.toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${unidad}`)
@@ -212,7 +236,37 @@ export function Movimientos() {
   const [clase, setClase] = useState('')
   const [registradoPor, setRegistradoPor] = useState('')
   const [agrupacion, setAgrupacion] = useState('articulo')
+  /*
+    PLEGADO POR DEFECTO, Y NO POR GUSTO.
+
+    Agrupar por material da HOY 122 filas —medido— y el techo son los 303
+    artículos del catálogo. Una tabla de 122 renglones encima de la lista no es
+    un resumen: es otra lista, y empuja fuera de la pantalla justo lo que se
+    venía a leer.
+
+    Se enseñan los ocho primeros y el resto se pide. Es divulgación progresiva,
+    que es la regla que aplica: enseñar lo complejo por partes en vez de
+    volcarlo de golpe.
+
+    Por persona son 7 filas y por mes 3, así que ahí el plegado no llega a
+    aparecer — el umbral lo decide el contenido, no la agrupación.
+  */
+  const [expandido, setExpandido] = useState(false)
   const { data: articulos } = useArticulos()
+
+  // Cambiar de agrupación con la tabla desplegada deja al ojo en mitad de otra
+  // cosa: se vuelve a plegar, que es donde la vista empieza.
+  /** Pulsar una fila del resumen deja el libro filtrado por ella. */
+  const aplicarComoFiltro = (por: string, clave: string) => {
+    if (por === 'articulo') setArticuloId(clave)
+    if (por === 'persona') setRegistradoPor(clave)
+    setExpandido(false)
+  }
+
+  const cambiarAgrupacion = (v: string) => {
+    setAgrupacion(v)
+    setExpandido(false)
+  }
 
   const { data, isPending, error } = useMovimientos({
     ...(almacenId ? { almacenId: Number(almacenId) } : {}),
@@ -395,35 +449,100 @@ export function Movimientos() {
               label="Agrupar"
               className="w-56"
               value={agrupacion}
-              onChange={(e) => setAgrupacion(e.target.value)}
+              onChange={(e) => cambiarAgrupacion(e.target.value)}
               opciones={AGRUPACIONES}
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[420px] text-sm">
-              <thead>
-                <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-                  <th className="py-2 pr-3 font-medium">
-                    {AGRUPACIONES.find((a) => a.valor === agrupacion)?.etiqueta.replace('Por ', '')}
-                  </th>
-                  <th className="px-3 py-2 text-right font-medium">Movimientos</th>
-                  <th className="py-2 pl-3 text-right font-medium">Cantidad</th>
-                </tr>
-              </thead>
-              <tbody>
-                {agrupar(data, agrupacion, nombreDe).map((g) => (
-                  <tr key={g.clave} className="border-hairline border-b last:border-0">
-                    <td className="text-ink/85 py-2 pr-3">{g.etiqueta}</td>
-                    <td className="text-ink/70 tabular px-3 py-2 text-right">{g.cuantos}</td>
-                    <td className="text-ink/85 tabular py-2 pl-3 text-right whitespace-nowrap">
-                      {cantidadLegible(g.porUnidad)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {(() => {
+            const grupos = agrupar(data, agrupacion, nombreDe)
+            const aLaVista = expandido ? grupos : grupos.slice(0, VISIBLES)
+            const ocultos = grupos.length - aLaVista.length
+
+            return (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[420px] text-sm">
+                    <thead>
+                      <tr className="text-ink/45 border-hairline border-b text-left text-xs">
+                        <th className="py-2 pr-3 font-medium">
+                          {AGRUPACIONES.find((a) => a.valor === agrupacion)?.etiqueta.replace('Por ', '')}
+                        </th>
+                        {/*
+                          La tabla se ordena por movimientos y no por cantidad, y
+                          es a propósito: en esta lista conviven sacos, litros y
+                          metros cúbicos, así que ordenar por cantidad compararía
+                          40 litros con 3 sacos. El número de movimientos no tiene
+                          unidad y se puede comparar entre cualquier par de filas.
+                        */}
+                        <th className="px-3 py-2 text-right font-medium" aria-sort="descending">
+                          Movimientos
+                        </th>
+                        <th className="py-2 pl-3 text-right font-medium">Cantidad</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aLaVista.map((g) => {
+                        /*
+                          CADA FILA ES UN FILTRO, y eso es lo que de verdad
+                          resuelve las 122.
+
+                          Plegar esconde el problema; poder bajar al detalle lo
+                          quita. Pulsar «ARENA» deja el libro entero filtrado por
+                          arena, y entonces el resumen pasa a tener una fila y la
+                          lista de abajo enseña solo lo suyo. Es más rápido que
+                          desplegar y buscar con la vista.
+                        */
+                        const filtrable = puedeFiltrarse(agrupacion, g.clave)
+                        const Fila = filtrable ? 'button' : 'span'
+                        return (
+                          <tr key={g.clave} className="border-hairline border-b last:border-0">
+                            <td className="py-2 pr-3">
+                              <Fila
+                                {...(filtrable
+                                  ? {
+                                      type: 'button' as const,
+                                      onClick: () => aplicarComoFiltro(agrupacion, g.clave),
+                                      title: `Ver solo ${g.etiqueta}`,
+                                      className:
+                                        'text-ink/85 hover:text-tierra-600 dark:hover:text-tierra-300 text-left underline-offset-4 hover:underline',
+                                    }
+                                  : { className: 'text-ink/85' })}
+                              >
+                                {g.etiqueta}
+                              </Fila>
+                            </td>
+                            <td className="text-ink/70 tabular px-3 py-2 text-right">{g.cuantos}</td>
+                            <td className="text-ink/85 tabular py-2 pl-3 text-right whitespace-nowrap">
+                              {cantidadLegible(g.porUnidad)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/*
+                  El botón dice CUÁNTOS faltan y no «ver más»: «ver más» no
+                  informa de si son tres o doscientos, y de eso depende que
+                  alguien lo pulse o prefiera acotar el filtro.
+                */}
+                {grupos.length > VISIBLES ? (
+                  <button
+                    type="button"
+                    aria-expanded={expandido}
+                    onClick={() => setExpandido((v) => !v)}
+                    className="text-tierra-600 dark:text-tierra-300 border-hairline mt-2 w-full rounded-[6px] border border-dashed py-2 text-xs font-medium transition-colors hover:bg-ink/4"
+                  >
+                    {expandido
+                      ? `Ver solo los ${VISIBLES} primeros`
+                      : `Ver los otros ${ocultos} ${agrupacion === 'articulo' ? 'materiales' : agrupacion === 'persona' ? 'nombres' : 'meses'}`}
+                  </button>
+                ) : null}
+              </>
+            )
+          })()}
 
           {/*
             SI SE LLEGÓ AL TOPE, SE DICE.

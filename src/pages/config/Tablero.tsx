@@ -1,6 +1,7 @@
 import { Building2, ClipboardList, DatabaseBackup, FileText, Users } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
+import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { QueHacer } from '@/components/QueHacer'
 import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
@@ -153,6 +154,21 @@ export function TableroConfiguracion() {
       </div>
 
       <QueHacer grupos={QUE_HACER} />
+
+      <PrimeraVez className="mt-8">
+        <p>
+          Aquí hay dos clases de cosa. Lo que <strong>se pone una vez</strong> —los datos de la
+          empresa, los usuarios con sus roles, los documentos legales— y lo que{' '}
+          <strong>se revisa de vez en cuando</strong>, que es la auditoría y el respaldo de la
+          base.
+        </p>
+        <p className="text-ink/50">
+          Un rol no es un cargo: es un lote de permisos con nombre. Cada módulo se reparte con
+          cuatro niveles, así que dos personas con el mismo cargo pueden ver cosas distintas si
+          tienen roles distintos. Cuando alguien dice que «no le aparece» una pantalla, es ahí
+          donde se mira.
+        </p>
+      </PrimeraVez>
 
       {/* La auditoría no se reparte por módulos: o se tiene el rol o no. Quien
           no lo tiene ve el tablero sin esa tarjeta y sin explicación, y eso se

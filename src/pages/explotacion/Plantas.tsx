@@ -23,6 +23,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { ArrowRight, Factory, History, Pencil, Plus, Route, Truck } from 'lucide-react'
 import { Ayuda } from '@/components/Ayuda'
+import { BotonesDelPaso, PanelDelPaso, RielDePasos, usePasos } from '@/components/FormularioPorPasos'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -370,8 +371,138 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
   const [operador, setOperador] = useState('')
 
   const nuevo = sitio === null
-  const listo =
-    nombre.trim().length >= 3 && tipo !== '' && (!nuevo || (codigo.trim().length >= 2 && operador !== ''))
+
+  /*
+    QUÉ SITIO ES, Y QUIÉN LO LLEVA.
+
+    Son los dos pasos, y no se inventaron: el formulario ya separaba lo que
+    identifica al sitio —su código, su nombre, qué clase de sitio es— de lo que
+    dice cómo funciona. Un sitio sin responsable existe; un sitio sin nombre,
+    no. Por eso el corte va ahí y no por la mitad de la rejilla.
+
+    Entra el 24/09/2026 con la evaluación del frontend. Conviene decir que es
+    un formulario CORTO —ocho campos— y que el paso a paso se justifica aquí
+    por lo que es, no por lo que mide: una planta se crea una vez y no se
+    vuelve, así que quien lo llena no sabe lo que viene y agradece ver el
+    final. Lo que NO se parte son los formularios que alguien llena treinta
+    veces al día; el criterio está escrito en `FormularioPorPasos`.
+  */
+  const pasos = [
+    {
+      id: 'que-es',
+      titulo: 'Qué sitio es',
+      subtitulo: 'Lo que lo identifica. El código no se cambia después.',
+      // Las mismas reglas que pedía el formulario de una pieza, repartidas
+      // donde se llenan. Antes se comprobaban todas juntas al final.
+      falta:
+        nombre.trim().length < 3 || tipo === ''
+          ? 'Falta el nombre —tres letras al menos— y qué clase de sitio es.'
+          : nuevo && codigo.trim().length < 2
+            ? 'Falta el código del sitio.'
+            : null,
+      contenido: (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {nuevo ? (
+            <Input
+              label="Código"
+              placeholder="PLANTA-NORTE"
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value)}
+              hint="Corto y sin espacios. No se cambia después."
+            />
+          ) : null}
+          <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+          <Select
+            label="Qué es"
+            vacio="Elige el tipo"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as TipoDeSitio)}
+            opciones={TIPOS}
+          />
+        </div>
+      ),
+    },
+    {
+      id: 'quien-lo-lleva',
+      titulo: 'Quién lo lleva, y dónde queda su material',
+      subtitulo: nuevo
+        ? 'Quién lo opera hace falta; lo demás se puede poner después.'
+        : 'Quién lo opera no se cambia aquí, sino desde «Operador», con fecha.',
+      falta: nuevo && operador === '' ? 'Falta decir quién opera el sitio.' : null,
+      contenido: (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {nuevo ? (
+              <Select
+                label="Quién lo opera"
+                vacio="Elige quién"
+                value={operador}
+                onChange={(e) => setOperador(e.target.value)}
+                opciones={(duenos ?? []).map((d) => ({ valor: d.codigo, etiqueta: d.nombre }))}
+                hint="Si es un aliado que no está en la lista, se añade primero en Inventario › Dueños."
+              />
+            ) : null}
+            <Select
+              label="Patio de inventario"
+              vacio="Sin patio"
+              value={almacen}
+              onChange={(e) => setAlmacen(e.target.value)}
+              opciones={(almacenes ?? []).map((a) => ({
+                valor: String(a.id),
+                etiqueta: `${a.codigo} · ${a.nombre}`,
+              }))}
+              hint="Donde queda el material que llega o sale de este sitio."
+            />
+            <SelectBuscable
+              label="Responsable"
+              vacio="Nadie por ahora"
+              valor={responsable}
+              onCambio={(v) => setResponsable(v)}
+              hint="Aprueba los viajes que salen de este sitio o llegan a él."
+              opciones={(empleados ?? []).map((e) => ({
+                valor: String(e.id),
+                codigo: e.ficha,
+                nombre: `${e.nombres} ${e.apellidos}`,
+                detalle: e.cargo,
+              }))}
+            />
+            <Input
+              label="Abierto desde"
+              type="date"
+              max={hoyEnCaracas()}
+              value={desde}
+              onChange={(e) => setDesde(e.target.value)}
+              hint="En blanco si no se sabe."
+            />
+          </div>
+          <Textarea
+            className="mt-4"
+            label="Nota"
+            rows={2}
+            value={nota}
+            onChange={(e) => setNota(e.target.value)}
+          />
+        </>
+      ),
+    },
+  ]
+
+  const pasoA = usePasos(pasos)
+
+  const guardarSitio = async () => {
+    await guardar.mutateAsync({
+      id: sitio?.id ?? null,
+      codigo: nuevo ? codigo : null,
+      nombre,
+      tipo: tipo as TipoDeSitio,
+      almacen_id: almacen ? Number(almacen) : null,
+      responsable_id: responsable ? Number(responsable) : null,
+      abierto_desde: desde || null,
+      nota: nota || null,
+      operador: nuevo ? operador : null,
+    })
+    onCerrar()
+  }
 
   return (
     <Modal
@@ -385,91 +516,17 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
       }
       ancho="lg"
       acciones={
-        <>
-          <Button variant="ghost" onClick={onCerrar}>
-            Cancelar
-          </Button>
-          <Button
-            disabled={!listo || guardar.isPending}
-            onClick={async () => {
-              await guardar.mutateAsync({
-                id: sitio?.id ?? null,
-                codigo: nuevo ? codigo : null,
-                nombre,
-                tipo: tipo as TipoDeSitio,
-                almacen_id: almacen ? Number(almacen) : null,
-                responsable_id: responsable ? Number(responsable) : null,
-                abierto_desde: desde || null,
-                nota: nota || null,
-                operador: nuevo ? operador : null,
-              })
-              onCerrar()
-            }}
-          >
-            {guardar.isPending ? 'Guardando…' : nuevo ? 'Crear el sitio' : 'Guardar'}
-          </Button>
-        </>
+        <BotonesDelPaso
+          pasos={pasoA}
+          cancelar={onCerrar}
+          etiquetaFinal={nuevo ? 'Crear el sitio' : 'Guardar'}
+          guardando={guardar.isPending}
+          onTerminar={() => void guardarSitio()}
+        />
       }
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-        {nuevo ? (
-          <Input
-            label="Código"
-            placeholder="PLANTA-NORTE"
-            value={codigo}
-            onChange={(e) => setCodigo(e.target.value)}
-            hint="Corto y sin espacios. No se cambia después."
-          />
-        ) : null}
-        <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
-        <Select
-          label="Qué es"
-          vacio="Elige el tipo"
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value as TipoDeSitio)}
-          opciones={TIPOS}
-        />
-        {nuevo ? (
-          <Select
-            label="Quién lo opera"
-            vacio="Elige quién"
-            value={operador}
-            onChange={(e) => setOperador(e.target.value)}
-            opciones={(duenos ?? []).map((d) => ({ valor: d.codigo, etiqueta: d.nombre }))}
-            hint="Si es un aliado que no está en la lista, se añade primero en Inventario › Dueños."
-          />
-        ) : null}
-        <Select
-          label="Patio de inventario"
-          vacio="Sin patio"
-          value={almacen}
-          onChange={(e) => setAlmacen(e.target.value)}
-          opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: `${a.codigo} · ${a.nombre}` }))}
-          hint="Donde queda el material que llega o sale de este sitio."
-        />
-        <SelectBuscable
-          label="Responsable"
-          vacio="Nadie por ahora"
-          valor={responsable}
-          onCambio={(v) => setResponsable(v)}
-          hint="Aprueba los viajes que salen de este sitio o llegan a él."
-          opciones={(empleados ?? []).map((e) => ({
-            valor: String(e.id),
-            codigo: e.ficha,
-            nombre: `${e.nombres} ${e.apellidos}`,
-            detalle: e.cargo,
-          }))}
-        />
-        <Input
-          label="Abierto desde"
-          type="date"
-          max={hoyEnCaracas()}
-          value={desde}
-          onChange={(e) => setDesde(e.target.value)}
-          hint="En blanco si no se sabe."
-        />
-      </div>
-      <Textarea className="mt-4" label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />
+      <RielDePasos pasos={pasos} actual={pasoA.actual} masLejos={pasoA.masLejos} onIr={pasoA.ir} />
+      <PanelDelPaso paso={pasoA.paso} />
       {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-3" /> : null}
     </Modal>
   )

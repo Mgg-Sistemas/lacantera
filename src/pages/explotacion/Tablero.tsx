@@ -1,70 +1,89 @@
 import { Link } from 'react-router'
-import { Mountain, Pickaxe, Scale, Zap } from 'lucide-react'
+import { Map, Route, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
-import { GrupoAcciones, PrimeraVez, type Accion } from '@/components/tablero/GrupoAcciones'
-import { useFrentes, useProduccion, useVoladuras } from '@/lib/api/explotacion'
+import { GrupoAcciones, type Accion } from '@/components/tablero/GrupoAcciones'
+import { PrimeraVez } from '@/components/tablero/PrimeraVez'
+import { useSalidasDelDia } from '@/lib/api/salidasPlanta'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { hoyEnCaracas } from '@/lib/api/tasas'
 import { enteros } from '@/lib/formato'
 
 /**
  * Por dónde se empieza en explotación.
  *
- * ESTE SÍ ES UNA CADENA, Y ES LA MISMA QUE CUENTA LA PORTADA
+ * REHECHO EL 24/09/2026, CON LA REMODELACIÓN DEL PUNTO 3
  *
- * Se abre el banco, se vuela, y del turno sale material. Ocurre en ese orden y
- * no en otro: no se vuela un frente que no existe, y no hay producción sin
- * haber arrancado roca.
+ * Este tablero estaba escrito para tres pantallas que ya no se pueden abrir.
+ * Enseñaba «Frentes activos», «Voladuras registradas» y «Partes de hoy» —tres
+ * ceros—, un botón grande a «Cargar parte de turno», y una explicación de
+ * cómo van en orden las tres. Las tres llevan el marbete `fueraDelMvp` desde el
+ * 23/09/2026, así que `GrupoAcciones` las filtraba y el recorrido se quedaba
+ * sin ninguna tarjeta: quedaban los ceros, el botón al cartel de obra y un
+ * texto explicando puertas cerradas.
  *
- * Es literalmente el recorrido que la portada le cuenta a la calle —la piedra
- * se vuela, se extrae, se tritura, se despacha—, así que el tablero lo numera
- * igual. Quien trabaja aquí y quien mira la web están viendo lo mismo.
+ * No es que el tablero estuviera mal escrito: es que el módulo cambió debajo y
+ * el tablero no se enteró. Es justo lo que un tablero no puede permitirse,
+ * porque es lo primero que se ve al entrar al módulo.
  *
- * EL PARTE DE TURNO ES LA PUERTA
+ * LO QUE HAY ABIERTO SON TRES PANTALLAS: salidas de planta, viajes de camiones
+ * y plantas y rutas. Las tres se ofrecen aquí.
  *
- * Es la única forma de que entre material producido al patio, y por eso va
- * destacado: quien no lo carga deja el inventario sin lo que la planta sacó ese
- * día, y eso no se nota hasta que alguien va a despachar y no hay existencia.
+ * Y CONVIENE DECIR QUE EL PRIMER INTENTO SE QUEDÓ CORTO. Al rehacerlo esa misma
+ * mañana se miró qué estaba `fueraDelMvp` y se dejó solo salidas de planta,
+ * olvidando las otras dos, que nunca estuvieron en obra. Lo vio el usuario a la
+ * primera: el menú ofrecía cuatro entradas y el tablero una. Un tablero que
+ * ofrece menos que el menú de al lado es peor que no tenerlo, porque enseña que
+ * el módulo tiene menos de lo que tiene.
+ *
+ * Y CONVIENE SABERLO AL MIRAR LA CIFRA: `salidas_planta` no tiene ni una fila
+ * desde que existe. El cero de aquí es verdad y no un fallo. Está preguntado a
+ * planta por qué; hasta que se sepa, no se toca nada más de este módulo.
  */
 export function TableroExplotacion() {
-  const { data: frentes, isPending, error } = useFrentes()
-  const { data: voladuras } = useVoladuras()
-  const { data: produccion } = useProduccion()
+  const dia = hoyEnCaracas()
+  const { data: salidas, isPending, error } = useSalidasDelDia(dia)
   const { puede } = useMisPermisos()
 
   const puedeEscribir = puede('EXPLOTACION', 'ESCRITURA')
 
-  const hoy = new Date().toLocaleDateString('en-CA')
-  const partesHoy = (produccion ?? []).filter((p) => p.fecha === hoy).length
-  // Un frente puede estar activo, suspendido o agotado. Solo el primero
-  // cuenta como «donde se esta cortando ahora».
-  const frentesActivos = (frentes ?? []).filter((f) => f.estado === 'ACTIVO').length
+  // Las anuladas no cuentan: el tablero dice qué salió, y una salida anulada
+  // no salió. El detalle de por qué se anuló vive en la pantalla.
+  const vivas = (salidas ?? []).filter((s) => s.estado === 'REGISTRADO')
+  const m3 = vivas.reduce((s, x) => s + Number(x.m3 ?? 0), 0)
 
+  /*
+    En el orden en que se usan, no en el que se explican.
+
+    Las salidas se anotan todos los días —veinte o treinta veces—, los viajes se
+    revisan al cuadrar el acarreo, y las plantas y rutas se tocan cuando abre o
+    cierra un sitio o cambia una tarifa. Lo que más se usa, primero.
+  */
   const pasos: Accion[] = [
     {
-      titulo: 'I · Se abre el banco',
-      detalle: 'Los frentes y sus bancos: dónde se está cortando y a qué cota.',
-      icono: Mountain,
-      ruta: '/app/explotacion/frentes',
-      exigeEscritura: true,
-    },
-    {
-      titulo: 'II · Se vuela',
-      detalle: 'Barrenación y carga explosiva. Queda registrado qué frente y con qué.',
-      icono: Zap,
-      ruta: '/app/explotacion/voladuras',
-      exigeEscritura: true,
-    },
-    {
-      titulo: 'III · Sale el turno',
+      titulo: 'Anotar una salida',
       detalle:
-        'El parte de turno. Es la única puerta por la que entra al patio lo que produjo la planta.',
-      icono: Scale,
-      ruta: '/app/explotacion/produccion',
-      cuenta: partesHoy,
+        'Cada camión que sale de la planta con producto. Es lo que se mide de verdad: el patio no se entera de otra forma.',
+      icono: Truck,
+      ruta: '/app/explotacion/salidas',
+      cuenta: vivas.length,
       exigeEscritura: true,
+    },
+    {
+      titulo: 'Viajes de camiones',
+      detalle:
+        'El acarreo: qué camión movió qué, de dónde a dónde, y cuánto se le paga al transportista por ello.',
+      icono: Route,
+      ruta: '/app/explotacion/viajes',
+    },
+    {
+      titulo: 'Plantas y rutas',
+      detalle:
+        'Las minas, plantas y bases, quién las opera y las rutas con su tarifa. Se toca cuando abre o cierra un sitio.',
+      icono: Map,
+      ruta: '/app/explotacion/plantas',
     },
   ]
 
@@ -72,11 +91,13 @@ export function TableroExplotacion() {
     <>
       <PageHeader
         title="Explotación"
-        description="Del frente al patio: dónde se corta, qué se voló y qué sacó cada turno."
+        description="El acarreo y lo que sale de la planta, camión por camión. Los frentes y el parte de turno siguen en obra."
         actions={
-          <Link to="/app/explotacion/produccion">
-            <Button icon={<Pickaxe />}>Cargar parte de turno</Button>
-          </Link>
+          puedeEscribir ? (
+            <Link to="/app/explotacion/salidas">
+              <Button icon={<Truck />}>Anotar una salida</Button>
+            </Link>
+          ) : undefined
         }
       />
 
@@ -85,55 +106,46 @@ export function TableroExplotacion() {
 
       {!isPending && !error ? (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Card>
               <p className="text-ink/45 text-2xs font-mono tracking-[0.16em] uppercase">
-                Frentes activos
+                Salidas de hoy
               </p>
               <p className="text-ink/90 tabular mt-3 text-3xl font-light">
-                {enteros(frentesActivos)}
+                {enteros(vivas.length)}
               </p>
-              <p className="text-ink/45 mt-2 text-xs">Donde se está cortando ahora</p>
-            </Card>
-
-            <Card>
-              <p className="text-ink/45 text-2xs font-mono tracking-[0.16em] uppercase">
-                Voladuras registradas
-              </p>
-              <p className="text-ink/90 tabular mt-3 text-3xl font-light">
-                {enteros((voladuras ?? []).length)}
-              </p>
-              <p className="text-ink/45 mt-2 text-xs">Histórico completo</p>
-            </Card>
-
-            <Card>
-              <p className="text-ink/45 text-2xs font-mono tracking-[0.16em] uppercase">
-                Partes de hoy
-              </p>
-              <p className="text-ink/90 tabular mt-3 text-3xl font-light">{enteros(partesHoy)}</p>
               <p className="text-ink/45 mt-2 text-xs">
-                {partesHoy === 0 ? 'Sin cargar todavía' : 'Turnos cargados'}
+                {vivas.length === 0 ? 'Todavía no ha salido nada' : 'Camiones que salieron'}
               </p>
+            </Card>
+
+            <Card>
+              <p className="text-ink/45 text-2xs font-mono tracking-[0.16em] uppercase">
+                Metros cúbicos de hoy
+              </p>
+              <p className="text-ink/90 tabular mt-3 text-3xl font-light">{enteros(m3)}</p>
+              <p className="text-ink/45 mt-2 text-xs">Estimados por la carga útil del camión</p>
             </Card>
           </div>
 
           <div className="mt-8 space-y-8">
-            <GrupoAcciones
-              titulo="El recorrido de la piedra"
-              acciones={pasos}
-              puedeEscribir={puedeEscribir}
-              columnas={3}
-            />
+            <GrupoAcciones acciones={pasos} />
 
             <PrimeraVez>
               <p>
-                Las tres pantallas van en orden: primero existe el frente, después se vuela, y del
-                turno sale el material. <strong>El parte de turno es el que mueve el inventario</strong> —
-                sin él, la planta produce y el patio no se entera.
+                Tres pantallas abiertas y cada una contesta una pregunta distinta.{' '}
+                <strong>Salidas de planta</strong> es lo que sale con producto, camión por camión —y
+                los metros cúbicos se llenan solos con la carga útil—.{' '}
+                <strong>Viajes de camiones</strong> es el acarreo y lo que se le paga al
+                transportista. <strong>Plantas y rutas</strong> es dónde están los sitios y qué
+                tarifa tiene cada ruta.
               </p>
               <p className="text-ink/50">
-                De un mismo turno salen varios materiales a la vez, así que el parte lleva renglones:
-                piedra 1, piedra 2, granzón y polvillo se cuentan por separado en el mismo papel.
+                Frentes y bancos, voladuras y el parte de turno están en obra y vuelven en la fase
+                3. No es que falten de hacer: están construidos y no pueden guardar nada todavía
+                —el parte exige un frente y un producto, y no hay ni frentes cargados ni artículos
+                con categoría PRODUCTO—. Voladuras además no se usa aquí: la cantera arranca el
+                material con máquina, no con explosivo.
               </p>
             </PrimeraVez>
           </div>

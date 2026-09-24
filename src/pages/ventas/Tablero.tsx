@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
+import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { useCotizacionesVenta, useNotasEntrega } from '@/lib/api/ventas'
 import { useFacturas } from '@/lib/api/facturacion'
 import { dolares } from '@/lib/formato'
@@ -217,11 +218,10 @@ export function TableroVentas() {
                     Lista de precios
                   </Button>
                 </Link>
-                <Link to="/app/facturacion/libro-ventas">
-                  <Button variant="outline" size="sm">
-                    Libro de ventas
-                  </Button>
-                </Link>
+                {/* El libro de ventas se fue al Libro Mayor de Tesorería el
+                    24/09/2026, y pide TESORERIA. Se quita el botón en vez de
+                    reapuntarlo: quien lleva ventas no tiene ese permiso, y le
+                    ofrecería una puerta que se cierra al pulsarla. */}
               </div>
             </Card>
 
@@ -241,6 +241,19 @@ export function TableroVentas() {
               </Link>
             </Card>
           </div>
+
+          <PrimeraVez className="mt-4">
+            <p>
+              Una venta va en cuatro pasos y cada uno deja su papel: se cotiza, se despacha con una{' '}
+              <strong>nota de entrega</strong> —que es lo que saca el material del patio—, se
+              factura lo despachado y se cobra la factura. Una factura puede recoger varias notas.
+            </p>
+            <p className="text-ink/50">
+              Y cuidado con una palabra: «despachar» aquí es la venta. El papeleo de la romana —el
+              ticket con el peso del camión y la guía de movilización— es otro módulo, Despachos.
+              Una cosa es el negocio y la otra el trámite.
+            </p>
+          </PrimeraVez>
         </>
       ) : null}
     </>

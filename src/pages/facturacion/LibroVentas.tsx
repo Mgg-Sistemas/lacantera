@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { BookOpen, Download } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Pestanas } from '@/components/Pestanas'
+import { PESTANAS_LIBRO_MAYOR } from '@/components/pestanasDeModulos'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -92,7 +94,7 @@ export function LibroVentas() {
   return (
     <>
       <PageHeader
-        title="Libro de ventas"
+        title="Libro Mayor · Ventas"
         description="Lo que se declara del IVA cobrado. Las facturas suman y las notas de crédito restan."
         actions={
           /* `items-end` alinea el botón con la caja del mes, no con su
@@ -106,6 +108,8 @@ export function LibroVentas() {
               onChange={(e) => setMes(e.target.value)}
               className="w-[170px]"
             />
+
+      <Pestanas pestanas={PESTANAS_LIBRO_MAYOR} />
             <Button
               variant="outline"
               icon={<Download />}
