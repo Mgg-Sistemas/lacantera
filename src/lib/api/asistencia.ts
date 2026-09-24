@@ -193,3 +193,123 @@ export function duracion(minutos: number | null): string {
   const m = minutos % 60
   return h === 0 ? `${m} min` : m === 0 ? `${h} h` : `${h} h ${m} min`
 }
+
+/* ───────────────────────────────────────────────── los visitantes */
+
+/*
+  Christopher, 24/09/2026: «gestionar a los que no forman parte de nómina, pero
+  vienen de visita». La misma idea que la jornada: una fila por visita, con la
+  entrada y la salida juntas; salida en blanco = sigue adentro. No hay carnet:
+  se registra a mano, o se toma del directorio de contactos.
+*/
+
+export interface Visita {
+  id: number
+  fecha: string
+  entrada: string
+  salida: string | null
+  nombre: string
+  documento: string | null
+  empresa: string | null
+  telefono: string | null
+  contacto_id: number | null
+  visita_a: number | null
+  /** A quién del personal vino a ver. */
+  visitado: string | null
+  visitado_cargo: string | null
+  motivo: string | null
+  placa: string | null
+  nota: string | null
+  estado: 'ADENTRO' | 'SALIO' | 'ANULADA'
+  minutos: number | null
+  registrado_por: string | null
+  registrado_en: string
+  corregido_por: string | null
+  corregido_en: string | null
+  anulada_en: string | null
+  anulada_por: string | null
+  motivo_anulacion: string | null
+}
+
+/** Lo que se teclea. Las horas van en ISO; la entrada vacía es «ahora», y la pone la base. */
+export interface DatosVisita {
+  contacto_id: string
+  nombre: string
+  documento: string
+  empresa: string
+  telefono: string
+  visita_a: string
+  motivo: string
+  placa: string
+  nota: string
+  entrada: string
+  salida: string
+}
+
+export const visitaVacia = (): DatosVisita => ({
+  contacto_id: '',
+  nombre: '',
+  documento: '',
+  empresa: '',
+  telefono: '',
+  visita_a: '',
+  motivo: '',
+  placa: '',
+  nota: '',
+  entrada: '',
+  salida: '',
+})
+
+export const datosDeVisita = (v: Visita): DatosVisita => ({
+  contacto_id: v.contacto_id === null ? '' : String(v.contacto_id),
+  nombre: v.nombre,
+  documento: v.documento ?? '',
+  empresa: v.empresa ?? '',
+  telefono: v.telefono ?? '',
+  visita_a: v.visita_a === null ? '' : String(v.visita_a),
+  motivo: v.motivo ?? '',
+  placa: v.placa ?? '',
+  nota: v.nota ?? '',
+  entrada: v.entrada,
+  salida: v.salida ?? '',
+})
+
+export function useVisitas(desde: string, hasta: string) {
+  return useQuery({
+    queryKey: ['asistencia', 'visitas', desde, hasta],
+    queryFn: async () =>
+      desenvolver<Visita[]>(
+        await supabase.from('v_asistencia_visitas').select('*').gte('fecha', desde).lte('fecha', hasta).order('entrada'),
+      ),
+  })
+}
+
+/** Quien sigue adentro, sea de hoy o de otro día que nadie cerró. */
+export function useVisitasAdentro() {
+  return useQuery({
+    queryKey: ['asistencia', 'visitas', 'adentro'],
+    refetchInterval: 60_000,
+    queryFn: async () =>
+      desenvolver<Visita[]>(
+        await supabase.from('v_asistencia_visitas').select('*').eq('estado', 'ADENTRO').order('entrada', { ascending: false }),
+      ),
+  })
+}
+
+export function useRegistrarVisita() {
+  return useAccion((datos: DatosVisita) => rpc<number>('registrar_visita', { p_datos: datos }))
+}
+
+export function useCerrarVisita() {
+  return useAccion((v: { id: number; salida?: string | null }) =>
+    rpc('cerrar_visita', { p_id: v.id, p_salida: v.salida ?? null }),
+  )
+}
+
+export function useCorregirVisita() {
+  return useAccion((v: { id: number; datos: DatosVisita }) => rpc('corregir_visita', { p_id: v.id, p_datos: v.datos }))
+}
+
+export function useAnularVisita() {
+  return useAccion((v: { id: number; motivo: string }) => rpc('anular_visita', { p_id: v.id, p_motivo: v.motivo }))
+}
