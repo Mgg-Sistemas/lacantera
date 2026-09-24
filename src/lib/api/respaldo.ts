@@ -86,28 +86,23 @@ export function useDescargarRespaldo() {
       setTimeout(() => URL.revokeObjectURL(url), 60_000)
 
       /*
-        Y ADEMÁS POR CORREO, PERO SIN JUGARSE LA DESCARGA.
+        DESCARGAR ES DESCARGAR, Y NADA MÁS.
 
-        Lo pidió la líder: que el respaldo se baje al navegador Y llegue al
-        correo. El orden importa — primero se baja, y solo entonces se intenta
-        mandar. Si el correo falla, la persona ya tiene su archivo.
+        Hasta hoy esto mandaba además un correo a quien pulsaba. Tenía sentido
+        mientras era la única forma de que el respaldo saliera de la máquina;
+        dejó de tenerlo el 24/09/2026, cuando la líder pidió un botón propio de
+        «Enviar por correo». Ella misma lo dijo al verlo: «si estoy descargando,
+        ¿por qué me sale lo del envío de correo?».
 
-        Por eso el fallo no se propaga: se devuelve dicho, para que la pantalla
-        lo cuente, y no como excepción, que tiraría abajo una descarga que salió
-        bien.
+        Y no era solo ruido. El correo fallaba —el servicio de correo estaba a
+        medio configurar— y cada descarga buena terminaba con una línea amarilla
+        de advertencia debajo. Una descarga que salió bien no debe parecer que
+        salió a medias.
+
+        Quien quiera las dos cosas las pide dos veces, que son dos botones y
+        están uno al lado del otro.
       */
-      let correo: { enviado: boolean; fallo?: string }
-      try {
-        await mandarPorCorreo(sql, enlace.download, [])
-        correo = { enviado: true }
-        await anotar(true, null, null)
-      } catch (e) {
-        const fallo = e instanceof Error ? e.message : String(e)
-        correo = { enviado: false, fallo }
-        await anotar(false, motivoDelFallo(fallo), null)
-      }
-
-      return { bytes: blob.size, nombre: enlace.download, correo }
+      return { bytes: blob.size, nombre: enlace.download }
     },
   })
 }
