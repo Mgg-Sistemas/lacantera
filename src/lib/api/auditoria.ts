@@ -302,6 +302,16 @@ const NOMBRES: Record<string, string> = {
   perfiles: 'Perfil de usuario',
   proveedores: 'Proveedor',
   rol_permisos: 'Permiso de un rol',
+  /*
+    LAS DOS DEL ENVÍO AUTOMÁTICO DEL RESPALDO.
+
+    Faltaban, y se notó el 24/09/2026: el usuario programó el envío y puso su
+    destinatario, las dos cosas quedaron anotadas, y en la pantalla salían con
+    el nombre crudo de la tabla. Un renglón de auditoría que no se puede leer
+    es un renglón que no informa de nada, que es justo lo que se reportó.
+  */
+  respaldo_programacion: 'Cada cuánto sale el respaldo',
+  respaldo_destinatarios: 'A quién le llega el respaldo',
   roles: 'Rol',
   autorizaciones: 'Permiso extendido',
   restricciones: 'Permiso restringido',
