@@ -244,7 +244,12 @@ function motivoDelFallo(fallo: string): string {
     desplegada, porque no hay red, o porque el 404 del portal viene sin
     cabeceras CORS y el navegador lo corta—. Sin esta línea se anotaba como
     DESCONOCIDO, que es justo lo que no ayuda a nadie a arreglarlo.
+
+    Ojo con lo que NO va aquí: «non-2xx status code» suena parecido y es lo
+    contrario. Ahí la función contestó, y contestó que no. Eso es un rechazo,
+    y mezclarlo con la red haría buscar el problema en el sitio equivocado.
   */
+  if (t.includes('non-2xx')) return 'RECHAZADO'
   if (
     t.includes('fetch') ||
     t.includes('network') ||
@@ -327,14 +332,46 @@ async function mandarPorCorreo(
     registro del navegador, que es donde lo necesita quien lo va a arreglar.
   */
   if (error) {
-    const crudo = error.message ?? String(error)
     console.error('El respaldo no se pudo mandar por correo:', error)
-    throw new Error(
-      /failed to send a request|failed to fetch|networkerror/i.test(crudo)
-        ? 'No se pudo contactar al servicio de correo del sistema. Vuelve a intentarlo dentro de un minuto.'
-        : crudo,
-    )
+    throw new Error(await razonDelFallo(error))
   }
 
   return bytes.length
+}
+
+/*
+  LO QUE DE VERDAD CONTESTÓ LA FUNCIÓN.
+
+  `supabase-js` tapa el motivo con dos frases que no le dicen nada a nadie:
+  «Failed to send a request to the Edge Function» cuando la petición no llega a
+  contestar, y «Edge Function returned a non-2xx status code» cuando contesta
+  con error. La segunda es la peor de las dos, porque la función SÍ explicó qué
+  pasó —«El servicio de correo rechazó el envío», «El envío de correo todavía no
+  está configurado»— y esa explicación se tira a la basura.
+
+  No se tira del todo: el `Response` sin leer sigue colgando de `error.context`,
+  y el cuerpo es `{ error: '…' }`. De ahí sale el texto que se enseña. Las dos
+  veces que esto falló en la cantera —24/09/2026, 8:37 y 10:23— se perdió media
+  mañana averiguando por fuera algo que el servidor ya había contestado.
+*/
+async function razonDelFallo(error: unknown): Promise<string> {
+  const contexto = (error as { context?: unknown }).context
+  if (contexto instanceof Response) {
+    try {
+      const cuerpo = await contexto.clone().json()
+      const dicho = typeof cuerpo?.error === 'string' ? cuerpo.error.trim() : ''
+      if (dicho) return dicho
+    } catch {
+      /* la función contestó algo que no era JSON */
+    }
+  }
+
+  const crudo = error instanceof Error ? error.message : String(error)
+  if (/failed to send a request|failed to fetch|networkerror/i.test(crudo)) {
+    return 'No se pudo contactar al servicio de correo del sistema. Vuelve a intentarlo dentro de un minuto.'
+  }
+  if (/non-2xx/i.test(crudo)) {
+    return 'El servicio de correo contestó con un error y no dijo cuál. Mira el registro de la función en Supabase.'
+  }
+  return crudo
 }
