@@ -517,6 +517,33 @@ export interface PorCobrar {
   dias_desde_emision: number
 }
 
+/** Un proveedor que le debe dinero a la empresa: pagó con material que valía más que su orden. */
+export interface PorCobrarAProveedor {
+  saldo_id: number
+  numero: string
+  proveedor: string
+  rif: string
+  orden: string | null
+  moneda: string
+  monto: string
+  pendiente: string
+  motivo: string
+  desde: string
+  dias: number
+}
+
+/**
+ * Lo que deben los proveedores. Nace en Compras, cuando un pago con material
+ * deja diferencia «por cobrar», y hasta el 24/09/2026 no salía aquí: quien
+ * miraba Cuentas por cobrar creía que nadie debía nada.
+ */
+export function usePorCobrarAProveedores() {
+  return useQuery({
+    queryKey: ['cobranza', 'proveedores'],
+    queryFn: () => rpc<PorCobrarAProveedor[]>('por_cobrar_a_proveedores', {}),
+  })
+}
+
 export function usePorCobrar() {
   return useQuery({
     queryKey: ['cobranza'],

@@ -7016,9 +7016,11 @@ Dentro de cada tarjeta:
 
 **El orden es por antigüedad y no por monto, a propósito.** Una deuda de 400 dólares de hace noventa días es un problema distinto de una de 4.000 emitida ayer, y una lista ordenada por monto las pone justo al revés de como hay que atenderlas.
 
-Al pie de la pantalla queda dicho dónde se cobra: **Los cobros se registran desde Facturación › Facturas, abriendo la factura.** El texto es un enlace.
+**Proveedores que deben.** Desde el 24/09/2026, debajo de los clientes hay un segundo bloque con los proveedores que le deben dinero a la empresa: pagaron una compra con material que valía más que la orden y Compras dejó la diferencia **por cobrar** (12.5 y el pago con material). Cada saldo va en la moneda de su orden, con la compra de la que viene, desde cuándo y cuánto queda; al total de arriba solo suman los que están en dólares, porque esos saldos no llevan tasa congelada y convertirlos con la de hoy sería inventar. Antes no salían aquí y la pantalla decía que nadie debía nada.
 
-Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitidas están cobradas. Las nuevas aparecen aquí en cuanto se emiten a crédito o quedan con saldo.**
+Al pie de la pantalla queda dicho dónde se cobra: **Los cobros a clientes se registran desde Facturación › Facturas, abriendo la factura. Lo que debe un proveedor se cobra desde Compras › Proveedores, en sus saldos.** Los dos textos son enlaces.
+
+Si no debe nadie: **Nadie debe nada**, con el texto **Todas las facturas emitidas están cobradas y ningún proveedor debe diferencia. Las nuevas aparecen aquí en cuanto se emiten a crédito, quedan con saldo, o un pago con material deja dinero por cobrar.**
 
 **Desde aquí no se cobra.** No hay filtros, ni acciones, ni exportación.
 
