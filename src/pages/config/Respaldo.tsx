@@ -5,6 +5,7 @@ import {
   Loader2,
   Lock,
   Mail,
+  CalendarClock,
   Pencil,
   Plus,
   ShieldAlert,
@@ -15,6 +16,9 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { Select } from '@/components/ui/Select'
+import { Segmento } from '@/components/ui/Segmento'
+import { Interruptor } from '@/components/ui/Interruptor'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import {
@@ -24,8 +28,12 @@ import {
   limpiarCorreos,
   useDescargarRespaldo,
   useEnviarRespaldoPorCorreo,
+  loQueImpideProgramar,
   useDestinatariosDelRespaldo,
   useGuardarDestinatarioDelRespaldo,
+  useProgramacionDelRespaldo,
+  useProgramarRespaldo,
+  type Cadencia,
   useResumenRespaldo,
 } from '@/lib/api/respaldo'
 import { useMisRoles } from '@/lib/api/catalogo'
@@ -640,6 +648,21 @@ function ElEnvioAutomatico() {
         ) : null}
       </div>
 
+      {/*
+        CUÁNDO SALE, ANTES DE A QUIÉN LE LLEGA.
+
+        Las dos mitades viven en la misma tarjeta porque son el mismo envío, y
+        van en este orden porque así se lee: primero si esto ocurre y cuándo,
+        después a quién le toca recibirlo.
+      */}
+      <LaProgramacion />
+
+      <div className="border-hairline my-5 border-t" />
+
+      <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">
+        A quién le llega
+      </p>
+
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} className="mt-3" /> : null}
 
@@ -801,6 +824,260 @@ function ModalDestinatario({ onCerrar, hay }: { onCerrar: () => void; hay: boole
       </div>
 
       {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-3" /> : null}
+    </Modal>
+  )
+}
+
+const CADENCIAS: { valor: Cadencia; etiqueta: string }[] = [
+  { valor: 'SEMANAL', etiqueta: 'Cada semana' },
+  { valor: 'QUINCENAL', etiqueta: 'Cada quincena' },
+  { valor: 'MENSUAL', etiqueta: 'Cada mes' },
+]
+
+const DIAS_DE_LA_SEMANA = [
+  'lunes',
+  'martes',
+  'miércoles',
+  'jueves',
+  'viernes',
+  'sábado',
+  'domingo',
+]
+
+/*
+  CADA CUÁNTO SALE EL RESPALDO.
+
+  Lo pidió el usuario el 24/09/2026: que la frecuencia se pueda configurar. Y
+  se decidió sin opción diaria, que no es una limitación técnica: cada envío
+  deja una copia del archivo con las cédulas, los sueldos y las cuentas
+  bancarias en un buzón, y un correo no se puede retirar.
+
+  LA HORA ES DE CARACAS, SIEMPRE. La conversión a la hora del servidor la hace
+  la base. Es la pieza que estaba mal: el cron decía `0 8 1 * *` creyendo que
+  eran las 8:00, y eran las 4:00 de la madrugada.
+
+  SE DICE SI ESTÁ ENCENDIDO, NO SI ESTÁ CONFIGURADO. Son cosas distintas y hacen
+  falta tres piezas para la primera: esta programación, un destinatario y el
+  secreto del vault. La base devuelve `por_que_no` con las que falten, y aquí
+  se enseñan en lista porque «faltan tres cosas» en una línea no se lee.
+*/
+function LaProgramacion() {
+  const { data, isPending, error } = useProgramacionDelRespaldo()
+  const [editando, setEditando] = useState(false)
+
+  if (isPending) return <Cargando />
+  if (error) return <ErrorDeCarga error={error} />
+  if (!data) return null
+
+  if (!data.autorizado) {
+    return (
+      <p className="text-ink/55 text-sm">
+        Cada cuánto sale el respaldo lo ve y lo cambia quien tiene el rol de Respaldo de la base.
+      </p>
+    )
+  }
+
+  const razones = (data.por_que_no ?? '').split(' · ').filter(Boolean)
+
+  return (
+    <>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">Cada cuánto sale</p>
+        <Button
+          variant="outline"
+          size="sm"
+          icon={<CalendarClock />}
+          onClick={() => setEditando(true)}
+        >
+          {data.cadencia ? 'Cambiar cuándo' : 'Programarlo'}
+        </Button>
+      </div>
+
+      <div className="mt-3">
+        {data.cadencia ? (
+          <p className="text-ink/85 text-sm">
+            {comoSeLee(data.cadencia, data.dia, data.hora ?? 0, data.minuto ?? 0)}
+            {data.motivo ? (
+              <span className="text-ink/50 block text-xs leading-relaxed">{data.motivo}</span>
+            ) : null}
+          </p>
+        ) : (
+          <p className="text-ink/55 text-sm">Todavía no se ha programado ninguna frecuencia.</p>
+        )}
+
+        {data.encendido ? (
+          <p className="text-success mt-2 text-sm">
+            Encendido. El próximo sale el {fechaHora(data.proxima_vez)}.
+          </p>
+        ) : (
+          <div className="border-warning/30 bg-warning/5 mt-3 rounded-md border px-4 py-3">
+            <p className="text-ink/80 text-sm font-medium">El envío automático está apagado.</p>
+            {razones.length > 0 ? (
+              <ul className="text-ink/65 mt-1.5 space-y-0.5 text-sm">
+                {razones.map((r) => (
+                  <li key={r}>· {r}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      {editando ? <ModalProgramacion actual={data} onCerrar={() => setEditando(false)} /> : null}
+    </>
+  )
+}
+
+/** La programación, dicha como se dice en voz alta. */
+function comoSeLee(cadencia: Cadencia, dia: number | null, hora: number, minuto: number): string {
+  const aLas = `las ${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
+  if (cadencia === 'SEMANAL') {
+    return `Cada semana, los ${DIAS_DE_LA_SEMANA[(dia ?? 1) - 1]} a ${aLas}.`
+  }
+  // La quincena de esta casa es la de la nómina: el 1 y el 16, no «cada 14 días».
+  if (cadencia === 'QUINCENAL') return `Cada quincena, los días 1 y 16 a ${aLas}.`
+  return `Cada mes, el día ${dia} a ${aLas}.`
+}
+
+function ModalProgramacion({
+  actual,
+  onCerrar,
+}: {
+  actual: ReturnType<typeof useProgramacionDelRespaldo>['data'] & object
+  onCerrar: () => void
+}) {
+  const programar = useProgramarRespaldo()
+  const [cadencia, setCadencia] = useState<Cadencia>(actual.cadencia ?? 'MENSUAL')
+  const [dia, setDia] = useState(String(actual.dia ?? 1))
+  const [hora, setHora] = useState(String(actual.hora ?? 8))
+  const [minuto, setMinuto] = useState(String(actual.minuto ?? 0))
+  const [activo, setActivo] = useState(actual.activo ?? true)
+  const [motivo, setMotivo] = useState('')
+
+  const falta = loQueImpideProgramar({
+    cadencia,
+    dia: cadencia === 'QUINCENAL' ? null : Number(dia),
+    hora: Number(hora),
+    motivo,
+  })
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Cada cuánto sale el respaldo"
+      descripcion="La hora es la de Caracas. El sistema la convierte sola a la del servidor."
+      ancho="md"
+      acciones={
+        <>
+          {falta ? <p className="text-ink/45 mr-auto text-left text-xs">{falta}</p> : null}
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={!!falta || programar.isPending}
+            onClick={async () => {
+              await programar.mutateAsync({
+                cadencia,
+                dia: cadencia === 'QUINCENAL' ? null : Number(dia),
+                hora: Number(hora),
+                minuto: Number(minuto),
+                activo,
+                motivo,
+              })
+              onCerrar()
+            }}
+          >
+            {programar.isPending ? 'Guardando…' : 'Guardar'}
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-4">
+        <div>
+          <p className="text-ink/70 mb-1.5 text-sm font-medium">Cada cuánto</p>
+          <Segmento
+            opciones={CADENCIAS.map((c) => ({ valor: c.valor, etiqueta: c.etiqueta }))}
+            valor={cadencia}
+            onCambio={(v) => setCadencia(v as Cadencia)}
+          />
+          {/* Sin opción diaria, y se dice por qué: no es que no se pueda. */}
+          <p className="text-ink/45 mt-1.5 text-xs leading-relaxed">
+            No hay opción diaria a propósito. Cada envío deja una copia del archivo con las cédulas
+            y los sueldos en un buzón, y un correo no se puede retirar.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {cadencia === 'SEMANAL' ? (
+            <Select
+              label="Qué día"
+              value={dia}
+              onChange={(e) => setDia(e.target.value)}
+              opciones={DIAS_DE_LA_SEMANA.map((d, i) => ({
+                valor: String(i + 1),
+                etiqueta: d.charAt(0).toUpperCase() + d.slice(1),
+              }))}
+            />
+          ) : cadencia === 'MENSUAL' ? (
+            <Select
+              label="Qué día del mes"
+              hint="Hasta el 28: los meses cortos no tienen 29, 30 ni 31."
+              value={dia}
+              onChange={(e) => setDia(e.target.value)}
+              opciones={Array.from({ length: 28 }, (_, i) => ({
+                valor: String(i + 1),
+                etiqueta: String(i + 1),
+              }))}
+            />
+          ) : (
+            <div className="sm:col-span-1">
+              <p className="text-ink/70 mb-1.5 text-sm font-medium">Qué días</p>
+              <p className="text-ink/55 border-hairline rounded-md border px-3 py-2 text-sm">
+                El 1 y el 16
+              </p>
+            </div>
+          )}
+
+          <Select
+            label="A qué hora"
+            hint="Hora de Caracas."
+            value={hora}
+            onChange={(e) => setHora(e.target.value)}
+            opciones={Array.from({ length: 24 }, (_, i) => ({
+              valor: String(i),
+              etiqueta: `${String(i).padStart(2, '0')}:00`,
+            }))}
+          />
+
+          <Select
+            label="Y minuto"
+            value={minuto}
+            onChange={(e) => setMinuto(e.target.value)}
+            opciones={[0, 15, 30, 45].map((m) => ({
+              valor: String(m),
+              etiqueta: String(m).padStart(2, '0'),
+            }))}
+          />
+        </div>
+
+        <Interruptor
+          etiqueta="Que salga"
+          detalle="Apagado, la programación se guarda pero no sale ningún correo."
+          encendido={activo}
+          onCambio={setActivo}
+        />
+
+        <Textarea
+          label="Por qué así"
+          rows={2}
+          hint="Queda guardado con la programación. Dentro de un año explica por qué se eligió esta frecuencia."
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+        />
+      </div>
+
+      {programar.error ? <ErrorDeCarga error={programar.error} className="mt-3" /> : null}
     </Modal>
   )
 }
