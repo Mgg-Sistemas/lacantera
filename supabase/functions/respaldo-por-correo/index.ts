@@ -22,8 +22,9 @@
   desde la cantera da unos 300 kB/s, o sea casi un minuto solo en subir lo que el
   navegador ya tenía en la mano. Comprimido son 1 o 2 MB y son segundos.
 
-  Lo que se comparte, entonces, no es el código sino el formato: `.sql.gz` con
-  `CompressionStream('gzip')`, que existe igual en el navegador y en Deno.
+  Lo que se comparte, entonces, no es el código sino el formato: `.sql.zip`,
+  que se arma igual en los dos sitios porque `CompressionStream` existe en ambos. Iba
+  en `.sql.gz` hasta que Brevo lo rechazó en producción el 24/09/2026.
 
   LA VÍA DEL CRON, Y POR QUÉ CONTESTA ANTES DE TRABAJAR
 
@@ -142,11 +143,104 @@ async function secretoDelVault(
 }
 
 /** El `.sql` comprimido y en base64, igual que lo hace el navegador. */
-async function comprimirABase64(sql: string): Promise<string> {
-  const flujo = new Blob([sql]).stream().pipeThrough(new CompressionStream('gzip'))
-  const bytes = new Uint8Array(await new Response(flujo).arrayBuffer())
-  // De 32 kB en 32 kB: `String.fromCharCode(...bytes)` de un tirón revienta,
-  // porque una llamada tiene tope de argumentos y un mega lo pasa.
+/*
+  UN ZIP DE UN SOLO ARCHIVO.
+
+  COPIA DE `src/lib/zip.ts`, y no se puede evitar: aquello corre en el navegador
+  y esto en Deno, y no se ven entre ellos. Si se toca uno hay que tocar el otro.
+  El porqué entero está escrito allí; en corto: iba en gzip y Brevo lo rechazó
+  en producción el 24/09/2026 —«Unsupported file format: gz»— porque tiene lista
+  blanca de extensiones y `gz` no está en ella.
+*/
+const TABLA_CRC = (() => {
+  const t = new Uint32Array(256)
+  for (let n = 0; n < 256; n++) {
+    let c = n
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+    t[n] = c >>> 0
+  }
+  return t
+})()
+
+function crc32(datos: Uint8Array): number {
+  let c = 0xffffffff
+  for (let i = 0; i < datos.length; i++) c = TABLA_CRC[(c ^ datos[i]) & 0xff] ^ (c >>> 8)
+  return (c ^ 0xffffffff) >>> 0
+}
+
+async function zipDeUnArchivo(nombreDentro: string, contenido: string): Promise<Uint8Array> {
+  const crudo = new TextEncoder().encode(contenido)
+  const crc = crc32(crudo)
+  // `deflate-raw`: un zip guarda el deflate pelado, sin envoltura zlib.
+  const comprimido = new Uint8Array(
+    await new Response(
+      new Blob([crudo]).stream().pipeThrough(new CompressionStream('deflate-raw')),
+    ).arrayBuffer(),
+  )
+
+  const nombre = new TextEncoder().encode(nombreDentro)
+  const d = new Date()
+  const hora = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)
+  const fecha = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()
+
+  const LOCAL = 30 + nombre.length
+  const CENTRAL = 46 + nombre.length
+  const zip = new Uint8Array(LOCAL + comprimido.length + CENTRAL + 22)
+  const v = new DataView(zip.buffer)
+  let p = 0
+
+  v.setUint32(p, 0x04034b50, true)
+  v.setUint16(p + 4, 20, true)
+  v.setUint16(p + 6, 0, true)
+  v.setUint16(p + 8, 8, true)
+  v.setUint16(p + 10, hora, true)
+  v.setUint16(p + 12, fecha, true)
+  v.setUint32(p + 14, crc, true)
+  v.setUint32(p + 18, comprimido.length, true)
+  v.setUint32(p + 22, crudo.length, true)
+  v.setUint16(p + 26, nombre.length, true)
+  v.setUint16(p + 28, 0, true)
+  zip.set(nombre, p + 30)
+  p += LOCAL
+
+  zip.set(comprimido, p)
+  p += comprimido.length
+
+  const inicioIndice = p
+  v.setUint32(p, 0x02014b50, true)
+  v.setUint16(p + 4, 20, true)
+  v.setUint16(p + 6, 20, true)
+  v.setUint16(p + 8, 0, true)
+  v.setUint16(p + 10, 8, true)
+  v.setUint16(p + 12, hora, true)
+  v.setUint16(p + 14, fecha, true)
+  v.setUint32(p + 16, crc, true)
+  v.setUint32(p + 20, comprimido.length, true)
+  v.setUint32(p + 24, crudo.length, true)
+  v.setUint16(p + 28, nombre.length, true)
+  v.setUint16(p + 30, 0, true)
+  v.setUint16(p + 32, 0, true)
+  v.setUint16(p + 34, 0, true)
+  v.setUint16(p + 36, 0, true)
+  v.setUint32(p + 38, 0, true)
+  v.setUint32(p + 42, 0, true)
+  zip.set(nombre, p + 46)
+  p += CENTRAL
+
+  v.setUint32(p, 0x06054b50, true)
+  v.setUint16(p + 4, 0, true)
+  v.setUint16(p + 6, 0, true)
+  v.setUint16(p + 8, 1, true)
+  v.setUint16(p + 10, 1, true)
+  v.setUint32(p + 12, CENTRAL, true)
+  v.setUint32(p + 16, inicioIndice, true)
+  v.setUint16(p + 20, 0, true)
+
+  return zip
+}
+
+async function comprimirABase64(nombreDentro: string, sql: string): Promise<string> {
+  const bytes = await zipDeUnArchivo(nombreDentro, sql)
   let binario = ''
   const TROZO = 32768
   for (let i = 0; i < bytes.length; i += TROZO) {
@@ -187,8 +281,8 @@ async function enviarElProgramado(sistema: NonNullable<ReturnType<typeof comoElS
       subject: `Respaldo mensual de la base · ${hoy}`,
       permitirRespaldo: true,
       adjunto: {
-        nombre: `respaldo-lacantera-${hoy}.sql.gz`,
-        base64: await comprimirABase64(String(sql)),
+        nombre: `respaldo-lacantera-${hoy}.sql.zip`,
+        base64: await comprimirABase64(`respaldo-lacantera-${hoy}.sql`, String(sql)),
       },
       html: plantillaHtml(
         'Respaldo mensual de la base de datos',
