@@ -13,7 +13,6 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { GrupoAcciones, type Accion } from '@/components/tablero/GrupoAcciones'
-import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { useCuentas, usePorPagar, useResumenPanel } from '@/lib/api/tesoreria'
 import { bolivares, dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -48,7 +47,7 @@ export function TableroTesoreria() {
   const colaPagos: Accion[] = [
     {
       titulo: 'Pagos autorizados',
-      detalle: 'Órdenes que compras ya aprobó y esperan que salga la plata.',
+      detalle: 'Órdenes que compras ya aprobó y esperan que salga el dinero.',
       icono: HandCoins,
       ruta: '/app/tesoreria/pagos',
       cuenta: r?.por_pagar_n ?? 0,
@@ -183,20 +182,9 @@ export function TableroTesoreria() {
           </div>
 
           <div className="mt-8 space-y-8">
-            <GrupoAcciones titulo="Sale plata" acciones={colaPagos} />
-            <GrupoAcciones titulo="Entra plata" acciones={colaCobros} />
+            <GrupoAcciones titulo="Sale dinero" acciones={colaPagos} />
+            <GrupoAcciones titulo="Entra dinero" acciones={colaCobros} />
             <GrupoAcciones titulo="Se mueve" acciones={movimientos} />
-
-            <PrimeraVez>
-              <p>
-                Tesorería no decide qué se paga: <strong>ejecuta lo que ya se autorizó</strong>. Las
-                órdenes llegan aprobadas desde compras y aquí se indica de qué cuenta sale.
-              </p>
-              <p className="text-ink/50">
-                Una cuenta recién creada no cuenta hasta que se le registra el saldo de apertura. Si
-                el disponible parece bajo, es lo primero que hay que mirar.
-              </p>
-            </PrimeraVez>
           </div>
         </>
       ) : null}

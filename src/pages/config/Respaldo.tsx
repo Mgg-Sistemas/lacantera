@@ -181,13 +181,6 @@ export function Respaldo() {
               <p className="text-ink/85 font-medium">
                 Este es el archivo más delicado que produce el sistema
               </p>
-              <p className="text-ink/65 mt-1 leading-relaxed">
-                Dentro van las cédulas, los sueldos y las cuentas bancarias de todo el personal, los
-                precios, los clientes y la bitácora entera. Todo lo que aquí dentro está repartido
-                por permisos, ahí queda junto y sin ninguna protección. Guárdalo donde guardarías el
-                libro de nómina en papel, y no lo dejes en la carpeta de descargas de una
-                computadora que usa más gente.
-              </p>
             </div>
           </div>
 
