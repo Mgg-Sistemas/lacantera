@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { BookOpen, Download } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
-import { PESTANAS_ANALISIS } from '@/components/pestanasDeModulos'
+import { PESTANAS_LIBRO_MAYOR } from '@/components/pestanasDeModulos'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -81,8 +81,8 @@ export function LibroCompras() {
   return (
     <>
       <PageHeader
-        title="Libro de compras"
-        description="El IVA que se pagó a los proveedores y que se descuenta del que se cobró."
+        title="Libro Mayor · Compras"
+        description="El IVA que se pagó a los proveedores y que se descuenta del que se cobró. Es uno de los dos libros que pide el SENIAT."
         actions={
           /* `items-end` alinea el botón con la caja del mes, no con su
              etiqueta. Antes llevaba un `mb-6` a mano que lo levantaba 24 px de
@@ -113,7 +113,7 @@ export function LibroCompras() {
           acciones, entre el mes y el botón de descargar: con dos pestañas
           cortas cabía y no se veía, y al entrar la tercera se juntó todo en un
           renglón. */}
-      <Pestanas pestanas={PESTANAS_ANALISIS} />
+      <Pestanas pestanas={PESTANAS_LIBRO_MAYOR} />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}

@@ -267,11 +267,11 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/compras/directa': 'compra rapida ya hecha factura sin cotizar sin gerente contado',
   '/app/compras/proveedores': 'rif suplidor',
   '/app/compras/recepciones': 'recibir entrada mercancia llegada',
-  '/app/compras/libro': 'iva impuesto seniat fiscal credito',
+  '/app/tesoreria/libro-mayor': 'iva impuesto seniat fiscal credito libro mayor compras',
   '/app/facturacion': 'factura fac cobrar cobro emitir fiscal numero de control',
   '/app/facturacion/notas-credito': 'nota de credito ncr devolucion descuento correccion',
   '/app/facturacion/por-cobrar': 'deuda deben clientes cartera vencida saldo cobranza',
-  '/app/facturacion/libro-ventas': 'iva impuesto seniat fiscal debito',
+  '/app/tesoreria/libro-mayor/ventas': 'iva impuesto seniat fiscal debito libro mayor ventas',
   '/app/facturacion/notas-entrega': 'nota de entrega ne remision despachar material',
   '/app/ventas/clientes': 'rif comprador',
   '/app/ventas/precios': 'tarifa lista precio',
@@ -612,15 +612,15 @@ export const navigation: NavSection[] = [
           // menú y la pantalla daba el cartel de obra: se dijo al mover los
           // pagos que el historial venía con ellos, y no vino.
           { label: 'Movimientos de dinero', to: '/app/tesoreria/movimientos' },
-          // El libro cuelga de Compras porque quien lo saca es quien cargó las
-          // facturas del proveedor, y así el permiso que ya gobierna esas
-          // facturas gobierna también su libro. Se quedó aquí cuando Facturación
-          // pasó a módulo propio (15/09/2026): ese módulo es lo que la empresa
-          // emite, y este libro es lo que recibe.
           // El centro de costos que abría este grupo se retiró el 14/09/2026:
           // leía un libro de tesorería vacío. Lo sustituye el módulo «Centro
           // de costo», con entrada propia en Administración.
-          { label: 'Libro de compras', to: '/app/compras/libro' },
+          //
+          // Y EL LIBRO DE COMPRAS SE FUE EL 24/09/2026, al Libro Mayor de
+          // Tesorería. Colgaba de aquí porque quien lo sacaba era quien cargaba
+          // las facturas del proveedor; el usuario decidió que un libro fiscal
+          // es cuenta de tesorería, sabiendo que siete de las quince personas
+          // que lo veían dejan de verlo.
           // A dónde va el dinero. La líder preguntó qué unidad genera más
           // gasto, y la respuesta sale de las mismas compras que alimentan el
           // libro: por eso son pestañas la una de la otra.
@@ -712,7 +712,6 @@ export const navigation: NavSection[] = [
           { label: 'Facturas', to: '/app/facturacion' },
           { label: 'Notas de crédito', to: '/app/facturacion/notas-credito' },
           { label: 'Cuentas por cobrar', to: '/app/facturacion/por-cobrar' },
-          { label: 'Libro de ventas', to: '/app/facturacion/libro-ventas' },
         ],
       },
       {
@@ -797,6 +796,13 @@ export const navigation: NavSection[] = [
           { label: 'Tablero', to: '/app/tesoreria' },
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
           { label: 'Reportes', to: '/app/tesoreria/reportes' },
+          /*
+            Los dos libros fiscales, juntos y aquí desde el 24/09/2026. Estaban
+            uno en Compras y otro en Facturación, cada uno donde nace su papel;
+            el usuario los quiso en un solo sitio y en el módulo que lleva las
+            cuentas.
+          */
+          { label: 'Libro Mayor', to: '/app/tesoreria/libro-mayor' },
         ],
       },
     ],

@@ -217,11 +217,10 @@ export function TableroVentas() {
                     Lista de precios
                   </Button>
                 </Link>
-                <Link to="/app/facturacion/libro-ventas">
-                  <Button variant="outline" size="sm">
-                    Libro de ventas
-                  </Button>
-                </Link>
+                {/* El libro de ventas se fue al Libro Mayor de Tesorería el
+                    24/09/2026, y pide TESORERIA. Se quita el botón en vez de
+                    reapuntarlo: quien lleva ventas no tiene ese permiso, y le
+                    ofrecería una puerta que se cierra al pulsarla. */}
               </div>
             </Card>
 

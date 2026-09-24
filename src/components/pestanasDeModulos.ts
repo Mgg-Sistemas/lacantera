@@ -97,7 +97,29 @@ export const PESTANAS_DEUDAS: Pestana[] = [
   dos se responden con lo mismo: las compras del período, sumadas de otra
   manera.
 */
+/*
+  EL LIBRO DE COMPRAS SE FUE AL LIBRO MAYOR, EN TESORERÍA (24/09/2026).
+
+  Se llevó consigo la razón por la que estas dos eran pestañas la una de la
+  otra, así que «Gasto por unidad» se queda sin barra: una sola pestaña no es
+  una barra de pestañas, es un título repetido.
+*/
 export const PESTANAS_ANALISIS: Pestana[] = [
-  { etiqueta: 'Libro de compras', a: '/app/compras/libro' },
   { etiqueta: 'Gasto por unidad', a: '/app/compras/gasto' },
+]
+
+/*
+  LOS DOS LIBROS FISCALES, JUNTOS PERO NO REVUELTOS.
+
+  El usuario los pidió «en conjunto Libro Mayor», y en conjunto quiere decir un
+  solo sitio donde buscarlos — no una sola tabla. El de compras y el de ventas
+  son dos libros que pide el SENIAT, cada uno con su formato: fundirlos en una
+  lista sería juntar el IVA que se paga con el que se cobra, que es justo lo que
+  el papel separa.
+
+  Así que una pantalla, dos pestañas, y cada libro entero por dentro.
+*/
+export const PESTANAS_LIBRO_MAYOR: Pestana[] = [
+  { etiqueta: 'Compras', a: '/app/tesoreria/libro-mayor' },
+  { etiqueta: 'Ventas', a: '/app/tesoreria/libro-mayor/ventas' },
 ]

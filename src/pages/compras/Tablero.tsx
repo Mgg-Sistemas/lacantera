@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
 import {
   AlertTriangle,
-  BookOpen,
   Building2,
   ClipboardList,
   FileText,
@@ -297,12 +296,19 @@ const QUE_HACER: GrupoDeAcciones[] = [
         icono: FileText,
         a: '/app/compras/facturas',
       },
-      {
-        titulo: 'Libro de compras',
-        detalle: 'Lo que va al SENIAT: base imponible, IVA y crédito fiscal del período.',
-        icono: BookOpen,
-        a: '/app/compras/libro',
-      },
+      /*
+        AQUÍ ESTABA EL LIBRO DE COMPRAS, y se quita en vez de reapuntarlo.
+
+        Se fue al Libro Mayor de Tesorería el 24/09/2026, y con él su permiso:
+        ahora pide TESORERIA. De las quince personas que ven este tablero, siete
+        no tienen ese permiso.
+
+        Dejar el enlace apuntando allí les pondría delante una tarjeta que al
+        pulsarla contesta «Tesorería no está a tu alcance». Ya hay precedente
+        escrito de ese error en el mapa de módulos del menú, cuando la cola de
+        pagos pasó a Compras. Un enlace que no se puede seguir es peor que no
+        tenerlo: promete algo y lo niega en el clic siguiente.
+      */
     ],
   },
 ]
