@@ -12,6 +12,7 @@ import {
 import { PageHeader } from '@/components/PageHeader'
 import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { QueHacer } from '@/components/QueHacer'
+import { MaterialPorRecibir } from './MaterialPorRecibir'
 import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -259,6 +260,11 @@ export function TableroInventario() {
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
+
+      {/* Lo que un cliente trae para pagar una factura. Va arriba porque es
+          lo único del tablero que alguien más está esperando: la factura no
+          baja hasta que almacén lo confirme aquí. */}
+      <MaterialPorRecibir />
 
       {!isPending && !error ? (
         <>

@@ -4,13 +4,12 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
-import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
-import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
+import { ModalCobro } from './ModalCobro'
 import { dinero, dolares, fecha, fechaHora } from '@/lib/formato'
 import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useClientes } from '@/lib/api/ventas'
@@ -20,7 +19,6 @@ import { IGTF_POR_DEFECTO, tributoElegido, useIvaPorDefecto } from '@/pages/vent
 import { ModalFacturaDirecta } from './FacturaDirecta'
 import { useMiPerfil, useMisAcciones } from '@/lib/api/usuarios'
 import { FacturasPorAutorizar } from './PorAutorizar'
-import { useCuentas } from '@/lib/api/tesoreria'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
@@ -37,7 +35,6 @@ import {
   useFacturarNotas,
   useFacturasPorAutorizar,
   useFacturas,
-  useRegistrarCobro,
   type FacturaVenta,
 } from '@/lib/api/facturacion'
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
@@ -47,7 +44,7 @@ import {
   notaDeConversionDeVenta,
 } from '@/pages/ventas/filas'
 import { densidadesDeArticulos } from '@/lib/api/catalogo'
-import { useMetodosPago, nombreDe, opcionesDe, metodosParaMoneda } from '@/lib/api/metodosPago'
+import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 
 const TONO: Record<string, 'royal' | 'success' | 'neutral'> = {
   EMITIDA: 'royal',
@@ -85,7 +82,6 @@ export function Facturacion() {
   const porFacturar = useNotasEntrega('DESPACHADA')
   const { data: empresa } = useEmpresa()
   const { data: yo } = useMiPerfil()
-  const { data: cuentas } = useCuentas()
 
   const facturar = useFacturarNotas()
   /*
@@ -111,7 +107,6 @@ export function Facturacion() {
     for (const numero of (s.notas ?? '').split(', ')) if (numero) enEspera.set(numero, s.numero)
   }
   const anular = useAnularFactura()
-  const cobrar = useRegistrarCobro()
   const anularCobro = useAnularCobro()
 
   const [emitiendo, setEmitiendo] = useState(false)
@@ -134,20 +129,6 @@ export function Facturacion() {
   const { data: clientes } = useClientes()
   const [observacion, setObservacion] = useState('')
 
-  const [cuentaId, setCuentaId] = useState('')
-  const [monto, setMonto] = useState('')
-  const [metodo, setMetodo] = useState('TRANSFERENCIA')
-  const [referencia, setReferencia] = useState('')
-  /*
-    `null` significa «no lo he tocado»: la base lo deduce de la moneda.
-
-    Lo que decide cómo llega marcada la casilla es la ficha de la empresa. Si
-    la empresa no aplica IGTF, no se marca ni siquiera cobrando en divisas — y
-    entonces se manda `false` explícito en vez de `null`, porque si no la base
-    volvería a deducirlo de la moneda y lo aplicaría igual.
-  */
-  const aplicaIgtf = empresa?.aplica_igtf ?? true
-  const [igtf, setIgtf] = useState<boolean | null>(null)
 
   // La factura abierta se busca en la lista en cada pintada, no se copia al
   // abrirla. Copiada, anular un cobro desde dentro del propio detalle dejaba a
@@ -210,9 +191,6 @@ export function Facturacion() {
   const sinTributo =
     !!primera && !clienteElegido?.exento_iva && alicuotaFactura === 0 && igtfFactura.vale === 0
 
-  const cuenta = cuentas?.find((c) => String(c.id) === cuentaId)
-  const metodosDeLaCuenta = metodosParaMoneda(metodos, cuenta?.moneda)
-  const metodoNoVale = !!cuenta && !metodosDeLaCuenta.some((m) => m.codigo === metodo)
 
   const imprimir = async (f: FacturaVenta) => {
     const renglones = renglonesDetalle.data ?? []
@@ -600,10 +578,6 @@ export function Facturacion() {
                     icon={<Banknote />}
                     onClick={() => {
                       setCobrando(detalle)
-                      setCuentaId('')
-                      setMonto('')
-                      setReferencia('')
-                      setIgtf(null)
                     }}
                   >
                     Registrar cobro
@@ -725,118 +699,17 @@ export function Facturacion() {
       ) : null}
 
       {/* -------------------------------------------------------- cobro */}
+      {/* Varias líneas —dinero, crédito del cliente, material— en una sola
+          llamada. Lo que era una ventana de un cobro vive ahora en ModalCobro. */}
       {cobrando ? (
-        <Modal
-          abierto
+        <ModalCobro
+          factura={cobrando}
           onCerrar={() => setCobrando(null)}
-          titulo={`Cobrar la factura ${cobrando.numero}`}
-          descripcion={`${cobrando.cliente} · faltan ${dolares(cobrando.saldo_usd)}`}
-          acciones={
-            <>
-              <Button variant="ghost" onClick={() => setCobrando(null)}>
-                Cancelar
-              </Button>
-              <Button
-                disabled={cobrar.isPending || !cuentaId || !Number(monto) || metodoNoVale}
-                onClick={async () => {
-                  await cobrar.mutateAsync({
-                    factura_id: cobrando.id,
-                    cuenta_id: Number(cuentaId),
-                    monto: Number(monto),
-                    metodo,
-                    referencia: referencia || null,
-                    igtf: igtf ?? (aplicaIgtf ? null : false),
-                  })
-                  setCobrando(null)
-                  setDetalleId(null)
-                }}
-              >
-                {cobrar.isPending ? 'Registrando…' : 'Registrar el cobro'}
-              </Button>
-            </>
-          }
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <SelectBuscable
-              label="A qué cuenta entró"
-              vacio="Elige la cuenta"
-              valor={cuentaId}
-              onCambio={(v) => {
-                setCuentaId(v)
-                setIgtf(null)
-                // Un pago móvil elegido antes que una cuenta en dólares no se
-                // queda puesto: vuelve a la transferencia, que vale en todas.
-                const moneda = cuentas?.find((c) => String(c.id) === v)?.moneda
-                if (!metodosParaMoneda(metodos, moneda).some((m) => m.codigo === metodo)) {
-                  setMetodo('TRANSFERENCIA')
-                }
-              }}
-              opciones={(cuentas ?? [])
-                .filter((c) => c.activa)
-                .map((c) => ({
-                  valor: String(c.id),
-                  etiqueta: `${c.nombre} · ${c.moneda}`,
-                }))}
-              hint="El cobro se registra en la moneda de la cuenta."
-            />
-            <Input
-              label={`Monto${cuenta ? ` en ${cuenta.moneda}` : ''}`}
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              required
-            />
-            <Select
-              label="Cómo pagó"
-              value={metodo}
-              onChange={(e) => setMetodo(e.target.value)}
-              opciones={opcionesDe(metodosDeLaCuenta)}
-              hint={
-                cuenta
-                  ? 'Queda guardado en el cobro y en los movimientos de dinero.'
-                  : 'Elige primero la cuenta: el pago móvil solo va en bolívares.'
-              }
-              error={metodoNoVale ? `${nombreDe(metodos, metodo)} no se usa en ${cuenta?.moneda}.` : undefined}
-            />
-            <Input
-              label="Referencia"
-              placeholder={
-                metodo === 'EFECTIVO' ? 'Se genera sola' : 'Número de la transferencia'
-              }
-              value={referencia}
-              onChange={(e) => setReferencia(e.target.value)}
-              hint={
-                metodo === 'EFECTIVO'
-                  ? 'En efectivo no hay número que copiar: si lo dejas vacío, el sistema le pone uno (EFEUSD-2026-0001).'
-                  : 'El número que devolvió el banco o la plataforma.'
-              }
-            />
-          </div>
-
-          {cuenta ? (
-            <label className="text-ink/75 mt-4 flex cursor-pointer items-start gap-2 text-sm select-none">
-              <input
-                type="checkbox"
-                className="accent-royal-600 mt-0.5 size-4"
-                // Una factura que ya lleva su IGTF no se lo vuelve a cobrar.
-                checked={igtf ?? (aplicaIgtf && cuenta.moneda !== 'VES' && !(Number(cobrando.igtf) > 0))}
-                onChange={(e) => setIgtf(e.target.checked)}
-              />
-              <span>
-                Cobrarle el IGTF del 3%
-                <span className="text-ink/45 block text-xs leading-relaxed">
-                  Grava los pagos en divisas. No abona la factura: es un impuesto que se recauda y
-                  se entera al SENIAT, y va en su propio asiento del libro.
-                </span>
-              </span>
-            </label>
-          ) : null}
-
-          {cobrar.error ? <ErrorDeCarga error={cobrar.error} className="mt-4" /> : null}
-        </Modal>
+          onListo={() => {
+            setCobrando(null)
+            setDetalleId(null)
+          }}
+        />
       ) : null}
 
       {/* ------------------------------------------------------- anular */}
