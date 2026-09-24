@@ -143,7 +143,7 @@ export function normalizarAsunto(asunto: string): string {
 export function normalizarNombreAdjunto(nombre: string, permitirRespaldo: boolean): string {
   const limpio = String(nombre ?? '')
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^\w.\- ]+/g, '-')
     .replace(/-{2,}/g, '-')
     .replace(/^[.\- ]+/, '')
@@ -337,7 +337,23 @@ export async function enviarCorreo(o: OpcionesCorreo): Promise<ResultadoCorreo> 
       `[${o.funcion}] ${servicio} HTTP ${resp.status} ${cuerpo?.name ?? cuerpo?.code ?? '-'}:`,
       (cuerpo?.message ?? texto).slice(0, 300),
     )
-    throw new ErrorCorreo('El servicio de correo rechazó el envío.', 502)
+    /*
+      EL CÓDIGO DEL SERVICIO SÍ SALE A PANTALLA. SU MENSAJE, NO.
+
+      No es la misma cosa. El mensaje es texto libre y puede traer la dirección
+      que rechazó, una cabecera o el detalle de la cuenta; eso no debe acabar en
+      la pantalla de nadie ni en un renglón de auditoría. El código es de una
+      lista corta del propio servicio —`unauthorized`, `invalid_parameter`,
+      `permission_denied`, `account_under_validation`— y no lleva ningún dato de
+      nadie.
+
+      Sin él, «El servicio de correo rechazó el envío» obliga a entrar al panel
+      de Supabase a leer el registro para saber si es la llave, el remitente o
+      la cuenta sin aprobar. Con él, se sabe desde la pantalla. Lo pidió la
+      realidad: 24/09/2026, tres intentos fallidos sin poder decir por qué.
+    */
+    const senal = String(cuerpo?.code ?? cuerpo?.name ?? `HTTP ${resp.status}`).slice(0, 60)
+    throw new ErrorCorreo(`El servicio de correo rechazó el envío (${senal}).`, 502)
   }
 
   const { error: errorRegistro } = await o.admin.from('correos_enviados').insert({
