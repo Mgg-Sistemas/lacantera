@@ -12,6 +12,7 @@ import {
   User,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { QueHacer } from '@/components/QueHacer'
 import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { Button } from '@/components/ui/Button'
@@ -384,6 +385,19 @@ export function TableroCompras() {
       ) : null}
 
       <QueHacer grupos={QUE_HACER} />
+
+      <PrimeraVez className="mt-8">
+        <p>
+          Una compra pasa por una cadena, y el orden no es burocracia:{' '}
+          <strong>hasta que el gerente no aprueba, no hay orden</strong>, y sin orden el proveedor
+          no despacha. Se pide, se cotiza, se aprueba, se paga y se recibe.
+        </p>
+        <p className="text-ink/50">
+          La <strong>compra directa</strong> es el atajo para lo que se paga en el acto —un
+          repuesto que hace falta hoy— y no pasa por la cadena. Tiene su propio historial, que es
+          donde se ve qué se pagó y qué falta por llegar.
+        </p>
+      </PrimeraVez>
     </>
   )
 }

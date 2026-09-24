@@ -15,7 +15,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
-import { PrimeraVez } from '@/components/tablero/GrupoAcciones'
+import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { useEmpleados, usePeriodos } from '@/lib/api/nomina'
 import { enteros, fecha } from '@/lib/formato'
 

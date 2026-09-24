@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
+import { PrimeraVez } from '@/components/tablero/PrimeraVez'
 import { useCotizacionesVenta, useNotasEntrega } from '@/lib/api/ventas'
 import { useFacturas } from '@/lib/api/facturacion'
 import { dolares } from '@/lib/formato'
@@ -240,6 +241,19 @@ export function TableroVentas() {
               </Link>
             </Card>
           </div>
+
+          <PrimeraVez className="mt-4">
+            <p>
+              Una venta va en cuatro pasos y cada uno deja su papel: se cotiza, se despacha con una{' '}
+              <strong>nota de entrega</strong> —que es lo que saca el material del patio—, se
+              factura lo despachado y se cobra la factura. Una factura puede recoger varias notas.
+            </p>
+            <p className="text-ink/50">
+              Y cuidado con una palabra: «despachar» aquí es la venta. El papeleo de la romana —el
+              ticket con el peso del camión y la guía de movilización— es otro módulo, Despachos.
+              Una cosa es el negocio y la otra el trámite.
+            </p>
+          </PrimeraVez>
         </>
       ) : null}
     </>

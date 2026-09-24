@@ -1,5 +1,4 @@
 import type { LucideIcon } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
 import { TarjetaDeAccion } from '@/components/tablero/TarjetaDeAccion'
 import { esRutaFueraDelMvp } from '@/config/navigation'
 import { cn } from '@/lib/cn'
@@ -104,22 +103,5 @@ export function GrupoAcciones({
         ))}
       </div>
     </div>
-  )
-}
-
-/**
- * La explicación para quien entra por primera vez.
- *
- * Va al final de cada tablero y no arriba: quien ya sabe no tiene que
- * saltársela cada mañana, y quien no sabe la encuentra al terminar de mirar.
- */
-export function PrimeraVez({ children }: { children: React.ReactNode }) {
-  return (
-    <Card>
-      <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">
-        Si es la primera vez
-      </p>
-      <div className="text-ink/75 mt-3 space-y-2 text-sm leading-relaxed">{children}</div>
-    </Card>
   )
 }
