@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Database, Download, Loader2, Lock, ShieldAlert } from 'lucide-react'
+import { Database, Download, Loader2, Lock, Mail, Plus, ShieldAlert, X } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
-import { useDescargarRespaldo, useResumenRespaldo } from '@/lib/api/respaldo'
+import {
+  CORREO_POR_DEFECTO,
+  MAX_CORREOS,
+  correoValido,
+  limpiarCorreos,
+  useDescargarRespaldo,
+  useEnviarRespaldoPorCorreo,
+  useResumenRespaldo,
+} from '@/lib/api/respaldo'
 import { fechaHora } from '@/lib/formato'
 
 const peso = (bytes: number) =>
@@ -55,6 +64,21 @@ function comoVa(segundos: number): string {
   return 'Sigue bajando. Con la red lenta puede pasar de dos minutos.'
 }
 
+/*
+  Y lo mismo cuando no se baja nada, sino que se manda.
+
+  Son esperas distintas y la de antes mentía en la mitad de su recorrido: decía
+  «bajando el archivo» mientras lo que estaba pasando era una subida al servicio
+  de correo. Quien espera mirando una frase que no describe lo que ocurre deja
+  de creerse la siguiente.
+*/
+function comoVaElCorreo(segundos: number): string {
+  if (segundos < 8) return 'Leyendo las tablas…'
+  if (segundos < 25) return 'Comprimiendo el respaldo…'
+  if (segundos < 75) return 'Subiéndolo al correo. Son un par de megas por la red de la cantera.'
+  return 'Sigue subiendo. Con la red lenta puede pasar de dos minutos.'
+}
+
 /**
  * La copia de todos los datos, para llevársela.
  *
@@ -71,13 +95,45 @@ function comoVa(segundos: number): string {
 export function Respaldo() {
   const { data: resumen, isPending, error } = useResumenRespaldo()
   const descargar = useDescargarRespaldo()
+  const enviar = useEnviarRespaldoPorCorreo()
   const [confirmando, setConfirmando] = useState(false)
-  const segundos = useSegundos(descargar.isPending)
+  const [eligiendoCorreos, setEligiendoCorreos] = useState(false)
+
+  /*
+    LA LISTA EMPIEZA CON UNA FILA Y YA ESCRITA.
+
+    Es el caso de todos los días: la líder manda el respaldo a la dirección de
+    siempre. Arrancar con el campo vacío obligaría a teclearla cada vez, y una
+    dirección tecleada a mano cada vez es una dirección que algún día se teclea
+    mal — y este archivo no es de los que conviene mandar al buzón equivocado.
+  */
+  const [correos, setCorreos] = useState<string[]>([CORREO_POR_DEFECTO])
+
+  const trabajando = descargar.isPending || enviar.isPending
+  const segundos = useSegundos(trabajando)
 
   if (isPending) return <Cargando />
   if (error) return <ErrorDeCarga error={error} />
 
   const autorizado = resumen?.autorizado ?? false
+
+  const cambiarCorreo = (i: number, valor: string) =>
+    setCorreos((antes) => antes.map((c, j) => (j === i ? valor : c)))
+  const quitarCorreo = (i: number) => setCorreos((antes) => antes.filter((_, j) => j !== i))
+  const anadirCorreo = () => setCorreos((antes) => [...antes, ''])
+
+  /*
+    Qué habilita el botón de enviar.
+
+    Se mira sobre la lista ya limpia —sin vacíos ni repetidos— porque es la que
+    de verdad va a salir. Una fila en blanco al final, de alguien que pulsó
+    «Añadir otro» y se arrepintió, no debe bloquear el envío: se cae sola.
+  */
+  const listaLimpia = limpiarCorreos(correos)
+  const puedeEnviar =
+    listaLimpia.length > 0 &&
+    listaLimpia.length <= MAX_CORREOS &&
+    listaLimpia.every((c) => correoValido(c))
 
   return (
     <>
@@ -143,7 +199,7 @@ export function Respaldo() {
 
               <Button
                 icon={<Download className="size-[18px]" />}
-                disabled={descargar.isPending}
+                disabled={trabajando}
                 onClick={() => setConfirmando(true)}
               >
                 {descargar.isPending ? 'Armando el respaldo…' : 'Descargar respaldo'}
@@ -163,7 +219,7 @@ export function Respaldo() {
               terminaba, y entonces este panel quedaba detrás del velo: escrito,
               correcto y sin que nadie lo viera.
             */}
-            {descargar.isPending ? (
+            {trabajando ? (
               <div className="border-hairline mt-4 border-t pt-4">
                 {/*
                   El girador va NEUTRO y del tamaño del de la casa, no en tierra.
@@ -179,7 +235,9 @@ export function Respaldo() {
                 <div className="flex items-center gap-3">
                   <Loader2 className="text-ink/45 size-4 shrink-0 animate-spin" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-ink/85 text-sm font-medium">{comoVa(segundos)}</p>
+                    <p className="text-ink/85 text-sm font-medium">
+                      {enviar.isPending ? comoVaElCorreo(segundos) : comoVa(segundos)}
+                    </p>
                     <p className="text-ink/45 mt-0.5 text-xs">
                       <span className="tabular">{segundos}</span> segundo
                       {segundos === 1 ? '' : 's'} · no cierres esta pestaña
@@ -208,12 +266,32 @@ export function Respaldo() {
 
             {descargar.error ? <ErrorDeCarga error={descargar.error} className="mt-4" /> : null}
 
+            {/*
+              EL FALLO DEL ENVÍO SÍ ES UN ERROR ROJO, Y EL DE LA DESCARGA NO.
+
+              No es una incoherencia: son dos cosas distintas. Cuando se baja el
+              archivo y el correo no sale, la persona ya tiene lo que pidió y lo
+              del correo es un aviso. Cuando lo único que se pidió fue mandarlo,
+              que no salga es el fracaso entero.
+            */}
+            {enviar.error ? <ErrorDeCarga error={enviar.error} className="mt-4" /> : null}
+
+            {enviar.isSuccess && enviar.data ? (
+              <div className="border-hairline mt-4 border-t pt-4 text-sm">
+                <p className="text-success">
+                  Mandado a {enviar.data.para.join(', ')} · {peso(enviar.data.bytes)} comprimido.
+                </p>
+                <p className="text-ink/55 mt-1 text-xs">
+                  Si no aparece en unos minutos, mira la carpeta de correo no deseado.
+                </p>
+              </div>
+            ) : null}
+
             {descargar.isSuccess && descargar.data ? (
               <div className="border-hairline mt-4 border-t pt-4 text-sm">
                 <p className="text-success">
                   Descargado: <span className="font-mono">{descargar.data.nombre}</span> ·{' '}
-                  {peso(descargar.data.bytes)}. Quedó anotado en la auditoría quién lo hizo y
-                  cuándo.
+                  {peso(descargar.data.bytes)}
                 </p>
 
                 {/*
@@ -288,6 +366,29 @@ export function Respaldo() {
             <Button variant="ghost" onClick={() => setConfirmando(false)}>
               Cancelar
             </Button>
+
+            {/*
+              LA SEGUNDA SALIDA DEL ARCHIVO, PEDIDA POR LA LÍDER EL 24/09/2026.
+
+              Va aquí dentro y no en la tarjeta de fuera, que es donde se pensó
+              primero. El aviso de qué lleva el archivo está en este modal, y un
+              botón que manda el respaldo a otra persona no puede vivir en un
+              sitio donde ese aviso no se haya leído.
+
+              `outline` y no `primary`: la acción principal de esta pantalla
+              sigue siendo bajarlo. Dos botones naranjas uno al lado del otro no
+              se eligen, se pulsan a ojo.
+            */}
+            <Button
+              variant="outline"
+              icon={<Mail className="size-[18px]" />}
+              onClick={() => {
+                setConfirmando(false)
+                setEligiendoCorreos(true)
+              }}
+            >
+              Enviar por correo
+            </Button>
             {/*
               EL MODAL SE CIERRA AL PULSAR, NO AL TERMINAR.
 
@@ -345,6 +446,116 @@ export function Respaldo() {
           <strong className="text-ink/85 font-medium">Tarda cerca de un minuto.</strong> Son varios
           megas y la mayor parte del tiempo es la descarga, no la base. Mientras tanto verás los
           segundos correr aquí mismo: si el número se mueve, está trabajando.
+        </p>
+      </Modal>
+
+      {/* ---------------------- A quién se le manda ---------------------- */}
+      <Modal
+        abierto={eligiendoCorreos}
+        onCerrar={() => setEligiendoCorreos(false)}
+        titulo="Enviar el respaldo por correo"
+        descripcion="Va comprimido y como adjunto. No se baja a esta computadora."
+        ancho="sm"
+        acciones={
+          <>
+            <Button variant="ghost" onClick={() => setEligiendoCorreos(false)}>
+              Cancelar
+            </Button>
+            {/*
+              Se cierra al pulsar, igual que el de la descarga y por lo mismo:
+              la espera se mira en la tarjeta de detrás, con su contador, y un
+              velo encima la deja ilegible.
+
+              `mutate` y no `mutateAsync`: la promesa del segundo no la espera
+              nadie aquí, y cuando el envío falla queda sin capturar. El error
+              llega igual por `enviar.error`, que es donde la pantalla lo pinta.
+            */}
+            <Button
+              icon={<Mail className="size-[18px]" />}
+              disabled={!puedeEnviar}
+              onClick={() => {
+                setEligiendoCorreos(false)
+                enviar.mutate(listaLimpia)
+              }}
+            >
+              Enviar
+            </Button>
+          </>
+        }
+      >
+        <div className="border-danger/30 bg-danger/6 mb-4 flex items-start gap-3 rounded-[8px] border p-3">
+          <ShieldAlert className="text-danger mt-0.5 size-4 shrink-0" />
+          <p className="text-ink/75 text-xs leading-relaxed">
+            Quien reciba este correo tendrá{' '}
+            <strong className="text-ink/90 font-medium">
+              las cédulas, los sueldos y las cuentas bancarias de todo el personal
+            </strong>
+            , sin clave y sin permisos. Queda escrito a qué direcciones se mandó.
+          </p>
+        </div>
+
+        <p className="text-ink/75 mb-2 text-sm font-medium">A quién se manda</p>
+
+        <div className="space-y-2">
+          {correos.map((c, i) => {
+            /*
+              El error de cada fila solo aparece cuando ya hay algo escrito.
+
+              Marcar en rojo un campo vacío que la persona acaba de añadir es
+              regañarla por no haber terminado de teclear. La fila en blanco no
+              estorba: se cae sola al limpiar la lista.
+            */
+            const malo = c.trim().length > 0 && !correoValido(c)
+            return (
+              <div key={i} className="flex items-start gap-2">
+                <Input
+                  label={`Correo ${i + 1}`}
+                  ocultarEtiqueta
+                  sinNormalizar
+                  type="email"
+                  inputMode="email"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="nombre@dominio.com"
+                  value={c}
+                  error={malo ? 'Ese correo no se entiende.' : undefined}
+                  onChange={(e) => cambiarCorreo(i, e.target.value)}
+                />
+                {correos.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => quitarCorreo(i)}
+                    aria-label={`Quitar ${c.trim() || `el correo ${i + 1}`}`}
+                    className="text-ink/45 hover:bg-ink/6 hover:text-ink/80 focus-visible:outline-royal-600 flex size-10 shrink-0 items-center justify-center rounded-[6px] transition-colors focus-visible:outline-2"
+                  >
+                    <X className="size-4" />
+                  </button>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
+
+        {correos.length < MAX_CORREOS ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2"
+            icon={<Plus className="size-4" />}
+            onClick={anadirCorreo}
+          >
+            Añadir otro correo
+          </Button>
+        ) : (
+          <p className="text-ink/45 mt-2 text-xs">
+            Diez es el máximo de una vez. Para más, manda el correo dos veces.
+          </p>
+        )}
+
+        <p className="border-hairline text-ink/65 mt-4 border-t pt-3 text-xs leading-relaxed">
+          <strong className="text-ink/85 font-medium">Tarda cerca de un minuto.</strong> La base
+          arma el respaldo en segundos; el resto es subir el archivo por la red de la cantera. Verás
+          los segundos correr en la tarjeta de atrás.
         </p>
       </Modal>
     </>
