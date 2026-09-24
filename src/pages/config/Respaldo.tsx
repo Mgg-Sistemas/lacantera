@@ -209,10 +209,32 @@ export function Respaldo() {
             {descargar.error ? <ErrorDeCarga error={descargar.error} className="mt-4" /> : null}
 
             {descargar.isSuccess && descargar.data ? (
-              <p className="border-hairline text-success mt-4 border-t pt-4 text-sm">
-                Descargado: <span className="font-mono">{descargar.data.nombre}</span> ·{' '}
-                {peso(descargar.data.bytes)}. Quedó anotado en la auditoría quién lo hizo y cuándo.
-              </p>
+              <div className="border-hairline mt-4 border-t pt-4 text-sm">
+                <p className="text-success">
+                  Descargado: <span className="font-mono">{descargar.data.nombre}</span> ·{' '}
+                  {peso(descargar.data.bytes)}. Quedó anotado en la auditoría quién lo hizo y
+                  cuándo.
+                </p>
+
+                {/*
+                  EL CORREO SE CUENTA APARTE, Y SU FALLO NO ES UN ERROR ROJO.
+
+                  Son dos cosas distintas: el archivo ya está en la computadora
+                  de quien lo pidió. Que el correo no saliera es un aviso, no un
+                  fracaso — pintarlo en rojo haría creer que la descarga falló,
+                  que es justo lo contrario de lo que pasó.
+                */}
+                {descargar.data.correo.enviado ? (
+                  <p className="text-ink/55 mt-1 text-xs">
+                    Se mandó también a tu correo, comprimido.
+                  </p>
+                ) : (
+                  <p className="text-warning mt-1 text-xs">
+                    El archivo se descargó bien, pero no se pudo mandar por correo:{' '}
+                    {descargar.data.correo.fallo}
+                  </p>
+                )}
+              </div>
             ) : null}
           </Card>
 

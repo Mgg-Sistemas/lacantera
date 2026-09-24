@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
 import { rpc } from './rpc'
 
 /**
@@ -65,7 +66,71 @@ export function useDescargarRespaldo() {
       enlace.remove()
       setTimeout(() => URL.revokeObjectURL(url), 60_000)
 
-      return { bytes: blob.size, nombre: enlace.download }
+      /*
+        Y ADEMÁS POR CORREO, PERO SIN JUGARSE LA DESCARGA.
+
+        Lo pidió la líder: que el respaldo se baje al navegador Y llegue al
+        correo. El orden importa — primero se baja, y solo entonces se intenta
+        mandar. Si el correo falla, la persona ya tiene su archivo.
+
+        Por eso el fallo no se propaga: se devuelve dicho, para que la pantalla
+        lo cuente, y no como excepción, que tiraría abajo una descarga que salió
+        bien.
+      */
+      let correo: { enviado: boolean; fallo?: string }
+      try {
+        await mandarPorCorreo(sql, enlace.download)
+        correo = { enviado: true }
+      } catch (e) {
+        correo = { enviado: false, fallo: e instanceof Error ? e.message : String(e) }
+      }
+
+      return { bytes: blob.size, nombre: enlace.download, correo }
     },
   })
+}
+
+/*
+  EL RESPALDO COMPRIMIDO, CAMINO DEL CORREO.
+
+  Se comprime aquí y no en el servidor por una razón medida: son 16,5 MB, y
+  subirlos desde la cantera a unos 300 kB/s es casi un minuto de espera por algo
+  que el navegador ya tiene en la mano. Comprimido son uno o dos megas.
+
+  Y hace falta comprimir de todos modos: en base64 el crudo son 22 MB, Resend
+  admite 40, y `auditoria` crece 509 filas al día — la cuenta da unos treinta
+  días hasta que deje de caber. Ver `docs/carriles/evaluaciones/`.
+
+  `CompressionStream` es nativo del navegador desde 2023. No hay librería que
+  instalar ni que mantener.
+*/
+async function mandarPorCorreo(sql: string, nombreSql: string): Promise<void> {
+  const crudo = new Blob([sql]).stream()
+  const comprimido = crudo.pipeThrough(new CompressionStream('gzip'))
+  const bytes = new Uint8Array(await new Response(comprimido).arrayBuffer())
+
+  /*
+    A base64 por trozos.
+
+    `btoa(String.fromCharCode(...bytes))` es lo que se escribe primero y revienta
+    con archivos grandes: los argumentos de una llamada tienen tope y un mega de
+    bytes lo pasa. Se hace de 32 kB en 32 kB.
+  */
+  let binario = ''
+  const TROZO = 32768
+  for (let i = 0; i < bytes.length; i += TROZO) {
+    binario += String.fromCharCode(...bytes.subarray(i, i + TROZO))
+  }
+
+  const { data: sesion } = await supabase.auth.getSession()
+  const token = sesion.session?.access_token
+  if (!token) throw new Error('La sesión caducó: vuelve a entrar para que se mande el correo.')
+
+  const { error } = await supabase.functions.invoke('respaldo-por-correo', {
+    body: {
+      archivo: btoa(binario),
+      nombre: `${nombreSql}.gz`,
+    },
+  })
+  if (error) throw error
 }
