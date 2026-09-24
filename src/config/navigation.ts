@@ -1,5 +1,6 @@
 import {
   ScanLine,
+  BookUser,
   Banknote,
   Fuel,
   HandHelping,
@@ -144,6 +145,7 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   // guías): quien lleva esta planilla no tiene por qué ver el pesaje.
   ['/app/control-despacho', 'CONTROL_DESPACHO'],
   ['/app/asistencia', 'ASISTENCIA'],
+  ['/app/contactos', 'CONTACTOS'],
   ['/app/config/respaldo', 'RESPALDO'],
   ['/app/config/usuarios', 'USUARIOS'],
   ['/app/explotacion', 'EXPLOTACION'],
@@ -323,6 +325,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
     'control despacho planilla excel nota entrega salida cliente rif material m3 precio monto status contado cruce autorizado observaciones correlativo',
   '/app/asistencia':
     'asistencia carnet qr escanear entrada salida hora jornada calendario presente marcar turno noche dia horas trabajadas',
+  '/app/contactos':
+    'contactos directorio agenda telefono celular whatsapp correo email empresa persona cargo direccion etiqueta cliente proveedor prospecto socio importar exportar excel vcard duplicados',
   '/app/costos':
     'caja costo por m3 metro cubico fondo entregado deuda casa matriz socio gastos fijos cerrar caja tasa referencial precio',
 }
@@ -707,6 +711,17 @@ export const navigation: NavSection[] = [
         label: 'Control de asistencia',
         icon: ScanLine,
         to: '/app/asistencia',
+      },
+      {
+        /*
+          CONTACTOS, 24/09/2026. El directorio general: personas y empresas
+          con sus canales, dirección, etiquetas y quién los atiende. Un
+          contacto puede enlazarse al cliente, proveedor o trabajador que ya
+          existe, para no tenerlo dos veces.
+        */
+        label: 'Contactos',
+        icon: BookUser,
+        to: '/app/contactos',
       },
       {
         /*

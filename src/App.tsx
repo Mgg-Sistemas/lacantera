@@ -265,6 +265,7 @@ const ControlDespacho = pagina(() =>
 const ControlDeAsistencia = pagina(() =>
   import('@/pages/asistencia/ControlDeAsistencia').then((m) => ({ default: m.ControlDeAsistencia })),
 )
+const Contactos = pagina(() => import('@/pages/contactos/Contactos').then((m) => ({ default: m.Contactos })))
 const CentroDeCosto = pagina(() =>
   import('@/pages/costos/CentroDeCosto').then((m) => ({ default: m.CentroDeCosto })),
 )
@@ -315,6 +316,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/costos': <CentroDeCosto />,
   '/app/control-despacho': <ControlDespacho />,
   '/app/asistencia': <ControlDeAsistencia />,
+  '/app/contactos': <Contactos />,
   '/app/despachos': <TableroDespachos />,
   '/app/despachos/tickets': <Tickets />,
   '/app/despachos/guias': <Guias />,

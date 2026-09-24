@@ -68,6 +68,7 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 21 | Facturación | Sí |
 | 22 | Control de despacho | Solo el administrador, hasta que se reparta su permiso |
 | 23 | Control de asistencia | Solo el administrador, hasta que se reparta su permiso |
+| 24 | Contactos | Solo el administrador, hasta que se reparta su permiso |
 
 **Asignaciones, Maquinaria, Combustible, Facturación, Control de despacho y Control de asistencia tienen sus capítulos al final** —del 18 al 23— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
 
@@ -7219,3 +7220,52 @@ El botón **Reporte**: un período y, si se quiere, una sola persona. Sale con e
 ### 23.8 Lo que no hace
 
 **No alimenta la nómina.** Las horas se ven y se imprimen, y ahí terminan: las faltas y las horas extra se siguen cargando en Nómina › Novedades. Si algún día conviene que salgan de aquí, es una decisión aparte. Tampoco calcula retardos ni amonestaciones.
+
+## 24. Contactos
+
+**Administración › Contactos**
+
+El directorio general de la empresa: personas y empresas con las que se trata, con sus teléfonos, correos, dirección, etiquetas y quién los atiende. No es un módulo que mueva nada: no factura, no paga, no descuenta. Es donde se busca a alguien.
+
+**Quién entra.** Nace con el permiso cerrado para todos menos administración. Se reparte en Configuración › Usuarios, fila **Contactos**: **lectura** ve y exporta; **escritura** crea, edita e importa; **control total** además bloquea, desbloquea, elimina y edita las etiquetas.
+
+### 24.1 Qué se ve
+
+Arriba, los botones **Excel** y **vCard**, que sacan lo que se ve en pantalla o, si hay contactos marcados, solo esos; **Importar**, y **Nuevo contacto**.
+
+Debajo, el **buscador** y los filtros: tipo (personas o empresas), etiqueta, estado, región y quién lo atiende. Se combinan: «los proveedores de Puerto Ordaz que estén activos» es escribir «puerto ordaz» y marcar dos selectores. El estado empieza en **Activo**, para que lo inactivo y lo bloqueado no estorben; se cambia a **Cualquiera** cuando hace falta verlo.
+
+**El buscador entiende trozos y no le importan los acentos.** Busca en el nombre, la empresa, el cargo, los correos, los teléfonos con y sin formato, la ciudad, las etiquetas y la nota. Cada palabra que escribas tiene que estar: «perez 0414» encuentra a Pérez por su celular.
+
+La lista muestra, por contacto: nombre con su tratamiento y su documento; empresa y cargo; los **canales como enlaces**: el WhatsApp abre el chat, el celular y la oficina llaman, el correo abre el correo; dónde está; etiquetas; quién lo atiende; y el estado. Pulsar en la fila abre su ficha.
+
+Si dos contactos comparten un correo o un teléfono, arriba aparece un aviso amarillo con cuántas parejas hay y el botón **Ver solo esos**; en la lista, cada uno lleva la marca **· repetido**. Puede ser la misma persona dos veces, o dos personas con el teléfono de la misma oficina: lo decide quien lo mira.
+
+### 24.2 La ficha
+
+**Nuevo contacto** o pulsar una fila abre la ficha, en bloques:
+
+| Bloque | Qué lleva |
+| --- | --- |
+| **Quién es** | Si es persona o empresa. Persona: tratamiento, nombres, apellidos, cargo y su empresa, tomada del directorio o escrita a mano si no está. Empresa: razón social. En los dos, la cédula o el RIF, opcional, con la letra y los guiones |
+| **Cómo se le habla** | Celular, WhatsApp, teléfono de oficina con extensión, correo y correo secundario. Debajo, los enlaces para llamar o abrir el chat |
+| **Dónde está** | Dirección, ciudad, estado (con la lista de estados de Venezuela como ayuda), código postal, país, y el enlace **Ver en el mapa**, que se arma con la dirección escrita. No hay mapa dentro del sistema |
+| **En la web** | Sitio web, LinkedIn, Instagram, Facebook |
+| **Cómo se clasifica** | Las **etiquetas**, que son botones y admiten varias (cliente, proveedor, prospecto, socio, contratista, ente público, competidor, otro); **de dónde vino**, texto libre con sugerencias; **quién lo atiende**, un usuario del sistema; y el **estado**, con su motivo cuando no es activo |
+| **Es el contacto de…** | El cliente, el proveedor o el trabajador que ya existe en el sistema, para no tenerlo dos veces. Y la nota |
+
+**El control de repetidos lo hace la base.** Al guardar, si otro contacto ya tiene ese correo o ese teléfono, no se guarda y el aviso dice quién: **Ya existe «JOSE PEREZ» con el teléfono 4141234567.** El teléfono se compara por sus dígitos, sin el 58 ni el 0 de adelante, así que 0414-1234567, +58 414 1234567 y 4141234567 son el mismo; el correo, sin importar mayúsculas. Debajo del aviso aparece la casilla **Es otra persona: guardar igual**. Marcarla es decir que se miró; entonces pasa.
+
+**Bloquear, o quitar el bloqueo, pide control total.** Un contacto bloqueado sigue en el directorio, con su motivo, y sale con la etiqueta roja. **Eliminar**, también con control total, borra el contacto; queda en la auditoría quién lo hizo. Una empresa con personas enlazadas no se elimina hasta desenlazarlas. Si un contacto solo dejó de ser útil, márcalo inactivo en vez de borrarlo.
+
+### 24.3 Importar y exportar
+
+**Importar** abre la carga en tres pasos, como la del control de despacho: bajar la plantilla, llenarla en Excel, subirla y revisar antes de guardar. La plantilla trae dos filas de ejemplo que se borran, y las columnas obligatorias en realce: TIPO y, según sea, NOMBRES o RAZON SOCIAL. El orden de las columnas da igual, se casan por su título; una que falte se deja vacía. Las etiquetas van separadas por coma, con el nombre que tienen aquí.
+
+**Cargar crea contactos nuevos, nunca pisa los que ya están.** Cada fila pasa por las mismas reglas que la ficha, incluido el repetido: si la fila 12 trae el celular de alguien que ya está, o de la fila 3 del mismo archivo, no se guarda ninguna y el aviso dice **Fila 12: Ya existe «…»**. Lo que ya está se corrige en la pantalla, uno por uno, que es donde se ve el repetido.
+
+**Excel** baja lo que se ve o lo marcado, con todas las columnas más quién lo atiende y el estado. **vCard** baja un archivo `.vcf` que el teléfono, Outlook y WhatsApp importan solos: es la manera de pasarle al celular de alguien los contactos del directorio.
+
+### 24.4 Lo que este módulo no hace
+
+No envía correos ni mensajes: abre el canal y ahí termina. No lleva historial de conversaciones ni recordatorios. No sustituye a Clientes ni a Proveedores: esos siguen llevando lo que factura y lo que se compra; el contacto se enlaza a ellos para no escribir dos veces el mismo teléfono.
