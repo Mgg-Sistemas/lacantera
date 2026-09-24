@@ -20,7 +20,7 @@
     forma del cuerpo. Manda Brevo si está su llave; si no, Resend.
   · El modelo de permisos de esta casa —`private.tiene_permiso`— en vez del
     `role` de Golden Touch.
-  · El adjunto es `.sql.gz` y no `.sql.txt`: el respaldo se comprime porque a
+  · El adjunto es `.sql.zip` y no `.sql.txt`: el respaldo se comprime porque a
     16,5 MB en crudo son 22 en base64, y en un mes deja de caber en los 40 MB
     que admite Resend. Ver `docs/carriles/evaluaciones/`.
   · Castellano de esta casa, no de la otra.
@@ -145,7 +145,7 @@ export function normalizarAsunto(asunto: string): string {
 /**
  * Sanea el nombre del adjunto y exige una extensión de las conocidas.
  *
- * El `.sql.gz` solo se admite si quien llama lo habilita: es el respaldo de la
+ * El `.sql.zip` solo se admite si quien llama lo habilita: es el respaldo de la
  * base, y no debe poder colarse desde una función que manda un PDF.
  */
 export function normalizarNombreAdjunto(nombre: string, permitirRespaldo: boolean): string {
@@ -187,7 +187,7 @@ function validarContenido(base64: string, esPdf: boolean, esZip: boolean): void 
   } catch {
     throw new ErrorCorreo('El adjunto llegó mal formado.')
   }
-  // Un PDF empieza por %PDF y un gzip por 0x1f 0x8b. Comprobarlo cuesta nada y
+  // Un PDF empieza por %PDF. Comprobarlo cuesta nada y
   // evita que el nombre diga una cosa y el contenido sea otra.
   if (esPdf && !cabecera.startsWith('%PDF')) {
     throw new ErrorCorreo('Ese archivo no es un PDF.')
@@ -234,7 +234,7 @@ export type OpcionesCorreo = {
   subject: string
   html: string
   adjunto?: Adjunto
-  /** Habilita el `.sql.gz`. Solo la función del respaldo lo enciende. */
+  /** Habilita el `.sql.zip`. Solo la función del respaldo lo enciende. */
   permitirRespaldo?: boolean
 }
 
