@@ -535,6 +535,19 @@ export function useMovimientos(
       porque las otras ciento noventa y siete eran entradas.
     */
     tipos?: string[]
+    /*
+      CUÁNTOS SE TRAEN, Y POR QUÉ SE PUEDE PEDIR MÁS.
+
+      Doscientos es lo que necesita una lista que se mira: nadie recorre con la
+      vista el renglón mil. Pero desde que el libro SUMA —cuánto salió de arena,
+      cuántas veces lo movió alguien, cuánto en enero contra abril— el tope deja
+      de ser cosmético: un total calculado sobre doscientos de trescientos es un
+      número equivocado, y encima calladamente.
+
+      Así que se puede pedir más, y solo lo pide quien va a sumar. Las pantallas
+      que únicamente listan se quedan en doscientos y no pagan por la diferencia.
+    */
+    tope?: number
   } = {},
   /*
     Para quien solo quiere saber SI hay movimientos —el formulario del artículo,
@@ -564,7 +577,7 @@ export function useMovimientos(
           '*, almacen:almacenes(nombre), articulo:articulos(codigo, nombre), orden:ordenes_compra(numero, solicitud:solicitudes_pedido(directa)), baja:inventario_bajas(causa, destino)',
         )
         .order('registrado_en', { ascending: false })
-        .limit(200)
+        .limit(filtros.tope ?? 200)
 
       if (filtros.almacenId) q = q.eq('almacen_id', filtros.almacenId)
       if (filtros.articuloId) q = q.eq('articulo_id', filtros.articuloId)

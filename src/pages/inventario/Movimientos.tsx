@@ -14,10 +14,11 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
+import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { densidadesDeArticulos, useMisRoles, usePerfiles } from '@/lib/api/catalogo'
+import { densidadesDeArticulos, useArticulos, useMisRoles, usePerfiles } from '@/lib/api/catalogo'
 import {
   bajaDe,
   motivoDeSalida,
@@ -61,6 +62,111 @@ function loQueSeConto(m: Movimiento): string | null {
   )
 }
 
+/** Lo que se pide a la base. Ver por qué en la llamada. */
+const TOPE = 1000
+
+/*
+  LAS TRES CLASES QUE LA GENTE DISTINGUE, Y NO LOS DIEZ TIPOS QUE GUARDA LA BASE.
+
+  El usuario habló de «salidas, entradas o traslados». La base guarda diez tipos
+  —entrada por compra, salida a consumo, transferencia de entrada…— y esa
+  precisión sirve para el renglón, no para filtrar: quien pregunta «cuánto salió
+  de arena» no quiere elegir entre salida a consumo, por despacho, como pago de
+  una compra y por baja.
+
+  Los ajustes de costo y los reversos quedan fuera de las tres a propósito: no
+  mueven material, mueven el valor. Meterlos entre las entradas inflaría la
+  cuenta con kilos que nunca entraron.
+*/
+const TIPOS_DE_CLASE: Record<string, string[]> = {
+  ENTRADAS: ['ENTRADA_COMPRA', 'ENTRADA_PRODUCCION', 'ENTRADA_DEVOLUCION', 'ENTRADA_DIRECTA'],
+  SALIDAS: ['SALIDA_CONSUMO', 'SALIDA_DESPACHO', 'SALIDA_INTERCAMBIO', 'SALIDA_BAJA'],
+  TRASLADOS: ['TRANSFERENCIA_ENTRADA', 'TRANSFERENCIA_SALIDA'],
+}
+
+const CLASES = [
+  { valor: 'ENTRADAS', etiqueta: 'Solo entradas' },
+  { valor: 'SALIDAS', etiqueta: 'Solo salidas' },
+  { valor: 'TRASLADOS', etiqueta: 'Solo traslados' },
+]
+
+const AGRUPACIONES = [
+  { valor: 'articulo', etiqueta: 'Por material' },
+  { valor: 'persona', etiqueta: 'Por quién lo movió' },
+  { valor: 'mes', etiqueta: 'Por mes' },
+]
+
+const MESES = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+]
+
+/*
+  DE QUÉ SE SUMA, Y POR QUÉ NO SE SUMA TODO JUNTO.
+
+  «Si hay 10 salidas de arena, ¿cuánto es el total?» —el usuario—. La respuesta
+  parece un `sum(cantidad)` y no lo es: en el mismo libro conviven sacos,
+  litros, metros cúbicos y unidades. Sumar 3 sacos con 40 litros da 43 de nada.
+
+  Así que se cuenta SIEMPRE cuántos movimientos, que no tiene unidad, y la
+  cantidad se suma **por unidad**. Un grupo que mezcla dos unidades enseña las
+  dos, y ninguna de las dos miente.
+
+  Y el signo se respeta: una entrada suma y una salida resta. Cuando el filtro
+  ya acotó a una sola clase, el signo es el mismo en todas y el total se lee
+  como «cuánto salió» sin más.
+*/
+interface Grupo {
+  clave: string
+  etiqueta: string
+  cuantos: number
+  porUnidad: Map<string, number>
+}
+
+function agrupar(
+  movimientos: Movimiento[],
+  por: string,
+  nombreDe: (id: string | null) => string,
+): Grupo[] {
+  const grupos = new Map<string, Grupo>()
+
+  for (const m of movimientos) {
+    let clave: string
+    let etiqueta: string
+    if (por === 'persona') {
+      clave = m.registrado_por ?? 'sin-nombre'
+      etiqueta = nombreDe(m.registrado_por) || 'Sin registrar quién'
+    } else if (por === 'mes') {
+      // Se agrupa por la FECHA del movimiento y no por cuándo se escribió: es
+      // la misma razón por la que la consulta filtra por `fecha`.
+      const [anio, mes] = (m.fecha ?? '').split('-')
+      clave = `${anio}-${mes}`
+      etiqueta = mes ? `${MESES[Number(mes) - 1]} de ${anio}` : 'Sin fecha'
+    } else {
+      clave = String(m.articulo_id ?? 'sin-articulo')
+      etiqueta = m.articulo?.nombre ?? 'Sin artículo'
+    }
+
+    const g = grupos.get(clave) ?? { clave, etiqueta, cuantos: 0, porUnidad: new Map() }
+    g.cuantos += 1
+    const unidad = m.unidad || '—'
+    g.porUnidad.set(unidad, (g.porUnidad.get(unidad) ?? 0) + Number(m.cantidad) * (m.signo ?? 1))
+    grupos.set(clave, g)
+  }
+
+  // Por mes se ordena por fecha —enero antes que abril, que es lo que se
+  // pregunta—; en los otros dos manda quién movió más.
+  const lista = [...grupos.values()]
+  return por === 'mes'
+    ? lista.sort((a, b) => b.clave.localeCompare(a.clave))
+    : lista.sort((a, b) => b.cuantos - a.cuantos)
+}
+
+const cantidadLegible = (porUnidad: Map<string, number>) =>
+  [...porUnidad.entries()]
+    .map(([unidad, total]) => `${total.toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${unidad}`)
+    .join(' · ')
+
 export function Movimientos() {
   const { data: almacenes } = useAlmacenes()
   const { data: perfiles } = usePerfiles()
@@ -92,10 +198,38 @@ export function Movimientos() {
 
   const [almacenId, setAlmacenId] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
+
+  /*
+    LOS TRES FILTROS QUE FALTABAN, Y NINGUNO HUBO QUE CONSTRUIRLO.
+
+    El usuario los pidió así: «qué material, cuánto, a quién, por quién y en qué
+    fecha». La consulta ya sabía filtrar por artículo, por quién lo registró y
+    por clase de movimiento desde siempre — la pantalla solo ofrecía almacén y
+    fechas. Es el mismo caso del informe de personal de esta mañana: la
+    capacidad estaba y no se ofrecía.
+  */
+  const [articuloId, setArticuloId] = useState('')
+  const [clase, setClase] = useState('')
+  const [registradoPor, setRegistradoPor] = useState('')
+  const [agrupacion, setAgrupacion] = useState('articulo')
+  const { data: articulos } = useArticulos()
+
   const { data, isPending, error } = useMovimientos({
     ...(almacenId ? { almacenId: Number(almacenId) } : {}),
+    ...(articuloId ? { articuloId: Number(articuloId) } : {}),
+    ...(registradoPor ? { registradoPor } : {}),
+    ...(clase ? { tipos: TIPOS_DE_CLASE[clase] } : {}),
     ...(rango.desde ? { desde: rango.desde } : {}),
     ...(rango.hasta ? { hasta: rango.hasta } : {}),
+    /*
+      Se piden mil y no doscientos porque este libro ahora SUMA. Con
+      doscientos, un total de trescientos movimientos saldría corto sin avisar.
+
+      Mil cubre con holgura: el libro crece unos nueve movimientos al día, así
+      que son más de dos años. Y si algún día se pasa, se dice — ver el aviso
+      debajo del resumen.
+    */
+    tope: TOPE,
   })
 
   const [reversando, setReversando] = useState<{ id: number; numero: string } | null>(null)
@@ -110,6 +244,26 @@ export function Movimientos() {
 
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
+
+  /*
+    EL FILTRO, DICHO EN PALABRAS DEBAJO DE LA CIFRA.
+
+    Un resumen que dice «74 movimientos» sin decir de qué es un número sin
+    sujeto, y en un libro de inventario eso se copia a un informe y se convierte
+    en el total de todo. La misma razón por la que el informe de personal lleva
+    su renglón de «filtro aplicado».
+  */
+  const resumenDelFiltro = [
+    clase ? CLASES.find((c) => c.valor === clase)?.etiqueta.toLowerCase() : null,
+    articuloId ? `de ${articulos?.find((a) => String(a.id) === articuloId)?.nombre ?? 'un material'}` : null,
+    almacenId ? `en ${almacenes?.find((a) => String(a.id) === almacenId)?.nombre ?? 'un almacén'}` : null,
+    registradoPor ? `movidos por ${nombreDe(registradoPor)}` : null,
+    rango.desde || rango.hasta
+      ? `entre ${rango.desde ? fecha(rango.desde) : 'el principio'} y ${rango.hasta ? fecha(rango.hasta) : 'hoy'}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   /*
     EL LIBRO EN PAPEL
@@ -172,7 +326,7 @@ export function Movimientos() {
       <Pestanas pestanas={PESTANAS_MATERIAL} />
 
       <Card className="mb-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,16rem)_1fr]">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <SelectBuscable
             label="Almacén"
             vacio="Todos"
@@ -180,9 +334,113 @@ export function Movimientos() {
             onCambio={(v) => setAlmacenId(v)}
             opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
           />
+          {/*
+            Buscable y no un desplegable: hay 303 artículos, y elegir arena en
+            una lista de trescientos es peor que teclear «are».
+          */}
+          <SelectBuscable
+            label="Material"
+            vacio="Todos"
+            valor={articuloId}
+            onCambio={(v) => setArticuloId(v)}
+            opciones={(articulos ?? []).map((a) => ({
+              valor: String(a.id),
+              etiqueta: a.codigo ? `${a.codigo} · ${a.nombre}` : a.nombre,
+            }))}
+          />
+          <Select
+            label="Clase"
+            vacio="Entradas, salidas y traslados"
+            value={clase}
+            onChange={(e) => setClase(e.target.value)}
+            opciones={CLASES}
+          />
+          <SelectBuscable
+            label="Quién lo movió"
+            vacio="Cualquiera"
+            valor={registradoPor}
+            onCambio={(v) => setRegistradoPor(v)}
+            opciones={(perfiles ?? []).map((p) => ({ valor: p.id, etiqueta: p.nombre ?? p.id }))}
+          />
+        </div>
+        <div className="mt-3">
           <RangoDeFechas valor={rango} onCambio={setRango} />
         </div>
       </Card>
+
+      {/*
+        EL RESUMEN, QUE ES LO QUE SE PIDIÓ.
+
+        «Si hay 10 salidas de arena, ¿cuánto es el total? ¿Cuántas veces lo movió
+        X persona? ¿Cuántas en enero y cuántas en abril?» Son tres preguntas con
+        la misma forma —contar y sumar, agrupando por algo distinto— así que se
+        resuelven con un selector y no con tres pantallas.
+
+        Va ARRIBA de la lista y no debajo: quien viene a cuadrar quiere el número,
+        y el detalle es para cuando el número no cuadra.
+      */}
+      {data && data.length > 0 ? (
+        <Card className="mb-4">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-ink/85 font-medium">
+                <span className="tabular">{data.length}</span> movimiento
+                {data.length === 1 ? '' : 's'}
+              </p>
+              <p className="text-ink/45 text-xs">
+                {resumenDelFiltro || 'Todo el libro, sin filtrar'}
+              </p>
+            </div>
+            <Select
+              label="Agrupar"
+              className="w-56"
+              value={agrupacion}
+              onChange={(e) => setAgrupacion(e.target.value)}
+              opciones={AGRUPACIONES}
+            />
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[420px] text-sm">
+              <thead>
+                <tr className="text-ink/45 border-hairline border-b text-left text-xs">
+                  <th className="py-2 pr-3 font-medium">
+                    {AGRUPACIONES.find((a) => a.valor === agrupacion)?.etiqueta.replace('Por ', '')}
+                  </th>
+                  <th className="px-3 py-2 text-right font-medium">Movimientos</th>
+                  <th className="py-2 pl-3 text-right font-medium">Cantidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agrupar(data, agrupacion, nombreDe).map((g) => (
+                  <tr key={g.clave} className="border-hairline border-b last:border-0">
+                    <td className="text-ink/85 py-2 pr-3">{g.etiqueta}</td>
+                    <td className="text-ink/70 tabular px-3 py-2 text-right">{g.cuantos}</td>
+                    <td className="text-ink/85 tabular py-2 pl-3 text-right whitespace-nowrap">
+                      {cantidadLegible(g.porUnidad)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/*
+            SI SE LLEGÓ AL TOPE, SE DICE.
+
+            Un total corto y callado es peor que no dar total: quien lo copia a
+            un informe no tiene forma de saber que le faltan filas. Con el aviso,
+            acota el filtro y vuelve a mirar.
+          */}
+          {data.length >= TOPE ? (
+            <p className="text-warning border-hairline mt-3 border-t pt-3 text-xs">
+              Se están contando los <span className="tabular">{TOPE}</span> movimientos más
+              recientes, y hay más. Acota el material, la clase o las fechas para que el total sea
+              de todo.
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
