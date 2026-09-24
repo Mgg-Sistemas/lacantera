@@ -34,6 +34,7 @@ import type { Articulo } from '@/lib/api/catalogo'
 import { useMovimientos } from '@/lib/api/inventario'
 import { fecha } from '@/lib/formato'
 import { densidadEnPalabras, densidadLegible } from '@/lib/medidas'
+import { useFiltroEnLaDireccion } from '@/lib/enLaDireccion'
 
 const nuevo = {
   id: 0,
@@ -116,7 +117,9 @@ export function Articulos() {
   const renumerar = useRenumerarArticulo()
   const cambiarEstado = useCambiarEstadoArticulo()
 
-  const [busqueda, setBusqueda] = useState('')
+  // En la dirección y no en el estado: así «el catálogo filtrado por aceite»
+  // se pega en un mensaje. Ver `enLaDireccion.ts`.
+  const [busqueda, setBusqueda] = useFiltroEnLaDireccion()
   const [categoria, setCategoria] = useState('')
   const [form, setForm] = useState<typeof nuevo | null>(null)
 

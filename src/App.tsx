@@ -188,6 +188,9 @@ const Pagos = pagina(() => import('@/pages/tesoreria/Pagos').then((m) => ({ defa
 const PorPagar = pagina(() =>
   import('@/pages/tesoreria/PorPagar').then((m) => ({ default: m.PorPagar })),
 )
+const HistorialDirectas = pagina(() =>
+  import('@/pages/compras/HistorialDirectas').then((m) => ({ default: m.HistorialDirectas })),
+)
 const DetalleCompra = pagina(() =>
   import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
 )
@@ -324,7 +327,20 @@ const paginas: Record<string, ReactNode> = {
   '/app/compras/gasto': <GastoPorUnidad />,
   '/app/compras/recepciones': <Recepciones />,
   '/app/compras/facturas': <FacturasProveedor />,
-  '/app/compras/libro': <LibroCompras />,
+  /*
+    EL LIBRO MAYOR VIVE EN TESORERÍA, Y LA RUTA ES EL PERMISO.
+
+    No hace falta tocar el mapa de módulos: `moduloDeRuta` va por prefijo, así
+    que mudar la dirección a `/app/tesoreria/` es lo que hace que la pantalla
+    pida TESORERIA en vez de COMPRAS.
+
+    Y eso tiene consecuencia medida, decidida por el usuario el 24/09/2026:
+    **siete de las quince personas que hoy ven el libro de compras dejan de
+    verlo**, y no lo gana nadie nuevo. Se eligió sabiéndolo — el libro es cuenta
+    de tesorería, no de quien carga las facturas.
+  */
+  '/app/tesoreria/libro-mayor': <LibroCompras />,
+  '/app/tesoreria/libro-mayor/ventas': <LibroVentas />,
   /*
     LA FACTURACIÓN ES SU PROPIO MÓDULO DESDE EL 15/09/2026.
 
@@ -334,10 +350,14 @@ const paginas: Record<string, ReactNode> = {
   '/app/facturacion': <Facturacion />,
   '/app/facturacion/notas-credito': <NotasCredito />,
   '/app/facturacion/por-cobrar': <PorCobrar />,
-  '/app/facturacion/libro-ventas': <LibroVentas />,
   '/app/ventas/facturacion': <Navigate to="/app/facturacion" replace />,
   '/app/ventas/notas-credito': <Navigate to="/app/facturacion/notas-credito" replace />,
-  '/app/ventas/libro': <Navigate to="/app/facturacion/libro-ventas" replace />,
+  // Los enlaces viejos siguen llevando a alguna parte. Al Libro Mayor desde
+  // el 24/09/2026 — quien no tenga Tesorería se topará con el aviso de permiso,
+  // que es más honesto que una dirección que ya no existe.
+  '/app/ventas/libro': <Navigate to="/app/tesoreria/libro-mayor/ventas" replace />,
+  '/app/compras/libro': <Navigate to="/app/tesoreria/libro-mayor" replace />,
+  '/app/facturacion/libro-ventas': <Navigate to="/app/tesoreria/libro-mayor/ventas" replace />,
   '/app/tesoreria/por-cobrar': <Navigate to="/app/facturacion/por-cobrar" replace />,
   '/app/nomina/prestaciones': <Prestaciones />,
   '/app/maquinaria': <Maquinaria />,
@@ -639,6 +659,9 @@ export default function App() {
               <Route path="compras/nuevo" element={<NuevoPedido />} />
               <Route path="compras/directa" element={<CompraDirecta />} />
               <Route path="compras/:id/editar" element={<CorregirPedido />} />
+              {/* Antes que `compras/:id`, que si no atraparía «directa» como si
+                  fuera el número de una orden. */}
+              <Route path="compras/directa/historial" element={<HistorialDirectas />} />
               <Route path="compras/:id" element={<DetalleCompra />} />
               {/* `nuevo` antes que `:id` para leerlo de un vistazo, aunque el
                   enrutador ya prefiere lo estático sobre lo dinámico. */}
