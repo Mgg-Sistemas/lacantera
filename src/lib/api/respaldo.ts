@@ -38,14 +38,33 @@ function nombreDeArchivo(): string {
   return `respaldo-lacantera-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.sql`
 }
 
+/**
+ * El correo al que va el respaldo si nadie dice otra cosa.
+ *
+ * Lo fijó la líder el 24/09/2026. Va aquí y no en la base a propósito: no es un
+ * dato del negocio que alguien vaya a mantener desde una pantalla, es la
+ * dirección que ya está verificada en el servicio de correo. El día que se
+ * autentique el dominio de la empresa, esto cambia en una línea.
+ */
+export const CORREO_POR_DEFECTO = 'sistemamgg1@gmail.com'
+
+/** Cuántos admite de una vez. El mismo tope que `MAX_DESTINATARIOS` en la
+ *  función de correo y que el de `anotar_envio_del_respaldo`. */
+export const MAX_CORREOS = 10
+
+/** Pide el respaldo a la base y comprueba que no venga vacío. */
+async function armarRespaldo(): Promise<{ sql: string; nombre: string }> {
+  const sql = await rpc<string>('respaldo_datos')
+  if (!sql || sql.length < 100) {
+    throw new Error('La base devolvió un respaldo vacío. No se descargó nada.')
+  }
+  return { sql, nombre: nombreDeArchivo() }
+}
+
 export function useDescargarRespaldo() {
   return useMutation({
     mutationFn: async () => {
-      const sql = await rpc<string>('respaldo_datos')
-
-      if (!sql || sql.length < 100) {
-        throw new Error('La base devolvió un respaldo vacío. No se descargó nada.')
-      }
+      const { sql, nombre } = await armarRespaldo()
 
       /*
         `text/plain` y no `application/sql`: el segundo no lo reconocen todos
@@ -55,7 +74,7 @@ export function useDescargarRespaldo() {
       const url = URL.createObjectURL(blob)
       const enlace = document.createElement('a')
       enlace.href = url
-      enlace.download = nombreDeArchivo()
+      enlace.download = nombre
 
       // El enlace tiene que estar en el documento para que el clic cuente como
       // navegación, y la dirección no se puede soltar en la misma vuelta: el
@@ -79,19 +98,90 @@ export function useDescargarRespaldo() {
       */
       let correo: { enviado: boolean; fallo?: string }
       try {
-        await mandarPorCorreo(sql, enlace.download)
+        await mandarPorCorreo(sql, enlace.download, [])
         correo = { enviado: true }
-        await anotar(true, null)
+        await anotar(true, null, null)
       } catch (e) {
         const fallo = e instanceof Error ? e.message : String(e)
         correo = { enviado: false, fallo }
-        await anotar(false, motivoDelFallo(fallo))
+        await anotar(false, motivoDelFallo(fallo), null)
       }
 
       return { bytes: blob.size, nombre: enlace.download, correo }
     },
   })
 }
+
+/**
+ * Mandar el respaldo a los correos que se escriban, sin bajarlo a esta máquina.
+ *
+ * Es el encargo de la líder del 24/09/2026, y es una cosa distinta de la
+ * descarga aunque comparta casi todo el camino. La diferencia que importa está
+ * en cómo se cuenta el fallo: cuando la descarga sale bien y el correo no, lo
+ * que hay es un aviso —el archivo ya está en la computadora—. Aquí el correo es
+ * lo único que se pidió, así que si no sale, esto es un error y se levanta como
+ * tal para que la pantalla lo pinte en rojo.
+ *
+ * Y hay que decir lo que esto abre: hasta hoy el respaldo solo podía ir al
+ * correo de quien lo pedía, que no reparte nada que esa persona no tuviera ya.
+ * Ahora puede ir a cualquier dirección. Por eso las direcciones quedan escritas
+ * en `correos_enviados` —ver la migración del 24/09/2026—, enlazadas al renglón
+ * de auditoría del respaldo.
+ */
+export function useEnviarRespaldoPorCorreo() {
+  return useMutation({
+    mutationFn: async (correos: string[]) => {
+      const para = limpiarCorreos(correos)
+      if (!para.length) throw new Error('Hace falta al menos un correo de destino.')
+      if (para.length > MAX_CORREOS) {
+        throw new Error(`No se puede mandar a más de ${MAX_CORREOS} correos a la vez.`)
+      }
+
+      const { sql, nombre } = await armarRespaldo()
+
+      let bytes: number
+      try {
+        bytes = await mandarPorCorreo(sql, nombre, para)
+      } catch (e) {
+        const fallo = e instanceof Error ? e.message : String(e)
+        await anotar(false, motivoDelFallo(fallo), para)
+        throw e
+      }
+      await anotar(true, null, para)
+
+      return { para, bytes, nombre: `${nombre}.gz` }
+    },
+  })
+}
+
+/**
+ * Recorta, baja a minúsculas y quita vacíos y repetidos.
+ *
+ * Lo mismo que hace la base al anotar y la función de correo al mandar. Se
+ * repite aquí para que la pantalla enseñe la lista tal como va a salir, y no
+ * una que el servidor va a cambiar por detrás sin decirlo.
+ */
+export function limpiarCorreos(correos: string[]): string[] {
+  const lista: string[] = []
+  for (const c of correos) {
+    const limpio = c.trim().toLowerCase()
+    if (limpio && !lista.includes(limpio)) lista.push(limpio)
+  }
+  return lista
+}
+
+/*
+  QUÉ CUENTA COMO CORREO, EN LA PANTALLA.
+
+  Deliberadamente laxo y el mismo patrón que usa la función de correo: sin
+  espacios, sin comas y sin punto y coma, con arroba y con punto detrás. No
+  intenta decidir si el buzón existe —eso no lo sabe nadie hasta que rebota— y
+  sí impide lo único que de verdad rompe: que «a@b.com,c@d.com» entre como si
+  fuera una sola dirección y acabe siendo dos.
+*/
+const RX_CORREO = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/
+
+export const correoValido = (c: string): boolean => RX_CORREO.test(c.trim().toLowerCase())
 
 /*
   QUE LA AUDITORÍA DIGA SI SALIÓ.
@@ -109,12 +199,19 @@ export function useDescargarRespaldo() {
   el correo ya salió o ya no. Lo único que se pierde es la constancia, y eso se
   dice en el registro del navegador en vez de reventarle la pantalla a nadie.
 */
-async function anotar(enviado: boolean, motivo: string | null): Promise<void> {
+async function anotar(
+  enviado: boolean,
+  motivo: string | null,
+  para: string[] | null,
+): Promise<void> {
   try {
     await rpc('anotar_envio_del_respaldo', {
       p_enviado: enviado,
       p_mensaje_id: null,
       p_motivo: motivo,
+      // Nulo cuando fue al correo de la propia sesión: ahí no hay destino que
+      // revisar, y una columna llena de lo mismo no se lee.
+      p_para: para && para.length > 0 ? para : null,
     })
   } catch (e) {
     console.error('No se pudo anotar el envío del respaldo:', e)
@@ -139,7 +236,23 @@ function motivoDelFallo(fallo: string): string {
   if (t.includes('límite') || t.includes('429')) return 'TOPE_ALCANZADO'
   if (t.includes('rechazó') || t.includes('502')) return 'RECHAZADO'
   if (t.includes('destino') || t.includes('destinatario')) return 'SIN_DESTINATARIO'
-  if (t.includes('fetch') || t.includes('network') || t.includes('contactar')) return 'ERROR_DE_RED'
+  /*
+    «Failed to send a request to the Edge Function» entra aquí, y costó un
+    renglón de auditoría averiguarlo: es lo que dice `supabase-js` cuando el
+    `fetch` a la función ni siquiera llega a responder —porque no está
+    desplegada, porque no hay red, o porque el 404 del portal viene sin
+    cabeceras CORS y el navegador lo corta—. Sin esta línea se anotaba como
+    DESCONOCIDO, que es justo lo que no ayuda a nadie a arreglarlo.
+  */
+  if (
+    t.includes('fetch') ||
+    t.includes('network') ||
+    t.includes('contactar') ||
+    t.includes('edge function') ||
+    t.includes('failed to send')
+  ) {
+    return 'ERROR_DE_RED'
+  }
   return 'DESCONOCIDO'
 }
 
@@ -157,7 +270,11 @@ function motivoDelFallo(fallo: string): string {
   `CompressionStream` es nativo del navegador desde 2023. No hay librería que
   instalar ni que mantener.
 */
-async function mandarPorCorreo(sql: string, nombreSql: string): Promise<void> {
+async function mandarPorCorreo(
+  sql: string,
+  nombreSql: string,
+  para: string[],
+): Promise<number> {
   const crudo = new Blob([sql]).stream()
   const comprimido = crudo.pipeThrough(new CompressionStream('gzip'))
   const bytes = new Uint8Array(await new Response(comprimido).arrayBuffer())
@@ -183,7 +300,29 @@ async function mandarPorCorreo(sql: string, nombreSql: string): Promise<void> {
     body: {
       archivo: btoa(binario),
       nombre: `${nombreSql}.gz`,
+      // Vacío = al correo de quien lo pide. Lo resuelve la función, que es
+      // quien sabe de qué sesión viene la llamada.
+      ...(para.length > 0 ? { para } : {}),
     },
   })
-  if (error) throw error
+
+  /*
+    EL FALLO DE RED LLEGA EN INGLÉS, Y ASÍ NO SE PUEDE ENSEÑAR.
+
+    `supabase-js` devuelve «Failed to send a request to the Edge Function»
+    cuando el `fetch` no llega a completarse. En la cantera eso se leyó tal cual
+    en pantalla y no le dijo nada a nadie. El texto crudo sigue yendo al
+    registro del navegador, que es donde lo necesita quien lo va a arreglar.
+  */
+  if (error) {
+    const crudo = error.message ?? String(error)
+    console.error('El respaldo no se pudo mandar por correo:', error)
+    throw new Error(
+      /failed to send a request|failed to fetch|networkerror/i.test(crudo)
+        ? 'No se pudo contactar al servicio de correo del sistema. Vuelve a intentarlo dentro de un minuto.'
+        : crudo,
+    )
+  }
+
+  return bytes.length
 }
