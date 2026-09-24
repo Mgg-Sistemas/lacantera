@@ -70,7 +70,15 @@ export function topeDeAdjunto(): number {
 */
 const RX_CORREO = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/
 const RX_NOMBRE_PDF = /^[\w.\- ]{1,120}\.pdf$/
-const RX_NOMBRE_RESPALDO = /^[\w.\- ]{1,120}\.sql\.gz$/
+/*
+  EL RESPALDO VIAJA EN ZIP DESDE EL 24/09/2026.
+
+  Iba en gzip y Brevo lo rechazó en producción —«Unsupported file format: gz»—
+  porque tiene lista blanca de extensiones. Resend no la tiene, así que el
+  fallo apareció el día que entró el segundo servicio y no antes. Ver
+  `src/lib/zip.ts`.
+*/
+const RX_NOMBRE_RESPALDO = /^[\w.\- ]{1,120}\.sql\.zip$/
 const RX_BASE64 = /^[A-Za-z0-9+/]*={0,2}$/
 
 export function escaparHtml(s: unknown): string {
@@ -159,7 +167,7 @@ export function normalizarNombreAdjunto(nombre: string, permitirRespaldo: boolea
  * El tamaño se calcula sin decodificar. Decodificar 25 MB para medirlos es
  * gastar la memoria de la función en averiguar si cabe.
  */
-function validarContenido(base64: string, esPdf: boolean, esGz: boolean): void {
+function validarContenido(base64: string, esPdf: boolean, esZip: boolean): void {
   const b64 = String(base64 ?? '').replace(/\s+/g, '')
   if (!b64 || b64.length % 4 !== 0 || !RX_BASE64.test(b64)) {
     throw new ErrorCorreo('El adjunto llegó mal formado.')
@@ -184,7 +192,17 @@ function validarContenido(base64: string, esPdf: boolean, esGz: boolean): void {
   if (esPdf && !cabecera.startsWith('%PDF')) {
     throw new ErrorCorreo('Ese archivo no es un PDF.')
   }
-  if (esGz && !(cabecera.charCodeAt(0) === 0x1f && cabecera.charCodeAt(1) === 0x8b)) {
+  // PK\x03\x04, que es como empieza todo zip. Se comprueba por lo mismo que el
+  // %PDF: el nombre lo pone quien llama y la firma la pone quien lo creó.
+  if (
+    esZip &&
+    !(
+      cabecera.charCodeAt(0) === 0x50 &&
+      cabecera.charCodeAt(1) === 0x4b &&
+      cabecera.charCodeAt(2) === 0x03 &&
+      cabecera.charCodeAt(3) === 0x04
+    )
+  ) {
     throw new ErrorCorreo('Ese archivo no es un comprimido válido.')
   }
 }
@@ -238,7 +256,7 @@ export async function enviarCorreo(o: OpcionesCorreo): Promise<ResultadoCorreo> 
   if (o.adjunto) {
     const nombre = normalizarNombreAdjunto(o.adjunto.nombre, Boolean(o.permitirRespaldo))
     const content = String(o.adjunto.base64 ?? '').replace(/\s+/g, '')
-    validarContenido(content, nombre.endsWith('.pdf'), nombre.endsWith('.gz'))
+    validarContenido(content, nombre.endsWith('.pdf'), nombre.endsWith('.zip'))
     attachments = [{ filename: nombre, content }]
   }
 

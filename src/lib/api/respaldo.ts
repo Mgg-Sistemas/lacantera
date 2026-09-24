@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { zipDeUnArchivo } from '@/lib/zip'
 import { rpc } from './rpc'
 
 /**
@@ -149,7 +150,7 @@ export function useEnviarRespaldoPorCorreo() {
       }
       await anotar(true, null, para)
 
-      return { para, bytes, nombre: `${nombre}.gz` }
+      return { para, bytes, nombre: `${nombre}.zip` }
     },
   })
 }
@@ -269,15 +270,26 @@ function motivoDelFallo(fallo: string): string {
 
   `CompressionStream` es nativo del navegador desde 2023. No hay librería que
   instalar ni que mantener.
+
+  VA EN ZIP Y NO EN GZIP DESDE EL 24/09/2026, y la razón salió de producción:
+
+      [respaldo-por-correo] BREVO HTTP 400 invalid_parameter:
+      Unsupported file format: gz
+
+  Brevo tiene lista blanca de extensiones y `gz` no está en ella. Resend no mira
+  la extensión, así que esto funcionó mientras hubo un solo servicio y se rompió
+  el día que entró el segundo. Zip lo admiten los dos.
+
+  Y de paso arregla algo que no se había mirado: quien recibe el correo abre un
+  zip con doble clic en Windows, y un `.gz` le pide instalar algo.
 */
 async function mandarPorCorreo(
   sql: string,
   nombreSql: string,
   para: string[],
 ): Promise<number> {
-  const crudo = new Blob([sql]).stream()
-  const comprimido = crudo.pipeThrough(new CompressionStream('gzip'))
-  const bytes = new Uint8Array(await new Response(comprimido).arrayBuffer())
+  // El nombre de dentro es el .sql; el del zip se arma más abajo.
+  const bytes = await zipDeUnArchivo(nombreSql, sql)
 
   /*
     A base64 por trozos.
@@ -299,7 +311,7 @@ async function mandarPorCorreo(
   const { error } = await supabase.functions.invoke('respaldo-por-correo', {
     body: {
       archivo: btoa(binario),
-      nombre: `${nombreSql}.gz`,
+      nombre: `${nombreSql}.zip`,
       // Vacío = al correo de quien lo pide. Lo resuelve la función, que es
       // quien sabe de qué sesión viene la llamada.
       ...(para.length > 0 ? { para } : {}),
