@@ -360,64 +360,92 @@ export function Respaldo() {
         abierto={confirmando}
         onCerrar={() => setConfirmando(false)}
         titulo="Descargar el respaldo completo"
-        ancho="sm"
+        /*
+          `md` y no `sm` desde que hay tres botones al pie.
+
+          Los tres piden unos 440 px y el modal estrecho deja 408: el pie tiene
+          `flex-wrap`, así que «Descargar» caía solo a una segunda línea y la
+          acción principal quedaba descolgada debajo de las otras dos. Se vio en
+          producción antes de que nadie lo probara en un modal de tres botones.
+        */
+        ancho="md"
         acciones={
-          <>
+          /*
+            Fila en el escritorio, columna en el teléfono — y al revés, para que
+            arriba quede la acción principal y no «Cancelar», que es donde cae
+            el pulgar. El pie del modal ya es un `flex`, así que esto se cuelga
+            de él a ancho completo y manda sobre la colocación.
+          */
+          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
             <Button variant="ghost" onClick={() => setConfirmando(false)}>
               Cancelar
             </Button>
 
             {/*
-              LA SEGUNDA SALIDA DEL ARCHIVO, PEDIDA POR LA LÍDER EL 24/09/2026.
+              Y las dos acciones juntas a la derecha, con «Cancelar» solo al
+              otro lado.
 
-              Va aquí dentro y no en la tarjeta de fuera, que es donde se pensó
-              primero. El aviso de qué lleva el archivo está en este modal, y un
-              botón que manda el respaldo a otra persona no puede vivir en un
-              sitio donde ese aviso no se haya leído.
-
-              `outline` y no `primary`: la acción principal de esta pantalla
-              sigue siendo bajarlo. Dos botones naranjas uno al lado del otro no
-              se eligen, se pulsan a ojo.
+              Los tres seguidos y pegados al borde se leían como tres cosas del
+              mismo rango, y no lo son: irse no es hacer algo. Separado, el ojo
+              ve primero qué puede hacer con el archivo y solo después la
+              puerta de salida.
             */}
-            <Button
-              variant="outline"
-              icon={<Mail className="size-[18px]" />}
-              onClick={() => {
-                setConfirmando(false)
-                setEligiendoCorreos(true)
-              }}
-            >
-              Enviar por correo
-            </Button>
-            {/*
-              EL MODAL SE CIERRA AL PULSAR, NO AL TERMINAR.
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              {/*
+                LA SEGUNDA SALIDA DEL ARCHIVO, PEDIDA POR LA LÍDER EL
+                24/09/2026.
 
-              Estaba al revés: se esperaba a que la descarga acabara y solo
-              entonces se cerraba. Durante ese minuto el modal se quedaba encima
-              con un botón que decía «Armando…» y el contador corriendo detrás,
-              atenuado por el velo. El usuario lo dijo exacto: «es como si no
-              estuviera».
+                Va aquí dentro y no en la tarjeta de fuera, que es donde se
+                pensó primero. El aviso de qué lleva el archivo está en este
+                modal, y un botón que manda el respaldo a otra persona no puede
+                vivir en un sitio donde ese aviso no se haya leído.
 
-              Su trabajo —avisar de lo que lleva el archivo y pedir
-              confirmación— termina en el momento en que se pulsa. Lo que viene
-              después es esperar, y para esperar hay que poder VER la pantalla.
+                `outline` y no `primary`: la acción principal de esta pantalla
+                sigue siendo bajarlo. Dos botones naranjas uno al lado del otro
+                no se eligen, se pulsan a ojo.
+              */}
+              <Button
+                variant="outline"
+                icon={<Mail className="size-[18px]" />}
+                onClick={() => {
+                  setConfirmando(false)
+                  setEligiendoCorreos(true)
+                }}
+              >
+                Enviar por correo
+              </Button>
 
-              `mutate` y no `mutateAsync`: el segundo devuelve una promesa que
-              aquí ya no espera nadie, y cuando la base falla esa promesa queda
-              sin capturar. Es lo que llenó la consola del usuario de «Uncaught
-              (in promise)» cuando el respaldo se agotaba por tiempo. Con
-              `mutate` el error llega igual, por `descargar.error`, que es donde
-              la pantalla ya lo enseña.
-            */}
-            <Button
-              onClick={() => {
-                setConfirmando(false)
-                descargar.mutate()
-              }}
-            >
-              Descargar
-            </Button>
-          </>
+              {/*
+                EL MODAL SE CIERRA AL PULSAR, NO AL TERMINAR.
+
+                Estaba al revés: se esperaba a que la descarga acabara y solo
+                entonces se cerraba. Durante ese minuto el modal se quedaba
+                encima con un botón que decía «Armando…» y el contador
+                corriendo detrás, atenuado por el velo. El usuario lo dijo
+                exacto: «es como si no estuviera».
+
+                Su trabajo —avisar de lo que lleva el archivo y pedir
+                confirmación— termina en el momento en que se pulsa. Lo que
+                viene después es esperar, y para esperar hay que poder VER la
+                pantalla.
+
+                `mutate` y no `mutateAsync`: el segundo devuelve una promesa que
+                aquí ya no espera nadie, y cuando la base falla esa promesa
+                queda sin capturar. Es lo que llenó la consola del usuario de
+                «Uncaught (in promise)» cuando el respaldo se agotaba por
+                tiempo. Con `mutate` el error llega igual, por
+                `descargar.error`, que es donde la pantalla ya lo enseña.
+              */}
+              <Button
+                onClick={() => {
+                  setConfirmando(false)
+                  descargar.mutate()
+                }}
+              >
+                Descargar
+              </Button>
+            </div>
+          </div>
         }
       >
         <p className="text-ink/70 text-sm leading-relaxed">
@@ -455,9 +483,11 @@ export function Respaldo() {
         onCerrar={() => setEligiendoCorreos(false)}
         titulo="Enviar el respaldo por correo"
         descripcion="Va comprimido y como adjunto. No se baja a esta computadora."
-        ancho="sm"
+        /* Del mismo ancho que el aviso del que sale: uno se abre encima del
+           otro, y que el segundo encoja se lee como que es otra cosa. */
+        ancho="md"
         acciones={
-          <>
+          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
             <Button variant="ghost" onClick={() => setEligiendoCorreos(false)}>
               Cancelar
             </Button>
@@ -480,7 +510,7 @@ export function Respaldo() {
             >
               Enviar
             </Button>
-          </>
+          </div>
         }
       >
         <div className="border-danger/30 bg-danger/6 mb-4 flex items-start gap-3 rounded-[8px] border p-3">
