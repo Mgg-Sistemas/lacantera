@@ -7,7 +7,12 @@ import { Chip } from '@/components/ui/Chip'
 import { StatCard } from '@/components/StatCard'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dinero, documento, dolares, dolaresRedondos, fecha } from '@/lib/formato'
-import { usePorCobrar, type PorCobrar as Cobranza } from '@/lib/api/facturacion'
+import {
+  usePorCobrar,
+  usePorCobrarAProveedores,
+  type PorCobrar as Cobranza,
+  type PorCobrarAProveedor,
+} from '@/lib/api/facturacion'
 
 /**
  * Lo que deben los clientes.
@@ -41,6 +46,30 @@ const tramo = (dias: number) => {
 
 export function PorCobrar() {
   const { data, isPending, error } = usePorCobrar()
+  const proveedores = usePorCobrarAProveedores()
+
+  /*
+    LOS PROVEEDORES QUE DEBEN VAN APARTE Y EN SU MONEDA.
+
+    Nacen en Compras: un pago con material que valió más que la orden y se
+    dejó «por cobrar». No son facturas, no tienen vencimiento y el saldo está
+    en la moneda de la orden, sin tasa congelada; convertirlo con la de hoy
+    sería inventar. Por eso se listan aparte, cada uno en su moneda, y al
+    total en dólares solo suman los que ya están en dólares.
+  */
+  const deProveedores = useMemo(() => {
+    const porProveedor = new Map<string, { proveedor: string; rif: string; saldos: PorCobrarAProveedor[] }>()
+    for (const s of proveedores.data ?? []) {
+      const g = porProveedor.get(s.rif) ?? { proveedor: s.proveedor, rif: s.rif, saldos: [] }
+      g.saldos.push(s)
+      porProveedor.set(s.rif, g)
+    }
+    return [...porProveedor.values()]
+  }, [proveedores.data])
+  const proveedoresUsd = (proveedores.data ?? [])
+    .filter((s) => s.moneda === 'USD')
+    .reduce((s, x) => s + Number(x.pendiente), 0)
+  const proveedoresOtraMoneda = (proveedores.data ?? []).some((s) => s.moneda !== 'USD')
 
   const grupos = useMemo<Grupo[]>(() => {
     const mapa = new Map<string, Grupo>()
@@ -66,8 +95,9 @@ export function PorCobrar() {
     return [...mapa.values()].sort((a, b) => b.masVieja - a.masVieja || b.usd - a.usd)
   }, [data])
 
-  const total = grupos.reduce((s, g) => s + g.usd, 0)
+  const total = grupos.reduce((s, g) => s + g.usd, 0) + proveedoresUsd
   const vencido = grupos.reduce((s, g) => s + g.vencidoUsd, 0)
+  const hayAlgo = (data?.length ?? 0) > 0 || deProveedores.length > 0
 
   return (
     <>
@@ -79,17 +109,17 @@ export function PorCobrar() {
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
-      {data && data.length === 0 ? (
+      {data && !proveedores.isPending && !hayAlgo ? (
         <Card>
           <Vacio
             icono={<Coins />}
             titulo="Nadie debe nada"
-            descripcion="Todas las facturas emitidas están cobradas. Las nuevas aparecen aquí en cuanto se emiten a crédito o quedan con saldo."
+            descripcion="Todas las facturas emitidas están cobradas y ningún proveedor debe diferencia. Las nuevas aparecen aquí en cuanto se emiten a crédito, quedan con saldo, o un pago con material deja dinero por cobrar."
           />
         </Card>
       ) : null}
 
-      {data && data.length > 0 ? (
+      {data && hayAlgo ? (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
             <StatCard
@@ -172,12 +202,72 @@ export function PorCobrar() {
             ))}
           </div>
 
+          {deProveedores.length > 0 ? (
+            <>
+              <h2 className="text-ink/60 mt-8 mb-1 text-sm font-semibold">Proveedores que deben</h2>
+              <p className="text-ink/45 mb-3 text-xs">
+                Pagaron una compra con material que valía más que la orden, y la diferencia quedó
+                por cobrarles en dinero. Cada saldo va en la moneda de su orden
+                {proveedoresOtraMoneda ? '; al total de arriba solo suman los que están en dólares' : ''}.
+              </p>
+              <div className="space-y-4">
+                {deProveedores.map((g) => (
+                  <Card key={g.rif} flush>
+                    <CardHeader
+                      className="p-5 pb-0"
+                      title={g.proveedor}
+                      subtitle={`${documento(g.rif)} · ${g.saldos.length} saldo(s)`}
+                      action={<Chip tone="warning">Por cobrar</Chip>}
+                    />
+                    <div className="overflow-x-auto p-5 pt-4">
+                      <table className="w-full min-w-[600px] text-sm">
+                        <thead>
+                          <tr className="text-ink/45 border-hairline border-b text-left text-xs">
+                            <th className="py-2 font-medium">Saldo</th>
+                            <th className="py-2 font-medium">Compra</th>
+                            <th className="py-2 font-medium">Desde</th>
+                            <th className="py-2 text-right font-medium">Original</th>
+                            <th className="py-2 text-right font-medium">Pendiente</th>
+                            <th className="py-2 text-right font-medium">Antigüedad</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {g.saldos.map((s) => (
+                            <tr key={s.saldo_id} className="border-hairline border-b last:border-0">
+                              <td className="tabular text-ink/85 py-2 font-medium">
+                                {s.numero}
+                                <span className="text-ink/40 block text-xs">{s.motivo}</span>
+                              </td>
+                              <td className="text-ink/60 py-2 text-xs">{s.orden ?? '—'}</td>
+                              <td className="text-ink/60 py-2 text-xs">{fecha(s.desde)}</td>
+                              <td className="tabular text-ink/70 py-2 text-right">{dinero(s.moneda, s.monto)}</td>
+                              <td className="tabular text-ink/90 py-2 text-right font-medium">
+                                {dinero(s.moneda, s.pendiente)}
+                              </td>
+                              <td className="py-2 text-right">
+                                <Chip tone={s.dias > 30 ? 'danger' : 'neutral'}>{tramo(s.dias)}</Chip>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </>
+          ) : null}
+
           <p className="text-ink/45 mt-4 text-center text-xs">
-            Los cobros se registran desde{' '}
+            Los cobros a clientes se registran desde{' '}
             <Link to="/app/facturacion" className="text-royal-600 underline">
               Facturación › Facturas
             </Link>
-            , abriendo la factura.
+            , abriendo la factura. Lo que debe un proveedor se cobra desde{' '}
+            <Link to="/app/compras/proveedores" className="text-royal-600 underline">
+              Compras › Proveedores
+            </Link>
+            , en sus saldos.
           </p>
         </>
       ) : null}
