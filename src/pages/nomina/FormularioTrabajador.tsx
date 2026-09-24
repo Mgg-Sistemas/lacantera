@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
+import { FormularioPorPasos } from '@/components/FormularioPorPasos'
 import { PageHeader } from '@/components/PageHeader'
-import { Card, CardHeader } from '@/components/ui/Card'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { CampoDocumento } from '@/components/CampoDocumento'
@@ -162,7 +163,12 @@ export function FormularioTrabajador() {
     )
   }
 
-  const listo = f.nombres && f.apellidos && f.cargo && f.fecha_ingreso
+  const faltaQuien = !f.nombres || !f.apellidos ? 'Faltan los nombres y los apellidos.' : null
+  const faltaContrato =
+    !f.cargo || !f.fecha_ingreso ? 'Faltan el cargo y la fecha de ingreso.' : null
+  // El ultimo paso no exige nada suyo, pero no puede guardar con un hueco de
+  // los anteriores: se veria el boton de crear activo y la ficha no nacería.
+  const faltaPago = faltaQuien ?? faltaContrato
   const volver = esNuevo ? '/app/nomina/personal' : `/app/nomina/personal/${id}`
 
   const enviar = async () => {
@@ -190,318 +196,307 @@ export function FormularioTrabajador() {
         }
       />
 
-      <div className="grid gap-4">
-        {/* ------------------------------ Quién es ------------------------------ */}
-        <Card>
-          <CardHeader
-            title="Quién es"
-            subtitle="Lo que va en el carnet y a quién avisar si pasa algo."
-          />
+      <FormularioPorPasos
+        cancelarA={volver}
+        etiquetaFinal={esNuevo ? 'Crear ficha' : 'Guardar cambios'}
+        guardando={guardar.isPending}
+        onTerminar={() => void enviar()}
+        error={guardar.error ? <ErrorDeCarga error={guardar.error} /> : null}
+        pasos={[
+          {
+            id: 'quien',
+            titulo: 'Quién es',
+            subtitulo: 'Lo que va en el carnet y a quién avisar si pasa algo.',
+            falta: faltaQuien,
+            contenido: (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <CampoDocumento
+                    label="Cédula"
+                    valor={f.cedula}
+                    onCambiar={(v) => cambiar({ cedula: v })}
+                  />
+                  {/*
+                    EL RIF NO SE RELLENA SOLO CON LA CÉDULA, aunque en la mayoría de
+                    los casos sea la misma cifra con un dígito detrás. Ese dígito se
+                    calcula, quien tiene firma personal lleva J, y un RIF que el
+                    sistema se inventa termina impreso en una constancia que lee el
+                    banco. Se pide, no se adivina.
+                  */}
+                  <CampoDocumento
+                    label="RIF"
+                    tipo="rif"
+                    valor={f.rif}
+                    onCambiar={(v) => cambiar({ rif: v })}
+                    hint="Opcional. Con su dígito verificador: V-12.345.678-9."
+                  />
+                  <Input
+                    label="Nombres"
+                    value={f.nombres}
+                    onChange={(e) => cambiar({ nombres: e.target.value })}
+                  />
+                  <Input
+                    label="Apellidos"
+                    value={f.apellidos}
+                    onChange={(e) => cambiar({ apellidos: e.target.value })}
+                  />
+                  <Input
+                    label="Fecha de nacimiento"
+                    type="date"
+                    value={f.fecha_nacimiento}
+                    onChange={(e) => cambiar({ fecha_nacimiento: e.target.value })}
+                  />
+                  <Select
+                    label="Género"
+                    vacio="Sin indicar"
+                    value={f.genero}
+                    onChange={(e) => cambiar({ genero: e.target.value })}
+                    opciones={GENEROS}
+                  />
+                  <Select
+                    label="Estado civil"
+                    vacio="Sin indicar"
+                    value={f.estado_civil}
+                    onChange={(e) => cambiar({ estado_civil: e.target.value })}
+                    opciones={ESTADOS_CIVILES}
+                  />
+                  <Input
+                    label="Nacionalidad"
+                    placeholder="Venezolana"
+                    value={f.nacionalidad}
+                    onChange={(e) => cambiar({ nacionalidad: e.target.value.toUpperCase() })}
+                  />
+                  <Select
+                    label="Grupo sanguíneo"
+                    vacio="Sin indicar"
+                    hint="Va en el carnet. En una emergencia es lo primero que se busca."
+                    value={f.grupo_sanguineo}
+                    onChange={(e) => cambiar({ grupo_sanguineo: e.target.value })}
+                    opciones={GRUPOS_SANGUINEOS.map((g) => ({ valor: g, etiqueta: g }))}
+                  />
+                  {/* Entre los diecinueve telefonos de empleados habia uno guardado
+                      como «O4123917198» —la letra O en vez del cero— y nadie se
+                      entero hasta que se midio. La tecla filtrada lo impide. */}
+                  <CampoTelefono
+                    valor={f.telefono}
+                    onCambiar={(v) => cambiar({ telefono: v })}
+                  />
+                  <Input
+                    label="A quién llamar en una emergencia"
+                    placeholder="Marta Arias, esposa"
+                    value={f.contacto_emergencia}
+                    onChange={(e) => cambiar({ contacto_emergencia: e.target.value })}
+                  />
+                  <Input
+                    label="Teléfono de esa persona"
+                    value={f.telefono_emergencia}
+                    onChange={(e) => cambiar({ telefono_emergencia: e.target.value })}
+                  />
+                </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <CampoDocumento
-              label="Cédula"
-              valor={f.cedula}
-              onCambiar={(v) => cambiar({ cedula: v })}
-            />
-            {/*
-              EL RIF NO SE RELLENA SOLO CON LA CÉDULA, aunque en la mayoría de
-              los casos sea la misma cifra con un dígito detrás. Ese dígito se
-              calcula, quien tiene firma personal lleva J, y un RIF que el
-              sistema se inventa termina impreso en una constancia que lee el
-              banco. Se pide, no se adivina.
-            */}
-            <CampoDocumento
-              label="RIF"
-              tipo="rif"
-              valor={f.rif}
-              onCambiar={(v) => cambiar({ rif: v })}
-              hint="Opcional. Con su dígito verificador: V-12.345.678-9."
-            />
-            <Input
-              label="Nombres"
-              value={f.nombres}
-              onChange={(e) => cambiar({ nombres: e.target.value })}
-            />
-            <Input
-              label="Apellidos"
-              value={f.apellidos}
-              onChange={(e) => cambiar({ apellidos: e.target.value })}
-            />
-            <Input
-              label="Fecha de nacimiento"
-              type="date"
-              value={f.fecha_nacimiento}
-              onChange={(e) => cambiar({ fecha_nacimiento: e.target.value })}
-            />
-            <Select
-              label="Género"
-              vacio="Sin indicar"
-              value={f.genero}
-              onChange={(e) => cambiar({ genero: e.target.value })}
-              opciones={GENEROS}
-            />
-            <Select
-              label="Estado civil"
-              vacio="Sin indicar"
-              value={f.estado_civil}
-              onChange={(e) => cambiar({ estado_civil: e.target.value })}
-              opciones={ESTADOS_CIVILES}
-            />
-            <Input
-              label="Nacionalidad"
-              placeholder="Venezolana"
-              value={f.nacionalidad}
-              onChange={(e) => cambiar({ nacionalidad: e.target.value.toUpperCase() })}
-            />
-            <Select
-              label="Grupo sanguíneo"
-              vacio="Sin indicar"
-              hint="Va en el carnet. En una emergencia es lo primero que se busca."
-              value={f.grupo_sanguineo}
-              onChange={(e) => cambiar({ grupo_sanguineo: e.target.value })}
-              opciones={GRUPOS_SANGUINEOS.map((g) => ({ valor: g, etiqueta: g }))}
-            />
-            {/* Entre los diecinueve telefonos de empleados habia uno guardado
-                como «O4123917198» —la letra O en vez del cero— y nadie se
-                entero hasta que se midio. La tecla filtrada lo impide. */}
-            <CampoTelefono
-              valor={f.telefono}
-              onCambiar={(v) => cambiar({ telefono: v })}
-            />
-            <Input
-              label="A quién llamar en una emergencia"
-              placeholder="Marta Arias, esposa"
-              value={f.contacto_emergencia}
-              onChange={(e) => cambiar({ contacto_emergencia: e.target.value })}
-            />
-            <Input
-              label="Teléfono de esa persona"
-              value={f.telefono_emergencia}
-              onChange={(e) => cambiar({ telefono_emergencia: e.target.value })}
-            />
-          </div>
-
-          <div className="mt-4">
-            <Textarea
-              label="Dirección"
-              rows={2}
-              value={f.direccion}
-              onChange={(e) => cambiar({ direccion: e.target.value })}
-            />
-          </div>
-        </Card>
-
-        {/* ----------------------------- El contrato ---------------------------- */}
-        <Card>
-          <CardHeader
-            title="Su contrato"
-            subtitle="De la fecha de ingreso salen la antigüedad, el bono vacacional y la liquidación."
-          />
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {/* El cargo sale del tabulador y con él viene el sueldo. Se puede
-                dejar sin nivel —hay contratos especiales—, y entonces el cargo
-                se escribe a mano y el sueldo se pone abajo. Lo que no puede
-                pasar es tener nivel y un sueldo que no es el del nivel sin que
-                nadie se entere: de eso avisa la pantalla del tabulador. */}
-            <Select
-              label="Cargo del tabulador"
-              vacio="Fuera del tabulador"
-              hint={
-                f.tabulador_id
-                  ? 'Al guardar toma el sueldo de ese nivel.'
-                  : 'Sin nivel, el sueldo de esta ficha se escribe a mano y no sube cuando suba el tabulador.'
-              }
-              value={f.tabulador_id}
-              onChange={(e) => {
-                const nivel = (niveles.data ?? []).find((n) => String(n.id) === e.target.value)
-                cambiar(
-                  nivel
-                    ? {
-                        tabulador_id: e.target.value,
-                        cargo: nivel.cargo,
-                        salario_base: nivel.sueldo_mensual,
-                        moneda_salario: nivel.moneda,
-                        base_estipulacion: 'MENSUAL',
+                <div className="mt-4">
+                  <Textarea
+                    label="Dirección"
+                    rows={2}
+                    value={f.direccion}
+                    onChange={(e) => cambiar({ direccion: e.target.value })}
+                  />
+                </div>
+              </>
+            ),
+          },
+          {
+            id: 'contrato',
+            titulo: 'Su contrato',
+            subtitulo:
+              'De la fecha de ingreso salen la antigüedad, el bono vacacional y la liquidación.',
+            falta: faltaContrato,
+            contenido: (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {/* El cargo sale del tabulador y con él viene el sueldo. Se puede
+                      dejar sin nivel —hay contratos especiales—, y entonces el cargo
+                      se escribe a mano y el sueldo se pone abajo. Lo que no puede
+                      pasar es tener nivel y un sueldo que no es el del nivel sin que
+                      nadie se entere: de eso avisa la pantalla del tabulador. */}
+                  <Select
+                    label="Cargo del tabulador"
+                    vacio="Fuera del tabulador"
+                    hint={
+                      f.tabulador_id
+                        ? 'Al guardar toma el sueldo de ese nivel.'
+                        : 'Sin nivel, el sueldo de esta ficha se escribe a mano y no sube cuando suba el tabulador.'
+                    }
+                    value={f.tabulador_id}
+                    onChange={(e) => {
+                      const nivel = (niveles.data ?? []).find((n) => String(n.id) === e.target.value)
+                      cambiar(
+                        nivel
+                          ? {
+                              tabulador_id: e.target.value,
+                              cargo: nivel.cargo,
+                              salario_base: nivel.sueldo_mensual,
+                              moneda_salario: nivel.moneda,
+                              base_estipulacion: 'MENSUAL',
+                            }
+                          : { tabulador_id: '' },
+                      )
+                    }}
+                    opciones={(niveles.data ?? [])
+                      .filter((n) => n.activo || String(n.id) === f.tabulador_id)
+                      .map((n) => ({
+                        valor: String(n.id),
+                        etiqueta: `${n.cargo} — ${dinero(n.moneda, n.sueldo_mensual)}`,
+                      }))}
+                  />
+                  <Input
+                    label="Cargo"
+                    placeholder="Operador de trituradora"
+                    hint={f.tabulador_id ? 'Lo pone el tabulador.' : undefined}
+                    disabled={Boolean(f.tabulador_id)}
+                    value={f.cargo}
+                    onChange={(e) => cambiar({ cargo: e.target.value })}
+                  />
+                  <Input
+                    label="Departamento o frente"
+                    placeholder="Planta"
+                    value={f.departamento}
+                    onChange={(e) => cambiar({ departamento: e.target.value })}
+                  />
+                  <Input
+                    label="Fecha de ingreso"
+                    type="date"
+                    hint={
+                      !esNuevo && quien && !quien.fecha_ingreso_confirmada
+                        ? 'Esta fecha vino de la carga del libro de nómina y nadie la ha revisado. Corrígela: de aquí salen la antigüedad, el bono vacacional y la liquidación.'
+                        : 'De aquí salen la antigüedad y las prestaciones.'
+                    }
+                    value={f.fecha_ingreso}
+                    onChange={(e) => cambiar({ fecha_ingreso: e.target.value })}
+                  />
+                  <Select
+                    label="Jornada"
+                    value={f.tipo_jornada}
+                    onChange={(e) => cambiar({ tipo_jornada: e.target.value })}
+                    opciones={JORNADAS}
+                    hint="Decide el valor de la hora y el tope de horas extra."
+                  />
+                  <Input
+                    label="Días de utilidades al año"
+                    type="number"
+                    placeholder="30"
+                    hint="Vacío usa el mínimo legal de 30 días."
+                    value={f.dias_utilidades}
+                    onChange={(e) => cambiar({ dias_utilidades: e.target.value })}
+                  />
+                </div>
+              </>
+            ),
+          },
+          {
+            id: 'pago',
+            titulo: 'Cómo se le paga',
+            subtitulo: 'Lo último. Al guardar, la ficha queda creada.',
+            falta: faltaPago,
+            contenido: (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <Select
+                    label="Salario estipulado"
+                    value={f.base_estipulacion}
+                    onChange={(e) => cambiar({ base_estipulacion: e.target.value })}
+                    opciones={BASES_SALARIO}
+                  />
+                  <div className="grid grid-cols-[1fr_auto] gap-2">
+                    <Input
+                      label="Monto"
+                      type="number"
+                      step="0.01"
+                      inputMode="decimal"
+                      /*
+                        Este renglón es el que provocó el reclamo de los 267,17 $: se
+                        escribía 500 creyendo que la quincena daría 250, y daba 267
+                        porque encima se sumaba el cestaticket. Ahora el número
+                        significa lo que la persona recibe, y eso hay que decirlo
+                        donde se escribe, no en un manual.
+                      */
+                      hint={
+                        'Es lo que recibe, todo incluido: de aquí salen el beneficio de alimentación y las retenciones de ley. Los bonos y las penalizaciones se cargan aparte, en cada período.' +
+                        (f.tabulador_id
+                          ? ' Sale del tabulador: si lo cambias aquí, la ficha quedará desfasada hasta que alguien sincronice o corrija el nivel.'
+                          : '')
                       }
-                    : { tabulador_id: '' },
-                )
-              }}
-              opciones={(niveles.data ?? [])
-                .filter((n) => n.activo || String(n.id) === f.tabulador_id)
-                .map((n) => ({
-                  valor: String(n.id),
-                  etiqueta: `${n.cargo} — ${dinero(n.moneda, n.sueldo_mensual)}`,
-                }))}
-            />
-            <Input
-              label="Cargo"
-              placeholder="Operador de trituradora"
-              hint={f.tabulador_id ? 'Lo pone el tabulador.' : undefined}
-              disabled={Boolean(f.tabulador_id)}
-              value={f.cargo}
-              onChange={(e) => cambiar({ cargo: e.target.value })}
-            />
-            <Input
-              label="Departamento o frente"
-              placeholder="Planta"
-              value={f.departamento}
-              onChange={(e) => cambiar({ departamento: e.target.value })}
-            />
-            <Input
-              label="Fecha de ingreso"
-              type="date"
-              hint={
-                !esNuevo && quien && !quien.fecha_ingreso_confirmada
-                  ? 'Esta fecha vino de la carga del libro de nómina y nadie la ha revisado. Corrígela: de aquí salen la antigüedad, el bono vacacional y la liquidación.'
-                  : 'De aquí salen la antigüedad y las prestaciones.'
-              }
-              value={f.fecha_ingreso}
-              onChange={(e) => cambiar({ fecha_ingreso: e.target.value })}
-            />
-            <Select
-              label="Jornada"
-              value={f.tipo_jornada}
-              onChange={(e) => cambiar({ tipo_jornada: e.target.value })}
-              opciones={JORNADAS}
-              hint="Decide el valor de la hora y el tope de horas extra."
-            />
-            <Input
-              label="Días de utilidades al año"
-              type="number"
-              placeholder="30"
-              hint="Vacío usa el mínimo legal de 30 días."
-              value={f.dias_utilidades}
-              onChange={(e) => cambiar({ dias_utilidades: e.target.value })}
-            />
-          </div>
-        </Card>
+                      value={f.salario_base}
+                      onChange={(e) => cambiar({ salario_base: e.target.value })}
+                    />
+                    <Select
+                      label="Moneda"
+                      value={f.moneda_salario}
+                      onChange={(e) => cambiar({ moneda_salario: e.target.value })}
+                      opciones={enSimbolos(monedas.data)}
+                    />
+                  </div>
+                  <Select
+                    label="Frecuencia de pago"
+                    value={f.frecuencia}
+                    onChange={(e) => cambiar({ frecuencia: e.target.value })}
+                    opciones={FRECUENCIAS}
+                  />
+                  <Select
+                    label="Forma de pago"
+                    value={f.forma_pago}
+                    onChange={(e) => cambiar({ forma_pago: e.target.value })}
+                    opciones={opcionesDe(metodos)}
+                  />
 
-        {/* --------------------------- Cómo se le paga -------------------------- */}
-        <Card>
-          <CardHeader title="Cómo se le paga" />
+                  {f.forma_pago === 'TRANSFERENCIA' ? (
+                    <>
+                      <Select
+                        label="Banco"
+                        vacio="Elige el banco"
+                        value={f.banco}
+                        onChange={(e) => cambiar({ banco: e.target.value })}
+                        opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}
+                      />
+                      <Input
+                        label="Número de cuenta"
+                        value={f.numero_cuenta}
+                        onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
+                      />
+                    </>
+                  ) : null}
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <Select
-              label="Salario estipulado"
-              value={f.base_estipulacion}
-              onChange={(e) => cambiar({ base_estipulacion: e.target.value })}
-              opciones={BASES_SALARIO}
-            />
-            <div className="grid grid-cols-[1fr_auto] gap-2">
-              <Input
-                label="Monto"
-                type="number"
-                step="0.01"
-                inputMode="decimal"
-                /*
-                  Este renglón es el que provocó el reclamo de los 267,17 $: se
-                  escribía 500 creyendo que la quincena daría 250, y daba 267
-                  porque encima se sumaba el cestaticket. Ahora el número
-                  significa lo que la persona recibe, y eso hay que decirlo
-                  donde se escribe, no en un manual.
-                */
-                hint={
-                  'Es lo que recibe, todo incluido: de aquí salen el beneficio de alimentación y las retenciones de ley. Los bonos y las penalizaciones se cargan aparte, en cada período.' +
-                  (f.tabulador_id
-                    ? ' Sale del tabulador: si lo cambias aquí, la ficha quedará desfasada hasta que alguien sincronice o corrija el nivel.'
-                    : '')
-                }
-                value={f.salario_base}
-                onChange={(e) => cambiar({ salario_base: e.target.value })}
-              />
-              <Select
-                label="Moneda"
-                value={f.moneda_salario}
-                onChange={(e) => cambiar({ moneda_salario: e.target.value })}
-                opciones={enSimbolos(monedas.data)}
-              />
-            </div>
-            <Select
-              label="Frecuencia de pago"
-              value={f.frecuencia}
-              onChange={(e) => cambiar({ frecuencia: e.target.value })}
-              opciones={FRECUENCIAS}
-            />
-            <Select
-              label="Forma de pago"
-              value={f.forma_pago}
-              onChange={(e) => cambiar({ forma_pago: e.target.value })}
-              opciones={opcionesDe(metodos)}
-            />
+                  {f.forma_pago === 'PAGO_MOVIL' ? (
+                    <>
+                      <Select
+                        label="Banco"
+                        vacio="Elige el banco"
+                        value={f.banco}
+                        onChange={(e) => cambiar({ banco: e.target.value })}
+                        opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}
+                      />
+                      <Input
+                        label="Teléfono del pago móvil"
+                        value={f.telefono_pago}
+                        onChange={(e) => cambiar({ telefono_pago: e.target.value })}
+                      />
+                    </>
+                  ) : null}
+                </div>
 
-            {f.forma_pago === 'TRANSFERENCIA' ? (
-              <>
-                <Select
-                  label="Banco"
-                  vacio="Elige el banco"
-                  value={f.banco}
-                  onChange={(e) => cambiar({ banco: e.target.value })}
-                  opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}
-                />
-                <Input
-                  label="Número de cuenta"
-                  value={f.numero_cuenta}
-                  onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
-                />
+                <div className="mt-4">
+                  <Textarea
+                    label="Nota"
+                    rows={2}
+                    value={f.nota}
+                    onChange={(e) => cambiar({ nota: e.target.value })}
+                  />
+                </div>
               </>
-            ) : null}
-
-            {f.forma_pago === 'PAGO_MOVIL' ? (
-              <>
-                <Select
-                  label="Banco"
-                  vacio="Elige el banco"
-                  value={f.banco}
-                  onChange={(e) => cambiar({ banco: e.target.value })}
-                  opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}
-                />
-                <Input
-                  label="Teléfono del pago móvil"
-                  value={f.telefono_pago}
-                  onChange={(e) => cambiar({ telefono_pago: e.target.value })}
-                />
-              </>
-            ) : null}
-          </div>
-
-          <div className="mt-4">
-            <Textarea
-              label="Nota"
-              rows={2}
-              value={f.nota}
-              onChange={(e) => cambiar({ nota: e.target.value })}
-            />
-          </div>
-        </Card>
-      </div>
-
-      {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-4" /> : null}
-
-      {/*
-        Los botones se quedan abajo mientras se baja por el formulario.
-
-        Con treinta campos, ponerlos al final obliga a llenarlo todo, bajar
-        hasta el fondo y buscar; y arriba, a subir. Pegados, están donde se
-        mire. En el teléfono es la diferencia entre guardar y perder lo escrito
-        por cerrar la pestaña sin encontrar el botón.
-      */}
-      <div className="border-hairline bg-surface sticky bottom-0 z-10 mt-4 flex items-center justify-end gap-2 border-t px-1 py-3">
-        {!listo ? (
-          <p className="text-ink/45 mr-auto text-xs">
-            Faltan los nombres, los apellidos, el cargo y la fecha de ingreso.
-          </p>
-        ) : null}
-
-        <Link to={volver}>
-          <Button variant="ghost">Cancelar</Button>
-        </Link>
-
-        <Button disabled={!listo || guardar.isPending} onClick={enviar}>
-          {guardar.isPending ? 'Guardando…' : esNuevo ? 'Crear ficha' : 'Guardar cambios'}
-        </Button>
-      </div>
+            ),
+          },
+        ]}
+      />
     </>
   )
 }
