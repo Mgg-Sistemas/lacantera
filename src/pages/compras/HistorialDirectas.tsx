@@ -1,17 +1,20 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { ShoppingBag } from 'lucide-react'
+import { ShoppingBag, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_COMPRA_DIRECTA } from '@/components/pestanasDeModulos'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
+import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
+import { ModalRecepcion } from './ModalRecepcion'
 import { useComprasDirectas } from '@/lib/api/compras'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import type { Orden } from '@/lib/api/compras'
 import { dinero, fecha, fechaHora } from '@/lib/formato'
 
@@ -54,6 +57,14 @@ const ESTADOS: Record<string, { texto: string; tono: 'success' | 'warning' | 'da
 const comoSeLlama = (estado: string) => ESTADOS[estado]?.texto ?? estado
 
 /*
+  Desde qué estados se puede recibir. Son los mismos tres que la pantalla de
+  Recepciones pide a la base, y se nombran aquí para que las dos coincidan: una
+  compra que sale en Recepciones y no ofrece el botón aquí es una compra que
+  alguien va a creer trabada.
+*/
+const PENDIENTES = new Set(['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'POR_RECIBIR'])
+
+/*
   CUÁNTO LLEVA ESPERANDO LO QUE SE PAGÓ Y NO HA LLEGADO.
 
   Una compra directa se paga en el acto, así que lo único que puede envejecer es
@@ -82,6 +93,24 @@ export function HistorialDirectas() {
   const { data, isPending, error } = useComprasDirectas()
   const [estado, setEstado] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
+
+  /*
+    RECIBIR DESDE AQUÍ, QUE ES DONDE SE LEE QUE FALTA.
+
+    Lo preguntó el usuario nada más verlo: «si el estatus es pagada, falta
+    recibirla, ¿cómo se puede recibir o dónde está la opción?». Existía —en
+    Compras › Recepciones— pero había que saberlo, y eso es lo mismo que no
+    existir para quien acaba de leer «falta recibirla» en esta pantalla.
+
+    Se abre el MISMO modal que usa Recepciones, no una copia: si el día de
+    mañana recibir pide un dato más, lo pide en los dos sitios o en ninguno.
+
+    Y se pide INVENTARIO en escritura, igual que allí. Recibir mueve existencias:
+    el permiso no es de quien mira las compras, es de quien responde del almacén.
+  */
+  const [recibiendo, setRecibiendo] = useState<Orden | null>(null)
+  const { puede } = useMisPermisos()
+  const puedeRecibir = puede('INVENTARIO', 'ESCRITURA')
 
   /*
     El filtro se aplica aquí y no en la consulta a propósito: son 45 órdenes y
@@ -164,7 +193,8 @@ export function HistorialDirectas() {
                     <th className="px-3 py-3 font-medium">Proveedor</th>
                     <th className="px-3 py-3 font-medium">Estatus</th>
                     <th className="px-3 py-3 text-right font-medium">Total</th>
-                    <th className="px-5 py-3 font-medium">Material</th>
+                    <th className="px-3 py-3 font-medium">Material</th>
+                    <th className="px-5 py-3 text-right font-medium" />
                   </tr>
                 </thead>
                 <tbody>
@@ -192,7 +222,7 @@ export function HistorialDirectas() {
                         <td className="text-ink/85 tabular px-3 py-3 text-right font-medium whitespace-nowrap">
                           {dinero('USD', o.total_usd)}
                         </td>
-                        <td className="px-5 py-3 text-xs whitespace-nowrap">
+                        <td className="px-3 py-3 text-xs whitespace-nowrap">
                           {o.recibida_en ? (
                             <span className="text-ink/70">{fechaHora(o.recibida_en)}</span>
                           ) : (
@@ -214,6 +244,20 @@ export function HistorialDirectas() {
                             })()
                           )}
                         </td>
+                        <td className="px-5 py-3 text-right">
+                          {/* Solo donde tiene sentido: una recibida no se
+                              recibe otra vez, y una cancelada tampoco. */}
+                          {puedeRecibir && !o.recibida_en && PENDIENTES.has(o.estado) ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              icon={<Truck />}
+                              onClick={() => setRecibiendo(o)}
+                            >
+                              Recibir
+                            </Button>
+                          ) : null}
+                        </td>
                       </tr>
                     )
                   })}
@@ -222,6 +266,10 @@ export function HistorialDirectas() {
             </div>
           </Card>
         </>
+      ) : null}
+
+      {recibiendo ? (
+        <ModalRecepcion abierto onCerrar={() => setRecibiendo(null)} orden={recibiendo} />
       ) : null}
 
       {data && filtradas.length === 0 ? (
