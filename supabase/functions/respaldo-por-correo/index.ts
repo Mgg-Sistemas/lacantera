@@ -262,8 +262,20 @@ async function enviarElProgramado(sistema: NonNullable<ReturnType<typeof comoElS
     const hoy = new Date().toISOString().slice(0, 10)
     await enviarCorreo({
       funcion: `${FUNCION}-programado`,
-      // Sin persona detrás: el tope por hora se cuenta contra el propio sistema.
-      usuarioId: '00000000-0000-0000-0000-000000000000',
+      /*
+        NULO Y NO UN IDENTIFICADOR INVENTADO.
+
+        Iba con `00000000-0000-0000-0000-000000000000` y la fila no entraba:
+        `correos_enviados.usuario_id` tiene clave foránea contra los usuarios
+        de verdad. El correo SÍ salía
+        —esto se escribe después de que el servicio lo acepte— pero no quedaba
+        constancia, que es justo de donde lee el semáforo de la pantalla.
+
+        Nulo es además la marca que ya usa la casa para «lo hizo el sistema»,
+        la misma que la auditoría. Un identificador inventado era una tercera
+        forma de decir lo mismo, y encima una que la base no admitía.
+      */
+      usuarioId: null,
       admin: sistema,
       to: [destino.correo],
       subject: `Respaldo mensual de la base · ${hoy}`,
