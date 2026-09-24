@@ -7221,6 +7221,28 @@ El botón **Reporte**: un período y, si se quiere, una sola persona. Sale con e
 
 **No alimenta la nómina.** Las horas se ven y se imprimen, y ahí terminan: las faltas y las horas extra se siguen cargando en Nómina › Novedades. Si algún día conviene que salgan de aquí, es una decisión aparte. Tampoco calcula retardos ni amonestaciones.
 
+### 23.9 Los visitantes
+
+**Existe desde el 24 de septiembre de 2026.** Gente de afuera que entra a la cantera —un chofer de otra empresa, un inspector, un cliente que viene a ver el material, un técnico— y que no está en la nómina ni tiene carnet. La tarjeta **Visitantes**, debajo de **Hoy**, es donde se les marca la entrada y la salida. Usa el mismo permiso del módulo: quien marca al personal marca visitantes; quien anula jornadas anula visitas.
+
+**El visitante se registra una vez; después solo se le marca.** Cada persona de afuera está una sola vez en la lista de **Conocidos**, con su nombre, cédula, empresa y teléfono. Cada vez que viene, se le busca y se le marca la entrada: sus datos no se vuelven a escribir. Y la visita sigue la misma idea que la jornada: una fila con la entrada y la salida juntas; sin salida, **sigue adentro**, y no se cierra sola.
+
+| Qué | Cómo |
+| --- | --- |
+| **Marcar entrada** | El botón de la tarjeta. Se busca al visitante por nombre, cédula, empresa o teléfono; debajo dice cuántas veces ha venido y cuándo fue la última. Se agrega, si se quiere, **a quién visita** del personal, el motivo, la placa del vehículo y una nota. Con la **entrada vacía, la hora la pone el sistema** en ese momento; se llena solo para cargar una visita de antes, con su salida si ya se fue |
+| **Es nuevo: registrarlo** | Si no aparece en la búsqueda, es la primera vez que viene. Ese enlace abre los datos de la persona en la misma ventana; se llenan y se pulsa **Registrar y marcar entrada**. Queda registrado y adentro de una vez |
+| **Del directorio** | Si el visitante ya está en **Contactos**, se elige arriba y se rellenan solos el nombre, la cédula, la empresa y el teléfono. Solo lo ve quien tiene lectura en Contactos; los demás escriben todo a mano |
+| **Salida** | Al lado de cada persona que está adentro. La hora la pone el sistema ahora mismo. Si se fue antes y nadie lo anotó, la casilla **poner la hora real** deja escribirla |
+| **Conocidos** | La lista de todos los que han venido, con cuántas visitas lleva cada uno. Desde ahí se **editan** los datos de la persona, que cambian en todas sus visitas, y se deja **inactivo** al que no debe volver a entrar: a un inactivo no se le puede marcar entrada hasta activarlo. También se puede registrar a alguien sin marcarle entrada todavía |
+| **Corregir** y **Anular** | En la lista de visitas del día elegido en el calendario, como con las jornadas: corregir cambia las horas, el motivo o la persona, y queda anotado quién lo hizo; anular pide motivo y control total, y no borra |
+| **Excel del mes** | Saca las visitas del mes que muestra el calendario, una por fila, con todas sus columnas |
+
+<p class="regla"><strong>Los repetidos los decide el sistema.</strong> Al registrar o editar a un visitante, si otro ya tiene esa cédula o ese teléfono, no se guarda y el aviso dice quién: <em>Ya existe «PEDRO VISITANTE» con la cédula V-12345678</em>. El teléfono se compara por sus dígitos, sin el 58 ni el 0 de adelante, así que 0414-1234567 y +58 414 1234567 son el mismo. Si de verdad es otra persona, aparece la casilla <strong>Es otra persona: registrarlo igual</strong>; marcarla es decir que se miró, y entonces pasa. Y si la cédula o el teléfono coinciden con alguien del directorio de Contactos, el visitante queda enlazado a ese contacto solo: es la misma persona vista desde dos módulos.</p>
+
+**La misma persona no puede estar adentro dos veces.** Si sigue adentro y se le intenta marcar otra entrada, el aviso dice desde qué hora, y hay que registrarle la salida primero. Las visitas de otros días que quedaron sin salida aparecen en la misma lista de **Adentro ahora**, con la marca amarilla **Sin salida**, para que se cierren con la hora real.
+
+Los visitantes **no entran al calendario del personal, ni al reporte de asistencia, ni a la nómina**: son otra tabla, y se sacan por su propio Excel.
+
 ## 24. Contactos
 
 **Administración › Contactos**
