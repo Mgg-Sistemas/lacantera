@@ -17,8 +17,10 @@ import {
   ESTADOS_CIVILES,
   FRECUENCIAS,
   GENEROS,
+  GRADOS_INSTRUCCION,
   GRUPOS_SANGUINEOS,
   JORNADAS,
+  TIPOS_CUENTA,
   useEmpleados,
   useGuardarEmpleado,
 } from '@/lib/api/nomina'
@@ -73,8 +75,14 @@ const vacio = {
   forma_pago: 'TRANSFERENCIA',
   banco: '',
   numero_cuenta: '',
+  tipo_cuenta: '',
   telefono_pago: '',
   telefono: '',
+  grado_instruccion: '',
+  experiencia_empresa: '',
+  experiencia_cargo: '',
+  experiencia_tiempo: '',
+  experiencia_motivo_retiro: '',
   activo: true,
   nota: '',
 }
@@ -129,8 +137,14 @@ export function FormularioTrabajador() {
       forma_pago: quien.forma_pago,
       banco: quien.banco ?? '',
       numero_cuenta: quien.numero_cuenta ?? '',
+      tipo_cuenta: quien.tipo_cuenta ?? '',
       telefono_pago: quien.telefono_pago ?? '',
       telefono: quien.telefono ?? '',
+      grado_instruccion: quien.grado_instruccion ?? '',
+      experiencia_empresa: quien.experiencia_empresa ?? '',
+      experiencia_cargo: quien.experiencia_cargo ?? '',
+      experiencia_tiempo: quien.experiencia_tiempo ?? '',
+      experiencia_motivo_retiro: quien.experiencia_motivo_retiro ?? '',
       activo: quien.activo,
       nota: quien.nota ?? '',
     })
@@ -444,6 +458,53 @@ export function FormularioTrabajador() {
                     onChange={(e) => cambiar({ dias_utilidades: e.target.value })}
                   />
                 </div>
+
+                {/*
+                  CON QUÉ LLEGA — lo que la planilla de la entrevista pregunta y
+                  hasta hoy se quedaba en el papel.
+
+                  Nada de esto es obligatorio: hay fichas de gente que entró hace
+                  años y de quien nadie guardó una entrevista. Un campo vacío aquí
+                  quiere decir «no se sabe», que es distinto de «no tiene» y por eso
+                  no se rellena con nada.
+                */}
+                <div className="mt-6">
+                  <p className="text-ink/45 font-mono text-[11px] tracking-wider uppercase">
+                    Con qué llega
+                  </p>
+                  <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <Select
+                      label="Grado de instrucción"
+                      vacio="Sin indicar"
+                      value={f.grado_instruccion}
+                      onChange={(e) => cambiar({ grado_instruccion: e.target.value })}
+                      opciones={GRADOS_INSTRUCCION}
+                    />
+                    <Input
+                      label="Última empresa donde trabajó"
+                      value={f.experiencia_empresa}
+                      onChange={(e) => cambiar({ experiencia_empresa: e.target.value })}
+                    />
+                    <Input
+                      label="Cargo desempeñado"
+                      value={f.experiencia_cargo}
+                      onChange={(e) => cambiar({ experiencia_cargo: e.target.value })}
+                    />
+                    {/* Texto y no un número de meses: en la entrevista se contesta
+                        «dos años y pico», y convertirlo sería inventar precisión. */}
+                    <Input
+                      label="Tiempo en el cargo"
+                      placeholder="2 años"
+                      value={f.experiencia_tiempo}
+                      onChange={(e) => cambiar({ experiencia_tiempo: e.target.value })}
+                    />
+                    <Input
+                      label="Motivo de retiro"
+                      value={f.experiencia_motivo_retiro}
+                      onChange={(e) => cambiar({ experiencia_motivo_retiro: e.target.value })}
+                    />
+                  </div>
+                </div>
               </>
             ),
           },
@@ -516,6 +577,16 @@ export function FormularioTrabajador() {
                         label="Número de cuenta"
                         value={f.numero_cuenta}
                         onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
+                      />
+                      {/* El banco rebota una transferencia mandada como corriente a
+                          una cuenta de ahorro, y el que se entera es el trabajador
+                          el día de pago. */}
+                      <Select
+                        label="Tipo de cuenta"
+                        vacio="Sin indicar"
+                        value={f.tipo_cuenta}
+                        onChange={(e) => cambiar({ tipo_cuenta: e.target.value })}
+                        opciones={TIPOS_CUENTA}
                       />
                     </>
                   ) : null}

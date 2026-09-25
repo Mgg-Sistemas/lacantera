@@ -61,8 +61,34 @@ export interface Empleado {
   forma_pago: 'TRANSFERENCIA' | 'PAGO_MOVIL' | 'EFECTIVO' | 'BINANCE'
   banco: string | null
   numero_cuenta: string | null
+  /**
+   * Corriente o de ahorro.
+   *
+   * No es un adorno del formulario: el banco rebota una transferencia mandada
+   * como corriente a una cuenta de ahorro, y quien se entera es el trabajador
+   * el día de pago. Nulo mientras nadie lo haya preguntado.
+   */
+  tipo_cuenta: 'CORRIENTE' | 'AHORRO' | null
   telefono_pago: string | null
   telefono: string | null
+  /** Hasta dónde estudió. Nulo mientras no se sepa. */
+  grado_instruccion: 'PRIMARIA' | 'BACHILLER' | 'TSU' | 'UNIVERSITARIO' | 'POSTGRADO' | null
+  /*
+    LA ÚLTIMA EXPERIENCIA LABORAL, EN CUATRO CAMPOS Y NO EN UNA TABLA.
+
+    Los familiares y las condiciones de salud sí tienen tabla propia, porque
+    son varios. Aquí se pregunta UNA —la última— y una tabla para una fila por
+    persona es una junta que se paga en cada consulta a cambio de nada. El día
+    que la empresa quiera el historial entero, eso es otra cosa.
+
+    El tiempo es texto y no un número de meses: en la entrevista se contesta
+    «dos años y pico» o «desde 2019», y convertirlo aquí sería inventarse una
+    precisión que nadie dio.
+  */
+  experiencia_empresa: string | null
+  experiencia_cargo: string | null
+  experiencia_tiempo: string | null
+  experiencia_motivo_retiro: string | null
   activo: boolean
   /**
    * Contratado por día o por proyecto puntual.
@@ -140,6 +166,27 @@ export const JORNADAS = [
   { valor: 'DIURNA', etiqueta: 'Diurna — 8 h' },
   { valor: 'NOCTURNA', etiqueta: 'Nocturna — 7 h' },
   { valor: 'MIXTA', etiqueta: 'Mixta — 7,5 h' },
+]
+
+export const TIPOS_CUENTA = [
+  { valor: 'CORRIENTE', etiqueta: 'Corriente' },
+  { valor: 'AHORRO', etiqueta: 'Ahorro' },
+]
+
+/*
+  Los cinco escalones que usa el papel, y ni uno más.
+
+  Se quedaron fuera «técnico medio» y «maestría» porque no son escalones
+  distintos sino nombres de otros: el técnico medio sale del bachillerato y la
+  maestría es un postgrado. Una lista con sinónimos se contesta distinto según
+  quién entreviste, y entonces no se puede contar.
+*/
+export const GRADOS_INSTRUCCION = [
+  { valor: 'PRIMARIA', etiqueta: 'Primaria' },
+  { valor: 'BACHILLER', etiqueta: 'Bachiller' },
+  { valor: 'TSU', etiqueta: 'T.S.U.' },
+  { valor: 'UNIVERSITARIO', etiqueta: 'Universitario' },
+  { valor: 'POSTGRADO', etiqueta: 'Postgrado' },
 ]
 
 
@@ -768,6 +815,21 @@ export function useGuardarEmpleado() {
       // como cadena vacía y la función revienta con un error de tipo que no le
       // dice nada a quien solo quería guardar una ficha.
       p_tabulador_id: e.tabulador_id ? Number(e.tabulador_id) : null,
+      /*
+        LOS SEIS DE LA PLANILLA, SIEMPRE Y CON LA MISMA REGLA QUE EL RIF.
+
+        Se mandan aunque estén vacíos, por lo mismo que se explica arriba: la
+        base distingue no recibirlo —no lo toca— de recibirlo en blanco —lo
+        borra—. Esta pantalla los conoce, así que manda lo que tenga el
+        formulario; la del compañero, que no los conoce, no los manda y por eso
+        no los pisa.
+      */
+      p_tipo_cuenta: e.tipo_cuenta ?? '',
+      p_grado_instruccion: e.grado_instruccion ?? '',
+      p_experiencia_empresa: e.experiencia_empresa ?? '',
+      p_experiencia_cargo: e.experiencia_cargo ?? '',
+      p_experiencia_tiempo: e.experiencia_tiempo ?? '',
+      p_experiencia_motivo_retiro: e.experiencia_motivo_retiro ?? '',
     }),
   )
 }
