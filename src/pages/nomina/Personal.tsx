@@ -41,6 +41,8 @@ import { useSesion } from '@/lib/sesion'
 import { Visor } from '@/components/Visor'
 import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
 import { armarPlanillaDeIngreso } from '@/lib/ficha/planillaIngresoPdf'
+import type { ApartadoImpreso } from '@/lib/ficha/planillaIngresoPdf'
+import { ModalPlanillaDeIngreso } from './ModalPlanillaDeIngreso'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { dinero, documento, fecha } from '@/lib/formato'
 
@@ -268,17 +270,33 @@ export function Personal() {
     quién hay, ve que falta gente, y de ahí va a buscar. El papel está donde se
     decide que hace falta.
   */
-  const sacarPlanilla = async (conHuella: boolean) => {
+  const sacarPlanilla = async (conHuella: boolean, requisitos: ApartadoImpreso[]) => {
     setPreguntandoHuella(false)
     setArmando(true)
     try {
-      const pdf = await armarPlanillaDeIngreso({ empresa: empresaDelPapel(empresa), conHuella })
+      const pdf = await armarPlanillaDeIngreso({
+        empresa: empresaDelPapel(empresa),
+        conHuella,
+        requisitos,
+      })
+      /*
+        LA BAJADA CUENTA LAS HOJAS DE VERDAD.
+
+        Decía «dos hojas» a secas, y con la de documentos son tres. Se calcula
+        en vez de escribirse porque la tercera depende de lo que se marcó: si no
+        se marcó nada, siguen siendo dos y el papel no miente.
+      */
+      const hojas = requisitos.length > 0 ? 'tres hojas' : 'dos hojas'
       setVista({
         ...pdf,
         titulo: 'Planilla de ingreso',
-        descripcion: conHuella
-          ? 'En blanco, para llenar a mano en la entrevista · dos hojas · con recuadro para la huella'
-          : 'En blanco, para llenar a mano en la entrevista · dos hojas',
+        descripcion: [
+          'En blanco, para llenar a mano en la entrevista',
+          hojas,
+          conHuella ? 'con recuadro para la huella' : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       })
     } finally {
       setArmando(false)
@@ -770,32 +788,22 @@ export function Personal() {
         detrás: son dos caminos y los dos llevan al mismo sitio, así que
         obligar a marcar y luego confirmar sería un clic de más para nada.
       */}
-      <Modal
+      {/*
+        Y DESDE EL 25/09 ADEMÁS LLEVA LA HOJA DE DOCUMENTOS.
+
+        El modal se fue a su propio archivo cuando ganó eso. Aquí solo quedaba
+        una pregunta de dos botones; ahora tiene dos caras —la pregunta, y la
+        lista de qué se le pide al aspirante, que la empresa edita— y eso ya no
+        es un trozo de esta pantalla.
+
+        Lo que NO cambió, y es lo que hay que cuidar si alguien lo toca: al
+        abrirlo se sigue viendo la pregunta de la huella y nada más.
+      */}
+      <ModalPlanillaDeIngreso
         abierto={preguntandoHuella}
         onCerrar={() => setPreguntandoHuella(false)}
-        titulo="Planilla de ingreso"
-        descripcion="Sale en blanco, para llenarla a mano durante la entrevista."
-        ancho="sm"
-        acciones={
-          <>
-            <Button variant="ghost" onClick={() => setPreguntandoHuella(false)}>
-              Cancelar
-            </Button>
-            <Button variant="outline" onClick={() => void sacarPlanilla(false)}>
-              Sin huella
-            </Button>
-            <Button onClick={() => void sacarPlanilla(true)}>Con huella</Button>
-          </>
-        }
-      >
-        <p className="text-ink/70 text-sm leading-relaxed">
-          ¿Le pones un recuadro para la <strong>huella del pulgar</strong> al lado de las firmas?
-        </p>
-        <p className="text-ink/55 mt-2 text-sm leading-relaxed">
-          Sirve cuando la firma de alguien no sale igual dos veces. Si no hace falta, el pie queda
-          con las dos rayas de firma y nada más.
-        </p>
-      </Modal>
+        onEmitir={(conHuella, requisitos) => void sacarPlanilla(conHuella, requisitos)}
+      />
 
       <Visor
         abierto={vista !== null}

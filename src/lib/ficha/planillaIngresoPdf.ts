@@ -55,7 +55,7 @@
  */
 
 import { logoComoImagen } from './logo'
-import { ABAJO, ANCHO_UTIL, DER, IZQ } from './hoja'
+import { ABAJO, ajustar, ANCHO_UTIL, DER, IZQ } from './hoja'
 import {
   type EmpresaPapel,
   GRIS,
@@ -109,6 +109,21 @@ function casilla(doc: Doc, x: number, y: number, texto: string): number {
   doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(TINTA)
   doc.text(texto, x + 4.5, y)
   return x + 4.5 + doc.getTextWidth(texto) + 4
+}
+
+/**
+ * Un renglón de la hoja de requisitos: la casilla vacía y el documento al lado.
+ *
+ * La casilla es más grande que la de `casilla()` —cuatro milímetros frente a
+ * tres— porque estas se marcan con un bolígrafo encima de un mostrador y no con
+ * el papel apoyado en una mesa. Y el nombre va en tinta normal y no en gris: es
+ * lo que la persona va a leer para saber qué buscar en su casa.
+ */
+function renglonDeRequisito(doc: Doc, x: number, y: number, nombre: string, ancho: number) {
+  doc.setDrawColor('#9c9690').setLineWidth(0.35)
+  doc.rect(x, y - 3.2, 4, 4)
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(TINTA)
+  doc.text(ajustar(doc, nombre, ancho - 6.5), x + 6.5, y)
 }
 
 /** Un rótulo con su fila de casillas debajo. Para las listas cerradas. */
@@ -212,10 +227,24 @@ function pieFirmado(doc: Doc, conHuella: boolean): void {
   }
 }
 
+/** Un grupo de la hoja de requisitos: el título y lo que cuelga de él. */
+export interface ApartadoImpreso {
+  nombre: string
+  requisitos: string[]
+}
+
 export interface DatosPlanilla {
   empresa: EmpresaPapel
   /** Si el pie lleva recuadro para la huella del pulgar. Se elige al imprimir. */
   conHuella: boolean
+  /**
+   * Los requisitos de documentación, agrupados y ya filtrados por quien imprime.
+   *
+   * VACÍO ES UNA RESPUESTA VÁLIDA y no un error: sin requisitos no hay tercera
+   * hoja y la planilla sale como salía. Así el día que alguien vacíe la lista no
+   * se imprime una hoja con un título y nada debajo.
+   */
+  requisitos?: ApartadoImpreso[]
 }
 
 export async function armarPlanillaDeIngreso(
@@ -404,6 +433,97 @@ export async function armarPlanillaDeIngreso(
   /*
     EL PIE SE ESCRIBE UNA SOLA VEZ, AL FINAL.
 
+    LA TERCERA HOJA SOLO EXISTE SI HAY QUÉ PONER EN ELLA.
+
+    Es la que se lleva el prospecto: le dice qué documentos traer la próxima vez.
+    Va después de la planilla y no antes porque la planilla se llena delante del
+    entrevistador y esto se lee en casa.
+
+    LOS TÍTULOS VACÍOS NO SE IMPRIMEN. Un título sin requisitos debajo es una
+    promesa que el papel no cumple —quien lo lea buscará la lista y no la habrá—,
+    y además es la forma que tiene quien imprime de dejar fuera un grupo entero
+    sin borrarlo: desmarca sus renglones y el título se va con ellos.
+  */
+  const grupos = (d.requisitos ?? []).filter((g) => g.requisitos.length > 0)
+
+  if (grupos.length > 0) {
+    /*
+      CON BANDA DE TÍTULO, Y AQUÍ SÍ SE PAGAN LOS VEINTIÚN MILÍMETROS.
+
+      La hoja 2 renuncia a la banda porque es la continuación de la 1 y el pie ya
+      dice de qué papel salió. Esta no: **se separa del taco y se la lleva otra
+      persona**. Sin banda, puesta al lado de la planilla, parecían dos papeles
+      de dos empresas — y el aspirante recibe una y entrega la otra el mismo día.
+
+      Y SE LLAMA «CONSIGNACIÓN» Y NO «REQUISITOS». Lo que se lleva es la lista de
+      lo que va a consignar si queda; «requisitos» es como lo llamamos nosotros
+      por dentro. El código y el modal siguen diciendo requisitos: lo que cambia
+      es lo que lee quien no trabaja aquí.
+    */
+    doc.addPage()
+    y =
+      tituloDocumento(
+        doc,
+        membrete(doc, logo, { empresa: d.empresa }),
+        'Hoja de consignación de documentos',
+      ) + 8
+
+    /*
+      ENTRE LA BANDA Y EL PRIMER APARTADO NO VA NADA, Y COSTÓ CINCO REDACCIONES
+      DESCUBRIR QUE LA BUENA ERA NINGUNA.
+
+      Aquí hubo, por este orden: una frase que mandaba marcar a quien solo lee;
+      otra que explicaba quién llena el papel; un rótulo «Documentos a
+      consignar»; y una línea de apoyo diciendo que los marcados son los que hay
+      que entregar. Las cuatro decían, con otras palabras, lo que la banda ya
+      dice en tres: HOJA DE CONSIGNACIÓN DE DOCUMENTOS.
+
+      El título nombra el papel y explica qué se hace con él. Lo que se ponga
+      debajo o lo repite o narra un procedimiento en el que quien lee no
+      participa — el aspirante tuvo la hoja delante mientras se marcaba.
+
+      Así que el primer rótulo del papel es el del primer apartado de verdad.
+    */
+    /*
+      DOS COLUMNAS, Y SE CAMBIA DE HOJA ANTES DE PERDER UN RENGLÓN.
+
+      Con los once nombres que trae el sistema esto entra de sobra en una hoja.
+      Pero la lista la edita la empresa y va a crecer, así que el corte está
+      puesto: cuando el siguiente renglón no cabe, se abre otra hoja en vez de
+      pintarlo encima del pie. Un requisito que no se imprime es un documento
+      que el prospecto no trae.
+    */
+    const TECHO = ABAJO - 14
+    const PASO = 7
+
+    for (const grupo of grupos) {
+      // El título y su primer renglón no se separan: un título al pie de una
+      // hoja con su lista en la siguiente se lee como dos cosas distintas.
+      if (y + 6 + PASO > TECHO) {
+        doc.addPage()
+        y = membrete(doc, logo, { empresa: d.empresa }) + 8
+      }
+
+      y = seccion(doc, y, grupo.nombre)
+      y += 1
+
+      for (let i = 0; i < grupo.requisitos.length; i += 2) {
+        if (y > TECHO) {
+          doc.addPage()
+          y = membrete(doc, logo, { empresa: d.empresa }) + 8
+        }
+        renglonDeRequisito(doc, IZQ, y, grupo.requisitos[i], ANCHO_COL)
+        if (grupo.requisitos[i + 1]) {
+          renglonDeRequisito(doc, COL2, y, grupo.requisitos[i + 1], ANCHO_COL)
+        }
+        y += PASO
+      }
+
+      y += 4
+    }
+  }
+
+  /*
     `pieDePagina` recorre TODAS las páginas ya hechas en cada llamada. Se
     llamaba dos veces —una por hoja, con «Hoja 1 de 2» y «Hoja 2 de 2» escritos
     a mano— y la segunda pasada estampaba «Hoja 2 de 2» también en la primera,

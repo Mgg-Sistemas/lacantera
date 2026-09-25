@@ -172,12 +172,26 @@ export function membrete(
     /** Los bordes, si la hoja no es A4 vertical. */
     bordes?: Bordes
     /**
-     * Si se imprime el domicilio debajo del RIF. Solo la factura lo lleva.
+     * Si se imprime el domicilio debajo del RIF. **Por omisión, sí.**
      *
-     * Angélica, 18/09/2026, sobre la nota de entrega: «quítame la dirección del
-     * RIF, solo que salga el número de RIF». Vale para todos los papeles menos
-     * la factura, que por norma del SENIAT tiene que decir el domicilio fiscal
-     * de quien la emite.
+     * ESTO REVOCA UNA DECISIÓN ANTERIOR, Y SE DICE PARA QUE NADIE LA REPROPONGA
+     * CREYENDO QUE SIGUE EN PIE.
+     *
+     * Angélica, el 18/09/2026, sobre la nota de entrega: «quítame la dirección
+     * del RIF, solo que salga el número de RIF». Se hizo, y durante una semana
+     * el domicilio salió solo en la factura, que lo lleva por norma del SENIAT.
+     *
+     * El 25/09/2026 la dirección de Sistemas pidió lo contrario y para todos:
+     * dirección y correo en cada papel que emite la empresa. Se consultó el
+     * choque antes de tocar nada —no se resuelve un encargo pisando otro sin
+     * decirlo— y la decisión fue **en los veintidós, sin excepciones**.
+     *
+     * Así que el valor por omisión se invierte: antes había que pedir el
+     * domicilio y ahora hay que renunciar a él. Ningún papel renuncia hoy.
+     *
+     * LOS QUE NO LO LLEVAN, Y NO ES OLVIDO: el carnet mide 54 × 86 mm y no
+     * tiene membrete —lleva la forma y el RIF en un renglón de 3 mm—, y el
+     * parte diario no es un PDF sino un texto que se pega en un mensaje.
      */
     conDomicilio?: boolean
   },
@@ -269,10 +283,23 @@ export function membrete(
   anotar(y + 10, identidadImpresa)
 
   let bajo = y + 10
-  if (d.conDomicilio && d.empresa.domicilio) {
+  // Se pide para NO llevarlo, no para llevarlo. Ver `conDomicilio` arriba.
+  if ((d.conDomicilio ?? true) && d.empresa.domicilio) {
     doc.setFontSize(6.2)
     const lineas = (
       doc.splitTextToSize(d.empresa.domicilio.toUpperCase(), ANCHO_NOMBRE) as string[]
+      /*
+        DOS RENGLONES, Y EL TERCERO SE PERDERÍA EN SILENCIO.
+
+        Medido el 25/09 con el domicilio real de la empresa, 121 caracteres:
+        caben en dos. Con logo, 85,5 y 65,0 mm en un hueco de 88; sin logo,
+        104,8 y 45,8 en uno de 105 — **ahí sobran dos décimas de milímetro**.
+
+        Hasta hoy este recorte solo alcanzaba a la factura, que era el único
+        papel con domicilio. Desde que sale en los veintidós, alcanza a los
+        veintidós: si alguien alarga la dirección en Configuración, el final
+        se va sin que nadie se entere.
+      */
     ).slice(0, 2)
     doc.text(lineas, TEXTO, y + 13.4, { lineHeightFactor: 1.3 })
     lineas.forEach((l, i) => anotar(y + 13.4 + i * 2.4, l))
