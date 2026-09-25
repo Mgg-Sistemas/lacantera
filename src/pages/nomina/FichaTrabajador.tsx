@@ -45,6 +45,8 @@ import {
   useCuentasSinFicha,
   fichaDelInforme,
   useACargoDe,
+  GRADOS_INSTRUCCION,
+  TIPOS_CUENTA,
 } from '@/lib/api/nomina'
 import type { Empleado } from '@/lib/api/nomina'
 import { TarjetaFirma } from '@/components/TarjetaFirma'
@@ -98,6 +100,10 @@ type Exportable = 'pdf' | 'frente' | 'reverso' | 'carnet-pdf'
 
 const etiqueta = (lista: Array<{ valor: string; etiqueta: string }>, v: string | null) =>
   lista.find((o) => o.valor === v)?.etiqueta ?? '—'
+
+/** Como la de arriba, pero calla si no hay valor: para lo que se une con puntos. */
+const etiquetaSiHay = (lista: Array<{ valor: string; etiqueta: string }>, v: string | null) =>
+  v ? (lista.find((o) => o.valor === v)?.etiqueta ?? null) : null
 
 /** Las secciones de la ficha. Las mismas en pantalla y en el PDF: si se
  *  escribieran dos veces, tarde o temprano dirían cosas distintas. */
@@ -164,8 +170,15 @@ function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] 
         {
           clave: 'Cuenta',
           valor:
-            [e.banco, e.numero_cuenta ?? e.telefono_pago].filter(Boolean).join(' · ') ||
-            'No aplica',
+            [
+              e.banco,
+              e.numero_cuenta ?? e.telefono_pago,
+              // Solo si hay número de cuenta: en un pago móvil el tipo de cuenta
+              // no significa nada, y ponerlo ahí haría dudar de si falta un dato.
+              e.numero_cuenta ? etiquetaSiHay(TIPOS_CUENTA, e.tipo_cuenta) : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || 'No aplica',
         },
       ],
     },
@@ -177,6 +190,37 @@ function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] 
       campos: [
         { clave: 'Último día trabajado', valor: fecha(e.fecha_egreso) },
         { clave: 'Motivo', valor: e.motivo_egreso ?? '—', ancho: true },
+      ],
+    })
+  }
+
+  /*
+    CON QUÉ LLEGA — y solo si consta algo.
+
+    Se añade con un if, como las de egreso y observaciones, en vez de ir fija
+    entre las de arriba. De las fichas que ya existen ninguna tiene esto: una
+    sección fija enseñaría cinco renglones con una raya cada uno, y cinco rayas
+    seguidas no se leen como «no se sabe» sino como que la pantalla está rota.
+
+    Va antes de las observaciones para que la nota siga siendo lo último.
+  */
+  const traeDeAntes = [
+    e.grado_instruccion,
+    e.experiencia_empresa,
+    e.experiencia_cargo,
+    e.experiencia_tiempo,
+    e.experiencia_motivo_retiro,
+  ].some(Boolean)
+
+  if (traeDeAntes) {
+    secciones.push({
+      titulo: 'Con qué llega',
+      campos: [
+        { clave: 'Grado de instrucción', valor: etiqueta(GRADOS_INSTRUCCION, e.grado_instruccion) },
+        { clave: 'Última empresa', valor: e.experiencia_empresa ?? '—' },
+        { clave: 'Cargo desempeñado', valor: e.experiencia_cargo ?? '—' },
+        { clave: 'Tiempo en el cargo', valor: e.experiencia_tiempo ?? '—' },
+        { clave: 'Motivo de retiro', valor: e.experiencia_motivo_retiro ?? '—', ancho: true },
       ],
     })
   }
