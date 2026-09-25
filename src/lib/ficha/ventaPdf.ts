@@ -711,7 +711,15 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
   const rotulo = ROTULOS[d.tipo]
   const cabecera = membrete(doc, logo, {
     empresa: d.empresa,
-    conDomicilio: d.tipo === 'FACTURA',
+    /*
+      Ya no hace falta pedirlo, y dejarlo sería PEOR que no ponerlo.
+
+      Esta línea decía `conDomicilio: d.tipo === 'FACTURA'`, que con el valor
+      por omisión invertido el 25/09 pasaría a significar lo contrario de lo que
+      quería decir: a la cotización y a la nota de entrega les QUITARÍA la
+      dirección que ahora tienen que llevar. Se quita la línea y las tres se
+      comportan igual.
+    */
     datos: [
       [rotulo.numero, d.numero],
       ['FECHA', fechaCorta(d.fecha)],

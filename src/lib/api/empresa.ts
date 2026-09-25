@@ -364,15 +364,41 @@ export function diasParaVencer(vence: string | null): number | null {
  * es peor que uno con el nombre del registro: es la misma empresa, y el dato
  * de la base solo puede diferir si alguien lo editó en Configuración.
  */
-export function empresaDelPapel(e: Empresa | null | undefined): EmpresaPapel {
-  const region = [e?.estado, e?.zona_postal].filter(Boolean).join(' ')
-  const domicilio = [e?.domicilio_fiscal, e?.ciudad, region].filter(Boolean).join(', ')
+/**
+ * LA DIRECCIÓN QUE SE IMPRIME ESTÁ FIJADA, Y NO ES UN DESCUIDO.
+ *
+ * Decisión expresa del usuario, 25/09/2026: todos los papeles dicen esta
+ * dirección, **incluida la factura de venta**. Se le señaló que la factura es el
+ * caso delicado —el domicilio fiscal impreso es lo que mira un fiscal del
+ * SENIAT— y con eso delante decidió que sí, todos.
+ *
+ * QUIEN LEA ESTO DENTRO DE SEIS MESES VA A QUERER «ARREGLARLO», y por buenas
+ * razones: el comentario de `empresaDelPapel`, dos párrafos más abajo, cuenta
+ * que los cuatro campos de la ficha existen precisamente porque antes se
+ * imprimía un domicilio incompleto. Esto no deshace aquello.
+ *
+ * LA FICHA NO SE TOCA. `domicilio_fiscal`, `ciudad`, `estado` y `zona_postal`
+ * siguen en la base con el domicilio real, se siguen editando en Configuración
+ * y se siguen guardando. Lo único que cambia es que el papel dejó de leerlos
+ * para esta línea. El día que se quiera volver atrás, se borra esta constante y
+ * se descomenta el `join` de abajo: no hay dato que recuperar.
+ */
+export const DIRECCION_DEL_PAPEL = 'Vargas - La Guaira'
 
+export function empresaDelPapel(e: Empresa | null | undefined): EmpresaPapel {
+  /*
+    Así se componía hasta el 25/09/2026, y es a lo que se vuelve si un día se
+    deshace la decisión de arriba:
+
+        const region    = [e?.estado, e?.zona_postal].filter(Boolean).join(' ')
+        const domicilio = [e?.domicilio_fiscal, e?.ciudad, region]
+          .filter(Boolean).join(', ')
+  */
   return {
     razonSocial: e?.razon_social || EMPRESA.razonSocial,
     rif: e?.rif || EMPRESA.rif,
     actividad: EMPRESA.actividad,
-    domicilio: domicilio || null,
+    domicilio: DIRECCION_DEL_PAPEL,
     /*
       El correo se cae a la constante, como la razón social y el RIF de arriba.
 

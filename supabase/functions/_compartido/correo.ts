@@ -35,6 +35,16 @@
   esté puesta manda Brevo, y quitarla devuelve el sistema a Resend sin que nadie
   se quede sin correo entre una cosa y la otra.
 
+  RESEND ESTÁ DESCARTADO, Y NO SE VUELVE A PROPONER.
+
+  No es que se prefiriera Brevo: la dirección de Sistemas denegó el uso de
+  Resend, y por eso se volvió a Brevo. Queda escrito aquí porque el código
+  todavía sabe hablar con los dos, y porque Resend admite cuatro veces más
+  adjunto —25 MiB contra 6—: el día que el respaldo deje de caber en un correo,
+  a alguien se le va a ocurrir que la solución es cambiar de servicio.
+
+  No lo es. La solución está en otro sitio: lo que crece no viaja como adjunto.
+
   EL ADJUNTO NO PESA LO MISMO EN LOS DOS. Resend admite 40 MB de payload y Brevo
   10: el respaldo de la base va comprimido y hoy cabe en los dos, pero el tope
   cambia con el servicio para que el error salga aquí, con su explicación, y no
