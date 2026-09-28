@@ -15,6 +15,9 @@ import {
   useVehiculosDeDespacho,
 } from '@/lib/api/transporte'
 import { PageHeader } from '@/components/PageHeader'
+import { RangoDeFechas } from '@/components/RangoDeFechas'
+import { SIN_RANGO } from '@/components/rango'
+import type { Rango } from '@/components/rango'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -133,7 +136,24 @@ function cuentaDelDespacho(s: SolicitudDeDespacho) {
 
 export function NotasDeEntrega() {
   const monedas = useMonedasUsables()
-  const { data, isPending, error } = useNotasEntrega()
+  /*
+    LOS FILTROS DE LA LISTA VIAJAN A LA BASE.
+
+    Christopher, 28/09/2026: «en las notas de salida y de entrega poder buscar
+    una nota en específico». La lista trae las 200 más recientes: filtrar aquí
+    encontraría sólo entre esas, y una nota de hace meses diría «no existe»
+    existiendo. Por eso lo escrito va en la consulta.
+  */
+  const [busca, setBusca] = useState('')
+  const [estado, setEstado] = useState('')
+  const [rango, setRango] = useState<Rango>(SIN_RANGO)
+  const { data, isPending, error } = useNotasEntrega({
+    texto: busca,
+    ...(estado ? { estado } : {}),
+    ...(rango.desde ? { desde: rango.desde } : {}),
+    ...(rango.hasta ? { hasta: rango.hasta } : {}),
+  })
+  const hayFiltros = Boolean(busca.trim() || estado || rango.desde || rango.hasta)
   const { data: clientes } = useClientes(true)
   const { data: precios } = usePrecios()
   const { data: almacenes } = useAlmacenes()
@@ -574,6 +594,39 @@ export function NotasDeEntrega() {
 
       <h2 className="text-ink/85 font-titular mb-2 text-lg">Notas de entrega</h2>
 
+      {/*
+        BUSCAR UNA NOTA, Y NO SÓLO RECORRER LA LISTA.
+
+        Se busca contra todo lo que alguien tiene a mano cuando pregunta por
+        una nota: su número, el cliente, el RIF, la placa, el chofer, el ticket
+        de romana, el NS que respalda y la factura en la que terminó. Es un
+        campo y no seis, porque quien busca no sabe de antemano cuál de esos
+        datos es el que tiene escrito.
+      */}
+      <Card className="mb-4">
+        <div className="grid gap-3 lg:grid-cols-[1fr_minmax(0,13rem)]">
+          <Input
+            label="Buscar una nota"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="NE-2026-0042, el cliente, la placa, el NS o la factura"
+            hint="Busca en todas las notas, no sólo en las que se ven."
+          />
+          <Select
+            label="Estado"
+            value={estado}
+            onChange={(e) => setEstado(e.target.value)}
+            opciones={[
+              { valor: '', etiqueta: 'Cualquiera' },
+              ...Object.entries(ETIQUETA).map(([valor, etiqueta]) => ({ valor, etiqueta })),
+            ]}
+          />
+        </div>
+        <div className="mt-3">
+          <RangoDeFechas valor={rango} onCambio={setRango} />
+        </div>
+      </Card>
+
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
@@ -581,10 +634,14 @@ export function NotasDeEntrega() {
         <Card>
           <Vacio
             icono={<Truck />}
-            titulo="Todavía no ha salido ningún camión"
-            descripcion="Cada despacho se pide y, al aprobarlo, rebaja el patio y vale por sí solo. Si se decide facturarlo, se hace en Facturación y la nota queda enlazada a su factura. Si el patio está en cero, carga primero la producción desde Inventario › Existencias."
+            titulo={hayFiltros ? 'Ninguna nota con eso' : 'Todavía no ha salido ningún camión'}
+            descripcion={
+              hayFiltros
+                ? 'Se buscó en todas las notas, no sólo en las recientes. Revisa que el número esté completo —los papeles llevan NE-2026-0042, con el año y los cuatro dígitos— o quita el estado y las fechas.'
+                : 'Cada despacho se pide y, al aprobarlo, rebaja el patio y vale por sí solo. Si se decide facturarlo, se hace en Facturación y la nota queda enlazada a su factura. Si el patio está en cero, carga primero la producción desde Inventario › Existencias.'
+            }
             accion={
-              puedeDespachar ? (
+              puedeDespachar && !hayFiltros ? (
                 <Button icon={<Truck />} onClick={() => setNuevo(true)}>
                   Pedir despacho
                 </Button>

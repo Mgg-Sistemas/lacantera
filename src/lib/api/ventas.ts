@@ -495,9 +495,45 @@ export async function leerNotaEntregaPorNumero(numero: string): Promise<NotaEntr
   )
 }
 
-export function useNotasEntrega(estado?: string) {
+/*
+  CÓMO SE BUSCA UNA NOTA DE ENTREGA
+
+  Christopher, 28/09/2026: «poder buscar una nota en específico». La lista
+  trae las 200 más recientes, así que filtrar en la pantalla encontraría solo
+  entre esas: una nota de hace meses no llegaría nunca. Por eso lo que se
+  escribe viaja a la BASE.
+
+  Se compara contra todo lo que alguien tiene a mano cuando busca una nota: su
+  número, el cliente y su RIF, la placa, el chofer, el ticket de romana, el NS
+  que respalda y la factura en la que terminó.
+*/
+export interface FiltrosDeNotas {
+  /** Número de nota, cliente, RIF, placa, chofer, ticket, NS o factura. */
+  texto?: string
+  estado?: string
+  desde?: string
+  hasta?: string
+}
+
+const COLUMNAS_QUE_SE_BUSCAN = [
+  'numero',
+  'cliente',
+  'cliente_rif',
+  'vehiculo',
+  'chofer',
+  'ticket_romana',
+  'nota_salida',
+  'factura_numero',
+]
+
+export function useNotasEntrega(filtros: string | FiltrosDeNotas = {}) {
+  const f: FiltrosDeNotas = typeof filtros === 'string' ? { estado: filtros } : filtros
+  // La base guarda el texto en mayúscula y sin tildes (`trg_normalizar`), y
+  // `ilike` no distingue mayúsculas: se compara tal cual se escribió.
+  const texto = (f.texto ?? '').replace(/[,()]/g, ' ').trim()
+
   return useQuery({
-    queryKey: ['ventas', 'notas', estado ?? 'todas'],
+    queryKey: ['ventas', 'notas', f.estado ?? 'todas', texto, f.desde ?? '', f.hasta ?? ''],
     queryFn: async () => {
       let q = supabase
         .from('v_notas_entrega')
@@ -505,7 +541,10 @@ export function useNotasEntrega(estado?: string) {
         .order('fecha', { ascending: false })
         .order('id', { ascending: false })
         .limit(200)
-      if (estado) q = q.eq('estado', estado)
+      if (f.estado) q = q.eq('estado', f.estado)
+      if (f.desde) q = q.gte('fecha', f.desde)
+      if (f.hasta) q = q.lte('fecha', f.hasta)
+      if (texto) q = q.or(COLUMNAS_QUE_SE_BUSCAN.map((c) => `${c}.ilike.%${texto}%`).join(','))
       return desenvolver<NotaEntrega[]>(await q)
     },
   })

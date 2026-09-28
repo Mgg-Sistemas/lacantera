@@ -64,6 +64,17 @@ interface Fuente {
   titulo: (f: Record<string, unknown>) => string
   detalle: (f: Record<string, unknown>) => string | null
   to: (f: Record<string, unknown>) => string
+  /*
+    CUANDO UN DOCUMENTO SON VARIAS FILAS.
+
+    La nota de salida no tiene tabla: es un número repetido en cada asiento
+    del libro, uno por artículo. Buscar NS-2026-0012 de una nota con piedra y
+    arena devolvería el mismo número dos veces. Con esto la fuente dice qué
+    hace única a una fila, y se enseña una sola vez.
+  */
+  unicaPor?: (f: Record<string, unknown>) => string
+  /** Cuántas filas pedir. Más de las que se enseñan, si hay que descartar repetidas. */
+  tope?: number
 }
 
 const texto = (v: unknown) => (v == null ? '' : String(v))
@@ -110,6 +121,29 @@ const FUENTES: Fuente[] = [
     // La pantalla ya sabe abrir una nota por su número, y se quita el
     // parámetro al abrirla: cerrar el detalle no la vuelve a abrir.
     to: (f) => `/app/facturacion/notas-entrega?nota=${encodeURIComponent(texto(f.numero))}`,
+  },
+  {
+    /*
+      LA NOTA DE SALIDA, QUE NO TIENE TABLA.
+
+      Christopher, 28/09/2026, pidiendo buscar una nota en específico. El NS
+      vive como columna en cada asiento del libro, así que se busca ahí y se
+      descartan los repetidos: una nota con piedra y arena son dos asientos
+      con el mismo número.
+
+      Lleva al historial, que ya sabe abrir el papel de una nota por su
+      número. Pide SALIDAS, que es el módulo de esa pantalla.
+    */
+    modulo: 'SALIDAS',
+    tabla: 'inventario_movimientos',
+    columnas: ['nota_salida'],
+    seleccion: 'id, nota_salida, fecha',
+    tipo: 'Nota de salida',
+    titulo: (f) => texto(f.nota_salida),
+    detalle: (f) => texto(f.fecha) || null,
+    to: (f) => `/app/salidas?nota=${encodeURIComponent(texto(f.nota_salida))}`,
+    unicaPor: (f) => texto(f.nota_salida),
+    tope: 12,
   },
   {
     modulo: 'VENTAS',
@@ -196,18 +230,28 @@ export function useBusquedaDocumentos(consulta: string, puedeLeer: (modulo: stri
             .from(f.tabla)
             .select(f.seleccion)
             .or(filtro)
-            .limit(4)
+            .limit(f.tope ?? 4)
 
           // Que una tabla falle no debe dejar la búsqueda entera sin resultados:
           // se pierde esa fuente y las demás responden.
           if (error || !data) return [] as Hallazgo[]
 
-          return (data as unknown as Record<string, unknown>[]).map((fila) => ({
-            tipo: f.tipo,
-            titulo: f.titulo(fila),
-            detalle: f.detalle(fila),
-            to: f.to(fila),
-          }))
+          const vistas = new Set<string>()
+          return (data as unknown as Record<string, unknown>[])
+            .filter((fila) => {
+              if (!f.unicaPor) return true
+              const clave = f.unicaPor(fila)
+              if (vistas.has(clave)) return false
+              vistas.add(clave)
+              return true
+            })
+            .slice(0, 4)
+            .map((fila) => ({
+              tipo: f.tipo,
+              titulo: f.titulo(fila),
+              detalle: f.detalle(fila),
+              to: f.to(fila),
+            }))
         }),
       )
 
