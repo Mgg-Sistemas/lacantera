@@ -527,6 +527,20 @@ export function useMovimientos(
     /** A qué grupo del organigrama salió. */
     grupoId?: number
     /*
+      EL NÚMERO DE UN PAPEL QUE SE TIENE EN LA MANO.
+
+      Christopher, 28/09/2026: «en las notas de salida y de entrega poder
+      buscar una nota en específico». Quien llega con un NS escrito en un
+      papel no quiere acotar por artículo ni por fecha: quiere ese número.
+
+      Se busca en la BASE y no en la lista, porque la lista son los 200 más
+      recientes: una nota de hace tres meses no está entre ellos, y filtrar
+      aquí devolvería «no hay nada» sobre una nota que sí existe. Se compara
+      contra el número de la nota de salida y contra el del propio
+      movimiento, que es el otro número impreso.
+    */
+    nota?: string
+    /*
       QUÉ TIPOS SE QUIEREN VER.
 
       El libro los trae todos; la pantalla de salidas y traslados pide solo los
@@ -584,6 +598,10 @@ export function useMovimientos(
       if (filtros.registradoPor) q = q.eq('registrado_por', filtros.registradoPor)
       if (filtros.grupoId) q = q.eq('grupo_id', filtros.grupoId)
       if (filtros.tipos && filtros.tipos.length > 0) q = q.in('tipo', filtros.tipos)
+
+      // Las comas y los paréntesis rompen la sintaxis del `or` de PostgREST.
+      const aguja = (filtros.nota ?? '').replace(/[,()]/g, ' ').trim()
+      if (aguja) q = q.or(`nota_salida.ilike.%${aguja}%,numero.ilike.%${aguja}%`)
 
       /*
         Se filtra por `fecha`, no por `registrado_en`.
