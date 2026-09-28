@@ -285,7 +285,7 @@ export function ControlDespacho() {
           />
           Solo lo despachado
           <span className="text-ink/45">
-            — quita lo anulado, las salidas internas y los números sin documento. Es la vista para pasar el informe.
+            — quita lo anulado, las salidas internas, los respaldos de salida y los números sin documento. Es la vista para pasar el informe.
           </span>
         </label>
       </Card>
