@@ -3483,7 +3483,17 @@ El botón **Despachar**, con un camión. Si no ha salido ninguno: **Todavía no 
 | **Total** | Con el símbolo de su moneda |
 | **Estado** | **Por facturar** en naranja, **Facturada** en verde, **Anulada** en gris |
 
-Las 200 más recientes, sin filtros.
+Las 200 más recientes. Arriba de la lista, desde el **28 de septiembre de 2026**, están el buscador y los filtros.
+
+#### Buscar una nota
+
+**El campo Buscar una nota busca en todas, no solo en las 200 que se ven.** Lo que se escribe viaja a la base, así que una nota de hace meses aparece igual. Se compara contra todo lo que se suele tener a mano: el **número** de la nota, el **cliente**, su **RIF**, la **placa**, el **chofer**, el **ticket** de romana, el **NS** que respalda y la **factura** en la que terminó. Un solo campo, porque quien busca no siempre sabe cuál de esos datos es el que tiene escrito.
+
+Al lado, el **Estado** —cualquiera, pendiente, despachada, facturada o anulada— y debajo el **rango de fechas**. Se combinan entre sí y con el buscador.
+
+Si no aparece nada, el aviso lo dice con claridad: **Ninguna nota con eso**, y recuerda que el número va completo, **NE-2026-0042**, con el año y los cuatro dígitos.
+
+**La nota de salida se busca en su propia pantalla**, **Salidas › Historial**, con el mismo campo: **Buscar una nota**, donde vale el **NS-2026-0012** o el número del movimiento. Y las dos, la de entrega y la de salida, se encuentran también desde **la lupa de arriba**, escribiendo el número desde cualquier pantalla.
 
 #### Despachar material
 

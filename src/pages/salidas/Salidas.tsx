@@ -9,6 +9,7 @@ import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
 import { Card } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
@@ -73,6 +74,7 @@ export function Salidas() {
   const [articuloId, setArticuloId] = useState('')
   const [quien, setQuien] = useState('')
   const [grupoId, setGrupoId] = useState('')
+  const [nota, setNota] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
 
   const { data: almacenes } = useAlmacenes()
@@ -93,6 +95,7 @@ export function Salidas() {
     ...(articuloId ? { articuloId: Number(articuloId) } : {}),
     ...(quien ? { registradoPor: quien } : {}),
     ...(grupoId ? { grupoId: Number(grupoId) } : {}),
+    ...(nota.trim() ? { nota: nota.trim() } : {}),
     ...(rango.desde ? { desde: rango.desde } : {}),
     ...(rango.hasta ? { hasta: rango.hasta } : {}),
   })
@@ -162,7 +165,7 @@ export function Salidas() {
   }, [data, articuloId])
 
   const hayFiltros = Boolean(
-    almacenId || articuloId || quien || grupoId || rango.desde || rango.hasta,
+    almacenId || articuloId || quien || grupoId || nota.trim() || rango.desde || rango.hasta,
   )
 
   return (
@@ -175,7 +178,25 @@ export function Salidas() {
       <Pestanas pestanas={PESTANAS_SALIDAS} />
 
       <Card className="mb-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,14rem)_1fr]">
+        {/*
+          BUSCAR UNA NOTA ES OTRA COSA QUE ACOTAR UNA CONSULTA.
+
+          Christopher, 28/09/2026: «en las notas de salida y de entrega poder
+          buscar una nota en específico». Quien llega con un NS escrito no está
+          explorando: tiene el número y quiere esa nota. Por eso el campo va
+          solo y arriba, antes de los selectores, y busca en la base: si la nota
+          es de hace meses no está entre los 200 movimientos recientes, y
+          filtrar en la pantalla diría «no hay nada» sobre algo que sí existe.
+        */}
+        <Input
+          label="Buscar una nota"
+          value={nota}
+          onChange={(e) => setNota(e.target.value)}
+          placeholder="NS-2026-0012, o el número del movimiento"
+          hint="Trae la nota entera, con todos sus renglones, aunque sea vieja."
+        />
+
+        <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,14rem)_1fr]">
           <Select
             label="Qué mirar"
             value={vista}
@@ -261,7 +282,9 @@ export function Salidas() {
             titulo={hayFiltros ? 'Nada con esos filtros' : 'Todavía no ha salido nada'}
             descripcion={
               hayFiltros
-                ? 'Prueba a ampliar las fechas, o a quitar el artículo o el grupo.'
+                ? nota.trim()
+                  ? 'Ninguna nota con ese número. Revisa que esté completo: los papeles llevan NS-2026-0012, con el año y los cuatro dígitos.'
+                  : 'Prueba a ampliar las fechas, o a quitar el artículo o el grupo.'
                 : 'La primera línea la escribe la primera salida de material.'
             }
           />
