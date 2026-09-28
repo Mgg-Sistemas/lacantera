@@ -7112,11 +7112,13 @@ El módulo nació con el permiso en **Ninguno para todos los roles**: hasta que 
 
 ### 22.3 La pantalla
 
-Se filtra por **período** —arranca en el día 1 del mes en curso—, por **status** —donde «Sin status todavía» deja la lista de lo que falta por revisar— y por un **buscador** que mira a la vez el número, el cliente, el RIF, el material y las observaciones. La casilla **«Solo lo despachado»** quita lo anulado, las salidas internas y los números sin documento: es la vista para pasar el informe.
+Se filtra por **período** —arranca en el día 1 del mes en curso—, por **status** —donde «Sin status todavía» deja la lista de lo que falta por revisar— y por un **buscador** que mira a la vez el número, el cliente, el RIF, el material y las observaciones. La casilla **«Solo lo despachado»** quita lo anulado, las salidas internas, los respaldos de salida y los números sin documento: es la vista para pasar el informe.
 
 Sobre la tabla, una línea dice cuántos despachos hay, la cantidad **separada por unidad** —los metros cúbicos no se suman con las toneladas—, el monto en dólares y dos avisos: cuántas filas van **sin precio** y cuántas **sin RIF**.
 
 Una nota con tres materiales son **tres filas**, porque cada material tiene su cantidad y su precio. **El número de cada fila es un enlace** a su nota, para quien tenga permiso de esa pantalla. Y las filas que no suman se ven en gris, diciendo qué pasó con ese número: anulada, salida interna, deshecha, respaldo de una salida o sin documento.
+
+**La fila de respaldo también dice su material, desde el 28 de septiembre de 2026.** La nota de entrega que nació de una nota de salida sale en gris con su material, su cantidad y a qué NS respalda: **Respaldo de una salida · OPTIMAVIAL C.A · ARENA INTEGRAL 16,00 M3 · Respalda la nota de salida NS-2026-0025**. No lleva precio ni entra en los totales a propósito: ese dinero ya lo cuenta la fila de la NS, y sumarlo aquí lo contaría dos veces. Antes esa fila salía sin material ninguno, y una nota con dos materiales los habría escondido los dos.
 
 ### 22.4 Lo que se escribe aquí
 
