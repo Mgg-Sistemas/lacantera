@@ -695,3 +695,47 @@ export function useAnularNota() {
     rpc<void>('anular_nota_entrega', { p_id: n.id, p_motivo: n.motivo }),
   )
 }
+
+/** Edita el papel entero. Solo lo ve quien es ADMIN: lo exige la propia función. */
+export interface EdicionDeNota {
+  id: number
+  motivo: string
+  cliente_id: number
+  almacen_id: number
+  fecha: string
+  moneda: string
+  vehiculo?: string | null
+  chofer?: string | null
+  cedula_chofer?: string | null
+  peso_bruto?: number | null
+  peso_tara?: number | null
+  ticket_romana?: string | null
+  flete?: number
+  descuento?: number
+  observacion?: string | null
+  /** Ausente: los renglones se dejan como están (la que respalda una salida no los toca aquí). */
+  renglones?: RenglonVenta[]
+}
+
+export function useEditarNotaEntrega() {
+  return useAccionVentas((n: EdicionDeNota) =>
+    rpc<void>('editar_nota_entrega', {
+      p_id: n.id,
+      p_motivo: n.motivo,
+      p_cliente_id: n.cliente_id,
+      p_almacen_id: n.almacen_id,
+      p_fecha: n.fecha,
+      p_moneda: n.moneda,
+      p_vehiculo: n.vehiculo || null,
+      p_chofer: n.chofer || null,
+      p_cedula_chofer: n.cedula_chofer || null,
+      p_peso_bruto: n.peso_bruto ?? null,
+      p_peso_tara: n.peso_tara ?? null,
+      p_ticket_romana: n.ticket_romana || null,
+      p_flete: n.flete ?? 0,
+      p_descuento: n.descuento ?? 0,
+      p_observacion: n.observacion || null,
+      p_renglones: n.renglones ?? null,
+    }),
+  )
+}

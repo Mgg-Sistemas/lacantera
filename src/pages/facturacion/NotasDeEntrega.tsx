@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
-import { Check, Printer, Truck, X } from 'lucide-react'
+import { Check, FileText, Pencil, Printer, Truck, X } from 'lucide-react'
 import { CatalogoTransporte } from '@/components/CatalogoTransporte'
 import { ElegirArchivosDeCarga, FotosDeCarga } from '@/components/FotosDeCarga'
 import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
-import { usePerfiles } from '@/lib/api/catalogo'
+import { usePerfiles, useMisRoles } from '@/lib/api/catalogo'
 import {
   cedulaComparable,
   placaLimpia,
@@ -29,13 +29,14 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
-import { dinero, documento, enteros, fecha, fechaHora } from '@/lib/formato'
+import { bolivares, dinero, documento, dolares, enteros, fecha, fechaHora } from '@/lib/formato'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useGuias, useTickets } from '@/lib/api/despachos'
 import { useVehiculos } from '@/lib/api/vehiculos'
 import { armarNotaDeEntrega } from '@/lib/ficha/notaDeEntregaPapel'
+import { armarReporteNotasDeEntrega } from '@/lib/ficha/notasDeEntregaReportePdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
   useAnularNota,
@@ -56,6 +57,7 @@ import {
 import { useCompletarNotaDeEntrega, useGuardarCamionesDeNota } from '@/lib/api/salidas'
 import { ModalNotaDeEntrega } from '@/pages/salidas/ModalNotaDeEntrega'
 import { ListaDeCamiones, ModalCamiones } from './CamionesDeLaNota'
+import { ModalEditarNotaEntrega } from './ModalEditarNotaEntrega'
 /*
   Los renglones, el IVA y sus totales se quedaron en Ventas: son los mismos que
   arma una cotización, y partirlos en dos copias sería tener dos formas de sumar
@@ -182,9 +184,14 @@ export function NotasDeEntrega() {
   const { puede } = useMisPermisos()
   const puedeDespachar = puede('FACTURACION', 'ESCRITURA')
   const puedeAnular = puede('FACTURACION', 'TOTAL')
+  // Editar la nota entera es solo de ADMIN: lo exige también la función de la
+  // base, esto solo decide si se enseña el botón.
+  const { puede: puedeRol } = useMisRoles()
+  const puedeEditar = puedeRol('ADMIN')
 
   const [nuevo, setNuevo] = useState(false)
   const [detalle, setDetalle] = useState<NotaEntrega | null>(null)
+  const [editando, setEditando] = useState<NotaEntrega | null>(null)
   const [anulando, setAnulando] = useState<NotaEntrega | null>(null)
   /*
     UN ENLACE QUE TRAE `?nota=NE-2026-0012` ABRE ESA NOTA. Es como llega quien
@@ -234,6 +241,8 @@ export function NotasDeEntrega() {
   const desenlazar = useDesenlazarNota()
   const [motivo, setMotivo] = useState('')
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
+  const [reporte, setReporte] = useState<PdfArmado | null>(null)
+  const [armandoReporte, setArmandoReporte] = useState(false)
 
   const [clienteId, setClienteId] = useState('')
   const [almacenId, setAlmacenId] = useState('')
@@ -316,7 +325,7 @@ export function NotasDeEntrega() {
   const guiasVigentes = (guias ?? []).filter((g) => !g.vencida)
 
   // Todos los patios: cada renglón puede salir de uno distinto.
-  const { data: existencias } = useExistencias(undefined, nuevo)
+  const { data: existencias } = useExistencias(undefined, nuevo || editando !== null)
   const renglonesDetalle = useRenglones('nota_entrega_renglones', 'nota_id', detalle?.id ?? null)
 
   const porPatio: Record<string, Record<number, number>> = {}
@@ -379,6 +388,33 @@ export function NotasDeEntrega() {
     )
   }
 
+  // El reporte junta las notas tal como están filtradas en pantalla, cada una
+  // con el total en su propia moneda y su equivalente en Bs y en $ a la tasa
+  // que quedó congelada el día en que se emitió — no la de hoy.
+  const verReporte = async () => {
+    setArmandoReporte(true)
+    try {
+      const alcance = [
+        busca.trim() ? `búsqueda «${busca.trim()}»` : '',
+        estado ? `estado ${ETIQUETA[estado] ?? estado}` : '',
+        rango.desde || rango.hasta ? `del ${rango.desde ? fecha(rango.desde) : 'inicio'} al ${rango.hasta ? fecha(rango.hasta) : 'hoy'}` : '',
+      ]
+        .filter(Boolean)
+        .join(' · ') || `Las ${data?.length ?? 0} más recientes`
+      setReporte(
+        await armarReporteNotasDeEntrega({
+          empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+          emitidoPor: yo?.nombre ?? '',
+          momento: new Date(),
+          alcance,
+          notas: data ?? [],
+        }),
+      )
+    } finally {
+      setArmandoReporte(false)
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -388,6 +424,14 @@ export function NotasDeEntrega() {
           <>
             <Button variant="outline" icon={<Truck />} onClick={() => setCatalogo(true)}>
               Choferes / Vehículos
+            </Button>
+            <Button
+              variant="outline"
+              icon={<FileText />}
+              disabled={!data || data.length === 0 || armandoReporte}
+              onClick={() => void verReporte()}
+            >
+              {armandoReporte ? 'Armando…' : 'Reporte Bs/$'}
             </Button>
             {puedeDespachar ? (
               <Button icon={<Truck />} onClick={() => setNuevo(true)}>
@@ -655,7 +699,7 @@ export function NotasDeEntrega() {
       {data && data.length > 0 ? (
         <Card flush>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full min-w-[940px] text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Nota</th>
@@ -663,6 +707,8 @@ export function NotasDeEntrega() {
                   <th className="px-3 py-3 font-medium">Vehículo</th>
                   <th className="px-3 py-3 font-medium">Fecha</th>
                   <th className="px-3 py-3 text-right font-medium">Total</th>
+                  <th className="px-3 py-3 text-right font-medium">Total Bs</th>
+                  <th className="px-3 py-3 text-right font-medium">Total $</th>
                   <th className="px-5 py-3 text-right font-medium">Estado</th>
                 </tr>
               </thead>
@@ -695,6 +741,12 @@ export function NotasDeEntrega() {
                     <td className="text-ink/60 px-3 py-3 text-xs">{fecha(n.fecha)}</td>
                     <td className="tabular text-ink/85 px-3 py-3 text-right font-medium">
                       {dinero(n.moneda, n.total)}
+                    </td>
+                    <td className="tabular text-ink/60 px-3 py-3 text-right text-xs">
+                      {bolivares(n.total_bs)}
+                    </td>
+                    <td className="tabular text-ink/60 px-3 py-3 text-right text-xs">
+                      {dolares(n.total_usd)}
                     </td>
                     <td className="px-5 py-3 text-right">
                       <Chip tone={TONO[n.estado] ?? 'neutral'}>{ETIQUETA[n.estado]}</Chip>
@@ -1146,6 +1198,16 @@ export function NotasDeEntrega() {
               >
                 Imprimir
               </Button>
+              {puedeEditar ? (
+                <Button
+                  variant="outline"
+                  icon={<Pencil />}
+                  disabled={renglonesDetalle.isPending}
+                  onClick={() => setEditando(detalle)}
+                >
+                  Editar
+                </Button>
+              ) : null}
               {detalle.estado === 'PENDIENTE' && puedeDespachar ? (
                 <Button
                   disabled={renglonesDetalle.isPending}
@@ -1413,6 +1475,25 @@ export function NotasDeEntrega() {
         />
       ) : null}
 
+      {editando ? (
+        <ModalEditarNotaEntrega
+          abierto
+          onCerrar={() => {
+            setEditando(null)
+            // El detalle abierto es una copia vieja: se cierra para no
+            // enseñar lo que ya se corrigió.
+            setDetalle(null)
+          }}
+          nota={editando}
+          renglones={renglonesDetalle.data ?? []}
+          clientes={clientes ?? []}
+          precios={precios ?? []}
+          monedas={monedas.data ?? []}
+          opcionesDePatio={opcionesDePatio}
+          existenciasDePatio={(id) => porPatio[id]}
+        />
+      ) : null}
+
       {completando ? (
         <ModalNotaDeEntrega
           modo="completar"
@@ -1460,6 +1541,14 @@ export function NotasDeEntrega() {
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ""}
         titulo="Nota de entrega"
+      />
+
+      <Visor
+        abierto={reporte !== null}
+        onCerrar={() => setReporte(null)}
+        blob={reporte?.blob ?? null}
+        nombreArchivo={reporte?.nombre ?? ""}
+        titulo="Reporte de notas de entrega"
       />
     </>
   )
