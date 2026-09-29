@@ -395,7 +395,7 @@ export function useNotaDeSalida(): {
         descripcion={
           datos?.tipo === 'ORDEN'
             ? 'Lo que se solicitó y en qué estado está. Lo que de verdad sale lo dice la nota, al entregar.'
-            : 'Compruébala antes de imprimirla: es lo que va a firmar quien recibe el material.'
+            : 'Compruébela antes de imprimirla: es lo que va a firmar quien recibe el material.'
         }
         /*
           La casilla rehace el papel sin cerrarlo, igual que el selector de

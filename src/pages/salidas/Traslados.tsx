@@ -307,8 +307,8 @@ export function Traslados() {
           }
           descripcion={
             firmando.paso === 'aceptar'
-              ? `El material sale de ${firmando.t.origen ?? 'su origen'} y tu nombre va en «Envió» de la nota de traslado.`
-              : `El material entra en ${firmando.t.destino ?? 'su destino'} y tu nombre va en «Recibió» de la nota de traslado.`
+              ? `El material sale de ${firmando.t.origen ?? 'su origen'} y su nombre va en «Envió» de la nota de traslado.`
+              : `El material entra en ${firmando.t.destino ?? 'su destino'} y su nombre va en «Recibió» de la nota de traslado.`
           }
           ancho="sm"
           acciones={
@@ -345,7 +345,7 @@ export function Traslados() {
             <span className="text-ink/80">
               Poner mi firma digital en «{firmando.paso === 'aceptar' ? 'Envió' : 'Recibió'}»
               <span className="text-ink/50 mt-0.5 block text-xs">
-                Sin marcar, la raya sale en blanco con tu nombre debajo, para firmarla a mano.
+                Sin marcar, la raya sale en blanco con su nombre debajo, para firmarla a mano.
               </span>
             </span>
           </label>

@@ -178,7 +178,7 @@ export function Solicitudes() {
       {/* Se dice, en vez de dejar que lo descubra buscando un botón que no está. */}
       {comoApruebo?.restringida ? (
         <p className="text-ink/60 mb-3 text-sm">
-          Aprobar salidas se te restringió: puedes solicitarlas y cancelar las tuyas, y las aprueba
+          Aprobar salidas se le restringió: puede solicitarlas y cancelar las suyas, y las aprueba
           quien tenga ese permiso.
         </p>
       ) : null}
@@ -445,7 +445,7 @@ export function Solicitudes() {
           abierto
           onCerrar={() => setAprobando(null)}
           titulo={`Aprobar ${aprobando.numero}`}
-          descripcion="Tu nombre va en «Autorizado por» de la orden y de la nota que salga al entregarla."
+          descripcion="Su nombre va en «Autorizado por» de la orden y de la nota que salga al entregarla."
           ancho="sm"
           acciones={
             <>
@@ -483,7 +483,7 @@ export function Solicitudes() {
             <span className="text-ink/80">
               Poner mi firma digital en «Autorizado por»
               <span className="text-ink/50 mt-0.5 block text-xs">
-                Sin marcar, la raya sale en blanco con tu nombre debajo, para firmarla a mano.
+                Sin marcar, la raya sale en blanco con su nombre debajo, para firmarla a mano.
               </span>
             </span>
           </label>
