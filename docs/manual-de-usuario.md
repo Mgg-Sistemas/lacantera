@@ -3886,7 +3886,7 @@ Una nómina **pagada** no se anula, no se recalcula y su salida de dinero no se 
 
 **Nómina › Personal**
 
-El registro de quién trabaja en la empresa. La pantalla lo dice así: *"Quién trabaja aquí, desde cuándo y cuánto gana. De la fecha de ingreso salen la antigüedad, el bono vacacional y las prestaciones."*
+El registro de quién trabaja en la empresa: desde cuándo y cuánto gana. De la fecha de ingreso salen la antigüedad, el bono vacacional y las prestaciones, y la ficha de cada quien lleva su foto, su carnet y su constancia de trabajo.
 
 #### Qué se ve
 

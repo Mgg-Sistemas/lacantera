@@ -329,7 +329,6 @@ export function Personal() {
     <>
       <PageHeader
         title="Personal"
-        description="Quién trabaja aquí, desde cuándo y cuánto gana. De la fecha de ingreso salen la antigüedad, el bono vacacional y las prestaciones. La ficha de cada quien lleva su foto, su carnet y su constancia de trabajo."
         actions={
           <>
             {/*
