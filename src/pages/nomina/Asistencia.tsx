@@ -203,7 +203,7 @@ function DiasDelPeriodo({
       <div className="p-5 pb-3">
         <CardHeader
           title="Días de la quincena"
-          subtitle="Señala los días que no trabajó. Un clic: no vino y se le descuenta. Dos: justificada, no descuenta. Tres: se limpia."
+          subtitle="Señale los días que no trabajó. Un clic: no vino y se le descuenta. Dos: justificada, no descuenta. Tres: se limpia."
         />
       </div>
 
@@ -250,7 +250,7 @@ function DiasDelPeriodo({
         {/* Su quincena */}
         <div className="min-w-0 flex-1 p-5">
           {!trabajador ? (
-            <p className="text-ink/50 text-sm">Elige a alguien de la lista.</p>
+            <p className="text-ink/50 text-sm">Seleccione a alguien de la lista.</p>
           ) : (
             <>
               <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
@@ -523,7 +523,7 @@ export function Asistencia() {
           <div className="min-w-0 flex-1 sm:max-w-md">
             <Select
               label="Período"
-              vacio="Elige el período"
+              vacio="Seleccione el período"
               value={periodoId ? String(periodoId) : ''}
               onChange={(e) => setParams(e.target.value ? { periodo: e.target.value } : {})}
               opciones={(periodos ?? [])
@@ -546,7 +546,7 @@ export function Asistencia() {
         <Card>
           <Vacio
             icono={<CalendarClock />}
-            titulo="Elige un período"
+            titulo="Seleccione un período"
             descripcion="Las novedades se cargan sobre el período que se va a pagar."
           />
         </Card>
@@ -763,14 +763,14 @@ export function Asistencia() {
             */}
             {bonoTrasAprobar ? (
               <p className="border-warning/30 bg-warning-soft rounded-card text-ink/80 border p-3 text-xs">
-                Esta nómina ya está aprobada. Lo que cambies aquí cambia lo que se va a pagar, y
+                Esta nómina ya está aprobada. Lo que cambie aquí cambia lo que se va a pagar, y
                 el total deja de ser el que se aprobó.
               </p>
             ) : null}
 
             <Select
               label="Concepto"
-              vacio="Elige el concepto"
+              vacio="Seleccione el concepto"
               value={nuevoMonto.concepto}
               onChange={(e) => setNuevoMonto((n) => ({ ...n, concepto: e.target.value }))}
               opciones={porNovedad.map((c) => ({

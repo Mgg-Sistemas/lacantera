@@ -436,7 +436,7 @@ export function FormularioTrabajador() {
                     type="date"
                     hint={
                       !esNuevo && quien && !quien.fecha_ingreso_confirmada
-                        ? 'Esta fecha vino de la carga del libro de nómina y nadie la ha revisado. Corrígela: de aquí salen la antigüedad, el bono vacacional y la liquidación.'
+                        ? 'Esta fecha vino de la carga del libro de nómina y nadie la ha revisado. Corríjala: de aquí salen la antigüedad, el bono vacacional y la liquidación.'
                         : 'De aquí salen la antigüedad y las prestaciones.'
                     }
                     value={f.fecha_ingreso}
@@ -538,7 +538,7 @@ export function FormularioTrabajador() {
                       hint={
                         'Es lo que recibe, todo incluido: de aquí salen el beneficio de alimentación y las retenciones de ley. Los bonos y las penalizaciones se cargan aparte, en cada período.' +
                         (f.tabulador_id
-                          ? ' Sale del tabulador: si lo cambias aquí, la ficha quedará desfasada hasta que alguien sincronice o corrija el nivel.'
+                          ? ' Sale del tabulador: si lo cambia aquí, la ficha quedará desfasada hasta que alguien sincronice o corrija el nivel.'
                           : '')
                       }
                       value={f.salario_base}
@@ -568,7 +568,7 @@ export function FormularioTrabajador() {
                     <>
                       <Select
                         label="Banco"
-                        vacio="Elige el banco"
+                        vacio="Seleccione el banco"
                         value={f.banco}
                         onChange={(e) => cambiar({ banco: e.target.value })}
                         opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}
@@ -595,7 +595,7 @@ export function FormularioTrabajador() {
                     <>
                       <Select
                         label="Banco"
-                        vacio="Elige el banco"
+                        vacio="Seleccione el banco"
                         value={f.banco}
                         onChange={(e) => cambiar({ banco: e.target.value })}
                         opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}

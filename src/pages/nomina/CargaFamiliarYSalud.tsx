@@ -469,7 +469,7 @@ function LaSalud({ empleadoId, puedeEditar }: { empleadoId: number; puedeEditar:
           abierto
           onCerrar={() => setEditando(null)}
           titulo={editando.id ? 'Editar condición' : 'Agregar condición'}
-          descripcion="Escribe cuál es: «tiene una alergia» no sirve ni para avisar a un médico."
+          descripcion="Escriba cuál es: «tiene una alergia» no sirve ni para avisar a un médico."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setEditando(null)}>

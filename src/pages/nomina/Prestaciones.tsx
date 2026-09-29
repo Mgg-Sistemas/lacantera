@@ -435,7 +435,7 @@ export function Prestaciones() {
                 <div className="mt-4 flex flex-wrap items-end gap-3">
                   <SelectBuscable
                     label="Pagar desde"
-                    vacio="Elige la cuenta"
+                    vacio="Seleccione la cuenta"
                     valor={fAnt.cuenta_id}
                     onCambio={(v) => setFAnt({ ...fAnt, cuenta_id: v })}
                     opciones={(cuentas ?? [])
@@ -619,7 +619,7 @@ export function Prestaciones() {
 
           <Textarea
             label="De dónde sale esta cifra"
-            hint="Queda guardado con tu nombre y la hora."
+            hint="Queda guardado con su nombre y la hora."
             rows={2}
             className="mt-4"
             value={fCorte.nota}

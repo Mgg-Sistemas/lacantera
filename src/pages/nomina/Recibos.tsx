@@ -329,7 +329,7 @@ export function Recibos() {
           <div className="min-w-0 flex-1 sm:max-w-md">
             <Select
               label="Período"
-              vacio="Elige el período"
+              vacio="Seleccione el período"
               value={periodoId ? String(periodoId) : ''}
               onChange={(e) => setParams(e.target.value ? { periodo: e.target.value } : {})}
               opciones={(periodos ?? [])
@@ -352,7 +352,7 @@ export function Recibos() {
         <Card>
           <Vacio
             icono={<FileText />}
-            titulo="Elige un período"
+            titulo="Seleccione un período"
             descripcion="Los recibos aparecen cuando la nómina está calculada."
           />
         </Card>
