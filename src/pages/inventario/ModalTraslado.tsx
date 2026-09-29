@@ -19,6 +19,7 @@ import {
   useSolicitarTraslado,
 } from '@/lib/api/inventario'
 import type { FormaDeTraslado } from '@/lib/api/inventario'
+import { enCastellano } from '@/lib/castellano'
 
 /*
   EL RENGLÓN GUARDA EL TOTAL Y ADEMÁS LO QUE SE TECLEÓ.
@@ -354,7 +355,7 @@ export function ModalTraslado({
       }
       onTrasladado?.({ id: Number(id), forma })
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(enCastellano(e))
     }
   }
 

@@ -32,6 +32,7 @@ import { fechaHora } from '@/lib/formato'
 */
 import { ModalTraslado } from '@/pages/inventario/ModalTraslado'
 import { useNotaDeTraslado } from './NotaDeTraslado'
+import { enCastellano } from '@/lib/castellano'
 
 /*
   MATERIAL QUE CAMBIA DE SITIO, PASO A PASO.
@@ -104,7 +105,7 @@ export function Traslados() {
         await recibir.mutateAsync({ id: t.id, con_firma: conFirma })
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(enCastellano(e))
     } finally {
       setEnCurso(null)
     }
@@ -128,7 +129,7 @@ export function Traslados() {
       setCancelando(null)
       setMotivo('')
     } catch (e) {
-      setErrorAlCancelar(e instanceof Error ? e.message : String(e))
+      setErrorAlCancelar(enCastellano(e))
     }
   }
 

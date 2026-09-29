@@ -1,5 +1,6 @@
 import type { PostgrestError } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { enCastellano } from '@/lib/castellano'
 
 /**
  * Puente único con las funciones de la base.
@@ -18,21 +19,20 @@ import { supabase } from '@/lib/supabase'
 function traducir(error: PostgrestError): string {
   const mensaje = error.message ?? ''
 
-  if (error.code === '42501' || mensaje.includes('permission denied')) {
-    return mensaje.includes('rol')
-      ? mensaje
-      : 'Tu usuario no tiene permiso para esta acción.'
+  /*
+    Este caso se queda aquí y no baja al traductor general, porque es el único
+    que depende de cómo escribe esta casa. Cuando el mensaje nombra un ROL
+    —«Esta acción la realiza: Tesorería. Tu usuario no tiene ese rol.»— lo
+    escribió una función nuestra y dice exactamente qué falta; el genérico
+    «no tienes permiso» sería un paso atrás.
+  */
+  if ((error.code === '42501' || mensaje.includes('permission denied')) && mensaje.includes('rol')) {
+    return mensaje
   }
 
-  if (error.code === 'PGRST202') {
-    return 'Esa operación todavía no existe en la base de datos. Falta correr las migraciones.'
-  }
-
-  if (mensaje.includes('Failed to fetch')) {
-    return 'No hay conexión con el servidor. Revisa la red e inténtalo otra vez.'
-  }
-
-  return error.hint ? `${mensaje} ${error.hint}` : mensaje
+  // Lo demás lo resuelve el traductor de la casa, que es el mismo que usa la
+  // pantalla de error. Dos listas de traducción se separan en un mes.
+  return enCastellano(error)
 }
 
 /*

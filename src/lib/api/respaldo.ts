@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { zipDeUnArchivo } from '@/lib/zip'
 import { rpc } from './rpc'
+import { enCastellano } from '@/lib/castellano'
 
 /**
  * El respaldo de la base.
@@ -139,7 +140,7 @@ export function useEnviarRespaldoPorCorreo() {
       try {
         bytes = await mandarPorCorreo(sql, nombre, para)
       } catch (e) {
-        const fallo = e instanceof Error ? e.message : String(e)
+        const fallo = enCastellano(e)
         await anotar(false, motivoDelFallo(fallo), para)
         throw e
       }
@@ -361,7 +362,7 @@ async function razonDelFallo(error: unknown): Promise<string> {
     }
   }
 
-  const crudo = error instanceof Error ? error.message : String(error)
+  const crudo = enCastellano(error)
   if (/failed to send a request|failed to fetch|networkerror/i.test(crudo)) {
     return 'No se pudo contactar al servicio de correo del sistema. Vuelve a intentarlo dentro de un minuto.'
   }

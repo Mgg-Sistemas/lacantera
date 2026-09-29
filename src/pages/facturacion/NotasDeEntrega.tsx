@@ -77,6 +77,7 @@ import {
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useDesenlazarNota, useEnlazarNotaAFactura, useFacturas } from '@/lib/api/facturacion'
+import { enCastellano } from '@/lib/castellano'
 
 /*
   LA NOTA NO ESTÁ ESPERANDO UNA FACTURA. Christopher, 17/09/2026: «una nota de
@@ -545,7 +546,7 @@ export function NotasDeEntrega() {
                               onClick={() => {
                                 setFalloDespacho(null)
                                 aprobar.mutate(s.id, {
-                                  onError: (e) => setFalloDespacho(e instanceof Error ? e.message : String(e)),
+                                  onError: (e) => setFalloDespacho(enCastellano(e)),
                                 })
                               }}
                             >
@@ -784,7 +785,7 @@ export function NotasDeEntrega() {
                       await subirFotosDeCarga('DESPACHO', [numero], archivos)
                     } catch (e) {
                       setFalloDespacho(
-                        `El despacho ${numero} quedó pedido, pero las fotos no subieron (${e instanceof Error ? e.message : String(e)}). Añádelas desde su tarjeta.`,
+                        `El despacho ${numero} quedó pedido, pero las fotos no subieron (${enCastellano(e)}). Añádelas desde su tarjeta.`,
                       )
                     }
                   }
