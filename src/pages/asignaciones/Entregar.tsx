@@ -233,7 +233,7 @@ export function Entregar() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <SelectBuscable
               label="Trabajador"
-              vacio="Elige el trabajador"
+              vacio="Elija el trabajador"
               valor={empleado}
               onCambio={setEmpleado}
               opciones={(empleados ?? []).map((e) => ({
@@ -244,7 +244,7 @@ export function Entregar() {
 
             <SelectBuscable
               label="De qué almacén sale"
-              vacio="Elige el almacén"
+              vacio="Elija el almacén"
               valor={almacen}
               onCambio={(v) => {
                 setAlmacen(v)
@@ -327,7 +327,7 @@ export function Entregar() {
 
         {!almacen ? (
           <Card>
-            <p className="text-ink/50 text-sm">Elige un almacén para ver qué hay en él.</p>
+            <p className="text-ink/50 text-sm">Elija un almacén para ver qué hay en él.</p>
           </Card>
         ) : disponibles.isPending ? (
           <Cargando />
@@ -344,8 +344,8 @@ export function Entregar() {
                 title="Qué se lleva"
                 subtitle={
                   pide.length > 0
-                    ? 'Viene puesto lo que le toca por su cargo. Corrige lo que haga falta.'
-                    : 'Deja en blanco lo que no se entrega.'
+                    ? 'Viene puesto lo que le toca por su cargo. Corrija lo que haga falta.'
+                    : 'Deje en blanco lo que no se entrega.'
                 }
               />
 
@@ -363,7 +363,7 @@ export function Entregar() {
                     .map((id) => (catalogo ?? []).find((a) => a.id === id)?.nombre)
                     .filter(Boolean)
                     .join(', ')}
-                  . Prueba con otro almacén, o entrégale lo que sí hay y lo demás después.
+                  . Pruebe con otro almacén, o entréguele lo que sí hay y lo demás después.
                 </p>
               ) : null}
             </div>
@@ -457,7 +457,7 @@ export function Entregar() {
               : ''}
           </p>
         ) : (
-          <p className="text-ink/45 mr-auto text-xs">Marca al menos una cantidad.</p>
+          <p className="text-ink/45 mr-auto text-xs">Marque al menos una cantidad.</p>
         )}
 
         <Link to="/app/asignaciones">

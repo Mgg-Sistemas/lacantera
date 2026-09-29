@@ -255,7 +255,7 @@ function ModalSaldar({
         ) : (
           <p className="border-warning/30 bg-warning-soft text-ink/75 mt-4 rounded-[6px] border p-3 text-sm leading-relaxed">
             No hay ningún período de nómina abierto donde cargar el descuento, así que esto va a
-            fallar. Abre el período primero, o cierra el caso con reposición o exoneración.
+            fallar. Abra el período primero, o cierre el caso con reposición o exoneración.
           </p>
         )
       ) : null}
