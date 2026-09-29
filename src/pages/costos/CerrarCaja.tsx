@@ -124,7 +124,7 @@ export function CerrarCaja({
               Aceptar todos y cerrar
               {sinPrecio.length > 0 ? (
                 <span className="text-danger block text-xs">
-                  No se puede: {sinPrecio.length} sin precio. Corrígelos en Viajes o ciérrala dejándolos.
+                  No se puede: {sinPrecio.length} sin precio. Corríjalos en Viajes o ciérrela dejándolos.
                 </span>
               ) : null}
             </span>

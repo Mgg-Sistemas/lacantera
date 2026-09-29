@@ -103,7 +103,7 @@ export function FondoYDeuda({ caja, resumen }: { caja: CajaCosto; resumen: Resum
         </div>
         {deuda.error ? <ErrorDeCarga error={deuda.error} className="m-4" /> : null}
         {deuda.data && deuda.data.length === 0 ? (
-          <Vacio icono={<Wallet />} titulo="Sin orígenes" descripcion="Cárgalos en Catálogos." />
+          <Vacio icono={<Wallet />} titulo="Sin orígenes" descripcion="Cárguelos en Catálogos." />
         ) : null}
         {deuda.data && deuda.data.length > 0 ? (
           <div className="overflow-x-auto">

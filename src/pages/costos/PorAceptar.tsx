@@ -37,7 +37,7 @@ import { enteros, fecha as fmtFecha } from '@/lib/formato'
 import { aTexto, dineroONada, ORIGENES } from './formato'
 
 const AVISOS: Record<NonNullable<Candidato['aviso']>, { texto: string; tone: 'danger' | 'warning' }> = {
-  SIN_PRECIO: { texto: 'Sin precio: corrígelo en Viajes', tone: 'danger' },
+  SIN_PRECIO: { texto: 'Sin precio: corríjalo en Viajes', tone: 'danger' },
   PRECIO_RARO: { texto: 'Precio fuera de lo usual', tone: 'warning' },
   SIN_M3: { texto: 'Sin m³', tone: 'warning' },
 }
@@ -259,7 +259,7 @@ export function PorAceptar({ caja }: { caja: CajaCosto }) {
       {rechazando ? (
         <ConMotivo
           titulo="Rechazar"
-          descripcion={`${rechazando.descripcion}. Queda registrado con tu nombre; se puede deshacer mientras la caja siga abierta.`}
+          descripcion={`${rechazando.descripcion}. Queda registrado con su nombre; se puede deshacer mientras la caja siga abierta.`}
           verbo="Rechazar"
           onCerrar={() => setRechazando(null)}
           onConfirmar={(motivo) =>
