@@ -333,7 +333,7 @@ export function Cotizaciones() {
             <div className="sm:col-span-2">
               <SelectBuscable
                 label="Cliente"
-                vacio="Elige el cliente"
+                vacio="Seleccione el cliente"
                 valor={clienteId}
                 onCambio={(v) => {
                   setClienteId(v)
