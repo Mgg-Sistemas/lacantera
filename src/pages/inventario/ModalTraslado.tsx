@@ -270,7 +270,7 @@ export function ModalTraslado({
     ENVIAR:
       yo == null || yo.respaldo || yo.sitios.length > 0
         ? null
-        : 'No respondes por ningún almacén, así que no puedes enviar: pide el material.',
+        : 'No responde por ningún almacén, así que no puede enviar: pida el material.',
     DIRECTO:
       yo == null || yo.respaldo || yo.sitios.length > 1
         ? null
@@ -367,7 +367,7 @@ export function ModalTraslado({
       descripcion={
         pedido
           ? undefined
-          : 'Elige qué quieres hacer: cada opción dice quién hace cada paso. El costo viaja siempre con el material.'
+          : 'Elija qué quiere hacer: cada opción dice quién hace cada paso. El costo viaja siempre con el material.'
       }
       acciones={
         pedido ? (
@@ -387,7 +387,7 @@ export function ModalTraslado({
                 ? 'Guardando…'
                 : form.forma
                   ? FORMA_DE_TRASLADO[form.forma].boton
-                  : 'Elige qué quieres hacer'}
+                  : 'Elija qué quiere hacer'}
             </Button>
           </>
         )
@@ -397,12 +397,12 @@ export function ModalTraslado({
         <p className="text-ink/80 text-sm">
           Queda pedido y todavía no se ha movido nada. Lo aprueba y envía quien responde por
           «{pedido}», o administración; después, quien responde por el almacén de destino
-          confirma que llegó. Lo sigues en Salidas y traslados, pestaña «Traslados».
+          confirma que llegó. Lo sigue en Salidas y traslados, pestaña «Traslados».
         </p>
       ) : (
       <>
       <fieldset>
-        <legend className="text-ink/80 mb-2 text-sm font-medium">¿Qué quieres hacer?</legend>
+        <legend className="text-ink/80 mb-2 text-sm font-medium">¿Qué quiere hacer?</legend>
         <div className="grid gap-2">
           {FORMAS_DE_TRASLADO_ABIERTAS.map((f) => {
             const opcion = FORMA_DE_TRASLADO[f]
@@ -444,7 +444,7 @@ export function ModalTraslado({
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <SelectBuscable
           label="Sale de"
-          vacio="Elige el almacén"
+          vacio="Seleccione el almacén"
           valor={form.origen}
           onCambio={(v) => {
             // Y al reves: si el articulo elegido no esta en el almacen nuevo.
@@ -456,7 +456,7 @@ export function ModalTraslado({
             cambiar({ origen: v, ...(sigueEstando ? {} : { articulo: '', cantidad: '' }) })
           }}
           hint={[
-            form.forma !== 'PEDIR' && !yo?.respaldo ? 'Solo los almacenes por los que respondes.' : null,
+            form.forma !== 'PEDIR' && !yo?.respaldo ? 'Solo los almacenes por los que responde.' : null,
             form.articulo
               ? 'Solo los sitios donde hay ese artículo.'
               : 'Solo los sitios que tienen algo que trasladar.',
@@ -493,13 +493,13 @@ export function ModalTraslado({
         */}
         <SelectBuscable
           label="Entra en"
-          vacio="Elige el almacén"
+          vacio="Seleccione el almacén"
           valor={form.destino}
           onCambio={(v) => cambiar({ destino: v })}
           hint={
             [
               form.forma === 'DIRECTO' && !yo?.respaldo
-                ? 'Solo los almacenes por los que respondes.'
+                ? 'Solo los almacenes por los que responde.'
                 : null,
               origenSinCosto === undefined
                 ? null
@@ -537,7 +537,7 @@ export function ModalTraslado({
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <SelectBuscable
           label="Artículo"
-          vacio="Elige el artículo"
+          vacio="Seleccione el artículo"
           valor={form.articulo}
           /*
             CAMBIAR DE ARTICULO PUEDE DEJAR HUERFANO EL ALMACEN.
@@ -605,7 +605,7 @@ export function ModalTraslado({
             articulos?.find((a) => String(a.id) === form.articulo),
             formasDeContar,
           )}
-          hintSinArticulo="Elige almacén y artículo para ver cuánto hay."
+          hintSinArticulo="Seleccione almacén y artículo para ver cuánto hay."
           hint={
             disponible === null ? undefined : `Disponible: ${disponible.toLocaleString('es-VE')}`
           }
@@ -626,7 +626,7 @@ export function ModalTraslado({
         {hayMezcla ? (
           <Select
             label="¿De quién sale?"
-            vacio="Elige el dueño"
+            vacio="Seleccione el dueño"
             value={form.propietario}
             onChange={(e) => cambiar({ propietario: e.target.value })}
             hint="Aquí hay material de varios dueños. El traslado no cambia de dueño: lo lleva."
@@ -660,7 +660,7 @@ export function ModalTraslado({
               ? 'Poner mi firma digital en «Envió» y en «Recibió»'
               : 'Poner mi firma digital en «Envió»'}
             <span className="text-ink/50 mt-0.5 block text-xs">
-              Sin marcar, la raya de la nota de traslado sale en blanco con tu nombre debajo.
+              Sin marcar, la raya de la nota de traslado sale en blanco con su nombre debajo.
             </span>
           </span>
         </label>

@@ -231,7 +231,7 @@ export function ModalAlTaller({
 
           <SelectBuscable
             label="De dónde sale"
-            vacio={elegidoArticulo ? 'Elige el sitio' : 'Elige antes el material'}
+            vacio={elegidoArticulo ? 'Seleccione el sitio' : 'Seleccione antes el material'}
             valor={elegidoAlmacen}
             onCambio={setElegidoAlmacen}
             // Solo los sitios que lo tienen, con cuánto hay en cada uno: así no
@@ -260,7 +260,7 @@ export function ModalAlTaller({
           }
         />
         <Input
-          label={`Cuánto mandas${enCurso ? ` (${enPlural(enCurso.unidad)})` : ''}`}
+          label={`Cuánto manda${enCurso ? ` (${enPlural(enCurso.unidad)})` : ''}`}
           type="number"
           min="0.01"
           step="0.01"

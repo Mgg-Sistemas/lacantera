@@ -683,7 +683,7 @@ export function Existencias() {
         title="Existencias"
         description={
           enTotal
-            ? 'Todo lo que tiene la empresa, sumado. Elige un almacén o taller para ver y mover lo que hay en él.'
+            ? 'Todo lo que tiene la empresa, sumado. Seleccione un almacén o taller para ver y mover lo que hay en él.'
             : 'Lo que hay en este sitio ahora mismo, calculado sumando el libro de movimientos.'
         }
         actions={
@@ -1227,7 +1227,7 @@ export function Existencias() {
           descripcion={
             modal.tipo === 'entrada'
               ? 'Para lo que entra sin una compra de por medio: el saldo con el que arranca el almacén, algo comprado por fuera, material que trae alguien.'
-              : 'Escribe lo que contaste. El sistema calcula la diferencia y la deja registrada.'
+              : 'Escriba lo que contaste. El sistema calcula la diferencia y la deja registrada.'
           }
           /*
             LA ENTRADA NECESITA MÁS ANCHO QUE EL CONTEO.
@@ -1289,7 +1289,7 @@ export function Existencias() {
             <>
               <SelectBuscable
                 label="A qué almacén entra"
-                vacio="Elige el sitio"
+                vacio="Seleccione el sitio"
                 valor={aDonde}
                 /*
                   CAMBIAR DE ALMACEN OLVIDA TODAS LAS CONFIRMACIONES.
@@ -1410,7 +1410,7 @@ export function Existencias() {
 
                       <SelectBuscable
                         label="Qué entra"
-                        vacio="Elige el artículo"
+                        vacio="Seleccione el artículo"
                         valor={r.articulo}
                         onCambio={(v) =>
                           setRenglones((lista) =>
@@ -1593,7 +1593,7 @@ export function Existencias() {
                             que elegirla. */}
                         <Select
                           label="Moneda"
-                          vacio="Elige"
+                          vacio="Seleccione"
                           className="sm:col-span-2 sm:max-w-40"
                           value={r.moneda}
                           error={
@@ -1682,7 +1682,7 @@ export function Existencias() {
                             Donación, o no se sabe cuánto costó
                             <span className="text-ink/50 mt-0.5 block text-xs">
                               {r.sinValor
-                                ? 'Entra sin cifra y queda pendiente de valorar. Escribe abajo de dónde vino: dentro de un año esa nota es lo único que lo va a contestar.'
+                                ? 'Entra sin cifra y queda pendiente de valorar. Escriba abajo de dónde vino: dentro de un año esa nota es lo único que lo va a contestar.'
                                 : 'Para lo que llegó donado o sin factura, y nadie sabe cuánto costó. No es lo mismo que costar cero: un cero abarataría cada salida futura de este artículo.'}
                             </span>
                           </span>
@@ -2464,7 +2464,7 @@ function AvisoDeCosto({
             <strong>
               {nombre} viene costando {monto(r.viene_costando!)}
             </strong>{' '}
-            por {unidad || 'unidad'} y lo estás metiendo a {monto(r.entra_a!)}: son{' '}
+            por {unidad || 'unidad'} y lo está metiendo a {monto(r.entra_a!)}: son{' '}
             <strong>
               {monto(r.veces!)} veces {r.hacia === 'ARRIBA' ? 'más' : 'menos'}
             </strong>
@@ -2478,9 +2478,9 @@ function AvisoDeCosto({
             — es más de diez veces {r.hacia === 'ARRIBA' ? 'más caro' : 'más barato'}.
           </>
         )}{' '}
-        Comprueba la factura y la moneda: un cero de más aquí se arrastra a cada salida.
+        Compruebe la factura y la moneda: un cero de más aquí se arrastra a cada salida.
       </p>
-      {casilla('Es correcto, guárdalo así — quedará anotado en el movimiento')}
+      {casilla('Es correcto, guárdelo así — quedará anotado en el movimiento')}
     </div>
   )
 }
@@ -2640,7 +2640,7 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
         <p className="border-warning/40 bg-warning-soft text-ink/80 rounded-card mt-3 border p-2.5 text-xs leading-relaxed">
           <strong>Es el mismo costo que ya tiene</strong> —{dolares(p.costo_actual)} por{' '}
           {fila.unidad || 'unidad'}—: no hay nada que corregir. Si lo que estaba mal era la moneda,
-          elige la de la factura.
+          elija la de la factura.
         </p>
       ) : null}
 

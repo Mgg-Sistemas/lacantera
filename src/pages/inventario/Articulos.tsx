@@ -522,7 +522,7 @@ export function Articulos() {
             rows={3}
             value={motivoEstado}
             onChange={(e) => setMotivoEstado(e.target.value)}
-            hint="Queda guardado con tu nombre y la fecha. Al menos diez letras."
+            hint="Queda guardado con su nombre y la fecha. Al menos diez letras."
           />
           {/* Desactivar no pasa siempre: con existencia, o dentro de una
               cotización enviada o de un traslado, la base lo niega y dice por
@@ -541,7 +541,7 @@ export function Articulos() {
           descripcion={
             form.id
               ? 'El código no se cambia: es con lo que se pide en el almacén y ya está impreso en lo emitido.'
-              : 'Solo hacen falta el nombre, la categoría y la unidad. El código se pone solo si lo dejas vacío.'
+              : 'Solo hacen falta el nombre, la categoría y la unidad. El código se pone solo si lo deja vacío.'
           }
           acciones={
             <>
@@ -765,7 +765,7 @@ export function Articulos() {
                   rows={2}
                   value={form.motivo_densidad}
                   onChange={(e) => setForm({ ...form, motivo_densidad: e.target.value })}
-                  hint={`Era ${densidadLegible(densidadDeAntes ?? 0)} t/m³. Cambiarla cambia la conversión de todo lo que se imprima desde ahora, también de papeles viejos. Queda con tu nombre y la fecha; al menos diez letras.`}
+                  hint={`Era ${densidadLegible(densidadDeAntes ?? 0)} t/m³. Cambiarla cambia la conversión de todo lo que se imprima desde ahora, también de papeles viejos. Queda con su nombre y la fecha; al menos diez letras.`}
                 />
               </div>
             ) : null}

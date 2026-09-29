@@ -575,7 +575,7 @@ export function Movimientos() {
             }
             descripcion={
               rango.desde || rango.hasta || almacenId
-                ? 'No hubo movimientos en lo que estás mirando. Prueba a ampliar las fechas o a quitar el almacén.'
+                ? 'No hubo movimientos en lo que está mirando. Pruebe a ampliar las fechas o a quitar el almacén.'
                 : 'La primera línea la escribe la primera recepción de una compra.'
             }
           />
