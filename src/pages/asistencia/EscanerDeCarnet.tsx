@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { enCastellano } from '@/lib/castellano'
 
 /*
   LA CÁMARA QUE LEE EL QR DEL CARNET
@@ -67,7 +68,7 @@ function explicar(e: unknown): string {
     return 'La cámara está bloqueada. Si el navegador no preguntó nada, revisa el candado junto a la dirección y permite la cámara; si sigue igual, el servidor tiene la cámara prohibida para el sitio.'
   if (nombre === 'NotFoundError' || nombre === 'OverconstrainedError') return 'Este equipo no tiene cámara, o el navegador no la encuentra.'
   if (nombre === 'NotReadableError') return 'Otra aplicación está usando la cámara. Ciérrala y vuelve a intentar.'
-  return `No se pudo abrir la cámara: ${e instanceof Error ? e.message : String(e)}`
+  return `No se pudo abrir la cámara: ${enCastellano(e)}`
 }
 
 export function EscanerDeCarnet({ onLeido, onCerrar }: { onLeido: (texto: string) => void; onCerrar: () => void }) {

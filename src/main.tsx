@@ -7,6 +7,7 @@ import '@fontsource-variable/inter'
 import '@fontsource-variable/archivo/wght.css'
 import './index.css'
 import { aplicarTemaInicial } from './lib/tema'
+import { enCastellano } from '@/lib/castellano'
 
 // Antes de montar React: si esperara al primer render, la pantalla parpadearía
 // en claro antes de oscurecerse.
@@ -138,7 +139,7 @@ try {
     )
     throw error
   } else {
-    pantallaDeFallo(error instanceof Error ? error.message : String(error))
+    pantallaDeFallo(enCastellano(error))
     throw error
   }
 }

@@ -30,6 +30,7 @@ import type { SolicitudDeSalida } from '@/lib/api/salidas'
 import { ModalSalida } from './ModalSalida'
 import { useNotaDeSalida } from './NotaDeSalida'
 import { fechaHora } from '@/lib/formato'
+import { enCastellano } from '@/lib/castellano'
 
 /*
   LO QUE SE PIDE ANTES DE ENTREGARLO
@@ -146,7 +147,7 @@ export function Solicitudes() {
       setCerrando(null)
       setMotivo('')
     } catch (e) {
-      setFallo(e instanceof Error ? e.message : String(e))
+      setFallo(enCastellano(e))
     }
   }
 
@@ -298,7 +299,7 @@ export function Solicitudes() {
                         }
                         aprobar.mutate(
                           { id: s.id, con_firma: false },
-                          { onError: (e) => setFallo(e instanceof Error ? e.message : String(e)) },
+                          { onError: (e) => setFallo(enCastellano(e)) },
                         )
                       }}
                     >
@@ -356,7 +357,7 @@ export function Solicitudes() {
                         setFallo(null)
                         entregar.mutate(s.id, {
                           onSuccess: (numero) => void nota.abrir(numero as string, s.motivo),
-                          onError: (e) => setFallo(e instanceof Error ? e.message : String(e)),
+                          onError: (e) => setFallo(enCastellano(e)),
                         })
                       }}
                     >
@@ -461,7 +462,7 @@ export function Solicitudes() {
                       onSuccess: () => setAprobando(null),
                       onError: (e) => {
                         setAprobando(null)
-                        setFallo(e instanceof Error ? e.message : String(e))
+                        setFallo(enCastellano(e))
                       },
                     },
                   )

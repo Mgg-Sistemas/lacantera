@@ -28,6 +28,7 @@ import {
 } from '@/lib/api/inventario'
 import type { GrupoDeSalida } from '@/lib/api/inventario'
 import { cn } from '@/lib/cn'
+import { enCastellano } from '@/lib/castellano'
 
 /*
   SACAR MATERIAL, EN EL MÓDULO QUE LE TOCA
@@ -526,7 +527,7 @@ export function ModalSalida({
       try {
         await subirFotosDeCarga('SALIDA', numeros, archivos)
       } catch (e) {
-        aviso = `La solicitud ${numeros.join(', ')} quedó hecha, pero las fotos no subieron (${e instanceof Error ? e.message : String(e)}). Añádelas desde su tarjeta.`
+        aviso = `La solicitud ${numeros.join(', ')} quedó hecha, pero las fotos no subieron (${enCastellano(e)}). Añádelas desde su tarjeta.`
       } finally {
         setSubiendo(false)
       }
