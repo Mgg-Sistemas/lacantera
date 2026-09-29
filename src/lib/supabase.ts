@@ -101,7 +101,7 @@ if (!pareceClave && !pareceJwt) {
   throw new Error(
     `VITE_SUPABASE_PUBLISHABLE_KEY no tiene forma de clave (${publishableKey.length} caracteres). ` +
       `Debe ser una sola línea: o empieza por "sb_publishable_", o son tres tramos ` +
-      `separados por puntos. Revisa que esté copiada una sola vez y entera, desde ` +
+      `separados por puntos. Revise que esté copiada una sola vez y entera, desde ` +
       `Supabase → Settings → API. ${AYUDA}`,
   )
 }

@@ -152,7 +152,7 @@ export async function verificarCarnet(codigo: string): Promise<CarnetVerificado>
   if (error) {
     throw new Error(
       error.message?.includes('Failed to fetch')
-        ? 'No hay conexión. Revisa la señal del teléfono e inténtalo otra vez.'
+        ? 'No hay conexión. Revise la señal del teléfono e inténtelo otra vez.'
         : 'No se pudo comprobar el carnet en este momento.',
     )
   }

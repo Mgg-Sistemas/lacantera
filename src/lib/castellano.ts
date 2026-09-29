@@ -83,7 +83,7 @@ function pareceDeCasa(m: string): boolean {
  * Object]», nunca un enlace a una especificación.
  */
 export function enCastellano(fallo: unknown): string {
-  if (fallo == null) return 'Algo falló y no dijo qué. Vuelve a intentarlo.'
+  if (fallo == null) return 'Algo falló y no dijo qué. Vuelva a intentarlo.'
 
   const e = (typeof fallo === 'object' ? fallo : {}) as FalloLegible
   const m = texto(e.message) || (typeof fallo === 'string' ? fallo : '')
@@ -101,13 +101,13 @@ export function enCastellano(fallo: unknown): string {
     aviso, que además es el más frecuente en la cantera.
   */
   if (tiene('failed to fetch', 'networkerror', 'load failed', 'network request failed')) {
-    return 'No hay conexión con el servidor. Revisa la red e inténtalo otra vez. Lo que no se guardó, no quedó.'
+    return 'No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.'
   }
   if (nombre === 'AbortError' || nombre === 'TimeoutError' || tiene('aborted', 'timed out')) {
-    return 'La operación tardó demasiado y se cortó. Vuelve a intentarlo; si la red está lenta, espera un momento.'
+    return 'La operación tardó demasiado y se cortó. Vuelva a intentarlo; si la red está lenta, espere un momento.'
   }
   if (tiene('failed to send a request to the edge function')) {
-    return 'No se pudo contactar a esa parte del sistema. Vuelve a intentarlo dentro de un minuto.'
+    return 'No se pudo contactar a esa parte del sistema. Vuelva a intentarlo dentro de un minuto.'
   }
   if (tiene('edge function returned a non-2xx')) {
     return 'Esa parte del sistema contestó con un error. Si se repite, avisa a soporte.'
@@ -118,7 +118,7 @@ export function enCastellano(fallo: unknown): string {
     codigo === 'PGRST301' ||
     tiene('jwt expired', 'jwt is expired', 'invalid refresh token', 'refresh_token_not_found', 'auth session missing')
   ) {
-    return 'Tu sesión venció. Vuelve a entrar y repite lo que estabas haciendo.'
+    return 'Su sesión venció. Vuelva a entrar y repita lo que estaba haciendo.'
   }
 
   // ── Entrar al sistema ─────────────────────────────────────────────────────
@@ -145,15 +145,15 @@ export function enCastellano(fallo: unknown): string {
     return n ? `Por seguridad hay que esperar ${n} segundos antes de volver a intentarlo.` : 'Por seguridad hay que esperar un momento antes de volver a intentarlo.'
   }
   if (http === 429 || tiene('too many requests', 'rate limit')) {
-    return 'Se intentó demasiadas veces seguidas. Espera un minuto y vuelve a probar.'
+    return 'Se intentó demasiadas veces seguidas. Espere un minuto y vuelva a probar.'
   }
 
   // ── Permisos ──────────────────────────────────────────────────────────────
   if (codigo === '42501' || tiene('permission denied', 'row-level security', 'row level security')) {
-    return 'Tu usuario no tiene permiso para esta acción.'
+    return 'Su usuario no tiene permiso para esta acción.'
   }
   if (http === 401 || http === 403) {
-    return 'No tienes permiso para esto, o la sesión venció. Vuelve a entrar y prueba otra vez.'
+    return 'No tiene permiso para esto, o la sesión venció. Vuelva a entrar y pruebe otra vez.'
   }
 
   // ── Lo que la base no admite ──────────────────────────────────────────────
@@ -173,10 +173,10 @@ export function enCastellano(fallo: unknown): string {
     return col ? `Falta un dato obligatorio: ${col}.` : 'Falta un dato obligatorio.'
   }
   if (codigo === '23514' || tiene('violates check constraint')) {
-    return 'Ese valor no es válido para este campo. Revisa lo que escribiste.'
+    return 'Ese valor no es válido para este campo. Revise lo que escribió.'
   }
   if (codigo === '22P02' || tiene('invalid input syntax')) {
-    return 'Hay un dato con el formato equivocado. Revisa las fechas y los números.'
+    return 'Hay un dato con el formato equivocado. Revise las fechas y los números.'
   }
   if (codigo === '22001' || tiene('value too long')) return 'Ese texto es demasiado largo.'
   if (codigo === '22003' || tiene('out of range')) return 'Ese número se sale de lo que el campo admite.'
@@ -186,19 +186,19 @@ export function enCastellano(fallo: unknown): string {
     return 'Esa operación todavía no existe en la base de datos. Falta correr las migraciones.'
   }
   if (codigo === 'PGRST204' || tiene('schema cache')) {
-    return 'La base cambió hace un momento y el sistema todavía no se enteró. Recarga la página e inténtalo otra vez.'
+    return 'La base cambió hace un momento y el sistema todavía no se enteró. Recargue la página e inténtelo otra vez.'
   }
   if (codigo === '42P01' || tiene('does not exist')) {
     return 'Falta algo en la base de datos para esta pantalla. Avisa a soporte: hay una migración sin correr.'
   }
   if (codigo === '57014' || tiene('statement timeout', 'canceling statement')) {
-    return 'La consulta tardó demasiado y el servidor la cortó. Acota las fechas o los filtros y vuelve a pedirla.'
+    return 'La consulta tardó demasiado y el servidor la cortó. Acote las fechas o los filtros y vuelva a pedirla.'
   }
   if (codigo === '53300' || tiene('too many connections')) {
-    return 'El servidor está saturado en este momento. Espera un poco y vuelve a intentarlo.'
+    return 'El servidor está saturado en este momento. Espere un poco y vuelva a intentarlo.'
   }
   if (http >= 500 || tiene('internal server error', 'bad gateway', 'service unavailable')) {
-    return 'El servidor falló. Espera un momento y vuelve a intentarlo; si sigue, avisa a soporte.'
+    return 'El servidor falló. Espere un momento y vuelva a intentarlo; si sigue, avise a soporte.'
   }
 
   // ── Archivos ──────────────────────────────────────────────────────────────
@@ -220,13 +220,13 @@ export function enCastellano(fallo: unknown): string {
 
   // ── La cámara, que es un DOMException y no un error de red ────────────────
   if (nombre === 'NotAllowedError') {
-    return 'No diste permiso para usar la cámara. Ábrelo en el candado de la barra de direcciones y vuelve a intentarlo.'
+    return 'No dio permiso para usar la cámara. Ábralo en el candado de la barra de direcciones y vuelva a intentarlo.'
   }
   if (nombre === 'NotFoundError' || nombre === 'OverconstrainedError') {
     return 'Este equipo no tiene una cámara que el sistema pueda usar.'
   }
   if (nombre === 'NotReadableError') {
-    return 'La cámara está ocupada por otro programa. Ciérralo y vuelve a intentarlo.'
+    return 'La cámara está ocupada por otro programa. Ciérrelo y vuelva a intentarlo.'
   }
 
   // ── Lo que ya venía escrito para leerse ───────────────────────────────────
@@ -242,5 +242,5 @@ export function enCastellano(fallo: unknown): string {
     quien la necesita es quien va a arreglarlo — que sabe abrirla.
   */
   if (m) console.error('Fallo sin traducir:', fallo)
-  return 'Algo salió mal y el sistema no supo explicarlo. Vuelve a intentarlo; si se repite, avisa a soporte.'
+  return 'Algo salió mal y el sistema no supo explicarlo. Vuelva a intentarlo; si se repite, avise a soporte.'
 }
