@@ -265,7 +265,7 @@ export function Solicitudes() {
                   <p className="text-ink/40 mt-2 text-xs">
                     La solicitó {nombreDe(s.pedida_por)} · {fechaHora(s.pedida_en)}
                     {s.aprobada_en
-                      ? ` · ${s.estado === 'RECHAZADA' ? 'la resolvió' : 'la aprobó'} ${nombreDe(s.aprobada_por)}`
+                      ? ` · ${s.estado === 'RECHAZADA' ? 'la rechazó' : 'la aprobó'} ${nombreDe(s.aprobada_por)}`
                       : ''}
                     {s.aprobada_de_respaldo ? ' (de respaldo)' : ''}
                     {s.entregada_en ? ` · la entregó ${nombreDe(s.entregada_por)}` : ''}
