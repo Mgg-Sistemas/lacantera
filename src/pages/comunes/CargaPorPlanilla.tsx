@@ -231,7 +231,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
       if (obligatoriasQueFaltan.length > 0) {
         setErrorLectura(
           `A la planilla le faltan columnas que hacen falta: ${obligatoriasQueFaltan.join(', ')}. ` +
-            'Vuelve a bajar la plantilla y llena esa, sin cambiarle los nombres a las columnas.',
+            'Vuelva a bajar la plantilla y llene esa, sin cambiarle los nombres a las columnas.',
         )
         setFilas(null)
         return
@@ -265,7 +265,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
       setErrorLectura(
         e instanceof ErrorDePlanilla
           ? e.message
-          : 'No se pudo leer el archivo. Comprueba que sea la plantilla en CSV o en Excel.',
+          : 'No se pudo leer el archivo. Compruebe que sea la plantilla en CSV o en Excel.',
       )
     }
   }
@@ -337,7 +337,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
           {/* ------------------------------ 1. La plantilla ----------------------------- */}
           <Card>
             <CardHeader
-              title="1 · Baja la plantilla"
+              title="1 · Baje la plantilla"
               subtitle="Trae las columnas en el orden que el sistema espera, dos filas de ejemplo, y una segunda hoja que explica qué va en cada una."
             />
             <Button
@@ -350,15 +350,15 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
             </Button>
             <p className="text-ink/45 mt-2 text-xs">
               Es un archivo de Excel con dos hojas: la que se llena y otra con las
-              instrucciones. Al terminar, guárdala como está.
+              instrucciones. Al terminar, guárdela como está.
             </p>
           </Card>
 
           {/* -------------------------------- 2. Subirla -------------------------------- */}
           <Card>
             <CardHeader
-              title="2 · Súbela llena"
-              subtitle="Se revisa al instante y se te dice qué va a pasar con cada fila, antes de tocar nada."
+              title="2 · Súbala llena"
+              subtitle="Se revisa al instante y se le dice qué va a pasar con cada fila, antes de tocar nada."
             />
 
             <input
@@ -397,7 +397,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                   title="3 · Esto es lo que va a pasar"
                   subtitle={
                     informe.errores > 0
-                      ? 'Con una sola fila mal no entra ninguna. Corrígela aquí con «Corregir», o en el archivo y súbelo otra vez.'
+                      ? 'Con una sola fila mal no entra ninguna. Corríjala aquí con «Corregir», o en el archivo y súbalo otra vez.'
                       : 'Nada se ha escrito todavía.'
                   }
                 />
@@ -417,9 +417,9 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                 {corregidas.length > 0 ? (
                   <p className="text-ink/55 mt-3 text-xs">
                     {corregidas.length === 1
-                      ? 'Corregiste 1 fila aquí.'
-                      : `Corregiste ${corregidas.length} filas aquí.`}{' '}
-                    Se carga con la corrección, pero el archivo que tienes guardado sigue como
+                      ? 'Corrigió 1 fila aquí.'
+                      : `Corrigió ${corregidas.length} filas aquí.`}{' '}
+                    Se carga con la corrección, pero el archivo que tiene guardado sigue como
                     estaba.
                   </p>
                 ) : null}
@@ -442,7 +442,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                         : `Revisé los ${informe.avisos_de_costo} costos marcados abajo`}
                       <span className="text-ink/50 mt-0.5 block text-xs">
                         Lo que entra por primera vez pasa a ser la referencia de todo lo que
-                        venga después, y un cero de más no lo corrige nadie. Compruébalos con
+                        venga después, y un cero de más no lo corrige nadie. Compruébelos con
                         la factura antes de cargar.
                       </span>
                     </span>
@@ -466,7 +466,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                         ? 'Revisé el artículo nuevo que se parece a uno del catálogo'
                         : `Revisé los ${informe.avisos_de_parecido} artículos nuevos que se parecen a uno del catálogo`}
                       <span className="text-ink/50 mt-0.5 block text-xs">
-                        Si es el mismo, pulsa «Es el mismo» en su fila y se actualiza ese en vez
+                        Si es el mismo, pulse «Es el mismo» en su fila y se actualiza ese en vez
                         de crear otro. Dos fichas del mismo artículo acaban con la existencia
                         repartida y ninguna cuadra.
                       </span>
@@ -490,8 +490,8 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                       Entendido: esta planilla solo carga el catálogo, sin existencia
                       <span className="text-ink/50 mt-0.5 block text-xs">
                         Ninguna fila dice cuánto hay en un almacén, así que los artículos quedan
-                        creados con cero. Si querías meter lo que hay, llena almacén, cantidad,
-                        costo y moneda en cada fila y vuelve a subirla.
+                        creados con cero. Si quería meter lo que hay, llene almacén, cantidad,
+                        costo y moneda en cada fila y vuelva a subirla.
                       </span>
                     </span>
                   </label>
@@ -720,7 +720,7 @@ function CorregirFila({
       onCerrar={onCerrar}
       ancho="lg"
       titulo={`Corregir la fila ${fila}`}
-      descripcion="Vale solo para esta carga y se vuelve a revisar al instante. No se guarda nada hasta que pulses «Cargar»."
+      descripcion="Vale solo para esta carga y se vuelve a revisar al instante. No se guarda nada hasta que pulse «Cargar»."
       acciones={
         <>
           <Button variant="outline" onClick={onCerrar}>
