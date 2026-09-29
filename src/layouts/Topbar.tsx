@@ -43,7 +43,7 @@ function IndicadorEnVivo({ estado }: { estado: EstadoTiempoReal }) {
   if (estado !== 'sin-conexion') return null
 
   const explicacion =
-    'Se perdió el enlace con el servidor. Lo que ves puede estar viejo; recarga la página para ponerlo al día.'
+    'Se perdió el enlace con el servidor. Lo que ve puede estar viejo; recargue la página para ponerlo al día.'
 
   return (
     <span
@@ -198,7 +198,7 @@ function IndicadorTasa() {
             ? 'El BCV ya publicó la tasa de hoy y el sistema todavía valora con otra. Abre para arreglarlo.'
             : data.vigente
               ? 'Tasa publicada hoy y registrada en el sistema. Abre para ver las demás monedas y convertir.'
-              : `La última tasa publicada es del ${fechaCorta}. Confirma antes de emitir documentos.`
+              : `La última tasa publicada es del ${fechaCorta}. Confirme antes de emitir documentos.`
         }
         className={cn(clases, 'flex transition-colors', sinRegistrar && 'hover:border-warning/60')}
       >

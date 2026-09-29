@@ -243,7 +243,7 @@ export function Tasas() {
                       ? `Se registra como ${elegida?.fuente_tasa ?? 'PARALELO'}: no hay fuente pública que consultar.`
                       : enVivo.data
                         ? `Según ${quienPublica}: Bs ${fmtTasa(enVivo.data.valor)}${enVivo.data.vigente ? '' : ' (no es de hoy)'}`
-                        : `No se pudo consultar ${quienPublica}; escribe el valor a mano.`
+                        : `No se pudo consultar ${quienPublica}; escriba el valor a mano.`
                   }
                 />
               </div>

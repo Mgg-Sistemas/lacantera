@@ -31,7 +31,7 @@ export function MiCuenta() {
 
   if (isPending) return <Cargando />
   if (error) return <ErrorDeCarga error={error} />
-  if (!yo) return <ErrorDeCarga error={new Error('No se encontró tu perfil.')} />
+  if (!yo) return <ErrorDeCarga error={new Error('No se encontró su perfil.')} />
 
   const nombreDeRol = (codigo: string) =>
     roles?.find((r) => r.codigo === codigo)?.nombre ?? codigo
@@ -44,7 +44,7 @@ export function MiCuenta() {
 
   return (
     <>
-      <PageHeader title="Mi cuenta" description="Tus datos y tu clave." />
+      <PageHeader title="Mi cuenta" description="Sus datos y su clave." />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
@@ -87,8 +87,8 @@ export function MiCuenta() {
             <div className="border-warning/30 bg-warning-soft text-warning mt-4 flex items-start gap-2.5 rounded-[6px] border p-3 text-sm">
               <ShieldAlert className="mt-px size-[18px] shrink-0" />
               <span>
-                Tu clave todavía es la que te asignó la administración. Cámbiala por una que solo
-                tú sepas: mientras tanto, lo que registres con ella no distingue si fuiste tú.
+                Su clave todavía es la que le asignó la administración. Cámbiela por una que solo
+                usted sepa: mientras tanto, lo que registre con ella no distingue si fue usted.
               </span>
             </div>
           ) : null}
@@ -123,11 +123,11 @@ export function ExigeClaveNueva({ nombre }: { nombre: string }) {
         </div>
 
         <h1 className="text-ink/90 mt-5 text-center text-2xl font-semibold tracking-tight">
-          Ponle tu propia clave
+          Póngale su propia clave
         </h1>
         <p className="text-ink/55 mt-2 text-center text-base">
-          Hola, {nombre}. La clave con la que acabas de entrar te la dio la administración, así
-          que la saben dos personas. Elige una que sepas solo tú para seguir.
+          Hola, {nombre}. La clave con la que acaba de entrar se la dio la administración, así
+          que la saben dos personas. Elija una que sepa solo usted para seguir.
         </p>
 
         <div className="bg-surface shadow-card rounded-card border-hairline mt-7 border p-6">

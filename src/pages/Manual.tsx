@@ -213,7 +213,7 @@ export function Manual() {
           <Button
             variant="outline"
             icon={<Download />}
-            title="Abre el diálogo de impresión. Elige «Guardar como PDF» como destino."
+            title="Abre el diálogo de impresión. Elija «Guardar como PDF» como destino."
             onClick={() => window.print()}
           >
             Descargar en PDF

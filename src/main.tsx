@@ -134,8 +134,8 @@ try {
     location.reload()
   } else if (esArchivoQueNoLlego(error)) {
     pantallaDeFallo(
-      'Se publicó una versión nueva del sistema y tu navegador sigue trayendo la anterior. ' +
-        'Recarga con Ctrl+Shift+R. Si sigue igual, ábrelo en una ventana de incógnito y avisa a quien administra el sistema.',
+      'Se publicó una versión nueva del sistema y su navegador sigue trayendo la anterior. ' +
+        'Recargue con Ctrl+Shift+R. Si sigue igual, ábralo en una ventana de incógnito y avise a quien administra el sistema.',
     )
     throw error
   } else {
