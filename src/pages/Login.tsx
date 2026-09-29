@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase'
 import { estadoGuardado, paseConHuella } from '@/lib/huella'
 import { usePuntero } from '@/lib/puntero'
 import { sonarError } from '@/lib/sonido'
+import { enCastellano } from '@/lib/castellano'
 
 export function Login() {
   const navigate = useNavigate()
@@ -69,7 +70,7 @@ export function Login() {
 
       void navigate('/app')
     } catch (e) {
-      const mensaje = e instanceof Error ? e.message : String(e)
+      const mensaje = enCastellano(e)
       // Cancelar el diálogo del sistema no es un fallo que haya que gritar.
       if (!/NotAllowed|abort/i.test(mensaje)) {
         sonarError()

@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { enCastellano } from './castellano'
 
 /**
  * Dominio interno para el mapeo usuario → correo.
@@ -53,7 +54,7 @@ export async function iniciarSesion(
     if (error.status === 400) {
       return { ok: false, error: 'Usuario o clave incorrectos.' }
     }
-    return { ok: false, error: `No se pudo entrar: ${error.message}` }
+    return { ok: false, error: enCastellano(error) }
   }
 
   return { ok: true }

@@ -1,6 +1,7 @@
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
+import { enCastellano } from '@/lib/castellano'
 
 /**
  * Los tres estados que toda pantalla que lee de la base tiene que saber
@@ -18,7 +19,13 @@ export function Cargando({ texto = 'Cargando…' }: { texto?: string }) {
 }
 
 export function ErrorDeCarga({ error, className }: { error: unknown; className?: string }) {
-  const mensaje = error instanceof Error ? error.message : String(error)
+  /*
+    Por aquí pasa casi todo lo que se rompe en una pantalla, así que es el
+    sitio donde más rinde traducir: un solo cambio y deja de salir «Failed to
+    fetch» en cincuenta pantallas. Los mensajes que ya vienen en castellano
+    —los de nuestras funciones de base— pasan intactos.
+  */
+  const mensaje = enCastellano(error)
 
   return (
     <div

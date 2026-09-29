@@ -23,6 +23,7 @@ import {
   type DocumentoLegal,
 } from '@/lib/api/empresa'
 import { fecha } from '@/lib/formato'
+import { enCastellano } from '@/lib/castellano'
 
 const TOPE_BYTES = 50 * 1024 * 1024
 
@@ -125,7 +126,7 @@ export function Documentos() {
     try {
       setViendo({ doc, url: await urlDocumento(doc.archivo_path) })
     } catch (e) {
-      setFallo(e instanceof Error ? e.message : String(e))
+      setFallo(enCastellano(e))
     } finally {
       setAbriendo(null)
     }
@@ -159,7 +160,7 @@ export function Documentos() {
       setArchivo(null)
       setEditando(null)
     } catch (e) {
-      setFallo(e instanceof Error ? e.message : String(e))
+      setFallo(enCastellano(e))
     }
   }
 
@@ -170,7 +171,7 @@ export function Documentos() {
       await eliminar.mutateAsync(borrando.id)
       setBorrando(null)
     } catch (e) {
-      setFallo(e instanceof Error ? e.message : String(e))
+      setFallo(enCastellano(e))
     }
   }
 

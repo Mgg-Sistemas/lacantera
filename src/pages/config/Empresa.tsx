@@ -14,6 +14,7 @@ import {
   type Empresa as Datos,
 } from '@/lib/api/empresa'
 import { fecha } from '@/lib/formato'
+import { enCastellano } from '@/lib/castellano'
 
 /**
  * Quién es la empresa, según el registro.
@@ -77,7 +78,7 @@ export function Empresa() {
       })
       setGuardado(true)
     } catch (e) {
-      setFallo(e instanceof Error ? e.message : String(e))
+      setFallo(enCastellano(e))
     }
   }
 

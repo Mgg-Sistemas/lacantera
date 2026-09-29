@@ -9,6 +9,7 @@ import { ErrorDeCarga } from '@/components/ui/Estado'
 import { usePresentacionesDeArticulo } from '@/lib/api/catalogo'
 import { useReenvasar } from '@/lib/api/inventario'
 import type { Existencia } from '@/lib/api/inventario'
+import { enCastellano } from '@/lib/castellano'
 
 /*
   CAMBIAR DE ENVASE SIN CAMBIAR DE CANTIDAD.
@@ -114,7 +115,7 @@ export function ModalTrasvase({
       limpiar()
       onCerrar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(enCastellano(e))
     }
   }
 
