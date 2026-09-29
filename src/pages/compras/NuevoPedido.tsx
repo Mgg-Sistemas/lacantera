@@ -268,7 +268,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
         description={
           corrigiendo
             ? 'Se corrige sobre el mismo pedido: conserva su número y su sitio en el historial.'
-            : 'Lo que pidas aquí entra al tablero en la columna Pedido.'
+            : 'Lo que pida aquí entra al tablero en la columna Pedido.'
         }
         actions={
           <>
@@ -375,7 +375,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                 <span className="text-ink/80">
                   Poner mi firma digital en «Solicitado por»
                   <span className="text-ink/50 mt-0.5 block text-xs">
-                    Sin marcar, la raya de la orden de compra sale en blanco con tu nombre debajo.
+                    Sin marcar, la raya de la orden de compra sale en blanco con su nombre debajo.
                   </span>
                 </span>
               </label>
@@ -539,7 +539,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                   {!fila.articulo_id && fila.descripcion.trim().length >= 3 ? (
                     <div className="border-hairline rounded-card bg-canvas grid gap-3 border border-dashed p-3 sm:col-span-12 sm:grid-cols-12">
                       <p className="text-ink/60 text-xs sm:col-span-12">
-                        No está en el catálogo. Si es algo que se va a volver a pedir, créalo
+                        No está en el catálogo. Si es algo que se va a volver a pedir, créelo
                         ahora y queda con un solo nombre para siempre.
                       </p>
 
@@ -555,7 +555,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                       <div className="sm:col-span-5">
                         <Select
                           label="Categoría"
-                          vacio="Elige"
+                          vacio="Seleccione"
                           value={fila.nueva_categoria}
                           onChange={(e) =>
                             cambiar(fila.clave, { nueva_categoria: e.target.value })
@@ -585,7 +585,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                             Artículos
                           </Link>
                           , con su densidad: sin ella no se puede expresar en la otra medida. Después
-                          vuelve y elígelo en este renglón.
+                          vuelva y elíjalo en este renglón.
                         </p>
                       ) : null}
 

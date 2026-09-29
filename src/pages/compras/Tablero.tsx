@@ -403,7 +403,7 @@ export function TableroCompras() {
         <Vacio
           icono={<ClipboardList />}
           titulo="Todavía no hay compras"
-          descripcion="Un pedido arranca cuando alguien necesita algo: un repuesto, combustible, un servicio. Créalo y el tablero se llena solo."
+          descripcion="Un pedido arranca cuando alguien necesita algo: un repuesto, combustible, un servicio. Créelo y el tablero se llena solo."
           accion={
             <Link to="/app/compras/nuevo">
               <Button icon={<Plus />}>Crear el primer pedido</Button>

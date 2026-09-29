@@ -156,7 +156,7 @@ export function ModalEditarOrden({
       ancho="lg"
       onCerrar={onCerrar}
       titulo={`Editar la orden ${orden.numero}`}
-      descripcion="Cambia lo que haga falta: proveedor, renglones, cantidades y precios. El almacén recibirá lo que quede aquí."
+      descripcion="Cambie lo que haga falta: proveedor, renglones, cantidades y precios. El almacén recibirá lo que quede aquí."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -353,7 +353,7 @@ export function ModalEditarOrden({
           </p>
         ) : (
           <p className="text-ink/55 mt-2 text-xs">
-            Cambiaste la moneda: la cuenta de los 100 $ la hace la base al guardar.
+            Cambió la moneda: la cuenta de los 100 $ la hace la base al guardar.
           </p>
         )}
       </div>
@@ -364,7 +364,7 @@ export function ModalEditarOrden({
         rows={2}
         value={motivo}
         onChange={(e) => setMotivo(e.target.value)}
-        hint="Queda en la bitácora de la compra y en el registro de auditoría, con tu nombre."
+        hint="Queda en la bitácora de la compra y en el registro de auditoría, con su nombre."
       />
 
       {editar.error ? <ErrorDeCarga error={editar.error} className="mt-4" /> : null}

@@ -127,7 +127,7 @@ export function Proveedores() {
           <Vacio
             icono={<Truck />}
             titulo="Todavía no hay proveedores"
-            descripcion="Sin proveedores no se pueden cargar cotizaciones. Empieza por los tres o cuatro con los que se compra siempre."
+            descripcion="Sin proveedores no se pueden cargar cotizaciones. Empiece por los tres o cuatro con los que se compra siempre."
             accion={
               <Button icon={<Plus />} onClick={() => abrir()}>
                 Registrar el primero
@@ -155,7 +155,7 @@ export function Proveedores() {
           <Vacio
             icono={<Search />}
             titulo="Ningún proveedor coincide"
-            descripcion="Prueba con parte del nombre o con el RIF sin guiones."
+            descripcion="Pruebe con parte del nombre o con el RIF sin guiones."
           />
         </Card>
       ) : null}

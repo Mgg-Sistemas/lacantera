@@ -408,7 +408,7 @@ export function CompraDirecta() {
         await adjuntar.mutateAsync({ orden_id: ordenId, tipo: 'FACTURA', archivo: factura })
       } catch {
         setAvisoPapel(
-          'La compra quedó guardada, pero la factura no se pudo subir, así que el material no entró al almacén. Sube la factura desde la compra, en «Papeles», y recíbela desde ahí.',
+          'La compra quedó guardada, pero la factura no se pudo subir, así que el material no entró al almacén. Suba la factura desde la compra, en «Papeles», y recíbala desde ahí.',
         )
         return
       }
@@ -428,7 +428,7 @@ export function CompraDirecta() {
         setAvisoPapel(
           `La compra y su factura quedaron guardadas, pero el material no entró al almacén: ${
             e instanceof Error ? e.message : 'falló la recepción'
-          } Recíbela desde la compra.`,
+          } Recíbala desde la compra.`,
         )
         return
       }
@@ -490,7 +490,7 @@ export function CompraDirecta() {
               }))}
               valor={proveedorId}
               onCambio={setProveedorId}
-              vacio="Busca el proveedor"
+              vacio="Busque el proveedor"
             />
             <Input
               label="N° de la factura"
@@ -612,8 +612,8 @@ export function CompraDirecta() {
                       }))}
                       valor={f.articulo_id}
                       onCambio={(v: string) => elegirArticulo(f.clave, v)}
-                      vacio="Busca el artículo"
-                      hint="¿No aparece? Marca arriba «Es nuevo» y agrégalo al catálogo sin salir de la compra."
+                      vacio="Busque el artículo"
+                      hint="¿No aparece? Marque arriba «Es nuevo» y agréguelo al catálogo sin salir de la compra."
                     />
                   </div>
                 ) : null}
@@ -646,7 +646,7 @@ export function CompraDirecta() {
                     <div className="sm:col-span-4">
                       <Select
                         label="Categoría"
-                        vacio="Elige"
+                        vacio="Seleccione"
                         value={f.nueva_categoria}
                         onChange={(e) => cambiar(f.clave, { nueva_categoria: e.target.value })}
                         opciones={CATEGORIAS_ARTICULO}
@@ -655,7 +655,7 @@ export function CompraDirecta() {
                     <div className="sm:col-span-4">
                       <Select
                         label="Se le da salida por"
-                        vacio="Elige"
+                        vacio="Seleccione"
                         value={f.nueva_unidad}
                         onChange={(e) => cambiar(f.clave, { nueva_unidad: e.target.value })}
                         opciones={unidadesDeUso}
@@ -744,7 +744,7 @@ export function CompraDirecta() {
                           valor={f.cantidad}
                           onCambiar={(v, capturada) => cambiar(f.clave, { cantidad: v, capturada })}
                           articulo={articulo}
-                          hintSinArticulo="Elige antes el artículo"
+                          hintSinArticulo="Seleccione antes el artículo"
                         />
                       ) : (
                         <Input
@@ -802,8 +802,8 @@ export function CompraDirecta() {
                         {f.modo === 'SERVICIO' || !articulo
                           ? ''
                           : tieneFormas
-                            ? 'Si vino en bultos, elige la presentación junto a la cantidad: el catálogo sabe cuánto trae cada una.'
-                            : `El catálogo no le declara presentación: se compra por ${articulo.unidad}. Para comprarlo por saco o caja, decláralo en Artículos.`}
+                            ? 'Si vino en bultos, seleccione la presentación junto a la cantidad: el catálogo sabe cuánto trae cada una.'
+                            : `El catálogo no le declara presentación: se compra por ${articulo.unidad}. Para comprarlo por saco o caja, declárelo en Artículos.`}
                       </p>
                       <label className="text-ink/70 flex cursor-pointer items-center gap-2 self-end pb-2.5 text-sm select-none">
                         <input
@@ -912,7 +912,7 @@ export function CompraDirecta() {
                 Entra al almacén ahora
                 <span className="text-ink/50 mt-0.5 block text-xs">
                   {!almacen
-                  ? 'Elige antes el almacén.'
+                  ? 'Seleccione antes el almacén.'
                   : faltaLaFactura
                     ? 'Hace falta la factura: sin el papel del proveedor el material no entra.'
                     : 'Se recibe completa, con la fecha de la compra.'}
@@ -949,7 +949,7 @@ export function CompraDirecta() {
               <span className="text-ink/80">
                 Poner mi firma digital en «Solicitado por» y en «Autorizado por»
                 <span className="text-ink/50 mt-0.5 block text-xs">
-                  Sin marcar, las dos rayas de la orden de compra salen en blanco con tu nombre debajo.
+                  Sin marcar, las dos rayas de la orden de compra salen en blanco con su nombre debajo.
                 </span>
               </span>
             </label>
@@ -965,7 +965,7 @@ export function CompraDirecta() {
 
         {altasPendientes ? (
           <p className="text-warning text-right text-sm">
-            Hay un renglón nuevo que todavía no está en el catálogo: termínalo o cámbialo de
+            Hay un renglón nuevo que todavía no está en el catálogo: termínelo o cámbielo de
             camino antes de aceptar.
           </p>
         ) : null}

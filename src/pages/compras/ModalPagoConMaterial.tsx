@@ -219,7 +219,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
         <SelectBuscable
           className="sm:col-span-2"
           label="Qué material se entrega"
-          vacio="Elige el material"
+          vacio="Seleccione el material"
           valor={articuloId}
           onCambio={elegirArticulo}
           opciones={opcionesArticulo}
@@ -228,7 +228,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
 
         <Select
           label="De qué patio sale"
-          vacio={articuloId ? 'Elige el patio' : 'Primero el material'}
+          vacio={articuloId ? 'Seleccione el patio' : 'Primero el material'}
           value={almacenId}
           onChange={(e) => setAlmacenId(e.target.value)}
           disabled={!articuloId}
@@ -400,7 +400,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
 
       {pendiente <= 0.01 ? (
         <p className="text-warning mt-3 text-sm">
-          Esta orden ya tiene instruido todo lo que se debe. Para pagarla con material, devuelve antes
+          Esta orden ya tiene instruido todo lo que se debe. Para pagarla con material, devuelva antes
           una instrucción.
         </p>
       ) : null}
@@ -490,7 +490,7 @@ export function ModalRegistrarPagoConMaterial({
           <span className="text-ink/80">
             Poner mi firma digital en «Solicitado por» de la orden de salida
             <span className="text-ink/50 mt-0.5 block text-xs">
-              Sin marcar, la raya sale en blanco con tu nombre debajo.
+              Sin marcar, la raya sale en blanco con su nombre debajo.
             </span>
           </span>
         </label>
@@ -567,7 +567,7 @@ export function ModalUsarSaldo({
       </p>
       <Select
         label="Qué saldo"
-        vacio="Elige el saldo"
+        vacio="Seleccione el saldo"
         value={saldoId}
         onChange={(e) => {
           setSaldoId(e.target.value)
