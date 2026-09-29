@@ -349,7 +349,7 @@ export function Facturacion() {
           ancho="lg"
           onCerrar={cerrarEmision}
           titulo={emite ? 'Emitir factura' : 'Preparar factura'}
-          descripcion="Marca las notas de entrega que van en esta factura. Tienen que ser del mismo cliente y la misma moneda."
+          descripcion="Marque las notas de entrega que van en esta factura. Tienen que ser del mismo cliente y la misma moneda."
           acciones={
             <>
               <Button variant="ghost" onClick={cerrarEmision}>
@@ -486,7 +486,7 @@ export function Facturacion() {
 
               {sinTributo ? (
                 <p className="text-warning mt-2 text-sm">
-                  Una factura lleva IVA, IGTF o los dos: marca al menos uno.
+                  Una factura lleva IVA, IGTF o los dos: marque al menos uno.
                 </p>
               ) : null}
 
@@ -743,7 +743,7 @@ export function Facturacion() {
           </p>
           <Textarea
             label="Por qué se anula"
-            hint="Queda en el registro de auditoría con tu nombre y la hora."
+            hint="Queda en el registro de auditoría con su nombre y la hora."
             rows={3}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}

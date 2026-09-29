@@ -292,7 +292,7 @@ export function ModalCobro({
         <p className="border-warning/30 bg-warning-soft text-ink/80 mb-4 rounded-[6px] border p-3 text-sm">
           Esta factura ya tiene material por recibir:{' '}
           {porRecibir.map((m) => `${cant(m.cantidad)} ${m.unidad} de ${m.articulo}`).join(', ')}. Hasta que almacén
-          lo confirme, el saldo no baja. No lo vuelvas a registrar.
+          lo confirme, el saldo no baja. No lo vuelva a registrar.
         </p>
       ) : null}
 
@@ -308,7 +308,7 @@ export function ModalCobro({
               <div className="grid gap-3 sm:grid-cols-2">
                 <SelectBuscable
                   label="A qué cuenta entró"
-                  vacio="Elige la cuenta"
+                  vacio="Seleccione la cuenta"
                   valor={l.cuenta_id}
                   onCambio={(v) => {
                     const moneda = cuentaDe(v)?.moneda
@@ -447,7 +447,7 @@ export function ModalCobro({
               <SelectBuscable
                 className="sm:col-span-2"
                 label="Qué material trae"
-                vacio="Elige el material"
+                vacio="Seleccione el material"
                 valor={material.articulo_id}
                 onCambio={elegirArticulo}
                 opciones={(articulos ?? [])
@@ -456,7 +456,7 @@ export function ModalCobro({
               />
               <Select
                 label="A qué patio entra"
-                vacio="Elige el patio"
+                vacio="Seleccione el patio"
                 value={material.almacen_id}
                 onChange={(e) => setMaterial({ ...material, almacen_id: e.target.value })}
                 opciones={patios.map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
@@ -575,7 +575,7 @@ export function ModalCobro({
                   <Select
                     className="mt-3"
                     label="Qué pasa con lo que sobra"
-                    vacio="Elige"
+                    vacio="Seleccione"
                     value={material.excedenteComo}
                     onChange={(e) => setMaterial({ ...material, excedenteComo: e.target.value as ExcedenteDelCliente })}
                     opciones={(Object.keys(EXCEDENTE_DEL_CLIENTE) as ExcedenteDelCliente[]).map((k) => ({
