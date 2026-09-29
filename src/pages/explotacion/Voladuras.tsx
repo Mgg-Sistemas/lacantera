@@ -207,7 +207,7 @@ export function Voladuras() {
           <div className="grid gap-4 sm:grid-cols-3">
             <Select
               label="Frente"
-              vacio="Elige el frente"
+              vacio="Seleccione el frente"
               value={nueva.frente_id}
               onChange={(e) => setNueva({ ...nueva, frente_id: e.target.value })}
               opciones={disponibles}
@@ -407,7 +407,7 @@ export function Voladuras() {
         >
           <Textarea
             label="Por qué se anula"
-            hint="Queda en el registro de auditoría con tu nombre y la hora."
+            hint="Queda en el registro de auditoría con su nombre y la hora."
             rows={3}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}

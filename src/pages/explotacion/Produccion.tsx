@@ -314,7 +314,7 @@ export function Produccion() {
               <div key={f.clave} className="flex items-end gap-3">
                 <Select
                   label={`Renglón ${i + 1}`}
-                  vacio="Elige el material"
+                  vacio="Seleccione el material"
                   value={f.articulo_id}
                   onChange={(e) =>
                     setFilas(
@@ -472,7 +472,7 @@ export function Produccion() {
         >
           <Textarea
             label="Por qué se anula"
-            hint="Queda en el registro de auditoría con tu nombre y la hora."
+            hint="Queda en el registro de auditoría con su nombre y la hora."
             rows={3}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}

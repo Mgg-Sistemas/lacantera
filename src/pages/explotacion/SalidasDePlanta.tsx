@@ -192,7 +192,7 @@ function ElDia({ dia, onCambio }: { dia: string; onCambio: (d: string) => void }
       </div>
       {!esHoy ? (
         <p className="text-warning mt-3 text-sm">
-          Estás mirando otro día. Lo que anotes se guarda con esa fecha.
+          Está mirando otro día. Lo que anote se guarda con esa fecha.
         </p>
       ) : null}
     </Card>
@@ -244,7 +244,7 @@ function AnotarSalida({ dia }: { dia: string }) {
       <Card>
         <Vacio
           icono={<Truck />}
-          titulo="Tu rol no anota salidas"
+          titulo="Su rol no anota salidas"
           descripcion="Las del día se ven al lado, con lo que lleva sacado la planta."
         />
       </Card>
@@ -273,7 +273,7 @@ function AnotarSalida({ dia }: { dia: string }) {
           }
           descripcion={
             hayAlgunProducto
-              ? 'De la planta sale material a granel y se mide en m³. Los productos cargados están en otras unidades, así que ninguno se puede anotar aquí. Revisa la unidad en el catálogo de artículos.'
+              ? 'De la planta sale material a granel y se mide en m³. Los productos cargados están en otras unidades, así que ninguno se puede anotar aquí. Revise la unidad en el catálogo de artículos.'
               : 'Cárgalos por la planilla de artículos con categoría PRODUCTO (arena lavada, piedra picada…). Sin ellos no hay qué anotar.'
           }
         />
@@ -323,7 +323,7 @@ function AnotarSalida({ dia }: { dia: string }) {
 
         <Select
           label="Producto"
-          vacio="Elige el producto"
+          vacio="Seleccione el producto"
           value={producto}
           onChange={(e) => setProducto(e.target.value)}
           hint="Solo los que se miden en metros cúbicos: es lo que sale a granel de la planta."
@@ -345,8 +345,8 @@ function AnotarSalida({ dia }: { dia: string }) {
             !elegido
               ? 'Se llena solo al elegir el camión.'
               : sugerido
-                ? `La carga útil de ${elegido.placa} es ${sugerido} m³. Cámbialo si trajo otra cosa.`
-                : `${elegido.placa} no tiene carga útil cargada: pon los m³ o queda sin medir.`
+                ? `La carga útil de ${elegido.placa} es ${sugerido} m³. Cámbielo si trajo otra cosa.`
+                : `${elegido.placa} no tiene carga útil cargada: ponga los m³ o queda sin medir.`
           }
         />
 
@@ -419,7 +419,7 @@ function ElCamion({
     return (
       <SelectBuscable
         label="Camión"
-        vacio="Elige el camión"
+        vacio="Seleccione el camión"
         valor={valor}
         onCambio={onCambio}
         opciones={camiones.map((c) => ({
@@ -521,7 +521,7 @@ function LoQueVaSaliendo({
             <Vacio
               icono={<Truck />}
               titulo="Todavía no ha salido nada"
-              descripcion="Lo que anotes aparece aquí, camión por camión, y suma arriba."
+              descripcion="Lo que anote aparece aquí, camión por camión, y suma arriba."
             />
           </div>
         ) : (

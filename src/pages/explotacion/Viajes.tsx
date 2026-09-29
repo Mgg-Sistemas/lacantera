@@ -608,7 +608,7 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
             Todavía no cuentan para el pago. Los aprueba o rechaza el responsable de la mina o
             planta de origen o de destino, o quien tenga la casilla «Aprobar o rechazar viajes».
             {decidibles.length === 0
-              ? ' Tú no puedes decidir sobre ninguno de estos.'
+              ? ' Usted no puede decidir sobre ninguno de estos.'
               : ''}
           </p>
         </div>
@@ -637,7 +637,7 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
           <span className="text-ink/80">
             Poner mi firma digital en «Aprobado por» del registro del día
             <span className="text-ink/50 mt-0.5 block text-xs">
-              Vale para lo que apruebes aquí. Sin marcar, la raya sale en blanco con tu nombre
+              Vale para lo que apruebe aquí. Sin marcar, la raya sale en blanco con su nombre
               debajo.
             </span>
           </span>
@@ -1147,7 +1147,7 @@ function CargarViajes({
       <div className="flex flex-wrap items-end gap-3">
         <Select
           label={equipos[0]?.maquinaId != null ? 'Máquina' : 'Camión'}
-          vacio={equipos[0]?.maquinaId != null ? 'Elige la máquina' : 'Elige el camión'}
+          vacio={equipos[0]?.maquinaId != null ? 'Seleccione la máquina' : 'Seleccione el camión'}
           value={indice}
           onChange={(e) => {
             setIndice(e.target.value)
@@ -1161,7 +1161,7 @@ function CargarViajes({
         />
         <Select
           label="Por qué ruta"
-          vacio="Elige la ruta"
+          vacio="Seleccione la ruta"
           value={rutaId}
           onChange={(e) => {
             setRutaId(e.target.value)
@@ -1248,7 +1248,7 @@ function CargarViajes({
           <span>
             Poner mi firma digital en «Registrado por» del registro del día
             <span className="text-ink/50 mt-0.5 block text-xs">
-              Solo se estampa si la pones en todos los viajes que cargues ese día.
+              Solo se estampa si la pone en todos los viajes que cargue ese día.
             </span>
           </span>
         </label>
@@ -1501,7 +1501,7 @@ function AnularViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => void
     >
       <Textarea
         label="Por qué se anula"
-        hint="Queda en el registro de auditoría con tu nombre y la hora."
+        hint="Queda en el registro de auditoría con su nombre y la hora."
         rows={3}
         value={motivo}
         onChange={(e) => setMotivo(e.target.value)}
@@ -1860,7 +1860,7 @@ function PestanaPago() {
         <Card>
           <Vacio
             icono={<Coins />}
-            titulo={porDia ? 'Elige un día' : 'Elige las dos fechas'}
+            titulo={porDia ? 'Seleccione un día' : 'Seleccione las dos fechas'}
             descripcion="Con la fecha completa aparece lo que se le debe a cada empresa."
           />
         </Card>
@@ -1882,8 +1882,8 @@ function PestanaPago() {
             }
             descripcion={
               todas.length === 0
-                ? 'Prueba con otras fechas, o carga los viajes en la pestaña «Viajes del día».'
-                : 'Esa empresa no hizo viajes en esas fechas. Prueba con otras, o pon la empresa en «Todas».'
+                ? 'Pruebe con otras fechas, o cargue los viajes en la pestaña «Viajes del día».'
+                : 'Esa empresa no hizo viajes en esas fechas. Pruebe con otras, o ponga la empresa en «Todas».'
             }
           />
         </Card>
