@@ -489,7 +489,7 @@ export function ControlDespacho() {
         blob={papel?.blob ?? null}
         nombreArchivo={papel?.nombre ?? 'control-de-despacho.pdf'}
         titulo="Control de despacho"
-        descripcion="Revísalo antes de descargarlo o imprimirlo."
+        descripcion="Revíselo antes de descargarlo o imprimirlo."
       />
     </>
   )
@@ -589,7 +589,7 @@ function EditarFila({
             placeholder={fila.rif_del_cliente ? String(fila.rif) : 'V-12345678'}
             hint={
               fila.rif_del_cliente
-                ? 'Viene del cliente registrado. Escribe aquí solo si para esta fila debe ser otro.'
+                ? 'Viene del cliente registrado. Escriba aquí solo si para esta fila debe ser otro.'
                 : clienteId
                   ? 'Al guardar, saldrá del cliente elegido arriba.'
                   : 'Obligatorio: sin él la fila queda marcada.'
@@ -604,7 +604,7 @@ function EditarFila({
             error={precioMalo ? 'No es un precio válido.' : undefined}
             hint={
               fila.precio_de_la_nota
-                ? 'Viene de la nota de entrega. Escribe aquí solo para cambiarlo.'
+                ? 'Viene de la nota de entrega. Escriba aquí solo para cambiarlo.'
                 : fila.moneda_doc && fila.moneda_doc !== 'USD'
                   ? `La nota está en ${fila.moneda_doc}: su precio no se trae a una columna en dólares.`
                   : undefined
@@ -765,7 +765,7 @@ function CargaDesdeExcel({
 
         {leida && guardadas === null ? (
           <div>
-            <p className="text-ink/90 font-medium">3. Revisa antes de guardar</p>
+            <p className="text-ink/90 font-medium">3. Revise antes de guardar</p>
             <p className="text-ink/60 mt-1">
               {leida.cambios.length} fila{leida.cambios.length === 1 ? '' : 's'} con cambios · {leida.iguales} igual
               {leida.iguales === 1 ? '' : 'es'} a como están
@@ -829,7 +829,7 @@ function Ajustes({ columnaLibre, onCerrar }: { columnaLibre: string; onCerrar: (
       abierto
       onCerrar={onCerrar}
       titulo="Status y columna libre"
-      descripcion="La lista de status es tuya. Un status en uso no se borra: se apaga, y deja de ofrecerse sin perderse de las filas que ya lo tienen."
+      descripcion="La lista de status es suya. Un status en uso no se borra: se apaga, y deja de ofrecerse sin perderse de las filas que ya lo tienen."
       acciones={<Button onClick={onCerrar}>Listo</Button>}
     >
       <div className="space-y-4">
