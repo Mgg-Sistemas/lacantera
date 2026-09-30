@@ -537,6 +537,10 @@ export interface Recibo {
     forma_pago: string
     banco: string | null
     numero_cuenta: string | null
+    /** Solo para transferencia: el banco rebota si no coincide. */
+    tipo_cuenta: string | null
+    /** Solo para pago móvil. */
+    telefono_pago: string | null
   } | null
   lineas: LineaRecibo[]
 }
@@ -550,7 +554,7 @@ export function useRecibos(periodoId: number | undefined) {
         await supabase
           .from('nomina_recibos')
           .select(
-            '*, empleado:empleados(ficha, cedula, nombres, apellidos, cargo, departamento, fecha_ingreso, fecha_egreso, motivo_egreso, forma_pago, banco, numero_cuenta), lineas:nomina_recibo_lineas(*)',
+            '*, empleado:empleados(ficha, cedula, nombres, apellidos, cargo, departamento, fecha_ingreso, fecha_egreso, motivo_egreso, forma_pago, banco, numero_cuenta, tipo_cuenta, telefono_pago), lineas:nomina_recibo_lineas(*)',
           )
           .eq('periodo_id', periodoId!),
       ),
