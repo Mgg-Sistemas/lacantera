@@ -17,13 +17,76 @@ original y ya no es lo que corre. Lo que vale es este documento.
 
 ## El resumen en una línea
 
-Desde el PC se manda un comando corto por SSH; **el servidor se baja el código
-de GitHub, lo construye él mismo y cambia la carpeta publicada de golpe.**
+**Desde el 29 de septiembre de 2026 no hay que desplegar: basta con que el
+merge llegue a `main`.** El servidor se baja el código de GitHub, lo construye
+él mismo y cambia la carpeta publicada de golpe, sin que nadie entre por SSH.
+
+Antes de esa fecha había que mandar el comando a mano, y el sitio se quedaba
+viejo cada vez que a alguien se le olvidaba. Sigue existiendo el camino manual,
+para cuando haga falta forzarlo o probar otra rama:
 
 ```
 ~/desplegar.sh main        # publica la rama main
 ~/desplegar.sh develop     # publica otra rama, para probar
 ```
+
+## Quién lo dispara: dos mecanismos, y el segundo sostiene al primero
+
+**1. El bot de GitHub Actions** — `.github/workflows/desplegar.yml`. Se dispara
+con el `push` a `main` y entra por SSH al servidor. Es el camino rápido: el
+sitio queda actualizado en un par de minutos desde el merge.
+
+Necesita, en *Settings › Secrets and variables › Actions*:
+
+| | Nombre | Qué es |
+| --- | --- | --- |
+| secreto | `LLAVE_DEL_BOT_DE_DESPLIEGUE` | la llave privada del bot |
+| secreto | `HUELLA_DEL_SERVIDOR` | la línea de `known_hosts` del servidor |
+| variable | `DESTINO_DEL_BOT` | el `usuario@servidor` al que entra |
+
+Si falta alguno, el trabajo **sale verde** y lo dice en su resumen. Es a
+propósito: un workflow que se pone rojo en cada empujón se aprende a ignorar, y
+entonces ya no avisa el día que falle de verdad.
+
+**2. Un cron en el servidor**, cada dos minutos, que corre
+`~/desplegar-si-cambio.sh main`. Le pregunta a GitHub por el sha de `main` con
+`git ls-remote` y lo compara con el sha del `version.json` **publicado**. Si son
+el mismo, se va sin hacer nada; si difieren, despliega.
+
+Se compara contra lo publicado y no contra el clon del servidor a propósito: el
+clon dice lo que se construyó la última vez, y el `version.json` dice lo que la
+gente está viendo. Si un despliegue se cae a la mitad, el clon queda adelantado
+y el sitio atrasado — comparando contra el clon, esto no volvería a intentarlo
+nunca.
+
+**El cron no sobra.** Es la red debajo del bot: si Actions está caído, si el
+secreto caduca, si se acaba la cuota de minutos, el sitio se actualiza igual,
+tarde pero solo. Y cuando el bot llega primero, el cron encuentra que no hay
+nada que hacer y se va sin gastar nada. Los dos llaman al mismo guion, que tiene
+candado con `flock`: dos despliegues a la vez no se pisan.
+
+```
+~/despliegue-automatico.log            lo que ha hecho, y por qué
+touch ~/.sin-despliegue-automatico     lo detiene
+rm    ~/.sin-despliegue-automatico     lo devuelve
+```
+
+**El freno hace falta para probar `develop` en el servidor.** Sin él, el cron
+devuelve `main` encima a los dos minutos. Producción sale de `main`, y ahora eso
+se cumple solo.
+
+### La llave del bot no abre una consola
+
+En el servidor, la llave del bot está anotada en `authorized_keys` con
+`command="..."`, además de `no-pty`, `no-port-forwarding` y `no-agent-forwarding`.
+Entre lo que entre por esa llave, lo único que corre es el despliegue: no hay
+shell. Por eso el `ssh` del workflow no manda ninguna orden — daría igual, se
+ignora.
+
+Importa más de lo que parece: sin esa restricción, la misma llave sería una
+consola del usuario de despliegue, con el archivo de variables de producción
+dentro. Con ella, lo peor que consigue quien se la robe es construir `main` otra
+vez, que es lo que el cron ya hace solo.
 
 ## Por qué se construye allá y no se sube el `dist/`
 

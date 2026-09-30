@@ -39,8 +39,21 @@ concurrency:
   group: despliegue-del-droplet
   cancel-in-progress: false
 
+# LA DIRECCION DEL SERVIDOR NO VA ESCRITA AQUI, Y NO ES PARANOIA
+#
+# Este repositorio es PUBLICO, y `docs/despliegue-en-el-servidor.md` ya lo dice
+# desde antes que yo: «la direccion del servidor, el usuario, la llave SSH y el
+# archivo con las variables VITE_ no viven en el repositorio». La primera
+# version de este workflow llevaba `cantera@142.93.200.173` escrito en claro y
+# rompia esa regla.
+#
+# La IP se averigua de todos modos resolviendo el dominio; el USUARIO no, y es
+# la mitad que le falta a quien quiera probar llaves contra el puerto 22. Vive
+# en la variable de repositorio `DESTINO_DEL_BOT`, que solo ven los
+# colaboradores.
 env:
-  TIENE_LLAVE: ${{ secrets.LLAVE_DEL_BOT_DE_DESPLIEGUE != '' }}
+  TIENE_LLAVE: ${{ secrets.LLAVE_DEL_BOT_DE_DESPLIEGUE != '' && vars.DESTINO_DEL_BOT != '' }}
+  DESTINO: ${{ vars.DESTINO_DEL_BOT }}
 
 jobs:
   desplegar:
@@ -56,12 +69,11 @@ jobs:
           {
             echo "### El bot todavia no esta conectado"
             echo ""
-            echo "Faltan dos secretos del repositorio:"
+            echo "Falta algo de esto, en **Settings › Secrets and variables › Actions**:"
             echo ""
-            echo "- \`LLAVE_DEL_BOT_DE_DESPLIEGUE\` — la llave privada del bot."
-            echo "- \`HUELLA_DEL_SERVIDOR\` — la linea de known_hosts del droplet."
-            echo ""
-            echo "Se ponen en **Settings › Secrets and variables › Actions**."
+            echo "- secreto \`LLAVE_DEL_BOT_DE_DESPLIEGUE\` — la llave privada del bot."
+            echo "- secreto \`HUELLA_DEL_SERVIDOR\` — la linea de known_hosts del droplet."
+            echo "- variable \`DESTINO_DEL_BOT\` — el \`usuario@servidor\` al que entra."
             echo ""
             echo "Mientras tanto el sitio se actualiza igual: el cron del droplet"
             echo "mira main cada dos minutos y despliega si cambio."
@@ -87,7 +99,7 @@ jobs:
                    -o BatchMode=yes \
                    -o ConnectTimeout=30 \
                    -o ServerAliveInterval=15 \
-                   cantera@142.93.200.173; then
+                   "$DESTINO"; then
               echo "::endgroup::"
               echo "Desplegado." >> "$GITHUB_STEP_SUMMARY"
               exit 0

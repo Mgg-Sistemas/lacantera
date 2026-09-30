@@ -1,0 +1,27 @@
+# EL CRON QUE MANTIENE EL SITIO AL DIA
+#
+# Se instala en el usuario de despliegue del servidor, no en root:
+#
+#     crontab scripts/servidor/crontab-del-despliegue.txt
+#
+# y el guion tiene que estar en su home, ejecutable:
+#
+#     install -m 750 scripts/servidor/desplegar-si-cambio.sh ~/desplegar-si-cambio.sh
+#
+# Cada dos minutos le pregunta a GitHub si main se movio. Casi siempre no se
+# movio y no hace nada: es una consulta de red de un segundo. Cuando se movio,
+# construye y publica. El porque largo esta en `docs/despliegue-en-el-servidor.md`.
+#
+# DOS MINUTOS Y NO UNO: una construccion tarda cerca de un minuto y deja la CPU
+# del servidor al tope. Con un minuto, la siguiente vuelta caeria siempre encima
+# de la anterior; el candado la pararia, pero seria un pulso constante para nada.
+#
+# `$HOME` y no la ruta entera a proposito: el nombre del usuario de despliegue
+# no vive en este repositorio, que es publico. cron corre cada linea con
+# /bin/sh, asi que la variable se expande sola.
+#
+#   Registro:       ~/despliegue-automatico.log
+#   Freno de mano:  touch ~/.sin-despliegue-automatico   (y rm para soltarlo)
+#   A mano:         ~/desplegar.sh main
+#
+*/2 * * * * "$HOME"/desplegar-si-cambio.sh main >/dev/null 2>&1
