@@ -1,0 +1,115 @@
+# EL BOT QUE DESPLIEGA EN EL DROPLET
+#
+# Lo pidio Angelica el 29/09/2026: que produccion se actualice sola en cuanto
+# entra algo en main, sin que nadie tenga que entrar por SSH.
+#
+# HAY DOS MECANISMOS Y NO SOBRA NINGUNO
+#
+# Este bot es el rapido: se dispara con el push y el sitio queda actualizado en
+# un par de minutos. En el droplet vive ademas un cron que cada dos minutos
+# compara main con lo publicado y despliega si difieren.
+#
+# El cron no es un resto del montaje anterior: es la red debajo del bot. Si
+# GitHub Actions esta caido, si el secreto caduca, si alguien empuja con el
+# runner sin cuota — el sitio se actualiza igual, tarde pero solo. Y al reves,
+# cuando el bot llega primero, el cron encuentra que no hay nada que hacer y se
+# va sin gastar nada.
+#
+# Los dos llaman al MISMO guion del droplet, `desplegar-si-cambio.sh`, que
+# tiene candado: dos despliegues a la vez no se pisan.
+#
+# LA LLAVE NO ABRE UNA CONSOLA
+#
+# En el droplet, la llave de este bot esta anotada con `command="..."`: entre
+# lo que entre por ella, lo unico que corre es el despliegue. Por eso el `ssh`
+# de mas abajo no manda ninguna orden — daria igual, se ignora. Si la llave se
+# filtrara, lo peor que consigue quien la tenga es construir main otra vez.
+
+name: Desplegar en produccion
+
+on:
+  push:
+    branches: [main]
+  # Para relanzarlo a mano desde la pestaña Actions cuando haga falta.
+  workflow_dispatch:
+
+# Un despliegue a la vez. Sin esto, dos empujones seguidos arrancan dos
+# construcciones que se pelean por el mismo /var/www.
+concurrency:
+  group: despliegue-del-droplet
+  cancel-in-progress: false
+
+env:
+  TIENE_LLAVE: ${{ secrets.LLAVE_DEL_BOT_DE_DESPLIEGUE != '' }}
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Mientras los secretos no esten puestos, esto avisa y sale BIEN.
+      # Un workflow que se pone rojo en cada empujon se aprende a ignorar, y
+      # entonces ya no avisa de nada el dia que falle de verdad.
+      - name: Comprobar que estan los secretos
+        if: env.TIENE_LLAVE != 'true'
+        run: |
+          {
+            echo "### El bot todavia no esta conectado"
+            echo ""
+            echo "Faltan dos secretos del repositorio:"
+            echo ""
+            echo "- \`LLAVE_DEL_BOT_DE_DESPLIEGUE\` — la llave privada del bot."
+            echo "- \`HUELLA_DEL_SERVIDOR\` — la linea de known_hosts del droplet."
+            echo ""
+            echo "Se ponen en **Settings › Secrets and variables › Actions**."
+            echo ""
+            echo "Mientras tanto el sitio se actualiza igual: el cron del droplet"
+            echo "mira main cada dos minutos y despliega si cambio."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preparar la llave
+        if: env.TIENE_LLAVE == 'true'
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.LLAVE_DEL_BOT_DE_DESPLIEGUE }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.HUELLA_DEL_SERVIDOR }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      # Se reintenta tres veces. El puerto 22 del droplet no siempre contesta a
+      # la primera y un despliegue perdido por eso obliga a esperar al cron.
+      - name: Desplegar
+        if: env.TIENE_LLAVE == 'true'
+        run: |
+          for intento in 1 2 3; do
+            echo "::group::Intento $intento"
+            if ssh -i ~/.ssh/id_ed25519 \
+                   -o BatchMode=yes \
+                   -o ConnectTimeout=30 \
+                   -o ServerAliveInterval=15 \
+                   cantera@142.93.200.173; then
+              echo "::endgroup::"
+              echo "Desplegado." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "::endgroup::"
+            sleep 20
+          done
+          echo "No se pudo desplegar en tres intentos. El cron del droplet lo hara en los proximos minutos." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      # Lo que de verdad prueba que salio: lo que sirve el sitio.
+      - name: Comprobar que el sitio ya sirve este commit
+        if: env.TIENE_LLAVE == 'true'
+        run: |
+          # Sin `actions/checkout` no hay repositorio en el runner, asi que el
+          # sha sale de la variable y no de git. Clonar 200 MB para leer siete
+          # caracteres seria absurdo.
+          corto="${GITHUB_SHA:0:7}"
+          publicado=$(curl -fsS --max-time 20 https://mineriainternacionalts.com/version.json || echo '')
+          echo "Esperaba $corto · publicado: $publicado"
+          echo "Publicado: \`$publicado\`" >> "$GITHUB_STEP_SUMMARY"
+          case "$publicado" in
+            *"$corto"*) echo "Coincide." ;;
+            *) echo "::warning::El sitio todavia no sirve $corto. Puede ser cache; el cron lo reintenta." ;;
+          esac
