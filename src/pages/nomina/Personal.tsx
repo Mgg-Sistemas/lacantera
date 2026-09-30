@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import {
   ClipboardList,
   IdCard,
+  Landmark,
   Pencil,
   FileText,
   Plus,
@@ -33,6 +34,8 @@ import {
   useEgresarEmpleado,
   useACargoDe,
   useEmpleados,
+  usePeriodos,
+  useRecibos,
 } from '@/lib/api/nomina'
 import type { ACargoDe, CargasDeEmpleado, Empleado } from '@/lib/api/nomina'
 import { useMisRoles } from '@/lib/api/catalogo'
@@ -42,6 +45,7 @@ import { Visor } from '@/components/Visor'
 import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
 import { armarPlanillaDeIngreso } from '@/lib/ficha/planillaIngresoPdf'
 import type { ApartadoImpreso } from '@/lib/ficha/planillaIngresoPdf'
+import { armarPagoBancario } from '@/lib/ficha/nominaBancariaPdf'
 import { ModalPlanillaDeIngreso } from './ModalPlanillaDeIngreso'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { dinero, documento, fecha } from '@/lib/formato'
@@ -111,6 +115,19 @@ export function Personal() {
   const [egreso, setEgreso] = useState({ fecha: '', motivo: '' })
 
   const puedeRRHH = puede('RRHH')
+
+  /*
+    EL PERÍODO ACTIVO, PARA EL PAGO BANCARIO.
+
+    No hay un estado que diga literalmente «activo»: el que importa aquí es el
+    que ya se calculó y todavía no se pagó —CALCULADA (por aprobar) o APROBADA
+    (por pagar)—, que es cuando de verdad hace falta la planilla para el banco.
+    `usePeriodos` ya llega ordenado del más reciente al más viejo.
+  */
+  const periodos = usePeriodos()
+  const periodoActivo =
+    periodos.data?.find((p) => p.estado === 'CALCULADA' || p.estado === 'APROBADA') ?? null
+  const recibosDelActivo = useRecibos(periodoActivo?.id)
 
   /*
     LOS FILTROS DE RRHH
@@ -325,6 +342,53 @@ export function Personal() {
     }
   }
 
+  /*
+    EL PAGO BANCARIO, DEL PERÍODO QUE TOCA PAGAR.
+
+    Sale de los recibos ya calculados, no de la tabla de personal: el monto es
+    el que se congeló al calcular la nómina, con la tasa de ese día — no la de
+    hoy. Ver el comentario de `armarPagoBancario` para el porqué.
+  */
+  const sacarPagoBancario = async () => {
+    if (!periodoActivo || !recibosDelActivo.data || recibosDelActivo.data.length === 0) return
+    setArmando(true)
+    try {
+      const pdf = await armarPagoBancario({
+        periodo: {
+          numero: periodoActivo.numero,
+          desde: periodoActivo.desde,
+          hasta: periodoActivo.hasta,
+          tasaUsd: periodoActivo.tasa_usd,
+        },
+        trabajadores: recibosDelActivo.data
+          .filter((r) => r.empleado)
+          .map((r) => ({
+            ficha: r.empleado!.ficha,
+            nombre: `${r.empleado!.apellidos}, ${r.empleado!.nombres}`,
+            cedula: r.empleado!.cedula,
+            formaPago: r.empleado!.forma_pago,
+            banco: r.empleado!.banco,
+            tipoCuenta: r.empleado!.tipo_cuenta,
+            numeroCuenta: r.empleado!.numero_cuenta,
+            telefonoPago: r.empleado!.telefono_pago,
+            neto: r.neto,
+            netoUsd: r.neto_usd,
+          }))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es-VE')),
+        empresa: empresaDelPapel(empresa),
+        emitidoPor: nombre,
+        momento: new Date(),
+      })
+      setVista({
+        ...pdf,
+        titulo: 'Pago de nómina',
+        descripcion: `${periodoActivo.numero} · ${recibosDelActivo.data.length} trabajadores · datos bancarios y monto en Bs y $`,
+      })
+    } finally {
+      setArmando(false)
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -370,6 +434,30 @@ export function Personal() {
 
             {puedeRRHH ? (
               <>
+                {/*
+                  EL PAGO BANCARIO SÍ VA DETRÁS DE RRHH, a diferencia del
+                  informe: ese no lleva ni un monto, y este es justo la
+                  planilla con la que se ejecutan las transferencias — a quién,
+                  por qué banco y cuánto. Quien solo tiene Nómina en lectura ya
+                  ve estos mismos montos en Recibos si entra ahí; lo que no
+                  hace falta es dejar armado y listo para descargar el papel
+                  con el que se le paga al banco a cualquiera que abra esta
+                  pantalla.
+                */}
+                <Button
+                  variant="outline"
+                  icon={<Landmark />}
+                  disabled={
+                    armando ||
+                    !periodoActivo ||
+                    !recibosDelActivo.data ||
+                    recibosDelActivo.data.length === 0
+                  }
+                  onClick={() => void sacarPagoBancario()}
+                >
+                  {armando ? 'Preparando…' : 'Pago bancario'}
+                </Button>
+
                 {/* La carga por planilla vive donde se necesita, no en el menú:
                     quien va a dar de alta a treinta personas está mirando esta
                     lista, no buscándola en el riel. */}
