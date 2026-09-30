@@ -175,7 +175,15 @@ export function Almacenes() {
                 Cancelar
               </Button>
               <Button
-                disabled={guardar.isPending || !edicion.codigo || !edicion.nombre}
+                /*
+                  Al crear, el código ya no hace falta: si se deja vacío lo
+                  pone la base, con las tres letras del tipo y el siguiente
+                  número de esa serie. Al editar sí se exige, porque vaciarlo
+                  no significa «ponme otro», significa que se borró sin querer.
+                */
+                disabled={
+                  guardar.isPending || !edicion.nombre || (!!edicion.id && !edicion.codigo)
+                }
                 onClick={async () => {
                   // Los dos campos de tipo viajan como numero o como nada: la
                   // base rechaza una capacidad en un patio, y una cadena vacia
@@ -203,7 +211,12 @@ export function Almacenes() {
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label="Código"
-              placeholder="ALM-GEN"
+              placeholder={edicion.id ? 'ALM-0001' : 'Se pone solo'}
+              hint={
+                edicion.id
+                  ? undefined
+                  : 'Déjalo vacío y el sistema lo pone: las tres letras del tipo y el siguiente número.'
+              }
               value={edicion.codigo}
               onChange={(e) => cambiar({ codigo: e.target.value.toUpperCase() })}
             />
