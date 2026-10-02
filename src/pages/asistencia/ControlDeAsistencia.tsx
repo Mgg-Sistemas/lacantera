@@ -26,7 +26,8 @@ import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useEmpleados } from '@/lib/api/nomina'
 import { hoyEnCaracas } from '@/lib/api/tasas'
-import { useMiPerfil, useMisPermisos } from '@/lib/api/usuarios'
+import { useMiPerfil, useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
+import { useMisRoles } from '@/lib/api/catalogo'
 import {
   aFechaHoraLocal,
   deFechaHoraLocal,
@@ -92,6 +93,17 @@ export function ControlDeAsistencia() {
   const { puede } = useMisPermisos()
   const puedeMarcar = puede('ASISTENCIA', 'ESCRITURA')
   const puedeAnular = puede('ASISTENCIA', 'TOTAL')
+  /*
+    ESCANEAR SIN EL MÓDULO ENTERO. La casilla extendida `ASISTENCIA.ESCANEAR`
+    deja marcar (carnet, cámara o elegir persona) y ver esta pantalla a quien
+    no tiene ESCRITURA de módulo — genesis, por ejemplo—, sin darle corregir
+    ni anular, que siguen pidiendo el nivel real. Cargar a mano queda aparte,
+    solo para ADMIN: ni la casilla ni el nivel TOTAL del módulo la dan.
+  */
+  const { puede: puedeAccion } = useMisAcciones()
+  const { puede: puedeRol } = useMisRoles()
+  const puedeEscanear = puedeMarcar || puedeAccion('ASISTENCIA.ESCANEAR')
+  const puedeCargarAMano = puedeRol('ADMIN')
   const { data: empresa } = useEmpresa()
   const { data: yo } = useMiPerfil()
 
@@ -133,7 +145,7 @@ export function ControlDeAsistencia() {
             <Button variant="outline" icon={<FileText />} onClick={() => setReporte(true)}>
               Reporte
             </Button>
-            {puedeMarcar ? (
+            {puedeCargarAMano ? (
               <Button icon={<Plus />} onClick={() => setCargando(true)}>
                 Cargar a mano
               </Button>
@@ -142,7 +154,7 @@ export function ControlDeAsistencia() {
         }
       />
 
-      {puedeMarcar ? <Marcador hoy={hoy} /> : null}
+      {puedeEscanear ? <Marcador hoy={hoy} /> : null}
 
       <Hoy hoy={hoy} />
 

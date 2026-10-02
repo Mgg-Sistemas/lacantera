@@ -4,7 +4,7 @@ import { esRutaPropia, esRutaSoloAdmin, esRutaFueraDelMvp, moduloDeRuta } from '
 import { Card } from '@/components/ui/Card'
 import { Cargando } from '@/components/ui/Estado'
 import { EnConstruccion } from '@/components/EnConstruccion'
-import { useMisPermisos, useModulos } from '@/lib/api/usuarios'
+import { useMisAcciones, useMisPermisos, useModulos } from '@/lib/api/usuarios'
 import { useMisRoles } from '@/lib/api/catalogo'
 
 /**
@@ -23,6 +23,7 @@ export function ExigePermiso() {
   const { pathname } = useLocation()
   const { puede, resuelto, isPending } = useMisPermisos()
   const { puede: tieneRol, isPending: rolesPendientes } = useMisRoles()
+  const { puede: puedeAccion, isPending: accionesPendientes } = useMisAcciones()
   const { data: modulos } = useModulos()
 
   if (esRutaPropia(pathname)) return <Outlet />
@@ -46,6 +47,14 @@ export function ExigePermiso() {
   const codigo = moduloDeRuta(pathname)
 
   if (isPending) return <Cargando />
+
+  /*
+    ASISTENCIA TAMBIÉN SE ABRE CON LA CASILLA DE ESCANEAR.
+    `ASISTENCIA.ESCANEAR` deja marcar y leer sin el nivel de módulo completo
+    —genesis, por ejemplo—; sin este agujero, la reja de aquí la pararía antes
+    de llegar a la pantalla, aunque la base ya le dejara leer las jornadas.
+  */
+  if (codigo === 'ASISTENCIA' && accionesPendientes) return <Cargando />
 
   /*
     Las rutas de solo administrador se comprueban antes que el módulo.
@@ -81,7 +90,9 @@ export function ExigePermiso() {
     )
   }
 
-  if (!resuelto || puede(codigo)) return <Outlet />
+  if (!resuelto || puede(codigo) || (codigo === 'ASISTENCIA' && puedeAccion('ASISTENCIA.ESCANEAR'))) {
+    return <Outlet />
+  }
 
   const nombre = modulos?.find((m) => m.codigo === codigo)?.nombre ?? codigo
 
