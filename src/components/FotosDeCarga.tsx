@@ -11,6 +11,7 @@ import {
   TIPOS_ADMITIDOS,
   abrirFotoDeCarga,
   miniaturaDeFotoDeCarga,
+  repararMiniatura,
   problemaDelArchivo,
   useFotosDeCarga,
   useQuitarFotoDeCarga,
@@ -153,9 +154,17 @@ function Miniatura({ foto }: { foto: FotoDeCarga }) {
     */
     void miniaturaDeFotoDeCarga(foto.path)
       .catch(async () => {
-        const u = await abrirFotoDeCarga(foto.path)
-        creada = u
-        return u
+        // Foto de antes del guardado de miniaturas: se repara sola —fabrica y
+        // guarda la que faltaba— y muestra la chica. Si ni eso, baja el original.
+        try {
+          const u = await repararMiniatura(foto.path)
+          creada = u
+          return u
+        } catch {
+          const u = await abrirFotoDeCarga(foto.path)
+          creada = u
+          return u
+        }
       })
       .then((u) => {
         if (vigente) setUrl(u)
