@@ -221,3 +221,55 @@ export async function repararMiniatura(path: string): Promise<string> {
   }
   return URL.createObjectURL(mini)
 }
+
+/*
+  EL REPASO DE UNA VEZ: TODAS LAS MINIATURAS QUE FALTAN.
+
+  Para administración, un botón que le fabrica la miniatura a las fotos subidas
+  antes de este cambio, sin esperar a que alguien las mire una por una.
+
+  Corre en el NAVEGADOR del administrador, con su sesión y su permiso: cada
+  foto se baja al mismo navegador que ya podía verla, se encoge ahí, y su
+  versión chica vuelve al mismo depósito privado. Ninguna foto sale a ningún
+  otro sitio, y no se guarda nada fuera del depósito. Va una a una, para no
+  saturar la pestaña, y avisa del avance.
+*/
+export async function repararMiniaturasFaltantes(
+  avisar?: (hechas: number, total: number) => void,
+): Promise<{ total: number; generadas: number; yaEstaban: number; fallidas: number }> {
+  const fotos = desenvolver<{ path: string; tipo: string }[]>(
+    await supabase.from('fotos_de_carga').select('path, tipo').order('subida_en'),
+  )
+  // Solo imágenes: los PDF no llevan miniatura. Y por si una ruta se repite en
+  // la tabla (el mismo archivo adjunto a varias solicitudes), se procesa una vez.
+  const rutas = [...new Set(fotos.filter((f) => (f.tipo ?? '').startsWith('image/')).map((f) => f.path))]
+
+  let generadas = 0
+  let yaEstaban = 0
+  let fallidas = 0
+  let i = 0
+  for (const path of rutas) {
+    i++
+    // ¿Ya tiene su miniatura? Firmar es barato y evita bajar el original en balde.
+    const yaHecha = await supabase.storage.from(BUCKET).createSignedUrl(rutaMiniatura(path), 60)
+    if (!yaHecha.error && yaHecha.data) {
+      yaEstaban++
+      avisar?.(i, rutas.length)
+      continue
+    }
+    try {
+      const bajada = await supabase.storage.from(BUCKET).download(path)
+      if (bajada.error || !bajada.data) throw bajada.error ?? new Error('No bajó.')
+      const mini = await fabricarMiniatura(bajada.data)
+      const subida = await supabase.storage
+        .from(BUCKET)
+        .upload(rutaMiniatura(path), mini, { contentType: 'image/jpeg', upsert: true })
+      if (subida.error) throw subida.error
+      generadas++
+    } catch {
+      fallidas++
+    }
+    avisar?.(i, rutas.length)
+  }
+  return { total: rutas.length, generadas, yaEstaban, fallidas }
+}

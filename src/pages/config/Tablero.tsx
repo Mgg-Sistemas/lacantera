@@ -9,6 +9,7 @@ import { enteros } from '@/lib/formato'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useUsuarios, useModulos } from '@/lib/api/usuarios'
 import { useMisRoles } from '@/lib/api/catalogo'
+import { MantenimientoDeMiniaturas } from './MantenimientoDeMiniaturas'
 
 /*
   EL TABLERO DE CONFIGURACIÓN
@@ -169,6 +170,9 @@ export function TableroConfiguracion() {
           donde se mira.
         </p>
       </PrimeraVez>
+
+      {/* Mantenimiento de una vez, solo para administración. */}
+      {tieneRol('ADMIN') ? <MantenimientoDeMiniaturas /> : null}
 
       {/* La auditoría no se reparte por módulos: o se tiene el rol o no. Quien
           no lo tiene ve el tablero sin esa tarjeta y sin explicación, y eso se
