@@ -59,6 +59,57 @@ export function problemaDelArchivo(f: File): string | null {
   return null
 }
 
+/*
+  LA MINIATURA SE GUARDA AL SUBIR, NO SE FABRICA AL MIRAR.
+
+  Antes la versión chica se le pedía a Storage al vuelo, con su transformación
+  de imagen —encogerla al firmar la dirección—. Eso Supabase lo cobra por
+  imagen y por mes, y el contador se pasó del tope del plan: la lista de fotos
+  de carga es lo ÚNICO del sistema que tocaba esa transformación.
+
+  Ahora la miniatura se fabrica UNA vez, en el navegador de quien sube, y se
+  guarda al lado del original. Verla es bajar un archivo de pocos kilobytes,
+  sin transformación ninguna: el contador deja de subir.
+
+  Se guarda cuadrada y recortada al centro, al DOBLE del lado en que se ve —una
+  pantalla de densidad doble convierte 80 puntos en 160 píxeles, y una placa a
+  80 se vería lavada— y en JPEG, que para una miniatura pesa una fracción.
+
+  Es un lujo, no un requisito: si fabricarla o guardarla falla, la subida del
+  original NO se cae, y mirarla baja el original, como se hacía antes. Los PDF
+  no llevan miniatura: la transformación era de imágenes, y quien la pide ya
+  los distingue.
+*/
+const LADO_MINIATURA = 80
+
+/** La miniatura vive junto al original, con su mismo nombre más `.thumb.jpg`. */
+const rutaMiniatura = (path: string) => `${path}.thumb.jpg`
+
+/** Una miniatura cuadrada, recortada al centro, hecha en el navegador. */
+async function fabricarMiniatura(archivo: File): Promise<Blob> {
+  const lado = LADO_MINIATURA * 2
+  // `from-image`: respeta la orientación EXIF, para que la foto de un celular
+  // no salga acostada. La transformación de Storage ya lo hacía; esto la iguala.
+  const bitmap = await createImageBitmap(archivo, { imageOrientation: 'from-image' })
+  try {
+    // «cover»: se llena el cuadrado y se recorta lo que sobra, sin franjas.
+    const escala = Math.max(lado / bitmap.width, lado / bitmap.height)
+    const ancho = bitmap.width * escala
+    const alto = bitmap.height * escala
+    const lienzo = document.createElement('canvas')
+    lienzo.width = lado
+    lienzo.height = lado
+    const pincel = lienzo.getContext('2d')
+    if (!pincel) throw new Error('El navegador no da un lienzo para la miniatura.')
+    pincel.drawImage(bitmap, (lado - ancho) / 2, (lado - alto) / 2, ancho, alto)
+    const blob = await new Promise<Blob | null>((listo) => lienzo.toBlob(listo, 'image/jpeg', 0.6))
+    if (!blob) throw new Error('No se pudo codificar la miniatura.')
+    return blob
+  } finally {
+    bitmap.close()
+  }
+}
+
 /**
  * Sube los archivos y los anota en la base, en ese orden.
  *
@@ -78,6 +129,19 @@ export async function subirFotosDeCarga(
       .from(BUCKET)
       .upload(ruta, archivo, { contentType: archivo.type, upsert: false })
     if (error) throw new Error(`No se pudo subir ${archivo.name}: ${error.message}`)
+
+    // La miniatura, solo para imágenes y sin tumbar la subida si falla: el
+    // original ya está puesto, que es lo que de verdad importa.
+    if (archivo.type.startsWith('image/')) {
+      try {
+        const mini = await fabricarMiniatura(archivo)
+        await supabase.storage
+          .from(BUCKET)
+          .upload(rutaMiniatura(ruta), mini, { contentType: 'image/jpeg', upsert: true })
+      } catch {
+        /* sin miniatura guardada: verla bajará el original, como antes */
+      }
+    }
 
     // Una salida de varios almacenes son varias solicitudes: el mismo archivo va a todas.
     for (const referencia of referencias) {
@@ -111,47 +175,13 @@ export function useQuitarFotoDeCarga() {
   })
 }
 
-/*
-  LA MINIATURA SE PIDE PEQUEÑA, NO SE ENCOGE AL PINTARLA.
-
-  Hasta hoy la lista bajaba el ORIGINAL de cada foto —170 kB de media, hasta
-  311— y lo pintaba en un recuadro de 80 × 80 píxeles. Unas cuarenta veces lo
-  necesario, por miniatura, y al montar la tarjeta: no es una `<img>` con
-  dirección remota, era una descarga a mano, así que ni `loading="lazy"` la
-  salvaba.
-
-  Se ve poco porque las fotos de hoy son pequeñas. Pero este bucket crece a
-  **9,6 archivos al día** —seis veces más rápido que el de maquinaria— y cada
-  miniatura es además una petición firmada aparte, que paga su propia
-  comprobación de permisos. Cuarenta miniaturas no son cuarenta descargas
-  grandes: son cuarenta descargas grandes MÁS cuarenta comprobaciones.
-
-  Storage sabe redimensionar al firmar, y el plan de la organización lo trae.
-  Así que se pide del tamaño en que se va a ver y se acabó.
-
-  EL DOBLE DEL LADO, a propósito: en una pantalla de densidad doble —cualquier
-  portátil moderno— un recuadro de 80 puntos son 160 píxeles de verdad, y una
-  imagen de 80 se vería lavada justo donde hay que reconocer una placa.
-
-  Y esto NO sirve para los PDF: la transformación es de imágenes. Quien los
-  llama ya los distingue antes de pedir nada.
-*/
-const LADO_MINIATURA = 80
-
 export async function miniaturaDeFotoDeCarga(path: string): Promise<string> {
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 600, {
-    transform: {
-      width: LADO_MINIATURA * 2,
-      height: LADO_MINIATURA * 2,
-      // `cover` y no `contain`: el recuadro es cuadrado y las fotos no, y una
-      // foto encajada dentro deja dos franjas vacías que se leen como que la
-      // imagen no cargó del todo.
-      resize: 'cover',
-      quality: 60,
-    },
-  })
-
-  if (error || !data) throw new Error('No se pudo abrir la miniatura.')
+  // La versión chica que se guardó al subir. SIN transformación: una dirección
+  // firmada a un archivo que ya existe, que es lo que no se cobra.
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(rutaMiniatura(path), 600)
+  // Sin miniatura guardada —una foto de antes de este cambio—: se lanza para
+  // que quien llama baje el original, que es justo lo que su red ya hace.
+  if (error || !data) throw new Error('No hay miniatura guardada.')
   return data.signedUrl
 }
 
