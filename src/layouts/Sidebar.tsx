@@ -6,7 +6,7 @@ import type { NavItem, NavSection, NavChild } from '@/config/navigation'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib/cn'
 import { useSesion } from '@/lib/sesion'
-import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
 import { useMisRoles } from '@/lib/api/catalogo'
 
 interface SidebarProps {
@@ -63,9 +63,17 @@ function menuVisible(
 export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
   const { pathname } = useLocation()
   const { nombre, usuario, iniciales } = useSesion()
-  const { puede, resuelto } = useMisPermisos()
+  const { puede, resuelto: permisosResueltos } = useMisPermisos()
   const { puede: tieneRol } = useMisRoles()
-  const secciones = menuVisible(puede, resuelto, tieneRol('ADMIN'))
+  /*
+    ASISTENCIA TAMBIÉN SE ENSEÑA CON LA CASILLA DE ESCANEAR.
+    `ASISTENCIA.ESCANEAR` deja marcar y leer sin el nivel de módulo completo
+    —genesis, por ejemplo—; sin este agujero, el menú escondería el módulo
+    aunque la reja de la ruta y la base ya la dejaran entrar.
+  */
+  const { puede: puedeAccion, resuelto: accionesResueltas } = useMisAcciones()
+  const puedeVerModulo = (m: string) => puede(m) || (m === 'ASISTENCIA' && puedeAccion('ASISTENCIA.ESCANEAR'))
+  const secciones = menuVisible(puedeVerModulo, permisosResueltos && accionesResueltas, tieneRol('ADMIN'))
 
   // Un grupo abierto a la vez: con ocho módulos, permitir varios abiertos
   // convierte el riel en una lista de cuarenta líneas.
