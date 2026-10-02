@@ -86,11 +86,11 @@ const LADO_MINIATURA = 80
 const rutaMiniatura = (path: string) => `${path}.thumb.jpg`
 
 /** Una miniatura cuadrada, recortada al centro, hecha en el navegador. */
-async function fabricarMiniatura(archivo: File): Promise<Blob> {
+async function fabricarMiniatura(fuente: Blob): Promise<Blob> {
   const lado = LADO_MINIATURA * 2
   // `from-image`: respeta la orientación EXIF, para que la foto de un celular
   // no salga acostada. La transformación de Storage ya lo hacía; esto la iguala.
-  const bitmap = await createImageBitmap(archivo, { imageOrientation: 'from-image' })
+  const bitmap = await createImageBitmap(fuente, { imageOrientation: 'from-image' })
   try {
     // «cover»: se llena el cuadrado y se recorta lo que sobra, sin franjas.
     const escala = Math.max(lado / bitmap.width, lado / bitmap.height)
@@ -190,4 +190,34 @@ export async function abrirFotoDeCarga(path: string): Promise<string> {
   const { data, error } = await supabase.storage.from(BUCKET).download(path)
   if (error || !data) throw new Error('No se pudo abrir el archivo.')
   return URL.createObjectURL(data)
+}
+
+/*
+  LAS FOTOS DE ANTES DE ESTE CAMBIO SE REPARAN SOLAS AL MIRARLAS.
+
+  Una foto subida antes del guardado de miniaturas no tiene su `.thumb.jpg`, y
+  sin esto bajaría su original entero cada vez que se mira. Aquí, la primera
+  vez que alguien CON permiso la ve, se baja el original UNA vez, se fabrica la
+  miniatura que faltaba, se guarda para siempre, y se muestra ya la chica.
+
+  Así no hace falta un repaso aparte ni credenciales de servidor: el arreglo
+  corre en el navegador de quien ya tiene la sesión y el permiso, y cada foto
+  se cura la primera vez que de verdad se necesita.
+
+  Si guardar la miniatura falla —un usuario de solo lectura—, no pasa nada: se
+  ve igual de chica esta vez, y la próxima la curará quien sí pueda escribir.
+  Y si ni fabricarla se puede, quien llama cae a bajar el original, como antes.
+*/
+export async function repararMiniatura(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from(BUCKET).download(path)
+  if (error || !data) throw new Error('No se pudo abrir el archivo.')
+  const mini = await fabricarMiniatura(data)
+  try {
+    await supabase.storage
+      .from(BUCKET)
+      .upload(rutaMiniatura(path), mini, { contentType: 'image/jpeg', upsert: true })
+  } catch {
+    /* solo lectura: se ve chica igual, y otro la guardará después */
+  }
+  return URL.createObjectURL(mini)
 }
