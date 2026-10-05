@@ -6,8 +6,11 @@ import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
+import { ElegirArchivosDeCarga, FotosDeCarga } from '@/components/FotosDeCarga'
+import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
 import { useMaquinaria } from '@/lib/api/maquinaria'
 import {
+  numeroDeDespacho,
   useDespacharCombustible,
   useDespachosCombustible,
   useMotivosDespacho,
@@ -61,7 +64,14 @@ export function Surtidor() {
 
   const tanques = useTanques()
   const [tanque, setTanque] = useState('')
-  const [guardado, setGuardado] = useState<{ texto: string; litros: string } | null>(null)
+  const [guardado, setGuardado] = useState<{
+    texto: string
+    litros: string
+    /** El número del vale, para colgarle fotos desde el acuse. */
+    numero: string | null
+    /** Si las fotos no subieron por la señal, aquí se dice. */
+    avisoFotos: string | null
+  } | null>(null)
 
   const conSaldo = (tanques.data ?? []).filter((t) => Number(t.existencia) > 0)
   const elegido = conSaldo.find((t) => `${t.almacen_id}|${t.articulo_id}` === tanque)
@@ -86,7 +96,15 @@ export function Surtidor() {
   }
 
   if (guardado) {
-    return <Listo texto={guardado.texto} cuanto={guardado.litros} onOtro={() => setGuardado(null)} />
+    return (
+      <Listo
+        texto={guardado.texto}
+        cuanto={guardado.litros}
+        numero={guardado.numero}
+        avisoFotos={guardado.avisoFotos}
+        onOtro={() => setGuardado(null)}
+      />
+    )
   }
 
   if (conSaldo.length === 0) {
@@ -128,7 +146,7 @@ export function Surtidor() {
     <Vale
       tanque={elegido}
       onVolver={conSaldo.length > 1 ? () => setTanque('') : undefined}
-      onGuardado={(texto, cuanto) => setGuardado({ texto, litros: cuanto })}
+      onGuardado={(g) => setGuardado(g)}
     />
   )
 }
@@ -142,7 +160,7 @@ function Vale({
 }: {
   tanque: { almacen_id: number; almacen: string; articulo_id: number; articulo: string; unidad: string; existencia: string }
   onVolver?: () => void
-  onGuardado: (texto: string, cuanto: string) => void
+  onGuardado: (g: { texto: string; litros: string; numero: string | null; avisoFotos: string | null }) => void
 }) {
   const despachar = useDespacharCombustible()
   const { data: maquinas } = useMaquinaria(true)
@@ -163,6 +181,9 @@ function Vale({
   const [dia, setDia] = useState(hoy)
   const [nota, setNota] = useState('')
   const [tarda, setTarda] = useState(false)
+  /** Las fotos del despacho, tomadas antes de guardar. Se suben DESPUÉS de
+      que el vale quede guardado: si la señal se las come, el vale no se pierde. */
+  const [archivos, setArchivos] = useState<File[]>([])
 
   /*
     EL AVISO DE MALA SEÑAL.
@@ -225,7 +246,7 @@ function Vale({
       ? (personas ?? []).find((p) => String(p.id) === empleado)?.nombre || ''
       : otroNombre.trim()
 
-    await despachar.mutateAsync({
+    const id = await despachar.mutateAsync({
       articulo_id: tanque.articulo_id,
       almacen_id: tanque.almacen_id,
       cantidad: pedidos,
@@ -241,9 +262,39 @@ function Vale({
       nota: nota.trim() || null,
     })
 
-    onGuardado(
-      [
-        'Vale de combustible',
+    /*
+      LAS FOTOS VAN DESPUÉS DEL VALE, A PROPÓSITO.
+
+      El vale es el registro que no se puede perder; las fotos son su
+      respaldo. Si la señal se cae a mitad de la subida, el vale ya quedó
+      guardado y el acuse dice que las fotos faltan y dónde reintentarlas.
+      Al revés —fotos primero— una caída dejaría fotos huérfanas y el
+      combustible sin descontar.
+    */
+    let numero: string | null = null
+    let avisoFotos: string | null = null
+    try {
+      numero = await numeroDeDespacho(id)
+    } catch {
+      /* sin número no hay dónde colgar las fotos; se avisa abajo */
+    }
+    if (archivos.length > 0) {
+      if (numero) {
+        try {
+          await subirFotosDeCarga('COMBUSTIBLE', [numero], archivos)
+        } catch {
+          avisoFotos =
+            'El vale quedó guardado, pero las fotos no subieron por la señal. Añádalas aquí abajo cuando mejore.'
+        }
+      } else {
+        avisoFotos =
+          'El vale quedó guardado, pero no se pudo confirmar su número para colgarle las fotos. Añádalas desde la computadora.'
+      }
+    }
+
+    onGuardado({
+      texto: [
+        numero ? `Vale ${numero}` : 'Vale de combustible',
         `${litros(pedidos, tanque.unidad)} de ${tanque.articulo}`,
         `Tanque: ${tanque.almacen}`,
         `A: ${nombreMaquina}`,
@@ -254,8 +305,10 @@ function Vale({
       ]
         .filter(Boolean)
         .join('\n'),
-      litros(pedidos, tanque.unidad),
-    )
+      litros: litros(pedidos, tanque.unidad),
+      numero,
+      avisoFotos,
+    })
   }
 
   return (
@@ -380,6 +433,17 @@ function Vale({
           />
         ) : null}
 
+        {/* Las fotos del despacho: el tablero con el horómetro, la máquina
+            recibiendo. En el teléfono el botón abre la cámara directo. Se
+            suben cuando el vale ya quedó guardado, para que la señal no se
+            lleve el registro por delante. */}
+        <div>
+          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">
+            Fotos del despacho
+          </p>
+          <ElegirArchivosDeCarga archivos={archivos} onCambiar={setArchivos} />
+        </div>
+
         {/* Lo que casi nunca se toca, plegado: en el teléfono cada campo de más estorba. */}
         {masDatos ? (
           <>
@@ -424,7 +488,19 @@ function Vale({
 
 /* ─────────────────────────────────────────────────────────── el acuse */
 
-function Listo({ texto, cuanto, onOtro }: { texto: string; cuanto: string; onOtro: () => void }) {
+function Listo({
+  texto,
+  cuanto,
+  numero,
+  avisoFotos,
+  onOtro,
+}: {
+  texto: string
+  cuanto: string
+  numero: string | null
+  avisoFotos: string | null
+  onOtro: () => void
+}) {
   const compartir = async () => {
     // Compartir nativo donde lo hay; si no, WhatsApp, que es como se avisa aquí.
     if (navigator.share) {
@@ -449,6 +525,25 @@ function Listo({ texto, cuanto, onOtro }: { texto: string; cuanto: string; onOtr
       <pre className="border-hairline bg-ink/2 text-ink/70 mt-5 rounded-card border p-3 text-left text-xs whitespace-pre-wrap">
         {texto}
       </pre>
+
+      {avisoFotos ? (
+        <p className="border-warning/30 bg-warning-soft text-ink/80 rounded-card mt-4 border p-3 text-left text-sm">
+          {avisoFotos}
+        </p>
+      ) : null}
+
+      {/* Las fotos del vale: las que subieron se ven, y desde aquí mismo se
+          añaden las que falten — es el reintento natural cuando la señal se
+          comió la subida. */}
+      {numero ? (
+        <div className="mt-5 text-left">
+          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">
+            Fotos del vale {numero}
+          </p>
+          {/* Quien llegó a este acuse despachó, así que puede añadir. */}
+          <FotosDeCarga origen="COMBUSTIBLE" referencia={numero} puedeAnadir />
+        </div>
+      ) : null}
 
       <div className="mt-5 space-y-3">
         <Button className="w-full py-3.5" variant="outline" icon={<Share2 />} onClick={() => void compartir()}>

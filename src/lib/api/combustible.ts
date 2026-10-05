@@ -245,6 +245,22 @@ export function useCombustibleFueraDeTanque() {
   })
 }
 
+/**
+ * El número (CMB-…) de un vale recién creado.
+ *
+ * La RPC de despachar devuelve el id, pero las fotos del vale se cuelgan del
+ * número, igual que en las salidas y los despachos. Se lee de la misma vista
+ * que pinta la lista, así que quien puede despachar puede preguntarlo.
+ */
+export async function numeroDeDespacho(id: number): Promise<string | null> {
+  const { data } = await supabase
+    .from('v_despachos_combustible')
+    .select('numero')
+    .eq('id', id)
+    .maybeSingle()
+  return (data?.numero as string | null) ?? null
+}
+
 export function useDespacharCombustible() {
   const qc = useQueryClient()
   return useMutation({

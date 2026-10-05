@@ -6813,7 +6813,9 @@ Va en dos pasos. Primero **de qué tanque**, en botones grandes que dicen cuánt
 
 <p class="regla"><strong>Si la señal está mala, el sistema lo dice.</strong> Cuando el guardado tarda más de doce segundos aparece el aviso de que <strong>el vale ya se está guardando y no hay que cargarlo otra vez</strong>. Es el error más común en la mina: el que espera vuelve a pulsar, y salen dos vales del mismo gasoil.</p>
 
-Al guardar, la pantalla confirma lo que salió y ofrece **pasarlo por WhatsApp**, que es como se avisa en el patio. El vale firmado en papel se sigue sacando desde la computadora.
+**El vale lleva fotos desde el 5 de octubre de 2026.** En el mismo formulario está la sección **Fotos del despacho** —el tablero con el horómetro, la máquina recibiendo, el vale de papel si lo hay—, hasta cuatro archivos por vale, como en las salidas y los despachos. Las fotos **se suben después de que el vale queda guardado**, a propósito: si la señal se cae a mitad de la subida, el vale no se pierde; el acuse avisa que las fotos faltan y se añaden ahí mismo cuando la señal vuelva. Una foto se quita solo diciendo por qué, y quitarla no la borra: queda el rastro.
+
+Al guardar, la pantalla confirma lo que salió —con el número del vale— y ofrece **pasarlo por WhatsApp**, que es como se avisa en el patio. El vale firmado en papel se sigue sacando desde la computadora.
 
 **Quién entra directo.** En **Configuración › Usuarios**, entre los permisos extendidos de Combustible, está la casilla **Entrar directo al surtidor del teléfono**. A quien se le dé, abre el sistema y aparece ya en esta pantalla, sin pasar por el tablero. Es para la persona que está en la bomba. **La casilla no da permiso de nada por sí sola**: para despachar sigue haciendo falta escritura en Combustible. Y nadie la tiene de entrada: hay que prestarla a mano.
 
@@ -6822,6 +6824,8 @@ Al guardar, la pantalla confirma lo que salió y ofrece **pasarlo por WhatsApp**
 Cada despacho saca su **Vale de combustible** en papel, con el botón **Imprimir el vale**. Lleva la misma cabecera que el resto de los papeles del sistema (13.2).
 
 **Es el papel que firma quien recibe el combustible**, y por eso se imprime al despachar y no después.
+
+**Y sus fotos se miran desde la lista.** En **Últimos despachos**, cada vale con número tiene el botón de la cámara: ahí se ven las fotos que subió el bombero, se añaden las que falten y se quita una diciendo por qué. Verlas pide lectura de Combustible; añadir o quitar, escritura.
 
 ### 20.6 Cargar combustible a mano
 

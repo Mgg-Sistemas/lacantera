@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Droplets, FileText, Fuel, Plus, Settings2, Smartphone, Tags, TriangleAlert } from 'lucide-react'
+import { Camera, Droplets, FileText, Fuel, Plus, Settings2, Smartphone, Tags, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -32,6 +32,7 @@ import { useMisRoles } from '@/lib/api/catalogo'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useFirmas } from '@/lib/api/firmas'
 import { Visor } from '@/components/Visor'
+import { FotosDeCarga } from '@/components/FotosDeCarga'
 import { Link } from 'react-router'
 import { ModalCargarCombustible } from './ModalCargarCombustible'
 import { armarValeDeCombustible } from '@/lib/ficha/valeCombustiblePdf'
@@ -72,6 +73,8 @@ export function Combustible() {
   const firmas = useFirmas()
   const [despachando, setDespachando] = useState(false)
   const [vale, setVale] = useState<{ blob: Blob; nombre: string } | null>(null)
+  /** El vale cuyas fotos están desplegadas. Desde el 05/10/2026 el vale lleva fotos. */
+  const [fotosDe, setFotosDe] = useState<string | null>(null)
   const [ordenando, setOrdenando] = useState(false)
   const [cargando, setCargando] = useState(false)
 
@@ -454,6 +457,28 @@ export function Combustible() {
                 >
                   <FileText className="size-4" />
                 </Button>
+                {/* Las fotos del despacho: el tablero con el horómetro, la
+                    máquina recibiendo. Las sube el bombero desde el teléfono
+                    y aquí se miran, se completan o se quitan con motivo. */}
+                {d.numero ? (
+                  <Button
+                    variant="ghost"
+                    className="shrink-0"
+                    onClick={() => setFotosDe((n) => (n === d.numero ? null : d.numero))}
+                    title="Fotos del despacho"
+                  >
+                    <Camera className="size-4" />
+                  </Button>
+                ) : null}
+                {d.numero && fotosDe === d.numero ? (
+                  <div className="w-full pb-1">
+                    <FotosDeCarga
+                      origen="COMBUSTIBLE"
+                      referencia={d.numero}
+                      puedeAnadir={puedeDespachar}
+                    />
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
