@@ -177,8 +177,8 @@ export function Tabulador() {
         <Card className="mb-4">
           <p className="text-ink/60 text-sm">
             Todas las fichas coinciden con el tabulador, así que <strong>Sincronizar</strong> no
-            tiene nada que hacer ahora mismo. Cuando cambies un sueldo aquí abajo, esta franja te
-            dirá a quién le toca y de cuánto a cuánto, antes de que pulses nada.
+            tiene nada que hacer ahora mismo. Cuando cambie un sueldo aquí abajo, esta franja le
+            dirá a quién le toca y de cuánto a cuánto, antes de que pulse nada.
           </p>
         </Card>
       ) : null}
@@ -343,7 +343,7 @@ export function Tabulador() {
                   ? dinero(edicion.moneda, Number(edicion.sueldo_mensual) / 2)
                   : ''
               }
-              placeholder="Escribe el mensual"
+              placeholder="Escriba el mensual"
               readOnly
             />
 
@@ -428,7 +428,7 @@ export function Tabulador() {
                 Hay {borrando.personas}{' '}
                 {borrando.personas === 1 ? 'persona' : 'personas'} en este nivel. La base no va a
                 dejar quitarlo: si se soltaran, seguirían cobrando lo mismo pero dejarían de subir
-                cuando suba el cargo, y nadie sabría por qué. Muévelas antes, o desmarca «Vigente»
+                cuando suba el cargo, y nadie sabría por qué. Muévalas antes, o desmarque «Vigente»
                 para que deje de ofrecerse sin perder a quien está dentro.
               </p>
             ) : (

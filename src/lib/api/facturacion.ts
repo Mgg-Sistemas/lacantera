@@ -311,7 +311,7 @@ export const TIPOS_NOTA_CREDITO = [
   {
     valor: 'DEVOLUCION',
     etiqueta: 'Devolución de material',
-    ayuda: 'El cliente devolvió lo despachado. Elige el patio y el material vuelve a existencia.',
+    ayuda: 'El cliente devolvió lo despachado. Elija el patio y el material vuelve a existencia.',
   },
   {
     valor: 'CORRECCION',

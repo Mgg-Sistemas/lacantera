@@ -273,14 +273,14 @@ export function Parametros() {
           <div className="border-hairline mt-4 border-t pt-4">
             <p className="text-ink/80 text-sm">
               {cambio === null
-                ? 'Elige desde qué día.'
+                ? 'Seleccione desde qué día.'
                 : sinCambio
                   ? 'Ese día la nómina ya calcula exactamente esto: no hay nada que guardar.'
                   : `Desde ese día ${describirCambio(cambio)}.`}
             </p>
             {cambio && cambio.encendidos.length > 0 ? (
               <p className="text-ink/50 mt-1 text-xs">
-                Revisa antes los parámetros de abajo: el salario mínimo o el cestaticket pueden
+                Revise antes los parámetros de abajo: el salario mínimo o el cestaticket pueden
                 haber cambiado.
               </p>
             ) : null}
@@ -327,7 +327,7 @@ export function Parametros() {
             </p>
             {antesDelProgramado && programado ? (
               <p className="text-warning mt-2 text-xs">
-                Hay un cambio programado desde el {fecha(programado.vigencia_desde)}: elige ese día
+                Hay un cambio programado desde el {fecha(programado.vigencia_desde)}: seleccione ese día
                 o uno posterior.
               </p>
             ) : null}
@@ -342,7 +342,7 @@ export function Parametros() {
 
       {puedeRRHH ? (
         <p className="text-ink/50 mb-4 text-sm">
-          Toca cualquier parámetro para corregir su valor o abrirle una vigencia nueva.
+          Toque cualquier parámetro para corregir su valor o abrirle una vigencia nueva.
         </p>
       ) : null}
 
@@ -453,7 +453,7 @@ export function Parametros() {
           titulo={esCorreccion ? `Corregir ${nuevo.clave}` : 'Nueva vigencia'}
           descripcion={
             esCorreccion
-              ? 'Misma fecha de vigencia: se corrige lo que hay, no se abre una vigencia nueva. Cambia la fecha si lo que quieres es que rija desde otro día.'
+              ? 'Misma fecha de vigencia: se corrige lo que hay, no se abre una vigencia nueva. Cambie la fecha si lo que quiere es que rija desde otro día.'
               : 'No sustituye el valor anterior: lo cierra el día antes y empieza uno nuevo.'
           }
           ancho="sm"
@@ -542,7 +542,7 @@ export function Parametros() {
             */}
             <SelectBuscable
               label="Parámetro"
-              vacio="Elige cuál cambia"
+              vacio="Seleccione cuál cambia"
               valor={nuevo.clave}
               onCambio={(v) => {
                 const previo = (data ?? []).find((p) => p.clave === v)

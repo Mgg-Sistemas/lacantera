@@ -149,7 +149,7 @@ function CobrarSaldo({ saldo, onCerrar }: { saldo: SaldoAFavor; onCerrar: () => 
     >
       <Select
         label="A qué cuenta entra"
-        vacio={deLaMoneda.length ? 'Elige la cuenta' : `No hay cuentas en ${saldo.moneda}`}
+        vacio={deLaMoneda.length ? 'Seleccione la cuenta' : `No hay cuentas en ${saldo.moneda}`}
         value={cuentaId}
         onChange={(e) => setCuentaId(e.target.value)}
         opciones={deLaMoneda.map((c) => ({ valor: String(c.id), etiqueta: c.nombre }))}

@@ -267,7 +267,7 @@ export function Combustible() {
           <h2 className="text-ink/80 mb-1 text-sm font-semibold">Fuera de tanque</h2>
           <p className="text-ink/50 mb-3 text-xs">
             Combustible que la empresa tiene, pero en un sitio que no es un tanque —normalmente
-            porque la compra se recibió ahí—. No se puede despachar desde ahí: pásalo primero.
+            porque la compra se recibió ahí—. No se puede despachar desde ahí: páselo primero.
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -472,7 +472,7 @@ export function Combustible() {
         blob={vale?.blob ?? null}
         nombreArchivo={vale?.nombre ?? 'vale-combustible.pdf'}
         titulo="Vale de combustible"
-        descripcion="Compruébalo antes de imprimirlo: lo que diga este papel es lo que se va a firmar."
+        descripcion="Compruébelo antes de imprimirlo: lo que diga este papel es lo que se va a firmar."
       />
       <ModalPasarAlTanque origen={pasarAlTanque} onCerrar={() => setPasarAlTanque(null)} />
     </>
@@ -750,9 +750,9 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
           }))}
           hint={
             (maquinas ?? []).length === 0
-              ? 'Todavía no hay máquinas cargadas en la ficha. El vale se puede emitir igual: escribe abajo a qué se le echó. Cuando se carguen en Maquinaria aparecerán aquí y se podrá llevar el consumo por hora.'
+              ? 'Todavía no hay máquinas cargadas en la ficha. El vale se puede emitir igual: escriba abajo a qué se le echó. Cuando se carguen en Maquinaria aparecerán aquí y se podrá llevar el consumo por hora.'
               : ocultasPorCombustible > 0
-                ? `No salen ${ocultasPorCombustible} que queman otro combustible. Si la ficha de alguna está equivocada, corrígela en Maquinaria.`
+                ? `No salen ${ocultasPorCombustible} que queman otro combustible. Si la ficha de alguna está equivocada, corríjala en Maquinaria.`
                 : 'Sin máquina no hay consumo por hora: solo cuenta para el gasto.'
           }
         />
@@ -799,7 +799,7 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
           }
         >
           {topeAlcanzado
-            ? `Ya se surtió ${yaSurtidoHoy} veces ese día. Son ${TOPE_AL_DIA} al día como máximo: si de verdad hace falta más, revisa por qué.`
+            ? `Ya se surtió ${yaSurtidoHoy} veces ese día. Son ${TOPE_AL_DIA} al día como máximo: si de verdad hace falta más, revise por qué.`
             : `Es el surtido ${yaSurtidoHoy + 1} de ${TOPE_AL_DIA} de ese día para esta máquina.`}
         </p>
       ) : null}
@@ -886,7 +886,7 @@ function ModalMotivos({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =>
       abierto={abierto}
       onCerrar={onCerrar}
       titulo="Para qué se surte"
-      descripcion="La lista que sale al despachar. Cámbiala cuando haga falta; los vales viejos siguen diciendo lo que decían."
+      descripcion="La lista que sale al despachar. Cámbiela cuando haga falta; los vales viejos siguen diciendo lo que decían."
       acciones={
         <Button variant="ghost" onClick={onCerrar}>
           Listo
@@ -1029,13 +1029,13 @@ function ModalPasarAlTanque({
 
       {tanques.length === 0 ? (
         <p className="text-danger text-sm">
-          No hay ningún tanque creado. Créalo primero en Tanques, arriba, y vuelve aquí.
+          No hay ningún tanque creado. Créelo primero en Tanques, arriba, y vuelva aquí.
         </p>
       ) : (
         <>
           <SelectBuscable
             label="A qué tanque"
-            vacio="Elige el tanque"
+            vacio="Seleccione el tanque"
             valor={tanque}
             onCambio={setTanque}
             opciones={tanques.map((t) => ({

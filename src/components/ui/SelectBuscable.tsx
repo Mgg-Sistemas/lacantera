@@ -217,7 +217,7 @@ export function SelectBuscable({
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               onKeyDown={teclas}
-              placeholder="Escribe el código o el nombre…"
+              placeholder="Escriba el código o el nombre…"
               className={cn(
                 'rounded-control bg-surface text-ink/90 h-10 w-full border pr-9 pl-10 text-base',
                 'border-royal-600 focus:ring-royal-600/20 focus:ring-2 focus:outline-none',
@@ -254,7 +254,7 @@ export function SelectBuscable({
                   <span className="truncate">{textoDe(elegida)}</span>
                 </>
               ) : (
-                (vacio ?? 'Selecciona…')
+                (vacio ?? 'Seleccione…')
               )}
             </span>
           </button>

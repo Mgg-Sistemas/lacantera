@@ -35,8 +35,8 @@ export function PantallaQueNoLlego({
       }
       descripcion={
         porVersion
-          ? 'Se publicó una versión nueva mientras tenías el sistema abierto, y esta pantalla ya no llega a la anterior. Pulsa Actualizar cuando quieras traerla.'
-          : 'No llegó desde el servidor. Revisa la conexión y pulsa Recargar.'
+          ? 'Se publicó una versión nueva mientras tenía el sistema abierto, y esta pantalla ya no llega a la anterior. Pulse Actualizar cuando quiera traerla.'
+          : 'No llegó desde el servidor. Revise la conexión y pulse Recargar.'
       }
       accion={
         <div className="flex flex-wrap justify-center gap-2">

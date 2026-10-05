@@ -142,7 +142,7 @@ export function MovimientosTesoreria() {
             }
             descripcion={
               rango.desde || rango.hasta || metodo || moneda
-                ? 'No se movió dinero en lo que estás mirando. Prueba a ampliar las fechas o a quitar los filtros.'
+                ? 'No se movió dinero en lo que está mirando. Amplíe las fechas o quite los filtros.'
                 : 'El libro se llena solo: cada pago, ingreso o traslado escribe su línea.'
             }
           />

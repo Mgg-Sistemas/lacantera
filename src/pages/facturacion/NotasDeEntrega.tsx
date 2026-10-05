@@ -517,7 +517,7 @@ export function NotasDeEntrega() {
                         if (c.sinPermiso) {
                           return (
                             <p className="text-ink/45 border-hairline mt-2 border-t pt-2 text-xs">
-                              Los montos de este despacho no se muestran con tu permiso.
+                              Los montos de este despacho no se muestran con su permiso.
                             </p>
                           )
                         }
@@ -682,8 +682,8 @@ export function NotasDeEntrega() {
             titulo={hayFiltros ? 'Ninguna nota con eso' : 'Todavía no ha salido ningún camión'}
             descripcion={
               hayFiltros
-                ? 'Se buscó en todas las notas, no sólo en las recientes. Revisa que el número esté completo —los papeles llevan NE-2026-0042, con el año y los cuatro dígitos— o quita el estado y las fechas.'
-                : 'Cada despacho se pide y, al aprobarlo, rebaja el patio y vale por sí solo. Si se decide facturarlo, se hace en Facturación y la nota queda enlazada a su factura. Si el patio está en cero, carga primero la producción desde Inventario › Existencias.'
+                ? 'Se buscó en todas las notas, no sólo en las recientes. Revise que el número esté completo —los papeles llevan NE-2026-0042, con el año y los cuatro dígitos— o quite el estado y las fechas.'
+                : 'Cada despacho se pide y, al aprobarlo, rebaja el patio y vale por sí solo. Si se decide facturarlo, se hace en Facturación y la nota queda enlazada a su factura. Si el patio está en cero, cargue primero la producción desde Inventario › Existencias.'
             }
             accion={
               puedeDespachar && !hayFiltros ? (
@@ -781,7 +781,7 @@ export function NotasDeEntrega() {
                     {m3EnLaCarga.toLocaleString('es-VE', { maximumFractionDigits: 2 })} m³
                   </strong>{' '}
                   en un vehículo de {Number(vehiculoElegido!.capacidad_m3)} m³. Si es a propósito
-                  —dos viajes, carga parcial— sigue adelante.
+                  —dos viajes, carga parcial— siga adelante.
                 </p>
               ) : null}
 
@@ -837,7 +837,7 @@ export function NotasDeEntrega() {
                       await subirFotosDeCarga('DESPACHO', [numero], archivos)
                     } catch (e) {
                       setFalloDespacho(
-                        `El despacho ${numero} quedó pedido, pero las fotos no subieron (${enCastellano(e)}). Añádelas desde su tarjeta.`,
+                        `El despacho ${numero} quedó pedido, pero las fotos no subieron (${enCastellano(e)}). Añádalas desde su tarjeta.`,
                       )
                     }
                   }
@@ -854,7 +854,7 @@ export function NotasDeEntrega() {
             <div className="sm:col-span-2">
               <SelectBuscable
                 label="Cliente"
-                vacio="Elige el cliente"
+                vacio="Seleccione el cliente"
                 valor={clienteId}
                 onCambio={(v) => {
                   setClienteId(v)
@@ -876,7 +876,7 @@ export function NotasDeEntrega() {
             <div className="sm:col-span-3">
               <SelectBuscable
                 label="De qué patio sale"
-                vacio="Elige el patio o almacén"
+                vacio="Seleccione el patio o almacén"
                 valor={almacenId}
                 onCambio={(v) => setAlmacenId(v)}
                 opciones={opcionesDePatio}
@@ -967,7 +967,7 @@ export function NotasDeEntrega() {
                 hint={
                   guiasVigentes.length === 0
                     ? 'Opcional. No hay guías cargadas: el despacho sale sin guía.'
-                    : 'Opcional. Si este despacho lleva guía de movilización, elígela.'
+                    : 'Opcional. Si este despacho lleva guía de movilización, elíjala.'
                 }
               />
             </div>
@@ -985,7 +985,7 @@ export function NotasDeEntrega() {
               <div>
                 <SelectBuscable
                   label="Chofer / responsable"
-                  vacio="Busca el chofer…"
+                  vacio="Busque el chofer…"
                   valor={choferId}
                   onCambio={(v) => {
                     setChoferId(v)
@@ -1038,7 +1038,7 @@ export function NotasDeEntrega() {
               <div>
                 <SelectBuscable
                   label="Vehículo"
-                  vacio="Busca el vehículo…"
+                  vacio="Busque el vehículo…"
                   valor={vehiculoDespId}
                   onCambio={(v) => {
                     setVehiculoDespId(v)
@@ -1363,7 +1363,7 @@ export function NotasDeEntrega() {
             return (
               <Select
                 label="Factura"
-                vacio={posibles.length ? 'Elige la factura' : 'No hay ninguna disponible'}
+                vacio={posibles.length ? 'Seleccione la factura' : 'No hay ninguna disponible'}
                 value={facturaElegida}
                 onChange={(e) => setFacturaElegida(e.target.value)}
                 opciones={posibles.map((f) => ({
@@ -1405,7 +1405,7 @@ export function NotasDeEntrega() {
         >
           <Textarea
             label="Por qué se anula"
-            hint="Queda escrito en el registro de auditoría con tu nombre."
+            hint="Queda escrito en el registro de auditoría con su nombre."
             rows={3}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}

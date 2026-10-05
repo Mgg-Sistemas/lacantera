@@ -76,7 +76,7 @@ export function EncuadreFoto({
 
     if (archivo.size > MAX_MB * 1024 * 1024) {
       setError(
-        `La foto pesa ${(archivo.size / 1024 / 1024).toFixed(1)} MB y el máximo son ${MAX_MB}. Sácala con menos resolución o mándala por WhatsApp y guarda la que llega.`,
+        `La foto pesa ${(archivo.size / 1024 / 1024).toFixed(1)} MB y el máximo son ${MAX_MB}. Sáquela con menos resolución o mándela por WhatsApp y guarde la que llega.`,
       )
       return
     }
@@ -209,7 +209,7 @@ export function EncuadreFoto({
 
           {url ? (
             <p className="text-ink/40 max-w-[220px] text-center text-xs">
-              Arrastra para centrar la cara sobre la línea.
+              Arrastre para centrar la cara sobre la línea.
             </p>
           ) : null}
 

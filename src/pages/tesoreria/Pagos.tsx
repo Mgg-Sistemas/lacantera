@@ -218,7 +218,7 @@ function ModalTanda({
       <div className="grid gap-3 sm:grid-cols-2">
         <Select
           label="Por dónde salió el dinero"
-          vacio={compatibles.length ? 'Elige' : `No hay ninguna en ${moneda}`}
+          vacio={compatibles.length ? 'Seleccione' : `No hay ninguna en ${moneda}`}
           value={cuentaId}
           onChange={(e) => setCuentaId(e.target.value)}
           opciones={compatibles.map((c) => ({ valor: String(c.id), etiqueta: c.nombre }))}

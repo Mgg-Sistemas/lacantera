@@ -457,7 +457,7 @@ export function FichaTrabajador() {
               : 'Carnet — reverso',
           descripcion:
             tipo === 'frente'
-              ? '54 × 86 mm a 300 dpi. Revisa que la cara esté centrada antes de mandarlo a imprimir.'
+              ? '54 × 86 mm a 300 dpi. Revise que la cara esté centrada antes de mandarlo a imprimir.'
               : 'La marca, la razón social y el RIF. Es igual para todos: se imprime una vez y sirve para todos los carnets.',
         })
       } else {
@@ -535,7 +535,7 @@ export function FichaTrabajador() {
           tipoConstancia === 'CESE'
             ? 'Constancia de cese de actividades laborales'
             : 'Constancia de trabajo',
-        descripcion: 'Revísala antes de entregarla. La firma va a mano.',
+        descripcion: 'Revísela antes de entregarla. La firma va a mano.',
       })
       setPidiendo(false)
     } catch (err) {
@@ -867,7 +867,7 @@ export function FichaTrabajador() {
         abierto={atandoCuenta}
         onCerrar={() => setAtandoCuenta(false)}
         titulo="Atar una cuenta a esta ficha"
-        descripcion="Dejas dicho que el trabajador de esta ficha y ese usuario del sistema son la misma persona. No le da ni le quita ningún permiso."
+        descripcion="Deja dicho que el trabajador de esta ficha y ese usuario del sistema son la misma persona. No le da ni le quita ningún permiso."
         acciones={
           <>
             <Button variant="ghost" onClick={() => setAtandoCuenta(false)}>
@@ -912,7 +912,7 @@ export function FichaTrabajador() {
           }))}
           valor={cuentaElegida}
           onCambio={(v: string) => setCuentaElegida(v)}
-          vacio="Busca por nombre o por usuario"
+          vacio="Busque por nombre o por usuario"
           hint="Solo salen las cuentas que no son de nadie todavía. Una cuenta es de una sola persona."
         />
 
@@ -1291,7 +1291,7 @@ export function FichaTrabajador() {
                         ? `Dirá «por ${(
                             MOTIVOS_EGRESO.find((m) => m.valor === e.motivo_egreso)?.etiqueta ??
                             e.motivo_egreso
-                          ).toLowerCase()}». Piénsalo: el papel se lo lleva la persona.`
+                          ).toLowerCase()}». Piénselo: el papel se lo lleva la persona.`
                         : 'La carta dirá cuándo terminó, no por qué. Suele ser suficiente.'}
                     </span>
                   </span>

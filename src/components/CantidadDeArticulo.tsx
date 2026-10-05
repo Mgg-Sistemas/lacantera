@@ -107,7 +107,7 @@ export function CantidadDeArticulo({
   valor,
   onCambiar,
   articulo,
-  hintSinArticulo = 'Elige antes el artículo',
+  hintSinArticulo = 'Seleccione antes el artículo',
   hint,
   className,
   required,
@@ -376,7 +376,7 @@ export function CantidadDeArticulo({
           disabled={disabled}
           value={suelto}
           onChange={(e) => escribirSuelto(e.target.value)}
-          hint={`Lo que queda en el último ${presentacion.toLowerCase()} empezado. Déjalo vacío si están todos llenos.`}
+          hint={`Lo que queda en el último ${presentacion.toLowerCase()} empezado. Déjelo vacío si están todos llenos.`}
         />
       ) : null}
 

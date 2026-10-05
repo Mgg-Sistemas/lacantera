@@ -94,7 +94,7 @@ function AvisoConceptosCambiados({ periodo }: { periodo: Periodo }) {
 
   return (
     <p className="border-warning/30 bg-warning-soft text-ink/80 mt-3 rounded-[6px] border p-3 text-sm">
-      Después de calcular esta quincena {partes.join(' y ')}. Vuelve a calcularla antes de
+      Después de calcular esta quincena {partes.join(' y ')}. Vuelva a calcularla antes de
       aprobarla.
     </p>
   )
@@ -103,9 +103,9 @@ function AvisoConceptosCambiados({ periodo }: { periodo: Periodo }) {
 /** Qué toca hacer ahora con este período. Una sola acción por estado. */
 function siguiente(p: Periodo): string {
   if (p.estado === 'BORRADOR')
-    return 'Carga las novedades del período —horas extra, faltas, bonos— y calcula.'
+    return 'Cargue las novedades del período —horas extra, faltas, bonos— y calcule.'
   if (p.estado === 'CALCULADA')
-    return 'Revisa los recibos. Al aprobar, la nómina queda lista para que tesorería pague.'
+    return 'Revise los recibos. Al aprobar, la nómina queda lista para que tesorería pague.'
   if (p.estado === 'APROBADA')
     return 'Se paga desde una cuenta y el saldo baja. Si la cuenta no tiene saldo registrado, sale igual y tesorería recibe el aviso.'
   if (p.estado === 'PAGADA') return 'Cerrada. Los recibos quedan como comprobante.'
@@ -567,7 +567,7 @@ export function Procesos() {
           <div className="space-y-4">
             <SelectBuscable
               label="De qué cuenta sale"
-              vacio="Elige la cuenta"
+              vacio="Seleccione la cuenta"
               valor={pago.cuenta}
               onCambio={(v) => setPago((p) => ({ ...p, cuenta: v }))}
               opciones={(cuentas ?? []).map((c) => ({
@@ -682,7 +682,7 @@ export function Procesos() {
           abierto
           onCerrar={() => setRefrescando(null)}
           titulo={`Poner la tasa y recalcular ${refrescando.numero}`}
-          descripcion="Los recibos se rehacen con la tasa del día que elijas. Si la nómina estaba aprobada, sigue aprobada."
+          descripcion="Los recibos se rehacen con la tasa del día que elija. Si la nómina estaba aprobada, sigue aprobada."
           ancho="sm"
           acciones={
             <>
@@ -739,7 +739,7 @@ export function Procesos() {
               </>
             ) : (
               <p className="text-ink/60 text-sm">
-                No hay tasa registrada para ese día. Cárgala en Tesorería antes de recalcular.
+                No hay tasa registrada para ese día. Cárguela en Tesorería antes de recalcular.
               </p>
             )}
           </div>

@@ -135,7 +135,7 @@ export function ModalNotaDeEntrega({
       descripcion={
         modo === 'generar'
           ? 'Respalda lo mismo que ya salió: no vuelve a descontar material. Al cliente se le entrega solo la nota de salida; esta queda para el archivo.'
-          : 'Ponle lo que le falta. Cuando tenga cliente y todos sus precios deja de estar pendiente.'
+          : 'Póngale lo que le falta. Cuando tenga cliente y todos sus precios deja de estar pendiente.'
       }
       acciones={
         <>
@@ -174,16 +174,16 @@ export function ModalNotaDeEntrega({
           />
           {coincidio === false && !clienteId ? (
             <p className="text-ink/60 mt-1.5 text-xs">
-              No hay un cliente que se llame así. Elige otro,{' '}
+              No hay un cliente que se llame así. Elija otro,{' '}
               <a
                 href="/app/ventas/clientes"
                 target="_blank"
                 rel="noreferrer"
                 className="text-royal-600 dark:text-royal-300 underline"
               >
-                créalo en Ventas › Clientes
+                créelo en Ventas › Clientes
               </a>{' '}
-              o déjalo sin cliente: la nota queda pendiente y se completa después.
+              o déjelo sin cliente: la nota queda pendiente y se completa después.
             </p>
           ) : null}
         </div>

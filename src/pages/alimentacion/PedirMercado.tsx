@@ -189,7 +189,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
       onCerrar={onCerrar}
       ancho="lg"
       titulo="Pedir el mercado"
-      descripcion="La lista completa de víveres del catálogo, marcada. Quita lo que no haga falta, ajusta cantidades, y sale como un pedido urgente al circuito de Compras."
+      descripcion="La lista completa de víveres del catálogo, marcada. Quite lo que no haga falta, ajuste cantidades, y sale como un pedido urgente al circuito de Compras."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -223,8 +223,8 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
 
           {lista.length === 0 && libres.length === 0 ? (
             <p className="text-ink/60 text-sm">
-              No hay artículos de la categoría «Víveres» en el catálogo. Crea los víveres en Inventario ›
-              Artículos, o agrega abajo lo que haga falta como texto libre.
+              No hay artículos de la categoría «Víveres» en el catálogo. Cree los víveres en Inventario ›
+              Artículos, o agregue abajo lo que haga falta como texto libre.
             </p>
           ) : null}
 
@@ -317,7 +317,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
                 })}
                 {visibles.length === 0 ? (
                   <li className="text-ink/45 px-3 py-4 text-center text-sm">
-                    Nada coincide con «{filtro}». Si no existe, agrégalo abajo.
+                    Nada coincide con «{filtro}». Si no existe, agréguelo abajo.
                   </li>
                 ) : null}
               </ul>
@@ -329,7 +329,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
           <div className="grid gap-2 sm:grid-cols-[1fr_7rem_auto]">
             <SelectBuscable
               label="¿Falta algo? Agrega otro artículo"
-              vacio="Busca en todo el catálogo…"
+              vacio="Busque en todo el catálogo…"
               valor={agregarId}
               onCambio={setAgregarId}
               opciones={opcionesAgregar}

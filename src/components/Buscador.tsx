@@ -267,8 +267,8 @@ export function Buscador() {
                     {documentos.isFetching
                       ? 'Buscando…'
                       : texto.trim().length < 2
-                        ? 'Escribe al menos dos letras.'
-                        : 'Nada con ese nombre, ni en las pantallas ni en los documentos que puedes ver.'}
+                        ? 'Escriba al menos dos letras.'
+                        : 'Nada con ese nombre, ni en las pantallas ni en los documentos que puede ver.'}
                   </p>
                 ) : (
                   <ul className="max-h-[50vh] overflow-y-auto py-1.5">

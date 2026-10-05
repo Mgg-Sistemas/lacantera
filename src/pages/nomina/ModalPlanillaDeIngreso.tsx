@@ -140,7 +140,7 @@ export function ModalPlanillaDeIngreso({ abierto, onCerrar, onEmitir }: Props) {
       }
     >
       <p className="text-ink/70 text-sm leading-relaxed">
-        ¿Le pones un recuadro para la <strong>huella del pulgar</strong> al lado de las firmas?
+        ¿Le pone un recuadro para la <strong>huella del pulgar</strong> al lado de las firmas?
       </p>
       <p className="text-ink/55 mt-2 text-sm leading-relaxed">
         Sirve cuando la firma de alguien no sale igual dos veces. Si no hace falta, el pie queda
@@ -262,7 +262,7 @@ function EditorDeRequisitos({
 
       {grupos.length === 0 ? (
         <p className="text-ink/55 text-sm leading-relaxed">
-          No hay ningún apartado todavía. Crea el primero abajo — por ejemplo «Documentos
+          No hay ningún apartado todavía. Cree el primero abajo — por ejemplo «Documentos
           personales».
         </p>
       ) : null}

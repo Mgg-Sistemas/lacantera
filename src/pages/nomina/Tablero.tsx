@@ -260,7 +260,7 @@ export function TableroNomina() {
               <Cifra
                 titulo="Sin género cargado"
                 valor={sinGenero}
-                nota="Completa su ficha en Personal para que el desglose cuadre"
+                nota="Complete su ficha en Personal para que el desglose cuadre"
                 tenue
               />
             ) : null}

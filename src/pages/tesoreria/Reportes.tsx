@@ -144,7 +144,7 @@ export function ReportesTesoreria() {
   const libroDeCuenta = () =>
     armar('cuenta', async () => {
       const cuenta = (cuentas.data ?? []).find((c) => String(c.id) === cuentaId)
-      if (!cuenta) throw new Error('Elige de qué caja quieres el libro.')
+      if (!cuenta) throw new Error('Seleccione de qué caja quiere el libro.')
       const renglones = await leerLibroDeDinero({
         desde: desde || null,
         hasta: hasta || null,
@@ -329,7 +329,7 @@ export function ReportesTesoreria() {
       <Card className="mb-4">
         <CardHeader
           title="Resumen por moneda"
-          subtitle="Cada moneda en su fila: no se suman entre sí. Toca una para abrir su libro."
+          subtitle="Cada moneda en su fila: no se suman entre sí. Pulse una para abrir el libro de esa moneda."
           action={
             <Button icon={<FileText />} disabled={armando !== null || libro.isPending} onClick={() => void resumen()}>
               {armando === 'resumen' ? 'Armando…' : 'Ver en PDF'}
@@ -388,7 +388,7 @@ export function ReportesTesoreria() {
           <div className="mt-3 space-y-3">
             <Select
               label="Caja, banco o billetera"
-              vacio="Elige una"
+              vacio="Seleccione una"
               value={cuentaId}
               onChange={(e) => setCuentaId(e.target.value)}
               opciones={(cuentas.data ?? []).map((c) => ({
@@ -443,7 +443,7 @@ export function ReportesTesoreria() {
         blob={papel?.blob ?? null}
         nombreArchivo={papel?.nombre ?? 'reporte.pdf'}
         titulo="Reporte de Tesorería"
-        descripcion="Revísalo antes de descargarlo o imprimirlo."
+        descripcion="Revíselo antes de descargarlo o imprimirlo."
       />
     </>
   )

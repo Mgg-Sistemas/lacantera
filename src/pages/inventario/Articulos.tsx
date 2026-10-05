@@ -450,7 +450,7 @@ export function Articulos() {
           ancho="sm"
           onCerrar={() => setBorrando(null)}
           titulo={`Borrar ${borrando.nombre}`}
-          descripcion="Esto no es desactivar: el registro desaparece del todo y no se puede deshacer. Si el artículo ya tiene algún movimiento, una orden o un documento enganchado, la base no lo va a dejar — en ese caso, desactívalo en su lugar."
+          descripcion="Esto no es desactivar: el registro desaparece del todo y no se puede deshacer. Si el artículo ya tiene algún movimiento, una orden o un documento enganchado, la base no lo va a dejar — en ese caso, desactívelo en su lugar."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setBorrando(null)}>
@@ -522,7 +522,7 @@ export function Articulos() {
             rows={3}
             value={motivoEstado}
             onChange={(e) => setMotivoEstado(e.target.value)}
-            hint="Queda guardado con tu nombre y la fecha. Al menos diez letras."
+            hint="Queda guardado con su nombre y la fecha. Al menos diez letras."
           />
           {/* Desactivar no pasa siempre: con existencia, o dentro de una
               cotización enviada o de un traslado, la base lo niega y dice por
@@ -541,7 +541,7 @@ export function Articulos() {
           descripcion={
             form.id
               ? 'El código no se cambia: es con lo que se pide en el almacén y ya está impreso en lo emitido.'
-              : 'Solo hacen falta el nombre, la categoría y la unidad. El código se pone solo si lo dejas vacío.'
+              : 'Solo hacen falta el nombre, la categoría y la unidad. El código se pone solo si lo deja vacío.'
           }
           acciones={
             <>
@@ -765,16 +765,16 @@ export function Articulos() {
                   rows={2}
                   value={form.motivo_densidad}
                   onChange={(e) => setForm({ ...form, motivo_densidad: e.target.value })}
-                  hint={`Era ${densidadLegible(densidadDeAntes ?? 0)} t/m³. Cambiarla cambia la conversión de todo lo que se imprima desde ahora, también de papeles viejos. Queda con tu nombre y la fecha; al menos diez letras.`}
+                  hint={`Era ${densidadLegible(densidadDeAntes ?? 0)} t/m³. Cambiarla cambia la conversión de todo lo que se imprima desde ahora, también de papeles viejos. Queda con su nombre y la fecha; al menos diez letras.`}
                 />
               </div>
             ) : null}
 
             {form.id && unidadDeAntes && form.unidad !== unidadDeAntes && seHaMovido ? (
               <p className="text-warning -mt-2 text-xs leading-relaxed">
-                Ojo: ya tiene movimientos anotados en {unidadDeAntes}. Esas cantidades seguirán
+                Atención: ya tiene movimientos anotados en {unidadDeAntes}. Esas cantidades seguirán
                 diciendo el número que se escribió, así que la existencia quedará sumando{' '}
-                {unidadDeAntes} con {form.unidad}. Si la unidad de verdad cambió, cuenta el
+                {unidadDeAntes} con {form.unidad}. Si la unidad de verdad cambió, cuente el
                 almacén después para dejar el saldo bueno.
               </p>
             ) : null}
@@ -866,7 +866,7 @@ export function Articulos() {
                     ? 'Se corrige abajo, en «Otras formas de contarlo».'
                     : form.presentacion
                       ? `Lo que trae ${unNombre(presentaciones, form.presentacion)}.`
-                      : 'Primero di cómo llega.'
+                      : 'Primero indique cómo llega.'
                 }
                 value={
                   laDeDefecto

@@ -66,7 +66,7 @@ export function FacturasPorAutorizar({ onEmitida }: { onEmitida?: (facturaId: nu
         subtitle={
           autoriza
             ? 'Todavía no son facturas: no tienen número de control ni tocaron el patio. Al autorizarla se emite con la tasa de hoy.'
-            : 'Las preparaste tú. Quien tenga la casilla «Autorizar y emitir facturas» las emite o las rechaza.'
+            : 'Las preparó usted. Quien tenga la casilla «Autorizar y emitir facturas» las emite o las rechaza.'
         }
       />
 
@@ -85,7 +85,7 @@ export function FacturasPorAutorizar({ onEmitida }: { onEmitida?: (facturaId: nu
                   {s.origen === 'NOTAS'
                     ? `De ${s.notas ?? 'notas de entrega'}`
                     : `Sin nota, ${s.cuantos} renglón(es)`}
-                  {' · '}preparada por {mia ? 'ti' : (s.preparada_por_nombre ?? 'alguien')},{' '}
+                  {' · '}preparada por {mia ? 'usted' : (s.preparada_por_nombre ?? 'alguien')},{' '}
                   {fechaHora(s.preparada_en)}
                 </p>
                 {s.estado === 'RECHAZADA' || s.estado === 'RETIRADA' ? (

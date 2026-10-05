@@ -114,7 +114,7 @@ export function PorPagarAClientes() {
           <div className="space-y-3">
             <Select
               label="De qué cuenta sale"
-              vacio={cuentasDeLaMoneda.length ? 'Elige la cuenta' : `No hay cuentas en ${pagando.moneda}`}
+              vacio={cuentasDeLaMoneda.length ? 'Seleccione la cuenta' : `No hay cuentas en ${pagando.moneda}`}
               value={pago.cuenta}
               onChange={(e) => setPago({ ...pago, cuenta: e.target.value })}
               opciones={cuentasDeLaMoneda.map((c) => ({

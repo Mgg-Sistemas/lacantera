@@ -137,7 +137,7 @@ export function ModalEditarNotaEntrega({
         <div className="sm:col-span-2">
           <SelectBuscable
             label="Cliente"
-            vacio="Elige el cliente"
+            vacio="Seleccione el cliente"
             valor={clienteId}
             onCambio={setClienteId}
             opciones={clientes.map((c) => ({
@@ -149,7 +149,7 @@ export function ModalEditarNotaEntrega({
         <Select label="Moneda" value={moneda} onChange={(e) => setMoneda(e.target.value)} opciones={monedas} />
         <SelectBuscable
           label="De qué patio sale"
-          vacio="Elige el patio o almacén"
+          vacio="Seleccione el patio o almacén"
           valor={almacenId}
           onCambio={setAlmacenId}
           opciones={opcionesDePatio}
@@ -232,7 +232,7 @@ export function ModalEditarNotaEntrega({
       <div className="mt-4">
         <Textarea
           label="Por qué se edita"
-          hint="Queda escrito en el registro de auditoría con tu nombre."
+          hint="Queda escrito en el registro de auditoría con su nombre."
           rows={2}
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}

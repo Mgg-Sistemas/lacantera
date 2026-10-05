@@ -76,7 +76,7 @@ export function Login() {
         sonarError()
         setError(
           /refresh|token|JWT|expired/i.test(mensaje)
-            ? 'Tu sesión guardada caducó. Entra con tu clave y vuelve a activar la huella.'
+            ? 'Su sesión guardada caducó. Entre con su clave y vuelva a activar la huella.'
             : mensaje,
         )
       }
@@ -208,7 +208,7 @@ export function Login() {
             {salio && !error ? (
               <div className="border-ink/12 bg-ink/4 mt-5 flex items-center gap-2.5 rounded-[6px] border p-3">
                 <LogOut className="text-ink/45 size-[18px] shrink-0" />
-                <p className="text-ink/70 text-sm">Cerraste la sesión en este equipo.</p>
+                <p className="text-ink/70 text-sm">Cerró la sesión en este equipo.</p>
               </div>
             ) : null}
 
@@ -218,9 +218,9 @@ export function Login() {
                 <div>
                   <p className="text-ink/85 text-sm font-medium">Se cerró la sesión</p>
                   <p className="text-ink/60 mt-0.5 text-xs leading-relaxed">
-                    Pasa cuando se pierde la conexión al renovarse el acceso, o si entraste
-                    con la huella desde otro equipo. Vuelve a entrar y te dejamos donde
-                    estabas.
+                    Pasa cuando se pierde la conexión al renovarse el acceso, o si entró
+                    con la huella desde otro equipo. Vuelva a entrar y le dejamos donde
+                    estaba.
                   </p>
                 </div>
               </div>
@@ -246,7 +246,7 @@ export function Login() {
                 autoComplete="username"
                 autoCapitalize="none"
                 spellCheck={false}
-                placeholder="tu.usuario"
+                placeholder="su.usuario"
                 icon={<User />}
                 required
               />
@@ -308,8 +308,8 @@ export function Login() {
             ) : null}
 
             <p className="text-ink/45 mt-7 text-xs leading-relaxed">
-              El acceso lo asigna la administración de la empresa. Si no tienes credenciales,
-              escribe a sistemas.
+              El acceso lo asigna la administración de la empresa. Si no tiene credenciales,
+              escriba a sistemas.
             </p>
           </div>
         </div>

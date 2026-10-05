@@ -372,7 +372,7 @@ export function TarjetaCarnet({
         */}
         {pidiendo === 'emitir' && emitiendoDesdeOtroSitio() ? (
           <p className="border-warning/30 bg-warning-soft text-ink/75 mt-4 rounded-[6px] border p-3 text-sm leading-relaxed">
-            Estás emitiendo desde <strong>{window.location.host}</strong>, pero el QR va a apuntar a{' '}
+            Está emitiendo desde <strong>{window.location.host}</strong>, pero el QR va a apuntar a{' '}
             <strong>{URL_PUBLICA.replace(/^https?:\/\//, '')}</strong>, que es la dirección de
             producción. Es lo correcto; se avisa para que no sorprenda.
           </p>

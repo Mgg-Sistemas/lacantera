@@ -166,7 +166,7 @@ function ParaQuienSale({
         <Select
           className="mt-3"
           label="¿Qué área o cargo?"
-          vacio="Elige del organigrama"
+          vacio="Seleccione del organigrama"
           hint="Si no está, lo añade quien lleva el organigrama: desde aquí no se crea."
           value={grupo}
           onChange={(e) => onGrupo(e.target.value)}
@@ -226,8 +226,8 @@ function QuienResponde({
     <div className="space-y-3">
       <SelectBuscable
         label="¿Quién responde por ello?"
-        vacio="Elige a alguien de la empresa u «Otra persona»"
-        hint="Firma la nota. Si no es de la empresa, elige «Otra persona» y escribe su nombre."
+        vacio="Seleccione a alguien de la empresa u «Otra persona»"
+        hint="Firma la nota. Si no es de la empresa, elija «Otra persona» y escriba su nombre."
         valor={aMano ? OTRA_PERSONA : deLaEmpresa ? String(deLaEmpresa.id) : ''}
         onCambio={(v) => {
           if (v === OTRA_PERSONA) {
@@ -527,7 +527,7 @@ export function ModalSalida({
       try {
         await subirFotosDeCarga('SALIDA', numeros, archivos)
       } catch (e) {
-        aviso = `La solicitud ${numeros.join(', ')} quedó hecha, pero las fotos no subieron (${enCastellano(e)}). Añádelas desde su tarjeta.`
+        aviso = `La solicitud ${numeros.join(', ')} quedó hecha, pero las fotos no subieron (${enCastellano(e)}). Añádalas desde su tarjeta.`
       } finally {
         setSubiendo(false)
       }
@@ -607,7 +607,7 @@ export function ModalSalida({
             <div className="mb-4">
               <SelectBuscable
                 label="¿De qué almacén debe salir?"
-                vacio="Elige el sitio"
+                vacio="Seleccione el sitio"
                 valor={almacenPedido}
                 onCambio={(v) => setAlmacenPedido(v)}
                 opciones={sitiosConMaterial}
@@ -659,7 +659,7 @@ export function ModalSalida({
 
                   <SelectBuscable
                     label={modo === 'pedir' ? '¿Qué material?' : 'Qué sale'}
-                    vacio="Busca el material"
+                    vacio="Busque el material"
                     valor={r.articulo}
                     onCambio={(v) => {
                       /*
@@ -705,7 +705,7 @@ export function ModalSalida({
                         solo si este material sale de otro. */}
                     <SelectBuscable
                       label={modo === 'pedir' ? '¿De qué almacén sale?' : 'De dónde sale'}
-                      vacio={r.articulo ? 'Elige el sitio' : 'Elige antes el material'}
+                      vacio={r.articulo ? 'Seleccione el sitio' : 'Seleccione antes el material'}
                       valor={sitio}
                       onCambio={(v) =>
                         setRenglones((lista) =>
@@ -749,13 +749,13 @@ export function ModalSalida({
                         )
                       }
                       articulo={artSale}
-                      hintSinArticulo="Elige antes de dónde sale"
+                      hintSinArticulo="Seleccione antes de dónde sale"
                       hint={
                         sitio
                           ? pedidoHasta(i, sitio, r.articulo) > 0
                             ? `Quedan ${cantidad(disponible)} ${unidad} tras los renglones de arriba`
                             : `Hay ${cantidad(disponible)} ${unidad}`
-                          : 'Elige antes de dónde sale'
+                          : 'Seleccione antes de dónde sale'
                       }
                     />
                   </div>
@@ -784,7 +784,7 @@ export function ModalSalida({
                   {pasado ? (
                     <p className="text-danger mt-2 text-xs">
                       {pedidoHasta(i, sitio, r.articulo) > 0
-                        ? `Ya lo pediste más arriba: ahí solo quedan ${cantidad(disponible)} ${unidad}.`
+                        ? `Ya lo pidió más arriba: ahí solo quedan ${cantidad(disponible)} ${unidad}.`
                         : `Ahí solo quedan ${cantidad(disponible)} ${unidad}.`}
                     </p>
                   ) : null}
@@ -830,7 +830,7 @@ export function ModalSalida({
                 hint="Es lo que lee quien la aprueba, y queda en la nota cuando se entregue."
                 error={
                   ventaEnElMotivo
-                    ? `Dice «${ventaEnElMotivo}»: una venta no se solicita aquí, se registra en Facturación › Notas de entrega. Si no es una venta, dilo sin esa palabra; quien la aprueba lee el texto entero.`
+                    ? `Dice «${ventaEnElMotivo}»: una venta no se solicita aquí, se registra en Facturación › Notas de entrega. Si no es una venta, dígalo sin esa palabra; quien la aprueba lee el texto entero.`
                     : undefined
                 }
               />
@@ -846,7 +846,7 @@ export function ModalSalida({
                   <span className="text-ink/80">
                     Poner mi firma digital en «Solicitado por»
                     <span className="text-ink/50 mt-0.5 block text-xs">
-                      Sin marcar, la raya de la orden sale en blanco con tu nombre debajo.
+                      Sin marcar, la raya de la orden sale en blanco con su nombre debajo.
                     </span>
                   </span>
                 </label>
@@ -896,9 +896,9 @@ export function ModalSalida({
                     }))}
                   />
                   <Input
-                    label="…o escríbelo"
+                    label="…o escríbalo"
                     placeholder="Placa, o cómo se reconoce"
-                    hint={vehiculoId ? 'Ya elegiste uno de la lista.' : undefined}
+                    hint={vehiculoId ? 'Ya eligió uno de la lista.' : undefined}
                     disabled={Boolean(vehiculoId)}
                     value={vehiculoEscrito}
                     onChange={(e) => setVehiculoEscrito(e.target.value)}

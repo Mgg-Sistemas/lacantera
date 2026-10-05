@@ -93,7 +93,7 @@ export function TableroDespachos() {
             <PrimeraVez>
               <p>
                 Aquí no se registra la venta: se registra <strong>el peso y el permiso</strong>. Si
-                lo que buscas es despachar material a un cliente y dejarlo listo para facturar, eso
+                lo que busca es despachar material a un cliente y dejarlo listo para facturar, eso
                 es la nota de entrega, y está en Facturación.
               </p>
               <p>

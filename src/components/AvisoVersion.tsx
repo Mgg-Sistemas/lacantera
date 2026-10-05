@@ -33,10 +33,10 @@ export function AvisoVersion() {
       >
         <RefreshCw className="mt-0.5 size-[18px] shrink-0" />
         <div className="min-w-0 flex-1 text-sm">
-          <p className="font-medium">Estás viendo una versión antigua del sistema</p>
+          <p className="font-medium">Está viendo una versión antigua del sistema</p>
           <p className="mt-0.5 text-xs leading-relaxed opacity-90">
-            Hay una más reciente publicada y tu navegador sigue trayendo la anterior. Recarga con
-            Ctrl+Shift+R, o abre el sistema en una ventana de incógnito.
+            Hay una más reciente publicada y su navegador sigue trayendo la anterior. Recargue con
+            Ctrl+Shift+R, o abra el sistema en una ventana de incógnito.
           </p>
         </div>
         <button
@@ -73,7 +73,7 @@ export function AvisoVersion() {
       <div className="min-w-0 flex-1 text-sm">
         <p className="font-medium">Hay una versión nueva del sistema</p>
         <p className="mt-0.5 text-xs leading-relaxed opacity-90">
-          Termina y guarda lo que estés haciendo. Cuando quieras, pulsa Actualizar: nada se recarga
+          Termine y guarde lo que esté haciendo. Cuando quiera, pulse Actualizar: nada se recarga
           solo.
         </p>
         <div className="mt-2.5 flex flex-wrap gap-2">

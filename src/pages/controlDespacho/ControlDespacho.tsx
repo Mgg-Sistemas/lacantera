@@ -357,8 +357,8 @@ export function ControlDespacho() {
                         onClick={() => setOrden((o) => (o === 'ASC' ? 'DESC' : 'ASC'))}
                         aria-label={
                           orden === 'ASC'
-                            ? 'Ordenado de la fecha más vieja a la más nueva. Pulsa para darle la vuelta.'
-                            : 'Ordenado de la fecha más nueva a la más vieja. Pulsa para darle la vuelta.'
+                            ? 'Ordenado de la fecha más vieja a la más nueva. Pulse para darle la vuelta.'
+                            : 'Ordenado de la fecha más nueva a la más vieja. Pulse para darle la vuelta.'
                         }
                         className="text-ink/45 hover:text-ink/85 focus-visible:outline-royal-600 -mx-1 -my-0.5 flex items-center gap-1 rounded-[4px] px-1 py-0.5 font-medium transition-colors focus-visible:outline-2"
                       >
@@ -489,7 +489,7 @@ export function ControlDespacho() {
         blob={papel?.blob ?? null}
         nombreArchivo={papel?.nombre ?? 'control-de-despacho.pdf'}
         titulo="Control de despacho"
-        descripcion="Revísalo antes de descargarlo o imprimirlo."
+        descripcion="Revíselo antes de descargarlo o imprimirlo."
       />
     </>
   )
@@ -589,7 +589,7 @@ function EditarFila({
             placeholder={fila.rif_del_cliente ? String(fila.rif) : 'V-12345678'}
             hint={
               fila.rif_del_cliente
-                ? 'Viene del cliente registrado. Escribe aquí solo si para esta fila debe ser otro.'
+                ? 'Viene del cliente registrado. Escriba aquí solo si para esta fila debe ser otro.'
                 : clienteId
                   ? 'Al guardar, saldrá del cliente elegido arriba.'
                   : 'Obligatorio: sin él la fila queda marcada.'
@@ -604,7 +604,7 @@ function EditarFila({
             error={precioMalo ? 'No es un precio válido.' : undefined}
             hint={
               fila.precio_de_la_nota
-                ? 'Viene de la nota de entrega. Escribe aquí solo para cambiarlo.'
+                ? 'Viene de la nota de entrega. Escriba aquí solo para cambiarlo.'
                 : fila.moneda_doc && fila.moneda_doc !== 'USD'
                   ? `La nota está en ${fila.moneda_doc}: su precio no se trae a una columna en dólares.`
                   : undefined
@@ -719,10 +719,10 @@ function CargaDesdeExcel({
     >
       <div className="space-y-5 text-sm">
         <div>
-          <p className="text-ink/90 font-medium">1. Baja la plantilla</p>
+          <p className="text-ink/90 font-medium">1. Descargue la plantilla</p>
           <p className="text-ink/60 mt-1">
             Trae {marcadas > 0 ? `las ${vigentes} filas marcadas` : `los ${vigentes} despachos que se ven en pantalla`}, con lo que
-            ya tengan escrito. Las columnas de cabecera roja clara son las que se llenan. No toques la columna CLAVE: es lo
+            ya tengan escrito. Las columnas de cabecera roja clara son las que se llenan. No toque la columna CLAVE: es lo
             que ata cada fila a la suya.
           </p>
           <Button
@@ -738,9 +738,9 @@ function CargaDesdeExcel({
         </div>
 
         <div>
-          <p className="text-ink/90 font-medium">2. Llénala en Excel y súbela</p>
+          <p className="text-ink/90 font-medium">2. Llénela en Excel y súbala</p>
           <p className="text-ink/60 mt-1">
-            Lo que subas es cómo queda la fila: una celda vacía borra lo que había. El status tiene que ser uno de la lista
+            Lo que suba es cómo queda la fila: una celda vacía borra lo que había. El status tiene que ser uno de la lista
             {estados.some((e) => e.activo) ? ` (${estados.filter((e) => e.activo).map((e) => e.nombre).join(', ')})` : ''}.
           </p>
           <input
@@ -765,7 +765,7 @@ function CargaDesdeExcel({
 
         {leida && guardadas === null ? (
           <div>
-            <p className="text-ink/90 font-medium">3. Revisa antes de guardar</p>
+            <p className="text-ink/90 font-medium">3. Revise antes de guardar</p>
             <p className="text-ink/60 mt-1">
               {leida.cambios.length} fila{leida.cambios.length === 1 ? '' : 's'} con cambios · {leida.iguales} igual
               {leida.iguales === 1 ? '' : 'es'} a como están
@@ -829,7 +829,7 @@ function Ajustes({ columnaLibre, onCerrar }: { columnaLibre: string; onCerrar: (
       abierto
       onCerrar={onCerrar}
       titulo="Status y columna libre"
-      descripcion="La lista de status es tuya. Un status en uso no se borra: se apaga, y deja de ofrecerse sin perderse de las filas que ya lo tienen."
+      descripcion="La lista de status es suya. Un status en uso no se borra: se apaga, y deja de ofrecerse sin perderse de las filas que ya lo tienen."
       acciones={<Button onClick={onCerrar}>Listo</Button>}
     >
       <div className="space-y-4">

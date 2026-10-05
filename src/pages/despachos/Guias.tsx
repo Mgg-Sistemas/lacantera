@@ -290,7 +290,7 @@ export function Guias() {
             />
             <SelectBuscable
               label="Material"
-              vacio="Elige el material"
+              vacio="Seleccione el material"
               valor={nueva.articulo_id}
               onCambio={(v) => setNueva({ ...nueva, articulo_id: v })}
               opciones={(articulos ?? [])

@@ -128,7 +128,7 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
       <div className="grid gap-4 sm:grid-cols-2">
         <SelectBuscable
           label="Almacén que recibe"
-          vacio="Elige el almacén"
+          vacio="Seleccione el almacén"
           valor={almacenElegido}
           /*
             CAMBIAR DE ALMACEN OLVIDA LAS CONFIRMACIONES.
@@ -152,8 +152,8 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
                 ? 'Es el destino que pidió quien lo solicitó.'
                 : 'Ojo: el pedido era para otro sitio.'
               : orden.solicitud?.destino
-                ? `El pedido decía «${orden.solicitud.destino}», que no es un almacén. Elige dónde entra.`
-                : 'El pedido no dijo a dónde iba. Elige dónde entra.'
+                ? `El pedido decía «${orden.solicitud.destino}», que no es un almacén. Seleccione dónde entra.`
+                : 'El pedido no dijo a dónde iba. Seleccione dónde entra.'
           }
         />
         <Input
@@ -189,7 +189,7 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
               inputMode="decimal"
               value={cantidades[r.id] ?? ''}
               onChange={(e) => setCantidades((c) => ({ ...c, [r.id]: e.target.value }))}
-              hint="Déjalo en cero si este renglón no llegó todavía."
+              hint="Déjelo en cero si este renglón no llegó todavía."
             />
             <ConversionDeCantidad
               cantidad={cantidades[r.id]}
@@ -291,7 +291,7 @@ function AvisoDelPrecioDeLaOrden({
             — es más de diez veces {r.hacia === 'ARRIBA' ? 'más caro' : 'más barato'}.
           </>
         )}{' '}
-        Si el precio de la orden está mal, corrígelo en la orden antes de recibir: aquí solo se
+        Si el precio de la orden está mal, corríjalo en la orden antes de recibir: aquí solo se
         acepta o se para.
       </p>
       <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">

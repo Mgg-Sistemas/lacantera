@@ -75,7 +75,7 @@ export function CamposDePago({
       <p className="text-ink/50 border-hairline rounded-[6px] border border-dashed p-4 text-sm">
         {metodo
           ? `${metodo.nombre} no pide datos adicionales.`
-          : 'Elige primero cómo se paga.'}
+          : 'Seleccione primero cómo se paga.'}
       </p>
     )
   }
@@ -105,7 +105,7 @@ export function CamposDePago({
           <Select
             key={clave}
             label={campo.etiqueta}
-            vacio={`Elige ${campo.etiqueta.toLowerCase()}`}
+            vacio={`Seleccione ${campo.etiqueta.toLowerCase()}`}
             value={valor}
             onChange={(e) => onCambiar({ [clave]: e.target.value } as DatosPago)}
             opciones={campo.opciones.map((o) => ({ valor: o, etiqueta: o }))}

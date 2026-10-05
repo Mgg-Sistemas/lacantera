@@ -44,7 +44,7 @@ export function DeQuienSale({
   return (
     <Select
       label={label}
-      vacio="Elige el dueño"
+      vacio="Seleccione el dueño"
       value={valor}
       onChange={(e) => onCambio(e.target.value)}
       hint="Aquí hay material de varios dueños. Sacarlo sin decir de cuál era sería inventarlo."

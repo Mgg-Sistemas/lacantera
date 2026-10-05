@@ -124,7 +124,7 @@ export function ModalRegistrarPago({
         */}
         <Select
           label="Por dónde salió el dinero"
-          vacio={compatibles.length ? 'Elige' : `No hay ninguna registrada en ${instruccion.moneda}`}
+          vacio={compatibles.length ? 'Seleccione' : `No hay ninguna registrada en ${instruccion.moneda}`}
           value={cuentaId}
           onChange={(e) => setCuentaId(e.target.value)}
           opciones={compatibles.map((c) => ({ valor: String(c.id), etiqueta: c.nombre }))}
@@ -146,7 +146,7 @@ export function ModalRegistrarPago({
           onChange={(e) => setReferencia(e.target.value)}
           hint={
             instruccion.metodo === 'EFECTIVO'
-              ? 'En efectivo no hay número que copiar: si lo dejas vacío, el sistema le pone uno (EFEUSD-2026-0001).'
+              ? 'En efectivo no hay número que copiar: si lo deja vacío, el sistema le pone uno (EFEUSD-2026-0001).'
               : 'El número que devolvió el banco o la plataforma.'
           }
         />

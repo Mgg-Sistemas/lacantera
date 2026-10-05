@@ -101,9 +101,9 @@ export function ExigePermiso() {
       <div className="bg-ink/6 text-ink/45 mx-auto flex size-12 items-center justify-center rounded-full">
         <Lock className="size-6" />
       </div>
-      <h2 className="text-ink/90 mt-4 text-lg font-semibold">{nombre} no está a tu alcance</h2>
+      <h2 className="text-ink/90 mt-4 text-lg font-semibold">{nombre} no está a su alcance</h2>
       <p className="text-ink/55 mt-2 text-sm">
-        Tu rol no tiene acceso a este módulo. Si lo necesitas para tu trabajo, pídeselo a quien
+        Su rol no tiene acceso a este módulo. Si lo necesita para su trabajo, pídaselo a quien
         administra el sistema.
       </p>
       <Link

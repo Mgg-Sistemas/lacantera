@@ -107,7 +107,7 @@ function FilaDeCamion({
         <div>
           <SelectBuscable
             label="Chofer"
-            vacio="Busca el chofer…"
+            vacio="Busque el chofer…"
             valor={camion.chofer_id}
             onCambio={(v) => onCambio({ chofer_id: v })}
             opciones={(choferes ?? [])
@@ -154,7 +154,7 @@ function FilaDeCamion({
         <div>
           <SelectBuscable
             label="Vehículo"
-            vacio="Busca el vehículo…"
+            vacio="Busque el vehículo…"
             valor={camion.vehiculo_id}
             onCambio={(v) => onCambio({ vehiculo_id: v })}
             opciones={(vehiculos ?? [])

@@ -282,7 +282,7 @@ export function Contactos() {
           <Vacio
             icono={<BookUser />}
             titulo="El directorio está vacío"
-            descripcion="Crea el primer contacto, o carga muchos de una vez desde Excel."
+            descripcion="Cree el primer contacto, o cargue muchos de una vez desde Excel."
             accion={
               puedeEscribir ? (
                 <Button icon={<Plus />} onClick={() => setEditando({ contacto: null, inicial: datosVacios() })}>
@@ -296,7 +296,7 @@ export function Contactos() {
 
       {data && data.length > 0 && visibles.length === 0 ? (
         <Card>
-          <Vacio icono={<Search />} titulo="Nada con esos filtros" descripcion="Prueba con menos palabras o quita un filtro." />
+          <Vacio icono={<Search />} titulo="Nada con esos filtros" descripcion="Pruebe con menos palabras o quite un filtro." />
         </Card>
       ) : null}
 
