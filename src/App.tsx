@@ -51,6 +51,8 @@ const ExigePermiso = pagina(() =>
 )
 
 const Dashboard = pagina(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })))
+/* Quien tiene la casilla del surtidor aterriza ahí; el resto, en el tablero. */
+const Entrada = pagina(() => import('@/pages/Entrada').then((m) => ({ default: m.Entrada })))
 const MiCuenta = pagina(() => import('@/pages/MiCuenta').then((m) => ({ default: m.MiCuenta })))
 const ExigeClaveNueva = pagina(() =>
   import('@/pages/MiCuenta').then((m) => ({ default: m.ExigeClaveNueva })),
@@ -90,6 +92,14 @@ const TableroInventario = pagina(() =>
 )
 const Combustible = pagina(() =>
   import('@/pages/combustible/Combustible').then((m) => ({ default: m.Combustible })),
+)
+/*
+  La pantalla del surtidor va en su propio trozo a propósito: el teléfono que
+  la abre es el que peor señal tiene, y no tiene por qué bajarse la pantalla de
+  escritorio del combustible para surtir veinte litros.
+*/
+const Surtidor = pagina(() =>
+  import('@/pages/combustible/Surtidor').then((m) => ({ default: m.Surtidor })),
 )
 const Asignaciones = pagina(() =>
   import('@/pages/asignaciones/Asignaciones').then((m) => ({ default: m.Asignaciones })),
@@ -370,6 +380,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/inventario/movimientos': <Movimientos />,
   '/app/inventario/talleres': <Talleres />,
   '/app/combustible': <Combustible />,
+  '/app/combustible/surtidor': <Surtidor />,
   '/app/asignaciones': <Asignaciones />,
   '/app/asignaciones/incidencias': <Incidencias />,
   '/app/asignaciones/dotacion': <Dotacion />,
@@ -650,7 +661,7 @@ export default function App() {
             <Route path="despachos/vehiculos/:id" element={<AFichaDeCamion />} />
 
             <Route element={<ExigePermiso />}>
-              <Route index element={<Dashboard />} />
+              <Route index element={<Entrada tablero={<Dashboard />} />} />
 
               {/* La cuenta de cada quien no pertenece a ningún módulo: se
                   alcanza siempre, aunque le hayan cerrado todo lo demás. */}
