@@ -156,7 +156,7 @@ export function interpretarCarga(
     return {
       cambios: [],
       iguales: 0,
-      errores: ['La hoja no tiene la columna CLAVE. Baja la plantilla desde aquí y llena esa: la clave es lo que ata cada fila a la suya.'],
+      errores: ['La hoja no tiene la columna CLAVE. Baje la plantilla desde aquí y llene esa: la clave es lo que ata cada fila a la suya.'],
     }
   }
   const cRif = col('RIF')

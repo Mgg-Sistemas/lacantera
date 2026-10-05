@@ -195,9 +195,9 @@ function IndicadorTasa() {
         aria-expanded={abierto}
         title={
           sinRegistrar
-            ? 'El BCV ya publicó la tasa de hoy y el sistema todavía valora con otra. Abre para arreglarlo.'
+            ? 'El BCV ya publicó la tasa de hoy y el sistema todavía valora con otra. Abra para arreglarlo.'
             : data.vigente
-              ? 'Tasa publicada hoy y registrada en el sistema. Abre para ver las demás monedas y convertir.'
+              ? 'Tasa publicada hoy y registrada en el sistema. Abra para ver las demás monedas y convertir.'
               : `La última tasa publicada es del ${fechaCorta}. Confirme antes de emitir documentos.`
         }
         className={cn(clases, 'flex transition-colors', sinRegistrar && 'hover:border-warning/60')}

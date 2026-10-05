@@ -367,7 +367,7 @@ async function razonDelFallo(error: unknown): Promise<string> {
     return 'No se pudo contactar al servicio de correo del sistema. Vuelva a intentarlo dentro de un minuto.'
   }
   if (/non-2xx/i.test(crudo)) {
-    return 'El servicio de correo contestó con un error y no dijo cuál. Mira el registro de la función en Supabase.'
+    return 'El servicio de correo contestó con un error y no dijo cuál. Mire el registro de la función en Supabase.'
   }
   return crudo
 }

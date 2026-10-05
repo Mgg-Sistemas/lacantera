@@ -156,7 +156,7 @@ export function enCastellano(fallo: unknown): string {
   switch (nombre) {
     case 'NotAllowedError':
     case 'AbortError':
-      return 'No se completó. Puede que lo hayas cancelado, que pasara el minuto de espera, o que el aparato no llegara a pedírtelo. Vuelve a intentarlo y responde cuando salga el aviso del sistema.'
+      return 'No se completó. Puede que lo haya cancelado, que pasara el minuto de espera, o que el aparato no llegara a pedírselo. Vuelva a intentarlo y responda cuando salga el aviso del sistema.'
 
     case 'InvalidStateError':
       return 'Este equipo ya tiene su huella registrada para el sistema. Si no le deja entrar con ella, quítela y vuelva a activarla.'

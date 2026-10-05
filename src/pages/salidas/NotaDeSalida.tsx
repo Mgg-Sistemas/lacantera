@@ -314,7 +314,7 @@ export function useNotaDeSalida(): {
       setDatos(armados)
       setNota(await armarNotaDeSalida(armados))
     } catch (e) {
-      setFallo(`No se pudo armar la orden ${s.numero}. Vuelve a intentarlo; la solicitud no cambió.`)
+      setFallo(`No se pudo armar la orden ${s.numero}. Vuelva a intentarlo; la solicitud no cambió.`)
       console.error(e)
     }
   }
@@ -365,7 +365,7 @@ export function useNotaDeSalida(): {
       setDatos(armados)
       setNota(await armarNotaDeSalida(armados))
     } catch (e) {
-      setFallo(`No se pudo armar la nota de ${m.numero}. Vuelve a intentarlo; el movimiento no cambió.`)
+      setFallo(`No se pudo armar la nota de ${m.numero}. Vuelva a intentarlo; el movimiento no cambió.`)
       console.error(e)
     } finally {
       setArmando(null)
@@ -459,7 +459,7 @@ export function useNotaDeSalida(): {
                       })
                       .catch(() => {
                         if (turnoDeAsientos.current === turno)
-                          setFallo('No se pudo leer lo que sacó esa salida. Vuelve a intentarlo.')
+                          setFallo('No se pudo leer lo que sacó esa salida. Vuelva a intentarlo.')
                       })
                   }}
                 />

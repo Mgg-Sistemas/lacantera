@@ -357,8 +357,8 @@ export function ControlDespacho() {
                         onClick={() => setOrden((o) => (o === 'ASC' ? 'DESC' : 'ASC'))}
                         aria-label={
                           orden === 'ASC'
-                            ? 'Ordenado de la fecha más vieja a la más nueva. Pulsa para darle la vuelta.'
-                            : 'Ordenado de la fecha más nueva a la más vieja. Pulsa para darle la vuelta.'
+                            ? 'Ordenado de la fecha más vieja a la más nueva. Pulse para darle la vuelta.'
+                            : 'Ordenado de la fecha más nueva a la más vieja. Pulse para darle la vuelta.'
                         }
                         className="text-ink/45 hover:text-ink/85 focus-visible:outline-royal-600 -mx-1 -my-0.5 flex items-center gap-1 rounded-[4px] px-1 py-0.5 font-medium transition-colors focus-visible:outline-2"
                       >
@@ -719,10 +719,10 @@ function CargaDesdeExcel({
     >
       <div className="space-y-5 text-sm">
         <div>
-          <p className="text-ink/90 font-medium">1. Baja la plantilla</p>
+          <p className="text-ink/90 font-medium">1. Baje la plantilla</p>
           <p className="text-ink/60 mt-1">
             Trae {marcadas > 0 ? `las ${vigentes} filas marcadas` : `los ${vigentes} despachos que se ven en pantalla`}, con lo que
-            ya tengan escrito. Las columnas de cabecera roja clara son las que se llenan. No toques la columna CLAVE: es lo
+            ya tengan escrito. Las columnas de cabecera roja clara son las que se llenan. No toque la columna CLAVE: es lo
             que ata cada fila a la suya.
           </p>
           <Button
@@ -738,9 +738,9 @@ function CargaDesdeExcel({
         </div>
 
         <div>
-          <p className="text-ink/90 font-medium">2. Llénala en Excel y súbela</p>
+          <p className="text-ink/90 font-medium">2. Llénela en Excel y súbala</p>
           <p className="text-ink/60 mt-1">
-            Lo que subas es cómo queda la fila: una celda vacía borra lo que había. El status tiene que ser uno de la lista
+            Lo que suba es cómo queda la fila: una celda vacía borra lo que había. El status tiene que ser uno de la lista
             {estados.some((e) => e.activo) ? ` (${estados.filter((e) => e.activo).map((e) => e.nombre).join(', ')})` : ''}.
           </p>
           <input

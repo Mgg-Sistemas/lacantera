@@ -213,7 +213,7 @@ export function ModalAlTaller({
             vacio={
               articulosConExistencia.length === 0
                 ? 'Nada reparable con existencia'
-                : 'Busca el material'
+                : 'Busque el material'
             }
             valor={elegidoArticulo}
             onCambio={(v) => {
