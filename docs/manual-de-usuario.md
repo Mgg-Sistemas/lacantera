@@ -6817,6 +6817,8 @@ Va en dos pasos. Primero **de qué tanque**, en botones grandes que dicen cuánt
 
 Al guardar, la pantalla confirma lo que salió —con el número del vale— y ofrece **pasarlo por WhatsApp**, que es como se avisa en el patio. El vale firmado en papel se sigue sacando desde la computadora.
 
+**Y el error se arregla ahí mismo.** En el acuse están **Corregir este vale** —vuelve al formulario con todo puesto, se ajusta y se guarda con el mismo número— y **Anular**, que pide el motivo y devuelve el combustible al tanque con un reverso. Es para el vale que se acaba de emitir, que es donde se descubre el error; los de días anteriores se tocan desde la computadora y piden control total.
+
 **Quién entra directo.** En **Configuración › Usuarios**, entre los permisos extendidos de Combustible, está la casilla **Entrar directo al surtidor del teléfono**. A quien se le dé, abre el sistema y aparece ya en esta pantalla, sin pasar por el tablero. Es para la persona que está en la bomba. **La casilla no da permiso de nada por sí sola**: para despachar sigue haciendo falta escritura en Combustible. Y nadie la tiene de entrada: hay que prestarla a mano.
 
 ### 20.5 El vale
@@ -6826,6 +6828,8 @@ Cada despacho saca su **Vale de combustible** en papel, con el botón **Imprimir
 **Es el papel que firma quien recibe el combustible**, y por eso se imprime al despachar y no después.
 
 **Y sus fotos se miran desde la lista.** En **Últimos despachos**, cada vale con número tiene el botón de la cámara: ahí se ven las fotos que subió el bombero, se añaden las que falten y se quita una diciendo por qué. Verlas pide lectura de Combustible; añadir o quitar, escritura.
+
+**El vale se corrige y se anula desde el 5 de octubre de 2026** — nunca se edita por debajo ni se borra. En la misma lista, el lápiz abre el formulario con el vale puesto: se cambia lo que haga falta —litros, máquina, horómetro, quién recibió, fecha— y el vale **conserva su número** y queda marcado **Corregido**, con quién y cuándo. Si cambió la cantidad o la fecha, el libro de inventario lo cuenta con un **reverso y una salida nueva**, a la vista; el tanque del vale no se cambia (para eso se anula y se emite otro). **Anular** pide el motivo y devuelve el combustible al tanque con un reverso; el vale queda en gris con su motivo, y deja de contar para el tope de tres y para el horómetro. **Quien tiene escritura corrige o anula el vale del día; el de otro día exige control total** — la misma regla de las comidas.
 
 ### 20.6 Cargar combustible a mano
 

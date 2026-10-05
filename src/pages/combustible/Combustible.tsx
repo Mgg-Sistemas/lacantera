@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Camera, Droplets, FileText, Fuel, Plus, Settings2, Smartphone, Tags, TriangleAlert } from 'lucide-react'
+import { Ban, Camera, Droplets, FileText, Fuel, Pencil, Plus, Settings2, Smartphone, Tags, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -15,8 +15,10 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { useMaquinaria } from '@/lib/api/maquinaria'
 import { ListaEditable } from '@/components/ListaEditable'
 import {
+  useAnularDespacho,
   useBorrarMotivoDespacho,
   useConsumoCombustible,
+  useCorregirDespacho,
   useDespachosCombustible,
   useDespacharCombustible,
   useGuardarMotivoDespacho,
@@ -75,6 +77,9 @@ export function Combustible() {
   const [vale, setVale] = useState<{ blob: Blob; nombre: string } | null>(null)
   /** El vale cuyas fotos están desplegadas. Desde el 05/10/2026 el vale lleva fotos. */
   const [fotosDe, setFotosDe] = useState<string | null>(null)
+  /** El vale que se corrige (mismo formulario del despacho) y el que se anula. */
+  const [corrigiendo, setCorrigiendo] = useState<DespachoCombustible | null>(null)
+  const [anulando, setAnulando] = useState<DespachoCombustible | null>(null)
   const [ordenando, setOrdenando] = useState(false)
   const [cargando, setCargando] = useState(false)
 
@@ -406,11 +411,26 @@ export function Combustible() {
         <Card flush>
           <ul className="divide-hairline divide-y">
             {(despachos.data ?? []).map((d) => (
-              <li key={d.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+              <li
+                key={d.id}
+                className={cn(
+                  'flex flex-wrap items-center gap-3 px-5 py-3',
+                  d.anulado_en && 'opacity-50',
+                )}
+              >
                 <div className="min-w-0 grow">
                   <p className="text-ink/85 text-sm">
                     <span className="tabular font-semibold">{litros(d.cantidad, d.unidad)}</span> de{' '}
                     {d.combustible} · {d.destino}
+                    {d.anulado_en ? (
+                      <Chip tone="danger" className="ml-2">
+                        Anulado
+                      </Chip>
+                    ) : d.corregido_en ? (
+                      <Chip tone="neutral" className="ml-2">
+                        Corregido
+                      </Chip>
+                    ) : null}
                     {d.maquina_codigo ? (
                       <span className="text-ink/45 text-2xs ml-1.5 font-mono">
                         {d.maquina_codigo}
@@ -439,6 +459,7 @@ export function Combustible() {
                     {d.horometro ? ` · horómetro ${Number(d.horometro)}` : ' · sin horómetro'}
                     {` · recibió ${d.recibio}`}
                     {d.surtio ? ` · surtió ${d.surtio}` : ''}
+                    {d.anulado_en ? ` · anulado: ${d.motivo_anulacion}` : ''}
                   </p>
                   {d.nota ? <p className="text-ink/60 mt-1 text-sm">{d.nota}</p> : null}
                 </div>
@@ -470,6 +491,30 @@ export function Combustible() {
                     <Camera className="size-4" />
                   </Button>
                 ) : null}
+                {/* Corregir y anular, como en Golden pero sin borrar nada: la
+                    corrección conserva el número y deja rastro; la anulación
+                    devuelve el combustible con un reverso. El del día lo hace
+                    la escritura; el de otro día lo decide control total. */}
+                {puedeDespachar && !d.anulado_en ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      className="shrink-0"
+                      onClick={() => setCorrigiendo(d)}
+                      title="Corregir el vale"
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="text-danger shrink-0"
+                      onClick={() => setAnulando(d)}
+                      title="Anular el vale"
+                    >
+                      <Ban className="size-4" />
+                    </Button>
+                  </>
+                ) : null}
                 {d.numero && fotosDe === d.numero ? (
                   <div className="w-full pb-1">
                     <FotosDeCarga
@@ -485,7 +530,16 @@ export function Combustible() {
         </Card>
       ) : null}
 
-      <ModalDespacho abierto={despachando} onCerrar={() => setDespachando(false)} />
+      <ModalDespacho
+        abierto={despachando || corrigiendo !== null}
+        corrigiendo={corrigiendo}
+        onCerrar={() => {
+          setDespachando(false)
+          setCorrigiendo(null)
+        }}
+      />
+
+      <ModalAnularVale vale={anulando} onCerrar={() => setAnulando(null)} />
 
       <ModalCargarCombustible abierto={cargando} onCerrar={() => setCargando(false)} />
 
@@ -541,8 +595,20 @@ export function Combustible() {
  * la cortesía de decirlo mientras se llena el vale, en vez de dejar que el
  * error llegue al guardado.
  */
-function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {
+function ModalDespacho({
+  abierto,
+  corrigiendo,
+  onCerrar,
+}: {
+  abierto: boolean
+  /** El vale que se corrige, si esta ventana abre para corregir y no para crear.
+      El mismo formulario crea y corrige, como en los pedidos: dos pantallas
+      iguales se separan a la primera semana. */
+  corrigiendo?: DespachoCombustible | null
+  onCerrar: () => void
+}) {
   const despachar = useDespacharCombustible()
+  const corregir = useCorregirDespacho()
   const tanques = useTanques()
   const { data: maquinas } = useMaquinaria(true)
   const { data: personas } = usePersonasParaVale()
@@ -571,11 +637,30 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   const [detalle, setDetalle] = useState('')
   const [dia, setDia] = useState(hoy)
   const [nota, setNota] = useState('')
+  const [porQueSeCorrige, setPorQueSeCorrige] = useState('')
 
   const conSaldo = (tanques.data ?? []).filter((t) => Number(t.existencia) > 0)
 
   useEffect(() => {
     if (!abierto) return
+    if (corrigiendo) {
+      // Se abre con el vale puesto. El tanque no se cambia: eso es anular y
+      // emitir otro, y la base también lo impide.
+      setTanque(`${corrigiendo.almacen_id}|${corrigiendo.articulo_id}`)
+      setMaquina(corrigiendo.maquina_id != null ? String(corrigiendo.maquina_id) : '')
+      setDestino(corrigiendo.maquina_id == null ? corrigiendo.destino : '')
+      setCantidad(String(Number(corrigiendo.cantidad)))
+      setHorometro(corrigiendo.horometro != null ? String(Number(corrigiendo.horometro)) : '')
+      setEmpleado(corrigiendo.empleado_id != null ? String(corrigiendo.empleado_id) : '')
+      setOtroNombre(corrigiendo.empleado_id == null ? corrigiendo.recibio : '')
+      setOtraCedula(corrigiendo.empleado_id == null ? (corrigiendo.recibio_cedula ?? '') : '')
+      setMotivo(corrigiendo.motivo)
+      setDetalle(corrigiendo.motivo_detalle ?? '')
+      setDia(corrigiendo.fecha)
+      setNota(corrigiendo.nota ?? '')
+      setPorQueSeCorrige('')
+      return
+    }
     setTanque(conSaldo.length === 1 ? `${conSaldo[0].almacen_id}|${conSaldo[0].articulo_id}` : '')
     setMaquina('')
     setDestino('')
@@ -588,10 +673,14 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
     setDetalle('')
     setDia(hoy)
     setNota('')
+    setPorQueSeCorrige('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [abierto])
+  }, [abierto, corrigiendo?.id])
 
-  const elegido = conSaldo.find((t) => `${t.almacen_id}|${t.articulo_id}` === tanque)
+  // Se busca entre TODOS los tanques y no solo los con saldo: al corregir, el
+  // tanque del vale cuenta aunque hoy marque cero, porque el reverso le
+  // devuelve la cantidad original antes de la salida nueva.
+  const elegido = (tanques.data ?? []).find((t) => `${t.almacen_id}|${t.articulo_id}` === tanque)
 
   /*
     Las maquinas que pueden recibir ESTE combustible.
@@ -606,7 +695,12 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   )
   const ocultasPorCombustible = (maquinas ?? []).length - maquinasQuePueden.length
   const pedidos = Number(cantidad)
-  const excede = elegido ? pedidos > Number(elegido.existencia) : false
+  // Al corregir, lo que el vale ya sacó vuelve antes de la salida nueva.
+  const devuelve =
+    corrigiendo && elegido && corrigiendo.almacen_id === elegido.almacen_id
+      ? Number(corrigiendo.cantidad)
+      : 0
+  const excede = elegido ? pedidos > Number(elegido.existencia) + devuelve : false
   const sinFicha = maquina === ''
 
   // Quien recibe es obligatorio, de la nomina o escrito a mano. El combustible
@@ -626,8 +720,14 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
   */
   const TOPE_AL_DIA = 3
 
+  // Los anulados no atan nada, y el que se corrige tampoco se cuenta a sí mismo.
   const valesDeLaMaquina = maquina
-    ? (vales ?? []).filter((v) => String(v.maquina_id ?? '') === maquina)
+    ? (vales ?? []).filter(
+        (v) =>
+          String(v.maquina_id ?? '') === maquina &&
+          !v.anulado_en &&
+          v.id !== corrigiendo?.id,
+      )
     : []
 
   const yaSurtidoHoy = valesDeLaMaquina.filter((v) => v.fecha === dia).length
@@ -663,9 +763,7 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
 
   const enviar = async () => {
     if (!elegido) return
-    await despachar.mutateAsync({
-      articulo_id: elegido.articulo_id,
-      almacen_id: elegido.almacen_id,
+    const comun = {
       cantidad: pedidos,
       motivo,
       motivo_detalle: elMotivo?.exige_detalle ? detalle.trim() : null,
@@ -677,7 +775,20 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
       recibio_cedula: empleado ? null : otraCedula.trim() || null,
       fecha: dia,
       nota: nota.trim() || null,
-    })
+    }
+    if (corrigiendo) {
+      await corregir.mutateAsync({
+        id: corrigiendo.id,
+        ...comun,
+        motivo_correccion: porQueSeCorrige.trim() || null,
+      })
+    } else {
+      await despachar.mutateAsync({
+        articulo_id: elegido.articulo_id,
+        almacen_id: elegido.almacen_id,
+        ...comun,
+      })
+    }
     onCerrar()
   }
 
@@ -692,27 +803,46 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
           <Button variant="ghost" onClick={onCerrar}>
             Cancelar
           </Button>
-          <Button onClick={() => void enviar()} disabled={!valido || despachar.isPending}>
-            {despachar.isPending ? 'Guardando…' : 'Despachar'}
+          <Button
+            onClick={() => void enviar()}
+            disabled={!valido || despachar.isPending || corregir.isPending}
+          >
+            {despachar.isPending || corregir.isPending
+              ? 'Guardando…'
+              : corrigiendo
+                ? 'Guardar la corrección'
+                : 'Despachar'}
           </Button>
         </>
       }
     >
-      <Select
-        label="De qué tanque"
-        vacio="Elegir"
-        value={tanque}
-        onChange={(e) => setTanque(e.target.value)}
-        opciones={conSaldo.map((t) => ({
-          valor: `${t.almacen_id}|${t.articulo_id}`,
-          etiqueta: `${t.articulo} · quedan ${litros(t.existencia, t.unidad)}`,
-        }))}
-        hint={
-          conSaldo.length === 0
-            ? 'No hay combustible cargado en ningún tanque.'
-            : undefined
-        }
-      />
+      {corrigiendo ? (
+        // El tanque no se cambia al corregir: cambiar de tanque es anular este
+        // vale y emitir otro. Si cambió la cantidad o la fecha, el inventario
+        // lo cuenta con un reverso y una salida nueva, a la vista.
+        <Input
+          label="De qué tanque"
+          value={`${corrigiendo.tanque} · ${corrigiendo.combustible}`}
+          disabled
+          hint="El tanque del vale no se cambia: para eso se anula y se emite otro."
+        />
+      ) : (
+        <Select
+          label="De qué tanque"
+          vacio="Elegir"
+          value={tanque}
+          onChange={(e) => setTanque(e.target.value)}
+          opciones={conSaldo.map((t) => ({
+            valor: `${t.almacen_id}|${t.articulo_id}`,
+            etiqueta: `${t.articulo} · quedan ${litros(t.existencia, t.unidad)}`,
+          }))}
+          hint={
+            conSaldo.length === 0
+              ? 'No hay combustible cargado en ningún tanque.'
+              : undefined
+          }
+        />
+      )}
 
       {/* El «para qué» va antes que el «a qué»: son preguntas distintas, y si
           van juntas la gente contesta la máquina y da el motivo por sabido. */}
@@ -840,7 +970,7 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
           onChange={(e) => setCantidad(e.target.value)}
           error={
             excede && elegido
-              ? `En el tanque solo quedan ${litros(elegido.existencia, elegido.unidad)}`
+              ? `Alcanzan ${litros(Number(elegido.existencia) + devuelve, elegido.unidad)}${devuelve > 0 ? ' contando lo que este vale devuelve' : ''}`
               : undefined
           }
         />
@@ -885,7 +1015,76 @@ function ModalDespacho({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
         <Textarea label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />
       </div>
 
+      {corrigiendo ? (
+        <div className="mt-4">
+          <Input
+            label="Por qué se corrige"
+            placeholder="Se tecleó 40 y eran 14"
+            value={porQueSeCorrige}
+            onChange={(e) => setPorQueSeCorrige(e.target.value)}
+            hint="Opcional. El vale queda marcado corregido con su nombre y la hora igual."
+          />
+        </div>
+      ) : null}
+
       {despachar.error ? <ErrorDeCarga error={despachar.error} className="mt-3" /> : null}
+      {corregir.error ? <ErrorDeCarga error={corregir.error} className="mt-3" /> : null}
+    </Modal>
+  )
+}
+
+/*
+  ANULAR UN VALE: con motivo, y el combustible vuelve con un reverso.
+
+  Es la pieza que faltaba frente a Golden, que borra el movimiento y recalcula.
+  Aquí nada se borra: el vale queda a la vista con su motivo, y el libro de
+  inventario cuenta la ida y la vuelta.
+*/
+function ModalAnularVale({
+  vale,
+  onCerrar,
+}: {
+  vale: DespachoCombustible | null
+  onCerrar: () => void
+}) {
+  const anular = useAnularDespacho()
+  const [motivo, setMotivo] = useState('')
+
+  useEffect(() => {
+    if (vale) setMotivo('')
+  }, [vale])
+
+  if (!vale) return null
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo={`Anular ${vale.numero ?? 'el vale'}`}
+      descripcion={`${litros(vale.cantidad, vale.unidad)} de ${vale.combustible} a ${vale.destino}, el ${fecha(vale.fecha)}. El combustible vuelve al tanque con un reverso a la vista. ${vale.fecha === new Date().toLocaleDateString('en-CA') ? '' : 'No es de hoy: hace falta control total.'}`}
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            variant="danger"
+            disabled={motivo.trim().length < 3 || anular.isPending}
+            onClick={() =>
+              anular.mutate({ id: vale.id, motivo: motivo.trim() }, { onSuccess: onCerrar })
+            }
+          >
+            {anular.isPending ? 'Anulando…' : 'Anular'}
+          </Button>
+        </>
+      }
+    >
+      <Textarea
+        label="Por qué se anula"
+        rows={2}
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+      />
+      {anular.error ? <ErrorDeCarga error={anular.error} className="mt-3" /> : null}
     </Modal>
   )
 }

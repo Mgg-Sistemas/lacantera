@@ -6,11 +6,14 @@ import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
+import { Modal } from '@/components/ui/Modal'
 import { ElegirArchivosDeCarga, FotosDeCarga } from '@/components/FotosDeCarga'
 import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
 import { useMaquinaria } from '@/lib/api/maquinaria'
 import {
   numeroDeDespacho,
+  useAnularDespacho,
+  useCorregirDespacho,
   useDespacharCombustible,
   useDespachosCombustible,
   useMotivosDespacho,
@@ -55,6 +58,31 @@ import { cn } from '@/lib/cn'
 const TOPE_AL_DIA = 3
 const SEGUNDOS_PARA_AVISAR_DE_LA_SEÑAL = 12
 
+/** Lo que el formulario tenía al guardar: con esto se precarga la corrección. */
+interface ValoresDelVale {
+  cantidad: string
+  maquina: string
+  destino: string
+  horometro: string
+  motivo: string
+  detalle: string
+  empleado: string
+  otroNombre: string
+  dia: string
+  nota: string
+}
+
+interface ValeGuardado {
+  texto: string
+  litros: string
+  /** El número del vale, para colgarle fotos y para el acuse. */
+  numero: string | null
+  /** Si las fotos no subieron por la señal, aquí se dice. */
+  avisoFotos: string | null
+  id: number
+  valores: ValoresDelVale
+}
+
 const litros = (valor: string | number, unidad = 'L'): string =>
   `${Number(valor).toLocaleString('es-VE', { maximumFractionDigits: 2 })} ${unidad}`
 
@@ -64,14 +92,9 @@ export function Surtidor() {
 
   const tanques = useTanques()
   const [tanque, setTanque] = useState('')
-  const [guardado, setGuardado] = useState<{
-    texto: string
-    litros: string
-    /** El número del vale, para colgarle fotos desde el acuse. */
-    numero: string | null
-    /** Si las fotos no subieron por la señal, aquí se dice. */
-    avisoFotos: string | null
-  } | null>(null)
+  const [guardado, setGuardado] = useState<ValeGuardado | null>(null)
+  /** Volver al formulario con el vale puesto, para corregirlo. */
+  const [corrigiendo, setCorrigiendo] = useState(false)
 
   const conSaldo = (tanques.data ?? []).filter((t) => Number(t.existencia) > 0)
   const elegido = conSaldo.find((t) => `${t.almacen_id}|${t.articulo_id}` === tanque)
@@ -95,6 +118,29 @@ export function Surtidor() {
     )
   }
 
+  // La corrección vuelve al mismo formulario con el vale puesto. El tanque se
+  // busca entre TODOS —no solo los con saldo—, porque el del vale cuenta
+  // aunque hoy marque cero: el reverso le devuelve lo suyo antes de la salida.
+  if (guardado && corrigiendo) {
+    const delVale = (tanques.data ?? []).find(
+      (t) => `${t.almacen_id}|${t.articulo_id}` === tanque,
+    )
+    if (delVale) {
+      return (
+        <Vale
+          tanque={delVale}
+          correccion={{ id: guardado.id, numero: guardado.numero, valores: guardado.valores }}
+          onVolver={() => setCorrigiendo(false)}
+          onGuardado={(g) => {
+            setGuardado(g)
+            setCorrigiendo(false)
+          }}
+        />
+      )
+    }
+    // Sin el tanque a la vista no hay formulario: se cae al acuse de abajo.
+  }
+
   if (guardado) {
     return (
       <Listo
@@ -102,7 +148,12 @@ export function Surtidor() {
         cuanto={guardado.litros}
         numero={guardado.numero}
         avisoFotos={guardado.avisoFotos}
-        onOtro={() => setGuardado(null)}
+        id={guardado.id}
+        onCorregir={() => setCorrigiendo(true)}
+        onOtro={() => {
+          setGuardado(null)
+          setCorrigiendo(false)
+        }}
       />
     )
   }
@@ -155,31 +206,36 @@ export function Surtidor() {
 
 function Vale({
   tanque,
+  correccion,
   onVolver,
   onGuardado,
 }: {
   tanque: { almacen_id: number; almacen: string; articulo_id: number; articulo: string; unidad: string; existencia: string }
+  /** Con esto puesto, el formulario corrige ese vale en vez de crear uno. */
+  correccion?: { id: number; numero: string | null; valores: ValoresDelVale }
   onVolver?: () => void
-  onGuardado: (g: { texto: string; litros: string; numero: string | null; avisoFotos: string | null }) => void
+  onGuardado: (g: ValeGuardado) => void
 }) {
   const despachar = useDespacharCombustible()
+  const corregir = useCorregirDespacho()
   const { data: maquinas } = useMaquinaria(true)
   const { data: personas } = usePersonasParaVale()
   const motivos = useMotivosDespacho()
   const { data: vales } = useDespachosCombustible()
 
   const hoy = new Date().toLocaleDateString('en-CA')
-  const [cantidad, setCantidad] = useState('')
-  const [maquina, setMaquina] = useState('')
-  const [destino, setDestino] = useState('')
-  const [horometro, setHorometro] = useState('')
-  const [motivo, setMotivo] = useState('')
-  const [detalle, setDetalle] = useState('')
-  const [empleado, setEmpleado] = useState('')
-  const [otroNombre, setOtroNombre] = useState('')
+  const v0 = correccion?.valores
+  const [cantidad, setCantidad] = useState(v0?.cantidad ?? '')
+  const [maquina, setMaquina] = useState(v0?.maquina ?? '')
+  const [destino, setDestino] = useState(v0?.destino ?? '')
+  const [horometro, setHorometro] = useState(v0?.horometro ?? '')
+  const [motivo, setMotivo] = useState(v0?.motivo ?? '')
+  const [detalle, setDetalle] = useState(v0?.detalle ?? '')
+  const [empleado, setEmpleado] = useState(v0?.empleado ?? '')
+  const [otroNombre, setOtroNombre] = useState(v0?.otroNombre ?? '')
   const [masDatos, setMasDatos] = useState(false)
-  const [dia, setDia] = useState(hoy)
-  const [nota, setNota] = useState('')
+  const [dia, setDia] = useState(v0?.dia ?? hoy)
+  const [nota, setNota] = useState(v0?.nota ?? '')
   const [tarda, setTarda] = useState(false)
   /** Las fotos del despacho, tomadas antes de guardar. Se suben DESPUÉS de
       que el vale quede guardado: si la señal se las come, el vale no se pierde. */
@@ -192,14 +248,15 @@ function Vale({
     pulsar: así es como salen dos vales del mismo gasoil. A los doce segundos
     se le dice que ya quedó guardado y que no lo repita.
   */
+  const guardando = despachar.isPending || corregir.isPending
   useEffect(() => {
-    if (!despachar.isPending) {
+    if (!guardando) {
       setTarda(false)
       return
     }
     const t = setTimeout(() => setTarda(true), SEGUNDOS_PARA_AVISAR_DE_LA_SEÑAL * 1000)
     return () => clearTimeout(t)
-  }, [despachar.isPending])
+  }, [guardando])
 
   const maquinasQuePueden = (maquinas ?? []).filter(
     (m) => !m.combustible_id || m.combustible_id === tanque.articulo_id,
@@ -209,9 +266,18 @@ function Vale({
   const sinFicha = maquina === ''
 
   // Las mismas reglas del escritorio, adelantadas aquí. La base las impone igual.
+  // Los anulados no atan, y el vale que se corrige no se cuenta a sí mismo.
   const valesDeLaMaquina = useMemo(
-    () => (maquina ? (vales ?? []).filter((v) => String(v.maquina_id ?? '') === maquina) : []),
-    [vales, maquina],
+    () =>
+      maquina
+        ? (vales ?? []).filter(
+            (v) =>
+              String(v.maquina_id ?? '') === maquina &&
+              !v.anulado_en &&
+              v.id !== correccion?.id,
+          )
+        : [],
+    [vales, maquina, correccion?.id],
   )
   const yaSurtidoHoy = valesDeLaMaquina.filter((v) => v.fecha === dia).length
   const topeAlcanzado = Boolean(maquina) && yaSurtidoHoy >= TOPE_AL_DIA
@@ -220,7 +286,9 @@ function Vale({
     .map((v) => Number(v.horometro))
     .reduce<number | null>((alto, n) => (alto === null || n > alto ? n : alto), null)
 
-  const excede = pedidos > Number(tanque.existencia)
+  // Al corregir, lo que este vale ya sacó vuelve antes de la salida nueva.
+  const devuelve = correccion ? Number(correccion.valores.cantidad) || 0 : 0
+  const excede = pedidos > Number(tanque.existencia) + devuelve
   const faltaHorometro = Boolean(maquina) && horometro.trim() === ''
   const horometroRetrocede =
     Boolean(maquina) && horometro.trim() !== '' && ultimoHorometro !== null && Number(horometro) < ultimoHorometro
@@ -246,9 +314,33 @@ function Vale({
       ? (personas ?? []).find((p) => String(p.id) === empleado)?.nombre || ''
       : otroNombre.trim()
 
-    const id = await despachar.mutateAsync({
-      articulo_id: tanque.articulo_id,
-      almacen_id: tanque.almacen_id,
+    const valores: ValoresDelVale = {
+      cantidad: String(pedidos),
+      maquina,
+      destino,
+      horometro,
+      motivo,
+      detalle,
+      empleado,
+      otroNombre,
+      dia,
+      nota,
+    }
+    const armarTexto = (numero: string | null, corregido: boolean) =>
+      [
+        numero ? `Vale ${numero}${corregido ? ' (corregido)' : ''}` : 'Vale de combustible',
+        `${litros(pedidos, tanque.unidad)} de ${tanque.articulo}`,
+        `Tanque: ${tanque.almacen}`,
+        `A: ${nombreMaquina}`,
+        horometro ? `Horómetro: ${horometro}` : null,
+        `Recibió: ${quien}`,
+        `Motivo: ${elMotivo?.nombre ?? motivo}`,
+        `Fecha: ${dia}`,
+      ]
+        .filter(Boolean)
+        .join('\n')
+
+    const comun = {
       cantidad: pedidos,
       motivo,
       motivo_detalle: elMotivo?.exige_detalle ? detalle.trim() : null,
@@ -260,6 +352,29 @@ function Vale({
       recibio_cedula: null,
       fecha: dia,
       nota: nota.trim() || null,
+    }
+
+    /*
+      LA CORRECCIÓN NO CREA OTRO VALE: mismo número, números nuevos, y el
+      inventario cuenta el cambio con reverso y salida nueva si hizo falta.
+    */
+    if (correccion) {
+      await corregir.mutateAsync({ id: correccion.id, ...comun })
+      onGuardado({
+        texto: armarTexto(correccion.numero, true),
+        litros: litros(pedidos, tanque.unidad),
+        numero: correccion.numero,
+        avisoFotos: null,
+        id: correccion.id,
+        valores,
+      })
+      return
+    }
+
+    const id = await despachar.mutateAsync({
+      articulo_id: tanque.articulo_id,
+      almacen_id: tanque.almacen_id,
+      ...comun,
     })
 
     /*
@@ -293,21 +408,12 @@ function Vale({
     }
 
     onGuardado({
-      texto: [
-        numero ? `Vale ${numero}` : 'Vale de combustible',
-        `${litros(pedidos, tanque.unidad)} de ${tanque.articulo}`,
-        `Tanque: ${tanque.almacen}`,
-        `A: ${nombreMaquina}`,
-        horometro ? `Horómetro: ${horometro}` : null,
-        `Recibió: ${quien}`,
-        `Motivo: ${elMotivo?.nombre ?? motivo}`,
-        `Fecha: ${dia}`,
-      ]
-        .filter(Boolean)
-        .join('\n'),
+      texto: armarTexto(numero, false),
       litros: litros(pedidos, tanque.unidad),
       numero,
       avisoFotos,
+      id,
+      valores,
     })
   }
 
@@ -315,14 +421,18 @@ function Vale({
     <div className="mx-auto max-w-md pb-28">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-ink/85 font-titular truncate text-xl">{tanque.almacen}</h1>
+          <h1 className="text-ink/85 font-titular truncate text-xl">
+            {correccion ? `Corregir ${correccion.numero ?? 'el vale'}` : tanque.almacen}
+          </h1>
           <p className="text-ink/50 text-sm">
-            Quedan {litros(tanque.existencia, tanque.unidad)} de {tanque.articulo}
+            {correccion
+              ? `Mismo número, números nuevos. Tanque: ${tanque.almacen}.`
+              : `Quedan ${litros(tanque.existencia, tanque.unidad)} de ${tanque.articulo}`}
           </p>
         </div>
         {onVolver ? (
           <Button size="sm" variant="ghost" icon={<ArrowLeft />} onClick={onVolver}>
-            Tanque
+            {correccion ? 'Volver' : 'Tanque'}
           </Button>
         ) : null}
       </div>
@@ -436,13 +546,16 @@ function Vale({
         {/* Las fotos del despacho: el tablero con el horómetro, la máquina
             recibiendo. En el teléfono el botón abre la cámara directo. Se
             suben cuando el vale ya quedó guardado, para que la señal no se
-            lleve el registro por delante. */}
-        <div>
-          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">
-            Fotos del despacho
-          </p>
-          <ElegirArchivosDeCarga archivos={archivos} onCambiar={setArchivos} />
-        </div>
+            lleve el registro por delante. Al corregir no se piden: las del
+            vale ya están colgadas y se manejan desde el acuse. */}
+        {!correccion ? (
+          <div>
+            <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">
+              Fotos del despacho
+            </p>
+            <ElegirArchivosDeCarga archivos={archivos} onCambiar={setArchivos} />
+          </div>
+        ) : null}
 
         {/* Lo que casi nunca se toca, plegado: en el teléfono cada campo de más estorba. */}
         {masDatos ? (
@@ -461,6 +574,7 @@ function Vale({
         )}
 
         {despachar.error ? <ErrorDeCarga error={despachar.error} /> : null}
+        {corregir.error ? <ErrorDeCarga error={corregir.error} /> : null}
 
         {tarda ? (
           <p className="border-warning/30 bg-warning-soft text-ink/80 rounded-card border p-3 text-sm">
@@ -475,10 +589,10 @@ function Vale({
           <Button
             className="w-full py-4 text-base"
             icon={<Droplets />}
-            disabled={!valido || despachar.isPending}
+            disabled={!valido || guardando}
             onClick={() => void guardar()}
           >
-            {despachar.isPending ? 'Guardando…' : 'Surtir'}
+            {guardando ? 'Guardando…' : correccion ? 'Guardar la corrección' : 'Surtir'}
           </Button>
         </div>
       </div>
@@ -493,14 +607,48 @@ function Listo({
   cuanto,
   numero,
   avisoFotos,
+  id,
+  onCorregir,
   onOtro,
 }: {
   texto: string
   cuanto: string
   numero: string | null
   avisoFotos: string | null
+  id: number
+  onCorregir: () => void
   onOtro: () => void
 }) {
+  /*
+    CORREGIR Y ANULAR, TAMBIÉN DESDE EL TELÉFONO (05/10/2026). En Golden el
+    bombero borra desde el teléfono; aquí corrige con rastro o anula con
+    motivo, y el combustible vuelve con un reverso. Solo sobre el vale que
+    acaba de emitir, que es donde se descubre el error; los de antes se
+    tocan desde la computadora.
+  */
+  const anular = useAnularDespacho()
+  const [anulando, setAnulando] = useState(false)
+  const [motivo, setMotivo] = useState('')
+  const [anulado, setAnulado] = useState(false)
+
+  if (anulado) {
+    return (
+      <div className="mx-auto max-w-md pt-6 text-center">
+        <div className="bg-danger/10 text-danger mx-auto flex size-16 items-center justify-center rounded-full">
+          <Check className="size-8" />
+        </div>
+        <h1 className="text-ink/85 font-titular mt-4 text-xl">Vale anulado</h1>
+        <p className="text-ink/60 mt-1 text-sm">
+          {cuanto} volvieron al tanque con un reverso. El vale queda a la vista con su motivo.
+        </p>
+        <div className="mt-6">
+          <Button className="w-full py-3.5" icon={<Droplets />} onClick={onOtro}>
+            Surtir otra vez
+          </Button>
+        </div>
+      </div>
+    )
+  }
   const compartir = async () => {
     // Compartir nativo donde lo hay; si no, WhatsApp, que es como se avisa aquí.
     if (navigator.share) {
@@ -552,6 +700,22 @@ function Listo({
         <Button className="w-full py-3.5" icon={<Droplets />} onClick={onOtro}>
           Surtir otra vez
         </Button>
+        {/* El error se descubre leyendo el acuse: por eso el arreglo vive aquí. */}
+        <div className="flex gap-3">
+          <Button className="flex-1 py-3" variant="outline" onClick={onCorregir}>
+            Corregir este vale
+          </Button>
+          <Button
+            className="text-danger border-danger/30 flex-1 py-3"
+            variant="outline"
+            onClick={() => {
+              setMotivo('')
+              setAnulando(true)
+            }}
+          >
+            Anular
+          </Button>
+        </div>
         <Link
           to="/app/combustible"
           className="text-ink/45 active:text-ink/80 block pt-1 text-sm underline decoration-dotted underline-offset-4"
@@ -559,6 +723,45 @@ function Listo({
           Ver todo el combustible
         </Link>
       </div>
+
+      <Modal
+        abierto={anulando}
+        onCerrar={() => setAnulando(false)}
+        titulo={`Anular ${numero ?? 'el vale'}`}
+        descripcion="El combustible vuelve al tanque con un reverso a la vista. El vale queda con su motivo."
+        acciones={
+          <>
+            <Button variant="ghost" onClick={() => setAnulando(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              disabled={motivo.trim().length < 3 || anular.isPending}
+              onClick={() =>
+                anular.mutate(
+                  { id, motivo: motivo.trim() },
+                  {
+                    onSuccess: () => {
+                      setAnulando(false)
+                      setAnulado(true)
+                    },
+                  },
+                )
+              }
+            >
+              {anular.isPending ? 'Anulando…' : 'Anular'}
+            </Button>
+          </>
+        }
+      >
+        <Textarea
+          label="Por qué se anula"
+          rows={2}
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+        />
+        {anular.error ? <ErrorDeCarga error={anular.error} className="mt-3" /> : null}
+      </Modal>
     </div>
   )
 }

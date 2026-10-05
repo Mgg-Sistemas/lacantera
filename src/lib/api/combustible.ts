@@ -130,6 +130,11 @@ export interface DespachoCombustible {
   costo_usd: string | null
   nota: string | null
   registrado_en: string
+  /** Anulado con motivo y reverso: el vale queda, el combustible volvió. */
+  anulado_en: string | null
+  motivo_anulacion: string | null
+  /** Corregido con rastro: mismo número, números nuevos. */
+  corregido_en: string | null
 }
 
 export interface ConsumoMaquina {
@@ -298,6 +303,74 @@ export function useDespacharCombustible() {
       void qc.invalidateQueries({ queryKey: ['combustible'] })
       void qc.invalidateQueries({ queryKey: ['existencias'] })
       void qc.invalidateQueries({ queryKey: ['existencias-totales'] })
+    },
+  })
+}
+
+/*
+  EL VALE SE CORRIGE Y SE ANULA, no se edita ni se borra (05/10/2026).
+
+  Es lo que Golden hace con editar/eliminar, traído a los rieles de la casa:
+  anular deja el vale con su motivo y devuelve el combustible con un REVERSO;
+  corregir conserva el número, marca quién y cuándo, y si cambió la cantidad
+  o la fecha el inventario lo cuenta con reverso y salida nueva. Escritura
+  alcanza para el vale de HOY; el de otro día exige control total.
+*/
+
+export interface CorreccionDeDespacho {
+  id: number
+  cantidad: number
+  motivo: MotivoDespacho
+  motivo_detalle?: string | null
+  maquina_id?: number | null
+  destino?: string | null
+  horometro?: number | null
+  empleado_id?: number | null
+  recibio_nombre?: string | null
+  recibio_cedula?: string | null
+  fecha?: string | null
+  nota?: string | null
+  motivo_correccion?: string | null
+}
+
+export function useCorregirDespacho() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (c: CorreccionDeDespacho) =>
+      rpc<void>('corregir_despacho_combustible', {
+        p_id: c.id,
+        p_cantidad: c.cantidad,
+        p_motivo: c.motivo,
+        p_motivo_detalle: c.motivo_detalle ?? null,
+        p_maquina_id: c.maquina_id ?? null,
+        p_destino: c.destino ?? null,
+        p_horometro: c.horometro ?? null,
+        p_empleado_id: c.empleado_id ?? null,
+        p_recibio_nombre: c.recibio_nombre ?? null,
+        p_recibio_cedula: c.recibio_cedula ?? null,
+        p_fecha: c.fecha ?? null,
+        p_nota: c.nota ?? null,
+        p_motivo_correccion: c.motivo_correccion ?? null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['combustible'] })
+      void qc.invalidateQueries({ queryKey: ['existencias'] })
+      void qc.invalidateQueries({ queryKey: ['existencias-totales'] })
+      void qc.invalidateQueries({ queryKey: ['movimientos'] })
+    },
+  })
+}
+
+export function useAnularDespacho() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: { id: number; motivo: string }) =>
+      rpc<void>('anular_despacho_combustible', { p_id: a.id, p_motivo: a.motivo }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['combustible'] })
+      void qc.invalidateQueries({ queryKey: ['existencias'] })
+      void qc.invalidateQueries({ queryKey: ['existencias-totales'] })
+      void qc.invalidateQueries({ queryKey: ['movimientos'] })
     },
   })
 }
