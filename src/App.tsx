@@ -53,6 +53,13 @@ const ExigePermiso = pagina(() =>
 const Dashboard = pagina(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })))
 /* Quien tiene la casilla del surtidor aterriza ahí; el resto, en el tablero. */
 const Entrada = pagina(() => import('@/pages/Entrada').then((m) => ({ default: m.Entrada })))
+const Alimentacion = pagina(() =>
+  import('@/pages/alimentacion/Alimentacion').then((m) => ({ default: m.Alimentacion })),
+)
+/* La cocina del teléfono va en su propio trozo, por lo mismo que el surtidor. */
+const Cocina = pagina(() =>
+  import('@/pages/alimentacion/Cocina').then((m) => ({ default: m.Cocina })),
+)
 const MiCuenta = pagina(() => import('@/pages/MiCuenta').then((m) => ({ default: m.MiCuenta })))
 const ExigeClaveNueva = pagina(() =>
   import('@/pages/MiCuenta').then((m) => ({ default: m.ExigeClaveNueva })),
@@ -381,6 +388,8 @@ const paginas: Record<string, ReactNode> = {
   '/app/inventario/talleres': <Talleres />,
   '/app/combustible': <Combustible />,
   '/app/combustible/surtidor': <Surtidor />,
+  '/app/alimentacion': <Alimentacion />,
+  '/app/alimentacion/cocina': <Cocina />,
   '/app/asignaciones': <Asignaciones />,
   '/app/asignaciones/incidencias': <Incidencias />,
   '/app/asignaciones/dotacion': <Dotacion />,

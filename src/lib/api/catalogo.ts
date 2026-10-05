@@ -213,6 +213,12 @@ export const CATEGORIAS_ARTICULO = [
     pantalla.
   */
   { valor: 'EQUIPO', etiqueta: 'Equipo de oficina y cómputo' },
+  /*
+    VÍVERES, 05/10/2026: la comida del personal. La trajo el control de
+    alimentación, que es el único módulo que la consume — igual que
+    COMBUSTIBLE es el único que despacha de los tanques.
+  */
+  { valor: 'VIVERES', etiqueta: 'Víveres' },
   { valor: 'SERVICIO', etiqueta: 'Servicio' },
 ]
 
@@ -368,6 +374,7 @@ export const PREFIJO_DE_CATEGORIA: Record<string, string> = {
   PRODUCTO: 'PRD',
   REPUESTO: 'REP',
   SERVICIO: 'SRV',
+  VIVERES: 'VIV',
 }
 
 export function useRenumerarArticulo() {

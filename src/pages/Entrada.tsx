@@ -37,8 +37,14 @@ export function Entrada({ tablero }: { tablero: ReactNode }) {
   if (!acciones.resuelto || !roles.isSuccess) return <Cargando />
 
   const esAdmin = roles.roles.includes('ADMIN')
+  // Si alguien tuviera las dos casillas, gana el surtidor: el combustible se
+  // mueve más veces al día que la cocina, y desde cada pantalla se llega a la
+  // otra por el menú.
   if (!esAdmin && acciones.puede('COMBUSTIBLE.SURTIDOR_TELEFONO')) {
     return <Navigate to="/app/combustible/surtidor" replace />
+  }
+  if (!esAdmin && acciones.puede('ALIMENTACION.COCINA_TELEFONO')) {
+    return <Navigate to="/app/alimentacion/cocina" replace />
   }
   return <>{tablero}</>
 }
