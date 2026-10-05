@@ -161,7 +161,7 @@ export function Cocina() {
 
       <div className="mt-4 space-y-4">
         <Input
-          label="Cuántos comieron"
+          label="Platos"
           type="number"
           min="1"
           step="1"
@@ -172,7 +172,7 @@ export function Cocina() {
 
         {almacenes.length > 1 ? (
           <SelectBuscable
-            label="De qué almacén"
+            label="Almacén"
             vacio="El que tiene los víveres"
             valor={almacenElegido}
             onCambio={setAlmacen}
@@ -184,7 +184,7 @@ export function Cocina() {
             cantidad al lado. Marcar es escribir la cantidad; no hay un paso
             aparte de «añadir línea», que en el teléfono son dos toques más. */}
         <div>
-          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">Qué se gastó</p>
+          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">Víveres</p>
           {delAlmacen.length > 8 ? (
             <div className="mb-2">
               <Input

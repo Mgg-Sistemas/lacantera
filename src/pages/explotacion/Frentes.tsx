@@ -209,7 +209,7 @@ export function Frentes() {
               onChange={(e) => setEdicion({ ...edicion, material: e.target.value })}
             />
             <Select
-              label="Cómo se arranca"
+              label="Método de arranque"
               value={edicion.metodo_arranque}
               onChange={(e) => setEdicion({ ...edicion, metodo_arranque: e.target.value })}
               opciones={METODOS_ARRANQUE}

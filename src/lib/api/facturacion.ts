@@ -315,7 +315,7 @@ export const TIPOS_NOTA_CREDITO = [
   },
   {
     valor: 'CORRECCION',
-    etiqueta: 'Se facturó de más',
+    etiqueta: 'Corrección',
     ayuda: 'El precio o la cantidad quedaron por encima de lo acordado.',
   },
   {
@@ -325,7 +325,7 @@ export const TIPOS_NOTA_CREDITO = [
   },
   {
     valor: 'ANULACION',
-    etiqueta: 'Dejar la factura sin efecto',
+    etiqueta: 'Anulación',
     ayuda: 'La venta no ocurrió, pero la factura ya estaba en manos del cliente.',
   },
 ]

@@ -227,7 +227,7 @@ export function ModalFacturaDirecta({
         {sacaMaterial ? (
           <div className="mt-3">
             <SelectBuscable
-              label="De qué patio sale"
+              label="Patio"
               vacio="Seleccione el patio o almacén"
               valor={almacenId}
               onCambio={(v) => setAlmacenId(v)}

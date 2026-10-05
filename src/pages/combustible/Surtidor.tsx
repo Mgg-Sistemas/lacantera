@@ -497,7 +497,7 @@ function Vale({
 
       <div className="mt-5 space-y-4">
         <Input
-          label={`Cuántos ${enPlural(tanque.unidad) || 'litros'}`}
+          label={`Cantidad (${enPlural(tanque.unidad) || 'litros'})`}
           type="number"
           min="0.01"
           step="0.01"
@@ -509,7 +509,7 @@ function Vale({
         />
 
         <SelectBuscable
-          label="A qué máquina"
+          label="Máquina"
           vacio="No está en la ficha"
           valor={maquina}
           onCambio={setMaquina}
@@ -522,7 +522,7 @@ function Vale({
 
         {sinFicha ? (
           <Input
-            label="A qué se le echó"
+            label="Destino"
             value={destino}
             onChange={(e) => setDestino(e.target.value)}
             placeholder="La planta, una bomba, un camión de fuera…"
@@ -551,7 +551,7 @@ function Vale({
 
         {/* El motivo en botones, no en un desplegable: es lo que más se toca. */}
         <div>
-          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">Para qué</p>
+          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">Uso</p>
           <div className="flex flex-wrap gap-2">
             {(motivos.data ?? []).map((m) => (
               <button
@@ -581,7 +581,7 @@ function Vale({
         ) : null}
 
         <SelectBuscable
-          label="Quién lo recibió"
+          label="Receptor"
           vacio="No está en la nómina"
           valor={empleado}
           onCambio={setEmpleado}

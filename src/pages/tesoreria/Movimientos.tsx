@@ -99,7 +99,7 @@ export function MovimientosTesoreria() {
         <div className="flex flex-wrap items-start gap-3">
           <div className="w-full sm:w-48">
             <Select
-              label="Cómo se pagó"
+              label="Método de pago"
               vacio="De cualquier forma"
               value={metodo}
               onChange={(e) => filtrar('metodo', e.target.value)}
@@ -157,7 +157,7 @@ export function MovimientosTesoreria() {
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Movimiento</th>
                   <th className="px-3 py-3 font-medium">Fecha</th>
-                  <th className="px-3 py-3 font-medium">Cómo se pagó</th>
+                  <th className="px-3 py-3 font-medium">Método de pago</th>
                   <th className="px-3 py-3 font-medium">Concepto</th>
                   <th className="px-3 py-3 text-right font-medium">Monto</th>
                   <th className="px-5 py-3 text-right font-medium"></th>
@@ -299,7 +299,7 @@ export function MovimientosTesoreria() {
           </div>
 
           <Textarea
-            label="Por qué se deshace"
+            label="Motivo"
             rows={3}
             autoFocus
             value={motivo}

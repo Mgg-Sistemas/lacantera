@@ -73,7 +73,7 @@ export function VacacionesDelPeriodo({
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <div className="min-w-0 flex-1 sm:max-w-xs">
             <SelectBuscable
-              label="Quién"
+              label="Trabajador"
               valor={quien}
               onCambio={setQuien}
               vacio="Seleccione a alguien"

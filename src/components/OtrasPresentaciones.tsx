@@ -205,7 +205,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
 
       <div className="mt-3 grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
         <Select
-          label="Cómo llega"
+          label="Presentación"
           vacio="Seleccione"
           // Sin la lista leida no se ofrece: el desplegable filtraba «las que ya
           // estan» contra una lista vacia, asi que ofrecia una ya declarada y al
@@ -333,7 +333,7 @@ function NuevaFormaDeLlegada({
 
       <div className="grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
         <Input
-          label="Cómo llega"
+          label="Presentación"
           placeholder="Paila"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}

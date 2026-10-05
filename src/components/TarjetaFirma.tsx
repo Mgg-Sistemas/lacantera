@@ -121,7 +121,7 @@ export function TarjetaFirma({ nombre, de }: { nombre: string; de: DeQuien }) {
               className="mt-4"
               encendido={firma.usar}
               onCambio={encender}
-              etiqueta={firma.usar ? 'Se estampa en los papeles' : 'Guardada, pero sin usar'}
+              etiqueta={firma.usar ? 'En uso' : 'Sin usar'}
               detalle={
                 firma.usar
                   ? 'Apáguela para que los papeles salgan con la raya en blanco y se firmen a mano.'

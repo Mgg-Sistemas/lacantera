@@ -71,8 +71,8 @@ export interface Guia {
 }
 
 export const TIPOS_TICKET = [
-  { valor: 'SALIDA', etiqueta: 'Salida — material que se va' },
-  { valor: 'ENTRADA', etiqueta: 'Entrada — algo que llega' },
+  { valor: 'SALIDA', etiqueta: 'Salida' },
+  { valor: 'ENTRADA', etiqueta: 'Entrada' },
 ]
 
 function useAccion<A, R = unknown>(fn: (args: A) => Promise<R>) {

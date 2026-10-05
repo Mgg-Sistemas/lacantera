@@ -261,7 +261,7 @@ export function ControlDespacho() {
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               opciones={[
-                { valor: '—', etiqueta: 'Sin status todavía' },
+                { valor: '—', etiqueta: 'Sin status' },
                 ...(estados.data ?? []).map((e) => ({ valor: e.codigo, etiqueta: e.nombre })),
               ]}
             />
@@ -870,7 +870,7 @@ function Ajustes({ columnaLibre, onCerrar }: { columnaLibre: string; onCerrar: (
         <div className="flex items-end gap-2">
           <div className="flex-1">
             <Input
-              label="Cómo se llama la columna libre"
+              label="Nombre de la columna libre"
               value={columna}
               onChange={(e) => setColumna(e.target.value)}
             />

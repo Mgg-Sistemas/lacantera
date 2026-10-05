@@ -144,7 +144,7 @@ export function Visitantes({ hoy, dia, mes }: { hoy: string; dia: string | null;
         <p className="text-ink/45 mt-4 text-sm">Sin visitantes dentro.</p>
       ) : (
         <div className="mt-4">
-          <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Adentro ahora</p>
+          <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Dentro</p>
           <ul className="divide-hairline divide-y">
             {vivas.map((v) => (
               <li key={v.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
@@ -299,7 +299,7 @@ function CamposDeVisitante({ d, onCambio }: { d: DatosVisitante; onCambio: (d: D
     <>
       {leeContactos ? (
         <SelectBuscable
-          label="Del directorio de contactos"
+          label="Contacto"
           vacio="Buscar por nombre, empresa o teléfono… (opcional)"
           valor={d.contacto_id}
           onCambio={tomarDelDirectorio}
@@ -703,7 +703,7 @@ function AnularVisita({ visita, onCerrar }: { visita: Visita; onCerrar: () => vo
         </>
       }
     >
-      <Textarea label="Por qué" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+      <Textarea label="Motivo" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       {anular.error ? <ErrorDeCarga error={anular.error} className="mt-3" /> : null}
     </Modal>
   )

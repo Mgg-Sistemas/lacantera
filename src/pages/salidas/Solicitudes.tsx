@@ -431,7 +431,7 @@ export function Solicitudes() {
           }
         >
           <Textarea
-            label={cerrando.como === 'RECHAZAR' ? 'Por qué no se aprueba' : 'Por qué se cancela'}
+            label="Motivo"
             rows={3}
             autoFocus
             value={motivo}

@@ -63,7 +63,7 @@ const OPERACIONES: { valor: Operacion; etiqueta: string }[] = [
   { valor: 'INSERT', etiqueta: 'Creaciones' },
   { valor: 'UPDATE', etiqueta: 'Modificaciones' },
   { valor: 'DELETE', etiqueta: 'Borrados' },
-  { valor: 'ACCESO', etiqueta: 'Entradas al sistema' },
+  { valor: 'ACCESO', etiqueta: 'Accesos' },
   { valor: 'CLAVE', etiqueta: 'Cambios de clave' },
 ]
 
@@ -398,7 +398,7 @@ export function Auditoria() {
             onChange={(e) => cambiar({ texto: e.target.value })}
           />
           <Select
-            label="Quién"
+            label="Usuario"
             vacio="Cualquiera"
             value={filtros.usuario_id ?? ''}
             onChange={(e) => cambiar({ usuario_id: e.target.value })}
@@ -408,7 +408,7 @@ export function Auditoria() {
             }))}
           />
           <Select
-            label="Qué hizo"
+            label="Operación"
             vacio="Todo"
             value={filtros.operacion ?? ''}
             onChange={(e) => cambiar({ operacion: e.target.value })}
@@ -422,7 +422,7 @@ export function Auditoria() {
             mirar. Poner primero lo ancho deja que quien no sabe llegue igual.
           */}
           <Select
-            label="En qué módulo"
+            label="Módulo"
             vacio="Todo el sistema"
             value={filtros.modulo ?? ''}
             onChange={(e) => cambiar({ modulo: e.target.value })}
@@ -543,9 +543,9 @@ export function Auditoria() {
             <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-                  <th className="px-5 py-3 font-medium">Cuándo</th>
-                  <th className="px-3 py-3 font-medium">Quién</th>
-                  <th className="px-3 py-3 font-medium">Qué hizo</th>
+                  <th className="px-5 py-3 font-medium">Fecha</th>
+                  <th className="px-3 py-3 font-medium">Usuario</th>
+                  <th className="px-3 py-3 font-medium">Operación</th>
                   <th className="px-3 py-3 font-medium">Sobre qué</th>
                   <th className="px-5 py-3 text-right font-medium"></th>
                 </tr>
@@ -739,7 +739,7 @@ export function Auditoria() {
             */}
             {detalle.operacion !== 'ACCESO' && detalle.operacion !== 'CLAVE' ? (
               <div className="sm:col-span-2">
-                <dt className="text-ink/45 text-xs">Hecho con</dt>
+                <dt className="text-ink/45 text-xs">Origen</dt>
                 <dd className="text-ink/80">
                   {conQueSeHizo(detalle.origen) ?? (
                     <span className="text-ink/45">
@@ -751,7 +751,7 @@ export function Auditoria() {
             ) : null}
             {detalle.motivo ? (
               <div className="sm:col-span-2">
-                <dt className="text-ink/45 text-xs">Por qué se hizo</dt>
+                <dt className="text-ink/45 text-xs">Motivo</dt>
                 <dd className="text-ink/85">{detalle.motivo}</dd>
               </div>
             ) : null}

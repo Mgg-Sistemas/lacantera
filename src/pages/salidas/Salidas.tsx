@@ -198,7 +198,7 @@ export function Salidas() {
 
         <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,14rem)_1fr]">
           <Select
-            label="Qué mirar"
+            label="Ver"
             value={vista}
             onChange={(e) => setVista(e.target.value)}
             opciones={Object.entries(VISTAS).map(([clave, v]) => ({
@@ -236,7 +236,7 @@ export function Salidas() {
             opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
           />
           <SelectBuscable
-            label="Quién lo registró"
+            label="Registrado por"
             vacio="Todos"
             valor={quien}
             onCambio={(v) => setQuien(v)}

@@ -394,7 +394,7 @@ function ConMotivo({
         </>
       }
     >
-      <Textarea label="Por qué" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+      <Textarea label="Motivo" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       {error ? <ErrorDeCarga error={error} className="mt-3" /> : null}
     </Modal>
   )

@@ -41,7 +41,7 @@ const TONO: Record<string, 'success' | 'royal' | 'neutral'> = {
 
 const ETIQUETA: Record<string, string> = {
   LIBRE: 'Sin usar',
-  USADO: 'En una nota',
+  USADO: 'Usado',
   ANULADO: 'Anulado',
 }
 
@@ -111,7 +111,7 @@ export function Tickets() {
           onChange={(e) => setFiltro(e.target.value)}
           opciones={[
             { valor: 'LIBRE', etiqueta: 'Sin usar' },
-            { valor: 'USADO', etiqueta: 'Ya en una nota' },
+            { valor: 'USADO', etiqueta: 'Usados' },
             { valor: 'ANULADO', etiqueta: 'Anulados' },
           ]}
         />
@@ -440,7 +440,7 @@ export function Tickets() {
           }
         >
           <Textarea
-            label="Por qué se anula"
+            label="Motivo"
             rows={3}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}

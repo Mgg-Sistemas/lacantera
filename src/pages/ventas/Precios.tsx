@@ -123,7 +123,7 @@ export function Precios() {
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Producto</th>
-                  <th className="px-3 py-3 font-medium">Se vende por</th>
+                  <th className="px-3 py-3 font-medium">Unidad</th>
                   <th className="px-3 py-3 text-right font-medium">Precio</th>
                   <th className="px-3 py-3 text-right font-medium">Mínimo</th>
                   <th className="px-5 py-3 text-right font-medium">Actualizado</th>
@@ -231,7 +231,7 @@ export function Precios() {
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Select
-              label="Se vende por"
+              label="Unidad"
               value={edicion.unidad}
               onChange={(e) => setEdicion(conUnidad(edicion, e.target.value))}
               opciones={edicion.unidades.map((u) => ({

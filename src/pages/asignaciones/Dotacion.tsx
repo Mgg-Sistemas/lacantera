@@ -96,7 +96,7 @@ export function Dotacion() {
       {/* -------------------------------------------------- a quién le toca */}
       <Card className="mb-4">
         <CardHeader
-          title="A quién le toca ahora"
+          title="Dotación pendiente"
           subtitle={
             porEntregar.length === 0
               ? 'A nadie: todo el mundo está al día.'
@@ -375,7 +375,7 @@ function ModalEntregarA({
         />
 
         <SelectBuscable
-          label="A quién"
+          label="Trabajador"
           vacio={gente.length === 0 ? 'Sin personal en ese cargo' : 'Elija el trabajador'}
           valor={empleado}
           onCambio={setEmpleado}
@@ -487,7 +487,7 @@ function ModalDotacion({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
         />
 
         <SelectBuscable
-          label="Qué se le entrega"
+          label="Artículo"
           vacio="Elegir artículo"
           valor={articulo}
           onCambio={(v) => setArticulo(v)}
@@ -499,7 +499,7 @@ function ModalDotacion({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
-            label="Cuántas"
+            label="Cantidad"
             type="number"
             min="0"
             step="0.01"
@@ -508,7 +508,7 @@ function ModalDotacion({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
           />
 
           <Input
-            label="Se repone cada (meses)"
+            label="Frecuencia de reposición (meses)"
             type="number"
             min="1"
             step="1"

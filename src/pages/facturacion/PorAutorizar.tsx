@@ -156,7 +156,7 @@ export function FacturasPorAutorizar({ onEmitida }: { onEmitida?: (facturaId: nu
         <ConMotivo
           titulo={`Rechazar ${rechazando.numero}`}
           descripcion="No se emite nada. Quien la preparó lee el motivo y, si hace falta, prepara otra."
-          etiqueta="Por qué se rechaza"
+          etiqueta="Motivo"
           boton="Rechazar"
           accion={rechazar}
           id={rechazando.id}
@@ -171,7 +171,7 @@ export function FacturasPorAutorizar({ onEmitida }: { onEmitida?: (facturaId: nu
         <ConMotivo
           titulo={`Retirar ${retirando.numero}`}
           descripcion="Deja de esperar autorización. Sus notas de entrega vuelven a quedar libres para otra factura."
-          etiqueta="Por qué se retira"
+          etiqueta="Motivo"
           boton="Retirar"
           accion={retirar}
           id={retirando.id}

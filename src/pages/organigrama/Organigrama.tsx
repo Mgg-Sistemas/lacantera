@@ -748,19 +748,19 @@ function Formulario({
     <div className="border-hairline rounded-card border border-dashed p-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <Input
-          label="Cómo se llama"
+          label="Nombre"
           value={edicion.nombre}
           onChange={(e) => cambiar({ nombre: e.target.value })}
         />
         <Input
-          label="Quién lo ocupa"
+          label="Titular"
           hint="Se deja vacío si el puesto no tiene nombre y apellido."
           value={edicion.titular}
           onChange={(e) => cambiar({ titular: e.target.value })}
         />
         <div className="grid grid-cols-[1fr_auto] gap-2">
           <Select
-            label="Qué es"
+            label="Tipo"
             value={edicion.tipo}
             onChange={(e) => cambiar({ tipo: e.target.value as TipoDeNodo })}
             opciones={[

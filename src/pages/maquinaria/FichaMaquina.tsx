@@ -366,7 +366,7 @@ export function FichaMaquina() {
                 «tiene ruedas», es para qué está la cosa.
               */}
               <Select
-                label="Qué es"
+                label="Clase"
                 value={f.clase}
                 onChange={(e) => cambiar('clase', e.target.value)}
                 hint={CLASES_DE_MAQUINA.find((c) => c.valor === f.clase)?.pista}
@@ -394,7 +394,7 @@ export function FichaMaquina() {
                 contratado.
               */}
               <Select
-                label="De quién es"
+                label="Dueño"
                 value={f.propietario}
                 onChange={(e) => cambiar('propietario', e.target.value)}
                 opciones={(propietarios ?? []).map((d) => ({
@@ -419,7 +419,7 @@ export function FichaMaquina() {
               */}
               {!maquina ? (
                 <Select
-                  label="Cómo llega"
+                  label="Estado"
                   value={f.estado}
                   onChange={(e) => cambiar('estado', e.target.value)}
                   hint="Después se cambia desde la ficha, explicando por qué."
@@ -486,7 +486,7 @@ export function FichaMaquina() {
               */}
               <div className="sm:col-span-2">
                 <SelectBuscable
-                  label="Quién la conduce u opera"
+                  label="Operador"
                   vacio="Sin asignar"
                   valor={f.operador_id}
                   onCambio={(v) => cambiar('operador_id', v)}
@@ -502,7 +502,7 @@ export function FichaMaquina() {
 
               <div className="sm:col-span-2">
                 <SelectBuscable
-                  label="Dónde se resguarda, si tiene un sitio fijo"
+                  label="Almacén"
                   vacio="No tiene sitio fijo"
                   valor={f.almacen_id}
                   onCambio={(v) => cambiar('almacen_id', v)}
@@ -599,7 +599,7 @@ export function FichaMaquina() {
 
             <div className="mt-4 max-w-sm">
               <Input
-                label="Días que suele tardar su mantenimiento"
+                label="Duración estimada del mantenimiento (días)"
                 type="number"
                 min="1"
                 step="1"
@@ -678,7 +678,7 @@ export function FichaMaquina() {
               vez. En una máquina nueva no hay historia que contar todavía. */}
           {!esNueva ? (
             <Historial
-              titulo="Su historia"
+              titulo="Historial"
               subtitulo="Combustible, horas trabajadas, pasos por el taller, repuestos, modificaciones y cambios de estado, de lo más reciente a lo más viejo."
               hechos={historial.data}
               cargando={historial.isPending}

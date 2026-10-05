@@ -30,7 +30,7 @@ export function DeQuienSale({
   duenos,
   valor,
   onCambio,
-  label = '¿De quién sale?',
+  label = 'Dueño',
 }: {
   /** Los que tienen saldo positivo de ese artículo en ese sitio. */
   duenos: string[] | undefined

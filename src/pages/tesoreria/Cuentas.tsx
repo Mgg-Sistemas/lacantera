@@ -722,7 +722,7 @@ function ModalMovimiento({
 
         {accion !== 'apertura' ? (
           <Textarea
-            label={esAjuste ? 'Qué explica la diferencia' : 'Concepto'}
+            label="Concepto"
             rows={2}
             placeholder={
               esAjuste
@@ -749,7 +749,7 @@ function ModalMovimiento({
         */}
         {accion === 'egreso' ? (
           <Select
-            label="De qué clase es"
+            label="Categoría"
             vacio="Sin clasificar"
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
@@ -863,7 +863,7 @@ function ModalTraslado({
     >
       <div className="space-y-4">
         <Select
-          label="Sale de"
+          label="Cuenta de origen"
           vacio="Seleccione la cuenta"
           value={origen}
           onChange={(e) => setOrigen(e.target.value)}
@@ -883,7 +883,7 @@ function ModalTraslado({
         />
 
         <Select
-          label="Entra en"
+          label="Cuenta de destino"
           vacio="Seleccione la cuenta"
           value={destino}
           onChange={(e) => setDestino(e.target.value)}
@@ -897,7 +897,7 @@ function ModalTraslado({
 
         {cambia ? (
           <Input
-            label={`Cuánto llegó en ${cDestino!.moneda}`}
+            label={`Monto en ${cDestino!.moneda}`}
             type="number"
             step="0.01"
             inputMode="decimal"
@@ -1050,7 +1050,7 @@ function ModalCuenta({
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label={edicion.tipo === 'CAJA' ? 'Quién responde por el efectivo' : 'Titular'}
+              label={edicion.tipo === 'CAJA' ? 'Responsable' : 'Titular'}
               value={edicion.titular}
               onChange={(e) => cambiar({ titular: e.target.value })}
             />

@@ -117,7 +117,7 @@ function FilaDeCamion({
           {camion.chofer_id === '' ? (
             <div className="mt-2 grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
               <Input
-                label="¿No está? Nombre"
+                label="Nombre del chofer"
                 value={nuevoChofer}
                 onChange={(e) => setNuevoChofer(e.target.value)}
               />
@@ -167,7 +167,7 @@ function FilaDeCamion({
           {camion.vehiculo_id === '' ? (
             <div className="mt-2 grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
               <Input
-                label="¿No está? Marca / modelo"
+                label="Vehículo (marca/modelo)"
                 value={nuevoVehiculo}
                 onChange={(e) => setNuevoVehiculo(e.target.value)}
               />

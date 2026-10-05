@@ -117,7 +117,7 @@ export function ModalEstado({
           {exigeMotivo ? (
             <div className="mt-4">
               <Textarea
-                label="Por qué"
+                label="Motivo"
                 rows={2}
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}

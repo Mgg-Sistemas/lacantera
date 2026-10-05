@@ -228,7 +228,7 @@ export function FormularioTrabajador() {
         pasos={[
           {
             id: 'quien',
-            titulo: 'Quién es',
+            titulo: 'Datos personales',
             subtitulo: 'Lo que va en el carnet y a quién avisar si pasa algo.',
             falta: faltaQuien,
             contenido: (
@@ -305,13 +305,13 @@ export function FormularioTrabajador() {
                     onCambiar={(v) => cambiar({ telefono: v })}
                   />
                   <Input
-                    label="A quién llamar en una emergencia"
+                    label="Contacto de emergencia"
                     placeholder="Marta Arias, esposa"
                     value={f.contacto_emergencia}
                     onChange={(e) => cambiar({ contacto_emergencia: e.target.value })}
                   />
                   <Input
-                    label="Teléfono de esa persona"
+                    label="Teléfono de emergencia"
                     value={f.telefono_emergencia}
                     onChange={(e) => cambiar({ telefono_emergencia: e.target.value })}
                   />
@@ -470,7 +470,7 @@ export function FormularioTrabajador() {
                 */}
                 <div className="mt-6">
                   <p className="text-ink/45 font-mono text-[11px] tracking-wider uppercase">
-                    Con qué llega
+                    Formación y experiencia
                   </p>
                   <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     <Select

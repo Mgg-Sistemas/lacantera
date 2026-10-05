@@ -95,7 +95,7 @@ export function Mantenimientos() {
             value={estado}
             onChange={(e) => setEstado(e.target.value as '' | EstadoOrden)}
             opciones={[
-              { valor: 'ABIERTO', etiqueta: 'En el taller' },
+              { valor: 'ABIERTO', etiqueta: 'Abiertas' },
               { valor: 'CERRADO', etiqueta: 'Terminadas' },
               { valor: 'ANULADO', etiqueta: 'Anuladas' },
             ]}
@@ -157,7 +157,7 @@ export function Mantenimientos() {
                       }
                     >
                       {m.estado === 'ABIERTO'
-                        ? 'En el taller'
+                        ? 'Abierta'
                         : m.estado === 'ANULADO'
                           ? 'Anulada'
                           : 'Terminada'}
@@ -211,7 +211,7 @@ export function Mantenimientos() {
                       síntoma y el otro la reparación. */}
                   {m.motivo ? (
                     <p className="text-ink/60 mt-2 text-sm leading-relaxed">
-                      <span className="text-ink/40">Entró por:</span> {m.motivo}
+                      <span className="text-ink/40">Motivo:</span> {m.motivo}
                     </p>
                   ) : null}
                   {m.detalle ? (

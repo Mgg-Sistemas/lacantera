@@ -378,7 +378,7 @@ export function Traslados() {
         }
       >
         <Textarea
-          label="Por qué se cancela"
+          label="Motivo"
           rows={2}
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}

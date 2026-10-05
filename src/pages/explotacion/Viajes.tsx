@@ -297,7 +297,7 @@ function PestanaDia() {
                 </th>
               ))}
               <th className="px-3 py-3 text-right font-medium">m³</th>
-              <th className="px-3 py-3 text-right font-medium">Se le debe</th>
+              <th className="px-3 py-3 text-right font-medium">Monto a pagar</th>
               <th className="px-5 py-3 text-right font-medium" />
             </tr>
           </thead>
@@ -794,7 +794,7 @@ function AjustarPrecio({ grupo, onCerrar }: { grupo: GrupoPorAprobar; onCerrar: 
       </div>
       <Textarea
         className="mt-3"
-        label="Por qué cambia"
+        label="Motivo"
         placeholder="Volvió vacío por falla de la pala; se paga la mitad por medio viaje…"
         rows={2}
         value={motivo}
@@ -835,7 +835,7 @@ function RechazarViajes({ grupo, onCerrar }: { grupo: GrupoPorAprobar; onCerrar:
       }
     >
       <Textarea
-        label="Por qué se rechazan"
+        label="Motivo"
         hint="Quien los cargó va a leerlo."
         rows={3}
         value={motivo}
@@ -1160,7 +1160,7 @@ function CargarViajes({
           className="w-52"
         />
         <Select
-          label="Por qué ruta"
+          label="Ruta"
           vacio="Seleccione la ruta"
           value={rutaId}
           onChange={(e) => {
@@ -1172,7 +1172,7 @@ function CargarViajes({
           className="w-72"
         />
         <Select
-          label="Cómo volvió"
+          label="Carga"
           value={carga}
           onChange={(e) => {
             setCarga(e.target.value as CargaDelViaje)
@@ -1187,7 +1187,7 @@ function CargarViajes({
         />
         {ofreceM3 ? (
           <Input
-            label={pideM3 ? 'Cuántos m³ traía' : 'Metros cúbicos (si se sabe)'}
+            label={pideM3 ? 'Metros cúbicos' : 'Metros cúbicos (si se sabe)'}
             type="number"
             min="0"
             step="0.01"
@@ -1198,7 +1198,7 @@ function CargarViajes({
           />
         ) : null}
         <Input
-          label="Cuántos viajes"
+          label="Cantidad de viajes"
           type="number"
           min="1"
           max="60"
@@ -1306,7 +1306,7 @@ function DetalleDelEquipo({
                   <th className="py-2 pr-3 font-medium">N.º</th>
                   <th className="px-3 py-2 font-medium">Ruta</th>
                   <th className="px-3 py-2 font-medium">Hora</th>
-                  <th className="px-3 py-2 font-medium">Cómo volvió</th>
+                  <th className="px-3 py-2 font-medium">Carga</th>
                   <th className="px-3 py-2 text-right font-medium">m³</th>
                   <th className="px-3 py-2 text-right font-medium">Precio</th>
                   <th className="px-3 py-2 font-medium">Estado</th>
@@ -1529,7 +1529,7 @@ function CajaDeTarifas({ rutas }: { rutas: RutaAcarreo[] }) {
     <div className="border-hairline flex items-center gap-3 rounded-[6px] border px-3 py-2">
       <Coins className="text-ink/35 size-4 shrink-0" />
       <div className="text-xs">
-        <p className="text-ink/45">Se paga por viaje</p>
+        <p className="text-ink/45">Tarifa por viaje</p>
         <p className="text-ink/80 tabular">
           {rutas
             .filter((r) => r.precio_usd !== null || r.precio_libre)

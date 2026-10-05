@@ -189,7 +189,7 @@ export function Asignaciones() {
             onChange={(e) => setBusqueda(e.target.value)}
           />
           <SelectBuscable
-            label="Sitio"
+            label="Almacén"
             vacio="Todos"
             valor={almacenId}
             onCambio={(v) => setAlmacenId(v)}
@@ -312,7 +312,7 @@ export function Asignaciones() {
       </div>
 
       {/* ------------------------------------------------------- el stock */}
-      <h2 className="text-ink/80 mb-1 text-sm font-semibold">Lo que hay</h2>
+      <h2 className="text-ink/80 mb-1 text-sm font-semibold">Existencias</h2>
       <p className="text-ink/50 mb-3 text-xs leading-relaxed">
         La existencia cuenta todas, prestadas incluidas: siguen siendo de la empresa. Lo que se
         puede entregar hoy es la columna de disponibles.
@@ -338,8 +338,8 @@ export function Asignaciones() {
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Artículo</th>
-                  <th className="px-3 py-3 font-medium">Dónde</th>
-                  <th className="px-3 py-3 text-right font-medium">Hay</th>
+                  <th className="px-3 py-3 font-medium">Almacén</th>
+                  <th className="px-3 py-3 text-right font-medium">Existencia</th>
                   <th className="px-3 py-3 text-right font-medium">Entregadas</th>
                   <th className="px-3 py-3 text-right font-medium">Disponibles</th>
                   <th className="px-5 py-3 text-right font-medium" />
@@ -516,7 +516,7 @@ function ModalEntrega({
       }
     >
       <SelectBuscable
-        label="A quién"
+        label="Trabajador"
         vacio="Elegir trabajador"
         valor={empleado}
         onCambio={(v) => setEmpleado(v)}
@@ -535,7 +535,7 @@ function ModalEntrega({
           se está entregando.
         */}
         <Input
-          label={`Cuántas ${unidadEnPlural(bien.unidad)}`}
+          label={`Cantidad (${unidadEnPlural(bien.unidad)})`}
           type="number"
           min="1"
           step="1"
@@ -555,7 +555,7 @@ function ModalEntrega({
       */}
       <div className="mt-4">
         <Input
-          label="Cuándo tiene que estar de vuelta (opcional)"
+          label="Fecha límite (opcional)"
           type="date"
           min={dia}
           value={limite}
@@ -642,8 +642,8 @@ function ModalCierre({
   }
 
   const tipos = [
-    { valor: 'PERDIDA' as const, titulo: 'No aparece', detalle: 'Se perdió o no la devolvió.' },
-    { valor: 'DANO' as const, titulo: 'Está dañada', detalle: 'Volvió rota o dejó de servir.' },
+    { valor: 'PERDIDA' as const, titulo: 'Pérdida', detalle: 'Se perdió o no la devolvió.' },
+    { valor: 'DANO' as const, titulo: 'Daño', detalle: 'Volvió rota o dejó de servir.' },
   ]
 
   return (
@@ -651,7 +651,7 @@ function ModalCierre({
       abierto
       onCerrar={onCerrar}
       ancho="sm"
-      titulo={incidencia ? 'Qué pasó con el bien' : 'Lo devolvió'}
+      titulo={incidencia ? 'Incidencia' : 'Devolución'}
       descripcion={`${cantidad(a.cantidad)} ${a.articulo} · ${a.empleado}`}
       acciones={
         <>
@@ -689,7 +689,7 @@ function ModalCierre({
 
       <div className="mt-4">
         <Textarea
-          label={incidencia ? 'Qué pasó' : 'Nota'}
+          label={incidencia ? 'Motivo' : 'Nota'}
           rows={3}
           value={texto}
           onChange={(e) => setTexto(e.target.value)}

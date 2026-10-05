@@ -179,7 +179,7 @@ function ParaQuienSale({
       {ambito === 'FUERA' ? (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Input
-            label="¿A quién?"
+            label="Destino"
             hint="La empresa o la persona que lo recibe."
             value={externo}
             onChange={(e) => onExterno(e.target.value)}
@@ -225,7 +225,7 @@ function QuienResponde({
   return (
     <div className="space-y-3">
       <SelectBuscable
-        label="¿Quién responde por ello?"
+        label="Responsable"
         vacio="Seleccione a alguien de la empresa u «Otra persona»"
         hint="Firma la nota. Si no es de la empresa, elija «Otra persona» y escriba su nombre."
         valor={aMano ? OTRA_PERSONA : deLaEmpresa ? String(deLaEmpresa.id) : ''}
@@ -249,7 +249,7 @@ function QuienResponde({
       />
       {aMano ? (
         <Input
-          label="Nombre de quien responde"
+          label="Nombre del responsable"
           hint="La persona que responde por lo que sale."
           value={responsable}
           onChange={(e) => onResponsable(e.target.value)}
@@ -658,7 +658,7 @@ export function ModalSalida({
                   </div>
 
                   <SelectBuscable
-                    label={modo === 'pedir' ? '¿Qué material?' : 'Qué sale'}
+                    label="Artículo"
                     vacio="Busque el material"
                     valor={r.articulo}
                     onCambio={(v) => {
@@ -704,7 +704,7 @@ export function ModalSalida({
                     {/* Al pedir, arranca en el almacén de arriba y se cambia
                         solo si este material sale de otro. */}
                     <SelectBuscable
-                      label={modo === 'pedir' ? '¿De qué almacén sale?' : 'De dónde sale'}
+                      label="Almacén"
                       vacio={r.articulo ? 'Seleccione el sitio' : 'Seleccione antes el material'}
                       valor={sitio}
                       onCambio={(v) =>
@@ -776,7 +776,7 @@ export function ModalSalida({
                             lista.map((x) => (x.clave === r.clave ? { ...x, propietario: v } : x)),
                           )
                         }
-                        label="¿De quién sale?"
+                        label="Dueño"
                       />
                     </div>
                   ) : null}
@@ -821,7 +821,7 @@ export function ModalSalida({
               />
 
               <Textarea
-                label="¿Para qué se necesita?"
+                label="Motivo"
                 className="mt-4"
                 rows={3}
                 placeholder="Mascarillas para el turno de cribado"
@@ -910,7 +910,7 @@ export function ModalSalida({
                     onChange={(e) => setRecibeNombre(e.target.value)}
                   />
                   <Input
-                    label="Su cédula"
+                    label="Cédula"
                     placeholder="V-12345678"
                     hint="Va debajo del nombre, en el papel que firma."
                     value={recibeCedula}
@@ -930,7 +930,7 @@ export function ModalSalida({
                   /* Decía «¿De qué clase?». Christopher: «falta aclarar un poco,
                      ¿clase de salida? ¿de qué clase... salida?». Era un rótulo
                      escrito por quien ya sabía la respuesta. */
-                  label="¿Por qué sale?"
+                  label="Motivo"
                   value={clase}
                   onChange={(e) => setClase(e.target.value)}
                   hint={claseElegida?.pista ?? undefined}

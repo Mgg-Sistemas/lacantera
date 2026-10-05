@@ -284,7 +284,7 @@ export function FotosDelRegistro({
               pista="Arrastre una imagen o toque para elegirla."
             />
             <Input
-              label="Qué se ve"
+              label="Descripción"
               placeholder="El golpe del guardafango derecho"
               value={nota}
               onChange={(e) => setNota(e.target.value)}

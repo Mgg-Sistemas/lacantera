@@ -138,8 +138,8 @@ export function Plantas() {
                 <thead>
                   <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                     <th className="px-5 py-3 font-medium">Sitio</th>
-                    <th className="px-3 py-3 font-medium">Qué es</th>
-                    <th className="px-3 py-3 font-medium">Lo opera</th>
+                    <th className="px-3 py-3 font-medium">Tipo</th>
+                    <th className="px-3 py-3 font-medium">Operador</th>
                     <th className="px-3 py-3 font-medium">Responsable</th>
                     <th className="px-3 py-3 font-medium">Patio de inventario</th>
                     <th className="px-3 py-3 font-medium">Estado</th>
@@ -257,8 +257,8 @@ export function Plantas() {
                 <thead>
                   <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                     <th className="px-5 py-3 font-medium">Ruta</th>
-                    <th className="px-3 py-3 font-medium">De dónde a dónde</th>
-                    <th className="px-3 py-3 font-medium">Se paga hoy</th>
+                    <th className="px-3 py-3 font-medium">Origen y destino</th>
+                    <th className="px-3 py-3 font-medium">Tarifa</th>
                     <th className="px-3 py-3 font-medium">Estado</th>
                     <th className="px-5 py-3" />
                   </tr>
@@ -413,7 +413,7 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
           ) : null}
           <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
           <Select
-            label="Qué es"
+            label="Tipo"
             vacio="Seleccione el tipo"
             value={tipo}
             onChange={(e) => setTipo(e.target.value as TipoDeSitio)}
@@ -434,7 +434,7 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
           <div className="grid gap-4 sm:grid-cols-2">
             {nuevo ? (
               <Select
-                label="Quién lo opera"
+                label="Operador"
                 vacio="Seleccione quién"
                 value={operador}
                 onChange={(e) => setOperador(e.target.value)}
@@ -608,7 +608,7 @@ function CerrarSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion; onCerrar: (
       ) : null}
 
       <Input label="Cerrado desde" type="date" max={hoyEnCaracas()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
-      <Textarea className="mt-3" label="Por qué se cierra" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+      <Textarea className="mt-3" label="Motivo" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       {cerrar.error ? <ErrorDeCarga error={cerrar.error} className="mt-3" /> : null}
     </Modal>
   )
@@ -654,7 +654,7 @@ function OperadorDelSitio({
     <Modal
       abierto
       onCerrar={onCerrar}
-      titulo={`Quién opera ${sitio.nombre}`}
+      titulo={`Operador de ${sitio.nombre}`}
       descripcion="Ceder, transferir o sumar un aliado es cambiar el operador desde una fecha. El de antes queda en la historia hasta el día anterior. El material del patio y las máquinas ubicadas ahí solo pasan si se marcan."
       ancho="lg"
       acciones={
@@ -726,7 +726,7 @@ function OperadorDelSitio({
           </div>
           <Textarea
             className="mt-3"
-            label="Por qué cambia"
+            label="Motivo"
             placeholder="Cesión de la gobernación según acta del…"
             rows={2}
             value={motivo}
@@ -790,7 +790,7 @@ function OperadorDelSitio({
                       {marcado && x.tipo === 'MATERIAL' ? (
                         <div className="w-48">
                           <Input
-                            label="Cuánto pasa"
+                            label="Cantidad"
                             type="number"
                             min="0"
                             step="0.01"
@@ -879,9 +879,9 @@ function FichaDeRuta({
       }
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select label="Sale de" vacio="Seleccione el sitio" value={origen} onChange={(e) => setOrigen(e.target.value)} opciones={opciones} />
+        <Select label="Origen" vacio="Seleccione el sitio" value={origen} onChange={(e) => setOrigen(e.target.value)} opciones={opciones} />
         <Select
-          label="Llega a"
+          label="Destino"
           vacio="Seleccione el sitio"
           value={destino}
           onChange={(e) => setDestino(e.target.value)}

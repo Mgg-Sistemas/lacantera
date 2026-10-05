@@ -153,7 +153,7 @@ export function Clientes() {
                   <th className="px-5 py-3 font-medium">Cliente</th>
                   <th className="px-3 py-3 font-medium">Identificación</th>
                   <th className="px-3 py-3 font-medium">Condición</th>
-                  <th className="px-3 py-3 text-right font-medium">Debe</th>
+                  <th className="px-3 py-3 text-right font-medium">Deuda</th>
                   <th className="px-3 py-3 text-right font-medium">Última venta</th>
                   <th className="px-5 py-3 text-right font-medium">Estado</th>
                 </tr>
@@ -299,7 +299,7 @@ export function Clientes() {
               opciones={CONDICIONES_PAGO}
             />
             <Select
-              label="Moneda con la que se le factura"
+              label="Moneda preferida"
               value={edicion.moneda_preferida}
               onChange={(e) => cambiar({ moneda_preferida: e.target.value })}
               opciones={monedas.data ?? []}
@@ -338,7 +338,7 @@ export function Clientes() {
 
             {edicion.contribuyente_especial ? (
               <Input
-                label="Porcentaje de IVA que retiene"
+                label="Retención de IVA"
                 type="number"
                 min="0"
                 max="100"

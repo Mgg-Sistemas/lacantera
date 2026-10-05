@@ -298,7 +298,7 @@ export function ServirComida({ onCerrar }: { onCerrar: () => void }) {
     >
       <div className="space-y-4">
         <div>
-          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">Qué comida</p>
+          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">Tipo de comida</p>
           <div className="flex flex-wrap gap-2">
             {TIPOS_DE_COMIDA.map((t) => (
               <button
@@ -320,7 +320,7 @@ export function ServirComida({ onCerrar }: { onCerrar: () => void }) {
 
         <div className="grid gap-4 sm:grid-cols-3">
           <Input
-            label="Cuántos comieron"
+            label="Platos"
             type="number"
             min="1"
             step="1"
@@ -329,7 +329,7 @@ export function ServirComida({ onCerrar }: { onCerrar: () => void }) {
             onChange={(e) => setPlatos(e.target.value)}
           />
           <SelectBuscable
-            label="De qué almacén"
+            label="Almacén"
             vacio="El que tiene los víveres"
             valor={almacenElegido}
             onCambio={setAlmacen}
@@ -339,7 +339,7 @@ export function ServirComida({ onCerrar }: { onCerrar: () => void }) {
         </div>
 
         <div>
-          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">Qué se gastó</p>
+          <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">Víveres</p>
           <div className="space-y-2">
             {lineas.map((l, i) => {
               const v = delAlmacen.find((x) => String(x.articulo_id) === l.articulo_id)
@@ -438,7 +438,7 @@ function AnularComida({ comida, hoy, onCerrar }: { comida: Comida; hoy: string; 
         </>
       }
     >
-      <Textarea label="Por qué" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+      <Textarea label="Motivo" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       {anular.error ? <ErrorDeCarga error={anular.error} className="mt-3" /> : null}
     </Modal>
   )

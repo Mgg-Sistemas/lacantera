@@ -50,7 +50,7 @@ const CAMPOS: Record<string, Campo> = {
     modo: 'email',
   },
   red_cripto: { etiqueta: 'Red', marcador: 'TRON (TRC20)' },
-  receptor: { etiqueta: 'Quién recibe el efectivo' },
+  receptor: { etiqueta: 'Receptor' },
 }
 
 export function CamposDePago({

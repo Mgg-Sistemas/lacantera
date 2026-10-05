@@ -512,7 +512,7 @@ function LaSalud({ empleadoId, puedeEditar }: { empleadoId: number; puedeEditar:
             />
             <div className="sm:col-span-2">
               <Input
-                label="Cuál es"
+                label="Descripción"
                 placeholder="Penicilina · Asma · Hipoacusia del oído derecho"
                 value={editando.descripcion}
                 onChange={(e) => setEditando({ ...editando, descripcion: e.target.value })}

@@ -771,7 +771,7 @@ function Anular({ jornada, onCerrar }: { jornada: Jornada; onCerrar: () => void 
         </>
       }
     >
-      <Textarea label="Por qué" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+      <Textarea label="Motivo" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       {anular.error ? <ErrorDeCarga error={anular.error} className="mt-3" /> : null}
     </Modal>
   )

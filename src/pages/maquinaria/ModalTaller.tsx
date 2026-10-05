@@ -195,7 +195,7 @@ function Entrada({
 
       <div className="mt-5">
         <Textarea
-          label="Por qué entra"
+          label="Motivo"
           rows={2}
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
@@ -204,7 +204,7 @@ function Entrada({
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <Input label="Entra el" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
+        <Input label="Fecha" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
         <Select
           label="Taller"
           vacio="Sin taller / externo"
@@ -241,7 +241,7 @@ function Entrada({
           hint={URGENCIAS.find((u) => u.valor === urgencia)?.detalle}
         />
         <Select
-          label="Qué hace falta"
+          label="Especialidad"
           vacio="Sin especificar"
           value={especialidad}
           onChange={(e) => setEspecialidad(e.target.value)}
@@ -415,7 +415,7 @@ function Salida({
             trabajo y no se quiere registrar.
           </p>
           <Textarea
-            label="Por qué se anula"
+            label="Motivo"
             rows={3}
             value={motivoAnulacion}
             onChange={(e) => setMotivoAnulacion(e.target.value)}
@@ -439,9 +439,9 @@ function Salida({
           />
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Input label="Sale el" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
+            <Input label="Fecha de salida" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
             <Input
-              label="Mano de obra en dólares"
+              label="Mano de obra (USD)"
               type="number"
               min="0"
               step="0.01"
@@ -453,7 +453,7 @@ function Salida({
             />
           </div>
 
-          <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Repuestos que se le pusieron</h3>
+          <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Repuestos</h3>
           {tallerId === null ? (
             <p className="text-ink/50 text-xs leading-relaxed">
               Esta orden no dice en qué taller se hizo, así que no hay de dónde descontar. El
@@ -531,7 +531,7 @@ function Salida({
             </>
           )}
 
-          <h3 className="text-ink/85 mt-6 mb-3 text-sm font-semibold">Cómo queda al salir</h3>
+          <h3 className="text-ink/85 mt-6 mb-3 text-sm font-semibold">Estado de salida</h3>
           <div className="grid gap-2 sm:grid-cols-3">
             {salidas.map((s) => (
               <button

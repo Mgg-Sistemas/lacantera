@@ -304,8 +304,8 @@ export function ListaDeFlota({ maquinas, acc }: { maquinas: Maquina[]; acc: Acci
             <tr className="text-ink/45 border-hairline border-b text-left text-xs whitespace-nowrap">
               <th className="px-5 py-2.5 font-medium">Equipo</th>
               <th className="px-3 py-2.5 font-medium">Estado</th>
-              <th className="px-3 py-2.5 font-medium">Quién la lleva</th>
-              <th className="px-3 py-2.5 font-medium">Dónde</th>
+              <th className="px-3 py-2.5 font-medium">Operador</th>
+              <th className="px-3 py-2.5 font-medium">Almacén</th>
               <th className="px-3 py-2.5 font-medium">Desde el mantenimiento</th>
               <th className="px-5 py-2.5 text-right font-medium" />
             </tr>

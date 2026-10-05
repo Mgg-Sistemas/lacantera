@@ -201,7 +201,7 @@ export function Prestaciones() {
             tone="royal"
           />
           <StatCard
-            label="Adelantado"
+            label="Anticipos"
             value={enCifra(totalAnticipos)}
             icon={<HandCoins />}
             tone="warning"
@@ -243,11 +243,11 @@ export function Prestaciones() {
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Trabajador</th>
-                  <th className="px-3 py-3 font-medium">Desde</th>
+                  <th className="px-3 py-3 font-medium">Ingreso</th>
                   <th className="px-3 py-3 text-right font-medium">Garantía</th>
                   <th className="px-3 py-3 text-right font-medium">Intereses</th>
-                  <th className="px-3 py-3 text-right font-medium">Adelantado</th>
-                  <th className="px-3 py-3 text-right font-medium">Se le debe</th>
+                  <th className="px-3 py-3 text-right font-medium">Anticipos</th>
+                  <th className="px-3 py-3 text-right font-medium">Saldo</th>
                   <th className="px-5 py-3 text-right font-medium">Corte</th>
                 </tr>
               </thead>
@@ -372,7 +372,7 @@ export function Prestaciones() {
             {[
               ['Garantía acumulada', detalle.garantia],
               ['Intereses', detalle.intereses],
-              ['Adelantado', `−${dinero(detalle.moneda, Number(detalle.anticipos) + Number(detalle.corte_anticipos))}`],
+              ['Anticipos', `−${dinero(detalle.moneda, Number(detalle.anticipos) + Number(detalle.corte_anticipos))}`],
             ].map(([k, v], i) => (
               <div key={String(k)} className="flex justify-between">
                 <span className="text-ink/55">{k}</span>
@@ -382,7 +382,7 @@ export function Prestaciones() {
               </div>
             ))}
             <div className="border-hairline flex justify-between border-t pt-1.5">
-              <span className="text-ink/75 font-medium">Se le debe</span>
+              <span className="text-ink/75 font-medium">Saldo</span>
               <span className="tabular text-ink/90 font-semibold">
                 {dinero(detalle.moneda, detalle.saldo)}
               </span>
@@ -414,7 +414,7 @@ export function Prestaciones() {
                   ['Bono vacacional', liquidacion.bono_vacacional_monto],
                   ['Utilidades fraccionadas', liquidacion.utilidades_monto],
                   ['Indemnización', liquidacion.indemnizacion],
-                  ['Menos lo adelantado', `−${dinero(liquidacion.moneda, liquidacion.anticipos)}`],
+                  ['Anticipos', `−${dinero(liquidacion.moneda, liquidacion.anticipos)}`],
                 ].map(([k, v]) => (
                   <div key={String(k)} className="flex justify-between">
                     <span className="text-ink/55">{k}</span>
@@ -434,7 +434,7 @@ export function Prestaciones() {
               {liquidacion.estado === 'CALCULADA' && puede('NOMINA', 'TOTAL') ? (
                 <div className="mt-4 flex flex-wrap items-end gap-3">
                   <SelectBuscable
-                    label="Pagar desde"
+                    label="Cuenta"
                     vacio="Seleccione la cuenta"
                     valor={fAnt.cuenta_id}
                     onCambio={(v) => setFAnt({ ...fAnt, cuenta_id: v })}
@@ -606,7 +606,7 @@ export function Prestaciones() {
               onChange={(e) => setFCorte({ ...fCorte, intereses: e.target.value })}
             />
             <Input
-              label="Ya adelantado"
+              label="Anticipos"
               type="number"
               min="0"
               step="0.01"
@@ -820,14 +820,14 @@ export function Prestaciones() {
               required
             />
             <Select
-              label="Para qué"
+              label="Motivo"
               value={fAnt.motivo}
               onChange={(e) => setFAnt({ ...fAnt, motivo: e.target.value })}
               opciones={MOTIVOS_ANTICIPO}
               hint="La ley permite adelantar para vivienda, salud, educación y pensión alimentaria."
             />
             <SelectBuscable
-              label="De qué cuenta sale"
+              label="Cuenta"
               vacio="Sin mover tesorería"
               valor={fAnt.cuenta_id}
               onCambio={(v) => setFAnt({ ...fAnt, cuenta_id: v })}
@@ -901,7 +901,7 @@ export function Prestaciones() {
               required
             />
             <Select
-              label="Por qué sale"
+              label="Motivo"
               value={fLiq.motivo}
               onChange={(e) => setFLiq({ ...fLiq, motivo: e.target.value })}
               opciones={MOTIVOS_EGRESO}

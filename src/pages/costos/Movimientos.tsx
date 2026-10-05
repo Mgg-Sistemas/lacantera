@@ -205,7 +205,7 @@ function AgregarGasto({ onCerrar }: { onCerrar: () => void }) {
       </div>
       <div className="mt-4">
         <Input
-          label="Qué es"
+          label="Descripción"
           value={descripcion}
           onChange={(e) => setDescripcion(e.target.value)}
           placeholder="Comida del turno de la tarde"

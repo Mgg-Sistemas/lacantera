@@ -92,7 +92,7 @@ export interface RenglonProduccion {
 export const METODOS_ARRANQUE = [
   { valor: 'VOLADURA', etiqueta: 'Voladura' },
   { valor: 'MARTILLO', etiqueta: 'Martillo hidráulico' },
-  { valor: 'AMBOS', etiqueta: 'Los dos, según el material' },
+  { valor: 'AMBOS', etiqueta: 'Voladura y martillo' },
 ]
 
 export const ESTADOS_FRENTE = [

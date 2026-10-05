@@ -123,7 +123,7 @@ export function ModalRegistrarPago({
           IGTF. Sin ella la base no sabría a qué tasa registrarlo.
         */}
         <Select
-          label="Por dónde salió el dinero"
+          label="Cuenta"
           vacio={compatibles.length ? 'Seleccione' : `No hay ninguna registrada en ${instruccion.moneda}`}
           value={cuentaId}
           onChange={(e) => setCuentaId(e.target.value)}

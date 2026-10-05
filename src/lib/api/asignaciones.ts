@@ -112,17 +112,17 @@ export interface PorCobrar {
 export const MOTIVOS_SALDO = [
   {
     valor: 'DESCUENTO',
-    etiqueta: 'Se le descuenta',
+    etiqueta: 'Descuento',
     detalle: 'Va como deducción en la nómina del período.',
   },
   {
     valor: 'REPOSICION',
-    etiqueta: 'La repuso',
+    etiqueta: 'Reposición',
     detalle: 'Trajo otra. Entra al almacén por su recepción, no desde aquí.',
   },
   {
     valor: 'EXONERADO',
-    etiqueta: 'No se le cobra',
+    etiqueta: 'Exoneración',
     detalle: 'Se rompió trabajando o se decidió no cobrársela.',
   },
 ]

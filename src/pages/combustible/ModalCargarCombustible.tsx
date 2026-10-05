@@ -210,7 +210,7 @@ export function ModalCargarCombustible({
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Select
-          label="A qué tanque"
+          label="Tanque"
           vacio="Elegir"
           value={tanque}
           onChange={(e) => setTanque(e.target.value)}
@@ -224,7 +224,7 @@ export function ModalCargarCombustible({
           }
         />
         <Select
-          label="Qué combustible"
+          label="Combustible"
           vacio="Elegir"
           value={articulo}
           onChange={(e) => setArticulo(e.target.value)}
@@ -237,7 +237,7 @@ export function ModalCargarCombustible({
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input
-          label={`Cuántos ${unidad.toLowerCase()}`}
+          label={`Cantidad (${unidad.toLowerCase()})`}
           type="number"
           min="0.01"
           step="0.01"
@@ -246,7 +246,7 @@ export function ModalCargarCombustible({
           onChange={(e) => setCantidad(e.target.value)}
         />
         <Input
-          label={`Cuánto costó cada ${unidad.toLowerCase()} (USD)`}
+          label="Costo por unidad (USD)"
           type="number"
           min="0"
           step="0.0001"
@@ -279,7 +279,7 @@ export function ModalCargarCombustible({
             onChange={(e) => setSinCosto(e.target.checked)}
           />
           <span className="text-ink/80">
-            No costó nada para esta empresa
+            Sin costo
             <span className="text-ink/50 mt-0.5 block text-xs">
               {sinCosto
                 ? 'Va a su propio tanque y escriba abajo de dónde vino y quién asumió el gasto. Queda en el movimiento.'
@@ -290,7 +290,7 @@ export function ModalCargarCombustible({
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <Input label="Entra el" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
+        <Input label="Fecha" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
         <Input
           label="Referencia"
           placeholder="Factura, guía, nota"
@@ -301,7 +301,7 @@ export function ModalCargarCombustible({
 
       <div className="mt-4">
         <Textarea
-          label="De dónde viene"
+          label="Origen"
           rows={2}
           placeholder="Saldo inicial del tanque"
           value={motivo}

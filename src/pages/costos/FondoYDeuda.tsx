@@ -231,7 +231,7 @@ function MoverFondo({ tipo, onCerrar }: { tipo: 'entrega' | 'abono'; onCerrar: (
       </div>
       <div className="mt-4">
         <Input
-          label="Qué es"
+          label="Descripción"
           value={descripcion}
           onChange={(e) => setDescripcion(e.target.value)}
           placeholder={tipo === 'entrega' ? 'Entrega de la primera quincena' : 'Devolución parcial'}

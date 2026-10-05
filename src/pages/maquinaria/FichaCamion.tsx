@@ -90,7 +90,7 @@ export function FichaCamion() {
         <div className="space-y-4 lg:col-span-2">
           <Card>
             <CardHeader
-              title="Quién lo maneja"
+              title="Chofer"
               subtitle={
                 v.chofer_actual
                   ? `Desde el ${fecha(v.chofer_desde!)}`
@@ -166,12 +166,12 @@ export function FichaCamion() {
           <Card>
             <CardHeader title="La ficha" />
             <dl className="mt-4 space-y-3 text-sm">
-              <Dato termino="Carga" valor={`${Number(v.capacidad_m3)} m³`} />
+              <Dato termino="Capacidad" valor={`${Number(v.capacidad_m3)} m³`} />
               {v.capacidad_ton ? (
                 <Dato termino="En toneladas" valor={`${Number(v.capacidad_ton)} t`} />
               ) : null}
               <Dato
-                termino="De quién es"
+                termino="Dueño"
                 valor={v.propio ? 'De la empresa' : (v.transportista ?? 'De un transportista')}
               />
               {!v.activo ? <Dato termino="Estado" valor="Fuera de servicio" /> : null}

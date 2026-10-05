@@ -803,14 +803,14 @@ export function Asistencia() {
             */}
             <div className="grid gap-4 sm:grid-cols-2">
               <Select
-                label="Cómo se paga"
+                label="Método de pago"
                 vacio="Como el resto de la nómina"
                 value={nuevoMonto.metodo_pago}
                 onChange={(e) => setNuevoMonto((n) => ({ ...n, metodo_pago: e.target.value }))}
                 opciones={opcionesDe(metodos.data)}
               />
               <Input
-                label="Cuándo se paga"
+                label="Fecha del pago"
                 type="date"
                 value={nuevoMonto.pagar_en}
                 onChange={(e) => setNuevoMonto((n) => ({ ...n, pagar_en: e.target.value }))}

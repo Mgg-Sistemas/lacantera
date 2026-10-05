@@ -742,7 +742,7 @@ export function Facturacion() {
             del cliente se corrige con nota de crédito, no anulándola.
           </p>
           <Textarea
-            label="Por qué se anula"
+            label="Motivo"
             hint="Queda en el registro de auditoría con su nombre y la hora."
             rows={3}
             value={motivo}

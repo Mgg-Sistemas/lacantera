@@ -345,7 +345,7 @@ export function TarjetaCarnet({
         */}
         {pidiendo === 'anular' || carnet ? (
         <Textarea
-          label={pidiendo === 'anular' ? 'Por qué se anula' : 'Por qué se emite otro (opcional)'}
+          label={pidiendo === 'anular' ? 'Motivo' : 'Motivo (opcional)'}
           rows={3}
           value={motivo}
           onChange={(ev) => setMotivo(ev.target.value)}

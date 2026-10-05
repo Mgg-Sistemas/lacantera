@@ -93,7 +93,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
     ],
   },
   {
-    titulo: 'La gente',
+    titulo: 'Personal',
     acciones: [
       {
         titulo: 'Cargar personal por planilla',

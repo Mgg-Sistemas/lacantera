@@ -217,7 +217,7 @@ function ModalTanda({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Select
-          label="Por dónde salió el dinero"
+          label="Cuenta"
           vacio={compatibles.length ? 'Seleccione' : `No hay ninguna en ${moneda}`}
           value={cuentaId}
           onChange={(e) => setCuentaId(e.target.value)}
@@ -431,7 +431,7 @@ export function Pagos() {
           <Card className="mb-4">
             <div className="grid gap-3 sm:grid-cols-3">
               <Select
-                label="Qué urge"
+                label="Prioridad"
                 vacio="Todas las prioridades"
                 value={prioridad}
                 onChange={(e) => setPrioridad(e.target.value)}
@@ -442,7 +442,7 @@ export function Pagos() {
                 ]}
               />
               <Select
-                label="Para qué unidad"
+                label="Unidad"
                 vacio="Todas las unidades"
                 value={unidad}
                 onChange={(e) => setUnidad(e.target.value)}
@@ -453,9 +453,9 @@ export function Pagos() {
                 value={orden}
                 onChange={(e) => setOrden(e.target.value as typeof orden)}
                 opciones={[
-                  { valor: 'ANTIGUEDAD', etiqueta: 'Lo que lleva más esperando' },
-                  { valor: 'PRIORIDAD', etiqueta: 'Lo más urgente' },
-                  { valor: 'MONTO', etiqueta: 'De mayor a menor monto' },
+                  { valor: 'ANTIGUEDAD', etiqueta: 'Antigüedad' },
+                  { valor: 'PRIORIDAD', etiqueta: 'Prioridad' },
+                  { valor: 'MONTO', etiqueta: 'Monto' },
                 ]}
               />
             </div>

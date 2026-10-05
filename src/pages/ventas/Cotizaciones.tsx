@@ -585,7 +585,7 @@ export function Totales({
       <div className="border-hairline border-t pt-1.5">{linea('Total', total, true)}</div>
       {retencion && retencion > 0 ? (
         <>
-          {linea('IVA que retiene el cliente', -retencion)}
+          {linea('Retención de IVA', -retencion)}
           <div className="border-hairline border-t pt-1.5">
             {linea('A cobrar', total - retencion, true)}
           </div>

@@ -243,7 +243,7 @@ export function Entregar() {
             />
 
             <SelectBuscable
-              label="De qué almacén sale"
+              label="Almacén"
               vacio="Elija el almacén"
               valor={almacen}
               onCambio={(v) => {
@@ -274,7 +274,7 @@ export function Entregar() {
             cuál. Un desplegable escondería la mitad de la pregunta.
           */}
           <div className="border-hairline mt-5 border-t pt-5">
-            <p className="text-ink/75 mb-2 text-sm font-medium">¿Para qué se le da?</p>
+            <p className="text-ink/75 mb-2 text-sm font-medium">Clase de entrega</p>
 
             <div className="grid gap-2 sm:grid-cols-2">
               {(
@@ -373,9 +373,9 @@ export function Entregar() {
                 <thead>
                   <tr className="text-ink/45 border-hairline border-y text-left text-xs">
                     <th className="px-5 py-3 font-medium">Artículo</th>
-                    <th className="px-3 py-3 font-medium">Al entregarlo</th>
+                    <th className="px-3 py-3 font-medium">Modo de entrega</th>
                     <th className="px-3 py-3 text-right font-medium">Disponible</th>
-                    <th className="px-5 py-3 text-right font-medium">Cuánto</th>
+                    <th className="px-5 py-3 text-right font-medium">Cantidad</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -387,7 +387,7 @@ export function Entregar() {
                       </td>
                       <td className="px-3 py-2.5">
                         <Chip tone={a.modo_entrega === 'RETORNABLE' ? 'royal' : 'neutral'}>
-                          {a.modo_entrega === 'RETORNABLE' ? 'Vuelve' : 'Se gasta'}
+                          {a.modo_entrega === 'RETORNABLE' ? 'Retornable' : 'Consumible'}
                         </Chip>
                       </td>
                       <td className="tabular text-ink/70 px-3 py-2.5 text-right">

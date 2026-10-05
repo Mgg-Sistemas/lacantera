@@ -334,7 +334,7 @@ export function FotosDeCarga({
           }
         >
           <Textarea
-            label="Por qué se quita"
+            label="Motivo"
             rows={2}
             autoFocus
             value={motivo}

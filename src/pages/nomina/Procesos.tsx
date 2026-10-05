@@ -566,7 +566,7 @@ export function Procesos() {
         >
           <div className="space-y-4">
             <SelectBuscable
-              label="De qué cuenta sale"
+              label="Cuenta"
               vacio="Seleccione la cuenta"
               valor={pago.cuenta}
               onCambio={(v) => setPago((p) => ({ ...p, cuenta: v }))}
@@ -620,7 +620,7 @@ export function Procesos() {
           }
         >
           <Textarea
-            label="Por qué se anula"
+            label="Motivo"
             rows={3}
             autoFocus
             value={motivo}
@@ -666,7 +666,7 @@ export function Procesos() {
             refresco la deja aprobada.
           </p>
           <Textarea
-            label="Por qué se devuelve"
+            label="Motivo"
             rows={3}
             autoFocus
             value={motivoDevolver}

@@ -255,7 +255,7 @@ export function QueLlevaEncima({
               catálogo de una cantera y no tiene por qué estarlo.
             */}
             <SelectBuscable
-              label="¿Está en el catálogo?"
+              label="Artículo"
               vacio="No está, lo escribo abajo"
               valor={f.articulo_id}
               onCambio={(v) => {
@@ -296,7 +296,7 @@ export function QueLlevaEncima({
             */}
             {f.articulo_id && dondeHay.length > 0 ? (
               <SelectBuscable
-                label="¿De qué almacén salió?"
+                label="Origen"
                 vacio="De ninguno: vino de fuera"
                 valor={f.almacen_id}
                 onCambio={(v) => setF((x) => ({ ...x, almacen_id: v }))}
@@ -348,7 +348,7 @@ export function QueLlevaEncima({
               ficha de nómina.
             */}
             <Input
-              label="Por qué se modificó"
+              label="Motivo"
               placeholder="Para tener señal en el frente norte"
               value={f.motivo}
               onChange={(e) => setF({ ...f, motivo: e.target.value })}
@@ -372,7 +372,7 @@ export function QueLlevaEncima({
                 hint="El de la antena, no el de la máquina: es lo que la identifica si mañana se pasa a otro equipo."
               />
               <Input
-                label="Cuántos"
+                label="Cantidad"
                 type="number"
                 min="0"
                 step="0.01"
@@ -392,7 +392,7 @@ export function QueLlevaEncima({
                 }
               />
               <Input
-                label="Cuándo se le montó"
+                label="Fecha"
                 type="date"
                 max={hoyEnCaracas()}
                 value={f.fecha}
@@ -409,7 +409,7 @@ export function QueLlevaEncima({
               */}
               {f.almacen_id ? null : (
                 <Input
-                  label="Lo que costó (USD)"
+                  label="Costo (USD)"
                   type="number"
                   min="0"
                   step="0.01"
@@ -480,7 +480,7 @@ export function QueLlevaEncima({
             ficha, otra se repone y la tercera se reclama.
           */}
           <Input
-            label="Por qué se quita"
+            label="Motivo"
             placeholder="Se pasó a la 0453"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
@@ -501,7 +501,7 @@ export function QueLlevaEncima({
           {quitando.articulo_id && Number(quitando.cantidad ?? 0) > 0 ? (
             <div className="mt-4">
               <SelectBuscable
-                label="¿Vuelve a algún almacén?"
+                label="Destino"
                 vacio="No vuelve: se gastó o se fue"
                 valor={destino}
                 onCambio={setDestino}

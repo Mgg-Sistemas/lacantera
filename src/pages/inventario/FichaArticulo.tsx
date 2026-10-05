@@ -151,7 +151,7 @@ export function FichaArticulo() {
           lo registró. Lo que cambia es que ahora lo comparten las tres fichas. */}
       <Historial
         className="mt-4"
-        titulo="Su historia"
+        titulo="Historial"
         subtitulo="Todo lo que le ha pasado desde que se creó, de lo más reciente a lo más viejo."
         hechos={historial.data}
         cargando={historial.isPending}

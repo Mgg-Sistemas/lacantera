@@ -792,7 +792,7 @@ function ModalDestinatario({ onCerrar, hay }: { onCerrar: () => void; hay: boole
     <Modal
       abierto
       onCerrar={onCerrar}
-      titulo={hay ? 'Cambiar a quién le llega' : 'A quién le llega el respaldo'}
+      titulo={hay ? 'Cambiar el destinatario' : 'Destinatario del respaldo'}
       descripcion="Una sola dirección a la vez. La anterior deja de recibirlo, y queda guardada con su motivo."
       ancho="md"
       acciones={
@@ -847,7 +847,7 @@ function ModalDestinatario({ onCerrar, hay }: { onCerrar: () => void; hay: boole
 
       <div className="mt-4">
         <Textarea
-          label="Por qué va a esa dirección"
+          label="Motivo"
           rows={3}
           hint="Lo pide la base, no la pantalla. Un «campo obligatorio» se rellena con un punto; una razón escrita se escribe."
           value={motivo}
@@ -861,9 +861,9 @@ function ModalDestinatario({ onCerrar, hay }: { onCerrar: () => void; hay: boole
 }
 
 const CADENCIAS: { valor: Cadencia; etiqueta: string }[] = [
-  { valor: 'SEMANAL', etiqueta: 'Cada semana' },
-  { valor: 'QUINCENAL', etiqueta: 'Cada quincena' },
-  { valor: 'MENSUAL', etiqueta: 'Cada mes' },
+  { valor: 'SEMANAL', etiqueta: 'Semanal' },
+  { valor: 'QUINCENAL', etiqueta: 'Quincenal' },
+  { valor: 'MENSUAL', etiqueta: 'Mensual' },
 ]
 
 const DIAS_DE_LA_SEMANA = [
@@ -914,7 +914,7 @@ function LaProgramacion() {
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">Cada cuánto sale</p>
+        <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">Frecuencia</p>
         <Button
           variant="outline"
           size="sm"
@@ -1037,7 +1037,7 @@ function ModalProgramacion({
     <Modal
       abierto
       onCerrar={onCerrar}
-      titulo="Cada cuánto sale el respaldo"
+      titulo="Frecuencia del respaldo"
       descripcion="La hora es la de Caracas. El sistema la convierte sola a la del servidor."
       ancho="md"
       acciones={
@@ -1067,7 +1067,7 @@ function ModalProgramacion({
     >
       <div className="grid gap-4">
         <div>
-          <p className="text-ink/70 mb-1.5 text-sm font-medium">Cada cuánto</p>
+          <p className="text-ink/70 mb-1.5 text-sm font-medium">Frecuencia</p>
           <Segmento
             opciones={CADENCIAS.map((c) => ({ valor: c.valor, etiqueta: c.etiqueta }))}
             valor={cadencia}
@@ -1083,7 +1083,7 @@ function ModalProgramacion({
         <div className="grid gap-4 sm:grid-cols-3">
           {cadencia === 'SEMANAL' ? (
             <Select
-              label="Qué día"
+              label="Día"
               value={dia}
               onChange={(e) => setDia(e.target.value)}
               opciones={DIAS_DE_LA_SEMANA.map((d, i) => ({
@@ -1093,7 +1093,7 @@ function ModalProgramacion({
             />
           ) : cadencia === 'MENSUAL' ? (
             <Select
-              label="Qué día del mes"
+              label="Día del mes"
               hint="Hasta el 28: los meses cortos no tienen 29, 30 ni 31."
               value={dia}
               onChange={(e) => setDia(e.target.value)}
@@ -1104,7 +1104,7 @@ function ModalProgramacion({
             />
           ) : (
             <div className="sm:col-span-1">
-              <p className="text-ink/70 mb-1.5 text-sm font-medium">Qué días</p>
+              <p className="text-ink/70 mb-1.5 text-sm font-medium">Días</p>
               <p className="text-ink/55 border-hairline rounded-md border px-3 py-2 text-sm">
                 El 1 y el 16
               </p>
@@ -1112,7 +1112,7 @@ function ModalProgramacion({
           )}
 
           <Select
-            label="A qué hora"
+            label="Hora"
             hint="Hora de Caracas."
             value={hora}
             onChange={(e) => setHora(e.target.value)}
@@ -1123,7 +1123,7 @@ function ModalProgramacion({
           />
 
           <Select
-            label="Y minuto"
+            label="Minuto"
             value={minuto}
             onChange={(e) => setMinuto(e.target.value)}
             opciones={[0, 15, 30, 45].map((m) => ({
@@ -1134,14 +1134,14 @@ function ModalProgramacion({
         </div>
 
         <Interruptor
-          etiqueta="Que salga"
+          etiqueta="Activo"
           detalle="Apagado, la programación se guarda pero no sale ningún correo."
           encendido={activo}
           onCambio={setActivo}
         />
 
         <Textarea
-          label="Por qué así"
+          label="Motivo"
           rows={2}
           hint="Queda guardado con la programación. Dentro de un año explica por qué se eligió esta frecuencia."
           value={motivo}
@@ -1209,7 +1209,7 @@ function ModalCorregir({
       </div>
       <div className="mt-4">
         <Textarea
-          label="Por qué se corrige"
+          label="Motivo"
           rows={2}
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
@@ -1265,7 +1265,7 @@ function ModalQuitar({
       }
     >
       <Textarea
-        label="Por qué deja de recibirlo"
+        label="Motivo"
         rows={2}
         value={motivo}
         onChange={(e) => setMotivo(e.target.value)}

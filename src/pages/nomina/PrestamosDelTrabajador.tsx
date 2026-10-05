@@ -321,7 +321,7 @@ export function PrestamosDelTrabajador({
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="Cuánto"
+              label="Monto"
               type="number"
               inputMode="decimal"
               value={nuevo.capital}
@@ -337,7 +337,7 @@ export function PrestamosDelTrabajador({
               ]}
             />
             <Input
-              label="En cuántas quincenas"
+              label="Cuotas"
               type="number"
               hint="Opcional. Una sola quincena es 1."
               value={nuevo.cuotas}
@@ -345,7 +345,7 @@ export function PrestamosDelTrabajador({
             />
             <div className="sm:col-span-2">
               <Textarea
-                label="Para qué es"
+                label="Motivo"
                 rows={2}
                 value={nuevo.motivo}
                 onChange={(e) => setNuevo({ ...nuevo, motivo: e.target.value })}
@@ -400,7 +400,7 @@ export function PrestamosDelTrabajador({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="Cuánto"
+              label="Monto"
               type="number"
               inputMode="decimal"
               hint={`Máximo ${dinero(pagando.prestamo.moneda, pagando.prestamo.saldo)}`}
@@ -451,7 +451,7 @@ export function PrestamosDelTrabajador({
           }
         >
           <Textarea
-            label="Por qué se anula"
+            label="Motivo"
             rows={2}
             hint="Al menos diez letras: dentro de un año esto será lo único que lo explique."
             value={anulando.motivo}

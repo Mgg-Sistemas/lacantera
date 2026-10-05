@@ -875,7 +875,7 @@ export function NotasDeEntrega() {
             />
             <div className="sm:col-span-3">
               <SelectBuscable
-                label="De qué patio sale"
+                label="Patio"
                 vacio="Seleccione el patio o almacén"
                 valor={almacenId}
                 onCambio={(v) => setAlmacenId(v)}
@@ -1001,7 +1001,7 @@ export function NotasDeEntrega() {
                 {choferId === '' ? (
                   <div className="mt-2 grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
                     <Input
-                      label="¿No está? Nombre del chofer"
+                      label="Nombre del chofer"
                       value={nuevoChofer}
                       onChange={(e) => setNuevoChofer(e.target.value)}
                     />
@@ -1057,7 +1057,7 @@ export function NotasDeEntrega() {
                 {vehiculoDespId === '' ? (
                   <div className="mt-2 grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
                     <Input
-                      label="¿No está? Vehículo (marca/modelo)"
+                      label="Vehículo (marca/modelo)"
                       value={nuevoVehiculo}
                       onChange={(e) => setNuevoVehiculo(e.target.value)}
                     />
@@ -1404,7 +1404,7 @@ export function NotasDeEntrega() {
           }
         >
           <Textarea
-            label="Por qué se anula"
+            label="Motivo"
             hint="Queda escrito en el registro de auditoría con su nombre."
             rows={3}
             value={motivo}
@@ -1445,7 +1445,7 @@ export function NotasDeEntrega() {
           }
         >
           <Textarea
-            label={cerrando.como === 'RECHAZAR' ? 'Por qué no se aprueba' : 'Por qué se cancela'}
+            label="Motivo"
             rows={3}
             autoFocus
             value={motivoCierre}

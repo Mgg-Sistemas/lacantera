@@ -124,7 +124,7 @@ export function ModalHorometro({
       <div className="grid gap-4 sm:grid-cols-3">
         <Input label="Fecha" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
         <Input
-          label="Al arrancar"
+          label="Inicial"
           type="number"
           min="0"
           step="0.01"
@@ -133,7 +133,7 @@ export function ModalHorometro({
           onChange={(e) => setInicial(e.target.value)}
         />
         <Input
-          label="Al terminar"
+          label="Final"
           type="number"
           min="0"
           step="0.01"

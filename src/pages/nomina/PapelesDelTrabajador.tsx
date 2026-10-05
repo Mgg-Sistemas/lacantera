@@ -287,7 +287,7 @@ function AgregarPapel({ empleadoId, onCerrar }: { empleadoId: number; onCerrar: 
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <Select
-            label="Qué papel es"
+            label="Tipo de documento"
             value={tipo}
             onChange={(e) => setTipo(e.target.value)}
             opciones={(tipos.data ?? [])

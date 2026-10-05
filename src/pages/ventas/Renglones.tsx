@@ -222,7 +222,7 @@ export function Renglones({
             {patios ? (
               <div className="sm:col-span-4">
                 <Select
-                  label="De qué patio sale"
+                  label="Patio"
                   vacio={
                     patios.deLaNota
                       ? `El de la nota (${patios.opciones.find((o) => o.valor === patios.deLaNota)?.etiqueta ?? '—'})`
@@ -237,7 +237,7 @@ export function Renglones({
 
             <div className={patios ? 'sm:col-span-3' : 'sm:col-span-4'}>
               <Select
-                label="Se vende por"
+                label="Unidad"
                 value={fila.unidad}
                 disabled={!articulo}
                 onChange={(e) => elegirUnidad(fila, e.target.value)}
@@ -289,7 +289,7 @@ export function Renglones({
 
             <div className="sm:col-span-4">
               <Select
-                label="A qué precio sale"
+                label="Precio"
                 vacio={fila.articulo_id ? 'Seleccione la condición' : '—'}
                 value={fila.condicion}
                 disabled={!fila.articulo_id}
@@ -378,7 +378,7 @@ export function Renglones({
             {fila.condicion === 'SIN_CARGO' ? (
               <div className="sm:col-span-12">
                 <Input
-                  label="Por qué sale sin cargo"
+                  label="Motivo"
                   value={fila.motivo}
                   onChange={(e) => cambiar(fila.clave, { motivo: e.target.value })}
                   hint="Queda escrito en el renglón y en el papel."

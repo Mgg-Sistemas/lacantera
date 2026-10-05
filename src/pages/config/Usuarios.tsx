@@ -1971,7 +1971,7 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
       >
         <div className="space-y-4">
           <SelectBuscable
-            label="A quién"
+            label="Usuario"
             opciones={opcionesPersona}
             valor={forma.usuario_id}
             onCambio={(v: string) => setForma((f) => ({ ...f, usuario_id: v }))}
@@ -1990,7 +1990,7 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
           */}
           <div>
             <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-              <span className="text-ink/80 text-sm font-medium">Qué se le extiende</span>
+              <span className="text-ink/80 text-sm font-medium">Permisos</span>
               <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 {visibles.length > 0 && !todasMarcadas ? (
                   <button
@@ -2213,7 +2213,7 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
         }
       >
         <Textarea
-          label="Por qué se retira"
+          label="Motivo"
           value={motivoRetiro}
           onChange={(e) => setMotivoRetiro(e.target.value)}
           rows={2}
@@ -2551,7 +2551,7 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
       >
         <div className="space-y-4">
           <SelectBuscable
-            label="A quién"
+            label="Usuario"
             opciones={opcionesPersona}
             valor={forma.usuario_id}
             onCambio={(v: string) => setForma((f) => ({ ...f, usuario_id: v }))}
@@ -2561,7 +2561,7 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
 
           <div>
             <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-              <span className="text-ink/80 text-sm font-medium">Qué no debe poder</span>
+              <span className="text-ink/80 text-sm font-medium">Permisos</span>
               {forma.acciones.length > 0 ? (
                 <button
                   type="button"
@@ -2735,7 +2735,7 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
       >
         <div className="space-y-3">
           <Textarea
-            label="Por qué se levanta"
+            label="Motivo"
             value={motivoLevantar}
             onChange={(e) => setMotivoLevantar(e.target.value)}
             rows={2}

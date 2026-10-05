@@ -183,10 +183,10 @@ function ComoSeCompro({ articuloId, unidad }: { articuloId: number; unidad: stri
         <table className="w-full min-w-[420px] text-sm">
           <thead>
             <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-              <th className="py-2 pr-3 font-medium">Se compró en</th>
+              <th className="py-2 pr-3 font-medium">Presentación</th>
               <th className="px-3 py-2 font-medium">Veces</th>
-              <th className="px-3 py-2 text-right font-medium">Salió a</th>
-              <th className="py-2 pl-3 font-medium">Cuándo</th>
+              <th className="px-3 py-2 text-right font-medium">Costo</th>
+              <th className="py-2 pl-3 font-medium">Fecha</th>
             </tr>
           </thead>
           <tbody>

@@ -307,7 +307,7 @@ export function ModalCobro({
             <div key={l.clave} className="border-hairline rounded-[6px] border p-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <SelectBuscable
-                  label="A qué cuenta entró"
+                  label="Cuenta"
                   vacio="Seleccione la cuenta"
                   valor={l.cuenta_id}
                   onCambio={(v) => {
@@ -332,7 +332,7 @@ export function ModalCobro({
                   onChange={(e) => cambiarDinero(l.clave, { monto: e.target.value })}
                 />
                 <Select
-                  label="Cómo pagó"
+                  label="Método de pago"
                   value={l.metodo}
                   onChange={(e) => cambiarDinero(l.clave, { metodo: e.target.value })}
                   opciones={opcionesDe(metodosDeLaCuenta)}
@@ -395,7 +395,7 @@ export function ModalCobro({
           {credito ? (
             <div className="border-hairline grid gap-3 rounded-[6px] border p-3 sm:grid-cols-2">
               <Select
-                label="Qué crédito"
+                label="Saldo"
                 value={credito.saldo_id}
                 onChange={(e) => {
                   const c = creditosUsables.find((x) => String(x.id) === e.target.value)
@@ -407,7 +407,7 @@ export function ModalCobro({
                 }))}
               />
               <Input
-                label={`Cuánto usar (${factura.moneda})`}
+                label={`Monto (${factura.moneda})`}
                 type="number"
                 min="0"
                 step="0.01"
@@ -446,7 +446,7 @@ export function ModalCobro({
             <div className="grid gap-3 sm:grid-cols-2">
               <SelectBuscable
                 className="sm:col-span-2"
-                label="Qué material trae"
+                label="Material"
                 vacio="Seleccione el material"
                 valor={material.articulo_id}
                 onCambio={elegirArticulo}
@@ -455,7 +455,7 @@ export function ModalCobro({
                   .map((a) => ({ valor: String(a.id), etiqueta: `${a.codigo} · ${a.nombre}`, detalle: a.unidad }))}
               />
               <Select
-                label="A qué patio entra"
+                label="Patio"
                 vacio="Seleccione el patio"
                 value={material.almacen_id}
                 onChange={(e) => setMaterial({ ...material, almacen_id: e.target.value })}
@@ -464,7 +464,7 @@ export function ModalCobro({
               <div className="flex gap-2">
                 <Input
                   className="flex-1"
-                  label="Cuánto"
+                  label="Cantidad"
                   type="number"
                   min="0"
                   step="0.01"
@@ -486,7 +486,7 @@ export function ModalCobro({
                 ) : null}
               </div>
               <Select
-                label="A qué precio se toma"
+                label="Precio"
                 value={material.condicion}
                 disabled={!material.articulo_id}
                 onChange={(e) => setMaterial({ ...material, condicion: e.target.value as CondicionDelMaterial })}
@@ -539,7 +539,7 @@ export function ModalCobro({
               ) : null}
               {material.condicion === 'ACORDADO' || material.condicion === 'DESCUENTO' ? (
                 <Input
-                  label="Por qué ese precio"
+                  label="Motivo"
                   value={material.motivo}
                   onChange={(e) => setMaterial({ ...material, motivo: e.target.value })}
                 />

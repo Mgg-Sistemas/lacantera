@@ -24,7 +24,7 @@ export const diceQueIncluye = (incluye: ClaseCosto[]): string =>
   incluye.length === 0 ? 'nada todavía' : incluye.map((c) => CLASES[c].toLowerCase()).join(' + ')
 
 export const ORIGENES: Record<string, string> = {
-  MANUAL: 'Tecleado aquí',
+  MANUAL: 'Manual',
   ACARREO: 'Viajes de camiones',
   SALIDA_PLANTA: 'Salidas de planta',
   FIJO: 'Gasto fijo',

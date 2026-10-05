@@ -118,7 +118,7 @@ export function ModalChofer({
       {deLaCasa ? (
         <div className="mt-4">
           <SelectBuscable
-            label="Quién"
+            label="Chofer"
             vacio="Seleccione a la persona"
             valor={empleadoId}
             onCambio={(v) => setEmpleadoId(v)}
@@ -149,14 +149,14 @@ export function ModalChofer({
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input
-          label={esTraspaso ? 'Lo recibe el' : 'Desde'}
+          label={esTraspaso ? 'Desde' : 'Desde'}
           type="date"
           max={hoy}
           value={desde}
           onChange={(e) => setDesde(e.target.value)}
         />
         <Input
-          label="Por qué"
+          label="Motivo"
           placeholder={esTraspaso ? 'Vacaciones, reposo, cambio de ruta' : 'Opcional'}
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}

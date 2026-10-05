@@ -148,7 +148,7 @@ export function ModalEditarNotaEntrega({
         </div>
         <Select label="Moneda" value={moneda} onChange={(e) => setMoneda(e.target.value)} opciones={monedas} />
         <SelectBuscable
-          label="De qué patio sale"
+          label="Patio"
           vacio="Seleccione el patio o almacén"
           valor={almacenId}
           onCambio={setAlmacenId}
@@ -231,7 +231,7 @@ export function ModalEditarNotaEntrega({
 
       <div className="mt-4">
         <Textarea
-          label="Por qué se edita"
+          label="Motivo"
           hint="Queda escrito en el registro de auditoría con su nombre."
           rows={2}
           value={motivo}

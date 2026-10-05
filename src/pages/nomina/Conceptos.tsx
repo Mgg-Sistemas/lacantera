@@ -252,7 +252,7 @@ export function Conceptos() {
         >
           <div className="space-y-4">
             <Input
-              label="Cómo se llama"
+              label="Nombre"
               placeholder="Bono de transporte"
               hint="Es lo que va impreso en el recibo del trabajador."
               value={edicion.nombre}
@@ -294,7 +294,7 @@ export function Conceptos() {
             />
 
             <Select
-              label="Qué hace en el recibo"
+              label="Tipo"
               value={edicion.tipo}
               onChange={(e) =>
                 setEdicion((x) =>

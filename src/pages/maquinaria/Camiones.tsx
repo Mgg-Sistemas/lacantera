@@ -109,7 +109,7 @@ export function CamionesDeLaFlota({
 
       {propios.length > 0 ? (
         <Grupo
-          titulo="De la empresa"
+          titulo="Flota propia"
           nota="Llevan horómetro y mantenimiento. El semáforo viene de su ficha de máquina."
           camiones={propios}
           puedeEditar={puedeEditar}
@@ -119,7 +119,7 @@ export function CamionesDeLaFlota({
 
       {ajenos.length > 0 ? (
         <Grupo
-          titulo="De transportistas"
+          titulo="Transportistas"
           nota="No se les lleva mantenimiento: no son de la empresa. Van agrupados por la empresa a la que pertenecen, que es a quien se le paga el acarreo."
           camiones={ajenos}
           puedeEditar={puedeEditar}
@@ -547,7 +547,7 @@ export function ModalCamion({
         </div>
       </div>
 
-      <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">De quién es</h3>
+      <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Dueño</h3>
       <p className="text-ink/50 mb-3 text-xs leading-relaxed">
         La empresa es a quien se le paga el acarreo: los viajes de este camión se agrupan por ella
         en el registro de pago.
@@ -555,7 +555,7 @@ export function ModalCamion({
 
       <div className="grid gap-4">
         <Select
-          label="Empresa a la que pertenece"
+          label="Empresa"
           vacio="Seleccione la empresa"
           value={empresaElegida}
           disabled={duenoBloqueado}
@@ -612,7 +612,7 @@ export function ModalCamion({
         ) : null}
       </div>
 
-      <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Cuánto carga</h3>
+      <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Capacidad</h3>
       <p className="text-ink/50 mb-3 text-xs leading-relaxed">
         Los metros cúbicos son obligatorios: es la medida con la que se despacha hoy. Las toneladas
         quedan vacías hasta que alguien las pese — deducirlas de los metros cúbicos da un número

@@ -825,14 +825,14 @@ function ModalDespacho({
         // vale y emitir otro. Si cambió la cantidad o la fecha, el inventario
         // lo cuenta con un reverso y una salida nueva, a la vista.
         <Input
-          label="De qué tanque"
+          label="Tanque"
           value={`${corrigiendo.tanque} · ${corrigiendo.combustible}`}
           disabled
           hint="El tanque del vale no se cambia: para eso se anula y se emite otro."
         />
       ) : (
         <Select
-          label="De qué tanque"
+          label="Tanque"
           vacio="Elegir"
           value={tanque}
           onChange={(e) => setTanque(e.target.value)}
@@ -852,7 +852,7 @@ function ModalDespacho({
           van juntas la gente contesta la máquina y da el motivo por sabido. */}
       <div className="mt-4">
         <Select
-          label="Para qué"
+          label="Uso"
           vacio="Elegir"
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
@@ -893,7 +893,7 @@ function ModalDespacho({
           y esconderlas obligaria a abrir Maquinaria antes de poder surtir.
         */}
         <SelectBuscable
-          label="A qué máquina"
+          label="Máquina"
           vacio="No está en la ficha"
           valor={maquina}
           onCambio={(v) => setMaquina(v)}
@@ -920,7 +920,7 @@ function ModalDespacho({
       {sinFicha ? (
         <div className="mt-4">
           <Input
-            label="A qué se le echó"
+            label="Destino"
             placeholder="Planta eléctrica de la oficina"
             value={destino}
             onChange={(e) => setDestino(e.target.value)}
@@ -929,7 +929,7 @@ function ModalDespacho({
       ) : (
         <div className="mt-4">
           <Input
-            label="Horómetro al echarle"
+            label="Horómetro"
             type="number"
             min="0"
             step="0.01"
@@ -965,7 +965,7 @@ function ModalDespacho({
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input
-          label={`Cuántos ${enPlural(elegido?.unidad) || 'litros'}`}
+          label={`Cantidad (${enPlural(elegido?.unidad) || 'litros'})`}
           type="number"
           min="0.01"
           step="0.01"
@@ -983,7 +983,7 @@ function ModalDespacho({
 
       <div className="mt-4">
         <SelectBuscable
-          label="Quién lo recibió"
+          label="Receptor"
           vacio="No está en la nómina"
           valor={empleado}
           onCambio={(v) => setEmpleado(v)}
@@ -1262,7 +1262,7 @@ function ModalPasarAlTanque({
       ) : (
         <>
           <SelectBuscable
-            label="A qué tanque"
+            label="Destino"
             vacio="Seleccione el tanque"
             valor={tanque}
             onCambio={setTanque}
@@ -1276,7 +1276,7 @@ function ModalPasarAlTanque({
 
           <Input
             className="mt-3"
-            label="Cuánto se pasa"
+            label="Cantidad"
             type="number"
             min="0"
             step="0.01"
@@ -1294,7 +1294,7 @@ function ModalPasarAlTanque({
 
           <Textarea
             className="mt-3"
-            label="Por qué se mueve"
+            label="Motivo"
             rows={2}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}

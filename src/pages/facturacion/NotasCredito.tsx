@@ -185,7 +185,7 @@ export function NotasCredito() {
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Nota</th>
-                  <th className="px-3 py-3 font-medium">Corrige</th>
+                  <th className="px-3 py-3 font-medium">Factura</th>
                   <th className="px-3 py-3 font-medium">Cliente</th>
                   <th className="px-3 py-3 font-medium">Motivo</th>
                   <th className="px-3 py-3 text-right font-medium">Monto</th>
@@ -283,7 +283,7 @@ export function NotasCredito() {
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Select
-              label="Factura que se corrige"
+              label="Factura"
               value={facturaId}
               onChange={(e) => elegirFactura(e.target.value)}
               opciones={[
@@ -334,7 +334,7 @@ export function NotasCredito() {
                       <th className="px-3 py-2.5 font-medium">Renglón de la factura</th>
                       <th className="w-28 px-3 py-2.5 font-medium">Cantidad</th>
                       <th className="w-32 px-3 py-2.5 font-medium">Precio</th>
-                      <th className="w-44 px-3 py-2.5 font-medium">¿Vuelve al patio?</th>
+                      <th className="w-44 px-3 py-2.5 font-medium">Patio</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -550,7 +550,7 @@ export function NotasCredito() {
           }
         >
           <Textarea
-            label="Por qué se anula"
+            label="Motivo"
             rows={3}
             value={motivoAnulacion}
             onChange={(e) => setMotivoAnulacion(e.target.value)}

@@ -903,7 +903,7 @@ export function FichaTrabajador() {
         }
       >
         <SelectBuscable
-          label="Qué cuenta es suya"
+          label="Usuario"
           opciones={(cuentasLibres.data ?? []).map((c: { id: string; usuario: string; nombre: string; cargo: string | null }) => ({
             valor: c.id,
             nombre: c.nombre,
@@ -982,7 +982,7 @@ export function FichaTrabajador() {
               encendido={e.eventual}
               deshabilitado={marcarEventual.isPending}
               onCambio={(v) => marcarEventual.mutate({ id: e.id, eventual: v })}
-              etiqueta="Contratado por día o por proyecto puntual"
+              etiqueta="Eventual"
               detalle={
                 e.eventual
                   ? 'Ahora mismo NO entra en la nómina semanal, quincenal ni mensual.'
@@ -1040,7 +1040,7 @@ export function FichaTrabajador() {
         },
         {
           clase: 'ASIGNACION' as const,
-          titulo: 'Asignado para una actividad',
+          titulo: 'Asignación',
           subtitulo: 'Lo que se le dio para una faena concreta y hay que recuperar.',
           vacio: 'No tiene nada asignado.',
         },
@@ -1071,9 +1071,9 @@ export function FichaTrabajador() {
                 <table className="w-full min-w-[480px] text-sm">
                   <thead>
                     <tr className="text-ink/45 border-hairline border-y text-left text-xs">
-                      <th className="px-5 py-3 font-medium">Qué</th>
-                      <th className="px-3 py-3 text-right font-medium">Cuánto</th>
-                      <th className="px-3 py-3 font-medium">Desde</th>
+                      <th className="px-5 py-3 font-medium">Artículo</th>
+                      <th className="px-3 py-3 text-right font-medium">Cantidad</th>
+                      <th className="px-3 py-3 font-medium">Fecha</th>
                       <th className="px-5 py-3 text-right font-medium">Estado</th>
                     </tr>
                   </thead>
@@ -1109,7 +1109,7 @@ export function FichaTrabajador() {
                               }
                             >
                               {x.estado === 'ASIGNADA'
-                                ? 'En su poder'
+                                ? 'Asignada'
                                 : x.estado === 'DEVUELTA'
                                   ? 'Devuelta'
                                   : x.estado === 'PERDIDA'
@@ -1243,7 +1243,7 @@ export function FichaTrabajador() {
               */}
               {!e.activo ? (
                 <Select
-                  label="Qué papel"
+                  label="Tipo"
                   value={tipoConstancia}
                   onChange={(ev) => setTipoConstancia(ev.target.value as 'TRABAJO' | 'CESE')}
                   opciones={[
@@ -1379,7 +1379,7 @@ export function FichaTrabajador() {
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="Cuándo"
+              label="Fecha"
               type="date"
               max={hoyEnCaracas()}
               value={inc.fecha}
@@ -1387,14 +1387,14 @@ export function FichaTrabajador() {
             />
 
             <Select
-              label="Qué pasó"
+              label="Tipo"
               value={inc.tipo}
               onChange={(ev) => setInc({ ...inc, tipo: ev.target.value })}
               opciones={TIPOS_INCIDENCIA.map((t) => ({ valor: t.valor, etiqueta: t.etiqueta }))}
             />
 
             <Input
-              label="Dónde"
+              label="Lugar"
               placeholder="Planta 01"
               value={inc.lugar}
               onChange={(ev) => setInc({ ...inc, lugar: ev.target.value.toUpperCase() })}

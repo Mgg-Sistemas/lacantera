@@ -109,7 +109,7 @@ export function Guias() {
           onChange={(e) => setFiltro(e.target.value)}
           opciones={[
             { valor: 'VIGENTE', etiqueta: 'Vigentes' },
-            { valor: 'USADA', etiqueta: 'Ya usadas' },
+            { valor: 'USADA', etiqueta: 'Usadas' },
             { valor: 'ANULADA', etiqueta: 'Anuladas' },
           ]}
         />
@@ -308,7 +308,7 @@ export function Guias() {
                 licencia de toneladas, y el papel del ministerio dice una o la
                 otra. Un campo con nombre de unidad era una trampa. */}
             <Input
-              label="Cantidad que ampara"
+              label="Cantidad amparada"
               type="number"
               min="0"
               step="0.01"
@@ -436,7 +436,7 @@ export function Guias() {
           }
         >
           <Textarea
-            label="Por qué se anula"
+            label="Motivo"
             rows={3}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}

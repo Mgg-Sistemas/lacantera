@@ -108,7 +108,7 @@ export function ConteoDeEnvases({
                 }))}
             />
             <Input
-              label={i === 0 ? 'Cuántos' : ''}
+              label={i === 0 ? 'Cantidad' : ''}
               type="number"
               min="0"
               step="1"

@@ -328,7 +328,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
               la escoba y el jabón se compran en el mismo mercado. */}
           <div className="grid gap-2 sm:grid-cols-[1fr_7rem_auto]">
             <SelectBuscable
-              label="¿Falta algo? Agregue otro artículo"
+              label="Artículo"
               vacio="Busque en todo el catálogo…"
               valor={agregarId}
               onCambio={setAgregarId}
@@ -361,7 +361,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
           {libres.map((l) => (
             <div key={l.clave} className="grid gap-2 sm:grid-cols-[1fr_7rem_auto]">
               <Input
-                label="Qué es"
+                label="Descripción"
                 placeholder="Bombona de gas de 10 kg"
                 value={l.descripcion}
                 onChange={(e) =>
@@ -407,7 +407,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <SelectBuscable
-              label="A dónde llega"
+              label="Destino"
               vacio="Se decide al recibir"
               valor={almacen}
               onCambio={setAlmacen}

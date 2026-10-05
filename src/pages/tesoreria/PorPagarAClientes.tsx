@@ -113,7 +113,7 @@ export function PorPagarAClientes() {
         >
           <div className="space-y-3">
             <Select
-              label="De qué cuenta sale"
+              label="Cuenta"
               vacio={cuentasDeLaMoneda.length ? 'Seleccione la cuenta' : `No hay cuentas en ${pagando.moneda}`}
               value={pago.cuenta}
               onChange={(e) => setPago({ ...pago, cuenta: e.target.value })}
@@ -124,7 +124,7 @@ export function PorPagarAClientes() {
               hint="Se paga desde una cuenta en la misma moneda de la deuda."
             />
             <Input
-              label={`Cuánto (${pagando.moneda})`}
+              label={`Monto (${pagando.moneda})`}
               type="number"
               min="0"
               step="0.01"
