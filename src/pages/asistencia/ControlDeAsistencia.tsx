@@ -384,6 +384,30 @@ function Hoy({ hoy }: { hoy: string }) {
   const salieron = vivas.filter((j) => j.estado === 'CERRADA' && j.fecha === hoy)
   const olvidadas = vivas.filter((j) => j.estado === 'ABIERTA' && j.fecha !== hoy)
 
+  /*
+    LAS JORNADAS SIN SALIDA SE CUENTAN, NO SE ENUMERAN.
+
+    Christopher, 05/10/2026, con sesenta y dos delante: «ese mensaje me llena
+    toda la pantalla y no debería ser así».
+
+    Y crecen solas: la consulta de esta tarjeta pide las de hoy MÁS todas las
+    abiertas de cualquier día, sin tope, porque una jornada sin salida no se
+    cierra nunca sola —si al día siguiente la persona vuelve a entrar, se le
+    abre una nueva y la vieja se queda esperando a que alguien la corrija—.
+    Veinte personas que no marcan la salida dejan veinte cada día, y en tres
+    días ya no se lee nada más en la pantalla.
+
+    Así que el aviso dice cuántas son y de qué días, y se despliega si se
+    quieren ver. Desplegado va agrupado por día y en texto corrido: lo que
+    hace falta para ir a corregirlas es la fecha, que es por donde se entra
+    desde el calendario.
+  */
+  const [verOlvidadas, setVerOlvidadas] = useState(false)
+
+  const porFecha = new Map<string, typeof olvidadas>()
+  for (const j of olvidadas) porFecha.set(j.fecha, [...(porFecha.get(j.fecha) ?? []), j])
+  const diasOlvidados = [...porFecha.entries()].sort((a, b) => b[0].localeCompare(a[0]))
+
   return (
     <Card>
       <CardHeader
@@ -436,17 +460,47 @@ function Hoy({ hoy }: { hoy: string }) {
           </div>
           {olvidadas.length > 0 ? (
             <div className="border-warning/30 bg-warning-soft rounded-card border p-3 lg:col-span-2">
-              <p className="text-ink/80 flex items-center gap-1.5 text-sm font-medium">
-                <TriangleAlert className="text-warning size-4" />
-                Jornadas de otros días sin salida
-              </p>
-              <ul className="mt-1 space-y-0.5">
-                {olvidadas.map((j) => (
-                  <li key={j.id} className="text-ink/65 text-xs">
-                    {j.nombre} · entró el {fmtFecha(j.fecha)} a las {horaDe(j.entrada)}. Se corrige desde el calendario.
-                  </li>
-                ))}
-              </ul>
+              <button
+                type="button"
+                onClick={() => setVerOlvidadas((v) => !v)}
+                aria-expanded={verOlvidadas}
+                className="flex w-full items-start gap-1.5 text-left"
+              >
+                <TriangleAlert className="text-warning mt-0.5 size-4 shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <span className="text-ink/80 block text-sm font-medium">
+                    {olvidadas.length} jornada{olvidadas.length === 1 ? '' : 's'} de otros días sin
+                    salida
+                  </span>
+                  <span className="text-ink/55 block text-xs">
+                    {diasOlvidados.length === 1
+                      ? `Del ${fmtFecha(diasOlvidados[0][0])}.`
+                      : `En ${diasOlvidados.length} días, del ${fmtFecha(diasOlvidados[diasOlvidados.length - 1][0])} al ${fmtFecha(diasOlvidados[0][0])}.`}{' '}
+                    Pasa cuando se marca la entrada y no la salida. Se corrigen desde el calendario.
+                  </span>
+                </span>
+                <ChevronRight
+                  className={cn(
+                    'text-ink/40 mt-0.5 size-4 shrink-0 transition-transform',
+                    verOlvidadas && 'rotate-90',
+                  )}
+                />
+              </button>
+
+              {verOlvidadas ? (
+                <ul className="border-warning/20 mt-2.5 space-y-1.5 border-t pt-2.5">
+                  {diasOlvidados.map(([f, js]) => (
+                    <li key={f}>
+                      <span className="text-ink/75 text-xs font-medium">
+                        {fmtFecha(f)} · {js.length} {js.length === 1 ? 'persona' : 'personas'}
+                      </span>
+                      <span className="text-ink/55 block text-xs leading-relaxed">
+                        {js.map((j) => `${j.nombre} (${horaDe(j.entrada)})`).join(' · ')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           ) : null}
         </div>

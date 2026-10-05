@@ -7248,6 +7248,10 @@ Debajo aparece en grande lo que pasó: **Entrada · 07:12 · Nombre**, o **Salid
 
 Quién está **adentro** ahora mismo, quién **ya salió** con sus horas, y —aparte y en amarillo— las jornadas de **otros días que quedaron sin salida**, que son las que hay que corregir.
 
+**El aviso amarillo cuenta, no enumera.** Dice cuántas jornadas sin salida hay y de qué días —*«62 jornadas de otros días sin salida. En 4 días, del 23 de septiembre al 3 de octubre»*— y se despliega con el triangulito si se quieren ver; desplegado van **agrupadas por día**, con los nombres y la hora de entrada en texto corrido. Antes salían todas enumeradas, una debajo de otra, y con sesenta llenaban la pantalla entera.
+
+**Y conviene saber por qué se acumulan:** una jornada sin salida **no se cierra nunca sola**. Si al día siguiente la persona vuelve a marcar entrada, se le abre una jornada nueva y la vieja se queda esperando a que alguien la corrija desde el calendario. Veinte personas que olvidan marcar la salida dejan veinte jornadas abiertas cada día, y se van sumando. La cuenta solo baja corrigiéndolas.
+
 ### 23.5 El calendario
 
 Un mes de un vistazo, con cuántas personas marcaron cada día y cuántas jornadas quedaron sin salida. Se puede filtrar a **una sola persona**. Al tocar un día se ve su gente: entrada, salida, horas, turno (☀️ día si entró entre las 6 y las 18, 🌙 noche el resto), y si vino del carnet o se cargó a mano.
