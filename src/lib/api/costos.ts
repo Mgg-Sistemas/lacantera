@@ -82,6 +82,13 @@ export interface ResumenCaja {
   m3_despacho: number
   costo_por_m3: number | null
   costo_por_m3_mina: number | null
+  /**
+   * El margen con que se propuso el precio, en por ciento. Nulo en las fotos
+   * de cajas cerradas antes del 05/10/2026, que no lo llevaban.
+   */
+  margen_sugerido: number | null
+  /** A cuánto vender el m³ para que quede ese margen. Nulo si el costo va tapado. */
+  precio_sugerido_m3: number | null
   incluye: ClaseCosto[]
   por_producto: { producto_id: number; producto: string; m3: number; salidas: number }[]
   por_categoria: { categoria_raiz: string; categoria: string; nombre: string; monto_usd: number }[]
@@ -195,6 +202,8 @@ export interface GastoFijo {
 
 export interface ConfiguracionCostos {
   corte_mensual: boolean
+  /** Margen sobre el precio de venta, en por ciento. De fábrica, 30. */
+  margen_sugerido: number
 }
 
 // ---------------------------------------------------------------------------
@@ -320,7 +329,7 @@ export function useConfiguracionCostos() {
     queryKey: ['costos', 'configuracion'],
     queryFn: async () =>
       desenvolver<ConfiguracionCostos>(
-        await supabase.from('costo_configuracion').select('corte_mensual').single(),
+        await supabase.from('costo_configuracion').select('corte_mensual, margen_sugerido').single(),
       ),
   })
 }
@@ -473,7 +482,9 @@ export function useGuardarGastoFijo() {
 }
 
 export function useConfigurarCostos() {
-  return useAccion((c: { corte_mensual: boolean }) =>
-    rpc('costo_configurar', { p_corte_mensual: c.corte_mensual }),
+  // `margen` en blanco deja el que había: así la casilla del corte se guarda
+  // sola sin arrastrar un margen viejo que alguien acabara de cambiar.
+  return useAccion((c: { corte_mensual: boolean; margen?: number | null }) =>
+    rpc('costo_configurar', { p_corte_mensual: c.corte_mensual, p_margen: c.margen ?? null }),
   )
 }

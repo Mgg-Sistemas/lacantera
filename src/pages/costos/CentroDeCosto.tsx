@@ -104,7 +104,7 @@ export function CentroDeCosto() {
 
       {r ? (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Cifra
               grande
               rotulo="Costo por m³"
@@ -117,6 +117,27 @@ export function CentroDeCosto() {
                     : `Incluye ${diceQueIncluye(r.incluye)} · sobre m³ estimados por carga útil`
               }
               apagada={tapado || r.costo_por_m3 === null}
+            />
+            {/*
+              A CUÁNTO VENDER, que es la pregunta que seguía al costo.
+
+              Va al lado del costo y no en otra pestaña porque es la misma
+              conversación: cuánto me cuesta, a cuánto lo pongo. El margen se
+              cambia en Catálogos y manda para todo el que mire, para que dos
+              personas no coticen con dos precios distintos el mismo día.
+            */}
+            <Cifra
+              grande
+              rotulo="Precio sugerido por m³"
+              valor={tapado ? '—' : porM3(r.precio_sugerido_m3)}
+              pie={
+                tapado
+                  ? 'Sale del costo, y el costo va en blanco sin esa casilla'
+                  : r.precio_sugerido_m3 === null
+                    ? 'Hace falta el costo por m³ para proponer un precio'
+                    : `Con ${enteros(r.margen_sugerido ?? 30)} % de margen sobre la venta · referencial, el precio lo decide gerencia`
+              }
+              apagada={tapado || r.precio_sugerido_m3 === null}
             />
             <Cifra
               rotulo="Costo de la caja"

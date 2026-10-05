@@ -32,6 +32,7 @@ export function Catalogos() {
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <CorteMensual />
+      <MargenDeVenta />
       <Origenes />
       <Fijos />
       <Categorias />
@@ -59,6 +60,60 @@ function CorteMensual() {
         />
         <span className="text-ink/80">Las cajas se cortan a fin de mes</span>
       </label>
+      {configurar.error ? <ErrorDeCarga error={configurar.error} className="mt-3" /> : null}
+    </Card>
+  )
+}
+
+/*
+  EL MARGEN CON QUE SE PROPONE EL PRECIO.
+
+  Christopher lo pidió desde el primer día: «la tasa referencial a la que se va
+  a vender». El precio sale de costo / (1 − margen), que es margen SOBRE LA
+  VENTA, igual que en MGG y Golden Touch: con 30 % y un costo de 7 el precio es
+  10 y quedan 3, que son el 30 % de 10. Recargar el costo un 30 % daría 9,10 y
+  el margen real sería 23 %.
+
+  Se guarda al salir del campo y no en cada tecla: escribir «3» camino de «30»
+  habría guardado un 3 % y cambiado el precio de todo el mundo por un instante.
+*/
+function MargenDeVenta() {
+  const conf = useConfiguracionCostos()
+  const configurar = useConfigurarCostos()
+  const guardado = conf.data?.margen_sugerido ?? 30
+  const [texto, setTexto] = useState<string | null>(null)
+  const valor = texto ?? String(guardado)
+  const n = Number(valor.replace(',', '.'))
+  const malo = valor.trim() === '' || Number.isNaN(n) || n < 0 || n > 95
+
+  const guardar = () => {
+    setTexto(null)
+    if (malo || n === Number(guardado)) return
+    void configurar.mutateAsync({ corte_mensual: conf.data?.corte_mensual ?? false, margen: n })
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        title="Margen de venta"
+        subtitle="Con esto el centro de costo propone a cuánto vender el m³. Es el margen que queda sobre el precio, no un recargo sobre el costo."
+      />
+      <div className="mt-4 max-w-40">
+        <Input
+          label="Margen"
+          inputMode="decimal"
+          value={valor}
+          disabled={conf.isPending || configurar.isPending}
+          onChange={(e) => setTexto(e.target.value)}
+          onBlur={guardar}
+          error={malo ? 'Entre 0 y 95.' : undefined}
+          hint={malo ? undefined : 'Por ciento sobre la venta'}
+        />
+      </div>
+      <p className="text-ink/45 mt-3 text-xs">
+        Con un costo de $ 7,00 por m³ y {malo ? '—' : n} % de margen, el precio sugerido sería{' '}
+        <span className="tabular text-ink/70">{malo ? '—' : dinero('USD', 7 / (1 - n / 100))}</span> por m³.
+      </p>
       {configurar.error ? <ErrorDeCarga error={configurar.error} className="mt-3" /> : null}
     </Card>
   )
