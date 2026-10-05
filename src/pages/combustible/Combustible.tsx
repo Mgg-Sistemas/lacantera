@@ -1022,7 +1022,7 @@ function ModalDespacho({
       {corrigiendo ? (
         <div className="mt-4">
           <Input
-            label="Por qué se corrige"
+            label="Motivo"
             placeholder="Se tecleó 40 y eran 14"
             value={porQueSeCorrige}
             onChange={(e) => setPorQueSeCorrige(e.target.value)}
@@ -1083,7 +1083,7 @@ function ModalAnularVale({
       }
     >
       <Textarea
-        label="Por qué se anula"
+        label="Motivo"
         rows={2}
         value={motivo}
         onChange={(e) => setMotivo(e.target.value)}
