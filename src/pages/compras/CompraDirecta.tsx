@@ -16,10 +16,11 @@ import { ErrorDeCarga } from '@/components/ui/Estado'
 import { CantidadDeArticulo, type CantidadCapturada } from '@/components/CantidadDeArticulo'
 import { ParecidosAEste } from '@/components/ParecidosAEste'
 import {
-  CATEGORIAS_ARTICULO,
   CONDICIONES_PAGO,
   conSusFormas,
+  opcionesDeCategoria,
   useArticulos,
+  useCategoriasDeInventario,
   useCrearArticulo,
   useGuardarPresentacionDeArticulo,
   usePresentaciones,
@@ -135,6 +136,7 @@ export function CompraDirecta() {
   const navigate = useNavigate()
   const { data: proveedores } = useProveedores()
   const { data: articulos } = useArticulos()
+  const { data: categoriasInv } = useCategoriasDeInventario()
   // Las formas de contar de todo el catalogo, de un tiron: quince renglones no
   // pueden ser quince consultas para leer quince filas.
   const { data: formasDeContar } = useTodasLasPresentaciones()
@@ -649,7 +651,7 @@ export function CompraDirecta() {
                         vacio="Seleccione"
                         value={f.nueva_categoria}
                         onChange={(e) => cambiar(f.clave, { nueva_categoria: e.target.value })}
-                        opciones={CATEGORIAS_ARTICULO}
+                        opciones={opcionesDeCategoria(categoriasInv)}
                       />
                     </div>
                     <div className="sm:col-span-4">

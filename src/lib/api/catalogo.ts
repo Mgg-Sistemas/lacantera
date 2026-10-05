@@ -178,49 +178,74 @@ export function comoLlega(
 }
 
 /*
-  TIENE UN GEMELO EN LA BASE, Y CONVIENE SABERLO.
+  LAS CATEGORÍAS VIVEN EN LA BASE DESDE EL 05/10/2026.
 
-  `public.categorias_de_articulo` devuelve estos mismos pares —el codigo sale
-  del CHECK de la tabla, el nombre de un CASE escrito alli— porque la carga por
-  planilla los necesita del otro lado: el desplegable del Excel ofrece el nombre
-  y el cargador tiene que reconocerlo.
+  Aquí hubo una lista escrita a mano, con una gemela en la planilla y una
+  tercera en el CHECK de la tabla: añadir una categoría era una migración.
+  Christopher: «necesito poder crear nuevas categorías sin necesidad de que
+  sea por código». Ahora manda la tabla `categorias_articulo`: estas
+  consultas la leen y la pantalla de Artículos la edita, con control total
+  de Inventario.
 
-  Esta lista manda en los formularios; aquella, en la planilla. Si los NOMBRES se
-  separan, lo que pasa es que la planilla ofrece una palabra y la pantalla otra
-  — feo, pero no rompe nada: el cargador admite tambien el codigo. Lo que no
-  puede separarse son los CODIGOS, y de eso se encarga el CHECK.
+  Las categorías DE SISTEMA (combustible, producto, víveres…) siguen ahí
+  como filas marcadas: el programa se ramifica comparando contra esas
+  palabras, así que no se eliminan. Las creadas a mano solo clasifican, que
+  es exactamente lo que se pidió.
 */
-export const CATEGORIAS_ARTICULO = [
-  { valor: 'PRODUCTO', etiqueta: 'Producto de cantera' },
-  { valor: 'REPUESTO', etiqueta: 'Repuesto' },
-  { valor: 'INSUMO', etiqueta: 'Insumo' },
-  { valor: 'COMBUSTIBLE', etiqueta: 'Combustible' },
-  { valor: 'LUBRICANTE', etiqueta: 'Lubricante' },
-  { valor: 'EPP', etiqueta: 'Equipo de protección' },
-  { valor: 'HERRAMIENTA', etiqueta: 'Herramienta' },
-  { valor: 'EXPLOSIVO', etiqueta: 'Explosivo' },
-  /*
-    LA QUE FALTABA, Y LA ÚNICA QUE SOLO CLASIFICA.
+export interface CategoriaDeInventario {
+  codigo: string
+  etiqueta: string
+  /** Las letras con las que empiezan los códigos de sus artículos (VIV-0001). */
+  prefijo: string
+  activa: boolean
+  de_sistema: boolean
+}
 
-    Christopher, con el caso delante: «se desea añadir una laptop y eso ya es un
-    equipo electrónico o de oficina, la opción no está». Hasta hoy una laptop se
-    guardaba como INSUMO, lo mismo que un guante.
+export function useCategoriasDeInventario() {
+  return useQuery({
+    queryKey: ['categorias-articulo'],
+    queryFn: async () =>
+      desenvolver<CategoriaDeInventario[]>(
+        await supabase.from('categorias_articulo').select('*').order('etiqueta'),
+      ),
+    staleTime: 5 * 60_000,
+  })
+}
 
-    Se pudo añadir barata porque no habilita nada: no despacha combustible, no se
-    produce, no se vende, no fuerza retorno. Las otras ocho sí mandan sobre el
-    programa —veintiún objetos de la base se ramifican comparando contra estas
-    palabras— y por eso esta lista no es una tabla que se edite desde la
-    pantalla.
-  */
-  { valor: 'EQUIPO', etiqueta: 'Equipo de oficina y cómputo' },
-  /*
-    VÍVERES, 05/10/2026: la comida del personal. La trajo el control de
-    alimentación, que es el único módulo que la consume — igual que
-    COMBUSTIBLE es el único que despacha de los tanques.
-  */
-  { valor: 'VIVERES', etiqueta: 'Víveres' },
-  { valor: 'SERVICIO', etiqueta: 'Servicio' },
-]
+/** Las opciones del desplegable de categoría, donde haga falta. */
+export function opcionesDeCategoria(categorias: CategoriaDeInventario[] | undefined) {
+  return (categorias ?? [])
+    .filter((c) => c.activa)
+    .map((c) => ({ valor: c.codigo, etiqueta: c.etiqueta }))
+}
+
+export function useCrearCategoriaDeArticulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (c: { etiqueta: string; prefijo?: string | null }) =>
+      rpc<{ codigo: string; etiqueta: string; prefijo: string }>('crear_categoria_de_articulo', {
+        p_etiqueta: c.etiqueta,
+        p_prefijo: c.prefijo || null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['categorias-articulo'] })
+      // La planilla de carga arma su desplegable con la otra consulta.
+      void qc.invalidateQueries({ queryKey: ['categorias-de-articulo'] })
+    },
+  })
+}
+
+export function useEliminarCategoriaDeArticulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (codigo: string) =>
+      rpc<void>('eliminar_categoria_de_articulo', { p_codigo: codigo }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['categorias-articulo'] })
+      void qc.invalidateQueries({ queryKey: ['categorias-de-articulo'] })
+    },
+  })
+}
 
 /*
   CÓMO SE COMPORTA UN ARTÍCULO AL ENTREGARLO
@@ -352,31 +377,6 @@ export function useGuardarPresentacion() {
 
   La base decide mirando: si dejó rastro, rechaza y dice dónde.
 */
-/*
-  LAS TRES LETRAS CON LAS QUE EMPIEZA EL CODIGO DE CADA CATEGORIA.
-
-  ES UN ESPEJO de `private.prefijo_de_categoria`, y quien manda es la base. Aquí
-  solo sirve para decidir si vale la pena OFRECER la renumeración: si las dos
-  listas se separaran, lo peor que pasa es que el botón aparezca cuando no hacía
-  falta y la base conteste «el código ya corresponde a la categoría».
-
-  Se acepta ese espejo, y no otro, porque el fallo es inofensivo y la alternativa
-  —preguntarle a la base por cada artículo de la lista— sería una consulta por
-  fila para decidir si se pinta un botón.
-*/
-export const PREFIJO_DE_CATEGORIA: Record<string, string> = {
-  COMBUSTIBLE: 'CMB',
-  EPP: 'EPP',
-  EQUIPO: 'EQU',
-  HERRAMIENTA: 'HER',
-  INSUMO: 'INS',
-  LUBRICANTE: 'LUB',
-  PRODUCTO: 'PRD',
-  REPUESTO: 'REP',
-  SERVICIO: 'SRV',
-  VIVERES: 'VIV',
-}
-
 export function useRenumerarArticulo() {
   const qc = useQueryClient()
   return useMutation({

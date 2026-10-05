@@ -1579,7 +1579,7 @@ Pulsa **Nuevo artículo** y llena la ficha:
 | --- | --- | --- |
 | **Código** | Sí | No se puede repetir y **no se cambia después** |
 | **Nombre** | Sí | Sin él no se habilita **Guardar** |
-| **Categoría** | Sí | Empieza en **Repuesto**. Las nueve son: **Producto de cantera**, **Repuesto**, **Insumo**, **Combustible**, **Lubricante**, **Equipo de protección**, **Herramienta**, **Explosivo** y **Servicio** |
+| **Categoría** | Sí | Empieza en **Repuesto**. La lista sale de la base —once de nacimiento, de **Producto de cantera** a **Víveres**— y crece desde el botón **Categorías**, sin tocar código |
 | **Unidad** | Sí | Empieza en **Unidad**. Los productos de cantera van en tonelada |
 | **Existencia mínima** | No | **Cero significa que no se controla.** |
 | **Al entregarlo a una persona** | — | Las tres opciones están abajo. La categoría propone una y se puede cambiar |
@@ -1588,6 +1588,12 @@ Pulsa **Nuevo artículo** y llena la ficha:
 | **Se puede mandar al taller** | — | **(vuelve arreglado)** o **(se gasta, no se repara)**. Viene marcada sola en las herramientas y los repuestos, y se puede corregir. Se apaga si el artículo no entra al inventario |
 
 **La casilla de taller decide si el artículo ofrece el botón «Al taller» en Existencias** (7.4). Marcarla en un pote de aceite llenaría de ruido el desplegable de lo que se manda a reparar; no marcarla en una herramienta la deja sin poder mandarse.
+
+#### Las categorías se crean desde la pantalla
+
+**Desde el 5 de octubre de 2026** las categorías viven en la base, no en el código. Con **control total de Inventario** aparece el botón **Categorías** en la cabecera del catálogo: se escribe el nombre —**Material médico**, por ejemplo— y el sistema arma el resto: el código interno y el **prefijo** con el que empezarán los códigos de sus artículos (las tres primeras letras, editable antes de crear). La categoría nueva aparece de inmediato en todos los formularios y en la planilla de carga.
+
+Dos reglas, y las dos con motivo. **Las once categorías de nacimiento son del sistema y no se eliminan**: el programa las usa por nombre —el combustible se despacha de tanques, el producto se vende, los víveres se cocinan—, y por eso llevan la marca **Del sistema** en la lista. Y **una categoría solo se elimina mientras ningún artículo la use**: la que ya clasifica artículos es una palabra que el catálogo necesita. Las creadas desde la pantalla clasifican y numeran, nada más; si un día una de ellas debe mandar sobre el programa, eso sí es trabajo de código.
 
 #### Qué pasa al entregarlo
 
