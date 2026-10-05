@@ -7348,6 +7348,12 @@ La vista para quien cocina, con el mismo molde del surtidor de combustible (20.4
 
 Una comida no se edita ni se borra: **se anula con motivo**, y los víveres vuelven al inventario con un reverso que queda a la vista. Quien tiene escritura puede anular **la del mismo día** —el error se corrige donde se cometió—; anular una de otro día cambia costos que alguien pudo haber mirado, y por eso pide control total.
 
-### 25.5 Lo que este módulo no hace
+### 25.5 Pedir el mercado
+
+El botón **Pedir el mercado** arma la lista de compra de la cocina sin teclearla: aparecen **todos los víveres del catálogo, ya marcados**, con la cantidad de la última solicitud de mercado como sugerencia y, al lado de cada uno, cuánto hay en existencia. El trabajo es quitar lo que no hace falta y ajustar números. Si falta algo que no es víver —la escoba, el jabón— se agrega **cualquier artículo del catálogo** con el buscador; y lo que no existe todavía se escribe como **texto libre**, para que la oficina decida al cotizar.
+
+Lo que sale de ahí **no es un papel aparte: es un pedido de compras de verdad** — número SOL, prioridad urgente, título «Reposición del mercado» — que entra al tablero de Compras y sigue el circuito de siempre: cotizar, aprobar, pagar y recibir. La recepción en el almacén elegido es la entrada de inventario que repone los víveres. Para pedirlo basta la **escritura en Alimentación**: no hace falta el permiso de Compras, porque del pedido en adelante todo lo decide la oficina.
+
+### 25.6 Lo que este módulo no hace
 
 No asocia la comida a un trabajador concreto: cuenta platos, no nombres — igual que MGG. No lleva menú ni recetas. Y su analítica de ciclos de mercado —inventario teórico contra conteo, merma, ración por persona— no se trajo todavía: se decidirá con un mes de comidas registradas delante.

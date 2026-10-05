@@ -152,3 +152,58 @@ export function useAnularComida() {
     rpc<void>('anular_comida', { p_id: a.id, p_motivo: a.motivo }),
   )
 }
+
+/* ────────────────────────────────────── la solicitud de mercado ──────────
+
+   Traída de MGG: la cocina arma la lista de compra —todos los víveres, con
+   las cantidades de la última vez— y la manda. Por debajo es un pedido de
+   compras de verdad (SOL-…, urgente) que la oficina cotiza, aprueba y
+   recibe; la cocina no necesita el permiso de Compras porque la puerta
+   `solicitar_mercado` pide el de Alimentación. */
+
+export interface ListaDeMercado {
+  numero: string
+  fecha: string
+  estado: string
+  renglones: { articulo_id: number; cantidad: string }[]
+}
+
+/** La última solicitud de mercado, para sugerir cantidades. Nula si no hay. */
+export function useUltimaListaDeMercado() {
+  return useQuery({
+    queryKey: ['alimentacion', 'mercado', 'ultima'],
+    queryFn: () => rpc<ListaDeMercado | null>('ultima_lista_de_mercado', {}),
+  })
+}
+
+export interface MercadoSolicitado {
+  id: number
+  numero: string
+}
+
+export function useSolicitarMercado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (p: {
+      renglones: {
+        articulo_id?: number | null
+        descripcion?: string
+        cantidad: number
+        observacion?: string | null
+      }[]
+      almacen_id?: number | null
+      nota?: string | null
+    }) =>
+      rpc<MercadoSolicitado>('solicitar_mercado', {
+        p_renglones: p.renglones,
+        p_almacen_id: p.almacen_id ?? null,
+        p_nota: p.nota ?? null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['alimentacion'] })
+      // El pedido aparece en el tablero de Compras de quien lo tenga abierto.
+      void qc.invalidateQueries({ queryKey: ['compras'] })
+      void qc.invalidateQueries({ queryKey: ['notificaciones'] })
+    },
+  })
+}

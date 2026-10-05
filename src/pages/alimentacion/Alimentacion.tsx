@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { Plus, Smartphone, TriangleAlert, UtensilsCrossed } from 'lucide-react'
+import { Plus, ShoppingCart, Smartphone, TriangleAlert, UtensilsCrossed } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -25,6 +25,7 @@ import {
 } from '@/lib/api/alimentacion'
 import { dolares, fecha as fmtFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
+import { PedirMercado } from './PedirMercado'
 
 /*
   EL CONTROL DE ALIMENTACIÓN, EN EL ESCRITORIO.
@@ -49,6 +50,7 @@ export function Alimentacion() {
   const viveres = useViveres()
 
   const [sirviendo, setSirviendo] = useState(false)
+  const [pidiendoMercado, setPidiendoMercado] = useState(false)
   const [anulando, setAnulando] = useState<Comida | null>(null)
 
   const vivas = useMemo(() => (comidas.data ?? []).filter((c) => c.estado === 'SERVIDA'), [comidas.data])
@@ -68,9 +70,17 @@ export function Alimentacion() {
               </Button>
             </Link>
             {puedeServir ? (
-              <Button icon={<Plus />} onClick={() => setSirviendo(true)}>
-                Servir comida
-              </Button>
+              <>
+                {/* La lista de compra llega armada: todos los víveres del
+                    catálogo con la cantidad de la última vez. Sale como un
+                    pedido urgente al circuito de Compras. */}
+                <Button variant="outline" icon={<ShoppingCart />} onClick={() => setPidiendoMercado(true)}>
+                  Pedir el mercado
+                </Button>
+                <Button icon={<Plus />} onClick={() => setSirviendo(true)}>
+                  Servir comida
+                </Button>
+              </>
             ) : null}
           </>
         }
@@ -193,6 +203,7 @@ export function Alimentacion() {
       </Card>
 
       {sirviendo ? <ServirComida onCerrar={() => setSirviendo(false)} /> : null}
+      {pidiendoMercado ? <PedirMercado onCerrar={() => setPidiendoMercado(false)} /> : null}
       {anulando ? <AnularComida comida={anulando} hoy={hoy} onCerrar={() => setAnulando(null)} /> : null}
     </>
   )
