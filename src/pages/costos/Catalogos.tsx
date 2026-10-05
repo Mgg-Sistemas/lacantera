@@ -17,6 +17,7 @@ import { ListaEditable } from '@/components/ListaEditable'
 import {
   useConfiguracionCostos,
   useConfigurarCostos,
+  useGuardarMargenDeVenta,
   useGastosFijos,
   useGuardarGastoFijo,
   useGuardarOrigenFondo,
@@ -79,7 +80,7 @@ function CorteMensual() {
 */
 function MargenDeVenta() {
   const conf = useConfiguracionCostos()
-  const configurar = useConfigurarCostos()
+  const guardarMargen = useGuardarMargenDeVenta()
   const guardado = conf.data?.margen_sugerido ?? 30
   const [texto, setTexto] = useState<string | null>(null)
   const valor = texto ?? String(guardado)
@@ -89,7 +90,7 @@ function MargenDeVenta() {
   const guardar = () => {
     setTexto(null)
     if (malo || n === Number(guardado)) return
-    void configurar.mutateAsync({ corte_mensual: conf.data?.corte_mensual ?? false, margen: n })
+    void guardarMargen.mutateAsync(n)
   }
 
   return (
@@ -103,7 +104,7 @@ function MargenDeVenta() {
           label="Margen"
           inputMode="decimal"
           value={valor}
-          disabled={conf.isPending || configurar.isPending}
+          disabled={conf.isPending || guardarMargen.isPending}
           onChange={(e) => setTexto(e.target.value)}
           onBlur={guardar}
           error={malo ? 'Entre 0 y 95.' : undefined}
@@ -114,7 +115,7 @@ function MargenDeVenta() {
         Con un costo de $ 7,00 por m³ y {malo ? '—' : n} % de margen, el precio sugerido sería{' '}
         <span className="tabular text-ink/70">{malo ? '—' : dinero('USD', 7 / (1 - n / 100))}</span> por m³.
       </p>
-      {configurar.error ? <ErrorDeCarga error={configurar.error} className="mt-3" /> : null}
+      {guardarMargen.error ? <ErrorDeCarga error={guardarMargen.error} className="mt-3" /> : null}
     </Card>
   )
 }

@@ -58,40 +58,47 @@ comment on column public.costo_configuracion.margen_sugerido is
   'division revienta.';
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 2. Configurar: ahora también el margen
+-- 2. El margen se guarda por su propia puerta
 --
--- Se tira la de un solo argumento en vez de dejar las dos: una con `default`
--- y otra sin él hacen ambigua la llamada de un argumento, y Postgres la
--- rechaza en tiempo de ejecución. Solo la llama esta aplicación.
+-- La primera versión de esta migración le añadía el margen a `costo_configurar`
+-- y, para no dejar la llamada de un argumento ambigua, BORRABA la función
+-- vieja. Eso es una operación destructiva sobre algo que ya está en producción
+-- y funcionando, y se rechazó con razón.
+--
+-- Esta forma no borra nada: `costo_configurar` se queda intacta con su
+-- booleano, y el margen entra por una función nueva. Cada ajuste se guarda
+-- solo, que además es como se usan —nadie cambia el corte mensual y el margen
+-- en el mismo gesto—, y una migración que solo AÑADE se puede volver a correr
+-- sin miedo.
 -- ───────────────────────────────────────────────────────────────────────────
-drop function if exists public.costo_configurar(boolean);
-
-create or replace function public.costo_configurar(
-  p_corte_mensual boolean,
-  p_margen        numeric default null
-)
+create or replace function public.costo_guardar_margen(p_margen numeric)
 returns void
 language plpgsql security definer set search_path to ''
 as $$
 begin
   perform private.exigir_accion('COSTOS.CATALOGOS');
 
-  if p_margen is not null and (p_margen < 0 or p_margen > 95) then
+  if p_margen is null then
+    raise exception 'Falta el margen.' using errcode = '22023';
+  end if;
+  if p_margen < 0 or p_margen > 95 then
     raise exception 'El margen va entre 0 y 95 por ciento.' using errcode = '22023';
   end if;
 
   update public.costo_configuracion
-     set corte_mensual   = coalesce(p_corte_mensual, false),
-         -- Nulo = no se toca: así la casilla del corte puede guardarse sola.
-         margen_sugerido = coalesce(p_margen, margen_sugerido),
+     set margen_sugerido = p_margen,
          cambiado_por    = (select auth.uid()),
          cambiado_en     = now()
    where id;
 end;
 $$;
 
-revoke execute on function public.costo_configurar(boolean, numeric) from public, anon;
-grant  execute on function public.costo_configurar(boolean, numeric) to authenticated;
+comment on function public.costo_guardar_margen(numeric) is
+  'Cambia el margen con que el centro de costo propone el precio de venta. '
+  'Pide la casilla COSTOS.CATALOGOS, la misma del resto de los catalogos.';
+
+revoke execute on function public.costo_guardar_margen(numeric) from public, anon;
+grant  execute on function public.costo_guardar_margen(numeric) to authenticated;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 3. El resumen devuelve el precio sugerido

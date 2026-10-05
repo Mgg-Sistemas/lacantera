@@ -482,9 +482,15 @@ export function useGuardarGastoFijo() {
 }
 
 export function useConfigurarCostos() {
-  // `margen` en blanco deja el que había: así la casilla del corte se guarda
-  // sola sin arrastrar un margen viejo que alguien acabara de cambiar.
-  return useAccion((c: { corte_mensual: boolean; margen?: number | null }) =>
-    rpc('costo_configurar', { p_corte_mensual: c.corte_mensual, p_margen: c.margen ?? null }),
+  return useAccion((c: { corte_mensual: boolean }) =>
+    rpc('costo_configurar', { p_corte_mensual: c.corte_mensual }),
   )
+}
+
+/**
+ * El margen va por su propia puerta y no dentro de `costo_configurar`: así no
+ * hubo que tocar —ni borrar— una función que ya estaba en producción.
+ */
+export function useGuardarMargenDeVenta() {
+  return useAccion((margen: number) => rpc('costo_guardar_margen', { p_margen: margen }))
 }
