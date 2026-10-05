@@ -262,7 +262,7 @@ export function Input({
             Asi que en ese caso exacto se dice lo que hay que hacer.
           */}
           {/^\d{1,3}[.,]\d{3}$/.test(String(value ?? '')) ? (
-            <span className="text-ink/55"> · si querías mil, quita el punto</span>
+            <span className="text-ink/55"> · si quería mil, quite el punto</span>
           ) : null}
         </p>
       ) : null}
