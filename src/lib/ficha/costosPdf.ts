@@ -94,6 +94,16 @@ export async function armarCierreDeCaja(d: DatosCierreDeCaja): Promise<ArchivoAr
   y = seccion(doc, y, 'Resumen')
   y = etiquetaValor(doc, y, [
     ['Costo por m³', r.dinero_tapado ? 'sin acceso al pago de viajes' : porM3(r.costo_por_m3)],
+    // Las cajas cerradas antes del 05/10/2026 no guardaron precio sugerido: se
+    // dice que no lo llevaban, en vez de inventarlo con el margen de hoy.
+    [
+      'Precio sugerido por m³',
+      r.dinero_tapado
+        ? 'sin acceso al pago de viajes'
+        : r.margen_sugerido === null || r.margen_sugerido === undefined
+          ? 'no se calculaba en esta caja'
+          : `${porM3(r.precio_sugerido_m3)} (margen ${r.margen_sugerido} %)`,
+    ],
     ['Incluye', diceQueIncluye(r.incluye)],
     ['Costo de la caja', dinero(r.costo_usd)],
     ['Ajustes de cajas cerradas', dinero(r.ajustes_tardios_usd)],
