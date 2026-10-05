@@ -632,6 +632,15 @@ function useAccionInventario<A>(fn: (args: A) => Promise<unknown>) {
     mutationFn: fn,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['existencias'] })
+      /*
+        «existencias-totales» y «existencias-articulo» NO cuelgan de
+        «existencias»: son claves propias, así que invalidar solo la primera
+        dejaba la vista «Todo el inventario» y el desglose «Ver dónde está»
+        enseñando lo de antes hasta recargar la página a mano. Un ajuste hecho
+        ahí parecía no haber pasado.
+      */
+      void qc.invalidateQueries({ queryKey: ['existencias-totales'] })
+      void qc.invalidateQueries({ queryKey: ['existencias-articulo'] })
       void qc.invalidateQueries({ queryKey: ['movimientos'] })
       void qc.invalidateQueries({ queryKey: ['compras'] })
       void qc.invalidateQueries({ queryKey: ['notificaciones'] })
