@@ -2033,7 +2033,7 @@ export function Existencias() {
           ) : null}
 
           <Textarea
-            label={modal.tipo === 'entrada' ? 'De dónde vino' : 'Qué explica la diferencia'}
+            label={modal.tipo === 'entrada' ? 'De dónde vino' : 'Motivo'}
             className="mt-4"
             rows={3}
             value={motivo}

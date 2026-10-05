@@ -537,7 +537,7 @@ export function Articulos() {
             </p>
           ) : null}
           <Textarea
-            label={cambiando.activo ? '¿Por qué se desactiva?' : '¿Por qué se vuelve a activar?'}
+            label="Motivo"
             rows={3}
             value={motivoEstado}
             onChange={(e) => setMotivoEstado(e.target.value)}

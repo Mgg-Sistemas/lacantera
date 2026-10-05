@@ -149,7 +149,7 @@ export function ModalCambioDeDueno({
         />
         <div>
           <Input
-            label={`Cuántas ${fila.unidad}`}
+            label={`Cantidad (${fila.unidad})`}
             type="number"
             min="0"
             step="0.0001"

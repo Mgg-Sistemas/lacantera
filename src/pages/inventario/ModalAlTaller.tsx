@@ -260,7 +260,7 @@ export function ModalAlTaller({
           }
         />
         <Input
-          label={`Cuánto manda${enCurso ? ` (${enPlural(enCurso.unidad)})` : ''}`}
+          label={`Cantidad${enCurso ? ` (${enPlural(enCurso.unidad)})` : ''}`}
           type="number"
           min="0.01"
           step="0.01"

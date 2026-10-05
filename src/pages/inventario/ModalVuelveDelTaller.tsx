@@ -105,7 +105,7 @@ export function ModalVuelveDelTaller({
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input
-          label={`Cuánto vuelve (${orden?.unidad?.toLowerCase() ?? 'unidades'})`}
+          label={`Cantidad (${orden?.unidad?.toLowerCase() ?? 'unidades'})`}
           type="number"
           min="0"
           step="0.01"
