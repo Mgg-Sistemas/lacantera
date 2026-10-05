@@ -50,7 +50,7 @@ export function MantenimientoDeMiniaturas() {
           <p className="text-ink/55 mt-1 text-sm">
             Las fotos subidas antes del cambio de miniaturas bajan la imagen completa cada vez que se
             miran. Este repaso les genera la versión pequeña que falta, de una sola vez. Las fotos se
-            procesan aquí, en tu navegador, y no salen a ningún lado.
+            procesan aquí, en su navegador, y no salen a ningún lado.
           </p>
         </div>
         <Button icon={<Images />} onClick={() => void correr()} disabled={corriendo}>
