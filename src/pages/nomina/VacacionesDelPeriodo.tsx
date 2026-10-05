@@ -76,7 +76,7 @@ export function VacacionesDelPeriodo({
               label="Quién"
               valor={quien}
               onCambio={setQuien}
-              vacio="Elige a alguien"
+              vacio="Seleccione a alguien"
               opciones={empleados
                 .filter((e) => !yaAnotados.has(e.id))
                 .map((e) => ({ valor: String(e.id), etiqueta: `${e.apellidos}, ${e.nombres}` }))}

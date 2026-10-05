@@ -110,7 +110,7 @@ export function Dotacion() {
         {!pendiente.isPending && porEntregar.length === 0 ? (
           <p className="text-ink/50 mt-4 text-sm">
             {(reglas ?? []).length === 0
-              ? 'Todavía no hay ninguna dotación definida, así que no hay nada que reclamar. Empieza por decir qué le toca a cada cargo.'
+              ? 'Todavía no hay ninguna dotación definida, así que no hay nada que reclamar. Empiece por decir qué le toca a cada cargo.'
               : 'Nadie tiene dotación pendiente ahora mismo.'}
           </p>
         ) : null}
@@ -376,7 +376,7 @@ function ModalEntregarA({
 
         <SelectBuscable
           label="A quién"
-          vacio={gente.length === 0 ? 'Nadie con ese cargo' : 'Elige el trabajador'}
+          vacio={gente.length === 0 ? 'Nadie con ese cargo' : 'Elija el trabajador'}
           valor={empleado}
           onCambio={setEmpleado}
           opciones={gente.map((e) => ({
@@ -414,7 +414,7 @@ function ModalEntregarA({
         {empleado && aEntregar.length === 0 && elegido?.tabulador_id != null ? (
           <p className="text-ink/55 text-sm leading-relaxed">
             A su cargo no se le ha definido ninguna dotación, así que no hay nada que proponer.
-            Defínela arriba con <strong>Añadir</strong>, o entrégale a mano desde{' '}
+            Defínala arriba con <strong>Añadir</strong>, o entréguele a mano desde{' '}
             <strong>Quién tiene qué</strong>.
           </p>
         ) : null}

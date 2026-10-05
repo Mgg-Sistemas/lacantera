@@ -282,7 +282,7 @@ export function ModalCargarCombustible({
             No costó nada para esta empresa
             <span className="text-ink/50 mt-0.5 block text-xs">
               {sinCosto
-                ? 'Va a su propio tanque y escribe abajo de dónde vino y quién asumió el gasto. Queda en el movimiento.'
+                ? 'Va a su propio tanque y escriba abajo de dónde vino y quién asumió el gasto. Queda en el movimiento.'
                 : 'Para material trasladado desde otra empresa del grupo, donde ya se registró el gasto.'}
             </span>
           </span>
@@ -317,7 +317,7 @@ export function ModalCargarCombustible({
                 <strong>
                   Este combustible viene costando {revision.data.viene_costando} en ese tanque
                 </strong>{' '}
-                y lo estás metiendo a {revision.data.entra_a}: son{' '}
+                y lo está metiendo a {revision.data.entra_a}: son{' '}
                 <strong>
                   {revision.data.veces} veces{' '}
                   {revision.data.hacia === 'ARRIBA' ? 'más' : 'menos'}
@@ -330,7 +330,7 @@ export function ModalCargarCombustible({
                 más de diez veces {revision.data?.hacia === 'ARRIBA' ? 'más caro' : 'más barato'}.
               </>
             )}{' '}
-            Comprueba la factura: un cero de más aquí se arrastra a cada vale que salga del
+            Compruebe la factura: un cero de más aquí se arrastra a cada vale que salga del
             tanque.
           </p>
           <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
@@ -339,7 +339,7 @@ export function ModalCargarCombustible({
               checked={confirmado}
               onChange={(e) => setConfirmado(e.target.checked)}
             />
-            Es correcto, guárdalo así — quedará anotado en el movimiento
+            Es correcto, guárdelo así — quedará anotado en el movimiento
           </label>
         </div>
       ) : null}

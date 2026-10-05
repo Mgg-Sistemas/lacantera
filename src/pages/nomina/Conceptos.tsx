@@ -129,7 +129,7 @@ export function Conceptos() {
           <div className="p-5">
             <Vacio
               titulo="Todavía no hay ninguno"
-              descripcion="Crea el primero: un bono de transporte, uno por rendimiento, la cuota de un préstamo."
+              descripcion="Cree el primero: un bono de transporte, uno por rendimiento, la cuota de un préstamo."
             />
           </div>
         ) : (

@@ -1853,14 +1853,14 @@ export const FORMA_DE_TRASLADO: Record<
   ENVIAR: {
     titulo: 'Enviar material a otro almacén',
     explica:
-      'Sale ahora de un almacén por el que respondes y queda «En camino». Quien responde por el de destino confirma que llegó.',
+      'Sale ahora de un almacén por el que responde y queda «En camino». Quien responde por el de destino confirma que llegó.',
     boton: 'Enviar ahora',
     enLaLista: 'Enviado',
   },
   DIRECTO: {
     titulo: 'Traslado directo',
     explica:
-      'Sale y llega en este mismo momento, sin esperar a nadie. Solo si respondes por los dos almacenes, o eres administración.',
+      'Sale y llega en este mismo momento, sin esperar a nadie. Solo si responde por los dos almacenes, o es administración.',
     boton: 'Trasladar ahora',
     enLaLista: 'Directo',
   },

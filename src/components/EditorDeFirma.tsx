@@ -183,7 +183,7 @@ export function EditorDeFirma({
 
     img.onerror = () => {
       URL.revokeObjectURL(url)
-      setAviso('No se pudo leer esa imagen. Prueba con un PNG o un JPG.')
+      setAviso('No se pudo leer esa imagen. Pruebe con un PNG o un JPG.')
     }
 
     img.src = url
@@ -213,7 +213,7 @@ export function EditorDeFirma({
       {modo === 'ESCRIBIR' ? (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Input
-            label="Cómo firmas"
+            label="Cómo firma"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             hint="Puede ser el nombre completo o solo las iniciales."
@@ -244,7 +244,7 @@ export function EditorDeFirma({
             />
           </label>
           <p className="text-ink/45 mt-2 text-xs">
-            Una foto de tu firma en papel blanco sirve. El fondo se quita solo; lo que importa es
+            Una foto de su firma en papel blanco sirve. El fondo se quita solo; lo que importa es
             que el trazo se vea oscuro y la hoja clara.
           </p>
         </div>
@@ -261,7 +261,7 @@ export function EditorDeFirma({
         <div className="pointer-events-none absolute inset-x-8 bottom-9 border-b border-dashed border-current opacity-15" />
         {!hayAlgo ? (
           <p className="text-ink/30 pointer-events-none absolute inset-x-0 bottom-3 text-center text-xs">
-            {modo === 'DIBUJAR' ? 'Firma aquí con el ratón o con el dedo' : 'Aquí se verá tu firma'}
+            {modo === 'DIBUJAR' ? 'Firme aquí con el ratón o con el dedo' : 'Aquí se verá su firma'}
           </p>
         ) : null}
 

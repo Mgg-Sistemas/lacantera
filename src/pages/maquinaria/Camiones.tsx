@@ -556,7 +556,7 @@ export function ModalCamion({
       <div className="grid gap-4">
         <Select
           label="Empresa a la que pertenece"
-          vacio="Elige la empresa"
+          vacio="Seleccione la empresa"
           value={empresaElegida}
           disabled={duenoBloqueado}
           onChange={(e) => {
@@ -588,7 +588,7 @@ export function ModalCamion({
             placeholder="Nombre de la empresa o del dueño"
             value={f.transportista}
             onChange={(e) => cambiar('transportista', e.target.value)}
-            error={yaExiste ? `Ya está cargada como «${yaExiste}»: elígela de la lista.` : undefined}
+            error={yaExiste ? `Ya está cargada como «${yaExiste}»: selecciónela de la lista.` : undefined}
           />
         ) : null}
 

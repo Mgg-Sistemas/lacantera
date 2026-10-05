@@ -204,7 +204,7 @@ export function Renglones({
             <div className={patios ? 'sm:col-span-5' : 'sm:col-span-8'}>
               <Select
                 label={`Renglón ${indice + 1}`}
-                vacio="Elige el producto"
+                vacio="Seleccione el producto"
                 value={fila.articulo_id}
                 onChange={(e) => elegirArticulo(fila.clave, e.target.value)}
                 opciones={articulos.map((p) => ({
@@ -290,7 +290,7 @@ export function Renglones({
             <div className="sm:col-span-4">
               <Select
                 label="A qué precio sale"
-                vacio={fila.articulo_id ? 'Elige la condición' : '—'}
+                vacio={fila.articulo_id ? 'Seleccione la condición' : '—'}
                 value={fila.condicion}
                 disabled={!fila.articulo_id}
                 onChange={(e) =>
@@ -302,7 +302,7 @@ export function Renglones({
                 opciones={opcionesCondicion}
                 error={
                   fila.condicion === 'SIN_CARGO' && !puedeRegalar
-                    ? 'Sin cargo lo autoriza quien pueda vender bajo el mínimo, y no tienes esa casilla.'
+                    ? 'Sin cargo lo autoriza quien pueda vender bajo el mínimo, y no tiene esa casilla.'
                     : undefined
                 }
                 hint={
@@ -363,7 +363,7 @@ export function Renglones({
                   <p className="text-ink/60 text-sm">
                     {Number(fila.precio) > 0 && lista !== null
                       ? `Queda en ${dinero(moneda, fila.precio)} por ${fila.unidad}, de ${dinero(moneda, lista)}.`
-                      : 'Escribe el descuento para ver en cuánto queda.'}
+                      : 'Escriba el descuento para ver en cuánto queda.'}
                     {bajoMinimo ? (
                       <span className="text-warning block text-xs">
                         Por debajo del mínimo de {dinero(moneda, minimo!)}: lo autoriza quien pueda

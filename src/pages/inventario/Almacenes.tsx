@@ -215,7 +215,7 @@ export function Almacenes() {
               hint={
                 edicion.id
                   ? undefined
-                  : 'Déjalo vacío y el sistema lo pone: las tres letras del tipo y el siguiente número.'
+                  : 'Déjelo vacío y el sistema lo pone: las tres letras del tipo y el siguiente número.'
               }
               value={edicion.codigo}
               onChange={(e) => cambiar({ codigo: e.target.value.toUpperCase() })}

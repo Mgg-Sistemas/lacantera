@@ -68,7 +68,7 @@ export function EnConstruccion({ children }: { children: React.ReactNode }) {
       </p>
 
       <p className="text-ink/45 mt-3 text-xs">
-        Si llegaste por un enlace o escribiendo la dirección, no te equivocaste: la pantalla
+        Si llegó por un enlace o escribiendo la dirección, no se equivocó: la pantalla
         existe, pero aún no está lista.
       </p>
 

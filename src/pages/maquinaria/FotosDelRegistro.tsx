@@ -157,7 +157,7 @@ export function FotosDelRegistro({
             </div>
 
             <p className="text-ink/40 mt-3 text-xs">
-              {fotos.length} foto{fotos.length === 1 ? '' : 's'} · toca una para verla en grande
+              {fotos.length} foto{fotos.length === 1 ? '' : 's'} · toque una para verla en grande
             </p>
           </>
         ) : null}
@@ -281,7 +281,7 @@ export function FotosDelRegistro({
               acepta="image/*"
               tope={8 * 1024 * 1024}
               deshabilitado={agregar.isPending}
-              pista="Arrastra una imagen o toca para elegirla."
+              pista="Arrastre una imagen o toque para elegirla."
             />
             <Input
               label="Qué se ve"

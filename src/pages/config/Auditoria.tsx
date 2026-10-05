@@ -344,7 +344,7 @@ export function Auditoria() {
         : await copiarAuditoriaJson(filtros)
       setAvisoCopia(
         n >= TOPE_DE_COPIA
-          ? `Se llevó ${n.toLocaleString('es-VE')} renglones, que es el tope. Acota las fechas para llevarte el resto.`
+          ? `Se llevó ${n.toLocaleString('es-VE')} renglones, que es el tope. Acote las fechas para llevarse el resto.`
           : `${n.toLocaleString('es-VE')} renglones.`,
       )
     } catch (e) {
@@ -530,7 +530,7 @@ export function Auditoria() {
             titulo={hayFiltro ? 'Nada con esos filtros' : 'Todavía no hay movimientos anotados'}
             descripcion={
               hayFiltro
-                ? 'Prueba con un rango de fechas más amplio o quita algún filtro.'
+                ? 'Pruebe con un rango de fechas más amplio o quite algún filtro.'
                 : 'El registro empieza a llenarse desde que se activó. Lo que pasó antes de eso no está aquí, y no se puede inventar.'
             }
           />

@@ -204,7 +204,7 @@ export function SoltarArchivo({
           <>
             <Upload className={cn('size-5', encima ? 'text-royal-600' : 'text-ink/35')} />
             <span className="text-ink/70 text-sm">
-              {encima ? 'Suéltalo aquí' : 'Arrastra el archivo, o pulsa para elegirlo'}
+              {encima ? 'Suéltelo aquí' : 'Arrastre el archivo, o pulse para elegirlo'}
             </span>
             {pista ? <span className="text-ink/45 text-xs">{pista}</span> : null}
           </>

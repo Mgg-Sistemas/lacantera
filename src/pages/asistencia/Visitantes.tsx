@@ -396,7 +396,7 @@ function MarcarEntrada({ onCerrar }: { onCerrar: () => void }) {
           <div className="space-y-2">
             <SelectBuscable
               label="Visitante"
-              vacio="Busca por nombre, cédula, empresa o teléfono…"
+              vacio="Busque por nombre, cédula, empresa o teléfono…"
               valor={v.visitante_id}
               onCambio={(id) => setV((x) => ({ ...x, visitante_id: id }))}
               opciones={(visitantes ?? []).filter((p) => p.activo).map(etiquetaDe)}
@@ -483,7 +483,7 @@ function CorregirVisita({ visita, onCerrar }: { visita: Visita; onCerrar: () => 
       <div className="space-y-4">
         <SelectBuscable
           label="Visitante"
-          vacio="Busca por nombre, cédula, empresa o teléfono…"
+          vacio="Busque por nombre, cédula, empresa o teléfono…"
           valor={v.visitante_id}
           onCambio={(id) => setV((x) => ({ ...x, visitante_id: id }))}
           opciones={(visitantes ?? []).map(etiquetaDe)}
@@ -507,7 +507,7 @@ function CorregirVisita({ visita, onCerrar }: { visita: Visita; onCerrar: () => 
             value={salida}
             onChange={(e) => setSalida(e.target.value)}
             error={alReves ? 'Tiene que ser después de la entrada.' : undefined}
-            hint={visita.estado === 'ADENTRO' ? 'Está adentro: ponle la salida para cerrarla.' : 'Vacía: vuelve a quedar adentro.'}
+            hint={visita.estado === 'ADENTRO' ? 'Está adentro: póngale la salida para cerrarla.' : 'Vacía: vuelve a quedar adentro.'}
           />
         </div>
         <Textarea label="Nota" rows={2} value={v.nota} onChange={pon('nota')} />

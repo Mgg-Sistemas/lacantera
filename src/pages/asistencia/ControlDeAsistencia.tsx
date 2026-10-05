@@ -165,7 +165,7 @@ export function ControlDeAsistencia() {
       <Card className="mt-4">
         <CardHeader
           title="Calendario"
-          subtitle="Un mes de un vistazo. Toca un día para ver su gente y corregir una hora."
+          subtitle="Un mes de un vistazo. Toque un día para ver su gente y corregir una hora."
         />
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <div className="flex items-center gap-1">
@@ -237,7 +237,7 @@ export function ControlDeAsistencia() {
         blob={papel?.blob ?? null}
         nombreArchivo={papel?.nombre ?? 'asistencia.pdf'}
         titulo="Reporte de asistencia"
-        descripcion="Revísalo antes de descargarlo o imprimirlo."
+        descripcion="Revíselo antes de descargarlo o imprimirlo."
       />
     </>
   )
@@ -283,7 +283,7 @@ function Marcador({ hoy }: { hoy: string }) {
     <Card className="mb-4">
       <CardHeader
         title="Marcar"
-        subtitle="Escanea el carnet, o elige a la persona. El sistema decide si es entrada o salida y pone la hora."
+        subtitle="Escanee el carnet, o elija a la persona. El sistema decide si es entrada o salida y pone la hora."
       />
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div>
@@ -292,7 +292,7 @@ function Marcador({ hoy }: { hoy: string }) {
               <Input
                 label="Carnet"
                 icon={<ScanLine />}
-                placeholder="Escanea aquí…"
+                placeholder="Escanee aquí…"
                 autoComplete="off"
                 sinNormalizar
                 value={codigo}
@@ -316,8 +316,8 @@ function Marcador({ hoy }: { hoy: string }) {
         <div className="flex items-end gap-2">
           <div className="flex-1">
             <SelectBuscable
-              label="O elige a la persona"
-              vacio="Busca por nombre o ficha…"
+              label="O elija a la persona"
+              vacio="Busque por nombre o ficha…"
               valor={personaId}
               onCambio={setPersonaId}
               opciones={(empleados ?? []).map((e) => ({ valor: String(e.id), etiqueta: `${e.nombres} ${e.apellidos}`, detalle: `${e.ficha} · ${e.cedula}` }))}
@@ -591,7 +591,7 @@ function CargarAMano({ onCerrar }: { onCerrar: () => void }) {
       abierto
       onCerrar={onCerrar}
       titulo="Cargar una jornada a mano"
-      descripcion="Para quien no pudo marcar. Queda registrada como cargada a mano y con tu nombre."
+      descripcion="Para quien no pudo marcar. Queda registrada como cargada a mano y con su nombre."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -619,7 +619,7 @@ function CargarAMano({ onCerrar }: { onCerrar: () => void }) {
       <div className="space-y-4">
         <SelectBuscable
           label="Persona"
-          vacio="Busca por nombre o ficha…"
+          vacio="Busque por nombre o ficha…"
           valor={personaId}
           onCambio={setPersonaId}
           opciones={(empleados ?? []).map((e) => ({ valor: String(e.id), etiqueta: `${e.nombres} ${e.apellidos}`, detalle: `${e.ficha} · ${e.cedula}` }))}
@@ -683,7 +683,7 @@ function Corregir({ jornada, onCerrar }: { jornada: Jornada; onCerrar: () => voi
             value={salida}
             onChange={(e) => setSalida(e.target.value)}
             error={alReves ? 'Tiene que ser después de la entrada.' : undefined}
-            hint={jornada.estado === 'ABIERTA' ? 'Está abierta: ponle la salida para cerrarla.' : 'Vacía, vuelve a quedar abierta.'}
+            hint={jornada.estado === 'ABIERTA' ? 'Está abierta: póngale la salida para cerrarla.' : 'Vacía, vuelve a quedar abierta.'}
           />
         </div>
         <Textarea label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Por qué se corrige" />

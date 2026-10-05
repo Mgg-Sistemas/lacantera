@@ -57,7 +57,7 @@ export function ChipTasa({ className }: { className?: string }) {
         )}
       >
         <AlertTriangle className="size-3.5 shrink-0" />
-        Sin tasa registrada — cárgala
+        Sin tasa registrada — cárguela
       </Link>
     )
   }

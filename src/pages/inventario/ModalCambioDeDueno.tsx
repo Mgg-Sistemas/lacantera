@@ -128,7 +128,7 @@ export function ModalCambioDeDueno({
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Select
           label="Era de"
-          vacio={duenos.length > 1 ? 'Elige el dueño' : undefined}
+          vacio={duenos.length > 1 ? 'Seleccione el dueño' : undefined}
           value={de}
           onChange={(e) => setDe(e.target.value)}
           hint="Solo salen los que tienen algo de esto aquí."
@@ -136,7 +136,7 @@ export function ModalCambioDeDueno({
         />
         <Select
           label="Pasa a ser de"
-          vacio="Elige el dueño"
+          vacio="Seleccione el dueño"
           value={a}
           onChange={(e) => setA(e.target.value)}
           error={de && a && de === a ? 'Ya es suyo.' : undefined}

@@ -293,7 +293,7 @@ export function Documentos() {
         titulo={corrigiendo ? 'Corregir documento' : 'Cargar documento'}
         descripcion={
           corrigiendo
-            ? 'Cambia lo que haga falta. El archivo solo se toca si subes uno nuevo.'
+            ? 'Cambie lo que haga falta. El archivo solo se toca si sube uno nuevo.'
             : 'PDF o imagen, hasta 50 MB. Queda guardado dentro del sistema.'
         }
         acciones={
@@ -309,7 +309,7 @@ export function Documentos() {
       >
         <Select
           label="Tipo de documento"
-          vacio="Elige el tipo"
+          vacio="Seleccione el tipo"
           value={form.tipo}
           onChange={(e) => cambiar({ tipo: e.target.value })}
           opciones={(tipos ?? []).map((t) => ({ valor: t.codigo, etiqueta: t.nombre }))}
@@ -336,7 +336,7 @@ export function Documentos() {
           tope={TOPE_BYTES}
           pista={
             corrigiendo
-              ? 'Vacio se queda el que ya esta. Solo pon uno si llego una version nueva del papel.'
+              ? 'Vacio se queda el que ya esta. Solo ponga uno si llego una version nueva del papel.'
               : 'PDF o imagen, hasta 50 MB.'
           }
         />
@@ -353,7 +353,7 @@ export function Documentos() {
             type="date"
             value={form.vence_el}
             onChange={(e) => cambiar({ vence_el: e.target.value })}
-            hint={tipo?.caduca ? 'Este tipo suele caducar.' : 'Déjalo vacío si no caduca.'}
+            hint={tipo?.caduca ? 'Este tipo suele caducar.' : 'Déjelo vacío si no caduca.'}
           />
         </div>
 
@@ -386,7 +386,7 @@ export function Documentos() {
       >
         <p className="text-ink/70 text-sm">
           Se borra <strong className="text-ink/90">{borrando?.nombre}</strong> y también el archivo.
-          Esto no se puede deshacer: si es el único ejemplar que queda, tendrás que volver a
+          Esto no se puede deshacer: si es el único ejemplar que queda, tendrá que volver a
           escanearlo.
         </p>
       </Modal>

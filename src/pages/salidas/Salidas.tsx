@@ -172,7 +172,7 @@ export function Salidas() {
     <>
       <PageHeader
         title="Historial de salidas y traslados"
-        description="Lo que ya salió del inventario y lo que ya se movió entre almacenes. Aquí solo se consulta: para registrar una salida o solicitarla ve a «Salidas», y para mover material entre almacenes, a «Traslados»."
+        description="Lo que ya salió del inventario y lo que ya se movió entre almacenes. Aquí solo se consulta: para registrar una salida o solicitarla vaya a «Salidas», y para mover material entre almacenes, a «Traslados»."
       />
 
       <Pestanas pestanas={PESTANAS_SALIDAS} />
@@ -266,7 +266,7 @@ export function Salidas() {
           <p className="text-ink/50 mt-2 text-xs">
             {resumen}
             {(data ?? []).length === 200
-              ? ' · el libro trae los 200 más recientes: acota las fechas para ver más atrás'
+              ? ' · el libro trae los 200 más recientes: acote las fechas para ver más atrás'
               : ''}
           </p>
         ) : null}
@@ -283,8 +283,8 @@ export function Salidas() {
             descripcion={
               hayFiltros
                 ? nota.trim()
-                  ? 'Ninguna nota con ese número. Revisa que esté completo: los papeles llevan NS-2026-0012, con el año y los cuatro dígitos.'
-                  : 'Prueba a ampliar las fechas, o a quitar el artículo o el grupo.'
+                  ? 'Ninguna nota con ese número. Revise que esté completo: los papeles llevan NS-2026-0012, con el año y los cuatro dígitos.'
+                  : 'Amplíe las fechas, o quite el artículo o el grupo.'
                 : 'La primera línea la escribe la primera salida de material.'
             }
           />

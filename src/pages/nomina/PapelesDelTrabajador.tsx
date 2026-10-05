@@ -301,7 +301,7 @@ function AgregarPapel({ empleadoId, onCerrar }: { empleadoId: number; onCerrar: 
               setTocado(true)
               setNombre(e.target.value)
             }}
-            hint="Como quieras encontrarlo después."
+            hint="Como quiera encontrarlo después."
           />
         </div>
 

@@ -43,7 +43,7 @@ function IndicadorEnVivo({ estado }: { estado: EstadoTiempoReal }) {
   if (estado !== 'sin-conexion') return null
 
   const explicacion =
-    'Se perdió el enlace con el servidor. Lo que ves puede estar viejo; recarga la página para ponerlo al día.'
+    'Se perdió el enlace con el servidor. Lo que ve puede estar viejo; recargue la página para ponerlo al día.'
 
   return (
     <span
@@ -143,7 +143,7 @@ function IndicadorTasa() {
   if (isError || !data) {
     return (
       <div
-        title="No se pudo consultar la tasa. Verifica la conexión antes de emitir documentos."
+        title="No se pudo consultar la tasa. Verifique la conexión antes de emitir documentos."
         className="border-danger/30 bg-danger-soft mr-1 hidden items-center gap-2.5 rounded-full border py-1.5 pr-3 pl-3 sm:flex"
       >
         <span className="bg-danger size-1.5 shrink-0 rounded-full" />
@@ -195,10 +195,10 @@ function IndicadorTasa() {
         aria-expanded={abierto}
         title={
           sinRegistrar
-            ? 'El BCV ya publicó la tasa de hoy y el sistema todavía valora con otra. Abre para arreglarlo.'
+            ? 'El BCV ya publicó la tasa de hoy y el sistema todavía valora con otra. Abra para arreglarlo.'
             : data.vigente
-              ? 'Tasa publicada hoy y registrada en el sistema. Abre para ver las demás monedas y convertir.'
-              : `La última tasa publicada es del ${fechaCorta}. Confirma antes de emitir documentos.`
+              ? 'Tasa publicada hoy y registrada en el sistema. Abra para ver las demás monedas y convertir.'
+              : `La última tasa publicada es del ${fechaCorta}. Confirme antes de emitir documentos.`
         }
         className={cn(clases, 'flex transition-colors', sinRegistrar && 'hover:border-warning/60')}
       >
@@ -221,7 +221,7 @@ function IndicadorTasa() {
               <p className="text-ink/85 text-xs font-medium">La tasa de hoy no está registrada</p>
               <p className="text-ink/60 mt-0.5 text-2xs leading-relaxed">
                 {registrada.data
-                  ? `El sistema valora con la del ${new Date(`${registrada.data.fecha}T12:00:00`).toLocaleDateString('es-VE', { day: 'numeric', month: 'short' })}. Regístrala antes de emitir.`
+                  ? `El sistema valora con la del ${new Date(`${registrada.data.fecha}T12:00:00`).toLocaleDateString('es-VE', { day: 'numeric', month: 'short' })}. Regístrela antes de emitir.`
                   : 'Sin ninguna tasa registrada no se puede emitir nada.'}
               </p>
             </Link>

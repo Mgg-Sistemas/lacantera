@@ -195,7 +195,7 @@ function TarjetaCuenta({
               variant="ghost"
               icon={<Archive />}
               disabled={conSaldo}
-              title={conSaldo ? 'Con saldo no se archiva: trasládalo o ajústalo a cero primero.' : undefined}
+              title={conSaldo ? 'Con saldo no se archiva: trasládelo o ajústelo a cero primero.' : undefined}
               onClick={onArchivar}
             >
               Archivar
@@ -414,9 +414,9 @@ export function Cuentas() {
                     , no con la del día en que entró cada saldo. Cada cuenta manda el suyo.
                   </>
                 ) : sinTasa.length > 0 ? (
-                  `Hay cuentas en ${sinTasa.join(', ')} y falta registrar su tasa del día. Sin ella el total saldría corto: regístrala en Sistema › Tasas de cambio. El saldo de cada cuenta sí es exacto.`
+                  `Hay cuentas en ${sinTasa.join(', ')} y falta registrar su tasa del día. Sin ella el total saldría corto: regístrela en Sistema › Tasas de cambio. El saldo de cada cuenta sí es exacto.`
                 ) : (
-                  'Falta la tasa del día para convertir. Regístrala en Sistema › Tasas de cambio; mientras tanto, el saldo de cada cuenta sí es exacto.'
+                  'Falta la tasa del día para convertir. Regístrela en Sistema › Tasas de cambio; mientras tanto, el saldo de cada cuenta sí es exacto.'
                 )}
               </p>
             </div>
@@ -864,7 +864,7 @@ function ModalTraslado({
       <div className="space-y-4">
         <Select
           label="Sale de"
-          vacio="Elige la cuenta"
+          vacio="Seleccione la cuenta"
           value={origen}
           onChange={(e) => setOrigen(e.target.value)}
           opciones={cuentas.map((c) => ({
@@ -884,7 +884,7 @@ function ModalTraslado({
 
         <Select
           label="Entra en"
-          vacio="Elige la cuenta"
+          vacio="Seleccione la cuenta"
           value={destino}
           onChange={(e) => setDestino(e.target.value)}
           opciones={cuentas
@@ -1002,7 +1002,7 @@ function ModalCuenta({
             <>
               <Select
                 label="Banco"
-                vacio="Elige el banco"
+                vacio="Seleccione el banco"
                 value={edicion.banco}
                 onChange={(e) => cambiar({ banco: e.target.value })}
                 opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}

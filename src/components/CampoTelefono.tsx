@@ -76,7 +76,7 @@ export function CampoTelefono({
       hint={
         hint ??
         (raro
-          ? 'No parece un número venezolano. Si es de fuera, escríbelo con +.'
+          ? 'No parece un número venezolano. Si es de fuera, escríbalo con +.'
           : 'Once cifras: 0412-5551234. Con el + delante si es de otro país.')
       }
     />

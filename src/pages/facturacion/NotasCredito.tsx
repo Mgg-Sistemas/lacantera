@@ -241,7 +241,7 @@ export function NotasCredito() {
           ancho="lg"
           onCerrar={cerrar}
           titulo="Emitir nota de crédito"
-          descripcion="Se arma sobre los renglones de la factura: marca lo que sobra y ajusta la cantidad o el precio."
+          descripcion="Se arma sobre los renglones de la factura: marque lo que sobra y ajuste la cantidad o el precio."
           acciones={
             <>
               <Button variant="ghost" onClick={cerrar}>
@@ -287,7 +287,7 @@ export function NotasCredito() {
               value={facturaId}
               onChange={(e) => elegirFactura(e.target.value)}
               opciones={[
-                { valor: '', etiqueta: 'Elige la factura…' },
+                { valor: '', etiqueta: 'Seleccione la factura…' },
                 ...facturables.map((f) => ({
                   valor: String(f.id),
                   etiqueta: `${f.numero} · ${f.cliente} · ${dinero(f.moneda, f.total)}`,
@@ -421,7 +421,7 @@ export function NotasCredito() {
               <div className="border-hairline mt-4 flex items-center justify-between border-t pt-3">
                 <p className="text-ink/55 text-sm">
                   {elegidas.length === 0
-                    ? 'Marca al menos un renglón.'
+                    ? 'Marque al menos un renglón.'
                     : `${elegidas.length} renglón${elegidas.length === 1 ? '' : 'es'} · ` +
                       (yaAcreditado > 0
                         ? `esta factura ya tiene ${dinero(factura.moneda, yaAcreditado)} acreditados y quedan ${dinero(factura.moneda, porAcreditar)}`

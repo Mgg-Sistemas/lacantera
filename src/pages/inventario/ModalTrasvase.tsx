@@ -260,7 +260,7 @@ export function ModalTrasvase({
           }
         >
           {volDesde === 0
-            ? 'Escribe cuánto sale de cada lado'
+            ? 'Escriba cuánto sale de cada lado'
             : cuadra
               ? 'Cuadra'
               : `Faltan ${numero(Math.abs(volDesde - volHacia))} ${unidad} de un lado`}

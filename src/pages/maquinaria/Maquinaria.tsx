@@ -627,8 +627,8 @@ export function Maquinaria() {
                   titulo="Ninguna coincide"
                   descripcion={
                     filtroEstado
-                      ? 'Prueba con otro estado, o quita los filtros para ver la flota entera.'
-                      : 'Las desincorporadas no salen a menos que las pidas por estado.'
+                      ? 'Pruebe con otro estado, o quite los filtros para ver la flota entera.'
+                      : 'Las desincorporadas no salen a menos que las pida por estado.'
                   }
                   accion={
                     <Button

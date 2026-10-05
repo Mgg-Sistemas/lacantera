@@ -347,7 +347,7 @@ export function ServirComida({ onCerrar }: { onCerrar: () => void }) {
                 <div key={i} className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
                   <SelectBuscable
                     label="Víver"
-                    vacio="Busca el víver…"
+                    vacio="Busque el víver…"
                     valor={l.articulo_id}
                     onCambio={(val) => pon(i, 'articulo_id', val)}
                     opciones={delAlmacen.map((x) => ({
@@ -392,7 +392,7 @@ export function ServirComida({ onCerrar }: { onCerrar: () => void }) {
           >
             Otro víver
           </Button>
-          {repetido ? <p className="text-danger mt-2 text-xs">Hay un víver repetido: junta sus cantidades.</p> : null}
+          {repetido ? <p className="text-danger mt-2 text-xs">Hay un víver repetido: junte sus cantidades.</p> : null}
         </div>
 
         <Textarea label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />

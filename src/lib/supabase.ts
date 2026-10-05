@@ -67,7 +67,7 @@ const publishableKey = soloLoValido(
 )
 
 const AYUDA =
-  'En local van en .env.local (copia .env.example). En Vercel, en ' +
+  'En local van en .env.local (copie .env.example). En Vercel, en ' +
   'Settings → Environment Variables, y hay que volver a desplegar después ' +
   'de cambiarlas: el valor se incrusta al compilar, no se lee al abrir.'
 
@@ -101,7 +101,7 @@ if (!pareceClave && !pareceJwt) {
   throw new Error(
     `VITE_SUPABASE_PUBLISHABLE_KEY no tiene forma de clave (${publishableKey.length} caracteres). ` +
       `Debe ser una sola línea: o empieza por "sb_publishable_", o son tres tramos ` +
-      `separados por puntos. Revisa que esté copiada una sola vez y entera, desde ` +
+      `separados por puntos. Revise que esté copiada una sola vez y entera, desde ` +
       `Supabase → Settings → API. ${AYUDA}`,
   )
 }

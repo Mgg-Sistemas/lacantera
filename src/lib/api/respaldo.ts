@@ -307,7 +307,7 @@ async function mandarPorCorreo(
 
   const { data: sesion } = await supabase.auth.getSession()
   const token = sesion.session?.access_token
-  if (!token) throw new Error('La sesión caducó: vuelve a entrar para que se mande el correo.')
+  if (!token) throw new Error('La sesión caducó: inicie sesión nuevamente para que se envíe el correo.')
 
   const { error } = await supabase.functions.invoke('respaldo-por-correo', {
     body: {
@@ -364,10 +364,10 @@ async function razonDelFallo(error: unknown): Promise<string> {
 
   const crudo = enCastellano(error)
   if (/failed to send a request|failed to fetch|networkerror/i.test(crudo)) {
-    return 'No se pudo contactar al servicio de correo del sistema. Vuelve a intentarlo dentro de un minuto.'
+    return 'No se pudo contactar al servicio de correo del sistema. Vuelva a intentarlo dentro de un minuto.'
   }
   if (/non-2xx/i.test(crudo)) {
-    return 'El servicio de correo contestó con un error y no dijo cuál. Mira el registro de la función en Supabase.'
+    return 'El servicio de correo contestó con un error y no dijo cuál. Mire el registro de la función en Supabase.'
   }
   return crudo
 }
@@ -534,7 +534,7 @@ export function loQueImpideProgramar(p: {
 }): string | null {
   if (p.cadencia !== 'QUINCENAL' && !p.dia) return 'Falta elegir el día.'
   if (p.cadencia === 'MENSUAL' && p.dia === 28 && p.hora >= HORA_QUE_YA_CRUZA) {
-    return `El día 28 a las ${String(p.hora).padStart(2, '0')}:00 de Caracas cae el día 29 en la hora del servidor, y febrero no tiene 29: ese mes se saltaría. Elige un día anterior, o una hora antes de las ${HORA_QUE_YA_CRUZA}:00.`
+    return `El día 28 a las ${String(p.hora).padStart(2, '0')}:00 de Caracas cae el día 29 en la hora del servidor, y febrero no tiene 29: ese mes se saltaría. Elija un día anterior, o una hora antes de las ${HORA_QUE_YA_CRUZA}:00.`
   }
   if (p.motivo.trim().length < 4) return 'Falta decir por qué se programa así.'
   return null

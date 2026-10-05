@@ -554,7 +554,7 @@ export function Movimientos() {
           {data.length >= TOPE ? (
             <p className="text-warning border-hairline mt-3 border-t pt-3 text-xs">
               Se están contando los <span className="tabular">{TOPE}</span> movimientos más
-              recientes, y hay más. Acota el material, la clase o las fechas para que el total sea
+              recientes, y hay más. Acote el material, la clase o las fechas para que el total sea
               de todo.
             </p>
           ) : null}
@@ -575,7 +575,7 @@ export function Movimientos() {
             }
             descripcion={
               rango.desde || rango.hasta || almacenId
-                ? 'No hubo movimientos en lo que estás mirando. Prueba a ampliar las fechas o a quitar el almacén.'
+                ? 'No hubo movimientos en lo que está mirando. Amplíe las fechas o quite el almacén.'
                 : 'La primera línea la escribe la primera recepción de una compra.'
             }
           />

@@ -82,7 +82,7 @@ export function FormularioClave({
         >
           <Check className="text-success mt-px size-[18px] shrink-0" />
           <p className="text-success text-sm">
-            Clave cambiada. La próxima vez entra con la nueva.
+            Clave cambiada. La próxima vez entre con la nueva.
           </p>
         </div>
       ) : null}
@@ -114,7 +114,7 @@ export function FormularioClave({
       />
 
       <Input
-        label="Repite la clave nueva"
+        label="Repita la clave nueva"
         value={confirmacion}
         onChange={(e) => setConfirmacion(e.target.value)}
         autoComplete="new-password"

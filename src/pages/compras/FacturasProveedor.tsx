@@ -435,7 +435,7 @@ export function FacturasProveedor() {
           <div className="grid gap-4 sm:grid-cols-3">
             <SelectBuscable
               label="Proveedor"
-              vacio="Elige el proveedor"
+              vacio="Seleccione el proveedor"
               valor={nueva.proveedor_id}
               onCambio={(v) =>
                 setNueva(conRetencionPropuesta({ ...nueva, proveedor_id: v }))
@@ -463,7 +463,7 @@ export function FacturasProveedor() {
             <SelectBuscable
               label="¿Contra qué orden?"
               vacio={
-                nueva.proveedor_id ? 'Elige la orden' : 'Elige antes el proveedor'
+                nueva.proveedor_id ? 'Seleccione la orden' : 'Seleccione antes el proveedor'
               }
               valor={nueva.orden_id}
               onCambio={(v) => setNueva({ ...nueva, orden_id: v })}
@@ -842,7 +842,7 @@ export function FacturasProveedor() {
                   {detalle.orden_numero}
                 </Link>
                 , que tiene su propio camino de pago. El sistema no cruza los dos todavía:
-                comprueba allá antes de pagar aquí.
+                compruebe allá antes de pagar aquí.
               </p>
             ) : null}
           </div>
@@ -1019,7 +1019,7 @@ export function FacturasProveedor() {
           <div className="grid gap-4 sm:grid-cols-2">
             <SelectBuscable
               label="De qué cuenta sale"
-              vacio="Elige la cuenta"
+              vacio="Seleccione la cuenta"
               valor={cuentaId}
               onCambio={(v) => {
                 setCuentaId(v)
@@ -1054,7 +1054,7 @@ export function FacturasProveedor() {
               hint={
                 cuenta
                   ? 'Queda guardado en el pago y en los movimientos de dinero.'
-                  : 'Elige primero la cuenta: el pago móvil solo va en bolívares.'
+                  : 'Seleccione primero la cuenta: el pago móvil solo va en bolívares.'
               }
               error={metodoNoVale ? `${nombreDe(metodos, metodo)} no se usa en ${cuenta?.moneda}.` : undefined}
             />
@@ -1115,7 +1115,7 @@ export function FacturasProveedor() {
         >
           <Textarea
             label="Por qué se anula"
-            hint="Queda en el registro de auditoría con tu nombre y la hora."
+            hint="Queda en el registro de auditoría con su nombre y la hora."
             rows={3}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}

@@ -81,7 +81,7 @@ export function Cocina() {
   if (!puedeServir) {
     return (
       <p className="text-ink/60 mx-auto mt-10 max-w-sm text-center text-sm">
-        Tu usuario puede ver la alimentación, pero no servir comidas. Hace falta el permiso de escritura en
+        Su usuario puede ver la alimentación, pero no servir comidas. Hace falta el permiso de escritura en
         Alimentación.
       </p>
     )
@@ -238,7 +238,7 @@ export function Cocina() {
 
         {tarda ? (
           <p className="border-warning/30 bg-warning-soft text-ink/80 rounded-card border p-3 text-sm">
-            Está tardando por la señal. <strong>La comida ya se está guardando: no la cargues otra vez.</strong>
+            Está tardando por la señal. <strong>La comida ya se está guardando: no la cargue otra vez.</strong>
           </p>
         ) : null}
       </div>

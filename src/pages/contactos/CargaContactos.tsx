@@ -72,7 +72,7 @@ export function CargaContactos({ etiquetas, onCerrar }: { etiquetas: EtiquetaDeC
     >
       <div className="space-y-5 text-sm">
         <div>
-          <p className="text-ink/90 font-medium">1. Baja la plantilla</p>
+          <p className="text-ink/90 font-medium">1. Descargue la plantilla</p>
           <p className="text-ink/60 mt-1">
             Trae dos filas de ejemplo, que se borran. Las columnas de cabecera en realce son las que hacen falta: TIPO y,
             según sea, NOMBRES o RAZON SOCIAL. Las etiquetas van separadas por coma, con el nombre que tienen aquí.
@@ -89,7 +89,7 @@ export function CargaContactos({ etiquetas, onCerrar }: { etiquetas: EtiquetaDeC
         </div>
 
         <div>
-          <p className="text-ink/90 font-medium">2. Llénala en Excel y súbela</p>
+          <p className="text-ink/90 font-medium">2. Llénela en Excel y súbala</p>
           <p className="text-ink/60 mt-1">
             El orden de las columnas da igual: se casan por su título. Una que falte se deja vacía. Si un correo o un
             teléfono ya está en el directorio, no se guarda nada y el aviso dice en qué fila.
@@ -116,7 +116,7 @@ export function CargaContactos({ etiquetas, onCerrar }: { etiquetas: EtiquetaDeC
 
         {leida && guardadas === null ? (
           <div>
-            <p className="text-ink/90 font-medium">3. Revisa antes de guardar</p>
+            <p className="text-ink/90 font-medium">3. Revise antes de guardar</p>
             <p className="text-ink/60 mt-1">
               {leida.filas.length} contacto{leida.filas.length === 1 ? '' : 's'} por crear
               {leida.saltadas > 0 ? ` · ${leida.saltadas} fila${leida.saltadas === 1 ? '' : 's'} vacía${leida.saltadas === 1 ? '' : 's'} o de ejemplo, saltada${leida.saltadas === 1 ? '' : 's'}` : ''}

@@ -79,7 +79,7 @@ export function Surtidor() {
   if (!puedeDespachar) {
     return (
       <p className="text-ink/60 mx-auto mt-10 max-w-sm text-center text-sm">
-        Tu usuario puede ver el combustible, pero no despacharlo. Para surtir hace falta el permiso de
+        Su usuario puede ver el combustible, pero no despacharlo. Para surtir hace falta el permiso de
         escritura en Combustible.
       </p>
     )
@@ -101,7 +101,7 @@ export function Surtidor() {
     return (
       <div className="mx-auto max-w-md">
         <h1 className="text-ink/85 font-titular text-xl">¿De qué tanque?</h1>
-        <p className="text-ink/50 mt-1 text-sm">Toca el tanque del que vas a surtir.</p>
+        <p className="text-ink/50 mt-1 text-sm">Toque el tanque del que va a surtir.</p>
         <div className="mt-4 space-y-3">
           {conSaldo.map((t) => (
             <button
@@ -372,7 +372,7 @@ function Vale({
 
         {empleado === '' ? (
           <Input
-            label="O escribe quién"
+            label="O escriba quién"
             value={otroNombre}
             onChange={(e) => setOtroNombre(e.target.value)}
             placeholder="Nombre de quien recibe"
@@ -400,7 +400,7 @@ function Vale({
 
         {tarda ? (
           <p className="border-warning/30 bg-warning-soft text-ink/80 rounded-card border p-3 text-sm">
-            Está tardando por la señal. <strong>El vale ya se está guardando: no lo cargues otra vez.</strong>
+            Está tardando por la señal. <strong>El vale ya se está guardando: no lo cargue otra vez.</strong>
           </p>
         ) : null}
       </div>

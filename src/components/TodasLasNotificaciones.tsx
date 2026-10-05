@@ -386,7 +386,7 @@ export function TodasLasNotificaciones({
             descripcion={
               grupos.length === 0
                 ? 'Aquí entran los pedidos, las entradas de inventario y los pagos.'
-                : 'Quita el filtro para ver el resto.'
+                : 'Quite el filtro para ver el resto.'
             }
             resuelto={grupos.length > 0 && soloSinLeer && sinLeer === 0}
           />

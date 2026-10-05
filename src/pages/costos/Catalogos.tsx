@@ -170,7 +170,7 @@ function Origenes() {
             })
           }}
           onBorrar={async () => {
-            throw new Error('Los orígenes no se borran: apágalo.')
+            throw new Error('Los orígenes no se borran: apáguelo.')
           }}
           onAnadir={(nombre) => guardar.mutateAsync({ nombre, genera_deuda: generaDeuda === 'si' })}
         />

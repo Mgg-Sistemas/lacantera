@@ -143,7 +143,7 @@ export function interpretarContactos(hoja: string[][], etiquetas: EtiquetaDeCont
   })
   const columna = (titulo: string) => indice.get(llano(titulo))
   if (columna('NOMBRES') === undefined && columna('RAZON SOCIAL') === undefined) {
-    return { filas: [], errores: ['La hoja no trae ni la columna NOMBRES ni RAZON SOCIAL. Baja la plantilla y llénala.'], saltadas: 0 }
+    return { filas: [], errores: ['La hoja no trae ni la columna NOMBRES ni RAZON SOCIAL. Descargue la plantilla y llénela.'], saltadas: 0 }
   }
 
   const etiquetaPor = new Map<string, string>()
@@ -162,7 +162,7 @@ export function interpretarContactos(hoja: string[][], etiquetas: EtiquetaDeCont
       return i === undefined ? '' : String(fila[i] ?? '').trim()
     }
     const vacia = COLUMNAS.every((c) => celda(c.titulo) === '')
-    if (vacia || /BORRALA/.test(llano(celda('NOTA')))) {
+    if (vacia || /BORRALA|BORRELA/.test(llano(celda('NOTA')))) {
       saltadas++
       continue
     }

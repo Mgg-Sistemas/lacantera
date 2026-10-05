@@ -46,7 +46,7 @@ export function CasillaIgtf({
             <span className="text-ink/50 mt-0.5 block text-xs leading-relaxed">
               {aplica
                 ? 'Se calcula sobre el total con IVA.'
-                : 'Márcala cuando el pago se haga en divisas y toque cobrarlo.'}
+                : 'Márquela cuando el pago se haga en divisas y toque cobrarlo.'}
             </span>
           </span>
         </label>

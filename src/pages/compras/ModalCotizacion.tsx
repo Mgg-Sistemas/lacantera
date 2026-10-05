@@ -234,7 +234,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
             esta cotizacion sino cargar la de otro, y eso ya tiene su boton. */}
         <SelectBuscable
           label="Proveedor"
-          vacio="Elige el proveedor"
+          vacio="Seleccione el proveedor"
           disabled={corrigiendo}
           valor={proveedorId}
           onCambio={(v) => {

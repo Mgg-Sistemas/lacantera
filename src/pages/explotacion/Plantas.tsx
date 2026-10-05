@@ -414,7 +414,7 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
           <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
           <Select
             label="Qué es"
-            vacio="Elige el tipo"
+            vacio="Seleccione el tipo"
             value={tipo}
             onChange={(e) => setTipo(e.target.value as TipoDeSitio)}
             opciones={TIPOS}
@@ -435,7 +435,7 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
             {nuevo ? (
               <Select
                 label="Quién lo opera"
-                vacio="Elige quién"
+                vacio="Seleccione quién"
                 value={operador}
                 onChange={(e) => setOperador(e.target.value)}
                 opciones={(duenos ?? []).map((d) => ({ valor: d.codigo, etiqueta: d.nombre }))}
@@ -598,7 +598,7 @@ function CerrarSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion; onCerrar: (
 
       {avisa.length > 0 ? (
         <div className="border-hairline mb-4 rounded-[6px] border p-3">
-          <p className="text-ink/80 text-sm font-medium">Al cerrarlo, ten presente</p>
+          <p className="text-ink/80 text-sm font-medium">Al cerrarlo, tenga presente</p>
           <ul className="text-ink/65 mt-1.5 list-disc space-y-1 pl-5 text-sm">
             {avisa.map((c) => (
               <li key={c.que}>{c.detalle}</li>
@@ -714,7 +714,7 @@ function OperadorDelSitio({
           <div className="grid gap-3 sm:grid-cols-2">
             <Select
               label="Nuevo operador"
-              vacio="Elige quién"
+              vacio="Seleccione quién"
               value={operador}
               onChange={(e) => setOperador(e.target.value)}
               opciones={(duenos ?? [])
@@ -744,7 +744,7 @@ function OperadorDelSitio({
                 ¿Pasa algo de lo que hay con el nuevo operador?
               </p>
               <p className="text-ink/50 mt-0.5 text-xs">
-                Lo que no marques sigue siendo de quien es hoy. Lo marcado cambia de dueño el día de la
+                Lo que no marque sigue siendo de quien es hoy. Lo marcado cambia de dueño el día de la
                 cesión, así que esa fecha no puede ser futura. El material pide Inventario total; las
                 máquinas, Maquinaria en escritura.
               </p>
@@ -879,10 +879,10 @@ function FichaDeRuta({
       }
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select label="Sale de" vacio="Elige el sitio" value={origen} onChange={(e) => setOrigen(e.target.value)} opciones={opciones} />
+        <Select label="Sale de" vacio="Seleccione el sitio" value={origen} onChange={(e) => setOrigen(e.target.value)} opciones={opciones} />
         <Select
           label="Llega a"
-          vacio="Elige el sitio"
+          vacio="Seleccione el sitio"
           value={destino}
           onChange={(e) => setDestino(e.target.value)}
           opciones={opciones.filter((o) => o.valor !== origen)}

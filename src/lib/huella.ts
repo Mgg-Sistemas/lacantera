@@ -156,19 +156,19 @@ export function enCastellano(fallo: unknown): string {
   switch (nombre) {
     case 'NotAllowedError':
     case 'AbortError':
-      return 'No se completó. Puede que lo hayas cancelado, que pasara el minuto de espera, o que el aparato no llegara a pedírtelo. Vuelve a intentarlo y responde cuando salga el aviso del sistema.'
+      return 'No se completó. Puede que lo haya cancelado, que pasara el minuto de espera, o que el aparato no llegara a pedírselo. Vuelva a intentarlo y responda cuando salga el aviso del sistema.'
 
     case 'InvalidStateError':
-      return 'Este equipo ya tiene tu huella registrada para el sistema. Si no te deja entrar con ella, quítala y vuelve a activarla.'
+      return 'Este equipo ya tiene su huella registrada para el sistema. Si no le deja entrar con ella, quítela y vuelva a activarla.'
 
     case 'NotSupportedError':
       return 'Este equipo no tiene un lector que el sistema pueda usar. En Windows hace falta tener configurado Windows Hello; en el teléfono, la huella o la cara del propio aparato.'
 
     case 'SecurityError':
-      return 'La huella solo funciona sobre una conexión segura. Entra por la dirección con https y vuelve a intentarlo.'
+      return 'La huella solo funciona sobre una conexión segura. Entre por la dirección con https y vuelva a intentarlo.'
 
     case 'ConstraintError':
-      return 'El aparato no puede cumplir lo que el sistema le pide: hace falta que verifique quién eres, y aquí no hay huella, cara ni PIN configurados.'
+      return 'El aparato no puede cumplir lo que el sistema le pide: hace falta que verifique quién es usted, y aquí no hay huella, cara ni PIN configurados.'
 
     case 'UnknownError':
       return 'El lector falló sin decir por qué. Suele arreglarse cerrando el navegador y volviendo a entrar.'
@@ -177,7 +177,7 @@ export function enCastellano(fallo: unknown): string {
       // Un error nuestro ya viene escrito para leerse; uno del navegador que no
       // esté en la lista, al menos sin el enlace a la especificación.
       if (fallo instanceof Error && !(fallo instanceof DOMException)) return fallo.message
-      return 'No se pudo usar la huella en este equipo. Entra con tu clave y vuelve a intentarlo más tarde.'
+      return 'No se pudo usar la huella en este equipo. Entre con su clave y vuelva a intentarlo más tarde.'
   }
 }
 
@@ -277,7 +277,7 @@ export async function paseConHuella(): Promise<string> {
   if (!afirmacion) throw new Error('No se reconoció la huella.')
 
   const llave = await llaveDelEquipo()
-  if (!llave) throw new Error('Se perdió la llave de este equipo. Entra con tu clave.')
+  if (!llave) throw new Error('Se perdió la llave de este equipo. Entre con su clave.')
 
   const { v, d } = JSON.parse(guardado) as { v: string; d: string }
   const plano = await crypto.subtle.decrypt(

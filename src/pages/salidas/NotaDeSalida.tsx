@@ -194,7 +194,7 @@ export function useNotaDeSalida(): {
       )
     } catch (e) {
       setFallo(
-        `La nota ${n.numero} existe, pero no se pudo armar su papel. Búscala en Facturación › Notas de entrega.`,
+        `La nota ${n.numero} existe, pero no se pudo armar su papel. Búsquela en Facturación › Notas de entrega.`,
       )
       console.error(e)
     } finally {
@@ -265,7 +265,7 @@ export function useNotaDeSalida(): {
         el operador creería que no se guardó y volvería a sacar el material.
       */
       setFallo(
-        `La salida ${numero} quedó registrada, pero no se pudo armar el papel. Búscala en Movimientos y pulsa «Nota».`,
+        `La salida ${numero} quedó registrada, pero no se pudo armar el papel. Búsquela en Movimientos y pulse «Nota».`,
       )
       console.error(e)
     }
@@ -314,7 +314,7 @@ export function useNotaDeSalida(): {
       setDatos(armados)
       setNota(await armarNotaDeSalida(armados))
     } catch (e) {
-      setFallo(`No se pudo armar la orden ${s.numero}. Vuelve a intentarlo; la solicitud no cambió.`)
+      setFallo(`No se pudo armar la orden ${s.numero}. Vuelva a intentarlo; la solicitud no cambió.`)
       console.error(e)
     }
   }
@@ -365,7 +365,7 @@ export function useNotaDeSalida(): {
       setDatos(armados)
       setNota(await armarNotaDeSalida(armados))
     } catch (e) {
-      setFallo(`No se pudo armar la nota de ${m.numero}. Vuelve a intentarlo; el movimiento no cambió.`)
+      setFallo(`No se pudo armar la nota de ${m.numero}. Vuelva a intentarlo; el movimiento no cambió.`)
       console.error(e)
     } finally {
       setArmando(null)
@@ -395,7 +395,7 @@ export function useNotaDeSalida(): {
         descripcion={
           datos?.tipo === 'ORDEN'
             ? 'Lo que se solicitó y en qué estado está. Lo que de verdad sale lo dice la nota, al entregar.'
-            : 'Compruébala antes de imprimirla: es lo que va a firmar quien recibe el material.'
+            : 'Compruébela antes de imprimirla: es lo que va a firmar quien recibe el material.'
         }
         /*
           La casilla rehace el papel sin cerrarlo, igual que el selector de
@@ -459,7 +459,7 @@ export function useNotaDeSalida(): {
                       })
                       .catch(() => {
                         if (turnoDeAsientos.current === turno)
-                          setFallo('No se pudo leer lo que sacó esa salida. Vuelve a intentarlo.')
+                          setFallo('No se pudo leer lo que sacó esa salida. Vuelva a intentarlo.')
                       })
                   }}
                 />

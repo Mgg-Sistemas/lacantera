@@ -173,7 +173,7 @@ export function ModalFacturaDirecta({
         <div className="sm:col-span-2">
           <SelectBuscable
             label="Cliente"
-            vacio="Elige el cliente"
+            vacio="Seleccione el cliente"
             valor={clienteId}
             onCambio={(v) => {
               setClienteId(v)
@@ -228,7 +228,7 @@ export function ModalFacturaDirecta({
           <div className="mt-3">
             <SelectBuscable
               label="De qué patio sale"
-              vacio="Elige el patio o almacén"
+              vacio="Seleccione el patio o almacén"
               valor={almacenId}
               onCambio={(v) => setAlmacenId(v)}
               opciones={opcionesDePatio}
@@ -288,7 +288,7 @@ export function ModalFacturaDirecta({
 
       {sinTributo ? (
         <p className="text-warning mt-2 text-sm">
-          Una factura lleva IVA, IGTF o los dos: marca al menos uno.
+          Una factura lleva IVA, IGTF o los dos: marque al menos uno.
         </p>
       ) : null}
 

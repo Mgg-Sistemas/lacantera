@@ -853,7 +853,7 @@ export function Personal() {
               label="Motivo"
               rows={3}
               placeholder="Renuncia, despido justificado, fin de contrato, cargada por error…"
-              hint="De él dependen las prestaciones que le tocan. Si la ficha se cargó por error o está duplicada, escríbelo tal cual: es la forma de sacarla de la lista sin borrar nada."
+              hint="De él dependen las prestaciones que le tocan. Si la ficha se cargó por error o está duplicada, escríbalo tal cual: es la forma de sacarla de la lista sin borrar nada."
               value={egreso.motivo}
               onChange={(e) => setEgreso((g) => ({ ...g, motivo: e.target.value }))}
             />

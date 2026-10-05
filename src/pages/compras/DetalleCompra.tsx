@@ -1153,7 +1153,7 @@ export function DetalleCompra() {
       <Vacio
         icono={<ShoppingCart />}
         titulo="Ese pedido ya no está"
-        descripcion="Puede que lo hayan cancelado o borrado. Si llegaste desde un aviso, ese aviso quedó viejo."
+        descripcion="Puede que lo hayan cancelado o borrado. Si llegó desde un aviso, ese aviso quedó viejo."
         accion={
           <Link to="/app/compras">
             <Button variant="outline">Ver los pedidos</Button>
@@ -1393,7 +1393,7 @@ export function DetalleCompra() {
                   <Vacio
                     icono={<FileText />}
                     titulo="Sin cotizaciones"
-                    descripcion="Carga lo que manden los proveedores. Con dos o más, la comparación se hace sola."
+                    descripcion="Cargue lo que manden los proveedores. Con dos o más, la comparación se hace sola."
                   />
                 ) : null}
 
@@ -1776,7 +1776,7 @@ export function DetalleCompra() {
               {compra.estado === 'BORRADOR' ? (
                 <>
                   <p className="text-ink/60 mb-3 text-sm">
-                    Todavía es un borrador: nadie más lo ve en el tablero hasta que lo envíes.
+                    Todavía es un borrador: nadie más lo ve en el tablero hasta que lo envíe.
                   </p>
                   <Button
                     block
@@ -1813,7 +1813,7 @@ export function DetalleCompra() {
                 puedeCompras ? (
                   <>
                     <p className="text-ink/60 mb-3 text-sm">
-                      Carga las cotizaciones que manden los proveedores y propón una al gerente
+                      Cargue las cotizaciones que manden los proveedores y proponga una al gerente
                       general.
                     </p>
                     <Button block icon={<FileText />} onClick={() => setModal({ tipo: 'cotizacion' })}>
@@ -1845,7 +1845,7 @@ export function DetalleCompra() {
                     {propuestas.length > 1 ? (
                       <div className="mb-3">
                         <p className="text-ink/60 mb-2 text-sm">
-                          Compras subió {propuestas.length} cotizaciones. Escoge cuál se aprueba:
+                          Compras subió {propuestas.length} cotizaciones. Escoja cuál se aprueba:
                         </p>
                         <div className="space-y-1.5">
                           {propuestas.map((c) => (
@@ -1916,7 +1916,7 @@ export function DetalleCompra() {
                         <span className="text-ink/80">
                           Autorizada bajo autorización del gerente general
                           <span className="text-ink/50 mt-0.5 block text-xs">
-                            {autorizaAprobar.por_nombre} te lo autorizó
+                            {autorizaAprobar.por_nombre} se lo autorizó
                             {autorizaAprobar.hasta ? ` hasta el ${fecha(autorizaAprobar.hasta)}` : ''}
                             . Va a quedar escrito en la orden.
                           </span>
@@ -1960,7 +1960,7 @@ export function DetalleCompra() {
                         <span className="text-ink/80">
                           Poner mi firma digital en «Autorizado por»
                           <span className="text-ink/50 mt-0.5 block text-xs">
-                            Sin marcar, la raya de la orden de compra sale en blanco con tu nombre
+                            Sin marcar, la raya de la orden de compra sale en blanco con su nombre
                             debajo, para firmarla a mano.
                           </span>
                         </span>
@@ -2066,13 +2066,13 @@ export function DetalleCompra() {
                         </span>
                         .
                         {orden.comprobante_tipo === 'FACTURA'
-                          ? ' Recuerda registrarla para poder descontar el IVA.'
+                          ? ' Recuerde registrarla para poder descontar el IVA.'
                           : ''}
                       </p>
                     )}
 
                     <p className="text-ink/60 mb-3 text-sm">
-                      Indica cómo se le paga al proveedor. Con eso la orden entra a tesorería.
+                      Indique cómo se le paga al proveedor. Con eso la orden entra a tesorería.
                     </p>
                     <Button
                       block
@@ -2093,7 +2093,7 @@ export function DetalleCompra() {
                 puedeCompras ? (
                   <>
                     <p className="text-ink/60 text-sm">
-                      Registra el pago abajo, en el pago autorizado. Al hacerlo, la compra queda
+                      Registre el pago abajo, en el pago autorizado. Al hacerlo, la compra queda
                       esperando que llegue el material.
                     </p>
                     {/*
@@ -2150,7 +2150,7 @@ export function DetalleCompra() {
                       {!hayPapelDelProveedor ? (
                         <div className="border-warning/30 bg-warning-soft mt-2 rounded-[6px] border p-3">
                           <p className="text-ink/80 text-sm leading-relaxed">
-                            Falta el papel del proveedor. Sube la{' '}
+                            Falta el papel del proveedor. Suba la{' '}
                             <strong className="font-semibold">factura</strong> o la{' '}
                             <strong className="font-semibold">nota de entrega</strong> en «Papeles
                             de la compra», aquí abajo, y se podrá recibir.
@@ -2195,7 +2195,7 @@ export function DetalleCompra() {
               (puedeGerente || puedeCompras) ? (
                 <>
                   <p className="text-ink/60 mb-3 text-sm">
-                    Hay {dinero(orden.moneda, orden.total)} pagados sin material. Decide qué pasó
+                    Hay {dinero(orden.moneda, orden.total)} pagados sin material. Decida qué pasó
                     con ese dinero para cerrar la tarjeta.
                   </p>
                   <Button block variant="outline" onClick={() => setModal({ tipo: 'resolver' })}>
@@ -2257,7 +2257,7 @@ export function DetalleCompra() {
               <div className="mt-3">
                 <p className="text-ink/70 mb-2 text-sm">
                   La compra <strong className="text-ink/85">quedó aprobada</strong>, pero el
-                  respaldo no llegó a subir. Vuelve a subirlo en «Papeles recibidos», dentro de la
+                  respaldo no llegó a subir. Vuelva a subirlo en «Papeles recibidos», dentro de la
                   orden.
                 </p>
                 <ErrorDeCarga error={respaldar.error} />
