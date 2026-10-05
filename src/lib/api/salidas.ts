@@ -54,7 +54,7 @@ export const ESTADO_DE_SOLICITUD: Record<
   PEDIDA: { texto: 'Por aprobar', tono: 'warning' },
   APROBADA: { texto: 'Por entregar', tono: 'royal' },
   ENTREGADA: { texto: 'Entregada', tono: 'success' },
-  RECHAZADA: { texto: 'No aprobada', tono: 'neutral' },
+  RECHAZADA: { texto: 'Rechazada', tono: 'neutral' },
   CANCELADA: { texto: 'Cancelada', tono: 'neutral' },
 }
 
@@ -309,7 +309,7 @@ export function ordenEnPapel(
   return {
     numero: s.numero,
     estado: ESTADO_DE_SOLICITUD[s.estado].texto,
-    sello: s.estado === 'RECHAZADA' ? 'NO APROBADA' : s.estado === 'CANCELADA' ? 'CANCELADA' : null,
+    sello: s.estado === 'RECHAZADA' ? 'RECHAZADA' : s.estado === 'CANCELADA' ? 'CANCELADA' : null,
     fechaOrden: fechaHora(s.pedida_en),
     solicito: {
       nombre: nombreDe(s.pedida_por),

@@ -112,10 +112,10 @@ export interface RenglonDeSalida {
 */
 export interface OrdenEnPapel {
   numero: string
-  /** Como lo dice la pantalla: «Por aprobar», «Entregada», «No aprobada». */
+  /** Como lo dice la pantalla: «Por aprobar», «Entregada», «Rechazada». */
   estado: string
   /** Una orden que no sigue lleva un sello cruzado, para que no se use. */
-  sello?: 'NO APROBADA' | 'CANCELADA' | null
+  sello?: 'RECHAZADA' | 'CANCELADA' | null
   fechaOrden: string
   solicito: { nombre: string | null; firma?: string | null }
   autorizo: {
