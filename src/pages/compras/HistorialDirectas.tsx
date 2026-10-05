@@ -283,7 +283,7 @@ export function HistorialDirectas() {
             }
             descripcion={
               estado || rango.desde || rango.hasta
-                ? 'Pruebe a quitar el estatus o a ampliar las fechas.'
+                ? 'Quite el estatus o amplíe las fechas.'
                 : 'La primera la escribe quien registre una compra en la pestaña de al lado.'
             }
           />

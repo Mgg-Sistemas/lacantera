@@ -74,7 +74,7 @@ export function GastoPorUnidad() {
             titulo={hayPeriodo ? 'Nada en esas fechas' : 'Todavía no hay compras que repartir'}
             descripcion={
               hayPeriodo
-                ? 'No se aprobó ninguna compra ni salió material en el período que está mirando. Pruebe a ampliarlo.'
+                ? 'No se aprobó ninguna compra ni salió material en el período que está mirando. Amplíe el período.'
                 : 'Cuando se apruebe la primera orden, aquí aparecerá para qué unidad fue y cuánto costó.'
             }
           />
