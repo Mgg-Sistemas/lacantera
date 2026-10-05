@@ -1,7 +1,9 @@
 import { Fragment, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import {
   Archive,
   ArchiveRestore,
+  ChevronRight,
   KeyRound,
   Search,
   Plus,
@@ -168,6 +170,18 @@ function TarjetaRol({
   */
   const [abiertos, setAbiertos] = useState<string[]>([])
 
+  /*
+    Y LAS CASILLAS DE UN MÓDULO DETALLADO, PLEGADAS.
+
+    Christopher, 05/10/2026: «que no sea una lista enorme, no con una fila
+    infinita de permisos». En un rol detallado, cada módulo con catálogo
+    desplegaba TODAS sus casillas —Compras son siete, Nómina once— y la
+    tarjeta se volvía un rollo de cien renglones donde no se distinguía un
+    módulo de otro. Ahora el módulo dice de un golpe cuántas tiene marcadas
+    de cuántas, y las casillas se abren cuando se van a tocar.
+  */
+  const [desplegados, setDesplegados] = useState<string[]>([])
+
   const tieneAlgo = (codigo: string) => {
     const nivel = niveles.get(codigo) ?? 'NINGUNO'
     const suyas = accionesPorModulo.get(codigo) ?? []
@@ -254,6 +268,8 @@ function TarjetaRol({
                 que hace algo.
               */
               const porCasillas = rol.a_la_medida && suyas.length > 0
+              const cuantasMarcadas = suyas.filter((a) => marcadas.has(a.codigo)).length
+              const desplegado = desplegados.includes(m.codigo)
 
               return (
                 <Fragment key={m.codigo}>
@@ -264,25 +280,51 @@ function TarjetaRol({
                         <span className="text-ink/40 ml-2 text-2xs">detallado</span>
                       ) : null}
                     </td>
-                    {COLUMNAS.map((c) => (
-                      <td key={c.nivel} className="px-2 py-2.5 text-center">
-                        {porCasillas ? (
-                          <span className="text-ink/20 text-xs">·</span>
-                        ) : (
+                    {porCasillas ? (
+                      /* En vez de tres puntos muertos y las casillas debajo: el
+                         recuento, que es lo que se quiere saber de un vistazo, y
+                         la puerta para abrirlas. */
+                      <td colSpan={COLUMNAS.length} className="px-2 py-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDesplegados((xs) =>
+                              xs.includes(m.codigo)
+                                ? xs.filter((x) => x !== m.codigo)
+                                : [...xs, m.codigo],
+                            )
+                          }
+                          className="text-ink/55 hover:text-ink/85 mx-auto flex items-center gap-1.5 text-xs"
+                          aria-expanded={desplegado}
+                        >
+                          <ChevronRight
+                            className={cn('size-3.5 transition-transform', desplegado && 'rotate-90')}
+                          />
+                          <span className="tabular">
+                            {cuantasMarcadas} de {suyas.length}
+                          </span>
+                          <span className="hidden sm:inline">
+                            {desplegado ? 'casillas' : cuantasMarcadas === 1 ? 'casilla' : 'casillas'}
+                          </span>
+                        </button>
+                      </td>
+                    ) : (
+                      COLUMNAS.map((c) => (
+                        <td key={c.nivel} className="px-2 py-2.5 text-center">
                           <Casilla
                             marcada={alcanza(nivel, c.nivel)}
                             bloqueada={!editable || intocable}
                             etiqueta={`${c.etiqueta} en ${m.nombre} para ${rol.nombre}`}
                             onPulsar={() => onNivel(m.codigo, nivelAlMarcar(nivel, c.nivel))}
                           />
-                        )}
-                      </td>
-                    ))}
+                        </td>
+                      ))
+                    )}
                   </tr>
 
-                  {porCasillas
+                  {porCasillas && desplegado
                     ? suyas.map((a) => (
-                        <tr key={a.codigo} className="border-hairline border-b last:border-0">
+                        <tr key={a.codigo} className="border-hairline bg-ink/2 border-b last:border-0">
                           <td colSpan={1 + COLUMNAS.length} className="py-2 pr-5 pl-10">
                             <label className="flex cursor-pointer items-start gap-2.5">
                               <input
@@ -1417,6 +1459,89 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
+// La ficha recogida de una persona, común a las dos pestañas de permisos
+//
+// Christopher, 05/10/2026: «que cada persona sea un retráctil o contraíble con
+// todos los permisos acomodados por módulo, y que yo pueda ver los permisos
+// organizados, no una lista inmensa».
+//
+// Las dos pestañas —lo extendido y lo restringido— se leen igual y por eso
+// comparten esta pieza: cerrada dice de quién es, cuántos permisos vigentes
+// tiene y en qué módulos; abierta, los permisos agrupados. Dos componentes
+// gemelos se separarían a la primera semana, como ya pasó con otras parejas de
+// esta pantalla.
+// ---------------------------------------------------------------------------
+
+/** Los permisos de alguien, en grupos por módulo y en el orden en que llegaron. */
+function porModuloDe<T extends { modulo: string; modulo_nombre: string }>(filas: T[]) {
+  const mapa = new Map<string, { codigo: string; nombre: string; filas: T[] }>()
+  for (const f of filas) {
+    const g = mapa.get(f.modulo) ?? { codigo: f.modulo, nombre: f.modulo_nombre, filas: [] }
+    g.filas.push(f)
+    mapa.set(f.modulo, g)
+  }
+  return [...mapa.values()]
+}
+
+function FichaDePersona({
+  nombre,
+  chip,
+  modulos,
+  cuantos,
+  abierta,
+  /** Abierta porque se está buscando o porque es la única: no se deja cerrar. */
+  fija,
+  onAlternar,
+  children,
+}: {
+  nombre: string
+  chip: { texto: string; tono: 'success' | 'warning' | 'neutral' }
+  modulos: string[]
+  cuantos: number
+  abierta: boolean
+  fija: boolean
+  onAlternar: () => void
+  children: ReactNode
+}) {
+  return (
+    <Card flush className="overflow-hidden">
+      <button
+        type="button"
+        onClick={fija ? undefined : onAlternar}
+        aria-expanded={abierta}
+        className={cn(
+          'flex w-full items-start gap-2.5 px-4 py-3 text-left',
+          !fija && 'hover:bg-ink/3 cursor-pointer transition-colors',
+        )}
+      >
+        {fija ? (
+          <span className="mt-0.5 size-4 shrink-0" />
+        ) : (
+          <ChevronRight
+            className={cn(
+              'text-ink/40 mt-0.5 size-4 shrink-0 transition-transform',
+              abierta && 'rotate-90',
+            )}
+          />
+        )}
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-ink/85 font-medium">{nombre}</span>
+            <Chip tone={chip.tono}>{chip.texto}</Chip>
+          </span>
+          {/* Cerrada, esta línea es toda la ficha: en qué módulos y cuántos.
+              Sin ella habría que abrir una por una para saber dónde mirar. */}
+          <span className="text-ink/45 mt-0.5 block text-xs">
+            {cuantos} permiso{cuantos === 1 ? '' : 's'} · {modulos.join(' · ')}
+          </span>
+        </span>
+      </button>
+      {abierta ? <div className="border-hairline border-t">{children}</div> : null}
+    </Card>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Autorizaciones: lo que se le extiende a una persona por encima de su rol
 //
 // La líder: «Coloca que Jesmary pueda aprobar las órdenes marcando un check que
@@ -1455,6 +1580,10 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
   const [busca, setBusca] = useState('')
   /** El buscador de la lista, que no es el del modal: aquí se busca lo ya dado. */
   const [filtro, setFiltro] = useState('')
+  /** Qué personas están desplegadas. Todas empiezan recogidas. */
+  const [abiertas, setAbiertas] = useState<string[]>([])
+  /** Qué módulos están abiertos en el catálogo del modal. */
+  const [modulosAbiertos, setModulosAbiertos] = useState<string[]>([])
   /** Lo que la base dejó fuera y por qué, para decirlo al cerrar. */
   const [omitidas, setOmitidas] = useState<{ accion: string; motivo: string }[]>([])
 
@@ -1603,18 +1732,30 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
   const pasadas = coinciden.filter((a) => !a.vigente)
 
   /*
-    AGRUPADO POR PERSONA.
+    AGRUPADO POR PERSONA, Y RECOGIDO.
 
     Christopher, 05/10/2026: «me sale el nombre de cada persona repetido
     varias veces; mejor que salga la persona con los permisos extendidos que
-    tiene». Una tarjeta por persona con sus permisos adentro. Van primero
-    las personas con algo vigente, porque la pregunta de siempre es «qué
-    tiene fulano hoy», no «qué tuvo».
+    tiene» y, al verlo agrupado pero abierto, «que no sea una lista enorme,
+    que cada persona sea un retráctil con los permisos acomodados por
+    módulo».
+
+    Así que una ficha por persona, CERRADA, que dice de un vistazo cuántos
+    permisos vigentes tiene y en qué módulos. Se abre la que se quiera mirar
+    y sus permisos salen agrupados por módulo. Van primero las personas con
+    algo vigente, porque la pregunta de siempre es «qué tiene fulano hoy».
   */
   const porPersona = new Map<string, AutorizacionDelSistema[]>()
   for (const a of [...vivas, ...pasadas]) {
     porPersona.set(a.a_usuario, [...(porPersona.get(a.a_usuario) ?? []), a])
   }
+
+  /*
+    BUSCAR ABRE LO QUE ENCUENTRA. Quien escribe «aprobar compras» quiere ver
+    el permiso, no la ficha cerrada de quien lo tiene; y con una sola persona
+    en pantalla no hay nada que ordenar, así que tampoco se recoge.
+  */
+  const abrirTodas = q !== '' || porPersona.size === 1
 
   return (
     <>
@@ -1659,72 +1800,84 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
           Ningún permiso extendido coincide con «{filtro.trim()}».
         </p>
       ) : (
-        /*
-          UNA TARJETA POR PERSONA, SUS PERMISOS ADENTRO.
-
-          Antes era una tarjeta por permiso y el nombre se repetía tantas
-          veces como permisos tuviera. La pregunta real es «qué tiene
-          fulano», y esa se contesta con el nombre una vez y la lista debajo.
-        */
-        <div className="grid items-start gap-3 lg:grid-cols-2">
+        <div className="space-y-2.5">
           {[...porPersona.values()].map((suyas) => {
             const vigentes = suyas.filter((a) => a.vigente).length
+            const abierta = abrirTodas || abiertas.includes(suyas[0].a_usuario)
             return (
-              <Card key={suyas[0].a_usuario} flush className="overflow-hidden">
-                <div className="border-hairline flex flex-wrap items-center gap-2 border-b px-4 py-3">
-                  <span className="text-ink/85 font-medium">{suyas[0].a_nombre}</span>
-                  <Chip tone={vigentes > 0 ? 'success' : 'neutral'}>
-                    {vigentes > 0
-                      ? `${vigentes} vigente${vigentes === 1 ? '' : 's'}`
-                      : 'Nada vigente'}
-                  </Chip>
-                </div>
-                <ul className="divide-hairline divide-y">
-                  {suyas.map((a) => (
-                    <li key={a.id} className={cn('px-4 py-3', !a.vigente && 'opacity-60')}>
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-ink/80 text-sm">
-                            {a.accion_nombre}
-                            <span className="text-ink/40"> · {a.modulo_nombre}</span>
-                            {!a.vigente ? (
-                              <span className="text-ink/45 ml-2 text-xs">
-                                {a.revocada_en ? 'Retirada' : 'Fuera de fecha'}
-                              </span>
+              <FichaDePersona
+                key={suyas[0].a_usuario}
+                nombre={suyas[0].a_nombre}
+                chip={
+                  vigentes > 0
+                    ? { texto: `${vigentes} vigente${vigentes === 1 ? '' : 's'}`, tono: 'success' }
+                    : { texto: 'Nada vigente', tono: 'neutral' }
+                }
+                modulos={porModuloDe(suyas).map((g) => g.nombre)}
+                cuantos={suyas.length}
+                abierta={abierta}
+                fija={abrirTodas}
+                onAlternar={() =>
+                  setAbiertas((xs) =>
+                    xs.includes(suyas[0].a_usuario)
+                      ? xs.filter((x) => x !== suyas[0].a_usuario)
+                      : [...xs, suyas[0].a_usuario],
+                  )
+                }
+              >
+                {porModuloDe(suyas).map((g) => (
+                  <div key={g.codigo}>
+                    <p className="text-ink/45 bg-ink/2 text-2xs px-4 py-1.5 font-medium tracking-wider uppercase">
+                      {g.nombre}
+                    </p>
+                    <ul className="divide-hairline divide-y">
+                      {g.filas.map((a) => (
+                        <li key={a.id} className={cn('px-4 py-2.5', !a.vigente && 'opacity-60')}>
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-ink/80 text-sm">
+                                {a.accion_nombre}
+                                {!a.vigente ? (
+                                  <span className="text-ink/45 ml-2 text-xs">
+                                    {a.revocada_en ? 'Retirada' : 'Fuera de fecha'}
+                                  </span>
+                                ) : null}
+                              </p>
+                              <p className="text-ink/60 mt-1 text-sm italic">«{a.motivo}»</p>
+                              <p className="text-ink/50 mt-1 text-xs">
+                                Bajo autorización de{' '}
+                                <span className="text-ink/70">{a.por_nombre}</span>
+                                {' · desde '}
+                                {fecha(a.desde)}
+                                {a.hasta ? ` hasta ${fecha(a.hasta)}` : ' · sin fecha de fin'}
+                              </p>
+                              {a.revocada_en ? (
+                                <p className="text-ink/45 mt-1 text-xs">
+                                  Retirada por {a.revocada_nombre ?? '—'} el {fecha(a.revocada_en)}
+                                  {a.revocada_motivo ? ` · ${a.revocada_motivo}` : ''}
+                                </p>
+                              ) : null}
+                            </div>
+                            {gestionable && a.vigente ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-danger border-danger/30 shrink-0"
+                                onClick={() => {
+                                  setRetirando(a)
+                                  setMotivoRetiro('')
+                                }}
+                              >
+                                Retirar
+                              </Button>
                             ) : null}
-                          </p>
-                          <p className="text-ink/60 mt-1 text-sm italic">«{a.motivo}»</p>
-                          <p className="text-ink/50 mt-1 text-xs">
-                            Bajo autorización de <span className="text-ink/70">{a.por_nombre}</span>
-                            {' · desde '}
-                            {fecha(a.desde)}
-                            {a.hasta ? ` hasta ${fecha(a.hasta)}` : ' · sin fecha de fin'}
-                          </p>
-                          {a.revocada_en ? (
-                            <p className="text-ink/45 mt-1 text-xs">
-                              Retirada por {a.revocada_nombre ?? '—'} el {fecha(a.revocada_en)}
-                              {a.revocada_motivo ? ` · ${a.revocada_motivo}` : ''}
-                            </p>
-                          ) : null}
-                        </div>
-                        {gestionable && a.vigente ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-danger border-danger/30 shrink-0"
-                            onClick={() => {
-                              setRetirando(a)
-                              setMotivoRetiro('')
-                            }}
-                          >
-                            Retirar
-                          </Button>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </FichaDePersona>
             )
           })}
         </div>
@@ -1822,44 +1975,83 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
               onChange={(e) => setBusca(e.target.value)}
             />
 
-            <div className="border-hairline rounded-card mt-2 max-h-64 overflow-y-auto border">
+            {/*
+              LOS MÓDULOS, PLEGADOS.
+
+              Son dieciocho módulos y unas 180 casillas: abiertos de golpe, la
+              caja era un rollo en el que había que desplazarse a ciegas. Cada
+              módulo dice cuántas tiene marcadas de cuántas, se abre el que se
+              va a repartir, y «todo el módulo» sigue a mano sin abrirlo.
+              Buscando, se abre lo que coincide: quien escribe «aprobar» quiere
+              ver las casillas, no los módulos que las contienen.
+            */}
+            <div className="border-hairline rounded-card divide-hairline mt-2 max-h-72 divide-y overflow-y-auto border">
               {porModulo.length === 0 ? (
                 <p className="text-ink/45 p-3 text-sm">Ninguna casilla coincide.</p>
               ) : (
                 porModulo.map(([modulo, lista]) => {
                   const codigos = lista.map((a) => a.codigo)
-                  const todoElModulo = codigos.every((c) => forma.acciones.includes(c))
+                  const cuantas = codigos.filter((c) => forma.acciones.includes(c)).length
+                  const todoElModulo = cuantas === codigos.length
+                  const desplegado = busca.trim() !== '' || modulosAbiertos.includes(modulo)
                   return (
                     <div key={modulo}>
-                      <div className="bg-canvas sticky top-0 flex items-baseline justify-between gap-2 px-3 py-1.5">
-                        <p className="text-ink/50 text-2xs tracking-wide uppercase">{modulo}</p>
+                      <div className="bg-canvas flex items-center justify-between gap-2 px-3 py-1.5">
                         <button
                           type="button"
-                          className="text-royal-600 dark:text-royal-300 text-2xs underline"
+                          onClick={() =>
+                            setModulosAbiertos((xs) =>
+                              xs.includes(modulo) ? xs.filter((x) => x !== modulo) : [...xs, modulo],
+                            )
+                          }
+                          aria-expanded={desplegado}
+                          className="text-ink/60 hover:text-ink/85 flex min-w-0 items-center gap-1.5"
+                        >
+                          <ChevronRight
+                            className={cn(
+                              'size-3.5 shrink-0 transition-transform',
+                              desplegado && 'rotate-90',
+                            )}
+                          />
+                          <span className="text-2xs truncate tracking-wide uppercase">{modulo}</span>
+                          <span
+                            className={cn(
+                              'text-2xs tabular shrink-0',
+                              cuantas > 0 ? 'text-royal-600 dark:text-royal-300' : 'text-ink/35',
+                            )}
+                          >
+                            {cuantas}/{codigos.length}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          className="text-royal-600 dark:text-royal-300 text-2xs shrink-0 underline"
                           onClick={() => marcarVarias(codigos, !todoElModulo)}
                         >
                           {todoElModulo ? 'quitar el módulo' : 'todo el módulo'}
                         </button>
                       </div>
-                      {lista.map((a) => (
-                        <label
-                          key={a.codigo}
-                          className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 px-3 py-2"
-                        >
-                          <input
-                            type="checkbox"
-                            className="accent-royal-600 mt-0.5 size-4 shrink-0"
-                            checked={forma.acciones.includes(a.codigo)}
-                            onChange={() => marcar(a.codigo)}
-                          />
-                          <span className="min-w-0">
-                            <span className="text-ink/85 block text-sm">{a.nombre}</span>
-                            {a.dice ? (
-                              <span className="text-ink/45 block text-xs">{a.dice}</span>
-                            ) : null}
-                          </span>
-                        </label>
-                      ))}
+                      {desplegado
+                        ? lista.map((a) => (
+                            <label
+                              key={a.codigo}
+                              className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 px-3 py-2 pl-8"
+                            >
+                              <input
+                                type="checkbox"
+                                className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                                checked={forma.acciones.includes(a.codigo)}
+                                onChange={() => marcar(a.codigo)}
+                              />
+                              <span className="min-w-0">
+                                <span className="text-ink/85 block text-sm">{a.nombre}</span>
+                                {a.dice ? (
+                                  <span className="text-ink/45 block text-xs">{a.dice}</span>
+                                ) : null}
+                              </span>
+                            </label>
+                          ))
+                        : null}
                     </div>
                   )
                 })
@@ -2017,6 +2209,10 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
     hasta: '',
   })
   const [busca, setBusca] = useState('')
+  /** Qué personas están desplegadas. Todas empiezan recogidas. */
+  const [abiertas, setAbiertas] = useState<string[]>([])
+  /** Qué módulos están abiertos en el catálogo del modal. */
+  const [modulosAbiertos, setModulosAbiertos] = useState<string[]>([])
   const [omitidas, setOmitidas] = useState<{ accion: string; motivo: string }[]>([])
 
   const limpiar = () => {
@@ -2103,12 +2299,14 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
   const vivas = filas.filter((r) => r.vigente)
   const pasadas = filas.filter((r) => !r.vigente)
 
-  // Agrupado por persona, como los extendidos: el nombre una vez y sus
-  // restricciones debajo. Primero quien tiene alguna vigente.
+  // Agrupado por persona y recogido, como los extendidos: la misma pieza y la
+  // misma lectura. Primero quien tiene alguna vigente.
   const porPersona = new Map<string, RestriccionDelSistema[]>()
   for (const r of [...vivas, ...pasadas]) {
     porPersona.set(r.a_usuario, [...(porPersona.get(r.a_usuario) ?? []), r])
   }
+  // Aquí no hay buscador —son pocas—, así que solo se queda abierta la única.
+  const abrirTodas = porPersona.size === 1
 
   const estado = (r: RestriccionDelSistema) =>
     r.vigente
@@ -2140,67 +2338,87 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
           descripcion="Cuando alguien no deba poder algo que su rol le da, se le restringe desde aquí, con la razón escrita. Sus compañeros de rol no pierden nada."
         />
       ) : (
-        <div className="grid items-start gap-3 lg:grid-cols-2">
+        <div className="space-y-2.5">
           {[...porPersona.values()].map((suyas) => {
             const vigentes = suyas.filter((r) => r.vigente).length
+            const abierta = abrirTodas || abiertas.includes(suyas[0].a_usuario)
             return (
-              <Card key={suyas[0].a_usuario} flush className="overflow-hidden">
-                <div className="border-hairline flex flex-wrap items-center gap-2 border-b px-4 py-3">
-                  <span className="text-ink/85 font-medium">{suyas[0].a_nombre}</span>
-                  <Chip tone={vigentes > 0 ? 'warning' : 'neutral'}>
-                    {vigentes > 0
-                      ? `${vigentes} vigente${vigentes === 1 ? '' : 's'}`
-                      : 'Nada vigente'}
-                  </Chip>
-                </div>
-                <ul className="divide-hairline divide-y">
-                  {suyas.map((r) => {
-                    const e = estado(r)
-                    return (
-                      <li key={r.id} className={cn('px-4 py-3', !r.vigente && 'opacity-60')}>
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-ink/80 text-sm">
-                              No puede: {r.accion_nombre}
-                              <span className="text-ink/40"> · {r.modulo_nombre}</span>
-                              {!r.vigente ? (
-                                <span className="text-ink/45 ml-2 text-xs">{e.texto}</span>
+              <FichaDePersona
+                key={suyas[0].a_usuario}
+                nombre={suyas[0].a_nombre}
+                chip={
+                  vigentes > 0
+                    ? { texto: `${vigentes} vigente${vigentes === 1 ? '' : 's'}`, tono: 'warning' }
+                    : { texto: 'Nada vigente', tono: 'neutral' }
+                }
+                modulos={porModuloDe(suyas).map((g) => g.nombre)}
+                cuantos={suyas.length}
+                abierta={abierta}
+                fija={abrirTodas}
+                onAlternar={() =>
+                  setAbiertas((xs) =>
+                    xs.includes(suyas[0].a_usuario)
+                      ? xs.filter((x) => x !== suyas[0].a_usuario)
+                      : [...xs, suyas[0].a_usuario],
+                  )
+                }
+              >
+                {porModuloDe(suyas).map((g) => (
+                  <div key={g.codigo}>
+                    <p className="text-ink/45 bg-ink/2 text-2xs px-4 py-1.5 font-medium tracking-wider uppercase">
+                      {g.nombre}
+                    </p>
+                    <ul className="divide-hairline divide-y">
+                      {g.filas.map((r) => {
+                        const e = estado(r)
+                        return (
+                          <li key={r.id} className={cn('px-4 py-2.5', !r.vigente && 'opacity-60')}>
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-ink/80 text-sm">
+                                  No puede: {r.accion_nombre}
+                                  {!r.vigente ? (
+                                    <span className="text-ink/45 ml-2 text-xs">{e.texto}</span>
+                                  ) : null}
+                                </p>
+                                <p className="text-ink/60 mt-1 text-sm italic">«{r.motivo}»</p>
+                                <p className="text-ink/50 mt-1 text-xs">
+                                  Restringida por{' '}
+                                  <span className="text-ink/70">{r.por_nombre}</span>
+                                  {' · desde '}
+                                  {fecha(r.desde)}
+                                  {r.hasta ? ` hasta ${fecha(r.hasta)}` : ' · sin fecha de fin'}
+                                </p>
+                                {r.levantada_en ? (
+                                  <p className="text-ink/45 mt-1 text-xs">
+                                    Levantada por {r.levantada_nombre ?? '—'} el{' '}
+                                    {fecha(r.levantada_en)}
+                                    {r.levantada_motivo ? ` · ${r.levantada_motivo}` : ''}
+                                  </p>
+                                ) : null}
+                              </div>
+                              {gestionable && !r.levantada_en ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="shrink-0"
+                                  onClick={() => {
+                                    setLevantando(r)
+                                    setMotivoLevantar('')
+                                    setErrorLevantar(null)
+                                  }}
+                                >
+                                  Levantar
+                                </Button>
                               ) : null}
-                            </p>
-                            <p className="text-ink/60 mt-1 text-sm italic">«{r.motivo}»</p>
-                            <p className="text-ink/50 mt-1 text-xs">
-                              Restringida por <span className="text-ink/70">{r.por_nombre}</span>
-                              {' · desde '}
-                              {fecha(r.desde)}
-                              {r.hasta ? ` hasta ${fecha(r.hasta)}` : ' · sin fecha de fin'}
-                            </p>
-                            {r.levantada_en ? (
-                              <p className="text-ink/45 mt-1 text-xs">
-                                Levantada por {r.levantada_nombre ?? '—'} el {fecha(r.levantada_en)}
-                                {r.levantada_motivo ? ` · ${r.levantada_motivo}` : ''}
-                              </p>
-                            ) : null}
-                          </div>
-                          {gestionable && !r.levantada_en ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="shrink-0"
-                              onClick={() => {
-                                setLevantando(r)
-                                setMotivoLevantar('')
-                                setErrorLevantar(null)
-                              }}
-                            >
-                              Levantar
-                            </Button>
-                          ) : null}
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </Card>
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </FichaDePersona>
             )
           })}
         </div>
@@ -2276,38 +2494,70 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
               onChange={(e) => setBusca(e.target.value)}
             />
 
-            <div className="border-hairline rounded-card mt-2 max-h-64 overflow-y-auto border">
+            {/* Plegado por módulo, igual que al extender: aquí son menos
+                casillas —solo las que la base pregunta por su nombre— pero se
+                lee con la misma cabeza. */}
+            <div className="border-hairline rounded-card divide-hairline mt-2 max-h-72 divide-y overflow-y-auto border">
               {restringibles.isPending || acciones.isPending ? (
                 <p className="text-ink/45 p-3 text-sm">Cargando las casillas…</p>
               ) : porModulo.length === 0 ? (
                 <p className="text-ink/45 p-3 text-sm">Ninguna casilla coincide.</p>
               ) : (
-                porModulo.map(([modulo, lista]) => (
-                  <div key={modulo}>
-                    <p className="bg-canvas text-ink/50 text-2xs sticky top-0 px-3 py-1.5 tracking-wide uppercase">
-                      {modulo}
-                    </p>
-                    {lista.map((a) => (
-                      <label
-                        key={a.codigo}
-                        className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 px-3 py-2"
+                porModulo.map(([modulo, lista]) => {
+                  const cuantas = lista.filter((a) => forma.acciones.includes(a.codigo)).length
+                  const desplegado = busca.trim() !== '' || modulosAbiertos.includes(modulo)
+                  return (
+                    <div key={modulo}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setModulosAbiertos((xs) =>
+                            xs.includes(modulo) ? xs.filter((x) => x !== modulo) : [...xs, modulo],
+                          )
+                        }
+                        aria-expanded={desplegado}
+                        className="bg-canvas text-ink/60 hover:text-ink/85 flex w-full items-center gap-1.5 px-3 py-1.5"
                       >
-                        <input
-                          type="checkbox"
-                          className="accent-royal-600 mt-0.5 size-4 shrink-0"
-                          checked={forma.acciones.includes(a.codigo)}
-                          onChange={() => marcar(a.codigo)}
+                        <ChevronRight
+                          className={cn(
+                            'size-3.5 shrink-0 transition-transform',
+                            desplegado && 'rotate-90',
+                          )}
                         />
-                        <span className="min-w-0">
-                          <span className="text-ink/85 block text-sm">{a.nombre}</span>
-                          {a.dice ? (
-                            <span className="text-ink/45 block text-xs">{a.dice}</span>
-                          ) : null}
+                        <span className="text-2xs truncate tracking-wide uppercase">{modulo}</span>
+                        <span
+                          className={cn(
+                            'text-2xs tabular shrink-0',
+                            cuantas > 0 ? 'text-royal-600 dark:text-royal-300' : 'text-ink/35',
+                          )}
+                        >
+                          {cuantas}/{lista.length}
                         </span>
-                      </label>
-                    ))}
-                  </div>
-                ))
+                      </button>
+                      {desplegado
+                        ? lista.map((a) => (
+                            <label
+                              key={a.codigo}
+                              className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 px-3 py-2 pl-8"
+                            >
+                              <input
+                                type="checkbox"
+                                className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                                checked={forma.acciones.includes(a.codigo)}
+                                onChange={() => marcar(a.codigo)}
+                              />
+                              <span className="min-w-0">
+                                <span className="text-ink/85 block text-sm">{a.nombre}</span>
+                                {a.dice ? (
+                                  <span className="text-ink/45 block text-xs">{a.dice}</span>
+                                ) : null}
+                              </span>
+                            </label>
+                          ))
+                        : null}
+                    </div>
+                  )
+                })
               )}
             </div>
             <p className="text-ink/45 mt-1.5 text-xs">
