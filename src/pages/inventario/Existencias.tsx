@@ -825,7 +825,7 @@ export function Existencias() {
           */}
           {(propietarios ?? []).length > 1 ? (
             <Select
-              label="De quién"
+              label="Dueño"
               vacio="De todos"
               value={dueno}
               onChange={(e) => setDueno(e.target.value)}
@@ -837,7 +837,7 @@ export function Existencias() {
           ) : null}
 
           <SelectBuscable
-            label="Dónde"
+            label="Almacén"
             vacio="Todo el inventario"
             valor={almacenId}
             onCambio={(v) => setAlmacenId(v)}
@@ -1379,7 +1379,7 @@ export function Existencias() {
           {modal.tipo === 'entrada' ? (
             <>
               <SelectBuscable
-                label="A qué almacén entra"
+                label="Almacén"
                 vacio="Seleccione el sitio"
                 valor={aDonde}
                 /*
@@ -1500,7 +1500,7 @@ export function Existencias() {
                       </div>
 
                       <SelectBuscable
-                        label="Qué entra"
+                        label="Artículo"
                         vacio="Seleccione el artículo"
                         valor={r.articulo}
                         onCambio={(v) =>
@@ -1903,7 +1903,7 @@ export function Existencias() {
                     duenos={modal.fila?.duenos}
                     valor={saleDe}
                     onCambio={setSaleDe}
-                    label="¿De quién es lo que contó?"
+                    label="Dueño"
                   />
                 </div>
               ) : null}
@@ -2807,7 +2807,7 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
           Asi que se dice que tiene que llevar: el error y el respaldo.
         */}
       <Textarea
-        label="Por qué se corrige"
+        label="Motivo"
         className="mt-4"
         rows={2}
         placeholder="Qué se cargó mal y con qué papel se comprueba el costo correcto"

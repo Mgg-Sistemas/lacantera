@@ -443,7 +443,7 @@ export function ModalTraslado({
           taller de un patio cuando los dos empiezan igual. */}
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <SelectBuscable
-          label="Sale de"
+          label="Origen"
           vacio="Seleccione el almacén"
           valor={form.origen}
           onCambio={(v) => {
@@ -492,7 +492,7 @@ export function ModalTraslado({
           es lo mismo que ya hace el modal de cargar combustible.
         */}
         <SelectBuscable
-          label="Entra en"
+          label="Destino"
           vacio="Seleccione el almacén"
           valor={form.destino}
           onCambio={(v) => cambiar({ destino: v })}
@@ -625,7 +625,7 @@ export function ModalTraslado({
         */}
         {hayMezcla ? (
           <Select
-            label="¿De quién sale?"
+            label="Dueño"
             vacio="Seleccione el dueño"
             value={form.propietario}
             onChange={(e) => cambiar({ propietario: e.target.value })}
@@ -640,7 +640,7 @@ export function ModalTraslado({
 
       <Textarea
         className="mt-4"
-        label="Por qué se mueve"
+        label="Motivo"
         rows={2}
         value={form.motivo}
         onChange={(e) => cambiar({ motivo: e.target.value })}

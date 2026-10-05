@@ -209,7 +209,7 @@ export function ModalAlTaller({
       {!fila ? (
         <div className="mb-4 grid gap-4 sm:grid-cols-2">
           <SelectBuscable
-            label="Qué se manda"
+            label="Artículo"
             vacio={
               articulosConExistencia.length === 0
                 ? 'Nada reparable con existencia'
@@ -230,7 +230,7 @@ export function ModalAlTaller({
           />
 
           <SelectBuscable
-            label="De dónde sale"
+            label="Origen"
             vacio={elegidoArticulo ? 'Seleccione el sitio' : 'Seleccione antes el material'}
             valor={elegidoAlmacen}
             onCambio={setElegidoAlmacen}
@@ -248,7 +248,7 @@ export function ModalAlTaller({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Select
-          label="A qué taller"
+          label="Taller"
           vacio="Elegir"
           value={taller}
           onChange={(e) => setTaller(e.target.value)}
@@ -273,7 +273,7 @@ export function ModalAlTaller({
 
       <div className="mt-4">
         <Textarea
-          label="Qué le pasa"
+          label="Motivo"
           rows={2}
           placeholder="Se torcieron en el traslado y hay que enderezarlas"
           value={motivo}
@@ -291,7 +291,7 @@ export function ModalAlTaller({
           hint={URGENCIAS.find((u) => u.valor === urgencia)?.detalle}
         />
         <Select
-          label="Qué hace falta"
+          label="Especialidad"
           vacio="Sin especificar"
           value={especialidad}
           onChange={(e) => setEspecialidad(e.target.value)}
@@ -304,7 +304,7 @@ export function ModalAlTaller({
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <Input label="Sale el" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
+        <Input label="Fecha de salida" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
         <Input
           label="Días estimados"
           type="number"

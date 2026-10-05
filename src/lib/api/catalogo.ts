@@ -257,12 +257,12 @@ export function useEliminarCategoriaDeArticulo() {
 export const MODOS_ENTREGA = [
   {
     valor: 'RETORNABLE',
-    etiqueta: 'Se presta y vuelve',
+    etiqueta: 'Retornable',
     ayuda: 'Queda a nombre de quien lo recibe y se le pide de vuelta. Aparece en Asignaciones.',
   },
   {
     valor: 'CONSUMIBLE',
-    etiqueta: 'Se entrega y no vuelve',
+    etiqueta: 'Consumible',
     ayuda: 'Se gasta al usarlo. Sale por su propio camino —combustible, dotación, movimiento de almacén— y no como préstamo.',
   },
   {

@@ -780,7 +780,7 @@ export function Articulos() {
             {cambiaDensidad ? (
               <div className="sm:col-span-2">
                 <Textarea
-                  label="¿Por qué cambia la densidad?"
+                  label="Motivo"
                   rows={2}
                   value={form.motivo_densidad}
                   onChange={(e) => setForm({ ...form, motivo_densidad: e.target.value })}
@@ -843,7 +843,7 @@ export function Articulos() {
                 contar.
               */}
               <Select
-                label="Cómo llega"
+                label="Presentación"
                 vacio="Suelto, sin empaque"
                 /*
                   Cuando el panel de abajo ya lleva las formas, estos dos campos
@@ -968,7 +968,7 @@ export function Articulos() {
                 entregar a alguien, y por eso Asignaciones ofrecía gasolina
                 «hasta que la devuelva». */}
             <Select
-              label="Al entregarlo a una persona"
+              label="Modo de entrega"
               className="sm:col-span-2"
               hint={MODOS_ENTREGA.find((m) => m.valor === form.modo_entrega)?.ayuda}
               value={form.modo_entrega}

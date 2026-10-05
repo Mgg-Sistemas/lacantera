@@ -410,7 +410,7 @@ export function Movimientos() {
             opciones={CLASES}
           />
           <SelectBuscable
-            label="Quién lo movió"
+            label="Registrado por"
             vacio="Cualquiera"
             valor={registradoPor}
             onCambio={(v) => setRegistradoPor(v)}
@@ -834,7 +834,7 @@ export function Movimientos() {
           }
         >
           <Textarea
-            label="Por qué se deshace"
+            label="Motivo"
             rows={3}
             autoFocus
             value={motivo}

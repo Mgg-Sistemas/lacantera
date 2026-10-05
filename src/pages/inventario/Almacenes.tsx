@@ -248,7 +248,7 @@ export function Almacenes() {
               de dueño, y no lo decide quien carga una silla.
             */}
             <Select
-              label="De quién es lo que guarda"
+              label="Dueño"
               value={edicion.propietario}
               onChange={(e) => cambiar({ propietario: e.target.value })}
               hint={
@@ -279,7 +279,7 @@ export function Almacenes() {
               ponga a cualquiera para poder guardar.
             */}
             <SelectBuscable
-              label="Quién responde por él"
+              label="Responsable"
               vacio="Nadie por ahora"
               valor={edicion.responsable_id}
               onCambio={(v) => cambiar({ responsable_id: v })}

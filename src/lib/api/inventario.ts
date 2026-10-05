@@ -64,7 +64,7 @@ export const TIPOS_ALMACEN = [
   { valor: 'PATIO', etiqueta: 'Patio de material' },
   { valor: 'TALLER', etiqueta: 'Taller' },
   { valor: 'COMBUSTIBLE', etiqueta: 'Combustible' },
-  { valor: 'TRANSITO', etiqueta: 'En camino' },
+  { valor: 'TRANSITO', etiqueta: 'En tránsito' },
   /*
     Christopher: «debemos ampliar las opciones, incluso añadir un lugar que sea
     un patio, pero no de material, pensado por ejemplo para patio de máquinas o
@@ -254,7 +254,7 @@ export interface Existencia {
   almacen_id: number
   almacen_codigo: string
   almacen: string
-  /** El tipo de sitio. «TRANSITO» es «En camino»: ahí solo mueven los traslados. */
+  /** El tipo de sitio. «TRANSITO» es «En tránsito»: ahí solo mueven los traslados. */
   almacen_tipo?: string | null
   articulo_id: number
   articulo_codigo: string
@@ -1819,9 +1819,9 @@ export const ESTADO_TRASLADO: Record<
   EstadoTraslado,
   { texto: string; tono: 'warning' | 'royal' | 'success' | 'neutral' }
 > = {
-  SOLICITUD: { texto: 'Pedido, sin enviar', tono: 'warning' },
-  ACEPTADA: { texto: 'En camino', tono: 'royal' },
-  RECIBIDA: { texto: 'Llegó', tono: 'success' },
+  SOLICITUD: { texto: 'Solicitado', tono: 'warning' },
+  ACEPTADA: { texto: 'En tránsito', tono: 'royal' },
+  RECIBIDA: { texto: 'Recibido', tono: 'success' },
   CANCELADA: { texto: 'Cancelado', tono: 'neutral' },
 }
 
@@ -1853,7 +1853,7 @@ export const FORMA_DE_TRASLADO: Record<
   ENVIAR: {
     titulo: 'Enviar material a otro almacén',
     explica:
-      'Sale ahora de un almacén por el que responde y queda «En camino». Quien responde por el de destino confirma que llegó.',
+      'Sale ahora de un almacén por el que responde y queda «En tránsito». Quien responde por el de destino confirma que llegó.',
     boton: 'Enviar ahora',
     enLaLista: 'Enviado',
   },

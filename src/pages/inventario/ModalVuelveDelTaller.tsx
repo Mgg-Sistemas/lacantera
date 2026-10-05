@@ -120,7 +120,7 @@ export function ModalVuelveDelTaller({
           }
         />
         <Select
-          label="A qué almacén vuelve"
+          label="Destino"
           vacio="Elegir"
           value={destino}
           onChange={(e) => setDestino(e.target.value)}
@@ -132,9 +132,9 @@ export function ModalVuelveDelTaller({
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <Input label="Sale el" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
+        <Input label="Fecha de salida" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
         <Input
-          label="Qué costó el trabajo (USD)"
+          label="Costo del trabajo (USD)"
           type="number"
           min="0"
           step="0.01"

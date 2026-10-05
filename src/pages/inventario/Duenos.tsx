@@ -237,7 +237,7 @@ export function Duenos() {
             */}
             {!edicion.esLaCasa ? (
               <Interruptor
-                etiqueta="Se ofrece al elegir dueño"
+                etiqueta="Activo"
                 detalle="Apagarlo lo saca de los desplegables. Lo que ya era suyo sigue siéndolo: no se puede apagar si todavía le cuelga algún almacén o alguna máquina."
                 encendido={edicion.activo}
                 onCambio={(v) => setEdicion((x) => (x ? { ...x, activo: v } : x))}

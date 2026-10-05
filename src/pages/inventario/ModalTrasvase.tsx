@@ -281,7 +281,7 @@ export function ModalTrasvase({
 
       <Textarea
         className="mt-3"
-        label="¿Por qué se cambia de envase?"
+        label="Motivo"
         placeholder="Para que los operadores puedan moverlo sin montacargas"
         value={motivo}
         onChange={(e) => setMotivo(e.target.value)}

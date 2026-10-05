@@ -127,7 +127,7 @@ export function ModalCambioDeDueno({
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Select
-          label="Era de"
+          label="Dueño anterior"
           vacio={duenos.length > 1 ? 'Seleccione el dueño' : undefined}
           value={de}
           onChange={(e) => setDe(e.target.value)}
@@ -135,7 +135,7 @@ export function ModalCambioDeDueno({
           opciones={duenos.map((d) => ({ valor: d, etiqueta: nombreDe(d) }))}
         />
         <Select
-          label="Pasa a ser de"
+          label="Dueño nuevo"
           vacio="Seleccione el dueño"
           value={a}
           onChange={(e) => setA(e.target.value)}
@@ -165,7 +165,7 @@ export function ModalCambioDeDueno({
           />
         </div>
         <Input
-          label="Cuándo"
+          label="Fecha"
           type="date"
           max={hoyEnCaracas()}
           value={fecha}
@@ -202,7 +202,7 @@ export function ModalCambioDeDueno({
       */}
       <Textarea
         className="mt-4"
-        label="Por qué cambia de dueño"
+        label="Motivo"
         rows={3}
         placeholder="Acta de donación 2026-14 de la gobernación"
         value={motivo}
