@@ -579,7 +579,7 @@ function PestanaRoles({ editable }: { editable: boolean }) {
               {!edicion.nuevo && edicion.a_la_medida !== yaEra ? (
                 <p className="text-warning mt-3 text-xs leading-relaxed">
                   {edicion.a_la_medida
-                    ? 'Al detallarlo, en los módulos ya desglosados dejará de valer su nivel y solo valdrán las casillas que le marques. Empieza sin ninguna.'
+                    ? 'Al detallarlo, en los módulos ya desglosados dejará de valer su nivel y solo valdrán las casillas que le marque. Empieza sin ninguna.'
                     : 'Al devolverlo a módulo entero, sus casillas dejan de decidir y vuelve a mandar el nivel de cada módulo.'}
                 </p>
               ) : null}
@@ -690,7 +690,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
     setError(null)
 
     if (edicion.roles.length === 0) {
-      setError('Asigna al menos un rol. Un usuario sin roles no puede hacer nada.')
+      setError('Asigne al menos un rol. Un usuario sin roles no puede hacer nada.')
       return
     }
 
@@ -698,7 +698,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
       crear.mutate(edicion, {
         onSuccess: () => {
           setEdicion(null)
-          setAviso(`Usuario ${edicion.usuario} creado. Dile la clave en persona, no por escrito.`)
+          setAviso(`Usuario ${edicion.usuario} creado. Dígale la clave en persona, no por escrito.`)
         },
         onError: (e: Error) => setError(e.message),
       })
@@ -835,7 +835,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                       {u.usuario}
                       {u.usuario === yo ? (
                         <Chip tone="royal" className="ml-2">
-                          Tú
+                          Usted
                         </Chip>
                       ) : null}
                     </td>
@@ -1056,7 +1056,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                 value={edicion.clave}
                 revealable
                 onChange={(e) => cambiar({ clave: e.target.value })}
-                hint="Mínimo 8 caracteres. Dásela en persona y que la cambie."
+                hint="Mínimo 8 caracteres. Désela en persona y que la cambie."
               />
             ) : null}
 
@@ -1113,7 +1113,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
         abierto={clave !== null}
         onCerrar={() => setClave(null)}
         titulo="Cambiar la clave"
-        descripcion={clave ? `La clave de ${clave.nombre}. Dásela en persona.` : undefined}
+        descripcion={clave ? `La clave de ${clave.nombre}. Désela en persona.` : undefined}
         ancho="sm"
         acciones={
           <>
@@ -1222,13 +1222,13 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                 <>
                   Se queda sin permiso para nada desde ya: si entra con su clave, ve el sistema
                   vacío. Lo que hizo hasta hoy se conserva entero: su nombre sigue en lo que pidió,
-                  aprobó o pagó. Si se fue de malas, repónle además la clave desde la llave, que es
+                  aprobó o pagó. Si se fue de malas, repóngale además la clave desde la llave, que es
                   lo que le cierra la sesión. Una vez inactivo, se puede archivar.
                 </>
               ) : (
                 <>
                   Recupera sus roles y sus permisos con la misma clave que tenía. Si no la recuerda,
-                  cámbiasela desde la llave.
+                  cámbiesela desde la llave.
                 </>
               )}
             </p>
@@ -1287,7 +1287,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
             ) : null}
 
             <p className="text-ink/70 text-sm leading-relaxed">
-              Sale de la lista de en uso y queda en el archivo con la fecha, el motivo y tu nombre.
+              Sale de la lista de en uso y queda en el archivo con la fecha, el motivo y su nombre.
               Sigue sin poder hacer nada, igual que inactivo, y su nombre sigue en todo lo que
               firmó. Para volver a encenderlo habrá que sacarlo del archivo primero.
             </p>
@@ -1349,7 +1349,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
             {/* Sacar del archivo no es decidir que la persona vuelve a entrar.
                 Vuelve inactiva, y encenderla es el botón del muñeco. */}
             <p className="text-ink/70 text-sm leading-relaxed">
-              Vuelve a la lista de en uso, pero inactivo. Si tiene que volver a entrar, reactívalo
+              Vuelve a la lista de en uso, pero inactivo. Si tiene que volver a entrar, reactívelo
               aparte desde su fila.
             </p>
             {desarchivando.archivado_motivo ? (
@@ -1667,7 +1667,7 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
           limpiar()
         }}
         titulo="Extender un permiso"
-        descripcion="Se le presta a una persona concreta una cosa concreta. Todo lo que firme con ella va a decir que fue bajo tu autorización."
+        descripcion="Se le presta a una persona concreta una cosa concreta. Todo lo que firme con ella va a decir que fue bajo su autorización."
         acciones={
           <>
             <Button
@@ -1701,7 +1701,7 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
             opciones={opcionesPersona}
             valor={forma.usuario_id}
             onCambio={(v: string) => setForma((f) => ({ ...f, usuario_id: v }))}
-            vacio="Elige a la persona"
+            vacio="Seleccione a la persona"
           />
 
           {/*
@@ -1746,7 +1746,7 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
               label="Buscar"
               ocultarEtiqueta
               icon={<Search />}
-              placeholder="Filtra por casilla o por módulo"
+              placeholder="Filtre por casilla o por módulo"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -1795,8 +1795,8 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
               )}
             </div>
             <p className="text-ink/45 mt-1.5 text-xs">
-              Solo puedes extender lo que tú mismo puedes hacer. La misma justificación vale para
-              todas las que marques; las que ya tenga por su rol se saltan solas.
+              Solo puede extender lo que usted mismo puede hacer. La misma justificación vale para
+              todas las que marque; las que ya tenga por su rol se saltan solas.
             </p>
           </div>
 
@@ -1872,7 +1872,7 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
         titulo="Retirar el permiso"
         descripcion={
           retirando
-            ? `${retirando.a_nombre} deja de poder «${retirando.accion_nombre}» en el acto. Lo que ya firmó con este permiso no se toca: sigue diciendo que fue bajo tu autorización.`
+            ? `${retirando.a_nombre} deja de poder «${retirando.accion_nombre}» en el acto. Lo que ya firmó con este permiso no se toca: sigue diciendo que fue bajo su autorización.`
             : ''
         }
         acciones={
@@ -2157,7 +2157,7 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
             opciones={opcionesPersona}
             valor={forma.usuario_id}
             onCambio={(v: string) => setForma((f) => ({ ...f, usuario_id: v }))}
-            vacio="Elige a la persona"
+            vacio="Seleccione a la persona"
             hint="Los administradores no aparecen: a ellos no se les restringe nada. Si no deben poder algo, se les quita el rol."
           />
 
@@ -2180,7 +2180,7 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
               label="Buscar"
               ocultarEtiqueta
               icon={<Search />}
-              placeholder="Filtra por casilla o por módulo"
+              placeholder="Filtre por casilla o por módulo"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -2222,7 +2222,7 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
             <p className="text-ink/45 mt-1.5 text-xs">
               Aparecen las casillas que el sistema comprueba una por una. Lo demás depende del nivel
               que el rol da en cada módulo: para quitarlo, se le cambia el rol. La misma
-              justificación vale para todas las que marques.
+              justificación vale para todas las que marque.
             </p>
           </div>
 
@@ -2356,7 +2356,7 @@ export function Usuarios() {
         <div className="border-warning/30 bg-warning-soft text-warning mb-5 flex items-start gap-2.5 rounded-[6px] border p-3 text-sm">
           <ShieldCheck className="mt-px size-[18px] shrink-0" />
           <span>
-            Estás viendo esta pantalla en solo lectura. Crear usuarios y cambiar permisos lo hace
+            Está viendo esta pantalla en solo lectura. Crear usuarios y cambiar permisos lo hace
             quien tiene el rol de administrador del sistema.
           </span>
         </div>
