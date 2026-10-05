@@ -16,13 +16,15 @@ import { Textarea } from '@/components/ui/Textarea'
 import { OtrasPresentaciones } from '@/components/OtrasPresentaciones'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
-  CATEGORIAS_ARTICULO,
   MODOS_ENTREGA,
+  opcionesDeCategoria,
   useArticulos,
   useCambiarEstadoArticulo,
   useArticulosParecidos,
+  useCategoriasDeInventario,
+  useCrearCategoriaDeArticulo,
+  useEliminarCategoriaDeArticulo,
   useRenumerarArticulo,
-  PREFIJO_DE_CATEGORIA,
   useCrearArticulo,
   useEditarArticulo,
   usePresentacionesDeArticulo,
@@ -31,6 +33,7 @@ import {
   useUnidades,
 } from '@/lib/api/catalogo'
 import type { Articulo } from '@/lib/api/catalogo'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMovimientos } from '@/lib/api/inventario'
 import { fecha } from '@/lib/formato'
 import { densidadEnPalabras, densidadLegible } from '@/lib/medidas'
@@ -112,6 +115,20 @@ export function Articulos() {
   )
   const crear = useCrearArticulo()
   const editar = useEditarArticulo()
+
+  /*
+    Las categorías salen de la base desde el 05/10/2026: lo que antes era una
+    lista escrita aquí hoy es la tabla `categorias_articulo`, y con control
+    total de Inventario se administran desde el botón «Categorías».
+  */
+  const { puede } = useMisPermisos()
+  const categorias = useCategoriasDeInventario()
+  const opcionesCategoria = opcionesDeCategoria(categorias.data)
+  const etiquetaDeCategoria = (codigo: string) =>
+    (categorias.data ?? []).find((c) => c.codigo === codigo)?.etiqueta ?? codigo
+  const prefijoDeCategoria = (codigo: string) =>
+    (categorias.data ?? []).find((c) => c.codigo === codigo)?.prefijo
+  const [gestionando, setGestionando] = useState(false)
 
   const eliminar = useEliminarArticulo()
   const renumerar = useRenumerarArticulo()
@@ -214,8 +231,8 @@ export function Articulos() {
   const desencaja =
     !!form?.id &&
     !!form.codigo &&
-    !!PREFIJO_DE_CATEGORIA[form.categoria] &&
-    form.codigo.split('-')[0] !== PREFIJO_DE_CATEGORIA[form.categoria]
+    !!prefijoDeCategoria(form.categoria) &&
+    form.codigo.split('-')[0] !== prefijoDeCategoria(form.categoria)
 
   const filtrados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
@@ -248,6 +265,11 @@ export function Articulos() {
                 Cargar por planilla
               </Button>
             </Link>
+            {puede('INVENTARIO', 'TOTAL') ? (
+              <Button variant="outline" icon={<Boxes />} onClick={() => setGestionando(true)}>
+                Categorías
+              </Button>
+            ) : null}
             <Button icon={<Plus />} onClick={() => setForm({ ...nuevo })}>
               Nuevo artículo
             </Button>
@@ -271,7 +293,7 @@ export function Articulos() {
             vacio="Todas"
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
-            opciones={CATEGORIAS_ARTICULO}
+            opciones={opcionesCategoria}
           />
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -360,10 +382,7 @@ export function Articulos() {
                         </p>
                       ) : null}
                     </td>
-                    <td className="text-ink/70 px-3 py-3">
-                      {CATEGORIAS_ARTICULO.find((c) => c.valor === a.categoria)?.etiqueta ??
-                        a.categoria}
-                    </td>
+                    <td className="text-ink/70 px-3 py-3">{etiquetaDeCategoria(a.categoria)}</td>
                     <td className="text-ink/70 px-3 py-3">{a.unidad}</td>
                     <td className="px-3 py-3">
                       <Chip tone={a.modo_entrega === 'RETORNABLE' ? 'royal' : 'neutral'}>
@@ -658,7 +677,7 @@ export function Articulos() {
                   modo_entrega: form.id ? form.modo_entrega : modoDe(e.target.value),
                 })
               }
-              opciones={CATEGORIAS_ARTICULO}
+              opciones={opcionesCategoria}
             />
             {/*
               EL CODIGO NO SIGUE A LA CATEGORIA, PERO PUEDE ALCANZARLA.
@@ -1044,7 +1063,121 @@ export function Articulos() {
           {editar.error ? <ErrorDeCarga error={editar.error} className="mt-4" /> : null}
         </Modal>
       ) : null}
+
+      {gestionando ? <Categorias onCerrar={() => setGestionando(false)} /> : null}
     </>
+  )
+}
+
+/* ──────────────────────────────────────────────────── las categorías */
+
+/*
+  LAS CATEGORÍAS SE CREAN AQUÍ, NO EN UNA MIGRACIÓN.
+
+  Christopher, 05/10/2026: «necesito poder crear nuevas categorías sin
+  necesidad de que sea por código». La lista vive en la tabla
+  `categorias_articulo`; las marcadas como del sistema no se eliminan
+  —el programa las usa por nombre: el combustible se despacha, el producto
+  se vende, los víveres se cocinan— y las creadas aquí solo clasifican.
+  Una creada por error se puede eliminar mientras ningún artículo la use.
+*/
+function Categorias({ onCerrar }: { onCerrar: () => void }) {
+  const categorias = useCategoriasDeInventario()
+  const crearCategoria = useCrearCategoriaDeArticulo()
+  const eliminarCategoria = useEliminarCategoriaDeArticulo()
+
+  const [etiqueta, setEtiqueta] = useState('')
+  const [prefijo, setPrefijo] = useState('')
+
+  // El prefijo que saldría si no se escribe uno: las tres primeras letras,
+  // la misma red que usa la base.
+  const prefijoPropuesto = etiqueta
+    .toUpperCase()
+    .replace(/[ÁÉÍÓÚÜÑ]/g, (l) => 'AEIOUUN'['ÁÉÍÓÚÜÑ'.indexOf(l)])
+    .replace(/[^A-Z]/g, '')
+    .slice(0, 3)
+
+  const crear = async () => {
+    await crearCategoria.mutateAsync({
+      etiqueta: etiqueta.trim(),
+      prefijo: prefijo.trim() || null,
+    })
+    setEtiqueta('')
+    setPrefijo('')
+  }
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      ancho="lg"
+      titulo="Categorías del catálogo"
+      descripcion="Clasifican los artículos y deciden con qué letras empiezan sus códigos. Las del sistema no se eliminan: el programa las usa por nombre."
+      acciones={<Button onClick={onCerrar}>Listo</Button>}
+    >
+      <div className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+          <Input
+            label="Nueva categoría"
+            placeholder="Material médico"
+            value={etiqueta}
+            onChange={(e) => setEtiqueta(e.target.value)}
+          />
+          <Input
+            label="Prefijo"
+            placeholder={prefijoPropuesto || 'VIV'}
+            hint="Con él empiezan sus códigos."
+            value={prefijo}
+            onChange={(e) => setPrefijo(e.target.value.toUpperCase())}
+          />
+          <div className="flex items-start pt-6">
+            <Button
+              icon={<Plus />}
+              disabled={etiqueta.trim().length < 3 || crearCategoria.isPending}
+              onClick={() => void crear()}
+            >
+              {crearCategoria.isPending ? 'Creando…' : 'Crear'}
+            </Button>
+          </div>
+        </div>
+
+        {crearCategoria.error ? <ErrorDeCarga error={crearCategoria.error} /> : null}
+        {eliminarCategoria.error ? <ErrorDeCarga error={eliminarCategoria.error} /> : null}
+
+        {categorias.isPending ? <Cargando /> : null}
+        {categorias.error ? <ErrorDeCarga error={categorias.error} /> : null}
+
+        <ul className="divide-hairline border-hairline divide-y rounded-card border">
+          {(categorias.data ?? []).map((c) => (
+            <li key={c.codigo} className="flex items-center gap-3 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-ink/85 text-sm">{c.etiqueta}</p>
+                <p className="text-ink/40 font-mono text-xs">{c.codigo}</p>
+              </div>
+              <span className="tabular text-ink/60 font-mono text-xs">{c.prefijo}-…</span>
+              {c.de_sistema ? (
+                <Chip tone="neutral">Del sistema</Chip>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-danger"
+                  disabled={eliminarCategoria.isPending}
+                  onClick={() => eliminarCategoria.mutate(c.codigo)}
+                >
+                  Eliminar
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        <p className="text-ink/45 text-xs">
+          La categoría nueva aparece de inmediato en los formularios y en la planilla de carga. Solo se
+          elimina la que ningún artículo usa.
+        </p>
+      </div>
+    </Modal>
   )
 }
 

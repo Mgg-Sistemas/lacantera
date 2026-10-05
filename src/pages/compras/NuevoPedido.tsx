@@ -14,9 +14,10 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useMiFirma } from '@/lib/api/firmas'
 import {
-  CATEGORIAS_ARTICULO,
   conSusFormas,
+  opcionesDeCategoria,
   useArticulos,
+  useCategoriasDeInventario,
   useCrearArticulo,
   usePerfiles,
   useTodasLasPresentaciones,
@@ -143,6 +144,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
   const corrigiendo = !!pedido
   const navigate = useNavigate()
   const { data: articulos } = useArticulos()
+  const { data: categoriasInv } = useCategoriasDeInventario()
   const { data: formasDeContar } = useTodasLasPresentaciones()
   const { data: almacenes } = useAlmacenes()
   const crearArticulo = useCrearArticulo()
@@ -560,7 +562,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                           onChange={(e) =>
                             cambiar(fila.clave, { nueva_categoria: e.target.value })
                           }
-                          opciones={CATEGORIAS_ARTICULO}
+                          opciones={opcionesDeCategoria(categoriasInv)}
                         />
                       </div>
 
