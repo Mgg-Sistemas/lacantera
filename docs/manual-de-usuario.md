@@ -5839,6 +5839,8 @@ Y la advertencia que conviene repetir: **ningún nivel de esta matriz convierte 
 
 **La tarjeta de cada rol enseña solo los módulos a los que llega.** Desde el 5 de octubre de 2026 la matriz ya no lista los veintitantos módulos del sistema en cada tarjeta: la fila de un módulo aparece cuando el rol tiene algo en él, y desaparece al quitárselo todo. Un rol recién creado sale como una tarjeta corta que dice que no llega a ningún módulo todavía, igual de organizada que las demás.
 
+**Y en un rol detallado, las casillas de cada módulo vienen plegadas.** En vez de desplegar las siete casillas de Compras y las once de Nómina una debajo de otra, la fila del módulo dice **cuántas tiene marcadas de cuántas hay** —*3 de 7 casillas*— y se abre con el triangulito cuando se van a tocar. Así la tarjeta de un rol detallado se lee de un vistazo en lugar de ser un rollo de cien renglones.
+
 #### Cambiar un permiso
 
 1. Entra en la pestaña **Roles y permisos**.
@@ -5930,7 +5932,13 @@ Con el botón **Extender un permiso** se pide:
 
 **Un permiso extendido se retira**, no se borra, y al retirarlo se pide **Por qué se retira**: queda el rastro de que existió, de quién lo dio, por qué y hasta cuándo.
 
-**La lista va agrupada por persona.** Desde el 5 de octubre de 2026 cada persona sale una sola vez, como una tarjeta con todos sus permisos extendidos adentro —primero quien tiene algo vigente—, en vez de repetir su nombre en una tarjeta por permiso. La pestaña **Permisos restringidos** —la cara contraria: quitarle a una persona concreta algo que su rol le daría— va agrupada de la misma forma.
+**La lista va agrupada por persona, y recogida.** Desde el 5 de octubre de 2026 cada persona sale una sola vez, como una **ficha plegada** que dice su nombre, cuántos permisos vigentes tiene y en qué módulos: *«2 permisos · Compras · Tesorería»*. Se abre con el triangulito la que se quiera mirar, y sus permisos salen **agrupados por módulo**, cada uno con su motivo, quién lo autorizó y sus fechas. Primero van las personas con algo vigente.
+
+**Buscar abre lo que encuentra**: al escribir en el buscador las fichas se despliegan solas, porque quien busca «aprobar compras» quiere ver el permiso y no la ficha cerrada de quien lo tiene. Con una sola persona en pantalla tampoco se recoge nada.
+
+La pestaña **Permisos restringidos** —la cara contraria: quitarle a una persona concreta algo que su rol le daría— se lee exactamente igual.
+
+**En las ventanas de extender y de restringir, el catálogo también viene plegado.** Son dieciocho módulos y unas 180 casillas: cada módulo dice cuántas lleva marcadas de cuántas tiene —*3/7*— y se abre el que se va a repartir. El enlace **todo el módulo** sigue a mano sin necesidad de abrirlo, y al escribir en el filtro los módulos que coinciden se despliegan solos.
 
 #### Lo que ni siquiera el administrador puede hacer
 
