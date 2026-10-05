@@ -116,14 +116,14 @@ export function FormularioContacto({
       }
     >
       {/* ── Quién es ─────────────────────────────────────────────────── */}
-      <Bloque titulo="Quién es">
+      <Bloque titulo="Identificación">
         <Select
-          label="Es"
+          label="Tipo"
           value={d.tipo}
           onChange={(e) => cambiar({ tipo: e.target.value as DatosContacto['tipo'] })}
           opciones={[
-            { valor: 'PERSONA', etiqueta: 'Una persona' },
-            { valor: 'EMPRESA', etiqueta: 'Una empresa' },
+            { valor: 'PERSONA', etiqueta: 'Persona' },
+            { valor: 'EMPRESA', etiqueta: 'Empresa' },
           ]}
         />
         <Input
@@ -160,7 +160,7 @@ export function FormularioContacto({
       </Bloque>
 
       {/* ── Cómo se le habla ─────────────────────────────────────────── */}
-      <Bloque titulo="Cómo se le habla">
+      <Bloque titulo="Medios de contacto">
         <Input
           label="Celular"
           value={d.celular}
@@ -197,7 +197,7 @@ export function FormularioContacto({
       </Bloque>
 
       {/* ── Dónde está ───────────────────────────────────────────────── */}
-      <Bloque titulo="Dónde está">
+      <Bloque titulo="Ubicación">
         <Input className="sm:col-span-2" label="Dirección" value={d.direccion} onChange={(e) => cambiar({ direccion: e.target.value })} />
         <Input label="Ciudad" value={d.ciudad} onChange={(e) => cambiar({ ciudad: e.target.value })} />
         <Input
@@ -231,7 +231,7 @@ export function FormularioContacto({
       </Bloque>
 
       {/* ── Cómo se clasifica ────────────────────────────────────────── */}
-      <Bloque titulo="Cómo se clasifica">
+      <Bloque titulo="Clasificación">
         <div className="sm:col-span-2">
           <p className="text-ink/70 mb-1 text-xs font-medium">Etiquetas</p>
           <div className="flex flex-wrap gap-2">
@@ -257,7 +257,7 @@ export function FormularioContacto({
           </div>
         </div>
         <Input
-          label="De dónde vino"
+          label="Origen"
           value={d.origen}
           onChange={(e) => cambiar({ origen: e.target.value })}
           list="origenes-de-contacto"
@@ -269,8 +269,8 @@ export function FormularioContacto({
           ))}
         </datalist>
         <Select
-          label="Quién lo atiende"
-          vacio="Nadie en particular"
+          label="Asignado a"
+          vacio="Sin asignar"
           value={d.asignado_a}
           onChange={(e) => cambiar({ asignado_a: e.target.value })}
           opciones={(usuarios ?? []).filter((u) => u.activo).map((u) => ({ valor: u.id, etiqueta: u.nombre }))}
@@ -283,28 +283,28 @@ export function FormularioContacto({
           hint="Bloquear, o desbloquear, pide control total sobre Contactos."
         />
         {d.estado !== 'ACTIVO' ? (
-          <Input label="Por qué" value={d.estado_motivo} onChange={(e) => cambiar({ estado_motivo: e.target.value })} />
+          <Input label="Motivo" value={d.estado_motivo} onChange={(e) => cambiar({ estado_motivo: e.target.value })} />
         ) : null}
       </Bloque>
 
       {/* ── Lo que ya existe en el sistema ───────────────────────────── */}
       <Bloque titulo="Es el contacto de…">
         <SelectBuscable
-          label="Un cliente"
+          label="Cliente"
           vacio="Ninguno"
           valor={d.cliente_id}
           onCambio={(v) => cambiar({ cliente_id: v })}
           opciones={(enlazables.data?.clientes ?? []).map((c) => ({ valor: String(c.id), etiqueta: c.nombre, detalle: c.rif }))}
         />
         <SelectBuscable
-          label="Un proveedor"
+          label="Proveedor"
           vacio="Ninguno"
           valor={d.proveedor_id}
           onCambio={(v) => cambiar({ proveedor_id: v })}
           opciones={(enlazables.data?.proveedores ?? []).map((p) => ({ valor: String(p.id), etiqueta: p.nombre, detalle: p.rif }))}
         />
         <SelectBuscable
-          label="Un trabajador"
+          label="Trabajador"
           vacio="Ninguno"
           valor={d.empleado_id}
           onCambio={(v) => cambiar({ empleado_id: v })}
@@ -372,15 +372,15 @@ function EmpresaDeLaPersona({ d, cambiar }: { d: DatosContacto; cambiar: (c: Par
   return (
     <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
       <SelectBuscable
-        label="Empresa (del directorio)"
-        vacio="Ninguna del directorio"
+        label="Empresa registrada"
+        vacio="Ninguna"
         valor={d.empresa_id}
         onCambio={(v) => cambiar({ empresa_id: v, empresa_nombre: v ? '' : d.empresa_nombre })}
         opciones={empresas.map((e) => ({ valor: String(e.id), etiqueta: e.nombre, detalle: e.documento ?? undefined }))}
         hint="Si su empresa está en el directorio, enlácela aquí y no la escriba."
       />
       <Input
-        label="Empresa (a mano)"
+        label="Empresa no registrada"
         value={d.empresa_nombre}
         onChange={(e) => cambiar({ empresa_nombre: e.target.value })}
         disabled={!!d.empresa_id}

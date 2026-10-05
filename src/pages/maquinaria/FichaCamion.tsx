@@ -152,7 +152,7 @@ export function FichaCamion() {
               de maquinaria lleva etiqueta: sin decirlo, parecería que el camión
               tiene combustible propio. */}
           <Historial
-            titulo="Qué ha hecho"
+            titulo="Actividad"
             subtitulo="Pesajes, despachos, guías, choferes y —si es propio— también su combustible, sus horas y sus pasos por el taller."
             hechos={hilo.data}
             cargando={hilo.isPending}

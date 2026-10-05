@@ -553,7 +553,7 @@ export const navigation: NavSection[] = [
           auditoría fila por fila y no de memoria.
         */
         children: [
-          { label: 'Quién tiene qué', to: '/app/asignaciones' },
+          { label: 'Bienes asignados', to: '/app/asignaciones' },
           { label: 'Dotación por cargo', to: '/app/asignaciones/dotacion' },
           { label: 'Incidencias', to: '/app/asignaciones/incidencias' },
         ],

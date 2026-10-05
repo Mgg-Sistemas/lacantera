@@ -991,7 +991,7 @@ export function ModalSalida({
         <Modal
           abierto
           onCerrar={() => setOrdenandoClases(false)}
-          titulo="Por qué puede salir un material"
+          titulo="Motivos de salida"
           descripcion="La lista que aparece al sacar material. Cada razón ya sabe si es consumo o merma: eso no se cambia desde aquí, porque movería de sitio salidas ya registradas."
           ancho="sm"
           acciones={<Button onClick={() => setOrdenandoClases(false)}>Listo</Button>}

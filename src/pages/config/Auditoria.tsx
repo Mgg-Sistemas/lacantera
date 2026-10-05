@@ -852,10 +852,10 @@ function Explicado({ movimiento }: { movimiento: Movimiento }) {
     movimiento.operacion === 'UPDATE' && movimiento.cambios?.length ? (
       <Diferencias movimiento={movimiento} nombres={nombres} />
     ) : movimiento.operacion === 'INSERT' && movimiento.despues ? (
-      <FilaCompleta titulo="Cómo quedó" fila={movimiento.despues} nombres={nombres} />
+      <FilaCompleta titulo="Registro creado" fila={movimiento.despues} nombres={nombres} />
     ) : movimiento.operacion === 'DELETE' && movimiento.antes ? (
       <FilaCompleta
-        titulo="Lo que había antes de borrarlo"
+        titulo="Registro eliminado"
         fila={movimiento.antes}
         nombres={nombres}
       />

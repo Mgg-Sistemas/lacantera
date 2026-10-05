@@ -101,7 +101,7 @@ export function ModalPlanillaDeIngreso({ abierto, onCerrar, onEmitir }: Props) {
       <Modal
         abierto
         onCerrar={cerrar}
-        titulo="Qué documentos se piden"
+        titulo="Documentos requeridos"
         descripcion="Lo que se imprime en la hoja que se lleva el aspirante. Cambia con el tiempo, así que se edita aquí mismo."
         ancho="lg"
         acciones={

@@ -241,7 +241,7 @@ export function Contactos() {
             />
             <Select
               className="lg:col-span-2"
-              label="Quién lo atiende"
+              label="Asignado a"
               vacio="Cualquiera"
               value={asignado}
               onChange={(e) => setAsignado(e.target.value)}

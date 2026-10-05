@@ -388,7 +388,7 @@ function ModalEntregarA({
         {elegido && elegido.tabulador_id == null ? (
           <p className="border-warning/30 bg-warning-soft text-ink/75 rounded-[6px] border p-3 text-sm leading-relaxed">
             Esta persona no tiene un cargo del tabulador en su ficha, así que el sistema no sabe qué
-            le toca. Se le puede entregar igual desde <strong>Quién tiene qué</strong>, eligiendo a
+            le toca. Se le puede entregar igual desde <strong>Bienes asignados</strong>, eligiendo a
             mano lo que se lleva.
           </p>
         ) : null}
@@ -415,7 +415,7 @@ function ModalEntregarA({
           <p className="text-ink/55 text-sm leading-relaxed">
             A su cargo no se le ha definido ninguna dotación, así que no hay nada que proponer.
             Defínala arriba con <strong>Añadir</strong>, o entréguele a mano desde{' '}
-            <strong>Quién tiene qué</strong>.
+            <strong>Bienes asignados</strong>.
           </p>
         ) : null}
       </div>
@@ -456,7 +456,7 @@ function ModalDotacion({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
     <Modal
       abierto={abierto}
       onCerrar={onCerrar}
-      titulo="Qué le toca a este cargo"
+      titulo="Dotación del cargo"
       descripcion="Se declara una vez y vale para todos los que tengan ese puesto, incluidos los que entren después."
       acciones={
         <>

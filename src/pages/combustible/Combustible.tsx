@@ -1113,7 +1113,7 @@ function ModalMotivos({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =>
     <Modal
       abierto={abierto}
       onCerrar={onCerrar}
-      titulo="Para qué se surte"
+      titulo="Usos del combustible"
       descripcion="La lista que sale al despachar. Cámbiela cuando haga falta; los vales viejos siguen diciendo lo que decían."
       acciones={
         <Button variant="ghost" onClick={onCerrar}>
