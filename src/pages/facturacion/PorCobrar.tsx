@@ -37,7 +37,7 @@ interface Grupo {
 }
 
 const tramo = (dias: number) => {
-  if (dias <= 0) return 'Al día'
+  if (dias <= 0) return 'Por vencer'
   if (dias <= 30) return 'Hasta 30 días'
   if (dias <= 60) return '31 a 60 días'
   if (dias <= 90) return '61 a 90 días'
@@ -155,7 +155,7 @@ export function PorCobrar() {
                       {g.vencidoUsd > 0 ? (
                         <Chip tone="danger">{dolares(g.vencidoUsd)} vencido</Chip>
                       ) : (
-                        <Chip tone="success">Al día</Chip>
+                        <Chip tone="success">Sin vencidos</Chip>
                       )}
                     </div>
                   }

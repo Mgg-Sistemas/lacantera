@@ -132,17 +132,17 @@ export function Duenos() {
                       de distinguirlos. En las demás se calla, que es donde
                       repetirlo lo convertiría en ruido. */}
                   {d.es_la_casa ? (
-                    <Chip tone="success">Nosotros</Chip>
+                    <Chip tone="success">Propio</Chip>
                   ) : (
                     <Chip tone="warning" icon={<Landmark />}>
-                      Ajeno
+                      De terceros
                     </Chip>
                   )}
                 </div>
 
                 <p className="text-ink/55 mt-3 text-xs leading-relaxed">
                   {total === 0
-                    ? 'Todavía no tiene nada a su nombre.'
+                    ? 'Sin material asignado.'
                     : [
                         c.almacenes > 0
                           ? `${c.almacenes} almacén${c.almacenes === 1 ? '' : 'es'}`
@@ -157,7 +157,7 @@ export function Duenos() {
 
                 {!d.activo ? (
                   <Chip tone="neutral" className="mt-3">
-                    No se ofrece
+                    Inactivo
                   </Chip>
                 ) : null}
               </Card>

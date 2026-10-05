@@ -240,9 +240,9 @@ function ListaDeVisitas({
           <span className="tabular text-ink/85 text-sm">
             {horaDe(v.entrada)} → {v.salida ? horaDe(v.salida) : '—'}
           </span>
-          <span className="tabular text-ink/60 w-20 text-right text-sm">{v.estado === 'ADENTRO' ? 'adentro' : duracion(v.minutos)}</span>
+          <span className="tabular text-ink/60 w-20 text-right text-sm">{v.estado === 'ADENTRO' ? 'dentro' : duracion(v.minutos)}</span>
           {v.estado === 'ADENTRO' ? (
-            <Chip tone="info">Adentro</Chip>
+            <Chip tone="info">Dentro</Chip>
           ) : v.estado === 'SALIO' ? (
             <Chip tone="neutral">Salió</Chip>
           ) : (
@@ -576,7 +576,7 @@ function VisitantesConocidos({ puedeEditar, onCerrar }: { puedeEditar: boolean; 
                       .join(' · ')}
                   </p>
                 </div>
-                {p.adentro ? <Chip tone="info">Adentro</Chip> : null}
+                {p.adentro ? <Chip tone="info">Dentro</Chip> : null}
                 {!p.activo ? <Chip tone="neutral">Inactivo</Chip> : null}
                 {puedeEditar ? (
                   <Button size="sm" variant="ghost" icon={<Pencil />} onClick={() => setEditando(p)}>

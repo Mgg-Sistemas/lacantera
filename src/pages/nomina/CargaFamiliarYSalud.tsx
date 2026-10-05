@@ -172,7 +172,7 @@ function LaCargaFamiliar({
                       </p>
                     </div>
 
-                    {f.depende ? <Chip tone="info">Depende</Chip> : null}
+                    {f.depende ? <Chip tone="info">Dependiente</Chip> : null}
 
                     {puedeEditar ? (
                       <>

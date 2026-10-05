@@ -427,7 +427,7 @@ function Hoy({ hoy }: { hoy: string }) {
       ) : (
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div>
-            <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Adentro</p>
+            <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Dentro</p>
             {adentro.length === 0 ? (
               <p className="text-ink/40 text-sm">Nadie.</p>
             ) : (
