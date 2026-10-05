@@ -359,7 +359,7 @@ export function ModalEditarOrden({
       </div>
 
       <Textarea
-        label="Por qué se edita"
+        label="Motivo"
         className="mt-4"
         rows={2}
         value={motivo}

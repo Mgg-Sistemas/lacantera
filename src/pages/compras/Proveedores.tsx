@@ -313,7 +313,7 @@ export function Proveedores() {
               opciones={CONDICIONES_PAGO}
             />
             <Select
-              label="Moneda con la que cotiza"
+              label="Moneda preferida"
               value={edicion.moneda_preferida}
               onChange={(e) => cambiar({ moneda_preferida: e.target.value })}
               opciones={monedas ?? []}
@@ -323,7 +323,7 @@ export function Proveedores() {
                 solo al momento de pagarle, y se puede cambiar: el que siempre
                 cobra por transferencia un día pide efectivo. */}
             <Select
-              label="Cómo suele cobrar"
+              label="Método de pago preferido"
               vacio="Sin definir"
               value={edicion.metodo_pago_preferido ?? ''}
               onChange={(e) => cambiar({ metodo_pago_preferido: e.target.value || null })}

@@ -116,8 +116,8 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   */
   EN_TESORERIA: { texto: 'Por pagar', tono: 'info' },
   // Contra entrega: aprobada y esperando el material, sin un bolivar fuera.
-  POR_RECIBIR: { texto: 'Contra entrega · esperando el material', tono: 'info' },
-  PAGADA_POR_RECIBIR: { texto: 'Pagada · falta que llegue', tono: 'success' },
+  POR_RECIBIR: { texto: 'Contra entrega · por recibir', tono: 'info' },
+  PAGADA_POR_RECIBIR: { texto: 'Pagada · por recibir', tono: 'success' },
   RECIBIDA_PARCIAL: { texto: 'Recibida parcialmente', tono: 'success' },
   RECIBIDA: { texto: 'Recibida', tono: 'success' },
   PROVEEDOR_DESISTIO: { texto: 'El proveedor desistió', tono: 'danger' },
@@ -285,7 +285,7 @@ function compararCotizaciones(cotizaciones: Cotizacion[]): Map<number, Ventaja[]
         if (Number(c.dias_entrega) === masRapida) {
           anotar(c.id, {
             clave: 'entrega',
-            etiqueta: 'Llega antes',
+            etiqueta: 'Entrega más rápida',
             detalle: `Entrega en ${masRapida} día${masRapida === 1 ? '' : 's'}.`,
             tono: 'neutral',
           })
@@ -2409,7 +2409,7 @@ export function DetalleCompra() {
         onCerrar={() => setModal(null)}
         titulo="El proveedor desistió"
         descripcion="La compra ya está pagada. La tarjeta se queda a la vista hasta que se resuelva el dinero."
-        etiqueta="Registrar que desistió"
+        etiqueta="Registrar desistimiento"
         pendiente={desistir.isPending}
         error={desistir.error}
         onConfirmar={async (motivo) => {
@@ -2474,13 +2474,13 @@ export function DetalleCompra() {
           }
         >
           <Select
-            label="Qué pasó con el dinero"
+            label="Resolución"
             value={resolucion}
             onChange={(e) => setResolucion(e.target.value)}
             opciones={[
-              { valor: 'REEMBOLSADO', etiqueta: 'El proveedor lo devolvió' },
-              { valor: 'SALDO_FAVOR', etiqueta: 'Queda como saldo a favor con el proveedor' },
-              { valor: 'PERDIDA', etiqueta: 'Se dio por perdido' },
+              { valor: 'REEMBOLSADO', etiqueta: 'Reembolso' },
+              { valor: 'SALDO_FAVOR', etiqueta: 'Saldo a favor' },
+              { valor: 'PERDIDA', etiqueta: 'Pérdida' },
             ]}
           />
           {resolver.error ? <ErrorDeCarga error={resolver.error} className="mt-3" /> : null}
@@ -2609,7 +2609,7 @@ function ModalCorregirPrecio({
       {/* Como en la correccion de costo: el ejemplo dice que escribir, no
             que responder. Un caso real entero se copia tal cual. */}
       <Textarea
-        label="Por qué se corrige"
+        label="Motivo"
         className="mt-4"
         rows={2}
         placeholder="Qué se tecleó mal y de dónde sale el precio correcto"

@@ -288,7 +288,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
     contrario —es el camino corto, para lo que se paga en el acto—.
   */
   {
-    titulo: 'La compra que no pasa por la cadena',
+    titulo: 'Compra directa',
     detalle: 'Para lo que se paga en el acto y no espera aprobación.',
     acciones: [
       {

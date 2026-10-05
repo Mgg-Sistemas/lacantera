@@ -166,7 +166,7 @@ export function PapelesDeCompra({
           */}
           <div className="flex flex-wrap items-end gap-3">
             <Select
-              label="¿Qué papel es?"
+              label="Tipo de documento"
               value={elegido}
               onChange={(e) => setTipo(e.target.value as TipoDePapel)}
               className="min-w-[220px] flex-1"

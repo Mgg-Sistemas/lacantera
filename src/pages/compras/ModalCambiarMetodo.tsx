@@ -103,7 +103,7 @@ export function ModalCambiarMetodo({ abierto, onCerrar, instruccion }: Props) {
     >
       <div className="grid gap-4">
         <Select
-          label="Cómo se paga"
+          label="Método de pago"
           value={metodo}
           onChange={(e) => cambiarMetodo(e.target.value)}
           opciones={opcionesDe(posibles)}
@@ -124,7 +124,7 @@ export function ModalCambiarMetodo({ abierto, onCerrar, instruccion }: Props) {
           se pide antes para no gastarle a nadie un viaje al servidor.
         */}
         <Textarea
-          label="Por qué se cambia"
+          label="Motivo"
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
           rows={3}

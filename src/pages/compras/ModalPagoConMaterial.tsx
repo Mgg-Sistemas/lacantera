@@ -218,7 +218,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
       <div className="grid gap-4 sm:grid-cols-2">
         <SelectBuscable
           className="sm:col-span-2"
-          label="Qué material se entrega"
+          label="Material"
           vacio="Seleccione el material"
           valor={articuloId}
           onCambio={elegirArticulo}
@@ -227,7 +227,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
         />
 
         <Select
-          label="De qué patio sale"
+          label="Patio"
           vacio={articuloId ? 'Seleccione el patio' : 'Primero el material'}
           value={almacenId}
           onChange={(e) => setAlmacenId(e.target.value)}
@@ -241,7 +241,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
         <div className="flex gap-2">
           <Input
             className="flex-1"
-            label="Cuánto"
+            label="Cantidad"
             type="number"
             min="0"
             step="0.01"
@@ -267,7 +267,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
         </div>
 
         <Select
-          label="A qué precio se toma"
+          label="Precio"
           value={condicion}
           disabled={!articuloId}
           onChange={(e) => setCondicion(e.target.value as CondicionDelMaterial)}
@@ -566,7 +566,7 @@ export function ModalUsarSaldo({
         <strong className="text-ink/85 tabular">{dinero(orden.moneda, pendiente)}</strong>.
       </p>
       <Select
-        label="Qué saldo"
+        label="Saldo"
         vacio="Seleccione el saldo"
         value={saldoId}
         onChange={(e) => {

@@ -461,7 +461,7 @@ export function FacturasProveedor() {
               que no atarla.
             */}
             <SelectBuscable
-              label="¿Contra qué orden?"
+              label="Orden de compra"
               vacio={
                 nueva.proveedor_id ? 'Seleccione la orden' : 'Seleccione antes el proveedor'
               }
@@ -1018,7 +1018,7 @@ export function FacturasProveedor() {
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <SelectBuscable
-              label="De qué cuenta sale"
+              label="Cuenta"
               vacio="Seleccione la cuenta"
               valor={cuentaId}
               onCambio={(v) => {
@@ -1047,7 +1047,7 @@ export function FacturasProveedor() {
               required
             />
             <Select
-              label="Cómo se pagó"
+              label="Método de pago"
               value={metodo}
               onChange={(e) => setMetodo(e.target.value)}
               opciones={opcionesDe(metodosDeLaCuenta)}
@@ -1114,7 +1114,7 @@ export function FacturasProveedor() {
           }
         >
           <Textarea
-            label="Por qué se anula"
+            label="Motivo"
             hint="Queda en el registro de auditoría con su nombre y la hora."
             rows={3}
             value={motivo}

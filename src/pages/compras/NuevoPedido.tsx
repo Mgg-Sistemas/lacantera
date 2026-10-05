@@ -318,7 +318,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
 
             <div className="sm:col-span-2">
             <Textarea
-              label="Para qué es"
+              label="Justificación"
               placeholder="La muela está gastada y el material sale fuera de medida."
               hint="Quien aprueba no está en el frente."
               rows={4}
@@ -332,7 +332,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                 busca por «tesoreria» y sale quien la lleva, sin que el
                 renglón se parta en dos cuando el cargo es largo. */}
             <SelectBuscable
-              label="Quién lo solicita"
+              label="Solicitante"
               hint="Si a quien lo necesita le falta algo, se le pregunta a esta persona."
               valor={seleccion}
               onCambio={setQuienPide}
@@ -351,7 +351,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
             {seleccion === OTRA_PERSONA ? (
               <div className="border-hairline rounded-card space-y-4 border border-dashed p-3">
                 <Input
-                  label="Nombre de quien solicita"
+                  label="Nombre del solicitante"
                   placeholder="José Rondón"
                   value={otroNombre}
                   onChange={(e) => setOtroNombre(e.target.value)}
@@ -395,7 +395,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
             />
 
             <Input
-              label="Se necesita para"
+              label="Fecha requerida"
               type="date"
               value={requeridaPara}
               onChange={(e) => setRequeridaPara(e.target.value)}
@@ -424,7 +424,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
             {sitio === OTRO_SITIO ? (
               <div className="sm:col-span-2">
                 <Input
-                  label="Cuál es el destino"
+                  label="Destino"
                   placeholder="Frente 3, planta de lavado, la 966"
                   value={destino}
                   onChange={(e) => setDestino(e.target.value)}

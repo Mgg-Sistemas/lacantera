@@ -180,7 +180,7 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
             </p>
 
             <Input
-              label="Cantidad que llegó"
+              label="Cantidad recibida"
               className="mt-2 sm:max-w-[220px]"
               type="number"
               min="0"

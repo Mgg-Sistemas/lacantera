@@ -80,9 +80,9 @@ import { cn } from '@/lib/cn'
   el historial de un archivo de mil líneas.
 */
 const MODOS = [
-  { valor: 'CATALOGO', etiqueta: 'Está en el catálogo' },
-  { valor: 'NUEVO', etiqueta: 'Es nuevo: agregarlo al catálogo' },
-  { valor: 'SERVICIO', etiqueta: 'Es un servicio' },
+  { valor: 'CATALOGO', etiqueta: 'Artículo del catálogo' },
+  { valor: 'NUEVO', etiqueta: 'Artículo nuevo' },
+  { valor: 'SERVICIO', etiqueta: 'Servicio' },
 ] as const
 type Modo = (typeof MODOS)[number]['valor']
 
@@ -504,7 +504,7 @@ export function CompraDirecta() {
           </div>
 
           <Input
-            label="Qué se compró"
+            label="Concepto"
             placeholder="Guantes y botas para el frente"
             hint="Es lo que se lee en el tablero."
             value={titulo}
@@ -639,7 +639,7 @@ export function CompraDirecta() {
                     </p>
                     <div className="sm:col-span-8">
                       <Input
-                        label="Cómo se llama"
+                        label="Nombre"
                         placeholder="POLLO ENTERO"
                         value={f.descripcion}
                         onChange={(e) => cambiar(f.clave, { descripcion: e.target.value })}
@@ -656,7 +656,7 @@ export function CompraDirecta() {
                     </div>
                     <div className="sm:col-span-4">
                       <Select
-                        label="Se le da salida por"
+                        label="Unidad"
                         vacio="Seleccione"
                         value={f.nueva_unidad}
                         onChange={(e) => cambiar(f.clave, { nueva_unidad: e.target.value })}
@@ -666,7 +666,7 @@ export function CompraDirecta() {
                     </div>
                     <div className="sm:col-span-4">
                       <Select
-                        label="Se compra en"
+                        label="Presentación"
                         vacio="Suelto, en esa unidad"
                         value={f.nueva_presentacion}
                         onChange={(e) =>
@@ -728,7 +728,7 @@ export function CompraDirecta() {
                 {f.modo === 'SERVICIO' ? (
                   <div className="mt-3">
                     <Input
-                      label="Qué servicio"
+                      label="Servicio"
                       placeholder="Flete desde Ciudad Bolívar"
                       value={f.descripcion}
                       onChange={(e) => cambiar(f.clave, { descripcion: e.target.value })}
@@ -885,7 +885,7 @@ export function CompraDirecta() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Select
-              label="A qué almacén entra"
+              label="Almacén"
               vacio="No entra al inventario"
               value={almacen}
               onChange={(e) => setAlmacen(e.target.value)}

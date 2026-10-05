@@ -45,10 +45,10 @@ import { dinero, fecha, fechaHora } from '@/lib/formato'
 */
 const ESTADOS: Record<string, { texto: string; tono: 'success' | 'warning' | 'danger' | 'neutral' }> = {
   RECIBIDA: { texto: 'Recibida', tono: 'success' },
-  RECIBIDA_PARCIAL: { texto: 'Recibida a medias', tono: 'warning' },
-  PAGADA_POR_RECIBIR: { texto: 'Pagada, falta recibirla', tono: 'warning' },
+  RECIBIDA_PARCIAL: { texto: 'Recibida parcialmente', tono: 'warning' },
+  PAGADA_POR_RECIBIR: { texto: 'Pagada, por recibir', tono: 'warning' },
   POR_RECIBIR: { texto: 'Por recibir', tono: 'warning' },
-  POR_INDICAR_PAGO: { texto: 'Falta indicar el pago', tono: 'warning' },
+  POR_INDICAR_PAGO: { texto: 'Por indicar el pago', tono: 'warning' },
   EN_TESORERIA: { texto: 'En tesorería', tono: 'warning' },
   PROVEEDOR_DESISTIO: { texto: 'El proveedor desistió', tono: 'danger' },
   CANCELADA: { texto: 'Cancelada', tono: 'danger' },
