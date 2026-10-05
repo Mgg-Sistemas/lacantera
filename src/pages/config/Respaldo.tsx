@@ -166,7 +166,7 @@ export function Respaldo() {
     <>
       <PageHeader
         title="Respaldo de la base"
-        description="Una copia de todos los datos del sistema, para guardarla fuera de aquí."
+        description="Copia completa de los datos del sistema, para conservarla fuera de él."
       />
 
       {/* ------------------------- Quien no puede ------------------------- */}

@@ -319,7 +319,7 @@ export function Recibos() {
     <>
       <PageHeader
         title="Recibos de pago"
-        description="El recibo es un documento con consecuencias legales: sin él, en un juicio se presume cierto lo que alegue el trabajador."
+        description="Recibos de pago de nómina. Son la prueba legal del pago: sin recibo, en un juicio se presume cierto lo que alegue el trabajador."
       />
 
       <Pestanas pestanas={PESTANAS_PERIODO} />

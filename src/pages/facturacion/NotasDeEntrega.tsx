@@ -419,7 +419,7 @@ export function NotasDeEntrega() {
     <>
       <PageHeader
         title="Notas de entrega"
-        description="El papel con el que sale el camión. El despacho se pide con chofer, cédula y placa; al aprobarlo nace la nota y el material se descuenta del patio."
+        description="Notas de entrega: el documento con el que sale el camión. El despacho se solicita con chofer, cédula y placa; al aprobarse se emite la nota y el material se descuenta del patio."
         actions={
           <>
             <Button variant="outline" icon={<Truck />} onClick={() => setCatalogo(true)}>

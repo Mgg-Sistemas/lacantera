@@ -285,7 +285,7 @@ export function ReportesTesoreria() {
       <PageHeader
         eyebrow="Tesorería"
         title="Reportes"
-        description="Lo que entró, lo que salió y lo que hay, moneda por moneda. Todo se ve antes de descargarse."
+        description="Ingresos, egresos y saldos por moneda. Todo se puede revisar antes de descargarlo."
       />
 
       <Card className="mb-4">

@@ -120,7 +120,7 @@ export function Tasas() {
     <>
       <PageHeader
         title="Tasas de cambio"
-        description="La tasa que valora los documentos. No es la del indicador de arriba: esa informa, esta compromete."
+        description="Tasa de cambio aplicada a los documentos. No es la del indicador de la barra superior, que solo informa."
       />
 
       {monedas.data && monedas.data.length > 1 ? (

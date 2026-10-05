@@ -78,7 +78,7 @@ export function Dotacion() {
     <>
       <PageHeader
         title="Dotación por cargo"
-        description="Qué le corresponde a cada puesto y cada cuánto se repone. De aquí sale la lista de a quién le toca hoy."
+        description="Dotación que corresponde a cada puesto y su frecuencia de reposición. De aquí se genera la lista de entregas pendientes del día."
         actions={
           puedeMover ? (
             <div className="flex flex-wrap gap-2">

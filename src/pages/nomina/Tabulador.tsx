@@ -76,7 +76,7 @@ export function Tabulador() {
     <>
       <PageHeader
         title="Tabulador de cargos"
-        description="Cuánto gana cada cargo al mes. El quincenal sale de esa cifra: no se escribe aparte, para que las dos no puedan desfasarse."
+        description="Salario mensual de cada cargo. El quincenal se deriva de esa cifra y no se registra aparte, para que no puedan diferir."
         actions={
           puedeRRHH ? (
             <>

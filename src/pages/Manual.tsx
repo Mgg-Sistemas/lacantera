@@ -197,7 +197,7 @@ export function Manual() {
     <>
       <PageHeader
         title="Manual de usuario"
-        description="Cómo se usa el sistema, explicado para quien trabaja con él todos los días. Se puede leer aquí, buscar por un mensaje de error, o descargarlo en PDF para repartirlo en el patio."
+        description="Manual de uso del sistema. Se puede consultar aquí, buscar por mensaje de error o descargar en PDF."
         actions={
           /*
             Dice PDF y no «Imprimir» porque es lo que la gente viene a buscar, y

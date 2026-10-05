@@ -244,7 +244,7 @@ export function FichaMaquina() {
         description={
           esNueva
             ? 'El código la identifica en todo el sistema. Lo demás se puede completar después.'
-            : 'Los cambios se ven en la lista de equipos en cuanto se guardan.'
+            : 'Los cambios se reflejan en la lista de equipos al guardar.'
         }
         actions={
           <div className="flex flex-wrap items-center gap-2">

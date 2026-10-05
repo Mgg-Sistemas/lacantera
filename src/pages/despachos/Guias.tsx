@@ -84,7 +84,7 @@ export function Guias() {
     <>
       <PageHeader
         title="Guías de movilización"
-        description="El permiso con el que el mineral puede circular."
+        description="Guías de movilización: el permiso con el que circula el mineral."
         actions={
           <div className="flex items-center gap-3">
             {porVencer > 0 ? <Chip tone="warning">{porVencer} por vencer</Chip> : null}

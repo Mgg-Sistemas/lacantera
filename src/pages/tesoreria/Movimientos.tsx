@@ -83,7 +83,7 @@ export function MovimientosTesoreria() {
     <>
       <PageHeader
         title="Libro de tesorería"
-        description="Todo el dinero que entró y salió. No se edita ni se borra: para deshacer algo se escribe el movimiento contrario, y quedan los dos a la vista — el equivocado y el que lo corrige."
+        description="Libro de ingresos y egresos. Los registros no se editan ni se eliminan: una corrección se asienta con el movimiento contrario, y ambos quedan visibles."
       />
 
       <Card className="mb-4">

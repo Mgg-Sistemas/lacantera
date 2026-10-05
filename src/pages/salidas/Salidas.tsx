@@ -172,7 +172,7 @@ export function Salidas() {
     <>
       <PageHeader
         title="Historial de salidas y traslados"
-        description="Lo que ya salió del inventario y lo que ya se movió entre almacenes. Aquí solo se consulta: para registrar una salida o solicitarla vaya a «Salidas», y para mover material entre almacenes, a «Traslados»."
+        description="Consulta de salidas del inventario y traslados entre almacenes. Para registrar o solicitar una salida, vaya a «Salidas»; para trasladar material, a «Traslados»."
       />
 
       <Pestanas pestanas={PESTANAS_SALIDAS} />

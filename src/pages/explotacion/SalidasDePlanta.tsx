@@ -122,7 +122,7 @@ export function SalidasDePlanta() {
     <>
       <PageHeader
         title="Salidas de planta"
-        description="Cada camión que sale de la planta con un producto. Es lo que se mide de verdad: los metros cúbicos son la carga útil del camión, estimados."
+        description="Salidas de producto de la planta, camión por camión. Es la medición de referencia: los metros cúbicos corresponden a la carga útil estimada del camión."
       />
 
       <ElDia dia={dia} onCambio={setDia} />

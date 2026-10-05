@@ -373,7 +373,7 @@ export function TableroCompras() {
     <>
       <PageHeader
         title="Compras"
-        description="Cada tarjeta es una compra. Avanza de un panel al siguiente y no se salta pasos."
+        description="Cada tarjeta es una compra. Avanza de una etapa a la siguiente sin saltarse ninguna."
         actions={
           <Link to="/app/compras/nuevo">
             <Button icon={<Plus />}>Nuevo pedido</Button>

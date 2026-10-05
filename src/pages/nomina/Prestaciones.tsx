@@ -128,7 +128,7 @@ export function Prestaciones() {
       <>
         <PageHeader
           title="Prestaciones sociales"
-          description="Lo que la empresa le debe a cada quien por el tiempo trabajado."
+          description="Prestaciones sociales acumuladas de cada trabajador por el tiempo de servicio."
         />
 
         <Pestanas pestanas={PESTANAS_REGLAS} />
@@ -148,7 +148,7 @@ export function Prestaciones() {
     <>
       <PageHeader
         title="Prestaciones sociales"
-        description="Lo que la empresa le debe a cada quien por el tiempo trabajado."
+        description="Prestaciones sociales acumuladas de cada trabajador por el tiempo de servicio."
         actions={
           puede('NOMINA', 'ESCRITURA') ? (
             <div className="flex flex-wrap items-center gap-2">

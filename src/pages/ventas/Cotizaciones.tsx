@@ -206,7 +206,7 @@ export function Cotizaciones() {
     <>
       <PageHeader
         title="Cotizaciones"
-        description="Lo que se le ofrece al cliente antes de despachar. No compromete existencias."
+        description="Ofertas al cliente previas al despacho. No comprometen existencias."
         actions={
           <Button icon={<Plus />} onClick={() => setNueva(true)}>
             Nueva cotización

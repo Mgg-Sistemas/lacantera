@@ -217,7 +217,7 @@ export function Procesos() {
     <>
       <PageHeader
         title="Procesar nómina"
-        description="Un período se abre, se calcula, se aprueba y se paga. No se salta pasos: cada uno deja constancia de quién lo hizo."
+        description="Períodos de nómina: apertura, cálculo, aprobación y pago, en ese orden. Cada paso registra quién lo ejecutó."
         actions={
           puedeRRHH ? (
             <Button

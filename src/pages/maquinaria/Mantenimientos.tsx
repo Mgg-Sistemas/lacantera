@@ -60,7 +60,7 @@ export function Mantenimientos() {
     <>
       <PageHeader
         title="Historial de taller"
-        description="Qué ha entrado, cuánto tardó, qué se le hizo y qué costó. Las órdenes abiertas son máquinas paradas ahora mismo."
+        description="Órdenes de mantenimiento: ingreso, duración, trabajo realizado y costo. Las órdenes abiertas corresponden a máquinas paradas."
       />
 
       {isPending ? <Cargando /> : null}

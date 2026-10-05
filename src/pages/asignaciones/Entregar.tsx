@@ -216,7 +216,7 @@ export function Entregar() {
     <>
       <PageHeader
         title="Entregar a un trabajador"
-        description="Varias cosas de una vez. Lo que vuelve queda a su nombre; lo que se gasta sale del almacén."
+        description="Entrega de varios bienes a la vez. Los retornables quedan asignados a la persona; los consumibles se descuentan del almacén."
         actions={
           <Link to="/app/asignaciones">
             <Button variant="outline" size="sm" icon={<ArrowLeft />}>

@@ -513,7 +513,7 @@ export function Asistencia() {
     <>
       <PageHeader
         title="Novedades del período"
-        description="Lo único que cambia de una quincena a otra: horas extra, faltas, bonos y descuentos. El resto lo saca el sistema del contrato."
+        description="Novedades del período: horas extra, faltas, bonos y descuentos. El resto lo calcula el sistema a partir del contrato."
       />
 
       <Pestanas pestanas={PESTANAS_PERIODO} />

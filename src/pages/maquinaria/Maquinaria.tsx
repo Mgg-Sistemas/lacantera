@@ -381,7 +381,7 @@ export function Maquinaria() {
     <>
       <PageHeader
         title="Maquinaria"
-        description="Cada equipo y cada camión: lo que lleva trabajado, cuánto le falta para su mantenimiento y lo que carga."
+        description="Equipos y camiones: uso acumulado, margen hasta el próximo mantenimiento y capacidad de carga."
         actions={
           <>
             <Button

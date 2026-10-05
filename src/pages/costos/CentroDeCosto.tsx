@@ -57,7 +57,7 @@ export function CentroDeCosto() {
       <>
         <PageHeader
           title="Centro de costo"
-          description="Lo que entra para operar, lo que cuesta producir y a cuánto sale el metro cúbico. Es una caja: se cierra y la foto se congela."
+          description="Ingresos para operar, costo de producción y costo por metro cúbico. Funciona como una caja: al cerrarse, sus cifras quedan fijas."
         />
         {puedeCerrar ? (
           <AbrirPrimeraCaja />

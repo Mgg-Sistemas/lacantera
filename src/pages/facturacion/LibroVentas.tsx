@@ -95,7 +95,7 @@ export function LibroVentas() {
     <>
       <PageHeader
         title="Libro Mayor · Ventas"
-        description="Lo que se declara del IVA cobrado. Las facturas suman y las notas de crédito restan."
+        description="IVA cobrado a declarar. Las facturas suman y las notas de crédito restan."
         actions={
           /* `items-end` alinea el botón con la caja del mes, no con su
              etiqueta. Antes llevaba un `mb-6` a mano que lo levantaba 24 px de

@@ -269,8 +269,8 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
         title={corrigiendo ? `Corregir ${pedido.numero}` : 'Nuevo pedido'}
         description={
           corrigiendo
-            ? 'Se corrige sobre el mismo pedido: conserva su número y su sitio en el historial.'
-            : 'Lo que pida aquí entra al tablero en la columna Pedido.'
+            ? 'La corrección se hace sobre el mismo pedido: conserva su número y su lugar en el historial.'
+            : 'El pedido entra al tablero en la columna Pedido.'
         }
         actions={
           <>

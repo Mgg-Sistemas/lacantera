@@ -122,7 +122,7 @@ export function Viajes() {
     <>
       <PageHeader
         title="Viajes de camiones"
-        description="Cuántos viajes hizo cada camión o máquina y por qué ruta. Cada viaje nuevo espera a que lo apruebe el responsable de la mina o planta, o quien tenga la casilla de aprobar: hasta entonces no cuenta para el pago."
+        description="Viajes por camión o máquina y por ruta. Cada viaje nuevo queda pendiente de aprobación del responsable de la mina o planta, o de quien tenga ese permiso; hasta entonces no cuenta para el pago."
         actions={
           <Link to="/app/explotacion/plantas">
             <Button variant="outline" icon={<Route />}>

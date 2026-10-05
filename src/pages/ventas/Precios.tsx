@@ -93,7 +93,7 @@ export function Precios() {
     <>
       <PageHeader
         title="Lista de precios"
-        description="A cuánto se vende cada cosa, por unidad, y por debajo de cuánto no se vende."
+        description="Precios de venta por unidad y precio mínimo de cada producto."
         actions={
           sinPrecio > 0 ? (
             <Chip tone="warning">

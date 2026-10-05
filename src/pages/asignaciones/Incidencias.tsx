@@ -51,7 +51,7 @@ export function Incidencias() {
     <>
       <PageHeader
         title="Incidencias"
-        description="Bienes perdidos o dañados que siguen sin resolverse. Falta decidir qué pasa con quien los tenía."
+        description="Bienes perdidos o dañados pendientes de resolución. Falta decidir la responsabilidad de quien los tenía asignados."
       />
 
       {isPending ? <Cargando /> : null}

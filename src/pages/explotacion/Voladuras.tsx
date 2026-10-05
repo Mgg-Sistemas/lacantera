@@ -68,7 +68,7 @@ export function Voladuras() {
     <>
       <PageHeader
         title="Voladuras"
-        description="Lo que se arranca del cerro, con su permiso y su responsable."
+        description="Registro de voladuras, con su permiso y su responsable."
         actions={
           puede('EXPLOTACION', 'ESCRITURA') ? (
             <Button

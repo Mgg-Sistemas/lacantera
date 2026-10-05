@@ -44,7 +44,7 @@ export function GastoPorUnidad() {
     <>
       <PageHeader
         title="Gasto por unidad"
-        description="A dónde va el dinero de las compras. Cada pedido dice para qué sitio es, y aquí se suma."
+        description="Gasto de compras por unidad de destino. Cada pedido indica su destino y aquí se totaliza."
       />
 
       <Pestanas pestanas={PESTANAS_ANALISIS} />

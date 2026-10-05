@@ -197,7 +197,7 @@ export function TableroNomina() {
     <>
       <PageHeader
         title="Nómina"
-        description="En qué punto va el período y qué falta para cerrarlo."
+        description="Estado del período en curso y lo pendiente para su cierre."
         actions={
           <Link to="/app/nomina/procesos">
             <Button icon={<Calculator />}>Procesar nómina</Button>

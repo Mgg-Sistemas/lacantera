@@ -149,7 +149,7 @@ export function HistorialDirectas() {
     <>
       <PageHeader
         title="Compras directas"
-        description="Lo que se compró yendo a buscarlo, con su estatus. Una compra directa nace ya pagada: lo único que puede faltarle es que llegue el material."
+        description="Compras directas y su estatus. Una compra directa nace pagada: solo puede quedar pendiente la recepción del material."
       />
 
       <Pestanas pestanas={PESTANAS_COMPRA_DIRECTA} />

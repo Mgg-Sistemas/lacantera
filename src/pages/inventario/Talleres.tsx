@@ -105,7 +105,7 @@ export function Talleres() {
     <>
       <PageHeader
         title="Talleres"
-        description="Qué tiene asignado cada taller y en qué lo está gastando. El detalle artículo por artículo vive en Existencias."
+        description="Material asignado a cada taller y su consumo. El detalle por artículo está en Existencias."
       />
 
       <Pestanas pestanas={PESTANAS_SITIOS} />

@@ -91,7 +91,7 @@ export function TableroExplotacion() {
     <>
       <PageHeader
         title="Explotación"
-        description="El acarreo y lo que sale de la planta, camión por camión. Los frentes y el parte de turno siguen en obra."
+        description="Acarreo y salidas de planta, camión por camión. Los frentes y el parte de turno están en desarrollo."
         actions={
           puedeEscribir ? (
             <Link to="/app/explotacion/salidas">

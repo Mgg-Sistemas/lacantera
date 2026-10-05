@@ -103,7 +103,7 @@ export function PorCobrar() {
     <>
       <PageHeader
         title="Cuentas por cobrar"
-        description="Facturas emitidas y todavía sin cobrar del todo. El saldo va en dólares porque se cobra en las dos monedas."
+        description="Facturas emitidas con saldo pendiente. El saldo se expresa en dólares porque se cobra en ambas monedas."
       />
 
       {isPending ? <Cargando /> : null}

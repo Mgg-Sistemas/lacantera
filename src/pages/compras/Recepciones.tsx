@@ -48,7 +48,7 @@ export function Recepciones() {
     <>
       <PageHeader
         title="Recepciones"
-        description="Lo que está pagado y todavía no ha entrado al almacén."
+        description="Compras pagadas cuyo material aún no ha ingresado al almacén."
         actions={
           ordenes.length > 0 ? (
             <Chip tone={ordenes.length > 3 ? 'warning' : 'royal'}>

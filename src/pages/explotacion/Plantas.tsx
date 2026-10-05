@@ -85,7 +85,7 @@ export function Plantas() {
     <>
       <PageHeader
         title="Plantas y rutas"
-        description="Las minas, plantas, patios y bases de la operación, quién opera cada uno y las rutas entre ellos con lo que se paga por viaje. Abrir, cerrar o ceder un sitio se hace aquí, con fecha, y no borra su historia."
+        description="Minas, plantas, patios y bases de la operación, con su operador y las rutas entre ellos con su tarifa por viaje. La apertura, el cierre o la cesión de un sitio se registran aquí con fecha y no borran su historial."
         actions={
           <>
             <Link to="/app/explotacion/viajes">

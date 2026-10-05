@@ -355,7 +355,7 @@ export function Cuentas() {
     <>
       <PageHeader
         title="Bancos y cajas"
-        description="Dónde está el dinero. El saldo se suma del libro: no hay un número guardado que pueda quedar viejo."
+        description="Cuentas bancarias, cajas y billeteras. El saldo se calcula a partir de los movimientos registrados, no se guarda aparte."
         actions={
           puedeMover ? (
             <div className="flex gap-2">

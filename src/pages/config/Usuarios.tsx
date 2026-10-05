@@ -2779,7 +2779,7 @@ export function Usuarios() {
     <>
       <PageHeader
         title="Usuarios y roles"
-        description="Quién entra al sistema y a qué llega cada quien."
+        description="Usuarios del sistema y los módulos a los que accede cada uno."
       />
 
       {!isPending && !editable ? (

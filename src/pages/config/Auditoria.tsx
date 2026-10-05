@@ -379,7 +379,7 @@ export function Auditoria() {
     <>
       <PageHeader
         title="Auditoría"
-        description="Todo lo que se escribe en el sistema queda aquí, con la fecha, la hora y quién lo hizo. Esta pantalla la abre solo la administración."
+        description="Registro de toda escritura en el sistema, con fecha, hora y usuario. Acceso exclusivo de la administración."
       />
 
       <QuienEstaConectado />

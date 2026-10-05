@@ -74,7 +74,7 @@ export function Frentes() {
     <>
       <PageHeader
         title="Frentes y bancos"
-        description="Dónde se está arrancando el material, y con qué."
+        description="Frentes de explotación activos y los equipos asignados a cada uno."
         actions={
           puede('EXPLOTACION', 'ESCRITURA') ? (
             <Button icon={<Plus />} onClick={() => setEdicion({ ...vacio })}>

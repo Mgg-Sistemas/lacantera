@@ -87,7 +87,7 @@ export function Tickets() {
     <>
       <PageHeader
         title="Tickets de romana"
-        description="Cada pesada del portón, entre o salga."
+        description="Tickets de romana de cada pesaje, de entrada o de salida."
         actions={
           <div className="flex items-center gap-3">
             {libres > 0 ? <Chip tone="success">{libres} sin usar</Chip> : null}

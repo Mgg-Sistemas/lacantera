@@ -276,7 +276,7 @@ export function Organigrama() {
       <PageHeader
         eyebrow="Organización"
         title="Organigrama"
-        description="Quién depende de quién, y cuánta gente hay prevista en cada puesto. Pulse un puesto para seguir su línea de mando."
+        description="Estructura jerárquica y plazas previstas por puesto. Pulse un puesto para ver su línea de mando."
         actions={
           /*
             Descargarlo lo puede hacer cualquiera, aunque no pueda tocar ni una

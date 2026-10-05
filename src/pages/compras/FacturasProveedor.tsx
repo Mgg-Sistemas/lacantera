@@ -256,7 +256,7 @@ export function FacturasProveedor() {
     <>
       <PageHeader
         title="Facturas recibidas de proveedores"
-        description="El papel que manda el proveedor por una orden ya aprobada. Es lo que sustenta el crédito fiscal del IVA."
+        description="Facturas de proveedores contra órdenes de compra aprobadas. Sustentan el crédito fiscal del IVA."
         /*
           AQUÍ NO SE CREA UNA FACTURA
 

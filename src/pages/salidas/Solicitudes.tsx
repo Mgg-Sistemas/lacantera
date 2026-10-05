@@ -155,7 +155,7 @@ export function Solicitudes() {
     <>
       <PageHeader
         title="Salidas"
-        description="Sacar material que ya hay en un almacén. Toda salida se solicita: no descuenta nada hasta que la aprueba quien responde por el almacén y alguien de almacén la entrega. Una venta no sale por aquí, sino por Facturación › Notas de entrega. Comprar lo que no hay se hace en Compras."
+        description="Solicitudes de salida de material de un almacén. Ninguna salida descuenta existencias hasta que la aprueba el responsable del almacén y el personal de almacén la entrega. Las ventas salen por Facturación › Notas de entrega; las compras se gestionan en Compras."
         actions={
           <Button icon={<SendHorizontal />} onClick={() => setPidiendo(true)}>
             Solicitar salida

@@ -242,7 +242,7 @@ export function Facturacion() {
     <>
       <PageHeader
         title="Facturación"
-        description="Contra notas de entrega —una, o todas las de la semana de un cliente— o sin nota, con sus propios renglones."
+        description="Facturas contra notas de entrega —una, o todas las de la semana de un cliente— o sin nota, con renglones propios."
         actions={
           <>
             <Button variant="outline" icon={<Receipt />} onClick={() => setDirecta(true)}>

@@ -250,7 +250,7 @@ export function TableroInventario() {
     <>
       <PageHeader
         title="Inventario"
-        description="Cómo está el patio ahora mismo, y por dónde entra y sale el material."
+        description="Estado actual del patio y las entradas y salidas de material."
         actions={
           <Link to="/app/inventario/existencias">
             <Button icon={<Boxes />}>Ver existencias</Button>

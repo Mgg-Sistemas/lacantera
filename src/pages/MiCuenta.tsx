@@ -44,7 +44,7 @@ export function MiCuenta() {
 
   return (
     <>
-      <PageHeader title="Mi cuenta" description="Sus datos y su clave." />
+      <PageHeader title="Mi cuenta" description="Datos personales y clave de acceso." />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>

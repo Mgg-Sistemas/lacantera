@@ -76,7 +76,7 @@ export function Almacenes() {
     <>
       <PageHeader
         title="Almacenes y patios"
-        description="Dónde se guarda cada cosa. Las existencias se llevan por almacén, no en un montón único."
+        description="Almacenes, patios y talleres. Las existencias se controlan por almacén."
         actions={
           <Button icon={<Plus />} onClick={() => abrir()}>
             Nuevo almacén

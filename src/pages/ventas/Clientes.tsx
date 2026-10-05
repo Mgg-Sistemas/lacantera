@@ -95,7 +95,7 @@ export function Clientes() {
     <>
       <PageHeader
         title="Clientes"
-        description="A quién se le vende. La dirección se imprime en la factura y el límite de crédito se aplica al facturar."
+        description="Registro de clientes. La dirección se imprime en la factura y el límite de crédito se aplica al facturar."
         actions={
           <Button icon={<Plus />} onClick={() => abrir()}>
             Nuevo cliente

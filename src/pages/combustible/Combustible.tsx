@@ -171,7 +171,7 @@ export function Combustible() {
     <>
       <PageHeader
         title="Combustible"
-        description="Cuánto queda, cuánto consume cada máquina y a qué se le echó. Entra por una compra recibida, o a mano desde Cargar."
+        description="Existencias de combustible, consumo por máquina y destino de cada despacho. Ingresa por compra recibida o por carga manual."
         actions={
           puedeDespachar ? (
             <>

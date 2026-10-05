@@ -179,7 +179,7 @@ export function Documentos() {
     <>
       <PageHeader
         title="Documentos legales"
-        description="Los papeles de la empresa, guardados dentro del sistema y no en una carpeta pública."
+        description="Documentos de la empresa, almacenados en el sistema y no en una carpeta pública."
         actions={
           puedeCargar ? (
             <Button icon={<Upload className="size-[18px]" />} onClick={abrirNuevo}>

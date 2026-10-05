@@ -254,7 +254,7 @@ export function Articulos() {
     <>
       <PageHeader
         title="Catálogo de artículos"
-        description="Lo que se pide, se compra y se cuenta. Un artículo mal definido se convierte en existencias que no cuadran."
+        description="Catálogo de artículos que se solicitan, se compran y se cuentan. Una definición incorrecta produce existencias que no cuadran."
         actions={
           <>
             {/* Dejo de ser entrada del menú y paso a estar donde hago falta:

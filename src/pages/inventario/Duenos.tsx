@@ -87,7 +87,7 @@ export function Duenos() {
       <PageHeader
         eyebrow="Inventario"
         title="Dueños del material"
-        description="No todo lo que la cantera tiene a mano es suyo. Aquí se dice de quién puede ser, y cada almacén y cada máquina elige uno de esta lista."
+        description="Registro de dueños del material, propio y de terceros. Cada almacén y cada máquina se asocia a uno."
         actions={
           editable ? (
             <Button icon={<Plus />} onClick={() => abrir()}>

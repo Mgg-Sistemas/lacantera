@@ -56,7 +56,7 @@ export function TableroDespachos() {
     <>
       <PageHeader
         title="Despachos"
-        description="El papeleo de la romana: se pesa el camión y se emite la guía con la que sale."
+        description="Control de romana: pesaje del camión y emisión de la guía de salida."
         actions={
           <Link to="/app/despachos/tickets">
             <Button icon={<Scale />}>Pesar en romana</Button>

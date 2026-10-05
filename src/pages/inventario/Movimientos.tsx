@@ -364,7 +364,7 @@ export function Movimientos() {
     <>
       <PageHeader
         title="Movimientos"
-        description="El libro del inventario. Nada se edita y nada se borra: una corrección se escribe como un movimiento nuevo."
+        description="Libro de movimientos del inventario. Los registros no se editan ni se eliminan: toda corrección se asienta como un movimiento nuevo."
         actions={
           <Button
             variant="outline"

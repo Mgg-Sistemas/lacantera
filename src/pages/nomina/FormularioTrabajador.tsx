@@ -208,7 +208,7 @@ export function FormularioTrabajador() {
         description={
           esNuevo
             ? 'El número de ficha lo asigna el sistema al guardar: cuatro dígitos, correlativo.'
-            : 'Los cambios se ven en su ficha en cuanto se guarda.'
+            : 'Los cambios se reflejan en la ficha al guardar.'
         }
         actions={
           <Link to={volver}>

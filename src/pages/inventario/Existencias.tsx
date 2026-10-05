@@ -703,8 +703,8 @@ export function Existencias() {
         title="Existencias"
         description={
           enTotal
-            ? 'Todo lo que tiene la empresa, sumado. Seleccione un almacén o taller para ver y mover lo que hay en él.'
-            : 'Lo que hay en este sitio ahora mismo, calculado sumando el libro de movimientos.'
+            ? 'Existencias totales de la empresa. Seleccione un almacén o taller para consultar y mover su contenido.'
+            : 'Existencias actuales de este almacén, calculadas a partir del libro de movimientos.'
         }
         actions={
           puede('ALMACEN') ? (

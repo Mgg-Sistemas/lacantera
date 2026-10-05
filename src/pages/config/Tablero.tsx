@@ -108,7 +108,7 @@ export function TableroConfiguracion() {
     <>
       <PageHeader
         title="Configuración"
-        description="Lo que hace funcionar al resto: quién entra, con qué datos sale cada papel, y qué queda registrado."
+        description="Configuración general: usuarios y accesos, datos de los documentos impresos y registro de auditoría."
       />
 
       {isPending ? <Cargando /> : null}

@@ -137,7 +137,7 @@ export function Traslados() {
     <>
       <PageHeader
         title="Traslados"
-        description="Material que cambia de almacén. Se pide, se envía o se hace directo; cada fila dice qué falta y a quién le toca."
+        description="Traslados de material entre almacenes: solicitados, enviados o directos. Cada fila indica lo pendiente y a quién le corresponde."
         actions={
           puede('SALIDAS', 'ESCRITURA') ? (
             <Button icon={<MoveRight className="size-[18px]" />} onClick={() => setAbierto(true)}>

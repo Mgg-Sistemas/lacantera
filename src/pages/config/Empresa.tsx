@@ -102,7 +102,7 @@ export function Empresa() {
     <>
       <PageHeader
         title="Datos de la empresa"
-        description="Lo que dice el registro. Sale impreso en cada papel que emite el sistema."
+        description="Datos registrales de la empresa. Se imprimen en cada documento que emite el sistema."
       />
 
       {/* El aviso va arriba porque es lo único de esta pantalla que puede

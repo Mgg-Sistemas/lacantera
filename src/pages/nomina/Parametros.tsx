@@ -211,7 +211,7 @@ export function Parametros() {
     <>
       <PageHeader
         title="Parámetros de nómina"
-        description="Ninguna cifra legal está escrita en el código. Todas viven aquí con su fecha de vigencia, porque en Venezuela cambian por decreto."
+        description="Parámetros legales de nómina, cada uno con su fecha de vigencia. No están fijados en el código porque en Venezuela cambian por decreto."
         actions={
           puedeRRHH ? (
             <Button

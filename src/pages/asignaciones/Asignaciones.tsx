@@ -157,7 +157,7 @@ export function Asignaciones() {
     <>
       <PageHeader
         title="Asignaciones"
-        description="Quién tiene qué, desde cuándo, y qué queda por entregar. Lo que vuelve no descuenta del almacén: el bien sigue siendo de la empresa."
+        description="Bienes asignados a cada persona, con su fecha de entrega y lo pendiente por entregar. Los retornables no descuentan del almacén: siguen siendo de la empresa."
         actions={
           puede('ALMACEN', 'RRHH', 'ADMIN') ? (
             <Link to="/app/asignaciones/entregar">

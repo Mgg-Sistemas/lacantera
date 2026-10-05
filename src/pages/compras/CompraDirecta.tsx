@@ -452,7 +452,7 @@ export function CompraDirecta() {
     <>
       <PageHeader
         title="Compra directa"
-        description="Lo que ya se compró, con su factura. No pasa por cotizaciones ni por el gerente."
+        description="Registro de una compra ya realizada, con su factura. No pasa por cotización ni por aprobación del gerente."
         actions={
           <>
             <ChipTasa className="self-center" />

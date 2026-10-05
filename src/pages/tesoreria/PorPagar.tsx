@@ -58,7 +58,7 @@ export function PorPagar() {
     <>
       <PageHeader
         title="Cuentas por pagar"
-        description="Lo que se le debe a cada proveedor, por autorizaciones de compra que todavía no han salido del banco."
+        description="Deuda con cada proveedor por autorizaciones de compra pendientes de pago."
       />
 
       <Pestanas pestanas={PESTANAS_DEUDAS} />

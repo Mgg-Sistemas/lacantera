@@ -144,7 +144,7 @@ export function Contactos() {
     <>
       <PageHeader
         title="Contactos"
-        description="Personas y empresas con las que trata la empresa: cómo se les habla, dónde están y quién los atiende."
+        description="Directorio de personas y empresas: medios de contacto, ubicación y responsable de la atención."
         actions={
           <>
             <Button

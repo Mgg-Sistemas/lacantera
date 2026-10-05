@@ -354,7 +354,7 @@ export function Pagos() {
     <>
       <PageHeader
         title="Pagos por hacer"
-        description="Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda esperando que llegue el material."
+        description="Compras autorizadas pendientes de pago. Al pagarse, la compra queda a la espera de la recepción del material."
       />
 
       <Pestanas pestanas={PESTANAS_DEUDAS} />

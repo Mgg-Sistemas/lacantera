@@ -82,7 +82,7 @@ export function LibroCompras() {
     <>
       <PageHeader
         title="Libro Mayor · Compras"
-        description="El IVA que se pagó a los proveedores y que se descuenta del que se cobró. Es uno de los dos libros que pide el SENIAT."
+        description="IVA pagado a los proveedores, deducible del IVA cobrado. Es uno de los dos libros que exige el SENIAT."
         actions={
           /* `items-end` alinea el botón con la caja del mes, no con su
              etiqueta. Antes llevaba un `mb-6` a mano que lo levantaba 24 px de

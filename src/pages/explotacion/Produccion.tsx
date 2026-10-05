@@ -96,7 +96,7 @@ export function Produccion() {
     <>
       <PageHeader
         title="Producción por turno"
-        description="Lo que produjo cada turno, y por dónde entra al patio."
+        description="Producción por turno y su punto de entrada al patio."
         actions={
           puede('EXPLOTACION', 'ESCRITURA') ? (
             <Button icon={<Plus />} disabled={frentesActivos.length === 0} onClick={abrir}>

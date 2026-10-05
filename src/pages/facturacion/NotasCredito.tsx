@@ -155,7 +155,7 @@ export function NotasCredito() {
     <>
       <PageHeader
         title="Notas de crédito"
-        description="El papel que corrige una factura que ya salió de la empresa."
+        description="Notas de crédito: corrigen una factura ya emitida."
         actions={
           puede('FACTURACION', 'TOTAL') ? (
             <Button icon={<Plus />} onClick={() => setEmitiendo(true)}>

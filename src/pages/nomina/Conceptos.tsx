@@ -105,7 +105,7 @@ export function Conceptos() {
       <PageHeader
         eyebrow="Nómina"
         title="Bonos y descuentos"
-        description="Los conceptos que se cargan a mano cada período. Los que el sistema calcula solo se enseñan abajo, sin tocar."
+        description="Conceptos de carga manual por período. Los que calcula el sistema se muestran abajo en solo lectura."
         actions={
           puedeEditar ? (
             <Button icon={<Plus />} onClick={() => setEdicion(EN_BLANCO)}>

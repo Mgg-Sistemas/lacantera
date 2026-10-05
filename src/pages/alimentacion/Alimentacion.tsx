@@ -61,7 +61,7 @@ export function Alimentacion() {
     <>
       <PageHeader
         title="Alimentación"
-        description="Las comidas servidas al personal: cuántos platos, qué víveres se gastaron y cuánto costó cada plato. Los víveres se descuentan del inventario al servir."
+        description="Comidas servidas al personal: platos, víveres consumidos y costo por plato. Los víveres se descuentan del inventario al servir."
         actions={
           <>
             <Link to="/app/alimentacion/cocina">

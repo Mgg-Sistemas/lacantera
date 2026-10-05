@@ -99,7 +99,7 @@ export function Proveedores() {
     <>
       <PageHeader
         title="Proveedores"
-        description="A quién se le compra. El RIF y la condición de pago se usan al emitir la orden."
+        description="Registro de proveedores. El RIF y la condición de pago se usan al emitir la orden de compra."
         actions={
           <>
             {/* La carga por planilla vive donde se necesita, no en el menú:

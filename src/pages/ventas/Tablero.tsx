@@ -127,7 +127,7 @@ export function TableroVentas() {
     <>
       <PageHeader
         title="Ventas"
-        description="Del pedido del cliente hasta el cobro. Cada paso muestra qué está esperando ahí."
+        description="Ciclo de venta, del pedido al cobro. Cada etapa muestra lo que tiene pendiente."
         actions={
           <Link to="/app/facturacion/notas-entrega">
             <Button icon={<Truck />}>Despachar material</Button>

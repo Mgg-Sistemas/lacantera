@@ -117,7 +117,7 @@ export function Carnets() {
     <>
       <PageHeader
         title="Carnets"
-        description="Quién tiene carnet emitido y quién no. El carnet lleva un QR que abre una página diciendo si sigue valiendo."
+        description="Estado de emisión de carnets. Cada carnet lleva un código QR que verifica su vigencia."
       />
 
       <Pestanas pestanas={PESTANAS_PERSONAL} />
