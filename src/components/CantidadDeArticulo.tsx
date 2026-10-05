@@ -367,7 +367,7 @@ export function CantidadDeArticulo({
       */}
       {usandoPresentacion ? (
         <Input
-          label={`Y además, sueltos en ${unidad}`}
+          label={`Fracción en ${unidad}`}
           className="mt-2"
           type="number"
           min="0"

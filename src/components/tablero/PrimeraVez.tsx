@@ -35,7 +35,7 @@ export function PrimeraVez({
   return (
     <Card className={cn(className)}>
       <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">
-        Si es la primera vez
+        Primeros pasos
       </p>
       <div className="text-ink/75 mt-3 space-y-2 text-sm leading-relaxed">{children}</div>
     </Card>

@@ -182,9 +182,9 @@ export function TableroTesoreria() {
           </div>
 
           <div className="mt-8 space-y-8">
-            <GrupoAcciones titulo="Sale dinero" acciones={colaPagos} />
-            <GrupoAcciones titulo="Entra dinero" acciones={colaCobros} />
-            <GrupoAcciones titulo="Se mueve" acciones={movimientos} />
+            <GrupoAcciones titulo="Egresos" acciones={colaPagos} />
+            <GrupoAcciones titulo="Ingresos" acciones={colaCobros} />
+            <GrupoAcciones titulo="Movimientos" acciones={movimientos} />
           </div>
         </>
       ) : null}

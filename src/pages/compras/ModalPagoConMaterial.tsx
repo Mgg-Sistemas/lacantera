@@ -356,7 +356,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
           {excedente > 0 ? (
             <fieldset className="mt-3">
               <legend className="text-ink/80 mb-2 text-sm font-medium">
-                ¿Qué pasa con lo que sobra?
+                Excedente
               </legend>
               <div className="grid gap-2 sm:grid-cols-2">
                 {(Object.keys(EXCEDENTE_COMO) as ExcedenteComo[]).map((c) => (
@@ -472,7 +472,7 @@ export function ModalRegistrarPagoConMaterial({
       ) : null}
 
       <Input
-        label="¿Quién lo recibe por el proveedor?"
+        label="Receptor por el proveedor"
         hint="Su nombre va en la nota de salida, en «Para quién» y en quién responde."
         value={recibe}
         onChange={(e) => setRecibe(e.target.value)}

@@ -323,7 +323,7 @@ export function Almacenes() {
 
             {edicion.tipo === 'TALLER' ? (
               <Input
-                label="Trabajos a la vez"
+                label="Trabajos simultáneos"
                 type="number"
                 min="1"
                 step="1"

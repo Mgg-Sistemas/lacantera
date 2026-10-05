@@ -53,7 +53,7 @@ export interface GrupoDeAcciones {
 
 export function QueHacer({
   grupos,
-  titulo = '¿Qué quiere hacer?',
+  titulo = 'Acciones',
 }: {
   grupos: GrupoDeAcciones[]
   titulo?: string

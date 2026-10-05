@@ -573,7 +573,7 @@ function Vale({
 
         {elMotivo?.exige_detalle ? (
           <Input
-            label="En pocas palabras"
+            label="Detalle del uso"
             value={detalle}
             onChange={(e) => setDetalle(e.target.value)}
             placeholder={elMotivo.pista ?? 'Por qué'}
@@ -593,7 +593,7 @@ function Vale({
 
         {empleado === '' ? (
           <Input
-            label="O escriba quién"
+            label="Nombre del receptor"
             value={otroNombre}
             onChange={(e) => setOtroNombre(e.target.value)}
             placeholder="Nombre de quien recibe"

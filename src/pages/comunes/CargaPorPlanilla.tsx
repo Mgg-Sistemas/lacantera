@@ -45,9 +45,9 @@ import type { InformeDeCarga } from '@/lib/api/cargaLote'
 
 /** El estado de una fila, dicho como se lee. */
 const COMO_SE_DICE: Record<string, { texto: string; tono: 'success' | 'info' | 'danger' }> = {
-  NUEVO: { texto: 'Se crea', tono: 'success' },
-  ACTUALIZA: { texto: 'Se actualiza', tono: 'info' },
-  ERROR: { texto: 'No entra', tono: 'danger' },
+  NUEVO: { texto: 'Nuevo', tono: 'success' },
+  ACTUALIZA: { texto: 'Actualización', tono: 'info' },
+  ERROR: { texto: 'Error', tono: 'danger' },
 }
 
 type Accion = UseMutationResult<InformeDeCarga, Error, FilaDeHoja[], unknown>
@@ -534,7 +534,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                         </span>
                         <Chip tone={dicho.tono}>{dicho.texto}</Chip>
                         {f.estado !== 'ERROR' && corregidas.includes(f.fila) ? (
-                          <Chip tone="neutral">Corregida aquí</Chip>
+                          <Chip tone="neutral">Corregida en pantalla</Chip>
                         ) : null}
                         <span className="text-ink/80 text-sm font-medium">
                           {/* Sin código en una fila nueva no es un problema: la

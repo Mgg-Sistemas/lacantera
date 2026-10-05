@@ -295,11 +295,11 @@ export function Plantas() {
                       </td>
                       <td className="px-3 py-3">
                         {r.se_puede_usar ? (
-                          <Chip tone="success">Se usa</Chip>
+                          <Chip tone="success">Activa</Chip>
                         ) : !r.activa ? (
                           <Chip tone="neutral">Apagada</Chip>
                         ) : (
-                          <Chip tone="warning">Un sitio está cerrado</Chip>
+                          <Chip tone="warning">Sitio cerrado</Chip>
                         )}
                       </td>
                       <td className="px-5 py-3 text-right whitespace-nowrap">
@@ -390,7 +390,7 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
   const pasos = [
     {
       id: 'que-es',
-      titulo: 'Qué sitio es',
+      titulo: 'Identificación',
       subtitulo: 'Lo que lo identifica. El código no se cambia después.',
       // Las mismas reglas que pedía el formulario de una pieza, repartidas
       // donde se llenan. Antes se comprobaban todas juntas al final.
@@ -424,7 +424,7 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
     },
     {
       id: 'quien-lo-lleva',
-      titulo: 'Quién lo lleva, y dónde queda su material',
+      titulo: 'Operación e inventario',
       subtitulo: nuevo
         ? 'Quién lo opera hace falta; lo demás se puede poner después.'
         : 'Quién lo opera no se cambia aquí, sino desde «Operador», con fecha.',

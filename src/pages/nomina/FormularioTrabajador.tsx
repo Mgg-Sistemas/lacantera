@@ -330,7 +330,7 @@ export function FormularioTrabajador() {
           },
           {
             id: 'contrato',
-            titulo: 'Su contrato',
+            titulo: 'Datos laborales',
             subtitulo:
               'De la fecha de ingreso salen la antigüedad, el bono vacacional y la liquidación.',
             falta: faltaContrato,
@@ -510,7 +510,7 @@ export function FormularioTrabajador() {
           },
           {
             id: 'pago',
-            titulo: 'Cómo se le paga',
+            titulo: 'Remuneración',
             subtitulo: 'Lo último. Al guardar, la ficha queda creada.',
             falta: faltaPago,
             contenido: (

@@ -62,7 +62,7 @@ const PASOS_DEL_PERIODO: Record<string, { texto: string; tono: 'neutral' | 'info
 */
 const QUE_HACER: GrupoDeAcciones[] = [
   {
-    titulo: 'La quincena, paso a paso',
+    titulo: 'Proceso de nómina',
     detalle: 'En este orden. Cada paso se apoya en el anterior.',
     acciones: [
       {

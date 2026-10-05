@@ -606,7 +606,7 @@ export function ModalSalida({
           {modo === 'pedir' ? (
             <div className="mb-4">
               <SelectBuscable
-                label="¿De qué almacén debe salir?"
+                label="Almacén predeterminado"
                 vacio="Seleccione el sitio"
                 valor={almacenPedido}
                 onCambio={(v) => setAlmacenPedido(v)}
@@ -904,7 +904,7 @@ export function ModalSalida({
                     onChange={(e) => setVehiculoEscrito(e.target.value)}
                   />
                   <Input
-                    label="Quién lo recibe"
+                    label="Recibido por"
                     placeholder="Nombre y apellido"
                     value={recibeNombre}
                     onChange={(e) => setRecibeNombre(e.target.value)}

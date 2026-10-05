@@ -678,7 +678,7 @@ export function CompraDirecta() {
                     <div className="sm:col-span-4">
                       {f.nueva_presentacion ? (
                         <Input
-                          label={`Cuántos ${f.nueva_unidad || 'de su unidad'} trae cada ${f.nueva_presentacion.toLowerCase()}`}
+                          label="Unidades por presentación"
                           type="number"
                           min="0"
                           step="0.0001"

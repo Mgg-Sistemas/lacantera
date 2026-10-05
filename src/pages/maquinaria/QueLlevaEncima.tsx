@@ -104,7 +104,7 @@ export function QueLlevaEncima({
     <>
       <Card>
         <CardHeader
-          title="Qué lleva encima"
+          title="Modificaciones"
           subtitle="Lo que se le añadió y no venía con ella: una antena, unos cauchos especiales, un blindaje. Todo esto sale también en su historia."
           action={
             editable ? (
@@ -175,7 +175,7 @@ export function QueLlevaEncima({
         {quitados.length > 0 ? (
           <div className="mt-4">
             <p className="text-ink/40 text-2xs font-mono tracking-[0.16em] uppercase">
-              Ya no lo lleva
+              Retirados
             </p>
             <ul className="mt-2 space-y-1.5">
               {quitados.map((a) => (
@@ -198,7 +198,7 @@ export function QueLlevaEncima({
         <Modal
           abierto
           onCerrar={() => setMontando(false)}
-          titulo="Montarle algo a la máquina"
+          titulo="Nueva modificación"
           descripcion="Queda en su ficha y en su historia, con la fecha."
           acciones={
             <>

@@ -139,7 +139,7 @@ export function Alimentacion() {
                 </span>
                 {Number(v.stock_minimo) > 0 && Number(v.existencia) <= Number(v.stock_minimo) ? (
                   <Chip tone="warning" icon={<TriangleAlert />}>
-                    Poco
+                    Bajo mínimo
                   </Chip>
                 ) : null}
               </li>

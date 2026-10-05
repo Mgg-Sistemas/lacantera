@@ -968,7 +968,7 @@ function ModalCuenta({
   const pasos = [
     {
       id: 'que-cuenta',
-      titulo: 'Qué cuenta es',
+      titulo: 'Identificación',
       subtitulo: 'Una cuenta, una moneda. Los datos de abajo cambian según el tipo.',
       // Es lo único que el formulario exigía antes de guardar, y se pide aquí
       // porque es aquí donde se escribe.
@@ -1044,7 +1044,7 @@ function ModalCuenta({
     },
     {
       id: 'de-quien',
-      titulo: 'De quién responde, y cómo se comporta',
+      titulo: 'Titular y condiciones',
       subtitulo: 'Se puede dejar en blanco y completarlo después.',
       contenido: (
         <>

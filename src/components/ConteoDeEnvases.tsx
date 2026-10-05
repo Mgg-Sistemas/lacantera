@@ -155,7 +155,7 @@ export function ConteoDeEnvases({
       */}
       <div className="mt-3">
         <Input
-          label={`Y además, sueltos en ${unidad}`}
+          label={`Fracción en ${unidad}`}
           type="number"
           min="0"
           step="0.0001"

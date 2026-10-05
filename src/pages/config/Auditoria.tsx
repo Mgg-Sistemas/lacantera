@@ -173,7 +173,7 @@ function LoQueNoSePudoHacer() {
   return (
     <Card className="mb-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-ink/90 text-base font-semibold">Lo que se intentó y no se pudo</h2>
+        <h2 className="text-ink/90 text-base font-semibold">Intentos fallidos</h2>
         <span className="text-ink/45 text-xs">
           {isPending
             ? 'Cargando…'
@@ -254,7 +254,7 @@ function QuienEstaConectado() {
   return (
     <Card className="mb-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-ink/90 text-base font-semibold">Quién está en el sistema</h2>
+        <h2 className="text-ink/90 text-base font-semibold">Usuarios en línea</h2>
         <span className="text-ink/45 text-xs">
           {isPending
             ? 'Cargando…'
@@ -429,7 +429,7 @@ export function Auditoria() {
             opciones={(modulos.data ?? []).map((m) => ({ valor: m, etiqueta: m }))}
           />
           <Select
-            label="Sobre qué"
+            label="Tabla"
             vacio="Todo"
             value={filtros.tabla ?? ''}
             onChange={(e) => cambiar({ tabla: e.target.value })}
@@ -546,7 +546,7 @@ export function Auditoria() {
                   <th className="px-5 py-3 font-medium">Fecha</th>
                   <th className="px-3 py-3 font-medium">Usuario</th>
                   <th className="px-3 py-3 font-medium">Operación</th>
-                  <th className="px-3 py-3 font-medium">Sobre qué</th>
+                  <th className="px-3 py-3 font-medium">Tabla</th>
                   <th className="px-5 py-3 text-right font-medium"></th>
                 </tr>
               </thead>
@@ -756,7 +756,7 @@ export function Auditoria() {
               </div>
             ) : null}
             <div>
-              <dt className="text-ink/45 text-xs">Desde</dt>
+              <dt className="text-ink/45 text-xs">Dirección IP</dt>
               <dd className="text-ink/80 tabular">{detalle.ip ?? 'no registrada'}</dd>
             </div>
           </dl>

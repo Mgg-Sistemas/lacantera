@@ -874,7 +874,7 @@ export function Articulos() {
                 }))}
               />
               <Input
-                label={`Cuántas ${form.unidad} trae`}
+                label="Unidades por presentación"
                 type="number"
                 min="0"
                 step="0.0001"

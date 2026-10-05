@@ -337,7 +337,7 @@ export function FichaMaquina() {
           {/* ------------------------------ Cuál es ------------------------------ */}
           <Card>
             <CardHeader
-              title="Cuál es"
+              title="Identificación"
               subtitle="El código es con el que se la nombra en el patio y en todos los papeles."
             />
 
@@ -526,7 +526,7 @@ export function FichaMaquina() {
           {/* --------------------------- Qué combustible --------------------------- */}
           <Card>
             <CardHeader
-              title="Qué combustible quema"
+              title="Combustible"
               subtitle="Con esto, el vale se niega a echarle lo que no es y a pasarse de lo que le cabe."
             />
 
@@ -559,7 +559,7 @@ export function FichaMaquina() {
           {/* ----------------------------- Cuándo avisa ----------------------------- */}
           <Card>
             <CardHeader
-              title="Cuándo avisar"
+              title="Umbrales de mantenimiento"
               subtitle="Horas desde el último mantenimiento. Los tres van en orden: primero el aviso, después la alarma, y el tope al final."
             />
 

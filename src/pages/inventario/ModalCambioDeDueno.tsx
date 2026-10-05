@@ -184,7 +184,7 @@ export function ModalCambioDeDueno({
       */}
       <Input
         className="mt-4"
-        label="Valor acordado, si se acordó uno (USD)"
+        label="Valor acordado (USD)"
         type="number"
         min="0"
         step="0.01"

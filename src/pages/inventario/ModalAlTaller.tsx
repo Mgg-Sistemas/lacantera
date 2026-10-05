@@ -278,7 +278,7 @@ export function ModalAlTaller({
           placeholder="Se torcieron en el traslado y hay que enderezarlas"
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
-          hint="Lo que se sabe ahora. Qué se le hizo se anota al cerrarla."
+          hint="Lo que se sabe ahora. El trabajo realizado se anota al cerrarla."
         />
       </div>
 

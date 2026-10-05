@@ -60,7 +60,7 @@ interface Paso {
 const PASOS: Paso[] = [
   {
     romano: 'I',
-    titulo: 'Se cotiza',
+    titulo: 'Cotización',
     espera: 'cotizaciones esperando respuesta',
     icono: FileText,
     ruta: '/app/ventas/cotizaciones',
@@ -69,7 +69,7 @@ const PASOS: Paso[] = [
   },
   {
     romano: 'II',
-    titulo: 'Se despacha',
+    titulo: 'Despacho',
     espera: 'notas despachadas',
     icono: Truck,
     ruta: '/app/facturacion/notas-entrega',
@@ -77,7 +77,7 @@ const PASOS: Paso[] = [
   },
   {
     romano: 'III',
-    titulo: 'Se factura',
+    titulo: 'Facturación',
     espera: 'notas sin factura',
     icono: Receipt,
     ruta: '/app/facturacion',
@@ -87,7 +87,7 @@ const PASOS: Paso[] = [
   },
   {
     romano: 'IV',
-    titulo: 'Se cobra',
+    titulo: 'Cobro',
     espera: 'facturas por cobrar',
     icono: Wallet,
     ruta: '/app/facturacion',
@@ -192,7 +192,7 @@ export function TableroVentas() {
           <div className="mt-4 grid gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <p className="text-ink/40 text-2xs font-mono tracking-[0.18em] uppercase">
-                Si es la primera vez
+                Primeros pasos
               </p>
               <p className="text-ink/75 mt-3 text-sm leading-relaxed">
                 Una venta se registra <strong>despachando</strong>, y eso se hace en{' '}

@@ -181,7 +181,7 @@ export function Clientes() {
                         {CONDICIONES_PAGO.find((x) => x.valor === c.condicion_pago)?.etiqueta}
                         {c.contribuyente_especial ? (
                           <Chip tone="warning" className="ml-2">
-                            Retiene IVA
+                            Agente de retención
                           </Chip>
                         ) : null}
                       </td>

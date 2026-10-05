@@ -288,7 +288,7 @@ export function FormularioContacto({
       </Bloque>
 
       {/* ── Lo que ya existe en el sistema ───────────────────────────── */}
-      <Bloque titulo="Es el contacto de…">
+      <Bloque titulo="Vinculado a">
         <SelectBuscable
           label="Cliente"
           vacio="Ninguno"

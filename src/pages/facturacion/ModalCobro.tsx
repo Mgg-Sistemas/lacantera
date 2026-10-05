@@ -574,7 +574,7 @@ export function ModalCobro({
                 {excedenteMaterial > 0 ? (
                   <Select
                     className="mt-3"
-                    label="Qué pasa con lo que sobra"
+                    label="Excedente"
                     vacio="Seleccione"
                     value={material.excedenteComo}
                     onChange={(e) => setMaterial({ ...material, excedenteComo: e.target.value as ExcedenteDelCliente })}

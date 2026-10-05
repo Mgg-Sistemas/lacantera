@@ -442,7 +442,7 @@ function Hoy({ hoy }: { hoy: string }) {
             )}
           </div>
           <div>
-            <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Ya salieron</p>
+            <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Jornadas cerradas</p>
             {salieron.length === 0 ? (
               <p className="text-ink/40 text-sm">Sin registros.</p>
             ) : (

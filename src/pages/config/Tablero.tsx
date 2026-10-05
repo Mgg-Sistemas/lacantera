@@ -29,7 +29,7 @@ import { MantenimientoDeMiniaturas } from './MantenimientoDeMiniaturas'
 
 const QUE_HACER: GrupoDeAcciones[] = [
   {
-    titulo: 'Lo que se pone una vez',
+    titulo: 'Configuración inicial',
     detalle: 'Sin esto, los papeles salen sin membrete y nadie puede entrar.',
     acciones: [
       {
@@ -62,7 +62,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
     ],
   },
   {
-    titulo: 'Revisar de vez en cuando',
+    titulo: 'Revisión periódica',
     acciones: [
       {
         titulo: 'Auditoría',

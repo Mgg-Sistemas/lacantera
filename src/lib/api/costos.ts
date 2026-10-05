@@ -41,7 +41,7 @@ export const CLASES: Record<ClaseCosto, string> = {
   COMBUSTIBLE: 'Combustible',
   NOMINA: 'Nómina',
   COMPRA: 'Compra',
-  GASTO: 'Gasto suelto',
+  GASTO: 'Gasto menor',
   FIJO: 'Gasto fijo',
 }
 

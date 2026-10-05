@@ -164,7 +164,7 @@ export function ModalTrasvase({
       {envase !== SUELTO ? (
         <Input
           className="mt-2"
-          label={`Y además, sueltos en ${unidad}`}
+          label={`Fracción en ${unidad}`}
           type="number"
           min="0"
           step="0.0001"

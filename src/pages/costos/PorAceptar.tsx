@@ -38,7 +38,7 @@ import { aTexto, dineroONada, ORIGENES } from './formato'
 
 const AVISOS: Record<NonNullable<Candidato['aviso']>, { texto: string; tone: 'danger' | 'warning' }> = {
   SIN_PRECIO: { texto: 'Sin precio: corríjalo en Viajes', tone: 'danger' },
-  PRECIO_RARO: { texto: 'Precio fuera de lo usual', tone: 'warning' },
+  PRECIO_RARO: { texto: 'Precio atípico', tone: 'warning' },
   SIN_M3: { texto: 'Sin m³', tone: 'warning' },
 }
 

@@ -190,7 +190,7 @@ export function Combustible() {
               {puedeOrdenar ? (
                 <Button variant="ghost" onClick={() => setOrdenando(true)}>
                   <Tags className="size-4" />
-                  Motivos
+                  Usos
                 </Button>
               ) : null}
               {/* El modulo sabia sacar y no sabia meter, y quien preguntaba
@@ -869,7 +869,7 @@ function ModalDespacho({
         {elMotivo?.exige_detalle ? (
           <div className="mt-4">
             <Input
-              label="¿Para qué exactamente?"
+              label="Detalle del uso"
               placeholder="Prueba de la bomba nueva"
               value={detalle}
               onChange={(e) => setDetalle(e.target.value)}
@@ -1001,7 +1001,7 @@ function ModalDespacho({
       {empleado === '' ? (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Input
-            label="Nombre de quien recibió"
+            label="Nombre del receptor"
             placeholder="José Ramírez"
             value={otroNombre}
             onChange={(e) => setOtroNombre(e.target.value)}
@@ -1130,7 +1130,7 @@ function ModalMotivos({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =>
         }))}
         error={guardar.error ?? borrar.error}
         guardando={guardar.isPending || borrar.isPending}
-        etiquetaAnadir="Añadir motivo"
+        etiquetaAnadir="Añadir uso"
         placeholderNuevo="Traslado a otro frente"
         nota="Apagar un motivo lo quita del formulario sin tocar los vales ya emitidos. Borrar solo funciona con los que nunca se usaron."
         onGuardar={(e) => {

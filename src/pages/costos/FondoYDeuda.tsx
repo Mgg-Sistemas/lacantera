@@ -57,7 +57,7 @@ export function FondoYDeuda({ caja, resumen }: { caja: CajaCosto; resumen: Resum
           }
         />
         <Cifra
-          rotulo="Si se pagara todo el costo"
+          rotulo="Saldo proyectado"
           valor={dineroONada(quedaria)}
           pie="Fondo menos el costo devengado. Es lo que se arrastra a la siguiente caja."
           alerta={quedaria !== null && quedaria < 0}
@@ -113,7 +113,7 @@ export function FondoYDeuda({ caja, resumen }: { caja: CajaCosto; resumen: Resum
                   <th className="px-5 py-2.5 font-medium">Origen</th>
                   <th className="px-5 py-2.5 text-right font-medium">Entregado</th>
                   <th className="px-5 py-2.5 text-right font-medium">Abonado</th>
-                  <th className="px-5 py-2.5 text-right font-medium">Se le debe</th>
+                  <th className="px-5 py-2.5 text-right font-medium">Deuda</th>
                 </tr>
               </thead>
               <tbody className="divide-hairline divide-y">

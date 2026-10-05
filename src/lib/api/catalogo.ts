@@ -267,7 +267,7 @@ export const MODOS_ENTREGA = [
   },
   {
     valor: 'NO',
-    etiqueta: 'No se le entrega a una persona',
+    etiqueta: 'No entregable',
     ayuda: 'Lo que se vende o se contrata. Nadie se lo lleva.',
   },
 ]

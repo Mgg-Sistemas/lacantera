@@ -415,7 +415,7 @@ function MarcarEntrada({ onCerrar }: { onCerrar: () => void }) {
         )}
 
         <SelectBuscable
-          label="A quién visita"
+          label="Persona visitada"
           vacio="Alguien del personal (opcional)"
           valor={v.visita_a}
           onCambio={(id) => setV((x) => ({ ...x, visita_a: id }))}
@@ -489,7 +489,7 @@ function CorregirVisita({ visita, onCerrar }: { visita: Visita; onCerrar: () => 
           opciones={(visitantes ?? []).map(etiquetaDe)}
         />
         <SelectBuscable
-          label="A quién visita"
+          label="Persona visitada"
           vacio="Alguien del personal (opcional)"
           valor={v.visita_a}
           onCambio={(id) => setV((x) => ({ ...x, visita_a: id }))}

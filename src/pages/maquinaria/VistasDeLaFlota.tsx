@@ -102,10 +102,10 @@ const avanceDe = (m: Maquina) =>
   que ya dice la barra de la derecha, así que nadie depende de él.
 */
 const ROTULO_SEMAFORO: Record<string, string> = {
-  BLOQUEANTE: 'Pasada del tope',
-  ALARMA: 'En alarma',
-  AVISO: 'Se acerca al tope',
-  OK: 'Al día',
+  BLOQUEANTE: 'Tope superado',
+  ALARMA: 'Alarma',
+  AVISO: 'Aviso',
+  OK: 'Dentro del intervalo',
 }
 
 function PuntoDeSemaforo({ estado }: { estado: string }) {

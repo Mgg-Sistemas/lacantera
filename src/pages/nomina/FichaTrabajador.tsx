@@ -1005,7 +1005,7 @@ export function FichaTrabajador() {
 
       <Card className="mt-4">
         <CardHeader
-          title="De qué responde"
+          title="A su cargo"
           subtitle="Los sitios y las máquinas que tiene a su cargo. Al irse, esto es lo que hay que entregar."
         />
         {aCargo === undefined ? (
@@ -1401,7 +1401,7 @@ export function FichaTrabajador() {
             />
 
             <Select
-              label="Cuánto duró"
+              label="Momento"
               value={inc.momento}
               onChange={(ev) => setInc({ ...inc, momento: ev.target.value })}
               opciones={MOMENTOS_INCIDENCIA}

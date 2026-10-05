@@ -246,7 +246,7 @@ export function Salidas() {
             }))}
           />
           <SelectBuscable
-            label="Para quién salió"
+            label="Destino"
             vacio="Todos"
             valor={grupoId}
             onCambio={(v) => setGrupoId(v)}
@@ -300,7 +300,7 @@ export function Salidas() {
                   <th className="min-w-60 px-5 py-3 font-medium">Movimiento</th>
                   <th className="px-3 py-3 font-medium">Artículo</th>
                   <th className="px-3 py-3 font-medium">Almacén</th>
-                  <th className="px-3 py-3 font-medium">Para quién</th>
+                  <th className="px-3 py-3 font-medium">Destino</th>
                   <th className="px-3 py-3 text-right font-medium">Cantidad</th>
                 </tr>
               </thead>

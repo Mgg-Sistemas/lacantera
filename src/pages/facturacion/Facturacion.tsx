@@ -596,7 +596,7 @@ export function Facturacion() {
               <Chip tone="danger">Vencida hace {detalle.dias_vencida} días</Chip>
             ) : null}
             {Number(detalle.retencion_iva) > 0 ? (
-              <Chip tone="warning">Retiene IVA</Chip>
+              <Chip tone="warning">Agente de retención</Chip>
             ) : null}
             {detalle.origen === 'DIRECTA' ? (
               <Chip tone="neutral">

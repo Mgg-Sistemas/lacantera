@@ -135,7 +135,7 @@ export function PorCobrar() {
               icon={<CalendarClock />}
             />
             <StatCard
-              label="Clientes que deben"
+              label="Clientes con saldo"
               value={String(grupos.length)}
               tone="info"
               icon={<Building2 />}
@@ -204,7 +204,7 @@ export function PorCobrar() {
 
           {deProveedores.length > 0 ? (
             <>
-              <h2 className="text-ink/60 mt-8 mb-1 text-sm font-semibold">Proveedores que deben</h2>
+              <h2 className="text-ink/60 mt-8 mb-1 text-sm font-semibold">Proveedores con saldo</h2>
               <p className="text-ink/45 mb-3 text-xs">
                 Pagaron una compra con material que valía más que la orden, y la diferencia quedó
                 por cobrarles en dinero. Cada saldo va en la moneda de su orden

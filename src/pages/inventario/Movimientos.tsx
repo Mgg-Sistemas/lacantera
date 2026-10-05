@@ -102,7 +102,7 @@ const CLASES = [
 
 const AGRUPACIONES = [
   { valor: 'articulo', etiqueta: 'Por material' },
-  { valor: 'persona', etiqueta: 'Por quién lo movió' },
+  { valor: 'persona', etiqueta: 'Por usuario' },
   { valor: 'mes', etiqueta: 'Por mes' },
 ]
 

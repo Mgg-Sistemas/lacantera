@@ -183,7 +183,7 @@ export function Traslados() {
                 <th className="px-4 py-3 font-medium">Artículo</th>
                 <th className="px-4 py-3 text-right font-medium">Cantidad</th>
                 <th className="px-4 py-3 font-medium">Recorrido</th>
-                <th className="px-4 py-3 font-medium">Qué pasó y qué falta</th>
+                <th className="px-4 py-3 font-medium">Seguimiento</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>

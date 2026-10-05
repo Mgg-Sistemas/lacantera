@@ -235,7 +235,7 @@ function FilaPendiente({
         la lista se leyera como una lista de descuidos.
       */}
       <Chip tone={nunca ? 'neutral' : 'warning'}>
-        {nunca ? 'Nunca se le dio' : `Venció el ${fecha(d.toca_el!)}`}
+        {nunca ? 'Sin entregar' : `Venció el ${fecha(d.toca_el!)}`}
       </Chip>
 
       {/*

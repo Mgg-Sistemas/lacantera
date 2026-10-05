@@ -77,7 +77,7 @@ export function CerrarCaja({
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
-          label="Cerrar hasta el"
+          label="Fecha de cierre"
           type="date"
           min={caja.fecha_inicio}
           max={hoy}
@@ -94,7 +94,7 @@ export function CerrarCaja({
       </div>
 
       <div className="bg-ink/4 mt-4 rounded-[6px] p-3 text-sm">
-        <p className="text-ink/85 font-medium">Lo que se congela</p>
+        <p className="text-ink/85 font-medium">Resumen del cierre</p>
         <p className="text-ink/65 mt-1">
           Costo {dineroONada(resumen.costo_usd)} · {enteros(resumen.m3_planta)} m³ salidos ·{' '}
           {resumen.dinero_tapado ? 'costo por m³ sin acceso' : porM3(resumen.costo_por_m3)}

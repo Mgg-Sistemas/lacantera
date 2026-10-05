@@ -40,25 +40,25 @@ const ESTILOS: Record<
   { etiqueta: string; clases: string; icono: typeof CircleCheck; titulo: string }
 > = {
   OK: {
-    etiqueta: 'Al día',
+    etiqueta: 'Dentro del intervalo',
     clases: 'border-hairline bg-surface text-ink/55',
     icono: CircleCheck,
     titulo: 'Dentro de su intervalo de mantenimiento.',
   },
   AVISO: {
-    etiqueta: 'Programar',
+    etiqueta: 'Aviso',
     clases: 'border-warning/40 bg-warning-soft text-warning',
     icono: TriangleAlert,
     titulo: 'Pasó el primer umbral. Conviene programar el mantenimiento.',
   },
   ALARMA: {
-    etiqueta: 'Urgente',
+    etiqueta: 'Alarma',
     clases: 'border-safety/50 bg-safety-soft text-safety font-semibold',
     icono: AlertTriangle,
     titulo: 'Quedan pocas horas para el tope.',
   },
   BLOQUEANTE: {
-    etiqueta: 'Pasó el tope',
+    etiqueta: 'Tope superado',
     clases: 'border-danger bg-danger text-white font-semibold shadow-[0_0_0_3px_rgba(179,38,30,0.18)]',
     icono: OctagonAlert,
     titulo: 'Superó su tope de horas. No debería seguir trabajando sin mantenimiento.',

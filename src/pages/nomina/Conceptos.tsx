@@ -168,7 +168,7 @@ export function Conceptos() {
                     Normal
                   </Chip>
                 ) : null}
-                {!c.activo ? <Chip>Apagado</Chip> : null}
+                {!c.activo ? <Chip>Inactivo</Chip> : null}
 
                 {puedeEditar ? (
                   <div className="flex shrink-0 gap-1.5">

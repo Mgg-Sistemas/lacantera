@@ -243,7 +243,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
             }))}
         />
         <Input
-          label={`Cuántas ${unidad} trae`}
+          label="Unidades por presentación"
           type="number"
           min="0"
           step="0.0001"

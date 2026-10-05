@@ -199,7 +199,7 @@ function Entrada({
           rows={2}
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
-          hint="Lo que se sabe ahora. Qué se le hizo se anota al sacarla."
+          hint="Lo que se sabe ahora. El trabajo realizado se anota al sacarla."
         />
       </div>
 
@@ -431,7 +431,7 @@ function Salida({
           ) : null}
 
           <Textarea
-            label="Qué se le hizo"
+            label="Trabajo realizado"
             rows={3}
             value={detalle}
             onChange={(e) => setDetalle(e.target.value)}

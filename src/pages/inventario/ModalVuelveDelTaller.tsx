@@ -96,7 +96,7 @@ export function ModalVuelveDelTaller({
       }
     >
       <Textarea
-        label="Qué se le hizo"
+        label="Trabajo realizado"
         rows={2}
         placeholder="Se enderezaron en la prensa"
         value={detalle}

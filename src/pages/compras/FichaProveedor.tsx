@@ -131,7 +131,7 @@ export function FichaProveedor() {
               }
             />
             <Cifra
-              etiqueta="Lo que más se le compra"
+              etiqueta="Artículos más comprados"
               valor={r.articulo_frecuente ?? '—'}
               pie={`De ${enteros(r.renglones)} ${r.renglones === 1 ? 'renglón' : 'renglones'} en total`}
             />
