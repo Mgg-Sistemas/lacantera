@@ -329,6 +329,18 @@ export function Existencias() {
 
   const [busqueda, setBusqueda] = useState('')
   const [soloBajas, setSoloBajas] = useState(false)
+  /*
+    LO QUE ESTÁ EN CERO ES RUIDO, NO INVENTARIO.
+
+    Se pidió no verlo ni en la lista ni en el acta: artículos que nunca
+    tuvieron existencia o que ya se consumieron del todo llenan la pantalla
+    sin aportar nada que contar. La excepción es lo que está por debajo de su
+    mínimo —ahí el cero es justo la alerta que importa, y ocultarlo rompería
+    el aviso de «conviene pedirlos antes de que hagan falta»—, y por eso
+    sigue existiendo un «Mostrar lo que está en cero» para cuando sí hace
+    falta verlo, como al buscar un duplicado para eliminar.
+  */
+  const [mostrarEnCero, setMostrarEnCero] = useState(false)
   const [desglose, setDesglose] = useState<ExistenciaTotal | null>(null)
   /*
     «CONTAR» DIRECTO DESDE «TODO EL INVENTARIO», SIN PASAR POR «VER DÓNDE ESTÁ».
@@ -443,12 +455,13 @@ export function Existencias() {
 
       const bajo = Number(e.stock_minimo) > 0 && Number(e.existencia) <= Number(e.stock_minimo)
       if (soloBajas && !bajo) return false
+      if (!mostrarEnCero && !bajo && Number(e.existencia) === 0) return false
       if (!texto) return true
       return (
         e.articulo.toLowerCase().includes(texto) || e.articulo_codigo.toLowerCase().includes(texto)
       )
     })
-  }, [datos, busqueda, soloBajas, dueno])
+  }, [datos, busqueda, soloBajas, mostrarEnCero, dueno])
 
   /*
     El valor llega NULO a quien no tiene INVENTARIO.VER_VALORACION: la vista
@@ -839,6 +852,14 @@ export function Existencias() {
             }))}
           />
         </div>
+
+        <button
+          type="button"
+          onClick={() => setMostrarEnCero((v) => !v)}
+          className="text-royal-600 dark:text-royal-300 mt-3 text-sm font-medium underline"
+        >
+          {mostrarEnCero ? 'Ocultar lo que está en cero' : 'Mostrar lo que está en cero'}
+        </button>
       </Card>
 
       {isPending ? <Cargando /> : null}
@@ -1193,7 +1214,7 @@ export function Existencias() {
             eliminarDuplicado.reset()
           }}
           titulo={`Eliminar duplicado: ${duplicando.articulo}`}
-          descripcion="Esto no genera una salida. Si el artículo nunca tuvo movimiento se borra entero; si ya tuvo, reversa cada movimiento (una corrección, no un consumo) y lo desactiva, dejando la existencia en cero. Si ya está en una factura, una nota o cualquier otro documento de verdad, la base lo va a negar: en ese caso no es un duplicado aislado, desactívalo en su lugar."
+          descripcion="Esto no genera una salida. Si el artículo nunca tuvo movimiento se borra entero; si ya tuvo, reversa cada movimiento (una corrección, no un consumo) y lo desactiva, dejando la existencia en cero. Si ya está en una factura, una nota o cualquier otro documento de verdad, la base lo va a negar: en ese caso no es un duplicado aislado, desactívelo en su lugar."
           acciones={
             <>
               <Button
