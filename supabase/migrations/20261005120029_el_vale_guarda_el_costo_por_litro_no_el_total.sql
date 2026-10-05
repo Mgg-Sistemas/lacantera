@@ -17,9 +17,14 @@
 -- el promedio de lo que queda en el tanque se hunde.
 --
 -- NO DAÑÓ NINGÚN DATO: se comprobó en producción que no existe ni un
--- movimiento de despacho de combustible todavía. El error estaba latente, y
--- se corrige justo antes de que el surtidor del teléfono (20261005105213)
--- estrene ese camino.
+-- movimiento de despacho de combustible todavía. Y AL APLICARLO SE DESCUBRIÓ
+-- ALGO MEJOR: la función viva de producción ya no era la de este repositorio.
+-- El compañero la evolucionó —dueño del material, propietario en el asiento—
+-- y su versión pasa el costo POR UNIDAD correctamente; el total solo se usa
+-- para la columna propia del vale. El ancla no apareció, el parche avisó «ya
+-- guarda el costo por litro» y no tocó nada: el error solo existía en la
+-- versión vieja del archivo de este repo. El parche se queda porque es
+-- inofensivo y deja esta historia escrita donde se va a buscar.
 --
 -- Se corrige con el parche anclado de la casa: se exige UNA sola coincidencia
 -- del texto viejo, y si la función cambió y el ancla no está, la migración
