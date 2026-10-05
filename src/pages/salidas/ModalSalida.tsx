@@ -527,7 +527,7 @@ export function ModalSalida({
       try {
         await subirFotosDeCarga('SALIDA', numeros, archivos)
       } catch (e) {
-        aviso = `La solicitud ${numeros.join(', ')} quedó hecha, pero las fotos no subieron (${enCastellano(e)}). Añádelas desde su tarjeta.`
+        aviso = `La solicitud ${numeros.join(', ')} quedó hecha, pero las fotos no subieron (${enCastellano(e)}). Añádalas desde su tarjeta.`
       } finally {
         setSubiendo(false)
       }
@@ -784,7 +784,7 @@ export function ModalSalida({
                   {pasado ? (
                     <p className="text-danger mt-2 text-xs">
                       {pedidoHasta(i, sitio, r.articulo) > 0
-                        ? `Ya lo pediste más arriba: ahí solo quedan ${cantidad(disponible)} ${unidad}.`
+                        ? `Ya lo pidió más arriba: ahí solo quedan ${cantidad(disponible)} ${unidad}.`
                         : `Ahí solo quedan ${cantidad(disponible)} ${unidad}.`}
                     </p>
                   ) : null}
@@ -830,7 +830,7 @@ export function ModalSalida({
                 hint="Es lo que lee quien la aprueba, y queda en la nota cuando se entregue."
                 error={
                   ventaEnElMotivo
-                    ? `Dice «${ventaEnElMotivo}»: una venta no se solicita aquí, se registra en Facturación › Notas de entrega. Si no es una venta, dilo sin esa palabra; quien la aprueba lee el texto entero.`
+                    ? `Dice «${ventaEnElMotivo}»: una venta no se solicita aquí, se registra en Facturación › Notas de entrega. Si no es una venta, dígalo sin esa palabra; quien la aprueba lee el texto entero.`
                     : undefined
                 }
               />
@@ -898,7 +898,7 @@ export function ModalSalida({
                   <Input
                     label="…o escríbalo"
                     placeholder="Placa, o cómo se reconoce"
-                    hint={vehiculoId ? 'Ya elegiste uno de la lista.' : undefined}
+                    hint={vehiculoId ? 'Ya eligió uno de la lista.' : undefined}
                     disabled={Boolean(vehiculoId)}
                     value={vehiculoEscrito}
                     onChange={(e) => setVehiculoEscrito(e.target.value)}

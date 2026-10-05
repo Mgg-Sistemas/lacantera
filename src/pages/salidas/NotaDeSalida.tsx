@@ -194,7 +194,7 @@ export function useNotaDeSalida(): {
       )
     } catch (e) {
       setFallo(
-        `La nota ${n.numero} existe, pero no se pudo armar su papel. Búscala en Facturación › Notas de entrega.`,
+        `La nota ${n.numero} existe, pero no se pudo armar su papel. Búsquela en Facturación › Notas de entrega.`,
       )
       console.error(e)
     } finally {
@@ -265,7 +265,7 @@ export function useNotaDeSalida(): {
         el operador creería que no se guardó y volvería a sacar el material.
       */
       setFallo(
-        `La salida ${numero} quedó registrada, pero no se pudo armar el papel. Búscala en Movimientos y pulsa «Nota».`,
+        `La salida ${numero} quedó registrada, pero no se pudo armar el papel. Búsquela en Movimientos y pulse «Nota».`,
       )
       console.error(e)
     }

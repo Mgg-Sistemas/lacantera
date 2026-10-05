@@ -67,7 +67,7 @@ function explicar(e: unknown): string {
   if (nombre === 'NotAllowedError' || nombre === 'SecurityError')
     return 'La cámara está bloqueada. Si el navegador no preguntó nada, revise el candado junto a la dirección y permita la cámara; si sigue igual, el servidor tiene la cámara prohibida para el sitio.'
   if (nombre === 'NotFoundError' || nombre === 'OverconstrainedError') return 'Este equipo no tiene cámara, o el navegador no la encuentra.'
-  if (nombre === 'NotReadableError') return 'Otra aplicación está usando la cámara. Ciérrala y vuelve a intentar.'
+  if (nombre === 'NotReadableError') return 'Otra aplicación está usando la cámara. Ciérrela y vuelva a intentarlo.'
   return `No se pudo abrir la cámara: ${enCastellano(e)}`
 }
 

@@ -864,7 +864,7 @@ export function Existencias() {
             titulo={datos.length === 0 ? 'El inventario está vacío' : 'Nada coincide'}
             descripcion={
               datos.length === 0
-                ? 'Las existencias aparecen cuando entra material. Si el almacén arranca ahora, usa «Registrar entrada» para cargar el saldo inicial con su costo.'
+                ? 'Las existencias aparecen cuando entra material. Si el almacén arranca ahora, use «Registrar entrada» para cargar el saldo inicial con su costo.'
                 : undefined
             }
           />
@@ -1227,7 +1227,7 @@ export function Existencias() {
           descripcion={
             modal.tipo === 'entrada'
               ? 'Para lo que entra sin una compra de por medio: el saldo con el que arranca el almacén, algo comprado por fuera, material que trae alguien.'
-              : 'Escriba lo que contaste. El sistema calcula la diferencia y la deja registrada.'
+              : 'Escriba lo que contó. El sistema calcula la diferencia y la deja registrada.'
           }
           /*
             LA ENTRADA NECESITA MÁS ANCHO QUE EL CONTEO.
@@ -1812,7 +1812,7 @@ export function Existencias() {
                     duenos={modal.fila?.duenos}
                     valor={saleDe}
                     onCambio={setSaleDe}
-                    label="¿De quién es lo que contaste?"
+                    label="¿De quién es lo que contó?"
                   />
                 </div>
               ) : null}
@@ -1893,7 +1893,7 @@ export function Existencias() {
                           setHoja([{ presentacion: formasDeLaFila[0].presentacion, cantidad: '' }])
                         }
                       >
-                        ¿Contaste envases de varios tipos?
+                        ¿Contó envases de varios tipos?
                       </button>
                     ) : (
                       <div className="mt-3">

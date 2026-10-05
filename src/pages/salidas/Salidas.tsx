@@ -172,7 +172,7 @@ export function Salidas() {
     <>
       <PageHeader
         title="Historial de salidas y traslados"
-        description="Lo que ya salió del inventario y lo que ya se movió entre almacenes. Aquí solo se consulta: para registrar una salida o solicitarla ve a «Salidas», y para mover material entre almacenes, a «Traslados»."
+        description="Lo que ya salió del inventario y lo que ya se movió entre almacenes. Aquí solo se consulta: para registrar una salida o solicitarla vaya a «Salidas», y para mover material entre almacenes, a «Traslados»."
       />
 
       <Pestanas pestanas={PESTANAS_SALIDAS} />
@@ -266,7 +266,7 @@ export function Salidas() {
           <p className="text-ink/50 mt-2 text-xs">
             {resumen}
             {(data ?? []).length === 200
-              ? ' · el libro trae los 200 más recientes: acota las fechas para ver más atrás'
+              ? ' · el libro trae los 200 más recientes: acote las fechas para ver más atrás'
               : ''}
           </p>
         ) : null}

@@ -274,7 +274,7 @@ function AnotarSalida({ dia }: { dia: string }) {
           descripcion={
             hayAlgunProducto
               ? 'De la planta sale material a granel y se mide en m³. Los productos cargados están en otras unidades, así que ninguno se puede anotar aquí. Revise la unidad en el catálogo de artículos.'
-              : 'Cárgalos por la planilla de artículos con categoría PRODUCTO (arena lavada, piedra picada…). Sin ellos no hay qué anotar.'
+              : 'Cárguelos por la planilla de artículos con categoría PRODUCTO (arena lavada, piedra picada…). Sin ellos no hay qué anotar.'
           }
         />
       </Card>

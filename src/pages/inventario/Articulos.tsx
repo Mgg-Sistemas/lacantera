@@ -450,7 +450,7 @@ export function Articulos() {
           ancho="sm"
           onCerrar={() => setBorrando(null)}
           titulo={`Borrar ${borrando.nombre}`}
-          descripcion="Esto no es desactivar: el registro desaparece del todo y no se puede deshacer. Si el artículo ya tiene algún movimiento, una orden o un documento enganchado, la base no lo va a dejar — en ese caso, desactívalo en su lugar."
+          descripcion="Esto no es desactivar: el registro desaparece del todo y no se puede deshacer. Si el artículo ya tiene algún movimiento, una orden o un documento enganchado, la base no lo va a dejar — en ese caso, desactívelo en su lugar."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setBorrando(null)}>
@@ -772,9 +772,9 @@ export function Articulos() {
 
             {form.id && unidadDeAntes && form.unidad !== unidadDeAntes && seHaMovido ? (
               <p className="text-warning -mt-2 text-xs leading-relaxed">
-                Ojo: ya tiene movimientos anotados en {unidadDeAntes}. Esas cantidades seguirán
+                Atención: ya tiene movimientos anotados en {unidadDeAntes}. Esas cantidades seguirán
                 diciendo el número que se escribió, así que la existencia quedará sumando{' '}
-                {unidadDeAntes} con {form.unidad}. Si la unidad de verdad cambió, cuenta el
+                {unidadDeAntes} con {form.unidad}. Si la unidad de verdad cambió, cuente el
                 almacén después para dejar el saldo bueno.
               </p>
             ) : null}
@@ -866,7 +866,7 @@ export function Articulos() {
                     ? 'Se corrige abajo, en «Otras formas de contarlo».'
                     : form.presentacion
                       ? `Lo que trae ${unNombre(presentaciones, form.presentacion)}.`
-                      : 'Primero di cómo llega.'
+                      : 'Primero indique cómo llega.'
                 }
                 value={
                   laDeDefecto

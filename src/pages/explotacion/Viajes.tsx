@@ -1121,7 +1121,7 @@ function CargarViajes({
       ? 'Esta ruta no tiene tarifa fija: se cuadra con el pedido.'
       : ruta.precio_hasta_usd !== null && ruta.precio_usd !== null
         ? `La tarifa va de ${dolares(ruta.precio_usd)} a ${dolares(ruta.precio_hasta_usd)}.`
-        : 'La tarifa de esta ruta es un rango: di cuánto se paga.'
+        : 'La tarifa de esta ruta es un rango: diga cuánto se paga.'
 
   const enviar = async () => {
     if (!equipo || !ruta) return
@@ -1437,7 +1437,7 @@ function CorregirViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => vo
         <Input label="Hora" type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
         {volvioVacio ? (
           <p className="text-ink/55 self-end text-xs">
-            Volvió vacío: no lleva metros cúbicos. Si traía carga, anúlalo y cárgalo de nuevo.
+            Volvió vacío: no lleva metros cúbicos. Si traía carga, anúlelo y cárguelo de nuevo.
           </p>
         ) : (
           <Input

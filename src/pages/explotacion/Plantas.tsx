@@ -598,7 +598,7 @@ function CerrarSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion; onCerrar: (
 
       {avisa.length > 0 ? (
         <div className="border-hairline mb-4 rounded-[6px] border p-3">
-          <p className="text-ink/80 text-sm font-medium">Al cerrarlo, ten presente</p>
+          <p className="text-ink/80 text-sm font-medium">Al cerrarlo, tenga presente</p>
           <ul className="text-ink/65 mt-1.5 list-disc space-y-1 pl-5 text-sm">
             {avisa.map((c) => (
               <li key={c.que}>{c.detalle}</li>

@@ -719,7 +719,7 @@ function CargaDesdeExcel({
     >
       <div className="space-y-5 text-sm">
         <div>
-          <p className="text-ink/90 font-medium">1. Baje la plantilla</p>
+          <p className="text-ink/90 font-medium">1. Descargue la plantilla</p>
           <p className="text-ink/60 mt-1">
             Trae {marcadas > 0 ? `las ${vigentes} filas marcadas` : `los ${vigentes} despachos que se ven en pantalla`}, con lo que
             ya tengan escrito. Las columnas de cabecera roja clara son las que se llenan. No toque la columna CLAVE: es lo

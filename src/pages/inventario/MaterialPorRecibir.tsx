@@ -113,7 +113,7 @@ export function MaterialPorRecibir() {
         >
           <p className="text-ink/60 mb-3 text-sm">
             Esto no se deshace: el material queda en el patio y el cobro registrado. Si no llegó completo,
-            no lo confirmes; que Facturación anule este cobro y lo registre con la cantidad real.
+            no lo confirme; que Facturación anule este cobro y lo registre con la cantidad real.
           </p>
           <Textarea
             label="Nota"

@@ -337,7 +337,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
           {/* ------------------------------ 1. La plantilla ----------------------------- */}
           <Card>
             <CardHeader
-              title="1 · Baje la plantilla"
+              title="1 · Descargue la plantilla"
               subtitle="Trae las columnas en el orden que el sistema espera, dos filas de ejemplo, y una segunda hoja que explica qué va en cada una."
             />
             <Button
