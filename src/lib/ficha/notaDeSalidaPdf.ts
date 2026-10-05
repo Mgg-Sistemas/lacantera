@@ -129,7 +129,7 @@ export interface OrdenEnPapel {
   }
   entrego: { nombre: string | null; fecha: string | null }
   notaSalida?: string | null
-  /** Por qué no se aprobó o se canceló. */
+  /** Por qué se rechazó o se canceló. */
   cierre?: string | null
 }
 
@@ -354,7 +354,7 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
   const filasDeLaOrden: Array<[string, string | null | undefined]> = []
   if (orden) {
     const autorizado = orden.autorizo.noAprobo
-      ? `No la aprobó ${orden.autorizo.nombre ?? '—'}${orden.autorizo.fecha ? ` · ${orden.autorizo.fecha}` : ''}`
+      ? `La rechazó ${orden.autorizo.nombre ?? '—'}${orden.autorizo.fecha ? ` · ${orden.autorizo.fecha}` : ''}`
       : orden.autorizo.nombre
         ? `${orden.autorizo.nombre}${orden.autorizo.fecha ? ` · ${orden.autorizo.fecha}` : ''}${orden.autorizo.deRespaldo ? ' · con la casilla de aprobar salidas' : ''}`
         : orden.sello
@@ -372,7 +372,7 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
       ['Solicitado por', orden.solicito.nombre],
       ['Autorizado por', autorizado],
       ['Fecha de entrega', entregado],
-      [orden.sello === 'CANCELADA' ? 'Por qué se canceló' : 'Por qué no se aprobó', orden.cierre],
+      [orden.sello === 'CANCELADA' ? 'Por qué se canceló' : 'Por qué se rechazó', orden.cierre],
     )
   } else if (!esOrden) {
     filasDeLaOrden.push([
