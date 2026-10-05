@@ -92,8 +92,8 @@ export function PorAceptar({ caja }: { caja: CajaCosto }) {
       {candidatos.data && lista.length === 0 ? (
         <Vacio
           icono={<Inbox />}
-          titulo="Nada por aceptar"
-          descripcion="Todo lo registrado ya entró al libro o se rechazó. Lo nuevo aparece aquí en cuanto se registre."
+          titulo="Sin registros por aceptar"
+          descripcion="Todo lo registrado ya fue aceptado o rechazado. Los registros nuevos aparecen aquí."
           resuelto
         />
       ) : null}

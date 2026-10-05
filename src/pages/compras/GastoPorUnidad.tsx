@@ -71,11 +71,11 @@ export function GastoPorUnidad() {
         <Card>
           <Vacio
             icono={<Building2 />}
-            titulo={hayPeriodo ? 'Nada en esas fechas' : 'Todavía no hay compras que repartir'}
+            titulo={hayPeriodo ? 'Sin resultados en el período' : 'Sin compras registradas'}
             descripcion={
               hayPeriodo
-                ? 'No se aprobó ninguna compra ni salió material en el período que está mirando. Amplíe el período.'
-                : 'Cuando se apruebe la primera orden, aquí aparecerá para qué unidad fue y cuánto costó.'
+                ? 'No hay compras aprobadas ni salidas de material en el período. Amplíe el rango de fechas.'
+                : 'Al aprobarse la primera orden se mostrarán su unidad de destino y su costo.'
             }
           />
         </Card>

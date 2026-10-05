@@ -465,8 +465,8 @@ export function Cuentas() {
         <Card>
           <Vacio
             icono={<Landmark />}
-            titulo="No hay cuentas"
-            descripcion="Sin una cuenta no se puede registrar de dónde sale el dinero de una compra."
+            titulo="Sin cuentas registradas"
+            descripcion="Se necesita al menos una cuenta para registrar el origen de los pagos."
             accion={
               puedeMover ? (
                 <Button icon={<Plus />} onClick={() => abrir()}>

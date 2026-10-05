@@ -117,8 +117,8 @@ export function Talleres() {
         <Card>
           <Vacio
             icono={<Wrench />}
-            titulo="No hay talleres registrados"
-            descripcion="Un taller se crea como almacén, eligiendo el tipo Taller. A partir de ahí recibe material, guarda lo suyo y las reparaciones se le pueden atribuir."
+            titulo="Sin talleres registrados"
+            descripcion="Un taller se crea como almacén de tipo Taller. Desde entonces recibe material, lleva sus existencias y se le pueden atribuir reparaciones."
             accion={
               <Button variant="outline" onClick={() => navegar('/app/inventario/almacenes')}>
                 Ir a almacenes
@@ -196,7 +196,7 @@ export function Talleres() {
                       </div>
 
                       {suyas.length === 0 ? (
-                        <p className="text-ink/45 mt-1 text-sm">Nada abierto.</p>
+                        <p className="text-ink/45 mt-1 text-sm">Sin órdenes abiertas.</p>
                       ) : (
                         <ul className="mt-2 space-y-1.5">
                           {suyas.slice(0, 5).map((o) => (
@@ -275,8 +275,8 @@ export function Talleres() {
                   </p>
                 ) : (
                   <p className="text-ink/50 mt-1 text-sm">
-                    Todavía no ha recibido material. Llega por transferencia desde otro almacén o
-                    por una compra recibida aquí.
+                    Sin material recibido. Ingresa por traslado desde otro almacén o por compra
+                    recibida.
                   </p>
                 )}
               </div>
@@ -294,7 +294,7 @@ export function Talleres() {
                 </p>
 
                 {suyas.length === 0 ? (
-                  <p className="text-ink/45 text-sm">Ninguna máquina tiene este taller como sede.</p>
+                  <p className="text-ink/45 text-sm">Sin máquinas con sede en este taller.</p>
                 ) : (
                   <ul className="flex flex-wrap gap-2">
                     {suyas.map((m) => (
@@ -387,7 +387,7 @@ function ModalReparaciones({
         <Vacio
           icono={<Wrench />}
           titulo="Sin trabajos registrados"
-          descripcion="Cuando se registre un mantenimiento o un servicio indicando este taller, aparecerá aquí."
+          descripcion="Aquí aparecen los mantenimientos y servicios registrados con este taller."
         />
       ) : null}
 

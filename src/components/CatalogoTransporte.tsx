@@ -147,7 +147,7 @@ function Choferes({ filtro, puedeEditar }: { filtro: string; puedeEditar: boolea
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
       {data && lista.length === 0 ? (
-        <Vacio titulo="Ningún chofer" descripcion="Se añaden aquí o al pedir un despacho." />
+        <Vacio titulo="Sin choferes registrados" descripcion="Se registran aquí o al solicitar un despacho." />
       ) : null}
 
       <ul className="divide-hairline divide-y">
@@ -238,7 +238,7 @@ function Vehiculos({ filtro, puedeEditar }: { filtro: string; puedeEditar: boole
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
       {data && lista.length === 0 ? (
-        <Vacio titulo="Ningún vehículo" descripcion="Se añaden aquí o al pedir un despacho." />
+        <Vacio titulo="Sin vehículos registrados" descripcion="Se registran aquí o al solicitar un despacho." />
       ) : null}
 
       <ul className="divide-hairline divide-y">

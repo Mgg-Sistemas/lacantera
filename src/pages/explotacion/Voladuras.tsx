@@ -89,11 +89,11 @@ export function Voladuras() {
         <Card>
           <Vacio
             icono={<Bomb />}
-            titulo="No hay voladuras registradas"
+            titulo="Sin voladuras registradas"
             descripcion={
               disponibles.length === 0
-                ? 'Primero hace falta un frente activo que se trabaje con voladura. Se crean en Frentes y bancos.'
-                : 'Cada voladura queda con su fecha, su consumo de explosivo y quién la dirigió.'
+                ? 'Se necesita un frente activo explotado con voladura. Los frentes se crean en Frentes y bancos.'
+                : 'Cada voladura se registra con su fecha, el consumo de explosivo y su responsable.'
             }
           />
         </Card>

@@ -115,7 +115,7 @@ export function VacacionesDelPeriodo({
       ) : null}
 
       {lista.length === 0 ? (
-        <p className="text-ink/45 mt-4 text-sm">Nadie salió de vacaciones en este período.</p>
+        <p className="text-ink/45 mt-4 text-sm">Sin vacaciones en este período.</p>
       ) : (
         <ul className="divide-hairline mt-4 divide-y">
           {lista.map((v) => (

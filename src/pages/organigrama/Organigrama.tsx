@@ -510,7 +510,7 @@ export function Organigrama() {
 
         {(nodos ?? []).length === 0 ? (
           <div className="px-5 py-10 text-center">
-            <p className="text-ink/70 font-titular text-lg">Todavía no hay organigrama</p>
+            <p className="text-ink/70 font-titular text-lg">Sin organigrama definido</p>
             <p className="text-ink/45 mx-auto mt-1 max-w-sm text-sm leading-relaxed">
               Empiece por lo de arriba —la gerencia general— y vaya colgando de ahí. Cada puesto que
               añada abre el banco siguiente.

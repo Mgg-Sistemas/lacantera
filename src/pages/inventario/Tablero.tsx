@@ -348,7 +348,7 @@ export function TableroInventario() {
               </p>
               <p className="text-ink/45 mt-2 text-xs">
                 {bajoMinimo.length === 0
-                  ? 'Nada por reponer'
+                  ? 'Sin artículos por reponer'
                   : 'Conviene pedirlos antes de que falten'}
               </p>
             </Card>

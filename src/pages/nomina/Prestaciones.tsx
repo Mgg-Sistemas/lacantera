@@ -137,7 +137,7 @@ export function Prestaciones() {
           <Vacio
             icono={<PiggyBank />}
             titulo="Las prestaciones sociales están deshabilitadas"
-            descripcion="Están apagadas en los conceptos de ley: no se liquida, no se cierra trimestre, no se calculan intereses ni se adelanta, y lo guardado no se borra. Se vuelven a habilitar encendiendo Prestaciones sociales en Parámetros de nómina."
+            descripcion="Están desactivadas en los conceptos de ley: no se liquidan, no se cierran trimestres, no se calculan intereses ni se otorgan anticipos. Lo registrado se conserva. Se habilitan activando Prestaciones sociales en Parámetros de nómina."
           />
         </Card>
       </>
@@ -230,7 +230,7 @@ export function Prestaciones() {
         <Card>
           <Vacio
             icono={<PiggyBank />}
-            titulo="No hay trabajadores"
+            titulo="Sin trabajadores"
             descripcion="Las prestaciones se calculan sobre el personal cargado en Nómina."
           />
         </Card>

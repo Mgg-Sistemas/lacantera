@@ -361,8 +361,8 @@ function PestanaDia() {
         <Card className="mb-4">
           <Vacio
             icono={<Route />}
-            titulo="No hay ninguna ruta abierta"
-            descripcion="Los viajes se cargan por ruta, de un sitio a otro. Se crean en Explotación › Plantas y rutas."
+            titulo="Sin rutas abiertas"
+            descripcion="Los viajes se registran por ruta. Las rutas se crean en Explotación › Plantas y rutas."
           />
         </Card>
       ) : null}
@@ -371,8 +371,8 @@ function PestanaDia() {
         <Card>
           <Vacio
             icono={<Truck />}
-            titulo="Todavía no hay camiones cargados"
-            descripcion="Los viajes se anotan por camión, así que primero hay que cargar la flota en Maquinaria › Equipos, con su placa y su capacidad."
+            titulo="Sin camiones registrados"
+            descripcion="Los viajes se registran por camión. Registre primero la flota en Maquinaria › Equipos, con placa y capacidad."
           />
         </Card>
       ) : null}
@@ -416,7 +416,7 @@ function PestanaDia() {
                   })),
                 )
               ) : (
-                <p className="text-ink/45 text-xs">Ninguna máquina propia hizo viajes este día.</p>
+                <p className="text-ink/45 text-xs">Sin viajes de máquinas propias este día.</p>
               )}
               {escribe && listaMaquinas.length > 0 ? (
                 <CargarViajes
@@ -1861,7 +1861,7 @@ function PestanaPago() {
           <Vacio
             icono={<Coins />}
             titulo={porDia ? 'Seleccione un día' : 'Seleccione las dos fechas'}
-            descripcion="Con la fecha completa aparece lo que se le debe a cada empresa."
+            descripcion="Con la fecha completa se muestra lo adeudado a cada empresa."
           />
         </Card>
       ) : null}
@@ -1876,14 +1876,14 @@ function PestanaPago() {
             titulo={
               todas.length === 0
                 ? porDia
-                  ? 'Ese día no tiene viajes registrados'
-                  : 'Esas fechas no tienen viajes registrados'
-                : 'Con ese filtro no queda nada'
+                  ? 'Sin viajes registrados ese día'
+                  : 'Sin viajes registrados en esas fechas'
+                : 'Sin resultados'
             }
             descripcion={
               todas.length === 0
-                ? 'Pruebe con otras fechas, o cargue los viajes en la pestaña «Viajes del día».'
-                : 'Esa empresa no hizo viajes en esas fechas. Pruebe con otras, o ponga la empresa en «Todas».'
+                ? 'Seleccione otras fechas o registre los viajes en la pestaña «Viajes del día».'
+                : 'La empresa no registra viajes en esas fechas. Seleccione otras o elija «Todas» en empresa.'
             }
           />
         </Card>

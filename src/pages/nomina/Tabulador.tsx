@@ -192,7 +192,7 @@ export function Tabulador() {
           <Vacio
             icono={<Scale />}
             titulo="El tabulador está vacío"
-            descripcion="Sin escala de sueldos, cada ficha lleva su cifra suelta y subir un cargo obliga a corregirlas una por una."
+            descripcion="Sin escala salarial, cada ficha lleva su propio salario y un ajuste por cargo debe hacerse ficha por ficha."
             accion={
               puedeRRHH ? (
                 <Button icon={<Plus />} onClick={() => abrir()}>

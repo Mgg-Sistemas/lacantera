@@ -167,11 +167,11 @@ export function Traslados() {
       ) : lista.length === 0 ? (
         <Vacio
           icono={<MoveRight className="size-6" />}
-          titulo={verTodos ? 'Todavía no se ha movido nada de almacén' : 'No hay traslados pendientes'}
+          titulo={verTodos ? 'Sin traslados registrados' : 'Sin traslados pendientes'}
           descripcion={
             verTodos
-              ? 'Cuando alguien pida, envíe o haga directo un traslado, queda aquí con cada uno de sus pasos.'
-              : 'Ningún pedido espera que lo envíen y nada va en camino. Lo terminado está en «Todos».'
+              ? 'Cada traslado solicitado, enviado o directo se registra aquí con sus etapas.'
+              : 'Ningún traslado está pendiente de envío ni en tránsito. Los finalizados están en «Todos».'
           }
         />
       ) : (

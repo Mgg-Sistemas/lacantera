@@ -207,7 +207,7 @@ export function Surtidor() {
     return (
       <div className="mx-auto max-w-md">
         <p className="text-ink/60 mt-10 text-center text-sm">
-          No hay combustible en ningún tanque. Hay que cargarlo antes de poder surtir.
+          Sin combustible en los tanques. Debe cargarse antes de surtir.
         </p>
         {operacionesDeAlmacen}
       </div>

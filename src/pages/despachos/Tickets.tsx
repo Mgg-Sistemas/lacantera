@@ -124,8 +124,8 @@ export function Tickets() {
         <Card>
           <Vacio
             icono={<Scale />}
-            titulo="No hay pesadas registradas"
-            descripcion="Un ticket guarda el bruto y la tara; el neto lo calcula la base. Al despachar, la nota de entrega toma los pesos de aquí en vez de que alguien los teclee dos veces."
+            titulo="Sin pesajes registrados"
+            descripcion="Cada ticket registra el peso bruto y la tara; el neto se calcula automáticamente. La nota de entrega toma los pesos del ticket."
           />
         </Card>
       ) : null}

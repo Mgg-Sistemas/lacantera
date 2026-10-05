@@ -618,7 +618,7 @@ export function Personal() {
         <Card>
           <Vacio
             icono={<Users />}
-            titulo="Todavía no hay personal cargado"
+            titulo="Sin personal registrado"
             descripcion="Sin trabajadores no se puede calcular una nómina."
             accion={
               puedeRRHH ? (

@@ -122,8 +122,8 @@ export function LibroCompras() {
         <Card>
           <Vacio
             icono={<BookOpen />}
-            titulo={`No hay compras registradas en ${nombreMes(mes)}`}
-            descripcion="Si hubo compras y no aparecen, es que falta cargar la factura del proveedor. Sin ella su IVA no se puede descontar."
+            titulo={`Sin compras registradas en ${nombreMes(mes)}`}
+            descripcion="Si hubo compras, falta registrar la factura del proveedor. Sin ella su IVA no se puede descontar."
           />
         </Card>
       ) : null}

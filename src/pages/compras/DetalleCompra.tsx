@@ -1168,8 +1168,8 @@ export function DetalleCompra() {
     return (
       <Vacio
         icono={<ShoppingCart />}
-        titulo="Ese pedido ya no está"
-        descripcion="Puede que lo hayan cancelado o borrado. Si llegó desde un aviso, ese aviso quedó viejo."
+        titulo="Pedido no encontrado"
+        descripcion="Pudo haber sido cancelado o eliminado. Si llegó desde una notificación, esta ya no está vigente."
         accion={
           <Link to="/app/compras">
             <Button variant="outline">Ver los pedidos</Button>
@@ -1409,7 +1409,7 @@ export function DetalleCompra() {
                   <Vacio
                     icono={<FileText />}
                     titulo="Sin cotizaciones"
-                    descripcion="Cargue lo que manden los proveedores. Con dos o más, la comparación se hace sola."
+                    descripcion="Registre las cotizaciones de los proveedores. Con dos o más, la comparación es automática."
                   />
                 ) : null}
 

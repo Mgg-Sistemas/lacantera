@@ -178,7 +178,7 @@ function LoQueNoSePudoHacer() {
           {isPending
             ? 'Cargando…'
             : intentos.length === 0
-              ? 'Ningún intento rechazado'
+              ? 'Sin intentos rechazados'
               : `${deHoy} hoy · los últimos ${intentos.length}`}
         </span>
       </div>
@@ -259,7 +259,7 @@ function QuienEstaConectado() {
           {isPending
             ? 'Cargando…'
             : dentro.length === 0
-              ? 'Nadie conectado ahora'
+              ? 'Sin usuarios conectados'
               : `${dentro.length} de ${gente.length} conectad${dentro.length === 1 ? 'o' : 'os'}`}
         </span>
       </div>
@@ -285,7 +285,7 @@ function QuienEstaConectado() {
 
         {dentro.length === 0 && !isPending ? (
           <p className="text-ink/50 text-sm">
-            Nadie tiene el sistema abierto en este momento.
+            Ningún usuario tiene sesión abierta.
           </p>
         ) : null}
       </div>
@@ -501,7 +501,7 @@ export function Auditoria() {
             {isPending
               ? 'Contando…'
               : total === 0
-                ? 'Ningún movimiento con estos filtros'
+                ? 'Sin resultados'
                 : `${total.toLocaleString('es-VE')} ${total === 1 ? 'movimiento' : 'movimientos'}`}
           </p>
           {hayFiltro ? (
@@ -527,11 +527,11 @@ export function Auditoria() {
         <Card>
           <Vacio
             icono={<History />}
-            titulo={hayFiltro ? 'Nada con esos filtros' : 'Todavía no hay movimientos anotados'}
+            titulo={hayFiltro ? 'Sin resultados' : 'Sin registros de auditoría'}
             descripcion={
               hayFiltro
-                ? 'Pruebe con un rango de fechas más amplio o quite algún filtro.'
-                : 'El registro empieza a llenarse desde que se activó. Lo que pasó antes de eso no está aquí, y no se puede inventar.'
+                ? 'Amplíe el rango de fechas o quite algún filtro.'
+                : 'El registro comienza en su fecha de activación. Lo anterior no está registrado.'
             }
           />
         </Card>

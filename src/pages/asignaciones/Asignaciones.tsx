@@ -216,12 +216,12 @@ export function Asignaciones() {
             icono={<HandHelping />}
             titulo={
               (fuera.data ?? []).length === 0
-                ? 'Nadie tiene nada asignado'
-                : 'Nadie coincide'
+                ? 'Sin bienes asignados'
+                : 'Sin resultados'
             }
             descripcion={
               (fuera.data ?? []).length === 0
-                ? 'Cuando se entregue algo, aparecerá aquí a nombre de quien lo tiene.'
+                ? 'Los bienes entregados aparecen aquí a nombre de quien los tiene.'
                 : undefined
             }
           />
@@ -325,8 +325,8 @@ export function Asignaciones() {
         <Card>
           <Vacio
             icono={<Wrench />}
-            titulo="No hay nada que asignar"
-            descripcion="Se cargan en el catálogo y entran a un almacén por una compra recibida o una transferencia. Desde ahí se le pueden entregar a alguien."
+            titulo="Sin bienes disponibles para asignar"
+            descripcion="Los bienes se registran en el catálogo e ingresan al almacén por compra recibida o traslado. Desde el almacén se asignan."
           />
         </Card>
       ) : null}

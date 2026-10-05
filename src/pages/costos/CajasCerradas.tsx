@@ -61,8 +61,8 @@ export function CajasCerradas() {
     return (
       <Vacio
         icono={<Archive />}
-        titulo="Todavía no se ha cerrado ninguna caja"
-        descripcion="Al cerrar la abierta, su foto queda aquí: costo por m³, m³ y costo, congelados."
+        titulo="Sin cajas cerradas"
+        descripcion="Al cerrarse, cada caja queda aquí con su costo por m³, sus m³ y su costo, sin cambios posteriores."
       />
     )
   }

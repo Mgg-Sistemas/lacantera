@@ -91,8 +91,8 @@ export function Frentes() {
         <Card>
           <Vacio
             icono={<Mountain />}
-            titulo="Todavía no hay frentes"
-            descripcion="Un frente es el sitio del cerro donde se está trabajando. Sin al menos uno no se puede cargar producción, porque el parte de turno dice de dónde salió la piedra."
+            titulo="Sin frentes registrados"
+            descripcion="Un frente es el punto del cerro en explotación. Se necesita al menos uno para registrar producción, porque el parte de turno indica su procedencia."
           />
         </Card>
       ) : null}

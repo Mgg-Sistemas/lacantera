@@ -537,8 +537,8 @@ export function Pagos() {
         <Card>
           <Vacio
             icono={<Wallet />}
-            titulo="No hay nada por pagar"
-            descripcion="Cuando compras autorice una orden e indique cómo se paga, aparece aquí."
+            titulo="Sin pagos pendientes"
+            descripcion="Aquí aparecen las órdenes autorizadas por Compras con método de pago indicado."
           />
         </Card>
       ) : null}

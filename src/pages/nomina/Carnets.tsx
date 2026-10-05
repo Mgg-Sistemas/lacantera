@@ -189,8 +189,8 @@ export function Carnets() {
         <Card className="mt-4">
           <Vacio
             icono={<BadgeCheck />}
-            titulo="Todo el mundo tiene carnet"
-            descripcion="Los trabajadores activos tienen su carnet emitido. Cuando entre alguien nuevo aparecerá aquí."
+            titulo="Sin carnets pendientes"
+            descripcion="Todos los trabajadores activos tienen carnet. Los ingresos nuevos aparecen aquí."
           />
         </Card>
       ) : null}
@@ -244,8 +244,8 @@ export function Carnets() {
         <Card className="mt-4">
           <Vacio
             icono={<IdCard />}
-            titulo="No hay personal activo"
-            descripcion="Los carnets se emiten a los trabajadores en nómina. Cuando haya alguno, aparecerá aquí."
+            titulo="Sin personal activo"
+            descripcion="Los carnets se emiten a los trabajadores en nómina."
           />
         </Card>
       ) : null}

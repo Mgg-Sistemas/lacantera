@@ -110,8 +110,8 @@ export function Clientes() {
         <Card>
           <Vacio
             icono={<Building2 />}
-            titulo="Todavía no hay clientes"
-            descripcion="Sin cliente no se puede despachar ni facturar. Empiece por los que se llevan material todas las semanas."
+            titulo="Sin clientes registrados"
+            descripcion="Sin clientes no se puede despachar ni facturar. Empiece por los habituales."
             accion={
               <Button icon={<Plus />} onClick={() => abrir()}>
                 Registrar el primero
@@ -138,8 +138,8 @@ export function Clientes() {
         <Card>
           <Vacio
             icono={<Search />}
-            titulo="Ningún cliente coincide"
-            descripcion="Pruebe con parte del nombre o con el RIF sin guiones."
+            titulo="Sin resultados"
+            descripcion="Busque por parte del nombre o por el RIF sin guiones."
           />
         </Card>
       ) : null}

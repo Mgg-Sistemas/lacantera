@@ -103,7 +103,7 @@ export function CamionesDeLaFlota({
         <p className="text-ink/45 text-sm">
           {fueraDeServicio > 0
             ? 'Los que coinciden están fuera de servicio.'
-            : 'Ningún camión coincide con la búsqueda.'}
+            : 'Sin resultados.'}
         </p>
       ) : null}
 

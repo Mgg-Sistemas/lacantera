@@ -65,8 +65,8 @@ export function Recepciones() {
         <Card className="mb-4">
           <Vacio
             icono={<PackageCheck />}
-            titulo="No hay nada esperando"
-            descripcion="Todo lo que se pagó ya llegó al almacén. Cuando se pague una orden nueva aparecerá aquí."
+            titulo="Sin recepciones pendientes"
+            descripcion="Todo lo pagado ya ingresó al almacén. Las órdenes pagadas pendientes de recepción aparecen aquí."
           />
         </Card>
       ) : null}
@@ -149,7 +149,7 @@ export function Recepciones() {
 
         {recibidas.length === 0 ? (
           <div className="px-5 pb-5">
-            <p className="text-ink/55 mt-3 text-sm">Todavía no se ha recibido ningún material.</p>
+            <p className="text-ink/55 mt-3 text-sm">Sin material recibido.</p>
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto">

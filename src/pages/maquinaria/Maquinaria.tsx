@@ -603,7 +603,7 @@ export function Maquinaria() {
           {/* La búsqueda encontró camiones y ninguna máquina: una línea basta.
               El cartel grande taparía justo lo que se encontró. */}
           {maquinas.length === 0 && todas.length > 0 && hayFiltro && camiones.length > 0 ? (
-            <p className="text-ink/45 mb-2 text-sm">Ninguna máquina coincide.</p>
+            <p className="text-ink/45 mb-2 text-sm">Sin resultados.</p>
           ) : maquinas.length === 0 ? (
             <Card>
               {/* Dos ceros que parecen el mismo y no lo son: uno dice que falta
@@ -612,8 +612,8 @@ export function Maquinaria() {
                   borraron los datos. */}
               {todas.length === 0 ? (
                 <Vacio
-                  titulo="No hay máquinas cargadas"
-                  descripcion="Sin ellas no se puede llevar el horómetro ni programar mantenimientos. Se cargan una vez, con su código y su tope de horas."
+                  titulo="Sin máquinas registradas"
+                  descripcion="Sin máquinas no se puede llevar el horómetro ni programar mantenimientos. Cada una se registra con su código y su tope de horas."
                   accion={
                     puedeEscribir ? (
                       <Button icon={<Plus />} onClick={() => void navegar('/app/maquinaria/nueva')}>
@@ -624,11 +624,11 @@ export function Maquinaria() {
                 />
               ) : (
                 <Vacio
-                  titulo="Ninguna coincide"
+                  titulo="Sin resultados"
                   descripcion={
                     filtroEstado
-                      ? 'Pruebe con otro estado, o quite los filtros para ver la flota entera.'
-                      : 'Las desincorporadas no salen a menos que las pida por estado.'
+                      ? 'Seleccione otro estado o quite los filtros para ver toda la flota.'
+                      : 'Las máquinas desincorporadas solo se muestran al filtrar por ese estado.'
                   }
                   accion={
                     <Button

@@ -137,13 +137,13 @@ export function MovimientosTesoreria() {
             icono={<BookOpen />}
             titulo={
               rango.desde || rango.hasta || metodo || moneda
-                ? 'Nada con esos filtros'
-                : 'Todavía no hay movimientos'
+                ? 'Sin resultados'
+                : 'Sin movimientos registrados'
             }
             descripcion={
               rango.desde || rango.hasta || metodo || moneda
-                ? 'No se movió dinero en lo que está mirando. Amplíe las fechas o quite los filtros.'
-                : 'El libro se llena solo: cada pago, ingreso o traslado escribe su línea.'
+                ? 'Sin movimientos de dinero en el período. Amplíe las fechas o quite los filtros.'
+                : 'Cada pago, ingreso o traslado se registra automáticamente en el libro.'
             }
           />
         </Card>

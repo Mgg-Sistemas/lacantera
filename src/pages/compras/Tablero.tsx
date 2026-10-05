@@ -402,8 +402,8 @@ export function TableroCompras() {
       {data && data.length === 0 ? (
         <Vacio
           icono={<ClipboardList />}
-          titulo="Todavía no hay compras"
-          descripcion="Un pedido arranca cuando alguien necesita algo: un repuesto, combustible, un servicio. Créelo y el tablero se llena solo."
+          titulo="Sin compras registradas"
+          descripcion="Las compras empiezan con un pedido: un repuesto, combustible o un servicio. Cree el primero."
           accion={
             <Link to="/app/compras/nuevo">
               <Button icon={<Plus />}>Crear el primer pedido</Button>

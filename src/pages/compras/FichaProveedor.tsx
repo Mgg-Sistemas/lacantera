@@ -78,8 +78,8 @@ export function FichaProveedor() {
       <Card>
         <Vacio
           icono={<Receipt />}
-          titulo="No hay ningún proveedor con ese número"
-          descripcion="Puede que se haya dado de baja o que el enlace venga con un número que ya no existe."
+          titulo="Proveedor no encontrado"
+          descripcion="Pudo haber sido dado de baja, o el enlace apunta a un número inexistente."
           accion={
             <Link to="/app/compras/proveedores">
               <Button variant="outline">Ver los proveedores</Button>
@@ -109,8 +109,8 @@ export function FichaProveedor() {
         <Card>
           <Vacio
             icono={<Receipt />}
-            titulo="Todavía no se le ha comprado nada"
-            descripcion="Cuando se le apruebe la primera orden, aquí aparecerá cuánto se le lleva comprado, qué se le compra más y los papeles que haya entregado."
+            titulo="Sin compras a este proveedor"
+            descripcion="Al aprobarse la primera orden se mostrarán el total comprado, los artículos más comprados y los documentos entregados."
           />
         </Card>
       ) : (
@@ -207,8 +207,7 @@ export function FichaProveedor() {
 
               {(papeles ?? []).length === 0 ? (
                 <p className="text-ink/50 mt-4 text-sm">
-                  Todavía no se ha guardado ningún papel suyo. Se cargan desde la compra, y desde
-                  ahí aparecen aquí.
+                  Sin documentos registrados. Se cargan desde cada compra.
                 </p>
               ) : (
                 <ul className="mt-4 space-y-2">

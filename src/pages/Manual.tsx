@@ -253,7 +253,7 @@ export function Manual() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-ink/50 px-3 py-3 text-sm">Nada coincide con esa búsqueda.</p>
+                  <p className="text-ink/50 px-3 py-3 text-sm">Sin resultados.</p>
                 )}
               </div>
             ) : null}

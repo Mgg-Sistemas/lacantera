@@ -113,8 +113,8 @@ export function PorCobrar() {
         <Card>
           <Vacio
             icono={<Coins />}
-            titulo="Nadie debe nada"
-            descripcion="Todas las facturas emitidas están cobradas y ningún proveedor debe diferencia. Las nuevas aparecen aquí en cuanto se emiten a crédito, quedan con saldo, o un pago con material deja dinero por cobrar."
+            titulo="Sin saldos por cobrar"
+            descripcion="Todas las facturas emitidas están cobradas y ningún proveedor adeuda diferencias. Aparecen aquí las facturas a crédito, las que quedan con saldo y los pagos con material que dejan un monto por cobrar."
           />
         </Card>
       ) : null}

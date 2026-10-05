@@ -250,8 +250,8 @@ function EditorDeRequisitos({
     return (
       <Vacio
         icono={<ListChecks />}
-        titulo="Todavía no hay documentos que pedir"
-        descripcion="Quien lleve los parámetros de nómina puede cargarlos desde aquí."
+        titulo="Sin documentos requeridos"
+        descripcion="Los registra desde aquí quien administra los parámetros de nómina."
       />
     )
   }

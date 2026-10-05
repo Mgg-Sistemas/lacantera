@@ -172,8 +172,8 @@ export function NotasCredito() {
         <Card>
           <Vacio
             icono={<FileMinus />}
-            titulo="No se ha emitido ninguna nota de crédito"
-            descripcion="Mientras la factura no haya salido de la empresa se anula y se hace otra. Esto es para cuando ya está en manos del cliente."
+            titulo="Sin notas de crédito emitidas"
+            descripcion="Una factura que no ha salido de la empresa se anula y se emite de nuevo. La nota de crédito corrige una factura ya entregada al cliente."
           />
         </Card>
       ) : null}

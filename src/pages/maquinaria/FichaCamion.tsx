@@ -58,7 +58,7 @@ export function FichaCamion() {
   if (!v) {
     return (
       <Card>
-        <Vacio titulo="Ese camión no existe" descripcion="Puede que se haya eliminado." />
+        <Vacio titulo="Camión no encontrado" descripcion="Pudo haber sido eliminado." />
       </Card>
     )
   }
@@ -94,7 +94,7 @@ export function FichaCamion() {
               subtitle={
                 v.chofer_actual
                   ? `Desde el ${fecha(v.chofer_desde!)}`
-                  : 'Nadie lo tiene asignado ahora mismo.'
+                  : 'Sin asignación actual.'
               }
               action={
                 permisos.chofer ? (
@@ -157,7 +157,7 @@ export function FichaCamion() {
             hechos={hilo.data}
             cargando={hilo.isPending}
             error={hilo.error}
-            vacio="Todavía no ha hecho nada"
+            vacio="Sin actividad registrada"
             prestadoDe={{ prefijo: '/app/maquinaria', etiqueta: 'de maquinaria' }}
           />
         </div>

@@ -241,8 +241,8 @@ export function Procesos() {
         <Card>
           <Vacio
             icono={<Calculator />}
-            titulo="Todavía no hay ningún período"
-            descripcion="Una nómina empieza abriendo el período que se va a pagar."
+            titulo="Sin períodos registrados"
+            descripcion="La nómina comienza con la apertura del período a pagar."
             accion={
               puedeRRHH ? (
                 <Button

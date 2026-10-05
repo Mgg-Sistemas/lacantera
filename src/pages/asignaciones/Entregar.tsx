@@ -334,8 +334,8 @@ export function Entregar() {
         ) : (disponibles.data ?? []).length === 0 ? (
           <Vacio
             icono={<PackageCheck />}
-            titulo="En ese almacén no hay nada que entregar"
-            descripcion="Entra por una compra recibida o por una transferencia. Lo que se vende no aparece aquí: no se le entrega a una persona."
+            titulo="Sin bienes disponibles en este almacén"
+            descripcion="Los bienes ingresan por compra recibida o traslado. Los artículos de venta no se muestran: no se entregan a personas."
           />
         ) : (
           <Card flush>

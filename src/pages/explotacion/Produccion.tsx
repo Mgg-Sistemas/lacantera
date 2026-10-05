@@ -113,11 +113,11 @@ export function Produccion() {
         <Card>
           <Vacio
             icono={<Factory />}
-            titulo="Todavía no hay partes de turno"
+            titulo="Sin partes de turno"
             descripcion={
               frentesActivos.length === 0
-                ? 'Primero hace falta un frente activo. Se crean en Explotación › Frentes y bancos.'
-                : 'El parte de turno es lo que mete la piedra al patio: sin él, el inventario dice cero y no se puede despachar.'
+                ? 'Se necesita un frente activo. Los frentes se crean en Explotación › Frentes y bancos.'
+                : 'El parte de turno ingresa la producción al patio: sin él, el inventario queda en cero y no se puede despachar.'
             }
           />
         </Card>
@@ -270,7 +270,7 @@ export function Produccion() {
             />
             <Select
               label="Voladura"
-              vacio="Ninguna en particular"
+              vacio="Sin especificar"
               value={nuevo.voladura_id}
               onChange={(e) => setNuevo({ ...nuevo, voladura_id: e.target.value })}
               opciones={voladurasDelFrente}

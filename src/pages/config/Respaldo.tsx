@@ -213,7 +213,7 @@ export function Respaldo() {
                     ? `Último respaldo: ${fechaHora(resumen.ultimo)}${
                         resumen.ultimo_por ? ` · ${resumen.ultimo_por}` : ''
                       }`
-                    : 'Todavía no se ha descargado ninguno.'}
+                    : 'Sin descargas.'}
                 </p>
               </div>
 
@@ -682,7 +682,7 @@ function ElEnvioAutomatico() {
           {activos.length === 0 ? (
             <div className="border-warning/30 bg-warning/5 rounded-md border px-4 py-3">
               <p className="text-ink/80 text-sm leading-relaxed">
-                <strong>No hay ninguna dirección configurada.</strong> La tarea programada se
+                <strong>Sin direcciones configuradas.</strong> La tarea programada se
                 despierta, ve que no tiene a quién mandárselo y no hace nada.
               </p>
               {!puedeCambiarlo ? (
@@ -934,7 +934,7 @@ function LaProgramacion() {
             ) : null}
           </p>
         ) : (
-          <p className="text-ink/55 text-sm">Todavía no se ha programado ninguna frecuencia.</p>
+          <p className="text-ink/55 text-sm">Sin frecuencia programada.</p>
         )}
 
         {data.encendido ? (

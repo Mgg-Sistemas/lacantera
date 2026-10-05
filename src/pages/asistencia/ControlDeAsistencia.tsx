@@ -201,7 +201,7 @@ export function ControlDeAsistencia() {
             title={`${fmtFecha(dia)}${dia === hoy ? ' · hoy' : ''}`}
             subtitle={
               delDia.length === 0
-                ? 'Nadie marcó ese día.'
+                ? 'Sin marcaciones ese día.'
                 : `${new Set(delDia.filter((j) => j.estado !== 'ANULADA').map((j) => j.empleado_id)).size} persona${delDia.length === 1 ? '' : 's'}`
             }
           />
@@ -423,7 +423,7 @@ function Hoy({ hoy }: { hoy: string }) {
       ) : error ? (
         <ErrorDeCarga error={error} />
       ) : vivas.length === 0 ? (
-        <p className="text-ink/45 mt-4 text-sm">Nadie ha marcado todavía.</p>
+        <p className="text-ink/45 mt-4 text-sm">Sin marcaciones.</p>
       ) : (
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div>
@@ -444,7 +444,7 @@ function Hoy({ hoy }: { hoy: string }) {
           <div>
             <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Ya salieron</p>
             {salieron.length === 0 ? (
-              <p className="text-ink/40 text-sm">Nadie todavía.</p>
+              <p className="text-ink/40 text-sm">Sin registros.</p>
             ) : (
               <ul className="space-y-1">
                 {salieron.map((j) => (

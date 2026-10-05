@@ -64,8 +64,8 @@ export function CentroDeCosto() {
         ) : (
           <Vacio
             icono={<Lock />}
-            titulo="Todavía no hay una caja abierta"
-            descripcion="La abre quien tenga Total en el centro de costo. Hasta entonces no hay nada que mirar."
+            titulo="Sin caja abierta"
+            descripcion="La abre un usuario con control total sobre el centro de costo."
           />
         )}
       </>

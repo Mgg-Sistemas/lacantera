@@ -889,10 +889,10 @@ export function Existencias() {
         <Card>
           <Vacio
             icono={<Boxes />}
-            titulo={datos.length === 0 ? 'El inventario está vacío' : 'Nada coincide'}
+            titulo={datos.length === 0 ? 'El inventario está vacío' : 'Sin resultados'}
             descripcion={
               datos.length === 0
-                ? 'Las existencias aparecen cuando entra material. Si el almacén arranca ahora, use «Registrar entrada» para cargar el saldo inicial con su costo.'
+                ? 'Las existencias aparecen al ingresar material. Para un almacén nuevo, use «Registrar entrada» para cargar el saldo inicial con su costo.'
                 : undefined
             }
           />

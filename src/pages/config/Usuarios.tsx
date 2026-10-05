@@ -928,16 +928,16 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
         <Card>
           <Vacio
             icono={<UsersIcon />}
-            titulo="No hay usuarios"
-            descripcion="Ni siquiera el administrador. Algo falta por correr en la base."
+            titulo="Sin usuarios"
+            descripcion="Ni siquiera el administrador: falta una configuración inicial en la base de datos."
           />
         </Card>
       ) : apartado === 'archivados' && archivados.length === 0 ? (
         <Card>
           <Vacio
             icono={<Archive />}
-            titulo="Nada en el archivo"
-            descripcion="Las cuentas que se archiven aparecen aquí, con su motivo y quién las archivó. Solo se archiva lo que ya está inactivo."
+            titulo="Archivo vacío"
+            descripcion="Las cuentas archivadas aparecen aquí con su motivo y el usuario que las archivó. Solo se archivan cuentas inactivas."
           />
         </Card>
       ) : (
@@ -1842,8 +1842,8 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
 
       {filas.length === 0 ? (
         <Vacio
-          titulo="No hay permisos extendidos"
-          descripcion="Cuando alguien tenga que hacer algo que no le compete —el gerente de viaje y una orden que no puede esperar— se le extiende desde aquí, con la razón escrita."
+          titulo="Sin permisos extendidos"
+          descripcion="Un permiso extendido autoriza a una persona algo que su rol no incluye —por ejemplo, una orden urgente con el gerente ausente—, con su justificación."
         />
       ) : coinciden.length === 0 ? (
         <p className="text-ink/45 py-8 text-center text-sm">
@@ -2037,7 +2037,7 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
             */}
             <div className="border-hairline rounded-card divide-hairline mt-2 max-h-72 divide-y overflow-y-auto border">
               {porModulo.length === 0 ? (
-                <p className="text-ink/45 p-3 text-sm">Ninguna casilla coincide.</p>
+                <p className="text-ink/45 p-3 text-sm">Sin resultados.</p>
               ) : (
                 porModulo.map(([modulo, lista]) => {
                   const codigos = lista.map((a) => a.codigo)
@@ -2419,8 +2419,8 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
 
       {filas.length === 0 ? (
         <Vacio
-          titulo="No hay permisos restringidos"
-          descripcion="Cuando alguien no deba poder algo que su rol le da, se le restringe desde aquí, con la razón escrita. Sus compañeros de rol no pierden nada."
+          titulo="Sin permisos restringidos"
+          descripcion="Un permiso restringido retira a una persona algo que su rol incluye, con su justificación. El resto del rol no se ve afectado."
         />
       ) : coinciden.length === 0 ? (
         <p className="text-ink/45 py-8 text-center text-sm">
@@ -2590,7 +2590,7 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
               {restringibles.isPending || acciones.isPending ? (
                 <p className="text-ink/45 p-3 text-sm">Cargando las casillas…</p>
               ) : porModulo.length === 0 ? (
-                <p className="text-ink/45 p-3 text-sm">Ninguna casilla coincide.</p>
+                <p className="text-ink/45 p-3 text-sm">Sin resultados.</p>
               ) : (
                 porModulo.map(([modulo, lista]) => {
                   const cuantas = lista.filter((a) => forma.acciones.includes(a.codigo)).length

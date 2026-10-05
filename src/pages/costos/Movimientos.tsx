@@ -56,7 +56,7 @@ export function Movimientos({ caja }: { caja: CajaCosto }) {
         <Vacio
           icono={<BookOpen />}
           titulo="El libro está vacío"
-          descripcion="Lo que se acepte en «Por aceptar» y lo que se teclee aquí aparece en esta lista."
+          descripcion="Aquí aparecen los registros aceptados en «Por aceptar» y los cargados manualmente."
         />
       ) : null}
 

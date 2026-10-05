@@ -282,8 +282,8 @@ export function FacturasProveedor() {
         <Card>
           <Vacio
             icono={<FileText />}
-            titulo="Todavía no se ha recibido ninguna factura"
-            descripcion="Una factura se registra desde la orden de compra que la motivó: se abre la compra y ahí está el botón. Sin registrarla, el IVA que se pagó no se puede descontar del que se cobró — es dinero real que se queda en el camino."
+            titulo="Sin facturas registradas"
+            descripcion="Las facturas se registran desde su orden de compra. Sin registrarla, el IVA pagado no se puede descontar del IVA cobrado."
             accion={
               <Button variant="outline" onClick={() => navegar('/app/compras')}>
                 Ir a las compras

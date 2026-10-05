@@ -266,7 +266,7 @@ export function Facturacion() {
         <Card>
           <Vacio
             icono={<Receipt />}
-            titulo="Todavía no se ha facturado nada"
+            titulo="Sin facturas emitidas"
             descripcion={
               notas.length > 0
                 ? `Hay ${notas.length} nota(s) de entrega esperando factura.`
@@ -396,8 +396,8 @@ export function Facturacion() {
           {notas.length === 0 ? (
             <Vacio
               icono={<Receipt />}
-              titulo="No hay notas sin factura"
-              descripcion="Todas las notas despachadas ya están en una factura. Una nota no tiene por qué facturarse: solo aparecen aquí las que todavía no lo están."
+              titulo="Sin notas pendientes de facturar"
+              descripcion="Todas las notas despachadas están facturadas. Facturar una nota es opcional; aquí aparecen las que aún no lo están."
             />
           ) : (
             <div className="space-y-2">

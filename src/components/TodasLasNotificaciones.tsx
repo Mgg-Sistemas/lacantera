@@ -381,11 +381,11 @@ export function TodasLasNotificaciones({
           <Vacio
             icono={<Bell />}
             titulo={
-              grupos.length === 0 ? 'Sin movimientos todavía' : 'Nada que enseñar con ese filtro'
+              grupos.length === 0 ? 'Sin notificaciones' : 'Sin resultados'
             }
             descripcion={
               grupos.length === 0
-                ? 'Aquí entran los pedidos, las entradas de inventario y los pagos.'
+                ? 'Aquí se notifican los pedidos, las entradas de inventario y los pagos.'
                 : 'Quite el filtro para ver el resto.'
             }
             resuelto={grupos.length > 0 && soloSinLeer && sinLeer === 0}

@@ -221,8 +221,8 @@ export function Cotizaciones() {
         <Card>
           <Vacio
             icono={<FileText />}
-            titulo="Todavía no se ha cotizado nada"
-            descripcion="Una cotización sirve para que el cliente sepa el precio antes de mandar el camión. También se puede despachar sin cotizar."
+            titulo="Sin cotizaciones"
+            descripcion="La cotización informa el precio al cliente antes del despacho. Es opcional."
             accion={
               <Button icon={<Plus />} onClick={() => setNueva(true)}>
                 Cotizar

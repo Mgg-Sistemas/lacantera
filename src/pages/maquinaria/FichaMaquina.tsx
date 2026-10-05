@@ -171,8 +171,8 @@ export function FichaMaquina() {
     return (
       <Card>
         <Vacio
-          titulo="No encontramos esa máquina"
-          descripcion="Puede que se haya desincorporado o que el enlace esté equivocado."
+          titulo="Máquina no encontrada"
+          descripcion="Pudo haber sido desincorporada, o el enlace es incorrecto."
           accion={
             <Link to="/app/maquinaria">
               <Button variant="outline">Ver los equipos</Button>
@@ -487,7 +487,7 @@ export function FichaMaquina() {
               <div className="sm:col-span-2">
                 <SelectBuscable
                   label="Quién la conduce u opera"
-                  vacio="Nadie por ahora"
+                  vacio="Sin asignar"
                   valor={f.operador_id}
                   onCambio={(v) => cambiar('operador_id', v)}
                   hint="Quien responde por ella para funcionar o trasladarse. Una máquina en espera puede quedarse sin nadie."
@@ -683,7 +683,7 @@ export function FichaMaquina() {
               hechos={historial.data}
               cargando={historial.isPending}
               error={historial.error}
-              vacio="Todavía no se le ha hecho nada"
+              vacio="Sin mantenimientos registrados"
             />
           ) : null}
 

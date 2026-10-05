@@ -240,7 +240,7 @@ export function Combustible() {
           <Vacio
             icono={<Fuel />}
             titulo="El tanque está vacío"
-            descripcion="El combustible entra por una compra recibida, o a mano con el botón Cargar de arriba. Desde el tanque se despacha a las máquinas."
+            descripcion="El combustible ingresa por compra recibida o con el botón Cargar. Desde el tanque se despacha a las máquinas."
           />
         </Card>
       ) : null}
@@ -327,8 +327,8 @@ export function Combustible() {
         <Card className="mb-6">
           <Vacio
             icono={<Fuel />}
-            titulo="Todavía no se ha despachado a ninguna máquina"
-            descripcion="Cuando se le eche combustible a una máquina anotando su horómetro, aquí aparecerá cuánto consume por hora."
+            titulo="Sin despachos a máquinas"
+            descripcion="Al registrar un despacho con la lectura del horómetro, aquí se muestra el consumo por hora."
           />
         </Card>
       ) : null}
@@ -405,8 +405,8 @@ export function Combustible() {
         <Card>
           <Vacio
             icono={<Fuel />}
-            titulo="Sin despachos todavía"
-            descripcion="Cada vez que se le eche combustible a algo quedará anotado aquí: a qué, para qué, cuánto y quién lo recibió."
+            titulo="Sin despachos registrados"
+            descripcion="Cada despacho se registra aquí con su destino, uso, cantidad y receptor."
           />
         </Card>
       ) : null}
@@ -842,7 +842,7 @@ function ModalDespacho({
           }))}
           hint={
             conSaldo.length === 0
-              ? 'No hay combustible cargado en ningún tanque.'
+              ? 'Sin combustible en los tanques.'
               : undefined
           }
         />
@@ -1257,7 +1257,7 @@ function ModalPasarAlTanque({
 
       {tanques.length === 0 ? (
         <p className="text-danger text-sm">
-          No hay ningún tanque creado. Créelo primero en Tanques, arriba, y vuelva aquí.
+          Sin tanques registrados. Créelo primero en Tanques.
         </p>
       ) : (
         <>

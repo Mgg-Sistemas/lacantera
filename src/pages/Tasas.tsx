@@ -332,7 +332,7 @@ export function Tasas() {
                   {vigente.data.arrastrada ? ' · arrastrada' : ''}
                 </p>
               ) : (
-                <p className="text-ink/45 mt-1 text-xs">Ninguna todavía.</p>
+                <p className="text-ink/45 mt-1 text-xs">Sin registros.</p>
               )}
             </div>
           </div>

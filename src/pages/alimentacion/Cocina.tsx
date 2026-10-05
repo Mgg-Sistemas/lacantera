@@ -106,8 +106,8 @@ export function Cocina() {
   if (almacenes.length === 0) {
     return (
       <p className="text-ink/60 mx-auto mt-10 max-w-sm text-center text-sm">
-        No hay víveres en ningún almacén. Tienen que entrar por una compra, o trasladarse al almacén de la
-        cocina, antes de poder servir.
+        Sin víveres en los almacenes. Deben ingresar por compra o trasladarse al almacén de la
+        cocina antes de servir.
       </p>
     )
   }

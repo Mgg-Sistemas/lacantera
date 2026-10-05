@@ -110,8 +110,8 @@ export function Precios() {
         <Card>
           <Vacio
             icono={<Tag />}
-            titulo="No hay nada que vender en el catálogo"
-            descripcion="Los precios se le ponen a los artículos de categoría Producto o Servicio. Créelos primero en Inventario › Catálogo de artículos."
+            titulo="Sin productos de venta en el catálogo"
+            descripcion="Los precios se asignan a artículos de categoría Producto o Servicio, que se crean en Inventario › Catálogo de artículos."
           />
         </Card>
       ) : null}

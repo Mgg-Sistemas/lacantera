@@ -378,7 +378,7 @@ export function Dashboard() {
                 tone={porAprobar.length > 0 ? 'warning' : 'success'}
                 deltaLabel={
                   porAprobar.length === 0
-                    ? 'Ninguna compra detenida'
+                    ? 'Sin compras detenidas'
                     : masVieja === null || masVieja === 0
                       ? 'Pendientes de la gerencia'
                       : `La más vieja lleva ${masVieja} día${masVieja === 1 ? '' : 's'}`
@@ -395,7 +395,7 @@ export function Dashboard() {
                 tone={r.pago_mas_viejo_dias > 7 ? 'warning' : 'info'}
                 deltaLabel={
                   r.por_pagar_n === 0
-                    ? 'Nada pendiente'
+                    ? 'Sin pendientes'
                     : `${r.por_pagar_n} pago${r.por_pagar_n === 1 ? '' : 's'} autorizado${r.por_pagar_n === 1 ? '' : 's'}`
                 }
               />
@@ -451,7 +451,7 @@ export function Dashboard() {
                   Number(r.inventario_ajeno_usd) > 0
                     ? `${dolaresRedondos(r.inventario_usd)} de La Cantera · ${dolaresRedondos(r.inventario_ajeno_usd)} de otros`
                     : r.articulos_bajo_minimo === 0
-                      ? 'Ningún artículo bajo mínimo'
+                      ? 'Sin artículos bajo el mínimo'
                       : `${r.articulos_bajo_minimo} bajo el mínimo`
                 }
               />
@@ -478,7 +478,7 @@ export function Dashboard() {
                 tone="info"
                 deltaLabel={
                   r.acarreos_7d === 0
-                    ? 'Ningún viaje esta semana'
+                    ? 'Sin viajes esta semana'
                     : `${enteros(r.acarreos_7d)} viaje${r.acarreos_7d === 1 ? '' : 's'}`
                 }
               />
@@ -513,7 +513,7 @@ export function Dashboard() {
                 tone="info"
                 deltaLabel={
                   Number(r.nomina_periodos_abiertos) === 0
-                    ? 'Ningún período abierto'
+                    ? 'Sin período abierto'
                     : `${r.nomina_periodos_abiertos} período${r.nomina_periodos_abiertos === 1 ? '' : 's'} sin pagar`
                 }
               />
@@ -530,15 +530,14 @@ export function Dashboard() {
                 title="Requiere atención"
                 subtitle={
                   avisos.length === 0
-                    ? 'Nada detenido ahora mismo'
+                    ? 'Sin pendientes detenidos'
                     : `${avisos.length} asunto${avisos.length === 1 ? '' : 's'} abierto${avisos.length === 1 ? '' : 's'}`
                 }
               />
 
               {avisos.length === 0 ? (
                 <p className="text-ink/50 border-hairline mt-4 rounded-[6px] border border-dashed p-6 text-center text-sm">
-                  Ninguna compra atrasada, ningún pago esperando y ningún artículo bajo el
-                  mínimo.
+                  Sin compras atrasadas, pagos en espera ni artículos bajo el mínimo.
                 </p>
               ) : (
                 <ul className="mt-4 space-y-3">

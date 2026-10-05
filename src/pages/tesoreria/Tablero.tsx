@@ -144,7 +144,7 @@ export function TableroTesoreria() {
               </p>
               <p className="text-ink/45 mt-2 text-xs">
                 {r.por_pagar_n === 0
-                  ? 'Nada autorizado esperando'
+                  ? 'Sin pagos autorizados pendientes'
                   : `${enteros(r.por_pagar_n)} autorizado${r.por_pagar_n === 1 ? '' : 's'}`}
               </p>
             </Card>

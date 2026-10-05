@@ -110,8 +110,8 @@ export function Dotacion() {
         {!pendiente.isPending && porEntregar.length === 0 ? (
           <p className="text-ink/50 mt-4 text-sm">
             {(reglas ?? []).length === 0
-              ? 'Todavía no hay ninguna dotación definida, así que no hay nada que reclamar. Empiece por decir qué le toca a cada cargo.'
-              : 'Nadie tiene dotación pendiente ahora mismo.'}
+              ? 'Sin dotación definida. Defina primero la dotación de cada cargo.'
+              : 'Sin dotación pendiente.'}
           </p>
         ) : null}
 
@@ -137,8 +137,8 @@ export function Dotacion() {
         <Card>
           <Vacio
             icono={<HardHat />}
-            titulo="Ningún cargo tiene dotación definida"
-            descripcion="Se declara una vez por puesto —dos pares de botas cada seis meses al de patio— y a partir de ahí el sistema dice a quién le toca sin que nadie lleve la cuenta."
+            titulo="Sin dotación definida"
+            descripcion="La dotación se define una vez por puesto —por ejemplo, dos pares de botas cada seis meses— y el sistema calcula las entregas que corresponden."
           />
         </Card>
       ) : null}
@@ -376,7 +376,7 @@ function ModalEntregarA({
 
         <SelectBuscable
           label="A quién"
-          vacio={gente.length === 0 ? 'Nadie con ese cargo' : 'Elija el trabajador'}
+          vacio={gente.length === 0 ? 'Sin personal en ese cargo' : 'Elija el trabajador'}
           valor={empleado}
           onCambio={setEmpleado}
           opciones={gente.map((e) => ({

@@ -375,8 +375,8 @@ export function FichaTrabajador() {
       <Card>
         <Vacio
           icono={<UserX />}
-          titulo="No hay ninguna ficha con ese número"
-          descripcion="Puede que el trabajador se haya dado de baja o que el enlace venga con un número que ya no existe."
+          titulo="Ficha no encontrada"
+          descripcion="El trabajador pudo haber sido dado de baja, o el enlace apunta a un número inexistente."
           accion={
             <Link to="/app/nomina/personal">
               <Button variant="outline">Ver el personal</Button>
@@ -1036,7 +1036,7 @@ export function FichaTrabajador() {
           clase: 'DOTACION' as const,
           titulo: 'Dotación',
           subtitulo: 'Lo que necesita por su rol: casco, botas, uniforme, equipo.',
-          vacio: 'Todavía no se le ha dado dotación.',
+          vacio: 'Sin dotación entregada.',
         },
         {
           clase: 'ASIGNACION' as const,
@@ -1149,7 +1149,7 @@ export function FichaTrabajador() {
         {incidencias.isPending ? <Cargando /> : null}
 
         {!incidencias.isPending && (incidencias.data ?? []).length === 0 ? (
-          <p className="text-ink/45 px-5 pt-3 pb-5 text-sm">Ninguna anotada.</p>
+          <p className="text-ink/45 px-5 pt-3 pb-5 text-sm">Sin registros.</p>
         ) : null}
 
         {(incidencias.data ?? []).length > 0 ? (

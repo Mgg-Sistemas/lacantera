@@ -244,8 +244,8 @@ function AnotarSalida({ dia }: { dia: string }) {
       <Card>
         <Vacio
           icono={<Truck />}
-          titulo="Su rol no anota salidas"
-          descripcion="Las del día se ven al lado, con lo que lleva sacado la planta."
+          titulo="Su rol no registra salidas"
+          descripcion="Las salidas del día se muestran al lado, con el acumulado de la planta."
         />
       </Card>
     )
@@ -268,13 +268,13 @@ function AnotarSalida({ dia }: { dia: string }) {
           icono={<Truck />}
           titulo={
             hayAlgunProducto
-              ? 'Ningún producto se mide en metros cúbicos'
-              : 'Todavía no hay productos de planta'
+              ? 'Sin productos medidos en metros cúbicos'
+              : 'Sin productos de planta'
           }
           descripcion={
             hayAlgunProducto
-              ? 'De la planta sale material a granel y se mide en m³. Los productos cargados están en otras unidades, así que ninguno se puede anotar aquí. Revise la unidad en el catálogo de artículos.'
-              : 'Cárguelos por la planilla de artículos con categoría PRODUCTO (arena lavada, piedra picada…). Sin ellos no hay qué anotar.'
+              ? 'La planta despacha material a granel, medido en m³. Los productos registrados usan otras unidades y no se pueden anotar aquí. Revise la unidad en el catálogo de artículos.'
+              : 'Regístrelos por la planilla de artículos con categoría PRODUCTO (arena lavada, piedra picada…).'
           }
         />
       </Card>
@@ -520,8 +520,8 @@ function LoQueVaSaliendo({
           <div className="px-4 py-2">
             <Vacio
               icono={<Truck />}
-              titulo="Todavía no ha salido nada"
-              descripcion="Lo que anote aparece aquí, camión por camión, y suma arriba."
+              titulo="Sin salidas registradas"
+              descripcion="Las salidas registradas aparecen aquí camión por camión y se totalizan arriba."
             />
           </div>
         ) : (

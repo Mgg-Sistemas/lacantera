@@ -115,7 +115,7 @@ export function TableroExplotacion() {
                 {enteros(vivas.length)}
               </p>
               <p className="text-ink/45 mt-2 text-xs">
-                {vivas.length === 0 ? 'Todavía no ha salido nada' : 'Camiones que salieron'}
+                {vivas.length === 0 ? 'Sin salidas registradas' : 'Camiones que salieron'}
               </p>
             </Card>
 

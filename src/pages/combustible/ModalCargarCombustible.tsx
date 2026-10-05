@@ -219,7 +219,7 @@ export function ModalCargarCombustible({
             sinCosto
               ? 'Lo que no costó nada va a su propio tanque, para no hundir el costo del que sí tiene precio.'
               : tanques.length === 0
-              ? 'No hay ningún tanque. Se crea en Inventario → Almacenes, con tipo Combustible.'
+              ? 'Sin tanques registrados. Se crean en Inventario › Almacenes, con tipo Combustible.'
               : undefined
           }
         />

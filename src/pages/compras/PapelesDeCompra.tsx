@@ -150,7 +150,7 @@ export function PapelesDeCompra({
         </ul>
       ) : (
         <p className="text-ink/50 mt-4 text-sm">
-          Todavía no se ha guardado ningún papel de esta compra.
+          Sin documentos registrados para esta compra.
         </p>
       )}
 

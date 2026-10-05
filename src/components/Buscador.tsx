@@ -268,7 +268,7 @@ export function Buscador() {
                       ? 'Buscando…'
                       : texto.trim().length < 2
                         ? 'Escriba al menos dos letras.'
-                        : 'Nada con ese nombre, ni en las pantallas ni en los documentos que puede ver.'}
+                        : 'Sin resultados en las pantallas ni en los documentos a su alcance.'}
                   </p>
                 ) : (
                   <ul className="max-h-[50vh] overflow-y-auto py-1.5">

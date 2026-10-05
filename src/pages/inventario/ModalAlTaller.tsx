@@ -212,7 +212,7 @@ export function ModalAlTaller({
             label="Artículo"
             vacio={
               articulosConExistencia.length === 0
-                ? 'Nada reparable con existencia'
+                ? 'Sin artículos reparables en existencia'
                 : 'Busque el material'
             }
             valor={elegidoArticulo}
@@ -255,7 +255,7 @@ export function ModalAlTaller({
           opciones={talleres.map((t) => ({ valor: String(t.id), etiqueta: t.nombre }))}
           hint={
             talleres.length === 0
-              ? 'No hay ningún otro taller donde mandarlo.'
+              ? 'Sin otros talleres disponibles.'
               : 'El material se mueve de verdad: sale del almacén y entra al taller.'
           }
         />

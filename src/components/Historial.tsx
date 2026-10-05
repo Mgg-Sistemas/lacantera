@@ -126,7 +126,7 @@ export function Historial({
   hechos,
   cargando,
   error,
-  vacio = 'Todavía no ha pasado nada',
+  vacio = 'Sin registros',
   prestadoDe,
   className,
 }: HistorialProps) {

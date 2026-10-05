@@ -570,13 +570,13 @@ export function Movimientos() {
             icono={<ScrollText />}
             titulo={
               rango.desde || rango.hasta || almacenId
-                ? 'Nada con esos filtros'
-                : 'El libro está en blanco'
+                ? 'Sin resultados'
+                : 'El libro está vacío'
             }
             descripcion={
               rango.desde || rango.hasta || almacenId
-                ? 'No hubo movimientos en lo que está mirando. Amplíe las fechas o quite el almacén.'
-                : 'La primera línea la escribe la primera recepción de una compra.'
+                ? 'Sin movimientos en el período. Amplíe las fechas o quite el almacén.'
+                : 'El primer movimiento se registra con la primera recepción de una compra.'
             }
           />
         </Card>

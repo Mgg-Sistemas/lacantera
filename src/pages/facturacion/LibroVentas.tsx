@@ -129,8 +129,8 @@ export function LibroVentas() {
         <Card>
           <Vacio
             icono={<BookOpen />}
-            titulo={`No se facturó nada en ${nombreMes(mes)}`}
-            descripcion="Un mes sin ventas se declara igual, en cero. Lo que no se puede es no declararlo."
+            titulo={`Sin facturación en ${nombreMes(mes)}`}
+            descripcion="Un mes sin ventas se declara igualmente, en cero."
           />
         </Card>
       ) : null}

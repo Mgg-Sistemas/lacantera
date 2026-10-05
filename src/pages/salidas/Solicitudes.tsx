@@ -200,11 +200,11 @@ export function Solicitudes() {
         <Card>
           <Vacio
             icono={<ClipboardList />}
-            titulo={verTodas ? 'Todavía no hay solicitudes' : 'Nada esperando'}
+            titulo={verTodas ? 'Sin solicitudes' : 'Sin solicitudes pendientes'}
             descripcion={
               verTodas
-                ? 'Cuando alguien solicite una salida, aparecerá aquí antes de que se entregue.'
-                : 'Ninguna solicitud espera aprobación ni entrega. Las cerradas están en «Todas».'
+                ? 'Las solicitudes de salida aparecen aquí antes de su entrega.'
+                : 'Ninguna solicitud está pendiente de aprobación ni de entrega. Las cerradas están en «Todas».'
             }
           />
         </Card>

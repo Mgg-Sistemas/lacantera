@@ -104,8 +104,8 @@ export function Duenos() {
       {!isPending && !error && (data ?? []).length === 0 ? (
         <Card>
           <Vacio
-            titulo="Todavía no hay dueños"
-            descripcion="Debería haber al menos uno: la propia empresa."
+            titulo="Sin dueños registrados"
+            descripcion="Debe existir al menos uno: la propia empresa."
           />
         </Card>
       ) : null}

@@ -464,7 +464,7 @@ export function NotasDeEntrega() {
             {solicitudes.error ? <ErrorDeCarga error={solicitudes.error} /> : null}
             {falloDespacho ? <p className="text-danger mb-2 text-sm">{falloDespacho}</p> : null}
             {aLaVista.length === 0 ? (
-              <p className="text-ink/50 text-sm">Ningún despacho espera aprobación.</p>
+              <p className="text-ink/50 text-sm">Sin despachos pendientes de aprobación.</p>
             ) : null}
             <div className="space-y-3">
               {aLaVista.map((s) => (
@@ -679,11 +679,11 @@ export function NotasDeEntrega() {
         <Card>
           <Vacio
             icono={<Truck />}
-            titulo={hayFiltros ? 'Ninguna nota con eso' : 'Todavía no ha salido ningún camión'}
+            titulo={hayFiltros ? 'Sin resultados' : 'Sin notas de entrega'}
             descripcion={
               hayFiltros
-                ? 'Se buscó en todas las notas, no sólo en las recientes. Revise que el número esté completo —los papeles llevan NE-2026-0042, con el año y los cuatro dígitos— o quite el estado y las fechas.'
-                : 'Cada despacho se pide y, al aprobarlo, rebaja el patio y vale por sí solo. Si se decide facturarlo, se hace en Facturación y la nota queda enlazada a su factura. Si el patio está en cero, cargue primero la producción desde Inventario › Existencias.'
+                ? 'La búsqueda abarca todas las notas. Verifique el número completo —formato NE-2026-0042, con año y cuatro dígitos— o quite el estado y las fechas.'
+                : 'Cada despacho se solicita y, al aprobarse, se descuenta del patio y tiene validez propia. Su facturación es opcional y se hace en Facturación, enlazando la nota a la factura. Si el patio está en cero, registre primero la producción en Inventario › Existencias.'
             }
             accion={
               puedeDespachar && !hayFiltros ? (
@@ -1363,7 +1363,7 @@ export function NotasDeEntrega() {
             return (
               <Select
                 label="Factura"
-                vacio={posibles.length ? 'Seleccione la factura' : 'No hay ninguna disponible'}
+                vacio={posibles.length ? 'Seleccione la factura' : 'Sin facturas disponibles'}
                 value={facturaElegida}
                 onChange={(e) => setFacturaElegida(e.target.value)}
                 opciones={posibles.map((f) => ({

@@ -330,12 +330,12 @@ export function Articulos() {
               data.length === 0
                 ? 'El catálogo está vacío'
                 : verDesactivados && desactivados === 0
-                  ? 'No hay artículos desactivados'
-                  : 'Nada coincide con la búsqueda'
+                  ? 'Sin artículos desactivados'
+                  : 'Sin resultados'
             }
             descripcion={
               data.length === 0
-                ? 'Las migraciones traen un catálogo inicial de cantera. Si no aparece, todavía no se han corrido.'
+                ? 'El sistema incluye un catálogo inicial de cantera. Si no aparece, falta una configuración inicial en la base de datos.'
                 : undefined
             }
           />

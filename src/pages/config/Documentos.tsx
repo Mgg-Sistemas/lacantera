@@ -206,8 +206,8 @@ export function Documentos() {
       ) : (documentos ?? []).length === 0 ? (
         <Vacio
           icono={<FileText className="size-6" />}
-          titulo="Todavía no hay documentos cargados"
-          descripcion="El acta de alianza con la Gobernación, el comprobante del RIF, el registro mercantil y lo que haga falta van aquí."
+          titulo="Sin documentos cargados"
+          descripcion="Aquí se guardan el acta de alianza con la Gobernación, el comprobante del RIF, el registro mercantil y demás documentos de la empresa."
           accion={
             puedeCorregir ? (
               <Button icon={<Upload className="size-[18px]" />} onClick={abrirNuevo}>

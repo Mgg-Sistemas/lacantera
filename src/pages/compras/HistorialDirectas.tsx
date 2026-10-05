@@ -278,13 +278,13 @@ export function HistorialDirectas() {
             icono={<ShoppingBag />}
             titulo={
               estado || rango.desde || rango.hasta
-                ? 'Nada con esos filtros'
-                : 'Todavía no hay compras directas'
+                ? 'Sin resultados'
+                : 'Sin compras directas'
             }
             descripcion={
               estado || rango.desde || rango.hasta
                 ? 'Quite el estatus o amplíe las fechas.'
-                : 'La primera la escribe quien registre una compra en la pestaña de al lado.'
+                : 'Las compras directas se registran en la pestaña contigua.'
             }
           />
         </Card>

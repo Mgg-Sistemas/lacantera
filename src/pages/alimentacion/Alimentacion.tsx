@@ -123,8 +123,8 @@ export function Alimentacion() {
           <ErrorDeCarga error={viveres.error} />
         ) : (viveres.data ?? []).length === 0 ? (
           <p className="text-ink/45 mt-4 text-sm">
-            No hay víveres en ningún almacén. Los víveres son artículos de la categoría «Víveres»: se crean
-            en Inventario › Artículos y entran por una compra.
+            Sin víveres en los almacenes. Los víveres son artículos de la categoría «Víveres»: se crean
+            en Inventario › Artículos e ingresan por compra.
           </p>
         ) : (
           <ul className="divide-hairline mt-3 divide-y">
@@ -161,8 +161,8 @@ export function Alimentacion() {
         {comidas.data && comidas.data.length === 0 ? (
           <Vacio
             icono={<UtensilsCrossed />}
-            titulo="Ninguna comida en este período"
-            descripcion="La primera la sirve quien cocina, desde la vista de teléfono o con el botón de arriba."
+            titulo="Sin comidas en este período"
+            descripcion="Las comidas se registran desde la vista de teléfono o con el botón Servir comida."
           />
         ) : null}
 

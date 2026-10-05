@@ -297,7 +297,7 @@ export function ControlDespacho() {
       ) : planilla.error ? (
         <ErrorDeCarga error={planilla.error} />
       ) : filas.length === 0 ? (
-        <Vacio titulo="Nada en ese período" descripcion="No hay notas de entrega ni de salida con esas fechas y esos filtros." />
+        <Vacio titulo="Sin resultados en el período" descripcion="No hay notas de entrega ni de salida con esas fechas y esos filtros." />
       ) : (
         <>
           <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">

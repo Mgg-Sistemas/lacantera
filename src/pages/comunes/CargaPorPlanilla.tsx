@@ -398,7 +398,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                   subtitle={
                     informe.errores > 0
                       ? 'Con una sola fila mal no entra ninguna. Corríjala aquí con «Corregir», o en el archivo y súbalo otra vez.'
-                      : 'Nada se ha escrito todavía.'
+                      : 'Sin datos.'
                   }
                 />
 

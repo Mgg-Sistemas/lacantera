@@ -279,13 +279,13 @@ export function Salidas() {
         <Card>
           <Vacio
             icono={<PackageMinus />}
-            titulo={hayFiltros ? 'Nada con esos filtros' : 'Todavía no ha salido nada'}
+            titulo={hayFiltros ? 'Sin resultados' : 'Sin salidas registradas'}
             descripcion={
               hayFiltros
                 ? nota.trim()
-                  ? 'Ninguna nota con ese número. Revise que esté completo: los papeles llevan NS-2026-0012, con el año y los cuatro dígitos.'
-                  : 'Amplíe las fechas, o quite el artículo o el grupo.'
-                : 'La primera línea la escribe la primera salida de material.'
+                  ? 'Sin notas con ese número. Verifique el número completo: formato NS-2026-0012, con año y cuatro dígitos.'
+                  : 'Amplíe las fechas o quite el artículo o el grupo.'
+                : 'El primer registro corresponde a la primera salida de material.'
             }
           />
         </Card>

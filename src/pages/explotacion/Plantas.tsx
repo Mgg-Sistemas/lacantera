@@ -125,8 +125,8 @@ export function Plantas() {
           <Card>
             <Vacio
               icono={<Factory />}
-              titulo="Todavía no hay sitios"
-              descripcion="Una mina, una planta, un patio o una base. Las rutas de los viajes van de un sitio a otro."
+              titulo="Sin sitios registrados"
+              descripcion="Un sitio es una mina, planta, patio o base. Las rutas de los viajes unen dos sitios."
             />
           </Card>
         ) : null}
@@ -244,8 +244,8 @@ export function Plantas() {
           <Card>
             <Vacio
               icono={<Route />}
-              titulo="Todavía no hay rutas"
-              descripcion="Sin rutas no se pueden cargar viajes: cada viaje va por una."
+              titulo="Sin rutas registradas"
+              descripcion="Sin rutas no se pueden registrar viajes: cada viaje corresponde a una."
             />
           </Card>
         ) : null}
@@ -455,7 +455,7 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
             />
             <SelectBuscable
               label="Responsable"
-              vacio="Nadie por ahora"
+              vacio="Sin asignar"
               valor={responsable}
               onCambio={(v) => setResponsable(v)}
               hint="Aprueba los viajes que salen de este sitio o llegan a él."

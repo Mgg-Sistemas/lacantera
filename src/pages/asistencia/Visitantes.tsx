@@ -141,7 +141,7 @@ export function Visitantes({ hoy, dia, mes }: { hoy: string; dia: string | null;
       ) : adentro.error ? (
         <ErrorDeCarga error={adentro.error} />
       ) : vivas.length === 0 ? (
-        <p className="text-ink/45 mt-4 text-sm">No hay visitantes adentro.</p>
+        <p className="text-ink/45 mt-4 text-sm">Sin visitantes dentro.</p>
       ) : (
         <div className="mt-4">
           <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Adentro ahora</p>
@@ -560,7 +560,7 @@ function VisitantesConocidos({ puedeEditar, onCerrar }: { puedeEditar: boolean; 
         ) : error ? (
           <ErrorDeCarga error={error} />
         ) : lista.length === 0 ? (
-          <p className="text-ink/45 text-sm">{data?.length ? 'Ninguno con eso.' : 'Todavía no ha venido nadie.'}</p>
+          <p className="text-ink/45 text-sm">{data?.length ? 'Ninguno con eso.' : 'Sin visitas registradas.'}</p>
         ) : (
           <ul className="divide-hairline max-h-96 divide-y overflow-y-auto">
             {lista.map((p) => (

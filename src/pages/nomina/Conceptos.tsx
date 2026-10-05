@@ -128,8 +128,8 @@ export function Conceptos() {
         {deLaCasa.length === 0 ? (
           <div className="p-5">
             <Vacio
-              titulo="Todavía no hay ninguno"
-              descripcion="Cree el primero: un bono de transporte, uno por rendimiento, la cuota de un préstamo."
+              titulo="Sin conceptos registrados"
+              descripcion="Por ejemplo: bono de transporte, bono por rendimiento o cuota de préstamo."
             />
           </div>
         ) : (

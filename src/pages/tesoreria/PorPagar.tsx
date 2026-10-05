@@ -147,8 +147,8 @@ export function PorPagar() {
           <Vacio
             icono={<HandCoins />}
             resuelto
-            titulo="No se le debe nada a nadie"
-            descripcion="Toda compra autorizada ya salió del banco. Cuando el gerente apruebe una compra nueva, aparecerá aquí esperando pago."
+            titulo="Sin deudas con proveedores"
+            descripcion="Todas las compras autorizadas están pagadas. Las compras aprobadas por el gerente aparecen aquí pendientes de pago."
           />
         </Card>
       ) : null}

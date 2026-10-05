@@ -122,7 +122,7 @@ export function Guias() {
         <Card>
           <Vacio
             icono={<FileCheck />}
-            titulo="No hay guías cargadas"
+            titulo="Sin guías registradas"
             descripcion="Sin guía vigente, Ventas rechaza el despacho de mineral. Quien tenga control total sobre Despachos puede autorizar una salida sin ella, y esa nota queda marcada."
           />
         </Card>
@@ -373,7 +373,7 @@ export function Guias() {
               }))}
               hint={
                 (vehiculos ?? []).length === 0
-                  ? 'No hay vehículos cargados. Se cargan en Maquinaria › Equipos.'
+                  ? 'Sin vehículos registrados. Se registran en Maquinaria › Equipos.'
                   : undefined
               }
             />

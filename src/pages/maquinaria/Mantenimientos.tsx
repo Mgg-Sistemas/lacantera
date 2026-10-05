@@ -108,11 +108,11 @@ export function Mantenimientos() {
           <Vacio
             icono={<Wrench />}
             titulo={
-              (data ?? []).length === 0 ? 'Todavía no ha pasado nada por el taller' : 'Nada coincide'
+              (data ?? []).length === 0 ? 'Sin órdenes de mantenimiento' : 'Sin resultados'
             }
             descripcion={
               (data ?? []).length === 0
-                ? 'Cuando una máquina entre al taller desde su ficha, la orden aparecerá aquí con lo que se le hizo y lo que costó.'
+                ? 'Las órdenes abiertas desde la ficha de cada máquina aparecen aquí con su trabajo realizado y su costo.'
                 : undefined
             }
           />

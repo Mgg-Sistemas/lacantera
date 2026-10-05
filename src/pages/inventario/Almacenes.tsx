@@ -93,8 +93,8 @@ export function Almacenes() {
         <Card>
           <Vacio
             icono={<Warehouse />}
-            titulo="No hay almacenes"
-            descripcion="Sin al menos uno no se puede recibir material."
+            titulo="Sin almacenes registrados"
+            descripcion="Se necesita al menos uno para recibir material."
             accion={
               <Button icon={<Plus />} onClick={() => abrir()}>
                 Crear el primero
@@ -280,7 +280,7 @@ export function Almacenes() {
             */}
             <SelectBuscable
               label="Responsable"
-              vacio="Nadie por ahora"
+              vacio="Sin asignar"
               valor={edicion.responsable_id}
               onCambio={(v) => cambiar({ responsable_id: v })}
               hint="Una misma persona puede llevar varios almacenes: se la elige en cada uno."
