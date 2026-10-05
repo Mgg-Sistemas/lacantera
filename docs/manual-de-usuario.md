@@ -6333,7 +6333,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **En las incidencias del personal.** Si se elige un tipo que no pide reposo —**Conflicto**, **Llegada tarde** u **Otra**— y a la vez se marca **Varios días**, el campo de los días de reposo no se dibuja y el guardado falla con un mensaje sin traducir. Mientras eso se arregla, **para varios días usa un tipo que pida reposo**, o anota la duración en el motivo.
 
-**El combustible inicial entra valorado en cero, y eso abarata lo que sale de ese tanque.** Los litros trasladados desde la base principal del grupo sí costaron dinero — solo que en la otra empresa, y aquí no se sabe cuánto. Mientras entren a cero, **el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta**. El tanque aparte impide que contamine al resto (20.5), pero no inventa la cifra que falta. Si algún día se sabe lo que se pagó por ellos, entrarlos con ese costo lo arregla.
+**El combustible inicial entra valorado en cero, y eso abarata lo que sale de ese tanque.** Los litros trasladados desde la base principal del grupo sí costaron dinero — solo que en la otra empresa, y aquí no se sabe cuánto. Mientras entren a cero, **el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta**. El tanque aparte impide que contamine al resto (20.6), pero no inventa la cifra que falta. Si algún día se sabe lo que se pagó por ellos, entrarlos con ese costo lo arregla.
 
 **El 3 % de obra social de la alianza se guarda y no se calcula.** El convenio con la Gobernación tiene tres porcentajes: 14 % para la Gobernación, 86 % para la empresa y un 3 % sobre los ingresos netos destinado a obra social. Los dos primeros los reparte el sistema; **el tercero está guardado pero no lo aplica ninguna pantalla**, así que hoy no hay dónde ver cuánto se debe por ese concepto. Como 14 y 86 ya suman cien, ese 3 % no sale del mismo bruto: o sale de la parte de la empresa, o es una obligación aparte, y eso es una decisión que todavía no se ha tomado. **Conviene tomarla antes de la primera factura de venta.**
 
@@ -6746,7 +6746,7 @@ El reparto es el mismo que el de Maquinaria, y por el mismo motivo: quien opera 
 
 Arriba, **los tanques con su saldo**. Si no hay ninguno con existencia, la pantalla lo dice: **El tanque está vacío**.
 
-**Hay dos tanques, y no es un error de configuración.** Uno es **Tanque de combustible**, el de siempre. El otro es **Combustible inicial (sin costo)**, y el apartado 20.5 explica por qué existe.
+**Hay dos tanques, y no es un error de configuración.** Uno es **Tanque de combustible**, el de siempre. El otro es **Combustible inicial (sin costo)**, y el apartado 20.6 explica por qué existe.
 
 Debajo, **el consumo por máquina** —litros por hora— y la lista de despachos. Cuando una máquina tiene despachos pero le falta el horómetro, sale marcada: **Falta anotar el horómetro en el parte diario**. Sin ese dato los litros no se pueden convertir en litros por hora, así que esa máquina no entra en la comparación.
 
@@ -6779,13 +6779,27 @@ Los motivos son seis y salen de un catálogo, no de una lista escrita en la pant
 
 **La lista de motivos la toca quien despacha**, no sistemas: es quien sabe para qué se echa combustible en esta cantera. Pero cambiarla pide control total.
 
-### 20.4 El vale
+### 20.4 Surtir desde el teléfono
+
+**Existe desde el 5 de octubre de 2026.** Es la misma operación de arriba, pero hecha para usarla **de pie al lado del tanque**, con el celular en una mano. Se abre con el botón **Vista de teléfono**, arriba en Combustible, y la puede abrir cualquiera que pueda despachar.
+
+Va en dos pasos. Primero **de qué tanque**, en botones grandes que dicen cuánto queda en cada uno; si solo hay un tanque con saldo, ese paso se salta. Después el vale: litros, máquina, horómetro, para qué, y quién lo recibió. Los motivos son botones, no una lista desplegable, porque es lo que más se toca. La fecha y la nota están plegadas hasta que hagan falta.
+
+**Las reglas son exactamente las mismas** que en la computadora: el tope de tres vales por máquina al día, el horómetro que no puede retroceder, y el nombre de quien recibe obligatorio. No es un atajo: es la misma puerta.
+
+<p class="regla"><strong>Si la señal está mala, el sistema lo dice.</strong> Cuando el guardado tarda más de doce segundos aparece el aviso de que <strong>el vale ya se está guardando y no hay que cargarlo otra vez</strong>. Es el error más común en la mina: el que espera vuelve a pulsar, y salen dos vales del mismo gasoil.</p>
+
+Al guardar, la pantalla confirma lo que salió y ofrece **pasarlo por WhatsApp**, que es como se avisa en el patio. El vale firmado en papel se sigue sacando desde la computadora.
+
+**Quién entra directo.** En **Configuración › Usuarios**, entre los permisos extendidos de Combustible, está la casilla **Entrar directo al surtidor del teléfono**. A quien se le dé, abre el sistema y aparece ya en esta pantalla, sin pasar por el tablero. Es para la persona que está en la bomba. **La casilla no da permiso de nada por sí sola**: para despachar sigue haciendo falta escritura en Combustible. Y nadie la tiene de entrada: hay que prestarla a mano.
+
+### 20.5 El vale
 
 Cada despacho saca su **Vale de combustible** en papel, con el botón **Imprimir el vale**. Lleva la misma cabecera que el resto de los papeles del sistema (13.2).
 
 **Es el papel que firma quien recibe el combustible**, y por eso se imprime al despachar y no después.
 
-### 20.5 Cargar combustible a mano
+### 20.6 Cargar combustible a mano
 
 El combustible entra normalmente **por una compra recibida**. Para lo demás está el botón **Cargar**: el saldo con el que arranca un tanque, algo comprado por fuera, un traslado.
 
@@ -6831,11 +6845,11 @@ Un tanque que se llama «combustible inicial (sin costo)» y que contuviera gaso
 
 **Lo que sigue pendiente, y conviene saberlo:** esos 20.000 litros **sí costaron dinero**, solo que en la otra empresa. Mientras entren a cero, el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta. Si algún día se sabe lo que se pagó por ellos, entrarlos con ese costo dejaría bien a la vez el promedio, el costo por máquina y el centro de costos.
 
-### 20.6 Cuando el sistema no te deja
+### 20.7 Cuando el sistema no te deja
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Aquí no entra material sin costo: se hundiría el costo promedio de lo que ya hay.» | Se marcó **No costó nada para esta empresa** apuntando al tanque de siempre | Mételo en el tanque de combustible inicial, que es el que lo lleva aparte (20.5) |
+| «Aquí no entra material sin costo: se hundiría el costo promedio de lo que ya hay.» | Se marcó **No costó nada para esta empresa** apuntando al tanque de siempre | Mételo en el tanque de combustible inicial, que es el que lo lleva aparte (20.6) |
 | «Aquí solo entra lo que no costó nada. Lo que tiene precio va al tanque de siempre.» | Se intentó meter combustible comprado al tanque inicial | Elige el tanque de siempre y escribe lo que costó |
 | «Una entrada sin costo hay que explicarla entera: de dónde vino y quién asumió el gasto.» | El motivo tiene menos de quince letras | Escribe de dónde vino y quién pagó. Dentro de un año esa nota es lo único que lo va a contestar |
 | «Hay que decir cuánto costó la unidad.» | Se dejó el costo vacío sin marcar la casilla | Escribe el costo, o marca **No costó nada para esta empresa** si de verdad no costó |

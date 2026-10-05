@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Droplets, FileText, Fuel, Plus, Settings2, Tags, TriangleAlert } from 'lucide-react'
+import { Droplets, FileText, Fuel, Plus, Settings2, Smartphone, Tags, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -163,6 +163,16 @@ export function Combustible() {
         actions={
           puedeDespachar ? (
             <>
+              {/*
+                La misma pantalla, para usarla al lado del tanque. No está
+                escondida detrás de una casilla: quien puede despachar puede
+                abrirla. La casilla solo decide quién ATERRIZA ahí al entrar.
+              */}
+              <Link to="/app/combustible/surtidor">
+                <Button variant="ghost" icon={<Smartphone />}>
+                  Vista de teléfono
+                </Button>
+              </Link>
               {/* La lista de motivos se toca desde aquí: quien despacha es quien
                   descubre que falta uno, y no debería tener que pedirlo. */}
               {puedeOrdenar ? (
