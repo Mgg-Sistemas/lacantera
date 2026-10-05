@@ -242,10 +242,19 @@ export function Surtidor() {
     )
   }
 
+  /*
+    EL BOTÓN DE VOLVER EXISTE SIEMPRE QUE HAYA ADÓNDE VOLVER. Antes solo
+    salía con más de un tanque, y estaba bien: con uno solo, la pantalla de
+    selección se saltaba y no había atrás. Pero quien opera el almacén SÍ
+    pasa por esa pantalla aunque haya un solo tanque —ahí viven la entrada y
+    el traslado— y entraba al vale sin poder regresar (Christopher lo
+    encontró el 05/10/2026). El único caso sin botón sigue siendo el bombero
+    con un solo tanque, que nunca vio otra pantalla.
+  */
   return (
     <Vale
       tanque={elegido}
-      onVolver={conSaldo.length > 1 ? () => setTanque('') : undefined}
+      onVolver={conSaldo.length > 1 || puedeAlmacen ? () => setTanque('') : undefined}
       onGuardado={(g) => setGuardado(g)}
     />
   )
