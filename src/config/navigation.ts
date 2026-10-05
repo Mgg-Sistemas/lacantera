@@ -18,6 +18,7 @@ import {
   ShoppingCart,
   Truck,
   Users,
+  UtensilsCrossed,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -151,6 +152,7 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/explotacion', 'EXPLOTACION'],
   ['/app/maquinaria', 'MAQUINARIA'],
   ['/app/combustible', 'COMBUSTIBLE'],
+  ['/app/alimentacion', 'ALIMENTACION'],
   ['/app/asignaciones', 'ASIGNACIONES'],
   /*
     Salidas y traslados son su propio módulo desde el 16/09/2026: lo que sale
@@ -311,6 +313,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/nomina/prestaciones': 'antiguedad liquidacion intereses garantia',
   '/app/nomina/tabulador': 'cargo sueldo escala aumento',
   '/app/combustible': 'gasoil gasolina diesel surtir tanque',
+  '/app/alimentacion':
+    'alimentacion comida cocina comedor viveres desayuno almuerzo cena platos costo por plato raciones',
   '/app/asignaciones': 'herramienta prestada quien tiene responsable',
   '/app/asignaciones/dotacion': 'dotacion cargo botas guantes casco epp reponer cada cuanto le toca',
   '/app/nomina/carnets': 'carnet qr codigo verificar emitir plastico identificacion quien tiene',
@@ -722,6 +726,16 @@ export const navigation: NavSection[] = [
         label: 'Contactos',
         icon: BookUser,
         to: '/app/contactos',
+      },
+      {
+        /*
+          ALIMENTACIÓN, 05/10/2026. Traída de MGG a los rieles de la casa: cada
+          comida servida descuenta sus víveres del inventario al promedio, y de
+          ahí sale el costo por plato. La cocina tiene su vista de teléfono.
+        */
+        label: 'Alimentación',
+        icon: UtensilsCrossed,
+        to: '/app/alimentacion',
       },
       {
         /*

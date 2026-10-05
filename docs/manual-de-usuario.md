@@ -69,6 +69,7 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 22 | Control de despacho | Solo el administrador, hasta que se reparta su permiso |
 | 23 | Control de asistencia | Solo el administrador, hasta que se reparta su permiso |
 | 24 | Contactos | Solo el administrador, hasta que se reparta su permiso |
+| 25 | Alimentación | Solo el administrador, hasta que se reparta su permiso |
 
 **Asignaciones, Maquinaria, Combustible, Facturación, Control de despacho y Control de asistencia tienen sus capítulos al final** —del 18 al 23— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
 
@@ -7317,3 +7318,36 @@ Si dos contactos comparten un correo o un teléfono, arriba aparece un aviso ama
 ### 24.4 Lo que este módulo no hace
 
 No envía correos ni mensajes: abre el canal y ahí termina. No lleva historial de conversaciones ni recordatorios. No sustituye a Clientes ni a Proveedores: esos siguen llevando lo que factura y lo que se compra; el contacto se enlaza a ellos para no escribir dos veces el mismo teléfono.
+
+
+## 25. Alimentación
+
+**Administración › Alimentación**
+
+**Existe desde el 5 de octubre de 2026**, traído del sistema MGG a los rieles de esta casa. Registra cada comida servida al personal —desayuno, almuerzo o cena— con cuántas personas comieron y qué víveres se gastaron. **Los víveres se descuentan del inventario al servir**, al costo promedio que tengan en ese momento, y de ahí sale el número que justifica el módulo: **el costo por plato**.
+
+**Quién entra.** Nace con el permiso cerrado para todos menos administración; se reparte en Configuración › Usuarios, fila **Alimentación**. **Lectura** ve las comidas y el costo; **escritura** sirve comidas y anula las de hoy; **control total** anula las de cualquier día.
+
+### 25.1 Los víveres
+
+Un víver es un artículo de la categoría **Víveres**, con códigos VIV-0001 en adelante. Se crean en Inventario › Artículos y **entran por una compra recibida**, como todo. Si la cocina tiene su propio almacén, los víveres se le llevan con un **traslado** — un traslado no pierde existencia, así que no hay doble descuento: la única resta la hace la comida al servirse.
+
+### 25.2 Servir una comida
+
+Desde la pantalla, el botón **Servir comida**: qué comida fue, cuántos comieron, de qué almacén salió, y la lista de víveres con sus cantidades. La pantalla estima el costo con el promedio actual; **la cifra final la pone el sistema** al guardar, y queda congelada: el plato de ayer no cambia de precio con la compra de mañana.
+
+El sistema no deja servir con fecha futura, ni con un víver repetido en la lista, ni más cantidad de la que hay en el almacén. Cada comida queda con su número — **COM-2026-0001** en adelante — y sus consumos se ven también en el libro de inventario, uno por víver, con el número de la comida en la nota.
+
+### 25.3 La cocina en el teléfono
+
+La vista para quien cocina, con el mismo molde del surtidor de combustible (20.4): se abre desde el botón **Vista de teléfono**, toca 🍳, 🍽️ o 🌙, pone cuántos comieron, escribe las cantidades al lado de cada víver y guarda. Si la señal está mala y el guardado tarda más de doce segundos, el aviso dice que **ya se está guardando y no hay que cargarla otra vez**. Al guardar, el acuse dice el costo por plato y se puede **pasar por WhatsApp**.
+
+**Quién entra directo.** En Configuración › Usuarios, entre los permisos extendidos de Alimentación, está la casilla **Entrar directo a la cocina del teléfono**: quien la tiene abre el sistema y aparece ya en esa pantalla. No da permiso de nada por sí sola, y nadie la tiene de entrada. Si una misma persona tuviera también la del surtidor, aterriza en el surtidor.
+
+### 25.4 Anular
+
+Una comida no se edita ni se borra: **se anula con motivo**, y los víveres vuelven al inventario con un reverso que queda a la vista. Quien tiene escritura puede anular **la del mismo día** —el error se corrige donde se cometió—; anular una de otro día cambia costos que alguien pudo haber mirado, y por eso pide control total.
+
+### 25.5 Lo que este módulo no hace
+
+No asocia la comida a un trabajador concreto: cuenta platos, no nombres — igual que MGG. No lleva menú ni recetas. Y su analítica de ciclos de mercado —inventario teórico contra conteo, merma, ración por persona— no se trajo todavía: se decidirá con un mes de comidas registradas delante.
