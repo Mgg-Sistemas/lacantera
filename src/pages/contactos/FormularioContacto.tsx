@@ -171,7 +171,7 @@ export function FormularioContacto({
           label="WhatsApp"
           value={d.whatsapp}
           onChange={(e) => cambiar({ whatsapp: e.target.value })}
-          placeholder="Si es el mismo celular, repítelo"
+          placeholder="Si es el mismo celular, repítalo"
         />
         {enlaceLlamada(d.celular) || enlaceWhatsApp(d.whatsapp) ? (
           <p className="flex flex-wrap gap-4 text-xs sm:col-span-2">
@@ -325,7 +325,7 @@ export function FormularioContacto({
               <input type="checkbox" className="accent-royal-600 mt-0.5 size-4" checked={otraPersona} onChange={(e) => setOtraPersona(e.target.checked)} />
               <span>
                 Es otra persona: guardar igual.
-                <span className="text-ink/45 block text-xs">Dos personas pueden compartir el teléfono de una oficina. Si es la misma, mejor edita la que ya está.</span>
+                <span className="text-ink/45 block text-xs">Dos personas pueden compartir el teléfono de una oficina. Si es la misma, mejor edite la que ya está.</span>
               </span>
             </label>
           ) : null}
@@ -345,7 +345,7 @@ export function FormularioContacto({
           abierto
           onCerrar={() => setBorrando(false)}
           titulo={`Eliminar a ${contacto.nombre}`}
-          descripcion="Un contacto no mueve dinero ni inventario, así que se puede borrar. Queda registrado quién lo hizo. Si solo dejó de ser útil, márcalo inactivo en vez de borrarlo."
+          descripcion="Un contacto no mueve dinero ni inventario, así que se puede borrar. Queda registrado quién lo hizo. Si solo dejó de ser útil, márquelo inactivo en vez de borrarlo."
           ancho="sm"
           acciones={
             <>
@@ -377,7 +377,7 @@ function EmpresaDeLaPersona({ d, cambiar }: { d: DatosContacto; cambiar: (c: Par
         valor={d.empresa_id}
         onCambio={(v) => cambiar({ empresa_id: v, empresa_nombre: v ? '' : d.empresa_nombre })}
         opciones={empresas.map((e) => ({ valor: String(e.id), etiqueta: e.nombre, detalle: e.documento ?? undefined }))}
-        hint="Si su empresa está en el directorio, enlázala aquí y no la escribas."
+        hint="Si su empresa está en el directorio, enlácela aquí y no la escriba."
       />
       <Input
         label="Empresa (a mano)"

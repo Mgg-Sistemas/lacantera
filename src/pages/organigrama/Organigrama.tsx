@@ -276,7 +276,7 @@ export function Organigrama() {
       <PageHeader
         eyebrow="Organización"
         title="Organigrama"
-        description="Quién depende de quién, y cuánta gente hay prevista en cada puesto. Pulsa un puesto para seguir su línea de mando."
+        description="Quién depende de quién, y cuánta gente hay prevista en cada puesto. Pulse un puesto para seguir su línea de mando."
         actions={
           /*
             Descargarlo lo puede hacer cualquiera, aunque no pueda tocar ni una
@@ -330,7 +330,7 @@ export function Organigrama() {
       {quienMueve ? (
         <div className="border-royal-600/40 bg-royal-600/5 rounded-card mt-4 flex flex-wrap items-center gap-3 border p-3">
           <p className="text-ink/80 text-sm">
-            Moviendo <strong className="font-titular">{quienMueve.nombre}</strong>. Pulsa el puesto
+            Moviendo <strong className="font-titular">{quienMueve.nombre}</strong>. Pulse el puesto
             del que debe colgar.
           </p>
           <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setMoviendo(null)}>
@@ -512,8 +512,8 @@ export function Organigrama() {
           <div className="px-5 py-10 text-center">
             <p className="text-ink/70 font-titular text-lg">Todavía no hay organigrama</p>
             <p className="text-ink/45 mx-auto mt-1 max-w-sm text-sm leading-relaxed">
-              Empieza por lo de arriba —la gerencia general— y ve colgando de ahí. Cada puesto que
-              añadas abre el banco siguiente.
+              Empiece por lo de arriba —la gerencia general— y vaya colgando de ahí. Cada puesto que
+              añada abre el banco siguiente.
             </p>
             {puedeEditar ? (
               <Button className="mt-4" icon={<Plus />} onClick={() => setEdicion(EN_BLANCO(null))}>
@@ -567,8 +567,8 @@ export function Organigrama() {
       {puedeEditar && edicion === null && (nodos ?? []).length > 0 ? (
         <p className="text-ink/40 mt-4 text-xs">
           {enfocado === null
-            ? 'Pulsa un puesto para seguir su línea de mando y para poder tocarlo.'
-            : 'Pulsa el mismo puesto otra vez para soltarlo.'}
+            ? 'Pulse un puesto para seguir su línea de mando y para poder tocarlo.'
+            : 'Pulse el mismo puesto otra vez para soltarlo.'}
         </p>
       ) : null}
     </>
