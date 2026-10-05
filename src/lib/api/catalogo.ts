@@ -634,6 +634,36 @@ export function useCambiarEstadoArticulo() {
   })
 }
 
+/**
+ * Borrar un duplicado o uno mal cargado, solo ADMIN.
+ *
+ * El libro de inventario no se puede borrar, para nadie — así que esto no es
+ * un DELETE a secas: si el artículo tiene movimientos, los reversa uno por
+ * uno (una corrección, no una salida) y lo desactiva; solo se borra entero
+ * si nunca tuvo ni un movimiento. Si ya está en una factura, una nota o
+ * cualquier otro documento de verdad, la base lo niega y dice en qué está.
+ *
+ * Toca existencias además del catálogo —un reverso mueve el libro—, así que
+ * invalida las tres cachés de existencias, no solo «articulos».
+ */
+export function useEliminarArticuloDuplicado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: { id: number; motivo: string }) =>
+      rpc<'BORRADO' | 'REVERSADO_Y_DESACTIVADO'>('eliminar_articulo_duplicado', {
+        p_articulo_id: a.id,
+        p_motivo: a.motivo,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['articulos'] })
+      void qc.invalidateQueries({ queryKey: ['existencias'] })
+      void qc.invalidateQueries({ queryKey: ['existencias-totales'] })
+      void qc.invalidateQueries({ queryKey: ['existencias-articulo'] })
+      void qc.invalidateQueries({ queryKey: ['movimientos'] })
+    },
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Proveedores
 // ---------------------------------------------------------------------------

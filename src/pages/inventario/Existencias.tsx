@@ -13,6 +13,7 @@ import {
   Search,
   SendHorizontal,
   Shuffle,
+  Trash2,
   TriangleAlert,
   Wrench,
 } from 'lucide-react'
@@ -43,6 +44,7 @@ import {
   densidadesDeArticulos,
   conSusFormas,
   useArticulos,
+  useEliminarArticuloDuplicado,
   useMisRoles,
   useCostoPorPresentacion,
   usePresentacionesDeArticulo,
@@ -340,6 +342,11 @@ export function Existencias() {
   */
   const [resolviendoAjuste, setResolviendoAjuste] = useState<number | null>(null)
   const ajusteDirecto = useExistenciasDeArticulo(resolviendoAjuste)
+  /* Duplicado o mal cargado: reversa sus movimientos (no una salida) y lo
+     desactiva, o lo borra entero si nunca tuvo movimiento. Solo ADMIN. */
+  const [duplicando, setDuplicando] = useState<ExistenciaTotal | null>(null)
+  const [motivoDuplicado, setMotivoDuplicado] = useState('')
+  const eliminarDuplicado = useEliminarArticuloDuplicado()
   /* Que fila se esta corrigiendo de valoracion. Va aparte de `modal` porque no
      comparte ni el formulario ni el permiso con las cuatro acciones de almacen. */
   const [costo, setCosto] = useState<Existencia | null>(null)
@@ -1049,6 +1056,16 @@ export function Existencias() {
                                 {resolviendoAjuste === total!.articulo_id ? '…' : 'Contar'}
                               </Button>
                             ) : null}
+                            {puede('ADMIN') ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                icon={<Trash2 />}
+                                onClick={() => setDuplicando(total)}
+                              >
+                                Eliminar duplicado
+                              </Button>
+                            ) : null}
                             <Button
                               size="sm"
                               variant="ghost"
@@ -1165,6 +1182,59 @@ export function Existencias() {
       ) : null}
 
       {costo ? <ModalCorregirCosto fila={costo} onCerrar={() => setCosto(null)} /> : null}
+
+      {duplicando ? (
+        <Modal
+          abierto
+          ancho="sm"
+          onCerrar={() => {
+            setDuplicando(null)
+            setMotivoDuplicado('')
+            eliminarDuplicado.reset()
+          }}
+          titulo={`Eliminar duplicado: ${duplicando.articulo}`}
+          descripcion="Esto no genera una salida. Si el artículo nunca tuvo movimiento se borra entero; si ya tuvo, reversa cada movimiento (una corrección, no un consumo) y lo desactiva, dejando la existencia en cero. Si ya está en una factura, una nota o cualquier otro documento de verdad, la base lo va a negar: en ese caso no es un duplicado aislado, desactívalo en su lugar."
+          acciones={
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setDuplicando(null)
+                  setMotivoDuplicado('')
+                  eliminarDuplicado.reset()
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                disabled={eliminarDuplicado.isPending || motivoDuplicado.trim().length < 4}
+                onClick={async () => {
+                  await eliminarDuplicado.mutateAsync({
+                    id: duplicando.articulo_id,
+                    motivo: motivoDuplicado,
+                  })
+                  setDuplicando(null)
+                  setMotivoDuplicado('')
+                }}
+              >
+                {eliminarDuplicado.isPending ? 'Eliminando…' : 'Eliminar duplicado'}
+              </Button>
+            </>
+          }
+        >
+          <Textarea
+            label="Motivo (queda en la auditoría)"
+            value={motivoDuplicado}
+            onChange={(e) => setMotivoDuplicado(e.target.value)}
+            placeholder="Ej.: se cargó dos veces por error al crear el catálogo"
+            rows={3}
+          />
+          {eliminarDuplicado.error ? (
+            <ErrorDeCarga error={eliminarDuplicado.error} className="mt-3" />
+          ) : null}
+        </Modal>
+      ) : null}
 
       <ModalTrasvase fila={trasvase} onCerrar={() => setTrasvase(null)} />
 
