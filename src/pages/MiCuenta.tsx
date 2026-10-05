@@ -50,7 +50,7 @@ export function MiCuenta() {
         <Card>
           <CardHeader
             title={yo.nombre}
-            subtitle="Para cambiar estos datos, habla con quien administra el sistema."
+            subtitle="Para cambiar estos datos, hable con quien administra el sistema."
           />
 
           <div className="mt-4">

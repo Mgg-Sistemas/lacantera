@@ -165,10 +165,10 @@ export function enCastellano(fallo: unknown): string {
       return 'Este equipo no tiene un lector que el sistema pueda usar. En Windows hace falta tener configurado Windows Hello; en el teléfono, la huella o la cara del propio aparato.'
 
     case 'SecurityError':
-      return 'La huella solo funciona sobre una conexión segura. Entra por la dirección con https y vuelve a intentarlo.'
+      return 'La huella solo funciona sobre una conexión segura. Entre por la dirección con https y vuelva a intentarlo.'
 
     case 'ConstraintError':
-      return 'El aparato no puede cumplir lo que el sistema le pide: hace falta que verifique quién eres, y aquí no hay huella, cara ni PIN configurados.'
+      return 'El aparato no puede cumplir lo que el sistema le pide: hace falta que verifique quién es usted, y aquí no hay huella, cara ni PIN configurados.'
 
     case 'UnknownError':
       return 'El lector falló sin decir por qué. Suele arreglarse cerrando el navegador y volviendo a entrar.'

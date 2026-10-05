@@ -307,7 +307,7 @@ async function mandarPorCorreo(
 
   const { data: sesion } = await supabase.auth.getSession()
   const token = sesion.session?.access_token
-  if (!token) throw new Error('La sesión caducó: vuelve a entrar para que se mande el correo.')
+  if (!token) throw new Error('La sesión caducó: inicie sesión nuevamente para que se envíe el correo.')
 
   const { error } = await supabase.functions.invoke('respaldo-por-correo', {
     body: {

@@ -208,7 +208,7 @@ export function Login() {
             {salio && !error ? (
               <div className="border-ink/12 bg-ink/4 mt-5 flex items-center gap-2.5 rounded-[6px] border p-3">
                 <LogOut className="text-ink/45 size-[18px] shrink-0" />
-                <p className="text-ink/70 text-sm">Cerraste la sesión en este equipo.</p>
+                <p className="text-ink/70 text-sm">Cerró la sesión en este equipo.</p>
               </div>
             ) : null}
 

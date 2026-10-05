@@ -67,7 +67,7 @@ const publishableKey = soloLoValido(
 )
 
 const AYUDA =
-  'En local van en .env.local (copia .env.example). En Vercel, en ' +
+  'En local van en .env.local (copie .env.example). En Vercel, en ' +
   'Settings → Environment Variables, y hay que volver a desplegar después ' +
   'de cambiarlas: el valor se incrusta al compilar, no se lee al abrir.'
 

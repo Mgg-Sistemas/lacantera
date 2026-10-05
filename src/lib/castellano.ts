@@ -110,7 +110,7 @@ export function enCastellano(fallo: unknown): string {
     return 'No se pudo contactar a esa parte del sistema. Vuelva a intentarlo dentro de un minuto.'
   }
   if (tiene('edge function returned a non-2xx')) {
-    return 'Esa parte del sistema contestó con un error. Si se repite, avisa a soporte.'
+    return 'Esa parte del sistema contestó con un error. Si se repite, avise a soporte.'
   }
 
   // ── La sesión ─────────────────────────────────────────────────────────────
@@ -123,10 +123,10 @@ export function enCastellano(fallo: unknown): string {
 
   // ── Entrar al sistema ─────────────────────────────────────────────────────
   if (tiene('invalid login credentials')) return 'Usuario o clave incorrectos.'
-  if (tiene('email not confirmed')) return 'Esa cuenta todavía no está confirmada. Avisa a quien administra el sistema.'
+  if (tiene('email not confirmed')) return 'Esa cuenta todavía no está confirmada. Avise a quien administra el sistema.'
   if (tiene('user already registered', 'already been registered')) return 'Ese usuario ya existe.'
   if (tiene('user not found')) return 'Ese usuario no existe.'
-  if (tiene('user is banned')) return 'Esa cuenta está bloqueada. Habla con quien administra el sistema.'
+  if (tiene('user is banned')) return 'Esa cuenta está bloqueada. Hable con quien administra el sistema.'
   if (tiene('signups not allowed', 'signup is disabled')) {
     return 'Las cuentas no se crean solas: las da de alta quien administra el sistema.'
   }
@@ -163,7 +163,7 @@ export function enCastellano(fallo: unknown): string {
     adivinar cuál de los ocho campos de la pantalla es el repetido.
   */
   if (codigo === '23505' || tiene('duplicate key value')) {
-    return 'Ya existe un registro con ese dato. Búscalo en vez de crearlo otra vez.'
+    return 'Ya existe un registro con ese dato. Búsquelo en lugar de crearlo otra vez.'
   }
   if (codigo === '23503' || tiene('violates foreign key constraint', 'is still referenced from table')) {
     return 'Eso está en uso en otra parte del sistema: no se puede borrar ni cambiar mientras algo dependa de ello.'
@@ -189,7 +189,7 @@ export function enCastellano(fallo: unknown): string {
     return 'La base cambió hace un momento y el sistema todavía no se enteró. Recargue la página e inténtelo otra vez.'
   }
   if (codigo === '42P01' || tiene('does not exist')) {
-    return 'Falta algo en la base de datos para esta pantalla. Avisa a soporte: hay una migración sin correr.'
+    return 'Falta algo en la base de datos para esta pantalla. Avise a soporte: hay una migración sin correr.'
   }
   if (codigo === '57014' || tiene('statement timeout', 'canceling statement')) {
     return 'La consulta tardó demasiado y el servidor la cortó. Acote las fechas o los filtros y vuelva a pedirla.'
@@ -203,16 +203,16 @@ export function enCastellano(fallo: unknown): string {
 
   // ── Archivos ──────────────────────────────────────────────────────────────
   if (tiene('the resource already exists', 'duplicate', 'already exists')) {
-    return 'Ya hay un archivo con ese nombre. Cámbiale el nombre o borra el anterior.'
+    return 'Ya hay un archivo con ese nombre. Cámbiele el nombre o borre el anterior.'
   }
   if (http === 413 || tiene('payload too large', 'maximum allowed size', 'entity too large')) {
-    return 'El archivo pesa más de lo que se admite. Súbelo más liviano.'
+    return 'El archivo pesa más de lo que se admite. Redúzcalo y vuelva a subirlo.'
   }
   if (tiene('mime type', 'not supported')) {
     return 'Ese tipo de archivo no se admite aquí.'
   }
   if (tiene('bucket not found')) {
-    return 'Falta preparar el almacén de archivos. Avisa a soporte.'
+    return 'Falta preparar el almacén de archivos. Avise a soporte.'
   }
   if (tiene('object not found', 'not_found')) {
     return 'Ese archivo ya no está. Puede que lo hayan borrado.'

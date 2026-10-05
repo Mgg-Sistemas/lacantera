@@ -173,7 +173,7 @@ function trocear(
         const cerca = parecida(palabra, alias)
         throw new ErrorDeCuenta(
           cerca
-            ? `«${palabra}» no es una moneda. ¿Querías escribir ${simbolo(cerca)}?`
+            ? `«${palabra}» no es una moneda. ¿Quiso escribir ${simbolo(cerca)}?`
             : `«${palabra}» no es una moneda del sistema.`,
         )
       }
@@ -321,7 +321,7 @@ function evaluar(n: Nodo, enBolivares: Map<string, number>, nombre: (c: string) 
     const dim = a.dim + b.dim
     if (dim > 1) {
       throw new ErrorDeCuenta(
-        'No se puede multiplicar dinero por dinero: el resultado no sería una cantidad. Para un porcentaje usa un número suelto, como «× 1,16».',
+        'No se puede multiplicar dinero por dinero: el resultado no sería una cantidad. Para un porcentaje use un número suelto, como «× 1,16».',
       )
     }
     return { bs: a.bs * b.bs, dim, moneda: a.moneda ?? b.moneda }
