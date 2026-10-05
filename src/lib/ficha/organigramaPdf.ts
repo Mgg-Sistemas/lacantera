@@ -144,7 +144,7 @@ function detallesDe(n: NodoParaPapel): Detalle[] {
   const detalles: Detalle[] = []
   if (titular) detalles.push({ texto: `Titular: ${titular}`, apagado: false })
   if (n.cuantos > 0) {
-    const puestos = `${n.cuantos} puesto${n.cuantos === 1 ? '' : 's'}`
+    const puestos = `${n.cuantos} plaza${n.cuantos === 1 ? '' : 's'}`
     detalles.push(
       titular || n.cuantos > 1
         ? { texto: puestos, apagado: false }
@@ -256,7 +256,7 @@ function cabecera(doc: Doc, logo: string, d: DatosOrganigrama, bordes: Bordes): 
 
   doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
   doc.text(
-    'Recuadro rojo con fondo: unidad o dependencia.  Recuadro gris: cargo.  Debajo del nombre, quién responde o lo ocupa, y cuántos puestos tiene.',
+    'Recuadro rojo con fondo: unidad o dependencia.  Recuadro gris: cargo.  Debajo del nombre, quién responde o lo ocupa, y cuántas plazas tiene.',
     bordes.izq,
     y - 2,
   )
@@ -308,7 +308,7 @@ export async function armarOrganigrama(d: DatosOrganigrama): Promise<ArchivoArma
 
   if (raices.length === 0) {
     doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(GRIS)
-    doc.text('El organigrama está vacío.', bordes.izq, inicioDelArbol + 6)
+    doc.text('Sin organigrama definido', bordes.izq, inicioDelArbol + 6)
   } else {
     let cursor = inicioDelArbol
     for (const r of raices) {

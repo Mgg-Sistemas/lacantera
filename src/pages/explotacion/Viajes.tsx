@@ -1500,7 +1500,7 @@ function AnularViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => void
       }
     >
       <Textarea
-        label="Por qué se anula"
+        label="Motivo"
         hint="Queda en el registro de auditoría con su nombre y la hora."
         rows={3}
         value={motivo}

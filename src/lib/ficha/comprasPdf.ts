@@ -307,7 +307,7 @@ export async function armarOrdenDeCompra(d: DatosOrdenCompra): Promise<ArchivoAr
     ['Notas', d.condiciones.notas],
     ['Clasificación', d.condiciones.clasificacion],
     ['Entrega prometida', d.condiciones.entregaPrometida],
-    ['Forma de pago', d.condiciones.condicionPago],
+    ['Condición de pago', d.condiciones.condicionPago],
     ['Documentos', d.condiciones.documentos],
     ['Aprobada por', d.condiciones.aprobadaPor],
     ['Aprobada el', d.condiciones.aprobadaEl],
@@ -501,7 +501,7 @@ export async function armarComprobanteDePago(
     ['Monto pagado', conMoneda(d.monedaPago, d.montoPagado)],
     ['Fecha de pago', d.fechaPago],
     ['Pagado por', d.pagadoPor],
-    ['Comprobante adjunto', d.comprobanteAdjunto ?? 'Sin archivo adjunto'],
+    ['Referencia', d.comprobanteAdjunto ?? 'Sin archivo adjunto'],
   ])
 
   pieDePagina(
@@ -650,7 +650,7 @@ export async function armarCotizacionDeCompra(
   y = etiquetaValor(doc, y, [
     ['Pedido', d.condiciones.tituloPedido],
     ['N° del proveedor', d.numeroProveedor],
-    ['Forma de pago', d.condiciones.condicionPago],
+    ['Condición de pago', d.condiciones.condicionPago],
     ['Entrega', d.condiciones.diasEntrega != null ? `${d.condiciones.diasEntrega} días` : null],
     ['Validez', d.condiciones.validezDias != null ? `${d.condiciones.validezDias} días` : null],
     ['Cargada por', d.condiciones.cargadaPor],

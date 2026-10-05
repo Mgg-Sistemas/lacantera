@@ -105,7 +105,7 @@ export async function armarLibroDeMovimientos(d: DatosLibro): Promise<ArchivoArm
   let y = membrete(doc, logo, {
     empresa: d.empresa,
     datos: [
-      ['Alcance', donde],
+      ['Almacén', donde],
       ['Emitido', fechaLarga(d.momento)],
     ],
   })
@@ -123,7 +123,7 @@ export async function armarLibroDeMovimientos(d: DatosLibro): Promise<ArchivoArm
 
   y = seccion(doc, y, 'Alcance')
   y = etiquetaValor(doc, y, [
-    ['Sitio', donde],
+    ['Almacén', donde],
     ['Movimientos listados', String(d.renglones.length)],
     ['Entradas / salidas', `${entradas} entraron · ${salidas} salieron`],
     ['Filtro aplicado', d.filtro || 'Ninguno: se lista todo el libro'],

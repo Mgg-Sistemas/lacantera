@@ -135,7 +135,7 @@ export function textoDelReporteDiario(d: DatosReporteDiario): string {
   // la lista en una pared de dibujitos.
   lineas.push('🚜 *1. EQUIPOS Y MAQUINARIA EN OPERACIÓN*')
   if (d.equipos.length === 0) {
-    lineas.push('No se anotó el horómetro de ningún equipo.')
+    lineas.push('Sin lecturas de horómetro.')
   } else {
     for (const e of d.equipos) {
       const horas = e.horas === null ? null : `${decimal1.format(Number(e.horas))} h`
@@ -160,7 +160,7 @@ export function textoDelReporteDiario(d: DatosReporteDiario): string {
   // ── Transporte ───────────────────────────────────────────────────────────
   lineas.push('🚚 *2. RESUMEN DE TRANSPORTE Y FLETES*')
   if (d.camiones.length === 0) {
-    lineas.push('No se registraron viajes.')
+    lineas.push('Sin viajes registrados.')
   } else {
     for (const c of d.camiones) {
       const tramos = [

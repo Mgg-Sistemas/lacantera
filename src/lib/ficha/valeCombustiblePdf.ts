@@ -154,8 +154,8 @@ export async function armarValeDeCombustible(d: DatosValeCombustible): Promise<V
   y += ALTO_CAJA + 10
 
   y = bloqueEtiquetado(doc, y, 'El despacho', [
-    ['Para qué', d.motivo],
-    ['De qué tanque', d.tanque],
+    ['Uso', d.motivo],
+    ['Tanque', d.tanque],
     ['Fecha', cuando],
     // Sin horómetro el vale sirve igual para el gasto, pero no para el consumo
     // por hora. Se dice, en vez de dejar el hueco: quien lea el papel tiene que
@@ -166,7 +166,7 @@ export async function armarValeDeCombustible(d: DatosValeCombustible): Promise<V
         ? `${Number(d.horometro).toLocaleString('es-VE', { maximumFractionDigits: 2 })} h`
         : d.sinFicha
           ? 'No aplica: no tiene ficha de máquina'
-          : 'No se tomó',
+          : 'Sin horómetro',
     ],
     /*
       El costo iba con `toFixed(2)`, que escribe en ingles: en el mismo bloque,
@@ -177,7 +177,7 @@ export async function armarValeDeCombustible(d: DatosValeCombustible): Promise<V
   ])
 
   y = bloqueEtiquetado(doc, y, 'Quién', [
-    ['Recibió', d.recibio],
+    ['Receptor', d.recibio],
     ['Cédula', d.recibioCedula],
     ['Entregó', d.surtio],
   ])

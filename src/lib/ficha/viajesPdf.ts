@@ -137,7 +137,7 @@ export interface DatosRegistroDiario {
 /* Los anchos suman los 150 mm útiles. */
 const COLUMNAS_VIAJE: Columna[] = [
   { titulo: 'N.º', ancho: 14 },
-  { titulo: 'A dónde', ancho: 52 },
+  { titulo: 'Ruta', ancho: 52 },
   { titulo: 'Hora', ancho: 20 },
   { titulo: 'm³', ancho: 22, alDerecha: true },
   { titulo: 'Precio', ancho: 24, alDerecha: true },

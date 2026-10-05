@@ -376,7 +376,7 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
   etiqueta('Dirección', x1, y + yDireccion)
   parrafo(direccion, x1, y + yDireccion + 4.5)
 
-  etiqueta(d.condicionPago ? 'Condición' : 'Teléfono', x2, y + 14.5)
+  etiqueta(d.condicionPago ? 'Condición de pago' : 'Teléfono', x2, y + 14.5)
   valor(d.condicionPago ?? d.contraparte.telefono ?? '', x2, y + 19, 50)
 
   if (d.despacho) {
@@ -638,7 +638,7 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
     doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
     doc.line(x, fila - 3.5, DER - 3, fila - 3.5)
     fila += 1
-    linea('IVA retenido por el cliente', `- ${conSimbolo(d.moneda, d.retencionIva)}`)
+    linea('Retención de IVA', `- ${conSimbolo(d.moneda, d.retencionIva)}`)
     linea(
       'A pagar',
       conSimbolo(d.moneda, Number(d.total) - Number(d.retencionIva ?? 0)),

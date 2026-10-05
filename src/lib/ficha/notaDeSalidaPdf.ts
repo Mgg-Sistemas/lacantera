@@ -218,7 +218,7 @@ export interface NotaArmada {
 // lee igual venga de una salida o de un traslado.
 export const COLUMNAS: Columna[] = [
   { titulo: 'Código', ancho: 26 },
-  { titulo: 'Material', ancho: 55 },
+  { titulo: 'Artículo', ancho: 55 },
   { titulo: 'Cantidad', ancho: 18, alDerecha: true },
   { titulo: 'Unidad', ancho: 15 },
   // «Costo unit.» a ocho puntos no cabe en quince milimetros: la cabecera se
@@ -238,7 +238,7 @@ export const COLUMNAS: Columna[] = [
 */
 export const COLUMNAS_SIN_DINERO: Columna[] = [
   { titulo: 'Código', ancho: 26 },
-  { titulo: 'Material', ancho: 91 },
+  { titulo: 'Artículo', ancho: 91 },
   { titulo: 'Cantidad', ancho: 18, alDerecha: true },
   { titulo: 'Unidad', ancho: 15 },
 ]
@@ -257,7 +257,7 @@ export function columnasDeNota(conCostos: boolean, conConversion: boolean): Colu
   return conCostos
     ? [
         { titulo: 'Código', ancho: 22 },
-        { titulo: 'Material', ancho: 39 },
+        { titulo: 'Artículo', ancho: 39 },
         { titulo: 'Cantidad', ancho: 18, alDerecha: true },
         { titulo: 'Unidad', ancho: 13 },
         conversion,
@@ -266,7 +266,7 @@ export function columnasDeNota(conCostos: boolean, conConversion: boolean): Colu
       ]
     : [
         { titulo: 'Código', ancho: 26 },
-        { titulo: 'Material', ancho: 69 },
+        { titulo: 'Artículo', ancho: 69 },
         { titulo: 'Cantidad', ancho: 18, alDerecha: true },
         { titulo: 'Unidad', ancho: 15 },
         conversion,
@@ -388,15 +388,15 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
     (
       [
         ...filasDeLaOrden,
-        ['De qué almacén', mezclada ? 'Varios · se indica en cada renglón' : d.almacen],
+        ['Almacén', mezclada ? 'Varios · se indica en cada renglón' : d.almacen],
         ['Motivo', orden ? null : d.clase],
         ['Para quién', d.paraQuien],
         ['A dónde va', d.destino],
         // Solo si se sabe. El filtro de abajo se lleva las filas vacías, así
         // que una salida que se llevaron a pie sale igual que siempre.
-        ['En qué sale', d.vehiculo],
+        ['Vehículo', d.vehiculo],
         [
-          'Lo recibe',
+          'Recibido por',
           d.recibio
             ? `${d.recibio}${d.recibioCedula ? ` · ${d.recibioCedula}` : ''}`
             : null,

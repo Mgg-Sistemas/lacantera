@@ -69,10 +69,10 @@ export interface DatosEntrega {
 
 const COLUMNAS: Columna[] = [
   { titulo: 'Código', ancho: 26 },
-  { titulo: 'Lo que se entrega', ancho: 66 },
+  { titulo: 'Artículo', ancho: 66 },
   { titulo: 'Cantidad', ancho: 20, alDerecha: true },
   { titulo: 'Unidad', ancho: 16 },
-  { titulo: 'Devolver el', ancho: 22 },
+  { titulo: 'Fecha límite', ancho: 22 },
 ]
 
 export async function armarConstanciaDeEntrega(d: DatosEntrega): Promise<ArchivoArmado> {
@@ -107,7 +107,7 @@ export async function armarConstanciaDeEntrega(d: DatosEntrega): Promise<Archivo
     ['Cédula', d.trabajador.cedula],
     ['Cargo', d.trabajador.cargo],
     ['Departamento', d.trabajador.departamento],
-    ['Sale de', d.almacen],
+    ['Almacén', d.almacen],
   ])
 
   y = seccion(doc, y, 'Qué se le entrega')

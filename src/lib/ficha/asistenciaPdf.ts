@@ -100,7 +100,7 @@ export async function armarReporteDeAsistencia(d: {
     y,
     COLUMNAS_RESUMEN,
     personas.length === 0
-      ? [['Sin asistencia en el período', '', '', '', '']]
+      ? [['Sin marcaciones en el período', '', '', '', '']]
       : personas.map((p) => [p.nombre, p.ficha, String(p.dias.size), duracion(p.minutos), p.abiertas ? String(p.abiertas) : '']),
   )
   y = notaBajoLaTabla(

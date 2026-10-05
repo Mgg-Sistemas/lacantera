@@ -137,7 +137,7 @@ function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] 
         // lado de su etiqueta en media columna, y recortarlo con puntos
         // suspensivos deja justo el dato que hace falta en una emergencia.
         {
-          clave: 'En una emergencia, llamar a',
+          clave: 'Contacto de emergencia',
           valor: [e.contacto_emergencia, e.telefono_emergencia].filter(Boolean).join(' · ') || '—',
           ancho: true,
         },
@@ -159,7 +159,7 @@ function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] 
       ],
     },
     {
-      titulo: 'Cómo se le paga',
+      titulo: 'Remuneración',
       campos: [
         {
           clave: 'Salario',
@@ -214,7 +214,7 @@ function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] 
 
   if (traeDeAntes) {
     secciones.push({
-      titulo: 'Con qué llega',
+      titulo: 'Formación y experiencia',
       campos: [
         { clave: 'Grado de instrucción', valor: etiqueta(GRADOS_INSTRUCCION, e.grado_instruccion) },
         { clave: 'Última empresa', valor: e.experiencia_empresa ?? '—' },
@@ -469,7 +469,7 @@ export function FichaTrabajador() {
             departamento: e.departamento,
             estado: e.activo
               ? `Activo desde el ${fecha(e.fecha_ingreso)}`
-              : `Egresado el ${fecha(e.fecha_egreso)}`,
+              : `Desincorporado el ${fecha(e.fecha_egreso)}`,
             activo: e.activo,
             secciones,
             foto: img,

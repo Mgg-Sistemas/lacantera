@@ -155,8 +155,8 @@ export async function armarReciboDePrestamo(d: {
     [
       ['Fecha', fechaCorta(p.fecha)],
       ['Estado', p.estado],
-      ['Para qué es', p.motivo],
-      ['Cómo se paga', comoSePaga(p)],
+      ['Motivo', p.motivo],
+      ['Cuotas', comoSePaga(p)],
       ['Abonado a la fecha', dinero(p.moneda, p.abonado)],
       ['Saldo pendiente', dinero(p.moneda, p.saldo)],
     ],
@@ -177,7 +177,7 @@ export async function armarReciboDePrestamo(d: {
   // Una reimpresión meses después tiene que distinguirse del día que se prestó.
   if (Number(p.saldo) > 0 && Number(p.abonado) > 0) {
     doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
-    doc.text(`queda debiendo: ${dinero(p.moneda, p.saldo)}`, DER - 4, y + 12.3, { align: 'right' })
+    doc.text(`saldo: ${dinero(p.moneda, p.saldo)}`, DER - 4, y + 12.3, { align: 'right' })
   }
   y += ALTO + 8
 

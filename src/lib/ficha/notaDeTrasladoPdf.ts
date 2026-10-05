@@ -146,8 +146,8 @@ export async function armarNotaDeTraslado(d: DatosNotaDeTraslado): Promise<NotaA
     'El traslado',
     (
       [
-        ['Sale de', d.origen],
-        ['Entra en', d.destino],
+        ['Origen', d.origen],
+        ['Destino', d.destino],
         ['Fecha', d.fecha],
         ['Estado', d.estado],
         ['Cómo nació', p?.forma],
@@ -159,7 +159,7 @@ export async function armarNotaDeTraslado(d: DatosNotaDeTraslado): Promise<NotaA
   // El motivo antes de la tabla, como en la nota de salida: explica todos los
   // renglones, y leerlo después de la lista obliga a volver a subir.
   if (d.motivo) {
-    y = seccion(doc, y, 'Por qué se mueve')
+    y = seccion(doc, y, 'Motivo')
     doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(TINTA)
     const lineas = doc.splitTextToSize(d.motivo, ANCHO_UTIL) as string[]
     doc.text(lineas, IZQ, y, { lineHeightFactor: 1.45 })

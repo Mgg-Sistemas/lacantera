@@ -83,7 +83,7 @@ const COLUMNAS: Columna[] = [
   { titulo: 'Artículo', ancho: 44 },
   { titulo: 'Unidad', ancho: 15 },
   { titulo: 'Existencia', ancho: 20, alDerecha: true },
-  { titulo: 'Costo unit.', ancho: 16, alDerecha: true },
+  { titulo: 'Costo prom.', ancho: 16, alDerecha: true },
   { titulo: 'Valor', ancho: 16, alDerecha: true },
   // Se imprime vacía a propósito: es donde se escribe a mano lo que se contó.
   { titulo: 'Contado', ancho: 17, alDerecha: true },
@@ -92,7 +92,7 @@ const COLUMNAS: Columna[] = [
 /* Las dos columnas de dinero, para poder quitarlas cuando quien emite el acta no
    tiene permiso para ver precios. Se nombran aquí y no en línea para que añadir
    una tercera columna de dinero no obligue a acordarse de este sitio. */
-const ES_DINERO = ['Costo unit.', 'Valor']
+const ES_DINERO = ['Costo prom.', 'Valor']
 
 /* Con la columna de la conversión, sigue sumando 150: la pagan un poco todas. */
 const COLUMNAS_CON_CONVERSION: Columna[] = [
@@ -101,7 +101,7 @@ const COLUMNAS_CON_CONVERSION: Columna[] = [
   { titulo: 'Unidad', ancho: 13 },
   { titulo: 'Existencia', ancho: 18, alDerecha: true },
   { titulo: 'Conversión', ancho: 20, alDerecha: true },
-  { titulo: 'Costo unit.', ancho: 15, alDerecha: true },
+  { titulo: 'Costo prom.', ancho: 15, alDerecha: true },
   { titulo: 'Valor', ancho: 15, alDerecha: true },
   { titulo: 'Contado', ancho: 15, alDerecha: true },
 ]
@@ -140,7 +140,7 @@ export async function armarActaExistencias(d: DatosActa): Promise<ArchivoArmado>
 
   y = seccion(doc, y, 'Alcance')
   y = etiquetaValor(doc, y, [
-    ['Sitio', donde],
+    ['Almacén', donde],
     ['Artículos listados', String(d.renglones.length)],
     ...(conPrecio
       ? ([['Valor en libros', `$ ${numero(total ?? 0)}`]] as [string, string][])
