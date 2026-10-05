@@ -63,7 +63,7 @@ export function FotosDeLaMaquina({
               deshabilitado={deshabilitado}
               pista={
                 i < FOTOS_MINIMAS
-                  ? 'Obligatoria. Arrastra una imagen o toca para elegirla.'
+                  ? 'Obligatoria. Arrastre una imagen o toque para elegirla.'
                   : 'Otra vista, si hace falta.'
               }
             />

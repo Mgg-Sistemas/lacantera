@@ -84,7 +84,7 @@ export function TarjetaFirma({ nombre, de }: { nombre: string; de: DeQuien }) {
         title={esMia ? 'Mi firma' : 'Su firma'}
         subtitle={
           esMia
-            ? 'Los papeles que emitas salen firmados con ella: órdenes de compra, actas, recibos.'
+            ? 'Los papeles que emita salen firmados con ella: órdenes de compra, actas, recibos.'
             : 'Sale impresa en sus recibos de pago y en lo que se le entregue firmado.'
         }
         action={
@@ -109,7 +109,7 @@ export function TarjetaFirma({ nombre, de }: { nombre: string; de: DeQuien }) {
           <div className="border-hairline mt-4 rounded-[8px] border bg-white p-4">
             <img
               src={firma.imagen}
-              alt={esMia ? 'Tu firma' : `Firma de ${nombre}`}
+              alt={esMia ? 'Su firma' : `Firma de ${nombre}`}
               className={firma.usar ? 'mx-auto block h-20 object-contain' : 'mx-auto block h-20 object-contain opacity-30'}
             />
             <div className="mx-auto mt-1 w-3/4 border-b border-neutral-300" />
@@ -124,8 +124,8 @@ export function TarjetaFirma({ nombre, de }: { nombre: string; de: DeQuien }) {
               etiqueta={firma.usar ? 'Se estampa en los papeles' : 'Guardada, pero sin usar'}
               detalle={
                 firma.usar
-                  ? 'Apágala para que los papeles salgan con la raya en blanco y se firmen a mano.'
-                  : 'La firma sigue guardada. Enciéndela cuando quieras volver a usarla.'
+                  ? 'Apáguela para que los papeles salgan con la raya en blanco y se firmen a mano.'
+                  : 'La firma sigue guardada. Enciéndala cuando quiera volver a usarla.'
               }
             />
           ) : null}
@@ -151,7 +151,7 @@ export function TarjetaFirma({ nombre, de }: { nombre: string; de: DeQuien }) {
         <div className="mt-4">
           <p className="text-ink/55 text-sm">
             {esMia
-              ? 'Todavía no has guardado ninguna. Mientras tanto, los papeles que emitas salen con la raya en blanco para firmarlos a mano.'
+              ? 'Todavía no ha guardado ninguna. Mientras tanto, los papeles que emita salen con la raya en blanco para firmarlos a mano.'
               : 'Todavía no tiene firma guardada. Sus papeles salen con la raya en blanco para que los firme a mano.'}
           </p>
           {puedeEditar ? (
@@ -164,7 +164,7 @@ export function TarjetaFirma({ nombre, de }: { nombre: string; de: DeQuien }) {
 
       <p className="text-ink/40 mt-4 text-xs">
         Una firma guardada la puede copiar quien la vea, así que no prueba que{' '}
-        {esMia ? 'firmaste' : 'firmó'}: prueba que el papel salió del sistema. Lo que deja
+        firmó: prueba que el papel salió del sistema. Lo que deja
         constancia de quién hizo qué es el registro de auditoría.
       </p>
 
@@ -177,8 +177,8 @@ export function TarjetaFirma({ nombre, de }: { nombre: string; de: DeQuien }) {
         titulo={firma ? 'Cambiar la firma' : 'Guardar la firma'}
         descripcion={
           esMia
-            ? 'Trázala, escríbela o carga una foto de la que ya usas en papel.'
-            : `Trázala con ${nombre} delante, escríbela, o carga una foto de la que firmó en papel.`
+            ? 'Trácela, escríbala o cargue una foto de la que ya usa en papel.'
+            : `Trácela con ${nombre} delante, escríbala, o cargue una foto de la que firmó en papel.`
         }
         acciones={
           <>

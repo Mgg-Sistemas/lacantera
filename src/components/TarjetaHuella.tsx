@@ -47,7 +47,7 @@ export function TarjetaHuella() {
       // El pase que se va a guardar cifrado es el de la sesión abierta.
       const { data } = await supabase.auth.getSession()
       const pase = data.session?.refresh_token
-      if (!pase) throw new Error('No hay una sesión abierta que guardar. Vuelve a entrar.')
+      if (!pase) throw new Error('No hay una sesión abierta que guardar. Vuelva a entrar.')
 
       await activarHuella({
         usuario,
@@ -57,7 +57,7 @@ export function TarjetaHuella() {
 
       setActiva(true)
       setDuena(usuario)
-      setAviso('Listo. En este equipo ya puedes entrar con la huella.')
+      setAviso('Listo. En este equipo ya puede entrar con la huella.')
     } catch (e) {
       /*
         El mensaje ya viene en castellano desde `huella.ts`.
@@ -125,19 +125,19 @@ export function TarjetaHuella() {
                   a nombre de <strong className="text-ink/90">{duena}</strong>
                 </>
               ) : null}
-              . Al entrar te la pedirá en vez de la clave.
+              . Al entrar se la pedirá en vez de la clave.
             </p>
           ) : (
             <p className="text-ink/70">
-              Tu huella no sale del aparato: ni el sistema ni nadie la ve. Lo que se guarda aquí es
-              tu pase de sesión cifrado, y hace falta tu dedo para abrirlo.
+              Su huella no sale del aparato: ni el sistema ni nadie la ve. Lo que se guarda aquí es
+              su pase de sesión cifrado, y hace falta su dedo para abrirlo.
             </p>
           )}
 
           {activa ? (
             <p className="text-ink/45 mt-2 text-xs">
-              Si pierdes este equipo, cambia tu clave: eso la desactiva aquí y en cualquier otro
-              aparato donde la hayas puesto.
+              Si pierde este equipo, cambie su clave: eso la desactiva aquí y en cualquier otro
+              aparato donde la haya puesto.
             </p>
           ) : null}
 
