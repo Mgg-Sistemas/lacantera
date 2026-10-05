@@ -79,8 +79,8 @@ export function ModalChofer({
       titulo={esTraspaso ? `Traspasar ${vehiculo.placa}` : `Asignar chofer a ${vehiculo.placa}`}
       descripcion={
         esTraspaso
-          ? `Ahora lo maneja ${vehiculo.chofer_actual}. Al guardar, su período se cierra el día antes de la fecha que pongas.`
-          : 'Queda registrado desde la fecha que indiques.'
+          ? `Ahora lo maneja ${vehiculo.chofer_actual}. Al guardar, su período se cierra el día antes de la fecha que ponga.`
+          : 'Queda registrado desde la fecha que indique.'
       }
       acciones={
         <>
@@ -119,7 +119,7 @@ export function ModalChofer({
         <div className="mt-4">
           <SelectBuscable
             label="Quién"
-            vacio="Elige a la persona"
+            vacio="Seleccione a la persona"
             valor={empleadoId}
             onCambio={(v) => setEmpleadoId(v)}
             opciones={(empleados ?? [])

@@ -101,7 +101,7 @@ export function ModalHorometro({
       abierto={abierto}
       onCerrar={onCerrar}
       titulo={`Horómetro · ${etiquetaDeMaquina(maquina)}`}
-      descripcion="Copia los dos números que marca el reloj. La resta la hace el sistema."
+      descripcion="Copie los dos números que marca el reloj. La resta la hace el sistema."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -168,7 +168,7 @@ export function ModalHorometro({
           }
         >
           {horas < 0
-            ? 'El final no puede ser menor que el inicial. Revisa las dos casillas.'
+            ? 'El final no puede ser menor que el inicial. Revise las dos casillas.'
             : `Trabajó ${horas.toLocaleString('es-VE', { maximumFractionDigits: 2 })} horas ese día.`}
         </p>
       ) : null}
