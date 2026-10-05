@@ -5837,11 +5837,14 @@ Los quince del sistema, para referencia, son:
 
 Y la advertencia que conviene repetir: **ningún nivel de esta matriz convierte a nadie en gerente ni en administrador.** Marcarle **Control total** en Tesorería al rol de Almacén no le da el botón de pagar: seguirá chocando con la regla que exige el rol **Compras**, y esa no sale de esta matriz. Para prestarle a alguien una facultad concreta está la tercera pestaña, **Permisos extendidos**.
 
+**La tarjeta de cada rol enseña solo los módulos a los que llega.** Desde el 5 de octubre de 2026 la matriz ya no lista los veintitantos módulos del sistema en cada tarjeta: la fila de un módulo aparece cuando el rol tiene algo en él, y desaparece al quitárselo todo. Un rol recién creado sale como una tarjeta corta que dice que no llega a ningún módulo todavía, igual de organizada que las demás.
+
 #### Cambiar un permiso
 
 1. Entra en la pestaña **Roles y permisos**.
 2. Busca la tarjeta del rol.
 3. En la fila del módulo, marca o desmarca la casilla.
+4. Para un módulo que la tarjeta no enseña, úsese el selector **Darle acceso a otro módulo**, al pie de la tarjeta: el módulo elegido aparece con sus casillas en blanco y ahí se marca lo que le toca. Si no se marca nada, la fila se va sola la próxima vez.
 
 **Se guarda al instante.** No hay botón de guardar y no se pide confirmación. Y recuerda lo principal: **no le estás dando permiso a una persona, se lo estás dando a un rol.** Todos los que tengan ese rol quedan afectados por el mismo clic.
 
@@ -5926,6 +5929,8 @@ Con el botón **Extender un permiso** se pide:
 **Lo que se hace con un permiso extendido queda marcado como tal.** No es lo mismo aprobar una compra porque es tu puesto que aprobarla porque alguien te prestó la facultad: la orden impresa dice *bajo autorización de* seguido del nombre, y a quien la usa se le exige subir el papel que la respalda. Está contado en 9.5.
 
 **Un permiso extendido se retira**, no se borra, y al retirarlo se pide **Por qué se retira**: queda el rastro de que existió, de quién lo dio, por qué y hasta cuándo.
+
+**La lista va agrupada por persona.** Desde el 5 de octubre de 2026 cada persona sale una sola vez, como una tarjeta con todos sus permisos extendidos adentro —primero quien tiene algo vigente—, en vez de repetir su nombre en una tarjeta por permiso. La pestaña **Permisos restringidos** —la cara contraria: quitarle a una persona concreta algo que su rol le daría— va agrupada de la misma forma.
 
 #### Lo que ni siquiera el administrador puede hacer
 
