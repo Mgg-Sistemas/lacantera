@@ -8,6 +8,8 @@ import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { Modal } from '@/components/ui/Modal'
 import { ElegirArchivosDeCarga, FotosDeCarga } from '@/components/FotosDeCarga'
+import { ModalCargarCombustible } from './ModalCargarCombustible'
+import { ModalTraslado } from '../inventario/ModalTraslado'
 import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
 import { useMaquinaria } from '@/lib/api/maquinaria'
 import {
@@ -89,22 +91,34 @@ const litros = (valor: string | number, unidad = 'L'): string =>
 export function Surtidor() {
   const { puede } = useMisPermisos()
   const puedeDespachar = puede('COMBUSTIBLE', 'ESCRITURA')
+  /*
+    ENTRADA Y TRASLADO, SOLO PARA QUIEN YA PUEDE (05/10/2026). En Golden el
+    surtidor móvil también registra entradas y pasa combustible de tanque;
+    aquí esas operaciones son del almacén —`registrar_entrada` exige ese rol—
+    así que se ofrecen en el teléfono únicamente a quien ya las puede hacer
+    en el escritorio. No se abre ningún permiso: se acerca la puerta.
+  */
+  const puedeAlmacen = puede('INVENTARIO', 'ESCRITURA')
 
   const tanques = useTanques()
   const [tanque, setTanque] = useState('')
   const [guardado, setGuardado] = useState<ValeGuardado | null>(null)
   /** Volver al formulario con el vale puesto, para corregirlo. */
   const [corrigiendo, setCorrigiendo] = useState(false)
+  const [entrando, setEntrando] = useState(false)
+  const [trasladando, setTrasladando] = useState(false)
 
   const conSaldo = (tanques.data ?? []).filter((t) => Number(t.existencia) > 0)
   const elegido = conSaldo.find((t) => `${t.almacen_id}|${t.articulo_id}` === tanque)
 
-  // Con un solo tanque no se pregunta: se entra directo a surtir.
+  // Con un solo tanque no se pregunta: se entra directo a surtir. Salvo a
+  // quien también opera el almacén, que necesita la pantalla del tanque para
+  // llegar a la entrada y al traslado.
   useEffect(() => {
-    if (tanque === '' && conSaldo.length === 1) {
+    if (tanque === '' && conSaldo.length === 1 && !puedeAlmacen) {
       setTanque(`${conSaldo[0].almacen_id}|${conSaldo[0].articulo_id}`)
     }
-  }, [conSaldo, tanque])
+  }, [conSaldo, tanque, puedeAlmacen])
 
   if (tanques.isPending) return <Cargando />
   if (tanques.error) return <ErrorDeCarga error={tanques.error} />
@@ -158,11 +172,45 @@ export function Surtidor() {
     )
   }
 
+  /*
+    LA ENTRADA Y EL TRASLADO, DESDE EL TELÉFONO (05/10/2026). Reutilizan los
+    MISMOS modales del escritorio —cargar a mano y el traslado de
+    inventario—, así que las reglas y los permisos son idénticos. Solo los
+    ve quien opera el almacén; al bombero no se le ofrece lo que la base le
+    va a negar.
+  */
+  const operacionesDeAlmacen = puedeAlmacen ? (
+    <>
+      <div className="border-hairline mt-6 border-t pt-4">
+        <p className="text-ink/55 text-2xs mb-2 font-mono tracking-[0.16em] uppercase">
+          Otras operaciones
+        </p>
+        <div className="flex gap-3">
+          <Button className="flex-1" variant="outline" onClick={() => setEntrando(true)}>
+            Entrada de combustible
+          </Button>
+          <Button className="flex-1" variant="outline" onClick={() => setTrasladando(true)}>
+            Pasar de sitio
+          </Button>
+        </div>
+      </div>
+      <ModalCargarCombustible abierto={entrando} onCerrar={() => setEntrando(false)} />
+      <ModalTraslado
+        abierto={trasladando}
+        onCerrar={() => setTrasladando(false)}
+        origen={elegido?.almacen}
+      />
+    </>
+  ) : null
+
   if (conSaldo.length === 0) {
     return (
-      <p className="text-ink/60 mx-auto mt-10 max-w-sm text-center text-sm">
-        No hay combustible en ningún tanque. Hay que cargarlo antes de poder surtir.
-      </p>
+      <div className="mx-auto max-w-md">
+        <p className="text-ink/60 mt-10 text-center text-sm">
+          No hay combustible en ningún tanque. Hay que cargarlo antes de poder surtir.
+        </p>
+        {operacionesDeAlmacen}
+      </div>
     )
   }
 
@@ -189,6 +237,7 @@ export function Surtidor() {
             </button>
           ))}
         </div>
+        {operacionesDeAlmacen}
       </div>
     )
   }

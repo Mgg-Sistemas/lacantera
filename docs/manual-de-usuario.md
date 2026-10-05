@@ -6819,6 +6819,10 @@ Al guardar, la pantalla confirma lo que salió —con el número del vale— y o
 
 **Y el error se arregla ahí mismo.** En el acuse están **Corregir este vale** —vuelve al formulario con todo puesto, se ajusta y se guarda con el mismo número— y **Anular**, que pide el motivo y devuelve el combustible al tanque con un reverso. Es para el vale que se acaba de emitir, que es donde se descubre el error; los de días anteriores se tocan desde la computadora y piden control total.
 
+**Quien además opera el almacén ve «Otras operaciones»**: la **entrada de combustible** y el **traslado de sitio**, con las mismas ventanas y las mismas reglas del escritorio. Al bombero que solo despacha no se le ofrecen, porque la base se las negaría: la entrada y el traslado son del almacén.
+
+**Todo se refleja al momento.** Lo que el bombero guarda en el teléfono aparece solo en la pantalla de la oficina, y al revés, por el mismo canal en vivo que ya usan las existencias.
+
 **Quién entra directo.** En **Configuración › Usuarios**, entre los permisos extendidos de Combustible, está la casilla **Entrar directo al surtidor del teléfono**. A quien se le dé, abre el sistema y aparece ya en esta pantalla, sin pasar por el tablero. Es para la persona que está en la bomba. **La casilla no da permiso de nada por sí sola**: para despachar sigue haciendo falta escritura en Combustible. Y nadie la tiene de entrada: hay que prestarla a mano.
 
 ### 20.5 El vale
