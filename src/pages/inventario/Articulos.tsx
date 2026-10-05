@@ -136,6 +136,17 @@ export function Articulos() {
   */
   const [verDesactivados, setVerDesactivados] = useState(false)
   const [cambiando, setCambiando] = useState<Articulo | null>(null)
+  /*
+    BORRAR PEDÍA CONFIRMACIÓN EN NINGÚN LADO. Un clic sobre la papelera llamaba
+    a `eliminar` de una vez — sin esto, de puro apurado o de un dedo torcido se
+    borra un artículo entero, y a diferencia de «Desactivar» esto no tiene
+    vuelta atrás: `eliminar_articulo` hace un DELETE de verdad, no un apagado.
+    Solo lo deja la base si el artículo no tiene ni una fila enganchada en
+    ningún otro lado (movimientos, órdenes, documentos…); con algo enganchado,
+    la base lo niega y sugiere desactivar — pero eso hay que leerlo ANTES, no
+    después de haber ya disparado el borrado.
+  */
+  const [borrando, setBorrando] = useState<Articulo | null>(null)
   const [motivoEstado, setMotivoEstado] = useState('')
   const desactivados = (data ?? []).filter((a) => !a.activo).length
 
@@ -418,8 +429,10 @@ export function Articulos() {
                           className="text-danger"
                           icon={<Trash2 />}
                           aria-label={`Borrar ${a.nombre}`}
-                          disabled={eliminar.isPending}
-                          onClick={() => void eliminar.mutateAsync({ id: a.id }).catch(() => {})}
+                          onClick={() => {
+                            eliminar.reset()
+                            setBorrando(a)
+                          }}
                         />
                       </div>
                     </td>
@@ -431,7 +444,34 @@ export function Articulos() {
         </Card>
       ) : null}
 
-      {eliminar.error ? <ErrorDeCarga error={eliminar.error} className="mt-3" /> : null}
+      {borrando ? (
+        <Modal
+          abierto
+          ancho="sm"
+          onCerrar={() => setBorrando(null)}
+          titulo={`Borrar ${borrando.nombre}`}
+          descripcion="Esto no es desactivar: el registro desaparece del todo y no se puede deshacer. Si el artículo ya tiene algún movimiento, una orden o un documento enganchado, la base no lo va a dejar — en ese caso, desactívalo en su lugar."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setBorrando(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                disabled={eliminar.isPending}
+                onClick={async () => {
+                  await eliminar.mutateAsync({ id: borrando.id })
+                  setBorrando(null)
+                }}
+              >
+                {eliminar.isPending ? 'Borrando…' : 'Borrar de verdad'}
+              </Button>
+            </>
+          }
+        >
+          {eliminar.error ? <ErrorDeCarga error={eliminar.error} /> : null}
+        </Modal>
+      ) : null}
 
       {cambiando ? (
         <Modal
