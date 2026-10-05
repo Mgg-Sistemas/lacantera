@@ -151,6 +151,33 @@ function TarjetaRol({
   // esta misma pantalla, no habría desde dónde volver a abrirla.
   const intocable = rol.codigo === 'ADMIN'
 
+  /*
+    LA TARJETA ENSEÑA SOLO LOS MÓDULOS A LOS QUE EL ROL LLEGA.
+
+    Christopher, 05/10/2026: «cuando yo creo un nuevo rol, me da la lista
+    completa de permisos; la idea es que se vea como los que ya están
+    creados». Con veintitantos módulos, cada tarjeta era la matriz entera y
+    un rol recién nacido salía como una sábana de casillas vacías.
+
+    Ahora la fila de un módulo aparece cuando el rol tiene algo en él —su
+    escalón, o alguna casilla si es detallado— y desaparece al quitárselo
+    todo. Para abrirle un módulo nuevo está el selector de abajo: elegirlo lo
+    pone en la tarjeta con las casillas en blanco, y ahí se marca lo que le
+    toca. Si no se marca nada, al volver a entrar la fila ya no está, que es
+    exactamente lo que significa no tener nada marcado.
+  */
+  const [abiertos, setAbiertos] = useState<string[]>([])
+
+  const tieneAlgo = (codigo: string) => {
+    const nivel = niveles.get(codigo) ?? 'NINGUNO'
+    const suyas = accionesPorModulo.get(codigo) ?? []
+    if (rol.a_la_medida && suyas.length > 0) return suyas.some((a) => marcadas.has(a.codigo))
+    return nivel !== 'NINGUNO'
+  }
+
+  const visibles = modulos.filter((m) => tieneAlgo(m.codigo) || abiertos.includes(m.codigo))
+  const cerrados = modulos.filter((m) => !tieneAlgo(m.codigo) && !abiertos.includes(m.codigo))
+
   return (
     <Card flush className="overflow-hidden">
       <div
@@ -216,7 +243,7 @@ function TarjetaRol({
             </tr>
           </thead>
           <tbody>
-            {modulos.map((m) => {
+            {visibles.map((m) => {
               const nivel = niveles.get(m.codigo) ?? 'NINGUNO'
               const suyas = accionesPorModulo.get(m.codigo) ?? []
 
@@ -285,7 +312,31 @@ function TarjetaRol({
             })}
           </tbody>
         </table>
+
+        {visibles.length === 0 ? (
+          <p className="text-ink/45 px-5 py-6 text-center text-sm">
+            {intocable
+              ? 'Llega a todo sin necesitar filas aquí.'
+              : 'Este rol no llega a ningún módulo todavía. Ábrale el primero con el selector de abajo.'}
+          </p>
+        ) : null}
       </div>
+
+      {/* La puerta para abrirle un módulo que hoy no tiene: lo pone en la
+          tarjeta con las casillas en blanco, y ahí se marca lo que le toca. */}
+      {editable && !intocable && cerrados.length > 0 ? (
+        <div className="border-hairline border-t px-5 py-3">
+          <SelectBuscable
+            label="Darle acceso a otro módulo"
+            vacio="Elija el módulo…"
+            valor=""
+            onCambio={(codigo) => {
+              if (codigo) setAbiertos((xs) => (xs.includes(codigo) ? xs : [...xs, codigo]))
+            }}
+            opciones={cerrados.map((m) => ({ valor: m.codigo, etiqueta: m.nombre }))}
+          />
+        </div>
+      ) : null}
 
       {/* Los módulos que todavía no tienen catálogo se rigen por su escalón
           aunque el rol esté detallado. Hay que decirlo o el rol parece roto:
@@ -1551,6 +1602,20 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
   const vivas = coinciden.filter((a) => a.vigente)
   const pasadas = coinciden.filter((a) => !a.vigente)
 
+  /*
+    AGRUPADO POR PERSONA.
+
+    Christopher, 05/10/2026: «me sale el nombre de cada persona repetido
+    varias veces; mejor que salga la persona con los permisos extendidos que
+    tiene». Una tarjeta por persona con sus permisos adentro. Van primero
+    las personas con algo vigente, porque la pregunta de siempre es «qué
+    tiene fulano hoy», no «qué tuvo».
+  */
+  const porPersona = new Map<string, AutorizacionDelSistema[]>()
+  for (const a of [...vivas, ...pasadas]) {
+    porPersona.set(a.a_usuario, [...(porPersona.get(a.a_usuario) ?? []), a])
+  }
+
   return (
     <>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -1595,67 +1660,73 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
         </p>
       ) : (
         /*
-          EN TARJETAS, NO EN RENGLONES.
+          UNA TARJETA POR PERSONA, SUS PERMISOS ADENTRO.
 
-          Cada permiso extendido es un caso con su propia historia —a quién, qué,
-          por qué, hasta cuándo y quién respondió por él—, y leído como renglón
-          largo esa historia se aplasta contra el borde de la pantalla. En
-          tarjeta cada uno ocupa su cuadro y la vista cabe de un vistazo.
+          Antes era una tarjeta por permiso y el nombre se repetía tantas
+          veces como permisos tuviera. La pregunta real es «qué tiene
+          fulano», y esa se contesta con el nombre una vez y la lista debajo.
         */
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {[...vivas, ...pasadas].map((a) => (
-            <Card
-              key={a.id}
-              flush
-              className={cn('flex flex-col overflow-hidden', !a.vigente && 'opacity-60')}
-            >
-              <div className="min-w-0 flex-1 p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-ink/85 font-medium">{a.a_nombre}</span>
-                  <Chip tone={a.vigente ? 'success' : 'neutral'}>
-                    {a.vigente ? 'Vigente' : a.revocada_en ? 'Retirada' : 'Fuera de fecha'}
+        <div className="grid items-start gap-3 lg:grid-cols-2">
+          {[...porPersona.values()].map((suyas) => {
+            const vigentes = suyas.filter((a) => a.vigente).length
+            return (
+              <Card key={suyas[0].a_usuario} flush className="overflow-hidden">
+                <div className="border-hairline flex flex-wrap items-center gap-2 border-b px-4 py-3">
+                  <span className="text-ink/85 font-medium">{suyas[0].a_nombre}</span>
+                  <Chip tone={vigentes > 0 ? 'success' : 'neutral'}>
+                    {vigentes > 0
+                      ? `${vigentes} vigente${vigentes === 1 ? '' : 's'}`
+                      : 'Nada vigente'}
                   </Chip>
                 </div>
-
-                <p className="text-ink/70 mt-1 text-sm">
-                  {a.accion_nombre}
-                  <span className="text-ink/40"> · {a.modulo_nombre}</span>
-                </p>
-
-                <p className="text-ink/60 mt-1.5 text-sm italic">«{a.motivo}»</p>
-
-                <p className="text-ink/50 mt-1.5 text-xs">
-                  Bajo autorización de <span className="text-ink/70">{a.por_nombre}</span>
-                  {' · desde '}
-                  {fecha(a.desde)}
-                  {a.hasta ? ` hasta ${fecha(a.hasta)}` : ' · sin fecha de fin'}
-                </p>
-
-                {a.revocada_en ? (
-                  <p className="text-ink/45 mt-1.5 text-xs">
-                    Retirada por {a.revocada_nombre ?? '—'} el {fecha(a.revocada_en)}
-                    {a.revocada_motivo ? ` · ${a.revocada_motivo}` : ''}
-                  </p>
-                ) : null}
-              </div>
-
-              {gestionable && a.vigente ? (
-                <div className="border-hairline flex justify-end border-t p-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-danger border-danger/30"
-                    onClick={() => {
-                      setRetirando(a)
-                      setMotivoRetiro('')
-                    }}
-                  >
-                    Retirar
-                  </Button>
-                </div>
-              ) : null}
-            </Card>
-          ))}
+                <ul className="divide-hairline divide-y">
+                  {suyas.map((a) => (
+                    <li key={a.id} className={cn('px-4 py-3', !a.vigente && 'opacity-60')}>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-ink/80 text-sm">
+                            {a.accion_nombre}
+                            <span className="text-ink/40"> · {a.modulo_nombre}</span>
+                            {!a.vigente ? (
+                              <span className="text-ink/45 ml-2 text-xs">
+                                {a.revocada_en ? 'Retirada' : 'Fuera de fecha'}
+                              </span>
+                            ) : null}
+                          </p>
+                          <p className="text-ink/60 mt-1 text-sm italic">«{a.motivo}»</p>
+                          <p className="text-ink/50 mt-1 text-xs">
+                            Bajo autorización de <span className="text-ink/70">{a.por_nombre}</span>
+                            {' · desde '}
+                            {fecha(a.desde)}
+                            {a.hasta ? ` hasta ${fecha(a.hasta)}` : ' · sin fecha de fin'}
+                          </p>
+                          {a.revocada_en ? (
+                            <p className="text-ink/45 mt-1 text-xs">
+                              Retirada por {a.revocada_nombre ?? '—'} el {fecha(a.revocada_en)}
+                              {a.revocada_motivo ? ` · ${a.revocada_motivo}` : ''}
+                            </p>
+                          ) : null}
+                        </div>
+                        {gestionable && a.vigente ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-danger border-danger/30 shrink-0"
+                            onClick={() => {
+                              setRetirando(a)
+                              setMotivoRetiro('')
+                            }}
+                          >
+                            Retirar
+                          </Button>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )
+          })}
         </div>
       )}
 
@@ -2032,6 +2103,13 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
   const vivas = filas.filter((r) => r.vigente)
   const pasadas = filas.filter((r) => !r.vigente)
 
+  // Agrupado por persona, como los extendidos: el nombre una vez y sus
+  // restricciones debajo. Primero quien tiene alguna vigente.
+  const porPersona = new Map<string, RestriccionDelSistema[]>()
+  for (const r of [...vivas, ...pasadas]) {
+    porPersona.set(r.a_usuario, [...(porPersona.get(r.a_usuario) ?? []), r])
+  }
+
   const estado = (r: RestriccionDelSistema) =>
     r.vigente
       ? { texto: 'Vigente', tono: 'warning' as const }
@@ -2062,53 +2140,66 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
           descripcion="Cuando alguien no deba poder algo que su rol le da, se le restringe desde aquí, con la razón escrita. Sus compañeros de rol no pierden nada."
         />
       ) : (
-        <div className="space-y-2.5">
-          {[...vivas, ...pasadas].map((r) => {
-            const e = estado(r)
+        <div className="grid items-start gap-3 lg:grid-cols-2">
+          {[...porPersona.values()].map((suyas) => {
+            const vigentes = suyas.filter((r) => r.vigente).length
             return (
-              <Card key={r.id} flush className={cn('overflow-hidden', !r.vigente && 'opacity-60')}>
-                <div className="flex flex-wrap items-start justify-between gap-3 p-4">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-ink/85 font-medium">{r.a_nombre}</span>
-                      <Chip tone={e.tono}>{e.texto}</Chip>
-                    </div>
-
-                    <p className="text-ink/70 mt-1 text-sm">
-                      No puede: {r.accion_nombre}
-                      <span className="text-ink/40"> · {r.modulo_nombre}</span>
-                    </p>
-
-                    <p className="text-ink/50 mt-1.5 text-xs">
-                      Restringida por <span className="text-ink/70">{r.por_nombre}</span>
-                      {' · desde '}
-                      {fecha(r.desde)}
-                      {r.hasta ? ` hasta ${fecha(r.hasta)}` : ' · sin fecha de fin'}
-                    </p>
-
-                    <p className="text-ink/60 mt-1.5 text-sm italic">«{r.motivo}»</p>
-
-                    {r.levantada_en ? (
-                      <p className="text-ink/45 mt-1.5 text-xs">
-                        Levantada por {r.levantada_nombre ?? '—'} el {fecha(r.levantada_en)}
-                        {r.levantada_motivo ? ` · ${r.levantada_motivo}` : ''}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  {gestionable && !r.levantada_en ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setLevantando(r)
-                        setMotivoLevantar('')
-                        setErrorLevantar(null)
-                      }}
-                    >
-                      Levantar
-                    </Button>
-                  ) : null}
+              <Card key={suyas[0].a_usuario} flush className="overflow-hidden">
+                <div className="border-hairline flex flex-wrap items-center gap-2 border-b px-4 py-3">
+                  <span className="text-ink/85 font-medium">{suyas[0].a_nombre}</span>
+                  <Chip tone={vigentes > 0 ? 'warning' : 'neutral'}>
+                    {vigentes > 0
+                      ? `${vigentes} vigente${vigentes === 1 ? '' : 's'}`
+                      : 'Nada vigente'}
+                  </Chip>
                 </div>
+                <ul className="divide-hairline divide-y">
+                  {suyas.map((r) => {
+                    const e = estado(r)
+                    return (
+                      <li key={r.id} className={cn('px-4 py-3', !r.vigente && 'opacity-60')}>
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-ink/80 text-sm">
+                              No puede: {r.accion_nombre}
+                              <span className="text-ink/40"> · {r.modulo_nombre}</span>
+                              {!r.vigente ? (
+                                <span className="text-ink/45 ml-2 text-xs">{e.texto}</span>
+                              ) : null}
+                            </p>
+                            <p className="text-ink/60 mt-1 text-sm italic">«{r.motivo}»</p>
+                            <p className="text-ink/50 mt-1 text-xs">
+                              Restringida por <span className="text-ink/70">{r.por_nombre}</span>
+                              {' · desde '}
+                              {fecha(r.desde)}
+                              {r.hasta ? ` hasta ${fecha(r.hasta)}` : ' · sin fecha de fin'}
+                            </p>
+                            {r.levantada_en ? (
+                              <p className="text-ink/45 mt-1 text-xs">
+                                Levantada por {r.levantada_nombre ?? '—'} el {fecha(r.levantada_en)}
+                                {r.levantada_motivo ? ` · ${r.levantada_motivo}` : ''}
+                              </p>
+                            ) : null}
+                          </div>
+                          {gestionable && !r.levantada_en ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="shrink-0"
+                              onClick={() => {
+                                setLevantando(r)
+                                setMotivoLevantar('')
+                                setErrorLevantar(null)
+                              }}
+                            >
+                              Levantar
+                            </Button>
+                          ) : null}
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
               </Card>
             )
           })}
