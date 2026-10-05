@@ -382,13 +382,28 @@ function TarjetaRol({
 
       {/* Los módulos que todavía no tienen catálogo se rigen por su escalón
           aunque el rol esté detallado. Hay que decirlo o el rol parece roto:
-          alguien buscaría las casillas de Compras y no las encontraría. */}
-      {rol.a_la_medida && sinCatalogo > 0 ? (
+          alguien buscaría las casillas de Compras y no las encontraría.
+
+          Y cómo se vuelve: un rol detallado se creó así casi siempre sin
+          querer, y desde la tarjeta no se adivina que «Editar» lo devuelve a
+          la escalera de niveles. */}
+      {rol.a_la_medida ? (
         <p className="text-ink/45 border-hairline border-t px-5 py-3 text-xs leading-relaxed">
-          {sinCatalogo === 1
-            ? 'Queda un módulo sin desglosar en acciones: ese sigue rigiéndose por su escalón.'
-            : `Quedan ${sinCatalogo} módulos sin desglosar en acciones: esos siguen rigiéndose por su escalón.`}{' '}
-          Se van afinando de uno en uno, y mientras tanto el rol funciona.
+          {sinCatalogo > 0 ? (
+            <>
+              {sinCatalogo === 1
+                ? 'Queda un módulo sin desglosar en acciones: ese sigue rigiéndose por su escalón.'
+                : `Quedan ${sinCatalogo} módulos sin desglosar en acciones: esos siguen rigiéndose por su escalón.`}{' '}
+              Se van afinando de uno en uno, y mientras tanto el rol funciona.{' '}
+            </>
+          ) : null}
+          {editable && !intocable ? (
+            <>
+              Este rol se reparte permiso por permiso. Para manejarlo con los niveles de siempre
+              —lectura, escritura, control total—, entre en <strong>Editar</strong> y elija{' '}
+              <strong>Por módulo entero</strong>.
+            </>
+          ) : null}
         </p>
       ) : null}
     </Card>
@@ -625,58 +640,93 @@ function PestanaRoles({ editable }: { editable: boolean }) {
               rows={2}
             />
 
-            {/* La decisión que de verdad importa, y por eso va con su
-                explicación entera y no como un interruptor suelto. */}
-            <div className="border-hairline rounded-card border p-3.5">
-              <span className="text-ink/70 mb-2 block text-sm font-medium">
-                Cómo se le dan los permisos
-              </span>
+            {/*
+              UN ROL NUEVO NACE POR MÓDULO ENTERO, Y NO SE PREGUNTA.
 
-              <label className="flex cursor-pointer items-start gap-2.5">
-                <input
-                  type="radio"
-                  name="clase-de-rol"
-                  checked={!edicion.a_la_medida}
-                  onChange={() => cambiarRol({ a_la_medida: false })}
-                  className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
-                />
-                <span className="min-w-0">
-                  <span className="text-ink/85 block text-sm">Por módulo entero</span>
-                  <span className="text-ink/50 block text-xs leading-relaxed">
-                    Se le da un nivel en cada módulo: ninguno, lectura, escritura o total. Es
-                    como funcionan los roles de siempre.
-                  </span>
+              Christopher, 05/10/2026, con las dos tarjetas delante: «cuando
+              creo un nuevo rol se ve como el de la derecha, una lista
+              interminable de permisos; la idea es que se vea como el de la
+              izquierda, y después con los permisos extendidos o restringidos
+              se va cambiando».
+
+              El alta ofrecía elegir entre las dos clases, y «permiso por
+              permiso» sonaba a la opción cuidadosa — así nació AUDITOR, que es
+              la tarjeta de la derecha. Pero esa clase apaga la escalera del
+              módulo y obliga a decidir casilla por casilla desde cero, que es
+              justo lo que no se quiere al crear un rol.
+
+              Así que el alta ya no pregunta: se nace con niveles, que es como
+              funcionan los diez roles de la casa, y lo fino de cada persona se
+              ajusta donde corresponde, en permisos extendidos y restringidos.
+              La clase detallada sigue existiendo para el caso raro —hay roles
+              que de verdad la necesitan— pero se elige al EDITAR, a sabiendas.
+            */}
+            {edicion.nuevo ? (
+              <p className="border-hairline text-ink/55 rounded-card border border-dashed p-3 text-xs leading-relaxed">
+                <span className="text-ink/75 font-medium">Nace con niveles por módulo:</span>{' '}
+                ninguno, lectura, escritura o control total, como los roles de siempre. Lo que una
+                persona concreta necesite de más o de menos no se arregla en el rol, sino en{' '}
+                <span className="text-ink/75">Permisos extendidos</span> y{' '}
+                <span className="text-ink/75">Permisos restringidos</span>.
+              </p>
+            ) : (
+              <div className="border-hairline rounded-card border p-3.5">
+                <span className="text-ink/70 mb-2 block text-sm font-medium">
+                  Cómo se le dan los permisos
                 </span>
-              </label>
 
-              <label className="mt-3 flex cursor-pointer items-start gap-2.5">
-                <input
-                  type="radio"
-                  name="clase-de-rol"
-                  checked={edicion.a_la_medida}
-                  onChange={() => cambiarRol({ a_la_medida: true })}
-                  className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
-                />
-                <span className="min-w-0">
-                  <span className="text-ink/85 block text-sm">Permiso por permiso</span>
-                  <span className="text-ink/50 block text-xs leading-relaxed">
-                    Se marca una por una cada cosa que puede hacer. Es lo que permite dejarle
-                    ver un módulo sin poder modificarlo, o darle los papeles de la empresa sin
-                    darle el respaldo de la base.
+                <label className="flex cursor-pointer items-start gap-2.5">
+                  <input
+                    type="radio"
+                    name="clase-de-rol"
+                    checked={!edicion.a_la_medida}
+                    onChange={() => cambiarRol({ a_la_medida: false })}
+                    className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
+                  />
+                  <span className="min-w-0">
+                    <span className="text-ink/85 block text-sm">
+                      Por módulo entero
+                      <span className="text-ink/45 ml-1.5 text-xs">— lo normal</span>
+                    </span>
+                    <span className="text-ink/50 block text-xs leading-relaxed">
+                      Se le da un nivel en cada módulo: ninguno, lectura, escritura o total. Es
+                      como funcionan los roles de siempre.
+                    </span>
                   </span>
-                </span>
-              </label>
+                </label>
 
-              {/* Cambiar de clase a un rol que ya lleva gente es lo que puede
-                  dejar a alguien sin su pantalla el lunes por la mañana. */}
-              {!edicion.nuevo && edicion.a_la_medida !== yaEra ? (
-                <p className="text-warning mt-3 text-xs leading-relaxed">
-                  {edicion.a_la_medida
-                    ? 'Al detallarlo, en los módulos ya desglosados dejará de valer su nivel y solo valdrán las casillas que le marque. Empieza sin ninguna.'
-                    : 'Al devolverlo a módulo entero, sus casillas dejan de decidir y vuelve a mandar el nivel de cada módulo.'}
-                </p>
-              ) : null}
-            </div>
+                <label className="mt-3 flex cursor-pointer items-start gap-2.5">
+                  <input
+                    type="radio"
+                    name="clase-de-rol"
+                    checked={edicion.a_la_medida}
+                    onChange={() => cambiarRol({ a_la_medida: true })}
+                    className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
+                  />
+                  <span className="min-w-0">
+                    <span className="text-ink/85 block text-sm">
+                      Permiso por permiso
+                      <span className="text-ink/45 ml-1.5 text-xs">— para el caso raro</span>
+                    </span>
+                    <span className="text-ink/50 block text-xs leading-relaxed">
+                      Se marca una por una cada cosa que puede hacer, y la escalera del módulo
+                      deja de valer. Para quitarle o prestarle algo suelto a UNA persona no hace
+                      falta esto: eso son los permisos extendidos y restringidos.
+                    </span>
+                  </span>
+                </label>
+
+                {/* Cambiar de clase a un rol que ya lleva gente es lo que puede
+                    dejar a alguien sin su pantalla el lunes por la mañana. */}
+                {edicion.a_la_medida !== yaEra ? (
+                  <p className="text-warning mt-3 text-xs leading-relaxed">
+                    {edicion.a_la_medida
+                      ? 'Al detallarlo, en los módulos ya desglosados dejará de valer su nivel y solo valdrán las casillas que le marque. Empieza sin ninguna.'
+                      : 'Al devolverlo a módulo entero, sus casillas dejan de decidir y vuelve a mandar el nivel de cada módulo.'}
+                  </p>
+                ) : null}
+              </div>
+            )}
           </div>
         ) : null}
       </Modal>
@@ -2209,6 +2259,8 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
     hasta: '',
   })
   const [busca, setBusca] = useState('')
+  /** El buscador de la lista, que no es el del modal: aquí se busca lo ya quitado. */
+  const [filtro, setFiltro] = useState('')
   /** Qué personas están desplegadas. Todas empiezan recogidas. */
   const [abiertas, setAbiertas] = useState<string[]>([])
   /** Qué módulos están abiertos en el catálogo del modal. */
@@ -2295,9 +2347,23 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
   if (restricciones.isPending) return <Cargando />
   if (restricciones.error) return <ErrorDeCarga error={restricciones.error} />
 
+  /*
+    BUSCAR ENTRE LO YA QUITADO, igual que entre lo ya extendido: Christopher,
+    05/10/2026, «lo que hiciste en permisos extendidos lo haces en permisos
+    restringidos». Mismos campos: persona, casilla, módulo, quién la puso y el
+    motivo escrito.
+  */
   const filas = restricciones.data ?? []
-  const vivas = filas.filter((r) => r.vigente)
-  const pasadas = filas.filter((r) => !r.vigente)
+  const q = filtro.trim().toLowerCase()
+  const coinciden = q
+    ? filas.filter((r) =>
+        [r.a_nombre, r.accion_nombre, r.modulo_nombre, r.por_nombre, r.motivo].some((t) =>
+          (t ?? '').toLowerCase().includes(q),
+        ),
+      )
+    : filas
+  const vivas = coinciden.filter((r) => r.vigente)
+  const pasadas = coinciden.filter((r) => !r.vigente)
 
   // Agrupado por persona y recogido, como los extendidos: la misma pieza y la
   // misma lectura. Primero quien tiene alguna vigente.
@@ -2305,8 +2371,8 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
   for (const r of [...vivas, ...pasadas]) {
     porPersona.set(r.a_usuario, [...(porPersona.get(r.a_usuario) ?? []), r])
   }
-  // Aquí no hay buscador —son pocas—, así que solo se queda abierta la única.
-  const abrirTodas = porPersona.size === 1
+  // Buscar abre lo que encuentra, y con una sola persona no hay nada que recoger.
+  const abrirTodas = q !== '' || porPersona.size === 1
 
   const estado = (r: RestriccionDelSistema) =>
     r.vigente
@@ -2332,11 +2398,34 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
         ) : null}
       </div>
 
+      {filas.length > 0 ? (
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="min-w-[16rem] flex-1">
+            <Input
+              label="Buscar"
+              ocultarEtiqueta
+              icon={<Search />}
+              placeholder="Por persona, casilla, módulo, quién la puso o el motivo"
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+            />
+          </div>
+          <span className="text-ink/45 text-xs">
+            {q ? `${coinciden.length} de ${filas.length}` : `${filas.length} en total`}
+            {vivas.length > 0 ? ` · ${vivas.length} vigente${vivas.length === 1 ? '' : 's'}` : ''}
+          </span>
+        </div>
+      ) : null}
+
       {filas.length === 0 ? (
         <Vacio
           titulo="No hay permisos restringidos"
           descripcion="Cuando alguien no deba poder algo que su rol le da, se le restringe desde aquí, con la razón escrita. Sus compañeros de rol no pierden nada."
         />
+      ) : coinciden.length === 0 ? (
+        <p className="text-ink/45 py-8 text-center text-sm">
+          Ningún permiso restringido coincide con «{filtro.trim()}».
+        </p>
       ) : (
         <div className="space-y-2.5">
           {[...porPersona.values()].map((suyas) => {

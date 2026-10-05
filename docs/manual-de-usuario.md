@@ -5880,6 +5880,10 @@ Nómina, Tesorería y Ventas quedan fuera del rol de Consulta a propósito: «so
 | **Nombre** | Sí | Es lo que se lee en la tarjeta |
 | **Descripción** | No | **Qué hace quien tiene este rol. Se lee en la tarjeta.** |
 
+**Un rol nuevo nace siempre con niveles por módulo**, como los diez roles de la casa: ninguno, lectura, escritura o control total. El alta ya no pregunta cómo repartirlo, y es a propósito — lo que una persona concreta necesite de más o de menos **no se arregla inventando un rol a su medida**, sino en las pestañas de **Permisos extendidos** y **Permisos restringidos**.
+
+**Los roles «permiso por permiso» son la excepción, y se eligen al editar.** Esa clase apaga la escalera de niveles del módulo y obliga a marcar una por una cada cosa que la persona puede hacer; su tarjeta lo dice con la etiqueta **Detallado**. Si un rol quedó así sin querer, en su propia tarjeta se explica el camino de vuelta: **Editar** y elegir **Por módulo entero**, y entonces vuelve a mandar el nivel de cada módulo.
+
 Al editar, el **Código** queda bloqueado y la ventana lo explica: **El código no cambia: hay funciones de la base que lo nombran.**
 
 **Los roles que trae el sistema no se pueden borrar.** Solo se borran los que creó la empresa, y solo si no los tiene nadie. Si un rol del sistema sobra en alguien, el camino no es borrarlo sino quitárselo a quien no deba tenerlo: borrarlo dejaría sin dueño todas las reglas que lo nombran.
@@ -5936,7 +5940,7 @@ Con el botón **Extender un permiso** se pide:
 
 **Buscar abre lo que encuentra**: al escribir en el buscador las fichas se despliegan solas, porque quien busca «aprobar compras» quiere ver el permiso y no la ficha cerrada de quien lo tiene. Con una sola persona en pantalla tampoco se recoge nada.
 
-La pestaña **Permisos restringidos** —la cara contraria: quitarle a una persona concreta algo que su rol le daría— se lee exactamente igual.
+La pestaña **Permisos restringidos** —la cara contraria: quitarle a una persona concreta algo que su rol le daría— se lee exactamente igual, y tiene su mismo buscador: por persona, casilla, módulo, quién la puso o el motivo escrito.
 
 **En las ventanas de extender y de restringir, el catálogo también viene plegado.** Son dieciocho módulos y unas 180 casillas: cada módulo dice cuántas lleva marcadas de cuántas tiene —*3/7*— y se abre el que se va a repartir. El enlace **todo el módulo** sigue a mano sin necesidad de abrirlo, y al escribir en el filtro los módulos que coinciden se despliegan solos.
 
