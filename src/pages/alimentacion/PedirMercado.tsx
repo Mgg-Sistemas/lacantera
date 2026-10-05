@@ -328,7 +328,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
               la escoba y el jabón se compran en el mismo mercado. */}
           <div className="grid gap-2 sm:grid-cols-[1fr_7rem_auto]">
             <SelectBuscable
-              label="¿Falta algo? Agrega otro artículo"
+              label="¿Falta algo? Agregue otro artículo"
               vacio="Busque en todo el catálogo…"
               valor={agregarId}
               onCambio={setAgregarId}
