@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import {
   Boxes,
@@ -328,6 +328,18 @@ export function Existencias() {
   const [busqueda, setBusqueda] = useState('')
   const [soloBajas, setSoloBajas] = useState(false)
   const [desglose, setDesglose] = useState<ExistenciaTotal | null>(null)
+  /*
+    «CONTAR» DIRECTO DESDE «TODO EL INVENTARIO», SIN PASAR POR «VER DÓNDE ESTÁ».
+
+    Se pidió más rápido: antes, para corregir un artículo que vive en un solo
+    sitio —el caso de casi toda la lista—, había que abrir el desglose y
+    recién ahí aparecía el botón. Si solo hay un sitio no hay nada que
+    desglosar: se resuelve cuál es (una consulta de una fila, la misma que ya
+    usa «Ver dónde está») y se abre el conteo directo. Con más de un sitio
+    sigue haciendo falta elegir cuál, así que ahí se mantiene el desglose.
+  */
+  const [resolviendoAjuste, setResolviendoAjuste] = useState<number | null>(null)
+  const ajusteDirecto = useExistenciasDeArticulo(resolviendoAjuste)
   /* Que fila se esta corrigiendo de valoracion. Va aparte de `modal` porque no
      comparte ni el formulario ni el permiso con las cuatro acciones de almacen. */
   const [costo, setCosto] = useState<Existencia | null>(null)
@@ -597,6 +609,21 @@ export function Existencias() {
     setADonde(fila ? String(fila.almacen_id) : almacenId)
     setModal({ tipo, fila })
   }
+
+  // Resuelve el único sitio y abre el conteo solo, en cuanto llega la fila.
+  useEffect(() => {
+    if (resolviendoAjuste === null || ajusteDirecto.isPending) return
+    if (ajusteDirecto.data && ajusteDirecto.data.length === 1) {
+      abrir('ajuste', ajusteDirecto.data[0])
+    } else {
+      // Dejó de ser de un solo sitio entre que se pintó la fila y el clic
+      // (o falló la consulta): se cae al desglose, que sí sabe elegir.
+      const fila = totales.data?.find((t) => t.articulo_id === resolviendoAjuste)
+      if (fila) setDesglose(fila)
+    }
+    setResolviendoAjuste(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ajusteDirecto.data, ajusteDirecto.isPending, resolviendoAjuste])
 
   const guardar = async () => {
     if (!modal) return
@@ -1010,14 +1037,27 @@ export function Existencias() {
 
                       <td className="px-5 py-3 text-right whitespace-nowrap">
                         {enTotal ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            icon={<MapPin />}
-                            onClick={() => setDesglose(total)}
-                          >
-                            Ver dónde está
-                          </Button>
+                          <>
+                            {puede('ALMACEN') && total!.almacenes === 1 ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                icon={<Scale />}
+                                disabled={resolviendoAjuste === total!.articulo_id}
+                                onClick={() => setResolviendoAjuste(total!.articulo_id)}
+                              >
+                                {resolviendoAjuste === total!.articulo_id ? '…' : 'Contar'}
+                              </Button>
+                            ) : null}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              icon={<MapPin />}
+                              onClick={() => setDesglose(total)}
+                            >
+                              Ver dónde está
+                            </Button>
+                          </>
                         ) : fila!.almacen_tipo === 'TRANSITO' ? (
                           /* Lo que va de camino no se saca ni se cuenta
                              aquí: la base lo cierra, y ofrecerlo sería
