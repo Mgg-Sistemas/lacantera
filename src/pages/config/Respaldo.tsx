@@ -260,7 +260,7 @@ export function Respaldo() {
                     </p>
                     <p className="text-ink/45 mt-0.5 text-xs">
                       <span className="tabular">{segundos}</span> segundo
-                      {segundos === 1 ? '' : 's'} · no cierres esta pestaña
+                      {segundos === 1 ? '' : 's'} · no cierre esta pestaña
                     </p>
                   </div>
                 </div>
@@ -277,8 +277,8 @@ export function Respaldo() {
                 {segundos >= 20 ? (
                   <p className="border-hairline text-ink/55 mt-3 border-t pt-3 text-xs leading-relaxed">
                     <strong className="text-ink/75 font-medium">Recargar no lo acelera.</strong> Si
-                    pulsas F5, el servidor no se entera y sigue armando el mismo archivo: lo único
-                    que consigues es que se arme dos veces y tener que empezar la espera de nuevo.
+                    pulsa F5, el servidor no se entera y sigue armando el mismo archivo: lo único
+                    que consigue es que se arme dos veces y tener que empezar la espera de nuevo.
                   </p>
                 ) : null}
               </div>
@@ -302,7 +302,7 @@ export function Respaldo() {
                   Mandado a {enviar.data.para.join(', ')} · {peso(enviar.data.bytes)} comprimido.
                 </p>
                 <p className="text-ink/55 mt-1 text-xs">
-                  Si no aparece en unos minutos, mira la carpeta de correo no deseado.
+                  Si no aparece en unos minutos, mire la carpeta de correo no deseado.
                 </p>
               </div>
             ) : null}
@@ -462,8 +462,8 @@ export function Respaldo() {
           quien lo abra lo ve todo.
         </p>
         <p className="text-ink/55 mt-3 text-xs leading-relaxed">
-          Va a quedar anotado en la auditoría que lo descargaste tú, con la fecha y la hora. Si esta
-          computadora la usa alguien más, guarda el archivo en otro sitio y bórralo de la carpeta de
+          Va a quedar anotado en la auditoría que lo descargó usted, con la fecha y la hora. Si esta
+          computadora la usa alguien más, guarde el archivo en otro sitio y bórrelo de la carpeta de
           descargas.
         </p>
 
@@ -477,7 +477,7 @@ export function Respaldo() {
         */}
         <p className="border-hairline text-ink/65 mt-4 border-t pt-3 text-xs leading-relaxed">
           <strong className="text-ink/85 font-medium">Tarda cerca de un minuto.</strong> Son varios
-          megas y la mayor parte del tiempo es la descarga, no la base. Mientras tanto verás los
+          megas y la mayor parte del tiempo es la descarga, no la base. Mientras tanto verá los
           segundos correr aquí mismo: si el número se mueve, está trabajando.
         </p>
       </Modal>
@@ -583,13 +583,13 @@ export function Respaldo() {
           </Button>
         ) : (
           <p className="text-ink/45 mt-2 text-xs">
-            Diez es el máximo de una vez. Para más, manda el correo dos veces.
+            Diez es el máximo de una vez. Para más, mande el correo dos veces.
           </p>
         )}
 
         <p className="border-hairline text-ink/65 mt-4 border-t pt-3 text-xs leading-relaxed">
           <strong className="text-ink/85 font-medium">Tarda cerca de un minuto.</strong> La base
-          arma el respaldo en segundos; el resto es subir el archivo por la red de la cantera. Verás
+          arma el respaldo en segundos; el resto es subir el archivo por la red de la cantera. Verá
           los segundos correr en la tarjeta de atrás.
         </p>
       </Modal>
