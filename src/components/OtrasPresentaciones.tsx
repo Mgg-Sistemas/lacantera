@@ -119,7 +119,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
         <p className="text-ink/45 mt-3 text-xs">Buscando las formas declaradas…</p>
       ) : lista.length === 0 ? (
         <p className="text-ink/45 mt-3 text-xs">
-          Solo se cuenta en {unidad || 'su unidad'}. Añade una forma si llega en bultos.
+          Solo se cuenta en {unidad || 'su unidad'}. Añada una forma si llega en bultos.
         </p>
       ) : (
         <ul className="divide-hairline mt-3 divide-y">
@@ -206,7 +206,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
       <div className="mt-3 grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
         <Select
           label="Cómo llega"
-          vacio="Elige"
+          vacio="Seleccione"
           // Sin la lista leida no se ofrece: el desplegable filtraba «las que ya
           // estan» contra una lista vacia, asi que ofrecia una ya declarada y al
           // guardarla le cambiaba el factor sin decirlo.
@@ -326,7 +326,7 @@ function NuevaFormaDeLlegada({
   return (
     <div className="border-hairline rounded-card bg-canvas mt-3 border border-dashed p-3">
       <p className="text-ink/60 mb-2 text-xs">
-        Se añade a la lista que ven todos los módulos, así que mira primero si ya está con otro
+        Se añade a la lista que ven todos los módulos, así que mire primero si ya está con otro
         nombre. Aquí va solo la palabra del envase: cuántas {unidad} trae se dice arriba, porque
         eso cambia de un artículo a otro.
       </p>
@@ -385,7 +385,7 @@ function NuevaFormaDeLlegada({
               tropezar con el error un clic más tarde.
             */
             <p className="text-ink/60 mt-2 text-xs">
-              Usa <span className="font-semibold">{homonima.nombre}</span> en la lista de arriba.
+              Use <span className="font-semibold">{homonima.nombre}</span> en la lista de arriba.
             </p>
           ) : null}
         </div>

@@ -72,7 +72,7 @@ export function ParecidosAEste({
             checked={confirmado}
             onChange={(e) => onConfirmar(e.target.checked)}
           />
-          Es otra cosa distinta — créalo aparte
+          Es otra cosa distinta — créelo aparte
         </label>
       ) : null}
     </div>

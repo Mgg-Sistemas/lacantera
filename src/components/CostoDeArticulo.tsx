@@ -160,7 +160,7 @@ export function CostoDeArticulo({
           onChange={(e) => escribir(e.target.value)}
           hint={
             !articulo
-              ? 'Elige antes el artículo'
+              ? 'Seleccione antes el artículo'
               : convertible
                 ? undefined
                 : unidad

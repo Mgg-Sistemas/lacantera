@@ -88,7 +88,7 @@ export function ConteoDeEnvases({
   return (
     <div className="border-hairline rounded-card bg-canvas border border-dashed p-3">
       <p className="text-ink/60 mb-3 text-xs leading-relaxed">
-        Anota lo que ves en el estante, un renglón por tipo de envase. La cuenta la hace el sistema.
+        Anote lo que ve en el estante, un renglón por tipo de envase. La cuenta la hace el sistema.
       </p>
 
       <div className="space-y-2">
@@ -162,7 +162,7 @@ export function ConteoDeEnvases({
           inputMode="decimal"
           value={sueltos}
           onChange={(e) => avisar(lineas, e.target.value)}
-          hint={`Lo que quede dentro del envase empezado. Déjalo vacío si están todos llenos.`}
+          hint={`Lo que quede dentro del envase empezado. Déjelo vacío si están todos llenos.`}
         />
       </div>
 
