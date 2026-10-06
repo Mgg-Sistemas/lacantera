@@ -120,10 +120,19 @@ export async function armarConstanciaDeEntrega(d: DatosEntrega): Promise<Archivo
       r.articulo,
       String(r.cantidad),
       r.unidad,
-      // «No se devuelve» no cabe en veintidos milimetros y salia cortado
-      // —«No se devu...»—, que en un papel que se firma se lee como un error de
-      // imprenta. «No vuelve» dice lo mismo y entra entero.
-      r.fechaLimite ?? 'No vuelve',
+      /*
+        SIN FECHA NO ES «NO VUELVE», Y EL PAPEL LO DECIA.
+
+        Aqui ponia «No vuelve» cuando no se habia fijado fecha limite, y eso
+        afirma algo que nadie decidio: en una entrega retornable, el papel que
+        el trabajador firma declaraba que el bien no se devuelve. No poner
+        fecha significa que no se puso, nada mas.
+
+        «Sin fecha» es la verdad y mide lo mismo que lo que habia: la columna
+        son veintidos milimetros, y por eso en su dia se descarto «No se
+        devuelve», que salia cortado —«No se devu...»— en un papel que se firma.
+      */
+      r.fechaLimite ?? 'Sin fecha',
     ]),
   )
 
