@@ -2,7 +2,7 @@
 
 **Sistema de control interno · Minería Internacional TS, C.A.**
 
-**Versión 1.5 · 31 de agosto de 2026**
+**Versión 1.6 · 6 de octubre de 2026**
 
 ---
 
@@ -6275,7 +6275,7 @@ Se dice para que nadie lo lea como verificado:
 
 - **Este capítulo se repasó el 6 de octubre de 2026 contra el código del sistema, no usando las pantallas.** Lo que depende de lo que hay cargado —qué tasas se tomaron, qué combustible entró sin costo, qué órdenes quedaron sin declarar— no se comprobó.
 - **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles se levantaron de la base tal como estaba, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla, donde los módulos escondidos no salen.
-- **Los capítulos de Explotación y Ventas** no se revisaron pantalla por pantalla. Lo que dicen era cierto en una versión anterior y sus módulos han seguido cambiando. Ventas está en el menú desde el 28 de agosto de 2026; Explotación, y solo en parte, desde el 12 de septiembre (1.5). Explotación es de lo primero que se está repasando.
+- **El capítulo de Ventas** no se revisó pantalla por pantalla. Lo que dice era cierto en una versión anterior y el módulo ha seguido cambiando; está en el menú desde el 28 de agosto de 2026. El de **Explotación** se rehízo el 6 de octubre de 2026, contra el código como este.
 - **Los capítulos 19 y 20, Maquinaria y Combustible,** se escribieron leyendo las pantallas y la base, no usándolas. **Los capítulos 21 a 25** —Facturación, Control de despacho, Control de asistencia, Contactos y Alimentación— llegaron después y tampoco se han repasado contra las pantallas de hoy. Si algo no coincide con lo que hace el módulo en el patio, dígalo y se corrige.
 - **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla, quién puede pagar, que el rol de Tesorería ya no existe—, pero sus pantallas no se han recorrido una por una desde que el módulo volvió entero al menú, el 21 de septiembre de 2026.
 - **La factura de venta no está completa ante el SENIAT.** Lo que le falta está en 15.2, y no es un olvido de este manual sino del sistema.
