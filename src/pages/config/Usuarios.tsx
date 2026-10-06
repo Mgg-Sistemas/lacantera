@@ -394,7 +394,6 @@ function TarjetaRol({
               {sinCatalogo === 1
                 ? 'Queda un módulo sin desglosar en acciones: ese sigue rigiéndose por su escalón.'
                 : `Quedan ${sinCatalogo} módulos sin desglosar en acciones: esos siguen rigiéndose por su escalón.`}{' '}
-              Se van afinando de uno en uno, y mientras tanto el rol funciona.{' '}
             </>
           ) : null}
           {editable && !intocable ? (
@@ -524,7 +523,7 @@ function PestanaRoles({ editable }: { editable: boolean }) {
           </button>
           {verMatices ? (
             <p className="text-ink/55 mt-2 text-xs leading-relaxed">
-              Las firmas —aprobar una compra, aprobar una nomina— y la administracion del propio
+              Las firmas —aprobar una compra, aprobar una nómina— y la administración del propio
               sistema. Eso cuelga de Gerente general y Administrador, para que quien arma un
               documento no sea quien lo aprueba.
             </p>
@@ -599,7 +598,7 @@ function PestanaRoles({ editable }: { editable: boolean }) {
         descripcion={
           edicion?.nuevo
             ? 'Nace sin acceso a nada. Se le abre después, módulo por módulo.'
-            : 'El código no cambia: hay funciones de la base que lo nombran.'
+            : 'El código no cambia.'
         }
         acciones={
           <>
@@ -890,7 +889,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <p className="text-ink/55 max-w-2xl text-sm">
           Las cuentas las crea la administración: no hay registro abierto. Quien entra lo hace con
-          nombre de usuario, no con correo, porque buena parte de la plantilla no tiene uno.
+          nombre de usuario, no con correo.
         </p>
         {editable ? (
           <Button icon={<UserPlus />} onClick={() => abrir()}>
@@ -929,7 +928,6 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
           <Vacio
             icono={<UsersIcon />}
             titulo="Sin usuarios"
-            descripcion="Ni siquiera el administrador: falta una configuración inicial en la base de datos."
           />
         </Card>
       ) : apartado === 'archivados' && archivados.length === 0 ? (
@@ -1122,7 +1120,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
         descripcion={
           edicion?.nuevo
             ? 'Los roles deciden a qué llega. Se pueden cambiar después.'
-            : 'El nombre de usuario no cambia: es con lo que entra y con lo que quedó firmado lo que ya hizo.'
+            : 'El nombre de usuario no cambia.'
         }
         ancho="lg"
         acciones={
@@ -1376,8 +1374,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
               )}
             </p>
             <p className="text-ink/50 text-xs leading-relaxed">
-              Los usuarios no se borran: un documento firmado por alguien que ya no existe no
-              serviría de nada.
+              Los usuarios no se borran.
             </p>
           </div>
         </Modal>
@@ -1440,7 +1437,6 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
               value={archivando.motivo}
               rows={2}
               onChange={(e) => setArchivando((v) => (v ? { ...v, motivo: e.target.value } : v))}
-              hint="Es lo que va a leer quien lo busque dentro de un año."
             />
           </div>
         </Modal>
@@ -2171,7 +2167,7 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
             value={forma.motivo}
             onChange={(e) => setForma((f) => ({ ...f, motivo: e.target.value }))}
             rows={3}
-            hint="Por qué hace falta. Dentro de un mes es lo único que va a explicar por qué esta persona pudo hacer esto."
+            hint="Por qué hace falta."
           />
 
           {error ? <ErrorDeCarga error={new Error(error)} /> : null}
@@ -2217,7 +2213,6 @@ function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
           value={motivoRetiro}
           onChange={(e) => setMotivoRetiro(e.target.value)}
           rows={2}
-          hint="Opcional, pero ayuda a quien lea esto después."
         />
       </Modal>
     </>
@@ -2693,7 +2688,7 @@ function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
             value={forma.motivo}
             onChange={(e) => setForma((f) => ({ ...f, motivo: e.target.value }))}
             rows={3}
-            hint="Por qué no debe poder hacerlo. Es lo que va a leer quien pregunte, y la propia persona."
+            hint="Por qué no debe poder hacerlo. Lo lee también la propia persona."
           />
 
           {error ? <ErrorDeCarga error={new Error(error)} /> : null}

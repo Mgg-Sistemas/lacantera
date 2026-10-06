@@ -139,11 +139,13 @@ Conviene tener este recorrido en la cabeza antes de leer los capítulos, porque 
 
 1. Se registra el **frente** donde se trabaja.
 2. Se registra la **voladura**, contra ese frente.
-3. Al cierre del turno se carga el **parte de producción**, y ahí es donde la piedra entra al patio. Es la única puerta.
+3. Al cierre del turno se carga el **parte de producción**, y ahí es donde la piedra entra al patio.
 4. El material se guarda, se traslada entre patios y se cuenta, en **Inventario**.
 5. Cuando se vende, el camión se pesa en la **romana** y se le emite la **guía**.
 6. Sale con su **nota de entrega**, que es el paso que descuenta el patio.
 7. Se **factura** y se **cobra**.
+
+**El frente, la voladura y el parte de turno no están hoy en el menú** (1.5).
 
 ### 1.4 Bolívares y dólares
 
@@ -5575,7 +5577,7 @@ La pantalla tiene tres pestañas: **Usuarios**, **Roles y permisos** y **Permiso
 
 #### La pestaña Usuarios
 
-Arriba queda dicho cómo funciona el alta: **Las cuentas las crea la administración: no hay registro abierto. Quien entra lo hace con nombre de usuario, no con correo, porque buena parte de la plantilla no tiene uno.**
+Arriba queda dicho cómo funciona el alta: **Las cuentas las crea la administración: no hay registro abierto. Quien entra lo hace con nombre de usuario, no con correo.** Buena parte de la plantilla no tiene correo.
 
 La tabla tiene estas columnas:
 
@@ -5636,11 +5638,11 @@ Una advertencia sobre el reparto de roles, y no es menor: el sistema se instala 
 
 #### Editar un usuario, cambiarle la clave, inactivarlo
 
-**Editar.** Pulsa la fila. Se abre **Editar usuario**: **El nombre de usuario no cambia: es con lo que entra y con lo que quedó firmado lo que ya hizo.** Cambia lo que haga falta y pulsa **Guardar**.
+**Editar.** Pulsa la fila. Se abre **Editar usuario**: **El nombre de usuario no cambia.** Es con lo que entra y con lo que quedó firmado lo que ya hizo. Cambia lo que haga falta y pulsa **Guardar**.
 
 **Cambiar la clave.** Pulsa el botón de la llave en la fila. Se abre **Cambiar la clave**, con un solo campo, **Clave nueva**, y la ayuda **Mínimo 8 caracteres.** Cambiarle la clave a alguien **cierra todas sus sesiones abiertas** y le obliga a ponerse una propia la próxima vez que entre. Es lo mismo que pasa con un usuario nuevo, y por el mismo motivo.
 
-**Inactivar.** Pulsa el botón del muñeco. La ventana explica qué pasa: **Se queda sin permiso para nada desde ya: si entra con su clave, ve el sistema vacío. Lo que hizo hasta hoy se conserva entero: su nombre sigue en lo que pidió, aprobó o pagó. Si se fue de malas, repónle además la clave desde la llave, que es lo que le cierra la sesión. Una vez inactivo, se puede archivar.** Y debajo: **Los usuarios no se borran: un documento firmado por alguien que ya no existe no serviría de nada.** Al reactivar, el texto es **Recupera sus roles y sus permisos con la misma clave que tenía. Si no la recuerda, cámbiasela desde la llave.**
+**Inactivar.** Pulsa el botón del muñeco. La ventana explica qué pasa: **Se queda sin permiso para nada desde ya: si entra con su clave, ve el sistema vacío. Lo que hizo hasta hoy se conserva entero: su nombre sigue en lo que pidió, aprobó o pagó. Si se fue de malas, repónle además la clave desde la llave, que es lo que le cierra la sesión. Una vez inactivo, se puede archivar.** Y debajo: **Los usuarios no se borran.** Un documento firmado por alguien que ya no existe no serviría de nada. Al reactivar, el texto es **Recupera sus roles y sus permisos con la misma clave que tenía. Si no la recuerda, cámbiasela desde la llave.**
 
 **Hasta el 4 de septiembre de 2026 esa ventana decía «Deja de poder entrar al sistema desde ya», y no era verdad.** Inactivar nunca ha cerrado la puerta: apaga los permisos. La persona puede seguir entrando con su clave y encontrarse el sistema vacío. Lo que de verdad le cierra la sesión es cambiarle la clave.
 
@@ -5652,7 +5654,7 @@ Una cuenta no se borra, pero tampoco tiene por qué quedarse para siempre en la 
 
 1. Inactiva la cuenta con el botón del muñeco.
 2. Pulsa el botón de la caja. Se abre **Archivar a …** con el texto **Sale de la lista de en uso y queda en el archivo con la fecha, el motivo y tu nombre. Sigue sin poder hacer nada, igual que inactivo, y su nombre sigue en todo lo que firmó. Para volver a encenderlo habrá que sacarlo del archivo primero.**
-3. Escribe el **Motivo**. Es obligatorio, mínimo cuatro letras: **Es lo que va a leer quien lo busque dentro de un año.**
+3. Escribe el **Motivo**. Es obligatorio, mínimo cuatro letras. Es lo que va a leer quien lo busque dentro de un año.
 4. Pulsa **Archivar**.
 
 En **Archivados** cada fila muestra cuándo se archivó, quién lo hizo y el motivo, con el botón de la caja abierta para **Sacar del archivo**. Al sacarla, la cuenta vuelve a **En uso** pero **inactiva**: sacar algo del archivo no es decidir que la persona vuelve a entrar. Si tiene que entrar, se reactiva aparte con el muñeco.
@@ -5770,7 +5772,7 @@ Nómina, Tesorería y Ventas quedan fuera del rol de Consulta a propósito: «so
 
 **Los roles «permiso por permiso» son la excepción, y se eligen al editar.** Esa clase apaga la escalera de niveles del módulo y obliga a marcar una por una cada cosa que la persona puede hacer; su tarjeta lo dice con la etiqueta **Detallado**. Si un rol quedó así sin querer, en su propia tarjeta se explica el camino de vuelta: **Editar** y elegir **Por módulo entero**, y entonces vuelve a mandar el nivel de cada módulo.
 
-Al editar, el **Código** queda bloqueado y la ventana lo explica: **El código no cambia: hay funciones de la base que lo nombran.**
+Al editar, el **Código** queda bloqueado y la ventana lo dice: **El código no cambia.** Hay funciones de la base que lo nombran.
 
 **Los roles que trae el sistema no se pueden borrar.** Solo se borran los que creó la empresa, y solo si no los tiene nadie. Si un rol del sistema sobra en alguien, el camino no es borrarlo sino quitárselo a quien no deba tenerlo: borrarlo dejaría sin dueño todas las reglas que lo nombran.
 
@@ -5812,7 +5814,7 @@ Con el botón **Extender un permiso** se pide:
 | **Qué se le extiende** | Una o varias acciones del catálogo, agrupadas por módulo y con buscador. La misma justificación vale para todas. La ayuda dice el límite: *"Solo puedes extender lo que tú mismo puedes hacer."* |
 | **Desde** | En blanco, desde hoy |
 | **Hasta** | En blanco, **indefinida**. Conviene poner fecha |
-| **Justificación** | Obligatoria, y la ayuda dice por qué: *"Por qué hace falta. Dentro de un mes es lo único que va a explicar por qué esta persona pudo hacer esto."* |
+| **Justificación** | Obligatoria: *"Por qué hace falta."* Dentro de un mes es lo único que va a explicar por qué esta persona pudo hacer esto |
 
 **Para marcar muchas de una vez** está **Marcar todas**, encima de la lista: sin buscar nada marca el catálogo entero, y buscando algo —«compras»— marca solo las que se ven. Cada módulo tiene además su **todo el módulo**. Las que la persona ya tiene por su rol se saltan solas, y al terminar se dice en una línea cuántas fueron; las que no entraron por otra razón se listan con el porqué, y la ventana no se cierra hasta que se leen.
 
@@ -5866,7 +5868,7 @@ Guarda la identidad fiscal de la empresa: **Lo que dice el registro. Sale impres
 
 **Solo pueden cambiarla el Administrador del sistema y el Gerente general.** Para el resto los campos salen apagados y en lugar del botón aparece: **Solo la gerencia y quien administra el sistema pueden cambiar estos datos.**
 
-Si al RIF le quedan noventa días o menos para vencer, arriba del todo sale un aviso. En naranja si está por vencer — **El RIF vence el 04 jul 2028, dentro de 45 días. Conviene renovarlo antes.** — y en rojo si ya venció: **El RIF venció el 04 jul 2028. Con el RIF vencido no se puede facturar.** Va arriba del todo porque es lo único de esta pantalla que puede detener la operación de un día para otro.
+Si al RIF le quedan noventa días o menos para vencer, arriba del todo sale un aviso. En naranja si está por vencer — **El RIF vence el 04 jul 2028, dentro de 45 días.** — y en rojo si ya venció: **El RIF venció el 04 jul 2028. Con el RIF vencido no se puede facturar.** Va arriba del todo porque es lo único de esta pantalla que puede detener la operación de un día para otro.
 
 La pantalla es un formulario largo, repartido en dos tarjetas.
 
@@ -5935,7 +5937,7 @@ Está repartido así a propósito: cargar y quitar papeles de la empresa es de l
 
 1. Pulsa **Cargar documento**. La ventana dice lo que admite: **PDF o imagen, hasta 50 MB. Queda guardado dentro del sistema.**
 2. Elige el **Tipo de documento**. Empieza en **Elige el tipo**.
-3. Escribe el **Nombre**, mínimo tres letras: **Como lo buscará quien lo necesite dentro de un año.** Se escribe solo en mayúsculas y sin tildes.
+3. Escribe el **Nombre**, mínimo tres letras, como lo buscará quien lo necesite dentro de un año. Se escribe solo en mayúsculas y sin tildes.
 4. Elige el **Archivo**.
 5. Rellena **Emitido el** y **Vence el** si las sabes. Las dos son opcionales; la ayuda de la segunda avisa cuando ese tipo de papel suele caducar.
 6. Escribe una **Nota** si hace falta.
@@ -6050,11 +6052,11 @@ De ahí sale otra decisión que a primera vista parece un descuido: **el registr
 
 **Configuración › Respaldo de la base**
 
-Una copia de todos los datos del sistema, para guardarla fuera de aquí.
+Una copia de todos los datos del sistema, para guardarla fuera de aquí. Conviene bajarla antes de cualquier carga grande.
 
 #### Quién puede
 
-**Solo quien tenga el rol Respaldo de la base**, que hoy tienen dos personas. No lo abre nadie más, y **tampoco lo abre quien administra el sistema por el hecho de administrarlo**: en todo lo demás el administrador pasa por encima de la matriz de permisos, y aquí a propósito no. «Puede administrar el sistema» y «puede llevarse todos los datos de la empresa en un archivo» no son la misma autorización.
+**Solo quien tenga el rol Respaldo de la base.** No lo abre nadie más, y **tampoco lo abre quien administra el sistema por el hecho de administrarlo**: en todo lo demás el administrador pasa por encima de la matriz de permisos, y aquí a propósito no. «Puede administrar el sistema» y «puede llevarse todos los datos de la empresa en un archivo» no son la misma autorización.
 
 Un administrador sí puede otorgarse ese rol desde Usuarios y roles —esa llave no se le puede quitar sin dejar el sistema sin salida de emergencia—, pero tiene que hacerlo, y ese movimiento queda escrito en la auditoría con su nombre.
 

@@ -320,7 +320,6 @@ export function Documentos() {
           label="Nombre"
           value={form.nombre}
           onChange={(e) => cambiar({ nombre: e.target.value })}
-          hint="Como lo buscará quien lo necesite dentro de un año."
         />
 
         {/* Se arrastra o se pulsa, las dos cosas. Lo pidio Christopher: estos
@@ -336,7 +335,7 @@ export function Documentos() {
           tope={TOPE_BYTES}
           pista={
             corrigiendo
-              ? 'Vacio se queda el que ya esta. Solo ponga uno si llego una version nueva del papel.'
+              ? 'Vacío se queda el que ya está. Solo ponga uno si llegó una versión nueva del papel.'
               : 'PDF o imagen, hasta 50 MB.'
           }
         />

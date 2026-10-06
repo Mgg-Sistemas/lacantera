@@ -102,7 +102,7 @@ function comoVa(segundos: number): string {
 function comoVaElCorreo(segundos: number): string {
   if (segundos < 8) return 'Leyendo las tablas…'
   if (segundos < 25) return 'Comprimiendo el respaldo…'
-  if (segundos < 75) return 'Subiéndolo al correo. Son un par de megas por la red de la cantera.'
+  if (segundos < 75) return 'Subiéndolo al correo.'
   return 'Sigue subiendo. Con la red lenta puede pasar de dos minutos.'
 }
 
@@ -181,8 +181,8 @@ export function Respaldo() {
           <p className="text-ink/55 mt-2 text-sm leading-relaxed">
             El respaldo lleva juntas las cédulas, los sueldos y las cuentas bancarias de todo el
             personal, junto con los precios, los clientes y la bitácora completa. Descargarlo pide
-            un rol propio que tienen solo dos personas, y no lo abre ni quien administra el sistema
-            por el hecho de administrarlo.
+            un rol propio, y no lo abre ni quien administra el sistema por el hecho de
+            administrarlo.
           </p>
         </Card>
       ) : (
@@ -277,8 +277,7 @@ export function Respaldo() {
                 {segundos >= 20 ? (
                   <p className="border-hairline text-ink/55 mt-3 border-t pt-3 text-xs leading-relaxed">
                     <strong className="text-ink/75 font-medium">Recargar no lo acelera.</strong> Si
-                    pulsa F5, el servidor no se entera y sigue armando el mismo archivo: lo único
-                    que consigue es que se arme dos veces y tener que empezar la espera de nuevo.
+                    recarga la página, el archivo se arma dos veces y la espera empieza de nuevo.
                   </p>
                 ) : null}
               </div>
@@ -476,9 +475,8 @@ export function Respaldo() {
           tarde: para entonces ya está esperando sin saber cuánto.
         */}
         <p className="border-hairline text-ink/65 mt-4 border-t pt-3 text-xs leading-relaxed">
-          <strong className="text-ink/85 font-medium">Baja comprimido, en un .zip.</strong> La base
-          tarda un par de segundos en armarlo; lo que falte depende de la red. Mientras tanto verá
-          los segundos correr aquí mismo: si el número se mueve, está trabajando.
+          <strong className="text-ink/85 font-medium">Baja comprimido, en un .zip.</strong> Se arma
+          en segundos; lo que falte depende de la red. Mientras tanto, los segundos corren aquí.
         </p>
       </Modal>
 
@@ -588,9 +586,8 @@ export function Respaldo() {
         )}
 
         <p className="border-hairline text-ink/65 mt-4 border-t pt-3 text-xs leading-relaxed">
-          <strong className="text-ink/85 font-medium">Tarda cerca de un minuto.</strong> La base
-          arma el respaldo en segundos; el resto es subir el archivo por la red de la cantera. Verá
-          los segundos correr en la tarjeta de atrás.
+          <strong className="text-ink/85 font-medium">Tarda cerca de un minuto.</strong> Se arma en
+          segundos; el resto es subir el archivo. Los segundos corren en la tarjeta de atrás.
         </p>
       </Modal>
     </>
@@ -682,8 +679,7 @@ function ElEnvioAutomatico() {
           {activos.length === 0 ? (
             <div className="border-warning/30 bg-warning/5 rounded-md border px-4 py-3">
               <p className="text-ink/80 text-sm leading-relaxed">
-                <strong>Sin direcciones configuradas.</strong> La tarea programada se
-                despierta, ve que no tiene a quién mandárselo y no hace nada.
+                <strong>Sin direcciones configuradas.</strong> No se envía nada.
               </p>
               {!puedeCambiarlo ? (
                 <p className="text-ink/55 mt-2 text-xs">
@@ -839,7 +835,6 @@ function ModalDestinatario({ onCerrar, hay }: { onCerrar: () => void; hay: boole
         />
         <Input
           label="De quién es"
-          hint="Opcional. Ayuda a saber de quién era la dirección dentro de un año."
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
         />
@@ -849,7 +844,6 @@ function ModalDestinatario({ onCerrar, hay }: { onCerrar: () => void; hay: boole
         <Textarea
           label="Motivo"
           rows={3}
-          hint="Lo pide la base, no la pantalla. Un «campo obligatorio» se rellena con un punto; una razón escrita se escribe."
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
         />
@@ -1054,7 +1048,7 @@ function ModalProgramacion({
       abierto
       onCerrar={onCerrar}
       titulo="Frecuencia del respaldo"
-      descripcion="La hora es la de Caracas. El sistema la convierte sola a la del servidor."
+      descripcion="La hora es la de Caracas."
       ancho="md"
       acciones={
         <>
@@ -1091,7 +1085,7 @@ function ModalProgramacion({
           />
           {/* Sin opción diaria, y se dice por qué: no es que no se pueda. */}
           <p className="text-ink/45 mt-1.5 text-xs leading-relaxed">
-            No hay opción diaria a propósito. Cada envío deja una copia del archivo con las cédulas
+            No hay opción diaria. Cada envío deja una copia del archivo con las cédulas
             y los sueldos en un buzón, y un correo no se puede retirar.
           </p>
         </div>
@@ -1159,7 +1153,7 @@ function ModalProgramacion({
         <Textarea
           label="Motivo"
           rows={2}
-          hint="Queda guardado con la programación. Dentro de un año explica por qué se eligió esta frecuencia."
+          hint="Queda guardado con la programación."
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
         />

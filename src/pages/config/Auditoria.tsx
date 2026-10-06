@@ -764,10 +764,8 @@ export function Auditoria() {
           {detalle.operacion === 'ACCESO' ? (
             <p className="text-ink/55 flex items-start gap-2 text-sm leading-relaxed">
               <ShieldCheck className="text-success mt-0.5 size-4 shrink-0" />
-              Se anota la entrada, no la salida. Supabase borra la sesión al cerrarla, pero también
-              al caducar y al cambiar la clave, y desde la base no hay forma de distinguirlas:
-              escribir «salió» cuando en realidad se le venció la sesión sería falso, y esto no
-              puede contener nada falso.
+              Se anota la entrada, no la salida: cerrar la sesión, que caduque o cambiar la clave
+              la borran igual, y no se distinguen.
             </p>
           ) : null}
 

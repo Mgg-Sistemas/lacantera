@@ -120,7 +120,7 @@ export function Empresa() {
           <p>
             {dias < 0
               ? `El RIF venció el ${fecha(form.rif_vence_el ?? null)}. Con el RIF vencido no se puede facturar.`
-              : `El RIF vence el ${fecha(form.rif_vence_el ?? null)}, dentro de ${dias} día${dias === 1 ? '' : 's'}. Conviene renovarlo antes.`}
+              : `El RIF vence el ${fecha(form.rif_vence_el ?? null)}, dentro de ${dias} día${dias === 1 ? '' : 's'}.`}
           </p>
         </div>
       ) : null}
@@ -276,7 +276,7 @@ export function Empresa() {
         <h2 className="text-ink/90 mb-1 text-base font-semibold">Impuestos</h2>
         <p className="text-ink/50 mb-5 text-xs leading-relaxed">
           Cómo llegan marcadas las casillas al emitir. Cada operación puede decir otra cosa: esto
-          solo decide lo habitual, para que nadie tenga que acordarse en cada venta.
+          solo decide lo habitual.
         </p>
 
         <div className="grid gap-3">

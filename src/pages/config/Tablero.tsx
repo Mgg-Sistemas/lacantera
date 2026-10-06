@@ -54,7 +54,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
         paso: 3,
         titulo: 'Documentos legales',
         detalle:
-          'Los papeles de la empresa —RIF, permisos, solvencias— con su fecha de vencimiento, para que avise antes de que caduquen.',
+          'Los papeles de la empresa —RIF, permisos, solvencias— con su fecha de vencimiento. La lista marca los que están por vencer.',
         icono: FileText,
         a: '/app/config/documentos',
         exige: 'ESCRITURA',
@@ -74,7 +74,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
       {
         titulo: 'Respaldo de la base',
         detalle:
-          'La copia completa de los datos. Conviene bajarla antes de cualquier carga grande.',
+          'La copia completa de los datos.',
         icono: DatabaseBackup,
         a: '/app/config/respaldo',
       },
