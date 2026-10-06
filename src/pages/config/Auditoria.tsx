@@ -743,7 +743,7 @@ export function Auditoria() {
                 <dd className="text-ink/80">
                   {conQueSeHizo(detalle.origen) ?? (
                     <span className="text-ink/45">
-                      No consta: esto se anotó antes de que se guardara con qué se hace
+                      No consta
                     </span>
                   )}
                 </dd>

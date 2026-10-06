@@ -169,8 +169,7 @@ export function Solicitudes() {
         <h2 className="text-ink/85 font-titular text-lg">Solicitudes de salida</h2>
         <Ayuda>
           <p className="text-ink/45 text-xs">
-            Por ahora no hay salida directa: todo pasa por solicitud. Las de antes están en
-            «Historial».
+            Toda salida pasa por solicitud. Las salidas directas están en «Historial».
           </p>
         </Ayuda>
       </div>
