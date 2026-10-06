@@ -224,7 +224,13 @@ export function Salidas() {
           almacen: m.almacen?.nombre ?? '—',
           paraQuien: paraQuienSalio(m, grupos.data) ?? '—',
           registradoPor: nombreDe(m.registrado_por),
-          cantidad: `${m.signo > 0 ? '+' : '−'}${numeroLegible(m.cantidad)} ${m.unidad}`,
+          /*
+            UN GUION SIMPLE, NO EL SIGNO MENOS TIPOGRÁFICO.
+            El PDF usa las tipografías base de jsPDF, que no tienen el glyph
+            «−» (U+2212): sale como un carácter roto. En pantalla ese signo
+            se ve bien porque el navegador sí lo tiene.
+          */
+          cantidad: `${m.signo > 0 ? '+' : '-'}${numeroLegible(m.cantidad)} ${m.unidad}`,
         })),
         totalTexto,
         empresa: {

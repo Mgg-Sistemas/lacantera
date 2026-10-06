@@ -51,17 +51,25 @@ export interface DatosReporteSalidas {
   momento: Date
 }
 
-/* Las siete columnas suman los 150 mm útiles. «Movimiento» lleva el tipo y el
-   número juntos —«Salida a consumo · MOV-2026-0630»— en vez de una columna
-   para cada uno: el número solo no dice nada y el tipo solo no se puede
-   buscar en el papel. */
+/*
+  CINCO COLUMNAS, NO SIETE.
+
+  Con «Fecha» y «Registrado por» de columnas propias, el hueco que les
+  quedaba a las demás no alcanzaba: «Registrado por» partía su propio rótulo
+  en dos renglones, y «Destino» —que trae nombres largos, «OPTIMAVIAL, de
+  fuera de la empresa · responde …»— se apretaba contra «Cantidad».
+
+  La pantalla ya resuelve esto: no lleva «Fecha» ni «Registrado por» como
+  columnas, las pone debajo del movimiento, en chico. Aquí se hace lo mismo
+  —número y tipo arriba, fecha y quien lo registró debajo, en el mismo
+  renglón de celda, partido con un salto de línea— y las cinco columnas que
+  quedan suman los 150 mm útiles con hueco de sobra para los nombres largos.
+*/
 const COLUMNAS: Columna[] = [
-  { titulo: 'Fecha', ancho: 18 },
-  { titulo: 'Movimiento', ancho: 28 },
-  { titulo: 'Artículo', ancho: 26 },
-  { titulo: 'Almacén', ancho: 18 },
-  { titulo: 'Destino', ancho: 22 },
-  { titulo: 'Registrado por', ancho: 18 },
+  { titulo: 'Movimiento', ancho: 52 },
+  { titulo: 'Artículo', ancho: 28 },
+  { titulo: 'Almacén', ancho: 22 },
+  { titulo: 'Destino', ancho: 28 },
   { titulo: 'Cantidad', ancho: 20, alDerecha: true },
 ]
 
@@ -97,12 +105,10 @@ export async function armarReporteSalidas(d: DatosReporteSalidas): Promise<Archi
     y,
     COLUMNAS,
     d.renglones.map((r) => [
-      r.fecha,
-      `${r.movimiento} · ${r.numero}`,
+      `${r.numero} · ${r.movimiento}\n${r.fecha} · ${r.registradoPor}`,
       r.articulo,
       r.almacen,
       r.paraQuien,
-      r.registradoPor,
       r.cantidad,
     ]),
     d.totalTexto ? `TOTAL   ${d.totalTexto}` : '',
