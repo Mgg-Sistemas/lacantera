@@ -176,7 +176,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
       >
         <p className="text-ink/70 text-sm">
           Salió como el pedido <span className="text-ink/90 font-mono">{acuse}</span>, urgente. De aquí en
-          adelante va por Compras: lo cotizan, lo aprueban y, cuando llegue, la recepción mete los víveres
+          adelante va por Compras: lo cotizan, lo aprueban y, cuando llegue, la recepción ingresa los víveres
           al inventario.
         </p>
       </Modal>
@@ -417,7 +417,6 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
             />
             <Input
               label="Nota para la oficina"
-              placeholder="Opcional"
               value={nota}
               onChange={(e) => setNota(e.target.value)}
             />

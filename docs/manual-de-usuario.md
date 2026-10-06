@@ -1907,7 +1907,7 @@ Los tickets anulados se ven más pálidos, pero siguen en la lista.
 
 #### Pesar un vehículo
 
-1. Pulsa **Pesar**. La ventana avisa: **El neto sale solo. Si el bruto no supera a la tara, algo se escribió al revés.**
+1. Pulsa **Pesar**. La ventana avisa: **El neto se calcula solo. El bruto tiene que superar a la tara.**
 2. Elige el **Tipo**: **Salida — material que se va** o **Entrada — algo que llega**.
 3. Elige el **Vehículo**. Sale del catálogo de camiones de **Maquinaria › Equipos** y trae la placa, lo que carga y el transportista; **al elegirlo, el transportista se rellena solo**. Si el camión no está en el catálogo —el que viene una vez y no vuelve— se elige **Otro — escribo la placa** y aparece el campo **Placa** para teclearla.
 4. Escribe el **Peso bruto (kg)** y la **Tara (kg)**. Debajo, el recuadro **Neto** hace la resta mientras tecleas.
@@ -1941,7 +1941,7 @@ Los tickets anulados se ven más pálidos, pero siguen en la lista.
 
 El botón **Anular** aparece en la fila, en rojo, **solo mientras el ticket está Sin usar**, y solo para quien tenga el control total sobre Despachos.
 
-1. Pulsa **Anular**. Se abre **Anular el ticket TCK-2026-0004**, con el aviso **Se queda con su número, marcado como anulado. Un pesaje que desaparece deja un hueco en la numeración de la garita.**
+1. Pulsa **Anular**. Se abre **Anular el ticket TCK-2026-0004**, con el aviso **Se queda con su número, marcado como anulado.** Un pesaje que desaparece dejaría un hueco en la numeración de la garita.
 2. Escribe **Por qué se anula**.
 3. Pulsa **Anular**.
 
@@ -1955,7 +1955,7 @@ El botón está apagado hasta que el motivo tenga al menos cuatro letras.
 
 El permiso con el que el mineral puede circular. La pantalla lo dice así: **El permiso con el que el mineral puede circular.**
 
-**El sistema no emite la guía.** La emite el ministerio, y lo que se hace aquí es copiar el papel para saber cuáles hay, cuáles siguen vigentes y cuál amparó cada despacho. La ventana lo advierte: **Se copia del papel que emitió el ministerio. El número es el suyo, no uno nuestro.**
+**El sistema no emite la guía.** La emite el ministerio, y lo que se hace aquí es copiar el papel para saber cuáles hay, cuáles siguen vigentes y cuál amparó cada despacho. La ventana lo advierte: **Se copia del papel que emitió el ministerio, con su número.**
 
 #### Qué se ve
 
@@ -3444,7 +3444,7 @@ Si no aparece nada, el aviso lo dice con claridad: **Ninguna nota con eso**, y r
 
 Con la placa, el chofer y la cédula ocurre lo contrario: si las escribes tú, se respeta lo que escribiste, y solo se toman del ticket cuando las dejas en blanco. Es a propósito, porque el chofer que se anotó en la garita puede no ser el que se llevó el camión.
 
-Debajo de las dos listas hay ayudas que conviene leer. Si no hay pesajes disponibles: **No hay pesajes sin usar. Se registran en Despachos › Tickets de romana.** Y bajo la guía, siempre: **Ninguna salida de mineral viaja sin guía.** Si no hay ninguna vigente, el aviso sale en rojo: **No hay guías vigentes: el despacho de mineral se rechazará**.
+Debajo de las dos listas hay ayudas que conviene leer. Si no hay pesajes disponibles: **No hay pesajes sin usar.** Los pesajes se registran en Despachos › Tickets de romana. Y bajo la guía, siempre: **Ninguna salida de mineral viaja sin guía.** Si no hay ninguna vigente, el aviso sale en rojo: **No hay guías vigentes: el despacho de mineral se rechazará**.
 
 **Ninguna salida de mineral viaja sin guía.** Cuando la nota lleva un producto de cantera y no se eligió guía, el despacho se rechaza entero: no queda nota y no sale nada del patio. El sistema lo dice así: «Este despacho lleva mineral y no tiene guía de movilización. Cárgala en Despachos › Guías, o pídele a quien tenga control total sobre Despachos que lo autorice sin ella.» La razón es que la guía es lo que hace legal que el camión circule con la piedra, y el sistema es el último sitio donde se puede impedir que salga sin ella. Si la nota es solo un flete, no hace falta guía.
 
@@ -4989,7 +4989,7 @@ Al pulsar una ficha aparece debajo una barra con su nombre y lo que se puede hac
 
 De la cabeza del organigrama no se ofrece ni **Mover** ni **Quitar**: un organigrama sin cabeza no es un organigrama.
 
-El formulario pide: **Cómo se llama**, **Quién lo ocupa** —*se deja vacío si el puesto no tiene nombre y apellido*—, **Qué es** (**Unidad** o **Cargo**), **Cuántos**, **Departamento de nómina** —*para saber cuánta gente hay de verdad aquí*, y se puede dejar **Sin enlazar**— y una **Nota** para *lo que el nombre no alcanza a decir*. Se cierra con **Añadir** o **Guardar**, y con **Cancelar**.
+El formulario pide: **Cómo se llama**, **Quién lo ocupa** —*se deja vacío si el puesto no tiene nombre y apellido*—, **Qué es** (**Unidad** o **Cargo**), **Cuántos**, **Departamento de nómina** —*para contar la gente en nómina de este puesto*, y se puede dejar **Sin enlazar**— y una **Nota** para *lo que el nombre no alcanza a decir*. Se cierra con **Añadir** o **Guardar**, y con **Cancelar**.
 
 Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un **Cargo** es un puesto con su gente, como «Cocineros (2)».
 
@@ -6281,7 +6281,7 @@ Se dice para que nadie lo lea como verificado:
 - **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles se levantaron de la base tal como estaba, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla, donde los módulos escondidos no salen.
 - **El capítulo de Ventas** no se revisó pantalla por pantalla. Lo que dice era cierto en una versión anterior y el módulo ha seguido cambiando; está en el menú desde el 28 de agosto de 2026. El de **Explotación** se rehízo el 6 de octubre de 2026, contra el código como este.
 - **Los capítulos 19 y 20, Maquinaria y Combustible,** se escribieron leyendo las pantallas y la base, no usándolas. **Los capítulos 21 a 25** —Facturación, Control de despacho, Control de asistencia, Contactos y Alimentación— llegaron después y tampoco se han repasado contra las pantallas de hoy. Si algo no coincide con lo que hace el módulo en el patio, dígalo y se corrige.
-- **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla, quién puede pagar, que el rol de Tesorería ya no existe—, pero sus pantallas no se han recorrido una por una desde que el módulo volvió entero al menú, el 21 de septiembre de 2026.
+- **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla y quién puede pagar—, pero sus pantallas no se han recorrido una por una desde que el módulo volvió entero al menú, el 21 de septiembre de 2026.
 - **La factura de venta no está completa ante el SENIAT.** Lo que le falta está en 15.2, y no es un olvido de este manual sino del sistema.
 
 ---
@@ -6450,7 +6450,7 @@ La pantalla lo resume: *"Varias cosas de una vez. Lo que vuelve queda a su nombr
 
 1. En **A quién y de dónde**: el **Trabajador**, **De qué almacén sale** y la **Fecha**.
 2. En **Qué se lleva**, se escriben las cantidades. La ayuda lo dice: *"Deja en blanco lo que no se entrega."*
-3. La **Nota** es opcional, y su ejemplo dice para qué sirve: *"Opcional: para qué frente, quién autorizó."*
+3. La **Nota** es opcional, y su ejemplo dice para qué sirve: *"Para qué frente, quién autorizó."*
 
 Si el almacén elegido no tiene nada entregable, la pantalla lo dice en vez de enseñar una lista vacía: **En ese almacén no hay nada que entregar**.
 
@@ -6479,7 +6479,7 @@ Hay dos caminos, y responden a dos formas de trabajar.
 | Si la persona… | Se propone |
 | --- | --- |
 | Debe algo | **Lo que se le debe ahora mismo** |
-| Está al día | **Lo que su cargo dice**, por si hay que reponerle unas botas rotas antes de tiempo. La ventana lo advierte |
+| Está al día | **Esto es lo que corresponde a su cargo**, por si hay que reponerle unas botas rotas antes de tiempo |
 | No tiene cargo del tabulador | Nada: el sistema no sabe qué le toca. Se entrega a mano desde **Quién tiene qué** |
 
 **Lo que le toca se rellena al elegir el almacén, no antes.** Lo que le corresponde por su cargo no tiene por qué estar en el almacén desde el que se entrega hoy, y **lo que no esté se dice**: sale un aviso con el nombre de lo que falta. Se le entrega lo que sí hay y el resto después.
@@ -7201,7 +7201,7 @@ El botón **Reporte**: un período y, si se quiere, una sola persona. Sale con e
 | Qué | Cómo |
 | --- | --- |
 | **Marcar entrada** | El botón de la tarjeta. Se busca al visitante por nombre, cédula, empresa o teléfono; debajo dice cuántas veces ha venido y cuándo fue la última. Se agrega, si se quiere, **a quién visita** del personal, el motivo, la placa del vehículo y una nota. Con la **entrada vacía, la hora la pone el sistema** en ese momento; se llena solo para cargar una visita de antes, con su salida si ya se fue |
-| **Es nuevo: registrarlo** | Si no aparece en la búsqueda, es la primera vez que viene. Ese enlace abre los datos de la persona en la misma ventana; se llenan y se pulsa **Registrar y marcar entrada**. Queda registrado y adentro de una vez |
+| **Es nuevo: registrarlo** | Si no aparece en la búsqueda, se registra como nuevo: puede que esté escrito de otra manera, así que conviene probar antes con la cédula o la empresa. Ese enlace abre los datos de la persona en la misma ventana; se llenan y se pulsa **Registrar y marcar entrada**. Queda registrado y adentro de una vez |
 | **Del directorio** | Si el visitante ya está en **Contactos**, se elige arriba y se rellenan solos el nombre, la cédula, la empresa y el teléfono. Solo lo ve quien tiene lectura en Contactos; los demás escriben todo a mano |
 | **Salida** | Al lado de cada persona que está adentro. La hora la pone el sistema ahora mismo. Si se fue antes y nadie lo anotó, la casilla **poner la hora real** deja escribirla |
 | **Conocidos** | La lista de todos los que han venido, con cuántas visitas lleva cada uno. Desde ahí se **editan** los datos de la persona, que cambian en todas sus visitas, y se deja **inactivo** al que no debe volver a entrar: a un inactivo no se le puede marcar entrada hasta activarlo. También se puede registrar a alguien sin marcarle entrada todavía |

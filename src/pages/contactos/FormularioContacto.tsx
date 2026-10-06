@@ -131,7 +131,7 @@ export function FormularioContacto({
           value={d.documento}
           onChange={(e) => cambiar({ documento: e.target.value.toUpperCase() })}
           placeholder={esEmpresa ? 'J-12345678-9' : 'V-12345678'}
-          hint="Opcional. Con la letra y los guiones, como en clientes."
+          hint="Con la letra y los guiones, como en clientes."
         />
         {esEmpresa ? (
           <Input
@@ -325,7 +325,7 @@ export function FormularioContacto({
               <input type="checkbox" className="accent-royal-600 mt-0.5 size-4" checked={otraPersona} onChange={(e) => setOtraPersona(e.target.checked)} />
               <span>
                 Es otra persona: guardar igual.
-                <span className="text-ink/45 block text-xs">Dos personas pueden compartir el teléfono de una oficina. Si es la misma, mejor edite la que ya está.</span>
+                <span className="text-ink/45 block text-xs">Dos personas pueden compartir el teléfono de una oficina. Si es la misma, edite la que ya está.</span>
               </span>
             </label>
           ) : null}
@@ -345,7 +345,7 @@ export function FormularioContacto({
           abierto
           onCerrar={() => setBorrando(false)}
           titulo={`Eliminar a ${contacto.nombre}`}
-          descripcion="Un contacto no mueve dinero ni inventario, así que se puede borrar. Queda registrado quién lo hizo. Si solo dejó de ser útil, márquelo inactivo en vez de borrarlo."
+          descripcion="Se borra del directorio. Queda registrado quién lo hizo. Si solo dejó de ser útil, se puede marcar inactivo."
           ancho="sm"
           acciones={
             <>

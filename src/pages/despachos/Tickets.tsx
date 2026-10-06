@@ -214,7 +214,7 @@ export function Tickets() {
           ancho="lg"
           onCerrar={() => setNuevo(null)}
           titulo="Pesar un vehículo"
-          descripcion="El neto sale solo. Si el bruto no supera a la tara, algo se escribió al revés."
+          descripcion="El neto se calcula solo. El bruto tiene que superar a la tara."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setNuevo(null)}>
@@ -421,7 +421,7 @@ export function Tickets() {
           abierto
           onCerrar={() => setAnulando(null)}
           titulo={`Anular el ticket ${anulando.numero}`}
-          descripcion="Se queda con su número, marcado como anulado. Un pesaje que desaparece deja un hueco en la numeración de la garita."
+          descripcion="Se queda con su número, marcado como anulado."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setAnulando(null)}>

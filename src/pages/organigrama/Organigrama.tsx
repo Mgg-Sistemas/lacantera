@@ -779,7 +779,7 @@ function Formulario({
         </div>
         <SelectBuscable
           label="Departamento de nómina"
-          hint="Para saber cuánta gente hay de verdad aquí."
+          hint="Para contar la gente en nómina de este puesto."
           vacio="Sin enlazar"
           valor={edicion.departamento}
           onCambio={(v) => cambiar({ departamento: v })}
@@ -792,7 +792,6 @@ function Formulario({
         <Input
           className="sm:col-span-2"
           label="Nota"
-          hint="Lo que el nombre no alcanza a decir."
           value={edicion.nota}
           onChange={(e) => cambiar({ nota: e.target.value })}
         />

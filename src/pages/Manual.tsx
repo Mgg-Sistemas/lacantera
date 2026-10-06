@@ -57,17 +57,23 @@ const MODULO_DEL_CAPITULO: Record<string, string> = {
   Asignaciones: 'ASIGNACIONES',
 }
 
-/** Tesoreria no es «todavia no»: es «ya no». Merece su propia frase. */
-const AVISO_TESORERIA =
-  'Tesorería ya no existe en La Cantera: Compras absorbió su función. Este capítulo está pendiente de reescribir. Los pagos de una compra se hacen hoy desde Compras › Pagos por hacer, y el libro del dinero desde Compras › Movimientos de dinero.'
+/*
+  UN SOLO AVISO, Y GENERICO.
 
-const AVISO_EN_OBRA =
-  'Este módulo todavía no está en el sistema: el menú no lo ofrece. El capítulo se queda como referencia de cómo va a funcionar cuando entre.'
+  Este texto solo se pinta cuando el modulo de un capitulo no esta en el menu,
+  asi que no se puede escribir con lo que pasa hoy: lo que explicara el porque
+  de hoy seria falso el dia que se viera. Tesoreria tenia una frase propia
+  («Compras absorbio su funcion») que era verdad en agosto y dejo de serlo al
+  volver el modulo al menu, y nadie la vio cambiar porque estaba dormida. Por
+  eso dice solo la condicion con que se pinta, que es verdad siempre que sale
+  (06/10/2026).
+*/
+const AVISO_FUERA_DEL_MENU = 'Este módulo no está en el menú. El capítulo queda como referencia.'
 
 function avisoDelCapitulo(nombre: string): string | undefined {
   const modulo = MODULO_DEL_CAPITULO[nombre.trim()]
   if (!modulo || !esModuloEnObra(modulo)) return undefined
-  return modulo === 'TESORERIA' ? AVISO_TESORERIA : AVISO_EN_OBRA
+  return AVISO_FUERA_DEL_MENU
 }
 
 interface Hallazgo {

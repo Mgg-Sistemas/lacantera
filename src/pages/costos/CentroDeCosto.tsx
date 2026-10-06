@@ -237,7 +237,7 @@ function AbrirPrimeraCaja() {
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input label="Desde" type="date" max={hoy} value={desde} onChange={(e) => setDesde(e.target.value)} />
         <Input
-          label="Nombre (opcional)"
+          label="Nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           placeholder="Septiembre"

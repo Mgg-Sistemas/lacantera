@@ -300,7 +300,7 @@ function CamposDeVisitante({ d, onCambio }: { d: DatosVisitante; onCambio: (d: D
       {leeContactos ? (
         <SelectBuscable
           label="Contacto"
-          vacio="Buscar por nombre, empresa o teléfono… (opcional)"
+          vacio="Buscar por nombre, empresa o teléfono…"
           valor={d.contacto_id}
           onCambio={tomarDelDirectorio}
           opciones={(contactos ?? []).map((c) => ({
@@ -405,7 +405,7 @@ function MarcarEntrada({ onCerrar }: { onCerrar: () => void }) {
               <p className="text-ink/50 text-xs">
                 {elegido
                   ? `${elegido.visitas} visita${elegido.visitas === 1 ? '' : 's'}${elegido.ultima_visita ? `, la última el ${fmtFecha(elegido.ultima_visita.slice(0, 10))}` : ''}${elegido.adentro ? ' · está adentro ahora' : ''}`
-                  : 'Si no aparece, es la primera vez que viene.'}
+                  : 'Si no aparece, se registra como nuevo.'}
               </p>
               <Button size="sm" variant="ghost" onClick={() => setNuevo(true)}>
                 Es nuevo: registrarlo
@@ -416,7 +416,7 @@ function MarcarEntrada({ onCerrar }: { onCerrar: () => void }) {
 
         <SelectBuscable
           label="Persona visitada"
-          vacio="Alguien del personal (opcional)"
+          vacio="Alguien del personal"
           valor={v.visita_a}
           onCambio={(id) => setV((x) => ({ ...x, visita_a: id }))}
           opciones={(empleados ?? []).map((e) => ({ valor: String(e.id), etiqueta: `${e.nombres} ${e.apellidos}`, detalle: e.cargo }))}
@@ -490,7 +490,7 @@ function CorregirVisita({ visita, onCerrar }: { visita: Visita; onCerrar: () => 
         />
         <SelectBuscable
           label="Persona visitada"
-          vacio="Alguien del personal (opcional)"
+          vacio="Alguien del personal"
           valor={v.visita_a}
           onCambio={(id) => setV((x) => ({ ...x, visita_a: id }))}
           opciones={(empleados ?? []).map((e) => ({ valor: String(e.id), etiqueta: `${e.nombres} ${e.apellidos}`, detalle: e.cargo }))}
@@ -650,7 +650,7 @@ function CerrarVisita({ visita, onCerrar }: { visita: Visita; onCerrar: () => vo
       abierto
       onCerrar={onCerrar}
       titulo={`Salida de ${visita.nombre}`}
-      descripcion={`Entró el ${fmtFecha(visita.fecha)} a las ${horaDe(visita.entrada)}. La hora de salida la pone el sistema ahora mismo, salvo que se diga otra.`}
+      descripcion={`Entró el ${fmtFecha(visita.fecha)} a las ${horaDe(visita.entrada)}. La salida se registra con la hora actual, salvo que se indique otra.`}
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>

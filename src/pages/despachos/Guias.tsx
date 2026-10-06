@@ -211,7 +211,7 @@ export function Guias() {
           ancho="lg"
           onCerrar={() => setNueva(null)}
           titulo="Cargar guía de movilización"
-          descripcion="Se copia del papel que emitió el ministerio. El número es el suyo, no uno nuestro."
+          descripcion="Se copia del papel que emitió el ministerio, con su número."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setNueva(null)}>

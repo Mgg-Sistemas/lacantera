@@ -401,7 +401,7 @@ export function ServirComida({ onCerrar }: { onCerrar: () => void }) {
           <p className="text-ink/60 text-sm">
             Saldría en <span className="tabular text-ink/85">{dolares(valorEstimado)}</span>, unos{' '}
             <span className="tabular text-ink/85">{dolares(valorEstimado / Number(platos))}</span> por plato. La
-            cifra final la pone la base con el promedio del momento.
+            cifra final se calcula con el costo promedio del momento.
           </p>
         ) : null}
 
@@ -422,7 +422,7 @@ function AnularComida({ comida, hoy, onCerrar }: { comida: Comida; hoy: string; 
       abierto
       onCerrar={onCerrar}
       titulo={`Anular ${comida.numero}`}
-      descripcion={`${nombreDeTipo(comida.tipo)} del ${fmtFecha(comida.fecha)}, ${comida.platos} platos. Los víveres vuelven al inventario. ${esDeHoy ? '' : 'No es de hoy: hace falta control total.'}`}
+      descripcion={`${nombreDeTipo(comida.tipo)} del ${fmtFecha(comida.fecha)}, ${comida.platos} platos. Los víveres vuelven al inventario. ${esDeHoy ? '' : 'No es de hoy: requiere control total.'}`}
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>

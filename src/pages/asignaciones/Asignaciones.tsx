@@ -409,7 +409,7 @@ export function Asignaciones() {
         blob={papel?.blob ?? null}
         nombreArchivo={papel?.nombre ?? 'constancia.pdf'}
         titulo="Constancia de entrega"
-        descripcion="Se imprime y la firma el trabajador. La raya sale en blanco a propósito: no se usa la firma digital."
+        descripcion="Se imprime y la firma el trabajador. La raya sale en blanco: no lleva firma digital."
       />
 
       <ModalEntrega
@@ -555,12 +555,12 @@ function ModalEntrega({
       */}
       <div className="mt-4">
         <Input
-          label="Fecha límite (opcional)"
+          label="Fecha límite"
           type="date"
           min={dia}
           value={limite}
           onChange={(e) => setLimite(e.target.value)}
-          hint="Si se pone, el sistema avisa al día siguiente de pasarse. Si se deja vacío, no reclama nada."
+          hint="Si se indica, se avisa al día siguiente de pasarse."
         />
       </div>
 
@@ -695,7 +695,7 @@ function ModalCierre({
           onChange={(e) => setTexto(e.target.value)}
           hint={
             incidencia
-              ? 'Dentro de tres meses es lo único que dirá si fue un descuido o un accidente de trabajo.'
+              ? 'Indique si fue un descuido o un accidente de trabajo.'
               : undefined
           }
         />

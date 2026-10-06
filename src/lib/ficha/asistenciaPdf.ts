@@ -106,7 +106,7 @@ export async function armarReporteDeAsistencia(d: {
   y = notaBajoLaTabla(
     doc,
     y,
-    'Las horas son las de las jornadas cerradas. Una jornada sin salida cuenta como día presente pero no suma horas: nadie sabe a qué hora se fue.',
+    'Las horas son las de las jornadas cerradas. Una jornada sin salida cuenta como día presente pero no suma horas: no consta la hora de salida.',
   )
 
   if (vivas.length > 0) {

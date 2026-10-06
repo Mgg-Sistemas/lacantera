@@ -237,7 +237,6 @@ export function ControlDeAsistencia() {
         blob={papel?.blob ?? null}
         nombreArchivo={papel?.nombre ?? 'asistencia.pdf'}
         titulo="Reporte de asistencia"
-        descripcion="Revíselo antes de descargarlo o imprimirlo."
       />
     </>
   )
@@ -283,7 +282,7 @@ function Marcador({ hoy }: { hoy: string }) {
     <Card className="mb-4">
       <CardHeader
         title="Marcar"
-        subtitle="Escanee el carnet, o elija a la persona. El sistema decide si es entrada o salida y pone la hora."
+        subtitle="Escanee el carnet, o elija a la persona. Se registra como entrada o salida, con la hora."
       />
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div>

@@ -945,7 +945,7 @@ export function NotasDeEntrega() {
                 }))}
                 hint={
                   ticketsLibres.length === 0
-                    ? 'No hay pesajes sin usar. Se registran en Despachos › Tickets de romana.'
+                    ? 'No hay pesajes sin usar.'
                     : 'Al elegirlo, los pesos y la placa se traen de la báscula.'
                 }
               />

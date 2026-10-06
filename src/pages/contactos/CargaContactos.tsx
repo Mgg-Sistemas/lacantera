@@ -47,7 +47,7 @@ export function CargaContactos({ etiquetas, onCerrar }: { etiquetas: EtiquetaDeC
       abierto
       onCerrar={onCerrar}
       titulo="Cargar contactos desde Excel"
-      descripcion="Para meter muchos de una vez. Crea contactos nuevos: los que ya están no se tocan desde aquí."
+      descripcion="Para cargar muchos de una vez. Crea contactos nuevos: los que ya están no se tocan desde aquí."
       acciones={
         guardadas !== null ? (
           <Button onClick={onCerrar}>Listo</Button>

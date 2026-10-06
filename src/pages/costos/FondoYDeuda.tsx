@@ -238,7 +238,7 @@ function MoverFondo({ tipo, onCerrar }: { tipo: 'entrega' | 'abono'; onCerrar: (
         />
       </div>
       <div className="mt-4">
-        <Textarea label="Nota (opcional)" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />
+        <Textarea label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />
       </div>
       {accion.error ? <ErrorDeCarga error={accion.error} className="mt-3" /> : null}
     </Modal>

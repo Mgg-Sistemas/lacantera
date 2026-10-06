@@ -359,7 +359,7 @@ function ModalEntregarA({
       <div className="grid gap-4">
         <Select
           label="Cargo"
-          hint="Para acortar la lista. Se puede dejar en blanco."
+          hint="Para acortar la lista."
           value={cargo}
           onChange={(e) => {
             setCargo(e.target.value)
@@ -387,8 +387,8 @@ function ModalEntregarA({
 
         {elegido && elegido.tabulador_id == null ? (
           <p className="border-warning/30 bg-warning-soft text-ink/75 rounded-[6px] border p-3 text-sm leading-relaxed">
-            Esta persona no tiene un cargo del tabulador en su ficha, así que el sistema no sabe qué
-            le toca. Se le puede entregar igual desde <strong>Bienes asignados</strong>, eligiendo a
+            Esta persona no tiene un cargo del tabulador en su ficha: no hay dotación que proponer. Se
+            le puede entregar igual desde <strong>Bienes asignados</strong>, eligiendo a
             mano lo que se lleva.
           </p>
         ) : null}
@@ -398,7 +398,7 @@ function ModalEntregarA({
             <p className="text-ink/45 text-xs">
               {suyoPendiente.length > 0
                 ? 'Lo que se le debe ahora mismo'
-                : 'Está al día. Esto es lo que su cargo dice, por si hay que reponerle algo'}
+                : 'Está al día. Esto es lo que corresponde a su cargo'}
             </p>
             <ul className="mt-1.5 space-y-1">
               {aEntregar.map((l) => (
@@ -483,7 +483,7 @@ function ModalDotacion({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
                 etiqueta: `${t.cargo} · ${t.personas} persona${t.personas === 1 ? '' : 's'}`,
               })),
           ]}
-          hint="Sale del tabulador, que es el catálogo de cargos de verdad."
+          hint="Sale del tabulador."
         />
 
         <SelectBuscable

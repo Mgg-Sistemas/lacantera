@@ -363,7 +363,7 @@ export function Entregar() {
                     .map((id) => (catalogo ?? []).find((a) => a.id === id)?.nombre)
                     .filter(Boolean)
                     .join(', ')}
-                  . Pruebe con otro almacén, o entréguele lo que sí hay y lo demás después.
+                  .
                 </p>
               ) : null}
             </div>
@@ -435,7 +435,7 @@ export function Entregar() {
             <Textarea
               label="Nota"
               rows={2}
-              placeholder="Opcional: para qué frente, quién autorizó"
+              placeholder="Para qué frente, quién autorizó"
               value={nota}
               onChange={(e) => setNota(e.target.value)}
             />

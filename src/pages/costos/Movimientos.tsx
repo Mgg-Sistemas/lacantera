@@ -193,7 +193,7 @@ function AgregarGasto({ onCerrar }: { onCerrar: () => void }) {
           onChange={(e) => setMonto(e.target.value)}
         />
         <Select
-          label="Categoría (opcional)"
+          label="Categoría"
           vacio="Sin clasificar"
           value={categoria}
           onChange={(e) => setCategoria(e.target.value)}
@@ -212,7 +212,7 @@ function AgregarGasto({ onCerrar }: { onCerrar: () => void }) {
         />
       </div>
       <div className="mt-4">
-        <Textarea label="Nota (opcional)" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />
+        <Textarea label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />
       </div>
       {registrar.error ? <ErrorDeCarga error={registrar.error} className="mt-3" /> : null}
     </Modal>

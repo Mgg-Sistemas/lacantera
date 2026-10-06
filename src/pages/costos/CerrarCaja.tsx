@@ -86,7 +86,7 @@ export function CerrarCaja({
           hint={avisaFecha ? 'El corte mensual está encendido y esta fecha no es fin de mes.' : undefined}
         />
         <Input
-          label="Nombre de la siguiente (opcional)"
+          label="Nombre de la siguiente"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           placeholder="Octubre"

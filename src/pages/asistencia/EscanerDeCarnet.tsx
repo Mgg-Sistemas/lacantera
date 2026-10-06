@@ -65,7 +65,7 @@ async function elegirLector(lienzo: HTMLCanvasElement): Promise<Lector> {
 function explicar(e: unknown): string {
   const nombre = e instanceof Error ? e.name : ''
   if (nombre === 'NotAllowedError' || nombre === 'SecurityError')
-    return 'La cámara está bloqueada. Si el navegador no preguntó nada, revise el candado junto a la dirección y permita la cámara; si sigue igual, el servidor tiene la cámara prohibida para el sitio.'
+    return 'La cámara está bloqueada. Si el navegador no preguntó nada, revise el candado junto a la dirección y permita la cámara; si sigue igual, la cámara está bloqueada para este sitio: avise a sistemas.'
   if (nombre === 'NotFoundError' || nombre === 'OverconstrainedError') return 'Este equipo no tiene cámara, o el navegador no la encuentra.'
   if (nombre === 'NotReadableError') return 'Otra aplicación está usando la cámara. Ciérrela y vuelva a intentarlo.'
   return `No se pudo abrir la cámara: ${enCastellano(e)}`
@@ -141,7 +141,7 @@ export function EscanerDeCarnet({ onLeido, onCerrar }: { onLeido: (texto: string
       abierto
       onCerrar={onCerrar}
       titulo="Escanear el carnet"
-      descripcion="Apunte al QR del reverso. En cuanto lo lea, marca solo."
+      descripcion="Apunte al QR del reverso. En cuanto se lea, se marca solo."
       acciones={<Button variant="ghost" onClick={onCerrar}>Cancelar</Button>}
     >
       {fallo ? (

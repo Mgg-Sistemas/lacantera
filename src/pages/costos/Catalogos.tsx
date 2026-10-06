@@ -49,7 +49,7 @@ function CorteMensual() {
     <Card>
       <CardHeader
         title="Corte mensual"
-        subtitle="Con esto encendido, al cerrar la caja se propone el último día del mes y se avisa si se elige otra fecha. Un solo calendario."
+        subtitle="Con esto encendido, al cerrar la caja se propone el último día del mes y se avisa si se elige otra fecha."
       />
       <label className="mt-4 flex items-center gap-3 text-sm">
         <input
@@ -275,7 +275,7 @@ function FormularioFijo({
       <div className="grid gap-3 sm:grid-cols-2">
         <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Energía de planta" />
         <Select
-          label="Categoría (opcional)"
+          label="Categoría"
           vacio="Sin clasificar"
           value={categoria}
           onChange={(e) => setCategoria(e.target.value)}

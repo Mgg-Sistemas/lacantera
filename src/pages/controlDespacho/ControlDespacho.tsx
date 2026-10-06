@@ -489,7 +489,6 @@ export function ControlDespacho() {
         blob={papel?.blob ?? null}
         nombreArchivo={papel?.nombre ?? 'control-de-despacho.pdf'}
         titulo="Control de despacho"
-        descripcion="Revíselo antes de descargarlo o imprimirlo."
       />
     </>
   )
