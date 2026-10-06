@@ -110,16 +110,16 @@ Los módulos son quince. La última columna dice cuáles se ofrecen hoy en el me
 | Módulo | De qué se ocupa | Hoy |
 | --- | --- | --- |
 | **Panel** | La pantalla de inicio: qué hay que atender hoy | En el menú |
-| **Explotación** | Frentes y bancos, voladuras, y el parte de producción de cada turno | En obra |
+| **Explotación** | El acarreo de los camiones, las plantas y rutas, y las salidas de planta; también los frentes y bancos, las voladuras y el parte de cada turno | En el menú, salvo frentes, voladuras y el parte de turno, que están en obra |
 | **Maquinaria** | Los equipos de la cantera, su horómetro y lo que ha pasado por el taller | En el menú |
 | **Combustible** | El gasoil y la gasolina que se despachan a cada máquina | En el menú |
 | **Inventario** | Lo que hay en cada patio y almacén, y todo lo que entra y sale | En el menú |
 | **Asignaciones** | Lo que se le entrega a una persona y hay que recuperar, y lo que se pierde o se daña | En el menú |
 | **Despachos** | El pesaje en la romana y las guías de movilización | En obra |
 | **Compras** | Pedir, cotizar, aprobar, recibir, facturar y **pagar** lo que la empresa compra | En el menú |
-| **Ventas** | Clientes, precios, cotizaciones, notas de entrega y facturas | En obra |
+| **Ventas** | Clientes, precios, cotizaciones, notas de entrega y facturas | En el menú |
 | **Nómina** | Personal, novedades, cálculo, recibos, pagos, prestaciones sociales y el organigrama | En el menú |
-| **Tesorería** | Bancos y cajas, y cuentas por cobrar. **La empresa dejó de llevar saldos**: los pagos por hacer y los movimientos de dinero se mudaron a Compras | **No: se retiró** |
+| **Tesorería** | Bancos y cajas, el libro de tesorería, los reportes y el Libro Mayor | En el menú |
 | **Tasas de cambio** | Las tasas del día, que valorizan todo lo que se registre | En el menú |
 | **Configuración** | Datos de la empresa, documentos legales y auditoría | En el menú |
 | **Usuarios y roles** | Quién entra al sistema y a qué llega cada quien | En el menú |
@@ -131,7 +131,7 @@ El **Organigrama** no es un módulo propio: se reparte con el permiso de Nómina
 
 El **Manual de usuario** aparece siempre al final del menú y **no es un módulo**: no se reparte por permisos y no figura en la tabla. Quien acaba de entrar y todavía no tiene nada asignado lo ve igual, y es a propósito — es lo único que tiene mientras espera que administración le reparta lo demás. No contiene ningún dato de la empresa: solo explica cómo se usa el sistema.
 
-**Tesorería dejó de existir como módulo, y conviene entender por qué.** No se escondió mientras se afina: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos. Sus dos piezas vivas —**Pagos por hacer** y **Movimientos de dinero**— cuelgan hoy de **Compras**, que es donde se usan. El capítulo 12 sigue en el manual porque lo que cuenta esas dos pantallas vale, pero su primera línea avisa de dónde están ahora.
+**Tesorería** tiene cinco pantallas: Tablero, Bancos y cajas, Reportes, Libro Mayor y Libro de tesorería. **Pagos por hacer** cuelga de **Compras**, que es donde se usa. El capítulo 12 las cuenta.
 
 ### 1.3 Por dónde entra y por dónde sale el material
 
@@ -147,7 +147,7 @@ Conviene tener este recorrido en la cabeza antes de leer los capítulos, porque 
 
 ### 1.4 Bolívares y dólares
 
-La empresa cobra y paga en las dos monedas, y el sistema está hecho para eso desde el principio.
+La empresa cobra y paga en las dos monedas, y el sistema está hecho para eso.
 
 Cada documento se emite en la moneda en que se pactó la operación, y **guarda para siempre la tasa de cambio del día en que se emitió**. Si mañana la tasa cambia, ese documento no cambia. La tasa usada forma parte del hecho, igual que la fecha o el monto: no es un dato que se actualice.
 
@@ -163,19 +163,16 @@ Esto es lo primero que hay que saber antes de buscar una pantalla, porque explic
 - **Administración:** Centro de costo · Compras · Ventas · Control de despacho · Control de asistencia · Contactos · Alimentación · Facturación · Nómina · Organigrama · Tesorería
 - **Sistema:** Tasas de cambio · Configuración · Manual de usuario
 
-Cada persona ve solo los módulos sobre los que tiene permiso (3.1), así que su menú puede ser más corto que esta lista. Si tiene un manual impreso de hace unas semanas, esta lista es la que manda: el menú ha ido creciendo, y **Tesorería**, que estuvo fuera, volvió entera el 21 de septiembre de 2026.
+Cada persona ve solo los módulos sobre los que tiene permiso (3.1), así que su menú puede ser más corto que esta lista. Si tiene un manual impreso de otra fecha, esta lista es la que manda.
 
 **Hoy quedan fuera del menú un módulo entero y tres pantallas de otro:**
 
-| Qué | Desde | Por qué |
-| --- | --- | --- |
-| **Despachos**, entero: **Tablero**, **Tickets de romana** y **Guías de movilización** | 31 de agosto de 2026 | La cantera todavía no registra en el sistema la salida por el portón, y un módulo ofrecido que nadie usa se llena de pantallas vacías que después nadie sabe si están rotas o sin datos |
-| **Explotación › Voladuras** y **Producción por turno** | 12 de septiembre de 2026 | Voladuras no se usa, y Producción por turno no puede guardar nada mientras no haya productos cargados |
-| **Explotación › Frentes y bancos** | 23 de septiembre de 2026 | No había ni un frente cargado, y una pestaña que solo sabe enseñar que no hay nada le enseña a quien la abre que el módulo está vacío |
+- **Despachos**, entero: **Tablero**, **Tickets de romana** y **Guías de movilización**.
+- De **Explotación**: **Frentes y bancos**, **Voladuras** y **Producción por turno**.
 
 Ahora la parte que hay que entender bien, porque no es lo que parece:
 
-**Lo escondido no se borró, ni se cerró, ni se le quitó a nadie.** Sus pantallas siguen existiendo y sus direcciones siguen respondiendo. Es deliberado: el equipo las sigue desarrollando y cerrarlas lo dejaría sin poder verlas. Lo único que se hizo fue dejar de ofrecerlas desde el menú. La barra buscadora tampoco las ofrece.
+**Lo que está fuera del menú no está borrado ni cerrado.** Sus pantallas existen y sus direcciones responden. Es deliberado: el equipo las sigue desarrollando y cerrarlas lo dejaría sin poder verlas. Solo no se ofrecen desde el menú, y la barra buscadora tampoco las ofrece.
 
 Y para que nadie tropiece con una pantalla a medio afinar sin saberlo, **quien llegue a una de esas direcciones —escribiéndola a mano, por un enlace que le pasaron o porque quedó en el historial del navegador— se encuentra primero un cartel de obra**:
 
