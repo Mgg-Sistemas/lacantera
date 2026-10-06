@@ -22,7 +22,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema que existe hoy, no el que se planeó.** Donde algo esté a medio construir, el manual lo dice. El capítulo 15 reúne todo lo que todavía no está disponible y los puntos donde conviene tener cuidado, para que nadie planifique su trabajo contando con algo que aún no puede hacer.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** El sistema ha cambiado mucho desde esta versión, y no todos los capítulos se han repasado todavía contra las pantallas de hoy. Ya lo están esta presentación, el índice, el apartado 1.5 y los capítulos 3, 15 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, manda la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** El sistema ha cambiado mucho desde esta versión, y no todos los capítulos se han repasado todavía contra las pantallas de hoy. Ya lo están esta presentación, el índice, el apartado 1.5 y los capítulos 3, 12, 15 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, manda la pantalla.
 
 El orden de los capítulos es el del camino del material: primero se extrae, luego se almacena, después sale por el portón, y por último se administra lo que eso genera.
 
@@ -5184,187 +5184,172 @@ Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un
 
 ## 12. Tesorería
 
-**Tesorería volvió al menú el 21 de septiembre de 2026.** Estuvo unas semanas fuera porque la empresa había decidido no llevar bancos ni cajas; ahora sí los lleva, y el módulo regresó con todo lo que tenía —las cajas, el libro, los traslados— más lo único que le faltaba: los **reportes** (12.10).
+**Tesorería volvió al menú el 21 de septiembre de 2026.** Estuvo unas semanas fuera porque la empresa había decidido no llevar bancos ni cajas; ahora sí los lleva, y el módulo regresó entero, con sus reportes.
 
-Las cajas de arranque ya existen: una **en dólares**, una **en bolívares** y la billetera **en USDT**, además de Zelle y dos bancos. Se crean más desde **Bancos y cajas** (12.3). Todas nacen con saldo cero: lo primero que hay que hacer con cada una es registrar su **saldo de apertura** con lo que de verdad tiene hoy.
+En el menú, **Administración › Tesorería** tiene cinco pantallas: **Tablero**, **Bancos y cajas**, **Reportes**, **Libro Mayor** y **Libro de tesorería**. Dos cosas del dinero se ofrecen desde otros módulos, que es donde la gente las busca:
 
-Lo que se usa todos los días para pagar **sigue ofreciéndose desde Compras**, que es donde la gente ya lo busca:
-
-| Pantalla | Dónde está hoy |
+| Pantalla | Dónde está |
 | --- | --- |
-| **Pagos por hacer** | **Administración › Compras › Pagos por hacer** |
-| **Cuentas por pagar** | La misma pantalla, pestaña **Por proveedor** |
-| **Libro de tesorería** | **Administración › Compras › Movimientos de dinero** |
-| **Tablero**, **Bancos y cajas**, **Reportes** | **Administración › Tesorería** |
-| **Cuentas por cobrar** | Se mudó a Facturación (21.4) |
+| **Pagos por hacer**, con su pestaña **Por proveedor** | **Administración › Compras › Pagos por hacer** |
+| **Cuentas por cobrar** | **Administración › Facturación › Cuentas por cobrar** (21.4) |
 
-**Ninguna de las seis da el cartel de obra**: las direcciones responden y las pantallas se abren. Lo que las cierra hoy es el permiso, no el cartel — y sobre este módulo **solo el administrador tiene permiso**.
+Ninguna de ellas está escondida. Lo que decide quién las abre es el permiso de cada uno (12.1).
 
 Tesorería es el libro del dinero. Cada banco, cada caja de efectivo y cada billetera digital de la empresa tiene aquí su cuenta, y todo lo que entra y sale de ellas queda escrito en una sola lista, en orden, con la fecha, el concepto, la referencia y el nombre de quien lo registró.
 
 Hay una idea que conviene entender antes de tocar nada, y es la misma que ordena el inventario:
 
-**El saldo no es un número guardado. Es una suma.** El sistema no tiene apuntado en ningún lado que en Banesco hay 40.000 bolívares. Lo que tiene es la lista de movimientos de esa cuenta, y cada vez que abres la pantalla los suma. La propia pantalla lo dice: **Dónde está el dinero. El saldo se suma del libro: no hay un número guardado que pueda quedar viejo.**
+**El saldo no es un número guardado. Es una suma.** El sistema no tiene apuntado en ningún lado cuántos bolívares hay en un banco. Lo que tiene es la lista de movimientos de esa cuenta, y cada vez que se abre la pantalla los suma. La propia pantalla lo dice: **Cuentas bancarias, cajas y billeteras. El saldo se calcula a partir de los movimientos registrados, no se guarda aparte.**
 
 De ahí sale la consecuencia práctica: **para cambiar un saldo hay que escribir un movimiento**. No hay otra forma. No se corrige el número directamente, ni siquiera siendo administrador.
 
-Y hay una segunda regla que conviene tener presente desde la primera pantalla: **una cuenta, una moneda**. Una cuenta en bolívares no guarda dólares y una cuenta en dólares no guarda bolívares. La razón está en la sección 12.8.
+Y hay una segunda regla que conviene tener presente desde la primera pantalla: **una cuenta, una moneda**. Una cuenta en bolívares no guarda dólares y una cuenta en dólares no guarda bolívares. La razón está en 12.8.
 
 ### 12.0 Lo esencial, en una hoja
 
 Esto es lo mínimo para trabajar con el módulo. Todo lo que sigue en el capítulo lo explica despacio; esta hoja es la que conviene tener al lado las primeras semanas.
 
-**Una idea, y de ella sale todo lo demás.** El saldo no está guardado en ningún sitio: se suma del libro cada vez que abres la pantalla. Por eso **para cambiar un saldo hay que escribir un movimiento**. No se corrige el número a mano, ni siendo administrador.
+**Una idea, y de ella sale todo lo demás.** El saldo no está guardado en ningún sitio: se suma del libro cada vez que se abre la pantalla. Por eso **para cambiar un saldo hay que escribir un movimiento**.
 
-**Tesorería no decide qué se paga.** Las órdenes llegan ya aprobadas desde Compras, con su método, su moneda y su monto. Aquí solo se dice **de qué cuenta sale** y se confirma que salió.
+**Tesorería no decide qué se paga.** Las órdenes llegan ya aprobadas desde Compras, con su método, su moneda y su monto. Al pagar solo se dice **de qué cuenta sale** y se confirma que salió.
 
 #### Lo primero, y una sola vez por cuenta
 
-Registra el **saldo de apertura** de cada banco, caja y billetera con lo que de verdad tiene hoy. Todas nacen en cero. Si el disponible parece bajo, esto es lo primero que hay que mirar.
+Registre el **Saldo de apertura** de cada banco, caja y billetera con lo que de verdad tiene hoy. Todas nacen en cero, y el Tablero cuenta cuántas siguen sin abrir. Si el disponible parece bajo, esto es lo primero que hay que mirar.
 
 #### Dónde está cada cosa
 
-| Para | Ve a |
+| Para | Vaya a |
 | --- | --- |
 | Pagar una orden aprobada | Compras › **Pagos por hacer** |
 | Ver a quién se le debe | La misma pantalla, pestaña **Por proveedor** |
-| Ver todo lo que entró y salió | Compras › **Movimientos de dinero** |
+| Ver todo lo que entró y salió | Tesorería › **Libro de tesorería** |
 | Crear cuentas y ver cuánto hay | Tesorería › **Bancos y cajas** |
-| Informes | Tesorería › **Reportes** |
-| Ver a quién le cobras | Facturación › **Cuentas por cobrar** |
+| Los libros de compras y de ventas | Tesorería › **Libro Mayor** |
+| Informes de un período | Tesorería › **Reportes** |
+| Ver a quién se le cobra | Facturación › **Cuentas por cobrar** |
 
 #### El día a día
 
-1. Abre **Pagos por hacer**. Lo que está ahí ya fue autorizado.
-2. Elige la instrucción y di **de qué cuenta sale**. Tiene que ser una cuenta **de la misma moneda** que el pago.
-3. Pon el **número de referencia** del banco o de la plataforma. Solo el efectivo se libra de él.
-4. Confirma. La línea queda escrita en el libro con tu nombre y la hora, y la orden pasa a pagada.
+1. Abra **Pagos por hacer**. Lo que está ahí ya fue autorizado.
+2. Pulse **Pagar** en la orden y elija la **Cuenta** de donde sale. Tiene que ser una cuenta **de la misma moneda** que el pago.
+3. Escriba el **Número de referencia** del banco o de la plataforma. En efectivo es opcional.
+4. Confirme. La línea queda escrita en el libro con su nombre y la hora, y la orden pasa a pagada.
 
 Lo que no viene de una orden —un ingreso suelto, un gasto de caja chica, pasar dinero de una cuenta a otra— se registra desde **Bancos y cajas** con **Ingreso**, **Egreso** o **Trasladar**.
 
-#### Cuatro reglas que el sistema hace cumplir
+#### Cuatro reglas que conviene conocer
 
-- **Una cuenta, una moneda.** Una cuenta en bolívares no guarda dólares. Si te equivocaste de moneda al crearla y ya tiene movimientos, no se cambia: se crea otra y se desactiva la vieja.
-- **No hay sobregiro.** No puedes sacar más de lo que el libro dice que hay. Si el dinero está de verdad, es que falta registrar su entrada.
-- **No hay fechas futuras.** Nada se registra con fecha de mañana.
-- **El libro no se edita ni se borra.** Una línea equivocada se corrige **reversándola**: quedan las dos, la mala y la que la anula, y se entiende qué pasó. El pago de una compra se devuelve desde la compra, y un traslado se deshace con otro traslado en sentido contrario.
+- **Una cuenta, una moneda.** Si la cuenta ya tiene movimientos, su moneda no se cambia: se crea otra y se archiva la vieja.
+- **El sobregiro se decide cuenta por cuenta.** Las cuentas nacen con **Admite sobregiro** marcada, y entonces el libro deja sacar más de lo que dice que hay. Si se desmarca, el sistema frena la salida que deje la cuenta bajo cero.
+- **La fecha la pone quien registra.** El sistema no frena hoy una fecha futura en Tesorería: si se escribe la de mañana, queda la de mañana. Conviene mirarla antes de confirmar.
+- **El libro no se edita ni se borra.** Una línea equivocada se corrige **deshaciéndola**: quedan las dos, la mala y la que la anula, y se entiende qué pasó. Un traslado se deshace con otro en sentido contrario. **El pago de una compra no se deshace desde ninguna pantalla** (12.8).
 
-#### Los tres tropiezos más comunes
-
-| Lo que ves | Qué pasó de verdad |
-| --- | --- |
-| «En esa cuenta hay $ 200,00 y el pago es de $ 1.287,50» | El dinero está en el banco pero no en el libro. Falta el saldo de apertura o un ingreso. |
-| «La instrucción es por USD y la cuenta está en VES» | Elegiste una cuenta de otra moneda. Cambia de cuenta, o pide a compras que cambie la instrucción. |
-| «No hay tasa BCV registrada para esa fecha» | Falta la tasa del día. Se registra en Sistema › Tasas de cambio y se repite la operación. |
-
-**El IGTF lo pone el sistema, no tú.** Se aplica solo cuando la moneda del pago no es el bolívar, y se calcula al indicar el pago en Compras. Nadie lo activa ni lo desactiva a mano.
+**El IGTF lo propone el sistema.** Al indicar el pago en Compras viene marcado cuando la moneda no es el bolívar, y quien lo indica puede desmarcarlo si esa operación no lo causa.
 
 **Dos cosas que este módulo todavía no hace:** no calcula diferencial cambiario y no concilia contra el estado de cuenta del banco. Conciliar se puede, pero a mano: cada línea lleva su fecha, su referencia y su concepto.
 
 ### 12.1 Quién entra y quién puede hacer qué
 
-**No existe el rol de Tesorería.** Lo hubo y se retiró junto con el módulo. Los roles del sistema son diez y ninguno se llama así; están todos en 13.1.
+**No existe el rol de Tesorería.** Lo hubo y se retiró. Lo que existe es el **módulo** Tesorería en la matriz de permisos (13.1), con sus niveles de siempre.
 
 Hay **tres** puertas distintas, y conviene no confundirlas.
 
-**La primera es ver las pantallas del módulo** —Tablero y Bancos y cajas—. Depende del permiso sobre Tesorería, y hoy **solo lo tiene el administrador del sistema**. Todos los demás roles están en **Ninguno**, el gerente general y compras incluidos. Quien escriba la dirección ve la tarjeta **Tesorería no está a tu alcance**, con el texto **Tu rol no tiene acceso a este módulo. Si lo necesitas para tu trabajo, pídeselo a quien administra el sistema.** y el enlace **Volver al panel**.
+**La primera es ver las pantallas del módulo** —Tablero, Bancos y cajas, Reportes, Libro Mayor y Libro de tesorería—. Pide lectura sobre Tesorería. Quien no la tiene y escribe la dirección ve **Tesorería no está a su alcance**, con el texto **Su rol no tiene acceso a este módulo. Si lo necesita para su trabajo, pídaselo a quien administra el sistema.** y el botón **Volver al panel**.
 
-| Rol | Sobre Tesorería |
-| --- | --- |
-| Administrador del sistema | **Total** |
-| Los otros nueve roles | **Ninguno** |
+**La segunda es mover dinero en esas pantallas.** Pide escritura sobre Tesorería para **Nueva cuenta**, **Editar**, **Saldo de apertura**, **Ingreso**, **Egreso**, **Ajustar**, **Trasladar** y **Deshacer**; y control total para **Archivar**, **Desarchivar** y **Eliminar** una cuenta.
 
-**La segunda es mover dinero en esas pantallas** —**Nueva cuenta**, **Trasladar**, **Saldo de apertura**, **Ingreso**, **Egreso**, **Ajustar**, **Deshacer una línea**—. Pide permiso de **escritura** sobre Tesorería, que sale de la matriz de permisos como cualquier otro. Hoy, por lo anterior, solo el administrador.
+**La tercera es registrar un pago de la cola de Compras**, y esta no es de Tesorería. El botón **Pagar** de **Pagos por hacer** solo sale a quien tiene el rol Compras o es administrador. Por eso quien paga las órdenes es compras, y por eso esa pantalla vive en el menú de Compras.
 
-**La tercera es registrar un pago de la cola**, y esta no sale de la matriz: **la exige la propia función de la base y pide el rol Compras**, o ser administrador. Por eso quien paga las órdenes es compras, y por eso «Pagos por hacer» vive en el menú de Compras y no aquí.
+**Dar permiso sobre Tesorería no deja pagar las órdenes**, y tener el rol Compras no deja mover dinero en Bancos y cajas. Son dos llaves.
 
-**Esa tercera puerta no se puede abrir desde la matriz de permisos.** Dar permiso sobre Tesorería a alguien no le deja pagar; lo que hace falta es el rol Compras.
+Las casillas de acción de Tesorería que se ven en la matriz no cambian nada por sí solas: lo que cuenta es el nivel del módulo.
 
 ### 12.2 El circuito del dinero
 
-Antes de entrar en las pantallas conviene saber por dónde nace y por dónde muere cada deuda. En este módulo casi nada se teclea desde cero: la mayor parte llega sola desde Compras y desde Ventas.
+Antes de entrar en las pantallas conviene saber por dónde nace y por dónde muere cada deuda. En este módulo casi nada se teclea desde cero: la mayor parte llega sola desde Compras y desde Facturación.
 
 #### Lo que se debe a un proveedor
 
 1. **Alguien pide material.** Nace un pedido en Compras.
-2. **Compras cotiza y prepara la orden**, y la aprueba el **Gerente general**. Es quien la aprueba por su puesto — y, desde que existen los permisos extendidos, también quien tenga esa facultad prestada por un plazo (13.1). Lo aprobado de esa manera queda marcado como tal en la orden impresa.
-3. **Compras indica cómo se paga**: el método — **Transferencia bancaria**, **Pago móvil**, **Binance** o **Efectivo** —, la moneda, el monto y los datos de a dónde va el dinero. En ese momento nace la instrucción de pago, y con ella el IGTF ya calculado si la moneda no es el bolívar.
-4. **La instrucción aparece sola en Compras**, en dos vistas de la misma pantalla: **Pagos por hacer**, en orden de llegada, y su pestaña **Por proveedor**, agrupada. Nadie la carga a mano.
-5. **Quien tenga el rol Compras pulsa Pagar** y dice **por dónde salió** el dinero, con qué referencia y en qué fecha. No hay «tesorero»: ese rol no existe.
-6. **Al pulsar Confirmar el pago**, el sistema hace todo de una vez: escribe la línea **Pago a proveedor** en el libro y baja el saldo de la cuenta; si hay IGTF, escribe una segunda línea **IGTF** aparte; marca la instrucción como pagada; lo anota en la bitácora de la compra; y si con eso la orden queda saldada, la compra pasa a esperar que llegue el material.
+2. **Compras cotiza y prepara la orden**, y la aprueba el **Gerente general**, o quien tenga esa facultad prestada (13.1).
+3. **Compras indica cómo se paga**: el método, la moneda, el monto y los datos de a dónde va el dinero. En ese momento nace la instrucción de pago, con el IGTF propuesto si la moneda no es el bolívar.
+4. **La instrucción aparece sola en Compras**, en dos vistas de la misma pantalla: **Pagos por hacer**, para pagar, y su pestaña **Por proveedor**, agrupada. Nadie la carga a mano.
+5. **Quien tiene el rol Compras pulsa Pagar** y dice de qué cuenta salió el dinero, con qué referencia y en qué fecha.
+6. **Al pulsar Confirmar el pago**, el sistema hace todo de una vez: escribe la línea **Pago a proveedor** en el libro; si hay IGTF, escribe una segunda línea **IGTF** aparte; marca la instrucción como pagada; lo anota en la bitácora de la compra; y si con eso la orden queda saldada, la compra pasa a esperar que llegue el material.
 7. **La instrucción desaparece de la cola** y la línea se queda para siempre en el libro.
 
-Una deuda con un proveedor, por lo tanto, **se cierra pagándola desde tesorería, no borrándola**. Y si el pago estuvo mal, no se arregla reversando la línea del libro: hay que ir a la compra y devolver la instrucción de pago, porque reversar solo el dinero dejaría la compra marcada como pagada y el dinero de vuelta en la cuenta.
+Una deuda con un proveedor, por lo tanto, **se cierra pagándola, no borrándola**. Y **un pago ya confirmado no se deshace desde ninguna pantalla**: ni el libro lo deshace, porque dejaría la compra marcada como pagada y el dinero de vuelta, ni la compra deja devolver una instrucción que ya se pagó. Si un pago salió mal, avise a la administración.
 
 #### Lo que debe un cliente
 
-1. **Facturación emite una factura.** Si queda con saldo, la deuda aparece sola en **Facturación › Cuentas por cobrar**. Tampoco esta se carga a mano.
-2. **Se llama al cliente.** La lista está ordenada por antigüedad, no por monto, para que se vea a quién hay que llamar primero.
-3. **El cobro se registra en Facturación › Facturas**, abriendo la factura. No se cobra desde tesorería. Ahí se elige la cuenta donde cayó el dinero, el monto, el método, la fecha, la referencia y si se le cobra el IGTF.
-4. **El cobro escribe su línea en el libro de tesorería**, de tipo **Ingreso**, con el concepto de la factura, y sube el saldo de la cuenta. Si hay IGTF, va en una línea aparte.
-5. **Cuando el saldo de la factura llega a cero**, la factura queda cobrada y desaparece de la lista.
+1. **Facturación emite una factura.** Si queda con saldo, la deuda aparece sola en **Facturación › Cuentas por cobrar**.
+2. **El cobro se registra en Facturación › Facturas**, abriendo la factura. Ahí se elige la cuenta donde cayó el dinero, el monto, el método, la fecha, la referencia y si se le cobra el IGTF.
+3. **El cobro escribe su línea en el libro de tesorería**, de tipo **Ingreso**, y sube el saldo de la cuenta. Si hay IGTF, va en una línea aparte.
+4. **Cuando el saldo de la factura llega a cero**, la factura queda cobrada y desaparece de la lista.
 
-Dos cosas que conviene entender de aquí. La primera: **el cobro entra en la moneda de la cuenta donde cae el dinero, no en la de la factura**. Si la factura está en dólares y el cliente pagó a la cuenta en bolívares, el cobro es en bolívares. La segunda, que se deriva de la anterior: por eso los saldos de **Cuentas por cobrar** se muestran todos en dólares, porque se cobra en las dos monedas y hay que poder sumarlos.
+**El cobro entra en la moneda de la cuenta donde cae el dinero, no en la de la factura.** Por eso los saldos de **Cuentas por cobrar** se muestran todos en dólares: se cobra en las dos monedas y hay que poder sumarlos.
 
-Registrar un cobro exige permiso de escritura sobre el módulo Ventas. Quien factura es quien cobra. (El rol de Tesorería, que es lo que alguien podría esperar aquí, ya no existe: ver 12.1.)
+Registrar un cobro pide escritura sobre **Facturación**.
 
 ### 12.3 Bancos y cajas
 
-**Fuera del menú.** Es lo que la empresa decidió no llevar: hoy solo la abre el administrador.
+**Administración › Tesorería › Bancos y cajas**
 
 Es la pantalla de cabecera del módulo: dónde está el dinero de la empresa y cuánto hay en cada sitio. Desde aquí se crean las cuentas, se registran los ingresos y egresos que no vienen de una compra ni de una venta, y se traslada dinero de un sitio a otro.
 
 #### Qué se ve
 
-Arriba, una tarjeta con el rótulo **Disponible en cuentas activas**. **La cifra ya no es fija en dólares**: junto al rótulo hay una fila de píldoras, una por cada moneda con tasa registrada —**Bs**, **$**, y las demás con su símbolo—, y el total se expresa en la que se elija.
+Arriba, una tarjeta con el rótulo **Disponible en cuentas activas**. Junto al rótulo hay una fila de píldoras, una por cada moneda con tasa registrada, y el total se expresa en la que se elija.
 
-Al lado, la advertencia de cómo está hecha esa suma: **Convertido con las tasas de hoy (Bs X por $), no con la del día en que entró cada saldo. Cada cuenta manda el suyo.**
+Al lado, la advertencia de cómo está hecha esa suma: **Convertido con las tasas de hoy**, con la tasa entre paréntesis, **no con la del día en que entró cada saldo. Cada cuenta manda el suyo.**
 
-Si falta la tasa del día y hay cuentas en bolívares, la cifra se sustituye por **—** y el texto pasa a ser **Falta la tasa del día para convertir los bolívares. Regístrala en Sistema › Tasas de cambio; mientras tanto, el saldo de cada cuenta sí es exacto.** El sistema prefiere no dar el total antes que darlo mal.
+Si falta alguna tasa del día, el total no se da y lo dice: **Falta la tasa del día para convertir. Regístrela en Sistema › Tasas de cambio; mientras tanto, el saldo de cada cuenta sí es exacto.** El sistema prefiere no dar el total antes que darlo mal.
 
-Debajo, una tarjeta por cuenta. Cada una muestra el nombre, debajo el número de cuenta o el titular, la etiqueta de moneda arriba a la derecha — **VES** o **USD** —, el rótulo **Saldo** con el importe en la moneda de esa cuenta, en rojo si es negativo, y una línea final: **Sin movimientos todavía**, o el número de movimientos y la fecha del último. Las cuentas archivadas van en un bloque aparte al final, **Archivadas (n)**, atenuadas y con la etiqueta **Archivada**.
+Debajo, una tarjeta por cuenta: el nombre, el número de cuenta o el titular, la moneda arriba a la derecha, el **Saldo** en la moneda de esa cuenta —en rojo si es negativo— y una línea final, **Sin movimientos todavía** o cuántos movimientos tiene y la fecha del último. Las cuentas archivadas van en un bloque aparte al final, **Archivadas**, con la etiqueta **Archivada**.
 
-**Quién ve las cuentas.** Desde el 24/09/2026 las ven, además de tesorería y compras, quien tiene lectura en Facturación y quien tiene escritura en Nómina: el cobro de una factura pide en qué cuenta entra el dinero, y el pago de la nómina de cuál sale. Antes esos selectores les salían vacíos. Crear, editar, mover dinero y archivar sigue siendo de tesorería.
+El enlace **Ver movimientos** de cada tarjeta abre el libro de tesorería, pero **entero, no solo el de esa cuenta**: el libro ya no filtra por cuenta (12.7). El libro de una sola cuenta está en **Reportes › Libro de una caja** (12.10).
 
-#### Editar y archivar una cuenta
+**Quién ve las cuentas.** Además de quien tiene Tesorería, las ven quien tiene lectura en Compras o en Facturación y quien tiene escritura en Nómina: el pago de una compra, el cobro de una factura y el pago de la nómina piden de qué cuenta sale o en cuál entra el dinero. Crear, editar, mover dinero y archivar sigue siendo de Tesorería.
 
-**Editar** abre los mismos campos con los que se creó. Se puede cambiar cualquiera, la moneda incluida mientras la cuenta no tenga movimientos.
+#### Editar, archivar y eliminar una cuenta
 
-**Las cuentas no se borran: se archivan.** Una cuenta con movimientos es la contraparte de cada línea del libro, de cada cobro y de cada pago; borrarla dejaría asientos apuntando a nada. Pulsa **Archivar** en la tarjeta y confirma. La cuenta deja de salir en los selectores y en el disponible, pasa al bloque de archivadas, y el libro conserva todo. **Desarchivar**, en la misma tarjeta, la devuelve.
+**Editar** abre los mismos campos con los que se creó. Se puede cambiar cualquiera, la moneda incluida mientras la cuenta no tenga movimientos. Sin permiso de escritura, el botón es **Ver datos**.
 
-**Con saldo no se archiva.** El disponible suma solo cuentas activas, y archivar una con saldo haría desaparecer ese dinero del total sin que nadie lo moviera. El botón sale apagado y dice por qué; primero se traslada el saldo a otra cuenta o se ajusta a cero. Archivar y desarchivar piden control total sobre Tesorería.
+**Una cuenta con movimientos no se borra: se archiva.** Es la contraparte de cada línea del libro, de cada cobro y de cada pago; borrarla dejaría asientos apuntando a nada. Pulse **Archivar** en la tarjeta y confirme: **Deja de salir en los selectores y en el disponible. El libro conserva sus movimientos y se puede desarchivar cuando haga falta.** **Desarchivar**, en la misma tarjeta, la devuelve.
 
-**No hay buscador ni filtros en esta pantalla.**
+**Con saldo no se archiva.** El disponible suma solo cuentas activas, y archivar una con saldo haría desaparecer ese dinero del total sin que nadie lo moviera. El botón sale apagado, y al pasar el ratón dice **Con saldo no se archiva: trasládelo o ajústelo a cero primero.**
 
-Si todavía no hay ninguna cuenta, aparece **No hay cuentas**, con el texto **Sin una cuenta no se puede registrar de dónde sale el dinero de una compra.** y el botón **Crear la primera**.
+**Eliminar** solo existe para una cuenta archivada que nunca movió dinero: **Solo se elimina una cuenta archivada que nunca movió dinero. Desaparece de la lista y no hay vuelta atrás; la base guarda quién la eliminó.**
+
+No hay buscador ni filtros en esta pantalla. Si todavía no hay ninguna cuenta, aparece **Sin cuentas registradas**, con el texto **Se necesita al menos una cuenta para registrar el origen de los pagos.** y el botón **Crear la primera**.
 
 #### Crear una cuenta
 
-Pulsa **Nueva cuenta**. La ventana lleva escrito el porqué de la regla principal: **Una cuenta, una moneda. Mezclarlas obliga a inventar un saldo que ya no coincide con el del banco.**
+Pulse **Nueva cuenta**. La ventana tiene dos pasos, **Identificación** y **Titular y condiciones**, y lleva escrita la regla principal: **Una cuenta, una moneda. Mezclarlas obliga a inventar un saldo que ya no coincide con el del banco.**
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Tipo** | Sí | Empieza en **BANCO**. Opciones: **Cuenta bancaria**, **Caja / efectivo**, **Billetera digital (Binance)** |
-| **Moneda** | Sí | Empieza en **VES**. Opciones: **Bolívares**, **Dólares**. Al editar avisa: **No cambia si ya tiene movimientos.** |
-| **Nombre** | Sí | Mínimo tres letras. Sin él, **Guardar** está apagado |
-| **Banco** | Solo si el tipo es cuenta bancaria | Empieza en **Elige el banco**. Lista cerrada de los bancos del país, con su código |
-| **Número de cuenta** | Solo si el tipo es cuenta bancaria | |
-| **Correo de la plataforma** | Solo en billetera | Hace falta este o la dirección de la wallet |
-| **Dirección de la wallet** | Solo en billetera | Hace falta esta o el correo |
+| **Tipo** | Sí | **Cuenta bancaria**, **Caja / efectivo** o **Billetera digital (Binance)** |
+| **Moneda** | Sí | Las monedas que lleva el sistema. Al editar avisa: **No cambia si ya tiene movimientos.** |
+| **Nombre** | Sí | Sin él no se pasa al segundo paso: **Falta ponerle nombre a la cuenta.** |
+| **Banco** | En cuenta bancaria | Empieza en **Seleccione el banco**. Lista de los bancos del país, con su código |
+| **Número de cuenta** | En cuenta bancaria | En billetera, el mismo campo se llama **Dirección de la billetera** |
+| **Correo de la plataforma** | En billetera | Hace falta este o la dirección de la billetera |
 | **Red** | No | Solo en billetera |
-| **Titular** | Sí en cuenta bancaria y en caja | Si el tipo es caja, la etiqueta cambia a **Quién responde por el efectivo** |
+| **Titular** | En cuenta bancaria y en caja | En caja se llama **Responsable** |
 | **Cédula o RIF** | No | |
 | **Nota** | No | |
-| **Admite sobregiro** | — | Viene desmarcada. **Solo si el banco dio línea de crédito. Una caja chica no entrega billetes que no tiene.** |
+| **Admite sobregiro** | — | **Viene marcada.** **Solo si el banco dio línea de crédito. Una caja chica no entrega billetes que no tiene.** |
 | **Activa** | — | Viene marcada |
 
-Cierra con **Guardar**. Para corregir los datos de una cuenta existente se pulsa **Editar** en su tarjeta.
+Cierra con **Guardar**.
 
-**La moneda no se cambia después del primer movimiento.** Si te equivocaste, el camino es crear otra cuenta: cambiarla obligaría a reinterpretar como dólares todo lo que ya se registró en bolívares, y ningún saldo volvería a coincidir con el del banco.
+**La moneda no se cambia después del primer movimiento.** Si se equivocó, el camino es crear otra cuenta: cambiarla obligaría a reinterpretar como dólares todo lo que ya se registró en bolívares, y ningún saldo volvería a coincidir con el del banco.
 
 #### Registrar dinero que entra o que sale
 
-En la tarjeta de cada cuenta hay cuatro botones que escriben en el libro. No son intercambiables: cada uno responde a una situación distinta y así queda escrito en la línea.
+En la tarjeta de cada cuenta hay botones que escriben en el libro. No son intercambiables: cada uno responde a una situación distinta y así queda escrito en la línea.
 
 | Botón | Cuándo se usa | Lo que dice la ventana |
 | --- | --- | --- |
@@ -5375,28 +5360,29 @@ En la tarjeta de cada cuenta hay cuatro botones que escriben en el libro. No son
 
 Los pasos son los mismos en los cuatro casos:
 
-1. Pulsa el botón en la tarjeta de la cuenta.
-2. Escribe el **Monto en VES** o el **Monto en USD** — la etiqueta lleva la moneda de la cuenta. En **Ajustar** el monto va **positivo si sobra dinero en la cuenta, negativo si falta**.
-3. Escribe el **Concepto**. No aparece en el saldo de apertura, y en **Ajustar** la etiqueta cambia a **Qué explica la diferencia**.
-4. Rellena **De quién / a quién** y **Referencia** si es un ingreso o un egreso. Los dos son opcionales.
-5. **Fecha**: si la dejas en blanco, queda hoy.
-6. Pulsa **Registrar**.
+1. Pulse el botón en la tarjeta de la cuenta.
+2. Escriba el **Monto**, en la moneda de la cuenta. En **Ajustar** el monto va **positivo si sobra dinero en la cuenta, negativo si falta**.
+3. Escriba el **Concepto**. No aparece en el saldo de apertura.
+4. En el egreso, elija la **Categoría**: sin ella, el gasto sale como «sin clasificar» en el centro de costos.
+5. Rellene **De quién / a quién** y **Referencia** si es un ingreso o un egreso. Los dos son opcionales.
+6. **Fecha**: si la deja en blanco, queda hoy.
+7. Pulse **Registrar**.
 
-El botón **Registrar** está apagado mientras el monto no sea mayor que cero — en el ajuste basta con que sea distinto de cero — y mientras el concepto sea demasiado corto. En el ajuste se exige una explicación más larga que en el resto, porque un ajuste sin explicación es la única línea del libro que puede tapar un descuadre en vez de contarlo.
+El botón **Registrar** está apagado mientras el monto no sea mayor que cero —en el ajuste basta con que sea distinto de cero— y mientras el concepto sea demasiado corto. En el ajuste se exige una explicación más larga, porque un ajuste sin explicación es la única línea del libro que puede tapar un descuadre en vez de contarlo.
 
-**Un pago a un proveedor no se registra aquí.** Se registra desde la compra, para que el dinero y la orden queden atados: un egreso suelto bajaría el saldo pero dejaría la compra esperando pago para siempre.
+**Un pago a un proveedor no se registra aquí.** Se registra desde Pagos por hacer, para que el dinero y la orden queden atados: un egreso suelto bajaría el saldo pero dejaría la compra esperando pago para siempre.
 
 #### Trasladar entre cuentas
 
-Sirve para mover dinero de un sitio a otro sin que cuente como gasto ni como ingreso. Lo dice la propia ventana: **El mismo dinero cambiando de sitio. No cuenta como ingreso ni como gasto del mes.**
+Sirve para mover dinero de un sitio a otro sin que cuente como gasto ni como ingreso: **El mismo dinero cambiando de sitio. No cuenta como ingreso ni como gasto del mes.**
 
-1. Pulsa **Trasladar**.
-2. Elige **Sale de**. Cada opción se lee con el nombre de la cuenta y su saldo.
-3. Escribe el **Monto**. La etiqueta añade la moneda del origen en cuanto lo eliges.
-4. Elige **Entra en**. La cuenta de origen ya no aparece en esta lista.
-5. Si las dos cuentas son de monedas distintas, aparece **Cuánto llegó en {moneda}** y hay que llenarlo: **Se copia del comprobante. La casa de cambio no usa la tasa oficial y el sistema no va a inventar un número que el banco desmienta.**
-6. Rellena **Referencia** y **Fecha** si hace falta. Los dos son opcionales.
-7. Pulsa **Trasladar**.
+1. Pulse **Trasladar**.
+2. Elija la **Cuenta de origen**. Cada opción se lee con el nombre de la cuenta y su saldo.
+3. Escriba el **Monto**.
+4. Elija la **Cuenta de destino**. La de origen ya no aparece en esta lista.
+5. Si las dos cuentas son de monedas distintas, aparece **Monto en** la moneda del destino, y hay que llenarlo: **Se copia del comprobante. La casa de cambio no usa la tasa oficial y el sistema no va a inventar un número que el banco desmienta.**
+6. Rellene **Referencia** y **Fecha** si hace falta.
+7. Pulse **Trasladar**.
 
 Entre dos cuentas de la misma moneda **tiene que llegar exactamente lo que sale**. Si el banco cobró comisión, se registra aparte como un egreso: meterla dentro del traslado haría que el mismo dinero pareciera haber cambiado de valor al cambiar de sitio.
 
@@ -5406,9 +5392,11 @@ De aquí no sale ningún papel imprimible. Lo que produce esta pantalla son lín
 
 **Administración › Compras › Pagos por hacer**
 
-Es la cola de trabajo de quien paga: **Lo que compras ya autorizó y todavía no ha salido del banco. Al pagar, la compra queda esperando que llegue el material.**
+Es la cola de trabajo de quien paga: **Compras autorizadas pendientes de pago. Al pagarse, la compra queda a la espera de la recepción del material.**
 
-**Por pagar a clientes.** Desde el 24/09/2026, encima de la cola hay una tarjeta con lo que la empresa **le debe a sus clientes**: pagaron una factura con material que valía más de lo que debían, y quien cobró eligió devolverles la diferencia en dinero (21.2). Cada deuda dice el cliente, el saldo que la originó, la factura, desde cuándo y cuánto queda. **Pagar** pide de qué cuenta sale —solo cuentas en la misma moneda de la deuda—, cuánto, referencia y fecha; escribe un egreso en el libro y baja la deuda. Lo hace quien tiene escritura en Tesorería. Si no se debe nada, la tarjeta no aparece.
+**Por pagar a clientes.** Encima de la cola, cuando hay algo, sale una tarjeta con lo que la empresa **les debe a sus clientes**: **Pagaron una factura con material que valía más de lo que debían, y la diferencia se les devuelve en dinero.** Su botón **Pagar** pide de qué cuenta sale —solo cuentas en la misma moneda de la deuda—, cuánto, referencia y fecha, y escribe un egreso en el libro. Pide escritura sobre Tesorería.
+
+**Pagos con material.** Si hay órdenes que se pagan con material, salen en un aviso aparte y no en la cola: no salen de una cuenta, se registran en su orden de compra.
 
 #### Qué se ve
 
@@ -5419,56 +5407,50 @@ Arriba, dos tarjetas de resumen:
 | **Por pagar** | Cuántas instrucciones esperan, y debajo cuántas llevan más de tres días |
 | **Suma, con IGTF** | El total, **Al cambio de cada pago** |
 
-**Había una tercera, «En cuentas en dólares», y se retiró.** Enseñaba un disponible que ya no actualiza nadie: la empresa dejó de llevar saldos, así que ese número habría envejecido en pantalla dando la impresión contraria.
+Si alguna instrucción lleva más de una semana esperando, aparece un aviso: **Hay instrucciones esperando más de una semana. El proveedor no reserva el material hasta que ve el pago, y la cotización tiene fecha de vencimiento.**
 
-Si alguna instrucción lleva más de una semana esperando, aparece un aviso naranja: **Hay instrucciones esperando más de una semana. El proveedor no reserva el material hasta que ve el pago, y la cotización tiene fecha de vencimiento.**
+Debajo está la **Cola de pagos**, con cuántos hay por pagar. Cada fila muestra el número de la orden, que es un enlace a la compra; el método; los días que lleva esperando, en naranja pasados tres días y en rojo pasados siete; el proveedor y el título de la compra; a dónde va el dinero, según el método —banco y número de cuenta, teléfono del pago móvil, correo o cuenta de Binance, o **Entregar a** y el nombre en efectivo—; el titular y su documento; y a la derecha el importe en su moneda, con el IGTF sumado cuando aplica.
 
-Debajo está la **Cola de pagos**, con el subtítulo **En orden de llegada. La más vieja primero.** No es una tabla: es una lista de filas. Cada fila muestra el número de la orden, que es un enlace a la compra; la etiqueta del método; los días que lleva esperando, en naranja pasados tres días y en rojo pasados siete; el proveedor y el título de la compra; a dónde va el dinero, escrito según el método — banco y número de cuenta en una transferencia, banco y teléfono en un pago móvil, correo o cuenta en Binance, y **Entregar a {nombre}** en efectivo —; el titular y su documento; y a la derecha el importe en su moneda, con el IGTF sumado en naranja cuando aplica.
-
-**Sí hay filtros, y están para armar las tandas.** Sobre la cola hay tres controles:
+Sobre la cola hay tres controles para armar las tandas:
 
 | Control | Qué hace |
 | --- | --- |
-| **Qué urge** | Vacío es **Todas las prioridades**. Filtra por Urgente, Alta o Normal |
-| **Para qué unidad** | Vacío es **Todas las unidades**. Solo salen las que hoy tienen pagos pendientes |
-| **Por dónde empezar** | El orden de la lista: por antigüedad —el de partida—, por monto o por prioridad |
+| **Prioridad** | Vacío es **Todas las prioridades** |
+| **Unidad** | Vacío es **Todas las unidades**. Solo salen las que hoy tienen pagos pendientes |
+| **Por dónde empezar** | El orden de la lista: **Antigüedad** —el de partida—, **Prioridad** o **Monto** |
 
-**La lista se refresca sola**: lo que instruya Compras aparece aquí sin que tengas que recargar la pantalla.
+**La lista se refresca sola**: lo que instruya Compras aparece aquí sin recargar la pantalla.
 
-Si no hay nada pendiente: **No hay nada por pagar**, con el texto **Cuando compras autorice una orden e indique cómo se paga, aparece aquí.**
+Si no hay nada pendiente: **Sin pagos pendientes**, con el texto **Aquí aparecen las órdenes autorizadas por Compras con método de pago indicado.**
 
 #### Pagar
 
-1. Busca la fila y pulsa **Pagar**.
-2. Se abre **Registrar el pago**. Arriba, el método y el importe, y un recuadro con el destino del dinero y el titular. Si hay IGTF, en naranja: **Con IGTF salen $ 1.287,50 — $ 37,50 de impuesto.**
-3. Elige **Por dónde salió el dinero**. Ayuda: **Queda anotado en el pago. El sistema no lleva el saldo de las cuentas.** Las opciones se leen solo con el nombre de la cuenta: ya no llevan el saldo al lado, y **ya no hay aviso de saldo insuficiente**. Los dos eran la vigilancia de un número que la empresa dejó de llevar.
-4. Escribe el **Número de referencia**: **El número que devolvió el banco o la plataforma.** Si el método es efectivo, la etiqueta cambia a **Referencia (opcional en efectivo)**.
-5. Rellena la **Fecha del pago** si no es hoy: **Vacío es hoy. Es la fecha que aparece en el estado de cuenta.**
-6. Pulsa **Confirmar el pago**.
+1. Busque la fila y pulse **Pagar**.
+2. Se abre **Registrar el pago**. Arriba, el método y el importe, y un recuadro con el destino del dinero y el titular. Si hay IGTF, se dice cuánto sale en total y cuánto es de impuesto.
+3. Elija la **Cuenta**: **Queda anotado en el pago. El sistema no lleva el saldo de las cuentas.** Solo salen las cuentas en la misma moneda de la instrucción; si no hay ninguna, la lista lo dice, y hay que crearla en **Bancos y cajas**. No es un olvido: pagar una instrucción en dólares desde una cuenta en bolívares obligaría al sistema a inventar la tasa a la que se hizo el cambio.
+4. Escriba el **Número de referencia**: **El número que devolvió el banco o la plataforma.** En efectivo es opcional.
+5. Rellene la **Fecha del pago** si no es hoy.
+6. Pulse **Confirmar el pago**.
 
-**En la lista de cuentas solo salen las que están en la misma moneda de la instrucción.** Si no hay ninguna, la lista lo dice. **Bancos y cajas ya no está en el menú** —es una de las pantallas que quedaron fuera cuando Tesorería dejó de ser un módulo—, así que crear una cuenta hoy lo hace el administrador. No es un olvido: pagar una instrucción en dólares desde una cuenta en bolívares obligaría al sistema a inventar la tasa a la que se hizo el cambio, y esa cifra la pone el banco, no el sistema.
-
-Si el saldo de la cuenta elegida no alcanza, aparece un aviso naranja que **no impide confirmar**: **En esa cuenta hay $ 200,00 y el pago es de $ 1.287,50. Si el dinero ya está, falta registrar el ingreso o el saldo de apertura.** Avisa porque lo más frecuente no es que falte el dinero, sino que falte registrarlo. Quien sí impide confirmar es el propio libro, más adelante, si al escribir la línea el saldo queda por debajo de cero y la cuenta no admite sobregiro.
+Si la cuenta no admite sobregiro y el pago la dejaría bajo cero, el libro lo frena al confirmar.
 
 #### Pagar varias de una vez
 
 Es lo que se usa cuando se va al banco a hacer la tanda del día.
 
-Cada fila lleva **una casilla** a la izquierda, y solo la ve quien puede pagar.
+Cada fila lleva **una casilla** a la izquierda, y solo la ve quien puede pagar. También está **Marcar los de una moneda**.
 
-**Al marcar la primera, la moneda del lote queda fijada.** Las filas de otra moneda pierden su casilla, y con ella la posibilidad de entrar en ese lote. No es un capricho: **el lote entero sale de una sola cuenta y con una sola referencia**, y una cuenta tiene una sola moneda.
+**Al marcar la primera, la moneda del lote queda fijada.** Las filas de otra moneda pierden su casilla y su botón **Pagar** mientras dure el lote: **el lote entero sale de una sola cuenta y con una sola referencia**, y una cuenta tiene una sola moneda.
 
-Al pie, pegada abajo mientras se recorre la lista, aparece una barra con **N pagos marcados** y, debajo, la suma: *"Suman $ 1.287,50, con IGTF. Salen todos de la misma cuenta y con la misma referencia."* A la derecha, **Desmarcar** y **Registrar los N**.
+Al pie aparece una barra con los pagos marcados y su suma, y a la derecha **Desmarcar** y **Registrar los N**. La ventana del lote pide la cuenta, la fecha y la referencia: **La misma para todos: es la tanda que devolvió el banco.**
 
-**Si el banco te devolvió una referencia por cada pago, no uses el lote.** El lote escribe la misma en todos, y entonces el número del estado de cuenta deja de casar con el del sistema — que es justo lo que se mira cuando algo no cuadra.
+**Si el banco devolvió una referencia por cada pago, no use el lote.** El lote escribe la misma en todos, y entonces el número del estado de cuenta deja de casar con el del sistema, que es justo lo que se mira cuando algo no cuadra.
 
 ### 12.5 Cuentas por pagar
 
 **Administración › Compras › Pagos por hacer › Por proveedor**
 
-Ya no tiene entrada propia en el menú: es la segunda pestaña de **Pagos por hacer**. El título de la pantalla sigue diciendo **Cuentas por pagar**.
-
-Es la misma deuda de la pantalla anterior, pero vista al revés: **Lo que se le debe a cada proveedor, por autorizaciones de compra que todavía no han salido del banco.** La cola sirve para pagar en orden; esta pantalla sirve para decidir a quién se le paga.
+Es la segunda pestaña de **Pagos por hacer**, y su título es **Cuentas por pagar**: **Deuda con cada proveedor por autorizaciones de compra pendientes de pago.** La cola sirve para pagar en orden; esta pantalla sirve para decidir a quién se le paga.
 
 Arriba, la **Deuda total con proveedores** en dólares, y debajo cuántos proveedores y cuántos pagos autorizados la componen.
 
@@ -5481,23 +5463,23 @@ Dentro de cada tarjeta hay una tabla:
 | **Orden** | El número, que es un enlace al detalle de la compra |
 | **Compra** | El título de la compra |
 | **Autorizada** | La fecha en que se autorizó |
-| **Monto** | El importe en la moneda de la instrucción y, debajo en naranja, el IGTF si aplica |
+| **Monto** | El importe en la moneda de la instrucción y, debajo, el IGTF si aplica |
 
-Si no se debe nada: **No se le debe nada a nadie**, con el texto **Toda compra autorizada ya está pagada.**
+Si no se debe nada: **Sin deudas con proveedores**, con el texto **Todas las compras autorizadas están pagadas. Las compras aprobadas por el gerente aparecen aquí pendientes de pago.**
 
-**Desde aquí no se paga.** Es una pantalla de solo consulta: no tiene filtros, ni acciones, ni botón de imprimir ni de exportar. Para pagar hay que ir a **Pagos por hacer** o al detalle de la compra, donde está el formulario que ata el dinero a la orden.
+**Desde aquí no se paga.** Es una pantalla de solo consulta: no tiene filtros, ni acciones, ni botón de imprimir ni de exportar.
 
 ### 12.6 Cuentas por cobrar
 
-**Se mudó a Facturación el 15 de septiembre de 2026.** Está en el capítulo 21 (21.4).
+**Se mudó a Facturación el 15 de septiembre de 2026.** Está en **Administración › Facturación › Cuentas por cobrar**, y la cuenta el capítulo 21 (21.4).
 
 ### 12.7 Libro de tesorería
 
-**Administración › Compras › Movimientos de dinero**
+**Administración › Tesorería › Libro de tesorería**
 
-En el menú se llama así. El título de la pantalla sigue diciendo **Libro de tesorería**.
+Hasta el 24 de septiembre de 2026 colgaba del menú de Compras, como **Movimientos de dinero**. Hoy está en Tesorería y se llama igual en el menú y en la pantalla.
 
-Es el libro contable del dinero: **Todo el dinero que entró y salió. No se edita ni se borra: lo que estuvo mal se deshace y las dos líneas quedan.** Aquí no se registra nada nuevo: se consulta, y si algo se registró mal, se escribe la línea contraria.
+Es el libro contable del dinero: **Libro de ingresos y egresos. Los registros no se editan ni se eliminan: una corrección se asienta con el movimiento contrario, y ambos quedan visibles.** Aquí no se registra nada nuevo: se consulta, y si algo se registró mal, se escribe la línea contraria.
 
 #### Qué se ve
 
@@ -5505,11 +5487,11 @@ Arriba hay **tres filtros**:
 
 | Filtro | Qué hace |
 | --- | --- |
-| **Cómo se pagó** | Empieza en **De cualquier forma**. Efectivo, transferencia, pago móvil, Zelle, Binance u otro |
+| **Método de pago** | Empieza en **De cualquier forma** |
 | **Moneda** | Empieza en **Todas** |
 | **Rango de fechas** | Con atajos para los períodos de siempre |
 
-**Había un cuarto, el de Cuenta, y se retiró**: ya no se manejan cajas ni bancos, así que filtrar por cuenta dejó de decir nada.
+No se filtra por cuenta: el libro de una sola cuenta está en **Reportes › Libro de una caja**.
 
 La tabla tiene estas columnas:
 
@@ -5517,46 +5499,36 @@ La tabla tiene estas columnas:
 | --- | --- |
 | **Movimiento** | El número del asiento y, debajo, una etiqueta con el tipo |
 | **Fecha** | La fecha del movimiento |
+| **Método de pago** | Cómo se movió el dinero, y la moneda |
 | **Concepto** | El texto y, debajo, la contraparte, la referencia y quién lo registró |
-| **Monto** | Con signo más o menos, en la moneda de la cuenta, y debajo en gris el equivalente en la otra moneda |
+| **Monto** | Con signo más o menos, en la moneda del movimiento, y debajo en gris el equivalente en la otra moneda |
 
-Los tipos que puede llevar la etiqueta son: **Saldo de apertura**, **Ingreso**, **Egreso**, **Pago a proveedor**, **IGTF**, **Comisión bancaria**, **Traslado entre cuentas**, **Ajuste** y **Reverso**. Los reversos y los ajustes salen en naranja; las entradas, en verde. **El tipo se sigue llamando «Reverso» aunque el botón diga «Deshacer»**: es el nombre del asiento, no el del botón.
+Los tipos que puede llevar la etiqueta son: **Saldo de apertura**, **Ingreso**, **Egreso**, **Pago a proveedor**, **IGTF**, **Comisión bancaria**, **Traslado entre cuentas**, **Ajuste** y **Reverso**. **El tipo se sigue llamando «Reverso» aunque el botón diga «Deshacer»**: es el nombre del asiento, no el del botón.
 
-El equivalente en gris se calcula **con la tasa congelada del día del movimiento**, no con la de hoy. Es una diferencia con el total de la pantalla de cuentas, y es deliberada: así un pago de enero se puede comparar con uno de julio.
+El equivalente en gris se calcula **con la tasa congelada del día del movimiento**, no con la de hoy. Así un pago de enero se puede comparar con uno de julio.
 
-**La pantalla muestra las 200 líneas más recientes**, de la más nueva a la más vieja. No hay paginación ni botón de ver más, y el único filtro es el de cuenta. Es una limitación real: en un mes de mucho movimiento, una línea de hace unas semanas deja de aparecer aquí aunque siga en el libro.
+**La pantalla muestra las 200 líneas más recientes** de lo que piden los filtros, de la más nueva a la más vieja. No hay paginación: para llegar más atrás hay que acotar las fechas.
 
-Si todavía no hay nada: **Todavía no hay movimientos**, con el texto **El libro se llena solo: cada pago, ingreso o traslado escribe su línea.**
+Si todavía no hay nada: **Sin movimientos registrados**, con el texto **Cada pago, ingreso o traslado se registra automáticamente en el libro.** Si los filtros no dejan nada: **Sin resultados**.
 
 #### Deshacer una línea
 
-**El botón se llama Deshacer**, igual que en el libro de inventario. Por dentro la operación sigue siendo un reverso —es lo que dice la nota que deja— pero esa palabra no aparece en la pantalla.
-
-1. Busca la línea equivocada.
-2. Pulsa **Deshacer**. Se abre la ventana **Deshacer TES-000123** y el texto **Se escribe el movimiento contrario. El equivocado se queda a la vista: así se entiende qué pasó.**
-3. Arriba verás un recuadro fijo, que no se puede tocar, con el concepto y el importe de lo que vas a anular.
-4. Escribe **Por qué se reversa**. Mínimo diez letras. Ayuda: **Queda escrito en el movimiento nuevo.**
-5. Confirma con **Deshacer** en el botón rojo.
+1. Busque la línea equivocada.
+2. Pulse **Deshacer**. Se abre la ventana con el número del movimiento y el texto **Se escribe el movimiento contrario. El equivocado se queda a la vista: así se entiende qué pasó.**
+3. Arriba verá un recuadro fijo con el concepto y el importe de lo que va a anular.
+4. Escriba el **Motivo**. Mínimo diez letras. Ayuda: **Queda escrito en el movimiento nuevo.**
+5. Confirme con **Deshacer**.
 
 La línea original **se queda en el libro**. Lo que se escribe es una nueva, del mismo tamaño y en sentido contrario. Después, si hace falta, se registra la correcta.
 
 **El botón Deshacer no aparece en cuatro casos**, y cada uno tiene su motivo:
 
 - **La línea ya deshace otra.** Lo que ya se deshizo no se vuelve a deshacer: si la corrección estuvo mal, se registra el movimiento que corresponda.
-- **La línea es el pago de una compra.** Deshacerla a solas dejaría la compra marcada como pagada y el dinero de vuelta en la cuenta. Se devuelve la instrucción de pago desde la compra.
+- **La línea es el pago de una compra.** Deshacerla a solas dejaría la compra marcada como pagada y el dinero de vuelta en la cuenta (12.8).
 - **La línea es una de las dos mitades de un traslado.** Deshacer solo esa devolvería el dinero al origen dejándolo también en el destino. Se deshace con un traslado en sentido contrario.
-- **La línea es el pago de una nómina.**
+- **La línea es el pago de una nómina.** Deshacerla dejaría los recibos diciendo que se cobró y el banco diciendo que no salió nada.
 
 Y a esos se suma el de siempre: **sin permiso de escritura sobre Tesorería, el botón tampoco se dibuja.**
-
-**Aquí hay una asimetría que conviene entender**, porque es lo que hace que alguien de compras vea el libro y no pueda tocarlo:
-
-| Para… | Hace falta |
-| --- | --- |
-| **Entrar al libro** | El permiso de **Compras**, que es de donde cuelga en el menú |
-| **Deshacer una línea** | El permiso de **escritura sobre Tesorería**, que hoy solo tiene la administración |
-
-No es un rol —el de Tesorería se retiró y ya no existe— sino un nivel de la matriz. Y como sobre Tesorería todos los demás roles están en **Ninguno** (12.1), en la práctica **solo el administrador deshace una línea del libro**.
 
 ### 12.8 Lo que conviene entender
 
@@ -5566,119 +5538,129 @@ Es la primera decisión del módulo y la que más consecuencias tiene: **una cue
 
 La razón es que el saldo de una cuenta existe para compararse con una sola cosa: lo que dice el banco. Mezclar las dos monedas en una cuenta obliga a inventar un saldo «equivalente» que ya no coincide con ningún estado de cuenta, y a partir de ahí no hay forma de saber si un descuadre es un error de registro o una diferencia de cambio.
 
-De esa regla salen todas estas otras, que en la práctica se encuentran una tras otra:
+De esa regla salen todas estas otras:
 
 - La cuenta **no puede cambiar de moneda** una vez que tiene movimientos.
 - Un pago **solo puede salir de una cuenta en la misma moneda de la instrucción**.
 - Un traslado entre dos cuentas de la misma moneda **tiene que llegar completo**.
-- Un traslado entre monedas distintas **exige que escribas cuánto llegó**, porque ese número lo pone la casa de cambio y no el sistema.
+- Un traslado entre monedas distintas **exige escribir cuánto llegó**, porque ese número lo pone la casa de cambio y no el sistema.
 - El saldo de cada cuenta se muestra **en su propia moneda**; solo el total de la cabecera se convierte, y con la tasa de hoy.
 
-Hay tres tipos de cuenta y cada uno pide datos distintos, por lo que hace cada uno: la **Cuenta bancaria** exige banco, número y titular, porque es lo que se necesita para conciliar; la **Caja / efectivo** exige saber quién responde por el efectivo, porque una caja chica no tiene estado de cuenta y lo único que responde por ella es una persona; y la **Billetera digital (Binance)** exige el correo de la plataforma o la dirección de la wallet, que es a donde llega el dinero.
+Hay tres tipos de cuenta y cada uno pide datos distintos: la **Cuenta bancaria** pide banco, número y titular, porque es lo que se necesita para conciliar; la **Caja / efectivo** pide un responsable, porque una caja chica no tiene estado de cuenta y lo único que responde por ella es una persona; y la **Billetera digital (Binance)** pide el correo de la plataforma o la dirección de la billetera, que es a donde llega el dinero.
 
-Por defecto **ninguna cuenta deja sacar más de lo que tiene**. Se autoriza cuenta por cuenta con la casilla **Admite sobregiro**, y solo tiene sentido marcarla donde el banco haya dado línea de crédito: una caja chica no entrega billetes que no tiene, así que en una caja el sobregiro no es una autorización, es un error de conteo esperando a aparecer.
+**El sobregiro.** Las cuentas nacen con **Admite sobregiro** marcada. Solo tiene sentido dejarla así donde el banco haya dado línea de crédito: una caja chica no entrega billetes que no tiene, así que en una caja conviene desmarcarla. Desmarcada, el libro frena cualquier salida que deje la cuenta bajo cero.
 
 #### El IGTF
 
-Es el impuesto que grava los pagos hechos en divisas: dólares, euros y criptomonedas.
+Es el impuesto que grava los pagos hechos en divisas.
 
-**Quién decide si se aplica: el sistema, no la persona.** Se marca en el momento en que Compras dice cómo se va a pagar, y la regla es una sola: **se aplica cuando la moneda del pago no es el bolívar**. En bolívares no aplica, sea transferencia o pago móvil. Nadie lo activa ni lo desactiva a mano.
+**Quién decide si se aplica.** El sistema lo propone en el momento en que Compras dice cómo se va a pagar: viene marcado cuando la moneda del pago no es el bolívar. Quien indica el pago puede desmarcar la casilla si esa operación no lo causa.
 
-**Cuánto es.** La alícuota es un valor que el sistema tiene configurado, y hoy las pantallas la muestran escrita en sus propios textos: quien indica el pago en Compras lee **Pago en divisa: causa IGTF del 3% = $ X. Sale además del monto.**, la casilla del cobro en Ventas dice **Cobrarle el IGTF del 3%**, y el concepto que queda escrito en el libro es del estilo **IGTF 3% de la orden OC-2026-0002**. Este manual no fija ese porcentaje ni interpreta la ley: cuál es la alícuota vigente y cuándo cambia lo determina quien lleva la administración con su asesor, y ese valor es el que el sistema debe tener configurado.
+**Cuánto es.** Las pantallas muestran la alícuota escrita en sus propios textos: al indicar el pago se lee **Causa IGTF del 3%**, el cobro de una factura ofrece **Cobrarle el IGTF del 3% en esta línea**, y el concepto que queda en el libro es del estilo **IGTF 3% de la orden OC-2026-0002**. Este manual no fija ese porcentaje ni interpreta la ley: cuál es la alícuota vigente y cuándo cambia lo determina quien lleva la administración con su asesor.
 
-**Cómo evita el sistema cobrarlo dos veces.** Con cuatro cierres:
+**Cómo evita el sistema cobrarlo dos veces:**
 
-1. **El monto del impuesto no se teclea: se calcula solo** a partir del monto del pago. No hay ninguna casilla donde escribirlo, así que nadie puede duplicarlo tecleándolo mal.
-2. **Va en una línea aparte, no dentro del pago.** Al confirmar un pago se escriben dos líneas: una de tipo **Pago a proveedor**, por el monto limpio, y otra de tipo **IGTF**, por el impuesto. Sale de la misma cuenta, pero no es parte del precio: escrito aparte, se puede responder cuánto se pagó de impuesto en el mes sin desarmar cada pago uno por uno.
-3. **La segunda línea solo se escribe si hay impuesto que escribir.** Cuando no aplica, no hay línea de IGTF.
-4. **Una instrucción no se puede pagar dos veces.** Al pagarla queda marcada como pagada, y un segundo intento choca con **Esta instrucción está en "PAGADA" y no se puede volver a pagar.** Como el impuesto se escribe dentro de esa misma operación, tampoco puede duplicarse.
+1. **El monto del impuesto no se teclea: se calcula solo** a partir del monto del pago.
+2. **Va en una línea aparte, no dentro del pago.** Al confirmar un pago se escriben dos líneas: **Pago a proveedor**, por el monto limpio, e **IGTF**, por el impuesto. Escrito aparte, se puede responder cuánto se pagó de impuesto en el mes sin desarmar cada pago.
+3. **La segunda línea solo se escribe si hay impuesto que escribir.**
+4. **Una instrucción no se puede pagar dos veces.** Al pagarla queda marcada como pagada, y un segundo intento choca con **Esta instrucción está en "PAGADA" y no se puede volver a pagar.**
 
-En las ventas funciona al revés y también va aparte: cuando se le cobra a un cliente en divisas, el impuesto se recauda y entra como una línea propia, porque no es dinero de la empresa sino un impuesto que se recauda y se entrega. Mezclado con el cobro haría creer que el cliente pagó más de lo que abonó. Y por lo mismo, **el IGTF cobrado no abona la factura**: el saldo del cliente baja solo por lo que abonó.
+En las ventas funciona al revés y también va aparte: el impuesto cobrado a un cliente entra como una línea propia, porque no es dinero de la empresa sino un impuesto que se recauda y se entrega. Y por lo mismo, **el IGTF cobrado no abona la factura**: el saldo del cliente baja solo por lo que abonó.
 
 #### El diferencial cambiario
 
-**Esta parte todavía no está disponible.** El sistema no reconoce ni contabiliza ganancia ni pérdida por diferencial cambiario. No hay una pantalla, ni un informe, ni un cálculo que lo haga.
+**Esta parte todavía no está disponible.** El sistema no reconoce ni contabiliza ganancia ni pérdida por diferencial cambiario.
 
-Conviene decirlo claro porque hay algo parecido que sí funciona y se puede confundir con ello. Cada línea del libro guarda **la tasa del día en que se registró**, congelada, y de ahí sale el equivalente en la otra moneda que se ve en gris. El saldo de una cuenta se suma movimiento a movimiento con la tasa de cada día, no convirtiendo el saldo final con la tasa de hoy — porque convertir el saldo final diría cuánto valdría ese dinero si hubiera entrado hoy, que es otra pregunta.
-
-Eso hace que cada línea sea comparable con la del mes pasado. Pero no calcula el diferencial. Si hoy hace falta reconocer una diferencia por ese motivo, se hace a mano con el botón **Ajustar**, escribiendo en la explicación qué se está reconociendo y por qué.
+Hay algo parecido que sí funciona y se puede confundir con ello: cada línea del libro guarda **la tasa del día en que se registró**, congelada, y de ahí sale el equivalente que se ve en gris. Eso hace cada línea comparable con la del mes pasado, pero no calcula el diferencial. Si hace falta reconocer una diferencia por ese motivo, se hace a mano con **Ajustar**, escribiendo qué se está reconociendo y por qué.
 
 #### La conciliación bancaria
 
-**Tampoco está disponible.** No hay ninguna pantalla que cruce el libro con el estado de cuenta del banco. Lo que sí hay es todo lo que hace posible conciliar a mano: cada línea lleva su referencia, su fecha y su concepto obligatorio, y el saldo de cada cuenta se muestra en la moneda del banco para que se pueda comparar cifra contra cifra.
-
-Es también el motivo de que el sistema insista tanto con el concepto y la referencia. Los mensajes lo dicen con esas palabras: un monto sin concepto **no se puede conciliar después**. Quien escribe la línea tarda diez segundos; quien tenga que cuadrar el mes sin ella puede tardar una tarde.
+**Tampoco está disponible.** No hay ninguna pantalla que cruce el libro con el estado de cuenta del banco. Lo que sí hay es todo lo que hace posible conciliar a mano: cada línea lleva su referencia, su fecha y su concepto, y el saldo de cada cuenta se muestra en la moneda del banco para comparar cifra contra cifra.
 
 #### Por qué el libro no se edita ni se borra
 
-Una línea registrada no se modifica y no se elimina. Nunca, para nadie, ni siquiera para administración. Si alguien lo intenta desde fuera de las pantallas, salta el mismo candado: **El libro de tesorería no se edita ni se borra. Para corregir el movimiento TES-000123, revérsalo: queda la línea equivocada y la que la anula, y se entiende qué pasó.**
+Una línea registrada no se modifica y no se elimina. Nunca, para nadie, ni siquiera para la administración. La razón es la que hace útil al libro: un saldo que no cuadra se corrige con una línea nueva que lo explica, no borrando la que estaba mal. Es la única forma de que dentro de seis meses alguien pueda responder por qué un día salieron mil dólares de la caja.
 
-La razón es la que hace útil al libro: un saldo que no cuadra se corrige con una línea nueva que lo explica, no borrando la que estaba mal. Es la única forma de que dentro de seis meses alguien pueda responder por qué el 14 de marzo salieron mil dólares de la caja.
-
-Corregir tiene tres caminos, según qué se haya registrado mal:
+Corregir tiene estos caminos, según qué se haya registrado mal:
 
 1. **Deshacer** la línea, si es un ingreso, un egreso, un ajuste o un saldo de apertura.
-2. **Devolver la instrucción de pago desde la compra**, si lo que estuvo mal fue el pago de un proveedor.
-3. **Trasladar en sentido contrario**, si lo que estuvo mal fue un traslado.
+2. **Trasladar en sentido contrario**, si lo que estuvo mal fue un traslado.
+3. **El pago de una compra no tiene camino desde las pantallas.** El libro no lo deshace y la compra no deja devolver una instrucción ya pagada. Si un pago salió con la cuenta, el monto o la fecha equivocados, avise a la administración.
 
-### 12.9 Cuando el sistema no te deja
+### 12.9 Cuando el sistema no le deja
 
-| Lo que ves | Qué significa | Qué hacer |
+Algunos de estos mensajes los escribe la base de datos y todavía tutean; se copian como salen.
+
+| Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Esta acción la realiza: Tesorería. Tu usuario no tiene ese rol.» | Tu usuario consulta pero no mueve dinero | Pide el rol a administración, o que lo registre quien lo tenga |
-| «Tu usuario no tiene permiso para esta acción.» | Falta el permiso sobre el módulo | Pide el permiso a administración |
-| «Ponle nombre a la cuenta: es lo que se lee al elegir de dónde sale el dinero.» | El nombre quedó vacío o muy corto | Escribe un nombre que se reconozca en una lista, con el banco y la moneda |
-| «Una cuenta bancaria necesita banco, número de cuenta y titular.» | Falta alguno de los tres | Complétalos. Sin ellos la cuenta no se puede conciliar |
-| «Una caja necesita saber quién responde por el efectivo.» | Falta la persona responsable | Escribe quién responde por esa caja |
-| «Una billetera necesita el correo de la plataforma o la dirección de la wallet.» | No pusiste ninguno de los dos | Pon al menos uno: es a donde llega el dinero |
-| «La cuenta ya tiene movimientos en VES y no puede cambiar de moneda. Crea otra cuenta.» | Quieres cambiarle la moneda a una cuenta con historia | Crea otra cuenta en la moneda correcta y desactiva esta |
-| «Esta cuenta ya tiene su saldo de apertura. Si estaba mal, corrígelo con un ajuste.» | El saldo de apertura se registra una sola vez | Pulsa **Ajustar** y explica la diferencia |
-| «Escribe de qué es el ingreso. Un monto sin concepto no se puede conciliar después.» | El concepto quedó vacío o muy corto | Escribe de dónde vino el dinero |
-| «Escribe en qué se gastó. Un monto sin concepto no se puede conciliar después.» | El concepto quedó vacío o muy corto | Escribe en qué se gastó |
-| «Un ajuste sin explicación es un descuadre escondido. Escribe qué apareció o qué faltó.» | La explicación del ajuste es demasiado corta | Escribe qué dice el banco y qué decía el sistema |
-| «Un ajuste de cero no ajusta nada.» | El monto del ajuste quedó en cero | Pon la diferencia: positiva si sobra, negativa si falta |
-| «El monto tiene que ser mayor que cero.» | El monto quedó vacío o en cero | Escribe el importe |
-| «La cuenta "Caja chica en divisas" está cerrada. Reábrela si todavía se mueve dinero por ella.» | La cuenta está inactiva | Si sigue en uso, pulsa **Editar** y marca **Activa** |
-| «No se puede registrar un movimiento con fecha futura.» | La fecha es de mañana o después | Corrige la fecha |
-| «En "Caja chica en bolívares" hay 120,00 VES y se intentan sacar 300,00. Si el saldo no está al día, registra primero el saldo de apertura o el ingreso que falta.» | Sacarías más de lo que hay y la cuenta no admite sobregiro | Si el dinero está, falta registrar su entrada. Registra el saldo de apertura o el ingreso |
-| «El origen y el destino son la misma cuenta.» | Elegiste dos veces la misma cuenta | Cambia el destino |
-| «Entre dos cuentas en VES debe llegar lo mismo que sale. Si el banco cobró comisión, regístrala aparte.» | Pusiste importes distintos entre dos cuentas de la misma moneda | Iguala los importes y registra la comisión como un egreso |
-| «Indica cuánto llegó en USD : entre monedas distintas el monto lo decide el cambio, no el sistema.» | Falta decir cuánto llegó al destino | Cópialo del comprobante del banco o de la casa de cambio |
-| «No hay tasa BCV registrada para el 04/08/2026 ni para ninguna fecha anterior. Regístrala en Sistema › Tasas de cambio.» | Falta la tasa del día | Regístrala en **Sistema › Tasas de cambio** y repite la operación |
-| «Esta instrucción está en "PAGADA" y no se puede volver a pagar.» | Ese pago ya se hizo | Revisa el libro: la línea ya está |
-| «Falta el número de referencia de la transacción.» | Todo pago que no sea en efectivo necesita referencia | Copia el número que devolvió el banco o la plataforma |
-| «Indica de qué cuenta sale el dinero.» | No elegiste cuenta | Elige la cuenta en **De qué cuenta sale** |
-| «La instrucción es por USD y la cuenta "Caja chica en bolívares" está en VES. Elige una cuenta en USD o cambia la instrucción.» | La cuenta no es de la moneda del pago | Elige una cuenta en la moneda de la instrucción, o pide a compras que cambie la instrucción |
-| «En esa cuenta hay $ 200,00 y el pago es de $ 1.287,50. Si el dinero ya está, falta registrar el ingreso o el saldo de apertura.» | Aviso, no bloqueo: el saldo registrado no alcanza | Registra el ingreso que falta antes de confirmar |
-| «Escribe por qué se reversa. La línea anulada se queda a la vista y sin motivo no se entiende.» | El motivo tiene menos de diez letras | Explica qué pasó |
-| «El movimiento TES-000123 ya fue reversado.» | Esa línea ya se corrigió | Revisa el libro: la corrección ya está |
-| «Este movimiento es el pago de una compra. Reversarlo a solas dejaría la compra pagada y el dinero de vuelta: devuelve la instrucción de pago desde la compra.» | El pago está atado a una orden | Abre la compra y devuelve la instrucción de pago |
-| «El movimiento TES-000123 es una de las dos mitades de un traslado. Reversar solo esta devolvería el dinero al origen dejándolo también en el destino. Deshazlo con un traslado en sentido contrario.» | Un traslado tiene dos líneas | Haz un traslado en sentido contrario |
-| «El libro de tesorería no se edita ni se borra. Para corregir el movimiento TES-000123, revérsalo: queda la línea equivocada y la que la anula, y se entiende qué pasó.» | Se intentó cambiar o borrar una línea | Corrígela con un reverso |
-| «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
-
----
+| «Su usuario no tiene permiso para esta acción.» | Falta el permiso sobre el módulo | Pídalo a la administración |
+| **Tesorería no está a su alcance** | No tiene lectura sobre Tesorería | Pídala a la administración |
+| «Esta instrucción está en "PAGADA" y no se puede volver a pagar.» | Ese pago ya se hizo | Revise el libro: la línea ya está |
+| «Falta el número de referencia de la transacción.» | Todo pago que no sea en efectivo necesita referencia | Copie el número que devolvió el banco o la plataforma |
+| «La cuenta ya tiene movimientos en VES y no puede cambiar de moneda. Crea otra cuenta.» | Quiere cambiarle la moneda a una cuenta con historia | Cree otra cuenta en la moneda correcta y archive esta |
+| «Esta cuenta ya tiene su saldo de apertura. Si estaba mal, corrígelo con un ajuste.» | El saldo de apertura se registra una sola vez | Pulse **Ajustar** y explique la diferencia |
+| «Un ajuste de cero no ajusta nada.» | El monto del ajuste quedó en cero | Ponga la diferencia: positiva si sobra, negativa si falta |
+| El nombre de la cuenta, seguido de cuánto tiene y de **No alcanza.** | La salida dejaría bajo cero una cuenta que no admite sobregiro | Si el dinero está, falta registrar su entrada: el saldo de apertura o el ingreso |
+| «El origen y el destino son la misma cuenta.» | Eligió dos veces la misma cuenta | Cambie el destino |
+| «Entre dos cuentas en VES debe llegar lo mismo que sale. Si el banco cobró comisión, regístrala aparte.» | Puso importes distintos entre dos cuentas de la misma moneda | Iguale los importes y registre la comisión como un egreso |
+| «No hay tasa BCV registrada para el 04/08/2026 ni para ninguna fecha anterior. Regístrala en Sistema › Tasas de cambio.» | No hay ninguna tasa registrada en esa fecha ni antes | Regístrela en **Sistema › Tasas de cambio** y repita la operación |
+| «El movimiento TES-000123 ya fue reversado.» | Esa línea ya se corrigió | Revise el libro: la corrección ya está |
+| «La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.» al guardar una cuenta | Falta un dato que ese tipo de cuenta exige: banco, número y titular; un responsable; o el correo o la dirección de la billetera | Complete los datos del tipo de cuenta |
+| «No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.» | Se cayó el internet | Reintente cuando vuelva la señal |
 
 ### 12.10 Reportes
 
-Están en **Administración › Tesorería › Reportes**. Son cuatro, y los cuatro obedecen la misma regla: **nada se suma entre monedas**. Un bolívar y un dólar no son la misma cosa, así que no existe un «total general»: cada moneda va en su fila o en su sección.
+Están en **Administración › Tesorería › Reportes**. Son cuatro, y los cuatro obedecen la misma regla: **nada se suma entre monedas**. Un bolívar y un dólar no son la misma cosa, así que no existe un total general: cada moneda va en su fila o en su sección.
 
-Arriba se elige el **período** —por defecto, el mes en curso—, que manda sobre el resumen, los libros y los gastos. **Todo se ve antes de descargarse**: cada reporte se abre en el visor, y desde ahí se imprime o se guarda.
+Arriba se elige el **período** —por defecto, el mes en curso—, que manda sobre el resumen, los libros y los gastos. Cada reporte se abre en la vista previa, y desde ahí se descarga; la hoja de cálculo del cierre baja directamente.
 
 | Reporte | Qué trae |
 | --- | --- |
 | **Resumen por moneda** | Una fila por moneda con **Debe**, **Haber**, **Saldo en cajas**, **Por pagar** y **Por cobrar**, y debajo el saldo de cada caja, banco y billetera. **Al tocar una moneda se abre su libro** |
 | **Libro de una caja** | El libro clásico de siete columnas —fecha, caja, concepto, beneficiario, Debe, Haber y saldo— de la cuenta elegida, con su **saldo anterior** y su saldo al final |
-| **Gastos por categoría** | En qué se fue el dinero: categoría, subcategoría, monto y porcentaje, por moneda. **No cuenta los traslados** entre cuentas propias |
+| **Gastos por categoría** | En qué se fue el dinero: categoría, subcategoría, movimientos, monto y porcentaje, por moneda. **No cuenta los traslados** entre cuentas propias |
 | **Cierre de mes** | El resultado del mes por moneda (ingresos, gastos, resultado) y cómo **empezó y terminó cada caja**, más los gastos del mes. En PDF y en **hoja de cálculo**, que además trae todos los movimientos del mes |
 
 <p class="regla"><strong>En el resumen conviven dos clases de número, y el propio papel lo dice al pie.</strong> Debe y Haber suman lo movido <em>en el período</em>. Saldo en cajas, Por pagar y Por cobrar son <em>a hoy</em>, no al final del período.</p>
 
-**Un mes cerrado vuelve a salir igual.** El cierre no guarda una foto porque no le hace falta: el libro no se edita ni se borra, así que sumar septiembre dentro de un año da exactamente lo que dio en septiembre. El **saldo inicial** de cada caja tampoco se guarda: es el final menos lo que se movió en el mes, para que no exista un segundo número que pueda decir otra cosa.
+**Un mes cerrado vuelve a salir igual en sus totales.** El cierre no guarda una foto porque no le hace falta: el libro no se edita ni se borra, así que sumar septiembre dentro de un año da lo mismo que dio en septiembre. Lo único que puede cambiar es el reparto de **Gastos por categoría**, si después se clasifica un gasto que estaba sin clasificar. El **saldo inicial** de cada caja tampoco se guarda: es el final menos lo que se movió en el mes.
 
-**Ni los traslados ni los saldos de apertura son ingresos o gastos.** El dinero que pasa de una caja a otra no entró ni salió de la empresa, y el saldo con que arranca una cuenta tampoco. Aparecen en el Debe y el Haber de cada caja —ahí sí se movió— pero no en el resultado del mes.
+**Ni los traslados ni los saldos de apertura son ingresos o gastos.** Aparecen en el Debe y el Haber de cada caja —ahí sí se movió el dinero— pero no en el resultado del mes.
 
-**Por cobrar** se lleva en bolívares y en dólares: lo facturado en otra divisa va en la fila del dólar por su equivalente. Quien no tenga permiso para ver lo que se debe o lo que deben ve una raya en esa columna.
+**Por cobrar** se lleva en bolívares y en dólares: lo facturado en otra divisa va en la fila del dólar por su equivalente. Quien no tiene permiso para ver lo que se debe o lo que deben ve esas columnas en cero.
+
+### 12.11 El tablero
+
+**Administración › Tesorería › Tablero**
+
+La pantalla de entrada del módulo: **Saldos disponibles, su ubicación y pagos pendientes.** Arriba lleva un botón a **Bancos y cajas**.
+
+Cuatro cifras:
+
+| Cifra | Qué muestra |
+| --- | --- |
+| **En cuentas, en divisas** | Lo que hay en las cuentas activas en dólares, y debajo lo que hay en bolívares. Las cuentas en otras divisas no suman aquí |
+| **Por pagar a proveedores** | Lo autorizado y sin pagar, sin el IGTF. Cuenta también los pagos con material, que la cola de Pagos por hacer aparta, así que las dos cifras pueden no coincidir |
+| **Cuentas activas** | **Bancos y cajas en uso** |
+| **Sin saldo de apertura** | Las cuentas activas que todavía no tienen ningún movimiento: **No suman al disponible hasta abrirlas**. Si no queda ninguna, **Todas abiertas** |
+
+Debajo, los atajos del módulo agrupados en **Egresos**, **Ingresos** y **Movimientos**: **Pagos autorizados**, **Cuentas por pagar**, **Cuentas por cobrar**, **Mover entre cuentas**, **Libro de tesorería**, **Libro Mayor** y **Reportes**. A cada persona le salen solo los que su permiso alcanza.
+
+El atajo **Mover entre cuentas** abre el libro de tesorería; el traslado en sí se hace con **Trasladar**, en **Bancos y cajas**.
+
+### 12.12 El Libro Mayor
+
+**Administración › Tesorería › Libro Mayor**
+
+Son los dos libros fiscales que pide el SENIAT, en dos pestañas: **Compras** y **Ventas**. Arriba hay un solo filtro, **Mes**, que empieza en el mes pasado, y el botón **Descargar**, que baja el mes en hoja de cálculo.
+
+**Compras.** **IVA pagado a los proveedores, deducible del IVA cobrado. Es uno de los dos libros que exige el SENIAT.** Trae el resumen del mes —compras exentas, base imponible, crédito fiscal y total, todo en bolívares a la tasa que congeló cada factura— y una fila por factura de proveedor, por fecha de emisión. Las facturas anuladas no entran. Si no hubo ninguna: **Si hubo compras, falta registrar la factura del proveedor. Sin ella su IVA no se puede descontar.**
+
+**Ventas.** **IVA cobrado a declarar. Las facturas suman y las notas de crédito restan.** Trae el resumen —ventas exentas, base imponible, débito fiscal y total, en bolívares— y una fila por documento. Las facturas anuladas salen en cero con la etiqueta **Anulada**, porque la numeración de control tiene que correr sin huecos. Si el mes no tuvo ventas: **Un mes sin ventas se declara igualmente, en cero.**
+
+Los dos archivos se llaman **libro-compras-AAAA-MM.csv** y **libro-ventas-AAAA-MM.csv**.
+
+La pantalla pide lectura sobre Tesorería, pero los datos de cada libro piden además lectura sobre Compras o sobre Facturación. Quien abre la pestaña de Ventas sin permiso sobre Facturación la ve vacía.
 
 ## 13. Configuración
 
