@@ -2,7 +2,7 @@
   EL RESPALDO NO RECOPIA LOS DATOS EN CADA VUELTA
 
   Esta es la que arregla el «la consulta tardó demasiado» del 06/10/2026. La
-  anterior —`20261006120000`— le dio aire con el reloj; esta quita el motivo.
+  anterior —`20261006112304`— le dio aire con el reloj; esta quita el motivo.
 
   DÓNDE SE IBAN LOS SIETE SEGUNDOS, MEDIDO PIEZA A PIEZA
 
