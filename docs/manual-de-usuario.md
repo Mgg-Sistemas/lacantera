@@ -6354,72 +6354,86 @@ El sistema se entrega por partes. Este capítulo reúne lo que se espera del dis
 
 No es una lista de fallas. Es el estado real de la obra, y está aquí para que nadie organice su trabajo contando con algo que aún no puede hacer.
 
-Antes de nada: desde el 28 de agosto de 2026 **el menú ofrece el sistema entero**, salvo Tesorería, que no está escondida sino retirada (12.1). Eso está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
+Lo que hoy está escondido del menú —Despachos entero y tres pantallas de Explotación— está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
 
 ### 15.1 Puntos donde hay que tener cuidado
 
 Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las sabe. Son las más importantes del capítulo.
 
-**Una compra se puede pagar dos veces por caminos distintos.** El dinero puede salir por la instrucción de pago de la orden y también por el pago registrado sobre la factura del proveedor. Las dos pantallas viven hoy dentro de Compras. Los dos descuentan de una cuenta real y **ninguno de los dos sabe del otro**. Hasta que eso se cruce, conviene acordar en la empresa un solo camino y usar siempre ese.
+**Una compra se puede pagar dos veces por caminos distintos.** El dinero puede salir por la instrucción de pago de la orden, en **Pagos por hacer**, y también por el pago registrado sobre la factura del proveedor. Los dos descuentan de una cuenta real y **el sistema no los cruza**: si la orden ya se pagó por su instrucción, su factura nace debiendo el total igual. Las dos pantallas lo avisan, pero no lo impiden. Hasta que eso se cruce, conviene acordar en la empresa un solo camino y usar siempre ese. La compra directa no tiene el problema: su factura nace ya descontada.
 
-**El sistema pregunta con qué entrega el proveedor, pero no comprueba que se cumpla.** Declarar «factura» es obligatorio antes de pagar, y eso sí lo exige. Lo que no hay todavía es una pantalla que enseñe cuáles prometieron factura y no la registraron, ni forma de atar una factura a su orden. El cotejo sigue siendo trabajo de la oficina.
+**El sistema pregunta con qué entrega el proveedor, pero no comprueba que se cumpla.** Antes de pagar hay que declarar si entrega **Nota de entrega** o **Factura**, y sin eso no se puede pagar. Lo que no hay todavía es una pantalla que enseñe cuáles prometieron factura y no la registraron. El cotejo sigue siendo trabajo de la oficina.
 
-**Con qué entrega el proveedor no se corrige.** Se declara una vez y no hay dónde cambiarlo. Las órdenes que ya habían pasado de ese paso cuando la regla se implantó se quedaron sin declarar y así siguen.
+**Con qué entrega el proveedor no se corrige desde la pantalla.** Se declara una vez, en la ficha de la compra, y después solo se lee. Si alguna orden quedó sin declarar de antes de que existiera la regla, la pantalla no ofrece dónde hacerlo, y esa orden no se puede pagar.
 
-**Hay que liquidar antes de egresar.** El botón de liquidar prestaciones solo aparece mientras la persona está activa. Si se egresa primero, la liquidación ya no se puede calcular desde el sistema. El orden correcto es: liquidar, y después registrar la salida.
+**Una factura de proveedor cubre una sola orden.** Si el proveedor factura dos órdenes en un mismo papel, el sistema todavía no lo puede registrar.
 
-**El anticipo de prestaciones se puede descontar dos veces.** Existe como concepto en las novedades del período y también como operación propia en la pantalla de prestaciones. Si se carga por los dos lados, se descuenta dos veces. Elige uno.
+**Liquidar va antes que dar de baja.** Los botones **Liquidar** y **Anticipo** de prestaciones solo aparecen mientras la persona está activa. El camino es liquidar y después **Pagar y dar de baja**, que la saca de la nómina en el mismo paso. Si se le da de baja por otro lado antes de liquidar, la liquidación ya no se puede calcular desde la pantalla. Y **dar de baja no le cierra la entrada al sistema**: si la persona tenía usuario, se desactiva aparte, en **Configuración › Usuarios y roles**.
 
-**El USDT no tiene tasa oficial.** El dólar y el euro salen de lo que publica el BCV; el USDT sale de la mediana del mercado entre particulares de Binance y se registra como **PARALELO**. Es una referencia de mercado, no una publicación con respaldo. Confírmala con quien cierra las operaciones antes de registrarla.
+**El anticipo de prestaciones se puede descontar dos veces.** Existe como concepto en las novedades del período y también como operación propia en la pantalla de prestaciones, y la liquidación solo ve el segundo. Si se carga por los dos lados, se descuenta dos veces. Use uno solo.
 
-**La barra buscadora encuentra documentos de módulos escondidos.** Las pantallas escondidas no salen, pero una factura o una nota de entrega sí pueden aparecer en la lista, y al pulsarlas se llega al cartel de obra. No es un fallo del buscador: es que el documento existe y su pantalla todavía no se ofrece.
+**Las tasas se registran solas, y solo se enmiendan el mismo día.** El sistema toma varias veces al día el dólar y el euro que publica el BCV, y el USDT del mercado entre particulares de Binance. El USDT es una referencia de mercado, no una publicación con respaldo: conviene mirarlo en **Tasas de cambio** el mismo día, porque pasado ese día una tasa ya no se enmienda. Si la toma del USDT se frena —porque falta el dólar del día o la cifra se sale de lo razonable—, los documentos se valoran con la última registrada, y la pantalla lo dice.
 
 ### 15.2 Lo que falta dentro de módulos que sí funcionan
 
-**Costo por tonelada.** La producción entra al inventario valorada en cero, porque el costo real depende de la nómina, el gasoil y la voladura, y ese cálculo todavía no existe. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.** Las toneladas sí son confiables.
+**Costo de producción.** Lo que entra al inventario por producción entra valorado en cero. **Centro de costo** ya calcula un **Costo por m³** y un **Precio sugerido por m³**, pero solo con lo que hoy tiene de dónde salir —la propia tarjeta dice qué incluye—: la nómina y el combustible todavía no entran. Y ese costo no pasa al inventario. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.**
 
-**En Compras.** No hay matriz de aprobación por monto: toda compra necesita una sola aprobación, valga lo que valga. La factura del proveedor **ya se enlaza con su orden de compra** —nace desde la ficha de la compra y lleva su orden dentro—, pero el sistema todavía no cruza las cifras: no compara lo pedido con lo recibido y lo facturado. Ese cotejo lo sigue haciendo la persona. El sistema no calcula retenciones a proveedores. Lo que se debe por facturas no llega a **Compras › Pagos por hacer › Por proveedor**, que sigue leyendo solo las instrucciones de pago de las órdenes. **La orden de compra sí se imprime**; la cotización y el tablero, no.
+**En Compras.**
 
-**En Inventario.** Un artículo ya se puede corregir y borrar, pero **el código sigue sin poder cambiarse**: es con lo que se pide en el almacén y ya está impreso en lo emitido. Y **borrar solo funciona mientras nada lo haya tocado**; en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo.
+- No hay matriz de aprobación por monto: toda compra del tablero necesita una sola aprobación, valga lo que valga, y la **Compra directa** —que registra una compra ya hecha— no pasa por aprobación.
+- La factura del proveedor nace desde la ficha de su compra y lleva su orden dentro, pero **el sistema no cruza las cifras**: no compara lo pedido con lo recibido y lo facturado. Ese cotejo lo sigue haciendo la persona.
+- La **Retención de IVA** se propone sola al elegir el proveedor, si está marcado como contribuyente especial. La de ISLR se escribe a mano. **No se imprime comprobante de retención.**
+- Lo que se debe por facturas no llega a **Compras › Pagos por hacer › Por proveedor**, que sigue leyendo solo las instrucciones de pago de las órdenes.
+- Se imprimen la orden de compra, las cotizaciones recibidas y el comprobante de pago. **El tablero, no.**
 
-**En Despachos.** El sistema comprueba el cliente, el tipo, el estado y la vigencia de los papeles, pero **no compara cifras**: ni el peso neto del ticket contra las cantidades de la nota, ni las toneladas de la guía contra los renglones. Cuadrar eso sigue siendo trabajo de la persona. Además, la nota despachada sin guía **no se marca en ninguna pantalla**: el único rastro está en la auditoría.
+**En Inventario.** Un artículo se puede corregir y borrar, pero **su código no se escribe a mano**: es con lo que se pide en el almacén y ya está impreso en lo emitido. Si el artículo cambió de categoría y el prefijo ya no le cuadra, el botón **Ponerle el código que le toca** lo renumera, mientras no haya salido en ningún papel. **Borrar solo funciona mientras nada lo haya tocado**; en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo. El administrador tiene además **Eliminar duplicado**, para el artículo repetido que solo tiene movimientos: los reversa y lo desactiva, sin generar ninguna salida.
 
-**En Facturación.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La alícuota de IVA está fija y no se cambia desde ninguna pantalla. Las facturas emitidas desde el sistema no admiten descuento. **La nota de crédito no se imprime**: se registra y se declara, pero el papel que se le entrega al cliente todavía se hace por fuera, y fiscalmente es un documento con número de control propio.
+**En Despachos**, hoy escondido (1.5). El sistema comprueba el cliente, el tipo, el estado y la vigencia de los papeles, pero **no compara cifras**: ni las toneladas de la guía contra los renglones, ni el peso neto del ticket contra la nota —salvo cuando la nota lleva un solo renglón en toneladas, que toma el neto de la romana—. Cuadrar eso sigue siendo trabajo de la persona. Además, la nota despachada sin guía **no se marca en ninguna pantalla**.
 
-**La factura impresa todavía no está completa ante el SENIAT**, aunque ya le falta menos. Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención, la tasa del día y —desde el 27 de agosto— la **base imponible** y el **total exento** (10.7). **Le faltan dos cosas:**
+**En Facturación.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La factura directa admite descuento en cada renglón, pero no un descuento sobre el total. **La nota de crédito no se imprime**: se registra, entra en el libro de ventas y lleva su número de control propio, pero el papel que se le entrega al cliente todavía se hace por fuera.
 
-| Falta | Por qué importa |
-| --- | --- |
-| **Desglose por alícuota** | Hoy la factura admite una sola alícuota. Una factura mixta no se puede expresar |
+**La factura impresa todavía no está completa ante el SENIAT**, aunque ya le falta poco. Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención, la tasa del día, la **base imponible** y el **total exento** (10.7), y el IGTF cuando corresponde. **Le falta el desglose por alícuota**: cada factura lleva una sola alícuota, así que una factura mixta no se puede expresar.
 
-**Los datos de la imprenta y la alícuota ya se escriben** en **Configuración › Datos de la empresa**, y la factura los imprime (21.2). Lo que falta es solo el desglose.
+**Los datos de la imprenta y la alícuota general del IVA ya se escriben** en **Configuración › Datos de la empresa**, y la factura los imprime (21.2).
 
-**En Nómina.** Aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: las tres tarjetas son de solo lectura y el botón **Entregar** manda a otra pantalla. Lo que sí se arregló es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4).
+**En Nómina.** Aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de ley de las prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: sus tarjetas **Dotación** y **Asignación** son de solo lectura, y el botón **Entregar** manda a otra pantalla, que abre en asignación aunque se pulse desde la dotación. Lo que sí funciona es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4). Y una ausencia anotada como incidencia **no descuenta sola de la nómina**.
 
-**En las incidencias del personal.** Si se elige un tipo que no pide reposo —**Conflicto**, **Llegada tarde** u **Otra**— y a la vez se marca **Varios días**, el campo de los días de reposo no se dibuja y el guardado falla con un mensaje sin traducir. Mientras eso se arregla, **para varios días usa un tipo que pida reposo**, o anota la duración en el motivo.
+**En las incidencias del personal.** Si se elige un tipo que no pide reposo —**Conflicto**, **Llegada tarde** u **Otra**— y a la vez se marca **Varios días**, el campo de los días de reposo no se dibuja y el guardado falla con un mensaje que no dice por qué: «La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.» Mientras eso se arregla, **para varios días use un tipo que pida reposo**. Anotar la duración en el motivo solo sirve si no se marca **Varios días**.
 
-**El combustible inicial entra valorado en cero, y eso abarata lo que sale de ese tanque.** Los litros trasladados desde la base principal del grupo sí costaron dinero — solo que en la otra empresa, y aquí no se sabe cuánto. Mientras entren a cero, **el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta**. El tanque aparte impide que contamine al resto (20.6), pero no inventa la cifra que falta. Si algún día se sabe lo que se pagó por ellos, entrarlos con ese costo lo arregla.
+**El combustible que entra sin costo abarata lo que sale de su tanque.** Lo trasladado desde otra empresa del grupo se carga con la casilla **Sin costo** y entra en cero, en un tanque aparte que no admite lo que tiene precio. Mientras esté en cero, **el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta**. El tanque aparte impide que contamine al resto (20.6), pero no inventa la cifra que falta. Si algún día se sabe lo que se pagó, se puede poner con **Corregir el costo** en **Inventario › Existencias**, que pide un permiso propio; lo que ya salió a cero no cambia.
 
-**El 3 % de obra social de la alianza se guarda y no se calcula.** El convenio con la Gobernación tiene tres porcentajes: 14 % para la Gobernación, 86 % para la empresa y un 3 % sobre los ingresos netos destinado a obra social. Los dos primeros los reparte el sistema; **el tercero está guardado pero no lo aplica ninguna pantalla**, así que hoy no hay dónde ver cuánto se debe por ese concepto. Como 14 y 86 ya suman cien, ese 3 % no sale del mismo bruto: o sale de la parte de la empresa, o es una obligación aparte, y eso es una decisión que todavía no se ha tomado. **Conviene tomarla antes de la primera factura de venta.**
+**El 3 % de obra social de la alianza se guarda y no se calcula.** El convenio con la Gobernación tiene tres porcentajes: 14 % para la Gobernación, 86 % para la empresa y un 3 % sobre los ingresos netos destinado a obra social. Los dos primeros los calcula la base, pero **ninguna pantalla los enseña todavía**; el tercero está guardado y no lo aplica nadie. Como 14 y 86 ya suman cien, ese 3 % no sale del mismo bruto: o sale de la parte de la empresa, o es una obligación aparte, y eso en el sistema no está resuelto.
 
-**En Tesorería.** No hay conciliación bancaria: no existe una pantalla que cruce el libro con el estado de cuenta del banco. Tampoco se calcula el diferencial cambiario; lo que sí existe es la tasa congelada en cada línea.
+**En Tesorería.** No hay conciliación bancaria: ninguna pantalla cruza el libro con el estado de cuenta del banco. Lo más cercano es **Ajustar el saldo**, en **Bancos y cajas**, que deja escrita la diferencia a mano. Tampoco se calcula el diferencial cambiario; lo que sí existe es la tasa congelada en cada línea.
 
 ### 15.3 Detalles de la pantalla que conviene conocer
 
-- **Mantener sesión abierta**, en la pantalla de entrar, no cambia nada: marcarla o no da el mismo resultado.
-- **Olvidé mi contraseña** no lleva a ninguna parte. La reposición de clave se pide a administración.
-- **Las cifras de la pantalla de entrar son un adorno.** Las tarjetas de toneladas de la ilustración están escritas fijas y no salen de nada registrado. **Las del panel, en cambio, son reales**: salen de lo registrado en el sistema, y el propio panel lo dice al pie.
-- **Las listas largas se cortan** en los registros más recientes y no tienen paginación: 200 en los movimientos de inventario y en el libro de tesorería, 300 en voladuras y partes de turno, 400 en tickets, guías y facturas de proveedor, 60 en el historial de tasas. Un registro más antiguo sigue guardado, pero no se alcanza desde esa pantalla.
-- **Qué se descarga hoy.** El libro de compras y el de ventas bajan en CSV; la plantilla de carga de artículos baja en CSV; la orden de compra, la factura, la nota de entrega, la cotización, la ficha del trabajador, su carnet y su constancia bajan en PDF o en imagen; el respaldo de la base baja en SQL. Ninguna otra pantalla exporta.
+- **Mantener sesión abierta**, en la pantalla de entrar, no cambia nada: la sesión se guarda siempre, se marque o no.
+- **Olvidé mi contraseña** no lleva a ninguna parte. La clave la repone la administración, desde **Configuración › Usuarios y roles**.
+- **Las cifras del panel son reales**, y el propio panel lo dice al pie: **Todas las cifras salen de lo registrado en el sistema. No hay ningún número de ejemplo en esta pantalla.**
+- **Las listas largas se cortan en los registros más recientes.** No tienen páginas —la única que las tiene es Auditoría—, pero muchas tienen filtro de fechas, y acotando las fechas se llega a lo antiguo. Los topes que más se notan:
+
+| Lista | Cuántos enseña |
+| --- | --- |
+| **Inventario › Existencias › Movimientos** | Los 1000 más recientes, y avisa si hay más |
+| **Salidas y traslados › Historial** | Los 200 más recientes, y avisa si hay más |
+| **Compras › Recepciones** y **Tesorería › Libro de tesorería** | 200 |
+| **Facturación** (facturas, notas de crédito y notas de entrega), **Ventas › Cotizaciones**, **Salidas y traslados › Salidas** y los vales de **Combustible** | 200 |
+| **Salidas y traslados › Traslados**, **Compras › Historial de directas** y **Maquinaria › Historial de taller** | 300 |
+| **Compras › Proveedores › Facturas recibidas** | 400 |
+| El historial de **Tasas de cambio** | 60 por moneda |
+
+- **Qué se descarga hoy.** Casi todo papel del sistema baja en PDF: la orden y las cotizaciones de compra, el comprobante de pago, la cotización de venta, la factura, la nota de entrega, la nota de salida y la de traslado, el vale de combustible, la constancia de entrega, el acta de existencias y el libro de movimientos, los recibos de pago, la ficha y la constancia del trabajador, el carnet —también en imagen—, el organigrama, el cierre de caja, los reportes de tesorería y el registro de viajes. En hoja de cálculo bajan los libros de compras y de ventas, el cierre de tesorería, el pago de viajes y el registro de auditoría; en Excel, la planilla de control de despacho, los visitantes, los contactos y las plantillas de carga. Los contactos bajan además como tarjetas para el teléfono. **El respaldo de la base baja comprimido en .zip**, y también se puede mandar por correo. **La nota de crédito todavía no tiene papel.**
 
 ### 15.4 Lo que quedó sin comprobar en esta revisión
 
 Se dice para que nadie lo lea como verificado:
 
-- **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles de esta versión se levantaron de la base tal como está hoy, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla.
-- **Los capítulos de Explotación y Ventas** no se revisaron pantalla por pantalla. Lo que dicen era cierto en una versión anterior y sus módulos han seguido cambiando. **Ya no están en obra** —volvieron al menú el 28 de agosto—, así que ahora se pueden recorrer: es lo primero que conviene hacer en la próxima revisión.
-- **Los capítulos 19 y 20, Maquinaria y Combustible, son nuevos.** Se escribieron leyendo las pantallas y la base, no usándolas. Si algo no coincide con lo que hace el módulo en el patio, es de esperar en una primera versión: dilo y se corrige.
-- **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla, quién puede pagar, que el rol de Tesorería ya no existe— pero las pantallas que quedaron escondidas no se recorrieron una por una.
+- **Este capítulo se repasó el 6 de octubre de 2026 contra el código del sistema, no usando las pantallas.** Lo que depende de lo que hay cargado —qué tasas se tomaron, qué combustible entró sin costo, qué órdenes quedaron sin declarar— no se comprobó.
+- **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles se levantaron de la base tal como estaba, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla, donde los módulos escondidos no salen.
+- **Los capítulos de Explotación y Ventas** no se revisaron pantalla por pantalla. Lo que dicen era cierto en una versión anterior y sus módulos han seguido cambiando. Ventas está en el menú desde el 28 de agosto de 2026; Explotación, y solo en parte, desde el 12 de septiembre (1.5). Explotación es de lo primero que se está repasando.
+- **Los capítulos 19 y 20, Maquinaria y Combustible,** se escribieron leyendo las pantallas y la base, no usándolas. **Los capítulos 21 a 25** —Facturación, Control de despacho, Control de asistencia, Contactos y Alimentación— llegaron después y tampoco se han repasado contra las pantallas de hoy. Si algo no coincide con lo que hace el módulo en el patio, dígalo y se corrige.
+- **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla, quién puede pagar, que el rol de Tesorería ya no existe—, pero sus pantallas no se han recorrido una por una desde que el módulo volvió entero al menú, el 21 de septiembre de 2026.
 - **La factura de venta no está completa ante el SENIAT.** Lo que le falta está en 15.2, y no es un olvido de este manual sino del sistema.
 
 ---
