@@ -254,7 +254,7 @@ export function Articulos() {
     <>
       <PageHeader
         title="Catálogo de artículos"
-        description="Catálogo de artículos que se solicitan, se compran y se cuentan. Una definición incorrecta produce existencias que no cuadran."
+        description="Catálogo de artículos que se solicitan, se compran y se cuentan."
         actions={
           <>
             {/* Dejo de ser entrada del menú y paso a estar donde hago falta:
@@ -335,7 +335,7 @@ export function Articulos() {
             }
             descripcion={
               data.length === 0
-                ? 'El sistema incluye un catálogo inicial de cantera. Si no aparece, falta una configuración inicial en la base de datos.'
+                ? 'Sin artículos registrados.'
                 : undefined
             }
           />
@@ -378,7 +378,7 @@ export function Articulos() {
                         <p className="text-ink/55 mt-0.5 text-xs">
                           {a.motivo_estado
                             ? `Desactivado${a.estado_cambiado_en ? ` el ${fecha(a.estado_cambiado_en)}` : ''}: ${a.motivo_estado}`
-                            : 'Desactivado antes de que se pidiera el motivo.'}
+                            : 'Sin motivo registrado.'}
                         </p>
                       ) : null}
                     </td>
@@ -469,7 +469,7 @@ export function Articulos() {
           ancho="sm"
           onCerrar={() => setBorrando(null)}
           titulo={`Borrar ${borrando.nombre}`}
-          descripcion="Esto no es desactivar: el registro desaparece del todo y no se puede deshacer. Si el artículo ya tiene algún movimiento, una orden o un documento enganchado, la base no lo va a dejar — en ese caso, desactívelo en su lugar."
+          descripcion="Se elimina del todo y no se puede deshacer. Con movimientos, órdenes o documentos no se puede eliminar: se desactiva."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setBorrando(null)}>
@@ -533,7 +533,7 @@ export function Articulos() {
             <p className="text-ink/60 mb-3 text-sm">
               {cambiando.motivo_estado
                 ? `Se desactivó porque: ${cambiando.motivo_estado}`
-                : 'Se desactivó antes de que se pidiera el motivo.'}
+                : 'Sin motivo registrado.'}
             </p>
           ) : null}
           <Textarea
@@ -559,8 +559,8 @@ export function Articulos() {
           titulo={form.id ? `Corregir ${form.codigo}` : 'Nuevo artículo'}
           descripcion={
             form.id
-              ? 'El código no se cambia: es con lo que se pide en el almacén y ya está impreso en lo emitido.'
-              : 'Solo hacen falta el nombre, la categoría y la unidad. El código se pone solo si lo deja vacío.'
+              ? 'El código no se cambia.'
+              : 'Obligatorios: nombre, categoría y unidad.'
           }
           acciones={
             <>
@@ -633,7 +633,7 @@ export function Articulos() {
               hint={
                 form.id
                   ? 'No se cambia.'
-                  : 'Opcional. Vacío, se pone solo con el prefijo de su categoría.'
+                  : 'Vacío, se asigna con el prefijo de su categoría.'
               }
               value={form.codigo}
               onChange={(e) => setForm({ ...form, codigo: e.target.value.toUpperCase() })}
@@ -697,8 +697,7 @@ export function Articulos() {
               <div className="border-hairline rounded-card bg-canvas border border-dashed p-3 sm:col-span-2">
                 <p className="text-ink/60 text-xs leading-relaxed">
                   El código empieza por <span className="text-ink/85">{form.codigo.split('-')[0]}</span> y
-                  la categoría ya es otra. Se puede corregir mientras el artículo no haya salido en
-                  ningún papel; después se queda, y pasa a ser solo un nombre propio.
+                  la categoría ya es otra. Se puede corregir mientras no figure en ningún papel.
                 </p>
                 <Button
                   className="mt-2"
@@ -793,8 +792,7 @@ export function Articulos() {
               <p className="text-warning -mt-2 text-xs leading-relaxed">
                 Atención: ya tiene movimientos anotados en {unidadDeAntes}. Esas cantidades seguirán
                 diciendo el número que se escribió, así que la existencia quedará sumando{' '}
-                {unidadDeAntes} con {form.unidad}. Si la unidad de verdad cambió, cuente el
-                almacén después para dejar el saldo bueno.
+                {unidadDeAntes} con {form.unidad}.
               </p>
             ) : null}
             <div>
@@ -958,7 +956,6 @@ export function Articulos() {
               <Input
                 label="N° de parte o serial"
                 placeholder="La referencia del fabricante"
-                hint="Lo que se le dice al proveedor para que mande la pieza correcta."
                 value={form.numero_parte}
                 onChange={(e) => setForm({ ...form, numero_parte: e.target.value })}
               />
@@ -1061,9 +1058,8 @@ export function Articulos() {
           {form.inventariable ? (
             <p className="border-hairline text-ink/50 mt-4 rounded-lg border border-dashed px-3 py-2 text-xs leading-relaxed">
               <span className="text-ink/70 font-medium">De quién es no se dice aquí.</span> Se dice
-              al darle entrada, eligiendo el almacén: veinte sillas pueden ser ocho de la
-              gobernación y doce compradas, y un dueño en la ficha del artículo obligaría a
-              inventar dos sillas distintas. Los dueños y sus almacenes se administran en{' '}
+              al darle entrada, eligiendo el almacén. Los dueños y sus almacenes se administran
+              en{' '}
               <Link
                 to="/app/inventario/duenos"
                 className="text-royal-700 dark:text-royal-300 underline underline-offset-2"
@@ -1130,7 +1126,7 @@ function Categorias({ onCerrar }: { onCerrar: () => void }) {
       onCerrar={onCerrar}
       ancho="lg"
       titulo="Categorías del catálogo"
-      descripcion="Clasifican los artículos y deciden con qué letras empiezan sus códigos. Las del sistema no se eliminan: el programa las usa por nombre."
+      descripcion="Clasifican los artículos y deciden con qué letras empiezan sus códigos. Las del sistema no se eliminan."
       acciones={<Button onClick={onCerrar}>Listo</Button>}
     >
       <div className="space-y-4">

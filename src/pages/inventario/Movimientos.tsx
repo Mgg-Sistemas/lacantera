@@ -576,7 +576,7 @@ export function Movimientos() {
             descripcion={
               rango.desde || rango.hasta || almacenId
                 ? 'Sin movimientos en el período. Amplíe las fechas o quite el almacén.'
-                : 'El primer movimiento se registra con la primera recepción de una compra.'
+                : 'Cada entrada, salida o traslado deja su movimiento.'
             }
           />
         </Card>

@@ -345,7 +345,7 @@ export function Traslados() {
             <span className="text-ink/80">
               Poner mi firma digital en «{firmando.paso === 'aceptar' ? 'Envió' : 'Recibió'}»
               <span className="text-ink/50 mt-0.5 block text-xs">
-                Sin marcar, la raya sale en blanco con su nombre debajo, para firmarla a mano.
+                Sin marcar, la raya sale en blanco con su nombre debajo.
               </span>
             </span>
           </label>

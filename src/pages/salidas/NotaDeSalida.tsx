@@ -394,8 +394,8 @@ export function useNotaDeSalida(): {
         titulo={datos?.tipo === 'ORDEN' ? 'Orden de salida' : 'Nota de salida'}
         descripcion={
           datos?.tipo === 'ORDEN'
-            ? 'Lo que se solicitó y en qué estado está. Lo que de verdad sale lo dice la nota, al entregar.'
-            : 'Compruébela antes de imprimirla: es lo que va a firmar quien recibe el material.'
+            ? 'Lo solicitado y su estado. Lo que sale consta en la nota de salida, al entregar.'
+            : 'La firma quien recibe el material.'
         }
         /*
           La casilla rehace el papel sin cerrarlo, igual que el selector de

@@ -412,7 +412,7 @@ export function Solicitudes() {
           titulo={cerrando.como === 'RECHAZAR' ? 'No aprobar la solicitud' : 'Cancelar la solicitud'}
           descripcion={
             cerrando.como === 'RECHAZAR'
-              ? 'Quien la pidió va a leer el motivo, así que conviene que diga algo.'
+              ? 'Lo lee quien la pidió.'
               : 'Queda escrito y no se puede editar después.'
           }
           ancho="sm"
@@ -483,7 +483,7 @@ export function Solicitudes() {
             <span className="text-ink/80">
               Poner mi firma digital en «Autorizado por»
               <span className="text-ink/50 mt-0.5 block text-xs">
-                Sin marcar, la raya sale en blanco con su nombre debajo, para firmarla a mano.
+                Sin marcar, la raya sale en blanco con su nombre debajo.
               </span>
             </span>
           </label>

@@ -71,13 +71,13 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
   return [
     {
       titulo: 'Poner el almacén en marcha',
-      detalle: 'Los tres pasos para que el inventario empiece a decir la verdad.',
+      detalle: 'Tres pasos para poner en marcha el inventario.',
       acciones: [
         {
           paso: 1,
           titulo: 'Cargar el catálogo',
           detalle:
-            'Los artículos que la empresa maneja. Se sube una planilla de Excel y el sistema comprueba fila por fila antes de escribir nada.',
+            'Los artículos que la empresa maneja. Desde una planilla de Excel.',
           icono: Upload,
           a: '/app/inventario/articulos/carga',
           exige: 'ESCRITURA',
@@ -94,7 +94,7 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
           paso: 3,
           titulo: 'Cargar el saldo inicial',
           detalle:
-            'Lo que hay hoy en cada sitio, con su costo. Es la única entrada que no necesita una compra detrás.',
+            'Lo que hay hoy en cada sitio, con su costo.',
           icono: PackagePlus,
           a: '/app/inventario/existencias',
           exige: 'ESCRITURA',
@@ -133,7 +133,7 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
         {
           titulo: 'Contar el almacén',
           detalle:
-            'Se imprime el acta con lo que el sistema cree que hay, se cuenta a mano, y la diferencia se anota como ajuste.',
+            'Se imprime el acta con lo registrado, se cuenta a mano y la diferencia se anota como ajuste.',
           icono: ClipboardList,
           a: '/app/inventario/existencias',
         },
@@ -144,7 +144,7 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
               : 'Ver lo que está por debajo del mínimo',
           detalle:
             faltantes > 0
-              ? 'Hay artículos en el mínimo o por debajo. Conviene pedirlos antes de que hagan falta.'
+              ? 'Hay artículos en el mínimo o por debajo.'
               : 'Ahora mismo no hay nada por reponer.',
           icono: TriangleAlert,
           a: '/app/inventario/existencias',
@@ -349,7 +349,7 @@ export function TableroInventario() {
               <p className="text-ink/45 mt-2 text-xs">
                 {bajoMinimo.length === 0
                   ? 'Sin artículos por reponer'
-                  : 'Conviene pedirlos antes de que falten'}
+                  : 'En el mínimo o por debajo'}
               </p>
             </Card>
 
@@ -368,18 +368,16 @@ export function TableroInventario() {
 
           <PrimeraVez className="mt-8">
             <p>
-              La existencia <strong>no se escribe: se deduce</strong>. Es la suma del libro de
-              movimientos, y cada cosa que entra, sale o se traslada deja su renglón.
+              La existencia es la suma del libro de movimientos: cada cosa que entra, sale o se
+              traslada deja su renglón.
             </p>
             <p className="text-ink/50">
-              Registrar una entrada tampoco es escribirla a mano: es anotar que entraron
-              cuarenta y cuánto costaron, y la existencia sube como consecuencia. La diferencia
-              importa el día que alguien pregunte de dónde salieron.
+              Lo que llega con una orden entra al recibir la compra; lo demás, con «Registrar
+              entrada» en Existencias. Las salidas y los traslados están en Salidas y traslados.
             </p>
             <p className="text-ink/50">
-              Por eso no hay un botón de «poner existencia en 40». Si el conteo no cuadra con el
-              sistema, se corrige con un ajuste, que queda anotado con su motivo y con quién lo
-              hizo.
+              Si el conteo no cuadra con el sistema, se corrige con un ajuste, que queda anotado con
+              su motivo y con quién lo hizo.
             </p>
           </PrimeraVez>
 

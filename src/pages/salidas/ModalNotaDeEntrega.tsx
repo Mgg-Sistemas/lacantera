@@ -135,7 +135,7 @@ export function ModalNotaDeEntrega({
       descripcion={
         modo === 'generar'
           ? 'Respalda lo mismo que ya salió: no vuelve a descontar material. Al cliente se le entrega solo la nota de salida; esta queda para el archivo.'
-          : 'Póngale lo que le falta. Cuando tenga cliente y todos sus precios deja de estar pendiente.'
+          : 'Deja de estar pendiente cuando tiene cliente y todos sus precios.'
       }
       acciones={
         <>
@@ -190,7 +190,7 @@ export function ModalNotaDeEntrega({
 
         <div>
           <p className="text-ink/80 mb-2 text-sm font-medium">
-            Precios <span className="text-ink/45 font-normal">· en {monedaLeida}, opcionales</span>
+            Precios <span className="text-ink/45 font-normal">· en {monedaLeida}</span>
           </p>
           <ul className="divide-hairline border-hairline rounded-card divide-y border">
             {lineas.map((l) => (
@@ -223,7 +223,7 @@ export function ModalNotaDeEntrega({
 
         <div>
           <p className="text-ink/80 mb-2 text-sm font-medium">
-            Camiones <span className="text-ink/45 font-normal">· con qué se llevó el material, opcional</span>
+            Camiones <span className="text-ink/45 font-normal">· con qué se llevó el material</span>
           </p>
           <CamionesDeLaNota filas={camiones} onCambio={setCamiones} />
           {faltaEnCamiones ? <p className="text-warning mt-2 text-xs">{faltaEnCamiones}</p> : null}

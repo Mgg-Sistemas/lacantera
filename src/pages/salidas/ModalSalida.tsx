@@ -868,7 +868,7 @@ export function ModalSalida({
                   Se lo lleva un vehículo y alguien lo recibe
                   <span className="text-ink/50 mt-0.5 block text-xs">
                     El papel sale con «Recibió conforme» y su nombre debajo de la raya. Sin marcar,
-                    la raya queda en blanco como hasta ahora.
+                    la raya queda en blanco.
                   </span>
                 </span>
               </label>
@@ -992,7 +992,7 @@ export function ModalSalida({
           abierto
           onCerrar={() => setOrdenandoClases(false)}
           titulo="Motivos de salida"
-          descripcion="La lista que aparece al sacar material. Cada razón ya sabe si es consumo o merma: eso no se cambia desde aquí, porque movería de sitio salidas ya registradas."
+          descripcion="La lista que aparece al sacar material. Si cada razón es consumo o merma no se cambia desde aquí."
           ancho="sm"
           acciones={<Button onClick={() => setOrdenandoClases(false)}>Listo</Button>}
         >
@@ -1012,7 +1012,7 @@ export function ModalSalida({
             guardando={guardarClase.isPending || borrarClase.isPending}
             etiquetaAnadir="Añadir una razón"
             placeholderNuevo="Se prestó a otra obra"
-            nota="Una razón que ya se usó no se borra: se apaga. Si se borrara, las salidas de hace tres meses se quedarían sin poder decir por qué se hicieron."
+            nota="Una razón ya usada no se borra: se apaga."
           />
         </Modal>
       ) : null}

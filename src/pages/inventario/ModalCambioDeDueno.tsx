@@ -85,7 +85,7 @@ export function ModalCambioDeDueno({
       abierto
       onCerrar={onCerrar}
       titulo="Cambiar de dueño"
-      descripcion="El material no se mueve: sigue donde está. Lo que cambia es de quién es."
+      descripcion="El material no se mueve; cambia de dueño."
       acciones={
         <>
           <Button variant="outline" onClick={onCerrar}>
@@ -144,7 +144,7 @@ export function ModalCambioDeDueno({
             .filter((d) => d.codigo !== de)
             .map((d) => ({
               valor: d.codigo,
-              etiqueta: d.es_la_casa ? `${d.nombre} (nosotros)` : d.nombre,
+              etiqueta: d.nombre,
             }))}
         />
         <div>

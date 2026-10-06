@@ -139,7 +139,6 @@ export function ModalVuelveDelTaller({
           min="0"
           step="0.01"
           inputMode="decimal"
-          placeholder="Opcional"
           value={costo}
           onChange={(e) => setCosto(e.target.value)}
           hint="Si lo hizo un taller de fuera y pasó factura."

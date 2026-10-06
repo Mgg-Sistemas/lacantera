@@ -215,7 +215,7 @@ export function Almacenes() {
               hint={
                 edicion.id
                   ? undefined
-                  : 'Déjelo vacío y el sistema lo pone: las tres letras del tipo y el siguiente número.'
+                  : 'Vacío, se asigna solo: tres letras del tipo y el siguiente número.'
               }
               value={edicion.codigo}
               onChange={(e) => cambiar({ codigo: e.target.value.toUpperCase() })}
@@ -258,7 +258,7 @@ export function Almacenes() {
               }
               opciones={(propietarios ?? []).map((d) => ({
                 valor: d.codigo,
-                etiqueta: d.es_la_casa ? `${d.nombre} (nosotros)` : d.nombre,
+                etiqueta: d.nombre,
               }))}
             />
             {/*
@@ -317,7 +317,7 @@ export function Almacenes() {
                 placeholder="Litros"
                 value={edicion.capacidad}
                 onChange={(e) => cambiar({ capacidad: e.target.value })}
-                hint="Con esto, el saldo deja de ser «720 L» y pasa a leerse «720 de 5.000»."
+                hint="El saldo se muestra como «720 de 5.000»."
               />
             ) : null}
 
@@ -327,10 +327,9 @@ export function Almacenes() {
                 type="number"
                 min="1"
                 step="1"
-                placeholder="Opcional"
                 value={edicion.trabajos_a_la_vez}
                 onChange={(e) => cambiar({ trabajos_a_la_vez: e.target.value })}
-                hint="Sin esto, el taller no dice si le queda sitio: no opinar es mejor que inventar."
+                hint="Sin este dato no se indica si el taller tiene sitio."
               />
             ) : null}
           </div>

@@ -275,7 +275,7 @@ export function ModalTrasvase({
 
       {desdeEnvase === haciaEnvase && volDesde > 0 ? (
         <p className="text-warning mt-2 text-xs">
-          Las dos orillas son el mismo envase: eso no es un cambio.
+          Origen y destino son el mismo envase.
         </p>
       ) : null}
 
@@ -286,7 +286,6 @@ export function ModalTrasvase({
         value={motivo}
         onChange={(e) => setMotivo(e.target.value)}
         rows={2}
-        hint="Dentro de un año será lo único que lo explique."
       />
 
       {error ? <ErrorDeCarga error={new Error(error)} className="mt-3" /> : null}

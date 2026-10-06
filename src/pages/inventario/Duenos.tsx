@@ -212,7 +212,7 @@ export function Duenos() {
               hint={
                 edicion.esNuevo
                   ? 'Sin espacios ni tildes. Es lo que queda escrito en cada almacén y no se puede cambiar después.'
-                  : 'No se cambia: de él cuelgan los almacenes y las máquinas que ya son suyos.'
+                  : 'No se cambia.'
               }
               onChange={(e) =>
                 setEdicion((x) =>
@@ -244,8 +244,7 @@ export function Duenos() {
               />
             ) : (
               <p className="text-ink/45 text-xs leading-relaxed">
-                Esta es la propia empresa. No se puede desactivar: de ella cuelga «cuánto vale lo
-                nuestro», y sin ella ningún desplegable ofrecería a La Cantera.
+                Es la propia empresa. No se puede desactivar.
               </p>
             )}
 

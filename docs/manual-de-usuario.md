@@ -1255,7 +1255,7 @@ Arriba hay cuatro tarjetas:
 | --- | --- | --- |
 | **Artículos con existencia** | Cuántos artículos tienen algo, no cuántos hay en el catálogo | **de 28 en el catálogo** |
 | **Valor del inventario** | Lo que vale todo lo que hay | **A costo promedio, no a precio de venta** |
-| **Bajo el mínimo** | Cuántos artículos están por debajo de su mínimo | **Nada por reponer**, o **Conviene pedirlos antes de que falten** |
+| **Bajo el mínimo** | Cuántos artículos están por debajo de su mínimo | **Nada por reponer**, o **En el mínimo o por debajo** |
 | **Movimientos de hoy** | Cuántas líneas se escribieron hoy en el libro | **Entradas, salidas y traslados** |
 
 **Bajo el mínimo es la única tarjeta que se enciende**, con un filo ámbar arriba y el triángulo de aviso, y solo cuando hay algo que atender. Lo demás informa; esta reclama. Un artículo sin mínimo puesto no cuenta: no está bajo mínimo, está sin configurar.
@@ -1272,7 +1272,9 @@ Debajo, los atajos. **Ya no se agrupan por lo que le pasa al material sino por e
 
 **Y ya no hay ningún atajo que lleve al cartel de obra.** Los había —*Salió producción del turno* iba a Explotación y *Se despachó a un cliente* a Ventas— y se quitaron a propósito: un mapa que enseña calles cortadas hace perder el viaje. El día que esos módulos vuelvan al menú, los atajos vuelven con ellos.
 
-Al pie, para quien entra por primera vez, queda esta explicación: *"El inventario no se escribe a mano: se mueve solo cuando pasa algo. Entra al recibir una compra o al cargar el parte de turno; sale al despachar a un cliente o al consumir en el frente. Las existencias son la suma de todo eso. Por eso no hay un botón de «cargar existencias»: si un número no cuadra, se corrige con un ajuste, que queda anotado con su motivo."*
+Al pie, en **Primeros pasos**, queda esta orientación: *"La existencia es la suma del libro de movimientos: cada cosa que entra, sale o se traslada deja su renglón. Lo que llega con una orden entra al recibir la compra; lo demás, con «Registrar entrada» en Existencias. Las salidas y los traslados están en Salidas y traslados. Si el conteo no cuadra con el sistema, se corrige con un ajuste, que queda anotado con su motivo y con quién lo hizo."*
+
+**La existencia no se escribe a mano: se deduce del libro.** Registrar una entrada no es escribir *hay cuarenta*: es anotar que entraron cuarenta y cuánto costaron, y la existencia sube como consecuencia. Por eso no hay un botón de *poner existencia en 40*. La diferencia importa el día que alguien pregunta de dónde salieron.
 
 ### 7.4 Existencias
 
@@ -1286,7 +1288,7 @@ De ahí se baja: se abre el desglose de un artículo, se ve en qué sitios está
 
 #### Qué se ve
 
-Arriba, si hay artículos en el mínimo o por debajo, aparece una franja ámbar: **3 artículos en el mínimo o por debajo**, seguida de **Conviene pedirlos antes de que hagan falta.** y el enlace **Ver solo esos**, que se convierte en **Ver todo** al pulsarlo. Solo se controlan los artículos que tengan una existencia mínima distinta de cero.
+Arriba, si hay artículos en el mínimo o por debajo, aparece una franja ámbar: **3 artículos en el mínimo o por debajo**, seguida del enlace **Ver solo esos**, que se convierte en **Ver todo** al pulsarlo. Solo se controlan los artículos que tengan una existencia mínima distinta de cero.
 
 Debajo hay dos filtros: **Buscar**, que acepta el nombre o el código del artículo, y **Dónde**, que empieza en **Todo el inventario**. Los talleres se distinguen en la lista con un **· taller** detrás del nombre.
 
@@ -1516,7 +1518,7 @@ En la lista, esta columna se llama **Al entregarlo** y muestra la etiqueta corre
 
 **Esto cambió, y para bien.** Hasta la versión anterior de este manual un artículo creado no se podía editar ni borrar, y el único camino era desactivarlo y crear otro. Hoy:
 
-- **Se corrige** con el botón del lápiz. Se abre **Corregir REP-BOMBA** y se puede cambiar todo menos el código, que sale bloqueado con la ayuda **No se cambia.** El motivo está escrito en la ventana: **El código no se cambia: es con lo que se pide en el almacén y ya está impreso en lo emitido.**
+- **Se corrige** con el botón del lápiz. Se abre **Corregir REP-BOMBA** y se puede cambiar todo menos el código, que sale bloqueado con la ayuda **No se cambia.** La ventana lo dice: **El código no se cambia.** Es con lo que se pide en el almacén, y ya está impreso en lo emitido.
 - **Se borra** con la papelera, y **solo mientras nada lo haya tocado todavía**. En cuanto el artículo aparece en una orden de compra o en un movimiento de inventario, la base lo impide y el mensaje dice que se desactive. No es una traba: borrar un artículo que ya se movió dejaría el libro señalando a algo que no existe.
 - **Se activa y se desactiva** pulsando la etiqueta de la columna **Estado**, que cambia al instante y sin pedir confirmación.
 
@@ -1547,7 +1549,7 @@ Esta ficha **no muestra precios de venta**. Los precios viven en la lista de pre
 
 #### Su historia
 
-Es la tarjeta grande de abajo, y su subtítulo lo resume: **Todo lo que le ha pasado desde que se creó, de lo más reciente a lo más viejo.**
+Es la tarjeta grande de abajo, y su subtítulo lo resume: **Desde su creación, del más reciente al más antiguo.**
 
 No es una tabla, es una lista: un renglón por hecho. Cada uno lleva un icono a la izquierda —**flecha verde hacia abajo** si sumó existencia, **flecha roja hacia arriba** si la restó, **círculo** si no la movió—, el nombre de lo que pasó, la cantidad con su unidad, el almacén, y al pie la fecha y la hora, el documento y **lo registró** seguido del nombre de la persona. Cuando el hecho tiene que ver con alguien —una entrega, una devolución, una pérdida— aparece además el nombre de esa persona en una etiqueta gris.
 
@@ -1634,8 +1636,8 @@ Si el archivo no se puede leer, el aviso sale en rojo debajo del botón. Los má
 | --- | --- |
 | «La planilla no trae ninguna fila con datos.» | Llénala antes de subirla |
 | «La planilla no tiene una columna «codigo». ¿Seguro que es la plantilla del sistema?» | Estás subiendo otro archivo. Baja la plantilla y trabaja sobre ella |
-| «El formato .xls es de Excel 97 y no se puede leer. Ábrelo y guárdalo como .xlsx o como CSV.» | Guárdalo otra vez con **Guardar como** |
-| «Este navegador no sabe abrir archivos .xlsx. Guarda la planilla como CSV y vuelve a subirla.» | Guárdala como CSV |
+| «El formato .xls (Excel 97) no se puede leer. Ábralo y guárdelo como .xlsx.» | Guárdalo otra vez con **Guardar como** |
+| «Este navegador no abre archivos .xlsx. Guarde la planilla como CSV y vuelva a subirla.» | Guárdala como CSV |
 | «No se pudo leer el archivo. Comprueba que sea la plantilla en CSV o en Excel.» | Cualquier otro problema del archivo |
 
 #### 3 · Esto es lo que va a pasar
@@ -1789,6 +1791,8 @@ Del módulo salen cuatro documentos, y **los cuatro llevan la misma cabecera que
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
+| **Atención: ya tiene movimientos anotados en …**, al cambiar la unidad de un artículo | Lo anotado sigue diciendo el número que se escribió, y la existencia sumará las dos unidades | Si la unidad de verdad cambió, cuenta el almacén después para dejar el saldo bueno |
+| **Es el mismo costo que ya tiene**, al corregir un costo | La cifra nueva es igual a la que ya tenía | Si lo que estaba mal era la moneda, elige la de la factura |
 | «Esta acción la realiza: Almacén. Tu usuario no tiene ese rol.» | Tu usuario consulta pero no registra | Pide el rol a administración, o que lo registre quien lo tenga |
 | «Tu usuario no tiene permiso para esta acción.» | Falta el permiso sobre el módulo | Pide el permiso a administración |
 | «De "GASOIL" solo hay 40 en existencia y se intentan sacar 100.» | Quieres sacar más de lo que hay | Revisa el almacén. Si el material está, falta registrar su entrada |
@@ -7380,7 +7384,7 @@ Quien responde por el almacén ve en la tarjeta **Aprobar** y **No aprobar**.
 
 **Aprobar** no mueve nada: deja la salida **Por entregar**. Si tiene su firma guardada, antes le pregunta si la pone en **Autorizado por**; si no, aprueba al instante.
 
-**No aprobar** pide un **Motivo**: **Quien la pidió va a leer el motivo, así que conviene que diga algo.** La salida queda **Rechazada**, y quien la pidió ve en su tarjeta quién la rechazó y por qué. Tampoco mueve nada.
+**No aprobar** pide un **Motivo**: **Lo lee quien la pidió.** La salida queda **Rechazada**, y quien la pidió ve en su tarjeta quién la rechazó y por qué. Tampoco mueve nada.
 
 #### Entregar
 
@@ -7480,9 +7484,9 @@ El detalle completo de cada movimiento está en el libro de movimientos (7.6), y
 
 Todos se abren primero en una vista previa, con **Cerrar** y **Descargar**.
 
-**Orden de salida.** Es la solicitud en papel: lo que se pidió y en qué estado está. Se imprime en cualquier estado y no lleva costos. La vista previa lo dice: **Lo que se solicitó y en qué estado está. Lo que de verdad sale lo dice la nota, al entregar.** Si la salida se rechazó o se canceló, lleva cruzado el sello **RECHAZADA** o **CANCELADA**.
+**Orden de salida.** Es la solicitud en papel: lo que se pidió y en qué estado está. Se imprime en cualquier estado y no lleva costos. La vista previa lo dice: **Lo solicitado y su estado. Lo que sale consta en la nota de salida, al entregar.** Si la salida se rechazó o se canceló, lleva cruzado el sello **RECHAZADA** o **CANCELADA**.
 
-**Nota de salida.** Es lo que de verdad salió, y es el papel que firma quien recibe: **Compruébela antes de imprimirla: es lo que va a firmar quien recibe el material.** Sale sola al entregar, y se vuelve a sacar con el botón **Nota** de la tarjeta o del Historial.
+**Nota de salida.** Es lo que de verdad salió, y es el papel que firma quien recibe: **La firma quien recibe el material.** Compruébala antes de imprimirla. Sale sola al entregar, y se vuelve a sacar con el botón **Nota** de la tarjeta o del Historial.
 
 - Lleva el número de la nota y el de su orden, la fecha, el almacén, para quién es, el vehículo y **Recibido por** con su cédula, si se dijeron al solicitar.
 - Debajo, el motivo y la tabla del material, con **Código**, **Artículo**, **Cantidad** y **Unidad**. Si se contó en presentaciones, el artículo lo dice.

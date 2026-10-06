@@ -377,7 +377,7 @@ export async function armarNotaDeSalida(d: DatosNotaDeSalida): Promise<NotaArmad
   } else if (!esOrden) {
     filasDeLaOrden.push([
       'Orden de salida',
-      'Sin orden: salida directa, de antes de que toda salida se autorizara',
+      'Sin orden: salida directa',
     ])
   }
 

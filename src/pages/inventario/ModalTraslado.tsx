@@ -367,7 +367,7 @@ export function ModalTraslado({
       descripcion={
         pedido
           ? undefined
-          : 'Elija qué quiere hacer: cada opción dice quién hace cada paso. El costo viaja siempre con el material.'
+          : 'Cada opción indica quién hace cada paso. El costo viaja con el material.'
       }
       acciones={
         pedido ? (
@@ -504,8 +504,8 @@ export function ModalTraslado({
               origenSinCosto === undefined
                 ? null
                 : origenSinCosto
-                  ? 'Solo salen los sitios que también admiten material sin costo: lo que hay aquí entró sin precio y hundiría el promedio de los demás.'
-                  : 'No sale el tanque del combustible inicial: lo que hay ahí entró sin precio y no se mezcla con lo que sí costó.',
+                  ? 'Solo los sitios que admiten material sin costo.'
+                  : 'No incluye el tanque del combustible inicial: entró sin costo.',
             ]
               .filter(Boolean)
               .join(' ') || undefined
@@ -629,7 +629,7 @@ export function ModalTraslado({
             vacio="Seleccione el dueño"
             value={form.propietario}
             onChange={(e) => cambiar({ propietario: e.target.value })}
-            hint="Aquí hay material de varios dueños. El traslado no cambia de dueño: lo lleva."
+            hint="Aquí hay material de varios dueños. El traslado no cambia el dueño."
             opciones={duenosEnElOrigen.map((d) => ({
               valor: d,
               etiqueta: nombreDeDueno(d) ?? d,
@@ -644,7 +644,6 @@ export function ModalTraslado({
         rows={2}
         value={form.motivo}
         onChange={(e) => cambiar({ motivo: e.target.value })}
-        hint="Dentro de seis meses esto será lo único que explique el movimiento."
       />
 
       {miFirma?.usar && (form.forma === 'ENVIAR' || form.forma === 'DIRECTO') ? (

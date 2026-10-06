@@ -190,8 +190,8 @@ export function libroDePlantilla(
         [celda(`Carga de ${queSeCarga} — Minería Internacional TS`, ESTILO.titulo)],
         [
           celda(
-            `Borra las dos filas de ejemplo y escribe las tuyas debajo de la cabecera. ` +
-              `No cambies los nombres de las columnas. Obligatorias: ${obligatorias.join(', ')}.`,
+            `Borre las dos filas de ejemplo y escriba las suyas debajo de la cabecera. ` +
+              `No cambie los nombres de las columnas. Obligatorias: ${obligatorias.join(', ')}.`,
             ESTILO.subtitulo,
           ),
         ],
@@ -208,8 +208,7 @@ export function libroDePlantilla(
         [celda(`Cómo se llena la plantilla de ${queSeCarga}`, ESTILO.titulo)],
         [
           celda(
-            'Las columnas que no son obligatorias se pueden dejar vacías. Al subir el archivo, ' +
-              'el sistema revisa fila por fila y dice qué va a pasar con cada una antes de escribir nada.',
+            'Antes de cargar se muestra qué pasará con cada fila.',
             ESTILO.subtitulo,
           ),
         ],
@@ -228,9 +227,8 @@ export function libroDePlantilla(
         [celda('Si una fila queda mal', ESTILO.etiqueta)],
         [
           celda(
-            'No entra ninguna. Es a propósito: una carga a medias deja a nadie sabiendo qué quedó dentro, ' +
-              'y el archivo ya no sirve para volver a intentarlo. El sistema dice el número de fila y el motivo, ' +
-              'y esa fila se puede corregir ahí mismo en la pantalla, o aquí y subir el archivo otra vez.',
+            'No entra ninguna. Se indica la fila y el motivo; se corrige en la pantalla o en el archivo, ' +
+              'y se vuelve a subir.',
             ESTILO.parrafo,
           ),
         ],
@@ -274,11 +272,11 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
     Y UN CÓDIGO QUE NO EXISTE YA NO CREA NADA. Christopher pidió validar el
     «intento de nuevos códigos»: para uno nuevo, el código va vacío.
   */
-  { columna: 'codigo', obligatoria: false, dice: 'Solo para corregir un artículo que ya está: escribe su código. Para uno nuevo, déjalo vacío y la base le pone uno. Un código que no existe no entra.', ejemplo: '', otro: '' },
+  { columna: 'codigo', obligatoria: false, dice: 'Solo para corregir un artículo que ya está: escriba su código. Para uno nuevo, déjelo vacío y la base le pone uno. Un código que no existe no entra.', ejemplo: '', otro: '' },
   { columna: 'nombre', obligatoria: true, dice: 'Cómo se llama.', ejemplo: 'Arena lavada', otro: 'Flete por viaje' },
   { columna: 'descripcion', obligatoria: false, dice: 'Detalle. Si se deja vacía en un artículo que ya existe, se respeta la que tenía.', ejemplo: 'Granulometria fina, patio 1' },
-  { columna: 'categoria', obligatoria: true, dice: 'Elige una de la lista. Son las mismas que ofrece el sistema al crear un artículo, con el mismo nombre.', ejemplo: 'Producto de cantera', otro: 'Servicio', opciones: CATEGORIAS_DE_ARTICULO },
-  { columna: 'unidad', obligatoria: true, dice: 'Con qué se mide. Elige una de la lista: sale de las unidades que la empresa tiene cargadas.', ejemplo: 'M3', otro: 'SERV' },
+  { columna: 'categoria', obligatoria: true, dice: 'Elija una de la lista. Son las mismas que ofrece el sistema al crear un artículo, con el mismo nombre.', ejemplo: 'Producto de cantera', otro: 'Servicio', opciones: CATEGORIAS_DE_ARTICULO },
+  { columna: 'unidad', obligatoria: true, dice: 'Con qué se mide. Elija una de la lista: sale de las unidades que la empresa tiene cargadas.', ejemplo: 'M3', otro: 'SERV' },
   { columna: 'inventariable', obligatoria: false, dice: 'SI o NO. En uno nuevo, vacío es SI; en uno que ya existe, vacío respeta lo que tenía. Un SERVICIO tiene que ser NO.', ejemplo: 'SI', otro: 'NO', opciones: SI_NO },
   { columna: 'modo_entrega', obligatoria: false, dice: 'Qué pasa al entregarlo: RETORNABLE vuelve, CONSUMIBLE se gasta, NO es que no se entrega a nadie. En uno nuevo, vacío es CONSUMIBLE; en uno que ya existe, vacío respeta lo que tenía.', ejemplo: 'CONSUMIBLE', otro: 'NO', opciones: ['RETORNABLE', 'CONSUMIBLE', 'NO'] },
   { columna: 'reparable', obligatoria: false, dice: 'SI o NO: si esto se puede mandar al taller y vuelve arreglado. Vacío se deduce de la categoría — un repuesto o una herramienta sí, lo demás no. En un artículo que ya existe, vacío respeta lo que tenía.', ejemplo: 'NO', otro: 'SI', opciones: SI_NO },
@@ -323,9 +321,9 @@ export const COLUMNAS_ARTICULOS: ColumnaPlantilla[] = [
     gobernación se está cargando renglón a renglón, y sus cosas pueden acabar en
     un almacén nuestro sin dejar de ser suyas.
   */
-  { columna: 'propietario', obligatoria: false, dice: 'De quién es lo que entra. Vacío significa «del dueño del almacén», que es lo normal. Se llena cuando el material es de otro: cosas de la gobernación guardadas en un almacén nuestro.', ejemplo: '', otro: '' },
+  { columna: 'propietario', obligatoria: false, dice: 'De quién es lo que entra. Vacío significa «del dueño del almacén», que es lo normal. Se llena cuando el material es de otro: cosas de la gobernación guardadas en un almacén propio.', ejemplo: '', otro: '' },
   { columna: 'cantidad', obligatoria: false, dice: 'Cuánto hay de esto en ese almacén. Entra como carga inicial, con su movimiento y su fecha.', ejemplo: '120', otro: '' },
-  { columna: 'costo', obligatoria: false, dice: 'Cuánto vale la unidad de lo que entra. NO es el precio de venta: de este número salen el valor del inventario y lo que costará cada salida futura. Si nadie sabe cuánto costó, déjalo vacío y escribe SI en la siguiente.', ejemplo: '0.75', otro: '' },
+  { columna: 'costo', obligatoria: false, dice: 'Cuánto vale la unidad de lo que entra. NO es el precio de venta: de este número salen el valor del inventario y lo que costará cada salida futura. Si nadie sabe cuánto costó, déjelo vacío y escriba SI en la siguiente.', ejemplo: '0.75', otro: '' },
 
   /*
     LO DONADO ENTRA SIN CIFRA, Y NO CON UN CERO.
@@ -356,7 +354,7 @@ export const COLUMNAS_PERSONAL: ColumnaPlantilla[] = [
   { columna: 'nombres', obligatoria: true, dice: 'Como aparece en la cédula.', ejemplo: 'Juan Carlos', otro: 'Maria' },
   { columna: 'apellidos', obligatoria: true, dice: 'Como aparece en la cédula.', ejemplo: 'Perez Blanco', otro: 'Rojas' },
   { columna: 'cargo', obligatoria: true, dice: 'El cargo que ocupa. Si coincide con uno del tabulador, de ahí sale el sueldo.', ejemplo: 'OPERADOR EQUIPO PESADO', otro: 'ANALISTA ADMINISTRATIVO' },
-  { columna: 'fecha_ingreso', obligatoria: true, fecha: true, dice: 'Cuándo entró: 15/01/2026 o 2026-01-15. De aquí salen la antigüedad y las prestaciones, así que revísala.', ejemplo: '2026-01-15', otro: '2025-06-01' },
+  { columna: 'fecha_ingreso', obligatoria: true, fecha: true, dice: 'Cuándo entró: 15/01/2026 o 2026-01-15. De aquí salen la antigüedad y las prestaciones, así que revísela.', ejemplo: '2026-01-15', otro: '2025-06-01' },
   { columna: 'salario_base', obligatoria: false, dice: 'Lo que gana según su estipulación. En uno nuevo, vacío es cero y se le pone desde el tabulador; en uno que ya está cargado, vacío NO le toca el sueldo.', ejemplo: '350', otro: '500' },
   { columna: 'moneda_salario', obligatoria: false, dice: 'La moneda del sueldo. En uno nuevo, vacío es VES; en uno que ya está cargado, vacío respeta la que tenía.', ejemplo: 'USD', otro: 'USD' },
   { columna: 'base_estipulacion', obligatoria: false, dice: 'Si ese sueldo es MENSUAL, DIARIO o por HORA. En uno nuevo, vacío es MENSUAL; en uno que ya está cargado, vacío respeta lo que tenía.', ejemplo: 'MENSUAL', otro: 'MENSUAL' },

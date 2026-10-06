@@ -196,7 +196,7 @@ function columnaDe(referencia: string): number {
 async function leerXlsx(archivo: File): Promise<string[][]> {
   if (typeof DecompressionStream === 'undefined') {
     throw new ErrorDePlanilla(
-      'Este navegador no sabe abrir archivos .xlsx. Guarda la planilla como CSV y vuelve a subirla.',
+      'Este navegador no abre archivos .xlsx. Guarde la planilla como CSV y vuelva a subirla.',
     )
   }
 
@@ -307,7 +307,7 @@ export async function leerHoja(
     celdas = await leerXlsx(archivo)
   } else if (nombre.endsWith('.xls')) {
     throw new ErrorDePlanilla(
-      'El formato .xls es de Excel 97 y no se puede leer. Ábrelo y guárdalo como .xlsx.',
+      'El formato .xls (Excel 97) no se puede leer. Ábralo y guárdelo como .xlsx.',
     )
   } else if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) {
     // El BOM que Excel escribe delante se colaría dentro del primer nombre de
@@ -317,7 +317,7 @@ export async function leerHoja(
     celdas = partirCsv(texto, separadorDe(primera))
   } else {
     throw new ErrorDePlanilla(
-      'Ese archivo no es una planilla. Se admiten .xlsx y .csv, que es lo que descarga el botón de la plantilla.',
+      'Ese archivo no es una planilla. Se admiten .xlsx y .csv.',
     )
   }
 
@@ -349,8 +349,8 @@ export async function leerHoja(
     const encontrada = conContenido.findIndex((f) => f.some((c) => normalizar(c) === clave))
     if (encontrada < 0) {
       throw new ErrorDePlanilla(
-        `No encuentro la fila de columnas: en ninguna parte del archivo aparece «${opciones.claveEsperada}». ` +
-          'Vuelve a bajar la plantilla y llena esa, sin cambiarle los nombres a las columnas.',
+        `No se encuentra la fila de columnas: en ninguna parte del archivo aparece «${opciones.claveEsperada}». ` +
+          'Descargue de nuevo la plantilla y llénela sin cambiar los nombres de las columnas.',
       )
     }
     indiceCabecera = encontrada
@@ -369,7 +369,7 @@ export async function leerHoja(
   if (filas.length > TOPE_DE_FILAS) {
     throw new ErrorDePlanilla(
       `La planilla trae ${filas.length} filas y el máximo por archivo es ${TOPE_DE_FILAS}. ` +
-        'Pártela en varias y súbelas una detrás de otra: cada una se comprueba y se carga por su cuenta.',
+        'Divídala en varias y súbalas una a una.',
     )
   }
 

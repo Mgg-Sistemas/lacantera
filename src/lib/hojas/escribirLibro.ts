@@ -257,7 +257,7 @@ function xmlDeHoja(hoja: HojaDelLibro): string {
       const col = letraDeColumna(v.columna)
       return (
         `<dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1"` +
-        ` errorTitle="Valor no admitido" error="Elige uno de la lista."` +
+        ` errorTitle="Valor no admitido" error="Elija uno de la lista."` +
         ` sqref="${col}${v.desde}:${col}${v.hasta}">` +
         `<formula1>${escapar(v.origen)}</formula1></dataValidation>`
       )

@@ -798,7 +798,7 @@ export function Existencias() {
             <strong className="font-semibold">
               {bajas.length} artículo{bajas.length === 1 ? '' : 's'} en el mínimo o por debajo
             </strong>
-            . Conviene pedirlos antes de que hagan falta.{' '}
+            .{' '}
             <button
               type="button"
               onClick={() => setSoloBajas((v) => !v)}
@@ -831,7 +831,7 @@ export function Existencias() {
               onChange={(e) => setDueno(e.target.value)}
               opciones={(propietarios ?? []).map((d) => ({
                 valor: d.codigo,
-                etiqueta: d.es_la_casa ? `${d.nombre} (nosotros)` : d.nombre,
+                etiqueta: d.nombre,
               }))}
             />
           ) : null}
@@ -1214,7 +1214,7 @@ export function Existencias() {
             eliminarDuplicado.reset()
           }}
           titulo={`Eliminar duplicado: ${duplicando.articulo}`}
-          descripcion="Esto no genera una salida. Si el artículo nunca tuvo movimiento se borra entero; si ya tuvo, reversa cada movimiento (una corrección, no un consumo) y lo desactiva, dejando la existencia en cero. Si ya está en una factura, una nota o cualquier otro documento de verdad, la base lo va a negar: en ese caso no es un duplicado aislado, desactívelo en su lugar."
+          descripcion="Esto no genera una salida. Si el artículo nunca tuvo movimiento se borra entero; si ya tuvo, reversa cada movimiento (una corrección, no un consumo) y lo desactiva, dejando la existencia en cero. Si figura en una factura, una nota u otro documento, no se puede eliminar: se desactiva."
           acciones={
             <>
               <Button
@@ -1318,7 +1318,7 @@ export function Existencias() {
           descripcion={
             modal.tipo === 'entrada'
               ? 'Para lo que entra sin una compra de por medio: el saldo con el que arranca el almacén, algo comprado por fuera, material que trae alguien.'
-              : 'Escriba lo que contó. El sistema calcula la diferencia y la deja registrada.'
+              : 'Cantidad contada. La diferencia queda registrada como ajuste.'
           }
           /*
             LA ENTRADA NECESITA MÁS ANCHO QUE EL CONTEO.
@@ -1434,8 +1434,7 @@ export function Existencias() {
                 <p className="border-warning/40 bg-warning/10 text-warning mt-2 rounded-lg border px-3 py-2 text-xs leading-relaxed">
                   <Landmark className="mr-1 inline size-3.5 align-[-2px]" />
                   Lo que entre aquí será de {nombreDeDueno(almacenDeEntrada?.propietario)}, no de
-                  La Cantera. Después no se puede trasladar a un almacén nuestro: eso no sería
-                  mover material, sería cambiarlo de dueño.
+                  La Cantera. No se puede trasladar a un almacén propio.
                 </p>
               ) : null}
 
@@ -1773,8 +1772,8 @@ export function Existencias() {
                             Donación, o no se sabe cuánto costó
                             <span className="text-ink/50 mt-0.5 block text-xs">
                               {r.sinValor
-                                ? 'Entra sin cifra y queda pendiente de valorar. Escriba abajo de dónde vino: dentro de un año esa nota es lo único que lo va a contestar.'
-                                : 'Para lo que llegó donado o sin factura, y nadie sabe cuánto costó. No es lo mismo que costar cero: un cero abarataría cada salida futura de este artículo.'}
+                                ? 'Entra sin costo y queda pendiente de valorar. Indique abajo de dónde vino.'
+                                : 'Para material donado o sin factura. No equivale a costo cero.'}
                             </span>
                           </span>
                         </label>
@@ -2026,7 +2025,7 @@ export function Existencias() {
             <Input
               className="mt-4"
               label="Referencia"
-              hint="Opcional: quién lo trajo, o el número de una factura de fuera."
+              hint="Quién lo trajo, o el número de una factura de fuera."
               value={referencia}
               onChange={(e) => setReferencia(e.target.value)}
             />
@@ -2485,8 +2484,8 @@ function AvisoDeCosto({
   if (r.estado === 'SIN_TASA') {
     return (
       <p className="text-ink/50 mt-3 text-xs">
-        No hay tasa del {moneda} para hoy, así que este costo no se puede comparar con lo que el
-        artículo viene costando. La base avisará al guardar.
+        No hay tasa del {moneda} para hoy: el costo no se compara con el anterior. Se avisa al
+        guardar.
       </p>
     )
   }
@@ -2569,7 +2568,7 @@ function AvisoDeCosto({
             — es más de diez veces {r.hacia === 'ARRIBA' ? 'más caro' : 'más barato'}.
           </>
         )}{' '}
-        Compruebe la factura y la moneda: un cero de más aquí se arrastra a cada salida.
+        Compruebe la factura y la moneda.
       </p>
       {casilla('Es correcto, guárdelo así — quedará anotado en el movimiento')}
     </div>
@@ -2730,8 +2729,7 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
       {mismoCosto && p ? (
         <p className="border-warning/40 bg-warning-soft text-ink/80 rounded-card mt-3 border p-2.5 text-xs leading-relaxed">
           <strong>Es el mismo costo que ya tiene</strong> —{dolares(p.costo_actual)} por{' '}
-          {fila.unidad || 'unidad'}—: no hay nada que corregir. Si lo que estaba mal era la moneda,
-          elija la de la factura.
+          {fila.unidad || 'unidad'}—: no hay nada que corregir.
         </p>
       ) : null}
 
@@ -2780,8 +2778,8 @@ function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: ()
               <p className="text-ink/70 text-xs leading-relaxed">
                 Ya salieron <span className="tabular">{cantidad(p.ya_salio)}</span> {p.unidad}{' '}
                 cargados al costo de ahora.{' '}
-                <strong>{dolares(Math.abs(Number(p.no_se_recupera)))} no se recupera</strong>: eso ya
-                se le cargó a una máquina o a un centro de costo, y esto no lo reprecia.
+                <strong>{dolares(Math.abs(Number(p.no_se_recupera)))} no se recupera</strong>: ya se
+                cargó a una máquina o a un centro de costo.
               </p>
             </div>
           ) : null}

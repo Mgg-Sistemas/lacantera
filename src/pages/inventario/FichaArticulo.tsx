@@ -152,7 +152,7 @@ export function FichaArticulo() {
       <Historial
         className="mt-4"
         titulo="Historial"
-        subtitulo="Todo lo que le ha pasado desde que se creó, de lo más reciente a lo más viejo."
+        subtitulo="Desde su creación, del más reciente al más antiguo."
         hechos={historial.data}
         cargando={historial.isPending}
         error={historial.error}

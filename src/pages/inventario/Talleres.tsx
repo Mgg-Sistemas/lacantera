@@ -216,7 +216,7 @@ export function Talleres() {
                               title={
                                 o.sobre_que === 'MATERIAL'
                                   ? 'Cerrar: el material vuelve'
-                                  : 'Se cierra desde la ficha de la maquina'
+                                  : 'Se cierra desde la ficha de la máquina.'
                               }
                             >
                               <Chip

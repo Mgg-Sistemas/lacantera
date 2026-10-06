@@ -256,7 +256,7 @@ export function ModalAlTaller({
           hint={
             talleres.length === 0
               ? 'Sin otros talleres disponibles.'
-              : 'El material se mueve de verdad: sale del almacén y entra al taller.'
+              : 'Sale del almacén y entra al taller.'
           }
         />
         <Input
@@ -310,7 +310,6 @@ export function ModalAlTaller({
           type="number"
           min="1"
           step="1"
-          placeholder="Opcional"
           value={dias}
           onChange={(e) => setDias(e.target.value)}
           hint="Si se pasa, el taller lo marca en su cola."
