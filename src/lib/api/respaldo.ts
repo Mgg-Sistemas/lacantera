@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { zipDeUnArchivo } from '@/lib/zip'
 import { rpc } from './rpc'
-import { CONSULTA_CORTADA, enCastellano } from '@/lib/castellano'
+import { enCastellano } from '@/lib/castellano'
 
 /**
  * El respaldo de la base.
@@ -56,24 +56,14 @@ export const MAX_CORREOS = 10
 
 /** Pide el respaldo a la base y comprueba que no venga vacío. */
 async function armarRespaldo(): Promise<{ sql: string; nombre: string }> {
-  let sql: string
-  try {
-    sql = await rpc<string>('respaldo_datos')
-  } catch (e) {
-    /*
-      EL CORTE DEL RESPALDO NO SE ARREGLA ESPERANDO.
-
-      El traductor general dice «vuelva a intentarlo», que vale para una lista
-      que tardó. Aquí no: base midió el 06/10/2026 que el volcado ya no cabe en
-      los ocho segundos que la API da a cada petición, y que crece cada día con
-      la auditoría. Reintentar da lo mismo, así que el aviso manda a avisar y no
-      a esperar.
-    */
-    if (e instanceof Error && e.message === CONSULTA_CORTADA) {
-      throw new Error('El respaldo tardó demasiado y el servidor lo cortó. No es cosa del momento: avise a soporte.')
-    }
-    throw e
-  }
+  /*
+    Un corte por tiempo sale con el aviso general: vuelva a intentarlo y, si
+    se repite, avise a soporte. El 06/10/2026 tuvo uno propio que mandaba
+    directo a soporte, porque el volcado no cabía en el tiempo que la API da
+    a una petición. Desde que se arma sin recopiar el texto en cada vuelta
+    cabe con holgura, y un corte vuelve a ser cosa del momento.
+  */
+  const sql = await rpc<string>('respaldo_datos')
   if (!sql || sql.length < 100) {
     throw new Error('La base devolvió un respaldo vacío. No se descargó nada.')
   }

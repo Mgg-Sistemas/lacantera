@@ -77,17 +77,14 @@ function pareceDeCasa(m: string): boolean {
 }
 
 /*
-  DOS FRASES QUE OTROS TIENEN QUE RECONOCER YA TRADUCIDAS.
+  UNA FRASE QUE OTROS TIENEN QUE RECONOCER YA TRADUCIDA.
 
   `rpc()` lanza el mensaje en castellano y el código de Postgres se pierde por
-  el camino. Quien necesita saber que fue la red, o que la base cortó por
-  tiempo, compara con estas constantes en vez de copiar la frase a mano: dos
-  copias se separan en el primer retoque.
+  el camino. Quien necesita saber que fue la red compara con esta constante en
+  vez de copiar la frase a mano: dos copias se separan en el primer retoque.
 */
 export const SIN_CONEXION =
   'No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.'
-export const CONSULTA_CORTADA =
-  'La consulta tardó demasiado y el servidor la cortó. Vuelva a intentarlo; si se repite, avise a soporte.'
 
 /** Cómo dice cada navegador que no llegó a ningún sitio. */
 const RED_CAIDA = ['failed to fetch', 'networkerror', 'load failed', 'network request failed']
@@ -212,7 +209,7 @@ export function enCastellano(fallo: unknown): string {
     seguirse en cualquiera. Quien tiene filtros delante ya sabe usarlos.
   */
   if (codigo === '57014' || tiene('statement timeout', 'canceling statement')) {
-    return CONSULTA_CORTADA
+    return 'La consulta tardó demasiado y el servidor la cortó. Vuelva a intentarlo; si se repite, avise a soporte.'
   }
   if (codigo === '53300' || tiene('too many connections')) {
     return 'El servidor está saturado en este momento. Espere un poco y vuelva a intentarlo.'
