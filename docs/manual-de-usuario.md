@@ -22,7 +22,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema que existe hoy, no el que se planeó.** Donde algo esté a medio construir, el manual lo dice. El capítulo 15 reúne todo lo que todavía no está disponible y los puntos donde conviene tener cuidado, para que nadie planifique su trabajo contando con algo que aún no puede hacer.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** El sistema ha cambiado mucho desde esta versión, y no todos los capítulos se han repasado todavía contra las pantallas de hoy. Ya lo están esta presentación, el índice, el apartado 1.5 y el capítulo 3. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, manda la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** El sistema ha cambiado mucho desde esta versión, y no todos los capítulos se han repasado todavía contra las pantallas de hoy. Ya lo están esta presentación, el índice, el apartado 1.5 y los capítulos 3, 15 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, manda la pantalla.
 
 El orden de los capítulos es el del camino del material: primero se extrae, luego se almacena, después sale por el portón, y por último se administra lo que eso genera.
 
@@ -70,12 +70,11 @@ Así que los capítulos de lo que hoy está escondido **no se borraron ni se mov
 | 23 | Control de asistencia | Sí |
 | 24 | Contactos | Sí |
 | 25 | Alimentación | Sí |
+| 26 | Salidas y traslados | Sí |
 
 **Que un módulo esté en el menú no quiere decir que lo vea todo el mundo.** A cada persona le sale solo lo que su permiso alcanza (3.1). Control de despacho, Control de asistencia, Contactos y Alimentación nacieron abiertos solo para el administrador; quién más los ve depende de los permisos que se hayan repartido después.
 
-**Salidas y traslados todavía no tiene capítulo.** Es un módulo propio desde el 16 de septiembre de 2026, y su capítulo se está escribiendo; irá al final, con el número 26.
-
-**Los módulos que llegaron después tienen sus capítulos al final** —del 18 al 25— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
+**Los módulos que llegaron después tienen sus capítulos al final** —del 18 al 26— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
 
 ---
 
@@ -1576,29 +1575,9 @@ Tres reglas que conviene saber de antemano:
 
 ### 7.7 Transferencias
 
-**Operación › Inventario › Transferencias**
+**Los traslados entre almacenes se mudaron a Operación › Salidas y traslados › Traslados**, y están contados en 26.3. La entrada **Transferencias** ya no está en el menú: quien llega por su dirección vieja acaba en la pantalla nueva.
 
-Mover material de un sitio a otro. El total de la cantera no cambia: baja en un almacén y sube en el otro, por la misma cantidad y **al mismo costo**. Trasladar no cambia lo que vale el material.
-
-#### Hacer un traslado
-
-1. Pulsa **Nuevo traslado**.
-2. Elige **Sale de**.
-3. Elige **Entra en**. El almacén de origen desaparece de esta lista.
-4. Elige el **Artículo**.
-5. Escribe la **Cantidad**. Debajo verás **Disponible: 125**, y si te pasas, **Solo hay 125.** en rojo.
-6. Escribe **Por qué se mueve**.
-7. Pulsa **Trasladar**.
-
-Un traslado escribe **dos movimientos hermanos**: la salida del origen y la entrada en el destino. Por eso en la lista aparece una sola línea con la columna **Recorrido**, pero en el libro hay dos.
-
-El traslado queda con la fecha de hoy. No se puede fechar hacia atrás.
-
-#### Deshacer un traslado
-
-Pulsa **Deshacer**, escribe **Por qué se deshace** y confirma. Un traslado son dos movimientos —la salida de un almacén y la entrada en el otro— y se deshacen los dos a la vez. El material vuelve donde estaba.
-
-El sistema comprueba las dos antes de escribir ninguna. **O se deshacen las dos, o no se deshace ninguna**, nunca se queda a medias. Si el material ya salió del destino, no deja deshacerlo y lo explica.
+Dos cosas cambiaron para quien traía la costumbre de antes. Un traslado ya no es siempre inmediato: se puede pedir, enviar y confirmar que llegó, cada paso por quien responde por su almacén. Y ya no se deshace: lo pedido o en camino se cancela, y lo recibido se devuelve con un traslado de vuelta.
 
 ### 7.8 Catálogo de artículos
 
@@ -7453,3 +7432,212 @@ Lo que sale de ahí **no es un papel aparte: es un pedido de compras de verdad**
 ### 25.6 Lo que este módulo no hace
 
 No asocia la comida a un trabajador concreto: cuenta platos, no nombres — igual que MGG. No lleva menú ni recetas. Y su analítica de ciclos de mercado —inventario teórico contra conteo, merma, ración por persona— no se trajo todavía: se decidirá con un mes de comidas registradas delante.
+
+---
+
+## 26. Salidas y traslados
+
+**Operación › Salidas y traslados**
+
+Es el módulo de lo que sale del almacén y de lo que se mueve entre almacenes: por qué salió, para quién y quién lo entregó. Fue parte de Inventario hasta el 16 de septiembre de 2026, y desde entonces es un módulo propio, con su permiso.
+
+Tiene tres pantallas, que son también sus tres pestañas: **Historial**, **Salidas** y **Traslados**.
+
+Hay dos ideas que ordenan todo el módulo:
+
+- **Nada sale sin solicitud, y nada se descuenta hasta entregarlo.** Una salida se pide, la aprueba quien responde por el almacén y la entrega alguien de almacén. Solo al entregarla sale la nota y baja la existencia. Las salidas directas de antes siguen en el Historial, pero ya no se pueden hacer.
+- **Las ventas no salen por aquí.** Lo que se le vende a un cliente sale por **Facturación › Notas de entrega**, con su precio y su número; las compras se llevan en Compras.
+
+### 26.1 Quién entra y quién puede hacer qué
+
+Para entrar a cualquiera de las tres pantallas basta con tener **Salidas y traslados** en lectura. Lo demás depende de cada paso:
+
+| Para | Hace falta |
+| --- | --- |
+| Solicitar una salida | Lectura sobre el módulo |
+| Aprobar o no aprobar una salida | Ser el **Responsable** del almacén de donde sale —se pone en **Inventario › Almacenes y talleres**—, o tener la casilla **Aprobar las solicitudes de salida**, que trae el gerente general. **Quien pidió una salida no la aprueba** |
+| Entregar una salida | Escritura sobre el módulo |
+| Cancelar una salida | Haberla pedido, o poder aprobarla |
+| Hacer un traslado | Escritura sobre el módulo. Para enviarlo, además, ser el responsable del almacén de donde sale; para uno directo, de los dos almacenes |
+| Aprobar y enviar un traslado, confirmar que llegó o cancelarlo | Ser el responsable del almacén que toca. Aquí no cuenta el nivel del módulo |
+| Generar la nota de entrega de una salida | La casilla **Generar la nota de entrega de una salida**. No la trae ningún rol: se le presta a cada persona (13.1) |
+
+El gerente general y el administrador hacen de respaldo en todos los pasos de los almacenes: aprueban, envían, reciben y cancelan aunque no sean los responsables.
+
+El Historial y los traslados se leen, además, con el permiso de Inventario. Quien tiene uno suele tener el otro; si a alguien le salen esas dos pantallas vacías teniendo Salidas y traslados, es lo primero que hay que mirar.
+
+### 26.2 Salidas
+
+**Operación › Salidas y traslados › Salidas**
+
+La pantalla dice: **Solicitudes de salida de material de un almacén. Ninguna salida descuenta existencias hasta que la aprueba el responsable del almacén y el personal de almacén la entrega. Las ventas salen por Facturación › Notas de entrega; las compras se gestionan en Compras.**
+
+Arriba hay dos botones: **Esperan**, con cuántas, que enseña las que faltan por aprobar o por entregar, y **Todas**. Se abre en **Esperan**. Salen las doscientas más recientes, y todo el que entra al módulo ve todas, no solo las suyas.
+
+Cada solicitud es una tarjeta con su número —**Orden SS-2026-0001**— y su estado:
+
+| Estado | Qué quiere decir |
+| --- | --- |
+| **Por aprobar** | Se pidió y espera a quien responde por el almacén |
+| **Por entregar** | Se aprobó y espera a que alguien de almacén la entregue |
+| **Entregada** | Salió: tiene su nota de salida y ya descontó la existencia |
+| **Rechazada** | Quien responde por el almacén no la aprobó |
+| **Cancelada** | Se anuló antes de entregarla |
+
+Debajo, la tarjeta dice de qué almacén sale y para quién, el motivo, un renglón por cada material, quién la pidió, quién la aprobó o la rechazó y quién la entregó. Y lo que falta, en otro color: **Falta que la apruebe quien responde por** el almacén **o quien tenga el permiso de aprobar salidas.**, o **Aprobada. Falta que alguien de almacén la entregue: al entregarla sale la nota y se descuenta la existencia.**
+
+#### Solicitar una salida
+
+1. Pulse **Solicitar salida**. Se abre **Solicitar salida de material**. También se llega desde **Inventario › Existencias**, con el botón **Solicitar salida** de cada fila, y entonces el material y el almacén ya vienen puestos.
+2. Elija el **Almacén predeterminado**: es el de todos los renglones que no digan otro.
+3. En cada renglón, elija el **Artículo**, el **Almacén** —si solo un sitio lo tiene, se pone solo— y la **Cantidad**. Debajo de la cantidad se ve cuánto hay. Si el artículo tiene presentaciones —tambores, pailas, sacos—, puede contar en ellas y escribir en **Fracción en** la unidad lo que queda del último empezado.
+4. Si en ese almacén hay material de varios dueños, aparece **Dueño**: diga de cuál sale.
+5. Para otro material, pulse **Añadir otro material**.
+6. Diga **¿Quién lo va a recibir?**:
+   - **Alguien de la empresa**: un área o un cargo del organigrama.
+   - **Alguien de fuera de la empresa**: escriba el **Destino** —la empresa o la persona— y elija el **Responsable**, que firma la nota. Si no es de la empresa, elija **Otra persona — no es de la empresa** y escriba su nombre.
+7. Escriba el **Motivo**. Es lo que lee quien la aprueba, y queda en la nota cuando se entregue.
+8. Si se lo lleva un vehículo, marque **Se lo lleva un vehículo y alguien lo recibe** y diga el **Vehículo**, quién lo recibe (**Recibido por**) y su **Cédula**. El nombre y la cédula salen en el papel, en el cuadro, como **Recibido por**.
+9. Si quiere, adjunte hasta cuatro fotos o PDF del vehículo con **Adjuntar fotos o PDF**. No salen en el papel impreso.
+10. Pulse **Enviar solicitud**.
+
+**Una solicitud es de un solo almacén.** Si algún renglón sale de otro almacén, el botón dice **Enviar 2 solicitudes** y sale una por cada almacén, cada una para que la apruebe quien responde por el suyo. O salen todas, o ninguna.
+
+**Una venta no se solicita aquí, y el motivo lo vigila.** Si dice *venta*, *cliente*, *permuta*, *canje* o *pago con material*, la pantalla lo para: **Dice «venta»: una venta no se solicita aquí, se registra en Facturación › Notas de entrega. Si no es una venta, dígalo sin esa palabra; quien la aprueba lee el texto entero.**
+
+El motivo, el destino y el responsable se guardan en mayúsculas.
+
+**Las fotos se pueden añadir y quitar después**, desde la tarjeta, mientras la salida no esté rechazada ni cancelada. Subirlas pide escritura sobre el módulo. Una foto quitada no se borra: queda tachada, con quién la quitó y por qué.
+
+#### Aprobar o no aprobar
+
+Quien responde por el almacén ve en la tarjeta **Aprobar** y **No aprobar**.
+
+**Aprobar** no mueve nada: deja la salida **Por entregar**. Si tiene su firma guardada, antes le pregunta si la pone en **Autorizado por**; si no, aprueba al instante.
+
+**No aprobar** pide un **Motivo**: **Quien la pidió va a leer el motivo, así que conviene que diga algo.** La salida queda **Rechazada**, y quien la pidió ve en su tarjeta quién la rechazó y por qué. Tampoco mueve nada.
+
+#### Entregar
+
+Quien tiene escritura sobre el módulo ve **Entregar material** en las salidas **Por entregar**.
+
+**Un solo clic entrega**: no hay confirmación. En ese momento el sistema vuelve a comprobar que haya existencia, crea la nota de salida —**NS-2026-0001**—, descuenta el material al costo promedio del almacén y abre la nota para imprimirla.
+
+#### Cancelar
+
+Una salida **Por aprobar** o **Por entregar** se cancela con **Cancelar**, y pide un **Motivo**: **Queda escrito y no se puede editar después.** No cambia ninguna existencia, porque nada se descontó antes de entregar. **Una salida entregada ya no se cancela.**
+
+### 26.3 Traslados
+
+**Operación › Salidas y traslados › Traslados**
+
+La pantalla dice: **Traslados de material entre almacenes: solicitados, enviados o directos. Cada fila indica lo pendiente y a quién le corresponde.**
+
+Trasladar no cambia lo que vale el material: **el costo viaja con él**, y llega con el mismo con el que salió. Tampoco cambia de dueño: el traslado lo lleva.
+
+#### Tres maneras de trasladar
+
+Pulse **Nuevo traslado**. Lo primero que pregunta es **¿Qué quiere hacer?**, y cada opción dice quién hace cada paso:
+
+| Opción | Qué pasa | Botón |
+| --- | --- | --- |
+| **Pedir material de otro almacén** | **Queda pedido y todavía no se mueve nada. Lo aprueba y envía quien responde por el almacén de donde sale; quien responde por el de destino confirma que llegó.** | **Pedir traslado** |
+| **Enviar material a otro almacén** | **Sale ahora de un almacén por el que responde y queda «En tránsito». Quien responde por el de destino confirma que llegó.** | **Enviar ahora** |
+| **Traslado directo** | **Sale y llega en este mismo momento, sin esperar a nadie. Solo si responde por los dos almacenes, o es administración.** | **Trasladar ahora** |
+
+La opción que no está a su alcance sale apagada y dice por qué.
+
+Después:
+
+1. Elija el **Origen**. Solo salen los almacenes que tienen algo que trasladar.
+2. Elija el **Destino**. No puede ser el mismo: **No puede ser el mismo de donde sale.**
+3. Elija el **Artículo** y escriba la **Cantidad**. Debajo se ve cuánto hay disponible. Como en las salidas, se puede contar en presentaciones.
+4. Si en el origen hay material de varios dueños, diga de cuál en **Dueño**.
+5. Escriba el **Motivo**.
+6. Pulse el botón de la opción elegida.
+
+El traslado queda con la fecha de hoy: no hay campo de fecha.
+
+Mientras va de camino, el material no desaparece: sigue contando en el inventario, en un sitio que se llama **En camino**, y de ahí sale al confirmar la llegada.
+
+**Lo que entró sin costo** —como el combustible trasladado de otra empresa del grupo— solo se traslada con **Traslado directo**, y solo a sitios que también admiten material sin costo. Así no se mezcla con lo que sí costó.
+
+#### La lista
+
+Arriba hay dos botones: **Pendientes**, con cuántos, y **Todos**. Se abre en **Pendientes**, que son los pedidos y los que van de camino. Salen los trescientos más recientes.
+
+Cada fila dice el número —**TRA-2026-0001**—, su estado, cómo nació (**Pedido**, **Enviado** o **Directo**), el artículo con su motivo, la cantidad, el **Recorrido** de un almacén al otro y el **Seguimiento**: quién dio el último paso y lo que falta.
+
+| Estado | Qué quiere decir |
+| --- | --- |
+| **Solicitado** | Pedido. No se ha movido nada |
+| **En tránsito** | Salió del origen y espera a que confirmen la llegada |
+| **Recibido** | Llegó |
+| **Cancelado** | Se anuló. Si ya había salido, volvió al origen |
+
+#### Los pasos de cada traslado
+
+- **Aprobar y enviar**: lo ve quien responde por el almacén de origen en un traslado **Solicitado**. El material sale y queda **En tránsito**.
+- **Confirmar llegada**: lo ve quien responde por el almacén de destino en un traslado **En tránsito**. El material entra al destino y queda **Recibido**.
+- **Nota**: abre la nota de traslado, en cuanto el material ha salido.
+- **Cancelar**: pide un **Motivo**. Un traslado **Solicitado** lo cancela quien lo pidió o quien responde por cualquiera de los dos almacenes; uno **En tránsito**, quien responde por cualquiera de los dos. Si el material ya había salido, vuelve al origen, al mismo costo. **No se borra nada: el traslado queda cancelado con su motivo, y si el material ya había salido, su vuelta queda escrita en el libro.**
+
+Si tiene su firma guardada, al enviar y al recibir le pregunta si la pone en **Envió** o en **Recibió** de la nota de traslado.
+
+**Un traslado recibido no se cancela ni se deshace.** Si hay que devolver el material, se hace un traslado nuevo en sentido contrario.
+
+El inventario también tiene un botón **Trasladar**, en **Inventario › Existencias**, que abre esta misma ventana con el almacén ya puesto.
+
+### 26.4 Historial
+
+**Operación › Salidas y traslados › Historial**
+
+Es la consulta de todo lo que ya movió existencia: salidas entregadas y traslados. **Aquí no se registra nada.** Lo dice la pantalla: **Solo aparece lo que ya movió existencia. Una solicitud de salida sin entregar o un traslado pedido sin enviar todavía no está aquí: se ven en su pestaña.**
+
+Los filtros:
+
+- **Buscar una nota**: **Trae la nota entera, con todos sus renglones, aunque sea vieja.** Se busca por el número de la nota de salida —**NS-2026-0012**— o por el del movimiento.
+- **Ver**: **Salidas y traslados**, **Solo salidas** o **Solo traslados**.
+- **Desde** y **Hasta**, con los atajos **Hoy**, **Esta semana**, **Este mes** y **Mes pasado**. Cuentan el día en que pasó el movimiento.
+- **Artículo**, **Almacén**, **Registrado por** y **Destino**.
+
+Salen los doscientos más recientes. Si hay más, lo dice: **el libro trae los 200 más recientes: acote las fechas para ver más atrás**.
+
+Las columnas son **Movimiento**, **Artículo**, **Almacén**, **Destino** y **Cantidad**. En **Movimiento** va el número, la clase de salida, cuándo y quién la registró, y debajo los botones de los papeles:
+
+- **Orden SS-…**, en las salidas que vinieron de una solicitud.
+- **Nota NS-…**, en todas las salidas.
+- **Nota de traslado**, en los traslados.
+
+El detalle completo de cada movimiento está en el libro de movimientos (7.6), y la pantalla lleva un enlace al pie.
+
+### 26.5 Los papeles
+
+Todos se abren primero en una vista previa, con **Cerrar** y **Descargar**.
+
+**Orden de salida.** Es la solicitud en papel: lo que se pidió y en qué estado está. Se imprime en cualquier estado y no lleva costos. La vista previa lo dice: **Lo que se solicitó y en qué estado está. Lo que de verdad sale lo dice la nota, al entregar.** Si la salida se rechazó o se canceló, lleva cruzado el sello **RECHAZADA** o **CANCELADA**.
+
+**Nota de salida.** Es lo que de verdad salió, y es el papel que firma quien recibe: **Compruébela antes de imprimirla: es lo que va a firmar quien recibe el material.** Sale sola al entregar, y se vuelve a sacar con el botón **Nota** de la tarjeta o del Historial.
+
+- Lleva el número de la nota y el de su orden, la fecha, el almacén, para quién es, el vehículo y **Recibido por** con su cédula, si se dijeron al solicitar.
+- Debajo, el motivo y la tabla del material, con **Código**, **Artículo**, **Cantidad** y **Unidad**. Si se contó en presentaciones, el artículo lo dice.
+- La casilla **Incluir costos** de la vista previa añade el costo y el total. Viene desmarcada.
+- Las rayas de firma son **Solicitado por** y **Autorizado por**, con la firma digital de cada uno si la eligió. Las salidas viejas, de antes de que toda salida pasara por solicitud, firman **Entregó** y **Recibió conforme**.
+
+Si la salida fue para alguien de fuera de la empresa, quien tenga la casilla **Generar la nota de entrega de una salida** ve en la vista previa la opción **Generar nota de entrega**: una nota de entrega que respalda lo mismo que ya salió, sin volver a descontar material. Se explica en 10.10.
+
+**Nota de traslado.** Sale en cuanto el material deja el almacén de origen, y se vuelve a sacar con el botón **Nota**. Lleva el origen, el destino, el estado, cómo nació, quién dio cada paso y el motivo. Las rayas de firma son **Envió** y **Recibió**. Si el traslado se canceló, lleva cruzado el sello **CANCELADO**.
+
+### 26.6 Cuando el sistema no le deja
+
+| Lo que ve | Qué significa | Qué hacer |
+| --- | --- | --- |
+| **Dice «venta»: una venta no se solicita aquí…** al escribir el motivo | El motivo nombra una venta, un cliente o un pago con material | Si es una venta, regístrela en **Facturación › Notas de entrega**. Si no lo es, dígalo sin esa palabra |
+| **Ahí solo quedan** y una cantidad, en rojo | Pide más de lo que hay en ese almacén | Baje la cantidad, o saque el resto de otro almacén en otro renglón |
+| «Su usuario no tiene permiso para esta acción.» al pulsar **Aprobar** | Lo más probable: la solicitud la pidió usted. Nadie aprueba lo suyo | Que la apruebe otra persona que responda por ese almacén, o el gerente general |
+| «La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.» al solicitar en presentaciones | Hoy, pedir presentaciones enteras sin nada suelto falla | Pídalo en la unidad del artículo |
+| **La solicitud** y el número **quedó hecha, pero las fotos no subieron** | La salida se pidió, pero las fotos no llegaron | Añádalas desde su tarjeta. Si no le deja, es que subir fotos pide escritura sobre el módulo |
+| **No puede ser el mismo de donde sale.** | El destino del traslado es el mismo que el origen | Elija otro destino |
+| La opción **Enviar** o **Traslado directo** apagada | No responde por el almacén de origen, o por los dos | Use **Pedir material de otro almacén**, y que lo envíe quien responde por el origen |
+| Un mensaje que dice que el traslado **ya se recibió y no se cancela** | El material ya llegó | Haga un traslado de vuelta |
+| El Historial o los traslados vacíos, teniendo el módulo | Le falta el permiso de lectura sobre Inventario | Pídalo a la administración |
