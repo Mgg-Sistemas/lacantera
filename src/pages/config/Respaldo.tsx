@@ -963,6 +963,20 @@ function LaProgramacion() {
 }
 
 /*
+  EL IDENTIFICADOR DEL CORREO NO SE ENSEÑA.
+
+  Las frases anotadas hasta el 24/09/2026 terminan en «· mensaje <…@smtp-relay…>»,
+  el identificador que el servicio de correo le dio al envío. La base dejó de
+  escribirlo en la frase ese mismo día (20260924155005) —sigue guardado en
+  `correos_enviados`, que es donde le toca—, pero las frases de antes lo llevan
+  dentro, y la última que se enseña aquí puede ser una de ellas. Se quita esa
+  cola; si no está, la frase sale tal cual.
+*/
+function sinIdentificadorDelCorreo(frase: string): string {
+  return frase.replace(/\s*·\s*mensaje\s*<[^>]*>\s*$/, '')
+}
+
+/*
   SI SE DESPERTÓ Y QUÉ HIZO.
 
   Es la respuesta a «no se aprecia ni detecta que el cron esté funcionando». El
@@ -991,7 +1005,9 @@ function ElUltimoIntento() {
       {seSabeQueHizo ? (
         <>
           {' · '}
-          <span className={data.enviado ? 'text-success' : 'text-warning'}>{data.resultado}</span>
+          <span className={data.enviado ? 'text-success' : 'text-warning'}>
+            {sinIdentificadorDelCorreo(data.resultado ?? '')}
+          </span>
         </>
       ) : (
         <span className="text-ink/45"> · no quedó constancia de lo que hizo</span>
