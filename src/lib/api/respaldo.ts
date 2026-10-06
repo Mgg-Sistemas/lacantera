@@ -69,14 +69,29 @@ export function useDescargarRespaldo() {
       const { sql, nombre } = await armarRespaldo()
 
       /*
-        `text/plain` y no `application/sql`: el segundo no lo reconocen todos
-        los navegadores y alguno lo abre en una pestaña en vez de guardarlo.
+        SE BAJA COMPRIMIDO, COMO YA SE MANDABA POR CORREO.
+
+        Lo pidió la líder el 06/10/2026: «la base de datos será comprimida en un
+        archivo .rar o .zip para que sea más ligera». Zip y no rar porque rar es
+        propietario y hace falta un programa aparte para abrirlo; el zip lo abre
+        Windows con doble clic, sin instalar nada.
+
+        Son veintitrés megas de SQL que quedan en menos de dos: es texto con las
+        mismas palabras repetidas en cada fila, que es justo lo que un
+        compresor hace mejor. Importa en lo que se nota: lo que tarda en bajar,
+        lo que ocupa en el disco donde se guarde y lo que cuesta mandarlo
+        después por donde sea.
+
+        Se usa el MISMO `zipDeUnArchivo` que el correo. Un solo sitio donde se
+        arma un zip en toda la casa, y así el archivo que llega por correo y el
+        que se baja a mano son el mismo archivo.
       */
-      const blob = new Blob([sql], { type: 'text/plain;charset=utf-8' })
+      const bytes = await zipDeUnArchivo(nombre, sql)
+      const blob = new Blob([bytes as BlobPart], { type: 'application/zip' })
       const url = URL.createObjectURL(blob)
       const enlace = document.createElement('a')
       enlace.href = url
-      enlace.download = nombre
+      enlace.download = `${nombre}.zip`
 
       // El enlace tiene que estar en el documento para que el clic cuente como
       // navegación, y la dirección no se puede soltar en la misma vuelta: el

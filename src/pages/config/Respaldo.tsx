@@ -85,10 +85,10 @@ function useSegundos(corriendo: boolean): number {
   explica la espera.
 */
 function comoVa(segundos: number): string {
-  if (segundos < 8) return 'Leyendo las tablas…'
-  if (segundos < 25) return 'Armando el archivo…'
-  if (segundos < 75) return 'Bajando el archivo. Son varios megas por la red de la cantera.'
-  return 'Sigue bajando. Con la red lenta puede pasar de dos minutos.'
+  if (segundos < 4) return 'Leyendo las tablas…'
+  if (segundos < 12) return 'Armando el archivo…'
+  if (segundos < 40) return 'Bajándolo y comprimiéndolo…'
+  return 'Sigue bajando. Con la red lenta puede pasar del minuto.'
 }
 
 /*
@@ -311,7 +311,7 @@ export function Respaldo() {
               <div className="border-hairline mt-4 border-t pt-4 text-sm">
                 <p className="text-success">
                   Descargado: <span className="font-mono">{descargar.data.nombre}</span> ·{' '}
-                  {peso(descargar.data.bytes)}
+                  {peso(descargar.data.bytes)} comprimido
                 </p>
 
               </div>
@@ -476,9 +476,9 @@ export function Respaldo() {
           tarde: para entonces ya está esperando sin saber cuánto.
         */}
         <p className="border-hairline text-ink/65 mt-4 border-t pt-3 text-xs leading-relaxed">
-          <strong className="text-ink/85 font-medium">Tarda cerca de un minuto.</strong> Son varios
-          megas y la mayor parte del tiempo es la descarga, no la base. Mientras tanto verá los
-          segundos correr aquí mismo: si el número se mueve, está trabajando.
+          <strong className="text-ink/85 font-medium">Baja comprimido, en un .zip.</strong> La base
+          tarda un par de segundos en armarlo; lo que falte depende de la red. Mientras tanto verá
+          los segundos correr aquí mismo: si el número se mueve, está trabajando.
         </p>
       </Modal>
 
