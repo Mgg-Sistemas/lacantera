@@ -381,17 +381,30 @@ export function TableroCompras() {
         }
       />
 
+      {/*
+        EL AVISO DICE LO QUE CONSTA, NO LO QUE SUPONE.
+
+        Decía «12 compras pagadas sin recibir … por $ X. Ese dinero ya salió de
+        la empresa.», y el usuario lo señaló el 06/10/2026: «el sistema no debe
+        asumir». Al medirlo salieron tres cosas de más, no una. «Pagada» es lo
+        que alguien marcó, no lo que movió el banco. La columna PAGADA junta las
+        pagadas por recibir con las RECIBIDA_PARCIAL, así que «sin recibir» era
+        falso para estas. Y la suma es el total de cada orden, no lo pagado ni lo
+        que falta por llegar.
+      */}
       {enRiesgo.length > 0 ? (
         <div className="border-warning/30 bg-warning-soft mb-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
           <AlertTriangle className="text-warning mt-px size-[18px] shrink-0" />
           <p className="text-ink/80 text-sm">
             <strong className="font-semibold">
-              {enRiesgo.length} compra{enRiesgo.length === 1 ? '' : 's'} pagada
-              {enRiesgo.length === 1 ? '' : 's'} sin recibir
+              {enRiesgo.length === 1
+                ? '1 compra figura como pagada'
+                : `${enRiesgo.length} compras figuran como pagadas`}
             </strong>{' '}
-            desde hace más de una semana, por{' '}
-            {dolares(enRiesgo.reduce((s, t) => s + Number(t.total_usd ?? 0), 0))}. Ese dinero
-            ya salió de la empresa.
+            {enRiesgo.length === 1 ? 'y no consta recibida' : 'y no constan recibidas'} del todo
+            desde hace más de una semana.{' '}
+            {enRiesgo.length === 1 ? 'Su orden suma' : 'Sus órdenes suman'}{' '}
+            {dolares(enRiesgo.reduce((s, t) => s + Number(t.total_usd ?? 0), 0))}.
           </p>
         </div>
       ) : null}
