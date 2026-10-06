@@ -85,7 +85,7 @@ export function FotosDelRegistro({
       <Card className="mt-4">
         <CardHeader
           title="Fotos del equipo"
-          subtitle="Cómo se recibió. El día que se devuelva a su dueño o se discuta un golpe, esto es lo que vale."
+          subtitle="Estado en que se recibió."
           action={
             editable ? (
               <Button
@@ -114,8 +114,7 @@ export function FotosDelRegistro({
         */}
         {!isPending && !error && fotos.length === 0 ? (
           <p className="text-ink/45 mt-4 text-sm leading-relaxed">
-            Esta máquina se registró antes de que se pidieran las fotos. Desde
-            entonces ninguna nace sin al menos {FOTOS_MINIMAS}.
+            Esta máquina no tiene fotos de registro.
           </p>
         ) : null}
 
@@ -252,7 +251,7 @@ export function FotosDelRegistro({
           abierto
           onCerrar={() => setSubiendo(false)}
           titulo="Añadir una foto"
-          descripcion="Se suma a las que ya tiene. Las de antes no se tocan: son el estado en que se recibió."
+          descripcion="Se suma a las que ya tiene."
           acciones={
             <>
               <Button variant="outline" onClick={() => setSubiendo(false)}>
@@ -288,7 +287,6 @@ export function FotosDelRegistro({
               placeholder="El golpe del guardafango derecho"
               value={nota}
               onChange={(e) => setNota(e.target.value)}
-              hint="Opcional, pero dentro de un año esta frase es lo que hará buscar esta foto y no otra."
             />
             {agregar.error ? <ErrorDeCarga error={agregar.error} /> : null}
           </div>

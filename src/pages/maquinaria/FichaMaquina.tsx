@@ -172,7 +172,7 @@ export function FichaMaquina() {
       <Card>
         <Vacio
           titulo="Máquina no encontrada"
-          descripcion="Pudo haber sido desincorporada, o el enlace es incorrecto."
+          descripcion="La máquina no existe o el enlace es incorrecto."
           accion={
             <Link to="/app/maquinaria">
               <Button variant="outline">Ver los equipos</Button>
@@ -243,7 +243,7 @@ export function FichaMaquina() {
         title={esNueva ? 'Nueva máquina' : (maquina?.nombre ?? '')}
         description={
           esNueva
-            ? 'El código la identifica en todo el sistema. Lo demás se puede completar después.'
+            ? 'El código la identifica en todo el sistema.'
             : 'Los cambios se reflejan en la lista de equipos al guardar.'
         }
         actions={
@@ -399,7 +399,7 @@ export function FichaMaquina() {
                 onChange={(e) => cambiar('propietario', e.target.value)}
                 opciones={(propietarios ?? []).map((d) => ({
                   valor: d.codigo,
-                  etiqueta: d.es_la_casa ? `${d.nombre} (nosotros)` : d.nombre,
+                  etiqueta: d.nombre,
                 }))}
               />
 
@@ -490,7 +490,7 @@ export function FichaMaquina() {
                   vacio="Sin asignar"
                   valor={f.operador_id}
                   onCambio={(v) => cambiar('operador_id', v)}
-                  hint="Quien responde por ella para funcionar o trasladarse. Una máquina en espera puede quedarse sin nadie."
+                  hint="Quien responde por ella para funcionar o trasladarse."
                   opciones={(empleados ?? []).map((e) => ({
                     valor: String(e.id),
                     codigo: e.ficha,
@@ -506,7 +506,6 @@ export function FichaMaquina() {
                   vacio="No tiene sitio fijo"
                   valor={f.almacen_id}
                   onCambio={(v) => cambiar('almacen_id', v)}
-                  hint="Muchas andan de viaje o en exploración y no paran en un solo lado: dejarlo vacío es una respuesta válida."
                   opciones={(almacenes ?? []).map((a) => ({
                     valor: String(a.id),
                     etiqueta: `${a.nombre}${a.tipo === 'TALLER' ? ' (taller)' : ''}`,
@@ -527,7 +526,7 @@ export function FichaMaquina() {
           <Card>
             <CardHeader
               title="Combustible"
-              subtitle="Con esto, el vale se niega a echarle lo que no es y a pasarse de lo que le cabe."
+              subtitle="El vale de combustible comprueba el tipo y la capacidad."
             />
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -540,7 +539,7 @@ export function FichaMaquina() {
                   valor: String(c.id),
                   etiqueta: c.nombre,
                 }))}
-                hint="Vacío no estorba: se puede surtir igual, solo que sin esta comprobación."
+                hint="Sin este dato no se comprueba el tipo de combustible."
               />
               <Input
                 label="Capacidad del tanque"
@@ -603,10 +602,9 @@ export function FichaMaquina() {
                 type="number"
                 min="1"
                 step="1"
-                placeholder="Si se sabe"
                 value={f.dias_mantenimiento}
                 onChange={(e) => cambiar('dias_mantenimiento', e.target.value)}
-                hint="Sirve para avisar cuando lleva más de lo previsto en el taller. Vacío no compara contra nada."
+                hint="Se avisa cuando la máquina pasa en el taller más días de los previstos."
               />
             </div>
 
@@ -634,7 +632,7 @@ export function FichaMaquina() {
           <Card>
             <CardHeader
               title="Observaciones"
-              subtitle="Lo que hay que saber de esta máquina y no cabe en un campo: de dónde vino, qué manías tiene, qué se le prometió a quien la presta."
+              subtitle="Datos de la máquina que no tienen campo propio."
             />
             <div className="mt-4">
               <Textarea
@@ -643,7 +641,6 @@ export function FichaMaquina() {
                 placeholder="Llegó con el vidrio lateral partido. La bomba hidráulica es reconstruida."
                 value={f.nota}
                 onChange={(e) => cambiar('nota', e.target.value)}
-                hint="No es del horómetro ni del mantenimiento: es de la máquina."
               />
             </div>
           </Card>

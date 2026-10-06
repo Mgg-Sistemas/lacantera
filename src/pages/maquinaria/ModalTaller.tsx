@@ -218,7 +218,6 @@ function Entrada({
           type="number"
           min="1"
           step="1"
-          placeholder="Opcional"
           value={dias}
           onChange={(e) => setDias(e.target.value)}
         />
@@ -254,9 +253,8 @@ function Entrada({
       </div>
 
       <p className="border-hairline text-ink/60 mt-5 rounded-[6px] border border-dashed p-3 text-sm leading-relaxed">
-        Mientras esté dentro queda <strong>en el taller</strong> y no se le puede cambiar el estado
-        a mano. Sus horas siguen contando donde están: el contador se toca al salir, que es cuando
-        ya se le hizo algo.
+        Mientras esté dentro, queda <strong>en el taller</strong> y su estado no se cambia a mano.
+        El contador de horas se actualiza al salir.
       </p>
 
       {entrar.error ? <ErrorDeCarga error={entrar.error} className="mt-3" /> : null}
@@ -410,9 +408,8 @@ function Salida({
       {anulando ? (
         <>
           <p className="text-ink/70 mb-4 text-sm leading-relaxed">
-            Anular no borra la orden: la deja marcada con su motivo y devuelve la máquina al estado
-            que traía antes de entrar. Es para cuando se metió por error, no para cuando se hizo el
-            trabajo y no se quiere registrar.
+            La orden queda anulada con su motivo y la máquina vuelve al estado anterior. Solo para
+            una orden registrada por error.
           </p>
           <Textarea
             label="Motivo"
@@ -435,7 +432,6 @@ function Salida({
             rows={3}
             value={detalle}
             onChange={(e) => setDetalle(e.target.value)}
-            hint="Dentro de seis meses esto es lo único que dirá si ya se cambiaron las correas."
           />
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -446,7 +442,6 @@ function Salida({
               min="0"
               step="0.01"
               inputMode="decimal"
-              placeholder="Opcional"
               value={costo}
               onChange={(e) => setCosto(e.target.value)}
               hint="Los repuestos se suman aparte, a su costo promedio."
@@ -456,8 +451,7 @@ function Salida({
           <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Repuestos</h3>
           {tallerId === null ? (
             <p className="text-ink/50 text-xs leading-relaxed">
-              Esta orden no dice en qué taller se hizo, así que no hay de dónde descontar. El
-              consumo se registra como salida de almacén por su cuenta.
+              La orden no indica taller: los repuestos se registran como salida de almacén.
             </p>
           ) : (
             <>

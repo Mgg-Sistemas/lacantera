@@ -157,7 +157,7 @@ export function ModalChofer({
         />
         <Input
           label="Motivo"
-          placeholder={esTraspaso ? 'Vacaciones, reposo, cambio de ruta' : 'Opcional'}
+          placeholder={esTraspaso ? 'Vacaciones, reposo, cambio de ruta' : undefined}
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
         />
@@ -166,7 +166,7 @@ export function ModalChofer({
       {esTraspaso && vehiculo.chofer_desde ? (
         <p className="border-hairline text-ink/60 mt-4 rounded-[6px] border border-dashed p-3 text-sm leading-relaxed">
           {vehiculo.chofer_actual} lo tiene desde el {formatearFecha(vehiculo.chofer_desde)}. Su
-          período se cierra solo; no hay que hacer nada más.
+          período se cierra al guardar.
         </p>
       ) : null}
 

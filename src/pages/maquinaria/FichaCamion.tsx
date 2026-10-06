@@ -210,8 +210,7 @@ export function FichaCamion() {
             <Card>
               <CardHeader title="Mantenimiento" />
               <p className="text-ink/60 mt-3 text-sm leading-relaxed">
-                Este camión es de la empresa pero no tiene ficha en Maquinaria, así que nadie le
-                lleva el horómetro. Se enlaza desde Editar.
+                Sin ficha en Maquinaria: no se le lleva horómetro. Se enlaza desde Editar.
               </p>
             </Card>
           ) : null}

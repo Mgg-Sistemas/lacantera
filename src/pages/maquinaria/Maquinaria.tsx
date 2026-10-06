@@ -613,7 +613,7 @@ export function Maquinaria() {
               {todas.length === 0 ? (
                 <Vacio
                   titulo="Sin máquinas registradas"
-                  descripcion="Sin máquinas no se puede llevar el horómetro ni programar mantenimientos. Cada una se registra con su código y su tope de horas."
+                  descripcion="Cada máquina se registra con su código y su tope de horas."
                   accion={
                     puedeEscribir ? (
                       <Button icon={<Plus />} onClick={() => void navegar('/app/maquinaria/nueva')}>

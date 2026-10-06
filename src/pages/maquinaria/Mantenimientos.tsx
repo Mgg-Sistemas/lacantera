@@ -75,7 +75,7 @@ export function Mantenimientos() {
             </strong>
             {abiertas.some((m) => m.dias !== null && m.dias_estimados !== null && m.dias > m.dias_estimados)
               ? ', alguna lleva más días de los previstos.'
-              : '. No están trabajando mientras tanto.'}
+              : '.'}
           </p>
         </div>
       ) : null}

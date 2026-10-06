@@ -120,7 +120,7 @@ export function CamionesDeLaFlota({
       {ajenos.length > 0 ? (
         <Grupo
           titulo="Transportistas"
-          nota="No se les lleva mantenimiento: no son de la empresa. Van agrupados por la empresa a la que pertenecen, que es a quien se le paga el acarreo."
+          nota="Sin mantenimiento: no son de la empresa. Agrupados por empresa propietaria."
           camiones={ajenos}
           puedeEditar={puedeEditar}
           onEditar={onEditar}
@@ -342,7 +342,7 @@ export function ModalCamion({
   // Al dar de alta no hay dinero en juego todavía: el camión no tiene viajes.
   const duenoBloqueado = vehiculo !== null && !permisos.cambiarDueno
   const RAZON_DUENO =
-    'Cambiarlo decide a quién se le pagan sus viajes: pide la casilla «Dar de alta y corregir un vehículo».'
+    'Requiere la casilla «Dar de alta y corregir un vehículo».'
 
   /*
     LA EMPRESA SE ELIGE DE UNA LISTA, Y LA PROPIA VA PRIMERO.
@@ -509,7 +509,7 @@ export function ModalCamion({
       abierto={abierto}
       onCerrar={onCerrar}
       titulo={vehiculo ? `Editar ${vehiculo.placa}` : 'Nuevo camión'}
-      descripcion="La placa se guarda en mayúsculas y sin espacios: es un identificador, no un texto libre."
+      descripcion="Se guarda en mayúsculas y sin espacios."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -549,8 +549,7 @@ export function ModalCamion({
 
       <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Dueño</h3>
       <p className="text-ink/50 mb-3 text-xs leading-relaxed">
-        La empresa es a quien se le paga el acarreo: los viajes de este camión se agrupan por ella
-        en el registro de pago.
+        Los viajes del camión se pagan a esta empresa.
       </p>
 
       <div className="grid gap-4">
@@ -578,7 +577,7 @@ export function ModalCamion({
                 ? 'Hace falta para guardar.'
                 : propio
                   ? 'Se le lleva horómetro y mantenimiento.'
-                  : 'Se elige de las ya cargadas para que la misma empresa no quede escrita de dos maneras.'
+                  : 'Seleccione de las empresas registradas.'
           }
         />
 
@@ -614,9 +613,7 @@ export function ModalCamion({
 
       <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Capacidad</h3>
       <p className="text-ink/50 mb-3 text-xs leading-relaxed">
-        Los metros cúbicos son obligatorios: es la medida con la que se despacha hoy. Las toneladas
-        quedan vacías hasta que alguien las pese — deducirlas de los metros cúbicos da un número
-        distinto según el material.
+        Los metros cúbicos son obligatorios.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -651,15 +648,14 @@ export function ModalCamion({
             min="0.01"
             step="0.01"
             inputMode="decimal"
-            placeholder="Vacía mientras nadie la mida"
             value={f.carga_util_m3}
             disabled={!permisos.cargaUtil}
             onChange={(e) => cambiar('carga_util_m3', e.target.value)}
             error={errorCargaUtil}
             hint={
               permisos.cargaUtil
-                ? 'Lo que de verdad baja de la mina en cada viaje, que los supervisores miden por paladas. Siempre va por debajo de la capacidad. De aquí salen los metros cúbicos de los viajes de camiones: sin ella esos viajes cuentan y cobran, pero suman cero.'
-                : 'De aquí salen los metros cúbicos de los viajes y el costo por m³: la pone quien tiene la casilla «Poner la carga útil de un camión».'
+                ? 'Metros cúbicos por viaje, medidos por paladas. No supera la capacidad. Sin ella, los viajes no suman metros cúbicos.'
+                : 'Requiere la casilla «Poner la carga útil de un camión».'
             }
           />
         </div>
@@ -701,9 +697,8 @@ export function ModalCamion({
             <div className="rounded-card border-danger/30 bg-danger/5 border p-3">
               <p className="text-ink/85 text-sm font-medium">¿Eliminar {vehiculo.placa}?</p>
               <p className="text-ink/60 mt-1 text-xs leading-relaxed">
-                Es para un camión cargado por error. Si ya hizo viajes, pesajes o guías no se va a
-                poder, y lo que corresponde es desmarcar «En servicio»: deja de ofrecerse y lo
-                registrado sigue cuadrando.
+                Solo para un camión registrado por error y sin viajes, pesajes ni guías. Para
+                retirarlo, desmarque «En servicio».
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button

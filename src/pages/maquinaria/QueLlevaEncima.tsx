@@ -105,7 +105,7 @@ export function QueLlevaEncima({
       <Card>
         <CardHeader
           title="Modificaciones"
-          subtitle="Lo que se le añadió y no venía con ella: una antena, unos cauchos especiales, un blindaje. Todo esto sale también en su historia."
+          subtitle="Lo que se le añadió después de recibirla. Sale también en su historia."
           action={
             editable ? (
               <Button size="sm" variant="soft" icon={<Plus />} onClick={() => setMontando(true)}>
@@ -120,7 +120,7 @@ export function QueLlevaEncima({
 
         {!isPending && !error && puestos.length === 0 && quitados.length === 0 ? (
           <p className="text-ink/45 mt-4 text-sm leading-relaxed">
-            Está tal como llegó: no se le ha montado nada.
+            Sin modificaciones.
           </p>
         ) : null}
 
@@ -271,7 +271,7 @@ export function QueLlevaEncima({
                   almacen_id: '',
                 }))
               }}
-              hint="Elegirlo rellena el nombre, y es lo único que permite después descontarlo de un almacén."
+              hint="Rellena el nombre y permite descontarlo de un almacén."
               opciones={(articulos ?? []).map((a) => ({
                 valor: String(a.id),
                 codigo: a.codigo,
@@ -303,7 +303,7 @@ export function QueLlevaEncima({
                 hint={
                   f.almacen_id
                     ? 'Se descuenta de ese almacén al guardar: deja de estar disponible.'
-                    : 'Sin almacén no se descuenta nada. Es el caso de lo que se compró afuera y se instaló.'
+                    : 'Sin almacén no se descuenta nada.'
                 }
                 opciones={dondeHay.map((e) => ({
                   valor: String(e.almacen_id),
@@ -318,8 +318,7 @@ export function QueLlevaEncima({
                 dejar un desplegable mudo. */}
             {f.articulo_id && dondeHay.length === 0 ? (
               <p className="text-ink/45 text-xs leading-relaxed">
-                De ese artículo no hay existencia disponible en ningún almacén, así que no puede
-                salir de uno. Se anota igual: queda dicho qué lleva la máquina.
+                Sin existencia en ningún almacén: se registra sin descontar.
               </p>
             ) : null}
 
@@ -352,7 +351,6 @@ export function QueLlevaEncima({
               placeholder="Para tener señal en el frente norte"
               value={f.motivo}
               onChange={(e) => setF({ ...f, motivo: e.target.value })}
-              hint="Dentro de un año esto es lo que explicará si sigue haciendo falta."
             />
 
             <Input
@@ -360,16 +358,15 @@ export function QueLlevaEncima({
               placeholder="Starlink Venezuela, el taller de Upata, un mecánico de la casa"
               value={f.hecho_por}
               onChange={(e) => setF({ ...f, hecho_por: e.target.value })}
-              hint="Quién montó el equipo, que no es quien lo está anotando. Si no se sabe, se deja vacío."
+              hint="Quién montó el equipo."
             />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
                 label="Serial del equipo"
-                placeholder="Opcional"
                 value={f.serial}
                 onChange={(e) => setF({ ...f, serial: e.target.value })}
-                hint="El de la antena, no el de la máquina: es lo que la identifica si mañana se pasa a otro equipo."
+                hint="El del equipo montado, no el de la máquina."
               />
               <Input
                 label="Cantidad"
@@ -377,7 +374,7 @@ export function QueLlevaEncima({
                 min="0"
                 step="0.01"
                 inputMode="decimal"
-                placeholder={f.almacen_id ? 'Hace falta' : 'Opcional'}
+                placeholder={f.almacen_id ? 'Hace falta' : undefined}
                 value={f.cantidad}
                 onChange={(e) => setF({ ...f, cantidad: e.target.value })}
                 hint={
@@ -414,7 +411,6 @@ export function QueLlevaEncima({
                   min="0"
                   step="0.01"
                   inputMode="decimal"
-                  placeholder="Opcional"
                   value={f.costo_usd}
                   onChange={(e) => setF({ ...f, costo_usd: e.target.value })}
                   hint="Solo como referencia: no entra en el valor del inventario."
@@ -484,7 +480,7 @@ export function QueLlevaEncima({
             placeholder="Se pasó a la 0453"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            hint="Se pasó a otra máquina, se gastó, se lo llevó el dueño. Dentro de un año esto es lo único que quedará."
+            hint="Se pasó a otra máquina, se gastó, se lo llevó el dueño."
           />
           {/*
             ¿VUELVE AL ESTANTE?

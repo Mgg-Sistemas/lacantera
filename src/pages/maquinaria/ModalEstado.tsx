@@ -67,7 +67,7 @@ export function ModalEstado({
          saca de circulacion una maquina que ya no funciona o que ya no es de la
          empresa?». La respuesta estaba aqui dentro y la pantalla no la decia en
          ningun sitio. */
-      descripcion={`Ahora mismo está ${ETIQUETA_ESTADO[maquina.estado].toLowerCase()}. Aquí también se saca de circulación: «fuera de servicio» si se dañó, «desincorporada» si ya no es de la empresa.`}
+      descripcion={`Estado actual: ${ETIQUETA_ESTADO[maquina.estado].toLowerCase()}. «Fuera de servicio» si se dañó; «desincorporada» si ya no es de la empresa.`}
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -84,8 +84,7 @@ export function ModalEstado({
     >
       {enTaller ? (
         <p className="border-warning/30 bg-warning-soft text-ink/80 rounded-[6px] border p-3 text-sm leading-relaxed">
-          Está en el taller. De ahí no se sale cambiando el estado: se sale cerrando su orden de
-          mantenimiento, que es donde se anota qué se le hizo y qué repuestos llevó.
+          Está en el taller. Sale al cerrar su orden de mantenimiento.
         </p>
       ) : (
         <>

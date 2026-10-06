@@ -6600,7 +6600,7 @@ Los tipos son ocho: **Excavadora**, **Cargador**, **Camión**, **Planta**, **Per
 
 **Es la tarea diaria del módulo, y de ella depende todo lo demás.**
 
-La ventana lo dice sin rodeos: *"Copia los dos números que marca el reloj. La resta la hace el sistema."* Se pide la **Fecha**, **Al arrancar** y **Al terminar**.
+La ventana lo dice sin rodeos: *"Copie las dos lecturas del horómetro."* Se pide la **Fecha**, la lectura **Inicial** y la **Final**.
 
 **No se anota la diferencia, se anotan las dos lecturas.** Es deliberado: quien copia dos números del tablero se equivoca menos que quien hace una resta de cabeza en el patio, y si algo no cuadra, las dos lecturas dejan ver dónde.
 
@@ -6612,7 +6612,7 @@ Se llega pulsando su fila. Tiene cinco bloques:
 | --- | --- |
 | **Foto** | *"Para reconocerla de un vistazo."* |
 | **Cuál es** | *"El código es con el que se la nombra en el patio y en todos los papeles."* |
-| **Qué combustible quema** | *"Con esto, el vale se niega a echarle lo que no es y a pasarse de lo que le cabe."* |
+| **Qué combustible quema** | *"El vale de combustible comprueba el tipo y la capacidad."* |
 | **Cuándo avisar** | Los tres umbrales, en horas desde el último mantenimiento |
 | **Su historia** | Combustible, horas trabajadas, pasos por el taller, repuestos y cambios de estado |
 

@@ -101,7 +101,7 @@ export function ModalHorometro({
       abierto={abierto}
       onCerrar={onCerrar}
       titulo={`Horómetro · ${etiquetaDeMaquina(maquina)}`}
-      descripcion="Copie los dos números que marca el reloj. La resta la hace el sistema."
+      descripcion="Copie las dos lecturas del horómetro."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -147,17 +147,15 @@ export function ModalHorometro({
           se ve antes de guardar y no tres semanas después. */}
       {retrocede && anterior ? (
         <p className="text-danger mt-4 text-sm font-medium">
-          Un horómetro no retrocede. La lectura del {formatearFecha(anterior.fecha)} terminó en{' '}
-          <span className="tabular">{anterior.final}</span>, así que esta no puede arrancar por
-          debajo de ese número.
+          La lectura del {formatearFecha(anterior.fecha)} terminó en{' '}
+          <span className="tabular">{anterior.final}</span>: el inicial no puede ser menor.
         </p>
       ) : null}
 
       {sePasa && siguiente ? (
         <p className="text-danger mt-4 text-sm font-medium">
           La lectura del {formatearFecha(siguiente.fecha)} arranca en{' '}
-          <span className="tabular">{siguiente.inicial}</span>, así que esta no puede terminar por
-          encima de ese número.
+          <span className="tabular">{siguiente.inicial}</span>: el final no puede ser mayor.
         </p>
       ) : null}
 
@@ -181,8 +179,7 @@ export function ModalHorometro({
               maximumFractionDigits: 2,
             })}
           </span>{' '}
-          horas sin anotar entre el {formatearFecha(anterior.fecha)} y este día. Se puede guardar
-          igual —pasa cuando se olvida un parte—, pero esas horas no van a contar para el
+          horas sin anotar entre el {formatearFecha(anterior.fecha)} y este día. No cuentan para el
           mantenimiento.
         </p>
       ) : null}
