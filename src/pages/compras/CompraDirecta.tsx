@@ -688,7 +688,7 @@ export function CompraDirecta() {
                           hint={
                             Number(f.nuevas_por_presentacion) > 0 && f.nueva_unidad
                               ? `10 ${f.nueva_presentacion.toLowerCase()} serán ${Number(f.nuevas_por_presentacion) * 10} ${f.nueva_unidad}.`
-                              : 'Sin esto nadie sabe cuántos hay en lo que se compró.'
+                              : 'Cuántas unidades trae cada presentación.'
                           }
                         />
                       ) : null}

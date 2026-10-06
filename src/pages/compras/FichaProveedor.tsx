@@ -79,7 +79,7 @@ export function FichaProveedor() {
         <Vacio
           icono={<Receipt />}
           titulo="Proveedor no encontrado"
-          descripcion="Pudo haber sido dado de baja, o el enlace apunta a un número inexistente."
+          descripcion="El proveedor no existe o el enlace es incorrecto."
           accion={
             <Link to="/app/compras/proveedores">
               <Button variant="outline">Ver los proveedores</Button>

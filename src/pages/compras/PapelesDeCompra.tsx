@@ -95,7 +95,7 @@ export function PapelesDeCompra({
     <Card>
       <CardHeader
         title="Papeles recibidos"
-        subtitle="Lo que entregó el proveedor: el comprobante del pago, la nota de entrega, la factura. Con los años el papel se pierde; esta copia no."
+        subtitle="Lo que entregó el proveedor: el comprobante del pago, la nota de entrega, la factura."
       />
 
       {(papeles ?? []).length > 0 ? (

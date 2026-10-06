@@ -150,7 +150,7 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
             destinoDelPedido
               ? String(destinoDelPedido) === almacenElegido
                 ? 'Es el destino que pidió quien lo solicitó.'
-                : 'Ojo: el pedido era para otro sitio.'
+                : 'El pedido era para otro sitio.'
               : orden.solicitud?.destino
                 ? `El pedido decía «${orden.solicitud.destino}», que no es un almacén. Seleccione dónde entra.`
                 : 'El pedido no dijo a dónde iba. Seleccione dónde entra.'
@@ -219,7 +219,7 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
         label="Nota"
         className="mt-4"
         rows={2}
-        placeholder="Opcional: número de guía, quién trajo el material, estado en que llegó"
+        placeholder="Número de guía, quién trajo el material, estado en que llegó"
         value={nota}
         onChange={(e) => setNota(e.target.value)}
       />

@@ -127,7 +127,7 @@ export function Proveedores() {
           <Vacio
             icono={<Truck />}
             titulo="Sin proveedores registrados"
-            descripcion="Sin proveedores no se pueden registrar cotizaciones. Empiece por los habituales."
+            descripcion="Sin proveedores no se pueden registrar cotizaciones."
             accion={
               <Button icon={<Plus />} onClick={() => abrir()}>
                 Registrar el primero

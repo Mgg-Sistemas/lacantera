@@ -353,7 +353,7 @@ export function ModalEditarOrden({
           </p>
         ) : (
           <p className="text-ink/55 mt-2 text-xs">
-            Cambió la moneda: la cuenta de los 100 $ la hace la base al guardar.
+            Cambió la moneda: el límite de 100 $ se comprueba al guardar.
           </p>
         )}
       </div>

@@ -281,7 +281,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
               : hayLista
                 ? lista !== null
                   ? `Lista: ${dinero(orden.moneda, lista)} por ${unidadElegida}. Por debajo del mínimo hace falta la casilla de vender bajo el mínimo.`
-                  : 'Tiene precio de lista en otra moneda: la cifra la pone la base al guardar.'
+                  : 'Tiene precio de lista en otra moneda: la cifra se calcula al guardar.'
                 : `No tiene precio de lista por ${unidadElegida}: se escribe el acordado.`
           }
         />
@@ -350,7 +350,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
             )}
           </p>
           <p className="text-ink/40 mt-1 text-xs">
-            Estimado con la tasa de hoy. La cifra que vale la calcula el sistema al guardar.
+            Estimado con la tasa de hoy. La cifra definitiva se calcula al guardar.
           </p>
 
           {excedente > 0 ? (
@@ -393,7 +393,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
         label="Nota"
         className="mt-4"
         rows={2}
-        placeholder="Opcional: lo acordado con el proveedor."
+        placeholder="Lo acordado con el proveedor."
         value={nota}
         onChange={(e) => setNota(e.target.value)}
       />
@@ -500,7 +500,6 @@ export function ModalRegistrarPagoConMaterial({
         label="Nota"
         className="mt-4"
         rows={2}
-        placeholder="Opcional."
         value={nota}
         onChange={(e) => setNota(e.target.value)}
       />

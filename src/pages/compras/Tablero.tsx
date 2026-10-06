@@ -243,7 +243,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
         paso: 1,
         titulo: 'Pedir algo',
         detalle:
-          'Lo levanta quien lo necesita: un repuesto, combustible, un servicio. Con decir qué hace falta y para qué, basta.',
+          'Lo levanta quien lo necesita: un repuesto, combustible, un servicio.',
         icono: Plus,
         a: '/app/compras/nuevo',
         exige: 'ESCRITURA',
@@ -270,7 +270,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
         paso: 4,
         titulo: 'Recibir el material',
         detalle:
-          'Almacén cuenta lo que llegó contra la orden. Puede llegar en partes; el sistema lleva la cuenta.',
+          'Almacén cuenta lo que llegó contra la orden. Puede llegar en partes.',
         icono: PackageCheck,
         a: '/app/compras/recepciones',
         exige: 'ESCRITURA',
@@ -314,7 +314,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
       {
         titulo: 'Cargar proveedores por planilla',
         detalle:
-          'Para cargarlos a todos de una vez. Manda el RIF: el mismo proveedor con dos RIF distintos es como se paga dos veces la misma factura.',
+          'Para cargarlos a todos de una vez. El RIF identifica a cada proveedor.',
         icono: Upload,
         a: '/app/compras/proveedores/carga',
         exige: 'ESCRITURA',
@@ -441,14 +441,12 @@ export function TableroCompras() {
 
       <PrimeraVez className="mt-8">
         <p>
-          Una compra pasa por una cadena, y el orden no es burocracia:{' '}
-          <strong>hasta que el gerente no aprueba, no hay orden</strong>, y sin orden el proveedor
-          no despacha. Se pide, se cotiza, se aprueba, se paga y se recibe.
+          Una compra pasa por cinco pasos: se pide, se cotiza, se aprueba, se paga y se recibe. La
+          orden de compra se emite al aprobarla el gerente.
         </p>
         <p className="text-ink/50">
-          La <strong>compra directa</strong> es el atajo para lo que se paga en el acto —un
-          repuesto que hace falta hoy— y no pasa por la cadena. Tiene su propio historial, que es
-          donde se ve qué se pagó y qué falta por llegar.
+          La <strong>compra directa</strong> es para lo que se paga en el acto, y no pasa por esos
+          pasos. Tiene su propio historial, donde se ve qué se pagó y qué falta por llegar.
         </p>
       </PrimeraVez>
     </>

@@ -58,7 +58,7 @@ export function FichaCamion() {
   if (!v) {
     return (
       <Card>
-        <Vacio titulo="Camión no encontrado" descripcion="Pudo haber sido eliminado." />
+        <Vacio titulo="Camión no encontrado" descripcion="El camión no existe o el enlace es incorrecto." />
       </Card>
     )
   }

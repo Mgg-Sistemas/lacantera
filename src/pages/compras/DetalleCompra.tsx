@@ -1169,7 +1169,7 @@ export function DetalleCompra() {
       <Vacio
         icono={<ShoppingCart />}
         titulo="Pedido no encontrado"
-        descripcion="Pudo haber sido cancelado o eliminado. Si llegó desde una notificación, esta ya no está vigente."
+        descripcion="El pedido no existe o el enlace es incorrecto."
         accion={
           <Link to="/app/compras">
             <Button variant="outline">Ver los pedidos</Button>
@@ -1959,7 +1959,7 @@ export function DetalleCompra() {
                         onCambio={setRespaldo}
                         acepta="application/pdf,image/*"
                         tope={10 * 1024 * 1024}
-                        etiqueta="Respaldo de la autorización (opcional)"
+                        etiqueta="Respaldo de la autorización"
                         pista="La captura de WhatsApp, el correo o el PDF donde el gerente autorizó esta compra. PDF o foto, hasta 10 MB."
                         deshabilitado={aprobar.isPending || respaldar.isPending}
                         className="mb-3"
@@ -1977,7 +1977,7 @@ export function DetalleCompra() {
                           Poner mi firma digital en «Autorizado por»
                           <span className="text-ink/50 mt-0.5 block text-xs">
                             Sin marcar, la raya de la orden de compra sale en blanco con su nombre
-                            debajo, para firmarla a mano.
+                            debajo.
                           </span>
                         </span>
                       </label>
@@ -2082,7 +2082,7 @@ export function DetalleCompra() {
                         </span>
                         .
                         {orden.comprobante_tipo === 'FACTURA'
-                          ? ' Recuerde registrarla para poder descontar el IVA.'
+                          ? ' Sin registrarla, su IVA no se puede descontar.'
                           : ''}
                       </p>
                     )}
@@ -2591,8 +2591,7 @@ function ModalCorregirPrecio({
         <span className="tabular text-ink/90 font-semibold">
           {dinero(orden.moneda, renglon.actual)}
         </span>
-        . Se corrige también en la cotización de la que salió, para que las dos digan lo mismo, y
-        los totales se rehacen solos.
+        . Se corrige también en la cotización de la que salió, y los totales se recalculan.
       </p>
 
       <Input

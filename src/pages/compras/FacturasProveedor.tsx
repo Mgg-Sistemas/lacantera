@@ -363,7 +363,7 @@ export function FacturasProveedor() {
             setPapel(null)
           }}
           titulo="Registrar factura de proveedor"
-          descripcion="Se copian las cifras del papel. Si la suma no coincide con el total impreso, el sistema se para antes de guardar."
+          descripcion="Se copian las cifras del papel. Si la suma no coincide con el total impreso, no se puede guardar."
           acciones={
             <>
               <Button
@@ -573,7 +573,7 @@ export function FacturasProveedor() {
               value={nueva.total_papel}
               onChange={(e) => setNueva({ ...nueva, total_papel: e.target.value })}
               error={descuadre ? `Lo tecleado suma ${totalCalculado.toFixed(2)}` : undefined}
-              hint="Opcional. Sirve para que el sistema compruebe la suma."
+              hint="Para comprobar la suma."
             />
             <Input
               label="Retención de IVA"
@@ -651,10 +651,6 @@ export function FacturasProveedor() {
           <div className="border-hairline mt-4 border-t pt-4">
             <p className="text-ink/75 text-sm font-medium">
               Imagen o PDF de la factura recibida
-            </p>
-            <p className="text-ink/50 mt-0.5 text-xs">
-              El papel del proveedor se despinta y se traspapela. Lo que quede aquí es lo que
-              habrá dentro de un año para demostrar que estas cifras son las que llegaron.
             </p>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -1077,8 +1073,7 @@ export function FacturasProveedor() {
               <span>
                 Pagar el IGTF del 3%
                 <span className="text-ink/45 block text-xs leading-relaxed">
-                  Grava los pagos en divisas. No abona la factura: va en su propio asiento porque no
-                  es del proveedor sino del fisco.
+                  Grava los pagos en divisas. No abona la factura: va en su propio asiento.
                 </span>
               </span>
             </label>

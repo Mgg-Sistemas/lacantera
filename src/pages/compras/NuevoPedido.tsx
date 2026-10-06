@@ -320,7 +320,6 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
             <Textarea
               label="Justificación"
               placeholder="La muela está gastada y el material sale fuera de medida."
-              hint="Quien aprueba no está en el frente."
               rows={4}
               value={justificacion}
               onChange={(e) => setJustificacion(e.target.value)}
@@ -541,8 +540,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                   {!fila.articulo_id && fila.descripcion.trim().length >= 3 ? (
                     <div className="border-hairline rounded-card bg-canvas grid gap-3 border border-dashed p-3 sm:col-span-12 sm:grid-cols-12">
                       <p className="text-ink/60 text-xs sm:col-span-12">
-                        No está en el catálogo. Si es algo que se va a volver a pedir, créelo
-                        ahora y queda con un solo nombre para siempre.
+                        No está en el catálogo. Se puede crear aquí sin dejar el pedido.
                       </p>
 
                       <div className="sm:col-span-4">
@@ -650,7 +648,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                   <div className="sm:col-span-10">
                     <Input
                       label="Observación"
-                      placeholder="Opcional: marca, medida, número de parte"
+                      placeholder="Marca, medida, número de parte"
                       value={fila.observacion}
                       onChange={(e) => cambiar(fila.clave, { observacion: e.target.value })}
                     />

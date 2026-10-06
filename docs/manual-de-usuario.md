@@ -2325,7 +2325,7 @@ Pulsa **Agregar renglón** por cada cosa distinta. **Quitar** borra un renglón,
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
 | **Título** | Sí | **Es lo que se lee en la tarjeta del tablero.** Mínimo cuatro letras |
-| **Para qué es** | Sí | **Quien aprueba no está en el frente.** Mínimo diez letras |
+| **Para qué es** | Sí | Mínimo diez letras. Quien aprueba no está en el frente y necesita el porqué |
 | **Quién lo solicita** | — | Empieza en tu propio nombre. La lista trae a cada persona activa con su cargo, y al final **Otra persona — no tiene usuario** |
 | **Nombre de quien solicita** | Sí, si elegiste **Otra persona** | Mínimo tres letras |
 | **Cargo o frente** | No | Solo si elegiste **Otra persona** |
@@ -2485,7 +2485,7 @@ Trae la orden y el pedido de los que sale, el proveedor, quién lo solicitó, la
 
 #### Los papeles que manda el proveedor
 
-Debajo de la orden hay una tarjeta, **Papeles recibidos**: *"Lo que entregó el proveedor: el comprobante del pago, la nota de entrega, la factura. Con los años el papel se pierde; esta copia no."*
+Debajo de la orden hay una tarjeta, **Papeles recibidos**: *"Lo que entregó el proveedor: el comprobante del pago, la nota de entrega, la factura."* Con los años el papel se pierde; esta copia no.
 
 Cuelga de la orden, así que **no aparece hasta que la compra tiene orden**. Primero se elige **¿Qué papel es?** y después el archivo — en ese orden, para que nadie suba una factura rotulada como nota de entrega por ir rápido.
 
@@ -2864,7 +2864,7 @@ Lo que registre otra persona aparece sin recargar la pantalla.
 
 #### Registrar una factura
 
-El diálogo se llama **Registrar factura de proveedor** y avisa de la regla principal: **Se copian las cifras del papel. Si la suma no coincide con el total impreso, el sistema se para antes de guardar.**
+El diálogo se llama **Registrar factura de proveedor** y avisa de la regla principal: **Se copian las cifras del papel. Si la suma no coincide con el total impreso, no se puede guardar.**
 
 1. Pulsa **Registrar factura**.
 2. Elige el **Proveedor**. La lista trae el RIF delante del nombre, para distinguir dos razones sociales parecidas.
@@ -2887,7 +2887,7 @@ El diálogo se llama **Registrar factura de proveedor** y avisa de la regla prin
 | **Base imponible** | No | Lo que sí lleva IVA |
 | **Alícuota (%)** | — | Viene precargada con la alícuota general. Se cambia si el papel trae otra |
 | **IVA** | No | **Se propone solo; manda lo que diga el papel.** Si lo pisas y no cuadra con la alícuota, debajo se lee **Por la alícuota daría 160.00** |
-| **Total impreso** | No | **Opcional. Sirve para que el sistema compruebe la suma.** |
+| **Total impreso** | No | **Para comprobar la suma.** |
 | **Observación** | No | |
 
 El recuadro **Total** de la derecha se va sumando mientras escribes: es el exento, más la base imponible, más el IVA.
@@ -2948,7 +2948,7 @@ Desde la ficha, con el botón **Registrar pago**. El diálogo dice de quién es 
 
 **El pago se registra en la moneda de la cuenta.** Lo dice la propia ayuda del campo, y es la razón de que el saldo se lleve en dólares: se elige la cuenta y esa cuenta manda.
 
-Sobre el IGTF. La casilla dice **Pagar el IGTF del 3%** y explica debajo: **Grava los pagos en divisas. No abona la factura: va en su propio asiento porque no es del proveedor sino del fisco.** **Viene marcada sola cuando la cuenta no es en bolívares**, y se puede desmarcar. Que vaya en su propio asiento importa: si se sumara al pago, parecería que al proveedor se le dio de más.
+Sobre el IGTF. La casilla dice **Pagar el IGTF del 3%** y explica debajo: **Grava los pagos en divisas. No abona la factura: va en su propio asiento.** Va aparte porque no es del proveedor sino del fisco. **Viene marcada sola cuando la cuenta no es en bolívares**, y se puede desmarcar. Que vaya en su propio asiento importa: si se sumara al pago, parecería que al proveedor se le dio de más.
 
 El dinero sale de la cuenta en el momento. Si en esa cuenta no alcanza el saldo, el sistema no deja registrar el pago y lo dice con el nombre de la cuenta y las dos cifras, porque una salida que deja la cuenta en negativo casi nunca es una salida real: falta cargar algo que sí entró.
 

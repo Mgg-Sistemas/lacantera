@@ -258,7 +258,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
           value={moneda}
           onChange={(e) => setMoneda(e.target.value)}
           opciones={monedas ?? []}
-          hint="Solo las que tienen tasa registrada: sin tasa no hay con qué convertir."
+          hint="Solo las que tienen tasa registrada."
         />
       </div>
 
