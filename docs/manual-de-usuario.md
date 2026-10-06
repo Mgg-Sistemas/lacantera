@@ -6685,10 +6685,10 @@ Si todavía no se ha despachado nada, cada bloque lo dice a su manera: **Todaví
 | --- | --- |
 | **De qué tanque** | Solo salen los que tienen saldo |
 | **Para qué** | Del catálogo de motivos. Ver abajo |
-| **¿Para qué exactamente?** | Solo en los motivos que lo exigen. *"En pocas palabras. Si esto se repite mucho, conviene que sea una opción propia."* |
+| **¿Para qué exactamente?** | Solo en los motivos que lo exigen. *"En pocas palabras."* Si un mismo uso se repite mucho, conviene que sea una opción propia de la lista |
 | **A qué máquina** | De la flota. Si no está, **No está en la ficha** |
 | **A qué se le echó** | Cuando no es una máquina de la flota |
-| **Horómetro al echarle** | *"Es lo que convierte los litros en litros por hora."* |
+| **Horómetro al echarle** | *"Con él se calculan los litros por hora."* |
 | **Fecha** | |
 
 Los motivos son seis y salen de un catálogo, no de una lista escrita en la pantalla:
@@ -6765,7 +6765,7 @@ Al marcarla:
 
 - El costo se pone en cero y el campo se apaga: *"Entra en cero: el gasto lo asumió la otra empresa."*
 - **El motivo pasa a exigir una explicación entera** —de dónde vino y quién asumió el gasto—, porque dentro de un año esa nota es lo único que lo va a contestar.
-- **El tanque cambia solo** al de combustible inicial: *"Lo que no costó nada va a su propio tanque, para no hundir el costo del que sí tiene precio."*
+- **El tanque cambia solo** al de combustible inicial: *"Lo que entra sin costo va a su propio tanque."* Así no se hunde el costo del que sí tiene precio.
 
 #### Por qué van en tanques separados
 

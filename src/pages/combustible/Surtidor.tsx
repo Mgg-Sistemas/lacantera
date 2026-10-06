@@ -526,7 +526,7 @@ function Vale({
             value={destino}
             onChange={(e) => setDestino(e.target.value)}
             placeholder="La planta, una bomba, un camión de fuera…"
-            hint="Sin ficha hay que decir a qué fue, o el vale no dice nada."
+            hint="Obligatorio si no es una máquina con ficha."
           />
         ) : (
           <Input
@@ -544,8 +544,7 @@ function Vale({
 
         {topeAlcanzado ? (
           <p className="border-warning/30 bg-warning-soft text-ink/80 rounded-card border p-3 text-sm">
-            Esa máquina ya tiene {TOPE_AL_DIA} vales hoy. Si de verdad hace falta otro, se carga desde la
-            computadora.
+            Esa máquina ya tiene {TOPE_AL_DIA} vales hoy. Otro se carga desde la computadora.
           </p>
         ) : null}
 
@@ -597,7 +596,6 @@ function Vale({
             value={otroNombre}
             onChange={(e) => setOtroNombre(e.target.value)}
             placeholder="Nombre de quien recibe"
-            hint="Un vale sin nombre no se le puede preguntar a nadie."
           />
         ) : null}
 

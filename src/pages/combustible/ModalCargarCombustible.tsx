@@ -217,7 +217,7 @@ export function ModalCargarCombustible({
           opciones={tanques.map((t) => ({ valor: String(t.id), etiqueta: t.nombre }))}
           hint={
             sinCosto
-              ? 'Lo que no costó nada va a su propio tanque, para no hundir el costo del que sí tiene precio.'
+              ? 'Lo que entra sin costo va a su propio tanque.'
               : tanques.length === 0
               ? 'Sin tanques registrados. Se crean en Inventario › Almacenes, con tipo Combustible.'
               : undefined
@@ -282,7 +282,7 @@ export function ModalCargarCombustible({
             Sin costo
             <span className="text-ink/50 mt-0.5 block text-xs">
               {sinCosto
-                ? 'Va a su propio tanque y escriba abajo de dónde vino y quién asumió el gasto. Queda en el movimiento.'
+                ? 'Va a su propio tanque. Indique abajo de dónde vino y quién asumió el gasto.'
                 : 'Para material trasladado desde otra empresa del grupo, donde ya se registró el gasto.'}
             </span>
           </span>
@@ -330,8 +330,7 @@ export function ModalCargarCombustible({
                 más de diez veces {revision.data?.hacia === 'ARRIBA' ? 'más caro' : 'más barato'}.
               </>
             )}{' '}
-            Compruebe la factura: un cero de más aquí se arrastra a cada vale que salga del
-            tanque.
+            Compruebe la factura.
           </p>
           <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
             <input

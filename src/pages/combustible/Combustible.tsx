@@ -219,7 +219,7 @@ export function Combustible() {
             <strong className="font-semibold">
               {bajos.map((t) => t.articulo).join(' y ')} en el mínimo o por debajo
             </strong>
-            . Quedarse sin combustible para el frente para la cantera un día entero.
+            .
           </p>
         </div>
       ) : null}
@@ -278,8 +278,7 @@ export function Combustible() {
         <div className="mb-6">
           <h2 className="text-ink/80 mb-1 text-sm font-semibold">Fuera de tanque</h2>
           <p className="text-ink/50 mb-3 text-xs">
-            Combustible que la empresa tiene, pero en un sitio que no es un tanque —normalmente
-            porque la compra se recibió ahí—. No se puede despachar desde ahí: páselo primero.
+            Combustible fuera de un tanque. No se despacha desde ahí: páselo primero a un tanque.
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -317,9 +316,8 @@ export function Combustible() {
       {/* ------------------------------------------------ cuánto consume */}
       <h2 className="text-ink/80 mb-1 text-sm font-semibold">Consumo por máquina</h2>
       <p className="text-ink/50 mb-3 text-xs leading-relaxed">
-        Los litros por hora salen de cruzar lo despachado con las horas del parte diario. Donde no
-        hay lecturas de horómetro la columna va vacía: un consumo estimado se parece demasiado a
-        uno medido.
+        Litros despachados entre las horas del parte diario. Sin lecturas de horómetro, la columna
+        va vacía.
       </p>
 
       {consumo.isPending ? <Cargando /> : null}
@@ -555,7 +553,7 @@ export function Combustible() {
         blob={vale?.blob ?? null}
         nombreArchivo={vale?.nombre ?? 'vale-combustible.pdf'}
         titulo="Vale de combustible"
-        descripcion="Compruébelo antes de imprimirlo: lo que diga este papel es lo que se va a firmar."
+        descripcion="Este papel es el que se firma."
       />
       <ModalPasarAlTanque origen={pasarAlTanque} onCerrar={() => setPasarAlTanque(null)} />
     </>
@@ -859,7 +857,7 @@ function ModalDespacho({
           opciones={(motivos.data ?? []).map((m) => ({ valor: m.codigo, etiqueta: m.nombre }))}
           hint={
             elMotivo?.pista ??
-            'No es lo mismo que a qué máquina: la misma excavadora se surte para producir o para probarla tras repararla.'
+            'Para qué se usa, no a qué máquina.'
           }
         />
 
@@ -873,7 +871,7 @@ function ModalDespacho({
               placeholder="Prueba de la bomba nueva"
               value={detalle}
               onChange={(e) => setDetalle(e.target.value)}
-              hint="En pocas palabras. Si esto se repite mucho, conviene que sea una opción propia."
+              hint="En pocas palabras."
             />
           </div>
         ) : null}
@@ -909,7 +907,7 @@ function ModalDespacho({
           }))}
           hint={
             (maquinas ?? []).length === 0
-              ? 'Todavía no hay máquinas cargadas en la ficha. El vale se puede emitir igual: escriba abajo a qué se le echó. Cuando se carguen en Maquinaria aparecerán aquí y se podrá llevar el consumo por hora.'
+              ? 'Sin máquinas registradas. Indique abajo el destino.'
               : ocultasPorCombustible > 0
                 ? `No salen ${ocultasPorCombustible} que queman otro combustible. Si la ficha de alguna está equivocada, corríjala en Maquinaria.`
                 : 'Sin máquina no hay consumo por hora: solo cuenta para el gasto.'
@@ -943,8 +941,8 @@ function ModalDespacho({
               horometroRetrocede
                 ? `Un horómetro no retrocede: lo último anotado marcaba ${ultimoHorometro}.`
                 : faltaHorometro
-                  ? 'Obligatorio al surtir una máquina. No reinicia nada: queda anotado en el vale.'
-                  : 'Es lo que convierte los litros en litros por hora.'
+                  ? 'Obligatorio al surtir una máquina. Queda anotado en el vale.'
+                  : 'Con él se calculan los litros por hora.'
             }
           />
         </div>
@@ -958,7 +956,7 @@ function ModalDespacho({
           }
         >
           {topeAlcanzado
-            ? `Ya se surtió ${yaSurtidoHoy} veces ese día. Son ${TOPE_AL_DIA} al día como máximo: si de verdad hace falta más, revise por qué.`
+            ? `Ya se surtió ${yaSurtidoHoy} veces ese día. Son ${TOPE_AL_DIA} al día como máximo.`
             : `Es el surtido ${yaSurtidoHoy + 1} de ${TOPE_AL_DIA} de ese día para esta máquina.`}
         </p>
       ) : null}
@@ -991,7 +989,6 @@ function ModalDespacho({
             valor: String(e.id),
             etiqueta: e.cargo ? `${e.nombre} · ${e.cargo}` : e.nombre,
           }))}
-          hint="El combustible es de lo que más se pierde: un vale sin nombre no se le puede preguntar a nadie."
         />
       </div>
 
@@ -1010,7 +1007,6 @@ function ModalDespacho({
             label="Cédula"
             valor={otraCedula}
             onCambiar={setOtraCedula}
-            hint="Opcional, pero es lo que permite dar con la persona después."
           />
         </div>
       ) : null}
@@ -1026,7 +1022,7 @@ function ModalDespacho({
             placeholder="Se tecleó 40 y eran 14"
             value={porQueSeCorrige}
             onChange={(e) => setPorQueSeCorrige(e.target.value)}
-            hint="Opcional. El vale queda marcado corregido con su nombre y la hora igual."
+            hint="El vale queda marcado corregido con su nombre y la hora."
           />
         </div>
       ) : null}
@@ -1064,7 +1060,7 @@ function ModalAnularVale({
       abierto
       onCerrar={onCerrar}
       titulo={`Anular ${vale.numero ?? 'el vale'}`}
-      descripcion={`${litros(vale.cantidad, vale.unidad)} de ${vale.combustible} a ${vale.destino}, el ${fecha(vale.fecha)}. El combustible vuelve al tanque con un reverso a la vista. ${vale.fecha === new Date().toLocaleDateString('en-CA') ? '' : 'No es de hoy: hace falta control total.'}`}
+      descripcion={`${litros(vale.cantidad, vale.unidad)} de ${vale.combustible} a ${vale.destino}, el ${fecha(vale.fecha)}. El combustible vuelve al tanque con un reverso a la vista. ${vale.fecha === new Date().toLocaleDateString('en-CA') ? '' : 'No es de hoy: requiere control total.'}`}
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -1114,7 +1110,7 @@ function ModalMotivos({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =>
       abierto={abierto}
       onCerrar={onCerrar}
       titulo="Usos del combustible"
-      descripcion="La lista que sale al despachar. Cámbiela cuando haga falta; los vales viejos siguen diciendo lo que decían."
+      descripcion="La lista que sale al despachar. Los cambios no alteran los vales emitidos."
       acciones={
         <Button variant="ghost" onClick={onCerrar}>
           Listo
@@ -1209,7 +1205,7 @@ function ModalPasarAlTanque({
       abierto
       onCerrar={onCerrar}
       titulo="Pasar al tanque"
-      descripcion="Se mueve de un sitio al otro con su costo. No se crea combustible: el total de la empresa no cambia."
+      descripcion="Se mueve con su costo. El total de la empresa no cambia."
       ancho="sm"
       acciones={
         <>
@@ -1298,7 +1294,7 @@ function ModalPasarAlTanque({
             rows={2}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            hint="Basta con «la compra se recibió en el patio y va al tanque»."
+            hint="Ej.: «la compra se recibió en el patio y va al tanque»."
           />
 
           {/* La base puede negarse por varias razones —el tanque no tiene sitio,
