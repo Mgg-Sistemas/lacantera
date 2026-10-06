@@ -199,9 +199,8 @@ export function Conceptos() {
         <div className="border-hairline border-b px-5 py-3">
           <h2 className="text-ink/85 text-sm font-semibold">Los que calcula el sistema</h2>
           <p className="text-ink/50 mt-0.5 text-xs">
-            No se editan ni se apagan: el cálculo los busca por su código, y sin ellos el recibo
-            saldría sin una línea que la ley exige. Se enseñan para saber de dónde sale cada
-            renglón.
+            No se editan ni se apagan: sin ellos el recibo saldría sin una línea que la ley exige.
+            Se enseñan para saber de dónde sale cada renglón.
           </p>
         </div>
         <ul className="grid gap-x-6 gap-y-1 px-5 py-3 sm:grid-cols-2">
@@ -285,7 +284,7 @@ export function Conceptos() {
               label="Código"
               hint={
                 edicion.esNuevo
-                  ? 'Se propone solo. Es con lo que el sistema lo guarda.'
+                  ? 'Se propone solo.'
                   : 'No se cambia: los montos ya cargados lo llevan.'
               }
               disabled={!edicion.esNuevo}
@@ -315,8 +314,7 @@ export function Conceptos() {
             <div className="border-hairline rounded-card space-y-2.5 border p-3">
               <p className="text-ink/70 text-xs">
                 Un bono puede quedarse en lo que se paga, o entrar además en la base con la que se
-                calculan prestaciones y vacaciones. Eso último cuesta más y es lo que suele
-                equivocarse.
+                calculan prestaciones y vacaciones. Eso último cuesta más.
               </p>
               <label className="text-ink/80 flex cursor-pointer items-start gap-2.5 text-sm select-none">
                 <input
@@ -364,7 +362,7 @@ export function Conceptos() {
               <Input
                 label="Base legal"
                 placeholder="LOTTT art. 104"
-                hint="Opcional. Si viene de la ley, decir de dónde."
+                hint="Si viene de la ley, de dónde."
                 value={edicion.base_legal}
                 onChange={(e) => setEdicion((x) => (x ? { ...x, base_legal: e.target.value } : x))}
               />

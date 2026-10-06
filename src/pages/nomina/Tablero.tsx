@@ -69,7 +69,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
         paso: 1,
         titulo: 'Anotar las novedades',
         detalle:
-          'Quién faltó, quién hizo horas extra, préstamos y descuentos. Lo que hace que esta quincena no sea igual que la anterior.',
+          'Quién faltó, quién hizo horas extra, préstamos y descuentos.',
         icono: ClipboardList,
         a: '/app/nomina/asistencia',
         exige: 'ESCRITURA',
@@ -98,7 +98,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
       {
         titulo: 'Cargar personal por planilla',
         detalle:
-          'Para cargar a toda la gente de una vez. Se baja la plantilla, se llena y el sistema comprueba fila por fila antes de escribir nada.',
+          'Para cargar a toda la gente de una vez, desde una planilla de Excel.',
         icono: Upload,
         a: '/app/nomina/personal/carga',
         exige: 'ESCRITURA',
@@ -276,8 +276,7 @@ export function TableroNomina() {
               </p>
               <p className="text-ink/50">
                 El sueldo base no se escribe por persona: sale del tabulador según el cargo. Si a
-                alguien hay que pagarle distinto, se corrige el cargo o se carga una novedad — así
-                queda dicho por qué.
+                alguien hay que pagarle distinto, se corrige el cargo o se carga una novedad.
               </p>
             </PrimeraVez>
           </div>

@@ -446,7 +446,7 @@ export function Procesos() {
           abierto
           onCerrar={() => setNuevo(null)}
           titulo="Abrir un período"
-          descripcion="La tasa del BCV se congela al abrirlo: si se moviera, el mismo recibo valdría distinto cada vez."
+          descripcion="La tasa del BCV se congela al abrirlo."
           ancho="sm"
           acciones={
             <>
@@ -711,7 +711,7 @@ export function Procesos() {
             max={hoyEnCaracas()}
             value={fechaTasa}
             onChange={(e) => setFechaTasa(e.target.value)}
-            hint="El día en que salió el dinero. Hoy es una sugerencia, no una obligación."
+            hint="El día en que salió el dinero."
           />
 
           {/*
@@ -739,7 +739,7 @@ export function Procesos() {
               </>
             ) : (
               <p className="text-ink/60 text-sm">
-                No hay tasa registrada para ese día. Cárguela en Tesorería antes de recalcular.
+                No hay tasa registrada para ese día. Cárguela en Sistema › Tasas de cambio antes de recalcular.
               </p>
             )}
           </div>

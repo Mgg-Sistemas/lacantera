@@ -242,7 +242,7 @@ function LaCargaFamiliar({
           abierto
           onCerrar={() => setEditando(null)}
           titulo={editando.id ? 'Editar familiar' : 'Agregar familiar'}
-          descripcion="La cédula es opcional: los menores no la tienen. La edad se calcula sola de la fecha de nacimiento."
+          descripcion="La edad se calcula de la fecha de nacimiento."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setEditando(null)}>
@@ -307,7 +307,6 @@ function LaCargaFamiliar({
             <Input
               label="Cédula"
               placeholder="V-12345678"
-              hint="Opcional"
               value={editando.cedula}
               onChange={(e) => setEditando({ ...editando, cedula: e.target.value.toUpperCase() })}
             />
@@ -506,7 +505,6 @@ function LaSalud({ empleadoId, puedeEditar }: { empleadoId: number; puedeEditar:
             <Input
               label="Desde"
               type="date"
-              hint="Opcional"
               value={editando.desde}
               onChange={(e) => setEditando({ ...editando, desde: e.target.value })}
             />

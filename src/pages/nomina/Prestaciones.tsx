@@ -219,9 +219,8 @@ export function Prestaciones() {
         <Card className="border-warning/30 mb-5 border">
           <p className="text-ink/70 text-sm leading-relaxed">
             Hay <span className="font-semibold">{sinCorte}</span> trabajador(es) sin corte cargado.
-            Mientras no lo tengan, su cuenta arranca en cero y el sistema no sabe qué traían de
-            antes. El corte se carga desde la ficha de cada uno, con lo que tenga acumulado a una
-            fecha.
+            Mientras no lo tengan, su cuenta arranca en cero, sin lo que traían de antes. El corte
+            se carga aquí: se pulsa la fila de cada uno y luego «Cargar el corte».
           </p>
         </Card>
       ) : null}
@@ -538,7 +537,7 @@ export function Prestaciones() {
           abierto
           onCerrar={() => setCorte(null)}
           titulo={`Corte de ${corte.nombre}`}
-          descripcion="Lo que tiene acumulado hasta una fecha. Desde ahí el sistema sigue solo."
+          descripcion="Lo que tiene acumulado hasta una fecha. Desde ahí se calcula solo."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setCorte(null)}>
@@ -566,8 +565,8 @@ export function Prestaciones() {
           }
         >
           <p className="text-ink/60 mb-4 text-sm leading-relaxed">
-            El sistema no tiene los salarios de los años anteriores, así que calcular hacia atrás
-            daría un número con cara de exacto y falso. Esto se carga a mano, y se ve que es a mano.
+            El sistema no tiene los salarios de años anteriores: el corte se carga a mano, y se ve
+            que es a mano.
           </p>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -761,8 +760,7 @@ export function Prestaciones() {
           </div>
 
           <p className="text-ink/55 mt-4 text-sm leading-relaxed">
-            La tasa se guarda con el mes al que pertenece: sin ella no se calcula nada, porque unos
-            intereses con una tasa inventada también son inventados.
+            La tasa se guarda con el mes al que pertenece: sin ella no se calculan los intereses.
           </p>
 
           {guardarTasa.error ? <ErrorDeCarga error={guardarTasa.error} className="mt-4" /> : null}

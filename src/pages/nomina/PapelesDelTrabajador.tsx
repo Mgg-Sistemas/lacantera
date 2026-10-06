@@ -119,7 +119,6 @@ export function PapelesDelTrabajador({
             {(papeles.data ?? []).length === 0 ? (
               <p className="text-ink/45 mt-4 text-sm">
                 No tiene ningún papel cargado.
-                {puedeEditar ? ' Se empieza por la cédula y el RIF.' : ''}
               </p>
             ) : (
               <ul className="divide-hairline mt-4 divide-y">
@@ -301,7 +300,6 @@ function AgregarPapel({ empleadoId, onCerrar }: { empleadoId: number; onCerrar: 
               setTocado(true)
               setNombre(e.target.value)
             }}
-            hint="Como quiera encontrarlo después."
           />
         </div>
 

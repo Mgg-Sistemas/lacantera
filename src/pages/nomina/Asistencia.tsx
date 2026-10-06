@@ -840,9 +840,8 @@ export function Asistencia() {
             */}
             {nuevoMonto.pagar_en ? (
               <p className="border-hairline bg-canvas rounded-card text-ink/60 border p-3 text-xs">
-                El bono sale en el recibo como cualquier otra asignación, sin marca de pendiente:
-                un papel no se actualiza cuando se paga. El día queda aquí, que es lo que se
-                consulta para saber qué falta por sacar de caja.
+                El bono sale en el recibo como cualquier otra asignación, sin marca de pendiente.
+                El día queda aquí: es lo que se consulta para saber qué falta por sacar de caja.
               </p>
             ) : null}
             {guardarMonto.error ? <ErrorDeCarga error={guardarMonto.error} /> : null}

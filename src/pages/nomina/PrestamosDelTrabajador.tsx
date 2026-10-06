@@ -339,7 +339,7 @@ export function PrestamosDelTrabajador({
             <Input
               label="Cuotas"
               type="number"
-              hint="Opcional. Una sola quincena es 1."
+              hint="Una sola quincena es 1."
               value={nuevo.cuotas}
               onChange={(e) => setNuevo({ ...nuevo, cuotas: e.target.value })}
             />
@@ -453,7 +453,7 @@ export function PrestamosDelTrabajador({
           <Textarea
             label="Motivo"
             rows={2}
-            hint="Al menos diez letras: dentro de un año esto será lo único que lo explique."
+            hint="Al menos diez letras."
             value={anulando.motivo}
             onChange={(e) => setAnulando({ ...anulando, motivo: e.target.value })}
           />

@@ -376,7 +376,7 @@ export function FichaTrabajador() {
         <Vacio
           icono={<UserX />}
           titulo="Ficha no encontrada"
-          descripcion="El trabajador pudo haber sido dado de baja, o el enlace apunta a un número inexistente."
+          descripcion="El trabajador no existe o el enlace es incorrecto."
           accion={
             <Link to="/app/nomina/personal">
               <Button variant="outline">Ver el personal</Button>
@@ -457,7 +457,7 @@ export function FichaTrabajador() {
               : 'Carnet — reverso',
           descripcion:
             tipo === 'frente'
-              ? '54 × 86 mm a 300 dpi. Revise que la cara esté centrada antes de mandarlo a imprimir.'
+              ? '54 × 86 mm a 300 dpi.'
               : 'La marca, la razón social y el RIF. Es igual para todos: se imprime una vez y sirve para todos los carnets.',
         })
       } else {
@@ -535,7 +535,7 @@ export function FichaTrabajador() {
           tipoConstancia === 'CESE'
             ? 'Constancia de cese de actividades laborales'
             : 'Constancia de trabajo',
-        descripcion: 'Revísela antes de entregarla. La firma va a mano.',
+        descripcion: 'La firma va a mano.',
       })
       setPidiendo(false)
     } catch (err) {
@@ -1292,7 +1292,7 @@ export function FichaTrabajador() {
                             MOTIVOS_EGRESO.find((m) => m.valor === e.motivo_egreso)?.etiqueta ??
                             e.motivo_egreso
                           ).toLowerCase()}». Piénselo: el papel se lo lleva la persona.`
-                        : 'La carta dirá cuándo terminó, no por qué. Suele ser suficiente.'}
+                        : 'La carta dirá cuándo terminó, no por qué.'}
                     </span>
                   </span>
                 </label>
@@ -1321,9 +1321,8 @@ export function FichaTrabajador() {
 
               {!firma.nombre ? (
                 <p className="text-ink/45 text-xs leading-relaxed">
-                  Nadie ha cargado quién firma por Recursos humanos, así que el renglón de la firma
-                  sale con el cargo y sin nombre, para llenarlo a mano. Se configura en Parámetros
-                  de nómina.
+                  Sin firmante de Recursos humanos: el renglón de la firma sale con el cargo y sin
+                  nombre. Se configura en Parámetros de nómina.
                 </p>
               ) : null}
             </div>
@@ -1474,7 +1473,6 @@ export function FichaTrabajador() {
               label="Motivo"
               rows={3}
               placeholder="Desacuerdo por uso de maquinaria"
-              hint="Lo que se escriba aquí es lo que se va a leer dentro de un año."
               value={inc.motivo}
               onChange={(ev) => setInc({ ...inc, motivo: ev.target.value })}
             />

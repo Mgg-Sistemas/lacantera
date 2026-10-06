@@ -251,7 +251,7 @@ export function FormularioTrabajador() {
                     tipo="rif"
                     valor={f.rif}
                     onCambiar={(v) => cambiar({ rif: v })}
-                    hint="Opcional. Con su dígito verificador: V-12.345.678-9."
+                    hint="Con su dígito verificador: V-12.345.678-9."
                   />
                   <Input
                     label="Nombres"

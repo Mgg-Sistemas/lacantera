@@ -76,7 +76,7 @@ export function Tabulador() {
     <>
       <PageHeader
         title="Tabulador de cargos"
-        description="Salario mensual de cada cargo. El quincenal se deriva de esa cifra y no se registra aparte, para que no puedan diferir."
+        description="Salario mensual de cada cargo. El quincenal se deriva de esa cifra y no se registra aparte."
         actions={
           puedeRRHH ? (
             <>
@@ -176,9 +176,8 @@ export function Tabulador() {
       {puedeRRHH && desfase.isFetched && fuera.length === 0 ? (
         <Card className="mb-4">
           <p className="text-ink/60 text-sm">
-            Todas las fichas coinciden con el tabulador, así que <strong>Sincronizar</strong> no
-            tiene nada que hacer ahora mismo. Cuando cambie un sueldo aquí abajo, esta franja le
-            dirá a quién le toca y de cuánto a cuánto, antes de que pulse nada.
+            Todas las fichas coinciden con el tabulador. Al cambiar un sueldo, aquí se indica a
+            quién afecta y de cuánto a cuánto.
           </p>
         </Card>
       ) : null}
@@ -270,8 +269,7 @@ export function Tabulador() {
               a quien consulta un sueldo no le hace falta, y a quien se pregunta
               por qué no puede editar el quincenal le hace mucha. */}
           <p className="text-ink/40 border-hairline border-t px-5 py-3 text-xs">
-            Solo se guarda el mensual. El quincenal es su mitad y se calcula cada vez, así que las
-            dos cifras no pueden acabar diciendo cosas distintas.
+            Solo se guarda el mensual. El quincenal es su mitad y se calcula cada vez.
           </p>
         </Card>
       ) : null}
@@ -426,10 +424,9 @@ export function Tabulador() {
               <p className="text-ink/70 flex items-start gap-2 text-sm leading-relaxed">
                 <TriangleAlert className="text-warning mt-0.5 size-4 shrink-0" />
                 Hay {borrando.personas}{' '}
-                {borrando.personas === 1 ? 'persona' : 'personas'} en este nivel. La base no va a
-                dejar quitarlo: si se soltaran, seguirían cobrando lo mismo pero dejarían de subir
-                cuando suba el cargo, y nadie sabría por qué. Muévalas antes, o desmarque «Vigente»
-                para que deje de ofrecerse sin perder a quien está dentro.
+                {borrando.personas === 1 ? 'persona' : 'personas'} en este nivel. No se puede quitar con
+                personas dentro. Muévalas antes, o desmarque «Vigente» para que deje de ofrecerse
+                sin perder a quien está dentro.
               </p>
             ) : (
               <p className="text-ink/70 text-sm leading-relaxed">
@@ -461,7 +458,7 @@ export function Tabulador() {
         >
           {hecho.length === 0 ? (
             <p className="text-ink/60 text-sm">
-              Alguien más lo había hecho ya, o el desfase se resolvió desde la ficha.
+              Las fichas ya coincidían con el tabulador.
             </p>
           ) : (
             <ul className="divide-hairline divide-y text-sm">

@@ -4010,7 +4010,7 @@ Debajo aparece la casilla **Decir el motivo de la salida**, **y viene apagada**.
 
 Está apagada a propósito. Este papel se lo lleva la persona, y «despido justificado» escrito en algo que va a enseñar en su próxima entrevista le hace un daño que la empresa no necesita hacerle. **La fecha de salida ya acredita el cese**, que es lo que se pide.
 
-La casilla dice lo que va a pasar antes de que pase. Marcada: *"Dirá «por despido justificado». Piénsalo: el papel se lo lleva la persona."* Sin marcar: *"La carta dirá cuándo terminó, no por qué. Suele ser suficiente."*
+La casilla dice lo que va a pasar antes de que pase. Marcada: *"Dirá «por despido justificado». Piénsalo: el papel se lo lleva la persona."* Sin marcar: *"La carta dirá cuándo terminó, no por qué."* Suele ser suficiente.
 
 Queda disponible para cuando de verdad haga falta —un trámite que lo exija—, y entonces es una decisión de quien firma, tomada a sabiendas.
 
@@ -4160,7 +4160,7 @@ Esta sí se registra desde la ficha, con el botón **Anotar una**, que ve recurs
 | **Cuánto duró** | Sí | Empieza en **Todo el día** |
 | **Días de reposo** | Según el caso | Solo aparece en los tipos que pueden llevar reposo. **Obligatorio si duró varios días.** |
 | **Quién más estuvo** | No | Casillas con el resto del personal activo. **Sin nadie marcado queda como individual.** |
-| **Motivo** | Sí | **Mínimo cinco caracteres.** La ayuda lo dice todo: *"Lo que se escriba aquí es lo que se va a leer dentro de un año."* |
+| **Motivo** | Sí | **Mínimo cinco caracteres.** Lo que se escriba aquí es lo que se va a leer dentro de un año |
 
 Los ocho tipos de **Qué pasó** son: **Conflicto**, **Enfermedad**, **Lesión en labores**, **Accidente común**, **Ausencia justificada**, **Ausencia injustificada**, **Llegada tarde** y **Otra**. Y los cinco de **Cuánto duró**: **En la mañana**, **En la tarde**, **En la noche**, **Todo el día** y **Varios días**.
 
@@ -4194,7 +4194,7 @@ Si nadie ha cargado quién firma por recursos humanos, la ventana también lo di
 
 **No es una entrada del menú**: es la segunda pestaña de **Personal**.
 
-La escala de sueldos de la empresa: cuánto gana cada cargo al mes. La pantalla lo resume así: *"Cuánto gana cada cargo al mes. El quincenal sale de esa cifra: no se escribe aparte, para que las dos no puedan desfasarse."*
+La escala de sueldos de la empresa: cuánto gana cada cargo al mes. La pantalla lo resume así: *"Salario mensual de cada cargo. El quincenal se deriva de esa cifra y no se registra aparte."* Así las dos cifras no pueden desfasarse.
 
 #### Qué se ve
 
@@ -4205,7 +4205,7 @@ Arriba, solo para recursos humanos, dos botones: **Sincronizar** y **Nuevo cargo
 Debajo, una de estas dos franjas:
 
 - **Si hay fichas desfasadas**, la franja las lista una por una con las columnas **Trabajador**, **Cargo**, **Tiene** y **Pasa a**, y explica exactamente qué va a pasar: *"Esto es lo que hará el botón Sincronizar de arriba: bajarles el sueldo y el nombre del cargo tal como están en la escala. Los recibos ya emitidos no cambian; una nómina en borrador sí tomará el sueldo nuevo cuando se vuelva a calcular."*
-- **Si no hay ninguna**, la franja dice *"Todas las fichas coinciden con el tabulador, así que Sincronizar no tiene nada que hacer ahora mismo. Cuando cambies un sueldo aquí abajo, esta franja te dirá a quién le toca y de cuánto a cuánto, antes de que pulses nada."*
+- **Si no hay ninguna**, la franja dice *"Todas las fichas coinciden con el tabulador. Al cambiar un sueldo, aquí se indica a quién afecta y de cuánto a cuánto."*
 
 La escala tiene estas columnas:
 
@@ -4215,7 +4215,7 @@ La escala tiene estas columnas:
 | **Mensual** | Lo único que se guarda |
 | **Quincenal** | Su mitad, calculada cada vez |
 
-El pie de la tabla vuelve a decirlo, porque es el punto de todo: *"Solo se guarda el mensual. El quincenal es su mitad y se calcula cada vez, así que las dos cifras no pueden acabar diciendo cosas distintas."*
+El pie de la tabla vuelve a decirlo, porque es el punto de todo: *"Solo se guarda el mensual. El quincenal es su mitad y se calcula cada vez."* Las dos cifras no pueden acabar diciendo cosas distintas.
 
 **El tabulador no lleva el bono de alimentación.** Lo llevó hasta el 6 de agosto de 2026, en una columna por cargo, y se quitó: el beneficio de alimentación es el mismo para toda la empresa, se carga una sola vez en **Parámetros de nómina** —con su fecha de vigencia y el decreto del que sale— y es de ahí de donde la nómina lo paga. Escrito también aquí, el día que cambiara el anuncio el tabulador seguiría enseñando el monto viejo, y el tabulador es justamente la pantalla que se consulta para saber cuánto gana un cargo.
 
@@ -4244,12 +4244,12 @@ El nombre del cargo **se guarda en mayúsculas y sin tildes**, y no se puede rep
 1. Cambia el sueldo del cargo y guarda.
 2. Vuelve a la franja de desfase y **lee la lista**: te dice a quién le toca, cuánto tiene y a cuánto pasa. Verde si sube, rojo si baja.
 3. Pulsa **Sincronizar**.
-4. Lee el resumen. Si cambió algo, sale **{n} fichas actualizadas** con la advertencia *"Estas personas cobran distinto a partir de la próxima nómina que se calcule."* y el detalle de cada una. Si no cambió nada, sale **No había nada que sincronizar** con la explicación *"Alguien más lo había hecho ya, o el desfase se resolvió desde la ficha."*
+4. Lee el resumen. Si cambió algo, sale **{n} fichas actualizadas** con la advertencia *"Estas personas cobran distinto a partir de la próxima nómina que se calcule."* y el detalle de cada una. Si no cambió nada, sale **No había nada que sincronizar** con la explicación *"Las fichas ya coincidían con el tabulador."*
 5. Pulsa **Entendido**.
 
 #### Quitar un cargo
 
-**Un cargo con gente dentro no se puede quitar.** El sistema lo dice antes de que lo intentes: *"Hay {n} persona(s) en este nivel. La base no va a dejar quitarlo: si se soltaran, seguirían cobrando lo mismo pero dejarían de subir cuando suba el cargo, y nadie sabría por qué. Muévelas antes, o desmarca «Vigente» para que deje de ofrecerse sin perder a quien está dentro."*
+**Un cargo con gente dentro no se puede quitar.** El sistema lo dice antes de que lo intentes: *"Hay {n} persona(s) en este nivel. No se puede quitar con personas dentro. Muévalas antes, o desmarque «Vigente» para que deje de ofrecerse sin perder a quien está dentro."* Si se soltaran, seguirían cobrando lo mismo pero dejarían de subir cuando suba el cargo, y nadie sabría por qué.
 
 Esa es la salida buena: **desmarcar Vigente**. El nivel deja de ofrecerse al crear fichas nuevas, pero quien está dentro sigue enganchado y sigue subiendo cuando suba el cargo.
 
@@ -4362,7 +4362,7 @@ Tres cosas que hay que saber antes de pulsar:
 
 **El período trae los conceptos de ley que rijan el día que cierra.** No se eligen en esta ventana: los deciden los interruptores de **Parámetros de nómina** (ver 11.9). Con las fechas puestas, la ventana lo dice: *"Además de lo pactado, este período calculará: …"*, o *"Este período calculará solo lo pactado…"* si no hay ninguno encendido. Se guardan al calcular el período, y desde ese momento esos recibos quedan con sus conceptos aunque los interruptores se muevan después.
 
-**La tasa se congela al abrir el período, no al pagar.** La propia ventana lo dice: *"La tasa del BCV se congela al abrirlo: si se moviera, el mismo recibo valdría distinto cada vez."* Todo lo que se calcule en ese período usa esa tasa: los montos en dólares de las novedades, y el equivalente en dólares que sale en los recibos.
+**La tasa se congela al abrir el período, no al pagar.** La propia ventana lo dice: *"La tasa del BCV se congela al abrirlo."* Si se moviera, el mismo recibo valdría distinto cada vez. Todo lo que se calcule en ese período usa esa tasa: los montos en dólares de las novedades, y el equivalente en dólares que sale en los recibos.
 
 **Los días que se pagan no son los del calendario.** La ayuda del campo lo explica: *"Los días que se pagan no son los del calendario: el mes son 30, tenga 28 o 31."* Un período mensual paga los días que estén cargados en **Parámetros de nómina**, no los del almanaque.
 
@@ -4611,7 +4611,7 @@ Debajo, tres cifras:
 
 **Las tres cifras cuentan solo a quien está activo.** La lista de abajo, en cambio, trae también a quien ya egresó, en gris.
 
-Si falta algún punto de partida, aparece una franja de aviso: *"Hay {n} trabajador(es) sin corte cargado. Mientras no lo tengan, su cuenta arranca en cero y el sistema no sabe qué traían de antes. El corte se carga desde la ficha de cada uno, con lo que tenga acumulado a una fecha."* Una advertencia sobre esa última frase: **el corte no se carga en la ficha del trabajador, sino aquí mismo**, pinchando la fila de la persona. La ficha no muestra nada de prestaciones.
+Si falta algún punto de partida, aparece una franja de aviso: *"Hay {n} trabajador(es) sin corte cargado. Mientras no lo tengan, su cuenta arranca en cero, sin lo que traían de antes. El corte se carga aquí: se pulsa la fila de cada uno y luego «Cargar el corte»."* **El corte no se carga en la ficha del trabajador**: la ficha no muestra nada de prestaciones.
 
 Si no hay nadie cargado en Personal, la pantalla dice **No hay trabajadores** y *"Las prestaciones se calculan sobre el personal cargado en Nómina."*
 
@@ -4633,7 +4633,7 @@ La lista tiene estas columnas:
 
 El corte es el punto de partida: lo que esa persona ya tenía acumulado el día en que el sistema empezó a llevarle la cuenta. Sin él, su cuenta arranca en cero y la lista lo dice.
 
-La propia ventana explica por qué se teclea a mano en vez de calcularlo el sistema: *"El sistema no tiene los salarios de los años anteriores, así que calcular hacia atrás daría un número con cara de exacto y falso. Esto se carga a mano, y se ve que es a mano."*
+La ventana lo dice: *"El sistema no tiene los salarios de años anteriores: el corte se carga a mano, y se ve que es a mano."* Calcular hacia atrás daría un número con cara de exacto y falso.
 
 1. Pincha la fila de la persona.
 2. Pulsa **Cargar el corte** —o **Corregir el corte**, si ya tiene uno—.
@@ -4693,7 +4693,7 @@ Se hace una vez al mes, cuando el mes ya cerró y el Banco Central publicó su t
 
 Sale el aviso «Intereses abonados a {n} trabajador(es).»
 
-**Sin tasa no se abona nada, y es a propósito.** La ventana lo dice con todas sus letras: *"La tasa se guarda con el mes al que pertenece: sin ella no se calcula nada, porque unos intereses con una tasa inventada también son inventados."* Si intentas calcular un mes sin tasa cargada, el sistema responde «No está cargada la tasa de intereses de …. Cárgala antes de calcular: con una tasa inventada, los intereses también lo serían.»
+**Sin tasa no se abona nada, y es a propósito.** La ventana lo dice: *"La tasa se guarda con el mes al que pertenece: sin ella no se calculan los intereses."* Unos intereses con una tasa inventada también son inventados. Si intentas calcular un mes sin tasa cargada, el sistema responde «No está cargada la tasa de intereses de …. Cárgala antes de calcular: con una tasa inventada, los intereses también lo serían.»
 
 **La tasa queda guardada con el mes al que pertenece**, no con el día en que la tecleaste. Eso es lo que permite que abonar marzo en agosto dé el mismo resultado que habría dado en marzo.
 
