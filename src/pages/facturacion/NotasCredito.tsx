@@ -311,8 +311,7 @@ export function NotasCredito() {
                   hint={TIPOS_NOTA_CREDITO.find((t) => t.valor === tipo)?.ayuda}
                 />
                 <div className="text-ink/55 self-end pb-1 text-sm">
-                  La nota toma la tasa de la factura (Bs {factura.tasa} por dólar), no la de hoy:
-                  tiene que restar los mismos bolívares que sumó.
+                  La nota toma la tasa de la factura (Bs {factura.tasa} por dólar), no la de hoy.
                 </div>
               </div>
 
@@ -323,7 +322,7 @@ export function NotasCredito() {
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Se despachó piedra 2 en lugar de piedra 1 y el cliente devolvió 12 t."
-                hint="Lo lee el cliente, lo lee el SENIAT y lo lee quien abra esto dentro de un año."
+                hint="Sale en la nota: lo leen el cliente y el SENIAT."
               />
 
               <div className="border-hairline mt-5 overflow-x-auto rounded-[6px] border">

@@ -203,14 +203,13 @@ function FilaDeCamion({
           label="Ticket de romana"
           value={camion.ticket}
           onChange={(e) => onCambio({ ticket: e.target.value })}
-          hint="Opcional."
         />
         <Input
           label="Peso neto (kg)"
           inputMode="decimal"
           value={camion.peso_neto}
           onChange={(e) => onCambio({ peso_neto: e.target.value })}
-          hint="Opcional. Lo que cargó este camión."
+          hint="Lo que cargó este camión."
         />
       </div>
     </div>

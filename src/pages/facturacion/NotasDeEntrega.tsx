@@ -655,7 +655,7 @@ export function NotasDeEntrega() {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="NE-2026-0042, el cliente, la placa, el NS o la factura"
-            hint="Busca en todas las notas, no sólo en las que se ven."
+            hint="Busca en todas las notas, no solo en las que se ven."
           />
           <Select
             label="Estado"
@@ -780,8 +780,7 @@ export function NotasDeEntrega() {
                   <strong className="font-semibold">
                     {m3EnLaCarga.toLocaleString('es-VE', { maximumFractionDigits: 2 })} m³
                   </strong>{' '}
-                  en un vehículo de {Number(vehiculoElegido!.capacidad_m3)} m³. Si es a propósito
-                  —dos viajes, carga parcial— siga adelante.
+                  en un vehículo de {Number(vehiculoElegido!.capacidad_m3)} m³. Se puede seguir.
                 </p>
               ) : null}
 
@@ -904,8 +903,8 @@ export function NotasDeEntrega() {
           <div className="border-hairline rounded-card mt-4 border border-dashed p-3">
             <p className="text-ink/60 mb-3 text-xs">
               Datos del camión y de la romana. Si se vende en metros cúbicos, el peso no cambia lo
-              que se factura: es la prueba del día que alguien discuta la cantidad. Si se vende un
-              solo material en toneladas, las toneladas son las del ticket.
+              que se factura. Si se vende un solo material en toneladas, las toneladas son las del
+              ticket.
             </p>
 
             {/* El pesaje y la guía se eligen de lo que la garita ya registró.
@@ -966,8 +965,8 @@ export function NotasDeEntrega() {
                 */
                 hint={
                   guiasVigentes.length === 0
-                    ? 'Opcional. No hay guías cargadas: el despacho sale sin guía.'
-                    : 'Opcional. Si este despacho lleva guía de movilización, elíjala.'
+                    ? 'No hay guías cargadas: el despacho sale sin guía.'
+                    : 'Si este despacho lleva guía de movilización, elíjala.'
                 }
               />
             </div>
@@ -1423,7 +1422,7 @@ export function NotasDeEntrega() {
           titulo={cerrando.como === 'RECHAZAR' ? `No aprobar ${cerrando.s.numero}` : `Cancelar ${cerrando.s.numero}`}
           descripcion={
             cerrando.como === 'RECHAZAR'
-              ? 'Quien lo pidió va a leer el motivo, así que conviene que diga algo.'
+              ? 'Lo lee quien lo pidió.'
               : 'Queda escrito y no se puede editar después.'
           }
           acciones={

@@ -139,7 +139,7 @@ export function faltaEnFila(f: FilaRenglon, precios: PrecioVenta[]): string | nu
     const d = Number(f.descuento)
     if (!(d > 0)) return 'Falta de cuánto es el descuento.'
     if (f.descuentoEn === 'PORCENTAJE' && d >= 100) return 'Un descuento del 100 % es sin cargo.'
-    if (f.precio !== '' && !(Number(f.precio) > 0)) return 'La rebaja se come el precio entero: eso es sin cargo.'
+    if (f.precio !== '' && !(Number(f.precio) > 0)) return 'El descuento cubre el precio entero: eso es sin cargo.'
   }
   if (f.condicion === 'SIN_CARGO' && f.motivo.trim().length < 4) {
     return 'Falta decir por qué sale sin cargo.'

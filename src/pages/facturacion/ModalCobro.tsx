@@ -619,7 +619,8 @@ export function ModalCobro({
           {quedaTrasHoyUsd > 0.01
             ? `Quedarían por cobrar unos ${dolares(quedaTrasHoyUsd)} después de hoy${material ? ', antes del material' : ''}.`
             : 'Con esto la factura queda cobrada.'}{' '}
-          Cifras estimadas con la tasa de hoy; las de verdad las pone la base con la tasa de cada documento.
+          Cifras estimadas con la tasa de hoy; las definitivas se calculan con la tasa de cada
+          documento.
         </p>
       </div>
 

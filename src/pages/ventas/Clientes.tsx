@@ -111,7 +111,7 @@ export function Clientes() {
           <Vacio
             icono={<Building2 />}
             titulo="Sin clientes registrados"
-            descripcion="Sin clientes no se puede despachar ni facturar. Empiece por los habituales."
+            descripcion="Sin clientes no se puede despachar ni facturar."
             accion={
               <Button icon={<Plus />} onClick={() => abrir()}>
                 Registrar el primero
@@ -314,13 +314,12 @@ export function Clientes() {
                 min="0"
                 step="1"
                 inputMode="decimal"
-                hint="No es un aviso: por encima de este monto el sistema no deja facturarle a crédito. En cero, no se le vende a crédito."
+                hint="Por encima de este monto no se le factura a crédito. En cero, no se le vende a crédito."
                 value={edicion.limite_credito}
                 onChange={(e) => cambiar({ limite_credito: e.target.value })}
               />
               <p className="text-warning mt-2 text-xs leading-relaxed">
-                Dar crédito compromete dinero de la empresa. Solo lo puede fijar quien tenga control
-                total sobre Ventas.
+                Solo lo fija quien tenga control total sobre Ventas.
               </p>
             </div>
           ) : null}

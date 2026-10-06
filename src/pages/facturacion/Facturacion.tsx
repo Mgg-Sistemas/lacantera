@@ -397,7 +397,7 @@ export function Facturacion() {
             <Vacio
               icono={<Receipt />}
               titulo="Sin notas pendientes de facturar"
-              descripcion="Todas las notas despachadas están facturadas. Facturar una nota es opcional; aquí aparecen las que aún no lo están."
+              descripcion="Todas las notas despachadas están facturadas. Facturar una nota es opcional."
             />
           ) : (
             <div className="space-y-2">
@@ -635,7 +635,7 @@ export function Facturacion() {
                 Abonado {dolares(detalle.cobrado_usd)} · falta{' '}
                 <span className="text-ink/85 font-semibold">{dolares(detalle.saldo_usd)}</span>
                 <span className="text-ink/40 block text-xs">
-                  El saldo se lleva en dólares porque se cobra en las dos monedas.
+                  El saldo se lleva en dólares.
                 </span>
               </p>
             ) : null}

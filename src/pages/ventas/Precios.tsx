@@ -272,8 +272,8 @@ export function Precios() {
           </div>
 
           <p className="text-ink/55 mt-4 text-sm leading-relaxed">
-            El mínimo no es una sugerencia: un descuento no baja de ahí. Solo lo salta quien tenga
-            la casilla de vender bajo el mínimo. En cero, no hay tope por abajo.
+            Un descuento no baja de ahí. Solo lo salta quien tenga la casilla de vender bajo el
+            mínimo. En cero, no hay tope por abajo.
           </p>
 
           {edicion.unidad !== edicion.unidad_articulo && edicion.densidad ? (

@@ -308,7 +308,7 @@ export function Renglones({
                 hint={
                   fila.condicion
                     ? fila.condicion === 'LISTA' && lista === null && hayLista
-                      ? 'La lista está en otra moneda: la cifra la pone la base al guardar.'
+                      ? 'La lista está en otra moneda: la cifra se calcula al guardar.'
                       : CONDICION_VENTA[fila.condicion].ayuda
                     : undefined
                 }

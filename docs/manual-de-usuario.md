@@ -3258,7 +3258,7 @@ Para editar, **pulsa en cualquier parte de la fila**. Se abre la misma ventana, 
 | **Activo — aparece al cotizar y despachar** | — | Viene marcada |
 | **Notas** | No | |
 
-Dos ayudas de esta ficha conviene leerlas enteras, porque explican decisiones que después no se pueden discutir con el sistema. La del límite: **No es un aviso: por encima de este monto el sistema no deja facturarle a crédito. En cero, no se le vende a crédito.** Y la del recuadro naranja: **Dar crédito compromete dinero de la empresa. Solo lo puede fijar quien tenga control total sobre Ventas.**
+Dos ayudas de esta ficha conviene leerlas enteras, porque explican decisiones que después no se pueden discutir con el sistema. La del límite: **Por encima de este monto no se le factura a crédito. En cero, no se le vende a crédito.** No es un aviso: es un tope. Y la del recuadro naranja: **Solo lo fija quien tenga control total sobre Ventas.** Dar crédito compromete dinero de la empresa.
 
 La del porcentaje que retiene: **Normalmente 75%. Se descuenta de lo que hay que cobrarle, no del total de la factura.**
 
@@ -3300,7 +3300,7 @@ La lista va ordenada por categoría y por nombre. **Sin buscador ni filtros.**
 4. Escribe el **Precio mínimo**, si va a haber suelo. En cero, no hay tope por abajo.
 5. Pulsa **Guardar precio**.
 
-Al pie de la ventana está la regla, escrita por la propia pantalla: **El mínimo no es una sugerencia: quien despacha no puede bajar de ahí. Solo lo salta quien tenga control total sobre Ventas. En cero, no hay tope por abajo.**
+Al pie de la ventana está la regla: **Un descuento no baja de ahí. Solo lo salta quien tenga la casilla de vender bajo el mínimo. En cero, no hay tope por abajo.** El mínimo no es una sugerencia.
 
 #### Qué no te deja el sistema
 
@@ -3415,7 +3415,7 @@ Si no aparece nada, el aviso lo dice con claridad: **Ninguna nota con eso**, y r
 2. Elige el **Cliente**. La moneda se ajusta sola a la suya.
 3. Elige **De qué patio sale**.
 4. Carga los renglones. **Con el patio ya elegido, cada renglón dice cuánto hay**: **Hay 1.250 TON en el patio elegido.** Si pides más, la **Cantidad** se pone en rojo con **No hay tanto en el patio**.
-5. Baja al recuadro del camión y la romana. El recuadro lo explica: **Datos del camión y de la romana. El peso no cambia lo que se factura: es la prueba del día que alguien discuta la cantidad.**
+5. Baja al recuadro del camión y la romana. El recuadro lo explica: **Datos del camión y de la romana. Si se vende en metros cúbicos, el peso no cambia lo que se factura.** El peso es la prueba del día que alguien discuta la cantidad.
 6. Elige el **Ticket de romana** de la lista, que trae los pesajes de salida que todavía no se han usado. **Al elegirlo, los pesos y la placa se traen de la báscula**, y no hay que teclearlos.
 7. Elige la **Guía de movilización**. Si en la nota va mineral, este paso no es opcional.
 8. Completa a mano lo que falte del camión.
@@ -3654,7 +3654,7 @@ Lo que sí se puede ajustar por documento y por cliente:
 
 Sobre la retención: cuando el cliente está marcado como contribuyente especial, la factura calcula la retención sobre el IVA y la muestra como dos líneas más, **IVA retenido por el cliente** y **A pagar**. **El sistema no emite un comprobante de retención aparte**: la retención sale como una línea dentro de la factura.
 
-Sobre la moneda: cada documento **congela la tasa del día** al crearse, y esa es la que se imprime al pie. **Sin tasa del día registrada no se emite nada**, ni cotización, ni nota, ni factura. El cobro se registra **en la moneda de la cuenta donde cayó el dinero**, no en la de la factura, y el sistema lo pasa a dólares para descontarlo del saldo. Por eso el saldo, la deuda y el límite de crédito van siempre en dólares.
+Sobre la moneda: cada documento **congela su tasa** al crearse, y esa es la que se imprime al pie. Sin la tasa del día, se valora con la última registrada; **sin ninguna tasa registrada no se emite nada**, ni cotización, ni nota, ni factura. El cobro se registra **en la moneda de la cuenta donde cayó el dinero**, no en la de la factura, y el sistema lo pasa a dólares para descontarlo del saldo. Por eso el saldo, la deuda y el límite de crédito van siempre en dólares.
 
 ### 10.11 Cuando el sistema no te deja
 
@@ -6856,7 +6856,7 @@ Si abres la ventana y no hay cola, dentro dice **No hay notas por facturar** y *
 
 Pulsa en la fila. El título trae el número y el número de control. Dentro están los chips del estado, la condición de pago, **Vencida hace 12 días** si aplica y **Retiene IVA** si el cliente retiene; la tarjeta **Renglones**; y el bloque de totales, que **cuando hay retención añade dos líneas**: **IVA que retiene el cliente**, en negativo, y **A cobrar**.
 
-Mientras la factura está en **Por cobrar** verás debajo **Abonado $ 400,00 · falta $ 800,00** y la explicación **El saldo se lleva en dólares porque se cobra en las dos monedas.**
+Mientras la factura está en **Por cobrar** verás debajo **Abonado $ 400,00 · falta $ 800,00** y la explicación **El saldo se lleva en dólares.** Va en dólares porque se cobra en las dos monedas.
 
 Si hay cobros, aparece la tarjeta **Cobros**: cada uno con su número y su método, la fecha y la hora, la cuenta, la referencia y el **IGTF** si lo hubo. Los anulados se ven más pálidos, con el sufijo **· anulado**.
 
@@ -6960,7 +6960,7 @@ Al elegirla, **la nota se arma sobre los renglones de esa factura**, no en blanc
 | **Factura que se corrige** | Sí | Solo las que siguen en pie |
 | **Fecha de la nota** | Sí | Empieza en hoy. **No puede ser anterior a la factura** |
 | **Por qué se corrige** | Sí | Los cuatro motivos de arriba |
-| **Motivo** | Sí | Lo lee el cliente, lo lee el SENIAT y lo lee quien abra esto en un año |
+| **Motivo** | Sí | **Sale en la nota: lo leen el cliente y el SENIAT.** Dentro de un año será lo único que la explique |
 | **¿Vuelve al patio?** | No | Por renglón. El almacén al que entra el material devuelto |
 
 **El material puede volver o no volver.** Si se despachó piedra 2 cuando pidieron piedra 1 y el cliente la devuelve, ese renglón lleva almacén y el material entra al inventario con su propio movimiento. Si lo que se corrige es el precio, no se mueve ninguna piedra. Es el mismo papel para las dos cosas porque para el SENIAT lo es.
@@ -6988,7 +6988,7 @@ Una factura que ya tiene notas de crédito **no se puede anular**. O se corrige 
 
 **Facturación › Cuentas por cobrar**
 
-Lo que deben los clientes: **Facturas emitidas y todavía sin cobrar del todo. El saldo va en dólares porque se cobra en las dos monedas.**
+Lo que deben los clientes: **Facturas emitidas con saldo pendiente. El saldo se expresa en dólares.**
 
 Arriba, tres indicadores: **Por cobrar**, con el total en dólares sin céntimos; **Vencido**, en rojo si hay algo vencido y en verde si no; y **Clientes que deben**.
 
