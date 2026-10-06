@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { FileText, PackageMinus } from 'lucide-react'
+import { FileText, PackageMinus, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
@@ -13,6 +13,9 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
+import { Visor } from '@/components/Visor'
+import { useEmpresa } from '@/lib/api/empresa'
+import { useSesion } from '@/lib/sesion'
 import { useArticulos, usePerfiles } from '@/lib/api/catalogo'
 import {
   grupoEnCorto,
@@ -23,9 +26,11 @@ import {
   useGruposDeSalida,
   useMovimientos,
 } from '@/lib/api/inventario'
-import { fechaHora } from '@/lib/formato'
+import { fecha, fechaHora } from '@/lib/formato'
 import { leerMotivoDeLaSalida, useSolicitudesDeSalida, type SolicitudDeSalida } from '@/lib/api/salidas'
 import type { Movimiento } from '@/lib/api/inventario'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
+import { armarReporteSalidas } from '@/lib/ficha/historialSalidasPdf'
 import { useNotaDeSalida } from './NotaDeSalida'
 import { useNotaDeTraslado } from './NotaDeTraslado'
 
@@ -76,10 +81,13 @@ export function Salidas() {
   const [grupoId, setGrupoId] = useState('')
   const [nota, setNota] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
+  const [reporte, setReporte] = useState<ArchivoArmado | null>(null)
 
   const { data: almacenes } = useAlmacenes()
   const { data: articulos } = useArticulos()
   const { data: perfiles } = usePerfiles()
+  const { data: empresa } = useEmpresa()
+  const { nombre: yo } = useSesion()
   const grupos = useGruposDeSalida()
   const notaDeSalida = useNotaDeSalida()
   const notaDeTraslado = useNotaDeTraslado()
@@ -139,13 +147,13 @@ export function Salidas() {
     Sumar cantidades de artículos distintos es sumar litros con pares de botas:
     el número saldría y no querría decir nada. Con un artículo elegido, la suma
     ES la respuesta —«cuántas mascarillas»—, y por eso aparece justo entonces.
-  */
-  const resumen = useMemo(() => {
-    const filas = data ?? []
-    if (filas.length === 0) return null
 
-    const cuantos = `${filas.length} movimiento${filas.length === 1 ? '' : 's'}`
-    if (!articuloId) return cuantos
+    Va aparte de `resumen` porque el reporte en PDF la necesita sin el
+    «N movimientos» delante — ahí ese conteo ya sale en «Alcance».
+  */
+  const totalTexto = useMemo(() => {
+    const filas = data ?? []
+    if (!articuloId || filas.length === 0) return null
 
     const unidad = filas[0]?.unidad ?? ''
     const salieron = filas
@@ -155,14 +163,79 @@ export function Salidas() {
       .filter((m) => m.signo > 0)
       .reduce((total, m) => total + Number(m.cantidad), 0)
 
-    return [
-      cuantos,
-      salieron ? `${numeroLegible(salieron)} ${unidad} salieron` : null,
-      entraron ? `${numeroLegible(entraron)} ${unidad} entraron` : null,
-    ]
-      .filter(Boolean)
-      .join(' · ')
+    return (
+      [
+        salieron ? `${numeroLegible(salieron)} ${unidad} salieron` : null,
+        entraron ? `${numeroLegible(entraron)} ${unidad} entraron` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ') || null
+    )
   }, [data, articuloId])
+
+  const resumen = useMemo(() => {
+    const filas = data ?? []
+    if (filas.length === 0) return null
+    const cuantos = `${filas.length} movimiento${filas.length === 1 ? '' : 's'}`
+    return totalTexto ? `${cuantos} · ${totalTexto}` : cuantos
+  }, [data, totalTexto])
+
+  /*
+    EL REPORTE SE ARMA CON LO QUE SE ESTÁ VIENDO, IGUAL QUE EL ACTA DE
+    EXISTENCIAS: lo que la pantalla ya filtró, no una consulta nueva. Pedir
+    «Arena integral, solo salidas» y que el papel traiga también los
+    traslados de otro artículo sería un reporte que miente sobre su propio
+    filtro.
+  */
+  const imprimirReporte = async () => {
+    const grupoFiltrado = grupoId ? (grupos.data ?? []).find((g) => String(g.id) === grupoId) : undefined
+
+    const alcance: Array<[string, string | null | undefined]> = [
+      ['Vista', (VISTAS[vista] ?? VISTAS.TODO).etiqueta],
+      [
+        'Rango',
+        rango.desde || rango.hasta
+          ? `${rango.desde ? fecha(rango.desde) : 'sin inicio'} — ${rango.hasta ? fecha(rango.hasta) : 'hoy'}`
+          : 'Todo el historial',
+      ],
+      [
+        'Artículo',
+        articuloId
+          ? (articulos ?? []).find((a) => String(a.id) === articuloId)?.nombre
+          : 'Todos',
+      ],
+      [
+        'Almacén',
+        almacenId ? (almacenes ?? []).find((a) => String(a.id) === almacenId)?.nombre : 'Todos',
+      ],
+      ['Registrado por', quien ? nombreDe(quien) : 'Todos'],
+      ['Destino', grupoId ? (grupoFiltrado ? grupoEnCorto(grupoFiltrado) : '—') : 'Todos'],
+      ...(nota.trim() ? ([['Nota buscada', nota.trim()]] as [string, string][]) : []),
+    ]
+
+    setReporte(
+      await armarReporteSalidas({
+        alcance,
+        renglones: (data ?? []).map((m) => ({
+          numero: m.numero,
+          fecha: fechaHora(m.registrado_en),
+          movimiento: nombreDeMovimiento(m),
+          articulo: m.articulo?.nombre ?? '—',
+          almacen: m.almacen?.nombre ?? '—',
+          paraQuien: paraQuienSalio(m, grupos.data) ?? '—',
+          registradoPor: nombreDe(m.registrado_por),
+          cantidad: `${m.signo > 0 ? '+' : '−'}${numeroLegible(m.cantidad)} ${m.unidad}`,
+        })),
+        totalTexto,
+        empresa: {
+          razonSocial: empresa?.razon_social ?? '',
+          rif: empresa?.rif ?? '',
+        },
+        emitidoPor: yo ?? '',
+        momento: new Date(),
+      }),
+    )
+  }
 
   const hayFiltros = Boolean(
     almacenId || articuloId || quien || grupoId || nota.trim() || rango.desde || rango.hasta,
@@ -173,6 +246,16 @@ export function Salidas() {
       <PageHeader
         title="Historial de salidas y traslados"
         description="Consulta de salidas del inventario y traslados entre almacenes. Para registrar o solicitar una salida, vaya a «Salidas»; para trasladar material, a «Traslados»."
+        actions={
+          <Button
+            variant="outline"
+            icon={<Printer />}
+            disabled={!data || data.length === 0}
+            onClick={() => void imprimirReporte()}
+          >
+            Reporte en PDF
+          </Button>
+        }
       />
 
       <Pestanas pestanas={PESTANAS_SALIDAS} />
@@ -369,6 +452,14 @@ export function Salidas() {
 
       {notaDeSalida.visor}
       {notaDeTraslado.visor}
+
+      <Visor
+        abierto={reporte !== null}
+        onCerrar={() => setReporte(null)}
+        blob={reporte?.blob ?? null}
+        nombreArchivo={reporte?.nombre ?? ''}
+        titulo="Historial de salidas y traslados"
+      />
     </>
   )
 }

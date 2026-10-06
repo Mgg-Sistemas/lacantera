@@ -18,26 +18,15 @@ Tres convenciones que se repiten en todo el documento:
 - Lo que aparece «entre comillas angulares» es un mensaje que muestra el sistema, copiado tal cual.
 - Las rutas se escriben como se recorre el menú: **Operación › Inventario › Existencias**.
 
-**Algunos mensajes del sistema todavía tutean.** Las pantallas tratan de usted, pero ciertos avisos los escribe la base de datos y no la pantalla, y esos siguen en tú. El manual los copia como salen, para que se reconozcan al verlos.
+**Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-**Este manual describe el sistema que existe hoy, no el que se planeó.** Donde algo esté a medio construir, el manual lo dice. El capítulo 15 reúne todo lo que todavía no está disponible y los puntos donde conviene tener cuidado, para que nadie planifique su trabajo contando con algo que aún no puede hacer.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra las pantallas de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 12, 15 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, manda la pantalla.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** El sistema ha cambiado mucho desde esta versión, y no todos los capítulos se han repasado todavía contra las pantallas de hoy. Ya lo están esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 12, 15 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, manda la pantalla.
+### El orden de los capítulos
 
-El orden de los capítulos es el del camino del material: primero se extrae, luego se almacena, después sale por el portón, y por último se administra lo que eso genera.
+**El orden es el del camino del material:** primero se extrae, luego se almacena, después sale por el portón, y por último se administra lo que eso genera. Describe cómo funciona la cantera, no lo que muestra el menú, y por eso no cambia cuando cambia el menú: así los números de capítulo siguen valiendo para quien tiene el manual impreso.
 
-### Por qué hay capítulos que hoy no se alcanzan
-
-El sistema se entrega por partes, y el menú cambia con cada entrega. Hoy ofrece casi todo. Lo que queda escondido es poco y está contado en 1.5: el módulo **Despachos** entero, y tres pantallas de **Explotación** —**Frentes y bancos**, **Voladuras** y **Producción por turno**—.
-
-De los dos caminos posibles, este manual eligió el segundo:
-
-- Reordenar los capítulos para poner delante lo que hoy se alcanza y mandar el resto al final.
-- **Dejar cada capítulo en su sitio y avisar al principio de los que hoy no se alcanzan.**
-
-El motivo es que las dos cosas se mueven a velocidades distintas. **El orden de los capítulos describe cómo funciona la cantera**, que es el mismo de hace veinte años: se extrae, se almacena, sale por el portón y se administra lo que eso genera. **El menú describe qué está entregado**, y eso cambia cada pocas semanas. Reordenar el manual con cada entrega lo dejaría sin ninguna estructura estable, cambiaría los números de capítulo debajo de los pies de quien lo tiene impreso, y dentro de dos meses habría que volver a moverlo todo.
-
-Así que los capítulos de lo que hoy está escondido **no se borraron ni se movieron**: lo que cuentan sigue existiendo, y el día que vuelva al menú hará falta. Cada uno abre con un recuadro que lo dice, y el índice lleva una columna que se lee de un vistazo.
+También tienen capítulo, en su sitio, las pantallas que hoy no están en el menú: el módulo **Despachos** entero y tres pantallas de **Explotación** —**Frentes y bancos**, **Voladuras** y **Producción por turno**—, contadas en 1.5. Cada capítulo lo dice al principio, y el índice lleva una columna que se lee de un vistazo.
 
 ---
 
@@ -56,7 +45,7 @@ Así que los capítulos de lo que hoy está escondido **no se borraron ni se mov
 | 9 | Compras | Sí |
 | 10 | Ventas | Sí |
 | 11 | Nómina | Sí |
-| 12 | Tesorería | Sí, desde el 21 de septiembre de 2026 |
+| 12 | Tesorería | Sí |
 | 13 | Configuración | Sí |
 | 14 | Las reglas que el sistema impone | — |
 | 15 | Lo que todavía no está construido | — |
@@ -72,9 +61,9 @@ Así que los capítulos de lo que hoy está escondido **no se borraron ni se mov
 | 25 | Alimentación | Sí |
 | 26 | Salidas y traslados | Sí |
 
-**Que un módulo esté en el menú no quiere decir que lo vea todo el mundo.** A cada persona le sale solo lo que su permiso alcanza (3.1). Control de despacho, Control de asistencia, Contactos y Alimentación nacieron abiertos solo para el administrador; quién más los ve depende de los permisos que se hayan repartido después.
+**Que un módulo esté en el menú no quiere decir que lo vea todo el mundo.** A cada persona le sale solo lo que su permiso alcanza (3.1).
 
-**Los módulos que llegaron después tienen sus capítulos al final** —del 18 al 26— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
+**Los capítulos 18 a 26 van al final**, y no intercalados donde les tocaría: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
 
 ---
 
@@ -419,7 +408,7 @@ Esto es todo lo que ofrece el menú hoy. Cada persona ve solo la parte sobre la 
 
 #### Lo que no sale en el menú
 
-Hoy hay escondidos un módulo entero y tres pantallas de otro. El apartado 1.5 explica desde cuándo y por qué.
+Hoy hay escondidos un módulo entero y tres pantallas de otro. El apartado 1.5 dice cuáles son y qué se encuentra quien llega a ellas.
 
 | Módulo | Pantallas escondidas | Capítulo |
 | --- | --- | --- |
@@ -705,12 +694,10 @@ Cuando la administración le repone la clave a alguien, a esa persona se le cier
 
 ### 3.8 Cuando algo no sale
 
-Los tres primeros mensajes los escribe la base de datos y por eso todavía tutean; se copian como salen.
-
 | Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
 | «La clave actual no es correcta.» | La clave que escribió arriba no es la que tiene puesta | Vuelva a escribirla. Si no la recuerda, pida a la administración que se la reponga |
-| «Sesión no válida. Vuelve a entrar.» | Su sesión caducó mientras estaba en la pantalla | Vuelva a entrar y repita el cambio |
+| «Sesión no válida. Vuelva a entrar.» | Su sesión caducó mientras estaba en la pantalla | Vuelva a entrar y repita el cambio |
 | «Su sesión venció. Vuelva a entrar y repita lo que estaba haciendo.» | Lo mismo, dicho por la pantalla en vez de por la base | Vuelva a entrar y repita el cambio |
 | «No se encontró su perfil.» | El sistema no encuentra sus datos | Avise a la administración |
 | **Nombre del módulo** seguido de **no está a su alcance** | Abrió una dirección de un módulo que no le toca | Pulse **Volver al panel**. Si lo necesita para su trabajo, pida el permiso a la administración |
