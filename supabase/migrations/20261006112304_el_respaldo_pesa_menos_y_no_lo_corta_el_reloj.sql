@@ -10,7 +10,7 @@
   pantalla dejó de funcionar de golpe.
 
   Esta migración hace dos cosas pequeñas. La que de verdad arregla el tiempo va
-  en la siguiente, `20261006123000`, y conviene leerla: la causa no era lo que
+  en la siguiente, `20261006112824`, y conviene leerla: la causa no era lo que
   parecía.
 
   1. ESCRIBIR POR POSICIÓN EN VEZ DE CONCATENAR
