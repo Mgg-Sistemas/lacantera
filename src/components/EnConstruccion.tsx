@@ -68,8 +68,7 @@ export function EnConstruccion({ children }: { children: React.ReactNode }) {
       </p>
 
       <p className="text-ink/45 mt-3 text-xs">
-        Si llegó por un enlace o escribiendo la dirección, no se equivocó: la pantalla
-        existe, pero aún no está lista.
+        Esta pantalla está en obra.
       </p>
 
       <div className="mt-5 flex flex-wrap items-center justify-center gap-3">

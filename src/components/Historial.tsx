@@ -122,7 +122,7 @@ export interface HistorialProps {
 
 export function Historial({
   titulo = 'Historial',
-  subtitulo = 'Todo lo que le ha pasado, de lo más reciente a lo más viejo.',
+  subtitulo = 'Del más reciente al más antiguo.',
   hechos,
   cargando,
   error,

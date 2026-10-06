@@ -77,8 +77,7 @@ export function ExigePermiso() {
         </div>
         <h2 className="text-ink/90 mt-4 text-lg font-semibold">Esto lo ve la administración</h2>
         <p className="text-ink/55 mt-2 text-sm">
-          El registro de auditoría guarda todo lo que ha hecho cada persona en el sistema. Solo lo
-          abre quien tiene el rol de administrador.
+          Solo para el rol de administrador.
         </p>
         <Link
           to="/app"
@@ -103,8 +102,7 @@ export function ExigePermiso() {
       </div>
       <h2 className="text-ink/90 mt-4 text-lg font-semibold">{nombre} no está a su alcance</h2>
       <p className="text-ink/55 mt-2 text-sm">
-        Su rol no tiene acceso a este módulo. Si lo necesita para su trabajo, pídaselo a quien
-        administra el sistema.
+        Su rol no tiene acceso a este módulo. Solicítelo a la administración.
       </p>
       <Link
         to="/app"

@@ -47,7 +47,7 @@ export function DeQuienSale({
       vacio="Seleccione el dueño"
       value={valor}
       onChange={(e) => onCambio(e.target.value)}
-      hint="Aquí hay material de varios dueños. Sacarlo sin decir de cuál era sería inventarlo."
+      hint="Aquí hay material de varios dueños. Seleccione de cuál sale."
       opciones={duenos.map((d) => ({
         valor: d,
         etiqueta: (propietarios ?? []).find((x) => x.codigo === d)?.nombre ?? d,

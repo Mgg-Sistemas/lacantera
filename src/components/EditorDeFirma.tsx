@@ -244,8 +244,7 @@ export function EditorDeFirma({
             />
           </label>
           <p className="text-ink/45 mt-2 text-xs">
-            Una foto de su firma en papel blanco sirve. El fondo se quita solo; lo que importa es
-            que el trazo se vea oscuro y la hoja clara.
+            Foto de la firma sobre papel blanco, con el trazo oscuro.
           </p>
         </div>
       ) : null}

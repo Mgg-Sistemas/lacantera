@@ -35,7 +35,7 @@ export function PantallaQueNoLlego({
       }
       descripcion={
         porVersion
-          ? 'Se publicó una versión nueva mientras tenía el sistema abierto, y esta pantalla ya no llega a la anterior. Pulse Actualizar cuando quiera traerla.'
+          ? 'Hay una versión nueva del sistema. Pulse Actualizar para abrir esta pantalla.'
           : 'No llegó desde el servidor. Revise la conexión y pulse Recargar.'
       }
       accion={

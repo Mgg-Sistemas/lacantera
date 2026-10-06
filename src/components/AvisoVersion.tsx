@@ -73,8 +73,7 @@ export function AvisoVersion() {
       <div className="min-w-0 flex-1 text-sm">
         <p className="font-medium">Hay una versión nueva del sistema</p>
         <p className="mt-0.5 text-xs leading-relaxed opacity-90">
-          Termine y guarde lo que esté haciendo. Cuando quiera, pulse Actualizar: nada se recarga
-          solo.
+          Guarde lo que esté haciendo y pulse Actualizar. La página no se recarga sola.
         </p>
         <div className="mt-2.5 flex flex-wrap gap-2">
           <Button size="sm" icon={<RefreshCw />} onClick={() => actualizarAhora(publicada)}>

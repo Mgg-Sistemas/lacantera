@@ -179,7 +179,7 @@ Ahora la parte que hay que entender bien, porque no es lo que parece:
 
 Y para que nadie tropiece con una pantalla a medio afinar sin saberlo, **quien llegue a una de esas direcciones —escribiéndola a mano, por un enlace que le pasaron o porque quedó en el historial del navegador— se encuentra primero un cartel de obra**:
 
-> **En construcción.** *Esta parte del sistema todavía se está trabajando y no forma parte de lo que hoy está en uso. Lo que se haga aquí puede perderse o no cuadrar con el resto.* Y debajo, en letra más pequeña: *Si llegó por un enlace o escribiendo la dirección, no se equivocó: la pantalla existe, pero aún no está lista.* El botón es **Volver al panel**.
+> **En construcción.** *Esta parte del sistema todavía se está trabajando y no forma parte de lo que hoy está en uso. Lo que se haga aquí puede perderse o no cuadrar con el resto.* Y debajo, en letra más pequeña: *Esta pantalla está en obra.* El botón es **Volver al panel**.
 
 **El cartel se le pone a todo el mundo, incluida la administración.** Quien tiene el rol de administrador ve además, en letra pequeña y en tono menor, un enlace **Entrar de todos modos**: es la puerta de servicio del equipo que está construyendo, no una invitación. Se recuerda mientras la pestaña esté abierta y se olvida al cerrarla, para que nadie se deje la puerta abierta sin darse cuenta en el equipo con el que se enseña el sistema.
 
@@ -277,7 +277,7 @@ Se hace desde **Mi cuenta**, en la tarjeta **Entrar con la huella**, cuyo subtí
 4. El botón pasa a **Esperando el dedo…** y se abre el diálogo del propio equipo pidiendo la huella, la cara o el PIN. Hay un minuto para responder.
 5. Al reconocerte, aparece en verde «Listo. En este equipo ya puedes entrar con la huella.»
 
-Si el equipo no tiene lector, **la tarjeta no muestra ningún botón** y explica por qué: **Este equipo no tiene lector de huella, o el navegador todavía no sabe usarlo. En un teléfono suele funcionar aunque aquí no.** Mientras el sistema averigua si hay lector, la tarjeta directamente no aparece.
+Si el equipo no tiene lector, **la tarjeta no muestra ningún botón** y lo dice: **Este equipo o este navegador no admite la huella.** Mientras el sistema averigua si hay lector, la tarjeta directamente no aparece.
 
 Cuando aún no está activada y el equipo sí tiene lector, la tarjeta explica qué se guarda: **Tu huella no sale del aparato: ni el sistema ni nadie la ve. Lo que se guarda aquí es tu pase de sesión cifrado, y hace falta tu dedo para abrirlo.**
 
@@ -344,7 +344,7 @@ La huella suele funcionar mejor en el teléfono que en un equipo de oficina, per
 | «La huella no está activada en este equipo.» | No hay pase guardado aquí | Entra con la clave y actívala en **Mi cuenta** |
 | «Se perdió la llave de este equipo. Entra con tu clave.» | El equipo ya no tiene con qué abrir el pase guardado | Entra con la clave y vuelve a activar la huella |
 | «No se pudo abrir la sesión.» | El pase se abrió pero la sesión no llegó a crearse | Entra con la clave |
-| «Este equipo no tiene lector de huella, o el navegador no sabe usarlo.» | Ese aparato no puede usar la huella | Entra con la clave. En el teléfono suele sí funcionar |
+| «Este equipo o este navegador no admite la huella.» | Ese aparato no puede usar la huella | Entra con la clave. En el teléfono suele sí funcionar |
 | «No hay una sesión abierta que guardar. Vuelve a entrar.» | Intentaste activar la huella sin sesión válida | Vuelve a entrar y actívala |
 | «No se registró la huella.» | El registro no llegó a completarse | Repite **Activar la huella** |
 | «Este navegador no deja guardar la llave de cifrado.» / «No se pudo abrir el almacén de llaves.» | Ese navegador no puede guardar el pase | Entra con la clave, o usa el sistema desde otro navegador |
@@ -442,9 +442,9 @@ Cómo se comporta el menú:
 
 Durante el primer instante después de entrar, mientras los permisos aún no han llegado, **se ve el menú completo**, incluidas por un momento las entradas escondidas. Un menú vacío durante medio segundo se lee como que el sistema se rompió.
 
-Si escribe a mano la dirección de un módulo que no le toca, o llega por un enlace que alguien le pasó, no ve una pantalla vacía sino una explicación con un candado: el nombre del módulo seguido de **no está a su alcance**, el texto **Su rol no tiene acceso a este módulo. Si lo necesita para su trabajo, pídaselo a quien administra el sistema.** y el botón **Volver al panel**.
+Si escribe a mano la dirección de un módulo que no le toca, o llega por un enlace que alguien le pasó, no ve una pantalla vacía sino una explicación con un candado: el nombre del módulo seguido de **no está a su alcance**, el texto **Su rol no tiene acceso a este módulo. Solicítelo a la administración.** y el botón **Volver al panel**.
 
-**Auditoría** tiene su propio mensaje, porque es solo del administrador: **Esto lo ve la administración**, con el texto **El registro de auditoría guarda todo lo que ha hecho cada persona en el sistema. Solo lo abre quien tiene el rol de administrador.**
+**Auditoría** tiene su propio mensaje, porque es solo del administrador: **Esto lo ve la administración**, con el texto **Solo para el rol de administrador.**
 
 Los permisos son una escalera de cuatro peldaños, no cuatro opciones sueltas: ninguno, lectura, escritura y total. El control total incluye escribir, y escribir incluye leer. Para ver una pantalla basta con lectura.
 
@@ -472,7 +472,7 @@ De izquierda a derecha:
 6. La campana de notificaciones.
 7. Su círculo con las iniciales —en pantallas anchas, también su nombre y una flecha—, que abre el menú del usuario.
 
-**Sin conexión en vivo** aparece únicamente si se pierde el enlace con el sistema o el equipo se queda sin red. Al pasar el ratón por encima explica qué implica: **Se perdió el enlace con el servidor. Lo que ve puede estar viejo; recargue la página para ponerlo al día.** En pantallas chicas se reduce al icono de la señal tachada, pero no desaparece: se esconde justo donde la señal se cae, que es el patio.
+**Sin conexión en vivo** aparece únicamente si se pierde el enlace con el sistema o el equipo se queda sin red. Al pasar el ratón por encima explica qué implica: **Se perdió el enlace con el servidor. Recargue la página para actualizar los datos.** En pantallas chicas se reduce al icono de la señal tachada, pero no desaparece: se esconde justo donde la señal se cae, que es el patio.
 
 El indicador **Tasa BCV** tiene estos estados. Al pasar el ratón, cada uno lo explica en un globo:
 
@@ -624,12 +624,12 @@ De vez en cuando se publica una versión nueva del sistema. El sistema lo compru
 El aviso es un recuadro amarillo, abajo a la derecha —abajo y centrado en el teléfono—, por encima de todo lo demás:
 
 - Título **Hay una versión nueva del sistema**
-- Detalle **Termine y guarde lo que esté haciendo. Cuando quiera, pulse Actualizar: nada se recarga solo.**
+- Detalle **Guarde lo que esté haciendo y pulse Actualizar. La página no se recarga sola.**
 - Botones **Actualizar** y **Más tarde**
 
 **Más tarde** no lo quita: lo reduce a una etiqueta pequeña, **Versión nueva**, abajo a la derecha, y pulsándola se vuelve a abrir. Mientras no actualice sigue trabajando con la versión que tenía abierta. Si mientras tanto se publica otra, el aviso se vuelve a abrir solo.
 
-Si entra a una pantalla que cambió con la versión nueva y ya no se puede traer desde la que tiene abierta, en su lugar aparece **Esta pantalla es de la versión nueva del sistema**, con el texto **Se publicó una versión nueva mientras tenía el sistema abierto, y esta pantalla ya no llega a la anterior. Pulse Actualizar cuando quiera traerla.** y los botones **Volver** y **Actualizar**. Si lo que falló es la conexión, dice **No se pudo abrir esta pantalla** y **No llegó desde el servidor. Revise la conexión y pulse Recargar.**, con los botones **Volver** y **Recargar**.
+Si entra a una pantalla que cambió con la versión nueva y ya no se puede traer desde la que tiene abierta, en su lugar aparece **Esta pantalla es de la versión nueva del sistema**, con el texto **Hay una versión nueva del sistema. Pulse Actualizar para abrir esta pantalla.** y los botones **Volver** y **Actualizar**. Si lo que falló es la conexión, dice **No se pudo abrir esta pantalla** y **No llegó desde el servidor. Revise la conexión y pulse Recargar.**, con los botones **Volver** y **Recargar**.
 
 Si pulsa **Actualizar** y el navegador sigue trayendo la versión vieja, el aviso cambia:
 
@@ -667,7 +667,7 @@ Debajo, bajo el rótulo **Roles**, están los roles que tiene. El de administrad
 
 **Entrar con la huella.** Es la tercera tarjeta, explicada en el apartado 2.3. Mientras el sistema comprueba si el equipo tiene lector, no se ve.
 
-**Mi firma.** Con el subtítulo **Los papeles que emita salen firmados con ella: órdenes de compra, actas, recibos.** Si todavía no tiene ninguna, lo dice —**Todavía no ha guardado ninguna. Mientras tanto, los papeles que emita salen con la raya en blanco para firmarlos a mano.**— y ofrece **Guardar mi firma**. La ventana para guardarla, **Guardar la firma**, deja trazarla, escribirla o cargar una foto de la que ya usa en papel.
+**Mi firma.** Con el subtítulo **Los papeles que emita salen firmados con ella: órdenes de compra, actas, recibos.** Si todavía no tiene ninguna, lo dice —**Sin firma guardada. Los papeles salen con la raya en blanco.**— y ofrece **Guardar mi firma**. La ventana para guardarla, **Guardar la firma**, deja trazarla, escribirla o cargar una foto de la que ya usa en papel.
 
 Con la firma guardada, la tarjeta la enseña sobre la raya, como saldrá en el papel, con su estado —**En uso** o **Sin usar**— y los botones **Cambiarla** y **Quitar la firma**. Apagada, la firma sigue guardada pero los papeles salen con la raya en blanco, para firmarlos a mano.
 
@@ -1591,7 +1591,7 @@ Son tres pasos, los tres a la vista en la misma página. A la derecha hay un pan
 
 #### 1 · Baja la plantilla
 
-**Trae las columnas en el orden que el sistema espera, dos filas de ejemplo, y una segunda hoja que explica qué va en cada una.**
+**Columnas, dos filas de ejemplo y una hoja de instrucciones.**
 
 Pulsa **Descargar plantilla**. Baja un archivo llamado `plantilla-articulos.xlsx`. **Es un Excel de dos hojas**: la que se llena y otra con las instrucciones de cada columna, para no tener que volver al manual mientras se rellena.
 
@@ -1624,7 +1624,7 @@ Las dos filas de ejemplo se borran y se escribe encima. **Los títulos de las co
 
 #### 2 · Súbela llena
 
-**Se revisa al instante y se te dice qué va a pasar con cada fila, antes de tocar nada.**
+**Antes de cargar se muestra qué pasará con cada fila.**
 
 Pulsa **Elegir archivo**. Acepta **CSV** y **Excel (.xlsx)**; del Excel lee **solo la primera hoja**. **No hay botón de revisar**: en cuanto se elige el archivo la revisión arranca sola y aparece el paso 3.
 
@@ -5020,7 +5020,7 @@ Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un
 | «No existe ese trabajador.» | La ficha ya no está | Recarga la lista |
 | «Las fichas de personal ya no se borran: se desincorporan…» | Alguien llamó al borrado viejo, casi siempre desde una pestaña abierta desde antes del cambio | Recarga la página y usa **Egresar** |
 | «La foto tiene que ser JPG, PNG o WEBP.» | El archivo no es una imagen de esas | Manda otra foto |
-| «La foto pesa … MB y el máximo son 5. Sácala con menos resolución o mándala por WhatsApp y guarda la que llega.» | La foto pesa demasiado | Haz lo que dice el mensaje |
+| «El archivo supera el tamaño admitido. Redúzcalo.» | La foto pasa de 5 MB | Sácala con menos resolución, o mándala por WhatsApp y guarda la que llega |
 | «El encuadre quedó fuera de la foto. Vuelve a centrarla.» | El recuadro se salió de la imagen | Arrastra la foto hasta que la cara quede sobre la línea |
 | «El cargo no puede quedar vacío: es el nombre con el que las fichas se enganchan al tabulador.» | El nivel quedó sin nombre | Escríbelo |
 | «El sueldo mensual tiene que ser un número de cero para arriba.» | El sueldo está vacío o en negativo | Escribe la cifra |
@@ -5138,7 +5138,7 @@ Lo que no viene de una orden —un ingreso suelto, un gasto de caja chica, pasar
 
 Hay **tres** puertas distintas, y conviene no confundirlas.
 
-**La primera es ver las pantallas del módulo** —Tablero, Bancos y cajas, Reportes, Libro Mayor y Libro de tesorería—. Pide lectura sobre Tesorería. Quien no la tiene y escribe la dirección ve **Tesorería no está a su alcance**, con el texto **Su rol no tiene acceso a este módulo. Si lo necesita para su trabajo, pídaselo a quien administra el sistema.** y el botón **Volver al panel**.
+**La primera es ver las pantallas del módulo** —Tablero, Bancos y cajas, Reportes, Libro Mayor y Libro de tesorería—. Pide lectura sobre Tesorería. Quien no la tiene y escribe la dirección ve **Tesorería no está a su alcance**, con el texto **Su rol no tiene acceso a este módulo. Solicítelo a la administración.** y el botón **Volver al panel**.
 
 **La segunda es mover dinero en esas pantallas.** Pide escritura sobre Tesorería para **Nueva cuenta**, **Editar**, **Saldo de apertura**, **Ingreso**, **Egreso**, **Ajustar**, **Trasladar** y **Deshacer**; y control total para **Archivar**, **Desarchivar** y **Eliminar** una cuenta.
 
@@ -6029,7 +6029,7 @@ Aquí **solo se mira y se filtra**. No hay botones de crear, editar ni borrar, y
 
 **Solo el rol de Administrador del sistema.** Es la única pantalla del sistema que exige un rol por encima de la matriz de permisos: no se puede dar «Auditoría en lectura» a nadie, porque no aparece en la matriz de módulos como un permiso repartible.
 
-Quien llegue escribiendo la dirección a mano ve una tarjeta: **Esto lo ve la administración**, con el texto **El registro de auditoría guarda todo lo que ha hecho cada persona en el sistema. Solo lo abre quien tiene el rol de administrador.**
+Quien llegue escribiendo la dirección a mano ve una tarjeta: **Esto lo ve la administración**, con el texto **Solo para el rol de administrador.**
 
 El motivo es el contenido, no la desconfianza. Los demás módulos se reparten sin problema: a alguien de tesorería se le puede dar Nómina en lectura. La auditoría no se reparte, porque es el registro de lo que ha hecho todo el mundo — incluida la propia administración — y quien la lee ve de una sentada los sueldos, las cédulas y las cuentas bancarias que pasaron por el sistema. Eso no es un permiso más: es una llave aparte.
 

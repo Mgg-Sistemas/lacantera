@@ -263,8 +263,8 @@ export function TodasLasNotificaciones({
       titulo="Movimientos"
       descripcion={
         sinLeer > 0
-          ? `${sinLeer} ${sinLeer === 1 ? 'asunto' : 'asuntos'} sin leer. Lo que no se ha atendido va primero.`
-          : 'Todo leído. Quedan aquí para consultarlos.'
+          ? `${sinLeer} ${sinLeer === 1 ? 'asunto' : 'asuntos'} sin leer.`
+          : 'Todo leído.'
       }
       ancho="lg"
       acciones={

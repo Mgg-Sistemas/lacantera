@@ -338,7 +338,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
           <Card>
             <CardHeader
               title="1 · Descargue la plantilla"
-              subtitle="Trae las columnas en el orden que el sistema espera, dos filas de ejemplo, y una segunda hoja que explica qué va en cada una."
+              subtitle="Columnas, dos filas de ejemplo y una hoja de instrucciones."
             />
             <Button
               className="mt-3"
@@ -349,8 +349,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
               Descargar plantilla
             </Button>
             <p className="text-ink/45 mt-2 text-xs">
-              Es un archivo de Excel con dos hojas: la que se llena y otra con las
-              instrucciones. Al terminar, guárdela como está.
+              Excel con dos hojas: datos e instrucciones. Guárdela sin cambiar el formato.
             </p>
           </Card>
 
@@ -358,7 +357,7 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
           <Card>
             <CardHeader
               title="2 · Súbala llena"
-              subtitle="Se revisa al instante y se le dice qué va a pasar con cada fila, antes de tocar nada."
+              subtitle="Antes de cargar se muestra qué pasará con cada fila."
             />
 
             <input
@@ -441,9 +440,8 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                         ? 'Revisé el costo marcado abajo'
                         : `Revisé los ${informe.avisos_de_costo} costos marcados abajo`}
                       <span className="text-ink/50 mt-0.5 block text-xs">
-                        Lo que entra por primera vez pasa a ser la referencia de todo lo que
-                        venga después, y un cero de más no lo corrige nadie. Compruébelos con
-                        la factura antes de cargar.
+                        El primer costo de un artículo es la referencia de los siguientes.
+                        Compruébelos con la factura.
                       </span>
                     </span>
                   </label>
@@ -466,9 +464,8 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                         ? 'Revisé el artículo nuevo que se parece a uno del catálogo'
                         : `Revisé los ${informe.avisos_de_parecido} artículos nuevos que se parecen a uno del catálogo`}
                       <span className="text-ink/50 mt-0.5 block text-xs">
-                        Si es el mismo, pulse «Es el mismo» en su fila y se actualiza ese en vez
-                        de crear otro. Dos fichas del mismo artículo acaban con la existencia
-                        repartida y ninguna cuadra.
+                        Si es el mismo, pulse «Es el mismo» en su fila: se actualiza el existente
+                        en vez de crear otro.
                       </span>
                     </span>
                   </label>
@@ -489,9 +486,8 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
                     <span className="text-ink/80">
                       Entendido: esta planilla solo carga el catálogo, sin existencia
                       <span className="text-ink/50 mt-0.5 block text-xs">
-                        Ninguna fila dice cuánto hay en un almacén, así que los artículos quedan
-                        creados con cero. Si quería meter lo que hay, llene almacén, cantidad,
-                        costo y moneda en cada fila y vuelva a subirla.
+                        Ninguna fila indica existencia: los artículos se crean con cero. Para
+                        cargar existencias, llene almacén, cantidad, costo y moneda.
                       </span>
                     </span>
                   </label>
@@ -624,7 +620,6 @@ export function CargaPorPlanilla(p: CargaPorPlanillaProps) {
           <div className="px-5 pt-5">
             <CardHeader
               title="Qué va en cada columna"
-              subtitle="Las que no son obligatorias se pueden dejar vacías."
             />
           </div>
           <ul className="mt-2">

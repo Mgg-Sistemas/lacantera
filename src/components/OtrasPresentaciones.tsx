@@ -96,8 +96,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
     <div className={cn('border-hairline rounded-card border border-dashed p-3', className)}>
       <p className="text-ink/75 text-sm font-medium">Otras formas de contarlo</p>
       <p className="text-ink/50 mt-0.5 text-xs">
-        El mismo material puede llegar de varias maneras. Sigue habiendo una sola existencia, en{' '}
-        {unidad || 'su unidad'}.
+        La existencia se lleva en {unidad || 'su unidad'}.
       </p>
       {/*
         SE GUARDA AL MOMENTO, Y HAY QUE DECIRLO.
@@ -326,9 +325,8 @@ function NuevaFormaDeLlegada({
   return (
     <div className="border-hairline rounded-card bg-canvas mt-3 border border-dashed p-3">
       <p className="text-ink/60 mb-2 text-xs">
-        Se añade a la lista que ven todos los módulos, así que mire primero si ya está con otro
-        nombre. Aquí va solo la palabra del envase: cuántas {unidad} trae se dice arriba, porque
-        eso cambia de un artículo a otro.
+        Se añade a la lista de todos los módulos: verifique que no exista con otro nombre. Solo
+        el nombre del envase; las {unidad} que trae se indican arriba.
       </p>
 
       <div className="grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">

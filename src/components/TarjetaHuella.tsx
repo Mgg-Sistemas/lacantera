@@ -113,8 +113,7 @@ export function TarjetaHuella() {
         <div className="min-w-0 flex-1 text-sm">
           {!disponible ? (
             <p className="text-ink/60">
-              Este equipo no tiene lector de huella, o el navegador todavía no sabe usarlo. En un
-              teléfono suele funcionar aunque aquí no.
+              Este equipo o este navegador no admite la huella.
             </p>
           ) : activa ? (
             <p className="text-ink/70">
@@ -136,8 +135,7 @@ export function TarjetaHuella() {
 
           {activa ? (
             <p className="text-ink/45 mt-2 text-xs">
-              Si pierde este equipo, cambie su clave: eso la desactiva aquí y en cualquier otro
-              aparato donde la haya puesto.
+              Cambiar la clave desactiva la huella en todos los equipos.
             </p>
           ) : null}
 

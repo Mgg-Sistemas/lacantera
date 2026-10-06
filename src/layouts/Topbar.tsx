@@ -43,7 +43,7 @@ function IndicadorEnVivo({ estado }: { estado: EstadoTiempoReal }) {
   if (estado !== 'sin-conexion') return null
 
   const explicacion =
-    'Se perdió el enlace con el servidor. Lo que ve puede estar viejo; recargue la página para ponerlo al día.'
+    'Se perdió el enlace con el servidor. Recargue la página para actualizar los datos.'
 
   return (
     <span

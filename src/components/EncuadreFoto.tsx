@@ -76,7 +76,7 @@ export function EncuadreFoto({
 
     if (archivo.size > MAX_MB * 1024 * 1024) {
       setError(
-        `La foto pesa ${(archivo.size / 1024 / 1024).toFixed(1)} MB y el máximo son ${MAX_MB}. Sáquela con menos resolución o mándela por WhatsApp y guarde la que llega.`,
+        'El archivo supera el tamaño admitido. Redúzcalo.',
       )
       return
     }

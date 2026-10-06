@@ -88,7 +88,7 @@ export function ConteoDeEnvases({
   return (
     <div className="border-hairline rounded-card bg-canvas border border-dashed p-3">
       <p className="text-ink/60 mb-3 text-xs leading-relaxed">
-        Anote lo que ve en el estante, un renglón por tipo de envase. La cuenta la hace el sistema.
+        Un renglón por tipo de envase.
       </p>
 
       <div className="space-y-2">

@@ -64,7 +64,7 @@ export function FotosDeLaMaquina({
               pista={
                 i < FOTOS_MINIMAS
                   ? 'Obligatoria. Arrastre una imagen o toque para elegirla.'
-                  : 'Otra vista, si hace falta.'
+                  : 'Otra vista.'
               }
             />
             {/* Los dos primeros huecos no se quitan: son el mínimo, y dejar
@@ -97,9 +97,7 @@ export function FotosDeLaMaquina({
       </Button>
 
       <p className="text-ink/45 mt-2 text-xs leading-relaxed">
-        Una sola foto no enseña una máquina: siempre hay un lado que no se ve. El día que se
-        devuelva a su dueño o se discuta un golpe, lo que vale es lo que se fotografió al
-        recibirla.
+        Se requieren {FOTOS_MINIMAS} fotos como mínimo.
       </p>
     </div>
   )

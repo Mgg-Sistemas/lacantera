@@ -134,11 +134,8 @@ export function ValorPorPresentacion({
         lleva cuenta.
       */}
       <p className="text-ink/50 mt-3 text-xs leading-relaxed">
-        <span className="text-ink/70">Esto es una conversión, no lo que hay.</span> La existencia se
-        mide en {unidad} y es la única cifra que alguien contó; los envases de esta tabla son una
-        división, con factores aproximados y sin saber cuáles están abiertos. Para saber cuántos
-        envases hay de verdad, hay que contarlos. Por eso la última columna repite el mismo total en
-        cada fila: hay un solo montón de {unidad}, mirado de varias maneras.
+        <span className="text-ink/70">Conversión aproximada.</span> La existencia se lleva en{' '}
+        {unidad}.
       </p>
 
       <ComoSeCompro articuloId={articuloId} unidad={unidad} />
@@ -228,8 +225,7 @@ function ComoSeCompro({ articuloId, unidad }: { articuloId: number; unidad: stri
         <p className="text-ink/60 mt-2 text-xs leading-relaxed">
           Entre la forma más barata y la más cara hay un{' '}
           <span className="text-ink/85 font-semibold">{numero(brecha, 1)}%</span> de diferencia por{' '}
-          {unidad}. El inventario se valora al promedio de todas, que es lo que hace cuadrar el
-          libro; esta tabla es para decidir cómo conviene comprar.
+          {unidad}. El inventario se valora al promedio de todas.
         </p>
       ) : null}
     </div>

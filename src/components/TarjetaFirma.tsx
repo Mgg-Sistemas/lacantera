@@ -124,8 +124,8 @@ export function TarjetaFirma({ nombre, de }: { nombre: string; de: DeQuien }) {
               etiqueta={firma.usar ? 'En uso' : 'Sin usar'}
               detalle={
                 firma.usar
-                  ? 'Apáguela para que los papeles salgan con la raya en blanco y se firmen a mano.'
-                  : 'La firma sigue guardada. Enciéndala cuando quiera volver a usarla.'
+                  ? 'Apagada, los papeles salen con la raya en blanco.'
+                  : 'La firma sigue guardada.'
               }
             />
           ) : null}
@@ -151,8 +151,8 @@ export function TarjetaFirma({ nombre, de }: { nombre: string; de: DeQuien }) {
         <div className="mt-4">
           <p className="text-ink/55 text-sm">
             {esMia
-              ? 'Todavía no ha guardado ninguna. Mientras tanto, los papeles que emita salen con la raya en blanco para firmarlos a mano.'
-              : 'Todavía no tiene firma guardada. Sus papeles salen con la raya en blanco para que los firme a mano.'}
+              ? 'Sin firma guardada. Los papeles salen con la raya en blanco.'
+              : 'Sin firma guardada. Sus papeles salen con la raya en blanco.'}
           </p>
           {puedeEditar ? (
             <Button className="mt-3" icon={<PenLine />} onClick={() => setAbierto(true)}>

@@ -56,7 +56,7 @@ export function DeQuienEs({
       tone="warning"
       icon={<Landmark />}
       className={className}
-      title="No es de La Cantera: está aquí a disposición de la empresa, pero pertenece a otro."
+      title="Pertenece a otro dueño."
     >
       {nombre}
     </Chip>
