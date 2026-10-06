@@ -270,7 +270,7 @@ export function MovimientosTesoreria() {
           abierto
           onCerrar={() => setReverso(null)}
           titulo={`Deshacer ${reverso.numero}`}
-          descripcion="Se escribe el movimiento contrario. El equivocado se queda a la vista: así se entiende qué pasó."
+          descripcion="Se escribe el movimiento contrario. El equivocado se queda a la vista."
           ancho="sm"
           acciones={
             <>

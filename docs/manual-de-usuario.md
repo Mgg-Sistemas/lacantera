@@ -1021,7 +1021,7 @@ En Plantas y rutas, lo que se escribe se guarda en mayúsculas.
 
 **Operación › Explotación › Tablero**
 
-La pantalla de entrada: **Acarreo y salidas de planta, camión por camión. Los frentes y el parte de turno están en desarrollo.**
+La pantalla de entrada: **Acarreo y salidas de planta, camión por camión. Los frentes y el parte de turno están en obra.**
 
 Arriba, dos cifras del día: **Salidas de hoy**, con cuántos camiones salieron, y **Metros cúbicos de hoy**, **Estimados por la carga útil del camión**. Solo cuentan las salidas que no se anularon.
 
@@ -1089,7 +1089,7 @@ El bloque solo enseña los pendientes del día elegido; los de otros días se ve
 
 En el detalle de un camión, cada viaje que aún no se aprueba tiene **Corregir**, para la hora y los metros cúbicos. **Solo se corrige lo que todavía no se ha aprobado.**
 
-**Anular** está en cualquier viaje que siga contando, para quien puede anular (6.1): **El viaje deja de contar y de cobrarse, pero la fila se queda. Su número tampoco se reutiliza: el hueco queda a la vista para poder explicarlo.** En la pantalla, sí. El papel del día, en cambio, por defecto deja fuera anulados y rechazados y vuelve a numerar los que quedan; para verlos en el papel hay que marcar **Incluir anulados y rechazados** en la vista previa.
+**Anular** está en cualquier viaje que siga contando, para quien puede anular (6.1): **El viaje deja de contar y de cobrarse, pero la fila se queda, y su número no se reutiliza.** El hueco queda a la vista para poder explicarlo. En la pantalla, sí. El papel del día, en cambio, por defecto deja fuera anulados y rechazados y vuelve a numerar los que quedan; para verlos en el papel hay que marcar **Incluir anulados y rechazados** en la vista previa.
 
 #### Registro de pago
 
@@ -5189,7 +5189,7 @@ Es la pantalla de cabecera del módulo: dónde está el dinero de la empresa y c
 
 Arriba, una tarjeta con el rótulo **Disponible en cuentas activas**. Junto al rótulo hay una fila de píldoras, una por cada moneda con tasa registrada, y el total se expresa en la que se elija.
 
-Al lado, la advertencia de cómo está hecha esa suma: **Convertido con las tasas de hoy**, con la tasa entre paréntesis, **no con la del día en que entró cada saldo. Cada cuenta manda el suyo.**
+Al lado, la advertencia de cómo está hecha esa suma: **Convertido con las tasas de hoy**, con la tasa entre paréntesis, **no con la del día en que entró cada saldo.**
 
 Si falta alguna tasa del día, el total no se da y lo dice: **Falta la tasa del día para convertir. Regístrela en Sistema › Tasas de cambio; mientras tanto, el saldo de cada cuenta sí es exacto.** El sistema prefiere no dar el total antes que darlo mal.
 
@@ -5213,7 +5213,7 @@ No hay buscador ni filtros en esta pantalla. Si todavía no hay ninguna cuenta, 
 
 #### Crear una cuenta
 
-Pulse **Nueva cuenta**. La ventana tiene dos pasos, **Identificación** y **Titular y condiciones**, y lleva escrita la regla principal: **Una cuenta, una moneda. Mezclarlas obliga a inventar un saldo que ya no coincide con el del banco.**
+Pulse **Nueva cuenta**. La ventana tiene dos pasos, **Identificación** y **Titular y condiciones**, y lleva escrita la regla principal: **Una cuenta, una moneda.**
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
@@ -5227,7 +5227,7 @@ Pulse **Nueva cuenta**. La ventana tiene dos pasos, **Identificación** y **Titu
 | **Titular** | En cuenta bancaria y en caja | En caja se llama **Responsable** |
 | **Cédula o RIF** | No | |
 | **Nota** | No | |
-| **Admite sobregiro** | — | **Viene marcada.** **Solo si el banco dio línea de crédito. Una caja chica no entrega billetes que no tiene.** |
+| **Admite sobregiro** | — | **Viene marcada.** **Solo si el banco dio línea de crédito.** Una caja chica no entrega billetes que no tiene |
 | **Activa** | — | Viene marcada |
 
 Cierra con **Guardar**.
@@ -5267,7 +5267,7 @@ Sirve para mover dinero de un sitio a otro sin que cuente como gasto ni como ing
 2. Elija la **Cuenta de origen**. Cada opción se lee con el nombre de la cuenta y su saldo.
 3. Escriba el **Monto**.
 4. Elija la **Cuenta de destino**. La de origen ya no aparece en esta lista.
-5. Si las dos cuentas son de monedas distintas, aparece **Monto en** la moneda del destino, y hay que llenarlo: **Se copia del comprobante. La casa de cambio no usa la tasa oficial y el sistema no va a inventar un número que el banco desmienta.**
+5. Si las dos cuentas son de monedas distintas, aparece **Monto en** la moneda del destino, y hay que llenarlo: **Se copia del comprobante: la casa de cambio no usa la tasa oficial.** El sistema no calcula un número que el banco pueda desmentir.
 6. Rellene **Referencia** y **Fecha** si hace falta.
 7. Pulse **Trasladar**.
 
@@ -5294,7 +5294,7 @@ Arriba, dos tarjetas de resumen:
 | **Por pagar** | Cuántas instrucciones esperan, y debajo cuántas llevan más de tres días |
 | **Suma, con IGTF** | El total, **Al cambio de cada pago** |
 
-Si alguna instrucción lleva más de una semana esperando, aparece un aviso: **Hay instrucciones esperando más de una semana. El proveedor no reserva el material hasta que ve el pago, y la cotización tiene fecha de vencimiento.**
+Si alguna instrucción lleva más de una semana esperando, aparece un aviso: **Hay instrucciones esperando más de una semana.** El proveedor no reserva el material hasta que ve el pago, y la cotización tiene fecha de vencimiento.
 
 Debajo está la **Cola de pagos**, con cuántos hay por pagar. Cada fila muestra el número de la orden, que es un enlace a la compra; el método; los días que lleva esperando, en naranja pasados tres días y en rojo pasados siete; el proveedor y el título de la compra; a dónde va el dinero, según el método —banco y número de cuenta, teléfono del pago móvil, correo o cuenta de Binance, o **Entregar a** y el nombre en efectivo—; el titular y su documento; y a la derecha el importe en su moneda, con el IGTF sumado cuando aplica.
 
@@ -5401,7 +5401,7 @@ Si todavía no hay nada: **Sin movimientos registrados**, con el texto **Cada pa
 #### Deshacer una línea
 
 1. Busque la línea equivocada.
-2. Pulse **Deshacer**. Se abre la ventana con el número del movimiento y el texto **Se escribe el movimiento contrario. El equivocado se queda a la vista: así se entiende qué pasó.**
+2. Pulse **Deshacer**. Se abre la ventana con el número del movimiento y el texto **Se escribe el movimiento contrario. El equivocado se queda a la vista.** Así se entiende qué pasó.
 3. Arriba verá un recuadro fijo con el concepto y el importe de lo que va a anular.
 4. Escriba el **Motivo**. Mínimo diez letras. Ayuda: **Queda escrito en el movimiento nuevo.**
 5. Confirme con **Deshacer**.

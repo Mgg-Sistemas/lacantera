@@ -426,7 +426,7 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
       id: 'quien-lo-lleva',
       titulo: 'Operación e inventario',
       subtitulo: nuevo
-        ? 'Quién lo opera hace falta; lo demás se puede poner después.'
+        ? 'Quién lo opera es obligatorio.'
         : 'Quién lo opera no se cambia aquí, sino desde «Operador», con fecha.',
       falta: nuevo && operador === '' ? 'Falta decir quién opera el sitio.' : null,
       contenido: (
@@ -512,7 +512,7 @@ function FichaDeSitio({ sitio, onCerrar }: { sitio: SitioDeOperacion | null; onC
       descripcion={
         nuevo
           ? 'Una mina, planta, patio o base. Quién lo opera se dice al crearlo; después se cambia con fecha desde «Operador», nunca aquí.'
-          : 'Quién lo opera no se cambia aquí: se hace desde «Operador», con fecha y motivo, para que quede la historia.'
+          : 'Quién lo opera no se cambia aquí: se hace desde «Operador», con fecha y motivo.'
       }
       ancho="lg"
       acciones={

@@ -92,7 +92,7 @@ export function Frentes() {
           <Vacio
             icono={<Mountain />}
             titulo="Sin frentes registrados"
-            descripcion="Un frente es el punto del cerro en explotación. Se necesita al menos uno para registrar producción, porque el parte de turno indica su procedencia."
+            descripcion="Un frente es el punto del cerro en explotación. Se necesita al menos uno para registrar producción."
           />
         </Card>
       ) : null}
@@ -153,7 +153,7 @@ export function Frentes() {
           abierto
           onCerrar={() => setEdicion(null)}
           titulo={edicion.id ? edicion.nombre : 'Nuevo frente'}
-          descripcion="El método de arranque manda: un frente de martillo no admite voladuras."
+          descripcion="Un frente de martillo no admite voladuras."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setEdicion(null)}>

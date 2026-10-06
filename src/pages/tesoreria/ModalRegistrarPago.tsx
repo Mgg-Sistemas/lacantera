@@ -138,7 +138,7 @@ export function ModalRegistrarPago({
         <Input
           label={
             instruccion.metodo === 'EFECTIVO'
-              ? 'Referencia (opcional en efectivo)'
+              ? 'Referencia'
               : 'Número de referencia'
           }
           autoFocus
@@ -146,7 +146,7 @@ export function ModalRegistrarPago({
           onChange={(e) => setReferencia(e.target.value)}
           hint={
             instruccion.metodo === 'EFECTIVO'
-              ? 'En efectivo no hay número que copiar: si lo deja vacío, el sistema le pone uno (EFEUSD-2026-0001).'
+              ? 'En efectivo, si se deja vacío, se numera solo (EFEUSD-2026-0001).'
               : 'El número que devolvió el banco o la plataforma.'
           }
         />

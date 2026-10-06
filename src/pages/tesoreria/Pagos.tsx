@@ -233,7 +233,7 @@ function ModalTanda({
         />
         <div className="sm:col-span-2">
           <Input
-            label={todoEfectivo ? 'Referencia (opcional en efectivo)' : 'Número de referencia'}
+            label={todoEfectivo ? 'Referencia' : 'Número de referencia'}
             value={referencia}
             onChange={(e) => setReferencia(e.target.value)}
             hint="La misma para todos: es la tanda que devolvió el banco."
@@ -421,8 +421,7 @@ export function Pagos() {
             <div className="border-warning/30 bg-warning-soft mb-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
               <AlertTriangle className="text-warning mt-px size-[18px] shrink-0" />
               <p className="text-ink/80 text-sm">
-                Hay instrucciones esperando más de una semana. El proveedor no reserva el
-                material hasta que ve el pago, y la cotización tiene fecha de vencimiento.
+                Hay instrucciones esperando más de una semana.
               </p>
             </div>
           ) : null}

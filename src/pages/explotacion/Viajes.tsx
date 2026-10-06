@@ -836,7 +836,7 @@ function RechazarViajes({ grupo, onCerrar }: { grupo: GrupoPorAprobar; onCerrar:
     >
       <Textarea
         label="Motivo"
-        hint="Quien los cargó va a leerlo."
+        hint="Lo lee quien los cargó."
         rows={3}
         value={motivo}
         onChange={(e) => setMotivo(e.target.value)}
@@ -937,7 +937,7 @@ function ReporteDeOperaciones({
     >
       <Textarea
         label="Novedades del día"
-        hint="Lo que el sistema no sabe: una manguera rota, el generador, una visita. Se escribe aquí y sale en el mensaje."
+        hint="Lo que no consta en el sistema: una manguera rota, el generador, una visita. Se escribe aquí y sale en el mensaje."
         rows={3}
         value={novedades}
         sinNormalizar
@@ -1187,7 +1187,7 @@ function CargarViajes({
         />
         {ofreceM3 ? (
           <Input
-            label={pideM3 ? 'Metros cúbicos' : 'Metros cúbicos (si se sabe)'}
+            label="Metros cúbicos"
             type="number"
             min="0"
             step="0.01"
@@ -1481,7 +1481,7 @@ function AnularViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => void
       abierto
       onCerrar={onCerrar}
       titulo={`Anular el viaje ${viaje.secuencia} de ${viaje.placa ?? ''}`}
-      descripcion="El viaje deja de contar y de cobrarse, pero la fila se queda. Su número tampoco se reutiliza: el hueco queda a la vista para poder explicarlo."
+      descripcion="El viaje deja de contar y de cobrarse, pero la fila se queda, y su número no se reutiliza."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>

@@ -273,7 +273,7 @@ export async function armarGastosPorCategoria(
   notaBajoLaTabla(
     doc,
     y,
-    'Cada moneda se totaliza por separado. «SIN CLASIFICAR» es lo que se pagó sin decir en qué: se clasifica después desde Movimientos de dinero.',
+    'Cada moneda se totaliza por separado. «SIN CLASIFICAR» es lo que se pagó sin decir en qué: se clasifica después desde el Libro de tesorería.',
   )
   return cerrar(doc, d, titulo, 'tesoreria-gastos-por-categoria.pdf')
 }

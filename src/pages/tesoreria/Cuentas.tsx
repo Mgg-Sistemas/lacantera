@@ -411,7 +411,7 @@ export function Cuentas() {
                           expresables.find((m) => m.codigo === expresarEn)?.simbolo ?? expresarEn
                         })`
                       : ''}
-                    , no con la del día en que entró cada saldo. Cada cuenta manda el suyo.
+                    , no con la del día en que entró cada saldo.
                   </>
                 ) : sinTasa.length > 0 ? (
                   `Hay cuentas en ${sinTasa.join(', ')} y falta registrar su tasa del día. Sin ella el total saldría corto: regístrela en Sistema › Tasas de cambio. El saldo de cada cuenta sí es exacto.`
@@ -547,8 +547,7 @@ export function Cuentas() {
             <ErrorDeCarga error={eliminar.error} />
           ) : (
             <p className="text-ink/60 text-sm">
-              Si alguna vez tuvo un movimiento, la base se negará y la cuenta se quedará archivada:
-              una cuenta con historia no se borra.
+              Si alguna vez tuvo un movimiento, no se puede eliminar: queda archivada.
             </p>
           )}
         </Modal>
@@ -762,7 +761,7 @@ function ModalMovimiento({
                   etiqueta: padre ? `${padre.nombre} · ${c.nombre}` : c.nombre,
                 }
               })}
-            hint="Sin clase, el gasto sale como «sin clasificar» en el centro de costos y hay que volver a por él."
+            hint="Sin clase, el gasto sale como «sin clasificar» en el centro de costos."
           />
         ) : null}
 
@@ -903,7 +902,7 @@ function ModalTraslado({
             inputMode="decimal"
             value={llega}
             onChange={(e) => setLlega(e.target.value)}
-            hint="Se copia del comprobante. La casa de cambio no usa la tasa oficial y el sistema no va a inventar un número que el banco desmienta."
+            hint="Se copia del comprobante: la casa de cambio no usa la tasa oficial."
           />
         ) : null}
 
@@ -1045,7 +1044,6 @@ function ModalCuenta({
     {
       id: 'de-quien',
       titulo: 'Titular y condiciones',
-      subtitulo: 'Se puede dejar en blanco y completarlo después.',
       contenido: (
         <>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1087,8 +1085,7 @@ function ModalCuenta({
               <span>
                 Admite sobregiro
                 <span className="text-ink/45 block text-xs">
-                  Solo si el banco dio línea de crédito. Una caja chica no entrega billetes
-                  que no tiene.
+                  Solo si el banco dio línea de crédito.
                 </span>
               </span>
             </label>
@@ -1114,7 +1111,7 @@ function ModalCuenta({
       abierto
       onCerrar={onCerrar}
       titulo={edicion.id ? 'Editar cuenta' : 'Nueva cuenta'}
-      descripcion="Una cuenta, una moneda. Mezclarlas obliga a inventar un saldo que ya no coincide con el del banco."
+      descripcion="Una cuenta, una moneda."
       acciones={
         <BotonesDelPaso
           pasos={paso}

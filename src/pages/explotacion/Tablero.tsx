@@ -65,7 +65,7 @@ export function TableroExplotacion() {
     {
       titulo: 'Anotar una salida',
       detalle:
-        'Cada camión que sale de la planta con producto. Es lo que se mide de verdad: el patio no se entera de otra forma.',
+        'Cada camión que sale de la planta con producto. Es la medición de referencia.',
       icono: Truck,
       ruta: '/app/explotacion/salidas',
       cuenta: vivas.length,
@@ -91,7 +91,7 @@ export function TableroExplotacion() {
     <>
       <PageHeader
         title="Explotación"
-        description="Acarreo y salidas de planta, camión por camión. Los frentes y el parte de turno están en desarrollo."
+        description="Acarreo y salidas de planta, camión por camión. Los frentes y el parte de turno están en obra."
         actions={
           puedeEscribir ? (
             <Link to="/app/explotacion/salidas">
@@ -141,11 +141,7 @@ export function TableroExplotacion() {
                 tarifa tiene cada ruta.
               </p>
               <p className="text-ink/50">
-                Frentes y bancos, voladuras y el parte de turno están en obra y vuelven en la fase
-                3. No es que falten de hacer: están construidos y no pueden guardar nada todavía
-                —el parte exige un frente y un producto, y no hay ni frentes cargados ni artículos
-                con categoría PRODUCTO—. Voladuras además no se usa aquí: la cantera arranca el
-                material con máquina, no con explosivo.
+                Frentes y bancos, voladuras y el parte de turno están en obra.
               </p>
             </PrimeraVez>
           </div>

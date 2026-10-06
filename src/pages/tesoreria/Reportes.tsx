@@ -443,7 +443,6 @@ export function ReportesTesoreria() {
         blob={papel?.blob ?? null}
         nombreArchivo={papel?.nombre ?? 'reporte.pdf'}
         titulo="Reporte de Tesorería"
-        descripcion="Revíselo antes de descargarlo o imprimirlo."
       />
     </>
   )

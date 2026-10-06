@@ -302,7 +302,7 @@ export function Produccion() {
               onChange={(e) => setNuevo({ ...nuevo, motivo_paro: e.target.value })}
               error={
                 Number(nuevo.paro) > 0 && !nuevo.motivo_paro.trim()
-                  ? 'Un paro sin motivo no se puede cuadrar después'
+                  ? 'Falta el motivo del paro.'
                   : undefined
               }
             />
