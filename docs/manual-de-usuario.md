@@ -22,7 +22,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema que existe hoy, no el que se planeó.** Donde algo esté a medio construir, el manual lo dice. El capítulo 15 reúne todo lo que todavía no está disponible y los puntos donde conviene tener cuidado, para que nadie planifique su trabajo contando con algo que aún no puede hacer.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** El sistema ha cambiado mucho desde esta versión, y no todos los capítulos se han repasado todavía contra las pantallas de hoy. Ya lo están esta presentación, el índice, el apartado 1.5 y los capítulos 3, 12, 15 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, manda la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** El sistema ha cambiado mucho desde esta versión, y no todos los capítulos se han repasado todavía contra las pantallas de hoy. Ya lo están esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 12, 15 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, manda la pantalla.
 
 El orden de los capítulos es el del camino del material: primero se extrae, luego se almacena, después sale por el portón, y por último se administra lo que eso genera.
 
@@ -979,330 +979,213 @@ Si escribes una moneda que no existe, te lo dice y, cuando se parece a una que s
 
 ## 6. Explotación
 
-> **Explotación está en el menú, pero no entera.** Se ofrecen **Tablero**, **Viajes de camiones**, **Plantas y rutas** y **Salidas de planta**; **Frentes y bancos**, **Voladuras** y **Producción por turno** están escondidas (1.5). **Este capítulo todavía cuenta justo esas tres, y no las que se ofrecen**: se está rehaciendo contra las pantallas de hoy. Hasta entonces, lo que sigue describe pantallas que hoy no se alcanzan desde el menú.
+**Operación › Explotación**
 
-Explotación es el principio de todo lo demás. Aquí se anota dónde se está arrancando el material, qué voladuras se hicieron y cuánto produjo cada turno. De esta última anotación sale la piedra que después se cuenta en el patio, se vende y se despacha.
+Explotación es el acarreo y lo que sale de la planta, camión por camión. El menú ofrece cuatro pantallas:
 
-Hay una idea que conviene entender antes de tocar nada, porque explica casi todas las reglas del módulo:
+- **Tablero**: el resumen del día.
+- **Salidas de planta**: cada camión que sale de la planta con producto, y cuántos metros cúbicos lleva.
+- **Viajes de camiones**: el acarreo, qué camión movió qué y de dónde a dónde, y lo que se le paga al transportista.
+- **Plantas y rutas**: las minas, plantas, patios y bases, quién las opera, y las rutas entre ellos con su tarifa.
 
-**El parte de turno es la única puerta por la que entra material al patio.** No es una forma más de cargar producción: es la única que queda. Mientras Explotación no existía había un atajo en Existencias, y ese atajo se cerró. Dos puertas al mismo patio es exactamente como se cuenta dos veces la misma piedra: una vez por el parte y otra por el atajo.
+**Frentes y bancos**, **Voladuras** y **Producción por turno** existen pero están escondidas del menú (1.5). Se cuentan al final del capítulo, en 6.7.
 
-De ahí se desprende la consecuencia práctica: **si el parte de turno no se carga, el inventario dice cero.** Y con el inventario en cero no se puede despachar ni facturar, porque el sistema no deja sacar material que según el libro no está.
+Hay una idea que ordena las cuatro pantallas que se ofrecen: **miden y pagan, pero no mueven el inventario.** Una salida de planta no saca nada de Existencias y un viaje no mete nada. Lo que hacen es contar —metros cúbicos que salieron, viajes que se hicieron— y de esa cuenta salen el costo por m³ de **Centro de costo** y lo que se le debe a cada transportista.
 
 ### 6.1 Quién entra y quién puede hacer qué
 
-Hay tres puertas distintas, y conviene no confundirlas.
+Para entrar a cualquiera de las cuatro pantallas hace falta lectura sobre **Explotación**. Sin ella, el módulo no aparece en el menú, y quien escribe la dirección ve **Explotación no está a su alcance**.
 
-La primera es **ver el módulo**. Depende del permiso sobre Explotación que administración le haya dado a tu usuario. Si no lo tienes, el grupo Explotación no aparece en el menú, y si escribes la dirección a mano verás una tarjeta con un candado: **Explotación no está a tu alcance**.
+Lo demás depende de casillas de la matriz de permisos (13.1):
 
-La segunda es **poder registrar**: crear frentes, registrar voladuras y cargar partes de turno.
-
-La tercera es **poder anular**. Anular una voladura o un parte no es una operación del día: un parte anulado le quita material al patio que quizá ya se despachó. Por eso pide el escalón más alto del módulo.
-
-**Hoy no lo alcanza nadie salvo el administrador del sistema.** Sobre Explotación, los otros nueve roles están en **Ninguno**, igual que en Despachos y en Ventas. Ya no es porque el módulo esté en obra —volvió al menú el 28 de agosto— sino porque **todavía no se ha repartido**: la columna está en la matriz esperando que alguien decida quién entra.
-
-La tabla que sigue es **cómo está previsto repartirlo el día que se ofrezca**, y así es como se comportan las pantallas:
-
-| Rol | Ve el módulo | Registra frentes, voladuras y partes | Anula voladuras y partes |
-| --- | --- | --- | --- |
-| Administrador del sistema | Sí | Sí | Sí |
-| Operaciones | Sí | Sí | Sí |
-| Gerente general | Sí | No | No |
-| Los otros siete roles | No | No | No |
-
-Administración lo abre desde la matriz de permisos cuando toque.
-
-Fíjate en la fila de Almacén: **quien lleva el patio no entra a Explotación.** Tiene consecuencias que hay que saber, y están explicadas en 6.6.
-
-Si ves las pantallas pero no ves ningún botón de acción, no es una falla: tu permiso es de consulta.
-
-**Lo que escribes se convierte solo a mayúsculas y se le quitan las tildes.** Ocurre mientras tecleas, en los nombres de los frentes, en el responsable de la voladura, en el operador y en las notas. La eñe se conserva. Unifica la forma de escribir para que buscar «CAMIÓN» y «camion» encuentre lo mismo.
-
-**Lo que registra otra persona aparece sin recargar la pantalla.** Si el operador carga el parte desde el patio mientras tú miras las existencias en la oficina, la piedra aparece sola.
-
-### 6.2 Cómo llega la piedra al patio
-
-Son cuatro pasos y siempre van en el mismo orden. Quien entienda esto entiende el módulo entero.
-
-1. **El frente.** Alguien anota en **Frentes y bancos** el sitio del cerro donde se está trabajando, y con qué se arranca: voladura, martillo, o los dos. Sin al menos un frente activo no se puede hacer nada más, porque tanto la voladura como el parte tienen que decir de dónde salió el material.
-2. **La voladura.** Cuando se dispara, se registra en **Voladuras** con su fecha, su explosivo, su responsable y su permiso. Aquí se anotan las **Toneladas estimadas**: lo que se calcula haber arrancado. Es una estimación, no una cuenta.
-3. **El parte de turno.** Al cerrar el turno, quien opera carga en **Producción por turno** lo que la trituradora produjo de verdad: un renglón por cada material, con sus toneladas. Puede enlazar el parte a la voladura que se estuvo trabajando.
-4. **La entrada al patio.** Al pulsar **Guardar el parte**, y en ese mismo momento, cada renglón escribe una entrada en el libro de inventario, en el patio que se eligió. A partir de ahí el material existe para el resto del sistema: se ve en Existencias y se puede despachar.
-
-Ese cuarto paso es el que hay que tener claro. **El parte de turno no es un reporte: es el asiento que mueve el inventario.** Guardarlo es meter la piedra al patio, y anularlo es sacarla.
-
-Y el paso 2 se cierra con el paso 3: cuando el parte se enlaza a la voladura, el sistema compara lo que se estimó con lo que se produjo y muestra el **Desvío**. Es el número que dice si quien calcula las voladuras está calibrado.
-
-### 6.3 Frentes y bancos
-
-**Operación › Explotación › Frentes y bancos**
-
-Dónde se está arrancando el material, y con qué. Es la primera pantalla del módulo porque todo lo demás cuelga de ella.
-
-#### Qué se ve
-
-Una tarjeta por frente. Cada una muestra el nombre, debajo el código, el banco y el material, y a la derecha una etiqueta con el estado: **activo**, **suspendido** o **agotado**.
-
-Debajo, cuatro cifras: **Producido** (las toneladas que han cargado los partes de ese frente), **Arranque**, **Voladuras** (cuántas se han registrado) y **Última** (la fecha de la más reciente). Si el frente tiene reserva anotada, aparece al pie: **Reserva estimada 40.000 t**.
-
-Si todavía no hay ninguno, la pantalla lo dice: **Todavía no hay frentes**.
-
-#### Crear o corregir un frente
-
-1. Pulsa **Nuevo frente**, arriba a la derecha. Para corregir uno que ya existe, **pulsa en cualquier parte de su tarjeta**: no hay botón de editar y nada en la pantalla lo indica.
-2. Llena la ficha.
-3. Pulsa **Guardar**.
-
-| Campo | ¿Hace falta? | Detalle |
-| --- | --- | --- |
-| **Código** | Sí | Corto, del estilo de **F-01**. No se puede repetir |
-| **Nombre** | Sí | Cómo lo llama la gente: **Frente norte** |
-| **Banco o cota** | No | En una cantera se avanza por bancos, y el mismo frente en dos bancos da material distinto |
-| **Material** | No | La roca: granito, caliza, arenisca |
-| **Cómo se arranca** | — | **Voladura**, **Martillo hidráulico** o **Los dos, según el material**. Empieza en **Voladura** |
-| **Estado** | — | **Activo**, **Suspendido** o **Agotado**. Empieza en **Activo** |
-| **Reserva estimada (t)** | No | Lo que estima geología. Es una cifra que se corrige, no una cuenta |
-| **Nota** | No | |
-
-#### Lo que no te deja el sistema
-
-**Sin código y sin nombre no se guarda.** El botón **Guardar** ni siquiera se enciende, y si llegara a intentarse, el sistema responde «El frente necesita un código con el que llamarlo.» o «El frente necesita un nombre.» Un frente sin nombre en la lista de un parte de turno no le dice nada a quien lo tiene que elegir a las seis de la mañana.
-
-**Dos frentes no pueden tener el mismo código.** El sistema no lo guarda, pero conviene saber que el aviso que aparece en ese caso no está escrito para quien lo lee: es el texto técnico que devuelve el sistema por su cuenta. Si al guardar un frente te sale un mensaje que no entiendes, revisa primero si ese código ya está en uso.
-
-**Un frente no se borra.** Se le pone **Suspendido** cuando se para, o **Agotado** cuando se acaba. La razón es que sus voladuras y sus partes siguen en el libro y tienen que poder seguir señalando de dónde salieron.
-
-**El estado manda sobre lo que se puede registrar después**, y la propia ficha lo advierte: *Un frente suspendido o agotado no admite partes de turno.*
-
-**El método de arranque también manda**, y el encabezado de la ficha lo dice: *El método de arranque manda: un frente de martillo no admite voladuras.* Está explicado en 6.4.
-
-### 6.4 Voladuras
-
-**Operación › Explotación › Voladuras**
-
-Lo que se arranca del cerro, con su permiso y su responsable. Cada voladura es un evento con explosivo de por medio, así que queda registrada con su número, no se edita y no se borra.
-
-#### Qué se ve
-
-Una lista, de la más reciente a la más antigua, con estas columnas:
-
-| Columna | Qué muestra |
+| Casilla | Para |
 | --- | --- |
-| **Voladura** | El número — **VOL-2026-0001**, que se reinicia cada año — y debajo la fecha y la hora |
-| **Frente** | El nombre del frente y, debajo, el banco |
-| **Barrenos** | Cuántos se perforaron |
-| **Explosivo** | Los kilos que se cargaron |
-| **Estimado** | Las toneladas que se calculó arrancar |
-| **Producido** | Las toneladas que después cargaron los partes de turno enlazados a esta voladura |
-| **Desvío** | Cuánto se apartó lo producido de lo estimado |
+| **Anotar lo que sale de la planta** | Anotar salidas de planta |
+| **Anular una salida de planta** | Anularlas |
+| **Cargar los viajes del dia** | Cargar viajes y corregir los que aún no se aprueban |
+| **Anular un viaje** | Anularlos |
+| **Aprobar o rechazar viajes** | Aprobar, rechazar y ajustar el precio de los viajes |
+| **Ver cuanto se le paga a cada transportista** | Ver tarifas, precios y montos. No la da ningún nivel: se marca a propósito |
+| **Crear rutas y cambiar lo que se paga por viaje** | Crear y corregir rutas, y ponerles tarifa |
+| **Abrir, cerrar y ceder plantas** | Dar de alta, cerrar, reabrir y ceder los sitios |
 
-Las voladuras anuladas se quedan en la lista, atenuadas, con la etiqueta **Anulada** en lugar del desvío.
+Los nombres de las casillas se copian como salen en la pantalla de permisos, algunos sin tilde.
 
-**El desvío es la cifra que hay que mirar.** Sale en verde cuando la diferencia es del 15 % o menos, hacia arriba o hacia abajo, y en ámbar cuando se pasa de ahí. Solo aparece si se anotaron las **Toneladas estimadas**: sin estimación no hay con qué comparar, y la columna muestra una raya.
+Quien no tiene la casilla de ver el pago ve una raya donde iría cada precio y cada monto, y los papeles lo dicen: **No se muestran: hace falta la casilla de ver el pago**.
 
-Pulsando en una línea se abre el detalle, con todo lo que se cargó y la observación.
+**Quién aprueba los viajes de un sitio:** su **Responsable**, que se pone en Plantas y rutas, quien tenga la casilla **Aprobar o rechazar viajes**, o el gerente general.
 
-#### Registrar una voladura
+En Plantas y rutas, lo que se escribe se guarda en mayúsculas.
 
-1. Pulsa **Registrar voladura**, arriba a la derecha.
-2. Elige el **Frente**. Ojo con esta lista, porque no trae todos: está explicado abajo.
-3. Llena lo que sepas. La **Fecha** viene puesta en hoy.
-4. Pulsa **Registrar**.
+### 6.2 El tablero
 
-| Campo | ¿Hace falta? | Detalle |
-| --- | --- | --- |
-| **Frente** | Sí | Es lo único obligatorio |
-| **Fecha** | — | Viene puesta en hoy. Se puede poner una anterior, no una futura |
-| **Hora** | No | |
-| **Barrenos** | No | |
-| **Metros perforados** | No | |
-| **Diámetro (mm)** | No | |
-| **Tipo de explosivo** | No | **Emulsión**, por ejemplo |
-| **Explosivo (kg)** | No | |
-| **Detonadores** | No | |
-| **Cordón (m)** | No | |
-| **Toneladas estimadas** | No | Sin ella no se calcula el **Desvío** |
-| **Responsable** | No | Quién la dirigió |
-| **Permiso** | No | La autorización de explosivos |
-| **Observación** | No | |
+**Operación › Explotación › Tablero**
 
-El encabezado del formulario recuerda de qué se trata: *Lo que se cargó y lo que se estima haber arrancado. El tonelaje real aparece después, en los partes de turno.*
+La pantalla de entrada: **Acarreo y salidas de planta, camión por camión. Los frentes y el parte de turno están en desarrollo.**
 
-#### Lo que no te deja el sistema
+Arriba, dos cifras del día: **Salidas de hoy**, con cuántos camiones salieron, y **Metros cúbicos de hoy**, **Estimados por la carga útil del camión**. Solo cuentan las salidas que no se anularon.
 
-**En la lista de frentes no aparecen los de martillo.** Tampoco los suspendidos ni los agotados. Es la misma regla que aplica el sistema al guardar, dicha antes de que escribas nada.
+Debajo, tres atajos: **Anotar una salida**, **Viajes de camiones** y **Plantas y rutas**, cada uno con lo que se hace ahí. A cada persona le salen los que su permiso alcanza.
 
-Si de todos modos se intenta registrar una voladura contra un frente de martillo, el sistema la rechaza en vez de guardarla: «El frente "FRENTE SUR" se trabaja con martillo, no con voladura. Si eso cambió, corrígelo primero en la ficha del frente.» **Se rechaza y no se guarda, y esa diferencia importa.** Guardarla dejaría un consumo de explosivo imputado a un sitio donde no se usó explosivo, y ese error no lo encuentra nadie hasta que aparece en un informe seis meses después. Si el frente de verdad cambió de método, se corrige primero en su ficha y después se registra la voladura.
+### 6.3 Salidas de planta
 
-**No se registra una voladura con fecha futura**, porque una voladura que todavía no ocurrió no tiene consumo real que anotar. El sistema responde «No se registra una voladura con fecha futura.»
+**Operación › Explotación › Salidas de planta**
 
-**Si no hay ningún frente que se trabaje con voladura, el botón Registrar voladura está apagado.** La pantalla lo explica: *Primero hace falta un frente activo que se trabaje con voladura. Se crean en Frentes y bancos.*
+**Salidas de producto de la planta, camión por camión. Es la medición de referencia: los metros cúbicos corresponden a la carga útil estimada del camión.**
 
-**Una voladura no se edita.** Si está mal, se anula con motivo y se registra la correcta.
+Se trabaja un día a la vez: arriba dice **Hoy** y la fecha, con el botón **Ver otro día**. Mirando otro día, lo avisa: **Está mirando otro día. Lo que anote se guarda con esa fecha.**
 
-#### Anular una voladura
+A la izquierda está el formulario y a la derecha la lista, **Lo que va saliendo**, con su total del día: cuántas salidas y cuántos metros cúbicos. Cada fila dice el camión, el producto, el número de la salida y los metros cúbicos, o **Sin medir**. Las anuladas se quedan en la lista, atenuadas, pero no suman.
 
-1. Pulsa en la línea para abrir el detalle.
-2. Pulsa **Anular**.
-3. Escribe **Por qué se anula**. Son mínimo cuatro letras, y el sistema responde «Escribe por qué se anula la voladura.» si se deja corto.
-4. Pulsa **Anular**.
+#### Anotar una salida
 
-La voladura **no se borra**: queda con su número, atenuada en la lista y con el motivo a la vista en el detalle. Es lo que se le puede enseñar a quien venga a preguntar.
+1. Elija el **Camión**. Si hay pocos camiones salen como botones, uno por placa; si hay muchos, como una lista con buscador.
+2. Elija el **Producto**: **Solo los que se miden en metros cúbicos: es lo que sale a granel de la planta.**
+3. Revise los **Metros cúbicos (estimado)**: **Se llena solo al elegir el camión**, con su carga útil. Si trajo otra cosa, cámbielo. Si el camión no tiene carga útil cargada, póngalos a mano o la salida queda **Sin medir**.
+4. Pulse **Anotar salida**.
 
-**No se puede anular una voladura que ya tiene partes de turno enlazados.** El sistema lo dice con la cuenta: «La voladura VOL-2026-0003 tiene 2 parte(s) de turno que trabajaron ese material. Anúlalos primero.» La razón es el orden: esos partes ya metieron piedra al patio, y borrar la voladura de la que dicen venir dejaría el tonelaje sin explicación.
+El camión y el producto se quedan puestos para la siguiente, que es lo normal cuando el mismo camión va y viene con lo mismo.
 
-### 6.5 Producción por turno
+**Las salidas de planta no se corrigen: se anulan.** Quien tiene la casilla de anular ve el botón en cada fila. La ventana pide un **Motivo** y dice lo que pasa: **No se borra: queda anulada con el motivo. Si ya entró al centro de costo, allí aparece para reversarla.**
 
-**Operación › Explotación › Producción por turno**
+**Para qué sirve todo esto.** Cada salida es el denominador del **Costo por m³** de **Centro de costo**: lo que costó la caja, dividido entre lo que salió de la planta. Sin salidas de planta anotadas, Centro de costo no puede dar ese número.
 
-Lo que produjo cada turno, y por dónde entra al patio. Es la pantalla que mueve el inventario.
+### 6.4 Viajes de camiones
 
-#### Qué se ve
+**Operación › Explotación › Viajes de camiones**
 
-Una lista de partes, del más reciente al más antiguo:
+**Viajes por camión o máquina y por ruta. Cada viaje nuevo queda pendiente de aprobación del responsable de la mina o planta, o de quien tenga ese permiso; hasta entonces no cuenta para el pago.**
 
-| Columna | Qué muestra |
-| --- | --- |
-| **Parte** | El número — **PRO-2026-0001**, que se reinicia cada año — y debajo la fecha y el turno |
-| **Frente** | De dónde salió el material |
-| **Patio** | A qué almacén entró |
-| **Producido** | La suma de todos los renglones del parte |
-| **Horas** | Las horas operativas y, en ámbar debajo, las horas de paro si las hubo |
-| **Rendimiento** | Toneladas por hora |
+Tiene dos pestañas: **Viajes del día** y **Registro de pago**.
 
-Los partes anulados se quedan en la lista, atenuados, con la etiqueta **Anulado** en lugar del rendimiento.
+#### Viajes del día
 
-**El rendimiento solo aparece si se anotaron las horas operativas.** No es un capricho de la pantalla: 300 toneladas no significan nada sueltas — puede ser un turno excelente de cuatro horas o uno malo de ocho. Sin horas, ese parte no se puede comparar con ningún otro.
+Arriba se elige el **Día**, y están los botones **Imprimir el día** y **Reporte de operaciones**. A la derecha, para quien ve el dinero, la **Tarifa por viaje** de cada ruta.
 
-Pulsando en una línea se abre el detalle: primero los renglones, uno por material con su cantidad, y debajo el patio, las horas, el paro, el rendimiento, la voladura y el operador.
+Los viajes se ven en una tabla por empresa transportista —los camiones propios en **Flota propia**—, con una fila por camión y una columna por ruta, más los **m³** y el **Monto a pagar** del día. Debajo de cada tabla está el formulario para cargar viajes, y al pie el total del día. **Ver los**, con el número de viajes, abre el detalle de un camión, viaje por viaje.
 
-#### Cargar un parte
+#### Cargar viajes
 
-1. Pulsa **Cargar parte**, arriba a la derecha.
-2. Revisa la **Fecha**, que viene puesta en hoy, y elige el **Turno**.
-3. Elige el **Frente** y el **Patio**.
-4. Enlaza la **Voladura**, si la hubo.
-5. Escribe las **Horas operativas** y, si hubo parada, las **Horas de paro** y el **Motivo del paro**.
-6. Llena el **Material producido**: en cada renglón elige el material y escribe las **Toneladas**. Con **Agregar material** se añade otro renglón, y con **Quitar** se elimina el que sobre. Abajo a la derecha se va sumando el **Total del turno**.
-7. Pulsa **Guardar el parte**.
+Lo hace quien puede cargar viajes (6.1).
 
-| Campo | ¿Hace falta? | Detalle |
-| --- | --- | --- |
-| **Fecha** | Sí | Viene puesta en hoy. Se puede poner una anterior, no una futura |
-| **Turno** | — | **Turno I**, **Turno II** o **Turno III**. Empieza en **Turno I** |
-| **Operador** | No | Quién reporta |
-| **Frente** | Sí | Solo salen los frentes activos |
-| **Patio** | Sí | Adónde entra el material. Si solo hay un almacén, viene elegido |
-| **Voladura** | No | Empieza en **Ninguna en particular**. Solo salen las voladuras vigentes de ese frente. *Enlazarla permite comparar lo estimado con lo producido* |
-| **Horas operativas** | No | *Sin ellas, el tonelaje no se puede comparar con otro turno* |
-| **Horas de paro** | No | |
-| **Motivo del paro** | Depende | Obligatorio en cuanto pongas horas de paro |
-| **Renglón** y **Toneladas** | Sí | Al menos uno, con cantidad mayor que cero |
-| **Nota** | No | |
+1. Elija el **Camión** —o la **Máquina**, en la sección de máquinas propias— y la **Ruta**.
+2. Elija la **Carga**: **Con la carga completa** (los metros cúbicos salen de la carga útil del camión), **Con carga parcial** (hay que decir cuántos traía) o **Vacío**.
+3. Escriba la **Cantidad de viajes**. **La cantidad se suma a los que ya tenga** ese camión en esa ruta ese día; no los reemplaza.
+4. Si la ruta es de precio libre o su tarifa es un rango, diga el **Precio de cada viaje**.
+5. Pulse **Cargar**.
 
-El encabezado del formulario dice lo importante en una línea: *Lo que se produjo entra al patio en el momento de guardar.*
+El precio lo pone la ruta. Si tiene tarifa fija, se copia la vigente en la fecha del viaje, y cambiar la tarifa después no toca los viajes ya cargados. Si es un rango, el precio tiene que caer dentro. Si es de precio libre —es lo que se hace con la coraza, que se cuadra con el pedido—, lo dice quien carga. **Las máquinas propias no se pagan por viaje**: el viaje queda contado sin precio.
 
-#### Lo que no te deja el sistema
+#### Aprobar, rechazar y ajustar el precio
 
-**Un parte sin material producido no se guarda.** El botón **Guardar el parte** está apagado mientras el total sea cero, y el sistema lo repite si llega a intentarse: «Un parte de turno sin material producido no dice nada.» Un parte que no mete piedra al patio no es un parte: es una nota.
+**Todo viaje nuevo nace «Por aprobar» y no cuenta para el pago hasta que alguien lo aprueba.** Los pendientes del día salen arriba, en el bloque **Por aprobar**, agrupados por camión y ruta, con los botones **Aprobar** y **Rechazar**, y **Ajustar precio** para quien ve el dinero. Quien no puede decidir sobre un grupo lee **Lo decide el responsable**.
 
-**Un renglón a medias no se guarda.** Si eliges el material y dejas las toneladas en blanco, o al revés, ese renglón se descarta en silencio y el resto del parte sí se guarda. Revisa el **Total del turno** antes de guardar: es la comprobación de que están todos.
+- **Ajustar precio** sirve para el viaje que volvió a medias o vacío: se pone el precio nuevo a los viajes marcados, con un motivo, y queda escrito lo que traían de la ruta.
+- **Rechazar** pide un motivo, que lee quien los cargó. **Un viaje rechazado no cuenta ni se paga, y no se puede volver a aprobar**: si fue un error de carga, se carga de nuevo.
 
-**Si pones horas de paro tienes que decir por qué.** El campo se pone en rojo con el aviso *Un paro sin motivo no se puede cuadrar después*, y el botón no se enciende. Un paro sin motivo es una hora perdida que nadie va a poder explicar cuando se revise el mes.
+El bloque solo enseña los pendientes del día elegido; los de otros días se ven cambiando la fecha.
 
-**Solo entran materiales del catálogo marcados como producto de cantera.** Si se intenta otra cosa, el sistema responde «La cantera produce productos. "GASOIL" está catalogado como COMBUSTIBLE.» La cantera produce piedra; el gasoil entra por una compra, no por un turno.
+#### Corregir y anular
 
-**No se registra producción con fecha futura**, porque un turno que todavía no ocurrió no produjo nada que meter al patio.
+En el detalle de un camión, cada viaje que aún no se aprueba tiene **Corregir**, para la hora y los metros cúbicos. **Solo se corrige lo que todavía no se ha aprobado.**
 
-**Solo hay un parte por turno y por frente.** Es la regla más importante de la pantalla y está explicada en 6.6.
+**Anular** está en cualquier viaje que siga contando, para quien puede anular (6.1): **El viaje deja de contar y de cobrarse, pero la fila se queda. Su número tampoco se reutiliza: el hueco queda a la vista para poder explicarlo.** En la pantalla, sí. El papel del día, en cambio, por defecto deja fuera anulados y rechazados y vuelve a numerar los que quedan; para verlos en el papel hay que marcar **Incluir anulados y rechazados** en la vista previa.
 
-#### Anular un parte
+#### Registro de pago
 
-1. Pulsa en la línea para abrir el detalle.
-2. Pulsa **Anular**.
-3. Escribe **Por qué se anula**. Mínimo cuatro letras: «Escribe por qué se anula el parte.»
-4. Pulsa **Anular el parte**.
+**No paga nada.** Es la consulta de lo que se le debe a cada empresa, para imprimirla o descargarla:
 
-La ventana avisa de lo que va a pasar antes de hacerlo: *El material que metió sale del patio con un asiento contrario. Si ya se despachó, no se puede: habrá que corregir con un ajuste.*
+- **Ver**: **Un día** o **Rango de fechas**, con atajos (**Hoy**, **Ayer**, **Esta semana**, **Este mes**, **Mes pasado**), y la **Empresa**.
+- **Imprimir el día** o **Imprimir el período**, en PDF.
+- **Descargar el día** o **Descargar el período**, en hoja de cálculo.
 
-El parte queda con su número, atenuado y con el motivo a la vista. En el libro de inventario aparecen las entradas contrarias con la nota **ANULACIÓN DEL PARTE PRO-2026-0012:** seguida de tu explicación.
+Solo cuentan los viajes aprobados y los de antes de que existiera la aprobación. Lo que se paga de verdad pasa por **Centro de costo**, que es donde se aceptan los viajes como costo.
 
-**No se puede anular un parte cuyo material ya se despachó.** El sistema lo comprueba material por material antes de escribir nada y lo dice con nombre y cantidad: «De "GRANZON" ya no quedan las 120 que metió este parte: se despacharon. Corrige con un ajuste de inventario, que deja constancia de la diferencia.» El motivo es que devolverlo dejaría el patio en negativo, y una existencia negativa no es un dato: es un error que alguien tendrá que deshacer más adelante, cuando ya nadie recuerde de dónde salió.
+#### El reporte de operaciones
+
+**Reporte de operaciones** arma el mensaje del día que se manda por WhatsApp: **Se copia y se pega tal cual: no se guarda en el sistema.** Se le añaden las **Novedades del día** —lo que el sistema no sabe— y se copia con **Copiar el mensaje** o se baja con **Descargar .txt**.
+
+Conviene saber cómo cuenta, para leerlo bien:
+
+- Cuenta los viajes **a planta fija, a lavado y de coraza**, que son los tres tramos de antes de que existieran las rutas. Los viajes de una ruta creada después no entran en esa cuenta.
+- El número de viajes incluye los que esperan aprobación, pero **los metros cúbicos solo suman lo aprobado**. Si todo está por aprobar, el volumen sale como que no se puede calcular.
+
+### 6.5 Plantas y rutas
+
+**Operación › Explotación › Plantas y rutas**
+
+**Minas, plantas, patios y bases de la operación, con su operador y las rutas entre ellos con su tarifa por viaje.**
+
+#### Sitios
+
+Un sitio es una **Mina**, una **Planta**, un **Patio**, una **Base** u **Otro**. Cada uno dice quién lo opera —la empresa, la gobernación o un aliado— y desde cuándo, quién es su **Responsable** y cuál es su **Patio de inventario**, que es el almacén de Inventario donde queda su material.
+
+Bajo el nombre de cada sitio abierto, en otro color, sale lo que le falta para trabajar: sin patio, sin responsable, sin rutas encendidas, o una ruta sin tarifa.
+
+- **Nuevo sitio** abre un formulario en dos pasos, **Identificación** y **Operación e inventario**. El código no se cambia después.
+- **Ceder u operador** cambia quién lo opera desde una fecha. El de antes queda en la historia hasta el día anterior. El material del patio y las máquinas solo pasan al nuevo operador si se marcan.
+- **Cerrar** pide fecha y motivo, y antes de cerrar enseña lo que lo impide —viajes por aprobar, traslados o salidas pendientes, mantenimientos abiertos— y lo que conviene tener presente. Desde esa fecha no se cargan viajes que salgan del sitio o lleguen a él. Su patio sigue abierto.
+- **Reabrir** lo devuelve al instante, sin confirmación. Al reabrirlo, la fecha y el motivo del cierre dejan de verse en la pantalla; quedan solo en la auditoría.
+
+#### Rutas
+
+Una ruta une dos sitios, y es por donde se cargan los viajes. Entre los mismos dos sitios puede haber más de una. Cada ruta tiene **una tarifa fija, un rango** (cada viaje dice cuánto se paga dentro de él) **o precio libre**.
+
+- **Nueva ruta** pide el **Origen**, el **Destino**, un **Nombre** si va a haber dos entre los mismos sitios, y si es de **Precio libre**. Una ruta con viajes no cambia de origen ni de destino: se apaga y se crea otra.
+- **Tarifas** abre la historia de la tarifa de la ruta y deja poner una nueva, que **rige desde su fecha**. Los viajes ya cargados llevan copiado su precio y no cambian. **Si se pone una tarifa con la misma fecha que otra que ya había, la sustituye**: la historia guarda una por fecha.
+
+El botón **Tarifas** solo sale a quien ve el dinero. Para ponerle tarifa a una ruta hacen falta las dos casillas, la de crear rutas y la de ver el pago.
 
 ### 6.6 Lo que conviene entender
 
-#### El parte de turno es la única puerta, y el atajo de Existencias ya no existe
+#### El parte de turno ya no es la única puerta, ni Existencias está cerrada
 
-Hubo un botón **Cargar producción** en **Existencias**, que fue la puerta provisional mientras Explotación no existía. **Ya no está.** Hoy en su lugar hay un botón **Registrar entrada**, que es otra cosa: sirve para lo que entra sin una compra de por medio —el saldo inicial de un almacén, algo comprado por fuera— y **no carga producción de cantera**. Está explicado en 7.4.
+Este capítulo decía que **Producción por turno** era *la única puerta por la que entra material al patio* y que el atajo de Existencias se había cerrado. Las dos cosas ya no son así:
 
-La piedra entra por el parte de turno y por ningún otro sitio. El parte, además, sabe de qué frente salió, con cuántas horas y contra qué voladura. Dos puertas al mismo patio es como se cuenta dos veces la misma piedra, así que se dejó una sola.
+- **Producción por turno está escondida del menú** desde el 12 de septiembre de 2026 (6.7).
+- **Registrar entrada**, en **Inventario › Existencias**, admite cualquier artículo que lleve existencias, también los productos de cantera. Lo registra como una entrada sin compra, con su procedencia y su costo (7.4).
+- **Salidas de planta** y **Viajes de camiones** no mueven el inventario.
 
-Con Explotación fuera del menú, la consecuencia es la que dice el aviso del principio de este capítulo: **hoy no entra piedra al patio por ninguna vía.**
+#### Lo que se mide, se mide en metros cúbicos
 
-#### Un parte lleva varios renglones porque un turno produce varios materiales
+Las salidas de planta se anotan en metros cúbicos, y solo con productos que se miden así. Las toneladas salen solo como equivalencia, con la densidad que tenga el artículo en el catálogo. Lo mismo el reporte de operaciones: su tonelaje es estimado.
 
-Una trituradora no saca un solo material: del mismo turno salen piedra 1, piedra 2, granzón y polvillo a la vez. Por eso el parte tiene renglones y no una sola cantidad. Obligar a llenar cuatro partes del mismo turno sería llenar cuatro veces la misma cabecera y arriesgarse a que una se quede sin cargar.
+#### Los metros cúbicos son estimados
 
-Lo que hay que saber es cómo se traduce eso al inventario: **cada renglón escribe su propia entrada en el libro**, con su número de movimiento, y el parte se queda apuntado con cuál escribió cada uno.
+Salvo que se escriban a mano, los metros cúbicos de una salida o de un viaje son **la carga útil del camión**, no una medición del material. Un camión sin carga útil cargada deja sus salidas **Sin medir**, y sus viajes no suman metros cúbicos aunque cuenten y cobren.
 
-Ahí está la razón de que anular funcione bien. **Al anular, el sistema reversa exactamente esas entradas y no otras parecidas.** Buscar «una entrada parecida» — mismo artículo, misma cantidad, mismo patio — devolvería la del turno de al lado el día que dos partes coincidan, y se estaría sacando del patio la piedra equivocada.
+### 6.7 Lo que hoy está escondido: frentes, voladuras y parte de turno
 
-Y como cada renglón es una entrada distinta, nada impide poner el mismo material en dos renglones del mismo parte. Si eso pasa, entran las dos cantidades por separado. Revisa el **Total del turno** antes de guardar.
+**Frentes y bancos**, **Voladuras** y **Producción por turno** existen, pero no se ofrecen desde el menú. Quien llega a su dirección ve el cartel de obra (1.5). Se cuentan aquí en corto para el día que vuelvan.
 
-#### Un parte por turno y por frente
-
-**El mismo turno en el mismo frente no admite dos partes.** Si se intenta, el sistema no lo guarda.
-
-La razón se dice en una frase: **dos partes del mismo turno en el mismo frente son el mismo tonelaje contado dos veces.** El segundo se carga casi siempre sin mala intención — alguien no sabe que el otro ya lo cargó — y el resultado es un patio con material que no existe, que se descubre el día que se va a despachar y no aparece.
-
-Si un parte quedó mal cargado, el camino es anularlo y hacer otro. Sale más largo, y a cambio quedan los dos en el libro: el equivocado, el motivo por el que se anuló y el correcto.
-
-Una advertencia honesta sobre esta regla: **el aviso que sale al intentar guardar el segundo parte no está escrito para quien lo lee.** Es el texto técnico que devuelve el sistema por su cuenta. Si al guardar un parte te aparece un mensaje que no entiendes, lo primero que hay que mirar es si ese turno ya está cargado para ese frente.
-
-#### El frente dice con qué se trabaja, y por eso se rechaza la voladura
-
-El método de arranque es un dato del frente y no una casilla que se marca en cada voladura. Eso es deliberado: quien registra una voladura a las siete de la mañana no está en condiciones de decidir con qué se trabaja el frente; eso se decidió antes y se anotó una sola vez.
-
-De ahí sale el control. Registrar una voladura contra un frente de martillo es un error de captura, y **el sistema lo rechaza en lugar de guardarlo**. Guardarlo sería más cómodo en el momento y mucho peor después: quedaría un consumo de explosivo imputado a un sitio donde no se usó explosivo, y ese número aparecería seis meses más tarde en un informe de costos que ya nadie puede reconstruir. Un rechazo se resuelve en el instante; un dato falso, no.
-
-#### La producción entra valorada en cero
-
-Cada renglón del parte entra al patio **con costo cero**. No es un olvido.
-
-Lo que cuesta producir una tonelada de piedra sale de la nómina, el gasoil, el explosivo y el desgaste de la trituradora. Ese cálculo el sistema todavía no lo hace. Poner un número inventado valoraría el patio con una cifra que nadie calculó, y esa cifra acabaría en un balance. Cero es falso, pero se ve falso; un costo inventado es falso y parece cierto.
-
-Consecuencia práctica, y hay que tenerla presente al mirar Existencias: **la producción sube las toneladas del patio pero no sube el Valor del inventario**, y arrastra el **Costo prom.** hacia abajo. Mientras el costeo no esté construido, el valor en dólares del material producido no es una cifra en la que apoyarse. Las toneladas sí.
-
-#### Lo que muestran las listas
-
-**Las tres pantallas muestran lo más reciente y no tienen paginación.** Frentes y bancos los muestra todos. Voladuras y Producción por turno muestran los 300 registros más recientes, sin filtros ni botón de ver más. Es una limitación real: en una cantera con tres turnos diarios, un parte de hace unos meses deja de aparecer en la pantalla aunque siga en el libro y siga contando en las existencias.
-
-### 6.7 Cuando el sistema no te deja
-
-| Lo que ves | Qué significa | Qué hacer |
+| Pantalla | Escondida desde | Por qué |
 | --- | --- | --- |
-| «Tu usuario no tiene permiso para esta acción.» | Te falta permiso sobre Explotación, y el mensaje no dice cuál | Si fue al anular una voladura o un parte, hace falta el control total sobre Explotación. Pídelo a administración, o que lo haga quien lo tenga |
-| **Explotación no está a tu alcance** | Llegaste a una pantalla del módulo sin permiso para verlo | Pulsa **Volver al panel**. Si lo necesitas para tu trabajo, pide el permiso a administración |
-| «El frente necesita un código con el que llamarlo.» | El código quedó vacío | Escribe un código corto, del estilo de **F-01** |
-| «El frente necesita un nombre.» | El nombre quedó vacío | Escribe cómo llama la gente a ese frente |
-| «El frente "FRENTE SUR" se trabaja con martillo, no con voladura. Si eso cambió, corrígelo primero en la ficha del frente.» | Se intentó registrar una voladura contra un frente de martillo | Si el frente cambió de método, corrígelo en **Frentes y bancos** y vuelve a registrar la voladura |
-| «El frente "FRENTE SUR" está agotado.» | Contra un frente agotado no se registran voladuras | Elige otro frente, o reactívalo en su ficha si de verdad se sigue trabajando |
-| «No se registra una voladura con fecha futura.» | La fecha es de mañana o después | Corrige la fecha |
-| «Escribe por qué se anula la voladura.» | El motivo quedó vacío o con menos de cuatro letras | Escribe qué pasó con esa voladura |
-| «La voladura VOL-2026-0003 ya estaba anulada.» | Esa voladura ya se anuló | Recarga la pantalla: la anulación ya está hecha |
-| «La voladura VOL-2026-0003 tiene 2 parte(s) de turno que trabajaron ese material. Anúlalos primero.» | Hay partes de turno enlazados que ya metieron piedra al patio | Anula primero esos partes. Si no se pueden anular porque el material ya se despachó, la voladura se queda como está |
-| «Un parte de turno sin material producido no dice nada.» | No se cargó ningún renglón con cantidad | Añade al menos un material con sus toneladas |
-| «El frente "FRENTE NORTE" está suspendido.» | Un frente suspendido o agotado no admite partes de turno | Elige otro frente, o vuelve a ponerlo **Activo** en su ficha si se retomó el trabajo |
-| «El patio "PATIO VIEJO" está cerrado.» | El almacén elegido está desactivado | Elige otro patio, o pide que lo reactiven en **Almacenes y patios** |
-| «No se registra producción con fecha futura.» | La fecha del parte es de mañana o después | Corrige la fecha |
-| «La voladura indicada no existe o está anulada.» | La voladura que enlazaste se anuló mientras llenabas el parte | Recarga la pantalla y elige otra, o deja **Ninguna en particular** |
-| «La cantera produce productos. "GASOIL" está catalogado como COMBUSTIBLE.» | Ese material no es un producto de cantera | Elige un producto de cantera. Si falta en la lista, revísalo en el catálogo de artículos |
-| «La cantidad de "GRANZON" tiene que ser mayor que cero.» | Un renglón quedó en cero | Escribe las toneladas, o quita el renglón |
-| «Escribe por qué se anula el parte.» | El motivo quedó vacío o con menos de cuatro letras | Escribe qué pasó con ese parte |
-| «El parte PRO-2026-0012 ya estaba anulado.» | Ese parte ya se anuló | Recarga la pantalla: la anulación ya está hecha |
-| «De "GRANZON" ya no quedan las 120 que metió este parte: se despacharon. Corrige con un ajuste de inventario, que deja constancia de la diferencia.» | El material del parte ya salió del patio y no se puede devolver | Haz un conteo físico en Existencias y explica la diferencia |
-| Un mensaje en inglés al guardar un parte o un frente | Casi siempre es un dato repetido: ese turno ya está cargado para ese frente, o ese código de frente ya existe | Revisa la lista antes de volver a guardar |
-| «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
+| **Voladuras** y **Producción por turno** | 12 de septiembre de 2026 | El parte de turno no podía guardar nada: exige un frente y productos cargados. Al medirlo el 23 de septiembre no había registrada ni una voladura ni un parte |
+| **Frentes y bancos** | 23 de septiembre de 2026 | No había ni un frente cargado, y el parte exige uno para guardarse |
+
+**Qué hacen, en corto:**
+
+- **Frentes y bancos** anota los sitios del cerro donde se trabaja, y con qué se arranca: voladura, martillo o los dos.
+- **Voladuras** registra cada disparo con su fecha, su explosivo, su responsable, su permiso y las toneladas estimadas. Se rechaza contra un frente de martillo.
+- **Producción por turno** carga lo que produjo cada turno, un renglón por material, y es lo único del sistema que escribe una **Entrada de producción** en el inventario: al guardar el parte, cada renglón entra al patio elegido, con costo cero. Un turno en un frente admite un solo parte. Anular un parte saca exactamente lo que ese parte metió, salvo que ya se haya despachado.
+
+Las casillas de permiso de estas tres pantallas —ver la producción, abrir frentes, anotar y anular voladuras y partes— siguen en la matriz, pero hoy no deciden nada: estas pantallas miran el nivel del módulo.
+
+### 6.8 Cuando el sistema no le deja
+
+| Lo que ve | Qué significa | Qué hacer |
+| --- | --- | --- |
+| **Explotación no está a su alcance** | No tiene lectura sobre Explotación | Pulse **Volver al panel**. Si lo necesita para su trabajo, pídalo a la administración |
+| «Su usuario no tiene permiso para esta acción.» | Le falta la casilla de lo que intentó hacer, y el mensaje no dice cuál | Mire en 6.1 qué casilla hace falta y pídala |
+| **Su rol no registra salidas** en Salidas de planta | No tiene la casilla de anotar salidas | Pídala, o que las anote quien la tenga |
+| **Sin productos medidos en metros cúbicos** | Los productos del catálogo usan otras unidades | Revise la unidad del producto en el catálogo de artículos |
+| **Sin rutas abiertas** en Viajes de camiones | No hay rutas encendidas con los dos sitios abiertos | Créelas o enciéndalas en **Plantas y rutas** |
+| **Sin camiones registrados** | No hay camiones en la flota | Regístrelos en **Maquinaria › Equipos**, con su placa y su capacidad |
+| Una ruta con **Sin tarifa: no se pueden cargar viajes** | La ruta no tiene tarifa vigente | Póngasela con **Tarifas**, en Plantas y rutas |
+| **Lo decide el responsable** en un grupo por aprobar | Usted no responde por ninguno de los dos sitios de esa ruta | Que lo apruebe el responsable, quien tenga la casilla o el gerente general |
+| **No se puede cerrar todavía** al cerrar un sitio | Hay algo pendiente en el sitio | La ventana dice qué y dónde se resuelve |
+| «Ya existe un registro con ese dato, y no puede haber dos.» al crear una ruta | Ya hay una ruta con ese nombre entre esos dos sitios | Póngale un nombre distinto |
+| «No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.» | Se cayó el internet | Reintente cuando vuelva la señal |
 
 ---
 

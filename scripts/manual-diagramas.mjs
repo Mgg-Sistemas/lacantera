@@ -352,7 +352,7 @@ const despachos = `
 </figure>`
 
 export default {
-  '6.2 Cómo llega la piedra al patio': explotacion,
+  '6.7 Lo que hoy está escondido: frentes, voladuras y parte de turno': explotacion,
   '8.3 Del pesaje a la salida del camión': despachos,
   '9.2 El circuito de una compra': compras,
   '10.2 El circuito de una venta': ventas,
