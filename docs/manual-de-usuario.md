@@ -408,7 +408,7 @@ Esto es todo lo que ofrece el menú hoy. Cada persona ve solo la parte sobre la 
 
 #### Lo que no sale en el menú
 
-Hoy hay escondidos un módulo entero y tres pantallas de otro. El apartado 1.5 explica desde cuándo y por qué.
+Hoy hay escondidos un módulo entero y tres pantallas de otro. El apartado 1.5 dice cuáles son y qué se encuentra quien llega a ellas.
 
 | Módulo | Pantallas escondidas | Capítulo |
 | --- | --- | --- |
@@ -694,12 +694,10 @@ Cuando la administración le repone la clave a alguien, a esa persona se le cier
 
 ### 3.8 Cuando algo no sale
 
-Los tres primeros mensajes los escribe la base de datos y por eso todavía tutean; se copian como salen.
-
 | Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
 | «La clave actual no es correcta.» | La clave que escribió arriba no es la que tiene puesta | Vuelva a escribirla. Si no la recuerda, pida a la administración que se la reponga |
-| «Sesión no válida. Vuelve a entrar.» | Su sesión caducó mientras estaba en la pantalla | Vuelva a entrar y repita el cambio |
+| «Sesión no válida. Vuelva a entrar.» | Su sesión caducó mientras estaba en la pantalla | Vuelva a entrar y repita el cambio |
 | «Su sesión venció. Vuelva a entrar y repita lo que estaba haciendo.» | Lo mismo, dicho por la pantalla en vez de por la base | Vuelva a entrar y repita el cambio |
 | «No se encontró su perfil.» | El sistema no encuentra sus datos | Avise a la administración |
 | **Nombre del módulo** seguido de **no está a su alcance** | Abrió una dirección de un módulo que no le toca | Pulse **Volver al panel**. Si lo necesita para su trabajo, pida el permiso a la administración |
