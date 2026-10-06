@@ -190,7 +190,7 @@ export async function activarHuella(datos: {
   refreshToken: string
 }): Promise<void> {
   if (!(await hayHuella())) {
-    throw new Error('Este equipo no tiene lector de huella, o el navegador no sabe usarlo.')
+    throw new Error('Este equipo o este navegador no admite la huella.')
   }
 
   let credencial: PublicKeyCredential | null

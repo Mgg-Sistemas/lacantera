@@ -228,7 +228,7 @@ async function abrirZip(bufer: ArrayBuffer): Promise<Map<string, Uint8Array>> {
     const crudo = bytes.subarray(inicio, inicio + comprimido)
     if (metodo === 0) salida.set(ruta, crudo)
     else if (metodo === 8) salida.set(ruta, await inflar(crudo))
-    else throw new Error('El libro usa una compresión que no se sabe leer.')
+    else throw new Error('El libro usa una compresión que no se puede leer.')
   }
   return salida
 }

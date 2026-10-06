@@ -718,10 +718,10 @@ Los tres primeros mensajes los escribe la base de datos y por eso todavía tutea
 | **En construcción** | Abrió una pantalla que hoy está escondida del menú (1.5) | Pulse **Volver al panel**. No es cosa de permisos |
 | «Su usuario no tiene permiso para esta acción.» | Falta el permiso para lo que intentó hacer | Pida el permiso a la administración, o que lo haga quien lo tenga |
 | «Esa operación todavía no está disponible en la base de datos. Avise a soporte.» | Esa parte del sistema todavía no está instalada en la base | Avise a soporte. No es algo que pueda resolver desde la pantalla |
-| «Falta algo en la base de datos para esta pantalla. Avise a soporte: hay una migración sin correr.» | A la pantalla le falta algo que la base todavía no tiene | Avise a soporte |
+| «Falta algo en la base de datos para esta pantalla. Avise a soporte.» | A la pantalla le falta algo que la base todavía no tiene | Avise a soporte |
 | «No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.» | Se cayó el internet | Reintente cuando vuelva la señal |
 | **Sin conexión en vivo** en la barra superior | El enlace en vivo se cortó; lo que ve puede estar viejo | Recargue la página para ponerla al día |
-| «Algo salió mal y el sistema no supo explicarlo. Vuelva a intentarlo; si se repite, avise a soporte.» | Un fallo que el sistema no reconoce | Vuelva a intentarlo; si se repite, avise a soporte |
+| «Algo salió mal. Vuelva a intentarlo; si se repite, avise a soporte.» | Un fallo que el sistema no reconoce | Vuelva a intentarlo; si se repite, avise a soporte |
 
 ---
 
@@ -954,7 +954,7 @@ Debajo del resultado, la calculadora **repite cómo leyó la cuenta**, con los s
 - **Dinero más dinero da dinero**, aunque sean monedas distintas: todo pasa por bolívares, que es la única moneda contra la que hay tasas.
 - **Dinero por un número da dinero.** Es lo que se usa para el IVA: **× 1,16**.
 - **Dinero entre un número da dinero.** Es repartir.
-- **Dinero entre dinero da un número**, que es una proporción. Y **dinero por dinero no existe**: el resultado no sería una cantidad de nada. Si lo intentas, responde: «No se puede multiplicar dinero por dinero: el resultado no sería una cantidad. Para un porcentaje usa un número suelto, como «× 1,16».»
+- **Dinero entre dinero da un número**, que es una proporción. Y **dinero por dinero no existe**: el resultado no sería una cantidad de nada. Si lo intentas, responde: «No se puede multiplicar dinero por dinero. Para un porcentaje use un número suelto, como «× 1,16».»
 
 Si escribes una moneda que no existe, te lo dice y, cuando se parece a una que sí, la propone: ««bsb» no es una moneda. ¿Querías escribir Bs?» Y si la moneda existe pero nadie ha cargado su tasa, avisa de lo que falta: «Falta registrar la tasa de Euro.»
 

@@ -1031,8 +1031,8 @@ export type Urgencia = 'NORMAL' | 'ALTA' | 'URGENTE'
 
 export const URGENCIAS: Array<{ valor: Urgencia; etiqueta: string; detalle: string }> = [
   { valor: 'NORMAL', etiqueta: 'Normal', detalle: 'Entra en la cola cuando toque.' },
-  { valor: 'ALTA', etiqueta: 'Alta', detalle: 'Antes que lo normal, sin parar lo demas.' },
-  { valor: 'URGENTE', etiqueta: 'Urgente', detalle: 'La maquina no trabaja hasta que salga.' },
+  { valor: 'ALTA', etiqueta: 'Alta', detalle: 'Antes que lo normal, sin parar lo demás.' },
+  { valor: 'URGENTE', etiqueta: 'Urgente', detalle: 'La máquina no trabaja hasta que salga.' },
 ]
 
 export interface OrdenDeTaller {

@@ -96,7 +96,7 @@ const RED_CAIDA = ['failed to fetch', 'networkerror', 'load failed', 'network re
  * Object]», nunca un enlace a una especificación.
  */
 export function enCastellano(fallo: unknown): string {
-  if (fallo == null) return 'Algo falló y no dijo qué. Vuelva a intentarlo.'
+  if (fallo == null) return 'Algo falló. Vuelva a intentarlo.'
 
   const e = (typeof fallo === 'object' ? fallo : {}) as FalloLegible
   const m = texto(e.message) || (typeof fallo === 'string' ? fallo : '')
@@ -139,7 +139,7 @@ export function enCastellano(fallo: unknown): string {
   if (tiene('user not found')) return 'Ese usuario no existe.'
   if (tiene('user is banned')) return 'Esa cuenta está bloqueada. Hable con quien administra el sistema.'
   if (tiene('signups not allowed', 'signup is disabled')) {
-    return 'Las cuentas no se crean solas: las da de alta quien administra el sistema.'
+    return 'Las cuentas las da de alta la administración.'
   }
   if (tiene('new password should be different')) return 'La clave nueva tiene que ser distinta de la anterior.'
   if (tiene('password should be at least')) {
@@ -197,10 +197,10 @@ export function enCastellano(fallo: unknown): string {
     return 'Esa operación todavía no está disponible en la base de datos. Avise a soporte.'
   }
   if (codigo === 'PGRST204' || tiene('schema cache')) {
-    return 'La base cambió hace un momento y el sistema todavía no se enteró. Recargue la página e inténtelo otra vez.'
+    return 'La base cambió hace un momento. Recargue la página e inténtelo otra vez.'
   }
   if (codigo === '42P01' || tiene('does not exist')) {
-    return 'Falta algo en la base de datos para esta pantalla. Avise a soporte: hay una migración sin correr.'
+    return 'Falta algo en la base de datos para esta pantalla. Avise a soporte.'
   }
   /*
     Aquí decía «Acote las fechas o los filtros», y salió en el respaldo, que no
@@ -232,7 +232,7 @@ export function enCastellano(fallo: unknown): string {
     return 'Falta preparar el almacén de archivos. Avise a soporte.'
   }
   if (tiene('object not found', 'not_found')) {
-    return 'Ese archivo ya no está. Puede que lo hayan borrado.'
+    return 'Ese archivo ya no está.'
   }
 
   // ── La cámara, que es un DOMException y no un error de red ────────────────
@@ -259,7 +259,7 @@ export function enCastellano(fallo: unknown): string {
     quien la necesita es quien va a arreglarlo — que sabe abrirla.
   */
   if (m) console.error('Fallo sin traducir:', fallo)
-  return 'Algo salió mal y el sistema no supo explicarlo. Vuelva a intentarlo; si se repite, avise a soporte.'
+  return 'Algo salió mal. Vuelva a intentarlo; si se repite, avise a soporte.'
 }
 
 /**
