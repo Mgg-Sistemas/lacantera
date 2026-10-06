@@ -76,6 +76,22 @@ function pareceDeCasa(m: string): boolean {
   return ACENTOS.test(m) || PALABRAS_DE_CASA.test(m)
 }
 
+/*
+  DOS FRASES QUE OTROS TIENEN QUE RECONOCER YA TRADUCIDAS.
+
+  `rpc()` lanza el mensaje en castellano y el código de Postgres se pierde por
+  el camino. Quien necesita saber que fue la red, o que la base cortó por
+  tiempo, compara con estas constantes en vez de copiar la frase a mano: dos
+  copias se separan en el primer retoque.
+*/
+export const SIN_CONEXION =
+  'No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.'
+export const CONSULTA_CORTADA =
+  'La consulta tardó demasiado y el servidor la cortó. Vuelva a intentarlo; si se repite, avise a soporte.'
+
+/** Cómo dice cada navegador que no llegó a ningún sitio. */
+const RED_CAIDA = ['failed to fetch', 'networkerror', 'load failed', 'network request failed']
+
 /**
  * El fallo, dicho como lo diría el sistema.
  *
@@ -100,9 +116,7 @@ export function enCastellano(fallo: unknown): string {
     resource», Safari «Load failed». Son el mismo suceso y merecen el mismo
     aviso, que además es el más frecuente en la cantera.
   */
-  if (tiene('failed to fetch', 'networkerror', 'load failed', 'network request failed')) {
-    return 'No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.'
-  }
+  if (tiene(...RED_CAIDA)) return SIN_CONEXION
   if (nombre === 'AbortError' || nombre === 'TimeoutError' || tiene('aborted', 'timed out')) {
     return 'La operación tardó demasiado y se cortó. Vuelva a intentarlo; si la red está lenta, espere un momento.'
   }
@@ -163,7 +177,7 @@ export function enCastellano(fallo: unknown): string {
     adivinar cuál de los ocho campos de la pantalla es el repetido.
   */
   if (codigo === '23505' || tiene('duplicate key value')) {
-    return 'Ya existe un registro con ese dato. Búsquelo en lugar de crearlo otra vez.'
+    return 'Ya existe un registro con ese dato, y no puede haber dos.'
   }
   if (codigo === '23503' || tiene('violates foreign key constraint', 'is still referenced from table')) {
     return 'Eso está en uso en otra parte del sistema: no se puede borrar ni cambiar mientras algo dependa de ello.'
@@ -173,17 +187,17 @@ export function enCastellano(fallo: unknown): string {
     return col ? `Falta un dato obligatorio: ${col}.` : 'Falta un dato obligatorio.'
   }
   if (codigo === '23514' || tiene('violates check constraint')) {
-    return 'Ese valor no es válido para este campo. Revise lo que escribió.'
+    return 'La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.'
   }
   if (codigo === '22P02' || tiene('invalid input syntax')) {
-    return 'Hay un dato con el formato equivocado. Revise las fechas y los números.'
+    return 'Hay un dato con el formato equivocado. Si lo escribió usted, revíselo; si llegó por un enlace, el enlace está mal.'
   }
   if (codigo === '22001' || tiene('value too long')) return 'Ese texto es demasiado largo.'
   if (codigo === '22003' || tiene('out of range')) return 'Ese número se sale de lo que el campo admite.'
 
   // ── La base misma ─────────────────────────────────────────────────────────
   if (codigo === 'PGRST202') {
-    return 'Esa operación todavía no existe en la base de datos. Falta correr las migraciones.'
+    return 'Esa operación todavía no está disponible en la base de datos. Avise a soporte.'
   }
   if (codigo === 'PGRST204' || tiene('schema cache')) {
     return 'La base cambió hace un momento y el sistema todavía no se enteró. Recargue la página e inténtelo otra vez.'
@@ -191,8 +205,14 @@ export function enCastellano(fallo: unknown): string {
   if (codigo === '42P01' || tiene('does not exist')) {
     return 'Falta algo en la base de datos para esta pantalla. Avise a soporte: hay una migración sin correr.'
   }
+  /*
+    Aquí decía «Acote las fechas o los filtros», y salió en el respaldo, que no
+    tiene ni lo uno ni lo otro. Por este traductor pasan casi todas las
+    pantallas —`ErrorDeCarga` y `rpc()`—, así que el consejo tiene que poder
+    seguirse en cualquiera. Quien tiene filtros delante ya sabe usarlos.
+  */
   if (codigo === '57014' || tiene('statement timeout', 'canceling statement')) {
-    return 'La consulta tardó demasiado y el servidor la cortó. Acote las fechas o los filtros y vuelva a pedirla.'
+    return CONSULTA_CORTADA
   }
   if (codigo === '53300' || tiene('too many connections')) {
     return 'El servidor está saturado en este momento. Espere un poco y vuelva a intentarlo.'
@@ -203,7 +223,7 @@ export function enCastellano(fallo: unknown): string {
 
   // ── Archivos ──────────────────────────────────────────────────────────────
   if (tiene('the resource already exists', 'duplicate', 'already exists')) {
-    return 'Ya hay un archivo con ese nombre. Cámbiele el nombre o borre el anterior.'
+    return 'No se pudo guardar el archivo porque ya había otro igual en el almacén. Vuelva a intentarlo; si se repite, avise a soporte.'
   }
   if (http === 413 || tiene('payload too large', 'maximum allowed size', 'entity too large')) {
     return 'El archivo pesa más de lo que se admite. Redúzcalo y vuelva a subirlo.'
@@ -243,4 +263,29 @@ export function enCastellano(fallo: unknown): string {
   */
   if (m) console.error('Fallo sin traducir:', fallo)
   return 'Algo salió mal y el sistema no supo explicarlo. Vuelva a intentarlo; si se repite, avise a soporte.'
+}
+
+/**
+ * ¿El fallo es que no hubo conexión con el servidor?
+ *
+ * Reconoce el error crudo del navegador y también el ya traducido, porque
+ * `rpc()` entrega el segundo.
+ */
+export function esFaltaDeConexion(fallo: unknown): boolean {
+  const m = (typeof fallo === 'string' ? fallo : texto((fallo as FalloLegible | null)?.message)).toLowerCase()
+  return m.includes(SIN_CONEXION.toLowerCase()) || RED_CAIDA.some((t) => m.includes(t))
+}
+
+/*
+  LO QUE NO SUBIÓ DESPUÉS DE LO QUE SÍ SE GUARDÓ.
+
+  Las fotos de una salida o de un despacho suben cuando la solicitud ya quedó.
+  Si fallan, el aviso decía «quedó pedido, pero las fotos no subieron (No hay
+  conexión… Lo que no se guardó, no quedó.)»: la coletilla del traductor
+  contradecía a la frase que la llevaba dentro. Cuando es la red se dice así, a
+  secas; si es otra cosa —un archivo que pesa demasiado—, se dice cuál, porque
+  ese motivo sí cambia lo que hay que hacer.
+*/
+export function porQueNoSubio(fallo: unknown): string {
+  return esFaltaDeConexion(fallo) ? ' por falta de conexión.' : `: ${enCastellano(fallo)}`
 }

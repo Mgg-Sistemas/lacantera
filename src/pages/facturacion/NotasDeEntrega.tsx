@@ -79,7 +79,7 @@ import {
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useDesenlazarNota, useEnlazarNotaAFactura, useFacturas } from '@/lib/api/facturacion'
-import { enCastellano } from '@/lib/castellano'
+import { enCastellano, porQueNoSubio } from '@/lib/castellano'
 
 /*
   LA NOTA NO ESTÁ ESPERANDO UNA FACTURA. Christopher, 17/09/2026: «una nota de
@@ -837,7 +837,7 @@ export function NotasDeEntrega() {
                       await subirFotosDeCarga('DESPACHO', [numero], archivos)
                     } catch (e) {
                       setFalloDespacho(
-                        `El despacho ${numero} quedó pedido, pero las fotos no subieron (${enCastellano(e)}). Añádalas desde su tarjeta.`,
+                        `El despacho ${numero} quedó pedido, pero las fotos no subieron${porQueNoSubio(e)} Añádalas desde su tarjeta.`,
                       )
                     }
                   }
