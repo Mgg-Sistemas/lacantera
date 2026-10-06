@@ -132,7 +132,15 @@ export async function armarLibroDeMovimientos(d: DatosLibro): Promise<ArchivoArm
 
   y = seccion(doc, y, 'Movimientos')
   const conConversion = hayConversion(d.renglones)
-  const signoDe = (r: RenglonDelLibro) => (r.signo > 0 ? '+' : r.signo < 0 ? '−' : '')
+  /*
+  EL SIGNO ES UN GUION NORMAL, Y NO EL MENOS TIPOGRAFICO.
+
+  Aqui habia un U+2212 —el menos de verdad, mas bonito y mas ancho— y la
+  helvetica que trae jsPDF no lo tiene: toda salida se imprimia como
+  «" 2 UND"», con el signo convertido en un hueco. Desde el 21/08/2026, en
+  todos los libros que tuvieran una salida.
+*/
+const signoDe = (r: RenglonDelLibro) => (r.signo > 0 ? '+' : r.signo < 0 ? '-' : '')
   y = tabla(
     doc,
     y,

@@ -6831,6 +6831,8 @@ Cada despacho saca su **Vale de combustible** en papel, con el botón **Imprimir
 
 **Es el papel que firma quien recibe el combustible**, y por eso se imprime al despachar y no después.
 
+**Un vale anulado se imprime como anulado.** Lleva el sello **ANULADO** cruzado sobre la hoja, el motivo de la anulación en vez de las rayas de firma —lo que no se firma, no se raya— y lo dice también en el nombre del archivo. Se sigue pudiendo imprimir a propósito: sirve de constancia de que se anuló, y con el sello encima no se confunde con uno vigente.
+
 **Y sus fotos se miran desde la lista.** En **Últimos despachos**, cada vale con número tiene el botón de la cámara: ahí se ven las fotos que subió el bombero, se añaden las que falten y se quita una diciendo por qué. Verlas pide lectura de Combustible; añadir o quitar, escritura.
 
 **El vale se corrige y se anula desde el 5 de octubre de 2026** — nunca se edita por debajo ni se borra. En la misma lista, el lápiz abre el formulario con el vale puesto: se cambia lo que haga falta —litros, máquina, horómetro, quién recibió, fecha— y el vale **conserva su número** y queda marcado **Corregido**, con quién y cuándo. Si cambió la cantidad o la fecha, el libro de inventario lo cuenta con un **reverso y una salida nueva**, a la vista; el tanque del vale no se cambia (para eso se anula y se emite otro). **Anular** pide el motivo y devuelve el combustible al tanque con un reverso; el vale queda en gris con su motivo, y deja de contar para el tope de tres y para el horómetro. **Quien tiene escritura corrige o anula el vale del día; el de otro día exige control total** — la misma regla de las comidas.

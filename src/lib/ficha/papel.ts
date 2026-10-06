@@ -277,7 +277,15 @@ export function membrete(
     crece solo cuando hay domicilio que enseñar, así que a los seis de antes no
     les cambia ni un milímetro.
   */
-  const identidad = ['J-RIF: ' + d.empresa.rif, d.empresa.contacto].filter(Boolean).join('  ·  ')
+  /*
+    LA LETRA DEL RIF NO SE REPITE.
+
+    Aqui ponia 'J-RIF: ' delante del numero, y el numero que guarda la empresa
+    ya trae su letra —J-50209170-0—, asi que el membrete de los veintidos
+    papeles salia «J-RIF: J-50209170-0». La letra es parte del numero, no del
+    rotulo.
+  */
+  const identidad = ['RIF: ' + d.empresa.rif, d.empresa.contacto].filter(Boolean).join('  ·  ')
   const identidadImpresa = ajustar(doc, identidad, ANCHO_NOMBRE)
   doc.text(identidadImpresa, TEXTO, y + 10)
   anotar(y + 10, identidadImpresa)
@@ -893,6 +901,28 @@ export function pieDePagina(doc: Doc, texto: string, bordes: Bordes = BORDES_A4)
 }
 
 /** Fecha y hora como las escribe el modelo: «20 ago. 2026, 02:50 p. m.» */
+/*
+  EL SELLO DE ANULADO, CRUZADO SOBRE LA HOJA.
+
+  Un papel anulado tiene que verse anulado desde el otro lado de la mesa. Va
+  en rojo y translucido para no tapar lo que dice el documento: lo que se
+  guarda sigue leyendose, pero nadie lo confunde con uno vigente.
+
+  Vive aqui, con los papeles internos. `ventaPdf` tiene el suyo igual y se
+  queda donde esta a proposito: los papeles que salen a la calle —cotizacion,
+  nota de entrega, factura, orden de compra— son una familia aparte, con su
+  propia maqueta y sus propias constantes, y no comparten ayudantes con esta.
+  Unirlos acoplaria dos cosas que estan separadas por decision.
+*/
+export function selloDeAnulado(doc: Doc, texto: string, centro: number, alto = 165): void {
+  doc.saveGraphicsState()
+  // @ts-expect-error jsPDF expone GState por el objeto global, sin tipo propio.
+  doc.setGState(new doc.GState({ opacity: 0.14 }))
+  doc.setTextColor('#DE3B40').setFont('helvetica', 'bold').setFontSize(64)
+  doc.text(texto, centro, alto, { align: 'center', angle: 28 })
+  doc.restoreGraphicsState()
+}
+
 export function fechaLarga(iso: string | Date): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso
   return new Intl.DateTimeFormat('es-VE', {

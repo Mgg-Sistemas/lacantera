@@ -1062,10 +1062,26 @@ export function DetalleCompra() {
               : orden.comprobante_tipo === 'NOTA_ENTREGA'
                 ? 'Nota de entrega'
                 : null,
-          aprobadaPor: quienEs(compra.confirmada_por),
-          aprobadaEl: compra.confirmada_en ? fechaHora(compra.confirmada_en) : null,
-          confirmadaPor: quienEs(compra.aprobada_gg_por),
-          confirmadaEl: compra.aprobada_gg_en ? fechaHora(compra.aprobada_gg_en) : null,
+          /*
+            QUIEN APRUEBA ES EL GERENTE, Y EL PAPEL DECIA OTRO NOMBRE.
+
+            Estos dos pares estaban cruzados: «Aprobada por» recibia
+            `confirmada_por` —el analista que confirmo el pedido en Compras—
+            y «Confirmada por» recibia al gerente. La orden impresa le
+            atribuia la aprobacion a quien no la dio, que en un papel que
+            autoriza un gasto no es un detalle de rotulo.
+
+            El bloque de firmas de abajo siempre estuvo bien: `autoriza` ya
+            toma `aprobada_gg_por` con su «bajo autorizacion de». Era solo la
+            tabla de condiciones.
+
+            OJO AL COMPARAR PAPELES: las ordenes impresas antes de hoy dicen
+            los nombres al reves. No se reimprimen solas.
+          */
+          aprobadaPor: quienEs(compra.aprobada_gg_por),
+          aprobadaEl: compra.aprobada_gg_en ? fechaHora(compra.aprobada_gg_en) : null,
+          confirmadaPor: quienEs(compra.confirmada_por),
+          confirmadaEl: compra.confirmada_en ? fechaHora(compra.confirmada_en) : null,
         },
         moneda: orden.moneda,
         renglones: (orden.renglones ?? [])

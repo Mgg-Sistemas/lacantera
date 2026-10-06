@@ -121,6 +121,10 @@ export function Combustible() {
           : null,
         costoUsd: d.costo_usd,
         nota: d.nota,
+        // Un vale anulado se imprime con su sello y sin rayas de firma: sirve
+        // de constancia de la anulacion, no de comprobante de entrega.
+        anuladoEn: d.anulado_en,
+        motivoAnulacion: d.motivo_anulacion,
         empresa: {
           razonSocial: empresa.data?.razon_social ?? '',
           rif: empresa.data?.rif ?? '',

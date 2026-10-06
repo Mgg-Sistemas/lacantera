@@ -11,6 +11,7 @@ import {
   tituloDocumento,
   pieDePagina,
   seccion,
+  selloDeAnulado,
 } from '@/lib/ficha/papel'
 import { ABAJO, ANCHO_UTIL, CENTRO, IZQ } from '@/lib/ficha/hoja'
 
@@ -79,6 +80,22 @@ export interface DatosValeCombustible {
 
   costoUsd?: string | number | null
   nota?: string | null
+
+  /*
+    EL VALE ANULADO SE IMPRIME COMO ANULADO.
+
+    Desde que el vale se puede anular (05/10/2026) este papel no se habia
+    enterado: salia con sus dos rayas para firmar como si fuera bueno, y un
+    vale cancelado que se ve valido es exactamente el papel con el que se
+    cobra un combustible que volvio al tanque.
+
+    Anulado, lleva el sello cruzado, el motivo a la vista y NINGUNA raya de
+    firma: no hay nada que firmar. Se sigue pudiendo imprimir a proposito —
+    sirve de constancia de que se anulo, y con el sello encima no engana a
+    nadie.
+  */
+  anuladoEn?: string | null
+  motivoAnulacion?: string | null
 
   empresa: { razonSocial: string; rif: string }
   momento: Date
@@ -192,22 +209,39 @@ export async function armarValeDeCombustible(d: DatosValeCombustible): Promise<V
     })
   }
 
-  // Encima de las firmas iba un aviso —«Al firmar, quien recibe declara…»—, y
-  // Christopher pidió quitarlo de los papeles.
-  firmas(
-    doc,
-    ABAJO - 24,
-    { texto: 'Entregó', nombre: d.surtio ?? null, imagen: d.surtioFirma ?? null },
-    { texto: 'Recibió conforme', nombre: d.recibio, imagen: d.recibioFirma ?? null },
-  )
+  const anulado = Boolean(d.anuladoEn)
+
+  if (anulado) {
+    // En vez de las rayas: por que se anulo. Lo que no se firma, no se raya.
+    seccion(doc, ABAJO - 34, 'Este vale fue anulado')
+    doc.setTextColor(TINTA).setFont('helvetica', 'normal').setFontSize(9)
+    doc.text(
+      d.motivoAnulacion ? `Motivo: ${d.motivoAnulacion}` : 'Sin motivo anotado.',
+      IZQ,
+      ABAJO - 26,
+      { maxWidth: ANCHO_UTIL },
+    )
+  } else {
+    // Encima de las firmas iba un aviso —«Al firmar, quien recibe declara…»—, y
+    // Christopher pidió quitarlo de los papeles.
+    firmas(
+      doc,
+      ABAJO - 24,
+      { texto: 'Entregó', nombre: d.surtio ?? null, imagen: d.surtioFirma ?? null },
+      { texto: 'Recibió conforme', nombre: d.recibio, imagen: d.recibioFirma ?? null },
+    )
+  }
 
   pieDePagina(
     doc,
     `Documento generado por el sistema${d.numero ? ` · ${d.numero}` : ''} · ${fechaLarga(d.momento)}`,
   )
 
+  // El sello va al final, encima de todo lo pintado.
+  if (anulado) selloDeAnulado(doc, 'ANULADO', CENTRO)
+
   doc.setProperties({
-    title: `Vale de combustible ${d.numero ?? ''} — ${d.destino}`,
+    title: `Vale de combustible ${d.numero ?? ''}${anulado ? ' (ANULADO)' : ''} — ${d.destino}`,
   })
 
   return {
