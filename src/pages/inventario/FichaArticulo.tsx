@@ -100,7 +100,7 @@ export function FichaArticulo() {
           <p className="text-ink/45 text-xs">Categoría</p>
           <p className="text-ink/85 mt-1 text-lg">{a.categoria}</p>
           <p className="text-ink/45 mt-1 text-xs">
-            {a.inventariable ? 'Se lleva en el libro' : 'No entra al inventario'}
+            {a.inventariable ? 'Lleva existencias' : 'No lleva existencias'}
           </p>
         </Card>
 

@@ -985,19 +985,35 @@ export function Articulos() {
             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
           />
 
-          <label className="text-ink/75 mt-4 flex cursor-pointer items-center gap-2 text-sm select-none">
-            <input
-              type="checkbox"
-              className="accent-royal-600 size-4"
-              disabled={form.categoria === 'SERVICIO'}
-              checked={form.inventariable}
-              onChange={(e) => setForm({ ...form, inventariable: e.target.checked })}
-            />
-            Entra al inventario
-            {form.categoria === 'SERVICIO' ? (
-              <span className="text-ink/45 text-xs">(un servicio no se almacena)</span>
-            ) : null}
-          </label>
+          {/*
+            LAS DOS CASILLAS DICEN QUÉ PASA EN CADA POSICIÓN, Y NO CAMBIAN AL MARCARLAS.
+
+            Antes la del taller enseñaba un paréntesis que seguía a la casilla:
+            apagada, el renglón decía «Se puede mandar al taller (se gasta, no se
+            repara)», que afirma y niega en la misma línea, y se leía como la
+            definición del rótulo. Y esta no tenía ayuda: «Entra al inventario»,
+            dentro de Inventario, no distinguía nada. Lo que de verdad decide es si
+            al artículo se le cuentan existencias, y eso es lo que dice ahora —con
+            lo que deja de hacer sin ellas, leído en las pantallas y en las funciones
+            de la base—.
+          */}
+          <div className="mt-4">
+            <label className="text-ink/75 flex cursor-pointer items-center gap-2 text-sm select-none">
+              <input
+                type="checkbox"
+                className="accent-royal-600 size-4"
+                disabled={form.categoria === 'SERVICIO'}
+                checked={form.inventariable}
+                onChange={(e) => setForm({ ...form, inventariable: e.target.checked })}
+              />
+              Lleva existencias
+            </label>
+            <p className="text-ink/50 mt-1 pl-6 text-xs">
+              {form.categoria === 'SERVICIO'
+                ? 'Un servicio no lleva existencias.'
+                : 'Marcada, el sistema cuenta cuánto hay en cada almacén. Sin marcar, se compra y se vende igual, pero no recibe entradas, no se traslada y no se descuenta al despachar.'}
+            </p>
+          </div>
 
           {/*
             Lo pidio Christopher viendo el selector del taller lleno de aceite de
@@ -1009,19 +1025,21 @@ export function Articulos() {
             respuesta es evidente, y se puede corregir: la casilla esta para el
             caso raro, no para hacer pensar en cada alta.
           */}
-          <label className="text-ink/75 mt-3 flex cursor-pointer items-center gap-2 text-sm select-none">
-            <input
-              type="checkbox"
-              className="accent-royal-600 size-4"
-              disabled={!form.inventariable}
-              checked={form.reparable}
-              onChange={(e) => setForm({ ...form, reparable: e.target.checked })}
-            />
-            Se puede mandar al taller
-            <span className="text-ink/45 text-xs">
-              {form.reparable ? '(vuelve arreglado)' : '(se gasta, no se repara)'}
-            </span>
-          </label>
+          <div className="mt-3">
+            <label className="text-ink/75 flex cursor-pointer items-center gap-2 text-sm select-none">
+              <input
+                type="checkbox"
+                className="accent-royal-600 size-4"
+                disabled={!form.inventariable}
+                checked={form.reparable}
+                onChange={(e) => setForm({ ...form, reparable: e.target.checked })}
+              />
+              Se puede mandar al taller
+            </label>
+            <p className="text-ink/50 mt-1 pl-6 text-xs">
+              Marcada, va al taller y vuelve arreglado. Sin marcar, se gasta y no se repara.
+            </p>
+          </div>
 
           {/*
             DE QUIÉN ES NO SE PREGUNTA AQUÍ, Y HAY QUE DECIRLO.
