@@ -150,8 +150,8 @@ export function Tasas() {
             title={puedeRegistrar ? `Registrar la tasa del día · ${unidad}` : `La tasa del día · ${unidad}`}
             subtitle={
               puedeRegistrar
-                ? 'El sistema la toma sola varias veces al día: el dólar y el euro del BCV, el USDT del P2P de Binance. Aquí se comprueba, se enmienda la de hoy si leyó mal, y se cargan las monedas sin fuente pública.'
-                : `La toma el sistema ${porBinance ? 'del P2P de Binance' : 'del BCV'}. Aquí se consulta cuál está rigiendo.`
+                ? 'Se registra automáticamente varias veces al día: dólar y euro del BCV, USDT de Binance. Aquí se revisa, se corrige la de hoy y se cargan las monedas sin fuente pública.'
+                : `Se registra automáticamente, ${porBinance ? 'de Binance' : 'del BCV'}.`
             }
           />
 
@@ -165,9 +165,8 @@ export function Tasas() {
                 {laTomoElSistema && deHoy.data ? (
                   <>
                     {' '}
-                    La tomó el sistema a las {hora(deHoy.data.registrado_en)},{' '}
-                    {porBinance ? 'del P2P de Binance' : 'del BCV'}. Si el
-                    número no cuadra, hoy todavía se puede enmendar.
+                    Registrada automáticamente a las {hora(deHoy.data.registrado_en)},{' '}
+                    {porBinance ? 'de Binance' : 'del BCV'}. Solo se puede corregir hoy.
                   </>
                 ) : null}
               </p>
@@ -316,7 +315,7 @@ export function Tasas() {
                 <p className="text-ink/50 text-xs">Fuente</p>
                 <p className="text-ink/85 text-lg font-medium">{elegida?.fuente_tasa}</p>
                 <p className="text-ink/45 mt-1 text-xs">
-                  Nadie la publica oficialmente. La carga quien la negocia.
+                  Sin fuente oficial: se carga a mano.
                 </p>
               </div>
             )}

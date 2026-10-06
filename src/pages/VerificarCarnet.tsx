@@ -721,7 +721,7 @@ function PedirCodigo() {
             Verificar un carnet
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-[#7a6a5c]">
-            Escanee el QR del reverso. Si no se deja leer, escriba aquí el código impreso debajo,
+            Escanee el QR del reverso. Si no se puede leer, escriba aquí el código impreso debajo,
             en tres grupos de seis.
           </p>
 

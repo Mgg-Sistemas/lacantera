@@ -218,9 +218,7 @@ export function Login() {
                 <div>
                   <p className="text-ink/85 text-sm font-medium">Se cerró la sesión</p>
                   <p className="text-ink/60 mt-0.5 text-xs leading-relaxed">
-                    Pasa cuando se pierde la conexión al renovarse el acceso, o si entró
-                    con la huella desde otro equipo. Vuelva a entrar y le dejamos donde
-                    estaba.
+                    Vuelva a entrar.
                   </p>
                 </div>
               </div>

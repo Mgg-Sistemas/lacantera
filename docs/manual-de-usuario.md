@@ -649,7 +649,7 @@ Es donde consulta sus datos y hace lo que es suyo y de nadie más: cambiar su cl
 
 El encabezado dice **Mi cuenta** y **Datos personales y clave de acceso.** Debajo hay cuatro tarjetas.
 
-**Sus datos.** Llevan por título su nombre completo y por subtítulo **Para cambiar estos datos, hable con quien administra el sistema.**
+**Sus datos.** Llevan por título su nombre completo y por subtítulo **Estos datos los cambia la administración.**
 
 | Dato | Qué muestra |
 | --- | --- |
@@ -736,7 +736,7 @@ El encabezado dice **Panel** y debajo **Operación de** seguido del día de la s
 
 ### 4.1 De dónde salen las cifras
 
-El propio panel lo dice al pie, con estas palabras: **Todas las cifras salen de lo registrado en el sistema. No hay ningún número de ejemplo en esta pantalla.**
+Todas las cifras del panel salen de lo registrado en el sistema. Ninguna es de ejemplo.
 
 Es cierto y conviene tenerlo claro, porque contrasta con la pantalla de entrar: **las tarjetas de toneladas que se ven al entrar sí son de adorno** y no salen de nada registrado. En el panel, no. Lo que aquí dice cero, es cero.
 
@@ -781,13 +781,13 @@ Si no hay nada, se ve un recuadro punteado con el texto **Ninguna compra atrasad
 
 Si hay algo, aparece una lista de recuadros, y cada uno lleva a la pantalla donde se resuelve. Estos son los cinco avisos que pueden salir:
 
-| Color | Lo que ves | Por qué importa | Adónde lleva |
+| Color | Lo que ves | Qué dice y por qué importa | Adónde lleva |
 | --- | --- | --- | --- |
-| Rojo | **La tasa de hoy no está cargada** | **Sin ella no se puede cotizar, aprobar ni pagar: todo documento valorado congela la tasa del día.** | **Tasas de cambio** |
-| Rojo | Cuántas **compras pagadas sin recibir** hay | **Más de una semana esperando material.** Es dinero que ya salió de la empresa | **Compras** |
-| Naranja | Cuántos días lleva **un pago autorizado sin salir** | **El proveedor no reserva el material hasta ver el pago, y la cotización tiene fecha de vencimiento.** Aparece a partir de los tres días | **Pagos por hacer** |
-| Naranja | Cuántas **compras esperan al gerente** | **Hasta que se apruebe no hay orden, y sin orden el proveedor no despacha.** | **Compras** |
-| Naranja | Cuántos **artículos están bajo el mínimo** | **Pedirlo ahora cuesta menos que quedarse sin ello.** | **Existencias** |
+| Rojo | **La tasa de hoy no está cargada** | **Los documentos de hoy se valoran con la última tasa registrada.** Cada documento valorado congela la tasa con la que se emitió | **Tasas de cambio** |
+| Rojo | Cuántas **compras pagadas sin recibir** hay | **Figuran como pagadas y no constan recibidas del todo desde hace más de una semana.** | **Compras** |
+| Naranja | Cuántos días lleva **un pago autorizado sin salir** | Aparece a partir de los tres días. El proveedor no reserva el material hasta ver el pago, y la cotización tiene fecha de vencimiento | **Pagos por hacer** |
+| Naranja | Cuántas **compras esperan al gerente** | Hasta que se apruebe no hay orden, y sin orden el proveedor no despacha | **Compras** |
+| Naranja | Cuántos **artículos están bajo el mínimo** | Pedirlo a tiempo cuesta menos que quedarse sin ello | **Existencias** |
 
 **Los avisos también se filtran por tu permiso.** Si el aviso lleva a un módulo que no puedes abrir, no se te muestra: avisarte de algo que no puedes ir a resolver solo sirve para inquietarte. Consecuencia práctica: **el panel de cada persona es distinto**, y que tú no veas un asunto no significa que no exista.
 
@@ -858,7 +858,7 @@ Lo primero de la pantalla es **la fila de monedas**: una píldora por cada una, 
 
 **Abre siempre en el dólar**, porque es con lo que se mide todo el sistema; las otras dos están a un clic. Cambiar de moneda **vacía el campo del valor** a propósito: la cifra que ibas a escribir para el dólar no vale para el euro.
 
-**Registrar la tasa del día · $** es la tarjeta ancha de arriba, y el símbolo del final cambia con la moneda elegida. Si tu permiso sobre Tasas de cambio es de consulta, el título dice solo **La tasa del día · $** y el subtítulo explica de dónde sale: **La toma el sistema del BCV. Aquí se consulta cuál está rigiendo.** Con permiso de escritura, el subtítulo repite la regla: **Una vez registrada no se puede corregir. Si se publica una corrección, se registra una fila nueva.**
+**Registrar la tasa del día · $** es la tarjeta ancha de arriba, y el símbolo del final cambia con la moneda elegida. Si tu permiso sobre Tasas de cambio es de consulta, el título dice solo **La tasa del día · $** y el subtítulo dice de dónde sale: **Se registra automáticamente, del BCV.** Con permiso de escritura, el subtítulo repite la regla: **Una vez registrada no se puede corregir. Si se publica una corrección, se registra una fila nueva.**
 
 Debajo hay un aviso de estado, siempre uno de los dos:
 
@@ -6254,7 +6254,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 - **Mantener sesión abierta**, en la pantalla de entrar, no cambia nada: la sesión se guarda siempre, se marque o no.
 - **Olvidé mi contraseña** no lleva a ninguna parte. La clave la repone la administración, desde **Configuración › Usuarios y roles**.
-- **Las cifras del panel son reales**, y el propio panel lo dice al pie: **Todas las cifras salen de lo registrado en el sistema. No hay ningún número de ejemplo en esta pantalla.**
+- **Las cifras del panel son reales**: salen de lo registrado en el sistema, y ninguna es de ejemplo.
 - **Las listas largas se cortan en los registros más recientes.** No tienen páginas —la única que las tiene es Auditoría—, pero muchas tienen filtro de fechas, y acotando las fechas se llega a lo antiguo. Los topes que más se notan:
 
 | Lista | Cuántos enseña |

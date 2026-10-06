@@ -25,8 +25,7 @@ export function ModuloPendiente({ title, seccion }: ModuloPendienteProps) {
         </IconTile>
         <h2 className="text-ink/85 mt-4 text-xl font-medium">En desarrollo</h2>
         <p className="text-ink/55 mt-1.5 max-w-md text-base leading-relaxed">
-          Esta pantalla entra cuando se defina la base de datos. La navegación y el diseño
-          ya están en su sitio.
+          Esta pantalla está en obra.
         </p>
       </Card>
     </>

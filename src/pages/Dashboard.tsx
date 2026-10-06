@@ -31,7 +31,7 @@ import { dolares, dolaresRedondos, enteros, hace } from '@/lib/formato'
 interface Aviso {
   tono: 'danger' | 'warning' | 'info'
   titulo: string
-  detalle: string
+  detalle?: string
   ruta: string
 }
 
@@ -55,7 +55,7 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
       tono: 'danger',
       titulo: 'La tasa de hoy no está cargada',
       detalle:
-        'Sin ella no se puede cotizar, aprobar ni pagar: todo documento valorado congela la tasa del día.',
+        'Los documentos de hoy se valoran con la última tasa registrada.',
       ruta: '/app/tasas',
     })
   }
@@ -64,7 +64,7 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
     avisos.push({
       tono: 'danger',
       titulo: `${r.compras_atrasadas} compra${r.compras_atrasadas === 1 ? '' : 's'} pagada${r.compras_atrasadas === 1 ? '' : 's'} sin recibir`,
-      detalle: `Más de una semana esperando material. Son ${dolares(r.pagado_sin_recibir_usd)} que ya salieron de la empresa.`,
+      detalle: 'Figuran como pagadas y no constan recibidas del todo desde hace más de una semana.',
       ruta: '/app/compras',
     })
   }
@@ -73,8 +73,6 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
     avisos.push({
       tono: 'warning',
       titulo: `Un pago lleva ${r.pago_mas_viejo_dias} días autorizado sin salir`,
-      detalle:
-        'El proveedor no reserva el material hasta ver el pago, y la cotización tiene fecha de vencimiento.',
       ruta: '/app/tesoreria/pagos',
     })
   }
@@ -83,7 +81,6 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
     avisos.push({
       tono: 'warning',
       titulo: `${r.compras_por_aprobar} compra${r.compras_por_aprobar === 1 ? '' : 's'} esperando al gerente`,
-      detalle: 'Hasta que se apruebe no hay orden, y sin orden el proveedor no despacha.',
       ruta: '/app/compras',
     })
   }
@@ -104,7 +101,6 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
         como una razon y empieza a leerse como texto de relleno — y entonces
         tampoco se lee el dia que si era un repuesto.
       */
-      detalle: 'Pedirlo ahora cuesta menos que quedarse sin ello.',
       ruta: '/app/inventario/existencias',
     })
   }
@@ -128,8 +124,6 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
     avisos.push({
       tono: 'warning',
       titulo: `${r.salidas_por_aprobar} salida${r.salidas_por_aprobar === 1 ? '' : 's'} esperando aprobación`,
-      detalle:
-        'Hasta que se apruebe, el material no sale del patio y quien lo pidió sigue esperando.',
       ruta: '/app/salidas/solicitudes',
     })
   }
@@ -138,7 +132,7 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
     avisos.push({
       tono: 'warning',
       titulo: `${r.despachos_por_aprobar} despacho${r.despachos_por_aprobar === 1 ? '' : 's'} pedido${r.despachos_por_aprobar === 1 ? '' : 's'} sin aprobar`,
-      detalle: 'Se aprueban desde la nota de entrega, que es donde se piden.',
+      detalle: 'Se aprueban desde la nota de entrega.',
       ruta: '/app/facturacion/notas-entrega',
     })
   }
@@ -149,7 +143,6 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
       titulo: `${r.notas_sin_facturar} nota${r.notas_sin_facturar === 1 ? '' : 's'} de entrega sin facturar`,
       // Se cuentan solo las facturables: hay notas que a propósito no lo son, y
       // meterlas en la cuenta haría que el aviso no bajara nunca de cero.
-      detalle: 'El material ya salió. Mientras no se facture, no se puede cobrar.',
       ruta: '/app/facturacion/notas-entrega',
     })
   }
@@ -158,8 +151,7 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
     avisos.push({
       tono: 'warning',
       titulo: `${r.maquinas_fuera} máquina${r.maquinas_fuera === 1 ? '' : 's'} fuera de servicio`,
-      detalle:
-        'Una máquina parada no produce y sigue costando. En el taller es distinto: ahí ya la están atendiendo.',
+      detalle: 'No incluye las que están en el taller.',
       ruta: '/app/maquinaria',
     })
   }
@@ -203,13 +195,12 @@ const iconos = { danger: AlertTriangle, warning: AlertTriangle, info: Info } as 
 const QUE_HACER: GrupoDeAcciones[] = [
   {
     titulo: 'Poner el sistema en marcha',
-    detalle: 'Lo que hay que cargar una vez para que lo demás funcione.',
+    detalle: 'Se carga una sola vez.',
     acciones: [
       {
         paso: 1,
         titulo: 'Cargar el catálogo de artículos',
-        detalle:
-          'Desde una planilla de Excel. El sistema comprueba fila por fila y enseña qué va a pasar antes de escribir nada.',
+        detalle: 'Desde una planilla de Excel.',
         icono: Boxes,
         a: '/app/inventario/articulos/carga',
         exige: 'ESCRITURA',
@@ -217,8 +208,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
       {
         paso: 2,
         titulo: 'Cargar el personal',
-        detalle:
-          'Desde una planilla, igual que el catálogo. Las fichas de quienes trabajan aquí, con su cargo y su sueldo.',
+        detalle: 'Desde una planilla de Excel: fichas, cargos y sueldos.',
         icono: Users,
         a: '/app/nomina/personal/carga',
         exige: 'ESCRITURA',
@@ -226,8 +216,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
       {
         paso: 3,
         titulo: 'Poner la tasa del día',
-        detalle:
-          'Sin tasa no se puede cotizar, aprobar ni pagar: todo documento valorado congela la del día.',
+        detalle: 'Sin tasa registrada no se valoran los documentos.',
         icono: Banknote,
         a: '/app/tasas',
         exige: 'ESCRITURA',
@@ -239,7 +228,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
     acciones: [
       {
         titulo: 'Pedir algo que hace falta',
-        detalle: 'Un repuesto, combustible, un servicio. Basta con decir qué y para qué.',
+        detalle: 'Un repuesto, combustible, un servicio.',
         icono: ShoppingCart,
         a: '/app/compras/nuevo',
         exige: 'ESCRITURA',
@@ -560,9 +549,11 @@ export function Dashboard() {
                           />
                           <div className="min-w-0">
                             <p className="text-ink/85 text-sm font-medium">{a.titulo}</p>
-                            <p className="text-ink/55 mt-0.5 text-xs leading-relaxed">
-                              {a.detalle}
-                            </p>
+                            {a.detalle ? (
+                              <p className="text-ink/55 mt-0.5 text-xs leading-relaxed">
+                                {a.detalle}
+                              </p>
+                            ) : null}
                           </div>
                         </Link>
                       </li>
@@ -646,11 +637,6 @@ export function Dashboard() {
             </div>
           ) : null}
 
-          <p className="text-ink/35 mt-5 flex items-center gap-1.5 text-xs">
-            <Banknote className="size-3.5" />
-            Todas las cifras salen de lo registrado en el sistema. No hay ningún número de
-            ejemplo en esta pantalla.
-          </p>
           <QueHacer grupos={QUE_HACER} />
         </>
       ) : null}
