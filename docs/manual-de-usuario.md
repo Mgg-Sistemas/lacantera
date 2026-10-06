@@ -14,21 +14,21 @@ Cada capítulo corresponde a un módulo y sigue siempre el mismo orden: para qu�
 
 Tres convenciones que se repiten en todo el documento:
 
-- Lo que aparece **en negrita** es texto que vas a ver escrito en la pantalla: un botón, el nombre de un campo, el título de una columna.
+- Lo que aparece **en negrita** es texto que va a ver escrito en la pantalla: un botón, el nombre de un campo, el título de una columna.
 - Lo que aparece «entre comillas angulares» es un mensaje que muestra el sistema, copiado tal cual.
 - Las rutas se escriben como se recorre el menú: **Operación › Inventario › Existencias**.
 
+**Algunos mensajes del sistema todavía tutean.** Las pantallas tratan de usted, pero ciertos avisos los escribe la base de datos y no la pantalla, y esos siguen en tú. El manual los copia como salen, para que se reconozcan al verlos.
+
 **Este manual describe el sistema que existe hoy, no el que se planeó.** Donde algo esté a medio construir, el manual lo dice. El capítulo 15 reúne todo lo que todavía no está disponible y los puntos donde conviene tener cuidado, para que nadie planifique su trabajo contando con algo que aún no puede hacer.
+
+> **El manual se está poniendo al día, capítulo por capítulo.** El sistema ha cambiado mucho desde esta versión, y no todos los capítulos se han repasado todavía contra las pantallas de hoy. Ya lo están esta presentación, el índice, el apartado 1.5 y el capítulo 3. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, manda la pantalla.
 
 El orden de los capítulos es el del camino del material: primero se extrae, luego se almacena, después sale por el portón, y por último se administra lo que eso genera.
 
 ### Por qué hay capítulos que hoy no se alcanzan
 
-El sistema se entrega por partes, y el menú fue creciendo. Hoy ofrece el sistema entero menos Tesorería: **Panel**, **Explotación**, **Maquinaria**, **Inventario**, **Combustible**, **Asignaciones**, **Despachos**, **Compras**, **Ventas**, **Nómina**, **Organigrama**, **Tasas de cambio**, **Configuración** y **Manual de usuario**.
-
-**Desde el 28 de agosto de 2026 el menú ofrece el sistema entero.** Explotación, Despachos y Ventas volvieron al riel —estaban construidos y funcionando, y lo que los tenía fuera era que nadie los había recorrido pantalla por pantalla—. El **Organigrama** había vuelto el día antes, dentro de Nómina.
-
-**Tesorería es lo único que no está, y es distinto: dejó de ser un módulo.** No está escondida esperando turno; la empresa decidió no llevar bancos ni cajas, y lo que quedaba vivo se lo llevó Compras. **Cuentas por cobrar** era suya y se mudó a Ventas, que es de donde nace lo que deben los clientes.
+El sistema se entrega por partes, y el menú cambia con cada entrega. Hoy ofrece casi todo. Lo que queda escondido es poco y está contado en 1.5: el módulo **Despachos** entero, y tres pantallas de **Explotación** —**Frentes y bancos**, **Voladuras** y **Producción por turno**—.
 
 De los dos caminos posibles, este manual eligió el segundo:
 
@@ -37,22 +37,22 @@ De los dos caminos posibles, este manual eligió el segundo:
 
 El motivo es que las dos cosas se mueven a velocidades distintas. **El orden de los capítulos describe cómo funciona la cantera**, que es el mismo de hace veinte años: se extrae, se almacena, sale por el portón y se administra lo que eso genera. **El menú describe qué está entregado**, y eso cambia cada pocas semanas. Reordenar el manual con cada entrega lo dejaría sin ninguna estructura estable, cambiaría los números de capítulo debajo de los pies de quien lo tiene impreso, y dentro de dos meses habría que volver a moverlo todo.
 
-Así que los capítulos de los módulos escondidos **no se borraron ni se movieron**: siguen siendo verdad y hacen falta. Lo único que cambió es que cada uno abre con un recuadro que lo dice, y que el índice lleva una columna que se lee de un vistazo.
+Así que los capítulos de lo que hoy está escondido **no se borraron ni se movieron**: lo que cuentan sigue existiendo, y el día que vuelva al menú hará falta. Cada uno abre con un recuadro que lo dice, y el índice lleva una columna que se lee de un vistazo.
 
 ---
 
 ## Índice
 
-| | Capítulo | ¿Se alcanza hoy desde el menú? |
+| | Capítulo | ¿Está en el menú? |
 | --- | --- | --- |
 | 1 | Qué es este sistema y qué no es | — |
 | 2 | Cómo entrar | Sí |
 | 3 | Cómo moverse por el sistema | Sí |
 | 4 | El panel | Sí |
 | 5 | Tasas de cambio | Sí |
-| 6 | Explotación | Sí |
+| 6 | Explotación | En parte: **Frentes y bancos**, **Voladuras** y **Producción por turno** están escondidas |
 | 7 | Inventario | Sí |
-| 8 | Despachos | Sí |
+| 8 | Despachos | No: el módulo entero está escondido |
 | 9 | Compras | Sí |
 | 10 | Ventas | Sí |
 | 11 | Nómina | Sí |
@@ -66,12 +66,16 @@ Así que los capítulos de los módulos escondidos **no se borraron ni se movier
 | 19 | Maquinaria | Sí |
 | 20 | Combustible | Sí |
 | 21 | Facturación | Sí |
-| 22 | Control de despacho | Solo el administrador, hasta que se reparta su permiso |
-| 23 | Control de asistencia | Solo el administrador, hasta que se reparta su permiso |
-| 24 | Contactos | Solo el administrador, hasta que se reparta su permiso |
-| 25 | Alimentación | Solo el administrador, hasta que se reparta su permiso |
+| 22 | Control de despacho | Sí |
+| 23 | Control de asistencia | Sí |
+| 24 | Contactos | Sí |
+| 25 | Alimentación | Sí |
 
-**Asignaciones, Maquinaria, Combustible, Facturación, Control de despacho y Control de asistencia tienen sus capítulos al final** —del 18 al 23— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
+**Que un módulo esté en el menú no quiere decir que lo vea todo el mundo.** A cada persona le sale solo lo que su permiso alcanza (3.1). Control de despacho, Control de asistencia, Contactos y Alimentación nacieron abiertos solo para el administrador; quién más los ve depende de los permisos que se hayan repartido después.
+
+**Salidas y traslados todavía no tiene capítulo.** Es un módulo propio desde el 16 de septiembre de 2026, y su capítulo se está escribiendo; irá al final, con el número 26.
+
+**Los módulos que llegaron después tienen sus capítulos al final** —del 18 al 25— y no en el sitio que les tocaría por el menú. El motivo es el mismo por el que los capítulos no se reordenan cuando un módulo entra o sale: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
 
 ---
 
@@ -154,36 +158,37 @@ Por eso la tasa del día está siempre visible en la parte de arriba de la panta
 
 Esto es lo primero que hay que saber antes de buscar una pantalla, porque explica por qué el menú no trae todo lo que este manual cuenta.
 
-**Hoy el menú lateral ofrece esto:**
+**Hoy el menú lateral ofrece esto**, en tres secciones y con el **Panel** arriba del todo:
 
-**Panel · Maquinaria · Inventario · Combustible · Asignaciones · Compras · Nómina · Tasas de cambio · Configuración · Manual de usuario**
+- **Operación:** Explotación · Maquinaria · Inventario · Salidas y traslados · Combustible · Asignaciones
+- **Administración:** Centro de costo · Compras · Ventas · Control de despacho · Control de asistencia · Contactos · Alimentación · Facturación · Nómina · Organigrama · Tesorería
+- **Sistema:** Tasas de cambio · Configuración · Manual de usuario
 
-Lo decidió así la líder de sistemas, para entregar primero lo que ya se puede usar todos los días sin sobresaltos, e ir soltando el resto conforme se afina. **El menú ha ido creciendo**: en agosto ofrecía seis entradas y hoy son diez —entraron Maquinaria, Combustible, Asignaciones y el propio manual—, así que si tienes un manual impreso de hace unas semanas, esta lista es la que manda.
+Cada persona ve solo los módulos sobre los que tiene permiso (3.1), así que su menú puede ser más corto que esta lista. Si tiene un manual impreso de hace unas semanas, esta lista es la que manda: el menú ha ido creciendo, y **Tesorería**, que estuvo fuera, volvió entera el 21 de septiembre de 2026.
 
-**Hoy solo queda un módulo fuera del menú: Tesorería.** Y no está en obra — se retiró, que es otra cosa (12.1). Tampoco la encuentra la barra buscadora, y lo mismo vale para las pantallas que cuelgan de ella: no están escondidas por su cuenta, lo está el grupo entero.
+**Hoy quedan fuera del menú un módulo entero y tres pantallas de otro:**
 
-Explotación, Despachos y Ventas estuvieron aquí hasta el 28 de agosto de 2026 y ya no: volvieron los tres juntos, porque son un circuito —se extrae, se pesa y se despacha, y se factura— y devolver uno solo habría dejado el camino cortado a la mitad.
-
-El **Organigrama** estuvo en esta lista y salió de ella el 27 de agosto de 2026: se rehizo la pantalla —antes era una lista con sangría que no se podía enseñar a nadie— y en cuanto se pudo presentar dejó de tener sentido tenerla detrás de un cartel de obra.
+| Qué | Desde | Por qué |
+| --- | --- | --- |
+| **Despachos**, entero: **Tablero**, **Tickets de romana** y **Guías de movilización** | 31 de agosto de 2026 | La cantera todavía no registra en el sistema la salida por el portón, y un módulo ofrecido que nadie usa se llena de pantallas vacías que después nadie sabe si están rotas o sin datos |
+| **Explotación › Voladuras** y **Producción por turno** | 12 de septiembre de 2026 | Voladuras no se usa, y Producción por turno no puede guardar nada mientras no haya productos cargados |
+| **Explotación › Frentes y bancos** | 23 de septiembre de 2026 | No había ni un frente cargado, y una pestaña que solo sabe enseñar que no hay nada le enseña a quien la abre que el módulo está vacío |
 
 Ahora la parte que hay que entender bien, porque no es lo que parece:
 
-**Esos módulos no se borraron, ni se cerraron, ni se le quitaron a nadie.** Sus pantallas siguen existiendo y sus direcciones siguen respondiendo. Es deliberado: el equipo los sigue desarrollando y cerrarlos lo dejaría sin poder verlos. Lo único que se hizo fue dejar de ofrecerlos desde el menú.
+**Lo escondido no se borró, ni se cerró, ni se le quitó a nadie.** Sus pantallas siguen existiendo y sus direcciones siguen respondiendo. Es deliberado: el equipo las sigue desarrollando y cerrarlas lo dejaría sin poder verlas. Lo único que se hizo fue dejar de ofrecerlas desde el menú. La barra buscadora tampoco las ofrece.
 
 Y para que nadie tropiece con una pantalla a medio afinar sin saberlo, **quien llegue a una de esas direcciones —escribiéndola a mano, por un enlace que le pasaron o porque quedó en el historial del navegador— se encuentra primero un cartel de obra**:
 
-> **En construcción.** *Esta parte del sistema todavía se está trabajando y no forma parte de lo que hoy está en uso. Lo que se haga aquí puede perderse o no cuadrar con el resto.* Y debajo, en letra más pequeña: *Si llegaste por un enlace o escribiendo la dirección, no te equivocaste: la pantalla existe, pero aún no está lista.* El único botón es **Volver al panel**.
+> **En construcción.** *Esta parte del sistema todavía se está trabajando y no forma parte de lo que hoy está en uso. Lo que se haga aquí puede perderse o no cuadrar con el resto.* Y debajo, en letra más pequeña: *Si llegó por un enlace o escribiendo la dirección, no se equivocó: la pantalla existe, pero aún no está lista.* El botón es **Volver al panel**.
 
 **El cartel se le pone a todo el mundo, incluida la administración.** Quien tiene el rol de administrador ve además, en letra pequeña y en tono menor, un enlace **Entrar de todos modos**: es la puerta de servicio del equipo que está construyendo, no una invitación. Se recuerda mientras la pestaña esté abierta y se olvida al cerrarla, para que nadie se deje la puerta abierta sin darse cuenta en el equipo con el que se enseña el sistema.
 
-Dos consecuencias prácticas que conviene tener presentes:
+**No es un problema de permisos.** Un candado —**Ventas no está a su alcance**— significa que a su rol no le abrieron ese módulo, y se resuelve pidiéndoselo a la administración. El cartel de obra significa otra cosa: que esa parte todavía no está entregada, y pedir el permiso no lo cambia. Si una dirección está a la vez escondida y fuera de su permiso, sale el cartel de obra.
 
-- **No es un problema de permisos.** Un candado —**Ventas no está a tu alcance**— significa que a tu rol no le abrieron ese módulo, y se resuelve pidiéndoselo a administración. El cartel de obra significa otra cosa: que esa parte todavía no está entregada, y pedir el permiso no lo cambia.
-- **Tesorería es un caso aparte, y no es «todavía no».** Los otros tres módulos escondidos están construidos y esperando. Tesorería **dejó de ser un módulo**: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos, y sus dos pantallas vivas se mudaron a **Compras**. Su capítulo sigue en el manual, con el aviso puesto.
+**Este manual sigue contando lo escondido**, capítulo por capítulo, porque existe y porque el día que vuelva al menú va a hacer falta. Cada capítulo afectado abre con un recuadro que lo dice.
 
-**Este manual sigue contando esos módulos entero**, capítulo por capítulo, porque lo que dicen es cierto y porque el día que vuelvan al menú va a hacer falta. Cada uno abre con un recuadro que recuerda que hoy no se alcanza.
-
-**El manual sí está en el menú**, al final, en **Sistema**, con un icono de libro. Y es la única entrada que no comprueba permisos: quien acaba de entrar y todavía no tiene ningún módulo asignado la ve igual. Es lo único que tiene mientras espera que administración le reparta lo demás.
+**El manual sí está en el menú**, al final, en **Sistema**, con un icono de libro. Y es la única entrada que no comprueba permisos: quien acaba de entrar y todavía no tiene ningún módulo asignado la ve igual. Es lo único que tiene mientras espera que la administración le reparta lo demás.
 
 #### La pantalla que se abre sin entrar
 
@@ -354,260 +359,286 @@ Dentro, todas las pantallas comparten el mismo marco: el menú a la izquierda, l
 
 ### 3.1 El menú lateral
 
-Está organizado en tres secciones, y dentro de ellas en grupos que se despliegan.
+Está organizado en tres secciones —**Operación**, **Administración** y **Sistema**— y, dentro de ellas, en módulos. Los que tienen varias pantallas se despliegan; los que tienen una sola son un enlace directo.
 
 Arriba del todo, sin rótulo de sección, está **Panel**, que lleva a la pantalla de inicio.
 
-Esto es todo lo que ofrece el menú hoy:
+Esto es todo lo que ofrece el menú hoy. Cada persona ve solo la parte sobre la que tiene permiso, así que el suyo puede ser más corto.
 
 **Operación**
 
-| Grupo | Pantallas |
+| Módulo | Pantallas |
 | --- | --- |
+| **Explotación** | **Tablero**, **Viajes de camiones**, **Plantas y rutas**, **Salidas de planta** |
 | **Maquinaria** | **Equipos**, **Historial de taller** |
-| **Inventario** | **Tablero**, **Existencias**, **Transferencias**, **Almacenes y talleres** |
-| **Combustible** | Enlace directo, sin submenú |
-| **Asignaciones** | **Quién tiene qué**, **Dotación por cargo**, **Incidencias** |
+| **Inventario** | **Tablero**, **Existencias**, **Almacenes y talleres** |
+| **Salidas y traslados** | **Historial**, **Salidas**, **Traslados** |
+| **Combustible** | Enlace directo |
+| **Asignaciones** | **Bienes asignados**, **Dotación por cargo**, **Incidencias** |
 
 **Administración**
 
-| Grupo | Pantallas |
+| Módulo | Pantallas |
 | --- | --- |
-| **Compras** | **Tablero**, **Proveedores**, **Recepciones**, **Pagos por hacer**, **Movimientos de dinero**, **Centro de costos**, **Libro de compras**, **Gasto por unidad** |
+| **Centro de costo** | Enlace directo |
+| **Compras** | **Tablero**, **Compra directa**, **Historial de directas**, **Proveedores**, **Recepciones**, **Pagos por hacer**, **Gasto por unidad** |
+| **Ventas** | **Tablero**, **Clientes**, **Lista de precios**, **Cotizaciones** |
+| **Control de despacho** | Enlace directo |
+| **Control de asistencia** | Enlace directo |
+| **Contactos** | Enlace directo |
+| **Alimentación** | Enlace directo |
+| **Facturación** | **Notas de entrega**, **Facturas**, **Notas de crédito**, **Cuentas por cobrar** |
 | **Nómina** | **Tablero**, **Personal**, **Nómina del período**, **Prestaciones y parámetros** |
+| **Organigrama** | Enlace directo |
+| **Tesorería** | **Tablero**, **Bancos y cajas**, **Reportes**, **Libro Mayor**, **Libro de tesorería** |
 
 **Sistema**
 
-| Grupo | Pantallas |
+| Módulo | Pantallas |
 | --- | --- |
-| **Tasas de cambio** | Enlace directo, sin submenú |
-| **Configuración** | **Tablero**, **Usuarios y roles**, **Datos de la empresa**, **Documentos legales**, **Auditoría**, **Respaldo de la base** |
+| **Tasas de cambio** | Enlace directo |
+| **Configuración** | **Tablero**, **Usuarios y roles**, **Datos de la empresa**, **Documentos legales**, **Auditoría** —solo la ve el administrador—, **Respaldo de la base** |
 | **Manual de usuario** | Enlace directo. **Es la única entrada que se ve sin tener ningún permiso** |
 
-**Muchas pantallas ya no están en el menú: están en pestañas.** El menú se quedó con la puerta de cada cosa y el resto se agrupó por dentro, arriba de la pantalla. Es lo que hay que saber para no darlas por perdidas:
+**Muchas pantallas no están en el menú: están en pestañas.** El menú se quedó con la puerta de cada cosa y el resto se agrupó por dentro, arriba de la pantalla. Es lo que hay que saber para no darlas por perdidas:
 
-| Si buscas | Está en |
+| Si busca | Está en |
 | --- | --- |
-| **Catálogo de artículos**, **Movimientos** | Pestañas de **Inventario › Existencias** |
-| **Talleres** | **Inventario › Almacenes y talleres**, segunda pestaña |
-| **Facturas de proveedor** | **Compras › Proveedores**, segunda pestaña. **Ahí se llama Facturas recibidas** |
-| **Cuentas por pagar** | **Compras › Pagos por hacer**, segunda pestaña. **Ahí se llama Por proveedor** |
-| **Centro de costos**, **Libro de compras**, **Gasto por unidad** | Están en el menú, y además son pestañas entre sí |
+| **Catálogo de artículos**, **Movimientos** | Pestañas de **Inventario › Existencias**. La del catálogo dice **Catálogo** |
+| **Talleres**, **Dueños del material** | Pestañas de **Inventario › Almacenes y talleres**, cuya primera pestaña se llama **Almacenes y patios** |
+| **Facturas de proveedor** | **Compras › Proveedores**, segunda pestaña. Ahí se llama **Facturas recibidas** |
+| **Cuentas por pagar** | **Compras › Pagos por hacer**, segunda pestaña. Ahí se llama **Por proveedor** |
 | **Tabulador de cargos**, **Carnets** | Pestañas de **Nómina › Personal** |
 | **Novedades del período**, **Procesar nómina**, **Recibos de pago** | Las tres pestañas de **Nómina › Nómina del período**, numeradas **1 · Novedades**, **2 · Procesar** y **3 · Recibos**, en el orden en que se hacen |
-| **Prestaciones sociales**, **Parámetros de nómina** | Pestañas de **Nómina › Prestaciones y parámetros** |
-| **Cargar por planilla** —artículos, personal o proveedores— | No es pestaña: es un **botón** dentro del Catálogo de artículos, de Personal y de Proveedores. También hay atajos en el Panel |
+| **Prestaciones sociales**, **Parámetros de nómina**, **Bonos y descuentos** | Pestañas de **Nómina › Prestaciones y parámetros** |
+| El libro de compras y el de ventas | Las pestañas **Compras** y **Ventas** de **Tesorería › Libro Mayor** |
+| **Cargar por planilla** —artículos, personal o proveedores— | No es pestaña: es un botón, **Cargar por planilla**, dentro del catálogo de artículos, de **Personal** y de **Proveedores**. El **Panel** tiene además atajos para cargar el catálogo y el personal, y el **Tablero** de Compras uno para cargar los proveedores |
+| La vista de teléfono del surtidor de **Combustible** y de la cocina de **Alimentación** | El botón **Vista de teléfono** de cada módulo. Quien tiene la casilla de usar el surtidor o la cocina desde el teléfono, y no es administrador, entra directamente ahí al abrir el sistema |
 
-**La lupa (Ctrl+K) sí las encuentra todas**, aunque no estén en el menú, y por su nombre corriente: buscar «cargar artículo» o «cuentas por pagar» lleva a donde toca.
+**La lupa (Ctrl+K) encuentra casi todas por su nombre corriente**, aunque no estén en el menú: escribir *cargar artículo* lleva a la carga de artículos. Las que no encuentra son **Carnets**, **Por proveedor**, **Dueños del material**, **Bonos y descuentos** y el libro de ventas: a esas se llega solo por su pestaña.
 
 **Todas las entradas de este menú están construidas.** Ninguna abre el cartel de obra. Si una pantalla no se abre, es por permisos o por conexión, no porque falte.
 
 #### Lo que no sale en el menú
 
-Una sola rama, y no está en obra: **Tesorería**. El apartado 1.5 explica por qué.
+Hoy hay escondidos un módulo entero y tres pantallas de otro. El apartado 1.5 explica desde cuándo y por qué.
 
-| Grupo | Pantallas | Capítulo |
+| Módulo | Pantallas escondidas | Capítulo |
 | --- | --- | --- |
-| **Tesorería** | **Tablero**, **Bancos y cajas** | 12 |
+| **Despachos** | El módulo entero: **Tablero**, **Tickets de romana** y **Guías de movilización** | 8 |
+| **Explotación** | **Frentes y bancos**, **Voladuras** y **Producción por turno** | 6 |
 
-**Está aquí por un motivo distinto al que tuvieron los demás.** Explotación, Despachos, Ventas y el Organigrama estuvieron escondidos esperando turno y ya volvieron. Tesorería **dejó de ser un módulo**: de sus seis pantallas, **Pagos por hacer** y **Movimientos de dinero** —que era el libro de tesorería— se mudaron a **Compras**; **Cuentas por cobrar** se mudó a **Ventas**, que es de donde nace lo que deben los clientes; y **Cuentas por pagar** desapareció como pantalla propia. Lo que queda escondido es lo único que la empresa decidió no llevar: bancos y cajas.
+**Se esconden para todo el mundo, incluido el administrador.** No es un permiso: el sistema se enseña desde una cuenta con todos los permisos, y si al administrador le siguiera saliendo el menú entero, esconderlo no habría servido de nada. La lupa tampoco las ofrece, y quien llega a su dirección se encuentra el cartel de obra.
 
-**Se esconden para todo el mundo, incluido el administrador.** No es un permiso: es que el MVP se enseña desde una cuenta con todos los permisos, y si al administrador le siguiera saliendo el menú entero, esconderlo no habría servido de nada.
-
-Dos nombres que cambiaron y conviene no buscar por el viejo: lo que antes era **Guías de despacho** hoy es **Guías de movilización** —es el permiso del ministerio para que el camión circule, no el papel que se le entrega al cliente—, y la primera entrada de casi todos los grupos pasó a llamarse **Tablero**.
+La primera entrada de casi todos los módulos se llama **Tablero**: es el resumen del módulo y el sitio por donde se empieza.
 
 Cómo se comporta el menú:
 
-- **Solo hay un grupo abierto a la vez.** Abrir uno cierra el anterior. Con quince módulos, varios abiertos convertirían el menú en una lista de cuarenta líneas.
-- Al entrar en una pantalla, **se abre solo el grupo al que pertenece**.
-- La pantalla en la que estás se ve en azul relleno con letra blanca.
-- Al pie, siempre a la vista, está **quién está dentro**: el círculo con tus iniciales, tu nombre completo y tu usuario debajo. Está ahí a propósito: es lo que evita que alguien registre algo sin darse cuenta de que quedó abierta la sesión de otra persona.
+- **Solo hay un módulo abierto a la vez.** Abrir uno cierra el anterior. Con más de veinte entradas, varios abiertos convertirían el menú en una lista interminable.
+- Al entrar en una pantalla, **se abre solo el módulo al que pertenece**.
+- La pantalla en la que está se ve resaltada en naranja: un enlace directo, relleno y con letra blanca; una pantalla dentro de un módulo, con un tinte suave y la letra más marcada.
+- Al pie, siempre a la vista, está **quién está dentro**: el círculo con sus iniciales, su nombre completo y su usuario debajo. Está ahí a propósito: es lo que evita que alguien registre algo sin darse cuenta de que quedó abierta la sesión de otra persona.
 
-**Los módulos sobre los que no tienes permiso no aparecen en el menú.** Y si a un grupo se le ocultan todas sus pantallas, desaparece el grupo entero; si a una sección se le vacían los grupos, desaparece la sección. No es pudor: sin permiso, esas pantallas se abrirían vacías, y una lista vacía miente.
+**Los módulos sobre los que no tiene permiso no aparecen en el menú.** Y si a un módulo se le ocultan todas sus pantallas, desaparece entero; si a una sección se le vacían los módulos, desaparece la sección. No es pudor: sin permiso, esas pantallas se abrirían vacías, y una lista vacía miente.
 
-Durante el primer instante después de entrar, mientras los permisos aún no han llegado, **se ve el menú completo**. Un menú vacío durante medio segundo se lee como que el sistema se rompió.
+Durante el primer instante después de entrar, mientras los permisos aún no han llegado, **se ve el menú completo**, incluidas por un momento las entradas escondidas. Un menú vacío durante medio segundo se lee como que el sistema se rompió.
 
-Si escribes a mano la dirección de un módulo que no te toca, o llegas por un enlace que alguien te pasó, no ves una pantalla vacía sino una explicación con un candado: el nombre del módulo seguido de **no está a tu alcance**, el texto **Tu rol no tiene acceso a este módulo. Si lo necesitas para tu trabajo, pídeselo a quien administra el sistema.** y el enlace **Volver al panel**.
+Si escribe a mano la dirección de un módulo que no le toca, o llega por un enlace que alguien le pasó, no ve una pantalla vacía sino una explicación con un candado: el nombre del módulo seguido de **no está a su alcance**, el texto **Su rol no tiene acceso a este módulo. Si lo necesita para su trabajo, pídaselo a quien administra el sistema.** y el botón **Volver al panel**.
 
 **Auditoría** tiene su propio mensaje, porque es solo del administrador: **Esto lo ve la administración**, con el texto **El registro de auditoría guarda todo lo que ha hecho cada persona en el sistema. Solo lo abre quien tiene el rol de administrador.**
 
 Los permisos son una escalera de cuatro peldaños, no cuatro opciones sueltas: ninguno, lectura, escritura y total. El control total incluye escribir, y escribir incluye leer. Para ver una pantalla basta con lectura.
 
-**Mi cuenta** es la excepción: se abre siempre, aunque te hayan quitado todos los permisos, porque nadie debe quedarse sin poder cambiarse la clave.
+**Mi cuenta** es la excepción: se abre siempre, aunque le hayan quitado todos los permisos, porque nadie debe quedarse sin poder cambiarse la clave.
 
 #### Contraer el menú
 
 En pantallas de escritorio, el botón de la barra superior contrae el menú a una tira de iconos. Su etiqueta alterna entre **Contraer menú** y **Expandir menú**.
 
-Contraído, cada icono muestra su nombre al pasar el ratón por encima, y **los grupos no se despliegan**: no hay ancho para el texto. Para llegar a una pantalla de dentro de un grupo hay que expandirlo primero.
+Contraído, cada icono muestra su nombre al pasar el ratón por encima, y **los módulos no se despliegan**: no hay ancho para el texto. Pulsar el icono de un módulo lleva a su **Tablero**, o a su primera pantalla si no tiene tablero. Al pie queda solo el círculo con las iniciales, y el nombre sale al pasar el ratón.
 
-**El sistema recuerda cómo lo dejaste**, en ese equipo, incluso después de cerrar el navegador. Quien trabaja con tablas anchas lo deja contraído y ya no lo repite cada mañana.
+**El sistema recuerda cómo lo dejó**, en ese navegador, incluso después de cerrarlo. Quien trabaja con tablas anchas lo deja contraído y ya no lo repite cada mañana.
+
+En el teléfono el menú no está fijo: se abre con **☰** y se cierra con la **✕** de su esquina o pulsando fuera.
 
 ### 3.2 La barra superior
 
 De izquierda a derecha:
 
-1. **☰** para abrir el menú, solo en el teléfono. Su etiqueta es **Abrir menú**.
+1. **☰** para abrir el menú, en el teléfono y en las pantallas que no llegan a ser de escritorio. Su etiqueta es **Abrir menú**.
 2. El botón de **Contraer menú** / **Expandir menú**, solo en escritorio.
-3. **Buscar**, con una lupa y la tecla sugerida **Ctrl K**.
+3. **Buscar**, con una lupa y la tecla sugerida **Ctrl K**. En el teléfono queda solo la lupa.
 4. El aviso **Sin conexión en vivo**, que solo aparece cuando hace falta.
-5. El indicador **Tasa BCV**.
+5. El indicador **Tasa BCV**, que no sale en el teléfono.
 6. La campana de notificaciones.
-7. Tu círculo con las iniciales, que abre el menú del usuario.
+7. Su círculo con las iniciales —en pantallas anchas, también su nombre y una flecha—, que abre el menú del usuario.
 
-**Sin conexión en vivo** aparece únicamente si se pierde el enlace con el sistema, y explica qué implica: **Se perdió el enlace con el servidor. Lo que ves puede estar viejo; recarga la página para ponerlo al día.** En pantallas chicas se reduce al icono de la señal tachada, pero no desaparece: se esconde justo donde la señal se cae, que es el patio.
+**Sin conexión en vivo** aparece únicamente si se pierde el enlace con el sistema o el equipo se queda sin red. Al pasar el ratón por encima explica qué implica: **Se perdió el enlace con el servidor. Lo que ve puede estar viejo; recargue la página para ponerlo al día.** En pantallas chicas se reduce al icono de la señal tachada, pero no desaparece: se esconde justo donde la señal se cae, que es el patio.
 
-El indicador **Tasa BCV** tiene estos estados:
+El indicador **Tasa BCV** tiene estos estados. Al pasar el ratón, cada uno lo explica en un globo:
 
-| Lo que ves | Qué significa |
-| --- | --- |
-| Punto gris parpadeando | Todavía está consultando |
-| Punto rojo y **No disponible** | No se pudo consultar. El globo lo dice: **No se pudo consultar la tasa. Verifica la conexión antes de emitir documentos.** |
-| Punto verde, **Tasa BCV · hoy** y la cifra en bolívares | La tasa publicada es de hoy y además está registrada |
-| Punto naranja y **Tasa BCV** seguido de una fecha anterior | La última publicada es de otro día |
-| Punto naranja y **Tasa BCV · hoy · sin registrar** | El BCV ya publicó la de hoy, pero nadie la ha registrado en el sistema |
+| Lo que ve | Qué significa | El globo dice |
+| --- | --- | --- |
+| Punto gris parpadeando | Todavía está consultando | — |
+| Punto rojo y **No disponible** | No se pudo consultar | **No se pudo consultar la tasa. Verifique la conexión antes de emitir documentos.** |
+| Punto verde, **Tasa BCV · hoy** y la cifra en bolívares | La tasa publicada es de hoy y además está registrada | **Tasa publicada hoy y registrada en el sistema. Abra para ver las demás monedas y convertir.** |
+| Punto naranja y **Tasa BCV** seguido de una fecha anterior | La última publicada es de otro día | **La última tasa publicada es del** y la fecha, seguido de **Confirme antes de emitir documentos.** |
+| Punto naranja y **Tasa BCV · hoy · sin registrar** | El BCV ya publicó la de hoy, pero el sistema todavía valora con otra | **El BCV ya publicó la tasa de hoy y el sistema todavía valora con otra. Abra para arreglarlo.** |
 
-**El indicador solo enseña el dólar, pero se despliega.** Al pulsarlo se abre un panel con tres cosas: el aviso **La tasa de hoy no está registrada** cuando toca —*El sistema valora con la del 15 ago. Regístrala antes de emitir.*—, la lista **Con lo que valora el sistema** con las tres monedas (**Dólar**, **Euro** y **Tether (USDT)**, cada una con su cifra en bolívares o la palabra **sin registrar**), la calculadora, y al pie el enlace **Ver y registrar tasas →**.
+**El indicador solo enseña el dólar, pero se despliega.** Al pulsarlo se abre un panel con cuatro cosas:
 
-Este indicador **solo informa**. No es la tasa con la que el sistema valora los documentos; esa se registra en **Tasas de cambio** y se explica en el capítulo 5.
+- El aviso **La tasa de hoy no está registrada**, cuando toca. Debajo dice con qué está valorando el sistema —**El sistema valora con la del** y la fecha, seguido de **Regístrela antes de emitir.**—, o **Sin ninguna tasa registrada no se puede emitir nada.** si no hay ninguna. Pulsar el aviso lleva a Tasas de cambio.
+- La lista **Con lo que valora el sistema**: el dólar y cada una de las demás monedas que lleva el sistema, con su cifra en bolívares o la palabra **sin registrar**.
+- La calculadora.
+- Al pie, el enlace **Ver y registrar tasas →**.
+
+Se cierra pulsando fuera o con la tecla Escape.
+
+**La cifra de la barra es la que publicó el BCV; la que usa el sistema para valorar los documentos es la registrada en Tasas de cambio**, que se explica en el capítulo 5. El color del punto dice si las dos coinciden, y el panel enseña las registradas.
 
 #### La barra buscadora
 
-**El buscador ya funciona**, y es la forma más rápida de llegar a cualquier sitio sin recorrer el menú. Hasta la versión anterior de este manual estaba dibujado y no hacía nada; ahora encuentra dos cosas distintas: **pantallas** y **documentos**.
+**El buscador es la forma más rápida de llegar a cualquier sitio** sin recorrer el menú, y encuentra dos cosas distintas: **pantallas** y **documentos**.
 
 Se abre de dos formas: pulsando **Buscar** en la barra, o con **Ctrl+K** desde cualquier pantalla —en un Mac, **Cmd+K**—. El mismo atajo la cierra, y también la cierran la tecla Escape y pulsar fuera de la caja. Al abrirse, el campo aparece vacío y con el cursor puesto.
 
-El campo dice **Una pantalla, un número de documento, un nombre…** Se escribe, se sube y se baja con las flechas **↑** y **↓**, y se abre lo resaltado con **Enter**.
+El campo dice **Una pantalla, un número de documento, un nombre…** Se escribe, se sube y se baja con las flechas **↑** y **↓** —o pasando el ratón—, y se abre lo resaltado con **Enter**.
 
 **Qué encuentra:**
 
-- **Pantallas.** Con el campo vacío ofrece las primeras ocho; al escribir, hasta seis. Cada una lleva debajo, en gris, **su grupo y su sección**, para distinguir dos pantallas con nombre parecido.
-- **Documentos y fichas**, bajo ese mismo encabezado. Nueve clases: **Orden de compra** por su número, **Proveedor** y **Cliente** por nombre o RIF, **Factura** y **Nota de entrega** por su número, **Artículo** por código o nombre, **Trabajador** por nombres, apellidos, cédula o número de ficha, **Máquina** por código o nombre, y **Vehículo** por su placa.
+- **Pantallas.** Con el campo vacío ofrece las primeras ocho; al escribir, hasta seis. Cada una lleva a su derecha, en gris, su módulo y su sección, para distinguir dos pantallas con nombre parecido.
+- **Documentos y fichas**, bajo ese encabezado. Diez clases: **Orden de compra** por su número; **Proveedor** y **Cliente** por nombre o RIF; **Factura**, **Nota de entrega** y **Nota de salida** por su número; **Artículo** por código o nombre; **Trabajador** por nombres, apellidos, cédula o número de ficha; **Máquina** por código o nombre; y **Camión** por su placa. Cada resultado lleva a la izquierda su clase y a la derecha un detalle —el estado, el RIF, el cargo, la fecha…—. Salen hasta cuatro por clase y doce en total.
 
-**Entiende cómo habla la gente, no cómo se rotula el menú.** El menú dice «Tasas de cambio» y quien necesita la calculadora escribe «convertir»; el menú dice «Tickets de romana» y quien la usa escribe «pesaje» o «peso bruto». Cada pantalla tiene detrás una lista de palabras equivalentes: «stock» lleva a Existencias, «gasoil» a Combustible, «excel» o «planilla» a la carga por planilla, «liquidación» a Prestaciones sociales. Y las palabras se pueden escribir en cualquier orden y a medias: **mant taller** encuentra el historial de taller.
+**Entiende cómo habla la gente, no cómo se rotula el menú.** El menú dice **Tasas de cambio** y quien necesita la calculadora escribe *convertir*. Cada pantalla tiene detrás una lista de palabras equivalentes: *stock* lleva a Existencias, *gasoil* a Combustible, *excel* o *planilla* a la carga por planilla —entre otras pantallas que también reciben planillas—, *liquidación* a Prestaciones sociales. Las palabras se pueden escribir en cualquier orden, a medias y sin tildes: *rep taller* encuentra el historial de taller.
 
 Cuatro cosas de su funcionamiento que evitan malentendidos:
 
-- Hay que escribir **al menos dos letras**. Con menos dice **Escribe al menos dos letras.**
-- Los documentos se buscan en la base, así que espera un instante después de que dejes de teclear. Mientras tanto dice **Buscando…**
-- **Solo encuentra lo que tu permiso alcanza.** Ofrecer un atajo a una pantalla que va a rebotar por falta de permiso es enseñar una puerta cerrada. Si no hay nada, dice **Nada con ese nombre, ni en las pantallas ni en los documentos que puedes ver.**
-- **Las pantallas escondidas del menú tampoco salen aquí.** La lupa es otra puerta al mismo menú, y un módulo escondido que se encontrara escribiendo su nombre no estaría escondido. Con una salvedad que conviene conocer: **los documentos sí salen**. Una factura puede aparecer en la lista, y al pulsarla se llega al cartel de obra. Las placas de los camiones ya no: desde el 16 de septiembre de 2026 llevan a su ficha en Maquinaria.
+- **Los documentos se buscan a partir de dos letras.** Las pantallas se filtran desde la primera; si con una sola letra no coincide ninguna, dice **Escriba al menos dos letras.**
+- Los documentos se buscan en la base, así que tardan un instante después de que deje de teclear. Mientras todavía no hay nada que enseñar, dice **Buscando…**
+- **Solo encuentra lo que su permiso alcanza.** Ofrecer un atajo a una pantalla que va a rebotar por falta de permiso es enseñar una puerta cerrada. Si no hay nada, dice **Sin resultados en las pantallas ni en los documentos a su alcance.**
+- **Las pantallas escondidas del menú tampoco salen aquí.** La lupa es otra puerta al mismo menú, y un módulo escondido que se encontrara escribiendo su nombre no estaría escondido.
 
-Solo tres resultados llevan al registro concreto —la orden de compra, el trabajador y el vehículo—; los demás dejan en la lista donde ese registro vive.
+Casi todos los documentos llevan a su ficha: la orden de compra, el proveedor, el artículo, el trabajador, la máquina y el camión —este último, en Maquinaria—. La nota de entrega abre su detalle y la nota de salida su papel en el historial de Salidas. El cliente deja en la lista de clientes, ya filtrada por su nombre, y la factura en la lista de facturas.
 
 #### El menú del usuario
 
-Se abre pulsando el círculo con tus iniciales, y se cierra pulsando fuera o con la tecla Escape. Contiene:
+Se abre pulsando el círculo con sus iniciales, y se cierra pulsando fuera o con la tecla Escape. Contiene:
 
-1. Tu nombre completo y, debajo en gris, tu usuario.
+1. Su nombre completo y, debajo en gris, su usuario.
 2. El bloque **Apariencia**, con los tres botones del tema.
 3. **Mi cuenta**.
 4. **Cerrar sesión**.
 
-**Cerrar sesión cierra la sesión al instante, sin preguntar.** No hay confirmación, así que no lo pulses con algo a medio escribir: lo que no se guardó, no quedó.
+**Cerrar sesión cierra la sesión al instante, sin preguntar.** No hay confirmación, así que no lo pulse con algo a medio escribir: lo que no se guardó, no quedó.
+
+**Cierra solo este equipo.** Si la misma cuenta está abierta en otro aparato, allí sigue abierta: varias personas comparten algunas cuentas, y salir de una no debe echar a las demás.
 
 Cerrar sesión **no quita la huella** de ese equipo.
 
 ### 3.3 Las notificaciones
 
-Sirven para enterarte de lo que pasa en el sistema —pedidos, entradas de inventario, pagos— sin tener que ir a mirar módulo por módulo. Se abren con la campana de la barra superior; no tienen pantalla propia.
+Sirven para enterarse de lo que pasa en el sistema —pedidos, entradas de inventario, pagos— sin tener que ir a mirar módulo por módulo. Se abren con la campana de la barra superior; no tienen pantalla propia.
 
-Si hay avisos sin leer, la campana lleva una burbuja roja con el número. A partir de cien muestra **99+**.
+Si hay avisos sin leer, la campana lleva una burbuja roja con el número.
 
 #### Un asunto por línea, no un aviso por línea
 
-Esto es lo que más cambió, y conviene entenderlo antes de mirar el panel.
+Una compra no genera un aviso: genera varios. El sistema anota cada paso —el pedido, la confirmación, la aprobación de gerencia, la orden sin método de pago— y cada paso es un aviso. Puestos en fila, varias líneas seguidas hablando de la misma compra parecerían el mismo aviso repetido.
 
-Una compra no genera un aviso: genera varios. El sistema anota cada paso —el pedido, la confirmación, la propuesta al gerente, la aprobación, la orden sin método de pago— y cada paso es un aviso. Puestos en fila, cinco líneas seguidas hablando de la misma compra parecen el mismo aviso repetido. **No lo son**, pero se leen así.
+Por eso **los avisos se agrupan por asunto**: una compra, una línea. La línea enseña **en qué estado está la cosa ahora** —su último paso— y, si llegó ahí dando varios, dice cuántos fueron: **· 4 movimientos**.
 
-Desde el 31 de agosto de 2026 **los avisos se agrupan por asunto**: una compra, una línea. La línea enseña **en qué estado está la cosa ahora**, y si llegó ahí dando pasos, dice cuántos fueron —**· 4 movimientos**—.
+La cuenta de la campana cuenta **asuntos** sin leer, no avisos. Es la misma cuenta que va a encontrar debajo.
 
-La cuenta de la campana cuenta **asuntos** sin leer, no avisos. Es la misma cuenta que vas a encontrar debajo: si dijera treinta y debajo hubiera siete, aprenderías a no fiarte del número.
+**La campana mira los cuarenta avisos más recientes.** De ahí salen su cuenta y su lista. Para ir más atrás está **Ver todas**.
 
 #### Qué se ve en el panel
 
-- La cabecera **Movimientos** y, debajo, cuántos hay sin leer o **Todo al día**.
-- El botón de silencio a la derecha de la cabecera, con el globo **Silenciar el sonido de aviso** o **Activar el sonido de aviso**.
-- Los ocho asuntos que más apuran. La campana es un vistazo, no un archivo.
-- Al pie, **Ver todas** —con el total entre paréntesis si hay más de ocho— y, si queda algo sin leer, el botón de marcarlo todo.
+- La cabecera **Movimientos** y, debajo, cuántos hay sin leer —**3 sin leer**— o **Todo al día**.
+- El botón de silencio a la derecha de la cabecera, con el globo **Silenciar el sonido de aviso** o **Activar el sonido de aviso**. Silenciado, su campana sale tachada.
+- Los ocho asuntos más recientes. La campana es un vistazo, no un archivo.
+- Al pie, **Ver todas** —con el número de asuntos entre paréntesis si hay más de ocho— y, si queda algo sin leer, el botón de marcarlo todo, un icono con el globo **Marcar todas como leídas**.
 
-Cada línea lleva un círculo con el icono de su módulo, el título del último movimiento —en negrita si no lo has leído—, un detalle en letra pequeña y una última línea con el tiempo transcurrido, quién lo provocó y cuántos movimientos lleva el asunto. El tiempo se escribe **ahora mismo**, **hace 5 min**, **hace 2 h**, **hace 3 d** o **hace 2 meses**. Los asuntos con algo sin leer tienen fondo azul claro y un punto azul a la derecha.
+Cada línea lleva un círculo con el icono de su módulo, el título del último movimiento —en negrita si no lo ha leído—, un detalle en letra pequeña y una última línea con el tiempo transcurrido, quién lo provocó y cuántos movimientos lleva el asunto. El tiempo se escribe **ahora mismo**, **hace 5 min**, **hace 2 h**, **hace 3 d**, **hace 1 mes** o **hace 2 meses**. Los asuntos con algo sin leer tienen el fondo ligeramente teñido y un punto naranja.
 
-El color indica la importancia: azul es informativo, naranja pide atención y rojo es urgente. **La importancia que manda es la del último movimiento**, no la más alta que haya tenido: una compra en la que el proveedor desistió —urgente— y que después se canceló ya no apura.
+El color del círculo indica la importancia: **naranja** es informativo, **amarillo** pide atención y **rojo** es urgente. **La importancia que manda es la del último movimiento**, no la más alta que haya tenido: una compra que pasó por un momento urgente y después se resolvió ya no apura.
 
 #### El orden
 
-Primero lo que no se ha leído, y dentro de eso lo que más apura. Después, lo más reciente.
+**Lo más reciente, arriba.** Cada asunto se coloca por su último movimiento: una compra de la que se habló ayer y otra vez esta mañana va arriba por lo de esta mañana.
 
-Sin leer manda porque es lo único que dice «esto todavía no lo ha atendido nadie». La importancia va después y no antes: un aviso urgente de la semana pasada que ya se leyó no debe tapar uno que pide atención y que nadie ha abierto hoy.
+Lo que no se ha leído no sube por estar sin leer: se distingue por su punto y por la cuenta de la campana. La importancia tampoco ordena: se ve en el color.
 
 #### Ver todas
 
-El botón del pie abre una ventana con **el archivo entero**: hasta doscientos asuntos, no ocho. Es donde se contesta «¿qué quedó pendiente de compras?» o «¿qué pasó con aquella orden?».
+El botón del pie abre una ventana titulada **Movimientos**, con el archivo: **los doscientos avisos más recientes**, agrupados por asunto igual que en la campana. Es donde se averigua qué quedó pendiente de compras o qué pasó con aquella orden.
 
 Trae dos filtros, y solo dos:
 
-- **Todos / Sin leer**, con la cuenta al lado.
-- **Todo** y una pastilla por cada módulo que tenga avisos, con cuántos. Las pastillas salen de lo que hay, no de la lista de módulos posibles: no vas a ver **Combustible (0)**.
+- **Todos** y **Sin leer**. El segundo lleva la cuenta entre paréntesis, y se apaga si no queda nada sin leer.
+- **Todo** y una pastilla por cada módulo que tenga avisos, con cuántos —**Compras (12)**—, de más a menos. Las pastillas salen de lo que hay, no de la lista de módulos posibles, y solo aparecen si hay avisos de más de un módulo. Pulsar otra vez la elegida la quita.
 
-*No hay filtro por importancia a propósito*: la importancia ya ordena la lista y ya colorea el icono, y filtrar por ella esconde justo lo que uno no sabía que tenía que mirar.
+Los dos filtros se combinan.
+
+*No hay filtro por importancia a propósito*: la importancia ya colorea el icono —al pasar el ratón dice **Urgente**, **Requiere atención** o **Informativo**—, y filtrar por ella esconde justo lo que uno no sabía que tenía que mirar.
 
 Cada asunto trae hasta tres botones:
 
-- **Abrir**, que lleva al documento y cierra la ventana.
-- **N pasos antes**, que despliega la historia sin salir de la lista. Cada paso dice qué pasó —«Se añadió COT-2026-0002 a lo propuesto», «Se retiró COT-2026-0002; quedan 1 propuestas»—, cuándo y quién.
-- **Marcar leída**, si queda algo sin leer.
+- **Abrir**, si el asunto lleva a algún sitio. Lo marca leído, lleva al documento y cierra la ventana.
+- **N pasos antes** —**1 paso antes** si es uno—, que despliega la historia sin salir de la lista. Cada paso dice qué pasó, cuándo y quién. Desplegado, el botón dice **Ocultar los pasos**.
+- **Marcar leída**, si queda algo sin leer. Marca el asunto entero y no lleva a ninguna parte.
 
-Abrir la historia y abrir el documento son dos preguntas distintas —«¿qué pasó con esto?» y «llévame allí»—, y por eso son dos botones: mezclarlas obligaría a salir de la lista para volver a entrar.
+Abrir la historia y abrir el documento son dos preguntas distintas —qué pasó con esto, y llévame allí—, y por eso son dos botones: mezclarlas obligaría a salir de la lista para volver a entrar.
+
+La ventana se cierra con **Cerrar**.
 
 #### Qué se puede hacer
 
-1. **Leer un asunto**: púlsalo en la campana. Queda leído **entero**, con todos sus pasos, aunque no lleve a ninguna pantalla: haber abierto la compra es haberse enterado de cómo está. Si lleva a algún sitio, el panel se cierra y te deja allí.
-2. **Ver el archivo entero**: **Ver todas**.
-3. **Marcar todas como leídas**: el botón del pie del panel, o el de la ventana. Mientras trabaja queda deshabilitado.
-4. **Silenciar el sonido**: el botón de la cabecera. Tu decisión se recuerda en ese aparato.
+1. **Leer un asunto**: púlselo en la campana. Queda leído **entero**, con todos sus pasos, aunque no lleve a ninguna pantalla: haber abierto la compra es haberse enterado de cómo está. El panel se cierra y, si el asunto lleva a algún sitio, lo deja allí.
+2. **Ver el archivo**: **Ver todas**.
+3. **Marcar todas como leídas**: el botón del pie del panel, o **Marcar todas como leídas** en la ventana. Mientras trabaja queda desactivado.
+4. **Silenciar el sonido**: el botón de la cabecera. La decisión se recuerda en ese navegador.
 
 Sobre el sonido, tres cosas que evitan malentendidos:
 
-- Es una nota corta y a volumen bajo, generada por el propio sistema.
-- **No suena al abrir el sistema**, aunque tengas avisos acumulados de ayer. Solo suena por los que llegan con la pantalla ya abierta.
+- Son dos notas cortas, la segunda más aguda, a volumen bajo y generadas por el propio sistema.
+- **No suena al abrir el sistema**, aunque tenga avisos acumulados de ayer. Solo suena por los que llegan sin leer con la pantalla ya abierta, esté en la pantalla que esté.
 - **Puede no sonar la primera vez**: los navegadores no dejan sonar nada hasta que la persona ha pulsado algo en la página.
 
-Si no hay nada, se ve **Sin movimientos todavía** con el texto **Aquí entran los pedidos, las entradas de inventario y los pagos.** Mientras carga, **Cargando…** Y si filtras en la ventana y no queda nada, **Nada que enseñar con ese filtro**.
+Si no hay nada, el panel dice **Sin movimientos todavía** y **Aquí entran los pedidos, las entradas de inventario y los pagos.**, y la ventana, **Sin notificaciones** y **Aquí se notifican los pedidos, las entradas de inventario y los pagos.** Mientras carga, **Cargando…** Y si se filtra en la ventana y no queda nada, **Sin resultados** y **Quite el filtro para ver el resto.**
 
-La lista se refresca sola cada cinco minutos y cada vez que vuelves a la pestaña, además del enlace en vivo que trae los avisos en el momento.
+La lista se refresca sola cada cinco minutos y cada vez que se vuelve a la pestaña, además del enlace en vivo que trae los avisos en el momento.
 
 ### 3.4 El tema claro y oscuro
 
-En el menú del usuario, el bloque **Apariencia** tiene tres botones: **Claro**, **Oscuro** y **Sistema**. El activo se ve resaltado.
+En el menú del usuario, el bloque **Apariencia** tiene tres botones: **Claro**, **Oscuro** y **Sistema**, con un sol, una luna y una pantalla. El activo se ve resaltado.
 
 **Sistema** es lo que viene puesto de fábrica: sigue lo que tenga configurado Windows o el teléfono, y cambia solo si el equipo cambia al anochecer con el sistema abierto.
 
-El cambio es inmediato, sin recargar. Y **es por aparato y por navegador**: no viaja con tu cuenta. Ponerlo en oscuro en la oficina no lo cambia en el teléfono.
+El cambio es inmediato, sin recargar. Y **es por aparato y por navegador**: no viaja con su cuenta. Ponerlo en oscuro en la oficina no lo cambia en el teléfono.
 
-La portada es la única pantalla que no obedece al tema: siempre va azul.
+La portada y la pantalla de entrar llevan un fondo oscuro fijo, en el tono tierra de la casa, que no cambia con el tema.
 
 ### 3.5 El aviso de versión nueva
 
-De vez en cuando se publica una versión nueva del sistema. El sistema lo comprueba al abrirlo, cada cinco minutos y cada vez que vuelves a la pestaña, y **no se recarga solo**: te avisa y tú eliges cuándo actualizar, para que puedas terminar y guardar lo que estés haciendo.
+De vez en cuando se publica una versión nueva del sistema. El sistema lo comprueba al abrirlo, cada cinco minutos, cada vez que se vuelve a la pestaña y cuando una pantalla no llega a cargarse. **No se recarga solo**: avisa y usted elige cuándo actualizar, para que pueda terminar y guardar lo que esté haciendo.
 
-El aviso es un recuadro naranja, abajo a la derecha —abajo y centrado en el teléfono—, por encima de todo lo demás:
+El aviso es un recuadro amarillo, abajo a la derecha —abajo y centrado en el teléfono—, por encima de todo lo demás:
 
 - Título **Hay una versión nueva del sistema**
-- Detalle **Termina y guarda lo que estés haciendo. Cuando quieras, pulsa Actualizar: nada se recarga solo.**
+- Detalle **Termine y guarde lo que esté haciendo. Cuando quiera, pulse Actualizar: nada se recarga solo.**
 - Botones **Actualizar** y **Más tarde**
 
-**Más tarde** no lo quita: lo reduce a una etiqueta pequeña, **Versión nueva**, en la misma esquina, y pulsándola se vuelve a abrir. Mientras no actualices sigues trabajando con la versión que tenías abierta. Si mientras tanto se publica otra, el aviso se vuelve a abrir solo.
+**Más tarde** no lo quita: lo reduce a una etiqueta pequeña, **Versión nueva**, abajo a la derecha, y pulsándola se vuelve a abrir. Mientras no actualice sigue trabajando con la versión que tenía abierta. Si mientras tanto se publica otra, el aviso se vuelve a abrir solo.
 
-Si entras a una pantalla que cambió con la versión nueva y ya no se puede traer desde la que tienes abierta, en su lugar aparece **Esta pantalla es de la versión nueva del sistema**, con los botones **Volver** y **Actualizar**. Si lo que falló es la conexión, dice **No se pudo abrir esta pantalla** y el botón es **Recargar**.
+Si entra a una pantalla que cambió con la versión nueva y ya no se puede traer desde la que tiene abierta, en su lugar aparece **Esta pantalla es de la versión nueva del sistema**, con el texto **Se publicó una versión nueva mientras tenía el sistema abierto, y esta pantalla ya no llega a la anterior. Pulse Actualizar cuando quiera traerla.** y los botones **Volver** y **Actualizar**. Si lo que falló es la conexión, dice **No se pudo abrir esta pantalla** y **No llegó desde el servidor. Revise la conexión y pulse Recargar.**, con los botones **Volver** y **Recargar**.
 
-Si pulsas **Actualizar** y el navegador sigue trayendo la versión vieja, el aviso cambia:
+Si pulsa **Actualizar** y el navegador sigue trayendo la versión vieja, el aviso cambia:
 
-- Título **Estás viendo una versión antigua del sistema**
-- Detalle **Hay una más reciente publicada y tu navegador sigue trayendo la anterior. Recarga con Ctrl+Shift+R, o abre el sistema en una ventana de incógnito.**
+- Título **Está viendo una versión antigua del sistema**
+- Detalle **Hay una más reciente publicada y su navegador sigue trayendo la anterior. Recargue con Ctrl+Shift+R, o abra el sistema en una ventana de incógnito.**
 - Botón **Recargar**
 
-**Ese no se puede cerrar ni posponer**: trabajar sobre una versión vieja creyendo que estás al día es peor que la molestia del recuadro. Se va solo cuando el navegador consiga traer la versión nueva.
+**Ese no se puede cerrar ni posponer**: trabajar sobre una versión vieja creyendo que está al día es peor que la molestia del recuadro. Se va cuando una recarga consigue traer la versión nueva.
 
 El aviso aparece en cualquier pantalla, incluidas la portada y la de entrar. Y sin conexión no avisa de nada, porque no saber no es motivo para molestar.
 
@@ -615,27 +646,31 @@ El aviso aparece en cualquier pantalla, incluidas la portada y la de entrar. Y s
 
 **Menú del usuario › Mi cuenta**
 
-Es donde consultas tus datos y haces las dos únicas cosas que son tuyas y de nadie más: cambiar tu clave y activar o quitar la huella en tu equipo. No está en el menú lateral, y se abre siempre, aunque no tengas permiso sobre ningún módulo.
+Es donde consulta sus datos y hace lo que es suyo y de nadie más: cambiar su clave, activar o quitar la huella en su equipo y guardar su firma. No está en el menú lateral, y se abre siempre, aunque no tenga permiso sobre ningún módulo.
 
-El encabezado dice **Mi cuenta** y **Tus datos y tu clave.** Debajo hay tres tarjetas.
+El encabezado dice **Mi cuenta** y **Datos personales y clave de acceso.** Debajo hay cuatro tarjetas.
 
-**Tus datos.** Llevan por título tu nombre completo y por subtítulo **Para cambiar estos datos, habla con quien administra el sistema.**
+**Sus datos.** Llevan por título su nombre completo y por subtítulo **Para cambiar estos datos, hable con quien administra el sistema.**
 
 | Dato | Qué muestra |
 | --- | --- |
-| **Usuario** | Tu nombre de acceso |
-| **Cargo** | Tu cargo. Si no está puesto, un guion |
-| **Cédula** | Tu cédula. Si no está puesta, un guion |
-| **Teléfono** | Tu teléfono. Si no está puesto, un guion |
-| **En el sistema desde** | La fecha en que te dieron de alta, escrita completa |
+| **Usuario** | Su nombre de acceso |
+| **Cargo** | Su cargo. Si no está puesto, una raya |
+| **Cédula** | Su cédula. Si no está puesta, una raya |
+| **Teléfono** | Su teléfono. Si no está puesto, una raya |
+| **En el sistema desde** | La fecha en que le dieron de alta, escrita completa |
 
-Debajo, bajo el rótulo **Roles**, están los roles que tienes. El de administrador se pinta en naranja y el resto en gris. Si no tienes ninguno, dice **Sin roles asignados**.
+Debajo, bajo el rótulo **Roles**, están los roles que tiene. El de administrador se pinta en naranja y el resto en gris. Si no tiene ninguno, dice **Sin roles asignados**.
 
-**Ninguno de estos datos se edita aquí.** No hay campos ni botón de guardar para el nombre, el cargo, la cédula ni el teléfono. La razón es que identifican a la persona en todo lo que firma, y quien los cambia es quien administra el sistema, no cada quien sobre sí mismo. Si algo está mal, pídelo a administración.
+**Ninguno de estos datos se edita aquí.** No hay campos ni botón de guardar para el nombre, el cargo, la cédula ni el teléfono. La razón es que identifican a la persona en todo lo que firma, y quien los cambia es quien administra el sistema, no cada quien sobre sí mismo. Si algo está mal, pídalo a la administración.
 
-**Cambiar la clave.** Con el subtítulo **Nadie más debería saberla, ni siquiera quien administra el sistema.** Si tu clave sigue siendo la que te dieron, encima del formulario aparece un aviso naranja: **Tu clave todavía es la que te asignó la administración. Cámbiala por una que solo tú sepas: mientras tanto, lo que registres con ella no distingue si fuiste tú.**
+**Cambiar la clave.** Con el subtítulo **Nadie más debería saberla, ni siquiera quien administra el sistema.** El formulario se explica en 3.7.
 
-**Entrar con la huella.** Es la tercera tarjeta, explicada en el apartado 2.3.
+**Entrar con la huella.** Es la tercera tarjeta, explicada en el apartado 2.3. Mientras el sistema comprueba si el equipo tiene lector, no se ve.
+
+**Mi firma.** Con el subtítulo **Los papeles que emita salen firmados con ella: órdenes de compra, actas, recibos.** Si todavía no tiene ninguna, lo dice —**Todavía no ha guardado ninguna. Mientras tanto, los papeles que emita salen con la raya en blanco para firmarlos a mano.**— y ofrece **Guardar mi firma**. La ventana para guardarla, **Guardar la firma**, deja trazarla, escribirla o cargar una foto de la que ya usa en papel.
+
+Con la firma guardada, la tarjeta la enseña sobre la raya, como saldrá en el papel, con su estado —**En uso** o **Sin usar**— y los botones **Cambiarla** y **Quitar la firma**. Apagada, la firma sigue guardada pero los papeles salen con la raya en blanco, para firmarlos a mano.
 
 ### 3.7 Cambiar la clave
 
@@ -644,45 +679,51 @@ Es el mismo formulario en **Mi cuenta** y en la pantalla obligatoria del primer 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
 | **Clave actual** | Sí | Oculta, con botón de ojo para verla |
-| **Clave nueva** | Sí | Oculta. Debajo, la ayuda **Mínimo 8 caracteres.** |
-| **Repite la clave nueva** | Sí | Oculta, con botón de ojo |
+| **Clave nueva** | Sí | Oculta, con botón de ojo. Debajo, la ayuda **Mínimo 8 caracteres.** |
+| **Repita la clave nueva** | Sí | Oculta, con botón de ojo |
 
-1. Escribe tu **Clave actual**.
-2. Escribe la **Clave nueva**, de ocho caracteres o más.
-3. Repítela en **Repite la clave nueva**.
-4. Pulsa **Cambiar la clave**, o **Guardar y entrar** si es tu primer ingreso. Mientras guarda dice **Cambiando…**
+1. Escriba su **Clave actual**.
+2. Escriba la **Clave nueva**, de ocho caracteres o más.
+3. Repítala en **Repita la clave nueva**.
+4. Pulse **Cambiar la clave**, o **Guardar y entrar** si es su primer ingreso. Mientras guarda dice **Cambiando…**
 
-**El botón está apagado hasta que las cuatro condiciones se cumplen**: que haya algo escrito en **Clave actual**, que la nueva llegue a ocho caracteres, que la nueva y su repetición sean idénticas, y que la nueva sea distinta de la actual. Mientras escribes, los avisos salen en rojo debajo del campo: **Faltan 3 caracteres.**, **Tiene que ser distinta de la actual.** y **Las dos claves no son iguales.** Este último no aparece hasta que hayas escrito algo en la repetición, porque señalar el error mientras se teclea es ruido.
+**El botón está apagado hasta que las cuatro condiciones se cumplen**: que haya algo escrito en **Clave actual**, que la nueva llegue a ocho caracteres, que la nueva y su repetición sean idénticas, y que la nueva sea distinta de la actual. Mientras escribe, los avisos salen en rojo debajo del campo, en el lugar de la ayuda: **Faltan 3 caracteres.**, **Tiene que ser distinta de la actual.** y **Las dos claves no son iguales.** Este último no aparece hasta que haya escrito algo en la repetición, porque señalar el error mientras se teclea es ruido.
 
-Al terminar sale en verde «Clave cambiada. La próxima vez entra con la nueva.» y los tres campos se vacían.
+Al terminar sale en verde **Clave cambiada. La próxima vez entre con la nueva.** y los tres campos se vacían.
 
-#### Qué le pasa a tus otras sesiones
+Si su clave sigue siendo la que le dio la administración, el sistema no le deja trabajar hasta cambiarla: al entrar le lleva a la pantalla del primer día, con este mismo formulario.
+
+#### Qué le pasa a sus otras sesiones
 
 Esto es lo más importante de la pantalla y conviene saberlo de antemano:
 
-**Cambiar tu clave cierra todas tus demás sesiones abiertas**, en cualquier otro equipo o teléfono. Quedan cerradas en el momento, sin aviso para quien las tuviera delante.
+**Cambiar su clave cierra todas sus demás sesiones abiertas**, en cualquier otro equipo o teléfono, sin aviso para quien las tuviera delante.
 
-**La sesión desde la que estás cambiando la clave se respeta**: tú no sales de tu propia pantalla.
+**La sesión desde la que está cambiando la clave se respeta**: usted no sale de su propia pantalla.
 
-**Y desactiva la huella en todas partes.** El pase guardado en cualquier otro aparato deja de servir en cuanto cambias la clave. Es la única forma de desactivarla a distancia, y por eso es lo primero que hay que hacer si se pierde un teléfono o un equipo: cámbiate la clave desde otro sitio y con eso echas a quien esté dentro y anulas la huella allí.
+**Y desactiva la huella en los demás aparatos.** El pase guardado en cualquier otro equipo deja de servir en cuanto cambia la clave. Es la única forma de desactivarla a distancia, y por eso es lo primero que hay que hacer si se pierde un teléfono o un equipo: cámbiese la clave desde otro sitio y con eso echa a quien esté dentro y anula la huella allí.
 
-Cuando la administración le repone la clave a alguien pasa exactamente lo mismo: se le cierran las demás sesiones, y la clave nueva vuelve a nacer marcada como prestada, así que esa persona tendrá que ponerse la suya al entrar.
+Cuando la administración le repone la clave a alguien, a esa persona se le cierran todas sus sesiones, y la clave nueva nace marcada como prestada, así que tendrá que ponerse la suya al entrar.
 
 ### 3.8 Cuando algo no sale
 
-| Lo que ves | Qué significa | Qué hacer |
+Los tres primeros mensajes los escribe la base de datos y por eso todavía tutean; se copian como salen.
+
+| Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «La clave actual no es correcta.» | La clave que escribiste arriba no es la que tienes puesta | Vuelve a escribirla. Si no la recuerdas, pide a la administración que la reponga |
-| «La clave nueva debe tener al menos 8 caracteres.» | La nueva es corta | Alárgala hasta ocho o más |
-| «La clave nueva tiene que ser distinta de la actual.» | Pusiste la misma que ya tenías | Elige otra |
-| «Sesión no válida. Vuelve a entrar.» | Tu sesión caducó mientras estabas en la pantalla | Vuelve a entrar y repite el cambio |
-| «No se encontró tu perfil.» | El sistema no encuentra tus datos | Avisa a la administración |
-| **Nombre del módulo** seguido de **no está a tu alcance** | Abriste una dirección de un módulo que no te toca | Pulsa **Volver al panel**. Si lo necesitas para tu trabajo, pide el permiso a administración |
-| **Esto lo ve la administración** | Intentaste abrir Auditoría sin ser administrador | Pulsa **Volver al panel** |
-| «Tu usuario no tiene permiso para esta acción.» | Falta el permiso para lo que intentaste hacer | Pide el permiso a administración, o que lo haga quien lo tenga |
-| «Esa operación todavía no existe en la base de datos. Falta correr las migraciones.» | Esa parte del sistema todavía no está instalada | Avisa a sistemas. No es algo que puedas resolver desde la pantalla |
-| «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
-| **Sin conexión en vivo** en la barra superior | El enlace en vivo se cortó; lo que ves puede estar viejo | Recarga la página para ponerla al día |
+| «La clave actual no es correcta.» | La clave que escribió arriba no es la que tiene puesta | Vuelva a escribirla. Si no la recuerda, pida a la administración que se la reponga |
+| «Sesión no válida. Vuelve a entrar.» | Su sesión caducó mientras estaba en la pantalla | Vuelva a entrar y repita el cambio |
+| «Su sesión venció. Vuelva a entrar y repita lo que estaba haciendo.» | Lo mismo, dicho por la pantalla en vez de por la base | Vuelva a entrar y repita el cambio |
+| «No se encontró su perfil.» | El sistema no encuentra sus datos | Avise a la administración |
+| **Nombre del módulo** seguido de **no está a su alcance** | Abrió una dirección de un módulo que no le toca | Pulse **Volver al panel**. Si lo necesita para su trabajo, pida el permiso a la administración |
+| **Esto lo ve la administración** | Intentó abrir Auditoría sin ser administrador | Pulse **Volver al panel** |
+| **En construcción** | Abrió una pantalla que hoy está escondida del menú (1.5) | Pulse **Volver al panel**. No es cosa de permisos |
+| «Su usuario no tiene permiso para esta acción.» | Falta el permiso para lo que intentó hacer | Pida el permiso a la administración, o que lo haga quien lo tenga |
+| «Esa operación todavía no está disponible en la base de datos. Avise a soporte.» | Esa parte del sistema todavía no está instalada en la base | Avise a soporte. No es algo que pueda resolver desde la pantalla |
+| «Falta algo en la base de datos para esta pantalla. Avise a soporte: hay una migración sin correr.» | A la pantalla le falta algo que la base todavía no tiene | Avise a soporte |
+| «No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.» | Se cayó el internet | Reintente cuando vuelva la señal |
+| **Sin conexión en vivo** en la barra superior | El enlace en vivo se cortó; lo que ve puede estar viejo | Recargue la página para ponerla al día |
+| «Algo salió mal y el sistema no supo explicarlo. Vuelva a intentarlo; si se repite, avise a soporte.» | Un fallo que el sistema no reconoce | Vuelva a intentarlo; si se repite, avise a soporte |
 
 ---
 
@@ -939,7 +980,7 @@ Si escribes una moneda que no existe, te lo dice y, cuando se parece a una que s
 
 ## 6. Explotación
 
-> **Este módulo volvió al menú el 28 de agosto de 2026.** Estuvo fuera un tiempo —construido y funcionando, pero sin recorrer pantalla por pantalla— y ya se ofrece. Lo que sigue pendiente es el reparto: hoy **solo lo alcanza el administrador**, porque nadie ha decidido todavía qué rol entra aquí. Y conviene saber una consecuencia: **el parte de turno es la única puerta por la que entra piedra al patio**, así que mientras nadie más tenga acceso, nadie más puede cargarlo.
+> **Explotación está en el menú, pero no entera.** Se ofrecen **Tablero**, **Viajes de camiones**, **Plantas y rutas** y **Salidas de planta**; **Frentes y bancos**, **Voladuras** y **Producción por turno** están escondidas (1.5). **Este capítulo todavía cuenta justo esas tres, y no las que se ofrecen**: se está rehaciendo contra las pantallas de hoy. Hasta entonces, lo que sigue describe pantallas que hoy no se alcanzan desde el menú.
 
 Explotación es el principio de todo lo demás. Aquí se anota dónde se está arrancando el material, qué voladuras se hicieron y cuánto produjo cada turno. De esta última anotación sale la piedra que después se cuenta en el patio, se vende y se despacha.
 
@@ -1902,7 +1943,7 @@ Del módulo salen cuatro documentos, y **los cuatro llevan la misma cabecera que
 
 ## 8. Despachos
 
-> **Este módulo volvió al menú el 28 de agosto de 2026.** Estuvo fuera un tiempo —construido y funcionando, pero sin recorrer pantalla por pantalla— y ya se ofrece. Lo que sigue pendiente es el reparto: hoy **solo lo alcanza el administrador**, porque nadie ha decidido todavía qué rol entra aquí. Este capítulo se escribió antes de que volviera, así que puede llevar detalles que ya no coincidan: dilo y se corrige.
+> **Despachos no está en el menú: está escondido entero desde el 31 de agosto de 2026**, porque la cantera todavía no registra en el sistema la salida por el portón (1.5). Quien llegue a su dirección se encuentra el cartel de obra. Este capítulo se conserva porque el módulo existe y el día que vuelva hará falta; se escribió antes de esconderlo, así que puede llevar detalles que ya no coincidan.
 
 Despachos guarda los dos papeles que acompañan al camión: el pesaje de la romana y la guía de movilización. Los dos se hacían a mano dentro de la nota de entrega, y los dos existen aunque no haya venta. Aquí se producen; Ventas los consume.
 
@@ -3245,7 +3286,7 @@ Conviene saberlo antes de buscarlo:
 
 ## 10. Ventas
 
-> **Este módulo volvió al menú el 28 de agosto de 2026.** Estuvo fuera un tiempo —construido y funcionando, pero sin recorrer pantalla por pantalla— y ya se ofrece. Lo que sigue pendiente es el reparto: hoy **solo lo alcanza el administrador**, porque nadie ha decidido todavía qué rol entra aquí. Este capítulo se escribió antes de que volviera, así que puede llevar detalles que ya no coincidan: dilo y se corrige.
+> **Ventas está en el menú desde el 28 de agosto de 2026**, y quién lo ve depende de los permisos de cada rol (3.1). **Este capítulo todavía no se ha repasado contra las pantallas de hoy**: se escribió antes de que volviera, y lo que se factura y se cobra se mudó después a Facturación (capítulo 21). Puede llevar detalles que ya no coincidan.
 
 Ventas es el camino del material hacia afuera: a quién se le vende, a cuánto y qué se le entregó. **Lo que se le factura y lo que paga tiene módulo propio desde el 15 de septiembre de 2026, Facturación**, explicado en el capítulo 21: allí se emite la factura sobre las notas de entrega que salen de aquí.
 
@@ -6391,14 +6432,14 @@ Sí. Solo necesitas navegador e internet, con el mismo usuario y la misma clave.
 **Se me fue el internet mientras registraba algo. ¿Se perdió?**
 Si no llegaste a guardar, sí. El sistema necesita conexión para guardar y no trabaja sin señal. Vuelve a registrarlo cuando vuelva el internet.
 
-**Ayer estaba Ventas en el menú y hoy no. ¿Se borró?**
-Ya no. Desde el 28 de agosto de 2026 el menú ofrece **Panel, Explotación, Despachos, Maquinaria, Inventario, Combustible, Asignaciones, Compras, Ventas, Nómina —con el Organigrama dentro—, Tasas de cambio, Configuración y Manual de usuario**. Lo único que no aparece es **Tesorería**, y no porque falte: se retiró. El apartado 1.5 lo explica entero.
+**Busco un módulo en el menú y no está. ¿Se borró?**
+No. Cada persona ve solo los módulos sobre los que tiene permiso (3.1), y además hay unas pocas pantallas escondidas para todo el mundo: hoy, **Despachos** entero y, de Explotación, **Frentes y bancos**, **Voladuras** y **Producción por turno**. El apartado 1.5 trae la lista entera del menú y explica lo escondido.
 
-**Antes había Tesorería y ahora no la encuentro.**
-Tesorería **dejó de ser un módulo**. No está escondida: la empresa decidió que el sistema no lleva bancos ni cajas, solo refleja los movimientos. Lo que se usaba todos los días se mudó a **Compras**: **Pagos por hacer** y **Movimientos de dinero** están ahí, en el mismo menú, y funcionan igual. El capítulo 12 las sigue contando.
+**Antes no estaba Tesorería y ahora sí.**
+Volvió al menú el 21 de septiembre de 2026, entera: **Tablero**, **Bancos y cajas**, **Reportes**, **Libro Mayor** y **Libro de tesorería**. **Pagos por hacer** se sigue ofreciendo desde **Compras**. El capítulo 12 la cuenta.
 
-**Escribí la dirección de Ventas y me salió «En construcción».**
-Es lo previsto. Esa pantalla existe, pero todavía no está entregada, y lo que se haga ahí puede perderse o no cuadrar con el resto. No es un problema de permisos: pedir el permiso no lo cambia.
+**Escribí la dirección de una pantalla y me salió «En construcción».**
+Es lo previsto: esa pantalla existe, pero hoy está escondida del menú, y lo que se haga ahí puede perderse o no cuadrar con el resto. No es un problema de permisos: pedir el permiso no lo cambia.
 
 **¿Por qué no veo el mismo menú que mi compañero?**
 Porque tienen permisos distintos. Cada quien ve solo los módulos que necesita para su trabajo. No es una falla.
