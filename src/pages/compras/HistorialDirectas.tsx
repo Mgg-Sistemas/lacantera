@@ -49,7 +49,7 @@ const ESTADOS: Record<string, { texto: string; tono: 'success' | 'warning' | 'da
   PAGADA_POR_RECIBIR: { texto: 'Pagada, por recibir', tono: 'warning' },
   POR_RECIBIR: { texto: 'Por recibir', tono: 'warning' },
   POR_INDICAR_PAGO: { texto: 'Por indicar el pago', tono: 'warning' },
-  EN_TESORERIA: { texto: 'En tesorería', tono: 'warning' },
+  EN_TESORERIA: { texto: 'Por pagar', tono: 'warning' },
   PROVEEDOR_DESISTIO: { texto: 'El proveedor desistió', tono: 'danger' },
   CANCELADA: { texto: 'Cancelada', tono: 'danger' },
 }

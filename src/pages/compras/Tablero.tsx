@@ -261,7 +261,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
         paso: 3,
         titulo: 'Pagar lo aprobado',
         detalle:
-          'Tesorería ejecuta el pago de lo que gerencia autorizó, y deja el comprobante.',
+          'Compras registra el pago de lo que la gerencia aprobó, y deja el comprobante.',
         icono: HandCoins,
         a: '/app/tesoreria/pagos',
         exige: 'ESCRITURA',
