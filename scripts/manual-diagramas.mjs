@@ -249,7 +249,7 @@ const inventario = `
 
 const explotacion = `
 <figure class="diagrama">
-<svg viewBox="0 0 760 260" role="img" aria-label="La piedra llega al patio por un solo camino: se define el frente, se registra la voladura contra ese frente, y al cierre del turno el parte de producción escribe una entrada al patio por cada material.">
+<svg viewBox="0 0 760 260" role="img" aria-label="Cómo entra al patio la piedra del parte de turno: se define el frente, se registra la voladura contra ese frente, y al cierre del turno el parte de producción escribe una entrada al patio por cada material.">
   <defs>
     <marker id="fe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
@@ -301,7 +301,7 @@ const explotacion = `
     <text x="676" y="166" text-anchor="middle">la piedra ya está</text>
   </g>
 
-  <text class="cierre" x="380" y="240" text-anchor="middle">Es la única puerta por la que entra material al patio.</text>
+  <text class="cierre" x="380" y="240" text-anchor="middle">Un renglón del parte, una entrada al patio.</text>
 </svg>
 <figcaption>Un parte lleva un renglón por cada material que salió en ese turno, y cada renglón escribe su propia entrada al patio. Por eso anular el parte reversa exactamente esas entradas y no otras parecidas.</figcaption>
 </figure>`
@@ -342,7 +342,7 @@ const despachos = `
 
   <g class="nota">
     <text x="125" y="126" text-anchor="middle">un pesaje, un viaje</text>
-    <text x="125" y="238" text-anchor="middle">sin ella no sale mineral</text>
+    <text x="125" y="238" text-anchor="middle">ampara un viaje</text>
   </g>
 
   <path class="hilo-punteado" d="M425,162 V272 H16 V81 H26" marker-end="url(#fd)"/>
@@ -352,7 +352,7 @@ const despachos = `
 </figure>`
 
 export default {
-  '6.7 Lo que hoy está escondido: frentes, voladuras y parte de turno': explotacion,
+  '6.7 Frentes, voladuras y parte de turno': explotacion,
   '8.3 Del pesaje a la salida del camión': despachos,
   '9.2 El circuito de una compra': compras,
   '10.2 El circuito de una venta': ventas,
