@@ -889,7 +889,7 @@ Debajo del campo del valor hay una línea de ayuda que dice qué se pudo consult
 
 Registrar la tasa del dólar apaga el aviso rojo **La tasa de hoy no está cargada** del panel.
 
-**Cargar una tasa exige permiso de escritura sobre Tasas de cambio**, que hoy tienen **administración, la gerencia general y recursos humanos**. No tesorería: ese rol se retiró (12.1). Quien solo la consulta ve la pantalla completa —las monedas, el historial y la calculadora— pero sin el formulario. Esto cambió el 4 de agosto de 2026: antes lo podía hacer cualquiera que entrara al sistema.
+**Cargar una tasa exige permiso de escritura sobre Tasas de cambio**, que hoy tienen **administración, la gerencia general y recursos humanos**. Quien solo la consulta ve la pantalla completa —las monedas, el historial y la calculadora— pero sin el formulario. Esto cambió el 4 de agosto de 2026: antes lo podía hacer cualquiera que entrara al sistema.
 
 ### 5.3 De dónde salen las tasas
 
@@ -3725,7 +3725,7 @@ La segunda es **poder ejecutar cada paso**. Aquí no hay un solo rol que registr
 
 **Aquí había una cuarta fila, la de Tesorería.** Ese rol ya no existe: se retiró junto con el módulo. Ver 12.1.
 
-**Quien paga la nómina es recursos humanos o la gerencia general**, no un tesorero: ese rol se retiró (12.1). Lo exige la propia función de la base, y por equivalencia pasa también quien tenga escritura sobre Nómina — que hoy son los mismos.
+**Quien paga la nómina es recursos humanos o la gerencia general.** Lo exige la propia función de la base, y por equivalencia pasa también quien tenga escritura sobre Nómina — que hoy son los mismos.
 
 **Prestaciones sociales la ven los cuatro**, porque para verla basta el mismo permiso sobre Nómina que para ver el resto del módulo. Otra cosa es poder registrar allí: eso está en 11.10 y no se reparte igual.
 
@@ -4372,7 +4372,7 @@ Al aprobar, le llega un aviso a tesorería y a recursos humanos: **Nómina {núm
 
 #### Pagar
 
-Lo hacen **recursos humanos y la gerencia general** —y la administración, que pasa por encima de todo—. **No es tesorería: ese rol se retiró** (12.1).
+Lo hacen **recursos humanos y la gerencia general** —y la administración, que pasa por encima de todo—.
 
 1. Pulsa **Pagar**.
 2. Elige **De qué cuenta sale**. La lista muestra el saldo de cada cuenta.
@@ -5057,7 +5057,7 @@ Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un
 
 ## 12. Tesorería
 
-**Tesorería volvió al menú el 21 de septiembre de 2026.** Estuvo unas semanas fuera porque la empresa había decidido no llevar bancos ni cajas; ahora sí los lleva, y el módulo regresó entero, con sus reportes.
+Tesorería es el libro del dinero. Cada banco, cada caja de efectivo y cada billetera digital de la empresa tiene aquí su cuenta, y todo lo que entra y sale de ellas queda escrito en una sola lista, en orden, con la fecha, el concepto, la referencia y el nombre de quien lo registró.
 
 En el menú, **Administración › Tesorería** tiene cinco pantallas: **Tablero**, **Bancos y cajas**, **Reportes**, **Libro Mayor** y **Libro de tesorería**. Dos cosas del dinero se ofrecen desde otros módulos, que es donde la gente las busca:
 
@@ -5066,9 +5066,7 @@ En el menú, **Administración › Tesorería** tiene cinco pantallas: **Tablero
 | **Pagos por hacer**, con su pestaña **Por proveedor** | **Administración › Compras › Pagos por hacer** |
 | **Cuentas por cobrar** | **Administración › Facturación › Cuentas por cobrar** (21.4) |
 
-Ninguna de ellas está escondida. Lo que decide quién las abre es el permiso de cada uno (12.1).
-
-Tesorería es el libro del dinero. Cada banco, cada caja de efectivo y cada billetera digital de la empresa tiene aquí su cuenta, y todo lo que entra y sale de ellas queda escrito en una sola lista, en orden, con la fecha, el concepto, la referencia y el nombre de quien lo registró.
+Lo que decide quién las abre es el permiso de cada uno (12.1).
 
 Hay una idea que conviene entender antes de tocar nada, y es la misma que ordena el inventario:
 
@@ -5124,7 +5122,7 @@ Lo que no viene de una orden —un ingreso suelto, un gasto de caja chica, pasar
 
 ### 12.1 Quién entra y quién puede hacer qué
 
-**No existe el rol de Tesorería.** Lo hubo y se retiró. Lo que existe es el **módulo** Tesorería en la matriz de permisos (13.1), con sus niveles de siempre.
+El acceso lo da el **módulo** Tesorería en la matriz de permisos (13.1), con sus niveles de siempre.
 
 Hay **tres** puertas distintas, y conviene no confundirlas.
 
@@ -5181,7 +5179,7 @@ Si falta alguna tasa del día, el total no se da y lo dice: **Falta la tasa del 
 
 Debajo, una tarjeta por cuenta: el nombre, el número de cuenta o el titular, la moneda arriba a la derecha, el **Saldo** en la moneda de esa cuenta —en rojo si es negativo— y una línea final, **Sin movimientos todavía** o cuántos movimientos tiene y la fecha del último. Las cuentas archivadas van en un bloque aparte al final, **Archivadas**, con la etiqueta **Archivada**.
 
-El enlace **Ver movimientos** de cada tarjeta abre el libro de tesorería, pero **entero, no solo el de esa cuenta**: el libro ya no filtra por cuenta (12.7). El libro de una sola cuenta está en **Reportes › Libro de una caja** (12.10).
+El enlace **Ver movimientos** de cada tarjeta abre el libro de tesorería, pero **entero, no solo el de esa cuenta**: el libro no filtra por cuenta (12.7). El libro de una sola cuenta está en **Reportes › Libro de una caja** (12.10).
 
 **Quién ve las cuentas.** Además de quien tiene Tesorería, las ven quien tiene lectura en Compras o en Facturación y quien tiene escritura en Nómina: el pago de una compra, el cobro de una factura y el pago de la nómina piden de qué cuenta sale o en cuál entra el dinero. Crear, editar, mover dinero y archivar sigue siendo de Tesorería.
 
@@ -5344,13 +5342,11 @@ Si no se debe nada: **Sin deudas con proveedores**, con el texto **Todas las com
 
 ### 12.6 Cuentas por cobrar
 
-**Se mudó a Facturación el 15 de septiembre de 2026.** Está en **Administración › Facturación › Cuentas por cobrar**, y la cuenta el capítulo 21 (21.4).
+Está en **Administración › Facturación › Cuentas por cobrar**, y la cuenta el capítulo 21 (21.4).
 
 ### 12.7 Libro de tesorería
 
 **Administración › Tesorería › Libro de tesorería**
-
-Hasta el 24 de septiembre de 2026 colgaba del menú de Compras, como **Movimientos de dinero**. Hoy está en Tesorería y se llama igual en el menú y en la pantalla.
 
 Es el libro contable del dinero: **Libro de ingresos y egresos. Los registros no se editan ni se eliminan: una corrección se asienta con el movimiento contrario, y ambos quedan visibles.** Aquí no se registra nada nuevo: se consulta, y si algo se registró mal, se escribe la línea contraria.
 
@@ -5376,7 +5372,7 @@ La tabla tiene estas columnas:
 | **Concepto** | El texto y, debajo, la contraparte, la referencia y quién lo registró |
 | **Monto** | Con signo más o menos, en la moneda del movimiento, y debajo en gris el equivalente en la otra moneda |
 
-Los tipos que puede llevar la etiqueta son: **Saldo de apertura**, **Ingreso**, **Egreso**, **Pago a proveedor**, **IGTF**, **Comisión bancaria**, **Traslado entre cuentas**, **Ajuste** y **Reverso**. **El tipo se sigue llamando «Reverso» aunque el botón diga «Deshacer»**: es el nombre del asiento, no el del botón.
+Los tipos que puede llevar la etiqueta son: **Saldo de apertura**, **Ingreso**, **Egreso**, **Pago a proveedor**, **IGTF**, **Comisión bancaria**, **Traslado entre cuentas**, **Ajuste** y **Reverso**. **El tipo se llama «Reverso» aunque el botón diga «Deshacer»**: es el nombre del asiento, no el del botón.
 
 El equivalente en gris se calcula **con la tasa congelada del día del movimiento**, no con la de hoy. Así un pago de enero se puede comparar con uno de julio.
 
@@ -5442,13 +5438,11 @@ En las ventas funciona al revés y también va aparte: el impuesto cobrado a un 
 
 #### El diferencial cambiario
 
-**Esta parte todavía no está disponible.** El sistema no reconoce ni contabiliza ganancia ni pérdida por diferencial cambiario.
-
-Hay algo parecido que sí funciona y se puede confundir con ello: cada línea del libro guarda **la tasa del día en que se registró**, congelada, y de ahí sale el equivalente que se ve en gris. Eso hace cada línea comparable con la del mes pasado, pero no calcula el diferencial. Si hace falta reconocer una diferencia por ese motivo, se hace a mano con **Ajustar**, escribiendo qué se está reconociendo y por qué.
+Cada línea del libro guarda **la tasa del día en que se registró**, congelada, y de ahí sale el equivalente que se ve en gris. Eso hace cada línea comparable con la del mes pasado, pero no es el diferencial cambiario: el sistema no reconoce ni contabiliza ganancia ni pérdida por ese motivo. Si hace falta reconocer una diferencia, se hace a mano con **Ajustar**, escribiendo qué se está reconociendo y por qué.
 
 #### La conciliación bancaria
 
-**Tampoco está disponible.** No hay ninguna pantalla que cruce el libro con el estado de cuenta del banco. Lo que sí hay es todo lo que hace posible conciliar a mano: cada línea lleva su referencia, su fecha y su concepto, y el saldo de cada cuenta se muestra en la moneda del banco para comparar cifra contra cifra.
+**Se concilia a mano**, con lo que lleva cada línea: su referencia, su fecha y su concepto. El saldo de cada cuenta se muestra en la moneda del banco, para comparar cifra contra cifra. Ninguna pantalla cruza el libro con el estado de cuenta del banco.
 
 #### Por qué el libro no se edita ni se borra
 
@@ -5462,21 +5456,19 @@ Corregir tiene estos caminos, según qué se haya registrado mal:
 
 ### 12.9 Cuando el sistema no le deja
 
-Algunos de estos mensajes los escribe la base de datos y todavía tutean; se copian como salen.
-
 | Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
 | «Su usuario no tiene permiso para esta acción.» | Falta el permiso sobre el módulo | Pídalo a la administración |
 | **Tesorería no está a su alcance** | No tiene lectura sobre Tesorería | Pídala a la administración |
 | «Esta instrucción está en "PAGADA" y no se puede volver a pagar.» | Ese pago ya se hizo | Revise el libro: la línea ya está |
 | «Falta el número de referencia de la transacción.» | Todo pago que no sea en efectivo necesita referencia | Copie el número que devolvió el banco o la plataforma |
-| «La cuenta ya tiene movimientos en VES y no puede cambiar de moneda. Crea otra cuenta.» | Quiere cambiarle la moneda a una cuenta con historia | Cree otra cuenta en la moneda correcta y archive esta |
-| «Esta cuenta ya tiene su saldo de apertura. Si estaba mal, corrígelo con un ajuste.» | El saldo de apertura se registra una sola vez | Pulse **Ajustar** y explique la diferencia |
+| «La cuenta ya tiene movimientos en VES y no puede cambiar de moneda. Cree otra cuenta.» | Quiere cambiarle la moneda a una cuenta con historia | Cree otra cuenta en la moneda correcta y archive esta |
+| «Esta cuenta ya tiene su saldo de apertura. Si estaba mal, corríjalo con un ajuste.» | El saldo de apertura se registra una sola vez | Pulse **Ajustar** y explique la diferencia |
 | «Un ajuste de cero no ajusta nada.» | El monto del ajuste quedó en cero | Ponga la diferencia: positiva si sobra, negativa si falta |
 | El nombre de la cuenta, seguido de cuánto tiene y de **No alcanza.** | La salida dejaría bajo cero una cuenta que no admite sobregiro | Si el dinero está, falta registrar su entrada: el saldo de apertura o el ingreso |
 | «El origen y el destino son la misma cuenta.» | Eligió dos veces la misma cuenta | Cambie el destino |
-| «Entre dos cuentas en VES debe llegar lo mismo que sale. Si el banco cobró comisión, regístrala aparte.» | Puso importes distintos entre dos cuentas de la misma moneda | Iguale los importes y registre la comisión como un egreso |
-| «No hay tasa BCV registrada para el 04/08/2026 ni para ninguna fecha anterior. Regístrala en Sistema › Tasas de cambio.» | No hay ninguna tasa registrada en esa fecha ni antes | Regístrela en **Sistema › Tasas de cambio** y repita la operación |
+| «Entre dos cuentas en VES debe llegar lo mismo que sale. Si el banco cobró comisión, regístrela aparte.» | Puso importes distintos entre dos cuentas de la misma moneda | Iguale los importes y registre la comisión como un egreso |
+| «No hay tasa BCV registrada para el 04/08/2026 ni para ninguna fecha anterior. Regístrela en Sistema › Tasas de cambio.» | No hay ninguna tasa registrada en esa fecha ni antes | Regístrela en **Sistema › Tasas de cambio** y repita la operación |
 | «El movimiento TES-000123 ya fue reversado.» | Esa línea ya se corrigió | Revise el libro: la corrección ya está |
 | «La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.» al guardar una cuenta | Falta un dato que ese tipo de cuenta exige: banco, número y titular; un responsable; o el correo o la dirección de la billetera | Complete los datos del tipo de cuenta |
 | «No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.» | Se cayó el internet | Reintente cuando vuelva la señal |
@@ -5918,7 +5910,7 @@ Son dos grupos distintos:
 | Compras | Sí | Sí |
 | El resto de los roles | No | No |
 
-Está repartido así a propósito: cargar y quitar papeles de la empresa es de la gerencia. **Aquí había una fila de Tesorería y ese rol ya no existe** (12.1). Quien consulta estos papeles para hacer su trabajo hoy es compras, que paga contra ellos.
+Está repartido así a propósito: cargar y quitar papeles de la empresa es de la gerencia. Quien consulta estos papeles para hacer su trabajo hoy es compras, que paga contra ellos.
 
 #### Cargar un documento
 
