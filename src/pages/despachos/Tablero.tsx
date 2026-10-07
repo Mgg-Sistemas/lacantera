@@ -75,7 +75,7 @@ export function TableroDespachos() {
                 Tickets sin usar
               </p>
               <p className="text-ink/90 tabular mt-3 text-3xl font-light">{enteros(libres)}</p>
-              <p className="text-ink/45 mt-2 text-xs">Pesajes registrados que no llevan guía</p>
+              <p className="text-ink/45 mt-2 text-xs">Pesajes que no están en ninguna nota de entrega</p>
             </Card>
 
             <Card>

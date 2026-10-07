@@ -1813,7 +1813,7 @@ Si ve las pantallas pero no ve los botones **Pesar** ni **Cargar guía**, su usu
 
 Es por donde se entra al módulo, y no se registra nada aquí. Su descripción lo resume: **Control de romana: pesaje del camión y emisión de la guía de salida.** Arriba a la derecha, **Pesar en romana**.
 
-Dos tarjetas dan las cifras del día: **Tickets sin usar** —**Pesajes registrados que no llevan guía**— y **Guías vigentes** —**Emitidas y todavía sin usar**—.
+Dos tarjetas dan las cifras del día: **Tickets sin usar** —**Pesajes que no están en ninguna nota de entrega**— y **Guías vigentes** —**Emitidas y todavía sin usar**—.
 
 Debajo, **El trámite**, con los dos pasos numerados:
 
