@@ -1124,13 +1124,11 @@ El botón **Tarifas** solo sale a quien ve el dinero. Para ponerle tarifa a una 
 
 ### 6.6 Lo que conviene entender
 
-#### El parte de turno ya no es la única puerta, ni Existencias está cerrada
+#### Por dónde entra el material al patio
 
-Este capítulo decía que **Producción por turno** era *la única puerta por la que entra material al patio* y que el atajo de Existencias se había cerrado. Las dos cosas ya no son así:
-
-- **Producción por turno está escondida del menú** desde el 12 de septiembre de 2026 (6.7).
 - **Registrar entrada**, en **Inventario › Existencias**, admite cualquier artículo que lleve existencias, también los productos de cantera. Lo registra como una entrada sin compra, con su procedencia y su costo (7.4).
 - **Salidas de planta** y **Viajes de camiones** no mueven el inventario.
+- **Producción por turno** también escribe entradas, pero no está en el menú (6.7).
 
 #### Lo que se mide, se mide en metros cúbicos
 
@@ -1140,22 +1138,17 @@ Las salidas de planta se anotan en metros cúbicos, y solo con productos que se 
 
 Salvo que se escriban a mano, los metros cúbicos de una salida o de un viaje son **la carga útil del camión**, no una medición del material. Un camión sin carga útil cargada deja sus salidas **Sin medir**, y sus viajes no suman metros cúbicos aunque cuenten y cobren.
 
-### 6.7 Lo que hoy está escondido: frentes, voladuras y parte de turno
+### 6.7 Frentes, voladuras y parte de turno
 
-**Frentes y bancos**, **Voladuras** y **Producción por turno** existen, pero no se ofrecen desde el menú. Quien llega a su dirección ve el cartel de obra (1.5). Se cuentan aquí en corto para el día que vuelvan.
-
-| Pantalla | Escondida desde | Por qué |
-| --- | --- | --- |
-| **Voladuras** y **Producción por turno** | 12 de septiembre de 2026 | El parte de turno no podía guardar nada: exige un frente y productos cargados. Al medirlo el 23 de septiembre no había registrada ni una voladura ni un parte |
-| **Frentes y bancos** | 23 de septiembre de 2026 | No había ni un frente cargado, y el parte exige uno para guardarse |
+Estas tres pantallas llevan lo que pasa en el cerro: dónde se trabaja, cada disparo y lo que produjo cada turno. No se ofrecen desde el menú, y quien llega a su dirección ve el cartel de obra (1.5).
 
 **Qué hacen, en corto:**
 
 - **Frentes y bancos** anota los sitios del cerro donde se trabaja, y con qué se arranca: voladura, martillo o los dos.
 - **Voladuras** registra cada disparo con su fecha, su explosivo, su responsable, su permiso y las toneladas estimadas. Se rechaza contra un frente de martillo.
-- **Producción por turno** carga lo que produjo cada turno, un renglón por material, y es lo único del sistema que escribe una **Entrada de producción** en el inventario: al guardar el parte, cada renglón entra al patio elegido, con costo cero. Un turno en un frente admite un solo parte. Anular un parte saca exactamente lo que ese parte metió, salvo que ya se haya despachado.
+- **Producción por turno** carga lo que produjo cada turno, un renglón por material, y es lo único del sistema que escribe una **Entrada de producción** en el inventario: al guardar el parte, cada renglón entra al patio elegido, con costo cero. Pide un frente activo, y cada renglón, un artículo de categoría producto. Un turno en un frente admite un solo parte. Anular un parte saca exactamente lo que ese parte metió, salvo que ya se haya despachado.
 
-Las casillas de permiso de estas tres pantallas —ver la producción, abrir frentes, anotar y anular voladuras y partes— siguen en la matriz, pero hoy no deciden nada: estas pantallas miran el nivel del módulo.
+Las casillas de permiso de estas tres pantallas —ver la producción, abrir frentes, anotar y anular voladuras y partes— están en la matriz, pero no deciden nada: estas pantallas miran el nivel del módulo.
 
 ### 6.8 Cuando el sistema no le deja
 
