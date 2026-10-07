@@ -6169,9 +6169,7 @@ Se dice aquí con claridad porque es la diferencia entre un control real y uno s
 
 ## 15. Lo que todavía no está construido
 
-El sistema se entrega por partes. Este capítulo reúne lo que se espera del diseño pero **todavía no funciona**, y los puntos donde conviene tener cuidado.
-
-No es una lista de fallas. Es el estado real de la obra, y está aquí para que nadie organice su trabajo contando con algo que aún no puede hacer.
+Este capítulo reúne lo que el sistema **aún no hace** y los puntos donde conviene tener cuidado, para que nadie organice su trabajo contando con algo que no puede hacer.
 
 Lo que hoy está escondido del menú —Despachos entero y tres pantallas de Explotación— está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
 
@@ -6183,7 +6181,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **El sistema pregunta con qué entrega el proveedor, pero no comprueba que se cumpla.** Antes de pagar hay que declarar si entrega **Nota de entrega** o **Factura**, y sin eso no se puede pagar. Lo que no hay todavía es una pantalla que enseñe cuáles prometieron factura y no la registraron. El cotejo sigue siendo trabajo de la oficina.
 
-**Con qué entrega el proveedor no se corrige desde la pantalla.** Se declara una vez, en la ficha de la compra, y después solo se lee. Si alguna orden quedó sin declarar de antes de que existiera la regla, la pantalla no ofrece dónde hacerlo, y esa orden no se puede pagar.
+**Con qué entrega el proveedor no se corrige desde la pantalla.** Se declara una vez, en la ficha de la compra, y después solo se lee. Si una orden quedó sin declarar, la pantalla no ofrece dónde hacerlo, y esa orden no se puede pagar.
 
 **Una factura de proveedor cubre una sola orden.** Si el proveedor factura dos órdenes en un mismo papel, el sistema todavía no lo puede registrar.
 
@@ -6211,9 +6209,9 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **En Facturación.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La factura directa admite descuento en cada renglón, pero no un descuento sobre el total. **La nota de crédito no se imprime**: se registra, entra en el libro de ventas y lleva su número de control propio, pero el papel que se le entrega al cliente todavía se hace por fuera.
 
-**La factura impresa todavía no está completa ante el SENIAT**, aunque ya le falta poco. Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención, la tasa del día, la **base imponible** y el **total exento** (10.7), y el IGTF cuando corresponde. **Le falta el desglose por alícuota**: cada factura lleva una sola alícuota, así que una factura mixta no se puede expresar.
+**La factura impresa no está completa ante el SENIAT.** Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención, la tasa del día, la **base imponible** y el **total exento** (10.7), y el IGTF cuando corresponde. **Le falta el desglose por alícuota**: cada factura lleva una sola alícuota, así que una factura mixta no se puede expresar.
 
-**Los datos de la imprenta y la alícuota general del IVA ya se escriben** en **Configuración › Datos de la empresa**, y la factura los imprime (21.2).
+**Los datos de la imprenta y la alícuota general del IVA se escriben** en **Configuración › Datos de la empresa**, y la factura los imprime (21.2).
 
 **En Nómina.** Aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de ley de las prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: sus tarjetas **Dotación** y **Asignación** son de solo lectura, y el botón **Entregar** manda a otra pantalla, que abre en asignación aunque se pulse desde la dotación. Lo que sí funciona es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4). Y una ausencia anotada como incidencia **no descuenta sola de la nómina**.
 
@@ -6250,10 +6248,9 @@ Se dice para que nadie lo lea como verificado:
 
 - **Este capítulo se repasó el 6 de octubre de 2026 contra el código del sistema, no usando las pantallas.** Lo que depende de lo que hay cargado —qué tasas se tomaron, qué combustible entró sin costo, qué órdenes quedaron sin declarar— no se comprobó.
 - **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles se levantaron de la base tal como estaba, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla, donde los módulos escondidos no salen.
-- **El capítulo de Ventas** no se revisó pantalla por pantalla. Lo que dice era cierto en una versión anterior y el módulo ha seguido cambiando; está en el menú desde el 28 de agosto de 2026. El de **Explotación** se rehízo el 6 de octubre de 2026, contra el código como este.
-- **Los capítulos 19 y 20, Maquinaria y Combustible,** se escribieron leyendo las pantallas y la base, no usándolas. **Los capítulos 21 a 25** —Facturación, Control de despacho, Control de asistencia, Contactos y Alimentación— llegaron después y tampoco se han repasado contra las pantallas de hoy. Si algo no coincide con lo que hace el módulo en el patio, dígalo y se corrige.
-- **El capítulo 12 se revisó por encima.** Se corrigió lo que engañaba —dónde está cada pantalla y quién puede pagar—, pero sus pantallas no se han recorrido una por una desde que el módulo volvió entero al menú, el 21 de septiembre de 2026.
-- **La factura de venta no está completa ante el SENIAT.** Lo que le falta está en 15.2, y no es un olvido de este manual sino del sistema.
+- **El capítulo de Ventas** no se ha repasado todavía contra las pantallas de hoy. El de **Explotación** se rehízo el 6 de octubre de 2026, contra el código como este.
+- **Los capítulos 19 y 20, Maquinaria y Combustible,** se escribieron leyendo las pantallas y la base, no usándolas. **Los capítulos 21 a 25** —Facturación, Control de despacho, Control de asistencia, Contactos y Alimentación— tampoco se han repasado contra las pantallas de hoy. Si algo no coincide con lo que hace el módulo en el patio, dígalo y se corrige.
+- **El capítulo 12 se repasó contra el código y la base**, no recorriendo sus pantallas una por una.
 
 ---
 
