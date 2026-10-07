@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import {
   AlertTriangle,
@@ -6,6 +7,7 @@ import {
   ClipboardCheck,
   Cog,
   Users,
+  FileText,
   HandCoins,
   Info,
   Mountain,
@@ -22,11 +24,17 @@ import { PageHeader } from '@/components/PageHeader'
 import { QueHacer } from '@/components/QueHacer'
 import type { GrupoDeAcciones } from '@/components/QueHacer'
 import { StatCard } from '@/components/StatCard'
+import { Visor } from '@/components/Visor'
 import { useResumenPanel } from '@/lib/api/tesoreria'
 import { useTablero } from '@/lib/api/compras'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useResumenDespachosDetalle } from '@/lib/api/ventas'
+import { useEmpresa } from '@/lib/api/empresa'
+import { useSesion } from '@/lib/sesion'
 import { moduloDeRuta } from '@/config/navigation'
-import { dolares, dolaresRedondos, enteros, hace } from '@/lib/formato'
+import { dolares, dolaresRedondos, bolivares, enteros, hace } from '@/lib/formato'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
+import { armarInformeDespachos } from '@/lib/ficha/informeDespachosPdf'
 
 interface Aviso {
   tono: 'danger' | 'warning' | 'info'
@@ -255,6 +263,40 @@ export function Dashboard() {
   const { data: tarjetas } = useTablero()
   const { puede } = useMisPermisos()
 
+  /*
+    EL DESGLOSE SOLO SE PIDE AL GENERAR EL INFORME.
+
+    Los cinco totales ya viajan en `r`, calculados en cada visita al Panel.
+    El desglose por artículo, destino y cliente tiene su propio GROUP BY y
+    no hace falta mientras nadie pida el papel — por eso el hook se activa
+    recién cuando se pulsa «Generar informe», no antes.
+  */
+  const [generandoInforme, setGenerandoInforme] = useState(false)
+  const detalleDespachos = useResumenDespachosDetalle(generandoInforme)
+  const [informe, setInforme] = useState<ArchivoArmado | null>(null)
+  const { data: empresa } = useEmpresa()
+  const { nombre: yo } = useSesion()
+
+  useEffect(() => {
+    if (!generandoInforme || !detalleDespachos.data || !r) return
+    void armarInformeDespachos({
+      resumen: {
+        movimientos: r.despachos_movimientos ?? 0,
+        traslados: r.despachos_traslados ?? 0,
+        notasVigentes: r.despachos_notas_vigentes ?? 0,
+        totalUsd: r.despachos_total_usd ?? 0,
+        totalBs: r.despachos_total_bs ?? 0,
+      },
+      detalle: detalleDespachos.data,
+      empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+      emitidoPor: yo ?? '',
+      momento: new Date(),
+    }).then((archivo) => {
+      setInforme(archivo)
+      setGenerandoInforme(false)
+    })
+  }, [generandoInforme, detalleDespachos.data, r, empresa, yo])
+
   const hoy = new Date().toLocaleDateString('es-VE', {
     weekday: 'long',
     day: 'numeric',
@@ -287,6 +329,9 @@ export function Dashboard() {
   const veTesoreria = puede('TESORERIA')
   const veCompras = puede('COMPRAS')
   const veInventario = puede('INVENTARIO')
+  // El mismo candado que ya protege los cinco números en la base: SALIDAS o
+  // FACTURACION en lectura. Ver la migración que los agregó a v_panel_resumen.
+  const veDespachos = puede('SALIDAS') || puede('FACTURACION')
 
   /*
     PODER PEDIR ALGO NO ES LLEVAR LAS COMPRAS
@@ -598,6 +643,48 @@ export function Dashboard() {
             ) : null}
           </div>
 
+          {/* ---------- Despachos y ventas ---------- */}
+          {veDespachos && r.despachos_movimientos !== null ? (
+            <div className="mt-5">
+              <Card>
+                <CardHeader
+                  title="Despachos y ventas"
+                  subtitle={`${enteros(r.despachos_notas_vigentes ?? 0)} nota${(r.despachos_notas_vigentes ?? 0) === 1 ? '' : 's'} de entrega · ${enteros(r.despachos_movimientos)} movimiento${r.despachos_movimientos === 1 ? '' : 's'} de salida${(r.despachos_traslados ?? 0) > 0 ? ` · ${enteros(r.despachos_traslados ?? 0)} traslado${r.despachos_traslados === 1 ? '' : 's'}` : ''}`}
+                />
+
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-ink/45 text-2xs font-mono tracking-[0.16em] uppercase">
+                      Total facturado
+                    </p>
+                    <p className="text-ink/90 tabular mt-1 text-2xl font-light">
+                      {dolares(r.despachos_total_usd ?? 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-ink/45 text-2xs font-mono tracking-[0.16em] uppercase">
+                      Total en bolívares
+                    </p>
+                    <p className="text-ink/90 tabular mt-1 text-2xl font-light">
+                      {bolivares(r.despachos_total_bs ?? 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  className="mt-4"
+                  variant="soft"
+                  size="sm"
+                  icon={<FileText />}
+                  disabled={generandoInforme}
+                  onClick={() => setGenerandoInforme(true)}
+                >
+                  {generandoInforme ? 'Generando…' : 'Generar informe'}
+                </Button>
+              </Card>
+            </div>
+          ) : null}
+
           {/* ---------- Aprobaciones ---------- */}
           {porAprobar.length > 0 ? (
             <div className="mt-5">
@@ -640,6 +727,14 @@ export function Dashboard() {
           <QueHacer grupos={QUE_HACER} />
         </>
       ) : null}
+
+      <Visor
+        abierto={informe !== null}
+        onCerrar={() => setInforme(null)}
+        blob={informe?.blob ?? null}
+        nombreArchivo={informe?.nombre ?? ''}
+        titulo="Informe de despachos y ventas"
+      />
     </>
   )
 }
