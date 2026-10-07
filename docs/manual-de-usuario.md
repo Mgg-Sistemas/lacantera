@@ -7279,13 +7279,13 @@ No asocia la comida a un trabajador concreto: cuenta platos, no nombres — igua
 
 **Operación › Salidas y traslados**
 
-Es el módulo de lo que sale del almacén y de lo que se mueve entre almacenes: por qué salió, para quién y quién lo entregó. Fue parte de Inventario hasta el 16 de septiembre de 2026, y desde entonces es un módulo propio, con su permiso.
+Es el módulo de lo que sale del almacén y de lo que se mueve entre almacenes: por qué salió, para quién y quién lo entregó. Tiene su propio permiso (26.1).
 
 Tiene tres pantallas, que son también sus tres pestañas: **Historial**, **Salidas** y **Traslados**.
 
 Hay dos ideas que ordenan todo el módulo:
 
-- **Nada sale sin solicitud, y nada se descuenta hasta entregarlo.** Una salida se pide, la aprueba quien responde por el almacén y la entrega alguien de almacén. Solo al entregarla sale la nota y baja la existencia. Las salidas directas de antes siguen en el Historial, pero ya no se pueden hacer.
+- **Nada sale sin solicitud, y nada se descuenta hasta entregarlo.** Una salida se pide, la aprueba quien responde por el almacén y la entrega alguien de almacén. Solo al entregarla sale la nota y baja la existencia. Las salidas **directas**, hechas sin solicitud, están en el **Historial**; desde ninguna pantalla se crea una nueva.
 - **Las ventas no salen por aquí.** Lo que se le vende a un cliente sale por **Facturación › Notas de entrega**, con su precio y su número; las compras se llevan en Compras.
 
 ### 26.1 Quién entra y quién puede hacer qué
@@ -7457,12 +7457,12 @@ Todos se abren primero en una vista previa, con **Cerrar** y **Descargar**.
 
 **Orden de salida.** Es la solicitud en papel: lo que se pidió y en qué estado está. Se imprime en cualquier estado y no lleva costos. La vista previa lo dice: **Lo solicitado y su estado. Lo que sale consta en la nota de salida, al entregar.** Si la salida se rechazó o se canceló, lleva cruzado el sello **RECHAZADA** o **CANCELADA**.
 
-**Nota de salida.** Es lo que de verdad salió, y es el papel que firma quien recibe: **La firma quien recibe el material.** Compruébala antes de imprimirla. Sale sola al entregar, y se vuelve a sacar con el botón **Nota** de la tarjeta o del Historial.
+**Nota de salida.** Es lo que de verdad salió, y es el papel que firma quien recibe: **La firma quien recibe el material.** Compruébela antes de imprimirla. Sale sola al entregar, y se vuelve a sacar con el botón **Nota** de la tarjeta o del Historial.
 
 - Lleva el número de la nota y el de su orden, la fecha, el almacén, para quién es, el vehículo y **Recibido por** con su cédula, si se dijeron al solicitar.
 - Debajo, el motivo y la tabla del material, con **Código**, **Artículo**, **Cantidad** y **Unidad**. Si se contó en presentaciones, el artículo lo dice.
 - La casilla **Incluir costos** de la vista previa añade el costo y el total. Viene desmarcada.
-- Las rayas de firma son **Solicitado por** y **Autorizado por**, con la firma digital de cada uno si la eligió. Las salidas viejas, de antes de que toda salida pasara por solicitud, firman **Entregó** y **Recibió conforme**.
+- Las rayas de firma son **Solicitado por** y **Autorizado por**, con la firma digital de cada uno si la eligió. Las salidas directas, hechas sin solicitud, firman **Entregó** y **Recibió conforme**.
 
 Si la salida fue para alguien de fuera de la empresa, quien tenga la casilla **Generar la nota de entrega de una salida** ve en la vista previa la opción **Generar nota de entrega**: una nota de entrega que respalda lo mismo que ya salió, sin volver a descontar material. Se explica en 10.10.
 
