@@ -813,15 +813,17 @@ Esta tarjeta solo se ve con permiso de Salidas o de Facturación. Su subtítulo 
 
 Debajo van dos cifras: el **total facturado**, en dólares, y su equivalente en **bolívares**. Las dos salen de las notas de entrega que no están anuladas —incluye las que todavía están pendientes de despacharse, aunque esas no suman dinero mientras no se les ponga precio—.
 
-El botón **Generar informe** arma un PDF con esos mismos números y además un desglose que no vive en el panel porque tiene su propio cálculo:
+Hay dos botones, y los dos parten del mismo desglose —no vive en el panel porque tiene su propio cálculo—:
 
 - **Volumen por producto**: cuánto salió de cada artículo del catálogo marcado como producto —no cuenta combustible, repuestos ni otros insumos, para no mezclar lo que se vendió con lo que se gastó—.
 - **Principales destinos**: a quién fue, contado en movimientos y no en cantidad, porque mezclar metros cúbicos de arena con otra unidad no diría nada.
 - **Principales clientes**: quién compró más, en dólares, según las notas de entrega con cliente.
 
-**El informe no inventa ninguna categoría de cliente.** No clasifica a nadie como "público" o "privado": solo nombres, cantidades y montos tal como están en el sistema.
+**Generar informe** arma el papel formal: rojo y marrón, con la misma plantilla que una orden de compra o una nota de entrega.
 
-Mientras se arma dice **Generando…** y el botón se bloquea; cuando termina, se abre en el visor de documentos como cualquier otro papel del sistema, listo para descargar o imprimir.
+**Presentación** arma el mismo contenido con otro lenguaje visual —portada oscura, cifras en tarjetas de colores—, pensado para enseñar o proyectar y no para archivar. Ninguno de los dos **inventa una categoría de cliente**: no clasifican a nadie como "público" o "privado", solo nombres, cantidades y montos tal como están en el sistema.
+
+Mientras se arma cualquiera de los dos, su botón dice **Generando…** y los dos se bloquean; cuando termina, se abre en el visor de documentos como cualquier otro papel del sistema, listo para descargar o imprimir.
 
 ### 4.8 Cuando algo no sale
 

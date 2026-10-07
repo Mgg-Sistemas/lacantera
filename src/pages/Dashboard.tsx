@@ -8,6 +8,7 @@ import {
   Cog,
   Users,
   FileText,
+  Presentation,
   HandCoins,
   Info,
   Mountain,
@@ -35,6 +36,7 @@ import { moduloDeRuta } from '@/config/navigation'
 import { dolares, dolaresRedondos, bolivares, enteros, hace } from '@/lib/formato'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarInformeDespachos } from '@/lib/ficha/informeDespachosPdf'
+import { armarInformeEjecutivoDespachos } from '@/lib/ficha/informeEjecutivoDespachosPdf'
 
 interface Aviso {
   tono: 'danger' | 'warning' | 'info'
@@ -263,39 +265,47 @@ export function Dashboard() {
   const { data: tarjetas } = useTablero()
   const { puede } = useMisPermisos()
 
-  /*
-    EL DESGLOSE SOLO SE PIDE AL GENERAR EL INFORME.
+/*
+    EL DESGLOSE SOLO SE PIDE AL GENERAR UN INFORME.
 
     Los cinco totales ya viajan en `r`, calculados en cada visita al Panel.
     El desglose por artículo, destino y cliente tiene su propio GROUP BY y
-    no hace falta mientras nadie pida el papel — por eso el hook se activa
-    recién cuando se pulsa «Generar informe», no antes.
+    no hace falta mientras nadie pida un papel — por eso el hook se activa
+    recién al pulsar alguno de los dos botones, no antes. Los dos informes
+    leen el mismo desglose: el formal (rojo y marrón, como el resto de los
+    papeles del sistema) y la presentación (oscura, con color, la que trajo
+    el usuario y pidió que se generara con datos reales en vez de subir la
+    de muestra).
   */
-  const [generandoInforme, setGenerandoInforme] = useState(false)
-  const detalleDespachos = useResumenDespachosDetalle(generandoInforme)
+  const [tipoInforme, setTipoInforme] = useState<'formal' | 'presentacion' | null>(null)
+  const detalleDespachos = useResumenDespachosDetalle(tipoInforme !== null)
   const [informe, setInforme] = useState<ArchivoArmado | null>(null)
   const { data: empresa } = useEmpresa()
   const { nombre: yo } = useSesion()
 
   useEffect(() => {
-    if (!generandoInforme || !detalleDespachos.data || !r) return
-    void armarInformeDespachos({
-      resumen: {
-        movimientos: r.despachos_movimientos ?? 0,
-        traslados: r.despachos_traslados ?? 0,
-        notasVigentes: r.despachos_notas_vigentes ?? 0,
-        totalUsd: r.despachos_total_usd ?? 0,
-        totalBs: r.despachos_total_bs ?? 0,
-      },
+    if (!tipoInforme || !detalleDespachos.data || !r) return
+    const resumen = {
+      movimientos: r.despachos_movimientos ?? 0,
+      traslados: r.despachos_traslados ?? 0,
+      notasVigentes: r.despachos_notas_vigentes ?? 0,
+      totalUsd: r.despachos_total_usd ?? 0,
+      totalBs: r.despachos_total_bs ?? 0,
+    }
+    const datosComunes = {
+      resumen,
       detalle: detalleDespachos.data,
       empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
       emitidoPor: yo ?? '',
       momento: new Date(),
-    }).then((archivo) => {
+    }
+    const armar =
+      tipoInforme === 'formal' ? armarInformeDespachos(datosComunes) : armarInformeEjecutivoDespachos(datosComunes)
+    void armar.then((archivo) => {
       setInforme(archivo)
-      setGenerandoInforme(false)
+      setTipoInforme(null)
     })
-  }, [generandoInforme, detalleDespachos.data, r, empresa, yo])
+  }, [tipoInforme, detalleDespachos.data, r, empresa, yo])
 
   const hoy = new Date().toLocaleDateString('es-VE', {
     weekday: 'long',
@@ -671,16 +681,34 @@ export function Dashboard() {
                   </div>
                 </div>
 
-                <Button
-                  className="mt-4"
-                  variant="soft"
-                  size="sm"
-                  icon={<FileText />}
-                  disabled={generandoInforme}
-                  onClick={() => setGenerandoInforme(true)}
-                >
-                  {generandoInforme ? 'Generando…' : 'Generar informe'}
-                </Button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    variant="soft"
+                    size="sm"
+                    icon={<FileText />}
+                    disabled={tipoInforme !== null}
+                    onClick={() => setTipoInforme('formal')}
+                  >
+                    {tipoInforme === 'formal' ? 'Generando…' : 'Generar informe'}
+                  </Button>
+                  {/*
+                    LA PRESENTACIÓN, AL LADO. El usuario trajo un informe
+                    armado fuera del sistema —portada oscura, tarjetas de
+                    colores— y pidió subirlo, generado con datos reales en
+                    vez de ser una imagen de muestra. Va junto al papel
+                    formal porque los dos parten del mismo desglose; lo que
+                    cambia es el lenguaje visual con el que se presenta.
+                  */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={<Presentation />}
+                    disabled={tipoInforme !== null}
+                    onClick={() => setTipoInforme('presentacion')}
+                  >
+                    {tipoInforme === 'presentacion' ? 'Generando…' : 'Presentación'}
+                  </Button>
+                </div>
               </Card>
             </div>
           ) : null}
@@ -733,7 +761,11 @@ export function Dashboard() {
         onCerrar={() => setInforme(null)}
         blob={informe?.blob ?? null}
         nombreArchivo={informe?.nombre ?? ''}
-        titulo="Informe de despachos y ventas"
+        titulo={
+          informe?.nombre.startsWith('informe-general')
+            ? 'Informe General de Despachos, Traslados y Notas de Entrega'
+            : 'Informe de despachos y ventas'
+        }
       />
     </>
   )
