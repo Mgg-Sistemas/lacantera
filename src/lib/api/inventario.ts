@@ -1563,15 +1563,17 @@ export const bajaDe = (m: Pick<Movimiento, 'baja'>) =>
   anotó, y si no, nada.
 */
 /*
-  TRES SALIDAS DE SEPTIEMBRE, ANOTADAS COMO ROBO POR ERROR DE QUIEN LAS CARGÓ.
+  LAS CUATRO SALIDAS DE SEPTIEMBRE ANOTADAS COMO ROBO POR ERROR DE QUIEN LAS CARGÓ.
 
-  Christopher, 15/09/2026, nombrando estos mismos tres movimientos: «no
-  tocaremos lo existente» — el libro se queda con su causa tal como se
-  anotó entonces, no se reversa ni se reescribe. Pero la nota de cada uno ya
-  explicaba lo que de verdad pasó, y el usuario del sistema lo confirmó el
-  07/10/2026: MOV-2026-0085 y MOV-2026-0079 fueron una venta normal que se
-  cargó por la puerta de baja; MOV-2026-0078 fue un convenio con una
-  ferretería para donación.
+  Son las mismas cuatro que nombra Christopher, 15/09/2026, al cerrar las
+  razones de baja —MOV 0078, 0079, 0085 y 0086, confirmado con una consulta
+  a `inventario_bajas` el 07/10/2026: no hay una quinta en todo el
+  historial—: «no tocaremos lo existente» — el libro se queda con su causa
+  tal como se anotó entonces, no se reversa ni se reescribe. Pero la nota de
+  cada una ya explicaba lo que de verdad pasó, y el usuario del sistema lo
+  confirmó el 07/10/2026: MOV-2026-0085, MOV-2026-0079 y MOV-2026-0086
+  fueron una venta normal que se cargó por la puerta de baja; MOV-2026-0078
+  fue un convenio con una ferretería para donación.
 
   Esto corrige solo lo que se LEE —con la misma palabra en pantalla, en el
   PDF y al reimprimir la nota, que es justo lo que pide la cita de arriba—,
@@ -1580,6 +1582,7 @@ export const bajaDe = (m: Pick<Movimiento, 'baja'>) =>
 const RAZON_CORREGIDA_A_MANO: Record<string, string> = {
   'MOV-2026-0085': 'Venta',
   'MOV-2026-0079': 'Venta',
+  'MOV-2026-0086': 'Venta',
   'MOV-2026-0078': 'Convenio',
 }
 
