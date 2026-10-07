@@ -249,8 +249,8 @@ export function TableroVentas() {
               factura lo despachado y se cobra la factura. Una factura puede recoger varias notas.
             </p>
             <p className="text-ink/50">
-              «Despachar» aquí es la venta. El ticket de la romana y la guía de movilización están
-              en otro módulo, Despachos.
+              «Despachar» aquí es la venta. El ticket de la romana y la guía de movilización se
+              eligen al pedir el despacho, si los hay.
             </p>
           </PrimeraVez>
         </>

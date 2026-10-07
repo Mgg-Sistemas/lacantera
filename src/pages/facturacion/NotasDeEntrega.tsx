@@ -683,7 +683,7 @@ export function NotasDeEntrega() {
             descripcion={
               hayFiltros
                 ? 'La búsqueda abarca todas las notas. Verifique el número completo —formato NE-2026-0042, con año y cuatro dígitos— o quite el estado y las fechas.'
-                : 'Cada despacho se solicita y, al aprobarse, se descuenta del patio y tiene validez propia. Su facturación es opcional y se hace en Facturación, enlazando la nota a la factura. Si el patio está en cero, registre primero la producción en Inventario › Existencias.'
+                : 'Cada despacho se solicita y, al aprobarse, se descuenta del patio y tiene validez propia. Si se factura, se hace en Facturación › Facturas. Si el patio está en cero, registre primero la producción en Inventario › Existencias.'
             }
             accion={
               puedeDespachar && !hayFiltros ? (
@@ -965,7 +965,7 @@ export function NotasDeEntrega() {
                 */
                 hint={
                   guiasVigentes.length === 0
-                    ? 'No hay guías cargadas: el despacho sale sin guía.'
+                    ? 'No hay guías vigentes.'
                     : 'Si este despacho lleva guía de movilización, elíjala.'
                 }
               />
