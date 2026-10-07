@@ -2333,7 +2333,7 @@ En la cabecera está el título de la compra y, debajo, la línea que la identif
 
 En la cabecera de esa misma tarjeta está el botón **Imprimir**, que saca **la orden de compra en papel**, y, si el proveedor entrega con factura, **Registrar factura** (9.11).
 
-**Pagos.** Aparece en cuanto hay instrucciones de pago: **Lo que compras autorizó pagar y lo que tesorería ya pagó.** Cada instrucción muestra el método, cuándo se cargó, su estado —**Por pagar**, **Pagada**, **Devuelta a compras** o **Anulada**—, el monto, el impuesto cuando corresponde, los datos de la transacción y la nota. Si la misma compra ya tiene pagos registrados por su factura, la tarjeta lo advierte: **Esta compra ya tiene pagos registrados por su factura**.
+**Pagos.** Aparece en cuanto hay instrucciones de pago: **Lo que se autorizó pagar y lo que ya se pagó.** Cada instrucción muestra el método, cuándo se cargó, su estado —**Por pagar**, **Pagada**, **Devuelta a compras** o **Anulada**—, el monto, el impuesto cuando corresponde, los datos de la transacción y la nota. Si la misma compra ya tiene pagos registrados por su factura, la tarjeta lo advierte: **Esta compra ya tiene pagos registrados por su factura**.
 
 **Historial.** **Quién movió esta compra y cuándo.** Cada línea trae el paso, el nombre de quien lo hizo, la fecha y hora y la nota que escribió. Si no hay nada todavía: **Sin movimientos todavía.**
 
@@ -2411,7 +2411,7 @@ Cuelga de la orden, así que **no aparece hasta que la compra tiene orden**. Pri
 | **Confirmada · indicar proveedores** | Botón **Cargar cotización** y, en cada una, **Proponer al gerente** (Compras) | **Compras está pidiendo precios a los proveedores.** |
 | **Por confirmar el gerente** | Botones **Aprobar la compra** y **Devolver a compras** (con sus casillas) | **Esperando la confirmación del gerente general.** |
 | **Aprobada · indicar método de pago** | Decir con qué entrega el proveedor, y **Indicar método de pago**, **Pagar con material** o **Usar saldo a favor** (Compras) | **Compras está cargando el método de pago.** |
-| **Por pagar** | Botones **Registrar el pago** y **Devolver a compras** en cada instrucción (Compras) | **Tesorería tiene la orden para pagar.** |
+| **Por pagar** | Botones **Registrar el pago** y **Devolver a compras** en cada instrucción (Compras) | **El pago lo registra compras.** |
 | **Pagada · por recibir**, **Contra entrega · por recibir** y **Recibida parcialmente** | Botón **Recibir material** (Almacén) | **La recepción la registra almacén.** |
 | **El proveedor desistió**, con dinero pendiente | Botón **Resolver el dinero** (Gerencia general o Compras) | La tarjeta se queda a la vista hasta que se resuelva |
 
@@ -2433,7 +2433,7 @@ Cinco acciones piden explicación antes de ejecutarse. Todas tienen el mismo cam
 | --- | --- | --- |
 | **Cancelar la compra** | **La tarjeta se va a la columna Cancelada y no se puede reabrir.** | **Cancelar la compra** |
 | **Devolver a compras** *(desde la gerencia)* | **Vuelve a la columna de cotizaciones para que consigan otra opción.** | **Devolver** |
-| **Cancelar la orden** | **Solo se puede antes de que tesorería pague.** | **Cancelar la orden** |
+| **Cancelar la orden** | **Solo se puede antes de que se registre el pago.** | **Cancelar la orden** |
 | **El proveedor desistió** | **La compra ya está pagada. La tarjeta se queda a la vista hasta que se resuelva el dinero.** | **Registrar desistimiento** |
 | **Devolver a compras** *(una instrucción de pago)* | **El pago no se ejecuta y compras tendrá que autorizarlo de nuevo.** | **Devolver** |
 
@@ -2553,7 +2553,7 @@ Una cotización se puede **Eliminar** mientras no esté propuesta al gerente y n
 
 Se llega desde la ficha de una compra en **Pagada · por recibir**, **Contra entrega · por recibir** o **Recibida parcialmente**, con el botón **Recibir material**. En la ficha lo ve el rol Almacén; los demás leen **La recepción la registra almacén.**
 
-**Sin el papel del proveedor no se puede recibir.** Si en la tarjeta **Papeles recibidos** no hay ni factura ni nota de entrega, la ficha lo dice en ámbar: «Falta el papel del proveedor. Suba la **factura** o la **nota de entrega** en «Papeles de la compra», aquí abajo, y se podrá recibir.»
+**Sin el papel del proveedor no se puede recibir.** Si en la tarjeta **Papeles recibidos** no hay ni factura ni nota de entrega, la ficha lo dice en ámbar: «Falta el papel del proveedor. Suba la **factura** o la **nota de entrega** en «Papeles recibidos», aquí abajo, y se podrá recibir.»
 
 **El comprobante de pago no sirve para esto**, y la propia pantalla lo aclara: «El comprobante de pago puede llegar después.» Dice que se pagó, no que llegó, y lo que hay que respaldar al recibir es que el material entró.
 
@@ -2578,7 +2578,7 @@ El estado de la orden se recalcula solo: **Recibida** si no falta nada, **Recibi
 
 #### La pantalla de Recepciones
 
-El mismo diálogo se alcanza desde **Compras › Recepciones**, sin tener que abrir la compra: **Compras pagadas cuyo material aún no ha ingresado al almacén.** Están también las de contra entrega, que esperan el material sin haberse pagado. Arriba, cuántas hay por recibir; si no hay ninguna, **Sin recepciones pendientes**.
+El mismo diálogo se alcanza desde **Compras › Recepciones**, sin tener que abrir la compra: **Compras cuyo material aún no ha ingresado al almacén: las pagadas y las contra entrega.** Arriba, cuántas hay por recibir; si no hay ninguna, **Sin recepciones pendientes**.
 
 Quien sigue una compra la busca por su número, pero quien está en el portón ve llegar un camión y sabe **de qué proveedor viene y qué trae**, no de qué orden salió. Cada tarjeta enseña el proveedor, cuándo se pagó, cuánto costó y qué falta renglón por renglón, con **Llegó una parte** cuando ya entró algo. El botón **Registrar recepción** lo ve quien tiene escritura sobre Inventario.
 

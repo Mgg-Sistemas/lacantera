@@ -410,7 +410,7 @@ export function CompraDirecta() {
         await adjuntar.mutateAsync({ orden_id: ordenId, tipo: 'FACTURA', archivo: factura })
       } catch {
         setAvisoPapel(
-          'La compra quedó guardada, pero la factura no se pudo subir, así que el material no entró al almacén. Suba la factura desde la compra, en «Papeles», y recíbala desde ahí.',
+          'La compra quedó guardada, pero la factura no se pudo subir, así que el material no entró al almacén. Suba la factura desde la compra, en «Papeles recibidos», y recíbala desde ahí.',
         )
         return
       }
@@ -615,7 +615,7 @@ export function CompraDirecta() {
                       valor={f.articulo_id}
                       onCambio={(v: string) => elegirArticulo(f.clave, v)}
                       vacio="Busque el artículo"
-                      hint="¿No aparece? Marque arriba «Es nuevo» y agréguelo al catálogo sin salir de la compra."
+                      hint="¿No aparece? Elija arriba «Artículo nuevo» y agréguelo al catálogo sin salir de la compra."
                     />
                   </div>
                 ) : null}

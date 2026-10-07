@@ -775,9 +775,9 @@ const NOMBRE_DEL_ESTADO: Record<string, Record<string, string>> = {
     NOTA_ENTREGA: 'El proveedor respalda con nota de entrega',
   },
   PAGO: {
-    POR_PAGAR: 'Pago instruido a tesorería',
-    PAGADA: 'Tesorería ejecutó el pago',
-    DEVUELTA: 'Tesorería devolvió el pago a compras',
+    POR_PAGAR: 'Pago autorizado',
+    PAGADA: 'Se registró el pago',
+    DEVUELTA: 'Se devolvió el pago autorizado',
     ANULADA: 'Se anuló el pago autorizado',
   },
 }
@@ -1649,7 +1649,7 @@ export function DetalleCompra() {
             <Card>
               <CardHeader
                 title="Pagos"
-                subtitle="Lo que compras autorizó pagar y lo que tesorería ya pagó."
+                subtitle="Lo que se autorizó pagar y lo que ya se pagó."
               />
 
               {/*
@@ -1904,7 +1904,7 @@ export function DetalleCompra() {
                         <strong className="text-ink/85">
                           {dinero(propuestas[0]?.moneda, propuestas[0]?.total ?? 0)}
                         </strong>
-                        . A partir de ahí, el precio queda fijo.
+                        .
                       </p>
                     )}
                     {/*
@@ -2088,7 +2088,7 @@ export function DetalleCompra() {
                     )}
 
                     <p className="text-ink/60 mb-3 text-sm">
-                      Indique cómo se le paga al proveedor. Con eso la orden entra a tesorería.
+                      Indique cómo se le paga al proveedor. Con eso la orden queda por pagar.
                     </p>
                     <Button
                       block
@@ -2136,7 +2136,7 @@ export function DetalleCompra() {
                   </>
                 ) : (
                   <p className="text-ink/60 text-sm">
-                    Tesorería tiene la orden para pagar.
+                    El pago lo registra compras.
                   </p>
                 )
               ) : null}
@@ -2169,7 +2169,7 @@ export function DetalleCompra() {
                             Falta el papel del proveedor. Suba la{' '}
                             <strong className="font-semibold">factura</strong> o la{' '}
                             <strong className="font-semibold">nota de entrega</strong> en «Papeles
-                            de la compra», aquí abajo, y se podrá recibir.
+                            recibidos», aquí abajo, y se podrá recibir.
                           </p>
                           <p className="text-ink/55 mt-1 text-xs">
                             El comprobante de pago puede llegar después.
@@ -2395,7 +2395,7 @@ export function DetalleCompra() {
         abierto={modal?.tipo === 'cancelar-orden'}
         onCerrar={() => setModal(null)}
         titulo="Cancelar la orden"
-        descripcion="Solo se puede antes de que tesorería pague."
+        descripcion="Solo se puede antes de que se registre el pago."
         etiqueta="Cancelar la orden"
         pendiente={cancelarOrden.isPending}
         error={cancelarOrden.error}
