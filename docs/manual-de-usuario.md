@@ -2984,175 +2984,180 @@ Cuatro reglas que evitan discusiones:
 
 ## 10. Ventas
 
-> **Ventas está en el menú desde el 28 de agosto de 2026**, y quién lo ve depende de los permisos de cada rol (3.1). **Este capítulo todavía no se ha repasado contra las pantallas de hoy**: se escribió antes de que volviera, y lo que se factura y se cobra se mudó después a Facturación (capítulo 21). Puede llevar detalles que ya no coincidan.
+Ventas es el camino del material hacia afuera: a quién se le vende, a cuánto, y qué se le ofrece antes de mandar el camión. El menú **Ventas** tiene cuatro pantallas: **Tablero**, **Clientes**, **Lista de precios** y **Cotizaciones**.
 
-Ventas es el camino del material hacia afuera: a quién se le vende, a cuánto y qué se le entregó. **Lo que se le factura y lo que paga tiene módulo propio desde el 15 de septiembre de 2026, Facturación**, explicado en el capítulo 21: allí se emite la factura sobre las notas de entrega que salen de aquí.
+El despacho se hace en **Facturación › Notas de entrega**, y la factura y el cobro en **Facturación › Facturas**. La nota de entrega se cuenta aquí (10.6) porque es el paso de la venta que saca el material del patio; la factura, el cobro y las notas de crédito, en el capítulo 21.
 
 Hay una idea que conviene entender antes de tocar nada, porque es la que ordena todo el módulo:
 
-**El material sale del patio con la nota de entrega, no con la factura.** Cuando registras un despacho, el sistema descuenta el material en ese instante. La factura viene después y es otro papel: el fiscal. Puede juntar varias notas de entrega y no mueve ni un kilo de inventario, porque el material ya salió.
+**El material sale del patio con la nota de entrega, no con la factura.** El despacho se pide, otra persona lo aprueba, y en ese momento nace la nota y el material se descuenta. La factura viene después, si viene, y es otro papel: el fiscal. Puede juntar varias notas de entrega y no mueve inventario, porque el material ya salió. La única que sí lo mueve es la **factura sin nota** cuando se emite con el material saliendo con ella (capítulo 21).
 
-De ahí se desprende lo demás: una nota de entrega mal hecha se corrige en el patio; una factura mal hecha se corrige con su número, que ya se consumió y no se recupera.
+**Facturar es opcional.** Una nota de entrega vale por sí sola: el despacho queda hecho y el material, descontado, se facture o no. Si se factura, la nota queda enlazada a su factura.
 
 ### 10.1 Quién entra y quién puede hacer qué
 
-Para ver el módulo hace falta que administración le haya dado a tu usuario acceso a Ventas. Si no lo tiene, el grupo Ventas no aparece en el menú.
+Ventas toca dos módulos y dos casillas, y conviene no confundirlos.
 
-Dentro del módulo hay dos alcances distintos. El primero es **el trabajo del día**: cotizar y despachar. El segundo es **el control total sobre Ventas**, que es como lo llaman las propias pantallas, y cubre las decisiones que comprometen dinero de la empresa: poner precios, dar crédito, vender por debajo del mínimo y anular.
+| Qué | Lo decide |
+| --- | --- |
+| Ver las cuatro pantallas de Ventas | El módulo **Ventas** en la matriz de permisos (13.1) |
+| Registrar y editar clientes, cotizar, cerrar una cotización | **Ventas** en escritura |
+| Poner o quitar un precio de la lista, y dar crédito a un cliente | **Ventas** en control total |
+| Vender por debajo del mínimo, o dar un renglón sin cargo | La casilla de **vender bajo el mínimo** (13.1) |
+| Ver **Facturación › Notas de entrega** | El módulo **Facturación** |
+| Pedir un despacho, completar una nota, ponerle sus camiones, enlazarla a una factura | **Facturación** en escritura |
+| Aprobar o no aprobar un despacho | La casilla **Aprobar los despachos** (13.1) |
+| Cancelar un despacho que espera aprobación | Quien lo pidió |
+| Anular una nota de entrega, o soltarla de una factura | **Facturación** en control total |
+| Corregir una nota entera con **Editar** | El rol **Administrador** |
 
-| Rol | Ve el módulo | Cotiza y despacha | Pone precios, da crédito, vende bajo el mínimo y anula despachos |
-| --- | --- | --- | --- |
-| Administrador | Sí | Sí | Sí |
+Dos reglas que no dependen de ningún permiso: **quien pide un despacho no lo aprueba**, aunque tenga la casilla, y **solo quien lo pidió lo cancela**. Las dos las impone la base.
 
-Hoy **solo el administrador** tiene acceso a Ventas: el reparto a los demás roles está por decidir. Facturar, cobrar y emitir notas de crédito no dependen de este permiso sino del de **Facturación** (21.1).
+**Cuando le falta permiso, el mensaje dice qué falta.** Si es un nivel sobre el módulo, verá «Su usuario no tiene acceso a ….»; si es una casilla, «Su usuario no tiene permiso para ….». Si llega sin detalle, «Su usuario no tiene permiso para esta acción.» En los tres casos se pide a la administración, o lo hace quien lo tenga.
 
-El rol Ventas está descrito así: **Cotiza, despacha material, factura y registra cobros.** Desde que la facturación tiene módulo propio, facturar y cobrar dependen además del permiso sobre Facturación. Es el reparto de siempre en una empresa: quien despacha no decide a cuánto vende la empresa ni a quién se le fía.
-
-**Cuando te falta permiso, el sistema no te dice cuál.** Siempre ves el mismo texto: «Tu usuario no tiene permiso para esta acción.» No es una falla ni un mensaje incompleto: es el único que llega hasta la pantalla. Si te sale al guardar un precio, al fijar un crédito o al anular, lo que falta es el control total sobre Ventas.
-
-**El control total sobre Ventas no alcanza para todo.** Despachar mineral sin guía de movilización depende de otro permiso, el control total sobre Despachos, y por defecto solo lo tiene quien administra el sistema. Se explica en el capítulo de Despachos.
-
-Una cosa más, que vale para todas las pantallas del módulo: **lo que escribes se convierte solo a mayúsculas y se le quitan las tildes** mientras tecleas. El **Correo** es la excepción y se guarda en minúscula.
+Una cosa más, que vale para todas las pantallas del módulo: **lo que se escribe pasa solo a mayúsculas y sin tildes** mientras se teclea. El **Correo** es la excepción y se guarda en minúscula.
 
 ### 10.2 El circuito de una venta
 
-Esta es la sección que hay que leer aunque no se lea ninguna otra. Del cliente al cobro son seis pasos, y cada uno tiene un requisito para pasar al siguiente.
+Esta es la sección que hay que leer aunque no se lea ninguna otra. Del cliente al cobro son seis pasos; dos son opcionales.
 
-1. **Se registra el cliente.** **Ventas › Clientes › Nuevo cliente**. Sin cliente no se cotiza, no se despacha y no se factura. Hace falta el **RIF** y la **Razón social**; el **Domicilio fiscal** se imprime en la factura.
-2. **Se le pone precio a lo que se vende.** **Ventas › Lista de precios**. Cada producto lleva un **Precio de lista**, que es el que se propone solo al cotizar y al despachar, y un **Precio mínimo**, que es el suelo. Un producto sin precio se puede elegir igual, pero hay que teclear el precio a mano.
-3. **Se cotiza, si hace falta.** **Ventas › Cotizaciones › Nueva cotización**. Nace en **Enviada**. Desde el detalle se cierra con **La aceptó**, y pasa a **Aceptada**, o con **La rechazó**, y pasa a **Rechazada**. Este paso es opcional: se puede despachar sin haber cotizado. Una cotización no compromete existencias, así que aceptarla no aparta material.
-4. **Sale el camión.** **Ventas › Notas de entrega › Despachar**. Hacen falta un cliente activo, el patio de donde sale, al menos un renglón con producto y cantidad, material suficiente en ese patio y la tasa del día registrada. **Y si en la nota va mineral, hace falta además una guía de movilización vigente**, que se carga antes en Despachos. La nota nace en **Por facturar**. **Este es el único paso que descuenta el patio.**
-5. **Se emite la factura.** **Facturación › Facturas › Facturar**. Se marcan una o varias notas que estén en **Por facturar**, del mismo cliente y de la misma moneda. Si la condición es a crédito, el cliente tiene que tener límite fijado y la factura tiene que caber dentro de él. Las notas pasan a **Facturada** y la factura nace en **Por cobrar**.
-6. **Se cobra.** Botón **Registrar cobro** dentro de la factura. Se pueden registrar varios abonos, en cualquiera de las dos monedas. **Cuando el saldo baja de un centavo de dólar, la factura pasa sola a Cobrada.** Nadie tiene que marcarla.
+1. **Se registra el cliente.** **Ventas › Clientes › Nuevo cliente**. Sin cliente no se cotiza, no se despacha y no se factura. Hacen falta la **Identificación** —el RIF de una empresa o la cédula de una persona sin RIF— y la **Razón social**; el **Domicilio fiscal** se imprime en la factura.
+2. **Se le pone precio a lo que se vende.** **Ventas › Lista de precios**. Cada producto lleva, por cada unidad en que se vende, un **precio de lista** y un **precio mínimo**, que es el suelo. Un producto sin precio en esa unidad se puede vender igual, a **precio acordado**.
+3. **Se cotiza, si hace falta.** **Ventas › Cotizaciones › Nueva cotización**. Nace en **Enviada**, y desde el detalle se cierra con **La aceptó** o con **La rechazó**. Una cotización no compromete existencias.
+4. **Se pide el despacho.** **Facturación › Notas de entrega › Pedir despacho**. Hacen falta el cliente, el patio, al menos un renglón completo y los datos del transporte: **el nombre del chofer, su cédula y la placa del vehículo**. El pedido queda **Por aprobar** y **no rebaja nada todavía**.
+5. **Otra persona lo aprueba.** Pulsa **Aprobar** en la tarjeta del despacho. En ese momento el sistema comprueba que haya material y tasa del día, **nace la nota de entrega en Despachada y el material sale del patio**. Este es el paso que descuenta el patio.
+6. **Se factura y se cobra, si se factura.** En **Facturación › Facturas**, con **Facturar notas**: se marcan una o varias notas despachadas del mismo cliente y la misma moneda, y la factura se envía a autorizar. La nota pasa a **Facturada** cuando la factura se emite, y el cobro se registra en la factura. Todo eso está en el capítulo 21 (21.2).
 
-**Las vueltas atrás.** Todas dejan rastro. La de la nota de entrega exige el control total sobre Ventas; las de la factura y el cobro, el control total sobre Facturación:
+**Las vueltas atrás.** Todas dejan rastro y piden motivo:
 
-- **Anular una nota que está en Por facturar** devuelve el material al patio y la nota queda en **Anulada**, a la vista. Pide motivo.
-- **Anular una factura que está en Por cobrar** deja la factura en **Anulada** con su número, y **sus notas de entrega vuelven a estar en Por facturar**, listas para facturarse otra vez. Pide motivo y exige que no haya cobros vivos.
-- **Anular un cobro** devuelve la factura de **Cobrada** a **Por cobrar**.
+- **No aprobar** un despacho lo cierra sin descontar nada. El motivo lo lee quien lo pidió.
+- **Cancelar** un despacho que espera aprobación lo retira. Lo hace quien lo pidió.
+- **Anular una nota Despachada** devuelve el material al patio con un reverso, y la nota queda **Anulada**, a la vista.
+- **Una nota Facturada no se anula desde la nota**: primero se anula la factura, y sus notas vuelven a quedar despachadas, sin factura (21.2).
 
-**Los dos papeles del camión ya no se escriben aquí.** El pesaje de la romana y la guía de movilización se registran antes, en su propio módulo, y al despachar se eligen de una lista. Al elegir el pesaje, los pesos y la placa se traen solos de la báscula; al guardar la nota, los dos papeles quedan gastados en ese viaje y no se pueden usar otra vez. Si la nota se anula, los dos vuelven a quedar libres. Todo eso está explicado en el capítulo de Despachos.
+**Los dos papeles del camión.** El pesaje de la romana y la guía de movilización se eligen de una lista al pedir el despacho, y los dos son opcionales. Al elegir el pesaje, los pesos y la placa se traen de la báscula; al aprobarse el despacho, el ticket y la guía quedan gastados en ese viaje, y si la nota se anula vuelven a quedar libres. El detalle está en el capítulo 8.
 
-**Tres avisos sobre este circuito, para que nadie los descubra a mitad de camino:**
+**La cotización aceptada no se convierte en despacho.** No hay botón que la pase a nota de entrega. Aunque el cliente haya aceptado, al pedir el despacho hay que volver a elegir el cliente y volver a cargar los renglones.
 
-**Sin guía de movilización no sale mineral.** No es un aviso que se pueda pasar de largo: el despacho se rechaza entero y no se descuenta nada del patio. Solo quien tenga el control total sobre Despachos —que no es el control total sobre Ventas— puede autorizar una salida sin ella.
-
-**La cotización aceptada no se convierte en despacho.** No hay botón que la pase a nota de entrega. Aunque el cliente haya aceptado, al despachar hay que volver a elegir el cliente y volver a cargar los renglones. Por lo mismo, el detalle de una cotización nunca llega a mostrar despachos asociados.
-
-**Una cotización no se puede anular desde la pantalla.** Solo se puede cerrar como **Aceptada** o como **Rechazada**. Una oferta que se cayó se cierra con **La rechazó**.
+**Una cotización no se anula desde la pantalla.** Solo se cierra como **Aceptada** o como **Rechazada**. Una oferta que se cayó se cierra con **La rechazó**.
 
 ### 10.3 Clientes
 
 **Ventas › Clientes**
 
-A quién se le vende. La propia pantalla lo resume: **A quién se le vende. La dirección se imprime en la factura y el límite de crédito se aplica al facturar.**
+A quién se le vende. La pantalla lo resume: **Registro de clientes. La dirección se imprime en la factura y el límite de crédito se aplica al facturar.**
 
 #### Qué se ve
 
-Arriba, el botón **Nuevo cliente**. Si todavía no hay ninguno, aparece la tarjeta **Todavía no hay clientes** con el texto **Sin cliente no se puede despachar ni facturar. Empieza por los que se llevan material todas las semanas.** y el botón **Registrar el primero**.
+Arriba, el botón **Nuevo cliente** y el campo **Buscar**, que encuentra por **Nombre, RIF o contacto**. Si no aparece nada, la pantalla sugiere buscar por parte del nombre o por el RIF sin guiones. La lupa de arriba, buscando un cliente por su nombre, aterriza aquí con la búsqueda puesta.
+
+Si todavía no hay ninguno, aparece **Sin clientes registrados**, con el texto **Sin clientes no se puede despachar ni facturar.** y el botón **Registrar el primero**.
 
 | Columna | Qué muestra |
 | --- | --- |
 | **Cliente** | Razón social y, debajo, el nombre comercial si lo tiene |
-| **RIF** | Tal cual |
-| **Condición** | La condición de pago y, si retiene, el chip **Retiene IVA** |
-| **Debe** | Lo que debe, en dólares. Debajo, **de $ X** si tiene límite, en rojo cuando la deuda lo pasó |
-| **Última venta** | Fecha de la última factura no anulada, o **—** |
+| **Identificación** | El RIF o la cédula |
+| **Condición** | La condición de pago y, si retiene IVA, el chip **Agente de retención** |
+| **Deuda** | Lo que debe, en dólares. Debajo, **de $ X** si tiene límite, en rojo cuando la deuda lo pasó |
+| **Última venta** | La fecha, o **—** |
 | **Estado** | **Activo** o **Inactivo** |
 
-**No hay buscador ni filtros.** La lista trae todos los clientes, activos e inactivos, ordenados por nombre. Es una limitación real: con muchos clientes hay que buscar con los ojos.
-
-Las cuatro condiciones de pago son **De contado**, **Crédito a 15 días**, **Crédito a 30 días** y **Crédito a 60 días**.
+Las condiciones de pago son cuatro: **De contado**, **Crédito a 15 días**, **Crédito a 30 días** y **Crédito a 60 días**.
 
 #### Registrar y editar
 
-Pulsa **Nuevo cliente**. Se abre la ventana **Nuevo cliente**, con el aviso **El RIF y la dirección salen impresos en la factura.** Llena la ficha y pulsa **Guardar**.
+Pulse **Nuevo cliente**. Se abre la ventana **Nuevo cliente**, con el aviso **La identificación y la dirección salen impresas en la factura.** Llene la ficha y pulse **Guardar**.
 
-Para editar, **pulsa en cualquier parte de la fila**. Se abre la misma ventana, titulada **Editar cliente**. No hay botón de editar.
+Para editar, **pulse en cualquier parte de la fila**. Se abre la misma ventana, titulada **Editar cliente**.
 
-**No se borra un cliente.** Se desmarca **Activo** y deja de aparecer al cotizar y al despachar, pero sus facturas y sus notas siguen donde están, que es lo que permite explicar una venta de hace un año.
+**Un cliente no se borra.** Se desmarca **Activo** y deja de aparecer al cotizar y al despachar, pero sus facturas y sus notas siguen donde están, que es lo que permite explicar una venta de hace un año.
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **RIF** | Sí | Con la forma **J-12345678-9**: una letra V, E, J, P, G o C, guion, ocho dígitos, guion, un dígito |
+| **Identificación** | Sí | El RIF con su dígito si es una empresa (**J-12.345.678-9**), o la cédula si es una persona sin RIF (**V-12.345.678**). Solo admite las teclas que sirven para eso, y la letra pasa sola a mayúscula. Lo dice la ayuda: **Cédula si es una persona sin RIF; RIF con su dígito si es una empresa.** |
 | **Razón social** | Sí | Mínimo tres letras |
 | **Nombre comercial** | No | |
 | **Persona de contacto** | No | |
-| **Teléfono** | No | |
+| **Teléfono** | No | Con la forma **0412-5551234** |
 | **Correo** | No | Se guarda en minúscula |
 | **Domicilio fiscal** | No | La ayuda avisa: **Va impreso en la factura. Una factura sin la dirección del comprador está mal emitida.** |
 | **Condición de pago** | Sí | Empieza en **De contado** |
-| **Moneda con la que se le factura** | Sí | **Dólares** o **Bolívares**. Empieza en **Dólares** |
+| **Moneda preferida** | Sí | Con la que arrancan sus documentos |
 | **Límite de crédito, en dólares** | No | Solo aparece si la condición no es **De contado** |
 | **Contribuyente especial — retiene IVA al pagar** | No | Viene desmarcada |
-| **Porcentaje de IVA que retiene** | No | Solo aparece si la casilla anterior está marcada. Empieza en **75** |
+| **Retención de IVA** | No | Solo aparece si la casilla anterior está marcada. Empieza en **75** |
 | **Exento de IVA — sus documentos salen con alícuota cero** | No | Viene desmarcada |
 | **Activo — aparece al cotizar y despachar** | — | Viene marcada |
 | **Notas** | No | |
 
-Dos ayudas de esta ficha conviene leerlas enteras, porque explican decisiones que después no se pueden discutir con el sistema. La del límite: **Por encima de este monto no se le factura a crédito. En cero, no se le vende a crédito.** No es un aviso: es un tope. Y la del recuadro naranja: **Solo lo fija quien tenga control total sobre Ventas.** Dar crédito compromete dinero de la empresa.
+Dos ayudas de esta ficha conviene leerlas enteras, porque explican decisiones que después no se pueden discutir con el sistema. La del límite: **Por encima de este monto no se le factura a crédito. En cero, no se le vende a crédito.** No es un aviso: es un tope. Y la del recuadro: **Solo lo fija quien tenga control total sobre Ventas.** Dar crédito compromete dinero de la empresa.
 
-La del porcentaje que retiene: **Normalmente 75%. Se descuenta de lo que hay que cobrarle, no del total de la factura.**
+La de la retención: **Normalmente 75%. Se descuenta de lo que hay que cobrarle, no del total de la factura.**
 
-#### Qué no te deja el sistema
+#### Qué no le deja el sistema
 
-**Poner un límite de crédito, o cualquier condición que no sea De contado, exige el control total sobre Ventas.** La razón está escrita arriba: fiar es comprometer dinero de la empresa, y esa no es una decisión de la persona que carga el cliente.
+**Poner un límite de crédito, o cualquier condición que no sea De contado, exige el control total sobre Ventas.** Fiar es comprometer dinero de la empresa, y esa no es una decisión de la persona que carga el cliente.
 
-**Dos clientes no pueden compartir RIF.** Si lo repites verás «Ya hay un cliente registrado con el RIF J-12345678-9.» El RIF es lo que identifica al comprador en la factura; repetido, la deuda de uno se mezcla con la del otro.
+**Dos clientes no pueden compartir identificación.** Si la repite verá «Ya hay un cliente registrado con el RIF J-12345678-9.» La identificación es lo que distingue al comprador en la factura; repetida, la deuda de uno se mezcla con la del otro.
 
-Y un aviso práctico: **el botón Guardar no se apaga aunque falten el RIF o la razón social.** La pantalla no lo comprueba antes; el rechazo llega después de pulsar, en un recuadro rojo dentro de la misma ventana. Revísalos antes de guardar y te ahorras el viaje.
+**El botón Guardar no se apaga aunque falten la identificación o la razón social.** El rechazo llega después de pulsar, dentro de la misma ventana. Revíselos antes de guardar y se ahorra el viaje.
 
 ### 10.4 Lista de precios
 
 **Ventas › Lista de precios**
 
-A cuánto se vende cada cosa, y por debajo de cuánto no se vende.
+A cuánto se vende cada cosa, en cada unidad, y por debajo de cuánto no se vende.
 
 #### Qué se ve
 
-El título **Lista de precios** y, a la derecha, si hay productos activos a los que no se les ha puesto precio, un aviso: **3 productos sin precio**.
+El título **Lista de precios** y, a la derecha, si hay productos activos sin precio, un aviso: **3 productos sin precio**.
 
-**Aquí no se crean artículos.** Solo se les pone precio a los que ya están en el catálogo y son vendibles. Si el catálogo no tiene nada que vender, la pantalla dice **No hay nada que vender en el catálogo** y explica: **Los precios se le ponen a los artículos de categoría Producto o Servicio. Créalos primero en Inventario › Catálogo de artículos.**
+**Aquí no se crean artículos.** Solo se les pone precio a los que ya están en el catálogo y son vendibles. Si el catálogo no tiene nada que vender, la pantalla dice **Sin productos de venta en el catálogo** y explica: **Los precios se asignan a artículos de categoría Producto o Servicio, que se crean en Inventario › Catálogo de artículos.**
+
+**Hay una fila por cada producto y unidad.** Lo que tiene densidad en el catálogo se vende en metros cúbicos y en toneladas, cada unidad con su precio y su mínimo; si una de las dos no tiene precio, bajo la unidad sale, por ejemplo, **por TON: sin precio**.
 
 | Columna | Qué muestra |
 | --- | --- |
 | **Producto** | Nombre y, debajo, el código, con **· servicio** si lo es y **· dado de baja** si el artículo no está activo |
-| **Unidad** | La del artículo |
+| **Unidad** | En la que se vende ese precio |
 | **Precio** | El importe, o el aviso **Sin precio** |
 | **Mínimo** | El importe, o **—** si es cero |
 | **Actualizado** | Fecha del último cambio, o **—** |
 
-La lista va ordenada por categoría y por nombre. **Sin buscador ni filtros.**
-
 #### Poner un precio
 
-1. Pulsa en cualquier parte de la fila del producto. Se abre una ventana titulada con el nombre del producto y el subtítulo **Precio por** su unidad.
-2. Elige la **Moneda**: **Dólares** o **Bolívares**. Empieza en **Dólares**.
-3. Escribe el **Precio de lista**.
-4. Escribe el **Precio mínimo**, si va a haber suelo. En cero, no hay tope por abajo.
-5. Pulsa **Guardar precio**.
+1. Pulse en cualquier parte de la fila. Se abre una ventana titulada con el nombre del producto y el subtítulo **Precio por** su unidad.
+2. Elija la **Unidad**. La que todavía no tiene precio dice **· sin precio todavía**.
+3. Elija la **Moneda**.
+4. Escriba el **Precio de lista por** esa unidad.
+5. Escriba el **Precio mínimo por** esa unidad, si va a haber suelo. En cero, no hay tope por abajo.
+6. Pulse **Guardar precio**.
 
 Al pie de la ventana está la regla: **Un descuento no baja de ahí. Solo lo salta quien tenga la casilla de vender bajo el mínimo. En cero, no hay tope por abajo.** El mínimo no es una sugerencia.
 
-#### Qué no te deja el sistema
+Si el precio es por la otra unidad, la ventana explica cómo sale el material: **El patio lo lleva en M3. Al vender por TON, lo que sale se calcula con la densidad del catálogo, 1,6 t/m³, salvo que el camión se pese en la romana.** Y si el artículo no tiene densidad: **Sin densidad en el catálogo solo se vende en metros cúbicos.**
 
-**El botón Guardar precio está apagado si el precio está vacío o en cero.** Un producto con precio cero se despacharía regalado sin que nadie lo note.
+Para quitar un precio, el botón **Quitar el precio por** esa unidad, en la misma ventana.
 
-**El mínimo no puede ser mayor que el precio**, y el sistema lo dice con las dos cifras: «El precio mínimo (12.00) no puede ser mayor que el precio (10.00).» Un suelo por encima del techo dejaría el producto imposible de vender sin saltar el mínimo.
+#### Qué no le deja el sistema
 
-**Poner precios exige el control total sobre Ventas**, porque es decidir a cuánto vende la empresa, y esa decisión no la toma quien despacha.
+**Poner o quitar precios exige el control total sobre Ventas**, porque es decidir a cuánto vende la empresa.
 
-Solo se le pone precio a productos y servicios. A un insumo el sistema responde «Solo se le pone precio de venta a lo que se vende. "45" es INSUMO.»
+**El botón Guardar precio está apagado si el precio está vacío o en cero.** Un producto con precio cero se despacharía regalado sin que nadie lo note; para regalar está el renglón **Sin cargo** (10.5).
+
+**El mínimo no puede ser mayor que el precio**, y el sistema lo dice con las dos cifras: «El precio mínimo (…) no puede ser mayor que el precio (…).» Un suelo por encima del techo dejaría el producto imposible de vender sin saltar el mínimo.
+
+Solo se le pone precio a productos y servicios. A un insumo el sistema responde «Solo se le pone precio de venta a lo que se vende. «FILTRO DE AIRE» es INSUMO.»
 
 ### 10.5 Cotizaciones
 
 **Ventas › Cotizaciones**
 
-Lo que se le ofrece al cliente antes de despachar. No compromete existencias.
+Lo que se le ofrece al cliente antes de despachar. La pantalla lo dice: **Ofertas al cliente previas al despacho. No comprometen existencias.**
 
 #### Qué se ve
 
-El botón **Nueva cotización**. Si no hay ninguna, la tarjeta **Todavía no se ha cotizado nada**, con el texto **Una cotización sirve para que el cliente sepa el precio antes de mandar el camión. También se puede despachar sin cotizar.** y el botón **Cotizar**.
+El botón **Nueva cotización**. Si no hay ninguna, **Sin cotizaciones**, con el texto **La cotización informa el precio al cliente antes del despacho. Es opcional.** y el botón **Cotizar**.
 
 | Columna | Qué muestra |
 | --- | --- |
@@ -3160,38 +3165,64 @@ El botón **Nueva cotización**. Si no hay ninguna, la tarjeta **Todavía no se 
 | **Cliente** | Razón social |
 | **Fecha** | La de emisión y, debajo, **vale hasta 19 ago 2026**; en naranja, **venció el 19 ago 2026**, si ya pasó |
 | **Total** | Con el símbolo de su moneda |
-| **Estado** | **Enviada** en azul, **Aceptada** en verde, **Rechazada** en rojo, **Anulada** en gris |
+| **Estado** | **Enviada**, **Aceptada** en verde, **Rechazada** en rojo, **Anulada** en gris |
 
-Se muestran **las 200 más recientes**, las nuevas primero, y no hay filtros ni buscador en pantalla.
+Se muestran **las 200 más recientes**, las nuevas primero, sin filtros ni buscador.
 
 #### Los renglones: el bloque donde se decide el precio
 
-Este bloque es el mismo en **Nueva cotización** y en **Despachar material**, así que se explica una sola vez.
+Este bloque es el mismo en **Nueva cotización** y en **Pedir despacho** (10.6), así que se explica una sola vez.
 
-Cada renglón es un recuadro con el desplegable **Renglón 1**, que empieza en **Elige el producto** y muestra cada opción como el código, el nombre y su precio; **Cantidad**; **Precio por** la unidad del producto; **Total del renglón**, que se calcula solo; y la casilla **Exento de IVA**, que va renglón por renglón. Abajo, **Agregar renglón**. El botón **Quitar** está apagado cuando solo queda un renglón, porque un documento sin renglones no dice nada.
+Cada renglón es un recuadro con estos campos:
 
-**Al elegir el producto, el precio se trae solo de la lista y queda editable.** Es a propósito: el precio se negocia. Si escribes uno por debajo del suelo, aparece el aviso amarillo **Por debajo del mínimo de $ 8,00** y el botón de guardar sigue encendido; quien decide es el sistema al guardar.
+| Campo | Detalle |
+| --- | --- |
+| **Renglón 1** | El producto. Empieza en **Seleccione el producto**, y cada opción es el código y el nombre |
+| **Patio** | Solo en el despacho. Empieza en el de la nota; se cambia cuando ese renglón sale de otro patio |
+| **Unidad** | **M3** o **TON** si el artículo tiene densidad; si no, la suya. La que no tiene precio de lista dice **· sin precio de lista** |
+| **Cantidad** | En la unidad elegida |
+| **Precio** | A qué precio sale, como condición: ver abajo |
+| **Total del renglón** | Se calcula solo |
+| **Exento de IVA** | Solo en la cotización. Deja ese renglón fuera de la base imponible |
 
-**Si el documento va en bolívares y el mínimo está en dólares, el aviso usa la tasa del día.** Cuando no hay tasa del día registrada, **el aviso no aparece**: un aviso calculado con una tasa inventada engaña más que el silencio.
+Abajo, **Agregar renglón**. El botón **Quitar** está apagado cuando solo queda un renglón, porque un documento sin renglones no dice nada.
 
-**Un renglón a medio llenar no da error: se descarta.** Si dejas un renglón sin producto, o con la cantidad en cero, al guardar simplemente no viaja. Cuenta los renglones del documento guardado antes de imprimirlo.
+**El precio no se teclea: se elige a qué precio sale.** Son cuatro condiciones:
+
+| Condición | Cuándo se ofrece | Qué pide |
+| --- | --- | --- |
+| **De lista** | Si esa unidad tiene precio de lista. La opción dice la cifra: **De lista · $ 12,00 por TON** | Nada más |
+| **Con descuento sobre la lista** | Si esa unidad tiene precio de lista | El **Descuento** y **En** qué va: **Porcentaje de la lista** o un monto menos por unidad. Debajo dice en cuánto queda: **Queda en $ 10,80 por TON, de $ 12,00.** |
+| **Sin cargo** | Siempre. A quien no tiene la casilla de vender bajo el mínimo, el campo le avisa en rojo: **Sin cargo lo autoriza quien pueda vender bajo el mínimo, y no tiene esa casilla.** | El **Motivo**, que **queda escrito en el renglón y en el papel** |
+| **Precio acordado (no hay lista)** | Si esa unidad no tiene precio de lista | El **Precio acordado por** esa unidad |
+
+Al elegir el producto con precio de lista, la condición arranca en **De lista**. La regla de cada condición está en la ayuda del campo: el precio de lista sale **de Ventas › Lista de precios, en la moneda del documento**, y el sin cargo **lo autoriza quien pueda vender bajo el mínimo**.
+
+**El mínimo se avisa en la pantalla y se decide en la base.** Si un descuento deja el precio por debajo del mínimo, sale en amarillo: **Por debajo del mínimo de $ 8,00: lo autoriza quien pueda vender bajo el mínimo.** El botón de guardar sigue encendido; al guardar, la base rechaza el renglón si quien guarda no tiene la casilla. Si el documento va en otra moneda que el mínimo, el aviso usa la tasa del día, y **sin tasa del día el aviso no aparece**: un aviso calculado con una tasa inventada engaña más que el silencio.
+
+**Un renglón a medio llenar dice qué le falta**, y mientras falte, el botón de guardar está apagado: **Falta la cantidad.**, **Falta decir a qué precio sale.**, **Falta de cuánto es el descuento.**, **Falta decir por qué sale sin cargo.**, **Falta el precio acordado.** Un renglón sin producto, en cambio, no se envía y no da error.
+
+En el papel y en el detalle, cada renglón que no salió de lista lleva debajo una línea gris que lo explica: **20 % de descuento sobre $ 12,00**, **Sin cargo (de lista, $ 12,00): muestra para el cliente**, **Precio acordado: esa unidad no tenía precio de lista**.
 
 #### Crear una cotización
 
-1. Pulsa **Nueva cotización**. La ventana avisa: **El precio sale de la lista y se puede ajustar. La tasa queda congelada en el documento.**
-2. Elige el **Cliente**. Solo aparecen los activos. **Al elegirlo, la moneda cambia sola a la que tenga el cliente.**
-3. Carga los renglones.
-4. Ajusta **Válida por (días)**, que empieza en **15**.
-5. Escribe **Descuento** y **Flete**, si los hay. El descuento es un monto, no un porcentaje. El flete lleva la ayuda **Se le suma a la base imponible.**
-6. Escribe la **Observación**, si hace falta.
-7. Revisa el bloque de totales, que se recalcula mientras escribes: **Subtotal**, **Descuento** y **Flete** cuando los hay, **IVA 16%** y, tras una raya, **Total**.
-8. Pulsa **Guardar cotización**.
+1. Pulse **Nueva cotización**. La ventana avisa: **Cada renglón dice a qué precio sale: de lista, con descuento, sin cargo o acordado. La tasa queda congelada en el documento.**
+2. Elija el **Cliente**. Solo aparecen los activos. Al elegirlo, la **Moneda** cambia sola a la suya.
+3. Cargue los renglones.
+4. Ajuste **Válida por (días)**, que empieza en **15**.
+5. Escriba el **Flete**, si lo hay. La ayuda dice: **Se le suma a la base imponible.**
+6. Escriba la **Observación**, si hace falta.
+7. Decida los impuestos. **La casilla Esta operación lleva IVA viene desmarcada**; al marcarla aparece la **Alícuota (%)**, que arranca en la de la ficha de la empresa y se puede cambiar para este documento. La casilla **Esta operación lleva IGTF** también viene desmarcada; marcada, arranca en el 3 % de ley y se calcula sobre el total con IVA.
+8. Revise el bloque de totales, que se recalcula mientras escribe: **Subtotal**, **Flete** si lo hay, **IVA** con su alícuota si lleva, **IGTF** si lleva y, tras una raya, **Total**.
+9. Pulse **Guardar cotización**.
 
-Si el cliente está marcado como exento, la ventana lo dice: **ACME C.A. está registrado como exento: el documento sale sin IVA.**
+**No hay descuento sobre el total del documento.** El descuento va en cada renglón, dicho sobre la lista, para que se sepa de qué precio salió cada cosa.
+
+Si el cliente está marcado como exento, la casilla del IVA no aparece y la ventana lo dice: **ACME C.A. está registrado como exento: el documento sale sin IVA.**
 
 #### Ver, cerrar e imprimir
 
-Pulsa en la fila. Se abre el detalle con el número por título, los chips del estado, la tarjeta **Renglones** con las columnas **Descripción**, **Cantidad**, **Precio** y **Total** —los renglones exentos llevan el chip **Exento**— y el bloque de totales.
+Pulse en la fila. Se abre el detalle con el número por título, el chip del estado —y el de **Vencida**, si pasó su validez—, la tabla de renglones con **Descripción**, **Cantidad**, **Precio** y **Total** —los exentos llevan el chip **Exento**— y el bloque de totales. Si el cliente retiene IVA, los totales terminan en **Retención de IVA** y **A cobrar**.
 
 | Botón | Cuándo aparece | Qué hace |
 | --- | --- | --- |
@@ -3200,154 +3231,195 @@ Pulsa en la fila. Se abre el detalle con el número por título, los chips del e
 | **La aceptó** | Solo si está **Enviada** | La pasa a **Aceptada** |
 | **La rechazó** | Solo si está **Enviada** | La pasa a **Rechazada** |
 
-**Vencida no es un estado: es un cálculo.** Sale de la fecha más los días de validez. Se hace así a propósito: un estado que solo cambia con el paso del tiempo obliga a que alguien lo cambie, y el día que nadie lo cambie el papel queda mintiendo. **Una cotización vencida se puede aceptar o rechazar igual**; nada lo impide.
+**Vencida no es un estado: es un cálculo.** Sale de la fecha más los días de validez. Un estado que solo cambia con el paso del tiempo obliga a que alguien lo cambie, y el día que nadie lo cambie el papel queda mintiendo. **Una cotización vencida se puede aceptar o rechazar igual**; nada lo impide.
 
 #### Qué sale de aquí
 
-El PDF sale con la misma cabecera que los demás papeles del sistema (13.2): la razón social, la actividad, el RIF, el domicilio fiscal y, si están cargados, el teléfono y el correo; a la derecha, **N° COTIZACIÓN**, **FECHA** y **VÁLIDA HASTA**. Debajo, centrado entre dos rayas, el rótulo **COTIZACIÓN**. Después, el recuadro del cliente con **CLIENTE**, **RIF**, **DIRECCIÓN** y **TELÉFONO**, y la tabla **DESCRIPCIÓN · CANTIDAD · UNIDAD · PRECIO · TOTAL**, que se parte en hojas numeradas **Página 2 de 3**.
+El PDF sale con la misma cabecera que los demás papeles del sistema (13.2): la razón social, la actividad, el RIF, el domicilio fiscal y, si están cargados, el teléfono y el correo; a la derecha, **N° COTIZACIÓN**, **FECHA** y **VÁLIDA HASTA**. Debajo, centrado entre dos rayas, el rótulo **COTIZACIÓN**. Después, el recuadro del cliente con **CLIENTE**, **RIF** —o **CÉDULA** si el cliente se registró con cédula—, **DIRECCIÓN** y **TELÉFONO**, y la tabla **DESCRIPCIÓN · CANTIDAD · UNIDAD · PRECIO · TOTAL**, con una columna **CONVERSIÓN** cuando algún renglón se puede expresar en la otra unidad. La tabla se parte en hojas numeradas **Página 2 de 3**.
 
-Bajo los totales sale siempre el equivalente en la otra moneda —**Equivale a Bs 45.320,00**— y, en el pie, la tasa usada: **Tasa del día: 235,4500 Bs/$**. Firman **Por la empresa** y **Aceptado por el cliente**, ambas con **Nombre, cédula y fecha**.
+Bajo los totales sale siempre el equivalente en la otra moneda —**Equivale a Bs 45.320,00**— y, en el pie, la tasa usada: **Tasa del día: 235,45 Bs/$**. Firman **Por la empresa** y **Aceptado por el cliente**, ambas con **Nombre, cédula y fecha**.
 
 El pie dice, literal: **Los precios están expresados con la tasa del día indicada arriba y se ajustan al momento de facturar. Esta cotización no compromete existencias.**
 
 ### 10.6 Notas de entrega
 
-**Ventas › Notas de entrega**
+**Facturación › Notas de entrega**
 
-El papel con el que sale el camión. Al despachar, el material se descuenta del patio.
+El papel con el que sale el camión. La pantalla lo resume: **Notas de entrega: el documento con el que sale el camión. El despacho se solicita con chofer, cédula y placa; al aprobarse se emite la nota y el material se descuenta del patio.**
 
 #### Qué se ve
 
-El botón **Despachar**, con un camión. Si no ha salido ninguno: **Todavía no ha salido ningún camión**, con el texto **Cada despacho rebaja el patio y queda esperando por facturar. Si el patio está en cero, carga primero la producción desde Inventario › Existencias.**
+Arriba, tres botones: **Choferes / Vehículos**, que abre el catálogo de los que se llevan el material; **Reporte Bs/$**, que saca en PDF las notas que se ven, con sus totales en las dos monedas; y **Pedir despacho**, que solo ve quien escribe en Facturación.
+
+Debajo, si hay despachos pedidos, la sección **Despachos por aprobar**, con una tarjeta por pedido (se explica más abajo). Y después la lista de notas.
 
 | Columna | Qué muestra |
 | --- | --- |
 | **Nota** | **NE-2026-0001** y, debajo, el número de la factura si ya está facturada |
-| **Cliente** | Razón social |
+| **Cliente** | Razón social, o **Cliente por concretar**. Si la nota respalda una salida, debajo: **Respalda la salida NS-2026-0012**, y **· solo respaldo** si no se va a facturar (10.10) |
 | **Vehículo** | La placa, o **—**, y debajo el chofer |
 | **Fecha** | La del despacho |
 | **Total** | Con el símbolo de su moneda |
-| **Estado** | **Por facturar** en naranja, **Facturada** en verde, **Anulada** en gris |
+| **Total Bs** y **Total $** | El mismo total en las dos monedas |
+| **Estado** | Ver abajo |
 
-Las 200 más recientes. Arriba de la lista, desde el **28 de septiembre de 2026**, están el buscador y los filtros.
+| Estado | Qué quiere decir |
+| --- | --- |
+| **Pendiente por completar** | Nació de una nota de salida y le falta el cliente o algún precio (10.10) |
+| **Despachada** | El material salió. No le falta nada: facturarla es opcional |
+| **Facturada** | Está enlazada a una factura |
+| **Anulada** | Se anuló y se queda a la vista, con su motivo |
+
+Las 200 más recientes. Si no hay ninguna, **Sin notas de entrega**.
 
 #### Buscar una nota
 
-**El campo Buscar una nota busca en todas, no solo en las 200 que se ven.** Lo que se escribe viaja a la base, así que una nota de hace meses aparece igual. Se compara contra todo lo que se suele tener a mano: el **número** de la nota, el **cliente**, su **RIF**, la **placa**, el **chofer**, el **ticket** de romana, el **NS** que respalda y la **factura** en la que terminó. Un solo campo, porque quien busca no siempre sabe cuál de esos datos es el que tiene escrito.
+**El campo Buscar una nota busca en todas, no solo en las que se ven.** La ayuda lo dice: **Busca en todas las notas, no solo en las que se ven.** Se compara contra todo lo que se suele tener a mano: el **número** de la nota, el **cliente**, su **RIF**, la **placa**, el **chofer**, el **ticket** de romana, el **NS** que respalda y la **factura** en la que terminó. Un solo campo, porque quien busca no siempre sabe cuál de esos datos es el que tiene escrito.
 
-Al lado, el **Estado** —cualquiera, pendiente, despachada, facturada o anulada— y debajo el **rango de fechas**. Se combinan entre sí y con el buscador.
+Al lado, el **Estado** —**Cualquiera** o uno de los cuatro— y debajo el **rango de fechas**. Se combinan entre sí y con el buscador.
 
-Si no aparece nada, el aviso lo dice con claridad: **Ninguna nota con eso**, y recuerda que el número va completo, **NE-2026-0042**, con el año y los cuatro dígitos.
+Si no aparece nada, sale **Sin resultados** y la pantalla recuerda que el número va completo, **NE-2026-0042**, con el año y los cuatro dígitos.
 
-**La nota de salida se busca en su propia pantalla**, **Salidas › Historial**, con el mismo campo: **Buscar una nota**, donde vale el **NS-2026-0012** o el número del movimiento. Y las dos, la de entrega y la de salida, se encuentran también desde **la lupa de arriba**, escribiendo el número desde cualquier pantalla.
+**La nota de salida se busca en su propia pantalla**, **Salidas › Historial**, con el mismo campo **Buscar una nota**, donde vale el **NS-2026-0012** o el número del movimiento. Y las dos, la de entrega y la de salida, se encuentran también desde **la lupa de arriba**, escribiendo el número desde cualquier pantalla.
 
-#### Despachar material
+#### Pedir un despacho
 
-1. Pulsa **Despachar**. La ventana avisa: **Esto rebaja el patio en el acto. Si el camión no sale, hay que anular la nota.**
-2. Elige el **Cliente**. La moneda se ajusta sola a la suya.
-3. Elige **De qué patio sale**.
-4. Carga los renglones. **Con el patio ya elegido, cada renglón dice cuánto hay**: **Hay 1.250 TON en el patio elegido.** Si pides más, la **Cantidad** se pone en rojo con **No hay tanto en el patio**.
-5. Baja al recuadro del camión y la romana. El recuadro lo explica: **Datos del camión y de la romana. Si se vende en metros cúbicos, el peso no cambia lo que se factura.** El peso es la prueba del día que alguien discuta la cantidad.
-6. Elige el **Ticket de romana** de la lista, que trae los pesajes de salida que todavía no se han usado. **Al elegirlo, los pesos y la placa se traen de la báscula**, y no hay que teclearlos.
-7. Elige la **Guía de movilización**. Si en la nota va mineral, este paso no es opcional.
-8. Completa a mano lo que falte del camión.
-9. Escribe el **Flete** y la **Observación**, si los hay.
-10. Pulsa **Despachar**.
+1. Pulse **Pedir despacho**. La ventana avisa: **No rebaja nada todavía. Al aprobarlo quien tiene el permiso, nace la nota de entrega y el material sale del patio.**
+2. Elija el **Cliente**. La **Moneda** se ajusta sola a la suya.
+3. Elija el **Patio**. La ayuda dice: **Si un renglón sale de otro patio, se elige en el renglón.**
+4. Cargue los renglones, como en la cotización (10.5). **Con el patio elegido, bajo el producto sale cuánto hay**: **Hay 1.250 TON en PATIO PRINCIPAL.** Si pide más, la **Cantidad** se pone en rojo con **No hay tanto en el patio**.
+5. Baje al recuadro del camión. El recuadro lo explica: **Datos del camión y de la romana. Si se vende en metros cúbicos, el peso no cambia lo que se factura. Si se vende un solo material en toneladas, las toneladas son las del ticket.** En ese caso la cantidad de ese renglón no se teclea: la ayuda dice **Las toneladas del ticket de romana.**
+6. Elija el **Ticket de romana** de la lista, si el camión se pesó. **Al elegirlo, los pesos y la placa se traen de la báscula**, y también el chofer.
+7. Elija la **Guía de movilización**, si el despacho lleva una.
+8. Complete los **Datos del despacho**: el chofer y el vehículo.
+9. Escriba el **Flete** y la **Observación**, si los hay, y adjunte las fotos de la carga si las hay.
+10. Pulse **Enviar a aprobación**.
+
+El botón está apagado mientras falte el cliente, el patio, un renglón completo o un dato del transporte, y debajo se lee qué falta: **Para enviarlo falta el nombre del chofer, su cédula, la placa del vehículo.**
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Cliente** | Sí | Solo los activos |
-| **Moneda** | Sí | Se sobrescribe con la del cliente |
-| **De qué patio sale** | Sí | Solo almacenes activos |
-| **Ticket de romana** *(la lista)* | No | Empieza en **Sin pesaje registrado**. Trae los pesajes de salida sin usar, con su placa y su neto |
-| **Guía de movilización** | Sí, cuando hay mineral | Empieza en **Sin guía**. Trae las vigentes que no estén vencidas, con su material y sus toneladas |
-| **Placa del vehículo** | No | Con la forma **A12BC3D**. Se llena sola al elegir el ticket |
-| **Chofer** | No | Se llena solo al elegir el ticket |
-| **Cédula del chofer** | No | Con la forma **V-12345678**. Se llena solo al elegir el ticket |
+| **Cliente** | Sí | Solo los activos. Empieza en **Seleccione el cliente** |
+| **Moneda** | Sí | Se pone sola la del cliente |
+| **Patio** | Sí | Empieza en **Seleccione el patio o almacén** |
+| **Ticket de romana** *(la lista)* | No | Empieza en **Sin pesaje registrado**. Trae los pesajes sin usar, cada uno con su placa y su neto. Si no hay ninguno: **No hay pesajes sin usar.** |
+| **Guía de movilización** | No | Empieza en **Sin guía**. Trae las guías vigentes, cada una con su material y su cantidad. La ayuda dice: **Si este despacho lleva guía de movilización, elíjala.** |
+| **Chofer / responsable** | Sí | Se busca en el catálogo. Si no está, se escriben debajo el **Nombre del chofer** y la **Cédula** |
+| **Vehículo** | Sí | Se busca en el catálogo. Si no está, se escriben debajo **Vehículo (marca/modelo)** y la **Placa** |
 | **Ticket de romana** *(la casilla de texto)* | No | Se llena sola con el número del ticket elegido |
-| **Peso bruto (kg)** | No | Se llena solo al elegir el ticket. Si lo escribes a mano, tiene que ser mayor que la tara |
-| **Tara (kg)** | No | Se llena sola al elegir el ticket. Con el bruto puesto, debajo aparece **Neto: 28.500 kg** |
+| **Peso bruto (kg)** | No | Se llena solo al elegir el ticket |
+| **Tara (kg)** | No | Se llena sola al elegir el ticket. Con el bruto mayor, debajo aparece **Neto: 28.500 kg** |
 | **Flete** | No | |
 | **Observación** | No | |
+| **Adjuntar fotos o PDF** | No | Las fotos de la carga, del vehículo que se lo lleva. No salen en el papel impreso |
 
-**Hay dos campos con el mismo nombre y no es un error.** Arriba está la lista **Ticket de romana**, donde se elige el pesaje; abajo, la casilla de texto **Ticket de romana**, que se llena sola con el número al elegirlo. La casilla se puede escribir a mano cuando el pesaje no esté registrado en el sistema, pero si eliges un ticket de la lista, lo que se guarda es el número de ese ticket y no lo que hayas tecleado.
+**El chofer y el vehículo, del catálogo o nuevos.** Cuando no están en la lista, al lado de los datos escritos hay un botón **+ Añadir** que los guarda en el catálogo en el acto. Si no se pulsa, el despacho se envía igual y el chofer o el vehículo se añaden solos. Un chofer necesita al menos tres letras de nombre y cinco dígitos de cédula; una placa, al menos cuatro caracteres.
 
-**Con un ticket elegido, los pesos que se guardan son los de la báscula.** Aunque escribas otros encima, el sistema guarda los del pesaje. Los pesos no se teclean a mano porque teclearlos otra vez es la forma de que el papel y la báscula terminen diciendo cosas distintas, y ese día ninguno de los dos sirve para discutir la cantidad con el cliente.
+**Elegir un ticket pisa lo que hubiera.** El chofer, la cédula, el vehículo y los pesos se toman del pesaje: si estaban en el catálogo se eligen, y si no, quedan escritos para añadirlos. Si después hay que cambiar algo, se cambia a mano.
 
-Con la placa, el chofer y la cédula ocurre lo contrario: si las escribes tú, se respeta lo que escribiste, y solo se toman del ticket cuando las dejas en blanco. Es a propósito, porque el chofer que se anotó en la garita puede no ser el que se llevó el camión.
+**Hay dos campos con el mismo nombre y no es un error.** Arriba está la lista **Ticket de romana**, donde se elige el pesaje; abajo, la casilla de texto **Ticket de romana**, que se llena sola con el número al elegirlo. La casilla se escribe a mano cuando el pesaje no está registrado en el sistema.
 
-Debajo de las dos listas hay ayudas que conviene leer. Si no hay pesajes disponibles: **No hay pesajes sin usar.** Los pesajes se registran en Despachos › Tickets de romana. Y bajo la guía, siempre: **Ninguna salida de mineral viaja sin guía.** Si no hay ninguna vigente, el aviso sale en rojo: **No hay guías vigentes: el despacho de mineral se rechazará**.
+**Dos avisos al pie de la ventana**, que no impiden enviar: si la carga pasa la capacidad del vehículo, **Se están cargando 18 m³ en un vehículo de 15 m³. Se puede seguir.**; y si el vehículo pasó su tope de mantenimiento, en rojo, **A12BC3D pasó su tope de mantenimiento. No debería estar trabajando.**
 
-**Ninguna salida de mineral viaja sin guía.** Cuando la nota lleva un producto de cantera y no se eligió guía, el despacho se rechaza entero: no queda nota y no sale nada del patio. El sistema lo dice así: «Este despacho lleva mineral y no tiene guía de movilización. Cárgala en Despachos › Guías, o pídele a quien tenga control total sobre Despachos que lo autorice sin ella.» La razón es que la guía es lo que hace legal que el camión circule con la piedra, y el sistema es el último sitio donde se puede impedir que salga sin ella. Si la nota es solo un flete, no hace falta guía.
+**En el despacho no hay IVA ni descuento sobre el total.** Los totales son **Subtotal**, **Flete** y **Total**: el IVA lo decide la factura, si se factura, y el descuento va en cada renglón.
 
-La excepción existe y conviene decir cómo funciona: **quien tenga el control total sobre Despachos puede despachar sin guía**, para los días en que el papel llega tarde y el cliente está esperando. **Esa nota queda guardada sin guía y quien la despachó queda en el registro de auditoría**, que solo abre la administración. Ninguna pantalla ni el PDF muestran una etiqueta que lo señale. El detalle está en el capítulo de Despachos.
+#### Aprobar, no aprobar o cancelar
 
-**En el despacho no hay campo de descuento.** Conviene saberlo antes de negociar: como la factura suma lo que traen sus notas, **ninguna factura emitida desde el sistema puede llevar descuento**. Si hay que rebajar, se rebaja en el precio del renglón.
+Cada despacho pedido tiene su tarjeta en **Despachos por aprobar**: **Despacho SD-2026-0001** con el chip **Por aprobar**, el cliente y el patio de donde sale, el vehículo con el chofer y su cédula, los renglones con su precio y su importe, y el **Total del despacho**. Si el ticket o la nota ya tienen número, salen juntos para cotejar los papeles. Debajo, quién lo pidió y cuándo, y las fotos de la carga.
 
-**Escribe la tara siempre menor que el peso bruto.** Si la pones mayor, el sistema rechaza el despacho, pero con un mensaje sin redactar que no se entiende. No es que hayas roto nada: es esa comprobación. Con un ticket de romana elegido esto no llega a pasar, porque los dos pesos vienen de la báscula y allí ya se comprobaron.
+| Botón | Quién lo ve | Qué hace |
+| --- | --- | --- |
+| **Aprobar** | Quien tiene la casilla **Aprobar los despachos** | Corre el despacho: nace la nota en **Despachada** y el material sale del patio |
+| **No aprobar** | El mismo | Lo cierra sin mover nada. Pide **Motivo**, que **lo lee quien lo pidió** |
+| **Cancelar** | Quien lo pidió | Lo retira. Pide **Motivo**, que **queda escrito y no se puede editar después** |
 
-#### Ver una nota, imprimirla y anularla
+**Quien pidió el despacho no lo aprueba**, aunque tenga la casilla: la base responde «El despacho SD-2026-0001 lo pidió usted: lo aprueba otro usuario con permiso.» Es el reparto de siempre: quien carga no se autoriza a sí mismo.
 
-Pulsa en la fila. El título es el número y el subtítulo dice de qué patio salió. Dentro están los chips del estado, la placa, **Neto 28.500 kg** si hay pesos y **En la factura FAC-2026-0012** si ya se facturó. Si está anulada, en rojo: **Anulada:** y el motivo.
+**Al aprobar, se comprueba todo de verdad.** Que haya material en el patio, que el cliente siga activo, que el patio no esté cerrado, que el ticket y la guía sigan libres, y que haya tasa. Si algo falla, no se aprueba nada y el mensaje dice qué (10.11).
 
-Los botones son **Cerrar**, **Imprimir** —abre el visor **Nota de entrega**— y **Anular**, en rojo, que **solo aparece mientras la nota está en Por facturar**. Una nota ya facturada no se anula desde aquí: primero se anula la factura, porque el número fiscal ya se emitió y tiene que quedar explicado.
+A quien no tiene la casilla, la sección le explica: **Los aprueba quien tenga el permiso «Aprobar los despachos» (la gerencia general, o a quien se le preste).** Los no aprobados y los cancelados se esconden, y el botón **Ver los no aprobados** los trae de vuelta.
 
-Para anular:
+#### Ver una nota
 
-1. Se abre **Anular la nota NE-2026-0007**, con el aviso **El material vuelve al patio con un reverso. La nota se queda a la vista, anulada.**
-2. Escribe **Por qué se anula**. La ayuda avisa: **Queda escrito en el registro de auditoría con tu nombre.**
-3. Pulsa **Anular la nota**.
+Pulse en la fila. El título es el número, y el subtítulo dice el cliente, la fecha y de qué patio salió, y si respalda una nota de salida. Dentro están los chips del estado, la placa, **Neto 28.500 kg** si hay pesos y **En la factura FAC-2026-0012** si ya se facturó. Si está anulada, en rojo: **Anulada:** y el motivo. Debajo, los camiones, de qué despacho salió —quién lo pidió y quién lo aprobó—, sus fotos, los renglones y los totales.
 
-**El botón está apagado hasta que el motivo tenga al menos cuatro letras**, y anular exige el control total sobre Ventas. La razón es que anular un despacho devuelve al patio material que nadie contó: es una corrección, no una operación del día.
+| Botón | Cuándo aparece | Qué hace |
+| --- | --- | --- |
+| **Cerrar** | Siempre | Cierra la ventana |
+| **Imprimir** | Siempre | Abre el PDF en el visor **Nota de entrega** |
+| **Editar** | Al rol Administrador | Corrige la nota entera (ver abajo) |
+| **Completar** | Si está **Pendiente por completar**, a quien escribe en Facturación | Le pone el cliente y los precios que le faltan (10.10) |
+| **Camiones** | Si no está anulada, a quien escribe en Facturación | Pone o cambia los camiones que se llevaron el material (10.10) |
+| **Anular** | Si está **Despachada** o **Pendiente por completar**, a quien tiene control total sobre Facturación | Ver abajo |
+| **Enlazar a una factura** | Si está **Despachada** y se puede facturar, a quien escribe en Facturación | La enlaza a una factura emitida sin nota |
+| **Soltar de la factura** | Si está **Facturada** en una factura sin nota, a quien tiene control total sobre Facturación | La desenlaza: vuelve a quedar despachada |
+
+**Enlazar a una factura** sirve para la factura que se emitió sin nota y sin sacar el material: el material sale después con la nota, y la nota se engancha a ella. La ventana lo explica: **La nota pasa a facturada con el número de esa factura. La factura no cambia: sus montos siguen siendo los suyos.** En la lista **Factura** solo aparecen las de ese cliente que cumplen eso. Una factura que ya sacó el material no admite notas: se contaría dos veces.
+
+**Editar** abre **Editar NE-2026-0007**, con el aviso **Solo un administrador ve este botón. Cada cambio queda en la bitácora con el motivo.** Se corrigen el cliente, la moneda, el patio, la fecha, el vehículo, el chofer, los pesos, el flete, el descuento, la observación y los renglones, y hace falta el **Motivo**. Una nota que respalda una salida no deja editar sus renglones: son los que esa salida descontó del patio.
+
+#### Anular
+
+1. Pulse **Anular**. Se abre **Anular la nota NE-2026-0007**, con el aviso **El material vuelve al patio con un reverso. La nota se queda a la vista, anulada.** Es así para la nota que salió de un despacho; la que respalda una nota de salida no devuelve nada (10.10).
+2. Escriba el **Motivo**. La ayuda avisa: **Queda escrito en el registro de auditoría con su nombre.**
+3. Pulse **Anular la nota**. **No anular** cierra sin hacer nada.
+
+**El botón está apagado hasta que el motivo tenga al menos cuatro letras.** Anular un despacho devuelve al patio material que nadie contó: es una corrección, no una operación del día.
+
+**Una nota ya facturada no se anula desde aquí**: primero se anula la factura, porque el número fiscal ya se emitió y tiene que quedar explicado. La excepción es la factura sin nota, de la que la nota se suelta con **Soltar de la factura**.
 
 #### Qué sale de aquí
 
-El PDF sale con la cabecera de la casa, como los demás, **pero el rótulo NOTA DE ENTREGA va en naranja** y no en el azul del resto. Es lo único que cambia de color en todo el sistema, y es a propósito: la nota es un papel de patio, se lee con guantes, y en un fajo de hojas mezcladas el color es lo que la separa de una factura sin tener que leer ninguna. A la derecha van **N° NOTA** y **FECHA**; bajo el recuadro del cliente, una segunda fila con **VEHÍCULO**, **CHOFER**, **CÉDULA** y **TICKET · PESO NETO**. Firman **Entregado por** y **Recibido conforme**, distintas a propósito de las de la cotización y la factura.
+El PDF sale con la cabecera de la casa, como los demás, **pero el rótulo NOTA DE ENTREGA va en naranja**. Es a propósito: la nota es un papel de patio, y en un fajo de hojas mezcladas el color es lo que la separa de una factura sin tener que leer ninguna. A la derecha van **N° NOTA** y **FECHA**. El recuadro del cliente lleva **CLIENTE**, **RIF** o **CÉDULA**, **DIRECCIÓN** y **TELÉFONO**, o **CLIENTE POR CONCRETAR** si todavía no lo tiene; debajo, una fila con **VEHÍCULO**, **CHOFER**, **CÉDULA** y **TICKET · PESO NETO**, un renglón por camión.
 
-El pie es lo más importante del papel: **ESTE DOCUMENTO NO ES UNA FACTURA. Ampara el traslado del material; la factura se emite aparte. Quien recibe firma conforme el material y el peso.**
+**La nota lleva solo el TOTAL.** Sin subtotal, sin impuestos, sin tasa al pie y sin leyenda: es el papel del material, y lo fiscal va en la factura. Firman **Entregado por** y **Recibido conforme**, distintas de las de la cotización y la factura. Si la nota está anulada sale el sello **ANULADA**, y si está pendiente, **PENDIENTE**.
 
 ### 10.7 Facturación
 
-**Se mudó a su propio módulo el 15 de septiembre de 2026.** Está en el capítulo 21 (21.2). Desde Ventas se llega hasta la nota de entrega; la factura se emite en **Facturación › Facturas**, sobre las notas que estén en **Por facturar**.
+La factura se hace en **Facturación › Facturas**: sobre las notas de entrega despachadas, con **Facturar notas**, o sin nota, con **Factura sin nota**. Toda factura se envía a autorizar y la emite otro usuario. Está en el capítulo 21 (21.2).
 
 ### 10.8 Notas de crédito
 
-**Se mudaron a Facturación.** Están en el capítulo 21 (21.3).
+Están en **Facturación › Notas de crédito**, en el capítulo 21 (21.3).
 
 ### 10.9 El libro de ventas
 
-**Se mudó a Facturación.** Está en el capítulo 21 (21.5).
+Está en **Tesorería › Libro Mayor**, en la pestaña **Ventas** (12.12).
 
 ### 10.10 Lo que conviene entender
 
 #### La nota de entrega que deja una nota de salida
 
-No toda nota de entrega nace de un despacho. Hay material que sale del almacén con una **nota de salida** hacia alguien de fuera —una ferretería, un contratista, un particular— y que conviene dejar respaldado también del lado de facturación. Para eso, en el visor donde se imprime la nota de salida aparece, en negrita, la casilla **Generar nota de entrega**.
+No toda nota de entrega nace de un despacho. Hay material que sale del almacén con una **nota de salida** hacia alguien de fuera —una ferretería, un contratista, un particular— y que conviene dejar respaldado también del lado de facturación. Para eso, en el visor donde se imprime la nota de salida aparece la casilla **Generar nota de entrega**.
 
 **No todas las salidas la llevan**, y por eso es una casilla y no algo automático: se marca solo cuando hace falta.
 
-Al marcarla se abre un cuadro con tres cosas, y ninguna es obligatoria:
+Al marcarla se abre **Nota de entrega de NS-2026-0012**, que avisa: **Respalda lo mismo que ya salió: no vuelve a descontar material. Al cliente se le entrega solo la nota de salida; esta queda para el archivo.** Tiene cuatro cosas, y ninguna es obligatoria:
 
 | Campo | Detalle |
 | --- | --- |
-| **Cliente** | Si el destino escrito en la salida coincide con un cliente del sistema, ya viene puesto. Si no, se elige otro, se crea en **Ventas › Clientes**, o se deja sin cliente |
-| **Precios** | Vienen vacíos, porque la nota de salida no tiene precios. Se teclean ahí mismo o se dejan para después |
-| **Se podrá facturar** | Marcada, la nota podrá cobrarse más adelante. Desmarcada, queda **solo de respaldo** y nunca aparece en Facturación para cobrarla |
-| **Camiones** | Con qué se llevó el material: chofer, vehículo y, si los hay, ticket de romana y peso neto. **Uno o varios**, con «Otro camión». La nota de salida no lo trae, y por eso se pregunta aquí |
+| **Cliente** | Empieza en **Sin cliente todavía**. La ayuda recuerda a quién dice la salida que se entregó: **La salida dice que se entregó a «FERRETERIA EL TORNILLO».** Si ese nombre coincide con un cliente del sistema, ya viene puesto; si no, se elige otro, se crea en **Ventas › Clientes**, o se deja sin cliente |
+| **Precios** | Uno por renglón, en la moneda de la nota. Vienen vacíos, porque la nota de salida no tiene precios. Se teclean ahí mismo o se dejan para después |
+| **Camiones** | Con qué se llevó el material: chofer, vehículo y, si los hay, ticket de romana y peso neto. **Uno o varios**, con **Otro camión** |
+| **Se podrá facturar** | Viene marcada. **Desmarcada, queda solo de respaldo: nunca aparece en Facturación para cobrarla.** |
 
-**Si le falta el cliente o algún precio, la nota nace pendiente.** Se ve en **Facturación › Notas de entrega** con la etiqueta **Pendiente por completar**, se puede imprimir —sale con el sello **PENDIENTE**— y no se puede facturar hasta que alguien con acceso a Facturación la abra y pulse **Completar**.
+El botón es **Generar la nota**.
+
+**Si le falta el cliente o algún precio, la nota nace pendiente.** La ventana lo avisa antes de guardar —**Va a quedar pendiente por completar**, y dice qué le falta—. La nota se ve en **Facturación › Notas de entrega** como **Pendiente por completar**, se puede imprimir —sale con el sello **PENDIENTE**— y no se puede facturar hasta que alguien que escribe en Facturación la abra y pulse **Completar**.
 
 <p class="regla"><strong>El material no se descuenta dos veces.</strong> La salida ya lo rebajó del almacén; esta nota de entrega solo documenta ese mismo movimiento. Por eso <strong>anularla no devuelve nada al almacén</strong>: si hay que devolver el material, lo que se deshace es la salida.</p>
 
-**Al cliente se le entrega solo la nota de salida.** La de entrega es para el archivo, y las dos se imprimen cuando haga falta: la de salida desde **Salidas** o **Movimientos**, y desde ese mismo visor —donde antes estaba la casilla— ahora dice **Dejó la nota de entrega NE-2026-0016** con un botón **Verla**. También está en **Facturación › Notas de entrega**, donde dice de qué salida viene.
+**Al cliente se le entrega solo la nota de salida.** La de entrega es para el archivo, y las dos se imprimen cuando haga falta: la de salida desde **Salidas** o **Movimientos**, y desde el mismo visor de la salida, que dice **Dejó la nota de entrega NE-2026-0016** con un botón **Verla** —y el chip **Pendiente** si lo está—. También está en **Facturación › Notas de entrega**, donde dice de qué salida viene.
 
 **Una salida deja una sola nota de entrega.** Si se anula, se puede generar otra.
 
-#### Los camiones de una nota de entrega, los que hagan falta
+**Quién puede marcar la casilla.** Nadie por su rol ni por su nivel: es la casilla **Generar la nota de entrega de una salida**, del módulo Salidas, y solo se tiene si el administrador la presta desde **Configuración › Usuarios › Permisos extendidos** (13.1). Quien no la tiene imprime su nota de salida como siempre y no ve la casilla.
 
-**Desde el 22 de septiembre de 2026 una nota de entrega puede llevar varios camiones.** Antes tenía sitio para uno —el que se pone al despachar—, y la que nacía de una salida no traía ninguno. Quien despacha lo pidió así: *«fueron 2 camiones, si se puede adjuntar la información de los 2 de una vez»*.
+**No vale** para las salidas hacia un área de la empresa —ahí no hay cliente a quien entregarle nada— ni para las que pagaron una compra con material, que son una compra y no una entrega.
 
-Se ponen en tres sitios, y en los tres es la misma lista:
+#### Los camiones de una nota de entrega
+
+**Una nota de entrega puede llevar varios camiones.** Se ponen en tres sitios, y en los tres es la misma lista:
 
 | Dónde | Cuándo |
 | --- | --- |
@@ -3355,17 +3427,11 @@ Se ponen en tres sitios, y en los tres es la misma lista:
 | En **Completar**, en Facturación › Notas de entrega | Al ponerle lo que le falta |
 | Con el botón **Camiones** del detalle de la nota, o del visor de la nota de salida que la dejó | En cualquier momento, mientras no esté anulada |
 
-De cada camión se dice el **chofer** y el **vehículo** —del catálogo, y si no están se añaden ahí mismo con nombre y cédula, o placa y descripción— y, si los hay, el **ticket de romana** y el **peso neto**. Un camión necesita al menos chofer o vehículo: un ticket solo no es un camión.
-
-**En el papel salen uno debajo del otro**, en el recuadro donde siempre fue el camión. Con uno solo, la nota se imprime igual que siempre.
+La ventana **Camiones de NE-2026-0016** lo explica: **Con qué se llevó el material. Salen en el papel de la nota de entrega, uno debajo del otro.** De cada camión se dice el **chofer** y el **vehículo** —del catálogo, y si no están se añaden ahí mismo— y, si los hay, el **ticket de romana** y el **peso neto**. Un camión necesita al menos chofer o vehículo: un ticket solo no es un camión.
 
 <p class="regla"><strong>Lo que se imprime es la foto del momento.</strong> Placa, chofer y cédula se copian a la nota al guardar, además de apuntar al catálogo. Si mañana se corrige el nombre de un chofer en el catálogo, la nota que ya se imprimió sigue diciendo lo que decía.</p>
 
-**Quién puede ponerlos.** Quien escribe en Facturación, sobre cualquier nota. Y quien tiene la casilla de generar la nota de entrega desde la salida, sobre las notas que nacieron de una salida: es la misma persona que la generó, poniéndole lo que la salida no tenía.
-
-**Quién puede marcar la casilla.** Nadie por su rol ni por su nivel: es la casilla **Generar la nota de entrega de una salida**, del módulo Salidas, y solo se tiene si el administrador la presta desde **Configuración › Usuarios › Permisos extendidos** (13.1). Quien no la tiene imprime su nota de salida como siempre y no ve la casilla.
-
-**No aparece** en las salidas hacia un área de la empresa —ahí no hay cliente a quien entregarle nada— ni en las que pagaron una compra con material, que son una compra y no una entrega.
+**Quién puede ponerlos.** Quien escribe en Facturación, sobre cualquier nota. Y quien generó la nota desde la salida, sobre esa nota: es la misma persona, poniéndole lo que la salida no tenía.
 
 #### La nota de entrega y la factura no son el mismo papel
 
@@ -3374,167 +3440,156 @@ Es la confusión más común, y sale cara: quien la tiene, o le entrega al clien
 | | Nota de entrega | Factura |
 | --- | --- | --- |
 | Qué es | El papel con el que sale el camión | El documento fiscal |
-| Lo dice el propio papel | **ESTE DOCUMENTO NO ES UNA FACTURA.** | — |
 | Numeración | **NE-2026-0001** | **FAC-2026-0012** más el número de control **00-00000034** |
-| ¿Mueve el patio? | Sí, en el acto | No. El material ya salió con la nota |
-| Cuántas | Una por despacho, con uno o varios camiones | Una puede juntar varias notas del mismo cliente y misma moneda |
-| Datos propios | Vehículo, chofer, cédula, ticket de romana, peso, guía de movilización | Número de control, condición de pago, vencimiento, retención |
-| Color de la banda | Naranja de seguridad | Azul de la casa |
+| ¿Mueve el patio? | Sí, al aprobarse el despacho | No, salvo la factura sin nota que saca el material |
+| ¿Es obligatoria? | Es la venta: sin ella no sale material | No: facturar una nota es opcional |
+| Cuántas | Una por despacho, con uno o varios camiones | Una puede juntar varias notas del mismo cliente y la misma moneda, o ir sin nota |
+| Datos propios | Vehículo, chofer, cédula, ticket de romana, peso, guía de movilización | Número de control, condición de pago, vencimiento, IVA, IGTF, retención |
+| Totales en el papel | Solo el total | Base, impuestos y total |
+| Color del rótulo | Naranja | El de la casa |
 | Firmas | **Entregado por** / **Recibido conforme** | **Por la empresa** / **Aceptado por el cliente** |
-| Estado al nacer | **Por facturar** | **Por cobrar** |
+| Estado al nacer | **Despachada** | **Por cobrar**, cuando se autoriza |
 
-Una cosa más, que importa cuando algo se corrige: **al facturar, los renglones se copian a la factura, no se leen de la nota**. Por eso la factura sigue diciendo lo mismo aunque después alguien anule la nota de la que salió.
+**Anular no es lo mismo que corregir.** Anular sirve mientras la factura no ha salido de la empresa: se rompe el papel y se hace otro. En cuanto está en manos del cliente, él tiene un documento fiscal con un número de control que existe —y el SENIAT también—, y entonces lo que corresponde es la **nota de crédito** (21.3).
 
-**Anular no es lo mismo que corregir.** Anular sirve mientras la factura no ha salido de la empresa: se rompe el papel y se hace otro. En cuanto está en manos del cliente, él tiene un documento fiscal con un número de control que existe —y el SENIAT también—, y entonces lo que corresponde es la **nota de crédito**, que tiene su propia sección más adelante.
+#### Cómo se descuenta el inventario al aprobar
 
-#### Cómo se descuenta el inventario al despachar
+Cuando alguien pulsa **Aprobar**, el sistema hace todo esto de una vez:
 
-Cuando pulsas **Despachar**, el sistema hace todo esto de una vez:
+1. Comprueba el pesaje, si se eligió uno: que sea de salida, que no esté usado ni anulado y que no se haya pesado para otro cliente.
+2. Comprueba la guía, si se eligió una: que no esté usada ni anulada, que no haya vencido y que no se haya emitido para otro cliente.
+3. Comprueba que el cliente siga activo y que el patio no esté cerrado.
+4. Crea la nota con su número y **congela la tasa del día** en el documento.
+5. Carga los renglones y comprueba su precio contra el mínimo.
+6. Mira la existencia real de cada patio, renglón por renglón. **Los servicios se saltan**: un flete se cobra, pero no sale de ningún almacén.
+7. Escribe la salida en el libro de inventario, valorada al costo promedio, y **guarda en cada renglón el movimiento exacto que escribió**.
+8. Marca el ticket y la guía como gastados en este viaje.
 
-1. Comprueba el pesaje, si elegiste uno: que sea de salida, que no esté usado ni anulado y que no se haya pesado para otro cliente. **De ahí toma el bruto, la tara y el número del ticket.**
-2. Comprueba la guía, si elegiste una: que esté vigente, que no haya vencido y que no se haya emitido para otro cliente.
-3. Crea la nota con su número y **congela la tasa del día** en el documento.
-4. Carga los renglones y comprueba que ningún precio quede por debajo del mínimo.
-5. **Comprueba que haya guía si en los renglones va mineral.** Lo mira aquí y no antes porque hasta este momento no sabía si la nota lleva producto o es solo un flete.
-6. Mira la existencia real del patio, renglón por renglón.
-7. **Los servicios se saltan.** Un flete se cobra, pero no sale de ningún almacén.
-8. Escribe la salida en el libro de inventario, valorada al costo promedio, con la nota **DESPACHO A ACME C.A.**
-9. **Guarda en cada renglón el número exacto de la salida que escribió.**
-10. Marca el ticket y la guía como gastados en este viaje: el ticket pasa a **En una nota** y la guía a **Usada**.
+Guardar el movimiento exacto es lo que hace que anular funcione bien: al anular, el sistema devuelve exactamente lo que sacó ese camión, no una salida parecida. Buscar «una salida parecida» devolvería la del camión de al lado el día que dos despachos coincidan en artículo y cantidad.
 
-Ese último paso es el que hace que anular funcione bien: al anular, el sistema devuelve exactamente lo que sacó ese camión, no una salida parecida. Buscar «una salida parecida» devolvería la del camión de al lado el día que dos despachos coincidan en artículo y cantidad.
+**O sale el material del patio y queda la nota, o no pasa ninguna de las dos cosas.** Nunca se queda a medias: no existe la nota sin material descontado, ni el material descontado sin nota.
 
-**O sale el material del patio y queda la nota, o no pasa ninguna de las dos cosas.** Nunca se queda a medias: no existe la nota impresa sin material descontado, ni el material descontado sin nota.
+**Qué pasa si no hay material.** El despacho no se aprueba y el sistema dice con nombre y cifras qué falta: «En "PATIO PRINCIPAL" hay … de "GRANZÓN" y se están despachando ….» No deja el patio en negativo, porque una existencia negativa no es un dato: es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió. Si el material sí está en el patio pero el sistema dice que no, lo que falta es la entrada: se carga la producción o se hace el conteo desde **Inventario › Existencias**, y después se vuelve a aprobar.
 
-**Qué pasa si no hay material.** El despacho se rechaza entero y el sistema dice con nombre y cifras qué falta: «En "PATIO PRINCIPAL" hay 120.0000 de "GRANZÓN" y se están despachando 200.0000.» No deja el patio en negativo, porque una existencia negativa no es un dato: es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió. Si el material sí está en el patio pero el sistema dice que no, lo que falta es la entrada: se carga la producción o se hace el conteo desde **Inventario › Existencias**, y después se repite el despacho.
+**Al anular**, el sistema escribe en el libro el movimiento contrario, con el motivo. El inventario nunca se edita: se le escribe el contrario, y los dos movimientos quedan visibles. **Y el pesaje y la guía vuelven a quedar libres**, listos para la nota que corrija a la anterior: el camión se pesó igual y la guía se emitió igual. Lo que se cayó fue la nota, no el pesaje.
 
-**Al anular**, el sistema escribe en el libro el movimiento contrario, con la nota **ANULACIÓN DE LA NOTA NE-2026-0007** y tu motivo. El inventario nunca se edita: se le escribe el contrario, y los dos movimientos quedan visibles.
+#### El mínimo, y quién vende por debajo
 
-**Y al anular, el pesaje y la guía vuelven a quedar libres**: el ticket regresa a **Sin usar** y la guía a **Vigente**, listos para la nota que corrija a la anterior. La razón es sencilla: el camión se pesó igual y la guía se emitió igual. Lo que se cayó fue la nota, no el pesaje. Si hubiera que volver a pesar un camión que ya se fue, la nota corregida saldría con un peso inventado.
+Cada producto lleva, por unidad, un **precio de lista** y un **precio mínimo**, que es el suelo (10.4).
 
-#### La lista de precios, y si se puede vender por debajo
+- **Con el mínimo en cero no hay tope por abajo.**
+- **Con un mínimo puesto, un descuento no puede bajar de ahí.** La base lo rechaza: «De "GRANZÓN" no se vende por debajo de … por TON. Con el descuento queda en ….»
+- **Quien tiene la casilla de vender bajo el mínimo sí puede**, y es la misma casilla que deja dar un renglón **Sin cargo**. El sistema no le pide explicación aparte: si un descuento excepcional tiene que quedar justificado, se escribe en la **Observación** del documento.
 
-Cada producto lleva dos números: el **Precio de lista**, que es el que se propone solo, y el **Precio mínimo**, que es el suelo.
+La comparación se hace **pasando los dos importes a dólares con la tasa del día del documento**, para que un mínimo fijado en dólares siga siendo comparable con un precio en bolívares.
 
-Al cargar un renglón, el precio de lista se copia solo y **se puede escribir otro encima**. Eso es intencional: el precio se negocia y el sistema no puede negociar por ti. Si el precio que escribes queda por debajo del suelo, aparece el aviso amarillo **Por debajo del mínimo de $ 8,00**, pero el botón de guardar sigue encendido. Quien decide es el sistema al guardar:
-
-- **Con el mínimo en cero no hay tope por abajo.** Cualquiera puede poner el precio que quiera.
-- **Con un mínimo puesto, quien hace el trabajo del día no puede bajar de ahí.** Verá «De "GRANZÓN" no se vende por debajo de 8.000000 USD. Se está ofreciendo 6 USD.»
-- **Quien tiene el control total sobre Ventas sí puede bajar de ahí, y el sistema no le pide explicación ni deja un aviso.** Es una decisión de la empresa, no del sistema: si un descuento excepcional tiene que quedar justificado, escríbelo en la **Observación** del documento.
-
-La comparación se hace **pasando los dos importes a dólares con la tasa del día del documento**, para que un mínimo fijado en dólares hace tres meses siga siendo comparable con un precio tecleado hoy en bolívares.
-
-Y una consecuencia del reparto de permisos: **poner precios exige el control total**, así que quien despacha no puede subir el suelo para poder bajarlo.
+Y una consecuencia del reparto de permisos: **poner precios exige el control total sobre Ventas**, así que quien despacha no puede mover el suelo para poder bajarlo.
 
 #### El límite de crédito, y cuándo se aplica
 
 El límite se fija en la ficha del cliente, en dólares, y **solo aparece si su condición de pago no es De contado**.
 
-**El límite no se comprueba al cotizar ni al despachar. Se comprueba al emitir la factura**, y solo si esa factura va a crédito. Conviene tenerlo presente: se puede despachar material a un cliente que después no va a poder facturarse a crédito, y a esas alturas el camión ya salió. Si un cliente anda al tope, revisa su columna **Debe** antes de despachar.
+**El límite no se comprueba al cotizar ni al pedir el despacho. Se comprueba al emitir la factura**, y solo si esa factura va a crédito. Conviene tenerlo presente: se puede despachar material a un cliente que después no va a poder facturarse a crédito, y a esas alturas el camión ya salió. Si un cliente anda al tope, revise su columna **Deuda** antes de despachar.
 
 Al emitir hay dos rechazos distintos:
 
-- **Sin límite fijado, no hay crédito.** El sistema dice «A "ACME C.A." no se le tiene autorizado crédito. Fija su límite o factúrale de contado.» Un límite en cero no significa crédito ilimitado: significa que no se le vende a crédito.
-- **Con la factura por encima del límite**, el sistema dice cuánto quedaría debiendo y cuál es su tope: «Con esta factura "ACME C.A." quedaría debiendo 5400.00 $ y su límite es 5000.00 $.» Solo lo puede pasar quien tenga el control total sobre Facturación, porque pasarse del límite es ampliar el crédito, y eso es una decisión de quien lo fijó.
+- **Sin límite fijado, no hay crédito.** El sistema dice «A "ACME C.A." no se le tiene autorizado crédito. Fije su límite o factúrele de contado.» Un límite en cero no significa crédito ilimitado: significa que no se le vende a crédito.
+- **Con la factura por encima del límite**, el sistema dice cuánto quedaría debiendo y cuál es su tope: «Con esta factura "ACME C.A." quedaría debiendo … $ y su límite es … $.» Solo lo puede pasar quien tenga el control total sobre Facturación, porque pasarse del límite es ampliar el crédito.
 
 La deuda del cliente y su límite **se llevan siempre en dólares**, igual que el saldo de las facturas, porque una factura en dólares se abona con transferencias en bolívares más de lo que se cree, y restar bolívares de dólares no se puede.
 
 #### Dos personas trabajando a la vez
 
-Esta sección existe para que trabajes tranquilo cuando hay dos personas en el sistema, que es lo normal un día de mucho movimiento.
+Un día de mucho movimiento hay varias personas en el sistema, y dos pueden tocar lo mismo en el mismo instante. **El sistema cierra la puerta antes de mirar**: en cuanto alguien empieza una de estas operaciones, aparta ese documento —ese despacho, esa nota, esa casilla de patio y artículo— y **el resto espera su turno**. Cuando le llega el turno al segundo, lo que ve ya no es el estado viejo: es el que dejó el primero. La espera dura un instante; no se nota.
 
-**Qué pasaba antes.** El sistema miraba, decidía y escribía, y entre el mirar y el decidir cabía otra operación. Dos personas facturándole al mismo cliente desde dos computadoras pasaban las dos la comprobación, porque ninguna veía lo que la otra todavía no había terminado. Salían **dos facturas por el mismo material, cada una con su número de control**. Lo mismo con los cobros: dos abonos simultáneos sobre la misma factura pasaban los dos y el dinero de más se perdía de vista. Lo mismo con dos camiones cargando el mismo material a la vez, que podían dejar el patio en negativo. Y lo mismo con dos personas anulando la misma nota, que devolvían el material al patio dos veces.
-
-**Qué hace ahora el sistema.** Cierra la puerta antes de mirar. En cuanto alguien empieza una de estas operaciones, el sistema aparta ese documento —esa nota, esa factura, esa casilla de patio y artículo— y **el resto espera su turno**. Cuando le llega el turno al segundo, lo que ve ya no es el estado viejo: es el que dejó el primero. La espera dura lo que dura la operación, que es un instante; no vas a notarla.
-
-**Qué ve exactamente quien pierde la carrera.** No ve un error raro ni una pantalla en blanco. Ve un mensaje que le dice qué pasó mientras tanto:
+**Quien pierde la carrera** no ve un error raro ni una pantalla en blanco. Ve un mensaje que le dice qué pasó mientras tanto:
 
 | Lo que pasó al mismo tiempo | Lo que ve el segundo |
 | --- | --- |
-| Otra persona facturó esas mismas notas | «Solo se facturan notas despachadas: 2 de las indicadas ya están facturadas o anuladas.» |
-| Otra persona terminó de cobrar la factura | «La factura FAC-2026-0012 está cobrada y no admite cobros.» |
-| Otra persona abonó y ya no queda tanto saldo | «A la factura FAC-2026-0012 le faltan 100.00 $ y se están abonando 900.00 $. …» |
-| Alguien registró un cobro mientras tú anulabas la factura | «La factura FAC-2026-0012 tiene 1 cobro(s) registrados. Anúlalos primero: …» |
-| Otro camión se llevó ese material | «En "PATIO PRINCIPAL" hay 120.0000 de "GRANZÓN" y se están despachando 200.0000.» |
-| Otra nota tomó ese mismo pesaje | «El ticket TCK-2026-0004 está usado.» |
-| Otra nota tomó esa misma guía | «La guía GM-2026-0099 está usada.» |
+| Otra persona aprobó, no aprobó o canceló ese despacho | «El despacho SD-2026-0001 ya no está esperando aprobación.» |
+| Otro camión se llevó ese material | «En "PATIO PRINCIPAL" hay … de "GRANZÓN" y se están despachando ….» |
+| Otra nota tomó ese mismo pesaje | «El ticket … está ….» |
+| Otra nota tomó esa misma guía | «La guía … está ….» |
 | Otra persona ya anuló esa nota | «La nota NE-2026-0007 ya estaba anulada.» |
 
-En todos los casos la regla es la misma: **lo que ves rechazado no se hizo a medias, no se hizo.** Vuelve a mirar la lista, que se actualiza sola, y decide con lo que hay.
+Lo mismo vale para facturar y cobrar (capítulo 21). En todos los casos la regla es la misma: **lo que se ve rechazado no se hizo a medias, no se hizo.** Vuelva a mirar la lista, que se actualiza sola, y decida con lo que hay.
 
-**Las pantallas de Ventas se refrescan solas.** Lo que registra otra persona aparece sin que recargues nada, y una escritura de ventas actualiza a la vez las cotizaciones, las notas, las facturas, los cobros, los clientes y las existencias. Es lo que permite que dos personas facturen al mismo tiempo viendo la misma cola de notas por facturar.
+**Las pantallas de Ventas y de Facturación se refrescan solas.** Lo que registra otra persona aparece sin recargar nada: clientes, precios, cotizaciones, despachos, notas, facturas, cobros y existencias.
 
 #### Los números de los documentos
 
-Cada documento lleva su correlativo: **COTV-2026-0001** las cotizaciones, **NE-2026-0001** las notas, **FAC-2026-0012** las facturas y **COB-2026-0001** los cobros. **Se reinician cada enero.**
+Cada documento lleva su correlativo con el año: **COTV-2026-0001** las cotizaciones, **SD-2026-0001** los despachos pedidos, **NE-2026-0001** las notas de entrega, **FAC-2026-0012** las facturas y **COB-2026-0001** los cobros. **Se reinician cada enero.**
 
 La factura lleva además un **número de control**, **00-00000034**, que es una serie aparte y **no se reinicia con el año**: sigue corriendo.
 
-**Ninguna factura se borra.** Una factura equivocada se anula y **se queda con su número**, marcada como anulada y con marca de agua en el PDF. La razón es la que hace útil toda la numeración: un correlativo con huecos es lo primero que se pregunta en una revisión, y «se borró por error» no es una respuesta.
+**Ningún documento se borra.** Uno equivocado se anula y **se queda con su número**, marcado como anulado y con el sello en el PDF. Un correlativo con huecos es lo primero que se pregunta en una revisión, y «se borró por error» no es una respuesta.
 
-#### El IVA y la moneda, tal como los calcula el sistema hoy
+#### El IVA y la moneda
 
-**El sistema calcula con una alícuota del 16% y no hay ninguna pantalla para cambiarla.** La línea de los totales dice **IVA 16%**. Si la alícuota cambiara, el cambio no se hace desde el sistema: hay que pedirlo a quien lo mantiene.
+**El IVA se decide en cada documento**, con la casilla **Esta operación lleva IVA** y su **Alícuota (%)**, que arranca en la de la ficha de la empresa (13.2) y se puede cambiar para ese documento. En la cotización la casilla viene desmarcada; en la factura, lo que diga la ficha de la empresa (21.2). **La nota de entrega no lleva IVA**: lo decide la factura, si se factura.
 
-Lo que sí se puede ajustar por documento y por cliente:
+Lo que más mueve el IVA:
 
-- **Cliente exento**: la casilla **Exento de IVA** en su ficha hace que todos sus documentos salgan sin IVA.
-- **Renglón exento**: la casilla **Exento de IVA** de cada línea deja ese renglón fuera de la base imponible.
+- **Cliente exento**: la casilla **Exento de IVA** de su ficha hace que todos sus documentos salgan sin IVA.
+- **Renglón exento**: la casilla **Exento de IVA** de cada renglón, en la cotización, lo deja fuera de la base imponible.
 - **El flete suma a la base imponible.**
-- **El descuento se reparte en proporción sobre lo gravado**, de modo que un descuento aplicado a renglones exentos no rebaje el IVA.
-- **Una factura no puede mezclar documentos con IVA y sin IVA.** Si una nota es exenta y otra no, se facturan por separado, porque un mismo total no puede declarar dos tratamientos distintos.
+- **El IGTF** es otra casilla, **Esta operación lleva IGTF**, que arranca en el 3 % de ley y se calcula sobre el total con IVA. Una factura tiene que llevar IVA, IGTF o los dos.
 
-Sobre la retención: cuando el cliente está marcado como contribuyente especial, la factura calcula la retención sobre el IVA y la muestra como dos líneas más, **IVA retenido por el cliente** y **A pagar**. **El sistema no emite un comprobante de retención aparte**: la retención sale como una línea dentro de la factura.
+Sobre la retención: cuando el cliente es agente de retención, el documento calcula la retención sobre el IVA y la muestra como dos líneas más: **Retención de IVA** y lo que queda por cobrar. **El sistema no emite un comprobante de retención aparte**: la retención sale como una línea dentro de la factura.
 
-Sobre la moneda: cada documento **congela su tasa** al crearse, y esa es la que se imprime al pie. Sin la tasa del día, se valora con la última registrada; **sin ninguna tasa registrada no se emite nada**, ni cotización, ni nota, ni factura. El cobro se registra **en la moneda de la cuenta donde cayó el dinero**, no en la de la factura, y el sistema lo pasa a dólares para descontarlo del saldo. Por eso el saldo, la deuda y el límite de crédito van siempre en dólares.
+Sobre la moneda: cada documento **congela su tasa** al crearse. Sin la tasa del día, se valora con la última registrada; **sin ninguna tasa registrada no se emite nada**, ni cotización, ni nota, ni factura. El cobro se registra **en la moneda de la cuenta donde cayó el dinero**, no en la de la factura, y el sistema lo pasa a dólares para descontarlo del saldo. Por eso el saldo, la deuda y el límite de crédito van siempre en dólares.
 
-### 10.11 Cuando el sistema no te deja
+### 10.11 Cuando el sistema no le deja
 
-| Lo que ves | Qué significa | Qué hacer |
+| Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Tu usuario no tiene permiso para esta acción.» | Te falta permiso, y el mensaje no dice cuál | Si fue al poner precios, dar crédito, vender bajo el mínimo o anular, hace falta el control total sobre Ventas. Pídelo a administración o que lo haga quien lo tenga |
-| «La razón social del cliente es obligatoria.» | Quedó vacía o con menos de tres letras | Escribe la razón social completa |
-| «El RIF "J-123" no tiene la forma J-12345678-9.» | El RIF está incompleto o mal escrito | Corrígelo con la forma letra, guion, ocho dígitos, guion, un dígito |
-| «Ya hay un cliente registrado con el RIF J-12345678-9.» | Ese cliente ya está cargado | Búscalo en la lista. Si está inactivo, ábrelo y márcalo **Activo** |
-| «El cliente "ACME C.A." está inactivo.» | Al cliente se le dio de baja | Actívalo desde su ficha, o elige otro cliente |
-| «El precio tiene que ser mayor que cero.» | El precio quedó vacío o en cero | Escribe el precio de lista |
-| «El precio mínimo (12.00) no puede ser mayor que el precio (10.00).» | El suelo quedó por encima del precio | Baja el mínimo o sube el precio |
-| «Solo se le pone precio de venta a lo que se vende. "45" es INSUMO.» | Ese artículo no es producto ni servicio | Revisa su categoría en el catálogo de artículos |
-| «Un documento sin renglones no dice nada. Agrega al menos uno.» | No viajó ningún renglón válido | Revisa que cada renglón tenga producto y cantidad mayor que cero |
-| «El artículo "GRANZÓN" está dado de baja y no se puede vender.» | El producto se desactivó en el catálogo | Actívalo en el catálogo, o vende otro |
-| «La cantidad de "GRANZÓN" tiene que ser mayor que cero.» | Un renglón quedó en cero | Escribe la cantidad |
-| «De "GRANZÓN" no se vende por debajo de 8.000000 USD. Se está ofreciendo 6 USD.» | El precio quedó bajo el mínimo | Sube el precio, o que lo autorice quien tenga control total sobre Ventas |
-| «No se cotiza con fecha futura.» / «No se despacha con fecha futura.» | La fecha es de mañana o después | Corrige la fecha |
-| «No hay tasa BCV registrada para el 04/08/2026 ni para ninguna fecha anterior. Regístrala en Sistema › Tasas de cambio.» | Falta la tasa del día | Regístrala en **Sistema › Tasas de cambio** y repite el documento |
-| «El documento COTV-2026-0007 quedaría en -35.00: el descuento se come el total. …» | El descuento es mayor que el documento entero | Baja el descuento. Un papel con total negativo no se puede cobrar |
-| «La cotización COTV-2026-0007 ya está aceptada.» | Otra persona ya la cerró | Recarga y mira el estado que tiene |
-| «El almacén "PATIO SUR" está cerrado.» | Ese patio no está activo | Elige otro patio, o pide que lo activen |
-| «En "PATIO PRINCIPAL" hay 120.0000 de "GRANZÓN" y se están despachando 200.0000.» | No hay tanto material | Si en el patio sí está, falta registrar su entrada: carga la producción o haz el conteo en **Inventario › Existencias** |
-| Un mensaje largo en inglés al pulsar **Despachar** | Escribiste la tara mayor que el peso bruto | Corrige la tara: siempre es menor que el bruto |
-| «Este despacho lleva mineral y no tiene guía de movilización. Cárgala en Despachos › Guías, o pídele a quien tenga control total sobre Despachos que lo autorice sin ella.» | La nota lleva producto de cantera y quedó sin guía | Carga la guía y repite el despacho, o pide la autorización a quien tenga el control total sobre Despachos |
-| «El ticket TCK-2026-0004 es de una entrada a la cantera, no de una salida.» | El pesaje elegido es de algo que llegó, no de algo que sale | Elige un pesaje de salida, o que la garita registre el del camión que se va |
-| «El ticket TCK-2026-0004 está usado.» / «está anulado.» | Ese pesaje ya no está disponible | Cierra, vuelve a abrir **Despachar** y elige uno de los que sigan sin usar |
-| «El ticket TCK-2026-0004 se pesó para otro cliente.» | El pesaje se registró a nombre de otro cliente | Elige el pesaje correcto, o pesa de nuevo el camión |
-| «La guía GM-2026-0099 está usada.» / «está anulada.» | Esa guía ya no ampara nada | Elige otra guía vigente |
-| «La guía GM-2026-0099 venció el 02/08/2026.» | La vigencia terminó antes de la fecha del despacho | Consigue una guía vigente: una vencida no ampara el viaje |
-| «La guía GM-2026-0099 se emitió para otro cliente.» | La guía tiene otro cliente puesto | Elige la guía de ese cliente, o una que no tenga cliente |
-| «Escribe por qué se anula. Un despacho anulado sin motivo no se puede auditar.» | El motivo quedó vacío o muy corto | Escribe al menos cuatro letras que expliquen qué pasó |
-| «La nota NE-2026-0007 ya estaba anulada.» | Alguien se te adelantó | Recarga la lista: la anulación ya está hecha |
-| «La nota NE-2026-0007 ya está en la factura. Anula primero la factura.» | Esa nota ya se facturó | Anula la factura. La nota vuelve sola a **Por facturar** |
-| «No hay notas de entrega que facturar.» | No marcaste ninguna nota | Marca al menos una de la lista |
-| «Solo se facturan notas despachadas: 1 de las indicadas ya están facturadas o anuladas.» | Otra persona movió esas notas mientras tú marcabas | Cierra, vuelve a abrir **Facturar** y marca las que sigan en la cola |
-| «Las notas son de 2 clientes distintos. Una factura es de un solo cliente.» | Se colaron notas de otro cliente | Emite una factura por cliente |
-| «Las notas están en monedas distintas y no se pueden sumar en una factura.» | Hay notas en dólares y en bolívares | Sepáralas por moneda |
-| «Las notas llevan alícuotas de IVA distintas. Factúralas por separado.» | Una nota es exenta y otra no | Emite una factura para las exentas y otra para las gravadas |
-| «A "ACME C.A." no se le tiene autorizado crédito. Fija su límite o factúrale de contado.» | El cliente no tiene límite fijado | Fija el límite en su ficha, o cambia la condición a **De contado** |
-| «Con esta factura "ACME C.A." quedaría debiendo 5400.00 $ y su límite es 5000.00 $.» | La factura pasa el límite | Cóbrale lo pendiente, factura de contado, o que lo autorice quien tenga control total sobre Facturación |
-| «La factura FAC-2026-0012 está cobrada y no admite cobros.» | Ya no queda saldo | Revisa los cobros de la factura antes de registrar otro |
-| «A la factura FAC-2026-0012 le faltan 800.00 $ y se están abonando 900.00 $. …» | El abono es mayor que lo que falta | Registra el monto que falta. Si el cliente pagó de más, regístralo como dos cobros o revisa la tasa del día |
-| «El monto del cobro tiene que ser mayor que cero.» | El monto quedó vacío o en cero | Escribe lo que entró |
-| «No se registra un cobro con fecha futura.» | La fecha es de mañana o después | Corrige la fecha |
-| «La factura FAC-2026-0012 tiene 2 cobro(s) registrados. Anúlalos primero: …» | La factura tiene dinero cobrado encima | Anula los cobros uno por uno y después la factura |
-| «La factura FAC-2026-0012 ya estaba anulada.» | Alguien se te adelantó | Recarga: ya está anulada |
-| «El cobro COB-2026-0003 ya estaba anulado.» | Ese cobro ya se reversó | Recarga la tarjeta **Cobros** |
+| «Su usuario no tiene acceso a ….» | Su permiso sobre Ventas o Facturación no llega al nivel que pide esa acción | Poner precios y dar crédito piden control total sobre Ventas; anular una nota, control total sobre Facturación (10.1). Pídalo a la administración, o que lo haga quien lo tenga |
+| «Su usuario no tiene permiso para ….» | Falta la casilla de esa acción: aprobar despachos, vender bajo el mínimo… | Se da en la matriz de permisos (13.1) |
+| «La razón social del cliente es obligatoria.» | Quedó vacía o con menos de tres letras | Escriba la razón social completa |
+| «El documento "J-123" no es ni un RIF (J-12345678-9) ni una cédula (V-12345678). …» | La identificación está incompleta o mal escrita | Corríjala: una empresa con su RIF y el dígito del final; una persona sin RIF, con su cédula |
+| «Ya hay un cliente registrado con el RIF J-12345678-9.» | Ese cliente ya está cargado | Búsquelo en la lista. Si está inactivo, ábralo y márquelo **Activo** |
+| «El cliente "ACME C.A." está inactivo.» | Al cliente se le dio de baja | Actívelo desde su ficha, o elija otro cliente |
+| «El precio tiene que ser mayor que cero.» | El precio quedó vacío o en cero | Escriba el precio de lista |
+| «El precio mínimo (…) no puede ser mayor que el precio (…).» | El suelo quedó por encima del precio | Baje el mínimo o suba el precio |
+| «Solo se le pone precio de venta a lo que se vende. «FILTRO DE AIRE» es INSUMO.» | Ese artículo no es producto ni servicio | Revise su categoría en el catálogo de artículos |
+| «Solo lo que se lleva en metros cúbicos o en toneladas se vende también en la otra unidad.» | Se quiso poner precio en una unidad que ese artículo no admite | Póngale precio en su propia unidad |
+| ««GRANZÓN» no tiene densidad: sin ella no se sabe cuánto sale del patio por cada TON.» | Para vender en la otra unidad hace falta la densidad | Póngasela en **Inventario › Catálogo de artículos** |
+| «Un documento sin renglones no dice nada. Agregue al menos uno.» | No viajó ningún renglón | Revise que cada renglón tenga producto, cantidad y precio |
+| «El artículo "GRANZÓN" está dado de baja y no se puede vender.» | El producto se desactivó en el catálogo | Actívelo en el catálogo, o venda otro |
+| «La cantidad de "GRANZÓN" tiene que ser mayor que cero.» | Un renglón quedó en cero | Escriba la cantidad |
+| «De "GRANZÓN" no se vende por debajo de … por TON. Con el descuento queda en ….» | El descuento deja el precio bajo el mínimo | Baje el descuento, o que lo guarde quien tenga la casilla de vender bajo el mínimo |
+| «Dar «GRANZÓN» sin cargo lo autoriza quien pueda vender por debajo del mínimo.» | Se eligió **Sin cargo** sin tener la casilla | Elija otra condición, o que lo guarde quien la tenga |
+| «Un renglón sin cargo dice por qué: «GRANZÓN» sale sin cobrarse.» | Falta el motivo del sin cargo | Escriba por qué sale sin cobrarse |
+| «Escriba a cuánto se acordó «GRANZÓN». Si no se cobra, es sin cargo.» | El precio acordado quedó vacío | Escriba el precio, o elija **Sin cargo** |
+| ««GRANZÓN» tiene precio de lista por TON: sale de lista o con descuento.» | Se eligió precio acordado en una unidad que sí tiene lista | Elija **De lista** o **Con descuento sobre la lista** |
+| «No se cotiza con fecha futura.» | La fecha es de mañana o después | Corrija la fecha |
+| «No hay tasa BCV registrada para el 04/08/2026 ni para ninguna fecha anterior. Regístrela en Sistema › Tasas de cambio.» | Falta la tasa | Regístrela en **Sistema › Tasas de cambio** y repita la operación |
+| «La cotización COTV-2026-0007 ya está ….» | Otra persona ya la cerró | Vuelva a abrirla y mire el estado que tiene |
+| «Falta el nombre del chofer.» / «Falta la cédula del chofer.» / «Falta la placa del vehículo.» | Al pedir el despacho faltó un dato del transporte | Complete los **Datos del despacho** |
+| «Ese patio no existe o está cerrado.» | El patio elegido no está activo | Elija otro patio, o pida que lo activen |
+| «El chofer … está deshabilitado en el catálogo.» / «El vehículo … está deshabilitado en el catálogo.» | Ese chofer o vehículo se desactivó | Elija otro, o actívelo en **Choferes / Vehículos** |
+| «El despacho SD-2026-0001 lo pidió usted: lo aprueba otro usuario con permiso.» | Quien pide no aprueba | Que lo apruebe otra persona con la casilla |
+| «El despacho SD-2026-0001 ya no está esperando aprobación.» | Otra persona lo aprobó, no lo aprobó o lo canceló | Mire la tarjeta: ya está resuelto |
+| «Solo quien lo pidió puede cancelarlo.» | El despacho es de otra persona | Pídale a esa persona que lo cancele, o que quien tenga la casilla no lo apruebe |
+| «Escriba por qué no se aprueba.» / «Escriba por qué se cancela.» | Falta el motivo | Escríbalo: lo lee quien lo pidió |
+| «El almacén "PATIO SUR" está cerrado.» | Al aprobar, ese patio ya no estaba activo | Pida que lo activen, o que se pida otra vez desde otro patio |
+| «En "PATIO PRINCIPAL" hay … de "GRANZÓN" y se están despachando ….» | Al aprobar, no había tanto material | Si en el patio sí está, falta registrar su entrada: cargue la producción o haga el conteo en **Inventario › Existencias** |
+| «El ticket TCK-2026-0004 es de una entrada a la cantera, no de una salida.» | El pesaje elegido es de algo que llegó, no de algo que sale | Elija un pesaje de salida |
+| «El ticket TCK-2026-0004 está ….» | Ese pesaje ya no está disponible: usado o anulado | Pida otra vez el despacho con un pesaje que siga sin usar |
+| «El ticket TCK-2026-0004 se pesó para otro cliente.» | El pesaje se registró a nombre de otro cliente | Elija el pesaje correcto |
+| «La guía GM-2026-0099 está ….» | Esa guía ya no ampara nada: usada o anulada | Elija otra guía, o despache sin ella |
+| «La guía GM-2026-0099 venció el 02/08/2026.» | La vigencia terminó antes de la fecha del despacho | Elija una guía vigente, o despache sin ella |
+| «La guía GM-2026-0099 se emitió para otro cliente.» | La guía tiene otro cliente puesto | Elija la guía de ese cliente, o una que no tenga cliente |
+| «Escriba por qué se anula. Un despacho anulado sin motivo no se puede auditar.» | El motivo quedó vacío o muy corto | Escriba al menos cuatro letras que expliquen qué pasó |
+| «La nota NE-2026-0007 ya estaba anulada.» | Alguien se le adelantó | La anulación ya está hecha |
+| «La nota NE-2026-0007 ya está en la factura. Anule primero la factura.» | Esa nota ya se facturó | Anule la factura. La nota vuelve sola a **Despachada** |
+| «Escriba por qué se edita la nota: queda en la bitácora.» | Falta el motivo de la edición | Escríbalo |
+| «La nota NE-2026-0007 está anulada: no se edita, se rehace.» | Se quiso editar una nota anulada | Pida otro despacho |
+| «La factura FAC-2026-0012 ya sacó el material del patio al emitirse: enlazarle esta nota lo contaría dos veces.» | Esa factura no admite notas | Deje la nota sin enlazar, o elija otra factura |
+| «La nota NE-2026-0007 y la factura FAC-2026-0012 son de clientes distintos.» | La nota y la factura no son del mismo cliente | Elija una factura de ese cliente |
+| «La factura FAC-2026-0012 se emitió a partir de la nota NE-2026-0007: para soltarla hay que anular la factura.» | Solo se suelta una nota de una factura sin nota | Anule la factura (21.2) |
+| «Los camiones de la nota los pone quien escribe en Facturación, o quien generó la nota desde la salida.» | No tiene permiso para poner camiones en esa nota | Que los ponga quien escribe en Facturación |
+| «La nota de salida NS-2026-0012 ya dejó su nota de entrega: NE-2026-0016.» | Esa salida ya tiene su nota | Use la que ya existe. Si está mal, anúlela y genere otra |
 
 ---
 
@@ -6062,7 +6117,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **En Facturación.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La factura directa admite descuento en cada renglón, pero no un descuento sobre el total. **La nota de crédito no se imprime**: se registra, entra en el libro de ventas y lleva su número de control propio, pero el papel que se le entrega al cliente todavía se hace por fuera.
 
-**La factura impresa no está completa ante el SENIAT.** Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención, la tasa del día, la **base imponible** y el **total exento** (10.7), y el IGTF cuando corresponde. **Le falta el desglose por alícuota**: cada factura lleva una sola alícuota, así que una factura mixta no se puede expresar.
+**La factura impresa no está completa ante el SENIAT.** Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención, la tasa del día, la **base imponible** y el **total exento** (21.2), y el IGTF cuando corresponde. **Le falta el desglose por alícuota**: cada factura lleva una sola alícuota, así que una factura mixta no se puede expresar.
 
 **Los datos de la imprenta y la alícuota general del IVA se escriben** en **Configuración › Datos de la empresa**, y la factura los imprime (21.2).
 
@@ -6101,7 +6156,7 @@ Se dice para que nadie lo lea como verificado:
 
 - **Este capítulo se repasó el 6 de octubre de 2026 contra el código del sistema, no usando las pantallas.** Lo que depende de lo que hay cargado —qué tasas se tomaron, qué combustible entró sin costo, qué órdenes quedaron sin declarar— no se comprobó.
 - **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles se levantaron de la base tal como estaba, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla, donde los módulos escondidos no salen.
-- **El capítulo de Ventas** no se ha repasado todavía contra las pantallas de hoy. El de **Explotación** se rehízo el 6 de octubre de 2026, contra el código como este.
+- **El capítulo de Ventas** se repasó el 7 de octubre de 2026 contra el código y los mensajes de la base, no usando sus pantallas. El de **Explotación** se rehízo el 6 de octubre de 2026, contra el código como este.
 - **Los capítulos 19 y 20, Maquinaria y Combustible,** se escribieron leyendo las pantallas y la base, no usándolas. **Los capítulos 21 a 25** —Facturación, Control de despacho, Control de asistencia, Contactos y Alimentación— tampoco se han repasado contra las pantallas de hoy. Si algo no coincide con lo que hace el módulo en el patio, dígalo y se corrige.
 - **El capítulo 12 se repasó contra el código y la base**, no recorriendo sus pantallas una por una.
 

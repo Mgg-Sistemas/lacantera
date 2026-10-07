@@ -83,7 +83,7 @@ const compras = `
 
 const ventas = `
 <figure class="diagrama">
-<svg viewBox="0 0 760 300" role="img" aria-label="Circuito de una venta: cliente, cotización opcional, nota de entrega, factura y cobro. Solo la nota de entrega descuenta material del patio.">
+<svg viewBox="0 0 760 300" role="img" aria-label="Circuito de una venta: cliente, cotización opcional, nota de entrega, factura opcional y cobro. La nota de entrega es la que descuenta el material del patio.">
   <defs>
     <marker id="fv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
@@ -129,8 +129,9 @@ const ventas = `
   <text class="hilo-tit regio" x="392" y="200">descuenta el material</text>
 
   <text class="nota" x="223" y="180" text-anchor="middle">paso opcional</text>
+  <text class="nota" x="537" y="180" text-anchor="middle">paso opcional</text>
 </svg>
-<figcaption>De los cinco pasos, solo la nota de entrega toca el patio. Ni la cotización aparta material ni la factura lo descuenta: cuando el camión sale, el material ya salió del sistema.</figcaption>
+<figcaption>La nota de entrega es la que toca el patio: nace al aprobarse el despacho, y el material sale con ella. La cotización no aparta material, y facturar es opcional: la nota vale por sí sola.</figcaption>
 </figure>`
 
 const nomina = `
