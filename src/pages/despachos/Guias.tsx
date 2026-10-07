@@ -123,7 +123,7 @@ export function Guias() {
           <Vacio
             icono={<FileCheck />}
             titulo="Sin guías registradas"
-            descripcion="Sin guía vigente, Ventas rechaza el despacho de mineral. Quien tenga control total sobre Despachos puede autorizar una salida sin ella, y esa nota queda marcada."
+            descripcion="Cada guía copia el papel que emitió el ministerio. Si un despacho la lleva, se elige en su nota de entrega."
           />
         </Card>
       ) : null}

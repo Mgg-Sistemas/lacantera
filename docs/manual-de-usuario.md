@@ -1524,7 +1524,7 @@ Los hechos que puede contar son estos:
 | **Salió en un despacho** | Una nota de entrega de una venta |
 | **Salió como pago de una compra** | Material que se dio para pagar una orden de compra |
 | **Se perdió en el manejo** | Merma: se rompió, se derramó, se echó a perder moviéndolo |
-| **Salió** con su causa | Una baja: **Salió · Robado**, por ejemplo. No se registran nuevas; las que hay siguen en el libro |
+| **Salió ·** y su causa | Una baja. No se registran nuevas; las que hay siguen en el libro |
 | **Ajuste: sobraba** / **Ajuste: faltaba** | Un conteo físico, en cada sentido |
 | **Se trasladó a otro almacén** / **Llegó de otro almacén** | Los dos movimientos de un traslado |
 | **Se deshizo un movimiento** | Una corrección |
@@ -1735,7 +1735,7 @@ Además de los que van en la tabla de arriba, el libro registra otros movimiento
 | **Devolución** | Material que vuelve al almacén |
 | **Merma** | Se perdió en el manejo, o no volvió del taller |
 | **Salida como pago de una compra** | Material que se dio para pagar una orden de compra |
-| **Salida** con su causa | Una baja: **Salida · Robado**, por ejemplo. No se registran nuevas; las que hay siguen en el libro |
+| **Salida ·** y su causa | Una baja. No se registran nuevas; las que hay siguen en el libro |
 | **Corrección de costo** | Un **Corregir el costo**: sale todo al costo malo y entra al bueno |
 | **Dejó de ser suyo** / **Pasó a ser suyo** | Un cambio de dueño: el material no se mueve, pasa de un dueño a otro |
 
@@ -1813,7 +1813,7 @@ Si ve las pantallas pero no ve los botones **Pesar** ni **Cargar guía**, su usu
 
 Es por donde se entra al módulo, y no se registra nada aquí. Su descripción lo resume: **Control de romana: pesaje del camión y emisión de la guía de salida.** Arriba a la derecha, **Pesar en romana**.
 
-Dos tarjetas dan las cifras del día: **Tickets sin usar** —**Pesajes registrados que no llevan guía**— y **Guías vigentes** —**Emitidas y todavía sin usar**—.
+Dos tarjetas dan las cifras del día: **Tickets sin usar** —**Pesajes que no están en ninguna nota de entrega**— y **Guías vigentes** —**Emitidas y todavía sin usar**—.
 
 Debajo, **El trámite**, con los dos pasos numerados:
 
