@@ -1562,13 +1562,36 @@ export const bajaDe = (m: Pick<Movimiento, 'baja'>) =>
   dice desde aquí. Lo de antes no la tiene y no se inventa: dice su causa si la
   anotó, y si no, nada.
 */
-export function motivoDeSalida(m: Pick<Movimiento, 'razon_salida' | 'baja'>): string | null {
-  return m.razon_salida?.trim() || causaDeBaja(bajaDe(m)?.causa)
+/*
+  TRES SALIDAS DE SEPTIEMBRE, ANOTADAS COMO ROBO POR ERROR DE QUIEN LAS CARGÓ.
+
+  Christopher, 15/09/2026, nombrando estos mismos tres movimientos: «no
+  tocaremos lo existente» — el libro se queda con su causa tal como se
+  anotó entonces, no se reversa ni se reescribe. Pero la nota de cada uno ya
+  explicaba lo que de verdad pasó, y el usuario del sistema lo confirmó el
+  07/10/2026: MOV-2026-0085 y MOV-2026-0079 fueron una venta normal que se
+  cargó por la puerta de baja; MOV-2026-0078 fue un convenio con una
+  ferretería para donación.
+
+  Esto corrige solo lo que se LEE —con la misma palabra en pantalla, en el
+  PDF y al reimprimir la nota, que es justo lo que pide la cita de arriba—,
+  sin tocar la causa guardada en `inventario_bajas` ni el libro.
+*/
+const RAZON_CORREGIDA_A_MANO: Record<string, string> = {
+  'MOV-2026-0085': 'Venta',
+  'MOV-2026-0079': 'Venta',
+  'MOV-2026-0078': 'Convenio',
+}
+
+export function motivoDeSalida(
+  m: Pick<Movimiento, 'numero' | 'razon_salida' | 'baja'>,
+): string | null {
+  return RAZON_CORREGIDA_A_MANO[m.numero] || m.razon_salida?.trim() || causaDeBaja(bajaDe(m)?.causa)
 }
 
 /** El tipo, con su motivo al lado cuando lo tiene: «Salida a consumo · VENTA». */
 export function nombreDeMovimiento(
-  m: Pick<Movimiento, 'tipo' | 'razon_salida' | 'baja'>,
+  m: Pick<Movimiento, 'numero' | 'tipo' | 'razon_salida' | 'baja'>,
 ): string {
   const tipo = TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo
   const motivo = motivoDeSalida(m)
@@ -1576,7 +1599,7 @@ export function nombreDeMovimiento(
 }
 
 /** Lo que la nota de salida pone como motivo: el guardado, o el tipo si no hay. */
-export const motivoParaLaNota = (m: Pick<Movimiento, 'tipo' | 'razon_salida' | 'baja'>) =>
+export const motivoParaLaNota = (m: Pick<Movimiento, 'numero' | 'tipo' | 'razon_salida' | 'baja'>) =>
   motivoDeSalida(m) ?? TIPOS_MOVIMIENTO[m.tipo] ?? m.tipo
 
 /*
@@ -1595,7 +1618,13 @@ export async function leerCabeceraDeNota(numero: string): Promise<{
   const fila = desenvolver<
     Pick<
       Movimiento,
-      'tipo' | 'razon_salida' | 'baja' | 'grupo_id' | 'destino_externo' | 'responsable_externo'
+      | 'numero'
+      | 'tipo'
+      | 'razon_salida'
+      | 'baja'
+      | 'grupo_id'
+      | 'destino_externo'
+      | 'responsable_externo'
     >
   >(
     await supabase
