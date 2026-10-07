@@ -86,7 +86,7 @@ El sistema está hecho para que ciertas cosas **no** se puedan hacer.
 
 No se puede borrar un movimiento de inventario. No se puede editar una nómina ya pagada. No se puede sacar material que no está. No se puede despachar mineral sin guía. No se puede cambiar el saldo de una cuenta a mano.
 
-Cuando el sistema te detiene, en la enorme mayoría de los casos es a propósito. La restricción no está para complicarte el trabajo: está para que dentro de seis meses, cuando alguien pregunte por qué faltaban cuarenta toneladas o por qué se le pagó de más a un trabajador, la respuesta esté escrita y no dependa de que alguien se acuerde.
+Cuando el sistema lo detiene, en la enorme mayoría de los casos es a propósito. La restricción no está para complicarle el trabajo: está para que dentro de seis meses, cuando alguien pregunte por qué faltaban cuarenta toneladas o por qué se le pagó de más a un trabajador, la respuesta esté escrita y no dependa de que alguien se acuerde.
 
 El capítulo 14 reúne esas reglas y explica el motivo de cada una. Vale la pena leerlo antes que los capítulos de los módulos.
 
@@ -146,7 +146,7 @@ Por eso la tasa del día está siempre visible en la parte de arriba de la panta
 
 ### 1.5 Lo que hoy se ofrece, y lo que está en obra
 
-Esto es lo primero que hay que saber antes de buscar una pantalla, porque explica por qué el menú no trae todo lo que este manual cuenta.
+Esto es lo primero que hay que saber antes de buscar una pantalla: qué ofrece hoy el menú, y qué cuenta este manual que no está en él.
 
 **Hoy el menú lateral ofrece esto**, en tres secciones y con el **Panel** arriba del todo:
 
@@ -173,7 +173,7 @@ Y para que nadie tropiece con una pantalla a medio afinar sin saberlo, **quien l
 
 **No es un problema de permisos.** Un candado —**Ventas no está a su alcance**— significa que a su rol no le abrieron ese módulo, y se resuelve pidiéndoselo a la administración. El cartel de obra significa otra cosa: que esa parte todavía no está entregada, y pedir el permiso no lo cambia. Si una dirección está a la vez escondida y fuera de su permiso, sale el cartel de obra.
 
-**Este manual sigue contando lo escondido**, capítulo por capítulo, porque existe y porque el día que vuelva al menú va a hacer falta. Cada capítulo afectado abre con un recuadro que lo dice.
+**Este manual cuenta también lo que está fuera del menú**, en el capítulo de su módulo, porque existe. Cada capítulo afectado lo dice al principio.
 
 **El manual sí está en el menú**, al final, en **Sistema**, con un icono de libro. Y es la única entrada que no comprueba permisos: quien acaba de entrar y todavía no tiene ningún módulo asignado la ve igual. Es lo único que tiene mientras espera que la administración le reparta lo demás.
 
