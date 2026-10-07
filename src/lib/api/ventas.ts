@@ -739,3 +739,43 @@ export function useEditarNotaEntrega() {
     }),
   )
 }
+
+// ---------------------------------------------------------------------------
+// El desglose del informe de despachos
+// ---------------------------------------------------------------------------
+
+export interface RenglonPorArticulo {
+  articulo: string
+  unidad: string
+  cantidad: number
+}
+
+export interface RenglonPorDestino {
+  destino: string
+  movimientos: number
+}
+
+export interface RenglonPorCliente {
+  cliente: string
+  monto_usd: number
+}
+
+export interface DetalleDespachos {
+  por_articulo: RenglonPorArticulo[]
+  por_destino: RenglonPorDestino[]
+  por_cliente: RenglonPorCliente[]
+}
+
+/**
+ * El desglose del informe de despachos: top 8 por artículo, por destino y
+ * por cliente. Los cinco totales ya están en `useResumenPanel` —se calculan
+ * en cada visita al Panel—; esto es lo que de verdad cuesta (sus GROUP BY),
+ * y por eso se pide aparte, solo al generar el informe en PDF.
+ */
+export function useResumenDespachosDetalle(activo: boolean) {
+  return useQuery({
+    queryKey: ['ventas', 'despachos-detalle'],
+    queryFn: () => rpc<DetalleDespachos>('resumen_despachos_detalle', {}),
+    enabled: activo,
+  })
+}

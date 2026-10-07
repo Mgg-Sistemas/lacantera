@@ -801,14 +801,29 @@ Cada tarjeta muestra el número de la compra, la etiqueta roja **Urgente** si lo
 
 ### 4.6 Lo que el panel todavía no mide
 
-Al final hay dos tarjetas que no son indicadores, sino avisos de lo que falta por construir. Están ahí para que nadie busque esas cifras creyendo que salen en cero:
+Al final hay una tarjeta que no es un indicador, sino un aviso de lo que falta por construir. Está ahí para que nadie busque esa cifra creyendo que sale en cero:
 
 - **Producción y explotación**: **Todavía no se registra. Cuando el módulo esté, aquí van las toneladas del día y de la semana.**
-- **Ventas y despachos**: **Todavía no se registran. Con ellos aparecerán aquí las guías de la romana y lo que está por cobrar.**
 
-Dicho sin rodeos: **hoy el panel no mide producción, ni despachos, ni ventas, ni cobranza.** Mide dinero en cuentas, deuda con proveedores, compras y valor de inventario. Para saber las toneladas del día hay que ir al inventario.
+Dicho sin rodeos: **hoy el panel no mide producción.** Para saber las toneladas del día hay que ir al inventario. Ventas y despachos sí se miden: ver el apartado siguiente.
 
-### 4.7 Cuando algo no sale
+### 4.7 Despachos y ventas
+
+Esta tarjeta solo se ve con permiso de Salidas o de Facturación. Su subtítulo cuenta, de un vistazo, cuántas notas de entrega vigentes hay, cuántos movimientos de salida y cuántos traslados.
+
+Debajo van dos cifras: el **total facturado**, en dólares, y su equivalente en **bolívares**. Las dos salen de las notas de entrega que no están anuladas —incluye las que todavía están pendientes de despacharse, aunque esas no suman dinero mientras no se les ponga precio—.
+
+El botón **Generar informe** arma un PDF con esos mismos números y además un desglose que no vive en el panel porque tiene su propio cálculo:
+
+- **Volumen por producto**: cuánto salió de cada artículo del catálogo marcado como producto —no cuenta combustible, repuestos ni otros insumos, para no mezclar lo que se vendió con lo que se gastó—.
+- **Principales destinos**: a quién fue, contado en movimientos y no en cantidad, porque mezclar metros cúbicos de arena con otra unidad no diría nada.
+- **Principales clientes**: quién compró más, en dólares, según las notas de entrega con cliente.
+
+**El informe no inventa ninguna categoría de cliente.** No clasifica a nadie como "público" o "privado": solo nombres, cantidades y montos tal como están en el sistema.
+
+Mientras se arma dice **Generando…** y el botón se bloquea; cuando termina, se abre en el visor de documentos como cualquier otro papel del sistema, listo para descargar o imprimir.
+
+### 4.8 Cuando algo no sale
 
 | Lo que ves | Qué significa | Qué hacer |
 | --- | --- | --- |
@@ -816,7 +831,7 @@ Dicho sin rodeos: **hoy el panel no mide producción, ni despachos, ni ventas, n
 | Caja roja con un triángulo y un mensaje | No se pudieron traer las cifras | Recarga. Los mensajes más frecuentes están en la tabla del apartado 3.8 |
 | Una tarjeta de indicador que no aparece | No tienes permiso sobre ese módulo, y por eso no se muestra en lugar de mostrar un cero falso | Pide el permiso a administración si lo necesitas para tu trabajo |
 
-El panel se refresca solo cada cinco minutos, además del enlace en vivo. No se puede descargar ni imprimir.
+El panel se refresca solo cada cinco minutos, además del enlace en vivo. No se puede descargar ni imprimir, salvo el informe de despachos y ventas del apartado 4.7, que sí es un papel aparte.
 
 ---
 

@@ -272,6 +272,24 @@ export interface ResumenPanel {
   /** Solicitudes de despacho en `PEDIDA`. Pide FACTURACION, no DESPACHOS:
    *  el despacho se pide y se aprueba desde la nota de entrega. */
   despachos_por_aprobar: number | null
+
+  /*
+    EL RESUMEN DE DESPACHOS Y VENTAS, LOS CINCO NÚMEROS.
+
+    Mismo candado que `notas_sin_facturar`: SALIDAS o FACTURACION en
+    LECTURA. El desglose por artículo, por destino y por cliente no vive
+    aquí —se pide aparte con `useResumenDespachosDetalle`, solo al generar
+    el informe— porque ese sí tiene su GROUP BY y no hace falta en cada
+    visita al Panel.
+  */
+  /** Todas las salidas (consumo, merma, baja, despacho, intercambio). */
+  despachos_movimientos: number | null
+  /** Traslados entre almacenes. */
+  despachos_traslados: number | null
+  /** Notas de entrega que no están anuladas. */
+  despachos_notas_vigentes: number | null
+  despachos_total_usd: string | null
+  despachos_total_bs: string | null
 }
 
 /**
