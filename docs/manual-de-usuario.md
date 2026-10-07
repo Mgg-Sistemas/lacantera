@@ -1784,84 +1784,75 @@ Del módulo salen estos documentos, y **todos llevan la misma cabecera que el re
 
 ## 8. Despachos
 
-> **Despachos no está en el menú: está escondido entero desde el 31 de agosto de 2026**, porque la cantera todavía no registra en el sistema la salida por el portón (1.5). Quien llegue a su dirección se encuentra el cartel de obra. Este capítulo se conserva porque el módulo existe y el día que vuelva hará falta; se escribió antes de esconderlo, así que puede llevar detalles que ya no coincidan.
-
-Despachos guarda los dos papeles que acompañan al camión: el pesaje de la romana y la guía de movilización. Los dos se hacían a mano dentro de la nota de entrega, y los dos existen aunque no haya venta. Aquí se producen; Ventas los consume.
+Despachos guarda los dos papeles que acompañan al camión en el portón: el pesaje de la romana y la guía de movilización. Los dos existen aunque no haya venta. Aquí se producen; la nota de entrega, en Facturación, los gasta.
 
 Hay una idea que conviene entender antes de tocar nada:
 
-**La báscula pesa todo lo que cruza el portón, no solo lo que se vende.** Una gandola de gasoil que llega también se pesa, y ese pesaje no termina nunca en una nota de entrega. Por eso el ticket tiene tipo — **Salida** o **Entrada** — y por eso vive en su propio módulo. Si la romana solo registrara ventas, el resto del tránsito del portón habría que llevarlo en un cuaderno, que es justo de donde se viene.
+**La báscula pesa todo lo que cruza el portón, no solo lo que se vende.** Una gandola de gasoil que llega también se pesa, y ese pesaje no termina nunca en una nota de entrega. Por eso el ticket tiene tipo —**Salida** o **Entrada**— y por eso vive en su propio módulo.
 
 De ahí se desprende lo demás: un ticket es la prueba de un viaje, la guía es el permiso de ese viaje, y la nota de entrega es la que los gasta.
 
 ### 8.1 Quién entra y quién puede hacer qué
 
-Para ver el módulo hace falta que administración le haya dado a tu usuario acceso a Despachos. Si no lo tiene, el grupo Despachos no aparece en el menú, y si escribes la dirección a mano verás una tarjeta con un candado: **Despachos no está a tu alcance**.
+Para ver el módulo hace falta permiso de lectura sobre Despachos. Sin él, quien escribe la dirección a mano ve una tarjeta con un candado: **Despachos no está a su alcance**.
 
-Dentro hay dos alcances distintos. El primero es **el trabajo del día**: pesar camiones y cargar guías. El segundo es **el control total sobre Despachos**, y cubre lo que corrige o lo que exceptúa: anular un pesaje, anular una guía y — esto es lo que más importa — autorizar un despacho de mineral sin guía.
+Dentro hay dos alcances:
 
-**Hoy no lo alcanza nadie salvo el administrador del sistema.** Sobre Despachos, los otros nueve roles están en **Ninguno**. El módulo volvió al menú el 28 de agosto, así que ya se puede repartir: **está sin repartir, que es otra cosa.**
+| Qué se hace | Qué hace falta |
+| --- | --- |
+| Pesar un camión y cargar una guía | Escritura sobre Despachos |
+| Anular un pesaje o una guía | Control total sobre Despachos |
 
-La tabla que sigue es **cómo está previsto repartirlo el día que se ofrezca**, y así es como se comportan las pantallas. Se deja escrita porque el reparto ya está decidido y porque las pantallas ya lo respetan; lo que falta es abrir el permiso.
+Si ve las pantallas pero no ve los botones **Pesar** ni **Cargar guía**, su usuario consulta y no registra.
 
-| Rol | Ve el módulo | Pesa y carga guías | Anula pesajes y guías, y autoriza despachos sin guía |
-| --- | --- | --- | --- |
-| Almacén | Sí | Sí | No |
-| Ventas | Sí | Sí | No |
-| Administrador | Sí | Sí | Sí |
-| Gerencia general | Sí | No | No |
-| Consulta | Sí | No | No |
-
-Los demás roles no ven el módulo. Si ves las pantallas pero no ves los botones **Pesar** ni **Cargar guía**, no es una falla: tu rol es de consulta.
-
-Conviene fijarse en una cosa del reparto: **el control total sobre Despachos no lo tiene la gerencia, lo tiene la administración del sistema.** Quien autoriza una salida sin guía no es quien vende ni quien firma la venta, y ese reparto es deliberado: el permiso que se salta un requisito no debe estar en manos de quien tiene prisa por despachar.
-
-**Cuando te falta permiso, el sistema no te dice cuál.** Siempre ves el mismo texto: «Tu usuario no tiene permiso para esta acción.»
-
-Una cosa más, que vale para las dos pantallas: **lo que escribes se convierte solo a mayúsculas y se le quitan las tildes.** Ocurre en las placas, los nombres de chofer, el transportista, el destino y las notas. Así una placa buscada como «a12bc34» encuentra la misma que se tecleó como «A12BC34».
-
-Y las dos pantallas **se refrescan solas**. Si la garita registra un pesaje mientras tú miras la lista desde la oficina, lo verás aparecer sin recargar nada.
+**Las placas, los nombres de chofer, el transportista, el destino y las notas se guardan en mayúsculas y sin tildes.** Así, una placa buscada como «a12bc34» encuentra la que se tecleó como «A12BC34».
 
 ### 8.2 El tablero
 
 **Operación › Despachos › Tablero**
 
-Es la primera entrada del grupo y por donde se aterriza al abrir Despachos. No se registra nada aquí. Describe el módulo en una línea —*"El papeleo de la romana: se pesa el camión y se emite la guía con la que sale."*— y ofrece los dos pasos, numerados:
+Es por donde se entra al módulo, y no se registra nada aquí. Su descripción lo resume: **Control de romana: pesaje del camión y emisión de la guía de salida.** Arriba a la derecha, **Pesar en romana**.
 
-| Paso | A dónde lleva |
+Dos tarjetas dan las cifras del día: **Tickets sin usar** —**Pesajes registrados que no llevan guía**— y **Guías vigentes** —**Emitidas y todavía sin usar**—.
+
+Debajo, **El trámite**, con los dos pasos numerados:
+
+| Paso | Qué es |
 | --- | --- |
-| **I · Se pesa en la romana** | Tickets de romana |
-| **II · Se emite la guía** | Guías de movilización. *"La guía de movilización, que es con lo que el camión puede circular."* |
+| **I · Se pesa en la romana** | **El ticket con el peso del camión, lleno y vacío. Es el soporte de lo que salió.** |
+| **II · Se emite la guía** | **La guía de movilización, que es con lo que el camión puede circular.** |
+
+Y una advertencia que ahorra viajes: **Aquí no se registra la venta: se registra el peso y el permiso.** Quien busca despachar material a un cliente y dejarlo listo para facturar busca la nota de entrega, que está en Facturación; el botón **Ir a las notas de entrega** lleva allí.
 
 ### 8.3 Del pesaje a la salida del camión
 
-Esta es la sección que hay que leer aunque no se lea ninguna otra. El circuito son cinco pasos y va siempre en el mismo orden.
+Esta es la sección que hay que leer aunque no se lea ninguna otra. El circuito va siempre en el mismo orden.
 
-1. **Se pesa el camión.** **Operación › Despachos › Tickets de romana › Pesar**. Se guarda el bruto, la tara y la placa. El ticket recibe su número — **TCK-2026-0001** — y nace **Sin usar**.
-2. **Se carga la guía de movilización.** **Operación › Despachos › Guías de movilización › Cargar guía**. El sistema no emite la guía: la emite el ministerio y aquí se copia el papel, con su número, su vigencia, su destino, el material y las toneladas que ampara. Nace **Vigente**.
-3. **Sale el camión con su nota de entrega.** **Ventas › Notas de entrega › Despachar**. Ahí se eligen los dos papeles: el **Ticket de romana** y la **Guía de movilización**. Al elegir el ticket, los pesos y la placa se traen solos de la báscula. **Si la nota lleva mineral y no lleva guía, el despacho se rechaza entero**, y con él la salida del inventario: el camión no sale.
-4. **Los dos papeles quedan gastados.** En cuanto la nota se guarda, el ticket pasa a **En una nota** y la guía a **Usada**, las dos con el número de la nota a la vista. Ninguno de los dos vuelve a aparecer para elegir.
+1. **Se pesa el camión.** **Operación › Despachos › Tickets de romana › Pesar**. Se guarda el bruto, la tara y la placa. El ticket recibe su número —**TCK-2026-0001**— y nace **Sin usar**.
+2. **Se carga la guía de movilización, si la hay.** **Operación › Despachos › Guías de movilización › Cargar guía**. El sistema no emite la guía: la emite el ministerio y aquí se copia el papel, con su número, su vigencia, su destino, el material y la cantidad que ampara. Nace **Vigente**.
+3. **Sale el camión con su nota de entrega.** En **Administración › Facturación › Notas de entrega** (10.6) se eligen los dos papeles: el **Ticket de romana** y la **Guía de movilización**. La ayuda del ticket lo dice: **Al elegirlo, los pesos y la placa se traen de la báscula.** **La guía es opcional**: si la hay, se engancha a la nota; si no, la nota sale igual.
+4. **Los dos papeles quedan gastados.** En cuanto la nota se guarda, el ticket pasa a **Usado** y la guía a **Usada**, con el número de la nota a la vista. Ninguno de los dos vuelve a aparecer para elegir.
 5. **Si la nota se anula, los dos vuelven a quedar libres.** El ticket regresa a **Sin usar** y la guía a **Vigente**, listos para la nota que corrige a la anterior.
 
 Dos avisos sobre este circuito, para que nadie los descubra a mitad de camino.
 
 **Un ticket de entrada nunca llega a una nota de entrega.** El pesaje de una gandola que llega se queda aquí, como registro del portón. Al despachar solo se ofrecen los tickets de salida.
 
-**Los dos papeles son opcionales para el sistema, salvo la guía cuando hay mineral.** Se puede despachar sin haber pesado el camión, y en ese caso los pesos se teclean a mano. Lo que no se puede es sacar mineral sin guía.
+**Los dos papeles son opcionales para la nota de entrega.** Se puede despachar sin haber pesado el camión y sin guía.
 
 ### 8.4 Tickets de romana
 
 **Operación › Despachos › Tickets de romana**
 
-Cada pesada del portón, entre o salga. La pantalla lo resume así: **Cada pesada del portón, entre o salga.**
+**Tickets de romana de cada pesaje, de entrada o de salida.**
 
 #### Qué se ve
 
 Arriba, si hay pesajes disponibles, una etiqueta verde: **3 sin usar**. Al lado, el botón **Pesar**.
 
-Debajo, el filtro **Ver**, que empieza en **Todos** y admite **Sin usar**, **Ya en una nota** y **Anulados**. No hay buscador: el filtro por estado es lo único que hay para acotar la lista.
+Debajo, el filtro **Ver**, que empieza en **Todos** y admite **Sin usar**, **Usados** y **Anulados**. No hay buscador: el filtro por estado es lo único que hay para acotar la lista.
 
-Si todavía no hay ninguna pesada, aparece la tarjeta **No hay pesadas registradas**, que explica para qué sirve la pantalla: **Al despachar, la nota de entrega toma los pesos de aquí en vez de que alguien los teclee dos veces.**
+Si no hay ninguna pesada, aparece **Sin pesajes registrados**, con el texto **Cada ticket registra el peso bruto y la tara; el neto se calcula automáticamente. La nota de entrega toma los pesos del ticket.**
 
 La lista tiene estas columnas:
 
@@ -1874,30 +1865,28 @@ La lista tiene estas columnas:
 | **Bruto** | El peso del camión cargado, en kilos |
 | **Tara** | El peso del camión vacío, en kilos |
 | **Neto** | La resta de los dos |
-| **Estado** | **Sin usar** en verde, **En una nota** en azul, **Anulado** en gris |
+| **Estado** | **Sin usar**, **Usado** o **Anulado** |
 
 Los tickets anulados se ven más pálidos, pero siguen en la lista.
 
-**La pantalla muestra los 400 tickets más recientes.** No hay paginación ni botón de ver más. Es una limitación real: en un portón con mucho tránsito, un pesaje de hace unas semanas deja de aparecer aquí.
-
 #### Pesar un vehículo
 
-1. Pulsa **Pesar**. La ventana avisa: **El neto se calcula solo. El bruto tiene que superar a la tara.**
-2. Elige el **Tipo**: **Salida — material que se va** o **Entrada — algo que llega**.
-3. Elige el **Vehículo**. Sale del catálogo de camiones de **Maquinaria › Equipos** y trae la placa, lo que carga y el transportista; **al elegirlo, el transportista se rellena solo**. Si el camión no está en el catálogo —el que viene una vez y no vuelve— se elige **Otro — escribo la placa** y aparece el campo **Placa** para teclearla.
-4. Escribe el **Peso bruto (kg)** y la **Tara (kg)**. Debajo, el recuadro **Neto** hace la resta mientras tecleas.
-5. Completa lo que sepas: **Transportista**, **Chofer**, **Cédula del chofer**, **Material**, y el **Cliente** si es una salida o el **Proveedor** si es una entrada.
-6. Revisa la **Fecha**, que viene puesta en hoy, y escribe la **Hora** si la llevas.
-7. Pulsa **Guardar el pesaje**.
+1. Pulse **Pesar**. Se abre **Pesar un vehículo**: **El neto se calcula solo. El bruto tiene que superar a la tara.**
+2. Elija el **Tipo**: salida o entrada. Empieza en salida.
+3. Elija el **Vehículo**. Sale del catálogo de **Maquinaria › Equipos** y trae la placa y lo que carga; al elegirlo, el transportista se rellena solo. Si el camión no está en el catálogo —el que viene una vez y no vuelve— se elige **Otro — escribo la placa** y aparece el campo **Placa**.
+4. Escriba el **Peso bruto (kg)** y la **Tara (kg)**. Debajo, el recuadro **Neto** hace la resta mientras se teclea.
+5. Complete lo que sepa: **Transportista**, **Chofer**, **Cédula del chofer**, **Material**, y el **Cliente** si es una salida o el **Proveedor** si es una entrada.
+6. Revise la **Fecha**, que viene puesta en hoy, y escriba la **Hora** si la lleva.
+7. Pulse **Guardar el pesaje**.
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Tipo** | Sí | Empieza en **Salida — material que se va** |
+| **Tipo** | Sí | Empieza en salida |
 | **Placa** | Sí | El botón queda apagado mientras esté vacía |
 | **Transportista** | No | |
 | **Chofer** | No | |
-| **Cédula del chofer** | No | Con la forma **V-12345678** |
-| **Material** | No | Empieza en **Sin especificar**. Trae todos los artículos activos |
+| **Cédula del chofer** | No | |
+| **Material** | No | Empieza en **Sin especificar** |
 | **Cliente** | No | Solo en las salidas. Empieza en **Sin cliente todavía** |
 | **Proveedor** | No | Solo en las entradas. Empieza en **Sin proveedor** |
 | **Peso bruto (kg)** | Sí | Tiene que ser mayor que la tara |
@@ -1905,30 +1894,28 @@ Los tickets anulados se ven más pálidos, pero siguen en la lista.
 | **Fecha** | Sí | Viene puesta en hoy. No admite una fecha futura |
 | **Hora** | No | |
 | **Romana** | No | Cuál báscula pesó, si hay más de una |
-| **Operador** | No | Quién pesó |
+| **Operador** | No | **Quién pesó** |
 | **Nota** | No | |
 
 **El cliente se puede dejar en blanco.** Se pesa cuando el camión llega al portón, y a esa hora a veces todavía no se sabe a nombre de quién sale la nota. Un ticket sin cliente se puede usar en el despacho de cualquiera; uno con cliente, solo en el de ese cliente.
 
-**Un pesaje no se puede modificar.** Ni los pesos, ni la placa, ni la fecha. Si está mal, se anula y se registra otro, porque un peso que se puede retocar después deja de ser una prueba de nada el día que alguien discuta la cantidad.
+**Un pesaje no se puede modificar.** Ni los pesos, ni la placa, ni la fecha. Si está mal, se anula y se registra otro: un peso que se puede retocar después deja de ser una prueba el día que alguien discuta la cantidad.
 
 #### Anular un pesaje
 
-El botón **Anular** aparece en la fila, en rojo, **solo mientras el ticket está Sin usar**, y solo para quien tenga el control total sobre Despachos.
+El botón **Anular** aparece en la fila **solo mientras el ticket está Sin usar**, y solo para quien tenga el control total sobre Despachos.
 
-1. Pulsa **Anular**. Se abre **Anular el ticket TCK-2026-0004**, con el aviso **Se queda con su número, marcado como anulado.** Un pesaje que desaparece dejaría un hueco en la numeración de la garita.
-2. Escribe **Por qué se anula**.
-3. Pulsa **Anular**.
+1. Pulse **Anular**. Se abre **Anular el ticket TCK-2026-0004**: **Se queda con su número, marcado como anulado.**
+2. Escriba el **Motivo**, de al menos cuatro letras.
+3. Pulse **Anular**, o **No anular** para dejarlo como estaba.
 
-El botón está apagado hasta que el motivo tenga al menos cuatro letras.
-
-**Un ticket que ya está en una nota de entrega no se anula desde aquí.** El sistema lo rechaza con «El ticket TCK-2026-0004 está en la nota de entrega. Anula primero la nota.» El orden es ese porque el ticket es lo que justifica el peso de esa nota: dejarlo anulado por debajo dejaría una nota de entrega con un peso que ningún pesaje respalda.
+**Un ticket que ya está en una nota de entrega no se anula desde aquí.** El sistema lo rechaza con «El ticket TCK-2026-0004 está en la nota de entrega. Anule primero la nota.» El ticket es lo que justifica el peso de esa nota: anularlo por debajo dejaría una nota con un peso que ningún pesaje respalda.
 
 ### 8.5 Guías de movilización
 
 **Operación › Despachos › Guías de movilización**
 
-El permiso con el que el mineral puede circular. La pantalla lo dice así: **El permiso con el que el mineral puede circular.**
+**Guías de movilización: el permiso con el que circula el mineral.**
 
 **El sistema no emite la guía.** La emite el ministerio, y lo que se hace aquí es copiar el papel para saber cuáles hay, cuáles siguen vigentes y cuál amparó cada despacho. La ventana lo advierte: **Se copia del papel que emitió el ministerio, con su número.**
 
@@ -1936,32 +1923,30 @@ El permiso con el que el mineral puede circular. La pantalla lo dice así: **El 
 
 Arriba, dos etiquetas cuando corresponde: **2 por vencer**, en ámbar, para las que vencen dentro de tres días o menos, y **5 vigentes**, en verde. Al lado, el botón **Cargar guía**.
 
-Debajo, el filtro **Ver**, que empieza en **Todas** y admite **Vigentes**, **Ya usadas** y **Anuladas**.
+Debajo, el filtro **Ver**, que empieza en **Todas** y admite **Vigentes**, **Usadas** y **Anuladas**.
 
-Si no hay ninguna, aparece la tarjeta **No hay guías cargadas**, con el texto **Sin guía vigente, Ventas rechaza el despacho de mineral. Quien tenga control total sobre Despachos puede autorizar una salida sin ella, y esa nota queda marcada.**
+Si no hay ninguna, aparece **Sin guías registradas**.
 
 | Columna | Qué muestra |
 | --- | --- |
-| **Guía** | El número del ministerio y, debajo, el número nuestro — **GMV-2026-0001** — y la fecha de emisión |
+| **Guía** | El número del ministerio y, debajo, el número interno —**GMV-2026-0001**— y la fecha de emisión |
 | **Destino** | A dónde va el viaje y, debajo, el cliente si se le puso uno |
 | **Material** | El producto amparado y, debajo, el frente del que sale |
-| **Ampara** | La cantidad que cubre el papel, con su medida: **m³** o **t** |
+| **Ampara** | La cantidad que cubre el papel, con su medida: **m³** o **TON** |
 | **Vigencia** | Hasta cuándo vale y, cuando ya se usó, el número de la nota de entrega |
 | **Estado** | **Vigente**, **Vence en 2 d**, **Vencida**, **Usada** o **Anulada** |
 
-**Vencida no es un estado que alguien marque: se calcula cada vez que abres la pantalla**, comparando la vigencia con el día de hoy. Guardado, haría falta que algo lo cambiara todas las noches, y la noche que no corriera una guía vencida seguiría diciendo que está vigente.
-
-Igual que en la romana, **la pantalla muestra las 400 guías más recientes** y el único filtro es el de estado.
+**Vencida no es un estado que alguien marque: se calcula cada vez que se abre la pantalla**, comparando la vigencia con el día de hoy.
 
 #### Cargar una guía
 
-1. Pulsa **Cargar guía**.
-2. Escribe el **Número de guía**, que es el del papel del ministerio.
-3. Revisa **Emitida el**, que viene en hoy, y escribe **Vence el**.
-4. Escribe el **Destino**.
-5. Elige el **Material**, escribe la **Cantidad que ampara** y elige la **Medida**: **Metros cúbicos** o **Toneladas**. La ayuda dice el criterio: *"La que diga el papel."* **Viene puesto en metros cúbicos**, porque es en lo que opera hoy la cantera mientras tramita la licencia para vender por tonelada.
-6. Completa lo que traiga el papel: **Cliente**, **Frente de origen** u **Origen**, **Transportista**, **Placa**, **Chofer**, **Cédula del chofer** y la **Observación**.
-7. Pulsa **Guardar la guía**.
+1. Pulse **Cargar guía**. Se abre **Cargar guía de movilización**.
+2. Escriba el **Número de guía**, que es el del papel del ministerio.
+3. Revise **Emitida el**, que viene en hoy, y escriba **Vence el**.
+4. Escriba el **Destino**.
+5. Elija el **Material**, escriba la **Cantidad amparada** y elija la **Medida**: **Metros cúbicos** o **Toneladas**. La ayuda dice el criterio: **La que diga el papel.**
+6. Complete lo que traiga el papel: **Cliente**, **Frente de origen** u **Origen**, **Transportista**, **Vehículo** —o **Placa** si es otro—, **Chofer**, **Cédula del chofer** y la **Observación**.
+7. Pulse **Guardar la guía**.
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
@@ -1970,53 +1955,32 @@ Igual que en la romana, **la pantalla muestra las 400 guías más recientes** y 
 | **Vence el** | Sí | No puede ser anterior a la emisión |
 | **Destino** | Sí | La ciudad o el sitio al que va el viaje |
 | **Cliente** | No | Empieza en **Sin cliente concreto** |
-| **Material** | Sí | Empieza en **Elige el material**. Solo trae productos de cantera |
-| **Cantidad que ampara** | Sí | Mayor que cero |
+| **Material** | Sí | Empieza en **Seleccione el material**. Solo trae productos de cantera |
+| **Cantidad amparada** | Sí | Mayor que cero |
 | **Medida** | Sí | **Metros cúbicos** o **Toneladas**. Empieza en metros cúbicos |
 | **Frente de origen** | No | Empieza en **Sin frente concreto** |
-| **Origen** | No | Para cuando no sale de un frente del sistema |
+| **Origen** | No | **La mina, si no sale de un frente** |
 | **Transportista** | No | |
-| **Placa** | No | |
+| **Vehículo** y **Placa** | No | Del catálogo de Maquinaria, o **Otro — escribo la placa** |
 | **Chofer** | No | |
-| **Cédula del chofer** | No | Con la forma **V-12345678** |
+| **Cédula del chofer** | No | |
 | **Observación** | No | |
 
 **El cliente se puede dejar en blanco**, igual que en el ticket. Una guía sin cliente ampara el despacho de cualquiera; una guía con cliente, solo el de ese cliente.
 
-**Una guía cargada no se puede editar.** Si el número o la vigencia quedaron mal, se anula y se carga otra vez, porque lo que está guardado tiene que decir lo mismo que el papel que lleva el chofer.
+**Una guía cargada no se puede editar.** Si el número o la vigencia quedaron mal, se anula y se carga otra vez: lo que está guardado tiene que decir lo mismo que el papel que lleva el chofer.
 
 #### Anular una guía
 
-El botón **Anular** aparece en la fila **solo mientras la guía está Vigente**, y solo para quien tenga el control total sobre Despachos. Se abre **Anular la guía GM-2026-0099**, con el aviso **Deja de estar disponible para amparar despachos.** Escribe **Por qué se anula** — mínimo cuatro letras — y pulsa **Anular**.
+El botón **Anular** aparece en la fila **solo mientras la guía está Vigente**, y solo para quien tenga el control total sobre Despachos. Se abre **Anular la guía GM-2026-0099**: **Deja de estar disponible para amparar despachos.** Escriba el **Motivo** —mínimo cuatro letras— y pulse **Anular**.
 
-Una guía que ya amparó un despacho no se anula desde aquí: el sistema responde «La guía GM-2026-0099 amparó un despacho. Anula primero la nota de entrega.» El motivo es el mismo que en el ticket: la nota quedaría diciendo que viajó amparada por un papel que el sistema da por anulado.
+Una guía que ya amparó un despacho no se anula desde aquí: el sistema responde «La guía GM-2026-0099 amparó un despacho. Anule primero la nota de entrega.» La nota quedaría diciendo que viajó amparada por un papel que el sistema da por anulado.
 
 ### 8.6 Vehículos
 
-**Operación › Maquinaria › Equipos**, en el bloque **Camiones**, debajo de las máquinas
+Los camiones viven en **Operación › Maquinaria › Equipos**, en el mismo catálogo que las máquinas (capítulo 19). Es de ahí de donde salen los desplegables **Vehículo** del ticket y de la guía: al elegir uno se traen su placa, lo que carga y su transportista.
 
-**Desde el 16 de septiembre de 2026 los camiones ya no están en Despachos.** Viven en la misma pantalla que las máquinas, como un solo catálogo con dos fichas distintas: la máquina lleva horómetro y taller; el camión, lo que carga y a quién se le pagan sus viajes. La dirección vieja sigue funcionando y lleva a la nueva.
-
-- **Para dar de alta** se pulsa **Agregar** y se elige **Camión**. Quien solo puede una de las dos cosas va directo a ella.
-- **El buscador de Equipos busca también camiones**: por placa, tipo, descripción, transportista o chofer. El contador da las dos cuentas por separado.
-- **Los filtros de máquina esconden los camiones**: un estado, un tipo, una clase o «las que hay que atender». El dueño **La Cantera** enseña los camiones propios; **Gobernación**, ninguno.
-- **Los fuera de servicio no salen** hasta que se pulsa **Ver los fuera de servicio**.
-- **Quién puede:** con Maquinaria en escritura se da de alta un camión, se le corrige la placa, el tipo, la descripción y la nota, se saca de servicio y se le asigna chofer. **Cambiarle de quién es, lo que le cabe o su ficha de máquina** a un camión que ya existe pide la casilla **Dar de alta y corregir un vehículo**, porque decide a quién se le pagan los viajes. La **carga útil** y **eliminar** siguen con sus casillas. Esos campos se ven apagados, con la razón debajo.
-- La clase **Vehículo** de las máquinas se llama ahora **Vehículo liviano**: es la camioneta que lleva gente, no un camión de carga.
-
-Es el catálogo del que salen los desplegables **Vehículo** del ticket y de la guía. Cada ficha lleva:
-
-| Campo | Detalle |
-| --- | --- |
-| **Placa** | Con la que se le identifica en todo el sistema |
-| **Tipo** | Volteo, chuto, gandola… |
-| **Descripción** | Lo que ayude a reconocerlo |
-| **Metros cúbicos** y **Toneladas** | Lo que carga. Es el dato que responde si un despacho cabe |
-| **Ficha de máquina** | Si el camión es de la empresa, se ata a su ficha de máquina |
-| **Transportista** | Si es de un tercero. Es lo que se rellena solo en el ticket al elegir el vehículo |
-| **Nota** | |
-
-**Un camión es propio o es de un transportista, no las dos cosas.** Los de la empresa se atan a Maquinaria para que su mantenimiento y su horómetro vivan en un solo sitio; los de fuera llevan el nombre de quien los pone.
+Si el catálogo está vacío, el desplegable lo dice: **Sin vehículos registrados. Se registran en Maquinaria › Equipos.** El camión que no está en el catálogo se pesa igual con **Otro — escribo la placa**.
 
 ### 8.7 Lo que conviene entender
 
@@ -2024,89 +1988,66 @@ Es el catálogo del que salen los desplegables **Vehículo** del ticket y de la 
 
 Un ticket puede ser de salida o de entrada. La de salida es el material que se va; la de entrada, la gandola de gasoil que llega o la recepción de una compra.
 
-Solo los tickets de salida llegan a Ventas. Los de entrada se quedan aquí como registro del portón, y si intentas usar uno en un despacho el sistema lo rechaza con «El ticket TCK-2026-0004 es de una entrada a la cantera, no de una salida.»
+Solo los tickets de salida llegan a la nota de entrega. Los de entrada se quedan aquí como registro del portón, y si se intenta usar uno en un despacho el sistema lo rechaza con «El ticket TCK-2026-0004 es de una entrada a la cantera, no de una salida.»
 
-Esto tiene una consecuencia práctica que conviene tener presente: **un ticket de entrada no mete material en el inventario.** Pesar la gandola no es recibirla. La entrada al inventario se registra donde siempre, en Compras o en Inventario. La romana deja constancia de lo que cruzó el portón; el inventario, de lo que se guardó.
+Esto tiene una consecuencia práctica: **un ticket de entrada no mete material en el inventario.** Pesar la gandola no es recibirla. La entrada al inventario se registra en Compras o en Inventario. La romana deja constancia de lo que cruzó el portón; el inventario, de lo que se guardó.
 
 #### Un ticket se usa una sola vez
 
-Un pesaje pertenece a un viaje. En cuanto una nota de entrega lo toma, el ticket pasa a **En una nota** y desaparece de la lista de los que se pueden elegir. Si intentas usarlo otra vez, el sistema responde «El ticket TCK-2026-0004 está usado.»
+Un pesaje pertenece a un viaje. En cuanto una nota de entrega lo toma, el ticket pasa a **Usado** y desaparece de la lista de los que se pueden elegir. Si se intenta usarlo otra vez, el sistema responde «El ticket TCK-2026-0004 está usado.»
 
-La razón se entiende sola en el patio: **si el mismo ticket pudiera colgarse de dos notas de entrega, el mismo camión estaría justificando dos despachos.** Las dos notas dirían que salieron veintiocho toneladas y habría una sola pesada para respaldarlas.
+**Si el mismo ticket pudiera colgarse de dos notas de entrega, el mismo camión estaría justificando dos despachos.** Las dos notas dirían que salieron veintiocho toneladas y habría una sola pesada para respaldarlas.
 
-**Al anular la nota, el ticket vuelve a quedar Sin usar.** Esto no es una excepción a la regla anterior, es la misma regla: el camión se pesó igual. Ese pesaje ocurrió, es válido, y lo que se cayó fue la nota. Si tuvieras que volver a pesar un camión que ya se fue, la nota corregida saldría con un peso inventado. Lo mismo pasa con la guía, que vuelve a **Vigente**.
+**Al anular la nota, el ticket vuelve a quedar Sin usar.** No es una excepción a la regla anterior, es la misma regla: el camión se pesó igual. Ese pesaje ocurrió, es válido, y lo que se cayó fue la nota. Lo mismo pasa con la guía, que vuelve a **Vigente**.
 
-#### Ninguna salida de mineral viaja sin guía
+#### La guía, cuando la hay, ampara un viaje
 
-Es la regla más dura del módulo y la que conviene explicar bien.
-
-**Cuando una nota de entrega lleva un producto de cantera y no se le eligió guía, el despacho se rechaza entero.** No se avisa y se sigue: no se guarda la nota y no sale nada del patio. El mensaje es: «Este despacho lleva mineral y no tiene guía de movilización. Cárgala en Despachos › Guías, o pídele a quien tenga control total sobre Despachos que lo autorice sin ella.»
-
-La razón es que la guía es lo que hace legal que el camión circule con la piedra. Un camión detenido en la vía sin guía es un problema de la empresa, no del sistema, y el sistema es el último sitio donde se puede impedir que salga.
-
-**La comprobación mira lo que va en los renglones, no lo que dice el papel.** Si la nota es solo un flete o un servicio, no hace falta guía. Basta con que haya un producto de cantera para que se exija.
-
-**Hay una excepción, y solo una: quien tenga el control total sobre Despachos puede despachar sin guía.** Existe porque hay días en que el papel llega tarde y el cliente está esperando, y una empresa que no puede despachar es una empresa parada. Ese permiso no lo da el control total sobre Ventas: es el de Despachos, y por defecto solo lo tiene la administración del sistema.
-
-**Y esa autorización queda marcada.** La nota queda guardada sin guía asociada, y el registro de auditoría guarda quién la despachó, cuándo y con qué datos. Eso importa por una razón concreta: una excepción que no deja rastro deja de ser una excepción y se convierte en la forma normal de trabajar, porque nadie puede contar cuántas veces se usó ni pedirle cuentas a nadie.
-
-Aquí hay que ser exacto sobre lo que el sistema hace hoy: **ninguna pantalla muestra una etiqueta que diga que una nota salió sin guía.** Ni la lista de notas de entrega, ni el detalle de la nota, ni el PDF. La única forma de revisarlo es el registro de auditoría, que solo abre quien tiene el rol de administrador. La pantalla de guías dice que la nota «queda marcada», y conviene leerlo por lo que es: queda guardada y auditada, no señalada a la vista de todo el mundo. Si la empresa quiere revisar esas salidas de forma habitual, hoy hay que pedirlo por fuera.
-
-#### Al elegir el ticket, los pesos y la placa se traen solos
-
-En la ventana de despachar hay dos listas, **Ticket de romana** y **Guía de movilización**, y debajo los campos del camión. La ayuda de la primera lo dice: **Al elegirlo, los pesos y la placa se traen de la báscula.**
-
-Al elegir un ticket se llenan solos el **Peso bruto (kg)**, la **Tara (kg)**, la **Placa del vehículo**, el **Chofer** y la **Cédula del chofer**.
-
-**Y lo que se guarda son los del ticket, no los que se vean en la pantalla.** Aunque después de elegir el ticket alguien escriba otro peso encima, el sistema guarda el de la báscula. Los pesos no se teclean a mano por lo mismo que no se copian dos veces a mano en ningún sitio: **teclear el peso otra vez es la forma de que el papel y la báscula terminen diciendo cosas distintas**, y el día que un cliente discuta la cantidad, la nota y el ticket tienen que decir lo mismo o ninguno de los dos sirve.
-
-La placa, el chofer y la cédula funcionan al revés: si los escribes tú, se respeta lo que escribiste; solo se traen del ticket cuando los dejas en blanco. Es a propósito, porque el chofer que se anotó en la garita a las seis de la mañana puede no ser el que se llevó el camión.
+**La nota de entrega no exige guía**: si se elige una, queda enganchada a ese despacho y deja de estar disponible; si no, el despacho sale igual. Una guía ampara un solo viaje, igual que un ticket es un solo pesaje.
 
 #### Lo que el sistema no comprueba
 
 Conviene decirlo con claridad, porque es fácil suponer lo contrario:
 
-- **No compara el peso neto del ticket con las cantidades de la nota.** Puedes despachar cien toneladas con un ticket de veintiocho. El peso queda como prueba, no como control.
-- **No compara las toneladas de la guía con lo que se despacha**, ni el material de la guía con el de los renglones. Una guía que ampara treinta toneladas de granzón no impide despachar cincuenta.
+- **No compara el peso neto del ticket con las cantidades de la nota.** Se pueden despachar cien toneladas con un ticket de veintiocho. El peso queda como prueba, no como control.
+- **No compara la cantidad de la guía con lo que se despacha**, ni el material de la guía con el de los renglones. Una guía que ampara treinta toneladas de granzón no impide despachar cincuenta.
 - **No comprueba que el material del ticket sea el de la nota.**
 
-Lo que sí comprueba es el cliente: **si el ticket o la guía se emitieron a nombre de un cliente, solo sirven para el despacho de ese cliente.** Si no coinciden, verás «El ticket TCK-2026-0004 se pesó para otro cliente.» o «La guía GM-2026-0099 se emitió para otro cliente.»
+Lo que sí comprueba es el cliente: **si el ticket o la guía se emitieron a nombre de un cliente, solo sirven para el despacho de ese cliente.** Si no coinciden, sale «El ticket TCK-2026-0004 se pesó para otro cliente.» o «La guía GM-2026-0099 se emitió para otro cliente.»
 
 Y comprueba la vigencia: una guía cuya vigencia terminó antes de la fecha del despacho se rechaza con «La guía GM-2026-0099 venció el 02/08/2026.»
 
 #### Los números de los documentos
 
-Cada pesaje lleva su correlativo, **TCK-2026-0001**, y cada guía lleva dos números: el del ministerio, que es el que se busca y el que va en el papel, y el nuestro, **GMV-2026-0001**, que sirve para nombrarla dentro del sistema. **Los dos correlativos se reinician cada enero.**
+Cada pesaje lleva su correlativo, **TCK-2026-0001**, y cada guía lleva dos números: el del ministerio, que es el que se busca y el que va en el papel, y el interno, **GMV-2026-0001**, que sirve para nombrarla dentro del sistema. **Los dos correlativos se reinician cada enero.**
 
-**Nada se borra.** Un pesaje equivocado se anula y se queda con su número, y una guía anulada sigue en la lista. La razón es la misma que en el resto del sistema: un correlativo con huecos es lo primero que se pregunta en una revisión, y en la garita un número que falta es un camión del que nadie sabe dar cuenta.
+**Nada se borra.** Un pesaje equivocado se anula y se queda con su número, y una guía anulada sigue en la lista. Un correlativo con huecos es lo primero que se pregunta en una revisión, y en la garita un número que falta es un camión del que nadie sabe dar cuenta.
 
-### 8.8 Cuando el sistema no te deja
+### 8.8 Cuando el sistema no le deja
 
-| Lo que ves | Qué significa | Qué hacer |
+| Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Tu usuario no tiene permiso para esta acción.» | Te falta permiso, y el mensaje no dice cuál | Si fue al anular un pesaje o una guía, hace falta el control total sobre Despachos. Pídelo a administración, o que lo haga quien lo tenga |
-| «Un pesaje sin placa no se puede atribuir a nadie.» | La placa quedó vacía | Escribe la placa del camión |
-| «El peso bruto (12000) tiene que ser mayor que la tara (12000).» | El bruto no supera a la tara | Revisa los dos números: el bruto es el camión cargado |
-| «No se registra un pesaje con fecha futura.» | La fecha es de mañana o después | Corrige la fecha |
-| «Escribe por qué se anula el pesaje.» | El motivo quedó vacío o con menos de cuatro letras | Escribe qué pasó con ese pesaje |
-| «El ticket TCK-2026-0004 ya estaba anulado.» | Alguien se te adelantó | Recarga la lista: la anulación ya está hecha |
-| «El ticket TCK-2026-0004 está en la nota de entrega. Anula primero la nota.» | Ese pesaje ya se usó en un despacho | Anula la nota desde **Ventas › Notas de entrega**. El ticket vuelve solo a **Sin usar** |
-| «La guía necesita su número, que es el que lleva el papel del ministerio.» | El número quedó vacío | Cópialo del papel |
-| «La guía necesita el destino: una guía ampara un viaje a un sitio.» | El destino quedó vacío | Escribe a dónde va el camión |
-| «La guía no puede vencer antes de emitirse.» | **Vence el** quedó antes de **Emitida el** | Revisa las dos fechas del papel |
-| «La guía tiene que amparar un tonelaje mayor que cero.» | La cantidad quedó vacía o en cero | Escribe la cantidad que dice el papel. **El mensaje habla de tonelaje aunque la guía se emita en metros cúbicos**: es un texto que quedó de antes |
-| Un mensaje largo en inglés al guardar la guía | Ese número de guía ya está cargado | Búscala en la lista con el filtro **Ver** en **Todas**. Si ya está, no hace falta cargarla otra vez |
-| «Escribe por qué se anula la guía.» | El motivo quedó vacío o muy corto | Escribe al menos cuatro letras que expliquen qué pasó |
-| «La guía GM-2026-0099 ya estaba anulada.» | Alguien se te adelantó | Recarga la lista |
-| «La guía GM-2026-0099 amparó un despacho. Anula primero la nota de entrega.» | Esa guía ya se usó | Anula la nota desde **Ventas › Notas de entrega**. La guía vuelve sola a **Vigente** |
-| «Este despacho lleva mineral y no tiene guía de movilización. Cárgala en Despachos › Guías, o pídele a quien tenga control total sobre Despachos que lo autorice sin ella.» | La nota lleva producto de cantera y no se eligió guía | Carga la guía y repite el despacho, o pide la autorización a quien tenga el control total sobre Despachos |
-| «El ticket TCK-2026-0004 es de una entrada a la cantera, no de una salida.» | Se eligió un pesaje de algo que llegó | Elige un ticket de salida, o registra el pesaje del camión que se va |
-| «El ticket TCK-2026-0004 está usado.» | Otra nota lo tomó primero | Cierra, vuelve a abrir **Despachar** y elige uno de los que sigan **Sin usar** |
-| «El ticket TCK-2026-0004 se pesó para otro cliente.» | El pesaje se registró a nombre de otro | Elige el ticket correcto, o pesa de nuevo el camión |
-| «La guía GM-2026-0099 está usada.» | Otra nota la tomó primero | Elige otra guía vigente |
-| «La guía GM-2026-0099 venció el 02/08/2026.» | La vigencia terminó antes de la fecha del despacho | Consigue una guía vigente. Una vencida no ampara el viaje |
-| «La guía GM-2026-0099 se emitió para otro cliente.» | La guía tiene otro cliente puesto | Elige la guía de ese cliente, o una que no tenga cliente |
-| «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
+| «Su usuario no tiene permiso para esta acción.» | Falta el permiso, y el mensaje no dice cuál | Si fue al anular un pesaje o una guía, hace falta el control total sobre Despachos. Pídalo a la administración, o que lo haga quien lo tenga |
+| «Un pesaje sin placa no se puede atribuir a nadie.» | La placa quedó vacía | Escriba la placa del camión |
+| «El peso bruto (12.000) tiene que ser mayor que la tara (12.000).» | El bruto no supera a la tara | Revise los dos números: el bruto es el camión cargado |
+| «No se registra un pesaje con fecha futura.» | La fecha es de mañana o después | Corrija la fecha |
+| «Escriba por qué se anula el pesaje.» | El motivo quedó vacío o con menos de cuatro letras | Escriba qué pasó con ese pesaje |
+| «El ticket TCK-2026-0004 ya estaba anulado.» | Alguien se adelantó | Recargue la lista: la anulación ya está hecha |
+| «El ticket TCK-2026-0004 está en la nota de entrega. Anule primero la nota.» | Ese pesaje ya se usó en un despacho | Anule la nota desde **Facturación › Notas de entrega**. El ticket vuelve solo a **Sin usar** |
+| «La guía necesita su número, que es el que lleva el papel del ministerio.» | El número quedó vacío | Cópielo del papel |
+| «La guía necesita el destino: una guía ampara un viaje a un sitio.» | El destino quedó vacío | Escriba a dónde va el camión |
+| «La guía no puede vencer antes de emitirse.» | **Vence el** quedó antes de **Emitida el** | Revise las dos fechas del papel |
+| «La guía tiene que amparar una cantidad mayor que cero.» | La cantidad quedó vacía o en cero | Escriba la cantidad que dice el papel |
+| «Ya existe un registro con ese dato, y no puede haber dos.», al guardar la guía | Ese número de guía ya está cargado | Búsquela en la lista con el filtro **Ver** en **Todas**. Si ya está, no hace falta cargarla otra vez |
+| «Escriba por qué se anula la guía.» | El motivo quedó vacío o muy corto | Escriba al menos cuatro letras que expliquen qué pasó |
+| «La guía GM-2026-0099 ya estaba anulada.» | Alguien se adelantó | Recargue la lista |
+| «La guía GM-2026-0099 amparó un despacho. Anule primero la nota de entrega.» | Esa guía ya se usó | Anule la nota desde **Facturación › Notas de entrega**. La guía vuelve sola a **Vigente** |
+| «El ticket TCK-2026-0004 es de una entrada a la cantera, no de una salida.» | Se eligió un pesaje de algo que llegó | Elija un ticket de salida, o registre el pesaje del camión que se va |
+| «El ticket TCK-2026-0004 está usado.» | Otra nota lo tomó primero | Cierre, vuelva a abrir la nota y elija uno de los que sigan **Sin usar** |
+| «El ticket TCK-2026-0004 se pesó para otro cliente.» | El pesaje se registró a nombre de otro | Elija el ticket correcto, o pese de nuevo el camión |
+| «La guía GM-2026-0099 está usada.» | Otra nota la tomó primero | Elija otra guía vigente |
+| «La guía GM-2026-0099 venció el 02/08/2026.» | La vigencia terminó antes de la fecha del despacho | Consiga una guía vigente. Una vencida no ampara el viaje |
+| «La guía GM-2026-0099 se emitió para otro cliente.» | La guía tiene otro cliente puesto | Elija la guía de ese cliente, o una que no tenga cliente |
+| «No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.» | Se cayó el internet | Reintente cuando vuelva la señal |
 
 ---
 

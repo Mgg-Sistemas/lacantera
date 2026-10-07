@@ -342,7 +342,7 @@ const despachos = `
 
   <g class="nota">
     <text x="125" y="126" text-anchor="middle">un pesaje, un viaje</text>
-    <text x="125" y="238" text-anchor="middle">sin ella no sale mineral</text>
+    <text x="125" y="238" text-anchor="middle">ampara un viaje</text>
   </g>
 
   <path class="hilo-punteado" d="M425,162 V272 H16 V81 H26" marker-end="url(#fd)"/>
