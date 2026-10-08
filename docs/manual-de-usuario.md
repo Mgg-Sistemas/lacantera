@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice y los capítulos 1, 3, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice y los capítulos 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -716,70 +716,69 @@ Cuando la administración le repone la clave a alguien, a esa persona se le cier
 
 ## 4. El panel
 
-**Panel** es la primera entrada del menú y adonde llega todo el que entra al sistema. Sirve para ver de un vistazo lo que hay que atender hoy y cómo va la operación.
+**Panel** es la primera entrada del menú y adonde llega quien entra al sistema. Sirve para ver de un vistazo lo que hay que atender hoy y cómo va la operación.
 
-La idea que hay que entender es esta: **el panel no se administra, se lee.** No hay ningún formulario, filtro ni botón de guardar; todo lo que se puede pulsar es un enlace a la pantalla donde el asunto se resuelve. Cada aviso nace de una condición del sistema y desaparece solo cuando esa condición deja de cumplirse. No se apagan a mano: el aviso de que falta la tasa se va cuando se registra la tasa, no cuando alguien lo descarta.
+La idea que hay que entender es esta: **el panel no se administra, se lee.** No hay ningún formulario ni botón de guardar; lo que se puede pulsar lleva a la pantalla donde el asunto se resuelve. Cada aviso nace de una condición del sistema y desaparece solo cuando esa condición deja de cumplirse. No se apagan a mano: el aviso de que falta la tasa se va cuando hay tasa, no cuando alguien lo descarta.
 
-El encabezado dice **Panel** y debajo **Operación de** seguido del día de la semana y la fecha.
+El encabezado dice **Panel** y debajo **Operación de** seguido del día de la semana y la fecha. Las cifras se refrescan solas cada cinco minutos.
 
 ### 4.1 De dónde salen las cifras
 
-Todas las cifras del panel salen de lo registrado en el sistema. Ninguna es de ejemplo.
+Todas las cifras del panel salen de lo registrado en el sistema. Ninguna es de ejemplo: lo que aquí dice cero, es cero.
 
-Es cierto y conviene tenerlo claro, porque contrasta con la pantalla de entrar: **las tarjetas de toneladas que se ven al entrar sí son de adorno** y no salen de nada registrado. En el panel, no. Lo que aquí dice cero, es cero.
+Con dos salvedades que hay que conocer:
 
-Con dos salvedades que hay que conocer antes de apoyarse en el **Valor del inventario**:
+- Lo que la cantera produce **entra al inventario valorado en cero**, porque el sistema no calcula lo que cuesta producir una tonelada. El **Valor del inventario** en dólares del material producido no es una cifra en la que apoyarse; las cantidades sí.
+- **El panel enseña solo lo que su permiso alcanza.** Eso se explica enseguida.
 
-- Lo que la cantera produce **entra al inventario valorado en cero**, porque el sistema todavía no calcula lo que cuesta producir una tonelada. Mientras eso siga así, el valor en dólares del material producido no es una cifra en la que apoyarse; las toneladas sí.
-- **Los indicadores muestran solo lo que tu permiso alcanza.** Eso se explica enseguida.
+**El panel no muestra ningún porcentaje de variación.** No hay flechas de subida o bajada, ni comparaciones con ayer o con el mes pasado. Las cifras son la foto de ahora mismo, no una tendencia.
 
-### 4.2 Los cuatro indicadores
+### 4.2 Los indicadores
 
-Son las cuatro tarjetas grandes de arriba. Cada una lleva un rótulo, una cifra en dólares sin céntimos y una línea de abajo que la explica.
+Son las tarjetas de arriba. Cada una lleva un rótulo, una cifra y una línea de abajo que la explica, y pulsarla lleva a su pantalla.
 
-| Rótulo | Qué mide | La línea de abajo |
-| --- | --- | --- |
-| **En cuentas, en divisas** | Lo que hay en las cuentas, en dólares | La misma cantidad en bolívares |
-| **Por pagar a proveedores** | Lo que se le debe a los proveedores | **Nada pendiente**, o cuántos pagos están autorizados |
-| **Pagado sin recibir** | Dinero que ya salió de la empresa por material que todavía no llegó | **Todo lo pagado llegó**, o cuántas órdenes vienen en camino |
-| **Valor del inventario** | Lo que vale el material que hay | **Ningún artículo bajo mínimo**, o cuántos están bajo el mínimo |
+| Rótulo | Qué mide | La línea de abajo | Se ve con |
+| --- | --- | --- | --- |
+| **Esperan aprobación** | Cuántas compras esperan la firma de la gerencia | **Sin compras detenidas**, o cuántos días lleva la más vieja | Compras |
+| **Por pagar a proveedores** | Lo que se le debe a los proveedores | **Sin pendientes**, o cuántos pagos están autorizados | Tesorería |
+| **Pagado sin recibir** | Dinero que ya salió por material que todavía no llegó | **Todo lo pagado llegó**, o cuántas órdenes vienen en camino | Tesorería |
+| **Valor del inventario** | Lo que vale el material que hay | **Sin artículos bajo el mínimo**, o cuántos están bajo el mínimo | Inventario |
+| **Acarreado en 7 días** | Metros cúbicos acarreados en la última semana | **Sin viajes esta semana**, o cuántos viajes | Explotación |
+| **Máquinas activas** | Cuántas máquinas están activas | **Ninguna parada**, o cuántas están fuera de servicio y en el taller | Maquinaria |
+| **Trabajadores activos** | Cuántos trabajadores hay activos | **Sin período abierto**, o cuántos períodos de nómina están sin pagar | Nómina |
 
-**Una tarjeta que no ves no es una tarjeta en cero.** Cada indicador aparece solo si tienes permiso sobre su módulo: **En cuentas, en divisas** necesita Tesorería; **Pagado sin recibir**, Compras; **Valor del inventario**, Inventario; y **Por pagar a proveedores** se ve con cualquiera de los dos, Tesorería o Compras.
+**Cuando hay material de otros dueños, el valor del inventario se parte.** La tarjeta pasa a decir **Valor del inventario, todo**, con el total en grande —lo que se custodia—, y debajo cuánto es de La Cantera y cuánto de otros.
 
-La razón de ocultarlas en lugar de mostrarlas vacías está bien pensada: sin permiso, el sistema no devuelve los datos y el indicador saldría en cero, y **un cero se lee como «no hay plata en las cuentas», que es una afirmación falsa**. Es preferible no mostrar nada que mostrar una mentira.
+**Una tarjeta que no ve no es una tarjeta en cero.** Sin permiso, la base no devuelve los datos y el indicador saldría en cero, y **un cero se lee como «no hay nada», que es una afirmación falsa**. Es preferible no mostrar nada que mostrar una mentira. Por la misma razón, lo que se le debe a los proveedores cuelga de Tesorería y no de Compras: quien solo pide material escribe en Compras, y lo que debe la empresa no es asunto suyo.
 
 #### Los colores
 
 El color de estas tarjetas no es decoración, avisa de algo:
 
+- **Esperan aprobación** se pone naranja si hay compras esperando, y verde si no.
 - **Por pagar a proveedores** se pone naranja cuando el pago más viejo lleva más de siete días esperando.
 - **Pagado sin recibir** se pone naranja si hay compras atrasadas, y verde si no hay ninguna.
-
-En los avisos de la tarjeta siguiente, los colores significan lo mismo en todo el sistema: **rojo** es algo que ya está haciendo daño, **naranja** es algo que hay que atender antes de que lo haga, y **azul** es información que conviene completar.
-
-#### Los porcentajes
-
-**El panel no muestra ningún porcentaje de variación.** No hay flechas de subida o bajada, ni comparaciones con ayer o con el mes pasado. Si alguien te habla del "12,4% frente a ayer", está mirando la ilustración de la pantalla de entrar, que es un dibujo de ejemplo. Las cifras del panel son la foto de ahora mismo, no una tendencia.
+- **Máquinas activas** se pone naranja si hay máquinas fuera de servicio.
 
 ### 4.3 Requiere atención
 
-Es la tarjeta que dice qué está detenido. Su subtítulo es **Nada detenido ahora mismo** o cuántos asuntos hay abiertos.
+Es la tarjeta que dice qué está detenido. Su subtítulo es **Sin pendientes detenidos** o cuántos asuntos hay abiertos. Si no hay nada: **Sin compras atrasadas, pagos en espera ni artículos bajo el mínimo.**
 
-Si no hay nada, se ve un recuadro punteado con el texto **Ninguna compra atrasada, ningún pago esperando y ningún artículo bajo el mínimo.**
+Si hay algo, aparece una lista, **lo rojo arriba**, y cada aviso lleva a la pantalla donde se resuelve:
 
-Si hay algo, aparece una lista de recuadros, y cada uno lleva a la pantalla donde se resuelve. Estos son los cinco avisos que pueden salir:
-
-| Color | Lo que ves | Qué dice y por qué importa | Adónde lleva |
+| Color | Lo que ve | Qué dice | Adónde lleva |
 | --- | --- | --- | --- |
-| Rojo | **La tasa de hoy no está cargada** | **Los documentos de hoy se valoran con la última tasa registrada.** Cada documento valorado congela la tasa con la que se emitió | **Tasas de cambio** |
-| Rojo | Cuántas **compras pagadas sin recibir** hay | **Figuran como pagadas y no constan recibidas del todo desde hace más de una semana.** | **Compras** |
-| Naranja | Cuántos días lleva **un pago autorizado sin salir** | Aparece a partir de los tres días. El proveedor no reserva el material hasta ver el pago, y la cotización tiene fecha de vencimiento | **Pagos por hacer** |
-| Naranja | Cuántas **compras esperan al gerente** | Hasta que se apruebe no hay orden, y sin orden el proveedor no despacha | **Compras** |
-| Naranja | Cuántos **artículos están bajo el mínimo** | Pedirlo a tiempo cuesta menos que quedarse sin ello | **Existencias** |
+| Rojo | **La tasa de hoy no está cargada** | **Los documentos de hoy se valoran con la última tasa registrada.** | **Tasas de cambio** (5) |
+| Rojo | Cuántas **compras pagadas sin recibir** | **Figuran como pagadas y no constan recibidas del todo desde hace más de una semana.** | **Compras** |
+| Naranja | **Un pago lleva** tantos **días autorizado sin salir** | Sale a partir de los tres días | **Pagos por hacer** |
+| Naranja | Cuántas **compras esperando al gerente** | | **Compras** |
+| Naranja | Cuántos **artículos bajo el mínimo** | | **Existencias** |
+| Naranja | Cuántas **salidas esperando aprobación** | | **Salidas y traslados › Salidas** (26.2) |
+| Naranja | Cuántos **despachos pedidos sin aprobar** | **Se aprueban desde la nota de entrega.** | **Notas de entrega** (10.6) |
+| Naranja | Cuántas **notas de entrega sin facturar** | Solo las que se pueden facturar | **Notas de entrega** |
+| Naranja | Cuántas **máquinas fuera de servicio** | **No incluye las que están en el taller.** | **Maquinaria** |
 
-**Los avisos también se filtran por tu permiso.** Si el aviso lleva a un módulo que no puedes abrir, no se te muestra: avisarte de algo que no puedes ir a resolver solo sirve para inquietarte. Consecuencia práctica: **el panel de cada persona es distinto**, y que tú no veas un asunto no significa que no exista.
-
-**Hubo un sexto aviso y se retiró.** Contaba cuántas cuentas estaban sin saldo de apertura y llevaba a **Bancos y cajas**. Pedía abrir un saldo que la empresa decidió no llevar —Tesorería dejó de ser un módulo justamente porque no se van a llevar bancos ni cajas, y el sistema solo refleja los movimientos—, y encima llevaba a una pantalla que está fuera del menú por lo mismo: al administrador le abría, y a todos los demás les daba el candado. Un aviso que pide arreglar algo por una puerta cerrada no es un aviso.
+**Los avisos también se filtran por su permiso.** Si el aviso lleva a un módulo que usted no puede abrir, no se le muestra: avisar de algo que no se puede ir a resolver solo sirve para inquietar. Consecuencia práctica: **el panel de cada persona es distinto**, y que usted no vea un asunto no significa que no exista.
 
 ### 4.4 Compras en curso
 
@@ -791,51 +790,45 @@ Esta tarjeta solo se ve con permiso de Compras. Su subtítulo es **Dónde está 
 4. **Por indicar el pago**
 5. **Pagadas, por recibir**
 
-Los ceros se ven en gris claro, para que la vista se vaya sola a lo que tiene número. Al final, el botón **Ver el tablero** lleva al tablero de Compras.
+Los ceros se ven más apagados, para que la vista se vaya sola a lo que tiene número. Al final, **Ver el tablero** lleva al tablero de Compras. Sin permiso de Compras, la tarjeta **Requiere atención** ocupa el ancho completo.
 
-Si no tienes permiso de Compras y esta tarjeta no se dibuja, la de **Requiere atención** ocupa el ancho completo.
+### 4.5 Despachos y ventas
 
-### 4.5 Esperando aprobación del gerente
+Esta tarjeta solo se ve con permiso de Salidas o de Facturación. Su subtítulo cuenta cuántas notas de entrega no anuladas hay, cuántos movimientos de salida y, si los hay, cuántos traslados.
 
-Este bloque **solo aparece si hay algo pendiente de aprobar**. Su subtítulo es **Lo que lleva más tiempo detenido, primero**, y ese es exactamente el orden: lo más antiguo arriba.
+Debajo van dos cifras: **Total facturado**, en dólares, y **Total en bolívares**. **Las dos suman todas las notas de entrega que no están anuladas, se hayan facturado o no** —incluidas las pendientes por completar, que no suman mientras no tengan precio—. El rótulo dice «facturado», pero lo que cuenta es lo despachado.
+
+Y dos botones, que arman un papel con el mismo desglose: cuánto salió de cada producto —solo lo que en el catálogo es producto, sin combustible, repuestos ni insumos—, a qué destinos fue —contado en movimientos, porque sumar metros cúbicos de arena con otra unidad no diría nada— y quiénes fueron los principales clientes, en dólares.
+
+- **Generar informe** arma el papel formal, con la misma plantilla que los demás papeles del sistema.
+- **Presentación** arma el mismo contenido con otro lenguaje visual —portada oscura, cifras en tarjetas de colores—, pensado para enseñar o proyectar y no para archivar.
+
+Ninguno de los dos clasifica a los clientes: solo nombres, cantidades y montos tal como están en el sistema. Mientras se arma cualquiera de los dos, su botón dice **Generando…** y los dos se bloquean; cuando termina, se abre en el visor de documentos, listo para descargar o imprimir.
+
+### 4.6 Esperando aprobación del gerente
+
+Este bloque **solo aparece si hay compras pendientes de aprobar**. Su subtítulo es **Lo que lleva más tiempo detenido, primero**, y ese es exactamente el orden.
 
 Cada tarjeta muestra el número de la compra, la etiqueta roja **Urgente** si lo es, el título, y una línea con quién la solicitó, el proveedor y cuánto tiempo lleva esperando. Si falta el solicitante dice **Sin solicitante**; si falta el proveedor, **sin proveedor**. A la derecha va el total en dólares, o un guion si todavía no lo tiene. Cada tarjeta lleva al detalle de esa compra.
 
-### 4.6 Lo que el panel todavía no mide
+### 4.7 Qué hacer
 
-Al final hay una tarjeta que no es un indicador, sino un aviso de lo que falta por construir. Está ahí para que nadie busque esa cifra creyendo que sale en cero:
+Al final, dos grupos de atajos a lo que más se hace desde aquí, en el orden en que suele venir:
 
-- **Producción y explotación**: **Todavía no se registra. Cuando el módulo esté, aquí van las toneladas del día y de la semana.**
+- **Poner el sistema en marcha** —**Se carga una sola vez.**—: **Cargar el catálogo de artículos**, **Cargar el personal** y **Poner la tasa del día**.
+- **Lo del día**: **Pedir algo que hace falta**, **Ver cómo está el almacén** y **Procesar la quincena**.
 
-Dicho sin rodeos: **hoy el panel no mide producción.** Para saber las toneladas del día hay que ir al inventario. Ventas y despachos sí se miden: ver el apartado siguiente.
-
-### 4.7 Despachos y ventas
-
-Esta tarjeta solo se ve con permiso de Salidas o de Facturación. Su subtítulo cuenta, de un vistazo, cuántas notas de entrega vigentes hay, cuántos movimientos de salida y cuántos traslados.
-
-Debajo van dos cifras: el **total facturado**, en dólares, y su equivalente en **bolívares**. Las dos salen de las notas de entrega que no están anuladas —incluye las que todavía están pendientes de despacharse, aunque esas no suman dinero mientras no se les ponga precio—.
-
-Hay dos botones, y los dos parten del mismo desglose —no vive en el panel porque tiene su propio cálculo—:
-
-- **Volumen por producto**: cuánto salió de cada artículo del catálogo marcado como producto —no cuenta combustible, repuestos ni otros insumos, para no mezclar lo que se vendió con lo que se gastó—.
-- **Principales destinos**: a quién fue, contado en movimientos y no en cantidad, porque mezclar metros cúbicos de arena con otra unidad no diría nada.
-- **Principales clientes**: quién compró más, en dólares, según las notas de entrega con cliente.
-
-**Generar informe** arma el papel formal: rojo y marrón, con la misma plantilla que una orden de compra o una nota de entrega.
-
-**Presentación** arma el mismo contenido con otro lenguaje visual —portada oscura, cifras en tarjetas de colores—, pensado para enseñar o proyectar y no para archivar. Ninguno de los dos **inventa una categoría de cliente**: no clasifican a nadie como "público" o "privado", solo nombres, cantidades y montos tal como están en el sistema.
-
-Mientras se arma cualquiera de los dos, su botón dice **Generando…** y los dos se bloquean; cuando termina, se abre en el visor de documentos como cualquier otro papel del sistema, listo para descargar o imprimir.
+Cada persona ve solo los atajos que puede abrir: los que escriben piden escritura sobre su módulo.
 
 ### 4.8 Cuando algo no sale
 
-| Lo que ves | Qué significa | Qué hacer |
+| Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| **Cargando…** con un aro girando | Todavía está trayendo las cifras | Espera unos segundos |
-| Caja roja con un triángulo y un mensaje | No se pudieron traer las cifras | Recarga. Los mensajes más frecuentes están en la tabla del apartado 3.8 |
-| Una tarjeta de indicador que no aparece | No tienes permiso sobre ese módulo, y por eso no se muestra en lugar de mostrar un cero falso | Pide el permiso a administración si lo necesitas para tu trabajo |
+| **Cargando…** | Todavía está trayendo las cifras | Espere unos segundos |
+| Una caja roja con un mensaje | No se pudieron traer las cifras | Recargue. Los mensajes más frecuentes están en la tabla del apartado 3.8 |
+| Una tarjeta o un aviso que no aparece | No tiene permiso sobre ese módulo, y por eso no se muestra en lugar de mostrar un cero falso | Pida el permiso a la administración si lo necesita para su trabajo |
 
-El panel se refresca solo cada cinco minutos, además del enlace en vivo. No se puede descargar ni imprimir, salvo el informe de despachos y ventas del apartado 4.7, que sí es un papel aparte.
+El panel no se descarga ni se imprime, salvo el informe de despachos y ventas (4.5), que es un papel aparte.
 
 ---
 
