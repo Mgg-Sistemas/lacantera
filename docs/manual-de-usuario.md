@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice y los capítulos 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice y los capítulos 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -195,150 +195,137 @@ Escribiendo **/v** a secas, sin código, se abre la misma página con un campo p
 
 El sistema no es anónimo. Cada movimiento de inventario, cada compra y cada pago quedan escritos con el nombre de la persona que los registró, y esa persona es la que entró con su usuario y su clave. De ahí sale la única regla que hay que entender antes de nada:
 
-**Tu clave es tuya y de nadie más.** Si dos personas usan el mismo usuario, lo que se registre con él no identifica a ninguna de las dos, y el rastro que hace útil al sistema deja de valer. Por eso, en cuanto la administración te entrega una clave, el sistema te obliga a cambiarla antes de dejarte trabajar.
+**La clave es de una sola persona.** Si dos personas usan el mismo usuario, lo que se registre con él no identifica a ninguna de las dos, y el rastro que hace útil al sistema deja de valer. Por eso, en cuanto la administración entrega una clave, el sistema obliga a cambiarla antes de dejar trabajar.
 
 ### 2.1 La portada
 
 Es la puerta de la calle. Se ve al abrir la dirección del sistema, con sesión y sin ella, y también es donde cae cualquier dirección equivocada que se escriba.
 
-No muestra ningún dato de la operación. Solo esto, en este orden:
+**No muestra ningún dato de la operación.** Es una presentación de la empresa —la actividad, lo que sale del patio, las fotos del frente— que termina en el botón **Entrar al sistema**. Debajo quedan la razón social, el **RIF** y el aviso **El acceso lo asigna la administración de la empresa.**
 
-1. El logo de la empresa.
-2. El titular **BIENVENIDO AL SISTEMA DE CONTROL INTERNO DE MINERIA INTERNACIONAL TS, C.A.** La razón social va en mayúsculas y sin tilde a propósito, porque así consta en el RIF.
-3. **RIF J-50209170-0**.
-4. El botón **Ingresar al Sistema**.
-5. El aviso **El acceso lo asigna la administración de la empresa.**
-6. Una foto del frente de explotación.
-7. El pie **Explotación de piedra**.
+Dos cosas de esta pantalla que conviene saber. La primera: **con la sesión ya abierta, la portada se sigue viendo**; no devuelve al panel. Es intencional. La segunda: es la única pantalla del sistema que no cambia con el tema claro u oscuro.
 
-Dos cosas de esta pantalla que conviene saber. La primera: si ya tienes la sesión abierta y vuelves a la portada, **la portada se sigue viendo**; no te devuelve al panel. Es intencional. La segunda: es la única pantalla del sistema que no cambia con el tema claro u oscuro, siempre va sobre fondo azul.
-
-Pulsa **Ingresar al Sistema** para pasar a la pantalla de entrar.
+El botón **Entrar al sistema** lleva a la pantalla de entrar.
 
 ### 2.2 La pantalla de entrar
 
-Es donde el sistema comprueba quién eres y abre la sesión de trabajo. Si ya tienes sesión abierta, esta pantalla no se ve: te lleva directo al panel.
+Es donde el sistema comprueba quién entra y abre la sesión de trabajo. Con la sesión ya abierta, esta pantalla no se ve: lleva directo al panel.
 
-Arriba del formulario está el título **Bienvenido de vuelta** y debajo **Entra para registrar la operación del día.** Si algo falla, aparece una caja roja encima del formulario con el motivo.
-
-En pantallas grandes, a la izquierda, hay una ilustración con dos tarjetas de cifras: **Despachado hoy**, **Existencia en patio** y una lista de materiales con sus toneladas.
-
-**Esas cifras son un ejemplo de adorno, no datos de la cantera.** Están escritas fijas en la pantalla y no salen de nada registrado. Da igual lo que haya pasado hoy en el patio: siempre dicen lo mismo. No las mires para saber cuánto se despachó.
+Su título es **Entrar al sistema**. Si algo falla, aparece una caja roja encima del formulario con el motivo.
 
 #### Los datos que se piden
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Usuario** | Sí | Se escribe en minúscula. Es el único campo de texto del sistema que **no** se convierte a mayúsculas, porque subirlo dejaría a todo el mundo fuera. Aparece con el ejemplo **tu.usuario** |
+| **Usuario** | Sí | Se escribe en minúscula. Es el único campo de texto del sistema que **no** se convierte a mayúsculas, porque subirlo dejaría a todo el mundo fuera. Aparece con el ejemplo **su.usuario** |
 | **Clave** | Sí | Se ve por puntos. Tiene un botón de ojo para mostrarla y ocultarla |
 | **Mantener sesión abierta** | No | Casilla, viene desmarcada |
 
 #### Entrar con usuario y clave
 
-1. Escribe tu **Usuario**.
-2. Escribe tu **Clave**.
-3. Pulsa **Entrar**. Mientras comprueba, el botón dice **Entrando…** y no se puede volver a pulsar.
-4. Si todo va bien, entras directo al panel.
+1. Escriba el **Usuario**.
+2. Escriba la **Clave**.
+3. Pulse **Entrar**. Mientras comprueba, el botón dice **Entrando…** y no se puede volver a pulsar.
+4. Si todo va bien, entra directo al panel.
 
 Al pie queda siempre el aviso **El acceso lo asigna la administración de la empresa. Si no tienes credenciales, escribe a sistemas.**
 
 **El sistema no dice si el error fue el usuario o la clave.** Ante los dos casos responde «Usuario o clave incorrectos.» Es a propósito: si lo dijera, cualquiera podría averiguar qué usuarios existen probando nombres.
 
-Si dejas un campo en blanco y pulsas **Entrar**, quien te avisa es el navegador con su propio texto, no el sistema.
+Si se deja un campo en blanco y se pulsa **Entrar**, quien avisa es el navegador con su propio texto, no el sistema.
 
 #### Dos cosas de esta pantalla que hoy no funcionan
 
 Conviene decirlas claro, porque están a la vista y parece que hacen algo:
 
-- **La casilla Mantener sesión abierta no cambia nada.** Marcarla o dejarla en blanco da el mismo resultado: la sesión se guarda igual en ese aparato. Está en pantalla, pero no se lee.
-- **El enlace Olvidé mi contraseña no lleva a ninguna parte.** No hay recuperación por cuenta propia. Si olvidaste la clave, pídele a la administración que te la reponga; entrarás con la que te den y el sistema te pedirá cambiarla enseguida.
+- **La casilla Mantener sesión abierta no cambia nada.** Marcarla o dejarla en blanco da el mismo resultado: la sesión se guarda igual en ese aparato. Está en pantalla, pero nadie la lee.
+- **El enlace Olvidé mi contraseña no lleva a ninguna parte.** No hay recuperación por cuenta propia. Quien olvide la clave se la pide a la administración; entrará con la que le den y el sistema le pedirá cambiarla enseguida.
 
 ### 2.3 Entrar con la huella
 
-Sirve para entrar poniendo el dedo en lugar de teclear la clave. Se activa **en un equipo concreto**, y hay que activarla otra vez en cada aparato desde el que trabajes: activarla en la oficina no la activa en el teléfono.
+Sirve para entrar poniendo el dedo en lugar de teclear la clave. Se activa **en un equipo concreto**, y hay que activarla otra vez en cada aparato: activarla en la oficina no la activa en el teléfono.
 
 #### Cómo se registra
 
 Se hace desde **Mi cuenta**, en la tarjeta **Entrar con la huella**, cuyo subtítulo lo resume: **Se activa por equipo. En el teléfono hay que activarla aparte.**
 
-1. Entra al sistema con tu usuario y tu clave.
-2. Abre el menú de tu usuario, arriba a la derecha, y pulsa **Mi cuenta**.
-3. Baja a la tarjeta **Entrar con la huella** y pulsa **Activar la huella**.
+1. Entre al sistema con su usuario y su clave.
+2. Abra el menú del usuario, arriba a la derecha, y pulse **Mi cuenta**.
+3. Baje a la tarjeta **Entrar con la huella** y pulse **Activar la huella**.
 4. El botón pasa a **Esperando el dedo…** y se abre el diálogo del propio equipo pidiendo la huella, la cara o el PIN. Hay un minuto para responder.
-5. Al reconocerte, aparece en verde «Listo. En este equipo ya puedes entrar con la huella.»
+5. Al reconocer a la persona, la tarjeta avisa en verde de que en ese equipo ya se puede entrar con la huella.
 
 Si el equipo no tiene lector, **la tarjeta no muestra ningún botón** y lo dice: **Este equipo o este navegador no admite la huella.** Mientras el sistema averigua si hay lector, la tarjeta directamente no aparece.
 
-Cuando aún no está activada y el equipo sí tiene lector, la tarjeta explica qué se guarda: **Tu huella no sale del aparato: ni el sistema ni nadie la ve. Lo que se guarda aquí es tu pase de sesión cifrado, y hace falta tu dedo para abrirlo.**
+Cuando aún no está activada y el equipo sí tiene lector, la tarjeta explica qué se guarda: **Su huella no sale del aparato**, y lo que queda guardado es el pase de sesión cifrado, que necesita el dedo para abrirse.
 
-Una vez activada, dice **Activada en este equipo. Al entrar te la pedirá en vez de la clave.** Si el pase guardado es de otra persona, lo indica con su nombre. Y debajo, en letra pequeña, queda el aviso que más importa: **Si pierdes este equipo, cambia tu clave: eso la desactiva aquí y en cualquier otro aparato donde la hayas puesto.**
+Una vez activada, dice **Activada en este equipo.** Si el pase guardado es de otra persona, lo indica con su nombre. Y debajo queda el aviso que más importa: **perdido el equipo, hay que cambiar la clave** — eso la desactiva ahí y en cualquier otro aparato donde se haya puesto.
 
-Para quitarla, pulsa **Quitar de este equipo**. El botón pasa a **Quitando…** y termina con «Quitada de este equipo. Aquí se entra con la clave.»
+Para quitarla, se pulsa **Quitar de este equipo**.
 
 #### Cómo se usa
 
-1. Abre la pantalla de entrar. Si la huella está activada en ese equipo, debajo del botón **Entrar** aparece un separador con la letra **o** y el botón **Entrar con la huella de** seguido de tu nombre de usuario. Si no se guardó el nombre, dice solo **Entrar con la huella**.
-2. Púlsalo. El botón pasa a **Esperando el dedo…**
-3. Pon el dedo cuando el equipo lo pida. Si te reconoce, entras directo al panel.
+1. Al abrir la pantalla de entrar, si la huella está activada en ese equipo, debajo del botón **Entrar** aparece un separador con la letra **o** y el botón **Entrar con la huella de** seguido del nombre de usuario. Si no se guardó el nombre, dice solo **Entrar con la huella**.
+2. Se pulsa. El botón pasa a **Esperando el dedo…**
+3. Se pone el dedo cuando el equipo lo pide. Si lo reconoce, entra directo al panel.
 
-Si cancelas el diálogo del dedo, **no aparece ningún error**: cancelar no es equivocarse.
+Si se cancela el diálogo del dedo, **no aparece ningún error**: cancelar no es equivocarse.
 
 La huella no sustituye a la clave, es un camino aparte. Si falla, el acceso con usuario y clave sigue justo encima, intacto.
 
 #### Lo que conviene entender de la huella
 
-- **La huella nunca sale del aparato.** El sistema no la ve ni la guarda en ningún sitio: no hay nada que robar. Lo que se guarda en el equipo es tu pase de sesión, cifrado, y hace falta tu dedo para abrirlo.
-- **Se mantiene sola.** El pase se renueva en silencio mientras usas el sistema, así que mañana sigue funcionando sin volver a activarla.
-- **Es un cierre serio de la puerta, no un búnker.** Quien tenga tu equipo desbloqueado y tu dedo entra. Trátalo como tratas la llave de la oficina.
+- **La huella nunca sale del aparato.** El sistema no la ve ni la guarda en ningún sitio: no hay nada que robar. Lo que se guarda en el equipo es el pase de sesión, cifrado, y hace falta el dedo para abrirlo.
+- **Se mantiene sola.** El pase se renueva en silencio mientras se usa el sistema, así que mañana sigue funcionando sin volver a activarla.
+- **Es un cierre serio de la puerta, no un búnker.** Quien tenga el equipo desbloqueado y el dedo entra. Se trata como se trata la llave de la oficina.
 - **Cerrar sesión no quita la huella** de ese equipo. Solo la quitan **Quitar de este equipo** o un cambio de clave.
-- **Si pierdes el equipo o el teléfono, cámbiate la clave desde cualquier otro sitio.** Eso cierra las demás sesiones y deja el pase guardado en el aparato perdido sin valor. Es la única forma de desactivar la huella a distancia.
+- **Perdido el equipo o el teléfono, se cambia la clave desde cualquier otro sitio.** Eso cierra las demás sesiones y deja sin valor el pase guardado en el aparato perdido. Es la única forma de desactivar la huella a distancia.
 - Quitar la huella aquí no borra la llave de acceso que Windows o el teléfono guardaron por su cuenta; eso se hace en los ajustes del propio equipo. Pero sin el pase cifrado ya no sirve para entrar.
 
-### 2.4 El primer ingreso: ponerle tu propia clave
+### 2.4 El primer ingreso: ponerle su propia clave
 
-La primera vez que entras, el sistema no te deja pasar a ninguna pantalla hasta que cambies la clave. Ocupa la pantalla entera, sin menú y sin barra superior:
+La primera vez, el sistema no deja pasar a ninguna pantalla hasta que se cambie la clave. Ocupa la pantalla entera, sin menú y sin barra superior:
 
-- Título **Ponle tu propia clave**.
-- Texto **Hola,** seguido de tu nombre, **La clave con la que acabas de entrar te la dio la administración, así que la saben dos personas. Elige una que sepas solo tú para seguir.**
+- Título **Póngale su propia clave**.
+- El texto **Hola,** con el nombre, y después: **La clave con la que acaba de entrar se la dio la administración, así que la saben dos personas. Elija una que sepa solo usted para seguir.**
 - El formulario de clave, con el botón rotulado **Guardar y entrar**.
 
-Aparece en tres casos: cuando te crean el usuario, cuando la administración te repone la clave, y a todo el mundo la vez que se implantó esta regla.
+Aparece en tres casos: al crear el usuario, cuando la administración repone la clave, y a todo el mundo la vez que se implantó esta regla.
 
-**No se puede posponer.** No hay botón de "más tarde" ni de cerrar, y como no hay barra superior tampoco hay **Cerrar sesión**: se sale cambiando la clave o cerrando el navegador. La razón es la del principio del capítulo: mientras la clave siga siendo la que te dieron, la saben dos personas, y lo que registres con ella no prueba que fuiste tú.
+**No se puede posponer.** No hay botón de «más tarde» ni de cerrar, y como no hay barra superior tampoco hay **Cerrar sesión**: se sale cambiando la clave o cerrando el navegador. La razón es la del principio del capítulo: mientras la clave siga siendo la que dio la administración, la saben dos personas, y lo que se registre con ella no prueba quién fue.
 
-Aunque vengas obligado, **el sistema te sigue pidiendo la clave actual**. Es para que alguien que se encuentre tu sesión abierta no pueda quedarse con tu cuenta cambiándole la clave.
+Aunque se llegue obligado, **el sistema sigue pidiendo la clave actual**. Es para que alguien que se encuentre una sesión abierta no pueda quedarse con la cuenta cambiándole la clave.
 
 Los campos y los avisos de este formulario son los mismos de **Mi cuenta**; están en el apartado 3.7.
 
 ### 2.5 Desde el teléfono
 
-El sistema se usa igual desde el teléfono, con cuatro diferencias que conviene conocer para no buscar lo que no está:
+El sistema se usa igual desde el teléfono, con tres diferencias que conviene conocer para no buscar lo que no está:
 
 - El menú lateral no está fijo: se abre como un cajón por encima de la pantalla, con el botón **☰** de la barra superior, y se cierra con la **X** o pulsando fuera. Mientras está abierto, la página del fondo no se mueve.
 - **Contraer el menú solo existe en pantallas grandes.** En el teléfono no hace falta: el menú ya está escondido.
-- El indicador de la tasa y tu nombre completo no caben y no se muestran; el círculo con tus iniciales sí.
-- La ilustración de la pantalla de entrar solo sale en pantallas grandes. En el teléfono se ve directamente el formulario.
+- El indicador de la tasa y el nombre completo no caben y no se muestran; el círculo con las iniciales sí.
 
 La huella suele funcionar mejor en el teléfono que en un equipo de oficina, pero **hay que activarla ahí también**, entrando primero con la clave.
 
-### 2.6 Cuando no puedes entrar
+### 2.6 Cuando no se puede entrar
 
-| Lo que ves | Qué significa | Qué hacer |
+| Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Usuario o clave incorrectos.» | El usuario no existe o la clave está mal. El sistema no distingue cuál de los dos, para que nadie averigüe qué usuarios existen | Revisa el usuario y vuelve a escribir la clave. Si sigue, pide a la administración que te la reponga |
-| «El usuario solo admite letras, números, punto, guion y guion bajo.» | El nombre que escribiste lleva espacios, tildes u otros signos | Escríbelo tal como te lo entregó la administración |
-| «No se pudo entrar.» | Falló el acceso y no vino ninguna explicación | Reintenta. Si se repite, avisa a sistemas |
-| «No se pudo entrar: …» seguido de un detalle | Falló algo fuera de tu control | Reintenta. Si se repite, pasa el detalle a sistemas |
-| «Tu sesión guardada caducó. Entra con tu clave y vuelve a activar la huella.» | El pase guardado en ese equipo dejó de valer | Entra con la clave y activa la huella otra vez en **Mi cuenta** |
-| «No se reconoció la huella.» | El lector no te identificó | Vuelve a intentarlo o entra con la clave |
-| «La huella no está activada en este equipo.» | No hay pase guardado aquí | Entra con la clave y actívala en **Mi cuenta** |
-| «Se perdió la llave de este equipo. Entra con tu clave.» | El equipo ya no tiene con qué abrir el pase guardado | Entra con la clave y vuelve a activar la huella |
-| «No se pudo abrir la sesión.» | El pase se abrió pero la sesión no llegó a crearse | Entra con la clave |
-| «Este equipo o este navegador no admite la huella.» | Ese aparato no puede usar la huella | Entra con la clave. En el teléfono suele sí funcionar |
-| «No hay una sesión abierta que guardar. Vuelve a entrar.» | Intentaste activar la huella sin sesión válida | Vuelve a entrar y actívala |
-| «No se registró la huella.» | El registro no llegó a completarse | Repite **Activar la huella** |
-| «Este navegador no deja guardar la llave de cifrado.» / «No se pudo abrir el almacén de llaves.» | Ese navegador no puede guardar el pase | Entra con la clave, o usa el sistema desde otro navegador |
-| **El sistema no pudo arrancar** en una pantalla blanca sin diseño | El sistema no llegó a cargar | Recarga. Si se repite, pasa a sistemas el detalle que aparece debajo del título |
+| «Usuario o clave incorrectos.» | El usuario no existe o la clave está mal. El sistema no distingue cuál de los dos, para que nadie averigüe qué usuarios existen | Revise el usuario y vuelva a escribir la clave. Si sigue, pida a la administración que la reponga |
+| «El usuario solo admite letras, números, punto, guion y guion bajo.» | El nombre escrito lleva espacios, tildes u otros signos | Escríbalo tal como lo entregó la administración |
+| «No se pudo entrar.» | Falló el acceso y no vino ninguna explicación | Reintente. Si se repite, avise a sistemas |
+| «No se pudo entrar: …» seguido de un detalle | Falló algo fuera de su control | Reintente. Si se repite, pase el detalle a sistemas |
+| «Su sesión guardada caducó. Entre con su clave y vuelva a activar la huella.» | El pase guardado en ese equipo dejó de valer | Entre con la clave y active la huella otra vez en **Mi cuenta** |
+| «No se reconoció la huella.» | El lector no identificó el dedo | Vuelva a intentarlo o entre con la clave |
+| «La huella no está activada en este equipo.» | No hay pase guardado aquí | Entre con la clave y actívela en **Mi cuenta** |
+| «Se perdió la llave de este equipo. Entre con su clave.» | El equipo ya no tiene con qué abrir el pase guardado | Entre con la clave y vuelva a activar la huella |
+| «No se pudo abrir la sesión.» | El pase se abrió pero la sesión no llegó a crearse | Entre con la clave |
+| «Este equipo o este navegador no admite la huella.» | Ese aparato no puede usar la huella | Entre con la clave. En el teléfono suele funcionar |
+| «No hay una sesión abierta que guardar. Vuelva a entrar.» | Se intentó activar la huella sin sesión válida | Vuelva a entrar y actívela |
+| «No se registró la huella.» | El registro no llegó a completarse | Repita **Activar la huella** |
+| «Este navegador no deja guardar la llave de cifrado.» / «No se pudo abrir el almacén de llaves.» | Ese navegador no puede guardar el pase | Entre con la clave, o use el sistema desde otro navegador |
+| **El sistema no pudo arrancar** en una pantalla blanca sin diseño | El sistema no llegó a cargar | Recargue. Si se repite, pase a sistemas el detalle que aparece debajo del título |
 
 ---
 
