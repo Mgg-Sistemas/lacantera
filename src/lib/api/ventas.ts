@@ -374,6 +374,53 @@ export function useRenglones(tabla: string, columna: string, id: number | null) 
   })
 }
 
+/** Un renglón de nota de entrega, con el nombre de su artículo — para el
+ *  desglose por material del reporte, no para editar la nota. */
+export interface RenglonConArticulo {
+  nota_id: number
+  articulo: string
+  unidad: string
+  cantidad: string
+  subtotal: string
+}
+
+/**
+ * Los renglones de varias notas a la vez, con su artículo.
+ *
+ * No es un hook: se pide una sola vez, al armar el reporte, igual que
+ * `densidadesDeArticulos` en Existencias — no hace falta mantenerlo en caché
+ * ni refrescarlo, porque el papel ya quedó armado cuando esto termina.
+ */
+export async function renglonesDeNotas(notaIds: number[]): Promise<RenglonConArticulo[]> {
+  if (notaIds.length === 0) return []
+  type ArticuloEmbebido = { nombre: string; unidad: string }
+  const filas = desenvolver<
+    Array<{
+      nota_id: number
+      cantidad: string
+      subtotal: string
+      // Sin tipos generados de la base, supabase-js infiere el embed de una
+      // relación a-uno como arreglo: mismo patrón que `bajaDe` en inventario.ts.
+      articulo: ArticuloEmbebido | ArticuloEmbebido[] | null
+    }>
+  >(
+    await supabase
+      .from('nota_entrega_renglones')
+      .select('nota_id, cantidad, subtotal, articulo:articulos(nombre, unidad)')
+      .in('nota_id', notaIds),
+  )
+  return filas.map((f) => {
+    const articulo = Array.isArray(f.articulo) ? f.articulo[0] : f.articulo
+    return {
+      nota_id: f.nota_id,
+      articulo: articulo?.nombre ?? 'Artículo eliminado',
+      unidad: articulo?.unidad ?? '',
+      cantidad: f.cantidad,
+      subtotal: f.subtotal,
+    }
+  })
+}
+
 export function useCrearCotizacion() {
   return useAccionVentas<
     {
@@ -513,6 +560,8 @@ export interface FiltrosDeNotas {
   estado?: string
   desde?: string
   hasta?: string
+  /** La moneda en la que se emitió la nota: «USD», «VES»… No el equivalente. */
+  moneda?: string
 }
 
 const COLUMNAS_QUE_SE_BUSCAN = [
@@ -533,7 +582,15 @@ export function useNotasEntrega(filtros: string | FiltrosDeNotas = {}) {
   const texto = (f.texto ?? '').replace(/[,()]/g, ' ').trim()
 
   return useQuery({
-    queryKey: ['ventas', 'notas', f.estado ?? 'todas', texto, f.desde ?? '', f.hasta ?? ''],
+    queryKey: [
+      'ventas',
+      'notas',
+      f.estado ?? 'todas',
+      texto,
+      f.desde ?? '',
+      f.hasta ?? '',
+      f.moneda ?? '',
+    ],
     queryFn: async () => {
       let q = supabase
         .from('v_notas_entrega')
@@ -544,6 +601,7 @@ export function useNotasEntrega(filtros: string | FiltrosDeNotas = {}) {
       if (f.estado) q = q.eq('estado', f.estado)
       if (f.desde) q = q.gte('fecha', f.desde)
       if (f.hasta) q = q.lte('fecha', f.hasta)
+      if (f.moneda) q = q.eq('moneda', f.moneda)
       if (texto) q = q.or(COLUMNAS_QUE_SE_BUSCAN.map((c) => `${c}.ilike.%${texto}%`).join(','))
       return desenvolver<NotaEntrega[]>(await q)
     },

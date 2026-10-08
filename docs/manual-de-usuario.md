@@ -3239,7 +3239,7 @@ El papel con el que sale el camión. La pantalla lo resume: **Notas de entrega: 
 
 #### Qué se ve
 
-Arriba, tres botones: **Choferes / Vehículos**, que abre el catálogo de los que se llevan el material; **Reporte Bs/$**, que saca en PDF las notas que se ven, con sus totales en las dos monedas; y **Pedir despacho**, que solo ve quien escribe en Facturación.
+Arriba, tres botones: **Choferes / Vehículos**, que abre el catálogo de los que se llevan el material; **Reporte Bs/$**, que saca en PDF las notas que se ven, con sus totales en las dos monedas y, debajo, un **Desglose por material** con cuánto se despachó de cada artículo, también en las dos monedas; y **Pedir despacho**, que solo ve quien escribe en Facturación.
 
 Debajo, si hay despachos pedidos, la sección **Despachos por aprobar**, con una tarjeta por pedido (se explica más abajo). Y después la lista de notas.
 
@@ -3266,7 +3266,7 @@ Las 200 más recientes. Si no hay ninguna, **Sin notas de entrega**.
 
 **El campo Buscar una nota busca en todas, no solo en las que se ven.** La ayuda lo dice: **Busca en todas las notas, no solo en las que se ven.** Se compara contra todo lo que se suele tener a mano: el **número** de la nota, el **cliente**, su **RIF**, la **placa**, el **chofer**, el **ticket** de romana, el **NS** que respalda y la **factura** en la que terminó. Un solo campo, porque quien busca no siempre sabe cuál de esos datos es el que tiene escrito.
 
-Al lado, el **Estado** —**Cualquiera** o uno de los cuatro— y debajo el **rango de fechas**. Se combinan entre sí y con el buscador.
+Al lado, el **Estado** —**Cualquiera** o uno de los cuatro— y la **Moneda** —**Cualquiera**, o una de las que tienen tasa registrada—, para ver solo los despachos en dólares o solo los que se emitieron en bolívares; es la moneda en la que se emitió la nota, no su equivalente, que siempre sale en las dos columnas. Debajo, el **rango de fechas**. Los tres se combinan entre sí y con el buscador.
 
 Si no aparece nada, sale **Sin resultados** y la pantalla recuerda que el número va completo, **NE-2026-0042**, con el año y los cuatro dígitos.
 

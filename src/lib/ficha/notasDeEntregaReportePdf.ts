@@ -40,12 +40,35 @@ const COLUMNAS: Columna[] = [
   { titulo: 'Estado', ancho: 18 },
 ]
 
+const COLUMNAS_MATERIAL: Columna[] = [
+  { titulo: 'Artículo', ancho: 60 },
+  { titulo: 'Unidad', ancho: 20 },
+  { titulo: 'Cantidad', ancho: 25, alDerecha: true },
+  { titulo: 'Subtotal Bs', ancho: 22.5, alDerecha: true },
+  { titulo: 'Subtotal $', ancho: 22.5, alDerecha: true },
+]
+
+/** Un artículo despachado, ya sumado entre todas las notas del alcance. */
+export interface MaterialDespachado {
+  articulo: string
+  unidad: string
+  cantidad: number
+  subtotalBs: number
+  subtotalUsd: number
+}
+
 const ETIQUETA: Record<string, string> = {
   PENDIENTE: 'Pendiente',
   DESPACHADA: 'Despachada',
   FACTURADA: 'Facturada',
   ANULADA: 'Anulada',
 }
+
+const decimal2 = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/** Entera si es entera. 752 metros cúbicos no se leen «752,00». */
+const cantidadLegible = (v: number): string =>
+  Number.isInteger(v) ? v.toLocaleString('es-VE') : decimal2.format(v)
 
 export async function armarReporteNotasDeEntrega(d: {
   empresa: { razonSocial: string; rif: string }
@@ -54,6 +77,10 @@ export async function armarReporteNotasDeEntrega(d: {
   /** «Las 12 notas marcadas», «Las 200 más recientes»… */
   alcance: string
   notas: NotaEntrega[]
+  /** Qué se despachó, ya sumado por artículo. Ausente: no se imprime la
+   *  sección — el llamador no siempre lo tiene a mano (es una consulta
+   *  aparte a los renglones). */
+  materiales?: MaterialDespachado[]
 }): Promise<ArchivoArmado> {
   const titulo = 'Notas de entrega'
   const { jsPDF } = await import('jspdf')
@@ -100,11 +127,38 @@ export async function armarReporteNotasDeEntrega(d: {
         ]),
     `Total Bs ${bolivares(totalBs)} · Total $ ${dolares(totalUsd)}`,
   )
-  notaBajoLaTabla(
+  y = notaBajoLaTabla(
     doc,
     y,
     'Cada monto sale de la tasa BCV vigente el día en que se emitió su nota, ya congelada — no la de hoy. Solo se suman las notas vigentes: una anulada se enseña en su renglón pero no entra en el total.',
   )
+
+  if (d.materiales && d.materiales.length > 0) {
+    const totalMaterialBs = d.materiales.reduce((s, m) => s + m.subtotalBs, 0)
+    const totalMaterialUsd = d.materiales.reduce((s, m) => s + m.subtotalUsd, 0)
+
+    y = seccion(doc, y, 'Desglose por material')
+    y = tabla(
+      doc,
+      y,
+      COLUMNAS_MATERIAL,
+      [...d.materiales]
+        .sort((a, b) => b.subtotalUsd - a.subtotalUsd)
+        .map((m) => [
+          m.articulo,
+          m.unidad,
+          cantidadLegible(m.cantidad),
+          bolivares(m.subtotalBs),
+          dolares(m.subtotalUsd),
+        ]),
+      `Total Bs ${bolivares(totalMaterialBs)} · Total $ ${dolares(totalMaterialUsd)}`,
+    )
+    notaBajoLaTabla(
+      doc,
+      y,
+      'Suma el subtotal de cada renglón de las notas vigentes del alcance, convertido con la tasa de su propia nota. Una misma nota puede traer más de un artículo, y por eso esta suma no tiene que coincidir con el total de la planilla.',
+    )
+  }
 
   pieDePagina(doc, `Documento generado por el sistema · ${titulo} · ${fechaLarga(d.momento)}`)
   doc.setProperties({ title: titulo })

@@ -36,7 +36,7 @@ import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useGuias, useTickets } from '@/lib/api/despachos'
 import { useVehiculos } from '@/lib/api/vehiculos'
 import { armarNotaDeEntrega } from '@/lib/ficha/notaDeEntregaPapel'
-import { armarReporteNotasDeEntrega } from '@/lib/ficha/notasDeEntregaReportePdf'
+import { armarReporteNotasDeEntrega, type MaterialDespachado } from '@/lib/ficha/notasDeEntregaReportePdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
   useAnularNota,
@@ -49,6 +49,7 @@ import {
   usePuedoAprobarDespachos,
   useRechazarDespacho,
   useRenglones,
+  renglonesDeNotas,
   useSolicitarDespacho,
   useSolicitudesDespacho,
   type NotaEntrega,
@@ -149,14 +150,16 @@ export function NotasDeEntrega() {
   */
   const [busca, setBusca] = useState('')
   const [estado, setEstado] = useState('')
+  const [monedaFiltro, setMonedaFiltro] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const { data, isPending, error } = useNotasEntrega({
     texto: busca,
     ...(estado ? { estado } : {}),
+    ...(monedaFiltro ? { moneda: monedaFiltro } : {}),
     ...(rango.desde ? { desde: rango.desde } : {}),
     ...(rango.hasta ? { hasta: rango.hasta } : {}),
   })
-  const hayFiltros = Boolean(busca.trim() || estado || rango.desde || rango.hasta)
+  const hayFiltros = Boolean(busca.trim() || estado || monedaFiltro || rango.desde || rango.hasta)
   const { data: clientes } = useClientes(true)
   const { data: precios } = usePrecios()
   const { data: almacenes } = useAlmacenes()
@@ -397,10 +400,44 @@ export function NotasDeEntrega() {
       const alcance = [
         busca.trim() ? `búsqueda «${busca.trim()}»` : '',
         estado ? `estado ${ETIQUETA[estado] ?? estado}` : '',
+        monedaFiltro
+          ? `moneda ${monedas.data?.find((m) => m.valor === monedaFiltro)?.etiqueta ?? monedaFiltro}`
+          : '',
         rango.desde || rango.hasta ? `del ${rango.desde ? fecha(rango.desde) : 'inicio'} al ${rango.hasta ? fecha(rango.hasta) : 'hoy'}` : '',
       ]
         .filter(Boolean)
         .join(' · ') || `Las ${data?.length ?? 0} más recientes`
+
+      const vigentes = (data ?? []).filter((n) => n.estado !== 'ANULADA')
+      const porNota = new Map(vigentes.map((n) => [n.id, n]))
+      const renglones = await renglonesDeNotas(vigentes.map((n) => n.id))
+
+      /*
+        QUÉ MATERIAL SE DESPACHÓ, SUMADO EN BS Y EN $.
+
+        El renglón solo guarda su subtotal en la moneda de la nota; se
+        convierte con la tasa de ESA nota, no con una tasa general, igual
+        que ya hace el total de la planilla — es la misma regla de que la
+        cifra del papel sea siempre la de la fila que la originó.
+      */
+      const porArticulo = new Map<string, MaterialDespachado>()
+      for (const r of renglones) {
+        const nota = porNota.get(r.nota_id)
+        if (!nota) continue
+        const subtotal = Number(r.subtotal)
+        const subtotalBs = subtotal * Number(nota.tasa)
+        const subtotalUsd = subtotalBs / Number(nota.tasa_usd)
+        const clave = `${r.articulo}··${r.unidad}`
+        const previo = porArticulo.get(clave)
+        porArticulo.set(clave, {
+          articulo: r.articulo,
+          unidad: r.unidad,
+          cantidad: (previo?.cantidad ?? 0) + Number(r.cantidad),
+          subtotalBs: (previo?.subtotalBs ?? 0) + subtotalBs,
+          subtotalUsd: (previo?.subtotalUsd ?? 0) + subtotalUsd,
+        })
+      }
+
       setReporte(
         await armarReporteNotasDeEntrega({
           empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
@@ -408,6 +445,7 @@ export function NotasDeEntrega() {
           momento: new Date(),
           alcance,
           notas: data ?? [],
+          materiales: [...porArticulo.values()],
         }),
       )
     } finally {
@@ -649,7 +687,7 @@ export function NotasDeEntrega() {
         datos es el que tiene escrito.
       */}
       <Card className="mb-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_minmax(0,13rem)]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_minmax(0,10rem)_minmax(0,10rem)]">
           <Input
             label="Buscar una nota"
             value={busca}
@@ -664,6 +702,21 @@ export function NotasDeEntrega() {
             opciones={[
               { valor: '', etiqueta: 'Cualquiera' },
               ...Object.entries(ETIQUETA).map(([valor, etiqueta]) => ({ valor, etiqueta })),
+            ]}
+          />
+          {/*
+            LA CATEGORÍA ELEGIBLE QUE PIDIÓ EL USUARIO: despachos en $ o en
+            Bs, por separado. Es la moneda EN LA QUE SE EMITIÓ la nota, no el
+            equivalente — una nota en bolívares siempre tiene su columna en
+            dólares al lado, y esto no filtra por esa columna.
+          */}
+          <Select
+            label="Moneda"
+            value={monedaFiltro}
+            onChange={(e) => setMonedaFiltro(e.target.value)}
+            opciones={[
+              { valor: '', etiqueta: 'Cualquiera' },
+              ...(monedas.data ?? []).map((m) => ({ valor: m.valor, etiqueta: m.etiqueta })),
             ]}
           />
         </div>
