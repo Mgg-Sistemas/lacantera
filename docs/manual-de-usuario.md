@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 19, 20, 21, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -7092,7 +7092,7 @@ Lo que el módulo no hace, para que nadie lo descubra con una factura en la mano
 
 ## 22. Control de despacho
 
-**Es la planilla de lo que salió, y existe desde el 21 de septiembre de 2026.** Se entra por **Administración › Control de despacho**, justo antes de Facturación, porque es lo que se mira para saber qué falta por cobrar.
+**Es la planilla de lo que salió.** Se entra por **Administración › Control de despacho**, justo antes de Facturación, porque es lo que se mira para saber qué falta por cobrar.
 
 Esa planilla se llevaba en Excel y se llenaba entera a mano: había que copiar el número de la nota, la fecha, el cliente, el material y la cantidad de cada despacho antes de poder anotar lo único que no está en ninguna parte del sistema —el precio acordado, el estado del cobro y las observaciones—. **Aquí la mitad izquierda se llena sola**, leyendo las notas de entrega y las notas de salida, y solo quedan cinco cosas por escribir.
 
@@ -7106,27 +7106,23 @@ Esa planilla se llevaba en Excel y se llenaba entera a mano: había que copiar e
 
 ### 22.2 Quién entra y quién puede hacer qué
 
-| Nivel | Qué permite |
-| --- | --- |
-| **Lectura** | Ver la planilla, filtrar, buscar y descargar el Excel y el PDF |
-| **Escritura** | Además, llenar las filas a mano, cargar desde Excel y decir a qué cliente corresponde un nombre escrito a mano |
-| **Control total** | Además, cambiar la lista de status y el nombre de la columna libre |
+**Lectura** ve la planilla, filtra, busca y descarga el Excel y el PDF. **Escritura** además llena las filas a mano, carga desde Excel y dice a qué cliente corresponde un nombre escrito a mano. **Control total** además cambia la lista de status y el nombre de la columna libre.
 
-El módulo nació con el permiso en **Ninguno para todos los roles**: hasta que administración lo reparta en **Usuarios y roles**, solo lo ve el administrador.
+El módulo nació con el permiso en **Ninguno para todos los roles**: hasta que administración lo reparta (13.1), solo lo ve el administrador.
 
 ### 22.3 La pantalla
 
-Se filtra por **período** —arranca en el día 1 del mes en curso—, por **status** —donde «Sin status todavía» deja la lista de lo que falta por revisar— y por un **buscador** que mira a la vez el número, el cliente, el RIF, el material y las observaciones. La casilla **«Solo lo despachado»** quita lo anulado, las salidas internas, los respaldos de salida y los números sin documento: es la vista para pasar el informe.
+Se filtra por fecha, con **Desde** y **Hasta** —arranca en el día 1 del mes en curso—, por **Status** —donde **Sin status** deja la lista de lo que falta por revisar— y con el campo **Buscar**, que mira a la vez el número, el cliente, el RIF, el material y las observaciones. Si los filtros no encuentran nada, la pantalla lo dice: **Sin resultados en el período**. La casilla **«Solo lo despachado»** quita lo anulado, las salidas internas, los respaldos de salida y los números sin documento: es la vista para pasar el informe.
 
 Sobre la tabla, una línea dice cuántos despachos hay, la cantidad **separada por unidad** —los metros cúbicos no se suman con las toneladas—, el monto en dólares y dos avisos: cuántas filas van **sin precio** y cuántas **sin RIF**.
 
 Una nota con tres materiales son **tres filas**, porque cada material tiene su cantidad y su precio. **El número de cada fila es un enlace** a su nota, para quien tenga permiso de esa pantalla. Y las filas que no suman se ven en gris, diciendo qué pasó con ese número: anulada, salida interna, deshecha, respaldo de una salida o sin documento.
 
-**La fila de respaldo también dice su material, desde el 28 de septiembre de 2026.** La nota de entrega que nació de una nota de salida sale en gris con su material, su cantidad y a qué NS respalda: **Respaldo de una salida · OPTIMAVIAL C.A · ARENA INTEGRAL 16,00 M3 · Respalda la nota de salida NS-2026-0025**. No lleva precio ni entra en los totales a propósito: ese dinero ya lo cuenta la fila de la NS, y sumarlo aquí lo contaría dos veces. Antes esa fila salía sin material ninguno, y una nota con dos materiales los habría escondido los dos.
+**La fila de respaldo también dice su material.** La nota de entrega que nació de una nota de salida sale en gris con su material, su cantidad y a qué NS respalda: **Respaldo de una salida · OPTIMAVIAL C.A · ARENA INTEGRAL 16,00 M3 · Respalda la nota de salida NS-2026-0025**. No lleva precio ni entra en los totales a propósito: ese dinero ya lo cuenta la fila de la NS, y sumarlo aquí lo contaría dos veces.
 
 ### 22.4 Lo que se escribe aquí
 
-Cinco columnas, y solo cinco: **RIF**, **precio en dólares**, **status**, **observaciones** y una **columna libre** que se llama «Otra» hasta que se le cambie el nombre. El **monto** no se teclea: es cantidad por precio.
+Cinco columnas, y solo cinco: **RIF o cédula**, **Precio US$**, **Status**, **Observaciones** y una columna libre que se llama **Otra** hasta que se le cambie el nombre. El **monto** no se teclea: es cantidad por precio.
 
 Dos de ellas pueden venir puestas:
 
@@ -7160,7 +7156,7 @@ Tres reglas que conviene tener claras:
 
 ### 22.7 La lista de status y la columna libre
 
-En el botón **Status y columna**, con control total sobre el módulo. La lista de status empieza con **CONTADO**, **CRUCE** y **AUTORIZADO**, que son los que ya usaba el Excel, y se le agregan los que hagan falta. **Un status que ya se usó no se borra: se apaga**, deja de ofrecerse y las filas que lo tienen lo conservan.
+En el botón **Status y columna**, que abre la ventana **Status y columna libre**, con control total sobre el módulo. Para añadir uno se escribe en **Status nuevo**. La lista de status empieza con **CONTADO**, **CRUCE** y **AUTORIZADO**, que son los que ya usaba el Excel, y se le agregan los que hagan falta. **Un status que ya se usó no se borra: se apaga**, deja de ofrecerse y las filas que lo tienen lo conservan.
 
 La columna libre está para lo que no encaja en ninguna otra —un número de guía, una placa, una referencia—. Al renombrarla cambia en la tabla, en el Excel, en el PDF y en la plantilla, y lo ya escrito en ella no se pierde.
 
@@ -7168,13 +7164,11 @@ La columna libre está para lo que no encaja en ninguna otra —un número de gu
 
 No emite ni anula notas, no corrige lo que dice una nota, no mueve inventario, no crea clientes, no factura y no registra cobros: el status que se pone aquí es una anotación, no un pago. Cada una de esas cosas se hace en su pantalla.
 
-Lo que le falta y podría tener: **escribir directo en la celda** sin abrir la ventana de la fila, **totales por cliente o por material** dentro de la misma pantalla, y **un aviso** cuando aparece un número sin documento.
-
 ---
 
 ## 23. Control de asistencia
 
-**Existe desde el 22 de septiembre de 2026** y está en **Administración › Control de asistencia**. Sirve para saber quién entró, quién salió y a qué hora: con el **carnet** —el mismo que ya tiene el QR de verificación— o cargado a mano por quien tenga permiso.
+Está en **Administración › Control de asistencia** y sirve para saber quién entró, quién salió y a qué hora: con el **carnet** —el mismo que ya tiene el QR de verificación— o cargado a mano por quien tenga permiso.
 
 ### 23.1 La idea que lo ordena: la jornada, no la marca
 
@@ -7186,13 +7180,9 @@ Aquí **cada fila es una jornada entera**: la entrada y la salida juntas, de una
 
 ### 23.2 Quién entra y quién puede hacer qué
 
-| Nivel | Qué permite |
-| --- | --- |
-| **Lectura** | Ver el día de hoy, el calendario y sacar el reporte |
-| **Escritura** | Además, **marcar** con el carnet o eligiendo a la persona, **cargar a mano** y **corregir** horas |
-| **Control total** | Además, **anular** una jornada y cambiar los **ajustes** |
+**Lectura** ve el día de hoy, el calendario y saca el reporte. **Escritura** además **marca** —con el carnet o eligiendo a la persona—, **carga a mano** y **corrige** horas. **Control total** además **anula** una jornada y cambia los **ajustes**.
 
-El módulo nació con el permiso en **Ninguno para todos los roles**: hasta que administración lo reparta en **Usuarios y roles**, solo lo ve el administrador.
+El módulo nació con el permiso en **Ninguno para todos los roles**: hasta que administración lo reparta (13.1), solo lo ve el administrador.
 
 ### 23.3 Marcar
 
@@ -7202,25 +7192,25 @@ Arriba de la pantalla, la tarjeta **Marcar**. Hay tres maneras, y en las tres **
 | --- | --- |
 | **Lector USB** | Se escanea el QR del carnet con el campo «Carnet» activo. El lector teclea la dirección y pulsa Enter solo. Es la manera para un puesto fijo |
 | **Cámara** | El botón **Cámara**, en el teléfono o el computador, con cualquier navegador. La primera vez el navegador pregunta si permite la cámara: hay que decir que sí. Apunta al QR del reverso y marca en cuanto lo lee. Si dice que la cámara está bloqueada, se permite desde el candado junto a la dirección |
-| **A mano** | Se busca a la persona por nombre o ficha y se pulsa **Marcar**. Para quien dejó el carnet en casa |
+| **A mano** | En **O elija a la persona** se busca por nombre o ficha y se pulsa **Marcar**. Para quien dejó el carnet en casa |
 
 Debajo aparece en grande lo que pasó: **Entrada · 07:12 · Nombre**, o **Salida**. Si salió mal —carnet anulado, persona que ya no está en el personal, doble escaneo—, lo dice ahí mismo.
 
-**Cómo decide.** Si la persona tiene una jornada abierta con menos de **16 horas** (se ajusta), el toque es su **salida**. Si no tiene ninguna, o la que tiene ya se pasó de las 16 horas, el toque es una **entrada nueva**, y la vieja queda abierta para que alguien la revise: el propio aviso lo dice.
+**Cómo decide.** Si la persona tiene una jornada abierta con menos de **16 horas** —el campo **Horas máximas de una jornada**, en **Ajustes de asistencia**, admite de 4 a 24—, el toque es su **salida**. Si no tiene ninguna, o la que tiene ya se pasó de las 16 horas, el toque es una **entrada nueva**, y la vieja queda abierta para que alguien la revise: el propio aviso lo dice.
 
-**Dos toques seguidos** del mismo carnet en menos de **2 minutos** (se ajusta): el segundo se rechaza. Es un candado, no un aviso.
+**Dos toques seguidos** del mismo carnet en menos de **2 minutos** —el campo **Minutos para considerar un doble escaneo**, de 0 a 30—: el segundo se rechaza. Es un candado, no un aviso.
 
 ### 23.4 Hoy
 
 Quién está **adentro** ahora mismo, quién **ya salió** con sus horas, y —aparte y en amarillo— las jornadas de **otros días que quedaron sin salida**, que son las que hay que corregir.
 
-**El aviso amarillo cuenta, no enumera.** Dice cuántas jornadas sin salida hay y de qué días —*«62 jornadas de otros días sin salida. En 4 días, del 23 de septiembre al 3 de octubre»*— y se despliega con el triangulito si se quieren ver; desplegado van **agrupadas por día**, con los nombres y la hora de entrada en texto corrido. Antes salían todas enumeradas, una debajo de otra, y con sesenta llenaban la pantalla entera.
+**El aviso amarillo cuenta, no enumera.** Dice cuántas jornadas sin salida hay y de qué días —*«62 jornadas de otros días sin salida. En 4 días, del 23 de septiembre al 3 de octubre»*— y se despliega con el triangulito si se quieren ver; desplegado van **agrupadas por día**, con los nombres y la hora de entrada en texto corrido.
 
 **Y conviene saber por qué se acumulan:** una jornada sin salida **no se cierra nunca sola**. Si al día siguiente la persona vuelve a marcar entrada, se le abre una jornada nueva y la vieja se queda esperando a que alguien la corrija desde el calendario. Veinte personas que olvidan marcar la salida dejan veinte jornadas abiertas cada día, y se van sumando. La cuenta solo baja corrigiéndolas.
 
 ### 23.5 El calendario
 
-Un mes de un vistazo, con cuántas personas marcaron cada día y cuántas jornadas quedaron sin salida. Se puede filtrar a **una sola persona**. Al tocar un día se ve su gente: entrada, salida, horas, turno (☀️ día si entró entre las 6 y las 18, 🌙 noche el resto), y si vino del carnet o se cargó a mano.
+Un mes de un vistazo, con cuántas personas marcaron cada día y cuántas jornadas quedaron sin salida. La casilla **Solo una persona** lo reduce a quien se elija. Al tocar un día se ve su gente: entrada, salida, horas, turno (☀️ día si entró entre las 6 y las 18, 🌙 noche el resto), y si vino del carnet o se cargó a mano.
 
 Desde ahí, con permiso:
 
@@ -7229,11 +7219,11 @@ Desde ahí, con permiso:
 
 ### 23.6 Cargar a mano
 
-El botón **Cargar a mano**. Persona, entrada, salida —opcional: vacía, la jornada queda abierta— y una nota. El sistema no deja cargar una jornada que se cruce con otra de la misma persona, ni una de más de 24 horas: si fueron dos días, se cargan como dos.
+El botón **Cargar a mano** abre **Cargar una jornada a mano**: **Persona**, **Entrada**, **Salida** —opcional: vacía, la jornada queda abierta— y una **Nota**. El sistema no deja cargar una jornada que se cruce con otra de la misma persona, ni una de más de 24 horas: si fueron dos días, se cargan como dos.
 
 ### 23.7 El reporte
 
-El botón **Reporte**: un período y, si se quiere, una sola persona. Sale con el membrete de la empresa, en dos tablas: **por persona** —días, horas, jornadas sin salida— y **jornada por jornada**. Se ve en el visor antes de descargarlo.
+El botón **Reporte** abre **Reporte de asistencia**: **Desde**, **Hasta** y, si se quiere, una sola persona. Sale con el membrete de la empresa, en dos tablas: **por persona** —días, horas, jornadas sin salida— y **jornada por jornada**. Se ve en el visor antes de descargarlo.
 
 <p class="regla"><strong>Una jornada sin salida cuenta como día presente pero no suma horas.</strong> Nadie sabe a qué hora se fue esa persona, y sumarle cero es mentir menos que inventarle ocho.</p>
 
@@ -7243,7 +7233,7 @@ El botón **Reporte**: un período y, si se quiere, una sola persona. Sale con e
 
 ### 23.9 Los visitantes
 
-**Existe desde el 24 de septiembre de 2026.** Gente de afuera que entra a la cantera —un chofer de otra empresa, un inspector, un cliente que viene a ver el material, un técnico— y que no está en la nómina ni tiene carnet. La tarjeta **Visitantes**, debajo de **Hoy**, es donde se les marca la entrada y la salida. Usa el mismo permiso del módulo: quien marca al personal marca visitantes; quien anula jornadas anula visitas.
+Gente de afuera que entra a la cantera —un chofer de otra empresa, un inspector, un cliente que viene a ver el material, un técnico— y que no está en la nómina ni tiene carnet. La tarjeta **Visitantes**, debajo de **Hoy**, es donde se les marca la entrada y la salida. Usa el mismo permiso del módulo: quien marca al personal marca visitantes; quien anula jornadas anula visitas.
 
 **El visitante se registra una vez; después solo se le marca.** Cada persona de afuera está una sola vez en la lista de **Conocidos**, con su nombre, cédula, empresa y teléfono. Cada vez que viene, se le busca y se le marca la entrada: sus datos no se vuelven a escribir. Y la visita sigue la misma idea que la jornada: una fila con la entrada y la salida juntas; sin salida, **sigue adentro**, y no se cierra sola.
 
