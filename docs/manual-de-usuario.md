@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 14, 15, 16, 19, 20, 21, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 19, 20, 21, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -6267,18 +6267,18 @@ Ni la administración, ni sistemas, ni la gerencia. Nadie necesita su clave para
 | --- | --- |
 | No puedo entrar, olvidé la clave, no tengo permisos | Administración |
 | La tasa del día está mal o no se ha cargado | Administración |
-| Un dato de un documento está equivocado | A tu supervisor, antes de tocar nada |
-| Una cifra no cuadra y no sé por qué | A tu supervisor |
-| El camión espera y falta un papel | A tu supervisor |
+| Un dato de un documento está equivocado | A su supervisor, antes de tocar nada |
+| Una cifra no cuadra y no sé por qué | A su supervisor |
+| El camión espera y falta un papel | A su supervisor |
 | El sistema muestra un error o se comporta raro | Sistemas |
 
-Cuando reportes un problema a sistemas, la información que sirve es siempre la misma:
+Al reportar un problema a sistemas, la información que sirve es siempre la misma:
 
-1. **En qué pantalla estabas.**
-2. **Qué botón pulsaste.**
+1. **En qué pantalla estaba.**
+2. **Qué botón pulsó.**
 3. **Qué decía exactamente el mensaje.**
 
-Una fotografía de la pantalla ahorra media hora de ida y vuelta. Si el mensaje trae un número de documento, cópialo tal cual.
+Una fotografía de la pantalla ahorra media hora de ida y vuelta. Si el mensaje trae un número de documento, cópielo tal cual.
 
 ---
 
@@ -7284,11 +7284,11 @@ El directorio general de la empresa: personas y empresas con las que se trata, c
 
 Arriba, los botones **Excel** y **vCard**, que sacan lo que se ve en pantalla o, si hay contactos marcados, solo esos; **Importar**, y **Nuevo contacto**.
 
-Debajo, el **buscador** y los filtros: tipo (personas o empresas), etiqueta, estado, región y quién lo atiende. Se combinan: «los proveedores de Puerto Ordaz que estén activos» es escribir «puerto ordaz» y marcar dos selectores. El estado empieza en **Activo**, para que lo inactivo y lo bloqueado no estorben; se cambia a **Cualquiera** cuando hace falta verlo.
+Debajo, el campo **Buscar** y cinco filtros: **Tipo** (personas o empresas), **Etiqueta**, **Estado**, **Región** y **Asignado a**. Se combinan: «los proveedores de Puerto Ordaz que estén activos» es escribir «puerto ordaz» y marcar dos selectores. El estado empieza en **Activo**, para que lo inactivo y lo bloqueado no estorben; se cambia a **Cualquiera** cuando hace falta verlo. Si no hay nada que mostrar, la pantalla distingue los dos casos: **El directorio está vacío** cuando no hay contactos, y **Sin resultados** cuando los filtros no encuentran ninguno.
 
-**El buscador entiende trozos y no le importan los acentos.** Busca en el nombre, la empresa, el cargo, los correos, los teléfonos con y sin formato, la ciudad, las etiquetas y la nota. Cada palabra que escribas tiene que estar: «perez 0414» encuentra a Pérez por su celular.
+**El buscador entiende trozos y no le importan los acentos.** Busca en el nombre, la empresa, el cargo, los correos, los teléfonos con y sin formato, la ciudad, las etiquetas y la nota. Cada palabra escrita tiene que estar: «perez 0414» encuentra a Pérez por su celular.
 
-La lista muestra, por contacto: nombre con su tratamiento y su documento; empresa y cargo; los **canales como enlaces**: el WhatsApp abre el chat, el celular y la oficina llaman, el correo abre el correo; dónde está; etiquetas; quién lo atiende; y el estado. Pulsar en la fila abre su ficha.
+La lista tiene siete columnas —**Contacto**, **Empresa · cargo**, **Canales**, **Dónde**, **Etiquetas**, **Atiende** y **Estado**—. El nombre va con su tratamiento y su documento, y los **canales son enlaces**: el WhatsApp abre el chat, el celular y la oficina llaman, el correo abre el correo. Pulsar en la fila abre su ficha.
 
 Si dos contactos comparten un correo o un teléfono, arriba aparece un aviso amarillo con cuántas parejas hay y el botón **Ver solo esos**; en la lista, cada uno lleva la marca **· repetido**. Puede ser la misma persona dos veces, o dos personas con el teléfono de la misma oficina: lo decide quien lo mira.
 
@@ -7298,20 +7298,20 @@ Si dos contactos comparten un correo o un teléfono, arriba aparece un aviso ama
 
 | Bloque | Qué lleva |
 | --- | --- |
-| **Quién es** | Si es persona o empresa. Persona: tratamiento, nombres, apellidos, cargo y su empresa, tomada del directorio o escrita a mano si no está. Empresa: razón social. En los dos, la cédula o el RIF, opcional, con la letra y los guiones |
+| **Quién es** | El **Tipo**: persona o empresa. Persona: **Tratamiento**, **Nombres**, **Apellidos**, **Cargo**, y la empresa en uno de dos campos — **Empresa registrada**, del directorio, o **Empresa no registrada**, escrita a mano—. Empresa: **Razón social**. El documento cambia de nombre con el tipo: **Cédula o RIF** para una persona, **RIF** para una empresa. Es opcional, con la letra y los guiones |
 | **Cómo se le habla** | Celular, WhatsApp, teléfono de oficina con extensión, correo y correo secundario. Debajo, los enlaces para llamar o abrir el chat |
 | **Dónde está** | Dirección, ciudad, estado (con la lista de estados de Venezuela como ayuda), código postal, país, y el enlace **Ver en el mapa**, que se arma con la dirección escrita. No hay mapa dentro del sistema |
 | **En la web** | Sitio web, LinkedIn, Instagram, Facebook |
-| **Cómo se clasifica** | Las **etiquetas**, que son botones y admiten varias (cliente, proveedor, prospecto, socio, contratista, ente público, competidor, otro); **de dónde vino**, texto libre con sugerencias; **quién lo atiende**, un usuario del sistema; y el **estado**, con su motivo cuando no es activo |
+| **Cómo se clasifica** | Las **etiquetas**, que son botones y admiten varias (cliente, proveedor, prospecto, socio, contratista, ente público, competidor, otro); **Origen**, de dónde vino, texto libre con sugerencias; **Asignado a**, un usuario del sistema; y el **Estado**, con su **Motivo** cuando no es activo |
 | **Es el contacto de…** | El cliente, el proveedor o el trabajador que ya existe en el sistema, para no tenerlo dos veces. Y la nota |
 
 **El control de repetidos lo hace la base.** Al guardar, si otro contacto ya tiene ese correo o ese teléfono, no se guarda y el aviso dice quién: **Ya existe «JOSE PEREZ» con el teléfono 4141234567.** El teléfono se compara por sus dígitos, sin el 58 ni el 0 de adelante, así que 0414-1234567, +58 414 1234567 y 4141234567 son el mismo; el correo, sin importar mayúsculas. Debajo del aviso aparece la casilla **Es otra persona: guardar igual**. Marcarla es decir que se miró; entonces pasa.
 
-**Bloquear, o quitar el bloqueo, pide control total.** Un contacto bloqueado sigue en el directorio, con su motivo, y sale con la etiqueta roja. **Eliminar**, también con control total, borra el contacto; queda en la auditoría quién lo hizo. Una empresa con personas enlazadas no se elimina hasta desenlazarlas. Si un contacto solo dejó de ser útil, márcalo inactivo en vez de borrarlo.
+**Bloquear, o quitar el bloqueo, pide control total.** Un contacto bloqueado sigue en el directorio, con su motivo, y sale con la etiqueta roja. **Eliminar**, también con control total, borra el contacto; queda en la auditoría quién lo hizo. Una empresa con personas enlazadas no se elimina hasta desenlazarlas. Si un contacto solo dejó de ser útil, márquelo inactivo en vez de borrarlo.
 
 ### 24.3 Importar y exportar
 
-**Importar** abre la carga en tres pasos, como la del control de despacho: bajar la plantilla, llenarla en Excel, subirla y revisar antes de guardar. La plantilla trae dos filas de ejemplo que se borran, y las columnas obligatorias en realce: TIPO y, según sea, NOMBRES o RAZON SOCIAL. El orden de las columnas da igual, se casan por su título; una que falte se deja vacía. Las etiquetas van separadas por coma, con el nombre que tienen aquí.
+**Importar** abre la ventana **Cargar contactos desde Excel**, en tres pasos como la del control de despacho: bajar la plantilla, llenarla en Excel, subirla y revisar antes de guardar. La plantilla trae dos filas de ejemplo que se borran, y las columnas obligatorias en realce: TIPO y, según sea, NOMBRES o RAZON SOCIAL. El orden de las columnas da igual, se casan por su título; una que falte se deja vacía. Las etiquetas van separadas por coma, con el nombre que tienen aquí.
 
 **Cargar crea contactos nuevos, nunca pisa los que ya están.** Cada fila pasa por las mismas reglas que la ficha, incluido el repetido: si la fila 12 trae el celular de alguien que ya está, o de la fila 3 del mismo archivo, no se guarda ninguna y el aviso dice **Fila 12: Ya existe «…»**. Lo que ya está se corrige en la pantalla, uno por uno, que es donde se ve el repetido.
 
