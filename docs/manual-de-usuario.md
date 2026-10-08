@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 14, 15, 16, 20, 21 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 14, 15, 16, 19, 20, 21 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -6439,29 +6439,45 @@ Asignaciones es de los pocos sitios del sistema que trabajan sin que nadie abra 
 
 ## 19. Maquinaria
 
-**Va al final por el mismo motivo que el 18**: meterlo en su sitio del menú correría diez números debajo de quien tiene el manual impreso.
+Es la flota: cada excavadora, cada cargador, cada planta y cada camión, con lo que lleva trabajado y **cuánto le falta para su próximo mantenimiento**. La pantalla lo resume: **Equipos y camiones: uso acumulado, margen hasta el próximo mantenimiento y capacidad de carga.**
 
-Es la flota: cada excavadora, cada cargador, cada camión y cada planta, con lo que lleva trabajado y **cuánto le falta para su próximo mantenimiento**. La pantalla lo resume así: *"Cada equipo, lo que lleva trabajado y cuánto le falta para su mantenimiento."*
+**La idea que hay que entender antes de nada es el horómetro.** Una máquina no se mantiene por calendario sino por horas de trabajo, y el sistema no las adivina: **alguien las anota**. De ahí sale todo lo demás: cuándo toca el taller, cuántos litros por hora consume, si vale lo que cuesta.
 
-**La idea que hay que entender antes de nada es el horómetro.** Una máquina no se mantiene por calendario sino por horas de trabajo, y el sistema no las adivina: **alguien las anota**. De ahí sale todo lo demás — cuándo toca el taller, cuántos litros por hora consume, si vale lo que cuesta.
+El menú **Maquinaria** tiene dos pantallas: **Equipos** e **Historial de taller**.
 
 ### 19.1 Quién entra y quién puede registrar
 
-Aquí **no hay dos puertas: hay una sola**, y es el permiso sobre Maquinaria. A diferencia de Inventario, los botones no cuelgan de ningún rol: si tienes escritura, escribes.
-
-| Rol | Sobre Maquinaria |
+| Qué | Lo decide |
 | --- | --- |
-| Administrador del sistema | **Control total** |
-| Almacén | **Escritura** |
-| Operaciones | **Escritura** |
-| Compras, Gerencia general, Consulta | Lectura |
-| Ventas, Recursos humanos, Solicitante, Respaldo | Ninguno |
+| Ver la flota, las fichas y el historial de taller | El módulo **Maquinaria** en la matriz de permisos (13.1) |
+| Registrar y editar máquinas, anotar el horómetro, meterlas y sacarlas del taller, cambiar su estado | **Maquinaria** en escritura |
+| Dar de alta y corregir un camión | **Maquinaria** o **Despachos** en escritura, o la casilla **Dar de alta y corregir un vehículo** |
+| Asignar o traspasar el chofer de un camión | **Maquinaria** o **Despachos** en escritura, o su casilla |
+| Poner la carga útil de un camión | La casilla **Poner la carga útil de un camión** |
+
+A quien solo tiene lectura, cada máquina le ofrece **Ver** en vez de **Editar**, y no le aparecen los botones que escriben.
 
 ### 19.2 Equipos
 
 **Operación › Maquinaria › Equipos**
 
-Tres filtros: **Buscar**, **Estado** y **Tipo**. Arriba, dos cuentas que son las que importan: cuántas máquinas **bloquean** y cuántas tienen algo **pendiente**.
+Arriba, los botones **Historial de taller**, **Nueva máquina** —para excavadoras, cargadores, plantas, generadores y vehículos livianos, lo que lleva horómetro y taller— y **Nuevo camión** (19.7).
+
+Si alguna máquina pasó su tope de horas, lo primero de la pantalla es el aviso de cuántas son.
+
+#### Cómo se mira la flota
+
+Debajo, tres mandos:
+
+- **De quién**, si hay más de un dueño: **Todas** o cada empresa propietaria. Cambia lo que dicen las cifras, no solo la lista.
+- **De qué clase**, si hay más de una: **Todo**, **Maquinaria** —lo que trabaja en la mina—, **Vehículo liviano** —lo que lleva gente y encargos; los camiones de carga van aparte— y **Equipo** —una planta, un generador—.
+- **Cómo verla**: **Fichas** (cada equipo con su detalle y sus botones), **Lista** (una línea por máquina) o **Patio** (solo el código y cómo está, todo en una pantalla). No filtra nada: cambia cómo se mira lo mismo.
+
+Después, una tarjeta por estado con cuántas máquinas hay en cada uno; pulsar una filtra la lista por ese estado. La de las activas avisa, si las hay, de cuántas pasaron su tope o cuántas hay que atender.
+
+Y la barra de búsqueda: **Buscar** —por código, nombre, marca, serial, placa o transportista— y **Tipo**, si hay más de uno. Si hay máquinas que atender, el atajo **Ver solo las N que hay que atender** las deja solas; **Quitar los filtros** vuelve a todo. Al lado, la cuenta: cuántas máquinas se ven de cuántas, y cuántos camiones.
+
+Sin máquinas registradas: **Sin máquinas registradas**, con **Cargar la primera**. Si la búsqueda no encuentra nada: **Sin resultados**. **Las máquinas desincorporadas solo se muestran al filtrar por ese estado.**
 
 #### El semáforo de mantenimiento
 
@@ -6469,79 +6485,150 @@ Es lo primero que se mira, y ordena la lista: lo peor arriba.
 
 | Semáforo | Qué significa |
 | --- | --- |
-| **(sin marca)** | Dentro de su intervalo de mantenimiento |
-| **Programar**, en ámbar | Pasó el primer umbral. Conviene programarlo |
+| **Dentro del intervalo** | Casi no se ve: lo normal no debe llamar la atención |
+| **Aviso**, en ámbar | Pasó el primer umbral. Hay que ir pensando en programarlo |
 | **Alarma**, en naranja | Quedan pocas horas para el tope |
-| **Pasó el tope**, en rojo y titilando | **No debería estar trabajando** |
+| **Tope superado**, en rojo y titilando | **No debería estar trabajando** |
 
 **El rojo titila a propósito.** Una máquina que se pasó del tope sigue arrancando —el sistema no apaga motores— pero cada hora que trabaja así se paga después, y más cara.
 
 #### El estado
 
-Es otra cosa distinta del semáforo: el semáforo dice **si le toca taller**, el estado dice **dónde está**.
+Es otra cosa distinta del semáforo: el semáforo dice **si le toca taller**; el estado dice **dónde está**.
 
 | Estado | Qué significa |
 | --- | --- |
 | **Activa** | Trabajando o asignada a un frente |
 | **En espera** | Sana y disponible, sin asignar |
-| **En el taller** | Dentro, con una orden abierta |
-| **Fuera de servicio** | Averiada o parada sin fecha. **No se puede mandar a trabajar** |
+| **En el taller** | Dentro, con una orden abierta. Lo pone solo el taller (19.5) |
+| **Fuera de servicio** | Averiada o parada sin fecha. No se puede mandar a trabajar |
 | **Desincorporada** | Ya no es de la flota. Se conserva por su historial |
 
 **Una máquina no se borra: se desincorpora.** Su historial —lo que consumió, lo que costó tenerla— es justamente lo que sirve para decidir sobre la siguiente.
 
-Al cambiar el estado hay que decir **Por qué**, y esa razón *"queda en la ficha de la máquina y se avisa a operaciones"*.
+**Cambiar estado** abre **Estado de** y la máquina: **Estado actual: … «Fuera de servicio» si se dañó; «desincorporada» si ya no es de la empresa.** Para fuera de servicio o desincorporada hay que escribir el **Motivo**, que **queda en la ficha de la máquina y se avisa a operaciones.** Una máquina en el taller no cambia de estado a mano: sale cerrando su mantenimiento.
 
-Los tipos son ocho: **Excavadora**, **Cargador**, **Camión**, **Planta**, **Perforadora**, **Vehículo**, **Generador** y **Otro**.
+#### Los botones de cada máquina
 
-> **Ojo con esta confusión, que ya ha costado tiempo.** El tipo de una **máquina** —excavadora, cargador, planta— **no es** el tipo de un **vehículo** de Despachos —volteo, chuto, gandola—. Son dos catálogos distintos para dos cosas distintas: uno describe qué hace el equipo, el otro qué carga el camión. Un camión de la flota puede estar en los dos, atado por su ficha (8.6).
+En la vista de fichas, cada máquina lleva su semáforo, su estado, el operador, cuántas horas lleva desde el último mantenimiento y la fecha de la última lectura, y los botones **Horómetro**, **Meter al taller** —o **Sacar del taller**, si está dentro—, **Cambiar estado** y **Editar**.
 
 ### 19.3 Anotar el horómetro
 
 **Es la tarea diaria del módulo, y de ella depende todo lo demás.**
 
-La ventana lo dice sin rodeos: *"Copie las dos lecturas del horómetro."* Se pide la **Fecha**, la lectura **Inicial** y la **Final**.
+**Horómetro** abre la ventana de esa máquina: **Copie las dos lecturas del horómetro.** Se piden la **Fecha**, la lectura **Inicial** y la **Final**, y debajo se lee cuánto trabajó: **Trabajó 8 horas ese día.** Si ese día ya tiene lectura, el botón dice **Corregir la lectura**.
 
-**No se anota la diferencia, se anotan las dos lecturas.** Es deliberado: quien copia dos números del tablero se equivoca menos que quien hace una resta de cabeza en el patio, y si algo no cuadra, las dos lecturas dejan ver dónde.
+**No se anota la diferencia, se anotan las dos lecturas.** Quien copia dos números del tablero se equivoca menos que quien hace una resta de cabeza en el patio, y si algo no cuadra, las dos lecturas dejan ver dónde.
+
+**Un horómetro no retrocede.** La lectura de un día no puede arrancar por debajo de donde terminó la del día anterior, y el sistema lo dice con los dos números. Si a la máquina le cambiaron el reloj, eso no se anota aquí: se corrige la ficha. Con la máquina en el taller, el botón está apagado.
 
 ### 19.4 La ficha de una máquina
 
-Se llega pulsando su fila. Tiene cinco bloques:
+Se llega con **Editar** —o **Ver**—, y **Nueva máquina** abre la misma ficha en blanco: **El código la identifica en todo el sistema.**
 
 | Bloque | Qué guarda |
 | --- | --- |
-| **Foto** | *"Para reconocerla de un vistazo."* |
-| **Cuál es** | *"El código es con el que se la nombra en el patio y en todos los papeles."* |
-| **Qué combustible quema** | *"El vale de combustible comprueba el tipo y la capacidad."* |
-| **Cuándo avisar** | Los tres umbrales, en horas desde el último mantenimiento |
-| **Su historia** | Combustible, horas trabajadas, pasos por el taller, repuestos y cambios de estado |
+| **Fotos del equipo** | **Estado en que se recibió.** Para registrar una máquina hacen falta **al menos dos fotos**: el día que se discuta un golpe, vale lo que se fotografió al recibirla |
+| **Identificación** | **El código es con el que se la nombra en el patio y en todos los papeles.** Código, nombre, clase, tipo, dueño, estado, marca, modelo, serial, año, el **Operador** —quien responde por ella— y el **Almacén** donde se guarda, si tiene sitio fijo |
+| **Combustible** | **El vale de combustible comprueba el tipo y la capacidad.** Qué combustible quema y la capacidad del tanque |
+| **Umbrales de mantenimiento** | **Aviso**, **Alarma** y **Tope**, en horas desde el último mantenimiento, y la **Duración estimada del mantenimiento (días)** |
+| **Observaciones** | Datos de la máquina que no tienen campo propio |
+| **Modificaciones** | **Lo que se le añadió después de recibirla.** Ver abajo |
+| **Historial** | Combustible, horas trabajadas, pasos por el taller, repuestos, modificaciones y cambios de estado, de lo más reciente a lo más viejo |
 
-**Los tres umbrales van en orden: primero el aviso, después la alarma, y el tope al final.** Son los que encienden el semáforo de 19.2, y **si no se llenan, la máquina nunca avisa de nada**: se queda en blanco para siempre, que parece estar bien y no lo está.
+Los tipos de máquina son **Excavadora**, **Cargador**, **Camión**, **Planta**, **Perforadora**, **Vehículo**, **Generador** y **Otro**. El estado de una máquina nueva se elige al registrarla, y después **se cambia desde la ficha, explicando por qué**.
 
-**El bloque del combustible no es informativo, es un candado.** Con él puesto, el vale de combustible (20.3) se niega a echarle gasoil a una máquina de gasolina y a pasarse de lo que le cabe el tanque. Sin él, acepta cualquier cosa.
+**Los tres umbrales van en orden: primero el aviso, después la alarma, y el tope al final.** Son los que encienden el semáforo, y **si no se llenan, la máquina nunca avisa de nada**: se queda en blanco para siempre, que parece estar bien y no lo está.
+
+**El bloque del combustible no es informativo, es un candado.** Con él puesto, el vale de combustible (20.3) no ofrece la máquina para otro combustible y no deja pasar de lo que le cabe el tanque. Sin él, no se comprueba nada.
+
+**Dos fichas no pueden tener el mismo serial**: serían dos fichas de la misma máquina, y las horas y el combustible se repartirían entre las dos.
+
+#### Las modificaciones
+
+Lo que se le monta a una máquina después de recibirla —un equipo, una pieza— se registra con **Nueva modificación**: **Queda en su ficha y en su historia, con la fecha.** Se dice el **Artículo** del catálogo —o se escribe, si no está—, el **Origen** —si sale de un almacén, **Se descuenta de ese almacén al guardar: deja de estar disponible.**—, **Qué se le montó**, el **Motivo**, **Quién lo hizo**, el **Serial del equipo** montado, la **Cantidad**, la **Fecha** y, como referencia, el **Costo (USD)**, que **no entra en el valor del inventario**.
+
+Quitarla abre **Quitar** y su nombre: **No se borra: queda en la historia con la fecha en que se quitó.** Se dice el motivo y su **Destino**: si vuelve a un almacén, **vuelve a contarse ahí, al mismo costo con el que salió**; si se gastó o se fue, no vuelve a ningún estante.
 
 ### 19.5 Mandarla al taller
 
-Desde su ficha. La ventana abre recordando en qué situación está: *"Lleva 412 horas desde el último mantenimiento, sobre un tope de 500."*
+**Meter al taller** abre la ventana con el nombre de la máquina y su situación: **Lleva 412 horas desde el último mantenimiento, sobre un tope de 500.** Primero se elige qué clase de trabajo es, porque cambia lo que pasa al salir:
+
+| Trabajo | Ejemplo | Al salir |
+| --- | --- | --- |
+| **Mantenimiento** | Le tocaba: motor, correas, filtros, cambio de aceite | **Al salir, el contador de horas vuelve a cero** |
+| **Reparación** | Se dañó algo y hay que arreglarlo | No toca el contador: sigue debiendo su mantenimiento |
+| **Servicio** | Engrase, combustible, revisión rápida | No toca el contador |
 
 | Campo | Detalle |
 | --- | --- |
-| **Por qué entra** | *"Lo que se sabe ahora. Qué se le hizo se anota al sacarla."* |
-| **Entra el** | La fecha |
-| **Taller** | *"Los repuestos salen de aquí."* Es un almacén de tipo Taller (7.11) |
+| **Motivo** | **Lo que se sabe ahora. El trabajo realizado se anota al sacarla.** |
+| **Fecha** | |
+| **Taller** | **Los repuestos salen de aquí.** Es un almacén de tipo Taller (7.11). O **Sin taller / externo** |
 | **Días estimados** | Contra los que se mide el retraso |
-| **Urgencia** | **Normal** *(entra en la cola cuando toque)*, **Alta** *(antes que lo normal, sin parar lo demás)* o **Urgente** *(la máquina no trabaja hasta que salga)* |
-| **Qué hace falta** | El oficio. Si el taller declaró los suyos y este no está, no lo acepta (7.5) |
+| **Urgencia** | **Normal** (entra en la cola cuando toque), **Alta** (antes que lo normal, sin parar lo demás) o **Urgente** (la máquina no trabaja hasta que salga) |
+| **Especialidad** | El oficio. **Si el taller declaró sus oficios y este no está, no lo acepta** (7.5) |
 
-**El taller que se elige es de dónde salen los repuestos**, así que la orden descuenta del inventario de ese taller y no de otro. Elegir el taller equivocado no rompe nada, pero deja el repuesto descontado del almacén que no era.
+Se guarda con **Meterla al taller**. Mientras esté dentro, queda **En el taller** y su estado no se cambia a mano.
+
+**Sacar del taller** abre la salida: el **Trabajo realizado**, la **Fecha de salida**, la **Mano de obra (USD)** —los repuestos se suman aparte, a su costo promedio—, los **Repuestos** que se usaron, cada uno con su cantidad, y el **Estado de salida**: **En espera** (lista, sin asignar todavía), **Activa** (vuelve al frente hoy mismo) o **Fuera de servicio** (salió sin quedar operativa). Se guarda con **Sacarla del taller**. Si la orden se abrió por error, **Anular la orden** la cierra sin trabajo.
+
+**El taller que se elige es de dónde salen los repuestos**, así que la orden descuenta del inventario de ese taller y no de otro. Sin taller no se descuentan repuestos.
 
 ### 19.6 Historial de taller
 
 **Operación › Maquinaria › Historial de taller**
 
-*"Qué ha entrado, cuánto tardó, qué se le hizo y qué costó. Las órdenes abiertas son máquinas paradas ahora mismo."*
+**Órdenes de mantenimiento: ingreso, duración, trabajo realizado y costo. Las órdenes abiertas corresponden a máquinas paradas.**
 
-Esa última frase es la razón de que esta pantalla exista aparte: **una orden abierta no es un registro, es una máquina que no está trabajando.** Filtra por **Buscar** y por **Estado**.
+Esa última frase es la razón de que esta pantalla exista aparte: **una orden abierta no es un registro, es una máquina que no está trabajando.** Filtra por **Buscar** y por **Estado**. Cada orden dice la máquina, la clase de trabajo, cuándo entró y salió —y si tardó más de lo estimado—, el horómetro, los repuestos con su costo y el motivo. Sin órdenes: **Sin órdenes de mantenimiento**.
+
+### 19.7 Los camiones
+
+Los camiones de carga van en su propio bloque, **Camiones**, debajo de la flota, en dos grupos: **Flota propia** —**Llevan horómetro y mantenimiento. El semáforo viene de su ficha de máquina.**— y **Transportistas** —**Sin mantenimiento: no son de la empresa. Agrupados por empresa propietaria.**—. Los que están fuera de servicio se esconden; **Ver los fuera de servicio** los trae.
+
+**Nuevo camión**, o **Editar** en uno, abre la ventana del camión: **Se guarda en mayúsculas y sin espacios.**
+
+| Campo | Detalle |
+| --- | --- |
+| **Placa** | |
+| **Tipo** | **Camión de volteo**, **Chuto con volqueta**, **Gandola**, **Cava**, **Cisterna** u **Otro** |
+| **Descripción** | |
+| **Empresa** | De quién es. Si no está registrada, **Otra empresa…** y su nombre |
+| **Ficha de máquina** | Si es propio. **Enlazarlo hace que el semáforo de mantenimiento se vea aquí y al momento de despachar.** |
+| **Metros cúbicos** y **Toneladas** | La capacidad |
+| **Carga útil en m³** | **Metros cúbicos por viaje, medidos por paladas. No supera la capacidad. Sin ella, los viajes no suman metros cúbicos.** Pide su casilla |
+| **Nota** | |
+
+Un camión sin carga útil lo dice en su tarjeta: **Sin carga útil: sus viajes no suman m³**.
+
+**La ficha del camión** se abre desde su tarjeta. Tiene el **Chofer** —quién lo maneja ahora y **Antes lo manejaron**—, la **Actividad** —**Pesajes, despachos, guías, choferes y —si es propio— también su combustible, sus horas y sus pasos por el taller.**—, **La ficha** con sus datos y, si es propio, el **Mantenimiento** de su ficha de máquina.
+
+**El chofer se asigna o se traspasa** desde ahí: **Asignar chofer a** la placa, o **Traspasar**, si ya tiene uno. El chofer puede ser **De la casa** —está en nómina, y su cédula y su cargo salen de ella— o **Del transportista**, con su nombre y su cédula. Se dice **Desde** cuándo y el **Motivo**. Al traspasar, el período del chofer anterior se cierra el día antes de la fecha nueva.
+
+> **Ojo con esta confusión, que ya ha costado tiempo.** El tipo de una **máquina** —excavadora, cargador, planta— **no es** el tipo de un **camión** —volteo, chuto, gandola—. Uno describe qué hace el equipo; el otro, qué carga. Un camión propio puede estar en los dos sitios, atado por su ficha de máquina.
+
+### 19.8 Cuando el sistema no le deja
+
+| Lo que ve | Qué significa | Qué hacer |
+| --- | --- | --- |
+| «Su usuario no tiene acceso a ….» | Su permiso sobre Maquinaria no llega a escritura | Pídalo a la administración, o que lo haga quien lo tenga |
+| «Hacen falta al menos dos fotos de la maquina para registrarla.» | Se quiso registrar una máquina con menos de dos fotos | Añada las fotos de los dos lados |
+| «Ya existe una máquina con el código ….» | Ese código ya es de otra máquina | Use otro código |
+| «Ese serial ya lo tiene la maquina ….» | Dos fichas con el mismo serial serían la misma máquina | Búsquela: ya está registrada |
+| «El aviso (…) tiene que ir antes que la alarma (…), y la alarma antes que el tope (…).» | Los umbrales están desordenados | Póngalos en orden: aviso, alarma, tope |
+| «El horómetro no retrocede: el final (…) no puede ser menor que el inicial (…).» | La lectura final quedó por debajo de la inicial | Revise las dos casillas |
+| «El horómetro no retrocede. La lectura del … terminó en …, así que la del … no puede arrancar en ….» | La lectura arranca por debajo de donde terminó la anterior | Copie bien el tablero. Si le cambiaron el reloj, eso se corrige en la ficha |
+| «No se anota una jornada que todavía no ocurrió.» | La fecha es de mañana o después | Corrija la fecha |
+| «La máquina "CAT-01" está en el taller. Se saca cerrando su mantenimiento.» | Se quiso cambiar el estado de una máquina que está dentro | Use **Sacar del taller** |
+| «Para meter una máquina al taller hay que abrir su mantenimiento, no cambiarle el estado.» | Se buscó el estado «en el taller» a mano | Use **Meter al taller** |
+| «La máquina "CAT-01" ya está en el taller.» | Ya tiene una orden abierta | Sáquela primero, o siga con esa orden |
+| «La máquina "CAT-01" está desincorporada: ya no es de la flota.» | No se manda al taller una máquina desincorporada | Si vuelve a la flota, cámbiele el estado primero |
+| «Hay que decir por qué entra al taller.» | Falta el motivo | Escriba lo que se sabe ahora |
+| «En "…" no se hace ….» | Ese taller no hace esa especialidad | Mire en **Talleres** cuál la hace, o añádale esa especialidad (7.5) |
+| «Hay que decir qué se hizo.» | Al sacarla falta el trabajo realizado | Escríbalo |
+| «El taller solo tiene … de "…": no alcanza para ….» | Se anotaron más repuestos de los que hay en ese taller | Revise la cantidad, o registre la entrada del repuesto en ese taller |
+| «Al salir del taller una máquina queda en espera, activa o fuera de servicio.» | Falta el estado de salida | Elija uno |
 
 ---
 
