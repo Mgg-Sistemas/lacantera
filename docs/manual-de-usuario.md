@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 14, 15, 16, 19, 20, 21 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 14, 15, 16, 19, 20, 21, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -7326,7 +7326,7 @@ No envía correos ni mensajes: abre el canal y ahí termina. No lleva historial 
 
 **Administración › Alimentación**
 
-**Existe desde el 5 de octubre de 2026**, traído del sistema MGG a los rieles de esta casa. Registra cada comida servida al personal —desayuno, almuerzo o cena— con cuántas personas comieron y qué víveres se gastaron. **Los víveres se descuentan del inventario al servir**, al costo promedio que tengan en ese momento, y de ahí sale el número que justifica el módulo: **el costo por plato**.
+Registra cada comida servida al personal —desayuno, almuerzo o cena— con cuántas personas comieron y qué víveres se gastaron. **Los víveres se descuentan del inventario al servir**, al costo promedio que tengan en ese momento, y de ahí sale el número que justifica el módulo: **el costo por plato**.
 
 **Quién entra.** Nace con el permiso cerrado para todos menos administración; se reparte en Configuración › Usuarios, fila **Alimentación**. **Lectura** ve las comidas y el costo; **escritura** sirve comidas y anula las de hoy; **control total** anula las de cualquier día.
 
@@ -7336,29 +7336,29 @@ Un víver es un artículo de la categoría **Víveres**, con códigos VIV-0001 e
 
 ### 25.2 Servir una comida
 
-Desde la pantalla, el botón **Servir comida**: qué comida fue, cuántos comieron, de qué almacén salió, y la lista de víveres con sus cantidades. La pantalla estima el costo con el promedio actual; **la cifra final la pone el sistema** al guardar, y queda congelada: el plato de ayer no cambia de precio con la compra de mañana.
+Desde la pantalla, el botón **Servir comida** abre la ventana **Servir una comida**: se elige **Desayuno**, **Almuerzo** o **Cena**, y después **Platos** —cuántos comieron—, **Almacén**, **Fecha**, y la lista de víveres con su **Víver** y su **Cantidad**. Hay además una **Nota**, por si la comida necesita explicarse. La pantalla estima el costo con el promedio actual; **la cifra final la pone el sistema** al guardar, y queda congelada: el plato de ayer no cambia de precio con la compra de mañana.
 
 El sistema no deja servir con fecha futura, ni con un víver repetido en la lista, ni más cantidad de la que hay en el almacén. Cada comida queda con su número — **COM-2026-0001** en adelante — y sus consumos se ven también en el libro de inventario, uno por víver, con el número de la comida en la nota.
 
 ### 25.3 La cocina en el teléfono
 
-La vista para quien cocina, con el mismo molde del surtidor de combustible (20.4): se abre desde el botón **Vista de teléfono**, toca 🍳, 🍽️ o 🌙, pone cuántos comieron, escribe las cantidades al lado de cada víver y guarda. Si la señal está mala y el guardado tarda más de doce segundos, el aviso dice que **ya se está guardando y no hay que cargarla otra vez**. Al guardar, el acuse dice el costo por plato y se puede **pasar por WhatsApp**.
+La vista para quien cocina, con el mismo molde del surtidor de combustible (20.4): se abre desde el botón **Vista de teléfono**, se toca 🍳, 🍽️ o 🌙 —desayuno, almuerzo o cena—, se ponen los **Platos**, se elige el **Almacén** y se escriben las cantidades al lado de cada víver. El buscador de arriba filtra la lista cuando el catálogo es largo. Si la señal está mala y el guardado tarda más de doce segundos, el aviso dice que **ya se está guardando y no hay que cargarla otra vez**. Al guardar, el acuse dice el costo por plato y se puede **pasar por WhatsApp**.
 
 **Quién entra directo.** En Configuración › Usuarios, entre los permisos extendidos de Alimentación, está la casilla **Entrar directo a la cocina del teléfono**: quien la tiene abre el sistema y aparece ya en esa pantalla. No da permiso de nada por sí sola, y nadie la tiene de entrada. Si una misma persona tuviera también la del surtidor, aterriza en el surtidor.
 
 ### 25.4 Anular
 
-Una comida no se edita ni se borra: **se anula con motivo**, y los víveres vuelven al inventario con un reverso que queda a la vista. Quien tiene escritura puede anular **la del mismo día** —el error se corrige donde se cometió—; anular una de otro día cambia costos que alguien pudo haber mirado, y por eso pide control total.
+Una comida no se edita ni se borra: **se anula con motivo**, y los víveres vuelven al inventario con un reverso que queda a la vista. Quien tiene escritura puede anular **la del mismo día** —el error se corrige donde se cometió—; anular una de otro día cambia costos que alguien pudo haber mirado, y por eso pide control total. **La ventana lo avisa antes de pulsar**: «No es de hoy: requiere control total.»
 
 ### 25.5 Pedir el mercado
 
-El botón **Pedir el mercado** arma la lista de compra de la cocina sin teclearla: aparecen **todos los víveres del catálogo, ya marcados**, con la cantidad de la última solicitud de mercado como sugerencia y, al lado de cada uno, cuánto hay en existencia. El trabajo es quitar lo que no hace falta y ajustar números. Si falta algo que no es víver —la escoba, el jabón— se agrega **cualquier artículo del catálogo** con el buscador; y lo que no existe todavía se escribe como **texto libre**, para que la oficina decida al cotizar.
+El botón **Pedir el mercado** arma la lista de compra de la cocina sin teclearla: aparecen **todos los víveres del catálogo, ya marcados**, con la cantidad de la última solicitud de mercado como sugerencia y, al lado de cada uno, cuánto hay en existencia. El trabajo es quitar lo que no hace falta y ajustar números. Si falta algo que no es víver —la escoba, el jabón— se agrega **cualquier artículo del catálogo** con el campo **Artículo**; y lo que no existe todavía se escribe en **Descripción**, como texto libre, para que la oficina decida al cotizar. Abajo están el **Destino** y una **Nota para la oficina**.
 
-Lo que sale de ahí **no es un papel aparte: es un pedido de compras de verdad** — número SOL, prioridad urgente, título «Reposición del mercado» — que entra al tablero de Compras y sigue el circuito de siempre: cotizar, aprobar, pagar y recibir. La recepción en el almacén elegido es la entrada de inventario que repone los víveres. Para pedirlo basta la **escritura en Alimentación**: no hace falta el permiso de Compras, porque del pedido en adelante todo lo decide la oficina.
+Lo que sale de ahí **no es un papel aparte: es un pedido de compras de verdad** — número SOL, prioridad urgente, título «Reposición del mercado» — que entra al tablero de Compras y sigue el circuito de siempre: cotizar, aprobar, pagar y recibir. La recepción es la entrada de inventario que repone los víveres. **El Destino puede quedar sin elegir** —dice «Se decide al recibir»—, y entonces el almacén se escoge al recibir el material. Para pedirlo basta la **escritura en Alimentación**: no hace falta el permiso de Compras, porque del pedido en adelante todo lo decide la oficina.
 
 ### 25.6 Lo que este módulo no hace
 
-No asocia la comida a un trabajador concreto: cuenta platos, no nombres — igual que MGG. No lleva menú ni recetas. Y su analítica de ciclos de mercado —inventario teórico contra conteo, merma, ración por persona— no se trajo todavía: se decidirá con un mes de comidas registradas delante.
+No asocia la comida a un trabajador concreto: cuenta platos, no nombres. No lleva menú ni recetas. Y su analítica de ciclos de mercado —inventario teórico contra conteo, merma, ración por persona— no se trajo todavía: se decidirá con un mes de comidas registradas delante.
 
 ---
 
