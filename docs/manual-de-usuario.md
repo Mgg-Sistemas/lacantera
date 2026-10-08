@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 14, 15, 20, 21 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 14, 15, 16, 20, 21 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -6188,79 +6188,76 @@ Se dice para que nadie lo lea como verificado:
 ## 16. Preguntas frecuentes
 
 **¿Puedo usar el sistema desde mi teléfono?**
-Sí. Solo necesitas navegador e internet, con el mismo usuario y la misma clave. No hay aplicación que instalar. El teléfono está pensado para el trabajo de patio; las tareas de oficina, como procesar la nómina o aprobar compras, se hacen más cómodas en la computadora.
+Sí. Solo hace falta un navegador e internet, con el mismo usuario y la misma clave. No hay aplicación que instalar. El teléfono está pensado para el trabajo de patio —el surtidor de combustible tiene su propia vista de teléfono (20.4)—; las tareas de oficina, como procesar la nómina o aprobar compras, son más cómodas en la computadora.
 
 **Se me fue el internet mientras registraba algo. ¿Se perdió?**
-Si no llegaste a guardar, sí. El sistema necesita conexión para guardar y no trabaja sin señal. Vuelve a registrarlo cuando vuelva el internet.
+Si no llegó a guardarse, sí. El sistema necesita conexión para guardar y no trabaja sin señal. Vuelva a registrarlo cuando vuelva el internet.
 
 **Busco un módulo en el menú y no está. ¿Se borró?**
-No. Cada persona ve solo los módulos sobre los que tiene permiso (3.1), y además hay unas pocas pantallas escondidas para todo el mundo: hoy, **Despachos** entero y, de Explotación, **Frentes y bancos**, **Voladuras** y **Producción por turno**. El apartado 1.5 trae la lista entera del menú y explica lo escondido.
-
-**Antes no estaba Tesorería y ahora sí.**
-Volvió al menú el 21 de septiembre de 2026, entera: **Tablero**, **Bancos y cajas**, **Reportes**, **Libro Mayor** y **Libro de tesorería**. **Pagos por hacer** se sigue ofreciendo desde **Compras**. El capítulo 12 la cuenta.
+No. Cada persona ve solo los módulos sobre los que tiene permiso (3.1), y además hay unas pocas pantallas que no están en el menú para nadie. El apartado 1.5 trae la lista entera del menú y dice cuáles son esas.
 
 **Escribí la dirección de una pantalla y me salió «En construcción».**
-Es lo previsto: esa pantalla existe, pero hoy está escondida del menú, y lo que se haga ahí puede perderse o no cuadrar con el resto. No es un problema de permisos: pedir el permiso no lo cambia.
+Es lo previsto: esa pantalla existe, pero no está en el menú, y lo que se haga ahí puede perderse o no cuadrar con el resto. No es un problema de permisos: pedir el permiso no lo cambia.
 
 **¿Por qué no veo el mismo menú que mi compañero?**
-Porque tienen permisos distintos. Cada quien ve solo los módulos que necesita para su trabajo. No es una falla.
+Porque tienen permisos distintos. Cada quien ve los módulos que necesita para su trabajo. No es una falla.
 
 **¿Cómo llego rápido a una pantalla sin recorrer el menú?**
 Con **Ctrl+K**, en cualquier momento. Encuentra pantallas y también documentos: el número de una orden de compra, el RIF de un proveedor, la cédula de un trabajador, la placa de un camión. Y entiende cómo habla la gente: «convertir» lleva a la calculadora de tasas, «stock» a Existencias, «gasoil» a Combustible.
 
 **Entré y no veo ningún módulo.**
-Tu usuario existe pero todavía no tiene permisos asignados. Pídeselos a administración.
+Su usuario existe, pero todavía no tiene permisos asignados. Pídaselos a la administración.
 
-**Veo la pantalla pero no me aparece ningún botón para registrar.**
-Tu permiso sobre ese módulo es de consulta. Ver y registrar son dos permisos distintos.
+**Veo la pantalla, pero no me aparece ningún botón para registrar.**
+Su permiso sobre ese módulo es de consulta. Ver y registrar son dos permisos distintos.
 
-**Quiero cargar la producción del turno y no encuentro dónde.**
-Está en **Operación › Explotación › Producción por turno**. Es la única puerta por la que entra material al patio.
+**Me aparece un botón, lo pulso y el sistema me dice que no tengo permiso.**
+Pasa: algunas pantallas enseñan un botón que la base después rechaza. El mensaje dice qué falta —un rol, una casilla o un nivel— y eso es lo que se pide a la administración.
 
 **¿Los precios se escriben con punto o con coma?**
-Con lo que tengas a mano: **el sistema entiende las dos**. Escribas «3,20» o «3.20», guarda tres con veinte. Se hizo así porque en Venezuela el decimal es la coma y el teclado del teléfono ofrece coma, pero antes el campo no la admitía: la gente escribía «320» sin darse cuenta, y en un precio unitario eso no se nota hasta el total.
+Con lo que tenga a mano: **el sistema entiende las dos**. Escriba «3,20» o «3.20», guarda tres con veinte. En Venezuela el decimal es la coma, y el teclado del teléfono la ofrece.
 
 **Pegué «1.500,25» copiado de una factura y salió bien. ¿Y «1.500» a secas?**
-Cuando hay dos separadores, el decimal es el último y el otro es de millar: «1.500,25» son mil quinientos con veinticinco, como esperabas. Pero **«1.500» a secas el sistema lo lee como uno y medio**, porque es lo que dice tal cual, y no hay forma de acertar siempre. **Si quieres mil quinientos, escríbelo sin punto: 1500.**
+Cuando hay dos separadores, el decimal es el último y el otro es de millar: «1.500,25» son mil quinientos con veinticinco. Pero **«1.500» a secas el sistema lo lee como uno y medio**, porque con un solo separador manda el decimal, y no hay forma de acertar siempre. **Para mil quinientos, escríbalo sin punto: 1500.**
 
 **En un campo de número no me deja escribir letras.**
 Es a propósito. Esos campos aceptan cifras, un solo separador decimal y el signo menos delante, y nada más.
 
 **Se perdió el carnet de un trabajador. ¿Qué hago?**
-Entra en su ficha, tarjeta del carnet, y pulsa **Se perdió**. Sale uno nuevo con un código nuevo, y **el anterior queda anulado**: si alguien lo encuentra y lo escanea, la página dirá que no vale. Si el carnet no se perdió y solo hace falta otra copia impresa, usa **Imprimir el carnet**, que no anula nada.
+Entre en su ficha, tarjeta del carnet, y pulse **Se perdió: anular y emitir otro**. Sale uno nuevo con un código nuevo, y **el anterior queda anulado**: si alguien lo encuentra y lo escanea, la página dirá que no vale. Si el carnet no se perdió y solo hace falta otra copia impresa, use **Imprimir el carnet**, que no anula nada.
 
 **¿Puedo mandar a la imprenta un solo reverso para todos los carnets?**
-**No.** Antes sí —el reverso era igual para todos— pero desde que lleva QR cada uno es distinto: el código del reverso es el que identifica a esa persona. Un reverso repetido haría que todos los carnets apuntaran al mismo trabajador.
+**No.** El reverso lleva el código QR que identifica a esa persona, así que cada uno es distinto. Un reverso repetido haría que todos los carnets apuntaran al mismo trabajador.
 
 **Un dato está mal. ¿Lo corrijo?**
-Depende de qué sea. Los catálogos —clientes, proveedores, almacenes— se corrigen normalmente. Los movimientos y los documentos ya aprobados no se editan: se corrigen con un documento nuevo que explica la corrección. Si no tienes claro cuál es el caso, pregunta antes de tocar nada.
+Depende de qué sea. Los catálogos —clientes, proveedores, almacenes— se corrigen normalmente. Los movimientos y los documentos ya emitidos no se editan: se corrigen con un documento nuevo que explica la corrección (14.1). Si no tiene claro cuál es el caso, pregunte antes de tocar nada.
 
 **Me equivoqué al crear un artículo. ¿Lo borro?**
-Ahora sí se puede corregir, con el lápiz del catálogo, y todo menos el código. Y se puede borrar **solo mientras nada lo haya tocado**: en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo. Aun así, conviene revisar el nombre y la unidad antes de guardar.
+Se corrige con el lápiz del catálogo. Y se puede borrar **solo mientras nada lo haya tocado**: en cuanto aparece en un documento o en un movimiento, el sistema responde «Este artículo ya se usó en documentos o movimientos, así que borrarlo dejaría esa historia sin sentido. Desactívelo: deja de ofrecerse en los formularios y lo ya emitido sigue cuadrando.» Aun así, conviene revisar el nombre y la unidad antes de guardar.
 
 **Tengo que cargar cien artículos. ¿Uno por uno?**
 No. Con el botón **Cargar por planilla** del **Catálogo de artículos**: se baja la plantilla, se llena en Excel, se sube y el sistema enseña qué va a pasar con cada fila antes de escribir nada. Sirve también para corregir los que ya están. Está en 7.10.
 
-**Tengo diez cascos pero no me deja entregar ninguno.**
-Porque están todos en manos de alguien. Existir y estar disponible no es lo mismo: lo prestado sigue contando como existencia —es de la empresa— pero no se puede volver a entregar. En la ficha del artículo se lee **0 disponible · 10 en manos de alguien**.
+**Tengo diez cascos, pero no me deja entregar ninguno.**
+Porque están todos en manos de alguien. Existir y estar disponible no es lo mismo: lo prestado sigue contando como existencia —es de la empresa— pero no se puede volver a entregar. En Existencias se lee **0 disponibles · 10 en manos de alguien**.
 
 **¿Dónde veo todo lo que le ha pasado a un artículo?**
-En su ficha. Se llega pulsando su fila en el **Catálogo de artículos**, y la tarjeta **Su historia** lista todo desde que se creó: entradas, salidas, ajustes, traslados, entregas, devoluciones y pérdidas, con la fecha y el nombre de quien lo registró.
+En su ficha. Se llega pulsando su fila en el **Catálogo de artículos**, y la tarjeta **Historial** lista todo desde que se creó —entradas, salidas, ajustes, traslados, entregas, devoluciones—, con la fecha y el nombre de quien lo registró (7.9).
 
 **El sistema me dice que no hay material, pero yo lo estoy viendo en el patio.**
-Falta registrar su entrada. Carga el parte de turno que quedó pendiente, o haz un conteo físico, y después repite la salida.
+Falta registrar su entrada. Regístrela, o haga un conteo físico, desde **Inventario › Existencias** (7.4), y después repita la operación.
 
-**El camión está esperando y la guía no ha llegado.**
-Sin guía no sale mineral. Quien tenga el permiso más alto sobre Despachos puede autorizar la salida igual, y esa autorización queda registrada. No es una decisión que se tome sin avisar a quien corresponda.
+**¿Hace falta la guía de movilización para despachar?**
+No en el sistema: es opcional. Si el despacho lleva guía, se elige al pedirlo (10.6).
 
 **¿Quién puede ver lo que yo hago?**
-Todo queda registrado: quién, cuándo y qué cambió. Esa bitácora la consulta administración. No es vigilancia sobre las personas: es el requisito que hace confiables las cifras de todos.
+Todo queda registrado: quién, cuándo y qué cambió. Ese registro lo consulta la administración (13.4). No es vigilancia sobre las personas: es el requisito que hace confiables las cifras de todos.
 
 **¿Por qué el sistema no dice si me equivoqué en el usuario o en la clave?**
 A propósito. Si lo dijera, cualquiera podría averiguar qué usuarios existen probando nombres.
 
 **Nadie me tiene que pedir la clave.**
-Ni administración, ni sistemas, ni la gerencia. Nadie necesita tu clave para hacer su trabajo. Si alguien te la pide, no la des y avísalo.
+Ni la administración, ni sistemas, ni la gerencia. Nadie necesita su clave para hacer su trabajo. Si alguien se la pide, no la dé y avise.
 
 ---
 
