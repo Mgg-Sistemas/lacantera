@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice y los capítulos 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice y los capítulos 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -6289,15 +6289,7 @@ Una laptop es dotación y vuelve; unas mascarillas son dotación y se gastan; un
 
 Hay dos puertas y hoy dan el mismo resultado, pero salen de sitios distintos y conviene saberlo porque el día que alguien toque los permisos dejarán de coincidir.
 
-**La primera es el permiso sobre Asignaciones**, el de la matriz de 13.1:
-
-| Rol | Sobre Asignaciones |
-| --- | --- |
-| Administrador del sistema | **Total** |
-| Almacén | **Escritura** |
-| Recursos humanos | **Escritura** |
-| Gerente general, Operaciones, Consulta | **Lectura** |
-| Ventas, Solicitante, Respaldo | Ninguno |
+**La primera es el permiso sobre Asignaciones**, el de la matriz que se reparte en Configuración (13.1).
 
 **La segunda es el rol.** Los botones que entregan y que cierran casos solo se dibujan para **Almacén**, **Recursos humanos** y **Administrador**. No sale de la matriz: está escrito en la pantalla.
 
@@ -6309,7 +6301,7 @@ Hoy los dos conjuntos son el mismo, así que nadie ve un botón que luego le fal
 
 La pantalla lo dice: *"Quién tiene qué, desde cuándo, y qué queda por entregar. Lo que vuelve no descuenta del almacén: el bien sigue siendo de la empresa."*
 
-Dos filtros: **Buscar** —acepta el trabajador, la ficha, la cédula o el artículo— y **Sitio**.
+Dos filtros: **Buscar** —acepta el trabajador, la ficha, la cédula o el artículo— y **Almacén**. Si no hay nada que enseñar, la pantalla lo dice: **Sin bienes disponibles para asignar**.
 
 La columna del estado dice en qué quedó cada cosa:
 
@@ -6330,11 +6322,11 @@ Desde aquí se saca la **Constancia de entrega**, que es el papel que firma quie
 
 La pantalla lo resume: *"Varias cosas de una vez. Lo que vuelve queda a su nombre; lo que se gasta sale del almacén."*
 
-1. En **A quién y de dónde**: el **Trabajador**, **De qué almacén sale** y la **Fecha**.
+1. En **A quién y de dónde**: el **Trabajador**, el **Almacén** del que sale y la **Fecha**. Si lo entregado hay que recuperarlo, se pone una **Fecha límite**.
 2. En **Qué se lleva**, se escriben las cantidades. La ayuda lo dice: *"Deja en blanco lo que no se entrega."*
 3. La **Nota** es opcional, y su ejemplo dice para qué sirve: *"Para qué frente, quién autorizó."*
 
-Si el almacén elegido no tiene nada entregable, la pantalla lo dice en vez de enseñar una lista vacía: **En ese almacén no hay nada que entregar**.
+Si el almacén elegido no tiene nada entregable, la pantalla lo dice en vez de enseñar una lista vacía: **Sin bienes disponibles en este almacén**.
 
 **Se entrega de varias cosas a la vez a propósito.** Un trabajador que empieza se lleva casco, botas y uniforme en el mismo acto, y hacerlo en tres pantallas es tres veces la misma ficha.
 
@@ -6344,11 +6336,11 @@ Si el almacén elegido no tiene nada entregable, la pantalla lo dice en vez de e
 
 *"Qué le corresponde a cada puesto y cada cuánto se repone. De aquí sale la lista de a quién le toca hoy."*
 
-Se define una vez por cargo y sirve para todos los que lo tengan. La ventana **Qué le toca a este cargo** pide: **Cargo**, **Qué se le entrega**, **Cuántas**, **Se repone cada (meses)** y una **Nota**.
+Se define una vez por cargo y sirve para todos los que lo tengan. La ventana **Dotación del cargo** pide: **Cargo**, **Artículo**, **Cantidad**, **Frecuencia de reposición (meses)** y una **Nota**. Si todavía no hay ninguna, la pantalla dice **Sin dotación definida**.
 
 Arriba está la tarjeta **A quién le toca ahora**, que es lo que se mira todos los días: quién debería tener algo y no lo tiene, o lo tiene vencido.
 
-**Ojo con esta trampa, que hace perder tiempo:** esa lista **solo ve a quien tenga un cargo del tabulador en su ficha**. Un trabajador con el cargo escrito a mano, sin cargo del tabulador asignado, **no aparece nunca**, por mucha dotación que le corresponda. Si echas de menos a alguien en esa lista, revisa primero su ficha en **Nómina › Personal**, no la dotación.
+**Ojo con esta trampa, que hace perder tiempo:** esa lista **solo ve a quien tenga un cargo del tabulador en su ficha**. Un trabajador con el cargo escrito a mano, sin cargo del tabulador asignado, **no aparece nunca**, por mucha dotación que le corresponda. Si falta alguien en esa lista, lo primero que hay que revisar es su ficha en **Nómina › Personal**, no la dotación.
 
 #### Entregar desde aquí
 
@@ -6356,7 +6348,7 @@ Hay dos caminos, y responden a dos formas de trabajar.
 
 **Por la lista**, cuando se va bajando por los pendientes: cada persona lleva un botón **Entregar** en su primer renglón. Se lleva a la pantalla de entrega **con ella puesta y con todo lo que se le debe**, no solo el renglón que se pulsó — quien llega al almacén se lleva de una vez lo suyo, y tres botones iguales en tres renglones seguidos harían pensar que entregan cosas distintas.
 
-**Por la persona**, cuando llega alguien concreto: el botón **Entregar a alguien**, arriba. Se elige el **Cargo** —que es solo un filtro para acortar la lista, y se puede dejar en blanco— y después **A quién**. La ventana enseña lo que se le va a entregar antes de continuar.
+**Por la persona**, cuando llega alguien concreto: el botón **Entregar a alguien**, arriba, que abre **Entregarle la dotación a alguien**. Se elige el **Cargo** —que es solo un filtro para acortar la lista, y se puede dejar en blanco— y después **A quién**. La ventana enseña lo que se le va a entregar antes de continuar.
 
 | Si la persona… | Se propone |
 | --- | --- |
@@ -6394,9 +6386,9 @@ El sistema **mete una deducción de verdad en la nómina**: por el costo del bie
 
 Tres cosas que hay que saber:
 
-**No se puede descontar lo que no tiene costo.** Si la herramienta no tiene costo calculado, el sistema no deja y lo dice: *«Esa herramienta no tiene costo calculado, así que no hay cuánto descontar. Sáldala con reposición o exoneración.»*
+**No se puede descontar lo que no tiene costo.** Si la herramienta no tiene costo calculado, el sistema no deja y lo dice: *«Esa herramienta no tiene costo calculado, así que no hay cuánto descontar. Sáldela con reposición o exoneración.»*
 
-**Si no hay ningún período abierto, tampoco.** El mensaje es: *«No hay ningún período de nómina que admita cambios donde cargar el descuento. Abre el período, o sáldala con reposición o exoneración.»*
+**Si no hay ningún período abierto, tampoco.** El mensaje es: *«No hay ningún período de nómina que admita cambios donde cargar el descuento. Abra el período, o sáldela con reposición o exoneración.»*
 
 **Si el período ya está calculado, hay que volver a calcularlo.** La deducción entra igual, pero el recibo no la recoge hasta que se recalcule. El sistema no lo avisa: es cosa de quien lleva la nómina acordarse.
 
@@ -6411,15 +6403,15 @@ Asignaciones es de los pocos sitios del sistema que trabajan sin que nadie abra 
 
 **El aviso de retraso sale una sola vez por asignación**, no todos los días hasta que vuelva. Es deliberado: un aviso que se repite se deja de leer.
 
-### 18.7 Cuando el sistema no te deja
+### 18.7 Cuando el sistema no le deja
 
-| Lo que ves | Qué significa | Qué hacer |
+| Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Esa herramienta no tiene costo calculado, así que no hay cuánto descontar. Sáldala con reposición o exoneración.» | El artículo no tiene costo | Ciérralo como reposición o exoneración |
-| «No hay ningún período de nómina que admita cambios donde cargar el descuento. Abre el período, o sáldala con reposición o exoneración.» | Ningún período en borrador ni calculado | Abre el período en Nómina, o cierra el caso de otra forma |
-| «Esa asignación está devuelta: solo se cierra lo que tuvo una incidencia.» | El bien ya volvió | No hay nada que cerrar |
-| **En ese almacén no hay nada que entregar** | El almacén elegido está sin existencias entregables | Elige otro almacén, o carga la entrada primero |
-| No ves el botón de entregar | Tu rol no es Almacén, Recursos humanos ni Administrador | Pídeselo a administración |
+| «Esa herramienta no tiene costo calculado, así que no hay cuánto descontar. Sáldela con reposición o exoneración.» | El artículo no tiene costo | Ciérrelo como reposición o exoneración |
+| «No hay ningún período de nómina que admita cambios donde cargar el descuento. Abra el período, o sáldela con reposición o exoneración.» | Ningún período en borrador ni calculado | Abra el período en Nómina, o cierre el caso de otra forma |
+| «Esa asignación está … : solo se cierra lo que tuvo una incidencia.» —el estado va en el hueco— | El bien ya volvió, o nunca tuvo incidencia | No hay nada que cerrar |
+| **Sin bienes disponibles en este almacén** | El almacén elegido está sin existencias entregables | Elija otro almacén, o cargue la entrada primero |
+| No aparece el botón de entregar | Su rol no es Almacén, Recursos humanos ni Administrador | Pídalo a administración |
 
 ---
 
