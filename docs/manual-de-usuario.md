@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 15, 21 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 15, 20, 21 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -6544,146 +6544,170 @@ Esa última frase es la razón de que esta pantalla exista aparte: **una orden a
 
 ## 20. Combustible
 
-Es el gasoil y la gasolina: **cuánto queda, cuánto consume cada máquina y a qué se le echó**. La pantalla lo dice entero: *"Cuánto queda, cuánto consume cada máquina y a qué se le echó. Entra por una compra recibida, o a mano desde Cargar."*
+Es el gasoil y la gasolina: cuánto queda, cuánto consume cada máquina y a qué se le echó. La pantalla lo resume: **Existencias de combustible, consumo por máquina y destino de cada despacho. Ingresa por compra recibida o por carga manual.**
 
 **El combustible es un artículo del inventario como cualquier otro**, guardado en un almacén de tipo Combustible (7.11). Lo que este módulo añade es lo que el inventario no sabe: a qué máquina se le echó y con qué horómetro, que es lo que convierte litros en **litros por hora**.
 
 ### 20.1 Quién entra y quién puede despachar
 
-Quien opera las máquinas es quien les echa combustible, así que el reparto de Combustible sigue al de Maquinaria. Quién lo tiene se mira en Configuración (13.1).
+| Qué | Lo decide |
+| --- | --- |
+| Ver los tanques, el consumo y los vales | El módulo **Combustible** en la matriz de permisos (13.1) |
+| Despachar, corregir o anular un vale del día, editar la lista de usos, añadir o quitar fotos de un vale | **Combustible** en escritura |
+| Corregir o anular un vale de otro día | **Combustible** en control total |
+| Cargar combustible a un tanque, o pasarlo de un sitio a un tanque | El rol **Almacén** |
+| Entrar directo a la vista de teléfono al abrir el sistema | La casilla **Entrar directo al surtidor del teléfono** (13.1) |
 
-**Ver los tanques, el consumo y los vales pide lectura.** Despachar, cargar combustible y trasladarlo entre tanques piden **escritura**. **Editar la lista de motivos pide control total**, y también corregir o anular un vale que no sea del día (20.5).
+Quien opera las máquinas es quien les echa combustible, así que el reparto suele seguir al de Maquinaria. Quién tiene cada cosa se mira en la matriz.
 
 ### 20.2 Qué se ve
 
-Arriba, **los tanques con su saldo**. Si no hay ninguno con existencia, la pantalla lo dice: **El tanque está vacío**.
+Arriba, los botones: **Vista de teléfono** (20.4), **Usos** —la lista de para qué se echa combustible—, **Tanques**, que lleva a **Inventario › Almacenes**, donde se crean, **Cargar** (20.6) y **Despachar** (20.3). Si un tanque está en su mínimo o por debajo, sale un aviso arriba: **GASOIL en el mínimo o por debajo.**
 
-**Hay dos tanques, y no es un error de configuración.** Uno es **Tanque de combustible**, el de siempre. El otro es **Combustible inicial (sin costo)**, y el apartado 20.6 explica por qué existe.
+**En el tanque**: una tarjeta por tanque y combustible, con lo que queda, el costo por litro —o **Sin costo registrado**— y el mínimo si lo tiene. Si no hay combustible en ningún tanque: **El tanque está vacío**.
 
-Debajo, **el consumo por máquina** —litros por hora— y la lista de despachos. Cuando una máquina tiene despachos pero le falta el horómetro, sale marcada: **Falta anotar el horómetro en el parte diario**. Sin ese dato los litros no se pueden convertir en litros por hora, así que esa máquina no entra en la comparación.
+**Fuera de tanque**, si lo hay: combustible que entró a un almacén que no es un tanque. La pantalla lo dice: **Combustible fuera de un tanque. No se despacha desde ahí: páselo primero a un tanque.** Cada tarjeta tiene **Pasarlo a un tanque**, que abre **Pasar al tanque**: **Se mueve con su costo. El total de la empresa no cambia.** Se elige el **Destino**, la **Cantidad** y el **Motivo**.
 
-Si todavía no se ha despachado nada, cada bloque lo dice a su manera: **Sin despachos a máquinas** y **Sin despachos registrados**.
+**Consumo por máquina**: **Litros despachados entre las horas del parte diario. Sin lecturas de horómetro, la columna va vacía.** Columnas: **Máquina**, **Litros**, **Horas**, **L/hora**, **USD/hora** y **Gasto**. Una máquina con despachos pero sin horómetro sale marcada: **Falta anotar el horómetro en el parte diario.** Sin despachos todavía: **Sin despachos a máquinas**.
+
+**Últimos despachos**: cada vale con sus litros, el combustible y el destino, la máquina o el chip **Sin ficha**, el uso —en naranja si es «Otro», con su detalle pegado— y debajo la fecha, la hora y el número. Un vale corregido lleva el chip **Corregido**; uno anulado, **Anulado**, en gris. A la derecha, los botones del vale (20.5). Sin vales: **Sin despachos registrados**.
 
 ### 20.3 Despachar combustible
 
-| Campo | Detalle |
-| --- | --- |
-| **De qué tanque** | Solo salen los que tienen saldo |
-| **Para qué** | Del catálogo de motivos. Ver abajo |
-| **¿Para qué exactamente?** | Solo en los motivos que lo exigen. *"En pocas palabras."* Si un mismo uso se repite mucho, conviene que sea una opción propia de la lista |
-| **A qué máquina** | De la flota. Si no está, **No está en la ficha** |
-| **A qué se le echó** | Cuando no es una máquina de la flota |
-| **Horómetro al echarle** | *"Con él se calculan los litros por hora."* |
-| **Fecha** | |
+**Despachar** abre **Despachar combustible**: **Se descuenta del tanque al costo promedio que tenga ahora.**
 
-Los motivos son seis y salen de un catálogo, no de una lista escrita en la pantalla:
+| Campo | ¿Hace falta? | Detalle |
+| --- | --- | --- |
+| **Tanque** | Sí | Solo los que tienen combustible, cada uno con lo que queda |
+| **Uso** | Sí | Para qué se usa, no a qué máquina. Sale de la lista de usos |
+| **Detalle del uso** | Según el uso | Solo en los usos que piden explicación. Ayuda: **En pocas palabras.** |
+| **Máquina** | No | De la flota. Si no está: **No está en la ficha**. Solo salen las que queman ese combustible, y cada una dice cuánto le cabe |
+| **Destino** | Sin máquina, sí | A qué se le echó, cuando no es una máquina con ficha |
+| **Horómetro** | Con máquina, sí | Lo que marca el tablero. Debajo dice lo último anotado |
+| **Cantidad (litros)** | Sí | Debajo dice cuánto alcanza |
+| **Fecha** | Sí | Empieza en hoy |
+| **Receptor** | Sí | Quien recibió el combustible, de la nómina. Si no está: **No está en la nómina**, y se escriben el **Nombre del receptor** y la **Cédula** |
+| **Nota** | No | |
 
-| Motivo | Cuándo |
-| --- | --- |
-| **Producción** | Sacar material: excavación, trituración, planta |
-| **Operación** | Acarreo y movimiento dentro de la cantera |
-| **Taller** | Mantenimiento, y la prueba de después |
-| **Planta** | Planta fija y generadores |
-| **Tercero** | Equipo que no es de la empresa |
-| **Otro** | Cualquier otro caso: **hay que decir cuál** |
+El botón **Despachar** está apagado mientras falte algo de lo obligatorio, el horómetro retroceda, la cantidad pase lo que hay o la máquina haya llegado a su tope del día.
 
-**El horómetro es el campo que más se salta y el que más falta hace.** Sin él el despacho se registra igual —los litros salen del tanque— pero esa máquina deja de tener consumo por hora, que es lo único que permite comparar dos equipos o notar que uno empezó a beber más de la cuenta.
+**Sin máquina no hay consumo por hora.** La ayuda lo dice: **Sin máquina no hay consumo por hora: solo cuenta para el gasto.** Con máquina, **el horómetro es obligatorio**: **Obligatorio al surtir una máquina. Queda anotado en el vale.** Es lo que permite comparar dos equipos o notar que uno empezó a beber más de la cuenta.
 
-**Y el contador es uno solo, aunque se apunte en dos sitios.** La lectura se compara con la más alta anotada hasta la fecha del vale, venga del vale o del parte diario. Por eso la pantalla puede dejar pasar un horómetro que la base rechaza: la pantalla solo ve los vales. El mensaje de la base dice con qué lectura choca.
+**Un horómetro no retrocede.** Si la lectura es menor que la última, la ayuda lo dice antes de guardar: **Un horómetro no retrocede: lo último anotado marcaba 1250.** **Y el contador es uno solo, aunque se apunte en dos sitios**: la base compara con la lectura más alta anotada hasta la fecha del vale, venga del vale o del parte diario. La pantalla solo ve los vales, así que puede dejar pasar una lectura que la base rechaza; el mensaje de la base dice con qué lectura choca.
 
-**La lista de motivos la toca quien despacha**, no sistemas: es quien sabe para qué se echa combustible en esta cantera. Pero cambiarla pide control total.
+**Tres vales por máquina al día, como máximo.** La pantalla lo avisa antes de llenar el resto —**Es el surtido 2 de 3 de ese día para esta máquina.**— y al llegar al tope apaga el botón: **Ya se surtió 3 veces ese día. Son 3 al día como máximo.** La base lo impone igual.
+
+#### La lista de usos
+
+El botón **Usos** abre **Usos del combustible**: **La lista que sale al despachar. Los cambios no alteran los vales emitidos.** Cada uso lleva su nombre, una pista que explica cuándo se usa y, si hace falta, la marca de que **pide explicación**: con ella, el vale no se guarda sin el **Detalle del uso**.
+
+**La lista la toca quien despacha**, no sistemas: es quien sabe para qué se echa combustible en esta cantera, y quien descubre que falta un uso. Si un mismo «Otro» se repite mucho, conviene que sea un uso propio de la lista.
 
 ### 20.4 Surtir desde el teléfono
 
-Es la misma operación de arriba, hecha para usarla **de pie al lado del tanque**, con el celular en una mano. Se abre con el botón **Vista de teléfono**, arriba en Combustible, y la puede abrir cualquiera que pueda despachar.
+Es la misma operación, hecha para usarla **de pie al lado del tanque**, con el celular en una mano. Se abre con **Vista de teléfono**, y la puede abrir cualquiera que pueda despachar.
 
-Va en dos pasos. Primero **de qué tanque**, en botones grandes que dicen cuánto queda en cada uno; si solo hay un tanque con saldo, ese paso se salta. Después el vale: litros, máquina, horómetro, para qué, y quién lo recibió. Los motivos son botones, no una lista desplegable, porque es lo que más se toca. La fecha y la nota están plegadas hasta que hagan falta.
+Va en dos pasos. Primero **¿De qué tanque?**: **Toque el tanque del que va a surtir.**, en botones grandes que dicen cuánto queda; si solo hay un tanque con combustible, ese paso se salta. Después el vale: **Cantidad**, **Máquina**, **Destino** si no es una máquina con ficha, **Horómetro**, el uso, **Receptor**, y las **Fotos del despacho**. Los usos son botones, no una lista desplegable, porque es lo que más se toca. La **Fecha** y la **Nota** están plegadas hasta que hagan falta. Se guarda con **Surtir**.
 
-**Las reglas son exactamente las mismas** que en la computadora: el tope de tres vales por máquina al día, el horómetro que no puede retroceder, y el nombre de quien recibe obligatorio. No es un atajo: es la misma puerta.
+**Las reglas son las mismas** que en la computadora: el tope de tres vales por máquina al día, el horómetro que no retrocede y quien recibe, obligatorio. No es un atajo: es la misma puerta.
 
-<p class="regla"><strong>Si la señal está mala, el sistema lo dice.</strong> Cuando el guardado tarda más de doce segundos aparece el aviso de que <strong>el vale ya se está guardando y no hay que cargarlo otra vez</strong>. Es el error más común en la mina: el que espera vuelve a pulsar, y salen dos vales del mismo gasoil.</p>
+<p class="regla"><strong>Si la señal está mala, el sistema lo dice.</strong> Cuando el guardado tarda, aparece: <strong>Está tardando por la señal. El vale ya se está guardando: no lo cargue otra vez.</strong> Es el error más común en la mina: el que espera vuelve a pulsar, y salen dos vales del mismo gasoil.</p>
 
-**El vale lleva fotos.** En el mismo formulario está la sección **Fotos del despacho** —el tablero con el horómetro, la máquina recibiendo, el vale de papel si lo hay—, hasta cuatro archivos por vale, como en las salidas y los despachos. Las fotos **se suben después de que el vale queda guardado**, a propósito: si la señal se cae a mitad de la subida, el vale no se pierde; el acuse avisa que las fotos faltan y se añaden ahí mismo cuando la señal vuelva. Una foto se quita solo diciendo por qué, y quitarla no la borra: queda el rastro.
+**Las fotos se suben después de que el vale queda guardado**, a propósito: si la señal se cae a mitad de la subida, el vale no se pierde. El acuse lo avisa —**El vale quedó guardado, pero las fotos no subieron por la señal. Añádalas aquí abajo cuando mejore.**— y se añaden ahí mismo. Una foto se quita solo diciendo por qué, y quitarla no la borra: queda el rastro.
 
-Al guardar, la pantalla confirma lo que salió —con el número del vale— y ofrece **pasarlo por WhatsApp**, que es como se avisa en el patio. El vale firmado en papel se sigue sacando desde la computadora.
+Al guardar, la pantalla dice **Quedó anotado**, con el número del vale, y ofrece **Pasarlo por WhatsApp**, que es como se avisa en el patio, y **Surtir otra vez**. El vale en papel se saca desde la computadora.
 
-**Y el error se arregla ahí mismo.** En el acuse están **Corregir este vale** —vuelve al formulario con todo puesto, se ajusta y se guarda con el mismo número— y **Anular**, que pide el motivo y devuelve el combustible al tanque con un reverso. Es para el vale que se acaba de emitir, que es donde se descubre el error; los de días anteriores se tocan desde la computadora y piden control total.
+**Y el error se arregla ahí mismo.** En el acuse están **Corregir este vale** —vuelve al formulario con todo puesto, y se guarda con el mismo número— y **Anular**, que pide el motivo y devuelve el combustible al tanque con un reverso. Es para el vale que se acaba de emitir, que es donde se descubre el error.
 
-**Quien además opera el almacén ve «Otras operaciones»**: la **entrada de combustible** y el **traslado de sitio**, con las mismas ventanas y las mismas reglas del escritorio. Al bombero que solo despacha no se le ofrecen, porque la base se las negaría: la entrada y el traslado son del almacén.
+**Quien además lleva el almacén ve «Otras operaciones»**: la entrada de combustible y el traslado a un tanque, con las mismas ventanas y reglas del escritorio.
 
-**Todo se refleja al momento.** Lo que el bombero guarda en el teléfono aparece solo en la pantalla de la oficina, y al revés, por el mismo canal en vivo que ya usan las existencias.
+**Todo se refleja al momento.** Lo que se guarda en el teléfono aparece solo en la pantalla de la oficina, y al revés.
 
-**Quién entra directo.** En **Configuración › Usuarios**, entre los permisos extendidos de Combustible, está la casilla **Entrar directo al surtidor del teléfono**. A quien se le dé, abre el sistema y aparece ya en esta pantalla, sin pasar por el tablero. Es para la persona que está en la bomba. **La casilla no da permiso de nada por sí sola**: para despachar sigue haciendo falta escritura en Combustible. Y nadie la tiene de entrada: hay que prestarla a mano. **Al administrador del sistema no le aplica**: entra en el tablero, tenga la casilla o no.
+**Quién entra directo.** A quien tiene la casilla **Entrar directo al surtidor del teléfono**, al abrir el sistema le aparece esta pantalla, sin pasar por el tablero. Es para la persona que está en la bomba. **La casilla no da permiso de nada por sí sola**: para despachar hace falta escritura en Combustible. **Al administrador del sistema no le aplica**: entra en el tablero, tenga la casilla o no.
 
 ### 20.5 El vale
 
-Cada despacho saca su **Vale de combustible** en papel, con el botón **Imprimir el vale**. Lleva la misma cabecera que el resto de los papeles del sistema (13.2).
+Cada vale tiene en **Últimos despachos** sus botones: imprimir, las fotos, corregir y anular.
 
-**Es el papel que firma quien recibe el combustible**, y por eso se imprime al despachar y no después.
+**Imprimir el vale** saca el **Vale de combustible** en papel: **Este papel es el que se firma.** Lleva la misma cabecera que el resto de los papeles del sistema (13.2). Lo firma quien recibe el combustible, y por eso se imprime al despachar y no después.
 
-**Un vale anulado se imprime como anulado.** Lleva el sello **ANULADO** cruzado sobre la hoja, el motivo de la anulación en vez de las rayas de firma —lo que no se firma, no se raya— y lo dice también en el nombre del archivo. Se sigue pudiendo imprimir a propósito: sirve de constancia de que se anuló, y con el sello encima no se confunde con uno vigente.
+**Un vale anulado se imprime como anulado.** Lleva el cuño **ANULADO** cruzado sobre la hoja, el motivo de la anulación en vez de las rayas de firma —lo que no se firma, no se raya— y lo dice también el nombre del archivo. Se puede imprimir a propósito: sirve de constancia de que se anuló, y con el cuño encima no se confunde con uno vigente.
 
-**Y sus fotos se miran desde la lista.** En **Últimos despachos**, cada vale con número tiene el botón de la cámara: ahí se ven las fotos que subió el bombero, se añaden las que falten y se quita una diciendo por qué. Verlas pide lectura de Combustible; añadir o quitar, escritura.
+**Las fotos**, con el botón de la cámara: se ven las que subió quien surtió, se añaden las que falten y se quita una diciendo por qué.
 
-**El vale se corrige y se anula** — nunca se edita por debajo ni se borra. En la misma lista, el lápiz abre el formulario con el vale puesto: se cambia lo que haga falta —litros, máquina, horómetro, quién recibió, fecha— y el vale **conserva su número** y queda marcado **Corregido**, con quién y cuándo. Si cambió la cantidad o la fecha, el libro de inventario lo cuenta con un **reverso y una salida nueva**, a la vista; el tanque del vale no se cambia (para eso se anula y se emite otro). **Anular** pide el motivo y devuelve el combustible al tanque con un reverso; el vale queda en gris con su motivo, y deja de contar para el tope de tres y para el horómetro. **Quien tiene escritura corrige o anula el vale del día; el de otro día exige control total** — la misma regla de las comidas.
+**Un vale se corrige o se anula; nunca se edita por debajo ni se borra.**
+
+- **Corregir el vale** abre el mismo formulario con el vale puesto. Se cambia lo que haga falta —litros, máquina, horómetro, quién recibió, fecha— y se escribe el **Motivo**: **El vale queda marcado corregido con su nombre y la hora.** Conserva su número. Si cambió la cantidad o la fecha, el libro de inventario lo cuenta con un reverso y una salida nueva, a la vista. **El tanque no se cambia**: **El tanque del vale no se cambia: para eso se anula y se emite otro.**
+- **Anular el vale** pide el motivo y devuelve el combustible al tanque con un reverso. El vale queda en gris, con su motivo, y deja de contar para el tope de tres y para el horómetro.
+
+**El vale del día lo corrige o lo anula quien despacha; el de otro día, el control total.** Los botones salen igual en los vales de otros días, y la ventana de anular lo advierte: **No es de hoy: requiere control total.**
 
 ### 20.6 Cargar combustible a mano
 
-El combustible entra normalmente **por una compra recibida**. Para lo demás está el botón **Cargar**: el saldo con el que arranca un tanque, algo comprado por fuera, un traslado.
+El combustible entra normalmente **por una compra recibida**. Para lo demás está **Cargar**, que abre **Cargar combustible al tanque**: **Para lo que entra sin una compra de por medio: el saldo con el que arranca el tanque, algo comprado por fuera, un traslado. Si llegó con una orden de compra, entra al recibirla.** Lo hace el rol Almacén.
 
 | Campo | Detalle |
 | --- | --- |
-| **A qué tanque** | Solo se ofrecen tanques, no almacenes |
-| **Qué combustible** | Solo artículos de esa categoría |
-| **Cuántos litros** | Mayor que cero |
-| **Cuánto costó cada litro (USD)** | *"Con esto se valora lo que se despache después. Sin costo, cada vale sale en cero."* |
-| **No costó nada para esta empresa** | Ver abajo. Viene desmarcada |
-| **Entra el** | La fecha |
-| **Referencia** | Texto libre: quién lo trajo, un número de factura de fuera |
-| **Motivo** | De dónde vino. Mínimo cuatro letras |
+| **Tanque** | Solo tanques. Si no hay ninguno: **Sin tanques registrados. Se crean en Inventario › Almacenes, con tipo Combustible.** |
+| **Combustible** | Solo artículos de esa categoría |
+| **Cantidad (litros)** | Mayor que cero |
+| **Costo por unidad (USD)** | **Con esto se valora lo que se despache después. Sin costo, cada vale sale en cero.** |
+| **Sin costo** | Viene desmarcada. **Para material trasladado desde otra empresa del grupo, donde ya se registró el gasto.** Ver abajo |
+| **Fecha** | |
+| **Referencia** | Factura, guía, nota |
+| **Origen** | De dónde vino |
 
-#### El combustible inicial: lo que llegó sin costar nada aquí
+**Si el costo se sale mucho del que ese tanque viene teniendo** —más de diez veces, para arriba o para abajo—, la ventana lo advierte con las dos cifras y pide **Compruebe la factura.** Para guardarlo así hay que marcar **Es correcto, guárdelo así — quedará anotado en el movimiento.** Un cero de más en una entrada se arrastra a cada vale que salga después.
 
-Llegaron a la cantera 20.000 litros trasladados desde la base principal del grupo, donde **ya se registró el gasto**. Como lo dijo Jesmary: *"ese combustible llegó hace ya bastante tiempo y no tiene factura ni una constancia de pago, solo lo llevaron y lo ingresaron a la cantera."*
+#### Lo que llega sin costar nada aquí
 
-No es una compra sin precio: **es un traslado entre empresas**. Por eso la casilla dice quién asumió el gasto en vez de dejar el costo en blanco — un costo vacío no se distingue de un descuido, y este no lo es.
+Hay combustible que llega a la cantera trasladado desde otra empresa del grupo, donde **ya se registró el gasto**. No es una compra sin precio: **es un traslado entre empresas**. Por eso la casilla dice que no costó nada para esta empresa, en vez de dejar el costo en blanco: un costo vacío no se distingue de un descuido, y este no lo es.
 
-Al marcarla:
+Al marcar **Sin costo**:
 
-- El costo se pone en cero y el campo se apaga: *"Entra en cero: el gasto lo asumió la otra empresa."*
-- **El motivo pasa a exigir una explicación entera** —de dónde vino y quién asumió el gasto—, porque dentro de un año esa nota es lo único que lo va a contestar.
-- **El tanque cambia solo** al de combustible inicial: *"Lo que entra sin costo va a su propio tanque."* Así no se hunde el costo del que sí tiene precio.
+- El costo se pone en cero y el campo se apaga: **Entra en cero: el gasto lo asumió la otra empresa.**
+- **El origen pasa a exigir una explicación entera** —de dónde vino y quién asumió el gasto—, porque dentro de un año esa nota es lo único que lo va a contestar.
+- **El tanque cambia solo** al que admite lo que entra sin costo: **Lo que entra sin costo va a su propio tanque.**
 
-#### Por qué van en tanques separados
+#### Por qué va en un tanque aparte
 
 Porque si no, **el costo de todo el combustible se hunde**.
 
-El sistema lleva un costo promedio por tanque. Con 1.000 litros comprados a $0,42 y 20.000 más entrando a cero, el promedio del conjunto cae a $0,02 — **veintiuna veces menos**. A partir de ahí cada vale carga a la máquina una veintiunava parte de lo que cuesta el gasoil, y con él se hunden el consumo por máquina, el gasto por unidad y el centro de costos.
+El sistema lleva un costo promedio por tanque. Con 1.000 litros comprados a $0,42 y 20.000 más entrando a cero, el promedio del conjunto cae a $0,02 — **veintiuna veces menos**. A partir de ahí cada vale carga a la máquina una veintiunava parte de lo que cuesta el gasoil, y con él se hunden el consumo por máquina, el gasto por unidad y el centro de costos. Y no se notaría hasta cuadrar el mes, con cien vales mal valorados.
 
-Y no se notaría: **no hay pantalla que avise de que bajó el costo del gasoil**. Se descubre cuadrando el mes, cuando ya se despacharon cien vales mal valorados.
+En tanques aparte, cada uno conserva su costo y cada vale sale valorado según de qué tanque salió, que es la verdad: unos litros costaron y otros no.
 
-Separados, cada tanque conserva el suyo y cada vale sale valorado según de qué tanque salió — que es la verdad: unos litros costaron y otros no.
+**La separación la impone el sistema, no la atención.** Un tanque se marca, en **Inventario › Almacenes**, como el que admite lo que entra sin costo, y la base no deja mezclar en ninguno de los dos sentidos (20.7). Lo mismo al pasar combustible de un sitio a otro: no se mueve entre el tanque sin costo y uno con costo.
 
-**La separación la impide el sistema, no la atención.** Va en los dos sentidos:
-
-- Combustible sin costo al tanque de siempre: *"Aquí no entra material sin costo: se hundiría el costo promedio de lo que ya hay."*
-- Combustible con precio al tanque inicial: *"Aquí solo entra lo que no costó nada. Lo que tiene precio va al tanque de siempre."*
-
-Un tanque que se llama «combustible inicial (sin costo)» y que contuviera gasoil comprado sería justo la confusión que esto viene a evitar.
-
-**Lo que sigue pendiente, y conviene saberlo:** esos 20.000 litros **sí costaron dinero**, solo que en la otra empresa. Mientras entren a cero, el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta. Si algún día se sabe lo que se pagó por ellos, entrarlos con ese costo dejaría bien a la vez el promedio, el costo por máquina y el centro de costos.
+**Y conviene saberlo:** ese combustible **sí costó dinero**, solo que en la otra empresa. Mientras esté a cero, el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta. Si algún día se sabe lo que se pagó, entrarlo con ese costo dejaría bien a la vez el promedio, el costo por máquina y el centro de costos.
 
 ### 20.7 Cuando el sistema no le deja
 
 | Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Aquí no entra material sin costo: se hundiría el costo promedio de lo que ya hay.» | Se marcó **No costó nada para esta empresa** apuntando al tanque de siempre | Métalo en el tanque de combustible inicial, que es el que lo lleva aparte (20.6) |
-| «Aquí solo entra lo que no costó nada. Lo que tiene precio va al tanque de siempre.» | Se intentó meter combustible comprado al tanque inicial | Elija el tanque de siempre y escriba lo que costó |
-| «Una entrada sin costo hay que explicarla entera: de dónde vino y quién asumió el gasto.» | El motivo tiene menos de quince letras | Escriba de dónde vino y quién pagó. Dentro de un año esa nota es lo único que lo va a contestar |
-| «Hay que decir cuánto costó la unidad.» | Se dejó el costo vacío sin marcar la casilla | Escriba el costo, o marque **No costó nada para esta empresa** si de verdad no costó |
-| «Si el material no costó nada para esta empresa, el costo tiene que ir en cero.» | Está marcada la casilla y hay un costo escrito | Quite la marca, o ponga el costo en cero |
+| «Esta acción la realiza: Almacén. Su usuario no tiene ese rol….» | Cargar combustible o pasarlo a un tanque es del almacén | Que lo haga quien tenga el rol Almacén |
+| «Su usuario no tiene acceso a ….» | Su permiso sobre Combustible no llega: despachar pide escritura, y un vale de otro día, control total | Pídalo a la administración, o que lo haga quien lo tenga |
+| «Hace falta el horómetro de "CAT-01" para surtirla. …» | Se eligió una máquina y no se escribió el horómetro | Escriba lo que marca el tablero |
+| «El horómetro de "CAT-01" no retrocede: lo último anotado marcaba … y se está surtiendo con …. …» | La lectura es menor que la más alta anotada, en un vale o en el parte diario | Revise el tablero. Si se ve mal o le cambiaron el reloj, eso se corrige en Maquinaria |
+| «A "CAT-01" ya se le surtió … veces el …. El máximo son … al día. …» | La máquina llegó a su tope del día | Si de verdad hizo falta más, hay que revisar por qué esa máquina consume así |
+| «Hay que decir quién recibió el combustible. …» | Falta el receptor | Elíjalo de la nómina, o escriba su nombre si no es de la nómina |
+| «Hay que decir a qué se le echó.» | Sin máquina y sin destino | Escriba el destino |
+| «Con el motivo "…" hay que decir en pocas palabras para qué fue.» | Ese uso pide explicación | Escriba el **Detalle del uso** |
+| «El motivo "…" ya no se usa.» | El uso se quitó de la lista mientras se llenaba el vale | Elija otro uso |
+| «En el tanque solo quedan … … de ….» | Se despacha más de lo que hay | Despache lo que hay, o cargue el tanque primero |
+| «El combustible sale del tanque, no de "…". Ese almacén es de tipo …. …» | Se quiso despachar desde un almacén que no es un tanque | Páselo primero a un tanque |
+| «No se despacha combustible con fecha futura.» | La fecha es de mañana o después | Corrija la fecha |
+| «El vale … está anulado: lo anulado no se corrige, se emite otro.» | Se quiso corregir un vale anulado | Emita otro vale |
+| «Diga por qué se anula.» | Falta el motivo de la anulación | Escríbalo |
+| «Aquí no entra material sin costo: se hundiría el costo promedio de lo que ya hay.» | Se marcó **Sin costo** apuntando a un tanque que no admite lo que entra sin costo | **Métalo en el tanque de combustible inicial, que es el que lo lleva aparte**, como dice el propio mensaje (20.6) |
+| «Aquí solo entra lo que no costó nada. Lo que tiene precio va al tanque de siempre.» | Se quiso meter combustible comprado al tanque sin costo | Elija el otro tanque y escriba lo que costó |
+| «Una entrada sin costo hay que explicarla entera: de dónde vino y quién asumió el gasto. Dentro de un año esa nota es lo único que lo va a contestar.» | El origen quedó corto | Escriba de dónde vino y quién pagó |
+| «Hay que decir cuánto costó la unidad. Si el gasto lo asumió otra empresa del grupo, marque «no costó nada para esta empresa» y explique de dónde vino.» | Se dejó el costo vacío sin marcar **Sin costo** | Escriba el costo, o marque **Sin costo** si de verdad no costó |
+| «Si el material no costó nada para esta empresa, el costo tiene que ir en cero. Quite la marca o ponga el costo en cero.» | Está marcada **Sin costo** y hay un costo escrito | Lo que dice el propio mensaje |
 | «La cantidad que entra tiene que ser mayor que cero.» | Los litros están vacíos o en cero | Escriba cuántos entran |
 | «Ese almacén no existe o está inactivo.» | El tanque se desactivó mientras tenía la ventana abierta | Recargue la pantalla |
+
+---
 
 ## 21. Facturación
 
