@@ -518,6 +518,11 @@ export interface NotaEntrega {
    * `cedula_chofer`, y el papel imprime lo uno o lo otro.
    */
   camiones: CamionDeNota[]
+  /** Si se espera cobrar parte en $ y parte en Bs. No es un cobro real: ver
+   *  `Despacho.pago_combinado`. */
+  pago_combinado: boolean
+  monto_usd_combinado: string | null
+  monto_bs_combinado: string | null
 }
 
 /** Un camión de una nota de entrega: la foto del momento, no el catálogo. */
@@ -627,6 +632,17 @@ export interface Despacho {
   observacion?: string | null
   ticket_id?: number | null
   guia_id?: number | null
+  /*
+    PAGO COMBINADO: PARTE EN $ Y PARTE EN BS.
+
+    No es un cobro real —no entra dinero a ninguna cuenta al pedir el
+    despacho—, solo lo que se espera cobrar, para que quien aprueba lo vea
+    y quien factura lo recuerde. El cobro de verdad se registra después,
+    en Facturación, con ModalCobro.
+  */
+  pago_combinado?: boolean
+  monto_usd_combinado?: number | null
+  monto_bs_combinado?: number | null
 }
 
 /*
@@ -666,6 +682,9 @@ export function useSolicitarDespacho() {
       // de la báscula.
       p_ticket_id: d.ticket_id ?? null,
       p_guia_id: d.guia_id ?? null,
+      p_pago_combinado: d.pago_combinado ?? false,
+      p_monto_usd_combinado: d.monto_usd_combinado ?? null,
+      p_monto_bs_combinado: d.monto_bs_combinado ?? null,
     }),
   )
 }
@@ -698,6 +717,9 @@ export interface SolicitudDeDespacho {
   motivo_cierre: string | null
   nota_id: number | null
   nota_numero: string | null
+  pago_combinado: boolean
+  monto_usd_combinado: string | null
+  monto_bs_combinado: string | null
   renglones: Array<{
     articulo_id: number
     articulo: string | null

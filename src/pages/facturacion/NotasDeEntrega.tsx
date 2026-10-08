@@ -251,6 +251,17 @@ export function NotasDeEntrega() {
   const [almacenId, setAlmacenId] = useState('')
   const [moneda, setMoneda] = useState('USD')
   /*
+    PAGO COMBINADO: PARTE EN $, PARTE EN BS.
+
+    Solo tiene sentido con la nota en dólares —es el caso real: precio en
+    $, una parte se paga en efectivo en bolívares—. En cualquier otra
+    moneda la casilla no se ofrece, y se apaga sola si el cliente elegido
+    cambia la moneda a otra cosa.
+  */
+  const [pagoCombinado, setPagoCombinado] = useState(false)
+  const [montoUsdCombinado, setMontoUsdCombinado] = useState('')
+  const [montoBsCombinado, setMontoBsCombinado] = useState('')
+  /*
     CHOFER Y VEHÍCULO, OBLIGATORIOS Y DEL CATÁLOGO. Se elige del catálogo o, si
     no está, se escribe al lado y se añade —con «+ Añadir» o, si no se pulsa,
     al enviar: la base lo añade sola—.
@@ -351,10 +362,34 @@ export function NotasDeEntrega() {
   const total = subtotal + (Number(flete) || 0)
   const incompletas = filasEfectivas.some((f) => faltaEnFila(f, precios ?? []) !== null)
 
+  /*
+    EL PAGO COMBINADO SE COMPRUEBA CONTRA EL TOTAL, AQUÍ, NO EN LA BASE.
+
+    `solicitar_despacho` solo exige que las dos cifras estén presentes y no
+    sean negativas —no tiene un total que comprobar, ver la migración—.
+    Pero la pantalla sí tiene el total a mano, así que es aquí donde se
+    avisa si las dos partes no cuadran con lo que de verdad cuesta la nota,
+    igual de en caliente que el resto de los avisos de este formulario.
+  */
+  const tasaUsdHoy = Number(tasaHoy?.tasa ?? 0)
+  const totalUsdEquivalente = moneda === 'USD' ? total : tasaUsdHoy > 0 ? total / tasaUsdHoy : 0
+  const combinadoUsd = Number(montoUsdCombinado) || 0
+  const combinadoBsEnUsd = tasaUsdHoy > 0 ? (Number(montoBsCombinado) || 0) / tasaUsdHoy : 0
+  const diferenciaCombinado = totalUsdEquivalente - combinadoUsd - combinadoBsEnUsd
+  const combinadoCuadra = Math.abs(diferenciaCombinado) < 0.01
+  const faltaElCombinado =
+    pagoCombinado && (montoUsdCombinado.trim() === '' || montoBsCombinado.trim() === '' || !combinadoCuadra)
+
   // La lista en bolívares no es el mismo número que en dólares.
   const cambiarMoneda = (nueva: string) => {
     setMoneda(nueva)
     setFilas((actuales) => repreciar(actuales, precios ?? [], nueva, Number(tasaHoy?.tasa ?? 0)))
+    // El pago combinado solo tiene sentido en dólares: ver la nota de arriba.
+    if (nueva !== 'USD') {
+      setPagoCombinado(false)
+      setMontoUsdCombinado('')
+      setMontoBsCombinado('')
+    }
   }
 
   const limpiar = () => {
@@ -375,6 +410,9 @@ export function NotasDeEntrega() {
     setFlete('')
     setObservacion('')
     setFilas([filaVacia()])
+    setPagoCombinado(false)
+    setMontoUsdCombinado('')
+    setMontoBsCombinado('')
   }
 
   // El papel se arma en un solo sitio: también lo imprime Salidas, cuando una
@@ -580,6 +618,11 @@ export function NotasDeEntrega() {
                             {!c.completa ? (
                               <p className="text-warning text-xs">
                                 Falta el precio de algún renglón: el total está incompleto.
+                              </p>
+                            ) : null}
+                            {s.pago_combinado ? (
+                              <p className="text-ink/60 text-xs">
+                                Pago combinado: {dolares(s.monto_usd_combinado ?? 0)} + {bolivares(s.monto_bs_combinado ?? 0)}
                               </p>
                             ) : null}
                           </div>
@@ -863,6 +906,7 @@ export function NotasDeEntrega() {
                   !almacenId ||
                   incompletas ||
                   faltaTransporte ||
+                  faltaElCombinado ||
                   aRenglones(filasEfectivas).length === 0
                 }
                 onClick={async () => {
@@ -883,6 +927,9 @@ export function NotasDeEntrega() {
                     observacion: observacion || null,
                     ticket_id: Number(ticketId) || null,
                     guia_id: Number(guiaId) || null,
+                    pago_combinado: pagoCombinado,
+                    monto_usd_combinado: pagoCombinado ? combinadoUsd : null,
+                    monto_bs_combinado: pagoCombinado ? Number(montoBsCombinado) || 0 : null,
                   })
                   if (archivos.length > 0) {
                     try {
@@ -1224,6 +1271,75 @@ export function NotasDeEntrega() {
               sinIva
             />
           </div>
+
+          {/*
+            PAGO COMBINADO: SOLO CON LA NOTA EN DÓLARES.
+
+            Es el caso real —precio en $, una parte se paga en efectivo en
+            bolívares—; en cualquier otra moneda la casilla no aporta nada y
+            se apaga sola (ver `cambiarMoneda`).
+          */}
+          {moneda === 'USD' ? (
+            <div className="mt-4">
+              <label className="border-hairline flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                  checked={pagoCombinado}
+                  onChange={(e) => {
+                    setPagoCombinado(e.target.checked)
+                    if (!e.target.checked) {
+                      setMontoUsdCombinado('')
+                      setMontoBsCombinado('')
+                    }
+                  }}
+                />
+                <span className="text-ink/80">
+                  Pago combinado: parte en $ y parte en Bs
+                  <span className="text-ink/50 mt-0.5 block text-xs">
+                    No rebaja nada todavía: es lo que se espera cobrar, para que quien aprueba
+                    y quien factura lo tengan presente.
+                  </span>
+                </span>
+              </label>
+
+              {pagoCombinado ? (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <Input
+                    label="Monto en $"
+                    type="number"
+                    value={montoUsdCombinado}
+                    onChange={(e) => setMontoUsdCombinado(e.target.value)}
+                    placeholder="0,00"
+                  />
+                  <Input
+                    label="Monto en Bs"
+                    type="number"
+                    value={montoBsCombinado}
+                    onChange={(e) => setMontoBsCombinado(e.target.value)}
+                    placeholder="0,00"
+                  />
+                  <p
+                    className={`text-xs sm:col-span-2 ${
+                      montoUsdCombinado.trim() === '' || montoBsCombinado.trim() === ''
+                        ? 'text-ink/50'
+                        : combinadoCuadra
+                          ? 'text-success'
+                          : 'text-warning'
+                    }`}
+                  >
+                    {montoUsdCombinado.trim() === '' || montoBsCombinado.trim() === ''
+                      ? 'Falta indicar cuánto se paga en cada moneda.'
+                      : combinadoCuadra
+                        ? `Cuadra con el total de la nota (${dolares(totalUsdEquivalente)}).`
+                        : diferenciaCombinado > 0
+                          ? `Faltan ${dolares(diferenciaCombinado)} por cubrir del total.`
+                          : `Sobran ${dolares(Math.abs(diferenciaCombinado))} respecto al total.`}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {despachar.error ? <ErrorDeCarga error={despachar.error} className="mt-4" /> : null}
         </Modal>
