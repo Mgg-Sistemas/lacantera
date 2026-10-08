@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice y los capítulos 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice y los capítulos 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -5429,7 +5429,7 @@ La idea que conviene entender antes de tocar nada es que **aquí hay dos capas d
 
 La razón de la segunda capa es la separación de tareas: si «control total en Compras» bastara para aprobar, el mismo comprador que arma la orden la firmaría. Y si la administración de usuarios colgara de un nivel, quien administra un módulo podría darse a sí mismo todos los demás.
 
-**Esto cambió el 4 de agosto de 2026.** Antes la matriz solo cerraba puertas: se le daba Nómina en escritura a un rol propio, la pantalla se abría, la persona llenaba la ficha entera y al guardar le rebotaba «tu usuario no tiene ese rol». Ahora la matriz manda de verdad sobre los módulos de trabajo. **Nadie perdió nada**: los roles que ya existían siguen valiendo igual.
+
 
 Un efecto secundario que conviene saber: **cargar la tasa del BCV pasó a pedir escritura en Tasas de cambio.** Antes lo podía hacer cualquiera que entrara al sistema, y la tasa es con lo que se valora cada cotización, factura y recibo. Hoy la tienen administración, la gerencia general y recursos humanos; quien solo la consulta ve la pantalla completa pero sin el formulario.
 
@@ -5453,7 +5453,7 @@ La tabla tiene estas columnas:
 
 | Columna | Qué muestra |
 | --- | --- |
-| **Usuario** | El nombre de usuario. En tu propia fila lleva la etiqueta **Tú** |
+| **Usuario** | El nombre de usuario. En su propia fila lleva la etiqueta **Tú** |
 | **Nombre** | Nombre y apellido |
 | **Cargo** | El cargo, si se llenó |
 | **Ficha de personal** | Si la cuenta está relacionada con un trabajador. Ver abajo |
@@ -5476,20 +5476,18 @@ Es el espejo de lo que ya hace la ficha del trabajador, que dice si esa persona 
 
 #### Crear un usuario
 
-1. Entra en la pestaña **Usuarios**.
-2. Pulsa **Nuevo usuario**. La ventana avisa: **Los roles deciden a qué llega. Se pueden cambiar después.**
-3. Escribe el **Nombre de usuario**. **De 3 a 32 caracteres: letras, números, punto y guion.** Se pasa solo a minúsculas y se le quitan los espacios.
-4. Escribe el **Nombre y apellido**. Se escribe solo en mayúsculas y sin tildes.
-5. Escribe la **Clave inicial**. **Mínimo 8 caracteres. Dásela en persona y que la cambie.**
-6. Rellena el **Cargo**, la **Cédula** y el **Teléfono** si los tienes. Los tres son opcionales, y los tres se guardan.
-
-**El Teléfono no se guardaba hasta el 27 de agosto de 2026.** El campo estaba en la ventana y el alta no lo llevaba a la base: el usuario se creaba sin dar error y el número se perdía. Si tienes usuarios creados antes de esa fecha a los que les falta el teléfono, es esto — se arregla abriendo su ficha y escribiéndolo.
-7. Marca al menos un rol en el bloque **Roles**. Viene marcado **Solicitante**.
-8. Pulsa **Guardar**. Aparece el aviso **Usuario p.ramirez creado. Dile la clave en persona, no por escrito.**
+1. Entre en la pestaña **Usuarios**.
+2. Pulse **Nuevo usuario**. La ventana avisa: **Los roles deciden a qué llega. Se pueden cambiar después.**
+3. Escriba el **Nombre de usuario**. **De 3 a 32 caracteres: letras, números, punto y guion.** Se pasa solo a minúsculas y se le quitan los espacios.
+4. Escriba el **Nombre y apellido**. Se escribe solo en mayúsculas y sin tildes.
+5. Escriba la **Clave inicial**. **Mínimo 8 caracteres. Désela en persona y que la cambie.**
+6. Rellene el **Cargo**, la **Cédula** y el **Teléfono** si los tiene. Los tres son opcionales, y los tres se guardan.
+7. Marque al menos un rol en el bloque **Roles**. Viene marcado **Solicitante**.
+8. Pulse **Guardar**. Aparece el aviso **Usuario p.ramirez creado. Dígale la clave en persona, no por escrito.**
 
 La primera vez que esa persona entre, el sistema le obliga a ponerse una clave propia antes de dejarle ver nada. El motivo es que la clave que pone administración la saben dos personas, y mientras eso sea así la sesión existe pero no identifica a nadie.
 
-Los roles que trae el sistema son **diez**, con la descripción que se lee al lado de cada casilla. **Hubo un undécimo, Tesorería, y se retiró el 25 de agosto de 2026** junto con el módulo: sus permisos, sus acciones y las cuentas que lo tenían se borraron el mismo día. Si tienes un manual impreso donde aparece, esta lista es la que manda.
+Los roles que trae el sistema son **diez**, con la descripción que se lee al lado de cada casilla. 
 
 | Rol | Qué dice el sistema de él |
 | --- | --- |
@@ -5508,11 +5506,11 @@ Una advertencia sobre el reparto de roles, y no es menor: el sistema se instala 
 
 #### Editar un usuario, cambiarle la clave, inactivarlo
 
-**Editar.** Pulsa la fila. Se abre **Editar usuario**: **El nombre de usuario no cambia.** Es con lo que entra y con lo que quedó firmado lo que ya hizo. Cambia lo que haga falta y pulsa **Guardar**.
+**Editar.** Pulse la fila. Se abre **Editar usuario**: **El nombre de usuario no cambia.** Es con lo que entra y con lo que quedó firmado lo que ya hizo. Cambia lo que haga falta y pulsa **Guardar**.
 
-**Cambiar la clave.** Pulsa el botón de la llave en la fila. Se abre **Cambiar la clave**, con un solo campo, **Clave nueva**, y la ayuda **Mínimo 8 caracteres.** Cambiarle la clave a alguien **cierra todas sus sesiones abiertas** y le obliga a ponerse una propia la próxima vez que entre. Es lo mismo que pasa con un usuario nuevo, y por el mismo motivo.
+**Cambiar la clave.** Pulse el botón de la llave en la fila. Se abre **Cambiar la clave**, con un solo campo, **Clave nueva**, y la ayuda **Mínimo 8 caracteres.** Cambiarle la clave a alguien **cierra todas sus sesiones abiertas** y le obliga a ponerse una propia la próxima vez que entre. Es lo mismo que pasa con un usuario nuevo, y por el mismo motivo.
 
-**Inactivar.** Pulsa el botón del muñeco. La ventana explica qué pasa: **Se queda sin permiso para nada desde ya: si entra con su clave, ve el sistema vacío. Lo que hizo hasta hoy se conserva entero: su nombre sigue en lo que pidió, aprobó o pagó. Si se fue de malas, repónle además la clave desde la llave, que es lo que le cierra la sesión. Una vez inactivo, se puede archivar.** Y debajo: **Los usuarios no se borran.** Un documento firmado por alguien que ya no existe no serviría de nada. Al reactivar, el texto es **Recupera sus roles y sus permisos con la misma clave que tenía. Si no la recuerda, cámbiasela desde la llave.**
+**Inactivar.** Pulse el botón del muñeco. La ventana explica qué pasa: **Se queda sin permiso para nada desde ya: si entra con su clave, ve el sistema vacío. Lo que hizo hasta hoy se conserva entero: su nombre sigue en lo que pidió, aprobó o pagó. Si se fue de malas, repónle además la clave desde la llave, que es lo que le cierra la sesión. Una vez inactivo, se puede archivar.** Y debajo: **Los usuarios no se borran.** Un documento firmado por alguien que ya no existe no serviría de nada. Al reactivar, el texto es **Recupera sus roles y sus permisos con la misma clave que tenía. Si no la recuerda, cámbiasela desde la llave.**
 
 **Hasta el 4 de septiembre de 2026 esa ventana decía «Deja de poder entrar al sistema desde ya», y no era verdad.** Inactivar nunca ha cerrado la puerta: apaga los permisos. La persona puede seguir entrando con su clave y encontrarse el sistema vacío. Lo que de verdad le cierra la sesión es cambiarle la clave.
 
@@ -5523,9 +5521,9 @@ Una cuenta no se borra, pero tampoco tiene por qué quedarse para siempre en la 
 **La regla: primero se inactiva, después se archiva.** El botón de la caja solo aparece en las filas que ya están inactivas. Y no es solo la pantalla: la base no deja archivar una cuenta encendida, ni encender una cuenta archivada.
 
 1. Inactiva la cuenta con el botón del muñeco.
-2. Pulsa el botón de la caja. Se abre **Archivar a …** con el texto **Sale de la lista de en uso y queda en el archivo con la fecha, el motivo y tu nombre. Sigue sin poder hacer nada, igual que inactivo, y su nombre sigue en todo lo que firmó. Para volver a encenderlo habrá que sacarlo del archivo primero.**
-3. Escribe el **Motivo**. Es obligatorio, mínimo cuatro letras. Es lo que va a leer quien lo busque dentro de un año.
-4. Pulsa **Archivar**.
+2. Pulse el botón de la caja. Se abre **Archivar a …** con el texto **Sale de la lista de en uso y queda en el archivo con la fecha, el motivo y su nombre. Sigue sin poder hacer nada, igual que inactivo, y su nombre sigue en todo lo que firmó. Para volver a encenderlo habrá que sacarlo del archivo primero.**
+3. Escriba el **Motivo**. Es obligatorio, mínimo cuatro letras. Es lo que va a leer quien lo busque dentro de un año.
+4. Pulse **Archivar**.
 
 En **Archivados** cada fila muestra cuándo se archivó, quién lo hizo y el motivo, con el botón de la caja abierta para **Sacar del archivo**. Al sacarla, la cuenta vuelve a **En uso** pero **inactiva**: sacar algo del archivo no es decidir que la persona vuelve a entrar. Si tiene que entrar, se reactiva aparte con el muñeco.
 
@@ -5586,7 +5584,7 @@ Los quince del sistema, para referencia, son:
 
 | Nivel | Qué le da al rol |
 | --- | --- |
-| Ninguna casilla marcada | El módulo no aparece en el menú. Si alguien escribe la dirección a mano, ve la tarjeta **{Módulo} no está a tu alcance** |
+| Ninguna casilla marcada | El módulo no aparece en el menú. Si alguien escribe la dirección a mano, ve la tarjeta **{Módulo} no está a su alcance** |
 | **Lectura** | Entra al módulo y consulta lo que hay. No escribe nada |
 | **Escritura** | Además de consultar, registra en ese módulo |
 | **Control total** | El escalón más alto de la matriz: abre el módulo entero |
@@ -5601,28 +5599,15 @@ Y la advertencia que conviene repetir: **ningún nivel de esta matriz convierte 
 
 #### Cambiar un permiso
 
-1. Entra en la pestaña **Roles y permisos**.
-2. Busca la tarjeta del rol.
+1. Entre en la pestaña **Roles y permisos**.
+2. Busque la tarjeta del rol.
 3. En la fila del módulo, marca o desmarca la casilla.
 4. Para un módulo que la tarjeta no enseña, úsese el selector **Darle acceso a otro módulo**, al pie de la tarjeta: el módulo elegido aparece con sus casillas en blanco y ahí se marca lo que le toca. Si no se marca nada, la fila se va sola la próxima vez.
 
-**Se guarda al instante.** No hay botón de guardar y no se pide confirmación. Y recuerda lo principal: **no le estás dando permiso a una persona, se lo estás dando a un rol.** Todos los que tengan ese rol quedan afectados por el mismo clic.
+**Se guarda al instante.** No hay botón de guardar y no se pide confirmación. Y recuerda lo principal: **no le está dando permiso a una persona, se lo está dando a un rol.** Todos los que tengan ese rol quedan afectados por el mismo clic.
 
-**El reparto se ajusta desde esta misma pantalla, así que la referencia buena es la matriz que tengas delante**, no una tabla impresa. Esta de aquí es orientativa y sirve para ver la forma que tiene el reparto:
+**El reparto se ajusta desde esta misma pantalla, así que la referencia buena es la matriz que tenga delante**, no una tabla impresa. Esta de aquí es orientativa y sirve para ver la forma que tiene el reparto:
 
-| Rol | Hasta dónde llega |
-| --- | --- |
-| **Administrador del sistema** | Control total en los catorce módulos de trabajo. **Respaldo de la base no**: ver más abajo |
-| **Gerente general** | Control total en casi todo. Lectura en Maquinaria, Combustible y Asignaciones |
-| **Compras** | Control total en Compras e Inventario; escritura en Configuración; lectura en Panel, Maquinaria, Combustible, Tesorería y Tasas |
-| **Tesorería** | Control total en el circuito del dinero y en lo que lo alimenta; nada en Maquinaria, Combustible ni Asignaciones |
-| **Almacén** | Escritura en Inventario, Asignaciones, Maquinaria, Combustible, Despachos y Configuración; lectura en Panel y Compras |
-| **Ventas** | Escritura en Ventas y Despachos; lectura en Panel, Inventario, Tesorería y Tasas |
-| **Operaciones** | Control total en Explotación; escritura en Maquinaria, Combustible y Compras; lectura en Panel, Inventario y Asignaciones |
-| **Recursos humanos** | Escritura en Nómina, Asignaciones, Inventario, Compras y Ventas; control total en Tasas de cambio |
-| **Solicitante** | Escritura en Compras; lectura en Panel e Inventario. Nada más |
-| **Consulta** | Lectura en Panel, Maquinaria, Combustible, Inventario, Asignaciones, Despachos, Compras y Tasas |
-| **Respaldo de la base** | Solo eso, y nada más |
 
 Nómina, Tesorería y Ventas quedan fuera del rol de Consulta a propósito: «solo lectura» de lo que gana cada quien sigue siendo ver el sueldo de todo el mundo.
 
@@ -5650,7 +5635,7 @@ Al editar, el **Código** queda bloqueado y la ventana lo dice: **El código no 
 
 Hay una regla del sistema que no se ve en ninguna pantalla y explica muchas sorpresas: **para cinco casos, tener el nivel equivale a tener el rol.**
 
-Cuando una acción pide un rol y no lo tienes, el sistema mira además si tienes el nivel equivalente. Si lo tienes, pasas.
+Cuando una acción pide un rol y no lo tiene, el sistema mira además si tiene el nivel equivalente. Si lo tiene, pasa.
 
 | Tener este rol… | …es lo mismo que tener |
 | --- | --- |
@@ -5681,7 +5666,7 @@ Con el botón **Extender un permiso** se pide:
 | Campo | Detalle |
 | --- | --- |
 | **A quién** | Una persona activa del sistema |
-| **Qué se le extiende** | Una o varias acciones del catálogo, agrupadas por módulo y con buscador. La misma justificación vale para todas. La ayuda dice el límite: *"Solo puedes extender lo que tú mismo puedes hacer."* |
+| **Qué se le extiende** | Una o varias acciones del catálogo, agrupadas por módulo y con buscador. La misma justificación vale para todas. La ayuda dice el límite: *"Solo puede extender lo que usted mismo puede hacer."* |
 | **Desde** | En blanco, desde hoy |
 | **Hasta** | En blanco, **indefinida**. Conviene poner fecha |
 | **Justificación** | Obligatoria: *"Por qué hace falta."* Dentro de un mes es lo único que va a explicar por qué esta persona pudo hacer esto |
@@ -5690,7 +5675,7 @@ Con el botón **Extender un permiso** se pide:
 
 **Nadie puede extender lo que él mismo no puede hacer.** Es lo que impide que esta pantalla se use para escalar permisos: el administrador puede prestar cualquier cosa porque lo puede todo, pero el gerente general solo presta lo suyo.
 
-**Lo que se hace con un permiso extendido queda marcado como tal.** No es lo mismo aprobar una compra porque es tu puesto que aprobarla porque alguien te prestó la facultad: la orden impresa dice *bajo autorización de* seguido del nombre, y a quien la usa se le exige subir el papel que la respalda. Está contado en 9.5.
+**Lo que se hace con un permiso extendido queda marcado como tal.** No es lo mismo aprobar una compra porque es su puesto que aprobarla porque alguien le prestó la facultad: la orden impresa dice *bajo autorización de* seguido del nombre, y a quien la usa se le exige subir el papel que la respalda. Está contado en 9.5.
 
 **Un permiso extendido se retira**, no se borra, y al retirarlo se pide **Por qué se retira**: queda el rastro de que existió, de quién lo dio, por qué y hasta cuándo.
 
@@ -5769,7 +5754,7 @@ La pantalla es un formulario largo, repartido en dos tarjetas.
 
 Se cierra con **Guardar cambios**, abajo a la derecha. Al terminar aparece **Guardado.** en verde. El botón está apagado mientras el RIF no tenga forma válida o la razón social esté vacía.
 
-Estos datos salen del comprobante del SENIAT, no de la memoria de nadie. Cópialos del papel.
+Estos datos salen del comprobante del SENIAT, no de la memoria de nadie. Cópielos del papel.
 
 **No se puede tener más de una empresa.** El sistema lleva los datos de una sola.
 
@@ -5793,25 +5778,18 @@ A la derecha van los botones: **Ver** para todos los que ven la lista, y para qu
 
 Son dos grupos distintos:
 
-| Quién | Ve la lista | Carga, corrige y quita |
-| --- | --- | --- |
-| Administrador del sistema | Sí | Sí |
-| Gerente general | Sí | Sí |
-| Almacén | Sí | Sí |
-| Compras | Sí | Sí |
-| El resto de los roles | No | No |
 
 Está repartido así a propósito: cargar y quitar papeles de la empresa es de la gerencia. Quien consulta estos papeles para hacer su trabajo hoy es compras, que paga contra ellos.
 
 #### Cargar un documento
 
-1. Pulsa **Cargar documento**. La ventana dice lo que admite: **PDF o imagen, hasta 50 MB. Queda guardado dentro del sistema.**
-2. Elige el **Tipo de documento**. Empieza en **Elige el tipo**.
-3. Escribe el **Nombre**, mínimo tres letras, como lo buscará quien lo necesite dentro de un año. Se escribe solo en mayúsculas y sin tildes.
-4. Elige el **Archivo**.
-5. Rellena **Emitido el** y **Vence el** si las sabes. Las dos son opcionales; la ayuda de la segunda avisa cuando ese tipo de papel suele caducar.
-6. Escribe una **Nota** si hace falta.
-7. Pulsa **Cargar**.
+1. Pulse **Cargar documento**. La ventana dice lo que admite: **PDF o imagen, hasta 50 MB. Queda guardado dentro del sistema.**
+2. Elija el **Tipo de documento**. Empieza en **Elige el tipo**.
+3. Escriba el **Nombre**, mínimo tres letras, como lo buscará quien lo necesite dentro de un año. Se escribe solo en mayúsculas y sin tildes.
+4. Elija el **Archivo**.
+5. Rellene **Emitido el** y **Vence el** si las sabe. Las dos son opcionales; la ayuda de la segunda avisa cuando ese tipo de papel suele caducar.
+6. Escriba una **Nota** si hace falta.
+7. Pulse **Cargar**.
 
 Los tipos disponibles son once, en este orden: **Alianza de la cantera – Gobernación**, **Registro Único de Información Fiscal (RIF)**, **Acta constitutiva**, **Acta de asamblea**, **Registro mercantil**, **Concesión minera**, **Permiso ambiental**, **Contrato**, **Solvencia**, **Poder o autorización** y **Otro documento**.
 
@@ -5821,7 +5799,7 @@ Los tipos disponibles son once, en este orden: **Alianza de la cantera – Gober
 
 #### Corregir un documento sin volver a subirlo
 
-**Sí se puede, y es lo normal.** Pulsa el lápiz: **Cambia lo que haga falta. El archivo solo se toca si subes uno nuevo.**
+**Sí se puede, y es lo normal.** Pulse el lápiz: **Cambia lo que haga falta. El archivo solo se toca si se sube uno nuevo.**
 
 Se pueden cambiar el tipo, el nombre, las fechas y la nota sin que el archivo se mueva. El campo del archivo cambia de etiqueta a **Reemplazar el archivo** y queda opcional: **Déjalo vacío y se queda el que ya está. Solo elige uno si llegó una versión nueva del papel.** Con papeles de diecisiete megas, esa diferencia es la que hay entre corregir una fecha y no corregirla nunca.
 
@@ -5955,41 +5933,41 @@ Guárdalo donde guardarías el libro de nómina en papel. No lo mandes por corre
 **Cada descarga queda anotada en la auditoría**, con el nombre de quien la pidió, la fecha y la hora.
 
 
-### 13.6 Cuando el sistema no te deja
+### 13.6 Cuando el sistema no le deja
 
-| Lo que ves | Qué significa | Qué hacer |
+| Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Esta acción la realiza: Administrador del sistema. Tu usuario no tiene ese rol.» | Estás en la pantalla pero sin el rol que la maneja | Pide a administración que lo haga, o que te dé el rol |
-| «Estás viendo esta pantalla en solo lectura. Crear usuarios y cambiar permisos lo hace quien tiene el rol de administrador del sistema.» | Aviso, no error: puedes consultar pero no cambiar | Si necesitas un cambio, pídeselo a administración |
-| «Asigna al menos un rol. Un usuario sin roles no puede hacer nada.» | Intentaste guardar un usuario sin marcar ningún rol | Marca al menos uno. **Solicitante** es el mínimo de cualquier supervisor |
-| «El usuario "p.ramirez" no es válido: de 3 a 32 caracteres, solo letras, números, punto, guion y guion bajo.» | El nombre de usuario tiene caracteres que no se admiten | Escríbelo con letras, números, punto y guion, sin espacios ni tildes |
-| «El usuario "p.ramirez" ya existe.» | Ese nombre de usuario está ocupado | Elige otro. Si la persona ya tiene cuenta, búscala en la lista y reactívala |
-| «El usuario necesita un nombre.» | Falta el nombre y apellido | Escríbelo |
+| «Esta acción la realiza: Administrador del sistema. Su usuario no tiene ese rol.» | Estás en la pantalla pero sin el rol que la maneja | Pide a administración que lo haga, o que te dé el rol |
+| «Está viendo esta pantalla en solo lectura. Crear usuarios y cambiar permisos lo hace quien tiene el rol de administrador del sistema.» | Aviso, no error: se puede consultar pero no cambiar | Si necesita un cambio, pídalo a administración |
+| «Asigne al menos un rol. Un usuario sin roles no puede hacer nada.» | Se intentó guardar un usuario sin marcar ningún rol | Marque al menos uno. **Solicitante** es el mínimo de cualquier supervisor |
+| «El usuario "p.ramirez" no es válido: de 3 a 32 caracteres, solo letras, números, punto, guion y guion bajo.» | El nombre de usuario tiene caracteres que no se admiten | Escríbalo con letras, números, punto y guion, sin espacios ni tildes |
+| «El usuario "p.ramirez" ya existe.» | Ese nombre de usuario está ocupado | Elija otro. Si la persona ya tiene cuenta, búsquela en la lista y reactívela |
+| «El usuario necesita un nombre.» | Falta el nombre y apellido | Escríbalo |
 | «La clave debe tener al menos 8 caracteres.» | La clave inicial es demasiado corta | Pon una de ocho caracteres o más y dásela en persona |
 | «Un usuario sin roles no puede hacer nada. Desactívalo en vez de dejarlo sin roles.» | Le quitaste todos los roles a alguien que sigue activo | Si ya no trabaja aquí, inactívalo desde el botón del muñeco |
-| «No puedes desactivar tu propio usuario.» | Estás intentando cerrarte la puerta a ti mismo | Que lo haga otro administrador |
+| «No puede desactivar su propio usuario.» | Estás intentando cerrarte la puerta a ti mismo | Que lo haga otro administrador |
 | «Es el único administrador activo. Nombra otro antes de desactivarlo.» | Quedaría el sistema sin nadie que lo administre | Dale el rol de administrador a otra persona y repite |
 | «Es el único administrador activo. Nombra otro antes de quitarle el rol.» | Lo mismo, quitando el rol en vez de desactivar | Nombra a otro administrador primero |
-| «El administrador tiene acceso completo por definición y no se puede recortar.» | Intentaste mover las casillas del rol de administrador | No se pueden mover: es la salida de emergencia del sistema |
-| «El código "xx" no es válido: de 3 a 32 caracteres, mayúsculas, números y guion bajo.» | El código del rol nuevo no tiene la forma admitida | Escríbelo en mayúsculas, con guion bajo en vez de espacios |
-| «El rol necesita un nombre.» | Falta el nombre del rol | Escríbelo: es lo que se lee en la tarjeta |
+| «El administrador tiene acceso completo por definición y no se puede recortar.» | Se intentó mover las casillas del rol de administrador | No se pueden mover: es la salida de emergencia del sistema |
+| «El código "xx" no es válido: de 3 a 32 caracteres, mayúsculas, números y guion bajo.» | El código del rol nuevo no tiene la forma admitida | Escríbalo en mayúsculas, con guion bajo en vez de espacios |
+| «El rol necesita un nombre.» | Falta el nombre del rol | Escríbalo: es lo que se lee en la tarjeta |
 | «El rol "TESORERIA" es del sistema y no se puede borrar. Quítaselo a quien no deba tenerlo.» | Los roles del sistema no se borran | Quítaselo a quien no deba tenerlo, desde su ficha |
 | «El rol todavía lo tienen 3 usuario(s). Quítaselo antes de borrarlo.» | El rol está en uso | Quítaselo a esas personas y vuelve a intentarlo |
-| «Esta acción la realiza: Administrador del sistema o Gerente general. Tu usuario no tiene ese rol.» | Los datos de la empresa y los documentos legales los cambian esos dos roles | Pídeselo a la gerencia o a administración |
-| «Solo la gerencia y quien administra el sistema pueden cambiar estos datos.» | Ves los datos de la empresa pero no puedes tocarlos | Pide el cambio a quien corresponda |
-| «La razón social no puede quedar vacía.» | Falta la razón social | Cópiala del registro, tal como está inscrita |
-| «El RIF "J-5020917" no tiene forma de RIF. Debe ser como J-50209170-0.» | El RIF está incompleto o mal escrito | Cópialo del comprobante, con la letra, el guion y el dígito final |
+| «Esta acción la realiza: Administrador del sistema o Gerente general. Su usuario no tiene ese rol.» | Los datos de la empresa y los documentos legales los cambian esos dos roles | Pídalo a la gerencia o a administración |
+| «Solo la gerencia y quien administra el sistema pueden cambiar estos datos.» | Ve los datos de la empresa pero no los puede tocar | Pide el cambio a quien corresponda |
+| «La razón social no puede quedar vacía.» | Falta la razón social | Cópiela del registro, tal como está inscrita |
+| «El RIF "J-5020917" no tiene forma de RIF. Debe ser como J-50209170-0.» | El RIF está incompleto o mal escrito | Cópielo del comprobante, con la letra, el guion y el dígito final |
 | «Ponle nombre al documento. Una lista de archivos sin nombre no se consulta.» | Falta el nombre del papel | Ponle el nombre con el que lo buscarían dentro de un año |
-| «Falta el archivo.» | Estás cargando un documento nuevo sin elegir archivo | Elige el archivo. Al corregir uno ya cargado sí puedes dejarlo vacío |
+| «Falta el archivo.» | Se está cargando un documento nuevo sin elegir archivo | Elija el archivo. Al corregir uno ya cargado sí se puede dejar vacío |
 | «acta.pdf · 62,3 MB — pasa del tope de 50 MB.» | El archivo pesa más de lo admitido | Escanéalo con menos resolución, o divídelo, y vuelve a intentarlo |
-| «No se pudo subir el archivo: …» | La carga se cortó | Revisa la conexión y repítela. Lo que no subió, no quedó |
-| «No se pudo abrir el documento: …» | La dirección del papel no se pudo preparar | Recarga la pantalla y pulsa **Ver** otra vez |
+| «No se pudo subir el archivo: …» | La carga se cortó | Revise la conexión y repítala. Lo que no subió, no quedó |
+| «No se pudo abrir el documento: …» | La dirección del papel no se pudo preparar | Recargue la pantalla y pulse **Ver** otra vez |
 | «No se pudo preparar el documento.» | El visor no logró mostrar el papel | Cierra la vista y vuelve a abrirla. Si sigue, avisa a quien administra el sistema |
 | «Esto lo ve la administración» | Llegaste a la Auditoría sin el rol de administrador | La auditoría no se reparte. Pide lo que necesites saber a quien administra el sistema |
 | «El registro de auditoría no se modifica ni se borra. Es lo único que lo hace valer.» | Se intentó cambiar o quitar una línea del registro | No hay forma de hacerlo, ni la habrá. Es lo que sostiene las cifras |
 | «Tu usuario no tiene permiso para esta acción.» | Falta el permiso sobre el módulo | Pide el permiso a administración |
-| «Esa operación todavía no existe en la base de datos. Falta correr las migraciones.» | El sistema quedó a medio actualizar | Avisa a quien administra el sistema. No es algo que se resuelva desde la pantalla |
-| «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
+| «Esa operación todavía no existe en la base de datos. Falta correr las migraciones.» | El sistema quedó a medio actualizar | Avise a quien administra el sistema. No es algo que se resuelva desde la pantalla |
+| «No hay conexión con el servidor. Revise la red e inténtelo otra vez.» | Se cayó el internet | Reintente cuando vuelva la señal. Lo que no se guardó, no quedó |
 
 ---
 
