@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice y los capítulos 1, 3, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -128,11 +128,13 @@ Conviene tener este recorrido en la cabeza antes de leer los capítulos, porque 
 
 1. Se registra el **frente** donde se trabaja.
 2. Se registra la **voladura**, contra ese frente.
-3. Al cierre del turno se carga el **parte de producción**, y ahí es donde la piedra entra al patio.
+3. Al cierre del turno se carga el **parte de producción**, que escribe la entrada del material al patio.
 4. El material se guarda, se traslada entre patios y se cuenta, en **Inventario**.
-5. Cuando se vende, el camión se pesa en la **romana** y se le emite la **guía**.
-6. Sale con su **nota de entrega**, que es el paso que descuenta el patio.
-7. Se **factura** y se **cobra**.
+5. Cuando se vende, el despacho se pide y **otra persona lo aprueba**. En ese momento nace la **nota de entrega** y **el patio se descuenta**.
+6. El camión se pesa en la **romana** y sale con esa nota. Si hay **guía de movilización** vigente, se le engancha.
+7. Se **factura** y se **cobra**. Facturar es opcional: la nota de entrega vale por sí sola (10).
+
+**El parte de producción no es la única entrada al patio.** **Registrar entrada**, en Inventario › Existencias, admite también los productos de cantera (6.6).
 
 **El frente, la voladura y el parte de turno no están hoy en el menú** (1.5).
 
