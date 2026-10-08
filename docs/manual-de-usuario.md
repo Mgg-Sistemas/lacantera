@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 19, 20, 21, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 19, 20, 21, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -841,90 +841,79 @@ El panel se refresca solo cada cinco minutos, además del enlace en vivo. No se 
 
 **Sistema › Tasas de cambio**
 
-Esta pantalla registra las tasas del día, que son con las que el sistema valora todos los documentos que se emiten. La propia pantalla marca la diferencia con el indicador de la barra superior en una frase que conviene aprenderse: **La tasa que valora los documentos. No es la del indicador de arriba: esa informa, esta compromete.**
+Esta pantalla lleva las tasas del día, que son con las que el sistema valora todos los documentos que se emiten. La propia pantalla marca la diferencia con el indicador de la barra superior: **Tasa de cambio aplicada a los documentos. No es la del indicador de la barra superior, que solo informa.**
 
-**Ya no es solo el dólar.** El sistema lleva tres monedas contra el bolívar, cada una con su tasa y su propia fuente:
+**Las tasas se registran solas.** Una tarea del sistema las toma varias veces al día de su fuente pública: el dólar y el euro, de lo que publica el **BCV**; el USDT, de la **mediana del P2P de Binance**, que se registra con fuente **PARALELO** porque no hay fuente oficial. Lo que queda para las personas es revisarlas, corregir la de hoy si la fuente se leyó mal, y cargar a mano las monedas que no tienen fuente pública. El bolívar no aparece en la lista porque su tasa contra sí mismo es uno por definición.
 
-| Moneda | Cómo se rotula | Símbolo | De dónde sale la referencia |
-| --- | --- | --- | --- |
-| Dólar | **Dólar estadounidense** | **$** | Lo publicado por el **BCV** |
-| Euro | **Euro** | **€** | Lo publicado por el **BCV** |
-| Tether | **Tether (USDT)** | **USDT** | La **mediana del P2P de Binance**. Se registra con fuente **PARALELO**: no hay fuente oficial que consultar |
-
-El bolívar no aparece en la lista porque su tasa contra sí mismo es uno por definición.
-
-Antes de tocar nada hay que entender esto: **una tasa registrada no se puede corregir ni borrar. Nunca, para nadie.** No hay botón de editar ni de eliminar en toda la pantalla. La razón es que la tasa es evidencia: con ella se valoró lo que se cotizó, se aprobó y se pagó ese día, y cambiarla después alteraría de golpe documentos ya emitidos. Si se publica una corrección, se registra una fila nueva y los documentos afectados se reprocesan aparte, con administración.
+Antes de tocar nada hay que entender esto: **una tasa de un día cerrado no se corrige ni se borra.** No hay botón de editar ni de eliminar. La tasa es evidencia: con ella se valoró lo que se cotizó, se aprobó y se pagó ese día, y cambiarla después alteraría de golpe documentos ya emitidos. **La única excepción es la de hoy, si la tomó el sistema solo**: esa se puede enmendar el mismo día, una única vez (5.2).
 
 ### 5.1 Qué se ve
 
-Lo primero de la pantalla es **la fila de monedas**: una píldora por cada una, con su nombre y su símbolo al lado en gris. **Todo lo que hay debajo —el formulario, los avisos y el historial— es de la moneda que esté elegida.**
+Lo primero de la pantalla es **la fila de monedas**: una píldora por cada una, con su nombre y su símbolo al lado en gris. **Todo lo que hay debajo —el formulario, los avisos y el historial— es de la moneda que esté elegida.** Abre siempre en el dólar, porque es con lo que se mide todo el sistema. Cambiar de moneda **vacía el campo del valor** a propósito: la cifra escrita para el dólar no vale para el euro.
 
-**Abre siempre en el dólar**, porque es con lo que se mide todo el sistema; las otras dos están a un clic. Cambiar de moneda **vacía el campo del valor** a propósito: la cifra que ibas a escribir para el dólar no vale para el euro.
-
-**Registrar la tasa del día · $** es la tarjeta ancha de arriba, y el símbolo del final cambia con la moneda elegida. Si tu permiso sobre Tasas de cambio es de consulta, el título dice solo **La tasa del día · $** y el subtítulo dice de dónde sale: **Se registra automáticamente, del BCV.** Con permiso de escritura, el subtítulo repite la regla: **Una vez registrada no se puede corregir. Si se publica una corrección, se registra una fila nueva.**
+**Registrar la tasa del día · $** es la tarjeta ancha de arriba, y el símbolo del final cambia con la moneda elegida. Su subtítulo lo resume: **Se registra automáticamente varias veces al día: dólar y euro del BCV, USDT de Binance. Aquí se revisa, se corrige la de hoy y se cargan las monedas sin fuente pública.** Con permiso de consulta, el título dice solo **La tasa del día · $**, el subtítulo dice de dónde sale —**Se registra automáticamente, del BCV.**— y no hay formulario.
 
 Debajo hay un aviso de estado, siempre uno de los dos:
 
-- En verde, si ya se registró: **La tasa de hoy ya está registrada: Bs** seguido de la cifra **por $. Los documentos que se emitan hoy en $ se valoran con esta.**
-- En naranja, si no: **Todavía no se ha registrado la tasa de hoy en $.**, seguido de **Los documentos se están valorando con la del** y la fecha de la última. Si no hay ninguna tasa registrada de esa moneda, dice **Sin ninguna tasa registrada no se puede emitir nada en $.**
+- En verde, si ya hay tasa de hoy: **La tasa de hoy ya está registrada: Bs** seguido de la cifra **por $. Los documentos que se emitan hoy en $ se valoran con esta.** Si la tomó el sistema, añade a qué hora y de dónde, y **Solo se puede corregir hoy.**
+- En naranja, si no: **Todavía no se ha registrado la tasa de hoy en $.**, seguido de **Los documentos se están valorando con la del** y la fecha de la última. Si no hay ninguna tasa registrada de esa moneda: **Sin ninguna tasa registrada no se puede emitir nada en $.** Para las monedas con fuente pública, quien puede registrar tiene ahí el botón **Tomarla del BCV ahora** —o **Tomarla de Binance ahora**—, que la pide en el momento sin esperar a la próxima pasada.
 
 **Ahora mismo** es la tarjeta estrecha, y muestra las dos tasas una encima de la otra para que no se confundan:
 
-- Arriba, la de la calle: **Publicada por el BCV** para el dólar y el euro, **Mediana del P2P de Binance** para el USDT. Debajo, la etiqueta **De hoy** o **De un día anterior** en el caso del BCV, y **De ahora mismo** en el de Binance.
-- Abajo, **Con la que valora el sistema**: la cifra registrada, o **Ninguna todavía.** Al lado, en letra pequeña, **Registrada el** y la fecha, con la palabra **arrastrada** si viene de un día anterior.
+- Arriba, la de la calle: **Publicada por el BCV** para el dólar y el euro, **Mediana del P2P de Binance** para el USDT, con la etiqueta **De hoy** o **De un día anterior** —o **De ahora mismo**, en el caso de Binance—. Una moneda sin fuente pública dice su fuente y **Sin fuente oficial: se carga a mano.**
+- Abajo, **Con la que valora el sistema**: la cifra registrada, o **Sin registros.** Debajo, **Registrada el** y la fecha, con **arrastrada** si viene de un día anterior.
 
 Y debajo de esa tarjeta está la calculadora, que tiene su propio apartado (5.5).
 
-**Historial** es la tercera tarjeta, con el subtítulo **Últimas tasas registradas en $.** Tiene tres columnas:
+**Historial** es la tercera tarjeta: **Últimas tasas registradas en $.**
 
 | Columna | Qué muestra |
 | --- | --- |
 | **Fecha** | El día de la semana abreviado, el día, el mes y el año |
 | **Bs por $** | El valor, con cuatro decimales |
-| **Fuente** | De dónde salió. **BCV** se pinta en azul; **PARALELO** y las demás, en gris |
+| **Fuente** | De dónde salió: **BCV**, **PARALELO** u otra |
 
 Los cuatro decimales no son un capricho: a más de doscientos bolívares por dólar, el cuarto decimal ya mueve céntimos en una factura.
 
-La tabla va de la más reciente a la más antigua, **es solo de la moneda elegida** y **muestra hasta sesenta filas. No tiene buscador, ni filtros, ni paginación**, así que una tasa muy antigua deja de aparecer aquí. Si no hay ninguna, se ve **Sin tasas registradas en $**.
+La tabla va de la más reciente a la más antigua, es solo de la moneda elegida y muestra hasta sesenta filas, sin buscador ni filtros: una tasa muy antigua deja de aparecer aquí. Si no hay ninguna, **Sin tasas registradas en $**.
 
-### 5.2 Cómo se carga una tasa
+### 5.2 Cómo se carga o se corrige una tasa
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
 | **Fecha** | Sí | Viene puesta la de hoy en Venezuela. **No admite días futuros** |
-| **Bolívares por $** | Sí | Numérico, admite decimales. El rótulo cambia con la moneda: **Bolívares por €**, **Bolívares por USDT**. Empieza vacío, con **0,0000** de ejemplo |
+| **Bolívares por $** | Sí | El rótulo cambia con la moneda: **Bolívares por €**, **Bolívares por USDT**. Admite decimales |
 
-1. Elige la **moneda** en la fila de píldoras. Si es el dólar, ya está elegida.
-2. Revisa la **Fecha**. Normalmente es la de hoy y no hay que tocarla.
-3. Escribe el valor. Si el sistema pudo consultar la fuente pública, tienes un botón que la copia de un golpe: **Usar la del BCV** para el dólar y el euro, **Usar la de Binance** para el USDT. Ese botón no aparece si la consulta falló.
-4. Pulsa **Registrar**. Mientras guarda dice **Guardando…** y no se puede volver a pulsar.
-5. Al guardar, el campo del valor se vacía solo y las tres tarjetas se ponen al día.
+1. Elija la **moneda** en la fila de píldoras.
+2. Revise la **Fecha**. Normalmente es la de hoy y no hay que tocarla.
+3. Escriba el valor. Si el sistema pudo consultar la fuente pública, tiene un botón que la copia de un golpe: **Usar la del BCV**, o **Usar la de Binance** para el USDT. Ese botón no aparece si la consulta falló.
+4. Pulse **Registrar**. Mientras guarda dice **Guardando…**.
 
-Debajo del campo del valor hay una línea de ayuda que dice qué se pudo consultar: **Según el BCV: Bs** con la cifra, o **Según la mediana del P2P de Binance: Bs** con la cifra, a la que se añade **(no es de hoy)** cuando la publicada corresponde a otro día. Si no se pudo consultar, dice **No se pudo consultar el BCV; escribe el valor a mano.**
+Debajo del campo del valor, la ayuda dice qué se pudo consultar: **Según el BCV: Bs** con la cifra —**(no es de hoy)** si la publicada es de otro día— o, si no se pudo, **No se pudo consultar el BCV; escriba el valor a mano.** Para una moneda sin fuente pública: **Se registra como PARALELO: no hay fuente pública que consultar.**
 
-**El botón Registrar está apagado mientras el campo del valor esté vacío**, y el selector de fecha no deja elegir mañana ni después, porque una tasa futura valoraría documentos con un número que todavía no se ha publicado.
+**Si la de hoy la tomó el sistema y la fuente se leyó mal**, el botón dice **Corregir la de hoy**: se escribe el valor bueno y se guarda. **Solo se puede enmendar la tasa que tomó sola la tarea diaria, el mismo día y una única vez.** Una tasa que registró una persona no se corrige, y la de un día cerrado tampoco, porque ya valoró documentos.
 
-Registrar la tasa del dólar apaga el aviso rojo **La tasa de hoy no está cargada** del panel.
+**El botón está apagado mientras el campo del valor esté vacío**, y la fecha no deja elegir mañana ni después: una tasa futura valoraría documentos con un número que todavía no se ha publicado.
 
-**Cargar una tasa exige permiso de escritura sobre Tasas de cambio**, que hoy tienen **administración, la gerencia general y recursos humanos**. Quien solo la consulta ve la pantalla completa —las monedas, el historial y la calculadora— pero sin el formulario. Esto cambió el 4 de agosto de 2026: antes lo podía hacer cualquiera que entrara al sistema.
+**Cargar una tasa pide escritura sobre Tasas de cambio** (13.1). Quien solo la consulta ve la pantalla completa —las monedas, el historial y la calculadora— pero sin el formulario.
 
 ### 5.3 De dónde salen las tasas
 
 Hay dos tasas distintas en el sistema y no hay que confundirlas.
 
-**La de la calle** se consulta a una fuente pública en internet y se refresca cada media hora. Es solo para mirar. Para el dólar y el euro es lo que publica el BCV; para el USDT es la mediana de las diez primeras ofertas del mercado entre particulares de Binance, consultada desde el servidor porque el navegador no puede pedirla directamente. **Ninguna de las tres valora nada.**
+**La de la calle** se consulta a una fuente pública en internet. Es solo para mirar: el indicador de la barra superior y la parte de arriba de **Ahora mismo**. Para el USDT es la mediana de las diez primeras ofertas del mercado entre particulares de Binance, consultada desde el servidor.
 
-**La registrada en esta pantalla** es la que el sistema usa para valorar los documentos. Puede escribirse a mano o copiarse de la pública con el botón, pero mientras no se registre aquí, para el sistema no existe.
+**La registrada** es la que el sistema usa para valorar los documentos. Normalmente la registra el propio sistema; también puede escribirse a mano. Mientras no esté registrada, para el sistema no existe.
 
-Si las dos no coinciden —arriba dice una cosa y **Con la que valora el sistema** dice otra—, significa que la tasa del día todavía no se ha cargado. Alguien tiene que registrarla antes de emitir nada.
+Si las dos no coinciden —arriba dice una cosa y **Con la que valora el sistema** dice otra—, lo más probable es que la de hoy todavía no se haya registrado: la tarea no ha pasado, o no pudo consultar la fuente.
 
-**El USDT no tiene tasa oficial, y eso hay que saberlo.** El dólar y el euro los publica el BCV y se registran con fuente **BCV**; el USDT se registra con fuente **PARALELO**, porque nadie lo publica oficialmente: lo pone quien lo negocia. La cifra de Binance es una referencia de mercado, no una publicación con respaldo. Antes de registrarla, confírmala con quien cierra las operaciones.
+**El USDT no tiene tasa oficial, y eso hay que saberlo.** El dólar y el euro los publica el BCV y se registran con fuente **BCV**; el USDT se registra con fuente **PARALELO**, porque nadie lo publica oficialmente. La cifra de Binance es una referencia de mercado, no una publicación con respaldo.
 
 #### La tasa que se arrastra
 
-El BCV no publica los fines de semana ni los feriados. Un documento emitido en sábado tiene que valorarse con algo, y ese algo es la última tasa registrada. Por eso la tarjeta **Ahora mismo** dice **arrastrada** cuando la que está valorando es de un día anterior: no es un error ni un descuido, es el sistema trabajando con lo último publicado.
+El BCV no publica los fines de semana ni los feriados. Un documento emitido en sábado tiene que valorarse con algo, y ese algo es la última tasa registrada. Por eso **Ahora mismo** dice **arrastrada** cuando la que está valorando es de un día anterior: no es un error, es el sistema trabajando con lo último publicado.
 
-**Cada moneda se arrastra por su cuenta.** Registrar la del dólar no registra la del euro. Si mañana hay que emitir algo en euros y nadie ha cargado el euro esta semana, se valorará con el euro de la semana pasada.
+**Cada moneda se arrastra por su cuenta.** Si un día no hay euro registrado, lo que se emita en euros se valora con el último euro que haya.
 
 ### 5.4 Por qué cada documento congela la tasa del día
 
@@ -934,18 +923,18 @@ La razón es la que sostiene toda la contabilidad de la empresa: una factura de 
 
 De ahí salen dos consecuencias prácticas:
 
-- **Cargar la tasa es lo primero de la mañana.** Mientras no esté, el sistema avisa en rojo en el panel, porque todo lo que se emita antes de cargarla se valorará con la del día anterior.
-- **Corregir una tasa mal cargada no se hace en esta pantalla.** Se registra una fila nueva y los documentos ya emitidos con la equivocada se revisan con administración. Por eso vale la pena mirar dos veces la cifra antes de pulsar **Registrar**.
+- **Conviene mirar la tasa a primera hora.** Mientras no esté la de hoy, el panel avisa, porque todo lo que se emita antes se valorará con la del día anterior. Si hace falta emitir antes de que pase la tarea, **Tomarla del BCV ahora** la trae en el momento.
+- **Una tasa mal cargada por una persona no se corrige en esta pantalla.** Los documentos ya emitidos con ella se revisan con la administración. Por eso vale la pena mirar dos veces la cifra antes de pulsar **Registrar**.
 
 ### 5.5 La calculadora
 
-Está en dos sitios: en la tarjeta **Ahora mismo** de esta pantalla, y dentro del panel que se despliega al pulsar el indicador de tasa de la barra superior. Sirve para hacer una cuenta con monedas mezcladas sin sacar la calculadora del teléfono ni buscar la tasa a mano.
+Está en dos sitios: en la tarjeta **Ahora mismo** de esta pantalla, y dentro del panel que se despliega al pulsar el indicador de tasa de la barra superior. Sirve para hacer una cuenta con monedas mezcladas sin buscar la tasa a mano.
 
-Su rótulo es **Calcular** y el campo trae de ejemplo **(300 $ + 120 €) / 3**. Se escribe la cuenta como se diría en voz alta y el resultado sale debajo, en grande, mientras se teclea. Con el campo vacío ofrece tres ejemplos pulsables: **(300 $ + 120 €) / 3**, **850 usdt \* 1,16** y **1200 $ - 340,50 €**.
+Su rótulo es **Calcular** y el campo trae de ejemplo **(300 $ + 120 €) / 3**. Se escribe la cuenta como se diría en voz alta y el resultado sale debajo, en grande, mientras se teclea. Con el campo vacío ofrece tres ejemplos que se pueden pulsar: **(300 $ + 120 €) / 3**, **850 usdt \* 1,16** y **1200 $ - 340,50 €**.
 
-Cuando el resultado es dinero aparece una fila **en** con una píldora por cada moneda —**Bs**, **$**, **€**, **USDT**—, y pulsando una se convierte el resultado a esa moneda. Solo salen las monedas que tengan tasa registrada. Empieza en bolívares.
+Cuando el resultado es dinero aparece una fila **en** con una píldora por cada moneda, y pulsando una se convierte el resultado a esa moneda. Solo salen las monedas que tengan tasa registrada.
 
-Debajo del resultado, la calculadora **repite cómo leyó la cuenta**, con los signos escritos como se escriben a mano: `300,00 $ + 120,00 € ÷ 3`. Es para que se vea si entendió lo que quisiste decir antes de apuntar el número.
+Debajo del resultado, la calculadora **repite cómo leyó la cuenta**, con los signos escritos como se escriben a mano. Es para que se vea si entendió lo que se quiso decir antes de apuntar el número.
 
 **Cómo hay que escribirle:**
 
@@ -958,25 +947,27 @@ Debajo del resultado, la calculadora **repite cómo leyó la cuenta**, con los s
 - **Dinero más dinero da dinero**, aunque sean monedas distintas: todo pasa por bolívares, que es la única moneda contra la que hay tasas.
 - **Dinero por un número da dinero.** Es lo que se usa para el IVA: **× 1,16**.
 - **Dinero entre un número da dinero.** Es repartir.
-- **Dinero entre dinero da un número**, que es una proporción. Y **dinero por dinero no existe**: el resultado no sería una cantidad de nada. Si lo intentas, responde: «No se puede multiplicar dinero por dinero. Para un porcentaje use un número suelto, como «× 1,16».»
+- **Dinero entre dinero da un número**, que es una proporción. Y **dinero por dinero no existe**: el resultado no sería una cantidad de nada. Si se intenta, responde: «No se puede multiplicar dinero por dinero. Para un porcentaje use un número suelto, como «× 1,16».»
 
-Si escribes una moneda que no existe, te lo dice y, cuando se parece a una que sí, la propone: ««bsb» no es una moneda. ¿Querías escribir Bs?» Y si la moneda existe pero nadie ha cargado su tasa, avisa de lo que falta: «Falta registrar la tasa de Euro.»
+Si se escribe una moneda que no existe, lo dice y, cuando se parece a una que sí, la propone: ««bsb» no es una moneda. ¿Quiso escribir Bs?» Y si la moneda existe pero no tiene tasa registrada, avisa de lo que falta: «Falta registrar la tasa de Euro.»
 
-**La calculadora no registra nada.** Es una cuenta a mano hecha en pantalla: no queda guardada, no aparece en ningún documento y no valora nada. Lo que valora es lo registrado en esta pantalla.
+**La calculadora no registra nada.** Es una cuenta hecha en pantalla: no queda guardada, no aparece en ningún documento y no valora nada.
 
-### 5.6 Cuando el sistema no te deja
+### 5.6 Cuando el sistema no le deja
 
-| Lo que ves | Qué significa | Qué hacer |
+| Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Ya existe una tasa BCV para USD/VES del … Las tasas no se corrigen: si el valor cambió, consulte con administración.» | Ya se cargó la tasa de ese día y esa moneda. Es el caso más frecuente | Revisa el historial: la de hoy ya está. Si el valor cargado está mal, habla con administración |
-| «La tasa debe ser mayor que cero (recibido: …)» | Escribiste cero o un valor negativo | Escribe la tasa publicada |
-| «No se puede registrar una tasa con fecha futura» | La fecha es de mañana o después | Corrige la fecha |
-| «Tu usuario no tiene acceso a Tasas de cambio.» | Tu permiso sobre este módulo es de consulta | Que la cargue administración, la gerencia o recursos humanos |
-| «No autenticado» | Tu sesión ya no vale | Vuelve a entrar y repite el registro |
-| «Las tasas de cambio no se modifican ni se borran (operación: …). Inserte una tasa nueva.» | Se intentó cambiar o eliminar una tasa ya registrada | Registra una fila nueva. Las tasas anteriores se quedan |
-| **No disponible** en el indicador de la barra superior | No se pudo consultar la tasa pública | Escribe el valor a mano. La consulta pública no hace falta para registrar |
-| «Falta registrar la tasa de Euro.» en la calculadora | Metiste esa moneda en la cuenta y nadie ha cargado su tasa | Regístrala arriba, eligiendo esa moneda |
-| «No hay conexión con el servidor. Revisa la red e inténtalo otra vez.» | Se cayó el internet | Reintenta cuando vuelva la señal. Lo que no se guardó, no quedó |
+| «Ya existe una tasa BCV para USD/VES del …» con «Las tasas no se corrigen: si el valor cambió, consulte con administración.» | Ya hay tasa de ese día y esa moneda | Revise el historial: la de ese día ya está. Si la tomó el sistema hoy y está mal, use **Corregir la de hoy**; si no, hable con la administración |
+| «Si la registró una persona, no se corrige: las tasas de un día cerrado son inmutables.» | Se quiso enmendar una tasa que no tomó el sistema | Hable con la administración |
+| «No hay una tasa automática de hoy para … que corregir» | La de hoy no la tomó el sistema, o no hay tasa de hoy | Registre la tasa con **Registrar** |
+| «Solo se puede enmendar la tasa que tomó sola la tarea diaria, el mismo día y una única vez.» | Esa tasa ya se corrigió una vez, o no es de hoy | Hable con la administración |
+| «La tasa debe ser mayor que cero (recibido: …)» | Se escribió cero o un valor negativo | Escriba la tasa publicada |
+| «No se puede registrar una tasa con fecha futura» | La fecha es de mañana o después | Corrija la fecha |
+| «Su usuario no tiene acceso a ….» | Su permiso sobre Tasas de cambio es de consulta | Que la cargue quien tenga escritura |
+| «Las tasas de cambio no se modifican ni se borran (operación: …). Inserte una tasa nueva.» | Se intentó cambiar o eliminar una tasa ya registrada | No se cambia: queda como está |
+| **No disponible** en el indicador de la barra superior | No se pudo consultar la tasa pública | La registrada sigue valiendo. Si hace falta, escriba el valor a mano |
+| «Falta registrar la tasa de Euro.» en la calculadora | Esa moneda no tiene tasa registrada | Regístrela arriba, eligiendo esa moneda |
+| «No hay conexión con el servidor. Revise la red e inténtelo otra vez. Lo que no se guardó, no quedó.» | Se cayó el internet | Repita cuando vuelva la señal |
 
 ---
 
