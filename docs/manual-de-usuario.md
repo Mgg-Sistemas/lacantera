@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 15, 20, 21 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice, el apartado 1.5 y los capítulos 3, 6, 7, 8, 9, 10, 12, 14, 15, 20, 21 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -6022,73 +6022,79 @@ Guárdalo donde guardarías el libro de nómina en papel. No lo mandes por corre
 
 ## 14. Las reglas que el sistema impone
 
-Estas son las reglas que explican la mayoría de los casos en que el sistema no te deja avanzar. **No son fallas.** Cada una está puesta a propósito y aquí se explica por qué.
+Estas son las reglas que explican la mayoría de los casos en que el sistema no le deja avanzar. **No son fallas.** Cada una está puesta a propósito, y aquí se explica por qué.
 
 ### 14.1 Lo que se registra, se queda
 
-Un movimiento de inventario no se modifica ni se elimina. Una nómina pagada no se revierte. Un pesaje no se corrige. Un cobro anulado no desaparece: queda anulado y a la vista.
+Un movimiento de inventario no se modifica ni se elimina. Una nómina pagada no se anula. Una factura anulada se queda con su número. Un cobro anulado no desaparece: queda anulado y a la vista.
 
-La razón es la misma en todos los casos. Si un dato se puede borrar, ningún número del sistema significa nada, porque siempre cabe la sospecha de que alguien arregló lo que no cuadraba. Corregir consiste en **escribir un documento nuevo que explique la corrección**, de modo que el error y su arreglo queden los dos visibles.
+La razón es la misma en todos los casos. Si un dato se puede borrar, ningún número del sistema significa nada, porque siempre cabe la sospecha de que alguien arregló lo que no cuadraba. Corregir consiste en **escribir un movimiento nuevo que explique la corrección** —un reverso, un ajuste, una nota de crédito—, de modo que el error y su arreglo queden los dos visibles. Hasta un vale de combustible que se corrige conserva su número y queda marcado **Corregido**, con quién y cuándo.
 
 Es más incómodo. También es lo único que hace que las cifras se puedan defender frente a un auditor, un socio o el SENIAT.
 
 ### 14.2 Una sola puerta para cada cosa
 
-La piedra entra al patio por el parte de turno, y por ningún otro sitio. Un pesaje de la romana se usa en un solo despacho. Una guía de movilización ampara un solo viaje.
+Un pesaje de la romana se usa en un solo despacho. Una guía de movilización ampara un solo viaje. Una salida deja una sola nota de entrega. Una nota de entrega que espera en una factura por autorizar no entra en otra.
 
-Todas estas reglas dicen lo mismo de formas distintas: **dos puertas al mismo sitio es como se cuenta dos veces lo mismo**. Un turno cargado dos veces son toneladas que no existen; un ticket usado dos veces es un camión que pesó una vez y salió dos.
+Todas estas reglas dicen lo mismo de formas distintas: **dos puertas al mismo sitio es como se cuenta dos veces lo mismo**. Un ticket usado dos veces es un camión que pesó una vez y salió dos.
 
 Cuando algo queda libre otra vez —al anular una nota, el ticket y la guía vuelven a quedar disponibles— es porque el hecho físico sigue siendo cierto: el camión se pesó igual.
 
 ### 14.3 Cada documento guarda su tasa
 
-Un documento emitido hoy conserva para siempre la tasa de hoy. Si mañana el BCV publica otra, ese documento no cambia.
+Un documento emitido hoy conserva para siempre la tasa de hoy. Si mañana el BCV publica otra, ese documento no cambia. Una nota de crédito toma la tasa de la factura que corrige, no la del día.
 
 Esto elimina de raíz un problema clásico: que el informe en bolívares y el informe en dólares dejen de cuadrar entre sí. No pueden desincronizarse, porque cada línea lleva su propia tasa congelada.
 
 ### 14.4 No se saca lo que no hay
 
-Ninguna operación puede dejar una existencia por debajo de cero: ni una salida, ni un traslado, ni un despacho, ni deshacer una entrada, ni anular un parte de turno.
+Ninguna operación puede dejar una existencia por debajo de cero: ni una salida, ni un traslado, ni un despacho, ni deshacer una entrada o una devolución.
 
-Una existencia negativa no es un dato, es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió. Es preferible detenerse en el momento y registrar la entrada que falta.
+Una existencia negativa no es un dato: es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió. Es preferible detenerse en el momento y registrar la entrada que falta.
 
 ### 14.5 Los documentos se numeran solos
 
-Los números de los documentos los pone el sistema, en orden y sin repetir, y se reinician cada año. Nadie los escribe a mano.
+Los números de los documentos los pone el sistema, en orden y sin repetir: el prefijo, el año y cuatro dígitos, como **NE-2026-0001**. Se reinician cada enero. Nadie los escribe a mano. El número de control de las facturas y las notas de crédito es la excepción: es una sola serie que no se reinicia (10.10).
 
-Dos personas registrando al mismo tiempo nunca obtienen el mismo número. Puede haber huecos en la serie si una operación se cae a mitad de camino; un hueco no es un documento perdido.
+Dos personas registrando al mismo tiempo nunca obtienen el mismo número. Y un documento que se anula se queda con su número.
 
 ### 14.6 Dos personas pueden trabajar a la vez
 
 Cuando dos personas intentan actuar sobre el mismo documento, el mismo material o el mismo pesaje en el mismo instante, el sistema atiende a una y detiene a la otra con un aviso. Nunca deja que las dos avancen.
 
-Es lo que impide que salgan dos notas de entrega por la misma cotización, que dos despachos se lleven el mismo material del patio, o que un ticket de romana se gaste dos veces. Si te toca ser quien recibe el aviso, no perdiste nada: vuelve a abrir el documento, comprueba cómo quedó y sigue desde ahí.
+Es lo que impide que dos personas aprueben el mismo despacho, que dos despachos se lleven el mismo material del patio, o que un ticket de romana se gaste dos veces. Si le toca recibir el aviso, no perdió nada: vuelva a abrir el documento, compruebe cómo quedó y siga desde ahí.
 
 ### 14.7 Todo queda registrado
 
-Cada operación guarda quién la hizo y cuándo. La bitácora de auditoría no se puede modificar ni borrar, y solo la consulta administración.
+Cada operación guarda quién la hizo y cuándo. El registro de auditoría no se puede modificar ni borrar, y solo lo abre la administración (13.4).
 
-No es vigilancia sobre las personas. Es lo que permite responder una pregunta concreta —quién autorizó este pago, quién despachó sin guía, quién cambió este precio— sin que la respuesta dependa de la memoria o la buena voluntad de nadie. Un sistema donde no se puede responder eso no sirve para controlar nada.
+No es vigilancia sobre las personas. Es lo que permite responder una pregunta concreta —quién autorizó este pago, quién anuló esta nota, quién cambió este precio— sin que la respuesta dependa de la memoria o la buena voluntad de nadie. Un sistema donde no se puede responder eso no sirve para controlar nada.
 
 ### 14.8 Las excepciones se conceden, pero se anotan
 
 Hay **dos maneras** de salirse de una regla, y conviene no confundirlas.
 
-**La primera es por control total sobre el módulo.** Algunas reglas admiten excepción para quien tenga el escalón más alto: despachar mineral sin guía —hay días en que el papel llega tarde y el cliente está esperando—, vender por debajo del precio mínimo del artículo, o facturar a crédito por encima del límite del cliente. La facultad viene del nivel de permiso, no de un permiso aparte.
+**La primera es por control total sobre el módulo.** Algunas reglas admiten excepción para quien tenga el escalón más alto: facturar a crédito por encima del límite del cliente, o corregir un vale de combustible de otro día. La facultad viene del nivel de permiso.
 
-**La segunda es por un permiso extendido**, que es lo contrario: no viene del nivel sino de que alguien te prestó una facultad concreta, a ti y por un plazo. Aprobar una compra sin ser el gerente general es el caso vivo. Está contado en 13.1.
+**La segunda es por una casilla**, que no viene del nivel sino de que alguien le dio a una persona una facultad concreta: vender por debajo del precio mínimo o dar un renglón sin cargo, aprobar despachos, autorizar facturas. Y entre las casillas, **los permisos extendidos**, que se prestan a una persona y por un plazo: aprobar una compra sin ser el gerente general es el caso típico. Está contado en 13.1.
 
-**Las dos quedan registradas en la auditoría**, con el nombre de quien las autorizó. Nunca pasan en silencio.
+**Todas quedan registradas en la auditoría**, con el nombre de quien actuó. Nunca pasan en silencio.
 
-**Y la segunda deja además rastro en el papel.** Quien aprueba una compra con un permiso extendido no firma como si fuera suyo: la orden impresa dice **bajo autorización de** seguido del nombre de quien se lo extendió, y el sistema le exige subir el papel que lo respalda. **El respaldo se pide solo ahí**: a quien actúa por su puesto no se le pide nada, porque no hay nada que justificar.
+**Y el permiso extendido deja además rastro en el papel.** Quien aprueba una compra con un permiso prestado no firma como si fuera suyo: la orden impresa dice **Bajo autorización de** seguido del nombre de quien se lo extendió, y el sistema le pide subir el papel que lo respalda. **El respaldo se pide solo ahí**: a quien actúa por su puesto no se le pide nada, porque no hay nada que justificar.
 
 ### 14.9 Sobre la separación de funciones
 
-El diseño del sistema establece que quien pide una compra no debe ser quien la aprueba, y quien la aprueba no debe ser quien recibe el material.
+La regla es que quien pide algo no sea quien lo aprueba. **En tres sitios la impone el sistema**, comparando quién es quién:
 
-**Hoy esa regla no la impone el sistema: la tiene que sostener la organización.** El sistema no compara identidades al aprobar, así que una persona con los dos permisos puede recorrer sola el circuito completo.
+- **Un despacho** no lo aprueba quien lo pidió (10.6).
+- **Una solicitud de salida** no la aprueba quien la pidió (26.2).
+- **Una factura** no la autoriza quien la preparó (21.2).
 
-Se dice aquí con claridad porque es la diferencia entre un control real y uno supuesto. Mientras esto no esté construido, la protección consiste en **no darle a la misma persona el permiso de pedir y el de aprobar**, y en revisar la auditoría con regularidad. El capítulo 13 explica cómo se reparten los permisos.
+En los tres, la base responde aunque la persona tenga la casilla: «Una factura no la autoriza quien la preparó.»
+
+**En compras, no.** Al aprobar una compra el sistema no compara identidades, así que una persona con los dos permisos —pedir y aprobar— puede recorrer sola el circuito. Tampoco compara a quien aprueba con quien recibe el material.
+
+Se dice aquí con claridad porque es la diferencia entre un control real y uno supuesto. Donde el sistema no lo impone, la protección consiste en **no darle a la misma persona el permiso de pedir y el de aprobar**, y en revisar la auditoría con regularidad. El capítulo 13 explica cómo se reparten los permisos.
 
 ---
 
