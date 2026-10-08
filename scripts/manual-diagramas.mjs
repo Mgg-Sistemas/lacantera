@@ -149,7 +149,7 @@ const nomina = `
   <g class="carril-tit">
     <text x="225" y="72" text-anchor="middle">RECURSOS HUMANOS</text>
     <text x="541" y="72" text-anchor="middle">GERENCIA</text>
-    <text x="699" y="72" text-anchor="middle">TESORERÍA</text>
+    <text x="699" y="72" text-anchor="middle">RRHH O GERENCIA</text>
   </g>
   <path class="abrazadera" d="M10,82 V76 H440 V82"/>
   <path class="abrazadera" d="M484,82 V76 H598 V82"/>
@@ -191,7 +191,7 @@ const nomina = `
   <text class="nota-alarma" x="699" y="160" text-anchor="middle">el dinero sale</text>
   <text class="nota-alarma" x="699" y="176" text-anchor="middle">y no se deshace</text>
 </svg>
-<figcaption>Los cuatro primeros pasos se pueden anular escribiendo el motivo. El quinto no: cuando tesorería confirma el pago, el saldo baja y la nómina queda cerrada. Un error detectado después solo se corrige cargando la diferencia en el período siguiente.</figcaption>
+<figcaption>Los cuatro primeros pasos se pueden anular escribiendo el motivo. El quinto no: cuando se confirma el pago, el saldo de la cuenta baja y la nómina queda cerrada. Un error detectado después solo se corrige cargando la diferencia en el período siguiente.</figcaption>
 </figure>`
 
 const inventario = `

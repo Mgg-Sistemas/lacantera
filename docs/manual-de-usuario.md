@@ -20,7 +20,7 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual se está poniendo al día, capítulo por capítulo.** Ya están repasados contra el sistema de hoy esta presentación, el índice y los capítulos 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 y 26. En los demás puede haber pantallas que cambiaron de nombre, textos que ya no se leen igual o funciones nuevas que no se cuentan. Si algo no coincide con lo que ve, mande la pantalla.
+> **El manual está repasado contra el sistema de hoy**: esta presentación, el índice y los veintiséis capítulos. Si algo no coincide con lo que ve, mande la pantalla.
 
 ### El orden de los capítulos
 
@@ -3589,89 +3589,79 @@ La nómina es el registro de quién trabaja en la empresa, cuánto gana cada qui
 
 Hay una idea que conviene entender antes de tocar nada, porque explica casi todo lo demás:
 
-**Una nómina no se teclea: se arma sola con dos cosas.** La primera es la ficha del trabajador, que dice desde cuándo trabaja, cuánto gana y cómo se le paga. La segunda son las novedades del período: lo único que cambia de una quincena a otra —horas extra, faltas, un bono, la cuota de un préstamo—. El resto lo pone el sistema. La pantalla lo dice con estas palabras: *"Lo único que cambia de una quincena a otra: horas extra, faltas, bonos y descuentos. El resto lo saca el sistema del contrato."*
+**Una nómina no se teclea: se arma sola con dos cosas.** La primera es la ficha del trabajador, que dice desde cuándo trabaja, cuánto gana y cómo se le paga. La segunda son las novedades del período: lo único que cambia de una quincena a otra —horas extra, faltas, un bono, la cuota de un préstamo—. El resto lo pone el sistema. La pantalla de novedades lo dice así: **Novedades del período: horas extra, faltas, bonos y descuentos. El resto lo calcula el sistema a partir del contrato.**
 
-La segunda idea es de la que depende que este módulo no te cueste dinero: **un período se abre, se calcula, se aprueba y se paga, en ese orden y en tres manos distintas.** Hasta el momento de pagar, todo se puede rehacer. Después de pagar, nada. Esa frontera está explicada con detalle en 11.2 y en 11.11, y es lo primero que hay que aprenderse de este capítulo.
+La segunda idea es la que evita que este módulo cueste dinero: **un período se abre, se calcula, se aprueba y se paga, en ese orden, y quien lo calcula no lo aprueba.** Hasta el momento de pagar, todo se puede rehacer. Después de pagar, nada. Esa frontera está explicada en 11.2 y en 11.12, y es lo primero que hay que aprenderse de este capítulo.
 
-> **Qué calcula la nómina lo deciden los interruptores de los conceptos de ley**, en Parámetros de nómina (ver 11.9). Lo pactado se calcula siempre: el sueldo de la ficha, los bonos y descuentos que se cargan a mano y las faltas injustificadas. Encima, cada concepto de ley se calcula solo si está encendido: el beneficio de alimentación aparte; el seguro social, el paro forzoso y el FAOV, cada uno con su retención y el aporte del patrono; los recargos de horas extra, nocturnas, feriados y descansos, y las prestaciones sociales, que apagadas quedan deshabilitadas. Con todos encendidos, la nómina calcula todo lo que cuenta este capítulo. Apagar uno no borra nada: al encenderlo vuelve su cálculo.
+> **Qué calcula la nómina lo deciden los interruptores de los conceptos de ley**, en Parámetros de nómina (11.9). Lo pactado se calcula siempre: el sueldo de la ficha, los bonos y descuentos que se cargan a mano y las faltas injustificadas. Encima, cada concepto de ley se calcula solo si está encendido: el beneficio de alimentación aparte; el seguro social, el paro forzoso y el FAOV, cada uno con su retención y el aporte del patrono; los recargos de horas extra, nocturnas, feriados y descansos; el bono vacacional, y las prestaciones sociales, que apagadas quedan deshabilitadas. Con todos encendidos, la nómina calcula todo lo que cuenta este capítulo. Apagar uno no borra nada: al encenderlo vuelve su cálculo.
+
+El menú **Nómina** abre con un **Tablero**: el estado del período en curso, cuánta gente hay activa y, en orden, lo que toca hacer —anotar las novedades, calcular la nómina, sacar los recibos—. Cada atajo lleva a su pantalla.
 
 ### 11.1 Quién entra y quién puede hacer qué
 
 Hay dos puertas distintas, y en este módulo conviene no confundirlas.
 
-La primera es **ver el módulo**. Depende del permiso sobre Nómina que administración le haya dado a tu usuario. Si no lo tienes, el grupo Nómina no te sirve de nada: verás una tarjeta con un candado, **Nómina no está a tu alcance**, con el texto *"Tu rol no tiene acceso a este módulo. Si lo necesitas para tu trabajo, pídeselo a quien administra el sistema."* y el enlace **Volver al panel**.
+La primera es **ver el módulo**. Depende del permiso sobre Nómina en la matriz de permisos (13.1). Sin él, el grupo Nómina no aparece en el menú; y si se llega por un enlace, sale una tarjeta con un candado: **Nómina no está a su alcance**, con **Su rol no tiene acceso a este módulo. Solicítelo a la administración.** y el enlace **Volver al panel**.
 
-La segunda es **poder ejecutar cada paso**. Aquí no hay un solo rol que registre y otros que consulten, como en inventario. Hay tres roles que hacen cosas distintas, y ninguno puede hacer la del otro.
+**Nómina es el módulo menos repartido del sistema, y es a propósito**: ver Nómina, aunque sea en lectura, es ver el sueldo de todo el mundo. Quién lo tiene se mira en la matriz.
 
-#### Qué ve cada rol dentro del módulo
-
-| Rol | Personal, fichas, tabulador y recibos | Novedades del período | Períodos y parámetros |
-| --- | --- | --- | --- |
-| Administrador | Sí | Sí | Sí |
-| Gerencia general | Sí | Sí | Sí |
-| Recursos humanos | Sí | Sí | Sí |
-| Los otros siete roles | No | No | No |
-
-**Nómina es el módulo menos repartido del sistema, y es a propósito.** Solo tres roles lo alcanzan. **Consulta queda fuera**, a diferencia de casi todos los demás módulos: «solo lectura» sobre Nómina sigue siendo ver el sueldo de todo el mundo.
-
-**Aquí había una cuarta fila, la de Tesorería.** Ese rol ya no existe: se retiró junto con el módulo. Ver 12.1.
-
-**Quien paga la nómina es recursos humanos o la gerencia general.** Lo exige la propia función de la base, y por equivalencia pasa también quien tenga escritura sobre Nómina — que hoy son los mismos.
-
-**Prestaciones sociales la ven los cuatro**, porque para verla basta el mismo permiso sobre Nómina que para ver el resto del módulo. Otra cosa es poder registrar allí: eso está en 11.10 y no se reparte igual.
+La segunda puerta es **poder ejecutar cada paso**. Aquí no hay un nivel que registre y otro que consulte, como en inventario: cada paso lo hace un rol concreto.
 
 #### Quién ejecuta cada acción
 
 | Acción | Quién la hace |
 | --- | --- |
-| Crear, editar, egresar y borrar fichas de personal | Recursos humanos |
-| Cargar la foto y guardar el encuadre | Recursos humanos |
+| Crear y editar fichas de personal, y desincorporar | Recursos humanos |
+| Cargar la foto, la firma y los papeles de la ficha | Recursos humanos |
 | Crear y editar los cargos del tabulador, y **Sincronizar** | Recursos humanos |
 | Cargar novedades del período | Recursos humanos |
 | **Abrir período**, **Calcular** y **Anular** | Recursos humanos |
-| Cargar una **Nueva vigencia** de un parámetro | Recursos humanos |
+| Cargar o corregir una vigencia de un parámetro | Recursos humanos |
+| Mover los interruptores de los conceptos de ley | Gerencia general |
 | **Aprobar la nómina** | **Gerencia general, y nadie más** |
+| **Devolver a calculada** una nómina aprobada | Gerencia general |
+| **Poner la tasa y recalcular** | Recursos humanos o gerencia general |
 | **Pagar** | **Recursos humanos o gerencia general** |
 | Ver e imprimir recibos | Cualquiera que vea el módulo |
+| Emitir y anular carnets | Quien tenga escritura sobre Nómina |
+| Editar el organigrama | Quien tenga escritura sobre Nómina |
 | **Cerrar trimestre** e **Intereses del mes**, en prestaciones sociales | Recursos humanos |
-| **Cargar el corte**, **Anticipo**, **Liquidar** y **Pagar y dar de baja** | Solo quien tenga el permiso más alto sobre Nómina. Recursos humanos no lo trae de fábrica |
+| **Cargar el corte**, **Anticipo**, **Liquidar** y **Pagar y dar de baja** | Quien tenga control total sobre Nómina |
 
-El rol de administrador pasa por encima de todo lo anterior.
+El rol de administrador pasa por encima de todo lo anterior. Y donde dice «Recursos humanos», la base acepta también a quien tenga escritura sobre Nómina, aunque no tenga ese rol; la pantalla, en cambio, enseña los botones solo al rol, así que esa persona no los ve.
 
-Las dos filas en negrita son el corazón del módulo. **Quien calcula la nómina no la aprueba, y quien la aprueba no la paga.** No es burocracia: es lo que impide que una sola persona, sola, abra un período, se lo apruebe y saque el dinero de la cuenta. La propia pantalla lo resume: *"No se salta pasos: cada uno deja constancia de quién lo hizo."*
+Las dos filas en negrita son el corazón del módulo. **Quien calcula la nómina no la aprueba**: recursos humanos calcula y la gerencia general aprueba, y ninguno de los dos puede hacer el paso del otro. Es lo que impide que una sola persona abra un período, se lo apruebe y saque el dinero.
 
-Si intentas un paso que no te toca, el sistema responde «Esta acción la realiza: Gerencia general. Tu usuario no tiene ese rol.», con el nombre del rol que sí puede hacerlo. No es una falla: es la respuesta correcta.
+Si se intenta un paso que no le toca, el sistema responde con el rol que sí puede hacerlo: «Esta acción la realiza: Gerente general. Su usuario no tiene ese rol.» No es una falla: es la respuesta correcta.
 
 ### 11.2 El ciclo de una nómina
 
-Esta sección es el módulo entero. Si solo lees una parte del capítulo, que sea esta.
+Esta sección es el módulo entero. Si solo lee una parte del capítulo, que sea esta.
 
-1. **Abrir período** — lo hace Recursos humanos, en **Nómina › Nómina del período › 2 · Procesar**
+Los tres primeros pasos están en **Nómina › Nómina del período**, que tiene tres pestañas numeradas en el orden en que se hacen: **1 · Novedades**, **2 · Procesar** y **3 · Recibos**.
 
-**No es una entrada del menú**: es la segunda pestaña de **Nómina del período**.. Se elige el tipo (**Semanal — 7 días**, **Quincenal — 15 días**, **Mensual — 30 días** o **Especial — días del calendario**) y las fechas **Desde** y **Hasta**. El período nace en borrador. *Se deshace:* sí, anulándolo.
-2. **Cargar novedades** — Recursos humanos, en **Nómina › Nómina del período › 1 · Novedades**
+1. **Abrir período** — recursos humanos, en **2 · Procesar**. Se elige el tipo (**Semanal — 7 días**, **Quincenal — 15 días**, **Mensual — 30 días** o **Especial — días del calendario**), las fechas **Desde** y **Hasta** y, si se quiere, una **Descripción**. El período nace en borrador. *Se deshace:* sí, anulándolo.
+2. **Cargar novedades** — recursos humanos, en **1 · Novedades**. Faltas, horas extra, bonos y descuentos. *Se deshace:* sí, se corrigen y se vuelven a guardar mientras el período esté en borrador o calculado.
+3. **Calcular** — recursos humanos, desde la tarjeta del período. Genera los recibos y el período pasa a calculado. *Se deshace:* sí. Recalcular borra los recibos anteriores y los rehace enteros; no acumula ni deja nada a medias.
+4. **Ver recibos** — cualquiera que vea el módulo, en **3 · Recibos**. Es el paso de revisión. No cambia nada.
+5. **Aprobar la nómina** — **solo gerencia general**. El período pasa a aprobado y a recursos humanos le llega el aviso. *Se deshace:* sí. La gerencia puede **Devolver a calculada**, con un motivo, o recursos humanos puede anular el período.
+6. **Pagar** — **recursos humanos o gerencia general**. Se elige de qué cuenta sale el dinero y se pulsa **Confirmar el pago**: queda una línea en el libro de tesorería. *Se deshace:* **no. Nunca. Por nadie.**
 
-**No es una entrada del menú**: es la primera de las tres pestañas de **Nómina del período**, numeradas en el orden en que se hacen.. Horas extra, faltas, bonos y descuentos. *Se deshace:* sí, se corrige y se vuelve a guardar todas las veces que haga falta, mientras el período esté en borrador o calculado.
-3. **Calcular** — Recursos humanos, desde la tarjeta del período. Genera los recibos y el período pasa a calculado. *Se deshace:* sí. Recalcular borra los recibos anteriores y los rehace enteros; no acumula ni deja nada a medias.
-4. **Ver recibos** — cualquiera que vea el módulo, en **Nómina › Nómina del período › 3 · Recibos**
-
-**No es una entrada del menú**: es la tercera pestaña de **Nómina del período**.. Es el paso de revisión. No cambia nada. *Se deshace:* no hace falta, no escribe nada.
-5. **Aprobar la nómina** — **solo gerencia general**. El período pasa a aprobado y le llega un aviso a tesorería y a recursos humanos. *Se deshace:* sí, anulando el período.
-6. **Confirmar el pago** — **recursos humanos o gerencia general**. Se elige de qué cuenta sale el dinero, el saldo de esa cuenta baja y queda una línea en el libro de tesorería. *Se deshace:* **no. Nunca. Por nadie.**
-
-Los estados que verás en la etiqueta de cada período, y la frase que el sistema pone debajo para decirte qué toca ahora:
+Los estados que se ven en la etiqueta de cada período, y la frase que el sistema pone debajo para decir qué toca ahora:
 
 | Etiqueta | Qué toca hacer, según la propia pantalla |
 | --- | --- |
-| **Borrador · cargar novedades** | *"Carga las novedades del período —horas extra, faltas, bonos— y calcula."* |
-| **Calculada · por aprobar** | *"Revisa los recibos. Al aprobar, la nómina queda lista para que tesorería pague."* |
-| **Aprobada · por pagar** | *"Se paga desde una cuenta y queda anotado de dónde salió."* |
-| **Pagada** | *"Cerrada. Los recibos quedan como comprobante."* |
+| **Borrador · cargar novedades** | **Cargue las novedades del período —horas extra, faltas, bonos— y calcule.** |
+| **Calculada · por aprobar** | **Revise los recibos. Al aprobar, la nómina queda lista para que tesorería pague.** |
+| **Aprobada · por pagar** | **Se paga desde una cuenta y el saldo baja. Si la cuenta no tiene saldo registrado, sale igual y tesorería recibe el aviso.** |
+| **Pagada** | **Cerrada. Los recibos quedan como comprobante.** |
 | **Anulada** | El motivo que se escribió al anularla |
 
-**Anular** es la marcha atrás del módulo, y solo funciona antes de pagar: se puede anular un período en borrador, calculado o aprobado, siempre escribiendo por qué. El período no desaparece: queda a la vista con su motivo, porque una nómina que se deshace sin explicación es una nómina que nadie puede defender después.
+Aunque dos de esas frases nombran a tesorería, el pago lo registra recursos humanos o la gerencia general.
 
-Una nómina **pagada** no se anula, no se recalcula y su salida de dinero no se reversa. La única corrección posible es la que el propio sistema indica: **cargar la diferencia en el período siguiente**, como bono o como descuento.
+**Anular** es la marcha atrás del módulo, y solo funciona antes de pagar: se puede anular un período en borrador, calculado o aprobado, siempre escribiendo por qué, con al menos diez letras. El período no desaparece: queda a la vista con su motivo, porque una nómina que se deshace sin explicación es una nómina que nadie puede defender después.
+
+Una nómina **pagada** no se anula, no se recalcula y su salida de dinero no se reversa. La única corrección posible es la que el propio sistema indica: **corregir la diferencia en el período siguiente**, como bono o como descuento.
 
 ### 11.3 Personal
 
@@ -3679,278 +3669,219 @@ Una nómina **pagada** no se anula, no se recalcula y su salida de dinero no se 
 
 El registro de quién trabaja en la empresa: desde cuándo y cuánto gana. De la fecha de ingreso salen la antigüedad, el bono vacacional y las prestaciones, y la ficha de cada quien lleva su foto, su carnet y su constancia de trabajo.
 
+Tiene tres pestañas: **Personal**, **Tabulador de cargos** (11.5) y **Carnets** (al final de este apartado).
+
 #### Qué se ve
 
-Arriba a la derecha, y solo con el rol de recursos humanos, hay **dos** botones: **Cargar por planilla** y **Nuevo trabajador**. El primero da de alta a toda la gente de una vez, o corrige las fichas que ya están; es el mismo mecanismo que el del catálogo de artículos, con su plantilla de Excel y su vista previa antes de escribir nada.
+Arriba hay cinco botones. Para todos: **Informe**, el listado del personal en PDF, y **Planilla de ingreso**, la hoja en blanco para la entrevista. Solo para recursos humanos: **Pago bancario**, **Cargar por planilla** y **Nuevo trabajador**.
 
-Debajo, dos filtros: **Buscar**, que acepta el nombre, la cédula o el cargo, y la casilla **Incluir a los desincorporados**, que viene **desmarcada**: la lista trae solo a quien está activo.
+Debajo, el campo **Buscar** —por **Nombre, cédula, cargo o ficha**— y seis desplegables para filtrar: **Género**, **Estado civil**, **Carga familiar**, **Dependientes**, **Salud** y **Contratación** (nómina ordinaria o eventual). Con algún filtro puesto aparece **Limpiar filtros**, y debajo se lee por qué se está filtrando y cuántos se ven de cuántos. La casilla **Incluir a los desincorporados** viene **desmarcada**: la lista trae solo a quien está activo.
 
-Si todavía no hay nadie cargado, la pantalla muestra **Todavía no hay personal cargado**, el texto *"Sin trabajadores no se puede calcular una nómina."* y el botón **Cargar el primero**.
-
-La lista tiene estas columnas:
+Si todavía no hay nadie cargado: **Sin personal registrado**, con **Sin trabajadores no se puede calcular una nómina.** y, para recursos humanos, **Cargar el primero**.
 
 | Columna | Qué muestra |
 | --- | --- |
-| **Trabajador** | Apellidos y nombres, como enlace a su ficha. Si la persona ya no está, al lado del nombre va una etiqueta roja **Desincorporado** y debajo, en pequeño, el motivo. Luego la cédula y el número de ficha |
+| **Trabajador** | Apellidos y nombres, como enlace a su ficha. Si la persona ya no está, va la etiqueta **Desincorporado** y debajo, en pequeño, el motivo. Luego la cédula y el número de ficha y, si tiene almacenes o máquinas a su cargo, cuántos |
 | **Cargo** | El cargo y, debajo, el departamento |
-| **Ingreso** | La fecha de ingreso y, debajo, la antigüedad, o **hasta** la fecha de egreso si egresó. Si la fecha de ingreso no está confirmada, en su lugar sale una etiqueta ámbar **Por confirmar** |
+| **Ingreso** | La fecha de ingreso y, debajo, la antigüedad, o **hasta** la fecha de egreso. Si la fecha de ingreso no está confirmada, en su lugar sale **Por confirmar** |
 | **Salario** | El monto con su símbolo y, debajo, la base y la frecuencia |
 
-En cada fila hay un botón **Ficha** para todos, y para recursos humanos además el lápiz para editar y **Desincorporar** (solo si la persona está activa). Quien no tenga ese rol ve en su lugar la etiqueta verde **Activo**. Al final de la fila de un desincorporado no va nada: su etiqueta ya está junto al nombre, y repetirla enseñaría lo mismo dos veces.
-
-**Ya no hay papelera.** Hasta el 6 de agosto de 2026 existía un botón para borrar una ficha; se quitó. Ver más abajo, en «Las fichas no se borran».
+En cada fila hay un botón **Ficha** para todos, y para recursos humanos además el lápiz para editar y **Desincorporar** (solo si la persona está activa). Quien no tiene ese rol ve en su lugar la etiqueta **Activo**.
 
 #### Cargar un trabajador
 
-1. Pulsa **Nuevo trabajador**.
-2. Llena los datos personales y laborales.
-3. Llena el bloque **Cómo se le paga**.
-4. Pulsa **Guardar**.
+**Nuevo trabajador** abre un formulario en tres pasos. Bajo el título se advierte: **El número de ficha lo asigna el sistema al guardar: cuatro dígitos, correlativo.** Se avanza con **Seguir** y se vuelve con **Atrás**; el último paso cierra con **Crear ficha** —o **Guardar cambios**, al editar—.
 
-**El número de ficha no se escribe.** Bajo el título, al crear, la pantalla lo advierte: *"El número de ficha lo asigna el sistema al guardar: cuatro dígitos, correlativo."*
-
-Los datos del primer bloque:
+Paso 1, **Datos personales** — **Lo que va en el carnet y a quién avisar si pasa algo.**
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Cédula** | Sí | Se escribe **V-12345678**. Empieza en **V-** y se pasa a mayúsculas al teclear |
-| **Nombres** | Sí | Sin esto no se habilita **Guardar** |
-| **Apellidos** | Sí | Sin esto no se habilita **Guardar** |
+| **Cédula** | Sí | Empieza en **V-**, con el ejemplo **V-12.345.678** |
+| **RIF** | No | **Con su dígito verificador: V-12.345.678-9.** |
+| **Nombres** y **Apellidos** | Sí | Sin ellos no se puede **Seguir**: **Faltan los nombres y los apellidos.** |
 | **Fecha de nacimiento** | No | |
-| **Género** | No | Empieza en **Sin indicar** |
-| **Estado civil** | No | Empieza en **Sin indicar** |
+| **Género** y **Estado civil** | No | Empiezan en **Sin indicar** |
 | **Nacionalidad** | No | Empieza en **VENEZOLANA** |
-| **Grupo sanguíneo** | No | *"Va en el carnet. En una emergencia es lo primero que se busca."* |
-| **Cargo del tabulador** | No | Empieza en **Fuera del tabulador**. Al elegir un nivel rellena solos el cargo, el salario y la moneda |
-| **Cargo** | Sí | Se **bloquea** si elegiste un nivel del tabulador, con la ayuda *"Lo pone el tabulador."* |
-| **Departamento o frente** | No | |
-| **Fecha de ingreso** | Sí | *"De aquí salen la antigüedad y las prestaciones."* |
-| **Teléfono** | No | |
-| **A quién llamar en una emergencia** | No | |
-| **Teléfono de esa persona** | No | |
+| **Grupo sanguíneo** | No | **Va en el carnet. En una emergencia es lo primero que se busca.** |
+| **Teléfono** | No | Con el ejemplo **0412-5551234** |
+| **Contacto de emergencia** y **Teléfono de emergencia** | No | |
 | **Dirección** | No | |
 
-Y el bloque **Cómo se le paga**:
+Paso 2, **Datos laborales** — **De la fecha de ingreso salen la antigüedad, el bono vacacional y la liquidación.**
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Salario estipulado** | — | **Por mes** (así empieza), **Por día** o **Por hora** |
-| **Monto** | No bloquea **Guardar** | Con nivel del tabulador: *"Sale del tabulador. Si lo cambias aquí, esta ficha aparecerá como desfasada hasta que alguien sincronice o corrija el nivel."* |
-| **Moneda** | — | **Bs** (así empieza) o **$** |
-| **Frecuencia de pago** | — | **Semanal**, **Quincenal** (así empieza) o **Mensual** |
-| **Jornada** | — | **Diurna — 8 h** (así empieza), **Nocturna — 7 h** o **Mixta — 7,5 h**. *"Decide el valor de la hora y el tope de horas extra."* |
-| **Días de utilidades al año** | No | Si se deja vacío, el sistema aplica el mínimo que tenga cargado en **Parámetros de nómina** |
-| **Forma de pago** | — | **Transferencia** (así empieza), **Pago móvil**, **Efectivo** o **Binance** |
-| **Banco** | No | Aparece solo con **Transferencia** o **Pago móvil**. Lista cerrada, con el código delante: **0102 · BANCO DE VENEZUELA** |
-| **Número de cuenta** | No | Solo con **Transferencia** |
-| **Teléfono del pago móvil** | No | Solo con **Pago móvil** |
-| **Nota** | No | |
+| **Cargo del tabulador** | No | Empieza en **Fuera del tabulador**. Al elegir un nivel, la ficha toma su sueldo al guardar. Sin nivel, el sueldo se escribe a mano y no sube cuando suba el tabulador |
+| **Cargo** | Sí | Con nivel del tabulador se bloquea: **Lo pone el tabulador.** Si el cargo no coincide con el del nivel, la pantalla lo dice y ofrece **Ponerlo como el tabulador** |
+| **Departamento o frente** | No | |
+| **Fecha de ingreso** | Sí | **De aquí salen la antigüedad y las prestaciones.** Sin ella y sin cargo no se puede **Seguir**: **Faltan el cargo y la fecha de ingreso.** |
+| **Jornada** | — | **Diurna — 8 h**, **Nocturna — 7 h** o **Mixta — 7,5 h**. **Decide el valor de la hora y el tope de horas extra.** |
+| **Días de utilidades al año** | No | Vacío, la nómina usa el mínimo cargado en **Parámetros de nómina** |
+| **Formación y experiencia** | No | **Grado de instrucción**, **Última empresa donde trabajó**, **Cargo desempeñado**, **Tiempo en el cargo** y **Motivo de retiro** |
 
-**Guardar** se habilita cuando están **Nombres**, **Apellidos**, **Cargo** y **Fecha de ingreso**. La fecha de ingreso es la más delicada de las cuatro, y el propio sistema explica por qué si intentas dejarla vacía: de ella dependen la antigüedad, el bono vacacional y las prestaciones.
+Paso 3, **Remuneración** — **Lo último. Al guardar, la ficha queda creada.**
 
-Cuando una ficha viene de la carga del libro de nómina y su fecha de ingreso nadie la ha revisado, el campo lo dice: *"Esta fecha vino de la carga del libro de nómina y nadie la ha revisado. Corrígela: de aquí salen la antigüedad, el bono vacacional y la liquidación."* Mientras eso siga así, en la lista sale **Por confirmar** y no se le puede emitir una constancia de trabajo.
+| Campo | Detalle |
+| --- | --- |
+| **Salario estipulado** | **Por mes**, **Por día** o **Por hora** |
+| **Monto** | **Es lo que recibe, todo incluido: de aquí salen el beneficio de alimentación y las retenciones de ley. Los bonos y las penalizaciones se cargan aparte, en cada período.** Con nivel del tabulador, la ayuda añade que cambiarlo deja la ficha desfasada hasta que alguien sincronice o corrija el nivel |
+| **Moneda** | |
+| **Frecuencia de pago** | **Semanal**, **Quincenal** o **Mensual** |
+| **Forma de pago** | De los métodos de pago del sistema |
+| **Banco**, **Número de cuenta** y **Tipo de cuenta** | Con transferencia. El banco es una lista cerrada, con el código delante: **0102 · BANCO DE VENEZUELA** |
+| **Banco** y **Teléfono del pago móvil** | Con pago móvil |
+| **Nota** | |
+
+Cuando una ficha viene de la carga del libro de nómina y su fecha de ingreso nadie la ha revisado, el campo lo dice: **Esta fecha vino de la carga del libro de nómina y nadie la ha revisado. Corríjala: de aquí salen la antigüedad, el bono vacacional y la liquidación.** Mientras eso siga así, en la lista sale **Por confirmar** y no se le puede emitir una constancia de trabajo.
+
+**Cargar por planilla** da de alta a toda la gente de una vez, o corrige las fichas que ya están. Es el mismo mecanismo que el del catálogo de artículos (7.10), con su plantilla de Excel y su vista previa antes de escribir nada; la columna que identifica a cada persona es la cédula.
 
 #### Quién tiene cuenta en el sistema
 
-En la columna del trabajador, junto al nombre, **a quien tiene cuenta le sale un iconito gris de persona**. Al pasar el ratón dice **Entra al sistema como** seguido de su usuario, y lo mismo lee un lector de pantalla.
+En la columna del trabajador, junto al nombre, **a quien tiene cuenta le sale un iconito gris de persona**. Al pasar el ratón dice **Entra al sistema como** seguido de su usuario.
 
-**A quien no tiene cuenta no le sale nada**, y es a propósito: de la plantilla, solo unos pocos entran al sistema. Marcar a la mayoría con un «no tiene» llenaría la lista de ruido.
+**A quien no tiene cuenta no le sale nada**, y es a propósito: de la plantilla, solo unos pocos entran al sistema. Marcar a la mayoría con un «no tiene» llenaría la lista de ruido. Es el espejo de lo que hace la lista de usuarios en Configuración (13.1).
 
-Es el espejo de lo que hace la lista de usuarios en Configuración, que dice al revés si esa cuenta es de alguien de la plantilla (13.1).
+#### Desincorporar a un trabajador
 
-#### Egresar a un trabajador
+1. Pulse **Desincorporar** en su fila.
+2. Escriba el **Último día trabajado**.
+3. Escriba el **Motivo**. La ayuda dice: **De él dependen las prestaciones que le tocan. Si la ficha se cargó por error o está duplicada, escríbalo tal cual: es la forma de sacarla de la lista sin borrar nada.**
+4. Pulse **Desincorporar**. El botón se enciende con la fecha y al menos cuatro letras de motivo.
 
-1. Pulsa **Egresar** en su fila.
-2. Escribe el **Último día trabajado**.
-3. Escribe el **Motivo**. Son mínimo cuatro letras y el sistema no las deja en blanco, porque *"De él dependen las prestaciones que le tocan."*
-4. Pulsa **Egresar**.
+La ventana lo resume: **Deja de entrar en las nóminas siguientes y queda marcado en la lista. Su historial se conserva entero: no se borra nada.** Y algo que la ventana no dice: **desincorporar no le cierra la entrada al sistema.** Si la persona tenía usuario, se inactiva aparte, en **Configuración › Usuarios y roles** (13.1); la tarjeta **Cuenta del sistema** de su ficha dice cuál era (11.4).
 
-La ventana lo resume: *"Deja de entrar en las nóminas siguientes y queda marcado en la lista. Su historial se conserva entero: no se borra nada."* Desincorporar **no borra nada**: guarda la fecha y el motivo, y la persona deja de aparecer en la lista salvo que marques **Incluir a los desincorporados**.
+**Desincorporar aquí no le calcula la liquidación, y además cierra la puerta para calcularla.** La liquidación se hace en **Nómina › Prestaciones y parámetros › Prestaciones sociales** (11.10), y esa pantalla solo deja liquidar a quien está activo. Si se desincorpora primero, la persona queda con su saldo de prestaciones a la vista y sin forma de cerrarle la cuenta. El sistema no avisa de esto.
 
-**Egresar aquí no le calcula la liquidación, y además cierra la puerta para calcularla.** La liquidación se hace en **Nómina › Prestaciones y parámetros › Prestaciones sociales**
+Por eso, **cuando alguien se va, el orden es liquidarlo primero en Prestaciones sociales**: el botón que paga la liquidación desincorpora a la persona por su cuenta, con la fecha y el motivo. **Desincorporar** aquí queda para cuando no hay nada que liquidar.
 
-**No es una entrada del menú**: es la primera pestaña de **Prestaciones y parámetros**. (ver 11.10), y esa pantalla solo deja liquidar a quien está activo. Si egresas primero, la persona queda con su saldo de prestaciones a la vista y sin forma de cerrarle la cuenta. El sistema no avisa de esto.
-
-Por eso, **cuando alguien se va, el orden es liquidarlo primero en Prestaciones sociales**: el botón que paga la liquidación egresa a la persona por su cuenta, con la fecha y el motivo, y no hay que volver a esta pantalla. **Egresar** aquí queda para cuando no hay nada que liquidar.
-
-#### El informe de personal
-
-Arriba, junto a **Cargar por planilla** y **Nuevo trabajador**, está el botón **Informe**. Saca un PDF con quién trabaja aquí: ficha, nombre, cédula, cargo, departamento y desde cuándo. **Sin sueldos.**
-
-Que no lleve montos no es un olvido. Un listado de quién trabaja aquí se enseña, se pega en una pared, se le manda a un inspector; los sueldos no. Por eso hay dos papeles: este y el del cierre de nómina (11.8), que sí los lleva. Tener las dos versiones es lo que permite dar la que corresponde sin tener que tachar nada.
-
-**Lleva siempre un apartado de desincorporados**, con su fecha de salida y su motivo, aunque en la pantalla tengas la casilla **Incluir a los desincorporados** apagada. La casilla manda en la tabla, que es lo que estás mirando; el apartado forma parte del papel. Si no hay ninguno, el apartado no aparece — un título con una tabla vacía debajo se lee como que falta algo.
-
-**El buscador manda.** Si escribes «mantenimiento» en **Buscar** y pulsas **Informe**, sale el informe de mantenimiento, con sus desincorporados. Arriba, en **Alcance**, el papel dice qué filtro se aplicó, cuántos hay en nómina y cuántos desincorporados. Sin filtro dice **Ninguno: se lista todo el personal**.
-
-Se abre en el visor antes de guardarse, como todos los papeles del sistema.
-
-**Para una sola persona**, el botón está en su ficha (11.4). Es la misma hoja con una fila.
+**Una ficha desincorporada no vuelve a activarse desde ninguna pantalla.** Si se desincorporó por error, hay que pedirlo a quien administra el sistema.
 
 #### Las fichas no se borran
 
-**No existe forma de borrar una ficha de personal.** Antes existía, con candados —solo dejaba borrar a quien no tuviera recibos ni novedades, es decir, a quien nunca había cobrado por el sistema— y aun así se quitó, porque esos candados no comprueban lo que hace falta comprobar. «Nunca cobró por el sistema» no significa «nunca trabajó aquí»: puede ser que su nómina no se haya procesado todavía, que se le pagara por fuera, o que la ficha se cargara ayer.
+**No existe forma de borrar una ficha de personal.** «Nunca cobró por el sistema» no significa «nunca trabajó aquí»: puede que su nómina no se haya procesado todavía, que se le pagara por fuera, o que la ficha se cargara ayer.
 
-**Una ficha cargada por error también se egresa.** Escribe el motivo tal cual —«cargada por error», «duplicada de la ficha 0012»— y desaparece de la lista de activos, que es todo lo que se quería. La diferencia es que dentro de un año se puede leer qué pasó, y que una desincorporación se deshace volviendo a activar la ficha, mientras que un borrado no se deshacía desde ninguna pantalla.
+**Una ficha cargada por error también se desincorpora.** Se escribe el motivo tal cual —«cargada por error», «duplicada de la ficha 0012»— y desaparece de la lista de activos, que es todo lo que se quería. La diferencia con un borrado es que dentro de un año se puede leer qué pasó. Si algo intenta borrar una ficha, la base responde: «Las fichas de personal ya no se borran: se desincorporan. Use "Desincorporar" con la fecha y el motivo —"cargada por error" también es un motivo—, y … deja de salir entre los activos sin que se pierda lo que decía su ficha.»
 
-Si alguien llama a la función vieja —una pestaña abierta desde antes del cambio, por ejemplo—, el sistema responde: *«Las fichas de personal ya no se borran: se desincorporan. Usa "Egresar" con la fecha y el motivo —"cargada por error" también es un motivo—, y esa persona deja de salir entre los activos sin que se pierda lo que decía su ficha.»*
+#### El informe de personal
+
+**Informe** saca un PDF con quién trabaja aquí: ficha, nombre, cédula, cargo, departamento y desde cuándo. Sin montos ni datos personales.
+
+Que no lleve sueldos no es un olvido. Un listado de quién trabaja aquí se enseña, se pega en una pared, se le manda a un inspector; los sueldos no. Por eso hay dos papeles: este y el del cierre de nómina (11.8), que sí los lleva.
+
+**El papel sigue a la pantalla.** Lleva lo que la lista enseña: si **Buscar** dice «mantenimiento», sale el informe de mantenimiento; y los desincorporados salen, en su propio apartado con su fecha de salida y su motivo, solo si **Incluir a los desincorporados** está marcada. Arriba, en **Alcance**, el papel dice qué filtro se aplicó, cuántos hay en nómina y cuántos desincorporados.
+
+Se abre en el visor antes de guardarse, como todos los papeles del sistema. **Para una sola persona**, el botón está en su ficha (11.4).
+
+#### La planilla de ingreso y el pago bancario
+
+**Planilla de ingreso** saca la hoja que se llena a mano durante la entrevista: **Sale en blanco, para llenarla a mano durante la entrevista.** Antes pregunta si lleva un recuadro para la **huella del pulgar** al lado de las firmas —**Sin huella** o **Con huella**—, y junto a ella sale la hoja de documentos que se le piden al aspirante. Esa lista se cambia ahí mismo, en **Documentos requeridos**, con la casilla de editar los parámetros de nómina.
+
+**Pago bancario**, para recursos humanos, saca un PDF con los datos bancarios y el monto de cada trabajador del período que esté calculado o aprobado: es lo que se lleva al banco.
 
 #### La pestaña Carnets
 
 **Nómina › Personal › Carnets**
 
-Es la tercera pestaña de Personal, junto a **Personal** y **Tabulador de cargos**, y responde a una sola pregunta: **quién tiene carnet emitido y quién no**.
-
-Existe para el arranque. Emitir el carnet de veintidós trabajadores desde la ficha de cada uno son veintidós visitas a veintidós pantallas; aquí se hace de una vez.
-
-La pantalla se reparte en tres tarjetas, y la primera solo aparece si hace falta:
+Responde a una sola pregunta: **quién tiene carnet emitido y quién no**. Emitir el carnet de veintidós trabajadores desde la ficha de cada uno son veintidós visitas a veintidós pantallas; aquí se hace de una vez.
 
 | Tarjeta | Qué trae |
 | --- | --- |
-| **N sin carnet** | Los que faltan, con su ficha y su cargo. Arriba a la derecha, el botón **Emitir los N** |
-| **N no se pudieron emitir** | Solo si alguno falló. Se reintenta pulsando otra vez, o desde su ficha |
+| **N sin carnet** | Los que faltan, con su ficha y su cargo, y **· sin foto cargada** si no la tienen. Arriba, el botón **Emitir los N**. Si no falta nadie: **Sin carnets pendientes** |
+| **N no se pudieron emitir** | Solo si alguno falló, con el mensaje de cada uno. Se reintentan pulsando otra vez, o desde su ficha |
 | **N con carnet** | Los que ya lo tienen, con su código y la fecha en que se emitió |
 
-**Emitir los N va de uno en uno, aunque el botón sea uno solo, y se ve avanzar.** No es lentitud: cada carnet necesita la foto de esa persona, recortada con su propio encuadre, y eso ocurre en el navegador. Con veintidós fotos que bajar, tarda. **No cierres la pestaña a media faena**; si se corta, los que ya salieron quedan emitidos y los demás siguen en la lista.
+**Emitir los N va de uno en uno, aunque el botón sea uno solo, y se ve avanzar.** Cada carnet lleva la foto de esa persona, recortada con su propio encuadre, y eso ocurre en el navegador. **No cierre la pestaña a media faena**; si se corta, los que ya salieron quedan emitidos y los demás siguen en la lista. A quien no tiene foto se le emite igual, sin ella.
 
-**Aquí solo se emiten los que faltan.** A quien ya tiene carnet no se le ofrece ningún botón, y es a propósito: volver a emitir anula el carnet anterior, y eso es una decisión de una persona concreta —se le perdió, se le rompió— que se toma en su ficha y diciendo por qué. Un botón de «reemitir a todos» convertiría en un clic el anular veintidós plásticos que están en veintidós bolsillos. La propia pantalla lo advierte al pie.
+**Aquí solo se emiten los que faltan.** El pie lo dice: **Aquí solo se emiten los que faltan. Reemitir a alguien que ya tiene anula su carnet actual, y eso se hace en su ficha, diciendo por qué.** Un botón de «reemitir a todos» convertiría en un clic el anular veintidós plásticos que están en veintidós bolsillos.
 
-**Quién puede emitir:** recursos humanos, administración y la gerencia general. Los demás ven la lista y nada más.
+**Quién puede emitir:** quien tenga escritura sobre Nómina. La pantalla enseña el botón a recursos humanos, a la administración y a la gerencia general; si la gerencia no tiene escritura sobre Nómina, cada carnet le falla.
 
-**La pestaña solo cuenta al personal activo.** A quien egresó no se le pide carnet y no aparece en ninguna de las dos listas, ni siquiera en «N con carnet» si llegó a tener uno. Aquí no hay casilla **Incluir a los desincorporados** como en Personal, y es coherente: a quien ya no trabaja aquí no se le emite carnet.
+**La pestaña solo cuenta al personal activo.** A quien se desincorporó no se le emite carnet y no aparece en ninguna de las listas.
 
 ### 11.4 La ficha del trabajador
 
-**No está en el menú.** Se llega pinchando el nombre de la persona en la lista de **Personal**, o desde la tabla de fichas desfasadas del tabulador.
+**No está en el menú.** Se llega pulsando el nombre de la persona en la lista de **Personal**, o desde la tabla de fichas desfasadas del tabulador.
 
 Es la pantalla donde se ve de un vistazo todo lo de una persona y **desde donde salen sus documentos**.
 
 #### Qué se ve
 
-Arriba, el nombre completo y, debajo, el número de ficha, el cargo y el departamento. A la derecha, la etiqueta **Activo** en verde o **Desincorporado** en rojo —la misma que en la lista— y, solo para recursos humanos, el botón **Editar datos**, que abre el formulario de Personal ya cargado con esa persona.
+Arriba, el nombre completo y, debajo, el número de ficha, el cargo y el departamento. A la derecha, la etiqueta **Activo** o **Desincorporado** —la misma que en la lista—, **Eventual** si lo es y, solo para recursos humanos, el botón **Editar datos**, que abre el formulario de Personal con esa persona cargada.
 
-A la izquierda, **la foto**. El recuadro tiene la proporción del carnet y, si no hay foto, dice **Sin foto**.
+A la izquierda, **la foto**. El recuadro tiene la proporción del carnet y, si no hay foto, dice **Sin foto**. Recursos humanos la carga así:
 
-1. Pulsa **Cargar foto** —o **Cambiar foto**, si ya hay una—.
-2. Mueve la barra de acercamiento y arrastra la foto. La ayuda lo explica: *"Arrastra para centrar la cara sobre la línea."* Hay una guía punteada que marca dónde debe quedar.
-3. Pulsa **Guardar el encuadre**.
+1. Pulse **Cargar foto** —o **Cambiar foto**, si ya hay una—.
+2. Mueva la barra de acercamiento y arrastre la foto. La ayuda lo explica: **Arrastre para centrar la cara sobre la línea.** Hay una guía punteada que marca dónde debe quedar.
+3. Pulse **Guardar el encuadre**.
 
-Para quitarla, **Quitar**. La foto tiene que ser JPG, PNG o WEBP y pesar como mucho 5 MB; si te pasas, el sistema te dice cuánto pesa y qué hacer.
+Para quitarla, **Quitar**. La foto tiene que ser JPG, PNG o WEBP; si pesa demasiado, el sistema responde **El archivo supera el tamaño admitido. Redúzcalo.**
 
-A la derecha están los datos, agrupados y **de solo lectura**. Son exactamente los mismos que salen impresos en la ficha, y están escritos una sola vez a propósito, para que la pantalla y el papel no puedan decir cosas distintas.
+A la derecha están los datos, agrupados y **de solo lectura**. Son los mismos que salen impresos en la ficha, escritos una sola vez a propósito, para que la pantalla y el papel no puedan decir cosas distintas.
 
 | Bloque | Qué trae |
 | --- | --- |
 | **Identificación** | **Cédula**, **RIF**, **Fecha de nacimiento**, **Edad**, **Grupo sanguíneo**, **Género**, **Nacionalidad**, **Estado civil** |
-| **Contacto** | **Teléfono**, **En una emergencia, llamar a**, **Dirección** |
+| **Contacto** | **Teléfono**, **Contacto de emergencia**, **Dirección** |
 | **Datos laborales** | **Cargo**, **Departamento**, **Fecha de ingreso**, **Antigüedad**, **Jornada**, **Utilidades** |
-| **Cómo se le paga** | **Salario**, **Frecuencia**, **Forma de pago**, **Cuenta** |
-| **Egreso** | Solo si egresó: **Último día trabajado** y **Motivo** |
+| **Remuneración** | **Salario**, **Frecuencia**, **Forma de pago**, **Cuenta** |
+| **Egreso** | Solo si se desincorporó: **Último día trabajado** y **Motivo** |
+| **Formación y experiencia** | Solo si consta algo: grado de instrucción, última empresa, cargo, tiempo y motivo de retiro |
 | **Observaciones** | Solo si la ficha tiene una nota |
 
 Lo que no tiene dato sale con un guion. Para cambiar cualquiera de estos datos hay que ir a **Editar datos**: aquí no se escribe.
 
+Debajo de los datos van, en este orden, la firma, el carnet, los documentos, la cuenta del sistema, los papeles y el resto de tarjetas de la persona. Casi todas las escribe recursos humanos; los demás las leen.
+
 #### Su firma
 
-Debajo de los datos hay una tarjeta, **Su firma**. La guarda recursos humanos, no el trabajador: el obrero no entra al sistema, así que se carga con él delante.
+**Su firma** la guarda recursos humanos, no el trabajador: el obrero no entra al sistema, así que se carga con él delante. **Sale impresa en sus recibos de pago y en lo que se le entregue firmado.**
 
-Bajo la firma guardada hay una etiqueta que dice en qué estado está: **Se estampa en los papeles** o **Guardada, pero sin usar**. Esa segunda es lo que permite tener la firma guardada y apagada mientras se aclara algo, sin borrarla.
+Se traza en pantalla, se escribe o se carga una foto de la que firmó en papel. Recursos humanos tiene además un interruptor, **En uso** o **Sin usar**: apagada, la firma sigue guardada pero los papeles salen con la raya en blanco. Es lo que permite tenerla apagada mientras se aclara algo, sin borrarla.
 
-**Sirve para el recibo de pago.** Cuando el trabajador tiene firma guardada y encendida, **el recibo sale con ella estampada** sobre la raya de la izquierda. Está en 11.8.
-
-#### Cuenta del sistema
-
-Al pie de la ficha, una tarjeta dice si esa persona entra al sistema: con qué **Usuario**, cuándo se creó la cuenta y qué alcance tiene.
-
-Es lo mismo que el iconito de la lista de Personal, pero con el detalle. Y es lo que hay que mirar **cuando alguien egresa**: saber qué cuenta era suya es lo que evita que se quede abierta.
-
-#### Los documentos
-
-En la tarjeta de abajo hay tres botones: **Ficha completa (PDF)**, **Constancia de trabajo** e **Informe de personal**. El carnet ya no está aquí: tiene tarjeta propia justo debajo, y el porqué está explicado en el apartado siguiente.
-
-**Los tres se abren primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que pulses **Descargar**. La ficha trae todos los datos en A4. La constancia es la carta que se entrega a un banco o a quien la pida, y avisa: *"Revísala antes de entregarla. La firma va a mano."* El informe es el resumen sin datos personales ni montos: la misma hoja que sale de la lista de personal (11.3), con una fila.
-
-##### Dos constancias, no una
-
-**A quien ya no trabaja aquí, el botón pregunta primero qué papel se quiere.** Aparece el desplegable **Qué papel** con dos opciones:
-
-- **Constancia de trabajo** — *"Acredita que trabajó aquí. Para un empleo nuevo, un banco."*
-- **Constancia de cese de actividades laborales** — *"Acredita que la relación laboral terminó. Para trámites."*
-
-No son el mismo papel con otro título: se piden para cosas distintas, y de una misma persona se pueden querer las dos. A quien sigue activo no se le pregunta: no se le puede certificar un cese.
-
-La de cese añade una frase —*"La relación laboral culminó en la fecha antes señalada"*— y cierra diciendo para qué sirve: *"para los fines legales que estime convenientes"*.
-
-##### El motivo de la salida no se imprime salvo que se pida
-
-Debajo aparece la casilla **Decir el motivo de la salida**, **y viene apagada**.
-
-Está apagada a propósito. Este papel se lo lleva la persona, y «despido justificado» escrito en algo que va a enseñar en su próxima entrevista le hace un daño que la empresa no necesita hacerle. **La fecha de salida ya acredita el cese**, que es lo que se pide.
-
-La casilla dice lo que va a pasar antes de que pase. Marcada: *"Dirá «por despido justificado». Piénsalo: el papel se lo lleva la persona."* Sin marcar: *"La carta dirá cuándo terminó, no por qué."* Suele ser suficiente.
-
-Queda disponible para cuando de verdad haga falta —un trámite que lo exija—, y entonces es una decisión de quien firma, tomada a sabiendas.
-
-Los dos salen con la misma cabecera que la orden de compra, el recibo y la factura: la razón social, el RIF y **el domicilio fiscal completo**, tal como estén cargados en **Configuración › Datos de la empresa** (13.2). Lo que falte ahí, falta en el papel.
-
-#### Los papeles que se adjuntan
-
-**Desde el 22 de septiembre de 2026 la ficha guarda los papeles de la persona**: la cédula, el RIF, el currículum y los que hagan falta. Antes lo único que se adjuntaba era la foto, y esos documentos vivían en la carpeta del computador de alguien.
-
-Están en la tarjeta **Papeles**, y se agregan con **Agregar papel**. De cada uno se dice **qué papel es** —de una lista: cédula, RIF, currículum, partida de nacimiento, título, licencia de conducir, certificado médico, antecedentes, contrato, carta bancaria u otro—, un **nombre**, el **archivo** —PDF o foto, hasta 50 MB—, y si hace falta, **cuándo se emitió**, **cuándo vence** y una **nota**.
-
-**Falta la cédula** y **falta el RIF** se avisan arriba de la lista. Son los dos que se piden para todo; que falte el currículum no detiene ningún trámite, así que no se convierte en un aviso que se aprende a ignorar.
-
-**Lo que caduca se ve venir.** La cédula, la licencia y el certificado médico vencen: cuando quedan sesenta días o menos, la fila lo dice, y si ya venció, también.
-
-<p class="regla"><strong>Los archivos no tienen dirección pública.</strong> Se guardan en el mismo depósito privado que las fotos del personal, y el enlace para mirarlos lo firma el servidor contra tu sesión y <strong>caduca a los diez minutos</strong>. La cédula de un trabajador no puede quedar colgada de una dirección que se reenvía por WhatsApp.</p>
-
-**Quitar un papel borra el archivo y no se recupera.** La fila se puede volver a subir; el escaneo, no. Por eso se pregunta antes.
-
-**Quién puede.** Verlos, quien pueda ver el personal. Agregarlos y quitarlos, **Recursos Humanos** —o quien tenga escritura en Nómina—, igual que para editar la ficha.
-
-#### El RIF
-
-**Es un campo aparte de la cédula, y opcional.** Se escribe en el formulario del trabajador, al lado de la cédula, con su dígito verificador: **V-12.345.678-9**.
-
-**El sistema no lo deduce de la cédula**, aunque en la mayoría de los casos sea la misma cifra con un dígito detrás. Ese dígito se calcula con una fórmula, quien tiene firma personal lleva **J** en vez de **V**, y un RIF que el sistema se invente termina impreso en una constancia que lee un banco. Se pide; no se adivina.
-
-**Hoy ninguna de las fichas lo tiene**, porque el campo acaba de existir. Se va llenando según se vayan teniendo los papeles.
+**Sirve para el recibo de pago.** Cuando el trabajador tiene firma guardada y en uso, **el recibo sale con ella estampada** sobre la raya de la izquierda (11.8).
 
 #### El carnet
 
-**El carnet dejó de ser una imagen que se baja y pasó a ser un documento que se emite.** El motivo es el QR: cada carnet lleva impreso en el reverso un código propio, distinto para cada persona, y ese código es el que abre la página que dice si el carnet sigue valiendo. Un código que no se ha emitido no verifica nada.
-
-**Ojo si tienes impreso un manual anterior.** Hasta la versión 1.2 el reverso del carnet era igual para todos —solo la marca, la razón social y el RIF— y se mandaba a la imprenta una sola vez. **Eso ya no es cierto y no puede hacerse:** un reverso repetido haría que todos los carnets de la cantera apuntaran a la misma persona al escanearlos.
+**El carnet es un documento que se emite, no una imagen que se baja.** El motivo es el QR: cada carnet lleva impreso en el reverso un código propio, distinto para cada persona, y ese código es el que abre la página que dice si el carnet sigue valiendo. Un código que no se ha emitido no verifica nada, y un reverso repetido haría que todos los carnets apuntaran a la misma persona al escanearlos.
 
 **Solo hay un carnet vigente por persona.** Emitir uno nuevo anula el anterior, y por eso hace falta decir por qué.
 
-**Quién puede emitir desde aquí:** recursos humanos y administración. El resto ve la tarjeta y puede imprimir, pero no emitir.
-
-**La gerencia general no ve estos botones en la ficha, aunque sí puede emitir.** Su permiso sobre Nómina se lo permite, y de hecho sí los ve en la pestaña **Carnets**; es la tarjeta de la ficha la que pregunta por el rol de recursos humanos. Es un desajuste, no una regla.
+**Quién puede emitir desde aquí:** recursos humanos y la administración. El resto ve la tarjeta y puede imprimir, pero no emitir. La base, por su parte, deja emitir a quien tenga escritura sobre Nómina.
 
 ##### Cuando todavía no tiene carnet
 
-La tarjeta lo dice —**Sin emitir**— y explica lo que va a pasar: *"Todavía no tiene carnet. Al emitirlo sale su PDF listo para la imprenta: dos páginas de 54 × 86 mm a 300 dpi, con el QR de verificación en el reverso."*
+La tarjeta lo dice —**Sin emitir**— y explica lo que va a pasar: **Todavía no tiene carnet. Al emitirlo sale su PDF listo para la imprenta: dos páginas de 54 × 86 mm a 300 dpi, con el QR de verificación en el reverso.**
 
-Se pulsa **Emitir el carnet**, se confirma, y el PDF se abre solo. No hay que buscarlo después.
+Se pulsa **Emitir el carnet**, se confirma, y el PDF se abre solo.
 
-**Sin foto también se emite**, y conviene saberlo porque el botón no avisa. Lo que pasa es que el carnet sale sin cara y **la página del QR no puede comparar a nadie**, que es para lo único que la foto está ahí. Carga la foto antes.
+**Sin foto también se emite**, y conviene saberlo porque el botón no avisa: el carnet sale sin cara y **la página del QR no puede comparar a nadie**, que es para lo único que la foto está ahí. Cargue la foto antes.
 
-**A quien ya egresó no se le emite carnet.** El sistema lo dice con su nombre: *«… ya no trabaja en la empresa: no se le emite un carnet nuevo.»*
+**A quien ya no trabaja aquí no se le emite carnet.** La tarjeta lo dice: **Esta persona ya no trabaja en la empresa, así que no se le emite carnet. Si tenía uno, escanea como no válido.**
 
 ##### Cuando ya lo tiene
-
-La tarjeta muestra tres cosas y un botón:
 
 | Qué | Para qué sirve |
 | --- | --- |
 | **Código impreso bajo el QR** | El mismo que sale escrito en el plástico, en grupos de seis. Sirve para teclearlo a mano cuando el QR está rayado y no lee |
-| **Adónde lleva el QR** | La dirección completa. El botón **Copiar la dirección** la deja en el portapapeles |
+| **Adónde lleva el QR** | La dirección completa. **Copiar la dirección** la deja en el portapapeles |
 | **Emitido el** | Fecha y hora |
 | **Imprimir el carnet** | Vuelve a sacar el mismo PDF. **Esto no emite nada ni anula nada** |
 
-**Imprimir es lo que se viene a hacer aquí casi siempre**: el carnet se perdió, se rompió, hace falta otra copia. No hay ningún límite ni ningún registro por imprimir de nuevo; el código sigue siendo el mismo y el carnet que ya está en el bolsillo sigue valiendo.
+**Imprimir es lo que se viene a hacer aquí casi siempre.** No hay ningún límite ni ningún registro por imprimir de nuevo; el código sigue siendo el mismo y el carnet que ya está en el bolsillo sigue valiendo.
+
+##### Volver a emitir, y anular
+
+Debajo hay dos botones, y solo los ve quien puede emitir:
+
+- **Se perdió: anular y emitir otro** — emite uno nuevo con otro código. **El anterior queda anulado**, y si alguien lo encuentra y lo escanea, la página dirá que no vale. Hay que imprimir el nuevo: el código va dentro del QR y el plástico viejo no lo tiene.
+- **Anular sin reemitir** — deja a la persona sin carnet vigente. Para cuando se desincorpora.
+
+Las dos piden un **Motivo**. El de anular es obligatorio; el de reemitir, opcional. **Lo que se escriba ahí no sale publicado**: queda escrito para el día que alguien aparezca con ese carnet, y la página del QR no lo enseña.
+
+Si hay carnets anulados, la tarjeta lista los últimos con su código, su fecha y su motivo. Sirve para cuando alguien aparece con un carnet que escanea como no válido y hay que responder de dónde salió.
+
+Al pie de la tarjeta: **¿Hace falta una cara suelta para retocarla? el frente · el reverso, en PNG.** Son un apaño de taller, y nada más. **El carnet que se manda a la imprenta es el PDF**, que ya trae las dos páginas al tamaño y a la resolución que pide.
 
 ##### La página que abre el QR
 
@@ -3961,196 +3892,235 @@ Lo primero y más grande es un sello con una sola palabra:
 | Sello | Qué significa |
 | --- | --- |
 | **Vigente** | El carnet vale. La persona trabaja aquí |
-| **Rechazado** | No vale. Debajo dice por qué: **Ya no trabaja aquí** o **Carnet anulado** |
+| **Rechazado** | No vale. Debajo dice por qué: **Ya no trabaja aquí**, **Carnet anulado** o **Código desconocido** |
+| **Sin señal** | No se pudo comprobar. Hay que volver a intentarlo |
 
-**La foto va dentro del sello**, del mismo color, para que no se pueda leer «Vigente» y mirar una cara que no corresponde sin darse cuenta de que son dos cosas distintas.
+**La foto va dentro del sello**, del mismo color, para que no se pueda leer «Vigente» y mirar una cara que no corresponde sin darse cuenta de que son dos cosas distintas. Si el carnet se emitió sin foto, lo dice: **Este carnet se emitió sin foto. Pida la cédula.**
 
-Debajo, los datos:
+Debajo, los datos: el nombre, el número de ficha, el cargo, la cédula, el departamento, **Trabaja aquí desde** y la edad; y el bloque **En caso de emergencia**, con el grupo sanguíneo, **Llamar a**, **Su propio teléfono** y la dirección. Al final, el código, que **debe coincidir con el impreso debajo del QR.** **Los teléfonos son enlaces**: se pulsan y el teléfono llama. Si alguien se accidenta en la carretera, quien encuentre el carnet no tiene que copiar un número a mano.
 
-| Bloque | Qué enseña |
-| --- | --- |
-| Identificación | Nombre, **número de ficha**, cargo, cédula |
-| Antigüedad | Desde cuándo trabaja aquí, y cuánto lleva, en años y meses |
-| Edad | Los años cumplidos |
-| **En caso de emergencia** | Grupo sanguíneo, a quién llamar y su teléfono, el teléfono de la persona, y su dirección |
-| Código | El mismo que está impreso bajo el QR |
+**A quien ya no trabaja aquí, la página no le publica más que lo justo**: ni departamento, ni antigüedad, ni edad, ni el bloque de emergencia. Lo dice: **No se publican más datos de quien ya no trabaja aquí.**
 
-**Los teléfonos son enlaces**: se pulsan y el teléfono llama. Es la razón por la que ese bloque existe y por la que está separado del resto con su propio rótulo en rojo — si alguien se accidenta en la carretera, quien encuentre el carnet no tiene que copiar un número a mano.
+**Lo que nunca enseña:** el sueldo, la cuenta bancaria, las incidencias, y el motivo por el que se anuló un carnet anterior.
 
-**Lo que NO enseña:** el sueldo, la cuenta bancaria, las incidencias, y el motivo por el que se anuló un carnet anterior. Nada de eso sale a la calle.
+Si el QR está rayado y no lee, la dirección **/v** sin código abre la misma página con un campo para teclearlo. Acepta el código con espacios o sin ellos, y corrige las confusiones de siempre —una **O** por un **cero**, una **I** o una **L** por un **uno**—.
 
-Si el QR está rayado y no lee, la dirección **/v** sin código abre la misma página con un campo para teclearlo. Acepta el código escrito con espacios o sin ellos, y corrige las confusiones de siempre —una **O** por un **cero**, una **I** o una **L** por un **uno**—.
+#### Los documentos
 
-##### Volver a emitir, y anular
+En la tarjeta de los documentos hay tres botones: **Ficha completa (PDF)**, **Constancia de trabajo** e **Informe de personal**.
 
-Debajo hay dos botones pequeños, y solo los ve quien puede emitir:
+**Los tres se abren primero en el visor**, con **Cerrar** y **Descargar** abajo, y nada se guarda hasta que se pulse **Descargar**. La ficha trae todos los datos en A4. La constancia es la carta que se entrega a un banco o a quien la pida, y el visor avisa: **La firma va a mano.** El informe es el resumen sin datos personales ni montos: la misma hoja que sale de la lista de personal (11.3), con una fila.
 
-- **Se perdió** — emite uno nuevo. **El anterior queda anulado**, y si alguien lo encuentra y lo escanea, la página dirá que no vale.
-- **Anular** — deja a la persona sin carnet vigente, sin emitir otro. Para cuando egresa.
+##### Emitir una constancia de trabajo
 
-Las dos piden un motivo. El de anular es obligatorio; el de reemitir, opcional. **Lo que se escriba ahí no sale publicado**: es una nota interna de nómina, y la página del QR no la enseña.
+1. Pulse **Constancia de trabajo**.
+2. Lea el párrafo que anticipa lo que dirá la carta: desde cuándo trabaja aquí y con qué cargo.
+3. Decida si deja marcada la casilla **Incluir el sueldo**. Viene marcada, y debajo el sistema explica el criterio: **El banco lo exige; un arrendador no tiene por qué verlo.**
+4. Pulse **Emitir**, revísela en el visor y pulse **Descargar**.
 
-Si hay carnets anulados, la tarjeta los lista abajo con su código, su fecha y su motivo. Sirve para cuando alguien aparece con un carnet que escanea como no válido y hay que responder de dónde salió.
+**No se puede emitir una constancia si la fecha de ingreso está sin confirmar.** El botón **Emitir** queda apagado y en su lugar aparece: **Falta confirmar la fecha de ingreso. La constancia declara desde cuándo trabaja aquí y sale firmada por la empresa: no se puede emitir con una fecha que nadie ha revisado.** Un aviso que se puede saltar con un clic se salta, y una constancia con una fecha inventada la firma la empresa. La fecha se corrige con **Editar datos**.
 
-##### Las dos caras sueltas
+Si nadie ha cargado quién firma por recursos humanos, la ventana lo dice y la carta sale con el cargo y el renglón en blanco para firmar a mano. Eso se arregla en **Parámetros de nómina** (11.9).
 
-Al pie de la tarjeta, en letra pequeña: *"¿Hace falta una cara suelta para retocarla? el frente · el reverso, en PNG."* Son un apaño de taller —mirar o retocar una cara— y nada más. **El carnet que se manda a la imprenta es el PDF**, que ya trae las dos páginas al tamaño y a la resolución que pide.
+##### Dos constancias, no una
 
-#### Dotación, asignación e incidencias
+**A quien ya no trabaja aquí, el botón pregunta primero qué papel se quiere.** Aparece el desplegable **Tipo** con dos opciones:
 
-Debajo de los documentos hay tres tarjetas más, y **son tres cosas distintas** que conviene no mezclar:
+- **Constancia de trabajo** — **Acredita que trabajó aquí. Para un empleo nuevo, un banco.**
+- **Constancia de cese de actividades laborales** — **Acredita que la relación laboral terminó. Para trámites.**
+
+No son el mismo papel con otro título: se piden para cosas distintas, y de una misma persona se pueden querer las dos. A quien sigue activo no se le pregunta: no se le puede certificar un cese. La de cese añade una frase —«La relación laboral culminó en la fecha antes señalada»— y cierra diciendo para qué sirve: «para los fines legales que estime convenientes».
+
+##### El motivo de la salida no se imprime salvo que se pida
+
+Si la ficha tiene motivo de salida, aparece la casilla **Decir el motivo de la salida**, **y viene apagada**.
+
+Está apagada a propósito. Este papel se lo lleva la persona, y «despido justificado» escrito en algo que va a enseñar en su próxima entrevista le hace un daño que la empresa no necesita hacerle. **La fecha de salida ya acredita el cese**, que es lo que se pide.
+
+La casilla dice lo que va a pasar antes de que pase. Marcada: **Dirá «por despido justificado». Piénselo: el papel se lo lleva la persona.** Sin marcar: **La carta dirá cuándo terminó, no por qué.** Queda disponible para cuando de verdad haga falta —un trámite que lo exija—, y entonces es una decisión de quien firma, tomada a sabiendas.
+
+Las constancias salen con la misma cabecera que la orden de compra, el recibo y la factura: la razón social, el RIF y **el domicilio fiscal completo**, tal como estén cargados en **Configuración › Datos de la empresa** (13.2). Lo que falte ahí, falta en el papel.
+
+#### Cuenta del sistema
+
+La tarjeta **Cuenta del sistema** dice **con qué usuario entra esta persona y qué puede hacer dentro**: el **Usuario**, cuándo se creó la cuenta y sus roles. Si la cuenta está desactivada, lo avisa.
+
+**A quien no tiene cuenta no le sale la tarjeta.** Solo la ve, con **Atar una cuenta**, quien tiene la casilla de vincular cuentas, que es también quien la cambia o la desata. Atar no da ni quita permisos: **deja dicho que el trabajador de esta ficha y ese usuario del sistema son la misma persona**, y una cuenta es de una sola persona.
+
+Es lo que hay que mirar **cuando alguien se va**: saber qué cuenta era suya es lo que evita que se quede abierta.
+
+#### Los papeles que se adjuntan
+
+La ficha guarda los papeles de la persona —la cédula, el RIF, el currículum y los que hagan falta— en la tarjeta **Papeles**, que se los agrega con **Agregar papel**. De cada uno se dice el **Tipo de documento**, un **Nombre**, el **Archivo** —PDF o foto, hasta 50 MB—, y si hace falta, **Emitido el**, **Vence el** y una **Nota**. Cada papel se abre con **Ver**.
+
+**Falta la cédula** y **Falta el RIF** se avisan arriba de la lista. Son los dos que se piden para todo; que falte el currículum no detiene ningún trámite, así que no se convierte en un aviso que se aprende a ignorar.
+
+**Lo que caduca se ve venir.** Cualquier papel con fecha de vencimiento lo dice cuando le quedan sesenta días o menos, y también si ya venció.
+
+<p class="regla"><strong>Los archivos no tienen dirección pública.</strong> Se guardan en el mismo depósito privado que las fotos del personal, y el enlace para mirarlos <strong>caduca a los diez minutos</strong>. La cédula de un trabajador no puede quedar colgada de una dirección que se reenvía por WhatsApp.</p>
+
+**Quitar un papel borra el archivo y no se recupera.** La fila se puede volver a subir; el escaneo, no. Por eso se pregunta antes.
+
+**Quién puede.** Verlos, quien pueda ver el personal. Agregarlos y quitarlos, recursos humanos.
+
+#### El RIF
+
+**Es un campo aparte de la cédula, y opcional.** Se escribe en el formulario del trabajador, con su dígito verificador: **V-12.345.678-9**.
+
+**El sistema no lo deduce de la cédula**, aunque en la mayoría de los casos sea la misma cifra con un dígito detrás. Ese dígito se calcula con una fórmula, quien tiene firma personal lleva **J** en vez de **V**, y un RIF que el sistema se invente termina impreso en una constancia que lee un banco. Se pide; no se adivina.
+
+#### Las demás tarjetas
 
 | Tarjeta | Qué guarda |
 | --- | --- |
+| **Condición de contratación** | El interruptor **Eventual**. **Quien es eventual no entra en las nóminas que corren solas. Se le paga abriendo un período especial.** |
+| **Carga familiar** | **Quién es de su familia y a quién mantiene. Solo quien esté marcado cuenta como dependiente.** De cada familiar, nombres, parentesco, fecha de nacimiento —de ahí sale la edad—, cédula y si **depende económicamente del trabajador** |
+| **Salud** | **Alergias, patologías y discapacidades declaradas. Solo lo ve quien pueda ver el personal.** Cada condición con su clase, desde cuándo y su descripción |
+| **Préstamos** | **Lo que se le prestó y lo que le queda por pagar. Se cobra por nómina, o lo paga él.** Ver abajo |
+| **A su cargo** | **Los sitios y las máquinas que tiene a su cargo. Al irse, esto es lo que hay que entregar.** |
 | **Dotación** | **Lo que necesita por su rol: casco, botas, uniforme, equipo.** |
-| **Asignado para una actividad** | **Lo que se le dio para una faena concreta y hay que recuperar.** |
+| **Asignación** | **Lo que se le dio para una faena concreta y hay que recuperar.** |
 | **Incidencias** | **Lo que le pasó: enfermedad, lesión en labores, ausencia, conflicto.** |
 
-**La diferencia entre dotación y asignación no es si vuelve, es para qué se le dio.** Una laptop es dotación y vuelve; unas mascarillas son dotación y se gastan; un kit de llaves para montar una banda es asignación. Si el bien vuelve o no lo dice cada artículo en el catálogo, en su campo **Al entregarlo a una persona** (7.8), y eso es un eje aparte.
+##### Los préstamos
 
-Las dos primeras tarjetas tienen las mismas cuatro columnas —**Qué**, **Cuánto**, **Desde** y **Estado**— y el mismo botón **Entregar** arriba a la derecha, que ven almacén y recursos humanos. En **Qué** va el nombre del artículo y debajo su código y el número de la entrega.
+**Prestar** abre la ventana del préstamo: el **Monto**, la **Moneda**, las **Cuotas** y el **Motivo**. **Las cuotas que se pacten son una intención, no un calendario: lo que manda es el saldo.** La tarjeta dice cuánto debe, o **No debe nada**, y cada préstamo está **Vigente**, **Saldado** o **Anulado**.
 
-La columna **Estado** dice en qué quedó cada cosa:
+Se cobra de dos maneras, y las dos bajan el mismo saldo: **Cobrar por nómina** —**Se carga al período de nómina abierto y baja el saldo, en el mismo acto.**— o **Registró un pago**, cuando él trae el dinero por fuera. El **Recibo** del préstamo **se imprime y se firma: quien recibe el dinero reconoce la deuda y autoriza el descuento.** **Solo se anula lo que no se ha empezado a cobrar.**
 
-| Etiqueta | Qué significa |
+##### Dotación y asignación
+
+**La diferencia entre dotación y asignación no es si vuelve, es para qué se le dio.** Una laptop es dotación y vuelve; unas mascarillas son dotación y se gastan; un kit de llaves para montar una banda es asignación. Si el bien vuelve o no lo dice cada artículo en el catálogo, en su **Modo de entrega** (7.8), y eso es un eje aparte.
+
+Las dos tarjetas tienen las mismas columnas —**Artículo**, **Cantidad**, **Fecha** y **Estado**— y el mismo botón **Entregar**, que ven almacén y recursos humanos. Lleva a la pantalla de entrega de Asignaciones (18.3) con la persona ya puesta. Desde la ficha no se entrega nada.
+
+| Estado | Qué significa |
 | --- | --- |
 | **Entregado** | Se gastó al usarlo. No hay nada que devolver |
-| **En su poder** | Lo tiene, y se le va a pedir de vuelta |
+| **Asignada** | Lo tiene, y se le va a pedir de vuelta |
 | **Devuelta** | Ya volvió |
 | **Perdida** | No apareció |
 | **Dañada** | Volvió rota o dejó de servir |
 | **Repuesta** | Trajo otra en su lugar |
 
-Cuando no hay nada, cada tarjeta lo dice a su manera: **Todavía no se le ha dado dotación.** y **No tiene nada asignado.**
+Cuando no hay nada, cada tarjeta lo dice: **Sin dotación entregada.** y **No tiene nada asignado.**
 
-**Desde aquí no se entrega nada.** Las dos tarjetas son de solo lectura: el botón **Entregar** lleva a la pantalla de entrega de Asignaciones, **que hoy sí se alcanza** —el módulo entró al menú— y está contada en 18.3. Y hay un detalle que hace perder tiempo: **al llegar allí la persona no viene puesta**, hay que volver a elegirla en el desplegable.
+##### Anotar una incidencia
 
-#### Anotar una incidencia
-
-Esta sí se registra desde la ficha, con el botón **Anotar una**, que ve recursos humanos. La ventana se llama **Anotar una incidencia de** seguido del nombre, y explica para qué es: **Lo que pasó, cuándo y por qué. Queda en su ficha y en la de quien haya participado.**
+Esta sí se registra desde la ficha, con **Anotar una**, que ve recursos humanos. La ventana dice: **Lo que pasó, cuándo y por qué. Queda en su ficha y en la de quien haya participado.**
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Cuándo** | Sí | Viene la fecha de hoy. No admite días futuros ni fechas anteriores al ingreso |
-| **Qué pasó** | Sí | Empieza en **Ausencia justificada** |
-| **Dónde** | No | El sitio. Se pasa solo a mayúsculas |
-| **Cuánto duró** | Sí | Empieza en **Todo el día** |
-| **Días de reposo** | Según el caso | Solo aparece en los tipos que pueden llevar reposo. **Obligatorio si duró varios días.** |
+| **Fecha** | Sí | Viene la de hoy. No admite días futuros |
+| **Tipo** | Sí | Empieza en **Ausencia justificada** |
+| **Lugar** | No | Se pasa solo a mayúsculas |
+| **Momento** | Sí | Empieza en **Todo el día** |
+| **Días de reposo** | Según el caso | Solo aparece en **Enfermedad**, **Lesión en labores**, **Accidente común** y las dos ausencias. **Obligatorio si duró varios días.** |
 | **Quién más estuvo** | No | Casillas con el resto del personal activo. **Sin nadie marcado queda como individual.** |
-| **Motivo** | Sí | **Mínimo cinco caracteres.** Lo que se escriba aquí es lo que se va a leer dentro de un año |
+| **Motivo** | Sí | Mínimo cinco letras. Lo que se escriba aquí es lo que se va a leer dentro de un año |
 
-Los ocho tipos de **Qué pasó** son: **Conflicto**, **Enfermedad**, **Lesión en labores**, **Accidente común**, **Ausencia justificada**, **Ausencia injustificada**, **Llegada tarde** y **Otra**. Y los cinco de **Cuánto duró**: **En la mañana**, **En la tarde**, **En la noche**, **Todo el día** y **Varios días**.
+Los ocho tipos son **Conflicto**, **Enfermedad**, **Lesión en labores**, **Accidente común**, **Ausencia justificada**, **Ausencia injustificada**, **Llegada tarde** y **Otra**. Los cinco momentos: **En la mañana**, **En la tarde**, **En la noche**, **Todo el día** y **Varios días**.
 
-**El botón Anotar está apagado hasta que el motivo llegue a cinco caracteres.** No sale ningún aviso en rojo: simplemente no se puede pulsar.
+**Ojo con «Varios días».** Si se elige con un tipo que no pide días de reposo —**Conflicto**, **Llegada tarde** u **Otra**—, la ventana deja pulsar **Anotar** y la base lo rechaza con el aviso genérico **La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.** Un hecho de varios días se anota con un tipo que admita días de reposo.
 
-**Una incidencia con más de un implicado se anota una sola vez y sale en todas las fichas.** Al marcar a alguien en **Quién más estuvo**, la incidencia aparece también en su ficha, con la línea **Anotada en la ficha de** seguida del nombre de la persona sobre la que se registró. Es lo que evita que un altercado entre dos se cuente como dos hechos distintos.
+**Una incidencia con más de un implicado se anota una sola vez y sale en todas las fichas.** Al marcar a alguien en **Quién más estuvo**, la incidencia aparece también en su ficha, con **Anotada en la ficha de** y el nombre de la persona sobre la que se registró. Es lo que evita que un altercado entre dos se cuente como dos hechos distintos.
 
-En la lista, cada incidencia se lee en una línea: la fecha, el tipo, el lugar, cuánto duró, los días de reposo entre paréntesis si los hay, y quiénes estuvieron o la palabra **Individual**. Debajo, **Motivo:** con lo que se escribió. Si no hay ninguna, **Ninguna anotada.**
+En la lista, cada incidencia se lee en una línea: la fecha, el tipo, el lugar, el momento, los días de reposo entre paréntesis si los hay, y quiénes estuvieron o **Individual**. Debajo, **Motivo:** con lo que se escribió. Si no hay ninguna, **Sin registros.**
 
-**Ojo con la palabra «incidencia», que el sistema usa para dos cosas.** Aquí es *algo que le pasó a una persona*. En la pantalla **Asignaciones › Incidencias** significa otra: *un bien perdido o dañado que sigue sin resolverse*. No se mezclan.
-
-#### Emitir una constancia de trabajo
-
-1. Pulsa **Constancia de trabajo**.
-2. Lee el párrafo que anticipa lo que dirá la carta: desde cuándo trabaja aquí y con qué cargo.
-3. Decide si dejas marcada la casilla **Incluir el sueldo**. Viene marcada, y debajo el sistema explica el criterio: *"El banco lo exige; un arrendador no tiene por qué verlo."*
-4. Pulsa **Emitir**.
-5. Revísala en el visor y pulsa **Descargar**.
-
-**No se puede emitir una constancia si la fecha de ingreso está sin confirmar.** El botón **Emitir** queda apagado y en su lugar aparece este aviso:
-
-> *"Falta confirmar la fecha de ingreso. La constancia declara desde cuándo trabaja aquí y sale firmada por la empresa: no se puede emitir con una fecha que nadie ha revisado."*
-
-Junto al aviso está el enlace **Corregir la fecha de ingreso**, que te lleva directo a arreglarlo. La razón de que sea un bloqueo y no una advertencia está escrita en el propio sistema: un aviso que se puede saltar con un clic se salta, y una constancia con una fecha inventada la firma la empresa.
-
-Si nadie ha cargado quién firma por recursos humanos, la ventana también lo dice, y la carta sale con el cargo y el renglón en blanco para firmar a mano. Eso se arregla en **Parámetros de nómina** (ver 11.9).
+**Ojo con la palabra «incidencia», que el sistema usa para dos cosas.** Aquí es *algo que le pasó a una persona*. En **Asignaciones › Incidencias** es *un bien perdido o dañado que sigue sin resolverse*. No se mezclan.
 
 ### 11.5 Tabulador de cargos
 
 **Nómina › Personal › Tabulador de cargos**
 
-**No es una entrada del menú**: es la segunda pestaña de **Personal**.
-
-La escala de sueldos de la empresa: cuánto gana cada cargo al mes. La pantalla lo resume así: *"Salario mensual de cada cargo. El quincenal se deriva de esa cifra y no se registra aparte."* Así las dos cifras no pueden desfasarse.
+La escala de sueldos de la empresa: cuánto gana cada cargo al mes. La pantalla lo resume: **Salario mensual de cada cargo. El quincenal se deriva de esa cifra y no se registra aparte.** Así las dos cifras no pueden desfasarse.
 
 #### Qué se ve
 
 Arriba, solo para recursos humanos, dos botones: **Sincronizar** y **Nuevo cargo**.
 
-**Sincronizar está siempre visible**, tenga o no algo que hacer. Es a propósito: un botón que solo aparece cuando hace falta no se puede encontrar cuando hace falta. Si hay fichas desfasadas, lleva pegada una etiqueta ámbar con cuántas son.
+**Sincronizar está siempre visible**, tenga o no algo que hacer: un botón que solo aparece cuando hace falta no se puede encontrar cuando hace falta. Si hay fichas desfasadas, lleva pegada una etiqueta con cuántas son.
 
-Debajo, una de estas dos franjas:
+Debajo, también solo para recursos humanos, una de estas dos franjas:
 
-- **Si hay fichas desfasadas**, la franja las lista una por una con las columnas **Trabajador**, **Cargo**, **Tiene** y **Pasa a**, y explica exactamente qué va a pasar: *"Esto es lo que hará el botón Sincronizar de arriba: bajarles el sueldo y el nombre del cargo tal como están en la escala. Los recibos ya emitidos no cambian; una nómina en borrador sí tomará el sueldo nuevo cuando se vuelva a calcular."*
-- **Si no hay ninguna**, la franja dice *"Todas las fichas coinciden con el tabulador. Al cambiar un sueldo, aquí se indica a quién afecta y de cuánto a cuánto."*
+- **Si hay fichas desfasadas**, la franja las lista una por una con las columnas **Trabajador**, **Cargo**, **Sueldo actual** y **Sueldo del tabulador**, y explica qué va a pasar: **Esto es lo que hará el botón Sincronizar de arriba: bajarles el sueldo y el nombre del cargo tal como están en la escala. Los recibos ya emitidos no cambian; una nómina en borrador sí tomará el sueldo nuevo cuando se vuelva a calcular.**
+- **Si no hay ninguna**: **Todas las fichas coinciden con el tabulador. Al cambiar un sueldo, aquí se indica a quién afecta y de cuánto a cuánto.**
 
 La escala tiene estas columnas:
 
 | Columna | Qué muestra |
 | --- | --- |
-| **Cargo** | El nombre y, debajo, cuánta gente está en ese nivel, y **inactivo** si no está vigente |
+| **Cargo** | El nombre y, debajo, cuántas personas activas hay en ese nivel, e **inactivo** si no está vigente |
 | **Mensual** | Lo único que se guarda |
 | **Quincenal** | Su mitad, calculada cada vez |
 
-El pie de la tabla vuelve a decirlo, porque es el punto de todo: *"Solo se guarda el mensual. El quincenal es su mitad y se calcula cada vez."* Las dos cifras no pueden acabar diciendo cosas distintas.
+El pie lo vuelve a decir, porque es el punto de todo: **Solo se guarda el mensual. El quincenal es su mitad y se calcula cada vez.** Si la escala está vacía: **El tabulador está vacío**, con **Cargar el primer cargo**.
 
-**El tabulador no lleva el bono de alimentación.** Lo llevó hasta el 6 de agosto de 2026, en una columna por cargo, y se quitó: el beneficio de alimentación es el mismo para toda la empresa, se carga una sola vez en **Parámetros de nómina** —con su fecha de vigencia y el decreto del que sale— y es de ahí de donde la nómina lo paga. Escrito también aquí, el día que cambiara el anuncio el tabulador seguiría enseñando el monto viejo, y el tabulador es justamente la pantalla que se consulta para saber cuánto gana un cargo.
+**El tabulador no lleva el beneficio de alimentación.** Es el mismo para toda la empresa, se carga una sola vez en **Parámetros de nómina** —con su fecha de vigencia y el decreto del que sale— y es de ahí de donde la nómina lo paga. Escrito también aquí, el día que cambiara el anuncio el tabulador seguiría enseñando el monto viejo.
 
 #### Crear o editar un cargo
 
-1. Pulsa **Nuevo cargo**, o el lápiz de la fila que quieres cambiar.
-2. Llena la ficha del nivel.
-3. Pulsa **Guardar**.
+1. Pulse **Nuevo cargo**, o el lápiz de la fila que quiere cambiar.
+2. Llene la ficha del nivel.
+3. Pulse **Guardar**.
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Cargo** | Sí, mínimo tres letras | *"Es el nombre con el que las fichas se enganchan a este nivel."* |
+| **Cargo** | Sí, mínimo tres letras | **Es el nombre con el que las fichas se enganchan a este nivel.** |
 | **Sueldo mensual** | Sí | |
-| **Moneda** | — | Empieza en **$** |
-| **Quincena** | — | **Está bloqueada.** Se calcula sola mientras escribes el mensual: *"La mitad del mensual. Se calcula sola."* |
-| **Orden en la lista** | No | *"Menor sale primero. El tabulador se lee como una escala, no en alfabético."* |
+| **Moneda** | — | Empieza en dólares |
+| **Quincena** | — | **Está bloqueada.** Se calcula sola mientras se escribe el mensual: **La mitad del mensual. Se calcula sola.** |
+| **Orden en la lista** | No | **Menor sale primero. El tabulador se lee como una escala, no en alfabético.** |
 | **Vigente** | — | Viene marcada |
 | **Nota** | No | |
 
-Debajo, una banda gris recuerda dónde está lo que no se escribe aquí: *"Aquí solo va el sueldo. El beneficio de alimentación es el mismo para todos y se carga una sola vez en Parámetros de nómina."* — con enlace directo a esa pantalla.
+Debajo, una banda gris recuerda dónde está lo que no se escribe aquí: **Aquí solo va el sueldo. El beneficio de alimentación es el mismo para todos y se carga una sola vez en Parámetros de nómina.**, con enlace a esa pantalla.
 
-El nombre del cargo **se guarda en mayúsculas y sin tildes**, y no se puede repetir. La razón es que «Vigilante» y «VIGILANTE» acabarían siendo dos niveles distintos y nadie sabría cuál es el bueno.
+El nombre del cargo **se guarda en mayúsculas y sin tildes**, y no se puede repetir: «Vigilante» y «VIGILANTE» acabarían siendo dos niveles distintos y nadie sabría cuál es el bueno. Si se repite, la pantalla dice **Ya existe un registro con ese dato, y no puede haber dos.**
 
 #### Bajar los sueldos a las fichas
 
-1. Cambia el sueldo del cargo y guarda.
-2. Vuelve a la franja de desfase y **lee la lista**: te dice a quién le toca, cuánto tiene y a cuánto pasa. Verde si sube, rojo si baja.
-3. Pulsa **Sincronizar**.
-4. Lee el resumen. Si cambió algo, sale **{n} fichas actualizadas** con la advertencia *"Estas personas cobran distinto a partir de la próxima nómina que se calcule."* y el detalle de cada una. Si no cambió nada, sale **No había nada que sincronizar** con la explicación *"Las fichas ya coincidían con el tabulador."*
-5. Pulsa **Entendido**.
+1. Cambie el sueldo del cargo y guarde.
+2. Vuelva a la franja de desfase y **lea la lista**: dice a quién le toca, cuánto tiene y a cuánto pasa. Verde si sube, rojo si baja.
+3. Pulse **Sincronizar**.
+4. Lea el resumen. Si cambió algo, sale cuántas fichas se actualizaron, con **Estas personas cobran distinto a partir de la próxima nómina que se calcule.** y el detalle de cada una. Si no, **No había nada que sincronizar** y **Las fichas ya coincidían con el tabulador.**
+5. Pulse **Entendido**.
+
+**Sincronizar solo toca a las personas activas de los niveles vigentes**, y les deja la base de su salario en «por mes».
 
 #### Quitar un cargo
 
-**Un cargo con gente dentro no se puede quitar.** El sistema lo dice antes de que lo intentes: *"Hay {n} persona(s) en este nivel. No se puede quitar con personas dentro. Muévalas antes, o desmarque «Vigente» para que deje de ofrecerse sin perder a quien está dentro."* Si se soltaran, seguirían cobrando lo mismo pero dejarían de subir cuando suba el cargo, y nadie sabría por qué.
+**Un cargo con fichas enganchadas no se puede quitar**, y eso incluye a las personas desincorporadas que estuvieron en él. La ventana avisa si hay gente activa: **Hay 2 personas en este nivel. No se puede quitar con personas dentro. Muévalas antes, o desmarque «Vigente» para que deje de ofrecerse sin perder a quien está dentro.** Pero el botón **Quitar** no se apaga, y la pantalla cuenta solo a los activos: un nivel donde solo quedan desincorporados dice que no hay nadie, y al quitarlo responde **Eso está en uso en otra parte del sistema: no se puede borrar ni cambiar mientras algo dependa de ello.**
 
-Esa es la salida buena: **desmarcar Vigente**. El nivel deja de ofrecerse al crear fichas nuevas, pero quien está dentro sigue enganchado y sigue subiendo cuando suba el cargo.
+La salida buena es **desmarcar Vigente**. El nivel deja de ofrecerse al crear fichas nuevas, y quien está dentro sigue enganchado. **Pero deja de subir**: un nivel que no está vigente no sale en la franja de desfase y **Sincronizar** no lo toca. Si a esas personas hay que subirles el sueldo, se pasan a un nivel vigente.
 
 ### 11.6 Novedades del período
 
 **Nómina › Nómina del período › 1 · Novedades**
 
-**No es una entrada del menú**: es la primera de las tres pestañas de **Nómina del período**.
-
-Es la única pantalla donde se teclea algo cada quincena: *"Lo único que cambia de una quincena a otra: horas extra, faltas, bonos y descuentos. El resto lo saca el sistema del contrato."*
-
-También se llega desde el botón **Cargar novedades** de la tarjeta de un período, y en ese caso llega con el período ya elegido.
+Es la única pantalla donde se teclea algo cada quincena: **Novedades del período: horas extra, faltas, bonos y descuentos. El resto lo calcula el sistema a partir del contrato.** También se llega desde **Cargar novedades**, en la tarjeta de un período, y entonces llega con el período ya elegido.
 
 #### Qué se ve
 
-Arriba, el selector **Período**, que empieza en **Elige el período**. No lista los períodos anulados. Al lado, la etiqueta de estado.
+Arriba, el selector **Período**, que empieza en **Seleccione el período** y no lista los anulados. Al lado, la etiqueta de estado. Sin período elegido: **Seleccione un período** y **Las novedades se cargan sobre el período que se va a pagar.**
 
-Si no eliges ninguno, la pantalla dice **Elige un período** y *"Las novedades se cargan sobre el período que se va a pagar."*
+Si el período ya no admite cambios, lo dice: **Este período está en «aprobada · por pagar» y ya no admite cambios. Lo que se ve es lo que se usó para calcular.** —con su estado—. No es una falla: los recibos ya están emitidos con esos números, y cambiarlos ahora dejaría el papel diciendo una cosa y el sistema otra.
 
-Si el período ya no admite cambios, el aviso es claro: *"Este período está en «{estado}» y ya no admite cambios. Lo que se ve es lo que se usó para calcular."* En ese caso todas las casillas quedan apagadas y desaparecen los botones. No es una falla: los recibos ya están emitidos con esos números y cambiarlos ahora dejaría el papel diciendo una cosa y el sistema otra.
+La pantalla trae a **la gente del período**, por fechas: quien entró o salió a mitad de período también está, porque se le paga lo que trabajó.
 
-**Con los recargos apagados en los conceptos de ley** la tabla se titula **Bonos y descuentos** y no trae las columnas de horas ni de recargos: *"Esta quincena no calcula recargos: las horas extra, nocturnas, feriados y descansos no se cargan, y lo que haya que pagar de más va como bono. Las faltas se marcan en el calendario."* Las faltas se siguen marcando en el calendario de arriba, y cada trabajador sigue teniendo su enlace **Bono o descuento**. Mientras la quincena se puede recalcular manda lo que rige hoy; ya aprobada, lo que se usó al calcularla.
+#### Las faltas, día por día
 
-La tabla se titula **Personal activo**, con el subtítulo *"Se guarda por trabajador. Lo que no se toca queda en cero."* Sus columnas:
+La tarjeta **Días de la quincena** es un calendario: **Señale los días que no trabajó. Un clic: no vino y se le descuenta. Dos: justificada, no descuenta. Tres: se limpia.**
+
+1. Elija a la persona en la lista de la izquierda. Al lado de cada nombre, si las tiene, sus faltas sin justificar y justificadas.
+2. Pulse cada día que faltó: una vez para **No vino · se le descuenta**, dos para **Justificada · no se descuenta**, tres para dejarlo limpio.
+3. Si hace falta, escriba **Por qué faltó** en el día marcado. Queda dicho quién lo marcó.
+
+Arriba se ven tres cifras: **Facturados**, **Laborados** y **A pagar**, que tienen en cuenta a quien entró o salió a mitad de período. Los días en que la persona no trabajaba aquí no se pueden marcar.
+
+#### Las horas y los recargos
+
+La tabla **Horas y recargos** —**Horas extra, nocturnas y días trabajados de descanso o feriado. Se guarda por trabajador; lo que no se toca queda en cero.**— tiene estas columnas:
 
 | Columna | Qué se carga |
 | --- | --- |
@@ -4160,61 +4130,47 @@ La tabla se titula **Personal activo**, con el subtítulo *"Se guarda por trabaj
 | **H. nocturnas** | Horas trabajadas en horario nocturno |
 | **Feriados trab.** | Días feriados trabajados |
 | **Descansos trab.** | Días de descanso trabajados |
-| **Faltas s/j** | Faltas sin justificar |
-| **Faltas just.** | Faltas justificadas |
 
-Cada casilla admite medios (0,5) y no admite números negativos.
+Se escribe en la fila de quien tuvo algo y se pulsa **Guardar** al final de esa fila. **Se guarda fila por fila**: lo que no se toca queda en cero, así que no hace falta pasar por todo el mundo. Las casillas admiten decimales y no admiten números negativos.
 
-#### Cargar las cantidades de un trabajador
+**Con los recargos apagados en los conceptos de ley** (11.9), la tabla se titula **Bonos y descuentos** y no trae las columnas de horas: **Esta quincena no calcula recargos: las horas extra, nocturnas, feriados y descansos no se cargan, y lo que haya que pagar de más va como bono. Las faltas se marcan en el calendario.**
 
-1. Elige el **Período**.
-2. Busca su fila y escribe lo que corresponda en cada casilla.
-3. Pulsa **Guardar** al final de esa fila.
+#### Las vacaciones del período
 
-**Se guarda fila por fila.** Lo que no toques queda en cero, así que no hace falta pasar por todo el mundo: solo por quien tuvo algo.
+Con el bono vacacional encendido en los conceptos de ley, aparece la tarjeta **Vacaciones del período**: **Quién estuvo fuera. Los días ya los paga el salario; la casilla decide si además lleva el bono.** Se elige al **Trabajador**, se escriben los **Días** y se pulsa **Anotar**. La casilla **Pagar el bono vacacional** de cada fila añade el bono; después **hay que recalcular** para que el recibo lo recoja.
 
 #### Cargar un bono o un descuento
 
-1. Pulsa **Bono o descuento** bajo el nombre de la persona.
-2. Elige el **Concepto**. La lista la lleva la empresa y se edita en **Bonos y descuentos** (11.11): de fábrica trae, para sumar, **Prima**, **Comisiones** y **Bono en divisas**; y para restar, **Cuota de préstamo**, **Anticipo de prestaciones** y **Otra deducción**. Cada opción dice si suma o resta.
-3. Escribe el **Monto**. Tiene que ser mayor que cero.
-4. Elige la **Moneda**. Empieza en **Bs**.
-5. **Cómo se paga**. Empieza en **Como el resto de la nómina**, que es lo normal. Si ese bono se paga por otra vía —en efectivo cuando la nómina va por transferencia, por ejemplo—, elígela aquí.
-6. **Cuándo se paga**. Vacío significa *"se paga con la nómina"*. Con fecha, *"Diferido: se paga ese día, no con la nómina."*
-7. Escribe la **Nota**. El marcador te recuerda para qué sirve: **Aparece en el recibo**.
-8. Pulsa **Agregar**.
+1. Pulse **Bono o descuento** bajo el nombre de la persona. La ventana explica qué va aquí: **Lo que no sale del contrato ni de las horas: una prima, un bono en divisas, la cuota de un préstamo.**
+2. Elija el **Concepto**. La lista la lleva la empresa y se edita en **Bonos y descuentos** (11.11). Cada opción dice si suma o resta.
+3. Escriba el **Monto**. Sin monto, **Agregar** queda apagado.
+4. Elija la **Moneda**.
+5. **Método de pago**. Empieza en **Como el resto de la nómina**, que es lo normal. Si ese bono se paga por otra vía —en efectivo cuando la nómina va por transferencia, por ejemplo—, se elige aquí.
+6. **Fecha del pago**. Vacía: **Vacío: se paga con la nómina.** Con fecha: **Diferido: se paga ese día, no con la nómina.**
+7. Escriba la **Nota**: **Aparece en el recibo**.
+8. Pulse **Agregar**.
 
-La ventana explica qué va aquí y qué no: *"Lo que no sale del contrato ni de las horas: una prima, un bono en divisas, la cuota de un préstamo."*
+**Un bono diferido no sale marcado en el recibo.** Al poner fecha, el recuadro lo avisa: **El bono sale en el recibo como cualquier otra asignación, sin marca de pendiente. El día queda aquí: es lo que se consulta para saber qué falta por sacar de caja.** Un papel impreso que dice «pendiente» lo sigue diciendo el año que viene, cuando ya se pagó.
 
-##### Un bono diferido no sale marcado en el recibo
+La fecha diferida **no puede caer antes de que cierre el período**: «La fecha de pago del bono (…) es anterior al cierre del período (…).» Un bono que se paga antes que el sueldo no es diferido, es un error de tecleo.
 
-Al poner fecha aparece un recuadro que conviene leer: **el bono sale en el recibo como cualquier otra asignación, sin marca de pendiente**.
+**Los bonos se cargan mientras la nómina está en borrador o calculada, y no después.** El cálculo solo rehace períodos en borrador o calculados, así que un bono cargado más tarde no lo recogería ningún recibo. **Ojo: con la nómina aprobada, la pantalla sigue ofreciendo Bono o descuento y la papelera**, y hasta avisa de que lo que cambie ahí cambia lo que se paga. **No es así**: la base rechaza el bono —«El período está en "APROBADA" y ya no admite cambios.»— y la papelera no hace nada. Para tocar una nómina aprobada hay que devolverla primero a calculada (11.7).
 
-Es deliberado. Un papel impreso que dice «pendiente» **sigue diciéndolo el año que viene**, cuando ya se pagó, y entonces es un documento firmado que afirma una deuda que no existe. El recibo dice lo que se ganó; cuándo se paga vive en esta pantalla, que sí se actualiza.
+**Cuidado con el concepto de anticipo de prestaciones, si la lista lo tiene.** Un anticipo de prestaciones se registra en **Prestaciones sociales** (11.10), y allí es donde baja el saldo de la persona y sale el dinero de la cuenta. Si además se carga aquí como descuento, se le descuenta dos veces. El sistema no avisa de esa duplicación, así que conviene decidir por cuál de las dos vías se hace y no mezclarlas.
 
-La fecha diferida **no puede caer antes de que cierre el período**. Si lo intentas: *"La fecha de pago del bono es anterior al cierre del período."* Un bono que se paga antes que el sueldo no es diferido, es un error de tecleo.
+Para quitar un bono, la papelera que tiene al lado. **Se borra al instante, sin pedir confirmación.**
 
-**Los bonos se cargan mientras la nómina está en borrador o calculada, y no después.** Sobre una nómina ya aprobada no se pueden cargar, y no es una restricción caprichosa: el cálculo solo rehace períodos en borrador o calculados, así que un bono cargado más tarde **no lo recogería ningún recibo**. Sería dinero apuntado que nadie cobra, que es peor que un «no se puede». Para tocar una nómina aprobada hay que devolverla primero.
-
-**Cuidado con el concepto Anticipo de prestaciones de esta lista.** Desde que existe la pantalla de **Prestaciones sociales**, un anticipo de prestaciones se registra allí, y allí es donde baja el saldo de la persona y sale el dinero de la cuenta. Si además lo cargas aquí como descuento, se le descuenta dos veces: una del saldo de sus prestaciones y otra de su quincena. El sistema no avisa de esa duplicación, así que decidan en la casa por cuál de las dos vías se hace y no se mezclen.
-
-Para quitar uno, pulsa la papelera que tiene al lado. **Se borra al instante, sin pedir confirmación.**
-
-Si cargas un monto en dólares, el sistema lo pasa a bolívares con la tasa que quedó congelada al abrir el período, no con la del día en que lo tecleas.
+Un monto en dólares se pasa a bolívares con la tasa del período, no con la del día en que se teclea.
 
 ### 11.7 Procesar nómina
 
 **Nómina › Nómina del período › 2 · Procesar**
 
-**No es una entrada del menú**: es la segunda pestaña de **Nómina del período**.
+Es la pantalla donde vive el ciclo completo: **Períodos de nómina: apertura, cálculo, aprobación y pago, en ese orden. Cada paso registra quién lo ejecutó.**
 
-Es la pantalla donde vive el ciclo completo: *"Un período se abre, se calcula, se aprueba y se paga. No se salta pasos: cada uno deja constancia de quién lo hizo."*
+Se ve una tarjeta por período, con su número —**NOM-2026-0001**, que se reinicia cada año—, sus fechas, su etiqueta de estado, la frase de qué toca hacer ahora y, cuando ya hay recibos, cuatro cifras: **Recibos**, **Asignaciones**, **Deducciones** y **Neto a pagar**. Si todavía no hay ninguno: **Sin períodos registrados**, **La nómina comienza con la apertura del período a pagar.** y **Abrir el primero**.
 
-Se ve una tarjeta por período, con su número —**NOM-2026-0001**, que se reinicia cada año—, sus fechas, su etiqueta de estado, la frase de qué toca hacer ahora y, cuando ya hay recibos, cuatro cifras: **Recibos**, **Asignaciones**, **Deducciones** y **Neto a pagar**.
-
-Si todavía no hay ninguno, sale **Todavía no hay ningún período**, el texto *"Una nómina empieza abriendo el período que se va a pagar."* y el botón **Abrir el primero**.
-
-Los botones de cada tarjeta cambian según el estado y según tu rol:
+Los botones de cada tarjeta cambian según el estado y según el rol:
 
 | Botón | Cuándo aparece | Quién lo ve |
 | --- | --- | --- |
@@ -4223,89 +4179,94 @@ Los botones de cada tarjeta cambian según el estado y según tu rol:
 | **Ver recibos** | Cuando ya hay recibos | Cualquiera |
 | **Aprobar la nómina** | Calculada | Gerencia general |
 | **Pagar** | Aprobada | Recursos humanos o gerencia general |
+| **Devolver a calculada** | Aprobada | Gerencia general |
 | **Anular** | Borrador, calculada o aprobada | Recursos humanos |
 
 En un período anulado no sale ningún botón.
 
 #### Abrir un período
 
-1. Pulsa **Abrir período**.
-2. Elige el **Tipo**: **Semanal — 7 días**, **Quincenal — 15 días**, **Mensual — 30 días** o **Especial — días del calendario**.
-3. Escribe **Desde** y **Hasta**.
-4. Escribe la **Descripción**, si quieres. Es el nombre con el que lo vas a reconocer después.
-5. Pulsa **Abrir**.
+1. Pulse **Abrir período**. Se abre **Abrir un período**.
+2. Elija el **Tipo**: **Semanal — 7 días**, **Quincenal — 15 días**, **Mensual — 30 días** o **Especial — días del calendario**.
+3. Escriba **Desde** y **Hasta**.
+4. Escriba la **Descripción**, si quiere. Es el nombre con el que se lo va a reconocer después.
+5. Pulse **Abrir**.
 
-Tres cosas que hay que saber antes de pulsar:
+Lo que hay que saber antes de pulsar:
 
-**El período trae los conceptos de ley que rijan el día que cierra.** No se eligen en esta ventana: los deciden los interruptores de **Parámetros de nómina** (ver 11.9). Con las fechas puestas, la ventana lo dice: *"Además de lo pactado, este período calculará: …"*, o *"Este período calculará solo lo pactado…"* si no hay ninguno encendido. Se guardan al calcular el período, y desde ese momento esos recibos quedan con sus conceptos aunque los interruptores se muevan después.
+**El período trae los conceptos de ley que rijan el día que cierra.** No se eligen en esta ventana: los deciden los interruptores de **Parámetros de nómina** (11.9). Con las fechas puestas, la ventana lo dice —**Además de lo pactado, este período calculará: …**, o **Este período calculará solo lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas.**— y añade: **Son los conceptos de ley que rigen el día que cierra; se cambian en Parámetros de nómina y se guardan al calcularlo.**
 
-**La tasa se congela al abrir el período, no al pagar.** La propia ventana lo dice: *"La tasa del BCV se congela al abrirlo."* Si se moviera, el mismo recibo valdría distinto cada vez. Todo lo que se calcule en ese período usa esa tasa: los montos en dólares de las novedades, y el equivalente en dólares que sale en los recibos.
+**Los días que se pagan no son los del calendario.** La ayuda del tipo lo explica: **Los días que se pagan no son los del calendario: el mes son 30, tenga 28 o 31.** Si las fechas abarcan otro número de días, la ventana avisa de que pagará igual: las fechas sirven para prorratear a quien entra o sale a mitad de período, y para que dos nóminas no se pisen.
 
-**Los días que se pagan no son los del calendario.** La ayuda del campo lo explica: *"Los días que se pagan no son los del calendario: el mes son 30, tenga 28 o 31."* Un período mensual paga los días que estén cargados en **Parámetros de nómina**, no los del almanaque.
+**Dos períodos no pueden solaparse si son del mismo tipo, y un Especial no puede solaparse con ninguno**, porque dos nóminas sobre los mismos días pagarían dos veces.
 
-**Dos períodos del mismo tipo no pueden solaparse**, porque dos nóminas sobre los mismos días pagarían dos veces. Dos períodos de tipo distinto sí pueden convivir en las mismas fechas.
+**Cada período paga a quien cobra con su frecuencia.** Un período quincenal hace recibos a quien cobra quincenal; uno especial, a todos. Quien está marcado **Eventual** no entra en las nóminas ordinarias: se le paga abriendo un especial.
 
 #### Calcular
 
-Pulsa **Calcular**. El sistema genera un recibo por trabajador y el período pasa a calculado.
+Pulse **Calcular**. El sistema genera los recibos y el período pasa a calculado.
 
-**Recalcular no acumula: borra los recibos del período y los vuelve a hacer enteros.** Puedes recalcular cuantas veces haga falta mientras el período esté en borrador o calculado. La razón está escrita en el propio sistema: quien corrige una hora extra mal cargada no tiene que adivinar qué quedó a medias.
+**Recalcular no acumula: borra los recibos del período y los vuelve a hacer enteros.** Se puede recalcular cuantas veces haga falta mientras el período esté en borrador o calculado: quien corrige una hora extra mal cargada no tiene que adivinar qué quedó a medias.
 
-Si a alguien las faltas sin justificar le dejan cero días pagados o menos, **esa persona no genera recibo**.
+Si a alguien las faltas sin justificar le dejan cero días pagados o menos, **esa persona no genera recibo**, y la pantalla de recibos lo avisa.
 
-Si falta algún parámetro, el sistema no calcula a medias: se detiene y te dice cuál falta y dónde cargarlo.
+Si falta algún parámetro, el sistema no calcula a medias: se detiene y dice cuál falta.
+
+**Si los conceptos de ley cambiaron después de calcular**, la tarjeta lo dice —qué se encendió o se apagó— y pide **Vuelva a calcularla antes de aprobarla.** No se deja aprobar hasta recalcularla.
+
+#### La tasa del período
+
+La ventana de abrir dice **La tasa del BCV se congela al abrirlo.**: el período toma la tasa del día en que cierra, o la última publicada si ese día no ha llegado. Todo lo que se calcula usa esa tasa: los montos en dólares de las novedades y el equivalente en dólares de los recibos.
+
+**Pero el pago se hace con la tasa del día en que sale el dinero.** Si la tasa del período ya no es la de hoy, la tarjeta avisa con las dos cifras y cuánto le descontaría o le sumaría a cada trabajador pagarla así, y ofrece **Poner la tasa y recalcular**: **Los recibos se rehacen con la tasa del día que elija. Si la nómina estaba aprobada, sigue aprobada.** Se elige la **Tasa del día** —**El día en que salió el dinero.**— y se pulsa **Recalcular**. Sin tasa registrada para ese día no se puede: hay que cargarla antes en **Sistema › Tasas de cambio** (5).
+
+**La base no deja pagar con una tasa vieja.** Si se intenta, responde con las dos tasas y cuánto se le descuenta a cada trabajador, y pide actualizar la tasa del período, volver a calcular y a aprobar.
 
 #### Aprobar la nómina
 
-Lo hace **gerencia general** —y la administración del sistema, que pasa por encima de todo—. **Esta sí es de las pocas que no tienen segunda puerta**: aprobar una nómina no se delega por nivel de permiso ni se extiende a nadie. Solo se aprueba una nómina calculada, y solo si tiene recibos: aprobar un período vacío sería aprobar nada.
+Lo hace **gerencia general** —y la administración, que pasa por encima de todo—. **Es de las pocas acciones que no tienen otra puerta**: aprobar una nómina no se delega por nivel de permiso. Solo se aprueba una nómina calculada, y solo si tiene recibos.
 
-Al aprobar, le llega un aviso a tesorería y a recursos humanos: **Nómina {número} aprobada**, con cuántos recibos son, por cuánto, y que está lista para pagar.
+Al aprobar, a recursos humanos le llega el aviso **Nómina {número} aprobada**, con cuántos recibos son, por cuánto, y que está lista para pagar.
+
+**Devolver a calculada** es la marcha atrás de la aprobación, y también es de la gerencia: **Vuelve a admitir cambios y habrá que aprobarla otra vez. Los recibos y sus montos no se tocan.** Pide un **Motivo** de al menos diez letras, que **queda en la notificación y en la auditoría**, y quién la aprobó y cuándo dejan de constar. Para actualizar solo la tasa no hace falta devolverla: el refresco la deja aprobada.
 
 #### Pagar
 
-Lo hacen **recursos humanos y la gerencia general** —y la administración, que pasa por encima de todo—.
+Lo hacen **recursos humanos y la gerencia general**.
 
-1. Pulsa **Pagar**.
-2. Elige **De qué cuenta sale**. La lista muestra el saldo de cada cuenta.
-3. Escribe la **Referencia**, si la tienes.
-4. Escribe la **Fecha del pago**. La ayuda dice **Vacío es hoy.**
-5. Pulsa **Confirmar el pago**.
+1. Pulse **Pagar**. Se abre **Pagar la nómina** con su número, cuántos trabajadores y el neto.
+2. Elija la **Cuenta** de la que sale el dinero. La lista muestra el saldo de cada una.
+3. Escriba la **Referencia**, si la tiene.
+4. Escriba la **Fecha del pago**. La ayuda dice **Vacío es hoy.** No se acepta una fecha futura ni una anterior al cierre del período: adelantar dinero es un anticipo, y lleva su propio registro.
+5. Pulse **Confirmar el pago**.
 
-La ayuda del primer campo explica qué pasa si pagas desde una cuenta en divisas: *"Los recibos están en bolívares. Desde una cuenta en divisas sale el equivalente a la tasa del período, la misma con la que se calculó."*
+La ayuda de la cuenta explica qué pasa si se paga desde una cuenta en divisas: **Los recibos están en bolívares. Desde una cuenta en divisas sale el equivalente a la tasa del período, la misma con la que se calculó.**
 
-Al confirmar, el saldo de esa cuenta baja, queda una línea de egreso en el libro de tesorería con el concepto **Nómina {número} — {n} trabajadores**, y les llega un aviso a gerencia general, a recursos humanos y a tesorería.
+Al confirmar, queda una línea de egreso en el libro de tesorería con el concepto **Nómina {número} — {n} trabajadores**, y les llega un aviso a la gerencia general, a recursos humanos y a compras.
 
-**La nómina no espera al saldo.** Desde el 22/09/2026, si la cuenta elegida no tiene fondos registrados —porque falta el saldo de apertura o un ingreso—, el pago sale igual: la cuenta queda en negativo y a tesorería le llega un segundo aviso, **{cuenta} quedó en negativo: nómina {número}**, con las dos cifras y el camino para arreglarlo desde Bancos y cajas. El candado de «no alcanza» sigue vivo para compras y egresos sueltos; el dinero a la gente —nómina, liquidación y anticipo de prestaciones— pasa por encima. Nómina termina su proceso y tesorería recibe el movimiento y el aviso.
+**La nómina no espera al saldo.** Si la cuenta elegida no tiene fondos registrados —porque falta el saldo de apertura o un ingreso—, el pago sale igual: la cuenta queda en negativo y llega un segundo aviso, **{cuenta} quedó en negativo: nómina {número}**, con las dos cifras y el camino para arreglarlo desde Bancos y cajas. El dinero a la gente —nómina, liquidación y anticipo de prestaciones— no se detiene por un saldo sin registrar.
 
-**Antes de pulsar Confirmar el pago, lee 11.11.** Este botón es el punto de no retorno del módulo.
+**Antes de pulsar Confirmar el pago, lea 11.12.** Este botón es el punto de no retorno del módulo.
 
 #### Anular
 
-1. Pulsa **Anular**.
-2. Escribe **Por qué se anula**. Son mínimo diez letras y el sistema no las deja en blanco, porque *"La nómina es un documento con consecuencias legales."*
-3. Pulsa **Anular**.
-
-La ventana lo resume: *"El período queda a la vista con su motivo. Una nómina pagada no se puede anular."*
+1. Pulse **Anular**. Se abre la ventana con el número del período: **El período queda a la vista con su motivo. Una nómina pagada no se puede anular.**
+2. Escriba el **Motivo**: **La nómina es un documento con consecuencias legales.** El botón se enciende con diez letras.
+3. Pulse **Anular**.
 
 ### 11.8 Recibos de pago
 
 **Nómina › Nómina del período › 3 · Recibos**
 
-**No es una entrada del menú**: es la tercera pestaña de **Nómina del período**.
-
-Aquí no se registra nada: **esta pantalla solo se lee y se imprime.** No tiene botones de editar ni de borrar.
-
-El recibo es el documento que justifica el pago, y la pantalla explica por qué se le da tanta importancia: *"El recibo es un documento con consecuencias legales: sin él, en un juicio se presume cierto lo que alegue el trabajador."*
+Aquí no se registra nada: **esta pantalla solo se lee y se imprime.** La pantalla explica por qué el recibo importa tanto: **Recibos de pago de nómina. Son la prueba legal del pago: sin recibo, en un juicio se presume cierto lo que alegue el trabajador.**
 
 #### Qué se ve
 
-Arriba, el selector **Período**, que empieza en **Elige el período** y **solo lista los períodos que ya tienen recibos**. Sin período elegido, la pantalla dice **Elige un período** y *"Los recibos aparecen cuando la nómina está calculada."*
+Arriba, el selector **Período**, que empieza en **Seleccione el período** y **solo lista los períodos que ya tienen recibos**. Sin período elegido: **Seleccione un período** y **Los recibos aparecen cuando la nómina está calculada.**
 
-Si nadie ha cargado quién firma por la empresa, aparece una tarjeta ámbar: *"Falta decir **quién firma por la empresa**. Los recibos saldrían con ese renglón en blanco."* con el botón **Ponerlo ahora**, que lleva directo a la pantalla donde se arregla. No hace falta buscarla.
+Si nadie ha cargado quién firma por la empresa, aparece un aviso: **Falta decir quién firma por la empresa. Los recibos saldrían con ese renglón en blanco.**, con **Ponerlo ahora**, que lleva a donde se arregla.
 
-Sobre la lista, cuántos recibos hay y dos botones: **Informe del período** e **Imprimir todos**. El informe va primero porque es lo que se mira al cuadrar; los recibos se imprimen cuando ya se cuadró.
-
-La lista trae:
+Sobre la lista, cuántos recibos hay —**cada uno con su copia, para firmar a mano**—, el interruptor **Equivalencia en dólares** y dos botones: **Informe del período** e **Imprimir todos**. El informe va primero porque es lo que se mira al cuadrar; los recibos se imprimen cuando ya se cuadró. Si alguien del período no tiene recibo porque no le quedaron días que pagar, la pantalla lo nombra y recuerda que se revisa en Novedades.
 
 | Columna | Qué muestra |
 | --- | --- |
@@ -4315,162 +4276,159 @@ La lista trae:
 | **Deducciones** | El total en bolívares |
 | **Neto** | En bolívares y, debajo, el equivalente en dólares |
 
-**Pincha en cualquier parte de la fila** para abrir el detalle. El icono de la impresora, en cambio, saca el papel directamente sin abrir el detalle.
-
-#### El informe del período
-
-**Imprimir todos** saca veintidós hojas que se reparten, una por persona. **Informe del período** saca **una** que se archiva y se enseña: quién cobró, cuántos días, asignaciones, deducciones y neto, con el total al pie.
-
-Es el mismo papel que el informe de personal (11.3) *"pero que este sí refleje lo que cobraron"*. Por eso comparte cabecera, apartados y forma; lo que cambia es que lleva las cifras — y que por eso mismo no se enseña fuera de administración.
-
-**Este papel no lleva cargo ni departamento, y es a propósito.** Los importes en bolívares necesitan sitio: seis dígitos con céntimos no caben en la misma tabla que ocho columnas. Se sacó el cargo y se conservó la cédula, porque este papel contesta «cuánto cobró cada quien» y quien lo revise lo va a cotejar contra los recibos, donde la persona se identifica por ficha, nombre y cédula. De qué se ocupa cada uno lo contesta el otro informe.
-
-Los que salieron dentro del período van en **su propio apartado**, con su fecha de salida y su motivo, y con su propio total. Si no hubo ninguno, el apartado no aparece.
-
-**Para una sola persona**, el botón **Informe** está dentro del detalle del recibo. Sirve sobre todo para quien se fue: es la hoja que dice qué cobró y que ya no sigue, sin tener que entregar el listado entero de la nómina. En **Alcance** dice **Solo 1 de 21 recibos del período**, para que nadie lo lea como si en esa quincena hubiera cobrado una sola persona.
-
-#### Al desincorporado se le paga, y el recibo lo dice
-
-Quien se va a mitad de quincena **cobra los días que trabajó**. El sistema los prorratea solo: si el período va del 16 al 31 y la persona salió el 26, le pagan los días que estuvo, no la quincena entera ni cero.
-
-Hasta el 31 de agosto de 2026 no era así: el cálculo dejaba fuera a quien estuviera marcado como inactivo, y **desincorporar marca inactivo el mismo día**. El resultado era que a quien se iba el 26 no se le pagaba la quincena que había trabajado hasta el 26 — dinero que se le debe. Ya está corregido.
-
-**Su recibo lo dice.** Debajo del nombre sale un distintivo rojo: **Desincorporado el 26 ago. 2026**. Y en el detalle, los **Días** que aparecen son los prorrateados.
-
-La fecha del recibo **se congela el día que se calcula**. Si mañana esa persona se reincorpora, el recibo de agosto tiene que seguir diciendo que en agosto se fue: un recibo es un documento y dice lo que era cierto cuando se emitió.
+**Pulse en cualquier parte de la fila** para abrir el detalle. El icono de la impresora, en cambio, saca el papel directamente.
 
 #### El detalle de un recibo
 
-Arriba, tres cifras: **Salario básico diario**, **Salario normal diario** y **Salario integral diario**. Debajo, cuatro bloques:
+Arriba, los salarios diarios: **Salario básico diario**, **Salario normal diario** y **Salario integral diario**. Debajo, cuatro bloques, cada línea con su equivalente en dólares:
 
 | Bloque | Qué trae |
 | --- | --- |
 | **Lo que se gana** | Lo que suma |
 | **Lo que se descuenta** | Lo que resta |
-| **Aportes del patrono** | *"No se le descuentan al trabajador: son costo de la empresa."* |
-| **Se aparta para prestaciones** | *"Se acumula a su favor. No sale de su pago."* |
+| **Aportes del patrono** | **No se le descuentan al trabajador: son costo de la empresa.** |
+| **Se aparta para prestaciones** | **Se acumula a su favor. No sale de su pago.** |
 
 Al final, el **Neto a cobrar**, con su equivalente en dólares, y cómo se le paga.
 
-Los dos últimos bloques son los que más confusión generan cuando alguien lee su recibo por primera vez. **Ni los aportes del patrono ni lo que se aparta para prestaciones salen de su pago**, y por eso en el papel impreso van con el título completo: **APORTES DEL PATRONO — NO SE LE DESCUENTAN** y **SE APARTA A SU FAVOR — NO SALE DE SU PAGO**, y a propósito no llevan subtotal, para que nadie los sume al descuento.
+Los dos últimos bloques son los que más confusión generan cuando alguien lee su recibo por primera vez. **Ni los aportes del patrono ni lo que se aparta para prestaciones salen de su pago**, y por eso en el papel van con el título completo —**APORTES DEL PATRONO — NO SE LE DESCUENTAN** y **SE APARTA A SU FAVOR — NO SALE DE SU PAGO**— y sin subtotal, para que nadie los sume al descuento.
 
-El bloque **Se aparta para prestaciones** dice lo que se apartó **en ese período**. Lo que la persona lleva acumulado en total, con sus intereses y sus adelantos, está en **Nómina › Prestaciones y parámetros › Prestaciones sociales**, explicado en 11.10. Son la misma cosa vista en dos sitios: el recibo enseña el aporte de esa quincena, la otra pantalla enseña la cuenta completa.
+**Se aparta para prestaciones** dice lo que se apartó **en ese período**. Lo que la persona lleva acumulado en total, con sus intereses y sus adelantos, está en **Prestaciones sociales** (11.10).
 
-**El detalle enseña solo lo que la quincena calculó.** Los bloques sin líneas no aparecen: sin seguro social, paro forzoso ni FAOV no hay **Aportes del patrono**, y sin prestaciones no hay **Se aparta para prestaciones**. Los salarios de arriba siguen la misma idea: el **Salario normal diario** sale si se calculó el seguro social, el paro forzoso, el FAOV o las prestaciones, y el **Salario integral diario**, si se calculó el FAOV o las prestaciones. Si no se calculó ninguno de ellos ni el beneficio de alimentación aparte, queda una sola cifra: **Salario diario**. El papel impreso sigue la misma regla.
+**El detalle enseña solo lo que la quincena calculó.** Los bloques sin líneas no aparecen: sin seguro social, paro forzoso ni FAOV no hay **Aportes del patrono**, y sin prestaciones no hay **Se aparta para prestaciones**. El **Salario normal diario** sale si se calculó el seguro social, el paro forzoso, el FAOV o las prestaciones; el **Salario integral diario**, si se calculó el FAOV o las prestaciones. Si no se calculó ninguno de ellos ni el beneficio de alimentación aparte, queda una sola cifra: **Salario diario**. El papel sigue la misma regla.
+
+#### A quien se va se le paga, y el recibo lo dice
+
+Quien se va a mitad de quincena **cobra los días que trabajó**. El sistema los prorratea solo: si el período va del 16 al 31 y la persona salió el 26, le pagan los días que estuvo, no la quincena entera ni cero.
+
+**Su recibo lo dice.** Bajo el nombre, el papel lleva el distintivo **Desincorporado el 26/08/2026**, y los días son los prorrateados. La fecha del recibo **se congela el día que se calcula**: un recibo es un documento y dice lo que era cierto cuando se emitió.
+
+#### El informe del período
+
+**Informe del período** saca el papel que se archiva y se enseña: quién cobró, cuántos días, asignaciones, deducciones y neto, con el total al pie. Es el mismo papel que el informe de personal (11.3), con las cifras —y por eso mismo no se enseña fuera de administración—.
+
+**Este papel no lleva cargo ni departamento, y es a propósito.** Los importes en bolívares necesitan sitio. Se conservó la cédula, porque quien lo revise lo va a cotejar contra los recibos.
+
+Los que salieron dentro del período van en **su propio apartado**, con su fecha de salida y su motivo, y con su propio total.
+
+**Para una sola persona**, el botón **Informe** está dentro del detalle del recibo. Sirve sobre todo para quien se fue. En **Alcance** dice, por ejemplo, **Solo 1 de 21 recibos del período**, para que nadie lo lea como si en esa quincena hubiera cobrado una sola persona.
 
 #### Imprimir
 
-Pulsa **Imprimir recibo** en el detalle, el icono de impresora en la fila, o **Imprimir todos** para el período completo. El recibo se abre primero en el visor, y solo se descarga si pulsas **Descargar**.
+**Imprimir recibo** en el detalle, el icono de impresora en la fila, o **Imprimir todos** para el período completo. El recibo se abre primero en el visor, y solo se descarga con **Descargar**.
 
-**Cada recibo sale siempre por duplicado**: **Original — para la empresa** y **Copia — para el trabajador**. Si caben en la misma hoja, van separados por una línea roja punteada con el rótulo **corte aquí**; si no caben, la copia va en su propia hoja.
+**Cada recibo sale siempre por duplicado**: **Original — para la empresa** y **Copia — para el trabajador**, normalmente uno en cada hoja. Si caben en la misma, van separados por la línea **corte aquí**.
 
-Cada copia trae el nombre, la cédula, la ficha, el cargo, las fechas y los días pagados; los salarios diarios que correspondan; los bloques que tengan líneas; la franja **NETO A COBRAR**; la declaración **Recibí conforme la cantidad indicada y estoy de acuerdo con los conceptos detallados.**; el renglón **Fecha de recibido:**; y dos firmas, la del trabajador y la de la empresa.
+Cada copia trae el número del recibo, el nombre, la cédula, la ficha, el cargo, las fechas y los días —facturados, laborados y a pagar—; los salarios diarios que correspondan; los bloques que tengan líneas; la franja **NETO A COBRAR**; la declaración **Recibí conforme la cantidad indicada y estoy de acuerdo con los conceptos detallados.**; el renglón **Fecha de recibido:**; y dos firmas, la del trabajador y la de la empresa —estampadas, si están guardadas y en uso—. Al pie, la tasa BCV con la que se calculó.
 
-Bajo el neto sale también el equivalente en dólares, con la palabra **referencia** delante. Es intencional: **no es lo que se paga, es lo que valía ese día**.
+Bajo el neto, con **Equivalencia en dólares** encendido, sale el equivalente en dólares con la palabra **referencia** delante. Es intencional: **no es lo que se paga, es lo que valía ese día.** Apagado, el recibo y el informe salen sin las cifras en dólares.
 
 ### 11.9 Parámetros de nómina
 
 **Nómina › Prestaciones y parámetros › Parámetros de nómina**
 
-**No es una entrada del menú**: es la segunda pestaña de **Prestaciones y parámetros**.
+Es la pantalla donde viven los porcentajes, los topes y los días con los que se calcula todo lo demás: **Parámetros legales de nómina, cada uno con su fecha de vigencia. Cambian por decreto.**
 
-Es la pantalla donde viven los porcentajes, los topes y los días con los que se calcula todo lo demás. La bajada lo dice sin rodeos: *"Ninguna cifra legal está escrita en el código. Todas viven aquí con su fecha de vigencia, porque en Venezuela cambian por decreto."*
-
-En la cabecera hay un aviso ámbar fijo:
-
-> *"El cestaticket y la base de la contribución de pensiones se anuncian sin publicarse en gaceta y cambian con frecuencia. Conviene revisarlos cada mes: una nómina calculada con el monto viejo se paga corta."*
-
-**Este manual no publica ningún valor.** Los que rigen hoy son los que estén cargados en esta pantalla, y quién los fija se explica más abajo, en 11.11.
-
-#### Qué se ve
-
-La lista trae **Parámetro**, **Valor**, **Rige desde** y **Fuente**. Solo se muestra **la vigencia más reciente de cada uno**. Si hay anteriores guardadas, al pie lo dice: *"Hay {n} vigencias anteriores guardadas. No se borran: son las que permiten recalcular una nómina vieja con las cifras que regían entonces."*
-
-Cada valor se muestra según su unidad: con el símbolo de porcentaje, con **Bs** o **$** delante, o con la palabra **días**, **h** o **× salario mínimo** detrás.
-
-#### Cargar un valor nuevo
-
-1. Pulsa **Nueva vigencia**.
-2. Elige el **Parámetro**. La lista **solo ofrece los que ya existen**: desde aquí no se inventan parámetros nuevos.
-3. Escribe el **Valor nuevo**.
-4. Revisa la **Unidad**, que viene rellena con la del valor anterior.
-5. Escribe **Rige desde**. Lee bien la ayuda: *"La fecha del decreto, no la de hoy: los períodos anteriores conservan el valor viejo."*
-6. Escribe la **Descripción**.
-7. Escribe la **Fuente**: la gaceta o el decreto. El marcador te muestra el formato.
-8. Pulsa **Guardar**.
-
-**Un valor nuevo no borra el anterior.** La ventana lo explica: *"No sustituye el valor anterior: lo cierra el día antes y empieza uno nuevo."* Y aquí **no hay borrado de ninguna clase**: lo único que se puede hacer es cargar una vigencia nueva.
+**Este manual no publica ningún valor.** Los que rigen hoy son los que estén cargados en esta pantalla.
 
 #### Los interruptores de los conceptos de ley
 
-Arriba de la lista está la tarjeta **Conceptos de ley**, con un interruptor por concepto. Lo pactado se calcula siempre: el sueldo de la ficha, los bonos y descuentos y las faltas. Cada interruptor decide si, encima, la nómina calcula ese concepto:
+Arriba está la tarjeta **Conceptos de ley**, con un interruptor por concepto. **La nómina siempre calcula lo pactado: el sueldo de la ficha, los bonos y descuentos, y las faltas. Encima calcula los conceptos encendidos, con los parámetros de abajo.**
 
 | Interruptor | Qué calcula encendido |
 | --- | --- |
-| **Cestaticket aparte** | El beneficio de alimentación, en su propia línea del recibo |
-| **Seguro social (IVSS)** | La retención al trabajador y el aporte del patrono |
-| **Paro forzoso (RPE)** | La retención al trabajador y el aporte del patrono |
-| **Vivienda (FAOV)** | La retención al trabajador y el aporte del patrono, sobre el salario integral |
-| **Recargos** | Horas extra, bono nocturno, feriados y descansos trabajados, que se cargan en las novedades |
-| **Prestaciones sociales** | Lo que se aparta en cada recibo, y la pantalla de prestaciones; apagadas, esa pantalla queda deshabilitada |
+| **Cestaticket aparte** | **El beneficio de alimentación va en su propia línea del recibo.** |
+| **Seguro social (IVSS)** | **Retención al trabajador y aporte del patrono.** |
+| **Paro forzoso (RPE)** | **Retención al trabajador y aporte del patrono.** |
+| **Vivienda (FAOV)** | **Retención al trabajador y aporte del patrono, sobre el salario integral.** |
+| **Recargos** | **Horas extra, bono nocturno, feriados y descansos trabajados, que se cargan en las novedades.** |
+| **Prestaciones sociales** | **Lo que se aparta en cada recibo, y la pantalla de prestaciones.** Apagadas, esa pantalla queda deshabilitada |
+| **Bono vacacional** | **Permite añadir el bono al recibo de quien sale de vacaciones. Los días no se pagan aparte: las faltas justificadas no bajan el salario, así que ya los cobra.** |
 
 **El sueldo de la ficha sigue siendo lo que la persona recibe**: el cestaticket y las retenciones que estén encendidos salen de él, no se suman encima. Los recargos sí se suman, porque pagan horas de más.
 
-**Solo los mueve gerencia general**, y administración. Los interruptores enseñan lo que rige hoy, y moverlos no guarda nada: debajo aparece qué cambia —*"Desde ese día se enciende…"*, *"…y se apaga…"*— y el campo **Desde**, que propone el día siguiente al cierre de la última quincena calculada y se puede cambiar. **Guardar** lo deja escrito; **Descartar** los devuelve a como estaban.
+**Solo los mueve la gerencia general**, y la administración; a los demás la tarjeta les dice **Estos interruptores los mueve gerencia general.** Moverlos no guarda nada: debajo aparece qué cambia —**Desde ese día se enciende…**, **…y se apaga…**— y el campo **Desde**, que propone el día siguiente al cierre de la última quincena calculada. **Guardar** lo deja escrito; **Descartar** los devuelve a como estaban. Si se enciende algo, la tarjeta recuerda: **Revise antes los parámetros de abajo: el salario mínimo o el cestaticket pueden haber cambiado.**
 
 Lo que conviene saber:
 
-- **Cada quincena se calcula con lo que rija el día en que cierra, y guarda con qué se calculó.** Mover un interruptor no cambia cómo se ven las quincenas ya calculadas.
-- **No se puede poner una fecha dentro de una quincena ya aprobada o pagada**, ni por delante de un cambio ya programado. Si hay uno programado, lo dice debajo de los interruptores.
-- **Si una quincena calculada y sin aprobar queda del otro lado del cambio**, Procesar nómina dice qué se encendió o se apagó después de calcularla y pide *"Vuelve a calcularla antes de aprobarla."*; el sistema no deja aprobarla hasta recalcularla.
-- **Antes de encender un concepto, revisa sus parámetros**: el salario mínimo o el cestaticket pueden haber cambiado mientras estuvo apagado. La tarjeta lo recuerda.
+- **Cada quincena se calcula con lo que rija el día en que cierra, y guarda con qué se calculó.** Mover un interruptor no cambia las quincenas ya calculadas.
+- **No se puede poner una fecha dentro de una quincena ya aprobada o pagada**, ni por delante de un cambio ya programado. Si hay uno programado, la tarjeta lo dice.
+- **Si una quincena calculada y sin aprobar queda del otro lado del cambio**, Procesar nómina lo avisa y no deja aprobarla hasta recalcularla (11.7).
 - Los conceptos de ley **no aparecen en la lista de parámetros**, y desde ella no se pueden corregir, cerrar ni eliminar.
+
+Debajo de la tarjeta, un aviso fijo: **El cestaticket y la base de la contribución de pensiones se anuncian sin publicarse en gaceta y cambian con frecuencia. Conviene revisarlos cada mes: una nómina calculada con el monto viejo se paga corta.**
+
+#### La lista de parámetros
+
+La lista trae **Parámetro**, **Valor**, **Rige desde** y **Fuente**, y **solo la vigencia más reciente de cada uno**. Si hay anteriores guardadas, el pie lo dice: **No se borran: son las que permiten recalcular una nómina vieja con las cifras que regían entonces.**
+
+Cada valor se muestra según su unidad: con el símbolo de porcentaje, con **Bs** o **$** delante, o con **días**, **h** o **× salario mínimo** detrás.
+
+#### Cargar o corregir un valor
+
+Lo hace recursos humanos. **Nueva vigencia** abre la ventana en blanco; tocar una fila la abre con sus valores: **Toque cualquier parámetro para corregir su valor o abrirle una vigencia nueva.**
+
+1. Elija el **Parámetro**. La lista **solo ofrece los que ya existen**: desde aquí no se inventan parámetros nuevos.
+2. Escriba el **Valor nuevo**.
+3. Revise la **Unidad** y la **Descripción**, que vienen rellenas con las del valor anterior.
+4. Escriba **Rige desde**: **La fecha del decreto, no la de hoy: los períodos anteriores conservan el valor viejo.**
+5. Escriba la **Fuente**: la gaceta o el decreto.
+6. Pulse **Guardar**.
+
+**La fecha decide qué se hace.** Con una fecha nueva, **no sustituye el valor anterior: lo cierra el día antes y empieza uno nuevo.** Con la misma fecha, corrige el que hay: **Misma fecha de vigencia: se corrige lo que hay, no se abre una vigencia nueva. Cambie la fecha si lo que quiere es que rija desde otro día.**
+
+Al corregir hay dos botones más:
+
+- **Dejó de regir hoy** cierra esa vigencia con la fecha de hoy.
+- **Eliminar** la quita, para la vigencia que nunca debió existir. Solo se puede si ninguna nómina se calculó mientras esa cifra regía; si alguna lo hizo, la base lo dice con el número de la nómina.
 
 #### Quién firma los recibos y las constancias
 
-El nombre, el cargo y la cédula de quien firma por recursos humanos también se cargan aquí, como parámetros de texto. La razón es la misma: el día que cambie la persona, eso lo corrige recursos humanos desde su pantalla.
+El nombre, el cargo y la cédula de quien firma por recursos humanos también se cargan aquí, como parámetros de texto. El día que cambie la persona, eso lo corrige recursos humanos desde su pantalla.
 
-Hay un detalle que conviene conocer: **el sistema trata el texto «Por definir» como si estuviera vacío**. Si el nombre del firmante dice eso, los recibos salen con el renglón de la firma en blanco, no firmados por alguien llamado «Por definir». Ese arreglo viene de un fallo real: durante semanas los recibos salieron firmados por un nombre que no era un nombre.
+**El sistema trata el texto «Por definir» como si estuviera vacío.** Si el nombre del firmante dice eso, los recibos salen con el renglón de la firma en blanco, no firmados por alguien llamado «Por definir».
 
 ### 11.10 Prestaciones sociales
 
 **Nómina › Prestaciones y parámetros › Prestaciones sociales**
 
-**No es una entrada del menú**: es la primera pestaña de **Prestaciones y parámetros**.
+Es la primera pestaña de **Prestaciones y parámetros**; las otras dos son **Parámetros de nómina** (11.9) y **Bonos y descuentos** (11.11). La cabecera la presenta así: **Prestaciones sociales acumuladas de cada trabajador por el tiempo de servicio.**
 
-Es la cuenta de lo que la empresa le debe a cada trabajador por el tiempo que lleva trabajando aquí. La pantalla lo dice en una línea: *"Lo que la empresa le debe a cada quien por el tiempo trabajado."*
+Es la cuenta de lo que la empresa le debe a cada trabajador por el tiempo que lleva trabajando aquí. Se lleva aparte de la nómina de la quincena porque no es dinero que se pague ahora: se acumula a favor del trabajador y solo sale de la empresa en dos momentos, cuando se le adelanta una parte y cuando se le liquida.
 
-> **Con las prestaciones apagadas en los conceptos de ley, esta pantalla está deshabilitada.** En lugar de la lista dice **Las prestaciones sociales están deshabilitadas** y cómo se vuelven a habilitar, y el sistema se niega a liquidar, cerrar trimestre, calcular intereses o adelantar. Lo que hubiera guardado no se borra.
+> **Con las prestaciones apagadas en los conceptos de ley (11.9), esta pantalla está deshabilitada.** En lugar de la lista dice **Las prestaciones sociales están deshabilitadas**, y debajo: **Están desactivadas en los conceptos de ley: no se liquidan, no se cierran trimestres, no se calculan intereses ni se otorgan anticipos. Lo registrado se conserva. Se habilitan activando Prestaciones sociales en Parámetros de nómina.**
 
-Esta cuenta se lleva dentro del sistema, no en una hoja aparte, y se lleva separada de la nómina de la quincena. La razón es que no es dinero que se pague ahora: se acumula a favor del trabajador y solo sale de la empresa en dos momentos, cuando se le adelanta una parte y cuando se le liquida.
+La pantalla decide con la fecha de hoy; la base, con **la fecha de la operación**: el último día del trimestre, del mes, el último día trabajado o el día del anticipo. Así que, con la pantalla encendida, cerrar un trimestre o un mes en que las prestaciones estaban apagadas no se deja, y la base lo explica: «Las prestaciones sociales están deshabilitadas: el 30/06/2026 están apagadas en los conceptos de ley. Se vuelven a habilitar encendiendo Prestaciones sociales en los conceptos de ley, en Nómina › Parámetros de nómina.»
 
 #### Lo que conviene entender antes de abrirla
 
 Esta es la parte que hay que saber explicar cuando alguien se acerca a preguntar cuánto tiene acumulado.
 
-**Lo que se le va acumulando se llama garantía.** Cada trimestre —cada tres meses del calendario— la empresa le abona a cada trabajador una cantidad de días de su salario. No se los paga en la quincena: se los apunta a su favor. Ese apunte es el mismo que sale en el recibo bajo el título **Se aparta para prestaciones**, y por eso el recibo advierte que *"Se acumula a su favor. No sale de su pago."*
+**Lo que se le va acumulando se llama garantía.** Cada trimestre —cada tres meses del calendario— la empresa le abona a cada trabajador una cantidad de días de su salario integral. No se le pagan en la quincena: se le apuntan a su favor. Ese abono es el **depósito trimestral**, y se hace en esta pantalla con **Cerrar trimestre**.
 
-**El día que cumple años de trabajo se le suman días adicionales.** Pasada la antigüedad que fija la ley, cada aniversario de ingreso trae unos días más, que se van acumulando año tras año hasta un tope. Se le abonan en el trimestre donde cae su aniversario, que es cuando se ganan.
+**No es la misma cifra que la del recibo.** El recibo de cada quincena trae el renglón **Se aparta para prestaciones** (11.8): es lo que corresponde a ese período, calculado en cada recibo. El depósito del trimestre se calcula aparte, desde el último recibo del trimestre, y es el que suma a la cuenta de esta pantalla. Las dos cifras no tienen por qué coincidir.
 
-**Cuántos días son, en los dos casos, no lo dice este manual.** Los fija la ley, y este capítulo no publica ni uno solo: un número equivocado en materia de prestaciones cuesta dinero de verdad. Los días del trimestre están en **Parámetros de nómina**, en el renglón **Días de garantía de prestaciones por trimestre**, con su fecha de vigencia y su fuente; ahí se consultan y ahí se corrigen. Los días adicionales del aniversario y su tope, en cambio, **no están en esa pantalla**: van escritos por dentro del sistema, así que si la ley los cambia hay que pedir que los cambien. En los dos casos el valor bueno lo fija quien lleva la nómina junto con su asesor laboral o contable, con la gaceta delante.
+**El día que cumple años de trabajo se le suman días adicionales**, que van creciendo año tras año hasta un tope. Se le abonan en el trimestre donde cae su aniversario.
 
-**Los intereses son lo que produce ese dinero mientras está apartado.** Mes a mes, lo acumulado gana intereses a favor del trabajador. La pantalla lo resume así: *"Corren sobre la garantía acumulada, a la tasa que publica el BCV."* Dos precisiones que ahorran discusiones: los intereses corren sobre la garantía, no sobre los intereses que ya se abonaron —eso sería interés sobre interés—, y la tasa hay que escribirla a mano cada mes, porque el sistema no la puede adivinar.
+**Cuántos días son, y de dónde sale cada número.** La pantalla enseña varios: la ventana de cerrar el trimestre habla de **quince días** y de **más de tres meses**; el anticipo, del **75%** de lo acumulado; la liquidación, de **30 días por año**. Solo uno de ellos se corrige desde una pantalla: los días del trimestre, que están en **Parámetros de nómina**, en el renglón **Días de garantía de prestaciones por trimestre**. Y aun ese tiene una trampa: **la ventana dice «quince» porque lo lleva escrito, no porque lo lea del parámetro.** Si el parámetro cambia, el cálculo usa el valor nuevo y la ventana sigue diciendo quince. Los demás —los días adicionales del aniversario y su tope, el tiempo mínimo de servicio, la parte que se puede adelantar y los días por año de la liquidación— van escritos por dentro del sistema: si la ley los cambia, hay que pedir que los cambien. En todos los casos, el valor bueno lo fija quien lleva la nómina junto con su asesor laboral o contable, con la gaceta delante.
 
-**Un anticipo es un adelanto de lo que ya tiene acumulado.** Es dinero que se le entrega hoy a cuenta de lo que se le debe. No es un préstamo y no se descuenta de la quincena: baja directamente el saldo de su cuenta de prestaciones. No se le puede adelantar todo: la ley fija hasta qué parte de lo acumulado se puede adelantar, y de ahí se resta lo que ya se le adelantó antes. Tampoco se adelanta para cualquier cosa; la propia pantalla lo recuerda debajo del campo: *"La ley permite adelantar para vivienda, salud, educación y pensión alimentaria."*
+**Los intereses son lo que produce ese dinero mientras está apartado.** Mes a mes, lo acumulado gana intereses a favor del trabajador. La ventana lo resume: **Corren sobre la garantía acumulada, a la tasa que publica el BCV.** Dos precisiones que ahorran discusiones: los intereses corren sobre la garantía menos lo que ya se le adelantó, medida al cierre de ese mes, y no sobre los intereses que ya se abonaron; y la tasa se escribe a mano cada mes, porque el sistema no la puede adivinar.
+
+**Un anticipo es un adelanto de lo que ya tiene acumulado.** Es dinero que se le entrega hoy a cuenta de lo que se le debe. No es un préstamo y no se descuenta de la quincena: baja directamente el saldo de su cuenta de prestaciones. No se le puede adelantar todo, y de lo que se puede se resta lo que ya se le adelantó antes. Tampoco se adelanta para cualquier cosa; la ayuda del campo lo recuerda: **La ley permite adelantar para vivienda, salud, educación y pensión alimentaria.**
+
+Los préstamos son otra cosa y viven en la ficha del trabajador, en su tarjeta **Préstamos** (11.4).
 
 **La liquidación es la cuenta final**, la que se hace cuando la persona se va, y suma todo lo anterior más lo que le quede pendiente del último año trabajado.
 
 #### Quién puede hacer qué aquí
 
-Ver la pantalla es lo mismo que ver el resto del módulo: con el permiso sobre Nómina alcanza. Registrar es otra cosa, y aquí hay dos alturas distintas:
-
 | Acción | Qué permiso pide |
 | --- | --- |
 | Ver la lista y la cuenta de cada quien | El permiso sobre Nómina, el mismo del resto del módulo |
-| **Cerrar trimestre** e **Intereses del mes** | Permiso de carga sobre Nómina. Lo tiene recursos humanos |
-| **Cargar el corte**, **Anticipo**, **Liquidar** y **Pagar y dar de baja** | El permiso más alto sobre Nómina |
+| **Cerrar trimestre** e **Intereses del mes** | Escritura sobre Nómina |
+| **Cargar el corte**, **Anticipo**, **Liquidar** y **Pagar y dar de baja** | Control total sobre Nómina |
 
-Los cuatro botones de la última fila piden el permiso más alto porque los cuatro mueven dinero o mueven la base con la que se calcula: el corte decide cuánto traía acumulado alguien de antes, y los otros tres sacan plata de la cuenta de la empresa. **Recursos humanos, con el permiso que trae de fábrica, no los ve.** Si hacen falta, se piden a quien administra el sistema. Si no los tienes, los botones no se dibujan.
+Los cuatro de la última fila piden el nivel más alto porque los cuatro mueven dinero o mueven la base con la que se calcula: el corte decide cuánto traía acumulado alguien de antes, y los otros tres sacan dinero de la cuenta de la empresa. Quien no tiene el nivel no ve el botón.
 
 #### Qué se ve
 
@@ -4481,60 +4439,75 @@ Debajo, tres cifras:
 | Tarjeta | Qué muestra |
 | --- | --- |
 | **Se les debe hoy** | La suma de lo que se le debe a todo el personal activo |
-| **Adelantado** | La suma de todo lo que se les ha adelantado y está restando de sus saldos |
+| **Anticipos** | La suma de lo que se les ha adelantado y está restando de sus saldos |
 | **Sin corte cargado** | Cuántos trabajadores no tienen todavía su punto de partida. En rojo si hay alguno, en verde si no queda ninguno |
 
-**Las dos primeras cifras salen partidas por moneda** cuando en la empresa hay sueldos en bolívares y sueldos en dólares: se muestran una al lado de la otra, separadas por un punto, y no se suman. Sumarlas daría un número que no es ni bolívares ni dólares, y a qué tasa se convierten no lo puede decidir una pantalla.
+**Las dos primeras cifras salen partidas por moneda** cuando en la empresa hay sueldos en bolívares y sueldos en dólares: se muestran una al lado de la otra y no se suman. Sumarlas daría un número que no es ni bolívares ni dólares, y a qué tasa se convierten no lo puede decidir una pantalla.
 
-**Las tres cifras cuentan solo a quien está activo.** La lista de abajo, en cambio, trae también a quien ya egresó, en gris.
+**Las tres cifras cuentan solo a quien está activo.** La lista de abajo trae también a quien ya salió, más tenue.
 
-Si falta algún punto de partida, aparece una franja de aviso: *"Hay {n} trabajador(es) sin corte cargado. Mientras no lo tengan, su cuenta arranca en cero, sin lo que traían de antes. El corte se carga aquí: se pulsa la fila de cada uno y luego «Cargar el corte»."* **El corte no se carga en la ficha del trabajador**: la ficha no muestra nada de prestaciones.
+Si falta algún punto de partida, aparece una franja de aviso: **Hay {n} trabajador(es) sin corte cargado. Mientras no lo tengan, su cuenta arranca en cero, sin lo que traían de antes. El corte se carga aquí: se pulsa la fila de cada uno y luego «Cargar el corte».** La ficha del trabajador no muestra nada de prestaciones.
 
-Si no hay nadie cargado en Personal, la pantalla dice **No hay trabajadores** y *"Las prestaciones se calculan sobre el personal cargado en Nómina."*
-
-La lista tiene estas columnas:
+Si no hay nadie cargado en Personal, la pantalla dice **Sin trabajadores** y **Las prestaciones se calculan sobre el personal cargado en Nómina.**
 
 | Columna | Qué muestra |
 | --- | --- |
-| **Trabajador** | Apellidos y nombres y, debajo, el número de ficha y el cargo, más **liquidado** si ya se le liquidó |
-| **Desde** | Su fecha de ingreso |
+| **Trabajador** | Apellidos y nombres y, debajo, el número de ficha y el cargo, más **egresado** si ya salió y **liquidado** si tiene una liquidación calculada o pagada |
+| **Ingreso** | Su fecha de ingreso |
 | **Garantía** | Lo acumulado: lo que traía del corte más lo abonado trimestre a trimestre |
 | **Intereses** | Los intereses abonados a su favor |
-| **Adelantado** | Lo que ya se le adelantó, en ámbar y con un menos delante. Un guion si nunca se le adelantó nada |
-| **Se le debe** | La garantía más los intereses, menos lo adelantado. Es la cifra que se responde cuando preguntan |
+| **Anticipos** | Lo que ya se le adelantó, en ámbar y con un menos delante. Una raya si nunca se le adelantó nada |
+| **Saldo** | La garantía más los intereses, menos los anticipos. Es la cifra que se responde cuando preguntan |
 | **Corte** | La fecha de su punto de partida, o la etiqueta **Sin corte** |
 
-**Pincha en cualquier parte de la fila** para abrir la cuenta de esa persona.
+**Liquidado** sale en cuanto la liquidación se calcula, antes de pagarla. Y el **Saldo** de quien ya cobró su liquidación no baja: la lista lo sigue enseñando entero. Las tarjetas de arriba no lo suman, porque solo cuentan a los activos.
+
+**Pulse en cualquier parte de la fila** para abrir la cuenta de esa persona.
+
+#### La cuenta de una persona
+
+Se abre pulsando su fila. Arriba, el nombre; debajo, la ficha, el cargo y desde cuándo trabaja.
+
+Lo primero es el resumen de su cuenta: **Garantía acumulada**, **Intereses**, **Anticipos** y, separada por una línea, **Saldo**. Al pie, la pantalla dice hasta cuánto se le puede adelantar hoy: **Se le puede adelantar hasta {monto} — el 75% de lo acumulado, menos lo ya adelantado.**
+
+Más abajo, y solo si los tiene, aparecen dos listas:
+
+- **Depósitos trimestrales**, uno por trimestre cerrado, con el año, el trimestre, los días que se le abonaron —y los adicionales, si le tocaron—, el salario integral diario con el que se calculó y el monto. Los marcados **estimado** son los que se calcularon desde la ficha por no haber recibos.
+- **Anticipos**, cada uno con su número —**ANT-2026-0001**, que se reinicia cada año—, el motivo, la fecha, de qué cuenta salió y el monto.
+
+Los depósitos y los anticipos anulados siguen apareciendo, marcados **anulado**: una cuenta de la que se borran renglones deja de poder explicarse. La liquidación anulada, en cambio, deja de verse.
+
+Los botones de la cuenta son **Cargar el corte** —o **Corregir el corte**—, **Anticipo** y **Liquidar**. **Anticipo** y **Liquidar** salen solo mientras la persona está activa y sin liquidar; el corte sale siempre.
 
 #### Cargar el corte
 
 El corte es el punto de partida: lo que esa persona ya tenía acumulado el día en que el sistema empezó a llevarle la cuenta. Sin él, su cuenta arranca en cero y la lista lo dice.
 
-La ventana lo dice: *"El sistema no tiene los salarios de años anteriores: el corte se carga a mano, y se ve que es a mano."* Calcular hacia atrás daría un número con cara de exacto y falso.
+La ventana se titula **Corte de {nombre}** y avisa: **El sistema no tiene los salarios de años anteriores: el corte se carga a mano, y se ve que es a mano.** Calcular hacia atrás daría un número con cara de exacto y falso.
 
-1. Pincha la fila de la persona.
-2. Pulsa **Cargar el corte** —o **Corregir el corte**, si ya tiene uno—.
-3. Llena la ficha del corte.
-4. Pulsa **Guardar el corte**.
+1. Pulse la fila de la persona.
+2. Pulse **Cargar el corte** —o **Corregir el corte**, si ya tiene uno—.
+3. Llene los campos.
+4. Pulse **Guardar el corte**.
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Acumulado hasta** | Sí | La fecha del corte. Sin ella no se habilita **Guardar el corte** |
+| **Acumulado hasta** | Sí | La fecha del corte. Sin ella no se enciende **Guardar el corte** |
 | **Días acumulados** | No | Cuántos días llevaba acumulados a esa fecha |
 | **Garantía en {moneda}** | No | El monto acumulado, en la moneda de su sueldo |
 | **Intereses acumulados** | No | Los intereses que ya había ganado |
-| **Ya adelantado** | No | Lo que se le había adelantado antes de esa fecha |
-| **De dónde sale esta cifra** | No | *"Queda guardado con tu nombre y la hora."* |
+| **Anticipos** | No | Lo que se le había adelantado antes de esa fecha |
+| **De dónde sale esta cifra** | No | **Queda guardado con su nombre y la hora.** |
 
-Ese último campo es el que hace defendible al corte: es lo único que explica, dentro de un año, de dónde salió el número que alguien tecleó.
+Ese último campo es el que hace defendible al corte, con dos límites que conviene saber. **La nota no se enseña en ninguna parte de la pantalla**: queda guardada, pero para leerla hay que pedírsela a quien administra el sistema. Y **al pulsar Corregir el corte el campo arranca vacío**: si no se vuelve a escribir, la nota anterior se pierde. Al corregir un corte, escriba otra vez de dónde sale la cifra.
 
-Tres cosas que el sistema no deja al cargar un corte, y por qué:
+Lo que el sistema no deja al guardar un corte, y por qué:
 
-- **No acepta una fecha futura**, porque nadie tiene acumulado todavía lo de un día que no ha llegado.
-- **No acepta una fecha anterior al ingreso** de esa persona, porque no se acumula nada antes de empezar a trabajar.
-- **No deja poner más adelantado que acumulado**, porque no se puede haber adelantado dinero que nunca se acumuló.
+- **Una fecha futura**, porque nadie tiene acumulado todavía lo de un día que no ha llegado.
+- **Una fecha anterior al ingreso** de esa persona, porque no se acumula nada antes de empezar a trabajar.
+- **Más anticipos que lo acumulado** —garantía más intereses—, porque no se puede haber adelantado dinero que nunca se acumuló. Las cifras de ese aviso salen sin separador de miles: «Los anticipos (1500.5) no pueden superar lo acumulado (1200).»
 
-Y una cuarta, que es la que más incomoda: **si ya hay trimestres cerrados anteriores a esa fecha, el corte no se guarda.** El sistema responde «Ya hay trimestres calculados antes de esa fecha de corte. Anúlalos primero: si no, ese tiempo quedaría contado dos veces.» La razón está en el propio mensaje: el corte ya incluye ese tiempo, y el trimestre lo volvería a contar. Ahora la parte incómoda: **esta pantalla no tiene ningún botón para anular un trimestre cerrado.** Si te topas con ese mensaje, no hay salida desde la pantalla; hay que pedírselo a quien administra el sistema.
+Y una cuarta, la que más incomoda: **si ya hay trimestres cerrados anteriores a esa fecha, el corte no se guarda.** La base responde «Ya hay trimestres calculados antes de esa fecha de corte. Anúlelos primero: si no, ese tiempo quedaría contado dos veces.» **Esta pantalla no tiene ningún botón para anular un trimestre cerrado**: con ese mensaje no hay salida desde la pantalla, y hay que pedírselo a quien administra el sistema.
 
 Por eso el orden importa: **primero se carga el corte de todo el mundo, y después se cierran trimestres.** Al revés se llega a un callejón.
 
@@ -4542,73 +4515,60 @@ Por eso el orden importa: **primero se carga el corte de todo el mundo, y despu�
 
 Es la operación que abona a cada quien lo que le tocó de ese trimestre. Se hace una vez, cuando el trimestre ya terminó.
 
-1. Pulsa **Cerrar trimestre**, arriba a la derecha.
-2. Escribe el **Año**.
-3. Elige el **Trimestre**: **1 — enero a marzo**, **2 — abril a junio**, **3 — julio a septiembre** o **4 — octubre a diciembre**. Viene propuesto el anterior al que corre.
-4. Pulsa **Cerrar el trimestre**.
+1. Pulse **Cerrar trimestre**, arriba a la derecha.
+2. Escriba el **Año**.
+3. Elija el **Trimestre**: **1 — enero a marzo**, **2 — abril a junio**, **3 — julio a septiembre** o **4 — octubre a diciembre**.
+4. Pulse **Cerrar el trimestre**.
 
-Al terminar sale un aviso con cuántos trabajadores se abonaron: «Trimestre cerrado para {n} trabajador(es).» Si no había nada que abonar —porque ese trimestre ya estaba cerrado, o porque nadie llevaba todavía el tiempo mínimo de servicio—, el aviso también lo dice. Se cierra con **Entendido**.
+La ventana propone el trimestre anterior al que corre, **del año en curso**. Entre enero y marzo eso no sirve: propone el trimestre 1 de este año, que todavía no ha terminado, y la base lo rechaza. En esos meses, cambie el año al anterior y elija el 4.
+
+Al terminar, encima de las cifras sale una franja con el resultado —**Trimestre cerrado para {n} trabajador(es).**, o **No había nada que abonar: ese trimestre ya estaba cerrado o nadie cumplía los tres meses.**— y se cierra con **Entendido**.
 
 Cuatro cosas que conviene saber antes de pulsar:
 
-**De dónde sale el salario con el que se calcula.** La ventana lo explica: *"El salario sale del último recibo del trimestre, con las horas extras y los recargos que de verdad se pagaron. Si no hay recibos, se calcula desde la ficha y el depósito queda marcado como estimado. Volver a correrlo no duplica nada."* Un abono marcado como **estimado** no está mal calculado: está calculado sobre el sueldo de la ficha y no sobre lo que de verdad se pagó, y se marca para que se sepa.
+**De dónde sale el salario con el que se calcula.** La ventana lo explica: **El salario sale del último recibo del trimestre, con las horas extras y los recargos que de verdad se pagaron. Si no hay recibos, se calcula desde la ficha y el depósito queda marcado como estimado. Volver a correrlo no duplica nada.** Un depósito **estimado** no está mal calculado: está calculado sobre el sueldo de la ficha y no sobre lo que de verdad se pagó, y se marca para que se sepa.
 
-**No se puede cerrar un trimestre que no ha terminado.** El sistema responde «El trimestre … de … todavía no ha terminado: cierra el ….», con la fecha en que se podrá. Cerrar un trimestre a mitad de camino abonaría menos de lo que corresponde y nadie se acordaría después de volver.
+**No se puede cerrar un trimestre que no ha terminado.** La base responde con la fecha en que se podrá: «El trimestre 4 de 2026 todavía no ha terminado: cierra el 31/12/2026.» Cerrar un trimestre a mitad de camino abonaría menos de lo que corresponde, y nadie se acordaría después de volver.
 
-**A quien no lleva todavía el tiempo mínimo de servicio no se le abona nada** ese trimestre. Empieza a acumular cuando la ley dice que empieza, y ese tiempo mínimo no lo decide el sistema.
+**A quien no lleva todavía el tiempo mínimo de servicio no se le abona nada** ese trimestre. La ventana habla de **tres meses**; la cuenta es de noventa días desde la fecha de ingreso.
 
-**Volver a cerrar el mismo trimestre no duplica nada.** A quien ya tiene su abono se le salta. Por eso se puede correr sin miedo después de cargar el corte de alguien que faltaba.
+**Volver a cerrar el mismo trimestre no duplica nada.** A quien ya tiene su depósito se le salta. Por eso se puede correr sin miedo después de cargar el corte de alguien que faltaba.
 
 #### Abonar los intereses del mes
 
 Se hace una vez al mes, cuando el mes ya cerró y el Banco Central publicó su tasa.
 
-1. Pulsa **Intereses del mes**, arriba a la derecha.
-2. Escribe el **Año** y el **Mes**. Viene propuesto el mes anterior.
-3. Escribe la **Tasa anual (%)** que publicó el Banco Central para ese mes.
-4. Pulsa **Abonar intereses**.
+1. Pulse **Intereses del mes**, arriba a la derecha.
+2. Escriba el **Año** y el **Mes**.
+3. Escriba la **Tasa anual (%)** que publicó el Banco Central para ese mes.
+4. Pulse **Abonar intereses**.
 
-Sale el aviso «Intereses abonados a {n} trabajador(es).»
+Sale la franja **Intereses abonados a {n} trabajador(es).**, también con cero.
 
-**Sin tasa no se abona nada, y es a propósito.** La ventana lo dice: *"La tasa se guarda con el mes al que pertenece: sin ella no se calculan los intereses."* Unos intereses con una tasa inventada también son inventados. Si intentas calcular un mes sin tasa cargada, el sistema responde «No está cargada la tasa de intereses de …. Cárgala antes de calcular: con una tasa inventada, los intereses también lo serían.»
+La ventana propone el mes anterior, **del año en curso**: en enero propone enero, que no ha terminado. En enero, cambie el año y elija el 12.
 
-**La tasa queda guardada con el mes al que pertenece**, no con el día en que la tecleaste. Eso es lo que permite que abonar marzo en agosto dé el mismo resultado que habría dado en marzo.
+**Sin tasa no se abona nada, y es a propósito.** La ventana lo dice: **La tasa se guarda con el mes al que pertenece: sin ella no se calculan los intereses.** Unos intereses con una tasa inventada también son inventados. Por eso **Abonar intereses** no se enciende con la tasa vacía o en cero.
 
-**Tampoco se puede abonar un mes que no ha terminado.**
+**La tasa queda guardada con el mes al que pertenece**, no con el día en que se tecleó. Es lo que permite que abonar marzo en agosto dé el mismo resultado que habría dado en marzo. Dos detalles de la ventana: **el campo de la tasa arranca vacío cada vez**, aunque ese mes ya tenga una cargada, y **la tasa se guarda antes de calcular**. Si el cálculo se niega —por ejemplo, porque el mes no ha terminado: «El mes 10/2026 todavía no ha terminado.»—, la tasa que se escribió ya quedó guardada para ese mes.
 
-**Volver a correr un mes ya abonado no suma dos veces**: rehace el abono de ese mes con la tasa que esté cargada. Si te equivocaste al teclear la tasa, esa es la forma de corregirlo: vuelve a correr el mismo mes con la tasa buena.
-
-#### La cuenta de una persona
-
-Se abre pinchando su fila. Arriba, el nombre; debajo, la ficha, el cargo y desde cuándo trabaja.
-
-Lo primero es el resumen de su cuenta: **Garantía acumulada**, **Intereses**, **Adelantado** y, separada por una línea, la cifra que importa, **Se le debe**. Al pie, la pantalla dice hasta cuánto se le puede adelantar hoy.
-
-Más abajo, y solo si los tiene, aparecen dos listas:
-
-- **Depósitos trimestrales**, uno por trimestre cerrado, con el año, el trimestre, los días que se le abonaron —y los adicionales, si le tocaron—, el salario diario con el que se calculó y el monto. Los marcados **estimado** son los que se calcularon desde la ficha por no haber recibos.
-- **Anticipos**, cada uno con su número —**ANT-2026-0001**, que también se reinicia cada año—, para qué fue, la fecha, de qué cuenta salió y el monto.
-
-Los depósitos y los anticipos anulados siguen apareciendo, en gris. No desaparecen: una cuenta de la que se borran renglones deja de poder explicarse.
+**Volver a correr un mes ya abonado no suma dos veces**: rehace el abono de ese mes con la tasa que se escriba. Si se tecleó mal la tasa, esa es la forma de corregirlo.
 
 #### Registrar un anticipo
 
-1. Abre la cuenta de la persona y pulsa **Anticipo**.
-2. Escribe el **Monto en {moneda}**. La ventana ya te dice arriba hasta cuánto se le puede adelantar; si escribes más, el campo se marca en rojo y avisa de que pasa del tope permitido.
-3. Elige **Para qué**: **Vivienda**, **Salud**, **Educación**, **Pensión alimentaria** u **Otro**.
-4. Elige **De qué cuenta sale**. Si lo dejas en **Sin mover tesorería**, el anticipo queda apuntado en su cuenta pero no sale dinero de ninguna cuenta de la empresa.
-5. Escribe la **Referencia**, si la tienes.
-6. Escribe el **Detalle**.
-7. Pulsa **Registrar el anticipo**.
+1. Abra la cuenta de la persona y pulse **Anticipo**. La ventana dice arriba hasta cuánto se le puede adelantar.
+2. Escriba el **Monto en {moneda}**. Si pasa del tope, el campo se marca con **Pasa del 75% permitido**, pero el botón sigue encendido: el que se niega después es la base.
+3. Elija el **Motivo**: **Vivienda**, **Salud**, **Educación**, **Pensión alimentaria** u **Otro**.
+4. Elija la **Cuenta** de la que sale el dinero, o déjela en **Sin mover tesorería**.
+5. Escriba la **Referencia**, si la tiene, y el **Detalle**.
+6. Pulse **Registrar el anticipo**.
 
-**Si eliges una cuenta, el dinero sale de verdad**: el saldo de esa cuenta baja y queda una línea de egreso en el libro de tesorería a nombre de esa persona. Si no la eliges, no baja ningún saldo. Conviene tenerlo claro antes de pulsar, porque son dos cosas distintas y el botón es el mismo.
+**Si elige una cuenta, el dinero sale de verdad**: el saldo de esa cuenta baja y queda una línea de egreso en el libro de tesorería a nombre de esa persona. Sale **aunque la cuenta no tenga saldo registrado**: queda en negativo y tesorería recibe el aviso, como con la nómina (11.7). Con **Sin mover tesorería**, el anticipo queda apuntado en su cuenta de prestaciones y no baja ningún saldo. Son dos cosas distintas con el mismo botón; conviene tenerlo claro antes de pulsar.
 
-Lo que el sistema no deja, y por qué:
+**El anticipo sale con la fecha de hoy.** La ventana no tiene campo de fecha.
 
-- **No deja adelantar más de lo permitido.** Responde «A … se le pueden adelantar hasta … y se están pidiendo …» La razón es que un anticipo por encima del tope no es un anticipo: es dinero entregado contra algo que todavía no existe.
-- **No deja un monto de cero o negativo**, porque un anticipo que no entrega nada no es un anticipo.
-- **No deja fecharlo hacia adelante**, porque el dinero no puede salir mañana y estar apuntado hoy.
-- **No se puede anular un anticipo desde esta pantalla.** Si se registró mal, hay que pedírselo a quien administra el sistema.
+Si el monto pasa del tope, la base responde: «A … se le pueden adelantar hasta 1.200,00 y se están pidiendo 1.500,00. La ley permite adelantar hasta el 75% de lo acumulado.» Un anticipo por encima del tope no es un anticipo: es dinero entregado contra algo que todavía no existe.
+
+**No se puede anular un anticipo desde esta pantalla.** Si se registró mal, hay que pedírselo a quien administra el sistema.
 
 #### Liquidar a un trabajador
 
@@ -4616,133 +4576,129 @@ Liquidar es la cuenta final de alguien que se va. Son dos pasos separados a prop
 
 **Paso uno: calcular.**
 
-1. Abre la cuenta de la persona y pulsa **Liquidar**.
-2. Escribe el **Último día trabajado**. Viene propuesto hoy.
-3. Elige **Por qué sale**: **Renuncia**, **Despido injustificado**, **Despido justificado**, **Contrato vencido**, **Jubilación** o **Fallecimiento**. La ayuda advierte de lo que cambia según elijas: *"El despido injustificado paga, además, otro tanto igual."*
-4. Escribe **Otras asignaciones** y **Otras deducciones**, si las hay.
-5. Escribe la **Observación**.
-6. Pulsa **Calcular la liquidación**.
+1. Abra la cuenta de la persona y pulse **Liquidar**.
+2. Escriba el **Último día trabajado**. Viene propuesto hoy.
+3. Elija el **Motivo**: **Renuncia**, **Despido injustificado**, **Despido justificado**, **Contrato vencido**, **Jubilación** o **Fallecimiento**. La ayuda advierte de lo que cambia según se elija: **El despido injustificado paga, además, otro tanto igual.**
+4. Escriba **Otras asignaciones** y **Otras deducciones**, si las hay, y la **Observación**.
+5. Pulse **Calcular la liquidación**.
 
-La ventana deja claro qué hace y qué no: *"Calcular no paga ni da de baja a nadie: deja el cálculo a la vista para revisarlo."* Ese es el punto: entre calcular y pagar hay una pausa, y esa pausa es la única oportunidad de revisar el cálculo mientras todavía se puede rehacer.
+La ventana se presenta con **Se calculan las dos cuentas que manda comparar la ley y se paga la mayor.**, y deja claro qué hace y qué no: **Calcular no paga ni da de baja a nadie: deja el cálculo a la vista para revisarlo. El pago se confirma después, desde la ficha.** Esa «ficha» es la cuenta de la persona en esta misma pantalla, no su ficha de Personal. Entre calcular y pagar hay una pausa, y esa pausa es la única oportunidad de revisar el cálculo.
 
-El cálculo aparece dentro de la cuenta de esa persona, en una tarjeta con su número —**Liquidación LIQ-2026-0001**, que se reinicia cada año— y su etiqueta de estado, **calculada** o **pagada**, con estos renglones:
+El cálculo aparece dentro de la cuenta de esa persona, en una tarjeta con su número —**Liquidación LIQ-2026-0001**, que se reinicia cada año—, el motivo, la fecha y su etiqueta, **calculada** o **pagada**:
 
 | Renglón | Qué es |
 | --- | --- |
 | **Garantía acumulada** | Lo que se le fue abonando trimestre a trimestre, más lo que traía del corte |
-| La cuenta por años de servicio | La otra forma de calcular lo mismo: los días por año de servicio que manda la ley, al último salario integral. Su título en pantalla trae el número de días; este manual no lo reproduce |
+| **30 días por año** | La otra forma de calcular lo mismo: días por año de servicio, al último salario integral |
 | **Base (la mayor)** | De las dos anteriores, la que dé más. Esa es la que se paga |
 | **Intereses** | Los intereses acumulados a su favor |
 | **Vacaciones fraccionadas** | La parte que le corresponde del último año trabajado |
 | **Bono vacacional** | Lo mismo, del bono |
 | **Utilidades fraccionadas** | Lo mismo, de las utilidades |
 | **Indemnización** | Solo trae cifra si sale por despido injustificado |
-| **Menos lo adelantado** | Todos sus anticipos, más lo que venía como adelantado en su corte |
+| **Anticipos** | Todos sus anticipos, más lo que venía como anticipado en su corte, con un menos delante |
 | **Total a pagar** | El resultado |
 
-La pantalla lo resume así: *"Se calculan las dos cuentas que manda comparar la ley y se paga la mayor."* Se enseñan las dos, y no solo el resultado, porque quien firma una liquidación tiene que poder explicar de dónde salió el número.
+Se enseñan las dos cuentas, y no solo el resultado, porque quien firma una liquidación tiene que poder explicar de dónde salió el número. **Con una excepción: Otras asignaciones y Otras deducciones entran en el Total a pagar, pero no tienen renglón en la tarjeta.** Si se escribió alguna, los renglones a la vista no suman el total, y la diferencia es exactamente eso.
 
 **Paso dos: pagar.**
 
-1. En esa misma tarjeta, elige **Pagar desde** la cuenta de la que sale el dinero.
-2. Pulsa **Pagar y dar de baja**.
+1. En esa misma tarjeta, elija la **Cuenta** de la que sale el dinero (**Seleccione la cuenta**).
+2. Pulse **Pagar y dar de baja**.
 
-El nombre del botón dice exactamente lo que hace: sale el dinero de la cuenta, queda la línea en el libro de tesorería y **la persona queda egresada en su ficha**, con la fecha y el motivo de la liquidación. No hay que ir a **Personal** a egresarla después: un trabajador liquidado que siguiera apareciendo como activo volvería a salir en la próxima nómina.
+El nombre del botón dice lo que hace: sale el dinero de la cuenta —aunque no tenga saldo registrado, con el mismo aviso a tesorería—, queda la línea en el libro de tesorería con la fecha de hoy, y **la persona queda desincorporada en su ficha** con el último día trabajado de la liquidación. No hay que ir a **Personal** a desincorporarla después: un trabajador liquidado que siguiera activo volvería a salir en la próxima nómina.
 
-Al revés hay una trampa, y es la más cara de este capítulo: **si primero lo egresas desde Personal, ya no lo puedes liquidar aquí.** Los botones **Anticipo** y **Liquidar** solo se dibujan para quien está activo, así que una persona egresada aparece en la lista, en gris, con su saldo a la vista y sin forma de cerrarle la cuenta desde la pantalla. El sistema no avisa de esto en ninguno de los dos sitios.
+Dos detalles del motivo de salida. Si la ficha ya tenía uno escrito, se queda el que tenía. Si no, se escribe el de la liquidación tal como lo guarda el sistema —**DESPIDO_INJUSTIFICADO**, **CONTRATO_VENCIDO**—, y así sale en la lista de Personal, en la ficha en PDF y en los informes que lo llevan; la ficha en pantalla y la constancia lo traducen.
 
-De ahí sale la regla de la casa: **cuando alguien se va, primero se le liquida aquí y se le paga.** El egreso lo pone el propio botón **Pagar y dar de baja**. **Egresar** en Personal queda para el caso en que no haya nada que liquidar.
+Y uno de la entrada: **pagar la liquidación no le cierra la entrada al sistema.** Si la persona tenía usuario, se inactiva aparte, en **Configuración › Usuarios y roles** (13.1).
+
+Al revés hay una trampa, y es la más cara de este capítulo: **si primero se desincorpora desde Personal, ya no se la puede liquidar aquí.** **Anticipo** y **Liquidar** solo salen para quien está activo, así que la persona queda en la lista con su saldo a la vista y sin forma de cerrarle la cuenta desde la pantalla. El sistema no avisa en ninguno de los dos sitios.
+
+De ahí sale la regla de la casa: **cuando alguien se va, primero se le liquida aquí y se le paga.** La desincorporación la pone el propio botón **Pagar y dar de baja**. **Desincorporar** en Personal (11.3) queda para cuando no hay nada que liquidar.
 
 Lo que el sistema no deja, y por qué:
 
-- **No deja liquidar dos veces.** Si ya hay un cálculo, responde «A … ya se le calculó la liquidación. Anúlala primero si hay que rehacerla.» Y aquí vale la misma advertencia de antes: **esta pantalla no tiene botón para anular una liquidación.** Antes de pulsar **Calcular la liquidación**, revisa la fecha y el motivo.
-- **No deja fechar el egreso antes del ingreso ni hacia adelante**, porque ninguna de las dos cosas puede haber pasado.
-- **No deja pagar una liquidación que no arroja monto**, ni pagar dos veces la misma.
-- **No deja adelantar ni liquidar a quien ya está egresado o ya se liquidó**: los botones **Anticipo** y **Liquidar** solo se dibujan para quien está activo y sin liquidar. Su cuenta se sigue viendo, pero de solo lectura.
+- **Liquidar dos veces.** Si ya hay un cálculo, la base responde «A … ya se le calculó la liquidación. Anúlela primero si hay que rehacerla.» Y **esta pantalla no tiene botón para anular una liquidación.** Antes de pulsar **Calcular la liquidación**, revise la fecha y el motivo.
+- **Fechar la salida antes del ingreso, o hacia adelante**, porque ninguna de las dos cosas puede haber pasado.
+- **Pagar una liquidación que no arroja monto**, ni pagar dos veces la misma.
 
 #### Lo que esta pantalla no hace
 
-Cuatro límites reales, dichos sin rodeos porque se descubren el primer día:
+Límites reales, dichos sin rodeos porque se descubren el primer día:
 
 - **No imprime nada.** No sale un comprobante de liquidación, ni un recibo de anticipo, ni un estado de cuenta para entregarle al trabajador. Lo que se le enseñe hay que copiarlo de la pantalla.
-- **No se anula nada desde aquí**: ni un trimestre cerrado, ni un anticipo, ni una liquidación. Los tres se pueden anular en el sistema, pero no hay botón que lo haga, así que hoy pasa por quien lo administra.
-- **No cierra el trimestre sola, ni abona los intereses sola.** Las dos cosas hay que acordarse de hacerlas: el trimestre cuando termina, los intereses cuando el Banco Central publica su tasa del mes. Nadie avisa.
+- **No anula nada**: ni un trimestre cerrado, ni un anticipo, ni una liquidación. Los tres se pueden anular en el sistema, pero no hay botón que lo haga, así que pasa por quien lo administra.
+- **El pago de un anticipo o de una liquidación sí se puede deshacer, pero desde el libro de tesorería** (12), con su reverso. Ojo con lo que eso deja: el dinero vuelve a la cuenta, y aquí el anticipo sigue registrado y la liquidación sigue **pagada**, con la persona desincorporada.
+- **No cierra el trimestre sola, ni abona los intereses sola.** Las dos cosas hay que acordarse de hacerlas: el trimestre cuando termina, los intereses cuando el Banco Central publica la tasa del mes. Nadie avisa.
 - **La ficha del trabajador no muestra nada de esto.** Para saber cuánto tiene acumulado alguien hay que venir a esta pantalla.
 
 ### 11.11 Bonos y descuentos
 
 **Nómina › Prestaciones y parámetros › Bonos y descuentos**
 
-**No es una entrada del menú**: es la tercera pestaña de **Prestaciones y parámetros**.
+Es la tercera pestaña de **Prestaciones y parámetros**.
 
-Es **la lista**, no los montos. Aquí se decide qué bonos y qué descuentos existen; cuánto se le carga a cada quien y en qué quincena se hace en **Novedades del período** (11.6). Por eso vive con lo que no cambia cada quincena, junto a las prestaciones y los parámetros.
+Aquí está **la lista** de bonos y descuentos, no los montos. Aquí se decide qué bonos y qué descuentos existen; cuánto se le carga a cada quien, y en qué período, se hace en **Novedades del período** (11.6). Por eso vive con lo que no cambia cada quincena, junto a las prestaciones y los parámetros.
 
-El título lo dice: **Bonos y descuentos** — *"Los conceptos que se cargan a mano cada período. Los que el sistema calcula solo se enseñan abajo, sin tocar."*
-
-Existe porque el catálogo era cerrado: *"Desconocemos el motivo o las razones o títulos de estos bonos, por lo tanto lo correcto es permitirle gestionar."* La empresa se inventa los suyos sin llamar a nadie.
+La cabecera lo dice: **Conceptos de carga manual por período. Los que calcula el sistema se muestran abajo en solo lectura.** El botón **Nuevo concepto** sale a recursos humanos.
 
 #### Qué se ve
 
-Dos listas. Arriba, **los de la casa**: los que se pueden crear, corregir, apagar y encender. Abajo, **los que el sistema calcula solo** —el sueldo, el beneficio de alimentación, las horas extra, el seguro social, el FAOV—, que se enseñan para que se sepa que están y **no se pueden tocar**.
+Dos listas.
 
-Si no hay ninguno propio: **Todavía no hay ninguno** — *"Crea el primero: un bono de transporte, uno por rendimiento, la cuota de un préstamo."*
+Arriba, **Los que se cargan a mano**: **Es lo que aparece al agregar un bono o un descuento a alguien en el período.** Son los de la empresa, y se pueden crear, corregir, apagar y encender. Si no hay ninguno: **Sin conceptos registrados**, con **Por ejemplo: bono de transporte, bono por rendimiento o cuota de préstamo.**
 
-Cada concepto lleva su código, su nombre, si suma o resta, y dos distintivos cuando corresponde: uno que avisa de que **entra en el salario integral —arrastra prestaciones—** y otro de que **entra en el salario normal**.
+Cada concepto lleva su nombre, su código —y su base legal, si la tiene— y unas etiquetas:
+
+- **Suma** o **Resta**, según sea bono o descuento.
+- **Integral**, si entra en el salario integral; al pasar el ratón dice **Entra en el salario integral: arrastra prestaciones.** Si no entra en el integral pero sí en el normal, la etiqueta es **Normal**. Un concepto que entra en los dos enseña solo **Integral**.
+- **Inactivo**, si está apagado.
+
+Y dos botones: **Editar** y **Apagar** —o **Encender**, si está apagado—.
+
+Abajo, **Los que calcula el sistema**: **No se editan ni se apagan: sin ellos el recibo saldría sin una línea que la ley exige. Se enseñan para saber de dónde sale cada renglón.** Son el sueldo, el beneficio de alimentación, los recargos, las retenciones y aportes de ley y lo que se aparta para prestaciones. No tienen botones.
 
 #### Crear o corregir uno
 
-1. Pulsa el botón de nuevo, o el de corregir sobre uno existente.
-2. **Cómo se llama.** Es lo que va impreso en el recibo, así que se escribe como se quiere leer.
-3. **Código.** Se normaliza solo a mayúsculas. **El guion se respeta**: los códigos de esta casa lo llevan —`BON-USD`, `DED-PRE`— y cambiarlo por otro signo crearía un concepto distinto con el mismo nombre.
-4. **Qué hace en el recibo**: suma (asignación) o resta (deducción). Desde aquí **solo se crean esas dos**; los aportes y las provisiones los calcula el sistema.
-5. Si incide en el salario normal o en el integral. Esto no es cosmético: **lo que incide en el integral arrastra prestaciones**, y eso se paga.
-6. **Orden en el recibo** y **Base legal**, opcionales.
+1. Pulse **Nuevo concepto**, o **Editar** sobre uno existente. La ventana se titula **Nuevo concepto** o **Corregir {código}**, y se presenta así: **Lo que se pueda cargar a mano en un período: un bono, un descuento, la cuota de un préstamo.**
+2. **Nombre.** **Es lo que va impreso en el recibo del trabajador.** Se escribe como se quiere leer.
+3. **Código.** **Se propone solo** a partir del nombre, en mayúsculas y sin tildes, cambiando espacios y signos —también el guion— por una raya baja. Se puede reescribir, pero si después se toca el nombre, la propuesta vuelve a pisarlo. **Al corregir ya no se cambia**: **No se cambia: los montos ya cargados lo llevan.**
+4. **Tipo**: **Bono — suma al recibo** o **Descuento — resta del recibo**. Desde aquí solo se crean esas dos clases; los aportes y las provisiones los calcula el sistema.
+5. Las dos casillas. La ventana explica lo que se decide: **Un bono puede quedarse en lo que se paga, o entrar además en la base con la que se calculan prestaciones y vacaciones. Eso último cuesta más.**
+   - **Entra en el salario normal** — **Cuenta para vacaciones y para el día de descanso.**
+   - **Entra en el salario integral** — **Cuenta además para las prestaciones sociales.**
+6. **Orden en el recibo** — **Más bajo, más arriba.** Viene en 500.
+7. **Base legal** — **Si viene de la ley, de dónde.**
+8. Pulse **Guardar**. Se enciende cuando el nombre y el código tienen al menos tres letras.
+
+Las casillas no son cosméticas: **lo que entra en el integral arrastra prestaciones**, y eso se paga.
 
 #### Apagar en vez de borrar
 
 Un concepto **no se borra**: se apaga. Uno usado en un período viejo no se puede borrar sin dejar recibos huérfanos, y esos recibos son documentos que ya se entregaron. Apagado deja de ofrecerse al cargar novedades y sigue explicando lo que ya está impreso.
 
-#### Lo que el sistema calcula solo no se toca
+**Guardar un concepto apagado lo vuelve a encender.** Si se corrige uno inactivo para dejarlo bien escrito, queda activo otra vez; si no debe ofrecerse, hay que pulsar **Apagar** de nuevo.
 
-Si intentas corregir o apagar uno de los de abajo, la base se niega: *"El concepto «SAL-BAS» lo calcula el sistema y no se edita aquí."* Y al apagar: *"…apagarlo dejaría el recibo sin una línea que la ley exige."*
+#### Los del sistema no se tocan
 
-Cambiarle el nombre sería inofensivo, pero esta misma puerta permitiría cambiarle el tipo o apagarlo, y entonces el cálculo seguiría corriendo y el recibo saldría sin una línea obligatoria.
+En pantalla no tienen botones, así que no se puede intentar. Si algo intenta corregir uno, la base se niega: «El concepto "SAL-BAS" lo calcula el sistema y no se edita aquí.» Y si intenta apagarlo: «El concepto "SAL-BAS" lo calcula el sistema: apagarlo dejaría el recibo sin una línea que la ley exige.»
+
+Cambiarle el nombre sería inofensivo, pero esa misma puerta permitiría cambiarle el tipo o apagarlo, y entonces el cálculo seguiría corriendo y el recibo saldría sin una línea obligatoria. Si hace falta uno parecido, se crea uno propio con otro código.
 
 ### 11.12 Lo que conviene entender
 
-#### La nómina semanal y la quincenal
+#### Dos nóminas a la vez: la frecuencia y el tipo
 
-Son dos cosas distintas y conviene tenerlas separadas en la cabeza:
+Son dos datos distintos y conviene tenerlos separados:
 
 - **La frecuencia de pago está en la ficha de cada trabajador**: **Semanal**, **Quincenal** o **Mensual**. Es un dato de esa persona.
 - **El tipo está en el período**: **Semanal — 7 días**, **Quincenal — 15 días**, **Mensual — 30 días** o **Especial — días del calendario**. Es un dato de esa nómina.
 
-**Cómo se elige el período.** No se elige: se abre. Recursos humanos pulsa **Abrir período**, elige el tipo y las fechas, y a partir de ahí ese período aparece en el desplegable **Período** de Novedades y de Recibos. Dos períodos del mismo tipo no pueden pisarse, pero un período semanal y uno quincenal sí pueden convivir sobre las mismas fechas, y eso es lo que permite llevar las dos nóminas a la vez.
+**El período no se elige: se abre.** Recursos humanos pulsa **Abrir período** (11.7), elige el tipo y las fechas, y a partir de ahí ese período aparece en el desplegable **Período** de Novedades y de Recibos. Dos períodos del mismo tipo no pueden pisarse, pero uno semanal y uno quincenal sí pueden convivir sobre las mismas fechas. Eso es lo que permite llevar las dos nóminas a la vez.
 
-Ahora la limitación, que hay que decir con todas sus letras porque cambia cómo se trabaja:
+**Al calcular, cada período hace recibos solo a quien cobra con su frecuencia.** Un período semanal recoge a los de frecuencia semanal; uno quincenal, a los de quincenal. El **Especial** alcanza a todos, y es el que se usa para pagar a quien está marcado **Eventual** en su ficha (11.4), que no entra en las nóminas ordinarias. Si nadie cobra con la frecuencia del período, la base lo dice: «Ningún trabajador activo cobra de forma semanal. Los que hay cobran: quincenal. Abra el período que corresponda, o corrija la frecuencia en la ficha del trabajador.»
 
-**Al calcular, el sistema genera recibos para todo el personal activo, sin mirar la frecuencia de pago de cada ficha.** Si abres un período semanal y pulsas **Calcular**, no salen solo los obreros de frecuencia semanal: sale todo el mundo. Lo mismo pasa en **Novedades del período**, que lista a todo el personal activo. Hoy la **Frecuencia de pago** de la ficha sirve para informar —se ve en la lista y en la ficha—, no para separar las dos nóminas al calcular.
-
-Mientras eso siga así, la separación entre las dos nóminas la tiene que sostener la persona que las lleva, revisando los recibos calculados antes de aprobar nada. Conviene confirmar este punto con quien administra el sistema antes de montar el procedimiento de la casa sobre él.
-
-#### El tabulador y cómo baja a las fichas
-
-El tabulador guarda **una sola cifra por cargo: el sueldo mensual**. La quincena es su mitad y se calcula cada vez que se muestra. No se puede escribir aparte, y ese es exactamente el punto: dos cifras que tienen que cuadrar entre sí acaban algún día sin cuadrar, y entonces nadie sabe cuál de las dos es la buena.
-
-El sueldo del tabulador llega a la ficha de una persona por dos caminos:
-
-1. **Al crear o editar la ficha.** Se elige el **Cargo del tabulador** y la pantalla copia en el acto el cargo, el sueldo y la moneda. El campo **Cargo** queda bloqueado, porque a partir de ahí lo pone el tabulador.
-2. **Con el botón Sincronizar.** Cuando cambia el sueldo de un cargo, las fichas enganchadas a él quedan **desfasadas**, y la franja del tabulador las lista con lo que tienen y lo que van a pasar a tener. **Sincronizar** les baja el sueldo y el nombre del cargo tal como están en la escala.
-
-Una ficha se considera desfasada si no coincide el sueldo, la moneda, la base **o el nombre del cargo**. Lo del nombre no es un capricho: si se rebautiza un nivel y las fichas se quedan con el nombre viejo, dentro de un año la lista de personal y el tabulador hablan de puestos que parecen distintos y son el mismo.
-
-**Qué no toca Sincronizar**, y por qué:
-
-- **A quien no tiene cargo del tabulador.** Está fuera de la escala a propósito. Su sueldo se escribió a mano y no sube cuando suba el tabulador.
-- **A quien ya egresó.** Su ficha es historia. Reescribirle el sueldo cambiaría la base de una liquidación que quizá ya se pagó.
-- **A los recibos ya emitidos.** Guardan sus propias cifras. Un recibo firmado no cambia porque suba el tabulador.
-
-Lo que sí cambia es un período abierto: uno en borrador o calculado tomará el sueldo nuevo la próxima vez que se calcule. Por eso el resumen de **Sincronizar** avisa: *"Estas personas cobran distinto a partir de la próxima nómina que se calcule."*
+**Novedades no filtra por frecuencia.** La lista de **Novedades del período** trae a todos los que estuvieron en la empresa entre esas fechas, cobren como cobren. Cargarle una novedad en un período semanal a alguien que cobra quincenal no sirve de nada: ese período no le hará recibo.
 
 #### El pago no se puede deshacer
 
@@ -4750,199 +4706,191 @@ Este es el punto más importante del capítulo.
 
 Hasta que se pulsa **Confirmar el pago**, todo tiene vuelta atrás:
 
-- Se puede **recalcular** cuantas veces haga falta. Recalcular rehace los recibos enteros.
-- Se pueden **corregir las novedades**: una hora extra mal cargada, una falta que no era, un bono que sobra.
-- Se puede **anular el período entero**, incluso ya aprobado, escribiendo por qué.
+- Una nómina en borrador o calculada **se recalcula** cuantas veces haga falta. Recalcular rehace los recibos enteros.
+- **Las novedades se corrigen**: una hora extra mal cargada, una falta que no era, un bono que sobra.
+- Una nómina **aprobada** ya no se recalcula ni admite novedades, pero la gerencia general la puede **Devolver a calculada** (11.7), y entonces vuelve a admitir todo.
+- **El período entero se anula**, incluso aprobado, escribiendo por qué.
 
-Después de **Confirmar el pago**, no hay ninguna de las tres:
+Después de **Confirmar el pago**, no hay ninguna de las cuatro:
 
-- **La nómina no se anula.** El sistema responde «Esta nómina ya se pagó y no se puede anular. Corrige la diferencia en el período siguiente.»
-- **La nómina no se recalcula.** El sistema responde «El período está en "PAGADA" y ya no se recalcula. Anúlalo si hay que rehacerlo.» — y anularla tampoco deja.
-- **La salida de dinero no se reversa.** En el libro de tesorería, un movimiento equivocado normalmente se corrige con un reverso, que es otra línea en sentido contrario. El pago de una nómina no admite ni siquiera eso: el botón de deshacer no se ofrece para esas líneas, y si se intenta, el sistema responde «Este movimiento es el pago de una nómina. Reversarlo dejaría los recibos diciendo que se cobró y el banco que no salió nada.»
+- **La nómina no se anula.** La base responde «Esta nómina ya se pagó y no se puede anular. Corrija la diferencia en el período siguiente.»
+- **La nómina no se recalcula.** **Calcular** ya no aparece en su tarjeta.
+- **La salida de dinero no se reversa.** En el libro de tesorería, un movimiento equivocado normalmente se corrige con un reverso, que es otra línea en sentido contrario. El pago de una nómina no admite ni eso: el libro no ofrece deshacer esa línea, y si algo lo intenta, la base responde «Este movimiento es el pago de una nómina. Reversarlo dejaría los recibos diciendo que se cobró y el banco que no salió nada.»
 
-La razón es esa misma frase. Si se devolviera el dinero a la cuenta, el período seguiría diciendo «pagada» y los recibos seguirían diciendo que la gente cobró. El sistema quedaría contando dos historias distintas, y esa contradicción no se descubre hasta el cierre, cuando ya nadie recuerda qué pasó.
+La razón es esa misma frase. Si se devolviera el dinero a la cuenta, el período seguiría diciendo **pagada** y los recibos seguirían diciendo que la gente cobró. El sistema quedaría contando dos historias distintas, y esa contradicción no se descubre hasta el cierre, cuando ya nadie recuerda qué pasó.
 
 **La única corrección posible es en el período siguiente.** Está escrita en el propio mensaje: se carga la diferencia en **Novedades del período** como un bono, si se pagó de menos, o como un descuento, si se pagó de más. Así quedan las dos cosas a la vista: lo que se pagó mal y la corrección.
 
-**Qué revisar antes de llegar ahí.** El paso de revisión existe y está entre calcular y aprobar. Úsalo:
+**Qué revisar antes de llegar ahí.** El paso de revisión existe y está entre calcular y aprobar:
 
-1. **Recalcula** después del último cambio en novedades. Un cambio guardado no entra en los recibos hasta que se vuelve a calcular.
-2. Abre **Ver recibos** y mira las cuatro cifras del período: **Recibos**, **Asignaciones**, **Deducciones** y **Neto a pagar**. Si el número de recibos no es el que esperas, sobra o falta gente.
-3. **Entra a los recibos, uno por uno.** La fila se abre pinchando en cualquier parte. Revisa los días pagados y los renglones de **Lo que se gana** y **Lo que se descuenta**.
-4. Comprueba que el tabulador no tenga fichas desfasadas sin sincronizar, porque si las hay, el sueldo del recibo no es el de la escala.
-5. Comprueba en **Parámetros de nómina** que los valores que cambian con frecuencia estén al día. Una nómina calculada con un monto viejo se paga corta.
+1. **Recalcule** después del último cambio en novedades. Un cambio guardado no entra en los recibos hasta que se vuelve a calcular.
+2. Abra **Ver recibos** y mire las cuatro cifras del período: **Recibos**, **Asignaciones**, **Deducciones** y **Neto a pagar**. Si el número de recibos no es el que espera, sobra o falta gente.
+3. **Entre a los recibos, uno por uno.** Revise los días pagados y los renglones de **Lo que se gana** y **Lo que se descuenta**.
+4. Compruebe que el tabulador no tenga fichas desfasadas sin sincronizar (11.5): si las hay, el sueldo del recibo no es el de la escala.
+5. Compruebe en **Parámetros de nómina** que los valores que cambian con frecuencia estén al día. Una nómina calculada con un monto viejo se paga corta.
 6. Solo entonces, **Aprobar la nómina**. Y solo entonces, **Confirmar el pago**.
 
-Que aprobar y pagar sean de dos personas distintas está pensado justo para esto: entre las dos hay una pausa, y esa pausa es la última oportunidad de encontrar un error mientras todavía se puede arreglar.
+**Aprobar y pagar no tienen por qué ser dos personas.** Aprobar es de la gerencia general; pagar, de recursos humanos o de la gerencia general. La misma gerencia puede hacer las dos cosas seguidas. La pausa entre aprobar y pagar no la pone el sistema: la pone quien decide no pagar sin mirar.
 
 #### Por qué los porcentajes y los topes se cargan en pantalla
 
-Las cifras con las que se calcula la nómina de cada período —los porcentajes de las deducciones, los topes y los días de referencia— no están escritas por dentro del sistema. Viven en **Parámetros de nómina**, cada una con su fecha de vigencia y su fuente.
+Las cifras con las que se calcula la nómina —los porcentajes de las retenciones, los topes y los días de referencia— no están escritas por dentro del sistema. Viven en **Parámetros de nómina** (11.9), cada una con su fecha de vigencia y su fuente.
 
-La razón la explica el propio sistema: en Venezuela estas cifras cambian por decreto, y a veces con efecto hacia atrás. Un número escrito por dentro obligaría a que un técnico tocara el sistema cada vez que sale una gaceta. Cargado en pantalla, lo actualiza recursos humanos el mismo día, sin esperar a nadie.
+La razón: en Venezuela estas cifras cambian por decreto, y a veces con efecto hacia atrás. Un número escrito por dentro obligaría a que un técnico tocara el sistema cada vez que sale una gaceta. Cargado en pantalla, lo actualiza recursos humanos el mismo día, sin esperar a nadie.
 
-**Con las prestaciones sociales esto se cumple solo a medias, y conviene saberlo.** Los días de garantía de cada trimestre sí están en **Parámetros de nómina**, en el renglón **Días de garantía de prestaciones por trimestre**. Pero otras cifras que usa esa pantalla van escritas por dentro: los días adicionales del aniversario y su tope, el tiempo mínimo de servicio para empezar a acumular, hasta qué parte de lo acumulado se puede adelantar y los días por año con los que se compara la liquidación. Ninguna de esas se puede corregir desde ninguna pantalla. Si la ley cambia alguna, hay que pedir que la cambien, y mientras tanto lo que salga en pantalla hay que contrastarlo con el asesor antes de pagar nada.
+**Con las prestaciones sociales esto se cumple solo a medias.** Los días de garantía de cada trimestre sí están en **Parámetros de nómina**. Las demás cifras de esa cuenta —los días adicionales del aniversario y su tope, el tiempo mínimo de servicio, la parte que se puede adelantar, los días por año de la liquidación y los días de base de las vacaciones fraccionadas— van escritas por dentro, y la pantalla de prestaciones las enseña (11.10). Ninguna se corrige desde una pantalla. Si la ley cambia alguna, hay que pedir que la cambien, y mientras tanto lo que salga en pantalla se contrasta con el asesor antes de pagar nada.
 
-De ahí sale la segunda regla, que es la que hace que los recibos sean defendibles: **los valores se aplican por la fecha del período, no por la de hoy.** Recalcular en agosto una nómina de marzo tiene que dar lo mismo que dio en marzo. Por eso las vigencias anteriores no se borran nunca.
+De ahí sale la segunda regla, la que hace que los recibos sean defendibles: **los valores se aplican por la fecha del período, no por la de hoy.** Recalcular en agosto una nómina de marzo tiene que dar lo mismo que dio en marzo. Por eso las vigencias anteriores no se borran.
 
-**Quién los mantiene.** Los carga recursos humanos, y **su valor lo fija quien lleve la nómina junto con su asesor laboral o contable**, con la gaceta o el decreto delante. Este manual no dice cuánto vale ninguno, y nadie debería tomar esos números de un manual: se toman de la fuente y se escriben en la pantalla, dejando anotada esa fuente en el campo **Fuente**.
+**Quién los mantiene.** Los carga recursos humanos, y **su valor lo fija quien lleva la nómina junto con su asesor laboral o contable**, con la gaceta o el decreto delante. Este manual no dice cuánto vale ninguno: se toman de la fuente y se escriben en la pantalla, dejando anotada esa fuente.
 
-Si al calcular falta alguno, el sistema no calcula a medias: se detiene y te dice cuál falta y dónde cargarlo.
+Si al calcular falta alguno, el sistema no calcula a medias: se detiene y dice cuál falta y dónde cargarlo.
 
-#### Las fichas de personal no se borran
+#### Los papeles que salen del módulo
 
-Hasta el 6 de agosto de 2026 se podía borrar una ficha, con candados: el sistema comprobaba que la persona existiera, que no tuviera ningún recibo de nómina y que no tuviera ninguna novedad cargada. La idea era dejar borrar solo una ficha cargada por error —un nombre mal escrito, una cédula repetida, alguien metido dos veces— y nunca a quien ya hubiera cobrado.
+Todos, menos el organigrama, se abren primero en el visor, y nada se guarda hasta que se pulsa **Descargar**. El organigrama se descarga directamente.
 
-**Se quitó.** Los candados comprobaban lo que la base sabe, no lo que hace falta saber. Que alguien no tenga recibos no significa que no haya trabajado aquí: puede que su nómina no se haya procesado todavía, que se le pagara por fuera, o que la ficha se cargara ayer. Y esos candados tampoco miraban las prestaciones: un corte cargado, unos trimestres cerrados o unos intereses abonados se iban con la ficha, en silencio.
-
-Encima, el borrado era la única acción de todo el sistema que no se podía deshacer desde ninguna pantalla.
-
-**Lo que se hace ahora, en todos los casos, es egresar.** Con la fecha y el motivo escrito, y «cargada por error» o «duplicada de la ficha 0012» son motivos perfectamente válidos. La persona deja de salir en la lista de activos —que es lo único que se quería— y lo que decía su ficha se conserva. Si mañana resulta que no había que sacarla, se vuelve a activar.
-
-**Lo que se borró antes del cambio se recuperó.** El registro de auditoría guarda la fila completa cuando algo se borra, así que las fichas volvieron con sus datos, desincorporadas y con el motivo apuntando a quién las borró y cuándo. Vuelven desincorporadas y no activas a propósito: nadie puede saber hoy cuál era una persona trabajando y cuál un duplicado, y devolverlas activas metería gente en la próxima nómina sin que nadie lo hubiera decidido. Quien sepa, las reactiva una por una.
-
-**El número de ficha no se reutiliza.** El correlativo nunca se reinicia. Si faltan números en la serie, son fichas de la época en que se podía borrar.
-
-
-#### Los documentos que salen del módulo
-
-Son cinco, salen de dos sitios distintos y **todos se abren en pantalla antes de guardarse**:
-
-| Documento | De dónde sale | Cómo sale |
+| Papel | De dónde sale | Dónde se explica |
 | --- | --- | --- |
-| **Ficha completa (PDF)** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
-| **Carnet (PDF)** | La tarjeta del carnet, en la ficha | Se emite y se abre solo. Después, **Imprimir el carnet** |
-| **Constancia de trabajo** | La ficha del trabajador | Se abre en el visor y se descarga desde ahí |
-| **Recibo de pago** | Recibos de pago | Se abre en el visor y se descarga desde ahí |
+| **Informe** de personal | La lista de **Personal**, y para una sola persona su ficha | 11.3 |
+| **Planilla de ingreso** | La lista de **Personal** | 11.3 |
+| **Pago bancario** | La lista de **Personal** | 11.3 |
+| **Ficha completa (PDF)** | La ficha del trabajador | 11.4 |
+| **Constancia de trabajo** y de cese | La ficha del trabajador | 11.4 |
+| Carnet | La ficha del trabajador, y la pestaña **Carnets** | 11.4 y 11.3 |
+| **Recibo de préstamo** | La tarjeta **Préstamos** de la ficha | 11.4 |
+| Recibo de pago | **Recibos de pago**: **Imprimir recibo** o **Imprimir todos** | 11.8 |
+| **Informe del período** | **Recibos de pago** | 11.8 |
+| Organigrama | **Organigrama**, con **Descargar** | 11.13 |
 
-- **La ficha** va en A4 con todos los datos de la pantalla, la foto, el estado de la persona y dos renglones de firma: **Firma del trabajador** y **Recursos humanos**. Al pie lleva quién la emitió y cuándo, y el rótulo **Documento interno**.
-- **El carnet** es un PDF de dos páginas, cada una de 54 × 86 mm a 300 dpi, que es lo que pide una imprenta para que no salga pixelado. En el frente van la foto, el nombre, el cargo y cuatro datos: **Cédula**, **Departamento**, **Ingreso** y **Sangre**. En el reverso, la marca, la razón social, el RIF y **el QR de verificación con el código de esa persona**.
-- **El reverso NO es igual para todos.** El código del QR es distinto en cada carnet: es lo que identifica a esa persona cuando alguien escanea. Está explicado entero en 11.4.
-- **La constancia** es la carta que se entrega a un banco o a quien la pida. Va en papel de la empresa, redactada en el tiempo verbal correcto según la persona siga trabajando o ya no, y con el sueldo dentro o fuera según dejes marcada la casilla **Incluir el sueldo**. Lleva un recuadro que repite el nombre, la cédula y la ficha para poder cotejarlos.
-- **El recibo** sale siempre por duplicado, original y copia, y esa es la mitad de su valor: la copia firmada por el trabajador es la constancia de que cobró. **Si el trabajador tiene firma guardada y encendida en su ficha, el recibo sale ya con ella estampada** sobre la raya de la izquierda; solo queda en blanco si no la tiene o está apagada. **La raya de la empresa, en cambio, sale siempre vacía**: de quien firma por la empresa se guarda el nombre y el cargo, no una imagen.
+**Prestaciones sociales no imprime nada**: ni la liquidación, ni el anticipo, ni el estado de cuenta (11.10).
 
-La ficha, la constancia y el recibo llevan al pie quién los emitió y cuándo, y **abren con la misma cabecera que el resto de los papeles del sistema** (13.2). Los que llevan firma de la empresa dependen de que el nombre del firmante esté cargado en **Parámetros de nómina**: si no lo está, el renglón sale con el cargo y en blanco, para firmar a mano. El carnet no lleva pie ni firma: en una tarjeta de 54 mm no cabe, y no hace falta.
+Los papeles que llevan firma de la empresa la toman de **Parámetros de nómina** (11.9). Si el nombre del firmante no está cargado, el renglón de la firma sale en blanco, para firmar a mano.
 
 ### 11.13 Organigrama
 
-Es una sección propia y no una pantalla dentro de Nómina, que es como lo pidió la líder de sistemas. **El permiso sí es el de Nómina**: quien lleva el personal es quien sabe de quién depende quién. Con Nómina en lectura se ve el árbol; para cambiarlo hace falta escritura, y sin ella no aparece ningún botón.
+**Organigrama**
 
-Responde una pregunta que ninguna otra pantalla contesta: **Quién depende de quién, y cuánta gente hay prevista en cada puesto.**
+Es una entrada propia del menú, al lado de **Nómina**. La cabecera dice: **Estructura jerárquica y plazas previstas por puesto. Pulse un puesto para ver su línea de mando.**
+
+Responde una pregunta que ninguna otra pantalla contesta: quién depende de quién, y cuánta gente hay prevista en cada puesto.
+
+#### Quién lo ve y quién lo cambia
+
+**Mirarlo y descargarlo, cualquiera que haya entrado al sistema.** Saber de quién depende quién no le hace daño a nadie y le ahorra a media empresa preguntarlo. El menú, en cambio, solo lo ofrece a quien ve Nómina; los demás llegan por la dirección de la pantalla o por un enlace.
+
+**Cambiarlo pide escritura sobre Nómina**: quien lleva el personal es quien sabe de quién depende quién. Sin ella no aparece ningún botón para cambiarlo; solo **Descargar**.
+
+**Quien lo abre sin permiso sobre Nómina ve la estructura bien, pero no las cifras de gente.** Esas cifras salen de la lista de personal, que no puede ver: **Registrada en nómina** le sale en cero, **Departamentos sin sitio** le dice **todos colocados**, y las marcas de desajuste de cada puesto tampoco son de fiar. Las cifras buenas son las que ve quien tiene Nómina.
 
 #### Qué se ve
 
-Tres tarjetas arriba:
+Arriba a la derecha, **Descargar**, que baja el organigrama en PDF. Debajo, tres tarjetas:
 
 | Rótulo | Qué mide |
 | --- | --- |
 | **Prevista en el organigrama** | Cuántas personas suman todos los puestos dibujados |
-| **Registrada en nómina** | Cuántas hay activas de verdad. Debajo, **cuadra** o **3 de diferencia**, y **· 2 sin departamento escrito** si las hay |
-| **Departamentos sin sitio** | Departamentos que existen en nómina y a los que nadie colgó de la estructura |
+| **Registrada en nómina** | Cuántas hay activas de verdad. Debajo, **cuadra** o, por ejemplo, **3 de diferencia**, y **· 2 sin departamento escrito** si las hay |
+| **Departamentos sin sitio** | Departamentos que existen en nómina y que nadie colgó de la estructura. Debajo, **todos colocados** o la lista, con cuánta gente tiene cada uno |
 
-Debajo va la estructura, **dibujada por bancos**: una banda horizontal por cada escalón de dependencia, como se corta un frente de cantera. Arriba el banco 1 —la gerencia—, y debajo cada nivel que cuelga.
+Debajo va la estructura, **dibujada por bancos**: una banda horizontal por cada escalón de dependencia, como se corta un frente de cantera. Arriba el primero —la gerencia— y debajo cada nivel que cuelga.
 
-En el canto izquierdo de cada banda va **el número del escalón** en grande y, debajo, **cuántos puestos y cuánta gente** hay en él. Es la lectura que la lista con sangría no dejaba hacer: de un vistazo se ve cuántos escalones tiene la empresa y dónde está el grueso del personal.
+En el canto izquierdo de cada banda va el rótulo **Nivel** con su número en grande y, debajo, cuántos puestos y cuánta gente hay en él. De un vistazo se ve cuántos escalones tiene la empresa y dónde está el grueso del personal.
 
-**No hay ni una línea dibujada.** Dentro de cada banda las fichas van reunidas bajo un rótulo pequeño —**de Administración**— que dice de quién cuelgan. Se lee igual que con líneas, y así la hoja crece hacia abajo y nunca hacia los lados: es lo que hace que el mismo dibujo sirva en un proyector y en un teléfono.
+**No hay ni una línea dibujada.** Dentro de cada banda los puestos van reunidos bajo un rótulo pequeño —**de Administración**— que dice de quién cuelgan. Se lee igual que con líneas, y así la hoja crece hacia abajo y nunca hacia los lados: es lo que hace que el mismo dibujo sirva en un proyector y en un teléfono.
 
-Cada ficha lleva el **nombre** —más marcado si es una unidad, más suave si es un cargo—, **quién lo ocupa** en naranja si tiene titular, y **cuántas plazas** hay previstas.
+Cada puesto lleva el **nombre** —más marcado si es una unidad, más suave si es un cargo—, quién lo ocupa si tiene titular, y cuántas plazas hay previstas.
 
-Y solo cuando hay desajuste, en ámbar, **cuántos hay en nómina de verdad**. **El acuerdo se calla y el desajuste se dice**: marcar también los que cuadran llena la pantalla de etiquetas y esconde justo lo que hay que mirar. Una ficha sin esa marca es una ficha que cuadra —o un puesto que no está enlazado a ningún departamento, y entonces no se sabe: pintar un cero sería mentir.
+Y solo cuando hay desajuste, en ámbar, **cuántos hay en nómina de verdad**. **El acuerdo se calla y el desajuste se dice**: marcar también los que cuadran llena la pantalla de etiquetas y esconde justo lo que hay que mirar. Un puesto sin esa marca es un puesto que cuadra, o uno que no está enlazado a ningún departamento, y entonces no se sabe: pintar un cero sería mentir.
+
+Si todavía no hay nada dibujado: **Sin organigrama definido**, con **Empiece por lo de arriba —la gerencia general— y vaya colgando de ahí. Cada puesto que añada abre el banco siguiente.** y, para quien puede cambiarlo, **Empezar por arriba**.
 
 #### Seguir una línea de mando
 
-**Al pulsar una ficha se enciende su línea de mando entera** —lo que tiene encima hasta la gerencia y todo lo que le cuelga— y el resto del organigrama se apaga. Es señalar con el dedo en una reunión, y de paso es cómo uno se sitúa antes de tocar nada.
+**Al pulsar un puesto se enciende su línea de mando entera** —lo que tiene encima hasta la gerencia y todo lo que le cuelga— y el resto se apaga. Es señalar con el dedo en una reunión, y de paso es cómo uno se sitúa antes de tocar nada.
 
-Pulsando la misma ficha otra vez se suelta y vuelve a verse todo. Lo apagado no está escondido: sigue pulsándose, y con el tabulador se recorre igual.
+Pulsando el mismo puesto otra vez se suelta y vuelve a verse todo. Lo apagado no está escondido: se sigue pulsando, y con el tabulador del teclado se recorre igual.
 
 #### Cómo se cambia
 
-Al pulsar una ficha aparece debajo una barra con su nombre y lo que se puede hacer con ella:
+Al pulsar un puesto aparece debajo una barra con su nombre y lo que se puede hacer con él:
 
-1. **Colgar un puesto**. Abre el formulario debajo, sin ventana emergente.
-2. **Editar**.
-3. **Mover**. No se arrastra —en un teléfono arrastrar es un ejercicio de puntería—: al pulsar **Mover**, **los destinos válidos se encienden con el borde punteado** y se elige uno pulsándolo. Lo que cuelga del puesto que se mueve no se ofrece, porque sería colgarlo de sí mismo. Para dejarlo como estaba, **Dejarlo donde está**.
+1. **Colgar un puesto**. Abre el formulario debajo, sin ventana emergente, con el rótulo **Nuevo puesto colgando de {puesto}**.
+2. **Editar**, con el rótulo **Editando {puesto}**.
+3. **Mover**. No se arrastra —en un teléfono, arrastrar es un ejercicio de puntería—: sale la franja **Moviendo {puesto}. Pulse el puesto del que debe colgar.**, **los destinos válidos se encienden con el borde punteado** y se elige uno pulsándolo. No se ofrecen ni lo que cuelga del puesto que se mueve —sería colgarlo de sí mismo— ni el puesto del que ya cuelga. Para dejarlo como estaba, **Dejarlo donde está**.
 4. **Quitar**, que solo aparece si de ese puesto no cuelga nada. Si cuelga algo, en su sitio se lee **No se quita: tiene 3 puestos colgando**, para que se sepa por qué no está el botón.
 
 De la cabeza del organigrama no se ofrece ni **Mover** ni **Quitar**: un organigrama sin cabeza no es un organigrama.
 
-El formulario pide: **Cómo se llama**, **Quién lo ocupa** —*se deja vacío si el puesto no tiene nombre y apellido*—, **Qué es** (**Unidad** o **Cargo**), **Cuántos**, **Departamento de nómina** —*para contar la gente en nómina de este puesto*, y se puede dejar **Sin enlazar**— y una **Nota** para *lo que el nombre no alcanza a decir*. Se cierra con **Añadir** o **Guardar**, y con **Cancelar**.
-
-Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un **Cargo** es un puesto con su gente, como «Cocineros (2)».
-
-#### Cuando no te deja
-
-| Lo que ves | Qué significa |
+| Campo | Detalle |
 | --- | --- |
-| «Ya hay una cabeza en el organigrama. Cuelga este nodo de alguna.» | Solo puede haber una raíz |
-| «De ahí cuelgan 3 puesto(s). Muévelos o quítalos primero.» | No se quita un puesto con gente colgando |
-| «No se puede mover ahí: ese puesto ya depende de este.» | Estabas creando un círculo |
-| «Un cargo no puede depender de sí mismo.» | Elegiste como destino el mismo puesto |
-| «El nombre del cargo o la unidad no puede quedar vacío.» | Falta el nombre |
+| **Nombre** | El único obligatorio. Sin él no se enciende **Guardar** |
+| **Titular** | **Se deja vacío si el puesto no tiene nombre y apellido.** |
+| **Tipo** | **Unidad** o **Cargo**. Empieza en **Unidad** |
+| **Cuántos** | Las plazas previstas. Empieza en 1 |
+| **Departamento de nómina** | **Para contar la gente en nómina de este puesto.** Cada opción dice cuánta gente tiene; se puede dejar **Sin enlazar** |
+| **Nota** | |
 
-### 11.14 Cuando el sistema no te deja
+Se cierra con **Guardar** o con **Cancelar**.
 
-| Lo que ves | Qué significa | Qué hacer |
+Una **Unidad** es una dependencia —Administración, Cocina, Operaciones—; un **Cargo** es un puesto con su gente, como «Cocineros», con dos plazas.
+
+La pantalla no deja llegar a los errores de la estructura: no ofrece crear una segunda cabeza, ni quitar un puesto con algo colgando, ni mover uno debajo de sí mismo, ni guardar sin nombre. Si alguno saliera, es porque otra persona cambió el organigrama a la vez; vuelva a cargar la pantalla y mire cómo quedó.
+
+### 11.14 Cuando el sistema no le deja
+
+Algunos mensajes no son los que escribió la base sino uno general que pone la pantalla encima: **Su usuario no tiene permiso para esta acción.**, **Ya existe un registro con ese dato, y no puede haber dos.**, **La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.** y **Eso está en uso en otra parte del sistema: no se puede borrar ni cambiar mientras algo dependa de ello.** La tabla dice qué quieren decir en cada pantalla de este módulo.
+
+| Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
-| «Esta acción la realiza: … Tu usuario no tiene ese rol.» | Ese paso lo ejecuta otro rol | Pídele que lo haga a quien tenga el rol que nombra el mensaje |
-| «Sesión no válida. Vuelve a entrar.» | Se cerró tu sesión | Vuelve a entrar al sistema |
-| «El período NOM-… (quincenal) ya cubre esas fechas. Dos nóminas sobre los mismos días pagarían dos veces.» | Ya hay un período abierto sobre esos días que se lleva a la misma gente | Anula el que sobra, o abre este sobre fechas que no se pisen. Ojo: **un período especial choca con cualquier otro**, porque se lleva a todo el personal |
-| «La fecha de pago del bono (…) es anterior al cierre del período (…).» | Se difirió un bono a un día anterior al cierre | Corrige la fecha. Un bono que se paga antes que el sueldo no es diferido, es un error de tecleo |
-| «El concepto "SAL-BAS" lo calcula el sistema y no se edita aquí.» | Se intentó corregir uno de los que el sistema calcula solo | Esos no se tocan. Si hace falta uno parecido, créalo con otro código |
-| «El concepto "…" lo calcula el sistema: apagarlo dejaría el recibo sin una línea que la ley exige.» | Se intentó apagar uno automático | Igual: no se apagan |
-| «El período está en "APROBADA" y ya no admite cambios.» | Se intentó cargar un bono sobre una nómina ya aprobada | Devuélvela primero. Cargado ahí, no lo recogería ningún recibo |
-| «Faltan el nombre y el apellido del trabajador.» | La ficha quedó sin nombre o sin apellido | Complétalos |
-| «La fecha de ingreso decide la antigüedad, el bono vacacional y las prestaciones. No puede quedar vacía.» | Falta la fecha de ingreso | Escríbela. Si no la sabes con certeza, búscala antes de guardar |
-| «La fecha de nacimiento da menos de 14 años. Es la edad mínima para trabajar (LOPNNA art. 96); revísala.» | La fecha de nacimiento está mal tecleada | Corrígela |
-| «Ya hay un trabajador con esa cédula.» | Esa persona ya está cargada | Búscala en la lista. Si no aparece, marca **Incluir a los desincorporados** |
-| «Hay un dato con formato inválido: la cédula se escribe V-12345678, y el grupo sanguíneo es uno de A+, A-, B+, B-, AB+, AB-, O+ u O-.» | La cédula o el grupo sanguíneo no tienen la forma esperada | Corrige el que corresponda |
-| «Ese cargo del tabulador ya no existe.» | El nivel se quitó mientras tenías la ficha abierta | Cierra, vuelve a abrir y elige otro cargo |
-| «Escribe el motivo del egreso: de él dependen las prestaciones que le tocan.» | El motivo quedó vacío o muy corto | Escribe por qué se va |
-| «No existe ese trabajador.» | La ficha ya no está | Recarga la lista |
-| «Las fichas de personal ya no se borran: se desincorporan…» | Alguien llamó al borrado viejo, casi siempre desde una pestaña abierta desde antes del cambio | Recarga la página y usa **Egresar** |
-| «La foto tiene que ser JPG, PNG o WEBP.» | El archivo no es una imagen de esas | Manda otra foto |
-| «El archivo supera el tamaño admitido. Redúzcalo.» | La foto pasa de 5 MB | Sácala con menos resolución, o mándala por WhatsApp y guarda la que llega |
-| «El encuadre quedó fuera de la foto. Vuelve a centrarla.» | El recuadro se salió de la imagen | Arrastra la foto hasta que la cara quede sobre la línea |
-| «El cargo no puede quedar vacío: es el nombre con el que las fichas se enganchan al tabulador.» | El nivel quedó sin nombre | Escríbelo |
-| «El sueldo mensual tiene que ser un número de cero para arriba.» | El sueldo está vacío o en negativo | Escribe la cifra |
-| «Ya hay un cargo con ese nombre en el tabulador.» | Ese nivel ya existe | Búscalo en la escala y edítalo en vez de crear otro |
-| «No existe ese cargo en el tabulador.» | El nivel se quitó mientras trabajabas | Recarga la pantalla |
-| «Hay … ficha(s) enganchadas a "…". Muévelas a otro cargo antes de quitarlo, o desactívalo en vez de borrarlo.» | Hay gente en ese nivel | Desmarca **Vigente**, o cámbiales el cargo primero |
-| «El período está en "…" y ya no admite cambios.» | Ese período ya se aprobó, se pagó o se anuló | Lo que haya que corregir va en el período siguiente |
-| «El período termina antes de empezar.» | **Hasta** es anterior a **Desde** | Corrige las fechas |
-| «Ya hay un período … que se solapa con esas fechas. Dos nóminas sobre los mismos días pagarían dos veces.» | Ya existe un período del mismo tipo sobre esos días | Busca el que ya está y trabaja sobre él |
-| «No existe el período ….» | Ese período ya no está | Recarga la pantalla |
-| «El período está en "PAGADA" y ya no se recalcula. Anúlalo si hay que rehacerlo.» | Ya se pagó. Y una nómina pagada tampoco se anula | Corrige la diferencia en el período siguiente |
-| «Falta el parámetro de nómina "…" para el …. Cárgalo en Nómina › Parámetros antes de calcular.» | Falta un valor para esas fechas | Cárgalo en **Parámetros de nómina** con su fecha de vigencia y vuelve a calcular |
-| «A … no se le pueden descontar … por "…": el tope del período es … (un tercio de lo que gana, LOTTT 154).» | El descuento cargado supera el tope del período | Baja el monto y reparte la cuota en varios períodos |
-| «Solo se aprueba una nómina calculada. Esta está en "…".» | El período no está calculado | Pulsa **Calcular** primero |
-| «Este período no tiene ningún recibo. Calcúlalo antes de aprobarlo.» | No se generó ningún recibo | Revisa que haya personal activo y vuelve a calcular |
-| «Escribe por qué se anula la nómina. Es un documento con consecuencias legales.» | El motivo quedó vacío o muy corto | Escribe qué pasó, con al menos diez letras |
-| «Esta nómina ya se pagó y no se puede anular. Corrige la diferencia en el período siguiente.» | El pago ya salió | Carga un bono o un descuento en el período siguiente |
-| «Este período ya estaba anulado.» | Alguien lo anuló antes que tú | Revisa la tarjeta: el motivo está a la vista |
-| «Solo se paga una nómina aprobada. Esta está en "…".» | Falta que gerencia general la apruebe | Pídele a gerencia general que la apruebe |
-| «Indica de qué cuenta sale el dinero.» | No elegiste la cuenta | Elige la cuenta en **De qué cuenta sale** |
-| «Este movimiento es el pago de una nómina. Reversarlo dejaría los recibos diciendo que se cobró y el banco que no salió nada.» | Intentas deshacer un pago de nómina desde el libro de tesorería | No hay forma de deshacerlo. La corrección va en el período siguiente |
-| «Tu usuario no tiene acceso a Nómina.» | O no tienes permiso sobre el módulo, o lo tienes pero no al nivel que pide esa acción | Pide el permiso a administración, o que lo haga quien lo tenga |
-| «El corte no puede ser de una fecha futura.» | La fecha del corte es de mañana o después | Corrige la fecha |
-| «El corte (…) es anterior al ingreso de … (…).» | El corte es de antes de que esa persona empezara a trabajar | Revisa las dos fechas: una de las dos está mal |
-| «Los anticipos (…) no pueden superar lo acumulado (…).» | En el corte pusiste más adelantado que acumulado | Revisa las cifras del corte contra el papel de donde salen |
-| «Ya hay trimestres calculados antes de esa fecha de corte. Anúlalos primero: si no, ese tiempo quedaría contado dos veces.» | Ese tiempo ya está abonado por trimestre y el corte lo contaría otra vez | La pantalla no anula trimestres. Pídeselo a quien administra el sistema |
-| «El trimestre … de … todavía no ha terminado: cierra el ….» | Estás cerrando un trimestre en curso | Espera a la fecha que dice el mensaje |
-| «El trimestre va del 1 al 4 (recibido: …).» | El trimestre está mal escrito | Elige uno de los cuatro de la lista |
-| «No está cargada la tasa de intereses de …. Cárgala antes de calcular: con una tasa inventada, los intereses también lo serían.» | Falta la tasa de ese mes | Escribe en **Tasa anual (%)** la que publicó el Banco Central para ese mes |
-| «El mes …/… todavía no ha terminado.» | Estás abonando intereses de un mes en curso | Espera a que el mes cierre |
-| «El anticipo tiene que ser mayor que cero.» | El monto quedó vacío o en cero | Escribe el monto |
-| «No se registra un anticipo con fecha futura.» | La fecha del anticipo es de mañana o después | Corrige la fecha |
-| «A … se le pueden adelantar hasta … y se están pidiendo …» | El anticipo pasa del tope de lo que se le puede adelantar | Baja el monto al que dice el mensaje |
-| «A … ya se le calculó la liquidación. Anúlala primero si hay que rehacerla.» | Esa persona ya tiene una liquidación calculada | Ábrela en su cuenta y revísala. Para rehacerla hay que anularla, y eso no se hace desde la pantalla |
-| «La fecha de egreso es anterior a la de ingreso.» | El último día trabajado es de antes del ingreso | Corrige la fecha |
-| «No se liquida con fecha futura.» | El último día trabajado todavía no ha llegado | Corrige la fecha |
-| «La liquidación … está ….» | Ya se pagó, o se anuló | Revisa su etiqueta de estado en la cuenta de esa persona |
-| «La liquidación … no arroja monto a pagar.» | La cuenta dio cero o menos, casi siempre por anticipos que se comieron lo acumulado | Revisa los renglones del cálculo antes de seguir |
-| «No existe la cuenta ….» | La cuenta de la que iba a salir el dinero ya no está | Recarga la pantalla y elige otra |
-| «Un parámetro de texto necesita un valor escrito.» | Ese parámetro lleva palabras, no un número | Escribe el texto |
-| «Un parámetro de unidad … necesita un número.» | Ese parámetro lleva una cifra, no palabras | Escribe el número |
+| «Esta acción la realiza: Gerente general. Su usuario no tiene ese rol.» | Ese paso lo ejecuta otro rol | Pida que lo haga quien tenga el rol que nombra el mensaje |
+| «Su usuario no tiene permiso para esta acción.» | Su usuario no tiene el permiso sobre Nómina, o no al nivel que pide esa acción | Pida el permiso a la administración, o que lo haga quien lo tenga |
+| «Sesión no válida. Vuelva a entrar.» | Se cerró su sesión | Vuelva a entrar al sistema |
+| «El período NOM-2026-0012 (quincenal) ya cubre esas fechas. Dos nóminas sobre los mismos días pagarían dos veces. Anule el período que sobra, o abra este sobre fechas que no se pisen con él.» | Ya hay un período del mismo tipo sobre esos días | Lo que dice el mensaje. **Un período especial choca con cualquier otro**, porque se lleva a todo el personal |
+| «El período termina antes de empezar.» | **Hasta** es anterior a **Desde** | Corrija las fechas |
+| «Ningún trabajador activo cobra de forma semanal. Los que hay cobran: quincenal. Abra el período que corresponda, o corrija la frecuencia en la ficha del trabajador.» | Nadie tiene la frecuencia de ese período | Abra el período del tipo correcto, o corrija la **Frecuencia de pago** en la ficha de quien corresponda |
+| «Falta el parámetro de nómina "…" para el …. Cárguelo en Nómina › Parámetros antes de calcular.» | Falta un valor para esas fechas | Cárguelo en **Parámetros de nómina** con su fecha de vigencia y vuelva a calcular |
+| «A … no se le puede descontar tanto en este periodo: entre todos los descuentos suman …, y el tope es … (un tercio de lo que gana, LOTTT 154). El que se pasa es "…". Reparte lo que falte en los periodos siguientes, o baja el monto de este.» | Los descuentos cargados a esa persona pasan del tope del período | Baje el monto y reparta la cuota en varios períodos |
+| «La fecha de pago del bono (…) es anterior al cierre del período (…).» | Se difirió un bono a un día anterior al cierre | Corrija la fecha. Un bono que se paga antes que el sueldo no es diferido: es un error de tecleo |
+| «El período está en "APROBADA" y ya no admite cambios.» | Se intentó cargar o corregir una novedad en una nómina ya aprobada | Pida a la gerencia general que la devuelva a calculada. Cargado ahí, no lo recogería ningún recibo |
+| «El período está en "…" y ya no admite cambios.» | Ese período ya se pagó o se anuló | Lo que haya que corregir va en el período siguiente |
+| «Solo se aprueba una nómina calculada. Esta está en "…".» | El período no está calculado | Pulse **Calcular** primero |
+| «Este período no tiene ningún recibo. Calcúlelo antes de aprobarlo.» | No se generó ningún recibo | Revise que haya personal activo con esa frecuencia y vuelva a calcular |
+| «Solo se paga una nómina aprobada. Esta está en "…".» | Falta que la gerencia general la apruebe | Pida a la gerencia general que la apruebe |
+| «Esta nómina ya se pagó y no se puede anular. Corrija la diferencia en el período siguiente.» | El pago ya salió | Cargue un bono o un descuento en el período siguiente |
+| «Este período ya estaba anulado.» | Alguien lo anuló antes | Revise la tarjeta: el motivo está a la vista |
+| «No existe el período ….» | Ese período ya no está | Vuelva a cargar la pantalla |
+| «Ya existe un registro con ese dato, y no puede haber dos.» | En una ficha: ya hay un trabajador con esa cédula. En el tabulador: ya hay un cargo con ese nombre | Busque el que ya está —en Personal, marcando **Incluir a los desincorporados**— y trabaje sobre él |
+| «La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.» | En una ficha: la cédula, el RIF o el grupo sanguíneo no tienen la forma esperada —la cédula se escribe V-12345678 y el RIF V-12345678-9—. En la foto: el recuadro quedó fuera de la imagen | Corrija el dato, o arrastre la foto hasta que la cara quede dentro del recuadro |
+| «La fecha de nacimiento da menos de 14 años. Es la edad mínima para trabajar (LOPNNA art. 96); revísela.» | La fecha de nacimiento está mal tecleada | Corríjala |
+| «Ese cargo del tabulador ya no existe.» | El nivel se quitó mientras la ficha estaba abierta | Cierre, vuelva a abrir y elija otro cargo |
+| «No existe ese trabajador.» | La ficha ya no está | Vuelva a cargar la lista |
+| «La foto tiene que ser JPG, PNG o WEBP.» | El archivo no es una imagen de esas | Elija otra foto |
+| «El archivo supera el tamaño admitido. Redúzcalo.» | La foto pasa de 5 MB | Sáquela con menos resolución |
+| «El cargo no puede quedar vacío: es el nombre con el que las fichas se enganchan al tabulador.» | El nivel quedó sin nombre | Escríbalo |
+| «El sueldo mensual tiene que ser un número de cero para arriba.» | El sueldo está vacío o en negativo | Escriba la cifra |
+| «No existe ese cargo en el tabulador.» | El nivel se quitó mientras trabajaba | Vuelva a cargar la pantalla |
+| «Eso está en uso en otra parte del sistema: no se puede borrar ni cambiar mientras algo dependa de ello.» | Se quiso quitar un nivel del tabulador que tiene fichas, aunque sean de gente desincorporada | Desmarque **Vigente**, o cámbieles el cargo primero (11.5) |
+| «Un parámetro de texto necesita un valor escrito.» | Ese parámetro lleva palabras, no un número | Escriba el texto |
+| «Un parámetro de unidad … necesita un número.» | Ese parámetro lleva una cifra, no palabras | Escriba el número |
+| «Las prestaciones sociales están deshabilitadas: el 30/06/2026 están apagadas en los conceptos de ley. Se vuelven a habilitar encendiendo Prestaciones sociales en los conceptos de ley, en Nómina › Parámetros de nómina.» | Ese trimestre, mes, anticipo o liquidación cae en una fecha en que las prestaciones estaban apagadas | Si estaban bien apagadas, no hay nada que abonar. Si no, se cargan las vigencias en **Parámetros de nómina** (11.9) |
+| «El corte no puede ser de una fecha futura.» | La fecha del corte es de mañana o después | Corrija la fecha |
+| «El corte (…) es anterior al ingreso de … (…).» | El corte es de antes de que esa persona empezara a trabajar | Revise las dos fechas: una de las dos está mal |
+| «Los anticipos (…) no pueden superar lo acumulado (…).» | En el corte hay más anticipos que garantía e intereses juntos | Revise las cifras del corte contra el papel de donde salen |
+| «Ya hay trimestres calculados antes de esa fecha de corte. Anúlelos primero: si no, ese tiempo quedaría contado dos veces.» | Ese tiempo ya está abonado por trimestre y el corte lo contaría otra vez | La pantalla no anula trimestres. Pídaselo a quien administra el sistema |
+| «El trimestre 4 de 2026 todavía no ha terminado: cierra el 31/12/2026.» | Se está cerrando un trimestre en curso. Entre enero y marzo pasa solo, porque la ventana propone el trimestre 1 del año en curso | Espere a la fecha que dice el mensaje, o elija el año y el trimestre que ya cerraron |
+| «El mes 10/2026 todavía no ha terminado.» | Se están abonando intereses de un mes en curso | Espere a que el mes cierre. La tasa que escribió ya quedó guardada |
+| «La tasa no puede ser negativa.» | La tasa se escribió con un menos | Escríbala sin signo |
+| «El mes va del 1 al 12.» | El mes está mal escrito | Corríjalo |
+| «El anticipo tiene que ser mayor que cero.» | El monto se escribió con un menos | Escriba el monto sin signo |
+| «A … se le pueden adelantar hasta … y se están pidiendo …. La ley permite adelantar hasta el 75% de lo acumulado.» | El anticipo pasa del tope | Baje el monto al que dice el mensaje |
+| «No existe la cuenta ….» | La cuenta del anticipo ya no está | Vuelva a cargar la pantalla y elija otra |
+| «A … ya se le calculó la liquidación. Anúlela primero si hay que rehacerla.» | Esa persona ya tiene una liquidación calculada | Ábrala en su cuenta y revísela. Para rehacerla hay que anularla, y eso no se hace desde la pantalla |
+| «La fecha de egreso es anterior a la de ingreso.» | El último día trabajado es de antes del ingreso | Corrija la fecha |
+| «No se liquida con fecha futura.» | El último día trabajado todavía no ha llegado | Corrija la fecha |
+| «La liquidación LIQ-2026-0001 está pagada.» | Otra persona la pagó antes | Revise la etiqueta de la liquidación en la cuenta de esa persona |
+| «La liquidación … no arroja monto a pagar.» | La cuenta dio cero o menos, casi siempre por anticipos que se comieron lo acumulado | Revise los renglones del cálculo antes de seguir |
+| «No existe esa cuenta.» | La cuenta de la que iba a salir la liquidación ya no está | Vuelva a cargar la pantalla y elija otra |
 
 ---
 
