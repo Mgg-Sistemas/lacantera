@@ -3285,7 +3285,7 @@ Si no aparece nada, sale **Sin resultados** y la pantalla recuerda que el númer
 9. Escriba el **Flete** y la **Observación**, si los hay, y adjunte las fotos de la carga si las hay.
 10. Pulse **Enviar a aprobación**.
 
-El botón está apagado mientras falte el cliente, el patio, un renglón completo o un dato del transporte, y debajo se lee qué falta: **Para enviarlo falta el nombre del chofer, su cédula, la placa del vehículo.**
+El botón está apagado mientras falte el cliente, el patio, un renglón completo, un dato del transporte o —con el pago combinado marcado— alguno de sus dos montos, y debajo se lee qué falta: **Para enviarlo falta el nombre del chofer, su cédula, la placa del vehículo.**
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
@@ -3313,9 +3313,11 @@ El botón está apagado mientras falte el cliente, el patio, un renglón complet
 
 **En el despacho no hay IVA ni descuento sobre el total.** Los totales son **Subtotal**, **Flete** y **Total**: el IVA lo decide la factura, si se factura, y el descuento va en cada renglón.
 
+**Pago combinado: parte en $ y parte en Bs.** Debajo del total, solo con la nota en dólares, está la casilla **Pago combinado: parte en $ y parte en Bs**. Al marcarla aparecen **Monto en $** y **Monto en Bs**, y debajo se lee si cuadra con el total de la nota —**Cuadra con el total de la nota ($50,00)**— o cuánto falta o sobra —**Faltan $12,50 por cubrir del total.**, **Sobran $3,00 respecto al total.**—. No es un cobro: no rebaja nada y no mueve ninguna cuenta, solo queda anotado para quien aprueba el despacho y para quien factura después; el cobro de verdad se registra en Facturación, al facturar. Al cambiar la nota a otra moneda, la casilla se apaga sola y los dos montos se borran.
+
 #### Aprobar, no aprobar o cancelar
 
-Cada despacho pedido tiene su tarjeta en **Despachos por aprobar**: **Despacho SD-2026-0001** con el chip **Por aprobar**, el cliente y el patio de donde sale, el vehículo con el chofer y su cédula, los renglones con su precio y su importe, y el **Total del despacho**. Si el ticket o la nota ya tienen número, salen juntos para cotejar los papeles. Debajo, quién lo pidió y cuándo, y las fotos de la carga.
+Cada despacho pedido tiene su tarjeta en **Despachos por aprobar**: **Despacho SD-2026-0001** con el chip **Por aprobar**, el cliente y el patio de donde sale, el vehículo con el chofer y su cédula, los renglones con su precio y su importe, y el **Total del despacho**. Si se pidió con pago combinado, debajo del total se lee **Pago combinado: $30,00 + Bs 500,00**. Si el ticket o la nota ya tienen número, salen juntos para cotejar los papeles. Debajo, quién lo pidió y cuándo, y las fotos de la carga.
 
 | Botón | Quién lo ve | Qué hace |
 | --- | --- | --- |
