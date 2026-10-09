@@ -18,7 +18,7 @@ Tres convenciones que se repiten en todo el documento:
 - Lo que aparece «entre comillas angulares» es un mensaje que muestra el sistema, copiado tal cual.
 - Las rutas se escriben como se recorre el menú: **Operación › Inventario › Existencias**.
 
-**Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
+**Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que el sistema no hace, para que nadie planifique su trabajo contando con ello.
 
 **Si algo no coincide con lo que ve en la pantalla, mande la pantalla.**
 
@@ -4228,7 +4228,7 @@ La ventana de abrir dice **La tasa del BCV se congela al abrirlo.**: el período
 
 Lo hace **gerencia general** —y la administración, que pasa por encima de todo—. **Es de las pocas acciones que no tienen otra puerta**: aprobar una nómina no se delega por nivel de permiso. Solo se aprueba una nómina calculada, y solo si tiene recibos.
 
-Al aprobar, a recursos humanos le llega el aviso **Nómina {número} aprobada**, con cuántos recibos son, por cuánto, y que está lista para pagar.
+Al aprobar, a recursos humanos le llega el aviso **Nómina NOM-2026-0001 aprobada**, con cuántos recibos son, por cuánto, y que está lista para pagar.
 
 **Devolver a calculada** es la marcha atrás de la aprobación, y también es de la gerencia: **Vuelve a admitir cambios y habrá que aprobarla otra vez. Los recibos y sus montos no se tocan.** Pide un **Motivo** de al menos diez letras, que **queda en la notificación y en la auditoría**, y quién la aprobó y cuándo dejan de constar. Para actualizar solo la tasa no hace falta devolverla: el refresco la deja aprobada.
 
@@ -4244,9 +4244,9 @@ Lo hacen **recursos humanos y la gerencia general**.
 
 La ayuda de la cuenta explica qué pasa si se paga desde una cuenta en divisas: **Los recibos están en bolívares. Desde una cuenta en divisas sale el equivalente a la tasa del período, la misma con la que se calculó.**
 
-Al confirmar, queda una línea de egreso en el libro de tesorería con el concepto **Nómina {número} — {n} trabajadores**, y les llega un aviso a la gerencia general, a recursos humanos y a compras.
+Al confirmar, queda una línea de egreso en el libro de tesorería con el concepto **Nómina NOM-2026-0001 — 12 trabajadores**, y les llega un aviso a la gerencia general, a recursos humanos y a compras.
 
-**La nómina no espera al saldo.** Si la cuenta elegida no tiene fondos registrados —porque falta el saldo de apertura o un ingreso—, el pago sale igual: la cuenta queda en negativo y llega un segundo aviso, **{cuenta} quedó en negativo: nómina {número}**, con las dos cifras y el camino para arreglarlo desde Bancos y cajas. El dinero a la gente —nómina, liquidación y anticipo de prestaciones— no se detiene por un saldo sin registrar.
+**La nómina no espera al saldo.** Si la cuenta elegida no tiene fondos registrados —porque falta el saldo de apertura o un ingreso—, el pago sale igual: la cuenta queda en negativo y llega un segundo aviso que nombra la cuenta que quedó en negativo y la nómina que la dejó así, con las dos cifras y el camino para arreglarlo desde Bancos y cajas. El dinero a la gente —nómina, liquidación y anticipo de prestaciones— no se detiene por un saldo sin registrar.
 
 **Antes de pulsar Confirmar el pago, lea 11.12.** Este botón es el punto de no retorno del módulo.
 
@@ -4448,7 +4448,7 @@ Debajo, tres cifras:
 
 **Las tres cifras cuentan solo a quien está activo.** La lista de abajo trae también a quien ya salió, más tenue.
 
-Si falta algún punto de partida, aparece una franja de aviso: **Hay {n} trabajador(es) sin corte cargado. Mientras no lo tengan, su cuenta arranca en cero, sin lo que traían de antes. El corte se carga aquí: se pulsa la fila de cada uno y luego «Cargar el corte».** La ficha del trabajador no muestra nada de prestaciones.
+Si falta algún punto de partida, aparece una franja de aviso: **Hay 3 trabajador(es) sin corte cargado. Mientras no lo tengan, su cuenta arranca en cero, sin lo que traían de antes. El corte se carga aquí: se pulsa la fila de cada uno y luego «Cargar el corte».** La ficha del trabajador no muestra nada de prestaciones.
 
 Si no hay nadie cargado en Personal, la pantalla dice **Sin trabajadores** y **Las prestaciones se calculan sobre el personal cargado en Nómina.**
 
@@ -4470,7 +4470,7 @@ Si no hay nadie cargado en Personal, la pantalla dice **Sin trabajadores** y **L
 
 Se abre pulsando su fila. Arriba, el nombre; debajo, la ficha, el cargo y desde cuándo trabaja.
 
-Lo primero es el resumen de su cuenta: **Garantía acumulada**, **Intereses**, **Anticipos** y, separada por una línea, **Saldo**. Al pie, la pantalla dice hasta cuánto se le puede adelantar hoy: **Se le puede adelantar hasta {monto} — el 75% de lo acumulado, menos lo ya adelantado.**
+Lo primero es el resumen de su cuenta: **Garantía acumulada**, **Intereses**, **Anticipos** y, separada por una línea, **Saldo**. Al pie, la pantalla dice hasta cuánto se le puede adelantar hoy: **Se le puede adelantar hasta 1.200,00 $ — el 75% de lo acumulado, menos lo ya adelantado.**
 
 Más abajo, y solo si los tiene, aparecen dos listas:
 
@@ -4485,7 +4485,7 @@ Los botones de la cuenta son **Cargar el corte** —o **Corregir el corte**—, 
 
 El corte es el punto de partida: lo que esa persona ya tenía acumulado el día en que el sistema empezó a llevarle la cuenta. Sin él, su cuenta arranca en cero y la lista lo dice.
 
-La ventana se titula **Corte de {nombre}** y avisa: **El sistema no tiene los salarios de años anteriores: el corte se carga a mano, y se ve que es a mano.** Calcular hacia atrás daría un número con cara de exacto y falso.
+La ventana se titula **Corte de** y el nombre del trabajador, y avisa: **El sistema no tiene los salarios de años anteriores: el corte se carga a mano, y se ve que es a mano.** Calcular hacia atrás daría un número con cara de exacto y falso.
 
 1. Pulse la fila de la persona.
 2. Pulse **Cargar el corte** —o **Corregir el corte**, si ya tiene uno—.
@@ -4496,7 +4496,7 @@ La ventana se titula **Corte de {nombre}** y avisa: **El sistema no tiene los sa
 | --- | --- | --- |
 | **Acumulado hasta** | Sí | La fecha del corte. Sin ella no se enciende **Guardar el corte** |
 | **Días acumulados** | No | Cuántos días llevaba acumulados a esa fecha |
-| **Garantía en {moneda}** | No | El monto acumulado, en la moneda de su sueldo |
+| **Garantía en Bs** | No | El monto acumulado, en la moneda de su sueldo |
 | **Intereses acumulados** | No | Los intereses que ya había ganado |
 | **Anticipos** | No | Lo que se le había adelantado antes de esa fecha |
 | **De dónde sale esta cifra** | No | **Queda guardado con su nombre y la hora.** |
@@ -4524,7 +4524,7 @@ Es la operación que abona a cada quien lo que le tocó de ese trimestre. Se hac
 
 La ventana propone el trimestre anterior al que corre, **del año en curso**. Entre enero y marzo eso no sirve: propone el trimestre 1 de este año, que todavía no ha terminado, y la base lo rechaza. En esos meses, cambie el año al anterior y elija el 4.
 
-Al terminar, encima de las cifras sale una franja con el resultado —**Trimestre cerrado para {n} trabajador(es).**, o **No había nada que abonar: ese trimestre ya estaba cerrado o nadie cumplía los tres meses.**— y se cierra con **Entendido**.
+Al terminar, encima de las cifras sale una franja con el resultado —**Trimestre cerrado para 12 trabajador(es).**, o **No había nada que abonar: ese trimestre ya estaba cerrado o nadie cumplía los tres meses.**— y se cierra con **Entendido**.
 
 Cuatro cosas que conviene saber antes de pulsar:
 
@@ -4545,7 +4545,7 @@ Se hace una vez al mes, cuando el mes ya cerró y el Banco Central publicó su t
 3. Escriba la **Tasa anual (%)** que publicó el Banco Central para ese mes.
 4. Pulse **Abonar intereses**.
 
-Sale la franja **Intereses abonados a {n} trabajador(es).**, también con cero.
+Sale la franja **Intereses abonados a 12 trabajador(es).**, también con cero.
 
 La ventana propone el mes anterior, **del año en curso**: en enero propone enero, que no ha terminado. En enero, cambie el año y elija el 12.
 
@@ -4558,7 +4558,7 @@ La ventana propone el mes anterior, **del año en curso**: en enero propone ener
 #### Registrar un anticipo
 
 1. Abra la cuenta de la persona y pulse **Anticipo**. La ventana dice arriba hasta cuánto se le puede adelantar.
-2. Escriba el **Monto en {moneda}**. Si pasa del tope, el campo se marca con **Pasa del 75% permitido**, pero el botón sigue encendido: el que se niega después es la base.
+2. Escriba el **Monto en Bs**. Si pasa del tope, el campo se marca con **Pasa del 75% permitido**, pero el botón sigue encendido: el que se niega después es la base.
 3. Elija el **Motivo**: **Vivienda**, **Salud**, **Educación**, **Pensión alimentaria** u **Otro**.
 4. Elija la **Cuenta** de la que sale el dinero, o déjela en **Sin mover tesorería**.
 5. Escriba la **Referencia**, si la tiene, y el **Detalle**.
@@ -4662,7 +4662,7 @@ Abajo, **Los que calcula el sistema**: **No se editan ni se apagan: sin ellos el
 
 #### Crear o corregir uno
 
-1. Pulse **Nuevo concepto**, o **Editar** sobre uno existente. La ventana se titula **Nuevo concepto** o **Corregir {código}**, y se presenta así: **Lo que se pueda cargar a mano en un período: un bono, un descuento, la cuota de un préstamo.**
+1. Pulse **Nuevo concepto**, o **Editar** sobre uno existente. La ventana se titula **Nuevo concepto**, o **Corregir** y el código del que se edita, y se presenta así: **Lo que se pueda cargar a mano en un período: un bono, un descuento, la cuota de un préstamo.**
 2. **Nombre.** **Es lo que va impreso en el recibo del trabajador.** Se escribe como se quiere leer.
 3. **Código.** **Se propone solo** a partir del nombre, en mayúsculas y sin tildes, cambiando espacios y signos —también el guion— por una raya baja. Se puede reescribir, pero si después se toca el nombre, la propuesta vuelve a pisarlo. **Al corregir ya no se cambia**: **No se cambia: los montos ya cargados lo llevan.**
 4. **Tipo**: **Bono — suma al recibo** o **Descuento — resta del recibo**. Desde aquí solo se crean esas dos clases; los aportes y las provisiones los calcula el sistema.
@@ -4817,9 +4817,9 @@ Pulsando el mismo puesto otra vez se suelta y vuelve a verse todo. Lo apagado no
 
 Al pulsar un puesto aparece debajo una barra con su nombre y lo que se puede hacer con él:
 
-1. **Colgar un puesto**. Abre el formulario debajo, sin ventana emergente, con el rótulo **Nuevo puesto colgando de {puesto}**.
-2. **Editar**, con el rótulo **Editando {puesto}**.
-3. **Mover**. No se arrastra —en un teléfono, arrastrar es un ejercicio de puntería—: sale la franja **Moviendo {puesto}. Pulse el puesto del que debe colgar.**, **los destinos válidos se encienden con el borde punteado** y se elige uno pulsándolo. No se ofrecen ni lo que cuelga del puesto que se mueve —sería colgarlo de sí mismo— ni el puesto del que ya cuelga. Para dejarlo como estaba, **Dejarlo donde está**.
+1. **Colgar un puesto**. Abre el formulario debajo, sin ventana emergente, con el rótulo **Nuevo puesto colgando de** y el nombre del puesto del que colgará.
+2. **Editar**, con el rótulo **Editando** y el nombre del puesto.
+3. **Mover**. No se arrastra —en un teléfono, arrastrar es un ejercicio de puntería—: sale la franja que nombra el puesto que se mueve y dice **Pulse el puesto del que debe colgar.**, **los destinos válidos se encienden con el borde punteado** y se elige uno pulsándolo. No se ofrecen ni lo que cuelga del puesto que se mueve —sería colgarlo de sí mismo— ni el puesto del que ya cuelga. Para dejarlo como estaba, **Dejarlo donde está**.
 4. **Quitar**, que solo aparece si de ese puesto no cuelga nada. Si cuelga algo, en su sitio se lee **No se quita: tiene 3 puestos colgando**, para que se sepa por qué no está el botón.
 
 De la cabeza del organigrama no se ofrece ni **Mover** ni **Quitar**: un organigrama sin cabeza no es un organigrama.
@@ -5532,7 +5532,7 @@ Los quince del sistema, para referencia, son:
 
 | Nivel | Qué le da al rol |
 | --- | --- |
-| Ninguna casilla marcada | El módulo no aparece en el menú. Si alguien escribe la dirección a mano, ve la tarjeta **{Módulo} no está a su alcance** |
+| Ninguna casilla marcada | El módulo no aparece en el menú. Si alguien escribe la dirección a mano, ve la tarjeta **Compras no está a su alcance** |
 | **Lectura** | Entra al módulo y consulta lo que hay. No escribe nada |
 | **Escritura** | Además de consultar, registra en ese módulo |
 | **Control total** | El escalón más alto de la matriz: abre el módulo entero |
@@ -5757,7 +5757,7 @@ Ten cuidado con una cosa: **la fecha de vencimiento no puede ser anterior a la d
 
 #### Quitar un documento
 
-Pulsa la papelera. La ventana lo dice sin rodeos: **Se borra {nombre} y también el archivo. Esto no se puede deshacer: si es el único ejemplar que queda, tendrás que volver a escanearlo.** Confirma con **Quitar**.
+Pulse la papelera. La ventana nombra el documento y lo dice sin rodeos: **… y también el archivo. Esto no se puede deshacer: si es el único ejemplar que queda, tendrá que volver a escanearlo.** Confirme con **Quitar**.
 
 #### Ver y descargar
 
@@ -5897,15 +5897,15 @@ Guárdalo donde guardarías el libro de nómina en papel. No lo mandes por corre
 | «Es el único administrador activo. Nombre otro antes de desactivarlo.» | Quedaría el sistema sin nadie que lo administre | Déle el rol de administrador a otra persona y repita |
 | «Es el único administrador activo. Nombre otro antes de quitarle el rol.» | Lo mismo, quitando el rol en vez de desactivar | Nombre a otro administrador primero |
 | «El administrador tiene acceso completo por definición y no se puede recortar.» | Se intentó mover las casillas del rol de administrador | No se pueden mover: es la salida de emergencia del sistema |
-| «El código "xx" no es válido: de 3 a 32 caracteres, mayúsculas, números y guion bajo.» | El código del rol nuevo no tiene la forma admitida | Escríbalo en mayúsculas, con guion bajo en vez de espacios |
+| «El código de un rol va en mayúsculas, sin espacios y con al menos tres letras. Por ejemplo: SUPERVISOR_PATIO.» | El código del rol nuevo no tiene la forma admitida | Escríbalo en mayúsculas, con guion bajo en vez de espacios |
 | «El rol necesita un nombre.» | Falta el nombre del rol | Escríbalo: es lo que se lee en la tarjeta |
-| «El rol "TESORERIA" es del sistema y no se puede borrar. Quítaselo a quien no deba tenerlo.» | Los roles del sistema no se borran | Quítaselo a quien no deba tenerlo, desde su ficha |
-| «El rol todavía lo tienen 3 usuario(s). Quítaselo antes de borrarlo.» | El rol está en uso | Quítaselo a esas personas y vuelve a intentarlo |
+| «El rol "TESORERIA" es del sistema y no se puede borrar. Quíteselo a quien no deba tenerlo.» | Los roles del sistema no se borran | Quíteselo a quien no deba tenerlo, desde su ficha |
+| «El rol todavía lo tienen 3 usuario(s). Quíteselo antes de borrarlo.» | El rol está en uso | Quíteselo a esas personas y vuelva a intentarlo |
 | «Esta acción la realiza: Administrador del sistema o Gerente general. Su usuario no tiene ese rol.» | Los datos de la empresa y los documentos legales los cambian esos dos roles | Pídalo a la gerencia o a administración |
 | «Solo la gerencia y quien administra el sistema pueden cambiar estos datos.» | Ve los datos de la empresa pero no los puede tocar | Pide el cambio a quien corresponda |
 | «La razón social no puede quedar vacía.» | Falta la razón social | Cópiela del registro, tal como está inscrita |
 | «El RIF "J-5020917" no tiene forma de RIF. Debe ser como J-50209170-0.» | El RIF está incompleto o mal escrito | Cópielo del comprobante, con la letra, el guion y el dígito final |
-| «Ponle nombre al documento. Una lista de archivos sin nombre no se consulta.» | Falta el nombre del papel | Ponle el nombre con el que lo buscarían dentro de un año |
+| «Póngale nombre al documento. Una lista de archivos sin nombre no se consulta.» | Falta el nombre del papel | Póngale el nombre con el que lo buscarían dentro de un año |
 | «Falta el archivo.» | Se está cargando un documento nuevo sin elegir archivo | Elija el archivo. Al corregir uno ya cargado sí se puede dejar vacío |
 | «acta.pdf · 62,3 MB — pasa del tope de 50 MB.» | El archivo pesa más de lo admitido | Escanéalo con menos resolución, o divídelo, y vuelve a intentarlo |
 | «No se pudo subir el archivo: …» | La carga se cortó | Revise la conexión y repítala. Lo que no subió, no quedó |
@@ -5914,7 +5914,6 @@ Guárdalo donde guardarías el libro de nómina en papel. No lo mandes por corre
 | «Esto lo ve la administración» | Llegaste a la Auditoría sin el rol de administrador | La auditoría no se reparte. Pide lo que necesites saber a quien administra el sistema |
 | «El registro de auditoría no se modifica ni se borra. Es lo único que lo hace valer.» | Se intentó cambiar o quitar una línea del registro | No hay forma de hacerlo, ni la habrá. Es lo que sostiene las cifras |
 | «Su usuario no tiene permiso para esta acción.» | Falta el permiso sobre el módulo | Pida el permiso a administración |
-| «Esa operación todavía no existe en la base de datos. Falta correr las migraciones.» | El sistema quedó a medio actualizar | Avise a quien administra el sistema. No es algo que se resuelva desde la pantalla |
 | «No hay conexión con el servidor. Revise la red e inténtelo otra vez.» | Se cayó el internet | Reintente cuando vuelva la señal. Lo que no se guardó, no quedó |
 
 ---
