@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ClipboardList, Plus, Search } from 'lucide-react'
+import { ClipboardList, FileDown, Plus, Search, Sheet } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Visor } from '@/components/Visor'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -20,10 +21,17 @@ import { ModalEstado } from './ModalEstado'
 import {
   CLASES_DE_MAQUINA,
   ETIQUETA_CLASE,
+  ETIQUETA_ESTADO,
+  TIPOS_MAQUINA,
   useMaquinaria,
   type ClaseDeMaquina,
   type Maquina,
 } from '@/lib/api/maquinaria'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import { useSesion } from '@/lib/sesion'
+import { descargarCsv } from '@/lib/api/libros'
+import { armarInformeDeFlota, type MaquinaDelInforme } from '@/lib/ficha/maquinariaPdf'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useVehiculos, type Vehiculo } from '@/lib/api/vehiculos'
 import { usePermisosDeCamion } from '@/lib/camiones'
@@ -377,6 +385,112 @@ export function Maquinaria() {
     busqueda.trim() || filtroEstado || tipo || dueno || clase || soloPendientes,
   )
 
+  /*
+    SACAR LA FLOTA EN PAPEL Y EN HOJA DE CÁLCULO.
+
+    Las dos salidas exportan LO QUE SE ESTÁ VIENDO, no la tabla entera: quien
+    filtró por un dueño y pulsa exportar espera ese dueño. Pero entonces el
+    papel tiene que decir su alcance, porque un listado que no lo dice miente
+    por omisión —quien lo recibe supone que están todas—. De ahí `alcance`.
+
+    Dos formatos y no uno porque sirven a dos cosas distintas: el PDF se firma
+    y se entrega, la hoja de cálculo se ordena y se cruza con otra lista. Dar
+    solo el PDF obliga a teclear a mano lo que el sistema ya tiene.
+
+    Los camiones no entran: son otra tabla, con otros datos —capacidad de
+    carga, tarifa por viaje— y mezclarlos daría un listado con media planilla
+    vacía en cada fila.
+  */
+  const empresa = useEmpresa()
+  const { nombre: quienEmite } = useSesion()
+  const [armando, setArmando] = useState(false)
+  const [papel, setPapel] = useState<ArchivoArmado | null>(null)
+
+  const alcance = hayFiltro
+    ? `Alcance: ${[
+        busqueda.trim() ? `búsqueda «${busqueda.trim()}»` : null,
+        filtroEstado ? `estado ${ETIQUETA_ESTADO[filtroEstado as Maquina['estado']]}` : null,
+        tipo ? `tipo ${TIPOS_MAQUINA.find((t) => t.valor === tipo)?.etiqueta ?? tipo}` : null,
+        dueno ? `propiedad de ${nombreDeDueno(dueno)}` : null,
+        clase ? `clase ${ETIQUETA_CLASE[clase as ClaseDeMaquina]}` : null,
+        soloPendientes ? 'solo las que piden mantenimiento' : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')}. No es la flota completa.`
+    : null
+
+  const paraElInforme = (): MaquinaDelInforme[] =>
+    maquinas.map((m) => ({
+      codigo: m.codigo,
+      nombre: m.nombre,
+      clase: ETIQUETA_CLASE[(m.clase ?? 'MAQUINA') as ClaseDeMaquina],
+      tipo: TIPOS_MAQUINA.find((t) => t.valor === m.tipo)?.etiqueta ?? m.tipo,
+      marcaModelo: [m.marca, m.modelo].filter(Boolean).join(' · '),
+      propietario: nombreDeDueno(m.propietario ?? LA_CASA),
+      estado: ETIQUETA_ESTADO[m.estado],
+    }))
+
+  async function exportarInforme() {
+    setArmando(true)
+    try {
+      setPapel(
+        await armarInformeDeFlota({
+          maquinas: paraElInforme(),
+          alcance,
+          emitidoPor: quienEmite,
+          momento: new Date(),
+          empresa: empresaDelPapel(empresa.data),
+        }),
+      )
+    } finally {
+      setArmando(false)
+    }
+  }
+
+  function exportarHoja() {
+    descargarCsv(
+      'flota',
+      [
+        'Código',
+        'Nombre',
+        'Clase',
+        'Tipo',
+        'Marca',
+        'Modelo',
+        'Año',
+        'Serial',
+        'Propietario',
+        'Estado',
+        'Operador',
+        'Dónde vive',
+        'Horómetro',
+        'Horas trabajadas',
+        'Desde el último mantenimiento',
+        'Tope de horas',
+        'Observaciones',
+      ],
+      maquinas.map((m) => [
+        m.codigo,
+        m.nombre,
+        ETIQUETA_CLASE[(m.clase ?? 'MAQUINA') as ClaseDeMaquina],
+        TIPOS_MAQUINA.find((t) => t.valor === m.tipo)?.etiqueta ?? m.tipo,
+        m.marca ?? '',
+        m.modelo ?? '',
+        m.anio ?? '',
+        m.serial ?? '',
+        nombreDeDueno(m.propietario ?? LA_CASA),
+        ETIQUETA_ESTADO[m.estado],
+        m.operador ?? '',
+        m.almacen ?? '',
+        m.horometro_actual ?? '',
+        m.horas_totales,
+        m.horas_desde_mant,
+        m.tope_horas,
+        m.nota ?? '',
+      ]),
+    )
+  }
+
   return (
     <>
       <PageHeader
@@ -390,6 +504,27 @@ export function Maquinaria() {
               onClick={() => navegar('/app/maquinaria/mantenimientos')}
             >
               Historial de taller
+            </Button>
+
+            {/* Exportar lo que se está viendo. Se apagan con la lista vacía:
+                un informe de cero equipos no es un informe. */}
+            <Button
+              variant="outline"
+              icon={<FileDown />}
+              disabled={armando || maquinas.length === 0}
+              title="El informe de la flota en PDF, con el conteo por estado y por dueño."
+              onClick={() => void exportarInforme()}
+            >
+              {armando ? 'Armando…' : 'Informe'}
+            </Button>
+            <Button
+              variant="ghost"
+              icon={<Sheet />}
+              disabled={maquinas.length === 0}
+              title="La misma lista en hoja de cálculo, con todas las columnas."
+              onClick={exportarHoja}
+            >
+              Excel
             </Button>
             {puedeEscribir ? (
               <Button
@@ -699,6 +834,15 @@ export function Maquinaria() {
         abierto={estado !== null}
         maquina={estado}
         onCerrar={() => setEstado(null)}
+      />
+
+      <Visor
+        abierto={papel !== null}
+        onCerrar={() => setPapel(null)}
+        blob={papel?.blob ?? null}
+        nombreArchivo={papel?.nombre ?? 'informe-de-la-flota.pdf'}
+        titulo={`Informe de la flota · ${maquinas.length} unidad${maquinas.length === 1 ? '' : 'es'}`}
+        descripcion="El conteo por estado y por dueño, y el detalle de cada equipo agrupado por estado."
       />
     </>
   )
