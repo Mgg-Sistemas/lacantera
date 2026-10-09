@@ -6,9 +6,9 @@
 
 ---
 
-## Cómo está hecho este manual
+## Cómo leer este manual
 
-Está escrito para quien trabaja con el sistema todos los días, no para quien lo programa. No hace falta saber de computación para seguirlo.
+Está escrito para quien trabaja con el sistema todos los días. No hace falta saber de computación para seguirlo.
 
 Cada capítulo corresponde a un módulo y sigue siempre el mismo orden: para qué sirve, quién puede entrar, qué se ve en cada pantalla, cómo se hace cada tarea paso a paso, y una tabla final con los mensajes que puede mostrar el sistema y qué hacer ante cada uno.
 
@@ -20,11 +20,11 @@ Tres convenciones que se repiten en todo el documento:
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que aún no está disponible, para que nadie planifique su trabajo contando con ello.
 
-> **El manual está repasado contra el sistema de hoy**: esta presentación, el índice y los veintiséis capítulos. Si algo no coincide con lo que ve, mande la pantalla.
+**Si algo no coincide con lo que ve en la pantalla, mande la pantalla.**
 
 ### El orden de los capítulos
 
-**El orden es el del camino del material:** primero se extrae, luego se almacena, después sale por el portón, y por último se administra lo que eso genera. Describe cómo funciona la cantera, no lo que muestra el menú, y por eso no cambia cuando cambia el menú: así los números de capítulo siguen valiendo para quien tiene el manual impreso.
+**El orden es el del camino del material:** primero se extrae, luego se almacena, después sale por el portón, y por último se administra lo que eso genera. Describe cómo funciona la cantera, no lo que muestra el menú, y por eso no cambia cuando cambia el menú.
 
 También tienen capítulo, en su sitio, las pantallas que hoy no están en el menú: el módulo **Despachos** entero y tres pantallas de **Explotación** —**Frentes y bancos**, **Voladuras** y **Producción por turno**—, contadas en 1.5. Cada capítulo lo dice al principio, y el índice lleva una columna que se lee de un vistazo.
 
@@ -165,17 +165,17 @@ Cada persona ve solo los módulos sobre los que tiene permiso (3.1), así que su
 
 Ahora la parte que hay que entender bien, porque no es lo que parece:
 
-**Lo que está fuera del menú no está borrado ni cerrado.** Sus pantallas existen y sus direcciones responden. Es deliberado: el equipo las sigue desarrollando y cerrarlas lo dejaría sin poder verlas. Solo no se ofrecen desde el menú, y la barra buscadora tampoco las ofrece.
+**Lo que está fuera del menú no está borrado ni cerrado.** Sus pantallas existen y sus direcciones responden; lo que pasa es que no se ofrecen desde el menú, y la barra buscadora tampoco las ofrece.
 
 Y para que nadie tropiece con una pantalla a medio afinar sin saberlo, **quien llegue a una de esas direcciones —escribiéndola a mano, por un enlace que le pasaron o porque quedó en el historial del navegador— se encuentra primero un cartel de obra**:
 
 > **En construcción.** *Esta parte del sistema todavía se está trabajando y no forma parte de lo que hoy está en uso. Lo que se haga aquí puede perderse o no cuadrar con el resto.* Y debajo, en letra más pequeña: *Esta pantalla está en obra.* El botón es **Volver al panel**.
 
-**El cartel se le pone a todo el mundo, incluida la administración.** Quien tiene el rol de administrador ve además, en letra pequeña y en tono menor, un enlace **Entrar de todos modos**: es la puerta de servicio del equipo que está construyendo, no una invitación. Se recuerda mientras la pestaña esté abierta y se olvida al cerrarla, para que nadie se deje la puerta abierta sin darse cuenta en el equipo con el que se enseña el sistema.
+**El cartel se le pone a todo el mundo, incluida la administración.** Quien tiene el rol de administrador ve además, en letra pequeña y en tono menor, un enlace **Entrar de todos modos**, que deja pasar el cartel. **Vale mientras la pestaña esté abierta y se olvida al cerrarla**, así que nadie se deja esa puerta abierta sin darse cuenta.
 
 **No es un problema de permisos.** Un candado —**Ventas no está a su alcance**— significa que a su rol no le abrieron ese módulo, y se resuelve pidiéndoselo a la administración. El cartel de obra significa otra cosa: que esa parte todavía no está entregada, y pedir el permiso no lo cambia. Si una dirección está a la vez escondida y fuera de su permiso, sale el cartel de obra.
 
-**Este manual cuenta también lo que está fuera del menú**, en el capítulo de su módulo, porque existe. Cada capítulo afectado lo dice al principio.
+**Este manual cuenta también lo que está fuera del menú**, en el capítulo de su módulo. Cada capítulo afectado lo dice al principio.
 
 **El manual sí está en el menú**, al final, en **Sistema**, con un icono de libro. Y es la única entrada que no comprueba permisos: quien acaba de entrar y todavía no tiene ningún módulo asignado la ve igual. Es lo único que tiene mientras espera que la administración le reparta lo demás.
 
@@ -2069,7 +2069,7 @@ La segunda es **poder hacer cada paso**, y no la decide una sola cosa:
 | Resolver el dinero de un proveedor que desistió | El rol **Gerencia general** o el rol **Compras** |
 | Recibir el material | El rol **Almacén** |
 
-**Quien paga las órdenes es el rol Compras**, y lo exige la propia función de la base. Por eso **Pagos por hacer** cuelga del menú de Compras.
+**Quien paga las órdenes es el rol Compras**, y el sistema lo exige. Por eso **Pagos por hacer** cuelga del menú de Compras.
 
 Si abre una compra y no ve ningún botón, el paso en el que está esa compra le toca a otro, y la pantalla dice a quién se está esperando.
 
@@ -5379,8 +5379,6 @@ La idea que conviene entender antes de tocar nada es que **aquí hay dos capas d
 
 La razón de la segunda capa es la separación de tareas: si «control total en Compras» bastara para aprobar, el mismo comprador que arma la orden la firmaría. Y si la administración de usuarios colgara de un nivel, quien administra un módulo podría darse a sí mismo todos los demás.
 
-
-
 Un efecto secundario que conviene saber: **cargar la tasa del BCV pasó a pedir escritura en Tasas de cambio.** Antes lo podía hacer cualquiera que entrara al sistema, y la tasa es con lo que se valora cada cotización, factura y recibo. Hoy la tienen administración, la gerencia general y recursos humanos; quien solo la consulta ve la pantalla completa pero sin el formulario.
 
 ### 13.1 Usuarios y permisos
@@ -5866,7 +5864,7 @@ Quien entre sin el rol ve la pantalla, no el botón, y una explicación de por q
 
 **No lleva las contraseñas.** Viven cifradas en otro sitio que el respaldo no toca. Al restaurar hay que volver a crear los usuarios.
 
-**No lleva la estructura de la base**, que vive en el repositorio del sistema. Para reconstruir la base hacen falta las dos cosas y en este orden: primero las migraciones sobre una base limpia, después este archivo.
+**No lleva la estructura de la base**, solo los datos. Reconstruir la base con este archivo es cosa de quien administra el sistema.
 
 #### Cómo se descarga
 
@@ -6074,15 +6072,6 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 - **Qué se descarga hoy.** Casi todo papel del sistema baja en PDF: la orden y las cotizaciones de compra, el comprobante de pago, la cotización de venta, la factura, la nota de entrega, la nota de salida y la de traslado, el vale de combustible, la constancia de entrega, el acta de existencias y el libro de movimientos, los recibos de pago, la ficha y la constancia del trabajador, el carnet —también en imagen—, el organigrama, el cierre de caja, los reportes de tesorería y el registro de viajes. En hoja de cálculo bajan los libros de compras y de ventas, el cierre de tesorería, el pago de viajes y el registro de auditoría; en Excel, la planilla de control de despacho, los visitantes, los contactos y las plantillas de carga. Los contactos bajan además como tarjetas para el teléfono. **El respaldo de la base baja comprimido en .zip**, y también se puede mandar por correo. **La nota de crédito todavía no tiene papel.**
 
-### 15.4 Lo que quedó sin comprobar en esta revisión
-
-Se dice para que nadie lo lea como verificado:
-
-- **Este capítulo se repasó el 6 de octubre de 2026 contra el código del sistema, no usando las pantallas.** Lo que depende de lo que hay cargado —qué tasas se tomaron, qué combustible entró sin costo, qué órdenes quedaron sin declarar— no se comprobó.
-- **El reparto de permisos que trae el sistema de fábrica.** Las tablas de roles se levantaron de la base tal como estaba, y esa base es también donde se prueba: puede llevar clics de ajuste que no son la configuración de arranque. La referencia buena es la propia matriz en pantalla, donde los módulos escondidos no salen.
-- **El capítulo de Ventas** se repasó el 7 de octubre de 2026 contra el código y los mensajes de la base, no usando sus pantallas. El de **Explotación** se rehízo el 6 de octubre de 2026, contra el código como este.
-- **Los capítulos 19 y 20, Maquinaria y Combustible,** se escribieron leyendo las pantallas y la base, no usándolas. **Los capítulos 21 a 25** —Facturación, Control de despacho, Control de asistencia, Contactos y Alimentación— tampoco se han repasado contra las pantallas de hoy. Si algo no coincide con lo que hace el módulo en el patio, dígalo y se corrige.
-- **El capítulo 12 se repasó contra el código y la base**, no recorriendo sus pantallas una por una.
 
 ---
 
