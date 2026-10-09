@@ -48,7 +48,7 @@ También tienen capítulo, en su sitio, las pantallas que hoy no están en el me
 | 12 | Tesorería | Sí |
 | 13 | Configuración | Sí |
 | 14 | Las reglas que el sistema impone | — |
-| 15 | Lo que todavía no está construido | — |
+| 15 | Lo que el sistema no hace, y dónde tener cuidado | — |
 | 16 | Preguntas frecuentes | — |
 | 17 | A quién acudir | — |
 | 18 | Asignaciones | Sí |
@@ -4954,12 +4954,12 @@ Lo que no viene de una orden —un ingreso suelto, un gasto de caja chica, pasar
 
 - **Una cuenta, una moneda.** Si la cuenta ya tiene movimientos, su moneda no se cambia: se crea otra y se archiva la vieja.
 - **El sobregiro se decide cuenta por cuenta.** Las cuentas nacen con **Admite sobregiro** marcada, y entonces el libro deja sacar más de lo que dice que hay. Si se desmarca, el sistema frena la salida que deje la cuenta bajo cero.
-- **La fecha la pone quien registra.** El sistema no frena hoy una fecha futura en Tesorería: si se escribe la de mañana, queda la de mañana. Conviene mirarla antes de confirmar.
+- **La fecha la pone quien registra.** El sistema no frena una fecha futura en Tesorería: si se escribe la de mañana, queda la de mañana. Conviene mirarla antes de confirmar.
 - **El libro no se edita ni se borra.** Una línea equivocada se corrige **deshaciéndola**: quedan las dos, la mala y la que la anula, y se entiende qué pasó. Un traslado se deshace con otro en sentido contrario. **El pago de una compra no se deshace desde ninguna pantalla** (12.8).
 
 **El IGTF lo propone el sistema.** Al indicar el pago en Compras viene marcado cuando la moneda no es el bolívar, y quien lo indica puede desmarcarlo si esa operación no lo causa.
 
-**Dos cosas que este módulo todavía no hace:** no calcula diferencial cambiario y no concilia contra el estado de cuenta del banco. Conciliar se puede, pero a mano: cada línea lleva su fecha, su referencia y su concepto.
+**Dos cosas que este módulo no hace:** no calcula diferencial cambiario y no concilia contra el estado de cuenta del banco. Conciliar se puede, pero a mano: cada línea lleva su fecha, su referencia y su concepto.
 
 ### 12.1 Quién entra y quién puede hacer qué
 
@@ -5892,10 +5892,10 @@ Guárdalo donde guardarías el libro de nómina en papel. No lo mandes por corre
 | «El usuario "p.ramirez" ya existe.» | Ese nombre de usuario está ocupado | Elija otro. Si la persona ya tiene cuenta, búsquela en la lista y reactívela |
 | «El usuario necesita un nombre.» | Falta el nombre y apellido | Escríbalo |
 | «La clave debe tener al menos 8 caracteres.» | La clave inicial es demasiado corta | Pon una de ocho caracteres o más y dásela en persona |
-| «Un usuario sin roles no puede hacer nada. Desactívalo en vez de dejarlo sin roles.» | Le quitaste todos los roles a alguien que sigue activo | Si ya no trabaja aquí, inactívalo desde el botón del muñeco |
+| «Un usuario sin roles no puede hacer nada. Desactívelo en vez de dejarlo sin roles.» | Le quitó todos los roles a alguien que sigue activo | Si ya no trabaja aquí, inactívelo desde el botón del muñeco |
 | «No puede desactivar su propio usuario.» | Estás intentando cerrarte la puerta a ti mismo | Que lo haga otro administrador |
-| «Es el único administrador activo. Nombra otro antes de desactivarlo.» | Quedaría el sistema sin nadie que lo administre | Dale el rol de administrador a otra persona y repite |
-| «Es el único administrador activo. Nombra otro antes de quitarle el rol.» | Lo mismo, quitando el rol en vez de desactivar | Nombra a otro administrador primero |
+| «Es el único administrador activo. Nombre otro antes de desactivarlo.» | Quedaría el sistema sin nadie que lo administre | Déle el rol de administrador a otra persona y repita |
+| «Es el único administrador activo. Nombre otro antes de quitarle el rol.» | Lo mismo, quitando el rol en vez de desactivar | Nombre a otro administrador primero |
 | «El administrador tiene acceso completo por definición y no se puede recortar.» | Se intentó mover las casillas del rol de administrador | No se pueden mover: es la salida de emergencia del sistema |
 | «El código "xx" no es válido: de 3 a 32 caracteres, mayúsculas, números y guion bajo.» | El código del rol nuevo no tiene la forma admitida | Escríbalo en mayúsculas, con guion bajo en vez de espacios |
 | «El rol necesita un nombre.» | Falta el nombre del rol | Escríbalo: es lo que se lee en la tarjeta |
@@ -5913,7 +5913,7 @@ Guárdalo donde guardarías el libro de nómina en papel. No lo mandes por corre
 | «No se pudo preparar el documento.» | El visor no logró mostrar el papel | Cierra la vista y vuelve a abrirla. Si sigue, avisa a quien administra el sistema |
 | «Esto lo ve la administración» | Llegaste a la Auditoría sin el rol de administrador | La auditoría no se reparte. Pide lo que necesites saber a quien administra el sistema |
 | «El registro de auditoría no se modifica ni se borra. Es lo único que lo hace valer.» | Se intentó cambiar o quitar una línea del registro | No hay forma de hacerlo, ni la habrá. Es lo que sostiene las cifras |
-| «Tu usuario no tiene permiso para esta acción.» | Falta el permiso sobre el módulo | Pide el permiso a administración |
+| «Su usuario no tiene permiso para esta acción.» | Falta el permiso sobre el módulo | Pida el permiso a administración |
 | «Esa operación todavía no existe en la base de datos. Falta correr las migraciones.» | El sistema quedó a medio actualizar | Avise a quien administra el sistema. No es algo que se resuelva desde la pantalla |
 | «No hay conexión con el servidor. Revise la red e inténtelo otra vez.» | Se cayó el internet | Reintente cuando vuelva la señal. Lo que no se guardó, no quedó |
 
@@ -5989,7 +5989,7 @@ La regla es que quien pide algo no sea quien lo aprueba. **En tres sitios la imp
 - **Una solicitud de salida** no la aprueba quien la pidió (26.2).
 - **Una factura** no la autoriza quien la preparó (21.2).
 
-En los tres, la base responde aunque la persona tenga la casilla: «Una factura no la autoriza quien la preparó.»
+En los tres, el sistema responde aunque la persona tenga la casilla: «Una factura no la autoriza quien la preparó.»
 
 **En compras, no.** Al aprobar una compra el sistema no compara identidades, así que una persona con los dos permisos —pedir y aprobar— puede recorrer sola el circuito. Tampoco compara a quien aprueba con quien recibe el material.
 
@@ -5997,9 +5997,9 @@ Se dice aquí con claridad porque es la diferencia entre un control real y uno s
 
 ---
 
-## 15. Lo que todavía no está construido
+## 15. Lo que el sistema no hace, y dónde tener cuidado
 
-Este capítulo reúne lo que el sistema **aún no hace** y los puntos donde conviene tener cuidado, para que nadie organice su trabajo contando con algo que no puede hacer.
+Este capítulo reúne lo que el sistema **no hace** y los puntos donde conviene tener cuidado, para que nadie organice su trabajo contando con algo que no puede hacer.
 
 Lo que hoy está escondido del menú —Despachos entero y tres pantallas de Explotación— está explicado en 1.5 y no se repite aquí: **este capítulo habla de lo que falta, no de lo que está escondido.**
 
@@ -6009,11 +6009,11 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **Una compra se puede pagar dos veces por caminos distintos.** El dinero puede salir por la instrucción de pago de la orden, en **Pagos por hacer**, y también por el pago registrado sobre la factura del proveedor. Los dos descuentan de una cuenta real y **el sistema no los cruza**: si la orden ya se pagó por su instrucción, su factura nace debiendo el total igual. Las dos pantallas lo avisan, pero no lo impiden. Hasta que eso se cruce, conviene acordar en la empresa un solo camino y usar siempre ese. La compra directa no tiene el problema: su factura nace ya descontada.
 
-**El sistema pregunta con qué entrega el proveedor, pero no comprueba que se cumpla.** Antes de pagar hay que declarar si entrega **Nota de entrega** o **Factura**, y sin eso no se puede pagar. Lo que no hay todavía es una pantalla que enseñe cuáles prometieron factura y no la registraron. El cotejo sigue siendo trabajo de la oficina.
+**El sistema pregunta con qué entrega el proveedor, pero no comprueba que se cumpla.** Antes de pagar hay que declarar si entrega **Nota de entrega** o **Factura**, y sin eso no se puede pagar. Lo que no hay es una pantalla que enseñe cuáles prometieron factura y no la registraron. El cotejo sigue siendo trabajo de la oficina.
 
 **Con qué entrega el proveedor no se corrige desde la pantalla.** Se declara una vez, en la ficha de la compra, y después solo se lee. Si una orden quedó sin declarar, la pantalla no ofrece dónde hacerlo, y esa orden no se puede pagar.
 
-**Una factura de proveedor cubre una sola orden.** Si el proveedor factura dos órdenes en un mismo papel, el sistema todavía no lo puede registrar.
+**Una factura de proveedor cubre una sola orden.** Si el proveedor factura dos órdenes en un mismo papel, el sistema no lo puede registrar.
 
 **Liquidar va antes que dar de baja.** Los botones **Liquidar** y **Anticipo** de prestaciones solo aparecen mientras la persona está activa. El camino es liquidar y después **Pagar y dar de baja**, que la saca de la nómina en el mismo paso. Si se le da de baja por otro lado antes de liquidar, la liquidación ya no se puede calcular desde la pantalla. Y **dar de baja no le cierra la entrada al sistema**: si la persona tenía usuario, se desactiva aparte, en **Configuración › Usuarios y roles**.
 
@@ -6023,29 +6023,29 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 ### 15.2 Lo que falta dentro de módulos que sí funcionan
 
-**Costo de producción.** Lo que entra al inventario por producción entra valorado en cero. **Centro de costo** ya calcula un **Costo por m³** y un **Precio sugerido por m³**, pero solo con lo que hoy tiene de dónde salir —la propia tarjeta dice qué incluye—: la nómina y el combustible todavía no entran. Y ese costo no pasa al inventario. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.**
+**Costo de producción.** Lo que entra al inventario por producción entra valorado en cero. **Centro de costo** ya calcula un **Costo por m³** y un **Precio sugerido por m³**, pero solo con lo que hoy tiene de dónde salir —la propia tarjeta dice qué incluye—: la nómina y el combustible no entran. Y ese costo no pasa al inventario. Consecuencia práctica: **el valor en dólares del material producido no es una cifra en la que apoyarse.**
 
 **En Compras.**
 
 - No hay matriz de aprobación por monto: toda compra del tablero necesita una sola aprobación, valga lo que valga, y la **Compra directa** —que registra una compra ya hecha— no pasa por aprobación.
 - La factura del proveedor nace desde la ficha de su compra y lleva su orden dentro, pero **el sistema no cruza las cifras**: no compara lo pedido con lo recibido y lo facturado. Ese cotejo lo sigue haciendo la persona.
 - La **Retención de IVA** se propone sola al elegir el proveedor, si está marcado como contribuyente especial. La de ISLR se escribe a mano. **No se imprime comprobante de retención.**
-- Lo que se debe por facturas no llega a **Compras › Pagos por hacer › Por proveedor**, que sigue leyendo solo las instrucciones de pago de las órdenes.
+- Lo que se debe por facturas no llega a **Compras › Pagos por hacer › Por proveedor**, que lee solo las instrucciones de pago de las órdenes.
 - Se imprimen la orden de compra, las cotizaciones recibidas y el comprobante de pago. **El tablero, no.**
 
 **En Inventario.** Un artículo se puede corregir y borrar, pero **su código no se escribe a mano**: es con lo que se pide en el almacén y ya está impreso en lo emitido. Si el artículo cambió de categoría y el prefijo ya no le cuadra, el botón **Ponerle el código que le toca** lo renumera, mientras no haya salido en ningún papel. **Borrar solo funciona mientras nada lo haya tocado**; en cuanto aparece en una orden o en un movimiento, el camino es desactivarlo. El administrador tiene además **Eliminar duplicado**, para el artículo repetido que solo tiene movimientos: los reversa y lo desactiva, sin generar ninguna salida.
 
 **En Despachos**, hoy escondido (1.5). El sistema comprueba el cliente, el tipo, el estado y la vigencia de los papeles, pero **no compara cifras**: ni las toneladas de la guía contra los renglones, ni el peso neto del ticket contra la nota —salvo cuando la nota lleva un solo renglón en toneladas, que toma el neto de la romana—. Cuadrar eso sigue siendo trabajo de la persona. Además, la nota despachada sin guía **no se marca en ninguna pantalla**.
 
-**En Facturación.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La factura directa admite descuento en cada renglón, pero no un descuento sobre el total. **La nota de crédito no se imprime**: se registra, entra en el libro de ventas y lleva su número de control propio, pero el papel que se le entrega al cliente todavía se hace por fuera.
+**En Facturación.** **No hay nota de débito**, que es el papel contrario a la de crédito: para cobrarle de más a un cliente al que se le facturó de menos, hoy hay que emitir otra factura. La factura directa admite descuento en cada renglón, pero no un descuento sobre el total. **La nota de crédito no se imprime**: se registra, entra en el libro de ventas y lleva su número de control propio, pero el papel que se le entrega al cliente se hace por fuera.
 
 **La factura impresa no está completa ante el SENIAT.** Tiene el número, el número de control, el RIF de las dos partes, la dirección del cliente, la fecha, el vencimiento, la condición de pago, la retención, la tasa del día, la **base imponible** y el **total exento** (21.2), y el IGTF cuando corresponde. **Le falta el desglose por alícuota**: cada factura lleva una sola alícuota, así que una factura mixta no se puede expresar.
 
 **Los datos de la imprenta y la alícuota general del IVA se escriben** en **Configuración › Datos de la empresa**, y la factura los imprime (21.2).
 
-**En Nómina.** Aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de ley de las prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hace falta una actualización del sistema. **Desde la ficha del trabajador no se registra dotación ni asignación**: sus tarjetas **Dotación** y **Asignación** son de solo lectura, y el botón **Entregar** manda a otra pantalla, que abre en asignación aunque se pulse desde la dotación. Lo que sí funciona es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4). Y una ausencia anotada como incidencia **no descuenta sola de la nómina**.
+**En Nómina.** Aunque la mayoría de los parámetros se cargan en pantalla, **algunas cifras de ley de las prestaciones están escritas por dentro** y no se pueden corregir desde ninguna pantalla: si la ley cambia, hay que pedir que las cambien. **Desde la ficha del trabajador no se registra dotación ni asignación**: sus tarjetas **Dotación** y **Asignación** son de solo lectura, y el botón **Entregar** manda a otra pantalla, que abre en asignación aunque se pulse desde la dotación. Lo que sí funciona es que **la persona ya llega puesta** cuando se entra desde la dotación (18.4). Y una ausencia anotada como incidencia **no descuenta sola de la nómina**.
 
-**En las incidencias del personal.** Si se elige un tipo que no pide reposo —**Conflicto**, **Llegada tarde** u **Otra**— y a la vez se marca **Varios días**, el campo de los días de reposo no se dibuja y el guardado falla con un mensaje que no dice por qué: «La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.» Mientras eso se arregla, **para varios días use un tipo que pida reposo**. Anotar la duración en el motivo solo sirve si no se marca **Varios días**.
+**En las incidencias del personal.** Si se elige un tipo que no pide reposo —**Conflicto**, **Llegada tarde** u **Otra**— y a la vez se marca **Varios días**, el campo de los días de reposo no se dibuja y el guardado falla con un mensaje que no dice por qué: «La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.» **Para varios días, use un tipo que pida reposo.** Anotar la duración en el motivo solo sirve si no se marca **Varios días**.
 
 **El combustible que entra sin costo abarata lo que sale de su tanque.** Lo trasladado desde otra empresa del grupo se carga con la casilla **Sin costo** y entra en cero, en un tanque aparte que no admite lo que tiene precio. Mientras esté en cero, **el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta**. El tanque aparte impide que contamine al resto (20.6), pero no inventa la cifra que falta. Si algún día se sabe lo que se pagó, se puede poner con **Corregir el costo** en **Inventario › Existencias**, que pide un permiso propio; lo que ya salió a cero no cambia.
 
@@ -6070,7 +6070,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 | **Compras › Proveedores › Facturas recibidas** | 400 |
 | El historial de **Tasas de cambio** | 60 por moneda |
 
-- **Qué se descarga hoy.** Casi todo papel del sistema baja en PDF: la orden y las cotizaciones de compra, el comprobante de pago, la cotización de venta, la factura, la nota de entrega, la nota de salida y la de traslado, el vale de combustible, la constancia de entrega, el acta de existencias y el libro de movimientos, los recibos de pago, la ficha y la constancia del trabajador, el carnet —también en imagen—, el organigrama, el cierre de caja, los reportes de tesorería y el registro de viajes. En hoja de cálculo bajan los libros de compras y de ventas, el cierre de tesorería, el pago de viajes y el registro de auditoría; en Excel, la planilla de control de despacho, los visitantes, los contactos y las plantillas de carga. Los contactos bajan además como tarjetas para el teléfono. **El respaldo de la base baja comprimido en .zip**, y también se puede mandar por correo. **La nota de crédito todavía no tiene papel.**
+- **Qué se descarga hoy.** Casi todo papel del sistema baja en PDF: la orden y las cotizaciones de compra, el comprobante de pago, la cotización de venta, la factura, la nota de entrega, la nota de salida y la de traslado, el vale de combustible, la constancia de entrega, el acta de existencias y el libro de movimientos, los recibos de pago, la ficha y la constancia del trabajador, el carnet —también en imagen—, el organigrama, el cierre de caja, los reportes de tesorería y el registro de viajes. En hoja de cálculo bajan los libros de compras y de ventas, el cierre de tesorería, el pago de viajes y el registro de auditoría; en Excel, la planilla de control de despacho, los visitantes, los contactos y las plantillas de carga. Los contactos bajan además como tarjetas para el teléfono. **El respaldo de la base baja comprimido en .zip**, y también se puede mandar por correo. **La nota de crédito no tiene papel.**
 
 
 ---
@@ -6102,7 +6102,7 @@ Su usuario existe, pero todavía no tiene permisos asignados. Pídaselos a la ad
 Su permiso sobre ese módulo es de consulta. Ver y registrar son dos permisos distintos.
 
 **Me aparece un botón, lo pulso y el sistema me dice que no tengo permiso.**
-Pasa: algunas pantallas enseñan un botón que la base después rechaza. El mensaje dice qué falta —un rol, una casilla o un nivel— y eso es lo que se pide a la administración.
+Pasa: algunos botones se ven aunque la acción pida algo más. El mensaje dice qué falta —un rol, una casilla o un nivel— y eso es lo que se pide a la administración.
 
 **¿Los precios se escriben con punto o con coma?**
 Con lo que tenga a mano: **el sistema entiende las dos**. Escriba «3,20» o «3.20», guarda tres con veinte. En Venezuela el decimal es la coma, y el teclado del teléfono la ofrece.
@@ -6567,13 +6567,13 @@ El botón **Despachar** está apagado mientras falte algo de lo obligatorio, el 
 
 **Un horómetro no retrocede.** Si la lectura es menor que la última, la ayuda lo dice antes de guardar: **Un horómetro no retrocede: lo último anotado marcaba 1250.** **Y el contador es uno solo, aunque se apunte en dos sitios**: la base compara con la lectura más alta anotada hasta la fecha del vale, venga del vale o del parte diario. La pantalla solo ve los vales, así que puede dejar pasar una lectura que la base rechaza; el mensaje de la base dice con qué lectura choca.
 
-**Tres vales por máquina al día, como máximo.** La pantalla lo avisa antes de llenar el resto —**Es el surtido 2 de 3 de ese día para esta máquina.**— y al llegar al tope apaga el botón: **Ya se surtió 3 veces ese día. Son 3 al día como máximo.** La base lo impone igual.
+**Tres vales por máquina al día, como máximo.** La pantalla lo avisa antes de llenar el resto —**Es el surtido 2 de 3 de ese día para esta máquina.**— y al llegar al tope apaga el botón: **Ya se surtió 3 veces ese día. Son 3 al día como máximo.** Y no hay otro camino: el sistema no deja un cuarto.
 
 #### La lista de usos
 
 El botón **Usos** abre **Usos del combustible**: **La lista que sale al despachar. Los cambios no alteran los vales emitidos.** Cada uso lleva su nombre, una pista que explica cuándo se usa y, si hace falta, la marca de que **pide explicación**: con ella, el vale no se guarda sin el **Detalle del uso**.
 
-**La lista la toca quien despacha**, no sistemas: es quien sabe para qué se echa combustible en esta cantera, y quien descubre que falta un uso. Si un mismo «Otro» se repite mucho, conviene que sea un uso propio de la lista.
+**La lista la toca quien despacha**: es quien sabe para qué se echa combustible en esta cantera, y quien descubre que falta un uso. Si un mismo «Otro» se repite mucho, conviene que sea un uso propio de la lista.
 
 ### 20.4 Surtir desde el teléfono
 
@@ -6649,7 +6649,7 @@ El sistema lleva un costo promedio por tanque. Con 1.000 litros comprados a $0,4
 
 En tanques aparte, cada uno conserva su costo y cada vale sale valorado según de qué tanque salió, que es la verdad: unos litros costaron y otros no.
 
-**La separación la impone el sistema, no la atención.** Un tanque se marca, en **Inventario › Almacenes**, como el que admite lo que entra sin costo, y la base no deja mezclar en ninguno de los dos sentidos (20.7). Lo mismo al pasar combustible de un sitio a otro: no se mueve entre el tanque sin costo y uno con costo.
+**La separación la impone el sistema, no la atención.** Un tanque se marca, en **Inventario › Almacenes**, como el que admite lo que entra sin costo, y el sistema no deja mezclar en ninguno de los dos sentidos (20.7). Lo mismo al pasar combustible de un sitio a otro: no se mueve entre el tanque sin costo y uno con costo.
 
 **Y conviene saberlo:** ese combustible **sí costó dinero**, solo que en la otra empresa. Mientras esté a cero, el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta. Si algún día se sabe lo que se pagó, entrarlo con ese costo dejaría bien a la vez el promedio, el costo por máquina y el centro de costos.
 
@@ -6697,7 +6697,7 @@ El menú **Facturación** tiene cuatro pantallas, en el orden del trabajo: **Not
 | Autorizar y emitir una factura, o rechazarla | La casilla **Autorizar y emitir facturas** (13.1) |
 | Anular facturas y cobros, emitir y anular notas de crédito, dejar pasar una factura por encima del límite de crédito del cliente | **Facturación** en control total |
 
-**Quien prepara una factura no la autoriza**, aunque tenga la casilla: la emite otra persona. Lo impone la base.
+**Quien prepara una factura no la autoriza**, aunque tenga la casilla: la emite otra persona. No hay forma de saltárselo.
 
 Los clientes, su crédito y la lista de precios son de Ventas (10.3 y 10.4): desde aquí se leen para facturar, pero se registran y se corrigen allá.
 
@@ -6932,7 +6932,7 @@ El libro de ventas está en **Tesorería › Libro Mayor**, pestaña **Ventas**,
 
 **Lo que se vende sin IVA va entero en la columna de exentas.** Cuando un documento no lleva IVA —porque el cliente está marcado como exento o porque se desmarcó la casilla del IVA—, todo su monto es exento y la base imponible queda en cero.
 
-### 21.6 Lo que todavía falta
+### 21.6 Lo que el módulo no hace
 
 Lo que el módulo no hace, para que nadie lo descubra con una factura en la mano:
 
