@@ -5864,7 +5864,7 @@ Quien entre sin el rol ve la pantalla, no el botón, y una explicación de por q
 
 **No lleva las contraseñas.** Viven cifradas en otro sitio que el respaldo no toca. Al restaurar hay que volver a crear los usuarios.
 
-**No lleva la estructura de la base**, solo los datos. Reconstruir la base con este archivo es cosa de quien administra el sistema.
+**No lleva la estructura de la base**, que son las migraciones del repositorio. La pantalla lo dice en **Para reconstruir la base**: hacen falta las dos cosas y en ese orden —primero la estructura, después este archivo, que son los datos—.
 
 #### Cómo se descarga
 
