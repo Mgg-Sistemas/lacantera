@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, Save, ToggleLeft } from 'lucide-react'
+import { ArrowLeft, FileDown, Save, ToggleLeft } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Visor } from '@/components/Visor'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { Button } from '@/components/ui/Button'
@@ -31,6 +32,10 @@ import {
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { Historial } from '@/components/Historial'
 import { ModalEstado } from './ModalEstado'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import { useSesion } from '@/lib/sesion'
+import { armarFichaDeMaquina } from '@/lib/ficha/maquinariaPdf'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
 
 /*
   LA FICHA DE UNA MÁQUINA
@@ -111,6 +116,94 @@ export function FichaMaquina() {
   const [f, setF] = useState(vacio)
   const [cargado, setCargado] = useState(false)
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
+
+  /*
+    LA FICHA TÉCNICA EN PAPEL.
+
+    Maquinaria era el último módulo grande que no imprimía nada: se veía todo
+    en pantalla y no se podía sacar nada de ahí. La ficha técnica es lo que
+    acompaña a un equipo que se presta, que entra al taller o que hay que
+    enseñarle a su dueño, y hasta hoy se copiaba a mano.
+
+    Sale del mismo sitio que el resto de los papeles —el visor— para que se
+    revise antes de quedársela, como la ficha del trabajador.
+  */
+  const empresa = useEmpresa()
+  const { nombre: quienEmite } = useSesion()
+  const [armando, setArmando] = useState(false)
+  const [vista, setVista] = useState<ArchivoArmado | null>(null)
+
+  async function emitirFichaTecnica() {
+    if (!maquina) return
+    setArmando(true)
+    try {
+      const combustible =
+        combustibles.data?.find((c) => c.id === maquina.combustible_id)?.nombre ?? null
+
+      setVista(
+        await armarFichaDeMaquina({
+          codigo: maquina.codigo,
+          nombre: maquina.nombre,
+          queEs: [
+            CLASES_DE_MAQUINA.find((c) => c.valor === maquina.clase)?.etiqueta,
+            TIPOS_MAQUINA.find((t) => t.valor === maquina.tipo)?.etiqueta,
+          ]
+            .filter(Boolean)
+            .join(' · '),
+          estado: ETIQUETA_ESTADO[maquina.estado],
+          secciones: [
+            {
+              titulo: 'Identificación',
+              filas: [
+                ['Código', maquina.codigo],
+                ['Nombre', maquina.nombre],
+                ['Marca', maquina.marca],
+                ['Modelo', maquina.modelo],
+                ['Año', maquina.anio === null ? null : String(maquina.anio)],
+                ['Serial', maquina.serial],
+              ],
+            },
+            {
+              titulo: 'Situación',
+              filas: [
+                ['Estado', ETIQUETA_ESTADO[maquina.estado]],
+                ['Propietario', maquina.propietario ?? null],
+                ['Operador o responsable', maquina.operador ?? null],
+                ['Dónde vive', maquina.almacen],
+              ],
+            },
+            {
+              titulo: 'Horómetro y mantenimiento',
+              filas: [
+                ['Horómetro actual', maquina.horometro_actual],
+                ['Horas trabajadas', maquina.horas_totales],
+                ['Desde el último mantenimiento', maquina.horas_desde_mant],
+                ['Tope de horas', maquina.tope_horas],
+                ['Le faltan', maquina.horas_para_el_tope],
+                ['Última lectura', maquina.ultima_lectura],
+                ['Último mantenimiento', maquina.ultimo_mantenimiento],
+                ['Última reparación', maquina.ultima_reparacion],
+                ['Reparaciones', String(maquina.reparaciones)],
+              ],
+            },
+            {
+              titulo: 'Combustible',
+              filas: [
+                ['Qué quema', combustible],
+                ['Capacidad del tanque', maquina.capacidad_combustible],
+              ],
+            },
+          ],
+          nota: maquina.nota,
+          emitidaPor: quienEmite,
+          momento: new Date(),
+          empresa: empresaDelPapel(empresa.data),
+        }),
+      )
+    } finally {
+      setArmando(false)
+    }
+  }
 
   /*
     La ficha era hasta hoy un formulario y nada más: decía qué ES la máquina y
@@ -290,6 +383,18 @@ export function FichaMaquina() {
                     Cambiar estado
                   </Button>
                 ) : null}
+
+                {/* La ficha técnica la saca cualquiera que pueda ver el
+                    equipo: es lo que ya tiene delante, en una hoja. */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<FileDown />}
+                  disabled={armando}
+                  onClick={() => void emitirFichaTecnica()}
+                >
+                  {armando ? 'Armando…' : 'Ficha técnica'}
+                </Button>
               </>
             ) : null}
 
@@ -306,6 +411,15 @@ export function FichaMaquina() {
         abierto={cambiandoEstado}
         maquina={maquina ?? null}
         onCerrar={() => setCambiandoEstado(false)}
+      />
+
+      <Visor
+        abierto={vista !== null}
+        onCerrar={() => setVista(null)}
+        blob={vista?.blob ?? null}
+        nombreArchivo={vista?.nombre ?? 'ficha-tecnica.pdf'}
+        titulo={maquina ? `Ficha técnica ${maquina.codigo} — ${maquina.nombre}` : ''}
+        descripcion="Todo lo que el sistema sabe del equipo, en una hoja A4."
       />
 
       {/*
