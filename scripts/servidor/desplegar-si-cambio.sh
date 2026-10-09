@@ -80,9 +80,17 @@ decir "$RAMA cambio: publicado ${publicado:-ninguno} -> ${remoto:0:7}. Desplegan
 if salida=$("$HOME/desplegar.sh" "$RAMA" 2>&1); then
   decir "LISTO ${remoto:0:7}. $(printf '%s\n' "$salida" | grep '^PUBLICADO' || true)"
 else
-  decir "FALLO el despliegue de ${remoto:0:7}. Ultimas lineas:"
-  printf '%s\n' "$salida" | tail -25 >>"$REGISTRO"
-  decir "El sitio sigue sirviendo ${publicado:-la version anterior}: desplegar.sh no publica nada hasta que la construccion termina bien."
+  codigo=$?
+  # El 75 de desplegar.sh quiere decir "habia otro despliegue y no se hizo
+  # nada": no es un fallo y no debe leerse como tal en el registro. La rama
+  # sigue sin publicarse, asi que la proxima vuelta del cron lo reintenta sola.
+  if [ "$codigo" -eq 75 ]; then
+    decir "OCUPADO: otro despliegue estaba corriendo. Se reintenta en la proxima vuelta."
+  else
+    decir "FALLO el despliegue de ${remoto:0:7} (codigo $codigo). Ultimas lineas:"
+    printf '%s\n' "$salida" | tail -25 >>"$REGISTRO"
+    decir "El sitio sigue sirviendo ${publicado:-la version anterior}: desplegar.sh no publica nada hasta que la construccion termina bien."
+  fi
 fi
 
 # Que el registro no crezca sin fin: se queda con la mitad mas reciente.
