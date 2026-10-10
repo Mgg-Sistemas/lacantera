@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import {
   ClipboardList,
   IdCard,
+  Images,
   Landmark,
   Pencil,
   FileText,
@@ -29,6 +30,7 @@ import {
   ESTADOS_CIVILES,
   FRECUENCIAS,
   GENEROS,
+  cargarFoto,
   fichaDelInforme,
   useCargasDeEmpleados,
   useEgresarEmpleado,
@@ -43,9 +45,11 @@ import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { Visor } from '@/components/Visor'
 import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
+import { armarDirectorioPersonal } from '@/lib/ficha/directorioPersonalPdf'
 import { armarPlanillaDeIngreso } from '@/lib/ficha/planillaIngresoPdf'
 import type { ApartadoImpreso } from '@/lib/ficha/planillaIngresoPdf'
 import { armarPagoBancario } from '@/lib/ficha/nominaBancariaPdf'
+import { fotoRecortada } from '@/lib/ficha/encuadre'
 import { ModalPlanillaDeIngreso } from './ModalPlanillaDeIngreso'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { dinero, documento, fecha } from '@/lib/formato'
@@ -115,6 +119,21 @@ export function Personal() {
   const [egreso, setEgreso] = useState({ fecha: '', motivo: '' })
 
   const puedeRRHH = puede('RRHH')
+  /*
+    EL DIRECTORIO CON FOTOS, SOLO PARA EL ADMINISTRADOR.
+
+    Se pidió así: una lista con la cara de cada quien es un dato más
+    sensible que la tabla de nombres que ya ve cualquiera con lectura en
+    Nómina, y el sistema no tiene forma de prestar un permiso a una
+    persona puntual sin dárselo también a quien ya es administrador —ver
+    el mismo razonamiento en `eliminar_articulo_duplicado`—, así que el
+    candado real es el rol.
+  */
+  const puedeAdmin = puede('ADMIN')
+  const [armandoDirectorio, setArmandoDirectorio] = useState<{
+    hechos: number
+    total: number
+  } | null>(null)
 
   /*
     EL PERÍODO ACTIVO, PARA EL PAGO BANCARIO.
@@ -343,6 +362,63 @@ export function Personal() {
   }
 
   /*
+    EL DIRECTORIO CON FOTOS.
+
+    Las fotos se bajan del almacén una por una, nunca todas a la vez: ya se
+    aprendió con los carnets (`Carnets.tsx`) que veinte descargas
+    simultáneas contra el almacén se rechazan a medias, y una foto a medio
+    bajar no puede tumbar el documento entero. Por eso se ve avanzar: con
+    el personal entero, un botón que se queda pensando sin decir nada se
+    lee como que se colgó.
+  */
+  const sacarDirectorio = async (gente: Empleado[]) => {
+    if (gente.length === 0) return
+    setArmandoDirectorio({ hechos: 0, total: gente.length })
+    try {
+      const personas = []
+      for (let i = 0; i < gente.length; i++) {
+        const e = gente[i]
+        setArmandoDirectorio({ hechos: i, total: gente.length })
+
+        const img = await cargarFoto(e.foto_path)
+        const fotoDataUrl = img
+          ? fotoRecortada(
+              img,
+              16,
+              18,
+              { zoom: Number(e.foto_zoom), x: Number(e.foto_x), y: Number(e.foto_y) },
+            )
+          : null
+
+        personas.push({
+          ficha: e.ficha,
+          nombre: `${e.nombres} ${e.apellidos}`.trim(),
+          cedula: e.cedula,
+          cargo: e.cargo,
+          departamento: e.departamento,
+          fechaIngreso: e.fecha_ingreso,
+          fotoDataUrl,
+        })
+      }
+
+      const pdf = await armarDirectorioPersonal({
+        personas,
+        filtro: filtroDelPapel,
+        empresa: empresaDelPapel(empresa),
+        emitidoPor: nombre,
+        momento: new Date(),
+      })
+      setVista({
+        ...pdf,
+        titulo: 'Directorio de personal',
+        descripcion: `${gente.length} ${gente.length === 1 ? 'persona' : 'personas'} · con foto, solo para administración`,
+      })
+    } finally {
+      setArmandoDirectorio(null)
+    }
+  }
+
+  /*
     EL PAGO BANCARIO, DEL PERÍODO QUE TOCA PAGAR.
 
     Sale de los recibos ya calculados, no de la tabla de personal: el monto es
@@ -417,6 +493,19 @@ export function Personal() {
             >
               {armando ? 'Preparando…' : 'Informe'}
             </Button>
+
+            {puedeAdmin ? (
+              <Button
+                variant="outline"
+                icon={<Images />}
+                disabled={armandoDirectorio !== null || filtrados.length === 0}
+                onClick={() => void sacarDirectorio(filtrados)}
+              >
+                {armandoDirectorio
+                  ? `Cargando fotos… ${armandoDirectorio.hechos}/${armandoDirectorio.total}`
+                  : 'Directorio con fotos'}
+              </Button>
+            ) : null}
 
             {/*
               LA PLANILLA NO PIDE EL ROL DE RRHH, por lo mismo que el informe: es

@@ -3780,6 +3780,8 @@ La ventana lo resume: **Vuelve a entrar en las nóminas siguientes. La antigüed
 
 Que no lleve sueldos no es un olvido. Un listado de quién trabaja aquí se enseña, se pega en una pared, se le manda a un inspector; los sueldos no. Por eso hay dos papeles: este y el del cierre de nómina (11.8), que sí los lleva.
 
+**Directorio con fotos**, solo para el administrador, saca el mismo tipo de lista pero con la foto de cada quien al lado de lo básico —ficha, cédula, cargo, departamento y desde cuándo—. Las fotos se bajan del almacén una por una mientras se arma el PDF, y el botón lo dice: **Cargando fotos… 8/22**. A quien no tiene foto cargada le sale el recuadro vacío con **Sin foto**: no se inventa una cara. Los dos papeles toman la misma gente que esté filtrada en pantalla en ese momento.
+
 **El papel sigue a la pantalla.** Lleva lo que la lista enseña: si **Buscar** dice «mantenimiento», sale el informe de mantenimiento; y los desincorporados salen, en su propio apartado con su fecha de salida y su motivo, solo si **Incluir a los desincorporados** está marcada. Arriba, en **Alcance**, el papel dice qué filtro se aplicó, cuántos hay en nómina y cuántos desincorporados.
 
 Se abre en el visor antes de guardarse, como todos los papeles del sistema. **Para una sola persona**, el botón está en su ficha (11.4).
