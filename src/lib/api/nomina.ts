@@ -845,6 +845,18 @@ export function useEgresarEmpleado() {
 }
 
 /**
+ * El camino de vuelta de `useEgresarEmpleado`: deshace exactamente lo que
+ * ese egreso escribió —`activo`, `fecha_egreso`, `motivo_egreso`— y nada
+ * más. La antigüedad sigue contando desde `fecha_ingreso`, sin tocar: no es
+ * una ficha nueva, es la misma persona que vuelve.
+ */
+export function useReincorporarEmpleado() {
+  return useAccionNomina((e: { id: number; motivo: string }) =>
+    rpc('reincorporar_empleado', { p_id: e.id, p_motivo: e.motivo }),
+  )
+}
+
+/**
  * Borrar de verdad, para la ficha que nunca debió existir.
  *
  * No es lo mismo que egresar. La base solo lo deja pasar si esa persona no

@@ -8,6 +8,7 @@ import {
   Pencil,
   ScrollText,
   TriangleAlert,
+  UserCheck,
   UserX,
 } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -34,6 +35,7 @@ import {
   useFoto,
   useGuardarEncuadre,
   useMarcarEventual,
+  useReincorporarEmpleado,
   useEmpleados,
   useIncidencias,
   useRegistrarIncidencia,
@@ -259,6 +261,12 @@ export function FichaTrabajador() {
   const [encuadreGuardado, setEncuadreGuardado] = useState('')
   const [exportando, setExportando] = useState<Exportable | null>(null)
   const [falloExportar, setFalloExportar] = useState<Error | null>(null)
+
+  // Reincorporar: el camino de vuelta de «Desincorporar». Un solo motivo, sin
+  // fecha —la antigüedad sigue contando desde el ingreso de siempre—.
+  const [reincorporando, setReincorporando] = useState(false)
+  const [motivoReincorporo, setMotivoReincorporo] = useState('')
+  const reincorporar = useReincorporarEmpleado()
 
   // La constancia
   const empresa = useEmpresa()
@@ -610,6 +618,19 @@ export function FichaTrabajador() {
           {/* Al lado del estado y no escondido en la ficha: que alguien sea
               eventual cambia si cobra en el ciclo, así que se ve de entrada. */}
           {e.eventual ? <Chip tone="warning">Eventual</Chip> : null}
+          {puedeRRHH && !e.activo ? (
+            <Button
+              size="sm"
+              variant="outline"
+              icon={<UserCheck />}
+              onClick={() => {
+                setMotivoReincorporo('')
+                setReincorporando(true)
+              }}
+            >
+              Reincorporar
+            </Button>
+          ) : null}
           {puedeRRHH ? (
             <Link to={`/app/nomina/personal/${e.id}/editar`}>
               <Button size="sm" variant="outline" icon={<Pencil />}>
@@ -619,6 +640,42 @@ export function FichaTrabajador() {
           ) : null}
         </div>
       </div>
+
+      {reincorporando ? (
+        <Modal
+          abierto
+          ancho="sm"
+          onCerrar={() => setReincorporando(false)}
+          titulo={`Reincorporar a ${e.nombres} ${e.apellidos}`}
+          descripcion="Vuelve a entrar en las nóminas siguientes. La antigüedad sigue contando desde su ingreso de siempre."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setReincorporando(false)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={reincorporar.isPending || motivoReincorporo.trim().length < 4}
+                onClick={async () => {
+                  await reincorporar.mutateAsync({ id: e.id, motivo: motivoReincorporo })
+                  setReincorporando(false)
+                }}
+              >
+                {reincorporar.isPending ? 'Guardando…' : 'Reincorporar'}
+              </Button>
+            </>
+          }
+        >
+          <Textarea
+            label="Motivo"
+            rows={3}
+            placeholder="Vuelve a trabajar, egreso cargado por error…"
+            hint="Queda en la auditoría."
+            value={motivoReincorporo}
+            onChange={(ev) => setMotivoReincorporo(ev.target.value)}
+          />
+          {reincorporar.error ? <ErrorDeCarga error={reincorporar.error} className="mt-3" /> : null}
+        </Modal>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
         {/* ------------------------------- Foto ------------------------------- */}
