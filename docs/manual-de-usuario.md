@@ -3758,7 +3758,15 @@ La ventana lo resume: **Deja de entrar en las nóminas siguientes y queda marcad
 
 Por eso, **cuando alguien se va, el orden es liquidarlo primero en Prestaciones sociales**: el botón que paga la liquidación desincorpora a la persona por su cuenta, con la fecha y el motivo. **Desincorporar** aquí queda para cuando no hay nada que liquidar.
 
-**Una ficha desincorporada no vuelve a activarse desde ninguna pantalla.** Si se desincorporó por error, hay que pedirlo a quien administra el sistema.
+#### Reincorporar a un trabajador
+
+En la ficha de quien está desincorporado, junto a **Editar datos**, aparece **Reincorporar**.
+
+1. Pulse **Reincorporar**.
+2. Escriba el **Motivo** —«vuelve a trabajar», «egreso cargado por error»—. La ayuda dice: **Queda en la auditoría.**
+3. Pulse **Reincorporar**. El botón se enciende con al menos cuatro letras de motivo.
+
+La ventana lo resume: **Vuelve a entrar en las nóminas siguientes. La antigüedad sigue contando desde su ingreso de siempre.** Deshace exactamente lo que escribió **Desincorporar** —el estado, el último día trabajado y el motivo del egreso vuelven a quedar en blanco— y nada más: no inventa un ingreso nuevo, no toca ningún recibo ya emitido —cada uno ya dice si esa persona estaba de baja el mes en que se calculó, y eso no cambia— y, si tenía usuario, tampoco se lo reactiva: eso sigue haciéndose aparte, en **Configuración › Usuarios y roles** (13.1).
 
 #### Las fichas no se borran
 
