@@ -7116,6 +7116,10 @@ Desde ahí, con permiso:
 - **Corregir**: cambiar la entrada, la salida o la nota. Queda anotado quién y cuándo.
 - **Anular**: con un motivo. No se borra: queda anulada y a la vista.
 
+**Debajo de la gente que marcó, la pantalla dice quién no marcó ese día** —*«3 sin marcar ese día»*, con el nombre, la ficha y el cargo de cada uno—, o **Todo el personal activo marcó ese día** si no falta nadie. Solo se calcula hasta hoy: un día futuro no enseña esta lista, porque todavía no pasó.
+
+<p class="regla"><strong>Esto no es un registro de faltas, es una resta.</strong> El sistema no sabe qué días trabaja cada quien, ni quién está de vacaciones, de reposo o con un permiso: cuenta a todo el personal activo —sin los eventuales, que no tienen obligación de marcar todos los días— y resta a quien tenga una jornada sin anular ese día. No descuenta domingos, feriados ni permisos que no se hayan registrado como marcación, así que antes de tomarlo como una falta hay que revisarlo. Si alguien ya ingresó después de esa fecha, tampoco sale en la lista: no se le puede pedir que marcara antes de existir en el sistema.</p>
+
 ### 23.6 Cargar a mano
 
 El botón **Cargar a mano** abre **Cargar una jornada a mano**: **Persona**, **Entrada**, **Salida** —opcional: vacía, la jornada queda abierta— y una **Nota**. El sistema no deja cargar una jornada que se cruce con otra de la misma persona, ni una de más de 24 horas: si fueron dos días, se cargan como dos.
