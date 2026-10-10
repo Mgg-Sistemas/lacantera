@@ -131,6 +131,29 @@ export function ControlDeAsistencia() {
   }, [delMes])
   const delDia = dia ? (porDia.get(dia) ?? []) : []
 
+  /*
+    QUIÉN NO MARCÓ ESE DÍA.
+
+    No hay en el sistema un calendario de días laborables ni un registro de
+    quién está de vacaciones o de reposo un día concreto —solo la jornada
+    marcada y la ficha de personal—, así que esto es lo más preciso que se
+    puede calcular con lo que hay: todo el personal activo, sin los
+    eventuales (no tienen obligación de marcar todos los días) y sin quien
+    todavía no había ingresado esa fecha, que no tenga una jornada sin anular
+    ese día. No descuenta domingos, feriados ni permisos no marcados —se
+    dice así en la propia pantalla, para que no se lea como una falta
+    confirmada sin más.
+  */
+  const marcaronEseDia = new Set(
+    delDia.filter((j) => j.estado !== 'ANULADA').map((j) => j.empleado_id),
+  )
+  const noMarcaron =
+    dia && dia <= hoy
+      ? (empleados ?? []).filter(
+          (e) => !e.eventual && e.fecha_ingreso <= dia && !marcaronEseDia.has(e.id),
+        )
+      : []
+
   return (
     <>
       <PageHeader
@@ -212,6 +235,32 @@ export function ControlDeAsistencia() {
             onCorregir={setCorrigiendo}
             onAnular={setAnulando}
           />
+
+          {dia <= hoy ? (
+            <div className="border-hairline mt-4 border-t pt-4">
+              <p className="text-ink/70 text-sm font-medium">
+                {noMarcaron.length === 0
+                  ? 'Todo el personal activo marcó ese día.'
+                  : `${noMarcaron.length} sin marcar ese día`}
+              </p>
+              {noMarcaron.length > 0 ? (
+                <ul className="mt-2 grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
+                  {noMarcaron.map((e) => (
+                    <li key={e.id} className="text-ink/65 text-sm">
+                      {e.nombres} {e.apellidos}
+                      <span className="text-ink/40 font-mono text-xs"> · {e.ficha}</span>
+                      {e.cargo ? <span className="text-ink/40 text-xs"> · {e.cargo}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <p className="text-ink/40 mt-2 text-xs">
+                Cuenta a todo el personal activo, sin los eventuales. No descuenta domingos,
+                feriados ni permisos que no se hayan registrado como marcación: revíselo antes de
+                tomarlo como una falta.
+              </p>
+            </div>
+          ) : null}
         </Card>
       ) : null}
 
