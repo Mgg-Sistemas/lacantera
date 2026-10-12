@@ -1,14 +1,37 @@
 import { useMemo, useState } from 'react'
-import { Search, Wrench } from 'lucide-react'
+import { FileText, Search, Wrench } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
+import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { useReporteMantenimientos, type EstadoOrden } from '@/lib/api/maquinaria'
+import { RangoDeFechas } from '@/components/RangoDeFechas'
+import { SIN_RANGO } from '@/components/rango'
+import type { Rango } from '@/components/rango'
+import { Visor } from '@/components/Visor'
+import { useEmpresa } from '@/lib/api/empresa'
+import { useMiPerfil } from '@/lib/api/usuarios'
+import { useMaquinaria, useReporteMantenimientos, type EstadoOrden } from '@/lib/api/maquinaria'
+import { armarInformeMantenimiento, type OrdenDelInforme } from '@/lib/ficha/maquinariaPdf'
+import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { dolares, enteros, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
+
+const ETIQUETA_TIPO: Record<string, string> = {
+  MANTENIMIENTO: 'Mantenimiento',
+  SERVICIO: 'Servicio',
+  REPARACION: 'Reparación',
+}
+
+const ETIQUETA_ESTADO_ORDEN: Record<EstadoOrden, string> = {
+  ABIERTO: 'Abierta',
+  CERRADO: 'Terminada',
+  ANULADO: 'Anulada',
+}
 
 /**
  * El reporte de taller.
@@ -31,6 +54,77 @@ export function Mantenimientos() {
   const { data, isPending, error } = useReporteMantenimientos()
   const [busqueda, setBusqueda] = useState('')
   const [estado, setEstado] = useState<'' | EstadoOrden>('')
+
+  /*
+    EL INFORME: POR MÁQUINA O POR RANGO DE FECHAS.
+
+    Christopher, 14/10/2026: el historial de taller solo se veía en pantalla,
+    sin poder sacarlo en papel. Las 300 órdenes más recientes ya están
+    cargadas; el informe arma el PDF con las que caigan dentro del alcance
+    elegido, sin pedir nada de nuevo al servidor.
+  */
+  const { data: empresa } = useEmpresa()
+  const { data: yo } = useMiPerfil()
+  const { data: maquinas } = useMaquinaria(false)
+  const [pidiendoInforme, setPidiendoInforme] = useState(false)
+  const [alcanceInforme, setAlcanceInforme] = useState<'MAQUINA' | 'FECHAS'>('FECHAS')
+  const [maquinaInforme, setMaquinaInforme] = useState('')
+  const [rangoInforme, setRangoInforme] = useState<Rango>(SIN_RANGO)
+  const [armandoInforme, setArmandoInforme] = useState(false)
+  const [informe, setInforme] = useState<PdfArmado | null>(null)
+
+  const armarInforme = async () => {
+    setArmandoInforme(true)
+    try {
+      const maquina = (maquinas ?? []).find((m) => String(m.id) === maquinaInforme) ?? null
+      const dentroDelAlcance = (data ?? []).filter((m) => {
+        if (alcanceInforme === 'MAQUINA') return String(m.maquina_id) === maquinaInforme
+        if (rangoInforme.desde && m.fecha < rangoInforme.desde) return false
+        if (rangoInforme.hasta && m.fecha > rangoInforme.hasta) return false
+        return true
+      })
+
+      const alcance =
+        alcanceInforme === 'MAQUINA'
+          ? `Máquina ${maquina ? `${maquina.codigo} · ${maquina.nombre}` : maquinaInforme}`
+          : rangoInforme.desde || rangoInforme.hasta
+            ? `Del ${rangoInforme.desde ? fecha(rangoInforme.desde) : 'inicio'} al ${rangoInforme.hasta ? fecha(rangoInforme.hasta) : 'hoy'}`
+            : `Las ${dentroDelAlcance.length} órdenes más recientes`
+
+      const ordenes: OrdenDelInforme[] = dentroDelAlcance.map((m) => ({
+        numero: m.numero,
+        maquinaCodigo: m.maquina_codigo,
+        maquina: m.maquina,
+        tipo: ETIQUETA_TIPO[m.tipo] ?? m.tipo,
+        estado: ETIQUETA_ESTADO_ORDEN[m.estado] ?? m.estado,
+        fecha: m.fecha,
+        fechaSalida: m.fecha_salida,
+        dias: m.dias,
+        taller: m.taller,
+        tecnico: m.tecnico,
+        motivo: m.motivo,
+        detalle: m.detalle,
+        costoManoObra: m.costo_usd !== null ? Number(m.costo_usd) : null,
+        costoRepuestos: Number(m.costo_repuestos_usd),
+        costoTotal: Number(m.costo_total_usd),
+        repuestos: m.repuestos,
+        intervaloHoras: m.intervalo_horas !== null ? Number(m.intervalo_horas) : null,
+      }))
+
+      setInforme(
+        await armarInformeMantenimiento({
+          ordenes,
+          alcance,
+          emitidoPor: yo?.nombre ?? '',
+          momento: new Date(),
+          empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+        }),
+      )
+      setPidiendoInforme(false)
+    } finally {
+      setArmandoInforme(false)
+    }
+  }
 
   const filtradas = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
@@ -61,6 +155,16 @@ export function Mantenimientos() {
       <PageHeader
         title="Historial de taller"
         description="Órdenes de mantenimiento: ingreso, duración, trabajo realizado y costo. Las órdenes abiertas corresponden a máquinas paradas."
+        actions={
+          <Button
+            variant="outline"
+            icon={<FileText />}
+            disabled={!data || data.length === 0}
+            onClick={() => setPidiendoInforme(true)}
+          >
+            Informe
+          </Button>
+        }
       />
 
       {isPending ? <Cargando /> : null}
@@ -204,6 +308,10 @@ export function Mantenimientos() {
                     {m.repuestos > 0
                       ? ` · ${m.repuestos} repuesto${m.repuestos === 1 ? '' : 's'} por ${dolares(m.costo_repuestos_usd)}`
                       : ''}
+                    {m.tecnico ? ` · hecho por ${m.tecnico}` : ''}
+                    {m.intervalo_horas
+                      ? ` · próximo a las ${enteros(Number(m.intervalo_horas))} h`
+                      : ''}
                   </p>
 
                   {/* Al abrir se dice por qué entra; al cerrar, qué se le hizo.
@@ -228,6 +336,70 @@ export function Mantenimientos() {
           </ul>
         </Card>
       ) : null}
+
+      {pidiendoInforme ? (
+        <Modal
+          abierto
+          onCerrar={() => setPidiendoInforme(false)}
+          titulo="Informe de mantenimiento"
+          descripcion="Por una máquina —todo su historial— o por un rango de fechas, para todas las máquinas."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setPidiendoInforme(false)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={
+                  armandoInforme || (alcanceInforme === 'MAQUINA' && !maquinaInforme)
+                }
+                onClick={() => void armarInforme()}
+              >
+                {armandoInforme ? 'Armando…' : 'Generar'}
+              </Button>
+            </>
+          }
+        >
+          <Select
+            label="Alcance"
+            value={alcanceInforme}
+            onChange={(e) => setAlcanceInforme(e.target.value as 'MAQUINA' | 'FECHAS')}
+            opciones={[
+              { valor: 'FECHAS', etiqueta: 'Por rango de fechas' },
+              { valor: 'MAQUINA', etiqueta: 'Por una máquina' },
+            ]}
+          />
+          {alcanceInforme === 'MAQUINA' ? (
+            <div className="mt-3">
+              <SelectBuscable
+                label="Máquina"
+                vacio="Seleccione la máquina"
+                valor={maquinaInforme}
+                onCambio={setMaquinaInforme}
+                opciones={(maquinas ?? []).map((m) => ({
+                  valor: String(m.id),
+                  etiqueta: `${m.codigo} · ${m.nombre}`,
+                }))}
+              />
+            </div>
+          ) : (
+            <div className="mt-3">
+              <RangoDeFechas valor={rangoInforme} onCambio={setRangoInforme} />
+              <p className="text-ink/50 mt-2 text-xs">
+                Sin fechas, trae las {(data ?? []).length} órdenes más recientes cargadas en
+                pantalla.
+              </p>
+            </div>
+          )}
+        </Modal>
+      ) : null}
+
+      <Visor
+        abierto={informe !== null}
+        onCerrar={() => setInforme(null)}
+        blob={informe?.blob ?? null}
+        nombreArchivo={informe?.nombre ?? ''}
+        titulo="Informe de mantenimiento"
+      />
     </>
   )
 }

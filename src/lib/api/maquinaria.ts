@@ -72,6 +72,13 @@ export interface Maquina {
   tope_horas: string
   aviso_horas: string
   alarma_horas: string
+  /**
+   * El tope de ESTE ciclo: el intervalo del último mantenimiento cerrado si se
+   * fijó uno propio, o `tope_horas` si no. Es el que hay que mostrar como
+   * «próximo mantenimiento» — `tope_horas` es solo la configuración por
+   * defecto de la máquina.
+   */
+  tope_horas_efectivo: string
   /** Cuánto suele tardar su mantenimiento. Nulo si nadie lo ha estimado. */
   dias_mantenimiento: number | null
   /** Qué combustible quema. Nulo mientras no se sepa. */
@@ -168,6 +175,10 @@ export interface Mantenimiento {
   repuestos: number
   motivo_anulacion: string | null
   registrado_en: string
+  /** Quién hizo el trabajo de verdad: el mecánico o el taller externo. Se pide al cerrar. */
+  tecnico: string | null
+  /** Solo en MANTENIMIENTO cerrado sobre una máquina: el intervalo propio de este ciclo. */
+  intervalo_horas: string | null
 }
 
 export interface RepuestoUsado {
@@ -719,6 +730,10 @@ export function useCerrarMantenimiento() {
       devuelto?: number | null
       /** A que almacen vuelve. Obligatorio si la orden era sobre material. */
       destino_id?: number | null
+      /** Quién hizo el trabajo de verdad: el mecánico o el taller externo. */
+      tecnico?: string | null
+      /** Solo tiene efecto en MANTENIMIENTO sobre una máquina. Si no se da, se usa el tope de la máquina. */
+      intervalo_horas?: number | null
     }) =>
       rpc<number>('cerrar_mantenimiento', {
         p_id: m.id,
@@ -729,6 +744,8 @@ export function useCerrarMantenimiento() {
         p_devuelto: m.devuelto ?? null,
         p_destino_id: m.destino_id ?? null,
         p_fecha_salida: m.fecha_salida ?? null,
+        p_tecnico: m.tecnico || null,
+        p_intervalo_horas: m.intervalo_horas ?? null,
       }),
   )
 }
