@@ -6394,6 +6394,8 @@ Es lo primero que se mira, y ordena la lista: lo peor arriba.
 
 **El rojo titila a propósito.** Una máquina que se pasó del tope sigue arrancando —el sistema no apaga motores— pero cada hora que trabaja así se paga después, y más cara.
 
+**El tope que se mide no es siempre el configurado en la máquina.** Si el último mantenimiento cerrado fijó un intervalo propio para ese ciclo (19.5), el semáforo —y el «Desde el último mantenimiento»— se miden contra ese número hasta el próximo mantenimiento. Sin un intervalo propio, es el tope de siempre.
+
 #### El estado
 
 Es otra cosa distinta del semáforo: el semáforo dice **si le toca taller**; el estado dice **dónde está**.
@@ -6473,7 +6475,11 @@ Quitarla abre **Quitar** y su nombre: **No se borra: queda en la historia con la
 
 Se guarda con **Meterla al taller**. Mientras esté dentro, queda **En el taller** y su estado no se cambia a mano.
 
-**Sacar del taller** abre la salida: el **Trabajo realizado**, la **Fecha de salida**, la **Mano de obra (USD)** —los repuestos se suman aparte, a su costo promedio—, los **Repuestos** que se usaron, cada uno con su cantidad, y el **Estado de salida**: **En espera** (lista, sin asignar todavía), **Activa** (vuelve al frente hoy mismo) o **Fuera de servicio** (salió sin quedar operativa). Se guarda con **Sacarla del taller**. Si la orden se abrió por error, **Anular la orden** la cierra sin trabajo.
+**Sacar del taller** abre la salida: el **Trabajo realizado**, la **Fecha de salida**, la **Mano de obra (USD)** —los repuestos se suman aparte, a su costo promedio—, el **Técnico o taller que hizo el trabajo**, los **Repuestos** que se usaron, cada uno con su cantidad, y el **Estado de salida**: **En espera** (lista, sin asignar todavía), **Activa** (vuelve al frente hoy mismo) o **Fuera de servicio** (salió sin quedar operativa). Se guarda con **Sacarla del taller**. Si la orden se abrió por error, **Anular la orden** la cierra sin trabajo.
+
+**El técnico es quién hizo el trabajo de verdad** —el mecánico o el taller externo—, distinto de quién lo anota en el sistema. Se pide siempre, para dejar constancia de quién respondió por ese trabajo.
+
+**En un Mantenimiento hay además Próximo mantenimiento en (horas).** Si se deja en blanco, el próximo aviso se mide contra el tope que tiene configurado la máquina (19.4), igual que siempre. Si se escribe un número, **ese intervalo vale solo para este ciclo**: sirve para un cambio de aceite especial que dura menos que el estándar de la máquina, sin tener que tocar su configuración. El aviso y la alarma se corren en la misma proporción, así que el semáforo sigue teniendo sus tres etapas.
 
 **El taller que se elige es de dónde salen los repuestos**, así que la orden descuenta del inventario de ese taller y no de otro. Sin taller no se descuentan repuestos.
 
@@ -6483,7 +6489,9 @@ Se guarda con **Meterla al taller**. Mientras esté dentro, queda **En el taller
 
 **Órdenes de mantenimiento: ingreso, duración, trabajo realizado y costo. Las órdenes abiertas corresponden a máquinas paradas.**
 
-Esa última frase es la razón de que esta pantalla exista aparte: **una orden abierta no es un registro, es una máquina que no está trabajando.** Filtra por **Buscar** y por **Estado**. Cada orden dice la máquina, la clase de trabajo, cuándo entró y salió —y si tardó más de lo estimado—, el horómetro, los repuestos con su costo y el motivo. Sin órdenes: **Sin órdenes de mantenimiento**.
+Esa última frase es la razón de que esta pantalla exista aparte: **una orden abierta no es un registro, es una máquina que no está trabajando.** Filtra por **Buscar** y por **Estado**. Cada orden dice la máquina, la clase de trabajo, cuándo entró y salió —y si tardó más de lo estimado—, el horómetro, los repuestos con su costo, el técnico que hizo el trabajo y el motivo. Sin órdenes: **Sin órdenes de mantenimiento**.
+
+**Informe** saca en PDF el histórico de órdenes, por una **máquina** —todo su historial— o por un **rango de fechas** —todas las máquinas de ese período—. Trae fecha de entrada y salida, qué se hizo, el taller y el técnico, los repuestos con su costo y, si se fijó uno, el intervalo del próximo mantenimiento de ese ciclo. Sin fechas elegidas, arma el informe con las órdenes más recientes que ya están cargadas en pantalla.
 
 ### 19.7 Los camiones
 

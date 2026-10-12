@@ -88,7 +88,7 @@ const colorDeBarra = (m: Maquina) =>
         : 'bg-royal-600'
 
 const avanceDe = (m: Maquina) =>
-  Math.min((Number(m.horas_desde_mant) / Number(m.tope_horas)) * 100, 100)
+  Math.min((Number(m.horas_desde_mant) / Number(m.tope_horas_efectivo)) * 100, 100)
 
 /*
   EL SEMÁFORO EN VERSIÓN LISTA.
@@ -133,7 +133,7 @@ function PuntoDeSemaforo({ estado }: { estado: string }) {
 // ---------------------------------------------------------------------------
 export function FichaDeMaquina({ m, acc }: { m: Maquina; acc: Acciones }) {
   const horas = Number(m.horas_desde_mant)
-  const tope = Number(m.tope_horas)
+  const tope = Number(m.tope_horas_efectivo)
   const bloquea = m.semaforo === 'BLOQUEANTE'
   const enTaller = m.mantenimiento_abierto_id !== null
 
@@ -360,7 +360,7 @@ export function ListaDeFlota({ maquinas, acc }: { maquinas: Maquina[]; acc: Acci
                         m.semaforo === 'BLOQUEANTE' ? 'text-danger font-semibold' : 'text-ink/60',
                       )}
                     >
-                      {enteros(Number(m.horas_desde_mant))}/{enteros(Number(m.tope_horas))} h
+                      {enteros(Number(m.horas_desde_mant))}/{enteros(Number(m.tope_horas_efectivo))} h
                     </span>
                   </div>
                 </td>

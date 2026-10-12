@@ -26,6 +26,7 @@ import {
   type Columna,
   type EmpresaPapel,
   etiquetaValor,
+  fechaCorta,
   fechaLarga,
   GRIS,
   membrete,
@@ -304,4 +305,121 @@ export async function armarInformeDeFlota(d: DatosInformeFlota): Promise<Archivo
   })
 
   return { blob: doc.output('blob'), nombre: 'informe-de-la-flota.pdf' }
+}
+
+// ---------------------------------------------------------------------------
+// EL INFORME DE MANTENIMIENTO
+//
+// A diferencia del informe de flota —un inventario de activos—, este es un
+// histórico de órdenes de taller: qué entró, qué se le hizo, quién lo hizo y
+// cuánto costó. Se pide por una máquina (todo su historial) o por un rango de
+// fechas (todas las máquinas de ese período); los dos casos arman el mismo
+// papel, solo cambia qué tan explícito hay que ser con cuál es cuál en
+// `alcance`.
+// ---------------------------------------------------------------------------
+
+export interface OrdenDelInforme {
+  numero: string | null
+  maquinaCodigo: string
+  maquina: string
+  /** Ya traducido: «Mantenimiento», «Servicio», «Reparación». */
+  tipo: string
+  /** Ya traducido: «Abierta», «Terminada», «Anulada». */
+  estado: string
+  fecha: string
+  fechaSalida: string | null
+  dias: number | null
+  taller: string | null
+  tecnico: string | null
+  motivo: string | null
+  detalle: string | null
+  costoManoObra: number | null
+  costoRepuestos: number
+  costoTotal: number
+  repuestos: number
+  /** Solo en mantenimiento cerrado: a cuántas horas toca el próximo, para este ciclo. */
+  intervaloHoras: number | null
+}
+
+export interface DatosInformeMantenimiento {
+  ordenes: OrdenDelInforme[]
+  /** Por qué máquina o qué rango de fechas se pidió. Nunca viene vacío: este
+   *  papel siempre dice su alcance, a diferencia del de flota. */
+  alcance: string
+  emitidoPor: string
+  momento: Date
+  empresa: EmpresaPapel
+}
+
+const COLUMNAS_MANTENIMIENTO: Columna[] = [
+  { titulo: 'Orden', ancho: 16 },
+  { titulo: 'Máquina', ancho: 24 },
+  { titulo: 'Tipo · Estado', ancho: 20 },
+  { titulo: 'Entrada · Salida', ancho: 24 },
+  { titulo: 'Taller · Técnico', ancho: 26 },
+  { titulo: 'Qué se hizo', ancho: 26 },
+  { titulo: 'Costo', ancho: 14, alDerecha: true },
+]
+
+const celdasMantenimiento = (o: OrdenDelInforme): string[] => [
+  texto(o.numero),
+  `${texto(o.maquinaCodigo)} · ${texto(o.maquina)}`,
+  `${texto(o.tipo)} · ${texto(o.estado)}`,
+  [
+    fechaCorta(o.fecha),
+    o.fechaSalida ? fechaCorta(o.fechaSalida) : null,
+    o.dias !== null ? `${o.dias} día${o.dias === 1 ? '' : 's'}` : null,
+  ]
+    .filter((x) => x !== null)
+    .join(' · ') || SIN_DATO,
+  [o.taller, o.tecnico].filter((x) => x).join(' · ') || SIN_DATO,
+  [
+    o.detalle || o.motivo,
+    o.repuestos > 0 ? `${o.repuestos} repuesto${o.repuestos === 1 ? '' : 's'}` : null,
+    o.intervaloHoras !== null ? `próximo a las ${o.intervaloHoras} h` : null,
+  ]
+    .filter((x) => x)
+    .join(' · ') || SIN_DATO,
+  o.costoTotal > 0 ? `$${o.costoTotal.toFixed(2)}` : SIN_DATO,
+]
+
+export async function armarInformeMantenimiento(
+  d: DatosInformeMantenimiento,
+): Promise<ArchivoArmado> {
+  const { jsPDF } = await import('jspdf')
+  const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
+
+  const costoTotal = d.ordenes.reduce((s, o) => s + o.costoTotal, 0)
+
+  let y = membrete(doc, logo, {
+    empresa: d.empresa,
+    datos: [
+      ['ÓRDENES', String(d.ordenes.length)],
+      ['GENERADO', fechaLarga(d.momento)],
+    ],
+  })
+
+  y = tituloDocumento(doc, y, 'Informe de mantenimiento')
+  y = notaAlPie(doc, y, d.alcance) + 2
+
+  y = seccion(doc, y, 'Resumen')
+  y =
+    etiquetaValor(doc, y, [
+      ['Órdenes', String(d.ordenes.length)],
+      ['Mano de obra + repuestos', `$${costoTotal.toFixed(2)}`],
+    ]) + 4
+
+  y = seccion(doc, y, 'Órdenes')
+  y = tabla(doc, y, COLUMNAS_MANTENIMIENTO, d.ordenes.map(celdasMantenimiento)) - 1
+
+  pieDePagina(doc, `Generado el ${fechaLarga(d.momento)} por ${d.emitidoPor} · Documento interno`)
+
+  doc.setProperties({
+    title: 'Informe de mantenimiento',
+    subject: 'Órdenes de taller de la maquinaria',
+    author: d.empresa.razonSocial,
+  })
+
+  return { blob: doc.output('blob'), nombre: 'informe-de-mantenimiento.pdf' }
 }
