@@ -776,6 +776,109 @@ export function useAnularNota() {
   )
 }
 
+// ---------------------------------------------------------------------------
+// La cuenta de la nota de entrega: por cobrar o por pagar, sin facturación
+//
+// No existe mientras no se use. Christopher, 12/10/2026: la facturación no
+// corre todavía por trámites legales, pero el material sale igual y hay que
+// poder cobrarlo —o devolverlo si pagaron de más— sin esperarla. Por eso esto
+// no toca `facturas_venta` ni `cobros_venta`: es su propio libro, colgado
+// directo de la nota. Un solo saldo neto en dólares sirve para las dos
+// direcciones: positivo es «por cobrar», negativo es «por pagar».
+// ---------------------------------------------------------------------------
+
+export interface CuentaNotaEntrega {
+  nota_id: number
+  numero: string
+  cliente_id: number
+  cliente: string
+  moneda: string
+  fecha: string
+  total_usd: string
+  cobrado_usd: string
+  reembolsado_usd: string
+  saldo_usd: string
+}
+
+export function useCuentaNotaEntrega(notaId: number | null) {
+  return useQuery({
+    queryKey: ['ventas', 'cuenta_nota_entrega', notaId],
+    enabled: notaId !== null,
+    queryFn: async () =>
+      desenvolver<CuentaNotaEntrega | null>(
+        await supabase
+          .from('v_cuenta_nota_entrega')
+          .select('*')
+          .eq('nota_id', notaId!)
+          .maybeSingle(),
+      ),
+  })
+}
+
+export interface MovimientoCuentaNota {
+  id: number
+  numero: string
+  nota_id: number
+  tipo: 'COBRO' | 'REEMBOLSO'
+  fecha: string
+  cuenta_id: number
+  moneda: string
+  monto: string
+  monto_usd: string
+  referencia: string | null
+  observacion: string | null
+  estado: 'VIGENTE' | 'ANULADO'
+  motivo_anulacion: string | null
+  registrado_en: string
+  cuenta: { nombre: string; moneda: string } | null
+}
+
+export function useMovimientosCuentaNota(notaId: number | null) {
+  return useQuery({
+    queryKey: ['ventas', 'movimientos_cuenta_nota', notaId],
+    enabled: notaId !== null,
+    queryFn: async () =>
+      desenvolver<MovimientoCuentaNota[]>(
+        await supabase
+          .from('cuenta_nota_entrega_movimientos')
+          .select('*, cuenta:cuentas_tesoreria(nombre, moneda)')
+          .eq('nota_id', notaId!)
+          .order('registrado_en', { ascending: false }),
+      ),
+  })
+}
+
+export function useRegistrarMovimientoCuentaNota() {
+  return useAccionVentas<
+    {
+      nota_id: number
+      tipo: 'COBRO' | 'REEMBOLSO'
+      monto: number
+      cuenta_id: number
+      fecha?: string
+      referencia?: string | null
+      observacion?: string | null
+    },
+    number
+  >((m) =>
+    rpc<number>('registrar_movimiento_cuenta_nota', {
+      p_nota_id: m.nota_id,
+      p_tipo: m.tipo,
+      p_monto: m.monto,
+      p_cuenta_id: m.cuenta_id,
+      p_fecha: m.fecha || null,
+      p_referencia: m.referencia || null,
+      p_observacion: m.observacion || null,
+    }),
+  )
+}
+
+export function useAnularMovimientoCuentaNota() {
+  return useAccionVentas((m: { id: number; motivo: string }) =>
+    rpc<void>('anular_movimiento_cuenta_nota', { p_id: m.id, p_motivo: m.motivo }),
+  )
+}
+
 /** Edita el papel entero. Solo lo ve quien es ADMIN: lo exige la propia función. */
 export interface EdicionDeNota {
   id: number

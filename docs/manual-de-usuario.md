@@ -3445,6 +3445,17 @@ Es la confusión más común, y sale cara: quien la tiene, o le entrega al clien
 
 **Anular no es lo mismo que corregir.** Anular sirve mientras la factura no ha salido de la empresa: se rompe el papel y se hace otro. En cuanto está en manos del cliente, él tiene un documento fiscal con un número de control que existe —y el SENIAT también—, y entonces lo que corresponde es la **nota de crédito** (21.3).
 
+#### La cuenta de la nota: por cobrar o por pagar, sin facturación
+
+Mientras la facturación no corra por trámites legales con la sucursal, el material sigue saliendo igual y hay que poder cobrarlo —o devolverlo, si el cliente pagó de más— sin esperar la factura. Para eso, dentro del detalle de cada nota hay un apartado propio, **Cuenta de esta nota**, que no es Cuentas por cobrar (21.4) ni toca una factura: es el libro de esa nota, y nada más.
+
+- **Un solo saldo, en dólares, que puede ir para los dos lados.** No hay una pantalla para «por cobrar» y otra para «por pagar»: es el mismo número. Si es positivo, el cliente todavía debe ese material; si es negativo, pagó de más y se le debe devolver algo.
+- **Sin IVA.** El saldo de partida es el total de la nota tal cual —ya neto de descuento y flete—, porque la nota de entrega no lleva IVA (10.6) y el negocio no lo aplica todavía por los trámites de la sucursal.
+- **Dos tipos de movimiento:** **Cobro** (entra dinero a una cuenta de tesorería) y **Reembolso** (sale de una cuenta de tesorería, para devolver lo que sobró). Cada uno pide la cuenta donde cayó o de donde salió el dinero, el monto, una referencia opcional y una observación.
+- **La tasa es la del día en que se registra el movimiento, no la del día en que se despachó la nota.** La nota congeló su propia tasa al salir el camión; el cobro llega otro día y a su propio cambio, por eso el saldo se compara siempre en dólares.
+- **Se ve y se usa igual que el resto de la pantalla:** lo maneja quien tiene permiso de escritura en Facturación, y anular un movimiento pide el permiso total, igual que anular la nota.
+- **Una nota con cobros o reembolsos vigentes no se puede anular.** Hay que anular primero esos movimientos —cada uno reversa su asiento en tesorería— y, con la cuenta en cero, recién entonces se anula la nota.
+
 #### Cómo se descuenta el inventario al aprobar
 
 Cuando alguien pulsa **Aprobar**, el sistema hace todo esto de una vez:
