@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
-import { Check, FileText, Pencil, Printer, Truck, X } from 'lucide-react'
+import { Check, FileText, Pencil, Printer, Truck, Wallet, X } from 'lucide-react'
 import { CatalogoTransporte } from '@/components/CatalogoTransporte'
 import { ElegirArchivosDeCarga, FotosDeCarga } from '@/components/FotosDeCarga'
 import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
@@ -39,22 +39,28 @@ import { armarNotaDeEntrega } from '@/lib/ficha/notaDeEntregaPapel'
 import { armarReporteNotasDeEntrega, type MaterialDespachado } from '@/lib/ficha/notasDeEntregaReportePdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
+  useAnularMovimientoCuentaNota,
   useAnularNota,
   useAprobarDespacho,
   useCancelarDespacho,
   useClientes,
+  useCuentaNotaEntrega,
+  useMovimientosCuentaNota,
   useNotasEntrega,
   leerNotaEntregaPorNumero,
   usePrecios,
   usePuedoAprobarDespachos,
   useRechazarDespacho,
+  useRegistrarMovimientoCuentaNota,
   useRenglones,
   renglonesDeNotas,
   useSolicitarDespacho,
   useSolicitudesDespacho,
+  type MovimientoCuentaNota,
   type NotaEntrega,
   type SolicitudDeDespacho,
 } from '@/lib/api/ventas'
+import { useCuentas } from '@/lib/api/tesoreria'
 import { useCompletarNotaDeEntrega, useGuardarCamionesDeNota } from '@/lib/api/salidas'
 import { ModalNotaDeEntrega } from '@/pages/salidas/ModalNotaDeEntrega'
 import { ListaDeCamiones, ModalCamiones } from './CamionesDeLaNota'
@@ -243,6 +249,28 @@ export function NotasDeEntrega() {
   const enlazar = useEnlazarNotaAFactura()
   const desenlazar = useDesenlazarNota()
   const [motivo, setMotivo] = useState('')
+
+  /*
+    LA CUENTA DE LA NOTA: POR COBRAR O POR PAGAR, SIN FACTURACIÓN.
+
+    Christopher, 12/10/2026: la facturación no corre todavía por trámites
+    legales, pero el material sale igual y hay que poder cobrarlo —o
+    devolverlo si pagaron de más— sin esperarla. Solo mientras el detalle de
+    una nota está abierto se piden su saldo y su libro de movimientos.
+  */
+  const cuentaDetalle = useCuentaNotaEntrega(detalle?.id ?? null)
+  const movimientosDetalle = useMovimientosCuentaNota(detalle?.id ?? null)
+  const { data: cuentasTesoreria } = useCuentas(true)
+  const registrarMovimiento = useRegistrarMovimientoCuentaNota()
+  const anularMovimiento = useAnularMovimientoCuentaNota()
+  const [registrandoMovimiento, setRegistrandoMovimiento] = useState(false)
+  const [tipoMovimiento, setTipoMovimiento] = useState<'COBRO' | 'REEMBOLSO'>('COBRO')
+  const [montoMovimiento, setMontoMovimiento] = useState('')
+  const [cuentaMovimientoId, setCuentaMovimientoId] = useState('')
+  const [referenciaMovimiento, setReferenciaMovimiento] = useState('')
+  const [observacionMovimiento, setObservacionMovimiento] = useState('')
+  const [anulandoMovimiento, setAnulandoMovimiento] = useState<MovimientoCuentaNota | null>(null)
+  const [motivoMovimiento, setMotivoMovimiento] = useState('')
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
   const [reporte, setReporte] = useState<PdfArmado | null>(null)
   const [armandoReporte, setArmandoReporte] = useState(false)
@@ -1493,6 +1521,246 @@ export function NotasDeEntrega() {
               sinIva
             />
           </div>
+
+          {/*
+            LA CUENTA DE ESTA NOTA, APARTE DE FACTURACIÓN.
+
+            Christopher, 12/10/2026: la facturación no corre todavía por
+            trámites legales, pero el material sale igual y hay que poder
+            cobrarlo —o devolverlo si pagaron de más— sin esperarla. No toca
+            facturas_venta ni cobros_venta: es el libro propio de la nota.
+          */}
+          {detalle.estado !== 'ANULADA' ? (
+            <div className="border-hairline rounded-card mt-4 border p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-ink/55 text-xs font-medium tracking-wide uppercase">
+                    Cuenta de esta nota
+                  </p>
+                  <p className="text-ink/50 mt-0.5 text-xs">
+                    Aparte de Facturación: lo que falta cobrar de este despacho, o lo que se le
+                    debe devolver al cliente.
+                  </p>
+                </div>
+                {puedeDespachar ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    icon={<Wallet />}
+                    onClick={() => {
+                      setTipoMovimiento('COBRO')
+                      setMontoMovimiento('')
+                      setCuentaMovimientoId('')
+                      setReferenciaMovimiento('')
+                      setObservacionMovimiento('')
+                      setRegistrandoMovimiento(true)
+                    }}
+                  >
+                    Registrar cobro o reembolso
+                  </Button>
+                ) : null}
+              </div>
+
+              {cuentaDetalle.isPending ? <Cargando /> : null}
+              {cuentaDetalle.error ? <ErrorDeCarga error={cuentaDetalle.error} className="mt-2" /> : null}
+
+              {cuentaDetalle.data
+                ? (() => {
+                    const c = cuentaDetalle.data
+                    const saldo = Number(c.saldo_usd)
+                    const tono = Math.abs(saldo) < 0.01 ? 'neutral' : saldo > 0 ? 'warning' : 'info'
+                    const etiqueta =
+                      Math.abs(saldo) < 0.01
+                        ? 'Saldada'
+                        : saldo > 0
+                          ? `Por cobrar ${dolares(saldo)}`
+                          : `Por pagar ${dolares(Math.abs(saldo))}`
+                    return (
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <Chip tone={tono}>{etiqueta}</Chip>
+                        <span className="text-ink/50 text-xs">
+                          Total {dolares(c.total_usd)} · cobrado {dolares(c.cobrado_usd)}
+                          {Number(c.reembolsado_usd) > 0
+                            ? ` · reembolsado ${dolares(c.reembolsado_usd)}`
+                            : ''}
+                        </span>
+                      </div>
+                    )
+                  })()
+                : null}
+
+              {movimientosDetalle.data && movimientosDetalle.data.length > 0 ? (
+                <ul className="border-hairline mt-3 divide-y border-t text-sm">
+                  {movimientosDetalle.data.map((m) => (
+                    <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                      <div className="min-w-0">
+                        <p className="text-ink/80">
+                          {m.tipo === 'COBRO' ? 'Cobro' : 'Reembolso'} de {dinero(m.moneda, m.monto)}
+                          {m.moneda !== 'USD' ? (
+                            <span className="text-ink/45"> · {dolares(m.monto_usd)}</span>
+                          ) : null}
+                          {m.estado === 'ANULADO' ? (
+                            <span className="text-ink/40 italic"> · anulado</span>
+                          ) : null}
+                        </p>
+                        <p className="text-ink/45 text-xs">
+                          {m.numero} · {fecha(m.fecha)} · {m.cuenta?.nombre ?? ''}
+                          {m.referencia ? ` · ref. ${m.referencia}` : ''}
+                        </p>
+                        {m.observacion ? (
+                          <p className="text-ink/55 text-xs italic">{m.observacion}</p>
+                        ) : null}
+                        {m.motivo_anulacion ? (
+                          <p className="text-danger text-xs">Anulado: {m.motivo_anulacion}</p>
+                        ) : null}
+                      </div>
+                      {m.estado === 'VIGENTE' && puedeAnular ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-danger"
+                          onClick={() => {
+                            setAnulandoMovimiento(m)
+                            setMotivoMovimiento('')
+                          }}
+                        >
+                          Anular
+                        </Button>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
+        </Modal>
+      ) : null}
+
+      {/* ------------------------------------ cuenta: registrar movimiento */}
+      {registrandoMovimiento && detalle ? (
+        <Modal
+          abierto
+          onCerrar={() => setRegistrandoMovimiento(false)}
+          titulo={`Registrar movimiento · ${detalle.numero}`}
+          descripcion="No toca Facturación: es la cuenta de esta nota, aparte. El cobro entra a la cuenta de tesorería elegida; el reembolso sale de ella."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setRegistrandoMovimiento(false)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={
+                  registrarMovimiento.isPending ||
+                  !cuentaMovimientoId ||
+                  !(Number(montoMovimiento) > 0)
+                }
+                onClick={async () => {
+                  await registrarMovimiento.mutateAsync({
+                    nota_id: detalle.id,
+                    tipo: tipoMovimiento,
+                    monto: Number(montoMovimiento),
+                    cuenta_id: Number(cuentaMovimientoId),
+                    referencia: referenciaMovimiento || null,
+                    observacion: observacionMovimiento || null,
+                  })
+                  setRegistrandoMovimiento(false)
+                }}
+              >
+                {registrarMovimiento.isPending ? 'Guardando…' : 'Registrar'}
+              </Button>
+            </>
+          }
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Select
+              label="Tipo"
+              value={tipoMovimiento}
+              onChange={(e) => setTipoMovimiento(e.target.value as 'COBRO' | 'REEMBOLSO')}
+              opciones={[
+                { valor: 'COBRO', etiqueta: 'Cobro (el cliente paga)' },
+                { valor: 'REEMBOLSO', etiqueta: 'Reembolso (se le devuelve al cliente)' },
+              ]}
+            />
+            <Input
+              label="Monto"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={montoMovimiento}
+              onChange={(e) => setMontoMovimiento(e.target.value)}
+            />
+            <div className="sm:col-span-2">
+              <Select
+                label="Cuenta de tesorería"
+                vacio="Seleccione la cuenta"
+                value={cuentaMovimientoId}
+                onChange={(e) => setCuentaMovimientoId(e.target.value)}
+                opciones={(cuentasTesoreria ?? []).map((c) => ({
+                  valor: String(c.id),
+                  etiqueta: `${c.nombre} · ${c.moneda}`,
+                }))}
+                hint="La moneda y la tasa del día se toman de esta cuenta, no de la nota."
+              />
+            </div>
+            <Input
+              label="Referencia"
+              value={referenciaMovimiento}
+              onChange={(e) => setReferenciaMovimiento(e.target.value)}
+            />
+            <div className="sm:col-span-2">
+              <Textarea
+                label="Observación"
+                rows={2}
+                value={observacionMovimiento}
+                onChange={(e) => setObservacionMovimiento(e.target.value)}
+              />
+            </div>
+          </div>
+          {registrarMovimiento.error ? (
+            <ErrorDeCarga error={registrarMovimiento.error} className="mt-4" />
+          ) : null}
+        </Modal>
+      ) : null}
+
+      {/* --------------------------------------- cuenta: anular movimiento */}
+      {anulandoMovimiento ? (
+        <Modal
+          abierto
+          ancho="sm"
+          onCerrar={() => setAnulandoMovimiento(null)}
+          titulo={`Anular ${anulandoMovimiento.numero}`}
+          descripcion="El dinero se reversa en tesorería con un asiento contrario."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setAnulandoMovimiento(null)}>
+                No anular
+              </Button>
+              <Button
+                disabled={anularMovimiento.isPending || motivoMovimiento.trim().length < 4}
+                onClick={async () => {
+                  await anularMovimiento.mutateAsync({
+                    id: anulandoMovimiento.id,
+                    motivo: motivoMovimiento,
+                  })
+                  setAnulandoMovimiento(null)
+                }}
+              >
+                {anularMovimiento.isPending ? 'Anulando…' : 'Anular'}
+              </Button>
+            </>
+          }
+        >
+          <Textarea
+            label="Motivo"
+            rows={3}
+            value={motivoMovimiento}
+            onChange={(e) => setMotivoMovimiento(e.target.value)}
+            required
+          />
+          {anularMovimiento.error ? (
+            <ErrorDeCarga error={anularMovimiento.error} className="mt-4" />
+          ) : null}
         </Modal>
       ) : null}
 
