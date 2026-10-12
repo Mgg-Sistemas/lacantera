@@ -178,7 +178,7 @@ export function FichaMaquina() {
                 ['Horómetro actual', maquina.horometro_actual],
                 ['Horas trabajadas', maquina.horas_totales],
                 ['Desde el último mantenimiento', maquina.horas_desde_mant],
-                ['Tope de horas', maquina.tope_horas],
+                ['Tope de horas', maquina.tope_horas_efectivo],
                 ['Le faltan', maquina.horas_para_el_tope],
                 ['Última lectura', maquina.ultima_lectura],
                 ['Último mantenimiento', maquina.ultimo_mantenimiento],

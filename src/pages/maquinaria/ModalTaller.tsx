@@ -296,6 +296,8 @@ function Salida({
   const [dia, setDia] = useState(hoy)
   const [detalle, setDetalle] = useState('')
   const [costo, setCosto] = useState('')
+  const [tecnico, setTecnico] = useState('')
+  const [intervaloHoras, setIntervaloHoras] = useState('')
   const [estadoSalida, setEstadoSalida] = useState<'EN_ESPERA' | 'ACTIVA' | 'FUERA_DE_SERVICIO'>(
     'EN_ESPERA',
   )
@@ -310,6 +312,8 @@ function Salida({
     setDia(hoy)
     setDetalle('')
     setCosto('')
+    setTecnico('')
+    setIntervaloHoras('')
     setEstadoSalida('EN_ESPERA')
     setFilas([])
     setAnulando(false)
@@ -330,7 +334,7 @@ function Salida({
     return hay ? Number(f.cantidad) > Number(hay.existencia) : false
   })
 
-  const valido = detalle.trim().length >= 3 && !seExcede
+  const valido = detalle.trim().length >= 3 && tecnico.trim().length >= 3 && !seExcede
 
   const enviar = async () => {
     await salir.mutateAsync({
@@ -340,6 +344,8 @@ function Salida({
       repuestos,
       estado_salida: estadoSalida,
       fecha_salida: dia,
+      tecnico: tecnico.trim(),
+      intervalo_horas: intervaloHoras ? Number(intervaloHoras) : null,
     })
     onCerrar()
   }
@@ -446,6 +452,38 @@ function Salida({
               onChange={(e) => setCosto(e.target.value)}
               hint="Los repuestos se suman aparte, a su costo promedio."
             />
+          </div>
+
+          {/*
+            QUIÉN LO HIZO, DE VERDAD. Christopher, 14/10/2026: distinto de
+            quien lo anota en el sistema (el usuario logueado) — el mecánico
+            o el taller externo.
+          */}
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Técnico o taller que hizo el trabajo"
+              value={tecnico}
+              onChange={(e) => setTecnico(e.target.value)}
+            />
+            {/*
+              EL INTERVALO PROPIO DE ESTE CICLO. Solo tiene efecto en un
+              mantenimiento sobre máquina: en servicio o reparación no
+              reinicia ningún contador, así que un intervalo ahí no
+              significaría nada.
+            */}
+            {maquina.mantenimiento_abierto_tipo === 'MANTENIMIENTO' ? (
+              <Input
+                label="Próximo mantenimiento en (horas)"
+                type="number"
+                min="0"
+                step="1"
+                inputMode="decimal"
+                value={intervaloHoras}
+                onChange={(e) => setIntervaloHoras(e.target.value)}
+                placeholder={maquina.tope_horas}
+                hint={`Si se deja en blanco, se usa el tope configurado de la máquina (${enteros(Number(maquina.tope_horas))} h).`}
+              />
+            ) : null}
           </div>
 
           <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Repuestos</h3>
