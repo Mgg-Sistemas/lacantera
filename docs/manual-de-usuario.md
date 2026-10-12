@@ -3445,6 +3445,15 @@ Es la confusión más común, y sale cara: quien la tiene, o le entrega al clien
 
 **Anular no es lo mismo que corregir.** Anular sirve mientras la factura no ha salido de la empresa: se rompe el papel y se hace otro. En cuanto está en manos del cliente, él tiene un documento fiscal con un número de control que existe —y el SENIAT también—, y entonces lo que corresponde es la **nota de crédito** (21.3).
 
+#### Pendiente por cobrar, aparte de Facturación
+
+Al pedir un despacho hay una casilla, **Pendiente por cobrar**, para cuando el material se vendió a crédito. No es una cuenta por cobrar ni una nota de crédito: es un recordatorio con fecha de pago, que no se enlaza a ninguna factura ni pasa por Facturación.
+
+- **Marcarla pide su fecha de pago**, y esa fecha no puede ser anterior a hoy: poner un vencimiento ya vencido no tendría sentido.
+- **Se busca por su propia categoría.** En los filtros de Notas de entrega, **Cobro** tiene dos opciones aparte de Cualquiera: **Pendiente por cobrar** y **Vencidas**. En la lista y en el detalle de la nota aparece un rótulo —**Por cobrar** o **Vencida**, con la fecha— al lado del estado de siempre.
+- **El sistema avisa solo.** Cuando se pasa la fecha de pago sin que nadie haya marcado la nota como cobrada, sale un aviso en la campana, una vez por nota: no se repite todos los días.
+- **Marcar como cobrada** apaga el recordatorio, desde el detalle de la nota. No reversa nada del patio ni de ningún libro de dinero —no hay nada que reversar—: esto no mueve inventario ni toca tesorería, solo lleva la cuenta de quién todavía debe.
+
 #### Cómo se descuenta el inventario al aprobar
 
 Cuando alguien pulsa **Aprobar**, el sistema hace todo esto de una vez:
