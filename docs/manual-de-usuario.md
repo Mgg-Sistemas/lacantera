@@ -3453,6 +3453,7 @@ Al pedir un despacho hay una casilla, **Pendiente por cobrar**, para cuando el m
 - **Se busca por su propia categoría.** En los filtros de Notas de entrega, **Cobro** tiene dos opciones aparte de Cualquiera: **Pendiente por cobrar** y **Vencidas**. En la lista y en el detalle de la nota aparece un rótulo —**Por cobrar** o **Vencida**, con la fecha— al lado del estado de siempre.
 - **El sistema avisa solo.** Cuando se pasa la fecha de pago sin que nadie haya marcado la nota como cobrada, sale un aviso en la campana, una vez por nota: no se repite todos los días.
 - **Marcar como cobrada** apaga el recordatorio, desde el detalle de la nota. No reversa nada del patio ni de ningún libro de dinero —no hay nada que reversar—: esto no mueve inventario ni toca tesorería, solo lleva la cuenta de quién todavía debe.
+- **Una nota ya despachada también se puede dejar pendiente por cobrar después.** Si no se marcó al pedirla, desde el detalle de la nota sale **Marcar pendiente por cobrar**, que pide la misma fecha de pago. No se puede usar en una nota anulada ni en una que ya tenga la cuenta abierta sin resolver.
 
 #### Cómo se descuenta el inventario al aprobar
 
