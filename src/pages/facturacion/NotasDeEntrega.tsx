@@ -43,6 +43,7 @@ import {
   useAprobarDespacho,
   useCancelarDespacho,
   useClientes,
+  useMarcarNotaCobrada,
   useNotasEntrega,
   leerNotaEntregaPorNumero,
   usePrecios,
@@ -151,15 +152,19 @@ export function NotasDeEntrega() {
   const [busca, setBusca] = useState('')
   const [estado, setEstado] = useState('')
   const [monedaFiltro, setMonedaFiltro] = useState('')
+  const [cobroFiltro, setCobroFiltro] = useState<'' | 'PENDIENTE' | 'VENCIDA'>('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const { data, isPending, error } = useNotasEntrega({
     texto: busca,
     ...(estado ? { estado } : {}),
     ...(monedaFiltro ? { moneda: monedaFiltro } : {}),
+    ...(cobroFiltro ? { cobro: cobroFiltro } : {}),
     ...(rango.desde ? { desde: rango.desde } : {}),
     ...(rango.hasta ? { hasta: rango.hasta } : {}),
   })
-  const hayFiltros = Boolean(busca.trim() || estado || monedaFiltro || rango.desde || rango.hasta)
+  const hayFiltros = Boolean(
+    busca.trim() || estado || monedaFiltro || cobroFiltro || rango.desde || rango.hasta,
+  )
   const { data: clientes } = useClientes(true)
   const { data: precios } = usePrecios()
   const { data: almacenes } = useAlmacenes()
@@ -167,6 +172,7 @@ export function NotasDeEntrega() {
   const { data: yo } = useMiPerfil()
   const despachar = useSolicitarDespacho()
   const anular = useAnularNota()
+  const marcarCobrada = useMarcarNotaCobrada()
   const solicitudes = useSolicitudesDespacho()
   const { data: puedoAprobar } = usePuedoAprobarDespachos()
   const aprobar = useAprobarDespacho()
@@ -261,6 +267,15 @@ export function NotasDeEntrega() {
   const [pagoCombinado, setPagoCombinado] = useState(false)
   const [montoUsdCombinado, setMontoUsdCombinado] = useState('')
   const [montoBsCombinado, setMontoBsCombinado] = useState('')
+  /*
+    PENDIENTE POR COBRAR, APARTE DE FACTURACIÓN.
+
+    Christopher, 12/10/2026: un recordatorio con fecha de pago, sin enlazarse
+    a cuentas por cobrar, notas de crédito ni ninguna factura. La base exige
+    la fecha cuando se marca, y que no sea anterior a hoy.
+  */
+  const [pendienteCobro, setPendienteCobro] = useState(false)
+  const [fechaPago, setFechaPago] = useState('')
   /*
     CHOFER Y VEHÍCULO, OBLIGATORIOS Y DEL CATÁLOGO. Se elige del catálogo o, si
     no está, se escribe al lado y se añade —con «+ Añadir» o, si no se pulsa,
@@ -413,6 +428,8 @@ export function NotasDeEntrega() {
     setPagoCombinado(false)
     setMontoUsdCombinado('')
     setMontoBsCombinado('')
+    setPendienteCobro(false)
+    setFechaPago('')
   }
 
   // El papel se arma en un solo sitio: también lo imprime Salidas, cuando una
@@ -625,6 +642,11 @@ export function NotasDeEntrega() {
                                 Pago combinado: {dolares(s.monto_usd_combinado ?? 0)} + {bolivares(s.monto_bs_combinado ?? 0)}
                               </p>
                             ) : null}
+                            {s.pendiente_por_cobrar ? (
+                              <p className="text-ink/60 text-xs">
+                                Pendiente por cobrar · vence {fecha(s.fecha_pago!)}
+                              </p>
+                            ) : null}
                           </div>
                         )
                       })()}
@@ -730,7 +752,7 @@ export function NotasDeEntrega() {
         datos es el que tiene escrito.
       */}
       <Card className="mb-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_minmax(0,10rem)_minmax(0,10rem)]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_minmax(0,10rem)_minmax(0,10rem)_minmax(0,11rem)]">
           <Input
             label="Buscar una nota"
             value={busca}
@@ -760,6 +782,20 @@ export function NotasDeEntrega() {
             opciones={[
               { valor: '', etiqueta: 'Cualquiera' },
               ...(monedas.data ?? []).map((m) => ({ valor: m.valor, etiqueta: m.etiqueta })),
+            ]}
+          />
+          {/*
+            PENDIENTE POR COBRAR, LA CATEGORÍA APARTE DE FACTURACIÓN.
+            Christopher, 12/10/2026: buscar por esto en Notas de entrega.
+          */}
+          <Select
+            label="Cobro"
+            value={cobroFiltro}
+            onChange={(e) => setCobroFiltro(e.target.value as '' | 'PENDIENTE' | 'VENCIDA')}
+            opciones={[
+              { valor: '', etiqueta: 'Cualquiera' },
+              { valor: 'PENDIENTE', etiqueta: 'Pendiente por cobrar' },
+              { valor: 'VENCIDA', etiqueta: 'Vencidas' },
             ]}
           />
         </div>
@@ -845,7 +881,14 @@ export function NotasDeEntrega() {
                       {dolares(n.total_usd)}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <Chip tone={TONO[n.estado] ?? 'neutral'}>{ETIQUETA[n.estado]}</Chip>
+                      <div className="flex flex-col items-end gap-1">
+                        <Chip tone={TONO[n.estado] ?? 'neutral'}>{ETIQUETA[n.estado]}</Chip>
+                        {n.pendiente_por_cobrar && !n.cobrada_en ? (
+                          <Chip tone={n.vencida_por_cobrar ? 'danger' : 'warning'}>
+                            {n.vencida_por_cobrar ? 'Vencida' : 'Por cobrar'} · {fecha(n.fecha_pago!)}
+                          </Chip>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -907,6 +950,7 @@ export function NotasDeEntrega() {
                   incompletas ||
                   faltaTransporte ||
                   faltaElCombinado ||
+                  (pendienteCobro && !fechaPago) ||
                   aRenglones(filasEfectivas).length === 0
                 }
                 onClick={async () => {
@@ -930,6 +974,8 @@ export function NotasDeEntrega() {
                     pago_combinado: pagoCombinado,
                     monto_usd_combinado: pagoCombinado ? combinadoUsd : null,
                     monto_bs_combinado: pagoCombinado ? Number(montoBsCombinado) || 0 : null,
+                    pendiente_por_cobrar: pendienteCobro,
+                    fecha_pago: pendienteCobro ? fechaPago : null,
                   })
                   if (archivos.length > 0) {
                     try {
@@ -1341,6 +1387,49 @@ export function NotasDeEntrega() {
             </div>
           ) : null}
 
+          {/*
+            PENDIENTE POR COBRAR, APARTE DE FACTURACIÓN.
+
+            Christopher, 12/10/2026: un recordatorio con fecha de pago, sin
+            enlazarse a cuentas por cobrar, notas de crédito ni ninguna
+            factura. Se puede buscar después por esa categoría, y la campana
+            avisa sola cuando se pasa la fecha.
+          */}
+          <div className="mt-4">
+            <label className="border-hairline flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+              <input
+                type="checkbox"
+                className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                checked={pendienteCobro}
+                onChange={(e) => {
+                  setPendienteCobro(e.target.checked)
+                  if (!e.target.checked) setFechaPago('')
+                }}
+              />
+              <span className="text-ink/80">
+                Pendiente por cobrar
+                <span className="text-ink/50 mt-0.5 block text-xs">
+                  No se enlaza a Facturación ni a cuentas por cobrar: es solo un recordatorio con
+                  fecha de pago. Se puede buscar después por esta categoría, y el sistema avisa si
+                  se pasa la fecha.
+                </span>
+              </span>
+            </label>
+
+            {pendienteCobro ? (
+              <div className="mt-3">
+                <Input
+                  label="Fecha de pago"
+                  type="date"
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={fechaPago}
+                  onChange={(e) => setFechaPago(e.target.value)}
+                  hint={!fechaPago ? 'Hace falta para dejarla pendiente por cobrar.' : undefined}
+                />
+              </div>
+            ) : null}
+          </div>
+
           {despachar.error ? <ErrorDeCarga error={despachar.error} className="mt-4" /> : null}
         </Modal>
       ) : null}
@@ -1441,10 +1530,45 @@ export function NotasDeEntrega() {
             {detalle.factura_numero ? (
               <Chip tone="success">En la factura {detalle.factura_numero}</Chip>
             ) : null}
+            {detalle.pendiente_por_cobrar ? (
+              detalle.cobrada_en ? (
+                <Chip tone="success">Cobrada el {fecha(detalle.cobrada_en)}</Chip>
+              ) : (
+                <Chip tone={detalle.vencida_por_cobrar ? 'danger' : 'warning'}>
+                  {detalle.vencida_por_cobrar ? 'Vencida' : 'Por cobrar'} · vence{' '}
+                  {fecha(detalle.fecha_pago!)}
+                </Chip>
+              )
+            ) : null}
           </div>
 
           {detalle.motivo_anulacion ? (
             <p className="text-danger mt-3 text-sm">Anulada: {detalle.motivo_anulacion}</p>
+          ) : null}
+
+          {/*
+            PENDIENTE POR COBRAR: EL ÚNICO BOTÓN QUE LE HACE FALTA.
+            Christopher, 12/10/2026: marcarla como cobrada apaga el
+            recordatorio. No reversa nada, no hay nada que reversar.
+          */}
+          {detalle.pendiente_por_cobrar && !detalle.cobrada_en && puedeDespachar ? (
+            <div className="border-hairline mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[6px] border p-3 text-sm">
+              <span className="text-ink/70">
+                Pendiente por cobrar, vence el {fecha(detalle.fecha_pago!)}.
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                icon={<Check />}
+                disabled={marcarCobrada.isPending}
+                onClick={() => marcarCobrada.mutate({ id: detalle.id })}
+              >
+                {marcarCobrada.isPending ? 'Guardando…' : 'Marcar como cobrada'}
+              </Button>
+            </div>
+          ) : null}
+          {marcarCobrada.error ? (
+            <ErrorDeCarga error={marcarCobrada.error} className="mt-2" />
           ) : null}
 
           <ListaDeCamiones camiones={detalle.camiones ?? []} />
