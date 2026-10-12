@@ -523,6 +523,16 @@ export interface NotaEntrega {
   pago_combinado: boolean
   monto_usd_combinado: string | null
   monto_bs_combinado: string | null
+  /**
+   * Pendiente por cobrar, aparte de Facturación. Christopher, 12/10/2026: un
+   * recordatorio con fecha de pago, sin enlazarse a cuentas por cobrar ni a
+   * ninguna factura. `vencida_por_cobrar` la calcula la vista: pendiente, sin
+   * cobrar todavía y con la fecha ya pasada.
+   */
+  pendiente_por_cobrar: boolean
+  fecha_pago: string | null
+  cobrada_en: string | null
+  vencida_por_cobrar: boolean
 }
 
 /** Un camión de una nota de entrega: la foto del momento, no el catálogo. */
@@ -567,6 +577,8 @@ export interface FiltrosDeNotas {
   hasta?: string
   /** La moneda en la que se emitió la nota: «USD», «VES»… No el equivalente. */
   moneda?: string
+  /** «PENDIENTE»: todavía sin cobrar. «VENCIDA»: pendiente y ya pasó la fecha. */
+  cobro?: 'PENDIENTE' | 'VENCIDA' | ''
 }
 
 const COLUMNAS_QUE_SE_BUSCAN = [
@@ -595,6 +607,7 @@ export function useNotasEntrega(filtros: string | FiltrosDeNotas = {}) {
       f.desde ?? '',
       f.hasta ?? '',
       f.moneda ?? '',
+      f.cobro ?? '',
     ],
     queryFn: async () => {
       let q = supabase
@@ -607,6 +620,8 @@ export function useNotasEntrega(filtros: string | FiltrosDeNotas = {}) {
       if (f.desde) q = q.gte('fecha', f.desde)
       if (f.hasta) q = q.lte('fecha', f.hasta)
       if (f.moneda) q = q.eq('moneda', f.moneda)
+      if (f.cobro === 'PENDIENTE') q = q.eq('pendiente_por_cobrar', true).is('cobrada_en', null)
+      if (f.cobro === 'VENCIDA') q = q.eq('vencida_por_cobrar', true)
       if (texto) q = q.or(COLUMNAS_QUE_SE_BUSCAN.map((c) => `${c}.ilike.%${texto}%`).join(','))
       return desenvolver<NotaEntrega[]>(await q)
     },
@@ -643,6 +658,15 @@ export interface Despacho {
   pago_combinado?: boolean
   monto_usd_combinado?: number | null
   monto_bs_combinado?: number | null
+  /**
+   * PENDIENTE POR COBRAR, APARTE DE FACTURACIÓN.
+   *
+   * Christopher, 12/10/2026: un recordatorio con fecha de pago, sin enlazarse
+   * a cuentas por cobrar, notas de crédito ni ninguna factura. La fecha es
+   * obligatoria si se marca, y no puede ser anterior a hoy — lo exige la base.
+   */
+  pendiente_por_cobrar?: boolean
+  fecha_pago?: string | null
 }
 
 /*
@@ -685,6 +709,8 @@ export function useSolicitarDespacho() {
       p_pago_combinado: d.pago_combinado ?? false,
       p_monto_usd_combinado: d.monto_usd_combinado ?? null,
       p_monto_bs_combinado: d.monto_bs_combinado ?? null,
+      p_pendiente_por_cobrar: d.pendiente_por_cobrar ?? false,
+      p_fecha_pago: d.fecha_pago || null,
     }),
   )
 }
@@ -720,6 +746,8 @@ export interface SolicitudDeDespacho {
   pago_combinado: boolean
   monto_usd_combinado: string | null
   monto_bs_combinado: string | null
+  pendiente_por_cobrar: boolean
+  fecha_pago: string | null
   renglones: Array<{
     articulo_id: number
     articulo: string | null
@@ -773,6 +801,13 @@ export function useCancelarDespacho() {
 export function useAnularNota() {
   return useAccionVentas((n: { id: number; motivo: string }) =>
     rpc<void>('anular_nota_entrega', { p_id: n.id, p_motivo: n.motivo }),
+  )
+}
+
+/** Apaga el recordatorio de «pendiente por cobrar»: no reversa nada, no hay nada que reversar. */
+export function useMarcarNotaCobrada() {
+  return useAccionVentas((n: { id: number }) =>
+    rpc<void>('marcar_nota_de_entrega_cobrada', { p_id: n.id }),
   )
 }
 

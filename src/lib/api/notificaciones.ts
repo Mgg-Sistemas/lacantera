@@ -32,6 +32,7 @@ export type Modulo =
   | 'ASIGNACIONES'
   | 'INVENTARIO'
   | 'SALIDAS'
+  | 'FACTURACION'
   | 'SISTEMA'
 
 export type Importancia = 'INFO' | 'ATENCION' | 'URGENTE'
