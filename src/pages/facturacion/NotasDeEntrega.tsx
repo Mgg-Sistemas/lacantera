@@ -44,6 +44,7 @@ import {
   useCancelarDespacho,
   useClientes,
   useMarcarNotaCobrada,
+  useMarcarNotaPendientePorCobrar,
   useNotasEntrega,
   leerNotaEntregaPorNumero,
   usePrecios,
@@ -173,6 +174,9 @@ export function NotasDeEntrega() {
   const despachar = useSolicitarDespacho()
   const anular = useAnularNota()
   const marcarCobrada = useMarcarNotaCobrada()
+  const marcarPendiente = useMarcarNotaPendientePorCobrar()
+  const [marcandoPendiente, setMarcandoPendiente] = useState<NotaEntrega | null>(null)
+  const [fechaPagoNueva, setFechaPagoNueva] = useState('')
   const solicitudes = useSolicitudesDespacho()
   const { data: puedoAprobar } = usePuedoAprobarDespachos()
   const aprobar = useAprobarDespacho()
@@ -1571,6 +1575,29 @@ export function NotasDeEntrega() {
             <ErrorDeCarga error={marcarCobrada.error} className="mt-2" />
           ) : null}
 
+          {/*
+            UNA NOTA QUE YA NACIÓ SIN LA CASILLA. Christopher, 14/10/2026:
+            notas ya despachadas que hacía falta dejar pendientes por cobrar
+            después. Solo si no está ya abierta una cuenta (pendiente sin
+            cobrar) ni anulada.
+          */}
+          {!(detalle.pendiente_por_cobrar && !detalle.cobrada_en) &&
+          detalle.estado !== 'ANULADA' &&
+          puedeDespachar ? (
+            <div className="mt-3">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setFechaPagoNueva('')
+                  setMarcandoPendiente(detalle)
+                }}
+              >
+                Marcar pendiente por cobrar
+              </Button>
+            </div>
+          ) : null}
+
           <ListaDeCamiones camiones={detalle.camiones ?? []} />
 
           {/* De qué despacho salió: quién lo pidió, quién lo aprobó, y sus fotos. */}
@@ -1704,6 +1731,49 @@ export function NotasDeEntrega() {
             required
           />
           {anular.error ? <ErrorDeCarga error={anular.error} className="mt-4" /> : null}
+        </Modal>
+      ) : null}
+
+      {/* -------------------------------- marcar pendiente por cobrar */}
+      {marcandoPendiente ? (
+        <Modal
+          abierto
+          ancho="sm"
+          onCerrar={() => setMarcandoPendiente(null)}
+          titulo={`Marcar pendiente por cobrar · ${marcandoPendiente.numero}`}
+          descripcion="No se enlaza a Facturación ni a cuentas por cobrar: es solo un recordatorio con fecha de pago."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setMarcandoPendiente(null)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={marcarPendiente.isPending || !fechaPagoNueva}
+                onClick={async () => {
+                  await marcarPendiente.mutateAsync({
+                    id: marcandoPendiente.id,
+                    fecha_pago: fechaPagoNueva,
+                  })
+                  setMarcandoPendiente(null)
+                  setDetalle(null)
+                }}
+              >
+                {marcarPendiente.isPending ? 'Guardando…' : 'Marcar'}
+              </Button>
+            </>
+          }
+        >
+          <Input
+            label="Fecha de pago"
+            type="date"
+            min={new Date().toISOString().slice(0, 10)}
+            value={fechaPagoNueva}
+            onChange={(e) => setFechaPagoNueva(e.target.value)}
+            autoFocus
+          />
+          {marcarPendiente.error ? (
+            <ErrorDeCarga error={marcarPendiente.error} className="mt-4" />
+          ) : null}
         </Modal>
       ) : null}
 

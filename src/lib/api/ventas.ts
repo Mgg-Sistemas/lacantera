@@ -811,6 +811,16 @@ export function useMarcarNotaCobrada() {
   )
 }
 
+/** Para una nota que ya nació sin la casilla: la deja pendiente por cobrar después, con su fecha. */
+export function useMarcarNotaPendientePorCobrar() {
+  return useAccionVentas((n: { id: number; fecha_pago: string }) =>
+    rpc<void>('marcar_nota_de_entrega_pendiente_por_cobrar', {
+      p_id: n.id,
+      p_fecha_pago: n.fecha_pago,
+    }),
+  )
+}
+
 /** Edita el papel entero. Solo lo ve quien es ADMIN: lo exige la propia función. */
 export interface EdicionDeNota {
   id: number
