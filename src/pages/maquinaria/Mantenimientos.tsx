@@ -16,6 +16,7 @@ import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import {
+  repuestosDeOrdenes,
   TIPOS_INTERVENCION,
   useMaquinaria,
   useReporteMantenimientos,
@@ -96,30 +97,50 @@ export function Mantenimientos() {
             ? `Del ${rangoInforme.desde ? fecha(rangoInforme.desde) : 'inicio'} al ${rangoInforme.hasta ? fecha(rangoInforme.hasta) : 'hoy'}`
             : `Las ${dentroDelAlcance.length} órdenes más recientes`
 
-      const ordenes: OrdenDelInforme[] = dentroDelAlcance.map((m) => ({
-        numero: m.numero,
-        maquinaCodigo: m.maquina_codigo,
-        maquina: m.maquina,
-        tipo: ETIQUETA_TIPO[m.tipo] ?? m.tipo,
-        estado: ETIQUETA_ESTADO_ORDEN[m.estado] ?? m.estado,
-        fecha: m.fecha,
-        fechaSalida: m.fecha_salida,
-        dias: m.dias,
-        taller: m.taller,
-        tecnico: m.tecnico,
-        motivo: m.motivo,
-        detalle: m.detalle,
-        costoManoObra: m.costo_usd !== null ? Number(m.costo_usd) : null,
-        costoRepuestos: Number(m.costo_repuestos_usd),
-        costoTotal: Number(m.costo_total_usd),
-        repuestos: m.repuestos,
-        intervaloHoras: m.intervalo_horas !== null ? Number(m.intervalo_horas) : null,
-        origenTecnico: m.origen_tecnico,
-        intervenciones: (m.intervenciones ?? []).map(
-          (i) => TIPOS_INTERVENCION.find((t) => t.valor === i)?.etiqueta ?? i,
-        ),
-        averiaNumero: m.averia_numero,
-      }))
+      // Los repuestos de verdad —con artículo y costo—, de un solo viaje para
+      // todas las órdenes del alcance: una consulta, no una por orden.
+      const repuestos = await repuestosDeOrdenes(dentroDelAlcance.map((m) => m.id))
+      const repuestosPorOrden = new Map<number, typeof repuestos>()
+      for (const r of repuestos) {
+        const lista = repuestosPorOrden.get(r.mantenimiento_id) ?? []
+        lista.push(r)
+        repuestosPorOrden.set(r.mantenimiento_id, lista)
+      }
+
+      const ordenes: OrdenDelInforme[] = dentroDelAlcance.map((m) => {
+        const maquinaDeLaOrden = (maquinas ?? []).find((x) => x.id === m.maquina_id) ?? null
+        return {
+          numero: m.numero,
+          maquinaCodigo: m.maquina_codigo,
+          maquina: m.maquina,
+          marca: maquinaDeLaOrden?.marca ?? null,
+          modelo: maquinaDeLaOrden?.modelo ?? null,
+          serial: maquinaDeLaOrden?.serial ?? null,
+          tipo: ETIQUETA_TIPO[m.tipo] ?? m.tipo,
+          estado: ETIQUETA_ESTADO_ORDEN[m.estado] ?? m.estado,
+          fecha: m.fecha,
+          fechaSalida: m.fecha_salida,
+          dias: m.dias,
+          taller: m.taller,
+          tecnico: m.tecnico,
+          origenTecnico: m.origen_tecnico,
+          motivo: m.motivo,
+          detalle: m.detalle,
+          costoManoObra: m.costo_usd !== null ? Number(m.costo_usd) : null,
+          costoRepuestos: Number(m.costo_repuestos_usd),
+          costoTotal: Number(m.costo_total_usd),
+          repuestosDetalle: (repuestosPorOrden.get(m.id) ?? []).map((r) => ({
+            cantidad: Number(r.cantidad),
+            articulo: r.articulo,
+            unidad: r.unidad,
+            costo: Number(r.costo_usd),
+          })),
+          horometro: m.horometro !== null ? Number(m.horometro) : null,
+          intervaloHoras: m.intervalo_horas !== null ? Number(m.intervalo_horas) : null,
+          intervenciones: m.intervenciones ?? [],
+          averiaNumero: m.averia_numero,
+        }
+      })
 
       setInforme(
         await armarInformeMantenimiento({

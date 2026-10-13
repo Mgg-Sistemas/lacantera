@@ -361,6 +361,51 @@ export function useReporteMantenimientos(estado?: EstadoOrden) {
   })
 }
 
+export interface RepuestoDeOrdenInforme {
+  mantenimiento_id: number
+  cantidad: string
+  costo_usd: string
+  articulo: string
+  unidad: string
+}
+
+/**
+ * Los repuestos de varias órdenes a la vez, con el nombre de su artículo.
+ *
+ * No es un hook: se pide una sola vez, al armar el informe de mantenimiento,
+ * igual que `renglonesDeNotas` en ventas.ts — no hace falta mantenerlo en
+ * caché, porque el papel ya quedó armado cuando esto termina.
+ */
+export async function repuestosDeOrdenes(ordenIds: number[]): Promise<RepuestoDeOrdenInforme[]> {
+  if (ordenIds.length === 0) return []
+  type ArticuloEmbebido = { nombre: string; unidad: string }
+  const filas = desenvolver<
+    Array<{
+      mantenimiento_id: number
+      cantidad: string
+      costo_usd: string
+      // Sin tipos generados de la base, supabase-js infiere el embed de una
+      // relación a-uno como arreglo: mismo patrón que `renglonesDeNotas`.
+      articulo: ArticuloEmbebido | ArticuloEmbebido[] | null
+    }>
+  >(
+    await supabase
+      .from('mantenimiento_repuestos')
+      .select('mantenimiento_id, cantidad, costo_usd, articulo:articulos(nombre, unidad)')
+      .in('mantenimiento_id', ordenIds),
+  )
+  return filas.map((f) => {
+    const articulo = Array.isArray(f.articulo) ? f.articulo[0] : f.articulo
+    return {
+      mantenimiento_id: f.mantenimiento_id,
+      cantidad: f.cantidad,
+      costo_usd: f.costo_usd,
+      articulo: articulo?.nombre ?? 'Artículo eliminado',
+      unidad: articulo?.unidad ?? '',
+    }
+  })
+}
+
 /** Los repuestos que se le pusieron a una orden. */
 export function useRepuestosDeOrden(ordenId: number | null) {
   return useQuery({
