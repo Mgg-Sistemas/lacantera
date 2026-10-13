@@ -6491,7 +6491,9 @@ Se guarda con **Meterla al taller**. Mientras esté dentro, queda **En el taller
 
 Esa última frase es la razón de que esta pantalla exista aparte: **una orden abierta no es un registro, es una máquina que no está trabajando.** Filtra por **Buscar** y por **Estado**. Cada orden dice la máquina, la clase de trabajo, cuándo entró y salió —y si tardó más de lo estimado—, el horómetro, los repuestos con su costo, el técnico que hizo el trabajo y el motivo. Sin órdenes: **Sin órdenes de mantenimiento**.
 
-**Informe** saca en PDF el histórico de órdenes, por una **máquina** —todo su historial— o por un **rango de fechas** —todas las máquinas de ese período—. Trae fecha de entrada y salida, qué se hizo, el taller y el técnico, los repuestos con su costo y, si se fijó uno, el intervalo del próximo mantenimiento de ese ciclo. Sin fechas elegidas, arma el informe con las órdenes más recientes que ya están cargadas en pantalla.
+**Informe** saca en PDF el histórico de órdenes, por una **máquina** —todo su historial— o por un **rango de fechas** —todas las máquinas de ese período—. Sin fechas elegidas, arma el informe con las órdenes más recientes que ya están cargadas en pantalla.
+
+El papel trae primero un índice compacto de todas las órdenes del alcance elegido, y después **cada orden en su propia hoja**, firmable a mano: fecha de entrada y salida, equipo con marca, modelo y serial, técnico —con si es de la casa o externo—, la **casilla de tipo de intervención** marcada o sin marcar igual que en el papel de taller, descripción del problema, acciones realizadas, el horómetro y, si se fijó uno, el próximo mantenimiento de ese ciclo, los repuestos con su costo real, y la avería que esa orden atendió, si atendió alguna.
 
 ### 19.7 Los camiones
 
