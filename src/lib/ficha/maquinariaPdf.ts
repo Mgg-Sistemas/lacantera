@@ -21,14 +21,19 @@
 
 import { logoComoImagen } from './logo'
 import type { ArchivoArmado } from './armado'
-import { ABAJO, ARRIBA, DER, IZQ } from './hoja'
+import { ABAJO, ANCHO_UTIL, ARRIBA, DER, IZQ } from './hoja'
 import {
+  bloqueEtiquetado,
   type Columna,
   type EmpresaPapel,
   etiquetaValor,
   fechaCorta,
   fechaLarga,
+  firmas,
   GRIS,
+  GRIS_SUAVE,
+  HAIRLINE,
+  MARCA,
   membrete,
   notaAlPie,
   pieDePagina,
@@ -318,10 +323,36 @@ export async function armarInformeDeFlota(d: DatosInformeFlota): Promise<Archivo
 // `alcance`.
 // ---------------------------------------------------------------------------
 
+/**
+ * Las siete clases de trabajo que se pueden marcar en una orden, varias a la
+ * vez. Vive aquí —no en `lib/api/maquinaria`— porque el papel es quien
+ * necesita la lista COMPLETA para dibujar la casilla de cada una, marcada o
+ * no: `OrdenDelInforme.intervenciones` solo trae las que SÍ se marcaron.
+ */
+const TIPOS_INTERVENCION_PDF = [
+  { valor: 'MECANICA', etiqueta: 'Mecánica' },
+  { valor: 'ELECTRICIDAD', etiqueta: 'Electricidad' },
+  { valor: 'HIDRAULICA', etiqueta: 'Mangueras / hidráulica' },
+  { valor: 'SERVICIO', etiqueta: 'Servicio' },
+  { valor: 'SOLDADURA', etiqueta: 'Soldadura' },
+  { valor: 'REPUESTO', etiqueta: 'Repuesto' },
+  { valor: 'OTRA', etiqueta: 'Otra' },
+]
+
+export interface RepuestoDelInforme {
+  cantidad: number
+  articulo: string
+  unidad: string
+  costo: number
+}
+
 export interface OrdenDelInforme {
   numero: string | null
   maquinaCodigo: string
   maquina: string
+  marca: string | null
+  modelo: string | null
+  serial: string | null
   /** Ya traducido: «Mantenimiento», «Servicio», «Reparación». */
   tipo: string
   /** Ya traducido: «Abierta», «Terminada», «Anulada». */
@@ -331,17 +362,18 @@ export interface OrdenDelInforme {
   dias: number | null
   taller: string | null
   tecnico: string | null
+  /** Si el técnico es de la casa o un taller/proveedor de afuera. */
+  origenTecnico: string | null
   motivo: string | null
   detalle: string | null
   costoManoObra: number | null
   costoRepuestos: number
   costoTotal: number
-  repuestos: number
-  /** Solo en mantenimiento cerrado: a cuántas horas toca el próximo, para este ciclo. */
+  repuestosDetalle: RepuestoDelInforme[]
+  /** El horómetro al entrar al taller, y a cuántas horas toca el próximo —si se fijó uno para este ciclo—. */
+  horometro: number | null
   intervaloHoras: number | null
-  /** Si el técnico es de la casa o un taller/proveedor de afuera. */
-  origenTecnico: string | null
-  /** Qué clase de trabajo fue —mecánica, eléctrica, hidráulica…—, ya traducido. */
+  /** Las claves de `TIPOS_INTERVENCION_PDF` que se marcaron, sin traducir. */
   intervenciones: string[]
   /** La avería que esta orden atendió, si alguna. */
   averiaNumero: string | null
@@ -387,8 +419,9 @@ const celdasMantenimiento = (o: OrdenDelInforme): string[] => [
     .join(' · ') || SIN_DATO,
   [
     o.detalle || o.motivo,
-    o.intervenciones.length > 0 ? o.intervenciones.join(', ') : null,
-    o.repuestos > 0 ? `${o.repuestos} repuesto${o.repuestos === 1 ? '' : 's'}` : null,
+    o.repuestosDetalle.length > 0
+      ? `${o.repuestosDetalle.length} repuesto${o.repuestosDetalle.length === 1 ? '' : 's'}`
+      : null,
     o.intervaloHoras !== null ? `próximo a las ${o.intervaloHoras} h` : null,
     o.averiaNumero ? `atiende ${o.averiaNumero}` : null,
   ]
@@ -396,6 +429,170 @@ const celdasMantenimiento = (o: OrdenDelInforme): string[] => [
     .join(' · ') || SIN_DATO,
   o.costoTotal > 0 ? `$${o.costoTotal.toFixed(2)}` : SIN_DATO,
 ]
+
+const COLUMNAS_REPUESTOS: Columna[] = [
+  { titulo: 'Cant.', ancho: 20 },
+  { titulo: 'Repuesto o insumo', ancho: 98 },
+  { titulo: 'Costo', ancho: 32, alDerecha: true },
+]
+
+const celdasRepuesto = (r: RepuestoDelInforme): string[] => [
+  `${r.cantidad} ${r.unidad}`.trim(),
+  texto(r.articulo),
+  r.costo > 0 ? `$${r.costo.toFixed(2)}` : SIN_DATO,
+]
+
+/**
+ * La casilla de cada tipo de intervención, marcada o no —igual que en el
+ * papel que se llena a mano—: se dibujan TODAS, para que quien lo lea vea de
+ * un vistazo qué se descartó y no solo qué se marcó.
+ */
+function checkboxesIntervencion(doc: Doc, y: number, marcados: string[]): number {
+  const COLUMNAS_FILA = 3
+  const ANCHO_COL = ANCHO_UTIL / COLUMNAS_FILA
+  const ALTO_FILA = 6
+  let fila = y
+
+  TIPOS_INTERVENCION_PDF.forEach((t, i) => {
+    const col = i % COLUMNAS_FILA
+    if (col === 0 && i > 0) fila += ALTO_FILA
+    const x = IZQ + col * ANCHO_COL
+    const marcado = marcados.includes(t.valor)
+
+    doc.setDrawColor(TINTA).setLineWidth(0.3)
+    doc.rect(x, fila - 2.6, 3.2, 3.2)
+    if (marcado) {
+      doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(TINTA)
+      doc.text('X', x + 0.5, fila + 0.1)
+    }
+
+    doc.setFont('helvetica', marcado ? 'bold' : 'normal').setFontSize(8)
+    doc.setTextColor(marcado ? TINTA : GRIS_SUAVE)
+    doc.text(t.etiqueta, x + 4.6, fila)
+  })
+
+  return fila + ALTO_FILA + 3
+}
+
+/** Un bloque con barra de título y un párrafo debajo, para texto libre —no una tabla de etiqueta/valor—. */
+function bloqueParrafo(doc: Doc, y: number, titulo: string, cuerpo: string): number {
+  const ALTO_TITULO = 6
+  let fila = y
+
+  doc.setFillColor(MARCA)
+  doc.rect(IZQ, fila, ANCHO_UTIL, ALTO_TITULO, 'F')
+  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor('#FFFFFF')
+  doc.text(titulo, IZQ + 3, fila + 4.3)
+  fila += ALTO_TITULO
+
+  doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor(TINTA)
+  const lineas = doc.splitTextToSize(cuerpo || SIN_DATO, ANCHO_UTIL - 6) as string[]
+  const altoCuerpo = lineas.length * 4.1 + 4.5
+
+  doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
+  doc.rect(IZQ, fila, ANCHO_UTIL, altoCuerpo)
+  doc.text(lineas, IZQ + 3, fila + 4.6, { lineHeightFactor: 1.35 })
+
+  return fila + altoCuerpo + 4
+}
+
+/**
+ * Una orden, en su propia hoja —el modelo que se pidió clonar, con los datos
+ * de La Cantera—: fecha, técnico, equipo, de qué se trató, qué se encontró,
+ * qué se hizo, el horómetro, los repuestos con su costo real (los nuestros
+ * descuentan inventario de verdad; el papel de origen solo los describía) y
+ * las dos rayas para firmar a mano.
+ */
+function pintarOrden(doc: Doc, o: OrdenDelInforme): void {
+  let y = ARRIBA
+
+  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS_SUAVE)
+  doc.text('INFORME DE MANTENIMIENTO', IZQ, y)
+  doc.text(texto(o.numero), DER, y, { align: 'right' })
+  y += 6
+
+  const ALTO_BARRA = 11
+  doc.setFillColor(MARCA)
+  doc.rect(IZQ, y, ANCHO_UTIL, ALTO_BARRA, 'F')
+  doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor('#FFFFFF')
+  doc.text('ORDEN DE TALLER', IZQ + 3, y + 7.3)
+  doc.setFont('helvetica', 'normal').setFontSize(8.5)
+  doc.text(`${o.tipo} · ${o.estado}`, DER - 3, y + 7.3, { align: 'right' })
+  y += ALTO_BARRA + 5
+
+  const generales: Array<[string, string | null | undefined]> = [
+    [
+      'Fecha',
+      [fechaCorta(o.fecha), o.fechaSalida ? `salió el ${fechaCorta(o.fechaSalida)}` : null]
+        .filter(Boolean)
+        .join(' · '),
+    ],
+    ['Equipo', [o.maquinaCodigo, o.maquina].filter(Boolean).join(' · ')],
+  ]
+  if (o.marca || o.modelo) generales.push(['Marca y modelo', [o.marca, o.modelo].filter(Boolean).join(' ')])
+  if (o.serial) generales.push(['Código de serial', o.serial])
+  generales.push([
+    'Técnico',
+    o.tecnico
+      ? `${o.tecnico}${o.origenTecnico === 'EXTERNO' ? ' · externo' : o.origenTecnico === 'INTERNO' ? ' · de la casa' : ''}`
+      : null,
+  ])
+  if (o.taller) generales.push(['Taller', o.taller])
+  if (o.averiaNumero) generales.push(['Avería que atiende', o.averiaNumero])
+
+  y = bloqueEtiquetado(doc, y, 'DATOS GENERALES', generales)
+
+  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(TINTA)
+  doc.text('TIPO DE INTERVENCIÓN', IZQ, y)
+  y += 6
+  y = checkboxesIntervencion(doc, y, o.intervenciones)
+
+  y = bloqueParrafo(doc, y, 'DESCRIPCIÓN DEL PROBLEMA', o.motivo ?? '')
+  y = bloqueParrafo(
+    doc,
+    y,
+    'ACCIONES REALIZADAS',
+    o.detalle ?? (o.estado === 'Abierta' ? 'Sigue en el taller: aún sin cerrar.' : ''),
+  )
+
+  if (o.horometro !== null || o.intervaloHoras !== null) {
+    y =
+      etiquetaValor(
+        doc,
+        y,
+        [
+          ['Llevaba desde el mantenimiento anterior', o.horometro !== null ? `${o.horometro} h` : null],
+          ['Próximo mantenimiento', o.intervaloHoras !== null ? `en ${o.intervaloHoras} h` : null],
+        ].filter(([, v]) => v) as Array<[string, string]>,
+      ) + 3
+  }
+
+  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(TINTA)
+  doc.text('REPUESTOS UTILIZADOS', IZQ, y)
+  y += 5
+  if (o.repuestosDetalle.length > 0) {
+    y = tabla(doc, y, COLUMNAS_REPUESTOS, o.repuestosDetalle.map(celdasRepuesto)) + 3
+  } else {
+    doc.setFont('helvetica', 'italic').setFontSize(8).setTextColor(GRIS_SUAVE)
+    doc.text('Sin repuestos registrados.', IZQ, y + 3)
+    y += 9
+  }
+
+  if (o.costoManoObra !== null || o.costoTotal > 0) {
+    y =
+      etiquetaValor(doc, y, [
+        ['Mano de obra', o.costoManoObra !== null ? `$${o.costoManoObra.toFixed(2)}` : SIN_DATO],
+        ['Repuestos', `$${o.costoRepuestos.toFixed(2)}`],
+        ['Total', `$${o.costoTotal.toFixed(2)}`],
+      ]) + 4
+  }
+
+  if (y + 24 > ABAJO) {
+    doc.addPage()
+    y = ABAJO - 24
+  }
+  firmas(doc, y + 20, 'Firma de quien hizo el trabajo', 'Firma de quien autoriza')
+}
 
 export async function armarInformeMantenimiento(
   d: DatosInformeMantenimiento,
@@ -424,8 +621,19 @@ export async function armarInformeMantenimiento(
       ['Mano de obra + repuestos', `$${costoTotal.toFixed(2)}`],
     ]) + 4
 
-  y = seccion(doc, y, 'Órdenes')
-  y = tabla(doc, y, COLUMNAS_MANTENIMIENTO, d.ordenes.map(celdasMantenimiento)) - 1
+  y = seccion(doc, y, 'Índice de órdenes')
+  tabla(doc, y, COLUMNAS_MANTENIMIENTO, d.ordenes.map(celdasMantenimiento))
+
+  /*
+    CADA ORDEN, EN SU PROPIA HOJA. Es el modelo que se pidió clonar —un
+    reporte, una hoja, firmable a mano—, adaptado con los datos reales de la
+    cantera: el horómetro, el costo de mano de obra y repuestos, y la avería
+    que atendió, que el papel de origen no llevaba.
+  */
+  for (const orden of d.ordenes) {
+    doc.addPage()
+    pintarOrden(doc, orden)
+  }
 
   pieDePagina(doc, `Generado el ${fechaLarga(d.momento)} por ${d.emitidoPor} · Documento interno`)
 
