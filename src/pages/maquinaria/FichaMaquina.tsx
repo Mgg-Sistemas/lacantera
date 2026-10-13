@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, FileDown, Save, ToggleLeft } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, FileDown, Save, ToggleLeft } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Visor } from '@/components/Visor'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -32,6 +32,7 @@ import {
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { Historial } from '@/components/Historial'
 import { ModalEstado } from './ModalEstado'
+import { ModalAveria } from './ModalAveria'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarFichaDeMaquina } from '@/lib/ficha/maquinariaPdf'
@@ -116,6 +117,7 @@ export function FichaMaquina() {
   const [f, setF] = useState(vacio)
   const [cargado, setCargado] = useState(false)
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
+  const [viendoAverias, setViendoAverias] = useState(false)
 
   /*
     LA FICHA TÉCNICA EN PAPEL.
@@ -384,6 +386,15 @@ export function FichaMaquina() {
                   </Button>
                 ) : null}
 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<AlertTriangle />}
+                  onClick={() => setViendoAverias(true)}
+                >
+                  Averías
+                </Button>
+
                 {/* La ficha técnica la saca cualquiera que pueda ver el
                     equipo: es lo que ya tiene delante, en una hoja. */}
                 <Button
@@ -411,6 +422,12 @@ export function FichaMaquina() {
         abierto={cambiandoEstado}
         maquina={maquina ?? null}
         onCerrar={() => setCambiandoEstado(false)}
+      />
+      <ModalAveria
+        abierto={viendoAverias}
+        maquina={maquina ?? null}
+        puedeEscribir={editable}
+        onCerrar={() => setViendoAverias(false)}
       />
 
       <Visor

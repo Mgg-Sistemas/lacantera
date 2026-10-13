@@ -18,6 +18,7 @@ import { usePropietarios } from '@/lib/api/inventario'
 import { ModalHorometro } from './ModalHorometro'
 import { ModalTaller } from './ModalTaller'
 import { ModalEstado } from './ModalEstado'
+import { ModalAveria } from './ModalAveria'
 import {
   CLASES_DE_MAQUINA,
   ETIQUETA_CLASE,
@@ -152,6 +153,7 @@ export function Maquinaria() {
   const [horometro, setHorometro] = useState<Maquina | null>(null)
   const [taller, setTaller] = useState<Maquina | null>(null)
   const [estado, setEstado] = useState<Maquina | null>(null)
+  const [averiaDe, setAveriaDe] = useState<Maquina | null>(null)
   const navegar = useNavigate()
 
   const puedeEscribir = puede('MAQUINARIA', 'ESCRITURA')
@@ -376,6 +378,7 @@ export function Maquinaria() {
       onHorometro: setHorometro,
       onTaller: setTaller,
       onEstado: setEstado,
+      onAveria: setAveriaDe,
       onAbrir: (m: Maquina) => void navegar(`/app/maquinaria/${m.id}`),
     }),
     [puedeEscribir, navegar],
@@ -834,6 +837,12 @@ export function Maquinaria() {
         abierto={estado !== null}
         maquina={estado}
         onCerrar={() => setEstado(null)}
+      />
+      <ModalAveria
+        abierto={averiaDe !== null}
+        maquina={averiaDe}
+        puedeEscribir={puedeEscribir}
+        onCerrar={() => setAveriaDe(null)}
       />
 
       <Visor

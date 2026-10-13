@@ -14,8 +14,9 @@ import { desenvolver, rpc } from './rpc'
   borran: quitar una la deja a la vista, tachada, con quién, cuándo y por qué.
 */
 
-/** COMBUSTIBLE desde el 05/10/2026: el vale del tanque también lleva fotos. */
-export type OrigenDeCarga = 'SALIDA' | 'DESPACHO' | 'COMBUSTIBLE'
+/** COMBUSTIBLE desde el 05/10/2026: el vale del tanque también lleva fotos.
+ *  AVERIA desde el 13/10/2026: la foto de referencia de qué se dañó. */
+export type OrigenDeCarga = 'SALIDA' | 'DESPACHO' | 'COMBUSTIBLE' | 'AVERIA'
 
 export const MAXIMO_DE_ARCHIVOS = 4
 export const TIPOS_ADMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
