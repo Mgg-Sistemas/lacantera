@@ -399,6 +399,26 @@ const COLUMNAS_MANTENIMIENTO: Columna[] = [
   { titulo: 'Costo', ancho: 14, alDerecha: true },
 ]
 
+/**
+ * Un vistazo del texto libre, para el índice.
+ *
+ * EL ÍNDICE RESUME; LA HOJA DE LA ORDEN CUENTA.
+ *
+ * La celda «Qué se hizo» mide 26 mm y recibía el relato ENTERO. `tabla` parte
+ * las celdas en renglones y hace la fila tan alta como haga falta, así que una
+ * avería contada en un párrafo producía una fila de más de un metro: se salía
+ * de la hoja y ni empezando en una nueva cabía. Con cuarenta frases medimos
+ * una fila de 1.204 mm sobre un papel de 297.
+ *
+ * Aquí se corta, y no se pierde nada: el texto completo va íntegro en la hoja
+ * propia de esa orden, que viene justo después.
+ */
+const vistazo = (t: string | null | undefined, tope = 90): string => {
+  const limpio = (t ?? '').replace(/\s+/g, ' ').trim()
+  if (limpio === '') return ''
+  return limpio.length <= tope ? limpio : `${limpio.slice(0, tope - 1).trimEnd()}…`
+}
+
 const celdasMantenimiento = (o: OrdenDelInforme): string[] => [
   texto(o.numero),
   `${texto(o.maquinaCodigo)} · ${texto(o.maquina)}`,
@@ -418,7 +438,7 @@ const celdasMantenimiento = (o: OrdenDelInforme): string[] => [
     .filter((x) => x)
     .join(' · ') || SIN_DATO,
   [
-    o.detalle || o.motivo,
+    vistazo(o.detalle || o.motivo),
     o.repuestosDetalle.length > 0
       ? `${o.repuestosDetalle.length} repuesto${o.repuestosDetalle.length === 1 ? '' : 's'}`
       : null,
@@ -441,6 +461,32 @@ const celdasRepuesto = (r: RepuestoDelInforme): string[] => [
   texto(r.articulo),
   r.costo > 0 ? `$${r.costo.toFixed(2)}` : SIN_DATO,
 ]
+
+/**
+ * Hasta dónde puede llegar el contenido de una hoja.
+ *
+ * NO es `ABAJO`. El pie se dibuja DENTRO del margen —una raya en `PIE - 5` y
+ * el texto en `PIE`—, así que un recuadro que baje hasta `ABAJO` le pasa por
+ * encima. El contenido se detiene antes y le deja el sitio.
+ */
+const FONDO = ABAJO - 10
+
+/**
+ * Asegura `alto` milímetros de hoja antes de pintar un bloque que no sabe
+ * partirse.
+ *
+ * `tabla` mira el hueco antes de cada fila, pero ni `etiquetaValor` ni los
+ * rótulos sueltos ni las casillas lo hacen: se dibujan donde se les diga,
+ * aunque sea por debajo del margen. Esto es lo que antes faltaba y lo que
+ * sacaba medio bloque fuera del papel.
+ */
+function conHueco(doc: Doc, y: number, alto: number): number {
+  if (y + alto > FONDO) {
+    doc.addPage()
+    return ARRIBA
+  }
+  return y
+}
 
 /**
  * La casilla de cada tipo de intervención, marcada o no —igual que en el
@@ -474,10 +520,36 @@ function checkboxesIntervencion(doc: Doc, y: number, marcados: string[]): number
   return fila + ALTO_FILA + 3
 }
 
-/** Un bloque con barra de título y un párrafo debajo, para texto libre —no una tabla de etiqueta/valor—. */
+/**
+ * Un bloque con barra de título y un párrafo debajo, para texto libre —no una
+ * tabla de etiqueta/valor—.
+ *
+ * SE PARTE POR HOJAS, PORQUE ANTES NO SE PARTÍA.
+ *
+ * Dibujaba el recuadro del alto que hiciera falta allí donde estuviera, sin
+ * mirar cuánto quedaba de hoja. Una avería contada en seis renglones salía por
+ * el borde de abajo: el recuadro cruzaba el pie y el texto se perdía fuera del
+ * papel. Ahora se mide primero, y lo que no cabe sigue en la hoja siguiente.
+ */
 function bloqueParrafo(doc: Doc, y: number, titulo: string, cuerpo: string): number {
   const ALTO_TITULO = 6
+  const ALTO_LINEA = 4.1
+  /* El aire del recuadro bajo la última línea, y el que lo separa de abajo. */
+  const AIRE = 4.5
   let fila = y
+
+  // La fuente se fija ANTES de medir: `splitTextToSize` parte según el ancho
+  // del tipo que esté puesto, y con otro cuerpo daría un número de renglones
+  // que no es el que luego se dibuja.
+  doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor(TINTA)
+  const lineas = doc.splitTextToSize(cuerpo || SIN_DATO, ANCHO_UTIL - 6) as string[]
+
+  // Un título solo al pie de la hoja no dice nada. Si no caben él y un par de
+  // renglones, el bloque entero empieza en la hoja siguiente.
+  if (fila + ALTO_TITULO + 2 * ALTO_LINEA + AIRE > FONDO) {
+    doc.addPage()
+    fila = ARRIBA
+  }
 
   doc.setFillColor(MARCA)
   doc.rect(IZQ, fila, ANCHO_UTIL, ALTO_TITULO, 'F')
@@ -486,14 +558,29 @@ function bloqueParrafo(doc: Doc, y: number, titulo: string, cuerpo: string): num
   fila += ALTO_TITULO
 
   doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor(TINTA)
-  const lineas = doc.splitTextToSize(cuerpo || SIN_DATO, ANCHO_UTIL - 6) as string[]
-  const altoCuerpo = lineas.length * 4.1 + 4.5
 
-  doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
-  doc.rect(IZQ, fila, ANCHO_UTIL, altoCuerpo)
-  doc.text(lineas, IZQ + 3, fila + 4.6, { lineHeightFactor: 1.35 })
+  let puesta = 0
+  while (puesta < lineas.length) {
+    // Cuántos renglones caben de aquí al margen de abajo. Nunca menos de uno:
+    // con cero, el bucle no avanzaría y el documento no se terminaría nunca.
+    const caben = Math.max(1, Math.floor((FONDO - fila - AIRE) / ALTO_LINEA))
+    const trozo = lineas.slice(puesta, puesta + caben)
+    const alto = trozo.length * ALTO_LINEA + AIRE
 
-  return fila + altoCuerpo + 4
+    doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
+    doc.rect(IZQ, fila, ANCHO_UTIL, alto)
+    doc.text(trozo, IZQ + 3, fila + 4.6, { lineHeightFactor: 1.35 })
+
+    fila += alto
+    puesta += trozo.length
+
+    if (puesta < lineas.length) {
+      doc.addPage()
+      fila = ARRIBA
+    }
+  }
+
+  return fila + 4
 }
 
 /**
@@ -542,6 +629,9 @@ function pintarOrden(doc: Doc, o: OrdenDelInforme): void {
 
   y = bloqueEtiquetado(doc, y, 'DATOS GENERALES', generales)
 
+  /* El rótulo y sus tres filas de casillas van juntos o no van: 6 del rótulo
+     y 21 de las casillas, que son siete repartidas de tres en tres. */
+  y = conHueco(doc, y, 27)
   doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(TINTA)
   doc.text('TIPO DE INTERVENCIÓN', IZQ, y)
   y += 6
@@ -556,6 +646,7 @@ function pintarOrden(doc: Doc, o: OrdenDelInforme): void {
   )
 
   if (o.horometro !== null || o.intervaloHoras !== null) {
+    y = conHueco(doc, y, 18)
     y =
       etiquetaValor(
         doc,
@@ -567,6 +658,9 @@ function pintarOrden(doc: Doc, o: OrdenDelInforme): void {
       ) + 3
   }
 
+  // El rótulo no se queda solo al pie: hacen falta él, la cabecera de la
+  // tabla y un par de renglones para que empezar aquí sirva de algo.
+  y = conHueco(doc, y, 24)
   doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(TINTA)
   doc.text('REPUESTOS UTILIZADOS', IZQ, y)
   y += 5
@@ -579,6 +673,7 @@ function pintarOrden(doc: Doc, o: OrdenDelInforme): void {
   }
 
   if (o.costoManoObra !== null || o.costoTotal > 0) {
+    y = conHueco(doc, y, 22)
     y =
       etiquetaValor(doc, y, [
         ['Mano de obra', o.costoManoObra !== null ? `$${o.costoManoObra.toFixed(2)}` : SIN_DATO],
@@ -587,11 +682,30 @@ function pintarOrden(doc: Doc, o: OrdenDelInforme): void {
       ]) + 4
   }
 
-  if (y + 24 > ABAJO) {
+  /*
+    LAS FIRMAS, DONDE SE PUEDAN FIRMAR.
+
+    Antes se pedían 24 mm y luego se dibujaban 20 mm MÁS ABAJO del sitio
+    comprobado, así que la raya aterrizaba en el pie —y su rótulo encima del
+    texto del pie—. Y cuando no cabían, abría hoja nueva para ponerlas al
+    final del todo: una hoja en blanco con dos rayas pegadas al borde.
+
+    El tope es el mismo de la ficha del trabajador: nunca por debajo de
+    `ABAJO - 16`, que es lo que necesita el rótulo bajo la raya para no tocar
+    el pie. Si el contenido llega hasta ahí, las firmas empiezan hoja nueva
+    ARRIBA, no al borde de abajo.
+  */
+  const ALTO_FIRMA = 16
+  if (y + 8 > ABAJO - ALTO_FIRMA) {
     doc.addPage()
-    y = ABAJO - 24
+    y = ARRIBA
   }
-  firmas(doc, y + 20, 'Firma de quien hizo el trabajo', 'Firma de quien autoriza')
+  firmas(
+    doc,
+    Math.min(Math.max(y + 8, ABAJO - 24), ABAJO - ALTO_FIRMA),
+    'Firma de quien hizo el trabajo',
+    'Firma de quien autoriza',
+  )
 }
 
 export async function armarInformeMantenimiento(
