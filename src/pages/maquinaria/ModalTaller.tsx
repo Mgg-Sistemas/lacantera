@@ -8,11 +8,14 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import {
+  TIPOS_INTERVENCION,
   URGENCIAS,
   useAbrirMantenimiento,
   useAnularMantenimiento,
+  useAverias,
   useCerrarMantenimiento,
   useEspecialidades,
+  useMantenimientoAbierto,
   type Maquina,
   type TipoOrden,
   type Urgencia,
@@ -83,6 +86,9 @@ function Entrada({
 }) {
   const entrar = useAbrirMantenimiento()
   const { data: almacenes } = useAlmacenes()
+  // Averías pendientes de esta máquina, para poder decir «esta orden atiende
+  // esa avería» sin obligar a abrir una por cada avería reportada.
+  const { data: averiasPendientes } = useAverias(maquina.id, true)
 
   const hoy = new Date().toLocaleDateString('en-CA')
   const [tipo, setTipo] = useState<TipoOrden>('MANTENIMIENTO')
@@ -93,6 +99,7 @@ function Entrada({
   const especialidades = useEspecialidades()
   const [urgencia, setUrgencia] = useState<Urgencia>('NORMAL')
   const [especialidad, setEspecialidad] = useState('')
+  const [averiaId, setAveriaId] = useState('')
 
   useEffect(() => {
     if (!abierto) return
@@ -103,6 +110,7 @@ function Entrada({
     setDias(maquina.dias_mantenimiento ? String(maquina.dias_mantenimiento) : '')
     setUrgencia('NORMAL')
     setEspecialidad('')
+    setAveriaId('')
     // `hoy` se recalcula en cada render pero es el mismo texto; no entra como
     // dependencia para no reabrir el formulario a medianoche mientras se llena.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,6 +150,7 @@ function Entrada({
       taller_id: taller ? Number(taller) : null,
       fecha: dia,
       dias_estimados: dias ? Number(dias) : null,
+      averia_id: averiaId ? Number(averiaId) : null,
     })
     onCerrar()
   }
@@ -202,6 +211,26 @@ function Entrada({
           hint="Lo que se sabe ahora. El trabajo realizado se anota al sacarla."
         />
       </div>
+
+      {/*
+        ¿ATIENDE UNA AVERÍA YA REPORTADA? Christopher, 13/10/2026: opcional —
+        no toda entrada al taller viene de una avería reportada antes—. Se
+        elige aquí y se marca atendida al salir, si se confirma que sí.
+      */}
+      {(averiasPendientes ?? []).length > 0 ? (
+        <div className="mt-4">
+          <Select
+            label="¿Atiende una avería reportada?"
+            vacio="Ninguna / no aplica"
+            value={averiaId}
+            onChange={(e) => setAveriaId(e.target.value)}
+            opciones={(averiasPendientes ?? []).map((a) => ({
+              valor: String(a.id),
+              etiqueta: `${a.numero} · ${a.descripcion}`,
+            }))}
+          />
+        </div>
+      ) : null}
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         <Input label="Fecha" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
@@ -291,13 +320,19 @@ function Salida({
   const anular = useAnularMantenimiento()
   const tallerId = maquina.mantenimiento_taller_id
   const { data: existencias } = useExistencias(tallerId ?? undefined, tallerId !== null)
+  // La orden abierta de verdad, para saber si atiende una avería: eso vive en
+  // la orden (se eligió al entrar), no en la ficha de la máquina.
+  const { data: ordenAbierta } = useMantenimientoAbierto(maquina.id)
 
   const hoy = new Date().toLocaleDateString('en-CA')
   const [dia, setDia] = useState(hoy)
   const [detalle, setDetalle] = useState('')
   const [costo, setCosto] = useState('')
   const [tecnico, setTecnico] = useState('')
+  const [origenTecnico, setOrigenTecnico] = useState<'INTERNO' | 'EXTERNO'>('INTERNO')
+  const [intervenciones, setIntervenciones] = useState<string[]>([])
   const [intervaloHoras, setIntervaloHoras] = useState('')
+  const [averiaAtendida, setAveriaAtendida] = useState(true)
   const [estadoSalida, setEstadoSalida] = useState<'EN_ESPERA' | 'ACTIVA' | 'FUERA_DE_SERVICIO'>(
     'EN_ESPERA',
   )
@@ -313,7 +348,10 @@ function Salida({
     setDetalle('')
     setCosto('')
     setTecnico('')
+    setOrigenTecnico('INTERNO')
+    setIntervenciones([])
     setIntervaloHoras('')
+    setAveriaAtendida(true)
     setEstadoSalida('EN_ESPERA')
     setFilas([])
     setAnulando(false)
@@ -346,6 +384,9 @@ function Salida({
       fecha_salida: dia,
       tecnico: tecnico.trim(),
       intervalo_horas: intervaloHoras ? Number(intervaloHoras) : null,
+      origen_tecnico: origenTecnico,
+      intervenciones,
+      marcar_averia_atendida: averiaAtendida,
     })
     onCerrar()
   }
@@ -457,21 +498,34 @@ function Salida({
           {/*
             QUIÉN LO HIZO, DE VERDAD. Christopher, 14/10/2026: distinto de
             quien lo anota en el sistema (el usuario logueado) — el mecánico
-            o el taller externo.
+            o el taller externo. El origen, interno o externo, solo cambia
+            la etiqueta del campo y queda aparte en la base.
           */}
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 grid gap-4 sm:grid-cols-[auto_1fr]">
+            <Select
+              label="Origen"
+              value={origenTecnico}
+              onChange={(e) => setOrigenTecnico(e.target.value as 'INTERNO' | 'EXTERNO')}
+              opciones={[
+                { valor: 'INTERNO', etiqueta: 'De la casa' },
+                { valor: 'EXTERNO', etiqueta: 'Externo' },
+              ]}
+            />
             <Input
-              label="Técnico o taller que hizo el trabajo"
+              label={origenTecnico === 'INTERNO' ? 'Técnico' : 'Proveedor o taller externo'}
               value={tecnico}
               onChange={(e) => setTecnico(e.target.value)}
             />
-            {/*
-              EL INTERVALO PROPIO DE ESTE CICLO. Solo tiene efecto en un
-              mantenimiento sobre máquina: en servicio o reparación no
-              reinicia ningún contador, así que un intervalo ahí no
-              significaría nada.
-            */}
-            {maquina.mantenimiento_abierto_tipo === 'MANTENIMIENTO' ? (
+          </div>
+
+          {/*
+            EL INTERVALO PROPIO DE ESTE CICLO. Solo tiene efecto en un
+            mantenimiento sobre máquina: en servicio o reparación no
+            reinicia ningún contador, así que un intervalo ahí no
+            significaría nada.
+          */}
+          {maquina.mantenimiento_abierto_tipo === 'MANTENIMIENTO' ? (
+            <div className="mt-4">
               <Input
                 label="Próximo mantenimiento en (horas)"
                 type="number"
@@ -483,8 +537,61 @@ function Salida({
                 placeholder={maquina.tope_horas}
                 hint={`Si se deja en blanco, se usa el tope configurado de la máquina (${enteros(Number(maquina.tope_horas))} h).`}
               />
-            ) : null}
+            </div>
+          ) : null}
+
+          {/*
+            QUÉ CLASE DE TRABAJO FUE, APARTE DEL TIPO DE LA ORDEN.
+            Christopher, 13/10/2026: el tipo de arriba (Mantenimiento/
+            Servicio/Reparación) decide si resetea el contador de horas;
+            esto es solo descriptivo, y se puede marcar más de uno.
+          */}
+          <div className="mt-4">
+            <p className="text-ink/70 mb-2 text-sm font-medium">Tipo de intervención</p>
+            <div className="flex flex-wrap gap-2">
+              {TIPOS_INTERVENCION.map((t) => {
+                const marcado = intervenciones.includes(t.valor)
+                return (
+                  <button
+                    key={t.valor}
+                    type="button"
+                    onClick={() =>
+                      setIntervenciones((v) =>
+                        marcado ? v.filter((x) => x !== t.valor) : [...v, t.valor],
+                      )
+                    }
+                    className={cn(
+                      'rounded-full border px-3 py-1 text-sm transition-colors',
+                      marcado
+                        ? 'border-royal-600 bg-royal-600/10 text-royal-700 dark:text-royal-300'
+                        : 'border-hairline text-ink/60 hover:border-royal-300',
+                    )}
+                  >
+                    {t.etiqueta}
+                  </button>
+                )
+              })}
+            </div>
           </div>
+
+          {/*
+            ¿ESTA ORDEN DEJA ATENDIDA LA AVERÍA? Solo sale si la orden se
+            abrió enlazada a una. Desmarcarlo no la anula ni la ignora: solo
+            deja la avería pendiente para una próxima orden.
+          */}
+          {ordenAbierta?.averia_id ? (
+            <label className="border-hairline mt-4 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
+              <input
+                type="checkbox"
+                className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                checked={averiaAtendida}
+                onChange={(e) => setAveriaAtendida(e.target.checked)}
+              />
+              <span className="text-ink/80">
+                Dar por atendida la avería {ordenAbierta.averia_numero}
+              </span>
+            </label>
+          ) : null}
 
           <h3 className="text-ink/85 mt-6 mb-1 text-sm font-semibold">Repuestos</h3>
           {tallerId === null ? (

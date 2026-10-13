@@ -79,6 +79,8 @@ export interface Maquina {
    * defecto de la máquina.
    */
   tope_horas_efectivo: string
+  /** Averías PENDIENTE de esta máquina, sin contar las atendidas ni las anuladas. */
+  averias_pendientes: number
   /** Cuánto suele tardar su mantenimiento. Nulo si nadie lo ha estimado. */
   dias_mantenimiento: number | null
   /** Qué combustible quema. Nulo mientras no se sepa. */
@@ -179,6 +181,13 @@ export interface Mantenimiento {
   tecnico: string | null
   /** Solo en MANTENIMIENTO cerrado sobre una máquina: el intervalo propio de este ciclo. */
   intervalo_horas: string | null
+  /** Si el técnico es de la casa o un taller/proveedor de afuera. */
+  origen_tecnico: 'INTERNO' | 'EXTERNO' | null
+  /** Qué clase de trabajo fue —mecánica, eléctrica, hidráulica…—, varios a la vez. */
+  intervenciones: string[]
+  /** La avería que esta orden atiende, si alguna. Se elige al abrir la orden. */
+  averia_id: number | null
+  averia_numero: string | null
 }
 
 export interface RepuestoUsado {
@@ -698,6 +707,8 @@ export function useAbrirMantenimiento() {
       especialidad?: string | null
       /** Lo que se preve usar. No descuenta nada hasta cerrar. */
       repuestos?: Array<{ articulo_id: number; cantidad: number }>
+      /** La avería que esta orden atiende, si alguna. Debe estar PENDIENTE y ser de esta máquina. */
+      averia_id?: number | null
     }) =>
       rpc<number>('abrir_mantenimiento', {
         p_maquina_id: m.maquina_id ?? null,
@@ -712,6 +723,7 @@ export function useAbrirMantenimiento() {
         p_urgencia: m.urgencia ?? 'NORMAL',
         p_especialidad: m.especialidad ?? null,
         p_repuestos: m.repuestos ?? [],
+        p_averia_id: m.averia_id ?? null,
       }),
   )
 }
@@ -734,6 +746,12 @@ export function useCerrarMantenimiento() {
       tecnico?: string | null
       /** Solo tiene efecto en MANTENIMIENTO sobre una máquina. Si no se da, se usa el tope de la máquina. */
       intervalo_horas?: number | null
+      /** Si el técnico es de la casa o un taller/proveedor de afuera. */
+      origen_tecnico?: 'INTERNO' | 'EXTERNO' | null
+      /** Qué clase de trabajo fue —mecánica, eléctrica, hidráulica…—, varios a la vez. */
+      intervenciones?: string[]
+      /** Si esta orden deja atendida la avería que se eligió al abrirla. */
+      marcar_averia_atendida?: boolean
     }) =>
       rpc<number>('cerrar_mantenimiento', {
         p_id: m.id,
@@ -746,7 +764,122 @@ export function useCerrarMantenimiento() {
         p_fecha_salida: m.fecha_salida ?? null,
         p_tecnico: m.tecnico || null,
         p_intervalo_horas: m.intervalo_horas ?? null,
+        p_intervenciones: m.intervenciones ?? [],
+        p_origen_tecnico: m.origen_tecnico || null,
+        p_marcar_averia_atendida: m.marcar_averia_atendida ?? false,
       }),
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Averías: lo que se dañó, aparte del taller que la atiende
+//
+// Christopher, 13/10/2026: clonado del módulo de Servicios de SOS La Guaira,
+// sin su membrete institucional. Una avería se reporta en el momento, queda
+// PENDIENTE y NUNCA cambia el estado operativo de la máquina por sí sola —eso
+// se decide aparte, en Cambiar estado—. Una orden de taller puede atenderla
+// opcionalmente, o se marca atendida a mano si se resolvió sin pasar por ahí.
+// ---------------------------------------------------------------------------
+
+export type EstadoAveria = 'PENDIENTE' | 'ATENDIDA' | 'ANULADA'
+
+export interface Averia {
+  id: number
+  numero: string
+  maquina_id: number
+  maquina_codigo: string
+  maquina: string
+  categoria: string
+  descripcion: string
+  estado: EstadoAveria
+  reportada_por: string | null
+  reportada_en: string
+  atendida_en: string | null
+  mantenimiento_id: number | null
+  mantenimiento_numero: string | null
+  motivo_anulacion: string | null
+  anulada_por: string | null
+  anulada_en: string | null
+}
+
+export const CATEGORIAS_AVERIA = [
+  { valor: 'MOTOR', etiqueta: 'Motor' },
+  { valor: 'HIDRAULICA', etiqueta: 'Hidráulica' },
+  { valor: 'ELECTRICA', etiqueta: 'Eléctrica' },
+  { valor: 'TREN_DE_RODAJE', etiqueta: 'Tren de rodaje' },
+  { valor: 'ESTRUCTURA', etiqueta: 'Estructura' },
+  { valor: 'OTRA', etiqueta: 'Otra' },
+]
+
+/**
+ * Sin catálogo en la base, a propósito —igual que en el sistema de origen—:
+ * si mañana aparece un tipo de intervención nuevo, se agrega aquí, no en una
+ * migración.
+ */
+export const TIPOS_INTERVENCION = [
+  { valor: 'MECANICA', etiqueta: 'Mecánica' },
+  { valor: 'ELECTRICIDAD', etiqueta: 'Electricidad' },
+  { valor: 'HIDRAULICA', etiqueta: 'Mangueras / hidráulica' },
+  { valor: 'SOLDADURA', etiqueta: 'Soldadura' },
+  { valor: 'REPUESTO', etiqueta: 'Repuesto' },
+  { valor: 'SERVICIO', etiqueta: 'Servicio' },
+  { valor: 'OTRA', etiqueta: 'Otra' },
+]
+
+export function useAverias(maquinaId?: number | null, soloPendientes = false) {
+  return useQuery({
+    queryKey: ['maquinaria', 'averias', maquinaId ?? 'todas', soloPendientes],
+    queryFn: async () => {
+      let q = supabase
+        .from('v_averias_maquinaria')
+        .select('*')
+        .order('reportada_en', { ascending: false })
+      if (maquinaId) q = q.eq('maquina_id', maquinaId)
+      if (soloPendientes) q = q.eq('estado', 'PENDIENTE')
+      return desenvolver<Averia[]>(await q)
+    },
+  })
+}
+
+/** La orden abierta de una máquina, si tiene una — para saber qué avería atiende, al cerrarla. */
+export function useMantenimientoAbierto(maquinaId: number | null) {
+  return useQuery({
+    queryKey: ['maquinaria', 'orden-abierta', maquinaId],
+    enabled: maquinaId !== null,
+    queryFn: async () => {
+      const filas = desenvolver<Mantenimiento[]>(
+        await supabase
+          .from('v_mantenimientos')
+          .select('*')
+          .eq('maquina_id', maquinaId!)
+          .eq('estado', 'ABIERTO')
+          .limit(1),
+      )
+      return filas[0] ?? null
+    },
+  })
+}
+
+export function useReportarAveria() {
+  return useAccion(
+    async (a: { maquina_id: number; categoria: string; descripcion: string }) =>
+      rpc<number>('reportar_averia', {
+        p_maquina_id: a.maquina_id,
+        p_categoria: a.categoria,
+        p_descripcion: a.descripcion,
+      }),
+  )
+}
+
+export function useMarcarAveriaAtendida() {
+  return useAccion(async (a: { id: number }) =>
+    rpc<void>('marcar_averia_atendida', { p_id: a.id }),
+  )
+}
+
+export function useAnularAveria() {
+  return useAccion(async (a: { id: number; motivo: string }) =>
+    rpc<void>('anular_averia', { p_id: a.id, p_motivo: a.motivo }),
   )
 }
 

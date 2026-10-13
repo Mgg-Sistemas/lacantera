@@ -6539,6 +6539,36 @@ Un camión sin carga útil lo dice en su tarjeta: **Sin carga útil: sus viajes 
 | «Hay que decir qué se hizo.» | Al sacarla falta el trabajo realizado | Escríbalo |
 | «El taller solo tiene … de "…": no alcanza para ….» | Se anotaron más repuestos de los que hay en ese taller | Revise la cantidad, o registre la entrada del repuesto en ese taller |
 | «Al salir del taller una máquina queda en espera, activa o fuera de servicio.» | Falta el estado de salida | Elija uno |
+| «Hay que describir qué pasó.» | Al reportar una avería falta la descripción, o tiene menos de 3 letras | Escriba qué se dañó |
+| «Esa avería no existe, no es de esta máquina, o ya no está pendiente.» | Se quiso enlazar al abrir una avería de otra máquina, o ya atendida | Elija una avería de esta máquina que siga pendiente |
+| «La avería "…" ya está …» | Se quiso marcar atendida o anular una avería que ya no está pendiente | Revise su estado actual |
+| «El origen del técnico es INTERNO o EXTERNO.» | Dato interno de la base; no debería verse desde la pantalla | Repórtelo si aparece |
+
+### 19.9 Averías
+
+**Averías** —el botón sale en cada tarjeta y también en la ficha de la máquina— es para dejar constancia de lo que se dañó, en el momento en que se nota, sin esperar a que alguien decida qué hacer con eso.
+
+**Es un papel aparte del mantenimiento, y responde una pregunta distinta.** Reportar una avería **no cambia el estado de la máquina**: eso se decide aparte, en **Cambiar estado** (19.2). Son dos preguntas que no se deben mezclar —¿se resolvió el papel de la avería? / ¿la máquina sirve hoy?—: si se mezclaran, una pila de averías sin cerrar haría ver la flota peor —o mejor— de lo que está de verdad.
+
+**Reportarla** pide la **Categoría** —Motor, Hidráulica, Eléctrica, Tren de rodaje, Estructura u Otra— y **Qué pasó**. Queda **Pendiente**, con su propio número (**AVE-2026-…**), y se le pueden añadir fotos de referencia.
+
+Una avería pendiente se resuelve de dos formas:
+
+- **Dentro de una orden de taller.** Al **Meter al taller** (19.5), si la máquina tiene averías pendientes aparece **¿Atiende una avería reportada?**: se elige, y al **Sacar del taller** queda la casilla **Dar por atendida la avería …**, marcada por defecto. Desmarcarla no la anula: la deja pendiente para una próxima orden.
+- **A mano, sin pasar por el taller.** Desde el listado de averías, **Marcar atendida** — para lo que se resolvió sin abrir una orden formal.
+
+**Anular** es solo para una avería que se reportó por error —la máquina equivocada, un duplicado—; pide el motivo. No se anula una ya atendida.
+
+El listado separa **Pendientes** de **Resueltas**, y una avería atendida por una orden de taller dice en cuál.
+
+### 19.10 Qué se hizo, en detalle: origen del técnico y tipo de intervención
+
+Al **Sacar del taller** (19.5), aparte del técnico, dos datos más:
+
+- **Origen**: **De la casa** o **Externo**. Solo cambia la etiqueta del campo —**Técnico** o **Proveedor o taller externo**— y queda guardado aparte, para poder distinguir después quién hizo cada trabajo.
+- **Tipo de intervención**: **Mecánica, Electricidad, Mangueras/hidráulica, Soldadura, Repuesto, Servicio** u **Otra**, y se puede marcar más de una a la vez. Es otra pregunta que el **Mantenimiento/Servicio/Reparación** de la entrada (19.5): ese decide si el contador de horas vuelve a cero; esto solo describe qué clase de trabajo fue.
+
+El **informe de mantenimiento** (19.6) ya trae estos datos, y también la avería que cada orden atendió, si atendió alguna.
 
 ---
 

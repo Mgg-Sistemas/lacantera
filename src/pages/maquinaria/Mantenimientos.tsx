@@ -15,7 +15,12 @@ import type { Rango } from '@/components/rango'
 import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
-import { useMaquinaria, useReporteMantenimientos, type EstadoOrden } from '@/lib/api/maquinaria'
+import {
+  TIPOS_INTERVENCION,
+  useMaquinaria,
+  useReporteMantenimientos,
+  type EstadoOrden,
+} from '@/lib/api/maquinaria'
 import { armarInformeMantenimiento, type OrdenDelInforme } from '@/lib/ficha/maquinariaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { dolares, enteros, fecha } from '@/lib/formato'
@@ -109,6 +114,11 @@ export function Mantenimientos() {
         costoTotal: Number(m.costo_total_usd),
         repuestos: m.repuestos,
         intervaloHoras: m.intervalo_horas !== null ? Number(m.intervalo_horas) : null,
+        origenTecnico: m.origen_tecnico,
+        intervenciones: (m.intervenciones ?? []).map(
+          (i) => TIPOS_INTERVENCION.find((t) => t.valor === i)?.etiqueta ?? i,
+        ),
+        averiaNumero: m.averia_numero,
       }))
 
       setInforme(
@@ -308,10 +318,18 @@ export function Mantenimientos() {
                     {m.repuestos > 0
                       ? ` · ${m.repuestos} repuesto${m.repuestos === 1 ? '' : 's'} por ${dolares(m.costo_repuestos_usd)}`
                       : ''}
-                    {m.tecnico ? ` · hecho por ${m.tecnico}` : ''}
+                    {m.tecnico
+                      ? ` · hecho por ${m.tecnico}${m.origen_tecnico === 'EXTERNO' ? ' (externo)' : ''}`
+                      : ''}
+                    {m.intervenciones.length > 0
+                      ? ` · ${m.intervenciones
+                          .map((i) => TIPOS_INTERVENCION.find((t) => t.valor === i)?.etiqueta ?? i)
+                          .join(', ')}`
+                      : ''}
                     {m.intervalo_horas
                       ? ` · próximo a las ${enteros(Number(m.intervalo_horas))} h`
                       : ''}
+                    {m.averia_numero ? ` · atiende ${m.averia_numero}` : ''}
                   </p>
 
                   {/* Al abrir se dice por qué entra; al cerrar, qué se le hizo.

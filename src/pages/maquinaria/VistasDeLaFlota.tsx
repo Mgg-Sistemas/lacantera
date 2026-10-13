@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { Eye, Gauge, ToggleLeft, Wrench } from 'lucide-react'
+import { AlertTriangle, Eye, Gauge, ToggleLeft, Wrench } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -42,6 +42,7 @@ interface Acciones {
   onTaller: (m: Maquina) => void
   onEstado: (m: Maquina) => void
   onAbrir: (m: Maquina) => void
+  onAveria: (m: Maquina) => void
 }
 
 /* El tono del chip de estado, que es el mismo en las tres vistas. */
@@ -175,6 +176,11 @@ export function FichaDeMaquina({ m, acc }: { m: Maquina; acc: Acciones }) {
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Chip tone={tonoDeEstado(m)}>{ETIQUETA_ESTADO[m.estado]}</Chip>
             <DeQuienEs propietario={m.propietario} />
+            {m.averias_pendientes > 0 ? (
+              <Chip tone="danger">
+                {m.averias_pendientes} avería{m.averias_pendientes === 1 ? '' : 's'}
+              </Chip>
+            ) : null}
             {m.dias_en_taller !== null ? (
               <span
                 className={cn(
@@ -266,6 +272,9 @@ export function FichaDeMaquina({ m, acc }: { m: Maquina; acc: Acciones }) {
             </Button>
             <Button size="sm" variant="ghost" icon={<ToggleLeft />} onClick={() => acc.onEstado(m)}>
               Cambiar estado
+            </Button>
+            <Button size="sm" variant="ghost" icon={<AlertTriangle />} onClick={() => acc.onAveria(m)}>
+              Reportar avería
             </Button>
           </>
         ) : null}
