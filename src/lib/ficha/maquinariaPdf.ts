@@ -339,6 +339,12 @@ export interface OrdenDelInforme {
   repuestos: number
   /** Solo en mantenimiento cerrado: a cuántas horas toca el próximo, para este ciclo. */
   intervaloHoras: number | null
+  /** Si el técnico es de la casa o un taller/proveedor de afuera. */
+  origenTecnico: string | null
+  /** Qué clase de trabajo fue —mecánica, eléctrica, hidráulica…—, ya traducido. */
+  intervenciones: string[]
+  /** La avería que esta orden atendió, si alguna. */
+  averiaNumero: string | null
 }
 
 export interface DatosInformeMantenimiento {
@@ -372,11 +378,19 @@ const celdasMantenimiento = (o: OrdenDelInforme): string[] => [
   ]
     .filter((x) => x !== null)
     .join(' · ') || SIN_DATO,
-  [o.taller, o.tecnico].filter((x) => x).join(' · ') || SIN_DATO,
+  [
+    o.taller,
+    o.tecnico,
+    o.origenTecnico === 'EXTERNO' ? 'externo' : o.origenTecnico === 'INTERNO' ? 'interno' : null,
+  ]
+    .filter((x) => x)
+    .join(' · ') || SIN_DATO,
   [
     o.detalle || o.motivo,
+    o.intervenciones.length > 0 ? o.intervenciones.join(', ') : null,
     o.repuestos > 0 ? `${o.repuestos} repuesto${o.repuestos === 1 ? '' : 's'}` : null,
     o.intervaloHoras !== null ? `próximo a las ${o.intervaloHoras} h` : null,
+    o.averiaNumero ? `atiende ${o.averiaNumero}` : null,
   ]
     .filter((x) => x)
     .join(' · ') || SIN_DATO,
