@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { FileText, Search, Wrench } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { FileSignature, FileText, Search, Wrench } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
@@ -16,6 +17,8 @@ import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import {
+  ETIQUETA_CLASE,
+  ETIQUETA_ESTADO,
   repuestosDeOrdenes,
   TIPOS_INTERVENCION,
   useMaquinaria,
@@ -23,6 +26,13 @@ import {
   type EstadoOrden,
 } from '@/lib/api/maquinaria'
 import { armarInformeMantenimiento, type OrdenDelInforme } from '@/lib/ficha/maquinariaPdf'
+import {
+  antecedentesPropuestos,
+  armarInformeTecnico,
+  totalesDelInforme,
+  type EquipoDelInforme,
+  type IntervencionDelInforme,
+} from '@/lib/ficha/informeTecnicoPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import { dolares, enteros, fecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
@@ -78,6 +88,32 @@ export function Mantenimientos() {
   const [rangoInforme, setRangoInforme] = useState<Rango>(SIN_RANGO)
   const [armandoInforme, setArmandoInforme] = useState(false)
   const [informe, setInforme] = useState<PdfArmado | null>(null)
+
+  /*
+    EL INFORME TÉCNICO Y DE COSTOS DE UN EQUIPO.
+
+    Christopher, 14/10/2026: «tráelo de SOS». Es otro papel y no una variante
+    del anterior —ver la cabecera de `informeTecnicoPdf.ts`—: aquél responde
+    qué órdenes hubo, éste cuánto lleva costado UNA máquina y en qué estado
+    está. Por eso pide máquina obligatoria, y por eso pide escribir.
+
+    LOS TRES TEXTOS SE PROPONEN, NO SE IMPONEN. Los antecedentes se redactan
+    solos con los datos del período; las conclusiones y las recomendaciones
+    nacen en blanco. Un informe técnico sin una línea escrita por alguien que
+    conoce el equipo es una consulta impresa, no un informe.
+  */
+  const [pidiendoTecnico, setPidiendoTecnico] = useState(false)
+  const [maquinaTecnico, setMaquinaTecnico] = useState('')
+  const [rangoTecnico, setRangoTecnico] = useState<Rango>(SIN_RANGO)
+  const [antecedentes, setAntecedentes] = useState('')
+  const [antecedentesTocados, setAntecedentesTocados] = useState(false)
+  const [conclusiones, setConclusiones] = useState('')
+  const [recomendaciones, setRecomendaciones] = useState('')
+  const [valida, setValida] = useState('Wilmer')
+  const [cargoValida, setCargoValida] = useState('Supervisor de maquinaria')
+  const [recibe, setRecibe] = useState('')
+  const [cargoRecibe, setCargoRecibe] = useState('Responsable del equipo')
+  const [armandoTecnico, setArmandoTecnico] = useState(false)
 
   const armarInforme = async () => {
     setArmandoInforme(true)
@@ -157,6 +193,143 @@ export function Mantenimientos() {
     }
   }
 
+  /** La maquina elegida para el informe tecnico, con su ficha completa. */
+  const equipoTecnico = (maquinas ?? []).find((m) => String(m.id) === maquinaTecnico) ?? null
+
+  const periodoTecnico =
+    rangoTecnico.desde || rangoTecnico.hasta
+      ? `del ${rangoTecnico.desde ? fecha(rangoTecnico.desde) : 'inicio'} al ${
+          rangoTecnico.hasta ? fecha(rangoTecnico.hasta) : 'hoy'
+        }`
+      : 'todo su historial'
+
+  /*
+    LO QUE ENTRA AL INFORME.
+
+    Las ANULADAS quedan fuera, y no es un filtro de comodidad: una orden
+    anulada es una que no ocurrio, y sus costos ya se revirtieron. Dejarla
+    sumaria al total un dinero que nadie gasto, en el papel que justamente se
+    saca para decir cuanto se gasto.
+  */
+  const ordenesDelTecnico = useMemo(
+    () =>
+      !equipoTecnico
+        ? []
+        : (data ?? [])
+            .filter((m) => m.maquina_id === equipoTecnico.id && m.estado !== 'ANULADO')
+            .filter((m) => {
+              if (rangoTecnico.desde && m.fecha < rangoTecnico.desde) return false
+              if (rangoTecnico.hasta && m.fecha > rangoTecnico.hasta) return false
+              return true
+            }),
+    [data, equipoTecnico, rangoTecnico.desde, rangoTecnico.hasta],
+  )
+
+  const intervencionesTecnico: IntervencionDelInforme[] = useMemo(
+    () =>
+      ordenesDelTecnico.map((m) => ({
+        numero: m.numero,
+        fecha: m.fecha,
+        fechaSalida: m.fecha_salida,
+        tipo: ETIQUETA_TIPO[m.tipo] ?? m.tipo,
+        estado: ETIQUETA_ESTADO_ORDEN[m.estado] ?? m.estado,
+        taller: m.taller,
+        tecnico: m.tecnico,
+        origenTecnico: m.origen_tecnico,
+        motivo: m.motivo,
+        detalle: m.detalle,
+        horometro: m.horometro !== null ? Number(m.horometro) : null,
+        costoManoObra: m.costo_usd !== null ? Number(m.costo_usd) : null,
+        costoRepuestos: Number(m.costo_repuestos_usd),
+        repuestos: [],
+      })),
+    [ordenesDelTecnico],
+  )
+
+  const equipoDelInforme: EquipoDelInforme | null = equipoTecnico
+    ? {
+        codigo: equipoTecnico.codigo,
+        nombre: equipoTecnico.nombre,
+        clase: equipoTecnico.clase ? (ETIQUETA_CLASE[equipoTecnico.clase] ?? null) : null,
+        tipo: equipoTecnico.tipo,
+        marca: equipoTecnico.marca,
+        modelo: equipoTecnico.modelo,
+        serial: equipoTecnico.serial,
+        anio: equipoTecnico.anio,
+        propietario: equipoTecnico.propietario ?? null,
+        estado: ETIQUETA_ESTADO[equipoTecnico.estado] ?? equipoTecnico.estado,
+        operador: equipoTecnico.operador ?? null,
+        ubicacion: equipoTecnico.almacen,
+        horometro:
+          equipoTecnico.horometro_actual !== null ? Number(equipoTecnico.horometro_actual) : null,
+        horasDesdeMantenimiento: Number(equipoTecnico.horas_desde_mant),
+        topeHoras: Number(equipoTecnico.tope_horas_efectivo),
+        ultimoMantenimiento: equipoTecnico.ultimo_mantenimiento,
+      }
+    : null
+
+  const totalTecnico = totalesDelInforme(intervencionesTecnico)
+
+  /*
+    LOS ANTECEDENTES SE REESCRIBEN MIENTRAS NADIE LOS HAYA TOCADO.
+
+    Cambiar la maquina o el periodo cambia lo que el parrafo cuenta, asi que
+    dejar el anterior seria dejar un texto que habla de otro equipo. Pero en
+    cuanto alguien escribe en el campo, el sistema deja de pisarlo: lo escrito
+    a mano vale mas que lo que propone el sistema, siempre.
+  */
+  useEffect(() => {
+    if (!pidiendoTecnico || antecedentesTocados || !equipoDelInforme) return
+    setAntecedentes(antecedentesPropuestos(equipoDelInforme, intervencionesTecnico, periodoTecnico))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pidiendoTecnico, antecedentesTocados, maquinaTecnico, rangoTecnico.desde, rangoTecnico.hasta])
+
+  const armarTecnico = async () => {
+    if (!equipoDelInforme) return
+    setArmandoTecnico(true)
+    try {
+      // Los repuestos de verdad --con articulo y costo--, de un solo viaje para
+      // todas las ordenes del informe.
+      const repuestos = await repuestosDeOrdenes(ordenesDelTecnico.map((m) => m.id))
+      const porOrden = new Map<number, IntervencionDelInforme['repuestos']>()
+      for (const r of repuestos) {
+        const lista = porOrden.get(r.mantenimiento_id) ?? []
+        lista.push({
+          cantidad: Number(r.cantidad),
+          articulo: r.articulo,
+          unidad: r.unidad,
+          costo: Number(r.costo_usd),
+        })
+        porOrden.set(r.mantenimiento_id, lista)
+      }
+
+      setInforme(
+        await armarInformeTecnico({
+          equipo: equipoDelInforme,
+          intervenciones: intervencionesTecnico.map((i, indice) => ({
+            ...i,
+            repuestos: porOrden.get(ordenesDelTecnico[indice].id) ?? [],
+          })),
+          periodo: periodoTecnico,
+          antecedentes: antecedentes.trim(),
+          conclusiones: conclusiones.trim(),
+          recomendaciones: recomendaciones
+            .split('\n')
+            .map((r) => r.trim())
+            .filter((r) => r !== ''),
+          valida: { nombre: valida.trim(), cargo: cargoValida.trim() },
+          recibe: { nombre: recibe.trim(), cargo: cargoRecibe.trim() },
+          emitidoPor: yo?.nombre ?? '',
+          momento: new Date(),
+          empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+        }),
+      )
+      setPidiendoTecnico(false)
+    } finally {
+      setArmandoTecnico(false)
+    }
+  }
+
   const filtradas = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
     const orden: Record<EstadoOrden, number> = { ABIERTO: 0, CERRADO: 1, ANULADO: 2 }
@@ -187,14 +360,24 @@ export function Mantenimientos() {
         title="Historial de taller"
         description="Órdenes de mantenimiento: ingreso, duración, trabajo realizado y costo. Las órdenes abiertas corresponden a máquinas paradas."
         actions={
-          <Button
-            variant="outline"
-            icon={<FileText />}
-            disabled={!data || data.length === 0}
-            onClick={() => setPidiendoInforme(true)}
-          >
-            Informe
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              icon={<FileSignature />}
+              disabled={!data || data.length === 0}
+              onClick={() => setPidiendoTecnico(true)}
+            >
+              Informe técnico
+            </Button>
+            <Button
+              variant="outline"
+              icon={<FileText />}
+              disabled={!data || data.length === 0}
+              onClick={() => setPidiendoInforme(true)}
+            >
+              Informe
+            </Button>
+          </>
         }
       />
 
@@ -432,12 +615,126 @@ export function Mantenimientos() {
         </Modal>
       ) : null}
 
+      {pidiendoTecnico ? (
+        <Modal
+          abierto
+          onCerrar={() => setPidiendoTecnico(false)}
+          titulo="Informe técnico y de costos"
+          descripcion="De un equipo: su ficha, el historial de intervenciones con lo que costó cada una, los totales y las firmas."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setPidiendoTecnico(false)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={armandoTecnico || !equipoDelInforme}
+                onClick={() => void armarTecnico()}
+              >
+                {armandoTecnico ? 'Armando…' : 'Generar'}
+              </Button>
+            </>
+          }
+        >
+          <SelectBuscable
+            label="Equipo"
+            vacio="Seleccione la máquina"
+            valor={maquinaTecnico}
+            onCambio={setMaquinaTecnico}
+            opciones={(maquinas ?? []).map((m) => ({
+              valor: String(m.id),
+              etiqueta: `${m.codigo} · ${m.nombre}`,
+            }))}
+          />
+
+          <div className="mt-3">
+            <RangoDeFechas valor={rangoTecnico} onCambio={setRangoTecnico} />
+          </div>
+
+          {equipoDelInforme ? (
+            <div className="border-line bg-paper-2 mt-3 rounded-[6px] border p-3">
+              <p className="text-ink/70 text-xs">
+                {totalTecnico.intervenciones === 0
+                  ? 'Sin órdenes de taller en ese período. El informe sale igual, con la ficha del equipo y lo que usted escriba.'
+                  : `${totalTecnico.intervenciones} ${
+                      totalTecnico.intervenciones === 1 ? 'intervención' : 'intervenciones'
+                    } · mano de obra ${dolares(totalTecnico.manoObra)} · repuestos ${dolares(
+                      totalTecnico.repuestos,
+                    )} · total ${dolares(totalTecnico.total)}`}
+              </p>
+            </div>
+          ) : null}
+
+          <div className="mt-3">
+            <Textarea
+              label="Antecedentes y estado operativo"
+              rows={4}
+              value={antecedentes}
+              onChange={(e) => {
+                setAntecedentes(e.target.value)
+                setAntecedentesTocados(true)
+              }}
+            />
+            <p className="text-ink/50 mt-1 text-xs">
+              Lo redacta el sistema con los datos del período. Corríjalo antes de emitir: deja de
+              reescribirse en cuanto usted escribe.
+            </p>
+          </div>
+
+          <div className="mt-3">
+            <Textarea
+              label="Conclusiones técnicas"
+              rows={3}
+              value={conclusiones}
+              onChange={(e) => setConclusiones(e.target.value)}
+            />
+          </div>
+
+          <div className="mt-3">
+            <Textarea
+              label="Recomendaciones"
+              rows={3}
+              value={recomendaciones}
+              onChange={(e) => setRecomendaciones(e.target.value)}
+            />
+            <p className="text-ink/50 mt-1 text-xs">
+              Una por renglón. Salen numeradas en el informe; si lo deja vacío, esa parte no se
+              imprime.
+            </p>
+          </div>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Input label="Valida" value={valida} onChange={(e) => setValida(e.target.value)} />
+            <Input
+              label="Cargo de quien valida"
+              value={cargoValida}
+              onChange={(e) => setCargoValida(e.target.value)}
+            />
+            <Input
+              label="Recibe conforme"
+              value={recibe}
+              onChange={(e) => setRecibe(e.target.value)}
+            />
+            <Input
+              label="Cargo de quien recibe"
+              value={cargoRecibe}
+              onChange={(e) => setCargoRecibe(e.target.value)}
+            />
+          </div>
+        </Modal>
+      ) : null}
+
       <Visor
         abierto={informe !== null}
         onCerrar={() => setInforme(null)}
         blob={informe?.blob ?? null}
         nombreArchivo={informe?.nombre ?? ''}
-        titulo="Informe de mantenimiento"
+        /* Los dos papeles salen por el mismo visor; el nombre del archivo es lo
+           que dice cuál de los dos se acaba de armar. */
+        titulo={
+          (informe?.nombre ?? '').startsWith('informe-tecnico')
+            ? 'Informe técnico y de costos'
+            : 'Informe de mantenimiento'
+        }
       />
     </>
   )

@@ -53,7 +53,7 @@ type Doc = import('jspdf').jsPDF
  * ficha de equipo la diferencia importa: hoy muchos de estos campos están
  * vacíos porque nadie los ha cargado todavía, y el papel no debe disimularlo.
  */
-const SIN_DATO = '—'
+export const SIN_DATO = '—'
 
 const texto = (v: string | number | null | undefined): string => {
   if (v === null || v === undefined) return SIN_DATO
@@ -469,7 +469,7 @@ const celdasRepuesto = (r: RepuestoDelInforme): string[] => [
  * el texto en `PIE`—, así que un recuadro que baje hasta `ABAJO` le pasa por
  * encima. El contenido se detiene antes y le deja el sitio.
  */
-const FONDO = ABAJO - 10
+export const FONDO = ABAJO - 10
 
 /**
  * Asegura `alto` milímetros de hoja antes de pintar un bloque que no sabe
@@ -480,7 +480,7 @@ const FONDO = ABAJO - 10
  * aunque sea por debajo del margen. Esto es lo que antes faltaba y lo que
  * sacaba medio bloque fuera del papel.
  */
-function conHueco(doc: Doc, y: number, alto: number): number {
+export function conHueco(doc: Doc, y: number, alto: number): number {
   if (y + alto > FONDO) {
     doc.addPage()
     return ARRIBA
@@ -531,7 +531,7 @@ function checkboxesIntervencion(doc: Doc, y: number, marcados: string[]): number
  * el borde de abajo: el recuadro cruzaba el pie y el texto se perdía fuera del
  * papel. Ahora se mide primero, y lo que no cabe sigue en la hoja siguiente.
  */
-function bloqueParrafo(doc: Doc, y: number, titulo: string, cuerpo: string): number {
+export function bloqueParrafo(doc: Doc, y: number, titulo: string, cuerpo: string): number {
   const ALTO_TITULO = 6
   const ALTO_LINEA = 4.1
   /* El aire del recuadro bajo la última línea, y el que lo separa de abajo. */
