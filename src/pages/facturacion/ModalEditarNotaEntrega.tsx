@@ -6,12 +6,14 @@ import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { documento } from '@/lib/formato'
+import { documento, fecha as formatoFecha } from '@/lib/formato'
 import type { PrecioVenta } from '@/lib/api/ventas'
 import { aRenglones, filaVacia, type FilaRenglon } from '@/pages/ventas/filas'
 import { Renglones } from '@/pages/ventas/Renglones'
 import {
   useEditarNotaEntrega,
+  useMarcarNotaCobrada,
+  useMarcarNotaPendientePorCobrar,
   type Cliente,
   type NotaEntrega,
   type RenglonGuardado,
@@ -55,6 +57,8 @@ export function ModalEditarNotaEntrega({
   existenciasDePatio: (almacenId: string) => Record<number, number> | undefined
 }) {
   const editar = useEditarNotaEntrega()
+  const marcarCobrada = useMarcarNotaCobrada()
+  const marcarPendiente = useMarcarNotaPendientePorCobrar()
   const editaRenglones = nota.nota_salida === null
 
   const [clienteId, setClienteId] = useState(String(nota.cliente_id ?? ''))
@@ -70,6 +74,8 @@ export function ModalEditarNotaEntrega({
   const [descuento, setDescuento] = useState(String(Number(nota.descuento)))
   const [observacion, setObservacion] = useState(nota.observacion ?? '')
   const [motivo, setMotivo] = useState('')
+  const [mostrandoFechaPago, setMostrandoFechaPago] = useState(false)
+  const [fechaPagoCobro, setFechaPagoCobro] = useState('')
   const [filas, setFilas] = useState<FilaRenglon[]>(() =>
     renglones.length > 0
       ? renglones.map((r) => ({
@@ -205,6 +211,71 @@ export function ModalEditarNotaEntrega({
 
       <div className="mt-4">
         <Textarea label="Observación" rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)} />
+      </div>
+
+      {/*
+        CUENTA POR COBRAR, APARTE DE ESTA EDICIÓN. Christopher, 16/10/2026:
+        pidió la opción aquí mismo, en editar. Usa el mismo recordatorio que
+        ya existe en el detalle de la nota (`marcar_nota_de_entrega_cobrada` /
+        `marcar_nota_de_entrega_pendiente_por_cobrar`), no `editar_nota_entrega`:
+        no es parte del papel, así que no pide motivo ni queda en esa bitácora.
+      */}
+      <div className="border-hairline mt-4 rounded-[6px] border p-3">
+        <p className="text-ink/45 mb-2 text-xs font-medium tracking-wide uppercase">
+          Cuenta por cobrar
+        </p>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <span className="text-ink/70 text-sm">
+            {nota.pendiente_por_cobrar
+              ? nota.cobrada_en
+                ? `Cobrada el ${formatoFecha(nota.cobrada_en)}.`
+                : `Pendiente por cobrar, vence el ${formatoFecha(nota.fecha_pago)}.`
+              : 'No está marcada como pendiente por cobrar.'}
+          </span>
+
+          {nota.pendiente_por_cobrar && !nota.cobrada_en ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={marcarCobrada.isPending}
+              onClick={async () => {
+                await marcarCobrada.mutateAsync({ id: nota.id })
+                onCerrar()
+              }}
+            >
+              {marcarCobrada.isPending ? 'Guardando…' : 'Marcar como cobrada'}
+            </Button>
+          ) : nota.estado !== 'ANULADA' ? (
+            mostrandoFechaPago ? (
+              <div className="flex items-end gap-2">
+                <Input
+                  label="Fecha de pago"
+                  type="date"
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={fechaPagoCobro}
+                  onChange={(e) => setFechaPagoCobro(e.target.value)}
+                  autoFocus
+                />
+                <Button
+                  size="sm"
+                  disabled={!fechaPagoCobro || marcarPendiente.isPending}
+                  onClick={async () => {
+                    await marcarPendiente.mutateAsync({ id: nota.id, fecha_pago: fechaPagoCobro })
+                    onCerrar()
+                  }}
+                >
+                  {marcarPendiente.isPending ? 'Guardando…' : 'Confirmar'}
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" variant="ghost" onClick={() => setMostrandoFechaPago(true)}>
+                Marcar pendiente por cobrar
+              </Button>
+            )
+          ) : null}
+        </div>
+        {marcarCobrada.error ? <ErrorDeCarga error={marcarCobrada.error} className="mt-2" /> : null}
+        {marcarPendiente.error ? <ErrorDeCarga error={marcarPendiente.error} className="mt-2" /> : null}
       </div>
 
       {editaRenglones ? (
