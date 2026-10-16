@@ -194,6 +194,26 @@ export async function abrirFotoDeCarga(path: string): Promise<string> {
   return URL.createObjectURL(data)
 }
 
+/**
+ * Las fotos de verdad, como `File`, para compartirlas junto con un reporte
+ * (`compartirWhatsapp.ts`). De una en una, nunca con `Promise.all`: veinte
+ * descargas del almacén a la vez se rechazan a medias, y el reporte no puede
+ * salir con una foto a medio bajar. Una que falla no tumba a las demás.
+ */
+export async function archivosDeCarga(fotos: FotoDeCarga[]): Promise<File[]> {
+  const archivos: File[] = []
+  for (const f of fotos) {
+    try {
+      const { data, error } = await supabase.storage.from(BUCKET).download(f.path)
+      if (error || !data) continue
+      archivos.push(new File([data], f.nombre ?? `foto-${f.id}`, { type: f.tipo }))
+    } catch {
+      /* una foto que no se pudo bajar se queda fuera; el reporte sale con las demás */
+    }
+  }
+  return archivos
+}
+
 /*
   LAS FOTOS DE ANTES DE ESTE CAMBIO SE REPARAN SOLAS AL MIRARLAS.
 
