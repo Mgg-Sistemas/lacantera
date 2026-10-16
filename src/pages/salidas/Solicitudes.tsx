@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { ClipboardList, FileText, PackageCheck, PackageMinus, SendHorizontal, X } from 'lucide-react'
+import {
+  ClipboardList,
+  FileText,
+  MessageCircle,
+  PackageCheck,
+  PackageMinus,
+  SendHorizontal,
+  X,
+} from 'lucide-react'
 import { Ayuda } from '@/components/Ayuda'
 import { FotosDeCarga } from '@/components/FotosDeCarga'
 import { PageHeader } from '@/components/PageHeader'
@@ -28,7 +36,9 @@ import {
 } from '@/lib/api/salidas'
 import type { SolicitudDeSalida } from '@/lib/api/salidas'
 import { ModalSalida } from './ModalSalida'
+import { ModalReporteSalida } from './ModalReporteSalida'
 import { useNotaDeSalida } from './NotaDeSalida'
+import { useEmpresa } from '@/lib/api/empresa'
 import { fechaHora } from '@/lib/formato'
 import { enCastellano } from '@/lib/castellano'
 
@@ -103,6 +113,20 @@ export function Solicitudes() {
   const entregar = useEntregarSolicitud()
   const nota = useNotaDeSalida()
   const puedoSacar = alcanza('SALIDAS', 'ESCRITURA')
+  const { data: empresa } = useEmpresa()
+
+  /*
+    EL AVISO DE QUE EL REPORTE YA ESTÁ LISTO, igual que en Notas de entrega:
+    sale solo al entregar, sin forzar una ventana encima de quien entrega
+    varias seguidas. El botón de Reporte, en cada tarjeta, lo deja disponible
+    después también, por si hay que reenviarlo.
+  */
+  const [avisoEntrega, setAvisoEntrega] = useState<{ s: SolicitudDeSalida; notaSalida: string } | null>(
+    null,
+  )
+  const [verReporteSalida, setVerReporteSalida] = useState<{ s: SolicitudDeSalida; notaSalida: string } | null>(
+    null,
+  )
 
   /*
     LA SOLICITUD, TAMBIÉN DESDE UNA FILA DE EXISTENCIAS.
@@ -164,6 +188,38 @@ export function Solicitudes() {
       />
 
       <Pestanas pestanas={PESTANAS_SALIDAS} />
+
+      {avisoEntrega ? (
+        <div className="border-success/30 bg-success-soft mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[6px] border p-3.5">
+          <p className="text-ink/80 flex items-center gap-2 text-sm">
+            <PackageCheck className="text-success size-[18px] shrink-0" />
+            <span>
+              <strong className="font-semibold">Material entregado</strong> — el reporte para
+              compartir ya está listo.
+            </span>
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              icon={<MessageCircle />}
+              onClick={() => {
+                setVerReporteSalida(avisoEntrega)
+                setAvisoEntrega(null)
+              }}
+            >
+              Ver reporte
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<X />}
+              aria-label="Cerrar aviso"
+              onClick={() => setAvisoEntrega(null)}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-ink/85 font-titular text-lg">Solicitudes de salida</h2>
@@ -333,6 +389,17 @@ export function Solicitudes() {
                     </Button>
                   ) : null}
 
+                  {s.nota_salida ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      icon={<MessageCircle />}
+                      onClick={() => setVerReporteSalida({ s, notaSalida: s.nota_salida! })}
+                    >
+                      Reporte
+                    </Button>
+                  ) : null}
+
                   {puedo.rechazar ? (
                     <Button
                       size="sm"
@@ -355,7 +422,10 @@ export function Solicitudes() {
                       onClick={() => {
                         setFallo(null)
                         entregar.mutate(s.id, {
-                          onSuccess: (numero) => void nota.abrir(numero as string, s.motivo),
+                          onSuccess: (numero) => {
+                            void nota.abrir(numero as string, s.motivo)
+                            setAvisoEntrega({ s, notaSalida: numero as string })
+                          },
                           onError: (e) => setFallo(enCastellano(e)),
                         })
                       }}
@@ -490,6 +560,19 @@ export function Solicitudes() {
       ) : null}
 
       {nota.visor}
+
+      {verReporteSalida ? (
+        <ModalReporteSalida
+          s={verReporteSalida.s}
+          numeroNota={verReporteSalida.notaSalida}
+          razonSocial={empresa?.razon_social ?? ''}
+          destino={paraQuien(verReporteSalida.s)}
+          pedidoPor={nombreDe(verReporteSalida.s.pedida_por)}
+          aprobadoPor={nombreDe(verReporteSalida.s.aprobada_por)}
+          entregadoPor={nombreDe(verReporteSalida.s.entregada_por)}
+          onCerrar={() => setVerReporteSalida(null)}
+        />
+      ) : null}
     </>
   )
 }
