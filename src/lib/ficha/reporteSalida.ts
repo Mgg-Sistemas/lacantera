@@ -70,7 +70,7 @@ export function textoDelReporteSalida(d: DatosReporteSalida): string {
   lineas.push('')
 
   lineas.push(
-    `✍️ Pidió: ${d.pedidoPor ?? '—'} · Aprobó: ${d.aprobadoPor ?? '—'} · Entregó: ${d.entregadoPor ?? '—'}`,
+    `✍️ Solicitante: ${d.pedidoPor ?? '—'} · Aprobó: ${d.aprobadoPor ?? '—'} · Entregó: ${d.entregadoPor ?? '—'}`,
   )
   lineas.push(`📷 ${d.fotos} foto${d.fotos === 1 ? '' : 's'} del vehículo adjunta${d.fotos === 1 ? '' : 's'}`)
 
