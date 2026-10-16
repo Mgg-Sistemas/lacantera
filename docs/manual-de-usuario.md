@@ -3353,6 +3353,8 @@ Pulse en la fila. El título es el número, y el subtítulo dice el cliente, la 
 
 **Editar** abre **Editar NE-2026-0007**, con el aviso **Solo un administrador ve este botón. Cada cambio queda en la bitácora con el motivo.** Se corrigen el cliente, la moneda, el patio, la fecha, el vehículo, el chofer, los pesos, el flete, el descuento, la observación y los renglones, y hace falta el **Motivo**. Una nota que respalda una salida no deja editar sus renglones: son los que esa salida descontó del patio.
 
+Dentro de **Editar** hay además, aparte del resto del formulario, un recuadro **Cuenta por cobrar**: enseña si la nota ya está pendiente por cobrar o cobrada, y según el caso un botón para **Marcar pendiente por cobrar** (pide la fecha de pago) o **Marcar como cobrada**. Es el mismo recordatorio del apartado 10.10, puesto también aquí por comodidad: no toca el papel ni pide motivo, así que no hace falta pulsar **Guardar los cambios** para que quede.
+
 #### Anular
 
 1. Pulse **Anular**. Se abre **Anular la nota NE-2026-0007**, con el aviso **El material vuelve al patio con un reverso. La nota se queda a la vista, anulada.** Es así para la nota que salió de un despacho; la que respalda una nota de salida no devuelve nada (10.10).
