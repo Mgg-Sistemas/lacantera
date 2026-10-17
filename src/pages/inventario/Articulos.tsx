@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { Interruptor } from '@/components/ui/Interruptor'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
@@ -24,6 +25,7 @@ import {
   useCategoriasDeInventario,
   useCrearCategoriaDeArticulo,
   useEliminarCategoriaDeArticulo,
+  useMarcarCategoriaDeCocina,
   useRenumerarArticulo,
   useCrearArticulo,
   useEditarArticulo,
@@ -1099,6 +1101,7 @@ function Categorias({ onCerrar }: { onCerrar: () => void }) {
   const categorias = useCategoriasDeInventario()
   const crearCategoria = useCrearCategoriaDeArticulo()
   const eliminarCategoria = useEliminarCategoriaDeArticulo()
+  const marcarCocina = useMarcarCategoriaDeCocina()
 
   const [etiqueta, setEtiqueta] = useState('')
   const [prefijo, setPrefijo] = useState('')
@@ -1157,6 +1160,7 @@ function Categorias({ onCerrar }: { onCerrar: () => void }) {
 
         {crearCategoria.error ? <ErrorDeCarga error={crearCategoria.error} /> : null}
         {eliminarCategoria.error ? <ErrorDeCarga error={eliminarCategoria.error} /> : null}
+        {marcarCocina.error ? <ErrorDeCarga error={marcarCocina.error} /> : null}
 
         {categorias.isPending ? <Cargando /> : null}
         {categorias.error ? <ErrorDeCarga error={categorias.error} /> : null}
@@ -1169,6 +1173,17 @@ function Categorias({ onCerrar }: { onCerrar: () => void }) {
                 <p className="text-ink/40 font-mono text-xs">{c.codigo}</p>
               </div>
               <span className="tabular text-ink/60 font-mono text-xs">{c.prefijo}-…</span>
+              {/*
+                La casilla que decide qué puede consumir la cocina: con ella
+                marcada, los artículos de la categoría entran a Servir comida y
+                a la lista del mercado, y la base los acepta (17/10/2026).
+              */}
+              <Interruptor
+                encendido={c.de_cocina}
+                deshabilitado={marcarCocina.isPending}
+                onCambio={(v) => marcarCocina.mutate({ codigo: c.codigo, de_cocina: v })}
+                etiqueta="Cocina"
+              />
               {c.de_sistema ? (
                 <Chip tone="neutral">Del sistema</Chip>
               ) : (
@@ -1188,7 +1203,8 @@ function Categorias({ onCerrar }: { onCerrar: () => void }) {
 
         <p className="text-ink/45 text-xs">
           La categoría nueva aparece de inmediato en los formularios y en la planilla de carga. Solo se
-          elimina la que ningún artículo usa.
+          elimina la que ningún artículo usa. El interruptor «Cocina» decide si sus artículos se
+          pueden servir en comidas y entran a la lista del mercado.
         </p>
       </div>
     </Modal>
