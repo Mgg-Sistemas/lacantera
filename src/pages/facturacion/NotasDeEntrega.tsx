@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
-import { Check, FileText, Pencil, Printer, Truck, X } from 'lucide-react'
+import { Check, FileText, MessageCircle, Pencil, Printer, Truck, X } from 'lucide-react'
 import { CatalogoTransporte } from '@/components/CatalogoTransporte'
 import { ElegirArchivosDeCarga, FotosDeCarga } from '@/components/FotosDeCarga'
 import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
@@ -61,6 +61,7 @@ import { useCompletarNotaDeEntrega, useGuardarCamionesDeNota } from '@/lib/api/s
 import { ModalNotaDeEntrega } from '@/pages/salidas/ModalNotaDeEntrega'
 import { ListaDeCamiones, ModalCamiones } from './CamionesDeLaNota'
 import { ModalEditarNotaEntrega } from './ModalEditarNotaEntrega'
+import { ModalReporteDespacho } from './ModalReporteDespacho'
 /*
   Los renglones, el IVA y sus totales se quedaron en Ventas: son los mismos que
   arma una cotización, y partirlos en dos copias sería tener dos formas de sumar
@@ -187,6 +188,26 @@ export function NotasDeEntrega() {
   const [cerrando, setCerrando] = useState<{ s: SolicitudDeDespacho; como: 'RECHAZAR' | 'CANCELAR' } | null>(null)
   const [motivoCierre, setMotivoCierre] = useState('')
   const [falloDespacho, setFalloDespacho] = useState<string | null>(null)
+  /*
+    EL AVISO DE QUE EL REPORTE YA ESTÁ LISTO.
+
+    Christopher, 16/10/2026: «me están pidiendo un reporte individual de cada
+    salida y nota de entrega», generado justo al aprobar. No se abre solo
+    —interrumpiría a quien aprueba varios despachos seguidos—: sale un aviso
+    chico con un botón, y se queda ahí hasta que se cierra o se pide otro.
+  */
+  const [avisoDespacho, setAvisoDespacho] = useState<{
+    notaId: number
+    solicitudNumero: string
+    pedidoPor: string
+    aprobadoPor: string
+  } | null>(null)
+  const [verReporteDespacho, setVerReporteDespacho] = useState<{
+    notaId: number
+    solicitudNumero: string | null
+    pedidoPor: string | null
+    aprobadoPor: string | null
+  } | null>(null)
   const [catalogo, setCatalogo] = useState(false)
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
@@ -539,6 +560,38 @@ export function NotasDeEntrega() {
         }
       />
 
+      {avisoDespacho ? (
+        <div className="border-success/30 bg-success-soft mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[6px] border p-3.5">
+          <p className="text-ink/80 flex items-center gap-2 text-sm">
+            <Check className="text-success size-[18px] shrink-0" />
+            <span>
+              <strong className="font-semibold">Despacho aprobado</strong> — el reporte para
+              compartir ya está listo.
+            </span>
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              icon={<MessageCircle />}
+              onClick={() => {
+                setVerReporteDespacho(avisoDespacho)
+                setAvisoDespacho(null)
+              }}
+            >
+              Ver reporte
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<X />}
+              aria-label="Cerrar aviso"
+              onClick={() => setAvisoDespacho(null)}
+            />
+          </div>
+        </div>
+      ) : null}
+
       {/* ------------------------------------------ despachos por aprobar */}
       {(() => {
         const todas = solicitudes.data ?? []
@@ -697,6 +750,13 @@ export function NotasDeEntrega() {
                               onClick={() => {
                                 setFalloDespacho(null)
                                 aprobar.mutate(s.id, {
+                                  onSuccess: (notaId) =>
+                                    setAvisoDespacho({
+                                      notaId,
+                                      solicitudNumero: s.numero,
+                                      pedidoPor: nombreDe(s.pedida_por),
+                                      aprobadoPor: yo?.nombre ?? '—',
+                                    }),
                                   onError: (e) => setFalloDespacho(enCastellano(e)),
                                 })
                               }}
@@ -1459,6 +1519,21 @@ export function NotasDeEntrega() {
               >
                 Imprimir
               </Button>
+              <Button
+                variant="outline"
+                icon={<MessageCircle />}
+                onClick={() => {
+                  const s = (solicitudes.data ?? []).find((x) => x.nota_id === detalle.id)
+                  setVerReporteDespacho({
+                    notaId: detalle.id,
+                    solicitudNumero: s?.numero ?? null,
+                    pedidoPor: s ? nombreDe(s.pedida_por) : null,
+                    aprobadoPor: s ? nombreDe(s.resuelta_por) : null,
+                  })
+                }}
+              >
+                Reporte
+              </Button>
               {puedeEditar ? (
                 <Button
                   variant="outline"
@@ -1912,6 +1987,17 @@ export function NotasDeEntrega() {
         nombreArchivo={reporte?.nombre ?? ""}
         titulo="Reporte de notas de entrega"
       />
+
+      {verReporteDespacho ? (
+        <ModalReporteDespacho
+          notaId={verReporteDespacho.notaId}
+          solicitudNumero={verReporteDespacho.solicitudNumero}
+          razonSocial={empresa?.razon_social ?? ''}
+          pedidoPor={verReporteDespacho.pedidoPor}
+          aprobadoPor={verReporteDespacho.aprobadoPor}
+          onCerrar={() => setVerReporteDespacho(null)}
+        />
+      ) : null}
     </>
   )
 }
