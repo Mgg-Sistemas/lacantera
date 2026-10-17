@@ -96,18 +96,41 @@ export interface ViverEnAlmacen {
   costo_promedio_usd: string | null
 }
 
+/**
+ * Las categorías que la cocina puede consumir, dichas por la base.
+ *
+ * Era la palabra VIVERES clavada aquí, y Christopher pidió poder añadir
+ * otras —desechables, limpieza— sin llamar a nadie (17/10/2026). Ahora lo
+ * dice la casilla «Se consume en cocina» de cada categoría, que él mismo
+ * administra en Artículos → Categorías. La misma cura que los motivos del
+ * combustible: la lista vive en la base, no en el código.
+ *
+ * Sale del RPC y no de la tabla porque leer la tabla pide permiso de PANEL,
+ * que quien cocina no tiene.
+ */
+async function categoriasDeCocina(): Promise<string[]> {
+  const categorias = await rpc<{ codigo: string; de_cocina: boolean }[]>(
+    'categorias_de_articulo',
+    {},
+  )
+  return categorias.filter((c) => c.de_cocina).map((c) => c.codigo)
+}
+
 export function useViveres() {
   return useQuery({
     queryKey: ['alimentacion', 'viveres'],
-    queryFn: async () =>
-      desenvolver<ViverEnAlmacen[]>(
+    queryFn: async () => {
+      const categorias = await categoriasDeCocina()
+      if (categorias.length === 0) return []
+      return desenvolver<ViverEnAlmacen[]>(
         await supabase
           .from('v_existencias')
           .select('almacen_id, almacen, articulo_id, articulo, unidad, existencia, stock_minimo, costo_promedio_usd')
-          .eq('categoria', 'VIVERES')
+          .in('categoria', categorias)
           .gt('existencia', 0)
           .order('articulo'),
-      ),
+      )
+    },
   })
 }
 

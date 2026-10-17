@@ -199,6 +199,8 @@ export interface CategoriaDeInventario {
   prefijo: string
   activa: boolean
   de_sistema: boolean
+  /** Marcada, la cocina puede consumir sus artículos y entran a la lista del mercado. */
+  de_cocina: boolean
 }
 
 export function useCategoriasDeInventario() {
@@ -231,6 +233,30 @@ export function useCrearCategoriaDeArticulo() {
       void qc.invalidateQueries({ queryKey: ['categorias-articulo'] })
       // La planilla de carga arma su desplegable con la otra consulta.
       void qc.invalidateQueries({ queryKey: ['categorias-de-articulo'] })
+    },
+  })
+}
+
+/**
+ * Marcar o quitar «Se consume en cocina» a una categoría.
+ *
+ * Es lo que decide que una categoría entre a la pantalla de servir, a la
+ * lista del mercado y a la validación de la base — sin tocar código. La misma
+ * reja que crear una: control total de inventario.
+ */
+export function useMarcarCategoriaDeCocina() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (c: { codigo: string; de_cocina: boolean }) =>
+      rpc<void>('marcar_categoria_de_cocina', {
+        p_codigo: c.codigo,
+        p_de_cocina: c.de_cocina,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['categorias-articulo'] })
+      void qc.invalidateQueries({ queryKey: ['categorias-de-articulo'] })
+      // La cocina arma su lista de víveres con esta casilla.
+      void qc.invalidateQueries({ queryKey: ['alimentacion'] })
     },
   })
 }
@@ -430,7 +456,8 @@ export function useUnidades() {
 export function useCategoriasDeArticulo() {
   return useQuery({
     queryKey: ['categorias-de-articulo'],
-    queryFn: () => rpc<{ codigo: string; etiqueta: string }[]>('categorias_de_articulo', {}),
+    queryFn: () =>
+      rpc<{ codigo: string; etiqueta: string; de_cocina: boolean }[]>('categorias_de_articulo', {}),
     staleTime: Infinity,
   })
 }
