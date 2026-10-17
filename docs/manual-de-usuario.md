@@ -3332,6 +3332,8 @@ Cada despacho pedido tiene su tarjeta en **Despachos por aprobar**: **Despacho S
 
 A quien no tiene la casilla, la sección le explica: **Los aprueba quien tenga el permiso «Aprobar los despachos» (la gerencia general, o a quien se le preste).** Los no aprobados y los cancelados se esconden, y el botón **Ver los no aprobados** los trae de vuelta.
 
+**Al aprobar sale un aviso: «Despacho aprobado — el reporte para compartir ya está listo.»** No obliga a nada —se puede cerrar con la ✕ y seguir aprobando otros—, pero su botón **Ver reporte** abre el mensaje de ese despacho, ya armado para pegar en WhatsApp: cliente, vehículo, material, el total en Bs y en $, quién lo pidió y quién lo aprobó, y cuántas fotos tiene. **Copiar el mensaje** lo deja en el portapapeles; **Compartir con fotos** usa la función de compartir del teléfono para mandar el texto y las fotos de ese despacho juntos — en computadora de escritorio puede no estar disponible, y ahí queda **Copiar el mensaje**. El botón **Reporte**, en el detalle de la nota, abre lo mismo en cualquier momento después, por si hay que reenviarlo.
+
 #### Ver una nota
 
 Pulse en la fila. El título es el número, y el subtítulo dice el cliente, la fecha y de qué patio salió, y si respalda una nota de salida. Dentro están los chips del estado, la placa, **Neto 28.500 kg** si hay pesos y **En la factura FAC-2026-0012** si ya se facturó. Si está anulada, en rojo: **Anulada:** y el motivo. Debajo, los camiones, de qué despacho salió —quién lo pidió y quién lo aprobó—, sus fotos, los renglones y los totales.
@@ -3350,6 +3352,8 @@ Pulse en la fila. El título es el número, y el subtítulo dice el cliente, la 
 **Enlazar a una factura** sirve para la factura que se emitió sin nota y sin sacar el material: el material sale después con la nota, y la nota se engancha a ella. La ventana lo explica: **La nota pasa a facturada con el número de esa factura. La factura no cambia: sus montos siguen siendo los suyos.** En la lista **Factura** solo aparecen las de ese cliente que cumplen eso. Una factura que ya sacó el material no admite notas: se contaría dos veces.
 
 **Editar** abre **Editar NE-2026-0007**, con el aviso **Solo un administrador ve este botón. Cada cambio queda en la bitácora con el motivo.** Se corrigen el cliente, la moneda, el patio, la fecha, el vehículo, el chofer, los pesos, el flete, el descuento, la observación y los renglones, y hace falta el **Motivo**. Una nota que respalda una salida no deja editar sus renglones: son los que esa salida descontó del patio.
+
+Dentro de **Editar** hay además, aparte del resto del formulario, un recuadro **Cuenta por cobrar**: enseña si la nota ya está pendiente por cobrar o cobrada, y según el caso un botón para **Marcar pendiente por cobrar** (pide la fecha de pago) o **Marcar como cobrada**. Es el mismo recordatorio del apartado 10.10, puesto también aquí por comodidad: no toca el papel ni pide motivo, así que no hace falta pulsar **Guardar los cambios** para que quede.
 
 #### Anular
 
@@ -7385,6 +7389,8 @@ Quien responde por el almacén ve en la tarjeta **Aprobar** y **No aprobar**.
 Quien tiene escritura sobre el módulo ve **Entregar material** en las salidas **Por entregar**.
 
 **Un solo clic entrega**: no hay confirmación. En ese momento el sistema vuelve a comprobar que haya existencia, crea la nota de salida —**NS-2026-0001**—, descuenta el material al costo promedio del almacén y abre la nota para imprimirla.
+
+**Y sale un aviso: «Material entregado — el reporte para compartir ya está listo.»** Igual que al aprobar un despacho (13.4): no interrumpe, y su botón **Ver reporte** abre el mensaje para WhatsApp de esa salida —con la orden **SS-** y la nota **NS-** juntas, el material, para quién salió, el vehículo y quién la pidió, aprobó y entregó—. **Copiar el mensaje** o **Compartir con fotos** (las de esa salida, si el teléfono lo permite). El botón **Reporte**, al lado de **Orden** y **Nota** en cada tarjeta, lo vuelve a abrir cuando haga falta.
 
 #### Cancelar
 
