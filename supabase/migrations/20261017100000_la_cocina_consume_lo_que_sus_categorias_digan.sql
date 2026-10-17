@@ -85,32 +85,33 @@ grant execute on function public.marcar_categoria_de_cocina(text, boolean) to au
 -- ──────── 4 · servir_comida le pregunta a la tabla, no a una palabra ───────
 --
 -- Parche anclado sobre la función VIVA (la lección del 05/10: puede ser más
--- nueva que el repositorio). Si el ancla no aparece tal cual, el parche se
--- niega en vez de adivinar.
+-- nueva que el repositorio). Las anclas son de UNA SOLA LÍNEA a propósito:
+-- la primera versión usaba un ancla de tres líneas y el copiado chat →
+-- SQL Editor convirtió los saltos a 
+, con lo que dejó de coincidir
+-- (17/10/2026). Un ancla sin saltos no tiene nada que un pegado pueda romper.
+-- Si aun así no aparece, el parche se niega en vez de adivinar.
 
 do $mig$
 declare
   v_def   text := pg_get_functiondef(
     'public.servir_comida(text,integer,bigint,jsonb,date,text,text)'::regprocedure);
-  v_ancla text := $a$    if v_art.categoria <> 'VIVERES' then
-      raise exception '«%» no es un víver: la cocina solo descuenta víveres.', v_art.nombre using errcode = '22023';
-    end if;$a$;
-  v_nueva text := $n$    -- Lo que la cocina puede consumir lo dicen las categorías, no una
-    -- palabra escrita aquí: la casilla «Se consume en cocina» de
-    -- Artículos → Categorías. Para sacar otra cosa del inventario están
-    -- las salidas de siempre, con su solicitud y su firma.
-    if not exists (
-      select 1 from public.categorias_articulo c
-       where c.codigo = v_art.categoria and c.de_cocina
-    ) then
-      raise exception '«%» no se consume en cocina: marque su categoría con «Se consume en cocina», en Artículos → Categorías.', v_art.nombre using errcode = '22023';
-    end if;$n$;
+  v_cond  text := $a$v_art.categoria <> 'VIVERES'$a$;
+  v_viejo text := $a$'«%» no es un víver: la cocina solo descuenta víveres.'$a$;
 begin
-  if position(v_ancla in v_def) = 0 then
+  if position(v_cond in v_def) = 0 then
     raise exception 'El ancla de servir_comida no aparece: la función viva cambió y este parche no debe adivinar.';
   end if;
 
-  execute replace(v_def, v_ancla, v_nueva);
+  v_def := replace(v_def, v_cond,
+    $n$not exists (select 1 from public.categorias_articulo cc where cc.codigo = v_art.categoria and cc.de_cocina)$n$);
+
+  -- El mensaje se moderniza si está tal cual; si alguien ya lo retocó, se
+  -- queda como esté — el mensaje no es la regla.
+  v_def := replace(v_def, v_viejo,
+    $n$'«%» no se consume en cocina: marque su categoría con «Se consume en cocina», en Artículos → Categorías.'$n$);
+
+  execute v_def;
 end;
 $mig$;
 
