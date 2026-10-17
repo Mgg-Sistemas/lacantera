@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
-import { useArticulos, type Articulo } from '@/lib/api/catalogo'
+import { useArticulos, useCategoriasDeArticulo, type Articulo } from '@/lib/api/catalogo'
 import { useAlmacenes } from '@/lib/api/inventario'
 import { useSolicitarMercado, useUltimaListaDeMercado, useViveres } from '@/lib/api/alimentacion'
 import { fecha as fmtFecha } from '@/lib/formato'
@@ -48,17 +48,27 @@ let contadorLibre = 0
 
 export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
   const articulos = useArticulos()
+  const categorias = useCategoriasDeArticulo()
   const existencias = useViveres()
   const ultima = useUltimaListaDeMercado()
   const { data: almacenes } = useAlmacenes()
   const pedir = useSolicitarMercado()
 
+  /*
+    La lista principal del mercado: los artículos de las categorías con la
+    casilla «Se consume en cocina», no solo VIVERES (17/10/2026). Lo que no
+    la tenga sigue entrando como extra, igual que siempre.
+  */
+  const deCocina = useMemo(
+    () => new Set((categorias.data ?? []).filter((c) => c.de_cocina).map((c) => c.codigo)),
+    [categorias.data],
+  )
   const viveres = useMemo(
     () =>
       (articulos.data ?? [])
-        .filter((a) => a.categoria === 'VIVERES')
+        .filter((a) => deCocina.has(a.categoria))
         .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')),
-    [articulos.data],
+    [articulos.data, deCocina],
   )
 
   // Cuánto hay de cada víver, sumando todos los almacenes: el dato que decide
