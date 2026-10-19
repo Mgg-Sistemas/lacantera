@@ -147,6 +147,20 @@ const Existencias = pagina(() =>
 const Movimientos = pagina(() =>
   import('@/pages/inventario/Movimientos').then((m) => ({ default: m.Movimientos })),
 )
+/*
+  EL ALMACÉN DEL TELÉFONO, EN SUS PROPIOS TROZOS, por lo mismo que la cocina
+  y el surtidor: quien registra una entrada o entrega material en el patio no
+  tiene por qué bajarse el tablero entero de Existencias.
+*/
+const Almacen = pagina(() =>
+  import('@/pages/inventario/Almacen').then((m) => ({ default: m.Almacen })),
+)
+const AlmacenEntrada = pagina(() =>
+  import('@/pages/inventario/AlmacenEntrada').then((m) => ({ default: m.AlmacenEntrada })),
+)
+const AlmacenSalida = pagina(() =>
+  import('@/pages/inventario/AlmacenSalida').then((m) => ({ default: m.AlmacenSalida })),
+)
 const TableroNomina = pagina(() =>
   import('@/pages/nomina/Tablero').then((m) => ({ default: m.TableroNomina })),
 )
@@ -386,6 +400,9 @@ const paginas: Record<string, ReactNode> = {
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,
   '/app/inventario/talleres': <Talleres />,
+  '/app/inventario/almacen': <Almacen />,
+  '/app/inventario/almacen/entrada': <AlmacenEntrada />,
+  '/app/inventario/almacen/salida': <AlmacenSalida />,
   '/app/combustible': <Combustible />,
   '/app/combustible/surtidor': <Surtidor />,
   '/app/alimentacion': <Alimentacion />,
