@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import {
   Boxes,
   Coins,
@@ -13,6 +13,7 @@ import {
   Search,
   SendHorizontal,
   Shuffle,
+  Smartphone,
   Trash2,
   TriangleAlert,
   Wrench,
@@ -57,6 +58,7 @@ import { useNotaDeTraslado } from '@/pages/salidas/NotaDeTraslado'
 import { ConteoDeEnvases } from '@/components/ConteoDeEnvases'
 import type { LineaDeConteo } from '@/components/ConteoDeEnvases'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
+import { AvisoDeCosto } from '@/components/AvisoDeCosto'
 import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedasUsables, enSimbolos, hoyEnCaracas } from '@/lib/api/tasas'
 import {
@@ -65,7 +67,6 @@ import {
   useExistencias,
   useCorregirCosto,
   useImpactoDeCorregirCosto,
-  useRevisarCostoDeEntrada,
   useExistenciasDeArticulo,
   useExistenciasTotales,
   useMovimientos,
@@ -707,18 +708,30 @@ export function Existencias() {
             : 'Existencias actuales de este almacén, calculadas a partir del libro de movimientos.'
         }
         actions={
-          puede('ALMACEN') ? (
-            /*
-              Antes esto era un atajo a Explotación, que hoy está fuera del
-              MVP y detrás del cartel de obra: el botón principal de esta
-              pantalla mandaba a una puerta cerrada.
+          <>
+            {/*
+              El almacén del teléfono tiene sus dos propias tareas —entrada y
+              salida— y no hace falta la casilla de "entrar directo" para
+              llegar a él desde aquí: quien puede entrar a Existencias puede
+              probarlo.
+            */}
+            <Link to="/app/inventario/almacen">
+              <Button variant="ghost" icon={<Smartphone />}>
+                Vista de teléfono
+              </Button>
+            </Link>
+            {puede('ALMACEN') ? (
+              /*
+                Antes esto era un atajo a Explotación, que hoy está fuera del
+                MVP y detrás del cartel de obra: el botón principal de esta
+                pantalla mandaba a una puerta cerrada.
 
-              Y sobre todo, Inventario tiene que valerse solo. Sin esta
-              entrada, la única forma de meter mercancía con su costo era una
-              orden de compra, y un almacén que arranca no tiene ninguna
-              todavía.
-            */
-            <>
+                Y sobre todo, Inventario tiene que valerse solo. Sin esta
+                entrada, la única forma de meter mercancía con su costo era una
+                orden de compra, y un almacén que arranca no tiene ninguna
+                todavía.
+              */
+              <>
               <Button
                 variant="outline"
                 icon={<Printer />}
@@ -785,7 +798,8 @@ export function Existencias() {
                 Mandar al taller
               </Button>
             </>
-          ) : undefined
+            ) : null}
+          </>
         }
       />
 
@@ -2432,146 +2446,6 @@ function ModalDesglose({
         </ul>
       ) : null}
     </Modal>
-  )
-}
-
-/**
- * El aviso del costo, con la respuesta de la base en vez de una deducción.
- *
- * Es un componente y no un trozo suelto porque tiene que preguntar, y preguntar
- * es un hook. Lo que gana con eso son las dos cosas que antes fallaban en
- * silencio: sale en cualquier moneda —la conversión la hace la base con la tasa
- * del día— y distingue de verdad la primera entrada del desvío, aunque quien
- * teclea no tenga permiso para ver el promedio.
- *
- * A esa persona se le dice QUE se sale, no CUANTO. Es poco, pero es cierto, y
- * es exactamente lo que dice el mensaje de la base cuando rechaza: así lo que
- * lee antes de guardar y lo que leería después no se contradicen.
- */
-function AvisoDeCosto({
-  almacenId,
-  articuloId,
-  costo,
-  moneda,
-  cantidad: cant,
-  unidad,
-  nombre,
-  confirmado,
-  onConfirmar,
-}: {
-  almacenId: number | null
-  articuloId: number | null
-  costo: number
-  moneda: string
-  cantidad: number
-  unidad: string
-  nombre: string
-  confirmado: boolean
-  onConfirmar: (valor: boolean) => void
-}) {
-  const revision = useRevisarCostoDeEntrada(almacenId, articuloId, costo, moneda)
-
-  if (!articuloId || costo <= 0 || cant <= 0) return null
-
-  const r = revision.data
-  /*
-    Mientras la base contesta no se pinta nada. Enseñar un hueco reservado que
-    luego casi siempre queda vacío entrena a no mirarlo, que es lo contrario de
-    lo que hace falta aquí.
-  */
-  if (!r || r.estado === 'NORMAL' || r.estado === 'SIN_ARTICULO') return null
-
-  if (r.estado === 'SIN_TASA') {
-    return (
-      <p className="text-ink/50 mt-3 text-xs">
-        No hay tasa del {moneda} para hoy: el costo no se compara con el anterior. Se avisa al
-        guardar.
-      </p>
-    )
-  }
-
-  const casilla = (texto: string) => (
-    <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
-      <input type="checkbox" checked={confirmado} onChange={(e) => onConfirmar(e.target.checked)} />
-      {texto}
-    </label>
-  )
-
-  /*
-    LA PRIMERA VEZ NO HAY CONTRA QUE COMPARAR, Y ES CUANDO MAS DUELE.
-
-    Los cinco aceites del 5 de septiembre entraban por primera vez, así que la
-    reja de las diez veces no tenía con qué medirlos y calló. No hay número
-    contra el que avisar; lo que sí se puede es decir que NADIE lo está
-    comprobando, y que ese costo se convierte en la referencia de todo lo que
-    venga después.
-
-    La base lo exige igual, así que esto no es un adorno: sin la casilla, el
-    guardado fallaría con un error que la pantalla no ofrece cómo resolver.
-  */
-  if (r.estado === 'PRIMERA') {
-    /*
-      CON LA MONEDA Y SU EQUIVALENTE EN LA OTRA.
-
-      Decía «a 39.332,15 cada una», y con una factura en bolívares esa cifra
-      coincidía con el papel: la casilla se marcó de buena fe y la cafetera entró
-      en dólares. Ahora dice la moneda y cuánto es en la otra —la cuenta la hace
-      la base con la tasa del día—, que es donde un error así se ve: treinta y
-      tres millones de bolívares por una cafetera no pasan desapercibidos.
-    */
-    const rotulo = (m: string) => (m === 'VES' ? 'Bs' : m)
-    return (
-      <div className="border-hairline bg-ink/4 rounded-card mt-3 border p-2.5">
-        <p className="text-ink/80 text-xs leading-relaxed">
-          <strong>Es la primera vez que entra a este almacén</strong>, así que no hay con qué
-          comparar el costo. Serán <span className="tabular">{cantidad(cant)}</span> {unidad} a{' '}
-          <span className="tabular font-semibold">
-            {monto(costo)} {rotulo(moneda)}
-          </span>{' '}
-          cada una
-          {r.equivale != null && r.equivale_en ? (
-            <>
-              , que son{' '}
-              <span className="tabular font-semibold">
-                {monto(r.equivale)} {rotulo(r.equivale_en)}
-              </span>
-            </>
-          ) : null}
-          . Este costo se convierte en la referencia de todo lo que entre después.
-        </p>
-        {casilla('Lo comprobé con la factura, también la moneda')}
-      </div>
-    )
-  }
-
-  const veLasCifras = r.veces != null && r.viene_costando != null && r.entra_a != null
-
-  return (
-    <div className="border-warning/40 bg-warning-soft rounded-card mt-3 border p-2.5">
-      <p className="text-ink/80 text-xs leading-relaxed">
-        {veLasCifras ? (
-          <>
-            <strong>
-              {nombre} viene costando {monto(r.viene_costando!)}
-            </strong>{' '}
-            por {unidad || 'unidad'} y lo está metiendo a {monto(r.entra_a!)}: son{' '}
-            <strong>
-              {monto(r.veces!)} veces {r.hacia === 'ARRIBA' ? 'más' : 'menos'}
-            </strong>
-            .
-          </>
-        ) : (
-          <>
-            <strong>
-              Este costo se sale mucho de lo que {nombre} viene costando en este almacén
-            </strong>{' '}
-            — es más de diez veces {r.hacia === 'ARRIBA' ? 'más caro' : 'más barato'}.
-          </>
-        )}{' '}
-        Compruebe la factura y la moneda.
-      </p>
-      {casilla('Es correcto, guárdelo así — quedará anotado en el movimiento')}
-    </div>
   )
 }
 

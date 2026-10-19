@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import {
   ClipboardList,
   FileText,
@@ -7,6 +7,7 @@ import {
   PackageCheck,
   PackageMinus,
   SendHorizontal,
+  Smartphone,
   X,
 } from 'lucide-react'
 import { Ayuda } from '@/components/Ayuda'
@@ -181,9 +182,16 @@ export function Solicitudes() {
         title="Salidas"
         description="Solicitudes de salida de material de un almacén. Ninguna salida descuenta existencias hasta que la aprueba el responsable del almacén y el personal de almacén la entrega. Las ventas salen por Facturación › Notas de entrega; las compras se gestionan en Compras."
         actions={
-          <Button icon={<SendHorizontal />} onClick={() => setPidiendo(true)}>
-            Solicitar salida
-          </Button>
+          <>
+            <Link to="/app/inventario/almacen/salida">
+              <Button variant="ghost" icon={<Smartphone />}>
+                Vista de teléfono
+              </Button>
+            </Link>
+            <Button icon={<SendHorizontal />} onClick={() => setPidiendo(true)}>
+              Solicitar salida
+            </Button>
+          </>
         }
       />
 

@@ -46,5 +46,8 @@ export function Entrada({ tablero }: { tablero: ReactNode }) {
   if (!esAdmin && acciones.puede('ALIMENTACION.COCINA_TELEFONO')) {
     return <Navigate to="/app/alimentacion/cocina" replace />
   }
+  if (!esAdmin && acciones.puede('INVENTARIO.ALMACEN_TELEFONO')) {
+    return <Navigate to="/app/inventario/almacen" replace />
+  }
   return <>{tablero}</>
 }
