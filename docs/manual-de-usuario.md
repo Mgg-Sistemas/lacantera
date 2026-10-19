@@ -7298,11 +7298,20 @@ El botón **Pedir el mercado** arma la lista de compra de la cocina sin teclearl
 
 Lo que sale de ahí **no es un papel aparte: es un pedido de compras de verdad** — número SOL, prioridad urgente, título «Reposición del mercado» — que entra al tablero de Compras y sigue el circuito de siempre: cotizar, aprobar, pagar y recibir. La recepción es la entrada de inventario que repone los víveres. **El Destino puede quedar sin elegir** —dice «Se decide al recibir»—, y entonces el almacén se escoge al recibir el material. Para pedirlo basta la **escritura en Alimentación**: no hace falta el permiso de Compras, porque del pedido en adelante todo lo decide la oficina.
 
-### 25.6 Lo que este módulo no hace
+### 25.6 Reporte e informe del período
+
+En **Comidas servidas**, al lado del rango de fechas, hay dos botones que trabajan sobre ese mismo rango —el que ya está elegido en la pantalla, sin preguntarlo otra vez—:
+
+- **Reporte** abre el mensaje para compartir por WhatsApp: cuántas comidas y platos, cuánto se gastó, el costo por plato, el desglose por desayuno/almuerzo/cena y los **víveres con mayor gasto del período**. Es un resumen, no una lista completa; si hace falta el detalle de cada comida, para eso está el informe en PDF. Se copia o se descarga como **.txt**; no se guarda en el sistema.
+- **Informe PDF** arma un papel con el mismo período: el alcance (comidas, platos, gastado, costo por plato, cuántas anuladas), una tabla con cada comida y otra con **todos los víveres consumidos**, cantidad y valor de cada uno. Se enseña en una vista previa antes de descargarlo, igual que el resto de los papeles del sistema.
+
+Las comidas anuladas se cuentan aparte en los dos: no entran en los totales ni en la tabla de víveres, porque lo que se anuló no se gastó.
+
+### 25.7 Lo que este módulo no hace
 
 No asocia la comida a un trabajador concreto: cuenta platos, no nombres. No lleva menú ni recetas. Y su analítica de ciclos de mercado —inventario teórico contra conteo, merma, ración por persona— no se trajo todavía: se decidirá con un mes de comidas registradas delante.
 
-### 25.7 Cuando el sistema no le deja
+### 25.8 Cuando el sistema no le deja
 
 | Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |

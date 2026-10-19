@@ -1,6 +1,17 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { Plus, ShoppingCart, Smartphone, TriangleAlert, UtensilsCrossed } from 'lucide-react'
+import {
+  Check,
+  ClipboardCopy,
+  Download,
+  MessageCircle,
+  Plus,
+  Printer,
+  ShoppingCart,
+  Smartphone,
+  TriangleAlert,
+  UtensilsCrossed,
+} from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -12,7 +23,11 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import type { Rango } from '@/components/rango'
+import { Visor } from '@/components/Visor'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useEmpresa } from '@/lib/api/empresa'
+import { useSesion } from '@/lib/sesion'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import {
   TIPOS_DE_COMIDA,
@@ -25,6 +40,9 @@ import {
 } from '@/lib/api/alimentacion'
 import { dolares, fecha as fmtFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
+import { armarInformeAlimentacion } from '@/lib/ficha/alimentacionPdf'
+import { copiarAlPortapapeles } from '@/lib/ficha/reporteDiario'
+import { textoDelReporteAlimentacion } from '@/lib/ficha/reporteAlimentacion'
 import { PedirMercado } from './PedirMercado'
 import { CampoCantidadDeViver } from './CampoCantidadDeViver'
 
@@ -45,18 +63,71 @@ export function Alimentacion() {
   const { puede } = useMisPermisos()
   const puedeServir = puede('ALIMENTACION', 'ESCRITURA')
   const hoy = hoyEnCaracas()
+  const { data: empresa } = useEmpresa()
+  const { nombre: yo } = useSesion()
 
   const [rango, setRango] = useState<Rango>({ desde: primerDiaDelMes(hoy), hasta: hoy })
-  const comidas = useComidas(rango.desde || primerDiaDelMes(hoy), rango.hasta || hoy)
+  const desde = rango.desde || primerDiaDelMes(hoy)
+  const hasta = rango.hasta || hoy
+  const comidas = useComidas(desde, hasta)
   const viveres = useViveres()
 
   const [sirviendo, setSirviendo] = useState(false)
   const [pidiendoMercado, setPidiendoMercado] = useState(false)
   const [anulando, setAnulando] = useState<Comida | null>(null)
+  const [reportando, setReportando] = useState(false)
+  const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
 
   const vivas = useMemo(() => (comidas.data ?? []).filter((c) => c.estado === 'SERVIDA'), [comidas.data])
   const totalValor = vivas.reduce((s, c) => s + Number(c.valor_usd), 0)
   const totalPlatos = vivas.reduce((s, c) => s + c.platos, 0)
+
+  /*
+    LOS VÍVERES DEL PERÍODO, SUMADOS POR ARTÍCULO. Es lo que de verdad
+    responde «¿en qué se fue la plata»: sirve tanto para el reporte (los
+    cinco de mayor gasto) como para la tabla entera del informe en PDF.
+    Nace de los renglones que ya trae cada comida servida: no hace falta
+    ninguna consulta aparte.
+  */
+  const viveresAgregados = useMemo(() => {
+    const mapa = new Map<number, { articulo: string; unidad: string; cantidad: number; valorUsd: number }>()
+    for (const c of vivas) {
+      for (const r of c.renglones) {
+        const actual = mapa.get(r.articulo_id) ?? {
+          articulo: r.articulo,
+          unidad: r.unidad,
+          cantidad: 0,
+          valorUsd: 0,
+        }
+        actual.cantidad += Number(r.cantidad)
+        actual.valorUsd += Number(r.valor_usd)
+        mapa.set(r.articulo_id, actual)
+      }
+    }
+    return [...mapa.values()].sort((a, b) => b.valorUsd - a.valorUsd)
+  }, [vivas])
+
+  const generarInforme = async () => {
+    setPdf(
+      await armarInformeAlimentacion({
+        desde,
+        hasta,
+        comidas: (comidas.data ?? []).map((c) => ({
+          numero: c.numero,
+          fecha: fmtFecha(c.fecha),
+          tipo: nombreDeTipo(c.tipo),
+          platos: c.platos,
+          valorUsd: c.valor_usd,
+          costoPorPlatoUsd: c.costo_por_plato_usd,
+          estado: c.estado,
+        })),
+        viveres: viveresAgregados,
+        empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+        emitidoPor: yo ?? '',
+        momento: new Date(),
+      }),
+    )
+  }
 
   return (
     <>
@@ -151,7 +222,22 @@ export function Alimentacion() {
 
       {/* ------------------------------------------------- las comidas */}
       <Card>
-        <CardHeader title="Comidas servidas" subtitle="Una fila por comida, con sus víveres y su costo por plato." />
+        <CardHeader
+          title="Comidas servidas"
+          subtitle="Una fila por comida, con sus víveres y su costo por plato."
+          action={
+            comidas.data && comidas.data.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" icon={<MessageCircle />} onClick={() => setReportando(true)}>
+                  Reporte
+                </Button>
+                <Button variant="outline" size="sm" icon={<Printer />} onClick={() => void generarInforme()}>
+                  Informe PDF
+                </Button>
+              </div>
+            ) : null
+          }
+        />
         <div className="mt-3">
           <RangoDeFechas valor={rango} onCambio={setRango} />
         </div>
@@ -206,7 +292,111 @@ export function Alimentacion() {
       {sirviendo ? <ServirComida onCerrar={() => setSirviendo(false)} /> : null}
       {pidiendoMercado ? <PedirMercado onCerrar={() => setPidiendoMercado(false)} /> : null}
       {anulando ? <AnularComida comida={anulando} hoy={hoy} onCerrar={() => setAnulando(null)} /> : null}
+      {reportando ? (
+        <ReporteDeAlimentacion
+          desde={desde}
+          hasta={hasta}
+          razonSocial={empresa?.razon_social ?? ''}
+          comidas={comidas.data ?? []}
+          viveresAgregados={viveresAgregados}
+          onCerrar={() => setReportando(false)}
+        />
+      ) : null}
+
+      <Visor
+        abierto={pdf !== null}
+        onCerrar={() => setPdf(null)}
+        blob={pdf?.blob ?? null}
+        nombreArchivo={pdf?.nombre ?? ''}
+        titulo="Informe de alimentación"
+      />
     </>
+  )
+}
+
+/* ──────────────────────────────────────────────── reporte (WhatsApp) */
+
+function ReporteDeAlimentacion({
+  desde,
+  hasta,
+  razonSocial,
+  comidas,
+  viveresAgregados,
+  onCerrar,
+}: {
+  desde: string
+  hasta: string
+  razonSocial: string
+  comidas: Comida[]
+  viveresAgregados: { articulo: string; unidad: string; cantidad: number; valorUsd: number }[]
+  onCerrar: () => void
+}) {
+  const [copiado, setCopiado] = useState(false)
+
+  const servidas = comidas.filter((c) => c.estado === 'SERVIDA')
+  const anuladas = comidas.length - servidas.length
+  const platos = servidas.reduce((s, c) => s + c.platos, 0)
+  const valorUsd = servidas.reduce((s, c) => s + Number(c.valor_usd), 0)
+
+  const porTipo = TIPOS_DE_COMIDA.map((t) => ({
+    tipo: t.tipo,
+    nombre: t.nombre,
+    comidas: servidas.filter((c) => c.tipo === t.tipo).length,
+    platos: servidas.filter((c) => c.tipo === t.tipo).reduce((s, c) => s + c.platos, 0),
+  }))
+
+  const texto = textoDelReporteAlimentacion({
+    desde,
+    hasta,
+    razonSocial,
+    comidasServidas: servidas.length,
+    comidasAnuladas: anuladas,
+    platos,
+    valorUsd,
+    porTipo,
+    viveresDeMayorGasto: viveresAgregados.slice(0, 5),
+  })
+
+  const copiar = async () => {
+    setCopiado(await copiarAlPortapapeles(texto))
+  }
+
+  const descargar = () => {
+    const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `reporte-alimentacion-${desde}-a-${hasta}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Reporte de alimentación"
+      descripcion="El mensaje para compartir por WhatsApp. No se guarda en el sistema."
+      ancho="lg"
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cerrar
+          </Button>
+          <Button variant="outline" icon={<Download />} onClick={descargar}>
+            Descargar .txt
+          </Button>
+          <Button icon={copiado ? <Check /> : <ClipboardCopy />} onClick={() => void copiar()}>
+            {copiado ? 'Copiado' : 'Copiar el mensaje'}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-ink/45 mb-1.5 text-xs">Así va a quedar</p>
+      <pre className="bg-ink/4 text-ink/80 max-h-80 overflow-auto rounded-[6px] p-3 text-xs leading-relaxed whitespace-pre-wrap">
+        {texto}
+      </pre>
+    </Modal>
   )
 }
 
