@@ -7302,6 +7302,15 @@ Lo que sale de ahí **no es un papel aparte: es un pedido de compras de verdad**
 
 No asocia la comida a un trabajador concreto: cuenta platos, no nombres. No lleva menú ni recetas. Y su analítica de ciclos de mercado —inventario teórico contra conteo, merma, ración por persona— no se trajo todavía: se decidirá con un mes de comidas registradas delante.
 
+### 25.7 Cuando el sistema no le deja
+
+| Lo que ve | Qué significa | Qué hacer |
+| --- | --- | --- |
+| «En "X" no se conoce el costo de "Y" todavía: corríjalo en Inventario antes de servir la comida.» | Ese víver entró al almacén sin que se declarara su costo, y todavía nadie lo corrigió con la factura en mano | Vaya a **Inventario › Movimientos** y corrija su costo (19/10/2026: pasó con 30 víveres cargados por planilla sin cifra) |
+| «En "X" hay … de "Y" y la comida pide …» | No alcanza la existencia de ese víver en ese almacén | Baje la cantidad o traslade más víveres al almacén de la cocina |
+| «Cada víver lleva su cantidad, mayor que cero.» | Un renglón quedó sin víver o sin cantidad | Complete o quite esa línea |
+| «Hay un víver repetido en la lista: junta sus cantidades en una sola línea.» | El mismo víver aparece dos veces | Súmelo en un solo renglón |
+
 ---
 
 ## 26. Salidas y traslados
