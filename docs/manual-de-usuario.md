@@ -389,7 +389,7 @@ Esto es todo lo que ofrece el menú hoy. Cada persona ve solo la parte sobre la 
 | **Prestaciones sociales**, **Parámetros de nómina**, **Bonos y descuentos** | Pestañas de **Nómina › Prestaciones y parámetros** |
 | El libro de compras y el de ventas | Las pestañas **Compras** y **Ventas** de **Tesorería › Libro Mayor** |
 | **Cargar por planilla** —artículos, personal o proveedores— | No es pestaña: es un botón, **Cargar por planilla**, dentro del catálogo de artículos, de **Personal** y de **Proveedores**. El **Panel** tiene además atajos para cargar el catálogo y el personal, y el **Tablero** de Compras uno para cargar los proveedores |
-| La vista de teléfono del surtidor de **Combustible** y de la cocina de **Alimentación** | El botón **Vista de teléfono** de cada módulo. Quien tiene la casilla de usar el surtidor o la cocina desde el teléfono, y no es administrador, entra directamente ahí al abrir el sistema |
+| La vista de teléfono del surtidor de **Combustible**, de la cocina de **Alimentación** y del almacén de **Inventario** | El botón **Vista de teléfono** de cada módulo. Quien tiene la casilla de usar el surtidor, la cocina o el almacén desde el teléfono, y no es administrador, entra directamente ahí al abrir el sistema |
 
 **La lupa (Ctrl+K) encuentra casi todas por su nombre corriente**, aunque no estén en el menú: escribir *cargar artículo* lleva a la carga de artículos. Las que no encuentra son **Carnets**, **Por proveedor**, **Dueños del material**, **Bonos y descuentos** y el libro de ventas: a esas se llega solo por su pestaña.
 
@@ -1754,7 +1754,20 @@ Del módulo salen estos documentos, y **todos llevan la misma cabecera que el re
 
 **El acta se imprime antes de contar, no después.** Es su razón de ser: se sale al patio con lo que el sistema cree que hay y se anota al lado lo que se cuenta. El acta no registra nada: el ajuste se hace después con **Contar**.
 
-### 7.14 Cuando el sistema no le deja
+### 7.14 El almacén en el teléfono
+
+Con el mismo molde del surtidor de combustible (20.4) y la cocina de Alimentación (25.3): botones grandes, teclado numérico, aviso de mala señal a los doce segundos, y un acuse que se pasa por WhatsApp. Se abre con **Vista de teléfono**, desde **Existencias** o desde **Salidas**.
+
+Son dos tareas, no una:
+
+- **Registrar entrada** — los mismos campos de siempre: almacén, uno o más artículos con su cantidad y su costo, el aviso si el costo se sale de lo normal, **Referencia** y **Procedencia**. Al guardar, un acuse con lo que entró, para compartir por WhatsApp.
+- **Entregar material** — una lista de las solicitudes **ya aprobadas**, por entregar. No se teclea nada: destino, responsable, renglones y vehículo ya se decidieron al pedirla y al aprobarla. Se toca una, se confirma, y sale el mismo reporte compartible por WhatsApp que ya existe en Salidas y traslados (26.5).
+
+**Quién ve cada botón.** Registrar entrada pide escritura en Inventario; Entregar material, escritura en Salidas. Quien tiene las dos ve un menú para elegir; quien tiene solo una, aterriza derecho en ella.
+
+**Entrar directo al abrir el sistema.** En Configuración › Usuarios, entre los permisos extendidos de Inventario, está la casilla **Entrar directo al almacén del teléfono**: quien la tiene abre el sistema y aparece ya en esta pantalla, en vez de en el tablero. No da permiso de nada por sí sola.
+
+### 7.15 Cuando el sistema no le deja
 
 | Lo que ve | Qué significa | Qué hacer |
 | --- | --- | --- |
