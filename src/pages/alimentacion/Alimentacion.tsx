@@ -26,6 +26,7 @@ import {
 import { dolares, fecha as fmtFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 import { PedirMercado } from './PedirMercado'
+import { CampoCantidadDeViver } from './CampoCantidadDeViver'
 
 /*
   EL CONTROL DE ALIMENTACIÓN, EN EL ESCRITORIO.
@@ -344,7 +345,7 @@ export function ServirComida({ onCerrar }: { onCerrar: () => void }) {
             {lineas.map((l, i) => {
               const v = delAlmacen.find((x) => String(x.articulo_id) === l.articulo_id)
               return (
-                <div key={i} className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+                <div key={i} className="grid gap-2 sm:grid-cols-[1fr_minmax(8rem,13rem)_auto]">
                   <SelectBuscable
                     label="Víver"
                     vacio="Busque el víver…"
@@ -356,14 +357,10 @@ export function ServirComida({ onCerrar }: { onCerrar: () => void }) {
                       detalle: `hay ${Number(x.existencia).toLocaleString('es-VE')} ${x.unidad}`,
                     }))}
                   />
-                  <Input
-                    label="Cantidad"
-                    type="number"
-                    min="0.001"
-                    step="0.001"
-                    inputMode="decimal"
-                    value={l.cantidad}
-                    onChange={(e) => pon(i, 'cantidad', e.target.value)}
+                  <CampoCantidadDeViver
+                    unidad={v?.unidad ?? ''}
+                    valor={l.cantidad}
+                    onCambiar={(val) => pon(i, 'cantidad', val)}
                     error={
                       v && Number(l.cantidad) > Number(v.existencia)
                         ? `Hay ${Number(v.existencia).toLocaleString('es-VE')}`

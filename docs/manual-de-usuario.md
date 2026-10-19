@@ -7280,9 +7280,11 @@ Desde la pantalla, el botón **Servir comida** abre la ventana **Servir una comi
 
 El sistema no deja servir con fecha futura, ni con un víver repetido en la lista, ni más cantidad de la que hay en el almacén. Cada comida queda con su número — **COM-2026-0001** en adelante — y sus consumos se ven también en el libro de inventario, uno por víver, con el número de la comida en la nota.
 
+**Cuánto se gastó, en gramos o en mililitros.** Un víver que se cuenta en **KG** o en **L** trae, al lado de la **Cantidad**, un selector con su subdivisión — **Gramos** o **Mililitros** —: se elige, se teclea «500» y debajo se enseña la cuenta, «= 0,5 KG», antes de guardar. No es una unidad nueva del catálogo: es solo una forma más cómoda de escribir un gasto chico sin hacer la división de cabeza; lo que se guarda sigue siendo en la unidad del víver. Un víver en **UND** no trae ese selector: no hay nada que subdividir.
+
 ### 25.3 La cocina en el teléfono
 
-La vista para quien cocina, con el mismo molde del surtidor de combustible (20.4): se abre desde el botón **Vista de teléfono**, se toca 🍳, 🍽️ o 🌙 —desayuno, almuerzo o cena—, se ponen los **Platos**, se elige el **Almacén** y se escriben las cantidades al lado de cada víver. El buscador de arriba filtra la lista cuando el catálogo es largo. Si la señal está mala y el guardado tarda más de doce segundos, el aviso dice que **ya se está guardando y no hay que cargarla otra vez**. Al guardar, el acuse dice el costo por plato y se puede **pasar por WhatsApp**.
+La vista para quien cocina, con el mismo molde del surtidor de combustible (20.4): se abre desde el botón **Vista de teléfono**, se toca 🍳, 🍽️ o 🌙 —desayuno, almuerzo o cena—, se ponen los **Platos**, se elige el **Almacén** y se escriben las cantidades al lado de cada víver, con el mismo selector de **Gramos** o **Mililitros** para el víver que lo admite. El buscador de arriba filtra la lista cuando el catálogo es largo. Si la señal está mala y el guardado tarda más de doce segundos, el aviso dice que **ya se está guardando y no hay que cargarla otra vez**. Al guardar, el acuse dice el costo por plato y se puede **pasar por WhatsApp**.
 
 **Quién entra directo.** En Configuración › Usuarios, entre los permisos extendidos de Alimentación, está la casilla **Entrar directo a la cocina del teléfono**: quien la tiene abre el sistema y aparece ya en esa pantalla. No da permiso de nada por sí sola, y nadie la tiene de entrada. Si una misma persona tuviera también la del surtidor, aterriza en el surtidor.
 

@@ -14,6 +14,8 @@ import {
 } from '@/lib/api/alimentacion'
 import { dolares } from '@/lib/formato'
 import { cn } from '@/lib/cn'
+import { subunidadDe } from '@/lib/subunidad'
+import { CampoCantidadDeViver } from './CampoCantidadDeViver'
 
 /*
   LA COCINA, EN EL TELÉFONO.
@@ -213,20 +215,13 @@ export function Cocina() {
                           : `hay ${Number(v.existencia).toLocaleString('es-VE')} ${v.unidad}`}
                       </p>
                     </div>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.001"
-                      inputMode="decimal"
-                      placeholder="0"
-                      value={cantidad}
-                      onChange={(e) =>
-                        setCantidades((c) => ({ ...c, [v.articulo_id]: e.target.value }))
-                      }
-                      className={cn(
-                        'border-hairline bg-surface tabular w-24 rounded-[8px] border px-2 py-2.5 text-right text-sm',
-                        pasa && 'border-danger',
-                      )}
+                    <CampoCantidadDeViver
+                      unidad={v.unidad}
+                      valor={cantidad}
+                      onCambiar={(val) => setCantidades((c) => ({ ...c, [v.articulo_id]: val }))}
+                      variante="compacta"
+                      resaltar={pasa}
+                      className={cn('shrink-0', subunidadDe(v.unidad) ? 'w-40' : 'w-24')}
                     />
                   </li>
                 )
