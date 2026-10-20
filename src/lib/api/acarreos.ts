@@ -89,6 +89,10 @@ export interface Acarreo {
   decidido_por_nombre: string | null
   decidido_como: 'RESPONSABLE' | 'CASILLA' | 'RESPALDO' | null
   motivo_rechazo: string | null
+  /** La última vez que volvió a la cola, si volvió. No se borra al decidirlo otra vez. */
+  devuelto_en: string | null
+  devuelto_por_nombre: string | null
+  motivo_devolucion: string | null
   anterior_a_la_aprobacion: boolean
   /** El precio que traía de su ruta, si quien aprueba lo ajustó. Nulo sin la casilla del dinero. */
   precio_antes_de_ajuste: string | null
@@ -479,6 +483,24 @@ export function useAprobarViajes() {
 export function useAjustarPrecioDeViajes() {
   return useAccion((a: { ids: number[]; precio: number; motivo: string }) =>
     rpc<number>('ajustar_precio_de_viajes', { p_ids: a.ids, p_precio: a.precio, p_motivo: a.motivo }),
+  )
+}
+
+/**
+ * Devuelve a la cola un viaje YA DECIDIDO: vuelve a «por aprobar».
+ *
+ * Christopher aprobó once viajes cuando quería aprobar tres (20/10/2026) y no
+ * había cómo deshacerlo: rechazar es una DECISIÓN —«estos no se pagan»— y
+ * anular borra del conteo un viaje que sí ocurrió. Hubo que arreglarlo con
+ * SQL a mano; esta es la puerta para que no vuelva a hacer falta.
+ *
+ * El sello de la decisión se va; el de la devolución se queda aunque después
+ * se apruebe: meses después, cuadrando un pago, esa historia es justo lo que
+ * alguien va a querer leer.
+ */
+export function useDevolverViajes() {
+  return useAccion((d: { ids: number[]; motivo: string }) =>
+    rpc<number>('devolver_viajes_a_por_aprobar', { p_ids: d.ids, p_motivo: d.motivo }),
   )
 }
 
