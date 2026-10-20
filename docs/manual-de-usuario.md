@@ -1756,16 +1756,17 @@ Del módulo salen estos documentos, y **todos llevan la misma cabecera que el re
 
 ### 7.14 El almacén en el teléfono
 
-Con el mismo molde del surtidor de combustible (20.4) y la cocina de Alimentación (25.3): botones grandes, teclado numérico, aviso de mala señal a los doce segundos, y un acuse que se pasa por WhatsApp. Se abre con **Vista de teléfono**, desde **Existencias** o desde **Salidas**.
+Con el mismo molde del surtidor de combustible (20.4) y la cocina de Alimentación (25.3): botones grandes, teclado numérico, aviso de mala señal a los doce segundos, y un acuse que se pasa por WhatsApp. Se abre con **Vista de teléfono**, desde **Existencias**, desde **Salidas** o desde **Asignaciones**. Cada pantalla lleva un enlace **← Atrás** para salir sin terminar.
 
-Son dos tareas, no una:
+Son tres tareas, no una:
 
-- **Registrar entrada** — los mismos campos de siempre: almacén, uno o más artículos con su cantidad y su costo, el aviso si el costo se sale de lo normal, **Referencia** y **Procedencia**. Al guardar, un acuse con lo que entró, para compartir por WhatsApp.
+- **Registrar entrada** — los mismos campos de siempre: almacén, uno o más artículos con su cantidad y su costo, el aviso si el costo se sale de lo normal, **Referencia** y **Procedencia**. Al guardar, un acuse con lo que entró, para compartir por WhatsApp. Si el artículo todavía no está en el catálogo, el enlace **No está en el catálogo: darlo de alta** abre un formulario corto —nombre, categoría y unidad, el código se pone solo— y lo deja elegido en el renglón sin salir de la entrada.
 - **Entregar material** — una lista de las solicitudes **ya aprobadas**, por entregar. No se teclea nada: destino, responsable, renglones y vehículo ya se decidieron al pedirla y al aprobarla. Se toca una, se confirma, y sale el mismo reporte compartible por WhatsApp que ya existe en Salidas y traslados (26.5).
+- **Entregar a un trabajador** — la misma puerta de Asignaciones (18.3): se elige el trabajador, el almacén, si es **Préstamo** o **Dotación**, y se marca la cantidad de cada cosa que se lleva, de una lista buscable. Lo que vuelve y lo que se gasta lo decide el catálogo, no esta pantalla. Al guardar, un acuse que dice cuánto quedó prestado y cuánto consumido.
 
-**Quién ve cada botón.** Registrar entrada pide escritura en Inventario; Entregar material, escritura en Salidas. Quien tiene las dos ve un menú para elegir; quien tiene solo una, aterriza derecho en ella.
+**Quién ve cada botón.** Registrar entrada pide escritura en Inventario; Entregar material, escritura en Salidas; Entregar a un trabajador, el rol Almacén, Recursos Humanos o administración. Quien tiene más de una tarea ve un menú para elegir; quien tiene solo una, aterriza derecho en ella.
 
-**Entrar directo al abrir el sistema.** En Configuración › Usuarios, entre los permisos extendidos de Inventario, está la casilla **Entrar directo al almacén del teléfono**: quien la tiene abre el sistema y aparece ya en esta pantalla, en vez de en el tablero. No da permiso de nada por sí sola.
+**Entrar directo al abrir el sistema.** En Configuración › Usuarios, entre los permisos extendidos de Inventario, está la casilla **Entrar directo al almacén del teléfono**: quien la tiene abre el sistema y aparece ya en esta pantalla, en vez de en el tablero. No da permiso de nada por sí sola: cada tarea sigue pidiendo el suyo.
 
 ### 7.15 Cuando el sistema no le deja
 
@@ -6257,6 +6258,8 @@ La columna del estado dice en qué quedó cada cosa:
 
 Desde aquí se saca la **Constancia de entrega**, que es el papel que firma quien recibe.
 
+**Informe PDF**, en la cabecera, pide un rango de fechas y arma un papel con el alcance del período —cuántas entregas, cuántas son préstamo y cuántas dotación, cuántas siguen sin devolver, cuántas se devolvieron y cuántas se perdieron o dañaron— y una tabla con cada entrega del período, con su estado. Es el mismo molde que el informe de Alimentación (25.6): se ve antes de descargar.
+
 ### 18.3 Entregar a un trabajador
 
 **No está en el menú.** Se llega por el botón de la cabecera de **Quién tiene qué**.
@@ -6715,7 +6718,7 @@ Hay combustible que llega a la cantera trasladado desde otra empresa del grupo, 
 Al marcar **Sin costo**:
 
 - El costo se pone en cero y el campo se apaga: **Entra en cero: el gasto lo asumió la otra empresa.**
-- **El origen pasa a exigir una explicación entera** —de dónde vino y quién asumió el gasto—, porque dentro de un año esa nota es lo único que lo va a contestar.
+- **El origen pasa a exigir una explicación entera** —de dónde vino y quién asumió el gasto—, porque dentro de un año esa nota es lo único que lo va a contestar. Pide **al menos quince letras**, y el campo lo dice: **Obligatorio: de dónde vino y quién asumió el gasto.** Si falta algo para poder cargar, justo encima del botón **Cargar** sale dicho, enumerado como se habla: **Para cargar falta el tanque, la cantidad y el origen.**
 - **El tanque cambia solo** al que admite lo que entra sin costo: **Lo que entra sin costo va a su propio tanque.**
 
 #### Por qué va en un tanque aparte

@@ -10,6 +10,8 @@ import { Modal } from '@/components/ui/Modal'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
+import { RangoDeFechas } from '@/components/RangoDeFechas'
+import type { Rango } from '@/components/rango'
 import { useAlmacenes } from '@/lib/api/inventario'
 import { useEmpleados } from '@/lib/api/nomina'
 import {
@@ -23,9 +25,13 @@ import {
   type TipoIncidencia,
 } from '@/lib/api/asignaciones'
 import { useMisRoles } from '@/lib/api/catalogo'
+import { useEmpresa } from '@/lib/api/empresa'
+import { useSesion } from '@/lib/sesion'
+import { hoyEnCaracas } from '@/lib/api/tasas'
 import { dolares, fecha } from '@/lib/formato'
 import { Visor } from '@/components/Visor'
 import { armarConstanciaDeEntrega } from '@/lib/ficha/entregaPdf'
+import { armarInformeAsignaciones } from '@/lib/ficha/asignacionesPdf'
 import { EMPRESA } from '@/lib/empresa'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { cn } from '@/lib/cn'
@@ -59,6 +65,9 @@ export function Asignaciones() {
   const fuera = useAsignaciones({ estado: 'ASIGNADA' })
   const perdidas = useAsignaciones({ estado: 'PERDIDA' })
   const { puede } = useMisRoles()
+  const { data: empresa } = useEmpresa()
+  const { nombre: yo } = useSesion()
+  const hoy = hoyEnCaracas()
 
   const [busqueda, setBusqueda] = useState('')
   const [entregando, setEntregando] = useState<Asignable | null | undefined>(undefined)
@@ -66,6 +75,48 @@ export function Asignaciones() {
     a: Asignacion
     como: 'devolver' | 'incidencia'
   } | null>(null)
+
+  /*
+    EL INFORME DE ENTRADAS Y SALIDAS, POR RANGO DE FECHAS.
+
+    Christopher, 20/10/2026: hermano del de Alimentación. No hace falta otra
+    consulta aparte de la que ya trae la pantalla: `useAsignaciones` se
+    extendió con `desde`/`hasta` y aquí se pide sin filtrar por estado, para
+    que el informe cuente también lo ya devuelto y lo perdido del período.
+  */
+  const [generandoInforme, setGenerandoInforme] = useState(false)
+  const [rangoInforme, setRangoInforme] = useState<Rango>({ desde: `${hoy.slice(0, 7)}-01`, hasta: hoy })
+  const paraInforme = useAsignaciones({
+    desde: rangoInforme.desde || undefined,
+    hasta: rangoInforme.hasta || undefined,
+  })
+  const [pdfInforme, setPdfInforme] = useState<ArchivoArmado | null>(null)
+
+  const generarInforme = async () => {
+    const desde = rangoInforme.desde || hoy
+    const hasta = rangoInforme.hasta || hoy
+    setPdfInforme(
+      await armarInformeAsignaciones({
+        desde,
+        hasta,
+        asignaciones: (paraInforme.data ?? []).map((a) => ({
+          numero: a.numero,
+          fechaEntrega: a.fecha_entrega,
+          trabajador: a.empleado,
+          articulo: a.articulo,
+          unidad: a.unidad,
+          cantidad: a.cantidad,
+          clase: a.clase,
+          estado: a.estado,
+          fechaDevolucion: a.fecha_devolucion,
+        })),
+        empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+        emitidoPor: yo ?? '',
+        momento: new Date(),
+      }),
+    )
+    setGenerandoInforme(false)
+  }
 
   const puedeMover = puede('ALMACEN')
 
@@ -159,11 +210,16 @@ export function Asignaciones() {
         title="Asignaciones"
         description="Bienes asignados a cada persona, con su fecha de entrega y lo pendiente por entregar. Los retornables no descuentan del almacén: siguen siendo de la empresa."
         actions={
-          puede('ALMACEN', 'RRHH', 'ADMIN') ? (
-            <Link to="/app/asignaciones/entregar">
-              <Button icon={<PackagePlus />}>Entregar a un trabajador</Button>
-            </Link>
-          ) : null
+          <>
+            <Button variant="outline" icon={<Printer />} onClick={() => setGenerandoInforme(true)}>
+              Informe PDF
+            </Button>
+            {puede('ALMACEN', 'RRHH', 'ADMIN') ? (
+              <Link to="/app/asignaciones/entregar">
+                <Button icon={<PackagePlus />}>Entregar a un trabajador</Button>
+              </Link>
+            ) : null}
+          </>
         }
       />
 
@@ -410,6 +466,36 @@ export function Asignaciones() {
         nombreArchivo={papel?.nombre ?? 'constancia.pdf'}
         titulo="Constancia de entrega"
         descripcion="Se imprime y la firma el trabajador. La raya sale en blanco: no lleva firma digital."
+      />
+
+      {generandoInforme ? (
+        <Modal
+          abierto
+          ancho="sm"
+          onCerrar={() => setGenerandoInforme(false)}
+          titulo="Informe de asignaciones"
+          descripcion="Entregas, devoluciones y pérdidas del período elegido."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setGenerandoInforme(false)}>
+                Cancelar
+              </Button>
+              <Button disabled={paraInforme.isPending} onClick={() => void generarInforme()}>
+                {paraInforme.isPending ? 'Cargando…' : 'Generar PDF'}
+              </Button>
+            </>
+          }
+        >
+          <RangoDeFechas valor={rangoInforme} onCambio={setRangoInforme} />
+        </Modal>
+      ) : null}
+
+      <Visor
+        abierto={pdfInforme !== null}
+        onCerrar={() => setPdfInforme(null)}
+        blob={pdfInforme?.blob ?? null}
+        nombreArchivo={pdfInforme?.nombre ?? ''}
+        titulo="Informe de asignaciones"
       />
 
       <ModalEntrega
