@@ -15,8 +15,17 @@ import { desenvolver, rpc } from './rpc'
 */
 
 /** COMBUSTIBLE desde el 05/10/2026: el vale del tanque también lleva fotos.
- *  AVERIA desde el 13/10/2026: la foto de referencia de qué se dañó. */
-export type OrigenDeCarga = 'SALIDA' | 'DESPACHO' | 'COMBUSTIBLE' | 'AVERIA'
+ *  AVERIA desde el 13/10/2026: la foto de referencia de qué se dañó.
+ *  MANTENIMIENTO desde el 20/10/2026: la orden de taller firmada, el
+ *  presupuesto del taller y las fotos del trabajo. Es lo que Christopher pidió
+ *  el 13/10 —«dónde subo el documento firmado»— y lo que completa el
+ *  registro fotográfico del informe técnico. */
+export type OrigenDeCarga =
+  | 'SALIDA'
+  | 'DESPACHO'
+  | 'COMBUSTIBLE'
+  | 'AVERIA'
+  | 'MANTENIMIENTO'
 
 export const MAXIMO_DE_ARCHIVOS = 4
 export const TIPOS_ADMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
@@ -212,6 +221,69 @@ export async function archivosDeCarga(fotos: FotoDeCarga[]): Promise<File[]> {
     }
   }
   return archivos
+}
+
+/** Una imagen ya reducida y en data URL, con su proporción, lista para un papel. */
+export interface ImagenParaPapel {
+  dataUrl: string
+  ancho: number
+  alto: number
+  nombre: string
+}
+
+/**
+ * Las imágenes de unas cargas, listas para meterlas en un PDF.
+ *
+ * NO SE USA LA MINIATURA, y no es un descuido: la guardada mide 160 píxeles de
+ * lado y se ve lavada en papel. Se baja el original y se reduce aquí a un lado
+ * mayor de 900, que impreso a media hoja se lee bien y deja el documento en un
+ * peso que se manda por WhatsApp.
+ *
+ * DE UNA EN UNA, nunca con `Promise.all` —la misma razón que
+ * `archivosDeCarga`—: veinte descargas a la vez se rechazan a medias y el
+ * informe saldría con una foto rota. Una que falla se queda fuera y las demás
+ * entran; un informe sin una foto sigue sirviendo, uno que no sale no.
+ *
+ * Los PDF adjuntos no pasan por aquí: no son imágenes. El papel los nombra.
+ */
+export async function imagenesParaPapel(
+  fotos: FotoDeCarga[],
+  ladoMayor = 900,
+): Promise<ImagenParaPapel[]> {
+  const listas: ImagenParaPapel[] = []
+
+  for (const f of fotos) {
+    if (!(f.tipo ?? '').startsWith('image/')) continue
+    try {
+      const { data, error } = await supabase.storage.from(BUCKET).download(f.path)
+      if (error || !data) continue
+
+      const bitmap = await createImageBitmap(data, { imageOrientation: 'from-image' })
+      try {
+        const escala = Math.min(1, ladoMayor / Math.max(bitmap.width, bitmap.height))
+        const ancho = Math.round(bitmap.width * escala)
+        const alto = Math.round(bitmap.height * escala)
+        const lienzo = document.createElement('canvas')
+        lienzo.width = ancho
+        lienzo.height = alto
+        const pincel = lienzo.getContext('2d')
+        if (!pincel) continue
+        pincel.drawImage(bitmap, 0, 0, ancho, alto)
+        listas.push({
+          dataUrl: lienzo.toDataURL('image/jpeg', 0.72),
+          ancho,
+          alto,
+          nombre: f.nombre ?? `foto-${f.id}`,
+        })
+      } finally {
+        bitmap.close()
+      }
+    } catch {
+      /* una foto que no se pudo bajar o leer se queda fuera del papel */
+    }
+  }
+
+  return listas
 }
 
 /*

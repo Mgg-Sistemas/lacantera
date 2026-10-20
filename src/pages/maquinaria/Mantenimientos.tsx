@@ -14,8 +14,10 @@ import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
 import { Visor } from '@/components/Visor'
+import { FotosDeCarga } from '@/components/FotosDeCarga'
+import { imagenesParaPapel, useFotosDeCarga } from '@/lib/api/fotosDeCarga'
 import { useEmpresa } from '@/lib/api/empresa'
-import { useMiPerfil } from '@/lib/api/usuarios'
+import { useMiPerfil, useMisPermisos } from '@/lib/api/usuarios'
 import {
   ETIQUETA_CLASE,
   ETIQUETA_ESTADO,
@@ -81,6 +83,11 @@ export function Mantenimientos() {
   */
   const { data: empresa } = useEmpresa()
   const { data: yo } = useMiPerfil()
+  const { puede } = useMisPermisos()
+  const puedeAdjuntar = puede('MAQUINARIA', 'ESCRITURA')
+  /* Una consulta por pantalla, no una por orden: la misma que usa cada
+     tarjeta de papeles, servida de la cache. El informe la reaprovecha. */
+  const papeles = useFotosDeCarga('MANTENIMIENTO')
   const { data: maquinas } = useMaquinaria(false)
   const [pidiendoInforme, setPidiendoInforme] = useState(false)
   const [alcanceInforme, setAlcanceInforme] = useState<'MAQUINA' | 'FECHAS'>('FECHAS')
@@ -303,12 +310,44 @@ export function Mantenimientos() {
         porOrden.set(r.mantenimiento_id, lista)
       }
 
+      /*
+        LOS PAPELES DE CADA ORDEN, PARA EL REGISTRO FOTOGRAFICO.
+
+        Las imagenes se bajan y se reducen aqui -no en el papel- porque bajar
+        y encoger es cosa del navegador, y `informeTecnicoPdf.ts` es puro: se
+        le dan las imagenes hechas y el solo las coloca. Asi sus cuentas y su
+        maqueta se pueden comprobar sin red.
+
+        Lo quitado no entra: una foto retirada con su motivo sigue a la vista
+        en la pantalla, tachada, pero el informe cuenta lo que vale hoy.
+      */
+      const vigentes = (papeles.data ?? []).filter((f) => !f.quitada_en)
+      const porNumero = new Map<string, typeof vigentes>()
+      for (const f of vigentes) {
+        const lista = porNumero.get(f.referencia) ?? []
+        lista.push(f)
+        porNumero.set(f.referencia, lista)
+      }
+
+      const fotosPorOrden = new Map<string, Awaited<ReturnType<typeof imagenesParaPapel>>>()
+      const adjuntosPorOrden = new Map<string, string[]>()
+      for (const [numero, suyas] of porNumero) {
+        const imagenes = suyas.filter((f) => (f.tipo ?? '').startsWith('image/'))
+        if (imagenes.length > 0) fotosPorOrden.set(numero, await imagenesParaPapel(imagenes))
+        const otros = suyas
+          .filter((f) => !(f.tipo ?? '').startsWith('image/'))
+          .map((f) => f.nombre ?? 'adjunto')
+        if (otros.length > 0) adjuntosPorOrden.set(numero, otros)
+      }
+
       setInforme(
         await armarInformeTecnico({
           equipo: equipoDelInforme,
           intervenciones: intervencionesTecnico.map((i, indice) => ({
             ...i,
             repuestos: porOrden.get(ordenesDelTecnico[indice].id) ?? [],
+            fotos: i.numero ? (fotosPorOrden.get(i.numero) ?? []) : [],
+            adjuntos: i.numero ? (adjuntosPorOrden.get(i.numero) ?? []) : [],
           })),
           periodo: periodoTecnico,
           antecedentes: antecedentes.trim(),
@@ -551,6 +590,25 @@ export function Mantenimientos() {
                     <p className="text-ink/50 mt-1 text-sm italic">
                       Anulada: {m.motivo_anulacion}
                     </p>
+                  ) : null}
+
+                  {/*
+                    LOS PAPELES DE LA ORDEN (20/10/2026).
+
+                    La orden firmada, el presupuesto del taller, la foto del
+                    trabajo. Cuelgan del número de la orden, así que una sin
+                    número —las viejas, de antes del correlativo— no los ofrece:
+                    no habría de dónde colgarlos ni dónde volver a encontrarlos.
+
+                    Admite JPG, PNG, WEBP y PDF. El PDF es lo que hace que la
+                    orden firmada quepa aquí y no en el teléfono de alguien.
+                  */}
+                  {m.numero ? (
+                    <FotosDeCarga
+                      origen="MANTENIMIENTO"
+                      referencia={m.numero}
+                      puedeAnadir={puedeAdjuntar && m.estado !== 'ANULADO'}
+                    />
                   ) : null}
                 </li>
               )
