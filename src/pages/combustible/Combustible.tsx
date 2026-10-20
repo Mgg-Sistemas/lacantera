@@ -40,6 +40,7 @@ import { ModalCargarCombustible } from './ModalCargarCombustible'
 import { armarValeDeCombustible } from '@/lib/ficha/valeCombustiblePdf'
 import type { DespachoCombustible } from '@/lib/api/combustible'
 import { dolares, enPlural, fecha } from '@/lib/formato'
+import { enumerar } from '@/lib/texto'
 import { cn } from '@/lib/cn'
 
 function litros(valor: string | number, unidad = 'L'): string {
@@ -751,17 +752,40 @@ function ModalDespacho({
     ultimoHorometro !== null &&
     Number(horometro) < ultimoHorometro
 
-  const valido =
-    elegido !== undefined &&
-    pedidos > 0 &&
-    !excede &&
-    motivo !== '' &&
-    !faltaDetalle &&
-    hayQuienRecibe &&
-    !topeAlcanzado &&
-    !faltaHorometro &&
-    !horometroRetrocede &&
-    (!sinFicha || destino.trim().length >= 3)
+  /*
+    QUÉ FALTA, DICHO EN VOZ ALTA —igual que en Cargar (20/10/2026)—.
+
+    Diez condiciones encienden este botón y la pantalla explicaba cuatro: el
+    horómetro que falta o retrocede, el tope del día y la cantidad que no cabe.
+    De las otras seis —el tanque, la cantidad, el uso, su detalle, quién recibe
+    y el destino— no decía nada: el botón se quedaba apagado y el vale a medio
+    llenar, sin manera de saber qué faltaba.
+
+    LA VALIDEZ SALE DE ESTA LISTA, no de una condición escrita aparte. Es lo
+    único que impide que vuelvan a separarse: con dos listas, la que enciende
+    el botón y la que lo explica acaban diciendo cosas distintas.
+
+    Lo que YA tiene su propio aviso en pantalla se marca `yaAvisado` y no se
+    repite abajo. Un dato dicho dos veces con dos redacciones se lee como dos
+    problemas.
+  */
+  const impedimentos: Array<{ dice: string; yaAvisado?: boolean }> = []
+  if (elegido === undefined) impedimentos.push({ dice: 'el tanque' })
+  if (!(pedidos > 0)) impedimentos.push({ dice: 'la cantidad' })
+  if (excede) impedimentos.push({ dice: 'una cantidad que alcance', yaAvisado: true })
+  if (motivo === '') impedimentos.push({ dice: 'el uso' })
+  if (faltaDetalle) impedimentos.push({ dice: 'el detalle del uso' })
+  if (!hayQuienRecibe) impedimentos.push({ dice: 'quién recibe' })
+  if (topeAlcanzado) impedimentos.push({ dice: 'un surtido libre del día', yaAvisado: true })
+  if (faltaHorometro) impedimentos.push({ dice: 'el horómetro', yaAvisado: true })
+  if (horometroRetrocede) {
+    impedimentos.push({ dice: 'un horómetro que no retroceda', yaAvisado: true })
+  }
+  if (sinFicha && destino.trim().length < 3) impedimentos.push({ dice: 'el destino' })
+
+  const valido = impedimentos.length === 0
+
+  const porDecir = enumerar(impedimentos.filter((i) => !i.yaAvisado).map((i) => i.dice))
 
   const enviar = async () => {
     if (!elegido) return
@@ -1025,6 +1049,14 @@ function ModalDespacho({
             hint="El vale queda marcado corregido con su nombre y la hora."
           />
         </div>
+      ) : null}
+
+      {/*
+        Va al final del cuerpo porque el pie del modal es fijo: aquí queda
+        justo encima del botón, que es donde se mira cuando no se enciende.
+      */}
+      {porDecir !== '' ? (
+        <p className="text-ink/50 mt-4 text-xs">Para despachar falta {porDecir}.</p>
       ) : null}
 
       {despachar.error ? <ErrorDeCarga error={despachar.error} className="mt-3" /> : null}
