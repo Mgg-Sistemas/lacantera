@@ -44,6 +44,7 @@ import {
   Printer,
   Route,
   Truck,
+  Undo2,
   X,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -66,6 +67,7 @@ import {
   useAcarreosDia,
   useAjustarPrecioDeViajes,
   useAnularAcarreo,
+  useDevolverViajes,
   useAprobarViajes,
   useComoApruebo,
   useCorregirAcarreo,
@@ -1284,6 +1286,9 @@ function DetalleDelEquipo({
   const viajes = useAcarreosDeEquipo(dia, equipo)
   const [anulando, setAnulando] = useState<Acarreo | null>(null)
   const [corrigiendo, setCorrigiendo] = useState<Acarreo | null>(null)
+  const [devolviendo, setDevolviendo] = useState<Acarreo | null>(null)
+  /* Devolver lo decide quien pudo aprobarlo: la misma regla, el mismo helper. */
+  const comoApruebo = useComoApruebo()
   const { puede } = useMisPermisos()
 
   return (
@@ -1351,6 +1356,13 @@ function DetalleDelEquipo({
                         {v.motivo_rechazo ? (
                           <span className="text-ink/45 mt-0.5 block text-2xs">{v.motivo_rechazo}</span>
                         ) : null}
+                        {/* Que volvió a la cola se queda dicho aunque luego se decida otra vez. */}
+                        {v.motivo_devolucion ? (
+                          <span className="text-ink/45 mt-0.5 block text-2xs">
+                            Devuelto{v.devuelto_por_nombre ? ` por ${v.devuelto_por_nombre}` : ''}:{' '}
+                            {v.motivo_devolucion}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="py-2 pl-3 text-right whitespace-nowrap">
                         {(v.estado === 'POR_APROBAR' || v.estado === 'REGISTRADO') &&
@@ -1362,6 +1374,24 @@ function DetalleDelEquipo({
                             onClick={() => setCorrigiendo(v)}
                           >
                             Corregir
+                          </Button>
+                        ) : null}
+                        {/*
+                          DEVOLVER NO ES RECHAZAR NI ANULAR. Rechazar dice
+                          «estos no se pagan» y anular borra del conteo un viaje
+                          que ocurrió; esto solo dice «me equivoqué al decidir» y
+                          lo deja otra vez esperando. Sale sobre lo decidido,
+                          que es lo único que tiene decisión que deshacer.
+                        */}
+                        {(v.estado === 'APROBADO' || v.estado === 'RECHAZADO') &&
+                        puedoDecidirViaje(comoApruebo.data, v) ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={<Undo2 />}
+                            onClick={() => setDevolviendo(v)}
+                          >
+                            Devolver
                           </Button>
                         ) : null}
                         {!muerto && puede('EXPLOTACION', 'TOTAL') ? (
@@ -1389,6 +1419,9 @@ function DetalleDelEquipo({
         <CorregirViaje viaje={corrigiendo} onCerrar={() => setCorrigiendo(null)} />
       ) : null}
       {anulando ? <AnularViaje viaje={anulando} onCerrar={() => setAnulando(null)} /> : null}
+      {devolviendo ? (
+        <DevolverViaje viaje={devolviendo} onCerrar={() => setDevolviendo(null)} />
+      ) : null}
     </>
   )
 }
@@ -1468,6 +1501,57 @@ function CorregirViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => vo
         ) : null}
       </div>
       {corregir.error ? <ErrorDeCarga error={corregir.error} className="mt-4" /> : null}
+    </Modal>
+  )
+}
+
+/**
+ * Devolver un viaje decidido a la cola.
+ *
+ * El motivo es obligatorio y no es burocracia: lo lee quien tenga que
+ * decidirlo otra vez, que puede ser alguien distinto y días después. Sin él,
+ * un viaje reaparece en la bandeja sin que nadie sepa por qué volvió.
+ */
+function DevolverViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => void }) {
+  const devolver = useDevolverViajes()
+  const [motivo, setMotivo] = useState('')
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo={`Devolver el viaje ${viaje.secuencia} de ${viaje.placa ?? ''}`}
+      descripcion={`Vuelve a «por aprobar» y deja de contar hasta que alguien lo decida otra vez. El viaje no se borra ni se rechaza: solo se deshace la decisión${
+        viaje.decidido_por_nombre ? ` de ${viaje.decidido_por_nombre}` : ''
+      }.`}
+      ancho="sm"
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Volver
+          </Button>
+          <Button
+            disabled={devolver.isPending || motivo.trim().length < 4}
+            onClick={async () => {
+              await devolver.mutateAsync({ ids: [viaje.id], motivo })
+              onCerrar()
+            }}
+          >
+            {devolver.isPending ? 'Devolviendo…' : 'Devolver a por aprobar'}
+          </Button>
+        </>
+      }
+    >
+      <Textarea
+        label="Motivo"
+        hint="Lo lee quien tenga que decidirlo otra vez. Queda guardado aunque después se apruebe."
+        placeholder="Se aprobó por error junto con otro lote"
+        rows={3}
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+        required
+      />
+      {devolver.error ? <ErrorDeCarga error={devolver.error} className="mt-3" /> : null}
     </Modal>
   )
 }
