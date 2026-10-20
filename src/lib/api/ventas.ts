@@ -525,9 +525,11 @@ export interface NotaEntrega {
   monto_bs_combinado: string | null
   /**
    * Pendiente por cobrar, aparte de Facturación. Christopher, 12/10/2026: un
-   * recordatorio con fecha de pago, sin enlazarse a cuentas por cobrar ni a
-   * ninguna factura. `vencida_por_cobrar` la calcula la vista: pendiente, sin
-   * cobrar todavía y con la fecha ya pasada.
+   * recordatorio con fecha de pago, sin enlazarse a ninguna factura.
+   * `vencida_por_cobrar` la calcula la vista: pendiente, sin cobrar todavía y
+   * con la fecha ya pasada. Desde el 20/10/2026 Cuentas por cobrar también la
+   * ENSEÑA —«debería poder verlas también desde cuentas por cobrar»—: solo
+   * lectura, la deuda sigue viviendo aquí y se cobra marcando la nota.
    */
   pendiente_por_cobrar: boolean
   fecha_pago: string | null
