@@ -133,10 +133,45 @@ export function ModalCargarCombustible({
   }, [abierto])
 
   const litros = Number(cantidad)
-  const valido =
-    Boolean(tanque) && Boolean(articulo) && litros > 0 &&
-    (sinCosto ? motivo.trim().length >= 15 : Number(costo) > 0) &&
-    motivo.trim().length >= 4
+
+  /*
+    QUÉ FALTA, DICHO EN VOZ ALTA.
+
+    Christopher, 20/10/2026: «el botón de cargar no se activa aunque llene
+    todos los datos». Los llenaba: todos los que la pantalla enseñaba como
+    obligatorios, que no eran todos los que la validación exigía.
+
+    EL CAMPO QUE FALTABA ERA «ORIGEN», y no se veía. Su texto de ejemplo
+    —«Saldo inicial del tanque»— se parece lo bastante a un valor escrito
+    como para jurar que ya estaba lleno, y nada decía que fuera obligatorio ni
+    que pidiera cuatro letras —quince cuando el material entra sin costo—.
+
+    Un botón apagado sin explicación no es una reja: es un callejón. La
+    persona no puede saber si le falta algo, si no tiene permiso, o si el
+    sistema está roto; y las tres se parecen desde fuera.
+
+    LA LISTA Y LA VALIDEZ SALEN DEL MISMO SITIO, a propósito. Separadas, el
+    día que alguien añada un campo obligatorio y olvide la lista, el botón
+    volvería a apagarse en silencio —que es exactamente lo que pasó aquí—.
+  */
+  const falta: string[] = []
+  if (!tanque) falta.push('el tanque')
+  if (!articulo) falta.push('el combustible')
+  if (!(litros > 0)) falta.push('la cantidad')
+  if (!sinCosto && !(Number(costo) > 0)) falta.push('el costo por unidad')
+  if (motivo.trim().length < (sinCosto ? 15 : 4)) {
+    falta.push(
+      sinCosto ? 'el origen, con quién asumió el gasto' : 'el origen',
+    )
+  }
+
+  const valido = falta.length === 0
+
+  /** «el tanque, la cantidad y el origen»: con «y» antes del último, como se habla. */
+  const enumerado =
+    falta.length <= 1
+      ? (falta[0] ?? '')
+      : `${falta.slice(0, -1).join(', ')} y ${falta[falta.length - 1]}`
 
   const unidad =
     (combustibles.data ?? []).find((c) => String(c.id) === articulo)?.unidad ?? 'L'
@@ -304,6 +339,11 @@ export function ModalCargarCombustible({
           label="Origen"
           rows={2}
           placeholder="Saldo inicial del tanque"
+          hint={
+            sinCosto
+              ? 'Obligatorio: de dónde vino y quién asumió el gasto.'
+              : 'Obligatorio: de dónde viene este combustible.'
+          }
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
         />
@@ -341,6 +381,15 @@ export function ModalCargarCombustible({
             Es correcto, guárdelo así — quedará anotado en el movimiento
           </label>
         </div>
+      ) : null}
+
+      {/*
+        Va al final del cuerpo y no al lado del botón porque el pie del modal
+        es fijo: aquí queda justo encima de «Cargar», que es donde se mira
+        cuando no se enciende.
+      */}
+      {falta.length > 0 ? (
+        <p className="text-ink/50 mt-4 text-xs">Para cargar falta {enumerado}.</p>
       ) : null}
 
       {entrada.error ? <ErrorDeCarga error={entrada.error} className="mt-3" /> : null}
