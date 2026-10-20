@@ -10,9 +10,10 @@ import { dinero, documento, dolares, dolaresRedondos, fecha } from '@/lib/format
 import {
   usePorCobrar,
   usePorCobrarAProveedores,
-  type PorCobrar as Cobranza,
   type PorCobrarAProveedor,
 } from '@/lib/api/facturacion'
+import { useNotasEntrega } from '@/lib/api/ventas'
+import { hoyEnCaracas } from '@/lib/api/tasas'
 
 /**
  * Lo que deben los clientes.
@@ -25,12 +26,38 @@ import {
  * días es un problema distinto de una de 4.000 $ emitida ayer, y una lista
  * ordenada por monto las pone al revés. Por eso el orden es por vencimiento y
  * lo vencido se separa del resto con color.
+ *
+ * LAS NOTAS DE ENTREGA PENDIENTES POR COBRAR ENTRAN AL GRUPO DE SU CLIENTE
+ * (20/10/2026). Christopher: «las notas de entrega que son cuentas por cobrar
+ * debería poder verlas también desde cuentas por cobrar». Nacieron el 12/10
+ * como recordatorio aparte, y separadas esta pantalla mentía: decía que un
+ * cliente debía dos facturas cuando también se llevó tres gandolas sin
+ * facturar. Entran las que siguen vivas, sin cobrar y SIN factura — la que ya
+ * se facturó cobra por su factura, que ya está aquí, y sumarla dos veces
+ * sería inventarse la deuda.
  */
+
+/** Una factura con saldo o una nota de entrega pendiente, ya igualadas. */
+interface RenglonPorCobrar {
+  clave: string
+  tipo: 'FACTURA' | 'NOTA'
+  numero: string
+  /** El número de control de la factura; la nota no tiene y lo dice. */
+  detalle: string
+  emitida: string
+  vence: string | null
+  moneda: string
+  total: string
+  saldoUsd: number
+  diasVencida: number
+}
 
 interface Grupo {
   cliente: string
   rif: string
-  facturas: Cobranza[]
+  renglones: RenglonPorCobrar[]
+  facturas: number
+  notas: number
   usd: number
   vencidoUsd: number
   masVieja: number
@@ -47,6 +74,8 @@ const tramo = (dias: number) => {
 export function PorCobrar() {
   const { data, isPending, error } = usePorCobrar()
   const proveedores = usePorCobrarAProveedores()
+  // Las notas marcadas pendientes y aún sin cobrar; lo demás se filtra abajo.
+  const notas = useNotasEntrega({ cobro: 'PENDIENTE' })
 
   /*
     LOS PROVEEDORES QUE DEBEN VAN APARTE Y EN SU MONEDA.
@@ -73,53 +102,107 @@ export function PorCobrar() {
 
   const grupos = useMemo<Grupo[]>(() => {
     const mapa = new Map<string, Grupo>()
-
-    for (const f of data ?? []) {
-      const g = mapa.get(f.cliente) ?? {
-        cliente: f.cliente,
-        rif: f.cliente_rif,
-        facturas: [],
+    const grupoDe = (cliente: string, rif: string): Grupo => {
+      const g = mapa.get(cliente) ?? {
+        cliente,
+        rif,
+        renglones: [],
+        facturas: 0,
+        notas: 0,
         usd: 0,
         vencidoUsd: 0,
         masVieja: 0,
       }
-      g.facturas.push(f)
-      g.usd += Number(f.saldo_usd)
-      if (f.dias_vencida > 0) g.vencidoUsd += Number(f.saldo_usd)
-      g.masVieja = Math.max(g.masVieja, f.dias_vencida)
-      mapa.set(f.cliente, g)
+      mapa.set(cliente, g)
+      return g
+    }
+    const anotar = (g: Grupo, r: RenglonPorCobrar) => {
+      g.renglones.push(r)
+      g.usd += r.saldoUsd
+      if (r.diasVencida > 0) g.vencidoUsd += r.saldoUsd
+      g.masVieja = Math.max(g.masVieja, r.diasVencida)
     }
 
-    // Primero quien lleva más tiempo debiendo, y a igualdad de días, quien más
-    // debe. Es el orden en el que se hacen las llamadas.
+    for (const f of data ?? []) {
+      const g = grupoDe(f.cliente, f.cliente_rif)
+      g.facturas += 1
+      anotar(g, {
+        clave: `F-${f.factura_id}`,
+        tipo: 'FACTURA',
+        numero: f.numero,
+        detalle: f.numero_control,
+        emitida: f.fecha,
+        vence: f.vence_el,
+        moneda: f.moneda,
+        total: f.total,
+        saldoUsd: Number(f.saldo_usd),
+        diasVencida: f.dias_vencida,
+      })
+    }
+
+    /*
+      La vencida se calcula aquí contra el día de Caracas, no con el reloj del
+      navegador: la vista trae la bandera pero no los días, y el tramo de
+      antigüedad se arma con días. Fechas AAAA-MM-DD: comparar las cadenas es
+      comparar los días.
+    */
+    const hoy = hoyEnCaracas()
+    for (const n of notas.data ?? []) {
+      if (!n.cliente || n.estado === 'ANULADA' || n.factura_id !== null) continue
+      const vencidaHace =
+        n.fecha_pago && n.fecha_pago < hoy
+          ? Math.round((Date.parse(hoy) - Date.parse(n.fecha_pago)) / 86_400_000)
+          : 0
+      const g = grupoDe(n.cliente, n.cliente_rif ?? '')
+      g.notas += 1
+      anotar(g, {
+        clave: `N-${n.id}`,
+        tipo: 'NOTA',
+        numero: n.numero,
+        detalle: 'Nota de entrega',
+        emitida: n.fecha,
+        vence: n.fecha_pago,
+        moneda: n.moneda,
+        total: n.total,
+        saldoUsd: Number(n.total_usd),
+        diasVencida: vencidaHace,
+      })
+    }
+
+    // Dentro del cliente, lo más vencido primero; entre clientes, quien lleva
+    // más tiempo debiendo y, a igualdad de días, quien más debe. Es el orden
+    // en el que se hacen las llamadas.
+    for (const g of mapa.values()) {
+      g.renglones.sort((a, b) => b.diasVencida - a.diasVencida || b.saldoUsd - a.saldoUsd)
+    }
     return [...mapa.values()].sort((a, b) => b.masVieja - a.masVieja || b.usd - a.usd)
-  }, [data])
+  }, [data, notas.data])
 
   const total = grupos.reduce((s, g) => s + g.usd, 0) + proveedoresUsd
   const vencido = grupos.reduce((s, g) => s + g.vencidoUsd, 0)
-  const hayAlgo = (data?.length ?? 0) > 0 || deProveedores.length > 0
+  const hayAlgo = grupos.length > 0 || deProveedores.length > 0
 
   return (
     <>
       <PageHeader
         title="Cuentas por cobrar"
-        description="Facturas emitidas con saldo pendiente. El saldo se expresa en dólares."
+        description="Facturas con saldo pendiente y notas de entrega pendientes por cobrar, agrupadas por cliente. El saldo se expresa en dólares."
       />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
-      {data && !proveedores.isPending && !hayAlgo ? (
+      {data && !proveedores.isPending && !notas.isPending && !hayAlgo ? (
         <Card>
           <Vacio
             icono={<Coins />}
             titulo="Sin saldos por cobrar"
-            descripcion="Todas las facturas emitidas están cobradas y ningún proveedor adeuda diferencias. Aparecen aquí las facturas a crédito, las que quedan con saldo y los pagos con material que dejan un monto por cobrar."
+            descripcion="Todas las facturas están cobradas, ninguna nota de entrega espera su pago y ningún proveedor adeuda diferencias. Aparecen aquí las facturas a crédito o con saldo, las notas de entrega marcadas pendientes por cobrar y los pagos con material que dejan un monto por cobrar."
           />
         </Card>
       ) : null}
 
-      {data && hayAlgo ? (
+      {data && !notas.isPending && hayAlgo ? (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
             <StatCard
@@ -148,7 +231,13 @@ export function PorCobrar() {
                 <CardHeader
                   className="p-5 pb-0"
                   title={g.cliente}
-                  subtitle={`${documento(g.rif)} · ${g.facturas.length} factura(s)`}
+                  subtitle={[
+                    documento(g.rif),
+                    g.facturas > 0 ? `${g.facturas} factura(s)` : null,
+                    g.notas > 0 ? `${g.notas} nota(s) de entrega` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                   action={
                     <div className="text-right">
                       <p className="tabular text-ink/90 text-lg font-semibold">{dolares(g.usd)}</p>
@@ -165,7 +254,7 @@ export function PorCobrar() {
                   <table className="w-full min-w-[600px] text-sm">
                     <thead>
                       <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-                        <th className="py-2 font-medium">Factura</th>
+                        <th className="py-2 font-medium">Documento</th>
                         <th className="py-2 font-medium">Emitida</th>
                         <th className="py-2 font-medium">Vence</th>
                         <th className="py-2 text-right font-medium">Total</th>
@@ -174,23 +263,26 @@ export function PorCobrar() {
                       </tr>
                     </thead>
                     <tbody>
-                      {g.facturas.map((f) => (
-                        <tr key={f.factura_id} className="border-hairline border-b last:border-0">
+                      {g.renglones.map((r) => (
+                        <tr key={r.clave} className="border-hairline border-b last:border-0">
                           <td className="tabular text-ink/85 py-2 font-medium">
-                            {f.numero}
-                            <span className="text-ink/40 block text-xs">{f.numero_control}</span>
+                            {r.numero}
+                            <span className="text-ink/40 block text-xs">{r.detalle}</span>
                           </td>
-                          <td className="text-ink/60 py-2 text-xs">{fecha(f.fecha)}</td>
-                          <td className="text-ink/60 py-2 text-xs">{fecha(f.vence_el)}</td>
+                          <td className="text-ink/60 py-2 text-xs">{fecha(r.emitida)}</td>
+                          {/* La nota sin fecha de pago no vence: se dice, no se inventa. */}
+                          <td className="text-ink/60 py-2 text-xs">
+                            {r.vence ? fecha(r.vence) : 'Sin fecha de pago'}
+                          </td>
                           <td className="tabular text-ink/70 py-2 text-right">
-                            {dinero(f.moneda, f.total)}
+                            {dinero(r.moneda, r.total)}
                           </td>
                           <td className="tabular text-ink/90 py-2 text-right font-medium">
-                            {dolares(f.saldo_usd)}
+                            {dolares(r.saldoUsd)}
                           </td>
                           <td className="py-2 text-right">
-                            <Chip tone={f.dias_vencida > 0 ? 'danger' : 'neutral'}>
-                              {tramo(f.dias_vencida)}
+                            <Chip tone={r.diasVencida > 0 ? 'danger' : 'neutral'}>
+                              {tramo(r.diasVencida)}
                             </Chip>
                           </td>
                         </tr>
@@ -259,11 +351,15 @@ export function PorCobrar() {
           ) : null}
 
           <p className="text-ink/45 mt-4 text-center text-xs">
-            Los cobros a clientes se registran desde{' '}
+            Los cobros de facturas se registran desde{' '}
             <Link to="/app/facturacion" className="text-royal-600 underline">
               Facturación › Facturas
             </Link>
-            , abriendo la factura. Lo que debe un proveedor se cobra desde{' '}
+            , abriendo la factura. Una nota de entrega se marca cobrada desde{' '}
+            <Link to="/app/facturacion/notas-entrega" className="text-royal-600 underline">
+              Facturación › Notas de entrega
+            </Link>
+            . Lo que debe un proveedor se cobra desde{' '}
             <Link to="/app/compras/proveedores" className="text-royal-600 underline">
               Compras › Proveedores
             </Link>
