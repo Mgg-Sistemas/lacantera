@@ -223,9 +223,17 @@ export function useEntregarATrabajador() {
   })
 }
 
-export function useAsignaciones(filtros: { estado?: EstadoAsignacion; empleadoId?: number } = {}) {
+export function useAsignaciones(
+  filtros: { estado?: EstadoAsignacion; empleadoId?: number; desde?: string; hasta?: string } = {},
+) {
   return useQuery({
-    queryKey: ['asignaciones', filtros.estado ?? 'todas', filtros.empleadoId ?? 'todos'],
+    queryKey: [
+      'asignaciones',
+      filtros.estado ?? 'todas',
+      filtros.empleadoId ?? 'todos',
+      filtros.desde ?? '',
+      filtros.hasta ?? '',
+    ],
     queryFn: async () => {
       let q = supabase
         .from('v_asignaciones_herramienta')
@@ -234,6 +242,8 @@ export function useAsignaciones(filtros: { estado?: EstadoAsignacion; empleadoId
         .limit(300)
       if (filtros.estado) q = q.eq('estado', filtros.estado)
       if (filtros.empleadoId) q = q.eq('empleado_id', filtros.empleadoId)
+      if (filtros.desde) q = q.gte('fecha_entrega', filtros.desde)
+      if (filtros.hasta) q = q.lte('fecha_entrega', `${filtros.hasta}T23:59:59`)
       return desenvolver<Asignacion[]>(await q)
     },
   })

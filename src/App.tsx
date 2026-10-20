@@ -161,6 +161,9 @@ const AlmacenEntrada = pagina(() =>
 const AlmacenSalida = pagina(() =>
   import('@/pages/inventario/AlmacenSalida').then((m) => ({ default: m.AlmacenSalida })),
 )
+const AlmacenPrestamo = pagina(() =>
+  import('@/pages/inventario/AlmacenPrestamo').then((m) => ({ default: m.AlmacenPrestamo })),
+)
 const TableroNomina = pagina(() =>
   import('@/pages/nomina/Tablero').then((m) => ({ default: m.TableroNomina })),
 )
@@ -403,6 +406,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/inventario/almacen': <Almacen />,
   '/app/inventario/almacen/entrada': <AlmacenEntrada />,
   '/app/inventario/almacen/salida': <AlmacenSalida />,
+  '/app/inventario/almacen/prestamo': <AlmacenPrestamo />,
   '/app/combustible': <Combustible />,
   '/app/combustible/surtidor': <Surtidor />,
   '/app/alimentacion': <Alimentacion />,

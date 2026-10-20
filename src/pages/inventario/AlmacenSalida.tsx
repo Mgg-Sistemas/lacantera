@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { PackageCheck } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -133,6 +134,12 @@ export function AlmacenSalida() {
 
   return (
     <div className="mx-auto max-w-md pb-10">
+      <Link
+        to="/app/inventario/almacen"
+        className="text-ink/45 active:text-ink/80 mb-3 inline-block text-sm underline decoration-dotted underline-offset-4"
+      >
+        ← Atrás
+      </Link>
       <h1 className="text-ink/85 font-titular text-xl">Entregar material</h1>
       <p className="text-ink/55 mt-1 text-sm">Solicitudes ya aprobadas, por entregar.</p>
 
