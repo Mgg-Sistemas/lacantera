@@ -6,13 +6,22 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
+import { Modal } from '@/components/ui/Modal'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { CostoDeArticulo } from '@/components/CostoDeArticulo'
 import { AvisoDeCosto } from '@/components/AvisoDeCosto'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useAlmacenes, useRegistrarEntradas } from '@/lib/api/inventario'
-import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
+import {
+  conSusFormas,
+  opcionesDeCategoria,
+  useArticulos,
+  useCategoriasDeInventario,
+  useCrearArticulo,
+  useTodasLasPresentaciones,
+  useUnidades,
+} from '@/lib/api/catalogo'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import { cn } from '@/lib/cn'
 
@@ -75,6 +84,9 @@ export function AlmacenEntrada() {
   const [motivo, setMotivo] = useState('')
   const [acuse, setAcuse] = useState<{ texto: string } | null>(null)
   const [tarda, setTarda] = useState(false)
+  // La clave del renglón para el que se está dando de alta un artículo nuevo,
+  // o null si el formulario de alta está cerrado.
+  const [creandoPara, setCreandoPara] = useState<string | null>(null)
 
   useEffect(() => {
     if (!entrada.isPending) {
@@ -167,6 +179,12 @@ export function AlmacenEntrada() {
 
   return (
     <div className="mx-auto max-w-md pb-28">
+      <Link
+        to="/app/inventario/almacen"
+        className="text-ink/45 active:text-ink/80 mb-3 inline-block text-sm underline decoration-dotted underline-offset-4"
+      >
+        ← Atrás
+      </Link>
       <h1 className="text-ink/85 font-titular text-xl">Registrar entrada</h1>
 
       <div className="mt-4 space-y-4">
@@ -238,6 +256,13 @@ export function AlmacenEntrada() {
                         detalle: `${a.categoria} · ${a.unidad}`,
                       }))}
                   />
+                  <button
+                    type="button"
+                    className="text-royal-600 mt-1.5 text-xs underline decoration-dotted underline-offset-4"
+                    onClick={() => setCreandoPara(r.clave)}
+                  >
+                    No está en el catálogo: darlo de alta
+                  </button>
 
                   <div className="mt-3 space-y-3">
                     <CantidadDeArticulo
@@ -358,7 +383,93 @@ export function AlmacenEntrada() {
           </Button>
         </div>
       </div>
+
+      {creandoPara ? (
+        <NuevoArticulo
+          onCerrar={() => setCreandoPara(null)}
+          onCreado={(id) => {
+            pon(creandoPara, { articulo: String(id) })
+            setCreandoPara(null)
+          }}
+        />
+      ) : null}
     </div>
+  )
+}
+
+/* ──────────────────────────────────────── dar de alta un artículo nuevo */
+
+/**
+ * Lo mínimo para que el artículo exista y se pueda recibir: nombre,
+ * categoría y unidad. El código se pone solo, igual que en el catálogo de
+ * escritorio; lo demás —descripción, mínimo, marca— se completa después,
+ * desde Inventario › Catálogo, si hace falta.
+ */
+function NuevoArticulo({
+  onCerrar,
+  onCreado,
+}: {
+  onCerrar: () => void
+  onCreado: (articuloId: number) => void
+}) {
+  const { data: categorias } = useCategoriasDeInventario()
+  const { data: unidades } = useUnidades()
+  const crear = useCrearArticulo()
+
+  const [nombre, setNombre] = useState('')
+  const [categoria, setCategoria] = useState('')
+  const [unidad, setUnidad] = useState('')
+
+  const valido = nombre.trim().length >= 3 && categoria !== '' && unidad !== ''
+
+  const guardar = async () => {
+    const id = await crear.mutateAsync({
+      codigo: '',
+      nombre: nombre.trim(),
+      categoria,
+      unidad,
+      inventariable: true,
+    })
+    onCreado(id)
+  }
+
+  return (
+    <Modal
+      abierto
+      ancho="sm"
+      onCerrar={onCerrar}
+      titulo="Nuevo artículo"
+      descripcion="Lo mínimo para recibirlo hoy. El código se pone solo."
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button disabled={!valido || crear.isPending} onClick={() => void guardar()}>
+            {crear.isPending ? 'Creando…' : 'Crear y usar'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+        <Select
+          label="Categoría"
+          vacio="Seleccione"
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+          opciones={opcionesDeCategoria(categorias)}
+        />
+        <Select
+          label="Unidad"
+          vacio="Seleccione"
+          value={unidad}
+          onChange={(e) => setUnidad(e.target.value)}
+          opciones={(unidades ?? []).map((u) => ({ valor: u.codigo, etiqueta: `${u.nombre} (${u.codigo})` }))}
+        />
+        {crear.error ? <ErrorDeCarga error={crear.error} /> : null}
+      </div>
+    </Modal>
   )
 }
 

@@ -1,32 +1,40 @@
 import { Navigate, useNavigate } from 'react-router'
-import { PackageCheck, PackagePlus } from 'lucide-react'
+import { HandHelping, PackageCheck, PackagePlus } from 'lucide-react'
 import { Cargando } from '@/components/ui/Estado'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMisRoles } from '@/lib/api/catalogo'
 
 /*
   INVENTARIO, EN EL TELÉFONO.
 
-  Dos tareas, no una: Registrar entrada y Entregar material. Quien tiene las
-  dos ve este menú; quien solo tiene una aterriza derecho en ella, igual que
-  decide `Entrada.tsx` entre Cocina y el Surtidor — aterrizar en un sitio u
-  otro es una comodidad, no un permiso.
+  Tres tareas, no una: Registrar entrada, Entregar material y Entregar a un
+  trabajador. Quien tiene más de una ve este menú; quien tiene solo una
+  aterriza derecho en ella, igual que decide `Entrada.tsx` entre Cocina y el
+  Surtidor — aterrizar en un sitio u otro es una comodidad, no un permiso.
 */
 export function Almacen() {
   const { puede, resuelto } = useMisPermisos()
+  const { puede: tieneRol, isSuccess: rolesListos } = useMisRoles()
   const navegar = useNavigate()
 
-  if (!resuelto) return <Cargando />
+  if (!resuelto || !rolesListos) return <Cargando />
 
   const puedeEntrada = puede('INVENTARIO', 'ESCRITURA')
   const puedeSalida = puede('SALIDAS', 'ESCRITURA')
+  const puedePrestamo = tieneRol('ALMACEN', 'RRHH', 'ADMIN')
 
-  if (puedeEntrada && !puedeSalida) return <Navigate to="/app/inventario/almacen/entrada" replace />
-  if (puedeSalida && !puedeEntrada) return <Navigate to="/app/inventario/almacen/salida" replace />
+  const tareas = [
+    { puede: puedeEntrada, ruta: '/app/inventario/almacen/entrada' },
+    { puede: puedeSalida, ruta: '/app/inventario/almacen/salida' },
+    { puede: puedePrestamo, ruta: '/app/inventario/almacen/prestamo' },
+  ].filter((t) => t.puede)
 
-  if (!puedeEntrada && !puedeSalida) {
+  if (tareas.length === 1) return <Navigate to={tareas[0].ruta} replace />
+
+  if (tareas.length === 0) {
     return (
       <p className="text-ink/60 mx-auto mt-10 max-w-sm text-center text-sm">
-        Su usuario no tiene permiso para registrar entradas ni para entregar material.
+        Su usuario no tiene permiso para ninguna de las tareas del almacén del teléfono.
       </p>
     )
   }
@@ -37,29 +45,47 @@ export function Almacen() {
       <p className="text-ink/55 mt-1 text-sm">¿Qué va a hacer?</p>
 
       <div className="mt-6 space-y-3">
-        <button
-          type="button"
-          onClick={() => void navegar('/app/inventario/almacen/entrada')}
-          className="border-hairline rounded-card active:bg-ink/5 flex w-full items-center gap-3 border p-5 text-left transition-colors"
-        >
-          <PackagePlus className="text-royal-600 size-7 shrink-0" />
-          <span>
-            <span className="text-ink/85 block text-base font-medium">Registrar entrada</span>
-            <span className="text-ink/55 block text-xs">Lo que entra al almacén, con su costo</span>
-          </span>
-        </button>
+        {puedeEntrada ? (
+          <button
+            type="button"
+            onClick={() => void navegar('/app/inventario/almacen/entrada')}
+            className="border-hairline rounded-card active:bg-ink/5 flex w-full items-center gap-3 border p-5 text-left transition-colors"
+          >
+            <PackagePlus className="text-royal-600 size-7 shrink-0" />
+            <span>
+              <span className="text-ink/85 block text-base font-medium">Registrar entrada</span>
+              <span className="text-ink/55 block text-xs">Lo que entra al almacén, con su costo</span>
+            </span>
+          </button>
+        ) : null}
 
-        <button
-          type="button"
-          onClick={() => void navegar('/app/inventario/almacen/salida')}
-          className="border-hairline rounded-card active:bg-ink/5 flex w-full items-center gap-3 border p-5 text-left transition-colors"
-        >
-          <PackageCheck className="text-royal-600 size-7 shrink-0" />
-          <span>
-            <span className="text-ink/85 block text-base font-medium">Entregar material</span>
-            <span className="text-ink/55 block text-xs">Lo que ya está aprobado, por entregar</span>
-          </span>
-        </button>
+        {puedeSalida ? (
+          <button
+            type="button"
+            onClick={() => void navegar('/app/inventario/almacen/salida')}
+            className="border-hairline rounded-card active:bg-ink/5 flex w-full items-center gap-3 border p-5 text-left transition-colors"
+          >
+            <PackageCheck className="text-royal-600 size-7 shrink-0" />
+            <span>
+              <span className="text-ink/85 block text-base font-medium">Entregar material</span>
+              <span className="text-ink/55 block text-xs">Lo que ya está aprobado, por entregar</span>
+            </span>
+          </button>
+        ) : null}
+
+        {puedePrestamo ? (
+          <button
+            type="button"
+            onClick={() => void navegar('/app/inventario/almacen/prestamo')}
+            className="border-hairline rounded-card active:bg-ink/5 flex w-full items-center gap-3 border p-5 text-left transition-colors"
+          >
+            <HandHelping className="text-royal-600 size-7 shrink-0" />
+            <span>
+              <span className="text-ink/85 block text-base font-medium">Entregar a un trabajador</span>
+              <span className="text-ink/55 block text-xs">Herramienta en préstamo, o un consumible</span>
+            </span>
+          </button>
+        ) : null}
       </div>
     </div>
   )
