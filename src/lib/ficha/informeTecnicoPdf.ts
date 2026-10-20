@@ -36,7 +36,7 @@
 
 import { logoComoImagen } from './logo'
 import type { ArchivoArmado } from './armado'
-import { IZQ } from './hoja'
+import { ANCHO_UTIL, IZQ } from './hoja'
 import {
   bloqueEtiquetado,
   type Columna,
@@ -94,6 +94,18 @@ export interface IntervencionDelInforme {
   costoManoObra: number | null
   costoRepuestos: number
   repuestos: RepuestoDelInformeTecnico[]
+  /** Las fotos del trabajo, ya reducidas. Vacio si no se subio ninguna. */
+  fotos?: ImagenDelInforme[]
+  /** Los adjuntos que NO son imagen -la orden firmada en PDF-, por su nombre. */
+  adjuntos?: string[]
+}
+
+/** Una imagen ya reducida, tal como la deja `imagenesParaPapel`. */
+export interface ImagenDelInforme {
+  dataUrl: string
+  ancho: number
+  alto: number
+  nombre: string
 }
 
 export interface EquipoDelInforme {
@@ -379,7 +391,88 @@ export async function armarInformeTecnico(d: DatosInformeTecnico): Promise<Archi
 
   // ── 5 ─────────────────────────────────────────────────────────────────────
   y = conHueco(doc, y, 24)
-  y = seccion(doc, y, '5. Conclusiones técnicas y recomendaciones')
+  /*
+    EL REGISTRO FOTOGRAFICO.
+
+    Solo sale si hay algo que ensenar, y entonces corre la numeracion de las
+    dos ultimas secciones -igual que en el papel de SOS del que viene-. Una
+    seccion que diga «sin fotografias» ocupa media hoja para decir que no hay
+    nada que ver.
+
+    Las imagenes llegan ya reducidas de `imagenesParaPapel`. Aqui solo se
+    colocan: dos por fila, cada una metida en su hueco SIN deformarse -una
+    foto estirada de un cilindro no sirve para discutir un trabajo-.
+  */
+  const conFotos = d.intervenciones.filter((i) => (i.fotos ?? []).length > 0)
+  const conAdjuntos = d.intervenciones.filter((i) => (i.adjuntos ?? []).length > 0)
+  const hayRegistro = conFotos.length > 0 || conAdjuntos.length > 0
+
+  if (hayRegistro) {
+    y = conHueco(doc, y, 24)
+    y = seccion(doc, y, '5. Registro fotografico')
+
+    const HUECO = (ANCHO_UTIL - 6) / 2
+    const ALTO_HUECO = 42
+
+    for (const i of conFotos) {
+      y = conHueco(doc, y, 14)
+      doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(GRIS)
+      doc.text(`${texto(i.numero)} \u00b7 ${fechaCorta(i.fecha)}`, IZQ, y)
+      y += 4.5
+
+      let columna = 0
+      for (const foto of i.fotos ?? []) {
+        if (columna === 0) y = conHueco(doc, y, ALTO_HUECO + 4)
+
+        const escala = Math.min(HUECO / foto.ancho, ALTO_HUECO / foto.alto)
+        const ancho = foto.ancho * escala
+        const alto = foto.alto * escala
+        const x = IZQ + columna * (HUECO + 6) + (HUECO - ancho) / 2
+
+        try {
+          doc.addImage(foto.dataUrl, 'JPEG', x, y, ancho, alto)
+        } catch {
+          /* una imagen que jsPDF no sabe leer no tumba el informe entero */
+        }
+
+        columna += 1
+        if (columna === 2) {
+          columna = 0
+          y += ALTO_HUECO + 4
+        }
+      }
+      if (columna === 1) y += ALTO_HUECO + 4
+      y += 2
+    }
+
+    if (conAdjuntos.length > 0) {
+      /*
+        LOS PDF NO SE DIBUJAN, SE NOMBRAN. La orden firmada sube como PDF y no
+        cabe como imagen. Callarla seria peor que nombrarla: quien lea el
+        informe sabra que existe y donde buscarla, en su orden del sistema.
+      */
+      y = conHueco(doc, y, 14)
+      doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(GRIS)
+      doc.text('ADJUNTOS EN EL SISTEMA', IZQ, y)
+      y += 4.5
+
+      doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(GRIS)
+      for (const i of conAdjuntos) {
+        const lineas = doc.splitTextToSize(
+          `${texto(i.numero)}: ${(i.adjuntos ?? []).join(', ')}`,
+          ANCHO_UTIL,
+        ) as string[]
+        y = conHueco(doc, y, lineas.length * 4.1 + 1)
+        doc.text(lineas, IZQ, y, { lineHeightFactor: 1.35 })
+        y += lineas.length * 4.1 + 1
+      }
+      y += 2
+    }
+
+    y = conHueco(doc, y, 24)
+  }
+
+  y = seccion(doc, y, `${hayRegistro ? '6' : '5'}. Conclusiones tecnicas y recomendaciones`)
   y = bloqueParrafo(doc, y, 'CONCLUSIONES', d.conclusiones) + 2
   if (d.recomendaciones.length > 0) {
     y = conHueco(doc, y, 16)
@@ -399,7 +492,7 @@ export async function armarInformeTecnico(d: DatosInformeTecnico): Promise<Archi
   */
   const ALTO_FIRMA = 18
   y = conHueco(doc, y + 6, ALTO_FIRMA + 6)
-  y = seccion(doc, y, '6. Firmas de conformidad y validación')
+  y = seccion(doc, y, `${hayRegistro ? '7' : '6'}. Firmas de conformidad y validacion`)
   firmas(
     doc,
     y + 12,

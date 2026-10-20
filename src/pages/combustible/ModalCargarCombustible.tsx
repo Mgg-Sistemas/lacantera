@@ -12,6 +12,7 @@ import {
 } from '@/lib/api/inventario'
 import { useCombustibles } from '@/lib/api/combustible'
 import { hoyEnCaracas } from '@/lib/api/tasas'
+import { enumerar } from '@/lib/texto'
 import { cn } from '@/lib/cn'
 
 /*
@@ -167,11 +168,7 @@ export function ModalCargarCombustible({
 
   const valido = falta.length === 0
 
-  /** «el tanque, la cantidad y el origen»: con «y» antes del último, como se habla. */
-  const enumerado =
-    falta.length <= 1
-      ? (falta[0] ?? '')
-      : `${falta.slice(0, -1).join(', ')} y ${falta[falta.length - 1]}`
+  const enumerado = enumerar(falta)
 
   const unidad =
     (combustibles.data ?? []).find((c) => String(c.id) === articulo)?.unidad ?? 'L'

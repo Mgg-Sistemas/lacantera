@@ -19,3 +19,18 @@ export const enMayuscula = (texto: string) =>
     .replace(/[óòöôõ]/g, 'o')
     .replace(/[úùüû]/g, 'u')
     .toUpperCase()
+
+/**
+ * «el tanque, la cantidad y el origen»: una lista dicha como se habla, con
+ * «y» antes del último en vez de una coma más.
+ *
+ * Nace de los botones que no se encendían y no decían por qué (20/10/2026).
+ * Vive aquí y no en la pantalla que lo estrenó porque el problema no era de
+ * una pantalla: cualquier formulario con más de un campo obligatorio tiene
+ * que poder decir qué le falta, y dos copias de esto acabarían separando la
+ * coma del «y».
+ */
+export const enumerar = (partes: string[]): string =>
+  partes.length <= 1
+    ? (partes[0] ?? '')
+    : `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`
