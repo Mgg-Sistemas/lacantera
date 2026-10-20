@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { DeQuienSale } from '@/components/DeQuienSale'
 import { faltaDecirDeQuien } from '@/lib/deQuien'
 import { useMisRoles } from '@/lib/api/catalogo'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useEmpleados } from '@/lib/api/nomina'
 import { useEntregables, useEntregarATrabajador } from '@/lib/api/asignaciones'
@@ -29,7 +30,14 @@ const SEGUNDOS_PARA_AVISAR_DE_LA_SEÑAL = 12
 
 export function AlmacenPrestamo() {
   const { puede } = useMisRoles()
-  const puedeEntregar = puede('ALMACEN', 'RRHH', 'ADMIN')
+  const { puede: puedeModulo } = useMisPermisos()
+  /*
+    LA MISMA REJA QUE EL RPC `entregar_a_trabajador`: por el rol de siempre
+    (ALMACEN, RRHH, ADMIN) O por el permiso del módulo Asignaciones. La
+    segunda rama es la que deja prestar este botón a alguien con un rol a la
+    medida —como `ALMACEN_TELEFONO`— sin tener que darle el rol entero.
+  */
+  const puedeEntregar = puede('ALMACEN', 'RRHH', 'ADMIN') || puedeModulo('ASIGNACIONES', 'ESCRITURA')
   const { data: empleados } = useEmpleados(true)
   const { data: almacenes, isPending: cargandoAlmacenes } = useAlmacenes()
   const entregar = useEntregarATrabajador()

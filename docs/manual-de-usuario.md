@@ -1758,15 +1758,18 @@ Del módulo salen estos documentos, y **todos llevan la misma cabecera que el re
 
 Con el mismo molde del surtidor de combustible (20.4) y la cocina de Alimentación (25.3): botones grandes, teclado numérico, aviso de mala señal a los doce segundos, y un acuse que se pasa por WhatsApp. Se abre con **Vista de teléfono**, desde **Existencias**, desde **Salidas** o desde **Asignaciones**. Cada pantalla lleva un enlace **← Atrás** para salir sin terminar.
 
-Son tres tareas, no una:
+Son cuatro tareas, no una:
 
 - **Registrar entrada** — los mismos campos de siempre: almacén, uno o más artículos con su cantidad y su costo, el aviso si el costo se sale de lo normal, **Referencia** y **Procedencia**. Al guardar, un acuse con lo que entró, para compartir por WhatsApp. Si el artículo todavía no está en el catálogo, el enlace **No está en el catálogo: darlo de alta** abre un formulario corto —nombre, categoría y unidad, el código se pone solo— y lo deja elegido en el renglón sin salir de la entrada.
 - **Entregar material** — una lista de las solicitudes **ya aprobadas**, por entregar. No se teclea nada: destino, responsable, renglones y vehículo ya se decidieron al pedirla y al aprobarla. Se toca una, se confirma, y sale el mismo reporte compartible por WhatsApp que ya existe en Salidas y traslados (26.5).
 - **Entregar a un trabajador** — la misma puerta de Asignaciones (18.3): se elige el trabajador, el almacén, si es **Préstamo** o **Dotación**, y se marca la cantidad de cada cosa que se lleva, de una lista buscable. Lo que vuelve y lo que se gasta lo decide el catálogo, no esta pantalla. Al guardar, un acuse que dice cuánto quedó prestado y cuánto consumido.
+- **Ver inventario** — solo consulta, nada se mueve desde aquí: se busca un artículo, con o sin elegir un almacén, y se ve cuánto hay y en qué unidad. Para mirar antes de registrar, sin salir del teléfono.
 
-**Quién ve cada botón.** Registrar entrada pide escritura en Inventario; Entregar material, escritura en Salidas; Entregar a un trabajador, el rol Almacén, Recursos Humanos o administración. Quien tiene más de una tarea ve un menú para elegir; quien tiene solo una, aterriza derecho en ella.
+**Quién ve cada botón.** Registrar entrada pide escritura en Inventario; Entregar material, escritura en Salidas; Entregar a un trabajador, escritura en Asignaciones o el rol Almacén, Recursos Humanos o administración; Ver inventario, aunque sea solo lectura en Inventario. Quien tiene más de una tarea ve un menú para elegir; quien tiene solo una, aterriza derecho en ella.
 
 **Entrar directo al abrir el sistema.** En Configuración › Usuarios, entre los permisos extendidos de Inventario, está la casilla **Entrar directo al almacén del teléfono**: quien la tiene abre el sistema y aparece ya en esta pantalla, en vez de en el tablero. No da permiso de nada por sí sola: cada tarea sigue pidiendo el suyo.
+
+**Para quien solo trabaja desde el teléfono.** El rol **Almacén** reparte, además de Inventario y Salidas, otros módulos de escritorio —Alimentación, Combustible, Compras, Configuración, Maquinaria— que nada tienen que ver con estas cuatro tareas. Para alguien que solo las usa a él, el rol a la medida **Almacén (teléfono)** reparte exactamente lo que piden —Inventario, Salidas, Asignaciones y el Panel, todo lo demás en Ninguno— sin tocar el rol Almacén, que comparten otras personas. Se asigna como cualquier otro rol, desde Configuración › Usuarios.
 
 ### 7.15 Cuando el sistema no le deja
 
