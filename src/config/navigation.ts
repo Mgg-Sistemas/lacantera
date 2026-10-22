@@ -19,6 +19,7 @@ import {
   Truck,
   Users,
   UtensilsCrossed,
+  Wallet,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -163,6 +164,10 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/inventario', 'INVENTARIO'],
   ['/app/despachos', 'DESPACHOS'],
   ['/app/compras', 'COMPRAS'],
+  // Gastos, 22/10/2026: la factura física transcrita, categorizada y con su
+  // foto. Módulo propio, aparte de Centro de Costo, que está en evaluación de
+  // cambiar o eliminarse.
+  ['/app/gastos', 'GASTOS'],
   // La facturación es su propio módulo desde el 15/09/2026: gasta números de
   // control, entra al libro y deja a alguien debiendo, y eso no es tarea de
   // quien cotiza ni de quien despacha.
@@ -693,6 +698,23 @@ export const navigation: NavSection[] = [
           { label: 'Clientes', to: '/app/ventas/clientes' },
           { label: 'Lista de precios', to: '/app/ventas/precios' },
           { label: 'Cotizaciones', to: '/app/ventas/cotizaciones' },
+        ],
+      },
+      {
+        /*
+          GASTOS, 22/10/2026. Christopher pidió un sitio para cargar la factura
+          física (escaneo o foto), transcribirla con una observación de para qué
+          se usó lo comprado, y un informe de gasto por categoría. Se pensó
+          primero como extensión de Centro de Costo, pero ese módulo está en
+          evaluación de cambiar o eliminarse, así que nace aparte: su propio
+          catálogo de categorías, su propia tabla, su propio permiso. Es
+          bitácora, no contabilidad — no toca ninguna cuenta de Tesorería.
+        */
+        label: 'Gastos',
+        icon: Wallet,
+        children: [
+          { label: 'Historial de gastos', to: '/app/gastos' },
+          { label: 'Categorías', to: '/app/gastos/categorias' },
         ],
       },
       {
