@@ -37,10 +37,13 @@ export function ElegirArchivosDeCarga({
   archivos,
   onCambiar,
   disponibles = MAXIMO_DE_ARCHIVOS,
+  descripcion = 'del vehículo que se lo lleva. No salen en el papel impreso.',
 }: {
   archivos: File[]
   onCambiar: (a: File[]) => void
   disponibles?: number
+  /** Lo que sigue a «X de Y ·». Por defecto, el texto de siempre. */
+  descripcion?: string
 }) {
   const entrada = useRef<HTMLInputElement>(null)
   const [aviso, setAviso] = useState<string | null>(null)
@@ -74,8 +77,7 @@ export function ElegirArchivosDeCarga({
           Adjuntar fotos o PDF
         </Button>
         <span className="text-ink/50 text-xs">
-          {archivos.length} de {disponibles} · del vehículo que se lo lleva. No salen en el papel
-          impreso.
+          {archivos.length} de {disponibles} · {descripcion}
         </span>
         <input
           ref={entrada}
@@ -216,10 +218,16 @@ export function FotosDeCarga({
   origen,
   referencia,
   puedeAnadir,
+  etiqueta = 'Fotos del vehículo',
+  descripcionAdjunto,
 }: {
   origen: OrigenDeCarga
   referencia: string
   puedeAnadir: boolean
+  /** Lo que se lee antes del contador. Por defecto, el texto de siempre (el vehículo que se lo lleva). */
+  etiqueta?: string
+  /** Lo que se lee al adjuntar, después de «X de Y ·». Por defecto, el texto de siempre. */
+  descripcionAdjunto?: string
 }) {
   const { data } = useFotosDeCarga(origen)
   const { data: perfiles } = usePerfiles()
@@ -243,7 +251,7 @@ export function FotosDeCarga({
     <div className="mt-3">
       <p className="text-ink/55 mb-1.5 flex items-center gap-1.5 text-xs font-medium">
         <Paperclip className="size-3.5" />
-        Fotos del vehículo ({vigentes.length} de {MAXIMO_DE_ARCHIVOS})
+        {etiqueta} ({vigentes.length} de {MAXIMO_DE_ARCHIVOS})
       </p>
 
       {vigentes.length > 0 ? (
@@ -287,7 +295,12 @@ export function FotosDeCarga({
 
       {puedeAnadir && disponibles > 0 ? (
         <div className="mt-2">
-          <ElegirArchivosDeCarga archivos={nuevos} onCambiar={setNuevos} disponibles={disponibles} />
+          <ElegirArchivosDeCarga
+            archivos={nuevos}
+            onCambiar={setNuevos}
+            disponibles={disponibles}
+            descripcion={descripcionAdjunto}
+          />
           {nuevos.length > 0 ? (
             <Button
               size="sm"
