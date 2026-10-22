@@ -19,13 +19,15 @@ import { desenvolver, rpc } from './rpc'
  *  MANTENIMIENTO desde el 20/10/2026: la orden de taller firmada, el
  *  presupuesto del taller y las fotos del trabajo. Es lo que Christopher pidió
  *  el 13/10 —«dónde subo el documento firmado»— y lo que completa el
- *  registro fotográfico del informe técnico. */
+ *  registro fotográfico del informe técnico.
+ *  GASTO desde el 22/10/2026: la factura física del módulo de Gastos. */
 export type OrigenDeCarga =
   | 'SALIDA'
   | 'DESPACHO'
   | 'COMBUSTIBLE'
   | 'AVERIA'
   | 'MANTENIMIENTO'
+  | 'GASTO'
 
 export const MAXIMO_DE_ARCHIVOS = 4
 export const TIPOS_ADMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']

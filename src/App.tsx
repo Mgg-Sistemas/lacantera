@@ -303,6 +303,10 @@ const ControlDeAsistencia = pagina(() =>
   import('@/pages/asistencia/ControlDeAsistencia').then((m) => ({ default: m.ControlDeAsistencia })),
 )
 const Contactos = pagina(() => import('@/pages/contactos/Contactos').then((m) => ({ default: m.Contactos })))
+const Gastos = pagina(() => import('@/pages/gastos/Gastos').then((m) => ({ default: m.Gastos })))
+const CategoriasDeGasto = pagina(() =>
+  import('@/pages/gastos/Categorias').then((m) => ({ default: m.Categorias })),
+)
 const CentroDeCosto = pagina(() =>
   import('@/pages/costos/CentroDeCosto').then((m) => ({ default: m.CentroDeCosto })),
 )
@@ -354,6 +358,8 @@ const paginas: Record<string, ReactNode> = {
   '/app/control-despacho': <ControlDespacho />,
   '/app/asistencia': <ControlDeAsistencia />,
   '/app/contactos': <Contactos />,
+  '/app/gastos': <Gastos />,
+  '/app/gastos/categorias': <CategoriasDeGasto />,
   '/app/despachos': <TableroDespachos />,
   '/app/despachos/tickets': <Tickets />,
   '/app/despachos/guias': <Guias />,
