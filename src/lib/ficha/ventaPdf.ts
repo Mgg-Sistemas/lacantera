@@ -676,13 +676,17 @@ function firmas(doc: Doc, d: DatosDocumento, y: number) {
   }
 }
 
-export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
-  const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
-
-  // El logo de la empresa. Se carga una vez y se reutiliza en cada hoja.
-  const logo = await logoComoImagen()
-
+/**
+ * Dibuja un documento entero —cabecera, tabla repartida en hojas, totales,
+ * firmas y pie— sobre un `jsPDF` que ya existe, empezando en la página que
+ * esté activa en ese momento.
+ *
+ * Separado de `armarDocumento` para poder armar varios documentos en un solo
+ * archivo (`armarVariosDocumentos`): quien llama decide cuándo abrir página
+ * nueva entre uno y el siguiente, esta función no lo sabe ni le hace falta
+ * saberlo.
+ */
+function dibujarDocumento(doc: Doc, logo: string, d: DatosDocumento): void {
   // Cuánto ocupa el cierre —totales, firmas y observación— para saber si cabe
   // detrás del último renglón o necesita hoja propia.
   const cierre = altoTotales(d) + 22 + (d.observacion ? 10 : 0)
@@ -904,6 +908,16 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
 
     pie(doc, d, indice + 1, hojas.length)
   }
+}
+
+export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
+  const { jsPDF } = await import('jspdf')
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
+
+  // El logo de la empresa. Se carga una vez y se reutiliza en cada hoja.
+  const logo = await logoComoImagen()
+
+  dibujarDocumento(doc, logo, d)
 
   doc.setProperties({
     title: `${ROTULOS[d.tipo].titulo} ${d.numero} — ${d.contraparte.nombre}`,
@@ -914,5 +928,44 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
   return {
     blob: doc.output('blob'),
     nombre: `${ROTULOS[d.tipo].archivo}-${d.numero.toLowerCase()}.pdf`,
+  }
+}
+
+/**
+ * Varios documentos del mismo tipo, uno detrás de otro en un solo PDF —cada
+ * uno exactamente como sale impreso solo, con sus propias hojas si le hacen
+ * falta—, no un resumen de todos juntos.
+ *
+ * Nace el 23/10/2026 para "Imprimir notas" en Notas de entrega: Christopher
+ * pidió poder imprimir de corrido las que están filtradas en pantalla, no un
+ * reporte — cada nota de entrega completa, tal como ya sale al pedirla sola.
+ * El logo se carga una sola vez para todo el lote, no una vez por documento.
+ */
+export async function armarVariosDocumentos(
+  lista: DatosDocumento[],
+  opciones: { titulo: string; archivo: string },
+): Promise<PdfArmado> {
+  if (lista.length === 0) {
+    throw new Error('No hay ningún documento que imprimir.')
+  }
+
+  const { jsPDF } = await import('jspdf')
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
+  const logo = await logoComoImagen()
+
+  lista.forEach((d, i) => {
+    if (i > 0) doc.addPage()
+    dibujarDocumento(doc, logo, d)
+  })
+
+  doc.setProperties({
+    title: opciones.titulo,
+    subject: opciones.titulo,
+    author: lista[0].empresa.razonSocial,
+  })
+
+  return {
+    blob: doc.output('blob'),
+    nombre: opciones.archivo,
   }
 }

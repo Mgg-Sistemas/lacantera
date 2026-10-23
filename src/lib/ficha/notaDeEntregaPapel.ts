@@ -3,7 +3,8 @@ import { empresaDelPapel, type useEmpresa } from '@/lib/api/empresa'
 import type { Cliente, NotaEntrega, RenglonGuardado } from '@/lib/api/ventas'
 import { enteros } from '@/lib/formato'
 import { conversionDeRenglon } from '@/pages/ventas/filas'
-import { armarDocumento } from './ventaPdf'
+import { armarDocumento, armarVariosDocumentos, type DatosDocumento } from './ventaPdf'
+import type { EmpresaPapel } from './papel'
 
 /*
   EL PAPEL DE LA NOTA DE ENTREGA, EN UN SOLO SITIO.
@@ -17,30 +18,28 @@ import { armarDocumento } from './ventaPdf'
   La que todavía no tiene cliente o precios sale con el sello PENDIENTE: se
   puede archivar, pero nadie la confunde con una nota terminada.
 */
-export async function armarNotaDeEntrega(d: {
-  nota: NotaEntrega
-  renglones: RenglonGuardado[]
-  cliente: Pick<Cliente, 'direccion' | 'telefono'> | null
-  empresa: ReturnType<typeof useEmpresa>['data']
-  emitidoPor: string
-}) {
-  const { nota: n, renglones } = d
-  const densidades = await densidadesDeArticulos({ ids: renglones.map((r) => r.articulo_id) })
-  const densidadDe = (r: RenglonGuardado) =>
-    densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3
 
-  return armarDocumento({
+/** Los datos de una nota, listos para `armarDocumento` — sin construir el PDF todavía. */
+function datosDeNota(
+  n: NotaEntrega,
+  renglones: RenglonGuardado[],
+  cliente: Pick<Cliente, 'direccion' | 'telefono'> | null,
+  densidadDe: (r: RenglonGuardado) => string | null | undefined,
+  empresa: EmpresaPapel,
+  emitidoPor: string,
+): DatosDocumento {
+  return {
     tipo: 'NOTA',
     numero: n.numero,
     fecha: n.fecha,
     contraparte: {
       nombre: n.cliente ?? 'CLIENTE POR CONCRETAR',
       rif: n.cliente_rif ?? '',
-      direccion: d.cliente?.direccion ?? null,
+      direccion: cliente?.direccion ?? null,
       // El hueco del teléfono existía en el papel desde el primer día y nadie
       // lo llenaba: salía «TELÉFONO —» en todas las notas y todas las
       // cotizaciones. El dato está aquí mismo, en la lista de clientes.
-      telefono: d.cliente?.telefono ?? null,
+      telefono: cliente?.telefono ?? null,
     },
     despacho: {
       vehiculo: n.vehiculo,
@@ -81,7 +80,63 @@ export async function armarNotaDeEntrega(d: {
     total: n.total,
     observacion: n.observacion,
     sello: n.estado === 'ANULADA' ? 'ANULADA' : n.estado === 'PENDIENTE' ? 'PENDIENTE' : null,
-    empresa: empresaDelPapel(d.empresa),
-    emitidoPor: d.emitidoPor,
+    empresa,
+    emitidoPor,
+  }
+}
+
+export async function armarNotaDeEntrega(d: {
+  nota: NotaEntrega
+  renglones: RenglonGuardado[]
+  cliente: Pick<Cliente, 'direccion' | 'telefono'> | null
+  empresa: ReturnType<typeof useEmpresa>['data']
+  emitidoPor: string
+}) {
+  const { nota: n, renglones } = d
+  const densidades = await densidadesDeArticulos({ ids: renglones.map((r) => r.articulo_id) })
+  const densidadDe = (r: RenglonGuardado) =>
+    densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3
+
+  return armarDocumento(
+    datosDeNota(n, renglones, d.cliente, densidadDe, empresaDelPapel(d.empresa), d.emitidoPor),
+  )
+}
+
+/**
+ * Varias notas de entrega en un solo PDF, cada una completa —con su propia
+ * hoja o sus propias hojas, si le hacen falta—, tal como sale al pedirla sola.
+ *
+ * Nace el 23/10/2026: «Imprimir notas» en Notas de entrega arma esto con lo
+ * que está filtrado en pantalla, sin un tope de cuántas: Christopher pidió
+ * que el propio filtro de categoría (Estado, fechas…) se encargue de acotar
+ * cuántas entran, no un límite escrito aquí.
+ */
+export async function armarNotasDeEntrega(d: {
+  notas: NotaEntrega[]
+  renglonesPorNota: Map<number, RenglonGuardado[]>
+  clientePorId: Map<number, Pick<Cliente, 'direccion' | 'telefono'>>
+  empresa: ReturnType<typeof useEmpresa>['data']
+  emitidoPor: string
+}) {
+  const todosLosIds = [...d.renglonesPorNota.values()].flat().map((r) => r.articulo_id)
+  const densidades = await densidadesDeArticulos({ ids: todosLosIds })
+  const densidadDe = (r: RenglonGuardado) =>
+    densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3
+  const empresaPapel = empresaDelPapel(d.empresa)
+
+  const lista = d.notas.map((n) =>
+    datosDeNota(
+      n,
+      d.renglonesPorNota.get(n.id) ?? [],
+      d.clientePorId.get(n.cliente_id ?? -1) ?? null,
+      densidadDe,
+      empresaPapel,
+      d.emitidoPor,
+    ),
+  )
+
+  return armarVariosDocumentos(lista, {
+    titulo: `Notas de entrega (${d.notas.length})`,
+    archivo: `notas-de-entrega-${d.notas.length}.pdf`,
   })
 }

@@ -35,7 +35,7 @@ import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useGuias, useTickets } from '@/lib/api/despachos'
 import { useVehiculos } from '@/lib/api/vehiculos'
-import { armarNotaDeEntrega } from '@/lib/ficha/notaDeEntregaPapel'
+import { armarNotaDeEntrega, armarNotasDeEntrega } from '@/lib/ficha/notaDeEntregaPapel'
 import { armarReporteNotasDeEntrega, type MaterialDespachado } from '@/lib/ficha/notasDeEntregaReportePdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
@@ -51,10 +51,12 @@ import {
   usePuedoAprobarDespachos,
   useRechazarDespacho,
   useRenglones,
+  renglonesCompletosDeNotas,
   renglonesDeNotas,
   useSolicitarDespacho,
   useSolicitudesDespacho,
   type NotaEntrega,
+  type RenglonGuardado,
   type SolicitudDeDespacho,
 } from '@/lib/api/ventas'
 import { useCompletarNotaDeEntrega, useGuardarCamionesDeNota } from '@/lib/api/salidas'
@@ -277,6 +279,7 @@ export function NotasDeEntrega() {
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
   const [reporte, setReporte] = useState<PdfArmado | null>(null)
   const [armandoReporte, setArmandoReporte] = useState(false)
+  const [armandoLote, setArmandoLote] = useState(false)
 
   const [clienteId, setClienteId] = useState('')
   const [almacenId, setAlmacenId] = useState('')
@@ -471,6 +474,43 @@ export function NotasDeEntrega() {
     )
   }
 
+  /*
+    IMPRIMIR NOTAS: CADA UNA COMPLETA, NO UN RESUMEN.
+
+    Christopher, 23/10/2026: «un botón para imprimir todas las notas de
+    entrega por categoría, no un reporte de todas, necesito cada nota de
+    entrega». A diferencia de `verReporte` —que suma material y descarta las
+    anuladas—, esto imprime exactamente lo que está filtrado en pantalla, tal
+    cual está, en el mismo papel que sale al pedir una nota sola. Sin tope de
+    cuántas: que el propio filtro (Estado, fechas…) se encargue de acotar.
+  */
+  const imprimirLote = async () => {
+    setArmandoLote(true)
+    try {
+      const notas = data ?? []
+      const renglones = await renglonesCompletosDeNotas(notas.map((n) => n.id))
+      const renglonesPorNota = new Map<number, RenglonGuardado[]>()
+      for (const r of renglones) {
+        const lista = renglonesPorNota.get(r.nota_id) ?? []
+        lista.push(r)
+        renglonesPorNota.set(r.nota_id, lista)
+      }
+      const clientePorId = new Map((clientes ?? []).map((c) => [c.id, c]))
+
+      setPdf(
+        await armarNotasDeEntrega({
+          notas,
+          renglonesPorNota,
+          clientePorId,
+          empresa,
+          emitidoPor: yo?.nombre ?? '',
+        }),
+      )
+    } finally {
+      setArmandoLote(false)
+    }
+  }
+
   // El reporte junta las notas tal como están filtradas en pantalla, cada una
   // con el total en su propia moneda y su equivalente en Bs y en $ a la tasa
   // que quedó congelada el día en que se emitió — no la de hoy.
@@ -550,6 +590,14 @@ export function NotasDeEntrega() {
               onClick={() => void verReporte()}
             >
               {armandoReporte ? 'Armando…' : 'Reporte Bs/$'}
+            </Button>
+            <Button
+              variant="outline"
+              icon={<Printer />}
+              disabled={!data || data.length === 0 || armandoLote}
+              onClick={() => void imprimirLote()}
+            >
+              {armandoLote ? 'Armando…' : 'Imprimir notas'}
             </Button>
             {puedeDespachar ? (
               <Button icon={<Truck />} onClick={() => setNuevo(true)}>
