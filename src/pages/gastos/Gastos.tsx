@@ -84,6 +84,16 @@ export function Gastos() {
   const [buscado, setBuscado] = useState('')
   const [categoriaFiltro, setCategoriaFiltro] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
+  /*
+    LAS ANULADAS NO ESTORBAN EL HISTORIAL POR DEFECTO.
+
+    Christopher, 23/10/2026: una factura anulada —típicamente, un error de
+    tecleo que se corrigió registrando la correcta aparte— no es trabajo
+    pendiente ni gasto real, y verla mezclada con las vigentes entorpece
+    revisar lo que de verdad se gastó. No se oculta del todo —sigue siendo el
+    rastro de qué se tecleó primero—, solo deja de salir salvo que se pida.
+  */
+  const [verAnuladas, setVerAnuladas] = useState(false)
 
   const [registrando, setRegistrando] = useState(false)
   const [form, setForm] = useState(filaVacia())
@@ -100,6 +110,7 @@ export function Gastos() {
   const filtrados = useMemo(() => {
     const texto = buscado.trim().toLowerCase()
     return (data ?? []).filter((g) => {
+      if (!verAnuladas && g.anulada_en) return false
       if (categoriaFiltro && g.categoria !== categoriaFiltro) return false
       if (rango.desde && g.fecha < rango.desde) return false
       if (rango.hasta && g.fecha > rango.hasta) return false
@@ -111,7 +122,9 @@ export function Gastos() {
         g.observacion.toLowerCase().includes(texto)
       )
     })
-  }, [data, buscado, categoriaFiltro, rango])
+  }, [data, buscado, categoriaFiltro, rango, verAnuladas])
+
+  const anuladasOcultas = (data ?? []).filter((g) => g.anulada_en).length
 
   const abrirRegistro = () => {
     setForm(filaVacia())
@@ -175,8 +188,20 @@ export function Gastos() {
             opciones={opcionesDeCategoriaDeGasto(categorias)}
           />
         </div>
-        <div className="mt-3">
-          <RangoDeFechas valor={rango} onCambio={setRango} />
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <RangoDeFechas valor={rango} onCambio={setRango} className="grow" />
+          <label className="text-ink/60 flex shrink-0 cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="accent-royal-600 size-4"
+              checked={verAnuladas}
+              onChange={(e) => setVerAnuladas(e.target.checked)}
+            />
+            Mostrar anuladas
+            {!verAnuladas && anuladasOcultas > 0 ? (
+              <span className="text-ink/35">({anuladasOcultas})</span>
+            ) : null}
+          </label>
         </div>
       </Card>
 
