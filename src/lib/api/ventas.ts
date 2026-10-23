@@ -421,6 +421,28 @@ export async function renglonesDeNotas(notaIds: number[]): Promise<RenglonConArt
   })
 }
 
+/**
+ * Los renglones ENTEROS de varias notas a la vez —los mismos que trae
+ * `useRenglones` para una sola—, cada uno con el `nota_id` al que pertenece.
+ *
+ * No sirve `renglonesDeNotas`: ese trae el resumen que pide el reporte por
+ * material (artículo, cantidad, subtotal), y para imprimir cada nota completa
+ * hace falta la descripción, el precio unitario y si el renglón es exento —lo
+ * que ya trae `RenglonGuardado`, aquí multiplicado por nota.
+ */
+export async function renglonesCompletosDeNotas(
+  notaIds: number[],
+): Promise<(RenglonGuardado & { nota_id: number })[]> {
+  if (notaIds.length === 0) return []
+  return desenvolver<(RenglonGuardado & { nota_id: number })[]>(
+    await supabase
+      .from('nota_entrega_renglones')
+      .select('*')
+      .in('nota_id', notaIds)
+      .order('linea'),
+  )
+}
+
 export function useCrearCotizacion() {
   return useAccionVentas<
     {
