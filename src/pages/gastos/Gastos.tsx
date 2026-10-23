@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { BarChart3, Plus, Receipt, Search } from 'lucide-react'
+import { BarChart3, Plus, Receipt, Search, X } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
@@ -12,9 +12,11 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
-import { FotosDeCarga } from '@/components/FotosDeCarga'
+import { ElegirArchivosDeCarga, FotosDeCarga } from '@/components/FotosDeCarga'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { hoyEnCaracas, useMonedas } from '@/lib/api/tasas'
+import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
+import { porQueNoSubio } from '@/lib/castellano'
 import {
   opcionesDeCategoriaDeGasto,
   useAnularGasto,
@@ -34,13 +36,24 @@ import { dinero, fecha } from '@/lib/formato'
   informe de gasto por categoría. Es bitácora, no contabilidad: no mueve
   ninguna cuenta de Tesorería.
 
-  LA FOTO SE ADJUNTA DESPUÉS DE REGISTRAR, NO DURANTE.
+  LA FOTO SE ADJUNTA EN EL MISMO FORMULARIO.
 
-  Igual que el historial de taller: se registra primero —lo mínimo, rápido—,
-  y la foto se cuelga desde la propia tarjeta con `<FotosDeCarga>`, el mismo
-  componente que ya usan Salidas, Despachos, Combustible, Avería y
-  Mantenimiento. No hace falta un camino especial para subir en el momento de
-  crear: la tarjeta ya está ahí, con su número, en cuanto se guarda.
+  Se probó al revés —registrar primero, adjuntar después desde la tarjeta,
+  como el historial de taller—, y las primeras seis facturas reales mostraron
+  que esa foto siempre llegaba de inmediato: nunca se dejó para después. Así
+  que el selector vive aquí, en el mismo modal, con la misma infraestructura
+  de fotos que ya usan Salidas, Despachos, Combustible, Avería y
+  Mantenimiento. La tarjeta del historial conserva su propio `<FotosDeCarga>`
+  por si hace falta añadir o corregir una foto más tarde.
+
+  PROVEEDOR Y GUARDAR-Y-OTRA, PARA CARGAR VARIAS SEGUIDAS.
+
+  Las mismas seis facturas eran del mismo proveedor, tecleado entero cada vez.
+  El campo ahora sugiere los proveedores ya usados (una lista nativa del
+  navegador, `<datalist>`, que no impide escribir uno nuevo) y rellena su RIF
+  si coincide. Y «Registrar y cargar otra» guarda sin cerrar el modal,
+  dejando puestos proveedor, RIF, categoría, moneda y fecha — lo que casi
+  siempre se repite cuando se sube un lote de la misma visita.
 
   UNA FACTURA NO SE CORRIGE, SE ANULA.
 
@@ -97,7 +110,36 @@ export function Gastos() {
 
   const [registrando, setRegistrando] = useState(false)
   const [form, setForm] = useState(filaVacia())
+  const [archivos, setArchivos] = useState<File[]>([])
+  const [avisoFoto, setAvisoFoto] = useState<string | null>(null)
   const registrar = useRegistrarGasto()
+
+  /** Los proveedores ya usados, más reciente primero, con su RIF. Alimenta el `<datalist>`. */
+  const proveedoresConocidos = useMemo(() => {
+    const vistos = new Map<string, string>()
+    for (const g of [...(data ?? [])].sort((a, b) => b.registrado_en.localeCompare(a.registrado_en))) {
+      if (!vistos.has(g.proveedor)) vistos.set(g.proveedor, g.documento_proveedor ?? '')
+    }
+    return Array.from(vistos, ([proveedor, documento_proveedor]) => ({ proveedor, documento_proveedor }))
+  }, [data])
+
+  /**
+   * Una factura vigente con el mismo proveedor y el mismo número de factura.
+   *
+   * No bloquea: puede ser legítimo (dos renglones de una misma compra grande,
+   * o simple coincidencia). Solo avisa, para que un tecleo apurado no la
+   * duplique sin darse cuenta.
+   */
+  const posibleDuplicado = useMemo(() => {
+    const numero = form.numero_factura.trim()
+    const proveedor = form.proveedor.trim().toUpperCase()
+    if (!numero || !proveedor) return null
+    return (
+      (data ?? []).find(
+        (g) => !g.anulada_en && g.proveedor === proveedor && (g.numero_factura ?? '').trim() === numero,
+      ) ?? null
+    )
+  }, [data, form.numero_factura, form.proveedor])
 
   const [anulando, setAnulando] = useState<GastoFactura | null>(null)
   const [motivo, setMotivo] = useState('')
@@ -128,11 +170,13 @@ export function Gastos() {
 
   const abrirRegistro = () => {
     setForm(filaVacia())
+    setArchivos([])
     setRegistrando(true)
   }
 
-  const guardar = async () => {
-    await registrar.mutateAsync({
+  /** Registra la factura y, si hay fotos elegidas, las sube de una vez. Devuelve el número. */
+  const registrarUno = async () => {
+    const numero = await registrar.mutateAsync({
       fecha: form.fecha,
       proveedor: form.proveedor.trim(),
       categoria: form.categoria,
@@ -142,7 +186,35 @@ export function Gastos() {
       documento_proveedor: form.documento_proveedor.trim() || null,
       numero_factura: form.numero_factura.trim() || null,
     })
+    if (archivos.length > 0) {
+      try {
+        await subirFotosDeCarga('GASTO', [numero], archivos)
+      } catch (e) {
+        setAvisoFoto(
+          `La factura ${numero} quedó registrada, pero la foto no subió${porQueNoSubio(e)} Añádala desde su tarjeta, más abajo en el historial.`,
+        )
+      }
+    }
+    return numero
+  }
+
+  const guardar = async () => {
+    await registrarUno()
     setRegistrando(false)
+  }
+
+  /** Guarda sin cerrar el modal, para cargar varias facturas seguidas del mismo proveedor. */
+  const guardarYOtra = async () => {
+    await registrarUno()
+    setForm((f) => ({
+      ...filaVacia(),
+      fecha: f.fecha,
+      proveedor: f.proveedor,
+      documento_proveedor: f.documento_proveedor,
+      categoria: f.categoria,
+      moneda: f.moneda,
+    }))
+    setArchivos([])
   }
 
   const formValido =
@@ -170,6 +242,20 @@ export function Gastos() {
           </>
         }
       />
+
+      {avisoFoto ? (
+        <div className="border-warning/30 bg-warning-soft mb-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
+          <p className="text-ink/80 grow text-sm">{avisoFoto}</p>
+          <button
+            type="button"
+            aria-label="Cerrar el aviso"
+            className="text-ink/45 hover:text-ink/80 shrink-0"
+            onClick={() => setAvisoFoto(null)}
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      ) : null}
 
       <Card className="mb-4">
         <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
@@ -295,11 +381,18 @@ export function Gastos() {
           abierto
           onCerrar={() => setRegistrando(false)}
           titulo="Registrar factura"
-          descripcion="Lo mínimo para dejarla en el historial. La foto se adjunta justo después, desde la propia tarjeta."
+          descripcion="Con su foto de una vez: no hace falta bajar después a buscarla en la tarjeta."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setRegistrando(false)}>
                 Cancelar
+              </Button>
+              <Button
+                variant="outline"
+                disabled={!formValido || registrar.isPending}
+                onClick={() => void guardarYOtra()}
+              >
+                {registrar.isPending ? 'Guardando…' : 'Registrar y cargar otra'}
               </Button>
               <Button disabled={!formValido || registrar.isPending} onClick={() => void guardar()}>
                 {registrar.isPending ? 'Guardando…' : 'Registrar'}
@@ -315,12 +408,31 @@ export function Gastos() {
               max={HOY}
               onChange={(e) => setForm((f) => ({ ...f, fecha: e.target.value }))}
             />
-            <Input
-              label="Proveedor"
-              value={form.proveedor}
-              onChange={(e) => setForm((f) => ({ ...f, proveedor: e.target.value }))}
-              autoFocus
-            />
+            <div>
+              <Input
+                label="Proveedor"
+                value={form.proveedor}
+                list="gastos-proveedores-conocidos"
+                onChange={(e) => {
+                  const valor = e.target.value
+                  const conocido = proveedoresConocidos.find((p) => p.proveedor === valor.trim().toUpperCase())
+                  setForm((f) => ({
+                    ...f,
+                    proveedor: valor,
+                    // Solo rellena el RIF si venía vacío: no pisa lo que ya se tecleó a mano.
+                    documento_proveedor:
+                      conocido && !f.documento_proveedor ? conocido.documento_proveedor : f.documento_proveedor,
+                  }))
+                }}
+                autoFocus
+              />
+              {/* Lista nativa del navegador: sugiere, pero no impide escribir un proveedor nuevo. */}
+              <datalist id="gastos-proveedores-conocidos">
+                {proveedoresConocidos.map((p) => (
+                  <option key={p.proveedor} value={p.proveedor} />
+                ))}
+              </datalist>
+            </div>
             <Select
               label="Categoría"
               vacio="Seleccione una categoría"
@@ -342,11 +454,19 @@ export function Gastos() {
                 opciones={(monedas ?? []).map((m) => ({ valor: m.codigo, etiqueta: m.codigo }))}
               />
             </div>
-            <Input
-              label="N.º de factura (si tiene)"
-              value={form.numero_factura}
-              onChange={(e) => setForm((f) => ({ ...f, numero_factura: e.target.value }))}
-            />
+            <div>
+              <Input
+                label="N.º de factura (si tiene)"
+                value={form.numero_factura}
+                onChange={(e) => setForm((f) => ({ ...f, numero_factura: e.target.value }))}
+              />
+              {posibleDuplicado ? (
+                <p className="text-warning mt-1 text-xs">
+                  Ya hay una factura {posibleDuplicado.numero} de este proveedor con ese número, por{' '}
+                  {dinero(posibleDuplicado.moneda, posibleDuplicado.monto)}. Revise que no sea la misma.
+                </p>
+              ) : null}
+            </div>
             <Input
               label="RIF o cédula del proveedor (si tiene)"
               placeholder="J-12345678-9"
@@ -361,6 +481,14 @@ export function Gastos() {
               rows={3}
               value={form.observacion}
               onChange={(e) => setForm((f) => ({ ...f, observacion: e.target.value }))}
+            />
+          </div>
+
+          <div className="mt-3">
+            <ElegirArchivosDeCarga
+              archivos={archivos}
+              onCambiar={setArchivos}
+              descripcion="de la factura. No salen en ningún papel impreso."
             />
           </div>
 
