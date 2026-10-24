@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
-import { Check, FileText, MessageCircle, Pencil, Printer, Truck, X } from 'lucide-react'
+import { Check, Combine, FileText, MessageCircle, Pencil, Printer, Truck, X } from 'lucide-react'
 import { CatalogoTransporte } from '@/components/CatalogoTransporte'
 import { ElegirArchivosDeCarga, FotosDeCarga } from '@/components/FotosDeCarga'
 import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
@@ -984,7 +984,16 @@ export function NotasDeEntrega() {
                     </td>
                     <td className="text-ink/60 px-3 py-3 text-xs">{fecha(n.fecha)}</td>
                     <td className="tabular text-ink/85 px-3 py-3 text-right font-medium">
-                      {dinero(n.moneda, n.total)}
+                      <span className="inline-flex items-center justify-end gap-1">
+                        {dinero(n.moneda, n.total)}
+                        {n.pago_combinado ? (
+                          <span
+                            title={`Pago combinado: ${dolares(n.monto_usd_combinado ?? 0)} + ${bolivares(n.monto_bs_combinado ?? 0)}`}
+                          >
+                            <Combine className="text-ink/45 size-3.5 shrink-0" />
+                          </span>
+                        ) : null}
+                      </span>
                     </td>
                     <td className="tabular text-ink/60 px-3 py-3 text-right text-xs">
                       {bolivares(n.total_bs)}
