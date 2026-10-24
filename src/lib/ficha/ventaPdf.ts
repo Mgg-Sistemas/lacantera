@@ -149,6 +149,18 @@ export interface DatosDocumento {
     }[]
   } | null
 
+  /**
+   * Solo la nota de entrega. Lo que se esperaba cobrar en cada moneda, cuando
+   * el cliente paga una parte en dólares y otra en bolívares.
+   *
+   * Christopher, 23/10/2026: pidió que esto sí se imprima, con los dos
+   * montos. Es la única excepción a «en la nota de entrega únicamente
+   * dejemos el total» (17/09/2026): esa regla seguía pensada para no mezclar
+   * la nota con subtotal, flete o impuestos — el pago combinado no es nada
+   * de eso, es justo lo que falta para que el papel diga cómo se cobra.
+   */
+  pagoCombinado?: { usd: string | number; bs: string | number } | null
+
   moneda: string
   /** Bolívares por una unidad de la moneda del documento: por euro si va en euros. */
   tasa: string | number
@@ -548,7 +560,7 @@ const lineaDeIva = (d: DatosDocumento) =>
 const lineaDeIgtf = (d: DatosDocumento) => mencionaImpuestos(d) && Number(d.igtf ?? 0) > 0
 
 function altoTotales(d: DatosDocumento): number {
-  if (!mencionaImpuestos(d)) return 15
+  if (!mencionaImpuestos(d)) return d.pagoCombinado ? 20 : 15
   const filas =
     2 + // subtotal, total
     (lineaDeIva(d) ? 1 : 0) +
@@ -575,12 +587,18 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
   }
 
   /*
-    LA NOTA DE ENTREGA, SOLO EL TOTAL. Christopher, 17/09/2026: «en la nota de
-    entrega únicamente dejemos el total; cualquier otra nota no debe ir». Sin
-    subtotal, sin flete aparte y sin la equivalencia en la otra moneda.
+    LA NOTA DE ENTREGA, SOLO EL TOTAL —Y EL PAGO COMBINADO, DESDE EL
+    23/10/2026—. Christopher, 17/09/2026: «en la nota de entrega únicamente
+    dejemos el total; cualquier otra nota no debe ir». Sin subtotal, sin
+    flete aparte y sin la equivalencia en la otra moneda. El pago combinado
+    es la única línea de más que se pidió después: no es un dato del
+    documento —como el subtotal o el flete—, es cómo se cobra.
   */
   if (!mencionaImpuestos(d)) {
     linea('TOTAL', conSimbolo(d.moneda, d.total), true)
+    if (d.pagoCombinado) {
+      linea('Pago combinado', `${conSimbolo('USD', d.pagoCombinado.usd)} + ${conSimbolo('VES', d.pagoCombinado.bs)}`)
+    }
     return fila
   }
 
