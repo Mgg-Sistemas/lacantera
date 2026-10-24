@@ -80,6 +80,12 @@ function datosDeNota(
     total: n.total,
     observacion: n.observacion,
     sello: n.estado === 'ANULADA' ? 'ANULADA' : n.estado === 'PENDIENTE' ? 'PENDIENTE' : null,
+    // Lo que se espera cobrar en cada moneda, cuando el cliente paga una
+    // parte en $ y otra en Bs. Christopher, 23/10/2026: pidió que esto se
+    // imprima en el papel, con los dos montos.
+    pagoCombinado: n.pago_combinado
+      ? { usd: n.monto_usd_combinado ?? 0, bs: n.monto_bs_combinado ?? 0 }
+      : null,
     empresa,
     emitidoPor,
   }
