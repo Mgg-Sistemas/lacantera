@@ -232,7 +232,7 @@ export function TableroNomina() {
                       : actual.estado === 'CALCULADA'
                         ? 'Revisar los recibos antes de aprobar'
                         : actual.estado === 'APROBADA'
-                          ? 'Tesorería tiene que ejecutar el pago'
+                          ? 'Falta marcarla como pagada'
                           : 'Cerrado'}
                   </p>
                 </>
