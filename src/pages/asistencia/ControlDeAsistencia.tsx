@@ -4,13 +4,12 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
-  LogIn,
-  LogOut,
   Pencil,
   Plus,
   ScanLine,
   Settings2,
   TriangleAlert,
+  UserCheck,
   X,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -58,10 +57,13 @@ import { Visitantes } from './Visitantes'
   Tres cosas en una pantalla, en el orden en que se usan:
 
   1. MARCAR. El escáner de carnet —un lector USB que teclea, o la cámara del
-     teléfono— o la persona elegida a mano. La base decide si es entrada o
-     salida y pone la hora; aquí solo se enseña grande lo que pasó.
-  2. HOY. Quién está adentro ahora mismo y quién ya salió. También lo que quedó
-     abierto de otros días, porque eso es lo que hay que revisar.
+     teléfono— o la persona elegida a mano. Christopher, 26/10/2026: «solo me
+     interesa saber que asistió» — un escaneo deja la jornada completa de una
+     vez, sin horario que medir. Volver a escanear el mismo día no hace nada
+     nuevo; aquí solo se enseña grande lo que pasó.
+  2. HOY. Quién asistió. También lo que quedó abierto de otros días —ya solo
+     pasa por una corrección a mano, no por faltar el segundo escaneo—, porque
+     eso es lo que hay que revisar.
   3. LOS VISITANTES. Gente de afuera que entró: quién sigue adentro, con su
      botón de salida, y las visitas del día elegido. No tocan la nómina.
   4. EL CALENDARIO. Un mes de un vistazo, y al tocar un día, su gente. Desde
@@ -331,7 +333,7 @@ function Marcador({ hoy }: { hoy: string }) {
     <Card className="mb-4">
       <CardHeader
         title="Marcar"
-        subtitle="Escanee el carnet, o elija a la persona. Se registra como entrada o salida, con la hora."
+        subtitle="Escanee el carnet, o elija a la persona. Un escaneo basta para dejar constancia de que asistió, con la hora."
       />
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div>
@@ -381,24 +383,17 @@ function Marcador({ hoy }: { hoy: string }) {
         <div
           className={cn(
             'rounded-card mt-4 flex flex-wrap items-center gap-4 border p-4',
-            ultima.accion === 'ENTRADA' ? 'border-success/40 bg-success-soft' : 'border-royal-600/30 bg-royal-600/8',
+            ultima.accion === 'ASISTIO' ? 'border-success/40 bg-success-soft' : 'border-royal-600/30 bg-royal-600/8',
           )}
         >
-          {ultima.accion === 'ENTRADA' ? <LogIn className="text-success size-8" /> : <LogOut className="text-royal-700 size-8" />}
+          <UserCheck className={cn('size-8', ultima.accion === 'ASISTIO' ? 'text-success' : 'text-royal-700')} />
           <div className="min-w-0 flex-1">
             <p className="text-ink/90 text-lg font-bold">
-              {ultima.accion === 'ENTRADA' ? 'Entrada' : 'Salida'} · {horaDe(ultima.momento)}
+              {ultima.accion === 'ASISTIO' ? 'Asistencia registrada' : 'Ya había marcado'} · {horaDe(ultima.momento)}
             </p>
             <p className="text-ink/70 truncate text-sm">
               {ultima.nombre} <span className="text-ink/45">· ficha {ultima.ficha}</span>
             </p>
-            {ultima.quedo_abierta_otra ? (
-              <p className="text-warning mt-1 flex items-center gap-1 text-xs">
-                <TriangleAlert className="size-3.5" />
-                Tenía una jornada abierta desde el {fmtFecha(ultima.abierta_desde?.slice(0, 10) ?? '')} a las{' '}
-                {horaDe(ultima.abierta_desde)} sin salida. Se abrió una nueva; la vieja hay que corregirla.
-              </p>
-            ) : null}
           </div>
           <Button size="sm" variant="ghost" icon={<X />} onClick={() => setUltima(null)} aria-label="Cerrar" />
         </div>
@@ -428,8 +423,17 @@ function Marcador({ hoy }: { hoy: string }) {
 function Hoy({ hoy }: { hoy: string }) {
   const { data, isPending, error } = useJornadasDeHoy(hoy)
   const vivas = (data ?? []).filter((j) => j.estado !== 'ANULADA')
-  const adentro = vivas.filter((j) => j.estado === 'ABIERTA' && j.fecha === hoy)
-  const salieron = vivas.filter((j) => j.estado === 'CERRADA' && j.fecha === hoy)
+  /*
+    UNA SOLA LISTA: QUIÉN ASISTIÓ HOY.
+
+    Desde el 26/10/2026 un escaneo cierra su propia jornada al instante, así
+    que ya no hay un "Dentro" que llenar —nadie se queda abierto— ni un
+    "Jornadas cerradas" que distinguir de otra cosa. Las dos eran la misma
+    lista. Si alguna sigue ABIERTA es porque alguien se la dejó así a mano al
+    corregirla, no porque falte el segundo escaneo; se marca aparte, no se
+    esconde.
+  */
+  const asistieron = vivas.filter((j) => j.fecha === hoy)
   const olvidadas = vivas.filter((j) => j.estado === 'ABIERTA' && j.fecha !== hoy)
 
   /*
@@ -463,7 +467,7 @@ function Hoy({ hoy }: { hoy: string }) {
         subtitle={
           isPending
             ? ''
-            : `${adentro.length} adentro · ${salieron.length} ya salieron${olvidadas.length ? ` · ${olvidadas.length} de otros días sin salida` : ''}`
+            : `${asistieron.length} asisti${asistieron.length === 1 ? 'ó' : 'eron'}${olvidadas.length ? ` · ${olvidadas.length} de otros días sin salida` : ''}`
         }
       />
       {isPending ? (
@@ -474,32 +478,18 @@ function Hoy({ hoy }: { hoy: string }) {
         <p className="text-ink/45 mt-4 text-sm">Sin marcaciones.</p>
       ) : (
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div>
-            <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Dentro</p>
-            {adentro.length === 0 ? (
-              <p className="text-ink/40 text-sm">Nadie.</p>
+          <div className="lg:col-span-2">
+            <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Asistieron hoy</p>
+            {asistieron.length === 0 ? (
+              <p className="text-ink/40 text-sm">Nadie todavía.</p>
             ) : (
-              <ul className="space-y-1">
-                {adentro.map((j) => (
-                  <li key={j.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="text-ink/85 truncate">{j.nombre}</span>
-                    <span className="text-ink/50 tabular shrink-0 text-xs">desde las {horaDe(j.entrada)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <div>
-            <p className="text-ink/55 mb-2 text-xs font-medium tracking-wide uppercase">Jornadas cerradas</p>
-            {salieron.length === 0 ? (
-              <p className="text-ink/40 text-sm">Sin registros.</p>
-            ) : (
-              <ul className="space-y-1">
-                {salieron.map((j) => (
+              <ul className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+                {asistieron.map((j) => (
                   <li key={j.id} className="flex items-center justify-between gap-2 text-sm">
                     <span className="text-ink/85 truncate">{j.nombre}</span>
                     <span className="text-ink/50 tabular shrink-0 text-xs">
-                      {horaDe(j.entrada)} → {horaDe(j.salida)} · {duracion(j.minutos)}
+                      {horaDe(j.entrada)}
+                      {j.estado === 'ABIERTA' ? ' · sin cerrar' : ''}
                     </span>
                   </li>
                 ))}
@@ -524,7 +514,8 @@ function Hoy({ hoy }: { hoy: string }) {
                     {diasOlvidados.length === 1
                       ? `Del ${fmtFecha(diasOlvidados[0][0])}.`
                       : `En ${diasOlvidados.length} días, del ${fmtFecha(diasOlvidados[diasOlvidados.length - 1][0])} al ${fmtFecha(diasOlvidados[0][0])}.`}{' '}
-                    Pasa cuando se marca la entrada y no la salida. Se corrigen desde el calendario.
+                    Desde que un escaneo cierra su propia jornada, esto solo pasa si alguien la dejó
+                    así a mano al corregirla. Se corrigen desde el calendario.
                   </span>
                 </span>
                 <ChevronRight
