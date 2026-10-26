@@ -9,9 +9,14 @@ import { desenvolver, rpc } from './rpc'
   entrada y salida, verlo en calendario, y que quien tenga el permiso pueda
   corregir las horas. La hora del escaneo la pone la base, no el teléfono.
 
-  LA UNIDAD ES LA JORNADA: una fila con la entrada y la salida juntas. Una
-  jornada con la salida en blanco está ABIERTA, y se queda así hasta que alguien
-  la cierre o la corrija: la entrada del día siguiente nunca la cierra.
+  LA UNIDAD ES LA JORNADA: una fila con la entrada y la salida juntas.
+
+  DESDE EL 26/10/2026, escanear deja la jornada completa de una vez —entrada y
+  salida con la misma hora—: «solo me interesa saber que asistió», no un
+  horario que medir. Quien vuelve a escanear ese mismo día no abre nada nuevo:
+  se le avisa que ya había marcado. Una jornada sigue pudiendo quedar ABIERTA
+  —salida en blanco— solo si alguien se la deja así a mano al corregirla desde
+  el calendario; ya no es lo que pasa al escanear.
 */
 
 export interface Jornada {
@@ -48,17 +53,21 @@ export interface AjustesDeAsistencia {
   minutos_doble_marca: number
 }
 
-/** Lo que responde la base al marcar. */
+/**
+ * Lo que responde la base al marcar.
+ *
+ * Desde el 26/10/2026 un escaneo deja la jornada completa de una vez —entrada
+ * y salida con la misma hora—: no hay nada que medir, solo que asistió.
+ * `ASISTIO` es la primera marca del día; `YA_MARCADA` es cualquier escaneo de
+ * después, con la hora de la primera.
+ */
 export interface Marcada {
-  accion: 'ENTRADA' | 'SALIDA'
+  accion: 'ASISTIO' | 'YA_MARCADA'
   jornada_id: number
   momento: string
   empleado_id: number
   nombre: string
   ficha: string
-  /** Había una jornada vieja abierta que se pasó del plazo: se abrió otra y esa sigue abierta. */
-  quedo_abierta_otra: boolean
-  abierta_desde: string | null
 }
 
 export function useJornadas(desde: string, hasta: string) {
