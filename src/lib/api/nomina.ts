@@ -719,9 +719,10 @@ export function enLista(nombres: readonly string[]): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Pagar la nómina mueve dinero y avisa; calcularla cambia los recibos. Se
- * invalida también tesorería y los avisos porque el pago escribe en el libro
- * y emite la notificación que pidió el gerente.
+ * Calcular, aprobar, anular, devolver o pagar: todas cambian el período y
+ * emiten su notificación. Tesorería no se usa por ahora (26/10/2026) —pagar
+ * ya no exige cuenta ni mueve su libro—, así que esta acción ya no invalida
+ * esa caché.
  */
 function useAccionNomina<A>(fn: (args: A) => Promise<unknown>) {
   const qc = useQueryClient()
@@ -729,7 +730,6 @@ function useAccionNomina<A>(fn: (args: A) => Promise<unknown>) {
     mutationFn: fn,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['nomina'] })
-      void qc.invalidateQueries({ queryKey: ['tesoreria'] })
       void qc.invalidateQueries({ queryKey: ['notificaciones'] })
       // Tocar una ficha puede sacarla o meterla en el tabulador: quien tenga
       // esa pantalla abierta vería un botón de sincronizar que ya no hace nada,
@@ -1601,12 +1601,17 @@ export function useAnularPeriodo() {
   )
 }
 
+/**
+ * Marca el período como pagado. La cuenta es opcional —Tesorería no se usa
+ * por ahora—: sin ella, no se crea ningún movimiento ni se descuenta saldo
+ * de nada, el período pasa derecho a Pagada.
+ */
 export function usePagarNomina() {
   return useAccionNomina(
-    (p: { periodo_id: number; cuenta_id: number; referencia?: string; fecha?: string }) =>
-      rpc<number>('pagar_nomina', {
+    (p: { periodo_id: number; cuenta_id?: number; referencia?: string; fecha?: string }) =>
+      rpc<number | null>('pagar_nomina', {
         p_periodo_id: p.periodo_id,
-        p_cuenta_id: p.cuenta_id,
+        p_cuenta_id: p.cuenta_id ?? null,
         p_referencia: p.referencia || null,
         p_fecha: p.fecha || null,
       }),
