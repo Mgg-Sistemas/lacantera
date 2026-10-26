@@ -10,7 +10,6 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
-import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
@@ -29,11 +28,10 @@ import {
 } from '@/lib/api/nomina'
 import type { Periodo } from '@/lib/api/nomina'
 import { useDevolverNomina, useRefrescarTasaDeNomina } from '@/lib/api/nomina'
-import { useCuentas } from '@/lib/api/tesoreria'
 import { hoyEnCaracas, useTasaDeFecha, useTasaVigente } from '@/lib/api/tasas'
 
 import { useMisRoles } from '@/lib/api/catalogo'
-import { bolivares, dinero, dolares, fecha } from '@/lib/formato'
+import { bolivares, dolares, fecha } from '@/lib/formato'
 
 /**
  * El aviso de que el período va con una tasa que ya no es la de hoy, o `null`.
@@ -106,8 +104,7 @@ function siguiente(p: Periodo): string {
     return 'Cargue las novedades del período —horas extra, faltas, bonos— y calcule.'
   if (p.estado === 'CALCULADA')
     return 'Revise los recibos. Al aprobar, la nómina queda lista para que tesorería pague.'
-  if (p.estado === 'APROBADA')
-    return 'Se paga desde una cuenta y el saldo baja. Si la cuenta no tiene saldo registrado, sale igual y tesorería recibe el aviso.'
+  if (p.estado === 'APROBADA') return 'Lista para pagar. Al confirmar el pago, el período queda cerrado.'
   if (p.estado === 'PAGADA') return 'Cerrada. Los recibos quedan como comprobante.'
   return p.motivo_anulacion ?? 'Anulada.'
 }
@@ -147,8 +144,16 @@ function avisoDeFechas(tipo: string, desde: string, hasta: string): string | nul
 
 export function Procesos() {
   const { data, isPending, error } = usePeriodos()
-  const { data: cuentas } = useCuentas(true)
   const { puede } = useMisRoles()
+  /*
+    LAS ANULADAS NO ESTORBAN LA LISTA POR DEFECTO.
+
+    Christopher, 26/10/2026: la lista siempre mostraba todos los períodos,
+    anulados incluidos, sin forma de ocultarlos. Mismo patrón que ya usa
+    Gastos: se ocultan solas y una casilla las trae de vuelta para cuando
+    haga falta el histórico.
+  */
+  const [verAnuladas, setVerAnuladas] = useState(false)
 
   const abrir = useAbrirPeriodo()
   const calcular = useCalcularNomina()
@@ -168,7 +173,7 @@ export function Procesos() {
     descripcion: string
   }>(null)
   const [pagando, setPagando] = useState<Periodo | null>(null)
-  const [pago, setPago] = useState({ cuenta: '', referencia: '', fecha: '' })
+  const [pago, setPago] = useState({ referencia: '', fecha: '' })
   const [anulando, setAnulando] = useState<Periodo | null>(null)
   const [motivo, setMotivo] = useState('')
 
@@ -212,6 +217,8 @@ export function Procesos() {
     mundo menos administración.
   */
   const puedePagar = puede('RRHH', 'GERENTE_GENERAL')
+
+  const anuladasOcultas = (data ?? []).filter((p) => p.estado === 'ANULADA').length
 
   return (
     <>
@@ -259,8 +266,25 @@ export function Procesos() {
         </Card>
       ) : null}
 
+      {data && data.length > 0 ? (
+        <label className="text-ink/60 mb-4 flex w-fit cursor-pointer items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="accent-royal-600 size-4"
+            checked={verAnuladas}
+            onChange={(e) => setVerAnuladas(e.target.checked)}
+          />
+          Mostrar anuladas
+          {!verAnuladas && anuladasOcultas > 0 ? (
+            <span className="text-ink/35">({anuladasOcultas})</span>
+          ) : null}
+        </label>
+      ) : null}
+
       <div className="space-y-4">
-        {(data ?? []).map((p) => {
+        {(data ?? [])
+          .filter((p) => verAnuladas || p.estado !== 'ANULADA')
+          .map((p) => {
           const etiqueta = ESTADOS_PERIODO[p.estado]
           return (
             <Card key={p.id}>
@@ -385,7 +409,7 @@ export function Procesos() {
                       icon={<Wallet />}
                       onClick={() => {
                         setPagando(p)
-                        setPago({ cuenta: '', referencia: '', fecha: '' })
+                        setPago({ referencia: '', fecha: '' })
                       }}
                     >
                       Pagar
@@ -548,11 +572,10 @@ export function Procesos() {
                 Cancelar
               </Button>
               <Button
-                disabled={pagar.isPending || !pago.cuenta}
+                disabled={pagar.isPending}
                 onClick={async () => {
                   await pagar.mutateAsync({
                     periodo_id: pagando.id,
-                    cuenta_id: Number(pago.cuenta),
                     referencia: pago.referencia,
                     fecha: pago.fecha,
                   })
@@ -565,19 +588,8 @@ export function Procesos() {
           }
         >
           <div className="space-y-4">
-            <SelectBuscable
-              label="Cuenta"
-              vacio="Seleccione la cuenta"
-              valor={pago.cuenta}
-              onCambio={(v) => setPago((p) => ({ ...p, cuenta: v }))}
-              opciones={(cuentas ?? []).map((c) => ({
-                valor: String(c.id),
-                etiqueta: `${c.nombre} — ${dinero(c.moneda, c.saldo)}`,
-              }))}
-              hint="Los recibos están en bolívares. Desde una cuenta en divisas sale el equivalente a la tasa del período, la misma con la que se calculó. La nómina no espera al saldo: si la cuenta no tiene fondos registrados, el pago sale igual, la cuenta queda en negativo y a tesorería le llega el aviso para registrar el ingreso o el saldo de apertura."
-            />
             <Input
-              label="Referencia"
+              label="Referencia (opcional)"
               value={pago.referencia}
               onChange={(e) => setPago((p) => ({ ...p, referencia: e.target.value }))}
             />
