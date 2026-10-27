@@ -64,6 +64,8 @@ import { ModalNotaDeEntrega } from '@/pages/salidas/ModalNotaDeEntrega'
 import { ListaDeCamiones, ModalCamiones } from './CamionesDeLaNota'
 import { ModalEditarNotaEntrega } from './ModalEditarNotaEntrega'
 import { ModalReporteDespacho } from './ModalReporteDespacho'
+import { ModalReporteVentasWhatsapp } from './ModalReporteVentasWhatsapp'
+import { textoDelReporteVentasWhatsapp } from '@/lib/ficha/reporteVentasWhatsapp'
 /*
   Los renglones, el IVA y sus totales se quedaron en Ventas: son los mismos que
   arma una cotización, y partirlos en dos copias sería tener dos formas de sumar
@@ -280,6 +282,8 @@ export function NotasDeEntrega() {
   const [reporte, setReporte] = useState<PdfArmado | null>(null)
   const [armandoReporte, setArmandoReporte] = useState(false)
   const [armandoLote, setArmandoLote] = useState(false)
+  const [reporteWhatsapp, setReporteWhatsapp] = useState<string | null>(null)
+  const [armandoWhatsapp, setArmandoWhatsapp] = useState(false)
 
   const [clienteId, setClienteId] = useState('')
   const [almacenId, setAlmacenId] = useState('')
@@ -511,53 +515,54 @@ export function NotasDeEntrega() {
     }
   }
 
+  // Calcula el alcance y el total acumulado por material según los filtros aplicados.
+  const resumenParaReporte = async () => {
+    const alcance =
+      [
+        busca.trim() ? `búsqueda «${busca.trim()}»` : '',
+        estado ? `estado ${ETIQUETA[estado] ?? estado}` : '',
+        monedaFiltro
+          ? `moneda ${monedas.data?.find((m) => m.valor === monedaFiltro)?.etiqueta ?? monedaFiltro}`
+          : '',
+        rango.desde || rango.hasta
+          ? `del ${rango.desde ? fecha(rango.desde) : 'inicio'} al ${rango.hasta ? fecha(rango.hasta) : 'hoy'}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' · ') || `Las ${data?.length ?? 0} más recientes`
+
+    const vigentes = (data ?? []).filter((n) => n.estado !== 'ANULADA')
+    const porNota = new Map(vigentes.map((n) => [n.id, n]))
+    const renglones = await renglonesDeNotas(vigentes.map((n) => n.id))
+
+    const porArticulo = new Map<string, MaterialDespachado>()
+    for (const r of renglones) {
+      const nota = porNota.get(r.nota_id)
+      if (!nota) continue
+      const subtotal = Number(r.subtotal)
+      const subtotalBs = subtotal * Number(nota.tasa)
+      const subtotalUsd = subtotalBs / Number(nota.tasa_usd)
+      const clave = `${r.articulo}··${r.unidad}`
+      const previo = porArticulo.get(clave)
+      porArticulo.set(clave, {
+        articulo: r.articulo,
+        unidad: r.unidad,
+        cantidad: (previo?.cantidad ?? 0) + Number(r.cantidad),
+        subtotalBs: (previo?.subtotalBs ?? 0) + subtotalBs,
+        subtotalUsd: (previo?.subtotalUsd ?? 0) + subtotalUsd,
+      })
+    }
+
+    return { alcance, materiales: [...porArticulo.values()] }
+  }
+
   // El reporte junta las notas tal como están filtradas en pantalla, cada una
   // con el total en su propia moneda y su equivalente en Bs y en $ a la tasa
   // que quedó congelada el día en que se emitió — no la de hoy.
   const verReporte = async () => {
     setArmandoReporte(true)
     try {
-      const alcance = [
-        busca.trim() ? `búsqueda «${busca.trim()}»` : '',
-        estado ? `estado ${ETIQUETA[estado] ?? estado}` : '',
-        monedaFiltro
-          ? `moneda ${monedas.data?.find((m) => m.valor === monedaFiltro)?.etiqueta ?? monedaFiltro}`
-          : '',
-        rango.desde || rango.hasta ? `del ${rango.desde ? fecha(rango.desde) : 'inicio'} al ${rango.hasta ? fecha(rango.hasta) : 'hoy'}` : '',
-      ]
-        .filter(Boolean)
-        .join(' · ') || `Las ${data?.length ?? 0} más recientes`
-
-      const vigentes = (data ?? []).filter((n) => n.estado !== 'ANULADA')
-      const porNota = new Map(vigentes.map((n) => [n.id, n]))
-      const renglones = await renglonesDeNotas(vigentes.map((n) => n.id))
-
-      /*
-        QUÉ MATERIAL SE DESPACHÓ, SUMADO EN BS Y EN $.
-
-        El renglón solo guarda su subtotal en la moneda de la nota; se
-        convierte con la tasa de ESA nota, no con una tasa general, igual
-        que ya hace el total de la planilla — es la misma regla de que la
-        cifra del papel sea siempre la de la fila que la originó.
-      */
-      const porArticulo = new Map<string, MaterialDespachado>()
-      for (const r of renglones) {
-        const nota = porNota.get(r.nota_id)
-        if (!nota) continue
-        const subtotal = Number(r.subtotal)
-        const subtotalBs = subtotal * Number(nota.tasa)
-        const subtotalUsd = subtotalBs / Number(nota.tasa_usd)
-        const clave = `${r.articulo}··${r.unidad}`
-        const previo = porArticulo.get(clave)
-        porArticulo.set(clave, {
-          articulo: r.articulo,
-          unidad: r.unidad,
-          cantidad: (previo?.cantidad ?? 0) + Number(r.cantidad),
-          subtotalBs: (previo?.subtotalBs ?? 0) + subtotalBs,
-          subtotalUsd: (previo?.subtotalUsd ?? 0) + subtotalUsd,
-        })
-      }
-
+      const { alcance, materiales } = await resumenParaReporte()
       setReporte(
         await armarReporteNotasDeEntrega({
           empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
@@ -565,11 +570,30 @@ export function NotasDeEntrega() {
           momento: new Date(),
           alcance,
           notas: data ?? [],
-          materiales: [...porArticulo.values()],
+          materiales,
         }),
       )
     } finally {
       setArmandoReporte(false)
+    }
+  }
+
+  const verReporteWhatsapp = async () => {
+    setArmandoWhatsapp(true)
+    try {
+      const { alcance, materiales } = await resumenParaReporte()
+      setReporteWhatsapp(
+        textoDelReporteVentasWhatsapp({
+          empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+          emitidoPor: yo?.nombre ?? '',
+          momento: new Date(),
+          alcance,
+          notas: data ?? [],
+          materiales,
+        }),
+      )
+    } finally {
+      setArmandoWhatsapp(false)
     }
   }
 
@@ -582,6 +606,14 @@ export function NotasDeEntrega() {
           <>
             <Button variant="outline" icon={<Truck />} onClick={() => setCatalogo(true)}>
               Choferes / Vehículos
+            </Button>
+            <Button
+              variant="outline"
+              icon={<MessageCircle />}
+              disabled={!data || data.length === 0 || armandoWhatsapp}
+              onClick={() => void verReporteWhatsapp()}
+            >
+              {armandoWhatsapp ? 'Armando…' : 'Reporte WhatsApp'}
             </Button>
             <Button
               variant="outline"
@@ -2044,6 +2076,13 @@ export function NotasDeEntrega() {
         nombreArchivo={reporte?.nombre ?? ""}
         titulo="Reporte de notas de entrega"
       />
+
+      {reporteWhatsapp ? (
+        <ModalReporteVentasWhatsapp
+          texto={reporteWhatsapp}
+          onCerrar={() => setReporteWhatsapp(null)}
+        />
+      ) : null}
 
       {verReporteDespacho ? (
         <ModalReporteDespacho
