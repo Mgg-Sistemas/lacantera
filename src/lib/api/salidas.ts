@@ -287,7 +287,13 @@ export function useAprobarSolicitud() {
 /** La orden de la que salió una nota, o nula si la nota es de una salida directa. */
 export async function leerOrdenDeLaNota(nota: string): Promise<SolicitudDeSalida | null> {
   return desenvolver<SolicitudDeSalida | null>(
-    await supabase.from('solicitudes_salida').select('*').eq('nota_salida', nota).maybeSingle(),
+    await supabase
+      .from('solicitudes_salida')
+      .select(
+        '*, almacen:almacenes(nombre), renglones:solicitud_salida_renglones(*, articulo:articulos(codigo, nombre, unidad))',
+      )
+      .eq('nota_salida', nota)
+      .maybeSingle(),
   )
 }
 

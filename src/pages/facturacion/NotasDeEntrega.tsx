@@ -59,8 +59,14 @@ import {
   type RenglonGuardado,
   type SolicitudDeDespacho,
 } from '@/lib/api/ventas'
-import { useCompletarNotaDeEntrega, useGuardarCamionesDeNota } from '@/lib/api/salidas'
+import {
+  useCompletarNotaDeEntrega,
+  useGuardarCamionesDeNota,
+  leerOrdenDeLaNota,
+  type SolicitudDeSalida,
+} from '@/lib/api/salidas'
 import { ModalNotaDeEntrega } from '@/pages/salidas/ModalNotaDeEntrega'
+import { ModalReporteSalida } from '@/pages/salidas/ModalReporteSalida'
 import { ListaDeCamiones, ModalCamiones } from './CamionesDeLaNota'
 import { ModalEditarNotaEntrega } from './ModalEditarNotaEntrega'
 import { ModalReporteDespacho } from './ModalReporteDespacho'
@@ -211,6 +217,18 @@ export function NotasDeEntrega() {
     solicitudNumero: string | null
     pedidoPor: string | null
     aprobadoPor: string | null
+  } | null>(null)
+  /*
+    UNA NOTA TAMBIÉN PUEDE NACER DE UNA SALIDA (Pedir→Aprobar→Entregar), NO
+    SOLO DE UN DESPACHO PEDIDO. `solicitudes_despacho` no tiene esa solicitud
+    —por eso el botón de abajo cae aquí cuando no la encuentra ahí—, y las
+    fotos de esa salida viven con origen 'SALIDA', no 'DESPACHO': por eso se
+    enseña con `ModalReporteSalida`, ya probado, y no estirando el de despacho.
+  */
+  const [verReporteSalida, setVerReporteSalida] = useState<{
+    s: SolicitudDeSalida
+    numeroNota: string
+    destino: string | null
   } | null>(null)
   const [catalogo, setCatalogo] = useState(false)
   const nombreDe = (uid: string | null) =>
@@ -1612,13 +1630,37 @@ export function NotasDeEntrega() {
                 variant="outline"
                 icon={<MessageCircle />}
                 onClick={() => {
-                  const s = (solicitudes.data ?? []).find((x) => x.nota_id === detalle.id)
-                  setVerReporteDespacho({
-                    notaId: detalle.id,
-                    solicitudNumero: s?.numero ?? null,
-                    pedidoPor: s ? nombreDe(s.pedida_por) : null,
-                    aprobadoPor: s ? nombreDe(s.resuelta_por) : null,
-                  })
+                  void (async () => {
+                    const s = (solicitudes.data ?? []).find((x) => x.nota_id === detalle.id)
+                    if (s) {
+                      setVerReporteDespacho({
+                        notaId: detalle.id,
+                        solicitudNumero: s.numero,
+                        pedidoPor: nombreDe(s.pedida_por),
+                        aprobadoPor: nombreDe(s.resuelta_por),
+                      })
+                      return
+                    }
+
+                    const orden = detalle.nota_salida
+                      ? await leerOrdenDeLaNota(detalle.nota_salida).catch(() => null)
+                      : null
+                    if (orden) {
+                      setVerReporteSalida({
+                        s: orden,
+                        numeroNota: detalle.nota_salida as string,
+                        destino: detalle.cliente ?? null,
+                      })
+                      return
+                    }
+
+                    setVerReporteDespacho({
+                      notaId: detalle.id,
+                      solicitudNumero: null,
+                      pedidoPor: null,
+                      aprobadoPor: null,
+                    })
+                  })()
                 }}
               >
                 Reporte
@@ -2092,6 +2134,19 @@ export function NotasDeEntrega() {
           pedidoPor={verReporteDespacho.pedidoPor}
           aprobadoPor={verReporteDespacho.aprobadoPor}
           onCerrar={() => setVerReporteDespacho(null)}
+        />
+      ) : null}
+
+      {verReporteSalida ? (
+        <ModalReporteSalida
+          s={verReporteSalida.s}
+          numeroNota={verReporteSalida.numeroNota}
+          razonSocial={empresa?.razon_social ?? ''}
+          destino={verReporteSalida.destino}
+          pedidoPor={nombreDe(verReporteSalida.s.pedida_por)}
+          aprobadoPor={nombreDe(verReporteSalida.s.aprobada_por)}
+          entregadoPor={nombreDe(verReporteSalida.s.entregada_por)}
+          onCerrar={() => setVerReporteSalida(null)}
         />
       ) : null}
     </>
