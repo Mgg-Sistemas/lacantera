@@ -575,6 +575,7 @@ export function Solicitudes() {
           numeroNota={verReporteSalida.notaSalida}
           razonSocial={empresa?.razon_social ?? ''}
           destino={paraQuien(verReporteSalida.s)}
+          camiones={verReporteSalida.s.vehiculo ? [{ vehiculo: verReporteSalida.s.vehiculo, chofer: null }] : []}
           pedidoPor={nombreDe(verReporteSalida.s.pedida_por)}
           aprobadoPor={nombreDe(verReporteSalida.s.aprobada_por)}
           entregadoPor={nombreDe(verReporteSalida.s.entregada_por)}

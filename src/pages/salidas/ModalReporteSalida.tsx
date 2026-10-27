@@ -18,6 +18,7 @@ export function ModalReporteSalida({
   numeroNota,
   razonSocial,
   destino,
+  camiones,
   pedidoPor,
   aprobadoPor,
   entregadoPor,
@@ -28,6 +29,13 @@ export function ModalReporteSalida({
   numeroNota: string
   razonSocial: string
   destino: string | null
+  /**
+   * Los camiones de verdad, los de la NOTA —no el `vehiculo` de la orden,
+   * que es lo que se escribió a mano al pedir y puede no coincidir con lo
+   * que de verdad se cargó—. Si quien llama todavía no tiene la nota —justo
+   * al entregar, antes de completarla—, pasa un arreglo vacío.
+   */
+  camiones: Array<{ vehiculo: string | null; chofer: string | null }>
   pedidoPor: string | null
   aprobadoPor: string | null
   entregadoPor: string | null
@@ -49,7 +57,7 @@ export function ModalReporteSalida({
     fecha: s.pedida_en,
     almacen: s.almacen?.nombre ?? '—',
     destino,
-    vehiculo: s.vehiculo,
+    camiones,
     renglones: (s.renglones ?? []).map((r) => ({
       cantidad: r.cantidad,
       unidad: r.articulo?.unidad ?? r.presentacion ?? '',
