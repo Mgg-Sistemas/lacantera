@@ -229,6 +229,7 @@ export function NotasDeEntrega() {
     s: SolicitudDeSalida
     numeroNota: string
     destino: string | null
+    camiones: Array<{ vehiculo: string | null; chofer: string | null }>
   } | null>(null)
   const [catalogo, setCatalogo] = useState(false)
   const nombreDe = (uid: string | null) =>
@@ -1650,6 +1651,12 @@ export function NotasDeEntrega() {
                         s: orden,
                         numeroNota: detalle.nota_salida as string,
                         destino: detalle.cliente ?? null,
+                        camiones:
+                          detalle.camiones.length > 0
+                            ? detalle.camiones.map((c) => ({ vehiculo: c.vehiculo, chofer: c.chofer }))
+                            : detalle.vehiculo
+                              ? [{ vehiculo: detalle.vehiculo, chofer: detalle.chofer }]
+                              : [],
                       })
                       return
                     }
@@ -2143,6 +2150,7 @@ export function NotasDeEntrega() {
           numeroNota={verReporteSalida.numeroNota}
           razonSocial={empresa?.razon_social ?? ''}
           destino={verReporteSalida.destino}
+          camiones={verReporteSalida.camiones}
           pedidoPor={nombreDe(verReporteSalida.s.pedida_por)}
           aprobadoPor={nombreDe(verReporteSalida.s.aprobada_por)}
           entregadoPor={nombreDe(verReporteSalida.s.entregada_por)}
