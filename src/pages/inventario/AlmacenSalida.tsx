@@ -179,6 +179,7 @@ export function AlmacenSalida() {
           numeroNota={reporte.notaSalida}
           razonSocial={empresa?.razon_social ?? ''}
           destino={paraQuien(reporte.s)}
+          camiones={reporte.s.vehiculo ? [{ vehiculo: reporte.s.vehiculo, chofer: null }] : []}
           pedidoPor={nombreDe(reporte.s.pedida_por)}
           aprobadoPor={nombreDe(reporte.s.aprobada_por)}
           entregadoPor={nombreDe(reporte.s.entregada_por)}
