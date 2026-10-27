@@ -22,7 +22,8 @@ export interface DatosReporteSalida {
   almacen: string
   /** Ya resuelto: el grupo interno, o «X, de fuera de la empresa · responde Y». */
   destino: string | null
-  vehiculo: string | null
+  /** Un camión por salida, o varios si se cargó en más de uno —igual que el reporte del despacho. */
+  camiones: Array<{ vehiculo: string | null; chofer: string | null }>
   renglones: RenglonDelReporteSalida[]
   pedidoPor: string | null
   aprobadoPor: string | null
@@ -56,7 +57,14 @@ export function textoDelReporteSalida(d: DatosReporteSalida): string {
 
   lineas.push(`🏭 *Sale de:* ${d.almacen}`)
   lineas.push(`🎯 *Para:* ${d.destino ?? 'Sin destino registrado'}`)
-  if (d.vehiculo) lineas.push(`🚚 *Vehículo:* ${d.vehiculo}`)
+  if (d.camiones.length === 0) {
+    lineas.push('🚚 *Vehículo:* Sin registrar')
+  } else {
+    for (const c of d.camiones) {
+      const quien = [c.vehiculo ?? 'Sin placa', c.chofer].filter(Boolean).join(' · ')
+      lineas.push(`🚚 *Vehículo:* ${quien}`)
+    }
+  }
   lineas.push('')
 
   lineas.push('🧱 *Material:*')
