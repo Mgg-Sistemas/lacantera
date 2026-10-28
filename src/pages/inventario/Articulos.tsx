@@ -40,6 +40,7 @@ import { useMovimientos } from '@/lib/api/inventario'
 import { fecha } from '@/lib/formato'
 import { densidadEnPalabras, densidadLegible } from '@/lib/medidas'
 import { useFiltroEnLaDireccion } from '@/lib/enLaDireccion'
+import { ModalEditarArticulo } from './ModalEditarArticulo'
 
 const nuevo = {
   id: 0,
@@ -141,6 +142,15 @@ export function Articulos() {
   const [busqueda, setBusqueda] = useFiltroEnLaDireccion()
   const [categoria, setCategoria] = useState('')
   const [form, setForm] = useState<typeof nuevo | null>(null)
+  /*
+    CORREGIR UN ARTÍCULO QUE YA EXISTE VIVE EN SU PROPIO COMPONENTE desde el
+    28/10/2026, compartido con el botón «Editar» que Existencias ofrece solo a
+    ADMIN (ver `ModalEditarArticulo.tsx`). El `form` de aquí abajo se quedó
+    solo para «Nuevo artículo»: con el lápiz nunca más queda con `id` puesto,
+    así que todas sus ramas `form.id ? … : …` siguen caminando por el lado de
+    crear, como ya hacían.
+  */
+  const [editando, setEditando] = useState<Articulo | null>(null)
 
   /*
     LO DESACTIVADO NO SE VE, PERO SE PUEDE TRAER DE VUELTA.
@@ -415,31 +425,7 @@ export function Articulos() {
                           variant="ghost"
                           icon={<Pencil />}
                           aria-label={`Editar ${a.nombre}`}
-                          onClick={() =>
-                            setForm({
-                              id: a.id,
-                              confirmado: false,
-                              codigo: a.codigo,
-                              nombre: a.nombre,
-                              categoria: a.categoria,
-                              unidad: a.unidad,
-                              descripcion: a.descripcion ?? '',
-                              inventariable: a.inventariable,
-                              reparable: a.reparable,
-                              stock_minimo: String(a.stock_minimo),
-                              modo_entrega: a.modo_entrega,
-                              presentacion: a.presentacion ?? '',
-                              marca: a.marca ?? '',
-                              numero_parte: a.numero_parte ?? '',
-                              unidades_por_presentacion:
-                                a.unidades_por_presentacion == null
-                                  ? ''
-                                  : String(Number(a.unidades_por_presentacion)),
-                              densidad_ton_m3:
-                                a.densidad_ton_m3 == null ? '' : String(Number(a.densidad_ton_m3)),
-                              motivo_densidad: '',
-                            })
-                          }
+                          onClick={() => setEditando(a)}
                         />
                         {/* Borrar solo sale si nada lo ha tocado todavía. En
                             cuanto aparece en una orden o un movimiento, la base
@@ -1081,6 +1067,10 @@ export function Articulos() {
       ) : null}
 
       {gestionando ? <Categorias onCerrar={() => setGestionando(false)} /> : null}
+
+      {editando ? (
+        <ModalEditarArticulo articulo={editando} onCerrar={() => setEditando(null)} />
+      ) : null}
     </>
   )
 }

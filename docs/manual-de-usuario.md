@@ -1187,6 +1187,7 @@ La segunda es **poder registrar**, y no la decide una sola cosa:
 | **Categorías**, en el catálogo | **Control total** sobre Inventario |
 | **Corregir el costo** | Una casilla propia de la matriz de permisos (13.1), aparte del rol y del nivel |
 | **Eliminar duplicado** | Solo administración |
+| **Editar**, en cada fila de Existencias | Solo administración |
 
 **Los botones de almacén cuelgan del rol, no del nivel de permiso.** Quien tiene **Control total** sobre Inventario pero no el rol Almacén ve las pantallas y no ve ninguno de esos botones, tampoco el del acta. No es un error.
 
@@ -1340,6 +1341,10 @@ Solo dentro de **Ver dónde está**, y en los artículos que se llevan en varios
 #### Eliminar duplicado
 
 Solo para administración, en la vista del total, para el artículo que se cargó dos veces. **Esto no genera una salida. Si el artículo nunca tuvo movimiento se borra entero; si ya tuvo, reversa cada movimiento (una corrección, no un consumo) y lo desactiva, dejando la existencia en cero. Si figura en una factura, una nota u otro documento, no se puede eliminar: se desactiva.** El motivo queda en la auditoría.
+
+#### Editar
+
+Solo para administración, en cualquier fila de Existencias —en el total o dentro de un almacén—. Abre la misma ficha de corrección que ya existe en **Catálogo de artículos** (7.8): nombre, categoría, unidad, mínimo y lo demás. Es un atajo para cuando el error se nota aquí, en vez de ir a buscarlo en el catálogo. **Cambiar la categoría no cambia el código**: un artículo cargado con el prefijo de otra categoría se corrige con nombre y categoría nuevos, pero el código sigue igual salvo que nunca haya salido en ningún papel —ahí es donde ayuda **Ponerle el código que le toca**, en la misma ficha (7.8).
 
 #### La producción entra valorada en cero
 
