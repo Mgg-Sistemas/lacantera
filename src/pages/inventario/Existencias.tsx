@@ -7,6 +7,7 @@ import {
   MapPin,
   MoveRight,
   PackagePlus,
+  Pencil,
   Plus,
   Printer,
   Scale,
@@ -41,6 +42,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalAlTaller } from './ModalAlTaller'
 import { ModalCambioDeDueno } from './ModalCambioDeDueno'
+import { ModalEditarArticulo } from './ModalEditarArticulo'
 import {
   densidadesDeArticulos,
   conSusFormas,
@@ -51,6 +53,7 @@ import {
   usePresentacionesDeArticulo,
   useTodasLasPresentaciones,
 } from '@/lib/api/catalogo'
+import type { Articulo } from '@/lib/api/catalogo'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
 import { ModalTrasvase } from './ModalTrasvase'
 import { ModalTraslado } from './ModalTraslado'
@@ -360,6 +363,16 @@ export function Existencias() {
   const [duplicando, setDuplicando] = useState<ExistenciaTotal | null>(null)
   const [motivoDuplicado, setMotivoDuplicado] = useState('')
   const eliminarDuplicado = useEliminarArticuloDuplicado()
+  /*
+    CORREGIR EL ARTÍCULO DESDE AQUÍ, SOLO ADMIN.
+    Christopher, 28/10/2026, con SAL cargada como INSUMO en vez de VÍVERES:
+    «tengo varios artículos que fueron cargados con mala categoría o mal el
+    nombre». Esto es donde se nota el error —no en Catálogo—, así que aquí se
+    corrige, con el mismo formulario y la misma RPC de siempre (ver
+    `ModalEditarArticulo.tsx`). Catálogo sigue abierto a COMPRAS/ALMACÉN como
+    hasta hoy; este atajo es solo un camino más corto, y solo para ADMIN.
+  */
+  const [editando, setEditando] = useState<Articulo | null>(null)
   /* Que fila se esta corrigiendo de valoracion. Va aparte de `modal` porque no
      comparte ni el formulario ni el permiso con las cuatro acciones de almacen. */
   const [costo, setCosto] = useState<Existencia | null>(null)
@@ -1095,6 +1108,19 @@ export function Existencias() {
                               <Button
                                 size="sm"
                                 variant="ghost"
+                                icon={<Pencil />}
+                                onClick={() => {
+                                  const a = (articulos ?? []).find((x) => x.id === total!.articulo_id)
+                                  if (a) setEditando(a)
+                                }}
+                              >
+                                Editar
+                              </Button>
+                            ) : null}
+                            {puede('ADMIN') ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
                                 icon={<Trash2 />}
                                 onClick={() => setDuplicando(total)}
                               >
@@ -1176,6 +1202,20 @@ export function Existencias() {
                               </Button>
                             ) : null}
                           </>
+                        ) : null}
+
+                        {!enTotal && puede('ADMIN') ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={<Pencil />}
+                            onClick={() => {
+                              const a = (articulos ?? []).find((x) => x.id === fila!.articulo_id)
+                              if (a) setEditando(a)
+                            }}
+                          >
+                            Editar
+                          </Button>
                         ) : null}
 
                         {/*
@@ -1300,6 +1340,10 @@ export function Existencias() {
           propio archivo: esta pantalla ya tiene cuatro modales dentro. */}
       {cambiandoDueno ? (
         <ModalCambioDeDueno fila={cambiandoDueno} onCerrar={() => setCambiandoDueno(null)} />
+      ) : null}
+
+      {editando ? (
+        <ModalEditarArticulo articulo={editando} onCerrar={() => setEditando(null)} />
       ) : null}
 
       <ModalAlTaller
