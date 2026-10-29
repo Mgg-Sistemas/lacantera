@@ -78,6 +78,7 @@ export function ModalReporteDespacho({
         pedidoPor,
         aprobadoPor,
         fotos: fotosDeEsteDespacho.length,
+        observacion: nota.data.observacion,
       })
     : ''
 

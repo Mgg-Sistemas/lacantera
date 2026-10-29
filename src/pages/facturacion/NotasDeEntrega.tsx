@@ -1763,6 +1763,13 @@ export function NotasDeEntrega() {
             <p className="text-danger mt-3 text-sm">Anulada: {detalle.motivo_anulacion}</p>
           ) : null}
 
+          {detalle.observacion ? (
+            <p className="text-ink/70 mt-3 text-sm whitespace-pre-wrap">
+              <span className="text-ink/45">Observación: </span>
+              {detalle.observacion}
+            </p>
+          ) : null}
+
           {/*
             PENDIENTE POR COBRAR: EL ÚNICO BOTÓN QUE LE HACE FALTA.
             Christopher, 12/10/2026: marcarla como cobrada apaga el
