@@ -35,6 +35,7 @@ export interface DatosReporteDespacho {
   aprobadoPor: string | null
   /** Cuántas fotos del vehículo tiene adjuntas el despacho que la originó. */
   fotos: number
+  observacion: string | null
 }
 
 const dia = new Intl.DateTimeFormat('es-VE', {
@@ -91,6 +92,11 @@ export function textoDelReporteDespacho(d: DatosReporteDespacho): string {
       `(Bs ${dinero2.format(Number(d.totalBs))} · $ ${dinero2.format(Number(d.totalUsd))})`,
   )
   lineas.push('')
+
+  if (d.observacion) {
+    lineas.push(`📝 *Observación:* ${d.observacion}`)
+    lineas.push('')
+  }
 
   lineas.push(`✍️ Solicitante: ${d.pedidoPor ?? '—'} · Aprobó: ${d.aprobadoPor ?? '—'}`)
   lineas.push(`📷 ${d.fotos} foto${d.fotos === 1 ? '' : 's'} del vehículo adjunta${d.fotos === 1 ? '' : 's'}`)
