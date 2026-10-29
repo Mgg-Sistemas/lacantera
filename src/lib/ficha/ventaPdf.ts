@@ -705,9 +705,29 @@ function firmas(doc: Doc, d: DatosDocumento, y: number) {
  * saberlo.
  */
 function dibujarDocumento(doc: Doc, logo: string, d: DatosDocumento): void {
+  /*
+    LA OBSERVACIÓN ENTERA, NO UN PEDAZO. Antes se cortaba con puntos
+    suspensivos a lo que cupiera en una sola línea —"EL CLIENTE PASO DINERO DE
+    MAS 835.556,60 B…"—, y el resto se perdía para siempre: no vive en
+    ninguna otra parte del papel. Se mide aquí, antes de saber si el cierre
+    cabe detrás de la tabla, con un tope de 6 líneas para que una observación
+    kilométrica no empuje las firmas fuera de la hoja.
+  */
+  doc.setFont('helvetica', 'normal').setFontSize(7)
+  let lineasObservacion: string[] = []
+  if (d.observacion) {
+    lineasObservacion = doc.splitTextToSize(`Observación: ${d.observacion}`, ANCHO_NOTAS) as string[]
+    if (lineasObservacion.length > 6) {
+      lineasObservacion = [
+        ...lineasObservacion.slice(0, 5),
+        ajustar(doc, lineasObservacion.slice(5).join(' '), ANCHO_NOTAS),
+      ]
+    }
+  }
+
   // Cuánto ocupa el cierre —totales, firmas y observación— para saber si cabe
   // detrás del último renglón o necesita hoja propia.
-  const cierre = altoTotales(d) + 22 + (d.observacion ? 10 : 0)
+  const cierre = altoTotales(d) + 22 + (lineasObservacion.length ? lineasObservacion.length * 3.2 + 3 : 0)
   const topeTabla = ABAJO - 14
 
   // El encabezado de la primera hoja se pinta antes de repartir los renglones
@@ -913,9 +933,9 @@ function dibujarDocumento(doc: Doc, logo: string, d: DatosDocumento): void {
         yNota += nota.length * 2.9 + 0.3
       }
 
-      if (d.observacion) {
+      if (lineasObservacion.length > 0) {
         doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7)
-        doc.text(ajustar(doc, `Observación: ${d.observacion}`, ANCHO_UTIL * 0.5), IZQ, yNota + 2.5)
+        lineasObservacion.forEach((linea, j) => doc.text(linea, IZQ, yNota + 2.5 + j * 3.2))
       }
 
       const finTotales = totales(doc, d, y)
