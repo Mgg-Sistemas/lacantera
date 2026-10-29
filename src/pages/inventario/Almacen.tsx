@@ -56,7 +56,10 @@ export function Almacen() {
   const [buscado, setBuscado] = useState('')
 
   const puedeEntrada = puede('INVENTARIO', 'ESCRITURA')
-  const puedeSalida = puede('SALIDAS', 'ESCRITURA')
+  // Pedir una salida solo exige LECTURA en Salidas; entregarla exige
+  // ESCRITURA. La tarjeta se enseña con cualquiera de las dos, y
+  // AlmacenSalida.tsx decide a cuál de las dos aterriza.
+  const puedeSalida = puede('SALIDAS', 'LECTURA')
   /*
     LA MISMA REJA QUE EL RPC `entregar_a_trabajador`: por el rol de siempre
     (ALMACEN, RRHH, ADMIN) o por el permiso del módulo Asignaciones — la

@@ -94,7 +94,7 @@ const renglonVacio = (articulo = '', almacen = ''): RenglonEnCurso => ({
   formulario no tenía cómo saber que existía. Ahora son dos opciones con lo que
   pide cada una, igual que las formas del traslado.
 */
-type AmbitoDeSalida = '' | 'EMPRESA' | 'FUERA'
+export type AmbitoDeSalida = '' | 'EMPRESA' | 'FUERA'
 
 const AMBITOS: { valor: Exclude<AmbitoDeSalida, ''>; titulo: string; explica: string }[] = [
   {
@@ -109,7 +109,13 @@ const AMBITOS: { valor: Exclude<AmbitoDeSalida, ''>; titulo: string; explica: st
   },
 ]
 
-function ParaQuienSale({
+/*
+  REUTILIZADA DESDE EL TELÉFONO. `AlmacenPedirSalida.tsx` —pedir salida sin
+  pasar por el escritorio— pinta exactamente la misma pregunta: a quién sale,
+  del mismo organigrama y con el mismo «de fuera de la empresa». Se exporta
+  para no mantener dos veces la misma lógica de para quién va el material.
+*/
+export function ParaQuienSale({
   pregunta,
   ambito,
   onAmbito,
@@ -263,7 +269,7 @@ function QuienResponde({
   Lo que viaja a la base: o el grupo, o los dos datos de fuera. Nunca los dos
   —es justo lo que la base rechaza— y nunca ninguno.
 */
-const paraQuienVa = (ambito: AmbitoDeSalida, grupo: string, externo: string, responsable: string) =>
+export const paraQuienVa = (ambito: AmbitoDeSalida, grupo: string, externo: string, responsable: string) =>
   ambito === 'FUERA'
     ? { externo: externo.trim(), responsable: responsable.trim() }
     : { grupo_id: Number(grupo) }

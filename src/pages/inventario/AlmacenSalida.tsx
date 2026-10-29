@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
-import { PackageCheck } from 'lucide-react'
+import { Link, Navigate } from 'react-router'
+import { PackageCheck, SendHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
@@ -26,6 +26,9 @@ import { ModalReporteSalida } from '@/pages/salidas/ModalReporteSalida'
 export function AlmacenSalida() {
   const { puede } = useMisPermisos()
   const puedeEntregar = puede('SALIDAS', 'ESCRITURA')
+  // Pedir solo exige LECTURA, la misma regla que aplica `pedir_salida` en la
+  // base: quien ve el módulo puede solicitar, aunque no pueda entregar.
+  const puedePedir = puede('SALIDAS', 'LECTURA')
   const { data: solicitudes, isPending, error } = useSolicitudesDeSalida()
   const { data: perfiles } = usePerfiles()
   const grupos = useGruposDeSalida()
@@ -54,17 +57,20 @@ export function AlmacenSalida() {
         `${s.numero} ${paraQuien(s)}`.toLowerCase().includes(buscado.trim().toLowerCase()),
     )
 
-  if (isPending) return <Cargando />
-  if (error) return <ErrorDeCarga error={error} />
-
-  if (!puedeEntregar) {
+  if (!puedeEntregar && !puedePedir) {
     return (
       <p className="text-ink/60 mx-auto mt-10 max-w-sm text-center text-sm">
-        Su usuario puede ver las salidas, pero no entregar material. Hace falta el permiso de
-        escritura en Salidas.
+        Su usuario no tiene acceso a Salidas.
       </p>
     )
   }
+
+  // Solo puede pedir, no entregar: esta pantalla no tiene nada más que
+  // ofrecerle, así que aterriza derecho en el formulario de solicitud.
+  if (!puedeEntregar) return <Navigate to="/app/inventario/almacen/salida/pedir" replace />
+
+  if (isPending) return <Cargando />
+  if (error) return <ErrorDeCarga error={error} />
 
   const confirmar = (s: SolicitudDeSalida) => {
     setFallo(null)
@@ -142,6 +148,17 @@ export function AlmacenSalida() {
       </Link>
       <h1 className="text-ink/85 font-titular text-xl">Entregar material</h1>
       <p className="text-ink/55 mt-1 text-sm">Solicitudes ya aprobadas, por entregar.</p>
+
+      <Link
+        to="/app/inventario/almacen/salida/pedir"
+        className="border-hairline active:bg-ink/5 rounded-card mt-4 flex items-center gap-3 border border-dashed p-4 text-left transition-colors"
+      >
+        <SendHorizontal className="text-royal-600 size-6 shrink-0" />
+        <span>
+          <span className="text-ink/85 block text-sm font-medium">Solicitar salida</span>
+          <span className="text-ink/50 block text-xs">Pedir que el almacén entregue algo que ya tiene</span>
+        </span>
+      </Link>
 
       {porEntregar.length > 3 ? (
         <Input

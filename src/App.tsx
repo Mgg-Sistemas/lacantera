@@ -161,6 +161,9 @@ const AlmacenEntrada = pagina(() =>
 const AlmacenSalida = pagina(() =>
   import('@/pages/inventario/AlmacenSalida').then((m) => ({ default: m.AlmacenSalida })),
 )
+const AlmacenPedirSalida = pagina(() =>
+  import('@/pages/inventario/AlmacenPedirSalida').then((m) => ({ default: m.AlmacenPedirSalida })),
+)
 const AlmacenPrestamo = pagina(() =>
   import('@/pages/inventario/AlmacenPrestamo').then((m) => ({ default: m.AlmacenPrestamo })),
 )
@@ -418,6 +421,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/inventario/almacen': <Almacen />,
   '/app/inventario/almacen/entrada': <AlmacenEntrada />,
   '/app/inventario/almacen/salida': <AlmacenSalida />,
+  '/app/inventario/almacen/salida/pedir': <AlmacenPedirSalida />,
   '/app/inventario/almacen/prestamo': <AlmacenPrestamo />,
   '/app/inventario/almacen/retornar': <AlmacenRetorno />,
   '/app/inventario/almacen/existencias': <AlmacenExistencias />,
