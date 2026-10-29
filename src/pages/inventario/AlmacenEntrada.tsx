@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { Check, PackagePlus, Plus, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -77,16 +77,25 @@ export function AlmacenEntrada() {
   const { data: formasDeContar } = useTodasLasPresentaciones()
   const monedas = useMonedasUsables()
   const entrada = useRegistrarEntradas()
+  const [params] = useSearchParams()
 
-  const [almacen, setAlmacen] = useState('')
   const [renglones, setRenglones] = useState<RenglonEnCurso[]>([renglonVacio()])
+  const [almacen, setAlmacen] = useState('')
   const [referencia, setReferencia] = useState('')
   const [motivo, setMotivo] = useState('')
   const [acuse, setAcuse] = useState<{ texto: string } | null>(null)
   const [tarda, setTarda] = useState(false)
-  // La clave del renglón para el que se está dando de alta un artículo nuevo,
-  // o null si el formulario de alta está cerrado.
-  const [creandoPara, setCreandoPara] = useState<string | null>(null)
+  /*
+    LA CLAVE DEL RENGLÓN para el que se está dando de alta un artículo nuevo,
+    o null si el formulario de alta está cerrado.
+
+    Si se llega con `?nuevo=1` —el atajo "Producto nuevo" de la portada del
+    teléfono— arranca abierto de una vez, sobre el único renglón que hay al
+    entrar: ahorra el paso de buscar el link "No está en el catálogo".
+  */
+  const [creandoPara, setCreandoPara] = useState<string | null>(
+    params.get('nuevo') === '1' ? renglones[0].clave : null,
+  )
 
   useEffect(() => {
     if (!entrada.isPending) {
