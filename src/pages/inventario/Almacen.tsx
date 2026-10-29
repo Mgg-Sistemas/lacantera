@@ -215,7 +215,7 @@ function Tarjeta({
       type="button"
       onClick={onClick}
       className={cn(
-        'active:brightness-95 rounded-card flex flex-1 flex-col items-center justify-center gap-2 border p-6 text-center transition-[filter]',
+        'active:brightness-95 rounded-card flex w-full flex-1 flex-col items-center justify-center gap-2 border p-6 text-center transition-[filter]',
         TONOS_TARJETA[tono],
       )}
     >
