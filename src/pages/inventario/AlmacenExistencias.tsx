@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { Input } from '@/components/ui/Input'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
@@ -20,9 +20,12 @@ export function AlmacenExistencias() {
   const { puede } = useMisPermisos()
   const puedeVer = puede('INVENTARIO', 'LECTURA')
   const { data: almacenes } = useAlmacenes()
+  const [params] = useSearchParams()
 
   const [almacen, setAlmacen] = useState('')
-  const [buscado, setBuscado] = useState('')
+  // Llega con lo ya tecleado cuando viene del buscador de la portada del
+  // teléfono (`?q=`), para no obligar a escribirlo dos veces.
+  const [buscado, setBuscado] = useState(params.get('q') ?? '')
 
   const totales = useExistenciasTotales(!almacen)
   const delSitio = useExistencias(almacen ? Number(almacen) : undefined, Boolean(almacen))

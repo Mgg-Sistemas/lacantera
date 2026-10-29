@@ -1,24 +1,59 @@
+import { useState, type ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router'
-import { Boxes, HandHelping, PackageCheck, PackagePlus } from 'lucide-react'
+import { LayoutGrid, PackageCheck, PackagePlus, Search, Undo2 } from 'lucide-react'
 import { Cargando } from '@/components/ui/Estado'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { useMisRoles } from '@/lib/api/catalogo'
+import { useMisRoles, type Rol } from '@/lib/api/catalogo'
+import { useAsignaciones } from '@/lib/api/asignaciones'
+import { cn } from '@/lib/cn'
 
 /*
   INVENTARIO, EN EL TELÉFONO.
 
-  Cuatro tareas, no una: Registrar entrada, Entregar material, Entregar a un
-  trabajador, y Ver inventario —consulta, no mueve nada—. Quien tiene más de
-  una ve este menú; quien tiene solo una aterriza derecho en ella, igual que
-  decide `Entrada.tsx` entre Cocina y el Surtidor — aterrizar en un sitio u
-  otro es una comodidad, no un permiso.
+  Cinco tareas, no una: Dar de alta un producto, Registrar entrada, Entregar
+  material, Entregar/retornar a un trabajador, y Ver inventario —consulta, no
+  mueve nada—. Quien tiene más de una ve este menú; quien tiene solo una
+  aterriza derecho en ella, igual que decide `Entrada.tsx` entre Cocina y el
+  Surtidor — aterrizar en un sitio u otro es una comodidad, no un permiso.
+
+  Christopher, 29/10/2026: rediseño a tarjetas grandes, con "Producto nuevo"
+  como su propia puerta (antes vivía escondida dentro de "Registrar entrada")
+  y una cola de "Por retornar" que antes no existía en el teléfono —los
+  préstamos activos (asignaciones sin devolver) solo se veían desde el
+  escritorio. Entregar a un trabajador por primera vez se mudó ahí dentro: es
+  la misma puerta de siempre, solo que ahora cuelga de la cola de préstamos en
+  vez de tener su propia tarjeta en esta portada.
 */
+
+const ETIQUETA_ROL: Record<Rol, string> = {
+  ADMIN: 'Administrador',
+  GERENTE_GENERAL: 'Gerencia general',
+  COMPRAS: 'Compras',
+  TESORERIA: 'Tesorería',
+  ALMACEN: 'Almacén',
+  OPERACIONES: 'Operaciones',
+  RRHH: 'Recursos humanos',
+  SOLICITANTE: 'Solicitante',
+  CONSULTA: 'Consulta',
+}
+// El orden en que se escoge cuál mostrar cuando el usuario tiene varios roles.
+const ORDEN_ROL: Rol[] = [
+  'ADMIN',
+  'GERENTE_GENERAL',
+  'ALMACEN',
+  'RRHH',
+  'COMPRAS',
+  'TESORERIA',
+  'OPERACIONES',
+  'SOLICITANTE',
+  'CONSULTA',
+]
+
 export function Almacen() {
   const { puede, resuelto } = useMisPermisos()
-  const { puede: tieneRol, isSuccess: rolesListos } = useMisRoles()
+  const { puede: tieneRol, roles, isSuccess: rolesListos } = useMisRoles()
   const navegar = useNavigate()
-
-  if (!resuelto || !rolesListos) return <Cargando />
+  const [buscado, setBuscado] = useState('')
 
   const puedeEntrada = puede('INVENTARIO', 'ESCRITURA')
   const puedeSalida = puede('SALIDAS', 'ESCRITURA')
@@ -31,10 +66,15 @@ export function Almacen() {
   const puedePrestamo = tieneRol('ALMACEN', 'RRHH', 'ADMIN') || puede('ASIGNACIONES', 'ESCRITURA')
   const puedeVerInventario = puede('INVENTARIO', 'LECTURA')
 
+  const porRetornar = useAsignaciones({ estado: 'ASIGNADA' })
+  const cantidadPorRetornar = (porRetornar.data ?? []).filter((a) => a.clase === 'ASIGNACION').length
+
+  if (!resuelto || !rolesListos) return <Cargando />
+
   const tareas = [
     { puede: puedeEntrada, ruta: '/app/inventario/almacen/entrada' },
     { puede: puedeSalida, ruta: '/app/inventario/almacen/salida' },
-    { puede: puedePrestamo, ruta: '/app/inventario/almacen/prestamo' },
+    { puede: puedePrestamo, ruta: '/app/inventario/almacen/retornar' },
     { puede: puedeVerInventario, ruta: '/app/inventario/almacen/existencias' },
   ].filter((t) => t.puede)
 
@@ -48,68 +88,147 @@ export function Almacen() {
     )
   }
 
+  const miRol = ORDEN_ROL.find((r) => roles.includes(r))
+
+  const buscar = () => {
+    const q = buscado.trim()
+    void navegar(q ? `/app/inventario/almacen/existencias?q=${encodeURIComponent(q)}` : '/app/inventario/almacen/existencias')
+  }
+
   return (
     <div className="mx-auto max-w-md pt-6">
-      <h1 className="text-ink/85 font-titular text-xl">Inventario</h1>
-      <p className="text-ink/55 mt-1 text-sm">¿Qué va a hacer?</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-ink/85 font-titular text-xl">Inventario</h1>
+          {miRol ? (
+            <p className="text-ink/45 text-2xs mt-0.5 font-mono tracking-[0.16em] uppercase">
+              {ETIQUETA_ROL[miRol]}
+            </p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={() => void navegar('/app/inventario')}
+          className="border-hairline text-ink/55 active:bg-ink/5 rounded-control flex shrink-0 items-center gap-1.5 border px-3 py-2 text-xs transition-colors"
+        >
+          <LayoutGrid className="size-3.5" />
+          Módulo completo
+        </button>
+      </div>
 
       <div className="mt-6 space-y-3">
         {puedeEntrada ? (
-          <button
-            type="button"
-            onClick={() => void navegar('/app/inventario/almacen/entrada')}
-            className="border-hairline rounded-card active:bg-ink/5 flex w-full items-center gap-3 border p-5 text-left transition-colors"
-          >
-            <PackagePlus className="text-royal-600 size-7 shrink-0" />
-            <span>
-              <span className="text-ink/85 block text-base font-medium">Registrar entrada</span>
-              <span className="text-ink/55 block text-xs">Lo que entra al almacén, con su costo</span>
-            </span>
-          </button>
+          <Tarjeta
+            tono="warning"
+            icono={<PackagePlus />}
+            titulo="Producto nuevo"
+            subtitulo="Algo que todavía no está en el almacén"
+            onClick={() => void navegar('/app/inventario/almacen/entrada?nuevo=1')}
+          />
         ) : null}
 
-        {puedeSalida ? (
-          <button
-            type="button"
-            onClick={() => void navegar('/app/inventario/almacen/salida')}
-            className="border-hairline rounded-card active:bg-ink/5 flex w-full items-center gap-3 border p-5 text-left transition-colors"
-          >
-            <PackageCheck className="text-royal-600 size-7 shrink-0" />
-            <span>
-              <span className="text-ink/85 block text-base font-medium">Entregar material</span>
-              <span className="text-ink/55 block text-xs">Lo que ya está aprobado, por entregar</span>
-            </span>
-          </button>
+        {puedeEntrada || puedeSalida ? (
+          <div className="flex gap-3">
+            {puedeEntrada ? (
+              <Tarjeta
+                tono="success"
+                icono={<PackagePlus className="size-6" />}
+                titulo="Entrada"
+                subtitulo="Llegó más de un producto que ya está"
+                compacta
+                onClick={() => void navegar('/app/inventario/almacen/entrada')}
+              />
+            ) : null}
+            {puedeSalida ? (
+              <Tarjeta
+                tono="warning"
+                icono={<PackageCheck className="size-6" />}
+                titulo="Salida"
+                subtitulo="Sale material del almacén"
+                compacta
+                onClick={() => void navegar('/app/inventario/almacen/salida')}
+              />
+            ) : null}
+          </div>
         ) : null}
 
         {puedePrestamo ? (
-          <button
-            type="button"
-            onClick={() => void navegar('/app/inventario/almacen/prestamo')}
-            className="border-hairline rounded-card active:bg-ink/5 flex w-full items-center gap-3 border p-5 text-left transition-colors"
-          >
-            <HandHelping className="text-royal-600 size-7 shrink-0" />
-            <span>
-              <span className="text-ink/85 block text-base font-medium">Entregar a un trabajador</span>
-              <span className="text-ink/55 block text-xs">Herramienta en préstamo, o un consumible</span>
-            </span>
-          </button>
+          <Tarjeta
+            tono="info"
+            icono={<Undo2 />}
+            titulo={`Por retornar (${cantidadPorRetornar})`}
+            subtitulo={
+              cantidadPorRetornar > 0
+                ? 'Hay préstamos pendientes por devolver'
+                : 'No hay nada pendiente por retornar'
+            }
+            onClick={() => void navegar('/app/inventario/almacen/retornar')}
+          />
         ) : null}
 
         {puedeVerInventario ? (
-          <button
-            type="button"
-            onClick={() => void navegar('/app/inventario/almacen/existencias')}
-            className="border-hairline rounded-card active:bg-ink/5 flex w-full items-center gap-3 border p-5 text-left transition-colors"
-          >
-            <Boxes className="text-royal-600 size-7 shrink-0" />
-            <span>
-              <span className="text-ink/85 block text-base font-medium">Ver inventario</span>
-              <span className="text-ink/55 block text-xs">Solo consulta: qué hay y dónde</span>
-            </span>
-          </button>
+          <div className="border-hairline bg-surface focus-within:border-royal-400 rounded-card flex items-center gap-2 border px-3 py-2.5 transition-colors">
+            <Search className="text-ink/35 size-4 shrink-0" />
+            <input
+              value={buscado}
+              onChange={(e) => setBuscado(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') buscar()
+              }}
+              placeholder="Buscar producto…"
+              className="text-ink/85 placeholder:text-ink/35 min-w-0 flex-1 bg-transparent text-sm outline-none"
+            />
+          </div>
         ) : null}
       </div>
     </div>
+  )
+}
+
+type TonoTarjeta = 'success' | 'warning' | 'info'
+
+const TONOS_TARJETA: Record<TonoTarjeta, string> = {
+  success: 'bg-success-soft border-success/25',
+  warning: 'bg-warning-soft border-warning/35',
+  info: 'bg-info-soft border-info/25',
+}
+
+const ICONO_TARJETA: Record<TonoTarjeta, string> = {
+  success: 'text-success',
+  warning: 'text-warning',
+  info: 'text-info',
+}
+
+function Tarjeta({
+  tono,
+  icono,
+  titulo,
+  subtitulo,
+  onClick,
+  compacta = false,
+}: {
+  tono: TonoTarjeta
+  icono: ReactNode
+  titulo: string
+  subtitulo: string
+  onClick: () => void
+  compacta?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'active:brightness-95 rounded-card flex flex-1 flex-col items-center gap-2 border text-center transition-[filter]',
+        TONOS_TARJETA[tono],
+        compacta ? 'p-4' : 'p-6',
+      )}
+    >
+      <span className={cn('[&>svg]:size-7', ICONO_TARJETA[tono])}>{icono}</span>
+      <span>
+        <span className="text-ink/90 block text-base font-semibold">{titulo}</span>
+        <span className="text-ink/55 mt-0.5 block text-xs leading-snug">{subtitulo}</span>
+      </span>
+    </button>
   )
 }
