@@ -132,20 +132,18 @@ export function Almacen() {
             {puedeEntrada ? (
               <Tarjeta
                 tono="success"
-                icono={<PackagePlus className="size-6" />}
+                icono={<PackagePlus />}
                 titulo="Entrada"
                 subtitulo="Llegó más de un producto que ya está"
-                compacta
                 onClick={() => void navegar('/app/inventario/almacen/entrada')}
               />
             ) : null}
             {puedeSalida ? (
               <Tarjeta
                 tono="warning"
-                icono={<PackageCheck className="size-6" />}
+                icono={<PackageCheck />}
                 titulo="Salida"
                 subtitulo="Sale material del almacén"
-                compacta
                 onClick={() => void navegar('/app/inventario/almacen/salida')}
               />
             ) : null}
@@ -205,23 +203,20 @@ function Tarjeta({
   titulo,
   subtitulo,
   onClick,
-  compacta = false,
 }: {
   tono: TonoTarjeta
   icono: ReactNode
   titulo: string
   subtitulo: string
   onClick: () => void
-  compacta?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'active:brightness-95 rounded-card flex flex-1 flex-col items-center gap-2 border text-center transition-[filter]',
+        'active:brightness-95 rounded-card flex flex-1 flex-col items-center justify-center gap-2 border p-6 text-center transition-[filter]',
         TONOS_TARJETA[tono],
-        compacta ? 'p-4' : 'p-6',
       )}
     >
       <span className={cn('[&>svg]:size-7', ICONO_TARJETA[tono])}>{icono}</span>
