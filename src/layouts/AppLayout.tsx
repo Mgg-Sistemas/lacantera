@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useTiempoReal } from '@/lib/tiempoReal'
 import { useLatido } from '@/lib/api/usuarios'
+import { bloquearScroll } from '@/lib/bloqueoDeScroll'
 
 const CLAVE_COLAPSADO = 'lacantera:sidebar-colapsado'
 
@@ -44,12 +45,13 @@ export function AppLayout() {
     localStorage.setItem(CLAVE_COLAPSADO, String(collapsed))
   }, [collapsed])
 
-  // Bloquea el scroll del fondo mientras el cajón móvil está abierto.
+  // Bloquea el scroll del fondo mientras el cajón móvil está abierto. Con
+  // contador: ver `bloqueoDeScroll.ts` — un modal abierto a la vez que el
+  // cajón no deja el scroll trabado al cerrar cualquiera de los dos.
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? 'hidden' : ''
-    return () => {
-      document.body.style.overflow = ''
-    }
+    if (!mobileOpen) return
+    const liberar = bloquearScroll()
+    return liberar
   }, [mobileOpen])
 
   return (
