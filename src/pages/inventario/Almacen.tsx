@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router'
-import { LayoutGrid, PackageCheck, PackagePlus, Search, Undo2 } from 'lucide-react'
+import { History, LayoutGrid, PackageCheck, PackagePlus, Search, Undo2 } from 'lucide-react'
 import { Cargando } from '@/components/ui/Estado'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMisRoles, type Rol } from '@/lib/api/catalogo'
@@ -79,6 +79,7 @@ export function Almacen() {
     { puede: puedeSalida, ruta: '/app/inventario/almacen/salida' },
     { puede: puedePrestamo, ruta: '/app/inventario/almacen/retornar' },
     { puede: puedeVerInventario, ruta: '/app/inventario/almacen/existencias' },
+    { puede: puedeVerInventario, ruta: '/app/inventario/almacen/movimientos' },
   ].filter((t) => t.puede)
 
   if (tareas.length === 1) return <Navigate to={tareas[0].ruta} replace />
@@ -164,6 +165,16 @@ export function Almacen() {
                 : 'No hay nada pendiente por retornar'
             }
             onClick={() => void navegar('/app/inventario/almacen/retornar')}
+          />
+        ) : null}
+
+        {puedeVerInventario ? (
+          <Tarjeta
+            tono="info"
+            icono={<History />}
+            titulo="Historial de movimientos"
+            subtitulo="Buscar un movimiento y reportarlo por WhatsApp"
+            onClick={() => void navegar('/app/inventario/almacen/movimientos')}
           />
         ) : null}
 
