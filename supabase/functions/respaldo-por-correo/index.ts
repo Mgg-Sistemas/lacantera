@@ -114,6 +114,57 @@ function comoElSistema() {
 const cifra = (n: number) => new Intl.NumberFormat('es-VE').format(n)
 
 /*
+  SI EL TRABAJO DE FONDO SE CAE, QUE QUEDE ESCRITO.
+
+  Encontrado el 30/10/2026: el envío del 1/10 se disparó —está en el historial
+  del cron, "succeeded"— y no dejó ni una fila en `correos_enviados`, ni de
+  éxito ni de fallo. La base ya había contestado 202 antes de que este trabajo
+  arrancara, así que nada de lo que pase aquí dentro vuelve a tocar Postgres
+  por sí solo, y el único rastro que quedaba era un `console.error` que nadie
+  lee hasta que ya pasó un mes y los logs de la función ya se borraron.
+
+  Esto repite a mano lo que hace `private.anotar_intento_del_respaldo` desde
+  SQL —que esta función no puede llamar: vive en el esquema `private`, que
+  PostgREST no expone—, con la llave de servicio, que para esto sí hace falta:
+  el registro de los envíos no lo debe poder tocar quien los pide.
+*/
+async function anotarFalloDeFondo(
+  sistema: NonNullable<ReturnType<typeof comoElSistema>>,
+  motivo: string,
+  etiqueta: string,
+) {
+  try {
+    const { data: aud } = await sistema
+      .from('auditoria')
+      .insert({
+        usuario_id: null,
+        usuario: 'SISTEMA',
+        nombre: 'EL SISTEMA',
+        tabla: 'respaldo',
+        operacion: 'ACCESO',
+        etiqueta,
+      })
+      .select('id')
+      .single()
+
+    await sistema.from('correos_enviados').insert({
+      usuario_id: null,
+      funcion: `${FUNCION}-programado`,
+      destinatarios: 0,
+      asunto: 'Respaldo mensual de la base',
+      auditoria_id: aud?.id ?? null,
+      motivo_fallo: motivo,
+    })
+  } catch (e) {
+    // Si ni esto se puede anotar, que al menos quede en el log de la función.
+    console.error(
+      `[${FUNCION}] no se pudo anotar el fallo de fondo:`,
+      e instanceof Error ? e.message : String(e),
+    )
+  }
+}
+
+/*
   QUIÉN COMPRUEBA EL SECRETO DEL CRON, Y POR QUÉ NO SE LEE AQUÍ.
 
   Antes esto leía `vault.decrypted_secrets` y comparaba a mano. No funcionaba, y
@@ -274,6 +325,11 @@ async function enviarElProgramado(sistema: NonNullable<ReturnType<typeof comoElS
     const correos = (destinos ?? []).map((d) => d.correo).filter(Boolean)
     if (correos.length === 0) {
       console.error(`[${FUNCION}] no hay destinatario configurado; no se manda nada`)
+      await anotarFalloDeFondo(
+        sistema,
+        'SIN_DESTINATARIO',
+        'El sistema no mandó el respaldo: no hay ninguna dirección activa',
+      )
       return
     }
 
@@ -319,9 +375,12 @@ async function enviarElProgramado(sistema: NonNullable<ReturnType<typeof comoElS
       ),
     })
   } catch (e) {
-    console.error(
-      `[${FUNCION}] el envío programado falló:`,
-      e instanceof Error ? e.message : String(e),
+    const mensaje = e instanceof Error ? e.message : String(e)
+    console.error(`[${FUNCION}] el envío programado falló:`, mensaje)
+    await anotarFalloDeFondo(
+      sistema,
+      'FALLO_EN_SEGUNDO_PLANO',
+      `El sistema no pudo mandar el respaldo: ${mensaje}`,
     )
   }
 }
