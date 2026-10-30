@@ -358,6 +358,18 @@ export function Existencias() {
   */
   const [resolviendoAjuste, setResolviendoAjuste] = useState<number | null>(null)
   const ajusteDirecto = useExistenciasDeArticulo(resolviendoAjuste)
+  /*
+    «CORREGIR EL COSTO» DIRECTO DESDE «TODO EL INVENTARIO», IGUAL QUE «CONTAR».
+
+    Christopher, 30/10/2026: ya existía el botón dentro de «Ver dónde está»
+    —se puso ahí porque antes no existía en ningún lado—, pero seguía sin
+    encontrarlo: «no recordaba que editar costo estaba dentro de ver dónde
+    está». Mismo arreglo que «Contar» arriba: con un solo sitio no hay nada
+    que elegir, así que se resuelve cuál es y se abre el parte directo. Con
+    más de un sitio sigue haciendo falta el desglose.
+  */
+  const [resolviendoCosto, setResolviendoCosto] = useState<number | null>(null)
+  const costoDirecto = useExistenciasDeArticulo(resolviendoCosto)
   /* Duplicado o mal cargado: reversa sus movimientos (no una salida) y lo
      desactiva, o lo borra entero si nunca tuvo movimiento. Solo ADMIN. */
   const [duplicando, setDuplicando] = useState<ExistenciaTotal | null>(null)
@@ -658,6 +670,19 @@ export function Existencias() {
     setResolviendoAjuste(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ajusteDirecto.data, ajusteDirecto.isPending, resolviendoAjuste])
+
+  // Lo mismo, para «Corregir el costo».
+  useEffect(() => {
+    if (resolviendoCosto === null || costoDirecto.isPending) return
+    if (costoDirecto.data && costoDirecto.data.length === 1) {
+      setCosto(costoDirecto.data[0])
+    } else {
+      const fila = totales.data?.find((t) => t.articulo_id === resolviendoCosto)
+      if (fila) setDesglose(fila)
+    }
+    setResolviendoCosto(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [costoDirecto.data, costoDirecto.isPending, resolviendoCosto])
 
   const guardar = async () => {
     if (!modal) return
@@ -1102,6 +1127,19 @@ export function Existencias() {
                                 onClick={() => setResolviendoAjuste(total!.articulo_id)}
                               >
                                 {resolviendoAjuste === total!.articulo_id ? '…' : 'Contar'}
+                              </Button>
+                            ) : null}
+                            {puedeAccion('INVENTARIO.AJUSTAR_COSTO') &&
+                            total!.almacenes === 1 &&
+                            Number(total!.existencia) > 0 ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                icon={<Coins />}
+                                disabled={resolviendoCosto === total!.articulo_id}
+                                onClick={() => setResolviendoCosto(total!.articulo_id)}
+                              >
+                                {resolviendoCosto === total!.articulo_id ? '…' : 'Corregir el costo'}
                               </Button>
                             ) : null}
                             {puede('ADMIN') ? (
