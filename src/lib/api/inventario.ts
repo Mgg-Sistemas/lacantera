@@ -620,6 +620,33 @@ export function useMovimientos(
   })
 }
 
+export interface ReferenciaDeFotos {
+  origen: 'SALIDA' | 'DESPACHO'
+  referencia: string
+}
+
+/*
+  A QUÉ PAPEL PREGUNTARLE LAS FOTOS DE ESTE MOVIMIENTO, SI TIENE.
+
+  El movimiento no lo sabe por sí solo —ver el porqué en la migración
+  `de_donde_salen_las_fotos_de_un_movimiento`—, así que se le pregunta a la
+  base, que sí puede cruzar las tablas que hace falta. `null` cuando el
+  movimiento no nació de ninguna salida ni despacho —una entrada, un ajuste,
+  un reverso, un traslado— y por tanto no hay fotos que buscar.
+*/
+export function useReferenciaDeFotosDelMovimiento(movimientoId: number | null) {
+  return useQuery({
+    enabled: movimientoId != null,
+    queryKey: ['referencia-de-fotos-del-movimiento', movimientoId],
+    queryFn: async () => {
+      const filas = await rpc<ReferenciaDeFotos[]>('referencia_de_fotos_del_movimiento', {
+        p_movimiento_id: movimientoId,
+      })
+      return filas[0] ?? null
+    },
+  })
+}
+
 /**
  * Toda escritura de inventario invalida existencias, movimientos, el tablero
  * de compras y los avisos: una recepción cierra una orden y emite una

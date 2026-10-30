@@ -50,16 +50,22 @@ export interface FotoDeCarga {
   motivo_quitada: string | null
 }
 
-/** Todas las de un origen de una vez: una consulta por pantalla, no una por tarjeta. */
-export function useFotosDeCarga(origen: OrigenDeCarga) {
+/**
+ * Todas las de un origen de una vez: una consulta por pantalla, no una por
+ * tarjeta. Admite el origen en null/indefinido —apagada— para cuando todavía
+ * no se sabe si el papel que las trae es una salida o un despacho (o si las
+ * tiene siquiera), como en el reporte de un movimiento de inventario.
+ */
+export function useFotosDeCarga(origen: OrigenDeCarga | null | undefined) {
   return useQuery({
     queryKey: ['fotos-de-carga', origen],
+    enabled: origen != null,
     queryFn: async () =>
       desenvolver<FotoDeCarga[]>(
         await supabase
           .from('fotos_de_carga')
           .select('*')
-          .eq('origen', origen)
+          .eq('origen', origen as OrigenDeCarga)
           .order('subida_en'),
       ),
   })

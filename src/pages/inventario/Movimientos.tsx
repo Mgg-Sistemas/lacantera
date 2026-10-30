@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowDownLeft, ArrowUpRight, FileText, Printer, ScrollText, Undo2 } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, FileText, Printer, ScrollText, Share2, Undo2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
@@ -35,6 +35,7 @@ import { Visor } from '@/components/Visor'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { armarLibroDeMovimientos } from '@/lib/ficha/libroMovimientos'
+import { ModalReporteMovimiento } from './ModalReporteMovimiento'
 
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { dolares, fecha } from '@/lib/formato'
@@ -290,6 +291,7 @@ export function Movimientos() {
   // El movimiento entero y no su número: el libro no se edita, así que lo que
   // se abrió no puede quedarse viejo mientras la ventana sigue abierta.
   const [detalle, setDetalle] = useState<Movimiento | null>(null)
+  const [reportando, setReportando] = useState<Movimiento | null>(null)
   const [motivo, setMotivo] = useState('')
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
   const [tituloDoc, setTituloDoc] = useState('Libro de movimientos')
@@ -780,6 +782,15 @@ export function Movimientos() {
                         </Button>
                       ) : null}
 
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        icon={<Share2 />}
+                        onClick={() => setReportando(m)}
+                      >
+                        Reportar
+                      </Button>
+
                       {/* Una corrección de costo no se deshace: se vuelve a
                           corregir, y la base lo dice igual. Las dos patas están
                           enlazadas pero `reversar_movimiento` solo sabe
@@ -849,6 +860,14 @@ export function Movimientos() {
           m={detalle}
           quien={nombreDe(detalle.registrado_por)}
           onCerrar={() => setDetalle(null)}
+        />
+      ) : null}
+
+      {reportando ? (
+        <ModalReporteMovimiento
+          m={reportando}
+          quien={nombreDe(reportando.registrado_por)}
+          onCerrar={() => setReportando(null)}
         />
       ) : null}
 
