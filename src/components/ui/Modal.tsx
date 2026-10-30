@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { bloquearScroll } from '@/lib/bloqueoDeScroll'
 
 interface ModalProps {
   abierto: boolean
@@ -61,13 +62,14 @@ export function Modal({
     if (!panel.current?.contains(document.activeElement)) panel.current?.focus()
 
     // Bloquear el desplazamiento de fondo. En móvil, sin esto, el dedo mueve
-    // la página y el modal parece pegado a la nada.
-    const previo = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    // la página y el modal parece pegado a la nada. Con contador: ver
+    // `bloqueoDeScroll.ts` — un modal dentro de otro, cerrados juntos, no deja
+    // el scroll trabado.
+    const liberar = bloquearScroll()
 
     return () => {
       document.removeEventListener('keydown', alPulsar)
-      document.body.style.overflow = previo
+      liberar()
     }
   }, [abierto])
 

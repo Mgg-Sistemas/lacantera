@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Download, FileWarning, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { bloquearScroll } from '@/lib/bloqueoDeScroll'
 
 /**
  * Ver el papel antes de quedárselo.
@@ -146,10 +147,12 @@ export function Visor({
       if (e.key === 'Escape') onCerrar()
     }
     document.addEventListener('keydown', alPulsar)
-    document.body.style.overflow = 'hidden'
+    // Con contador: ver `bloqueoDeScroll.ts` — un visor abierto encima de un
+    // modal, cerrados juntos, no deja el scroll trabado.
+    const liberar = bloquearScroll()
     return () => {
       document.removeEventListener('keydown', alPulsar)
-      document.body.style.overflow = ''
+      liberar()
     }
   }, [abierto, onCerrar])
 
