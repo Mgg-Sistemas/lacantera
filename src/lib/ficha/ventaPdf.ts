@@ -21,13 +21,15 @@
  *     (Subtotal + IVA = Total) con banda de equivalencia cambiaria; la nota de
  *     entrega muestra únicamente su total (y el pago combinado cuando aplica).
  *
- * TRES CENTÍMETROS DE MARGEN por los cuatro lados, como todo lo que sale de
- * aquí: viene de `hoja.ts` y no se decide en este archivo.
+ *   - ESCALA DINÁMICA EN HOJA A4. Aprovecha el ancho comercial de la hoja
+ *     (16 mm de margen lateral) y adapta la altura de las tarjetas, renglones
+ *     y separaciones verticales según la cantidad de renglones para que el
+ *     documento nunca quede apeñuscado arriba ni deje media página en blanco.
  */
 
 import { logoComoImagen } from './logo'
 import { dinero, esCedula } from '@/lib/formato'
-import { ABAJO, ajustar, ANCHO_UTIL, ARRIBA, CENTRO, DER, IZQ, PIE } from './hoja'
+import { ajustar } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
 import {
   type EmpresaPapel,
@@ -42,6 +44,15 @@ import {
 import type { PdfArmado } from './reciboPdf'
 
 const NARANJA = '#C2500A'
+
+/** Geometría A4 amplia para documentos ejecutivos (210 × 297 mm). */
+const IZQ = 16
+const DER = 194
+const ANCHO_UTIL = DER - IZQ // 178 mm
+const CENTRO = 105
+const ARRIBA = 16
+const ABAJO = 279
+const PIE = 281
 
 type Doc = import('jspdf').jsPDF
 
@@ -66,13 +77,6 @@ export interface RenglonImpreso {
   subtotal: string | number
   exento_iva?: boolean
 }
-
-/** Lo que crece un renglón por cada línea de más, de descripción o de detalle. */
-const LINEA_DE_MAS = 3.4
-
-/** Siete milímetros un renglón base, más las líneas adicionales de descripción o detalle. */
-const altoRenglon = (lineas: number, r: RenglonImpreso) =>
-  7 + (lineas - 1) * LINEA_DE_MAS + (r.detalle ? 3.4 : 0)
 
 export interface DatosDocumento {
   tipo: TipoDocumento
@@ -148,6 +152,66 @@ export interface DatosDocumento {
   emitidoPor: string
 }
 
+/**
+ * Parámetros de ritmo vertical y tipografía que se adaptan a la densidad del
+ * documento. Con pocos renglones todo respira con mayor cuerpo; con muchos
+ * renglones se compacta suavemente para aprovechar la hoja sin desbordar.
+ */
+interface EscalaLayout {
+  tallaFila: number
+  tallaDetalle: number
+  altoBaseFila: number
+  lineaDeMas: number
+  altoDetalle: number
+  altoCabeceraTabla: number
+  baseFilaCliente: number
+  altoDespachoBase: number
+  altoCajaFirmas: number
+}
+
+function escalaParaRenglones(cantidadRenglones: number): EscalaLayout {
+  if (cantidadRenglones <= 3) {
+    return {
+      tallaFila: 9.8,
+      tallaDetalle: 8,
+      altoBaseFila: 12,
+      lineaDeMas: 4.4,
+      altoDetalle: 4.8,
+      altoCabeceraTabla: 9.8,
+      baseFilaCliente: 13.5,
+      altoDespachoBase: 15.5,
+      altoCajaFirmas: 24,
+    }
+  }
+  if (cantidadRenglones <= 6) {
+    return {
+      tallaFila: 9.2,
+      tallaDetalle: 7.6,
+      altoBaseFila: 10.2,
+      lineaDeMas: 4,
+      altoDetalle: 4.3,
+      altoCabeceraTabla: 9,
+      baseFilaCliente: 12.2,
+      altoDespachoBase: 14,
+      altoCajaFirmas: 22,
+    }
+  }
+  return {
+    tallaFila: 8.6,
+    tallaDetalle: 7.2,
+    altoBaseFila: 8.4,
+    lineaDeMas: 3.6,
+    altoDetalle: 3.8,
+    altoCabeceraTabla: 8.2,
+    baseFilaCliente: 11,
+    altoDespachoBase: 13,
+    altoCajaFirmas: 19,
+  }
+}
+
+const altoRenglon = (lineas: number, r: RenglonImpreso, esc: EscalaLayout) =>
+  esc.altoBaseFila + (lineas - 1) * esc.lineaDeMas + (r.detalle ? esc.altoDetalle : 0)
+
 const ROTULOS: Record<
   TipoDocumento,
   {
@@ -210,7 +274,7 @@ const fechaCorta = (iso: string): string =>
   )
 
 // ---------------------------------------------------------------------------
-// Las columnas de la tabla (reparto sobre los 150 mm de ANCHO_UTIL)
+// Las columnas de la tabla (reparto sobre los 178 mm de ANCHO_UTIL)
 //
 // Cada columna tiene su propio hueco delimitado por líneas divisorias sutiles.
 // UNIDAD y CONVERSIÓN van centradas dentro de su celda para que los encabezados
@@ -234,91 +298,99 @@ interface Columnas {
 }
 
 const SIN_CONVERSION: Columnas = {
-  descripcion: 66,
-  cant: IZQ + 91.5,
-  unidCentro: IZQ + 103,
+  descripcion: 80,
+  cant: IZQ + 109,
+  unidCentro: IZQ + 123.5,
   convCentro: null,
-  prec: IZQ + 128.5,
-  total: DER - 2.5,
-  divisores: [IZQ + 72, IZQ + 94, IZQ + 112, IZQ + 131],
+  prec: IZQ + 153,
+  total: DER - 3.5,
+  divisores: [IZQ + 86, IZQ + 112, IZQ + 135, IZQ + 156],
 }
 
 const CON_CONVERSION: Columnas = {
-  descripcion: 48,
-  cant: IZQ + 71.5,
-  unidCentro: IZQ + 82,
-  convCentro: IZQ + 101,
-  prec: IZQ + 128.5,
-  total: DER - 2.5,
-  divisores: [IZQ + 54, IZQ + 74, IZQ + 90, IZQ + 112, IZQ + 131],
+  descripcion: 60,
+  cant: IZQ + 86,
+  unidCentro: IZQ + 99,
+  convCentro: IZQ + 121.5,
+  prec: IZQ + 153,
+  total: DER - 3.5,
+  divisores: [IZQ + 66, IZQ + 89, IZQ + 109, IZQ + 134, IZQ + 156],
 }
 
 /** Ancho reservado a la izquierda para los recuadros de conversión y observación. */
-const ANCHO_NOTAS = 76
+const ANCHO_NOTAS = 92
 
-function lineasDeDescripcion(doc: Doc, texto: string, ancho: number): string[] {
-  doc.setFont('helvetica', 'bold').setFontSize(8)
+function lineasDeDescripcion(doc: Doc, texto: string, ancho: number, talla: number): string[] {
+  doc.setFont('helvetica', 'bold').setFontSize(talla)
   const partes = doc.splitTextToSize(texto, ancho) as string[]
   if (partes.length <= 2) return partes
   return [partes[0], ajustar(doc, partes.slice(1).join(' '), ancho)]
 }
 
 /**
- * Membrete izquierdo + Tarjeta Fiscal derecha del Modelo Ejecutivo.
+ * Membrete izquierdo con logo prominente + Tarjeta Fiscal derecha del Modelo Ejecutivo.
  */
-function cabeceraEjecutiva(doc: Doc, logo: string, d: DatosDocumento): number {
+function cabeceraEjecutiva(
+  doc: Doc,
+  logo: string,
+  d: DatosDocumento,
+  espacioExtra = 0,
+): number {
   const y = ARRIBA
   const rotulo = ROTULOS[d.tipo]
 
-  const ANCHO_CAJA = 56
+  const ANCHO_CAJA = 64
   const xCaja = DER - ANCHO_CAJA
 
-  if (logo) doc.addImage(logo, 'PNG', IZQ, y - 1, 14, 14)
+  const LADO_LOGO = 25
+  if (logo) doc.addImage(logo, 'PNG', IZQ, y - 0.5, LADO_LOGO, LADO_LOGO)
 
-  const TEXTO = logo ? IZQ + 17 : IZQ
+  const TEXTO = logo ? IZQ + LADO_LOGO + 4.5 : IZQ
   const ANCHO_NOMBRE = xCaja - TEXTO - 4
 
-  let talla = 13.5
+  let talla = 15.5
   doc.setFont('helvetica', 'bold')
   const nombre = d.empresa.razonSocial.toUpperCase()
-  while (talla > 8.5) {
+  while (talla > 9.5) {
     doc.setFontSize(talla)
     if (doc.getTextWidth(nombre) <= ANCHO_NOMBRE) break
     talla -= 0.5
   }
 
   doc.setTextColor(MARCA).setFontSize(talla)
-  doc.text(ajustar(doc, nombre, ANCHO_NOMBRE), TEXTO, y + 3)
+  doc.text(ajustar(doc, nombre, ANCHO_NOMBRE), TEXTO, y + 5.2)
 
-  let bajoIzq = y + 3
+  let bajoIzq = y + 5.2
   if (d.empresa.actividad) {
-    doc.setFont('helvetica', 'bold').setFontSize(6.8).setTextColor(ROTULO)
-    doc.text(ajustar(doc, d.empresa.actividad.toUpperCase(), ANCHO_NOMBRE), TEXTO, y + 7.2)
-    bajoIzq = y + 7.2
+    doc.setFont('helvetica', 'bold').setFontSize(8.2).setTextColor(ROTULO)
+    doc.text(ajustar(doc, d.empresa.actividad.toUpperCase(), ANCHO_NOMBRE), TEXTO, y + 10.4)
+    bajoIzq = y + 10.4
   }
 
   const rifTexto = `RIF: ${d.empresa.rif}`
-  doc.setFont('helvetica', 'bold').setFontSize(6.8).setTextColor(TINTA)
-  doc.text(rifTexto, TEXTO, y + 11)
+  doc.setFont('helvetica', 'bold').setFontSize(8.2).setTextColor(TINTA)
+  doc.text(rifTexto, TEXTO, y + 15.2)
   if (d.empresa.contacto) {
     const xContacto = TEXTO + doc.getTextWidth(rifTexto)
     doc.setFont('helvetica', 'normal').setTextColor(GRIS)
     doc.text(
-      ajustar(doc, `  ·  ${d.empresa.contacto}`, Math.max(10, ANCHO_NOMBRE - (xContacto - TEXTO))),
+      ajustar(doc, `  ·  ${d.empresa.contacto}`, Math.max(12, ANCHO_NOMBRE - (xContacto - TEXTO))),
       xContacto,
-      y + 11,
+      y + 15.2,
     )
   }
-  bajoIzq = y + 11
+  bajoIzq = y + 15.2
 
   if (d.empresa.domicilio) {
-    doc.setFont('helvetica', 'normal').setFontSize(6.2).setTextColor(GRIS)
+    doc.setFont('helvetica', 'normal').setFontSize(7.4).setTextColor(GRIS)
     const lineas = (
       doc.splitTextToSize(d.empresa.domicilio.toUpperCase(), ANCHO_NOMBRE) as string[]
     ).slice(0, 2)
-    doc.text(lineas, TEXTO, y + 14.4, { lineHeightFactor: 1.3 })
-    bajoIzq = y + 14.4 + (lineas.length - 1) * 2.4
+    doc.text(lineas, TEXTO, y + 19.6, { lineHeightFactor: 1.32 })
+    bajoIzq = y + 19.6 + (lineas.length - 1) * 3.1
   }
+
+  bajoIzq = Math.max(bajoIzq, y + LADO_LOGO - 1)
 
   // Tarjeta Fiscal a la derecha
   const filasCaja: Array<{
@@ -349,72 +421,67 @@ function cabeceraEjecutiva(doc: Doc, logo: string, d: DatosDocumento): number {
     })
   }
 
-  const ALTO_CABECERA_CAJA = 5.6
-  const ALTO_FILA_CAJA = 4.4
-  const altoCuerpoCaja = filasCaja.length * ALTO_FILA_CAJA + 2.2
+  const ALTO_CABECERA_CAJA = 7
+  const ALTO_FILA_CAJA = 5.6
+  const altoCuerpoCaja = filasCaja.length * ALTO_FILA_CAJA + 2.8
   const altoCaja = ALTO_CABECERA_CAJA + altoCuerpoCaja
-  const yCaja = y - 1.5
+  const yCaja = y - 0.5
 
   // Fondo y borde general de la tarjeta fiscal
   doc.setFillColor('#faf8f6')
-  doc.setDrawColor('#d6d3d1').setLineWidth(0.25)
-  doc.roundedRect(xCaja, yCaja, ANCHO_CAJA, altoCaja, 1.2, 1.2, 'FD')
+  doc.setDrawColor('#d6d3d1').setLineWidth(0.3)
+  doc.roundedRect(xCaja, yCaja, ANCHO_CAJA, altoCaja, 1.4, 1.4, 'FD')
 
   // Banda superior de la tarjeta con el título del documento
   doc.setFillColor(rotulo.color)
   doc.rect(xCaja, yCaja, ANCHO_CAJA, ALTO_CABECERA_CAJA, 'F')
-  doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor('#FFFFFF')
-  doc.text(rotulo.titulo, xCaja + ANCHO_CAJA / 2, yCaja + 3.9, { align: 'center' })
+  doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor('#FFFFFF')
+  doc.text(rotulo.titulo, xCaja + ANCHO_CAJA / 2, yCaja + 4.9, { align: 'center' })
 
-  let yFila = yCaja + ALTO_CABECERA_CAJA + 3.6
+  let yFila = yCaja + ALTO_CABECERA_CAJA + 4.6
   filasCaja.forEach((f) => {
     if (f.separador) {
-      doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
-      if (f.separador === 'dashed') doc.setLineDashPattern([0.8, 0.8], 0)
-      doc.line(xCaja + 2.5, yFila - 3.1, DER - 2.5, yFila - 3.1)
+      doc.setDrawColor(HAIRLINE).setLineWidth(0.22)
+      if (f.separador === 'dashed') doc.setLineDashPattern([0.9, 0.9], 0)
+      doc.line(xCaja + 3, yFila - 3.9, DER - 3, yFila - 3.9)
       if (f.separador === 'dashed') doc.setLineDashPattern([], 0)
     }
 
-    doc.setFont('helvetica', 'bold').setFontSize(6.2).setTextColor(GRIS)
-    doc.text(`${f.etiqueta}:`, xCaja + 2.5, yFila)
+    doc.setFont('helvetica', 'bold').setFontSize(7.4).setTextColor(GRIS)
+    doc.text(`${f.etiqueta}:`, xCaja + 3, yFila)
 
     doc
       .setFont('helvetica', 'bold')
-      .setFontSize(f.destacado ? 8.2 : 7)
+      .setFontSize(f.destacado ? 10.2 : 8.5)
       .setTextColor(f.destacado ? rotulo.color : TINTA)
-    doc.text(ajustar(doc, f.valor, 32), DER - 2.5, yFila, { align: 'right' })
+    doc.text(ajustar(doc, f.valor, 38), DER - 3, yFila, { align: 'right' })
 
     yFila += ALTO_FILA_CAJA
   })
 
-  const regla = Math.max(bajoIzq + 3.5, yCaja + altoCaja + 2.8)
-  doc.setDrawColor(rotulo.color).setLineWidth(0.65)
+  const regla = Math.max(bajoIzq + 4, yCaja + altoCaja + 3.5) + espacioExtra * 0.35
+  doc.setDrawColor(rotulo.color).setLineWidth(0.75)
   doc.line(IZQ, regla, DER, regla)
 
-  return regla + 3.5
+  return regla + 5 + espacioExtra * 0.65
 }
 
 /**
- * Tarjeta del cliente con barra lateral de acento y, en la nota, datos del despacho.
+ * Calcula y dibuja la tarjeta del cliente con barra lateral de acento y datos de despacho.
  */
-function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
-  const rotulo = ROTULOS[d.tipo]
-  const x1 = IZQ + 4.5
-  const xDiv = IZQ + 92
-  const x2 = IZQ + 95
-  const ANCHO_1 = 84.5
-  const ANCHO_2 = 52
-  const RENGLON = 3.5
+function medirEncabezadoCliente(doc: Doc, d: DatosDocumento, esc: EscalaLayout) {
+  const ANCHO_1 = 104
+  const RENGLON = 4.2
 
-  doc.setFont('helvetica', 'bold').setFontSize(8.2)
+  doc.setFont('helvetica', 'bold').setFontSize(9.8)
   const nombre = (doc.splitTextToSize(d.contraparte.nombre || '—', ANCHO_1) as string[]).slice(0, 2)
-  doc.setFont('helvetica', 'bold').setFontSize(7.6)
+  doc.setFont('helvetica', 'bold').setFontSize(8.8)
   const direccion = (
     doc.splitTextToSize(d.contraparte.direccion ?? '—', ANCHO_1) as string[]
   ).slice(0, 3)
 
-  const altoFila1 = 9.5 + (nombre.length - 1) * RENGLON
-  const altoFila2 = 9.5 + (direccion.length - 1) * RENGLON
+  const altoFila1 = esc.baseFilaCliente + (nombre.length - 1) * RENGLON
+  const altoFila2 = esc.baseFilaCliente + (direccion.length - 1) * RENGLON
   const altoDatos = altoFila1 + altoFila2
 
   const camiones = d.despacho?.camiones?.length
@@ -422,84 +489,112 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
     : d.despacho
       ? [d.despacho]
       : []
-  const altoDespacho = d.despacho ? 12 + Math.max(0, camiones.length - 1) * 4.8 : 0
-  const altoTotal = altoDatos + altoDespacho
+  const altoDespacho = d.despacho
+    ? esc.altoDespachoBase + Math.max(0, camiones.length - 1) * 5.6
+    : 0
+
+  return {
+    nombre,
+    direccion,
+    altoFila1,
+    altoFila2,
+    altoDatos,
+    camiones,
+    altoDespacho,
+    altoTotal: altoDatos + altoDespacho,
+  }
+}
+
+function encabezadoCliente(
+  doc: Doc,
+  d: DatosDocumento,
+  y: number,
+  esc: EscalaLayout,
+  espacioExtra = 0,
+): number {
+  const rotulo = ROTULOS[d.tipo]
+  const x1 = IZQ + 5.5
+  const xDiv = IZQ + 114
+  const x2 = IZQ + 118
+  const ANCHO_2 = DER - x2 - 3
+
+  const m = medirEncabezadoCliente(doc, d, esc)
 
   // Fondo y contorno de la tarjeta
   doc.setFillColor(FILA_ALTERNA)
-  doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
-  doc.rect(IZQ, y, ANCHO_UTIL, altoTotal, 'FD')
+  doc.setDrawColor(HAIRLINE).setLineWidth(0.3)
+  doc.rect(IZQ, y, ANCHO_UTIL, m.altoTotal, 'FD')
 
   // Barra lateral izquierda de acento
   doc.setFillColor(rotulo.acento)
-  doc.rect(IZQ, y, 1.4, altoTotal, 'F')
+  doc.rect(IZQ, y, 1.8, m.altoTotal, 'F')
 
   // Líneas internas de la grilla de cliente
-  doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
-  doc.line(xDiv, y, xDiv, y + altoDatos)
-  doc.line(IZQ + 1.4, y + altoFila1, DER, y + altoFila1)
+  doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
+  doc.line(xDiv, y, xDiv, y + m.altoDatos)
+  doc.line(IZQ + 1.8, y + m.altoFila1, DER, y + m.altoFila1)
 
   const etiqueta = (texto: string, x: number, fila: number, color = GRIS) => {
-    doc.setFont('helvetica', 'bold').setFontSize(6.2).setTextColor(color)
+    doc.setFont('helvetica', 'bold').setFontSize(7.2).setTextColor(color)
     doc.text(texto.toUpperCase(), x, fila)
   }
 
   // Fila 1: Cliente y Cédula/RIF
-  etiqueta('Cliente / Razón Social', x1, y + 4.2, rotulo.acento)
-  doc.setFont('helvetica', 'bold').setFontSize(8.2).setTextColor('#222222')
-  doc.text(nombre, x1, y + 8, { lineHeightFactor: 1.35 })
+  etiqueta('Cliente / Razón Social', x1, y + 5, rotulo.acento)
+  doc.setFont('helvetica', 'bold').setFontSize(9.8).setTextColor('#1c1917')
+  doc.text(m.nombre, x1, y + 9.8, { lineHeightFactor: 1.32 })
 
-  etiqueta(esCedula(d.contraparte.rif) ? 'Cédula / RIF' : 'RIF / Cédula', x2, y + 4.2, rotulo.acento)
-  doc.setFont('helvetica', 'bold').setFontSize(8.2).setTextColor('#222222')
-  doc.text(ajustar(doc, d.contraparte.rif || '—', ANCHO_2), x2, y + 8)
+  etiqueta(esCedula(d.contraparte.rif) ? 'Cédula / RIF' : 'RIF / Cédula', x2, y + 5, rotulo.acento)
+  doc.setFont('helvetica', 'bold').setFontSize(9.8).setTextColor('#1c1917')
+  doc.text(ajustar(doc, d.contraparte.rif || '—', ANCHO_2), x2, y + 9.8)
 
   // Fila 2: Dirección y Condición de pago / Teléfono
-  const yDir = y + altoFila1
-  etiqueta('Dirección Fiscal', x1, yDir + 4.2, GRIS)
-  doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(TINTA)
-  doc.text(direccion, x1, yDir + 8, { lineHeightFactor: 1.35 })
+  const yDir = y + m.altoFila1
+  etiqueta('Dirección Fiscal', x1, yDir + 5, GRIS)
+  doc.setFont('helvetica', 'bold').setFontSize(8.8).setTextColor(TINTA)
+  doc.text(m.direccion, x1, yDir + 9.6, { lineHeightFactor: 1.32 })
 
-  etiqueta(d.condicionPago ? 'Condición de pago' : 'Teléfono', x2, yDir + 4.2, GRIS)
+  etiqueta(d.condicionPago ? 'Condición de pago' : 'Teléfono', x2, yDir + 5, GRIS)
   const valorCondicion = d.condicionPago ?? d.contraparte.telefono ?? '—'
   if (d.condicionPago) {
-    doc.setFont('helvetica', 'bold').setFontSize(7.4)
-    const textoCond = ajustar(doc, valorCondicion, ANCHO_2 - 4)
-    const anchoPastilla = doc.getTextWidth(textoCond) + 4
+    doc.setFont('helvetica', 'bold').setFontSize(8.6)
+    const textoCond = ajustar(doc, valorCondicion, ANCHO_2 - 5)
+    const anchoPastilla = doc.getTextWidth(textoCond) + 5
     doc.setFillColor('#ebe5e0')
-    doc.roundedRect(x2, yDir + 5.1, anchoPastilla, 4.2, 0.8, 0.8, 'F')
+    doc.roundedRect(x2, yDir + 6.1, anchoPastilla, 5.2, 1, 1, 'F')
     doc.setTextColor(ROTULO)
-    doc.text(textoCond, x2 + 2, yDir + 8)
+    doc.text(textoCond, x2 + 2.5, yDir + 9.7)
   } else {
-    doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(TINTA)
-    doc.text(ajustar(doc, valorCondicion, ANCHO_2), x2, yDir + 8)
+    doc.setFont('helvetica', 'bold').setFontSize(8.8).setTextColor(TINTA)
+    doc.text(ajustar(doc, valorCondicion, ANCHO_2), x2, yDir + 9.6)
   }
 
   // Fila 3 (solo Nota de Entrega): Vehículo, Chofer, Cédula, Ticket/Peso
   if (d.despacho) {
-    const yDesp = y + altoDatos
-    doc.setDrawColor('#d6d3d1').setLineWidth(0.3)
-    doc.line(IZQ + 1.4, yDesp, DER, yDesp)
+    const yDesp = y + m.altoDatos
+    doc.setDrawColor('#d6d3d1').setLineWidth(0.35)
+    doc.line(IZQ + 1.8, yDesp, DER, yDesp)
 
     const columnas = [
-      ['Vehículo', 32],
-      ['Chofer', 48],
-      ['Cédula', 28],
-      ['Ticket · peso neto', 36],
+      ['Vehículo', 38],
+      ['Chofer', 58],
+      ['Cédula', 34],
+      ['Ticket · peso neto', 42],
     ] as const
 
     let x = x1
     for (const [rot, ancho] of columnas) {
       etiqueta(
-        camiones.length > 1 && rot === 'Vehículo' ? `Vehículos (${camiones.length})` : rot,
+        m.camiones.length > 1 && rot === 'Vehículo' ? `Vehículos (${m.camiones.length})` : rot,
         x,
-        yDesp + 4.2,
+        yDesp + 5.2,
         rotulo.acento,
       )
       x += ancho
     }
 
-    camiones.forEach((c, i) => {
-      const fila = yDesp + 8 + i * 4.8
+    m.camiones.forEach((c, i) => {
+      const fila = yDesp + 10.2 + i * 5.6
       const valores = [
         c.vehiculo,
         c.chofer,
@@ -508,14 +603,14 @@ function encabezadoCliente(doc: Doc, d: DatosDocumento, y: number): number {
       ]
       let cx = x1
       columnas.forEach(([, ancho], j) => {
-        doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor('#222222')
+        doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor('#1c1917')
         doc.text(ajustar(doc, valores[j] || '—', ancho - 3), cx, fila)
         cx += ancho
       })
     })
   }
 
-  return y + altoTotal + 4.5
+  return y + m.altoTotal + 6 + espacioExtra
 }
 
 function cabeceraTabla(
@@ -523,45 +618,47 @@ function cabeceraTabla(
   y: number,
   col: Columnas,
   rotulo: (typeof ROTULOS)[TipoDocumento],
+  esc: EscalaLayout,
 ): number {
-  const ALTO = 7
+  const ALTO = esc.altoCabeceraTabla
   doc.setFillColor(rotulo.color)
   doc.rect(IZQ, y, ANCHO_UTIL, ALTO, 'F')
 
   // Separadores verticales sutiles en la cabecera
-  doc.setDrawColor(rotulo.divisorCabecera).setLineWidth(0.2)
+  doc.setDrawColor(rotulo.divisorCabecera).setLineWidth(0.25)
   for (const x of col.divisores) {
-    doc.line(x, y + 1.2, x, y + ALTO - 1.2)
+    doc.line(x, y + 1.5, x, y + ALTO - 1.5)
   }
 
-  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(6.8)
-  doc.text('DESCRIPCIÓN', IZQ + 3, y + 4.7)
-  doc.text('CANTIDAD', col.cant, y + 4.7, { align: 'right' })
-  doc.text('UNIDAD', col.unidCentro, y + 4.7, { align: 'center' })
-  if (col.convCentro !== null) doc.text('CONVERSIÓN', col.convCentro, y + 4.7, { align: 'center' })
-  doc.text('PRECIO', col.prec, y + 4.7, { align: 'right' })
-  doc.text('TOTAL', col.total, y + 4.7, { align: 'right' })
+  const yTexto = y + ALTO * 0.64
+  doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(8)
+  doc.text('DESCRIPCIÓN', IZQ + 3.5, yTexto)
+  doc.text('CANTIDAD', col.cant, yTexto, { align: 'right' })
+  doc.text('UNIDAD', col.unidCentro, yTexto, { align: 'center' })
+  if (col.convCentro !== null) doc.text('CONVERSIÓN', col.convCentro, yTexto, { align: 'center' })
+  doc.text('PRECIO', col.prec, yTexto, { align: 'right' })
+  doc.text('TOTAL', col.total, yTexto, { align: 'right' })
 
   return y + ALTO
 }
 
 function pie(doc: Doc, d: DatosDocumento, pagina: number, de: number) {
-  doc.setDrawColor('#d6d3d1').setLineWidth(0.25)
-  doc.line(IZQ, PIE - 8, DER, PIE - 8)
+  doc.setDrawColor('#d6d3d1').setLineWidth(0.3)
+  doc.line(IZQ, PIE - 9, DER, PIE - 9)
 
   const legal =
     d.tipo === 'FACTURA' && d.empresa.imprenta
       ? `${PIES[d.tipo]} Imprenta: ${d.empresa.imprenta}.`
       : PIES[d.tipo]
 
-  doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.5)
-  const lineas = (doc.splitTextToSize(legal, ANCHO_UTIL - 30) as string[]).slice(0, 2)
-  doc.text(lineas, IZQ, lineas.length > 1 ? PIE - 6.2 : PIE - 4.5)
+  doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7.4)
+  const lineas = (doc.splitTextToSize(legal, ANCHO_UTIL - 34) as string[]).slice(0, 2)
+  doc.text(lineas, IZQ, lineas.length > 1 ? PIE - 6.6 : PIE - 5)
 
-  doc.setFont('helvetica', 'bold').setTextColor(ROTULO)
-  doc.text(`Página ${pagina} de ${de}`, DER, PIE - 4.5, { align: 'right' })
+  doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(ROTULO)
+  doc.text(`Página ${pagina} de ${de}`, DER, PIE - 5, { align: 'right' })
 
-  doc.setFont('helvetica', 'normal').setTextColor(GRIS)
+  doc.setFont('helvetica', 'normal').setFontSize(7.4).setTextColor(GRIS)
   doc.text(`Emitido por ${d.emitidoPor} · ${EMPRESA.marca}`, IZQ, PIE)
 
   if (d.tipo !== 'NOTA') {
@@ -574,7 +671,7 @@ function sello(doc: Doc, texto: string) {
   doc.saveGraphicsState()
   // @ts-expect-error jsPDF expone GState por el objeto global, sin tipo propio.
   doc.setGState(new doc.GState({ opacity: 0.14 }))
-  doc.setTextColor('#DE3B40').setFont('helvetica', 'bold').setFontSize(64)
+  doc.setTextColor('#DE3B40').setFont('helvetica', 'bold').setFontSize(68)
   doc.text(texto, CENTRO, 165, { align: 'center', angle: 28 })
   doc.restoreGraphicsState()
 }
@@ -587,7 +684,7 @@ const lineaDeIva = (d: DatosDocumento) =>
 const lineaDeIgtf = (d: DatosDocumento) => mencionaImpuestos(d) && Number(d.igtf ?? 0) > 0
 
 function altoTotales(d: DatosDocumento): number {
-  if (!mencionaImpuestos(d)) return d.pagoCombinado ? 18 : 13
+  if (!mencionaImpuestos(d)) return d.pagoCombinado ? 22 : 16
   const filas =
     1 + // subtotal
     (lineaDeIva(d) ? 1 : 0) +
@@ -595,7 +692,7 @@ function altoTotales(d: DatosDocumento): number {
     (Number(d.descuento) > 0 ? 1 : 0) +
     (Number(d.flete) > 0 ? 1 : 0) +
     (Number(d.retencionIva ?? 0) > 0 ? 2 : 0)
-  return filas * 4.8 + 18
+  return filas * 5.8 + 22
 }
 
 /**
@@ -604,31 +701,31 @@ function altoTotales(d: DatosDocumento): number {
  */
 function totales(doc: Doc, d: DatosDocumento, y: number): number {
   const rotulo = ROTULOS[d.tipo]
-  const x = IZQ + 82
+  const x = IZQ + 98
   const ancho = DER - x
-  const yInicio = y + 3
+  const yInicio = y
 
   if (!mencionaImpuestos(d)) {
-    const altoCaja = d.pagoCombinado ? 14 : 9
+    const altoCaja = d.pagoCombinado ? 17.5 : 11.5
     doc.setFillColor('#faf8f6')
-    doc.setDrawColor(rotulo.color).setLineWidth(0.4)
-    doc.roundedRect(x, yInicio, ancho, altoCaja, 1, 1, 'FD')
+    doc.setDrawColor(rotulo.color).setLineWidth(0.45)
+    doc.roundedRect(x, yInicio, ancho, altoCaja, 1.2, 1.2, 'FD')
 
-    doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(rotulo.color)
-    doc.text('TOTAL', x + 3.5, yInicio + 6)
-    doc.setFontSize(10.5).setTextColor('#111111')
-    doc.text(conSimbolo(d.moneda, d.total), DER - 3.5, yInicio + 6, { align: 'right' })
+    doc.setFont('helvetica', 'bold').setFontSize(10.5).setTextColor(rotulo.color)
+    doc.text('TOTAL', x + 4.5, yInicio + 7.4)
+    doc.setFontSize(12.2).setTextColor('#111111')
+    doc.text(conSimbolo(d.moneda, d.total), DER - 4.5, yInicio + 7.4, { align: 'right' })
 
     if (d.pagoCombinado) {
-      doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
-      doc.line(x + 3, yInicio + 8, DER - 3, yInicio + 8)
-      doc.setFont('helvetica', 'normal').setFontSize(7.2).setTextColor(GRIS)
-      doc.text('Pago combinado', x + 3.5, yInicio + 12)
+      doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
+      doc.line(x + 3.5, yInicio + 10, DER - 3.5, yInicio + 10)
+      doc.setFont('helvetica', 'normal').setFontSize(8.2).setTextColor(GRIS)
+      doc.text('Pago combinado', x + 4.5, yInicio + 14.8)
       doc.setFont('helvetica', 'bold').setTextColor(TINTA)
       doc.text(
         `${conSimbolo('USD', d.pagoCombinado.usd)} + ${conSimbolo('VES', d.pagoCombinado.bs)}`,
-        DER - 3.5,
-        yInicio + 12,
+        DER - 4.5,
+        yInicio + 14.8,
         { align: 'right' },
       )
     }
@@ -657,25 +754,25 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
     filasSuperiores.push([etqIgtf, conSimbolo(d.moneda, d.igtf ?? 0)])
   }
 
-  const ALTO_FILA = 4.6
-  const altoSuperiores = filasSuperiores.length * ALTO_FILA + 3
-  const ALTO_BANDA_TOTAL = 8
+  const ALTO_FILA = 5.6
+  const altoSuperiores = filasSuperiores.length * ALTO_FILA + 3.6
+  const ALTO_BANDA_TOTAL = 9.8
   const tieneRetencion = Number(d.retencionIva ?? 0) > 0
-  const altoRetencion = tieneRetencion ? 10 : 0
-  const ALTO_BANDA_EQ = 5.6
+  const altoRetencion = tieneRetencion ? 12 : 0
+  const ALTO_BANDA_EQ = 6.8
   const altoTotalCaja = altoSuperiores + ALTO_BANDA_TOTAL + altoRetencion + ALTO_BANDA_EQ
 
   // Contenedor blanco general
   doc.setFillColor('#ffffff')
-  doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
-  doc.roundedRect(x, yInicio, ancho, altoTotalCaja, 1, 1, 'FD')
+  doc.setDrawColor(HAIRLINE).setLineWidth(0.3)
+  doc.roundedRect(x, yInicio, ancho, altoTotalCaja, 1.2, 1.2, 'FD')
 
-  let cursor = yInicio + 4.4
+  let cursor = yInicio + 5.4
   for (const [etq, val] of filasSuperiores) {
-    doc.setFont('helvetica', 'normal').setFontSize(7.8).setTextColor(GRIS)
-    doc.text(etq, x + 3.5, cursor)
+    doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(GRIS)
+    doc.text(etq, x + 4.5, cursor)
     doc.setFont('helvetica', 'bold').setTextColor(TINTA)
-    doc.text(val, DER - 3.5, cursor, { align: 'right' })
+    doc.text(val, DER - 4.5, cursor, { align: 'right' })
     cursor += ALTO_FILA
   }
 
@@ -683,33 +780,33 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
   const yBandaTotal = yInicio + altoSuperiores
   doc.setFillColor(FILA_ALTERNA)
   doc.rect(x + 0.2, yBandaTotal, ancho - 0.4, ALTO_BANDA_TOTAL, 'F')
-  doc.setDrawColor(rotulo.color).setLineWidth(0.5)
+  doc.setDrawColor(rotulo.color).setLineWidth(0.55)
   doc.line(x, yBandaTotal, DER, yBandaTotal)
 
-  doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(rotulo.color)
-  doc.text('TOTAL', x + 3.5, yBandaTotal + 5.4)
-  doc.setFontSize(10.5).setTextColor('#111111')
-  doc.text(conSimbolo(d.moneda, d.total), DER - 3.5, yBandaTotal + 5.4, { align: 'right' })
+  doc.setFont('helvetica', 'bold').setFontSize(10.5).setTextColor(rotulo.color)
+  doc.text('TOTAL', x + 4.5, yBandaTotal + 6.6)
+  doc.setFontSize(12.2).setTextColor('#111111')
+  doc.text(conSimbolo(d.moneda, d.total), DER - 4.5, yBandaTotal + 6.6, { align: 'right' })
 
   let yDespuesTotal = yBandaTotal + ALTO_BANDA_TOTAL
 
   if (tieneRetencion) {
-    doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
+    doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
     doc.line(x, yDespuesTotal, DER, yDespuesTotal)
 
-    doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-    doc.text('Retención de IVA', x + 3.5, yDespuesTotal + 4)
+    doc.setFont('helvetica', 'normal').setFontSize(8.6).setTextColor(GRIS)
+    doc.text('Retención de IVA', x + 4.5, yDespuesTotal + 4.8)
     doc.setFont('helvetica', 'bold').setTextColor(MARCA)
-    doc.text(`- ${conSimbolo(d.moneda, d.retencionIva)}`, DER - 3.5, yDespuesTotal + 4, {
+    doc.text(`- ${conSimbolo(d.moneda, d.retencionIva)}`, DER - 4.5, yDespuesTotal + 4.8, {
       align: 'right',
     })
 
-    doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(TINTA)
-    doc.text('A pagar', x + 3.5, yDespuesTotal + 8.2)
+    doc.setFont('helvetica', 'bold').setFontSize(9.2).setTextColor(TINTA)
+    doc.text('A pagar', x + 4.5, yDespuesTotal + 9.8)
     doc.text(
       conSimbolo(d.moneda, Number(d.total) - Number(d.retencionIva ?? 0)),
-      DER - 3.5,
-      yDespuesTotal + 8.2,
+      DER - 4.5,
+      yDespuesTotal + 9.8,
       { align: 'right' },
     )
     yDespuesTotal += altoRetencion
@@ -725,15 +822,15 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
       ? `Equivale a $ ${numero(Number(d.total) / tasaRef)}`
       : `Equivale a Bs ${numero(Number(d.total) * Number(d.tasa || 1))}`
 
-  doc.setFont('helvetica', 'normal').setFontSize(6.6).setTextColor('#f5f5f4')
-  doc.text(`Tasa BCV: ${numero(tasaRef)} Bs/$`, x + 3.5, yDespuesTotal + 3.9)
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor('#ffffff')
-  doc.text(otra, DER - 3.5, yDespuesTotal + 3.9, { align: 'right' })
+  doc.setFont('helvetica', 'normal').setFontSize(7.6).setTextColor('#f5f5f4')
+  doc.text(`Tasa BCV: ${numero(tasaRef)} Bs/$`, x + 4.5, yDespuesTotal + 4.6)
+  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor('#ffffff')
+  doc.text(otra, DER - 4.5, yDespuesTotal + 4.6, { align: 'right' })
 
   return yInicio + altoTotalCaja + 3
 }
 
-function firmas(doc: Doc, d: DatosDocumento, y: number) {
+function firmas(doc: Doc, d: DatosDocumento, yCaja: number, altoCaja: number) {
   const izquierda = d.tipo === 'NOTA' ? 'Entregado por' : 'Por la empresa'
   const derecha = d.tipo === 'NOTA' ? 'Recibido conforme' : 'Aceptado por el cliente'
   const subIzq = 'Nombre, cédula, fecha y sello'
@@ -741,7 +838,7 @@ function firmas(doc: Doc, d: DatosDocumento, y: number) {
 
   const SEPARA = 12
   const ancho = (ANCHO_UTIL - SEPARA) / 2
-  const ALTO_CAJA = 17
+  const yLinea = yCaja + altoCaja - 9
 
   for (const [i, [texto, subtitulo]] of [
     [izquierda, subIzq],
@@ -749,17 +846,17 @@ function firmas(doc: Doc, d: DatosDocumento, y: number) {
   ].entries()) {
     const x = IZQ + i * (ancho + SEPARA)
     doc.setFillColor('#faf8f6')
-    doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
-    doc.roundedRect(x, y - 9.5, ancho, ALTO_CAJA, 1, 1, 'FD')
+    doc.setDrawColor(HAIRLINE).setLineWidth(0.3)
+    doc.roundedRect(x, yCaja, ancho, altoCaja, 1.2, 1.2, 'FD')
 
-    const margenLinea = ancho * 0.12
-    doc.setDrawColor(TINTA).setLineWidth(0.35)
-    doc.line(x + margenLinea, y - 0.5, x + ancho - margenLinea, y - 0.5)
+    const margenLinea = ancho * 0.1
+    doc.setDrawColor(TINTA).setLineWidth(0.4)
+    doc.line(x + margenLinea, yLinea, x + ancho - margenLinea, yLinea)
 
-    doc.setTextColor(ROTULO).setFont('helvetica', 'bold').setFontSize(6.8)
-    doc.text(texto.toUpperCase(), x + ancho / 2, y + 3, { align: 'center' })
-    doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(6.3)
-    doc.text(subtitulo, x + ancho / 2, y + 6, { align: 'center' })
+    doc.setTextColor(ROTULO).setFont('helvetica', 'bold').setFontSize(8)
+    doc.text(texto.toUpperCase(), x + ancho / 2, yLinea + 4.2, { align: 'center' })
+    doc.setTextColor(GRIS).setFont('helvetica', 'normal').setFontSize(7.2)
+    doc.text(subtitulo, x + ancho / 2, yLinea + 7.4, { align: 'center' })
   }
 }
 
@@ -773,38 +870,38 @@ function pintarNotasIzquierda(
   lineasObservacion: string[],
   acento: string,
 ): number {
-  let cursor = y + 3
+  let cursor = y
 
   if (lineasConversion.length > 0) {
-    const altoCaja = 4.2 + lineasConversion.length * 3.1
+    const altoCaja = 5.4 + lineasConversion.length * 4
     doc.setFillColor('#faf8f6')
-    doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
+    doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
     doc.rect(IZQ, cursor, ANCHO_NOTAS, altoCaja, 'FD')
     doc.setFillColor(GRIS_SUAVE)
-    doc.rect(IZQ, cursor, 1.1, altoCaja, 'F')
+    doc.rect(IZQ, cursor, 1.4, altoCaja, 'F')
 
     lineasConversion.forEach((linea, idx) => {
       doc
         .setFont('helvetica', idx === 0 ? 'bold' : 'normal')
-        .setFontSize(idx === 0 ? 6.8 : 6.3)
+        .setFontSize(idx === 0 ? 8 : 7.5)
         .setTextColor(idx === 0 ? ROTULO : GRIS)
-      doc.text(linea, IZQ + 3, cursor + 3.5 + idx * 3.1)
+      doc.text(linea, IZQ + 4, cursor + 4.6 + idx * 4)
     })
 
-    cursor += altoCaja + 2.5
+    cursor += altoCaja + 3.5
   }
 
   if (lineasObservacion.length > 0) {
-    const altoObs = 4 + lineasObservacion.length * 3.1
+    const altoObs = 5 + lineasObservacion.length * 4
     doc.setFillColor('#faf8f6')
-    doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
+    doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
     doc.rect(IZQ, cursor, ANCHO_NOTAS, altoObs, 'FD')
     doc.setFillColor(acento)
-    doc.rect(IZQ, cursor, 1.1, altoObs, 'F')
+    doc.rect(IZQ, cursor, 1.4, altoObs, 'F')
 
-    doc.setFont('helvetica', 'normal').setFontSize(6.5).setTextColor(TINTA)
+    doc.setFont('helvetica', 'normal').setFontSize(7.6).setTextColor(TINTA)
     lineasObservacion.forEach((linea, idx) => {
-      doc.text(linea, IZQ + 3, cursor + 3.4 + idx * 3.1)
+      doc.text(linea, IZQ + 4, cursor + 4.5 + idx * 4)
     })
 
     cursor += altoObs
@@ -816,67 +913,111 @@ function pintarNotasIzquierda(
 function dibujarDocumento(doc: Doc, logo: string, d: DatosDocumento): void {
   const rotulo = ROTULOS[d.tipo]
   const col = d.renglones.some((r) => r.conversion) ? CON_CONVERSION : SIN_CONVERSION
+  const esc = escalaParaRenglones(d.renglones.length)
 
   // Medir notas de conversión y observación antes de repartir las hojas
-  doc.setFont('helvetica', 'normal').setFontSize(6.4)
+  doc.setFont('helvetica', 'normal').setFontSize(7.6)
   let lineasConversion: string[] = []
   if (col.convCentro !== null && d.notaConversion) {
     for (const parrafo of d.notaConversion.split('\n')) {
-      const envueltas = doc.splitTextToSize(parrafo, ANCHO_NOTAS - 5) as string[]
+      const envueltas = doc.splitTextToSize(parrafo, ANCHO_NOTAS - 7) as string[]
       lineasConversion.push(...envueltas)
     }
     if (lineasConversion.length > 7) {
       lineasConversion = [
         ...lineasConversion.slice(0, 6),
-        ajustar(doc, lineasConversion.slice(6).join(' '), ANCHO_NOTAS - 5),
+        ajustar(doc, lineasConversion.slice(6).join(' '), ANCHO_NOTAS - 7),
       ]
     }
   }
 
-  doc.setFont('helvetica', 'normal').setFontSize(6.5)
+  doc.setFont('helvetica', 'normal').setFontSize(7.6)
   let lineasObservacion: string[] = []
   if (d.observacion) {
     lineasObservacion = doc.splitTextToSize(
       `Observación: ${d.observacion}`,
-      ANCHO_NOTAS - 5,
+      ANCHO_NOTAS - 7,
     ) as string[]
     if (lineasObservacion.length > 5) {
       lineasObservacion = [
         ...lineasObservacion.slice(0, 4),
-        ajustar(doc, lineasObservacion.slice(4).join(' '), ANCHO_NOTAS - 5),
+        ajustar(doc, lineasObservacion.slice(4).join(' '), ANCHO_NOTAS - 7),
       ]
     }
   }
 
   const altoNotasIzq =
-    (lineasConversion.length > 0 ? 6.5 + lineasConversion.length * 3.1 : 0) +
-    (lineasObservacion.length > 0 ? 6 + lineasObservacion.length * 3.1 : 0)
-  const cierre = Math.max(altoTotales(d), altoNotasIzq) + 26
+    (lineasConversion.length > 0 ? 5.4 + lineasConversion.length * 4 : 0) +
+    (lineasConversion.length > 0 && lineasObservacion.length > 0 ? 3.5 : 0) +
+    (lineasObservacion.length > 0 ? 5 + lineasObservacion.length * 4 : 0)
+  const altoBloqueInferior = Math.max(altoTotales(d), altoNotasIzq)
+  const cierre = altoBloqueInferior + esc.altoCajaFirmas + 14
   const topeTabla = ABAJO - 14
 
-  const yTrasMembrete = cabeceraEjecutiva(doc, logo, d)
-  const yPrimera = encabezadoCliente(doc, d, yTrasMembrete)
+  const lineas = d.renglones.map((r) =>
+    lineasDeDescripcion(doc, r.descripcion, col.descripcion, esc.tallaFila),
+  )
+  const altoDe = (i: number) => altoRenglon(lineas[i].length, d.renglones[i], esc)
+  const sumaRenglones = d.renglones.reduce((acc, _, i) => acc + altoDe(i), 0)
 
-  const lineas = d.renglones.map((r) => lineasDeDescripcion(doc, r.descripcion, col.descripcion))
-  const altoDe = (i: number) => altoRenglon(lineas[i].length, d.renglones[i])
+  // Medir cuánto ocupa la primera página en su escala base para saber cuánto
+  // espacio vertical libre hay cuando el documento cabe en una sola hoja.
+  const mCliente = medirEncabezadoCliente(doc, d, esc)
+  const altoMembreteBase = 37
+  const altoUsadoBase =
+    ARRIBA +
+    altoMembreteBase +
+    mCliente.altoTotal +
+    6 +
+    esc.altoCabeceraTabla +
+    sumaRenglones +
+    6 +
+    altoBloqueInferior +
+    10 +
+    esc.altoCajaFirmas
+
+  const cabeEnUnaHoja = ARRIBA + altoMembreteBase + mCliente.altoTotal + 6 + esc.altoCabeceraTabla + sumaRenglones + cierre <= ABAJO - 6
+  const espacioLibre = cabeEnUnaHoja ? Math.max(0, ABAJO - 10 - altoUsadoBase) : 0
+
+  // Repartimos el espacio libre de forma armónica entre las secciones y el cuerpo
+  // de la tabla para que la hoja se vea proporcionada de arriba a abajo.
+  const extraMembrete = Math.min(espacioLibre * 0.14, 7)
+  const extraCliente = Math.min(espacioLibre * 0.14, 7)
+  const extraPorFila =
+    cabeEnUnaHoja && d.renglones.length > 0
+      ? Math.min((espacioLibre * 0.22) / d.renglones.length, 4.5)
+      : 0
+  const extraCuerpoTabla = cabeEnUnaHoja
+    ? Math.min(
+        Math.max(0, espacioLibre - extraMembrete - extraCliente - extraPorFila * d.renglones.length) *
+          0.48,
+        42,
+      )
+    : 0
+  const extraPostTabla = cabeEnUnaHoja ? Math.min(espacioLibre * 0.12, 7) : 0
+
+  const yTrasMembrete = cabeceraEjecutiva(doc, logo, d, extraMembrete)
+  const yPrimera = encabezadoCliente(doc, d, yTrasMembrete, esc, extraCliente)
+
+  const altoFilaConExtra = (i: number) => altoDe(i) + extraPorFila
 
   const hojas: number[][] = []
   {
-    let y = yPrimera + 7
+    let y = yPrimera + esc.altoCabeceraTabla
     let actual: number[] = []
 
     for (const i of d.renglones.keys()) {
-      if (y + altoDe(i) > topeTabla) {
+      if (y + altoFilaConExtra(i) > topeTabla) {
         hojas.push(actual)
         actual = []
-        y = ARRIBA + 12 + 7
+        y = ARRIBA + 14 + esc.altoCabeceraTabla
       }
       actual.push(i)
-      y += altoDe(i)
+      y += altoFilaConExtra(i)
     }
     hojas.push(actual)
 
-    if (y + cierre > ABAJO) hojas.push([])
+    if (y + extraCuerpoTabla + cierre > ABAJO) hojas.push([])
   }
 
   for (const [indice, posiciones] of hojas.entries()) {
@@ -888,109 +1029,140 @@ function dibujarDocumento(doc: Doc, logo: string, d: DatosDocumento): void {
       y = yPrimera
     } else {
       doc.setFillColor(rotulo.color)
-      doc.rect(IZQ, ARRIBA, ANCHO_UTIL, 9, 'F')
-      if (logo) doc.addImage(logo, 'PNG', IZQ + 3, ARRIBA + 1.5, 6, 6)
-      doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(8)
-      doc.text(`${rotulo.titulo} ${d.numero}`, IZQ + 12, ARRIBA + 6)
-      doc.setFont('helvetica', 'normal').setFontSize(7)
-      doc.text(ajustar(doc, d.contraparte.nombre, 60), DER - 3, ARRIBA + 6, { align: 'right' })
-      y = ARRIBA + 12
+      doc.rect(IZQ, ARRIBA, ANCHO_UTIL, 10.5, 'F')
+      if (logo) doc.addImage(logo, 'PNG', IZQ + 3, ARRIBA + 1.2, 8, 8)
+      doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(9)
+      doc.text(`${rotulo.titulo} ${d.numero}`, IZQ + 14, ARRIBA + 6.8)
+      doc.setFont('helvetica', 'normal').setFontSize(8)
+      doc.text(ajustar(doc, d.contraparte.nombre, 75), DER - 3.5, ARRIBA + 6.8, { align: 'right' })
+      y = ARRIBA + 14
     }
 
     const yInicioTabla = y
-    y = cabeceraTabla(doc, y, col, rotulo)
+    y = cabeceraTabla(doc, y, col, rotulo, esc)
 
     for (const [k, i] of posiciones.entries()) {
       const r = d.renglones[i]
       const descripcion = lineas[i]
-      const bajada = (descripcion.length - 1) * LINEA_DE_MAS
-      const alto = altoDe(i)
+      const bajada = (descripcion.length - 1) * esc.lineaDeMas
+      const alto = altoFilaConExtra(i)
+      const offsetVertical = extraPorFila * 0.42
+      const yTextoBase = y + esc.altoBaseFila * 0.58 + offsetVertical
 
       // Fondo de la fila
       doc.setFillColor(k % 2 === 1 ? FILA_ALTERNA : '#FFFFFF')
       doc.rect(IZQ, y, ANCHO_UTIL, alto, 'F')
 
       // Separadores verticales e inferior de la fila
-      doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
+      doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
       for (const xDiv of col.divisores) {
         doc.line(xDiv, y, xDiv, y + alto)
       }
       doc.line(IZQ, y + alto, DER, y + alto)
 
       // Descripción en negrita
-      doc.setTextColor('#222222').setFont('helvetica', 'bold').setFontSize(8)
-      descripcion.forEach((linea, j) => doc.text(linea, IZQ + 3, y + 4.5 + j * LINEA_DE_MAS))
+      doc.setTextColor('#1c1917').setFont('helvetica', 'bold').setFontSize(esc.tallaFila)
+      descripcion.forEach((linea, j) =>
+        doc.text(linea, IZQ + 3.5, yTextoBase + j * esc.lineaDeMas),
+      )
 
       // Cantidad
-      doc.setTextColor('#222222').setFont('helvetica', 'bold').setFontSize(8)
-      doc.text(numero(r.cantidad), col.cant, y + 4.5, { align: 'right' })
+      doc.setTextColor('#1c1917').setFont('helvetica', 'bold').setFontSize(esc.tallaFila)
+      doc.text(numero(r.cantidad), col.cant, yTextoBase, { align: 'right' })
 
       // Unidad centrada en pastilla
-      doc.setFont('helvetica', 'bold').setFontSize(6.6)
+      doc.setFont('helvetica', 'bold').setFontSize(esc.tallaFila - 1.2)
       const textoUnidad = r.unidad || '—'
-      const anchoPastilla = Math.max(doc.getTextWidth(textoUnidad) + 3.4, 7.5)
+      const anchoPastilla = Math.max(doc.getTextWidth(textoUnidad) + 4.4, 9)
+      const altoPastilla = 5
       doc.setFillColor(k % 2 === 1 ? '#ebe5e0' : '#f3efeb')
       doc.roundedRect(
         col.unidCentro - anchoPastilla / 2,
-        y + 1.5,
+        yTextoBase - 3.6,
         anchoPastilla,
-        4.1,
-        0.7,
-        0.7,
+        altoPastilla,
+        0.9,
+        0.9,
         'F',
       )
       doc.setTextColor(ROTULO)
-      doc.text(textoUnidad, col.unidCentro, y + 4.3, { align: 'center' })
+      doc.text(textoUnidad, col.unidCentro, yTextoBase - 0.2, { align: 'center' })
 
       // Conversión centrada
       if (col.convCentro !== null) {
         doc
           .setFont('helvetica', 'bold')
-          .setFontSize(7.8)
+          .setFontSize(esc.tallaFila - 0.3)
           .setTextColor(r.conversion ? ROTULO : GRIS)
-        doc.text(r.conversion ?? '—', col.convCentro, y + 4.5, { align: 'center' })
+        doc.text(r.conversion ?? '—', col.convCentro, yTextoBase, { align: 'center' })
       }
 
       // Precio unitario
-      doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(TINTA)
-      doc.text(numero(r.precio_unitario), col.prec, y + 4.5, { align: 'right' })
+      doc.setFont('helvetica', 'normal').setFontSize(esc.tallaFila).setTextColor(TINTA)
+      doc.text(numero(r.precio_unitario), col.prec, yTextoBase, { align: 'right' })
 
       // Subtotal del renglón
-      doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor('#111111')
-      doc.text(numero(r.subtotal), col.total, y + 4.5, { align: 'right' })
+      doc.setFont('helvetica', 'bold').setFontSize(esc.tallaFila).setTextColor('#111111')
+      doc.text(numero(r.subtotal), col.total, yTextoBase, { align: 'right' })
 
       // Línea secundaria de detalle (con pequeña flecha en L compatible con WinAnsi)
       if (r.detalle) {
-        const yDet = y + 7.8 + bajada
-        doc.setDrawColor(GRIS_SUAVE).setLineWidth(0.25)
-        doc.line(IZQ + 3.5, yDet - 1.8, IZQ + 3.5, yDet - 0.6)
-        doc.line(IZQ + 3.5, yDet - 0.6, IZQ + 4.8, yDet - 0.6)
+        const yDet = yTextoBase + bajada + esc.altoDetalle * 0.88
+        doc.setDrawColor(GRIS_SUAVE).setLineWidth(0.3)
+        doc.line(IZQ + 4, yDet - 2.1, IZQ + 4, yDet - 0.7)
+        doc.line(IZQ + 4, yDet - 0.7, IZQ + 5.6, yDet - 0.7)
 
-        doc.setTextColor(GRIS).setFont('helvetica', 'italic').setFontSize(6.5)
-        doc.text(ajustar(doc, r.detalle, col.descripcion - 4), IZQ + 5.6, yDet)
+        doc.setTextColor(GRIS).setFont('helvetica', 'italic').setFontSize(esc.tallaDetalle)
+        doc.text(ajustar(doc, r.detalle, col.descripcion - 5), IZQ + 6.6, yDet)
       }
 
       y += alto
     }
 
+    // Si hay pocos renglones en hoja única, prolongamos el cuerpo de la tabla con
+    // renglones de guía sutiles para darle porte de formato ejecutivo completo.
+    if (indice === 0 && hojas.length === 1 && extraCuerpoTabla >= 9) {
+      const altoGuia = 10.5
+      const numGuias = Math.floor(extraCuerpoTabla / altoGuia)
+      for (let g = 0; g < numGuias; g++) {
+        const indiceVisual = posiciones.length + g
+        const alto = g === numGuias - 1 ? extraCuerpoTabla - g * altoGuia : altoGuia
+        doc.setFillColor(indiceVisual % 2 === 1 ? '#fcfbfa' : '#ffffff')
+        doc.rect(IZQ, y, ANCHO_UTIL, alto, 'F')
+        doc.setDrawColor(HAIRLINE).setLineWidth(0.2)
+        for (const xDiv of col.divisores) {
+          doc.line(xDiv, y, xDiv, y + alto)
+        }
+        doc.line(IZQ, y + alto, DER, y + alto)
+        y += alto
+      }
+    }
+
     // Borde exterior de la tabla y línea de cierre inferior en el acento del documento
-    doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
+    doc.setDrawColor(HAIRLINE).setLineWidth(0.3)
     doc.line(IZQ, yInicioTabla, IZQ, y)
     doc.line(DER, yInicioTabla, DER, y)
-    doc.setDrawColor(rotulo.acento).setLineWidth(0.45)
+    doc.setDrawColor(rotulo.acento).setLineWidth(0.55)
     doc.line(IZQ, y, DER, y)
 
     if (indice === hojas.length - 1) {
+      const yBloque = y + 4.5 + extraPostTabla
       const finNotas = pintarNotasIzquierda(
         doc,
-        y,
+        yBloque,
         lineasConversion,
         lineasObservacion,
         rotulo.acento,
       )
-      const finTotales = totales(doc, d, y)
+      const finTotales = totales(doc, d, yBloque)
       const finBloque = Math.max(finNotas, finTotales)
-      firmas(doc, d, Math.min(Math.max(finBloque + 14, ABAJO - 22), ABAJO - 14))
+
+      const topeFirmasMax = ABAJO - esc.altoCajaFirmas - 12
+      const yCajaFirmas = Math.min(
+        Math.max(finBloque + 8, topeFirmasMax),
+        ABAJO - esc.altoCajaFirmas - 10,
+      )
+      firmas(doc, d, yCajaFirmas, esc.altoCajaFirmas)
     }
 
     if (d.sello) sello(doc, d.sello)
@@ -1003,7 +1175,7 @@ export async function armarDocumento(d: DatosDocumento): Promise<PdfArmado> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  const logo = await logoComoImagen()
+  const logo = await logoComoImagen(600, false)
 
   dibujarDocumento(doc, logo, d)
 
@@ -1029,7 +1201,7 @@ export async function armarVariosDocumentos(
 
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
-  const logo = await logoComoImagen()
+  const logo = await logoComoImagen(600, false)
 
   lista.forEach((d, i) => {
     if (i > 0) doc.addPage()
