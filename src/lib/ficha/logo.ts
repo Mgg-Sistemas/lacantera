@@ -120,9 +120,8 @@ export function dibujarLogo(
     ctx.restore()
   }
 
-  // El logo, encajado dentro del círculo con un margen para que no toque el
-  // borde. Se respeta su proporción: estirarlo lo deforma y se nota.
-  const margen = conCirculo ? lado * 0.14 : 0
+  // El logo ya es circular, así que basta un margen mínimo cuando va sobre disco blanco.
+  const margen = conCirculo ? lado * 0.02 : 0
   const disponible = lado - margen * 2
   const escala = Math.min(disponible / img.width, disponible / img.height)
   const ancho = img.width * escala
