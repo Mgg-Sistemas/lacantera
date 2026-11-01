@@ -1,5 +1,5 @@
 import { dinero } from '@/lib/formato'
-import { enLaOtraMedida, notaDeConversion } from '@/lib/medidas'
+import { densidadLegible, enLaOtraMedida } from '@/lib/medidas'
 import type {
   CondicionVenta,
   PrecioVenta,
@@ -311,21 +311,47 @@ export function conversionDeRenglon(
 }
 
 /**
- * La nota bajo la tabla: con qué densidad se convirtió cada material. Los
- * renglones pesados o estimados al despachar no entran, porque su línea de
- * detalle ya dice cómo se midió lo que salió.
+ * Resumen de conversión bajo la tabla: volumen total, peso estimado y el
+ * desglose de cada renglón convertido con su densidad en t/m³.
  */
 export function notaDeConversionDeVenta(
   renglones: RenglonGuardado[],
   densidadDelCatalogo: (r: RenglonGuardado) => string | number | null | undefined,
 ): string | null {
-  return notaDeConversion(
-    renglones
-      .filter((r) => r.medida !== 'ROMANA' && r.medida !== 'ESTIMADA')
-      .map((r) => ({
-        articulo: r.descripcion,
-        unidad: r.unidad,
-        densidad: r.densidad_usada ?? densidadDelCatalogo(r),
-      })),
-  )
+  let totalM3 = 0
+  let totalTon = 0
+  const detalles: string[] = []
+
+  for (const r of renglones) {
+    if (r.unidad !== 'M3' && r.unidad !== 'TON') continue
+    const d = Number(r.densidad_usada ?? densidadDelCatalogo(r) ?? 0)
+    const cant = Number(r.cantidad ?? 0)
+
+    if ((r.medida === 'ROMANA' || r.medida === 'ESTIMADA') && r.cantidad_inventario != null) {
+      const otraCant = Number(r.cantidad_inventario)
+      const m3 = r.unidad === 'M3' ? cant : otraCant
+      const ton = r.unidad === 'TON' ? cant : otraCant
+      totalM3 += m3
+      totalTon += ton
+      const sufijo = d > 0 ? ` (${densidadLegible(d)} t/m³)` : ''
+      detalles.push(
+        `• ${r.descripcion}: ${dosDecimales.format(cant)} ${r.unidad} = ${dosDecimales.format(otraCant)} ${r.unidad === 'TON' ? 'M3' : 'TON'}${sufijo}`,
+      )
+      continue
+    }
+
+    const otra = enLaOtraMedida(cant, r.unidad, d)
+    if (!otra) continue
+    const m3 = r.unidad === 'M3' ? cant : otra.cantidad
+    const ton = r.unidad === 'TON' ? cant : otra.cantidad
+    totalM3 += m3
+    totalTon += ton
+    detalles.push(
+      `• ${r.descripcion}: ${dosDecimales.format(cant)} ${r.unidad} = ${dosDecimales.format(otra.cantidad)} ${otra.unidad} (${densidadLegible(d)} t/m³)`,
+    )
+  }
+
+  if (detalles.length === 0) return null
+  const encabezado = `Volumen total: ${dosDecimales.format(totalM3)} M3  ·  Peso estimado: ${dosDecimales.format(totalTon)} TON`
+  return [encabezado, 'Conversión según densidad del catálogo:', ...detalles].join('\n')
 }
