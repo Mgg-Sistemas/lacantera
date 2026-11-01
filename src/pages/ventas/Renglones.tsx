@@ -75,7 +75,6 @@ export function Renglones({
   moneda,
   patios,
   toneladasDeRomana,
-  sinIva,
 }: Props) {
   const { data: tasaHoy } = useTasaVigente()
   const tasa = Number(tasaHoy?.tasa ?? 0)
@@ -400,22 +399,11 @@ export function Renglones({
               </div>
             ) : null}
 
-            <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-12">
-              {sinIva ? (
-                <span />
-              ) : (
-                <label className="text-ink/60 flex cursor-pointer items-center gap-2 text-xs select-none">
-                  <input
-                    type="checkbox"
-                    className="accent-royal-600 size-3.5"
-                    checked={fila.exento}
-                    onChange={(e) => cambiar(fila.clave, { exento: e.target.checked })}
-                  />
-                  Exento de IVA
-                </label>
-              )}
-              {falta && fila.articulo_id ? <p className="text-warning text-xs">{falta}</p> : null}
-            </div>
+            {falta && fila.articulo_id ? (
+              <div className="sm:col-span-12">
+                <p className="text-warning text-xs">{falta}</p>
+              </div>
+            ) : null}
           </div>
         )
       })}

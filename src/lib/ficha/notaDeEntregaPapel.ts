@@ -2,7 +2,7 @@ import { densidadesDeArticulos } from '@/lib/api/catalogo'
 import { empresaDelPapel, type useEmpresa } from '@/lib/api/empresa'
 import type { Cliente, NotaEntrega, RenglonGuardado } from '@/lib/api/ventas'
 import { enteros } from '@/lib/formato'
-import { conversionDeRenglon } from '@/pages/ventas/filas'
+import { conversionDeRenglon, notaDeConversionDeVenta } from '@/pages/ventas/filas'
 import { armarDocumento, armarVariosDocumentos, type DatosDocumento } from './ventaPdf'
 import type { EmpresaPapel } from './papel'
 
@@ -70,7 +70,7 @@ function datosDeNota(
       subtotal: r.subtotal,
       exento_iva: r.exento_iva,
     })),
-    notaConversion: null,
+    notaConversion: notaDeConversionDeVenta(renglones, densidadDe),
     subtotal: n.subtotal,
     descuento: n.descuento,
     flete: n.flete,
