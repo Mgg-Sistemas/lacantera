@@ -3,6 +3,7 @@ import { Navigate } from 'react-router'
 import { Cargando } from '@/components/ui/Estado'
 import { useMisAcciones } from '@/lib/api/usuarios'
 import { useMisRoles } from '@/lib/api/catalogo'
+import { PANTALLAS_DE_TELEFONO } from '@/config/navigation'
 
 /*
   DÓNDE ATERRIZA CADA QUIEN AL ENTRAR.
@@ -37,17 +38,12 @@ export function Entrada({ tablero }: { tablero: ReactNode }) {
   if (!acciones.resuelto || !roles.isSuccess) return <Cargando />
 
   const esAdmin = roles.roles.includes('ADMIN')
-  // Si alguien tuviera las dos casillas, gana el surtidor: el combustible se
-  // mueve más veces al día que la cocina, y desde cada pantalla se llega a la
-  // otra por el menú.
-  if (!esAdmin && acciones.puede('COMBUSTIBLE.SURTIDOR_TELEFONO')) {
-    return <Navigate to="/app/combustible/surtidor" replace />
-  }
-  if (!esAdmin && acciones.puede('ALIMENTACION.COCINA_TELEFONO')) {
-    return <Navigate to="/app/alimentacion/cocina" replace />
-  }
-  if (!esAdmin && acciones.puede('INVENTARIO.ALMACEN_TELEFONO')) {
-    return <Navigate to="/app/inventario/almacen" replace />
+  // El orden de PANTALLAS_DE_TELEFONO es la prioridad: si alguien tuviera dos
+  // casillas, gana la primera que case. Ver su propio comentario en
+  // navigation.ts para por qué el surtidor va delante.
+  if (!esAdmin) {
+    const propia = PANTALLAS_DE_TELEFONO.find((p) => acciones.puede(p.accion))
+    if (propia) return <Navigate to={propia.ruta} replace />
   }
   return <>{tablero}</>
 }

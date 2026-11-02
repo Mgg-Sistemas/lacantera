@@ -1,10 +1,16 @@
 import { Link, Outlet, useLocation } from 'react-router'
 import { Lock } from 'lucide-react'
-import { esRutaPropia, esRutaSoloAdmin, esRutaFueraDelMvp, moduloDeRuta } from '@/config/navigation'
+import {
+  esRutaPropia,
+  esRutaSoloAdmin,
+  esRutaFueraDelMvp,
+  moduloDeRuta,
+  rutaPermitidaSoloTelefono,
+} from '@/config/navigation'
 import { Card } from '@/components/ui/Card'
 import { Cargando } from '@/components/ui/Estado'
 import { EnConstruccion } from '@/components/EnConstruccion'
-import { useMisAcciones, useMisPermisos, useModulos } from '@/lib/api/usuarios'
+import { useMisAcciones, useMisPermisos, useModulos, useSoloTelefono } from '@/lib/api/usuarios'
 import { useMisRoles } from '@/lib/api/catalogo'
 
 /**
@@ -24,6 +30,7 @@ export function ExigePermiso() {
   const { puede, resuelto, isPending } = useMisPermisos()
   const { puede: tieneRol, isPending: rolesPendientes } = useMisRoles()
   const { puede: puedeAccion, isPending: accionesPendientes } = useMisAcciones()
+  const { soloTelefono, isPending: telefonoPendiente } = useSoloTelefono()
   const { data: modulos } = useModulos()
 
   if (esRutaPropia(pathname)) return <Outlet />
@@ -46,7 +53,7 @@ export function ExigePermiso() {
 
   const codigo = moduloDeRuta(pathname)
 
-  if (isPending) return <Cargando />
+  if (isPending || telefonoPendiente) return <Cargando />
 
   /*
     ASISTENCIA TAMBIÉN SE ABRE CON LA CASILLA DE ESCANEAR.
@@ -55,6 +62,39 @@ export function ExigePermiso() {
     de llegar a la pantalla, aunque la base ya le dejara leer las jornadas.
   */
   if (codigo === 'ASISTENCIA' && accionesPendientes) return <Cargando />
+
+  /*
+    QUIEN SOLO ENTRA POR TELÉFONO, NO SALE DE SUS PANTALLAS.
+
+    Antes que el permiso del módulo: esta cuenta puede tener escritura real en
+    Inventario, Salidas, Asignaciones o lectura en Nómina —el rol
+    ALMACEN_TELEFONO (20/10/2026) y VE_PERSONAL (20/10/2026) reparten
+    permisos de verdad, no de cosmética— y aun así no le toca ver el Tablero
+    de escritorio, Existencias ni el módulo de Nómina: solo la pantalla de
+    teléfono de la que ya tiene la casilla de aterrizaje.
+  */
+  if (soloTelefono) {
+    if (accionesPendientes) return <Cargando />
+    if (!rutaPermitidaSoloTelefono(pathname, puedeAccion)) {
+      return (
+        <Card className="mx-auto mt-10 max-w-lg text-center">
+          <div className="bg-ink/6 text-ink/45 mx-auto flex size-12 items-center justify-center rounded-full">
+            <Lock className="size-6" />
+          </div>
+          <h2 className="text-ink/90 mt-4 text-lg font-semibold">Esta cuenta entra por el teléfono</h2>
+          <p className="text-ink/55 mt-2 text-sm">
+            Esta pantalla es de escritorio. Esta cuenta solo ve las suyas de teléfono.
+          </p>
+          <Link
+            to="/app"
+            className="text-royal-600 hover:text-royal-700 dark:text-royal-300 mt-5 inline-block text-sm font-medium"
+          >
+            Volver a mi pantalla
+          </Link>
+        </Card>
+      )
+    }
+  }
 
   /*
     Las rutas de solo administrador se comprueban antes que el módulo.
