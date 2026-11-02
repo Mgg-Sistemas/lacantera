@@ -369,6 +369,48 @@ export function esRutaPropia(ruta: string): boolean {
   return RUTAS_PROPIAS.some((prefijo) => ruta.startsWith(prefijo))
 }
 
+/**
+ * A qué pantalla de teléfono lleva cada casilla de aterrizaje.
+ *
+ * Una sola lista para las tres cosas que la necesitan: `Entrada.tsx` decide
+ * dónde aterriza quien tiene la casilla, `ExigePermiso` decide qué le queda
+ * cerrado del resto si su rol es `solo_telefono`, y el riel le ofrece el
+ * enlace directo a su pantalla en vez del tablero de escritorio del módulo.
+ * Repetirla en los tres sitios es como una se queda desactualizada el día
+ * que entre una cuarta.
+ */
+export interface PantallaDeTelefono {
+  accion: string
+  ruta: string
+  label: string
+  icon: LucideIcon
+}
+
+export const PANTALLAS_DE_TELEFONO: PantallaDeTelefono[] = [
+  // Primero el surtidor: si alguien tuviera las dos casillas, gana él — el
+  // combustible se mueve más veces al día que la cocina, y desde cada
+  // pantalla se llega a la otra por su propio menú.
+  { accion: 'COMBUSTIBLE.SURTIDOR_TELEFONO', ruta: '/app/combustible/surtidor', label: 'Surtidor', icon: Fuel },
+  { accion: 'ALIMENTACION.COCINA_TELEFONO', ruta: '/app/alimentacion/cocina', label: 'Cocina', icon: UtensilsCrossed },
+  { accion: 'INVENTARIO.ALMACEN_TELEFONO', ruta: '/app/inventario/almacen', label: 'Almacén', icon: Boxes },
+]
+
+/**
+ * ¿Esta ruta le queda abierta a una cuenta `solo_telefono`?
+ *
+ * Siempre las propias (cuenta, manual, organigrama) y la raíz —que es donde
+ * `Entrada.tsx` hace el salto a la pantalla que le toque—, y de ahí para
+ * abajo solo la suya: `/app/inventario/almacen` entra, pero
+ * `/app/inventario` y `/app/inventario/existencias`, que son del mismo
+ * módulo y el mismo permiso, no.
+ */
+export function rutaPermitidaSoloTelefono(ruta: string, puedeAccion: (accion: string) => boolean): boolean {
+  if (ruta === '/app' || esRutaPropia(ruta)) return true
+  return PANTALLAS_DE_TELEFONO.some(
+    (p) => puedeAccion(p.accion) && (ruta === p.ruta || ruta.startsWith(p.ruta + '/')),
+  )
+}
+
 export interface NavSection {
   /** Ausente en el primer bloque: no se rotula lo que abre la lista. */
   label?: string

@@ -478,6 +478,27 @@ export function useMisAcciones() {
   }
 }
 
+/**
+ * Si quien mira solo debe ver la vista de teléfono de sus módulos.
+ *
+ * Es la restricción, no la comodidad: `Entrada.tsx` decide dónde ATERRIZA
+ * quien tiene una casilla de teléfono; esto decide qué le queda CERRADO
+ * después. Las usa juntas `ExigePermiso`.
+ */
+export function useSoloTelefono() {
+  const consulta = useQuery({
+    queryKey: ['mi-solo-telefono'],
+    queryFn: () => rpc<boolean>('mi_solo_telefono'),
+    staleTime: 5 * 60_000,
+  })
+
+  return {
+    ...consulta,
+    soloTelefono: consulta.data ?? false,
+    resuelto: consulta.isSuccess,
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Autorizaciones: lo que se le extiende a UNA PERSONA por encima de su rol
 //
