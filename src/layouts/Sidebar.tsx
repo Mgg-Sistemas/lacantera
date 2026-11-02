@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
-import { ChevronDown, X } from 'lucide-react'
-import { moduloDeRuta, navigation } from '@/config/navigation'
+import { BookOpen, ChevronDown, X } from 'lucide-react'
+import { moduloDeRuta, navigation, PANTALLAS_DE_TELEFONO } from '@/config/navigation'
 import type { NavItem, NavSection, NavChild } from '@/config/navigation'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib/cn'
 import { useSesion } from '@/lib/sesion'
-import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
+import { useMisAcciones, useMisPermisos, useSoloTelefono } from '@/lib/api/usuarios'
 import { useMisRoles } from '@/lib/api/catalogo'
 
 interface SidebarProps {
@@ -60,6 +60,28 @@ function menuVisible(
     .filter((seccion) => seccion.items.length > 0)
 }
 
+/**
+ * El menú de quien solo entra por teléfono.
+ *
+ * No es `menuVisible` con un filtro más: esta cuenta no tiene ningún módulo
+ * de escritorio, así que no hay nada que recorrer en `navigation`. Se ofrece
+ * un enlace directo por cada pantalla de teléfono que ya tiene (la misma
+ * lista que usa `Entrada.tsx` para aterrizar y `ExigePermiso` para cerrar el
+ * resto) y el manual, que se ve siempre.
+ */
+function seccionesSoloTelefono(puedeAccion: (accion: string) => boolean): NavSection[] {
+  const pantallas = PANTALLAS_DE_TELEFONO.filter((p) => puedeAccion(p.accion))
+
+  return [
+    {
+      items: pantallas.map((p) => ({ label: p.label, icon: p.icon, to: p.ruta })),
+    },
+    {
+      items: [{ label: 'Manual de usuario', icon: BookOpen, to: '/app/manual', siempre: true }],
+    },
+  ]
+}
+
 export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
   const { pathname } = useLocation()
   const { nombre, usuario, iniciales } = useSesion()
@@ -73,7 +95,11 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
   */
   const { puede: puedeAccion, resuelto: accionesResueltas } = useMisAcciones()
   const puedeVerModulo = (m: string) => puede(m) || (m === 'ASISTENCIA' && puedeAccion('ASISTENCIA.ESCANEAR'))
-  const secciones = menuVisible(puedeVerModulo, permisosResueltos && accionesResueltas, tieneRol('ADMIN'))
+  const { soloTelefono, resuelto: telefonoResuelto } = useSoloTelefono()
+  const secciones =
+    telefonoResuelto && soloTelefono
+      ? seccionesSoloTelefono(puedeAccion)
+      : menuVisible(puedeVerModulo, permisosResueltos && accionesResueltas, tieneRol('ADMIN'))
 
   // Un grupo abierto a la vez: con ocho módulos, permitir varios abiertos
   // convierte el riel en una lista de cuarenta líneas.
