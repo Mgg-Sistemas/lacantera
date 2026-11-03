@@ -80,6 +80,7 @@ export function Renglones({
   const tasa = Number(tasaHoy?.tasa ?? 0)
   const { puede } = useMisAcciones()
   const puedeRegalar = puede('VENTAS.VENDER_BAJO_MINIMO')
+  const puedePrecioManual = puede('VENTAS.PRECIO_MANUAL_CON_LISTA')
 
   // Un artículo sale una vez en el selector aunque tenga precio en dos unidades.
   const articulos = precios.filter(
@@ -133,10 +134,16 @@ export function Renglones({
 
   const elegirUnidad = (f: FilaRenglon, unidad: string) => {
     const hayLista = precioDeLista(precios, f.articulo_id, unidad) !== undefined
-    // La condición que ya no cabe se borra: sin lista no hay lista ni descuento.
+    /*
+      La condición que ya no cabe se borra: sin lista no hay lista ni
+      descuento. SIN_CARGO y ACORDADO se quedan tal como estaban elegidas a
+      propósito — ACORDADO ya no depende de que falte la lista, así que un
+      cambio de unidad que de repente SÍ tiene lista no debe borrar el
+      precio que la persona ya había escrito a mano.
+    */
     const condicion: FilaRenglon['condicion'] =
-      f.condicion === 'SIN_CARGO'
-        ? 'SIN_CARGO'
+      f.condicion === 'SIN_CARGO' || f.condicion === 'ACORDADO'
+        ? f.condicion
         : hayLista
           ? f.condicion === 'DESCUENTO'
             ? 'DESCUENTO'
@@ -189,6 +196,9 @@ export function Renglones({
               },
               { valor: 'DESCUENTO', etiqueta: 'Con descuento sobre la lista' },
               { valor: 'SIN_CARGO', etiqueta: 'Sin cargo' },
+              ...(puedePrecioManual
+                ? [{ valor: 'ACORDADO' as const, etiqueta: 'Precio manual (pisa la lista)' }]
+                : []),
             ]
           : [
               { valor: 'ACORDADO', etiqueta: 'Precio acordado (no hay lista)' },
@@ -302,13 +312,17 @@ export function Renglones({
                 error={
                   fila.condicion === 'SIN_CARGO' && !puedeRegalar
                     ? 'Sin cargo lo autoriza quien pueda vender bajo el mínimo, y no tiene esa casilla.'
-                    : undefined
+                    : fila.condicion === 'ACORDADO' && hayLista && !puedePrecioManual
+                      ? 'El precio manual con lista lo autoriza quien tenga esa casilla.'
+                      : undefined
                 }
                 hint={
                   fila.condicion
                     ? fila.condicion === 'LISTA' && lista === null && hayLista
                       ? 'La lista está en otra moneda: la cifra se calcula al guardar.'
-                      : CONDICION_VENTA[fila.condicion].ayuda
+                      : fila.condicion === 'ACORDADO' && hayLista
+                        ? 'Precio a mano que pisa el de lista. Diga por qué.'
+                        : CONDICION_VENTA[fila.condicion].ayuda
                     : undefined
                 }
               />
@@ -395,6 +409,17 @@ export function Renglones({
                   inputMode="decimal"
                   value={fila.precio}
                   onChange={(e) => cambiar(fila.clave, { precio: e.target.value })}
+                />
+              </div>
+            ) : null}
+
+            {fila.condicion === 'ACORDADO' && hayLista ? (
+              <div className="sm:col-span-8">
+                <Input
+                  label="Motivo"
+                  value={fila.motivo}
+                  onChange={(e) => cambiar(fila.clave, { motivo: e.target.value })}
+                  hint="Por qué se pisa el precio de lista. Queda escrito en el renglón y en el papel."
                 />
               </div>
             ) : null}
