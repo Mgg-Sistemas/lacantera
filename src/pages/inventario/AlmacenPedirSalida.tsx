@@ -12,10 +12,10 @@ import { ElegirArchivosDeCarga } from '@/components/FotosDeCarga'
 import { useVehiculos } from '@/lib/api/vehiculos'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { palabraDeVenta, usePedirSalida } from '@/lib/api/salidas'
+import { palabraDeVenta, usePedirSalida, usePersonasDeLaEmpresa } from '@/lib/api/salidas'
 import { useMiFirma } from '@/lib/api/firmas'
 import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
-import { useExistencias, useGruposDeSalida } from '@/lib/api/inventario'
+import { useExistencias } from '@/lib/api/inventario'
 import { porQueNoSubio } from '@/lib/castellano'
 import { ParaQuienSale, paraQuienVa, type AmbitoDeSalida } from '@/pages/salidas/ModalSalida'
 
@@ -73,7 +73,7 @@ export function AlmacenPedirSalida() {
   const [archivos, setArchivos] = useState<File[]>([])
   const [subiendo, setSubiendo] = useState(false)
 
-  const grupos = useGruposDeSalida()
+  const { data: empleados } = usePersonasDeLaEmpresa()
   const { data: articulos } = useArticulos()
   const { data: formasDeContar } = useTodasLasPresentaciones()
   const todas = useExistencias(undefined, puedePedir)
@@ -81,7 +81,7 @@ export function AlmacenPedirSalida() {
   const [renglones, setRenglones] = useState<RenglonEnCurso[]>([renglonVacio()])
   const [almacenPedido, setAlmacenPedido] = useState('')
   const [ambito, setAmbito] = useState<AmbitoDeSalida>('')
-  const [grupo, setGrupo] = useState('')
+  const [empleado, setEmpleado] = useState('')
   const [externo, setExterno] = useState('')
   const [responsable, setResponsable] = useState('')
   const [motivo, setMotivo] = useState('')
@@ -167,7 +167,7 @@ export function AlmacenPedirSalida() {
   const ventaEnElMotivo = palabraDeVenta(motivo)
   const faltaDecirParaQuien =
     !ambito ||
-    (ambito === 'EMPRESA' && !grupo) ||
+    (ambito === 'EMPRESA' && !empleado) ||
     (ambito === 'FUERA' && (externo.trim().length < 3 || responsable.trim().length < 3))
 
   const valido =
@@ -193,7 +193,7 @@ export function AlmacenPedirSalida() {
           setRenglones([renglonVacio()])
           setAlmacenPedido('')
           setAmbito('')
-          setGrupo('')
+          setEmpleado('')
           setExterno('')
           setResponsable('')
           setMotivo('')
@@ -214,7 +214,7 @@ export function AlmacenPedirSalida() {
         propietario: r.propietario || null,
       })),
       motivo,
-      ...paraQuienVa(ambito, grupo, externo, responsable),
+      ...paraQuienVa('pedir', ambito, empleado, externo, responsable),
       con_firma: miFirma?.usar === true && conMiFirma,
       ...(llevaRecibido
         ? {
@@ -441,12 +441,13 @@ export function AlmacenPedirSalida() {
         </div>
 
         <ParaQuienSale
+          modo="pedir"
           pregunta="¿Quién lo va a recibir?"
           ambito={ambito}
           onAmbito={setAmbito}
-          grupos={grupos.data}
-          grupo={grupo}
-          onGrupo={setGrupo}
+          empleados={empleados}
+          empleado={empleado}
+          onEmpleado={setEmpleado}
           externo={externo}
           onExterno={setExterno}
           responsable={responsable}

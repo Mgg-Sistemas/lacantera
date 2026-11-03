@@ -76,7 +76,10 @@ export interface SolicitudDeSalida {
   almacen_id: number
   clase: string
   motivo: string
+  /** El área o cargo del organigrama. Solo en solicitudes de antes del 03/11/2026: desde esa fecha el destinatario interno es una persona. */
   grupo_id: number | null
+  /** La persona de nómina que lo recibe, desde el 03/11/2026. */
+  empleado_id: number | null
   destino_externo: string | null
   responsable_externo: string | null
   pedida_por: string | null
@@ -198,7 +201,7 @@ export function usePedirSalida() {
       }>
       /** Para qué se necesita. Una solicitud no elige razón de salida. */
       motivo: string
-      grupo_id?: number | null
+      empleado_id?: number | null
       externo?: string | null
       responsable?: string | null
       /** Si quien solicita pone su firma digital en la orden. Por defecto no. */
@@ -227,7 +230,7 @@ export function usePedirSalida() {
             })),
         })),
         p_motivo: s.motivo,
-        p_grupo_id: s.grupo_id ?? null,
+        p_empleado_id: s.empleado_id ?? null,
         p_externo: s.externo || null,
         p_responsable: s.responsable || null,
         p_con_firma: s.con_firma ?? false,
@@ -384,6 +387,13 @@ export interface PersonaDeLaEmpresa {
   id: number
   nombre: string
   cargo: string | null
+  /**
+   * Activa en nómina de verdad: `activo` y sin `fecha_egreso`, el mismo
+   * criterio de `entregar_a_trabajador`. La lista trae a todo el mundo —no
+   * solo a quien está activo hoy— porque una salida vieja tiene que poder
+   * seguir diciendo a quién fue, aunque esa persona ya no esté.
+   */
+  activo: boolean
 }
 
 export function usePersonasDeLaEmpresa() {
@@ -393,6 +403,10 @@ export function usePersonasDeLaEmpresa() {
     staleTime: 5 * 60_000,
   })
 }
+
+/** El nombre de quien recibió, buscado en la lista. Null si ya no está. */
+export const nombreDeEmpleado = (personas: PersonaDeLaEmpresa[] | undefined, id?: number | null) =>
+  (id ? (personas ?? []).find((p) => p.id === id)?.nombre : null) ?? null
 
 export function useComoAprueboSalidas() {
   return useQuery({

@@ -6,8 +6,14 @@ import { Input } from '@/components/ui/Input'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { usePerfiles } from '@/lib/api/catalogo'
+import { useSesion } from '@/lib/sesion'
 import { nombreDeGrupo, useGruposDeSalida } from '@/lib/api/inventario'
-import { useEntregarSolicitud, useSolicitudesDeSalida } from '@/lib/api/salidas'
+import {
+  nombreDeEmpleado,
+  useEntregarSolicitud,
+  usePersonasDeLaEmpresa,
+  useSolicitudesDeSalida,
+} from '@/lib/api/salidas'
 import type { SolicitudDeSalida } from '@/lib/api/salidas'
 import { useEmpresa } from '@/lib/api/empresa'
 import { enCastellano } from '@/lib/castellano'
@@ -31,7 +37,9 @@ export function AlmacenSalida() {
   const puedePedir = puede('SALIDAS', 'LECTURA')
   const { data: solicitudes, isPending, error } = useSolicitudesDeSalida()
   const { data: perfiles } = usePerfiles()
+  const { session } = useSesion()
   const grupos = useGruposDeSalida()
+  const { data: personas } = usePersonasDeLaEmpresa()
   const { data: empresa } = useEmpresa()
   const entregar = useEntregarSolicitud()
 
@@ -44,6 +52,7 @@ export function AlmacenSalida() {
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
 
   const paraQuien = (s: SolicitudDeSalida) =>
+    nombreDeEmpleado(personas, s.empleado_id) ??
     nombreDeGrupo(grupos.data, s.grupo_id) ??
     (s.destino_externo
       ? `${s.destino_externo}, de fuera de la empresa${s.responsable_externo ? ` · responde ${s.responsable_externo}` : ''}`
@@ -77,7 +86,16 @@ export function AlmacenSalida() {
     entregar.mutate(s.id, {
       onSuccess: (numero) => {
         setEligiendo(null)
-        setReporte({ s, notaSalida: numero as string })
+        /*
+          `s` es la solicitud de antes de entregar: su `entregada_por` todavía
+          está en null, aunque la base acaba de escribirlo en esta misma
+          llamada. Quien entregó es, con certeza, quien tiene la sesión
+          abierta ahora mismo.
+        */
+        setReporte({
+          s: { ...s, entregada_por: session?.user.id ?? s.entregada_por },
+          notaSalida: numero as string,
+        })
       },
       onError: (e) => setFallo(enCastellano(e)),
     })
