@@ -53,6 +53,12 @@ interface RenglonEnCurso {
   moneda: string
   confirmado: boolean
   sinValor: boolean
+  /**
+   * A qué almacén entra ESTE renglón. Vacío significa «el de arriba»: la
+   * mayoría de una entrada va al mismo sitio, y este es solo el que lo
+   * cambia (03/11/2026).
+   */
+  almacen: string
 }
 
 let siguienteClave = 0
@@ -67,6 +73,7 @@ const renglonVacio = (): RenglonEnCurso => ({
   moneda: '',
   confirmado: false,
   sinValor: false,
+  almacen: '',
 })
 
 export function AlmacenEntrada() {
@@ -154,6 +161,8 @@ export function AlmacenEntrada() {
     await entrada.mutateAsync({
       almacen_id: Number(almacenElegido),
       renglones: listos.map((r) => ({
+        // Suyo si lo eligió; si no, el de arriba.
+        almacen_id: Number(r.almacen || almacenElegido),
         articulo_id: Number(r.articulo),
         cantidad: r.presentaciones ? Number(r.sueltas || 0) : Number(r.cantidad || 0),
         presentaciones: r.presentaciones ?? null,
@@ -176,7 +185,13 @@ export function AlmacenEntrada() {
         const cant = r.presentaciones
           ? `${r.presentaciones} ${r.presentacion} + ${r.sueltas || 0} ${art?.unidad ?? ''}`
           : `${Number(r.cantidad).toLocaleString('es-VE')} ${art?.unidad ?? ''}`
-        return `${art?.nombre ?? '—'}: ${cant}${r.sinValor ? ' (sin valorar)' : ''}`
+        // El sitio solo se repite cuando el renglón eligió uno distinto del
+        // de arriba: si no, ya lo dice la primera línea del mensaje.
+        const otroSitio =
+          r.almacen && r.almacen !== almacenElegido
+            ? ` · ${sitios.find((a) => String(a.id) === r.almacen)?.nombre ?? ''}`
+            : ''
+        return `${art?.nombre ?? '—'}: ${cant}${r.sinValor ? ' (sin valorar)' : ''}${otroSitio}`
       }),
       referencia ? `De: ${referencia}` : '',
     ]
@@ -203,7 +218,11 @@ export function AlmacenEntrada() {
           valor={almacenElegido}
           onCambio={(v) => {
             setAlmacen(v)
-            setRenglones((lista) => lista.map((x) => ({ ...x, confirmado: false })))
+            // Solo pierde la confirmación quien compara contra el de arriba:
+            // el que ya eligió el suyo sigue comparando contra ese.
+            setRenglones((lista) =>
+              lista.map((x) => (x.almacen ? x : { ...x, confirmado: false })),
+            )
           }}
           opciones={sitios.map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
         />
@@ -273,6 +292,18 @@ export function AlmacenEntrada() {
                     No está en el catálogo: darlo de alta
                   </button>
 
+                  {/* Vacío significa «el de arriba» — solo hace falta tocarlo
+                      si este artículo entra a otro sitio. */}
+                  <div className="mt-3">
+                    <SelectBuscable
+                      label="Almacén"
+                      vacio="Igual que arriba"
+                      valor={r.almacen}
+                      onCambio={(v) => pon(r.clave, { almacen: v, confirmado: false })}
+                      opciones={sitios.map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
+                    />
+                  </div>
+
                   <div className="mt-3 space-y-3">
                     <CantidadDeArticulo
                       key={`cantidad-${r.articulo}`}
@@ -330,7 +361,7 @@ export function AlmacenEntrada() {
                   </div>
 
                   <AvisoDeCosto
-                    almacenId={Number(almacenElegido) || null}
+                    almacenId={Number(r.almacen || almacenElegido) || null}
                     articuloId={Number(r.articulo) || null}
                     costo={costo}
                     moneda={r.moneda}
