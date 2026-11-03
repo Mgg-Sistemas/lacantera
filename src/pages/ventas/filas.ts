@@ -145,6 +145,9 @@ export function faltaEnFila(f: FilaRenglon, precios: PrecioVenta[]): string | nu
     return 'Falta decir por qué sale sin cargo.'
   }
   if (f.condicion === 'ACORDADO' && !(Number(f.precio) > 0)) return 'Falta el precio acordado.'
+  if (f.condicion === 'ACORDADO' && hayLista && f.motivo.trim().length < 4) {
+    return 'Falta decir por qué se pisa el precio de lista.'
+  }
   return null
 }
 
@@ -252,7 +255,11 @@ export function renglonEnPalabras(r: RenglonGuardado, moneda: string): string {
       `Sin cargo${lista ? ` (de lista, ${lista})` : ''}${r.motivo_condicion ? `: ${r.motivo_condicion.toLowerCase()}` : ''}`,
     )
   } else if (r.condicion === 'ACORDADO') {
-    partes.push('Precio acordado: esa unidad no tenía precio de lista')
+    partes.push(
+      lista
+        ? `Precio acordado: pisa el de lista (${lista})${r.motivo_condicion ? `, ${r.motivo_condicion.toLowerCase()}` : ''}`
+        : 'Precio acordado: esa unidad no tenía precio de lista',
+    )
   }
 
   if (r.medida === 'ROMANA' || r.medida === 'ESTIMADA') {
