@@ -15,6 +15,7 @@ import { useVehiculos } from '@/lib/api/vehiculos'
 import { conSusFormas, useArticulos, useTodasLasPresentaciones } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { palabraDeVenta, usePedirSalida, usePersonasDeLaEmpresa } from '@/lib/api/salidas'
+import type { PersonaDeLaEmpresa } from '@/lib/api/salidas'
 import { useMiFirma } from '@/lib/api/firmas'
 import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
 import {
@@ -112,28 +113,49 @@ const AMBITOS: { valor: Exclude<AmbitoDeSalida, ''>; titulo: string; explica: st
 /*
   REUTILIZADA DESDE EL TELÉFONO. `AlmacenPedirSalida.tsx` —pedir salida sin
   pasar por el escritorio— pinta exactamente la misma pregunta: a quién sale,
-  del mismo organigrama y con el mismo «de fuera de la empresa». Se exporta
-  para no mantener dos veces la misma lógica de para quién va el material.
+  con el mismo «de fuera de la empresa». Se exporta para no mantener dos
+  veces la misma lógica de para quién va el material.
+
+  AL PEDIR, EL DE DENTRO ES UNA PERSONA DE NÓMINA, NO UN ÁREA.
+
+  Christopher, 03/11/2026, con el reporte de una salida delante: quien recibe
+  tiene que quedar con nombre y apellido —«Wilmer Blanco», no «OPERACIONES ›
+  PLANTA»—, igual que ya pasa en «Entregar a un trabajador». Es un cambio solo
+  para SOLICITAR: la salida directa (`modo="registrar"`) sigue siendo de
+  escritorio y sigue cargando a un área o cargo del organigrama, porque ahí sí
+  puede no haber una sola persona a quien nombrar —toda la cuadrilla de un
+  turno, por ejemplo—.
 */
 export function ParaQuienSale({
+  modo,
   pregunta,
   ambito,
   onAmbito,
   grupos,
   grupo,
   onGrupo,
+  empleados,
+  empleado,
+  onEmpleado,
   externo,
   onExterno,
   responsable,
   onResponsable,
 }: {
+  /** Decide si «alguien de la empresa» es una persona de nómina o un área del organigrama. */
+  modo: 'pedir' | 'registrar'
   /** Quien solicita habla de lo que va a pasar; quien registra, de lo que pasa. */
   pregunta: string
   ambito: AmbitoDeSalida
   onAmbito: (v: AmbitoDeSalida) => void
-  grupos: GrupoDeSalida[] | undefined
-  grupo: string
-  onGrupo: (v: string) => void
+  /** Solo hace falta en modo «registrar». */
+  grupos?: GrupoDeSalida[] | undefined
+  grupo?: string
+  onGrupo?: (v: string) => void
+  /** Solo hace falta en modo «pedir». */
+  empleados?: PersonaDeLaEmpresa[] | undefined
+  empleado?: string
+  onEmpleado?: (v: string) => void
   externo: string
   onExterno: (v: string) => void
   responsable: string
@@ -168,14 +190,28 @@ export function ParaQuienSale({
         ))}
       </div>
 
-      {ambito === 'EMPRESA' ? (
+      {ambito === 'EMPRESA' && modo === 'pedir' ? (
+        <SelectBuscable
+          className="mt-3"
+          label="¿A quién se le entrega?"
+          vacio="Busque a la persona"
+          hint="Solo personal activo. Si no sale, no está activo en Nómina."
+          valor={empleado ?? ''}
+          onCambio={(v) => onEmpleado?.(v)}
+          opciones={(empleados ?? [])
+            .filter((p) => p.activo)
+            .map((p) => ({ valor: String(p.id), nombre: p.nombre, detalle: p.cargo ?? undefined }))}
+        />
+      ) : null}
+
+      {ambito === 'EMPRESA' && modo === 'registrar' ? (
         <Select
           className="mt-3"
           label="¿Qué área o cargo?"
           vacio="Seleccione del organigrama"
           hint="Si no está, lo añade quien lleva el organigrama: desde aquí no se crea."
-          value={grupo}
-          onChange={(e) => onGrupo(e.target.value)}
+          value={grupo ?? ''}
+          onChange={(e) => onGrupo?.(e.target.value)}
           opciones={(grupos ?? [])
             .filter((g) => g.activo)
             .map((g) => ({ valor: String(g.id), etiqueta: grupoEnCorto(g) }))}
@@ -245,11 +281,13 @@ function QuienResponde({
           onResponsable((personas ?? []).find((p) => String(p.id) === v)?.nombre ?? '')
         }}
         opciones={[
-          ...(personas ?? []).map((p) => ({
-            valor: String(p.id),
-            nombre: p.nombre,
-            detalle: p.cargo ?? undefined,
-          })),
+          ...(personas ?? [])
+            .filter((p) => p.activo)
+            .map((p) => ({
+              valor: String(p.id),
+              nombre: p.nombre,
+              detalle: p.cargo ?? undefined,
+            })),
           { valor: OTRA_PERSONA, nombre: 'Otra persona — no es de la empresa' },
         ]}
       />
@@ -266,13 +304,22 @@ function QuienResponde({
 }
 
 /*
-  Lo que viaja a la base: o el grupo, o los dos datos de fuera. Nunca los dos
-  —es justo lo que la base rechaza— y nunca ninguno.
+  Lo que viaja a la base: al pedir, la persona o los dos datos de fuera; al
+  registrar directo, el grupo del organigrama o los dos datos de fuera. Nunca
+  dos a la vez —es justo lo que la base rechaza— y nunca ninguno.
 */
-export const paraQuienVa = (ambito: AmbitoDeSalida, grupo: string, externo: string, responsable: string) =>
+export const paraQuienVa = (
+  modo: 'pedir' | 'registrar',
+  ambito: AmbitoDeSalida,
+  grupoOEmpleado: string,
+  externo: string,
+  responsable: string,
+) =>
   ambito === 'FUERA'
     ? { externo: externo.trim(), responsable: responsable.trim() }
-    : { grupo_id: Number(grupo) }
+    : modo === 'pedir'
+      ? { empleado_id: Number(grupoOEmpleado) }
+      : { grupo_id: Number(grupoOEmpleado) }
 
 export function ModalSalida({
   abierto,
@@ -350,6 +397,7 @@ export function ModalSalida({
   const guardarClase = useGuardarClaseDeSalida()
   const borrarClase = useBorrarClaseDeSalida()
   const grupos = useGruposDeSalida()
+  const { data: empleados } = usePersonasDeLaEmpresa()
   const { data: articulos } = useArticulos()
   const { data: formasDeContar } = useTodasLasPresentaciones()
 
@@ -365,6 +413,7 @@ export function ModalSalida({
   const [clase, setClase] = useState('')
   const [ambito, setAmbito] = useState<AmbitoDeSalida>('')
   const [grupo, setGrupo] = useState('')
+  const [empleado, setEmpleado] = useState('')
   const [externo, setExterno] = useState('')
   const [responsable, setResponsable] = useState('')
   const [motivo, setMotivo] = useState('')
@@ -382,6 +431,7 @@ export function ModalSalida({
     setAlmacenPedido(almacenInicial ?? '')
     setAmbito('')
     setGrupo('')
+    setEmpleado('')
     setExterno('')
     setResponsable('')
     setMotivo('')
@@ -498,7 +548,8 @@ export function ModalSalida({
 
   const faltaDecirParaQuien =
     !ambito ||
-    (ambito === 'EMPRESA' && !grupo) ||
+    (ambito === 'EMPRESA' && modo === 'pedir' && !empleado) ||
+    (ambito === 'EMPRESA' && modo === 'registrar' && !grupo) ||
     (ambito === 'FUERA' && (externo.trim().length < 3 || responsable.trim().length < 3))
 
   const pedir = async () => {
@@ -512,7 +563,7 @@ export function ModalSalida({
         propietario: r.propietario || null,
       })),
       motivo,
-      ...paraQuienVa(ambito, grupo, externo, responsable),
+      ...paraQuienVa('pedir', ambito, empleado, externo, responsable),
       con_firma: miFirma?.usar === true && conMiFirma,
       // Apagado el interruptor, no viaja nada: una salida que no lo usa queda
       // igual de limpia que antes de que esto existiera.
@@ -559,7 +610,7 @@ export function ModalSalida({
       })),
       motivo,
       tipo: clase,
-      ...paraQuienVa(ambito, grupo, externo, responsable),
+      ...paraQuienVa('registrar', ambito, grupo, externo, responsable),
     })) as string
 
     onRegistrada(numero, motivo)
@@ -814,12 +865,13 @@ export function ModalSalida({
           {modo === 'pedir' ? (
             <>
               <ParaQuienSale
+                modo="pedir"
                 pregunta="¿Quién lo va a recibir?"
                 ambito={ambito}
                 onAmbito={setAmbito}
-                grupos={grupos.data}
-                grupo={grupo}
-                onGrupo={setGrupo}
+                empleados={empleados}
+                empleado={empleado}
+                onEmpleado={setEmpleado}
                 externo={externo}
                 onExterno={setExterno}
                 responsable={responsable}
@@ -959,6 +1011,7 @@ export function ModalSalida({
               </div>
 
               <ParaQuienSale
+                modo="registrar"
                 pregunta="¿Quién lo recibe?"
                 ambito={ambito}
                 onAmbito={setAmbito}

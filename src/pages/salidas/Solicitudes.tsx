@@ -23,15 +23,18 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { usePerfiles } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
+import { useSesion } from '@/lib/sesion'
 import { useMiFirma } from '@/lib/api/firmas'
 import { nombreDeGrupo, useGruposDeSalida } from '@/lib/api/inventario'
 import {
   ESTADO_DE_SOLICITUD,
+  nombreDeEmpleado,
   quePuedoHacerConLaSolicitud,
   useAprobarSolicitud,
   useCancelarSolicitud,
   useComoAprueboSalidas,
   useEntregarSolicitud,
+  usePersonasDeLaEmpresa,
   useRechazarSolicitud,
   useSolicitudesDeSalida,
 } from '@/lib/api/salidas'
@@ -98,8 +101,10 @@ export function Solicitudes() {
 
   const { data: solicitudes, isPending, error } = useSolicitudesDeSalida()
   const { data: perfiles } = usePerfiles()
+  const { session } = useSesion()
   const { puede: alcanza } = useMisPermisos()
   const grupos = useGruposDeSalida()
+  const { data: personas } = usePersonasDeLaEmpresa()
   /*
     Quién aprueba ya no se decide como en el traslado. Desde el 16/09 es una
     casilla: la gerencia la trae por su rol, se le extiende a quien haga falta,
@@ -152,6 +157,7 @@ export function Solicitudes() {
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
 
   const paraQuien = (s: SolicitudDeSalida) =>
+    nombreDeEmpleado(personas, s.empleado_id) ??
     nombreDeGrupo(grupos.data, s.grupo_id) ??
     (s.destino_externo
       ? `${s.destino_externo}, de fuera de la empresa${s.responsable_externo ? ` · responde ${s.responsable_externo}` : ''}`
@@ -432,7 +438,17 @@ export function Solicitudes() {
                         entregar.mutate(s.id, {
                           onSuccess: (numero) => {
                             void nota.abrir(numero as string, s.motivo)
-                            setAvisoEntrega({ s, notaSalida: numero as string })
+                            /*
+                              `s` es la solicitud de antes de entregar, así que
+                              su `entregada_por` todavía está en null — la base
+                              recién lo escribió en esta misma llamada. Quien
+                              entregó es, con certeza, quien tiene la sesión
+                              abierta ahora mismo.
+                            */
+                            setAvisoEntrega({
+                              s: { ...s, entregada_por: session?.user.id ?? s.entregada_por },
+                              notaSalida: numero as string,
+                            })
                           },
                           onError: (e) => setFallo(enCastellano(e)),
                         })
