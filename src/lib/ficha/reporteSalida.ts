@@ -57,13 +57,11 @@ export function textoDelReporteSalida(d: DatosReporteSalida): string {
 
   lineas.push(`🏭 *Sale de:* ${d.almacen}`)
   lineas.push(`🎯 *Para:* ${d.destino ?? 'Sin destino registrado'}`)
-  if (d.camiones.length === 0) {
-    lineas.push('🚚 *Vehículo:* Sin registrar')
-  } else {
-    for (const c of d.camiones) {
-      const quien = [c.vehiculo ?? 'Sin placa', c.chofer].filter(Boolean).join(' · ')
-      lineas.push(`🚚 *Vehículo:* ${quien}`)
-    }
+  // Sin vehículo registrado, la línea no se imprime: no todas las salidas
+  // llevan uno, y «Sin registrar» se leía como que faltaba anotarlo.
+  for (const c of d.camiones) {
+    const quien = [c.vehiculo ?? 'Sin placa', c.chofer].filter(Boolean).join(' · ')
+    lineas.push(`🚚 *Vehículo:* ${quien}`)
   }
   lineas.push('')
 
