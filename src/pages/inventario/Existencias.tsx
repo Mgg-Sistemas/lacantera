@@ -194,11 +194,11 @@ interface RenglonEnCurso {
    */
   presentacion?: string | null
   /**
-   * Solo en la salida: de qué almacén sale ESTE renglón.
+   * A qué almacén entra ESTE renglón, en la entrada.
    *
-   * En la entrada el sitio se elige una vez arriba, porque lo que entra entra
-   * a un sitio. En la salida no es igual: «necesito estas cinco cosas» suele
-   * significar el aceite del almacén y las varillas del patio.
+   * Vacío significa «el de arriba» (`aDonde`), que es solo el valor por
+   * defecto desde el 03/11/2026: una entrada puede repartirse entre más de
+   * un sitio, igual que ya puede una salida.
    */
   almacen: string
 }
@@ -430,9 +430,6 @@ export function Existencias() {
   // almacén y el artículo hacen falta cuando se abre sin fila debajo.
   const [referencia, setReferencia] = useState('')
   const [aDonde, setADonde] = useState('')
-  /* El sitio elegido como destino de la entrada, para poder avisar de quién
-     será lo que entre antes de que se guarde. */
-  const almacenDeEntrada = (almacenes ?? []).find((a) => String(a.id) === aDonde)
   /*
     LA ENTRADA ES DE VARIOS RENGLONES
 
@@ -689,12 +686,15 @@ export function Existencias() {
 
     if (modal.tipo === 'entrada') {
       await entrada.mutateAsync({
-        almacen_id: Number(aDonde),
+        // El valor por defecto: se usa en los renglones que no eligieron el suyo.
+        almacen_id: aDonde ? Number(aDonde) : null,
         renglones: renglones
           // Un renglón sin valorar no trae costo a propósito: sin esto el
           // filtro lo tiraba en silencio y la laptop donada no llegaba nunca.
           .filter((r) => r.articulo && r.cantidad && (r.costo || r.sinValor))
           .map((r) => ({
+            // Suyo si lo eligió; si no, el de la cabecera.
+            almacen_id: Number(r.almacen || aDonde),
             articulo_id: Number(r.articulo),
             /*
               A la base van las DOS cifras tecleadas y no el total: con bultos,
@@ -1447,9 +1447,15 @@ export function Existencias() {
                   (modal.tipo === 'ajuste' && faltaDecirDeQuien(modal.fila?.duenos, saleDe)) ||
                   motivo.trim().length < 4 ||
                   (modal.tipo === 'entrada' &&
-                    (!aDonde ||
-                      renglones.filter((r) => r.articulo && r.cantidad && (r.costo || r.sinValor))
-                        .length === 0 ||
+                    (renglones.filter((r) => r.articulo && r.cantidad && (r.costo || r.sinValor))
+                      .length === 0 ||
+                      // Cada renglón contado tiene que resolver un almacén,
+                      // el suyo o el de la cabecera. Ninguno de los dos es lo
+                      // mismo que «no se sabe a dónde entra esto».
+                      renglones.some(
+                        (r) =>
+                          r.articulo && r.cantidad && (r.costo || r.sinValor) && !(r.almacen || aDonde),
+                      ) ||
                       // Un costo sin moneda no se manda: la base lo rechaza, y
                       // descartarlo en silencio sería peor.
                       renglones.some(
@@ -1479,16 +1485,19 @@ export function Existencias() {
                 vacio="Seleccione el sitio"
                 valor={aDonde}
                 /*
-                  CAMBIAR DE ALMACEN OLVIDA TODAS LAS CONFIRMACIONES.
+                  CAMBIAR DE ALMACEN OLVIDA LAS CONFIRMACIONES QUE DEPENDEN DE ÉL.
 
                   El costo promedio se lleva por pareja (almacen, articulo), asi
-                  que mover la entrada de sitio cambia el numero contra el que se
-                  comparan TODOS los renglones. Una confirmacion dada contra el
-                  promedio de un almacen no dice nada del otro.
+                  que mover el valor por defecto cambia el numero contra el que
+                  se comparan los renglones QUE NO ELIGIERON EL SUYO PROPIO — los
+                  que sí lo eligieron siguen comparando contra el suyo, y mover
+                  la cabecera no les cambia nada.
                 */
                 onCambio={(v) => {
                   setADonde(v)
-                  setRenglones((lista) => lista.map((x) => ({ ...x, confirmado: false })))
+                  setRenglones((lista) =>
+                    lista.map((x) => (x.almacen ? x : { ...x, confirmado: false })),
+                  )
                 }}
                 /*
                   EL TANQUE SIN COSTO NO ES DESTINO DE UNA ENTRADA CON PRECIO.
@@ -1523,16 +1532,9 @@ export function Existencias() {
                     ),
                   }))}
               />
-
-              {/* Y dicho en grande una vez elegido, porque la línea de la lista
-                  desaparece en cuanto se cierra el desplegable. */}
-              {esAjeno(almacenDeEntrada?.propietario) ? (
-                <p className="border-warning/40 bg-warning/10 text-warning mt-2 rounded-lg border px-3 py-2 text-xs leading-relaxed">
-                  <Landmark className="mr-1 inline size-3.5 align-[-2px]" />
-                  Lo que entre aquí será de {nombreDeDueno(almacenDeEntrada?.propietario)}, no de
-                  La Cantera. No se puede trasladar a un almacén propio.
-                </p>
-              ) : null}
+              <p className="text-ink/45 mt-1.5 text-xs">
+                El valor por defecto. Si un renglón entra a otro almacén, se elige en el renglón.
+              </p>
 
               <div className="mt-4 space-y-3">
                 {renglones.map((r, i) => {
@@ -1639,6 +1641,58 @@ export function Existencias() {
                             detalle: `${a.categoria} · ${a.unidad}`,
                           }))}
                       />
+
+                      {/*
+                        A DÓNDE ENTRA ESTE RENGLÓN (03/11/2026).
+
+                        Vacío significa «el de arriba»: la mayoría de una
+                        entrada va al mismo sitio, y obligar a elegir en cada
+                        renglón repetiría veinte veces lo que ya se dijo una.
+                        Quien sí reparte entre almacenes lo cambia renglón por
+                        renglón, igual que ya hace Salidas.
+                      */}
+                      <SelectBuscable
+                        label="Almacén"
+                        vacio="Igual que arriba"
+                        valor={r.almacen}
+                        onCambio={(v) =>
+                          setRenglones((lista) =>
+                            lista.map((x) =>
+                              x.clave === r.clave ? { ...x, almacen: v, confirmado: false } : x,
+                            ),
+                          )
+                        }
+                        opciones={(almacenes ?? [])
+                          .filter((a) => !a.admite_sin_costo)
+                          .map((a) => ({
+                            valor: String(a.id),
+                            codigo: a.codigo,
+                            nombre: a.nombre,
+                            detalle: conDueno(
+                              a.tipo,
+                              detalleDeDueno(a.propietario, nombreDeDueno(a.propietario)),
+                            ),
+                          }))}
+                      />
+
+                      {/* Y dicho en grande una vez resuelto, porque la línea de
+                          la lista desaparece en cuanto se cierra el
+                          desplegable. Por el almacén de ESTE renglón —el suyo
+                          si lo eligió, si no el de arriba—, no por el de la
+                          cabecera: con renglones repartidos entre dueños
+                          distintos, el aviso de uno no vale para el otro. */}
+                      {(() => {
+                        const almacenDelRenglon = (almacenes ?? []).find(
+                          (a) => String(a.id) === (r.almacen || aDonde),
+                        )
+                        return esAjeno(almacenDelRenglon?.propietario) ? (
+                          <p className="border-warning/40 bg-warning/10 text-warning mt-2 rounded-lg border px-3 py-2 text-xs leading-relaxed">
+                            <Landmark className="mr-1 inline size-3.5 align-[-2px]" />
+                            Esto será de {nombreDeDueno(almacenDelRenglon?.propietario)}, no de La
+                            Cantera. No se puede trasladar a un almacén propio.
+                          </p>
+                        ) : null
+                      })()}
 
                       {/*
                         DOS COLUMNAS Y LA MONEDA DEBAJO, NO TRES EN FILA.
@@ -1892,7 +1946,7 @@ export function Existencias() {
                         moneda de las facturas de aquí.
                       */}
                       <AvisoDeCosto
-                        almacenId={Number(aDonde) || null}
+                        almacenId={Number(r.almacen || aDonde) || null}
                         articuloId={Number(r.articulo) || null}
                         costo={costo}
                         moneda={r.moneda}
