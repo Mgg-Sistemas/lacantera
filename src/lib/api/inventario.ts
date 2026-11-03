@@ -900,8 +900,17 @@ export function useRegistrarEntrada() {
   )
 }
 
-/** Un renglón de una entrada: qué, cuánto, y cuánto costó en qué moneda. */
+/** Un renglón de una entrada: a qué almacén, qué, cuánto, y cuánto costó en qué moneda. */
 export interface RenglonDeEntrada {
+  /**
+   * A qué almacén entra ESTE renglón.
+   *
+   * Mismo criterio que `registrar_salidas` (03/11/2026): una entrada puede
+   * repartirse entre más de un sitio —parte del lote al almacén general, el
+   * resto al de obra—, y obligar a una entrada por almacén parte en dos un
+   * papel que es uno solo.
+   */
+  almacen_id: number
   articulo_id: number
   /**
    * Lo suelto, en la unidad de operación.
@@ -1035,11 +1044,15 @@ export function useRevisarCostoDeEntrada(
  * Cada renglón dice en qué moneda costó y la conversión a dólares la hace la
  * base con la tasa del día — aquí no se calcula ninguna tasa, que es la regla
  * de la casa. La unidad tampoco viaja: sale del artículo.
+ *
+ * CADA RENGLÓN DICE A DÓNDE ENTRA (03/11/2026). El almacén de cabecera es
+ * solo el valor por defecto —mismo criterio que `useRegistrarSalidas`—: se
+ * usa si el renglón no trae el suyo.
  */
 export function useRegistrarEntradas() {
   return useAccionInventario(
     (e: {
-      almacen_id: number
+      almacen_id: number | null
       renglones: RenglonDeEntrada[]
       motivo: string
       referencia?: string | null
@@ -1049,6 +1062,7 @@ export function useRegistrarEntradas() {
         p_almacen_id: e.almacen_id,
         p_renglones: e.renglones.map((r) => ({
           ...r,
+          almacen_id: String(r.almacen_id),
           // Las dos claves solo viajan cuando hay bultos: sin ellas la base
           // cuenta exactamente como siempre, que es lo que hace esto compatible.
           presentaciones: r.presentaciones || undefined,
