@@ -30,7 +30,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import { bolivares, dinero, documento, dolares, enteros, fecha, fechaHora } from '@/lib/formato'
-import { useEmpresa } from '@/lib/api/empresa'
+import { useEmpresa, empresaDelPapel } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useGuias, useTickets } from '@/lib/api/despachos'
@@ -69,6 +69,7 @@ import { ModalNotaDeEntrega } from '@/pages/salidas/ModalNotaDeEntrega'
 import { ModalReporteSalida } from '@/pages/salidas/ModalReporteSalida'
 import { ListaDeCamiones, ModalCamiones } from './CamionesDeLaNota'
 import { ModalEditarNotaEntrega } from './ModalEditarNotaEntrega'
+import { ModalEditarSolicitudDespacho } from './ModalEditarSolicitudDespacho'
 import { ModalReporteDespacho } from './ModalReporteDespacho'
 import { ModalReporteVentasWhatsapp } from './ModalReporteVentasWhatsapp'
 import { textoDelReporteVentasWhatsapp } from '@/lib/ficha/reporteVentasWhatsapp'
@@ -249,6 +250,7 @@ export function NotasDeEntrega() {
   const [nuevo, setNuevo] = useState(false)
   const [detalle, setDetalle] = useState<NotaEntrega | null>(null)
   const [editando, setEditando] = useState<NotaEntrega | null>(null)
+  const [editandoSolicitud, setEditandoSolicitud] = useState<SolicitudDeDespacho | null>(null)
   const [anulando, setAnulando] = useState<NotaEntrega | null>(null)
   /*
     UN ENLACE QUE TRAE `?nota=NE-2026-0012` ABRE ESA NOTA. Es como llega quien
@@ -405,7 +407,10 @@ export function NotasDeEntrega() {
   const guiasVigentes = (guias ?? []).filter((g) => !g.vencida)
 
   // Todos los patios: cada renglón puede salir de uno distinto.
-  const { data: existencias } = useExistencias(undefined, nuevo || editando !== null)
+  const { data: existencias } = useExistencias(
+    undefined,
+    nuevo || editando !== null || editandoSolicitud !== null,
+  )
   const renglonesDetalle = useRenglones('nota_entrega_renglones', 'nota_id', detalle?.id ?? null)
 
   const porPatio: Record<string, Record<number, number>> = {}
@@ -584,7 +589,7 @@ export function NotasDeEntrega() {
       const { alcance, materiales } = await resumenParaReporte()
       setReporte(
         await armarReporteNotasDeEntrega({
-          empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
+          empresa: empresaDelPapel(empresa),
           emitidoPor: yo?.nombre ?? '',
           momento: new Date(),
           alcance,
@@ -750,6 +755,9 @@ export function NotasDeEntrega() {
                                   {' '}· {dinero(s.moneda, r.precio_unitario)} c/u
                                 </span>
                               ) : null}
+                              {r.motivo_condicion ? (
+                                <span className="text-ink/50 italic"> · {r.motivo_condicion}</span>
+                              ) : null}
                             </span>
                             {r.precio_unitario != null ? (
                               <span className="text-ink/85 tabular shrink-0 font-medium">
@@ -825,6 +833,13 @@ export function NotasDeEntrega() {
                         </p>
                       ) : null}
 
+                      {s.observacion ? (
+                        <p className="text-ink/65 mt-2 text-xs whitespace-pre-wrap">
+                          <span className="text-ink/45">Observación: </span>
+                          {s.observacion}
+                        </p>
+                      ) : null}
+
                       <p className="text-ink/40 mt-2 text-xs">
                         Lo pidió {nombreDe(s.pedida_por)} · {fechaHora(s.pedida_en)}
                         {s.resuelta_en ? ` · lo cerró ${nombreDe(s.resuelta_por)} · ${fechaHora(s.resuelta_en)}` : ''}
@@ -874,6 +889,19 @@ export function NotasDeEntrega() {
                               No aprobar
                             </Button>
                           </>
+                        ) : null}
+                        {puedeEditar ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            icon={<Pencil />}
+                            onClick={() => {
+                              setFalloDespacho(null)
+                              setEditandoSolicitud(s)
+                            }}
+                          >
+                            Editar
+                          </Button>
                         ) : null}
                         {s.pedida_por === yo?.id || puedeAnular ? (
                           <Button
@@ -2073,6 +2101,19 @@ export function NotasDeEntrega() {
           monedas={monedas.data ?? []}
           opcionesDePatio={opcionesDePatio}
           existenciasDePatio={(id) => porPatio[id]}
+        />
+      ) : null}
+
+      {editandoSolicitud ? (
+        <ModalEditarSolicitudDespacho
+          abierto
+          onCerrar={() => setEditandoSolicitud(null)}
+          solicitud={editandoSolicitud}
+          clientes={clientes ?? []}
+          precios={precios ?? []}
+          monedas={monedas.data ?? []}
+          opcionesDePatio={opcionesDePatio}
+          existenciasDePatio={(id) => (existencias ? (porPatio[id] ?? {}) : undefined)}
         />
       ) : null}
 
