@@ -196,7 +196,7 @@ export function Renglones({
               },
               { valor: 'DESCUENTO', etiqueta: 'Con descuento sobre la lista' },
               { valor: 'SIN_CARGO', etiqueta: 'Sin cargo' },
-              ...(puedePrecioManual
+              ...(puedePrecioManual || fila.condicion === 'ACORDADO'
                 ? [{ valor: 'ACORDADO' as const, etiqueta: 'Precio manual (pisa la lista)' }]
                 : []),
             ]

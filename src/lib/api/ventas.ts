@@ -780,7 +780,62 @@ export interface SolicitudDeDespacho {
     unidad?: string
     /** Solo llega a quien ve los montos. */
     precio_unitario?: number
+    exento_iva?: boolean
+    condicion?: CondicionVenta
+    descuento_pct?: number | null
+    descuento_unitario?: number | null
+    motivo_condicion?: string | null
+    almacen_id?: number | null
   }>
+}
+
+export interface EdicionDeSolicitudDespacho {
+  id: number
+  cliente_id: number
+  almacen_id: number
+  renglones: RenglonVenta[]
+  vehiculo: string
+  chofer: string
+  cedula_chofer: string
+  vehiculo_descripcion?: string | null
+  moneda?: string | null
+  peso_bruto?: number | null
+  peso_tara?: number | null
+  ticket?: string | null
+  flete?: number
+  observacion?: string | null
+  pago_combinado?: boolean
+  monto_usd_combinado?: number | null
+  monto_bs_combinado?: number | null
+  pendiente_por_cobrar?: boolean
+  fecha_pago?: string | null
+}
+
+/** Edita un despacho pedido antes de aprobarlo. Solo lo ve quien es ADMIN: lo exige la propia función. */
+export function useEditarSolicitudDespacho() {
+  return useAccionVentas((d: EdicionDeSolicitudDespacho) =>
+    rpc<void>('editar_solicitud_despacho', {
+      p_id: d.id,
+      p_cliente_id: d.cliente_id,
+      p_almacen_id: d.almacen_id,
+      p_renglones: d.renglones,
+      p_vehiculo: d.vehiculo,
+      p_chofer: d.chofer,
+      p_cedula_chofer: d.cedula_chofer,
+      p_vehiculo_descripcion: d.vehiculo_descripcion || null,
+      p_moneda: d.moneda ?? null,
+      p_peso_bruto: d.peso_bruto ?? null,
+      p_peso_tara: d.peso_tara ?? null,
+      p_ticket: d.ticket || null,
+      p_flete: d.flete ?? 0,
+      p_observacion: d.observacion || null,
+      p_pago_combinado: d.pago_combinado ?? false,
+      p_monto_usd_combinado: d.monto_usd_combinado ?? null,
+      p_monto_bs_combinado: d.monto_bs_combinado ?? null,
+      p_pendiente_por_cobrar: d.pendiente_por_cobrar ?? false,
+      p_fecha_pago: d.fecha_pago || null,
+    }),
+  )
 }
 
 export function useSolicitudesDespacho() {
