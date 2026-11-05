@@ -557,6 +557,8 @@ export interface NotaEntrega {
   fecha_pago: string | null
   cobrada_en: string | null
   vencida_por_cobrar: boolean
+  /** Los articulo_id de sus renglones, sin repetir. Para el filtro por producto; no se enseña en pantalla. */
+  articulos_ids: number[]
 }
 
 /** Un camión de una nota de entrega: la foto del momento, no el catálogo. */
@@ -603,6 +605,8 @@ export interface FiltrosDeNotas {
   moneda?: string
   /** «PENDIENTE»: todavía sin cobrar. «VENCIDA»: pendiente y ya pasó la fecha. */
   cobro?: 'PENDIENTE' | 'VENCIDA' | ''
+  /** El articulo_id de un producto (categoría PRODUCTO): la nota lleva algún renglón de ese material. */
+  producto?: string
 }
 
 const COLUMNAS_QUE_SE_BUSCAN = [
@@ -632,6 +636,7 @@ export function useNotasEntrega(filtros: string | FiltrosDeNotas = {}) {
       f.hasta ?? '',
       f.moneda ?? '',
       f.cobro ?? '',
+      f.producto ?? '',
     ],
     queryFn: async () => {
       let q = supabase
@@ -646,6 +651,7 @@ export function useNotasEntrega(filtros: string | FiltrosDeNotas = {}) {
       if (f.moneda) q = q.eq('moneda', f.moneda)
       if (f.cobro === 'PENDIENTE') q = q.eq('pendiente_por_cobrar', true).is('cobrada_en', null)
       if (f.cobro === 'VENCIDA') q = q.eq('vencida_por_cobrar', true)
+      if (f.producto) q = q.contains('articulos_ids', [Number(f.producto)])
       if (texto) q = q.or(COLUMNAS_QUE_SE_BUSCAN.map((c) => `${c}.ilike.%${texto}%`).join(','))
       return desenvolver<NotaEntrega[]>(await q)
     },
