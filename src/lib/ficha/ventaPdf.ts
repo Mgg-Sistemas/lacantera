@@ -118,6 +118,16 @@ export interface DatosDocumento {
    */
   pagoCombinado?: { usd: string | number; bs: string | number } | null
 
+  /**
+   * Solo la nota de entrega. Estado de cuenta por cobrar cuando la nota fue
+   * marcada con ese compromiso de pago.
+   */
+  cuentaPorCobrar?: {
+    estado: 'POR_COBRAR' | 'VENCIDA' | 'COBRADA'
+    fechaPago?: string | null
+    cobradaEn?: string | null
+  } | null
+
   moneda: string
   /** Bolívares por una unidad de la moneda del documento. */
   tasa: string | number
@@ -684,7 +694,9 @@ const lineaDeIva = (d: DatosDocumento) =>
 const lineaDeIgtf = (d: DatosDocumento) => mencionaImpuestos(d) && Number(d.igtf ?? 0) > 0
 
 function altoTotales(d: DatosDocumento): number {
-  if (!mencionaImpuestos(d)) return d.pagoCombinado ? 22 : 16
+  if (!mencionaImpuestos(d)) {
+    return 14.5 + (d.pagoCombinado ? 6 : 0) + (d.cuentaPorCobrar ? 6.5 : 0)
+  }
   const filas =
     1 + // subtotal
     (lineaDeIva(d) ? 1 : 0) +
@@ -706,7 +718,8 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
   const yInicio = y
 
   if (!mencionaImpuestos(d)) {
-    const altoCaja = d.pagoCombinado ? 17.5 : 11.5
+    const altoCaja =
+      11.5 + (d.pagoCombinado ? 6 : 0) + (d.cuentaPorCobrar ? 6.5 : 0)
     doc.setFillColor('#faf8f6')
     doc.setDrawColor(rotulo.color).setLineWidth(0.45)
     doc.roundedRect(x, yInicio, ancho, altoCaja, 1.2, 1.2, 'FD')
@@ -716,18 +729,48 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
     doc.setFontSize(12.2).setTextColor('#111111')
     doc.text(conSimbolo(d.moneda, d.total), DER - 4.5, yInicio + 7.4, { align: 'right' })
 
+    let yCursor = yInicio + 10
+
     if (d.pagoCombinado) {
       doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
-      doc.line(x + 3.5, yInicio + 10, DER - 3.5, yInicio + 10)
+      doc.line(x + 3.5, yCursor, DER - 3.5, yCursor)
       doc.setFont('helvetica', 'normal').setFontSize(8.2).setTextColor(GRIS)
-      doc.text('Pago combinado', x + 4.5, yInicio + 14.8)
+      doc.text('Pago combinado', x + 4.5, yCursor + 4.8)
       doc.setFont('helvetica', 'bold').setTextColor(TINTA)
       doc.text(
         `${conSimbolo('USD', d.pagoCombinado.usd)} + ${conSimbolo('VES', d.pagoCombinado.bs)}`,
         DER - 4.5,
-        yInicio + 14.8,
+        yCursor + 4.8,
         { align: 'right' },
       )
+      yCursor += 6
+    }
+
+    if (d.cuentaPorCobrar) {
+      doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
+      doc.line(x + 3.5, yCursor, DER - 3.5, yCursor)
+
+      const esVencida = d.cuentaPorCobrar.estado === 'VENCIDA'
+      const esCobrada = d.cuentaPorCobrar.estado === 'COBRADA'
+      const colorEstado = esCobrada ? '#166534' : esVencida ? '#991b1b' : '#92400e'
+      const fondoPastilla = esCobrada ? '#dcfce7' : esVencida ? '#fee2e2' : '#fef3c7'
+      const fTexto = esCobrada
+        ? d.cuentaPorCobrar.cobradaEn
+          ? `Cobrada · ${fechaCorta(d.cuentaPorCobrar.cobradaEn)}`
+          : 'Cobrada'
+        : esVencida
+          ? `Vencida · ${d.cuentaPorCobrar.fechaPago ? fechaCorta(d.cuentaPorCobrar.fechaPago) : '—'}`
+          : `Por cobrar · ${d.cuentaPorCobrar.fechaPago ? fechaCorta(d.cuentaPorCobrar.fechaPago) : '—'}`
+
+      doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(GRIS)
+      doc.text('Cuenta por cobrar', x + 4.5, yCursor + 4.8)
+
+      doc.setFont('helvetica', 'bold').setFontSize(7.6)
+      const wPast = doc.getTextWidth(fTexto) + 4.4
+      doc.setFillColor(fondoPastilla)
+      doc.roundedRect(DER - 4.5 - wPast, yCursor + 1.3, wPast, 4.6, 0.9, 0.9, 'F')
+      doc.setTextColor(colorEstado)
+      doc.text(fTexto, DER - 4.5 - wPast / 2, yCursor + 4.6, { align: 'center' })
     }
 
     return yInicio + altoCaja + 3

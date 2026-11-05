@@ -32,6 +32,13 @@ function datosDeNota(
     tipo: 'NOTA',
     numero: n.numero,
     fecha: n.fecha,
+    vigencia:
+      n.pendiente_por_cobrar && !n.cobrada_en && n.fecha_pago && n.estado !== 'ANULADA'
+        ? {
+            rotulo: n.vencida_por_cobrar ? 'Vencida el' : 'Fecha de pago',
+            fecha: n.fecha_pago,
+          }
+        : null,
     contraparte: {
       nombre: n.cliente ?? 'CLIENTE POR CONCRETAR',
       rif: n.cliente_rif ?? '',
@@ -86,6 +93,14 @@ function datosDeNota(
     pagoCombinado: n.pago_combinado
       ? { usd: n.monto_usd_combinado ?? 0, bs: n.monto_bs_combinado ?? 0 }
       : null,
+    cuentaPorCobrar:
+      n.pendiente_por_cobrar && n.estado !== 'ANULADA'
+        ? {
+            estado: n.cobrada_en ? 'COBRADA' : n.vencida_por_cobrar ? 'VENCIDA' : 'POR_COBRAR',
+            fechaPago: n.fecha_pago,
+            cobradaEn: n.cobrada_en,
+          }
+        : null,
     empresa,
     emitidoPor,
   }
