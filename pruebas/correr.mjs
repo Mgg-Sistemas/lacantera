@@ -21,6 +21,7 @@ const SUITES = {
   acarreos: () => import('./acarreos.mjs'),
   vehiculos: () => import('./vehiculos.mjs'),
   costos: () => import('./costos.mjs'),
+  pagos: () => import('./pagos.mjs'),
 }
 
 const pedidas = process.argv.slice(2)
