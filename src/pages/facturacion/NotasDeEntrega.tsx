@@ -166,17 +166,19 @@ export function NotasDeEntrega() {
   const [estado, setEstado] = useState('')
   const [monedaFiltro, setMonedaFiltro] = useState('')
   const [cobroFiltro, setCobroFiltro] = useState<'' | 'PENDIENTE' | 'VENCIDA'>('')
+  const [productoFiltro, setProductoFiltro] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const { data, isPending, error } = useNotasEntrega({
     texto: busca,
     ...(estado ? { estado } : {}),
     ...(monedaFiltro ? { moneda: monedaFiltro } : {}),
     ...(cobroFiltro ? { cobro: cobroFiltro } : {}),
+    ...(productoFiltro ? { producto: productoFiltro } : {}),
     ...(rango.desde ? { desde: rango.desde } : {}),
     ...(rango.hasta ? { hasta: rango.hasta } : {}),
   })
   const hayFiltros = Boolean(
-    busca.trim() || estado || monedaFiltro || cobroFiltro || rango.desde || rango.hasta,
+    busca.trim() || estado || monedaFiltro || cobroFiltro || productoFiltro || rango.desde || rango.hasta,
   )
   const { data: clientes } = useClientes(true)
   const { data: precios } = usePrecios()
@@ -553,6 +555,9 @@ export function NotasDeEntrega() {
           : cobroFiltro === 'VENCIDA'
             ? 'vencidas por cobrar'
             : '',
+        productoFiltro
+          ? `producto ${precios?.find((p) => String(p.articulo_id) === productoFiltro)?.nombre ?? productoFiltro}`
+          : '',
         rango.desde || rango.hasta
           ? `del ${rango.desde ? fecha(rango.desde) : 'inicio'} al ${rango.hasta ? fecha(rango.hasta) : 'hoy'}`
           : '',
@@ -992,6 +997,27 @@ export function NotasDeEntrega() {
               { valor: '', etiqueta: 'Cualquiera' },
               { valor: 'PENDIENTE', etiqueta: 'Pendiente por cobrar' },
               { valor: 'VENCIDA', etiqueta: 'Vencidas' },
+            ]}
+          />
+          {/*
+            PRODUCTO: QUÉ MATERIAL LLEVA LA NOTA, NO EN QUÉ PATIO SALIÓ.
+            Christopher, 05/11/2026: un filtro por el material de venta (arena
+            lavada, polvillo, piedra…). Las opciones son las mismas que ya
+            carga `precios` (solo artículos de categoría PRODUCTO), sin pedir
+            nada aparte. Una nota puede llevar varios renglones de materiales
+            distintos; el filtro es de uno solo, igual que Moneda y Cobro.
+          */}
+          <Select
+            label="Producto"
+            value={productoFiltro}
+            onChange={(e) => setProductoFiltro(e.target.value)}
+            opciones={[
+              { valor: '', etiqueta: 'Cualquiera' },
+              ...Array.from(
+                new Map(
+                  (precios ?? []).map((p) => [p.articulo_id, { valor: String(p.articulo_id), etiqueta: p.nombre }]),
+                ).values(),
+              ).sort((a, b) => a.etiqueta.localeCompare(b.etiqueta)),
             ]}
           />
         </div>
