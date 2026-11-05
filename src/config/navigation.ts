@@ -301,6 +301,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/facturacion/notas-entrega': 'nota de entrega ne remision despachar material',
   '/app/ventas/clientes': 'rif comprador',
   '/app/ventas/precios': 'tarifa lista precio',
+  '/app/ventas/registros-de-pagos': 'banco deposito transferencia referencia cotejo conciliar pago caja',
   '/app/inventario/existencias': 'stock cuanto hay disponible sacar salida merma consumo motivo razon contar conteo ajuste',
   '/app/inventario/articulos': 'catalogo repuesto insumo herramienta epp material',
   '/app/organigrama': 'organizacion estructura jerarquia cargos quien depende de quien departamentos arbol',
@@ -740,6 +741,7 @@ export const navigation: NavSection[] = [
           { label: 'Clientes', to: '/app/ventas/clientes' },
           { label: 'Lista de precios', to: '/app/ventas/precios' },
           { label: 'Cotizaciones', to: '/app/ventas/cotizaciones' },
+          { label: 'Registros de pagos', to: '/app/ventas/registros-de-pagos' },
         ],
       },
       {

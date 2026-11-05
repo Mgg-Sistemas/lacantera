@@ -3620,6 +3620,45 @@ Sobre la moneda: cada documento **congela su tasa** al crearse. Sin la tasa del 
 | «Los camiones de la nota los pone quien escribe en Facturación, o quien generó la nota desde la salida.» | No tiene permiso para poner camiones en esa nota | Que los ponga quien escribe en Facturación |
 | «La nota de salida NS-2026-0012 ya dejó su nota de entrega: NE-2026-0016.» | Esa salida ya tiene su nota | Use la que ya existe. Si está mal, anúlela y genere otra |
 
+### 10.12 Registros de pagos
+
+*Nuevo el 06/11/2026.*
+
+En **Ventas › Registros de pagos** están los pagos que llegaron al banco y, debajo de cada uno, las notas de entrega que ese pago cubre. Sirve para cotejar la planilla del banco contra las notas: un pago puede cubrir varias notas, y una nota puede quedar repartida en más de un pago.
+
+**Ver** la lista es de cualquiera que entre a Ventas. **Registrar, importar, editar, anular y asociar** necesita el permiso extendido *Registrar pagos del banco y asociarlos a notas*, que se da persona por persona (el administrador lo tiene siempre).
+
+Esta pantalla **no cobra notas ni toca Tesorería**: no cambia saldos de cuentas ni el monto de ninguna nota. Solo relaciona un pago con sus notas.
+
+#### Lo que muestra cada pago
+
+Fecha, referencia, descripción, el monto del banco (y su equivalente en dólares) y un **estado**:
+
+| Estado | Qué quiere decir |
+|---|---|
+| **Cuadra** | Las notas asociadas suman exactamente el monto del banco |
+| **Diferencia mínima** | No suman exacto, pero la diferencia es de redondeo de la tasa (hasta el 0,01 % del pago) |
+| **No cuadra** | Las notas suman bastante más o menos que el pago |
+| **Sin notas** | Todavía nadie le asoció notas |
+| **Anulado** | El pago se anuló; no cuenta |
+
+Se filtra por fechas, estado, moneda, monto y se busca por referencia, descripción, número de nota o cliente. Toque un pago para desplegar sus notas.
+
+#### Registrar o importar pagos
+
+- **Registrar pago**: fecha, moneda, monto, tasa (si la deja vacía se usa la del BCV de ese día), referencia y descripción.
+- **Importar del banco**: copie las filas de la planilla del banco en Excel o Google Sheets y péguelas, o suba el archivo guardado como CSV. Antes de importar se ve una vista previa: las filas de nómina, préstamos, intereses y saldo inicial llegan desmarcadas; márquelas si de verdad son ventas. Una fila igual a un pago que ya existe (misma fecha, monto y referencia) no se duplica. Si una fila está mal, no entra ninguna y se dice cuál. Un archivo .xlsx no se sube directo: ábralo y copie las filas, o guárdelo como CSV.
+
+#### Asociar las notas
+
+Al desplegar un pago, **Asociar notas** muestra primero las notas de una semana antes o después con el monto más parecido; para otra, búsquela por número o cliente. Marque las que correspondan: arriba se ve cuánto suman contra el monto del banco. Cuando hay varias notas del mismo cliente con el mismo monto el mismo día, el sistema no decide por usted: las muestra todas y usted elige.
+
+#### Diferencias mínimas
+
+Cada nota asociada lleva un **monto aplicado** que nace igual al total de la nota. Si el banco depositó unos bolívares de más o de menos por la tasa, cambie ese monto y pulse **Guardar**: el pago pasa a **Cuadra**. La nota de entrega no cambia.
+
+**Quitar** una nota de un pago no la borra: deja de contar en ese pago y queda en la bitácora. **Anular pago** pide el motivo; tampoco se borra.
+
 ---
 
 ## 11. Nómina
