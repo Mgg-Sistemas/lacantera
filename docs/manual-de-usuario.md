@@ -3262,7 +3262,7 @@ El papel con el que sale el camión. La pantalla lo resume: **Notas de entrega: 
 
 #### Qué se ve
 
-Arriba, tres botones: **Choferes / Vehículos**, que abre el catálogo de los que se llevan el material; **Reporte Bs/$**, que saca en PDF las notas que se ven, con sus totales en las dos monedas y, debajo, un **Desglose por material** con cuánto se despachó de cada artículo, también en las dos monedas; y **Pedir despacho**, que solo ve quien escribe en Facturación.
+Arriba, los botones: **Choferes / Vehículos**, que abre el catálogo de los que se llevan el material; **Reporte WhatsApp**; **Reporte Bs/$**, que saca en PDF ejecutivo las notas que se ven (con tarjetas de resumen, planilla con estado y cobranza, relación de despachos por convenio/respaldo no facturables, resumen de cuentas por cobrar por cliente y **Desglose por material** en ambas monedas); **Imprimir notas**, que saca en un solo PDF cada nota filtrada en su formato completo; y **Pedir despacho**, que solo ve quien escribe en Facturación.
 
 Debajo, si hay despachos pedidos, la sección **Despachos por aprobar**, con una tarjeta por pedido (se explica más abajo). Y después la lista de notas.
 
