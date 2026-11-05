@@ -548,6 +548,11 @@ export function NotasDeEntrega() {
         monedaFiltro
           ? `moneda ${monedas.data?.find((m) => m.valor === monedaFiltro)?.etiqueta ?? monedaFiltro}`
           : '',
+        cobroFiltro === 'PENDIENTE'
+          ? 'pendientes por cobrar'
+          : cobroFiltro === 'VENCIDA'
+            ? 'vencidas por cobrar'
+            : '',
         rango.desde || rango.hasta
           ? `del ${rango.desde ? fecha(rango.desde) : 'inicio'} al ${rango.hasta ? fecha(rango.hasta) : 'hoy'}`
           : '',
