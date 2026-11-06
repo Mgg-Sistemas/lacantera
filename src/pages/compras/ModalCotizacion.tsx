@@ -4,6 +4,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
+import { ParecidosAEste } from '@/components/ParecidosAEste'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
@@ -11,13 +12,20 @@ import { ErrorDeCarga } from '@/components/ui/Estado'
 import {
   CONDICIONES_PAGO,
   conSusFormas,
+  opcionesDeCategoria,
   useArticulos,
+  useCategoriasDeInventario,
+  useCrearArticulo,
   usePresentaciones,
   useTodasLasPresentaciones,
   useProveedores,
 } from '@/lib/api/catalogo'
-import { useActualizarCotizacion, useRegistrarCotizacion } from '@/lib/api/compras'
-import type { Compra, Cotizacion } from '@/lib/api/compras'
+import {
+  useActualizarCotizacion,
+  useRegistrarCotizacion,
+  useVincularRenglon,
+} from '@/lib/api/compras'
+import type { Compra, Cotizacion, RenglonPedido } from '@/lib/api/compras'
 import { useMonedasUsables, useTasaVigente, hoyEnCaracas } from '@/lib/api/tasas'
 import { useAlicuotaIva } from '@/lib/api/empresa'
 import { bolivares, documento, dolares, tasa as fmtTasa } from '@/lib/formato'
@@ -270,8 +278,16 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
             <p className="text-ink/85 text-sm font-medium">{r.descripcion}</p>
             <p className="text-ink/50 text-xs">
               Pedido: {r.cantidad} {r.unidad}
+              {r.descripcion_pedida && r.descripcion_pedida !== r.descripcion
+                ? ` · se pidió como «${r.descripcion_pedida}»`
+                : ''}
               {r.observacion ? ` · ${r.observacion}` : ''}
             </p>
+
+            <NombreEnElInventario
+              renglon={r}
+              editable={compra.estado === 'PEDIDO' || compra.estado === 'CONFIRMADA'}
+            />
 
             <div className="mt-2.5 grid gap-2.5 sm:grid-cols-3">
               {/*
@@ -435,5 +451,176 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
 
       {registrar.error ? <ErrorDeCarga error={registrar.error} className="mt-4" /> : null}
     </Modal>
+  )
+}
+
+/*
+  EL NOMBRE CON QUE ENTRA AL INVENTARIO.
+
+  Angélica, 06/11/2026: «al momento de cotizar se tendrá la opción de guardar
+  con ese nombre en el inventario o se podrá editar para que tome el nombre
+  real en el inventario».
+
+  El pedido dice «Botas»; el inventario necesita un artículo. Aquí Compras:
+  - elige el artículo que ya existe (el nombre real), o
+  - lo crea: con el nombre del pedido tal cual, o corregido.
+
+  Se guarda al momento sobre el renglón del pedido, no sobre esta cotización:
+  el nombre es el mismo lo cotice quien lo cotice. La base no deja proponer
+  una cotización con renglones sin artículo, porque lo que llegue no entraría
+  al inventario.
+*/
+function NombreEnElInventario({
+  renglon,
+  editable,
+}: {
+  renglon: RenglonPedido
+  editable: boolean
+}) {
+  const { data: articulos } = useArticulos()
+  const { data: categorias } = useCategoriasDeInventario()
+  const crear = useCrearArticulo()
+  const vincular = useVincularRenglon()
+
+  const [cambiando, setCambiando] = useState(false)
+  const [nombre, setNombre] = useState(renglon.descripcion_pedida ?? renglon.descripcion)
+  const [categoria, setCategoria] = useState('')
+  const [confirmado, setConfirmado] = useState(false)
+
+  const actual = articulos?.find((a) => a.id === renglon.articulo_id)
+  const enVuelo = crear.isPending || vincular.isPending
+  const sinDensidad = renglon.unidad === 'M3' || renglon.unidad === 'TON'
+
+  const usar = async (articuloId: number) => {
+    await vincular.mutateAsync({ renglon_id: renglon.id, articulo_id: articuloId })
+    setCambiando(false)
+  }
+
+  const crearYUsar = async () => {
+    const id = await crear.mutateAsync({
+      // Vacío: la base le pone uno con el prefijo de su categoría.
+      codigo: '',
+      nombre: nombre.trim(),
+      categoria,
+      unidad: renglon.unidad,
+      confirmado,
+    })
+    await usar(id)
+    setCategoria('')
+    setConfirmado(false)
+  }
+
+  if (renglon.articulo_id != null && !cambiando) {
+    return (
+      <div className="border-hairline bg-canvas mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-[6px] border px-3 py-2 text-xs">
+        <span className="text-ink/70">
+          En el inventario:{' '}
+          <span className="text-ink/85 font-medium">
+            {actual ? `${actual.codigo} · ${actual.nombre}` : renglon.descripcion}
+          </span>{' '}
+          ({renglon.unidad})
+        </span>
+        {editable ? (
+          <Button variant="ghost" onClick={() => setCambiando(true)}>
+            Cambiar
+          </Button>
+        ) : null}
+      </div>
+    )
+  }
+
+  if (!editable) {
+    return (
+      <p className="text-ink/60 mt-2.5 text-xs">
+        Sin artículo del inventario: lo que llegue de este renglón no entra al inventario.
+      </p>
+    )
+  }
+
+  return (
+    <div className="border-hairline rounded-card bg-canvas mt-2.5 space-y-3 border border-dashed p-3">
+      <p className="text-ink/70 text-xs">
+        <span className="text-ink/85 font-medium">¿Con qué nombre entra al inventario?</span> Elija
+        el artículo real, o guárdelo con el nombre del pedido (o corregido). Sin esto no se puede
+        proponer.
+      </p>
+
+      <SelectBuscable
+        label="Ya existe en el inventario"
+        vacio="Buscar el artículo real"
+        valor={renglon.articulo_id != null ? String(renglon.articulo_id) : ''}
+        onCambio={(v) => {
+          if (v) void usar(Number(v))
+        }}
+        opciones={(articulos ?? []).map((a) => ({
+          valor: String(a.id),
+          codigo: a.codigo,
+          nombre: a.nombre,
+          detalle: `${a.categoria} · ${a.unidad}`,
+        }))}
+      />
+
+      <div className="grid gap-3 sm:grid-cols-12">
+        <div className="sm:col-span-6">
+          <Input
+            label="O créelo con este nombre"
+            hint="Tal como se pidió, o corríjalo."
+            value={nombre}
+            onChange={(e) => {
+              setNombre(e.target.value)
+              setConfirmado(false)
+            }}
+          />
+        </div>
+        <div className="sm:col-span-4">
+          <Select
+            label="Categoría"
+            vacio="Seleccione"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            opciones={opcionesDeCategoria(categorias)}
+          />
+        </div>
+        <div className="flex items-end sm:col-span-2">
+          <Button
+            variant="outline"
+            className="w-full"
+            disabled={nombre.trim().length < 2 || !categoria || sinDensidad || enVuelo}
+            onClick={() => void crearYUsar()}
+          >
+            {enVuelo ? 'Guardando…' : 'Crear'}
+          </Button>
+        </div>
+      </div>
+
+      {sinDensidad ? (
+        <p className="text-ink/60 text-xs">
+          Lo que se mide en {renglon.unidad === 'M3' ? 'metros cúbicos' : 'toneladas'} se crea en{' '}
+          <Link
+            to="/app/inventario/articulos"
+            className="text-royal-700 dark:text-royal-300 underline underline-offset-2"
+          >
+            Artículos
+          </Link>
+          , con su densidad. Después elíjalo arriba.
+        </p>
+      ) : null}
+
+      <ParecidosAEste
+        nombre={nombre}
+        categoria={categoria}
+        confirmado={confirmado}
+        onConfirmar={setConfirmado}
+      />
+
+      {renglon.articulo_id != null ? (
+        <Button variant="ghost" onClick={() => setCambiando(false)}>
+          Dejar el que tenía
+        </Button>
+      ) : null}
+
+      {crear.error ? <ErrorDeCarga error={crear.error} /> : null}
+      {vincular.error ? <ErrorDeCarga error={vincular.error} /> : null}
+    </div>
   )
 }

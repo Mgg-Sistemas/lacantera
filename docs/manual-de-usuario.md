@@ -2300,23 +2300,23 @@ La pantalla es una sola columna: arriba **Datos del pedido** y debajo **Qué se 
 | **Cargo o frente** | No | Solo si eligió **Otra persona** |
 | **Prioridad** | No | **Normal**, **Alta** o **Urgente — para la planta**. Empieza en **Normal** |
 | **Fecha requerida** | No | |
-| **Destino** | No | **A dónde va lo que se pide. Al recibirlo, entra aquí.** Es un almacén de los que reciben compras, u **Otro — no es un almacén**, que deja escribirlo |
 
 **Otra persona** existe porque en la cantera la mayoría de quienes necesitan algo no tienen computadora ni cuenta: el mecánico pide por radio y alguien en la oficina carga el pedido. Sin esa opción el sistema anotaría a quien está en la oficina y no a quien hay que preguntarle si llega otra cosa.
 
 Quien carga su propio pedido y tiene firma guardada puede marcar **Poner mi firma digital en «Solicitado por»**.
 
+**No se elige a qué almacén va.** El recuadro **Llega al almacén general (ALM-GEN).** lo dice: todo lo que se compra entra al almacén general, y de ahí se traslada al almacén o al frente que lo necesite. El sistema lo pone solo. La compra directa (9.5) sigue entrando donde se diga.
+
 #### Qué se necesita — un recuadro por renglón
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Renglón 1 · artículo del catálogo** | No | Si el artículo existe en el catálogo, se elige y se rellenan solos la descripción y la unidad. Si no, queda **No está en el catálogo — lo describo abajo** |
-| **Descripción** | Sí | Qué es. Ejemplo: un filtro de aire con su máquina |
-| **Cantidad** | Sí | Admite decimales, y en los artículos que se llevan en bultos se puede contar en bultos |
-| **Unidad** | No | Con un artículo del catálogo, la suya o sus presentaciones: **El almacén cuenta este artículo en esta unidad.** |
-| **Observación** | No | Marca, medida, número de parte |
+| **Renglón 1 · qué se necesita** | Sí | **Con palabras generales**: «Botas», «Filtro de aire», «Guantes» |
+| **Cantidad** | Sí | Admite decimales |
+| **Unidad** | No | Empieza en **UND** |
+| **Observación** | No | Talla, marca, medida, para qué es |
 
-**Lo que no está en el catálogo se puede crear sin salir del pedido.** Con un renglón sin artículo y la descripción escrita, aparece **No está en el catálogo. Se puede crear aquí sin dejar el pedido.**, con el **Código**, la **Categoría** y el botón **Crear y usar**.
+**Quien pide no busca el artículo en el inventario.** Escribe la cosa con su nombre general. El nombre con que entra al inventario lo pone Compras al cotizar (9.8).
 
 Pulse **Agregar renglón** por cada cosa distinta. **Quitar** borra un renglón, y está apagado cuando solo queda uno.
 
@@ -2572,6 +2572,19 @@ Debajo, en **Precios por renglón**, por cada renglón del pedido: **Cantidad**,
 **Solo se guardan los renglones que tengan precio escrito.** Los que quedan en blanco se omiten sin avisar.
 
 **La cantidad puede diferir de la pedida a propósito**, porque el proveedor vende por caja de doce y se pidieron diez. Se carga lo que él ofrece, no lo que se pidió.
+
+#### El nombre con que entra al inventario
+
+El pedido viene con nombres generales («Botas»). **Antes de proponer, cada renglón cotizado necesita su artículo del inventario**: sin él, lo que llegue no entraría al inventario. Debajo de cada renglón aparece **¿Con qué nombre entra al inventario?**, con dos caminos:
+
+- **Ya existe en el inventario**: se busca el artículo real y se elige. El renglón toma su nombre y su unidad.
+- **O créelo con este nombre**: viene escrito el nombre del pedido. Se deja tal cual o se corrige, se elige la **Categoría** y se pulsa **Crear**. El código se pone solo. Si ya hay uno que se llama parecido, el sistema lo enseña antes.
+
+Se guarda al momento sobre el pedido, no sobre la cotización: vale para todas las cotizaciones de esa compra. Ya nombrado, el renglón dice **En el inventario:** con el código y el nombre, y **Cambiar** deja elegir otro mientras la compra no se haya propuesto. En la ficha de la compra, debajo del nombre, queda **Se pidió como «Botas»**.
+
+Lo que se mide en metros cúbicos o toneladas se crea en **Artículos**, con su densidad, y después se elige aquí.
+
+#### Marca y presentación
 
 En cada renglón hay además **Marca** y **Presentación**. **Quien pide, pide en litros**, que es como se consume, y **quien compra recibe del proveedor otra cosa**: una marca y una presentación —bidón, barril, saco—. La **Marca** se escribe tal como la puso el proveedor; la **Presentación** se elige de las que el catálogo tiene para ese artículo, y empieza en **Como venga**. Son **lo que distingue dos cotizaciones del mismo proveedor**: en la tarjeta salen resumidas en una línea que empieza por **Ofrece**.
 
@@ -3005,6 +3018,7 @@ Cuatro reglas que evitan discusiones:
 | «La cantidad del renglón 2 debe ser mayor que cero.» | Falta la cantidad | Escriba cuánto se necesita |
 | «Este pedido está en "…" y ya no se corrige aquí. Si está con el gerente, retire lo propuesto; si ya se aprobó, la orden manda.» | El pedido pasó de Confirmada | Lo que dice el propio mensaje |
 | «Solo quien creó el pedido puede corregirlo.» | El pedido es de otra persona | Pídale a esa persona que lo corrija |
+| «Antes de proponer, diga con qué nombre entra al inventario: «BOTAS».» | Un renglón de esa cotización no tiene artículo del inventario | En la cotización, debajo del renglón: elija el artículo real o créelo con ese nombre (9.8) |
 | «Solo quien creó el borrador puede enviarlo.» | El borrador es de otra persona | Pídale a esa persona que lo envíe |
 | «Solo se envía un borrador. Este pedido está en "…".» | Ese pedido ya se envió | Revise el tablero: ya está en circulación |
 | «Solo se confirma un pedido recién enviado. Este está en "…".» | Ya alguien lo confirmó | Siga por el paso siguiente |
