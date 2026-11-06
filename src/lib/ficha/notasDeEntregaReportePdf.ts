@@ -401,6 +401,8 @@ function pintarTarjetasResumen(
     cobradasCount: number
     volumenResumenTexto: string
     totalCamiones: number
+    /** Sin la tarjeta de cuentas por cobrar: en su lugar, el volumen despachado. */
+    sinCobro?: boolean
   },
 ): number {
   const GAP = 4
@@ -470,7 +472,16 @@ function pintarTarjetasResumen(
               : 'Convertido a la tasa BCV de cada nota',
           colorLinea2: GRIS,
         },
-        {
+        resumen.sinCobro
+          ? {
+              acento: ROTULO,
+              titulo: 'VOLUMEN DESPACHADO',
+              valor: resumen.volumenResumenTexto || `${resumen.vigentes} despachos`,
+              linea1: `${resumen.totalCamiones} ${resumen.totalCamiones === 1 ? 'camión registrado' : 'camiones registrados'}`,
+              linea2: 'Suma de los renglones de las notas vigentes',
+              colorLinea2: GRIS,
+            }
+          : {
           acento: colorCobro,
           titulo: 'CUENTAS POR COBRAR',
           valor:
@@ -593,7 +604,7 @@ function cabeceraTablaPlanilla(doc: Doc, y: number): number {
   return y + ALTO
 }
 
-function infoSecundariaEstado(nota: NotaEntrega): {
+function infoSecundariaEstado(nota: NotaEntrega, sinCobro = false): {
   etiqueta: string
   estilo: EstiloPastilla
 } | null {
@@ -615,6 +626,8 @@ function infoSecundariaEstado(nota: NotaEntrega): {
     }
     return null
   }
+  // Ocultar el cobro: ni «Por cobrar», ni «Vencida», ni «Cobrada».
+  if (sinCobro) return null
 
   if (nota.cobrada_en) {
     return {
@@ -644,6 +657,15 @@ export async function armarReporteNotasDeEntrega(d: {
   notas: NotaEntrega[]
   /** Qué se despachó, ya sumado por artículo. */
   materiales?: MaterialDespachado[]
+  /**
+   * Sin nada de cobro (Christopher, 06/11/2026): ni la tarjeta de cuentas por
+   * cobrar, ni las etiquetas «Por cobrar / Vencida / Cobrada», ni el fondo de
+   * las vencidas, ni el renglón de pendiente ni la relación por cliente. Las
+   * notas y sus montos siguen iguales. Lo que se apaga no deja rastro.
+   */
+  ocultarCobro?: boolean
+  /** Se agrega al nombre del archivo: «-sin-cobro», «-sin-por-cobrar»… */
+  sufijoArchivo?: string
 }): Promise<ArchivoArmado> {
   const titulo = 'Reporte de Notas de Entrega'
   const { jsPDF } = await import('jspdf')
@@ -663,9 +685,11 @@ export async function armarReporteNotasDeEntrega(d: {
   const totalUsd = vigentes.reduce((s, nota) => s + Number(nota.total_usd), 0)
 
   // Cuentas por cobrar dentro del alcance (notas vigentes con pendiente_por_cobrar y sin cobrar)
-  const notasPorCobrar = vigentes.filter((n) => n.pendiente_por_cobrar && !n.cobrada_en)
+  // Con el cobro oculto quedan vacías, y con ellas el renglón de pendiente y la relación por cliente.
+  const sinCobro = d.ocultarCobro === true
+  const notasPorCobrar = sinCobro ? [] : vigentes.filter((n) => n.pendiente_por_cobrar && !n.cobrada_en)
   const notasVencidas = notasPorCobrar.filter((n) => n.vencida_por_cobrar)
-  const notasCobradas = vigentes.filter((n) => n.pendiente_por_cobrar && Boolean(n.cobrada_en))
+  const notasCobradas = sinCobro ? [] : vigentes.filter((n) => n.pendiente_por_cobrar && Boolean(n.cobrada_en))
 
   const porCobrarBs = notasPorCobrar.reduce((s, n) => s + Number(n.total_bs), 0)
   const porCobrarUsd = notasPorCobrar.reduce((s, n) => s + Number(n.total_usd), 0)
@@ -712,6 +736,7 @@ export async function armarReporteNotasDeEntrega(d: {
     cobradasCount: notasCobradas.length,
     volumenResumenTexto,
     totalCamiones,
+    sinCobro,
   })
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -772,7 +797,7 @@ export async function armarReporteNotasDeEntrega(d: {
             : null
 
       const trans = transporteDeNota(nota)
-      const infoSecundaria = infoSecundariaEstado(nota)
+      const infoSecundaria = infoSecundariaEstado(nota, sinCobro)
       const tieneDosPastillas = infoSecundaria !== null
       const renglonesIzq = Math.max(
         subNota ? 2 : 1,
@@ -792,7 +817,7 @@ export async function armarReporteNotasDeEntrega(d: {
       }
 
       // Fondo alterno o sutil realce según vencimiento o nota de convenio
-      if (nota.vencida_por_cobrar && !nota.cobrada_en && nota.estado !== 'ANULADA') {
+      if (!sinCobro && nota.vencida_por_cobrar && !nota.cobrada_en && nota.estado !== 'ANULADA') {
         doc.setFillColor('#fff8f8')
       } else if (esRespaldo) {
         doc.setFillColor(idx % 2 === 1 ? '#faf6ee' : '#fffdf7')
@@ -1627,6 +1652,6 @@ export async function armarReporteNotasDeEntrega(d: {
   doc.setProperties({ title: titulo })
   return {
     blob: doc.output('blob'),
-    nombre: `notas-de-entrega-${d.momento.toISOString().slice(0, 10)}.pdf`,
+    nombre: `notas-de-entrega-${d.momento.toISOString().slice(0, 10)}${d.sufijoArchivo ?? ''}.pdf`,
   }
 }
