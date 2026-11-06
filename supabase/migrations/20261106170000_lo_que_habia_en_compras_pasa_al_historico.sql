@@ -353,6 +353,11 @@ begin
        where o.id = coalesce(new.orden_id, old.orden_id);
 
     when 'instrucciones_pago' then
+      -- Una instrucción que ya existía tampoco se paga, se devuelve ni se
+      -- anula: frena cualquier cambio de su estado, no solo las nuevas.
+      if tg_op = 'UPDATE' and new.estado is not distinct from old.estado then
+        return new;
+      end if;
       select o.solicitud_id into v_solicitud
         from public.ordenes_compra o
        where o.id = coalesce(new.orden_id, old.orden_id);
@@ -386,7 +391,7 @@ create trigger trg_historico_no_se_mueve
 
 drop trigger if exists trg_historico_no_se_mueve on public.instrucciones_pago;
 create trigger trg_historico_no_se_mueve
-  before insert on public.instrucciones_pago
+  before insert or update on public.instrucciones_pago
   for each row execute function private.el_historico_no_se_mueve();
 
 drop trigger if exists trg_historico_no_se_mueve on public.cotizaciones;
