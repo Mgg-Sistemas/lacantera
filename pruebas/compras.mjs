@@ -323,6 +323,14 @@ export default async function pruebaCompras(tx) {
   const [o5] = await tx`select estado, recibida_en from public.ordenes_compra where id = ${orden.id}`
   comprobar(o5.estado === 'RECIBIDA', 'cuando llega todo, la orden se cierra')
   comprobar(o5.recibida_en !== null, 'y queda la fecha en que se cerró')
+
+  // Fase 4: con todo recibido, compras la marca finalizada.
+  await tx`select public.finalizar_compra(${pedido.id}, 'PRUEBA: todo en orden')`
+  const [pFin] = await tx`select estado, finalizada_en from public.solicitudes_pedido where id = ${pedido.id}`
+  comprobar(
+    pFin.estado === 'FINALIZADA' && pFin.finalizada_en !== null,
+    'con todo recibido, la compra se marca finalizada',
+  )
   comprobar((await enGeneral(pieza.id)) === 20, 'las veinte piezas están en el almacén')
   comprobar(
     (await enGeneral(flete.id)) === 0,
