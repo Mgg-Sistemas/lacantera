@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Ban,
   BadgeCheck,
+  MessageCircle,
   Boxes,
   Wallet,
   Check,
@@ -36,6 +37,12 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
+import { ModalProponerConPago } from './ModalProponerConPago'
+import { ModalWhatsappCompra } from './ModalWhatsappCompra'
+import { SePagara } from './SePagara'
+import { DECISION_VACIA, decisionCompleta, motivoDe } from './decisionPago'
+import type { DecisionPago } from './decisionPago'
+import { textoEstadoPago, textoParaAprobar } from '@/lib/ficha/comprasWhatsapp'
 import {
   ModalPagoConMaterial,
   ModalRegistrarPagoConMaterial,
@@ -77,6 +84,10 @@ import {
   useRetirarCotizacion,
   useResolverDesistimiento,
   useDeclararComprobante,
+  useAprobadores,
+  useAprobarOrden,
+  useDecidirPago,
+  useSoyAprobador,
 } from '@/lib/api/compras'
 // Con alias: la pantalla ya tiene su propio `nombreDe`, que traduce un
 // identificador de usuario. Dos cosas distintas no pueden llamarse igual en el
@@ -100,7 +111,7 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   BORRADOR: { texto: 'Borrador', tono: 'neutral' },
   PEDIDO: { texto: 'Pedido', tono: 'neutral' },
   CONFIRMADA: { texto: 'Confirmada · indicar proveedores', tono: 'info' },
-  POR_CONFIRMAR_GERENTE: { texto: 'Por confirmar el gerente', tono: 'royal' },
+  POR_CONFIRMAR_GERENTE: { texto: 'Pendiente por aprobar', tono: 'royal' },
   APROBADA: { texto: 'Aprobada', tono: 'warning' },
   CANCELADA: { texto: 'Cancelada', tono: 'neutral' },
   POR_INDICAR_PAGO: { texto: 'Aprobada · indicar método de pago', tono: 'warning' },
@@ -125,6 +136,8 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   // La compra pasó al Histórico de compras (06/11/2026). Lo escribe la
   // bitácora; en la compra se decide por `historico_en`.
   FINALIZADA: { texto: 'Finalizada', tono: 'info' },
+  // Quien aprueba dijo que no se pagará todavía (lo escribe la bitácora).
+  NO_PAGADA: { texto: 'No se pagará todavía', tono: 'warning' },
 }
 
 // ---------------------------------------------------------------------------
@@ -379,8 +392,8 @@ function TarjetaCotizacion({
             quien aprobo y que: es la que el gerente escogio de entre las
             propuestas, y solo aparece cuando el pedido esta aprobado de verdad.
           */}
-          {aprobada ? <Chip tone="success">La que aprobó el gerente</Chip> : null}
-          {cotizacion.propuesta ? <Chip tone="royal">Propuesta al gerente</Chip> : null}
+          {aprobada ? <Chip tone="success">La aprobada</Chip> : null}
+          {cotizacion.propuesta ? <Chip tone="royal">Propuesta para aprobar</Chip> : null}
           {/*
             El detalle iba solo en `title`, que en un telefono no existe: no hay
             raton con el que pasar por encima. Se enseña al lado de la etiqueta,
@@ -456,7 +469,7 @@ function TarjetaCotizacion({
               </Button>
             ) : (
               <Button size="sm" variant="soft" disabled={ocupado} onClick={onProponer}>
-                Proponer al gerente
+                Proponer para aprobar
               </Button>
             )}
             {/*
@@ -872,6 +885,25 @@ export function DetalleCompra() {
   const alcanza = (accion: string) => !enHistorico && tieneAccion(accion)
   const misAutorizaciones = useMisAutorizaciones()
 
+  /*
+    FLUJO NUEVO (06/11/2026). Aprueba solo quien está en la lista de
+    aprobadores —hoy, Norbelis—, y al aprobar decide si se paga. Compras
+    propone con el pago ya dicho.
+  */
+  const { data: soyAprobadorBase } = useSoyAprobador()
+  const soyAprobador = !enHistorico && soyAprobadorBase === true
+  const aprobarOrden = useAprobarOrden()
+  const decidirPago = useDecidirPago()
+  const [decision, setDecision] = useState<DecisionPago>(DECISION_VACIA)
+  const [decisionOrden, setDecisionOrden] = useState<DecisionPago>(DECISION_VACIA)
+  const [proponiendo, setProponiendo] = useState<Cotizacion | null>(null)
+  const [mensaje, setMensaje] = useState<{ titulo: string; texto: string } | null>(null)
+  /* El WhatsApp del pago se arma cuando la orden recién creada ya llegó. */
+  const [avisoPendiente, setAvisoPendiente] = useState<{ estado: string; referencia: string } | null>(
+    null,
+  )
+  const { data: aprobadores } = useAprobadores()
+
   const enviar = useEnviarPedido()
   const confirmar = useConfirmarPedido()
   const cancelarPedido = useCancelarPedido()
@@ -1214,6 +1246,42 @@ export function DetalleCompra() {
   // ahora son las que lleven el marbete, y pueden ser varias.
   const propuestas = cotizaciones.filter((c) => c.propuesta)
 
+  /* La propuesta que se va a aprobar: la única, o la que se escogió. */
+  const propuestaElegida =
+    propuestas.length === 1 ? propuestas[0] : (propuestas.find((c) => c.id === cualAprobar) ?? null)
+  /* Contra entrega se paga al recibir; con productos, por su camino. Ninguna pregunta «¿Se pagará?». */
+  const aprobacionSinPregunta =
+    !!propuestaElegida &&
+    (propuestaElegida.pago_metodo === 'INTERCAMBIO' ||
+      propuestaElegida.condicion_pago === 'CONTRA_ENTREGA')
+  /* De qué cotización salió la orden: ahí está el pago que dijo Compras. */
+  const cotizacionDeLaOrden = orden
+    ? (cotizaciones.find((c) => c.id === orden.cotizacion_id) ?? null)
+    : null
+  /* Flujo nuevo: la orden trae su pago desde la propuesta (salvo con productos). */
+  const pagoDecideQuienAprueba =
+    !!cotizacionDeLaOrden?.pago_metodo && cotizacionDeLaOrden.pago_metodo !== 'INTERCAMBIO'
+  const nombresAprobadores =
+    (aprobadores ?? []).map((a) => nombreDe(a.usuario_id)).join(' o ') || 'quien aprueba'
+
+  const textoDelPago = (estado: string, referencia?: string | null) =>
+    orden
+      ? textoEstadoPago({
+          compra,
+          orden,
+          cotizacion: cotizacionDeLaOrden,
+          estado,
+          referencia,
+          personas: {
+            solicita: solicitante,
+            analista: nombreDe(compra.registrada_por),
+            aprobo: orden.aprobada_gg_por ? nombreDe(orden.aprobada_gg_por) : null,
+          },
+          metodo: (c) => nombreDelMetodo(metodosDePago, c),
+          empresa: empresa?.razon_social,
+        })
+      : ''
+
   const estadoVisible = enHistorico ? 'FINALIZADA' : orden ? orden.estado : compra.estado
   const etiqueta = ETIQUETAS[estadoVisible] ?? { texto: estadoVisible, tono: 'neutral' as const }
 
@@ -1415,7 +1483,7 @@ export function DetalleCompra() {
                     ? 'Ninguna todavía'
                     : [
                         `${cotizaciones.length} cotización${cotizaciones.length === 1 ? '' : 'es'}`,
-                        propuestas.length > 0 ? `${propuestas.length} con el gerente` : null,
+                        propuestas.length > 0 ? `${propuestas.length} por aprobar` : null,
                         cotizaciones.length > 1
                           ? 'las etiquetas dicen en qué gana cada una'
                           : null,
@@ -1464,9 +1532,7 @@ export function DetalleCompra() {
                     ocupado={
                       proponer.isPending || retirar.isPending || eliminarCotizacion.isPending
                     }
-                    onProponer={() =>
-                      void proponer.mutate({ solicitud_id: compra.id, cotizacion_id: c.id })
-                    }
+                    onProponer={() => setProponiendo(c)}
                     onRetirar={() => void retirar.mutate({ id: c.id })}
                     onEditar={() => setModal({ tipo: 'cotizacion', corregir: c })}
                     onEliminar={() => void eliminarCotizacion.mutate({ id: c.id })}
@@ -1857,8 +1923,8 @@ export function DetalleCompra() {
                 puedeCompras ? (
                   <>
                     <p className="text-ink/60 mb-3 text-sm">
-                      Cargue las cotizaciones que manden los proveedores y proponga una al gerente
-                      general.
+                      Cargue las cotizaciones que manden los proveedores y proponga una con su
+                      método y datos de pago.
                     </p>
                     <Button block icon={<FileText />} onClick={() => setModal({ tipo: 'cotizacion' })}>
                       Cargar cotización
@@ -1872,7 +1938,7 @@ export function DetalleCompra() {
               ) : null}
 
               {compra.estado === 'POR_CONFIRMAR_GERENTE' ? (
-                puedeAprobar ? (
+                soyAprobador ? (
                   <>
                     {/*
                       CON VARIAS PROPUESTAS, EL GERENTE ESCOGE AQUÍ.
@@ -2010,24 +2076,89 @@ export function DetalleCompra() {
                         </span>
                       </label>
                     ) : null}
+                    {/*
+                      EL PAGO QUE DEJÓ COMPRAS, Y LA PREGUNTA DE SI SE PAGA.
+
+                      Se ve el método y el beneficiario de la propuesta elegida
+                      antes de decidir. Contra entrega y pago con productos no
+                      preguntan: lo primero se paga al recibir, lo segundo por
+                      su propio camino.
+                    */}
+                    {propuestaElegida ? (
+                      <div className="bg-ink/4 mb-3 rounded-[6px] p-3 text-sm">
+                        <p className="text-ink/50 text-xs">Pago indicado por Compras</p>
+                        {propuestaElegida.pago_metodo ? (
+                          <>
+                            <p className="text-ink/85 mt-0.5 font-medium">
+                              {propuestaElegida.pago_metodo === 'INTERCAMBIO'
+                                ? 'Con productos (intercambio)'
+                                : `${nombreDelMetodo(metodosDePago, propuestaElegida.pago_metodo)} · ${propuestaElegida.pago_moneda ?? ''}`}
+                            </p>
+                            <p className="text-ink/55 text-xs">
+                              {Object.values(propuestaElegida.pago_datos ?? {})
+                                .filter(Boolean)
+                                .join(' · ')}
+                              {propuestaElegida.pago_comprobante
+                                ? ` · entrega ${propuestaElegida.pago_comprobante === 'FACTURA' ? 'factura' : 'nota de entrega'}`
+                                : ''}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-warning mt-0.5 text-xs font-medium">
+                            Compras todavía no indicó cómo se paga. Devuélvala a compras para que
+                            la proponga con el pago.
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
+                    {propuestaElegida && !aprobacionSinPregunta ? (
+                      <SePagara
+                        className="mb-3"
+                        valor={decision}
+                        onCambio={setDecision}
+                        deshabilitado={aprobarOrden.isPending}
+                      />
+                    ) : propuestaElegida ? (
+                      <p className="text-ink/55 mb-3 text-xs">
+                        {propuestaElegida.condicion_pago === 'CONTRA_ENTREGA'
+                          ? 'Contra entrega: se decide el pago después de recibir el material.'
+                          : 'Con productos: Compras registra el pago con material después de aprobar.'}
+                      </p>
+                    ) : null}
                     <Button
                       block
                       icon={<BadgeCheck />}
                       disabled={
-                        aprobar.isPending ||
+                        aprobarOrden.isPending ||
                         respaldar.isPending ||
                         (!!autorizaAprobar && !bajoAutorizacion) ||
                         // Con varias propuestas no se aprueba a ciegas. La base
                         // lo rechaza igual; esto evita el viaje.
-                        (propuestas.length > 1 && cualAprobar === null)
+                        (propuestas.length > 1 && cualAprobar === null) ||
+                        !propuestaElegida?.pago_metodo ||
+                        (!aprobacionSinPregunta && !decisionCompleta(decision))
                       }
                       onClick={() => {
                         void (async () => {
-                          const ordenId = await aprobar.mutateAsync({
+                          const ordenId = await aprobarOrden.mutateAsync({
                             solicitud_id: compra.id,
                             cotizacion_id: cualAprobar,
                             con_firma: tengoFirma && conMiFirma,
+                            se_paga: aprobacionSinPregunta ? null : decision.sePaga,
+                            motivo: motivoDe(decision),
+                            referencia: decision.referencia,
+                            pago_visto: propuestaElegida?.pago_indicado_en ?? null,
                           })
+                          if (!aprobacionSinPregunta) {
+                            setAvisoPendiente({
+                              estado:
+                                decision.sePaga === true
+                                  ? 'PAGADA'
+                                  : `NO PAGADA · ${motivoDe(decision) ?? ''}`,
+                              referencia: decision.sePaga === true ? decision.referencia : '',
+                            })
+                          }
+                          setDecision(DECISION_VACIA)
                           /*
                             Si el archivo falla, la compra YA está aprobada: eso
                             no se deshace y no se disimula. Se dice, y el papel
@@ -2041,8 +2172,11 @@ export function DetalleCompra() {
                         })()
                       }}
                     >
-                      Aprobar la compra
+                      {aprobarOrden.isPending ? 'Aprobando…' : 'Aprobar la orden'}
                     </Button>
+                    {aprobarOrden.error ? (
+                      <ErrorDeCarga error={aprobarOrden.error} className="mt-2" />
+                    ) : null}
                     {puedeDevolver ? (
                       <Button
                         block
@@ -2056,12 +2190,104 @@ export function DetalleCompra() {
                   </>
                 ) : (
                   <p className="text-ink/60 text-sm">
-                    Esperando la confirmación del gerente general.
+                    Orden pendiente por aprobar. La aprueba {nombresAprobadores}.
                   </p>
                 )
               ) : null}
 
-              {orden?.estado === 'POR_INDICAR_PAGO' ? (
+              {/* El mensaje para pedir la aprobación: lo manda quien la lleva. */}
+              {compra.estado === 'POR_CONFIRMAR_GERENTE' && (puedeCompras || soyAprobador) ? (
+                <Button
+                  block
+                  variant="outline"
+                  className="mt-2"
+                  icon={<MessageCircle />}
+                  onClick={() =>
+                    setMensaje({
+                      titulo: 'WhatsApp para aprobar',
+                      texto: textoParaAprobar({
+                        compra,
+                        propuestas,
+                        productos: compra.renglones?.length ?? 0,
+                        personas: { solicita: solicitante, analista: nombreDe(compra.registrada_por) },
+                        metodo: (c) => nombreDelMetodo(metodosDePago, c),
+                        empresa: empresa?.razon_social,
+                      }),
+                    })
+                  }
+                >
+                  WhatsApp para aprobar
+                </Button>
+              ) : null}
+
+              {/*
+                FLUJO NUEVO: EL PAGO LO DECIDE QUIEN APRUEBA.
+
+                La orden trae el método desde la propuesta. Si al aprobar se
+                dijo que no se pagaría —o es contra entrega y ya llegó
+                material—, aquí se decide: marcarla pagada (sin Tesorería) o
+                dejar dicho por qué todavía no.
+              */}
+              {orden &&
+              pagoDecideQuienAprueba &&
+              ['POR_INDICAR_PAGO', 'EN_TESORERIA'].includes(orden.estado) ? (
+                <>
+                  {orden.no_pago_motivo ? (
+                    <div className="border-warning/30 bg-warning-soft mb-3 rounded-[6px] border p-3">
+                      <p className="text-ink/85 text-sm font-medium">No se pagará todavía</p>
+                      <p className="text-ink/65 mt-0.5 text-xs">
+                        {orden.no_pago_motivo}
+                        {orden.no_pago_en ? ` · ${fechaHora(orden.no_pago_en)}` : ''}
+                      </p>
+                    </div>
+                  ) : null}
+                  {soyAprobador ? (
+                    <>
+                      <SePagara
+                        className="mb-3"
+                        valor={decisionOrden}
+                        onCambio={setDecisionOrden}
+                        deshabilitado={decidirPago.isPending}
+                      />
+                      <Button
+                        block
+                        icon={<CircleDollarSign />}
+                        disabled={decidirPago.isPending || !decisionCompleta(decisionOrden)}
+                        onClick={() => {
+                          void (async () => {
+                            await decidirPago.mutateAsync({
+                              orden_id: orden.id,
+                              se_paga: decisionOrden.sePaga === true,
+                              motivo: motivoDe(decisionOrden),
+                              referencia: decisionOrden.referencia,
+                            })
+                            setAvisoPendiente({
+                              estado:
+                                decisionOrden.sePaga === true
+                                  ? 'PAGADA'
+                                  : `NO PAGADA · ${motivoDe(decisionOrden) ?? ''}`,
+                              referencia:
+                                decisionOrden.sePaga === true ? decisionOrden.referencia : '',
+                            })
+                            setDecisionOrden(DECISION_VACIA)
+                          })()
+                        }}
+                      >
+                        {decidirPago.isPending ? 'Guardando…' : 'Guardar la decisión del pago'}
+                      </Button>
+                      {decidirPago.error ? (
+                        <ErrorDeCarga error={decidirPago.error} className="mt-2" />
+                      ) : null}
+                    </>
+                  ) : (
+                    <p className="text-ink/60 text-sm">
+                      Aprobada. El pago lo decide {nombresAprobadores}.
+                    </p>
+                  )}
+                </>
+              ) : null}
+
+              {orden?.estado === 'POR_INDICAR_PAGO' && !pagoDecideQuienAprueba ? (
                 puedeCompras ? (
                   <>
                     {/*
@@ -2133,7 +2359,7 @@ export function DetalleCompra() {
                 )
               ) : null}
 
-              {orden?.estado === 'EN_TESORERIA' ? (
+              {orden?.estado === 'EN_TESORERIA' && !pagoDecideQuienAprueba ? (
                 puedeCompras ? (
                   <>
                     <p className="text-ink/60 text-sm">
@@ -2173,7 +2399,10 @@ export function DetalleCompra() {
                 <>
                   <div className="border-success/25 bg-success-soft rounded-[6px] border p-3">
                     <p className="text-ink/80 text-sm">
-                      Pagada el {fecha(orden.fecha_pago)}. Falta que almacén reciba el material.
+                      {orden.estado === 'POR_RECIBIR'
+                        ? 'Contra entrega: se paga lo que llegue. '
+                        : `Pagada el ${fecha(orden.fecha_pago)}. `}
+                      Falta que almacén reciba el material.
                       {orden.entrega_estimada
                         ? ` El proveedor ofreció entregar el ${fecha(orden.entrega_estimada)}.`
                         : ''}
@@ -2246,6 +2475,30 @@ export function DetalleCompra() {
                     Resolver el dinero
                   </Button>
                 </>
+              ) : null}
+
+              {/* El estado del pago por WhatsApp, para volver a mandarlo cuando haga falta. */}
+              {orden &&
+              pagoDecideQuienAprueba &&
+              (puedeCompras || soyAprobador) &&
+              (orden.no_pago_motivo || orden.pagada_en_compras_por) ? (
+                <Button
+                  block
+                  variant="outline"
+                  className="mt-2"
+                  icon={<MessageCircle />}
+                  onClick={() =>
+                    setMensaje({
+                      titulo: 'WhatsApp del pago',
+                      texto: textoDelPago(
+                        orden.no_pago_motivo ? `NO PAGADA · ${orden.no_pago_motivo}` : 'PAGADA',
+                        orden.instrucciones.find((i) => i.estado === 'PAGADA')?.referencia,
+                      ),
+                    })
+                  }
+                >
+                  WhatsApp del pago
+                </Button>
               ) : null}
 
               {/* Cancelar: disponible mientras no se haya pagado. */}
@@ -2362,6 +2615,31 @@ export function DetalleCompra() {
 
       {modal?.tipo === 'editar-orden' && orden && compra ? (
         <ModalEditarOrden abierto onCerrar={() => setModal(null)} compra={compra} orden={orden} />
+      ) : null}
+
+      {proponiendo ? (
+        <ModalProponerConPago
+          solicitudId={compra.id}
+          cotizacion={proponiendo}
+          onCerrar={() => setProponiendo(null)}
+        />
+      ) : null}
+
+      {mensaje ? (
+        <ModalWhatsappCompra
+          titulo={mensaje.titulo}
+          texto={mensaje.texto}
+          onCerrar={() => setMensaje(null)}
+        />
+      ) : null}
+
+      {/* Recién aprobada o decidido el pago: el mensaje sale en cuanto llega la orden. */}
+      {avisoPendiente && orden ? (
+        <ModalWhatsappCompra
+          titulo="WhatsApp del pago"
+          texto={textoDelPago(avisoPendiente.estado, avisoPendiente.referencia)}
+          onCerrar={() => setAvisoPendiente(null)}
+        />
       ) : null}
 
       {modal?.tipo === 'pago' && orden ? (
