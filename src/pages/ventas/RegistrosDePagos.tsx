@@ -247,8 +247,8 @@ export function RegistrosDePagos() {
               : `${cubiertasDeMas.length} notas están cubiertas de más`}
           </p>
           <p className="text-ink/65 mt-1 text-sm">
-            Reciben en sus pagos más de lo que valen: la misma nota quedó asociada a varios pagos. Busque la nota,
-            abra sus pagos y quite la que sobra (o baje su monto aplicado).
+            Reciben en sus pagos más de lo que valen: casi siempre porque la misma nota quedó asociada a varios
+            pagos. Busque la nota, abra sus pagos y quite la que sobra (o baje su monto aplicado).
           </p>
           <ul className="mt-2 space-y-1 text-sm">
             {cubiertasDeMas.map((n) => (

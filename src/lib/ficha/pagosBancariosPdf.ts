@@ -196,7 +196,7 @@ export async function armarReportePagos(d: DatosReportePagos): Promise<ArchivoAr
   }
 
   if (d.cubiertasDeMas && d.cubiertasDeMas.length > 0) {
-    y = seccion(doc, y + 2, 'Notas cubiertas de más (asociadas a varios pagos)')
+    y = seccion(doc, y + 2, 'Notas cubiertas de más')
     y = tabla(
       doc,
       y,
@@ -212,7 +212,7 @@ export async function armarReportePagos(d: DatosReportePagos): Promise<ArchivoAr
     y = notaBajoLaTabla(
       doc,
       y,
-      'Estas notas reciben en sus pagos más de lo que valen. Hay que quitar la nota de los pagos que no le corresponden antes de dar el mes por cerrado.',
+      'Estas notas reciben en sus pagos más de lo que valen (por encima del 0,5 % de redondeo). Hay que quitar la nota de los pagos que no le corresponden, o bajar su monto aplicado, antes de dar el mes por cerrado.',
     )
   }
 
