@@ -22,6 +22,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { Interruptor } from '@/components/ui/Interruptor'
 import { CampoDocumento } from '@/components/CampoDocumento'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
@@ -304,6 +305,10 @@ export function NotasDeEntrega() {
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
   const [reporte, setReporte] = useState<PdfArmado | null>(null)
   const [armandoReporte, setArmandoReporte] = useState(false)
+  const [pidiendoReporte, setPidiendoReporte] = useState(false)
+  const [ocultarCobroReporte, setOcultarCobroReporte] = useState(false)
+  const [sinPorCobrarReporte, setSinPorCobrarReporte] = useState(false)
+  const [fallaReporte, setFallaReporte] = useState<string | null>(null)
   const [armandoLote, setArmandoLote] = useState(false)
   const [reporteWhatsapp, setReporteWhatsapp] = useState<string | null>(null)
   const [armandoWhatsapp, setArmandoWhatsapp] = useState(false)
@@ -542,7 +547,7 @@ export function NotasDeEntrega() {
   }
 
   // Calcula el alcance y el total acumulado por material según los filtros aplicados.
-  const resumenParaReporte = async () => {
+  const resumenParaReporte = async (notasDelReporte: NotaEntrega[] = data ?? []) => {
     const alcance =
       [
         busca.trim() ? `búsqueda «${busca.trim()}»` : '',
@@ -565,7 +570,7 @@ export function NotasDeEntrega() {
         .filter(Boolean)
         .join(' · ') || `Las ${data?.length ?? 0} más recientes`
 
-    const vigentes = (data ?? []).filter((n) => n.estado !== 'ANULADA')
+    const vigentes = notasDelReporte.filter((n) => n.estado !== 'ANULADA')
     const porNota = new Map(vigentes.map((n) => [n.id, n]))
     const renglones = await renglonesDeNotas(vigentes.map((n) => n.id))
 
@@ -593,20 +598,46 @@ export function NotasDeEntrega() {
   // El reporte junta las notas tal como están filtradas en pantalla, cada una
   // con el total en su propia moneda y su equivalente en Bs y en $ a la tasa
   // que quedó congelada el día en que se emitió — no la de hoy.
+  /*
+    SIN LO POR COBRAR (Christopher, 06/11/2026): «necesito el reporte sin las
+    cuentas vencidas… una opción para que no se muestren las por cobrar y las
+    vencidas». Dos interruptores, independientes:
+      - ocultar el cobro: las mismas notas y los mismos totales, sin nada que
+        hable de cobro en el papel;
+      - sacar las notas por cobrar (las vencidas lo son también): no salen en
+        la planilla y los totales y el material se suman sin ellas. Las ya
+        cobradas sí salen: ya no deben nada.
+  */
+  const debeCobro = (n: NotaEntrega) => n.pendiente_por_cobrar && !n.cobrada_en
+  const notasParaElReporte = sinPorCobrarReporte ? (data ?? []).filter((n) => !debeCobro(n)) : (data ?? [])
+
   const verReporte = async () => {
+    setFallaReporte(null)
+    if (notasParaElReporte.length === 0) {
+      setFallaReporte('Todas las notas en pantalla están por cobrar o vencidas: sin ellas no queda nada que informar.')
+      return
+    }
     setArmandoReporte(true)
     try {
-      const { alcance, materiales } = await resumenParaReporte()
+      const resumen = await resumenParaReporte(notasParaElReporte)
+      // Sacar notas cambia el alcance y se dice; ocultar el cobro no deja rastro en el papel.
       setReporte(
         await armarReporteNotasDeEntrega({
           empresa: empresaDelPapel(empresa),
           emitidoPor: yo?.nombre ?? '',
           momento: new Date(),
-          alcance,
-          notas: data ?? [],
-          materiales,
+          alcance: sinPorCobrarReporte
+            ? `${resumen.alcance} · sin las notas por cobrar ni vencidas`
+            : resumen.alcance,
+          notas: notasParaElReporte,
+          materiales: resumen.materiales,
+          ocultarCobro: ocultarCobroReporte,
+          sufijoArchivo: `${sinPorCobrarReporte ? '-sin-por-cobrar' : ''}${ocultarCobroReporte ? '-sin-cobro' : ''}`,
         }),
       )
+      setPidiendoReporte(false)
+    } catch (e) {
+      setFallaReporte(e instanceof Error ? e.message : 'No se pudo armar el reporte.')
     } finally {
       setArmandoReporte(false)
     }
@@ -653,7 +684,10 @@ export function NotasDeEntrega() {
               variant="outline"
               icon={<FileText />}
               disabled={!data || data.length === 0 || armandoReporte}
-              onClick={() => void verReporte()}
+              onClick={() => {
+                setFallaReporte(null)
+                setPidiendoReporte(true)
+              }}
             >
               {armandoReporte ? 'Armando…' : 'Reporte Bs/$'}
             </Button>
@@ -2196,6 +2230,54 @@ export function NotasDeEntrega() {
         nombreArchivo={pdf?.nombre ?? ""}
         titulo="Nota de entrega"
       />
+
+      {pidiendoReporte ? (
+        <Modal
+          abierto
+          onCerrar={() => setPidiendoReporte(false)}
+          titulo="Reporte Bs/$"
+          descripcion="Junta las notas tal como están filtradas en pantalla. Elija qué sale en el papel."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setPidiendoReporte(false)}>
+                Cancelar
+              </Button>
+              <Button
+                icon={<FileText />}
+                disabled={armandoReporte || notasParaElReporte.length === 0}
+                onClick={() => void verReporte()}
+              >
+                {armandoReporte ? 'Armando…' : 'Generar PDF'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            <Interruptor
+              encendido={sinPorCobrarReporte}
+              onCambio={setSinPorCobrarReporte}
+              etiqueta="Sacar las notas por cobrar y las vencidas"
+              detalle="No salen en la planilla, y los totales y el material se suman sin ellas. Las que ya se cobraron sí salen."
+            />
+            <Interruptor
+              encendido={ocultarCobroReporte}
+              onCambio={setOcultarCobroReporte}
+              etiqueta="Ocultar la información de cobro"
+              detalle="Sin la tarjeta de cuentas por cobrar, sin las etiquetas «Por cobrar», «Vencida» o «Cobrada» y sin la relación de cobro por cliente. Las notas y los montos no cambian."
+            />
+          </div>
+          <p
+            className={`mt-4 text-sm ${notasParaElReporte.length === 0 ? 'text-warning font-medium' : 'text-ink/65'}`}
+          >
+            {notasParaElReporte.length === 0
+              ? 'Todas las notas en pantalla están por cobrar o vencidas: sin ellas no queda nada que informar.'
+              : sinPorCobrarReporte
+                ? `Saldrán ${notasParaElReporte.length} de ${data?.length ?? 0} notas: quedan fuera ${(data?.length ?? 0) - notasParaElReporte.length} por cobrar o vencidas.`
+                : `Saldrán las ${notasParaElReporte.length} notas en pantalla.`}
+          </p>
+          {fallaReporte ? <ErrorDeCarga error={new Error(fallaReporte)} className="mt-3" /> : null}
+        </Modal>
+      ) : null}
 
       <Visor
         abierto={reporte !== null}
