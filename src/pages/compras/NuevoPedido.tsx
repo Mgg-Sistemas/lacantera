@@ -147,7 +147,38 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
   const cambiar = (clave: number, cambios: Partial<FilaRenglon>) =>
     setFilas((f) => f.map((fila) => (fila.clave === clave ? { ...fila, ...cambios } : fila)))
 
+  /*
+    LO QUE FALTA SE DICE ANTES DE ENVIAR.
+
+    Antes, un renglón sin cantidad se descartaba callado; si no quedaba
+    ninguno, la base contestaba «El pedido necesita al menos un renglón» con el
+    renglón escrito a la vista. Ahora solo se ignoran los recuadros vacíos del
+    todo, y al que está a medias se le dice qué le falta.
+  */
+  const [aviso, setAviso] = useState<string | null>(null)
+
+  const faltaAlgo = (): string | null => {
+    const escritos = filas
+      .map((f, i) => ({ f, n: i + 1 }))
+      .filter(({ f }) => f.descripcion.trim() || f.cantidad.trim() || f.observacion.trim())
+
+    if (escritos.length === 0) return 'Escriba qué se necesita y cuánto.'
+
+    for (const { f, n } of escritos) {
+      if (f.descripcion.trim().length < 2) return `Al renglón ${n} le falta decir qué se necesita.`
+      const cantidad = Number(f.cantidad)
+      if (!f.cantidad.trim() || !Number.isFinite(cantidad) || cantidad <= 0) {
+        return `Al renglón ${n} («${f.descripcion.trim()}») le falta la cantidad.`
+      }
+    }
+    return null
+  }
+
   const enviar = async (enviarAhora: boolean) => {
+    const falta = faltaAlgo()
+    setAviso(falta)
+    if (falta) return
+
     const renglones = filas
       .filter((f) => f.descripcion.trim() && Number(f.cantidad) > 0)
       .map((f) => ({
@@ -430,16 +461,22 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
           </div>
         </div>
 
-          {crear.error ? <ErrorDeCarga error={crear.error} /> : null}
+          {aviso ? (
+            <ErrorDeCarga error={new Error(aviso)} />
+          ) : crear.error ? (
+            <ErrorDeCarga error={crear.error} />
+          ) : actualizar.error ? (
+            <ErrorDeCarga error={actualizar.error} />
+          ) : null}
         </Card>
 
         {/* Los botones fuera de la tarjeta: cierran la pantalla, no la
             sección. */}
         <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <Button variant="outline" disabled={crear.isPending} onClick={() => void enviar(false)}>
+          <Button variant="outline" disabled={crear.isPending || actualizar.isPending} onClick={() => void enviar(false)}>
             Guardar borrador
           </Button>
-          <Button size="lg" disabled={crear.isPending} onClick={() => void enviar(true)}>
+          <Button size="lg" disabled={crear.isPending || actualizar.isPending} onClick={() => void enviar(true)}>
             {crear.isPending ? 'Enviando…' : 'Enviar el pedido'}
           </Button>
         </div>
