@@ -159,7 +159,7 @@ export default async function pruebaPermisos(tx) {
   await como(tx, pide)
   await tx`select public.enviar_pedido(${borrador.id})`
   const [estado] = await tx`select estado from public.solicitudes_pedido where id = ${borrador.id}`
-  comprobar(estado.estado === 'PEDIDO', 'y su dueño sí lo manda')
+  comprobar(estado.estado === 'REVISION_ALMACEN', 'y su dueño sí lo manda (va primero al almacén)')
 
   await comoDueno(tx)
 }

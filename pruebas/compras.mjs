@@ -89,11 +89,41 @@ export default async function pruebaCompras(tx) {
       'ALTA') as id`
 
   const [p1] = await tx`select estado from public.solicitudes_pedido where id = ${pedido.id}`
-  comprobar(p1.estado === 'PEDIDO', 'el pedido nace enviado, no en borrador')
+  comprobar(
+    p1.estado === 'REVISION_ALMACEN',
+    'el pedido nace enviado y va primero a la revisión del almacén general',
+  )
 
   const [renglones] = await tx`
     select count(*) as n from public.solicitud_renglones where solicitud_id = ${pedido.id}`
   comprobar(Number(renglones.n) === 2, 'con sus dos renglones')
+
+  const antesDeRevisar = await debeFallar(
+    tx,
+    (sp) => sp`select public.confirmar_pedido(${pedido.id}, 'PRUEBA: antes del almacén')`,
+  )
+  comprobar(antesDeRevisar !== null, 'compras no lo confirma antes de que lo revise el almacén')
+
+  // El almacén general no tiene nada: pasa entero a compras.
+  const [revision] = await tx`
+    select public.revisar_pedido_en_almacen(${pedido.id}, '[]'::jsonb, null,
+      'PRUEBA: no hay nada en el almacén') as salida`
+  const [p1b] = await tx`select estado from public.solicitudes_pedido where id = ${pedido.id}`
+  const [renglones2] = await tx`
+    select count(*) as n from public.solicitud_renglones where solicitud_id = ${pedido.id}`
+  comprobar(
+    revision.salida === null && p1b.estado === 'PEDIDO' && Number(renglones2.n) === 2,
+    'si el almacén no tiene nada, pasa a compras entero y sin solicitud de salida',
+  )
+
+  const dosVeces = await debeFallar(
+    tx,
+    (sp) => sp`select public.revisar_pedido_en_almacen(${pedido.id}, '[]'::jsonb)`,
+  )
+  comprobar(
+    dosVeces !== null && /ya no espera la revisión/i.test(dosVeces),
+    'el almacén no lo revisa dos veces',
+  )
 
   await tx`select public.confirmar_pedido(${pedido.id}, 'PRUEBA: compras lo toma')`
   const [p2] = await tx`select estado from public.solicitudes_pedido where id = ${pedido.id}`
