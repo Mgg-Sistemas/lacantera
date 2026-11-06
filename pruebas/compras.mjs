@@ -176,6 +176,14 @@ export default async function pruebaCompras(tx) {
   const [p3] = await tx`select estado from public.solicitudes_pedido where id = ${pedido.id}`
   comprobar(p3.estado === 'POR_CONFIRMAR_GERENTE', 'proponer lo pone en manos del gerente')
 
+  // Desde el 06/11/2026 la orden nace solo de la mano de quien está en
+  // `compras_aprobadores` (hoy, Norbelis). La prueba se pone en la lista dentro
+  // de su transacción, que se deshace al terminar.
+  await comoDueno(tx)
+  await tx`insert into public.compras_aprobadores (usuario_id) values (${admin.id})
+           on conflict (usuario_id) do nothing`
+  await como(tx, admin.id)
+
   const [orden] = await tx`select public.aprobar_compra(${pedido.id}, 'PRUEBA: aprobada') as id`
 
   const [o1] = await tx`select * from public.ordenes_compra where id = ${orden.id}`

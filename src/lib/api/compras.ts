@@ -32,8 +32,16 @@ export interface DefinicionColumna {
 export const COLUMNAS: DefinicionColumna[] = [
   { clave: 'PEDIDO', titulo: 'Pedido', accion: 'Confirmar', tono: 'neutral' },
   { clave: 'CONFIRMADA', titulo: 'Confirmada', accion: 'Indicar proveedores', tono: 'info' },
-  { clave: 'GERENTE', titulo: 'Confirmar por el gerente', accion: 'Aprobar', tono: 'royal' },
-  { clave: 'APROBADA', titulo: 'Aprobada', accion: 'Indicar método de pago', tono: 'warning' },
+  // Angélica, 06/11/2026: «que diga órdenes pendientes por aprobar, sin el
+  // título de gerente general». La clave sigue siendo GERENTE: la calcula la
+  // vista y cambiarla no cambia nada de lo que ve nadie.
+  {
+    clave: 'GERENTE',
+    titulo: 'Órdenes pendientes por aprobar',
+    accion: 'Aprobar y decidir si se paga',
+    tono: 'royal',
+  },
+  { clave: 'APROBADA', titulo: 'Aprobada', accion: 'Decidir el pago', tono: 'warning' },
   { clave: 'PAGADA', titulo: 'Pagada', accion: 'Falta que llegue el material', tono: 'success' },
   // La compra termina aquí, pero se queda a la vista: si desapareciera al
   // recibirse, no habría dónde comprobar que llegó.
@@ -199,6 +207,19 @@ export interface Cotizacion {
    * primera sin decir nada.
    */
   propuesta: boolean
+  /**
+   * Cómo se le paga al proveedor si se aprueba esta cotización.
+   *
+   * Lo dice Compras al proponerla (flujo nuevo, 06/11/2026): el pago se conoce
+   * antes de aprobar, y quien aprueba decide si se paga ya. Nulo en las
+   * cotizaciones que todavía no se han propuesto.
+   */
+  pago_metodo?: string | null
+  pago_moneda?: string | null
+  pago_datos?: DatosPago | null
+  pago_igtf?: boolean | null
+  pago_comprobante?: 'NOTA_ENTREGA' | 'FACTURA' | null
+  pago_nota?: string | null
   proveedor: { id: number; nombre: string; rif: string; condicion_pago: string } | null
   renglones: RenglonCotizacion[]
 }
@@ -327,6 +348,12 @@ export interface Orden {
   cotizacion_id: number | null
   fecha_pago: string | null
   recibida_en: string | null
+  /** Por qué quien aprueba dijo que no se pagará todavía. Se borra al pagarla. */
+  no_pago_motivo?: string | null
+  no_pago_en?: string | null
+  /** Quién la marcó pagada en Compras. Tesorería no se vincula. */
+  pagada_en_compras_por?: string | null
+  aprobada_gg_por?: string | null
   desistio_motivo: string | null
   desistio_en: string | null
   desistio_resolucion: string | null
@@ -1066,6 +1093,103 @@ export function useAprobarCompra() {
         p_cotizacion_id: p.cotizacion_id ?? null,
         p_nota: p.nota ?? null,
         p_con_firma: p.con_firma,
+      }),
+  )
+}
+
+/*
+  FLUJO NUEVO (06/11/2026): EL PAGO SE DICE AL PROPONER, Y AL APROBAR SE DECIDE
+  SI SE PAGA.
+
+  Las órdenes las aprueba solo quien está en `compras_aprobadores` —hoy,
+  Norbelis—. La base lo exige al nacer la orden; esto es para que la pantalla
+  sepa si enseña los botones.
+*/
+export function useSoyAprobador() {
+  return useQuery({
+    queryKey: ['compras', 'soy-aprobador'],
+    queryFn: () => rpc<boolean>('soy_aprobador_de_compras'),
+    staleTime: 5 * 60_000,
+  })
+}
+
+/** Quiénes aprueban, para decirlo en pantalla: «La aprueba NORBELIS SEQUEA». */
+export function useAprobadores() {
+  return useQuery({
+    queryKey: ['compras', 'aprobadores'],
+    queryFn: async () =>
+      desenvolver<{ usuario_id: string }[]>(
+        await supabase.from('compras_aprobadores').select('usuario_id'),
+      ),
+    staleTime: 5 * 60_000,
+  })
+}
+
+/** Proponer una cotización con el pago ya dicho: método, moneda, datos y si entrega factura o nota. */
+export function useProponerConPago() {
+  return useAccion(
+    (p: {
+      solicitud_id: number
+      cotizacion_id: number
+      metodo: string
+      moneda: string
+      datos: DatosPago
+      comprobante: 'NOTA_ENTREGA' | 'FACTURA'
+      igtf?: boolean | null
+      nota?: string | null
+    }) =>
+      rpc('proponer_cotizacion_con_pago', {
+        p_solicitud_id: p.solicitud_id,
+        p_cotizacion_id: p.cotizacion_id,
+        p_metodo: p.metodo,
+        p_moneda: p.moneda,
+        p_datos: p.datos,
+        p_comprobante: p.comprobante,
+        p_igtf: p.igtf ?? null,
+        p_nota: p.nota || null,
+      }),
+  )
+}
+
+/**
+ * Aprobar y contestar «¿Se pagará?» en un solo paso.
+ *
+ * Sí → la orden queda pagada en Compras (sin cuenta ni movimiento de
+ * Tesorería). No → queda aprobada y por pagar, con el motivo. Contra entrega y
+ * pago con productos no preguntan: la base ignora `se_paga` en esos casos.
+ */
+export function useAprobarOrden() {
+  return useAccion(
+    (p: {
+      solicitud_id: number
+      cotizacion_id?: number | null
+      con_firma: boolean
+      nota?: string | null
+      se_paga: boolean | null
+      motivo?: string | null
+      referencia?: string | null
+    }) =>
+      rpc<number>('aprobar_orden_de_compra', {
+        p_solicitud_id: p.solicitud_id,
+        p_cotizacion_id: p.cotizacion_id ?? null,
+        p_con_firma: p.con_firma,
+        p_nota: p.nota || null,
+        p_se_paga: p.se_paga,
+        p_motivo: p.motivo || null,
+        p_referencia: p.referencia || null,
+      }),
+  )
+}
+
+/** Decidir el pago de una orden ya aprobada: marcarla pagada, o decir por qué todavía no. */
+export function useDecidirPago() {
+  return useAccion(
+    (p: { orden_id: number; se_paga: boolean; motivo?: string | null; referencia?: string | null }) =>
+      rpc('decidir_pago_de_orden', {
+        p_orden_id: p.orden_id,
+        p_se_paga: p.se_paga,
+        p_motivo: p.motivo || null,
+        p_referencia: p.referencia || null,
       }),
   )
 }

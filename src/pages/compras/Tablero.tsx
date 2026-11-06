@@ -251,21 +251,20 @@ const QUE_HACER: GrupoDeAcciones[] = [
       },
       {
         paso: 2,
-        titulo: 'Cotizar y proponer',
+        titulo: 'Cotizar y proponer con el pago',
         detalle:
-          'Compras carga las cotizaciones que consiguió y propone una al gerente. Se comparan lado a lado.',
+          'Compras carga las cotizaciones, las compara y propone una con su método y datos de pago.',
         icono: ClipboardList,
         a: '/app/compras',
         exige: 'ESCRITURA',
       },
       {
         paso: 3,
-        titulo: 'Pagar lo aprobado',
+        titulo: 'Aprobar y decidir el pago',
         detalle:
-          'Compras registra el pago de lo que la gerencia aprobó, y deja el comprobante.',
+          'Quien aprueba revisa la orden y marca si se pagará. Si dice que sí, queda pagada; Tesorería no interviene.',
         icono: HandCoins,
-        a: '/app/tesoreria/pagos',
-        exige: 'ESCRITURA',
+        a: '/app/compras',
       },
       {
         paso: 4,
@@ -451,8 +450,8 @@ export function TableroCompras() {
 
       <PrimeraVez className="mt-8">
         <p>
-          Una compra pasa por cinco pasos: se pide, se cotiza, se aprueba, se paga y se recibe. La
-          orden de compra se emite al aprobarla el gerente.
+          Una compra pasa por cinco pasos: se pide, se cotiza con su método de pago, se aprueba
+          decidiendo si se paga, y se recibe. La orden de compra se emite al aprobarla.
         </p>
         <p className="text-ink/50">
           La <strong>compra directa</strong> es para lo que se paga en el acto, y no pasa por esos
