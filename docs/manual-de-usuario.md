@@ -3695,10 +3695,20 @@ Las notas que quedaron asociadas a varios pagos antes de este cambio salen en un
 
 **Reporte PDF**, arriba a la derecha, arma el papel de dos maneras:
 
-- **Cierre de mes** (la que sale primero): todos los pagos del mes que usted elija, sin importar los filtros de la pantalla. Además trae las **notas de entrega del mes sin pago asociado**, las notas cubiertas de más de ese mes si las hay, y las rayas para firmar *Elaborado por* y *Revisado por*.
+- **Cierre de mes** (la que sale primero): se elige **Desde el mes** y **Hasta el mes**, entre los meses que tienen pagos (cada uno dice cuántos). Para un solo mes, el mismo en los dos. Toma esos meses enteros, sin importar los filtros de la pantalla.
 - **Lo que está en pantalla**: los pagos tal como los dejaron los filtros.
 
-Se puede elegir si van las notas de cada pago, si van los pagos que ya cuadran, si van las notas sin pago y los pagos anulados (solo en el cierre) y si va el logo. Lo que se apaga no aparece en el papel. Los totales van por moneda; lo único que se junta es el equivalente en dólares, calculado con la tasa de cada pago.
+Lo primero que se ve en el cierre, debajo del título, es el **total recibido en el banco** en el período, por moneda, con su equivalente en dólares y cuántos pagos fueron. Si el cierre abarca varios meses, debajo va un cuadro **Por mes** con lo que cerró cada uno. Después vienen el resumen, la lista de pagos, las **notas de entrega del período sin pago asociado**, las notas cubiertas de más si las hay, y las rayas para firmar *Elaborado por* y *Revisado por*.
+
+Se puede elegir:
+- si va **la lista de pagos** (apagada, el papel lleva solo el resumen);
+- si van las notas de cada pago y si van los pagos que ya cuadran;
+- si van las notas sin pago y los pagos anulados (solo en el cierre);
+- si va el logo.
+
+Lo que se apaga no aparece en el papel. Los totales van por moneda; lo único que se junta es el equivalente en dólares, calculado con la tasa de cada pago.
+
+*Desde el 06/11/2026* un papel que no informa no se genera. La ventana dice antes de generar cuántos pagos saldrán. El resumen cuenta siempre todo el período, aunque la lista lleve solo lo pendiente. Si con las opciones elegidas la lista quedaría vacía (por ejemplo, «solo pendientes» en un mes donde todo cuadra), en su lugar sale una línea que lo dice. Si en el período no hay pagos ni notas sin pago, el botón no genera el papel y explica por qué.
 
 ---
 
