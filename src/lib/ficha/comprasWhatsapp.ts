@@ -5,12 +5,15 @@
   Cantera, que es bimoneda y cuyo pago lo decide quien aprueba dentro de
   Compras —Tesorería no se vincula—.
 
-  Dos mensajes:
-  - «Para aprobar»: la solicitud está en «Órdenes pendientes por aprobar». Lleva
-    lo justo para decidir —qué es, quién lo pide, cuántos productos, las
-    cotizaciones y cuánto— y el pago que Compras dejó indicado.
-  - «Estado del pago»: lo que se decidió al aprobar o después. PAGADA, o NO
-    PAGADA con su motivo.
+  Uno por paso, como en MGG:
+  - «Solicitud de pedido»: lo que se pide, para el almacén general.
+  - «Revisión del almacén»: qué tiene (lo entrega) y qué va a Compras.
+  - «Para aprobar»: la solicitud en «Órdenes pendientes por aprobar», con el
+    pago que Compras dejó indicado.
+  - «Para pagar»: la orden aprobada que falta pagar, o la cuenta abierta.
+  - «Estado del pago»: PAGADA, o NO PAGADA con su motivo.
+  - «Recepción» y «Finalizada».
+  - Reportes del tablero: «Pendientes por pagar» y «Reporte de compras».
 
   ⚠ NINGÚN EMOJI LLEVA EL SELECTOR U+FE0F. WhatsApp normaliza el texto del
   enlace y del otro lado llega un cuadrito. Por eso aquí solo van emojis que son
@@ -18,7 +21,7 @@
 
   Nunca salen solos: los abre un botón, y se ven antes de mandarlos.
 */
-import type { Compra, Cotizacion, Orden } from '@/lib/api/compras'
+import type { Compra, Cotizacion, Orden, Tarjeta } from '@/lib/api/compras'
 import { CONDICIONES_PAGO } from '@/lib/api/catalogo'
 import { dinero } from '@/lib/formato'
 
@@ -199,12 +202,16 @@ function lineasRecibido(orden: OrdenDelMensaje): string[] {
 }
 
 /**
- * El comprobante de recepción (fase 4): qué llegó al almacén general de cada
- * renglón y si la orden quedó completa.
+ * El comprobante de recepción (fase 4), con la forma del de MGG: qué llegó al
+ * almacén general de cada renglón y si la orden quedó completa.
  */
 export function textoRecepcion(d: {
-  compra: Pick<Compra, 'numero' | 'titulo' | 'prioridad'>
+  compra?: Partial<Pick<Compra, 'numero' | 'titulo' | 'prioridad'>> | null
   orden: OrdenDelMensaje
+  almacen?: string | null
+  recibio?: string | null
+  nota?: string | null
+  fecha?: string | null
   personas?: PersonasCompra
   empresa?: string | null
 }): string {
@@ -213,12 +220,17 @@ export function textoRecepcion(d: {
     (r) => Number(r.cantidad_recibida) >= Number(r.cantidad) - 0.0001,
   )
   const L: string[] = []
-  L.push(`🔹 *ORDEN:* ${orden.numero} (${compra.numero})`)
-  L.push(completa ? '📦 *RECIBIDA COMPLETA en el almacén general*' : '📦 *RECIBIDA EN PARTE en el almacén general*')
+  L.push('📥 *RECEPCIÓN EN ALMACÉN*')
+  L.push(`📄 *Orden:* ${orden.numero}${compra?.numero ? ` (${compra.numero})` : ''}`)
   L.push(`🏭 *Proveedor:* ${orden.proveedor?.nombre ?? '—'}`)
-  L.push(`📝 *Detalle:* ${limpio(compra.titulo)}`)
+  L.push(`🏬 *Almacén:* ${limpio(d.almacen) || 'ALMACÉN GENERAL'}`)
+  if (limpio(compra?.titulo)) L.push(`📝 *Detalle:* ${limpio(compra?.titulo)}`)
   L.push(...lineasPersonas({ solicita: d.personas?.solicita }))
-  L.push('', '*RECIBIDO:*', ...lineasRecibido(orden))
+  L.push('', `📦 *Materiales (${(orden.renglones ?? []).length}):*`, ...lineasRecibido(orden))
+  L.push('', completa ? '📊 *Estado:* *RECIBIDA COMPLETA*' : '📊 *Estado:* *RECIBIDA EN PARTE*')
+  if (limpio(d.nota)) L.push(`📝 *Nota:* ${limpio(d.nota)}`)
+  if (limpio(d.recibio)) L.push(`👷 *Recibido por:* ${limpio(d.recibio)}`)
+  L.push(`🕒 ${d.fecha ? fechaCorta(d.fecha) : fechaHoraTxt()}`)
   if (limpio(d.empresa)) L.push('', `🏢 *${limpio(d.empresa)}*`)
   return L.join('\n')
 }
@@ -268,27 +280,230 @@ export function textoRevisionAlmacen(d: {
   const cant = (c: string | number, u?: string | null) =>
     `${Number(c).toLocaleString('es-VE', { maximumFractionDigits: 2 })}${limpio(u) ? ` ${limpio(u)}` : ''}`
   const L: string[] = []
-  L.push(`🔹 *SOLICITUD:* ${compra.numero}`)
-  L.push(finalizada ? '✅ *FINALIZADA · la atiende el almacén general*' : '🏬 *Revisada por el almacén general*')
+  L.push(`✅ *ALMACÉN GENERAL HA REVISADO EL PEDIDO ${compra.numero}*`)
+  L.push(`📅 ${fechaHoraTxt()}`)
+  if (finalizada) L.push('🏁 *FINALIZADA: el almacén entrega todo*')
   if (compra.prioridad === 'URGENTE') L.push('🚨 *URGENTE*')
   L.push(`📝 *Detalle:* ${limpio(compra.titulo)}`)
   L.push(...lineasPersonas({ solicita: d.personas?.solicita }))
 
   if (d.entregado.length > 0) {
-    L.push('', `📦 *ENTREGA EL ALMACÉN (${d.entregado.length}):*`)
+    L.push('', `📦 *TIENE (lo entrega almacén) · ${d.entregado.length}:*`)
     for (const r of d.entregado) {
       L.push(`• ${limpio(r.descripcion)}: ${cant(r.cantidad, r.unidad)}${limpio(r.articulo) ? ` (${limpio(r.articulo)})` : ''}`)
     }
     if (limpio(compra.salida_almacen_numero)) L.push(`🧾 *Solicitud de salida:* ${limpio(compra.salida_almacen_numero)}`)
   } else {
-    L.push('', '📦 *El almacén general no tiene nada de lo pedido.*')
+    L.push('', '📦 *TIENE (lo entrega almacén):*', '• Nada de lo solicitado')
   }
 
   if (!finalizada && d.faltan.length > 0) {
-    L.push('', `🛒 *PASA A COMPRAS (${d.faltan.length}):*`)
+    L.push('', `🛒 *VA A SOLICITAR A COMPRAS · ${d.faltan.length}:*`)
     for (const r of d.faltan) L.push(`• ${limpio(r.descripcion)}: ${cant(r.cantidad, r.unidad)}`)
+  } else {
+    L.push('', '🛒 *VA A SOLICITAR A COMPRAS:* nada, el almacén tiene todo.')
   }
   if (limpio(compra.revision_almacen_nota)) L.push('', `📌 *Nota:* ${limpio(compra.revision_almacen_nota)}`)
   if (limpio(d.empresa)) L.push('', `🏢 *${limpio(d.empresa)}*`)
   return L.join('\n')
+}
+
+const fechaHoraTxt = (iso?: string | null) => {
+  const d = iso ? new Date(iso) : new Date()
+  return new Intl.DateTimeFormat('es-VE', {
+    timeZone: 'America/Caracas',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(d)
+}
+
+const fechaCorta = (ymd?: string | null) => (ymd ? ymd.slice(0, 10).split('-').reverse().join('/') : '')
+
+/**
+ * La solicitud de pedido (como el «WhatsApp de la SP» de MGG): qué se pide,
+ * para qué y quién. Va al almacén general, que es el primero que lo revisa.
+ */
+export function textoSolicitudPedido(d: {
+  compra: Pick<
+    Compra,
+    'numero' | 'titulo' | 'justificacion' | 'prioridad' | 'requerida_para' | 'creada_en' | 'enviada_en'
+  >
+  renglones: { descripcion: string; cantidad: string | number; unidad?: string | null; observacion?: string | null }[]
+  personas?: PersonasCompra
+  cargo?: string | null
+  empresa?: string | null
+}): string {
+  const { compra } = d
+  const L: string[] = []
+  L.push(`📋 *SOLICITUD DE PEDIDO ${compra.numero}*`)
+  if (compra.prioridad === 'URGENTE') L.push('🚨 *URGENTE*')
+  else if (compra.prioridad === 'ALTA') L.push('🟠 *Prioridad alta*')
+  L.push(`📅 ${fechaHoraTxt(compra.enviada_en ?? compra.creada_en)}`)
+  L.push('📍 Llega al: ALMACÉN GENERAL')
+  if (compra.requerida_para) L.push(`⏰ Se necesita para el: ${fechaCorta(compra.requerida_para)}`)
+  if (limpio(d.personas?.solicita)) {
+    L.push(`👤 Solicita: ${limpio(d.personas?.solicita)}${limpio(d.cargo) ? ` — ${limpio(d.cargo)}` : ''}`)
+  }
+  L.push(`📝 *Detalle:* ${limpio(compra.titulo)}`)
+  if (limpio(compra.justificacion)) L.push(`🎯 Para qué: ${limpio(compra.justificacion)}`)
+  L.push('', `*PRODUCTOS SOLICITADOS (${d.renglones.length}):*`)
+  for (const r of d.renglones) {
+    L.push(`• ${limpio(r.descripcion)} — ${cantidadTxt(r.cantidad, r.unidad)}${limpio(r.observacion) ? ` (${limpio(r.observacion)})` : ''}`)
+  }
+  if (limpio(d.empresa)) L.push('', `🏢 *${limpio(d.empresa)}*`)
+  return L.join('\n')
+}
+
+/**
+ * Para pagar (como el «WhatsApp para pagar» de MGG): la orden aprobada que
+ * falta pagar, con el monto y los datos del beneficiario. A crédito no lleva
+ * los datos: dice hasta cuándo hay.
+ */
+export function textoParaPagar(d: {
+  compra: Pick<Compra, 'numero' | 'titulo' | 'prioridad' | 'justificacion'>
+  orden: Pick<
+    Orden,
+    'numero' | 'moneda' | 'total' | 'total_bs' | 'proveedor' | 'condicion_pago' | 'credito_vence' | 'tasa'
+  >
+  cotizacion?: Pick<Cotizacion, 'pago_metodo' | 'pago_moneda' | 'pago_datos'> | null
+  aprobadaEl?: string | null
+  productos?: number
+  personas?: PersonasCompra
+  metodo: NombreDeMetodo
+  empresa?: string | null
+}): string {
+  const { compra, orden } = d
+  const credito = !!orden.credito_vence
+  const L: string[] = []
+  L.push(`🔹 *ORDEN:* ${orden.numero} (${compra.numero})`)
+  L.push(credito ? '💳 *CUENTA ABIERTA · por pagar al vencer*' : '💰 *Aprobada · por pagar*')
+  L.push(compra.prioridad === 'URGENTE' ? '🚨 *Requerimiento:* URGENTE' : '🟢 *Requerimiento:* Normal')
+  L.push(`🏭 *Proveedor:* ${orden.proveedor?.nombre ?? '—'}`)
+  L.push(`📝 *Detalle:* ${limpio(compra.titulo)}`)
+  if (limpio(compra.justificacion)) L.push(`📌 *Para qué:* ${limpio(compra.justificacion)}`)
+  L.push(...lineasPersonas(d.personas).map((x) => x.replace('👔 *Aprobó:*', '👔 *Autorizó:*')))
+  if (d.aprobadaEl) L.push(`📅 *Fecha de aprobación:* ${d.aprobadaEl}`)
+  if (d.productos) L.push(`📦 *Productos:* ${d.productos}`)
+  if (orden.condicion_pago) L.push(`📋 *Condición:* ${condicionTxt(orden.condicion_pago)}`)
+  L.push(`💵 *Total:* ${dinero(orden.moneda, orden.total)}`)
+  if (orden.moneda !== 'VES' && orden.total_bs != null) {
+    L.push(`💱 *En Bs:* ${dinero('VES', orden.total_bs)}${orden.tasa ? ` (tasa ${Number(orden.tasa).toLocaleString('es-VE', { maximumFractionDigits: 4 })})` : ''}`)
+  }
+  if (credito) L.push(`⏰ *Vence el:* ${fechaCorta(orden.credito_vence)}`)
+  else if (d.cotizacion) L.push(...lineasPago(d.cotizacion, d.metodo))
+  if (limpio(d.empresa)) L.push(`🏢 *${limpio(d.empresa)}*`)
+  return L.join('\n')
+}
+
+/** Lo que el tablero sabe de cada compra; basta para los reportes. */
+type TarjetaDelReporte = Pick<
+  Tarjeta,
+  'numero' | 'titulo' | 'orden_numero' | 'proveedor' | 'moneda' | 'total' | 'total_usd' | 'total_bs' | 'columna' | 'credito_vence' | 'prioridad'
+>
+
+const usd = (n: number) => dinero('USD', n)
+const bs = (n: number) => dinero('VES', n)
+
+function bloque(titulo: string, lista: TarjetaDelReporte[], conVence = false): { L: string[]; usd: number; bs: number } {
+  const L: string[] = []
+  let tUsd = 0
+  let tBs = 0
+  if (lista.length === 0) return { L, usd: 0, bs: 0 }
+  L.push('', `${titulo} · ${lista.length}*`)
+  lista.forEach((t, i) => {
+    const u = Number(t.total_usd ?? 0)
+    const b = Number(t.total_bs ?? 0)
+    tUsd += u
+    tBs += b
+    const monto = t.total != null && t.moneda ? dinero(t.moneda, t.total) : 'sin monto'
+    const enBs = t.moneda && t.moneda !== 'VES' && t.total_bs != null ? ` (${bs(b)})` : ''
+    L.push(
+      `${i + 1}. ${t.orden_numero ?? t.numero} · ${limpio(t.proveedor) || limpio(t.titulo)} — ${monto}${enBs}${t.prioridad === 'URGENTE' ? ' 🚨' : ''}`,
+    )
+    if (conVence && t.credito_vence) L.push(`   ⏰ vence el ${fechaCorta(t.credito_vence)}`)
+  })
+  L.push(`*Subtotal:* ${usd(tUsd)} · ${bs(tBs)}`)
+  return { L, usd: tUsd, bs: tBs }
+}
+
+/** «Pendientes por pagar» del tablero (como el de MGG). */
+export function textoPendientesPorPagar(tarjetas: TarjetaDelReporte[], empresa?: string | null): string {
+  const porPagar = tarjetas.filter((t) => t.columna === 'APROBADA')
+  const credito = tarjetas.filter((t) => t.columna === 'CREDITO')
+  const L: string[] = ['📊 *PENDIENTES POR PAGAR*', `📅 ${fechaHoraTxt()}`]
+  if (porPagar.length + credito.length === 0) {
+    L.push('', '✅ No hay pendientes por pagar en este momento.')
+  } else {
+    L.push(`🧾 ${porPagar.length + credito.length} pendiente(s)${credito.length ? ` · ${credito.length} a crédito` : ''}`)
+    const a = bloque('📦 *ÓRDENES POR PAGAR', porPagar)
+    L.push(...a.L)
+    if (porPagar.length) L.push('', '💰 *TOTAL POR PAGAR*', `${usd(a.usd)} · ${bs(a.bs)}`)
+    const c = bloque('💳 *CUENTAS A CRÉDITO (aparte del total)', credito, true)
+    L.push(...c.L)
+  }
+  if (limpio(empresa)) L.push('', `🏢 *${limpio(empresa)}*`)
+  return L.join('\n')
+}
+
+/** El reporte del tablero por etapa (como el «Reporte por renglón» de MGG). */
+export function textoReporteCompras(tarjetas: TarjetaDelReporte[], empresa?: string | null): string {
+  const etapas: { col: string[]; titulo: string; vence?: boolean }[] = [
+    { col: ['REVISION'], titulo: '🏬 *EN REVISIÓN DEL ALMACÉN' },
+    { col: ['PEDIDO', 'CONFIRMADA'], titulo: '🛒 *POR COTIZAR' },
+    { col: ['GERENTE'], titulo: '⏳ *PENDIENTE POR APROBAR' },
+    { col: ['APROBADA'], titulo: '💰 *POR PAGAR' },
+    { col: ['CREDITO'], titulo: '💳 *CUENTAS A CRÉDITO', vence: true },
+    { col: ['PAGADA'], titulo: '📦 *PAGADA · POR RECIBIR' },
+    { col: ['RECIBIDA'], titulo: '📥 *RECIBIDA · POR FINALIZAR' },
+  ]
+  const activas = tarjetas.filter((t) => etapas.some((e) => e.col.includes(t.columna)))
+  const L: string[] = ['📊 *REPORTE DE COMPRAS*', `📅 ${fechaHoraTxt()}`]
+  if (activas.length === 0) {
+    L.push('', '✅ No hay compras pendientes en este momento.')
+  } else {
+    L.push(`🧾 ${activas.length} compra(s) en curso`)
+    let tUsd = 0
+    let tBs = 0
+    for (const e of etapas) {
+      const b = bloque(e.titulo, tarjetas.filter((t) => e.col.includes(t.columna)), e.vence)
+      L.push(...b.L)
+      tUsd += b.usd
+      tBs += b.bs
+    }
+    L.push('', '💰 *TOTAL GENERAL*', `${usd(tUsd)} · ${bs(tBs)}`)
+  }
+  if (limpio(empresa)) L.push('', `🏢 *${limpio(empresa)}*`)
+  return L.join('\n')
+}
+
+/**
+ * Los renglones tal como se pidieron. Lo que el almacén entregó entero ya no
+ * está en el pedido: se recupera de lo atendido, con la cantidad pedida.
+ */
+export function renglonesComoSePidieron(
+  compra: Pick<Compra, 'renglones' | 'atendido'>,
+): { linea: number; descripcion: string; cantidad: string; unidad: string | null; observacion: string | null }[] {
+  const atendidos = (compra.atendido ?? []).filter((a) => !a.sin_salida_en && a.linea != null)
+  const lineas = new Set(atendidos.map((a) => a.linea))
+  return [
+    ...atendidos.map((a) => ({
+      linea: a.linea ?? 0,
+      descripcion: a.descripcion,
+      cantidad: a.cantidad_pedida,
+      unidad: a.unidad,
+      observacion: null,
+    })),
+    ...(compra.renglones ?? [])
+      .filter((r) => !lineas.has(r.linea))
+      .map((r) => ({
+        linea: r.linea,
+        descripcion: r.descripcion_pedida ?? r.descripcion,
+        cantidad: r.cantidad,
+        unidad: r.unidad,
+        observacion: r.observacion,
+      })),
+  ].sort((a, b) => a.linea - b.linea)
 }

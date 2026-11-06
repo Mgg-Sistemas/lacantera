@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import {
   Archive,
   ArrowLeft,
@@ -50,6 +50,9 @@ import {
   textoParaAprobar,
   textoRecepcion,
   textoRevisionAlmacen,
+  textoSolicitudPedido,
+  renglonesComoSePidieron,
+  textoParaPagar,
 } from '@/lib/ficha/comprasWhatsapp'
 import {
   ModalPagoConMaterial,
@@ -954,6 +957,20 @@ export function DetalleCompra() {
   const [decisionOrden, setDecisionOrden] = useState<DecisionPago>(DECISION_VACIA)
   const [proponiendo, setProponiendo] = useState<Cotizacion | null>(null)
   const [mensaje, setMensaje] = useState<{ titulo: string; texto: string } | null>(null)
+  /*
+    Recién enviado el pedido, su WhatsApp sale solo (como en MGG, que encola el
+    mensaje después de cada paso). Llega como `?avisar=pedido` desde Nuevo
+    pedido, y se quita de la dirección para que recargar no lo vuelva a abrir.
+  */
+  const [params, setParams] = useSearchParams()
+  const [avisarPedido, setAvisarPedido] = useState(() => params.get('avisar') === 'pedido')
+  useEffect(() => {
+    if (params.has('avisar')) {
+      const p = new URLSearchParams(params)
+      p.delete('avisar')
+      setParams(p, { replace: true })
+    }
+  }, [params, setParams])
   const [revisando, setRevisando] = useState(false)
   /* El WhatsApp del pago se arma cuando la orden recién creada ya llegó. */
   const [avisoPendiente, setAvisoPendiente] = useState<{ estado: string; referencia: string } | null>(
@@ -1352,6 +1369,35 @@ export function DetalleCompra() {
         })
       : ''
 
+  // El pedido tal como se pidió (lo entregado por el almacén incluido).
+  const textoDelPedido = () =>
+    textoSolicitudPedido({
+      compra,
+      renglones: renglonesComoSePidieron(compra),
+      personas: { solicita: solicitante },
+      cargo: solicitanteCargo,
+      empresa: empresa?.razon_social,
+    })
+
+  // Para pagar: la orden aprobada que falta pagar, con los datos del beneficiario.
+  const textoDeParaPagar = () =>
+    orden
+      ? textoParaPagar({
+          compra,
+          orden,
+          cotizacion: cotizacionDeLaOrden,
+          aprobadaEl: compra.aprobada_gg_en ? fechaHora(compra.aprobada_gg_en) : null,
+          productos: orden.renglones?.length ?? 0,
+          personas: {
+            solicita: solicitante,
+            analista: nombreDe(compra.registrada_por),
+            aprobo: orden.aprobada_gg_por ? nombreDe(orden.aprobada_gg_por) : null,
+          },
+          metodo: (c) => nombreDelMetodo(metodosDePago, c),
+          empresa: empresa?.razon_social,
+        })
+      : ''
+
   // La respuesta del almacén general, armada con lo que quedó guardado.
   const textoDelAlmacen = () =>
     textoRevisionAlmacen({
@@ -1535,7 +1581,23 @@ export function DetalleCompra() {
             <CardHeader
               title="Qué se pidió"
               subtitle={compra.destino ? `Destino: ${compra.destino}` : undefined}
-              action={<Chip tone={etiqueta.tono}>{etiqueta.texto}</Chip>}
+              action={
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {compra.estado !== 'BORRADOR' ? (
+                    <Button
+                      size="sm"
+                      variant="soft"
+                      icon={<MessageCircle />}
+                      onClick={() =>
+                        setMensaje({ titulo: 'WhatsApp del pedido', texto: textoDelPedido() })
+                      }
+                    >
+                      WhatsApp
+                    </Button>
+                  ) : null}
+                  <Chip tone={etiqueta.tono}>{etiqueta.texto}</Chip>
+                </div>
+              }
             />
 
             <p className="text-ink/70 mt-3 text-base leading-relaxed">{compra.justificacion}</p>
@@ -2807,6 +2869,26 @@ export function DetalleCompra() {
                 </>
               ) : null}
 
+              {/* Para pagar (MGG): la orden aprobada que todavía no se paga. */}
+              {orden &&
+              !orden.fecha_pago &&
+              ['POR_INDICAR_PAGO', 'EN_TESORERIA', 'POR_RECIBIR', 'RECIBIDA_PARCIAL', 'RECIBIDA'].includes(
+                orden.estado,
+              ) &&
+              (puedeCompras || soyAprobador || puedeGerente) ? (
+                <Button
+                  block
+                  variant="outline"
+                  className="mt-2"
+                  icon={<MessageCircle />}
+                  onClick={() =>
+                    setMensaje({ titulo: 'WhatsApp para pagar', texto: textoDeParaPagar() })
+                  }
+                >
+                  WhatsApp para pagar
+                </Button>
+              ) : null}
+
               {/* El estado del pago por WhatsApp, para volver a mandarlo cuando haga falta. */}
               {orden &&
               pagoDecideQuienAprueba &&
@@ -2976,6 +3058,14 @@ export function DetalleCompra() {
         />
       ) : null}
 
+      {avisarPedido && !mensaje ? (
+        <ModalWhatsappCompra
+          titulo="WhatsApp del pedido"
+          texto={textoDelPedido()}
+          onCerrar={() => setAvisarPedido(false)}
+        />
+      ) : null}
+
       {/* Recién aprobada o decidido el pago: el mensaje sale en cuanto llega la orden. */}
       {avisoPendiente && orden ? (
         <ModalWhatsappCompra
@@ -3007,7 +3097,27 @@ export function DetalleCompra() {
       ) : null}
 
       {modal?.tipo === 'recepcion' && orden ? (
-        <ModalRecepcion abierto onCerrar={() => setModal(null)} orden={orden} />
+        <ModalRecepcion
+          abierto
+          onCerrar={() => setModal(null)}
+          orden={orden}
+          onHecho={(recibida, datos) => {
+            setModal(null)
+            setMensaje({
+              titulo: 'WhatsApp de la recepción',
+              texto: textoRecepcion({
+                compra,
+                orden: recibida,
+                almacen: datos.almacen,
+                nota: datos.nota,
+                fecha: datos.fecha,
+                recibio: datos.recibio,
+                personas: { solicita: solicitante },
+                empresa: empresa?.razon_social,
+              }),
+            })
+          }}
+        />
       ) : null}
 
       {precio && orden ? (

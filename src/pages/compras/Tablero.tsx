@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import {
   AlertTriangle,
@@ -10,6 +10,8 @@ import {
   Gauge,
   HandCoins,
   History,
+  MessageCircle,
+  Smartphone,
   PackageCheck,
   Plus,
   ShoppingBag,
@@ -28,6 +30,9 @@ import { COLUMNAS, useTablero } from '@/lib/api/compras'
 import type { Columna, DefinicionColumna, Tarjeta } from '@/lib/api/compras'
 import { dolares, hace } from '@/lib/formato'
 import { cn } from '@/lib/cn'
+import { textoPendientesPorPagar, textoReporteCompras } from '@/lib/ficha/comprasWhatsapp'
+import { useEmpresa } from '@/lib/api/empresa'
+import { ModalWhatsappCompra } from './ModalWhatsappCompra'
 
 type Tono = DefinicionColumna['tono']
 
@@ -402,6 +407,9 @@ export function TableroCompras() {
     return mapa
   }, [data])
 
+  const { data: empresa } = useEmpresa()
+  const [mensaje, setMensaje] = useState<{ titulo: string; texto: string } | null>(null)
+
   const enRiesgo = (data ?? []).filter(
     (t) => t.columna === 'PAGADA' && (t.dias_sin_recibir ?? 0) > 7,
   )
@@ -415,6 +423,39 @@ export function TableroCompras() {
           <>
             {/* Lo que había antes del flujo nuevo: cerrado como finalizado, sin
                 mover inventario (06/11/2026). */}
+            {/* La vista para el teléfono: tarjetas grandes por tarea (como MGG). */}
+            <Link to="/app/compras/telefono" className="sm:hidden">
+              <Button variant="soft" icon={<Smartphone />}>
+                Vista de teléfono
+              </Button>
+            </Link>
+            {/* Los reportes de MGG, para mandar por WhatsApp. */}
+            <Button
+              variant="outline"
+              icon={<MessageCircle />}
+              disabled={!data}
+              onClick={() =>
+                setMensaje({
+                  titulo: 'Pendientes por pagar',
+                  texto: textoPendientesPorPagar(data ?? [], empresa?.razon_social),
+                })
+              }
+            >
+              Pendientes por pagar
+            </Button>
+            <Button
+              variant="outline"
+              icon={<MessageCircle />}
+              disabled={!data}
+              onClick={() =>
+                setMensaje({
+                  titulo: 'Reporte de compras',
+                  texto: textoReporteCompras(data ?? [], empresa?.razon_social),
+                })
+              }
+            >
+              Reporte
+            </Button>
             <Link to="/app/compras/historico">
               <Button variant="outline" icon={<Archive />}>
                 Histórico de compras
@@ -481,6 +522,14 @@ export function TableroCompras() {
             <Panel key={c.clave} definicion={c} tarjetas={porColumna.get(c.clave) ?? []} />
           ))}
         </div>
+      ) : null}
+
+      {mensaje ? (
+        <ModalWhatsappCompra
+          titulo={mensaje.titulo}
+          texto={mensaje.texto}
+          onCerrar={() => setMensaje(null)}
+        />
       ) : null}
 
       <QueHacer grupos={QUE_HACER} />
