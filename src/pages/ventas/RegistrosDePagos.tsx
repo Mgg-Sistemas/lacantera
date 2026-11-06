@@ -482,8 +482,34 @@ function ModalReporte({
 }) {
   const { data: empresa } = useEmpresa()
   const { data: yo } = useMiPerfil()
+
+  /*
+    UN PAPEL QUE NO INFORMA NO SE IMPRIME (06/11/2026). Christopher recibió un
+    «cierre de octubre» con el resumen en cero y la tabla vacía: el mes no
+    tenía pagos pendientes y el interruptor los había quitado todos. Desde
+    entonces:
+      - el mes se elige entre los que TIENEN pagos, y puede ser un rango;
+      - el resumen cuenta siempre el período entero, aunque la lista lleve
+        solo lo pendiente;
+      - una lista vacía se dice en una línea, nunca como tabla sin filas;
+      - si no queda nada que contar, no se genera y se dice por qué.
+  */
+  const meses = useMemo(() => {
+    const cuenta = new Map<string, number>()
+    for (const p of todos) {
+      if (p.estado === 'ANULADO') continue
+      const m = p.fecha.slice(0, 7)
+      cuenta.set(m, (cuenta.get(m) ?? 0) + 1)
+    }
+    return Array.from(cuenta.entries()).sort((x, y) => (x[0] < y[0] ? 1 : -1))
+  }, [todos])
+  // Por defecto, el mes anterior si tuvo pagos; si no, el último que tuvo.
+  const mesInicial = meses.find(([m]) => m === mesAnterior())?.[0] ?? meses[0]?.[0] ?? mesAnterior()
+
   const [modo, setModo] = useState<'LISTA' | 'CIERRE'>('CIERRE')
-  const [mes, setMes] = useState(mesAnterior())
+  const [desdeMes, setDesdeMes] = useState(mesInicial)
+  const [hastaMes, setHastaMes] = useState(mesInicial)
+  const [conLista, setConLista] = useState(true)
   const [conNotasDelPago, setConNotasDelPago] = useState(true)
   const [conCuadrados, setConCuadrados] = useState(true)
   const [conSinPago, setConSinPago] = useState(true)
@@ -492,38 +518,69 @@ function ModalReporte({
   const [armando, setArmando] = useState(false)
   const [falla, setFalla] = useState<string | null>(null)
 
+  // El período, aunque se elijan los meses al revés.
+  const [mesA, mesB] = desdeMes <= hastaMes ? [desdeMes, hastaMes] : [hastaMes, desdeMes]
+  const desde = `${mesA}-01`
+  const hasta = (() => {
+    const [a, m] = mesB.split('-').map(Number)
+    return `${mesB}-${String(new Date(a, m, 0).getDate()).padStart(2, '0')}`
+  })()
+  const variosMeses = mesA !== mesB
+  const nombrePeriodo = variosMeses ? `${nombreDelMes(mesA)} — ${nombreDelMes(mesB)}` : nombreDelMes(mesA)
+
+  // Lo del período (para el resumen) y lo que de verdad irá en la lista.
+  const delPeriodo =
+    modo === 'CIERRE'
+      ? todos.filter((p) => p.fecha >= desde && p.fecha <= hasta && (conAnulados || p.estado !== 'ANULADO'))
+      : filtrados
+  const enLista = conCuadrados ? delPeriodo : delPeriodo.filter((p) => p.estado !== 'CUADRA')
+  const vigentesDelPeriodo = delPeriodo.filter((p) => p.estado !== 'ANULADO').length
+
+  // Lo que se le dice a la persona antes de generar.
+  const previo =
+    vigentesDelPeriodo === 0
+      ? modo === 'CIERRE'
+        ? conSinPago
+          ? `En ${nombrePeriodo} no hay pagos del banco. El papel llevará solo las notas de entrega sin pago, si las hay.`
+          : `En ${nombrePeriodo} no hay pagos del banco: no hay nada que informar.`
+        : 'La pantalla no tiene pagos con esos filtros: no hay nada que informar.'
+      : !conLista
+        ? `Saldrá solo el resumen de ${vigentesDelPeriodo} pago(s), sin la lista.`
+        : enLista.length === 0
+          ? `Los ${vigentesDelPeriodo} pago(s) cuadran: en lugar de la lista saldrá una línea que lo dice.`
+          : `Saldrán ${enLista.length} de ${delPeriodo.length} pago(s) en la lista.`
+  const nadaQueInformar = vigentesDelPeriodo === 0 && !(modo === 'CIERRE' && conSinPago)
+
   const armar = async () => {
     setArmando(true)
     setFalla(null)
     try {
-      let pagos: PagoBancario[]
       let notasSinPago = null
       let deMas: NotaCubiertaDeMas[] | null = null
       let alcance: Array<[string, string]>
       let nombre = 'registros-de-pagos'
 
       if (modo === 'CIERRE') {
-        const [a, m] = mes.split('-').map(Number)
-        const desde = `${mes}-01`
-        const hasta = `${mes}-${String(new Date(a, m, 0).getDate()).padStart(2, '0')}`
-        pagos = todos.filter(
-          (p) => p.fecha >= desde && p.fecha <= hasta && (conAnulados || p.estado !== 'ANULADO'),
-        )
         if (conSinPago) notasSinPago = await leerNotasSinPago(desde, hasta)
-        // Un cierre no se firma sin decir que hay notas cobradas dos veces en el mes.
+        if (vigentesDelPeriodo === 0 && (notasSinPago?.length ?? 0) === 0) {
+          setFalla(`En ${nombrePeriodo} no hay pagos del banco ni notas de entrega sin pago: no hay nada que informar.`)
+          return
+        }
+        // Un cierre no se firma sin decir que hay notas cobradas dos veces en el período.
         deMas = cubiertasDeMas.filter((n) => n.fecha >= desde && n.fecha <= hasta)
         alcance = [
-          ['Mes', nombreDelMes(mes)],
+          [variosMeses ? 'Meses' : 'Mes', nombrePeriodo],
           ['Período', `${fecha(desde)} — ${fecha(hasta)}`],
         ]
-        nombre += `-cierre-${mes}`
+        nombre += variosMeses ? `-cierre-${mesA}-a-${mesB}` : `-cierre-${mesA}`
       } else {
-        pagos = filtrados
         alcance = alcanceEnPantalla
       }
 
-      if (!conCuadrados) {
-        pagos = pagos.filter((p) => p.estado !== 'CUADRA')
+      if (!conLista) {
+        alcance = [...alcance, ['Se muestra', 'Solo el resumen, sin la lista de pagos']]
+        nombre += '-resumen'
+      } else if (!conCuadrados) {
         alcance = [...alcance, ['Se muestran', 'Solo los pagos que no cuadran o no tienen notas']]
         nombre += '-pendientes'
       }
@@ -532,9 +589,13 @@ function ModalReporte({
       onListo(
         await armarReportePagos({
           modo,
-          mes: nombreDelMes(mes),
+          mes: nombrePeriodo,
+          variosMeses,
           alcance,
-          pagos: [...pagos].sort((x, y) => (x.fecha === y.fecha ? x.id - y.id : x.fecha < y.fecha ? -1 : 1)),
+          resumenDe: delPeriodo,
+          pagos: conLista
+            ? [...enLista].sort((x, y) => (x.fecha === y.fecha ? x.id - y.id : x.fecha < y.fecha ? -1 : 1))
+            : null,
           conNotasDelPago,
           notasSinPago,
           cubiertasDeMas: deMas,
@@ -552,18 +613,20 @@ function ModalReporte({
     }
   }
 
+  const opcionesDeMes = meses.map(([m, n]) => ({ valor: m, etiqueta: `${nombreDelMes(m)} · ${n} pago${n === 1 ? '' : 's'}` }))
+
   return (
     <Modal
       abierto
       onCerrar={onCerrar}
       titulo="Reporte PDF de pagos"
-      descripcion="Elija qué sale en el papel. El cierre de mes toma el mes entero, sin importar los filtros de la pantalla."
+      descripcion="Elija qué sale en el papel. El cierre toma los meses enteros, sin importar los filtros de la pantalla."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
             Cancelar
           </Button>
-          <Button icon={<Printer />} disabled={armando || (modo === 'CIERRE' && !mes)} onClick={() => void armar()}>
+          <Button icon={<Printer />} disabled={armando || nadaQueInformar} onClick={() => void armar()}>
             {armando ? 'Armando…' : 'Generar PDF'}
           </Button>
         </>
@@ -573,37 +636,76 @@ function ModalReporte({
         <Select
           label="Qué reporte"
           value={modo}
-          onChange={(e) => setModo(e.target.value as 'LISTA' | 'CIERRE')}
+          onChange={(e) => {
+            setModo(e.target.value as 'LISTA' | 'CIERRE')
+            setFalla(null)
+          }}
           opciones={[
             { valor: 'CIERRE', etiqueta: 'Cierre de mes' },
             { valor: 'LISTA', etiqueta: `Lo que está en pantalla (${filtrados.length} pagos)` },
           ]}
         />
-        {modo === 'CIERRE' ? (
-          <Input label="Mes" type="month" max={hoy().slice(0, 7)} value={mes} onChange={(e) => setMes(e.target.value)} />
-        ) : null}
       </div>
+      {modo === 'CIERRE' ? (
+        opcionesDeMes.length > 0 ? (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Select
+              label="Desde el mes"
+              value={desdeMes}
+              onChange={(e) => {
+                setDesdeMes(e.target.value)
+                setFalla(null)
+              }}
+              opciones={opcionesDeMes}
+            />
+            <Select
+              label="Hasta el mes"
+              hint="Para un solo mes, deje el mismo en los dos."
+              value={hastaMes}
+              onChange={(e) => {
+                setHastaMes(e.target.value)
+                setFalla(null)
+              }}
+              opciones={opcionesDeMes}
+            />
+          </div>
+        ) : (
+          <p className="text-ink/60 mt-4 text-sm">Todavía no hay pagos registrados para cerrar.</p>
+        )
+      ) : null}
+
+      <p className={`mt-4 text-sm ${nadaQueInformar ? 'text-warning font-medium' : 'text-ink/65'}`}>{previo}</p>
 
       <div className="mt-5 space-y-3">
         <Interruptor
-          encendido={conNotasDelPago}
-          onCambio={setConNotasDelPago}
-          etiqueta="Mostrar las notas de cada pago"
-          detalle="Debajo de cada pago, los números de nota y el cliente."
+          encendido={conLista}
+          onCambio={setConLista}
+          etiqueta="Incluir la lista de pagos"
+          detalle="Apagado, el papel lleva solo el resumen del período (y las secciones de abajo que estén encendidas)."
         />
-        <Interruptor
-          encendido={conCuadrados}
-          onCambio={setConCuadrados}
-          etiqueta="Incluir los pagos que ya cuadran"
-          detalle="Apagado, el papel lleva solo lo pendiente: lo que no cuadra o no tiene notas."
-        />
+        {conLista ? (
+          <>
+            <Interruptor
+              encendido={conNotasDelPago}
+              onCambio={setConNotasDelPago}
+              etiqueta="Mostrar las notas de cada pago"
+              detalle="Debajo de cada pago, los números de nota y el cliente."
+            />
+            <Interruptor
+              encendido={conCuadrados}
+              onCambio={setConCuadrados}
+              etiqueta="Incluir los pagos que ya cuadran"
+              detalle="Apagado, la lista lleva solo lo pendiente. El resumen sigue contando todo el período."
+            />
+          </>
+        ) : null}
         {modo === 'CIERRE' ? (
           <>
             <Interruptor
               encendido={conSinPago}
               onCambio={setConSinPago}
-              etiqueta="Incluir las notas del mes sin pago"
-              detalle="Las notas de entrega del mes que no tienen ningún pago asociado."
+              etiqueta="Incluir las notas sin pago"
+              detalle="Las notas de entrega del período que no tienen ningún pago asociado."
             />
             <Interruptor
               encendido={conAnulados}

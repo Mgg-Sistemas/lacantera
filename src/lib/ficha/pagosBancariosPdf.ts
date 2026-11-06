@@ -13,9 +13,15 @@ import {
   pieDePagina,
   fechaLarga,
   fechaCorta,
+  MARCA,
+  ROTULO,
+  TINTA,
+  GRIS,
+  FILA_ALTERNA,
   type Columna,
   type EmpresaPapel,
 } from '@/lib/ficha/papel'
+import { IZQ, ANCHO_UTIL } from '@/lib/ficha/hoja'
 import type { EstadoPago, NotaCubiertaDeMas, NotaSinPago, PagoBancario } from '@/lib/api/pagosBancarios'
 
 /*
@@ -49,10 +55,14 @@ export const ETIQUETA_ESTADO: Record<EstadoPago, string> = {
 
 export interface DatosReportePagos {
   modo: 'LISTA' | 'CIERRE'
-  /** «Septiembre 2026», solo en el cierre. */
+  /** «Septiembre 2026» o «Septiembre 2026 — Octubre 2026», solo en el cierre. */
   mes?: string
+  variosMeses?: boolean
   alcance: Array<[string, string | null | undefined]>
-  pagos: PagoBancario[]
+  /** Todo el período: de aquí sale el resumen, aunque la lista lleve solo lo pendiente. */
+  resumenDe: PagoBancario[]
+  /** Lo que va en la lista. Null: la lista no va. Vacía: se dice en una línea. */
+  pagos: PagoBancario[] | null
   conNotasDelPago: boolean
   /** Null: la sección no va (no es cierre, o se apagó). */
   notasSinPago: NotaSinPago[] | null
@@ -125,12 +135,86 @@ export function resumenDePagos(pagos: PagoBancario[]): Array<[string, string]> {
   ]
 }
 
+/*
+  EL TOTAL CON QUE CIERRA EL PERÍODO, LO PRIMERO QUE SE VE.
+
+  Christopher, 06/11/2026: «una de las primeras cosas que puedan ver es el
+  total con el que cierra el mes. Considerar el caso de N meses». Va en un
+  recuadro debajo del título, antes del alcance: lo recibido en el banco por
+  moneda —nada se suma entre monedas— y el equivalente en dólares, que sí se
+  junta porque cada pago ya trae su tasa. Los anulados no cuentan.
+*/
+type Doc = InstanceType<typeof import('jspdf').jsPDF>
+
+const vigentes = (pagos: PagoBancario[]) => pagos.filter((p) => p.estado !== 'ANULADO')
+
+function totalDelCierre(doc: Doc, y: number, pagos: PagoBancario[], periodo: string): number {
+  const v = vigentes(pagos)
+  const banco = porMoneda(v, (p) => p.moneda, (p) => Number(p.monto))
+  const usd = v.reduce((a, p) => a + Number(p.monto_usd ?? 0), 0)
+  const montos = v.length > 0 ? enLista(banco) : 'Sin pagos del banco en el período'
+  const ALTO = 24
+
+  doc.setDrawColor(MARCA).setLineWidth(0.4).setFillColor(FILA_ALTERNA)
+  doc.rect(IZQ, y, ANCHO_UTIL, ALTO, 'FD')
+
+  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(ROTULO)
+  doc.text(`TOTAL RECIBIDO EN EL BANCO · ${periodo.toUpperCase()}`, IZQ + 4, y + 6)
+
+  doc.setFont('helvetica', 'bold').setFontSize(v.length > 0 ? 16 : 12).setTextColor(TINTA)
+  doc.text(doc.splitTextToSize(montos, ANCHO_UTIL - 8)[0] as string, IZQ + 4, y + 14)
+
+  if (v.length > 0) {
+    doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor(GRIS)
+    doc.text(
+      `Equivalente: ${dinero('USD', usd)} (con la tasa de cada pago) · ${v.length} pago${v.length === 1 ? '' : 's'}`,
+      IZQ + 4,
+      y + 20,
+    )
+  }
+  return y + ALTO + 8
+}
+
+const COLUMNAS_POR_MES: Columna[] = [
+  { titulo: 'Mes', ancho: 40 },
+  { titulo: 'Pagos', ancho: 20, alDerecha: true },
+  { titulo: 'Total del banco', ancho: 60, alDerecha: true },
+  { titulo: 'Equivalente $', ancho: 30, alDerecha: true },
+]
+
+/** Cuando el cierre abarca varios meses, cuánto cerró cada uno. */
+function porMes(doc: Doc, y: number, pagos: PagoBancario[]): number {
+  const grupos = new Map<string, PagoBancario[]>()
+  for (const p of vigentes(pagos)) {
+    const m = p.fecha.slice(0, 7)
+    grupos.set(m, [...(grupos.get(m) ?? []), p])
+  }
+  const filas = Array.from(grupos.entries())
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([m, ps]) => {
+      const [a, mm] = m.split('-').map(Number)
+      const nombre = new Date(a, mm - 1, 1).toLocaleDateString('es-VE', { month: 'long' })
+      return [
+        `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} ${a}`,
+        String(ps.length),
+        enLista(porMoneda(ps, (p) => p.moneda, (p) => Number(p.monto))),
+        dinero('USD', ps.reduce((s, p) => s + Number(p.monto_usd ?? 0), 0)),
+      ]
+    })
+  if (filas.length === 0) return y
+  y = seccion(doc, y, 'Por mes')
+  return tabla(doc, y, COLUMNAS_POR_MES, filas) + 2
+}
+
 export async function armarReportePagos(d: DatosReportePagos): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
   const logo = d.conLogo ? await logoComoImagen() : ''
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  const titulo = d.modo === 'CIERRE' ? `Cierre de mes · ${d.mes ?? ''}` : 'Registros de pagos'
+  const titulo =
+    d.modo === 'CIERRE'
+      ? `${d.variosMeses ? 'Cierre de meses' : 'Cierre de mes'} · ${d.mes ?? ''}`
+      : 'Registros de pagos'
 
   let y = membrete(doc, logo, {
     empresa: d.empresa,
@@ -139,45 +223,61 @@ export async function armarReportePagos(d: DatosReportePagos): Promise<ArchivoAr
   y = tituloDocumento(doc, y, titulo)
   y = lineaEmpresa(doc, y, `${d.empresa.razonSocial} · RIF ${d.empresa.rif} · Pagos del banco y notas de entrega`)
 
+  if (d.modo === 'CIERRE') {
+    y = totalDelCierre(doc, y, d.resumenDe, d.mes ?? '')
+    if (d.variosMeses) y = porMes(doc, y, d.resumenDe)
+  }
+
   y = seccion(doc, y, 'Alcance')
   y = etiquetaValor(doc, y, [...d.alcance, ['Emitido por', d.emitidoPor]])
 
+  // Un resumen en ceros no informa: si no hubo pagos, se dice en una línea.
+  const hayPagos = d.resumenDe.some((p) => p.estado !== 'ANULADO')
   y = seccion(doc, y, 'Resumen')
-  y = etiquetaValor(doc, y, resumenDePagos(d.pagos))
+  y = etiquetaValor(
+    doc,
+    y,
+    hayPagos ? resumenDePagos(d.resumenDe) : [['Pagos', 'No hubo pagos del banco en el período.']],
+  )
 
-  y = seccion(doc, y, 'Pagos del banco')
-  y = tabla(
-    doc,
-    y,
-    COLUMNAS_PAGOS,
-    d.pagos.map((p) => {
-      const detalle = [p.descripcion ?? '']
-      if (d.conNotasDelPago) {
-        detalle.push(p.notas > 0 ? `Notas: ${p.numeros ?? ''}${p.clientes ? ` · ${p.clientes}` : ''}` : 'Sin notas asociadas')
-      }
-      const estado =
-        p.estado === 'MINIMA' || p.estado === 'DIFERENCIA'
-          ? `${ETIQUETA_ESTADO[p.estado]}\n${Number(p.diferencia) > 0 ? 'sobran' : 'faltan'} ${dinero(p.moneda, Math.abs(Number(p.diferencia)))}`
-          : ETIQUETA_ESTADO[p.estado]
-      return [
-        `${fechaCorta(p.fecha)}\n${p.referencia ? `REF ${p.referencia}` : 'Sin ref.'}`,
-        detalle.filter(Boolean).join('\n') || '—',
-        dinero(p.moneda, p.monto),
-        p.notas > 0 ? dinero(p.moneda, p.aplicado) : '—',
-        estado,
-      ]
-    }),
-  )
-  y = notaBajoLaTabla(
-    doc,
-    y,
-    '«Notas» es lo que cubren las notas de entrega asociadas a cada pago, en la moneda del pago. Diferencia mínima: no suma exacto, pero la diferencia es de redondeo de la tasa.',
-  )
+  if (d.pagos && hayPagos && d.pagos.length === 0) {
+    y = seccion(doc, y, 'Pagos del banco')
+    y = etiquetaValor(doc, y, [['Pendientes', 'Ninguno: todos los pagos del período cuadran con sus notas.']])
+  } else if (d.pagos && d.pagos.length > 0) {
+    y = seccion(doc, y, 'Pagos del banco')
+    y = tabla(
+      doc,
+      y,
+      COLUMNAS_PAGOS,
+      d.pagos.map((p) => {
+        const detalle = [p.descripcion ?? '']
+        if (d.conNotasDelPago) {
+          detalle.push(p.notas > 0 ? `Notas: ${p.numeros ?? ''}${p.clientes ? ` · ${p.clientes}` : ''}` : 'Sin notas asociadas')
+        }
+        const estado =
+          p.estado === 'MINIMA' || p.estado === 'DIFERENCIA'
+            ? `${ETIQUETA_ESTADO[p.estado]}\n${Number(p.diferencia) > 0 ? 'sobran' : 'faltan'} ${dinero(p.moneda, Math.abs(Number(p.diferencia)))}`
+            : ETIQUETA_ESTADO[p.estado]
+        return [
+          `${fechaCorta(p.fecha)}\n${p.referencia ? `REF ${p.referencia}` : 'Sin ref.'}`,
+          detalle.filter(Boolean).join('\n') || '—',
+          dinero(p.moneda, p.monto),
+          p.notas > 0 ? dinero(p.moneda, p.aplicado) : '—',
+          estado,
+        ]
+      }),
+    )
+    y = notaBajoLaTabla(
+      doc,
+      y,
+      '«Notas» es lo que cubren las notas de entrega asociadas a cada pago, en la moneda del pago. Diferencia mínima: no suma exacto, pero la diferencia es de redondeo de la tasa.',
+    )
+  }
 
   if (d.notasSinPago) {
-    y = seccion(doc, y + 2, 'Notas de entrega del mes sin pago asociado')
+    y = seccion(doc, y + 2, 'Notas de entrega del período sin pago asociado')
     if (d.notasSinPago.length === 0) {
-      y = etiquetaValor(doc, y, [['Pendientes', 'Ninguna: todas las notas del mes tienen pago asociado.']])
+      y = etiquetaValor(doc, y, [['Pendientes', 'Ninguna: todas las notas del período tienen pago asociado.']])
     } else {
       const total = porMoneda(d.notasSinPago, (n) => n.moneda, (n) => Number(n.total))
       y = tabla(
@@ -224,7 +324,9 @@ export async function armarReportePagos(d: DatosReportePagos): Promise<ArchivoAr
     firmas(doc, y + 18, { texto: 'Elaborado por', nombre: d.emitidoPor }, 'Revisado por')
   }
 
-  pieDePagina(doc, `Documento generado por el sistema · ${titulo} · ${fechaLarga(d.momento)}`)
+  // La fecha ya va en el membrete; en el pie, con un título de varios meses,
+  // se montaba sobre «Página 1 de 2».
+  pieDePagina(doc, `Documento generado por el sistema · ${titulo}`)
   doc.setProperties({ title: titulo })
 
   return { blob: doc.output('blob'), nombre: d.nombreArchivo }
