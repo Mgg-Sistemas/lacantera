@@ -178,6 +178,77 @@ export function textoEstadoPago(d: {
   return L.join('\n')
 }
 
+type OrdenDelMensaje = Pick<
+  Orden,
+  'numero' | 'moneda' | 'total' | 'total_bs' | 'proveedor' | 'condicion_pago' | 'renglones'
+>
+
+const cantidadTxt = (c: string | number, u?: string | null) =>
+  `${Number(c).toLocaleString('es-VE', { maximumFractionDigits: 2 })}${limpio(u) ? ` ${limpio(u)}` : ''}`
+
+/** «• BOMBA: 12 de 20 UND», renglón por renglón. */
+function lineasRecibido(orden: OrdenDelMensaje): string[] {
+  return [...(orden.renglones ?? [])]
+    .sort((a, b) => a.linea - b.linea)
+    .map((r) => {
+      const pedida = Number(r.cantidad)
+      const llego = Number(r.cantidad_recibida)
+      const marca = llego >= pedida - 0.0001 ? '✅' : llego > 0 ? '🟡' : '⏳'
+      return `${marca} ${limpio(r.descripcion)}: ${cantidadTxt(llego)} de ${cantidadTxt(pedida, r.unidad)}`
+    })
+}
+
+/**
+ * El comprobante de recepción (fase 4): qué llegó al almacén general de cada
+ * renglón y si la orden quedó completa.
+ */
+export function textoRecepcion(d: {
+  compra: Pick<Compra, 'numero' | 'titulo' | 'prioridad'>
+  orden: OrdenDelMensaje
+  personas?: PersonasCompra
+  empresa?: string | null
+}): string {
+  const { compra, orden } = d
+  const completa = (orden.renglones ?? []).every(
+    (r) => Number(r.cantidad_recibida) >= Number(r.cantidad) - 0.0001,
+  )
+  const L: string[] = []
+  L.push(`🔹 *ORDEN:* ${orden.numero} (${compra.numero})`)
+  L.push(completa ? '📦 *RECIBIDA COMPLETA en el almacén general*' : '📦 *RECIBIDA EN PARTE en el almacén general*')
+  L.push(`🏭 *Proveedor:* ${orden.proveedor?.nombre ?? '—'}`)
+  L.push(`📝 *Detalle:* ${limpio(compra.titulo)}`)
+  L.push(...lineasPersonas({ solicita: d.personas?.solicita }))
+  L.push('', '*RECIBIDO:*', ...lineasRecibido(orden))
+  if (limpio(d.empresa)) L.push('', `🏢 *${limpio(d.empresa)}*`)
+  return L.join('\n')
+}
+
+/**
+ * La compra cerrada (fase 4): llegó todo y está pagada.
+ */
+export function textoFinalizada(d: {
+  compra: Pick<Compra, 'numero' | 'titulo' | 'prioridad'>
+  orden: OrdenDelMensaje & Pick<Orden, 'fecha_pago'>
+  nota?: string | null
+  personas?: PersonasCompra
+  empresa?: string | null
+}): string {
+  const { compra, orden } = d
+  const L: string[] = []
+  L.push(`🔹 *ORDEN:* ${orden.numero} (${compra.numero})`)
+  L.push('✅ *COMPRA FINALIZADA*')
+  L.push(`🏭 *Proveedor:* ${orden.proveedor?.nombre ?? '—'}`)
+  L.push(`📝 *Detalle:* ${limpio(compra.titulo)}`)
+  L.push(...lineasPersonas(d.personas))
+  if (orden.condicion_pago) L.push(`📋 *Condición:* ${condicionTxt(orden.condicion_pago)}`)
+  L.push(`💵 *Monto:* ${montoConBs(orden.moneda, orden.total, orden.total_bs)}`)
+  if (orden.fecha_pago) L.push(`💳 *Pagada:* ${orden.fecha_pago.split('-').reverse().join('/')}`)
+  L.push('📦 *Recibida completa en el almacén general*')
+  if (limpio(d.nota)) L.push(`📌 *Nota:* ${limpio(d.nota)}`)
+  if (limpio(d.empresa)) L.push('', `🏢 *${limpio(d.empresa)}*`)
+  return L.join('\n')
+}
+
 /**
  * La respuesta del almacén general (fase 2): qué entrega, con qué solicitud de
  * salida, y qué pasa a Compras. Si entregó todo, la compra queda FINALIZADA.

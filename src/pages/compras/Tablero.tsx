@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import {
   AlertTriangle,
   Archive,
+  BadgeCheck,
   Building2,
   ClipboardList,
   FileText,
@@ -297,9 +298,18 @@ const QUE_HACER: GrupoDeAcciones[] = [
         paso: 5,
         titulo: 'Recibir el material',
         detalle:
-          'Almacén cuenta lo que llegó contra la orden. Puede llegar en partes.',
+          'Almacén cuenta lo que llegó contra la orden, en el almacén general. Puede llegar en partes.',
         icono: PackageCheck,
         a: '/app/compras/recepciones',
+        exige: 'ESCRITURA',
+      },
+      {
+        paso: 6,
+        titulo: 'Marcar finalizada',
+        detalle:
+          'Con todo recibido y pagado, Compras cierra la compra y manda el WhatsApp de finalizada.',
+        icono: BadgeCheck,
+        a: '/app/compras',
         exige: 'ESCRITURA',
       },
     ],
@@ -477,10 +487,11 @@ export function TableroCompras() {
 
       <PrimeraVez className="mt-8">
         <p>
-          Una compra pasa por cinco pasos: se pide, el almacén general dice qué tiene, se cotiza lo
-          que falta con su método de pago, se aprueba decidiendo si se paga, y se recibe. Si el
-          almacén tiene todo, la compra queda finalizada sin comprar nada. La orden de compra se
-          emite al aprobarla.
+          Una compra pasa por seis pasos: se pide, el almacén general dice qué tiene, se cotiza lo
+          que falta con su método de pago, se aprueba decidiendo si se paga (a crédito queda en
+          cuenta abierta), se recibe en el almacén general y se marca finalizada. Si el almacén
+          tiene todo, la compra queda finalizada sin comprar nada. La orden de compra se emite al
+          aprobarla.
         </p>
         <p className="text-ink/50">
           La <strong>compra directa</strong> es para lo que se paga en el acto, y no pasa por esos
