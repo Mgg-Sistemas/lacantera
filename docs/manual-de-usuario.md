@@ -3659,6 +3659,27 @@ Cada nota asociada lleva un **monto aplicado** que nace igual al total de la not
 
 **Quitar** una nota de un pago no la borra: deja de contar en ese pago y queda en la bitácora. **Anular pago** pide el motivo; tampoco se borra.
 
+Los montos se escriben y se ven con sus puntos y su coma (687.248,00), para que no se confundan con un código. Puede escribirlos con o sin puntos: al salir del campo se ordenan solos.
+
+#### Una nota no se cobra dos veces
+
+*Nuevo el 06/11/2026.*
+
+Si una nota ya está cubierta por otros pagos, al asociarla a un pago más el sistema lo rechaza con el mensaje «La nota … ya está cubierta por otros pagos. Si este pago es el suyo, quítela primero del otro.». Cuando una nota está repartida en varios pagos, la lista de **Asociar notas** dice **le falta** y el monto que queda por cubrir, no el total de la nota; las que ya están cubiertas del todo no aparecen como sugerencia.
+
+Las notas que quedaron asociadas a varios pagos antes de este cambio salen en un aviso rojo arriba de la lista (**notas cubiertas de más**), y en el detalle del pago llevan la marca *Cubierta de más*. Toque el número de la nota en el aviso para ver sus pagos, y quite la nota del pago que no le corresponde.
+
+#### Reporte PDF y cierre de mes
+
+*Nuevo el 06/11/2026.*
+
+**Reporte PDF**, arriba a la derecha, arma el papel de dos maneras:
+
+- **Cierre de mes** (la que sale primero): todos los pagos del mes que usted elija, sin importar los filtros de la pantalla. Además trae las **notas de entrega del mes sin pago asociado**, las notas cubiertas de más de ese mes si las hay, y las rayas para firmar *Elaborado por* y *Revisado por*.
+- **Lo que está en pantalla**: los pagos tal como los dejaron los filtros.
+
+Se puede elegir si van las notas de cada pago, si van los pagos que ya cuadran, si van las notas sin pago y los pagos anulados (solo en el cierre) y si va el logo. Lo que se apaga no aparece en el papel. Los totales van por moneda; lo único que se junta es el equivalente en dólares, calculado con la tasa de cada pago.
+
 ---
 
 ## 11. Nómina
