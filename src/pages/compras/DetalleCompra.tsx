@@ -1557,6 +1557,11 @@ export function DetalleCompra() {
                       <tr key={r.id} className="border-hairline border-b last:border-0">
                         <td className="text-ink/85 py-2.5 pr-3 pl-5">
                           {r.descripcion}
+                          {r.descripcion_pedida && r.descripcion_pedida !== r.descripcion ? (
+                            <span className="text-ink/45 block text-xs">
+                              Se pidió como «{r.descripcion_pedida}»
+                            </span>
+                          ) : null}
                           {r.observacion ? (
                             <span className="text-ink/45 block text-xs">{r.observacion}</span>
                           ) : null}
