@@ -98,6 +98,43 @@ export default async function pruebaPagos(tx) {
   comprobar(quedanEnlaces === 1, 'pero el enlace no se borra: queda marcado')
   await como(tx, mira)
 
+  grupo('Registros de pagos · comprobantes')
+
+  // Solo se anota la fila: el archivo de verdad lo sube el navegador al depósito.
+  const [{ adjuntar_comprobante_pago: comp }] = await tx`
+    select public.adjuntar_comprobante_pago(${pago}, ${`${pago}/prueba.jpg`}, 'prueba.jpg', 'image/jpeg', 100)`
+  comprobar(Boolean(comp), 'con el permiso extendido se adjunta un comprobante')
+  const ajena = await debeFallar(
+    tx,
+    (sp) => sp`select public.adjuntar_comprobante_pago(${pago}, 'otro/prueba.jpg', 'x.jpg', 'image/jpeg', 100)`,
+  )
+  comprobar(/no corresponde/i.test(ajena ?? ''), 'un archivo que no cuelga del pago no se anota')
+  const raro = await debeFallar(
+    tx,
+    (sp) => sp`select public.adjuntar_comprobante_pago(${pago}, ${`${pago}/x.exe`}, 'x.exe', 'application/x-msdownload', 100)`,
+  )
+  comprobar(/solo se admiten/i.test(raro ?? ''), 'solo fotos o PDF')
+  const sinMotivoComp = await debeFallar(tx, (sp) => sp`select public.quitar_comprobante_pago(${comp}, '')`)
+  comprobar(/por qu/i.test(sinMotivoComp ?? ''), 'quitar un comprobante pide motivo')
+
+  await comoDueno(tx)
+  await como(tx, ajeno)
+  const [{ n: ajenoVeComp }] = await tx`select count(*)::int as n from public.pagos_bancarios_comprobantes`
+  comprobar(ajenoVeComp === 0, 'quien no entra a Ventas no ve los comprobantes')
+  const ajenoAdjunta = await debeFallar(
+    tx,
+    (sp) => sp`select public.adjuntar_comprobante_pago(${pago}, ${`${pago}/y.jpg`}, 'y.jpg', 'image/jpeg', 100)`,
+  )
+  comprobar(/permiso|ventas/i.test(ajenoAdjunta ?? ''), 'ni los adjunta')
+
+  await comoDueno(tx)
+  await como(tx, mira)
+  await tx`select public.quitar_comprobante_pago(${comp}, 'captura equivocada')`
+  await comoDueno(tx)
+  const [quitado] = await tx`select quitado_en, motivo_quitado from public.pagos_bancarios_comprobantes where id = ${comp}`
+  comprobar(Boolean(quitado?.quitado_en) && quitado.motivo_quitado === 'captura equivocada', 'quitado no se borra: queda con su motivo')
+  await como(tx, mira)
+
   const sinMotivo = await debeFallar(tx, (sp) => sp`select public.anular_pago_bancario(${pago}, '')`)
   comprobar(/por qu/i.test(sinMotivo ?? ''), 'anular pide motivo')
   await tx`select public.anular_pago_bancario(${pago}, 'prueba de anular')`

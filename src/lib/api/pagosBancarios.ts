@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { rpc } from './rpc'
+import { supabase } from '@/lib/supabase'
+import { fabricarMiniatura } from './fotosDeCarga'
+import { desenvolver, rpc } from './rpc'
 
 /**
  * Ventas › Registros de pagos: los depósitos que llegaron al banco y las notas
@@ -191,4 +193,113 @@ export function useQuitarNotaDePago() {
   return useAccionPagos((enlaceId: number) =>
     rpc<void>('quitar_nota_de_pago_bancario', { p_enlace_id: enlaceId }),
   )
+}
+
+/*
+  LOS COMPROBANTES DE CADA PAGO (06/11/2026).
+
+  Christopher: «adjuntar el capture del pago efectuado y poner el monto de forma
+  manual, para después asociarlo a la nota de entrega». Varios por pago (hasta
+  seis), fotos o PDF. No van en el reporte PDF.
+
+  El archivo va del navegador al depósito privado `comprobantes-pago`, colgado
+  del número del pago (`<pago>/<uuid>.jpg`), y después se anota en la base. Si
+  la subida falla, no queda anotado un comprobante que no existe. Quitar no
+  borra el archivo: lo deja fuera de la vista, con quién, cuándo y por qué.
+
+  Se guarda una miniatura al lado del original, como las fotos de carga, para
+  que la lista no baje capturas enteras.
+*/
+
+export const MAXIMO_COMPROBANTES = 6
+const DEPOSITO_COMPROBANTES = 'comprobantes-pago'
+const miniaturaDe = (path: string) => `${path}.thumb.jpg`
+
+export interface ComprobantePago {
+  id: number
+  pago_id: number
+  path: string
+  nombre: string | null
+  tipo: string
+  tamano: number | null
+  subido_por: string
+  subido_en: string
+  quitado_por: string | null
+  quitado_en: string | null
+  motivo_quitado: string | null
+}
+
+/** Todos de una vez —una consulta por pantalla—: la lista los usa para el clip. */
+export function useComprobantesDePagos() {
+  return useQuery({
+    queryKey: [...CLAVE, 'comprobantes'],
+    queryFn: async () =>
+      desenvolver<ComprobantePago[]>(
+        await supabase.from('pagos_bancarios_comprobantes').select('*').order('subido_en'),
+      ),
+  })
+}
+
+export async function subirComprobantes(pagoId: number, archivos: File[]) {
+  for (const archivo of archivos) {
+    const extension = archivo.name.split('.').pop()?.toLowerCase() || 'bin'
+    const ruta = `${pagoId}/${crypto.randomUUID()}.${extension}`
+    const { error } = await supabase.storage
+      .from(DEPOSITO_COMPROBANTES)
+      .upload(ruta, archivo, { contentType: archivo.type, upsert: false })
+    if (error) throw new Error(`No se pudo subir ${archivo.name}: ${error.message}`)
+
+    if (archivo.type.startsWith('image/')) {
+      try {
+        const mini = await fabricarMiniatura(archivo)
+        await supabase.storage
+          .from(DEPOSITO_COMPROBANTES)
+          .upload(miniaturaDe(ruta), mini, { contentType: 'image/jpeg', upsert: true })
+      } catch {
+        /* sin miniatura: mirarlo bajará el original */
+      }
+    }
+
+    await rpc<number>('adjuntar_comprobante_pago', {
+      p_pago_id: pagoId,
+      p_path: ruta,
+      p_nombre: archivo.name,
+      p_tipo: archivo.type,
+      p_tamano: archivo.size,
+    })
+  }
+}
+
+export function useSubirComprobantes() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: { pagoId: number; archivos: File[] }) => subirComprobantes(a.pagoId, a.archivos),
+    // Aunque falle a medias, los que sí entraron tienen que verse.
+    onSettled: () => void qc.invalidateQueries({ queryKey: [...CLAVE, 'comprobantes'] }),
+  })
+}
+
+export function useQuitarComprobante() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (q: { id: number; motivo: string }) =>
+      rpc<void>('quitar_comprobante_pago', { p_id: q.id, p_motivo: q.motivo }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: [...CLAVE, 'comprobantes'] }),
+  })
+}
+
+/** La miniatura guardada; lanza si no hay, para que quien llama baje el original. */
+export async function miniaturaDeComprobante(path: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(DEPOSITO_COMPROBANTES)
+    .createSignedUrl(miniaturaDe(path), 600)
+  if (error || !data) throw new Error('No hay miniatura guardada.')
+  return data.signedUrl
+}
+
+/** El archivo entero, para abrirlo. Una URL de objeto que hay que revocar al terminar. */
+export async function abrirComprobante(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from(DEPOSITO_COMPROBANTES).download(path)
+  if (error || !data) throw new Error('No se pudo abrir el comprobante.')
+  return URL.createObjectURL(data)
 }

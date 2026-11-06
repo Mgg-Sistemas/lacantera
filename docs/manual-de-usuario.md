@@ -3648,6 +3648,20 @@ Se filtra por fechas, estado, moneda, monto y se busca por referencia, descripci
 
 - **Registrar pago**: fecha, moneda, monto, tasa (si la deja vacía se usa la del BCV de ese día), referencia y descripción.
 - **Importar del banco**: copie las filas de la planilla del banco en Excel o Google Sheets y péguelas, o suba el archivo guardado como CSV. Antes de importar se ve una vista previa: las filas de nómina, préstamos, intereses y saldo inicial llegan desmarcadas; márquelas si de verdad son ventas. Una fila igual a un pago que ya existe (misma fecha, monto y referencia) no se duplica. Si una fila está mal, no entra ninguna y se dice cuál. Un archivo .xlsx no se sube directo: ábralo y copie las filas, o guárdelo como CSV.
+- **Posible repetido** *(06/11/2026)*: si una fila tiene la misma fecha, moneda y monto que un pago ya registrado —por ejemplo, uno que se cargó a mano con su captura—, llega **desmarcada** con el aviso «Posible repetido» y la referencia del que ya existe. La captura y el estado del banco casi nunca escriben la referencia igual, así que el sistema no decide: márquela solo si de verdad es otro pago.
+
+#### Comprobantes de pago
+
+*Nuevo el 06/11/2026.*
+
+Cada pago puede llevar hasta **seis comprobantes**: la captura del pago móvil o de la transferencia, o el PDF que mandó el cliente.
+
+- **Al registrar un pago**, el formulario trae **Adjuntar fotos o PDF**. En el teléfono deja tomar la foto con la cámara o elegirla de la galería. Mire la captura y escriba a mano la fecha, el monto, la moneda y la referencia: el sistema no lee la imagen.
+- **En un pago que ya existe** (por ejemplo, uno importado del banco), despliéguelo: arriba de sus notas está **Comprobantes**, con el mismo botón para adjuntar.
+- En la lista, el pago que tiene comprobante lleva un **clip** junto a la referencia (con el número, si son varios). Al desplegarlo se ven las miniaturas; tocar una la abre entera.
+- **Quitar** un comprobante pide el motivo y no lo borra: queda tachado debajo, con quién lo subió, quién lo quitó y por qué.
+
+Ver los comprobantes es de cualquiera que entre a Ventas; adjuntarlos y quitarlos, del mismo permiso que registra pagos. Los comprobantes **no salen en el reporte PDF**.
 
 #### Asociar las notas
 

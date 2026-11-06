@@ -104,8 +104,9 @@ const LADO_MINIATURA = 80
 /** La miniatura vive junto al original, con su mismo nombre más `.thumb.jpg`. */
 const rutaMiniatura = (path: string) => `${path}.thumb.jpg`
 
-/** Una miniatura cuadrada, recortada al centro, hecha en el navegador. */
-async function fabricarMiniatura(fuente: Blob): Promise<Blob> {
+/** Una miniatura cuadrada, recortada al centro, hecha en el navegador.
+ *  La usan también los comprobantes de Registros de pagos. */
+export async function fabricarMiniatura(fuente: Blob): Promise<Blob> {
   const lado = LADO_MINIATURA * 2
   // `from-image`: respeta la orientación EXIF, para que la foto de un celular
   // no salga acostada. La transformación de Storage ya lo hacía; esto la iguala.
