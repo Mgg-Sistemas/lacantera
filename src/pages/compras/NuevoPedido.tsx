@@ -5,25 +5,13 @@ import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ChipTasa } from '@/components/ChipTasa'
-import { CantidadDeArticulo } from '@/components/CantidadDeArticulo'
-import { ParecidosAEste } from '@/components/ParecidosAEste'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useMiFirma } from '@/lib/api/firmas'
-import {
-  conSusFormas,
-  opcionesDeCategoria,
-  useArticulos,
-  useCategoriasDeInventario,
-  useCrearArticulo,
-  usePerfiles,
-  useTodasLasPresentaciones,
-  useUnidades,
-} from '@/lib/api/catalogo'
-import { useAlmacenes } from '@/lib/api/inventario'
+import { usePerfiles, useUnidades } from '@/lib/api/catalogo'
 import { useActualizarPedido, useCompra, useCrearPedido } from '@/lib/api/compras'
 import type { Compra } from '@/lib/api/compras'
 import { Cargando, ErrorDeCarga as ErrorDeCargaPagina } from '@/components/ui/Estado'
@@ -39,68 +27,36 @@ import { useSesion } from '@/lib/sesion'
  */
 const OTRA_PERSONA = 'OTRA'
 
+/*
+  EL PEDIDO SE HACE CON PALABRAS GENERALES.
+
+  Angélica, 06/11/2026: «el pedido será con palabras generales, ejemplo:
+  Botas, y la cantidad». Quien pide no tiene por qué saber cómo se llama la
+  cosa en el inventario. Eso lo resuelve Compras al cotizar: lo guarda con ese
+  nombre o le pone el nombre real (`vincular_renglon_al_inventario`).
+*/
 interface FilaRenglon {
   clave: number
-  articulo_id: string
   descripcion: string
   cantidad: string
   unidad: string
   observacion: string
-  /* Solo mientras se crea el artículo desde aquí; no viajan al pedido. */
-  nuevo_codigo: string
-  nueva_categoria: string
-  /* «Ya vi el parecido y aun así es otra cosa». La base también lo exige. */
-  nuevo_confirmado: boolean
+  /* Solo al corregir un renglón que Compras ya nombró; no se edita aquí. */
+  articulo_id: string
+  descripcion_pedida: string
 }
 
 let contador = 0
 const filaVacia = (): FilaRenglon => ({
   clave: contador++,
-  articulo_id: '',
   descripcion: '',
   cantidad: '',
   unidad: 'UND',
   observacion: '',
-  nuevo_codigo: '',
-  nueva_categoria: '',
-  nuevo_confirmado: false,
+  articulo_id: '',
+  descripcion_pedida: '',
 })
 
-/*
-  QUÉ UNIDADES SE OFRECEN EN UN RENGLÓN.
-
-  Sin artículo, todas: el renglón es texto libre y no hay nada contra lo que
-  estrechar. Con artículo, la suya y las presentaciones que declaró — pero solo
-  las que además existen como unidad, porque `orden_renglones.unidad` apunta a
-  `unidades` y guardar TAMBOR ahí rompería la clave foránea.
-
-  Hoy eso deja casi siempre una sola opción, y está bien que así sea: la base
-  cuenta el artículo en su unidad y solo en ésa. Lo que se pierde no es
-  flexibilidad, es la posibilidad de escribir algo que el almacén va a leer de
-  otra manera sin avisar.
-*/
-function unidadesDeLaFila(
-  fila: FilaRenglon,
-  articulos: { id: number; unidad: string }[] | undefined,
-  formas: { articulo_id: number; presentacion: string; activa: boolean }[] | undefined,
-  unidades: { codigo: string; nombre: string }[] | undefined,
-): { valor: string; etiqueta: string }[] {
-  const todas = (unidades ?? []).map((u) => ({ valor: u.codigo, etiqueta: u.nombre }))
-  const articulo = (articulos ?? []).find((a) => String(a.id) === fila.articulo_id)
-  if (!articulo) return todas
-
-  const suyas = new Set<string>([articulo.unidad])
-  for (const f of formas ?? []) {
-    if (f.articulo_id === articulo.id && f.activa) suyas.add(f.presentacion)
-  }
-
-  const estrecha = todas.filter((u) => suyas.has(u.valor))
-  // Si la unidad del artículo no estuviera en el catálogo —no debería pasar,
-  // hay clave foránea— se prefiere ofrecer todas antes que una lista vacía.
-  return estrecha.length > 0 ? estrecha : todas
-}
-
-const OTRO_SITIO = 'OTRO'
 
 /*
   EL MISMO FORMULARIO CREA Y CORRIGE.
@@ -143,11 +99,6 @@ export function NuevoPedido() {
 function Formulario({ pedido }: { pedido: Compra | null }) {
   const corrigiendo = !!pedido
   const navigate = useNavigate()
-  const { data: articulos } = useArticulos()
-  const { data: categoriasInv } = useCategoriasDeInventario()
-  const { data: formasDeContar } = useTodasLasPresentaciones()
-  const { data: almacenes } = useAlmacenes()
-  const crearArticulo = useCrearArticulo()
   const { data: unidades } = useUnidades()
   const { data: perfiles } = usePerfiles()
   const { session } = useSesion()
@@ -174,24 +125,12 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
   const [justificacion, setJustificacion] = useState(pedido?.justificacion ?? '')
   const [prioridad, setPrioridad] = useState<string>(pedido?.prioridad ?? 'NORMAL')
   const [requeridaPara, setRequeridaPara] = useState(pedido?.requerida_para ?? '')
-  // OTRO_SITIO es la única opción del desplegable que no es un almacén: es la
-  // puerta para lo que el inventario no conoce —un frente, la planta, una
-  // máquina— sin volver al texto libre para todo lo demás.
-  const [sitio, setSitio] = useState(
-    pedido?.destino_almacen_id != null
-      ? String(pedido.destino_almacen_id)
-      : pedido?.destino
-        ? OTRO_SITIO
-        : '',
-  )
-  const [destino, setDestino] = useState(
-    pedido && pedido.destino_almacen_id == null ? (pedido.destino ?? '') : '',
-  )
   const [filas, setFilas] = useState<FilaRenglon[]>(() =>
     pedido && pedido.renglones.length > 0
       ? pedido.renglones.map((r) => ({
           ...filaVacia(),
           articulo_id: r.articulo_id != null ? String(r.articulo_id) : '',
+          descripcion_pedida: r.descripcion_pedida ?? '',
           descripcion: r.descripcion,
           cantidad: String(r.cantidad),
           unidad: r.unidad,
@@ -208,17 +147,6 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
   const cambiar = (clave: number, cambios: Partial<FilaRenglon>) =>
     setFilas((f) => f.map((fila) => (fila.clave === clave ? { ...fila, ...cambios } : fila)))
 
-  // Elegir un artículo del catálogo rellena descripción y unidad: lo que se
-  // pide es lo que el catálogo dice que es, no lo que cada quien escriba.
-  const elegirArticulo = (clave: number, id: string) => {
-    const articulo = articulos?.find((a) => String(a.id) === id)
-    cambiar(clave, {
-      articulo_id: id,
-      descripcion: articulo ? articulo.nombre : '',
-      unidad: articulo ? articulo.unidad : 'UND',
-    })
-  }
-
   const enviar = async (enviarAhora: boolean) => {
     const renglones = filas
       .filter((f) => f.descripcion.trim() && Number(f.cantidad) > 0)
@@ -228,6 +156,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
         cantidad: Number(f.cantidad),
         unidad: f.unidad,
         observacion: f.observacion.trim() || null,
+        descripcion_pedida: f.descripcion_pedida || null,
       }))
 
     const otra = seleccion === OTRA_PERSONA
@@ -238,8 +167,9 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
       renglones,
       prioridad,
       requerida_para: requeridaPara || null,
-      destino: sitio === OTRO_SITIO ? destino || null : null,
-      destino_almacen_id: sitio && sitio !== OTRO_SITIO ? Number(sitio) : null,
+      // Todo llega al almacén general; la base lo pone sola.
+      destino: null,
+      destino_almacen_id: null,
       solicitante_id: otra ? null : seleccion,
       solicitante_nombre: otra ? otroNombre : null,
       solicitante_cargo: otra ? otroCargo : null,
@@ -270,7 +200,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
         description={
           corrigiendo
             ? 'La corrección se hace sobre el mismo pedido: conserva su número y su lugar en el historial.'
-            : 'El pedido entra al tablero en la columna Pedido.'
+            : 'El pedido va primero al almacén general, que dice si lo tiene. Lo que falte pasa a Compras.'
         }
         actions={
           <>
@@ -400,36 +330,17 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
               onChange={(e) => setRequeridaPara(e.target.value)}
             />
 
-            <Select
-              label="Destino"
-              vacio="Sin definir"
-              value={sitio}
-              onChange={(e) => {
-                setSitio(e.target.value)
-                if (e.target.value !== OTRO_SITIO) setDestino('')
-              }}
-              opciones={[
-                ...(almacenes ?? [])
-                  // Los que están marcados como «recibe compras». No es un
-                  // almacén por defecto —no hay— sino la lista de sitios a los
-                  // que se puede pedir que llegue algo.
-                  .filter((a) => a.recibe_compras)
-                  .map((a) => ({ valor: String(a.id), etiqueta: a.nombre })),
-                { valor: OTRO_SITIO, etiqueta: 'Otro — no es un almacén' },
-              ]}
-              hint="A dónde va lo que se pide. Al recibirlo, entra aquí."
-            />
+            {/*
+              SIN DESTINO QUE ELEGIR.
 
-            {sitio === OTRO_SITIO ? (
-              <div className="sm:col-span-2">
-                <Input
-                  label="Destino"
-                  placeholder="Frente 3, planta de lavado, la 966"
-                  value={destino}
-                  onChange={(e) => setDestino(e.target.value)}
-                />
-              </div>
-            ) : null}
+              Angélica, 06/11/2026: «todo llega al general y del general se
+              harán traslados a los almacenes que corresponda». La base lo
+              pone sola (`trg_el_pedido_llega_al_general`).
+            */}
+            <div className="border-hairline bg-canvas rounded-card text-ink/70 border p-3 text-sm sm:col-span-2">
+              <span className="text-ink/85 font-medium">Llega al almacén general (ALM-GEN).</span>{' '}
+              De ahí se traslada al almacén o al frente que lo necesite.
+            </div>
           </div>
         </div>
 
@@ -443,212 +354,51 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                   key={fila.clave}
                   className="border-hairline rounded-card grid gap-3 border p-3 sm:grid-cols-12"
                 >
-                  <div className="sm:col-span-12">
-                    <SelectBuscable
-                      label={`Renglón ${indice + 1} · artículo del catálogo`}
-                      vacio="No está en el catálogo — lo describo abajo"
-                      valor={fila.articulo_id}
-                      onCambio={(v) => elegirArticulo(fila.clave, v)}
-                      opciones={(articulos ?? []).map((a) => ({
-                        valor: String(a.id),
-                        codigo: a.codigo,
-                        nombre: a.nombre,
-                        detalle: `${a.categoria} · ${a.unidad}`,
-                      }))}
-                    />
-                  </div>
-
                   <div className="sm:col-span-6">
                     <Input
-                      label="Descripción"
-                      placeholder="Filtro de aire de la 966"
+                      label={`Renglón ${indice + 1} · qué se necesita`}
+                      placeholder="Botas"
+                      hint="Con palabras generales. Compras le pone el nombre del inventario al cotizar."
                       value={fila.descripcion}
-                      onChange={(e) => cambiar(fila.clave, { descripcion: e.target.value })}
+                      onChange={(e) =>
+                        // Si Compras ya lo había nombrado y aquí se cambia, lo que se
+                        // pide es otra cosa: se vuelve a nombrar al cotizar.
+                        cambiar(fila.clave, {
+                          descripcion: e.target.value,
+                          articulo_id: '',
+                          descripcion_pedida: '',
+                        })
+                      }
                       required
                     />
                   </div>
 
                   <div className="sm:col-span-3">
-                    {/*
-                      Se pide en litros y se cuenta en bultos, asi que el campo
-                      deja elegir en cual se esta tecleando. Lo que sale de ahi
-                      viene siempre en la unidad del articulo, que es en lo que
-                      se lleva la existencia.
-                    */}
-                    <CantidadDeArticulo
-                      key={fila.articulo_id}
-                      valor={fila.cantidad}
-                      onCambiar={(v) => cambiar(fila.clave, { cantidad: v })}
-                      articulo={conSusFormas(
-                        articulos?.find((a) => String(a.id) === fila.articulo_id),
-                        formasDeContar,
-                      )}
-                      hintSinArticulo=""
+                    <Input
+                      label="Cantidad"
+                      type="number"
+                      min="0"
+                      step="any"
+                      inputMode="decimal"
+                      value={fila.cantidad}
+                      onChange={(e) => cambiar(fila.clave, { cantidad: e.target.value })}
                       required
                     />
                   </div>
 
                   <div className="sm:col-span-3">
-                    {/*
-                      LA LISTA SE ESTRECHA EN CUANTO HAY ARTÍCULO.
-
-                      Christopher: «si se escoge un item que tiene más de una
-                      presentación, el campo o lista unidad deberá de prepararse
-                      con únicamente las presentaciones que el item contiene».
-
-                      Y hay una razón más dura que la comodidad, que se encontró
-                      al ir a hacerlo: `registrar_entradas` toma la unidad DEL
-                      ARTÍCULO —`select unidad from articulos where id = ...`— y
-                      no mira nunca `orden_renglones.unidad`. Ofrecer las trece
-                      unidades era invitar a escribir «4 KG» de algo que el
-                      almacén va a anotar como 4 UND, sin avisar. Es la misma
-                      forma del error del 5/09: un número correcto leído con otra
-                      vara.
-
-                      Las presentaciones del artículo entran en la lista SOLO si
-                      además existen como unidad —CAJA, PAR, ROLLO y SACO son las
-                      cuatro que están en los dos catálogos—. TAMBOR y BIDON no lo
-                      están, y ofrecerlos rompería la clave foránea del renglón.
-                      Para esos, el reparto vive en el campo de cantidad de al
-                      lado, que sí sabe convertirlos.
-                    */}
                     <Select
                       label="Unidad"
                       value={fila.unidad}
                       onChange={(e) => cambiar(fila.clave, { unidad: e.target.value })}
-                      opciones={unidadesDeLaFila(fila, articulos, formasDeContar, unidades)}
-                      hint={
-                        fila.articulo_id
-                          ? 'El almacén cuenta este artículo en esta unidad.'
-                          : undefined
-                      }
+                      opciones={(unidades ?? []).map((u) => ({ valor: u.codigo, etiqueta: u.nombre }))}
                     />
                   </div>
-
-                  {/* CREAR EN EL CATÁLOGO SIN SALIR DE AQUÍ
-
-                      «No está en el catálogo» deja la descripción como texto
-                      libre, y a los seis meses conviven «Hoja CARTA A4», «hoja
-                      carta a4» y «oja carta A-4»: tres artículos que son el
-                      mismo y ninguna forma de sumar lo que se gastó en papel.
-
-                      Se podría exigir que estuviera en el catálogo antes de
-                      pedir, pero eso frena la compra por un trámite y la gente
-                      acabaría escribiendo cualquier cosa en la descripción para
-                      salir del paso. Así que se ofrece crearlo aquí, con lo que
-                      ya escribió, sin abandonar el pedido. */}
-                  {!fila.articulo_id && fila.descripcion.trim().length >= 3 ? (
-                    <div className="border-hairline rounded-card bg-canvas grid gap-3 border border-dashed p-3 sm:col-span-12 sm:grid-cols-12">
-                      <p className="text-ink/60 text-xs sm:col-span-12">
-                        No está en el catálogo. Se puede crear aquí sin dejar el pedido.
-                      </p>
-
-                      <div className="sm:col-span-4">
-                        <Input
-                          label="Código"
-                          placeholder="INS-HOJA-A4"
-                          value={fila.nuevo_codigo}
-                          onChange={(e) => cambiar(fila.clave, { nuevo_codigo: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="sm:col-span-5">
-                        <Select
-                          label="Categoría"
-                          vacio="Seleccione"
-                          value={fila.nueva_categoria}
-                          onChange={(e) =>
-                            cambiar(fila.clave, { nueva_categoria: e.target.value })
-                          }
-                          opciones={opcionesDeCategoria(categoriasInv)}
-                        />
-                      </div>
-
-                      {/*
-                        LO QUE SE MIDE EN M3 O EN TON SE CREA EN EL CATÁLOGO.
-
-                        Nace con su densidad, y la densidad no es cosa de quien
-                        pide una compra. Christopher, 16/09/2026: «el formulario
-                        de compra no debería consultar la densidad (pero sí
-                        mostrar la conversión); de eso se habrá encargado
-                        Catálogo». La base no crea uno en esas medidas sin ella,
-                        así que aquí no se ofrece el botón: se dice dónde se crea.
-                      */}
-                      {fila.unidad === 'M3' || fila.unidad === 'TON' ? (
-                        <p className="text-ink/60 text-xs sm:col-span-12">
-                          Lo que se mide en {fila.unidad === 'M3' ? 'metros cúbicos' : 'toneladas'} se
-                          crea en{' '}
-                          <Link
-                            to="/app/inventario/articulos"
-                            className="text-royal-700 dark:text-royal-300 underline underline-offset-2"
-                          >
-                            Artículos
-                          </Link>
-                          , con su densidad: sin ella no se puede expresar en la otra medida. Después
-                          vuelva y elíjalo en este renglón.
-                        </p>
-                      ) : null}
-
-                      <div className="flex items-end sm:col-span-3">
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          disabled={
-                            !fila.nuevo_codigo.trim() ||
-                            !fila.nueva_categoria ||
-                            fila.unidad === 'M3' ||
-                            fila.unidad === 'TON' ||
-                            crearArticulo.isPending
-                          }
-                          onClick={async () => {
-                            const id = await crearArticulo.mutateAsync({
-                              codigo: fila.nuevo_codigo.trim(),
-                              nombre: fila.descripcion.trim(),
-                              categoria: fila.nueva_categoria,
-                              unidad: fila.unidad,
-                              confirmado: fila.nuevo_confirmado,
-                            })
-                            cambiar(fila.clave, {
-                              articulo_id: String(id),
-                              nuevo_codigo: '',
-                              nueva_categoria: '',
-                              nuevo_confirmado: false,
-                            })
-                          }}
-                        >
-                          {crearArticulo.isPending ? 'Creando…' : 'Crear y usar'}
-                        </Button>
-                      </div>
-
-                      {/*
-                        LA DEFENSA YA ESTABA EN LA BASE Y ESTA PANTALLA NO LA
-                        LLAMABA.
-
-                        `crear_articulo` rechaza el homónimo salvo que le llegue
-                        `p_confirmado`, y la ficha de Artículos lleva semanas
-                        enseñando los parecidos antes de crear. Aquí no: se
-                        pulsaba «Crear y usar» y salía un error crudo de la base
-                        sin decir con qué chocaba, o entraba el duplicado.
-
-                        Es justo lo que pidió Christopher —«deberá de estar
-                        validado el campo para evitar duplicados»— y no había que
-                        inventarlo, había que enchufarlo.
-                      */}
-                      <div className="sm:col-span-12">
-                        <ParecidosAEste
-                          nombre={fila.descripcion}
-                          categoria={fila.nueva_categoria}
-                          confirmado={fila.nuevo_confirmado}
-                          onConfirmar={(v) => cambiar(fila.clave, { nuevo_confirmado: v })}
-                        />
-                      </div>
-                    </div>
-                  ) : null}
 
                   <div className="sm:col-span-10">
                     <Input
                       label="Observación"
-                      placeholder="Marca, medida, número de parte"
+                      placeholder="Talla, marca, medida, para qué es"
                       value={fila.observacion}
                       onChange={(e) => cambiar(fila.clave, { observacion: e.target.value })}
                     />

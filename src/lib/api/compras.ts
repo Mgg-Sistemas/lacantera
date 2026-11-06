@@ -176,6 +176,8 @@ export interface RenglonPedido {
   cantidad: string
   unidad: string
   observacion: string | null
+  /** Cómo lo pidió quien lo pidió («Botas»), si Compras le dio después el nombre del inventario. */
+  descripcion_pedida: string | null
 }
 
 /**
@@ -741,6 +743,8 @@ export interface RenglonNuevo {
   cantidad: number
   unidad: string
   observacion?: string | null
+  /** Solo al corregir un renglón que Compras ya nombró: cómo se pidió. */
+  descripcion_pedida?: string | null
 }
 
 export function useCrearPedido() {
@@ -1031,6 +1035,21 @@ export function useRevisarEnAlmacen() {
         p_empleado_id: p.empleado_id,
         p_nota: p.nota || null,
       }),
+  )
+}
+
+/**
+ * Compras le da al renglón su nombre en el inventario: el artículo que ya
+ * existe, o el que acaba de crear con el nombre del pedido o con otro. El
+ * renglón toma el nombre y la unidad del artículo; cómo se pidió queda en
+ * `descripcion_pedida`.
+ */
+export function useVincularRenglon() {
+  return useAccion((p: { renglon_id: number; articulo_id: number }) =>
+    rpc('vincular_renglon_al_inventario', {
+      p_renglon_id: p.renglon_id,
+      p_articulo_id: p.articulo_id,
+    }),
   )
 }
 
