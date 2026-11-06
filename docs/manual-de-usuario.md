@@ -3650,6 +3650,12 @@ Se filtra por fechas, estado, moneda, monto y se busca por referencia, descripci
 - **Importar del banco**: copie las filas de la planilla del banco en Excel o Google Sheets y péguelas, o suba el archivo guardado como CSV. Antes de importar se ve una vista previa: las filas de nómina, préstamos, intereses y saldo inicial llegan desmarcadas; márquelas si de verdad son ventas. Una fila igual a un pago que ya existe (misma fecha, monto y referencia) no se duplica. Si una fila está mal, no entra ninguna y se dice cuál. Un archivo .xlsx no se sube directo: ábralo y copie las filas, o guárdelo como CSV.
 - **Posible repetido** *(06/11/2026)*: si una fila tiene la misma fecha, moneda y monto que un pago ya registrado —por ejemplo, uno que se cargó a mano con su captura—, llega **desmarcada** con el aviso «Posible repetido» y la referencia del que ya existe. La captura y el estado del banco casi nunca escriben la referencia igual, así que el sistema no decide: márquela solo si de verdad es otro pago.
 
+#### Observación del pago
+
+*Nuevo el 06/11/2026.*
+
+Al desplegar un pago, **Agregar observación** deja escribir una nota interna —por ejemplo «el cliente pagó dos viajes en una sola transferencia»—. No reemplaza la descripción, que es el texto del banco. Se edita con **Editar observación**; si se borra todo el texto y se guarda, la observación se quita. Debajo dice quién la escribió y cuándo, y cada cambio queda en la bitácora. En la lista sale en una línea debajo de la descripción (*Obs.: …*) y el buscador también la encuentra. La escribe quien tiene el permiso de registrar pagos; la ve cualquiera que entre a Ventas.
+
 #### Comprobantes de pago
 
 *Nuevo el 06/11/2026.*

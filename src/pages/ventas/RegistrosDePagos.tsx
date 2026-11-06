@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Landmark,
   Link2,
+  MessageSquareText,
   Paperclip,
   Pencil,
   Plus,
@@ -27,7 +28,8 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO, type Rango } from '@/components/rango'
-import { cifra, comoNumero, dinero, fecha, tasa as formatoTasa } from '@/lib/formato'
+import { cifra, comoNumero, dinero, fecha, fechaHora, tasa as formatoTasa } from '@/lib/formato'
+import { usePerfiles } from '@/lib/api/catalogo'
 import { enMayuscula } from '@/lib/texto'
 import { useMiPerfil, useMisAcciones } from '@/lib/api/usuarios'
 import { useMonedasUsables } from '@/lib/api/tasas'
@@ -42,6 +44,8 @@ import {
   leerNotasSinPago,
   subirComprobantes,
   useComprobantesDePagos,
+  useGuardarObservacionPago,
+  useObservacionesDePagos,
   useAnularPagoBancario,
   useAsociarNotas,
   useCambiarMontoAplicado,
@@ -55,6 +59,7 @@ import {
   type ComprobantePago,
   type EstadoPago,
   type NotaCubiertaDeMas,
+  type ObservacionPago,
   type PagoBancario,
 } from '@/lib/api/pagosBancarios'
 
@@ -144,6 +149,13 @@ export function RegistrosDePagos() {
   }, [comprobantes])
   const vigentesDe = (pagoId: number) => (comprobantesPorPago.get(pagoId) ?? []).filter((c) => !c.quitado_en).length
 
+  const { data: observaciones } = useObservacionesDePagos()
+  const observacionDe = useMemo(() => {
+    const m = new Map<number, ObservacionPago>()
+    for (const o of observaciones ?? []) m.set(o.id, o)
+    return m
+  }, [observaciones])
+
   const [busca, setBusca] = useState('')
   const [estado, setEstado] = useState('')
   const [moneda, setMoneda] = useState('')
@@ -169,11 +181,11 @@ export function RegistrosDePagos() {
       if (desde != null && Number(p.monto) < desde) return false
       if (hasta != null && Number(p.monto) > hasta) return false
       if (!aguja) return true
-      return [p.referencia, p.descripcion, p.numeros, p.clientes].some((x) =>
+      return [p.referencia, p.descripcion, p.numeros, p.clientes, observacionDe.get(p.id)?.observacion].some((x) =>
         enMayuscula(x ?? '').includes(aguja),
       )
     })
-  }, [data, busca, estado, moneda, rango, montoDesde, montoHasta])
+  }, [data, busca, estado, moneda, rango, montoDesde, montoHasta, observacionDe])
 
   const cuenta = (e: EstadoPago) => filtrados.filter((p) => p.estado === e).length
   const monedasEnLista = Array.from(new Set((data ?? []).map((p) => p.moneda)))
@@ -355,6 +367,9 @@ export function RegistrosDePagos() {
                             ) : null}
                           </p>
                           {p.descripcion ? <p className="text-ink/50 line-clamp-1 text-xs">{p.descripcion}</p> : null}
+                          {observacionDe.get(p.id) ? (
+                            <p className="text-info line-clamp-1 text-xs">Obs.: {observacionDe.get(p.id)!.observacion}</p>
+                          ) : null}
                         </td>
                         <td className="tabular px-3 py-3 text-right whitespace-nowrap">
                           <span className="text-ink/90 font-medium">{dinero(p.moneda, p.monto)}</span>
@@ -390,6 +405,7 @@ export function RegistrosDePagos() {
                               puedeRegistrar={puedeRegistrar}
                               cubiertasDeMas={cubiertasDeMas ?? []}
                               comprobantes={comprobantesPorPago.get(p.id) ?? []}
+                              observacion={observacionDe.get(p.id) ?? null}
                               onEditar={() => setEditando(p)}
                             />
                           </td>
@@ -612,12 +628,14 @@ function DetalleDelPago({
   puedeRegistrar,
   cubiertasDeMas,
   comprobantes,
+  observacion,
   onEditar,
 }: {
   pago: PagoBancario
   puedeRegistrar: boolean
   cubiertasDeMas: NotaCubiertaDeMas[]
   comprobantes: ComprobantePago[]
+  observacion: ObservacionPago | null
   onEditar: () => void
 }) {
   const { data, isPending, error } = useNotasDePago(pago.id)
@@ -658,6 +676,8 @@ function DetalleDelPago({
       {!vigente ? (
         <p className="text-danger mb-3 text-sm">Anulado: {pago.motivo_anulacion}</p>
       ) : null}
+
+      <ObservacionDelPago pagoId={pago.id} observacion={observacion} puedeEditar={puedeRegistrar} />
 
       <ComprobantesDePago pagoId={pago.id} comprobantes={comprobantes} puedeAdjuntar={editable} />
 
@@ -777,6 +797,91 @@ function DetalleDelPago({
           <Textarea label="Motivo" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
           {anular.error ? <ErrorDeCarga error={anular.error} className="mt-3" /> : null}
         </Modal>
+      ) : null}
+    </div>
+  )
+}
+
+// ─────────────────────────────── la observación ─────────────────────────────
+
+/*
+  La nota interna de quien concilia, aparte de la descripción del banco. Se
+  edita en el mismo sitio; vaciarla la quita. Se puede escribir también en un
+  pago anulado: a veces es justo ahí donde hace falta explicar algo.
+*/
+function ObservacionDelPago({
+  pagoId,
+  observacion,
+  puedeEditar,
+}: {
+  pagoId: number
+  observacion: ObservacionPago | null
+  puedeEditar: boolean
+}) {
+  const guardar = useGuardarObservacionPago()
+  const { data: perfiles } = usePerfiles()
+  const [texto, setTexto] = useState<string | null>(null)
+  const actual = observacion?.observacion ?? ''
+  const quien = observacion?.observacion_por
+    ? perfiles?.find((p) => p.id === observacion.observacion_por)?.nombre
+    : null
+
+  if (texto != null) {
+    return (
+      <div className="mb-3">
+        <Textarea
+          label="Observación"
+          rows={2}
+          autoFocus
+          maxLength={1000}
+          placeholder="Por ejemplo: el cliente pagó dos viajes en una sola transferencia."
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+        />
+        <div className="mt-2 flex gap-2">
+          <Button
+            size="sm"
+            disabled={guardar.isPending || texto.trim() === actual}
+            onClick={async () => {
+              await guardar.mutateAsync({ id: pagoId, texto })
+              setTexto(null)
+            }}
+          >
+            {guardar.isPending ? 'Guardando…' : 'Guardar observación'}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setTexto(null)}>
+            Cancelar
+          </Button>
+        </div>
+        {guardar.error ? <ErrorDeCarga error={guardar.error} className="mt-2" /> : null}
+      </div>
+    )
+  }
+
+  if (!actual && !puedeEditar) return null
+
+  return (
+    <div className="mb-3">
+      <p className="text-ink/55 mb-1 flex items-center gap-1.5 text-xs font-medium">
+        <MessageSquareText className="size-3.5" />
+        Observación
+      </p>
+      {actual ? (
+        <>
+          <p className="text-ink/85 text-sm whitespace-pre-line">{actual}</p>
+          {observacion?.observacion_en ? (
+            <p className="text-ink/45 mt-0.5 text-[11px]">
+              {quien ?? '—'} · {fechaHora(observacion.observacion_en)}
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <p className="text-ink/45 text-xs">Sin observación.</p>
+      )}
+      {puedeEditar ? (
+        <Button size="sm" variant="outline" className="mt-2" icon={<Pencil />} onClick={() => setTexto(actual)}>
+          {actual ? 'Editar observación' : 'Agregar observación'}
+        </Button>
       ) : null}
     </div>
   )
