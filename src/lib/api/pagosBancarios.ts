@@ -61,6 +61,35 @@ export interface NotaCandidata {
   otros_pagos: number
 }
 
+export interface NotaSinPago {
+  nota_id: number
+  numero: string
+  fecha: string
+  cliente: string | null
+  moneda: string
+  total: string
+  total_bs: string | null
+  total_usd: string | null
+  facturable: boolean
+}
+
+/** Una nota que recibe en sus pagos más de lo que vale. */
+export interface NotaCubiertaDeMas {
+  nota_id: number
+  numero: string
+  fecha: string
+  cliente: string | null
+  moneda: string
+  total: string
+  total_usd: string
+  aplicado_usd: string
+  pagos: number
+}
+
+/** Las notas de un período que no tienen ningún pago asociado: el otro lado del cierre. */
+export const leerNotasSinPago = (desde: string, hasta: string) =>
+  rpc<NotaSinPago[]>('notas_sin_pago_bancario', { p_desde: desde, p_hasta: hasta })
+
 export interface FilaDePago {
   fecha: string
   moneda: string
@@ -76,6 +105,15 @@ export function usePagosBancarios() {
   return useQuery({
     queryKey: [...CLAVE, 'lista'],
     queryFn: () => rpc<PagoBancario[]>('listar_pagos_bancarios', {}),
+  })
+}
+
+export function useNotasCubiertasDeMas() {
+  return useQuery({
+    queryKey: [...CLAVE, 'cubiertas-de-mas'],
+    queryFn: () => rpc<NotaCubiertaDeMas[]>('notas_cubiertas_de_mas_pago_bancario', {}),
+    // Mientras la función no exista en la base, el aviso simplemente no sale.
+    retry: false,
   })
 }
 

@@ -78,6 +78,9 @@ export const dinero = (moneda: string | null | undefined, valor: string | number
   return `${simbolo} ${decimal2.format(aNumero(valor))}`
 }
 
+/** La cifra con puntos de miles y dos decimales, sin símbolo: para una casilla de monto. */
+export const cifra = (valor: string | number): string => decimal2.format(aNumero(valor))
+
 /** La tasa lleva cuatro decimales: a 235 Bs/USD, el cuarto decimal ya mueve céntimos. */
 export const tasa = (valor: string | number): string => decimal4.format(aNumero(valor))
 
