@@ -9,7 +9,6 @@ import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { useRevisarEnAlmacen } from '@/lib/api/compras'
 import type { Compra } from '@/lib/api/compras'
 import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
-import { usePersonasDeLaEmpresa } from '@/lib/api/salidas'
 import { textoRevisionAlmacen } from '@/lib/ficha/comprasWhatsapp'
 
 /*
@@ -59,7 +58,6 @@ export function ModalRevisionAlmacen({
   const almacenes = useAlmacenes()
   const almacen = (almacenes.data ?? []).find((a) => a.codigo === ALMACEN_QUE_REVISA)
   const existencias = useExistencias(almacen?.id, !!almacen)
-  const personas = usePersonasDeLaEmpresa()
   const revisar = useRevisarEnAlmacen()
 
   const renglones = useMemo(
@@ -104,7 +102,6 @@ export function ModalRevisionAlmacen({
   const cambiar = (id: number, base: Fila, c: Partial<Fila>) =>
     setFilas((f) => ({ ...f, [id]: { ...base, ...c } }))
 
-  const [empleado, setEmpleado] = useState('')
   const [nota, setNota] = useState('')
 
   const resumen = renglones.map((r) => {
@@ -138,7 +135,8 @@ export function ModalRevisionAlmacen({
     const ss = await revisar.mutateAsync({
       id: compra.id,
       renglones: enviados,
-      empleado_id: empleado ? Number(empleado) : null,
+      // Lo recibe el almacén general (inventario): Angélica, 06/11/2026.
+      empleado_id: null,
       nota,
     })
     onHecho(
@@ -256,16 +254,11 @@ export function ModalRevisionAlmacen({
           })}
 
           {entregaAlgo ? (
-            <SelectBuscable
-              label="¿Quién lo recibe?"
-              opciones={(personas.data ?? [])
-                .filter((p) => p.activo)
-                .map((p) => ({ valor: String(p.id), etiqueta: p.nombre, detalle: p.cargo ?? undefined }))}
-              valor={empleado}
-              vacio={`Quien pidió${solicitante ? ` (${solicitante})` : ''}`}
-              hint="Lo que entrega sale por una solicitud de salida del almacén general, con su autorización."
-              onCambio={setEmpleado}
-            />
+            <p className="text-ink/60 text-xs">
+              Lo recibe el <strong className="font-semibold">almacén general (inventario)</strong>
+              {solicitante ? `, a nombre de ${solicitante}` : ''}. Sale por una solicitud de salida
+              del almacén general, con su autorización.
+            </p>
           ) : null}
 
           <Textarea
