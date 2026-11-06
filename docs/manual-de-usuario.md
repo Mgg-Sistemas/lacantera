@@ -2328,7 +2328,7 @@ Pulse **Agregar renglón** por cada cosa distinta. **Quitar** borra un renglón,
 
 También está **Guardar borrador**, que deja el pedido con la etiqueta **Borrador**. Un borrador se puede completar después con **Corregir**, desde su ficha (9.2).
 
-**Un renglón sin descripción o con cantidad en cero no se envía, y el sistema no avisa de que lo descartó.** Revise la lista antes de pulsar.
+**Si a un renglón le falta algo, el sistema no envía y dice cuál**: «Al renglón 2 («BOTAS») le falta la cantidad.» o «Al renglón 2 le falta decir qué se necesita.» Un recuadro vacío del todo se ignora.
 
 Del pedido sale un número: **SOL-2026-0001**.
 
