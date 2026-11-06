@@ -1,10 +1,12 @@
 import { Fragment, useMemo, useState, type ComponentProps } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Ban,
   ChevronDown,
   ChevronRight,
   Landmark,
   Link2,
+  Paperclip,
   Pencil,
   Plus,
   Printer,
@@ -33,8 +35,13 @@ import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarReportePagos } from '@/lib/ficha/pagosBancariosPdf'
 import { leerMonto, leerPagosDelBanco, type FilaLeida } from '@/lib/leerPagosDelBanco'
+import { ElegirArchivosDeCarga } from '@/components/FotosDeCarga'
+import { ComprobantesDePago } from './ComprobantesDePago'
 import {
+  MAXIMO_COMPROBANTES,
   leerNotasSinPago,
+  subirComprobantes,
+  useComprobantesDePagos,
   useAnularPagoBancario,
   useAsociarNotas,
   useCambiarMontoAplicado,
@@ -45,6 +52,7 @@ import {
   useNotasDePago,
   usePagosBancarios,
   useQuitarNotaDePago,
+  type ComprobantePago,
   type EstadoPago,
   type NotaCubiertaDeMas,
   type PagoBancario,
@@ -125,8 +133,16 @@ const nombreDelMes = (aaaamm: string) => {
 export function RegistrosDePagos() {
   const { data, isPending, error } = usePagosBancarios()
   const { data: cubiertasDeMas } = useNotasCubiertasDeMas()
+  const { data: comprobantes } = useComprobantesDePagos()
   const { puede } = useMisAcciones()
   const puedeRegistrar = puede('VENTAS.REGISTRAR_PAGOS')
+
+  const comprobantesPorPago = useMemo(() => {
+    const m = new Map<number, ComprobantePago[]>()
+    for (const c of comprobantes ?? []) m.set(c.pago_id, [...(m.get(c.pago_id) ?? []), c])
+    return m
+  }, [comprobantes])
+  const vigentesDe = (pagoId: number) => (comprobantesPorPago.get(pagoId) ?? []).filter((c) => !c.quitado_en).length
 
   const [busca, setBusca] = useState('')
   const [estado, setEstado] = useState('')
@@ -326,7 +342,18 @@ export function RegistrosDePagos() {
                         </td>
                         <td className="text-ink/75 px-3 py-3 whitespace-nowrap">{fecha(p.fecha)}</td>
                         <td className="px-3 py-3">
-                          <p className="text-ink/85 font-medium">{p.referencia ? `REF ${p.referencia}` : 'Sin referencia'}</p>
+                          <p className="text-ink/85 flex items-center gap-1.5 font-medium">
+                            {p.referencia ? `REF ${p.referencia}` : 'Sin referencia'}
+                            {vigentesDe(p.id) > 0 ? (
+                              <span
+                                className="text-ink/50 inline-flex items-center gap-0.5 text-xs font-normal"
+                                title="Tiene comprobante adjunto"
+                              >
+                                <Paperclip className="size-3.5" />
+                                {vigentesDe(p.id) > 1 ? vigentesDe(p.id) : null}
+                              </span>
+                            ) : null}
+                          </p>
                           {p.descripcion ? <p className="text-ink/50 line-clamp-1 text-xs">{p.descripcion}</p> : null}
                         </td>
                         <td className="tabular px-3 py-3 text-right whitespace-nowrap">
@@ -362,6 +389,7 @@ export function RegistrosDePagos() {
                               pago={p}
                               puedeRegistrar={puedeRegistrar}
                               cubiertasDeMas={cubiertasDeMas ?? []}
+                              comprobantes={comprobantesPorPago.get(p.id) ?? []}
                               onEditar={() => setEditando(p)}
                             />
                           </td>
@@ -379,7 +407,7 @@ export function RegistrosDePagos() {
       {editando ? (
         <ModalPago pago={editando === 'nuevo' ? null : editando} onCerrar={() => setEditando(null)} />
       ) : null}
-      {importando ? <ModalImportar onCerrar={() => setImportando(false)} /> : null}
+      {importando ? <ModalImportar existentes={data ?? []} onCerrar={() => setImportando(false)} /> : null}
 
       {pidiendoReporte ? (
         <ModalReporte
@@ -583,11 +611,13 @@ function DetalleDelPago({
   pago,
   puedeRegistrar,
   cubiertasDeMas,
+  comprobantes,
   onEditar,
 }: {
   pago: PagoBancario
   puedeRegistrar: boolean
   cubiertasDeMas: NotaCubiertaDeMas[]
+  comprobantes: ComprobantePago[]
   onEditar: () => void
 }) {
   const { data, isPending, error } = useNotasDePago(pago.id)
@@ -628,6 +658,8 @@ function DetalleDelPago({
       {!vigente ? (
         <p className="text-danger mb-3 text-sm">Anulado: {pago.motivo_anulacion}</p>
       ) : null}
+
+      <ComprobantesDePago pagoId={pago.id} comprobantes={comprobantes} puedeAdjuntar={editable} />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
@@ -893,38 +925,78 @@ function ModalPago({ pago, onCerrar }: { pago: PagoBancario | null; onCerrar: ()
   })
   const cambiar = (c: Partial<typeof f>) => setF((x) => ({ ...x, ...c }))
   const monto = leerMonto(f.monto)
+  // El comprobante va al registrar. Al editar, se adjunta desde el detalle del pago.
+  const [archivos, setArchivos] = useState<File[]>([])
+  const [subiendo, setSubiendo] = useState(false)
+  // El pago ya se guardó pero el comprobante no subió: no se ofrece «Guardar» otra vez,
+  // que crearía el pago repetido.
+  const [aviso, setAviso] = useState<string | null>(null)
+  const qc = useQueryClient()
 
   return (
     <Modal
       abierto
       onCerrar={onCerrar}
       titulo={pago ? 'Editar pago' : 'Registrar pago'}
-      descripcion="Un pago que llegó al banco. Después se le asocian las notas de entrega que cubre."
+      descripcion={
+        pago
+          ? 'Un pago que llegó al banco. Después se le asocian las notas de entrega que cubre.'
+          : 'Adjunte la captura del pago y escriba los datos que se leen en ella. Después se le asocian las notas de entrega que cubre.'
+      }
       acciones={
-        <>
-          <Button variant="ghost" onClick={onCerrar}>
-            Cancelar
-          </Button>
-          <Button
-            disabled={guardar.isPending || !f.fecha || !(monto > 0)}
-            onClick={async () => {
-              await guardar.mutateAsync({
-                id: pago?.id,
-                fecha: f.fecha,
-                moneda: f.moneda,
-                monto,
-                tasa: f.moneda === 'USD' || !f.tasa.trim() ? null : leerTasa(f.tasa),
-                referencia: f.referencia.trim() || null,
-                descripcion: f.descripcion.trim() || null,
-              })
-              onCerrar()
-            }}
-          >
-            {guardar.isPending ? 'Guardando…' : 'Guardar'}
-          </Button>
-        </>
+        aviso ? (
+          <Button onClick={onCerrar}>Cerrar</Button>
+        ) : (
+          <>
+            <Button variant="ghost" onClick={onCerrar}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={guardar.isPending || subiendo || !f.fecha || !(monto > 0)}
+              onClick={async () => {
+                const r = await guardar.mutateAsync({
+                  id: pago?.id,
+                  fecha: f.fecha,
+                  moneda: f.moneda,
+                  monto,
+                  tasa: f.moneda === 'USD' || !f.tasa.trim() ? null : leerTasa(f.tasa),
+                  referencia: f.referencia.trim() || null,
+                  descripcion: f.descripcion.trim() || null,
+                })
+                if (!pago && archivos.length > 0) {
+                  setSubiendo(true)
+                  try {
+                    await subirComprobantes(Number(r), archivos)
+                  } catch (e) {
+                    setAviso(
+                      `El pago quedó guardado, pero el comprobante no subió: ${e instanceof Error ? e.message : 'error desconocido'}. Despliegue el pago en la lista y adjúntelo de nuevo.`,
+                    )
+                    return
+                  } finally {
+                    setSubiendo(false)
+                    void qc.invalidateQueries({ queryKey: ['pagos-bancarios'] })
+                  }
+                }
+                onCerrar()
+              }}
+            >
+              {guardar.isPending ? 'Guardando…' : subiendo ? 'Subiendo comprobante…' : 'Guardar'}
+            </Button>
+          </>
+        )
       }
     >
+      {!pago ? (
+        <div className="mb-4">
+          <ElegirArchivosDeCarga
+            archivos={archivos}
+            onCambiar={setArchivos}
+            disponibles={MAXIMO_COMPROBANTES}
+            descripcion="captura o PDF del pago. Con la cámara o desde la galería."
+          />
+        </div>
+      ) : null}
+      {aviso ? <p className="text-danger mb-4 text-sm">{aviso}</p> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Fecha" type="date" max={hoy()} value={f.fecha} onChange={(e) => cambiar({ fecha: e.target.value })} />
         <Select
@@ -964,17 +1036,34 @@ function ModalPago({ pago, onCerrar }: { pago: PagoBancario | null; onCerrar: ()
 
 // ─────────────────────────────── importar ───────────────────────────────────
 
-function ModalImportar({ onCerrar }: { onCerrar: () => void }) {
+function ModalImportar({ existentes, onCerrar }: { existentes: PagoBancario[]; onCerrar: () => void }) {
   const importar = useImportarPagosBancarios()
   const [texto, setTexto] = useState('')
   const [filas, setFilas] = useState<FilaLeida[]>([])
   const [resultado, setResultado] = useState<{ nuevos: number; repetidos: number } | null>(null)
   const [errorArchivo, setErrorArchivo] = useState<string | null>(null)
 
+  /*
+    POSIBLE REPETIDO. Un pago registrado a mano con su captura puede volver a
+    llegar en el estado del banco, y la referencia rara vez se escribe igual
+    en los dos (completa en uno, los últimos dígitos en el otro). La base solo
+    descarta el repetido con la referencia exacta; aquí se avisa también cuando
+    coinciden fecha, moneda y monto, y la fila llega desmarcada: que decida
+    una persona.
+  */
+  const parecido = (fila: FilaLeida['fila']) =>
+    existentes.find(
+      (p) =>
+        p.estado !== 'ANULADO' &&
+        p.fecha === fila.fecha &&
+        p.moneda === fila.moneda &&
+        Math.abs(Number(p.monto) - fila.monto) < 0.005,
+    ) ?? null
+
   const leer = (t: string) => {
     setTexto(t)
     setResultado(null)
-    setFilas(leerPagosDelBanco(t, hoy()))
+    setFilas(leerPagosDelBanco(t, hoy()).map((x) => (x.incluir && parecido(x.fila) ? { ...x, incluir: false } : x)))
   }
 
   const marcadas = filas.filter((x) => x.incluir)
@@ -1080,6 +1169,19 @@ function ModalImportar({ onCerrar }: { onCerrar: () => void }) {
                       <td className="px-3 py-2">{x.fila.referencia ?? '—'}</td>
                       <td className="px-3 py-2 text-xs">
                         {x.problema ? <span className="text-danger">{x.problema} </span> : null}
+                        {(() => {
+                          const p = x.problema ? null : parecido(x.fila)
+                          if (!p) return null
+                          const mismaRef =
+                            !!p.referencia && !!x.fila.referencia && p.referencia === enMayuscula(x.fila.referencia.trim())
+                          return (
+                            <span className="text-warning block font-medium">
+                              {mismaRef
+                                ? 'Ya está registrado con esta misma referencia: no se duplicará.'
+                                : `Posible repetido: ya hay un pago de ese día por ese monto (${p.referencia ? `REF ${p.referencia}` : 'sin referencia'}). Márquelo solo si es otro pago.`}
+                            </span>
+                          )
+                        })()}
                         <span className="text-ink/60 line-clamp-2">{x.fila.descripcion ?? x.texto}</span>
                       </td>
                     </tr>
@@ -1091,7 +1193,8 @@ function ModalImportar({ onCerrar }: { onCerrar: () => void }) {
           {filas.length > 0 ? (
             <p className="text-ink/50 mt-2 text-xs">
               {marcadas.length} de {filas.length} filas marcadas. Las de nómina, préstamos, intereses y saldo
-              inicial vienen desmarcadas; márquelas si sí son ventas.
+              inicial vienen desmarcadas; márquelas si sí son ventas. También vienen desmarcadas las que se
+              parecen a un pago ya registrado (misma fecha y monto).
             </p>
           ) : null}
         </>
