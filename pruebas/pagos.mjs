@@ -135,6 +135,21 @@ export default async function pruebaPagos(tx) {
   comprobar(Boolean(quitado?.quitado_en) && quitado.motivo_quitado === 'captura equivocada', 'quitado no se borra: queda con su motivo')
   await como(tx, mira)
 
+  grupo('Registros de pagos · observación')
+
+  await tx`select public.guardar_observacion_pago(${pago}, '  pagó dos viajes en uno  ')`
+  const [{ observacion: obs }] = await tx`select observacion from public.pagos_bancarios where id = ${pago}`
+  comprobar(obs === 'pagó dos viajes en uno', 'la observación se guarda tal cual, sin espacios de sobra')
+  await tx`select public.guardar_observacion_pago(${pago}, '')`
+  const [{ observacion: vacia }] = await tx`select observacion from public.pagos_bancarios where id = ${pago}`
+  comprobar(vacia === null, 'vaciarla la quita')
+  await comoDueno(tx)
+  await como(tx, ajeno)
+  const ajenoObs = await debeFallar(tx, (sp) => sp`select public.guardar_observacion_pago(${pago}, 'no')`)
+  comprobar(/permiso|ventas/i.test(ajenoObs ?? ''), 'sin el permiso no se escribe observación')
+  await comoDueno(tx)
+  await como(tx, mira)
+
   const sinMotivo = await debeFallar(tx, (sp) => sp`select public.anular_pago_bancario(${pago}, '')`)
   comprobar(/por qu/i.test(sinMotivo ?? ''), 'anular pide motivo')
   await tx`select public.anular_pago_bancario(${pago}, 'prueba de anular')`

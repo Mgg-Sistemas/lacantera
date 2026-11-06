@@ -196,6 +196,38 @@ export function useQuitarNotaDePago() {
 }
 
 /*
+  LA OBSERVACIÓN DE CADA PAGO (06/11/2026): la nota interna de quien concilia,
+  aparte de la descripción del banco. Se lee directo de la tabla —Ventas ya la
+  puede leer— para no cambiar la forma de `listar_pagos_bancarios`.
+*/
+export interface ObservacionPago {
+  id: number
+  observacion: string
+  observacion_por: string | null
+  observacion_en: string | null
+}
+
+export function useObservacionesDePagos() {
+  return useQuery({
+    queryKey: [...CLAVE, 'observaciones'],
+    queryFn: async () =>
+      desenvolver<ObservacionPago[]>(
+        await supabase
+          .from('pagos_bancarios')
+          .select('id, observacion, observacion_por, observacion_en')
+          .not('observacion', 'is', null),
+      ),
+  })
+}
+
+/** Texto vacío quita la observación; el cambio queda en la bitácora. */
+export function useGuardarObservacionPago() {
+  return useAccionPagos((a: { id: number; texto: string }) =>
+    rpc<void>('guardar_observacion_pago', { p_id: a.id, p_texto: a.texto }),
+  )
+}
+
+/*
   LOS COMPROBANTES DE CADA PAGO (06/11/2026).
 
   Christopher: «adjuntar el capture del pago efectuado y poner el monto de forma
