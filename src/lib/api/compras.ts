@@ -17,6 +17,7 @@ export type Columna =
   | 'CONFIRMADA'
   | 'GERENTE'
   | 'APROBADA'
+  | 'CREDITO'
   | 'PAGADA'
   | 'CANCELADA'
   | 'DESISTIO'
@@ -53,6 +54,14 @@ export const COLUMNAS: DefinicionColumna[] = [
     tono: 'royal',
   },
   { clave: 'APROBADA', titulo: 'Aprobada', accion: 'Decidir el pago', tono: 'warning' },
+  // Fase 3: a crédito no se pregunta «¿Se pagará?» al aprobar. El material se
+  // recibe cuando llegue y la orden se paga al vencer.
+  {
+    clave: 'CREDITO',
+    titulo: 'Cuenta abierta',
+    accion: 'Recibir y pagar al vencer',
+    tono: 'info',
+  },
   { clave: 'PAGADA', titulo: 'Pagada', accion: 'Falta que llegue el material', tono: 'success' },
   // La compra termina aquí, pero se queda a la vista: si desapareciera al
   // recibirse, no habría dónde comprobar que llegó.
@@ -102,6 +111,8 @@ export interface Tarjeta {
   renglones: number
   dias_sin_recibir: number | null
   columna: Columna
+  /** Orden a crédito: hasta cuándo hay para pagarla. */
+  credito_vence?: string | null
 }
 
 export function useTablero() {
@@ -391,6 +402,8 @@ export interface Orden {
   fecha_pago: string | null
   recibida_en: string | null
   /** Por qué quien aprueba dijo que no se pagará todavía. Se borra al pagarla. */
+  /** Orden a crédito: hasta cuándo hay para pagarla (aprobación + días). */
+  credito_vence?: string | null
   no_pago_motivo?: string | null
   no_pago_en?: string | null
   /** Quién la marcó pagada en Compras. Tesorería no se vincula. */
@@ -497,18 +510,28 @@ export function useComprasDirectas() {
 export function useOrdenesPorRecibir() {
   return useQuery({
     queryKey: ['compras', 'por-recibir'],
-    queryFn: async () =>
-      desenvolver<Orden[]>(
+    queryFn: async () => {
+      const ordenes = desenvolver<Orden[]>(
         await supabase
           .from('ordenes_compra')
           .select(SELECT_ORDEN)
           // Lo pagado y lo parcial es lo que de verdad está por llegar. Una
           // orden que sigue en tesorería no salió del banco todavía, y el
           // proveedor no despacha lo que no le han pagado.
-          .in('estado', ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'POR_RECIBIR'])
+          // A crédito (fase 3) se recibe sin haber pagado: entra también lo
+          // que sigue en cuenta abierta.
+          .or(
+            'estado.in.(PAGADA_POR_RECIBIR,RECIBIDA_PARCIAL,POR_RECIBIR),' +
+              'and(condicion_pago.in.(CREDITO_15,CREDITO_30,CREDITO_60),estado.in.(POR_INDICAR_PAGO,EN_TESORERIA))',
+          )
           .is('solicitud.historico_en', null)
           .order('fecha_pago', { ascending: true, nullsFirst: false }),
-      ),
+      )
+      // La de crédito que ya llegó entera y solo falta pagar no está por recibir.
+      return ordenes.filter((o) =>
+        (o.renglones ?? []).some((r) => Number(r.cantidad) - Number(r.cantidad_recibida) > 0.0001),
+      )
+    },
     refetchInterval: 5 * 60_000,
   })
 }
