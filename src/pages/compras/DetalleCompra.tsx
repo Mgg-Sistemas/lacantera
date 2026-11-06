@@ -142,6 +142,8 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   FINALIZADA: { texto: 'Finalizada', tono: 'info' },
   // Quien aprueba dijo que no se pagará todavía (lo escribe la bitácora).
   NO_PAGADA: { texto: 'No se pagará todavía', tono: 'warning' },
+  // La salida del almacén general se rechazó o canceló (lo escribe la bitácora).
+  SALIDA_RECHAZADA: { texto: 'El almacén no entregó: vuelve a compras', tono: 'warning' },
 }
 
 // ---------------------------------------------------------------------------
@@ -1273,7 +1275,7 @@ export function DetalleCompra() {
   const textoDelAlmacen = () =>
     textoRevisionAlmacen({
       compra,
-      entregado: (compra.atendido ?? []).map((a) => ({
+      entregado: (compra.atendido ?? []).filter((a) => !a.sin_salida_en).map((a) => ({
         descripcion: a.descripcion,
         cantidad: a.cantidad_entregada,
         unidad: a.unidad,
@@ -1545,8 +1547,20 @@ export function DetalleCompra() {
                             <td className="tabular text-ink/60 px-3 py-2.5 text-right">
                               {a.cantidad_pedida} {a.unidad}
                             </td>
-                            <td className="tabular text-success py-2.5 pr-5 pl-3 text-right font-medium">
-                              {a.cantidad_entregada}
+                            <td
+                              className={cn(
+                                'tabular py-2.5 pr-5 pl-3 text-right font-medium',
+                                a.sin_salida_en ? 'text-ink/40' : 'text-success',
+                              )}
+                            >
+                              <span className={a.sin_salida_en ? 'line-through' : undefined}>
+                                {a.cantidad_entregada}
+                              </span>
+                              {a.sin_salida_en ? (
+                                <span className="text-warning block text-xs font-normal">
+                                  No salió: la salida se {a.sin_salida_por === 'RECHAZADA' ? 'rechazó' : 'canceló'}
+                                </span>
+                              ) : null}
                             </td>
                           </tr>
                         ))}

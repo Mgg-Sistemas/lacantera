@@ -183,6 +183,9 @@ export interface AtendidoAlmacen {
   almacen_id: number
   salida_numero: string | null
   creado_en: string
+  /** La solicitud de salida se rechazó o canceló: no salió y volvió a Compras. */
+  sin_salida_en?: string | null
+  sin_salida_por?: string | null
 }
 
 export interface RenglonCotizacion {

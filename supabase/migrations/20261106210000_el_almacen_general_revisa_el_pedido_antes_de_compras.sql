@@ -476,6 +476,82 @@ revoke all on function public.revisar_pedido_en_almacen(bigint, jsonb, bigint, t
 grant execute on function public.revisar_pedido_en_almacen(bigint, jsonb, bigint, text) to authenticated;
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- 3b. Si la salida no se aprueba, lo «entregado» vuelve a Compras
+--
+-- La revisión decide en el momento (Angélica: «a compras se le marca como
+-- finalizada»), pero el material sale cuando la solicitud de salida se aprueba
+-- y se entrega. Si se RECHAZA o se CANCELA, lo que el almacén iba a dar no
+-- llegó: no puede quedarse en «Finalizada» ni fuera del pedido, porque nadie lo
+-- compraría.
+--   - Finalizada → vuelve a PEDIDO (sus renglones nunca se tocaron).
+--   - Pedido, confirmada o pendiente por aprobar → lo entregado vuelve como
+--     renglones nuevos (no se tocan los ya cotizados).
+--   - Aprobada o cancelada → no se mueve nada: queda en la bitácora y Compras
+--     recibe el aviso para pedirlo aparte.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+alter table public.solicitud_atendido_almacen
+  add column if not exists sin_salida_en  timestamptz,
+  add column if not exists sin_salida_por text;
+
+comment on column public.solicitud_atendido_almacen.sin_salida_en is
+  'La solicitud de salida se rechazó o se canceló: el almacén no lo entregó y volvió a Compras.';
+
+create or replace function private.la_salida_rechazada_vuelve_a_compras()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_s     public.solicitudes_pedido;
+  v_linea integer;
+  v_nota  text;
+begin
+  if new.estado not in ('RECHAZADA', 'CANCELADA') or old.estado in ('RECHAZADA', 'CANCELADA') then
+    return new;
+  end if;
+
+  for v_s in
+    select s.* from public.solicitudes_pedido s
+     where s.salida_almacen_numero = new.numero and s.historico_en is null
+     for update
+  loop
+    v_nota := format('La solicitud de salida %s se %s: el almacén no lo entregó y vuelve a compras',
+                     new.numero, case new.estado when 'RECHAZADA' then 'rechazó' else 'canceló' end);
+
+    if v_s.estado = 'FINALIZADA' then
+      update public.solicitudes_pedido set estado = 'PEDIDO', finalizada_en = null where id = v_s.id;
+    elsif v_s.estado in ('PEDIDO', 'CONFIRMADA', 'POR_CONFIRMAR_GERENTE') then
+      select coalesce(max(r.linea), 0) into v_linea from public.solicitud_renglones r where r.solicitud_id = v_s.id;
+
+      insert into public.solicitud_renglones (solicitud_id, linea, articulo_id, descripcion, cantidad, unidad, observacion)
+      select v_s.id, v_linea + row_number() over (order by a.linea, a.id), null,
+             a.descripcion, a.cantidad_entregada, a.unidad,
+             format('Volvió de la salida %s', new.numero)
+        from public.solicitud_atendido_almacen a
+       where a.solicitud_id = v_s.id and a.salida_numero = new.numero and a.sin_salida_en is null;
+    else
+      v_nota := v_nota || format(' (la compra ya está en «%s»: hay que pedirlo aparte)', v_s.estado);
+    end if;
+
+    update public.solicitud_atendido_almacen
+       set sin_salida_en = now(), sin_salida_por = new.estado
+     where solicitud_id = v_s.id and salida_numero = new.numero and sin_salida_en is null;
+
+    perform private.anotar('SOLICITUD', v_s.id, v_s.estado, 'SALIDA_RECHAZADA', v_nota);
+  end loop;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_la_salida_rechazada_vuelve_a_compras on public.solicitudes_salida;
+create trigger trg_la_salida_rechazada_vuelve_a_compras
+  after update of estado on public.solicitudes_salida
+  for each row execute function private.la_salida_rechazada_vuelve_a_compras();
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- 4. El tablero: «Revisión de almacén» y «Finalizada»
 --
 -- La misma vista; la columna suma dos casos. Las columnas de la vista no
@@ -669,6 +745,11 @@ begin
     when 'FINALIZADA' then
       v_aviso := 'Pedido atendido por el almacén general: finalizado';
       v_roles := array['COMPRAS'];
+
+    when 'SALIDA_RECHAZADA' then
+      v_aviso := 'El almacén no entregó: la salida no se aprobó y vuelve a compras';
+      v_roles := array['COMPRAS', 'ALMACEN'];
+      v_importancia := 'ATENCION';
 
     when 'CANCELADA' then
       v_aviso := 'Compra cancelada';

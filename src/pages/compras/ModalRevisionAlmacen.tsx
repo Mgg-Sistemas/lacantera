@@ -275,6 +275,13 @@ export function ModalRevisionAlmacen({
             onChange={(ev) => setNota(ev.target.value)}
           />
 
+          {entregaAlgo ? (
+            <p className="text-ink/50 text-xs">
+              Si la solicitud de salida se rechaza o se cancela en Salidas, lo que no salió vuelve
+              solo a Compras.
+            </p>
+          ) : null}
+
           <p
             className={
               entregaTodo
