@@ -3823,6 +3823,8 @@ Si una nota ya está cubierta por otros pagos, al asociarla a un pago más el si
 
 Las notas que quedaron asociadas a varios pagos antes de este cambio salen en un aviso rojo arriba de la lista (**notas cubiertas de más**), y en el detalle del pago llevan la marca *Cubierta de más*. Toque el número de la nota en el aviso para ver sus pagos, y quite la nota del pago que no le corresponde.
 
+*(07/11/2026)* Para cerrar el mes, los pagos que no cuadraban con el banco se forzaron a cuadrar: el monto aplicado de sus notas se ajustó hasta sumar exactamente lo que llegó al banco. Las notas de entrega no cambiaron; su total original sigue en **Facturación › Notas de entrega**. Las notas con un monto forzado no salen en el aviso de notas cubiertas de más.
+
 #### Reporte PDF y cierre de mes
 
 *Nuevo el 06/11/2026.*
