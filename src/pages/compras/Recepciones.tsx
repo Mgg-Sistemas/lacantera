@@ -11,6 +11,9 @@ import { useMisPermisos } from '@/lib/api/usuarios'
 import { useOrdenesPorRecibir, type Orden } from '@/lib/api/compras'
 import { useMovimientos } from '@/lib/api/inventario'
 import { ModalRecepcion } from './ModalRecepcion'
+import { ModalWhatsappCompra } from './ModalWhatsappCompra'
+import { textoRecepcion } from '@/lib/ficha/comprasWhatsapp'
+import { useEmpresa } from '@/lib/api/empresa'
 
 /**
  * Recepciones.
@@ -40,6 +43,8 @@ export function Recepciones() {
   const { puede } = useMisPermisos()
 
   const [recibiendo, setRecibiendo] = useState<Orden | null>(null)
+  const [mensaje, setMensaje] = useState<string | null>(null)
+  const { data: empresa } = useEmpresa()
 
   const ordenes = data ?? []
   const recibidas = (movimientos.data ?? []).filter((m) => m.tipo === 'ENTRADA_COMPRA').slice(0, 30)
@@ -129,7 +134,10 @@ export function Recepciones() {
                 </table>
                 <p className="text-ink/45 mt-2 text-xs">
                   Faltan {faltan(o)} unidades en total ·{' '}
-                  <Link to="/app/compras" className="text-royal-600 dark:text-royal-300">
+                  <Link
+                    to={o.solicitud?.id ? `/app/compras/${o.solicitud.id}` : '/app/compras'}
+                    className="text-royal-600 dark:text-royal-300"
+                  >
                     ver la compra
                   </Link>
                 </p>
@@ -186,7 +194,30 @@ export function Recepciones() {
       </Card>
 
       {recibiendo ? (
-        <ModalRecepcion abierto onCerrar={() => setRecibiendo(null)} orden={recibiendo} />
+        <ModalRecepcion
+          abierto
+          onCerrar={() => setRecibiendo(null)}
+          orden={recibiendo}
+          onHecho={(recibida, datos) => {
+            setRecibiendo(null)
+            setMensaje(
+              textoRecepcion({
+                compra: recibida.solicitud,
+                orden: recibida,
+                ...datos,
+                empresa: empresa?.razon_social,
+              }),
+            )
+          }}
+        />
+      ) : null}
+
+      {mensaje ? (
+        <ModalWhatsappCompra
+          titulo="WhatsApp de la recepción"
+          texto={mensaje}
+          onCerrar={() => setMensaje(null)}
+        />
       ) : null}
     </>
   )

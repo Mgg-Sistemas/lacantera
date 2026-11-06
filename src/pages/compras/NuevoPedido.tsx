@@ -221,7 +221,8 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
       enviar: enviarAhora,
       con_firma: ofrecerFirma && conMiFirma,
     })
-    void navigate(`/app/compras/${id}`)
+    // Enviado, sale su WhatsApp para el almacén general (como en MGG).
+    void navigate(`/app/compras/${id}${enviarAhora ? '?avisar=pedido' : ''}`)
   }
 
   return (

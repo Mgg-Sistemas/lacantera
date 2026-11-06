@@ -434,6 +434,11 @@ export interface Orden {
     historico_en?: string | null
     /** Compra directa: entra donde diga. Las demás se reciben en ALM-GEN (fase 4). */
     directa?: boolean
+    /** Para el WhatsApp de la recepción y para ir a la compra. */
+    id?: number
+    numero?: string
+    titulo?: string
+    prioridad?: 'NORMAL' | 'ALTA' | 'URGENTE'
   } | null
   renglones: RenglonOrden[]
   instrucciones: InstruccionPago[]
@@ -454,7 +459,7 @@ export interface Orden {
 const SELECT_ORDEN = `
   *,
   proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
-  solicitud:solicitudes_pedido!inner(destino, destino_almacen_id, historico_en, directa),
+  solicitud:solicitudes_pedido!inner(id, numero, titulo, prioridad, destino, destino_almacen_id, historico_en, directa),
   renglones:orden_renglones(*),
   instrucciones:instrucciones_pago(*)
 `

@@ -266,6 +266,9 @@ const CorregirPedido = pagina(() =>
 const TableroCompras = pagina(() =>
   import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),
 )
+const ComprasTelefono = pagina(() =>
+  import('@/pages/compras/ComprasTelefono').then((m) => ({ default: m.ComprasTelefono })),
+)
 const TableroVentas = pagina(() =>
   import('@/pages/ventas/Tablero').then((m) => ({ default: m.TableroVentas })),
 )
@@ -735,6 +738,8 @@ export default function App() {
                   fuera el número de una orden. */}
               <Route path="compras/directa/historial" element={<HistorialDirectas />} />
               <Route path="compras/historico" element={<HistoricoCompras />} />
+              {/* Compras en el teléfono (como las pantallas de teléfono de MGG). */}
+              <Route path="compras/telefono" element={<ComprasTelefono />} />
               <Route path="compras/:id" element={<DetalleCompra />} />
               {/* `nuevo` antes que `:id` para leerlo de un vistazo, aunque el
                   enrutador ya prefiere lo estático sobre lo dinámico. */}

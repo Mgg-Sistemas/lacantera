@@ -3100,6 +3100,33 @@ Para la capacitación del flujo nuevo. Cada uno solo necesita su fila.
 | **Norbelis Sequea** | Panel **Órdenes pendientes por aprobar**, **Aprobada** y **Cuenta abierta** | Revisa el pago indicado y **Aprobar la orden** contestando **¿Se pagará?** (Sí → pagada; No → motivo). Más tarde marca pagadas las que quedaron pendientes o a crédito |
 | **Compras** | Panel **Recibida** | **Marcar finalizada** y mandar el **WhatsApp de finalizada** |
 
+### 9.16 Los mensajes de WhatsApp
+
+Cada paso tiene su mensaje, con sus emojis, al estilo de MGG. **Ninguno sale solo**: el botón abre la vista previa, y desde ahí **📋 Copiar mensaje** o **💬 Enviar por WhatsApp**. En el teléfono, **Enviar por WhatsApp** abre la hoja de compartir del teléfono para elegir el chat o el grupo.
+
+| Mensaje | Empieza con | Dónde está | Se abre solo |
+| --- | --- | --- | --- |
+| **Del pedido** | 📋 *SOLICITUD DE PEDIDO SOL-…* | Botón **WhatsApp** en **Qué se pidió** | Sí, al **Enviar el pedido** |
+| **Del almacén** | ✅ *ALMACÉN GENERAL HA REVISADO EL PEDIDO…*, con 📦 lo que tiene y 🛒 lo que va a Compras | Tarjeta **Revisión del almacén general** | Sí, al terminar la revisión |
+| **Para aprobar** | 🔹 *SOLICITUD…* ⏳ *Pendiente por aprobar* | **Qué sigue**, con la propuesta hecha | No |
+| **Para pagar** | 🔹 *ORDEN…* 💰 *Aprobada · por pagar*, o 💳 *CUENTA ABIERTA* | **Qué sigue**, mientras la orden no esté pagada | No |
+| **Del pago** | 🔹 *ORDEN…* 📊 *Estado:* PAGADA / NO PAGADA · motivo | **Qué sigue** | Sí, al aprobar o al decidir el pago |
+| **De la recepción** | 📥 *RECEPCIÓN EN ALMACÉN* | **Qué sigue** y **Compras › Recepciones** | Sí, al **Recibir material** |
+| **De finalizada** | ✅ *COMPRA FINALIZADA* | **Qué sigue** | Sí, al **Marcar finalizada** |
+| **Pendientes por pagar** | 📊 *PENDIENTES POR PAGAR*: órdenes por pagar con su total y, aparte, las cuentas a crédito | Botón **Pendientes por pagar** del tablero | No |
+| **Reporte** | 📊 *REPORTE DE COMPRAS*: todo lo que está en curso, por etapa, con montos | Botón **Reporte** del tablero | No |
+
+### 9.17 Compras en el teléfono
+
+En el teléfono, el tablero muestra arriba **Vista de teléfono** (también se llega por la dirección `/app/compras/telefono`). Es una pantalla con botones grandes por tarea, como las de MGG:
+
+- **➕ Nuevo pedido**.
+- **🏬 Por revisar**: los pedidos que esperan al almacén general. **Revisar** abre la revisión allí mismo y al terminar sale su WhatsApp.
+- **📥 Por recibir**: las órdenes que esperan material, con lo que falta de cada renglón. **Recibir** abre la recepción y al guardar sale el WhatsApp de la recepción.
+- **⏳ Por aprobar**, **💰 Por pagar**, **🚨 Urgentes** y **✅ Finalizadas**: las compras de esa etapa. **Abrir** lleva a la ficha (a Norbelis le dice **Aprobar**).
+
+Cada tarjeta tiene **💬 WhatsApp** con el mensaje del pedido. Arriba hay un buscador, **Volver** regresa a los botones y **Tablero** lleva al tablero completo.
+
 ---
 
 ## 10. Ventas

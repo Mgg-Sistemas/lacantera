@@ -14,15 +14,30 @@ import {
 import type { Orden } from '@/lib/api/compras'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useArticulos } from '@/lib/api/catalogo'
+import { useMiPerfil } from '@/lib/api/usuarios'
+
+/** Lo que hace falta para el WhatsApp de la recepción. */
+export interface DatosDeRecepcion {
+  almacen: string | null
+  nota: string | null
+  fecha: string
+  recibio: string | null
+}
 
 interface Props {
   abierto: boolean
   onCerrar: () => void
   orden: Orden
+  /**
+   * Recibido: la orden con lo que acaba de entrar ya sumado, para armar el
+   * WhatsApp sin esperar a la consulta. Sin esto, solo se cierra.
+   */
+  onHecho?: (recibida: Orden, datos: DatosDeRecepcion) => void
 }
 
-export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
+export function ModalRecepcion({ abierto, onCerrar, orden, onHecho }: Props) {
   const { data: almacenes } = useAlmacenes()
+  const { data: yo } = useMiPerfil()
   // Solo por la densidad: el renglón de la orden no la trae, y lo que llega en
   // M3 o en TON se enseña también en la otra medida.
   const { data: articulos } = useArticulos(false)
@@ -114,6 +129,24 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
         }))
         .filter((r) => r.cantidad > 0),
     })
+    if (onHecho) {
+      onHecho(
+        {
+          ...orden,
+          renglones: orden.renglones.map((r) => ({
+            ...r,
+            cantidad_recibida: String(Number(r.cantidad_recibida) + Number(cantidades[r.id] ?? 0)),
+          })),
+        },
+        {
+          almacen: (almacenes ?? []).find((a) => String(a.id) === almacenElegido)?.nombre ?? null,
+          nota: nota.trim() || null,
+          fecha,
+          recibio: yo?.nombre ?? null,
+        },
+      )
+      return
+    }
     onCerrar()
   }
 
