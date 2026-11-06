@@ -2072,7 +2072,14 @@ Hay una idea que conviene entender antes de tocar nada:
 
 **Una compra no avanza porque alguien la mueva. Avanza porque alguien hace la acción que toca.** Las tarjetas no se arrastran de un panel a otro. El panel en el que está una compra es la consecuencia de lo último que se hizo con ella. La propia pantalla lo dice en su descripción: **Cada tarjeta es una compra. Avanza de una etapa a la siguiente sin saltarse ninguna.**
 
-La segunda idea es la que explica la mitad de las alarmas del módulo: **casi siempre se paga antes de recibir**. Entre el momento en que sale el dinero y el momento en que llega el camión hay dinero de la empresa en manos de un tercero. Por eso el tablero cuenta los días y avisa. La excepción es la compra **contra entrega**, que se recibe primero y se paga lo que llegó.
+La segunda idea es la que explica la mitad de las alarmas del módulo: **casi siempre se paga antes de recibir**. Entre el momento en que sale el dinero y el momento en que llega el camión hay dinero de la empresa en manos de un tercero. Por eso el tablero cuenta los días y avisa. Hay dos excepciones: la compra **contra entrega**, que se recibe primero y se paga lo que llegó, y la compra **a crédito**, que se recibe cuando llega y se paga al vencer.
+
+**Desde el 06/11/2026 el módulo trabaja con el flujo nuevo de compras.** Todo lo anterior a esa fecha está en **Histórico de compras** (botón arriba del tablero), cerrado como finalizado y sin mover inventario. Lo que cambió:
+
+- El pedido pasa primero por el **almacén general (ALM-GEN)**, que entrega lo que tiene. A Compras llega solo lo que falta.
+- Compras dice el **método y los datos de pago al proponer** la cotización, no después de aprobar.
+- Las órdenes las aprueba **solo Norbelis Sequea**, que al aprobar contesta **¿Se pagará?**. **Tesorería no interviene**: el pago se marca dentro de Compras.
+- Lo comprado se **recibe en el almacén general**, y al final Compras **marca la compra finalizada**.
 
 ### 9.1 Quién entra y quién puede hacer qué
 
@@ -2085,14 +2092,15 @@ La segunda es **poder hacer cada paso**, y no la decide una sola cosa:
 | Qué se hace | Qué hace falta |
 | --- | --- |
 | Crear un pedido | Entrar al módulo |
-| Confirmar el pedido, cargar y proponer cotizaciones, indicar el método de pago, registrar el pago, devolver una instrucción de pago, registrar la factura de una orden | El rol **Compras**, o ser administración |
-| Aprobar la compra | Una casilla propia de la matriz de permisos (13.1), que va con la gerencia general |
-| Devolver la compra a cotización | Otra casilla propia, distinta de la de aprobar |
+| Revisar el pedido en el almacén general | El rol **Almacén** |
+| Confirmar el pedido, cargar cotizaciones, proponer una con su método de pago, registrar la factura de una orden, marcar la compra finalizada | El rol **Compras**, o ser administración |
+| **Aprobar la orden y decidir si se paga** | **Solo Norbelis Sequea.** No va por rol: es una persona. Cualquier otro usuario, aunque sea administración o gerencia general, recibe «Las órdenes de compra solo las aprueba NORBELIS SEQUEA.» |
+| Devolver la compra a cotización | Una casilla propia de la matriz de permisos (13.1) |
 | Editar una orden aprobada, o corregir el precio de un renglón | Sendas casillas propias |
 | Resolver el dinero de un proveedor que desistió | El rol **Gerencia general** o el rol **Compras** |
 | Recibir el material | El rol **Almacén** |
 
-**Quien paga las órdenes es el rol Compras**, y el sistema lo exige. Por eso **Pagos por hacer** cuelga del menú de Compras.
+**Quien decide el pago es quien aprueba**, dentro de Compras. Tesorería no se vincula: marcar una orden pagada no mueve ninguna cuenta.
 
 Si abre una compra y no ve ningún botón, el paso en el que está esa compra le toca a otro, y la pantalla dice a quién se está esperando.
 
@@ -2102,23 +2110,72 @@ Si abre una compra y no ve ningún botón, el paso en el que está esa compra le
 
 Esta es la sección que hay que leer si solo se va a leer una. Todo lo demás del capítulo son detalles de estas casillas.
 
-| # | Cómo se llama | Quién lo mueve | Qué hace falta para pasar al siguiente |
+| # | Panel del tablero | Quién lo mueve | Qué hace falta para pasar al siguiente |
 | --- | --- | --- | --- |
-| 0 | **Borrador** *(opcional)* | Quien lo cargó | Pulsar **Enviar el pedido** |
-| 1 | **Pedido** | Compras | Pulsar **Confirmar el pedido** |
-| 2 | **Confirmada** *(en la ficha: **Confirmada · indicar proveedores**)* | Compras | Cargar al menos una cotización y pulsar **Proponer al gerente** |
-| 3 | **Confirmar por el gerente** *(en la ficha: **Por confirmar el gerente**)* | Gerencia general | Pulsar **Aprobar la compra**. Ahí nace la orden de compra |
-| 4 | **Aprobada** *(en la ficha: **Aprobada · indicar método de pago**)* | Compras | Decir **con qué entrega el proveedor**, y después **Indicar método de pago** |
-| 5 | **Por pagar** | Compras | **Registrar el pago** de cada instrucción, hasta cubrir el total |
-| 6 | **Pagada** *(en la ficha: **Pagada · por recibir**)* | Almacén | **Recibir material** |
-| 7 | **Recibida parcialmente** | Almacén | Volver a **Recibir material** hasta completar |
-| 8 | **Recibida** | — | Cerrada |
+| 0 | **Borrador** *(opcional, en el panel Pedido)* | Quien lo cargó | Pulsar **Enviar el pedido** |
+| 1 | **Revisión de almacén** | Almacén | Pulsar **Revisar en el almacén** y decir qué entrega el almacén general |
+| 2 | **Pedido** | Compras | Pulsar **Confirmar el pedido** |
+| 3 | **Confirmada** | Compras | Cargar al menos una cotización y pulsar **Proponer para aprobar**, con el método y los datos de pago |
+| 4 | **Órdenes pendientes por aprobar** | Norbelis Sequea | Pulsar **Aprobar la orden** contestando **¿Se pagará?**. Ahí nace la orden de compra |
+| 5 | **Aprobada** *(si dijo que no se pagará todavía)* | Norbelis Sequea | Volver a contestar **¿Se pagará?** cuando haya con qué |
+| 5 | **Cuenta abierta** *(a crédito)* | Almacén y Norbelis Sequea | Recibir cuando llegue; marcarla pagada al vencer |
+| 6 | **Pagada** *(en la ficha: **Pagada · por recibir**)* | Almacén | **Recibir material** en el almacén general |
+| 7 | **Recibida** | Compras | Pulsar **Marcar finalizada** |
+| 8 | **Finalizada** | — | Cerrada |
 
-Una compra recibida **se queda a la vista** en su panel. No desaparece: si desapareciera al recibirse, no habría dónde comprobar que llegó.
+Una compra finalizada **se queda a la vista** en su panel. No desaparece: si desapareciera, no habría dónde comprobar qué se compró y que llegó.
 
-**Los nombres cambian ligeramente entre el tablero y la ficha.** En el tablero, el panel se llama **Confirmada** y debajo dice la acción que falta, **Indicar proveedores**. En la ficha de la compra, la etiqueta junta las dos cosas: **Confirmada · indicar proveedores**. Es el mismo paso.
+**La compra contra entrega va en otro orden.** Si se pactó pagar al recibir, al aprobarla no se pregunta **¿Se pagará?**: la orden queda en **Contra entrega · por recibir**, primero entra el material y después se decide el pago de lo que llegó.
 
-**La compra contra entrega va en otro orden.** Si se pactó pagar al recibir, la orden aprobada queda en **Contra entrega · por recibir**: primero entra el material, y después se paga lo que llegó.
+#### 1. La revisión del almacén general
+
+Todo pedido enviado entra a **Revisión de almacén** y le llega un aviso a quienes tienen el rol Almacén. El almacenista abre la compra y pulsa **Revisar en el almacén**. Por cada renglón:
+
+1. Elige en **Artículo del almacén** qué artículo de ALM-GEN entrega. La lista solo ofrece lo que hay, con la existencia al lado («Hay 12 UND»).
+2. Escribe cuánto entrega. **Entregar N** lo llena solo con lo que se puede. No deja pasar de lo pedido ni de lo que hay.
+3. Si entrega algo, dice **¿Quién lo recibe?**. Si lo deja vacío, lo recibe quien pidió, si tiene ficha de nómina.
+
+Al guardar:
+
+| Si el almacén… | La compra… |
+| --- | --- |
+| Entrega **todo** | Queda **Finalizada**. No se compra nada |
+| Entrega **una parte** | Pasa a **Pedido** solo con lo que falta: el renglón entregado entero sale del pedido y el parcial queda con la diferencia |
+| No tiene **nada** | Pasa a **Pedido** tal cual |
+
+**Lo que entrega el almacén sale por una solicitud de salida** de ALM-GEN, la de **Salidas** (26.2), con su autorización de siempre: el material sale físicamente cuando se aprueba y se entrega allí. Si esa salida **se rechaza o se cancela**, lo que no salió vuelve solo a Compras y se avisa. En la ficha queda la tarjeta **Revisión del almacén general** con lo que entregó, el número de la solicitud de salida y el botón **WhatsApp** con la respuesta.
+
+#### 2. Proponer con el método de pago
+
+En **Confirmada**, Compras carga las cotizaciones y pulsa **Proponer para aprobar** en la que conviene. Ahí mismo dice:
+
+- con qué entrega el proveedor: **Nota de entrega** o **Factura**;
+- el **método de pago** (o **Con productos (intercambio)**), la **moneda** —la de la cotización o bolívares—, los **datos del beneficiario** y si lleva **IGTF**.
+
+Si Compras cambia el pago de una propuesta que ya está esperando aprobación, queda anotado y se avisa. **Quien aprueba solo puede aprobar el pago que tiene en pantalla**: si cambió mientras lo miraba, el sistema dice «Compras cambió el pago de esta propuesta mientras usted la revisaba. Recargue la página y revíselo antes de aprobar.»
+
+#### 3. Aprobar y decidir el pago
+
+En **Órdenes pendientes por aprobar**, Norbelis ve el **Pago indicado por Compras** y contesta **¿Se pagará esta orden?**:
+
+- **✓ Sí, se pagará** → la orden queda **Pagada** (con una referencia opcional). No mueve ninguna cuenta.
+- **✕ No se pagará** → hay que elegir el motivo: **sin fondos**, **esperando respuesta** u **otro** (escrito). La orden queda **Aprobada** y por pagar, y se puede marcar pagada más tarde desde la misma ficha.
+
+Si la compra no procede, no es un «no se pagará»: es **Devolver a compras**.
+
+Al aprobar se abre el **WhatsApp del pago** (PAGADA, o NO PAGADA con el motivo). Antes de aprobar, Compras o quien aprueba pueden mandar el **WhatsApp para aprobar**. Todos los mensajes se ven antes de mandarlos.
+
+#### 4. A crédito: cuenta abierta
+
+Si la cotización es a **crédito (15, 30 o 60 días)**, al aprobar **no se pregunta ¿Se pagará?**. La orden queda en **Cuenta abierta**, con su vencimiento: **el día de la aprobación más los días del crédito**. La tarjeta dice **Vence en N días**, en naranja cuando faltan tres o menos y en rojo cuando está vencida.
+
+El material **se recibe sin esperar el pago**. Cuando toque pagar, Norbelis contesta **¿Se pagará?** desde la ficha. Si ya llegó todo, la orden queda **Recibida**; si no, **Pagada · por recibir**.
+
+#### 5. Recibir y finalizar
+
+Lo comprado **se recibe en el almacén general**: el diálogo deja fijo ALM-GEN, y el sistema no acepta otro. Si el pedido era para otro sitio, se traslada desde allí (7.7). En la ficha está el botón **WhatsApp de la recepción**, con lo que llegó de cada renglón.
+
+Cuando llegó todo, la compra queda en **Recibida** y Compras recibe el aviso. Compras pulsa **Marcar finalizada** (con una nota si hace falta). La compra pasa a **Finalizada** y se abre el **WhatsApp de finalizada**.
 
 #### Las dos salidas que no son un fallo
 
@@ -2129,19 +2186,19 @@ Además de los pasos, una compra puede terminar de dos maneras que no son errore
 
 #### Los retrocesos
 
-- **La gerencia devuelve a compras.** La compra vuelve del paso 3 al paso 2, y **la cotización elegida se borra**: si se devuelve, es porque esa opción no sirve.
-- **Compras devuelve una instrucción de pago.** Si no queda ninguna instrucción viva, la orden vuelve del paso 5 al paso 4 para que se corrija el método de pago.
+- **Quien aprueba devuelve a compras.** La compra vuelve de **Órdenes pendientes por aprobar** a **Confirmada**, y **la cotización elegida se borra**: si se devuelve, es porque esa opción no sirve.
+- **La salida del almacén no se aprueba.** Si la solicitud de salida de la revisión se rechaza o se cancela en Salidas, lo que no salió vuelve a Compras solo.
 - **Una orden aprobada se puede editar.** Con su casilla, **Editar la orden** cambia los renglones, y **Corregir el precio** cambia el de uno solo. **Si la edición sube la orden más de 100 dólares, vuelve a la gerencia**: la orden se cancela y el pedido espera otra aprobación. La compra directa no pasa por ahí.
 
 #### La factura del proveedor
 
 Al circuito le falta un papel que no aparece en la tabla de arriba: **la factura que emite el proveedor**.
 
-**Ninguna orden se paga sin decir con qué entrega el proveedor.** En el paso 4, antes de poder indicar el método de pago, hay que declarar si el proveedor entrega con **nota de entrega** o con **factura**. No es opcional: el botón **Indicar método de pago** está apagado hasta que se responda. Está en 9.10.
+**Ninguna orden se aprueba sin decir con qué entrega el proveedor.** Al **Proponer para aprobar**, Compras declara si el proveedor entrega con **nota de entrega** o con **factura**, junto con el método de pago. No es opcional.
 
 **Si entrega con factura, se registra desde la propia orden**, con el botón **Registrar factura** de su ficha, y queda atada a ella. Mientras falte, la ficha lo dice: **Sin registrarla, su IVA no se puede descontar.** Registrarla no mueve la tarjeta: una compra recibida se queda en **Recibida** con factura o sin ella. La pantalla **Facturas de proveedor** reúne las que ya se registraron (9.11).
 
-**Una misma compra se puede pagar por dos caminos distintos, y el sistema no los cruza.** Uno es la instrucción de pago de la orden, en el paso 5. El otro es el pago que se registra sobre la factura, en su propia pantalla. Los dos sacan dinero de una cuenta y ninguno de los dos descuenta del otro. Las dos pantallas lo advierten, pero no lo impiden: la empresa tiene que decidir de antemano cuál de los dos caminos usa, y usar ese.
+**En el flujo nuevo, la orden se marca pagada al aprobarla o después, dentro de Compras, sin mover cuentas.** El pago que se registra sobre la factura, en su propia pantalla, es otro camino que sí saca dinero de una cuenta, y el sistema no los cruza: la empresa tiene que decidir de antemano cuál de los dos usa, y usar ese.
 
 #### Lo que se corrige y lo que no
 
@@ -2158,7 +2215,7 @@ Es la pantalla de cabecera del módulo: una tarjeta por compra, repartidas en pa
 
 #### Qué se ve
 
-Arriba, el título **Compras** y el botón **Nuevo pedido**.
+Arriba, el título **Compras** y los botones **Histórico de compras** (lo que había antes del 06/11/2026, cerrado y de solo lectura) y **Nuevo pedido**.
 
 Si hay compras que figuran como pagadas y llevan más de una semana sin recibirse del todo, aparece un aviso con cuántas son y cuánto suman sus órdenes: **3 compras figuran como pagadas y no constan recibidas del todo desde hace más de una semana. Sus órdenes suman …** Es el aviso más importante de la pantalla.
 
@@ -2166,12 +2223,15 @@ Debajo, los paneles, en rejilla. Cada uno lleva su título, en letra pequeña la
 
 | Panel | Acción que falta |
 | --- | --- |
+| **Revisión de almacén** | **El almacén general dice qué tiene** |
 | **Pedido** | **Confirmar** |
 | **Confirmada** | **Indicar proveedores** |
-| **Confirmar por el gerente** | **Aprobar** |
-| **Aprobada** | **Indicar método de pago** |
+| **Órdenes pendientes por aprobar** | **Aprobar y decidir si se paga** |
+| **Aprobada** | **Decidir el pago** |
+| **Cuenta abierta** | **Recibir y pagar al vencer** |
 | **Pagada** | **Falta que llegue el material** |
-| **Recibida** | **Cerrada** |
+| **Recibida** | **Marcar finalizada** |
+| **Finalizada** | **Cerrada** |
 | **Cancelada** | **No sigue** |
 | **El proveedor desistió** | **Resolver el dinero** |
 
@@ -2188,8 +2248,9 @@ Las etiquetas de señal son estas:
 | **Borrador** | El pedido todavía no se ha enviado |
 | **Sin cotizaciones** | Está confirmada y nadie ha cargado precios |
 | **3 cotizaciones** | Cuántos proveedores han cotizado |
-| **Falta el método de pago** | Está aprobada y no se ha indicado cómo se paga |
+| **Falta el método de pago** | Está aprobada y no se ha marcado pagada |
 | **Por pagar** | La instrucción de pago ya está cargada |
+| **Vence en 12 días** / **Vence hoy** / **Vencida hace 3 días** | En **Cuenta abierta**: cuánto falta para que venza el crédito. Naranja a tres días o menos, rojo vencida |
 | **Pagada hoy** | Se pagó hoy y aún no llega el material |
 | **12 días sin recibir** | Los días desde el pago. Cambia de verde a naranja a la semana, y a rojo pasados quince días |
 | **Dinero sin resolver** | El proveedor desistió y nadie ha decidido qué pasó con el dinero |
@@ -2206,11 +2267,11 @@ Debajo de los paneles está el bloque **Acciones**, con tres grupos de atajos. S
 
 | Grupo | Atajos |
 | --- | --- |
-| **La cadena de una compra** | Numerados, en el orden en que ocurren: **Pedir algo**, **Cotizar y proponer**, **Pagar lo aprobado**, **Recibir el material** |
+| **La cadena de una compra** | Numerados, en el orden en que ocurren: **Pedir algo**, **Revisar en el almacén general**, **Cotizar y proponer con el pago**, **Aprobar y decidir el pago**, **Recibir el material**, **Marcar finalizada** |
 | **Compra directa** | **Registrar una compra directa** e **Historial de directas** |
 | **Alrededor de la compra** | **Cargar proveedores por planilla**, **Proveedores**, **Facturas del proveedor** y **Gasto por unidad** |
 
-Al pie, en **Primeros pasos**: *«Una compra pasa por cinco pasos: se pide, se cotiza, se aprueba, se paga y se recibe. La orden de compra se emite al aprobarla el gerente.»*, y *«La compra directa es para lo que se paga en el acto, y no pasa por esos pasos. Tiene su propio historial, donde se ve qué se pagó y qué falta por llegar.»*
+Al pie, en **Primeros pasos**: *«Una compra pasa por seis pasos: se pide, el almacén general dice qué tiene, se cotiza lo que falta con su método de pago, se aprueba decidiendo si se paga (a crédito queda en cuenta abierta), se recibe en el almacén general y se marca finalizada.»*, y *«La compra directa es para lo que se paga en el acto, y no pasa por esos pasos. Tiene su propio historial, donde se ve qué se pagó y qué falta por llegar.»*
 
 **Ninguna acción cambia el estado de una compra desde el tablero**: todo ocurre dentro de la ficha, donde está el contexto completo de lo que se va a decidir.
 
@@ -2224,7 +2285,7 @@ El tablero se actualiza solo cuando otra persona mueve algo, y además se recarg
 
 Se llega desde el botón **Nuevo pedido** del tablero. **No está en el menú**, porque un pedido siempre nace mirando el tablero.
 
-Es donde alguien pide lo que necesita: **El pedido entra al tablero en la columna Pedido.** Arriba a la derecha, **Volver al tablero**.
+Es donde alguien pide lo que necesita, con el nombre general de cada cosa. Al enviarlo, **el pedido entra al tablero en la columna Revisión de almacén**: primero el almacén general dice qué tiene. Arriba a la derecha, **Volver al tablero**.
 
 La pantalla es una sola columna: arriba **Datos del pedido** y debajo **Qué se necesita**, con **Un renglón por cosa distinta.**
 
@@ -2564,7 +2625,9 @@ Una cotización se puede **Eliminar** mientras no esté propuesta al gerente y n
 
 ### 9.9 Recibir material
 
-Se llega desde la ficha de una compra en **Pagada · por recibir**, **Contra entrega · por recibir** o **Recibida parcialmente**, con el botón **Recibir material**. En la ficha lo ve el rol Almacén; los demás leen **La recepción la registra almacén.**
+Se llega desde la ficha de una compra en **Pagada · por recibir**, **Contra entrega · por recibir**, **Cuenta abierta** (a crédito, sin haber pagado) o **Recibida parcialmente**, con el botón **Recibir material**. En la ficha lo ve el rol Almacén; los demás leen **La recepción la registra almacén.**
+
+**Las órdenes de compra se reciben en el almacén general (ALM-GEN).** El diálogo lo deja fijo y el sistema no acepta otro: «Las órdenes de compra se reciben en el almacén general (ALM-GEN). De ahí se trasladan a donde hagan falta.» La compra directa sigue entrando donde diga.
 
 **Sin el papel del proveedor no se puede recibir.** Si en la tarjeta **Papeles recibidos** no hay ni factura ni nota de entrega, la ficha lo dice en ámbar: «Falta el papel del proveedor. Suba la **factura** o la **nota de entrega** en «Papeles recibidos», aquí abajo, y se podrá recibir.»
 
@@ -2576,7 +2639,7 @@ En **Qué llegó** aparecen **solo los renglones que todavía tienen algo pendie
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Almacén que recibe** | Sí | Empieza en el destino que dijo el pedido: **Es el destino que pidió quien lo solicitó.** Si el pedido no dijo un almacén, empieza vacío y la ayuda lo explica |
+| **Almacén que recibe** | Sí | En una orden de compra, fijo en el almacén general. En una compra directa, empieza en el destino que dijo el pedido |
 | **Fecha de recepción** | No | Empieza en hoy. **No admite fechas futuras** |
 | **Cantidad recibida** | No | Uno por renglón. Empieza en todo lo que falta, y el sistema no admite más. **Déjelo en cero si este renglón no llegó todavía.** |
 | **Nota** | No | Número de guía, quién trajo el material, estado en que llegó |
@@ -2587,7 +2650,7 @@ Después, **Registrar la recepción**. El botón está apagado si todas las cant
 
 Al registrar, el material entra al inventario con su propio número de movimiento y su costo en dólares, calculado con las tasas que quedaron congeladas en la orden. **Solo entra al inventario lo que lleva existencias**: un flete o una reparación se compran y se pagan, pero no hay nada que guardar en un estante, así que la orden avanza sin generar movimiento.
 
-El estado de la orden se recalcula solo: **Recibida** si no falta nada, **Recibida parcialmente** si falta algo.
+El estado de la orden se recalcula solo: **Recibida** si no falta nada, **Recibida parcialmente** si falta algo. A crédito, mientras no esté pagada, sigue en **Cuenta abierta**. Con todo recibido, Compras la cierra con **Marcar finalizada** (9.2).
 
 #### La pantalla de Recepciones
 
@@ -2598,6 +2661,8 @@ Quien sigue una compra la busca por su número, pero quien está en el portón v
 Debajo, **Lo último que entró**: las entradas por compra más recientes, con su número de movimiento, el material, el almacén y la cantidad. Sirve para comprobar de un vistazo que lo que se recibió hace un rato quedó registrado.
 
 ### 9.10 Indicar el método de pago
+
+> **En el flujo nuevo (desde el 06/11/2026) el método de pago se dice al proponer la cotización** (9.2, «Proponer con el método de pago»), y el pago lo marca quien aprueba. Lo que sigue describe el diálogo de antes, que solo aparece en órdenes que no traen el pago desde la propuesta.
 
 Se llega desde la ficha de una compra en **Aprobada · indicar método de pago**, con el botón **Indicar método de pago**. Solo lo ve el rol Compras.
 
@@ -2992,6 +3057,34 @@ Cuatro reglas que evitan discusiones:
 | «El monto del pago tiene que ser mayor que cero.» | El monto quedó vacío o en cero | Escriba cuánto se paga |
 | «A la factura F-00123 le faltan 500 $ y se están pagando 800 $.» | Se está pagando más de lo que se debe | Ajuste el monto a lo que falta |
 | «El pago PGC-2026-0001 ya estaba anulado.» | Otra persona lo anuló primero | Cierre y vuelva a abrir la ficha: ya está anulado |
+
+#### Los mensajes del flujo nuevo
+
+| Mensaje | Qué pasó | Qué hacer |
+| --- | --- | --- |
+| «Las órdenes de compra solo las aprueba NORBELIS SEQUEA.» | Otro usuario intentó aprobar | Aprueba solo ella. Mándele el **WhatsApp para aprobar** |
+| «Compras tiene que indicar cómo se paga antes de aprobar…» | La propuesta no trae el método de pago | **Devolver a compras** para que la proponga con el pago |
+| «Compras cambió el pago de esta propuesta mientras usted la revisaba…» | El pago cambió después de abrir la pantalla | Recargue la página, revise el pago nuevo y apruebe |
+| «Escriba por qué no se pagará todavía.» | Se marcó **No se pagará** sin motivo | Elija el motivo o escríbalo |
+| «La orden … tiene una instrucción de pago pendiente que no es la que propuso Compras…» | Alguien cargó un pago con otros datos | Devuelva esa instrucción y vuelva a marcar **Sí, se pagará** |
+| «El renglón … se pidieron 3 y se intentan entregar 5.» | En la revisión del almacén se puso más de lo pedido | Entregue como mucho lo pedido |
+| «De … hay 2 en el almacén general y se quieren entregar 5.» | No alcanza la existencia | Entregue lo que hay; lo demás pasa a Compras |
+| «Diga quién recibe lo que entrega el almacén: quien pidió no tiene ficha en nómina.» | El solicitante no tiene ficha | Elija la persona en **¿Quién lo recibe?** |
+| «Las órdenes de compra se reciben en el almacén general (ALM-GEN)…» | Se intentó recibir en otro almacén | Reciba en ALM-GEN y traslade después |
+| «La compra se finaliza cuando llegó todo el material…» | Falta material por recibir | Reciba lo que falta y vuelva a intentarlo |
+
+### 9.15 Guía rápida por rol
+
+Para la capacitación del flujo nuevo. Cada uno solo necesita su fila.
+
+| Quién | Dónde lo ve | Qué hace |
+| --- | --- | --- |
+| **Quien pide** | **Nuevo pedido** | Escribe qué necesita con su nombre general, la cantidad y para qué. Lo envía. No hace nada más: le llega el aviso cuando el almacén responde |
+| **Almacenista (ALM-GEN)** | Panel **Revisión de almacén**, y el aviso «Pedido por revisar en el almacén general» | **Revisar en el almacén**: por renglón, qué artículo entrega y cuánto. Manda el WhatsApp. Después aprueba y entrega la **solicitud de salida** en Salidas |
+| **Almacenista (ALM-GEN)** | Panel **Pagada** o **Cuenta abierta**, y **Compras › Recepciones** | Con la factura o nota de entrega subida, **Recibir material** en ALM-GEN. Manda el **WhatsApp de la recepción** |
+| **Compras** | Paneles **Pedido** y **Confirmada** | **Confirmar el pedido**, cargar cotizaciones y **Proponer para aprobar** con factura o nota, método, moneda y datos del beneficiario. Manda el **WhatsApp para aprobar** |
+| **Norbelis Sequea** | Panel **Órdenes pendientes por aprobar**, **Aprobada** y **Cuenta abierta** | Revisa el pago indicado y **Aprobar la orden** contestando **¿Se pagará?** (Sí → pagada; No → motivo). Más tarde marca pagadas las que quedaron pendientes o a crédito |
+| **Compras** | Panel **Recibida** | **Marcar finalizada** y mandar el **WhatsApp de finalizada** |
 
 ---
 
