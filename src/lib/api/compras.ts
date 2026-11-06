@@ -220,6 +220,8 @@ export interface Cotizacion {
   pago_igtf?: boolean | null
   pago_comprobante?: 'NOTA_ENTREGA' | 'FACTURA' | null
   pago_nota?: string | null
+  /** Cuándo Compras dijo el pago. La aprobación lo devuelve: solo se aprueba el pago que se vio. */
+  pago_indicado_en?: string | null
   proveedor: { id: number; nombre: string; rif: string; condicion_pago: string } | null
   renglones: RenglonCotizacion[]
 }
@@ -1168,6 +1170,8 @@ export function useAprobarOrden() {
       se_paga: boolean | null
       motivo?: string | null
       referencia?: string | null
+      /** El `pago_indicado_en` de la propuesta que se vio; la base rechaza si cambió. */
+      pago_visto: string | null
     }) =>
       rpc<number>('aprobar_orden_de_compra', {
         p_solicitud_id: p.solicitud_id,
@@ -1177,6 +1181,7 @@ export function useAprobarOrden() {
         p_se_paga: p.se_paga,
         p_motivo: p.motivo || null,
         p_referencia: p.referencia || null,
+        p_pago_visto: p.pago_visto,
       }),
   )
 }

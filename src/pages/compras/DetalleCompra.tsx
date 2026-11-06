@@ -2147,6 +2147,7 @@ export function DetalleCompra() {
                             se_paga: aprobacionSinPregunta ? null : decision.sePaga,
                             motivo: motivoDe(decision),
                             referencia: decision.referencia,
+                            pago_visto: propuestaElegida?.pago_indicado_en ?? null,
                           })
                           if (!aprobacionSinPregunta) {
                             setAvisoPendiente({

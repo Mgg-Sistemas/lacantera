@@ -272,11 +272,68 @@ begin
          pago_indicado_en  = now()
    where id = v_cot.id;
 
+  -- Si ya estaba propuesta, `proponer_cotizacion` no hace nada: el cambio de
+  -- pago tiene que quedar en la bitácora y avisarle a quien aprueba. La
+  -- aprobación, además, exige el `pago_indicado_en` que vio (ver
+  -- `aprobar_orden_de_compra`), así que no se aprueba un pago que no vio.
+  if v_cot.propuesta and v_cot.pago_metodo is not null then
+    perform private.anotar('SOLICITUD', p_solicitud_id, 'POR_CONFIRMAR_GERENTE', 'POR_CONFIRMAR_GERENTE',
+      format('Compras cambió el pago de %s', v_cot.numero));
+  end if;
+
   perform public.proponer_cotizacion(p_solicitud_id, p_cotizacion_id, p_nota);
 end;
 $$;
 
 grant execute on function public.proponer_cotizacion_con_pago(bigint, bigint, text, text, jsonb, text, boolean, text) to authenticated;
+
+-- Con la orden creada, el pago de su cotización es el que se aprobó: ya no se
+-- cambia, venga de donde venga el update.
+create or replace function private.el_pago_aprobado_no_se_cambia()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if (new.pago_metodo, new.pago_moneda, new.pago_datos, new.pago_igtf,
+      new.pago_comprobante, new.pago_nota, new.pago_indicado_en)
+     is distinct from
+     (old.pago_metodo, old.pago_moneda, old.pago_datos, old.pago_igtf,
+      old.pago_comprobante, old.pago_nota, old.pago_indicado_en)
+     and exists (select 1 from public.ordenes_compra o where o.cotizacion_id = new.id) then
+    raise exception 'La cotización % ya tiene orden de compra: el pago que se aprobó no se cambia.', new.numero
+      using errcode = '55000';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_el_pago_aprobado_no_se_cambia on public.cotizaciones;
+create trigger trg_el_pago_aprobado_no_se_cambia
+  before update on public.cotizaciones
+  for each row execute function private.el_pago_aprobado_no_se_cambia();
+
+-- ¿Esta instrucción es exactamente el pago que Compras propuso y se aprobó?
+-- Mismo método, moneda y beneficiario. `indicar_pago` guarda los datos sin
+-- espacios y con vacío como nulo; aquí se compara igual.
+create or replace function private.instruccion_es_la_propuesta(i public.instrucciones_pago, c public.cotizaciones)
+returns boolean
+language sql
+stable
+set search_path = ''
+as $$
+  select i.metodo = c.pago_metodo
+     and btrim(i.moneda) = btrim(c.pago_moneda)
+     and coalesce(i.banco, '')          = btrim(coalesce(c.pago_datos ->> 'banco', ''))
+     and coalesce(i.numero_cuenta, '')  = btrim(coalesce(c.pago_datos ->> 'numero_cuenta', ''))
+     and coalesce(i.titular, '')        = btrim(coalesce(c.pago_datos ->> 'titular', ''))
+     and coalesce(i.documento, '')      = btrim(coalesce(c.pago_datos ->> 'documento', ''))
+     and coalesce(i.telefono, '')       = btrim(coalesce(c.pago_datos ->> 'telefono', ''))
+     and coalesce(i.correo_binance, '') = btrim(coalesce(c.pago_datos ->> 'correo_binance', ''))
+     and coalesce(i.red_cripto, '')     = btrim(coalesce(c.pago_datos ->> 'red_cripto', ''))
+     and coalesce(i.receptor, '')       = btrim(coalesce(c.pago_datos ->> 'receptor', ''));
+$$;
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 3. ¿Se pagará?
@@ -335,6 +392,19 @@ begin
 
   select c.* into v_cot from public.cotizaciones c where c.id = v_o.cotizacion_id;
 
+  -- «Sí» paga lo que se aprobó y nada más. Si alguien dejó por su cuenta una
+  -- instrucción en dinero con otro método o beneficiario, no se da por pagada
+  -- a ciegas: primero se devuelve.
+  if exists (select 1
+               from public.instrucciones_pago i
+               join public.metodos_pago m on m.codigo = i.metodo and m.mueve_dinero
+              where i.orden_id = p_orden_id
+                and i.estado = 'POR_PAGAR'
+                and private.instruccion_es_la_propuesta(i, v_cot) is not true) then
+    raise exception 'La orden % tiene una instrucción de pago pendiente que no es la que propuso Compras. Hay que devolverla antes de marcar la orden pagada.', v_o.numero
+      using errcode = '55000';
+  end if;
+
   -- Lo que todavía no tiene instrucción se instruye con lo que Compras dijo al
   -- proponer. Contra entrega, solo lo que ya llegó: eso lo cuida el tope.
   select coalesce(sum(case when i.moneda = v_o.moneda then i.monto
@@ -379,6 +449,7 @@ begin
      where i.orden_id = p_orden_id
        and i.estado = 'POR_PAGAR'
        and exists (select 1 from public.metodos_pago m where m.codigo = i.metodo and m.mueve_dinero)
+       and private.instruccion_es_la_propuesta(i, v_cot)
     returning i.id
   loop
     perform private.anotar('PAGO', v_i.id, 'POR_PAGAR', 'PAGADA', 'Pagada en Compras');
@@ -439,7 +510,8 @@ create or replace function public.aprobar_orden_de_compra(
   p_nota text default null,
   p_se_paga boolean default null,
   p_motivo text default null,
-  p_referencia text default null
+  p_referencia text default null,
+  p_pago_visto timestamptz default null
 ) returns bigint
 language plpgsql
 security definer
@@ -456,13 +528,23 @@ begin
   -- renglones, firma y bitácora.
   v_orden := public.aprobar_compra(p_solicitud_id, p_cotizacion_id, p_nota, p_con_firma);
 
+  -- `for update`: si Compras está cambiando el pago en este momento, o espera
+  -- a que esto termine (y entonces el trigger ve la orden y lo frena), o
+  -- terminó antes (y entonces `pago_indicado_en` ya no coincide).
   select c.* into v_cot
     from public.cotizaciones c
     join public.ordenes_compra o on o.cotizacion_id = c.id
-   where o.id = v_orden;
+   where o.id = v_orden
+     for update of c;
 
   if v_cot.pago_metodo is null then
     raise exception 'Compras tiene que indicar cómo se paga antes de aprobar: método, datos del beneficiario y si entrega factura o nota.'
+      using errcode = '55000';
+  end if;
+
+  -- Se aprueba el pago que quien aprueba vio en pantalla, no otro.
+  if p_pago_visto is null or v_cot.pago_indicado_en is distinct from p_pago_visto then
+    raise exception 'Compras cambió el pago de esta propuesta mientras usted la revisaba. Recargue la página y revíselo antes de aprobar.'
       using errcode = '55000';
   end if;
 
@@ -483,7 +565,7 @@ begin
 end;
 $$;
 
-grant execute on function public.aprobar_orden_de_compra(bigint, bigint, boolean, text, boolean, text, text) to authenticated;
+grant execute on function public.aprobar_orden_de_compra(bigint, bigint, boolean, text, boolean, text, text, timestamptz) to authenticated;
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 5. Los avisos ya no hablan de la gerencia
