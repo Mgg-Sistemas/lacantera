@@ -85,8 +85,20 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
   const [fecha, setFecha] = useState(hoyEnCaracas())
   const [nota, setNota] = useState('')
 
+  /*
+    FASE 4 (06/11/2026): LO COMPRADO ENTRA AL ALMACÉN GENERAL.
+
+    Angélica: «se recepciona la OC en inventario general». Las órdenes del
+    flujo de compras entran a ALM-GEN —la base lo exige— y de ahí se trasladan
+    a donde hagan falta. La compra directa sigue entrando donde diga.
+  */
+  const almacenGeneral = (almacenes ?? []).find((a) => a.codigo === 'ALM-GEN')
+  const vaAlGeneral = !orden.solicitud?.directa
+
   // El almacén por defecto llega con la consulta, después del primer render.
-  const almacenElegido = almacenId || String(destinoDelPedido ?? '')
+  const almacenElegido = vaAlGeneral
+    ? String(almacenGeneral?.id ?? '')
+    : almacenId || String(destinoDelPedido ?? '')
 
   const guardar = async () => {
     await recibir.mutateAsync({
@@ -130,6 +142,7 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
           label="Almacén que recibe"
           vacio="Seleccione el almacén"
           valor={almacenElegido}
+          disabled={vaAlGeneral}
           /*
             CAMBIAR DE ALMACEN OLVIDA LAS CONFIRMACIONES.
 
@@ -147,7 +160,13 @@ export function ModalRecepcion({ abierto, onCerrar, orden }: Props) {
             etiqueta: `${a.codigo} · ${a.nombre}`,
           }))}
           hint={
-            destinoDelPedido
+            vaAlGeneral
+              ? `Las órdenes de compra se reciben en el almacén general.${
+                  orden.solicitud?.destino && destinoDelPedido !== almacenGeneral?.id
+                    ? ` El pedido era para «${orden.solicitud.destino}»: se traslada desde aquí.`
+                    : ''
+                }`
+              : destinoDelPedido
               ? String(destinoDelPedido) === almacenElegido
                 ? 'Es el destino que pidió quien lo solicitó.'
                 : 'El pedido era para otro sitio.'

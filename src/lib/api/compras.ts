@@ -65,13 +65,13 @@ export const COLUMNAS: DefinicionColumna[] = [
   { clave: 'PAGADA', titulo: 'Pagada', accion: 'Falta que llegue el material', tono: 'success' },
   // La compra termina aquí, pero se queda a la vista: si desapareciera al
   // recibirse, no habría dónde comprobar que llegó.
-  { clave: 'RECIBIDA', titulo: 'Recibida', accion: 'Cerrada', tono: 'info' },
-  // El almacén general tenía todo: salió por una solicitud de salida y no hubo
-  // que comprar nada.
+  { clave: 'RECIBIDA', titulo: 'Recibida', accion: 'Marcar finalizada', tono: 'info' },
+  // Cerrada: o la atendió entera el almacén general (fase 2), o llegó todo lo
+  // comprado y Compras la marcó finalizada (fase 4).
   {
     clave: 'FINALIZADA',
     titulo: 'Finalizada',
-    accion: 'Atendida por el almacén',
+    accion: 'Cerrada',
     tono: 'success',
   },
   { clave: 'CANCELADA', titulo: 'Cancelada', accion: 'No sigue', tono: 'neutral' },
@@ -430,6 +430,8 @@ export interface Orden {
     destino: string | null
     destino_almacen_id: number | null
     historico_en?: string | null
+    /** Compra directa: entra donde diga. Las demás se reciben en ALM-GEN (fase 4). */
+    directa?: boolean
   } | null
   renglones: RenglonOrden[]
   instrucciones: InstruccionPago[]
@@ -450,7 +452,7 @@ export interface Orden {
 const SELECT_ORDEN = `
   *,
   proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
-  solicitud:solicitudes_pedido!inner(destino, destino_almacen_id, historico_en),
+  solicitud:solicitudes_pedido!inner(destino, destino_almacen_id, historico_en, directa),
   renglones:orden_renglones(*),
   instrucciones:instrucciones_pago(*)
 `
@@ -594,6 +596,9 @@ export interface Compra {
   revision_almacen_nota?: string | null
   salida_almacen_numero?: string | null
   finalizada_en?: string | null
+  /** Quién la marcó finalizada (fase 4); nulo si la cerró el almacén. */
+  finalizada_por?: string | null
+  finalizada_nota?: string | null
   /** Lo que entregó el almacén general, renglón por renglón. */
   atendido?: AtendidoAlmacen[]
   renglones: RenglonPedido[]
@@ -1026,6 +1031,13 @@ export function useRevisarEnAlmacen() {
         p_empleado_id: p.empleado_id,
         p_nota: p.nota || null,
       }),
+  )
+}
+
+/** Fase 4: con la orden recibida completa, Compras cierra la compra. */
+export function useFinalizarCompra() {
+  return useAccion((p: { id: number; nota?: string | null }) =>
+    rpc('finalizar_compra', { p_id: p.id, p_nota: p.nota || null }),
   )
 }
 

@@ -44,7 +44,13 @@ import { ModalRevisionAlmacen } from './ModalRevisionAlmacen'
 import { SePagara } from './SePagara'
 import { DECISION_VACIA, decisionCompleta, motivoDe } from './decisionPago'
 import type { DecisionPago } from './decisionPago'
-import { textoEstadoPago, textoParaAprobar, textoRevisionAlmacen } from '@/lib/ficha/comprasWhatsapp'
+import {
+  textoEstadoPago,
+  textoFinalizada,
+  textoParaAprobar,
+  textoRecepcion,
+  textoRevisionAlmacen,
+} from '@/lib/ficha/comprasWhatsapp'
 import {
   ModalPagoConMaterial,
   ModalRegistrarPagoConMaterial,
@@ -75,6 +81,7 @@ import {
   useCorregirPrecioDeOrden,
   useCancelarOrden,
   useCancelarPedido,
+  useFinalizarCompra,
   useCompra,
   useConfirmarPedido,
   useDevolverACotizacion,
@@ -956,6 +963,8 @@ export function DetalleCompra() {
 
   const enviar = useEnviarPedido()
   const confirmar = useConfirmarPedido()
+  const finalizar = useFinalizarCompra()
+  const [notaFinal, setNotaFinal] = useState('')
   const cancelarPedido = useCancelarPedido()
   const proponer = useProponerCotizacion()
   /*
@@ -1327,6 +1336,22 @@ export function DetalleCompra() {
   const nombresAprobadores =
     (aprobadores ?? []).map((a) => nombreDe(a.usuario_id)).join(' o ') || 'quien aprueba'
 
+  // Fase 4: el WhatsApp de la compra cerrada.
+  const textoDeFinalizada = (nota?: string | null) =>
+    orden
+      ? textoFinalizada({
+          compra,
+          orden,
+          nota: nota ?? compra.finalizada_nota,
+          personas: {
+            solicita: solicitante,
+            analista: nombreDe(compra.registrada_por),
+            aprobo: orden.aprobada_gg_por ? nombreDe(orden.aprobada_gg_por) : null,
+          },
+          empresa: empresa?.razon_social,
+        })
+      : ''
+
   // La respuesta del almacén general, armada con lo que quedó guardado.
   const textoDelAlmacen = () =>
     textoRevisionAlmacen({
@@ -1630,7 +1655,8 @@ export function DetalleCompra() {
             </Card>
           ) : null}
 
-          {['CONFIRMADA', 'POR_CONFIRMAR_GERENTE', 'APROBADA'].includes(compra.estado) ? (
+          {['CONFIRMADA', 'POR_CONFIRMAR_GERENTE', 'APROBADA'].includes(compra.estado) ||
+          (compra.estado === 'FINALIZADA' && !!orden) ? (
             <Card>
               <CardHeader
                 title="Cotizaciones"
@@ -1661,7 +1687,7 @@ export function DetalleCompra() {
                         .join(' · ')
                 }
                 action={
-                  puedeCompras && compra.estado !== 'APROBADA' ? (
+                  puedeCompras && !['APROBADA', 'FINALIZADA'].includes(compra.estado) ? (
                     <Button size="sm" variant="soft" onClick={() => setModal({ tipo: 'cotizacion' })}>
                       Cargar cotización
                     </Button>
@@ -1695,9 +1721,9 @@ export function DetalleCompra() {
                       aunque la columna traiga algo viejo.
                     */
                     aprobada={
-                      compra.estado === 'APROBADA' && compra.cotizacion_elegida_id === c.id
+                      ['APROBADA', 'FINALIZADA'].includes(compra.estado) && compra.cotizacion_elegida_id === c.id
                     }
-                    puedeOperar={puedeCompras && compra.estado !== 'APROBADA'}
+                    puedeOperar={puedeCompras && !['APROBADA', 'FINALIZADA'].includes(compra.estado)}
                     ocupado={
                       proponer.isPending || retirar.isPending || eliminarCotizacion.isPending
                     }
@@ -2070,7 +2096,7 @@ export function DetalleCompra() {
                 )
               ) : null}
 
-              {compra.estado === 'FINALIZADA' ? (
+              {compra.estado === 'FINALIZADA' && !orden ? (
                 <div className="border-success/30 bg-success-soft rounded-[6px] border p-3">
                   <p className="text-ink/80 text-sm">
                     <strong className="font-semibold">Finalizada.</strong> El almacén general
@@ -2081,6 +2107,93 @@ export function DetalleCompra() {
                     . No hubo que comprar nada.
                   </p>
                 </div>
+              ) : null}
+
+              {/* Fase 4: la compra cerrada por Compras con todo recibido. */}
+              {compra.estado === 'FINALIZADA' && orden ? (
+                <>
+                  <div className="border-success/30 bg-success-soft rounded-[6px] border p-3">
+                    <p className="text-ink/80 text-sm">
+                      <strong className="font-semibold">Compra finalizada</strong>
+                      {compra.finalizada_en ? ` el ${fechaHora(compra.finalizada_en)}` : ''}
+                      {compra.finalizada_por ? ` por ${nombreDe(compra.finalizada_por)}` : ''}.
+                      Llegó todo al almacén general y está pagada.
+                    </p>
+                    {compra.finalizada_nota ? (
+                      <p className="text-ink/60 mt-1 text-xs">«{compra.finalizada_nota}»</p>
+                    ) : null}
+                  </div>
+                  <Button
+                    block
+                    variant="outline"
+                    icon={<MessageCircle />}
+                    onClick={() =>
+                      setMensaje({ titulo: 'WhatsApp de la compra finalizada', texto: textoDeFinalizada() })
+                    }
+                  >
+                    WhatsApp de finalizada
+                  </Button>
+                </>
+              ) : null}
+
+              {compra.estado === 'APROBADA' && orden?.estado === 'RECIBIDA' ? (
+                puedeCompras ? (
+                  <>
+                    <p className="text-ink/60 text-sm">
+                      Llegó todo el material y la orden está pagada. Márquela finalizada para
+                      cerrar la compra.
+                    </p>
+                    <Textarea
+                      label="Nota (opcional)"
+                      rows={2}
+                      value={notaFinal}
+                      onChange={(e) => setNotaFinal(e.target.value)}
+                    />
+                    <Button
+                      block
+                      icon={<BadgeCheck />}
+                      disabled={finalizar.isPending}
+                      onClick={() => {
+                        void (async () => {
+                          await finalizar.mutateAsync({ id: compra.id, nota: notaFinal })
+                          setMensaje({
+                            titulo: 'WhatsApp de la compra finalizada',
+                            texto: textoDeFinalizada(notaFinal),
+                          })
+                          setNotaFinal('')
+                        })()
+                      }}
+                    >
+                      {finalizar.isPending ? 'Finalizando…' : 'Marcar finalizada'}
+                    </Button>
+                    {finalizar.error ? <ErrorDeCarga error={finalizar.error} /> : null}
+                  </>
+                ) : (
+                  <p className="text-ink/60 text-sm">
+                    Llegó todo el material. Falta que Compras marque la compra finalizada.
+                  </p>
+                )
+              ) : null}
+
+              {orden && orden.renglones?.some((r) => Number(r.cantidad_recibida) > 0) ? (
+                <Button
+                  block
+                  variant="ghost"
+                  icon={<MessageCircle />}
+                  onClick={() =>
+                    setMensaje({
+                      titulo: 'WhatsApp de la recepción',
+                      texto: textoRecepcion({
+                        compra,
+                        orden,
+                        personas: { solicita: solicitante },
+                        empresa: empresa?.razon_social,
+                      }),
+                    })
+                  }
+                >
+                  WhatsApp de la recepción
+                </Button>
               ) : null}
 
               {compra.estado === 'BORRADOR' ? (
