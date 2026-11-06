@@ -78,6 +78,24 @@ function señal(t: Tarjeta): { texto: string; tono: Tono } | null {
       : { texto: 'Falta el método de pago', tono: 'warning' }
   }
 
+  // Cuenta abierta (fase 3): cuánto falta para que venza el crédito.
+  if (t.columna === 'CREDITO' && t.credito_vence) {
+    const d = Math.round(
+      (new Date(`${t.credito_vence}T00:00:00`).getTime() -
+        new Date(new Date().toDateString()).getTime()) /
+        86_400_000,
+    )
+    return {
+      texto:
+        d < 0
+          ? `Vencida hace ${-d} día${d === -1 ? '' : 's'}`
+          : d === 0
+            ? 'Vence hoy'
+            : `Vence en ${d} día${d === 1 ? '' : 's'}`,
+      tono: d < 0 ? 'danger' : d <= 3 ? 'warning' : 'info',
+    }
+  }
+
   if (t.columna === 'PAGADA' && t.dias_sin_recibir !== null) {
     const d = t.dias_sin_recibir
     return {
@@ -271,7 +289,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
         paso: 4,
         titulo: 'Aprobar y decidir el pago',
         detalle:
-          'Quien aprueba revisa la orden y marca si se pagará. Si dice que sí, queda pagada; Tesorería no interviene.',
+          'Quien aprueba revisa la orden y marca si se pagará. Si dice que sí, queda pagada; Tesorería no interviene. A crédito queda en cuenta abierta y se paga al vencer.',
         icono: HandCoins,
         a: '/app/compras',
       },

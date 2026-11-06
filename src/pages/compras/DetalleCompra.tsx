@@ -144,6 +144,49 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   NO_PAGADA: { texto: 'No se pagará todavía', tono: 'warning' },
   // La salida del almacén general se rechazó o canceló (lo escribe la bitácora).
   SALIDA_RECHAZADA: { texto: 'El almacén no entregó: vuelve a compras', tono: 'warning' },
+  // Fase 3: aprobada a crédito (lo escribe la bitácora).
+  CUENTA_ABIERTA: { texto: 'Cuenta abierta · a crédito', tono: 'info' },
+}
+
+// ---------------------------------------------------------------------------
+// Crédito (fase 3)
+// ---------------------------------------------------------------------------
+
+const esCredito = (c: string | null | undefined) => !!c && c.startsWith('CREDITO')
+const CUENTA_ABIERTA = 'CUENTA ABIERTA'
+
+/** Cuánto falta para que venza el crédito, o cuánto lleva vencido. */
+function AvisoCredito({ vence, condicion }: { vence: string | null; condicion: string }) {
+  const dias = vence
+    ? Math.round(
+        (new Date(`${vence}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) /
+          86_400_000,
+      )
+    : null
+  const vencida = dias !== null && dias < 0
+  return (
+    <div
+      className={cn(
+        'mb-3 rounded-[6px] border p-3',
+        vencida ? 'border-danger/30 bg-danger-soft' : 'border-info/30 bg-info-soft',
+      )}
+    >
+      <p className="text-ink/85 text-sm font-medium">
+        Cuenta abierta · a crédito {DIAS_DE_PAGO[condicion] ?? ''} días
+      </p>
+      <p className="text-ink/65 mt-0.5 text-xs">
+        {vence ? `Vence el ${fecha(vence)}` : 'Sin fecha de vencimiento'}
+        {dias === null
+          ? ''
+          : vencida
+            ? ` · vencida hace ${-dias} día${dias === -1 ? '' : 's'}`
+            : dias === 0
+              ? ' · vence hoy'
+              : ` · faltan ${dias} día${dias === 1 ? '' : 's'}`}
+        . El material se puede recibir antes de pagar.
+      </p>
+    </div>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -1260,7 +1303,20 @@ export function DetalleCompra() {
   const aprobacionSinPregunta =
     !!propuestaElegida &&
     (propuestaElegida.pago_metodo === 'INTERCAMBIO' ||
-      propuestaElegida.condicion_pago === 'CONTRA_ENTREGA')
+      propuestaElegida.condicion_pago === 'CONTRA_ENTREGA' ||
+      esCredito(propuestaElegida.condicion_pago))
+  /* A crédito (fase 3): se recibe antes de pagar, mientras falte material. */
+  const quedaPorRecibir = (orden?.renglones ?? []).some(
+    (r) => Number(r.cantidad) - Number(r.cantidad_recibida) > 0.0001,
+  )
+  const creditoAbierto =
+    !!orden &&
+    esCredito(orden.condicion_pago) &&
+    ['POR_INDICAR_PAGO', 'EN_TESORERIA'].includes(orden.estado)
+  const recibible =
+    !!orden &&
+    (['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'POR_RECIBIR'].includes(orden.estado) ||
+      (creditoAbierto && quedaPorRecibir))
   /* De qué cotización salió la orden: ahí está el pago que dijo Compras. */
   const cotizacionDeLaOrden = orden
     ? (cotizaciones.find((c) => c.id === orden.cotizacion_id) ?? null)
@@ -2264,9 +2320,11 @@ export function DetalleCompra() {
                       />
                     ) : propuestaElegida ? (
                       <p className="text-ink/55 mb-3 text-xs">
-                        {propuestaElegida.condicion_pago === 'CONTRA_ENTREGA'
-                          ? 'Contra entrega: se decide el pago después de recibir el material.'
-                          : 'Con productos: Compras registra el pago con material después de aprobar.'}
+                        {esCredito(propuestaElegida.condicion_pago)
+                          ? `A crédito (${DIAS_DE_PAGO[propuestaElegida.condicion_pago ?? ''] ?? ''} días): queda en cuenta abierta. El material se recibe cuando llegue y se marca pagada al vencer.`
+                          : propuestaElegida.condicion_pago === 'CONTRA_ENTREGA'
+                            ? 'Contra entrega: se decide el pago después de recibir el material.'
+                            : 'Con productos: Compras registra el pago con material después de aprobar.'}
                       </p>
                     ) : null}
                     <Button
@@ -2301,6 +2359,8 @@ export function DetalleCompra() {
                                   : `NO PAGADA · ${motivoDe(decision) ?? ''}`,
                               referencia: decision.sePaga === true ? decision.referencia : '',
                             })
+                          } else if (esCredito(propuestaElegida?.condicion_pago)) {
+                            setAvisoPendiente({ estado: CUENTA_ABIERTA, referencia: '' })
                           }
                           setDecision(DECISION_VACIA)
                           /*
@@ -2376,6 +2436,12 @@ export function DetalleCompra() {
               pagoDecideQuienAprueba &&
               ['POR_INDICAR_PAGO', 'EN_TESORERIA'].includes(orden.estado) ? (
                 <>
+                  {creditoAbierto ? (
+                    <AvisoCredito
+                      vence={orden.credito_vence ?? null}
+                      condicion={orden.condicion_pago ?? ''}
+                    />
+                  ) : null}
                   {orden.no_pago_motivo ? (
                     <div className="border-warning/30 bg-warning-soft mb-3 rounded-[6px] border p-3">
                       <p className="text-ink/85 text-sm font-medium">No se pagará todavía</p>
@@ -2539,13 +2605,15 @@ export function DetalleCompra() {
                 )
               ) : null}
 
-              {orden && ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'POR_RECIBIR'].includes(orden.estado) ? (
+              {orden && recibible ? (
                 <>
                   <div className="border-success/25 bg-success-soft rounded-[6px] border p-3">
                     <p className="text-ink/80 text-sm">
-                      {orden.estado === 'POR_RECIBIR'
-                        ? 'Contra entrega: se paga lo que llegue. '
-                        : `Pagada el ${fecha(orden.fecha_pago)}. `}
+                      {creditoAbierto
+                        ? 'A crédito: se recibe sin esperar el pago. '
+                        : orden.estado === 'POR_RECIBIR'
+                          ? 'Contra entrega: se paga lo que llegue. '
+                          : `Pagada el ${fecha(orden.fecha_pago)}. `}
                       Falta que almacén reciba el material.
                       {orden.entrega_estimada
                         ? ` El proveedor ofreció entregar el ${fecha(orden.entrega_estimada)}.`
@@ -2794,7 +2862,12 @@ export function DetalleCompra() {
       {avisoPendiente && orden ? (
         <ModalWhatsappCompra
           titulo="WhatsApp del pago"
-          texto={textoDelPago(avisoPendiente.estado, avisoPendiente.referencia)}
+          texto={textoDelPago(
+            avisoPendiente.estado === CUENTA_ABIERTA && orden.credito_vence
+              ? `${CUENTA_ABIERTA} · vence el ${fecha(orden.credito_vence)}`
+              : avisoPendiente.estado,
+            avisoPendiente.referencia,
+          )}
           onCerrar={() => setAvisoPendiente(null)}
         />
       ) : null}
