@@ -92,6 +92,40 @@ export function useTablero() {
   })
 }
 
+/*
+  EL HISTÓRICO DE COMPRAS.
+
+  Angélica, 06/11/2026: todo lo que había en compras pasa a un histórico, «como
+  finalizó, sin sumar stock», para dejar el tablero vacío para el flujo nuevo.
+
+  Es la misma tarjeta del tablero —sale de la misma vista base,
+  `v_compras_todas`— con tres datos más: cuándo se cerró, en qué columna estaba
+  y por qué. Se lee como FINALIZADA, pero `columna` y `estado_orden` siguen
+  diciendo la verdad de lo que pasó: una pagada que no llegó no se disfraza de
+  recibida.
+
+  En la base, lo del histórico ya no se mueve (`trg_historico_no_se_mueve`).
+*/
+export interface TarjetaHistorico extends Tarjeta {
+  historico_en: string
+  /** La columna del tablero en la que estaba al pasar al histórico. */
+  historico_columna: Columna | null
+  historico_nota: string | null
+}
+
+export function useHistoricoCompras() {
+  return useQuery({
+    queryKey: ['compras', 'historico'],
+    queryFn: async () =>
+      desenvolver<TarjetaHistorico[]>(
+        await supabase
+          .from('v_compras_historico')
+          .select('*')
+          .order('creada_en', { ascending: false }),
+      ),
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Detalle de una compra
 // ---------------------------------------------------------------------------
@@ -310,7 +344,11 @@ export interface Orden {
     telefono: string | null
   } | null
   /** A dónde pidió el solicitante que fuera. Decide el almacén al recibir. */
-  solicitud: { destino: string | null; destino_almacen_id: number | null } | null
+  solicitud: {
+    destino: string | null
+    destino_almacen_id: number | null
+    historico_en?: string | null
+  } | null
   renglones: RenglonOrden[]
   instrucciones: InstruccionPago[]
 }
@@ -322,10 +360,15 @@ export interface Orden {
  * se pagó, importa qué camión falta por llegar. Trae los renglones completos
  * porque la recepción se registra desde la misma fila, sin abrir la compra.
  */
+/*
+  `!inner` en la solicitud para poder filtrar por ella: lo que está en el
+  Histórico de compras no se espera, se cerró. Si apareciera aquí, alguien
+  intentaría recibirlo y la base le diría que no.
+*/
 const SELECT_ORDEN = `
   *,
   proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
-  solicitud:solicitudes_pedido(destino, destino_almacen_id),
+  solicitud:solicitudes_pedido!inner(destino, destino_almacen_id, historico_en),
   renglones:orden_renglones(*),
   instrucciones:instrucciones_pago(*)
 `
@@ -366,12 +409,14 @@ export function useComprasDirectas() {
             `
               *,
               proveedor:proveedores(id, nombre, rif, metodo_pago_preferido),
-              solicitud:solicitudes_pedido!inner(destino, destino_almacen_id, directa),
+              solicitud:solicitudes_pedido!inner(destino, destino_almacen_id, directa, historico_en),
               renglones:orden_renglones(*),
               instrucciones:instrucciones_pago(*)
             `,
           )
           .eq('solicitud.directa', true)
+          // Las que pasaron al Histórico de compras se ven allí, cerradas.
+          .is('solicitud.historico_en', null)
           // Lo último arriba: quien viene a repasar busca lo de esta semana, no
           // lo de septiembre pasado.
           .order('creada_en', { ascending: false })
@@ -392,6 +437,7 @@ export function useOrdenesPorRecibir() {
           // orden que sigue en tesorería no salió del banco todavía, y el
           // proveedor no despacha lo que no le han pagado.
           .in('estado', ['PAGADA_POR_RECIBIR', 'RECIBIDA_PARCIAL', 'POR_RECIBIR'])
+          .is('solicitud.historico_en', null)
           .order('fecha_pago', { ascending: true, nullsFirst: false }),
       ),
     refetchInterval: 5 * 60_000,
@@ -443,6 +489,13 @@ export interface Compra {
   firma_de_quien_pide: boolean | null
   firma_de_quien_aprueba: boolean | null
   motivo_cancelacion: string | null
+  /**
+   * Cuándo pasó al Histórico de compras. Con valor, la compra está cerrada como
+   * FINALIZADA: la pantalla no ofrece acciones y la base las rechaza.
+   */
+  historico_en?: string | null
+  historico_columna?: string | null
+  historico_nota?: string | null
   renglones: RenglonPedido[]
   cotizaciones: Cotizacion[]
   ordenes: Orden[]

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useMonedasUsables } from '@/lib/api/tasas'
 import { Banknote, FileText, Paperclip } from 'lucide-react'
@@ -18,7 +18,7 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dinero, documento, dolares, fecha, fechaHora } from '@/lib/formato'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { useTablero } from '@/lib/api/compras'
+import { useHistoricoCompras, useTablero } from '@/lib/api/compras'
 import { useProveedores } from '@/lib/api/catalogo'
 import { useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
 import { useCuentas } from '@/lib/api/tesoreria'
@@ -95,7 +95,14 @@ export function FacturasProveedor() {
   const { data: metodos } = useMetodosPago()
   const { data, isPending, error } = useFacturasCompra()
   const { data: proveedores } = useProveedores()
-  const { data: tarjetas } = useTablero()
+  const { data: enCurso } = useTablero()
+  /*
+    Las del Histórico de compras también: una factura que llega tarde de una
+    compra cerrada tiene que poder atarse a su orden, porque el libro de compras
+    la necesita igual. Cerrar la compra no cierra lo fiscal.
+  */
+  const { data: cerradas } = useHistoricoCompras()
+  const tarjetas = useMemo(() => [...(enCurso ?? []), ...(cerradas ?? [])], [enCurso, cerradas])
 
   const { data: empresa } = useEmpresa()
   const { data: cuentas } = useCuentas()

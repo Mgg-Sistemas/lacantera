@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
 import {
   AlertTriangle,
+  Archive,
   Building2,
   ClipboardList,
   FileText,
@@ -375,9 +376,18 @@ export function TableroCompras() {
         title="Compras"
         description="Cada tarjeta es una compra. Avanza de una etapa a la siguiente sin saltarse ninguna."
         actions={
-          <Link to="/app/compras/nuevo">
-            <Button icon={<Plus />}>Nuevo pedido</Button>
-          </Link>
+          <>
+            {/* Lo que había antes del flujo nuevo: cerrado como finalizado, sin
+                mover inventario (06/11/2026). */}
+            <Link to="/app/compras/historico">
+              <Button variant="outline" icon={<Archive />}>
+                Histórico de compras
+              </Button>
+            </Link>
+            <Link to="/app/compras/nuevo">
+              <Button icon={<Plus />}>Nuevo pedido</Button>
+            </Link>
+          </>
         }
       />
 
