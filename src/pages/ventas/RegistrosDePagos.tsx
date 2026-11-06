@@ -1,32 +1,52 @@
-import { Fragment, useMemo, useState } from 'react'
-import { Ban, ChevronDown, ChevronRight, Landmark, Link2, Pencil, Plus, Search, Upload, X } from 'lucide-react'
+import { Fragment, useMemo, useState, type ComponentProps } from 'react'
+import {
+  Ban,
+  ChevronDown,
+  ChevronRight,
+  Landmark,
+  Link2,
+  Pencil,
+  Plus,
+  Printer,
+  Search,
+  Upload,
+  X,
+} from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { Visor } from '@/components/Visor'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { Interruptor } from '@/components/ui/Interruptor'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO, type Rango } from '@/components/rango'
-import { dinero, fecha, tasa as formatoTasa } from '@/lib/formato'
+import { cifra, comoNumero, dinero, fecha, tasa as formatoTasa } from '@/lib/formato'
 import { enMayuscula } from '@/lib/texto'
-import { useMisAcciones } from '@/lib/api/usuarios'
+import { useMiPerfil, useMisAcciones } from '@/lib/api/usuarios'
 import { useMonedasUsables } from '@/lib/api/tasas'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
+import { armarReportePagos } from '@/lib/ficha/pagosBancariosPdf'
 import { leerMonto, leerPagosDelBanco, type FilaLeida } from '@/lib/leerPagosDelBanco'
 import {
+  leerNotasSinPago,
   useAnularPagoBancario,
   useAsociarNotas,
   useCambiarMontoAplicado,
   useGuardarPagoBancario,
   useImportarPagosBancarios,
   useNotasCandidatas,
+  useNotasCubiertasDeMas,
   useNotasDePago,
   usePagosBancarios,
   useQuitarNotaDePago,
   type EstadoPago,
+  type NotaCubiertaDeMas,
   type PagoBancario,
 } from '@/lib/api/pagosBancarios'
 
@@ -53,8 +73,58 @@ const ESTADOS: Record<EstadoPago, { etiqueta: string; tono: 'success' | 'warning
 
 const hoy = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' })
 
+/*
+  UN MONTO SE ESCRIBE CON SUS PUNTOS. Christopher, 06/11/2026: «687248» en la
+  casilla del monto aplicado «se confunde con un código». Mientras se escribe
+  se deja tal cual —poner puntos a mitad de tecleo mueve el cursor—; al salir
+  de la casilla se reescribe como 687.248,00. Se acepta punto o coma.
+*/
+/** La tasa no tiene miles: «848.546» es 848,546, no 848.546 bolívares. */
+const leerTasa = (texto: string) => Number(comoNumero(texto))
+
+const comoCifra = (texto: string, decimales: 2 | 4 = 2) => {
+  if (!texto.trim()) return ''
+  const n = decimales === 4 ? leerTasa(texto) : leerMonto(texto)
+  if (!Number.isFinite(n) || n === 0) return texto
+  return decimales === 4 ? formatoTasa(n) : cifra(n)
+}
+
+function CampoMonto({
+  decimales = 2,
+  value,
+  onChange,
+  ...resto
+}: Omit<ComponentProps<typeof Input>, 'value' | 'onChange'> & {
+  value: string
+  onChange: (texto: string) => void
+  decimales?: 2 | 4
+}) {
+  return (
+    <Input
+      {...resto}
+      inputMode="decimal"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={() => onChange(comoCifra(value, decimales))}
+    />
+  )
+}
+
+/** El mes anterior al de hoy, «2026-10»: es el que se suele cerrar. */
+const mesAnterior = () => {
+  const [a, m] = hoy().split('-').map(Number)
+  return m === 1 ? `${a - 1}-12` : `${a}-${String(m - 1).padStart(2, '0')}`
+}
+
+const nombreDelMes = (aaaamm: string) => {
+  const [a, m] = aaaamm.split('-').map(Number)
+  const texto = new Date(a, m - 1, 1).toLocaleDateString('es-VE', { month: 'long' })
+  return `${texto.charAt(0).toUpperCase()}${texto.slice(1)} ${a}`
+}
+
 export function RegistrosDePagos() {
   const { data, isPending, error } = usePagosBancarios()
+  const { data: cubiertasDeMas } = useNotasCubiertasDeMas()
   const { puede } = useMisAcciones()
   const puedeRegistrar = puede('VENTAS.REGISTRAR_PAGOS')
 
@@ -67,6 +137,8 @@ export function RegistrosDePagos() {
   const [abierto, setAbierto] = useState<number | null>(null)
   const [editando, setEditando] = useState<PagoBancario | 'nuevo' | null>(null)
   const [importando, setImportando] = useState(false)
+  const [pidiendoReporte, setPidiendoReporte] = useState(false)
+  const [reporte, setReporte] = useState<ArchivoArmado | null>(null)
 
   const filtrados = useMemo(() => {
     const aguja = enMayuscula(busca.trim())
@@ -96,16 +168,26 @@ export function RegistrosDePagos() {
         title="Registros de pagos"
         description="Los pagos que llegaron al banco y las notas de entrega que cubre cada uno. Toque un pago para ver sus notas."
         actions={
-          puedeRegistrar ? (
-            <>
-              <Button variant="outline" icon={<Upload />} onClick={() => setImportando(true)}>
-                Importar del banco
-              </Button>
-              <Button icon={<Plus />} onClick={() => setEditando('nuevo')}>
-                Registrar pago
-              </Button>
-            </>
-          ) : null
+          <>
+            <Button
+              variant="outline"
+              icon={<Printer />}
+              disabled={!data || data.length === 0}
+              onClick={() => setPidiendoReporte(true)}
+            >
+              Reporte PDF
+            </Button>
+            {puedeRegistrar ? (
+              <>
+                <Button variant="outline" icon={<Upload />} onClick={() => setImportando(true)}>
+                  Importar del banco
+                </Button>
+                <Button icon={<Plus />} onClick={() => setEditando('nuevo')}>
+                  Registrar pago
+                </Button>
+              </>
+            ) : null}
+          </>
         }
       />
 
@@ -139,8 +221,8 @@ export function RegistrosDePagos() {
             ]}
           />
           <div className="grid grid-cols-2 gap-2">
-            <Input label="Monto desde" inputMode="decimal" value={montoDesde} onChange={(e) => setMontoDesde(e.target.value)} />
-            <Input label="hasta" inputMode="decimal" value={montoHasta} onChange={(e) => setMontoHasta(e.target.value)} />
+            <CampoMonto label="Monto desde" value={montoDesde} onChange={setMontoDesde} />
+            <CampoMonto label="hasta" value={montoHasta} onChange={setMontoHasta} />
           </div>
         </div>
         <div className="mt-3">
@@ -150,6 +232,44 @@ export function RegistrosDePagos() {
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
+
+      {/*
+        UNA NOTA COBRADA MÁS DE UNA VEZ. Se vio el 06/11/2026: siete notas
+        asociadas a dos, tres y cinco pagos, cada pago «cuadrando». Desde ese
+        día el sistema ya no lo deja hacer; las que quedaron así se enseñan
+        aquí hasta que alguien quite los enlaces que sobran.
+      */}
+      {cubiertasDeMas && cubiertasDeMas.length > 0 ? (
+        <Card className="border-danger/30 bg-danger/5 mb-4">
+          <p className="text-danger font-medium">
+            {cubiertasDeMas.length === 1
+              ? 'Una nota está cubierta de más'
+              : `${cubiertasDeMas.length} notas están cubiertas de más`}
+          </p>
+          <p className="text-ink/65 mt-1 text-sm">
+            Reciben en sus pagos más de lo que valen: casi siempre porque la misma nota quedó asociada a varios
+            pagos. Busque la nota, abra sus pagos y quite la que sobra (o baje su monto aplicado).
+          </p>
+          <ul className="mt-2 space-y-1 text-sm">
+            {cubiertasDeMas.map((n) => (
+              <li key={n.nota_id}>
+                <button
+                  type="button"
+                  className="text-ink/85 hover:text-royal-700 font-medium underline-offset-2 hover:underline"
+                  onClick={() => setBusca(n.numero)}
+                >
+                  {n.numero}
+                </button>
+                <span className="text-ink/55">
+                  {' '}
+                  · {n.cliente ?? 'Sin cliente'} · vale {dinero('USD', n.total_usd)} y recibe{' '}
+                  {dinero('USD', n.aplicado_usd)} en {n.pagos} pagos
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
 
       {data && filtrados.length > 0 ? (
         <div className="mb-3 flex flex-wrap gap-2 text-sm">
@@ -241,6 +361,7 @@ export function RegistrosDePagos() {
                             <DetalleDelPago
                               pago={p}
                               puedeRegistrar={puedeRegistrar}
+                              cubiertasDeMas={cubiertasDeMas ?? []}
                               onEditar={() => setEditando(p)}
                             />
                           </td>
@@ -259,7 +380,200 @@ export function RegistrosDePagos() {
         <ModalPago pago={editando === 'nuevo' ? null : editando} onCerrar={() => setEditando(null)} />
       ) : null}
       {importando ? <ModalImportar onCerrar={() => setImportando(false)} /> : null}
+
+      {pidiendoReporte ? (
+        <ModalReporte
+          todos={data ?? []}
+          cubiertasDeMas={cubiertasDeMas ?? []}
+          filtrados={filtrados}
+          alcanceEnPantalla={[
+            [
+              'Fechas',
+              rango.desde || rango.hasta
+                ? `${rango.desde ? fecha(rango.desde) : 'sin inicio'} — ${rango.hasta ? fecha(rango.hasta) : 'hoy'}`
+                : 'Todas',
+            ],
+            ['Estado', estado ? ESTADOS[estado as EstadoPago].etiqueta : 'Todos los vigentes'],
+            ['Moneda', moneda || 'Todas'],
+            ...(montoDesde || montoHasta
+              ? ([['Monto', `${montoDesde || '0'} a ${montoHasta || 'sin tope'}`]] as [string, string][])
+              : []),
+            ...(busca.trim() ? ([['Búsqueda', busca.trim()]] as [string, string][]) : []),
+          ]}
+          onCerrar={() => setPidiendoReporte(false)}
+          onListo={(archivo) => {
+            setPidiendoReporte(false)
+            setReporte(archivo)
+          }}
+        />
+      ) : null}
+
+      <Visor
+        abierto={reporte !== null}
+        onCerrar={() => setReporte(null)}
+        blob={reporte?.blob ?? null}
+        nombreArchivo={reporte?.nombre ?? ''}
+        titulo="Registros de pagos"
+      />
     </>
+  )
+}
+
+// ─────────────────────────────── el reporte ─────────────────────────────────
+
+function ModalReporte({
+  todos,
+  cubiertasDeMas,
+  filtrados,
+  alcanceEnPantalla,
+  onCerrar,
+  onListo,
+}: {
+  todos: PagoBancario[]
+  cubiertasDeMas: NotaCubiertaDeMas[]
+  filtrados: PagoBancario[]
+  alcanceEnPantalla: Array<[string, string]>
+  onCerrar: () => void
+  onListo: (a: ArchivoArmado) => void
+}) {
+  const { data: empresa } = useEmpresa()
+  const { data: yo } = useMiPerfil()
+  const [modo, setModo] = useState<'LISTA' | 'CIERRE'>('CIERRE')
+  const [mes, setMes] = useState(mesAnterior())
+  const [conNotasDelPago, setConNotasDelPago] = useState(true)
+  const [conCuadrados, setConCuadrados] = useState(true)
+  const [conSinPago, setConSinPago] = useState(true)
+  const [conAnulados, setConAnulados] = useState(false)
+  const [conLogo, setConLogo] = useState(true)
+  const [armando, setArmando] = useState(false)
+  const [falla, setFalla] = useState<string | null>(null)
+
+  const armar = async () => {
+    setArmando(true)
+    setFalla(null)
+    try {
+      let pagos: PagoBancario[]
+      let notasSinPago = null
+      let deMas: NotaCubiertaDeMas[] | null = null
+      let alcance: Array<[string, string]>
+      let nombre = 'registros-de-pagos'
+
+      if (modo === 'CIERRE') {
+        const [a, m] = mes.split('-').map(Number)
+        const desde = `${mes}-01`
+        const hasta = `${mes}-${String(new Date(a, m, 0).getDate()).padStart(2, '0')}`
+        pagos = todos.filter(
+          (p) => p.fecha >= desde && p.fecha <= hasta && (conAnulados || p.estado !== 'ANULADO'),
+        )
+        if (conSinPago) notasSinPago = await leerNotasSinPago(desde, hasta)
+        // Un cierre no se firma sin decir que hay notas cobradas dos veces en el mes.
+        deMas = cubiertasDeMas.filter((n) => n.fecha >= desde && n.fecha <= hasta)
+        alcance = [
+          ['Mes', nombreDelMes(mes)],
+          ['Período', `${fecha(desde)} — ${fecha(hasta)}`],
+        ]
+        nombre += `-cierre-${mes}`
+      } else {
+        pagos = filtrados
+        alcance = alcanceEnPantalla
+      }
+
+      if (!conCuadrados) {
+        pagos = pagos.filter((p) => p.estado !== 'CUADRA')
+        alcance = [...alcance, ['Se muestran', 'Solo los pagos que no cuadran o no tienen notas']]
+        nombre += '-pendientes'
+      }
+      if (!conLogo) nombre += '-sin-logo'
+
+      onListo(
+        await armarReportePagos({
+          modo,
+          mes: nombreDelMes(mes),
+          alcance,
+          pagos: [...pagos].sort((x, y) => (x.fecha === y.fecha ? x.id - y.id : x.fecha < y.fecha ? -1 : 1)),
+          conNotasDelPago,
+          notasSinPago,
+          cubiertasDeMas: deMas,
+          conLogo,
+          nombreArchivo: `${nombre}.pdf`,
+          empresa: empresaDelPapel(empresa),
+          emitidoPor: yo?.nombre ?? '',
+          momento: new Date(),
+        }),
+      )
+    } catch (e) {
+      setFalla(e instanceof Error ? e.message : 'No se pudo armar el reporte.')
+    } finally {
+      setArmando(false)
+    }
+  }
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Reporte PDF de pagos"
+      descripcion="Elija qué sale en el papel. El cierre de mes toma el mes entero, sin importar los filtros de la pantalla."
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button icon={<Printer />} disabled={armando || (modo === 'CIERRE' && !mes)} onClick={() => void armar()}>
+            {armando ? 'Armando…' : 'Generar PDF'}
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Select
+          label="Qué reporte"
+          value={modo}
+          onChange={(e) => setModo(e.target.value as 'LISTA' | 'CIERRE')}
+          opciones={[
+            { valor: 'CIERRE', etiqueta: 'Cierre de mes' },
+            { valor: 'LISTA', etiqueta: `Lo que está en pantalla (${filtrados.length} pagos)` },
+          ]}
+        />
+        {modo === 'CIERRE' ? (
+          <Input label="Mes" type="month" max={hoy().slice(0, 7)} value={mes} onChange={(e) => setMes(e.target.value)} />
+        ) : null}
+      </div>
+
+      <div className="mt-5 space-y-3">
+        <Interruptor
+          encendido={conNotasDelPago}
+          onCambio={setConNotasDelPago}
+          etiqueta="Mostrar las notas de cada pago"
+          detalle="Debajo de cada pago, los números de nota y el cliente."
+        />
+        <Interruptor
+          encendido={conCuadrados}
+          onCambio={setConCuadrados}
+          etiqueta="Incluir los pagos que ya cuadran"
+          detalle="Apagado, el papel lleva solo lo pendiente: lo que no cuadra o no tiene notas."
+        />
+        {modo === 'CIERRE' ? (
+          <>
+            <Interruptor
+              encendido={conSinPago}
+              onCambio={setConSinPago}
+              etiqueta="Incluir las notas del mes sin pago"
+              detalle="Las notas de entrega del mes que no tienen ningún pago asociado."
+            />
+            <Interruptor
+              encendido={conAnulados}
+              onCambio={setConAnulados}
+              etiqueta="Incluir los pagos anulados"
+              detalle="Salen marcados como anulados y no suman."
+            />
+          </>
+        ) : null}
+        <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Con logo" />
+      </div>
+
+      {falla ? <ErrorDeCarga error={new Error(falla)} className="mt-4" /> : null}
+    </Modal>
   )
 }
 
@@ -268,10 +582,12 @@ export function RegistrosDePagos() {
 function DetalleDelPago({
   pago,
   puedeRegistrar,
+  cubiertasDeMas,
   onEditar,
 }: {
   pago: PagoBancario
   puedeRegistrar: boolean
+  cubiertasDeMas: NotaCubiertaDeMas[]
   onEditar: () => void
 }) {
   const { data, isPending, error } = useNotasDePago(pago.id)
@@ -335,15 +651,19 @@ function DetalleDelPago({
                     {n.cliente ?? 'Sin cliente'} · total {dinero(n.moneda, n.total)}
                     {n.otros_pagos > 0 ? ` · también en ${n.otros_pagos} pago(s) más` : ''}
                   </p>
+                  {cubiertasDeMas.some((c) => c.nota_id === n.nota_id) ? (
+                    <Chip tone="danger" className="mt-1">
+                      Cubierta de más: revise sus otros pagos
+                    </Chip>
+                  ) : null}
                 </div>
                 {editable ? (
                   <div className="flex items-end gap-2">
-                    <Input
+                    <CampoMonto
                       label={`Aplicado (${pago.moneda === 'VES' ? 'Bs' : pago.moneda})`}
-                      inputMode="decimal"
-                      className="w-36"
-                      value={escrito ?? String(Number(n.monto_aplicado))}
-                      onChange={(e) => setMontos((m) => ({ ...m, [n.enlace_id]: e.target.value }))}
+                      className="w-40"
+                      value={escrito ?? cifra(n.monto_aplicado)}
+                      onChange={(t) => setMontos((m) => ({ ...m, [n.enlace_id]: t }))}
                     />
                     {cambiado ? (
                       <Button
@@ -532,12 +852,20 @@ function ModalAsociar({ pago, onCerrar }: { pago: PagoBancario; onCerrar: () => 
                     {n.numero} <span className="text-ink/45 font-normal">· {fecha(n.fecha)}</span>
                   </p>
                   <p className="text-ink/55 truncate text-xs">
-                    {n.cliente ?? 'Sin cliente'}
+                    {n.cliente ?? 'Sin cliente'} · total {dinero(n.moneda, n.total)}
                     {n.otros_pagos > 0 ? ` · ya está en ${n.otros_pagos} pago(s)` : ''}
                   </p>
                 </div>
-                <span className="text-ink/85 tabular text-sm whitespace-nowrap">
-                  {dinero(pago.moneda, n.en_moneda_del_pago)}
+                {/* Lo que le falta a la nota, no su total: lo demás ya lo cubrieron otros pagos. */}
+                <span className="tabular text-right text-sm whitespace-nowrap">
+                  {Number(n.en_moneda_del_pago) > 0.005 ? (
+                    <>
+                      <span className="text-ink/45 block text-xs">{n.otros_pagos > 0 ? 'le falta' : 'vale'}</span>
+                      <span className="text-ink/85">{dinero(pago.moneda, n.en_moneda_del_pago)}</span>
+                    </>
+                  ) : (
+                    <span className="text-danger text-xs">Ya cubierta</span>
+                  )}
                 </span>
               </label>
             )
@@ -558,8 +886,8 @@ function ModalPago({ pago, onCerrar }: { pago: PagoBancario | null; onCerrar: ()
   const [f, setF] = useState({
     fecha: pago?.fecha ?? hoy(),
     moneda: pago?.moneda ?? 'VES',
-    monto: pago ? String(Number(pago.monto)) : '',
-    tasa: pago?.tasa ? String(Number(pago.tasa)) : '',
+    monto: pago ? cifra(pago.monto) : '',
+    tasa: pago?.tasa ? formatoTasa(pago.tasa) : '',
     referencia: pago?.referencia ?? '',
     descripcion: pago?.descripcion ?? '',
   })
@@ -585,7 +913,7 @@ function ModalPago({ pago, onCerrar }: { pago: PagoBancario | null; onCerrar: ()
                 fecha: f.fecha,
                 moneda: f.moneda,
                 monto,
-                tasa: f.moneda === 'USD' || !f.tasa.trim() ? null : leerMonto(f.tasa),
+                tasa: f.moneda === 'USD' || !f.tasa.trim() ? null : leerTasa(f.tasa),
                 referencia: f.referencia.trim() || null,
                 descripcion: f.descripcion.trim() || null,
               })
@@ -605,20 +933,19 @@ function ModalPago({ pago, onCerrar }: { pago: PagoBancario | null; onCerrar: ()
           onChange={(e) => cambiar({ moneda: e.target.value })}
           opciones={monedas.data ?? [{ valor: 'VES', etiqueta: 'Bolívares' }, { valor: 'USD', etiqueta: 'Dólares' }]}
         />
-        <Input
+        <CampoMonto
           label="Monto"
-          inputMode="decimal"
           placeholder="42.110,34"
           value={f.monto}
-          onChange={(e) => cambiar({ monto: e.target.value })}
+          onChange={(t) => cambiar({ monto: t })}
         />
         {f.moneda !== 'USD' ? (
-          <Input
+          <CampoMonto
             label="Tasa (Bs por $)"
-            inputMode="decimal"
+            decimales={4}
             hint="Si la deja vacía se usa la del BCV de ese día."
             value={f.tasa}
-            onChange={(e) => cambiar({ tasa: e.target.value })}
+            onChange={(t) => cambiar({ tasa: t })}
           />
         ) : null}
         <Input label="Referencia" value={f.referencia} onChange={(e) => cambiar({ referencia: e.target.value })} />
