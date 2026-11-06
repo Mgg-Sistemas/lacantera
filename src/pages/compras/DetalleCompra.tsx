@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
+  Archive,
   ArrowLeft,
   Ban,
   BadgeCheck,
@@ -121,6 +122,9 @@ const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'roy
   RECIBIDA_PARCIAL: { texto: 'Recibida parcialmente', tono: 'success' },
   RECIBIDA: { texto: 'Recibida', tono: 'success' },
   PROVEEDOR_DESISTIO: { texto: 'El proveedor desistió', tono: 'danger' },
+  // La compra pasó al Histórico de compras (06/11/2026). Lo escribe la
+  // bitácora; en la compra se decide por `historico_en`.
+  FINALIZADA: { texto: 'Finalizada', tono: 'info' },
 }
 
 // ---------------------------------------------------------------------------
@@ -852,8 +856,20 @@ export function DetalleCompra() {
   */
   const [cualAprobar, setCualAprobar] = useState<number | null>(null)
   const [respaldo, setRespaldo] = useState<File | null>(null)
-  const { puede } = useMisRoles()
-  const { puede: alcanza } = useMisAcciones()
+  /*
+    UNA COMPRA DEL HISTÓRICO SE MIRA, NO SE TOCA.
+
+    Pasó al Histórico de compras cerrada como finalizada (06/11/2026): no se
+    recibe, no se paga, no cambia de estado. La base ya lo rechaza; aquí se
+    apagan los botones para no mandar a nadie a que le digan que no. Se hace
+    en los dos mismos sitios de donde sale cada botón —el rol y la casilla—,
+    así ninguno de la pantalla se queda encendido por olvido.
+  */
+  const enHistorico = Boolean(compra?.historico_en)
+  const { puede: tieneRol } = useMisRoles()
+  const { puede: tieneAccion } = useMisAcciones()
+  const puede = (...roles: Parameters<typeof tieneRol>) => !enHistorico && tieneRol(...roles)
+  const alcanza = (accion: string) => !enHistorico && tieneAccion(accion)
   const misAutorizaciones = useMisAutorizaciones()
 
   const enviar = useEnviarPedido()
@@ -1198,7 +1214,7 @@ export function DetalleCompra() {
   // ahora son las que lleven el marbete, y pueden ser varias.
   const propuestas = cotizaciones.filter((c) => c.propuesta)
 
-  const estadoVisible = orden ? orden.estado : compra.estado
+  const estadoVisible = enHistorico ? 'FINALIZADA' : orden ? orden.estado : compra.estado
   const etiqueta = ETIQUETAS[estadoVisible] ?? { texto: estadoVisible, tono: 'neutral' as const }
 
   // La columna de recibido solo aparece cuando ya hay algo que recibir: antes
@@ -1308,14 +1324,26 @@ export function DetalleCompra() {
                 </Button>
               </Link>
             ) : null}
-            <Link to="/app/compras">
+            <Link to={enHistorico ? '/app/compras/historico' : '/app/compras'}>
               <Button variant="outline" icon={<ArrowLeft />}>
-                Tablero
+                {enHistorico ? 'Histórico' : 'Tablero'}
               </Button>
             </Link>
           </>
         }
       />
+
+      {enHistorico ? (
+        <div className="border-info/30 bg-info-soft mb-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
+          <Archive className="text-info mt-px size-[18px] shrink-0" />
+          <p className="text-ink/80 text-sm">
+            <strong className="font-semibold">Compra finalizada · Histórico de compras.</strong>{' '}
+            Se cerró el {fechaHora(compra.historico_en ?? null)} sin mover inventario
+            {orden ? ` (la orden estaba en «${ETIQUETAS[orden.estado]?.texto ?? orden.estado}»)` : ''}.
+            Ya no se recibe, no se paga ni cambia de estado.
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* ---------------- Columna principal ----------------

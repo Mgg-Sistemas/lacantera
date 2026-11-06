@@ -237,6 +237,9 @@ const PorPagar = pagina(() =>
 const HistorialDirectas = pagina(() =>
   import('@/pages/compras/HistorialDirectas').then((m) => ({ default: m.HistorialDirectas })),
 )
+const HistoricoCompras = pagina(() =>
+  import('@/pages/compras/HistoricoCompras').then((m) => ({ default: m.HistoricoCompras })),
+)
 const DetalleCompra = pagina(() =>
   import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
 )
@@ -731,6 +734,7 @@ export default function App() {
               {/* Antes que `compras/:id`, que si no atraparía «directa» como si
                   fuera el número de una orden. */}
               <Route path="compras/directa/historial" element={<HistorialDirectas />} />
+              <Route path="compras/historico" element={<HistoricoCompras />} />
               <Route path="compras/:id" element={<DetalleCompra />} />
               {/* `nuevo` antes que `:id` para leerlo de un vistazo, aunque el
                   enrutador ya prefiere lo estático sobre lo dinámico. */}
