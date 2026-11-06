@@ -177,3 +177,47 @@ export function textoEstadoPago(d: {
   if (limpio(d.empresa)) L.push(`🏢 *${limpio(d.empresa)}*`)
   return L.join('\n')
 }
+
+/**
+ * La respuesta del almacén general (fase 2): qué entrega, con qué solicitud de
+ * salida, y qué pasa a Compras. Si entregó todo, la compra queda FINALIZADA.
+ *
+ * `faltan` son los renglones que siguen en el pedido después de la revisión,
+ * con lo que falta.
+ */
+export function textoRevisionAlmacen(d: {
+  compra: Pick<Compra, 'numero' | 'titulo' | 'prioridad' | 'estado' | 'salida_almacen_numero' | 'revision_almacen_nota'>
+  entregado: { descripcion: string; cantidad: string | number; unidad?: string | null; articulo?: string | null }[]
+  faltan: { descripcion: string; cantidad: string | number; unidad?: string | null }[]
+  personas?: PersonasCompra
+  empresa?: string | null
+}): string {
+  const { compra } = d
+  const finalizada = compra.estado === 'FINALIZADA'
+  const cant = (c: string | number, u?: string | null) =>
+    `${Number(c).toLocaleString('es-VE', { maximumFractionDigits: 2 })}${limpio(u) ? ` ${limpio(u)}` : ''}`
+  const L: string[] = []
+  L.push(`🔹 *SOLICITUD:* ${compra.numero}`)
+  L.push(finalizada ? '✅ *FINALIZADA · la atiende el almacén general*' : '🏬 *Revisada por el almacén general*')
+  if (compra.prioridad === 'URGENTE') L.push('🚨 *URGENTE*')
+  L.push(`📝 *Detalle:* ${limpio(compra.titulo)}`)
+  L.push(...lineasPersonas({ solicita: d.personas?.solicita }))
+
+  if (d.entregado.length > 0) {
+    L.push('', `📦 *ENTREGA EL ALMACÉN (${d.entregado.length}):*`)
+    for (const r of d.entregado) {
+      L.push(`• ${limpio(r.descripcion)}: ${cant(r.cantidad, r.unidad)}${limpio(r.articulo) ? ` (${limpio(r.articulo)})` : ''}`)
+    }
+    if (limpio(compra.salida_almacen_numero)) L.push(`🧾 *Solicitud de salida:* ${limpio(compra.salida_almacen_numero)}`)
+  } else {
+    L.push('', '📦 *El almacén general no tiene nada de lo pedido.*')
+  }
+
+  if (!finalizada && d.faltan.length > 0) {
+    L.push('', `🛒 *PASA A COMPRAS (${d.faltan.length}):*`)
+    for (const r of d.faltan) L.push(`• ${limpio(r.descripcion)}: ${cant(r.cantidad, r.unidad)}`)
+  }
+  if (limpio(compra.revision_almacen_nota)) L.push('', `📌 *Nota:* ${limpio(compra.revision_almacen_nota)}`)
+  if (limpio(d.empresa)) L.push('', `🏢 *${limpio(d.empresa)}*`)
+  return L.join('\n')
+}

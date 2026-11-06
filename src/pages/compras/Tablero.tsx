@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   Upload,
   User,
+  Warehouse,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { PrimeraVez } from '@/components/tablero/PrimeraVez'
@@ -251,15 +252,23 @@ const QUE_HACER: GrupoDeAcciones[] = [
       },
       {
         paso: 2,
+        titulo: 'Revisar en el almacén general',
+        detalle:
+          'El almacén dice qué tiene. Lo que entrega sale por una solicitud de salida; si tiene todo, la compra queda finalizada.',
+        icono: Warehouse,
+        a: '/app/compras',
+      },
+      {
+        paso: 3,
         titulo: 'Cotizar y proponer con el pago',
         detalle:
-          'Compras carga las cotizaciones, las compara y propone una con su método y datos de pago.',
+          'Compras cotiza solo lo que el almacén no tenía, las compara y propone una con su método y datos de pago.',
         icono: ClipboardList,
         a: '/app/compras',
         exige: 'ESCRITURA',
       },
       {
-        paso: 3,
+        paso: 4,
         titulo: 'Aprobar y decidir el pago',
         detalle:
           'Quien aprueba revisa la orden y marca si se pagará. Si dice que sí, queda pagada; Tesorería no interviene.',
@@ -267,7 +276,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
         a: '/app/compras',
       },
       {
-        paso: 4,
+        paso: 5,
         titulo: 'Recibir el material',
         detalle:
           'Almacén cuenta lo que llegó contra la orden. Puede llegar en partes.',
@@ -450,8 +459,10 @@ export function TableroCompras() {
 
       <PrimeraVez className="mt-8">
         <p>
-          Una compra pasa por cinco pasos: se pide, se cotiza con su método de pago, se aprueba
-          decidiendo si se paga, y se recibe. La orden de compra se emite al aprobarla.
+          Una compra pasa por cinco pasos: se pide, el almacén general dice qué tiene, se cotiza lo
+          que falta con su método de pago, se aprueba decidiendo si se paga, y se recibe. Si el
+          almacén tiene todo, la compra queda finalizada sin comprar nada. La orden de compra se
+          emite al aprobarla.
         </p>
         <p className="text-ink/50">
           La <strong>compra directa</strong> es para lo que se paga en el acto, y no pasa por esos

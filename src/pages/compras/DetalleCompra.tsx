@@ -23,6 +23,7 @@ import {
   Undo2,
   UserX,
   Repeat,
+  Warehouse,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -39,10 +40,11 @@ import { ModalCotizacion } from './ModalCotizacion'
 import { ModalPago } from './ModalPago'
 import { ModalProponerConPago } from './ModalProponerConPago'
 import { ModalWhatsappCompra } from './ModalWhatsappCompra'
+import { ModalRevisionAlmacen } from './ModalRevisionAlmacen'
 import { SePagara } from './SePagara'
 import { DECISION_VACIA, decisionCompleta, motivoDe } from './decisionPago'
 import type { DecisionPago } from './decisionPago'
-import { textoEstadoPago, textoParaAprobar } from '@/lib/ficha/comprasWhatsapp'
+import { textoEstadoPago, textoParaAprobar, textoRevisionAlmacen } from '@/lib/ficha/comprasWhatsapp'
 import {
   ModalPagoConMaterial,
   ModalRegistrarPagoConMaterial,
@@ -109,6 +111,8 @@ import { cn } from '@/lib/cn'
 
 const ETIQUETAS: Record<string, { texto: string; tono: 'neutral' | 'info' | 'royal' | 'warning' | 'success' | 'danger' }> = {
   BORRADOR: { texto: 'Borrador', tono: 'neutral' },
+  // Fase 2: el almacén general dice qué tiene antes de que llegue a Compras.
+  REVISION_ALMACEN: { texto: 'En revisión del almacén', tono: 'warning' },
   PEDIDO: { texto: 'Pedido', tono: 'neutral' },
   CONFIRMADA: { texto: 'Confirmada · indicar proveedores', tono: 'info' },
   POR_CONFIRMAR_GERENTE: { texto: 'Pendiente por aprobar', tono: 'royal' },
@@ -898,6 +902,7 @@ export function DetalleCompra() {
   const [decisionOrden, setDecisionOrden] = useState<DecisionPago>(DECISION_VACIA)
   const [proponiendo, setProponiendo] = useState<Cotizacion | null>(null)
   const [mensaje, setMensaje] = useState<{ titulo: string; texto: string } | null>(null)
+  const [revisando, setRevisando] = useState(false)
   /* El WhatsApp del pago se arma cuando la orden recién creada ya llegó. */
   const [avisoPendiente, setAvisoPendiente] = useState<{ estado: string; referencia: string } | null>(
     null,
@@ -1264,6 +1269,27 @@ export function DetalleCompra() {
   const nombresAprobadores =
     (aprobadores ?? []).map((a) => nombreDe(a.usuario_id)).join(' o ') || 'quien aprueba'
 
+  // La respuesta del almacén general, armada con lo que quedó guardado.
+  const textoDelAlmacen = () =>
+    textoRevisionAlmacen({
+      compra,
+      entregado: (compra.atendido ?? []).map((a) => ({
+        descripcion: a.descripcion,
+        cantidad: a.cantidad_entregada,
+        unidad: a.unidad,
+      })),
+      faltan:
+        compra.estado === 'FINALIZADA'
+          ? []
+          : (compra.renglones ?? []).map((r) => ({
+              descripcion: r.descripcion,
+              cantidad: r.cantidad,
+              unidad: r.unidad,
+            })),
+      personas: { solicita: solicitante },
+      empresa: empresa?.razon_social,
+    })
+
   const textoDelPago = (estado: string, referencia?: string | null) =>
     orden
       ? textoEstadoPago({
@@ -1459,7 +1485,80 @@ export function DetalleCompra() {
                 </tbody>
               </table>
             </div>
+            {compra.estado === 'FINALIZADA' && (compra.renglones?.length ?? 0) > 0 ? (
+              <p className="text-ink/50 mt-3 text-xs">
+                Lo pedido. Lo entregó entero el almacén general (abajo).
+              </p>
+            ) : compra.revisada_almacen_en && (compra.atendido?.length ?? 0) > 0 ? (
+              <p className="text-ink/50 mt-3 text-xs">
+                Lo que falta después de lo que entregó el almacén general. Esto es lo que se compra.
+              </p>
+            ) : null}
           </Card>
+
+          {/* Lo que entregó el almacén general (fase 2). El renglón entregado
+              entero sale del pedido: aquí queda escrito. */}
+          {compra.revisada_almacen_en ? (
+            <Card>
+              <CardHeader
+                title="Revisión del almacén general"
+                subtitle={[
+                  `${fechaHora(compra.revisada_almacen_en)} · ${compra.revisada_almacen_por ? nombreDe(compra.revisada_almacen_por) : '—'}`,
+                  compra.salida_almacen_numero ? `Solicitud de salida ${compra.salida_almacen_numero}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+                action={
+                  <Button
+                    size="sm"
+                    variant="soft"
+                    icon={<MessageCircle />}
+                    onClick={() =>
+                      setMensaje({ titulo: 'WhatsApp del almacén', texto: textoDelAlmacen() })
+                    }
+                  >
+                    WhatsApp
+                  </Button>
+                }
+              />
+              {(compra.atendido?.length ?? 0) === 0 ? (
+                <p className="text-ink/60 mt-3 text-sm">
+                  El almacén general no tenía nada de lo pedido: pasó entero a Compras.
+                </p>
+              ) : (
+                <div className="-mx-5 mt-4 overflow-x-auto">
+                  <table className="w-full min-w-[420px] text-sm">
+                    <thead>
+                      <tr className="text-ink/45 border-hairline border-y text-left text-xs">
+                        <th className="py-2 pr-3 pl-5 font-medium">Renglón</th>
+                        <th className="px-3 py-2 text-right font-medium">Pedido</th>
+                        <th className="py-2 pr-5 pl-3 text-right font-medium">Entregó el almacén</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(compra.atendido ?? [])
+                        .slice()
+                        .sort((a, b) => (a.linea ?? 0) - (b.linea ?? 0))
+                        .map((a) => (
+                          <tr key={a.id} className="border-hairline border-b last:border-0">
+                            <td className="text-ink/85 py-2.5 pr-3 pl-5">{a.descripcion}</td>
+                            <td className="tabular text-ink/60 px-3 py-2.5 text-right">
+                              {a.cantidad_pedida} {a.unidad}
+                            </td>
+                            <td className="tabular text-success py-2.5 pr-5 pl-3 text-right font-medium">
+                              {a.cantidad_entregada}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {compra.revision_almacen_nota ? (
+                <p className="text-ink/60 mt-3 text-sm">«{compra.revision_almacen_nota}»</p>
+              ) : null}
+            </Card>
+          ) : null}
 
           {['CONFIRMADA', 'POR_CONFIRMAR_GERENTE', 'APROBADA'].includes(compra.estado) ? (
             <Card>
@@ -1881,6 +1980,37 @@ export function DetalleCompra() {
                 >
                   Editar la orden
                 </Button>
+              ) : null}
+
+              {compra.estado === 'REVISION_ALMACEN' ? (
+                puede('ALMACEN') ? (
+                  <>
+                    <p className="text-ink/60 mb-3 text-sm">
+                      Diga qué tiene el almacén general de cada renglón. Lo que entregue sale por
+                      una solicitud de salida; lo que falte pasa a Compras.
+                    </p>
+                    <Button block icon={<Warehouse />} onClick={() => setRevisando(true)}>
+                      Revisar en el almacén
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-ink/60 text-sm">
+                    Esperando que el almacén general diga qué tiene.
+                  </p>
+                )
+              ) : null}
+
+              {compra.estado === 'FINALIZADA' ? (
+                <div className="border-success/30 bg-success-soft rounded-[6px] border p-3">
+                  <p className="text-ink/80 text-sm">
+                    <strong className="font-semibold">Finalizada.</strong> El almacén general
+                    entregó todo
+                    {compra.salida_almacen_numero
+                      ? ` con la solicitud de salida ${compra.salida_almacen_numero}`
+                      : ''}
+                    . No hubo que comprar nada.
+                  </p>
+                </div>
               ) : null}
 
               {compra.estado === 'BORRADOR' ? (
@@ -2502,7 +2632,7 @@ export function DetalleCompra() {
               ) : null}
 
               {/* Cancelar: disponible mientras no se haya pagado. */}
-              {['PEDIDO', 'CONFIRMADA', 'POR_CONFIRMAR_GERENTE', 'BORRADOR'].includes(
+              {['REVISION_ALMACEN', 'PEDIDO', 'CONFIRMADA', 'POR_CONFIRMAR_GERENTE', 'BORRADOR'].includes(
                 compra.estado,
               ) ? (
                 <Button
@@ -2622,6 +2752,19 @@ export function DetalleCompra() {
           solicitudId={compra.id}
           cotizacion={proponiendo}
           onCerrar={() => setProponiendo(null)}
+        />
+      ) : null}
+
+      {revisando ? (
+        <ModalRevisionAlmacen
+          compra={compra}
+          solicitante={solicitante}
+          empresa={empresa?.razon_social}
+          onCerrar={() => setRevisando(false)}
+          onHecho={(texto) => {
+            setRevisando(false)
+            setMensaje({ titulo: 'WhatsApp del almacén', texto })
+          }}
         />
       ) : null}
 

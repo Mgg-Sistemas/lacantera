@@ -12,6 +12,7 @@ import { SELECT_MATERIAL, type PagoConMaterial } from './intercambio'
 // ---------------------------------------------------------------------------
 
 export type Columna =
+  | 'REVISION'
   | 'PEDIDO'
   | 'CONFIRMADA'
   | 'GERENTE'
@@ -20,6 +21,7 @@ export type Columna =
   | 'CANCELADA'
   | 'DESISTIO'
   | 'RECIBIDA'
+  | 'FINALIZADA'
 
 export interface DefinicionColumna {
   clave: Columna
@@ -30,6 +32,15 @@ export interface DefinicionColumna {
 }
 
 export const COLUMNAS: DefinicionColumna[] = [
+  // Fase 2 (06/11/2026): el pedido pasa primero por el almacén general. Lo que
+  // el almacén tiene sale por una solicitud de salida; a Compras llega solo lo
+  // que falta.
+  {
+    clave: 'REVISION',
+    titulo: 'Revisión de almacén',
+    accion: 'El almacén general dice qué tiene',
+    tono: 'warning',
+  },
   { clave: 'PEDIDO', titulo: 'Pedido', accion: 'Confirmar', tono: 'neutral' },
   { clave: 'CONFIRMADA', titulo: 'Confirmada', accion: 'Indicar proveedores', tono: 'info' },
   // Angélica, 06/11/2026: «que diga órdenes pendientes por aprobar, sin el
@@ -46,6 +57,14 @@ export const COLUMNAS: DefinicionColumna[] = [
   // La compra termina aquí, pero se queda a la vista: si desapareciera al
   // recibirse, no habría dónde comprobar que llegó.
   { clave: 'RECIBIDA', titulo: 'Recibida', accion: 'Cerrada', tono: 'info' },
+  // El almacén general tenía todo: salió por una solicitud de salida y no hubo
+  // que comprar nada.
+  {
+    clave: 'FINALIZADA',
+    titulo: 'Finalizada',
+    accion: 'Atendida por el almacén',
+    tono: 'success',
+  },
   { clave: 'CANCELADA', titulo: 'Cancelada', accion: 'No sigue', tono: 'neutral' },
   { clave: 'DESISTIO', titulo: 'El proveedor desistió', accion: 'Resolver el dinero', tono: 'danger' },
 ]
@@ -146,6 +165,24 @@ export interface RenglonPedido {
   cantidad: string
   unidad: string
   observacion: string | null
+}
+
+/**
+ * Lo que el almacén general entregó de un renglón del pedido. El renglón
+ * entregado entero sale del pedido; esto es lo que queda de él.
+ */
+export interface AtendidoAlmacen {
+  id: number
+  renglon_id: number | null
+  linea: number | null
+  descripcion: string
+  unidad: string | null
+  cantidad_pedida: string
+  cantidad_entregada: string
+  articulo_id: number
+  almacen_id: number
+  salida_numero: string | null
+  creado_en: string
 }
 
 export interface RenglonCotizacion {
@@ -525,6 +562,14 @@ export interface Compra {
   historico_en?: string | null
   historico_columna?: string | null
   historico_nota?: string | null
+  /** La revisión del almacén general (fase 2): quién, cuándo y con qué salida. */
+  revisada_almacen_por?: string | null
+  revisada_almacen_en?: string | null
+  revision_almacen_nota?: string | null
+  salida_almacen_numero?: string | null
+  finalizada_en?: string | null
+  /** Lo que entregó el almacén general, renglón por renglón. */
+  atendido?: AtendidoAlmacen[]
   renglones: RenglonPedido[]
   cotizaciones: Cotizacion[]
   ordenes: Orden[]
@@ -533,6 +578,7 @@ export interface Compra {
 const SELECT_DETALLE = `
   *,
   renglones:solicitud_renglones(*),
+  atendido:solicitud_atendido_almacen(*),
   cotizaciones:cotizaciones!cotizaciones_solicitud_id_fkey(
     *,
     proveedor:proveedores(id, nombre, rif, condicion_pago),
@@ -932,6 +978,28 @@ export function useEnviarPedido() {
 export function useConfirmarPedido() {
   return useAccion((p: { id: number; nota?: string }) =>
     rpc('confirmar_pedido', { p_id: p.id, p_nota: p.nota ?? null }),
+  )
+}
+
+/**
+ * La revisión del almacén general. Lo que entrega sale por una solicitud de
+ * salida de ALM-GEN (devuelve su número). Si entrega todo, la compra queda
+ * Finalizada; si no, a Compras pasa solo lo que falta.
+ */
+export function useRevisarEnAlmacen() {
+  return useAccion(
+    (p: {
+      id: number
+      renglones: { renglon_id: number; articulo_id: number | null; cantidad: number }[]
+      empleado_id: number | null
+      nota?: string | null
+    }) =>
+      rpc<string | null>('revisar_pedido_en_almacen', {
+        p_id: p.id,
+        p_renglones: p.renglones,
+        p_empleado_id: p.empleado_id,
+        p_nota: p.nota || null,
+      }),
   )
 }
 
