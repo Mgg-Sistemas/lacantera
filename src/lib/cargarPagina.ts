@@ -26,9 +26,9 @@ import { revisarVersionAhora, versionPublicada } from '@/lib/version'
   quedan publicados unos días (`~/desplegar.sh`). En Vercel sí, porque allí no se
   quedan.
 
-  No se reintenta la importación: una que falló no se vuelve a pedir de forma
-  fiable sin recargar, y reintentar contra un archivo que ya no existe solo
-  retrasaría el mensaje.
+  Se reintenta una sola vez, segundo y medio después (ver abajo): contra un
+  archivo que ya no existe solo retrasa el mensaje ese segundo y medio, y
+  contra un tropiezo de la red lo resuelve sin que nadie lo note.
 */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,7 +38,23 @@ export function conAvisoSiNoLlega<T extends { default: ComponentType<any> }>(
   return async () => {
     try {
       return await importar()
-    } catch {
+    } catch (primero) {
+      /*
+        UN SEGUNDO INTENTO ANTES DE RENDIRSE (07-nov)
+
+        Angélica vio «No se pudo abrir esta pantalla» justo mientras se
+        publicaba: el servidor construye en la misma máquina que sirve, y por
+        unos segundos tarda en contestar. Todas las pantallas estaban bien
+        publicadas. Un tropiezo así se arregla esperando un momento; los
+        navegadores actuales vuelven a pedir un módulo que falló al traerlo.
+      */
+      console.error('La pantalla no llegó; se reintenta', primero)
+      await new Promise((r) => setTimeout(r, 1500))
+      try {
+        return await importar()
+      } catch (segundo) {
+        console.error('La pantalla no llegó tampoco al reintentar', segundo)
+      }
       const publicada = await versionPublicada()
       const hayOtra = publicada !== null && publicada !== __VERSION__
       if (hayOtra) revisarVersionAhora()

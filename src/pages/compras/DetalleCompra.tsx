@@ -902,6 +902,18 @@ export function DetalleCompra() {
   const { data: metodosDePago } = useMetodosPago()
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
   /*
+    Si armar el papel falla, se dice. Antes el error se perdía en la consola y
+    el botón parecía no hacer nada: «los PDF no abren».
+  */
+  const [errorPdf, setErrorPdf] = useState<string | null>(null)
+  const conAvisoDelPdf = (armar: () => Promise<void>) => {
+    setErrorPdf(null)
+    armar().catch((e: unknown) => {
+      console.error('No se pudo armar el PDF', e)
+      setErrorPdf(e instanceof Error ? e.message : String(e))
+    })
+  }
+  /*
     En qué moneda se está leyendo la orden impresa.
 
     Vacío = la del documento. Se guarda aparte del PDF porque al cambiarla hay
@@ -1798,7 +1810,7 @@ export function DetalleCompra() {
                     onRetirar={() => void retirar.mutate({ id: c.id })}
                     onEditar={() => setModal({ tipo: 'cotizacion', corregir: c })}
                     onEliminar={() => void eliminarCotizacion.mutate({ id: c.id })}
-                    onPdf={() => void imprimirCotizacion(c)}
+                    onPdf={() => conAvisoDelPdf(() => imprimirCotizacion(c))}
                   />
                 ))}
               </div>
@@ -1850,7 +1862,7 @@ export function DetalleCompra() {
                       size="sm"
                       variant="outline"
                       icon={<Printer />}
-                      onClick={() => void imprimirOrden()}
+                      onClick={() => conAvisoDelPdf(() => imprimirOrden())}
                     >
                       Imprimir
                     </Button>
@@ -2058,7 +2070,7 @@ export function DetalleCompra() {
                       onRegistrarMaterial={() => setModal({ tipo: 'registrar-material', instruccion: i })}
                       onDevolver={() => setModal({ tipo: 'devolver-instruccion', instruccion: i })}
                       onCambiarMetodo={() => setModal({ tipo: 'cambiar-metodo', instruccion: i })}
-                      onComprobante={() => void imprimirComprobante(i)}
+                      onComprobante={() => conAvisoDelPdf(() => imprimirComprobante(i))}
                     />
                   ))}
               </div>
@@ -3252,14 +3264,22 @@ export function DetalleCompra() {
       ) : null}
 
       <Visor
-        abierto={pdf !== null}
+        abierto={pdf !== null || errorPdf !== null}
+        error={errorPdf}
         onCerrar={() => {
           setPdf(null)
+          setErrorPdf(null)
           setLeerOrdenEn('')
         }}
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ''}
-        titulo="Orden de compra"
+        titulo={
+          pdf?.nombre?.startsWith('cotizacion')
+            ? 'Cotización'
+            : pdf?.nombre?.startsWith('comprobante')
+              ? 'Comprobante de pago'
+              : 'Orden de compra'
+        }
         /*
           Solo se ofrece en la orden, que es el papel que sale de la casa. Y
           solo las dos monedas que el documento sabe convertir con sus propias
