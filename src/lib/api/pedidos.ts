@@ -8,9 +8,9 @@ import { normalizarCierre, normalizarFilas } from '@/lib/reportesCompras'
   PEDIDOS / COMPRAS COMO EN MGG (fase 1, 07/11/2026)
 
   Una sola tabla, `compras_ordenes`: la Solicitud de Pedido y, después, su
-  orden de compra. Se lee directo (la política de lectura decide qué filas
-  ve cada quien) y se escribe solo por funciones, que vuelven a preguntar el
-  permiso. Todo lo que cambia invalida `['pedidos']`, y el canal en vivo
+  orden de compra. Se lee con `compras_ordenes_visibles` (decide qué filas
+  ve cada quien, y solo Compras recibe los datos de pago) y se escribe solo
+  por funciones, que vuelven a preguntar el permiso. Todo lo que cambia invalida `['pedidos']`, y el canal en vivo
   (`tiempoReal.ts`) también, así que dos pantallas abiertas no se pisan.
 */
 
@@ -349,15 +349,14 @@ export function usePermisosPedidos() {
   })
 }
 
-/** Todas las órdenes que la política deja ver, la más nueva primero. */
+/** Todas las órdenes que cada quien puede ver, la más nueva primero. */
 export function usePedidos() {
   return useQuery({
     queryKey: ['pedidos', 'lista'],
-    queryFn: async () =>
-      desenvolver<Orden[]>(
-        await supabase.from('compras_ordenes').select('*').order('creado_en', { ascending: false }),
-      ),
+    queryFn: () => rpc<Orden[]>('compras_ordenes_visibles', { p_vista: 'todas' }),
     refetchOnWindowFocus: true,
+    // El canal en vivo de la tabla solo llega a Compras; los demás refrescan solos.
+    refetchInterval: 60_000,
   })
 }
 
@@ -365,16 +364,9 @@ export function usePedidos() {
 export function useSolicitudesEnRevision() {
   return useQuery({
     queryKey: ['pedidos', 'almacen', 'por-revisar'],
-    queryFn: async () =>
-      desenvolver<Orden[]>(
-        await supabase
-          .from('compras_ordenes')
-          .select('*')
-          .eq('estado', 'revision_almacen')
-          .eq('clase', 'producto')
-          .order('creado_en', { ascending: true }),
-      ),
+    queryFn: () => rpc<Orden[]>('compras_ordenes_visibles', { p_vista: 'por_revisar' }),
     refetchOnWindowFocus: true,
+    refetchInterval: 60_000,
   })
 }
 
@@ -382,16 +374,7 @@ export function useSolicitudesEnRevision() {
 export function useSolicitudesRevisadas(dias = 30) {
   return useQuery({
     queryKey: ['pedidos', 'almacen', 'revisadas', dias],
-    queryFn: async () =>
-      desenvolver<Orden[]>(
-        await supabase
-          .from('compras_ordenes')
-          .select('*')
-          .not('revisada_almacen_en', 'is', null)
-          .gte('revisada_almacen_en', new Date(Date.now() - dias * 86_400_000).toISOString())
-          .order('revisada_almacen_en', { ascending: false })
-          .limit(200),
-      ),
+    queryFn: () => rpc<Orden[]>('compras_ordenes_visibles', { p_vista: 'revisadas', p_dias: dias }),
     refetchOnWindowFocus: true,
   })
 }
