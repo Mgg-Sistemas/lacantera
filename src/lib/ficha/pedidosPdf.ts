@@ -16,6 +16,14 @@ import {
 import { DATOS_TECNICOS, LOGISTICA, desglosarOc, infoModalidad, labelCondicionPago } from '@/lib/ofertas'
 import type { Orden } from '@/lib/api/pedidos'
 import {
+  etiquetaDocumento,
+  labelMetodoPago,
+  labelRetencion,
+  montoAPagar,
+  resumenDatosPago,
+  saldoCredito,
+} from '@/lib/pagos'
+import {
   ETIQUETA_ALMACEN,
   SEDE_ALMACEN,
   cantidadSolicitada,
@@ -327,13 +335,15 @@ export interface DatosOcPdf {
   fechaEntregaPrometida: string | null
   /** La categoría de cada artículo, por su id. */
   categoriaDe: (articuloId: number | null | undefined) => string | null
+  /** La firma guardada de quien aprobó la OC (fase 3). Sin ella, la raya va en blanco. */
+  firmaAprobador?: string | null
 }
 
 /**
  * «ORDEN DE COMPRA» (MGG `ordenCompraPdf.ts`): proveedor, condiciones, datos de
- * la oferta elegida, desistimientos, ítems con su pie de totales, notas y
- * firmas. La firma escaneada de quien aprueba llega con la aprobación (fase 3):
- * hasta entonces la raya va en blanco.
+ * la oferta elegida, desistimientos, ítems con su pie de totales, el pago
+ * (documento, retenciones y monto a pagar, fase 3), notas y firmas. Ya
+ * aprobada, la firma guardada de quien la aprobó; sin firma, la raya en blanco.
  */
 export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: DatosOcPdf): Promise<ArchivoArmado> {
   const { jsPDF } = await import('jspdf')
@@ -488,6 +498,45 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
   }
   y = etiquetaValor(doc, y - 4, lineas, { columnas: 1 })
 
+  // EL PAGO (fase 3): sin Tesorería, las retenciones se restan del total.
+  const rets = o.retenciones ?? []
+  const filasPago: Array<[string, string]> = []
+  if (o.comprobante_tipo) filasPago.push(['Documento', etiquetaDocumento(o.comprobante_tipo)])
+  for (const m of o.metodo_pago ?? []) {
+    const datos = resumenDatosPago(m.metodo, m.datos)
+    const monto = Number(m.monto) > 0 ? `${m.moneda} ${Number(m.monto).toLocaleString('es-VE', { minimumFractionDigits: 2 })}` : ''
+    filasPago.push([`Método · ${labelMetodoPago(m.metodo)}`, [monto, datos].filter(Boolean).join(' · ') || String(m.moneda)])
+  }
+  if (o.numero_administracion) filasPago.push(['Tel. administración del proveedor', o.numero_administracion])
+  if (Number(o.descuento_pago) > 0) filasPago.push(['Descuento en el pago', `-${money2(o.descuento_pago)}`])
+  for (const r of rets) {
+    filasPago.push([
+      `Retención ${labelRetencion(r)}`,
+      `-${money2(r.monto)}${r.modo === 'porcentaje' && r.base != null ? ` (sobre ${money2(r.base)})` : ''}`,
+    ])
+  }
+  if (rets.length || Number(o.descuento_pago) > 0 || o.metodo_pago?.length) {
+    filasPago.push(['Monto a pagar', money2(montoAPagar(o))])
+  }
+  if (Number(o.abonado_total) > 0) {
+    filasPago.push(['Abonado', money2(o.abonado_total)])
+    filasPago.push(['Saldo pendiente', money2(saldoCredito(o))])
+  }
+  if (o.pagada_en && o.pago_fecha) {
+    filasPago.push([
+      'Pagada',
+      `${fechaCortaVE(o.pago_fecha) ?? ''} · ${money2(o.pago_monto_usd)}${o.pago_referencia ? ` · ref. ${o.pago_referencia}` : ''}`,
+    ])
+  }
+  if (filasPago.length) {
+    if (y + 30 > 265) {
+      doc.addPage()
+      y = 30
+    }
+    y = seccion(doc, y, 'Pago')
+    y = etiquetaValor(doc, y, filasPago, { columnas: 1 })
+  }
+
   if ((o.notas ?? '').trim()) {
     y = seccion(doc, y, 'Notas / observaciones')
     doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor('#333333')
@@ -506,6 +555,7 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
     {
       texto: o.oc_aprobada_en ? 'Firma autorizada' : `Firma autorizada · ${empresa.razonSocial}`,
       nombre: o.oc_aprobada_por_nombre ?? null,
+      imagen: o.oc_aprobada_en ? (d.firmaAprobador ?? null) : null,
     },
     { texto: 'Analista que realizó la solicitud', nombre: o.oc_creada_por_nombre ?? o.aprobada_por_nombre ?? null },
   )
@@ -513,4 +563,68 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
   pieDePagina(doc, `Documento auto-generado · ${o.codigo} · ${fechaLarga(new Date())}`)
   doc.setProperties({ title: `Orden de compra ${oc}` })
   return { blob: doc.output('blob'), nombre: `${oc}.pdf` }
+}
+
+// ---------------------------------------------------------------------------
+// Fase 3: «📋 OC por lote» (MGG `checklistOcPdf.ts`), en el papel de la casa
+// ---------------------------------------------------------------------------
+
+/**
+ * «ÓRDENES DE COMPRA PENDIENTES POR CONFIRMACIÓN»: la relación de las OC
+ * marcadas. MGG la saca apaisada y con un correlativo «GT-MTZ-BS-NNN-AAAA»;
+ * aquí va vertical (la tabla de la casa cabe) y con la fecha en el nombre.
+ */
+export async function armarChecklistOcPdf(
+  ordenes: Orden[],
+  empresa: EmpresaPapel,
+  d: { proveedorDe: (o: Orden) => string; descripcionDe: (o: Orden) => string },
+): Promise<ArchivoArmado> {
+  const { jsPDF } = await import('jspdf')
+  const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
+  const hoy = fechaHoraVE()
+
+  let y = membrete(doc, logo, {
+    empresa,
+    datos: [
+      ['Órdenes', String(ordenes.length)],
+      ['Fecha', hoy],
+    ],
+  })
+  y = tituloDocumento(doc, y, 'Órdenes de compra pendientes por confirmación')
+
+  const corta = (iso: string | null | undefined) => fechaCortaVE(iso) ?? '—'
+  y = tabla(
+    doc,
+    y,
+    [
+      { titulo: 'Item', ancho: 8 },
+      { titulo: 'N° ODC', ancho: 19 },
+      { titulo: 'Solicitado por', ancho: 19 },
+      { titulo: 'Proveedor', ancho: 22 },
+      { titulo: 'Descripción', ancho: 29 },
+      { titulo: 'Monto $', ancho: 16, alDerecha: true },
+      { titulo: 'F. compra', ancho: 13 },
+      { titulo: 'F. firma', ancho: 13 },
+      { titulo: 'Estatus', ancho: 11 },
+    ],
+    ordenes.map((o, i) => [
+      String(i + 1),
+      o.oc_codigo ?? o.codigo,
+      [o.solicitante_nombre ?? o.creado_por_nombre, o.unidad_solicitante].filter(Boolean).join('\n') || '—',
+      d.proveedorDe(o) || '—',
+      d.descripcionDe(o) || '—',
+      money2(o.total),
+      corta(o.oc_creada_en),
+      corta(o.oc_aprobada_en),
+      o.estado === 'oc_creada' ? 'POR CONFIRMAR' : 'CONFIRMADA',
+    ]),
+  )
+
+  const total = ordenes.reduce((a, o) => a + (Number(o.total) || 0), 0)
+  etiquetaValor(doc, y - 2, [['Total', money2(total)]], { columnas: 1 })
+
+  pieDePagina(doc, `Generado ${hoy} · ${empresa.razonSocial}`)
+  doc.setProperties({ title: 'Órdenes de compra pendientes por confirmación' })
+  return { blob: doc.output('blob'), nombre: `checklist-oc-${new Date().toISOString().slice(0, 10)}.pdf` }
 }

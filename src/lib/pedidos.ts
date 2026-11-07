@@ -114,15 +114,18 @@ const EVENTOS: Record<string, string> = {
   oc_reabierta: 'OC reabierta · volver a cotizar y re-elegir oferta',
   oc_reabierta_edicion: 'OC modificada · vuelve a aprobación del Gerente',
   confirmada_metodo: 'OC confirmada · indicar método de pago',
+  // La base arma el evento como 'confirmada_' || estado: con confirmada_metodo sale doble.
+  confirmada_confirmada_metodo: 'OC confirmada · indicar método de pago',
   confirmada_por_recibir: 'OC confirmada · pendiente por recepción',
   confirmada_cuenta_abierta: 'OC confirmada · crédito (cuenta abierta)',
   metodo_pago: 'Método de pago indicado · enviada a pagar',
-  metodo_pago_corregido: 'Método de pago corregido (sigue en Tesorería)',
+  // Sin Tesorería: MGG dice «(sigue en Tesorería)» y «Pago registrado (Tesorería)».
+  metodo_pago_corregido: 'Método de pago corregido',
   oc_aprobada: 'Confirmada pagar',
   anticipo: 'Pago anticipado',
   abono: 'Abono registrado (crédito)',
   credito_saldado: 'Crédito saldado · pendiente por recepción',
-  pagada: 'Pago registrado (Tesorería)',
+  pagada: 'Pago registrado',
   recibida: 'Recepción confirmada',
   finalizada: 'Pedido finalizado',
   revisada_almacen: 'Revisada por almacén',
@@ -136,6 +139,9 @@ const EVENTOS: Record<string, string> = {
   proveedores_asignados: 'Proveedores asignados (sub-OC por proveedor)',
   modalidad_pago_cambiada: 'Modalidad de pago cambiada',
   anulada: 'OC anulada',
+  // Fase 3, propios de La Cantera (sin Tesorería ni Retenciones).
+  documento_retenciones: 'Documento y retenciones indicados',
+  credito_a_recepcion: 'Crédito · enviada a Pendiente por recepción',
 }
 
 export const etiquetaEvento = (ev: string): string => EVENTOS[ev] ?? ev
@@ -155,6 +161,7 @@ const CLASE_EVENTO: Record<string, TonoEstado> = {
   oc_reabierta: 'warning',
   oc_reabierta_edicion: 'warning',
   confirmada_metodo: 'info',
+  confirmada_confirmada_metodo: 'info',
   anticipo: 'info',
   confirmada_por_recibir: 'info',
   confirmada_cuenta_abierta: 'warning',
@@ -171,6 +178,8 @@ const CLASE_EVENTO: Record<string, TonoEstado> = {
   proveedores_asignados: 'info',
   modalidad_pago_cambiada: 'info',
   anulada: 'danger',
+  documento_retenciones: 'info',
+  credito_a_recepcion: 'info',
 }
 
 export const claseEvento = (ev: string): TonoEstado => CLASE_EVENTO[ev] ?? 'neutral'
@@ -194,11 +203,80 @@ export function extraEvento(h: EventoHistorial): string {
   if (h.evento === 'modalidad_pago_cambiada') {
     return ` · ${h.a === 'usd' ? 'Pago en $ (Divisa)' : 'Pago en Bs al cambio (tasa BCV)'}`
   }
+  const pago = extraPago(h)
+  if (pago) return pago
   if (motivo) return motivo
   if ((h.evento === 'revisada_almacen' || h.evento === 'salida_rechazada') && typeof h.detalle === 'string' && h.detalle.trim()) {
     return ` · ${h.detalle}`
   }
   return ''
+}
+
+const usd = (v: unknown): string => money(v as number)
+
+/** Las retenciones de un evento: «IVA 75 % $12,00 · ISLR 2 % $2,00». */
+function retencionesTxt(v: unknown): string {
+  if (!Array.isArray(v) || !v.length) return ''
+  return (v as Array<{ tipo?: string; modo?: string; valor?: number; monto?: number }>)
+    .map((r) => `${r.tipo ?? ''} ${r.modo === 'monto' ? '(monto)' : `${r.valor ?? ''} %`} ${usd(r.monto)}`)
+    .join(' · ')
+}
+
+const METODO_TXT: Record<string, string> = {
+  divisas_efectivo: 'Divisas en efectivo',
+  efectivo_bs: 'Efectivo (Bs)',
+  transferencia: 'Transferencia',
+  pago_movil: 'Pago móvil',
+  binance_usdt: 'Binance / USDT',
+  zelle: 'Zelle',
+  otro: 'Otro',
+}
+
+function metodosTxt(v: unknown): string {
+  if (!Array.isArray(v) || !v.length) return ''
+  return (v as Array<{ metodo?: string }>).map((m) => METODO_TXT[m.metodo ?? ''] ?? m.metodo).join(' + ')
+}
+
+/** Lo que dicen los eventos del pago (fase 3): documento, retenciones, método, monto a pagar, referencia. */
+function extraPago(h: EventoHistorial): string {
+  const doc = h.comprobante === 'factura' ? 'Factura' : h.comprobante === 'nota_entrega' ? 'Nota de entrega' : ''
+  const partes: string[] = []
+  switch (h.evento) {
+    case 'metodo_pago':
+    case 'metodo_pago_corregido':
+      partes.push(metodosTxt(h.metodos ?? (h.despues as { metodos?: unknown } | undefined)?.metodos), doc)
+      if (retencionesTxt(h.retenciones)) partes.push(`Ret.: ${retencionesTxt(h.retenciones)}`)
+      if (Number(h.descuento_pago) > 0) partes.push(`desc. ${usd(h.descuento_pago)}`)
+      if (h.monto_a_pagar != null) partes.push(`a pagar ${usd(h.monto_a_pagar)}`)
+      break
+    case 'documento_retenciones':
+      partes.push(doc)
+      partes.push(retencionesTxt(h.retenciones) ? `Ret.: ${retencionesTxt(h.retenciones)}` : 'sin retenciones')
+      if (h.monto_a_pagar != null) partes.push(`a pagar ${usd(h.monto_a_pagar)}`)
+      if (h.saldo != null) partes.push(`saldo ${usd(h.saldo)}`)
+      break
+    case 'pagada':
+      partes.push(usd(h.monto_usd ?? h.monto))
+      if (h.moneda === 'Bs') partes.push(`Bs ${Number(h.monto).toLocaleString('es-VE', { minimumFractionDigits: 2 })} a ${h.tasa}`)
+      if (typeof h.referencia === 'string') partes.push(`ref. ${h.referencia}`)
+      if (typeof h.fecha === 'string') partes.push(`del ${h.fecha.split('-').reverse().join('/')}`)
+      if (typeof h.comprobante_nombre === 'string') partes.push(`📎 ${h.comprobante_nombre}`)
+      break
+    case 'abono':
+      partes.push(usd(h.monto), METODO_TXT[String(h.metodo)] ?? '')
+      if (typeof h.referencia === 'string') partes.push(`ref. ${h.referencia}`)
+      if (h.saldo != null) partes.push(`saldo ${usd(h.saldo)}`)
+      break
+    case 'credito_saldado':
+    case 'credito_a_recepcion':
+      if (h.abonado != null) partes.push(`abonado ${usd(h.abonado)}`)
+      if (h.saldo != null) partes.push(`saldo ${usd(h.saldo)}`)
+      break
+    default:
+      return ''
+  }
+  const t = partes.filter(Boolean).join(' · ')
+  return t ? ` · ${t}` : ''
 }
 
 // ---------------------------------------------------------------------------
@@ -286,6 +364,7 @@ export function coincide(o: Orden, texto: string, proveedor?: string | null): bo
       o.solicitante_nombre,
       o.creado_por_nombre,
       o.notas,
+      o.pago_referencia,
       etiquetaEstado(o.estado),
       money(o.total),
       String(o.total),
