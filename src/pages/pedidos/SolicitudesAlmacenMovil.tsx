@@ -10,6 +10,7 @@ import { useMiPerfil, useSoloTelefono } from '@/lib/api/usuarios'
 import { useMisRoles } from '@/lib/api/catalogo'
 import {
   usePermisosPedidos,
+  usePorRecibir,
   useSolicitudesEnRevision,
   useSolicitudesRevisadas,
   type Orden,
@@ -28,6 +29,7 @@ import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { RevisionSolicitudAlmacen } from './RevisionSolicitudAlmacen'
 import { usePdfSolicitud } from './usePdfSolicitud'
+import { RecepcionesTelefono } from './RecepcionesTelefono'
 
 /*
   SOLICITUDES DE PEDIDO EN EL TELÉFONO (MGG `SolicitudesAlmacenMovilView.tsx`)
@@ -36,6 +38,9 @@ import { usePdfSolicitud } from './usePdfSolicitud'
   como en MGG. Las revisadas son las de los últimos 7 días y al tocarlas sale
   su mensaje de WhatsApp. Sin «🔁 Traslados por hacer»: revisa un solo
   almacén (decisión de la dueña, 07/11/2026).
+
+  Fase 4: el botón «📥 Recepciones» abre la recepción de las OC por teléfono
+  (MGG `RecepcionesTelefono.tsx`).
 */
 
 const DIAS_REVISADAS = 7
@@ -55,6 +60,9 @@ export function SolicitudesAlmacenMovil() {
   const [busca, setBusca] = useState('')
   const [selId, setSelId] = useState<number | null>(null)
   const [mensaje, setMensaje] = useState<{ titulo: string; texto: string } | null>(null)
+  const [enRecepciones, setEnRecepciones] = useState(false)
+  const porRecibirQ = usePorRecibir()
+  const porRecibir = porRecibirQ.data ?? []
 
   const pendientes = useMemo(() => enRevision.data ?? [], [enRevision.data])
   const urgentes = pendientes.filter((o) => o.urgente)
@@ -131,7 +139,15 @@ export function SolicitudesAlmacenMovil() {
         </div>
       </div>
 
-      {sel ? (
+      {enRecepciones ? (
+        <RecepcionesTelefono
+          filas={porRecibir}
+          cargando={porRecibirQ.isPending}
+          error={porRecibirQ.error}
+          canWrite={permisos.data?.recibe_almacen === true}
+          onVolver={() => setEnRecepciones(false)}
+        />
+      ) : sel ? (
         <RevisionSolicitudAlmacen
           key={sel.id}
           orden={sel}
@@ -170,6 +186,15 @@ export function SolicitudesAlmacenMovil() {
               </>,
               cn('col-span-2 min-h-[84px]', filtro === 'revisadas' && 'bg-success/14'),
             )}
+            <button
+              type="button"
+              onClick={() => setEnRecepciones(true)}
+              className="bg-surface shadow-card col-span-2 flex min-h-[84px] flex-col items-center justify-center gap-0.5 rounded-[10px] border border-transparent px-3 py-3 text-center"
+            >
+              <span className="text-2xl">📥</span>
+              <span className="font-semibold">Recepciones ({porRecibir.length})</span>
+              <small className="text-ink/55">Órdenes de compra por recibir en el Almacén General</small>
+            </button>
           </div>
 
           <Input

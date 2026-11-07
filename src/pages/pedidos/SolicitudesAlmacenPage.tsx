@@ -11,6 +11,7 @@ import { cn } from '@/lib/cn'
 import { useMisAcciones, useSoloTelefono } from '@/lib/api/usuarios'
 import {
   usePermisosPedidos,
+  usePorRecibir,
   useSolicitudesEnRevision,
   useSolicitudesRevisadas,
   type Orden,
@@ -31,6 +32,7 @@ import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { ResumenListas, RevisionSolicitudAlmacen } from './RevisionSolicitudAlmacen'
 import { ACCION_TELEFONO_SOLICITUDES, usePdfSolicitud } from './usePdfSolicitud'
+import { RecepcionesPorRecibir } from './RecepcionesPorRecibir'
 
 /*
   SOLICITUDES DE PEDIDO EN EL ALMACÉN (MGG `SolicitudesAlmacenPage.tsx`)
@@ -41,14 +43,21 @@ import { ACCION_TELEFONO_SOLICITUDES, usePdfSolicitud } from './usePdfSolicitud'
   dos sedes y lo que tiene una viaja a la otra; aquí revisa solo el almacén
   general (decisión de la dueña, 07/11/2026), así que no hay traslados: lo que
   tiene sale por una solicitud de salida.
+
+  Fase 4: la tercera pestaña es «📥 Recepciones por recibir» (MGG Inventario →
+  Recepciones): las OC pagadas o en contra entrega que el almacén recibe en
+  ALM-GEN, con el modal «Recibir {OC}» y el histórico de recepciones.
 */
 
-type Pestana = 'pendientes' | 'revisadas'
+type Pestana = 'pendientes' | 'revisadas' | 'recepciones'
 
 export function SolicitudesAlmacenPage() {
   const permisos = usePermisosPedidos()
   const enRevision = useSolicitudesEnRevision()
   const revisadasQ = useSolicitudesRevisadas(30)
+  const porRecibirQ = usePorRecibir()
+  const porRecibir = useMemo(() => porRecibirQ.data ?? [], [porRecibirQ.data])
+  const [recepcionAbrir, setRecepcionAbrir] = useState<number | null>(null)
   const { puede: puedeAccion } = useMisAcciones()
   const { soloTelefono } = useSoloTelefono()
   const { ver, armando, visor } = usePdfSolicitud()
@@ -76,21 +85,25 @@ export function SolicitudesAlmacenPage() {
     setSelId(null)
   }, [pendientes, selId, enRevision.isSuccess, revisadas])
 
-  // El aviso de la campana trae ?detalle=ID: se abre esa SP si sigue por revisar.
+  // El aviso de la campana trae ?detalle=ID: se abre esa SP si sigue por
+  // revisar, o esa OC si está por recibir (fase 4).
   const [searchParams, setSearchParams] = useSearchParams()
   useEffect(() => {
     const id = searchParams.get('detalle')
-    if (!id || !enRevision.isSuccess) return
+    if (!id || !enRevision.isSuccess || porRecibirQ.isPending) return
     const next = new URLSearchParams(searchParams)
     next.delete('detalle')
     setSearchParams(next, { replace: true })
     if (pendientes.some((o) => String(o.id) === id)) {
       setPestana('pendientes')
       setSelId(Number(id))
+    } else if (porRecibir.some((f) => String(f.orden.id) === id)) {
+      setPestana('recepciones')
+      setRecepcionAbrir(Number(id))
     } else {
-      toast('La solicitud ya no está en revisión', 'info')
+      toast('La orden ya no está por revisar ni por recibir', 'info')
     }
-  }, [searchParams, setSearchParams, enRevision.isSuccess, pendientes])
+  }, [searchParams, setSearchParams, enRevision.isSuccess, pendientes, porRecibirQ.isPending, porRecibir])
 
   const filtradas = pendientes.filter((o) => coincide(o, busca))
   const revFiltradas = revisadas.filter((o) => coincide(o, buscaRev))
@@ -110,7 +123,7 @@ export function SolicitudesAlmacenPage() {
     <div>
       <PageHeader
         title="📋 Solicitudes de Pedido"
-        description="El almacén general confirma qué tiene de cada solicitud antes de que llegue a Compras. Lo que no tiene pasa a Compras para cotizar."
+        description="El almacén general confirma qué tiene de cada solicitud antes de que llegue a Compras, y recibe la mercancía de las órdenes de compra."
         actions={
           !soloTelefono && puedeAccion(ACCION_TELEFONO_SOLICITUDES) ? (
             <Link to="/app/solicitudes-pedido/telefono">
@@ -131,6 +144,7 @@ export function SolicitudesAlmacenPage() {
           [
             ['pendientes', `🕒 Por revisar (${pendientes.length})`],
             ['revisadas', `✅ Revisadas (${revisadas.length})`],
+            ['recepciones', `📥 Recepciones por recibir (${porRecibir.length})`],
           ] as const
         ).map(([p, label]) => (
           <button
@@ -149,7 +163,16 @@ export function SolicitudesAlmacenPage() {
         ))}
       </div>
 
-      {cargando ? (
+      {pestana === 'recepciones' ? (
+        <RecepcionesPorRecibir
+          filas={porRecibir}
+          cargando={porRecibirQ.isPending}
+          error={porRecibirQ.error}
+          canWrite={permisos.data?.recibe_almacen === true}
+          abrirId={recepcionAbrir}
+          onAbierta={() => setRecepcionAbrir(null)}
+        />
+      ) : cargando ? (
         <p className="text-ink/50 text-sm">Cargando…</p>
       ) : pestana === 'pendientes' ? (
         pendientes.length === 0 ? (

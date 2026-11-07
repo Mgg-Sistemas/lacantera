@@ -29,6 +29,8 @@ import {
   coincide,
   fechaHoraVE,
   money,
+  progresoRecepcion,
+  puedeFinalizarse,
   quienCargo,
   quienSolicita,
   relTime,
@@ -53,7 +55,9 @@ import { OcPorLoteView } from './OcPorLoteView'
   tarjetas con proveedor, modalidad de pago y «💬 n». La fase 3 aprueba y
   paga dentro de Compras (sin Tesorería): «📋 OC por lote», y en las tarjetas
   el método, el monto a pagar (total − retenciones), el saldo del crédito y el
-  pago registrado. Recibir y finalizar llegan con la fase 4. Las demás
+  pago registrado. La fase 4 recibe en el almacén (pantalla del almacén) y
+  finaliza en Compras con la evaluación del proveedor; las tarjetas dicen lo
+  recibido, la recepción parcial y si está lista para finalizar. Las demás
   pestañas están en su sitio con un aviso de la fase en que llegan.
 
   El tope de 10 tarjetas por columna de la pestaña OC lleva en MGG al
@@ -734,6 +738,28 @@ const KanbanCard = memo(function KanbanCard({
         ) : null}
       </span>
     ) : null
+  // La recepción y el cierre (fase 4).
+  const prog = progresoRecepcion(orden)
+  const listaParaFinalizar = puedeFinalizarse(orden)
+  const recepcion =
+    orden.estado === 'finalizada' ? (
+      <span className="text-success">✓ Finalizada{orden.finalizada_en ? ` · ${fechaHoraVE(orden.finalizada_en)}` : ''}</span>
+    ) : orden.recibida_en ? (
+      <span className={listaParaFinalizar ? 'text-success' : 'text-ink/65'}>
+        📦 Recibida {money(orden.recibido_total)}
+        {orden.estado === 'recibida' && orden.condiciones_pago === 'contra_entrega' && !orden.metodo_pago?.length ? (
+          <span className="text-warning"> · 💳 indicar método (pagar lo recibido)</span>
+        ) : listaParaFinalizar ? (
+          ' · lista para finalizar'
+        ) : orden.estado === 'cuenta_abierta' ? (
+          <span className="text-warning"> · pendiente por pagar</span>
+        ) : null}
+      </span>
+    ) : prog.parcial ? (
+      <span className="text-warning">
+        📦 Recepción parcial · {prog.completos}/{prog.total} completos · {money(orden.recibido_total)}
+      </span>
+    ) : null
   return (
     <div
       role="button"
@@ -830,6 +856,7 @@ const KanbanCard = memo(function KanbanCard({
         </div>
       ) : null}
       {pago ? <div className="mt-1 text-[11px]">{pago}</div> : null}
+      {recepcion ? <div className="mt-1 text-[11px]">{recepcion}</div> : null}
       <div className="mt-2 flex items-center justify-between">
         <span className={cn('font-mono font-semibold', !cuadra && 'text-warning')} title={cuadra ? undefined : 'El total no cuadra con sus partes'}>
           {cuadra ? '' : '⚠ '}
