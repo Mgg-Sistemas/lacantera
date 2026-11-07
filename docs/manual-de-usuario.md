@@ -5701,7 +5701,7 @@ Es el espejo de lo que ya hace la ficha del trabajador, que dice si esa persona 
 4. Escriba el **Nombre y apellido**. Se escribe solo en mayúsculas y sin tildes.
 5. Escriba la **Clave inicial**. **Mínimo 8 caracteres. Désela en persona y que la cambie.**
 6. Rellene el **Cargo**, la **Cédula** y el **Teléfono** si los tiene. Los tres son opcionales, y los tres se guardan.
-7. Marque al menos un rol en el bloque **Roles**. Viene marcado **Solicitante**.
+7. Marque al menos un rol en el bloque **Roles**. Viene marcado **Básico**.
 8. Pulse **Guardar**. Aparece el aviso **Usuario p.ramirez creado. Dígale la clave en persona, no por escrito.**
 
 La primera vez que esa persona entre, el sistema le obliga a ponerse una clave propia antes de dejarle ver nada. El motivo es que la clave que pone administración la saben dos personas, y mientras eso sea así la sesión existe pero no identifica a nadie.
@@ -5717,7 +5717,7 @@ Los roles que trae el sistema son **diez**, con la descripción que se lee al la
 | **Ventas** | **Cotiza, despacha material, factura y registra cobros.** |
 | **Operaciones** | **Registra producción, voladuras y consumo en el frente.** |
 | **Recursos humanos** | **Personal, asistencia y nómina.** |
-| **Solicitante** | **Puede pedir material. Es el rol mínimo de cualquier supervisor.** |
+| **Básico** | **Ve el panel y hace solicitudes de pedido. Es el rol con el que nace un usuario.** |
 | **Consulta** | **Solo lectura.** |
 | **Respaldo de la base** | **Puede descargar la copia completa de los datos. Es el archivo más sensible del sistema: no se reparte.** |
 
@@ -5751,6 +5751,44 @@ En **Archivados** cada fila muestra cuándo se archivó, quién lo hizo y el mot
 **Un usuario no se borra nunca.** No existe forma de hacerlo. Un usuario firmó cosas: pidió material, aprobó órdenes, pagó facturas. Borrarlo dejaría todos esos documentos firmados por nadie, que es exactamente lo mismo que no estar firmados.
 
 #### La pestaña Roles y permisos
+
+Desde el 7 de noviembre de 2026 esta pestaña trabaja como la de MGG: **todo es por casillas y se guarda solo**. Arriba a la derecha se lee en qué va: **💾 Los cambios se guardan automáticamente**, **⏳ Guardando…**, **✓ Guardado automáticamente** o **⚠ Error al guardar**. No hay botón Guardar.
+
+**Los administradores tienen control total sobre todo**: todos los módulos, aprobar órdenes de compra, aprobar salidas, todas las pantallas de teléfono y el respaldo de la base. No hace falta marcarles nada.
+
+**La solicitud de pedido la hace cualquier usuario.** Está arriba en el menú, debajo de **Panel**, para todos. Quien no lleva compras, al enviarla, ve **Solicitud SOL-… enviada** con su botón de **WhatsApp**, y no entra al tablero de compras: el proceso de compras es solo de quien tenga el módulo **Compras**.
+
+##### Usuarios autorizados para aprobar
+
+Es el primer recuadro. Es **una lista por persona**, aparte de los roles: aprobar es firmar, y la firma es de alguien, no de un cargo.
+
+| Columna | Qué es |
+| --- | --- |
+| **Usuario** | Nombre, usuario y qué aprueba: **Aprueba compras y salidas**, **Aprueba órdenes de compra** o **Aprueba salidas** |
+| **Aprobar órdenes de compra** | Casilla |
+| **Aprobar salidas** | Casilla |
+| **Firma** | La firma, o **Sin firma**. **Cargar firma** / **Cambiar** abre el editor (trazarla, escribirla o cargar una foto); la **✕** la quita |
+| **Quitar** | Le quita todo. Pregunta antes: **… ya no podrá aprobar órdenes de compra ni salidas. Lo que ya aprobó se conserva con su firma.** |
+
+- **Agregar usuario autorizado** abre una ventana: se elige el **Usuario** (solo activos que aún no están) y qué **Podrá**: **Aprobar órdenes de compra**, **Aprobar salidas** o **Ambas opciones**.
+- Si se intenta desmarcar las dos casillas, sale: **Debe quedar al menos una opción. Para quitarle todo, use «Quitar».**
+- Al estrenarla quedaron **Norbelis Sequea** (compras y salidas) y **Diana de la Rans** (salidas), que eran quienes aprobaban.
+- Los administradores aprueban siempre, sin estar en la lista.
+
+##### Buscar, gestionar y crear
+
+- **Buscar rol**: filtra por nombre o descripción y dice **N de M roles**. **✕ Limpiar** lo vacía.
+- **⚙ Gestionar**: una tabla con todos los roles —color, nombre, código, **Sistema**, **Solo teléfono** y cuántos usuarios— con **✎ Editar** y, si es propio y no tiene usuarios, la papelera.
+- **Nuevo rol**: código, nombre, descripción, **Color** y **📱 Solo teléfono**. Nace viendo el **Panel** y nada más.
+- **Eliminar** pregunta antes: **Se eliminará el rol «…». Esto borra también sus permisos.** No se puede eliminar un rol del sistema ni uno que tenga usuarios.
+
+##### Lo nuevo en cada tarjeta
+
+- **El color** del rol, en la raya de arriba.
+- **↺ Por defecto**: vuelve la matriz del rol a como estaba el 7 de noviembre de 2026 (o, si el rol es posterior, a solo **Panel** en lectura).
+- **📱 Pantallas de teléfono**: una casilla por pantalla — **Surtidor**, **Cocina**, **Almacén** y **Compras**. La pantalla sola no abre los datos: hace falta además la lectura de su módulo. Si falta, avisa **No se abre: falta lectura en …**.
+- **Solo teléfono**: entra directo a sus pantallas de teléfono y no ve las de escritorio. Sin pantallas marcadas avisa **Sin pantallas marcadas, este rol no tiene nada que abrir.**
+- **💾 Respaldo de la base de datos**: una sola casilla. Deja generar, descargar y enviar por correo el respaldo. Ya no sale como fila de la matriz.
 
 Hay una tarjeta por rol. En la cabecera van el nombre en mayúsculas, la etiqueta **Sistema** o **Propio**, la descripción y cuántos usuarios lo tienen — **3 usuarios asignados** o **Sin usuarios asignados** —, que está ahí para que se vea a cuánta gente afecta lo que vas a cambiar. Los roles propios llevan además los botones **Editar** y una papelera.
 
@@ -5861,10 +5899,9 @@ Cuando una acción pide un rol y no lo tiene, el sistema mira además si tiene e
 | **Recursos humanos** | Nómina en **escritura** |
 | **Almacén** | Inventario en **escritura** |
 | **Compras** | Compras en **control total** |
-| **Solicitante** | Compras en **escritura** |
 | **Operaciones** | Explotación en **escritura** |
 
-**Compras va a control total y no a escritura, y no es un descuido.** «Compras en escritura» lo tienen también Solicitante, Operaciones y Recursos humanos, que son quienes **piden** material. Si el comprador y el que pide compartieran nivel, cualquiera podría confirmar un pedido o dar de alta un proveedor. **Pedir es escritura; comprar es total.**
+**Compras va a control total y no a escritura, y no es un descuido.** «Compras en escritura» lo tienen también Operaciones y Recursos humanos, que son quienes **piden** material. Si el comprador y el que pide compartieran nivel, cualquiera podría confirmar un pedido o dar de alta un proveedor. **Pedir es escritura; comprar es total.**
 
 **Esto solo vale para las acciones que piden un rol.** Las que piden un permiso de módulo no tienen atajo: ahí el nivel es el nivel y nada más.
 
@@ -6158,7 +6195,7 @@ Guárdalo donde guardarías el libro de nómina en papel. No lo mandes por corre
 | --- | --- | --- |
 | «Esta acción la realiza: Administrador del sistema. Su usuario no tiene ese rol.» | Estás en la pantalla pero sin el rol que la maneja | Pide a administración que lo haga, o que te dé el rol |
 | «Está viendo esta pantalla en solo lectura. Crear usuarios y cambiar permisos lo hace quien tiene el rol de administrador del sistema.» | Aviso, no error: se puede consultar pero no cambiar | Si necesita un cambio, pídalo a administración |
-| «Asigne al menos un rol. Un usuario sin roles no puede hacer nada.» | Se intentó guardar un usuario sin marcar ningún rol | Marque al menos uno. **Solicitante** es el mínimo de cualquier supervisor |
+| «Asigne al menos un rol. Un usuario sin roles no puede hacer nada.» | Se intentó guardar un usuario sin marcar ningún rol | Marque al menos uno. **Básico** es el mínimo |
 | «El usuario "p.ramirez" no es válido: de 3 a 32 caracteres, solo letras, números, punto, guion y guion bajo.» | El nombre de usuario tiene caracteres que no se admiten | Escríbalo con letras, números, punto y guion, sin espacios ni tildes |
 | «El usuario "p.ramirez" ya existe.» | Ese nombre de usuario está ocupado | Elija otro. Si la persona ya tiene cuenta, búsquela en la lista y reactívela |
 | «El usuario necesita un nombre.» | Falta el nombre y apellido | Escríbalo |

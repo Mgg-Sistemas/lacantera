@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
-import { BookOpen, ChevronDown, X } from 'lucide-react'
+import { BookOpen, ChevronDown, ClipboardList, X } from 'lucide-react'
 import { moduloDeRuta, navigation, PANTALLAS_DE_TELEFONO } from '@/config/navigation'
 import type { NavItem, NavSection, NavChild } from '@/config/navigation'
 import { Logo } from '@/components/Logo'
@@ -77,7 +77,11 @@ function seccionesSoloTelefono(puedeAccion: (accion: string) => boolean): NavSec
       items: pantallas.map((p) => ({ label: p.label, icon: p.icon, to: p.ruta })),
     },
     {
-      items: [{ label: 'Manual de usuario', icon: BookOpen, to: '/app/manual', siempre: true }],
+      items: [
+        // Pedir lo puede cualquiera, también desde el teléfono (06/11/2026).
+        { label: 'Solicitud de pedido', icon: ClipboardList, to: '/app/compras/nuevo', siempre: true },
+        { label: 'Manual de usuario', icon: BookOpen, to: '/app/manual', siempre: true },
+      ],
     },
   ]
 }
