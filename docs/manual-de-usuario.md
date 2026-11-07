@@ -2133,7 +2133,7 @@ Todo pedido enviado entra a **Revisión de almacén** y le llega un aviso a quie
 
 1. Elige en **Artículo del almacén** qué artículo de ALM-GEN entrega. La lista solo ofrece lo que hay, con la existencia al lado («Hay 12 UND»).
 2. Escribe cuánto entrega. **Entregar N** lo llena solo con lo que se puede. No deja pasar de lo pedido ni de lo que hay.
-3. Si entrega algo, dice **¿Quién lo recibe?**. Si lo deja vacío, lo recibe quien pidió, si tiene ficha de nómina.
+3. No se pregunta quién lo recibe: lo que entrega lo recibe el **almacén general (inventario)**, a nombre de quien pidió.
 
 Al guardar:
 
@@ -2294,7 +2294,7 @@ La pantalla es una sola columna: arriba **Datos del pedido** y debajo **Qué se 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
 | **Título** | Sí | **Es lo que se lee en la tarjeta del tablero.** |
-| **Justificación** | Sí | Para qué es. Quien aprueba no está en el frente y necesita el porqué |
+| **Para qué es (opcional)** | No | Si hace falta explicarlo. Cada renglón ya lleva su observación |
 | **Solicitante** | — | **Si a quien lo necesita le falta algo, se le pregunta a esta persona.** Empieza en su propio nombre, marcado «(yo)». La lista trae a cada persona activa con su cargo, y al final **Otra persona — no tiene usuario** |
 | **Nombre del solicitante** | Sí, si eligió **Otra persona** | |
 | **Cargo o frente** | No | Solo si eligió **Otra persona** |
@@ -3009,7 +3009,6 @@ Cuatro reglas que evitan discusiones:
 | «Una compra no puede tener fecha futura.» | La fecha de la compra directa es de mañana o más allá | Corríjala |
 | «De esta orden ya se recibió todo.» | Se pulsó recibir sobre una orden completa | No falta nada por entrar |
 | «Póngale un título al pedido: es lo que se lee en el tablero.» | El título quedó corto | Escriba un título que se entienda desde el tablero |
-| «Explique para qué es. Quien aprueba no está en el frente y necesita el porqué.» | La justificación quedó corta | Escriba para qué se necesita |
 | «Indique quién solicita: elija a alguien del sistema o escriba su nombre.» | No se eligió persona ni se escribió un nombre | Elija a alguien de la lista o escriba el nombre |
 | «El nombre de quien solicita es demasiado corto para identificar a nadie.» | El nombre tiene menos de tres letras | Escriba el nombre completo |
 | «Quien solicita no existe o está inactivo.» | Esa persona no está activa | Elija a otra persona o escriba su nombre |
@@ -3083,7 +3082,6 @@ Cuatro reglas que evitan discusiones:
 | «La orden … tiene una instrucción de pago pendiente que no es la que propuso Compras…» | Alguien cargó un pago con otros datos | Devuelva esa instrucción y vuelva a marcar **Sí, se pagará** |
 | «El renglón … se pidieron 3 y se intentan entregar 5.» | En la revisión del almacén se puso más de lo pedido | Entregue como mucho lo pedido |
 | «De … hay 2 en el almacén general y se quieren entregar 5.» | No alcanza la existencia | Entregue lo que hay; lo demás pasa a Compras |
-| «Diga quién recibe lo que entrega el almacén: quien pidió no tiene ficha en nómina.» | El solicitante no tiene ficha | Elija la persona en **¿Quién lo recibe?** |
 | «Las órdenes de compra se reciben en el almacén general (ALM-GEN)…» | Se intentó recibir en otro almacén | Reciba en ALM-GEN y traslade después |
 | «La compra se finaliza cuando llegó todo el material…» | Falta material por recibir | Reciba lo que falta y vuelva a intentarlo |
 
