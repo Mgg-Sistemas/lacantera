@@ -280,12 +280,12 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
 
             <div className="sm:col-span-2">
             <Textarea
-              label="Justificación"
+              label="Para qué es (opcional)"
               placeholder="La muela está gastada y el material sale fuera de medida."
-              rows={4}
+              hint="No hace falta: cada renglón ya lleva su observación."
+              rows={3}
               value={justificacion}
               onChange={(e) => setJustificacion(e.target.value)}
-              required
             />
             </div>
 
