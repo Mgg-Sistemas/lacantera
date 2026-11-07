@@ -25,6 +25,7 @@ import {
   ESTADOS_FASES_SP,
   KANBAN_COLS_OC,
   KANBAN_COLS_PEDIDOS,
+  KANBAN_COLS_SERVICIO,
   TOPE_COLUMNA_OC,
   coincide,
   fechaHoraVE,
@@ -43,6 +44,10 @@ import { CrearOrdenModal } from './CrearOrdenModal'
 import { EstadoBadge, OrdenDetailModal } from './OrdenDetailModal'
 import { ConfirmDialog, MotivoModal } from './Dialogos'
 import { OcPorLoteView } from './OcPorLoteView'
+import { NuevoServicioModal } from './NuevoServicioModal'
+import { SolicitudMercadoModal } from './SolicitudMercadoModal'
+import { CategoriasModal } from './CategoriasModal'
+import { ServicioDirectoView } from './ServicioDirectoView'
 
 /*
   PEDIDOS / COMPRAS (MGG `PedidosPage`) · FASES 1, 2 Y 3
@@ -69,10 +74,17 @@ import { OcPorLoteView } from './OcPorLoteView'
   solicitudes y solo en las fases de la SP; si la abre por enlace estando ya
   más adelante, se le dice que ya está en Compras.
 
+  La fase 5a pone «🛠 Servicios» (solicitudes SV con sus columnas de MGG:
+  Solicitado … Servicio realizado, Finalizado), «🔧 Servicio Directo», «🛒
+  Solicitud de Mercado» y «📒 Categorías» (unidades solicitantes, categorías y
+  tipos de servicio). Compra Directa sigue siendo la de La Cantera.
+
   LO QUE AÚN NO ESTÁ (y por qué):
-    - «⌕ Histórico», «📊 Reporte por renglón», «📆 Cierre diario», «📒
-      Categorías» y «🛒 Solicitud de Mercado» llegan en la fase 5, con sus
-      pantallas. No se dibujan botones que no llevan a nada.
+    - «⌕ Histórico», «📊 Reporte por renglón» y «📆 Cierre diario» llegan en
+      la fase 5b, con sus pantallas. No se dibujan botones que no llevan a
+      nada.
+    - Sin la tarjeta «🛒 La cocina solicitó restablecer el mercado»: en La
+      Cantera no hay alertas de mercado; la cocina lo pide desde Alimentación.
     - El administrador arranca en la última pestaña que usó (la primera vez,
       «✉ Solicitud de Pedido»), no siempre en «🧾 Órdenes de Compra» como en
       MGG.
@@ -117,16 +129,13 @@ const PESTANAS: { scope: Scope; label: string; title: string }[] = [
   },
 ]
 
-/** En qué fase llega cada pestaña que todavía no está. */
-const FASE_DE: Partial<Record<Scope, string>> = {
-  servicio: 'fase 5 (servicios)',
-  servicio_directo: 'fase 5 (servicio directo)',
-}
-
 type ModalKind =
   | { kind: 'none' }
   | { kind: 'detail'; ordenId: number }
   | { kind: 'create' }
+  | { kind: 'create-servicio' }
+  | { kind: 'mercado' }
+  | { kind: 'categorias' }
   | { kind: 'edit'; orden: Orden }
   | { kind: 'approve'; orden: Orden }
   | { kind: 'cancel'; orden: Orden }
@@ -209,12 +218,26 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
     [ordenesDePestana, filterEstado, filterCreador, filterText, nombreProveedor],
   )
 
-  const columnas = scope === 'oc' ? KANBAN_COLS_OC : KANBAN_COLS_PEDIDOS
+  const columnas = scope === 'oc' ? KANBAN_COLS_OC : scope === 'servicio' ? KANBAN_COLS_SERVICIO : KANBAN_COLS_PEDIDOS
   const kanbanCols =
     filterEstado && columnas.some((c) => c.key === filterEstado) ? columnas.filter((c) => c.key === filterEstado) : columnas
 
   // ?detalle=ID abre el detalle (avisos y búsqueda global). Se consume de la URL.
   const [searchParams, setSearchParams] = useSearchParams()
+
+  // ?scope=… lleva a una pestaña (MGG: oc_lote|oc|pedidos|compra_directa…). El
+  // `sd` del servicio directo se queda: lo consume su vista.
+  useEffect(() => {
+    const s = searchParams.get('scope')
+    if (!s) return
+    const next = new URLSearchParams(searchParams)
+    next.delete('scope')
+    setSearchParams(next, { replace: true })
+    if (!soloSolicitud && PESTANAS.some((p) => p.scope === s)) {
+      setScope(s as Scope)
+      guardar(SCOPE_KEY, s)
+    }
+  }, [searchParams, setSearchParams, soloSolicitud])
   useEffect(() => {
     const id = searchParams.get('detalle')
     if (!id || !pedidos.isSuccess) return
@@ -273,8 +296,30 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
         actions={
           soloSolicitud ? (
             <Button onClick={() => setModal({ kind: 'create' })}>+ Nueva solicitud</Button>
-          ) : scope !== 'compra_directa' && scope !== 'oc_lote' && scope !== 'servicio_directo' && scope !== 'servicio' ? (
-            <Button onClick={() => setModal({ kind: 'create' })}>+ Nueva orden</Button>
+          ) : scope !== 'compra_directa' && scope !== 'oc_lote' && scope !== 'servicio_directo' ? (
+            <div className="flex flex-wrap gap-2">
+              {permisos.gestiona ? (
+                <Button variant="ghost" title="Gestionar las unidades solicitantes" onClick={() => setModal({ kind: 'categorias' })}>
+                  📒 Categorías
+                </Button>
+              ) : null}
+              {scope === 'servicio' ? (
+                <Button onClick={() => setModal({ kind: 'create-servicio' })}>+ Nuevo servicio</Button>
+              ) : (
+                <>
+                  {scope === 'pedidos' ? (
+                    <Button
+                      variant="ghost"
+                      title="Solicitud de Mercado: víveres y art. de limpieza para la cocina (urgente)"
+                      onClick={() => setModal({ kind: 'mercado' })}
+                    >
+                      🛒 Solicitud de Mercado
+                    </Button>
+                  ) : null}
+                  <Button onClick={() => setModal({ kind: 'create' })}>+ Nueva orden</Button>
+                </>
+              )}
+            </div>
           ) : null
         }
       />
@@ -332,19 +377,8 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
           proveedor={nombreProveedor}
           onOpen={(id) => setModal({ kind: 'detail', ordenId: id })}
         />
-      ) : FASE_DE[scope] ? (
-        <Card className="max-w-xl">
-          <Vacio
-            icono={<span className="text-3xl">🚧</span>}
-            titulo={`Próximamente · ${FASE_DE[scope]}`}
-            descripcion="Mientras tanto, lo que ya pasó a Compras sigue su camino en el Tablero (anterior)."
-            accion={
-              <Link to="/app/compras">
-                <Button variant="outline">Ir al Tablero (anterior)</Button>
-              </Link>
-            }
-          />
-        </Card>
+      ) : scope === 'servicio_directo' ? (
+        <ServicioDirectoView permisos={permisos} />
       ) : (
         <>
           <div className="mb-4 flex flex-wrap items-end gap-2">
@@ -449,7 +483,23 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
         />
       ) : null}
 
-      {modal.kind === 'create' || modal.kind === 'edit' ? (
+      {/* Los servicios se editan con el formato de servicio (MGG), no con el de productos. */}
+      {modal.kind === 'create-servicio' || (modal.kind === 'edit' && modal.orden.clase === 'servicio') ? (
+        <NuevoServicioModal
+          orden={modal.kind === 'edit' ? modal.orden : null}
+          permisos={permisos}
+          onClose={() => setModal(modal.kind === 'edit' ? { kind: 'detail', ordenId: modal.orden.id } : { kind: 'none' })}
+          onCreated={() => setModal(modal.kind === 'edit' ? { kind: 'detail', ordenId: modal.orden.id } : { kind: 'none' })}
+        />
+      ) : null}
+
+      {modal.kind === 'mercado' ? (
+        <SolicitudMercadoModal onClose={() => setModal({ kind: 'none' })} onCreated={(id) => setModal({ kind: 'detail', ordenId: id })} />
+      ) : null}
+
+      {modal.kind === 'categorias' ? <CategoriasModal onClose={() => setModal({ kind: 'none' })} /> : null}
+
+      {modal.kind === 'create' || (modal.kind === 'edit' && modal.orden.clase !== 'servicio') ? (
         <CrearOrdenModal
           orden={modal.kind === 'edit' ? modal.orden : null}
           permisos={permisos}

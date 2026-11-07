@@ -89,6 +89,24 @@ export interface ItemOrden {
   sin_inventario?: boolean
   /** La ficha se creó al recibir (renglón de nombre general). */
   ficha_creada?: boolean
+  // Solo servicios (fase 5a, MGG `ItemOrden` de clase 'servicio').
+  servicio_categoria?: string | null
+  servicio_tipo?: string | null
+  /** El equipo de Maquinaria; un electrodoméstico va solo con su nombre. */
+  equipo_id?: number | null
+  equipo_nombre?: string | null
+  /** Recarga: bombonas (o botellones) y los kg (o litros) en total. */
+  bombonas?: number | null
+  kg_recarga?: number | null
+  /** «▸ Detalle (opcional)»: piezas y trabajos del renglón. */
+  detalle_items?: DetalleServicioItem[] | null
+}
+
+/** Una pieza o trabajo del detalle de un renglón de servicio (MGG `DetalleServicioItem`). */
+export interface DetalleServicioItem {
+  descripcion: string
+  cantidad?: number | null
+  precio?: number | null
 }
 
 export interface EventoHistorial {
@@ -1284,5 +1302,459 @@ export async function borrarArchivosRecepcion(paths: string[]): Promise<void> {
 export async function urlArchivoRecepcion(path: string): Promise<string> {
   const { data, error } = await supabase.storage.from(BUCKET_RECEPCIONES).createSignedUrl(path, 600)
   if (error || !data) throw new Error(error?.message ?? 'No se pudo abrir el archivo')
+  return data.signedUrl
+}
+
+// ---------------------------------------------------------------------------
+// Fase 5a: servicios, catálogos, Solicitud de Mercado y servicio directo
+// ---------------------------------------------------------------------------
+
+/** Los catálogos de «📒 Categorías» (MGG `catalogos_pedido`). */
+export type Catalogo = 'unidad_solicitante' | 'servicio_categoria' | 'servicio_tipo'
+
+const TABLA_CATALOGO: Record<Catalogo, string> = {
+  unidad_solicitante: 'compras_unidades_solicitantes',
+  servicio_categoria: 'compras_categorias_servicio',
+  servicio_tipo: 'compras_tipos_servicio',
+}
+
+export interface ItemCatalogo {
+  id: number
+  nombre: string
+  activo: boolean
+}
+
+/** Un catálogo entero (activos e inactivos), por nombre. */
+export function useCatalogo(catalogo: Catalogo, activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'catalogos', catalogo],
+    enabled: activo,
+    queryFn: async () =>
+      desenvolver<ItemCatalogo[]>(
+        await supabase.from(TABLA_CATALOGO[catalogo]).select('id, nombre, activo').order('nombre'),
+      ),
+    staleTime: 60_000,
+  })
+}
+
+function useInvalidarCatalogos() {
+  const qc = useQueryClient()
+  return () => {
+    void qc.invalidateQueries({ queryKey: ['pedidos', 'catalogos'] })
+    void qc.invalidateQueries({ queryKey: ['pedidos', 'unidades'] })
+  }
+}
+
+export function useGuardarCatalogo() {
+  const invalidar = useInvalidarCatalogos()
+  return useMutation({
+    mutationFn: (d: { catalogo: Catalogo; id: number | null; nombre: string }) =>
+      rpc<{ id: number; nombre: string }>('compras_catalogo_guardar', {
+        p_catalogo: d.catalogo,
+        p_id: d.id,
+        p_nombre: d.nombre,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useActivarCatalogo() {
+  const invalidar = useInvalidarCatalogos()
+  return useMutation({
+    mutationFn: (d: { catalogo: Catalogo; id: number; activo: boolean }) =>
+      rpc('compras_catalogo_activar', { p_catalogo: d.catalogo, p_id: d.id, p_activo: d.activo }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useEliminarCatalogo() {
+  const invalidar = useInvalidarCatalogos()
+  return useMutation({
+    mutationFn: (d: { catalogo: Catalogo; id: number }) =>
+      rpc('compras_catalogo_eliminar', { p_catalogo: d.catalogo, p_id: d.id }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useProximoCodigoServicio(activo: boolean) {
+  return useQuery({
+    queryKey: ['pedidos', 'proximo-codigo-servicio'],
+    queryFn: () => rpc<string>('compras_proximo_codigo_servicio'),
+    enabled: activo,
+    staleTime: 0,
+  })
+}
+
+/** Un equipo de Maquinaria para casar el servicio (MGG `MaquinariaEquipo`). */
+export interface EquipoServicio {
+  id: number
+  codigo: string
+  nombre: string
+  tipo: string | null
+  clase: string | null
+  estado: string | null
+  marca: string | null
+  modelo: string | null
+}
+
+export function useEquiposServicio(activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'equipos-servicio'],
+    queryFn: () => rpc<EquipoServicio[]>('compras_equipos_para_servicio'),
+    enabled: activo,
+    staleTime: 5 * 60_000,
+  })
+}
+
+/** Un renglón de servicio tal como lo manda el formulario. */
+export interface RenglonServicio {
+  sku?: string | null
+  nombre: string
+  cantidad: number
+  precio: number
+  servicio_categoria: string
+  servicio_tipo: string | null
+  equipo_id: number | null
+  equipo_nombre: string | null
+  bombonas: number | null
+  kg_recarga: number | null
+  detalle_items: DetalleServicioItem[] | null
+}
+
+export interface DatosServicio {
+  items: RenglonServicio[]
+  notas: string | null
+  unidad_solicitante: string
+  solicitante_nombre: string | null
+  urgente: boolean
+}
+
+export function useCrearServicio() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: DatosServicio) =>
+      rpc<{ id: number; codigo: string; estado: EstadoOrden }>('compras_crear_servicio', {
+        p_items: d.items,
+        p_notas: d.notas,
+        p_unidad_solicitante: d.unidad_solicitante,
+        p_solicitante_nombre: d.solicitante_nombre,
+        p_urgente: d.urgente,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useEditarServicio() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: DatosServicio & { id: number }) =>
+      rpc<{ id: number; codigo: string; estado: EstadoOrden }>('compras_editar_servicio', {
+        p_id: d.id,
+        p_items: d.items,
+        p_notas: d.notas,
+        p_unidad_solicitante: d.unidad_solicitante,
+        p_solicitante_nombre: d.solicitante_nombre,
+        p_urgente: d.urgente,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+/** «🔧 Servicio realizado»: por renglón, cuánto se prestó. */
+export function useServicioRealizado() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; renglones: Array<{ sku: string; cantidad: number }>; nota: string | null }) =>
+      rpc<{ id: number; estado: EstadoOrden; recibido_total: number }>('compras_servicio_realizado', {
+        p_id: d.id,
+        p_datos: { renglones: d.renglones, nota: d.nota },
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+/** La última Solicitud de Mercado, para sugerir cantidades. */
+export interface UltimaMercado {
+  codigo: string
+  fecha: string
+  renglones: Array<{ articulo_id: number; cantidad: number }>
+}
+
+export function useUltimaSolicitudMercado(activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'mercado', 'ultima'],
+    queryFn: () => rpc<UltimaMercado | null>('compras_ultima_solicitud_mercado'),
+    enabled: activo,
+  })
+}
+
+export function useCrearSolicitudMercado() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: {
+      items: Array<{ sku?: string; nombre: string; cantidad: number; unidad?: string | null; articulo_id: number | null }>
+      notas: string | null
+      unidad_solicitante: string
+      solicitante_nombre: string | null
+    }) =>
+      rpc<{ id: number; codigo: string; estado: EstadoOrden }>('compras_crear_solicitud_mercado', {
+        p_items: d.items,
+        p_notas: d.notas,
+        p_unidad_solicitante: d.unidad_solicitante,
+        p_solicitante_nombre: d.solicitante_nombre,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// 🔧 Servicio directo (MGG `servicios_directos`)
+// ---------------------------------------------------------------------------
+
+export type EstadoServicioDirecto = 'en_proceso' | 'por_pagar' | 'confirmada_pagar' | 'finalizada'
+
+export interface ServicioDirectoItem {
+  servicio_categoria: string
+  servicio_tipo?: string | null
+  equipo_id?: number | null
+  equipo_nombre?: string | null
+  /** El nombre del renglón: «CATEGORÍA · EQUIPO · TIPO · 2 BOMBONA(S) · 86 KG». */
+  descripcion: string
+  cantidad: number
+  bombonas?: number | null
+  kg_recarga?: number | null
+  /** El monto del renglón, en $ (se carga con la factura). */
+  gasto?: number | null
+  detalle_items?: DetalleServicioItem[] | null
+}
+
+export interface FacturaDirecto {
+  path: string
+  filename: string
+  at: string
+}
+
+export interface ServicioDirecto {
+  id: number
+  codigo: string
+  descripcion: string
+  proveedor_id: number | null
+  proveedor_nombre: string | null
+  equipo_id: number | null
+  equipo_nombre: string | null
+  cantidad: number | string
+  items: ServicioDirectoItem[]
+  estado: EstadoServicioDirecto
+  moneda: string
+  gasto: number | string | null
+  unidad_solicitante: string | null
+  solicitante_nombre: string | null
+  nota: string | null
+  pago_externo: boolean
+  pago_externo_datos: string | null
+  facturas: FacturaDirecto[]
+  historial: EventoHistorial[]
+  creado_por: string
+  creado_por_nombre: string | null
+  creado_en: string
+  actualizado_en: string | null
+  montado_por_nombre: string | null
+  montado_en: string | null
+  metodo_pago: PagoMetodo[] | null
+  metodo_pago_por_nombre: string | null
+  metodo_pago_en: string | null
+  comprobante_tipo: 'factura' | 'nota_entrega' | null
+  retenciones: Retencion[]
+  descuento_pago: number | string | null
+  numero_administracion: string | null
+  pago_qr_path: string | null
+  pago_qr_nombre: string | null
+  pagada_por_nombre: string | null
+  pagada_en: string | null
+  pago_fecha: string | null
+  pago_referencia: string | null
+  pago_monto: number | string | null
+  pago_moneda: 'USD' | 'Bs' | 'USDT' | null
+  pago_tasa: number | string | null
+  pago_monto_usd: number | string | null
+  pago_comprobante_path: string | null
+  pago_comprobante_nombre: string | null
+  pago_nota: string | null
+  finalizada_en: string | null
+}
+
+/** Facturas, comprobante y QR del servicio directo. */
+export const BUCKET_SERVICIOS_DIRECTOS = 'compras-servicios-directos'
+
+export function useServiciosDirectos(activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'servicios-directos'],
+    enabled: activo,
+    queryFn: async () =>
+      desenvolver<ServicioDirecto[]>(
+        await supabase.from('compras_servicios_directos').select('*').order('creado_en', { ascending: false }),
+      ),
+    refetchOnWindowFocus: true,
+  })
+}
+
+function useInvalidarDirectos() {
+  const qc = useQueryClient()
+  return () => qc.invalidateQueries({ queryKey: ['pedidos', 'servicios-directos'] })
+}
+
+/** Un renglón del «Nuevo servicio directo». */
+export interface LineaServicioDirecto {
+  servicio_categoria: string
+  servicio_tipo: string | null
+  equipo_id: number | null
+  equipo_nombre: string | null
+  descripcion: string
+  cantidad: number
+  bombonas: number | null
+  kg_recarga: number | null
+  detalle_items: DetalleServicioItem[] | null
+}
+
+export function useCrearServicioDirecto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: {
+      lineas: LineaServicioDirecto[]
+      proveedor_id: number | null
+      proveedor_nuevo: { razon_social: string; rif: string } | null
+      unidad_solicitante: string | null
+      solicitante_nombre: string | null
+    }) => rpc<{ id: number; codigo: string; estado: EstadoServicioDirecto }>('compras_crear_servicio_directo', { p_datos: d }),
+    onSuccess: (_r, d) => {
+      void qc.invalidateQueries({ queryKey: ['pedidos', 'servicios-directos'] })
+      void qc.invalidateQueries({ queryKey: ['pedidos', 'catalogos'] })
+      if (d.proveedor_nuevo) void qc.invalidateQueries({ queryKey: ['proveedores'] })
+    },
+  })
+}
+
+export function useDetalleServicioDirecto() {
+  const invalidar = useInvalidarDirectos()
+  return useMutation({
+    mutationFn: (d: { id: number; detalles: DetalleServicioItem[][] }) =>
+      rpc('compras_detalle_servicio_directo', { p_id: d.id, p_detalles: d.detalles }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useMontarServicioDirecto() {
+  const invalidar = useInvalidarDirectos()
+  return useMutation({
+    mutationFn: (d: {
+      id: number
+      gastos: number[]
+      nota: string | null
+      pago_externo: boolean
+      pago_externo_datos: string | null
+      facturas: ArchivoSubido[]
+    }) =>
+      rpc<{ id: number; estado: EstadoServicioDirecto; gasto: number }>('compras_montar_servicio_directo', {
+        p_id: d.id,
+        p_datos: {
+          gastos: d.gastos,
+          nota: d.nota,
+          pago_externo: d.pago_externo,
+          pago_externo_datos: d.pago_externo_datos,
+          facturas: d.facturas,
+        },
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useMetodoPagoServicioDirecto() {
+  const invalidar = useInvalidarDirectos()
+  return useMutation({
+    mutationFn: (d: { id: number; datos: DatosMetodoPago }) =>
+      rpc<{ id: number; estado: EstadoServicioDirecto; monto_a_pagar: number }>('compras_metodo_pago_servicio_directo', {
+        p_id: d.id,
+        p_datos: d.datos,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export function usePagarServicioDirecto() {
+  const invalidar = useInvalidarDirectos()
+  return useMutation({
+    mutationFn: (d: { id: number; datos: DatosPagoRegistrado }) =>
+      rpc<{ id: number; estado: EstadoServicioDirecto; monto_usd: number }>('compras_pagar_servicio_directo', {
+        p_id: d.id,
+        p_datos: d.datos,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useEditarMontosServicioDirecto() {
+  const invalidar = useInvalidarDirectos()
+  return useMutation({
+    mutationFn: (d: { id: number; gastos: number[]; nota: string | null; pago_externo: boolean; pago_externo_datos: string | null }) =>
+      rpc<{ id: number; gasto: number }>('compras_editar_montos_servicio_directo', {
+        p_id: d.id,
+        p_datos: {
+          gastos: d.gastos,
+          nota: d.nota,
+          pago_externo: d.pago_externo,
+          pago_externo_datos: d.pago_externo_datos,
+        },
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+/** La lista final de facturas; las quitadas se borran del depósito después. */
+export function useFacturasServicioDirecto() {
+  const invalidar = useInvalidarDirectos()
+  return useMutation({
+    mutationFn: async (d: { id: number; facturas: ArchivoSubido[] }) => {
+      const quitadas = await rpc<string[]>('compras_facturas_servicio_directo', { p_id: d.id, p_facturas: d.facturas })
+      if (quitadas?.length) await supabase.storage.from(BUCKET_SERVICIOS_DIRECTOS).remove(quitadas)
+    },
+    onSuccess: invalidar,
+  })
+}
+
+export function useEliminarServicioDirecto() {
+  const invalidar = useInvalidarDirectos()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const paths = await rpc<string[]>('compras_eliminar_servicio_directo', { p_id: id })
+      // Que no se borre del depósito no deja nada mal: el servicio ya no existe.
+      if (paths?.length) await supabase.storage.from(BUCKET_SERVICIOS_DIRECTOS).remove(paths)
+    },
+    onSuccess: invalidar,
+  })
+}
+
+/** `{id}/{factura|pago|qr}-{nonce}-{nombre}` en el depósito del servicio directo. */
+export async function subirArchivoDirecto(id: number, prefijo: 'factura' | 'pago' | 'qr', f: File): Promise<ArchivoSubido> {
+  if (f.size > 10 * 1024 * 1024) throw new Error(`"${f.name}": no puede superar 10 MB`)
+  if (f.type && f.type !== 'application/pdf' && !f.type.startsWith('image/')) throw new Error(`"${f.name}": debe ser PDF o imagen`)
+  const limpio = f.name.replace(/[^\w.-]+/g, '_').slice(-80) || 'archivo'
+  const nonce = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+  const path = `${id}/${prefijo}-${nonce}-${limpio}`
+  const { error } = await supabase.storage
+    .from(BUCKET_SERVICIOS_DIRECTOS)
+    .upload(path, f, { upsert: false, contentType: f.type || undefined })
+  if (error) throw new Error(error.message)
+  return { path, filename: f.name }
+}
+
+/** Si el registro falla, lo recién subido se borra (que no quede huérfano). */
+export async function borrarArchivosDirecto(paths: string[]): Promise<void> {
+  if (paths.length) await supabase.storage.from(BUCKET_SERVICIOS_DIRECTOS).remove(paths)
+}
+
+/** Una dirección firmada de diez minutos. */
+export async function urlArchivoDirecto(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from(BUCKET_SERVICIOS_DIRECTOS).createSignedUrl(path, 600)
+  if (error || !data) throw new Error(error?.message ?? 'No se pudo abrir la factura')
   return data.signedUrl
 }

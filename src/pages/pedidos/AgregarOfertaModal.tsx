@@ -137,7 +137,8 @@ export function AgregarOfertaModal({
           sku: it.sku,
           nombre: it.nombre,
           unidad: it.unidad ?? sp?.unidad ?? '',
-          general: !!sp && !sp.articulo_id,
+          // Un renglón de servicio no se guarda en inventario (fase 5a).
+          general: !!sp && !sp.articulo_id && madre.clase !== 'servicio',
           cantidad: String(it.cantidad ?? ''),
           precio: txt(it.precio),
           precio_usd: txt(it.precio_usd),
@@ -160,7 +161,7 @@ export function AgregarOfertaModal({
       sku: it.sku,
       nombre: it.nombre,
       unidad: it.unidad ?? '',
-      general: !it.articulo_id,
+      general: !it.articulo_id && madre.clase !== 'servicio',
       cantidad: String(it.cantidad ?? ''),
       precio: '',
       precio_usd: '',

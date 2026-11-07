@@ -74,6 +74,27 @@ export const KANBAN_COLS_OC: { key: EstadoOrden; label: string }[] = [
   { key: 'desistida_proveedor', label: 'Proveedor desistió' },
 ]
 
+/**
+ * Pestaña «🛠 Servicios» (MGG `KANBAN_COLS_SERVICIO`): el ciclo completo de una
+ * OC en una sola pestaña, con los nombres de un servicio.
+ */
+export const KANBAN_COLS_SERVICIO: { key: EstadoOrden; label: string }[] = [
+  { key: 'pendiente', label: 'Solicitado' },
+  { key: 'aprobada', label: 'Aprobado (cotizar)' },
+  { key: 'oc_creada', label: 'Pendiente por aprobación' },
+  { key: 'cuenta_abierta', label: 'Crédito / cuenta abierta' },
+  { key: 'confirmada_metodo', label: 'Confirmado (método de pago)' },
+  { key: 'oc_aprobada', label: 'Confirmado pagar' },
+  { key: 'por_recibir', label: 'Pendiente por realizar' },
+  { key: 'pagada', label: 'Pagado' },
+  { key: 'recibida', label: 'Servicio realizado' },
+  { key: 'finalizada', label: 'Finalizado' },
+  { key: 'cancelada', label: 'Cancelado' },
+]
+
+/** MGG `FINALIDAD_MERCADO`: la Solicitud de Mercado no pasa por el almacén. */
+export const FINALIDAD_MERCADO = 'PEDIDO PARA RESTABLECER EL MERCADO'
+
 /** MGG: en la pestaña OC, 10 tarjetas por columna salvo «Pendiente (cargar ofertas)». */
 export const TOPE_COLUMNA_OC = 10
 
@@ -147,6 +168,14 @@ const EVENTOS: Record<string, string> = {
   recibida_parcial: 'Recepción parcial en almacén',
   evaluacion: 'Proveedor evaluado',
   comprobante_adjunto: 'Factura / nota de entrega cargada',
+  // Fase 5a. MGG deja constancia del servicio prestado con el mismo
+  // `recibida`; aquí lleva su nombre. Los del servicio directo son de La
+  // Cantera (en MGG ese historial solo guarda el anticipo).
+  servicio_realizado: 'Servicio realizado',
+  detalle_editado: 'Detalle del servicio editado',
+  montado: 'Factura y monto cargados · por pagar',
+  montos_editados: 'Montos editados',
+  facturas_actualizadas: 'Facturas actualizadas',
 }
 
 export const etiquetaEvento = (ev: string): string => EVENTOS[ev] ?? ev
@@ -188,6 +217,11 @@ const CLASE_EVENTO: Record<string, TonoEstado> = {
   recibida_parcial: 'warning',
   evaluacion: 'info',
   comprobante_adjunto: 'info',
+  servicio_realizado: 'success',
+  detalle_editado: 'info',
+  montado: 'info',
+  montos_editados: 'warning',
+  facturas_actualizadas: 'info',
 }
 
 export const claseEvento = (ev: string): TonoEstado => CLASE_EVENTO[ev] ?? 'neutral'
@@ -216,7 +250,11 @@ export function extraEvento(h: EventoHistorial): string {
   const recepcion = extraRecepcion(h)
   if (recepcion) return recepcion
   if (motivo) return motivo
-  if ((h.evento === 'revisada_almacen' || h.evento === 'salida_rechazada') && typeof h.detalle === 'string' && h.detalle.trim()) {
+  if (
+    (h.evento === 'revisada_almacen' || h.evento === 'salida_rechazada' || h.evento === 'creada') &&
+    typeof h.detalle === 'string' &&
+    h.detalle.trim()
+  ) {
     return ` · ${h.detalle}`
   }
   return ''
@@ -315,6 +353,21 @@ export function textoPuntualidad(dias: number): string {
 function extraRecepcion(h: EventoHistorial): string {
   const partes: string[] = []
   switch (h.evento) {
+    case 'montado':
+      if (h.total != null) partes.push(`total ${money(h.total as number)}`)
+      if (h.facturas) partes.push(`${h.facturas} factura(s)`)
+      if (h.pago_externo) partes.push('pago a externo')
+      if (h.edicion) partes.push('corregido')
+      break
+    case 'montos_editados':
+      if (h.antes != null && h.total != null) partes.push(`de ${money(h.antes as number)} a ${money(h.total as number)}`)
+      if (h.pagado != null) partes.push(`pagado ${money(h.pagado as number)}`)
+      break
+    case 'facturas_actualizadas':
+      if (h.facturas != null) partes.push(`${h.facturas} factura(s)`)
+      if (Number(h.quitadas) > 0) partes.push(`${h.quitadas} quitada(s)`)
+      break
+    case 'servicio_realizado':
     case 'recibida':
     case 'recibida_parcial': {
       if (typeof h.recepcion === 'string') partes.push(h.recepcion)
