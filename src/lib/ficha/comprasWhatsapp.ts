@@ -320,6 +320,14 @@ const fechaHoraTxt = (iso?: string | null) => {
   }).format(d)
 }
 
+/** Cancelada o rechazada se ve de un vistazo; lo terminado también. */
+function iconoDelEstado(estado: string): string {
+  const e = estado.toLowerCase()
+  if (/cancel|anulad|rechaz|desisti/.test(e)) return '❌'
+  if (/finaliz|recibida$/.test(e)) return '✅'
+  return '📌'
+}
+
 const fechaCorta = (ymd?: string | null) => (ymd ? ymd.slice(0, 10).split('-').reverse().join('/') : '')
 
 /**
@@ -334,11 +342,14 @@ export function textoSolicitudPedido(d: {
   renglones: { descripcion: string; cantidad: string | number; unidad?: string | null; observacion?: string | null }[]
   personas?: PersonasCompra
   cargo?: string | null
+  /** Cómo se lee el estado en que está ahora («Cancelada», «Pedido»…). */
+  estado?: string | null
   empresa?: string | null
 }): string {
   const { compra } = d
   const L: string[] = []
   L.push(`📋 *SOLICITUD DE PEDIDO ${compra.numero}*`)
+  if (limpio(d.estado)) L.push(`${iconoDelEstado(d.estado!)} *Estado:* ${limpio(d.estado)}`)
   if (compra.prioridad === 'URGENTE') L.push('🚨 *URGENTE*')
   else if (compra.prioridad === 'ALTA') L.push('🟠 *Prioridad alta*')
   L.push(`📅 ${fechaHoraTxt(compra.enviada_en ?? compra.creada_en)}`)
