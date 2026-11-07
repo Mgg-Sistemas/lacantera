@@ -47,10 +47,11 @@ import { mensajeDe, toast } from '@/lib/avisosFlotantes'
   Lo que no está, a propósito:
     - «Actividad económica» y «Origen» del proveedor: la ficha de proveedores
       de La Cantera no tiene esos campos.
-    - La calificación con estrellas: las evaluaciones al finalizar el pedido
-      llegan en la fase 4; hasta entonces todos son «sin evaluaciones previas».
-    - «Se guarda en inventario como» solo liga a una ficha que ya existe. Crear
-      fichas nuevas desde la cotización llega con la recepción (fase 4).
+    - «Se guarda en inventario como» solo liga a una ficha que ya existe. La
+      ficha nueva de un renglón de nombre general se crea al recibirlo, en el
+      almacén (fase 4).
+  La calificación con estrellas sale de las evaluaciones al finalizar el
+  pedido (fase 4, `compras_evaluaciones`).
 */
 
 const CAMPO = 'rounded-control border-ink/20 bg-surface h-9 w-full min-w-0 border px-2 text-sm'

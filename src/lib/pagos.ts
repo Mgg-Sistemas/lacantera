@@ -14,7 +14,7 @@
   hace las mismas cuentas al guardar: aquí se repiten para enseñarlas antes.
   Si las dos dijeran cosas distintas, manda la base.
 */
-import { urlArchivoPago, type Orden } from '@/lib/api/pedidos'
+import { urlArchivoPago, urlArchivoRecepcion, type Orden } from '@/lib/api/pedidos'
 import { r2, subtotalItems } from '@/lib/ofertas'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 
@@ -235,6 +235,15 @@ export const leerMonto = (s: string): number => aNumero(s) ?? 0
 export async function abrirArchivoPago(path: string): Promise<void> {
   try {
     window.open(await urlArchivoPago(path), '_blank', 'noopener')
+  } catch (e) {
+    toast(mensajeDe(e, 'No se pudo abrir el archivo'), 'error')
+  }
+}
+
+/** Abre una foto o la factura / nota de entrega de una recepción (fase 4). */
+export async function abrirArchivoRecepcion(path: string): Promise<void> {
+  try {
+    window.open(await urlArchivoRecepcion(path), '_blank', 'noopener')
   } catch (e) {
     toast(mensajeDe(e, 'No se pudo abrir el archivo'), 'error')
   }

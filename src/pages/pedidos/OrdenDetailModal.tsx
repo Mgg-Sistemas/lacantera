@@ -20,6 +20,7 @@ import {
   useDesistirProveedor,
   useEditarCantidades,
   useEstadisticasProveedores,
+  useEvaluacionDeOrden,
   useMarcarComprar,
   useOfertas,
   useReabrirOc,
@@ -28,8 +29,11 @@ import {
   type Oferta,
   type Orden,
   type PermisosPedidos,
+  type Recepcion,
 } from '@/lib/api/pedidos'
 import {
+  CALIDAD_LABEL,
+  ETIQUETA_ALMACEN,
   ESTADOS,
   claseEvento,
   etiquetaEvento,
@@ -37,9 +41,16 @@ import {
   fechaHoraVE,
   fmtCant,
   money,
+  esRecibible,
+  estrellas,
+  progresoRecepcion,
+  puedeFinalizarse,
+  recibidoDe,
   repartoRenglon,
   revisadaPorAlmacen,
   textoEstadoSedes,
+  textoPuntualidad,
+  tieneRecepcion,
   type TonoEstado,
 } from '@/lib/pedidos'
 import {
@@ -55,9 +66,11 @@ import {
   type ScoredOferta,
 } from '@/lib/ofertas'
 import {
+  mensajeRecepcion,
   mensajeRevisionAlmacen,
   mensajeSolicitudPedido,
   textoAbono,
+  textoFinalizada,
   textoOcAprobada,
   textoOrdenAprobacion,
   textoOrdenPagada,
@@ -66,6 +79,7 @@ import {
 } from '@/lib/ficha/pedidosWhatsapp'
 import {
   abrirArchivoPago,
+  abrirArchivoRecepcion,
   aceptaAbonos,
   basesPago,
   esCredito,
@@ -89,6 +103,8 @@ import { EditarOcModal } from './EditarOcModal'
 import { ChatOC } from './ChatOC'
 import { DocumentoRetencionesModal, MetodoPagoModal } from './MetodoPagoModal'
 import { AbonoModal, CreditoModal, MarcarPagadaModal } from './PagoModales'
+import { RecibirOrdenModal } from './RecibirOrdenModal'
+import { ComprobanteOcModal, FinalizarPedidoModal, RecepcionesDeOrdenModal } from './FinalizarPedidoModal'
 
 /*
   EL DETALLE DE UNA ORDEN (MGG `OrdenDetailModal`), FASES 1 Y 2
@@ -111,7 +127,12 @@ import { AbonoModal, CreditoModal, MarcarPagadaModal } from './PagoModales'
   retenciones», «📦 Enviar a Pendiente por recepción»), los WhatsApp de cada
   paso y las filas del pago: método, documento, retenciones, monto a pagar,
   abonado y pago registrado. Donde MGG dice «Tesorería», aquí lo hace Compras.
-  La recepción y el cierre llegan con la fase 4.
+
+  Fase 4: «📦 Confirmar recepción» (solo quien recibe en el almacén: Inventario
+  en escritura o rol de almacén), «📥 Ver recepción» con las recepciones R1,
+  R2… y su WhatsApp, «✓ Finalizar orden» con la evaluación del proveedor, «📎
+  Cargar factura / nota de entrega», las filas de la recepción y del cierre, y
+  la columna «Recibido» de los ítems.
 
   No se minimiza a la barra de abajo como en MGG: esa barra es una pieza del
   armazón de MGG que La Cantera no tiene.
@@ -158,9 +179,19 @@ type SubModal =
   | { kind: 'credito' }
   | { kind: 'documento' }
   | { kind: 'credito_recepcion' }
+  | { kind: 'recibir' }
+  | { kind: 'recepciones' }
+  | { kind: 'finalizar' }
+  | { kind: 'comprobante' }
 
 /** El WhatsApp que se ofrece después de cada paso del pago. */
-type AvisoWs = { tipo: 'aprobada' } | { tipo: 'pago' } | { tipo: 'pagada' } | { tipo: 'abono'; abono: Abono }
+type AvisoWs =
+  | { tipo: 'aprobada' }
+  | { tipo: 'pago' }
+  | { tipo: 'pagada' }
+  | { tipo: 'abono'; abono: Abono }
+  | { tipo: 'recepcion'; recepcion: Recepcion }
+  | { tipo: 'finalizada' }
 
 export function OrdenDetailModal({
   orden: o,
@@ -219,6 +250,10 @@ export function OrdenDetailModal({
   const proveedorDe = (id: number | null | undefined) => (id ? proveedores?.find((p) => p.id === id) : undefined)
   const prov = proveedorDe(o.proveedor_id)
   const { data: tasa } = useTasaVigente()
+  const { data: evaluacion } = useEvaluacionDeOrden(o.id, permisos.compras && o.estado === 'finalizada')
+  const recibible = permisos.recibe_almacen === true && esRecibible(o)
+  const conRecepcion = tieneRecepcion(o)
+  const progreso = progresoRecepcion(o)
 
   const { data: articulos } = useArticulos()
   const categoriaDe = useMemo(() => {
@@ -390,7 +425,17 @@ export function OrdenDetailModal({
         ? { titulo: `Avisar por WhatsApp · OC ${o.oc_codigo ?? o.codigo} para pagar`, texto: textoPago() }
         : avisoPaso.tipo === 'pagada'
           ? { titulo: `Avisar por WhatsApp · OC ${o.oc_codigo ?? o.codigo} PAGADA`, texto: textoOrdenPagada(o, datosMensaje) }
-          : { titulo: `Avisar por WhatsApp · abono a OC ${o.oc_codigo ?? o.codigo}`, texto: textoAbono(o, avisoPaso.abono, datosMensaje) }
+          : avisoPaso.tipo === 'recepcion'
+            ? {
+                titulo: `📥 Recepción ${avisoPaso.recepcion.codigo}`,
+                texto: mensajeRecepcion(avisoPaso.recepcion, { empresa: empresaNombre }),
+              }
+            : avisoPaso.tipo === 'finalizada'
+              ? {
+                  titulo: `Avisar por WhatsApp · ${o.oc_codigo ?? o.codigo} FINALIZADA`,
+                  texto: textoFinalizada(o, evaluacion ?? null, datosMensaje),
+                }
+              : { titulo: `Avisar por WhatsApp · abono a OC ${o.oc_codigo ?? o.codigo}`, texto: textoAbono(o, avisoPaso.abono, datosMensaje) }
 
   async function onAprobarOc() {
     if (!puedeAprobarOc) {
@@ -441,6 +486,7 @@ export function OrdenDetailModal({
     puedeAprobarOc &&
     !o.pagada_en &&
     !o.recibida_en &&
+    o.recibido_total == null &&
     !Number(o.abonado_total) &&
     ['confirmada_metodo', 'oc_aprobada', 'por_recibir', 'cuenta_abierta'].includes(o.estado)
   const desglose = desglosarOc(o)
@@ -639,6 +685,44 @@ export function OrdenDetailModal({
           </Button>
         </>
       ) : null}
+      {/* Recepción y cierre (fase 4) */}
+      {recibible ? (
+        <Button title="La mercancía entra al inventario del Almacén General" onClick={() => setSub({ kind: 'recibir' })}>
+          {o.estado === 'cuenta_abierta'
+            ? '📦 Recibir (crédito pendiente)'
+            : o.estado === 'pagada'
+              ? 'Marcar recibida'
+              : progreso.parcial
+                ? '📦 Recibir lo que falta'
+                : '📦 Confirmar recepción'}
+        </Button>
+      ) : null}
+      {conRecepcion && (permisos.compras || permisos.recibe_almacen) ? (
+        <Button variant="ghost" onClick={() => setSub({ kind: 'recepciones' })}>
+          📥 Ver recepción
+        </Button>
+      ) : null}
+      {o.factura_path && (permisos.compras || permisos.recibe_almacen) ? (
+        <Button variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!)}>
+          {o.estado === 'finalizada' ? '📎 Ver factura / soporte' : '📎 Ver soporte adjunto'}
+        </Button>
+      ) : null}
+      {o.estado === 'finalizada' && canManageProcurement ? (
+        <Button onClick={() => setSub({ kind: 'comprobante' })}>
+          {o.factura_path ? '📎 Reemplazar factura / nota' : '📎 Cargar factura / nota de entrega'}
+        </Button>
+      ) : null}
+      {o.estado === 'finalizada' && permisos.compras ? (
+        <Button variant="ghost" onClick={() => setAvisoPaso({ tipo: 'finalizada' })}>
+          💬 Aviso de finalizado
+        </Button>
+      ) : null}
+      {puedeFinalizarse(o) && canManageProcurement ? (
+        <Button title="Confirmá que se recibió todo y evaluá al proveedor" onClick={() => setSub({ kind: 'finalizar' })}>
+          ✓ Finalizar orden
+        </Button>
+      ) : null}
+
       {anulable ? (
         <Button variant="danger" onClick={() => setSub({ kind: 'anular' })}>
           ⊘ Anular OC
@@ -744,6 +828,16 @@ export function OrdenDetailModal({
           </Fila>
           <Fila k="Estado">
             <EstadoBadge estado={o.estado} />
+            {o.estado === 'cuenta_abierta' && o.recibida_en ? (
+              <Chip tone="info" className="ml-1.5">
+                📦 Recibido · pendiente por pagar
+              </Chip>
+            ) : null}
+            {progreso.parcial && !o.recibida_en ? (
+              <Chip tone="warning" className="ml-1.5">
+                📦 Recepción parcial · {progreso.completos}/{progreso.total} completos
+              </Chip>
+            ) : null}
           </Fila>
           <Fila k="Proveedor actual">
             {prov ? (
@@ -925,6 +1019,57 @@ export function OrdenDetailModal({
               {fechaHoraVE(o.pagada_en)} <span className="text-ink/50">· crédito saldado con abonos</span>
             </Fila>
           ) : null}
+          {conRecepcion ? (
+            <Fila k="Recepción">
+              {o.recibida_en ? (
+                <>
+                  {fechaHoraVE(o.recibida_en)} <span className="text-ink/50">por {o.recibida_por_nombre ?? '—'}</span>
+                </>
+              ) : (
+                <span className="text-warning">Parcial: falta mercancía por llegar</span>
+              )}
+              <div>
+                Total recibido: <strong className="font-mono">{money(o.recibido_total)}</strong>{' '}
+                <span className="text-ink/50">· de {money(o.total)}</span>
+              </div>
+            </Fila>
+          ) : null}
+          {conRecepcion ? <Fila k="Almacén destino">📦 {ETIQUETA_ALMACEN}</Fila> : null}
+          {o.nota_recepcion?.trim() ? (
+            <Fila k="Nota de recepción">
+              <span className="whitespace-pre-wrap">{o.nota_recepcion}</span>
+            </Fila>
+          ) : null}
+          {o.recepcion_fotos?.length ? (
+            <Fila k="Fotos de la recepción">
+              <div className="flex flex-wrap gap-1.5">
+                {o.recepcion_fotos.map((f, i) => (
+                  <Button key={f.path} size="sm" variant="ghost" onClick={() => void abrirArchivoRecepcion(f.path)}>
+                    📷 {f.recepcion ? `R${f.recepcion} · ` : ''}Foto {i + 1}
+                  </Button>
+                ))}
+              </div>
+            </Fila>
+          ) : null}
+          {o.factura_path ? (
+            <Fila k={o.factura_tipo === 'nota_entrega' ? 'Nota de entrega' : 'Factura'}>
+              <Button size="sm" variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!)}>
+                📎 {o.factura_nombre ?? 'Ver'}
+              </Button>
+            </Fila>
+          ) : null}
+          {o.finalizada_en ? (
+            <Fila k="Finalizada">
+              {fechaHoraVE(o.finalizada_en)} <span className="text-ink/50">por {o.finalizada_por_nombre ?? '—'}</span>
+            </Fila>
+          ) : null}
+          {evaluacion ? (
+            <Fila k="Evaluación del proveedor">
+              <span className="text-warning">{estrellas(evaluacion.calidad)}</span> {CALIDAD_LABEL[evaluacion.calidad] ?? evaluacion.calidad} ·{' '}
+              {textoPuntualidad(evaluacion.puntualidad_dias)}
+              {evaluacion.comentario ? <div className="text-ink/60 text-xs">📝 {evaluacion.comentario}</div> : null}
+            </Fila>
+          ) : null}
           {o.oferta_motivo?.trim() || o.oferta_motivo_adjuntos?.length ? (
             <Fila k="📝 Motivo de elección">
               {o.oferta_motivo ? <div>{o.oferta_motivo}</div> : null}
@@ -1016,7 +1161,14 @@ export function OrdenDetailModal({
         ) : null}
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-ink/85 font-semibold">Ítems</h4>
+          <h4 className="text-ink/85 font-semibold">
+            Ítems
+            {o.sin_inventario ? (
+              <Chip tone="warning" className="ml-2">
+                📦 Sin inventario
+              </Chip>
+            ) : null}
+          </h4>
           {canEditarCant ? (
             editandoCant ? (
               <span className="inline-flex items-center gap-2">
@@ -1056,6 +1208,7 @@ export function OrdenDetailModal({
                   </>
                 ) : null}
                 <th className="px-3 py-2 text-right font-medium">{revisadaAlmacen ? 'A comprar' : 'Cantidad'}</th>
+                {conRecepcion ? <th className="px-3 py-2 text-right font-medium">Recibido</th> : null}
                 {conPrecio ? (
                   <>
                     <th className="px-3 py-2 text-right font-medium">Precio</th>
@@ -1106,6 +1259,22 @@ export function OrdenDetailModal({
                         </div>
                       ) : null}
                       {it.finalidad ? <div className="text-ink/55 text-xs">🎯 {it.finalidad}</div> : null}
+                      {it.marca_recibida ? (
+                        <div className="text-warning text-xs">
+                          ⚠ Pedido: {it.marca ?? '—'} · Recibido: {it.marca_recibida}
+                          {it.nota_marca ? ` — ${it.nota_marca}` : ''}
+                        </div>
+                      ) : null}
+                      {it.sin_inventario ? (
+                        <Chip tone="warning" className="ml-1.5" title="No entra al inventario (servicio o consumo inmediato)">
+                          sin inventario
+                        </Chip>
+                      ) : null}
+                      {it.ficha_creada ? (
+                        <Chip tone="info" className="ml-1.5" title="La ficha de inventario se creó al recibir">
+                          ficha nueva
+                        </Chip>
+                      ) : null}
                       {it.almacen_sin_salida ? (
                         <div className="text-warning text-xs">
                           ⚠ La salida {it.almacen_sin_salida} no se aprobó: volvió a Compras
@@ -1150,6 +1319,16 @@ export function OrdenDetailModal({
                         </>
                       )}
                     </td>
+                    {conRecepcion ? (
+                      <td
+                        className={cn(
+                          'px-3 py-2 text-right',
+                          it.comprar !== false && recibidoDe(it) < Number(it.cantidad) ? 'text-warning' : 'text-success',
+                        )}
+                      >
+                        {it.comprar === false ? '—' : fmtCant(recibidoDe(it))}
+                      </td>
+                    ) : null}
                     {conPrecio ? (
                       <>
                         <td className="px-3 py-2 text-right">{money(it.precio)}</td>
@@ -1219,7 +1398,7 @@ export function OrdenDetailModal({
                   ].filter((x): x is string[] => !!x && (desglose.total !== desglose.subtotal || desglose.ivaIncluido))
                 ).map(([k, v, c]) => (
                   <tr key={k} className="border-hairline border-t">
-                    <td colSpan={revisadaAlmacen ? 8 : 6} className="text-ink/60 px-3 py-1.5 text-right">
+                    <td colSpan={(revisadaAlmacen ? 8 : 6) + (conRecepcion ? 1 : 0)} className="text-ink/60 px-3 py-1.5 text-right">
                       {k}
                     </td>
                     <td className={cn('px-3 py-1.5 text-right', c)}>{v}</td>
@@ -1227,7 +1406,7 @@ export function OrdenDetailModal({
                   </tr>
                 ))}
                 <tr className="border-hairline border-t font-semibold">
-                  <td colSpan={revisadaAlmacen ? 8 : 6} className="px-3 py-2 text-right">
+                  <td colSpan={(revisadaAlmacen ? 8 : 6) + (conRecepcion ? 1 : 0)} className="px-3 py-2 text-right">
                     TOTAL
                   </td>
                   <td className={cn('px-3 py-2 text-right', !desglose.cuadra && 'text-warning')}>{money(o.total)}</td>
@@ -1468,6 +1647,43 @@ export function OrdenDetailModal({
           }}
         />
       ) : null}
+
+      {sub.kind === 'recibir' ? (
+        <RecibirOrdenModal
+          orden={o}
+          proveedor={prov ? `${prov.nombre} · ${prov.rif}` : null}
+          onCancel={() => setSub({ kind: 'none' })}
+          onHecho={(r) => {
+            setSub({ kind: 'none' })
+            setAvisoPaso({ tipo: 'recepcion', recepcion: r.recepcion })
+          }}
+        />
+      ) : null}
+
+      {sub.kind === 'recepciones' ? (
+        <RecepcionesDeOrdenModal
+          orden={o}
+          onClose={() => setSub({ kind: 'none' })}
+          onWhatsapp={(r) => {
+            setSub({ kind: 'none' })
+            setAvisoPaso({ tipo: 'recepcion', recepcion: r })
+          }}
+        />
+      ) : null}
+
+      {sub.kind === 'finalizar' ? (
+        <FinalizarPedidoModal
+          orden={o}
+          fechaPrometidaOferta={ofertaAceptada?.fecha_entrega_prometida ?? null}
+          onClose={() => setSub({ kind: 'none' })}
+          onListo={() => {
+            setSub({ kind: 'none' })
+            setAvisoPaso({ tipo: 'finalizada' })
+          }}
+        />
+      ) : null}
+
+      {sub.kind === 'comprobante' ? <ComprobanteOcModal orden={o} onClose={() => setSub({ kind: 'none' })} /> : null}
 
       {avisoTexto ? <ModalWhatsappCompra titulo={avisoTexto.titulo} texto={avisoTexto.texto} onCerrar={() => setAvisoPaso(null)} /> : null}
 
