@@ -14,7 +14,7 @@ export type Rol =
   | 'ALMACEN'
   | 'OPERACIONES'
   | 'RRHH'
-  | 'SOLICITANTE'
+  | 'BASICO'
   | 'CONSULTA'
 
 /**
