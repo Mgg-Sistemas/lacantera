@@ -21,6 +21,9 @@ import { mensajeDe, toast } from '@/lib/avisosFlotantes'
   - En «Confirmada (indicar método de pago)», un cambio de productos,
     cantidades, precios, proveedor, condición o descuento la devuelve a
     aprobación; la nota y los nombres se guardan sin reabrirla.
+  - En «Confirmada pagar» (fase 3, MGG «✎ Editar precios»): productos,
+    cantidades y precios sin moverla; el proveedor o la condición la devuelven
+    a aprobación y borran el método de pago indicado.
 */
 
 const CAMPO = 'rounded-control border-ink/20 bg-surface h-9 w-full min-w-0 border px-2 text-sm'
@@ -192,7 +195,9 @@ export function EditarOcModal({
         <p className="text-ink/65">
           {todo
             ? 'Antes de aprobarla se corrige todo: unidad y persona que solicita, motivo, finalidad, proveedor, productos (marca, cantidad, precio), descuento, IVA e IGTF, condición y nota.'
-            : 'La OC ya está confirmada: si cambiás productos, cantidades, precios, proveedor, condición o descuento, vuelve a aprobación. La nota y los nombres se guardan sin reabrirla.'}
+            : o.estado === 'oc_aprobada'
+              ? 'La OC está en «Confirmada pagar»: se corrigen productos, cantidades y precios sin moverla (las retenciones en % y el monto a pagar se recalculan). Si cambiás el proveedor o la condición, vuelve a aprobación y el método de pago se indica de nuevo.'
+              : 'La OC ya está confirmada: si cambiás productos, cantidades, precios, proveedor, condición o descuento, vuelve a aprobación. La nota y los nombres se guardan sin reabrirla.'}
         </p>
 
         {todo ? (

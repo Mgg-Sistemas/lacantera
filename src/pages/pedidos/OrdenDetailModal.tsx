@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -8,17 +9,21 @@ import { cn } from '@/lib/cn'
 import { useArticulos, useProveedores } from '@/lib/api/catalogo'
 import { useEmpresa, empresaDelPapel } from '@/lib/api/empresa'
 import { useTasaVigente } from '@/lib/api/tasas'
+import { leerFirmasEncendidas } from '@/lib/api/firmas'
 import {
   urlAdjuntoOferta,
   urlImagen,
   useAnularOc,
+  useAprobarOc,
   useCambiarModalidad,
+  useEnviarCreditoARecepcion,
   useDesistirProveedor,
   useEditarCantidades,
   useEstadisticasProveedores,
   useMarcarComprar,
   useOfertas,
   useReabrirOc,
+  type Abono,
   type ItemOrden,
   type Oferta,
   type Orden,
@@ -49,7 +54,28 @@ import {
   montoFinalOferta,
   type ScoredOferta,
 } from '@/lib/ofertas'
-import { mensajeRevisionAlmacen, mensajeSolicitudPedido, textoOrdenAprobacion } from '@/lib/ficha/pedidosWhatsapp'
+import {
+  mensajeRevisionAlmacen,
+  mensajeSolicitudPedido,
+  textoAbono,
+  textoOcAprobada,
+  textoOrdenAprobacion,
+  textoOrdenPagada,
+  textoOrdenPago,
+  type CotizacionMensaje,
+} from '@/lib/ficha/pedidosWhatsapp'
+import {
+  abrirArchivoPago,
+  aceptaAbonos,
+  basesPago,
+  esCredito,
+  etiquetaDocumento,
+  labelMetodoPago,
+  labelRetencion,
+  montoAPagar,
+  resumenDatosPago,
+  saldoCredito,
+} from '@/lib/pagos'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarOrdenCompraPdf, armarSolicitudCotizacionPdf, armarSolicitudPedidoPdf } from '@/lib/ficha/pedidosPdf'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
@@ -61,6 +87,8 @@ import { AceptarOfertaModal } from './AceptarOfertaModal'
 import { AsignarProveedoresModal } from './AsignarProveedoresModal'
 import { EditarOcModal } from './EditarOcModal'
 import { ChatOC } from './ChatOC'
+import { DocumentoRetencionesModal, MetodoPagoModal } from './MetodoPagoModal'
+import { AbonoModal, CreditoModal, MarcarPagadaModal } from './PagoModales'
 
 /*
   EL DETALLE DE UNA ORDEN (MGG `OrdenDetailModal`), FASES 1 Y 2
@@ -75,8 +103,15 @@ import { ChatOC } from './ChatOC'
   el chat interno y los botones de la etapa de cotización y de la OC por
   aprobar (PDF para cotizar, asignar por producto, proveedor desistió, editar
   OC, re-elegir oferta, OC PDF, WhatsApp para aprobar, anular OC, cambiar de
-  proveedor). «✔ Aprobar OC», el método de pago, el pago y la recepción
-  llegan con las fases 3 y 4.
+  proveedor).
+
+  Fase 3 (sin Tesorería): «✔ Aprobar OC», «💳 Indicar método de pago / Enviar
+  para Pagar» (y «💳 Editar método de pago / datos»), «💵 Marcar pagada», el
+  crédito («📋 Ver crédito / historial», «💵 Registrar abono», «🧾 Documento y
+  retenciones», «📦 Enviar a Pendiente por recepción»), los WhatsApp de cada
+  paso y las filas del pago: método, documento, retenciones, monto a pagar,
+  abonado y pago registrado. Donde MGG dice «Tesorería», aquí lo hace Compras.
+  La recepción y el cierre llegan con la fase 4.
 
   No se minimiza a la barra de abajo como en MGG: esa barra es una pieza del
   armazón de MGG que La Cantera no tiene.
@@ -93,8 +128,6 @@ const PUNTO: Record<TonoEstado, string> = {
 
 /** Donde se ve el panel de ofertas (MGG `mostrarOfertas`). */
 const ESTADOS_CON_OFERTAS = new Set(['aprobada', 'desistida_proveedor', 'oc_creada', 'confirmada_metodo', 'oc_aprobada', 'pagada'])
-/** Los de la OC: se descarga «↓ OC PDF». */
-const ESTADOS_OC = new Set(['oc_creada', 'confirmada_metodo', 'cuenta_abierta', 'oc_aprobada', 'por_recibir', 'pagada', 'recibida', 'finalizada'])
 
 export function EstadoBadge({ estado }: { estado: string }) {
   const e = ESTADOS[estado as keyof typeof ESTADOS]
@@ -119,7 +152,15 @@ type SubModal =
   | { kind: 'desistir' }
   | { kind: 'anular' }
   | { kind: 'reabrir' }
-  | { kind: 'cambiar_proveedor' }
+  | { kind: 'metodo'; modo: 'enviar' | 'corregir' }
+  | { kind: 'pagar' }
+  | { kind: 'abono' }
+  | { kind: 'credito' }
+  | { kind: 'documento' }
+  | { kind: 'credito_recepcion' }
+
+/** El WhatsApp que se ofrece después de cada paso del pago. */
+type AvisoWs = { tipo: 'aprobada' } | { tipo: 'pago' } | { tipo: 'pagada' } | { tipo: 'abono'; abono: Abono }
 
 export function OrdenDetailModal({
   orden: o,
@@ -193,6 +234,10 @@ export function OrdenDetailModal({
   const anular = useAnularOc()
   const reabrir = useReabrirOc()
   const cambiarModalidad = useCambiarModalidad()
+  const aprobarOc = useAprobarOc()
+  const creditoARecepcion = useEnviarCreditoARecepcion()
+  const qc = useQueryClient()
+  const [avisoPaso, setAvisoPaso] = useState<AvisoWs | null>(null)
 
   const [sub, setSub] = useState<SubModal>({ kind: 'none' })
   const [mensajeWs, setMensajeWs] = useState<{ titulo: string; texto: string } | null>(null)
@@ -272,8 +317,13 @@ export function OrdenDetailModal({
   const ofertaAceptada = ofertas.find((f) => f.estado === 'aceptada' && f.proveedor_id === o.proveedor_id) ?? null
 
   function pdfOc() {
-    void armarPdf(`Orden de compra ${o.oc_codigo ?? o.codigo}`, () =>
-      armarOrdenCompraPdf(o, empresaDelPapel(empresa), {
+    void armarPdf(`Orden de compra ${o.oc_codigo ?? o.codigo}`, async () => {
+      // La firma guardada de quien la aprobó (si la tiene encendida).
+      const firmas = o.oc_aprobada_por
+        ? await qc.fetchQuery({ queryKey: ['firmas'], queryFn: leerFirmasEncendidas, staleTime: 5 * 60_000 }).catch(() => null)
+        : null
+      return armarOrdenCompraPdf(o, empresaDelPapel(empresa), {
+        firmaAprobador: o.oc_aprobada_por ? (firmas?.porPerfil[o.oc_aprobada_por] ?? null) : null,
         proveedor: prov
           ? {
               nombre: prov.nombre,
@@ -286,13 +336,13 @@ export function OrdenDetailModal({
           : null,
         fechaEntregaPrometida: ofertaAceptada?.fecha_entrega_prometida ?? null,
         categoriaDe: (id) => (id ? (categoriaDe.get(id) ?? null) : null),
-      }),
-    )
+      })
+    })
   }
 
-  function whatsappAprobar() {
-    // Las cotizaciones de la orden, del monto final más bajo al más alto (MGG).
-    const cotizaciones = [...ofertas]
+  // Las cotizaciones de la orden, del monto final más bajo al más alto (MGG).
+  function cotizacionesMensaje(): CotizacionMensaje[] {
+    return [...ofertas]
       .map((f) => ({ f, monto: montoFinalOferta(f).final }))
       .sort((a, b) => a.monto - b.monto)
       .map(({ f, monto }) => {
@@ -304,6 +354,10 @@ export function OrdenDetailModal({
           elegidaPor: elegida ? f.decidida_por_nombre : null,
         }
       })
+  }
+
+  function whatsappAprobar() {
+    const cotizaciones = cotizacionesMensaje()
     setMensajeWs({
       titulo: `Avisar para aprobar · ${o.oc_codigo ?? o.codigo}`,
       texto: textoOrdenAprobacion(o, {
@@ -314,6 +368,49 @@ export function OrdenDetailModal({
         tasaBs: tasa ? Number(tasa.tasa) : null,
       }),
     })
+  }
+
+  const empresaNombre = empresaDelPapel(empresa).razonSocial
+  const datosMensaje = {
+    proveedor: prov?.nombre ?? '',
+    empresa: empresaNombre,
+    condicion: o.condiciones_pago ? labelCondicionPago(o.condiciones_pago) : null,
+  }
+
+  /** «💬 WhatsApp para pagar» (MGG `textoOrdenPago`), con el saldo si es crédito. */
+  const textoPago = () =>
+    textoOrdenPago(o, { ...datosMensaje, cotizaciones: cotizacionesMensaje(), tasaBs: tasa ? Number(tasa.tasa) : null })
+
+  // El WhatsApp de cada paso se arma con la orden ya al día (el canal en vivo la trae).
+  const avisoTexto: { titulo: string; texto: string } | null = !avisoPaso
+    ? null
+    : avisoPaso.tipo === 'aprobada'
+      ? { titulo: `Avisar por WhatsApp · OC ${o.oc_codigo ?? o.codigo} aprobada`, texto: textoOcAprobada(o, datosMensaje) }
+      : avisoPaso.tipo === 'pago'
+        ? { titulo: `Avisar por WhatsApp · OC ${o.oc_codigo ?? o.codigo} para pagar`, texto: textoPago() }
+        : avisoPaso.tipo === 'pagada'
+          ? { titulo: `Avisar por WhatsApp · OC ${o.oc_codigo ?? o.codigo} PAGADA`, texto: textoOrdenPagada(o, datosMensaje) }
+          : { titulo: `Avisar por WhatsApp · abono a OC ${o.oc_codigo ?? o.codigo}`, texto: textoAbono(o, avisoPaso.abono, datosMensaje) }
+
+  async function onAprobarOc() {
+    if (!puedeAprobarOc) {
+      toast('Solo los usuarios autorizados para aprobar órdenes de compra (Usuarios > Roles y Permisos) pueden autorizarlas.', 'error')
+      return
+    }
+    try {
+      const [r] = await aprobarOc.mutateAsync([o.id])
+      toast(
+        r?.estado === 'por_recibir'
+          ? `OC confirmada: ${ocCodigo} · contra entrega: pendiente por recepción`
+          : r?.estado === 'cuenta_abierta'
+            ? `OC confirmada: ${ocCodigo} · crédito (cuenta abierta)`
+            : `OC confirmada: ${ocCodigo} · falta indicar el método de pago`,
+        'success',
+      )
+      setAvisoPaso({ tipo: 'aprobada' })
+    } catch (e) {
+      toast(mensajeDe(e, 'Error al confirmar'), 'error')
+    }
   }
 
   async function verImagen(path: string, deOferta = false) {
@@ -339,12 +436,13 @@ export function OrdenDetailModal({
     !conPrecio && canManageProcurement && o.estado !== 'revision_almacen' && o.estado !== 'atendida_almacen'
   const historial = [...(o.historial ?? [])].reverse()
   const ocCodigo = o.oc_codigo ?? o.codigo
+  // MGG: anulable ya aprobada, antes de pagarse o recibirse y sin abonos.
   const anulable =
     puedeAprobarOc &&
-    (o.estado === 'confirmada_metodo' ||
-      o.estado === 'oc_aprobada' ||
-      (o.estado === 'por_recibir' && !o.recibida_en) ||
-      (o.estado === 'cuenta_abierta' && !Number(o.abonado_total)))
+    !o.pagada_en &&
+    !o.recibida_en &&
+    !Number(o.abonado_total) &&
+    ['confirmada_metodo', 'oc_aprobada', 'por_recibir', 'cuenta_abierta'].includes(o.estado)
   const desglose = desglosarOc(o)
   const aviso = conPrecio ? avisoDeCuadre(o, money) : null
 
@@ -429,8 +527,18 @@ export function OrdenDetailModal({
           </Button>
         </>
       ) : null}
+      {o.estado === 'oc_creada' && puedeAprobarOc ? (
+        <Button
+          className="bg-success hover:bg-success hover:brightness-95"
+          disabled={aprobarOc.isPending}
+          title="Aprobar la OC: sigue según su condición de pago"
+          onClick={() => void onAprobarOc()}
+        >
+          {aprobarOc.isPending ? 'Aprobando…' : '✔ Aprobar OC'}
+        </Button>
+      ) : null}
 
-      {/* OC confirmada: indicar el método de pago llega en la fase 3 */}
+      {/* Confirmada (indicar método de pago) */}
       {o.estado === 'confirmada_metodo' && canManageProcurement ? (
         <>
           <Button variant="ghost" onClick={pdfOc}>
@@ -439,17 +547,97 @@ export function OrdenDetailModal({
           <Button variant="ghost" title="Un cambio material devuelve la OC a aprobación" onClick={() => setSub({ kind: 'editar_oc' })}>
             ✎ Modificar OC
           </Button>
-          <Button variant="ghost" onClick={() => setSub({ kind: 'cambiar_proveedor' })}>
-            🔁 Cambiar de proveedor (volver a cotizar)
-          </Button>
+          <Button onClick={() => setSub({ kind: 'metodo', modo: 'enviar' })}>💳 Indicar método de pago / Enviar para Pagar</Button>
         </>
       ) : null}
 
-      {ESTADOS_OC.has(o.estado) && o.estado !== 'oc_creada' && !(o.estado === 'confirmada_metodo' && canManageProcurement) &&
-      (canManageProcurement || o.estado === 'oc_aprobada') ? (
+      {/* Confirmada pagar: en MGG la paga Tesorería; aquí, Compras */}
+      {o.estado === 'oc_aprobada' ? (
+        <>
+          <Button variant="ghost" onClick={pdfOc}>
+            ↓ OC PDF
+          </Button>
+          <Button variant="ghost" title="Mensaje con el monto a pagar y los datos del proveedor" onClick={() => setMensajeWs({ titulo: `Avisar para pagar · ${ocCodigo}`, texto: textoPago() })}>
+            💬 WhatsApp para pagar
+          </Button>
+          {canManageProcurement ? (
+            <Button variant="ghost" title="Corregir precios sin moverla; cambiar el proveedor o la condición la devuelve a aprobación" onClick={() => setSub({ kind: 'editar_oc' })}>
+              ✎ Editar precios
+            </Button>
+          ) : null}
+          {canManageProcurement ? (
+            <Button variant="ghost" title="Corregir el método, los datos del proveedor, el documento y las retenciones" onClick={() => setSub({ kind: 'metodo', modo: 'corregir' })}>
+              💳 Editar método de pago / datos
+            </Button>
+          ) : null}
+          {puedeAprobarOc ? (
+            <Button className="bg-success hover:bg-success hover:brightness-95" onClick={() => setSub({ kind: 'pagar' })}>
+              💵 Marcar pagada
+            </Button>
+          ) : null}
+        </>
+      ) : null}
+
+      {/* Crédito · cuenta abierta (y el crédito que sigue con saldo) */}
+      {o.estado === 'cuenta_abierta' && permisos.compras ? (
+        <>
+          <Button variant="ghost" onClick={pdfOc}>
+            ↓ OC PDF
+          </Button>
+          <Button variant="ghost" title="Mensaje con el saldo del crédito" onClick={() => setMensajeWs({ titulo: `Avisar para pagar · ${ocCodigo}`, texto: textoPago() })}>
+            💬 WhatsApp para pagar
+          </Button>
+        </>
+      ) : null}
+      {esCredito(o) && ['cuenta_abierta', 'por_recibir', 'recibida'].includes(o.estado) && permisos.compras ? (
+        <>
+          <Button variant="ghost" onClick={() => setSub({ kind: 'credito' })}>
+            📋 Ver crédito / historial
+          </Button>
+          {canManageProcurement && !o.pagada_en ? (
+            <Button variant="ghost" title="Factura o nota de entrega, y las retenciones (se restan del total)" onClick={() => setSub({ kind: 'documento' })}>
+              🧾 Documento y retenciones
+            </Button>
+          ) : null}
+          {puedeAprobarOc && aceptaAbonos(o) ? (
+            <Button className="bg-success hover:bg-success hover:brightness-95" onClick={() => setSub({ kind: 'abono' })}>
+              💵 Registrar abono
+            </Button>
+          ) : null}
+        </>
+      ) : null}
+      {o.estado === 'cuenta_abierta' && canManageProcurement && !o.recibida_en ? (
+        <Button title="La orden sigue siendo a crédito: los abonos se siguen registrando" onClick={() => setSub({ kind: 'credito_recepcion' })}>
+          📦 Enviar a Pendiente por recepción
+        </Button>
+      ) : null}
+
+      {/* Contra entrega ya recibida: se indica cómo pagar lo recibido */}
+      {o.estado === 'recibida' && o.condiciones_pago === 'contra_entrega' && !o.metodo_pago?.length && canManageProcurement ? (
+        <Button onClick={() => setSub({ kind: 'metodo', modo: 'enviar' })}>💳 Indicar método de pago (pagar lo recibido)</Button>
+      ) : null}
+
+      {['por_recibir', 'pagada', 'recibida', 'finalizada'].includes(o.estado) && (canManageProcurement || permisos.compras) ? (
         <Button variant="ghost" onClick={pdfOc}>
           ↓ OC PDF
         </Button>
+      ) : null}
+      {o.pagada_en && o.pago_monto_usd != null && permisos.compras ? (
+        <>
+          <Button
+            variant="ghost"
+            onClick={() =>
+              o.pago_comprobante_path
+                ? void abrirArchivoPago(o.pago_comprobante_path)
+                : toast('No se adjuntó comprobante en este pago', 'info')
+            }
+          >
+            📥 Comprobante de pago
+          </Button>
+          <Button variant="ghost" onClick={() => setAvisoPaso({ tipo: 'pagada' })}>
+            💬 Aviso de pago
+          </Button>
+        </>
       ) : null}
       {anulable ? (
         <Button variant="danger" onClick={() => setSub({ kind: 'anular' })}>
@@ -652,6 +840,89 @@ export function OrdenDetailModal({
                   </Button>
                 ) : null}
               </div>
+            </Fila>
+          ) : null}
+          {o.metodo_pago?.length ? (
+            <Fila k="Método de pago">
+              {o.metodo_pago.map((m, i) => (
+                <div key={i}>
+                  💳 {labelMetodoPago(m.metodo)}
+                  {Number(m.monto) > 0 ? ` · ${m.moneda === 'USD' ? money(m.monto) : `${m.moneda} ${Number(m.monto).toLocaleString('es-VE', { minimumFractionDigits: 2 })}`}` : ` · ${m.moneda}`}
+                  {m.datos && resumenDatosPago(m.metodo, m.datos) ? (
+                    <div className="text-ink/55 pl-5 text-xs">↳ {resumenDatosPago(m.metodo, m.datos)}</div>
+                  ) : null}
+                </div>
+              ))}
+              {o.metodo_pago_en ? (
+                <div className="text-ink/50 text-xs">
+                  indicado {fechaHoraVE(o.metodo_pago_en)} por {o.metodo_pago_por_nombre ?? '—'}
+                </div>
+              ) : null}
+              {o.pago_qr_path ? (
+                <Button size="sm" variant="ghost" onClick={() => void abrirArchivoPago(o.pago_qr_path!)}>
+                  📷 Ver QR / imagen de pago
+                </Button>
+              ) : null}
+            </Fila>
+          ) : null}
+          {o.numero_administracion ? <Fila k="📞 Tel. administración">{o.numero_administracion}</Fila> : null}
+          {o.comprobante_tipo ? (
+            <Fila k="Documento">
+              <Chip tone="neutral">🧾 {etiquetaDocumento(o.comprobante_tipo)}</Chip>
+            </Fila>
+          ) : null}
+          {o.retenciones?.length ? (
+            <Fila k="Retenciones">
+              {o.retenciones.map((r) => (
+                <div key={r.tipo}>
+                  {labelRetencion(r)}
+                  {r.modo === 'porcentaje' && r.base != null ? <span className="text-ink/50"> sobre {money(r.base)}</span> : null}{' '}
+                  <strong className="text-danger font-mono">− {money(r.monto)}</strong>
+                </div>
+              ))}
+            </Fila>
+          ) : null}
+          {Number(o.descuento_pago) > 0 ? (
+            <Fila k="Descuento en el pago">
+              − {money(o.descuento_pago)} · <span className="text-ink/50">total OC {money(basesPago(o).total)} (no cambia)</span>
+            </Fila>
+          ) : null}
+          {o.metodo_pago?.length || o.retenciones?.length || Number(o.descuento_pago) > 0 || esCredito(o) ? (
+            ['confirmada_metodo', 'oc_aprobada', 'cuenta_abierta', 'por_recibir', 'pagada', 'recibida', 'finalizada'].includes(o.estado) ? (
+              <Fila k="Monto a pagar">
+                <strong className="text-success font-mono">{money(montoAPagar(o))}</strong>
+                {o.retenciones?.length || Number(o.descuento_pago) > 0 ? (
+                  <span className="text-ink/50 text-xs"> (total − retenciones{Number(o.descuento_pago) > 0 ? ' − descuento' : ''})</span>
+                ) : null}
+              </Fila>
+            ) : null
+          ) : null}
+          {esCredito(o) && ['cuenta_abierta', 'por_recibir', 'recibida', 'pagada', 'finalizada'].includes(o.estado) ? (
+            <Fila k="Abonado (crédito)">
+              {money(o.abonado_total)} de {money(montoAPagar(o))}{' '}
+              {saldoCredito(o) > 0.01 ? (
+                <Chip tone="warning">Saldo {money(saldoCredito(o))}</Chip>
+              ) : (
+                <Chip tone="success">✓ Saldado</Chip>
+              )}
+            </Fila>
+          ) : null}
+          {o.pagada_en && o.pago_monto_usd != null ? (
+            <Fila k="Pagada">
+              {o.pago_fecha ? o.pago_fecha.split('-').reverse().join('/') : fechaHoraVE(o.pagada_en)} · {money(o.pago_monto_usd)}
+              {o.pago_moneda === 'Bs' ? (
+                <span className="text-ink/50">
+                  {' '}
+                  (Bs {Number(o.pago_monto).toLocaleString('es-VE', { minimumFractionDigits: 2 })} a {Number(o.pago_tasa).toLocaleString('es-VE')})
+                </span>
+              ) : null}
+              {o.pago_referencia ? <> · ref. <span className="font-mono">{o.pago_referencia}</span></> : null}
+              <span className="text-ink/50"> · registró {o.pagada_por_nombre ?? '—'}</span>
+              {o.pago_nota ? <div className="text-ink/60 text-xs">📝 {o.pago_nota}</div> : null}
+            </Fila>
+          ) : o.pagada_en && esCredito(o) ? (
+            <Fila k="Pagada">
+              {fechaHoraVE(o.pagada_en)} <span className="text-ink/50">· crédito saldado con abonos</span>
             </Fila>
           ) : null}
           {o.oferta_motivo?.trim() || o.oferta_motivo_adjuntos?.length ? (
@@ -1126,30 +1397,79 @@ export function OrdenDetailModal({
         />
       ) : null}
 
-      {sub.kind === 'cambiar_proveedor' ? (
-        <MotivoModal
-          title={`Cambiar de proveedor · ${ocCodigo}`}
-          intro="⚠ Para cambiar de proveedor se vuelve a cotizar: la OC regresa a «Pendiente (cargar ofertas)», se reabren las ofertas y se anula la confirmación que tenía."
-          label="Motivo del cambio de proveedor (obligatorio)"
-          placeholder="Ej.: el proveedor no tiene existencia / mejor precio de otro proveedor"
-          confirmText="↩ Reabrir cotizaciones"
-          busy={reabrir.isPending}
+      {sub.kind === 'metodo' ? (
+        <MetodoPagoModal
+          orden={o}
+          proveedor={prov}
+          modo={sub.modo}
           onClose={() => setSub({ kind: 'none' })}
-          onConfirm={async (motivo) => {
-            if (motivo.length < 5) {
-              toast('El motivo es muy corto (mínimo 5 letras).', 'error')
-              return
-            }
+          onListo={() => {
+            setSub({ kind: 'none' })
+            setAvisoPaso({ tipo: 'pago' })
+          }}
+          onReabrir={async (motivo) => {
+            await reabrir.mutateAsync({ id: o.id, motivo })
+            toast(`OC ${ocCodigo} · cambio de proveedor: vuelve a «cargar ofertas» para escoger nueva cotización`, 'info')
+            setSub({ kind: 'none' })
+          }}
+        />
+      ) : null}
+
+      {sub.kind === 'pagar' ? (
+        <MarcarPagadaModal
+          orden={o}
+          onClose={() => setSub({ kind: 'none' })}
+          onListo={() => {
+            setSub({ kind: 'none' })
+            setAvisoPaso({ tipo: 'pagada' })
+          }}
+        />
+      ) : null}
+
+      {sub.kind === 'abono' ? (
+        <AbonoModal
+          orden={o}
+          onClose={() => setSub({ kind: 'none' })}
+          onListo={(a) => {
+            setSub({ kind: 'none' })
+            setAvisoPaso({ tipo: 'abono', abono: a })
+          }}
+        />
+      ) : null}
+
+      {sub.kind === 'credito' ? (
+        <CreditoModal
+          orden={o}
+          puedeAbonar={puedeAprobarOc && aceptaAbonos(o)}
+          onAbonar={() => setSub({ kind: 'abono' })}
+          onClose={() => setSub({ kind: 'none' })}
+        />
+      ) : null}
+
+      {sub.kind === 'documento' ? (
+        <DocumentoRetencionesModal orden={o} onClose={() => setSub({ kind: 'none' })} onListo={() => setSub({ kind: 'none' })} />
+      ) : null}
+
+      {sub.kind === 'credito_recepcion' ? (
+        <ConfirmDialog
+          title={`Enviar a Pendiente por recepción · ${ocCodigo}`}
+          message={`La OC pasa a «Pendiente por recepción» y el almacén recibe el aviso. Sigue siendo a crédito: los abonos se siguen registrando mientras haya saldo (hoy ${money(saldoCredito(o))}). ¿Continuar?`}
+          confirmText="📦 Enviar a Pendiente por recepción"
+          busy={creditoARecepcion.isPending}
+          onCancel={() => setSub({ kind: 'none' })}
+          onConfirm={async () => {
             try {
-              await reabrir.mutateAsync({ id: o.id, motivo })
-              toast(`OC ${ocCodigo} · cambio de proveedor: vuelve a «cargar ofertas» para escoger nueva cotización`, 'info')
+              await creditoARecepcion.mutateAsync(o.id)
+              toast(`OC ${ocCodigo} (crédito) · pendiente por recepción`, 'success')
               setSub({ kind: 'none' })
             } catch (e) {
-              toast(mensajeDe(e, 'No se pudo reabrir la OC'), 'error')
+              toast(mensajeDe(e, 'No se pudo enviar a recepción'), 'error')
             }
           }}
         />
       ) : null}
+
+      {avisoTexto ? <ModalWhatsappCompra titulo={avisoTexto.titulo} texto={avisoTexto.texto} onCerrar={() => setAvisoPaso(null)} /> : null}
 
       {mensajeWs ? (
         <ModalWhatsappCompra titulo={mensajeWs.titulo} texto={mensajeWs.texto} onCerrar={() => setMensajeWs(null)} />
