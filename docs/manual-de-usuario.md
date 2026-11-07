@@ -3203,11 +3203,22 @@ Si todavía no hay ninguno, aparece **Sin clientes registrados**, con el texto *
 | **Cliente** | Razón social y, debajo, el nombre comercial si lo tiene |
 | **Identificación** | El RIF o la cédula |
 | **Condición** | La condición de pago y, si retiene IVA, el chip **Agente de retención** |
-| **Deuda** | Lo que debe, en dólares. Debajo, **de $ X** si tiene límite, en rojo cuando la deuda lo pasó |
+| **Deuda** | Lo que debe en **facturas**, en dólares. Debajo, **de $ X** si tiene límite, en rojo cuando la deuda lo pasó |
+| **Por cobrar** | Lo que debe en **notas de entrega** marcadas por cobrar y todavía sin cobrar: en dólares, y debajo en bolívares, cuántas notas y cuántas vencidas. En rojo si alguna está vencida. **—** si no debe nada |
 | **Última venta** | La fecha, o **—** |
 | **Estado** | **Activo** o **Inactivo** |
 
 Las condiciones de pago son cuatro: **De contado**, **Crédito a 15 días**, **Crédito a 30 días** y **Crédito a 60 días**.
+
+#### Los clientes que deben por notas de entrega *(07/11/2026)*
+
+Las notas de entrega que se marcan **pendientes por cobrar** no son facturas, así que no suben la columna **Deuda** ni gastan el límite de crédito. Lo que se debe en ellas se ve en la columna **Por cobrar**.
+
+- Encienda **Solo los que deben por notas de entrega** (debajo del buscador) para ver solo a esos clientes.
+- **Toque el monto** de la columna **Por cobrar** para ver las notas que debe ese cliente: número, fecha, cuándo vence o hace cuántos días venció, y su monto en $ y Bs. El número de cada nota la abre en **Facturación › Notas de entrega**, que es donde se marca cobrada. Desde Clientes no se cobra nada.
+- El botón **Reporte por cobrar** arma un PDF con los clientes que deben, de quien más debe a quien menos: arriba el total por cobrar y lo vencido, y una fila por cliente con sus notas, sus vencidas y el total en Bs y en $. Antes de generarlo puede elegir **Solo las notas vencidas**, **Incluir el detalle de notas de cada cliente** (apagado, una fila por cliente) y **Con logo**.
+
+Los bolívares y los dólares de cada nota son los del día en que se hizo la nota, con su tasa, igual que en el reporte Bs/$ de Notas de entrega. Una nota vence cuando pasa su fecha de pago.
 
 #### Registrar y editar
 
