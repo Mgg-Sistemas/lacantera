@@ -125,7 +125,7 @@ export function textoParaAprobar(d: {
   L.push('⏳ *Pendiente por aprobar*')
   if (compra.prioridad === 'URGENTE') L.push('🚨 *URGENTE*')
   L.push(`📝 *Detalle:* ${limpio(compra.titulo)}`)
-  if (limpio(compra.justificacion)) L.push(`📌 *Para qué:* ${limpio(compra.justificacion)}`)
+  if (limpio(compra.justificacion)) L.push(`📌 *Motivo de compra:* ${limpio(compra.justificacion)}`)
   L.push(...lineasPersonas({ solicita: d.personas?.solicita, analista: d.personas?.analista }))
   if (d.productos > 0) L.push(`📦 *Productos:* ${d.productos}`)
 
@@ -348,7 +348,7 @@ export function textoSolicitudPedido(d: {
     L.push(`👤 Solicita: ${limpio(d.personas?.solicita)}${limpio(d.cargo) ? ` — ${limpio(d.cargo)}` : ''}`)
   }
   L.push(`📝 *Detalle:* ${limpio(compra.titulo)}`)
-  if (limpio(compra.justificacion)) L.push(`🎯 Para qué: ${limpio(compra.justificacion)}`)
+  if (limpio(compra.justificacion)) L.push(`🎯 Motivo de compra: ${limpio(compra.justificacion)}`)
   L.push('', `*PRODUCTOS SOLICITADOS (${d.renglones.length}):*`)
   for (const r of d.renglones) {
     L.push(`• ${limpio(r.descripcion)} — ${cantidadTxt(r.cantidad, r.unidad)}${limpio(r.observacion) ? ` (${limpio(r.observacion)})` : ''}`)
@@ -383,7 +383,7 @@ export function textoParaPagar(d: {
   L.push(compra.prioridad === 'URGENTE' ? '🚨 *Requerimiento:* URGENTE' : '🟢 *Requerimiento:* Normal')
   L.push(`🏭 *Proveedor:* ${orden.proveedor?.nombre ?? '—'}`)
   L.push(`📝 *Detalle:* ${limpio(compra.titulo)}`)
-  if (limpio(compra.justificacion)) L.push(`📌 *Para qué:* ${limpio(compra.justificacion)}`)
+  if (limpio(compra.justificacion)) L.push(`📌 *Motivo de compra:* ${limpio(compra.justificacion)}`)
   L.push(...lineasPersonas(d.personas).map((x) => x.replace('👔 *Aprobó:*', '👔 *Autorizó:*')))
   if (d.aprobadaEl) L.push(`📅 *Fecha de aprobación:* ${d.aprobadaEl}`)
   if (d.productos) L.push(`📦 *Productos:* ${d.productos}`)
