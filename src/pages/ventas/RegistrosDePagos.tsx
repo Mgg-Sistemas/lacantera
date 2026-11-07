@@ -193,7 +193,7 @@ export function RegistrosDePagos() {
   return (
     <>
       <PageHeader
-        title="Registros de pagos"
+        title="Conciliación de Pagos"
         description="Los pagos que llegaron al banco y las notas de entrega que cubre cada uno. Toque un pago para ver sus notas."
         actions={
           <>
@@ -457,7 +457,7 @@ export function RegistrosDePagos() {
         onCerrar={() => setReporte(null)}
         blob={reporte?.blob ?? null}
         nombreArchivo={reporte?.nombre ?? ''}
-        titulo="Registros de pagos"
+        titulo="Conciliación de Pagos"
       />
     </>
   )
