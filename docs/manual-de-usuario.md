@@ -5756,7 +5756,7 @@ Desde el 7 de noviembre de 2026 esta pestaña trabaja como la de MGG: **todo es 
 
 **Los administradores tienen control total sobre todo**: todos los módulos, aprobar órdenes de compra, aprobar salidas, todas las pantallas de teléfono y el respaldo de la base. No hace falta marcarles nada.
 
-**La solicitud de pedido la hace cualquier usuario.** Está arriba en el menú, debajo de **Panel**, para todos. Quien no lleva compras, al enviarla, ve **Solicitud SOL-… enviada** con su botón de **WhatsApp**, y no entra al tablero de compras: el proceso de compras es solo de quien tenga el módulo **Compras**.
+**La solicitud de pedido la hace cualquier usuario.** Está arriba en el menú, debajo de **Panel**, para todos. Quien no lleva compras, al enviarla, ve **Solicitud SOL-… enviada** con su botón de **WhatsApp**, y no entra al tablero de compras: el proceso de compras es solo de quien tenga el módulo **Compras**. **Pide siempre a su nombre**: elegir a otro solicitante —un usuario u «Otra persona — no tiene usuario»— es de Compras, Operaciones, Almacén, Recursos humanos o de quien tenga Compras en escritura. Si no, cualquiera podría firmar un pedido como la gerencia.
 
 ##### Usuarios autorizados para aprobar
 

@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useMiFirma } from '@/lib/api/firmas'
 import { usePerfiles, useUnidades } from '@/lib/api/catalogo'
-import { useActualizarPedido, useCompra, useCrearPedido } from '@/lib/api/compras'
+import { useActualizarPedido, useCompra, useCrearPedido, usePuedePedirPorOtro } from '@/lib/api/compras'
 import type { Compra } from '@/lib/api/compras'
 import { Cargando, ErrorDeCarga as ErrorDeCargaPagina } from '@/components/ui/Estado'
 import { useSesion } from '@/lib/sesion'
@@ -152,7 +152,13 @@ function Formulario({ pedido, onOtra }: { pedido: Compra | null; onOtra?: () => 
 
   // Mientras la lista de perfiles carga, el selector todavía no tiene opciones;
   // el valor por defecto es uno mismo, que es el caso más común.
-  const seleccion = quienPide || yo
+  /*
+    Quien no lleva compras (ni almacén, operaciones o nómina) pide a su nombre:
+    la base no le deja poner a otro, así que la pantalla no se lo ofrece.
+  */
+  const { data: porOtro } = usePuedePedirPorOtro()
+  const aSuNombre = porOtro === false
+  const seleccion = aSuNombre ? yo : quienPide || yo
   const ofrecerFirma = miFirma?.usar === true && seleccion === yo
 
   const cambiar = (clave: number, cambios: Partial<FilaRenglon>) =>
@@ -318,6 +324,14 @@ function Formulario({ pedido, onOtra }: { pedido: Compra | null; onOtra?: () => 
             {/* El cargo va en la tercera línea y no pegado al nombre: así se
                 busca por «tesoreria» y sale quien la lleva, sin que el
                 renglón se parta en dos cuando el cargo es largo. */}
+            {aSuNombre ? (
+              <div>
+                <span className="text-ink/70 mb-1.5 block text-sm font-medium">Solicitante</span>
+                <p className="text-ink/85 text-sm">
+                  {(perfiles ?? []).find((p) => p.id === yo)?.nombre ?? 'Usted'} (yo)
+                </p>
+              </div>
+            ) : (
             <SelectBuscable
               label="Solicitante"
               hint="Si a quien lo necesita le falta algo, se le pregunta a esta persona."
@@ -334,6 +348,7 @@ function Formulario({ pedido, onOtra }: { pedido: Compra | null; onOtra?: () => 
                 { valor: OTRA_PERSONA, nombre: 'Otra persona — no tiene usuario' },
               ]}
             />
+            )}
 
             {seleccion === OTRA_PERSONA ? (
               <div className="border-hairline rounded-card space-y-4 border border-dashed p-3">

@@ -1245,6 +1245,18 @@ export function useSoyAprobador() {
   })
 }
 
+/**
+ * ¿Puede pedir a nombre de otro? Compras, operaciones, almacén, nómina o quien
+ * tenga compras en escritura. Los demás piden a su nombre (07/11/2026).
+ */
+export function usePuedePedirPorOtro() {
+  return useQuery({
+    queryKey: ['compras', 'pedir-por-otro'],
+    queryFn: () => rpc<boolean>('puede_pedir_por_otro'),
+    staleTime: 5 * 60_000,
+  })
+}
+
 /** Quiénes aprueban, para decirlo en pantalla: «La aprueba NORBELIS SEQUEA». */
 export function useAprobadores() {
   return useQuery({

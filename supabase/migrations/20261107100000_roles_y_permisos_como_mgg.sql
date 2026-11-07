@@ -364,6 +364,40 @@ begin
 end;
 $function$;
 
+create or replace function private.puede_pedir_por_otro()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  -- Pedir a nombre de otro (un usuario o alguien sin usuario, como el
+  -- mecánico del frente) lo hace quien ya lo hacía: compras, operaciones,
+  -- almacén, nómina o quien tenga compras en escritura. Los demás piden a su
+  -- nombre: si no, cualquiera podría firmar un pedido como la gerencia.
+  select private.tiene_rol('COMPRAS', 'OPERACIONES', 'ALMACEN', 'RRHH')
+      or private.tiene_permiso('COMPRAS', 'ESCRITURA');
+$function$;
+
+create or replace function private.exigir_pedir_a_su_nombre(p_solicitante_id uuid, p_solicitante_nombre text)
+returns void
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $function$
+begin
+  if private.puede_pedir_por_otro() then
+    return;
+  end if;
+
+  if (p_solicitante_id is not null and p_solicitante_id <> (select auth.uid()))
+     or nullif(btrim(coalesce(p_solicitante_nombre, '')), '') is not null then
+    raise exception 'Solo puede hacer solicitudes a su nombre.' using errcode = '42501';
+  end if;
+end;
+$function$;
+
 create or replace function public.crear_pedido(
   p_titulo text,
   p_justificacion text,
@@ -391,6 +425,7 @@ declare
 begin
   -- Pedir lo puede cualquiera; comprar, solo quien lleva compras.
   perform private.exigir_usuario_activo();
+  perform private.exigir_pedir_a_su_nombre(p_solicitante_id, p_solicitante_nombre);
 
   if length(trim(coalesce(p_titulo, ''))) < 4 then
     raise exception 'Póngale un título al pedido: es lo que se lee en el tablero.' using errcode = '22023';
@@ -432,6 +467,114 @@ begin
 
   return v_id;
 end;
+$function$;
+
+-- Corregir tampoco cambia de nombre a quien no puede pedir por otro.
+create or replace function public.actualizar_pedido(
+  p_id bigint,
+  p_titulo text,
+  p_justificacion text,
+  p_renglones jsonb,
+  p_prioridad text default 'NORMAL',
+  p_requerida_para date default null,
+  p_destino text default null,
+  p_solicitante_id uuid default null,
+  p_solicitante_nombre text default null,
+  p_solicitante_cargo text default null,
+  p_destino_almacen_id bigint default null,
+  p_con_firma boolean default null
+) returns void
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_estado  text;
+  v_dueno   uuid;
+  v_sol     record;
+  v_destino text := nullif(trim(coalesce(p_destino, '')), '');
+  v_nombre  text;
+  v_cotiza  integer;
+  v_antes   uuid;
+begin
+  select estado, registrada_por, solicitante_id into v_estado, v_dueno, v_antes
+  from public.solicitudes_pedido where id = p_id;
+
+  if v_estado is null then
+    raise exception 'No existe el pedido %.', p_id using errcode = 'P0002';
+  end if;
+
+  if v_estado not in ('BORRADOR', 'PEDIDO', 'CONFIRMADA') then
+    raise exception 'Este pedido está en "%" y ya no se corrige aquí. Si está con el gerente, retire lo propuesto; si ya se aprobó, la orden manda.', v_estado
+      using errcode = '55000';
+  end if;
+
+  if v_dueno <> (select auth.uid()) and not private.tiene_rol('COMPRAS') then
+    raise exception 'Solo quien creó el pedido puede corregirlo.' using errcode = '42501';
+  end if;
+
+  perform private.exigir_pedir_a_su_nombre(p_solicitante_id, p_solicitante_nombre);
+
+  select count(*) into v_cotiza
+  from public.cotizaciones where solicitud_id = p_id;
+
+  if v_cotiza > 0 then
+    raise exception 'Este pedido ya tiene % cotización(es) cargada(s), y están puestas sobre estos renglones: corregirlo ahora las dejaría vacías. Elimine las cotizaciones y vuelva a cargarlas después.', v_cotiza
+      using errcode = '55000';
+  end if;
+
+  if p_destino_almacen_id is not null then
+    select nombre into v_nombre from public.almacenes where id = p_destino_almacen_id;
+    if v_nombre is null then
+      raise exception 'No existe el almacén %.', p_destino_almacen_id using errcode = '23503';
+    end if;
+    v_destino := v_nombre;
+  end if;
+
+  select * into v_sol from private.normalizar_solicitante(
+    coalesce(p_solicitante_id,
+             case when nullif(trim(coalesce(p_solicitante_nombre, '')), '') is null
+                  then v_dueno end),
+    p_solicitante_nombre, p_solicitante_cargo);
+
+  update public.solicitudes_pedido set
+    titulo = trim(p_titulo),
+    justificacion = trim(coalesce(p_justificacion, '')),
+    prioridad = coalesce(p_prioridad, 'NORMAL'),
+    requerida_para = p_requerida_para,
+    destino = v_destino,
+    destino_almacen_id = p_destino_almacen_id,
+    solicitante_id = v_sol.o_id,
+    solicitante_nombre = v_sol.o_nombre,
+    solicitante_cargo = v_sol.o_cargo,
+    firma_de_quien_pide = case
+      when p_con_firma is not null
+        then p_con_firma
+             and v_sol.o_id is not distinct from (select auth.uid())
+             and private.tengo_firma_encendida()
+      -- Lo que eligió quien pedía no pasa a quien pide ahora.
+      when v_sol.o_id is not distinct from v_antes then firma_de_quien_pide
+      else false
+    end
+  where id = p_id;
+
+  perform private.escribir_renglones(p_id, p_renglones);
+
+  if v_estado <> 'BORRADOR' then
+    perform private.anotar('SOLICITUD', p_id, v_estado, v_estado, 'Se corrigió el pedido');
+  end if;
+end;
+$function$;
+
+-- Para la pantalla: si ofrece elegir quién pide.
+create or replace function public.puede_pedir_por_otro()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select private.puede_pedir_por_otro();
 $function$;
 
 -- Cada quien ve sus propias solicitudes, aunque no lleve compras.
@@ -713,6 +856,7 @@ $function$;
 
 revoke all on function private.es_aprobador_de_salidas() from public, anon;
 revoke all on function private.exigir_usuario_activo() from public, anon;
+revoke all on function private.exigir_pedir_a_su_nombre(uuid, text) from public, anon;
 
 do $$
 declare
@@ -729,7 +873,9 @@ begin
     'public.guardar_rol(text, text, text, boolean, text, boolean)',
     'public.crear_pedido(text, text, jsonb, text, date, text, boolean, uuid, text, text, bigint, boolean)',
     'public.crear_usuario_sistema(text, text, text, text, text, text, text[])',
-    'public.como_apruebo_salidas()'
+    'public.como_apruebo_salidas()',
+    'public.actualizar_pedido(bigint, text, text, jsonb, text, date, text, uuid, text, text, bigint, boolean)',
+    'public.puede_pedir_por_otro()'
   ] loop
     execute format('revoke all on function %s from public, anon', f);
     execute format('grant execute on function %s to authenticated', f);
