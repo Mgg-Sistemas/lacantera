@@ -92,7 +92,8 @@ export async function armarSolicitudPedidoPdf(o: Orden, empresa: EmpresaPapel): 
     ],
   })
 
-  y = tituloDocumento(doc, y, `Solicitud de Pedido ${o.codigo}`)
+  const servicio = o.clase === 'servicio'
+  y = tituloDocumento(doc, y, `${servicio ? 'Solicitud de servicio' : 'Solicitud de Pedido'} ${o.codigo}`)
 
   // MGG: «{URGENTE · }{estado} · Generado {fecha}», en gris bajo el título.
   doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor('#6b6b6b')
@@ -104,7 +105,8 @@ export async function armarSolicitudPedidoPdf(o: Orden, empresa: EmpresaPapel): 
   y = etiquetaValor(doc, y, [
     ['Fecha', fechaHoraVE(o.creado_en)],
     ['Solicitante', solicitaDe(o)],
-    ['Se necesita en', ETIQUETA_ALMACEN],
+    // Un servicio no llega al almacén (fase 5a).
+    ['Se necesita en', servicio ? null : ETIQUETA_ALMACEN],
     ['Finalidad', o.finalidad ?? o.motivo ?? null],
     ['Urgente', o.urgente ? 'Sí' : null],
     ['Estado', etiquetaEstado(o.estado)],
@@ -116,7 +118,7 @@ export async function armarSolicitudPedidoPdf(o: Orden, empresa: EmpresaPapel): 
 
   const items = (o.items ?? []).filter((it) => seRevisa(it) || it.cantidad_solicitada != null)
 
-  y = seccion(doc, y, `Productos solicitados (${items.length})`)
+  y = seccion(doc, y, `${servicio ? 'Servicios solicitados' : 'Productos solicitados'} (${items.length})`)
   if (!items.length) {
     y = tabla(doc, y, COLUMNAS, [['', 'Sin productos', '', '']])
   } else if (!tieneRevision) {
@@ -467,11 +469,21 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
     ],
     items.map((it) => [
       it.general && !it.articulo_id ? '—' : it.sku,
-      [it.nombre, it.articulo_nombre && it.articulo_nombre !== it.nombre ? `(inventario: ${it.articulo_nombre})` : '']
+      [
+        it.nombre,
+        it.articulo_nombre && it.articulo_nombre !== it.nombre ? `(inventario: ${it.articulo_nombre})` : '',
+        // MGG: el detalle de un renglón de servicio sale como «  • desc · cant · precio».
+        ...(it.detalle_items ?? []).map(
+          (x) =>
+            `  • ${x.descripcion}${x.cantidad != null ? ` · ${fmtCant(x.cantidad)}` : ''}${x.precio != null ? ` · ${money2(x.precio)}` : ''}`,
+        ),
+      ]
         .filter(Boolean)
         .join('\n'),
       [it.marca, it.modelo].filter(Boolean).join(' / ') || '—',
-      d.categoriaDe(it.articulo_id) ?? '—',
+      o.clase === 'servicio'
+        ? [it.servicio_categoria, it.servicio_tipo].filter(Boolean).join(' · ') || '—'
+        : (d.categoriaDe(it.articulo_id) ?? '—'),
       `${fmtCant(it.cantidad)} ${it.unidad_compra ?? it.unidad ?? ''}`.trim(),
       `${money2(it.precio)}${it.unidad_compra ? ` / ${it.unidad_compra}` : ''}`,
       money2((Number(it.cantidad) || 0) * (Number(it.precio) || 0)),

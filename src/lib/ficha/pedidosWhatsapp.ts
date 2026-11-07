@@ -67,6 +67,42 @@ export function mensajeSolicitudPedido(o: Orden): string {
   return partes.join('\n')
 }
 
+/**
+ * La solicitud de servicio (fase 5a), con la forma de `mensajeSolicitudPedido`.
+ * MGG no tiene mensaje propio para el SV; este dice lo mismo que la SP con lo
+ * de un servicio: el equipo, el tipo y el detalle de piezas y trabajos.
+ */
+export function mensajeSolicitudServicio(o: Orden): string {
+  const items = (o.items ?? []).filter((it) => it.comprar !== false)
+  const partes: string[] = []
+  partes.push(`🛠 *SOLICITUD DE SERVICIO ${o.codigo}*`)
+  if (o.urgente) partes.push('🚨 *URGENTE*')
+  partes.push(`📅 ${fechaHoraVE(o.creado_en)}`)
+  const unidad = (o.unidad_solicitante ?? '').trim()
+  const persona = (quienSolicita(o) ?? '').trim()
+  if (unidad || persona) partes.push(`👤 Solicita: ${[unidad, persona].filter(Boolean).join(' — ')}`)
+  partes.push('')
+  partes.push(`*SERVICIOS SOLICITADOS (${items.length}):*`)
+  for (const it of items) {
+    partes.push(`• ${it.nombre} — ${fmtCant(it.cantidad)}`)
+    for (const d of it.detalle_items ?? []) {
+      partes.push(
+        `   ◦ ${d.descripcion}${d.cantidad != null ? ` · ${fmtCant(d.cantidad)}` : ''}${d.precio != null ? ` · ${montoTxt(d.precio)}` : ''}`,
+      )
+    }
+  }
+  if (Number(o.total) > 0) {
+    partes.push('')
+    partes.push(`💵 *Total estimado:* ${montoTxt(o.total)}`)
+  }
+  const nota = (o.notas ?? '').trim()
+  if (nota) {
+    partes.push('')
+    partes.push(`📝 ${nota}`)
+  }
+  return partes.join('\n')
+}
+
 // ---------------------------------------------------------------------------
 // Fase 2: la OC (MGG `ordenPagoTxt.ts`)
 // ---------------------------------------------------------------------------

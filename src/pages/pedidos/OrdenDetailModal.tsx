@@ -69,6 +69,7 @@ import {
   mensajeRecepcion,
   mensajeRevisionAlmacen,
   mensajeSolicitudPedido,
+  mensajeSolicitudServicio,
   textoAbono,
   textoFinalizada,
   textoOcAprobada,
@@ -105,6 +106,7 @@ import { DocumentoRetencionesModal, MetodoPagoModal } from './MetodoPagoModal'
 import { AbonoModal, CreditoModal, MarcarPagadaModal } from './PagoModales'
 import { RecibirOrdenModal } from './RecibirOrdenModal'
 import { ComprobanteOcModal, FinalizarPedidoModal, RecepcionesDeOrdenModal } from './FinalizarPedidoModal'
+import { ServicioRealizadoModal } from './ServicioRealizadoModal'
 
 /*
   EL DETALLE DE UNA ORDEN (MGG `OrdenDetailModal`), FASES 1 Y 2
@@ -183,6 +185,7 @@ type SubModal =
   | { kind: 'recepciones' }
   | { kind: 'finalizar' }
   | { kind: 'comprobante' }
+  | { kind: 'realizado' }
 
 /** El WhatsApp que se ofrece después de cada paso del pago. */
 type AvisoWs =
@@ -220,9 +223,12 @@ export function OrdenDetailModal({
   const isPendiente = o.estado === 'pendiente'
   const enRevisionAlmacen = o.estado === 'revision_almacen'
   const canApprove = canManageProcurement && isPendiente
+  const esServicio = o.clase === 'servicio'
+  // Un servicio no recibe OC- (conserva su SV): se edita mientras no tenga proveedor.
   const canEditar =
     (isPendiente || o.estado === 'aprobada' || enRevisionAlmacen) &&
     !o.oc_codigo &&
+    !(esServicio && (o.proveedor_id || o.parent_orden_id)) &&
     (canManageProcurement || o.creado_por === yo)
   const canEditarCant =
     ['pendiente', 'aprobada', 'oc_creada'].includes(o.estado) && (canManageProcurement || o.creado_por === yo)
@@ -242,7 +248,8 @@ export function OrdenDetailModal({
   const misHijas = o.parent_orden_id ? [] : hijas
   const pendientesMadre = useMemo(() => itemsPendientes(madre, hijas), [madre, hijas])
 
-  const veOfertas = permisos.compras && o.clase !== 'servicio' && ESTADOS_CON_OFERTAS.has(o.estado)
+  // MGG: el panel sale en la pestaña OC y en la de servicios.
+  const veOfertas = permisos.compras && ESTADOS_CON_OFERTAS.has(o.estado)
   const ofertasQ = useOfertas(permisos.compras ? [madre.id] : [])
   const ofertas = useMemo(() => ofertasQ.data ?? [], [ofertasQ.data])
   const { data: stats } = useEstadisticasProveedores(permisos.compras)
@@ -251,7 +258,10 @@ export function OrdenDetailModal({
   const prov = proveedorDe(o.proveedor_id)
   const { data: tasa } = useTasaVigente()
   const { data: evaluacion } = useEvaluacionDeOrden(o.id, permisos.compras && o.estado === 'finalizada')
-  const recibible = permisos.recibe_almacen === true && esRecibible(o)
+  // Un servicio no lo recibe el almacén: Compras confirma que se prestó (MGG «🔧 Servicio realizado»).
+  const recibible = permisos.recibe_almacen === true && !esServicio && esRecibible(o)
+  const servicioRealizable =
+    esServicio && canManageProcurement && !o.recibida_en && ['por_recibir', 'cuenta_abierta', 'pagada'].includes(o.estado)
   const conRecepcion = tieneRecepcion(o)
   const progreso = progresoRecepcion(o)
 
@@ -352,7 +362,7 @@ export function OrdenDetailModal({
   const ofertaAceptada = ofertas.find((f) => f.estado === 'aceptada' && f.proveedor_id === o.proveedor_id) ?? null
 
   function pdfOc() {
-    void armarPdf(`Orden de compra ${o.oc_codigo ?? o.codigo}`, async () => {
+    void armarPdf(`${o.clase === 'servicio' ? 'Orden de servicio' : 'Orden de compra'} ${o.oc_codigo ?? o.codigo}`, async () => {
       // La firma guardada de quien la aprobó (si la tiene encendida).
       const firmas = o.oc_aprobada_por
         ? await qc.fetchQuery({ queryKey: ['firmas'], queryFn: leerFirmasEncendidas, staleTime: 5 * 60_000 }).catch(() => null)
@@ -503,7 +513,7 @@ export function OrdenDetailModal({
           ↓ PDF de la OP
         </Button>
       ) : null}
-      {o.clase !== 'servicio' ? (
+      {!esServicio ? (
         <Button
           variant="ghost"
           title="Ver el mensaje de la Solicitud de Pedido (productos y cantidades) para copiarlo o mandarlo por WhatsApp"
@@ -511,7 +521,15 @@ export function OrdenDetailModal({
         >
           💬 WhatsApp de la SP
         </Button>
-      ) : null}
+      ) : (
+        <Button
+          variant="ghost"
+          title="Ver el mensaje de la solicitud de servicio (servicios, equipo y detalle) para copiarlo o mandarlo por WhatsApp"
+          onClick={() => setMensajeWs({ titulo: `Solicitud de servicio · ${o.codigo}`, texto: mensajeSolicitudServicio(o) })}
+        >
+          💬 WhatsApp del servicio
+        </Button>
+      )}
       {revisadaAlmacen ? (
         <Button
           variant="ghost"
@@ -654,7 +672,15 @@ export function OrdenDetailModal({
       ) : null}
       {o.estado === 'cuenta_abierta' && canManageProcurement && !o.recibida_en ? (
         <Button title="La orden sigue siendo a crédito: los abonos se siguen registrando" onClick={() => setSub({ kind: 'credito_recepcion' })}>
-          📦 Enviar a Pendiente por recepción
+          {esServicio ? '🔧 Enviar a Pendiente por realizar' : '📦 Enviar a Pendiente por recepción'}
+        </Button>
+      ) : null}
+      {servicioRealizable ? (
+        <Button
+          title="Dejar constancia de que el servicio se prestó (no entra al inventario)"
+          onClick={() => setSub({ kind: 'realizado' })}
+        >
+          🔧 Servicio realizado
         </Button>
       ) : null}
 
@@ -697,7 +723,7 @@ export function OrdenDetailModal({
                 : '📦 Confirmar recepción'}
         </Button>
       ) : null}
-      {conRecepcion && (permisos.compras || permisos.recibe_almacen) ? (
+      {conRecepcion && !esServicio && (permisos.compras || permisos.recibe_almacen) ? (
         <Button variant="ghost" onClick={() => setSub({ kind: 'recepciones' })}>
           📥 Ver recepción
         </Button>
@@ -919,7 +945,7 @@ export function OrdenDetailModal({
               </div>
             </Fila>
           ) : null}
-          {o.modalidad_pago && o.oc_codigo ? (
+          {o.modalidad_pago && (o.oc_codigo || o.oc_creada_en) ? (
             <Fila k="Modalidad de pago">
               <div className="flex flex-wrap items-center gap-2">
                 <Chip tone={o.modalidad_pago === 'usd' ? 'success' : 'info'}>
@@ -1020,7 +1046,7 @@ export function OrdenDetailModal({
             </Fila>
           ) : null}
           {conRecepcion ? (
-            <Fila k="Recepción">
+            <Fila k={esServicio ? 'Servicio realizado' : 'Recepción'}>
               {o.recibida_en ? (
                 <>
                   {fechaHoraVE(o.recibida_en)} <span className="text-ink/50">por {o.recibida_por_nombre ?? '—'}</span>
@@ -1034,7 +1060,7 @@ export function OrdenDetailModal({
               </div>
             </Fila>
           ) : null}
-          {conRecepcion ? <Fila k="Almacén destino">📦 {ETIQUETA_ALMACEN}</Fila> : null}
+          {conRecepcion && !esServicio ? <Fila k="Almacén destino">📦 {ETIQUETA_ALMACEN}</Fila> : null}
           {o.nota_recepcion?.trim() ? (
             <Fila k="Nota de recepción">
               <span className="whitespace-pre-wrap">{o.nota_recepcion}</span>
@@ -1259,6 +1285,18 @@ export function OrdenDetailModal({
                         </div>
                       ) : null}
                       {it.finalidad ? <div className="text-ink/55 text-xs">🎯 {it.finalidad}</div> : null}
+                      {esServicio && it.equipo_nombre ? <div className="text-ink/55 text-xs">🚜 {it.equipo_nombre}</div> : null}
+                      {it.detalle_items?.length ? (
+                        <ul className="text-ink/55 ml-4 list-disc text-xs">
+                          {it.detalle_items.map((d, k) => (
+                            <li key={k}>
+                              {d.descripcion}
+                              {d.cantidad != null ? ` · ${fmtCant(d.cantidad)}` : ''}
+                              {d.precio != null ? ` · ${money(d.precio)}` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                       {it.marca_recibida ? (
                         <div className="text-warning text-xs">
                           ⚠ Pedido: {it.marca ?? '—'} · Recibido: {it.marca_recibida}
@@ -1281,10 +1319,17 @@ export function OrdenDetailModal({
                         </div>
                       ) : null}
                     </td>
+                    {/* MGG: en un servicio, Categoría y Subcategoría son la categoría y el tipo de servicio. */}
                     <td className="text-ink/65 px-3 py-2 text-xs">
-                      {it.articulo_id ? (categoriaDe.get(it.articulo_id) ?? '—') : '—'}
+                      {esServicio
+                        ? (it.servicio_categoria ?? '—')
+                        : it.articulo_id
+                          ? (categoriaDe.get(it.articulo_id) ?? '—')
+                          : '—'}
                     </td>
-                    <td className="text-ink/40 px-3 py-2 text-xs">—</td>
+                    <td className={cn('px-3 py-2 text-xs', esServicio && it.servicio_tipo ? 'text-ink/65' : 'text-ink/40')}>
+                      {esServicio ? (it.servicio_tipo ?? '—') : '—'}
+                    </td>
                     {revisadaAlmacen ? (
                       <>
                         <td className="px-3 py-2 text-right">
@@ -1631,9 +1676,13 @@ export function OrdenDetailModal({
 
       {sub.kind === 'credito_recepcion' ? (
         <ConfirmDialog
-          title={`Enviar a Pendiente por recepción · ${ocCodigo}`}
-          message={`La OC pasa a «Pendiente por recepción» y el almacén recibe el aviso. Sigue siendo a crédito: los abonos se siguen registrando mientras haya saldo (hoy ${money(saldoCredito(o))}). ¿Continuar?`}
-          confirmText="📦 Enviar a Pendiente por recepción"
+          title={`${esServicio ? 'Enviar a Pendiente por realizar' : 'Enviar a Pendiente por recepción'} · ${ocCodigo}`}
+          message={
+            esServicio
+              ? `El servicio pasa a «Pendiente por realizar»: Compras confirma que se prestó. Sigue siendo a crédito: los abonos se siguen registrando mientras haya saldo (hoy ${money(saldoCredito(o))}). ¿Continuar?`
+              : `La OC pasa a «Pendiente por recepción» y el almacén recibe el aviso. Sigue siendo a crédito: los abonos se siguen registrando mientras haya saldo (hoy ${money(saldoCredito(o))}). ¿Continuar?`
+          }
+          confirmText={esServicio ? '🔧 Enviar a Pendiente por realizar' : '📦 Enviar a Pendiente por recepción'}
           busy={creditoARecepcion.isPending}
           onCancel={() => setSub({ kind: 'none' })}
           onConfirm={async () => {
@@ -1684,6 +1733,10 @@ export function OrdenDetailModal({
       ) : null}
 
       {sub.kind === 'comprobante' ? <ComprobanteOcModal orden={o} onClose={() => setSub({ kind: 'none' })} /> : null}
+
+      {sub.kind === 'realizado' ? (
+        <ServicioRealizadoModal orden={o} onClose={() => setSub({ kind: 'none' })} onListo={() => setSub({ kind: 'none' })} />
+      ) : null}
 
       {avisoTexto ? <ModalWhatsappCompra titulo={avisoTexto.titulo} texto={avisoTexto.texto} onCerrar={() => setAvisoPaso(null)} /> : null}
 
