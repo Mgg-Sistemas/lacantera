@@ -15,6 +15,7 @@ import {
   textoRecepcion,
   textoSolicitudPedido,
 } from '@/lib/ficha/comprasWhatsapp'
+import { estadoDeLaCompra } from '@/pages/compras/etiquetasDeEstado'
 import { dinero, hace } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 import { ModalRecepcion } from './ModalRecepcion'
@@ -287,6 +288,7 @@ export function ComprasTelefono() {
                 renglones: renglonesComoSePidieron(compra),
                 personas: { solicita: solicitante },
                 cargo,
+                estado: estadoDeLaCompra(compra),
                 empresa: empresa?.razon_social,
               })}
               onCerrar={() => setPedidoId(null)}
