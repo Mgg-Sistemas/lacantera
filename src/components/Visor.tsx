@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Download, FileWarning, X } from 'lucide-react'
+import { Download, ExternalLink, FileWarning, Share2, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { bloquearScroll } from '@/lib/bloqueoDeScroll'
 
@@ -41,6 +41,11 @@ interface VisorProps {
   titulo: string
   /** Una línea sobre qué se está mirando. */
   descripcion?: string
+  /**
+   * Por qué no hay documento, cuando armarlo falló. Sin esto el botón no hacía
+   * nada y no había forma de saber qué pasó.
+   */
+  error?: string | null
   /**
    * El tipo declarado, cuando se sabe. Manda sobre la extensión del nombre
    * porque un archivo puede haberse subido llamándose "acta" a secas.
@@ -116,6 +121,7 @@ export function Visor({
   casilla,
   extra,
   mime,
+  error,
 }: VisorProps) {
   const [deMemoria, setDeMemoria] = useState<string | null>(null)
   const [bajando, setBajando] = useState(false)
@@ -159,6 +165,35 @@ export function Visor({
   if (!abierto) return null
 
   const imagen = esImagen(blob, mime, nombreArchivo)
+
+  /*
+    EL TELÉFONO NO PINTA EL PDF DENTRO DE LA PÁGINA
+
+    Chrome de Android no trae visor de PDF: dentro del recuadro queda en blanco
+    y parece que «no abre». El navegador lo dice con `pdfViewerEnabled`. Ahí,
+    en vez del recuadro vacío, se ofrece abrirlo con la aplicación del
+    teléfono, compartirlo o descargarlo.
+  */
+  const sinVisorDePdf =
+    !imagen && typeof navigator !== 'undefined' && navigator.pdfViewerEnabled === false
+
+  const archivoParaCompartir = blob
+    ? new File([blob], nombreArchivo, { type: blob.type || 'application/pdf' })
+    : null
+  const puedeCompartir =
+    archivoParaCompartir !== null &&
+    typeof navigator !== 'undefined' &&
+    typeof navigator.canShare === 'function' &&
+    navigator.canShare({ files: [archivoParaCompartir] })
+
+  const compartir = async () => {
+    if (!archivoParaCompartir) return
+    try {
+      await navigator.share({ files: [archivoParaCompartir], title: titulo })
+    } catch {
+      // Cerrar el menú de compartir también llega como error: no es un fallo.
+    }
+  }
 
   /*
     Guardarlo con el nombre que le toca.
@@ -249,6 +284,33 @@ export function Visor({
             <div className="text-ink/50 flex h-full flex-col items-center justify-center gap-3 p-8 text-center text-sm">
               <FileWarning className="size-8 opacity-60" />
               No se pudo preparar el documento.
+              {error ? <span className="text-danger max-w-md text-xs">{error}</span> : null}
+            </div>
+          ) : sinVisorDePdf ? (
+            <div className="text-ink/60 flex h-full flex-col items-center justify-center gap-4 p-8 text-center text-sm">
+              <FileWarning className="size-8 opacity-60" />
+              <p className="max-w-xs">
+                Este teléfono no muestra el PDF dentro de la página. Ábralo con la
+                aplicación del teléfono, compártalo o descárguelo.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button
+                  variant="outline"
+                  icon={<ExternalLink className="size-[18px]" />}
+                  onClick={() => window.open(url, '_blank', 'noopener')}
+                >
+                  Abrir el PDF
+                </Button>
+                {puedeCompartir ? (
+                  <Button
+                    variant="outline"
+                    icon={<Share2 className="size-[18px]" />}
+                    onClick={() => void compartir()}
+                  >
+                    Compartir
+                  </Button>
+                ) : null}
+              </div>
             </div>
           ) : imagen ? (
             /*
