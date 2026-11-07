@@ -79,7 +79,7 @@ function seccionesSoloTelefono(puedeAccion: (accion: string) => boolean): NavSec
     {
       items: [
         // Pedir lo puede cualquiera, también desde el teléfono (06/11/2026).
-        { label: 'Solicitud de pedido', icon: ClipboardList, to: '/app/compras/nuevo', siempre: true },
+        { label: 'Solicitud de pedido', icon: ClipboardList, to: '/app/pedidos', siempre: true },
         { label: 'Manual de usuario', icon: BookOpen, to: '/app/manual', siempre: true },
       ],
     },

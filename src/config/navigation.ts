@@ -162,8 +162,15 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   */
   ['/app/salidas', 'SALIDAS'],
   ['/app/inventario', 'INVENTARIO'],
+  // La revisión de las solicitudes de pedido es del almacén (MGG:
+  // `RequireModule module="inventario"`).
+  ['/app/solicitudes-pedido', 'INVENTARIO'],
   ['/app/despachos', 'DESPACHOS'],
   ['/app/compras', 'COMPRAS'],
+  // Abierta a todos por `RUTAS_PROPIAS`; el módulo decide solo quién la ve
+  // dentro del grupo Compras del menú (los demás entran por «Solicitud de
+  // pedido», arriba).
+  ['/app/pedidos', 'COMPRAS'],
   // Gastos, 22/10/2026: la factura física transcrita, categorizada y con su
   // foto. Módulo propio, aparte de Centro de Costo, que está en evaluación de
   // cambiar o eliminarse.
@@ -364,8 +371,11 @@ export function moduloDeRuta(ruta: string): string {
   base, no la pantalla—; saber a quién le toca qué no le hace daño a nadie y le
   ahorra a media empresa preguntarlo.
 */
-// La solicitud de pedido también: la hace cualquiera (06/11/2026).
-const RUTAS_PROPIAS = ['/app/cuenta', '/app/manual', '/app/organigrama', '/app/compras/nuevo']
+// La solicitud de pedido también: la hace cualquiera (06/11/2026). Y desde el
+// 07/11/2026, la página de Pedidos / Compras como en MGG: quien no lleva
+// compras entra y ve solo sus solicitudes (el «soloSolicitud» de MGG); lo que
+// ve cada quien lo decide la base.
+const RUTAS_PROPIAS = ['/app/cuenta', '/app/manual', '/app/organigrama', '/app/compras/nuevo', '/app/pedidos']
 
 export function esRutaPropia(ruta: string): boolean {
   return RUTAS_PROPIAS.some((prefijo) => ruta.startsWith(prefijo))
@@ -397,6 +407,14 @@ export const PANTALLAS_DE_TELEFONO: PantallaDeTelefono[] = [
   { accion: 'INVENTARIO.ALMACEN_TELEFONO', ruta: '/app/inventario/almacen', label: 'Almacén', icon: Boxes },
   // La de compras (07/11/2026): revisar, recibir, aprobar y pagar desde el teléfono.
   { accion: 'COMPRAS.TELEFONO', ruta: '/app/compras/telefono', label: 'Compras', icon: ShoppingCart },
+  // La revisión de las solicitudes de pedido en el almacén (07/11/2026, MGG
+  // vista «solicitudes»). La última: solo aterriza aquí quien no tiene otra.
+  {
+    accion: 'INVENTARIO.SOLICITUDES_TELEFONO',
+    ruta: '/app/solicitudes-pedido/telefono',
+    label: 'Solicitudes de pedido',
+    icon: ClipboardList,
+  },
 ]
 
 /**
@@ -436,7 +454,9 @@ export const navigation: NavSection[] = [
         manejen compras harán el proceso de compras». Por eso va arriba y para
         todos, y no dentro de Compras.
       */
-      { label: 'Solicitud de pedido', icon: ClipboardList, to: '/app/compras/nuevo', siempre: true },
+      // Desde el 07/11/2026 abre Pedidos / Compras como en MGG: quien no
+      // lleva compras ve ahí «Solicitudes de Pedido» y «+ Nueva solicitud».
+      { label: 'Solicitud de pedido', icon: ClipboardList, to: '/app/pedidos', siempre: true },
     ],
   },
   {
@@ -553,6 +573,8 @@ export const navigation: NavSection[] = [
           { label: 'Tablero', to: '/app/inventario' },
           { label: 'Existencias', to: '/app/inventario/existencias' },
           { label: 'Almacenes y talleres', to: '/app/inventario/almacenes' },
+          // El almacén general revisa cada solicitud de pedido antes de Compras.
+          { label: 'Solicitudes de pedido', to: '/app/solicitudes-pedido' },
         ],
       },
       {
@@ -663,7 +685,14 @@ export const navigation: NavSection[] = [
           // desde que alguien la pide hasta que llega el material. No hay
           // "requisiciones" por un lado y "órdenes" por otro, porque quien
           // compra no piensa en dos documentos sino en una sola compra.
-          { label: 'Tablero', to: '/app/compras' },
+          /*
+            PEDIDOS / COMPRAS COMO EN MGG (07/11/2026). Va primero: es la
+            pantalla nueva del módulo. El tablero de siempre queda como
+            «anterior» mientras lo que ya estaba en curso termina su camino;
+            se retira en la fase 4.
+          */
+          { label: 'Pedidos / Compras', to: '/app/pedidos' },
+          { label: 'Tablero (anterior)', to: '/app/compras' },
           /*
             La compra directa es entrada propia y no un boton dentro del
             tablero, porque no es un paso del camino de un pedido: es otro
