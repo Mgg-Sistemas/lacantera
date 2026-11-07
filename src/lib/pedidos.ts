@@ -114,6 +114,8 @@ const EVENTOS: Record<string, string> = {
   oc_reabierta: 'OC reabierta · volver a cotizar y re-elegir oferta',
   oc_reabierta_edicion: 'OC modificada · vuelve a aprobación del Gerente',
   confirmada_metodo: 'OC confirmada · indicar método de pago',
+  // La base arma el evento como 'confirmada_' || estado: con confirmada_metodo sale doble.
+  confirmada_confirmada_metodo: 'OC confirmada · indicar método de pago',
   confirmada_por_recibir: 'OC confirmada · pendiente por recepción',
   confirmada_cuenta_abierta: 'OC confirmada · crédito (cuenta abierta)',
   metodo_pago: 'Método de pago indicado · enviada a pagar',
@@ -159,6 +161,7 @@ const CLASE_EVENTO: Record<string, TonoEstado> = {
   oc_reabierta: 'warning',
   oc_reabierta_edicion: 'warning',
   confirmada_metodo: 'info',
+  confirmada_confirmada_metodo: 'info',
   anticipo: 'info',
   confirmada_por_recibir: 'info',
   confirmada_cuenta_abierta: 'warning',
