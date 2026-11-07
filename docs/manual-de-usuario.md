@@ -2294,7 +2294,7 @@ La pantalla es una sola columna: arriba **Datos del pedido** y debajo **Qué se 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
 | **Título** | Sí | **Es lo que se lee en la tarjeta del tablero.** |
-| **Para qué es (opcional)** | No | Si hace falta explicarlo. Cada renglón ya lleva su observación |
+| **Motivo de compra (opcional)** | No | Si hace falta explicarlo. Cada renglón ya lleva su observación |
 | **Solicitante** | — | **Si a quien lo necesita le falta algo, se le pregunta a esta persona.** Empieza en su propio nombre, marcado «(yo)». La lista trae a cada persona activa con su cargo, y al final **Otra persona — no tiene usuario** |
 | **Nombre del solicitante** | Sí, si eligió **Otra persona** | |
 | **Cargo o frente** | No | Solo si eligió **Otra persona** |
