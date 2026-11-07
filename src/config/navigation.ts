@@ -364,7 +364,8 @@ export function moduloDeRuta(ruta: string): string {
   base, no la pantalla—; saber a quién le toca qué no le hace daño a nadie y le
   ahorra a media empresa preguntarlo.
 */
-const RUTAS_PROPIAS = ['/app/cuenta', '/app/manual', '/app/organigrama']
+// La solicitud de pedido también: la hace cualquiera (06/11/2026).
+const RUTAS_PROPIAS = ['/app/cuenta', '/app/manual', '/app/organigrama', '/app/compras/nuevo']
 
 export function esRutaPropia(ruta: string): boolean {
   return RUTAS_PROPIAS.some((prefijo) => ruta.startsWith(prefijo))
@@ -394,6 +395,8 @@ export const PANTALLAS_DE_TELEFONO: PantallaDeTelefono[] = [
   { accion: 'COMBUSTIBLE.SURTIDOR_TELEFONO', ruta: '/app/combustible/surtidor', label: 'Surtidor', icon: Fuel },
   { accion: 'ALIMENTACION.COCINA_TELEFONO', ruta: '/app/alimentacion/cocina', label: 'Cocina', icon: UtensilsCrossed },
   { accion: 'INVENTARIO.ALMACEN_TELEFONO', ruta: '/app/inventario/almacen', label: 'Almacén', icon: Boxes },
+  // La de compras (07/11/2026): revisar, recibir, aprobar y pagar desde el teléfono.
+  { accion: 'COMPRAS.TELEFONO', ruta: '/app/compras/telefono', label: 'Compras', icon: ShoppingCart },
 ]
 
 /**
@@ -425,7 +428,16 @@ export interface NavSection {
  */
 export const navigation: NavSection[] = [
   {
-    items: [{ label: 'Panel', icon: Gauge, to: '/app' }],
+    items: [
+      { label: 'Panel', icon: Gauge, to: '/app' },
+      /*
+        Pedir lo puede cualquiera (Angélica, 06/11/2026): «todos los usuarios
+        tendrán acceso a crear una solicitud de pedido, pero solo los que
+        manejen compras harán el proceso de compras». Por eso va arriba y para
+        todos, y no dentro de Compras.
+      */
+      { label: 'Solicitud de pedido', icon: ClipboardList, to: '/app/compras/nuevo', siempre: true },
+    ],
   },
   {
     label: 'Operación',

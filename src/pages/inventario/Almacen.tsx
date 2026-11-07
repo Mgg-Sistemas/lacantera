@@ -33,7 +33,7 @@ const ETIQUETA_ROL: Record<Rol, string> = {
   ALMACEN: 'Almacén',
   OPERACIONES: 'Operaciones',
   RRHH: 'Recursos humanos',
-  SOLICITANTE: 'Solicitante',
+  BASICO: 'Básico',
   CONSULTA: 'Consulta',
 }
 // El orden en que se escoge cuál mostrar cuando el usuario tiene varios roles.
@@ -45,7 +45,7 @@ const ORDEN_ROL: Rol[] = [
   'COMPRAS',
   'TESORERIA',
   'OPERACIONES',
-  'SOLICITANTE',
+  'BASICO',
   'CONSULTA',
 ]
 

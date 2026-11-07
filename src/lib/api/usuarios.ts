@@ -62,6 +62,10 @@ export interface RolSistema {
    * hasta que estén catalogados los quince.
    */
   a_la_medida: boolean
+  /** El color de la tarjeta, como en MGG. */
+  color: string
+  /** Entra solo por sus pantallas de teléfono; no ve las de escritorio. */
+  solo_telefono: boolean
 }
 
 export interface PermisoRol {
@@ -88,7 +92,7 @@ export function useRoles() {
       desenvolver<RolSistema[]>(
         await supabase
           .from('roles')
-          .select('codigo, nombre, descripcion, orden, sistema, a_la_medida')
+          .select('codigo, nombre, descripcion, orden, sistema, a_la_medida, color, solo_telefono')
           .order('orden'),
       ),
   })
@@ -366,12 +370,16 @@ export function useCrearRol() {
       nombre: string
       descripcion: string
       a_la_medida?: boolean
+      color?: string | null
+      solo_telefono?: boolean
     }) =>
       rpc<string>('crear_rol', {
         p_codigo: v.codigo,
         p_nombre: v.nombre,
         p_descripcion: v.descripcion,
         p_a_la_medida: v.a_la_medida ?? false,
+        p_color: v.color ?? null,
+        p_solo_telefono: v.solo_telefono ?? false,
       }),
     onSuccess: () => invalidarRoles(qc),
   })
@@ -385,16 +393,111 @@ export function useGuardarRol() {
       nombre: string
       descripcion: string
       a_la_medida?: boolean
+      color?: string | null
+      solo_telefono?: boolean | null
     }) =>
       rpc('guardar_rol', {
         p_codigo: v.codigo,
         p_nombre: v.nombre,
         p_descripcion: v.descripcion,
-        // Nulo deja la clase como estaba: quien solo viene a corregir el nombre
-        // no cambia de qué se rige el rol sin querer.
+        // Nulo deja cada cosa como estaba: quien solo viene a corregir el
+        // nombre no cambia de qué se rige el rol sin querer.
         p_a_la_medida: v.a_la_medida ?? null,
+        p_color: v.color ?? null,
+        p_solo_telefono: v.solo_telefono ?? null,
       }),
+    onSuccess: () => {
+      invalidarRoles(qc)
+      void qc.invalidateQueries({ queryKey: ['mi-solo-telefono'] })
+    },
+  })
+}
+
+/** «↺ Por defecto»: vuelve la matriz del rol a la guardada de fábrica. */
+export function useRestablecerRol() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (rol: string) => rpc('restablecer_rol', { p_rol: rol }),
     onSuccess: () => invalidarRoles(qc),
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Usuarios autorizados para aprobar (como en MGG)
+// ---------------------------------------------------------------------------
+
+/**
+ * Quién aprueba órdenes de compra y quién aprueba salidas.
+ *
+ * Es una lista por persona, aparte de los roles. El administrador aprueba
+ * siempre, sin estar en ella.
+ */
+export interface UsuarioAutorizado {
+  usuario_id: string
+  nombre: string
+  usuario: string
+  activo: boolean
+  aprobar_oc: boolean
+  aprobar_salidas: boolean
+  /** Su firma (PNG en data URL), o nulo si no tiene. */
+  firma: string | null
+}
+
+export function useUsuariosAutorizados() {
+  return useQuery({
+    queryKey: ['usuarios-autorizados'],
+    queryFn: () => rpc<UsuarioAutorizado[]>('usuarios_autorizados_lista'),
+  })
+}
+
+function invalidarAutorizados(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: ['usuarios-autorizados'] })
+  // Quién aprueba se lee también en compras y en salidas.
+  void qc.invalidateQueries({ queryKey: ['compras'] })
+  void qc.invalidateQueries({ queryKey: ['salidas'] })
+}
+
+export function useGuardarAutorizado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { usuario_id: string; aprobar_oc: boolean; aprobar_salidas: boolean }) =>
+      rpc('guardar_usuario_autorizado', {
+        p_usuario: v.usuario_id,
+        p_aprobar_oc: v.aprobar_oc,
+        p_aprobar_salidas: v.aprobar_salidas,
+      }),
+    onSuccess: () => invalidarAutorizados(qc),
+  })
+}
+
+export function useQuitarAutorizado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (usuario_id: string) => rpc('quitar_usuario_autorizado', { p_usuario: usuario_id }),
+    onSuccess: () => invalidarAutorizados(qc),
+  })
+}
+
+export function useGuardarFirmaDeUsuario() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { usuario_id: string; imagen: string; origen: string }) =>
+      rpc('guardar_firma_de_usuario', { p_usuario: v.usuario_id, p_imagen: v.imagen, p_origen: v.origen }),
+    onSuccess: () => {
+      invalidarAutorizados(qc)
+      void qc.invalidateQueries({ queryKey: ['firmas'] })
+    },
+  })
+}
+
+export function useQuitarFirmaDeUsuario() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (usuario_id: string) => rpc('quitar_firma_de_usuario', { p_usuario: usuario_id }),
+    onSuccess: () => {
+      invalidarAutorizados(qc)
+      void qc.invalidateQueries({ queryKey: ['firmas'] })
+    },
   })
 }
 

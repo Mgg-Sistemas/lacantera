@@ -74,7 +74,7 @@ export function ComprasTelefono() {
   const mosaicos: { vista: Vista; icono: string; titulo: string; pie: string; n: number; ver: boolean; alerta?: boolean }[] = [
     { vista: 'revisar', icono: '🏬', titulo: 'Por revisar', pie: 'El almacén general dice qué tiene', n: listas.revisar.length, ver: esAlmacen || esCompras, alerta: listas.revisar.length > 0 },
     { vista: 'recibir', icono: '📥', titulo: 'Por recibir', pie: 'Lo que llega al almacén general', n: ordenes.length, ver: esAlmacen || esCompras },
-    { vista: 'aprobar', icono: '⏳', titulo: 'Por aprobar', pie: soyAprobador ? 'Le toca a usted' : 'Esperan a Norbelis', n: listas.aprobar.length, ver: true, alerta: soyAprobador === true && listas.aprobar.length > 0 },
+    { vista: 'aprobar', icono: '⏳', titulo: 'Por aprobar', pie: soyAprobador ? 'Le toca a usted' : 'Esperan aprobación', n: listas.aprobar.length, ver: true, alerta: soyAprobador === true && listas.aprobar.length > 0 },
     { vista: 'pagar', icono: '💰', titulo: 'Por pagar', pie: 'Aprobadas y cuentas abiertas', n: listas.pagar.length, ver: esCompras || soyAprobador === true || puede('GERENTE_GENERAL') },
     { vista: 'urgentes', icono: '🚨', titulo: 'Urgentes', pie: 'En curso', n: listas.urgentes.length, ver: true, alerta: listas.urgentes.length > 0 },
     { vista: 'finalizadas', icono: '✅', titulo: 'Finalizadas', pie: 'Últimos 30 días', n: listas.finalizadas.length, ver: true },
@@ -97,7 +97,7 @@ export function ComprasTelefono() {
           </h1>
           <p className="text-ink/55 mt-0.5 text-sm">
             {yo?.nombre ?? ''}
-            {roles.length ? ` · ${roles.filter((r) => r !== 'SOLICITANTE').slice(0, 2).join(', ')}` : ''}
+            {roles.length ? ` · ${roles.filter((r) => r !== 'BASICO').slice(0, 2).join(', ')}` : ''}
           </p>
         </div>
         {vista === 'inicio' ? (

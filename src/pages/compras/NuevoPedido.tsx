@@ -12,10 +12,12 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useMiFirma } from '@/lib/api/firmas'
 import { usePerfiles, useUnidades } from '@/lib/api/catalogo'
-import { useActualizarPedido, useCompra, useCrearPedido } from '@/lib/api/compras'
+import { useActualizarPedido, useCompra, useCrearPedido, usePuedePedirPorOtro } from '@/lib/api/compras'
 import type { Compra } from '@/lib/api/compras'
 import { Cargando, ErrorDeCarga as ErrorDeCargaPagina } from '@/components/ui/Estado'
 import { useSesion } from '@/lib/sesion'
+import { useMisPermisos } from '@/lib/api/usuarios'
+import { PedidoEnviado } from '@/pages/compras/PedidoEnviado'
 
 /**
  * Valor del selector para quien pide y no tiene usuario.
@@ -93,12 +95,21 @@ export function CorregirPedido() {
 }
 
 export function NuevoPedido() {
-  return <Formulario pedido={null} />
+  // Cambia al pedir otra: el formulario se rearma vacío.
+  const [vuelta, setVuelta] = useState(0)
+  return <Formulario key={vuelta} pedido={null} onOtra={() => setVuelta((v) => v + 1)} />
 }
 
-function Formulario({ pedido }: { pedido: Compra | null }) {
+function Formulario({ pedido, onOtra }: { pedido: Compra | null; onOtra?: () => void }) {
   const corrigiendo = !!pedido
   const navigate = useNavigate()
+  /*
+    Pedir lo puede cualquiera; el tablero y el detalle, solo quien lleva
+    compras. A quien solo pide no se le manda a pantallas que no le abren.
+  */
+  const { puede: puedeModulo } = useMisPermisos()
+  const llevaCompras = puedeModulo('COMPRAS', 'LECTURA')
+  const [enviado, setEnviado] = useState<number | null>(null)
   const { data: unidades } = useUnidades()
   const { data: perfiles } = usePerfiles()
   const { session } = useSesion()
@@ -141,7 +152,13 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
 
   // Mientras la lista de perfiles carga, el selector todavía no tiene opciones;
   // el valor por defecto es uno mismo, que es el caso más común.
-  const seleccion = quienPide || yo
+  /*
+    Quien no lleva compras (ni almacén, operaciones o nómina) pide a su nombre:
+    la base no le deja poner a otro, así que la pantalla no se lo ofrece.
+  */
+  const { data: porOtro } = usePuedePedirPorOtro()
+  const aSuNombre = porOtro === false
+  const seleccion = aSuNombre ? yo : quienPide || yo
   const ofrecerFirma = miFirma?.usar === true && seleccion === yo
 
   const cambiar = (clave: number, cambios: Partial<FilaRenglon>) =>
@@ -221,8 +238,21 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
       enviar: enviarAhora,
       con_firma: ofrecerFirma && conMiFirma,
     })
+    if (!llevaCompras) {
+      setEnviado(id)
+      return
+    }
     // Enviado, sale su WhatsApp para el almacén general (como en MGG).
     void navigate(`/app/compras/${id}${enviarAhora ? '?avisar=pedido' : ''}`)
+  }
+
+  if (enviado !== null) {
+    return (
+      <>
+        <PageHeader title="Solicitud de pedido" />
+        <PedidoEnviado id={enviado} onOtra={() => onOtra?.()} />
+      </>
+    )
   }
 
   return (
@@ -240,11 +270,13 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                 se le ponen precios, así que lo que hay que saber antes de
                 empezar es si la tasa del día está cargada, no cuánto suma. */}
             <ChipTasa className="self-center" />
-            <Link to={corrigiendo ? `/app/compras/${pedido.id}` : '/app/compras'}>
-              <Button variant="outline" icon={<ArrowLeft />}>
-                {corrigiendo ? 'Volver al pedido' : 'Volver al tablero'}
-              </Button>
-            </Link>
+            {corrigiendo || llevaCompras ? (
+              <Link to={corrigiendo ? `/app/compras/${pedido.id}` : '/app/compras'}>
+                <Button variant="outline" icon={<ArrowLeft />}>
+                  {corrigiendo ? 'Volver al pedido' : 'Volver al tablero'}
+                </Button>
+              </Link>
+            ) : null}
           </>
         }
       />
@@ -292,6 +324,14 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
             {/* El cargo va en la tercera línea y no pegado al nombre: así se
                 busca por «tesoreria» y sale quien la lleva, sin que el
                 renglón se parta en dos cuando el cargo es largo. */}
+            {aSuNombre ? (
+              <div>
+                <span className="text-ink/70 mb-1.5 block text-sm font-medium">Solicitante</span>
+                <p className="text-ink/85 text-sm">
+                  {(perfiles ?? []).find((p) => p.id === yo)?.nombre ?? 'Usted'} (yo)
+                </p>
+              </div>
+            ) : (
             <SelectBuscable
               label="Solicitante"
               hint="Si a quien lo necesita le falta algo, se le pregunta a esta persona."
@@ -308,6 +348,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
                 { valor: OTRA_PERSONA, nombre: 'Otra persona — no tiene usuario' },
               ]}
             />
+            )}
 
             {seleccion === OTRA_PERSONA ? (
               <div className="border-hairline rounded-card space-y-4 border border-dashed p-3">
@@ -474,9 +515,12 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
         {/* Los botones fuera de la tarjeta: cierran la pantalla, no la
             sección. */}
         <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <Button variant="outline" disabled={crear.isPending || actualizar.isPending} onClick={() => void enviar(false)}>
-            Guardar borrador
-          </Button>
+          {/* El borrador se retoma desde el tablero, que es de quien lleva compras. */}
+          {llevaCompras ? (
+            <Button variant="outline" disabled={crear.isPending || actualizar.isPending} onClick={() => void enviar(false)}>
+              Guardar borrador
+            </Button>
+          ) : null}
           <Button size="lg" disabled={crear.isPending || actualizar.isPending} onClick={() => void enviar(true)}>
             {crear.isPending ? 'Enviando…' : 'Enviar el pedido'}
           </Button>

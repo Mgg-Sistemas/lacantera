@@ -1326,7 +1326,8 @@ export function DetalleCompra() {
   const pagoDecideQuienAprueba =
     !!cotizacionDeLaOrden?.pago_metodo && cotizacionDeLaOrden.pago_metodo !== 'INTERCAMBIO'
   const nombresAprobadores =
-    (aprobadores ?? []).map((a) => nombreDe(a.usuario_id)).join(' o ') || 'quien aprueba'
+    // Los administradores aprueban siempre, aunque no estén en la lista (07/11/2026).
+    [...(aprobadores ?? []).map((a) => nombreDe(a.usuario_id)), 'un administrador'].join(' o ')
 
   // Fase 4: el WhatsApp de la compra cerrada.
   const textoDeFinalizada = (nota?: string | null) =>
